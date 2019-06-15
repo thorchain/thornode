@@ -2,6 +2,7 @@ package rest
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -23,7 +24,7 @@ const (
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec, storePoolData string) {
 	r.HandleFunc(fmt.Sprintf("/%s/pools", storePoolData), poolHandler(cdc, cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pools", storePoolData), setPoolDataHandler(cdc, cliCtx)).Methods("PUT")
-	r.HandleFunc(fmt.Sprintf("/%s/pools/{%s}", storePoolData, restPoolData), resolvePoolDataHandler(cdc, cliCtx, storePoolData)).Methods("GET")
+	//r.HandleFunc(fmt.Sprintf("/%s/pools/{%s}", storePoolData, restPoolData), resolvePoolDataHandler(cdc, cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pools/{%s}/poolstruct", storePoolData, restPoolData), whoIsHandler(cdc, cliCtx, storePoolData)).Methods("GET")
 }
 
@@ -51,7 +52,7 @@ func setPoolDataHandler(cdc *codec.Codec, cliCtx context.CLIContext) http.Handle
 		}
 
 		// create the message
-		msg := types.NewMsgSetPoolData(req.TokenName, req.Ticker)
+		msg := types.NewMsgSetPoolData(req.TokenName, req.Ticker, cliCtx.GetFromAddress())
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -81,8 +82,11 @@ func whoIsHandler(cdc *codec.Codec, cliCtx context.CLIContext, storePoolData str
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		paramType := vars[restPoolData]
+		log.Printf("Got here")
 
 		res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolstruct/%s", storePoolData, paramType), nil)
+		log.Printf("RES: %+v", res)
+		log.Printf("Err: %+v", err)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return

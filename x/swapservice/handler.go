@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"fmt"
+	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -27,6 +28,7 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 			return sdk.ErrUnauthorized("Incorrect Owner").Result() // If not, throw an error
 		}
 	*/
+	log.Printf("handle: %s", msg.PoolID)
 	keeper.SetPoolData(
 		ctx,
 		msg.PoolID,
