@@ -58,21 +58,21 @@ func (msg MsgSetPoolData) GetSigners() []sdk.AccAddress {
 
 // MsgSetAccData defines a SetAccData message
 type MsgSetAccData struct {
-	AccID string         `json:"acc_id"`
-	Name  string         `json:"name"`
-	ATOM  string         `json:"atom"`
-	BTC   string         `json:"btc"`
-	Owner sdk.AccAddress `json:"owner"`
+	AccID  string         `json:"acc_id"`
+	Name   string         `json:"name"`
+	Ticker string         `json:"atom"`
+	Amount string         `json:"token"`
+	Owner  sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetAccData(name, atom, btc string, owner sdk.AccAddress) MsgSetAccData {
+func NewMsgSetAccData(name, ticker, amount string, owner sdk.AccAddress) MsgSetAccData {
 	return MsgSetAccData{
-		AccID: fmt.Sprintf("acc-%s", strings.ToLower(name)),
-		Name:  strings.ToLower(name),
-		ATOM:  atom,
-		BTC:   btc,
-		Owner: owner,
+		AccID:  fmt.Sprintf("acc-%s", strings.ToLower(name)),
+		Name:   strings.ToLower(name),
+		Ticker: ticker,
+		Amount: amount,
+		Owner:  owner,
 	}
 }
 

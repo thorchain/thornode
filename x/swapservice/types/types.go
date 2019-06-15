@@ -25,11 +25,15 @@ Atom Balance: %s
 Token Balance: %s`, w.TokenName, w.Ticker, w.BalanceAtom, w.BalanceToken))
 }
 
+type Holding struct {
+	Ticker string `json:"ticker"`
+	Amount string `json:"amount"`
+}
+
 //AccStruct is a struct that contains balances of an account
 type AccStruct struct {
-	Name string `json:"name"`
-	ATOM string `json:"atom"`
-	BTC  string `json:"btc"`
+	Name     string    `json:"name"`
+	Holdings []Holding `json:"holdings"`
 }
 
 func NewAccStruct() AccStruct {
@@ -38,9 +42,8 @@ func NewAccStruct() AccStruct {
 
 func (w AccStruct) String() string {
 	return strings.TrimSpace(fmt.Sprintf(`Balances for %s:
-%s ATOM
-%s BTC
-`, w.Name, w.ATOM, w.BTC))
+%+v
+`, w.Name, w.Holdings))
 }
 
 type AccStake struct {

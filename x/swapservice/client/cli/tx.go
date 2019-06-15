@@ -63,7 +63,7 @@ func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetAccData is the CLI command for sending a SetAccData transaction
 func GetCmdSetAccData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-account [name] [atom] [btc]",
+		Use:   "set-account [name] [ticker] [amount]",
 		Short: "Create a new account.",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {

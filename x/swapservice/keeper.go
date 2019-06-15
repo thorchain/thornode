@@ -46,11 +46,24 @@ func (k Keeper) SetAccStruct(ctx sdk.Context, accID string, accstruct AccStruct)
 }
 
 // SetAccData - sets the value string that a acc ID resolves to
-func (k Keeper) SetAccData(ctx sdk.Context, accID string, name, atom, btc string) {
+func (k Keeper) SetAccData(ctx sdk.Context, accID string, name, ticker, amount string) {
 	accstruct := k.GetAccStruct(ctx, accID)
-	accstruct.Name = strings.ToLower(name)
-	accstruct.ATOM = atom
-	accstruct.BTC = btc
+	found := false
+	ticker = strings.ToUpper(ticker)
+	for i, record := range accstruct.Holdings {
+		if record.Ticker == ticker {
+			accstruct.Holdings[i].Amount = amount
+			found = true
+			break
+		}
+	}
+	if !found {
+		record := Holding{
+			Ticker: ticker,
+			Amount: amount,
+		}
+		accstruct.Holdings = append(accstruct.Holdings, record)
+	}
 	k.SetAccStruct(ctx, accID, accstruct)
 }
 
