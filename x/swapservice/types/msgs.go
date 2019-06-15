@@ -99,3 +99,53 @@ func (msg MsgSetAccData) GetSignBytes() []byte {
 func (msg MsgSetAccData) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }
+
+// MsgSetStakeData defines a SetStakeData message
+type MsgSetStakeData struct {
+	StakeID string         `json:"acc_id"`
+	Name    string         `json:"name"`
+	Atom    string         `json:"atom"`
+	Token   string         `json:"token"`
+	Owner   sdk.AccAddress `json:"owner"`
+}
+
+// NewMsgSetPoolData is a constructor function for MsgSetPoolData
+func NewMsgSetStakeData(ticker, name, atom, token string, owner sdk.AccAddress) MsgSetStakeData {
+	return MsgSetStakeData{
+		StakeID: fmt.Sprintf("stake-%s", strings.ToUpper(ticker)),
+		Name:    name,
+		Atom:    atom,
+		Token:   token,
+		Owner:   owner,
+	}
+}
+
+// Route should return the pooldata of the module
+func (msg MsgSetStakeData) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgSetStakeData) Type() string { return "set_stakedata" }
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
+	if len(msg.Name) == 0 {
+		return sdk.ErrUnknownRequest("Stake Name cannot be empty")
+	}
+	if len(msg.Atom) == 0 {
+		return sdk.ErrUnknownRequest("Stake Atom cannot be empty")
+	}
+	if len(msg.Token) == 0 {
+		return sdk.ErrUnknownRequest("Stake Token cannot be empty")
+	}
+	return nil
+}
+
+// GetSignBytes encodes the message for signing
+func (msg MsgSetStakeData) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgSetStakeData) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
+}

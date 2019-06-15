@@ -14,4 +14,5 @@ func init() {
 func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgSetPoolData{}, "swapservice/SetPoolData", nil)
 	cdc.RegisterConcrete(MsgSetAccData{}, "swapservice/SetAccData", nil)
+	cdc.RegisterConcrete(MsgSetStakeData{}, "swapservice/SetStakeData", nil)
 }
