@@ -1,4 +1,4 @@
-module github.com/cosmos/sdk-application-tutorial
+module github.com/jpthor/test
 
 go 1.12
 
@@ -19,3 +19,4 @@ require (
 )
 
 replace golang.org/x/crypto => github.com/tendermint/crypto v0.0.0-20180820045704-3764759f34a5
+replace github.com/jpthor/test => ../test
