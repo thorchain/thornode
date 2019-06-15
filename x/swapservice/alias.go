@@ -33,4 +33,5 @@ type (
 	AccStruct          = types.AccStruct
 	StakeStruct        = types.StakeStruct
 	AccStake           = types.AccStake
+	Holding            = types.Holding
 )
