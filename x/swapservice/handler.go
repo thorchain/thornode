@@ -49,8 +49,8 @@ func handleMsgSetAccData(ctx sdk.Context, keeper Keeper, msg MsgSetAccData) sdk.
 		ctx,
 		msg.AccID,
 		msg.Name,
-		msg.ATOM,
-		msg.BTC,
+		msg.Ticker,
+		msg.Amount,
 	) // If so, set the acc data to the value specified in the msg.
 	return sdk.Result{} // return
 }
