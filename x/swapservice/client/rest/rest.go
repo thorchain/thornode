@@ -22,62 +22,16 @@ const (
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec, storePoolData string) {
 	r.HandleFunc(fmt.Sprintf("/%s/pooldatas", storePoolData), pooldatasHandler(cdc, cliCtx, storePoolData)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/pooldatas", storePoolData), buyPoolDataHandler(cdc, cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/pooldatas", storePoolData), setPoolDataHandler(cdc, cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/pooldatas/{%s}", storePoolData, restPoolData), resolvePoolDataHandler(cdc, cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pooldatas/{%s}/poolstruct", storePoolData, restPoolData), whoIsHandler(cdc, cliCtx, storePoolData)).Methods("GET")
 }
 
-type buyPoolDataReq struct {
-	BaseReq rest.BaseReq `json:"base_req"`
-	PoolData    string       `json:"pooldata"`
-	Amount  string       `json:"amount"`
-	Buyer   string       `json:"buyer"`
-}
-
-func buyPoolDataHandler(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var req buyPoolDataReq
-
-		if !rest.ReadRESTReq(w, r, cdc, &req) {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
-			return
-		}
-
-		baseReq := req.BaseReq.Sanitize()
-		if !baseReq.ValidateBasic(w) {
-			return
-		}
-
-		addr, err := sdk.AccAddressFromBech32(req.Buyer)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		coins, err := sdk.ParseCoins(req.Amount)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		// create the message
-		msg := types.NewMsgBuyPoolData(req.PoolData, coins, addr)
-		err = msg.ValidateBasic()
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
-		clientrest.WriteGenerateStdTxResponse(w, cdc, cliCtx, baseReq, []sdk.Msg{msg})
-	}
-}
-
 type setPoolDataReq struct {
-	BaseReq rest.BaseReq `json:"base_req"`
-	PoolData    string       `json:"pooldata"`
-	Value   string       `json:"value"`
-	Owner   string       `json:"owner"`
+	BaseReq  rest.BaseReq `json:"base_req"`
+	PoolData string       `json:"pooldata"`
+	Value    string       `json:"value"`
+	Owner    string       `json:"owner"`
 }
 
 func setPoolDataHandler(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
