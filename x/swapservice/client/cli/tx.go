@@ -44,7 +44,7 @@ func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSetPoolData(args[0], args[1], cliCtx.GetFromAddress())
+			msg := types.NewMsgSetPoolData(args[0], args[1])
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
