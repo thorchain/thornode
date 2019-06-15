@@ -11,8 +11,8 @@ type GenesisState struct {
 	PoolStructRecords []PoolStruct `json:"poolstruct_records"`
 }
 
-func NewGenesisState(whoIsRecords []PoolStruct) GenesisState {
-	return GenesisState{PoolStructRecords: nil}
+func NewGenesisState(pools []PoolStruct) GenesisState {
+	return GenesisState{PoolStructRecords: pools}
 }
 
 func ValidateGenesis(data GenesisState) error {
@@ -34,7 +34,9 @@ func DefaultGenesisState() GenesisState {
 }
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.ValidatorUpdate {
-	// TODO: INIT GENESIS
+	for _, record := range data.PoolStructRecords {
+		keeper.SetPoolStruct(ctx, fmt.Sprintf("pool-%s", record.Ticker), record)
+	}
 	return []abci.ValidatorUpdate{}
 }
 

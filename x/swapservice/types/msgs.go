@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,18 +11,21 @@ const RouterKey = ModuleName // this was defined in your key.go file
 
 // MsgSetPoolData defines a SetPoolData message
 type MsgSetPoolData struct {
-	PoolID       string `json:"pool_id"`
-	BalanceAtom  string `json:"balance_atom"`
-	BalanceToken string `json:"balance_token"`
-	Ticker       string `json:"ticker"`
-	TokenName    string `json:"token_name"`
+	PoolID       string         `json:"pool_id"`
+	BalanceAtom  string         `json:"balance_atom"`
+	BalanceToken string         `json:"balance_token"`
+	Ticker       string         `json:"ticker"`
+	TokenName    string         `json:"token_name"`
+	Owner        sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetPoolData(tokenName, ticker string) MsgSetPoolData {
+func NewMsgSetPoolData(tokenName, ticker string, owner sdk.AccAddress) MsgSetPoolData {
 	return MsgSetPoolData{
+		PoolID:    fmt.Sprintf("pool-%s", strings.ToUpper(ticker)),
 		Ticker:    strings.ToUpper(ticker),
 		TokenName: tokenName,
+		Owner:     owner,
 	}
 }
 
@@ -49,5 +53,5 @@ func (msg MsgSetPoolData) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (msg MsgSetPoolData) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{}
+	return []sdk.AccAddress{msg.Owner}
 }

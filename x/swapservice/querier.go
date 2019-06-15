@@ -1,6 +1,8 @@
 package swapservice
 
 import (
+	"log"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -29,6 +31,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 
 // nolint: unparam
 func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	log.Printf("Got here")
+	log.Printf("Path: %s", path[0])
 	poolstruct := keeper.GetPoolStruct(ctx, path[0])
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, poolstruct)
