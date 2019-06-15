@@ -9,10 +9,12 @@ import (
 
 // query endpoints supported by the swapservice Querier
 const (
-	QueryPoolStruct = "poolstruct"
-	QueryPoolDatas  = "pooldatas"
-	QueryAccStruct  = "accstruct"
-	QueryAccDatas   = "accdatas"
+	QueryPoolStruct  = "poolstruct"
+	QueryPoolDatas   = "pooldatas"
+	QueryAccStruct   = "accstruct"
+	QueryAccDatas    = "accdatas"
+	QueryStakeStruct = "stakestruct"
+	QueryStakeDatas  = "stakedatas"
 )
 
 // NewQuerier is the module level router for state queries
@@ -27,6 +29,10 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryAccStruct(ctx, path[1:], req, keeper)
 		case QueryAccDatas:
 			return queryAccDatas(ctx, req, keeper)
+		case QueryStakeStruct:
+			return queryStakeStruct(ctx, path[1:], req, keeper)
+		case QueryStakeDatas:
+			return queryStakeDatas(ctx, req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown swapservice query endpoint")
 		}
@@ -57,6 +63,18 @@ func queryAccStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	return res, nil
 }
 
+// nolint: unparam
+func queryStakeStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	stakestruct := keeper.GetStakeStruct(ctx, path[0])
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, stakestruct)
+	if err != nil {
+		panic("could not marshal result to JSON")
+	}
+
+	return res, nil
+}
+
 func queryPoolDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var pooldatasList QueryResPoolDatas
 
@@ -76,6 +94,23 @@ func queryPoolDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]by
 
 func queryAccDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var accdatasList QueryResAccDatas
+
+	iterator := keeper.GetDatasIterator(ctx)
+
+	for ; iterator.Valid(); iterator.Next() {
+		accdatasList = append(accdatasList, string(iterator.Key()))
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, accdatasList)
+	if err != nil {
+		panic("could not marshal result to JSON")
+	}
+
+	return res, nil
+}
+
+func queryStakeDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	var accdatasList QueryResStakeDatas
 
 	iterator := keeper.GetDatasIterator(ctx)
 

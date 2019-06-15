@@ -17,6 +17,7 @@ func NewGenesisState(pools []PoolStruct, accs []AccStruct) GenesisState {
 	return GenesisState{
 		PoolStructRecords: pools,
 		AccStructRecords:  accs,
+		// TODO: add stake structs to genesis
 	}
 }
 

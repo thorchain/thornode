@@ -42,3 +42,26 @@ func (w AccStruct) String() string {
 %s BTC
 `, w.Name, w.ATOM, w.BTC))
 }
+
+type AccStake struct {
+	Name  string `json:"name"`
+	Atom  string `json:"atom"`
+	Token string `json:"token"`
+}
+
+// Stake Struct is a struct that contain amount of coins stake towards a specific pool
+type StakeStruct struct {
+	Ticker string     `json:"ticker"`
+	Stakes []AccStake `json:"stakes"`
+}
+
+func NewStakeStruct() StakeStruct {
+	return StakeStruct{
+		Stakes: make([]AccStake, 0),
+	}
+}
+
+func (w StakeStruct) String() string {
+	// TODO: Print better stakes
+	return strings.TrimSpace(fmt.Sprintf("TODO: Print better stakes"))
+}

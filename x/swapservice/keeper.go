@@ -54,6 +54,49 @@ func (k Keeper) SetAccData(ctx sdk.Context, accID string, name, atom, btc string
 	k.SetAccStruct(ctx, accID, accstruct)
 }
 
+// Gets the entire StakeStruct metadata struct for a stake ID
+func (k Keeper) GetStakeStruct(ctx sdk.Context, stakeID string) StakeStruct {
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(stakeID)) {
+		return NewStakeStruct()
+	}
+	bz := store.Get([]byte(stakeID))
+	var stakestruct StakeStruct
+	k.cdc.MustUnmarshalBinaryBare(bz, &stakestruct)
+	return stakestruct
+}
+
+// Sets the entire StakeStruct metadata struct for a stake ID
+func (k Keeper) SetStakeStruct(ctx sdk.Context, stakeID string, stakestruct StakeStruct) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(stakeID), k.cdc.MustMarshalBinaryBare(stakestruct))
+}
+
+// SetStakeData - sets the value string that a stake ID resolves to
+func (k Keeper) SetStakeData(ctx sdk.Context, stakeID string, name, atom, token string) {
+	parts := strings.Split(stakeID, "-")
+	stakestruct := k.GetStakeStruct(ctx, stakeID)
+	stakestruct.Ticker = parts[1]
+	found := false
+	for i, record := range stakestruct.Stakes {
+		if record.Name == name {
+			stakestruct.Stakes[i].Atom = atom
+			stakestruct.Stakes[i].Token = token
+			found = true
+			break
+		}
+	}
+	if !found {
+		record := AccStake{
+			Name:  name,
+			Atom:  atom,
+			Token: token,
+		}
+		stakestruct.Stakes = append(stakestruct.Stakes, record)
+	}
+	k.SetStakeStruct(ctx, stakeID, stakestruct)
+}
+
 // Gets the entire PoolStruct metadata struct for a pool ID
 func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
 	store := ctx.KVStore(k.storeKey)
