@@ -26,7 +26,7 @@ var (
 // app module Basics object
 type AppModuleBasic struct{}
 
-func (AppModuleBasic) PoolData() string {
+func (AppModuleBasic) Name() string {
 	return ModuleName
 }
 
@@ -79,7 +79,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper) AppModule {
 	}
 }
 
-func (AppModule) PoolData() string {
+func (AppModule) Name() string {
 	return ModuleName
 }
 

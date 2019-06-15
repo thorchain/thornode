@@ -28,14 +28,17 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec, 
 }
 
 type setPoolDataReq struct {
-	BaseReq  rest.BaseReq `json:"base_req"`
-	PoolData string       `json:"pooldata"`
-	Value    string       `json:"value"`
-	Owner    string       `json:"owner"`
+	BaseReq      rest.BaseReq `json:"base_req"`
+	TokenName    string       `json:"token_name"`
+	Ticker       string       `json:"ticker"`
+	BalanceAtom  string       `json:"balance_atom"`
+	BalanceToken string       `json:"balance_token"`
 }
 
 func setPoolDataHandler(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var err error
+
 		var req setPoolDataReq
 		if !rest.ReadRESTReq(w, r, cdc, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
@@ -47,14 +50,8 @@ func setPoolDataHandler(cdc *codec.Codec, cliCtx context.CLIContext) http.Handle
 			return
 		}
 
-		addr, err := sdk.AccAddressFromBech32(req.Owner)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-
 		// create the message
-		msg := types.NewMsgSetPoolData(req.PoolData, req.Value, addr)
+		msg := types.NewMsgSetPoolData(req.TokenName, req.Ticker)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
