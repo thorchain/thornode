@@ -28,6 +28,33 @@ func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) 
 	}
 }
 
+// Gets the entire AccStruct metadata struct for a acc ID
+func (k Keeper) GetAccStruct(ctx sdk.Context, accID string) AccStruct {
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(accID)) {
+		return NewAccStruct()
+	}
+	bz := store.Get([]byte(accID))
+	var accstruct AccStruct
+	k.cdc.MustUnmarshalBinaryBare(bz, &accstruct)
+	return accstruct
+}
+
+// Sets the entire AccStruct metadata struct for a acc ID
+func (k Keeper) SetAccStruct(ctx sdk.Context, accID string, accstruct AccStruct) {
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(accID), k.cdc.MustMarshalBinaryBare(accstruct))
+}
+
+// SetAccData - sets the value string that a acc ID resolves to
+func (k Keeper) SetAccData(ctx sdk.Context, accID string, name, atom, btc string) {
+	accstruct := k.GetAccStruct(ctx, accID)
+	accstruct.Name = strings.ToLower(name)
+	accstruct.ATOM = atom
+	accstruct.BTC = btc
+	k.SetAccStruct(ctx, accID, accstruct)
+}
+
 // Gets the entire PoolStruct metadata struct for a pool ID
 func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
 	store := ctx.KVStore(k.storeKey)

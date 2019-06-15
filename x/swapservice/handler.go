@@ -2,7 +2,6 @@ package swapservice
 
 import (
 	"fmt"
-	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -13,6 +12,8 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		case MsgSetPoolData:
 			return handleMsgSetPoolData(ctx, keeper, msg)
+		case MsgSetAccData:
+			return handleMsgSetAccData(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -28,7 +29,6 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 			return sdk.ErrUnauthorized("Incorrect Owner").Result() // If not, throw an error
 		}
 	*/
-	log.Printf("handle: %s", msg.PoolID)
 	keeper.SetPoolData(
 		ctx,
 		msg.PoolID,
@@ -36,6 +36,19 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 		msg.Ticker,
 		msg.BalanceAtom,
 		msg.BalanceToken,
+	) // If so, set the pooldata to the value specified in the msg.
+	return sdk.Result{} // return
+}
+
+// Handle a message to set pooldata
+func handleMsgSetAccData(ctx sdk.Context, keeper Keeper, msg MsgSetAccData) sdk.Result {
+	// TODO: Validate the message
+	keeper.SetAccData(
+		ctx,
+		msg.AccID,
+		msg.Name,
+		msg.ATOM,
+		msg.BTC,
 	) // If so, set the pooldata to the value specified in the msg.
 	return sdk.Result{} // return
 }
