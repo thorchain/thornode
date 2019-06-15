@@ -32,8 +32,8 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 // GetCmdSetPoolData is the CLI command for sending a SetPoolData transaction
 func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-pooldata [pooldata] [value]",
-		Short: "set the value associated with a pooldata that you own",
+		Use:   "set-pool [token name] [ticker]",
+		Short: "TODO: remove me",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)

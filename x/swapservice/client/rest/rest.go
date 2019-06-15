@@ -21,10 +21,10 @@ const (
 
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec, storePoolData string) {
-	r.HandleFunc(fmt.Sprintf("/%s/pooldatas", storePoolData), pooldatasHandler(cdc, cliCtx, storePoolData)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/pooldatas", storePoolData), setPoolDataHandler(cdc, cliCtx)).Methods("PUT")
-	r.HandleFunc(fmt.Sprintf("/%s/pooldatas/{%s}", storePoolData, restPoolData), resolvePoolDataHandler(cdc, cliCtx, storePoolData)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/pooldatas/{%s}/poolstruct", storePoolData, restPoolData), whoIsHandler(cdc, cliCtx, storePoolData)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/pools", storePoolData), poolHandler(cdc, cliCtx, storePoolData)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/pools", storePoolData), setPoolDataHandler(cdc, cliCtx)).Methods("PUT")
+	r.HandleFunc(fmt.Sprintf("/%s/pools/{%s}", storePoolData, restPoolData), resolvePoolDataHandler(cdc, cliCtx, storePoolData)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/pools/{%s}/poolstruct", storePoolData, restPoolData), whoIsHandler(cdc, cliCtx, storePoolData)).Methods("GET")
 }
 
 type setPoolDataReq struct {
@@ -62,12 +62,12 @@ func setPoolDataHandler(cdc *codec.Codec, cliCtx context.CLIContext) http.Handle
 	}
 }
 
-func resolvePoolDataHandler(cdc *codec.Codec, cliCtx context.CLIContext, storePoolData string) http.HandlerFunc {
+func getPoolDataHandler(cdc *codec.Codec, cliCtx context.CLIContext, storePoolData string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		paramType := vars[restPoolData]
 
-		res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/resolve/%s", storePoolData, paramType), nil)
+		res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/getpool/%s", storePoolData, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
@@ -92,7 +92,7 @@ func whoIsHandler(cdc *codec.Codec, cliCtx context.CLIContext, storePoolData str
 	}
 }
 
-func pooldatasHandler(cdc *codec.Codec, cliCtx context.CLIContext, storePoolData string) http.HandlerFunc {
+func poolHandler(cdc *codec.Codec, cliCtx context.CLIContext, storePoolData string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/pooldatas", storePoolData), nil)
 		if err != nil {

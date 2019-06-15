@@ -1,6 +1,8 @@
 package types
 
 import (
+	"strings"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -18,7 +20,7 @@ type MsgSetPoolData struct {
 // NewMsgSetPoolData is a constructor function for MsgSetPoolData
 func NewMsgSetPoolData(tokenName, ticker string) MsgSetPoolData {
 	return MsgSetPoolData{
-		Ticker:    ticker,
+		Ticker:    strings.ToUpper(ticker),
 		TokenName: tokenName,
 	}
 }

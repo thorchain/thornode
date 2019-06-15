@@ -13,3 +13,6 @@ build
 # IDE
 .idea/
 *.iml
+
+alice.txt
+jack.txt
