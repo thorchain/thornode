@@ -57,7 +57,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var accRecords []AccStruct
 	var poolRecords []PoolStruct
-	iterator := k.GetPoolDatasIterator(ctx)
+	iterator := k.GetDatasIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
 		key := string(iterator.Key())
 		if strings.HasPrefix("pool-", key) {

@@ -1,7 +1,6 @@
 package swapservice
 
 import (
-	"log"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -90,8 +89,6 @@ func (k Keeper) SetPoolData(ctx sdk.Context, poolID string, tokenName, ticker, b
 	poolstruct.Ticker = strings.ToUpper(ticker)
 	poolstruct.BalanceAtom = balanceAtom
 	poolstruct.BalanceToken = balanceToken
-	log.Printf("Pool ID: %s", poolID)
-	log.Printf("SetPoolData: %s", poolstruct)
 	k.SetPoolStruct(ctx, poolID, poolstruct)
 }
 
@@ -104,7 +101,7 @@ func (k Keeper) SetBalances(ctx sdk.Context, poolID, atom, token string) {
 }
 
 // Get an iterator over all pool IDs in which the keys are the pool IDs and the values are the poolstruct
-func (k Keeper) GetPoolDatasIterator(ctx sdk.Context) sdk.Iterator {
+func (k Keeper) GetDatasIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, nil)
 }

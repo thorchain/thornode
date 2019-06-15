@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"log"
+
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -24,6 +26,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 
 	swapserviceTxCmd.AddCommand(client.PostCommands(
 		GetCmdSetPoolData(cdc),
+		GetCmdSetAccData(cdc),
 	)...)
 
 	return swapserviceTxCmd
@@ -45,6 +48,37 @@ func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msg := types.NewMsgSetPoolData(args[0], args[1], cliCtx.GetFromAddress())
+			err := msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+
+			cliCtx.PrintResponse = true
+
+			// return utils.CompleteAndBroadcastTxCLI(txBldr, cliCtx, msgs)
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdSetAccData is the CLI command for sending a SetAccData transaction
+func GetCmdSetAccData(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "set-account [name] [atom] [btc]",
+		Short: "Create a new account.",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc).WithAccountDecoder(cdc)
+
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			if err := cliCtx.EnsureAccountExists(); err != nil {
+				return err
+			}
+
+			log.Printf("Foo")
+			msg := types.NewMsgSetAccData(args[0], args[1], args[2], cliCtx.GetFromAddress())
+			log.Printf("Bar")
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
