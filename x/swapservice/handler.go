@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"fmt"
+	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -21,9 +22,20 @@ func NewHandler(keeper Keeper) sdk.Handler {
 
 // Handle a message to set pooldata
 func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sdk.Result {
-	if !msg.Owner.Equals(keeper.GetOwner(ctx, msg.PoolData)) { // Checks if the the msg sender is the same as the current owner
-		return sdk.ErrUnauthorized("Incorrect Owner").Result() // If not, throw an error
-	}
-	keeper.SetPoolData(ctx, msg.PoolData, msg.Value) // If so, set the pooldata to the value specified in the msg.
-	return sdk.Result{}                              // return
+	// TODO: Validate the message
+	/*
+		if !msg.Owner.Equals(keeper.GetOwner(ctx, msg.PoolData)) { // Checks if the the msg sender is the same as the current owner
+			return sdk.ErrUnauthorized("Incorrect Owner").Result() // If not, throw an error
+		}
+	*/
+	log.Printf("handle: %s", msg.PoolID)
+	keeper.SetPoolData(
+		ctx,
+		msg.PoolID,
+		msg.TokenName,
+		msg.Ticker,
+		msg.BalanceAtom,
+		msg.BalanceToken,
+	) // If so, set the pooldata to the value specified in the msg.
+	return sdk.Result{} // return
 }

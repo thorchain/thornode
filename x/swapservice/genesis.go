@@ -11,20 +11,17 @@ type GenesisState struct {
 	PoolStructRecords []PoolStruct `json:"poolstruct_records"`
 }
 
-func NewGenesisState(whoIsRecords []PoolStruct) GenesisState {
-	return GenesisState{PoolStructRecords: nil}
+func NewGenesisState(pools []PoolStruct) GenesisState {
+	return GenesisState{PoolStructRecords: pools}
 }
 
 func ValidateGenesis(data GenesisState) error {
 	for _, record := range data.PoolStructRecords {
-		if record.Owner == nil {
-			return fmt.Errorf("Invalid PoolStructRecord: Value: %s. Error: Missing Owner", record.Value)
+		if record.TokenName == "" {
+			return fmt.Errorf("Invalid PoolStructRecord: Value: %s. Error: Missing Token Name", record.TokenName)
 		}
-		if record.Value == "" {
-			return fmt.Errorf("Invalid PoolStructRecord: Owner: %s. Error: Missing Value", record.Owner)
-		}
-		if record.Price == nil {
-			return fmt.Errorf("Invalid PoolStructRecord: Value: %s. Error: Missing Price", record.Value)
+		if record.Ticker == "" {
+			return fmt.Errorf("Invalid PoolStructRecord: Owner: %s. Error: Missing Ticker", record.Ticker)
 		}
 	}
 	return nil
@@ -38,7 +35,7 @@ func DefaultGenesisState() GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.ValidatorUpdate {
 	for _, record := range data.PoolStructRecords {
-		keeper.SetPoolStruct(ctx, record.Value, record)
+		keeper.SetPoolStruct(ctx, fmt.Sprintf("pool-%s", record.Ticker), record)
 	}
 	return []abci.ValidatorUpdate{}
 }
