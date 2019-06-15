@@ -1,8 +1,6 @@
 package swapservice
 
 import (
-	"log"
-
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,6 +11,8 @@ import (
 const (
 	QueryPoolStruct = "poolstruct"
 	QueryPoolDatas  = "pooldatas"
+	QueryAccStruct  = "accstruct"
+	QueryAccDatas   = "accdatas"
 )
 
 // NewQuerier is the module level router for state queries
@@ -23,6 +23,10 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryPoolStruct(ctx, path[1:], req, keeper)
 		case QueryPoolDatas:
 			return queryPoolDatas(ctx, req, keeper)
+		case QueryAccStruct:
+			return queryAccStruct(ctx, path[1:], req, keeper)
+		case QueryAccDatas:
+			return queryAccDatas(ctx, req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown swapservice query endpoint")
 		}
@@ -31,8 +35,6 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 
 // nolint: unparam
 func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	log.Printf("Got here")
-	log.Printf("Path: %s", path[0])
 	poolstruct := keeper.GetPoolStruct(ctx, path[0])
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, poolstruct)
@@ -43,16 +45,45 @@ func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	return res, nil
 }
 
+// nolint: unparam
+func queryAccStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	accstruct := keeper.GetAccStruct(ctx, path[0])
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, accstruct)
+	if err != nil {
+		panic("could not marshal result to JSON")
+	}
+
+	return res, nil
+}
+
 func queryPoolDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var pooldatasList QueryResPoolDatas
 
-	iterator := keeper.GetPoolDatasIterator(ctx)
+	iterator := keeper.GetDatasIterator(ctx)
 
 	for ; iterator.Valid(); iterator.Next() {
 		pooldatasList = append(pooldatasList, string(iterator.Key()))
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pooldatasList)
+	if err != nil {
+		panic("could not marshal result to JSON")
+	}
+
+	return res, nil
+}
+
+func queryAccDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	var accdatasList QueryResAccDatas
+
+	iterator := keeper.GetDatasIterator(ctx)
+
+	for ; iterator.Valid(); iterator.Next() {
+		accdatasList = append(accdatasList, string(iterator.Key()))
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, accdatasList)
 	if err != nil {
 		panic("could not marshal result to JSON")
 	}

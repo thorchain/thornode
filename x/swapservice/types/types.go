@@ -24,3 +24,21 @@ func (w PoolStruct) String() string {
 Atom Balance: %s
 Token Balance: %s`, w.TokenName, w.Ticker, w.BalanceAtom, w.BalanceToken))
 }
+
+//AccStruct is a struct that contains balances of an account
+type AccStruct struct {
+	Name string `json:"name"`
+	ATOM string `json:"atom"`
+	BTC  string `json:"btc"`
+}
+
+func NewAccStruct() AccStruct {
+	return AccStruct{}
+}
+
+func (w AccStruct) String() string {
+	return strings.TrimSpace(fmt.Sprintf(`Balances for %s:
+%s ATOM
+%s BTC
+`, w.Name, w.ATOM, w.BTC))
+}

@@ -55,3 +55,47 @@ func (msg MsgSetPoolData) GetSignBytes() []byte {
 func (msg MsgSetPoolData) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
 }
+
+// MsgSetAccData defines a SetAccData message
+type MsgSetAccData struct {
+	AccID string         `json:"acc_id"`
+	Name  string         `json:"name"`
+	ATOM  string         `json:"atom"`
+	BTC   string         `json:"btc"`
+	Owner sdk.AccAddress `json:"owner"`
+}
+
+// NewMsgSetPoolData is a constructor function for MsgSetPoolData
+func NewMsgSetAccData(name, atom, btc string, owner sdk.AccAddress) MsgSetAccData {
+	return MsgSetAccData{
+		AccID: fmt.Sprintf("acc-%s", strings.ToLower(name)),
+		Name:  strings.ToLower(name),
+		ATOM:  atom,
+		BTC:   btc,
+		Owner: owner,
+	}
+}
+
+// Route should return the pooldata of the module
+func (msg MsgSetAccData) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgSetAccData) Type() string { return "set_accdata" }
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgSetAccData) ValidateBasic() sdk.Error {
+	if len(msg.Name) == 0 {
+		return sdk.ErrUnknownRequest("Account Name cannot be empty")
+	}
+	return nil
+}
+
+// GetSignBytes encodes the message for signing
+func (msg MsgSetAccData) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgSetAccData) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
+}
