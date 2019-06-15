@@ -1,6 +1,8 @@
 package swapservice
 
 import (
+	"log"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -54,6 +56,7 @@ func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 // nolint: unparam
 func queryAccStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	accstruct := keeper.GetAccStruct(ctx, path[0])
+	log.Printf("Acc Struct: %+v", accstruct)
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, accstruct)
 	if err != nil {
