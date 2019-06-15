@@ -1,6 +1,8 @@
 package swapservice
 
 import (
+	"strings"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 
@@ -41,6 +43,16 @@ func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
 func (k Keeper) SetPoolStruct(ctx sdk.Context, poolID string, poolstruct PoolStruct) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(poolID), k.cdc.MustMarshalBinaryBare(poolstruct))
+}
+
+// GetPool - gets the balances of a pool. Specifying ticker dictates which
+// balance is return in 0 vs 1 spot.
+func (k Keeper) GetPoolData(ctx sdk.Context, poolID, ticker string) (string, string) {
+	poolstruct := k.GetPoolStruct(ctx, poolID)
+	if strings.ToUpper(ticker) == "ATOM" {
+		return poolstruct.BalanceAtom, poolstruct.BalanceToken
+	}
+	return poolstruct.BalanceToken, poolstruct.BalanceAtom
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
