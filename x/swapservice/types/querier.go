@@ -27,3 +27,11 @@ type QueryResAccDatas []string
 func (n QueryResAccDatas) String() string {
 	return strings.Join(n[:], "\n")
 }
+
+// Query Result Payload for a pooldatas query
+type QueryResStakeDatas []string
+
+// implement fmt.Stringer
+func (n QueryResStakeDatas) String() string {
+	return strings.Join(n[:], "\n")
+}
