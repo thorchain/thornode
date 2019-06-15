@@ -14,6 +14,8 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgSetPoolData(ctx, keeper, msg)
 		case MsgSetAccData:
 			return handleMsgSetAccData(ctx, keeper, msg)
+		case MsgSetStakeData:
+			return handleMsgSetStakeData(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -40,7 +42,7 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 	return sdk.Result{} // return
 }
 
-// Handle a message to set pooldata
+// Handle a message to set acc data
 func handleMsgSetAccData(ctx sdk.Context, keeper Keeper, msg MsgSetAccData) sdk.Result {
 	// TODO: Validate the message
 	keeper.SetAccData(
@@ -49,6 +51,19 @@ func handleMsgSetAccData(ctx sdk.Context, keeper Keeper, msg MsgSetAccData) sdk.
 		msg.Name,
 		msg.ATOM,
 		msg.BTC,
-	) // If so, set the pooldata to the value specified in the msg.
+	) // If so, set the acc data to the value specified in the msg.
+	return sdk.Result{} // return
+}
+
+// Handle a message to set stake data
+func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) sdk.Result {
+	// TODO: Validate the message
+	keeper.SetStakeData(
+		ctx,
+		msg.StakeID,
+		msg.Name,
+		msg.Atom,
+		msg.Token,
+	) // If so, set the stake data to the value specified in the msg.
 	return sdk.Result{} // return
 }
