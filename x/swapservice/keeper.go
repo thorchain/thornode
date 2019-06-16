@@ -67,6 +67,17 @@ func (k Keeper) SetAccData(ctx sdk.Context, accID string, name, ticker, amount s
 	k.SetAccStruct(ctx, accID, accstruct)
 }
 
+func (k Keeper) GetAccData(ctx sdk.Context, accID, ticker string) string {
+	accstruct := k.GetAccStruct(ctx, accID)
+	ticker = strings.ToUpper(ticker)
+	for _, record := range accstruct.Holdings {
+		if record.Ticker == ticker {
+			return record.Amount
+		}
+	}
+	return ""
+}
+
 // Gets the entire StakeStruct metadata struct for a stake ID
 func (k Keeper) GetStakeStruct(ctx sdk.Context, stakeID string) StakeStruct {
 	store := ctx.KVStore(k.storeKey)
@@ -77,6 +88,17 @@ func (k Keeper) GetStakeStruct(ctx sdk.Context, stakeID string) StakeStruct {
 	var stakestruct StakeStruct
 	k.cdc.MustUnmarshalBinaryBare(bz, &stakestruct)
 	return stakestruct
+}
+
+// Get stake data for a specific user
+func (k Keeper) GetStakeData(ctx sdk.Context, stakeID, name string) AccStake {
+	stakestruct := k.GetStakeStruct(ctx, stakeID)
+	for _, record := range stakestruct.Stakes {
+		if record.Name == name {
+			return record
+		}
+	}
+	return AccStake{}
 }
 
 // Sets the entire StakeStruct metadata struct for a stake ID
