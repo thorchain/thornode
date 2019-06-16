@@ -1,4 +1,4 @@
-module github.com/jpthor/test
+module github.com/jpthor/cosmos-swap
 
 go 1.12
 
@@ -20,4 +20,4 @@ require (
 
 replace golang.org/x/crypto => github.com/tendermint/crypto v0.0.0-20180820045704-3764759f34a5
 
-replace github.com/jpthor/test => ../test
+replace github.com/jpthor/cosmos-swap => ../cosmos-swap

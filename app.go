@@ -22,7 +22,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/jpthor/test/x/swapservice"
+	"github.com/jpthor/cosmos-swap/x/swapservice"
 )
 
 const appPoolData = "swapservice"

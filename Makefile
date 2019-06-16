@@ -17,5 +17,8 @@ lint:
 test:
 	./scripts/test.sh
 
+demo:
+	./scripts/demo.sh
+
 start:
 	./scripts/start.sh

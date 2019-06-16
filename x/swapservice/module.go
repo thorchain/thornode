@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/jpthor/test/x/swapservice/client/cli"
-	"github.com/jpthor/test/x/swapservice/client/rest"
+	"github.com/jpthor/cosmos-swap/x/swapservice/client/cli"
+	"github.com/jpthor/cosmos-swap/x/swapservice/client/rest"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
