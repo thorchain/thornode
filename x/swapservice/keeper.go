@@ -2,7 +2,6 @@ package swapservice
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -153,8 +152,6 @@ func (k Keeper) SetStakeData(ctx sdk.Context, stakeID string, name, atom, token 
 		}
 		stakestruct.Stakes = append(stakestruct.Stakes, record)
 	}
-	log.Printf("Saving struct: %s", stakeID)
-	log.Printf("Struct: %+v", stakestruct)
 	k.SetStakeStruct(ctx, stakeID, stakestruct)
 }
 
