@@ -62,12 +62,20 @@ func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token
 		return err
 	}
 
+	log.Printf("A %g %g", stakeAtom, atom_amt)
+	if stakeAtom+atom_amt < 0 {
+		return fmt.Errorf("Insufficient funds: Not enough ATOM coins staked")
+	}
+	if stakeToken+token_amt < 0 {
+		return fmt.Errorf("Insufficient funds: Not enough token coins staked")
+	}
+
 	log.Printf("Pre-Account: %sAtom %sToken", atomAmount, tickerAmount)
 	log.Printf("Pre-Stake: %sAtom %sToken", stake.Atom, stake.Token)
 	log.Printf("Pre-Pool: %sAtom %sToken", pool.BalanceAtom, pool.BalanceToken)
 	log.Printf("Staking: %sAtom %sToken", atom_amount, token_amount)
 	log.Printf("Post-Account: %sAtom %sToken", fmt.Sprintf("%g", atomCoins-atom_amt), fmt.Sprintf("%g", tickerCoins-token_amt))
-	log.Printf("Post-Staking: %sAtom %sToken", fmt.Sprintf("%g", atom_amt-stakeAtom), fmt.Sprintf("%g", token_amt-stakeToken))
+	log.Printf("Post-Staking: %sAtom %sToken", fmt.Sprintf("%g", stakeAtom+atom_amt), fmt.Sprintf("%g", stakeToken+token_amt))
 
 	keeper.SetAccData(
 		ctx,
@@ -87,8 +95,8 @@ func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token
 		ctx,
 		stakeID,
 		requester,
-		fmt.Sprintf("%g", atom_amt-stakeAtom),
-		fmt.Sprintf("%g", token_amt-stakeToken),
+		fmt.Sprintf("%g", stakeAtom+atom_amt),
+		fmt.Sprintf("%g", stakeToken+token_amt),
 	)
 
 	balanceAtom, err := strconv.ParseFloat(pool.BalanceAtom, 64)

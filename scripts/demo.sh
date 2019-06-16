@@ -8,7 +8,8 @@ LTGREEN='\033]1;32m'
 
 tx () {
     tput setaf 2; echo ">$ sscli tx swapservice $@"; tput sgr0
-    echo "password" | sscli tx swapservice $@ --from jack --yes --broadcast-mode block
+    command=$1; shift;
+    echo "password" | sscli tx swapservice $command --from jack --yes --broadcast-mode block -- $@
 }
 
 query () {
