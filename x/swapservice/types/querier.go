@@ -13,11 +13,15 @@ func (r QueryResResolve) String() string {
 }
 
 // Query Result Payload for a pooldatas query
-type QueryResPoolDatas []string
+type QueryResPoolDatas []PoolStruct
 
 // implement fmt.Stringer
 func (n QueryResPoolDatas) String() string {
-	return strings.Join(n[:], "\n")
+	var tickers []string
+	for _, record := range n {
+		tickers = append(tickers, record.Ticker)
+	}
+	return strings.Join(tickers[:], "\n")
 }
 
 // Query Result Payload for a pooldatas query
