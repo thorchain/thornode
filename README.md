@@ -1,16 +1,29 @@
-# SDK Application Tutorial
+Cosmos Swap
+===========
 
-This repository contains the source code of the nameservice tutorial.
+Swap any two tokens on the [Cosmos network](cosmos.network)
 
-## Tutorial
+An account can stake coins into a pool that is composed of `ATOM` and any
+other single token. Once a pool has been created by an account(s) staking
+their coins, people can than swap/trade within that pool to gain one token
+over another.
 
-**[Click here](./tutorial/README.md)** to access the tutorial. You can also view it on the [website](https://cosmos.network/docs/tutorial).
+### Development
+Setup a local server
+```bash
+make start
+```
 
-## Building and running the example
+See [test](https://github.com/jpthor/cosmos-swap/blob/master/scripts/test.sh) and [demo](https://github.com/jpthor/cosmos-swap/blob/master/scripts/demo.sh) scripts for how to use the API
 
-**[Click here](./tutorial/build-run.md)**  for instructions on how to build and run the code.
+### Test
+Run tests
+```bash
+make test
+```
 
-Translations:
-- [中文](./README_cn.md)
+## TODO
 
-## [Slides](https://docs.google.com/presentation/d/1aCMAdkVY-gfgnGNPTygwVk3o68czPQ_VYfvdMy9Ek5Q/edit?usp=sharing)
+ * Stakers gain fees when people swap tokens
+ * Use real accAddresses instead of hacky made up accounts stored without this
+   module's KVstore.
