@@ -19,26 +19,26 @@ query () {
 
 # Setup wallets
 tx set-account alice ATOM 100000
-tx set-account alice CANYA 38
-tx set-account alice MARVEL 447
+tx set-account alice BTC 38
+tx set-account alice ETH 447
 tx set-account jack ATOM 100000
-tx set-account jack CANYA 104
-tx set-account jack MARVEL 1008
+tx set-account jack BTC 104
+tx set-account jack ETH 1008
 
 query accstruct alice
 query accstruct jack
 
 # Stake Coins
-tx set-stake alice CANYA 58 12
-tx set-stake alice MARVEL 578 308
-tx set-stake jack CANYA 55 88
-tx set-stake jack MARVEL 600 97
+tx set-stake alice BTC 58 12
+tx set-stake alice ETH 578 308
+tx set-stake jack BTC 55 88
+tx set-stake jack ETH 600 97
 
-query stakestruct CANYA
-query stakestruct MARVEL
+query stakestruct BTC
+query stakestruct ETH
 
 # Swap Coins
 query accstruct alice
-tx set-swap ATOM CANYA 10 alice alice
-tx set-swap CANYA MARVEL 10 alice alice
+tx set-swap ATOM BTC 10 alice alice
+tx set-swap BTC ETH 10 alice alice
 query accstruct alice
