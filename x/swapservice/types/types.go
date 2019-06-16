@@ -15,7 +15,10 @@ type PoolStruct struct {
 
 // Returns a new PoolStruct
 func NewPoolStruct() PoolStruct {
-	return PoolStruct{}
+	return PoolStruct{
+		BalanceAtom:  "0",
+		BalanceToken: "0",
+	}
 }
 
 // implement fmt.Stringer

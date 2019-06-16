@@ -104,16 +104,18 @@ func (msg MsgSetAccData) GetSigners() []sdk.AccAddress {
 type MsgSetStakeData struct {
 	StakeID string         `json:"acc_id"`
 	Name    string         `json:"name"`
+	Ticker  string         `json:"ticker"`
 	Atom    string         `json:"atom"`
 	Token   string         `json:"token"`
 	Owner   sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetStakeData(ticker, name, atom, token string, owner sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(name, ticker, atom, token string, owner sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		StakeID: fmt.Sprintf("stake-%s", strings.ToUpper(ticker)),
 		Name:    name,
+		Ticker:  ticker,
 		Atom:    atom,
 		Token:   token,
 		Owner:   owner,
@@ -130,6 +132,9 @@ func (msg MsgSetStakeData) Type() string { return "set_stakedata" }
 func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
 	if len(msg.Name) == 0 {
 		return sdk.ErrUnknownRequest("Stake Name cannot be empty")
+	}
+	if len(msg.Ticker) == 0 {
+		return sdk.ErrUnknownRequest("Stake Ticker cannot be empty")
 	}
 	if len(msg.Atom) == 0 {
 		return sdk.ErrUnknownRequest("Stake Atom cannot be empty")
@@ -216,48 +221,4 @@ type MsgStake struct {
 	AtomAmount  string         `json:"atom_amount"`
 	TokenAmount string         `json:"token_amount"`
 	Owner       sdk.AccAddress `json:"owner"`
-}
-
-// NewMsgStake is a constructor function for MsgStake
-func NewMsgStake(name, ticker, atomAmount, tokenAmount string, owner sdk.AccAddress) MsgStake {
-	return MsgStake{
-		Name:        name,
-		Ticker:      ticker,
-		AtomAmount:  atomAmount,
-		TokenAmount: tokenAmount,
-		Owner:       owner,
-	}
-}
-
-// Route should return the pooldata of the module
-func (msg MsgStake) Route() string { return RouterKey }
-
-// Type should return the action
-func (msg MsgStake) Type() string { return "set_stake" }
-
-// ValidateBasic runs stateless checks on the message
-func (msg MsgStake) ValidateBasic() sdk.Error {
-	if len(msg.Name) == 0 {
-		return sdk.ErrUnknownRequest("Stake Name cannot be empty")
-	}
-	if len(msg.Ticker) == 0 {
-		return sdk.ErrUnknownRequest("Stake Ticker cannot be empty")
-	}
-	if len(msg.AtomAmount) == 0 {
-		return sdk.ErrUnknownRequest("Stake Atom Amount cannot be empty")
-	}
-	if len(msg.TokenAmount) == 0 {
-		return sdk.ErrUnknownRequest("Stake Token Amount cannot be empty")
-	}
-	return nil
-}
-
-// GetSignBytes encodes the message for signing
-func (msg MsgStake) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
-}
-
-// GetSigners defines whose signature is required
-func (msg MsgStake) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Owner}
 }

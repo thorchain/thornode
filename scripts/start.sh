@@ -1,5 +1,8 @@
 #!/bin/bash
 
+set -x
+set -e
+
 while true; do
 
   appHome="$HOME/go/src/github.com"
@@ -20,7 +23,7 @@ while true; do
   sscli config indent true
   sscli config trust-node true
 
-  ssd gentx --name jack
+  echo "password" | ssd gentx --name jack
   ssd collect-gentxs
   ssd validate-genesis
 
