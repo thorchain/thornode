@@ -22,3 +22,7 @@ demo:
 
 start:
 	./scripts/start.sh
+
+clean:
+	rm -rf ~/.ssd
+	ssd unsafe-reset-all
