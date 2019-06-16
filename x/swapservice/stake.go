@@ -62,7 +62,6 @@ func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token
 		return err
 	}
 
-	log.Printf("A %g %g", stakeAtom, atom_amt)
 	if stakeAtom+atom_amt < 0 {
 		return fmt.Errorf("Insufficient funds: Not enough ATOM coins staked")
 	}
