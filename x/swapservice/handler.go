@@ -61,6 +61,8 @@ func handleMsgSetAccData(ctx sdk.Context, keeper Keeper, msg MsgSetAccData) sdk.
 // Handle a message to set stake data
 func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) sdk.Result {
 	// TODO: Validate the message
+	fmt.Println()
+	log.Printf("Setting stake: %s", msg.Name)
 	err := stake(
 		ctx,
 		keeper,
