@@ -104,16 +104,18 @@ func (msg MsgSetAccData) GetSigners() []sdk.AccAddress {
 type MsgSetStakeData struct {
 	StakeID string         `json:"acc_id"`
 	Name    string         `json:"name"`
+	Ticker  string         `json:"ticker"`
 	Atom    string         `json:"atom"`
 	Token   string         `json:"token"`
 	Owner   sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetStakeData(ticker, name, atom, token string, owner sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(name, ticker, atom, token string, owner sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		StakeID: fmt.Sprintf("stake-%s", strings.ToUpper(ticker)),
 		Name:    name,
+		Ticker:  ticker,
 		Atom:    atom,
 		Token:   token,
 		Owner:   owner,
@@ -130,6 +132,9 @@ func (msg MsgSetStakeData) Type() string { return "set_stakedata" }
 func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
 	if len(msg.Name) == 0 {
 		return sdk.ErrUnknownRequest("Stake Name cannot be empty")
+	}
+	if len(msg.Ticker) == 0 {
+		return sdk.ErrUnknownRequest("Stake Ticker cannot be empty")
 	}
 	if len(msg.Atom) == 0 {
 		return sdk.ErrUnknownRequest("Stake Atom cannot be empty")
@@ -148,4 +153,72 @@ func (msg MsgSetStakeData) GetSignBytes() []byte {
 // GetSigners defines whose signature is required
 func (msg MsgSetStakeData) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
+}
+
+// MsgSwap defines a MsgSwap message
+type MsgSwap struct {
+	PoolID       string         `json:"pool_id"`
+	SourceTicker string         `json:"source_ticker"`
+	TargetTicker string         `json:"target_ticker"`
+	Requester    string         `json:"requester"`
+	Destination  string         `json:"destination"`
+	Amount       string         `json:"amount"`
+	Owner        sdk.AccAddress `json:"owner"`
+}
+
+// NewMsgSwap is a constructor function for MsgSwap
+func NewMsgSwap(source, target, amount, requester, destination string, owner sdk.AccAddress) MsgSwap {
+	return MsgSwap{
+		SourceTicker: source,
+		TargetTicker: target,
+		Amount:       amount,
+		Requester:    requester,
+		Destination:  destination,
+		Owner:        owner,
+	}
+}
+
+// Route should return the pooldata of the module
+func (msg MsgSwap) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgSwap) Type() string { return "set_swap" }
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgSwap) ValidateBasic() sdk.Error {
+	if len(msg.SourceTicker) == 0 {
+		return sdk.ErrUnknownRequest("Swap Source Ticker cannot be empty")
+	}
+	if len(msg.TargetTicker) == 0 {
+		return sdk.ErrUnknownRequest("Swap Target cannot be empty")
+	}
+	if len(msg.Amount) == 0 {
+		return sdk.ErrUnknownRequest("Swap Amount cannot be empty")
+	}
+	if len(msg.Requester) == 0 {
+		return sdk.ErrUnknownRequest("Swap Requester cannot be empty")
+	}
+	if len(msg.Destination) == 0 {
+		return sdk.ErrUnknownRequest("Swap Destination cannot be empty")
+	}
+	return nil
+}
+
+// GetSignBytes encodes the message for signing
+func (msg MsgSwap) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgSwap) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Owner}
+}
+
+// MsgStake defines a MsgStake message
+type MsgStake struct {
+	Name        string         `json:"name"`
+	Ticker      string         `json:"ticker"`
+	AtomAmount  string         `json:"atom_amount"`
+	TokenAmount string         `json:"token_amount"`
+	Owner       sdk.AccAddress `json:"owner"`
 }

@@ -1,6 +1,8 @@
 package swapservice
 
 import (
+	"fmt"
+	"log"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -29,6 +31,9 @@ func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) 
 
 // Gets the entire AccStruct metadata struct for a acc ID
 func (k Keeper) GetAccStruct(ctx sdk.Context, accID string) AccStruct {
+	if !strings.HasPrefix(accID, "acc-") {
+		accID = fmt.Sprintf("acc-%s", accID)
+	}
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(accID)) {
 		return NewAccStruct()
@@ -41,12 +46,18 @@ func (k Keeper) GetAccStruct(ctx sdk.Context, accID string) AccStruct {
 
 // Sets the entire AccStruct metadata struct for a acc ID
 func (k Keeper) SetAccStruct(ctx sdk.Context, accID string, accstruct AccStruct) {
+	if !strings.HasPrefix(accID, "acc-") {
+		accID = fmt.Sprintf("acc-%s", accID)
+	}
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(accID), k.cdc.MustMarshalBinaryBare(accstruct))
 }
 
 // SetAccData - sets the value string that a acc ID resolves to
 func (k Keeper) SetAccData(ctx sdk.Context, accID string, name, ticker, amount string) {
+	if !strings.HasPrefix(accID, "acc-") {
+		accID = fmt.Sprintf("acc-%s", accID)
+	}
 	accstruct := k.GetAccStruct(ctx, accID)
 	found := false
 	ticker = strings.ToUpper(ticker)
@@ -67,8 +78,25 @@ func (k Keeper) SetAccData(ctx sdk.Context, accID string, name, ticker, amount s
 	k.SetAccStruct(ctx, accID, accstruct)
 }
 
+func (k Keeper) GetAccData(ctx sdk.Context, accID, ticker string) string {
+	if !strings.HasPrefix(accID, "acc-") {
+		accID = fmt.Sprintf("acc-%s", accID)
+	}
+	accstruct := k.GetAccStruct(ctx, accID)
+	ticker = strings.ToUpper(ticker)
+	for _, record := range accstruct.Holdings {
+		if record.Ticker == ticker {
+			return record.Amount
+		}
+	}
+	return ""
+}
+
 // Gets the entire StakeStruct metadata struct for a stake ID
 func (k Keeper) GetStakeStruct(ctx sdk.Context, stakeID string) StakeStruct {
+	if !strings.HasPrefix(stakeID, "stake-") {
+		stakeID = fmt.Sprintf("stake-%s", stakeID)
+	}
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(stakeID)) {
 		return NewStakeStruct()
@@ -77,6 +105,24 @@ func (k Keeper) GetStakeStruct(ctx sdk.Context, stakeID string) StakeStruct {
 	var stakestruct StakeStruct
 	k.cdc.MustUnmarshalBinaryBare(bz, &stakestruct)
 	return stakestruct
+}
+
+// Get stake data for a specific user
+func (k Keeper) GetStakeData(ctx sdk.Context, stakeID, name string) AccStake {
+	if !strings.HasPrefix(stakeID, "stake-") {
+		stakeID = fmt.Sprintf("stake-%s", stakeID)
+	}
+	stakestruct := k.GetStakeStruct(ctx, stakeID)
+	for _, record := range stakestruct.Stakes {
+		if record.Name == name {
+			return record
+		}
+	}
+	return AccStake{
+		Name:  name,
+		Atom:  "0",
+		Token: "0",
+	}
 }
 
 // Sets the entire StakeStruct metadata struct for a stake ID
@@ -107,11 +153,16 @@ func (k Keeper) SetStakeData(ctx sdk.Context, stakeID string, name, atom, token 
 		}
 		stakestruct.Stakes = append(stakestruct.Stakes, record)
 	}
+	log.Printf("Saving struct: %s", stakeID)
+	log.Printf("Struct: %+v", stakestruct)
 	k.SetStakeStruct(ctx, stakeID, stakestruct)
 }
 
 // Gets the entire PoolStruct metadata struct for a pool ID
 func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
+	if !strings.HasPrefix(poolID, "pool-") {
+		poolID = fmt.Sprintf("pool-%s", poolID)
+	}
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(poolID)) {
 		return NewPoolStruct()
@@ -119,6 +170,12 @@ func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
 	bz := store.Get([]byte(poolID))
 	var poolstruct PoolStruct
 	k.cdc.MustUnmarshalBinaryBare(bz, &poolstruct)
+	if poolstruct.BalanceAtom == "" {
+		poolstruct.BalanceAtom = "0"
+	}
+	if poolstruct.BalanceToken == "" {
+		poolstruct.BalanceToken = "0"
+	}
 	return poolstruct
 }
 

@@ -13,3 +13,9 @@ lint:
 	golangci-lint run
 	find . -pooldata '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -d -s
 	go mod verify
+
+test:
+	./scripts/test.sh
+
+start:
+	./scripts/start.sh
