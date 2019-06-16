@@ -31,3 +31,7 @@ tx set-stake jack COIN2 600 97
 
 query stakestruct COIN1
 query stakestruct COIN2
+
+# Swap Coins
+tx set-swap ATOM COIN1 10 alice alice
+query accstruct alice

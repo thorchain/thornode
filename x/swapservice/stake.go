@@ -101,6 +101,7 @@ func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token
 	}
 	pool.BalanceAtom = fmt.Sprintf("%g", balanceAtom+atom_amt)
 	pool.BalanceToken = fmt.Sprintf("%g", balanceToken+token_amt)
+	pool.Ticker = ticker
 	log.Printf("Post-Pool: %sAtom %sToken", pool.BalanceAtom, pool.BalanceToken)
 
 	keeper.SetPoolStruct(ctx, poolID, pool)
