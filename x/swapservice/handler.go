@@ -16,6 +16,8 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgSetAccData(ctx, keeper, msg)
 		case MsgSetStakeData:
 			return handleMsgSetStakeData(ctx, keeper, msg)
+		case MsgSwap:
+			return handleMsgSwap(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -65,5 +67,23 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		msg.Atom,
 		msg.Token,
 	) // If so, set the stake data to the value specified in the msg.
+	return sdk.Result{} // return
+}
+
+// Handle a message to set stake data
+func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
+	// TODO: Validate the message
+	err := swap(
+		ctx,
+		keeper,
+		msg.SourceTicker,
+		msg.TargetTicker,
+		msg.Amount,
+		msg.Requester,
+		msg.Destination,
+	) // If so, set the stake data to the value specified in the msg.
+	if err != nil {
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
 	return sdk.Result{} // return
 }
