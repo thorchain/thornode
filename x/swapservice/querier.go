@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"log"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -55,8 +56,8 @@ func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 
 // nolint: unparam
 func queryAccStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	log.Printf("REST ACC STrcut: %s", path[0])
 	accstruct := keeper.GetAccStruct(ctx, path[0])
-	log.Printf("Acc Struct: %+v", accstruct)
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, accstruct)
 	if err != nil {
@@ -68,6 +69,7 @@ func queryAccStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 
 // nolint: unparam
 func queryStakeStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	log.Printf("REST Stake Struct: %s", path[0])
 	stakestruct := keeper.GetStakeStruct(ctx, path[0])
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, stakestruct)
@@ -84,8 +86,13 @@ func queryPoolDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]by
 	iterator := keeper.GetDatasIterator(ctx)
 
 	for ; iterator.Valid(); iterator.Next() {
-		pooldatasList = append(pooldatasList, string(iterator.Key()))
+		key := string(iterator.Key())
+		if strings.HasPrefix(key, "pool-") {
+			poolstruct := keeper.GetPoolStruct(ctx, key)
+			pooldatasList = append(pooldatasList, poolstruct)
+		}
 	}
+	log.Printf("Pools: %+v", pooldatasList)
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pooldatasList)
 	if err != nil {
