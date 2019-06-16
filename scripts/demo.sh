@@ -19,6 +19,7 @@ query () {
 # Setup wallets
 tx set-account alice ATOM 100000
 tx set-account alice CANYA 38
+tx set-account alice MARVEL 447
 tx set-account jack ATOM 100000
 tx set-account jack CANYA 104
 tx set-account jack MARVEL 1008
