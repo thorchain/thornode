@@ -26,22 +26,22 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, cdc *codec.Codec, 
 	r.HandleFunc(fmt.Sprintf("/%s/pools", storePoolData), poolHandler(cdc, cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/account/{%s}", storePoolData, accData), accHandler(cdc, cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/stake/{%s}", storePoolData, stakeData), stakeHandler(cdc, cliCtx, storePoolData)).Methods("GET")
-	//r.HandleFunc(fmt.Sprintf("/%s/pools", storePoolData), setPoolDataHandler(cdc, cliCtx)).Methods("PUT")
+	r.HandleFunc(fmt.Sprintf("/%s/stake", storePoolData), setStakeDataHandler(cdc, cliCtx)).Methods("PUT")
 }
 
-type setPoolDataReq struct {
-	BaseReq      rest.BaseReq `json:"base_req"`
-	TokenName    string       `json:"token_name"`
-	Ticker       string       `json:"ticker"`
-	BalanceAtom  string       `json:"balance_atom"`
-	BalanceToken string       `json:"balance_token"`
+type setStakeData struct {
+	BaseReq rest.BaseReq `json:"base_req"`
+	Name    string       `json:"name"`
+	Ticker  string       `json:"ticker"`
+	Atom    string       `json:"atom_amount"`
+	Token   string       `json:"token_amount"`
 }
 
-func setPoolDataHandler(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
+func setStakeDataHandler(cdc *codec.Codec, cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var err error
 
-		var req setPoolDataReq
+		var req setStakeData
 		if !rest.ReadRESTReq(w, r, cdc, &req) {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
 			return
@@ -53,7 +53,7 @@ func setPoolDataHandler(cdc *codec.Codec, cliCtx context.CLIContext) http.Handle
 		}
 
 		// create the message
-		msg := types.NewMsgSetPoolData(req.TokenName, req.Ticker, cliCtx.GetFromAddress())
+		msg := types.NewMsgSetStakeData(req.Name, req.Ticker, req.Atom, req.Token, cliCtx.GetFromAddress())
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
