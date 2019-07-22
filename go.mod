@@ -21,6 +21,6 @@ require (
 	google.golang.org/genproto v0.0.0-20190327125643-d831d65fe17d // indirect
 )
 
-replace golang.org/x/crypto => github.com/tendermint/crypto v0.0.0-20180820045704-3764759f34a5
+replace golang.org/x/crypto => github.com/johnnyluo/crypto v0.0.0-20190722223544-3f5ecfe86f08
 
 replace github.com/jpthor/cosmos-swap => ../cosmos-swap
