@@ -58,6 +58,7 @@ func main() {
 		client.LineBreak,
 		keys.Commands(),
 		client.LineBreak,
+		exchangeCmd(),
 	)
 
 	executor := cli.PrepareMainCmd(rootCmd, "SS", app.DefaultCLIHome)
