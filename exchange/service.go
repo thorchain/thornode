@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
-	"bep2-swap-node/config"
+	"github.com/jpthor/cosmos-swap/config"
 )
 
 type Service struct {
