@@ -78,18 +78,15 @@ func startExchange(cmd *cobra.Command, args []string) error {
 	}
 	ds, err := storage.NewDataStore(dir, log.Logger)
 	if nil != err {
-		log.Logger.Err(err).Msg("fail to create data storage")
-		return
+		return errors.Wrapf(err, "fail to create data storage")
 	}
 	ws, err := exchange.NewWallets(ds, log.Logger)
 	if nil != err {
-		log.Error().Err(err).Msg("fail to create wallets")
-		return
+		return errors.Wrapf(err, "fail to create wallets")
 	}
 	svc, err := exchange.NewService(*s, ws, log.Logger)
 	if nil != err {
-		log.Error().Err(err).Msg("fail to create service")
-		return
+		return errors.Wrapf(err, "fail to create service")
 	}
 	if err := svc.Start(); nil != err {
 		log.Error().Err(err).Msg("fail to start")
@@ -105,6 +102,7 @@ func startExchange(cmd *cobra.Command, args []string) error {
 	if err := ds.Close(); nil != err {
 		log.Error().Err(err).Msg("fail to close datastore")
 	}
+	return nil
 }
 
 // initLog setup logging
