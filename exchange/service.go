@@ -18,6 +18,7 @@ type Service struct {
 	logger zerolog.Logger
 	ws     *Wallets
 	wg     *sync.WaitGroup
+	dc     client.DexClient
 	quit   chan struct{}
 }
 
@@ -56,7 +57,7 @@ func (s *Service) startProcess(wallet *Bep2Wallet) error {
 	if nil != err {
 		return errors.Wrap(err, "fail to create dex client")
 	}
-
+	s.dc = c
 	if err := c.SubscribeAccountEvent(c.GetKeyManager().GetAddr().String(), s.quit, s.receiveAccountEvent, s.onAccountEventError, func() {
 		s.logger.Info().Msg("close account event subscription")
 	}); nil != err {
