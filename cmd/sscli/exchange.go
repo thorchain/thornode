@@ -29,7 +29,7 @@ const (
 func exchangeCmd() *cobra.Command {
 	exCmd := &cobra.Command{
 		Use:   "exchange",
-		Short: "Integration with Binane exchange",
+		Short: "Integration with Binance exchange",
 		Long:  "exchange",
 		RunE:  startExchange,
 	}
