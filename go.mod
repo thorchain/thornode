@@ -4,7 +4,7 @@ go 1.12
 
 require (
 	github.com/binance-chain/go-sdk v1.0.7
-	github.com/cosmos/cosmos-sdk v0.28.2-0.20190605232616-5f9c3fdf8895
+	github.com/cosmos/cosmos-sdk v0.35.0
 	github.com/gorilla/mux v1.7.0
 	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/pkg/errors v0.8.1
@@ -15,6 +15,7 @@ require (
 	github.com/spf13/viper v1.0.3
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/tendermint/go-amino v0.15.0
+	github.com/tendermint/iavl v0.12.2 // indirect
 	github.com/tendermint/tendermint v0.31.5
 	golang.org/x/sys v0.0.0-20190329044733-9eb1bfa1ce65 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
