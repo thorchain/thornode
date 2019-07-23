@@ -1,0 +1,11 @@
+{
+  "pools": [
+    "BNB",
+    "USDSB-1AC",
+    "AWC-986",
+    "BOLT-4C6"
+  ],
+  "port": 8080,
+  "dex_base_url": "testnet-dex.binance.org",
+  "is_test_net": true
+}
