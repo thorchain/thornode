@@ -7,7 +7,7 @@ import (
 
 // PoolStruct is a struct that contains all the metadata of a pooldata
 type PoolStruct struct {
-	BalanceAtom  string `json:"balance_atom"`
+	BalanceRune  string `json:"balance_rune"`
 	BalanceToken string `json:"balance_token"`
 	Ticker       string `json:"ticker"`
 	TokenName    string `json:"token_name"`
@@ -16,7 +16,7 @@ type PoolStruct struct {
 // Returns a new PoolStruct
 func NewPoolStruct() PoolStruct {
 	return PoolStruct{
-		BalanceAtom:  "0",
+		BalanceRune:  "0",
 		BalanceToken: "0",
 	}
 }
@@ -24,8 +24,8 @@ func NewPoolStruct() PoolStruct {
 // implement fmt.Stringer
 func (w PoolStruct) String() string {
 	return strings.TrimSpace(fmt.Sprintf(`Token: %s (%s) 
-Atom Balance: %s
-Token Balance: %s`, w.TokenName, w.Ticker, w.BalanceAtom, w.BalanceToken))
+Rune Balance: %s
+Token Balance: %s`, w.TokenName, w.Ticker, w.BalanceRune, w.BalanceToken))
 }
 
 type Holding struct {
@@ -51,7 +51,7 @@ func (w AccStruct) String() string {
 
 type AccStake struct {
 	Name  string `json:"name"`
-	Atom  string `json:"atom"`
+	Rune  string `json:"rune"`
 	Token string `json:"token"`
 }
 
