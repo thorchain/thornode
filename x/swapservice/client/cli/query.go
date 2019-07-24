@@ -5,10 +5,10 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
-	"github.com/cosmos/cosmos-sdk/client/utils"
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 	"github.com/spf13/cobra"
+
+	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
@@ -17,7 +17,7 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		Short:                      "Querying commands for the swapservice module",
 		DisableFlagParsing:         true,
 		SuggestionsMinimumDistance: 2,
-		RunE:                       utils.ValidateCmd,
+		RunE:                       client.ValidateCmd,
 	}
 	swapserviceQueryCmd.AddCommand(client.GetCommands(
 		GetCmdPoolStruct(storeKey, cdc),
@@ -38,7 +38,7 @@ func GetCmdPoolStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			pooldata := args[0]
 
-			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolstruct/%s", queryRoute, pooldata), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolstruct/%s", queryRoute, pooldata), nil)
 			if err != nil {
 				fmt.Printf("could not resolve poolstruct - %s \n", pooldata)
 				return nil
@@ -61,7 +61,7 @@ func GetCmdAccStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			accstruct := args[0]
 
-			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/accstruct/%s", queryRoute, accstruct), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/accstruct/%s", queryRoute, accstruct), nil)
 			if err != nil {
 				fmt.Printf("could not resolve accstruct - %s \n", accstruct)
 				return nil
@@ -84,7 +84,7 @@ func GetCmdStakeStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			stakestruct := args[0]
 
-			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stakestruct/%s", queryRoute, stakestruct), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stakestruct/%s", queryRoute, stakestruct), nil)
 			if err != nil {
 				fmt.Printf("could not resolve stakestruct - %s \n", stakestruct)
 				return nil
@@ -106,7 +106,7 @@ func GetCmdPoolDatas(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/pooldatas", queryRoute), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/pooldatas", queryRoute), nil)
 			if err != nil {
 				fmt.Printf("could not get query pooldatas\n")
 				return nil
