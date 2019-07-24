@@ -64,7 +64,7 @@ func swapOne(ctx sdk.Context, keeper Keeper, source, target, amount, requester, 
 		fmt.Sprintf("%g", sourceCoins-amt),
 	)
 
-	balanceAtom, err := strconv.ParseFloat(pool.BalanceAtom, 64)
+	balanceRune, err := strconv.ParseFloat(pool.BalanceRune, 64)
 	if err != nil {
 		return err
 	}
@@ -74,11 +74,11 @@ func swapOne(ctx sdk.Context, keeper Keeper, source, target, amount, requester, 
 	}
 
 	log.Printf("Pre-Account: %sSource %sTarget", sourceAmount, targetAmount)
-	log.Printf("Pre-Pool: %sAtom %sToken", pool.BalanceAtom, pool.BalanceToken)
+	log.Printf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken)
 
 	if source == "ATOM" {
-		balanceAtom += amt
-		balanceToken = (amt * balanceToken) / (amt + balanceAtom)
+		balanceRune += amt
+		balanceToken = (amt * balanceToken) / (amt + balanceRune)
 		balanceY, err := strconv.ParseFloat(pool.BalanceToken, 64)
 		if err != nil {
 			return err
@@ -97,13 +97,13 @@ func swapOne(ctx sdk.Context, keeper Keeper, source, target, amount, requester, 
 		log.Printf("Post-Account: %g %s", sourceCoins-amt, fmt.Sprintf("%g", balanceY))
 	} else {
 		balanceToken += amt
-		balanceAtom = (balanceAtom * amt) / (amt + balanceToken)
-		balanceY, err := strconv.ParseFloat(pool.BalanceAtom, 64)
+		balanceRune = (balanceRune * amt) / (amt + balanceToken)
+		balanceY, err := strconv.ParseFloat(pool.BalanceRune, 64)
 		if err != nil {
 			return err
 		}
 		log.Printf("BNew Y: %g", balanceY)
-		balanceY = balanceY - balanceAtom
+		balanceY = balanceY - balanceRune
 		keeper.SetAccData(
 			ctx,
 			fmt.Sprintf("acc-%s", requester),
@@ -114,11 +114,11 @@ func swapOne(ctx sdk.Context, keeper Keeper, source, target, amount, requester, 
 		log.Printf("Post-Account: %g %s", sourceCoins-amt, fmt.Sprintf("%g", balanceY))
 	}
 
-	pool.BalanceAtom = fmt.Sprintf("%g", balanceAtom)
+	pool.BalanceRune = fmt.Sprintf("%g", balanceRune)
 	pool.BalanceToken = fmt.Sprintf("%g", balanceToken)
 	keeper.SetPoolStruct(ctx, poolID, pool)
 
-	log.Printf("Post-Pool: %sAtom %sToken", pool.BalanceAtom, pool.BalanceToken)
+	log.Printf("Post-Pool: %sAtom %sToken", pool.BalanceRune, pool.BalanceToken)
 
 	return nil
 }

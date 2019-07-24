@@ -39,7 +39,7 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 		msg.PoolID,
 		msg.TokenName,
 		msg.Ticker,
-		msg.BalanceAtom,
+		msg.BalanceRune,
 		msg.BalanceToken,
 	) // If so, set the pooldata to the value specified in the msg.
 	return sdk.Result{} // return
@@ -68,7 +68,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		keeper,
 		msg.Name,
 		msg.Ticker,
-		msg.Atom,
+		msg.Rune,
 		msg.Token,
 	)
 	if err != nil {
