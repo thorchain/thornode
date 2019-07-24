@@ -11,11 +11,11 @@ const RouterKey = ModuleName // this was defined in your key.go file
 
 // MsgSetPoolData defines a SetPoolData message
 type MsgSetPoolData struct {
-	PoolID       string         `json:"pool_id"`
-	BalanceAtom  string         `json:"balance_atom"`
-	BalanceToken string         `json:"balance_token"`
-	Ticker       string         `json:"ticker"`
-	TokenName    string         `json:"token_name"`
+	PoolID       string         `json:"pool_id"`       // generated automatically based on the ticker
+	BalanceRune  string         `json:"balance_rune"`  // balance rune
+	BalanceToken string         `json:"balance_token"` // balance of token
+	Ticker       string         `json:"ticker"`        // Ticker means the token symbol
+	TokenName    string         `json:"token_name"`    // usually it is a more user friendly token name
 	Owner        sdk.AccAddress `json:"owner"`
 }
 
@@ -60,12 +60,12 @@ func (msg MsgSetPoolData) GetSigners() []sdk.AccAddress {
 type MsgSetAccData struct {
 	AccID  string         `json:"acc_id"`
 	Name   string         `json:"name"`
-	Ticker string         `json:"atom"`
+	Ticker string         `json:"ticker"`
 	Amount string         `json:"token"`
 	Owner  sdk.AccAddress `json:"owner"`
 }
 
-// NewMsgSetPoolData is a constructor function for MsgSetPoolData
+// NewMsgSetAccData is a constructor function for MsgSetAccData
 func NewMsgSetAccData(name, ticker, amount string, owner sdk.AccAddress) MsgSetAccData {
 	return MsgSetAccData{
 		AccID:  fmt.Sprintf("acc-%s", strings.ToLower(name)),
@@ -102,22 +102,22 @@ func (msg MsgSetAccData) GetSigners() []sdk.AccAddress {
 
 // MsgSetStakeData defines a SetStakeData message
 type MsgSetStakeData struct {
-	StakeID string         `json:"acc_id"`
-	Name    string         `json:"name"`
-	Ticker  string         `json:"ticker"`
-	Atom    string         `json:"atom"`
-	Token   string         `json:"token"`
+	StakeID string         `json:"stake_id"` // StakeID generated automatically based on the ticker
+	Name    string         `json:"name"`     // token usually is a more user friendly name
+	Ticker  string         `json:"ticker"`   // ticker means the symbol
+	Token   string         `json:"token"`    // the amount of token stake
+	Rune    string         `json:"rune"`     // the amount of rune stake
 	Owner   sdk.AccAddress `json:"owner"`
 }
 
-// NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetStakeData(name, ticker, atom, token string, owner sdk.AccAddress) MsgSetStakeData {
+// NewMsgSetStakeData is a constructor function for MsgSetStakeData
+func NewMsgSetStakeData(name, ticker, r, token string, owner sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		StakeID: fmt.Sprintf("stake-%s", strings.ToUpper(ticker)),
 		Name:    name,
 		Ticker:  ticker,
-		Atom:    atom,
 		Token:   token,
+		Rune:    r,
 		Owner:   owner,
 	}
 }
@@ -136,8 +136,8 @@ func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
 	if len(msg.Ticker) == 0 {
 		return sdk.ErrUnknownRequest("Stake Ticker cannot be empty")
 	}
-	if len(msg.Atom) == 0 {
-		return sdk.ErrUnknownRequest("Stake Atom cannot be empty")
+	if len(msg.Rune) == 0 {
+		return sdk.ErrUnknownRequest("Stake Rune cannot be empty")
 	}
 	if len(msg.Token) == 0 {
 		return sdk.ErrUnknownRequest("Stake Token cannot be empty")

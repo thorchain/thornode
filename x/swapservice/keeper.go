@@ -119,7 +119,7 @@ func (k Keeper) GetStakeData(ctx sdk.Context, stakeID, name string) AccStake {
 	}
 	return AccStake{
 		Name:  name,
-		Atom:  "0",
+		Rune:  "0",
 		Token: "0",
 	}
 }
@@ -138,7 +138,7 @@ func (k Keeper) SetStakeData(ctx sdk.Context, stakeID string, name, atom, token 
 	found := false
 	for i, record := range stakestruct.Stakes {
 		if record.Name == name {
-			stakestruct.Stakes[i].Atom = atom
+			stakestruct.Stakes[i].Rune = atom
 			stakestruct.Stakes[i].Token = token
 			found = true
 			break
@@ -147,7 +147,7 @@ func (k Keeper) SetStakeData(ctx sdk.Context, stakeID string, name, atom, token 
 	if !found {
 		record := AccStake{
 			Name:  name,
-			Atom:  atom,
+			Rune:  atom,
 			Token: token,
 		}
 		stakestruct.Stakes = append(stakestruct.Stakes, record)
@@ -167,8 +167,8 @@ func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
 	bz := store.Get([]byte(poolID))
 	var poolstruct PoolStruct
 	k.cdc.MustUnmarshalBinaryBare(bz, &poolstruct)
-	if poolstruct.BalanceAtom == "" {
-		poolstruct.BalanceAtom = "0"
+	if poolstruct.BalanceRune == "" {
+		poolstruct.BalanceRune = "0"
 	}
 	if poolstruct.BalanceToken == "" {
 		poolstruct.BalanceToken = "0"
@@ -187,9 +187,9 @@ func (k Keeper) SetPoolStruct(ctx sdk.Context, poolID string, poolstruct PoolStr
 func (k Keeper) GetPoolData(ctx sdk.Context, poolID, ticker string) (string, string) {
 	poolstruct := k.GetPoolStruct(ctx, poolID)
 	if strings.ToUpper(ticker) == "ATOM" {
-		return poolstruct.BalanceAtom, poolstruct.BalanceToken
+		return poolstruct.BalanceRune, poolstruct.BalanceToken
 	}
-	return poolstruct.BalanceToken, poolstruct.BalanceAtom
+	return poolstruct.BalanceToken, poolstruct.BalanceRune
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
@@ -197,7 +197,7 @@ func (k Keeper) SetPoolData(ctx sdk.Context, poolID string, tokenName, ticker, b
 	poolstruct := k.GetPoolStruct(ctx, poolID)
 	poolstruct.TokenName = tokenName
 	poolstruct.Ticker = strings.ToUpper(ticker)
-	poolstruct.BalanceAtom = balanceAtom
+	poolstruct.BalanceRune = balanceAtom
 	poolstruct.BalanceToken = balanceToken
 	k.SetPoolStruct(ctx, poolID, poolstruct)
 }
@@ -205,7 +205,7 @@ func (k Keeper) SetPoolData(ctx sdk.Context, poolID string, tokenName, ticker, b
 // SetBalances - sets the current balances of a pool
 func (k Keeper) SetBalances(ctx sdk.Context, poolID, atom, token string) {
 	poolstruct := k.GetPoolStruct(ctx, poolID)
-	poolstruct.BalanceAtom = atom
+	poolstruct.BalanceRune = atom
 	poolstruct.BalanceToken = token
 	k.SetPoolStruct(ctx, poolID, poolstruct)
 }
