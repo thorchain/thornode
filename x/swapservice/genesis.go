@@ -40,8 +40,15 @@ func ValidateGenesis(data GenesisState) error {
 
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		PoolStructRecords: []PoolStruct{},
-		AccStructRecords:  []AccStruct{},
+		PoolStructRecords: []PoolStruct{
+			PoolStruct{
+				BalanceRune:  "0",
+				BalanceToken: "0",
+				TokenName:    "BNB",
+				Ticker:       "BNB",
+			},
+		},
+		AccStructRecords: []AccStruct{},
 	}
 }
 

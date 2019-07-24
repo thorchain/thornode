@@ -9,10 +9,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token_amount string) error {
+func stake(ctx sdk.Context, keeper Keeper, requester, ticker, rune_amount, token_amount string) error {
 
-	fmt.Println("")
-	log.Printf("%s staking %s %s %s", requester, ticker, atom_amount, token_amount)
+	log.Printf("%s staking %s %s %s", requester, ticker, rune_amount, token_amount)
 
 	ticker = strings.ToUpper(ticker)
 
@@ -24,7 +23,7 @@ func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token
 	if err != nil {
 		return err
 	}
-	atom_amt, err := strconv.ParseFloat(atom_amount, 64)
+	rune_amt, err := strconv.ParseFloat(rune_amount, 64)
 	if err != nil {
 		return err
 	}
@@ -42,18 +41,18 @@ func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token
 
 	atomAmount := keeper.GetAccData(ctx, fmt.Sprintf("acc-%s", requester), "ATOM")
 	if atomAmount == "" {
-		return fmt.Errorf("Insufficient funds: No atoms in account")
+		return fmt.Errorf("Insufficient funds: No runes in account")
 	}
-	atomCoins, err := strconv.ParseFloat(atomAmount, 64)
+	runeCoins, err := strconv.ParseFloat(atomAmount, 64)
 	if err != nil {
 		return err
 	}
-	if atom_amt > atomCoins {
-		return fmt.Errorf("Insufficient funds: Not enough atoms in account (%g/%g)", atom_amt, atomCoins)
+	if rune_amt > runeCoins {
+		return fmt.Errorf("Insufficient funds: Not enough runes in account (%g/%g)", rune_amt, runeCoins)
 	}
 
 	stake := keeper.GetStakeData(ctx, stakeID, requester)
-	stakeAtom, err := strconv.ParseFloat(stake.Atom, 64)
+	stakeRune, err := strconv.ParseFloat(stake.Rune, 64)
 	if err != nil {
 		return err
 	}
@@ -62,7 +61,7 @@ func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token
 		return err
 	}
 
-	if stakeAtom+atom_amt < 0 {
+	if stakeRune+rune_amt < 0 {
 		return fmt.Errorf("Insufficient funds: Not enough ATOM coins staked")
 	}
 	if stakeToken+token_amt < 0 {
@@ -70,11 +69,11 @@ func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token
 	}
 
 	log.Printf("Pre-Account: %sAtom %sToken", atomAmount, tickerAmount)
-	log.Printf("Pre-Stake: %sAtom %sToken", stake.Atom, stake.Token)
-	log.Printf("Pre-Pool: %sAtom %sToken", pool.BalanceAtom, pool.BalanceToken)
-	log.Printf("Staking: %sAtom %sToken", atom_amount, token_amount)
-	log.Printf("Post-Account: %sAtom %sToken", fmt.Sprintf("%g", atomCoins-atom_amt), fmt.Sprintf("%g", tickerCoins-token_amt))
-	log.Printf("Post-Staking: %sAtom %sToken", fmt.Sprintf("%g", stakeAtom+atom_amt), fmt.Sprintf("%g", stakeToken+token_amt))
+	log.Printf("Pre-Stake: %sAtom %sToken", stake.Rune, stake.Token)
+	log.Printf("Pre-Pool: %sAtom %sToken", pool.BalanceRune, pool.BalanceToken)
+	log.Printf("Staking: %sAtom %sToken", rune_amount, token_amount)
+	log.Printf("Post-Account: %sAtom %sToken", fmt.Sprintf("%g", runeCoins-rune_amt), fmt.Sprintf("%g", tickerCoins-token_amt))
+	log.Printf("Post-Staking: %sAtom %sToken", fmt.Sprintf("%g", stakeRune+rune_amt), fmt.Sprintf("%g", stakeToken+token_amt))
 
 	keeper.SetAccData(
 		ctx,
@@ -88,17 +87,17 @@ func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token
 		fmt.Sprintf("acc-%s", requester),
 		requester,
 		"ATOM",
-		fmt.Sprintf("%g", atomCoins-atom_amt),
+		fmt.Sprintf("%g", runeCoins-rune_amt),
 	)
 	keeper.SetStakeData(
 		ctx,
 		stakeID,
 		requester,
-		fmt.Sprintf("%g", stakeAtom+atom_amt),
+		fmt.Sprintf("%g", stakeRune+rune_amt),
 		fmt.Sprintf("%g", stakeToken+token_amt),
 	)
 
-	balanceAtom, err := strconv.ParseFloat(pool.BalanceAtom, 64)
+	balanceRune, err := strconv.ParseFloat(pool.BalanceRune, 64)
 	if err != nil {
 		return err
 	}
@@ -106,10 +105,10 @@ func stake(ctx sdk.Context, keeper Keeper, requester, ticker, atom_amount, token
 	if err != nil {
 		return err
 	}
-	pool.BalanceAtom = fmt.Sprintf("%g", balanceAtom+atom_amt)
+	pool.BalanceRune = fmt.Sprintf("%g", balanceRune+rune_amt)
 	pool.BalanceToken = fmt.Sprintf("%g", balanceToken+token_amt)
 	pool.Ticker = ticker
-	log.Printf("Post-Pool: %sAtom %sToken", pool.BalanceAtom, pool.BalanceToken)
+	log.Printf("Post-Pool: %sAtom %sToken", pool.BalanceRune, pool.BalanceToken)
 
 	keeper.SetPoolStruct(ctx, poolID, pool)
 

@@ -93,7 +93,7 @@ func GetCmdSetAccData(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetStakeData is the CLI command for sending a SetStakeData transaction
 func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-stake [name] [ticker] [atoms] [tokens]",
+		Use:   "set-stake [name] [ticker] [runes] [tokens]",
 		Short: "Stake coins into a pool",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
