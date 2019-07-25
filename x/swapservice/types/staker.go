@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-// Staker means staker obviosuly
+// Staker means staker obviosuly , someone stake on the pool
+// this structure will be the data store in the KV store
 type Staker struct {
 	PoolID        string `json:"pool_id"`        // represent the pool that they stake in
 	Ticker        string `json:"ticker"`         // the token symbol
@@ -40,6 +41,5 @@ func (s Staker) String() string {
 	sb.WriteString(fmt.Sprintln("rune-amount: " + s.RuneAmount))
 	sb.WriteString(fmt.Sprintln("pool-units: " + s.PoolUnits))
 	sb.WriteString(fmt.Sprintln("public-address: " + s.PublicAddress))
-
 	return sb.String()
 }
