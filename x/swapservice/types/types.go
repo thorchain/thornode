@@ -6,11 +6,15 @@ import (
 )
 
 // PoolStruct is a struct that contains all the metadata of a pooldata
+// This is the structure we will saved to the key value store
 type PoolStruct struct {
-	BalanceRune  string `json:"balance_rune"`
-	BalanceToken string `json:"balance_token"`
-	Ticker       string `json:"ticker"`
-	TokenName    string `json:"token_name"`
+	PoolID       string `json:"pool_id"`       // pool id
+	BalanceRune  string `json:"balance_rune"`  // how many RUNE in the pool
+	BalanceToken string `json:"balance_token"` // how many token in the pool
+	Ticker       string `json:"ticker"`        // what's the token's ticker
+	TokenName    string `json:"token_name"`    // what's the token's name
+	PoolUnits    string `json:"pool_units"`    // total units of the pool
+	PoolAddress  string `json:"pool_address"`  // pool address on binance chain
 }
 
 // Returns a new PoolStruct
@@ -18,14 +22,21 @@ func NewPoolStruct() PoolStruct {
 	return PoolStruct{
 		BalanceRune:  "0",
 		BalanceToken: "0",
+		PoolUnits:    "0",
 	}
 }
 
-// implement fmt.Stringer
+// String implement fmt.Stringer
 func (w PoolStruct) String() string {
-	return strings.TrimSpace(fmt.Sprintf(`Token: %s (%s) 
-Rune Balance: %s
-Token Balance: %s`, w.TokenName, w.Ticker, w.BalanceRune, w.BalanceToken))
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintln("pool-id: " + w.PoolID))
+	sb.WriteString(fmt.Sprintln("rune-balance: " + w.BalanceRune))
+	sb.WriteString(fmt.Sprintln("token-balance: " + w.BalanceToken))
+	sb.WriteString(fmt.Sprintln("ticker: " + w.Ticker))
+	sb.WriteString(fmt.Sprintln("token-name: " + w.TokenName))
+	sb.WriteString(fmt.Sprintln("pool-units: " + w.PoolUnits))
+	sb.WriteString(fmt.Sprintln("pool-address" + w.PoolAddress))
+	return sb.String()
 }
 
 type Holding struct {

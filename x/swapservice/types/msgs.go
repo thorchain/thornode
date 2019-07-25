@@ -10,6 +10,8 @@ import (
 const RouterKey = ModuleName // this was defined in your key.go file
 
 // MsgSetPoolData defines a SetPoolData message
+// TODO : I don't think we will need , because you will not directly set the pool data
+// the pool changes when stake / swap happens
 type MsgSetPoolData struct {
 	PoolID       string         `json:"pool_id"`       // generated automatically based on the ticker
 	BalanceRune  string         `json:"balance_rune"`  // balance rune
@@ -57,6 +59,7 @@ func (msg MsgSetPoolData) GetSigners() []sdk.AccAddress {
 }
 
 // MsgSetAccData defines a SetAccData message
+// TODO: given we don't hold asset ,thus we don't need to set Account Data
 type MsgSetAccData struct {
 	AccID  string         `json:"acc_id"`
 	Name   string         `json:"name"`
@@ -102,12 +105,13 @@ func (msg MsgSetAccData) GetSigners() []sdk.AccAddress {
 
 // MsgSetStakeData defines a SetStakeData message
 type MsgSetStakeData struct {
-	StakeID string         `json:"stake_id"` // StakeID generated automatically based on the ticker
-	Name    string         `json:"name"`     // token usually is a more user friendly name
-	Ticker  string         `json:"ticker"`   // ticker means the symbol
-	Token   string         `json:"token"`    // the amount of token stake
-	Rune    string         `json:"rune"`     // the amount of rune stake
-	Owner   sdk.AccAddress `json:"owner"`
+	StakeID       string         `json:"stake_id"`       // StakeID generated automatically based on the ticker
+	Name          string         `json:"name"`           // token usually is a more user friendly name
+	Ticker        string         `json:"ticker"`         // ticker means the symbol
+	Token         string         `json:"token"`          // the amount of token stake
+	Rune          string         `json:"rune"`           // the amount of rune stake
+	PublicAddress string         `json:"public_address"` // Staker's address on binance chain
+	Owner         sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
@@ -157,6 +161,7 @@ func (msg MsgSetStakeData) GetSigners() []sdk.AccAddress {
 
 // MsgSwap defines a MsgSwap message
 type MsgSwap struct {
+	// TODO we don't need Pool ID I would like to remove it
 	PoolID       string         `json:"pool_id"`
 	SourceTicker string         `json:"source_ticker"`
 	TargetTicker string         `json:"target_ticker"`
