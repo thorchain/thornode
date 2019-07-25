@@ -28,7 +28,7 @@ type Service struct {
 	quit   chan struct{}
 }
 
-type BinanceAccount struct {
+type BinanceAcct struct {
 	Stream string `json:"stream"`
 	Data   struct {
 		Event       string `json:"e"`
@@ -127,7 +127,7 @@ func (s *Service) receiveEvent(ch chan []byte, poolAddress string) {
 		mm := <-ch
 		log.Printf("recv: %s", mm)
 
-		var binance BinanceAccount
+		var binance BinanceAcct
 		err := json.Unmarshal(mm, &binance)
 
 		if err != nil {
@@ -142,7 +142,7 @@ func (s *Service) receiveEvent(ch chan []byte, poolAddress string) {
 	}
 }
 
-func (s *Service) getTxn(binance *BinanceAccount, poolAddress string) BinanceTxn {
+func (s *Service) getTxn(binance *BinanceAcct, poolAddress string) BinanceTxn {
 	for {
 		// This needs to change. We should instead be looping and checking that the transaction
 		// has been committed on chain, so we may then get the transaction data.
