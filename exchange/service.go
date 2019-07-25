@@ -80,8 +80,6 @@ func NewService(cfg config.Settings, ws *Wallets, logger zerolog.Logger) (*Servi
 	}, nil
 }
 
-// Loop through our pools and listen to each of them, in order to capture
-// published events.
 func (s *Service) Start() error {
 	s.logger.Info().Msg("start")
 	for _, symbol := range s.cfg.Pools {
@@ -101,7 +99,6 @@ func (s *Service) Start() error {
 	return nil
 }
 
-// Start processing. The address that's listened to is the address attached to the wallet.
 func (s *Service) startProcess(wallet *Bep2Wallet) error {
 	u := url.URL{Scheme: "wss", Host: s.cfg.DexBaseUrl, Path: fmt.Sprintf("/api/ws/%s", string(wallet.PublicAddress))}
 	s.logger.Info().Msgf("Listening to: %s", u.String())
@@ -123,12 +120,8 @@ func (s *Service) startProcess(wallet *Bep2Wallet) error {
 		}
 		ch <- message
 	}
-
-	return nil
 }
 
-// Receive the event and process it accordingly. We only care about "outboundTransferInfo"
-// events and ignore the rest.
 func (s *Service) receiveEvent(ch chan []byte, poolAddress string) {
 	for {
 		mm := <-ch
@@ -142,18 +135,14 @@ func (s *Service) receiveEvent(ch chan []byte, poolAddress string) {
 		}
 
 		if binance.Data.Event == "outboundTransferInfo" {
-			return
+			s.getTxn(&binance, poolAddress)
 		}
-
-		go s.getTxn(&binance, poolAddress)
 	}
 }
 
-// Get the transaction details from Binance.
-// TODO: Implement an appropriate retry mechanism for those instances when
-//       the updates are not available.
 func (s *Service) getTxn(binance *BinanceAcct, poolAddress string) BinanceTxn {
-	for {
+	select {
+	case <-time.After(time.Second * 3):
 		u := url.URL{Scheme: "https", Host: s.cfg.DexBaseUrl, Path: "/api/v1/transactions"}
 
 		q := u.Query()
@@ -167,21 +156,19 @@ func (s *Service) getTxn(binance *BinanceAcct, poolAddress string) BinanceTxn {
 		res, _ := http.Get(u.String())
 		body, _ := ioutil.ReadAll(res.Body)
 
-		var transaction BinanceTxn
+		var txn BinanceTxn
 
-		err := json.Unmarshal(body, &transaction)
+		err := json.Unmarshal(body, &txn)
 		if err != nil {
 			s.logger.Info().Msgf("There was an error: %s", err)
 		}
 
-		s.logger.Info().Msgf("Txn %v", transaction)
+		s.logger.Info().Msgf("Got Txn: %v", txn)
 
-		return transaction
+		return txn
 	}
 }
 
-// Keep the websocket alive. Send a PONG down the wire every 30 seconds, or
-// whatever the timeout is set to.
 func (s *Service) keepAlive(c *websocket.Conn, timeout time.Duration) {
 	lastResponse := time.Now()
 	c.SetPongHandler(func(msg string) error {
@@ -208,7 +195,6 @@ func (s *Service) keepAlive(c *websocket.Conn, timeout time.Duration) {
 	}()
 }
 
-// Stop the service and exit.
 func (s *Service) Stop() error {
 	os.Exit(1)
 
