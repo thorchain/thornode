@@ -45,7 +45,7 @@ type BinanceAccount struct {
 	} `json:"data"`
 }
 
-type BinanceTransaction struct {
+type BinanceTxn struct {
 	Tx []struct {
 		TxHash        string      `json:"txHash"`
 		BlockHeight   int         `json:"blockHeight"`
@@ -138,11 +138,11 @@ func (s *Service) receiveEvent(ch chan []byte, poolAddress string) {
 			return
 		}
 
-		go s.getTransaction(&binance, poolAddress)
+		go s.getTxn(&binance, poolAddress)
 	}
 }
 
-func (s *Service) getTransaction(binance *BinanceAccount, poolAddress string) BinanceTransaction {
+func (s *Service) getTxn(binance *BinanceAccount, poolAddress string) BinanceTxn {
 	for {
 		// This needs to change. We should instead be looping and checking that the transaction
 		// has been committed on chain, so we may then get the transaction data.
@@ -161,7 +161,7 @@ func (s *Service) getTransaction(binance *BinanceAccount, poolAddress string) Bi
 		res, _ := http.Get(u.String())
 		body, _ := ioutil.ReadAll(res.Body)
 
-		var transaction BinanceTransaction
+		var transaction BinanceTxn
 		err := json.Unmarshal(body, &transaction)
 
 		if err != nil {
