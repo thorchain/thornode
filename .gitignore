@@ -16,3 +16,6 @@ build
 
 alice.txt
 jack.txt
+bin/
+ssd
+sscli

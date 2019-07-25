@@ -8,13 +8,14 @@ import (
 // PoolStruct is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
 type PoolStruct struct {
-	PoolID       string `json:"pool_id"`       // pool id
-	BalanceRune  string `json:"balance_rune"`  // how many RUNE in the pool
-	BalanceToken string `json:"balance_token"` // how many token in the pool
-	Ticker       string `json:"ticker"`        // what's the token's ticker
-	TokenName    string `json:"token_name"`    // what's the token's name
-	PoolUnits    string `json:"pool_units"`    // total units of the pool
-	PoolAddress  string `json:"pool_address"`  // pool address on binance chain
+	PoolID       string `json:"p_id"` // pool id
+	BalanceRune  string `json:"r"`    // how many RUNE in the pool
+	BalanceToken string `json:"t"`    // how many token in the pool
+	Ticker       string `json:"ti"`   // what's the token's ticker
+	TokenName    string `json:"tn"`   // what's the token's name
+	PoolUnits    string `json:"pu"`   // total units of the pool
+	PoolAddress  string `json:"addr"` // pool address on binance chain
+	Status       string `json:"s"`    // status
 }
 
 // Returns a new PoolStruct
