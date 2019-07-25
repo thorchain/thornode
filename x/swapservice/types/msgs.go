@@ -10,8 +10,8 @@ import (
 const RouterKey = ModuleName // this was defined in your key.go file
 
 // MsgSetPoolData defines a SetPoolData message
-// TODO : I don't think we will need , because you will not directly set the pool data
 // the pool changes when stake / swap happens
+// Let's keep it for now, if we didn't add pool into genesis file, we could use this to set the pool meta data
 type MsgSetPoolData struct {
 	PoolID       string         `json:"pool_id"`       // generated automatically based on the ticker
 	BalanceRune  string         `json:"balance_rune"`  // balance rune
@@ -172,14 +172,4 @@ func (msg MsgSwap) GetSignBytes() []byte {
 // GetSigners defines whose signature is required
 func (msg MsgSwap) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Owner}
-}
-
-// MsgStake defines a MsgStake message
-// TODO don't need it,and it is not used either , for remove
-type MsgStake struct {
-	Name        string         `json:"name"`
-	Ticker      string         `json:"ticker"`
-	AtomAmount  string         `json:"atom_amount"`
-	TokenAmount string         `json:"token_amount"`
-	Owner       sdk.AccAddress `json:"owner"`
 }

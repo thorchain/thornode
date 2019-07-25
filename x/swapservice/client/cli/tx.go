@@ -73,6 +73,11 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
+func GetCmdSetUnstakeData(cdc *codec.Codec) *cobra.Command {
+	// TODO add command to unstake
+	return nil
+}
+
 // GetCmdSwap is the CLI command for swapping tokens
 func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{

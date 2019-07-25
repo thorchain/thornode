@@ -17,6 +17,7 @@ import (
 const poolIndexKey = `internal-pool-indexes`
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
+// TODO need to write unit test
 type Keeper struct {
 	coinKeeper bank.Keeper
 	storeKey   sdk.StoreKey // Unexposed key to access store from sdk.Context

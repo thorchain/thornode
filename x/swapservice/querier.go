@@ -44,33 +44,6 @@ func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 
 	return res, nil
 }
-
-// nolint: unparam
-//func queryAccStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-//	log.Printf("REST ACC STrcut: %s", path[0])
-//	accstruct := keeper.GetAccStruct(ctx, path[0])
-//
-//	res, err := codec.MarshalJSONIndent(keeper.cdc, accstruct)
-//	if err != nil {
-//		panic("could not marshal result to JSON")
-//	}
-//
-//	return res, nil
-//}
-
-// nolint: unparam
-//func queryStakeStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-//	log.Printf("REST Stake Struct: %s", path[0])
-//	stakestruct := keeper.GetStakeStruct(ctx, path[0])
-//
-//	res, err := codec.MarshalJSONIndent(keeper.cdc, stakestruct)
-//	if err != nil {
-//		panic("could not marshal result to JSON")
-//	}
-//
-//	return res, nil
-//}
-
 func queryPoolDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var pooldatasList QueryResPoolDatas
 
@@ -92,24 +65,6 @@ func queryPoolDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]by
 
 	return res, nil
 }
-
-func queryAccDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	var accdatasList QueryResAccDatas
-
-	iterator := keeper.GetDatasIterator(ctx)
-
-	for ; iterator.Valid(); iterator.Next() {
-		accdatasList = append(accdatasList, string(iterator.Key()))
-	}
-
-	res, err := codec.MarshalJSONIndent(keeper.cdc, accdatasList)
-	if err != nil {
-		panic("could not marshal result to JSON")
-	}
-
-	return res, nil
-}
-
 func queryStakeDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var accdatasList QueryResStakeDatas
 
