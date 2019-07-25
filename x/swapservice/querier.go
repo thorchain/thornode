@@ -12,12 +12,9 @@ import (
 
 // query endpoints supported by the swapservice Querier
 const (
-	QueryPoolStruct  = "poolstruct"
-	QueryPoolDatas   = "pooldatas"
-	QueryAccStruct   = "accstruct"
-	QueryAccDatas    = "accdatas"
-	QueryStakeStruct = "stakestruct"
-	QueryStakeDatas  = "stakedatas"
+	QueryPoolStruct = "poolstruct"
+	QueryPoolDatas  = "pooldatas"
+	QueryStakeDatas = "stakedatas"
 )
 
 // NewQuerier is the module level router for state queries
@@ -28,12 +25,6 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryPoolStruct(ctx, path[1:], req, keeper)
 		case QueryPoolDatas:
 			return queryPoolDatas(ctx, req, keeper)
-		case QueryAccStruct:
-			return queryAccStruct(ctx, path[1:], req, keeper)
-		case QueryAccDatas:
-			return queryAccDatas(ctx, req, keeper)
-		case QueryStakeStruct:
-			return queryStakeStruct(ctx, path[1:], req, keeper)
 		case QueryStakeDatas:
 			return queryStakeDatas(ctx, req, keeper)
 		default:
@@ -55,30 +46,30 @@ func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 }
 
 // nolint: unparam
-func queryAccStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	log.Printf("REST ACC STrcut: %s", path[0])
-	accstruct := keeper.GetAccStruct(ctx, path[0])
-
-	res, err := codec.MarshalJSONIndent(keeper.cdc, accstruct)
-	if err != nil {
-		panic("could not marshal result to JSON")
-	}
-
-	return res, nil
-}
+//func queryAccStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+//	log.Printf("REST ACC STrcut: %s", path[0])
+//	accstruct := keeper.GetAccStruct(ctx, path[0])
+//
+//	res, err := codec.MarshalJSONIndent(keeper.cdc, accstruct)
+//	if err != nil {
+//		panic("could not marshal result to JSON")
+//	}
+//
+//	return res, nil
+//}
 
 // nolint: unparam
-func queryStakeStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	log.Printf("REST Stake Struct: %s", path[0])
-	stakestruct := keeper.GetStakeStruct(ctx, path[0])
-
-	res, err := codec.MarshalJSONIndent(keeper.cdc, stakestruct)
-	if err != nil {
-		panic("could not marshal result to JSON")
-	}
-
-	return res, nil
-}
+//func queryStakeStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+//	log.Printf("REST Stake Struct: %s", path[0])
+//	stakestruct := keeper.GetStakeStruct(ctx, path[0])
+//
+//	res, err := codec.MarshalJSONIndent(keeper.cdc, stakestruct)
+//	if err != nil {
+//		panic("could not marshal result to JSON")
+//	}
+//
+//	return res, nil
+//}
 
 func queryPoolDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var pooldatasList QueryResPoolDatas

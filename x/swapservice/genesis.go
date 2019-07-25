@@ -10,13 +10,11 @@ import (
 
 type GenesisState struct {
 	PoolStructRecords []PoolStruct `json:"poolstruct_records"`
-	AccStructRecords  []AccStruct  `json:"accstruct_records"`
 }
 
-func NewGenesisState(pools []PoolStruct, accs []AccStruct) GenesisState {
+func NewGenesisState(pools []PoolStruct) GenesisState {
 	return GenesisState{
 		PoolStructRecords: pools,
-		AccStructRecords:  accs,
 		// TODO: add stake structs to genesis
 	}
 }
@@ -30,11 +28,7 @@ func ValidateGenesis(data GenesisState) error {
 			return fmt.Errorf("Invalid PoolStructRecord: Owner: %s. Error: Missing Ticker", record.Ticker)
 		}
 	}
-	for _, record := range data.AccStructRecords {
-		if record.Name == "" {
-			return fmt.Errorf("Invalid AccStructRecord: Name: %s. Error: Missing Name", record.Name)
-		}
-	}
+
 	return nil
 }
 
@@ -48,7 +42,6 @@ func DefaultGenesisState() GenesisState {
 				Ticker:       "BNB",
 			},
 		},
-		AccStructRecords: []AccStruct{},
 	}
 }
 
@@ -56,14 +49,11 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, record := range data.PoolStructRecords {
 		keeper.SetPoolStruct(ctx, fmt.Sprintf("pool-%s", strings.ToUpper(record.Ticker)), record)
 	}
-	for _, record := range data.AccStructRecords {
-		keeper.SetAccStruct(ctx, fmt.Sprintf("acct-%s", strings.ToLower(record.Name)), record)
-	}
+
 	return []abci.ValidatorUpdate{}
 }
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
-	var accRecords []AccStruct
 	var poolRecords []PoolStruct
 	iterator := k.GetDatasIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
@@ -72,14 +62,9 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 			var poolstruct PoolStruct
 			poolstruct = k.GetPoolStruct(ctx, key)
 			poolRecords = append(poolRecords, poolstruct)
-		} else if strings.HasPrefix("acc-", key) {
-			var accstruct AccStruct
-			accstruct = k.GetAccStruct(ctx, key)
-			accRecords = append(accRecords, accstruct)
 		}
 	}
 	return GenesisState{
 		PoolStructRecords: poolRecords,
-		AccStructRecords:  accRecords,
 	}
 }

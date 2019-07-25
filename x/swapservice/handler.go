@@ -13,8 +13,6 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		case MsgSetPoolData:
 			return handleMsgSetPoolData(ctx, keeper, msg)
-		case MsgSetAccData:
-			return handleMsgSetAccData(ctx, keeper, msg)
 		case MsgSetStakeData:
 			return handleMsgSetStakeData(ctx, keeper, msg)
 		case MsgSwap:
@@ -42,19 +40,6 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 		msg.BalanceRune,
 		msg.BalanceToken,
 	) // If so, set the pooldata to the value specified in the msg.
-	return sdk.Result{} // return
-}
-
-// Handle a message to set acc data
-func handleMsgSetAccData(ctx sdk.Context, keeper Keeper, msg MsgSetAccData) sdk.Result {
-	// TODO: Validate the message
-	keeper.SetAccData(
-		ctx,
-		msg.AccID,
-		msg.Name,
-		msg.Ticker,
-		msg.Amount,
-	) // If so, set the acc data to the value specified in the msg.
 	return sdk.Result{} // return
 }
 
