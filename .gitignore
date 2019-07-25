@@ -14,5 +14,8 @@ build
 .idea/
 *.iml
 
+
+cmd/sscli/data
+
 alice.txt
 jack.txt

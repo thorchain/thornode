@@ -1,15 +1,21 @@
 package exchange
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"net/url"
+	"os"
 	"sync"
+	"time"
 
 	"github.com/binance-chain/go-sdk/client"
-	"github.com/binance-chain/go-sdk/client/websocket"
-	"github.com/binance-chain/go-sdk/common/types"
-	"github.com/binance-chain/go-sdk/keys"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 
+	websocket "github.com/gorilla/websocket"
 	"github.com/jpthor/cosmos-swap/config"
 )
 
@@ -22,13 +28,52 @@ type Service struct {
 	quit   chan struct{}
 }
 
-// NewService create a new instance of service which will talk to the exchange
+type BinanceAccount struct {
+	Stream string `json:"stream"`
+	Data   struct {
+		Event       string `json:"e"`
+		EventHeight int    `json:"E"`
+		H           string `json:"H"`
+		TimeInForce string `json:"f"`
+		T           []struct {
+			O string `json:"o"`
+			C []struct {
+				Asset string `json:"a"`
+				A     string `json:"A"`
+			} `json:"c"`
+		} `json:"t"`
+	} `json:"data"`
+}
+
+type BinanceTransaction struct {
+	Tx []struct {
+		TxHash        string      `json:"txHash"`
+		BlockHeight   int         `json:"blockHeight"`
+		TxType        string      `json:"txType"`
+		TimeStamp     time.Time   `json:"timeStamp"`
+		FromAddr      string      `json:"fromAddr"`
+		ToAddr        string      `json:"toAddr"`
+		Value         string      `json:"value"`
+		TxAsset       string      `json:"txAsset"`
+		TxFee         string      `json:"txFee"`
+		TxAge         int         `json:"txAge"`
+		OrderID       interface{} `json:"orderId"`
+		Code          int         `json:"code"`
+		Data          interface{} `json:"data"`
+		ConfirmBlocks int         `json:"confirmBlocks"`
+		Memo          string      `json:"memo"`
+	} `json:"tx"`
+	Total int `json:"total"`
+}
+
+// Send a PONG every 30 seconds.
+const pongWait = 30 * time.Second
+
 func NewService(cfg config.Settings, ws *Wallets, logger zerolog.Logger) (*Service, error) {
 	return &Service{
 		cfg:    cfg,
 		ws:     ws,
 		wg:     &sync.WaitGroup{},
-		quit:   make(chan struct{}),
 		logger: logger.With().Str("module", "service").Logger(),
 	}, nil
 }
@@ -38,66 +83,125 @@ func (s *Service) Start() error {
 	for _, symbol := range s.cfg.Pools {
 		s.logger.Info().Msgf("start to process %s", symbol)
 		w, err := s.ws.GetWallet(symbol)
+
 		if nil != err {
 			return errors.Wrap(err, "fail to get wallet")
 		}
+
 		s.logger.Info().Msgf("wallet:%s", w)
 		if err := s.startProcess(w); nil != err {
-			return errors.Wrapf(err, "fail to start processing,%s", symbol)
+			return errors.Wrapf(err, "fail to start processing, %s", symbol)
 		}
 	}
+
 	return nil
 }
+
 func (s *Service) startProcess(wallet *Bep2Wallet) error {
-	keyManager, err := keys.NewPrivateKeyManager(wallet.PrivateKey)
-	if nil != err {
-		return errors.Wrap(err, "fail to create private key manager")
+	u := url.URL{Scheme: "wss", Host: s.cfg.DexBaseUrl, Path: fmt.Sprintf("/api/ws/%s", string(wallet.PublicAddress))}
+	s.logger.Info().Msgf("Listening to: %s", u.String())
+	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
+
+	if err != nil {
+		s.logger.Fatal().Msgf("Error: %s", err)
 	}
-	c, err := client.NewDexClient(s.cfg.DexBaseUrl, types.TestNetwork, keyManager)
-	if nil != err {
-		return errors.Wrap(err, "fail to create dex client")
+
+	s.keepAlive(c, pongWait)
+
+	ch := make(chan []byte)
+	go s.receiveEvent(ch, wallet.PublicAddress)
+
+	for {
+		_, message, err := c.ReadMessage()
+		if err != nil {
+			log.Println("read:", err)
+		}
+		ch <- message
 	}
-	s.dc = c
-	if err := c.SubscribeAccountEvent(c.GetKeyManager().GetAddr().String(), s.quit, s.receiveAccountEvent, s.onAccountEventError, func() {
-		s.logger.Info().Msg("close account event subscription")
-	}); nil != err {
-		return errors.Wrap(err, "fail to subscribe account event")
-	}
-	if err := c.SubscribeOrderEvent(c.GetKeyManager().GetAddr().String(), s.quit, s.receiveOrder, s.onAccountEventError, func() {
-		s.logger.Info().Msg("close order event subscription")
-	}); nil != err {
-		return errors.Wrap(err, "fail to subscribe order event")
-	}
+
 	return nil
 }
-func (s *Service) receiveOrder(events []*websocket.OrderEvent) {
-	for _, e := range events {
-		s.logger.Info().Msgf("order event:%v \n", e)
+
+func (s *Service) receiveEvent(ch chan []byte, poolAddress string) {
+	for {
+		mm := <-ch
+		log.Printf("recv: %s", mm)
+
+		var binance BinanceAccount
+		err := json.Unmarshal(mm, &binance)
+
+		if err != nil {
+			s.logger.Info().Msgf("There was an error: %s", err)
+		}
+
+		if binance.Data.Event == "outboundTransferInfo" {
+			return
+		}
+
+		go s.getTransaction(&binance, poolAddress)
 	}
 }
-func (s *Service) receiveAccountEvent(e *websocket.AccountEvent) {
-	/*
 
-		TODO:
+func (s *Service) getTransaction(binance *BinanceAccount, poolAddress string) BinanceTransaction {
+	for {
+		// This needs to change. We should instead be looping and checking that the transaction
+		// has been committed on chain, so we may then get the transaction data.
+		time.Sleep(5 * time.Second)
 
-		We need to pull the "memo" out of the transaction, so we can decide what to do with the tx
+		u := url.URL{Scheme: "https", Host: s.cfg.DexBaseUrl, Path: "/api/v1/transactions"}
 
-		To do this, we will use the tx event information to get the actual transaction
-		It may be, that we get the block number ae.EventBlock and get the block, and iterate over the transactions in it
+		q := u.Query()
+		q.Set("address", poolAddress)
+		q.Set("blockHeight", fmt.Sprintf("%v", binance.Data.EventHeight))
 
-		Once we have obtained the transaction memo, we will use a switch statement to handle the various memo's we support
-		More on that later...
+		u.RawQuery = q.Encode()
 
-	*/
-	s.logger.Info().Msgf("event-type:%s , event-time:%d \n", e.EventType, e.EventTime)
-	for _, item := range e.Balances {
-		s.logger.Info().Msgf("asset:%s free: %d frozen: %d locked %d \n", item.Asset, item.Free, item.Frozen, item.Locked)
+		s.logger.Info().Msgf("Getting transaction from: %s", u.String())
+
+		res, _ := http.Get(u.String())
+		body, _ := ioutil.ReadAll(res.Body)
+
+		var transaction BinanceTransaction
+		err := json.Unmarshal(body, &transaction)
+
+		if err != nil {
+			s.logger.Info().Msgf("There was an error: %s", err)
+		}
+
+		s.logger.Info().Msgf("Txn %v", transaction)
+
+		return transaction
 	}
 }
-func (s *Service) onAccountEventError(e error) {
-	s.logger.Err(e).Msg("account event error")
+
+func (s *Service) keepAlive(c *websocket.Conn, timeout time.Duration) {
+	lastResponse := time.Now()
+	c.SetPongHandler(func(msg string) error {
+		lastResponse = time.Now()
+
+		return nil
+	})
+
+	go func() {
+		for {
+			err := c.WriteMessage(websocket.PingMessage, []byte("pong"))
+
+			if err != nil {
+				return
+			}
+			time.Sleep(timeout / 2)
+
+			if time.Now().Sub(lastResponse) > timeout {
+				c.Close()
+
+				return
+			}
+		}
+	}()
 }
+
 func (s *Service) Stop() error {
-	close(s.quit)
+	os.Exit(1)
+
 	return nil
 }

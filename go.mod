@@ -6,6 +6,7 @@ require (
 	github.com/binance-chain/go-sdk v1.0.7
 	github.com/cosmos/cosmos-sdk v0.36.0-rc1
 	github.com/gorilla/mux v1.7.0
+	github.com/gorilla/websocket v1.4.0
 	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/procfs v0.0.0-20190328153300-af7bedc223fb // indirect
