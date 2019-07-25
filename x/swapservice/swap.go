@@ -31,6 +31,7 @@ func swapOne(ctx sdk.Context, keeper Keeper, source, target, amount, requester, 
 	fmt.Println("")
 	log.Printf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination)
 	poolID := fmt.Sprintf("pool-%s", source)
+	//TODO  it is RUNE , not ATOM
 	if source == "ATOM" {
 		poolID = fmt.Sprintf("pool-%s", target)
 	}
