@@ -220,6 +220,7 @@ func (msg MsgSwap) GetSigners() []sdk.AccAddress {
 }
 
 // MsgStake defines a MsgStake message
+// TODO don't need it,and it is not used either , for remove
 type MsgStake struct {
 	Name        string         `json:"name"`
 	Ticker      string         `json:"ticker"`
