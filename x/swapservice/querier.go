@@ -1,6 +1,7 @@
 package swapservice
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -44,12 +45,13 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 // nolint: unparam
 func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	poolstruct := keeper.GetPoolStruct(ctx, path[0])
-
+	if len(poolstruct.PoolID) == 0 {
+		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("pool: %s doesn't exist", path[0]))
+	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, poolstruct)
 	if err != nil {
-		panic("could not marshal result to JSON")
+		return nil, sdk.ErrInternal("could not marshal result to JSON")
 	}
-
 	return res, nil
 }
 
