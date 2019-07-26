@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+// PoolStakerKeyPrefix all poolstaker key start with this
+const PoolStakerKeyPrefix = "poolstaker-"
+
 // PoolStaker
 // {
 //    "p_id":"pool-BNB",

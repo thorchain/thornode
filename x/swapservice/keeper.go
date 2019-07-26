@@ -178,6 +178,9 @@ func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
 	if poolstruct.BalanceToken == "" {
 		poolstruct.BalanceToken = "0"
 	}
+	if len(poolstruct.PoolUnits) == 0 {
+		poolstruct.PoolUnits = "0"
+	}
 	return poolstruct
 }
 
@@ -189,7 +192,7 @@ func (k Keeper) SetPoolStruct(ctx sdk.Context, poolID string, poolstruct PoolStr
 
 // GetPool - gets the balances of a pool. Specifying ticker dictates which
 // balance is return in 0 vs 1 spot.
-func (k Keeper) GetPoolData(ctx sdk.Context, poolID, ticker string) (string, string) {
+func (k Keeper) GetPoolBalances(ctx sdk.Context, poolID, ticker string) (string, string) {
 	poolstruct := k.GetPoolStruct(ctx, poolID)
 	if strings.EqualFold(ticker, types.RuneTicker) {
 		return poolstruct.BalanceRune, poolstruct.BalanceToken
@@ -226,6 +229,7 @@ func (k Keeper) GetPoolStructDataIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStorePrefixIterator(store, []byte(types.PoolDataKeyPrefix))
 }
 
+// TODO remove this method later
 // Get an iterator over all pool IDs in which the keys are the pool IDs and the values are the poolstruct
 func (k Keeper) GetDatasIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
@@ -233,17 +237,18 @@ func (k Keeper) GetDatasIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // GetPoolIndex retrieve pool index from the data store
-func (k Keeper) GetPoolIndex(ctx sdk.Context) types.PoolIndex {
+func (k Keeper) GetPoolIndex(ctx sdk.Context) (types.PoolIndex, error) {
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(poolIndexKey)) {
-		return types.PoolIndex{}
+		return types.PoolIndex{}, nil
 	}
 	buf := store.Get([]byte(poolIndexKey))
 	var pi types.PoolIndex
 	if err := k.cdc.UnmarshalBinaryBare(buf, &pi); nil != err {
 		log.Errorf("fail to unmarshal poolindex,err: %s", err)
+		return types.PoolIndex{}, errors.Wrap(err, "fail to unmarshal poolindex")
 	}
-	return pi
+	return pi, nil
 }
 
 // SetPoolIndex write a pool index into datastore
@@ -253,21 +258,28 @@ func (k Keeper) SetPoolIndex(ctx sdk.Context, pi types.PoolIndex) {
 }
 
 // AddToPoolIndex will add the given poolID into the poolindex
-func (k Keeper) AddToPoolIndex(ctx sdk.Context, poolID string) {
-	pi := k.GetPoolIndex(ctx)
+func (k Keeper) AddToPoolIndex(ctx sdk.Context, poolID string) error {
+	pi, err := k.GetPoolIndex(ctx)
+	if nil != err {
+		return err
+	}
 	for _, item := range pi {
 		if strings.EqualFold(item, poolID) {
 			// already in the pool index , don't need to add
-			return
+			return nil
 		}
 	}
 	pi = append(pi, strings.ToUpper(poolID))
 	k.SetPoolIndex(ctx, pi)
+	return nil
 }
 
 // RemoveFromPoolIndex remove the given poolID from the poolIndex
-func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, poolID string) {
-	pi := k.GetPoolIndex(ctx)
+func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, poolID string) error {
+	pi, err := k.GetPoolIndex(ctx)
+	if nil != err {
+		return err
+	}
 	var newPI types.PoolIndex
 	for _, item := range pi {
 		if !strings.EqualFold(item, poolID) {
@@ -275,12 +287,13 @@ func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, poolID string) {
 		}
 	}
 	k.SetPoolIndex(ctx, pi)
+	return nil
 }
 
 // GetPoolStaker retrieve poolStaker from the data store
 func (k Keeper) GetPoolStaker(ctx sdk.Context, poolID string) (types.PoolStaker, error) {
 	store := ctx.KVStore(k.storeKey)
-	poolStakerKey := "poolstaker-" + poolID
+	poolStakerKey := types.PoolStakerKeyPrefix + poolID
 	if !store.Has([]byte(poolStakerKey)) {
 		return types.NewPoolStaker(poolID, "0"), nil
 	}
@@ -296,7 +309,7 @@ func (k Keeper) GetPoolStaker(ctx sdk.Context, poolID string) (types.PoolStaker,
 // SetPoolStaker store the poolstaker to datastore
 func (k Keeper) SetPoolStaker(ctx sdk.Context, poolID string, ps types.PoolStaker) {
 	store := ctx.KVStore(k.storeKey)
-	poolStakerKey := "poolstaker-" + poolID
+	poolStakerKey := types.PoolStakerKeyPrefix + poolID
 	store.Set([]byte(poolStakerKey), k.cdc.MustMarshalBinaryBare(&ps))
 }
 
