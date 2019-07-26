@@ -28,7 +28,9 @@ func NewHandler(keeper Keeper) sdk.Handler {
 
 // Handle a message to set pooldata
 func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sdk.Result {
+	ctx.Logger().Info("handleMsgSetPoolData request", "poolID:"+msg.PoolID)
 	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error(err.Error())
 		return sdk.Result{
 			Code: sdk.CodeUnknownRequest,
 			Data: []byte(err.Error()),
@@ -63,7 +65,6 @@ func handleMsgSetAccData(ctx sdk.Context, keeper Keeper, msg MsgSetAccData) sdk.
 // Handle a message to set stake data
 func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) sdk.Result {
 	// TODO: Validate the message
-	fmt.Println()
 	log.Printf("Setting stake: %s", msg.Name)
 	err := stake(
 		ctx,
@@ -82,8 +83,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 
 // Handle a message to set stake data
 func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
-	// TODO: Validate the message
-	err := swap(
+	amount, err := swap(
 		ctx,
 		keeper,
 		msg.SourceTicker,
@@ -93,8 +93,13 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
 		msg.Destination,
 	) // If so, set the stake data to the value specified in the msg.
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
-		return sdk.ErrUnknownRequest(err.Error()).Result()
+		ctx.Logger().Error("fail to process swap message", err)
+		return sdk.ErrInternal(err.Error()).Result()
 	}
-	return sdk.Result{} // return
+
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Data:      []byte(amount),
+		Codespace: "swap",
+	}
 }

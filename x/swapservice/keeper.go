@@ -229,6 +229,12 @@ func (k Keeper) GetPoolStructDataIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStorePrefixIterator(store, []byte(types.PoolDataKeyPrefix))
 }
 
+// PoolExist check whether the given pool exist in the datastore
+func (k Keeper) PoolExist(ctx sdk.Context, poolID string) bool {
+	store := ctx.KVStore(k.storeKey)
+	return store.Has([]byte(poolID))
+}
+
 // TODO remove this method later
 // Get an iterator over all pool IDs in which the keys are the pool IDs and the values are the poolstruct
 func (k Keeper) GetDatasIterator(ctx sdk.Context) sdk.Iterator {
