@@ -9,55 +9,6 @@ import (
 
 const RouterKey = ModuleName // this was defined in your key.go file
 
-// MsgSetPoolData defines a SetPoolData message
-// TODO : I don't think we will need , because you will not directly set the pool data
-// the pool changes when stake / swap happens
-type MsgSetPoolData struct {
-	PoolID       string         `json:"pool_id"`       // generated automatically based on the ticker
-	BalanceRune  string         `json:"balance_rune"`  // balance rune
-	BalanceToken string         `json:"balance_token"` // balance of token
-	Ticker       string         `json:"ticker"`        // Ticker means the token symbol
-	TokenName    string         `json:"token_name"`    // usually it is a more user friendly token name
-	Owner        sdk.AccAddress `json:"owner"`
-}
-
-// NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetPoolData(tokenName, ticker string, owner sdk.AccAddress) MsgSetPoolData {
-	return MsgSetPoolData{
-		PoolID:    fmt.Sprintf("pool-%s", strings.ToUpper(ticker)),
-		Ticker:    strings.ToUpper(ticker),
-		TokenName: tokenName,
-		Owner:     owner,
-	}
-}
-
-// Route should return the pooldata of the module
-func (msg MsgSetPoolData) Route() string { return RouterKey }
-
-// Type should return the action
-func (msg MsgSetPoolData) Type() string { return "set_pooldata" }
-
-// ValidateBasic runs stateless checks on the message
-func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
-	if len(msg.Ticker) == 0 {
-		return sdk.ErrUnknownRequest("Pool Ticker cannot be empty")
-	}
-	if len(msg.TokenName) == 0 {
-		return sdk.ErrUnknownRequest("Pool TokenName cannot be empty")
-	}
-	return nil
-}
-
-// GetSignBytes encodes the message for signing
-func (msg MsgSetPoolData) GetSignBytes() []byte {
-	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
-}
-
-// GetSigners defines whose signature is required
-func (msg MsgSetPoolData) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Owner}
-}
-
 // MsgSetAccData defines a SetAccData message
 // TODO: given we don't hold asset ,thus we don't need to set Account Data
 type MsgSetAccData struct {

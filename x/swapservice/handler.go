@@ -28,12 +28,12 @@ func NewHandler(keeper Keeper) sdk.Handler {
 
 // Handle a message to set pooldata
 func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sdk.Result {
-	// TODO: Validate the message
-	/*
-		if !msg.Owner.Equals(keeper.GetOwner(ctx, msg.PoolData)) { // Checks if the the msg sender is the same as the current owner
-			return sdk.ErrUnauthorized("Incorrect Owner").Result() // If not, throw an error
+	if err := msg.ValidateBasic(); nil != err {
+		return sdk.Result{
+			Code: sdk.CodeUnknownRequest,
+			Data: []byte(err.Error()),
 		}
-	*/
+	}
 	keeper.SetPoolData(
 		ctx,
 		msg.PoolID,
@@ -41,8 +41,10 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 		msg.Ticker,
 		msg.BalanceRune,
 		msg.BalanceToken,
-	) // If so, set the pooldata to the value specified in the msg.
-	return sdk.Result{} // return
+		msg.PoolAddress,
+		msg.Status)
+	// TODO return appropriate messages to client
+	return sdk.Result{}
 }
 
 // Handle a message to set acc data

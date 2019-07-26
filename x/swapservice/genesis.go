@@ -6,6 +6,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+
+	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 type GenesisState struct {
@@ -41,11 +43,15 @@ func ValidateGenesis(data GenesisState) error {
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		PoolStructRecords: []PoolStruct{
-			PoolStruct{
+			{
+				PoolID:       types.GetPoolNameFromTicker("BNB"),
 				BalanceRune:  "0",
 				BalanceToken: "0",
-				TokenName:    "BNB",
+				TokenName:    "Binance Coin",
 				Ticker:       "BNB",
+				PoolUnits:    "0",
+				PoolAddress:  "bnbxxdfdfdfdfdf",
+				Status:       types.Active.String(),
 			},
 		},
 		AccStructRecords: []AccStruct{},
@@ -54,7 +60,7 @@ func DefaultGenesisState() GenesisState {
 
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.ValidatorUpdate {
 	for _, record := range data.PoolStructRecords {
-		keeper.SetPoolStruct(ctx, fmt.Sprintf("pool-%s", strings.ToUpper(record.Ticker)), record)
+		keeper.SetPoolStruct(ctx, types.GetPoolNameFromTicker(record.Ticker), record)
 	}
 	for _, record := range data.AccStructRecords {
 		keeper.SetAccStruct(ctx, fmt.Sprintf("acct-%s", strings.ToLower(record.Name)), record)
@@ -68,7 +74,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	iterator := k.GetDatasIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
 		key := string(iterator.Key())
-		if strings.HasPrefix("pool-", key) {
+		if strings.HasPrefix(types.PoolDataKeyPrefix, key) {
 			var poolstruct PoolStruct
 			poolstruct = k.GetPoolStruct(ctx, key)
 			poolRecords = append(poolRecords, poolstruct)

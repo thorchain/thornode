@@ -2,7 +2,6 @@ package swapservice
 
 import (
 	"log"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -82,21 +81,17 @@ func queryStakeStruct(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 
 func queryPoolDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var pooldatasList QueryResPoolDatas
-
-	iterator := keeper.GetDatasIterator(ctx)
-
+	iterator := keeper.GetPoolStructDataIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
-		key := string(iterator.Key())
-		if strings.HasPrefix(key, "pool-") {
-			poolstruct := keeper.GetPoolStruct(ctx, key)
-			pooldatasList = append(pooldatasList, poolstruct)
-		}
+		var poolstruct PoolStruct
+		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &poolstruct)
+		pooldatasList = append(pooldatasList, poolstruct)
 	}
-	log.Printf("Pools: %+v", pooldatasList)
 
+	log.Printf("Pools: %+v", pooldatasList)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pooldatasList)
 	if err != nil {
-		panic("could not marshal result to JSON")
+		return nil, sdk.ErrInternal("could not marshal pools result to json")
 	}
 
 	return res, nil

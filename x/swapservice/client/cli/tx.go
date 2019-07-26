@@ -36,20 +36,19 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 // GetCmdSetPoolData is the CLI command for sending a SetPoolData transaction
 func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-pool [token name] [ticker]",
-		Short: "TODO: remove me",
-		Args:  cobra.ExactArgs(2),
+		Use:   "set-pool [token name] [ticker] [poolAddress] [status]",
+		Short: "Set pool data",
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgSetPoolData(args[0], args[1], cliCtx.GetFromAddress())
+			msg := types.NewMsgSetPoolData(args[0], args[1], args[2], types.GetPoolStatus(args[3]), cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
-			// return utils.CompleteAndBroadcastTxCLI(txBldr, cliCtx, msgs)
 			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
 		},
 	}
