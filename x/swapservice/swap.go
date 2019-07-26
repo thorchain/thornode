@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
 
@@ -101,6 +102,16 @@ func swapOne(ctx sdk.Context, keeper Keeper, source, target, amount, requester, 
 		ctx.Logger().Error(fmt.Sprintf("pool token balance %s is invalid", pool.BalanceToken))
 		return "0", errors.Wrap(err, "pool token balance is invalid")
 	}
+	// do we have enough balance to swap?
+	if isRune(source) {
+		if balanceToken == 0 {
+			return "0", errors.New("token :%s balance is 0, can't do swap")
+		}
+	} else {
+		if balanceRune == 0 {
+			return "0", errors.New(types.RuneTicker + " balance is 0, can't swap ")
+		}
+	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
 	newBalanceRune, newBalanceToken, returnAmt := calculateSwap(source, balanceRune, balanceToken, amt)
 	pool.BalanceRune = strconv.FormatFloat(newBalanceRune, 'f', 8, 64)
@@ -117,12 +128,15 @@ func calculateSwap(source string, balanceRune, balanceToken, amt float64) (float
 	if isRune(source) {
 		balanceRune += amt
 		tokenAmount := (amt * balanceToken) / balanceRune
+		liquidityFee := math.Pow(amt, 2.0) * balanceToken / math.Pow(balanceRune, 2.0)
+		tokenAmount -= liquidityFee
 		balanceToken = balanceToken - tokenAmount
 		return balanceRune, balanceToken, tokenAmount
 	} else {
-
 		balanceToken += amt
 		runeAmt := (balanceRune * amt) / balanceToken
+		liquidityFee := (math.Pow(amt, 2.0) * balanceRune) / math.Pow(balanceToken, 2.0)
+		runeAmt -= liquidityFee
 		balanceRune = balanceRune - runeAmt
 		return balanceRune, balanceToken, runeAmt
 	}

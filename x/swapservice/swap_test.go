@@ -25,8 +25,8 @@ func TestSwapCalculation(t *testing.T) {
 			tokenBalance:      100.0,
 			amountToSwap:      5.0,
 			runeBalanceAfter:  105.0,
-			tokenBalanceAfter: 95.24,
-			amountToReturn:    4.76,
+			tokenBalanceAfter: 95.46,
+			amountToReturn:    4.54,
 		},
 		{
 			name:              "normal-token",
@@ -34,9 +34,9 @@ func TestSwapCalculation(t *testing.T) {
 			runeBalance:       100.0,
 			tokenBalance:      100.0,
 			amountToSwap:      5.0,
-			runeBalanceAfter:  95.24,
+			runeBalanceAfter:  95.46,
 			tokenBalanceAfter: 105.0,
-			amountToReturn:    4.76,
+			amountToReturn:    4.54,
 		},
 	}
 	for _, item := range inputs {
