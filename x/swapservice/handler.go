@@ -2,7 +2,6 @@ package swapservice
 
 import (
 	"fmt"
-	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -58,14 +57,14 @@ func handleMsgSetAccData(ctx sdk.Context, keeper Keeper, msg MsgSetAccData) sdk.
 		msg.Name,
 		msg.Ticker,
 		msg.Amount,
-	) // If so, set the acc data to the value specified in the msg.
+	)
+	// If so, set the acc data to the value specified in the msg.
 	return sdk.Result{} // return
 }
 
 // Handle a message to set stake data
 func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) sdk.Result {
-	// TODO: Validate the message
-	log.Printf("Setting stake: %s", msg.Name)
+	ctx.Logger().Debug("received stake message")
 	err := stake(
 		ctx,
 		keeper,
@@ -75,10 +74,13 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		msg.Token,
 	)
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
+		ctx.Logger().Error("fail to process stake message", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	return sdk.Result{}
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: "stake",
+	}
 }
 
 // Handle a message to set stake data
