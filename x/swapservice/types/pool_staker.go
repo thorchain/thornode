@@ -5,6 +5,11 @@ import (
 	"strings"
 )
 
+type StakerUnit struct {
+	StakerID string `json:"staker_id"`
+	Units    string `json:"units"`
+}
+
 // PoolStakerKeyPrefix all poolstaker key start with this
 const PoolStakerKeyPrefix = "poolstaker-"
 
@@ -18,9 +23,9 @@ const PoolStakerKeyPrefix = "poolstaker-"
 //    }
 //}
 type PoolStaker struct {
-	PoolID     string            `json:"p_id"` // pool id
-	TotalUnits string            `json:"tu"`   // total units in the pool
-	Stakers    map[string]string `json:"ss"`   // key will be staker id , which is the address on binane chain value will be UNITS
+	PoolID     string       `json:"pool_id"`     // pool id
+	TotalUnits string       `json:"total_units"` // total units in the pool
+	Stakers    []StakerUnit `json:"stakers"`     // key will be staker id , which is the address on binane chain value will be UNITS
 }
 
 // NewPoolStaker create a new instance of PoolStaker
@@ -28,7 +33,7 @@ func NewPoolStaker(poolID string, totalUnits string) PoolStaker {
 	return PoolStaker{
 		PoolID:     poolID,
 		TotalUnits: totalUnits,
-		Stakers:    make(map[string]string),
+		Stakers:    []StakerUnit{},
 	}
 }
 
@@ -38,9 +43,35 @@ func (ps PoolStaker) String() string {
 	bs.WriteString(fmt.Sprintln("pool-id: " + ps.PoolID))
 	bs.WriteString(fmt.Sprintln("total units: " + ps.TotalUnits))
 	if nil != ps.Stakers {
-		for key, unit := range ps.Stakers {
-			bs.WriteString(fmt.Sprintln(key + " : " + unit))
+		for _, stakerUnit := range ps.Stakers {
+			bs.WriteString(fmt.Sprintln(stakerUnit.StakerID + " : " + stakerUnit.Units))
 		}
 	}
 	return bs.String()
+}
+func (ps *PoolStaker) GetStakerUnit(stakerID string) StakerUnit {
+	for _, item := range ps.Stakers {
+		if item.StakerID == stakerID {
+			return item
+		}
+	}
+	return StakerUnit{
+		StakerID: stakerID,
+		Units:    "0",
+	}
+}
+
+// UpsertStakeUnit
+func (ps *PoolStaker) UpsertStakerUnit(stakerUnit StakerUnit) {
+	deleteIdx := -1
+	for idx, item := range ps.Stakers {
+		if item.StakerID == stakerUnit.StakerID {
+			deleteIdx = idx
+		}
+	}
+	if deleteIdx != -1 {
+		ps.Stakers[deleteIdx] = stakerUnit
+		return
+	}
+	ps.Stakers = append(ps.Stakers, stakerUnit)
 }

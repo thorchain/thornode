@@ -22,8 +22,9 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	swapserviceQueryCmd.AddCommand(client.GetCommands(
 		GetCmdPoolStruct(storeKey, cdc),
 		GetCmdPoolDatas(storeKey, cdc),
-		GetCmdAccStruct(storeKey, cdc),
-		GetCmdStakeStruct(storeKey, cdc),
+		GetCmdStakerPoolStruct(storeKey, cdc),
+		GetCmdPoolStakerStruct(storeKey, cdc),
+		GetCmdPoolIndex(storeKey, cdc),
 	)...)
 	return swapserviceQueryCmd
 }
@@ -51,46 +52,43 @@ func GetCmdPoolStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdAccStruct queries information about a domain
-func GetCmdAccStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdStakerPoolStruct queries staker pool
+func GetCmdStakerPoolStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "accstruct [accdata]",
-		Short: "Query accstruct info of accdata",
+		Use:   "stakerpool [stakeraddress]",
+		Short: "Query staker pool info",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			accstruct := args[0]
+			stakerAddress := args[0]
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/accstruct/%s", queryRoute, accstruct), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stakerpools/%s", queryRoute, stakerAddress), nil)
 			if err != nil {
-				fmt.Printf("could not resolve accstruct - %s \n", accstruct)
+				cmd.Printf("could not resolve stakerpool - %s \n", stakerAddress)
 				return nil
 			}
 
-			var out types.AccStruct
+			var out types.StakerPool
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
 	}
-}
-
-// GetCmdStakeStruct queries information about a domain
-func GetCmdStakeStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
+} // GetCmdPoolStakerStruct queries pool staker
+func GetCmdPoolStakerStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "stakestruct [stakedata]",
-		Short: "Query stakestruct info of stakedata",
+		Use:   "poolstaker [ticker]",
+		Short: "Query pool staker info",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			stakestruct := args[0]
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stakestruct/%s", queryRoute, stakestruct), nil)
+			ticker := args[0]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolstakers/%s", queryRoute, ticker), nil)
 			if err != nil {
-				fmt.Printf("could not resolve stakestruct - %s \n", stakestruct)
+				cmd.Printf("could not resolve poolstaker - %s \n", ticker)
 				return nil
 			}
 
-			var out types.StakeStruct
+			var out types.PoolStaker
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
@@ -107,13 +105,35 @@ func GetCmdPoolDatas(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/pooldatas", queryRoute), nil)
 			if err != nil {
-				fmt.Printf("could not get query pooldatas\n")
+				cmd.Println("could not get query pooldatas")
 				return nil
 			}
 
 			var out types.QueryResPoolDatas
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
+		},
+	}
+}
+
+// GetCmdPoolIndex query pool index
+func GetCmdPoolIndex(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "poolindex",
+		Short: "poolindex",
+		// Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolindex", queryRoute), nil)
+			if err != nil {
+				cmd.Println("could not get query poolindex")
+				return nil
+			}
+
+			var out types.PoolIndex
+			cdc.MustUnmarshalJSON(res, &out)
+			cmd.Println(out)
+			return nil
 		},
 	}
 }

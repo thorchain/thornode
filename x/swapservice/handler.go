@@ -12,8 +12,6 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		case MsgSetPoolData:
 			return handleMsgSetPoolData(ctx, keeper, msg)
-		case MsgSetAccData:
-			return handleMsgSetAccData(ctx, keeper, msg)
 		case MsgSetStakeData:
 			return handleMsgSetStakeData(ctx, keeper, msg)
 		case MsgSwap:
@@ -48,39 +46,28 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 	return sdk.Result{}
 }
 
-// Handle a message to set acc data
-func handleMsgSetAccData(ctx sdk.Context, keeper Keeper, msg MsgSetAccData) sdk.Result {
-	// TODO: Validate the message
-	keeper.SetAccData(
-		ctx,
-		msg.AccID,
-		msg.Name,
-		msg.Ticker,
-		msg.Amount,
-	)
-	// If so, set the acc data to the value specified in the msg.
-	return sdk.Result{} // return
-}
-
 // Handle a message to set stake data
 func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) sdk.Result {
-	ctx.Logger().Debug("received stake message")
-	err := stake(
+	ctx.Logger().Info("handleMsgSetStakeData request", "stakerid:"+msg.Ticker)
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error(err.Error())
+		return sdk.Result{
+			Code: sdk.CodeUnknownRequest,
+			Data: []byte(err.Error()),
+		}
+	}
+	if err := stake(
 		ctx,
 		keeper,
 		msg.Name,
 		msg.Ticker,
 		msg.Rune,
 		msg.Token,
-	)
-	if err != nil {
+		msg.PublicAddress); err != nil {
 		ctx.Logger().Error("fail to process stake message", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: "stake",
-	}
+	return sdk.Result{}
 }
 
 // Handle a message to set stake data

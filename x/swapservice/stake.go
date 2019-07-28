@@ -33,28 +33,28 @@ func validateStakeMessage(ctx sdk.Context, keeper Keeper, name, ticker, rune_amo
 	}
 	return nil
 }
-func stake(ctx sdk.Context, keeper Keeper, name, ticker, rune_amount, token_amount, publicAddress string) error {
-	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s %s", name, ticker, rune_amount, token_amount))
-	if err := validateStakeMessage(ctx, keeper, name, ticker, rune_amount, token_amount); nil != err {
+
+func stake(ctx sdk.Context, keeper Keeper, name, ticker, stakeRuneAmount, stakeTokenAmount, publicAddress string) error {
+	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s %s", name, ticker, stakeRuneAmount, stakeTokenAmount))
+	if err := validateStakeMessage(ctx, keeper, name, ticker, stakeRuneAmount, stakeTokenAmount); nil != err {
 		ctx.Logger().Error("invalid request", err)
 		return errors.Wrap(err, "invalid request")
 	}
 	ticker = strings.ToUpper(ticker)
 	poolID := types.GetPoolNameFromTicker(ticker)
 	pool := keeper.GetPoolStruct(ctx, poolID)
-
-	token_amt, err := strconv.ParseFloat(token_amount, 64)
+	fTokenAmt, err := strconv.ParseFloat(stakeTokenAmount, 64)
 	if err != nil {
-		ctx.Logger().Error(fmt.Sprintf("%s is invalid token_amount", token_amount), err)
-		return errors.Wrapf(err, "%s is invalid token_amount", token_amount)
+		ctx.Logger().Error(fmt.Sprintf("%s is invalid token_amount", stakeTokenAmount), err)
+		return errors.Wrapf(err, "%s is invalid token_amount", stakeTokenAmount)
 	}
-	rune_amt, err := strconv.ParseFloat(rune_amount, 64)
+	fRuneAmt, err := strconv.ParseFloat(stakeRuneAmount, 64)
 	if err != nil {
-		ctx.Logger().Error(fmt.Sprintf("%s is invalid rune_amount", rune_amount), err)
-		return errors.Wrapf(err, "%s is invalid rune_amount", rune_amount)
+		ctx.Logger().Error(fmt.Sprintf("%s is invalid rune_amount", stakeRuneAmount), err)
+		return errors.Wrapf(err, "%s is invalid rune_amount", stakeRuneAmount)
 	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
-	ctx.Logger().Info(fmt.Sprintf("Staking: %sRUNE %sToken", rune_amount, token_amount))
+	ctx.Logger().Info(fmt.Sprintf("Staking: %sRUNE %sToken", stakeRuneAmount, stakeTokenAmount))
 
 	balanceRune, err := strconv.ParseFloat(pool.BalanceRune, 64)
 	if err != nil {
@@ -72,14 +72,14 @@ func stake(ctx sdk.Context, keeper Keeper, name, ticker, rune_amount, token_amou
 		ctx.Logger().Error(fmt.Sprintf("%s is invalid pool total units", pool.PoolUnits))
 		return errors.Wrapf(err, "%s is invalid pool total units", pool.PoolUnits)
 	}
-	newPoolUnits, stakerUnits, err := calculatePoolUnits(oldPoolUnits, balanceRune, balanceToken, rune_amt, token_amt)
+	newPoolUnits, stakerUnits, err := calculatePoolUnits(oldPoolUnits, balanceRune, balanceToken, fRuneAmt, fTokenAmt)
 	if nil != err {
 		ctx.Logger().Error("fail to calculate poolUnits", err)
 		return errors.Wrapf(err, "fail to calculate pool units")
 	}
 	ctx.Logger().Info(fmt.Sprintf("current pool units : %f ,staker units : %f", newPoolUnits, stakerUnits))
-	poolRune := balanceRune + rune_amt
-	poolToken := balanceToken + token_amt
+	poolRune := balanceRune + fRuneAmt
+	poolToken := balanceToken + fTokenAmt
 	pool.PoolUnits = strconv.FormatFloat(newPoolUnits, 'f', floatPrecision, 64)
 	pool.BalanceRune = strconv.FormatFloat(poolRune, 'f', floatPrecision, 64)
 	pool.BalanceToken = strconv.FormatFloat(poolToken, 'f', floatPrecision, 64)
@@ -87,21 +87,50 @@ func stake(ctx sdk.Context, keeper Keeper, name, ticker, rune_amount, token_amou
 	keeper.SetPoolStruct(ctx, poolID, pool)
 	ps, err := keeper.GetPoolStaker(ctx, poolID)
 	if nil != err {
-		ctx.Logger().Error("fail to get pool staker", err)
+		ctx.Logger().Error("fail to get pool staker", "err:", err)
 		return errors.Wrap(err, "fail to get pool staker..")
 	}
 	ps.TotalUnits = pool.PoolUnits
-	if ex, ok := ps.Stakers[publicAddress]; ok {
-		fex, err := strconv.ParseFloat(ex, 64)
-		if nil != err {
-			ctx.Logger().Error("fail to parse staker's exist unit", ex)
-		}
-		stakerUnits += fex
-	}
-	ps.Stakers[publicAddress] = strconv.FormatFloat(stakerUnits, 'f', floatPrecision, 64)
-	keeper.SetPoolStaker(ctx, poolID, ps)
+	su := ps.GetStakerUnit(publicAddress)
 
-	// update staker pool
+	fex, err := strconv.ParseFloat(su.Units, 64)
+	if nil != err {
+		ctx.Logger().Error("fail to parse staker's exist stake unit", "err", err)
+	}
+	stakerUnits += fex
+	su.Units = strconv.FormatFloat(stakerUnits, 'f', floatPrecision, 64)
+	ps.UpsertStakerUnit(su)
+	keeper.SetPoolStaker(ctx, poolID, ps)
+	sp, err := keeper.GetStakerPool(ctx, publicAddress)
+	if nil != err {
+		ctx.Logger().Error("fail to get stakerpool object", err)
+		return errors.Wrap(err, "fail to get stakepool object")
+	}
+	stakerPoolItem := sp.GetStakerPoolItem(poolID)
+	existUnit, err := strconv.ParseFloat(stakerPoolItem.Units, 64)
+	if nil != err {
+		ctx.Logger().Error("fail to parse exist unit", err)
+		return errors.Wrap(err, "fail to parse exist unit")
+	}
+	existRune, err := strconv.ParseFloat(stakerPoolItem.RuneBalance, 64)
+	if nil != err {
+		ctx.Logger().Error("fail to parse exist RUNE", err)
+		return errors.Wrap(err, "fail to parse exist RUNE")
+	}
+	existToken, err := strconv.ParseFloat(stakerPoolItem.TokenBalance, 64)
+	if nil != err {
+		ctx.Logger().Error("fail to parse exist token", err)
+		return errors.Wrap(err, "fail to parse exist token")
+	}
+	stakerUnits += existUnit
+	fRuneAmt += existRune
+	fTokenAmt += existToken
+
+	stakerPoolItem.Units = strconv.FormatFloat(stakerUnits, 'f', floatPrecision, 64)
+	stakerPoolItem.RuneBalance = strconv.FormatFloat(fRuneAmt, 'f', floatPrecision, 64)
+	stakerPoolItem.TokenBalance = strconv.FormatFloat(fTokenAmt, 'f', floatPrecision, 64)
+	sp.UpsertStakerPoolItem(stakerPoolItem)
+	keeper.SetStakerPool(ctx, publicAddress, sp)
 
 	return nil
 }
