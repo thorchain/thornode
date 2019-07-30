@@ -13,27 +13,41 @@ import (
 	types "gitlab.com/thorchain/bepswap/observe/x/silverback/types"
 )
 
-func Start(pongWait time.Duration, poolAddress string, dexHost string) {
-	log.Info().Msg("Starting Silverback....")
+type client struct {
+	pongWait time.Duration
+	poolAddress string
+	dexHost string
+}
+
+func NewClient(pongWait time.Duration, poolAddress string, dexHost string) *client {
+	return &client{
+		pongWait: pongWait,
+		poolAddress: poolAddress,
+		dexHost: dexHost,
+	}
+}
+
+func (c *client) Start() {
+	log.Info().Msg("Starting Silverback Client....")
 	
-	conn, err := Connect(pongWait, poolAddress, dexHost)
+	conn, err := c.Connect()
 	if err != nil {
 		log.Error().Msgf("There was an error while starting: %v", err)
 	}
 
-	log.Info().Msgf("Setting a keepalive of %v", pongWait)
-	SetKeepAlive(conn, pongWait)
+	log.Info().Msgf("Setting a keepalive of %v", c.pongWait)
+	c.SetKeepAlive(conn)
 
 	ch := make(chan []byte)
 
 	log.Info().Msg("Listening for events....")
-	ParseEvents(ch)
-	ReadEvents(ch, conn)
+	c.ParseEvents(ch)
+	c.ReadEvents(ch, conn)
 }
 
-func Connect(pongWait time.Duration, poolAddress string, dexHost string) (*websocket.Conn, error) {
-	path := fmt.Sprintf("/api/ws/%s", poolAddress)
-	url := url.URL{ Scheme: "wss", Host: dexHost, Path: path }
+func (c *client) Connect() (*websocket.Conn, error) {
+	path := fmt.Sprintf("/api/ws/%s", c.poolAddress)
+	url := url.URL{ Scheme: "wss", Host: c.dexHost, Path: path }
 
 	log.Info().Msgf("Opening up a connection to: %v", url.String())
 
@@ -45,7 +59,7 @@ func Connect(pongWait time.Duration, poolAddress string, dexHost string) (*webso
 	return conn, nil
 }
 
-func SetKeepAlive(conn *websocket.Conn, pongWait time.Duration) {
+func (c *client) SetKeepAlive(conn *websocket.Conn) {
 	lastResponse := time.Now()
 	conn.SetPongHandler(func(msg string) error {
 		lastResponse = time.Now()
@@ -59,8 +73,8 @@ func SetKeepAlive(conn *websocket.Conn, pongWait time.Duration) {
 				return
 			}
 
-			time.Sleep(pongWait / 2)
-			if time.Now().Sub(lastResponse) > pongWait {
+			time.Sleep(c.pongWait / 2)
+			if time.Now().Sub(lastResponse) > c.pongWait {
 				conn.Close()
 				return
 			}
@@ -68,7 +82,7 @@ func SetKeepAlive(conn *websocket.Conn, pongWait time.Duration) {
 	}()
 }
 
-func ReadEvents(ch chan []byte, conn *websocket.Conn) {
+func (c *client) ReadEvents(ch chan []byte, conn *websocket.Conn) {
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
@@ -78,7 +92,7 @@ func ReadEvents(ch chan []byte, conn *websocket.Conn) {
 	}
 }
 
-func ParseEvents(ch chan []byte) {
+func (c *client) ParseEvents(ch chan []byte) {
 	go func() {
 		for {
 			payload := <-ch
@@ -94,7 +108,7 @@ func ParseEvents(ch chan []byte) {
 	}()
 }
 
-func Stop() {
+func (c *client) Stop() {
 	log.Info().Msg("Shutting down....")
 	os.Exit(1)
 }
