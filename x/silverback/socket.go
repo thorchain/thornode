@@ -14,7 +14,7 @@ import (
 )
 
 func Start(pongWait time.Duration, poolAddress string, dexHost string) {
-	log.Info().Msg("Starting....")
+	log.Info().Msg("Starting Silverback....")
 	
 	conn, err := Connect(pongWait, poolAddress, dexHost)
 	if err != nil {
