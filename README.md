@@ -6,6 +6,7 @@ Observe events that take place on Binance.
 ### Development
 Setup a local server
 ```bash
+make install
 make start
 ```
 
