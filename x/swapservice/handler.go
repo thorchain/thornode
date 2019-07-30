@@ -1,10 +1,12 @@
 package swapservice
 
 import (
+	"encoding/json"
 	"fmt"
-	"log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 // NewHandler returns a handler for "swapservice" type messages.
@@ -13,12 +15,12 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		case MsgSetPoolData:
 			return handleMsgSetPoolData(ctx, keeper, msg)
-		case MsgSetAccData:
-			return handleMsgSetAccData(ctx, keeper, msg)
 		case MsgSetStakeData:
 			return handleMsgSetStakeData(ctx, keeper, msg)
 		case MsgSwap:
 			return handleMsgSwap(ctx, keeper, msg)
+		case types.MsgSetUnStake:
+			return handleMsgSetUnstake(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -28,12 +30,14 @@ func NewHandler(keeper Keeper) sdk.Handler {
 
 // Handle a message to set pooldata
 func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sdk.Result {
-	// TODO: Validate the message
-	/*
-		if !msg.Owner.Equals(keeper.GetOwner(ctx, msg.PoolData)) { // Checks if the the msg sender is the same as the current owner
-			return sdk.ErrUnauthorized("Incorrect Owner").Result() // If not, throw an error
+	ctx.Logger().Info("handleMsgSetPoolData request", "poolID:"+msg.PoolID)
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error(err.Error())
+		return sdk.Result{
+			Code: sdk.CodeUnknownRequest,
+			Data: []byte(err.Error()),
 		}
-	*/
+	}
 	keeper.SetPoolData(
 		ctx,
 		msg.PoolID,
@@ -41,47 +45,42 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 		msg.Ticker,
 		msg.BalanceRune,
 		msg.BalanceToken,
-	) // If so, set the pooldata to the value specified in the msg.
-	return sdk.Result{} // return
-}
-
-// Handle a message to set acc data
-func handleMsgSetAccData(ctx sdk.Context, keeper Keeper, msg MsgSetAccData) sdk.Result {
-	// TODO: Validate the message
-	keeper.SetAccData(
-		ctx,
-		msg.AccID,
-		msg.Name,
-		msg.Ticker,
-		msg.Amount,
-	) // If so, set the acc data to the value specified in the msg.
-	return sdk.Result{} // return
+		msg.PoolAddress,
+		msg.Status)
+	return sdk.Result{
+		Code: sdk.CodeOK,
+	}
 }
 
 // Handle a message to set stake data
 func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) sdk.Result {
-	// TODO: Validate the message
-	fmt.Println()
-	log.Printf("Setting stake: %s", msg.Name)
-	err := stake(
+	ctx.Logger().Info("handleMsgSetStakeData request", "stakerid:"+msg.Ticker)
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error(err.Error())
+		return sdk.Result{
+			Code: sdk.CodeUnknownRequest,
+			Data: []byte(err.Error()),
+		}
+	}
+	if err := stake(
 		ctx,
 		keeper,
 		msg.Name,
 		msg.Ticker,
 		msg.Rune,
 		msg.Token,
-	)
-	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
+		msg.PublicAddress); err != nil {
+		ctx.Logger().Error("fail to process stake message", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	return sdk.Result{}
+	return sdk.Result{
+		Code: sdk.CodeOK,
+	}
 }
 
 // Handle a message to set stake data
 func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
-	// TODO: Validate the message
-	err := swap(
+	amount, err := swap(
 		ctx,
 		keeper,
 		msg.SourceTicker,
@@ -91,8 +90,42 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
 		msg.Destination,
 	) // If so, set the stake data to the value specified in the msg.
 	if err != nil {
-		log.Printf("ERROR: %s", err.Error())
+		ctx.Logger().Error("fail to process swap message", err)
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Data:      []byte(amount),
+		Codespace: "swap",
+	}
+}
+
+// handleMsgSetUnstake process unstake
+func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) sdk.Result {
+	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.PublicAddress, msg.Percentage))
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid MsgSetUnstake", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	return sdk.Result{} // return
+	runeAmt, tokenAmount, err := unstake(ctx, keeper, msg)
+	if nil != err {
+		ctx.Logger().Error("fail to unstake", "error", err)
+		return sdk.ErrInternal("fail to process unstake request").Result()
+	}
+	res, err := json.Marshal(struct {
+		Rune  string `json:"rune"`
+		Token string `json:"token"`
+	}{
+		Rune:  runeAmt,
+		Token: tokenAmount,
+	})
+	if nil != err {
+		ctx.Logger().Error("fail to marshal result to json", "error", err)
+		// if this happen what should we tell the client?
+	}
+	return sdk.Result{
+		Code: sdk.CodeOK,
+		Data: res,
+	}
 }
