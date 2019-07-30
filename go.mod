@@ -1,4 +1,4 @@
-module observe
+module gitlab.com/thorchain/bepswap/observe
 
 go 1.12
 
