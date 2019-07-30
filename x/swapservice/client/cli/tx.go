@@ -7,7 +7,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
