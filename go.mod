@@ -8,6 +8,7 @@ require (
 	github.com/gorilla/mux v1.7.0
 	github.com/mattn/go-isatty v0.0.7 // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/prometheus/common v0.2.0
 	github.com/prometheus/procfs v0.0.0-20190328153300-af7bedc223fb // indirect
 	github.com/rs/zerolog v1.14.3
 	github.com/spf13/afero v1.2.2 // indirect
