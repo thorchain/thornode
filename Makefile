@@ -12,12 +12,14 @@ lint:
 build:
 	go build
 
+install:
+	go install -v
+
 test:
 	./scripts/test.sh
 
 start:
-	go build
 	./scripts/start.sh
 
 clean:
-	rm ./observe
+	rm ${GOBIN}/observe
