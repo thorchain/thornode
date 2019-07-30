@@ -8,8 +8,10 @@ import (
 )
 
 func Start(port string) {
-  http.HandleFunc("/", Status)
-  http.ListenAndServe(":" + port, nil)
+	go func() {
+  	http.HandleFunc("/", Status)
+		http.ListenAndServe(":" + port, nil)
+	}
 }
 
 func Status(w http.ResponseWriter, r *http.Request) {
