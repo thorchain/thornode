@@ -102,7 +102,7 @@ func (c *client) ParseEvents(ch chan []byte) {
 
 			err := json.Unmarshal(payload, &acct)
 			if err != nil {
-				log.Error().Msgf("There was an while parsing the event: %v", err)
+				log.Error().Msgf("There was an error while parsing the event: %v", err)
 			}
 		}
 	}()
