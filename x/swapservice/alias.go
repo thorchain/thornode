@@ -13,7 +13,6 @@ const (
 var (
 	NewMsgSetPoolData  = types.NewMsgSetPoolData
 	NewPoolStruct      = types.NewPoolStruct
-	NewMsgSetAccData   = types.NewMsgSetAccData
 	NewAccStruct       = types.NewAccStruct
 	NewMsgSetStakeData = types.NewMsgSetStakeData
 	NewStakeStruct     = types.NewStakeStruct
@@ -24,7 +23,6 @@ var (
 
 type (
 	MsgSetPoolData     = types.MsgSetPoolData
-	MsgSetAccData      = types.MsgSetAccData
 	MsgSetStakeData    = types.MsgSetStakeData
 	MsgSwap            = types.MsgSwap
 	QueryResResolve    = types.QueryResResolve
@@ -34,6 +32,4 @@ type (
 	PoolStruct         = types.PoolStruct
 	AccStruct          = types.AccStruct
 	StakeStruct        = types.StakeStruct
-	AccStake           = types.AccStake
-	Holding            = types.Holding
 )

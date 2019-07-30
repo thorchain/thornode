@@ -25,9 +25,9 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 
 	swapserviceTxCmd.AddCommand(client.PostCommands(
 		GetCmdSetPoolData(cdc),
-		GetCmdSetAccData(cdc),
 		GetCmdSetStakeData(cdc),
 		GetCmdSwap(cdc),
+		GetCmdUnstake(cdc),
 	)...)
 
 	return swapserviceTxCmd
@@ -36,35 +36,15 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 // GetCmdSetPoolData is the CLI command for sending a SetPoolData transaction
 func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-pool [token name] [ticker]",
-		Short: "TODO: remove me",
-		Args:  cobra.ExactArgs(2),
+		Use:   "set-pool [token name] [ticker] [poolAddress] [status]",
+		Short: "Set pool data",
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgSetPoolData(args[0], args[1], cliCtx.GetFromAddress())
-			err := msg.ValidateBasic()
-			if err != nil {
-				return err
-			}
-			// return utils.CompleteAndBroadcastTxCLI(txBldr, cliCtx, msgs)
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-// GetCmdSetAccData is the CLI command for sending a SetAccData transaction
-func GetCmdSetAccData(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "set-account [name] [ticker] [amount]",
-		Short: "Create a new account.",
-		Args:  cobra.ExactArgs(3),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			msg := types.NewMsgSetAccData(args[0], args[1], args[2], cliCtx.GetFromAddress())
+			msg := types.NewMsgSetPoolData(args[0], args[1], args[2], types.GetPoolStatus(args[3]), cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -77,13 +57,14 @@ func GetCmdSetAccData(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetStakeData is the CLI command for sending a SetStakeData transaction
 func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-stake [name] [ticker] [runes] [tokens]",
+		Use:   "set-stake [name] [ticker] [runes] [tokens] ",
 		Short: "Stake coins into a pool",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			msg := types.NewMsgSetStakeData(args[0], args[1], args[2], args[3], cliCtx.GetFromAddress())
+			msg.PublicAddress = args[0]
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -103,6 +84,25 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			msg := types.NewMsgSwap(args[0], args[1], args[2], args[3], args[4], cliCtx.GetFromAddress())
+			err := msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdUnstake command to unstake coins
+func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "unstake [ticker] [address] [percentage]",
+		Short: "Withdraw coins",
+		Args:  cobra.ExactArgs(3),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			msg := types.NewMsgSetUnStake(args[1], args[1], args[2], args[0], cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
