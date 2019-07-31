@@ -1,6 +1,6 @@
 package types
 
-type Calc struct {
+type Balances struct {
 	X float64
 	Y float64
 	R float64
