@@ -109,7 +109,7 @@ func (c *Client) ParseEvents(ch chan []byte) {
 				if acct.Data.Event == "outboundTransferInfo" {
 					for _, tx := range acct.Data.T {
 						for _, coin := range tx.C {
-							go c.ProcessTxn(coin.Asset, coin.A)
+							c.ProcessTxn(coin.Asset, coin.A)
 						}
 					}
 				}
@@ -119,36 +119,38 @@ func (c *Client) ParseEvents(ch chan []byte) {
 }
 
 func (c *Client) ProcessTxn(symbol string, amount string) {
-	for {
-		pool := NewPool(c.Binance.PoolAddress)
-		balances := pool.GetBalances() 
+	go func() {
+		for {
+			pool := NewPool(c.Binance.PoolAddress)
+			balances := pool.GetBalances() 
 
-		if symbol != pool.X {
-			return
+			if symbol != pool.X {
+				return
+			}
+
+			x, err := strconv.ParseFloat(amount, 64)
+			if err != nil {
+				log.Fatal().Msgf("Error: %v", err)
+			}
+
+			X, err := strconv.ParseFloat(balances.X, 64)
+			if err != nil {
+				log.Fatal().Msgf("Error: %v", err)
+			}
+
+			Y, err := strconv.ParseFloat(balances.Y, 64)
+			if err != nil {
+				log.Fatal().Msgf("Error: %v", err)
+			}
+
+			log.Info().Msgf("CalcOutput: %v", pool.CalcOutput(x, X, Y))
+			log.Info().Msgf("CalcOutputSlip: %v", pool.CalcOutputSlip(x, X, Y))
+			log.Info().Msgf("CalcLiquidityFee: %v", pool.CalcLiquidityFee(x, X, Y))
+			log.Info().Msgf("CalcTokensEmitted: %v", pool.CalcTokensEmitted(x, X, Y))
+			log.Info().Msgf("CalcTradeSlip: %v", pool.CalcTradeSlip(x, X, Y))
+			log.Info().Msgf("CalcPoolSlip: %v", pool.CalcPoolSlip(x, X, Y))
 		}
-
-		x, err := strconv.ParseFloat(amount, 64)
-		if err != nil {
-			log.Fatal().Msgf("Error: %v", err)
-		}
-
-		X, err := strconv.ParseFloat(balances.X, 64)
-		if err != nil {
-			log.Fatal().Msgf("Error: %v", err)
-		}
-
-		Y, err := strconv.ParseFloat(balances.Y, 64)
-		if err != nil {
-			log.Fatal().Msgf("Error: %v", err)
-		}
-
-		log.Info().Msgf("CalcOutput: %v", pool.CalcOutput(x, X, Y))
-		log.Info().Msgf("CalcOutputSlip: %v", pool.CalcOutputSlip(x, X, Y))
-		log.Info().Msgf("CalcLiquidityFee: %v", pool.CalcLiquidityFee(x, X, Y))
-		log.Info().Msgf("CalcTokensEmitted: %v", pool.CalcTokensEmitted(x, X, Y))
-		log.Info().Msgf("CalcTradeSlip: %v", pool.CalcTradeSlip(x, X, Y))
-		log.Info().Msgf("CalcPoolSlip: %v", pool.CalcPoolSlip(x, X, Y))
-	}
+	}()
 }
 
 func (c *Client) Stop() {
