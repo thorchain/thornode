@@ -6,10 +6,10 @@ import (
 	log "github.com/rs/zerolog/log"
 
 	"github.com/binance-chain/go-sdk/keys"
-	sdk "github.com/binance-chain/go-sdk/client"
-	transaction "github.com/binance-chain/go-sdk/client/transaction"
-	types "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/types/msg"
+	sdk "github.com/binance-chain/go-sdk/client"
+	types "github.com/binance-chain/go-sdk/common/types"
+	transaction "github.com/binance-chain/go-sdk/client/transaction"
 )
 
 type Binance struct {
