@@ -120,7 +120,7 @@ func (c *Client) ParseEvents(ch chan []byte) {
 
 func (c *Client) ProcessTxn(fromAddress string, symbol string, amount string) {
 	pool := NewPool(c.Binance.PoolAddress)
-	balances := pool.GetBalances() 
+	balances := pool.GetBal() 
 
 	if symbol != pool.X {
 		return
