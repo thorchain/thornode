@@ -20,10 +20,9 @@ type Client struct {
 }
 
 func NewClient(binance Binance) *Client {
-	pongWait := 30 * time.Second
 	return &Client{
 		Binance: binance,
-		PongWait: pongWait,
+		PongWait: 30 * time.Second,
 	}
 }
 
@@ -107,9 +106,10 @@ func (c *Client) ParseEvents(ch chan []byte) {
 
 			if acct.Stream == "transfers" {
 				if acct.Data.Event == "outboundTransferInfo" {
+					fromAddress := acct.Data.From
 					for _, tx := range acct.Data.T {
 						for _, coin := range tx.C {
-							c.ProcessTxn(coin.Asset, coin.A)
+							c.ProcessTxn(fromAddress, coin.Asset, coin.A)
 						}
 					}
 				}
@@ -118,7 +118,7 @@ func (c *Client) ParseEvents(ch chan []byte) {
 	}()
 }
 
-func (c *Client) ProcessTxn(symbol string, amount string) {
+func (c *Client) ProcessTxn(fromAddress string, symbol string, amount string) {
 	pool := NewPool(c.Binance.PoolAddress)
 	balances := pool.GetBalances() 
 
@@ -144,9 +144,13 @@ func (c *Client) ProcessTxn(symbol string, amount string) {
 	log.Info().Msgf("CalcOutput: %v", pool.CalcOutput(x, X, Y))
 	log.Info().Msgf("CalcOutputSlip: %v", pool.CalcOutputSlip(x, X, Y))
 	log.Info().Msgf("CalcLiquidityFee: %v", pool.CalcLiquidityFee(x, X, Y))
-	log.Info().Msgf("CalcTokensEmitted: %v", pool.CalcTokensEmitted(x, X, Y))
+
+	emitTokens := pool.CalcTokensEmitted(x, X, Y)
+	log.Info().Msgf("CalcTokensEmitted: %v", emitTokens)
 	log.Info().Msgf("CalcTradeSlip: %v", pool.CalcTradeSlip(x, X, Y))
 	log.Info().Msgf("CalcPoolSlip: %v", pool.CalcPoolSlip(x, X, Y))
+
+	c.Binance.SendToken(fromAddress, pool.Y, int64(emitTokens * 100000000))
 }
 
 func (c *Client) Stop() {
