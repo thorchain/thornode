@@ -16,9 +16,8 @@ func main() {
 	log.Info().Msgf("Current (Saved) Balances: %v", bal)
 
 	binance := silverback.NewBinance()
-	account := binance.GetAccount()
+	json, _ := json.Marshal(binance.GetAccount().Balances)
 
-	json, _ := json.Marshal(account.Balances)
 	err := db.Set("balances", json, 0).Err()
 	if err != nil {
 		log.Fatal().Msgf("Error: %v", err)
