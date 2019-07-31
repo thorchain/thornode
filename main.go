@@ -55,7 +55,8 @@ func main() {
 	json, _ := json.Marshal(account.Balances)
 	err = db.Set("balances", json, 0).Err()
 	if err != nil {
-		panic(err)
+		log.Fatal().Msgf("Error: %v", err)
+		Exit()
 	}
 
 	log.Info().Msg("Balances updated.")
