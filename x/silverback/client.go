@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"time"
+	"strconv"
 
 	"github.com/gorilla/websocket"
 	log "github.com/rs/zerolog/log"
@@ -95,16 +96,59 @@ func (c *Client) ParseEvents(ch chan []byte) {
 	go func() {
 		for {
 			payload := <-ch
-			log.Info().Msgf("An event was received: %v", payload)
-
 			var acct types.Account
 
 			err := json.Unmarshal(payload, &acct)
 			if err != nil {
 				log.Error().Msgf("There was an error while parsing the event: %v", err)
 			}
+
+			log.Info().Msgf("Event received: %v", acct)
+
+			if acct.Stream == "transfers" {
+				if acct.Data.Event == "outboundTransferInfo" {
+					for _, tx := range acct.Data.T {
+						for _, coin := range tx.C {
+							go c.ProcessTxn(coin.Asset, coin.A)
+						}
+					}
+				}
+			}
 		}
 	}()
+}
+
+func (c *Client) ProcessTxn(symbol string, amount string) {
+	for {
+		pool := NewPool(c.Binance.PoolAddress)
+		balances := pool.GetBalances() 
+
+		if symbol != pool.X {
+			return
+		}
+
+		x, err := strconv.ParseFloat(amount, 64)
+		if err != nil {
+			log.Fatal().Msgf("Error: %v", err)
+		}
+
+		X, err := strconv.ParseFloat(balances.X, 64)
+		if err != nil {
+			log.Fatal().Msgf("Error: %v", err)
+		}
+
+		Y, err := strconv.ParseFloat(balances.Y, 64)
+		if err != nil {
+			log.Fatal().Msgf("Error: %v", err)
+		}
+
+		log.Info().Msgf("CalcOutput: %v", pool.CalcOutput(x, X, Y))
+		log.Info().Msgf("CalcOutputSlip: %v", pool.CalcOutputSlip(x, X, Y))
+		log.Info().Msgf("CalcLiquidityFee: %v", pool.CalcLiquidityFee(x, X, Y))
+		log.Info().Msgf("CalcTokensEmitted: %v", pool.CalcTokensEmitted(x, X, Y))
+		log.Info().Msgf("CalcTradeSlip: %v", pool.CalcTradeSlip(x, X, Y))
+		log.Info().Msgf("CalcPoolSlip: %v", pool.CalcPoolSlip(x, X, Y))
+	}
 }
 
 func (c *Client) Stop() {

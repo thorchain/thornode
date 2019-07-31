@@ -12,8 +12,8 @@ import (
 
 type Pool struct {
 	PoolAddress string
-	SymbolX string
-	SymbolY string
+	X string
+	Y string
 }
 
 func NewPool(poolAddress string) *Pool {
@@ -21,8 +21,8 @@ func NewPool(poolAddress string) *Pool {
 
 	return &Pool{
 		PoolAddress: poolAddress,
-		SymbolX: "RUNE-A1F",
-		SymbolY: "BNB",
+		X: "RUNE-A1F",
+		Y: "BNB",
 	}
 }
 
@@ -42,7 +42,7 @@ func (p *Pool) GetBalances() types.Balances {
 	}
 
 	for _, coin := range tokens {
-		if coin.Symbol == p.SymbolX {
+		if coin.Symbol == p.X {
 			balances.X = coin.Free
 		} else {
 			balances.Y = coin.Free
