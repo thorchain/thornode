@@ -52,7 +52,7 @@ func (s *Server) Balances(w http.ResponseWriter, r *http.Request) {
 		log.Info().Msgf("Received message: %v", mt)
 
 		pool := NewPool(s.Binance.PoolAddress)
-		data := pool.GetBalances()
+		data := pool.GetBal()
 
 		js, err := json.Marshal(data)
 		if err != nil {
