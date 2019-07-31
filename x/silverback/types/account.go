@@ -6,7 +6,7 @@ type Account struct {
 		Event       string `json:"e"`
 		EventHeight int    `json:"E"`
 		H           string `json:"H"`
-		TimeInForce string `json:"f"`
+		From 				string `json:"f"`
 		T	[]struct {
 			O string `json:"o"`
 			C []struct {

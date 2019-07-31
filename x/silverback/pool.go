@@ -26,7 +26,7 @@ func NewPool(poolAddress string) *Pool {
 	}
 }
 
-func (p *Pool) GetBalances() types.Balances {
+func (p *Pool) GetBal() types.Balances {
 	db := jungle.RedisClient()
 	data, _ := db.Get("balances").Result()
 

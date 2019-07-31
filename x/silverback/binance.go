@@ -7,7 +7,9 @@ import (
 
 	"github.com/binance-chain/go-sdk/keys"
 	sdk "github.com/binance-chain/go-sdk/client"
+	transaction "github.com/binance-chain/go-sdk/client/transaction"
 	types "github.com/binance-chain/go-sdk/common/types"
+	"github.com/binance-chain/go-sdk/types/msg"
 )
 
 type Binance struct {
@@ -54,4 +56,26 @@ func (b *Binance) GetAccount() *types.BalanceAccount {
 	}
 
 	return account
+}
+
+func (b *Binance) SendToken(to string, symbol string, amount int64) *transaction.SendTokenResult {
+	log.Info().Msgf("to: %v, symbol: %v, amount: %v", to, symbol, amount)
+
+	coin := types.Coin{Denom: symbol, Amount: amount}
+	var coins []types.Coin
+	c := append(coins, coin)
+
+	address := types.AccAddress(to)
+
+	transfer := msg.Transfer{ToAddr: address, Coins: c}
+	var transfers []msg.Transfer
+	t := append(transfers, transfer)
+	log.Info().Msgf("Transaction to send: %v", t)
+
+	send, err := b.Client.SendToken(t, true)
+	if err != nil {
+		log.Error().Msgf("Error: %v", err)
+	}
+
+	return send
 }
