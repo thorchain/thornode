@@ -6,8 +6,8 @@ import (
 
 	log "github.com/rs/zerolog/log"
 
-	types "gitlab.com/thorchain/bepswap/observe/x/silverback/types"
 	jungle "gitlab.com/thorchain/bepswap/observe/x/jungle"
+	types "gitlab.com/thorchain/bepswap/observe/x/silverback/types"
 )
 
 type Pool struct {

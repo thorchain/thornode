@@ -6,8 +6,8 @@ import (
 
 	log "github.com/rs/zerolog/log"
 
-	silverback "gitlab.com/thorchain/bepswap/observe/x/silverback"
 	jungle "gitlab.com/thorchain/bepswap/observe/x/jungle"
+	silverback "gitlab.com/thorchain/bepswap/observe/x/silverback"
 )
 
 func main() {
