@@ -28,7 +28,7 @@ func main() {
 	privateKey := os.Getenv("PRIVATE_KEY")
 	if privateKey == "" {
 		log.Fatal().Msg("No private key set!")
-    Exit()
+		Exit()
 	}
 
 	keyManager, err := keys.NewPrivateKeyManager(privateKey)
