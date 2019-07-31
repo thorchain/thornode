@@ -24,7 +24,7 @@ func NewServer(binance Binance) *Server {
 func (s *Server) Start() {
 	go func() {
 		log.Info().Msg("Starting Silverback Server....")
-  	http.HandleFunc("/", s.Balances)
+		http.HandleFunc("/", s.Balances)
 		http.ListenAndServe(":" + s.Port, nil)
 	}()
 }
