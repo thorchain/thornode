@@ -54,8 +54,6 @@ func (s *server) Balances(w http.ResponseWriter, r *http.Request) {
 		data := types.Balances{
 			X: rand.Float64(),
 			Y: rand.Float64(),
-			R: rand.Float64(),
-			Z: rand.Float64(),
 		}
 
 		js, err := json.Marshal(data)
