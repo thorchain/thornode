@@ -1,35 +1,35 @@
 package silverback
 
 import (
+	"os"
 	"net/http"
 	"encoding/json"
-	"math/rand"
 
 	"github.com/gorilla/websocket"
 	log "github.com/rs/zerolog/log"
-
-	types "gitlab.com/thorchain/bepswap/observe/x/silverback/types"
 )
 
-type server struct {
-	port string
+type Server struct {
+	Binance Binance
+	Port string
 }
 
-func NewServer(port string) *server {
-	return &server{
-		port: port,
+func NewServer(binance Binance) *Server {
+	return &Server{
+		Binance: binance,
+		Port: os.Getenv("PORT"),
 	}
 }
 
-func (s *server) Start() {
+func (s *Server) Start() {
 	go func() {
 		log.Info().Msg("Starting Silverback Server....")
   	http.HandleFunc("/", s.Balances)
-		http.ListenAndServe(":" + s.port, nil)
+		http.ListenAndServe(":" + s.Port, nil)
 	}()
 }
 
-func (s *server) Balances(w http.ResponseWriter, r *http.Request) {
+func (s *Server) Balances(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	upgrader := websocket.Upgrader{}
@@ -51,10 +51,8 @@ func (s *server) Balances(w http.ResponseWriter, r *http.Request) {
 
 		log.Info().Msgf("Received message: %v", mt)
 
-		data := types.Balances{
-			X: rand.Float64(),
-			Y: rand.Float64(),
-		}
+		pool := NewPool(s.Binance.PoolAddress)
+		data := pool.GetBalances()
 
 		js, err := json.Marshal(data)
 		if err != nil {

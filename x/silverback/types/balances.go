@@ -1,6 +1,6 @@
 package types
 
 type Balances struct {
-	X float64
-	Y float64
+	X string
+	Y string
 }
