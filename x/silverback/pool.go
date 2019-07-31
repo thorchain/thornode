@@ -9,23 +9,23 @@ import (
 	jungle "gitlab.com/thorchain/bepswap/observe/x/jungle"
 )
 
-type pool struct {
+type Pool struct {
 	PoolAddress string
 	SymbolX string
 	SymbolY string
 }
 
-func NewPool(poolAddress string) *pool {
+func NewPool(poolAddress string) *Pool {
 	log.Info().Msgf("Initialising pool %s...", poolAddress)
 
-	return &pool{
+	return &Pool{
 		PoolAddress: poolAddress,
 		SymbolX: "RUNE-A1F",
 		SymbolY: "BNB",
 	}
 }
 
-func (p *pool) GetBalances() types.Balances {
+func (p *Pool) GetBalances() types.Balances {
 	db := jungle.RedisClient()
 	data, _ := db.Get("balances").Result()
 
@@ -50,3 +50,23 @@ func (p *pool) GetBalances() types.Balances {
 
 	return balances
 }
+
+// ( x * Y ) / ( x + X )
+func (p *Pool) CalcOutput() {}
+
+// ( x ) / ( x + X )
+func (p *Pool) CalcOutputSlip() {}
+
+// ( x^2 *  Y ) / ( x + X )^2
+func (p *Pool) CalcLiquidityFee() {}
+
+// ( x * X * Y ) / ( x + X )^2
+func (p *Pool) CalcTokensEmitted() {}
+
+// x * ( 2X + x) / ( x + X )^2
+func (p *Pool) CalcTradeSlip() {}
+
+func (p *Pool) CalcBalance() {}
+
+// x * ( 2X + x) / ( X * X )
+func (p *Pool) CalcPoolSlip() {}
