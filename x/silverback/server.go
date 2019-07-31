@@ -24,12 +24,12 @@ func NewServer(port string) *server {
 func (s *server) Start() {
 	go func() {
 		log.Info().Msg("Starting Silverback Server....")
-  	http.HandleFunc("/", s.Calc)
+  	http.HandleFunc("/", s.Balances)
 		http.ListenAndServe(":" + s.port, nil)
 	}()
 }
 
-func (s *server) Calc(w http.ResponseWriter, r *http.Request) {
+func (s *server) Balances(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	upgrader := websocket.Upgrader{}
@@ -49,9 +49,9 @@ func (s *server) Calc(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		log.Info().Msgf("Received: %v", err)
+		log.Info().Msgf("Received message: %v", mt)
 
-		data := types.Calc{
+		data := types.Balances{
 			X: rand.Float64(),
 			Y: rand.Float64(),
 			R: rand.Float64(),
