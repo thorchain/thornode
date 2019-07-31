@@ -2,6 +2,7 @@ package silverback
 
 import (
 	"encoding/json"
+	"math"
 
 	log "github.com/rs/zerolog/log"
 
@@ -52,21 +53,33 @@ func (p *Pool) GetBalances() types.Balances {
 }
 
 // ( x * Y ) / ( x + X )
-func (p *Pool) CalcOutput() {}
+func (p *Pool) CalcOutput(x, X, Y float64) float64 {
+	return ((x*Y)/(x+X))
+}
 
 // ( x ) / ( x + X )
-func (p *Pool) CalcOutputSlip() {}
+func (p *Pool) CalcOutputSlip(x, X, Y float64) float64 {
+	return (x/(x+X))
+}
 
 // ( x^2 *  Y ) / ( x + X )^2
-func (p *Pool) CalcLiquidityFee() {}
+func (p *Pool) CalcLiquidityFee(x, X, Y float64) float64 {
+	return ((math.Pow(x, 2)*Y)/math.Pow((x+X), 2))
+}
 
 // ( x * X * Y ) / ( x + X )^2
-func (p *Pool) CalcTokensEmitted() {}
+func (p *Pool) CalcTokensEmitted(x, X, Y float64) float64 {
+	return ((x*X*Y)/math.Pow((x+X), 2))
+}
 
 // x * ( 2X + x) / ( x + X )^2
-func (p *Pool) CalcTradeSlip() {}
+func (p *Pool) CalcTradeSlip(x, X, Y float64) float64 {
+	return (x*((2*X)+x)/(math.Pow((x+X), 2)))
+}
 
 func (p *Pool) CalcBalance() {}
 
 // x * ( 2X + x) / ( X * X )
-func (p *Pool) CalcPoolSlip() {}
+func (p *Pool) CalcPoolSlip(x, X, Y float64) float64 {
+	return (x *((2*X)+x)/(X*X))
+}
