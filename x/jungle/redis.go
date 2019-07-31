@@ -1,11 +1,15 @@
 package jungle
 
-import "github.com/go-redis/redis"
+import (
+	"os"
+
+	"github.com/go-redis/redis"
+)
 
 func RedisClient() *redis.Client {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
+		Addr:     os.Getenv("REDIS_URL"),
+		Password: os.Getenv("REDIS_PASSWORD"),
 		DB:       0,
 	})
 
