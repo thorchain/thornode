@@ -6,23 +6,25 @@ import (
 
 // MsgSwap defines a MsgSwap message
 type MsgSwap struct {
-	SourceTicker string         `json:"source_ticker"` // source token
-	TargetTicker string         `json:"target_ticker"`
-	Requester    string         `json:"requester"`
-	Destination  string         `json:"destination"`
-	Amount       string         `json:"amount"`
-	Owner        sdk.AccAddress `json:"owner"`
+	RequestTxHash string         `json:"request_tx_hash"` // Request transaction hash on Binance chain
+	SourceTicker  string         `json:"source_ticker"`   // source token
+	TargetTicker  string         `json:"target_ticker"`   // target token
+	Requester     string         `json:"requester"`       // request address on Binance chain
+	Destination   string         `json:"destination"`     // destination , not sure what we use it for
+	Amount        string         `json:"amount"`          // amount of token to swap
+	Owner         sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSwap is a constructor function for MsgSwap
-func NewMsgSwap(source, target, amount, requester, destination string, owner sdk.AccAddress) MsgSwap {
+func NewMsgSwap(requestTxHash, source, target, amount, requester, destination string, owner sdk.AccAddress) MsgSwap {
 	return MsgSwap{
-		SourceTicker: source,
-		TargetTicker: target,
-		Amount:       amount,
-		Requester:    requester,
-		Destination:  destination,
-		Owner:        owner,
+		RequestTxHash: requestTxHash,
+		SourceTicker:  source,
+		TargetTicker:  target,
+		Amount:        amount,
+		Requester:     requester,
+		Destination:   destination,
+		Owner:         owner,
 	}
 }
 
@@ -34,6 +36,9 @@ func (msg MsgSwap) Type() string { return "set_swap" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSwap) ValidateBasic() sdk.Error {
+	if len(msg.RequestTxHash) == 0 {
+		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
+	}
 	if len(msg.SourceTicker) == 0 {
 		return sdk.ErrUnknownRequest("Swap Source Ticker cannot be empty")
 	}

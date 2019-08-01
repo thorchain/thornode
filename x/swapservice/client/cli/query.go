@@ -25,6 +25,7 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdStakerPoolStruct(storeKey, cdc),
 		GetCmdPoolStakerStruct(storeKey, cdc),
 		GetCmdPoolIndex(storeKey, cdc),
+		GetCmdSwapRecord(storeKey, cdc),
 	)...)
 	return swapserviceQueryCmd
 }
@@ -133,6 +134,26 @@ func GetCmdPoolIndex(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			var out types.PoolIndex
 			cdc.MustUnmarshalJSON(res, &out)
 			cmd.Println(out)
+			return nil
+		},
+	}
+}
+
+// GetSwapRecord query a swap record
+func GetCmdSwapRecord(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "swaprecord [requestTxHash]",
+		Short: "swaprecord",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			requestTxHash := args[0]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/swaprecord/%s", queryRoute, requestTxHash), nil)
+			if err != nil {
+				cmd.Println("could not get query swaprecord")
+				return nil
+			}
+			cmd.Println(string(res))
 			return nil
 		},
 	}

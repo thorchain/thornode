@@ -31,7 +31,7 @@ func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) 
 	}
 }
 
-// Gets the entire PoolStruct metadata struct for a pool ID
+// GetPoolStruct get the entire PoolStruct metadata struct for a pool ID
 func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
 	if !strings.HasPrefix(poolID, types.PoolDataKeyPrefix) {
 		poolID = types.PoolDataKeyPrefix + poolID
@@ -196,12 +196,6 @@ func (k Keeper) SetPoolStaker(ctx sdk.Context, poolID string, ps types.PoolStake
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", poolStakerKey, ps))
 	result := k.cdc.MustMarshalBinaryBare(ps)
 	store.Set([]byte(poolStakerKey), result)
-	var ps1 types.PoolStaker
-	buf := store.Get([]byte(poolStakerKey))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &ps1); nil != err {
-		ctx.Logger().Error("fail to unmarshal poolstaker", err)
-	}
-	fmt.Printf("poolstaker , reverse:%s", ps1)
 }
 
 // GetStakerPool get the stakerpool from key value store
@@ -218,7 +212,6 @@ func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID string) (types.StakerPoo
 		ctx.Logger().Error("fail to unmarshal stakerpool", err)
 		return types.StakerPool{}, errors.Wrap(err, "fail to unmarshal stakerpool")
 	}
-	fmt.Printf("%q", ps)
 	return ps, nil
 }
 
@@ -228,4 +221,57 @@ func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID string, sp types.StakerP
 	stakerPoolKey := types.StakerPoolKeyPrefix + stakerID
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", stakerPoolKey, sp))
 	store.Set([]byte(stakerPoolKey), k.cdc.MustMarshalBinaryBare(sp))
+}
+
+// SetSwapRecord save the swap record to store
+func (k Keeper) SetSwapRecord(ctx sdk.Context, sr SwapRecord) error {
+	store := ctx.KVStore(k.storeKey)
+	swapRecordKey := swapRecordKeyPrefix + sr.RequestTxHash
+	ctx.Logger().Debug("upsert swaprecord", "key", swapRecordKey)
+	store.Set([]byte(swapRecordKey), k.cdc.MustMarshalBinaryBare(sr))
+	return nil
+}
+
+// GetSwapRecord retrieve the swap record from data store.
+func (k Keeper) GetSwapRecord(ctx sdk.Context, requestTxHash string) (SwapRecord, error) {
+	if isEmptyString(requestTxHash) {
+		return SwapRecord{}, errors.New("request tx hash is empty")
+	}
+	store := ctx.KVStore(k.storeKey)
+	swapRecordKey := swapRecordKeyPrefix + requestTxHash
+	ctx.Logger().Debug("get swap record", "key", swapRecordKey)
+	if !store.Has([]byte(swapRecordKey)) {
+		ctx.Logger().Debug("record not found", "key", swapRecordKey)
+		return SwapRecord{
+			RequestTxHash: requestTxHash,
+		}, nil
+	}
+	var sw SwapRecord
+	buf := store.Get([]byte(swapRecordKey))
+	if err := k.cdc.UnmarshalBinaryBare(buf, &sw); nil != err {
+		return SwapRecord{}, errors.Wrap(err, "fail to unmarshal SwapRecord")
+	}
+	return sw, nil
+}
+
+// UpdateSwapRecordPayTxHash update the swap record with the given paytxhash
+func (k Keeper) UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash string) error {
+	if isEmptyString(requestTxHash) {
+		return errors.New("request tx hash is empty")
+	}
+	if isEmptyString(payTxHash) {
+		return errors.New("pay tx hash is empty")
+	}
+	sr, err := k.GetSwapRecord(ctx, requestTxHash)
+	if nil != err {
+		return errors.Wrapf(err, "fail to get swap record with request hash:%s", requestTxHash)
+	}
+	sr.PayTxHash = payTxHash
+	return k.SetSwapRecord(ctx, sr)
+}
+
+// GetSwapRecordIterator only iterate swap record
+func (k Keeper) GetSwapRecordIterator(ctx sdk.Context) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIterator(store, []byte(swapRecordKeyPrefix))
 }

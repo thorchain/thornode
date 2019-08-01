@@ -79,16 +79,16 @@ func getTestSwap() *cobra.Command {
 	}
 
 	testSwapCmd := &cobra.Command{
-		Use:   "swap [source] [target] [amount] [requester] [destination]",
+		Use:   "swap [requestTxHash] [source] [target] [amount] [requester] [destination]",
 		Short: "swap coins",
-		Args:  cobra.ExactArgs(5),
+		Args:  cobra.ExactArgs(6),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clictx := getCliContext()
 			sb, err := exchange.NewStatechainBridge(clictx)
 			if nil != err {
 				return errors.Wrap(err, "fail to create statechain bridge")
 			}
-			txHash, err := sb.SendSwap(args[0], args[1], args[2], args[3], args[4], clictx.GetFromAddress(), "welcome@1", "")
+			txHash, err := sb.SendSwap(args[0], args[1], args[2], args[3], args[4], args[5], clictx.GetFromAddress(), "welcome@1", "")
 			if nil != err {
 				return errors.Wrap(err, "fail to send tx to statechain")
 			}
