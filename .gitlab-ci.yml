@@ -10,13 +10,13 @@ cache:
 
 stages:
   - build
-  - lint
   - test
+  - install
 
 unit_tests:
   stage: test
   script:
-    - make test
+    - go test ./...
 
 lint_code:
   stage: test
@@ -26,4 +26,9 @@ lint_code:
 build:
   stage: build
   script:
-    - make build
+    - go build ./...
+
+install:
+  stage: install
+  script:
+    - make install
