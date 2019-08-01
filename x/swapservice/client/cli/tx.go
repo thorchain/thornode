@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -26,6 +27,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdSetPoolData(cdc),
 		GetCmdSetStakeData(cdc),
 		GetCmdSwap(cdc),
+		GetCmdSwapComplete(cdc),
 		GetCmdUnstake(cdc),
 	)...)
 
@@ -73,16 +75,35 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdSwap is the CLI command for swapping tokens
-func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
+// GetCmdSwapComplete command to send MsgSwapComplete Message
+func GetCmdSwapComplete(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-swap [source] [target] [amount] [requester] [destination]",
-		Short: "Stake coins",
-		Args:  cobra.ExactArgs(5),
+		Use:   "set-swap-complete [requestTxHash] [payTxHash]",
+		Short: "Swap Complete",
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			msg := types.NewMsgSwap(args[0], args[1], args[2], args[3], args[4], cliCtx.GetFromAddress())
+			msg := types.NewMsgSwapComplete(args[0], args[1], cliCtx.GetFromAddress())
+			err := msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdSwap is the CLI command for swapping tokens
+func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "set-swap [requestTxHash] [source] [target] [amount] [requester] [destination]",
+		Short: "Swap coins",
+		Args:  cobra.ExactArgs(6),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			msg := types.NewMsgSwap(args[0], args[1], args[2], args[3], args[4], args[5], cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
