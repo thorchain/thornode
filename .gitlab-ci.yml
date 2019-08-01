@@ -2,11 +2,7 @@ image: golang:1.11
 
 cache:
   paths:
-    - /apt-cache
-    - /go/src/github.com
-    - /go/src/golang.org
-    - /go/src/google.golang.org
-    - /go/src/gopkg.in
+    - .cache
 
 before_script:
   - mkdir -p .cache
@@ -20,8 +16,6 @@ stages:
 unit_tests:
   stage: test
   script:
-    - mkdir -p .cache
-    - export GOPATH="$CI_PROJECT_DIR/.cache"
     - go test ./...
 
 lint_code:
