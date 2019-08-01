@@ -14,7 +14,7 @@ type GenesisState struct {
 	PoolStructRecords []PoolStruct `json:"poolstruct_records"`
 }
 
-func NewGenesisState(pools []PoolStruct, accs []AccStruct) GenesisState {
+func NewGenesisState(pools []PoolStruct) GenesisState {
 	return GenesisState{
 		PoolStructRecords: pools,
 	}
