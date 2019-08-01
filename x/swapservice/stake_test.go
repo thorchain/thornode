@@ -1,12 +1,15 @@
 package swapservice
 
 import (
-	"testing"
-
 	"github.com/pkg/errors"
+	. "gopkg.in/check.v1"
 )
 
-func TestCalculatePoolUnits(t *testing.T) {
+type StakeSuite struct{}
+
+var _ = Suite(&StakeSuite{})
+
+func (s StakeSuite) TestCalculatePoolUnits(c *C) {
 	inputs := []struct {
 		name         string
 		oldPoolUnits float64
@@ -71,33 +74,15 @@ func TestCalculatePoolUnits(t *testing.T) {
 			expectedErr:  nil,
 		},
 	}
+
 	for _, item := range inputs {
-		t.Run(item.name, func(st *testing.T) {
-			poolUnits, stakerUnits, err := calculatePoolUnits(item.oldPoolUnits, item.poolRune, item.poolToken, item.stakeRune, item.stakeToken)
-			if nil != item.expectedErr {
-				if nil == err {
-					t.Errorf("we are expecting %s, however we got nil", item.expectedErr)
-					return
-				}
-				if item.expectedErr.Error() != err.Error() {
-					t.Errorf("we are expecting %s, however we got %s", item.expectedErr, err)
-					return
-				}
-				return
-			}
-			if err != nil {
-				t.Errorf("we are not expecting err, however we got %s", err)
-				return
-			}
-			t.Log("poolunits", poolUnits)
-			if round(item.poolUnits) != round(poolUnits) {
-				t.Errorf("we are expecting poolUnits to be %f however we got %f ", item.poolUnits, poolUnits)
-				return
-			}
-			if round(item.stakerUnits) != round(stakerUnits) {
-				t.Errorf("we are expecting staker units to be %f however we got %f ", item.stakerUnits, stakerUnits)
-				return
-			}
-		})
+		poolUnits, stakerUnits, err := calculatePoolUnits(item.oldPoolUnits, item.poolRune, item.poolToken, item.stakeRune, item.stakeToken)
+		if item.expectedErr == nil {
+			c.Assert(err, IsNil)
+		} else {
+			c.Assert(err.Error(), Equals, item.expectedErr.Error())
+		}
+		c.Check(round(item.poolUnits), Equals, round(poolUnits))
+		c.Check(round(item.stakerUnits), Equals, round(stakerUnits))
 	}
 }

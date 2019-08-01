@@ -1,12 +1,15 @@
 package swapservice
 
 import (
-	"testing"
-
 	"github.com/pkg/errors"
+	. "gopkg.in/check.v1"
 )
 
-func TestCalculateUnstake(t *testing.T) {
+type UnstakeSuite struct{}
+
+var _ = Suite(&UnstakeSuite{})
+
+func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 	inputs := []struct {
 		name                  string
 		poolUnit              float64
@@ -94,36 +97,16 @@ func TestCalculateUnstake(t *testing.T) {
 		},
 		// TOOD add more cases in
 	}
+
 	for _, item := range inputs {
-		t.Run(item.name, func(st *testing.T) {
-			withDrawRune, withDrawToken, unitAfter, err := calculateUnstake(item.poolUnit, item.poolRune, item.poolToken, item.stakerUnit, item.percentage)
-			if nil != item.expectedErr {
-				if nil == err {
-					t.Errorf("we are expecting %s, however we got nil", item.expectedErr)
-					return
-				}
-				if item.expectedErr.Error() != err.Error() {
-					t.Errorf("we are expecting %s, however we got %s", item.expectedErr, err)
-					return
-				}
-				return
-			}
-			if err != nil {
-				t.Errorf("we are not expecting err, however we got %s", err)
-				return
-			}
-			if round(item.expectedWithdrawRune) != withDrawRune {
-				t.Errorf("expected withdraw rune is : %f, however we got : %f", item.expectedWithdrawRune, withDrawRune)
-				return
-			}
-			if round(item.expectedWithdrawToken) != withDrawToken {
-				t.Errorf("expected withdraw token is : %f, however we got : %f", item.expectedWithdrawToken, withDrawToken)
-				return
-			}
-			if round(item.expectedUnitLeft) != unitAfter {
-				t.Errorf("expected poolunit after withdraw is : %f, however we got : %f", item.expectedUnitLeft, unitAfter)
-				return
-			}
-		})
+		withDrawRune, withDrawToken, unitAfter, err := calculateUnstake(item.poolUnit, item.poolRune, item.poolToken, item.stakerUnit, item.percentage)
+		if item.expectedErr == nil {
+			c.Assert(err, IsNil)
+		} else {
+			c.Assert(err.Error(), Equals, item.expectedErr.Error())
+		}
+		c.Check(round(item.expectedWithdrawRune), Equals, withDrawRune)
+		c.Check(round(item.expectedWithdrawToken), Equals, withDrawToken)
+		c.Check(round(item.expectedUnitLeft), Equals, unitAfter)
 	}
 }

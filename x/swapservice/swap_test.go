@@ -1,8 +1,7 @@
 package swapservice
 
 import (
-	"math"
-	"testing"
+	. "gopkg.in/check.v1"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -15,7 +14,11 @@ import (
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
-func TestSwap(t *testing.T) {
+type SwapSuite struct{}
+
+var _ = Suite(&SwapSuite{})
+
+func (s SwapSuite) TestSwap(c *C) {
 	poolStorage := mocks.MockPoolStorage{}
 	key := sdk.NewKVStoreKey("test")
 	db := dbm.NewMemDB()
@@ -31,7 +34,7 @@ func TestSwap(t *testing.T) {
 		requester    string
 		destination  string
 		returnAmount string
-		err          error
+		expectedErr  error
 	}{
 		{
 			name:         "empty-source",
@@ -41,7 +44,7 @@ func TestSwap(t *testing.T) {
 			requester:    "tester",
 			destination:  "whatever",
 			returnAmount: "0",
-			err:          errors.New("source is empty"),
+			expectedErr:  errors.New("source is empty"),
 		},
 		{
 			name:         "empty-target",
@@ -51,7 +54,7 @@ func TestSwap(t *testing.T) {
 			requester:    "tester",
 			destination:  "whatever",
 			returnAmount: "0",
-			err:          errors.New("target is empty"),
+			expectedErr:  errors.New("target is empty"),
 		},
 		{
 			name:         "empty-amount",
@@ -61,7 +64,7 @@ func TestSwap(t *testing.T) {
 			requester:    "tester",
 			destination:  "whatever",
 			returnAmount: "0",
-			err:          errors.New("amount is empty"),
+			expectedErr:  errors.New("amount is empty"),
 		},
 		{
 			name:         "empty-requester",
@@ -71,7 +74,7 @@ func TestSwap(t *testing.T) {
 			requester:    "",
 			destination:  "whatever",
 			returnAmount: "0",
-			err:          errors.New("requester is empty"),
+			expectedErr:  errors.New("requester is empty"),
 		},
 		{
 			name:         "empty-destination",
@@ -81,7 +84,7 @@ func TestSwap(t *testing.T) {
 			requester:    "tester",
 			destination:  "",
 			returnAmount: "0",
-			err:          errors.New("destination is empty"),
+			expectedErr:  errors.New("destination is empty"),
 		},
 		{
 			name:         "pool-not-exist",
@@ -91,7 +94,7 @@ func TestSwap(t *testing.T) {
 			requester:    "tester",
 			destination:  "don'tknow",
 			returnAmount: "0",
-			err:          errors.New("pool-NOTEXIST doesn't exist"),
+			expectedErr:  errors.New("pool-NOTEXIST doesn't exist"),
 		},
 		{
 			name:         "pool-not-exist-1",
@@ -101,7 +104,7 @@ func TestSwap(t *testing.T) {
 			requester:    "tester",
 			destination:  "don'tknow",
 			returnAmount: "0",
-			err:          errors.New("pool-NOTEXIST doesn't exist"),
+			expectedErr:  errors.New("pool-NOTEXIST doesn't exist"),
 		},
 		{
 			name:         "swap",
@@ -111,7 +114,7 @@ func TestSwap(t *testing.T) {
 			requester:    "tester",
 			destination:  "don'tknow",
 			returnAmount: "4.53514739",
-			err:          nil,
+			expectedErr:  nil,
 		},
 		{
 			name:         "swap",
@@ -121,35 +124,21 @@ func TestSwap(t *testing.T) {
 			requester:    "tester",
 			destination:  "don'tknow",
 			returnAmount: "4.15017810",
-			err:          nil,
+			expectedErr:  nil,
 		},
 	}
 	for _, item := range inputs {
-		t.Run(item.name, func(st *testing.T) {
-			amount, err := swap(ctx, poolStorage, item.source, item.target, item.amount, item.requester, item.destination)
-			if nil != item.err {
-				if err == nil {
-					t.Errorf("we expect err :%s , however we didn't get it", item.err)
-					return
-				}
-				if err.Error() != item.err.Error() {
-					t.Errorf("we expect err : %s , however we got %s ", item.err, err)
-					return
-				}
-				return
-			}
-			if item.err == nil && err != nil {
-				t.Errorf("we are not expecting err, however we got :%s ", err)
-				return
-			}
-			if item.returnAmount != amount {
-				t.Errorf("we expected the return amonut to be %s , however we got %s", item.amount, amount)
-			}
-		})
-
+		amount, err := swap(ctx, poolStorage, item.source, item.target, item.amount, item.requester, item.destination)
+		if item.expectedErr == nil {
+			c.Assert(err, IsNil)
+		} else {
+			c.Assert(err.Error(), Equals, item.expectedErr.Error())
+		}
+		c.Check(item.returnAmount, Equals, amount)
 	}
 }
-func TestSwapCalculation(t *testing.T) {
+
+func (s SwapSuite) TestSwapCalculation(c *C) {
 	inputs := []struct {
 		name              string
 		source            string
@@ -159,7 +148,7 @@ func TestSwapCalculation(t *testing.T) {
 		runeBalanceAfter  float64
 		tokenBalanceAfter float64
 		amountToReturn    float64
-		err               error
+		expectedErr       error
 	}{
 		{
 			name:              "negative-balance-rune",
@@ -170,7 +159,7 @@ func TestSwapCalculation(t *testing.T) {
 			runeBalanceAfter:  105.0,
 			tokenBalanceAfter: 95.46,
 			amountToReturn:    4.54,
-			err:               errors.New("invalid balance"),
+			expectedErr:       errors.New("invalid balance"),
 		},
 		{
 			name:              "zero-balance-rune",
@@ -181,7 +170,7 @@ func TestSwapCalculation(t *testing.T) {
 			runeBalanceAfter:  105.0,
 			tokenBalanceAfter: 95.46,
 			amountToReturn:    4.54,
-			err:               errors.New("invalid balance"),
+			expectedErr:       errors.New("invalid balance"),
 		},
 		{
 			name:              "negative-balance-token",
@@ -192,7 +181,7 @@ func TestSwapCalculation(t *testing.T) {
 			runeBalanceAfter:  105.0,
 			tokenBalanceAfter: 95.46,
 			amountToReturn:    4.54,
-			err:               errors.New("invalid balance"),
+			expectedErr:       errors.New("invalid balance"),
 		},
 		{
 			name:              "zero-balance-token",
@@ -203,7 +192,7 @@ func TestSwapCalculation(t *testing.T) {
 			runeBalanceAfter:  105.0,
 			tokenBalanceAfter: 95.46,
 			amountToReturn:    4.54,
-			err:               errors.New("invalid balance"),
+			expectedErr:       errors.New("invalid balance"),
 		},
 		{
 			name:              "negative-amount",
@@ -214,7 +203,7 @@ func TestSwapCalculation(t *testing.T) {
 			runeBalanceAfter:  105.0,
 			tokenBalanceAfter: 95.46,
 			amountToReturn:    4.54,
-			err:               errors.New("amount is invalid"),
+			expectedErr:       errors.New("amount is invalid"),
 		},
 		{
 			name:              "invalid-amount-0",
@@ -225,7 +214,7 @@ func TestSwapCalculation(t *testing.T) {
 			runeBalanceAfter:  105.0,
 			tokenBalanceAfter: 95.46,
 			amountToReturn:    4.54,
-			err:               errors.New("amount is invalid"),
+			expectedErr:       errors.New("amount is invalid"),
 		},
 		{
 			name:              "normal-rune",
@@ -270,29 +259,14 @@ func TestSwapCalculation(t *testing.T) {
 	}
 
 	for _, item := range inputs {
-		t.Run(item.name, func(st *testing.T) {
-			r, t, a, err := calculateSwap(item.source, item.runeBalance, item.tokenBalance, item.amountToSwap)
-			if item.err != nil {
-				if err == nil {
-					st.Errorf("expected err: %s, however we didn't get it", item.err)
-					return
-				}
-				if item.err.Error() != err.Error() {
-					st.Errorf("we expected err:%s ,however we got %s ", item.err, err)
-					return
-				}
-				return
-			}
-			if item.err == nil && err != nil {
-				st.Errorf("we are not expecting error , however we got :%s", err)
-				return
-			}
-			if round(r) != item.runeBalanceAfter || round(t) != item.tokenBalanceAfter || round(a) != item.amountToReturn {
-				st.Errorf("expected rune balance after: %f,token balance:%f ,amount:%f, however we got rune balance:%f,token balance:%f,amount:%f", item.runeBalanceAfter, item.tokenBalanceAfter, item.amountToReturn, r, t, a)
-			}
-		})
+		r, t, a, err := calculateSwap(item.source, item.runeBalance, item.tokenBalance, item.amountToSwap)
+		if item.expectedErr == nil {
+			c.Assert(err, IsNil)
+			c.Check(round(r), Equals, item.runeBalanceAfter)
+			c.Check(round(t), Equals, item.tokenBalanceAfter)
+			c.Check(round(a), Equals, item.amountToReturn)
+		} else {
+			c.Assert(err.Error(), Equals, item.expectedErr.Error())
+		}
 	}
-}
-func round(input float64) float64 {
-	return math.Round(input*100) / 100
 }
