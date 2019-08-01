@@ -57,3 +57,21 @@ func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, poolID string) (types.
 func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, poolID string, ps types.PoolStaker) {
 
 }
+func (mps MockPoolStorage) SetSwapRecord(ctx sdk.Context, sr types.SwapRecord) error {
+	if strings.EqualFold(sr.RequestTxHash, "ASKFORERROR") {
+		return errors.New("you asked for it")
+	}
+	return nil
+}
+func (mps MockPoolStorage) GetSwapRecord(ctx sdk.Context, requestTxHash string) (types.SwapRecord, error) {
+	if strings.EqualFold(requestTxHash, "ASKFORERROR") {
+		return types.SwapRecord{}, errors.New("you asked for it")
+	}
+	return types.SwapRecord{}, nil
+}
+func (mps MockPoolStorage) UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash string) error {
+	if strings.EqualFold(requestTxHash, "ASKFORERROR") {
+		return errors.New("you ask for it")
+	}
+	return nil
+}
