@@ -11,12 +11,14 @@ import (
 
 type Server struct {
 	Binance Binance
+	Pool Pool
 	Port string
 }
 
-func NewServer(binance Binance) *Server {
+func NewServer(binance Binance, pool Pool) *Server {
 	return &Server{
 		Binance: binance,
+		Pool: pool,
 		Port: os.Getenv("PORT"),
 	}
 }

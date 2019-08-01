@@ -15,13 +15,15 @@ import (
 )
 
 type Client struct {
-	PongWait time.Duration
 	Binance Binance
+	Pool Pool
+	PongWait time.Duration
 }
 
-func NewClient(binance Binance) *Client {
+func NewClient(binance Binance, pool Pool) *Client {
 	return &Client{
 		Binance: binance,
+		Pool: pool,
 		PongWait: 30 * time.Second,
 	}
 }
@@ -131,39 +133,46 @@ func (c *Client) ParseEvents(ch chan []byte) {
 	}()
 }
 
-func (c *Client) ProcessTxn(fromAddress string, symbol string, amount string) {
-	pool := NewPool(c.Binance.PoolAddress)
-	balances := pool.GetBal() 
-
-	if symbol != pool.X {
-		return
-	}
-
+func (c *Client) ProcessTxn(fromAddress, symbol, amount string) {
 	x, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
 		log.Fatal().Msgf("Error: %v", err)
 	}
 
-	X, err := strconv.ParseFloat(balances.X, 64)
-	if err != nil {
-		log.Fatal().Msgf("Error: %v", err)
-	}
+	X, Y, txnAsset := c.CalcVars(symbol, amount)
 
-	Y, err := strconv.ParseFloat(balances.Y, 64)
-	if err != nil {
-		log.Fatal().Msgf("Error: %v", err)
-	}
+	log.Info().Msgf("CalcOutput: %v", c.Pool.CalcOutput(x, X, Y))
+	log.Info().Msgf("CalcOutputSlip: %v", c.Pool.CalcOutputSlip(x, X))
+	log.Info().Msgf("CalcLiquidityFee: %v", c.Pool.CalcLiquidityFee(x, X, Y))
 
-	log.Info().Msgf("CalcOutput: %v", pool.CalcOutput(x, X, Y))
-	log.Info().Msgf("CalcOutputSlip: %v", pool.CalcOutputSlip(x, X))
-	log.Info().Msgf("CalcLiquidityFee: %v", pool.CalcLiquidityFee(x, X, Y))
-
-	emitTokens := pool.CalcTokensEmitted(x, X, Y)
+	emitTokens := c.Pool.CalcTokensEmitted(x, X, Y)
 	log.Info().Msgf("CalcTokensEmitted: %v", emitTokens)
-	log.Info().Msgf("CalcTradeSlip: %v", pool.CalcTradeSlip(x, X, Y))
-	log.Info().Msgf("CalcPoolSlip: %v", pool.CalcPoolSlip(x, X, Y))
+	log.Info().Msgf("CalcTradeSlip: %v", c.Pool.CalcTradeSlip(x, X, Y))
+	log.Info().Msgf("CalcPoolSlip: %v", c.Pool.CalcPoolSlip(x, X, Y))
 
-	c.Binance.SendToken(fromAddress, pool.Y, int64(emitTokens * 100000000))
+	c.Binance.SendToken(fromAddress, txnAsset, int64(emitTokens * 100000000))
+}
+
+func (c *Client) CalcVars(symbol, amount string) (float64, float64, string) {
+	var (
+		X float64
+		Y float64
+		txnAsset string
+	)
+
+	balances := c.Pool.GetBal()
+
+	if symbol == c.Pool.X {
+		X, _ = strconv.ParseFloat(balances.X, 64)
+		Y, _ = strconv.ParseFloat(balances.Y, 64)
+		txnAsset = c.Pool.X
+	} else if symbol == c.Pool.Y {
+		X, _ = strconv.ParseFloat(balances.Y, 64)
+		Y, _ = strconv.ParseFloat(balances.X, 64)
+		txnAsset = c.Pool.Y
+	}
+
+	return X, Y, txnAsset
 }
 
 func (c *Client) Stop() {
