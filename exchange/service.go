@@ -1,8 +1,6 @@
 package exchange
 
 import (
-	"fmt"
-	"os"
 	"sync"
 
 	"github.com/binance-chain/go-sdk/client"
@@ -10,16 +8,10 @@ import (
 	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/cosmos/cosmos-sdk/client/context"
-	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
-	"google.golang.org/grpc/codes"
 
 	"github.com/jpthor/cosmos-swap/config"
-	st "github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 type Service struct {
@@ -29,6 +21,7 @@ type Service struct {
 	wg     *sync.WaitGroup
 	dc     client.DexClient
 	clictx *context.CLIContext
+	bridge *StatechainBridge
 	quit   chan struct{}
 }
 
@@ -37,11 +30,16 @@ func NewService(clictx *context.CLIContext, cfg config.Settings, ws *Wallets, lo
 	if nil == clictx {
 		return nil, errors.New("invalid clictx")
 	}
+	bridge, err := NewStatechainBridge(clictx)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create statechain bridge")
+	}
 	return &Service{
 		cfg:    cfg,
 		ws:     ws,
 		wg:     &sync.WaitGroup{},
 		clictx: clictx,
+		bridge: bridge,
 		quit:   make(chan struct{}),
 		logger: logger.With().Str("module", "service").Logger(),
 	}, nil
@@ -62,6 +60,7 @@ func (s *Service) Start() error {
 	}
 	return nil
 }
+
 func (s *Service) startProcess(wallet *Bep2Wallet) error {
 	keyManager, err := keys.NewPrivateKeyManager(wallet.PrivateKey)
 	if nil != err {
@@ -84,112 +83,11 @@ func (s *Service) startProcess(wallet *Bep2Wallet) error {
 	}
 	return nil
 }
+
 func (s *Service) receiveOrder(events []*websocket.OrderEvent) {
 	for _, e := range events {
 		s.logger.Info().Msgf("order event:%v \n", e)
 	}
-}
-
-// for the owner address here , something I am not quite sure yet
-// in this service,we might need to keep a map between the sender address of binance chain
-// and the address in statechain, if it doesn't exist, we create it automatically
-// thus we can keep a record of who stake what? and how much
-func (s *Service) Stake(name, ticker, r, token string, owner sdk.AccAddress, passphrase string) error {
-	msg := st.NewMsgSetStakeData(name, ticker, r, token, owner)
-	if err := msg.ValidateBasic(); nil != err {
-		return errors.Wrap(err, "invalid message")
-	}
-	txBldr := auth.NewTxBuilderFromCLI().
-		WithTxEncoder(utils.GetTxEncoder(s.clictx.Codec))
-
-	res, err := completeAndBroadcastTxCLI(txBldr, *s.clictx, []sdk.Msg{msg}, passphrase)
-	if nil != err {
-		return errors.Wrap(err, "fail to send stake")
-	}
-	// success
-	if res.Code == uint32(codes.OK) {
-		return nil
-	}
-	// somthing is wrong, let's find out and print out appropriate messages
-	return errors.New(res.String())
-}
-
-func (s *Service) SendSwap(source, target, amount, requester, destination string, owner sdk.AccAddress, passphrase string) error {
-	// TODO let's add more validations
-	msg := st.NewMsgSwap(source, target, amount, requester, destination, owner)
-	if err := msg.ValidateBasic(); nil != err {
-		return errors.Wrap(err, "invalid swap msg")
-	}
-	txBldr := auth.NewTxBuilderFromCLI().
-		WithTxEncoder(utils.GetTxEncoder(s.clictx.Codec))
-	res, err := completeAndBroadcastTxCLI(txBldr, *s.clictx, []sdk.Msg{msg}, passphrase)
-	if nil != err {
-		return errors.Wrap(err, "fail to send swap")
-	}
-
-	if res.Code == uint32(codes.OK) {
-		return nil
-	}
-	return errors.New(res.String())
-}
-
-func completeAndBroadcastTxCLI(txBldr authtypes.TxBuilder, cliCtx context.CLIContext, msgs []sdk.Msg, passphrase string) (sdk.TxResponse, error) {
-	txBldr, err := utils.PrepareTxBuilder(txBldr, cliCtx)
-	if err != nil {
-		return sdk.TxResponse{}, err
-	}
-
-	fromName := cliCtx.GetFromName()
-
-	if txBldr.SimulateAndExecute() || cliCtx.Simulate {
-		txBldr, err = utils.EnrichWithGas(txBldr, cliCtx, msgs)
-		if err != nil {
-			return sdk.TxResponse{}, err
-		}
-
-		gasEst := utils.GasEstimateResponse{GasEstimate: txBldr.Gas()}
-		_, _ = fmt.Fprintf(os.Stderr, "%s\n", gasEst.String())
-	}
-
-	//if !cliCtx.SkipConfirm {
-	//	stdSignMsg, err := txBldr.BuildSignMsg(msgs)
-	//	if err != nil {
-	//		return err
-	//	}
-	//
-	//	var json []byte
-	//	if viper.GetBool(flags.FlagIndentResponse) {
-	//		json, err = cliCtx.Codec.MarshalJSONIndent(stdSignMsg, "", "  ")
-	//		if err != nil {
-	//			panic(err)
-	//		}
-	//	} else {
-	//		json = cliCtx.Codec.MustMarshalJSON(stdSignMsg)
-	//	}
-	//
-	//	_, _ = fmt.Fprintf(os.Stderr, "%s\n\n", json)
-	//
-	//	buf := bufio.NewReader(os.Stdin)
-	//	ok, err := input.GetConfirmation("confirm transaction before signing and broadcasting", buf)
-	//	if err != nil || !ok {
-	//		_, _ = fmt.Fprintf(os.Stderr, "%s\n", "cancelled transaction")
-	//		return err
-	//	}
-	//}
-	//passphrase, err := ckeys.GetPassphrase(fromName)
-	//if err != nil {
-	//	return sdk.TxResponse{}, err
-	//}
-
-	// build and sign the transaction
-	txBytes, err := txBldr.BuildAndSign(fromName, passphrase, msgs)
-	if err != nil {
-		return sdk.TxResponse{}, err
-	}
-
-	// broadcast to a Tendermint node
-	return cliCtx.BroadcastTx(txBytes)
-
 }
 
 func (s *Service) receiveAccountEvent(e *websocket.AccountEvent) {
@@ -215,6 +113,8 @@ func (s *Service) receiveAccountEvent(e *websocket.AccountEvent) {
 func (s *Service) onAccountEventError(e error) {
 	s.logger.Err(e).Msg("account event error")
 }
+
+// Stop will stop the service gracefully
 func (s *Service) Stop() error {
 	close(s.quit)
 	return nil
