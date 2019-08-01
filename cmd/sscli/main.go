@@ -19,11 +19,6 @@ import (
 	app "github.com/jpthor/cosmos-swap"
 )
 
-const (
-	storeAcc = "acc"
-	storeSS  = "swapservice"
-)
-
 func main() {
 	cobra.EnableCommandSorting = false
 
@@ -59,6 +54,8 @@ func main() {
 		keys.Commands(),
 		client.LineBreak,
 		exchangeCmd(),
+		getTxDetailCmd(),
+		getTestSwap(),
 	)
 
 	executor := cli.PrepareMainCmd(rootCmd, "SS", app.DefaultCLIHome)

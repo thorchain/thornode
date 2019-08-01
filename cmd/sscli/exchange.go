@@ -7,14 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
-	app "github.com/jpthor/cosmos-swap"
 	"github.com/jpthor/cosmos-swap/config"
 	"github.com/jpthor/cosmos-swap/exchange"
 	"github.com/jpthor/cosmos-swap/storage"
@@ -89,24 +87,14 @@ func startExchange(cmd *cobra.Command, args []string) error {
 		return errors.Wrapf(err, "fail to create wallets")
 	}
 
-	clictx := context.NewCLIContext().
-		WithCodec(app.MakeCodec()).
-		WithTrustNode(true).
-		WithSimulation(false).
-		WithGenerateOnly(false).
-		WithBroadcastMode(flags.BroadcastSync)
-
-	clictx.SkipConfirm = true
-	svc, err := exchange.NewService(&clictx, *s, ws, log.Logger)
+	clictx := getCliContext()
+	svc, err := exchange.NewService(clictx, *s, ws, log.Logger)
 	if nil != err {
 		return errors.Wrapf(err, "fail to create service")
 	}
 	if err := svc.Start(); nil != err {
 		log.Error().Err(err).Msg("fail to start")
 	}
-	//if err := svc.Stake("johnny", "BNB", "1", "1", clictx.GetFromAddress(),"welcome@1"); nil != err {
-	//	panic(err)
-	//}
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM)
 	<-ch
