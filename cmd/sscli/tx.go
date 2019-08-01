@@ -46,7 +46,7 @@ func getTxDetail(cmd *cobra.Command, args []string) error {
 	clictx := getCliContext()
 	hashBuf, err := hex.DecodeString(txHash)
 	if nil != err {
-		return errors.Wrapf(err, "fail to decode hash,%s should be hex encoded string")
+		return errors.Wrapf(err, "fail to decode hash,%s should be hex encoded string", txHash)
 	}
 	rt, err := clictx.Client.Tx(hashBuf, true)
 	if nil != err {
