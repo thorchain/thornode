@@ -59,6 +59,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var poolRecords []PoolStruct
 	iterator := k.GetPoolStructDataIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
+		key := string(iterator.Key())
 		var poolstruct PoolStruct
 		poolstruct = k.GetPoolStruct(ctx, key)
 		poolRecords = append(poolRecords, poolstruct)
