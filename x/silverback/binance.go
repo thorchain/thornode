@@ -8,7 +8,6 @@ import (
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/common/types"
-	//ctypes "github.com/binance-chain/go-sdk/common/types"
 	sdk "github.com/binance-chain/go-sdk/client"
 	transaction "github.com/binance-chain/go-sdk/client/transaction"
 )
