@@ -15,9 +15,11 @@ import (
 )
 
 const (
-	stakeData = "stakedata"
-	accData   = "accdata"
-	swapData  = "swapdata"
+	restPoolStruct = "poolstruct"
+	restPoolData   = "pooldata"
+	swapData       = "swapdata"
+	stakeData      = "stakedata"
+	accData        = "accdata"
 )
 
 // TODO add the new features to Restful routes
@@ -25,6 +27,7 @@ const (
 // pool index etc
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storePoolData string) {
+	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}", storePoolData, restPoolStruct), poolStructHandler(cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pools", storePoolData), poolHandler(cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/account/{%s}", storePoolData, accData), accHandler(cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/stake/{%s}", storePoolData, stakeData), stakeHandler(cliCtx, storePoolData)).Methods("GET")
@@ -67,6 +70,20 @@ func setStakeDataHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
+func poolStructHandler(cliCtx context.CLIContext, storePoolData string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[restPoolData]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolstruct/%s", storePoolData, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 
