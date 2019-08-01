@@ -8,6 +8,10 @@ cache:
     - /go/src/google.golang.org
     - /go/src/gopkg.in
 
+before_script:
+  - mkdir -p .cache
+  - export GOPATH="$CI_PROJECT_DIR/.cache"
+
 stages:
   - build
   - test
@@ -16,9 +20,12 @@ stages:
 unit_tests:
   stage: test
   script:
+    - mkdir -p .cache
+    - export GOPATH="$CI_PROJECT_DIR/.cache"
     - go test ./...
 
 lint_code:
+  image: golangci/golangci-lint
   stage: test
   script:
     - make lint
