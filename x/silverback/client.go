@@ -161,14 +161,16 @@ func (c *Client) CalcVars(symbol, amount string) (float64, float64, string) {
 	)
 
 	balances := c.Pool.GetBal()
+	balX, _ := strconv.ParseFloat(balances.X, 64)
+	balY, _ := strconv.ParseFloat(balances.Y, 64)
 
 	if symbol == c.Pool.X {
-		X, _ = strconv.ParseFloat(balances.X, 64)
-		Y, _ = strconv.ParseFloat(balances.Y, 64)
+		X = balX
+		Y = balY
 		txnAsset = c.Pool.Y
 	} else if symbol == c.Pool.Y {
-		X, _ = strconv.ParseFloat(balances.Y, 64)
-		Y, _ = strconv.ParseFloat(balances.X, 64)
+		X = balY
+		Y = balX
 		txnAsset = c.Pool.X
 	}
 
