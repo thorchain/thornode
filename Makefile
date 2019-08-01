@@ -2,26 +2,39 @@ include Makefile.ledger
 all: lint install
 
 install: go.sum
-		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
+		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
 		GO111MODULE=on go mod verify
 
 lint:
-	golangci-lint run
-	find . -pooldata '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -d -s
-	go mod verify
+	@golangci-lint run
+	@go mod verify
 
 test:
-	./scripts/test.sh
+	@go test -mod=readonly ./...
 
-demo:
-	./scripts/demo.sh
+clear:
+	clear
 
-start:
-	./scripts/start.sh
+test-watch: clear
+	@./scripts/watch.bash
+
+build:
+	@go build ./...
+
+start: install start-daemon
+
+start-daemon:
+	skyyd start
+
+start-rest:
+	skyycli rest-server
+
+setup:
+	./scripts/setup.bash
 
 clean:
 	rm -rf ~/.ssd
