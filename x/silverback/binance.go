@@ -8,7 +8,7 @@ import (
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/common/types"
-	ctypes "github.com/binance-chain/go-sdk/common/types"
+	//ctypes "github.com/binance-chain/go-sdk/common/types"
 	sdk "github.com/binance-chain/go-sdk/client"
 	transaction "github.com/binance-chain/go-sdk/client/transaction"
 )
@@ -62,13 +62,14 @@ func (b *Binance) GetAccount() *types.BalanceAccount {
 }
 
 func (b *Binance) SendToken(to string, symbol string, amount int64) *transaction.SendTokenResult {
-	log.Info().Msgf("to: %v, symbol: %v, amount: %v", to, symbol, amount)
-	address := ctypes.AccAddress(to)
-	send, err := b.Client.SendToken([]msg.Transfer{{address, types.Coins{types.Coin{Denom: symbol, Amount: amount}}}}, true)
+	toAddr, _ := types.AccAddressFromBech32(string(types.AccAddress(to)))
+	send, err := b.Client.SendToken([]msg.Transfer{{toAddr, types.Coins{types.Coin{Denom: symbol, Amount: amount}}}}, true)
 
 	if err != nil {
 		log.Error().Msgf("Error: %v", err)
 	}
+
+	log.Info().Msgf("Send: %v", send)
 
 	return send
 }
