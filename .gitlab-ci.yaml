@@ -1,0 +1,29 @@
+image: golang:1.11
+
+cache:
+  paths:
+    - /apt-cache
+    - /go/src/github.com
+    - /go/src/golang.org
+    - /go/src/google.golang.org
+    - /go/src/gopkg.in
+
+stages:
+  - build
+  - lint
+  - test
+
+unit_tests:
+  stage: test
+  script:
+    - make test
+
+lint_code:
+  stage: test
+  script:
+    - make lint
+
+build:
+  stage: build
+  script:
+    - make build
