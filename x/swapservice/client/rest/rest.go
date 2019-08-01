@@ -15,10 +15,9 @@ import (
 )
 
 const (
-	restPoolData = "pooldata"
-	stakeData    = "stakedata"
-	accData      = "accdata"
-	swapData     = "swapdata"
+	stakeData = "stakedata"
+	accData   = "accdata"
+	swapData  = "swapdata"
 )
 
 // TODO add the new features to Restful routes
@@ -97,18 +96,6 @@ func stakeHandler(cliCtx context.CLIContext, storePoolData string) http.HandlerF
 		vars := mux.Vars(r)
 		paramType := vars[stakeData]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stakestruct/%s", storePoolData, paramType), nil)
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
-			return
-		}
-		rest.PostProcessResponse(w, cliCtx, res)
-	}
-}
-func swapRecordHandler(cliCtx context.CLIContext, storePoolData string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		paramType := vars[swapData]
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/swaprecord/%s", storePoolData, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
