@@ -8,10 +8,13 @@ import (
 // PoolDataKeyPrefix used as the key's prefix
 const PoolDataKeyPrefix = "pool-"
 
+// PoolStatus is an indication of what the pool state is
 type PoolStatus int
 
 const (
+	// Active means the pool is active
 	Active PoolStatus = iota
+	// Suspended means we take down the pool temporary
 	Suspended
 )
 
@@ -53,7 +56,7 @@ type PoolStruct struct {
 	Status       string `json:"status"`        // status
 }
 
-// Returns a new PoolStruct
+// NewPoolStruct Returns a new PoolStruct
 func NewPoolStruct() PoolStruct {
 	return PoolStruct{
 		BalanceRune:  "0",

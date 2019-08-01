@@ -19,4 +19,8 @@ type poolStorage interface {
 
 	GetPoolStaker(ctx sdk.Context, poolID string) (types.PoolStaker, error)
 	SetPoolStaker(ctx sdk.Context, poolID string, ps types.PoolStaker)
+
+	SetSwapRecord(ctx sdk.Context, sr SwapRecord) error
+	GetSwapRecord(ctx sdk.Context, requestTxHash string) (SwapRecord, error)
+	UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash string) error
 }

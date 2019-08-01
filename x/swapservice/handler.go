@@ -19,6 +19,8 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgSetStakeData(ctx, keeper, msg)
 		case MsgSwap:
 			return handleMsgSwap(ctx, keeper, msg)
+		case types.MsgSwapComplete:
+			return handleMsgSetSwapComplete(ctx, keeper, msg)
 		case types.MsgSetUnStake:
 			return handleMsgSetUnstake(ctx, keeper, msg)
 		default:
@@ -89,6 +91,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
 		msg.Amount,
 		msg.Requester,
 		msg.Destination,
+		msg.RequestTxHash,
 	) // If so, set the stake data to the value specified in the msg.
 	if err != nil {
 		ctx.Logger().Error("fail to process swap message", "error", err)
@@ -107,6 +110,22 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
 		Code:      sdk.CodeOK,
 		Data:      res,
 		Codespace: "swap",
+	}
+}
+
+// handleMsgSetSwapComplete mark a swap as complete , record the tx hash.
+func handleMsgSetSwapComplete(ctx sdk.Context, keeper Keeper, msg types.MsgSwapComplete) sdk.Result {
+	ctx.Logger().Debug("receive MsgSetSwapComplete", "requestTxHash", msg.RequestTxHash, "paytxhash", msg.PayTxHash)
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid MsgSwapComplete", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+	if err := swapComplete(ctx, keeper, msg.RequestTxHash, msg.PayTxHash); nil != err {
+		ctx.Logger().Error("fail to set swap to complete", "requestTxHash", msg.RequestTxHash, "paytxhash", msg.PayTxHash)
+		return sdk.ErrInternal("fail to mark a swap to complete").Result()
+	}
+	return sdk.Result{
+		Code: sdk.CodeOK,
 	}
 }
 
