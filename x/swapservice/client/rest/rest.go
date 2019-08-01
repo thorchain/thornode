@@ -19,6 +19,7 @@ const (
 	restPoolData = "pooldata"
 	stakeData    = "stakedata"
 	accData      = "accdata"
+	swapData     = "swapdata"
 )
 
 // TODO add the new features to Restful routes
@@ -29,6 +30,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storePoolData stri
 	r.HandleFunc(fmt.Sprintf("/%s/pools", storePoolData), poolHandler(cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/account/{%s}", storePoolData, accData), accHandler(cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/stake/{%s}", storePoolData, stakeData), stakeHandler(cliCtx, storePoolData)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/swaprecord/{%s}", storePoolData, swapData), stakeHandler(cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/stake", storePoolData), setStakeDataHandler(cliCtx)).Methods("PUT")
 }
 
@@ -125,6 +127,18 @@ func stakeHandler(cliCtx context.CLIContext, storePoolData string) http.HandlerF
 		vars := mux.Vars(r)
 		paramType := vars[stakeData]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stakestruct/%s", storePoolData, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+func swapRecordHandler(cliCtx context.CLIContext, storePoolData string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[swapData]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/swaprecord/%s", storePoolData, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return

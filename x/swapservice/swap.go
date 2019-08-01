@@ -12,12 +12,54 @@ import (
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
+// swapRecordKeyPrefix - all swap record store in the datastore need to prefix with this one
+const swapRecordKeyPrefix = `swaprecord-`
+
+// SwapRecord is
+type SwapRecord struct {
+	RequestTxHash   string `json:"request_tx_hash"`  // The TxHash on binance chain represent user send token to the pool
+	SourceTicker    string `json:"source_ticker"`    // Source ticker
+	TargetTicker    string `json:"target_ticker"`    // Target ticker
+	Requester       string `json:"requester"`        // Requester , should be the address on binance chain
+	Destination     string `json:"destination"`      // destination , not sure what it is used right now
+	AmountRequested string `json:"amount_requested"` // amount of source token in
+	AmountPaidBack  string `json:"amount_paid_back"` // amount of target token pay out to user
+	PayTxHash       string `json:"pay_tx_hash"`      // TxHash on binance chain represent our pay to user
+}
+
+// String implement stringer interface
+func (sr SwapRecord) String() string {
+	sb := strings.Builder{}
+	sb.WriteString("request-txhash:" + sr.RequestTxHash)
+	sb.WriteString("source-ticker:" + sr.SourceTicker)
+	sb.WriteString("target-ticker:" + sr.TargetTicker)
+	sb.WriteString("requester-address:" + sr.Requester)
+	sb.WriteString("destination:" + sr.Destination)
+	sb.WriteString("amount:" + sr.AmountRequested)
+	sb.WriteString("amount-pay-to-user:" + sr.AmountPaidBack)
+	return sb.String()
+}
+
+func getSwapRecordFromMsgSwap(ms MsgSwap) SwapRecord {
+	return SwapRecord{
+		RequestTxHash:   ms.RequestTxHash,
+		SourceTicker:    ms.SourceTicker,
+		TargetTicker:    ms.TargetTicker,
+		Requester:       ms.Requester,
+		Destination:     ms.Destination,
+		AmountRequested: ms.Amount,
+	}
+}
+
 func isEmptyString(input string) bool {
 	return strings.TrimSpace(input) == ""
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(ctx sdk.Context, keeper poolStorage, source, target, amount, requester, destination string) error {
+func validateMessage(ctx sdk.Context, keeper poolStorage, source, target, amount, requester, destination, requestTxHash string) error {
+	if isEmptyString(requestTxHash) {
+		return errors.New("request tx hash is empty")
+	}
 	if isEmptyString(source) {
 		return errors.New("source is empty")
 	}
@@ -48,8 +90,8 @@ func validateMessage(ctx sdk.Context, keeper poolStorage, source, target, amount
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, source, target, amount, requester, destination string) (string, error) {
-	if err := validateMessage(ctx, keeper, source, target, amount, requester, destination); nil != err {
+func swap(ctx sdk.Context, keeper poolStorage, source, target, amount, requester, destination, requestTxHash string) (string, error) {
+	if err := validateMessage(ctx, keeper, source, target, amount, requester, destination, requestTxHash); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
 	}
@@ -57,16 +99,33 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target, amount, requester
 
 	source = strings.ToUpper(source)
 	target = strings.ToUpper(target)
-
+	swapRecord := SwapRecord{
+		RequestTxHash:   requestTxHash,
+		SourceTicker:    source,
+		TargetTicker:    target,
+		Requester:       requester,
+		Destination:     destination,
+		AmountRequested: amount,
+	}
 	if isDoubleSwap {
 		runeAmount, err := swapOne(ctx, keeper, source, types.RuneTicker, amount, requester, destination)
 		if err != nil {
 			ctx.Logger().Error(fmt.Sprintf("fail to swap from %s to %s ", source, types.RuneTicker))
 			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, types.RuneTicker)
 		}
-		return swapOne(ctx, keeper, types.RuneTicker, target, runeAmount, requester, destination)
+		tokenAmount, err := swapOne(ctx, keeper, types.RuneTicker, target, runeAmount, requester, destination)
+		swapRecord.AmountPaidBack = tokenAmount
+		if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
+			ctx.Logger().Error("fail to save swap record", "error", err)
+		}
+		return tokenAmount, err
 	}
-	return swapOne(ctx, keeper, source, target, amount, requester, destination)
+	tokenAmount, err := swapOne(ctx, keeper, source, target, amount, requester, destination)
+	swapRecord.AmountPaidBack = tokenAmount
+	if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
+		ctx.Logger().Error("fail to save swap record", "error", err)
+	}
+	return tokenAmount, err
 }
 
 func isRune(ticker string) bool {
@@ -149,4 +208,15 @@ func calculateSwap(source string, balanceRune, balanceToken, amt float64) (float
 		balanceRune = balanceRune - runeAmt
 		return balanceRune, balanceToken, runeAmt, nil
 	}
+}
+
+// swapComplete  mark a swap to be in complete state
+func swapComplete(ctx sdk.Context, keeper poolStorage, requestTxHash, payTxHash string) error {
+	if isEmptyString(requestTxHash) {
+		return errors.New("request tx hash is empty")
+	}
+	if isEmptyString(payTxHash) {
+		return errors.New("pay tx hash is empty")
+	}
+	return keeper.UpdateSwapRecordPayTxHash(ctx, requestTxHash, payTxHash)
 }
