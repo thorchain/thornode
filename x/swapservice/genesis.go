@@ -2,7 +2,6 @@ package swapservice
 
 import (
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -58,14 +57,11 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var poolRecords []PoolStruct
-	iterator := k.GetDatasIterator(ctx)
+	iterator := k.GetPoolStructDataIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
-		key := string(iterator.Key())
-		if strings.HasPrefix(types.PoolDataKeyPrefix, key) {
-			var poolstruct PoolStruct
-			poolstruct = k.GetPoolStruct(ctx, key)
-			poolRecords = append(poolRecords, poolstruct)
-		}
+		var poolstruct PoolStruct
+		poolstruct = k.GetPoolStruct(ctx, key)
+		poolRecords = append(poolRecords, poolstruct)
 	}
 	return GenesisState{
 		PoolStructRecords: poolRecords,
