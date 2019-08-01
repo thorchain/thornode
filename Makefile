@@ -10,7 +10,7 @@ go.sum: go.mod
 		GO111MODULE=on go mod verify
 
 lint:
-	@golangci-lint run
+	@golangci-lint run --deadline=15m
 	@go mod verify
 
 test:
