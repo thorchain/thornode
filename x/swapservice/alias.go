@@ -13,9 +13,7 @@ const (
 var (
 	NewMsgSetPoolData  = types.NewMsgSetPoolData
 	NewPoolStruct      = types.NewPoolStruct
-	NewAccStruct       = types.NewAccStruct
 	NewMsgSetStakeData = types.NewMsgSetStakeData
-	NewStakeStruct     = types.NewStakeStruct
 	NewMsgSwap         = types.NewMsgSwap
 	ModuleCdc          = types.ModuleCdc
 	RegisterCodec      = types.RegisterCodec
@@ -27,9 +25,6 @@ type (
 	MsgSwap            = types.MsgSwap
 	QueryResResolve    = types.QueryResResolve
 	QueryResPoolDatas  = types.QueryResPoolDatas
-	QueryResAccDatas   = types.QueryResAccDatas
 	QueryResStakeDatas = types.QueryResStakeDatas
 	PoolStruct         = types.PoolStruct
-	AccStruct          = types.AccStruct
-	StakeStruct        = types.StakeStruct
 )
