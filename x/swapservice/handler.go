@@ -73,6 +73,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		ctx.Logger().Error("fail to process stake message", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
+	// TODO write staker's info to data
 	return sdk.Result{
 		Code: sdk.CodeOK,
 	}
@@ -90,13 +91,21 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
 		msg.Destination,
 	) // If so, set the stake data to the value specified in the msg.
 	if err != nil {
-		ctx.Logger().Error("fail to process swap message", err)
+		ctx.Logger().Error("fail to process swap message", "error", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-
+	res, err := json.Marshal(struct {
+		Token string `json:"token"`
+	}{
+		Token: amount,
+	})
+	if nil != err {
+		ctx.Logger().Error("fail to encode result to json", "error", err)
+		return sdk.ErrInternal("fail to encode result to json").Result()
+	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,
-		Data:      []byte(amount),
+		Data:      res,
 		Codespace: "swap",
 	}
 }
