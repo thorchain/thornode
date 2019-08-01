@@ -9,7 +9,6 @@ before_script:
   - export GOPATH="$CI_PROJECT_DIR/.cache"
 
 stages:
-  - build
   - test
   - install
 
@@ -23,11 +22,6 @@ lint_code:
   stage: test
   script:
     - make lint
-
-build:
-  stage: build
-  script:
-    - go build ./...
 
 install:
   stage: install
