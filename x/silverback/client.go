@@ -28,7 +28,7 @@ func NewClient(binance Binance) *Client {
 
 func (c *Client) Start() {
 	log.Info().Msg("Starting Silverback Client....")
-	
+
 	conn, err := c.Connect()
 	if err != nil {
 		log.Error().Msgf("There was an error while starting: %v", err)
@@ -95,21 +95,34 @@ func (c *Client) ParseEvents(ch chan []byte) {
 	go func() {
 		for {
 			payload := <-ch
-			var acct types.Account
+			var resp types.Response
 
-			err := json.Unmarshal(payload, &acct)
+			err := json.Unmarshal(payload, &resp)
 			if err != nil {
 				log.Error().Msgf("There was an error while parsing the event: %v", err)
 			}
 
-			log.Info().Msgf("Event received: %v", acct)
+			switch resp.Stream {
+			case "accounts":
+				var acct types.Account
 
-			if acct.Stream == "transfers" {
-				if acct.Data.Event == "outboundTransferInfo" {
-					fromAddress := acct.Data.From
-					for _, tx := range acct.Data.T {
-						for _, coin := range tx.C {
-							c.ProcessTxn(fromAddress, coin.Asset, coin.A)
+				json.Unmarshal(payload, &acct)
+				if acct.Data.EventType == "outboundAccountInfo" {
+					SyncBal(c.Binance)
+				}
+			case "transfers":
+				var tnsfr types.Transfer
+				json.Unmarshal(payload, &tnsfr)
+
+				if tnsfr.Data.FromAddr != c.Binance.PoolAddress {
+					log.Info().Msgf("Event received: %s", string(payload))
+
+					if tnsfr.Data.EventType == "outboundTransferInfo" {
+						fromAddr := tnsfr.Data.FromAddr
+						for _, tx := range tnsfr.Data.T {
+							for _, coin := range tx.Coins {
+								c.ProcessTxn(fromAddr, coin.Asset, coin.Amount)
+							}
 						}
 					}
 				}
@@ -142,7 +155,7 @@ func (c *Client) ProcessTxn(fromAddress string, symbol string, amount string) {
 	}
 
 	log.Info().Msgf("CalcOutput: %v", pool.CalcOutput(x, X, Y))
-	log.Info().Msgf("CalcOutputSlip: %v", pool.CalcOutputSlip(x, X, Y))
+	log.Info().Msgf("CalcOutputSlip: %v", pool.CalcOutputSlip(x, X))
 	log.Info().Msgf("CalcLiquidityFee: %v", pool.CalcLiquidityFee(x, X, Y))
 
 	emitTokens := pool.CalcTokensEmitted(x, X, Y)
