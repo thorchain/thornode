@@ -224,7 +224,7 @@ func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID string, sp types.StakerP
 }
 
 // SetSwapRecord save the swap record to store
-func (k Keeper) SetSwapRecord(ctx sdk.Context, sr SwapRecord) error {
+func (k Keeper) SetSwapRecord(ctx sdk.Context, sr types.SwapRecord) error {
 	store := ctx.KVStore(k.storeKey)
 	swapRecordKey := swapRecordKeyPrefix + sr.RequestTxHash
 	ctx.Logger().Debug("upsert swaprecord", "key", swapRecordKey)
@@ -233,23 +233,23 @@ func (k Keeper) SetSwapRecord(ctx sdk.Context, sr SwapRecord) error {
 }
 
 // GetSwapRecord retrieve the swap record from data store.
-func (k Keeper) GetSwapRecord(ctx sdk.Context, requestTxHash string) (SwapRecord, error) {
+func (k Keeper) GetSwapRecord(ctx sdk.Context, requestTxHash string) (types.SwapRecord, error) {
 	if isEmptyString(requestTxHash) {
-		return SwapRecord{}, errors.New("request tx hash is empty")
+		return types.SwapRecord{}, errors.New("request tx hash is empty")
 	}
 	store := ctx.KVStore(k.storeKey)
 	swapRecordKey := swapRecordKeyPrefix + requestTxHash
 	ctx.Logger().Debug("get swap record", "key", swapRecordKey)
 	if !store.Has([]byte(swapRecordKey)) {
 		ctx.Logger().Debug("record not found", "key", swapRecordKey)
-		return SwapRecord{
+		return types.SwapRecord{
 			RequestTxHash: requestTxHash,
 		}, nil
 	}
-	var sw SwapRecord
+	var sw types.SwapRecord
 	buf := store.Get([]byte(swapRecordKey))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &sw); nil != err {
-		return SwapRecord{}, errors.Wrap(err, "fail to unmarshal SwapRecord")
+		return types.SwapRecord{}, errors.Wrap(err, "fail to unmarshal SwapRecord")
 	}
 	return sw, nil
 }
