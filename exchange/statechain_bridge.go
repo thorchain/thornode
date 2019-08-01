@@ -117,7 +117,7 @@ func (b *StatechainBridge) GetSwapTokenAmountFromHash(hash string) (string, erro
 	}
 	hashBuf, err := hex.DecodeString(hash)
 	if nil != err {
-		return "", errors.Wrapf(err, "fail to decode hash,%s should be hex encoded string")
+		return "", errors.Wrapf(err, "fail to decode hash,%s should be hex encoded string", hash)
 	}
 	rt, err := b.clictx.Client.Tx(hashBuf, true)
 	if nil != err {
