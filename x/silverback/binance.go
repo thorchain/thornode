@@ -7,8 +7,9 @@ import (
 
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
+	"github.com/binance-chain/go-sdk/common/types"
+	ctypes "github.com/binance-chain/go-sdk/common/types"
 	sdk "github.com/binance-chain/go-sdk/client"
-	types "github.com/binance-chain/go-sdk/common/types"
 	transaction "github.com/binance-chain/go-sdk/client/transaction"
 )
 
@@ -17,6 +18,7 @@ type Binance struct {
 	PrivateKey string
 	DexHost string
 	Client sdk.DexClient
+	KeyManager keys.KeyManager
 }
 
 func NewBinance() *Binance {
@@ -46,6 +48,7 @@ func NewBinance() *Binance {
 		PrivateKey: key,
 		DexHost: dexHost,
 		Client: bClient,
+		KeyManager: keyManager,
 	}
 }
 
@@ -60,19 +63,9 @@ func (b *Binance) GetAccount() *types.BalanceAccount {
 
 func (b *Binance) SendToken(to string, symbol string, amount int64) *transaction.SendTokenResult {
 	log.Info().Msgf("to: %v, symbol: %v, amount: %v", to, symbol, amount)
+	address := ctypes.AccAddress(to)
+	send, err := b.Client.SendToken([]msg.Transfer{{address, types.Coins{types.Coin{Denom: symbol, Amount: amount}}}}, true)
 
-	coin := types.Coin{Denom: symbol, Amount: amount}
-	var coins []types.Coin
-	c := append(coins, coin)
-
-	address := types.AccAddress(to)
-
-	transfer := msg.Transfer{ToAddr: address, Coins: c}
-	var transfers []msg.Transfer
-	t := append(transfers, transfer)
-	log.Info().Msgf("Transaction to send: %v", t)
-
-	send, err := b.Client.SendToken(t, true)
 	if err != nil {
 		log.Error().Msgf("Error: %v", err)
 	}
