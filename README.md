@@ -1,6 +1,7 @@
 BEPSwap Statechain
 =======================
 Swaps any two coins on the Binance Exchange on top of the [Cosmos network](cosmos.network)
+[![Build Status](https://gitlab.com/thorchain/bepswap/statechain/badges/master/build.svg)](https://gitlab.com/thorchain/bepswap/statechain/commits/master)
 
 An account can stake coins into a pool that is composed of `ATOM` and any
 other single token. Once a pool has been created by an account(s) staking
