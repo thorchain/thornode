@@ -17,8 +17,6 @@ type Pool struct {
 }
 
 func NewPool(poolAddress string) *Pool {
-	log.Info().Msgf("Initialising pool %s...", poolAddress)
-
 	return &Pool{
 		PoolAddress: poolAddress,
 		X: "RUNE-A1F",
@@ -32,8 +30,6 @@ func (p *Pool) GetBal() types.Balances {
 
 	var balances types.Balances
 	var tokens types.Tokens
-
-	log.Info().Msgf("Data: %v", data)
 
 	err := json.Unmarshal([]byte(data), &tokens)
 	if err != nil {
@@ -58,7 +54,7 @@ func (p *Pool) CalcOutput(x, X, Y float64) float64 {
 }
 
 // ( x ) / ( x + X )
-func (p *Pool) CalcOutputSlip(x, X, Y float64) float64 {
+func (p *Pool) CalcOutputSlip(x, X float64) float64 {
 	return (x/(x+X))
 }
 
@@ -82,4 +78,15 @@ func (p *Pool) CalcBalance() {}
 // x * ( 2X + x) / ( X * X )
 func (p *Pool) CalcPoolSlip(x, X, Y float64) float64 {
 	return (x *((2*X)+x)/(X*X))
+}
+
+func SyncBal(binance Binance) {
+	db := jungle.RedisClient()
+	log.Info().Msgf("Balances: %v", binance.GetAccount().Balances)
+	balances, _ := json.Marshal(binance.GetAccount().Balances)
+
+	err := db.Set("balances", balances, 0).Err()
+	if err != nil {
+		log.Fatal().Msgf("Error: %v", err)
+	}
 }
