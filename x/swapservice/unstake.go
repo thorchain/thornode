@@ -78,7 +78,10 @@ func unstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) (string, s
 	}
 	ctx.Logger().Info("pool before unstake", "pool unit", poolUnits, "balance RUNE", poolRune, "balance token", poolToken)
 	ctx.Logger().Info("staker before withdraw", "staker unit", fStakerUnit)
-	withdrawRune, withDrawToken, unitAfter, err := calculateUnsake(poolUnits, poolRune, poolToken, fStakerUnit, fPercentage)
+	withdrawRune, withDrawToken, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolToken, fStakerUnit, fPercentage)
+	if err != nil {
+		return "0", "0", err
+	}
 	ctx.Logger().Info("client withdraw", "RUNE", withdrawRune, "token", withDrawToken, "units left", unitAfter)
 	// update pool
 	pool.PoolUnits = float64ToString(poolUnits - fStakerUnit + unitAfter)
@@ -111,7 +114,7 @@ func float64ToString(fvalue float64) string {
 	return strconv.FormatFloat(fvalue, 'f', floatPrecision, 64)
 }
 
-func calculateUnsake(poolUnit, poolRune, poolToken, stakerUnit, percentage float64) (float64, float64, float64, error) {
+func calculateUnstake(poolUnit, poolRune, poolToken, stakerUnit, percentage float64) (float64, float64, float64, error) {
 	if poolUnit <= 0 {
 		return 0, 0, 0, errors.New("poolUnits can't be zero or negative")
 	}

@@ -6,7 +6,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func TestCalculateUnsake(t *testing.T) {
+func TestCalculateUnstake(t *testing.T) {
 	inputs := []struct {
 		name                  string
 		poolUnit              float64
@@ -96,7 +96,7 @@ func TestCalculateUnsake(t *testing.T) {
 	}
 	for _, item := range inputs {
 		t.Run(item.name, func(st *testing.T) {
-			withDrawRune, withDrawToken, unitAfter, err := calculateUnsake(item.poolUnit, item.poolRune, item.poolToken, item.stakerUnit, item.percentage)
+			withDrawRune, withDrawToken, unitAfter, err := calculateUnstake(item.poolUnit, item.poolRune, item.poolToken, item.stakerUnit, item.percentage)
 			if nil != item.expectedErr {
 				if nil == err {
 					t.Errorf("we are expecting %s, however we got nil", item.expectedErr)
