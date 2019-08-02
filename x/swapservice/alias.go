@@ -11,20 +11,10 @@ const (
 )
 
 var (
-	NewMsgSetPoolData  = types.NewMsgSetPoolData
-	NewPoolStruct      = types.NewPoolStruct
-	NewMsgSetStakeData = types.NewMsgSetStakeData
-	NewMsgSwap         = types.NewMsgSwap
-	ModuleCdc          = types.ModuleCdc
-	RegisterCodec      = types.RegisterCodec
+	ModuleCdc     = types.ModuleCdc
+	RegisterCodec = types.RegisterCodec
 )
 
 type (
-	MsgSetPoolData     = types.MsgSetPoolData
-	MsgSetStakeData    = types.MsgSetStakeData
-	MsgSwap            = types.MsgSwap
-	QueryResResolve    = types.QueryResResolve
-	QueryResPoolDatas  = types.QueryResPoolDatas
-	QueryResStakeDatas = types.QueryResStakeDatas
-	PoolStruct         = types.PoolStruct
+	QueryResResolve = types.QueryResResolve
 )

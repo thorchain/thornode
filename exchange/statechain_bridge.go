@@ -9,13 +9,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-
-	st "github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 // StatechainBridge will be used to forward requests to statechain
@@ -42,24 +39,26 @@ func (b *StatechainBridge) Stake(name, ticker, r, token string, owner sdk.AccAdd
 	if len(memo) > 0 {
 		viper.Set(flags.FlagMemo, memo)
 	}
-	msg := st.NewMsgSetStakeData(name, ticker, r, token, owner)
-	if err := msg.ValidateBasic(); nil != err {
-		return "", errors.Wrap(err, "invalid message")
-	}
-	txBldr := auth.NewTxBuilderFromCLI().
-		WithTxEncoder(utils.GetTxEncoder(b.clictx.Codec))
+	/*
+		msg := st.NewMsgSetStakeData(name, ticker, r, token, owner)
+		if err := msg.ValidateBasic(); nil != err {
+			return "", errors.Wrap(err, "invalid message")
+		}
+		txBldr := auth.NewTxBuilderFromCLI().
+			WithTxEncoder(utils.GetTxEncoder(b.clictx.Codec))
 
-	res, err := completeAndBroadcastTxCLI(txBldr, *b.clictx, []sdk.Msg{msg}, passphrase)
-	if nil != err {
-		return "", errors.Wrap(err, "fail to send stake")
-	}
-	// success
-	if res.Code == uint32(sdk.CodeOK) {
-		return res.TxHash, nil
-	}
+		res, err := completeAndBroadcastTxCLI(txBldr, *b.clictx, []sdk.Msg{msg}, passphrase)
+		if nil != err {
+			return "", errors.Wrap(err, "fail to send stake")
+		}
+		// success
+		if res.Code == uint32(sdk.CodeOK) {
+			return res.TxHash, nil
+		}
+	*/
 
 	// somthing is wrong, let's find out and print out appropriate messages
-	return "", errors.New(res.String())
+	return "", nil //errors.New(res.String())
 }
 
 // SendSwap send swap request to statechain
@@ -69,21 +68,23 @@ func (b *StatechainBridge) SendSwap(requestTxHash, source, target, amount, reque
 	if len(memo) > 0 {
 		viper.Set(flags.FlagMemo, memo)
 	}
-	msg := st.NewMsgSwap(requestTxHash, source, target, amount, requester, destination, owner)
-	if err := msg.ValidateBasic(); nil != err {
-		return "", errors.Wrap(err, "invalid swap msg")
-	}
-	txBldr := auth.NewTxBuilderFromCLI().
-		WithTxEncoder(utils.GetTxEncoder(b.clictx.Codec))
-	res, err := completeAndBroadcastTxCLI(txBldr, *b.clictx, []sdk.Msg{msg}, passphrase)
-	if nil != err {
-		return "", errors.Wrap(err, "fail to send swap")
-	}
-	if res.Code == uint32(sdk.CodeOK) {
-		return res.TxHash, nil
-	}
+	/*
+		msg := st.NewMsgSwap(requestTxHash, source, target, amount, requester, destination, owner)
+		if err := msg.ValidateBasic(); nil != err {
+			return "", errors.Wrap(err, "invalid swap msg")
+		}
+		txBldr := auth.NewTxBuilderFromCLI().
+			WithTxEncoder(utils.GetTxEncoder(b.clictx.Codec))
+		res, err := completeAndBroadcastTxCLI(txBldr, *b.clictx, []sdk.Msg{msg}, passphrase)
+		if nil != err {
+			return "", errors.Wrap(err, "fail to send swap")
+		}
+		if res.Code == uint32(sdk.CodeOK) {
+			return res.TxHash, nil
+		}
+	*/
 
-	return "", errors.New(res.String())
+	return "", nil //errors.New(res.String())
 }
 
 // GetSwapTokenAmountFromHashWithRetry retry a few times before we give up
