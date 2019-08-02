@@ -27,6 +27,7 @@ func NewPool(poolAddress string, X string, Y string) *Pool {
 func (p *Pool) GetBal() types.Balances {
 	db := jungle.RedisClient()
 	data, _ := db.Get("balances").Result()
+	log.Info().Msgf("Got balances from REDIS: %v", data)
 
 	var balances types.Balances
 	var tokens types.Tokens
