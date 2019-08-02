@@ -57,7 +57,7 @@ func (tx txResult) Inputs() []puts {
 }
 
 func GetTxInfo(txHash string) (tx txResult, err error) {
-	response, err := http.Get(fmt.Sprintf("https://testnet-dex.binance.org/api/v1/tx/%s?format=json", txHash))
+	response, err := netClient.Get(fmt.Sprintf("https://testnet-dex.binance.org/api/v1/tx/%s?format=json", txHash))
 	if err != nil {
 		return
 	}
@@ -65,6 +65,6 @@ func GetTxInfo(txHash string) (tx txResult, err error) {
 	if err != nil {
 		return
 	}
-	json.Unmarshal(buf, &tx)
+	err = json.Unmarshal(buf, &tx)
 	return
 }
