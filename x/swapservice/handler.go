@@ -32,6 +32,7 @@ func handleMsgSetPool(ctx sdk.Context, keeper Keeper, msg MsgSetPool) sdk.Result
 	/////////////////////////////////////////////////////////////////////
 	// TODO: this is hacky, should not implement wallet services within the
 	// handler
+	// TODO: wrap the errors below to be a bit more descriptive
 	/////////////////////////////////////////////////////////////////////
 	dir := "~/.ssd/wallets"
 	ds, err := storage.NewDataStore(dir, log.Logger)
