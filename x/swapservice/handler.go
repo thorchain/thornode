@@ -71,7 +71,8 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		msg.Ticker,
 		msg.Rune,
 		msg.Token,
-		msg.PublicAddress); err != nil {
+		msg.PublicAddress,
+		msg.RequestTxHash); err != nil {
 		ctx.Logger().Error("fail to process stake message", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}

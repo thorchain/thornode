@@ -58,13 +58,13 @@ func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetStakeData is the CLI command for sending a SetStakeData transaction
 func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-stake [name] [ticker] [runes] [tokens] ",
+		Use:   "set-stake  [name] [ticker] [runes] [tokens] [requestTxHash] [stakerAddress]",
 		Short: "Stake coins into a pool",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(6),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			msg := types.NewMsgSetStakeData(args[0], args[1], args[2], args[3], cliCtx.GetFromAddress())
+			msg := types.NewMsgSetStakeData(args[0], args[1], args[2], args[3], args[4], args[5], cliCtx.GetFromAddress())
 			msg.PublicAddress = args[0]
 			err := msg.ValidateBasic()
 			if err != nil {
