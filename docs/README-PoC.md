@@ -79,12 +79,6 @@ watch for binance txs and process as needed based on memo and to address.
 ```
 {
   "tx_hash": "XXXX", // tx hash ID from a binance transaction
-  "from": "bnbXXX", // from bnb address (TESTNET ONLY)
-  "to": "bnbYYY", // to bnb address (aka pool address) (TESTNET ONLY)
-  "coins": [ // coins sending into our pool (TESTNET ONLY)
-    {"ticker": "BNB", "amount": "4.56"},
-    {"ticker": "RUNE", "amount": "75.8903"},
-  ],
 }
 ```
 
