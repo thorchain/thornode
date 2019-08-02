@@ -16,11 +16,11 @@ type Pool struct {
 	Y string
 }
 
-func NewPool(poolAddress string) *Pool {
+func NewPool(poolAddress string, X string, Y string) *Pool {
 	return &Pool{
 		PoolAddress: poolAddress,
-		X: "RUNE-A1F",
-		Y: "BNB",
+		X: X,
+		Y: Y,
 	}
 }
 
