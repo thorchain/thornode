@@ -85,7 +85,7 @@ func (k Keeper) TxDoesExist(ctx sdk.Context, key string) bool {
 }
 
 // Set tx
-func (k Keeper) SetStakeTx(ctx sdk.Context, tx StakeTx) {
+func (k Keeper) SetTxHash(ctx sdk.Context, tx TxHash) {
 	key := getKey(tx.Key(), poolKey)
 	if tx.Empty() {
 		return // cannot write an empty pool

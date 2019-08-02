@@ -1,8 +1,6 @@
 package types
 
 import (
-	"strings"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -10,19 +8,15 @@ const RouterKey = ModuleName // this was defined in your key.go file
 
 // MsgSetPool defines a MsgSetPool message
 type MsgSetPool struct {
-	Address     sdk.AccAddress `json:"address"`
-	TokenName   string         `json:"token_name"`
-	TokenTicker string         `json:"token_ticker"`
-	Signer      sdk.AccAddress `json:"signer"`
+	Pool   Pool           `json:"pool"`
+	Signer sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetPool is a constructor function for MsgSetPool
-func NewMsgSetPool(name, ticker string, address, signer sdk.AccAddress) MsgSetPool {
+func NewMsgSetPool(name, ticker string, signer sdk.AccAddress) MsgSetPool {
 	return MsgSetPool{
-		Address:     address,
-		TokenName:   name,
-		TokenTicker: strings.ToUpper(ticker),
-		Signer:      signer,
+		Pool:   NewPool(name, ticker),
+		Signer: signer,
 	}
 }
 
@@ -37,13 +31,13 @@ func (msg MsgSetPool) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if msg.Address.Empty() {
-		return sdk.ErrInvalidAddress(msg.Address.String())
+	if msg.Pool.Address.Empty() {
+		return sdk.ErrInvalidAddress(msg.Pool.Address.String())
 	}
-	if len(msg.TokenName) == 0 {
+	if len(msg.Pool.TokenName) == 0 {
 		return sdk.ErrUnknownRequest("Token name cannot be empty")
 	}
-	if len(msg.TokenTicker) == 0 {
+	if len(msg.Pool.TokenTicker) == 0 {
 		return sdk.ErrUnknownRequest("Token ticker cannot be empty")
 	}
 	return nil
@@ -61,14 +55,14 @@ func (msg MsgSetPool) GetSigners() []sdk.AccAddress {
 
 // MsgSetTxHash defines a MsgSetTxHash message
 type MsgSetTxHash struct {
-	TxHash string         `json:"tx_hash"`
+	TxHash TxHash         `json:"tx_hash"`
 	Signer sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetTxHash is a constructor function for MsgSetTxHash
-func NewMsgSetTxHash(txHash string, address, signer sdk.AccAddress) MsgSetTxHash {
+func NewMsgSetTxHash(txHash string, signer sdk.AccAddress) MsgSetTxHash {
 	return MsgSetTxHash{
-		TxHash: txHash,
+		TxHash: NewTxHash(txHash),
 		Signer: signer,
 	}
 }
@@ -84,7 +78,7 @@ func (msg MsgSetTxHash) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if len(msg.TxHash) == 0 {
+	if len(msg.TxHash.TxHash) == 0 {
 		return sdk.ErrUnknownRequest("Token ticker cannot be empty")
 	}
 	return nil

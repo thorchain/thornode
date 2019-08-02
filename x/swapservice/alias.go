@@ -16,7 +16,9 @@ var (
 )
 
 type (
+	MsgSetPool      = types.MsgSetPool
+	MsgSetTxHash    = types.MsgSetTxHash
 	QueryResResolve = types.QueryResResolve
 	Pool            = types.Pool
-	StakeTx         = types.StakeTx
+	TxHash          = types.TxHash
 )

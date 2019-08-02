@@ -14,8 +14,8 @@ type Pool struct {
 	TokenTicker string         `json:"token_ticker"` // ticker name of token (ie "BTC")
 }
 
+// TODO: create address
 func NewPool(name, ticker string) Pool {
-	// TODO add address
 	return Pool{
 		TokenName:   name,
 		TokenTicker: strings.ToUpper(ticker),
@@ -34,18 +34,24 @@ func (p Pool) String() string {
 	return fmt.Sprintf("Pool: %s (%s) %s", p.TokenName, p.TokenTicker, p.Address)
 }
 
-type StakeTx struct {
+type TxHash struct {
 	TxHash string `json:"tx_hash"` // binance chain tx hash of coins sent to our address
 }
 
-func (tx StakeTx) Key() string {
+func NewTxHash(txHash string) TxHash {
+	return TxHash{
+		TxHash: txHash,
+	}
+}
+
+func (tx TxHash) Key() string {
 	return tx.TxHash
 }
 
-func (tx StakeTx) Empty() bool {
+func (tx TxHash) Empty() bool {
 	return tx.TxHash == ""
 }
 
-func (tx StakeTx) String() string {
+func (tx TxHash) String() string {
 	return fmt.Sprintf("TxHash: %s", tx.TxHash)
 }
