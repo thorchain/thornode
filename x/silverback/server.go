@@ -51,12 +51,15 @@ func (s *Server) Start() {
 			svrChan <- client
 
 			for {
-					select {
-					case text, _ := <-client:
-						writer, _ := ws.NextWriter(websocket.TextMessage)
+				select {
+				case text, _ := <-client:
+					writer, err := ws.NextWriter(websocket.TextMessage)
+					// For some reason the client has gone away...
+					if err == nil {
 						writer.Write([]byte(text))
 						writer.Close()
 					}
+				}
 			}
 		})
 		http.ListenAndServe(":" + s.Port, nil)
