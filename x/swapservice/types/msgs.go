@@ -96,16 +96,16 @@ func (msg MsgSetTxHash) GetSigners() []sdk.AccAddress {
 
 // MsgSetUnStake defines a MsgSetUnStake message
 type MsgSetUnStake struct {
-	Pool   Pool           `json:"pool"`
 	Coins  sdk.Coins      `json:"coins"`
+	To     sdk.AccAddress `json:"to"`
 	Signer sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetUnStake is a constructor function for MsgSetUnStake
-func NewMsgSetUnStake(pool Pool, coins sdk.Coins, signer sdk.AccAddress) MsgSetUnStake {
+func NewMsgSetUnStake(coins sdk.Coins, to, signer sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
-		Pool:   pool,
 		Coins:  coins,
+		To:     to,
 		Signer: signer,
 	}
 }
@@ -121,8 +121,8 @@ func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if msg.Pool.Empty() {
-		return sdk.ErrUnknownRequest("Invalid Pool")
+	if msg.To.Empty() {
+		return sdk.ErrInvalidAddress(msg.To.String())
 	}
 	if len(msg.Coins) == 0 {
 		return sdk.ErrUnknownRequest("Cannot have no coins")

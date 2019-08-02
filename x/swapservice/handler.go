@@ -6,10 +6,20 @@ import (
 
 	exchange "github.com/jpthor/cosmos-swap/exchange"
 	storage "github.com/jpthor/cosmos-swap/storage"
+
+	"github.com/binance-chain/go-sdk/client"
+	bTypes "github.com/binance-chain/go-sdk/common/types"
+	"github.com/binance-chain/go-sdk/keys"
+	bMsg "github.com/binance-chain/go-sdk/types/msg"
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
+
+func UnitTokenTicker(ticker string) string {
+	return strings.ToUpper(fmt.Sprintf("%sU", ticker))
+}
 
 // NewHandler returns a handler for "swapservice" type messages.
 func NewHandler(keeper Keeper) sdk.Handler {
@@ -18,7 +28,9 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		case MsgSetPool:
 			return handleMsgSetPool(ctx, keeper, msg)
 		case MsgSetTxHash:
-			return handleMsgSetTxHash(ctx, keeper, msg)
+			return handleMsgSetStake(ctx, keeper, msg)
+		case MsgSetUnStake:
+			return handleMsgSetUnStake(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -67,7 +79,7 @@ func handleMsgSetPool(ctx sdk.Context, keeper Keeper, msg MsgSetPool) sdk.Result
 	return sdk.Result{}
 }
 
-func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Result {
+func handleMsgSetStake(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Result {
 	// validate there are not conflicts first
 	if keeper.TxDoesExist(ctx, msg.TxHash.Key()) {
 		return sdk.ErrUnknownRequest("Conflict").Result()
@@ -118,7 +130,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 				// TODO should error or something
 				continue
 			}
-			uTokenTicker := fmt.Sprintf("%sU", coin.Denom)
+			uTokenTicker := UnitTokenTicker(coin.Denom)
 
 			amt := sdk.NewCoins(
 				// TODO: calculate the proper unit toke value (hard coded to 100 for now)
@@ -140,6 +152,64 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 
 	// save that we have successfully handles the transaction
 	keeper.SetTxHash(ctx, msg.TxHash)
+
+	return sdk.Result{}
+}
+
+func handleMsgSetUnStake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) sdk.Result {
+
+	// Subtract unit tokens
+	for _, coin := range msg.Coins {
+		uTokenTicker := UnitTokenTicker(coin.Denom)
+
+		amt := sdk.NewCoins(
+			// TODO: calculate the proper unit toke value (hard coded to 100 for now)
+			sdk.NewCoin(uTokenTicker, sdk.NewInt(100)),
+		)
+		_, err := keeper.coinKeeper.SubtractCoins(ctx, msg.Signer, amt)
+		if err != nil {
+			return sdk.ErrInsufficientCoins("Account does not have enough coins").Result()
+		}
+	}
+
+	// Send coins on Binance chain to recipient
+	for _, coin := range msg.Coins {
+		wallet, err := getWallet(coin.Denom)
+		if err != nil {
+			// TODO: refund coins back to original wallet
+			return sdk.ErrUnknownRequest(err.Error()).Result()
+		}
+		keyManager, err := keys.NewPrivateKeyManager(wallet.PrivateKey)
+		if nil != err {
+			return sdk.ErrUnknownRequest(errors.Wrap(err, "fail to create private key manager").Error()).Result()
+		}
+		c, err := client.NewDexClient("testnet-dex.binance.org", bTypes.TestNetwork, keyManager)
+		if nil != err {
+			return sdk.ErrUnknownRequest(errors.Wrap(err, "fail to create dex client").Error()).Result()
+		}
+
+		transfers := []bMsg.Transfer{
+			{
+				bTypes.AccAddress(msg.To),
+				bTypes.Coins{
+					bTypes.Coin{
+						Denom:  coin.Denom,
+						Amount: coin.Amount.Int64(),
+					},
+				},
+			},
+		}
+		result, err := c.SendToken(transfers, true)
+		if err != nil || !result.Ok {
+			return sdk.ErrUnknownRequest(
+				fmt.Sprintf(
+					"Failed to send unstake coins: %s (%s)",
+					result.Log,
+					err.Error(),
+				),
+			).Result()
+		}
+	}
 
 	return sdk.Result{}
 }

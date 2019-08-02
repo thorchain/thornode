@@ -3,6 +3,7 @@ package rest
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -20,6 +21,7 @@ const (
 
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
+	r.HandleFunc(fmt.Sprintf("/%s/unstake", storeName), unstakeHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/stake/tx", storeName), stakeHandler(cliCtx)).Methods("POST")
 	r.HandleFunc(fmt.Sprintf("/%s/pool", storeName), createPoolHandler(cliCtx)).Methods("POST")
 
@@ -30,6 +32,61 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 
 // ---------------------------------------------------------------------------------
 // Tx Handler
+
+type unstakeReq struct {
+	BaseReq rest.BaseReq   `json:"base_req"`
+	Coins   sdk.Coins      `json:"coins"`
+	To      sdk.AccAddress `json:"to"`
+}
+
+func unstakeHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req unstakeReq
+
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		// validate 'To' address
+		if req.To.Empty() {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "Missing 'to' field")
+			return
+		}
+
+		// validate Coins are unit tokens
+		for _, coin := range req.Coins {
+			if !strings.HasSuffix(coin.Denom, "U") {
+				rest.WriteErrorResponse(
+					w,
+					http.StatusBadRequest,
+					fmt.Sprintf("Invalid unit token: %s", coin.Denom))
+				return
+			}
+		}
+
+		addr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		// create the message
+		msg := types.NewMsgSetUnStake(req.Coins, req.To, addr)
+		err = msg.ValidateBasic()
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
 
 type stakeReq struct {
 	BaseReq rest.BaseReq `json:"base_req"`
