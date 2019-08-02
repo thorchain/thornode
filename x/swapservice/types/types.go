@@ -36,6 +36,8 @@ func (p Pool) String() string {
 
 type TxHash struct {
 	TxHash string `json:"tx_hash"` // binance chain tx hash of coins sent to our address
+	// TODO: allow this field to be updated
+	Refunded bool `json:"refund"` // if tx has been refunded back to original wallet
 }
 
 func NewTxHash(txHash string) TxHash {

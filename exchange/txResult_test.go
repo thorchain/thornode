@@ -13,7 +13,7 @@ type TxHashSuite struct{}
 var _ = Suite(&TxHashSuite{})
 
 func (s *TxHashSuite) TestTxHash(c *C) {
-	result, err := GetTxIfno("ED92EB231E176EF54CCF6C34E83E44BA971192E75D55C86953BF0FB371F042FA")
+	result, err := GetTxInfo("ED92EB231E176EF54CCF6C34E83E44BA971192E75D55C86953BF0FB371F042FA")
 	c.Assert(err, IsNil)
 	c.Check(result.Memo(), Equals, "test")
 	c.Check(result.Inputs(), HasLen, 1)

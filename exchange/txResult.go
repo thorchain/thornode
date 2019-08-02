@@ -56,7 +56,7 @@ func (tx txResult) Inputs() []puts {
 	return tx.Msg().Value.Inputs
 }
 
-func GetTxIfno(txHash string) (tx txResult, err error) {
+func GetTxInfo(txHash string) (tx txResult, err error) {
 	response, err := http.Get(fmt.Sprintf("https://testnet-dex.binance.org/api/v1/tx/%s?format=json", txHash))
 	if err != nil {
 		return

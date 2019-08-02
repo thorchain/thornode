@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"fmt"
+	"strings"
 
 	exchange "github.com/jpthor/cosmos-swap/exchange"
 	storage "github.com/jpthor/cosmos-swap/storage"
@@ -72,9 +73,72 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 		return sdk.ErrUnknownRequest("Conflict").Result()
 	}
 
-	// TODO: check tx hash against binance API
-	// TODO: mint unit tokens for to user's account
+	txResult, err := exchange.GetTxInfo(msg.TxHash.TxHash)
+	if err != nil {
+		return sdk.ErrUnknownRequest(
+			fmt.Sprintf("Unable to get binance tx info: %s", err.Error()),
+		).Result()
+	}
 
+	/////////////////////////////////////////////////
+	// VALIDATE MEMO ////////////////////////////////
+	// Must start with rune
+	if !strings.HasPrefix(txResult.Memo(), "rune") {
+		// TODO: refund coins back to original wallet
+		return sdk.ErrUnknownRequest("Invalid memo: Not rune address").Result()
+	}
+
+	// Must be a valid bech32 address
+	addr, err := sdk.AccAddressFromHex(txResult.Memo())
+	if err != nil {
+		// TODO: refund coins back to original wallet
+		return sdk.ErrUnknownRequest(
+			fmt.Sprintf("Invalid memo: %s", err.Error()),
+		).Result()
+	}
+	/////////////////////////////////////////////////
+
+	// Discover coin
+	outputs := txResult.Outputs()
+	if len(outputs) == 0 {
+		// no outputs
+		return sdk.ErrUnknownRequest("No Outputs detected. Try again.").Result()
+	}
+
+	for _, output := range outputs {
+		// TODO: mint unit tokens for to user's account
+		for _, coin := range output.Coins {
+			wallet, err := getWallet(coin.Denom)
+			if err != nil {
+				// TODO: refund coins back to original wallet
+				return sdk.ErrUnknownRequest(err.Error()).Result()
+			}
+			if wallet.PublicAddress != output.Address {
+				// addresses don't match
+				// TODO should error or something
+				continue
+			}
+			uTokenTicker := fmt.Sprintf("%sU", coin.Denom)
+
+			amt := sdk.NewCoins(
+				// TODO: calculate the proper unit toke value (hard coded to 100 for now)
+				sdk.NewCoin(uTokenTicker, sdk.NewInt(100)),
+			)
+			_, err = keeper.coinKeeper.AddCoins(ctx, addr, amt)
+			if err != nil {
+				// TODO: refund coins back to original wallet
+				return sdk.ErrInternal(
+					fmt.Sprintf(
+						"Unable to Add %s coin. Try again. %s",
+						uTokenTicker,
+						err.Error(),
+					),
+				).Result()
+			}
+		}
+	}
+
+	// save that we have successfully handles the transaction
 	keeper.SetTxHash(ctx, msg.TxHash)
 
 	return sdk.Result{}
