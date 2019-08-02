@@ -69,6 +69,9 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 		return sdk.ErrUnknownRequest("Conflict").Result()
 	}
 
+	// TODO: check tx hash against binance API
+	// TODO: mint unit tokens for to user's account
+
 	keeper.SetTxHash(ctx, msg.TxHash)
 
 	return sdk.Result{}
