@@ -93,3 +93,57 @@ func (msg MsgSetTxHash) GetSignBytes() []byte {
 func (msg MsgSetTxHash) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Signer}
 }
+
+// MsgSetUnStake defines a MsgSetUnStake message
+type MsgSetUnStake struct {
+	Pool   Pool           `json:"pool"`
+	Coins  sdk.Coins      `json:"coins"`
+	Signer sdk.AccAddress `json:"signer"`
+}
+
+// NewMsgSetUnStake is a constructor function for MsgSetUnStake
+func NewMsgSetUnStake(pool Pool, coins sdk.Coins, signer sdk.AccAddress) MsgSetUnStake {
+	return MsgSetUnStake{
+		Pool:   pool,
+		Coins:  coins,
+		Signer: signer,
+	}
+}
+
+// Route should return the cmname of the module
+func (msg MsgSetUnStake) Route() string { return RouterKey }
+
+// Type should return the action
+func (msg MsgSetUnStake) Type() string { return "set_unstake" }
+
+// ValidateBasic runs stateless checks on the message
+func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
+	if msg.Signer.Empty() {
+		return sdk.ErrInvalidAddress(msg.Signer.String())
+	}
+	if msg.Pool.Empty() {
+		return sdk.ErrUnknownRequest("Invalid Pool")
+	}
+	if len(msg.Coins) == 0 {
+		return sdk.ErrUnknownRequest("Cannot have no coins")
+	}
+	for _, coin := range msg.Coins {
+		if !coin.IsValid() {
+			return sdk.ErrUnknownRequest("Cannot have no invalid coins")
+		}
+		if !coin.IsZero() {
+			return sdk.ErrUnknownRequest("Cannot have a coin with zero value")
+		}
+	}
+	return nil
+}
+
+// GetSignBytes encodes the message for signing
+func (msg MsgSetUnStake) GetSignBytes() []byte {
+	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
+}
+
+// GetSigners defines whose signature is required
+func (msg MsgSetUnStake) GetSigners() []sdk.AccAddress {
+	return []sdk.AccAddress{msg.Signer}
+}
