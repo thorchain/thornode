@@ -26,14 +26,3 @@ func (sr SwapRecord) String() string {
 	sb.WriteString("amount-pay-to-user:" + sr.AmountPaidBack)
 	return sb.String()
 }
-
-func getSwapRecordFromMsgSwap(ms MsgSwap) SwapRecord {
-	return SwapRecord{
-		RequestTxHash:   ms.RequestTxHash,
-		SourceTicker:    ms.SourceTicker,
-		TargetTicker:    ms.TargetTicker,
-		Requester:       ms.Requester,
-		Destination:     ms.Destination,
-		AmountRequested: ms.Amount,
-	}
-}

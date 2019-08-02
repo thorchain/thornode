@@ -66,8 +66,6 @@ func (k Keeper) SetPoolStruct(ctx sdk.Context, poolID string, poolstruct PoolStr
 	store.Set([]byte(poolID), k.cdc.MustMarshalBinaryBare(poolstruct))
 }
 
-// GetPool - gets the balances of a pool. Specifying ticker dictates which
-// balance is return in 0 vs 1 spot.
 func (k Keeper) GetPoolBalances(ctx sdk.Context, poolID, ticker string) (string, string) {
 	poolstruct := k.GetPoolStruct(ctx, poolID)
 	if strings.EqualFold(ticker, types.RuneTicker) {
@@ -109,13 +107,6 @@ func (k Keeper) GetPoolStructDataIterator(ctx sdk.Context) sdk.Iterator {
 func (k Keeper) PoolExist(ctx sdk.Context, poolID string) bool {
 	store := ctx.KVStore(k.storeKey)
 	return store.Has([]byte(poolID))
-}
-
-// TODO remove this method later
-// Get an iterator over all pool IDs in which the keys are the pool IDs and the values are the poolstruct
-func (k Keeper) GetDatasIterator(ctx sdk.Context) sdk.Iterator {
-	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, nil)
 }
 
 // GetPoolIndex retrieve pool index from the data store
