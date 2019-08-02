@@ -17,4 +17,6 @@ var (
 
 type (
 	QueryResResolve = types.QueryResResolve
+	Pool            = types.Pool
+	StakeTx         = types.StakeTx
 )

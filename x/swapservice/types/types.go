@@ -3,13 +3,15 @@ package types
 import (
 	"fmt"
 	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // Pool - metadata about a pool
 type Pool struct {
-	Address     string `json:"address"`      // unique BNB address to store staked tokens
-	TokenName   string `json:"token_name"`   // display name of token (ie "Bitcoin")
-	TokenTicker string `json:"token_ticker"` // ticker name of token (ie "BTC")
+	Address     sdk.AccAddress `json:"address"`      // unique BNB address to store staked tokens
+	TokenName   string         `json:"token_name"`   // display name of token (ie "Bitcoin")
+	TokenTicker string         `json:"token_ticker"` // ticker name of token (ie "BTC")
 }
 
 func NewPool(name, ticker string) Pool {
@@ -24,6 +26,10 @@ func (p Pool) Key() string {
 	return p.TokenTicker
 }
 
+func (p Pool) Empty() bool {
+	return p.Address.Empty() || p.TokenTicker == ""
+}
+
 func (p Pool) String() string {
 	return fmt.Sprintf("Pool: %s (%s) %s", p.TokenName, p.TokenTicker, p.Address)
 }
@@ -34,6 +40,10 @@ type StakeTx struct {
 
 func (tx StakeTx) Key() string {
 	return tx.TxHash
+}
+
+func (tx StakeTx) Empty() bool {
+	return tx.TxHash == ""
 }
 
 func (tx StakeTx) String() string {
