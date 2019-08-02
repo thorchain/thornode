@@ -88,7 +88,10 @@ the same address as the authenticating user. This ensures we can't
 accidentally send the unstaked tokens to another address.
 ```
 {
-  "ticker": "BNBU", // uToken ticker
-  "amount": "34.39857", // amount to unstake
+  "to": "bnbXXXXXXXXXXXXX", // bnb address to send coins to
+  "coins": [
+    "denom": "BNBU", // uToken ticker
+    "amount": "34.39857", // amount to unstake
+  ]
 }
 ```
