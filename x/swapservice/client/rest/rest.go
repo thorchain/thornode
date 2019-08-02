@@ -105,3 +105,15 @@ func stakeHandler(cliCtx context.CLIContext, storePoolData string) http.HandlerF
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
+func swapRecordHandler(cliCtx context.CLIContext, storePoolData string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[swapData]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/swaprecord/%s", storePoolData, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
