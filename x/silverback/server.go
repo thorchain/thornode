@@ -2,6 +2,7 @@ package silverback
 
 import (
 	"os"
+	"time"
 	"net/http"
 	"encoding/json"
 
@@ -26,44 +27,58 @@ func NewServer(binance Binance, pool Pool) *Server {
 func (s *Server) Start() {
 	go func() {
 		log.Info().Msg("Starting Silverback Server....")
-		http.HandleFunc("/", s.Balances)
+		var upgrader = websocket.Upgrader {
+			ReadBufferSize: 1024,
+			WriteBufferSize: 1024,
+			CheckOrigin: func(r * http.Request) bool {
+					return true
+			},
+		}
+		
+		sChan := make(chan chan string)
+		go s.PoolBal(sChan)
+
+		http.HandleFunc("/pool", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			ws, _ := upgrader.Upgrade(w, r, nil)
+			client := make(chan string, 1)
+			sChan <- client
+
+			for {
+					select {
+					case text, _ := <-client:
+						writer, _ := ws.NextWriter(websocket.TextMessage)
+						writer.Write([]byte(text))
+						writer.Close()
+					}
+			}
+		})
 		http.ListenAndServe(":" + s.Port, nil)
 	}()
 }
 
-func (s *Server) Balances(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
+func (s *Server) PoolBal(sChan chan chan string) {
+	var clients []chan string
+	bChan := make(chan []byte, 1)
 
-	upgrader := websocket.Upgrader{}
-	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+	go func (target chan []byte) {
+			for {
+				data := s.Pool.GetBal()
+				b, _ := json.Marshal(data)
 
-	c, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Info().Msgf("Upgrade: %v", err)
-		return
-	}
+				time.Sleep(2 * time.Second)
+				target <- b
+			}
+	}(bChan)
 
-	defer c.Close()
 	for {
-		mt, _, err := c.ReadMessage()
-		if err != nil {
-			log.Error().Msgf("Read error: %v", err)
-			break
-		}
-
-		log.Info().Msgf("Received message: %v", mt)
-		data := s.Pool.GetBal()
-
-		js, err := json.Marshal(data)
-		if err != nil {
-			log.Error().Msgf("Marshalling error: %v", err)
-			return
-		}
-
-		err = c.WriteMessage(mt, js)
-		if err != nil {
-			log.Error().Msgf("Write error: %v", err)
-			break
-		}
+			select {
+			case client, _ := <-sChan:
+					clients = append(clients, client)
+			case balances, _ := <-bChan:
+					for _, c := range clients {
+							c <- string(balances)
+					}
+			}
 	}
 }
