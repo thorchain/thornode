@@ -16,6 +16,8 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		switch msg := msg.(type) {
 		case MsgSetPool:
 			return handleMsgSetPool(ctx, keeper, msg)
+		case MsgSetTxHash:
+			return handleMsgSetTxHash(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()

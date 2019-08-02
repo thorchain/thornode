@@ -9,8 +9,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )
@@ -138,6 +136,7 @@ func (b *StatechainBridge) GetSwapTokenAmountFromHash(hash string) (string, erro
 	return swapResult.Token, nil
 }
 
+/*
 func completeAndBroadcastTxCLI(txBldr authtypes.TxBuilder, cliCtx context.CLIContext, msgs []sdk.Msg, passphrase string) (sdk.TxResponse, error) {
 	txBldr, err := utils.PrepareTxBuilder(txBldr, cliCtx)
 	if err != nil {
@@ -152,3 +151,4 @@ func completeAndBroadcastTxCLI(txBldr authtypes.TxBuilder, cliCtx context.CLICon
 	// broadcast to a Tendermint node
 	return cliCtx.BroadcastTx(txBytes)
 }
+*/
