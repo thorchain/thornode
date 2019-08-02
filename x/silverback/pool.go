@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math"
 
+	"github.com/go-redis/redis"
 	log "github.com/rs/zerolog/log"
 
 	jungle "gitlab.com/thorchain/bepswap/observe/x/jungle"
@@ -11,6 +12,7 @@ import (
 )
 
 type Pool struct {
+	Db *redis.Client
 	PoolAddress string
 	X string
 	Y string
@@ -18,6 +20,7 @@ type Pool struct {
 
 func NewPool(poolAddress string, X string, Y string) *Pool {
 	return &Pool{
+		Db: jungle.RedisClient(),
 		PoolAddress: poolAddress,
 		X: X,
 		Y: Y,
@@ -25,9 +28,7 @@ func NewPool(poolAddress string, X string, Y string) *Pool {
 }
 
 func (p *Pool) GetBal() types.Balances {
-	db := jungle.RedisClient()
-	data, _ := db.Get("balances").Result()
-	log.Info().Msgf("Got balances from REDIS: %v", data)
+	data, _ := p.Db.Get("balances").Result()
 
 	var balances types.Balances
 	var tokens types.Tokens
@@ -83,6 +84,8 @@ func (p *Pool) CalcPoolSlip(x, X, Y float64) float64 {
 
 func SyncBal(binance Binance) {
 	db := jungle.RedisClient()
+	defer db.Close()
+
 	log.Info().Msgf("Balances: %v", binance.GetAccount().Balances)
 	balances, _ := json.Marshal(binance.GetAccount().Balances)
 
