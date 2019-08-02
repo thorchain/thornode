@@ -35,14 +35,14 @@ func (s *Server) Start() {
 			},
 		}
 		
-		sChan := make(chan chan string)
-		go s.PoolBal(sChan)
+		svrChan := make(chan chan string)
+		go s.PoolBal(svrChan)
 
 		http.HandleFunc("/pool", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			ws, _ := upgrader.Upgrade(w, r, nil)
 			client := make(chan string, 1)
-			sChan <- client
+			svrChan <- client
 
 			for {
 					select {
@@ -57,25 +57,26 @@ func (s *Server) Start() {
 	}()
 }
 
-func (s *Server) PoolBal(sChan chan chan string) {
+func (s *Server) PoolBal(svrChan chan chan string) {
 	var clients []chan string
-	bChan := make(chan []byte, 1)
+	balChan := make(chan []byte, 1)
 
 	go func (target chan []byte) {
 			for {
 				data := s.Pool.GetBal()
+				log.Info().Msgf("Broadcasting balances: %v", data)
 				b, _ := json.Marshal(data)
 
-				time.Sleep(2 * time.Second)
+				time.Sleep(5 * time.Second)
 				target <- b
 			}
-	}(bChan)
+	}(balChan)
 
 	for {
 			select {
-			case client, _ := <-sChan:
+			case client, _ := <-svrChan:
 					clients = append(clients, client)
-			case balances, _ := <-bChan:
+			case balances, _ := <-balChan:
 					for _, c := range clients {
 							c <- string(balances)
 					}
