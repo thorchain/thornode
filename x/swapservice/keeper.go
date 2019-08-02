@@ -40,6 +40,17 @@ func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) 
 	}
 }
 
+// Get an iterator with prefix
+func (k Keeper) GetIteratorWithPrefix(ctx sdk.Context, prefix prefixKey) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIterator(store, []byte(prefix))
+}
+
+// Get an iterator for pools
+func (k Keeper) GetPoolIterator(ctx sdk.Context) sdk.Iterator {
+	return k.GetIteratorWithPrefix(ctx, poolKey)
+}
+
 func (k Keeper) DoesExist(ctx sdk.Context, key string) bool {
 	store := ctx.KVStore(k.storeKey)
 	return store.Has([]byte(key))

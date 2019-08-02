@@ -1,29 +1,9 @@
 package types
 
-import "strings"
+type QueryPool Pool
 
-// Query Result Payload for a resolve query
-type QueryResResolve struct {
-	Value string `json:"value"`
+func (p QueryPool) String() string {
+	return p.String()
 }
 
-// implement fmt.Stringer
-func (r QueryResResolve) String() string {
-	return r.Value
-}
-
-// Query Result Payload for a pooldatas query
-type QueryResAccDatas []string
-
-// implement fmt.Stringer
-func (n QueryResAccDatas) String() string {
-	return strings.Join(n[:], "\n")
-}
-
-// Query Result Payload for a pooldatas query
-type QueryResStakeDatas []string
-
-// implement fmt.Stringer
-func (n QueryResStakeDatas) String() string {
-	return strings.Join(n[:], "\n")
-}
+type QueryPools []Pool
