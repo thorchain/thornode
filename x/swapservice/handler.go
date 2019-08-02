@@ -25,28 +25,30 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	}
 }
 
+// TODO: this is hacky, should not implement wallet services within the
+// handler. Move to a better place
+func getWallet(ticker string) (*exchange.Bep2Wallet, error) {
+	// TODO: wrap the errors below to be a bit more descriptive
+	dir := "~/.ssd/wallets"
+	ds, err := storage.NewDataStore(dir, log.Logger)
+	if nil != err {
+		return nil, err
+	}
+	ws, err := exchange.NewWallets(ds, log.Logger)
+	if err != nil {
+		return nil, err
+	}
+
+	return ws.GetWallet(ticker)
+}
+
 func handleMsgSetPool(ctx sdk.Context, keeper Keeper, msg MsgSetPool) sdk.Result {
 	// validate there are not conflicts first
 	if keeper.PoolDoesExist(ctx, msg.Pool.Key()) {
 		return sdk.ErrUnknownRequest("Conflict").Result()
 	}
 
-	/////////////////////////////////////////////////////////////////////
-	// TODO: this is hacky, should not implement wallet services within the
-	// handler
-	// TODO: wrap the errors below to be a bit more descriptive
-	/////////////////////////////////////////////////////////////////////
-	dir := "~/.ssd/wallets"
-	ds, err := storage.NewDataStore(dir, log.Logger)
-	if nil != err {
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	ws, err := exchange.NewWallets(ds, log.Logger)
-	if err != nil {
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	wallet, err := ws.GetWallet(msg.Pool.TokenTicker)
+	wallet, err := getWallet(msg.Pool.TokenTicker)
 	if err != nil {
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
@@ -54,7 +56,6 @@ func handleMsgSetPool(ctx sdk.Context, keeper Keeper, msg MsgSetPool) sdk.Result
 	if err != nil {
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	////////////////////////////////////////////////////////////////////
 
 	if msg.Pool.Empty() {
 		return sdk.ErrUnknownRequest("Invalid Pool").Result()

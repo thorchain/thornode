@@ -1,6 +1,8 @@
 package exchange
 
 import (
+	"strings"
+
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -54,6 +56,7 @@ func (w *Wallets) GetWallet(assetSymbol string) (*Bep2Wallet, error) {
 	if len(assetSymbol) == 0 {
 		return nil, errors.New("assetSymbol is empty")
 	}
+	assetSymbol = strings.ToUpper(assetSymbol)
 	value, err := w.ds.Get([]byte(assetSymbol))
 	if nil != err {
 		if err != leveldb.ErrNotFound {
