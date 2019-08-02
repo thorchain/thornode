@@ -66,15 +66,15 @@ type StakerPoolItem struct {
 //    ]
 // }
 type StakerPool struct {
-	StakerID  string           `json:"staker_id"`      // this will be staker's address on binance chain
-	PoolUnits []StakerPoolItem `json:"pool_and_units"` // the key of this map will be the pool id , value will bt [UNIT,RUNE,TOKEN]
+	StakerID  string            `json:"staker_id"`      // this will be staker's address on binance chain
+	PoolUnits []*StakerPoolItem `json:"pool_and_units"` // the key of this map will be the pool id , value will bt [UNIT,RUNE,TOKEN]
 }
 
 // NewStakerPool create a new instance of StakerPool
 func NewStakerPool(id string) StakerPool {
 	return StakerPool{
 		StakerID:  id,
-		PoolUnits: []StakerPoolItem{},
+		PoolUnits: []*StakerPoolItem{},
 	}
 }
 
@@ -91,13 +91,13 @@ func (sp StakerPool) String() string {
 }
 
 // GetStakerPoolItem return the StakerPoolItem with given pool id
-func (sp *StakerPool) GetStakerPoolItem(poolID string) StakerPoolItem {
+func (sp *StakerPool) GetStakerPoolItem(poolID string) *StakerPoolItem {
 	for _, item := range sp.PoolUnits {
 		if strings.EqualFold(item.PoolID, poolID) {
 			return item
 		}
 	}
-	return StakerPoolItem{
+	return &StakerPoolItem{
 		PoolID:       poolID,
 		Units:        "0",
 		StakeDetails: []StakeTxDetail{},
@@ -118,15 +118,15 @@ func (sp *StakerPool) RemoveStakerPoolItem(poolID string) {
 }
 
 // UpsertStakerPoolItem if the given stakerPoolItem exist then it will update , otherwise it will add
-func (sp *StakerPool) UpsertStakerPoolItem(stakerPoolItem StakerPoolItem) {
-	deleteIdx := -1
+func (sp *StakerPool) UpsertStakerPoolItem(stakerPoolItem *StakerPoolItem) {
+	pos := -1
 	for idx, item := range sp.PoolUnits {
 		if strings.EqualFold(item.PoolID, stakerPoolItem.PoolID) {
-			deleteIdx = idx
+			pos = idx
 		}
 	}
-	if deleteIdx != -1 {
-		sp.PoolUnits[deleteIdx] = stakerPoolItem
+	if pos != -1 {
+		sp.PoolUnits[pos] = stakerPoolItem
 		return
 	}
 	sp.PoolUnits = append(sp.PoolUnits, stakerPoolItem)
