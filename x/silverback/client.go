@@ -168,10 +168,6 @@ func (c *Client) CalcVars(symbol, amount string) (float64, float64, string) {
 		X = balX
 		Y = balY
 		txnAsset = c.Pool.Y
-	} else if symbol == c.Pool.Y {
-		X = balY
-		Y = balX
-		txnAsset = c.Pool.X
 	}
 
 	return X, Y, txnAsset
