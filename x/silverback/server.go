@@ -39,6 +39,12 @@ func (s *Server) Start() {
 		go s.PoolBal(svrChan)
 
 		http.HandleFunc("/pool", func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path != "/pool" {
+				w.WriteHeader(404)
+				w.Write([]byte(`not found, da xiong dei !!!`))
+				return
+			}
+
 			w.Header().Set("Content-Type", "application/json")
 			ws, _ := upgrader.Upgrade(w, r, nil)
 			client := make(chan string, 1)
@@ -63,12 +69,16 @@ func (s *Server) PoolBal(svrChan chan chan string) {
 
 	go func (target chan []byte) {
 			for {
+				time.Sleep(5 * time.Second)
 				data := s.Pool.GetBal()
 				log.Info().Msgf("Broadcasting balances: %v", data)
-				b, _ := json.Marshal(data)
 
-				time.Sleep(5 * time.Second)
-				target <- b
+				b, err := json.Marshal(data)
+				if err != nil {
+					log.Error().Msgf("Error marshalling to JSON: %v", err)
+				} else {
+					target <- b
+				}
 			}
 	}(balChan)
 
