@@ -4,8 +4,8 @@ install: go.sum
 	GO111MODULE=on go install -v 
 
 go.sum: go.mod
-		@echo "--> Ensure dependencies have not been modified"
-		GO111MODULE=on go mod verify
+	@echo "--> Ensure dependencies have not been modified"
+	GO111MODULE=on go mod verify
 
 lint:
 	golangci-lint run
