@@ -41,7 +41,7 @@ func (s *Server) Start() {
 		http.HandleFunc("/pool", func(w http.ResponseWriter, r *http.Request) {
 			if r.URL.Path != "/pool" {
 				w.WriteHeader(404)
-				w.Write([]byte(`not found, da xiong dei !!!`))
+				w.Write([]byte(`Not Found.`))
 				return
 			}
 
