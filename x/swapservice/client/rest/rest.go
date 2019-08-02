@@ -59,7 +59,7 @@ func unstakeHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		// validate Coins are unit tokens
+		// validate Coins are unit tokens (end with "U")
 		for _, coin := range req.Coins {
 			if !strings.HasSuffix(coin.Denom, "U") {
 				rest.WriteErrorResponse(
