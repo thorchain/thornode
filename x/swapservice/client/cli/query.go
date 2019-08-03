@@ -21,7 +21,7 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	}
 	swapserviceQueryCmd.AddCommand(client.GetCommands(
 		GetCmdPoolStruct(storeKey, cdc),
-		GetCmdPoolDatas(storeKey, cdc),
+		GetCmdPoolStructs(storeKey, cdc),
 		GetCmdStakerPoolStruct(storeKey, cdc),
 		GetCmdPoolStakerStruct(storeKey, cdc),
 		GetCmdPoolIndex(storeKey, cdc),
@@ -97,21 +97,21 @@ func GetCmdPoolStakerStruct(queryRoute string, cdc *codec.Codec) *cobra.Command 
 	}
 }
 
-// GetCmdPoolDatas queries a list of all pooldatas
-func GetCmdPoolDatas(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdPoolStructs queries a list of all pool data
+func GetCmdPoolStructs(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "pooldatas",
-		Short: "pooldatas",
+		Use:   "pools",
+		Short: "pools",
 		// Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/pooldatas", queryRoute), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/pools", queryRoute), nil)
 			if err != nil {
-				cmd.Println("could not get query pooldatas")
+				cmd.Println("could not get query pools")
 				return nil
 			}
 
-			var out types.QueryResPoolDatas
+			var out types.QueryResPoolStructs
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
