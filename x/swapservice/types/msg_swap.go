@@ -10,7 +10,7 @@ type MsgSwap struct {
 	SourceTicker  string         `json:"source_ticker"`   // source token
 	TargetTicker  string         `json:"target_ticker"`   // target token
 	Requester     string         `json:"requester"`       // request address on Binance chain
-	Destination   string         `json:"destination"`     // destination , not sure what we use it for
+	Destination   string         `json:"destination"`     // destination , used for swap and send , the destination address we send it to
 	Amount        string         `json:"amount"`          // amount of token to swap
 	Owner         sdk.AccAddress `json:"owner"`
 }

@@ -28,16 +28,18 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storePoolData stri
 	r.HandleFunc(fmt.Sprintf("/%s/pools", storePoolData), poolHandler(cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/account/{%s}", storePoolData, accData), accHandler(cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/stake/{%s}", storePoolData, stakeData), stakeHandler(cliCtx, storePoolData)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/swaprecord/{%s}", storePoolData, swapData), stakeHandler(cliCtx, storePoolData)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/swaprecord/{%s}", storePoolData, swapData), swapRecordHandler(cliCtx, storePoolData)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/stake", storePoolData), setStakeDataHandler(cliCtx)).Methods("PUT")
 }
 
 type setStakeData struct {
-	BaseReq rest.BaseReq `json:"base_req"`
-	Name    string       `json:"name"`
-	Ticker  string       `json:"ticker"`
-	Atom    string       `json:"atom_amount"`
-	Token   string       `json:"token_amount"`
+	BaseReq       rest.BaseReq `json:"base_req"`
+	Name          string       `json:"name"`
+	Ticker        string       `json:"ticker"`
+	Rune          string       `json:"rune_amount"`
+	Token         string       `json:"token_amount"`
+	PublicAddress string       `json:"public_address"`
+	RequestTxHash string       `json:"request_tx_hash"`
 }
 
 func setStakeDataHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -56,7 +58,7 @@ func setStakeDataHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		// create the message
-		msg := types.NewMsgSetStakeData(req.Name, req.Ticker, req.Atom, req.Token, cliCtx.GetFromAddress())
+		msg := types.NewMsgSetStakeData(req.Name, req.Ticker, req.Rune, req.Token, req.PublicAddress, req.RequestTxHash, cliCtx.GetFromAddress())
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -96,6 +98,18 @@ func stakeHandler(cliCtx context.CLIContext, storePoolData string) http.HandlerF
 		vars := mux.Vars(r)
 		paramType := vars[stakeData]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stakestruct/%s", storePoolData, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+func swapRecordHandler(cliCtx context.CLIContext, storePoolData string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[swapData]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/swaprecord/%s", storePoolData, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
