@@ -50,7 +50,8 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 		msg.PoolAddress,
 		msg.Status)
 	return sdk.Result{
-		Code: sdk.CodeOK,
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
 	}
 }
 
@@ -71,13 +72,15 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		msg.Ticker,
 		msg.Rune,
 		msg.Token,
-		msg.PublicAddress); err != nil {
+		msg.PublicAddress,
+		msg.RequestTxHash); err != nil {
 		ctx.Logger().Error("fail to process stake message", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	// TODO write staker's info to data
+
 	return sdk.Result{
-		Code: sdk.CodeOK,
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
 	}
 }
 
@@ -109,7 +112,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
-		Codespace: "swap",
+		Codespace: DefaultCodespace,
 	}
 }
 
@@ -125,7 +128,8 @@ func handleMsgSetSwapComplete(ctx sdk.Context, keeper Keeper, msg types.MsgSwapC
 		return sdk.ErrInternal("fail to mark a swap to complete").Result()
 	}
 	return sdk.Result{
-		Code: sdk.CodeOK,
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
 	}
 }
 
@@ -153,7 +157,8 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake
 		// if this happen what should we tell the client?
 	}
 	return sdk.Result{
-		Code: sdk.CodeOK,
-		Data: res,
+		Code:      sdk.CodeOK,
+		Data:      res,
+		Codespace: DefaultCodespace,
 	}
 }

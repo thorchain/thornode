@@ -6,22 +6,25 @@ import (
 
 // MsgSetStakeData defines a SetStakeData message
 type MsgSetStakeData struct {
-	Name          string         `json:"name"`           // token usually is a more user friendly name
-	Ticker        string         `json:"ticker"`         // ticker means the symbol
-	Token         string         `json:"token"`          // the amount of token stake
-	Rune          string         `json:"rune"`           // the amount of rune stake
-	PublicAddress string         `json:"public_address"` // Staker's address on binance chain
+	Name          string         `json:"name"`            // token usually is a more user friendly name
+	Ticker        string         `json:"ticker"`          // ticker means the symbol
+	Token         string         `json:"token"`           // the amount of token stake
+	Rune          string         `json:"rune"`            // the amount of rune stake
+	PublicAddress string         `json:"public_address"`  // Staker's address on binance chain
+	RequestTxHash string         `json:"request_tx_hash"` // the txhash that represent user send token to our pool address
 	Owner         sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
-func NewMsgSetStakeData(name, ticker, r, token string, owner sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(name, ticker, r, token, publicAddress, requestTxHash string, owner sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
-		Name:   name,
-		Ticker: ticker,
-		Token:  token,
-		Rune:   r,
-		Owner:  owner,
+		Name:          name,
+		Ticker:        ticker,
+		Token:         token,
+		Rune:          r,
+		PublicAddress: publicAddress,
+		RequestTxHash: requestTxHash,
+		Owner:         owner,
 	}
 }
 
@@ -44,6 +47,12 @@ func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
 	}
 	if len(msg.Token) == 0 {
 		return sdk.ErrUnknownRequest("Stake Token cannot be empty")
+	}
+	if len(msg.RequestTxHash) == 0 {
+		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
+	}
+	if len(msg.PublicAddress) == 0 {
+		return sdk.ErrUnknownRequest("public address cannot be empty")
 	}
 	return nil
 }
