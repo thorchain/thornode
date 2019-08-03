@@ -21,12 +21,6 @@ type Pool struct {
 }
 ```
 
-What are pool units? How is it decided how many pool units there are for a
-given pool? Does this number inflate or deflate? Are Pool Units always whole
-numbers?
-What is Pool status? Why is it needed? What are the different statuses and
-what do they mean? Should this be an enum? How or who controls this status?
-
 ## PoolIndex
 ```golang
 // a list of all pools by pool ID
@@ -56,16 +50,16 @@ Is `TotalUnits` a duplication of `Pool.PoolUnits`? Storing the same data in
 two different places without a source of truth can be dangerous.
 
 ### StakerUnit
+Stores how much units a staker holds
 ```golang
 type StakerUnit struct {
     StakerID string `json:"staker_id"` // Staker bnb address
     Units    string `json:"units"` // number of units the stake owns
 }
 ```
-If Units are always going to be whole numbers, this should prob be a int64.
-
 
 ## StakerPool
+Stores all of the pools a staker is holds for
 ```golang
 type StakerPool struct {
     StakerID  string           `json:"staker_id"`      // this will be staker's address on binance chain
@@ -74,14 +68,15 @@ type StakerPool struct {
 ```
 
 ### StakerPoolItem
+Stores how many units, a stake has for a specific pool.
 ```golang
 type StakerPoolItem struct {
-    PoolID       string `json:"pool_id"` // ie pool-BNB
-    Units        string `json:"units"` // number of units a staker has in this
+    PoolID       string `json:"pool_id"`        // ie pool-BNB
+    Units        string `json:"units"`          // number of units a staker has in this
 pool
-    RuneBalance  string `json:"rune_balance"` // number of rune coins he
+    RuneBalance  string `json:"rune_balance"`   // number of rune coins he
 staked in the pool
-    TokenBalance string `json:"token_balance"` // number of token coins he
+    TokenBalance string `json:"token_balance"`  // number of token coins he
 staked in the pool
 }
 ```
@@ -93,7 +88,8 @@ type SwapRecord struct {
     SourceTicker    string `json:"source_ticker"`    // Source ticker
     TargetTicker    string `json:"target_ticker"`    // Target ticker
     Requester       string `json:"requester"`        // Requester , should be the address on binance chain
-    Destination     string `json:"destination"`      // destination , not sure what it is used right now
+    Destination     string `json:"destination"`      // destination, address to
+send the tokens
     AmountRequested string `json:"amount_requested"` // amount of source token in
     AmountPaidBack  string `json:"amount_paid_back"` // amount of target token pay out to user
     PayTxHash       string `json:"pay_tx_hash"`      // TxHash on binance chain represent our pay to user
