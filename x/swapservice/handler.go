@@ -64,6 +64,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 			Data: []byte(err.Error()),
 		}
 	}
+	keeper.AddSomeCoins(ctx, msg.Owner)
 	if err := stake(
 		ctx,
 		keeper,

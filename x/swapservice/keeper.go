@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/pkg/errors"
 
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
@@ -16,18 +17,19 @@ const poolIndexKey = `poolindexkey`
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
-	coinKeeper bank.Keeper
-	storeKey   sdk.StoreKey // Unexposed key to access store from sdk.Context
-	cdc        *codec.Codec // The wire codec for binary encoding/decoding.
+	coinKeeper   bank.Keeper
+	supplyKeeper *supply.Keeper
+	storeKey     sdk.StoreKey // Unexposed key to access store from sdk.Context
+	cdc          *codec.Codec // The wire codec for binary encoding/decoding.
 }
 
 // NewKeeper creates new instances of the swapservice Keeper
-func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
-	fmt.Println(storeKey)
+func NewKeeper(coinKeeper bank.Keeper, supplyKeeper *supply.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
 	return Keeper{
-		coinKeeper: coinKeeper,
-		storeKey:   storeKey,
-		cdc:        cdc,
+		coinKeeper:   coinKeeper,
+		storeKey:     storeKey,
+		supplyKeeper: supplyKeeper,
+		cdc:          cdc,
 	}
 }
 
@@ -265,4 +267,29 @@ func (k Keeper) UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxH
 func (k Keeper) GetSwapRecordIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(swapRecordKeyPrefix))
+}
+
+func (k Keeper) AddSomeCoins(ctx sdk.Context, address sdk.AccAddress) {
+	coins := sdk.Coins{
+		sdk.Coin{
+			Denom:  "bnb",
+			Amount: sdk.NewInt(10000),
+		},
+		sdk.Coin{
+			Denom:  "btc",
+			Amount: sdk.NewInt(10000),
+		},
+	}
+	if nil == k.supplyKeeper {
+		ctx.Logger().Error("supply keeper is nil")
+	}
+	err := k.supplyKeeper.MintCoins(ctx, ModuleName, coins)
+	if nil != err {
+		ctx.Logger().Error("fail to mint coins", "error", err)
+		return
+	}
+	if err := k.coinKeeper.SendCoins(ctx, k.supplyKeeper.GetModuleAddress(ModuleName), address, coins); nil != err {
+		ctx.Logger().Error("fail to give you coins", "error", err)
+		return
+	}
 }
