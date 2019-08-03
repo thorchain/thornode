@@ -55,6 +55,7 @@ var (
 		distr.ModuleName:          nil,
 		staking.BondedPoolName:    []string{supply.Burner, supply.Staking},
 		staking.NotBondedPoolName: []string{supply.Burner, supply.Staking},
+		swapservice.ModuleName:    []string{supply.Burner, supply.Minter, supply.Staking},
 	}
 )
 
@@ -197,6 +198,7 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 	// It handles interactions with the pooldatastore
 	app.ssKeeper = swapservice.NewKeeper(
 		app.bankKeeper,
+		app.supplyKeeper,
 		app.keySS,
 		app.cdc,
 	)
@@ -226,6 +228,7 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 		slashing.ModuleName,
 		swapservice.ModuleName,
 		genutil.ModuleName,
+		supply.ModuleName,
 	)
 
 	// register all module routes and module queriers
