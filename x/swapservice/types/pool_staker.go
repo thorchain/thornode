@@ -75,16 +75,17 @@ func (ps *PoolStaker) RemoveStakerUnit(stakerID string) {
 	}
 }
 
-// UpsertStakeUnit
+// UpsertStakerUnit it check whether the given staker unit is exist in the struct
+// if it exist then just update it , otherwise it append it
 func (ps *PoolStaker) UpsertStakerUnit(stakerUnit StakerUnit) {
-	deleteIdx := -1
+	pos := -1
 	for idx, item := range ps.Stakers {
 		if item.StakerID == stakerUnit.StakerID {
-			deleteIdx = idx
+			pos = idx
 		}
 	}
-	if deleteIdx != -1 {
-		ps.Stakers[deleteIdx] = stakerUnit
+	if pos != -1 {
+		ps.Stakers[pos] = stakerUnit
 		return
 	}
 	ps.Stakers = append(ps.Stakers, stakerUnit)

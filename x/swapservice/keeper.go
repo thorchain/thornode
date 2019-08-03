@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/pkg/errors"
+	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
@@ -23,12 +24,15 @@ type Keeper struct {
 
 // NewKeeper creates new instances of the swapservice Keeper
 func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
-	fmt.Println(storeKey)
 	return Keeper{
 		coinKeeper: coinKeeper,
 		storeKey:   storeKey,
 		cdc:        cdc,
 	}
+}
+
+func (k Keeper) Logger(ctx sdk.Context) log.Logger {
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
 }
 
 // GetPoolStruct get the entire PoolStruct metadata struct for a pool ID
