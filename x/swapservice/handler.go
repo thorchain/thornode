@@ -136,7 +136,7 @@ func handleMsgSetStake(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Res
 				// TODO: calculate the proper unit toke value (hard coded to 100 for now)
 				sdk.NewCoin(uTokenTicker, sdk.NewInt(100)),
 			)
-			_, err = keeper.coinKeeper.AddCoins(ctx, addr, amt)
+			err = keeper.MintCoins(ctx, addr, amt)
 			if err != nil {
 				// TODO: refund coins back to original wallet
 				return sdk.ErrInternal(
@@ -159,17 +159,9 @@ func handleMsgSetStake(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Res
 func handleMsgSetUnStake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) sdk.Result {
 
 	// Subtract unit tokens
-	for _, coin := range msg.Coins {
-		uTokenTicker := UnitTokenTicker(coin.Denom)
-
-		amt := sdk.NewCoins(
-			// TODO: calculate the proper unit toke value (hard coded to 100 for now)
-			sdk.NewCoin(uTokenTicker, sdk.NewInt(100)),
-		)
-		_, err := keeper.coinKeeper.SubtractCoins(ctx, msg.Signer, amt)
-		if err != nil {
-			return sdk.ErrInsufficientCoins("Account does not have enough coins").Result()
-		}
+	err := keeper.BurnCoins(ctx, msg.Signer, msg.Coins)
+	if err != nil {
+		return sdk.ErrInsufficientCoins("Account does not have enough coins").Result()
 	}
 
 	// Send coins on Binance chain to recipient

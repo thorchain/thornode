@@ -111,28 +111,31 @@ func (k Keeper) SetTxHash(ctx sdk.Context, tx TxHash) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
-func (k Keeper) MintCoins(ctx sdk.Context, address sdk.AccAddress, coins sdk.Coins) {
+func (k Keeper) MintCoins(ctx sdk.Context, address sdk.AccAddress, coins sdk.Coins) error {
 	err := k.supplyKeeper.MintCoins(ctx, ModuleName, coins)
 	if nil != err {
 		ctx.Logger().Error("fail to mint coins", "error", err)
-		return
+		return err
 	}
 
 	if err := k.coinKeeper.SendCoins(ctx, k.supplyKeeper.GetModuleAddress(ModuleName), address, coins); nil != err {
 		ctx.Logger().Error("fail to give you coins", "error", err)
-		return
+		return err
 	}
+
+	return nil
 }
 
-func (k Keeper) BurnCoins(ctx sdk.Context, address sdk.AccAddress, coins sdk.Coins) {
+func (k Keeper) BurnCoins(ctx sdk.Context, address sdk.AccAddress, coins sdk.Coins) error {
 	err := k.supplyKeeper.BurnCoins(ctx, ModuleName, coins)
 	if nil != err {
 		ctx.Logger().Error("fail to burn coins", "error", err)
-		return
+		return err
 	}
 
 	if _, err := k.coinKeeper.SubtractCoins(ctx, address, coins); nil != err {
 		ctx.Logger().Error("fail to give you coins", "error", err)
-		return
+		return err
 	}
+	return nil
 }
