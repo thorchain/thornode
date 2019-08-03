@@ -26,14 +26,14 @@ const (
 // pool staker , staker pool etc
 // pool index etc
 // RegisterRoutes - Central function to define routes that get registered by the main application
-func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storePoolData string) {
-	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}", storePoolData, restPoolStruct), poolStructHandler(cliCtx, storePoolData)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/pools", storePoolData), poolHandler(cliCtx, storePoolData)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/account/{%s}", storePoolData, accData), accHandler(cliCtx, storePoolData)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/stake/{%s}", storePoolData, stakeData), stakeHandler(cliCtx, storePoolData)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/swaprecord/{%s}", storePoolData, swapData), swapRecordHandler(cliCtx, storePoolData)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/unstakerecord/{%s}", storePoolData, swapData), unStakeRecordHandler(cliCtx, storePoolData)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/stake", storePoolData), setStakeDataHandler(cliCtx)).Methods("PUT")
+func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
+	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}", storeName, restPoolStruct), poolStructHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/pools", storeName), poolHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/account/{%s}", storeName, accData), accHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/stake/{%s}", storeName, stakeData), stakeHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/swaprecord/{%s}", storeName, swapData), swapRecordHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/unstakerecord/{%s}", storeName, swapData), unStakeRecordHandler(cliCtx, storePoolData)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/stake", storeName), setStakeDataHandler(cliCtx)).Methods("PUT")
 }
 
 type setStakeData struct {
