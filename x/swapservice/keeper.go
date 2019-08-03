@@ -121,9 +121,6 @@ func (k Keeper) AddSomeCoins(ctx sdk.Context, address sdk.AccAddress) {
 			Amount: sdk.NewInt(10000),
 		},
 	}
-	if nil == k.supplyKeeper {
-		ctx.Logger().Error("supply keeper is nil")
-	}
 	err := k.supplyKeeper.MintCoins(ctx, ModuleName, coins)
 	if nil != err {
 		ctx.Logger().Error("fail to mint coins", "error", err)
