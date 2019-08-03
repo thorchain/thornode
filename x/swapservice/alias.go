@@ -5,18 +5,16 @@ import (
 )
 
 const (
-	ModuleName = types.ModuleName
-	RouterKey  = types.RouterKey
-	StoreKey   = types.StoreKey
+	ModuleName       = types.ModuleName
+	RouterKey        = types.RouterKey
+	StoreKey         = types.StoreKey
+	DefaultCodespace = types.DefaultCodespace
 )
 
 var (
-	NewMsgSetPoolData  = types.NewMsgSetPoolData
-	NewPoolStruct      = types.NewPoolStruct
-	NewMsgSetStakeData = types.NewMsgSetStakeData
-	NewMsgSwap         = types.NewMsgSwap
-	ModuleCdc          = types.ModuleCdc
-	RegisterCodec      = types.RegisterCodec
+	NewPoolStruct = types.NewPoolStruct
+	ModuleCdc     = types.ModuleCdc
+	RegisterCodec = types.RegisterCodec
 )
 
 type (

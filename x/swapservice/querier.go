@@ -75,7 +75,6 @@ func queryPoolIndex(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 
 // queryPoolStakers
 func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	fmt.Println("query pool stakers.....")
 	ticker := path[0]
 	poolID := types.GetPoolNameFromTicker(ticker)
 	ps, err := keeper.GetPoolStaker(ctx, poolID)

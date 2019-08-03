@@ -8,7 +8,7 @@ type SwapRecord struct {
 	SourceTicker    string `json:"source_ticker"`    // Source ticker
 	TargetTicker    string `json:"target_ticker"`    // Target ticker
 	Requester       string `json:"requester"`        // Requester , should be the address on binance chain
-	Destination     string `json:"destination"`      // destination , not sure what it is used right now
+	Destination     string `json:"destination"`      // destination , used for swap and send , the destination address we send it to
 	AmountRequested string `json:"amount_requested"` // amount of source token in
 	AmountPaidBack  string `json:"amount_paid_back"` // amount of target token pay out to user
 	PayTxHash       string `json:"pay_tx_hash"`      // TxHash on binance chain represent our pay to user
