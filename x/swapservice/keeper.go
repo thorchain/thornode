@@ -110,23 +110,28 @@ func (k Keeper) SetTxHash(ctx sdk.Context, tx TxHash) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
-func (k Keeper) AddSomeCoins(ctx sdk.Context, address sdk.AccAddress) {
-	coins := sdk.Coins{
-		sdk.Coin{
-			Denom:  "bnb",
-			Amount: sdk.NewInt(10000),
-		},
-		sdk.Coin{
-			Denom:  "btc",
-			Amount: sdk.NewInt(10000),
-		},
-	}
+
+func (k Keeper) MintCoins(ctx sdk.Context, address sdk.AccAddress, coins sdk.Coins) {
 	err := k.supplyKeeper.MintCoins(ctx, ModuleName, coins)
 	if nil != err {
 		ctx.Logger().Error("fail to mint coins", "error", err)
 		return
 	}
+
 	if err := k.coinKeeper.SendCoins(ctx, k.supplyKeeper.GetModuleAddress(ModuleName), address, coins); nil != err {
+		ctx.Logger().Error("fail to give you coins", "error", err)
+		return
+	}
+}
+
+func (k Keeper) BurnCoins(ctx sdk.Context, address sdk.AccAddress, coins sdk.Coins) {
+	err := k.supplyKeeper.BurnCoins(ctx, ModuleName, coins)
+	if nil != err {
+		ctx.Logger().Error("fail to burn coins", "error", err)
+		return
+	}
+
+	if _, err := k.coinKeeper.SubtractCoins(ctx, address, coins); nil != err {
 		ctx.Logger().Error("fail to give you coins", "error", err)
 		return
 	}
