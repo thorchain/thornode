@@ -359,7 +359,7 @@ func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 // SetTxHas - saving a given txhash to the KVStore
 func (k Keeper) SetTxHash(ctx sdk.Context, tx TxHash) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxHash, tx.TxHash)
+	key := getKey(prefixTxHash, tx.Key())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
