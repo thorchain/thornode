@@ -75,3 +75,17 @@ func (mps MockPoolStorage) UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxH
 	}
 	return nil
 }
+func (mps MockPoolStorage) SetUnStakeRecord(ctx sdk.Context, ur types.UnstakeRecord) {
+}
+func (mps MockPoolStorage) GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (types.UnstakeRecord, error) {
+	if strings.EqualFold(requestTxHash, "ASKFORERROR") {
+		return types.UnstakeRecord{}, errors.New("you asked for it")
+	}
+	return types.UnstakeRecord{}, nil
+}
+func (mps MockPoolStorage) UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash, completeTxHash string) error {
+	if strings.EqualFold(requestTxHash, "ASKFORERROR") {
+		return errors.New("you ask for it")
+	}
+	return nil
+}

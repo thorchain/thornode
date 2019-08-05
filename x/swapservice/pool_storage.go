@@ -23,4 +23,8 @@ type poolStorage interface {
 	SetSwapRecord(ctx sdk.Context, sr types.SwapRecord) error
 	GetSwapRecord(ctx sdk.Context, requestTxHash string) (types.SwapRecord, error)
 	UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash string) error
+
+	SetUnStakeRecord(ctx sdk.Context, ur types.UnstakeRecord)
+	GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (types.UnstakeRecord, error)
+	UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash, completeTxHash string) error
 }

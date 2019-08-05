@@ -113,7 +113,11 @@ func (sp *StakerPool) RemoveStakerPoolItem(poolID string) {
 		}
 	}
 	if deleteIdx != -1 {
-		sp.PoolUnits = append(sp.PoolUnits[:deleteIdx], sp.PoolUnits[deleteIdx:]...)
+		if deleteIdx == 0 {
+			sp.PoolUnits = []*StakerPoolItem{}
+		} else {
+			sp.PoolUnits = append(sp.PoolUnits[:deleteIdx], sp.PoolUnits[deleteIdx:]...)
+		}
 	}
 }
 

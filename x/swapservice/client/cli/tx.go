@@ -29,6 +29,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdSwap(cdc),
 		GetCmdSwapComplete(cdc),
 		GetCmdUnstake(cdc),
+		GetCmdUnStakeComplete(cdc),
 	)...)
 
 	return swapserviceTxCmd
@@ -115,13 +116,32 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 // GetCmdUnstake command to unstake coins
 func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "unstake [ticker] [address] [percentage]",
+		Use:   "unstake [name] [address] [percentage] [ticker] [requestTxHash]",
 		Short: "Withdraw coins",
-		Args:  cobra.ExactArgs(3),
+		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			msg := types.NewMsgSetUnStake(args[1], args[1], args[2], args[0], cliCtx.GetFromAddress())
+			msg := types.NewMsgSetUnStake(args[0], args[1], args[2], args[3], args[4], cliCtx.GetFromAddress())
+			err := msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdUnStakeComplete command to send MsgUnStakeComplete Message
+func GetCmdUnStakeComplete(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "set-unstake-complete [requestTxHash] [payTxHash]",
+		Short: "unstake Complete",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			msg := types.NewMsgUnStakeComplete(args[0], args[1], cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
