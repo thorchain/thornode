@@ -27,7 +27,7 @@ func validateStakeAmount(stakers PoolStaker, stakerUnits float64) error {
 		}
 		sum += units
 	}
-	avgStake := sum / float64(stakerCount)
+	avgStake := sum / stakerCount
 
 	if len(stakers.Stakers) <= stakerLimit {
 		minStakerAmt = 0 // first 100 stakers there are no lower limits
