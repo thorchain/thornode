@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/jpthor/cosmos-swap/exchange"
 
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
@@ -24,6 +25,8 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgSetUnstake(ctx, keeper, msg)
 		case types.MsgUnStakeComplete:
 			return handleMsgSetUnstakeComplete(ctx, keeper, msg)
+		case MsgSetTxHash:
+			return handleMsgSetTxHash(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -205,6 +208,29 @@ func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg types.MsgUn
 		ctx.Logger().Error("fail to set swap to complete", "requestTxHash", msg.RequestTxHash, "completetxhash", msg.CompleteTxHash)
 		return sdk.ErrInternal("fail to mark a swap to complete").Result()
 	}
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
+func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Result {
+	// validate there are not conflicts first
+	if keeper.CheckTxHash(ctx, msg.TxHash.Key()) {
+		return sdk.ErrUnknownRequest("Conflict").Result()
+	}
+
+	txResult, err := exchange.GetTxInfo(msg.TxHash.TxHash)
+	if err != nil {
+		return sdk.ErrUnknownRequest(
+			fmt.Sprintf("Unable to get binance tx info: %s", err.Error()),
+		).Result()
+	}
+
+	memo := txResult.Memo()
+	// TODO parse memo, waiting on PR #30
+	_ = memo
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

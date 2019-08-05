@@ -12,14 +12,16 @@ const (
 )
 
 var (
-	NewPoolStruct = types.NewPoolStruct
-	ModuleCdc     = types.ModuleCdc
-	RegisterCodec = types.RegisterCodec
+	NewPoolStruct   = types.NewPoolStruct
+	NewMsgSetTxHash = types.NewMsgSetTxHash
+	ModuleCdc       = types.ModuleCdc
+	RegisterCodec   = types.RegisterCodec
 )
 
 type (
 	MsgSetPoolData      = types.MsgSetPoolData
 	MsgSetStakeData     = types.MsgSetStakeData
+	MsgSetTxHash        = types.MsgSetTxHash
 	MsgSwap             = types.MsgSwap
 	QueryResPoolStructs = types.QueryResPoolStructs
 	TxHash              = types.TxHash
