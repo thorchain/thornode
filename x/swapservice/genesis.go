@@ -10,12 +10,14 @@ import (
 )
 
 type GenesisState struct {
-	PoolStructRecords []PoolStruct `json:"poolstruct_records"`
+	PoolStructRecords []PoolStruct         `json:"poolstruct_records"`
+	TrustAccounts     []types.TrustAccount `json:"trust_accounts"`
 }
 
-func NewGenesisState(pools []PoolStruct) GenesisState {
+func NewGenesisState(pools []PoolStruct, trustAccounts []types.TrustAccount) GenesisState {
 	return GenesisState{
 		PoolStructRecords: pools,
+		TrustAccounts:     trustAccounts,
 	}
 }
 
@@ -26,6 +28,14 @@ func ValidateGenesis(data GenesisState) error {
 		}
 		if record.Ticker == "" {
 			return fmt.Errorf("Invalid PoolStructRecord: Owner: %s. Error: Missing Ticker", record.Ticker)
+		}
+	}
+	for _, ta := range data.TrustAccounts {
+		if len(ta.Name) == 0 {
+			return fmt.Errorf("invalid trust account record, error: missing account name")
+		}
+		if ta.Address.Empty() {
+			return fmt.Errorf("invalid trust account record, error: missing account address")
 		}
 	}
 	return nil
@@ -52,19 +62,31 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, record := range data.PoolStructRecords {
 		keeper.SetPoolStruct(ctx, types.GetPoolNameFromTicker(record.Ticker), record)
 	}
+	for _, ta := range data.TrustAccounts {
+		keeper.SetTrustAccount(ctx, ta)
+	}
 	return []abci.ValidatorUpdate{}
 }
 
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var poolRecords []PoolStruct
 	iterator := k.GetPoolStructDataIterator(ctx)
+	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
-		key := string(iterator.Key())
 		var poolstruct PoolStruct
-		poolstruct = k.GetPoolStruct(ctx, key)
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &poolstruct)
 		poolRecords = append(poolRecords, poolstruct)
+	}
+	var trustAccounts []types.TrustAccount
+	taIterator := k.GetTrustAccountIterator(ctx)
+	defer taIterator.Close()
+	for ; taIterator.Valid(); taIterator.Next() {
+		var ta types.TrustAccount
+		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
+		trustAccounts = append(trustAccounts, ta)
 	}
 	return GenesisState{
 		PoolStructRecords: poolRecords,
+		TrustAccounts:     trustAccounts,
 	}
 }

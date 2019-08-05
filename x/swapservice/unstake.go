@@ -9,6 +9,8 @@ import (
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
+const unstakeRecordPrefix = `unstakerecord-`
+
 func validateUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) error {
 	if isEmptyString(msg.Name) {
 		return errors.New("empty name")
@@ -18,6 +20,9 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) er
 	}
 	if isEmptyString(msg.Percentage) {
 		return errors.New("empty percentage")
+	}
+	if isEmptyString(msg.RequestTxHash) {
+		return errors.New("request tx hash is empty")
 	}
 	if isEmptyString(msg.Ticker) {
 		return errors.New("empty ticker")
@@ -108,6 +113,12 @@ func unstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) (string, s
 	keeper.SetPoolStruct(ctx, poolID, pool)
 	keeper.SetPoolStaker(ctx, poolID, poolStaker)
 	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
+	keeper.SetUnStakeRecord(ctx, types.UnstakeRecord{
+		RequestTxHash: msg.RequestTxHash,
+		Ticker:        msg.Ticker,
+		PublicAddress: msg.PublicAddress,
+		Percentage:    msg.Percentage,
+	})
 	return float64ToString(withdrawRune), float64ToString(withDrawToken), nil
 }
 func float64ToString(fvalue float64) string {
@@ -135,4 +146,15 @@ func calculateUnstake(poolUnit, poolRune, poolToken, stakerUnit, percentage floa
 	withdrawToken := stakerOwnership * percentage / 100 * poolToken
 	unitAfter := stakerUnit * (100 - percentage) / 100
 	return withdrawRune, withdrawToken, unitAfter, nil
+}
+
+// unStakeComplete  mark a swap to be in complete state
+func unStakeComplete(ctx sdk.Context, keeper poolStorage, requestTxHash, completeTxHash string) error {
+	if isEmptyString(requestTxHash) {
+		return errors.New("request tx hash is empty")
+	}
+	if isEmptyString(completeTxHash) {
+		return errors.New("complete tx hash is empty")
+	}
+	return keeper.UpdateUnStakeRecordCompleteTxHash(ctx, requestTxHash, completeTxHash)
 }

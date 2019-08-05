@@ -9,20 +9,22 @@ import (
 
 // MsgSetUnStake is used to withdraw
 type MsgSetUnStake struct {
-	Name          string         `json:"name"`           // name doesn't have particular usage right now , probably just for display
-	PublicAddress string         `json:"public_address"` // it should be the public address
-	Percentage    string         `json:"percentage"`     // unstake percentage
-	Ticker        string         `json:"ticker"`         // ticker token symbol
+	Name          string         `json:"name"`            // name doesn't have particular usage right now , probably just for display
+	PublicAddress string         `json:"public_address"`  // it should be the public address
+	Percentage    string         `json:"percentage"`      // unstake percentage
+	Ticker        string         `json:"ticker"`          // ticker token symbol
+	RequestTxHash string         `json:"request_tx_hash"` // request tx hash on binance chain
 	Owner         sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetUnStake is a constructor function for MsgSetPoolData
-func NewMsgSetUnStake(name, publicAddress, percentage, ticker string, owner sdk.AccAddress) MsgSetUnStake {
+func NewMsgSetUnStake(name, publicAddress, percentage, ticker, requestTxHash string, owner sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
 		Name:          name,
 		PublicAddress: publicAddress,
 		Percentage:    percentage,
 		Ticker:        strings.ToUpper(ticker),
+		RequestTxHash: requestTxHash,
 		Owner:         owner,
 	}
 }
@@ -40,6 +42,9 @@ func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
 	}
 	if len(msg.Ticker) == 0 {
 		return sdk.ErrUnknownRequest("Pool Ticker cannot be empty")
+	}
+	if len(msg.RequestTxHash) == 0 {
+		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
 	if len(msg.Percentage) == 0 {
 		return sdk.ErrUnknownRequest("Percentage cannot be empty")

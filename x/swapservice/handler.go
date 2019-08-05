@@ -23,6 +23,8 @@ func NewHandler(keeper Keeper) sdk.Handler {
 			return handleMsgSetSwapComplete(ctx, keeper, msg)
 		case types.MsgSetUnStake:
 			return handleMsgSetUnstake(ctx, keeper, msg)
+		case types.MsgUnStakeComplete:
+			return handleMsgSetUnstakeComplete(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -142,8 +144,8 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake
 	}
 	runeAmt, tokenAmount, err := unstake(ctx, keeper, msg)
 	if nil != err {
-		ctx.Logger().Error("fail to unstake", "error", err)
-		return sdk.ErrInternal("fail to process unstake request").Result()
+		ctx.Logger().Error("fail to UnStake", "error", err)
+		return sdk.ErrInternal("fail to process UnStake request").Result()
 	}
 	res, err := json.Marshal(struct {
 		Rune  string `json:"rune"`
@@ -159,6 +161,23 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
+		Codespace: DefaultCodespace,
+	}
+}
+
+// handleMsgSetUnstakeComplete mark an unstake to complete
+func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg types.MsgUnStakeComplete) sdk.Result {
+	ctx.Logger().Debug("receive MsgUnStakeComplete", "requestTxHash", msg.RequestTxHash, "completeTxHash", msg.CompleteTxHash)
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid MsgUnStakeComplete", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+	if err := unStakeComplete(ctx, keeper, msg.RequestTxHash, msg.CompleteTxHash); nil != err {
+		ctx.Logger().Error("fail to set swap to complete", "requestTxHash", msg.RequestTxHash, "completetxhash", msg.CompleteTxHash)
+		return sdk.ErrInternal("fail to mark a swap to complete").Result()
+	}
+	return sdk.Result{
+		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
 	}
 }
