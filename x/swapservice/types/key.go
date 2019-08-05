@@ -8,4 +8,6 @@ const (
 	StoreKey = ModuleName
 	// RuneTicker
 	RuneTicker = "RUNE"
+
+	RouterKey = ModuleName // this was defined in your key.go file
 )

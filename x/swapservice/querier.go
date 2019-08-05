@@ -14,7 +14,7 @@ import (
 // query endpoints supported by the swapservice Querier
 const (
 	QueryPoolStruct    = "poolstruct"
-	QueryPoolDatas     = "pooldatas"
+	QueryPoolStructs   = "poolstructs"
 	QueryPoolStakers   = "poolstakers"
 	QueryStakerPools   = "stakerpools"
 	QueryPoolIndex     = "poolindex"
@@ -28,8 +28,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		switch path[0] {
 		case QueryPoolStruct:
 			return queryPoolStruct(ctx, path[1:], req, keeper)
-		case QueryPoolDatas:
-			return queryPoolDatas(ctx, req, keeper)
+		case QueryPoolStructs:
+			return queryPoolStructs(ctx, req, keeper)
 		case QueryPoolStakers:
 			return queryPoolStakers(ctx, path[1:], req, keeper)
 		case QueryStakerPools:
@@ -137,15 +137,15 @@ func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	return res, nil
 }
 
-func queryPoolDatas(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	var pooldatasList QueryResPoolDatas
+func queryPoolStructs(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	var pools QueryResPoolStructs
 	iterator := keeper.GetPoolStructDataIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
 		var poolstruct PoolStruct
 		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &poolstruct)
-		pooldatasList = append(pooldatasList, poolstruct)
+		pools = append(pools, poolstruct)
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, pooldatasList)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, pools)
 	if err != nil {
 		return nil, sdk.ErrInternal("could not marshal pools result to json")
 	}
