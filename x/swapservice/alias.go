@@ -18,11 +18,9 @@ var (
 )
 
 type (
-	MsgSetPoolData     = types.MsgSetPoolData
-	MsgSetStakeData    = types.MsgSetStakeData
-	MsgSwap            = types.MsgSwap
-	QueryResResolve    = types.QueryResResolve
-	QueryResPoolDatas  = types.QueryResPoolDatas
-	QueryResStakeDatas = types.QueryResStakeDatas
-	PoolStruct         = types.PoolStruct
+	MsgSetPoolData      = types.MsgSetPoolData
+	MsgSetStakeData     = types.MsgSetStakeData
+	MsgSwap             = types.MsgSwap
+	QueryResPoolStructs = types.QueryResPoolStructs
+	PoolStruct          = types.PoolStruct
 )
