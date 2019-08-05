@@ -1,7 +1,6 @@
 package swapservice
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 )
@@ -112,7 +111,4 @@ func (s StakeSuite) TestValidateAmount(c *C) {
 	c.Assert(validateStakeAmount(skrs, 0.0001), NotNil)
 	c.Assert(validateStakeAmount(skrs, 0.002), NotNil)
 	c.Assert(validateStakeAmount(skrs, 0.004), IsNil)
-
-	config := sdk.GetConfig()
-	c.Check(config, Equals, true)
 }
