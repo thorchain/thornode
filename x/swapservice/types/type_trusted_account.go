@@ -6,6 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// TrustAccountPrefix all trust account will have this prefix
 const TrustAccountPrefix = `trustaccount-`
 
 // TrustAccount represent those accounts we can trust, and can be used to sign tx

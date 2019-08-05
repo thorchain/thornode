@@ -324,6 +324,14 @@ func (k Keeper) GetUnstakeRecordIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStorePrefixIterator(store, []byte(unstakeRecordPrefix))
 }
 
+// IsTrustAccount check whether the account is trust , and can send tx
+func (k Keeper) IsTrustAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
+	ctx.Logger().Debug("IsTrustAccount", "account address", addr.String())
+	store := ctx.KVStore(k.storeKey)
+	key := types.TrustAccountPrefix + addr.String()
+	return store.Has([]byte(key))
+}
+
 // SetTrustAccount save the given trust account into data store
 func (k Keeper) SetTrustAccount(ctx sdk.Context, ta types.TrustAccount) {
 	ctx.Logger().Debug("SetTrustAccount", "trust account", ta.String())
@@ -332,7 +340,7 @@ func (k Keeper) SetTrustAccount(ctx sdk.Context, ta types.TrustAccount) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ta))
 }
 
-// GetTrustAccountIterator iternate trust account
+// GetTrustAccountIterator iterate trust accounts
 func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(types.TrustAccountPrefix))
