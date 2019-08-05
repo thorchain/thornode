@@ -22,5 +22,6 @@ type (
 	MsgSetStakeData     = types.MsgSetStakeData
 	MsgSwap             = types.MsgSwap
 	QueryResPoolStructs = types.QueryResPoolStructs
+	TxHash              = types.TxHash
 	PoolStruct          = types.PoolStruct
 )
