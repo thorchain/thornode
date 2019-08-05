@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// StakerUnit staker and their units in the pool
 type StakerUnit struct {
 	StakerID string `json:"staker_id"`
 	Units    string `json:"units"`
