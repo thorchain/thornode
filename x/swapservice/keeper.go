@@ -270,3 +270,70 @@ func (k Keeper) GetSwapRecordIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(swapRecordKeyPrefix))
 }
+
+// SetUnStakeRecord write an UnStake record to key value store
+func (k Keeper) SetUnStakeRecord(ctx sdk.Context, ur types.UnstakeRecord) {
+	store := ctx.KVStore(k.storeKey)
+	unStakeRecordKey := unstakeRecordPrefix + ur.RequestTxHash
+	ctx.Logger().Debug("upsert UnStake", "key", unStakeRecordKey)
+	store.Set([]byte(unStakeRecordKey), k.cdc.MustMarshalBinaryBare(ur))
+}
+
+// GetUnStakeRecord query unstake record from Key Value store
+func (k Keeper) GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (types.UnstakeRecord, error) {
+	if isEmptyString(requestTxHash) {
+		return types.UnstakeRecord{}, errors.New("request tx hash is empty")
+	}
+	store := ctx.KVStore(k.storeKey)
+	unStakeRecordKey := unstakeRecordPrefix + requestTxHash
+	ctx.Logger().Debug("get UnStake record", "key", unStakeRecordKey)
+	if !store.Has([]byte(unStakeRecordKey)) {
+		ctx.Logger().Debug("record not found", "key", unStakeRecordKey)
+		return types.UnstakeRecord{
+			RequestTxHash: requestTxHash,
+		}, nil
+	}
+	var ur types.UnstakeRecord
+	buf := store.Get([]byte(unStakeRecordKey))
+	if err := k.cdc.UnmarshalBinaryBare(buf, &ur); nil != err {
+		return types.UnstakeRecord{}, errors.Wrap(err, "fail to unmarshal UnstakeRecord")
+	}
+	return ur, nil
+}
+
+// UpdateUnStakeRecordCompleteTxHash update the complete txHash
+func (k Keeper) UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash, completeTxHash string) error {
+	if isEmptyString(requestTxHash) {
+		return errors.New("request tx hash is empty")
+	}
+	if isEmptyString(completeTxHash) {
+		return errors.New("complete tx hash is empty")
+	}
+	ur, err := k.GetUnStakeRecord(ctx, requestTxHash)
+	if nil != err {
+		return errors.Wrapf(err, "fail to get UnStake record with request hash:%s", requestTxHash)
+	}
+	ur.CompleteTxHash = completeTxHash
+	k.SetUnStakeRecord(ctx, ur)
+	return nil
+}
+
+// GetUnstakeRecordIterator only iterate unstake record
+func (k Keeper) GetUnstakeRecordIterator(ctx sdk.Context) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIterator(store, []byte(unstakeRecordPrefix))
+}
+
+// SetTrustAccount save the given trust account into data store
+func (k Keeper) SetTrustAccount(ctx sdk.Context, ta types.TrustAccount) {
+	ctx.Logger().Debug("SetTrustAccount", "trust account", ta.String())
+	store := ctx.KVStore(k.storeKey)
+	key := types.TrustAccountPrefix + ta.Address.String()
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ta))
+}
+
+// GetTrustAccountIterator iternate trust account
+func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIterator(store, []byte(types.TrustAccountPrefix))
+}

@@ -13,12 +13,13 @@ import (
 
 // query endpoints supported by the swapservice Querier
 const (
-	QueryPoolStruct  = "poolstruct"
-	QueryPoolDatas   = "pooldatas"
-	QueryPoolStakers = "poolstakers"
-	QueryStakerPools = "stakerpools"
-	QueryPoolIndex   = "poolindex"
-	QuerySwapRecord  = "swaprecord"
+	QueryPoolStruct    = "poolstruct"
+	QueryPoolDatas     = "pooldatas"
+	QueryPoolStakers   = "poolstakers"
+	QueryStakerPools   = "stakerpools"
+	QueryPoolIndex     = "poolindex"
+	QuerySwapRecord    = "swaprecord"
+	QueryUnStakeRecord = "unstakerecord"
 )
 
 // NewQuerier is the module level router for state queries
@@ -37,10 +38,27 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryPoolIndex(ctx, path[1:], req, keeper)
 		case QuerySwapRecord:
 			return querySwapRecord(ctx, path[1:], req, keeper)
+		case QueryUnStakeRecord:
+			return queryUnStakeRecord(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown swapservice query endpoint")
 		}
 	}
+}
+
+// queryUnStakeRecord
+func queryUnStakeRecord(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	sr, err := keeper.GetUnStakeRecord(ctx, path[0])
+	if nil != err {
+		ctx.Logger().Error("fail to get UnStake record", err)
+		return nil, sdk.ErrInternal("fail to get UnStake record")
+	}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, sr)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal UnStake record to json", err)
+		return nil, sdk.ErrInternal("fail to marshal UnStake record to json")
+	}
+	return res, nil
 }
 
 // querySwapRecord
