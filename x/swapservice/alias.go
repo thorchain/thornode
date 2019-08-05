@@ -23,4 +23,7 @@ type (
 	MsgSwap             = types.MsgSwap
 	QueryResPoolStructs = types.QueryResPoolStructs
 	PoolStruct          = types.PoolStruct
+	PoolStaker          = types.PoolStaker
+	StakerPool          = types.StakerPool
+	StakerUnit          = types.StakerUnit
 )

@@ -12,6 +12,35 @@ import (
 )
 
 const floatPrecision = 8
+const stakerLimit = 100.0 // TODO: make configurable
+
+// validateStakeAmount
+func validateStakeAmount(stakers PoolStaker, stakerUnits float64) error {
+	var minStakerAmt float64
+	stakerCount := float64(len(stakers.Stakers))
+
+	var sum float64
+	for _, staker := range stakers.Stakers {
+		units, err := strconv.ParseFloat(staker.Units, 64)
+		if err != nil {
+			return errors.Wrapf(err, "%s is invalid units", staker.Units)
+		}
+		sum += units
+	}
+	avgStake := sum / float64(stakerCount)
+
+	if len(stakers.Stakers) <= stakerLimit {
+		minStakerAmt = 0 // first 100 stakers there are no lower limits
+	} else {
+		minStakerAmt = avgStake * ((stakerCount / stakerLimit) + 0.1) // Increases minStakeAmt by 10% every 100 stakers
+	}
+
+	if stakerUnits < minStakerAmt {
+		return fmt.Errorf("Not enough to stake (%f/%f)", stakerUnits, minStakerAmt)
+	}
+
+	return nil
+}
 
 // validateStakeMessage is to do some validation , and make sure it is legit
 func validateStakeMessage(ctx sdk.Context, keeper Keeper, name, ticker, stakeRuneAmount, stakeTokenAmount, requestTxHash, publicAddress string) error {
@@ -97,6 +126,10 @@ func stake(ctx sdk.Context, keeper Keeper, name, ticker, stakeRuneAmount, stakeT
 
 	}
 	stakerUnits += fex
+	err = validateStakeAmount(ps, stakerUnits)
+	if err != nil {
+		return errors.Wrapf(err, "invalid stake amount")
+	}
 	su.Units = strconv.FormatFloat(stakerUnits, 'f', floatPrecision, 64)
 	ps.UpsertStakerUnit(su)
 	keeper.SetPoolStaker(ctx, poolID, ps)

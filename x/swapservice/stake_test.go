@@ -1,6 +1,7 @@
 package swapservice
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 )
@@ -85,4 +86,33 @@ func (s StakeSuite) TestCalculatePoolUnits(c *C) {
 		c.Check(round(item.poolUnits), Equals, round(poolUnits))
 		c.Check(round(item.stakerUnits), Equals, round(stakerUnits))
 	}
+}
+
+func (s StakeSuite) TestValidateAmount(c *C) {
+	makePoolStaker := func(total int, avg string) PoolStaker {
+		stakers := make([]StakerUnit, total)
+		for i, _ := range stakers {
+			stakers[i] = StakerUnit{Units: avg}
+		}
+
+		return PoolStaker{
+			Stakers: stakers,
+		}
+	}
+
+	skrs := makePoolStaker(50, "0.001")
+	c.Assert(validateStakeAmount(skrs, 0.001), IsNil)
+
+	skrs = makePoolStaker(150, "0.0002")
+	c.Assert(validateStakeAmount(skrs, 0.0001), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.0002), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.0010), IsNil)
+
+	skrs = makePoolStaker(300, "0.001")
+	c.Assert(validateStakeAmount(skrs, 0.0001), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.002), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.004), IsNil)
+
+	config := sdk.GetConfig()
+	c.Check(config, Equals, true)
 }
