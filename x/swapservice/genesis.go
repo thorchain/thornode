@@ -9,11 +9,13 @@ import (
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
+// GenesisState strcture that used to store the data we put in genesis
 type GenesisState struct {
 	PoolStructRecords []PoolStruct         `json:"poolstruct_records"`
 	TrustAccounts     []types.TrustAccount `json:"trust_accounts"`
 }
 
+// NewGenesisState create a new instance of GenesisState
 func NewGenesisState(pools []PoolStruct, trustAccounts []types.TrustAccount) GenesisState {
 	return GenesisState{
 		PoolStructRecords: pools,
@@ -21,13 +23,28 @@ func NewGenesisState(pools []PoolStruct, trustAccounts []types.TrustAccount) Gen
 	}
 }
 
+// ValidateGenesis validate genesis is valid or not
 func ValidateGenesis(data GenesisState) error {
 	for _, record := range data.PoolStructRecords {
-		if record.TokenName == "" {
-			return fmt.Errorf("Invalid PoolStructRecord: Value: %s. Error: Missing Token Name", record.TokenName)
+		if len(record.TokenName) == 0 {
+			return fmt.Errorf("invalid PoolStruct, error: missing token name")
 		}
-		if record.Ticker == "" {
-			return fmt.Errorf("Invalid PoolStructRecord: Owner: %s. Error: Missing Ticker", record.Ticker)
+		if len(record.Ticker) == 0 {
+			return fmt.Errorf("invalid PoolStruct, error: missing ticker")
+		}
+		if len(record.PoolAddress) == 0 {
+			return fmt.Errorf("invalid PoolStruct, error: missing pool address")
+		}
+		if len(record.PoolID) == 0 {
+			return fmt.Errorf("invalid PoolStruct, error: missing pool id")
+		}
+	}
+	for _, ta := range data.TrustAccounts {
+		if len(ta.Name) == 0 {
+			return fmt.Errorf("invalid trust account record, error: missing account name")
+		}
+		if ta.Address.Empty() {
+			return fmt.Errorf("invalid trust account record, error: missing account address")
 		}
 	}
 	for _, ta := range data.TrustAccounts {
@@ -41,6 +58,7 @@ func ValidateGenesis(data GenesisState) error {
 	return nil
 }
 
+// DefaultGenesisState the default values we put in the Genesis
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		PoolStructRecords: []PoolStruct{
@@ -58,6 +76,7 @@ func DefaultGenesisState() GenesisState {
 	}
 }
 
+// InitGenesis read the data in GenesisState and apply it to data store
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.ValidatorUpdate {
 	for _, record := range data.PoolStructRecords {
 		keeper.SetPoolStruct(ctx, types.GetPoolNameFromTicker(record.Ticker), record)
@@ -68,6 +87,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	return []abci.ValidatorUpdate{}
 }
 
+// ExportGenesis export the data in Genesis
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	var poolRecords []PoolStruct
 	iterator := k.GetPoolStructDataIterator(ctx)

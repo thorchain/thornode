@@ -32,8 +32,25 @@ func NewHandler(keeper Keeper) sdk.Handler {
 	}
 }
 
+func isSignedByTrustAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.AccAddress) bool {
+	if len(signers) == 0 {
+		return false
+	}
+	for _, signer := range signers {
+		if !keeper.IsTrustAccount(ctx, signer) {
+			ctx.Logger().Error("unauthorized account", "address", signer.String())
+			return false
+		}
+	}
+	return true
+}
+
 // Handle a message to set pooldata
 func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sdk.Result {
+	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "pool id", msg.PoolID, "pool address", msg.PoolAddress)
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
 	ctx.Logger().Info("handleMsgSetPoolData request", "poolID:"+msg.PoolID)
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
@@ -60,6 +77,10 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 // Handle a message to set stake data
 func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) sdk.Result {
 	ctx.Logger().Info("handleMsgSetStakeData request", "stakerid:"+msg.Ticker)
+	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker, "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress)
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
 		return sdk.Result{
@@ -88,6 +109,10 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 
 // Handle a message to set stake data
 func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
+	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "source ticker", msg.SourceTicker, "target ticker", msg.TargetTicker)
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
 	amount, err := swap(
 		ctx,
 		keeper,
@@ -102,6 +127,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
 		ctx.Logger().Error("fail to process swap message", "error", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
+	// TODO Data has to be length prefixed
 	res, err := json.Marshal(struct {
 		Token string `json:"token"`
 	}{
@@ -121,6 +147,10 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
 // handleMsgSetSwapComplete mark a swap as complete , record the tx hash.
 func handleMsgSetSwapComplete(ctx sdk.Context, keeper Keeper, msg types.MsgSwapComplete) sdk.Result {
 	ctx.Logger().Debug("receive MsgSetSwapComplete", "requestTxHash", msg.RequestTxHash, "paytxhash", msg.PayTxHash)
+	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "pay tx hash", msg.PayTxHash)
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error("invalid MsgSwapComplete", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
@@ -138,6 +168,10 @@ func handleMsgSetSwapComplete(ctx sdk.Context, keeper Keeper, msg types.MsgSwapC
 // handleMsgSetUnstake process unstake
 func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.PublicAddress, msg.Percentage))
+	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress, "ticker", msg.Ticker, "percentage", msg.Percentage)
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error("invalid MsgSetUnstake", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
@@ -147,6 +181,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake
 		ctx.Logger().Error("fail to UnStake", "error", err)
 		return sdk.ErrInternal("fail to process UnStake request").Result()
 	}
+	// TODO Data has to be length prefixed
 	res, err := json.Marshal(struct {
 		Rune  string `json:"rune"`
 		Token string `json:"token"`
@@ -165,9 +200,12 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake
 	}
 }
 
-// handleMsgSetUnstakeComplete mark an unstake to complete
 func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg types.MsgUnStakeComplete) sdk.Result {
 	ctx.Logger().Debug("receive MsgUnStakeComplete", "requestTxHash", msg.RequestTxHash, "completeTxHash", msg.CompleteTxHash)
+	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash)
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error("invalid MsgUnStakeComplete", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
