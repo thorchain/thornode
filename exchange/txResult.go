@@ -3,15 +3,43 @@ package exchange
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 )
 
-var netClient = &http.Client{
-	Timeout: time.Second * 10,
+type Client struct {
+	httpClient *http.Client
+}
+
+func NewClient() *Client {
+	c := Client{
+		httpClient: &http.Client{
+			Timeout: time.Second * 10,
+		},
+	}
+
+	return &c
+}
+
+func (cli *Client) GetTxInfo(txHash string) (tx txResult, err error) {
+	// TODO: support mainnet
+
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://testnet-dex.binance.org/api/v1/tx/%s?format=json", txHash), nil)
+	if err != nil {
+		return tx, errors.Wrap(err, "failed to build request")
+	}
+
+	resp, err := cli.httpClient.Do(req)
+	if err != nil {
+		return tx, errors.Wrap(err, "request failed")
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&tx); err != nil {
+		return tx, errors.Wrap(err, "unmarshaling failed")
+	}
+	return
 }
 
 type msg struct {
@@ -54,17 +82,4 @@ func (tx txResult) Outputs() []puts {
 
 func (tx txResult) Inputs() []puts {
 	return tx.Msg().Value.Inputs
-}
-
-func GetTxInfo(txHash string) (tx txResult, err error) {
-	response, err := netClient.Get(fmt.Sprintf("https://testnet-dex.binance.org/api/v1/tx/%s?format=json", txHash))
-	if err != nil {
-		return
-	}
-	buf, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return
-	}
-	err = json.Unmarshal(buf, &tx)
-	return
 }
