@@ -1,7 +1,6 @@
 package swapservice
 
 import (
-	"encoding/json"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -54,10 +53,7 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 	ctx.Logger().Info("handleMsgSetPoolData request", "poolID:"+msg.PoolID)
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
-		return sdk.Result{
-			Code: sdk.CodeUnknownRequest,
-			Data: []byte(err.Error()),
-		}
+		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	keeper.SetPoolData(
 		ctx,
@@ -83,10 +79,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 	}
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
-		return sdk.Result{
-			Code: sdk.CodeUnknownRequest,
-			Data: []byte(err.Error()),
-		}
+		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	if err := stake(
 		ctx,
@@ -127,8 +120,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
 		ctx.Logger().Error("fail to process swap message", "error", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	// TODO Data has to be length prefixed
-	res, err := json.Marshal(struct {
+	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
 		Token string `json:"token"`
 	}{
 		Token: amount,
@@ -181,8 +173,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake
 		ctx.Logger().Error("fail to UnStake", "error", err)
 		return sdk.ErrInternal("fail to process UnStake request").Result()
 	}
-	// TODO Data has to be length prefixed
-	res, err := json.Marshal(struct {
+	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
 		Rune  string `json:"rune"`
 		Token string `json:"token"`
 	}{
