@@ -47,7 +47,6 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txWithdraw), Equals, true, Commentf("MEMO: %+v", memo))
-	c.Check(memo.GetAmount(), Equals, 25.0)
 
 	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:8.7:hello to : : the world!")
 	c.Assert(err, IsNil)

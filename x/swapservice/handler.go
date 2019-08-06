@@ -228,15 +228,72 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 			fmt.Sprintf("Unable to get binance tx info: %s", err.Error()),
 		).Result()
 	}
+	outputs := txResult.Outputs()
 
-	memo := txResult.Memo()
-	// TODO parse memo, waiting on PR #30
-	_ = memo
-
-	// TODO: handle request (ie swap, create pool, etc)
-
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
+	memo, err := ParseMemo(txResult.Memo())
+	if err != nil {
+		return sdk.ErrUnknownRequest(
+			fmt.Sprintf("Unable to parse memo: %s", err.Error()),
+		).Result()
 	}
+
+	handler := NewHandler(keeper)
+	var newMsg sdk.Msg
+
+	switch memo.(type) {
+	case CreateMemo:
+		if keeper.PoolExist(ctx, GetPoolNameFromTicker(memo.GetSymbol())) {
+			return sdk.ErrUnknownRequest("Pool already exists").Result()
+		}
+		// TODO: where should we get ticker metadata (name, icon, etc). Or
+		// should we not and let the frontend figure that out (we just provide
+		// the ticker)
+		newMsg = NewMsgSetPoolData(
+			"TOOD: Name",
+			memo.GetSymbol(),
+			"TODO: pool address",
+			PoolSuspended,
+			msg.Signer,
+		)
+	case StakeMemo:
+		runeAmount := "0"
+		tokenAmount := "0"
+		address := ""
+		for _, output := range outputs {
+			address = output.Address
+			for _, coin := range output.Coins {
+				if coin.Denom == "RUNE" {
+					runeAmount = fmt.Sprintf("%f", coin.Amount)
+				}
+				if coin.Denom == memo.GetSymbol() {
+					tokenAmount = fmt.Sprintf("%f", coin.Amount)
+				}
+			}
+		}
+		newMsg = NewMsgSetStakeData(
+			"TODO: Name",
+			memo.GetSymbol(),
+			tokenAmount,
+			runeAmount,
+			address,
+			msg.TxHash.TxHash,
+			msg.Signer,
+		)
+	case WithdrawMemo:
+		// TODO: withdraw
+	case SwapMemo:
+		// TODO: swap
+	default:
+		return sdk.ErrUnknownRequest(
+			fmt.Sprintf("Unable to find memo type: %s", err.Error()),
+		).Result()
+	}
+	result := handler(ctx, newMsg)
+
+	if result.IsOK() {
+		// save our tx to db so we don't process it a second time
+		keeper.SetTxHash(ctx, msg.TxHash)
+	}
+
+	return result
 }
