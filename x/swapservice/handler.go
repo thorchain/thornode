@@ -228,6 +228,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 			fmt.Sprintf("Unable to get binance tx info: %s", err.Error()),
 		).Result()
 	}
+
 	outputs := txResult.Outputs()
 	if len(outputs) == 0 {
 		return sdk.ErrUnknownRequest("Invalid tx: no outputs").Result()
@@ -237,7 +238,6 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 		return sdk.ErrUnknownRequest("Invalid tx: no inputs").Result()
 	}
 	address := inputs[0].Address
-
 	memo, err := ParseMemo(txResult.Memo())
 	if err != nil {
 		return sdk.ErrUnknownRequest(
@@ -257,8 +257,8 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 		newMsg = NewMsgSetPoolData(
 			"TOOD: Name",
 			memo.GetSymbol(),
-			"TODO: pool address",
-			PoolSuspended,
+			"TODO: pool address", // prob can be hard coded since its a single pool
+			PoolSuspended,        // new pools start in a suspended state
 			msg.Signer,
 		)
 	case StakeMemo:
@@ -304,9 +304,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 			msg.Signer,
 		)
 	default:
-		return sdk.ErrUnknownRequest(
-			fmt.Sprintf("Unable to find memo type: %s", err.Error()),
-		).Result()
+		return sdk.ErrUnknownRequest("Unable to find memo type").Result()
 	}
 
 	// trigger msg event
