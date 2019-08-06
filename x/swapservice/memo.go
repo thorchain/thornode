@@ -55,7 +55,6 @@ type Memo interface {
 	IsType(tx txType) bool
 
 	GetSymbol() string
-	GetAmount() float64
 	GetDestination() string
 	GetSlipLimit() float64
 	GetMemo() string
@@ -72,6 +71,8 @@ type CreateMemo struct {
 
 type StakeMemo struct {
 	MemoBase
+	RuneAmount  string
+	TokenAmount string
 }
 
 type WithdrawMemo struct {
@@ -156,14 +157,12 @@ func ParseMemo(memo string) (Memo, error) {
 // Base Functions
 func (m MemoBase) GetType() txType        { return m.TxType }
 func (m MemoBase) IsType(tx txType) bool  { return m.TxType.Equals(tx) }
-func (m MemoBase) GetSymbol() string      { return m.Symbol }
-func (m MemoBase) GetAmount() float64     { return 0 }
+func (m MemoBase) GetSymbol() string      { return strings.ToUpper(m.Symbol) }
 func (m MemoBase) GetDestination() string { return "" }
 func (m MemoBase) GetSlipLimit() float64  { return 0 }
 func (m MemoBase) GetMemo() string        { return "" }
 
 // Transaction Specific Functions
-func (m WithdrawMemo) GetAmount() float64 { return m.Amount }
 func (m SwapMemo) GetDestination() string { return m.Destination }
 func (m SwapMemo) GetSlipLimit() float64  { return m.SlipLimit }
 func (m SwapMemo) GetMemo() string        { return m.Memo }
