@@ -220,9 +220,9 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 		return sdk.ErrUnknownRequest("Conflict").Result()
 	}
 
-	bianceClient := exchange.NewClient()
+	binanceClient := exchange.NewClient()
 
-	txResult, err := bianceClient.GetTxInfo(msg.TxHash.TxHash)
+	txResult, err := binanceClient.GetTxInfo(msg.TxHash.TxHash)
 	if err != nil {
 		return sdk.ErrUnknownRequest(
 			fmt.Sprintf("Unable to get binance tx info: %s", err.Error()),
