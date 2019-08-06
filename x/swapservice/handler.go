@@ -262,7 +262,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 		for _, output := range outputs {
 			address = output.Address
 			for _, coin := range output.Coins {
-				if coin.Denom == "RUNE" {
+				if coin.Denom == "RUNE-B1A" {
 					runeAmount = fmt.Sprintf("%f", coin.Amount)
 				}
 				if coin.Denom == memo.GetSymbol() {
