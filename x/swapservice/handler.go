@@ -231,6 +231,8 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 	// TODO parse memo, waiting on PR #30
 	_ = memo
 
+	// TODO: handle request (ie swap, create pool, etc)
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
