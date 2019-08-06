@@ -214,6 +214,8 @@ func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg types.MsgUn
 	}
 }
 
+// handleMsgSetTxHash gets a binance tx hash, gets the tx/memo, and triggers
+// another handler to process the request
 func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Result {
 	// validate there are not conflicts first
 	if keeper.CheckTxHash(ctx, msg.TxHash.Key()) {
