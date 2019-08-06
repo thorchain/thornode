@@ -17,7 +17,7 @@ type TxHashSuite struct{}
 
 var _ = Suite(&TxHashSuite{})
 
-func (s *TxHashSuite) TestMockEndpoint(c *C) {
+func (s *TxHashSuite) TestGetTxInfo(c *C) {
 
 	okResponse := `{
 "code": 0,
