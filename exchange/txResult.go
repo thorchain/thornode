@@ -33,6 +33,7 @@ func (cli *Client) GetTxInfo(txHash string) (tx txResult, err error) {
 	}
 
 	resp, err := cli.httpClient.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		return tx, errors.Wrap(err, "request failed")
 	}

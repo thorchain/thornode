@@ -28,7 +28,7 @@ func (msg MsgSetTxHash) ValidateBasic() sdk.Error {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
 	if len(msg.TxHash.TxHash) == 0 {
-		return sdk.ErrUnknownRequest("Token ticker cannot be empty")
+		return sdk.ErrUnknownRequest("Tx hash cannot be empty")
 	}
 	return nil
 }
