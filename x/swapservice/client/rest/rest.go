@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	restTx         = "tx"
 	restPoolStruct = "poolstruct"
 	restPoolData   = "pooldata"
 	restPoolStaker = "poolstaker"
@@ -28,6 +29,7 @@ const (
 // pool index etc
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
+	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", storeName, restTx), getTxHash(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}", storeName, restPoolStruct), poolStructHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}/stakers", storeName, restPoolStaker), poolStakersHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/staker/{%s}", storeName, restStakerPool), stakerPoolHandler(cliCtx, storeName)).Methods("GET")
@@ -111,6 +113,20 @@ func setStakeDataHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
+func getTxHash(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[restTx]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/txhash/%s", storeName, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 

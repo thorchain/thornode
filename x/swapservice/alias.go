@@ -31,6 +31,7 @@ type (
 	MsgSetTxHash        = types.MsgSetTxHash
 	MsgSwap             = types.MsgSwap
 	QueryResPoolStructs = types.QueryResPoolStructs
+	QueryTxHash         = types.QueryTxHash
 	TxHash              = types.TxHash
 	PoolStruct          = types.PoolStruct
 )
