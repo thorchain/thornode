@@ -229,6 +229,14 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 		).Result()
 	}
 	outputs := txResult.Outputs()
+	if len(outputs) == 0 {
+		return sdk.ErrUnknownRequest("Invalid tx: no outputs").Result()
+	}
+	inputs := txResult.Inputs()
+	if len(inputs) == 0 {
+		return sdk.ErrUnknownRequest("Invalid tx: no inputs").Result()
+	}
+	address := inputs[0].Address
 
 	memo, err := ParseMemo(txResult.Memo())
 	if err != nil {
@@ -240,14 +248,12 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 	handler := NewHandler(keeper)
 	var newMsg sdk.Msg
 
+	// interpret the memo and initialize a corresponding msg event
 	switch memo.(type) {
 	case CreateMemo:
 		if keeper.PoolExist(ctx, GetPoolNameFromTicker(memo.GetSymbol())) {
 			return sdk.ErrUnknownRequest("Pool already exists").Result()
 		}
-		// TODO: where should we get ticker metadata (name, icon, etc). Or
-		// should we not and let the frontend figure that out (we just provide
-		// the ticker)
 		newMsg = NewMsgSetPoolData(
 			"TOOD: Name",
 			memo.GetSymbol(),
@@ -280,18 +286,37 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 			msg.Signer,
 		)
 	case WithdrawMemo:
-		// TODO: withdraw
+		newMsg = NewMsgSetUnStake(
+			"TODO: name",
+			address,
+			memo.GetAmount(),
+			memo.GetSymbol(),
+			msg.TxHash.TxHash,
+			msg.Signer,
+		)
 	case SwapMemo:
-		// TODO: swap
+		coin := outputs[0].Coins[0]
+		newMsg = NewMsgSwap(
+			msg.TxHash.TxHash,
+			coin.Denom,
+			memo.GetSymbol(),
+			fmt.Sprintf("%f", coin.Amount),
+			address,
+			memo.GetDestination(),
+			msg.Signer,
+		)
 	default:
 		return sdk.ErrUnknownRequest(
 			fmt.Sprintf("Unable to find memo type: %s", err.Error()),
 		).Result()
 	}
+
+	// trigger msg event
 	result := handler(ctx, newMsg)
 
+	// Check if our message was successful, if so, save txhash to kvstore, so
+	// we don't duplicate this work.
 	if result.IsOK() {
-		// save our tx to db so we don't process it a second time
 		keeper.SetTxHash(ctx, msg.TxHash)
 	}
 
