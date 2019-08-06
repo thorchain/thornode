@@ -8,29 +8,37 @@ import (
 
 // TXTYPE:STATE1:STATE2:STATE3:FINALMEMO
 
-type txType string
+type txType uint8
 
 const (
-	txCreate   txType = "create"
-	txStake    txType = "stake"
-	txWithdraw txType = "withdraw"
-	txSwap     txType = "swap"
+	txCreate txType = iota
+	txStake
+	txWithdraw
+	txSwap
+	unknowTx
 )
+
+var stringToTxTypeMap = map[string]txType{
+	"create":   txCreate,
+	"stake":    txStake,
+	"withdraw": txWithdraw,
+	"swap":     txSwap,
+}
+
+var txToStringMap = map[txType]string{
+	txCreate:   "create",
+	txStake:    "stake",
+	txWithdraw: "withdraw",
+	txSwap:     "swap",
+}
 
 // converts a string into a txType
 func stringToTxType(s string) (txType, error) {
-	switch strings.ToLower(s) {
-	case string(txCreate):
-		return txCreate, nil
-	case string(txStake):
-		return txStake, nil
-	case string(txWithdraw):
-		return txWithdraw, nil
-	case string(txSwap):
-		return txSwap, nil
-	default:
-		return "", fmt.Errorf("Invalid tx type")
+	sl := strings.ToLower(s)
+	if t, ok := stringToTxTypeMap[sl]; ok {
+		return t, nil
 	}
+	return unknowTx, fmt.Errorf("Invalid tx type: %s", s)
 }
 
 // Check if two txTypes are the same
@@ -40,15 +48,11 @@ func (tx txType) Equals(tx2 txType) bool {
 
 // Converts a txType into a string
 func (tx txType) String() string {
-	return string(tx)
+	return txToStringMap[tx]
 }
 
 type Memo interface {
 	IsType(tx txType) bool
-	IsCreate() bool
-	IsStake() bool
-	IsWithraw() bool
-	IsSwap() bool
 
 	GetSymbol() string
 	GetAmount() float64
@@ -152,10 +156,6 @@ func ParseMemo(memo string) (Memo, error) {
 // Base Functions
 func (m MemoBase) GetType() txType        { return m.TxType }
 func (m MemoBase) IsType(tx txType) bool  { return m.TxType.Equals(tx) }
-func (m MemoBase) IsCreate() bool         { return m.IsType(txCreate) }
-func (m MemoBase) IsStake() bool          { return m.IsType(txStake) }
-func (m MemoBase) IsWithraw() bool        { return m.IsType(txWithdraw) }
-func (m MemoBase) IsSwap() bool           { return m.IsType(txSwap) }
 func (m MemoBase) GetSymbol() string      { return m.Symbol }
 func (m MemoBase) GetAmount() float64     { return 0 }
 func (m MemoBase) GetDestination() string { return "" }
