@@ -264,9 +264,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 	case StakeMemo:
 		runeAmount := "0"
 		tokenAmount := "0"
-		address := ""
 		for _, output := range outputs {
-			address = output.Address
 			for _, coin := range output.Coins {
 				if coin.Denom == "RUNE-B1A" {
 					runeAmount = fmt.Sprintf("%f", coin.Amount)
