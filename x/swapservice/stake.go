@@ -18,20 +18,15 @@ const stakerLimit = 100.0 // TODO: make configurable
 func validateStakeAmount(stakers PoolStaker, stakerUnits float64) error {
 	var minStakerAmt float64
 	stakerCount := float64(len(stakers.Stakers))
-
-	var sum float64
-	for _, staker := range stakers.Stakers {
-		units, err := strconv.ParseFloat(staker.Units, 64)
-		if err != nil {
-			return errors.Wrapf(err, "%s is invalid units", staker.Units)
-		}
-		sum += units
-	}
-	avgStake := sum / stakerCount
-
-	if len(stakers.Stakers) <= stakerLimit {
+	if stakerCount <= stakerLimit {
 		minStakerAmt = 0 // first 100 stakers there are no lower limits
 	} else {
+		totalUnits, err := strconv.ParseFloat(stakers.TotalUnits, 64)
+		if err != nil {
+			return errors.Wrapf(err, "%s is invalid units", stakers.TotalUnits)
+		}
+		avgStake := totalUnits / stakerCount
+
 		minStakerAmt = avgStake * ((stakerCount / stakerLimit) + 0.1) // Increases minStakeAmt by 10% every 100 stakers
 	}
 
