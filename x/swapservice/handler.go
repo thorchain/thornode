@@ -257,7 +257,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 			return sdk.ErrUnknownRequest("Pool already exists").Result()
 		}
 		newMsg = NewMsgSetPoolData(
-			"TOOD: Name",
+			"TODO: Name",
 			memo.GetSymbol(),
 			"TODO: pool address", // prob can be hard coded since its a single pool
 			PoolSuspended,        // new pools start in a suspended state
