@@ -55,6 +55,7 @@ type Memo interface {
 	IsType(tx txType) bool
 
 	GetSymbol() string
+	GetAmount() string
 	GetDestination() string
 	GetSlipLimit() float64
 	GetMemo() string
@@ -77,7 +78,7 @@ type StakeMemo struct {
 
 type WithdrawMemo struct {
 	MemoBase
-	Amount float64
+	Amount string
 }
 
 type SwapMemo struct {
@@ -117,10 +118,11 @@ func ParseMemo(memo string) (Memo, error) {
 		if len(parts) < 3 {
 			return noMemo, fmt.Errorf("Missing withdrawal unit amount")
 		}
-		amount, err := strconv.ParseFloat(parts[2], 64)
+		// check that amount is parse-able as float64
+		_, err := strconv.ParseFloat(parts[2], 64)
 		return WithdrawMemo{
 			MemoBase: MemoBase{TxType: txWithdraw, Symbol: symbol},
-			Amount:   amount,
+			Amount:   parts[2],
 		}, err
 	case txSwap:
 		max := 5
@@ -158,11 +160,13 @@ func ParseMemo(memo string) (Memo, error) {
 func (m MemoBase) GetType() txType        { return m.TxType }
 func (m MemoBase) IsType(tx txType) bool  { return m.TxType.Equals(tx) }
 func (m MemoBase) GetSymbol() string      { return strings.ToUpper(m.Symbol) }
+func (m MemoBase) GetAmount() string      { return "" }
 func (m MemoBase) GetDestination() string { return "" }
 func (m MemoBase) GetSlipLimit() float64  { return 0 }
 func (m MemoBase) GetMemo() string        { return "" }
 
 // Transaction Specific Functions
+func (m WithdrawMemo) GetAmount() string  { return m.Amount }
 func (m SwapMemo) GetDestination() string { return m.Destination }
 func (m SwapMemo) GetSlipLimit() float64  { return m.SlipLimit }
 func (m SwapMemo) GetMemo() string        { return m.Memo }

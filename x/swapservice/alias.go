@@ -18,6 +18,8 @@ var (
 	NewMsgSetTxHash       = types.NewMsgSetTxHash
 	NewMsgSetPoolData     = types.NewMsgSetPoolData
 	NewMsgSetStakeData    = types.NewMsgSetStakeData
+	NewMsgSetUnStake      = types.NewMsgSetUnStake
+	NewMsgSwap            = types.NewMsgSwap
 	GetPoolNameFromTicker = types.GetPoolNameFromTicker
 	ModuleCdc             = types.ModuleCdc
 	RegisterCodec         = types.RegisterCodec
