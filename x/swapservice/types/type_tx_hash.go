@@ -18,6 +18,7 @@ type TxHash struct {
 func NewTxHash(hash string) TxHash {
 	return TxHash{
 		Request: hash,
+		Status:  Incomplete,
 	}
 }
 
