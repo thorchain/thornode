@@ -27,3 +27,10 @@ Once you have start the service, run tests...
 ```bash
 make test
 ```
+
+## Reset
+Between each run, you must start from a clean state...
+
+```bash
+make -C ../.. reset
+```
