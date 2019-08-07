@@ -158,11 +158,7 @@ func queryPoolStructs(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]
 func queryTxHash(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	hash := path[0]
 	tx := keeper.GetTxHash(ctx, hash)
-	q := QueryTxHash{
-		Done:     tx.Empty(),
-		Refunded: tx.Reverted,
-	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, q)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, tx)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")

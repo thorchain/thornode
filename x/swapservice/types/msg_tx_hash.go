@@ -27,8 +27,8 @@ func (msg MsgSetTxHash) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if len(msg.TxHash.TxHash) == 0 {
-		return sdk.ErrUnknownRequest("Tx hash cannot be empty")
+	if len(msg.TxHash.Request) == 0 {
+		return sdk.ErrUnknownRequest("Request hash cannot be empty")
 	}
 	return nil
 }
