@@ -36,11 +36,17 @@ start-daemon:
 start-rest:
 	sscli rest-server
 
+start-daemon-compose:
+	ssd start --rpc.laddr "tcp://0.0.0.0:26657"
+
+start-rest-compose:
+	sscli rest-server --laddr "tcp://0.0.0.0:1317"  --node "tcp://daemon:26657"
+
 setup:
-	./scripts/setup.bash
+	./scripts/setup.sh
 
 reset: clean
-	./scripts/reset.bash
+	./scripts/reset.sh
 
 clean:
 	rm -rf ~/.ssd

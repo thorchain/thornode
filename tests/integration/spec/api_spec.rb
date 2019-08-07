@@ -12,9 +12,9 @@ describe "API Tests" do
   context "Check that an empty tx hash returns properly" do
     it "should have no values" do
       resp = get("/tx/bogus")
-      expect(resp.body['request']).to eq ""
-      expect(resp.body['status']).to eq ""
-      expect(resp.body['txhash']).to eq ""
+      expect(resp.body['request']).to eq(""), resp.body
+      expect(resp.body['status']).to eq(""), resp.body
+      expect(resp.body['txhash']).to eq(""), resp.body
     end
   end
 
@@ -28,9 +28,9 @@ describe "API Tests" do
       resp = processTx("AF64E866F7EDD74A558BF1519FB12700DDE51CD0DB5166ED37C568BE04E0C7F3")
       expect(resp.code).to eq("500")
     end
-
+    sleep(3)
     it "should be able to get the pool" do
-      resp = get("/pool/TCAN-014")
+      resp = get("/pool/BNB")
       expect(resp.body['pool_id']).to eq("pool-TCAN-014"), resp.body
     end
 
