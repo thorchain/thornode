@@ -1,3 +1,3 @@
 
 test:
-	echo "TODO"
+	@rspec --fail-fast
