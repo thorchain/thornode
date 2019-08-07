@@ -12,7 +12,10 @@ describe "API Tests" do
   context "Check that an empty tx hash returns properly" do
     it "should have no values" do
       resp = get("/tx/bogus")
-      expect(resp.code).to eq 404
+      puts resp.body
+      expect(resp.body['request']).to eq ""
+      expect(resp.body['status']).to eq ""
+      expect(resp.body['txhash']).to eq ""
     end
   end
 
