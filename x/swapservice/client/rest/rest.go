@@ -173,7 +173,7 @@ func stakerPoolHandler(cliCtx context.CLIContext, storeName string) http.Handler
 }
 func poolHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/pools", storeName), nil)
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolstructs", storeName), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
