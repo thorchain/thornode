@@ -316,7 +316,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 	// we don't duplicate this work.
 	if result.IsOK() {
 		// retrieve done binance hash from result data and save to store
-		msg.TxHash.Done = string(result.Data)
+		msg.TxHash.SetDone(string(result.Data))
 		keeper.SetTxHash(ctx, msg.TxHash)
 	}
 
