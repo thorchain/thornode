@@ -36,6 +36,9 @@ start-rest:
 setup:
 	./scripts/setup.bash
 
+reset: clean
+	./scripts/reset.bash
+
 clean:
 	rm -rf ~/.ssd
 	ssd unsafe-reset-all
