@@ -17,12 +17,13 @@ type dbPrefix string
 
 const (
 	prefixTxHash dbPrefix = "tx"
+	prefixPool   dbPrefix = "pool"
 )
 
 const poolIndexKey = `poolindexkey`
 
 func getKey(prefix dbPrefix, key string) string {
-	return fmt.Sprintf("%s_%s", prefix, key)
+	return fmt.Sprintf("%s_%s", prefix, strings.ToUpper(key))
 }
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
@@ -47,14 +48,12 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 // GetPoolStruct get the entire PoolStruct metadata struct for a pool ID
 func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
-	if !strings.HasPrefix(poolID, types.PoolDataKeyPrefix) {
-		poolID = types.PoolDataKeyPrefix + poolID
-	}
+	key := getKey(prefixPool, poolID)
 	store := ctx.KVStore(k.storeKey)
-	if !store.Has([]byte(poolID)) {
+	if !store.Has([]byte(key)) {
 		return NewPoolStruct()
 	}
-	bz := store.Get([]byte(poolID))
+	bz := store.Get([]byte(key))
 	var poolstruct PoolStruct
 	k.cdc.MustUnmarshalBinaryBare(bz, &poolstruct)
 	if poolstruct.BalanceRune == "" {
@@ -71,6 +70,7 @@ func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
 
 // Sets the entire PoolStruct metadata struct for a pool ID
 func (k Keeper) SetPoolStruct(ctx sdk.Context, poolID string, poolstruct PoolStruct) {
+	poolID = strings.ToUpper(poolID)
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(poolID)) {
 		if err := k.AddToPoolIndex(ctx, poolID); nil != err {
@@ -120,7 +120,8 @@ func (k Keeper) GetPoolStructDataIterator(ctx sdk.Context) sdk.Iterator {
 // PoolExist check whether the given pool exist in the datastore
 func (k Keeper) PoolExist(ctx sdk.Context, poolID string) bool {
 	store := ctx.KVStore(k.storeKey)
-	return store.Has([]byte(poolID))
+	key := getKey(prefixPool, poolID)
+	return store.Has([]byte(key))
 }
 
 // GetPoolIndex retrieve pool index from the data store
