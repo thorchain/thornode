@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
+	"github.com/jpthor/cosmos-swap/config"
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
@@ -20,7 +21,7 @@ func isEmptyString(input string) bool {
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(ctx sdk.Context, keeper poolStorage, source, target, amount, requester, destination, requestTxHash string) error {
+func validateMessage(ctx sdk.Context, keeper poolStorage, source, target, amount, requester, destination, requestTxHash, tradeSlipLimit string) error {
 	if isEmptyString(requestTxHash) {
 		return errors.New("request tx hash is empty")
 	}
@@ -39,6 +40,9 @@ func validateMessage(ctx sdk.Context, keeper poolStorage, source, target, amount
 	if isEmptyString(destination) {
 		return errors.New("destination is empty")
 	}
+	if isEmptyString(tradeSlipLimit) {
+		return errors.New("trade slip limit is empty")
+	}
 	if source != types.RuneTicker {
 		poolID := types.GetPoolNameFromTicker(source)
 		if !keeper.PoolExist(ctx, poolID) {
@@ -54,8 +58,8 @@ func validateMessage(ctx sdk.Context, keeper poolStorage, source, target, amount
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, source, target, amount, requester, destination, requestTxHash string) (string, error) {
-	if err := validateMessage(ctx, keeper, source, target, amount, requester, destination, requestTxHash); nil != err {
+func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source, target, amount, requester, destination, requestTxHash, tradeSlipLimit string) (string, error) {
+	if err := validateMessage(ctx, keeper, source, target, amount, requester, destination, requestTxHash, tradeSlipLimit); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
 	}
@@ -72,19 +76,18 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target, amount, requester
 		AmountRequested: amount,
 	}
 	if isDoubleSwap {
-		runeAmount, err := swapOne(ctx, keeper, source, types.RuneTicker, amount, requester, destination)
+		runeAmount, err := swapOne(ctx, keeper, setting, source, types.RuneTicker, amount, requester, destination, tradeSlipLimit)
 		if err != nil {
-			ctx.Logger().Error(fmt.Sprintf("fail to swap from %s to %s ", source, types.RuneTicker))
 			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, types.RuneTicker)
 		}
-		tokenAmount, err := swapOne(ctx, keeper, types.RuneTicker, target, runeAmount, requester, destination)
+		tokenAmount, err := swapOne(ctx, keeper, setting, types.RuneTicker, target, runeAmount, requester, destination, tradeSlipLimit)
 		swapRecord.AmountPaidBack = tokenAmount
 		if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
 			ctx.Logger().Error("fail to save swap record", "error", err)
 		}
 		return tokenAmount, err
 	}
-	tokenAmount, err := swapOne(ctx, keeper, source, target, amount, requester, destination)
+	tokenAmount, err := swapOne(ctx, keeper, setting, source, target, amount, requester, destination, tradeSlipLimit)
 	swapRecord.AmountPaidBack = tokenAmount
 	if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
 		ctx.Logger().Error("fail to save swap record", "error", err)
@@ -95,8 +98,10 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target, amount, requester
 func isRune(ticker string) bool {
 	return strings.EqualFold(ticker, types.RuneTicker)
 }
-
-func swapOne(ctx sdk.Context, keeper poolStorage, source, target, amount, requester, destination string) (string, error) {
+func swapOne(ctx sdk.Context,
+	keeper poolStorage,
+	settings *config.Settings,
+	source, target, amount, requester, destination, tradeSlipLimit string) (string, error) {
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 	poolID := types.GetPoolNameFromTicker(source)
 
@@ -104,26 +109,35 @@ func swapOne(ctx sdk.Context, keeper poolStorage, source, target, amount, reques
 		poolID = types.GetPoolNameFromTicker(target)
 	}
 	if !keeper.PoolExist(ctx, poolID) {
-		ctx.Logger().Debug(fmt.Sprintf("pool %s doesn't exist", poolID))
-		return "0", errors.New(fmt.Sprintf("pool %s doesn't exist", poolID))
+		return "0", errors.Errorf("pool %s doesn't exist", poolID)
 	}
 
 	amt, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		ctx.Logger().Error(fmt.Sprintf("amount:%s is not valid", amount))
-		return "0", err
+		return "0", errors.Wrapf(err, "amount:%s is not valid", amount)
 	}
+	fslipLimit, err := strconv.ParseFloat(tradeSlipLimit, 64)
+	if err != nil {
+		return "0", errors.Wrapf(err, "trade slip limit %s is not valid", tradeSlipLimit)
+	}
+
 	pool := keeper.GetPoolStruct(ctx, poolID)
 
 	balanceRune, err := strconv.ParseFloat(pool.BalanceRune, 64)
 	if err != nil {
-		ctx.Logger().Error(fmt.Sprintf("pool rune balance  %s is invalid", pool.BalanceRune))
-		return "0", errors.Wrap(err, "pool rune balance is invalid")
+		return "0", errors.Wrapf(err, "pool rune balance %s is invalid", pool.BalanceRune)
 	}
 	balanceToken, err := strconv.ParseFloat(pool.BalanceToken, 64)
 	if err != nil {
-		ctx.Logger().Error(fmt.Sprintf("pool token balance %s is invalid", pool.BalanceToken))
-		return "0", errors.Wrap(err, "pool token balance is invalid")
+		return "0", errors.Wrapf(err, "pool token balance %s is invalid", pool.BalanceToken)
+	}
+	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
+	if poolSlip > settings.GlobalPoolSlip {
+		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, settings.GlobalPoolSlip)
+	}
+	userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
+	if math.Abs(userPrice-fslipLimit)/fslipLimit > settings.GlobalTradeSlipLimit {
+		return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, settings.GlobalTradeSlipLimit*100, fslipLimit)
 	}
 	// do we have enough balance to swap?
 	if isRune(source) {
@@ -146,6 +160,22 @@ func swapOne(ctx sdk.Context, keeper poolStorage, source, target, amount, reques
 	keeper.SetPoolStruct(ctx, poolID, pool)
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, returnTokenAmount))
 	return returnTokenAmount, nil
+}
+
+// calculateUserPrice return trade slip
+func calculateUserPrice(source string, balanceRune, balanceToken, amt float64) float64 {
+	if isRune(source) {
+		return math.Pow(balanceRune+amt, 2.0) / (balanceRune * balanceToken)
+	}
+	return math.Pow(balanceToken+amt, 2.0) / (balanceRune * balanceToken)
+}
+
+// calculatePoolSlip the slip of total pool
+func calculatePoolSlip(source string, balanceRune, balanceToken, amt float64) float64 {
+	if isRune(source) {
+		return amt * (2*balanceRune + amt) / math.Pow(balanceRune, 2.0)
+	}
+	return amt * (2*balanceToken + amt) / math.Pow(balanceToken, 2.0)
 }
 
 // calculateSwap how much rune, token and amount to emit

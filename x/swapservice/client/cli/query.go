@@ -107,7 +107,7 @@ func GetCmdPoolStructs(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/pools", queryRoute), nil)
 			if err != nil {
-				cmd.Println("could not get query pools")
+				cmd.Println("could not get query pools", err)
 				return nil
 			}
 
