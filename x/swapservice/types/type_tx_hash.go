@@ -12,6 +12,10 @@ func NewTxHash(hash string) TxHash {
 	}
 }
 
+func (tx TxHash) Empty() bool {
+	return tx.TxHash == ""
+}
+
 func (tx TxHash) String() string {
 	return tx.TxHash
 }

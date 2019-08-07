@@ -9,13 +9,20 @@ const (
 	RouterKey        = types.RouterKey
 	StoreKey         = types.StoreKey
 	DefaultCodespace = types.DefaultCodespace
+	PoolActive       = types.Active
+	PoolSuspended    = types.Suspended
 )
 
 var (
-	NewPoolStruct   = types.NewPoolStruct
-	NewMsgSetTxHash = types.NewMsgSetTxHash
-	ModuleCdc       = types.ModuleCdc
-	RegisterCodec   = types.RegisterCodec
+	NewPoolStruct         = types.NewPoolStruct
+	NewMsgSetTxHash       = types.NewMsgSetTxHash
+	NewMsgSetPoolData     = types.NewMsgSetPoolData
+	NewMsgSetStakeData    = types.NewMsgSetStakeData
+	NewMsgSetUnStake      = types.NewMsgSetUnStake
+	NewMsgSwap            = types.NewMsgSwap
+	GetPoolNameFromTicker = types.GetPoolNameFromTicker
+	ModuleCdc             = types.ModuleCdc
+	RegisterCodec         = types.RegisterCodec
 )
 
 type (
@@ -24,6 +31,7 @@ type (
 	MsgSetTxHash        = types.MsgSetTxHash
 	MsgSwap             = types.MsgSwap
 	QueryResPoolStructs = types.QueryResPoolStructs
+	QueryTxHash         = types.QueryTxHash
 	TxHash              = types.TxHash
 	PoolStruct          = types.PoolStruct
 )

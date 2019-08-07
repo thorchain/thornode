@@ -214,6 +214,8 @@ func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg types.MsgUn
 	}
 }
 
+// handleMsgSetTxHash gets a binance tx hash, gets the tx/memo, and triggers
+// another handler to process the request
 func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Result {
 	// validate there are not conflicts first
 	if keeper.CheckTxHash(ctx, msg.TxHash.Key()) {
@@ -229,14 +231,92 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 		).Result()
 	}
 
-	memo := txResult.Memo()
-	// TODO parse memo, waiting on PR #30
-	_ = memo
-
-	// TODO: handle request (ie swap, create pool, etc)
-
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
+	outputs := txResult.Outputs()
+	if len(outputs) == 0 {
+		return sdk.ErrUnknownRequest("Invalid tx: no outputs").Result()
 	}
+	inputs := txResult.Inputs()
+	if len(inputs) == 0 {
+		return sdk.ErrUnknownRequest("Invalid tx: no inputs").Result()
+	}
+	address := inputs[0].Address
+	memo, err := ParseMemo(txResult.Memo())
+	if err != nil {
+		return sdk.ErrUnknownRequest(
+			fmt.Sprintf("Unable to parse memo: %s", err.Error()),
+		).Result()
+	}
+
+	handler := NewHandler(keeper)
+	var newMsg sdk.Msg
+
+	// interpret the memo and initialize a corresponding msg event
+	switch memo.(type) {
+	case CreateMemo:
+		if keeper.PoolExist(ctx, GetPoolNameFromTicker(memo.GetSymbol())) {
+			return sdk.ErrUnknownRequest("Pool already exists").Result()
+		}
+		newMsg = NewMsgSetPoolData(
+			"TODO: Name",
+			memo.GetSymbol(),
+			"TODO: pool address", // prob can be hard coded since its a single pool
+			PoolSuspended,        // new pools start in a suspended state
+			msg.Signer,
+		)
+	case StakeMemo:
+		runeAmount := "0"
+		tokenAmount := "0"
+		for _, output := range outputs {
+			for _, coin := range output.Coins {
+				if coin.Denom == "RUNE-B1A" {
+					runeAmount = fmt.Sprintf("%f", coin.Amount)
+				}
+				if coin.Denom == memo.GetSymbol() {
+					tokenAmount = fmt.Sprintf("%f", coin.Amount)
+				}
+			}
+		}
+		newMsg = NewMsgSetStakeData(
+			"TODO: Name",
+			memo.GetSymbol(),
+			tokenAmount,
+			runeAmount,
+			address,
+			msg.TxHash.TxHash,
+			msg.Signer,
+		)
+	case WithdrawMemo:
+		newMsg = NewMsgSetUnStake(
+			"TODO: name",
+			address,
+			memo.GetAmount(),
+			memo.GetSymbol(),
+			msg.TxHash.TxHash,
+			msg.Signer,
+		)
+	case SwapMemo:
+		coin := outputs[0].Coins[0]
+		newMsg = NewMsgSwap(
+			msg.TxHash.TxHash,
+			coin.Denom,
+			memo.GetSymbol(),
+			fmt.Sprintf("%f", coin.Amount),
+			address,
+			memo.GetDestination(),
+			msg.Signer,
+		)
+	default:
+		return sdk.ErrUnknownRequest("Unable to find memo type").Result()
+	}
+
+	// trigger msg event
+	result := handler(ctx, newMsg)
+
+	// Check if our message was successful, if so, save txhash to kvstore, so
+	// we don't duplicate this work.
+	if result.IsOK() {
+		keeper.SetTxHash(ctx, msg.TxHash)
+	}
+
+	return result
 }
