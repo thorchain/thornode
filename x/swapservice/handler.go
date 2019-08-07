@@ -224,7 +224,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 
 	binanceClient := exchange.NewClient()
 
-	txResult, err := binanceClient.GetTxInfo(msg.TxHash.TxHash)
+	txResult, err := binanceClient.GetTxInfo(msg.TxHash.Request)
 	if err != nil {
 		return sdk.ErrUnknownRequest(
 			fmt.Sprintf("Unable to get binance tx info: %s", err.Error()),
@@ -282,7 +282,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 			tokenAmount,
 			runeAmount,
 			address,
-			msg.TxHash.TxHash,
+			msg.TxHash.Request,
 			msg.Signer,
 		)
 	case WithdrawMemo:
@@ -291,13 +291,13 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 			address,
 			memo.GetAmount(),
 			memo.GetSymbol(),
-			msg.TxHash.TxHash,
+			msg.TxHash.Request,
 			msg.Signer,
 		)
 	case SwapMemo:
 		coin := outputs[0].Coins[0]
 		newMsg = NewMsgSwap(
-			msg.TxHash.TxHash,
+			msg.TxHash.Request,
 			coin.Denom,
 			memo.GetSymbol(),
 			fmt.Sprintf("%f", coin.Amount),
@@ -315,6 +315,8 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 	// Check if our message was successful, if so, save txhash to kvstore, so
 	// we don't duplicate this work.
 	if result.IsOK() {
+		// retrieve done binance hash from result data and save to store
+		msg.TxHash.Done = string(result.Data)
 		keeper.SetTxHash(ctx, msg.TxHash)
 	}
 
