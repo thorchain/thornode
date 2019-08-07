@@ -9,4 +9,4 @@ wait-for-blockchain:
 	@./wait-for-blockchain.sh
 
 install:
-	make -C ../.. install
+	make -C ../.. install setup

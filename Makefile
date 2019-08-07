@@ -40,7 +40,7 @@ start-daemon-compose:
 	ssd start --rpc.laddr "tcp://0.0.0.0:26657"
 
 start-rest-compose:
-	sscli rest-server --laddr "tcp://0.0.0.0:1317"  --node "tcp://daemon:26657"
+	sscli rest-server --laddr "tcp://0.0.0.0:1317"  --node "tcp://daemon:26657" --chain-id sschain --trust-node
 
 setup:
 	./scripts/setup.sh
