@@ -34,4 +34,7 @@ type (
 	QueryTxHash         = types.QueryTxHash
 	TxHash              = types.TxHash
 	PoolStruct          = types.PoolStruct
+	PoolStaker          = types.PoolStaker
+	StakerPool          = types.StakerPool
+	StakerUnit          = types.StakerUnit
 )
