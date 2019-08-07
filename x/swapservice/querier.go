@@ -20,6 +20,7 @@ const (
 	QueryPoolIndex     = "poolindex"
 	QuerySwapRecord    = "swaprecord"
 	QueryUnStakeRecord = "unstakerecord"
+	QUeryTxHash        = "txhash"
 )
 
 // NewQuerier is the module level router for state queries
@@ -40,6 +41,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return querySwapRecord(ctx, path[1:], req, keeper)
 		case QueryUnStakeRecord:
 			return queryUnStakeRecord(ctx, path[1:], req, keeper)
+		case QUeryTxHash:
+			return queryTxHash(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown swapservice query endpoint")
 		}
@@ -148,6 +151,21 @@ func queryPoolStructs(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pools)
 	if err != nil {
 		return nil, sdk.ErrInternal("could not marshal pools result to json")
+	}
+	return res, nil
+}
+
+func queryTxHash(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	hash := path[0]
+	tx := keeper.GetTxHash(ctx, hash)
+	q := QueryTxHash{
+		Done:     tx.Empty(),
+		Refunded: tx.Reverted,
+	}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, q)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal tx hash to json", err)
+		return nil, sdk.ErrInternal("fail to marshal tx hash to json")
 	}
 	return res, nil
 }

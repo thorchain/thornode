@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	restTx         = "tx"
 	restPoolStruct = "poolstruct"
 	restPoolData   = "pooldata"
 	restPoolStaker = "poolstaker"
@@ -28,6 +29,7 @@ const (
 // pool index etc
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
+	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", storeName, restTx), getTxHash(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}", storeName, restPoolStruct), poolStructHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}/stakers", storeName, restPoolStaker), poolStakersHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/staker/{%s}", storeName, restStakerPool), stakerPoolHandler(cliCtx, storeName)).Methods("GET")
@@ -37,6 +39,44 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/swaprecord/{%s}", storeName, swapData), swapRecordHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/unstakerecord/{%s}", storeName, swapData), unStakeRecordHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/stake", storeName), setStakeDataHandler(cliCtx)).Methods("PUT")
+	r.HandleFunc(fmt.Sprintf("/%s/binance/tx", storeName), txHashHandler(cliCtx)).Methods("POST")
+}
+
+type txHashReq struct {
+	BaseReq rest.BaseReq `json:"base_req"`
+	TxHash  string       `json:"tx_hash"`
+}
+
+func txHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req txHashReq
+
+		if !rest.ReadRESTReq(w, r, cliCtx.Codec, &req) {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, "failed to parse request")
+			return
+		}
+
+		baseReq := req.BaseReq.Sanitize()
+		if !baseReq.ValidateBasic(w) {
+			return
+		}
+
+		addr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		// create the message
+		msg := types.NewMsgSetTxHash(req.TxHash, addr)
+		err = msg.ValidateBasic()
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
 }
 
 type setStakeData struct {
@@ -73,6 +113,20 @@ func setStakeDataHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
+func getTxHash(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[restTx]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/txhash/%s", storeName, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }
 
