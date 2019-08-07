@@ -14,7 +14,7 @@ import (
 // query endpoints supported by the swapservice Querier
 const (
 	QueryPoolStruct    = "poolstruct"
-	QueryPoolStructs   = "poolstructs"
+	QueryPoolStructs   = "pools"
 	QueryPoolStakers   = "poolstakers"
 	QueryStakerPools   = "stakerpools"
 	QueryPoolIndex     = "poolindex"
@@ -26,6 +26,7 @@ const (
 // NewQuerier is the module level router for state queries
 func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
+		ctx.Logger().Info("query", "path", path[0])
 		switch path[0] {
 		case QueryPoolStruct:
 			return queryPoolStruct(ctx, path[1:], req, keeper)

@@ -24,6 +24,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
+	"github.com/jpthor/cosmos-swap/config"
 	"github.com/jpthor/cosmos-swap/x/swapservice"
 )
 
@@ -200,13 +201,17 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 		app.keySS,
 		app.cdc,
 	)
+	s, err := config.LoadFromFile(DefaultNodeHome)
+	if nil != err {
+		cmn.Exit(err.Error())
+	}
 
 	app.mm = module.NewManager(
 		genaccounts.NewAppModule(app.accountKeeper),
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		auth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
-		swapservice.NewAppModule(app.ssKeeper, app.bankKeeper),
+		swapservice.NewAppModule(app.ssKeeper, app.bankKeeper, s),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		distr.NewAppModule(app.distrKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
@@ -259,7 +264,7 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 		app.tkeyParams,
 	)
 
-	err := app.LoadLatestVersion(app.keyMain)
+	err = app.LoadLatestVersion(app.keyMain)
 	if err != nil {
 		cmn.Exit(err.Error())
 	}
