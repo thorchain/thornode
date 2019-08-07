@@ -13,7 +13,17 @@ import (
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
+type dbPrefix string
+
+const (
+	prefixTxHash dbPrefix = "tx"
+)
+
 const poolIndexKey = `poolindexkey`
+
+func getKey(prefix dbPrefix, key string) string {
+	return fmt.Sprintf("%s_%s", prefix, key)
+}
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
@@ -344,4 +354,33 @@ func (k Keeper) SetTrustAccount(ctx sdk.Context, ta types.TrustAccount) {
 func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(types.TrustAccountPrefix))
+}
+
+// SetTxHas - saving a given txhash to the KVStore
+func (k Keeper) SetTxHash(ctx sdk.Context, tx TxHash) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixTxHash, tx.Key())
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
+}
+
+// GetTxHash - gets information of a tx hash
+func (k Keeper) GetTxHash(ctx sdk.Context, hash string) TxHash {
+	key := getKey(prefixTxHash, hash)
+
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return TxHash{}
+	}
+
+	bz := store.Get([]byte(key))
+	var record TxHash
+	k.cdc.MustUnmarshalBinaryBare(bz, &record)
+	return record
+}
+
+// CheckTxHash - check to see if we have already processed a specific tx
+func (k Keeper) CheckTxHash(ctx sdk.Context, hash string) bool {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixTxHash, hash)
+	return store.Has([]byte(key))
 }
