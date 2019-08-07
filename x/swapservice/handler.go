@@ -29,6 +29,8 @@ func NewHandler(keeper Keeper, settings *config.Settings) sdk.Handler {
 			return handleMsgSetUnstakeComplete(ctx, keeper, msg)
 		case MsgSetTxHash:
 			return handleMsgSetTxHash(ctx, keeper, settings, msg)
+		case MsgSetTxHashComplete:
+			return handleMsgSetTxHashComplete(ctx, keeper, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -317,6 +319,10 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 	// trigger msg event
 	result := handler(ctx, newMsg)
 
+	// TODO , Based on the new design we will not send the transaction back to binance chain here, instead
+	// the tx will be written into a txArray ,  it will be processed by `signer or auditor` when the block commited
+	// once the signer or auditor send it to binance chain, it will use MsgSetTxHashComplete to mark it is done
+	// given that I think the follow few lines will not be relevant¬
 	// Check if our message was successful, if so, save txhash to kvstore, so
 	// we don't duplicate this work.
 	if result.IsOK() {
@@ -326,4 +332,24 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 	}
 
 	return result
+}
+
+// handleMsgSetTxHashComplete will process
+func handleMsgSetTxHashComplete(ctx sdk.Context, keeper Keeper, msg MsgSetTxHashComplete) sdk.Result {
+	ctx.Logger().Debug("receive MsgSetTxHashComplete", "requestTxHash", msg.RequestTxHash, "complete tx hash", msg.CompleteTxHash)
+	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "complete tx hash", msg.CompleteTxHash)
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid MsgSetTxHashComplete", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+	txHash := NewTxHash(msg.RequestTxHash)
+	txHash.SetDone(msg.CompleteTxHash)
+	keeper.SetTxHash(ctx, txHash)
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
 }
