@@ -3,8 +3,8 @@ require 'pp'
 require 'json'
 # require 'tempfile'
 
-HOST = "localhost"
-PORT = 1317
+HOST = ENV['APIHOST'] || "localhost"
+PORT = ENV['APIPORT'] || 1317
 HTTP = Net::HTTP.new(HOST, PORT)
 
 def get(path)
@@ -27,7 +27,7 @@ def processTx(hash, mode = 'block')
 
   # write unsigned json to disk
   File.open("/tmp/unSigned.json", "w") { |file| file.puts resp.body}
-  signedTx = `echo "password" | sscli tx sign /tmp/unSigned.json --from jack`
+  signedTx = `echo "password" | sscli tx sign /tmp/unSigned.json --from jack --node "tcp://daemon:26657"`
   signedTx = JSON.parse(signedTx)
   signedJson = {
     'mode': mode,
