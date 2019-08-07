@@ -155,7 +155,7 @@ func GetCmdUnStakeComplete(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetTxHashComplete command to send MsgUnStakeComplete Message
 func GetCmdSetTxHashComplete(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-txhash-complete [requestTxHash] [payTxHash]",
+		Use:   "set-txhash-complete [requestTxHash] [completeTxHash]",
 		Short: "mark a txhash as complete",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
