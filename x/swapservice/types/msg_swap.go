@@ -12,11 +12,12 @@ type MsgSwap struct {
 	Requester     string         `json:"requester"`       // request address on Binance chain
 	Destination   string         `json:"destination"`     // destination , used for swap and send , the destination address we send it to
 	Amount        string         `json:"amount"`          // amount of token to swap
+	SlipLimit     string         `json:"slip_limit"`      // slip limit, only complete the swap when the pool slip is within limit
 	Owner         sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSwap is a constructor function for MsgSwap
-func NewMsgSwap(requestTxHash, source, target, amount, requester, destination string, owner sdk.AccAddress) MsgSwap {
+func NewMsgSwap(requestTxHash, source, target, amount, requester, destination, slipLimit string, owner sdk.AccAddress) MsgSwap {
 	return MsgSwap{
 		RequestTxHash: requestTxHash,
 		SourceTicker:  source,
@@ -24,6 +25,7 @@ func NewMsgSwap(requestTxHash, source, target, amount, requester, destination st
 		Amount:        amount,
 		Requester:     requester,
 		Destination:   destination,
+		SlipLimit:     slipLimit,
 		Owner:         owner,
 	}
 }

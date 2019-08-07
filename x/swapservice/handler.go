@@ -4,13 +4,15 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"github.com/jpthor/cosmos-swap/exchange"
 
+	"github.com/jpthor/cosmos-swap/config"
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 // NewHandler returns a handler for "swapservice" type messages.
-func NewHandler(keeper Keeper) sdk.Handler {
+func NewHandler(keeper Keeper, settings *config.Settings) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch msg := msg.(type) {
 		case MsgSetPoolData:
@@ -18,7 +20,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		case MsgSetStakeData:
 			return handleMsgSetStakeData(ctx, keeper, msg)
 		case MsgSwap:
-			return handleMsgSwap(ctx, keeper, msg)
+			return handleMsgSwap(ctx, keeper, settings, msg)
 		case types.MsgSwapComplete:
 			return handleMsgSetSwapComplete(ctx, keeper, msg)
 		case types.MsgSetUnStake:
@@ -26,7 +28,7 @@ func NewHandler(keeper Keeper) sdk.Handler {
 		case types.MsgUnStakeComplete:
 			return handleMsgSetUnstakeComplete(ctx, keeper, msg)
 		case MsgSetTxHash:
-			return handleMsgSetTxHash(ctx, keeper, msg)
+			return handleMsgSetTxHash(ctx, keeper, settings, msg)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -104,7 +106,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 }
 
 // Handle a message to set stake data
-func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
+func handleMsgSwap(ctx sdk.Context, keeper Keeper, setting *config.Settings, msg MsgSwap) sdk.Result {
 	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "source ticker", msg.SourceTicker, "target ticker", msg.TargetTicker)
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -112,12 +114,14 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, msg MsgSwap) sdk.Result {
 	amount, err := swap(
 		ctx,
 		keeper,
+		setting,
 		msg.SourceTicker,
 		msg.TargetTicker,
 		msg.Amount,
 		msg.Requester,
 		msg.Destination,
 		msg.RequestTxHash,
+		msg.SlipLimit,
 	) // If so, set the stake data to the value specified in the msg.
 	if err != nil {
 		ctx.Logger().Error("fail to process swap message", "error", err)
@@ -216,7 +220,7 @@ func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg types.MsgUn
 
 // handleMsgSetTxHash gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
-func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Result {
+func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings, msg MsgSetTxHash) sdk.Result {
 	// validate there are not conflicts first
 	if keeper.CheckTxHash(ctx, msg.TxHash.Key()) {
 		return sdk.ErrUnknownRequest("Conflict").Result()
@@ -247,7 +251,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 		).Result()
 	}
 
-	handler := NewHandler(keeper)
+	handler := NewHandler(keeper, setting)
 	var newMsg sdk.Msg
 
 	// interpret the memo and initialize a corresponding msg event
@@ -303,6 +307,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, msg MsgSetTxHash) sdk.Re
 			fmt.Sprintf("%f", coin.Amount),
 			address,
 			memo.GetDestination(),
+			fmt.Sprintf("%f", memo.GetSlipLimit()),
 			msg.Signer,
 		)
 	default:

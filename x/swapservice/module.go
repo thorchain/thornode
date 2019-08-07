@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"github.com/jpthor/cosmos-swap/config"
 	"github.com/jpthor/cosmos-swap/x/swapservice/client/cli"
 	"github.com/jpthor/cosmos-swap/x/swapservice/client/rest"
 )
@@ -69,13 +70,15 @@ type AppModule struct {
 	AppModuleBasic
 	keeper     Keeper
 	coinKeeper bank.Keeper
+	settings   *config.Settings
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k Keeper, bankKeeper bank.Keeper) AppModule {
+func NewAppModule(k Keeper, bankKeeper bank.Keeper, settings *config.Settings) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
+		settings:       settings,
 		coinKeeper:     bankKeeper,
 	}
 }
@@ -91,7 +94,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper)
+	return NewHandler(am.keeper, am.settings)
 }
 func (am AppModule) QuerierRoute() string {
 	return ModuleName

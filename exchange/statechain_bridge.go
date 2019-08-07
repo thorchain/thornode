@@ -65,11 +65,11 @@ func (b *StatechainBridge) Stake(name, ticker, r, token, publicAddress, requestT
 // SendSwap send swap request to statechain
 // first return parameter is txHash
 
-func (b *StatechainBridge) SendSwap(requestTxHash, source, target, amount, requester, destination string, owner sdk.AccAddress, passphrase, memo string) (string, error) {
+func (b *StatechainBridge) SendSwap(requestTxHash, source, target, amount, requester, destination string, owner sdk.AccAddress, passphrase, memo, tradeSliplimit string) (string, error) {
 	if len(memo) > 0 {
 		viper.Set(flags.FlagMemo, memo)
 	}
-	msg := st.NewMsgSwap(requestTxHash, source, target, amount, requester, destination, owner)
+	msg := st.NewMsgSwap(requestTxHash, source, target, amount, requester, destination, tradeSliplimit, owner)
 	if err := msg.ValidateBasic(); nil != err {
 		return "", errors.Wrap(err, "invalid swap msg")
 	}
