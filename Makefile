@@ -28,10 +28,10 @@ build:
 start: install start-daemon
 
 start-daemon:
-	skyyd start
+	ssd start
 
 start-rest:
-	skyycli rest-server
+	sscli rest-server
 
 setup:
 	./scripts/setup.bash
