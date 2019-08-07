@@ -1,6 +1,8 @@
 package swapservice
 
 import (
+	"fmt"
+
 	. "gopkg.in/check.v1"
 
 	"github.com/cosmos/cosmos-sdk/store"
@@ -10,6 +12,7 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
+	"github.com/jpthor/cosmos-swap/config"
 	"github.com/jpthor/cosmos-swap/x/swapservice/mocks"
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
@@ -25,17 +28,19 @@ func (s SwapSuite) TestSwap(c *C) {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
+	settings := config.DefaultSettings()
 	ctx := sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
 	inputs := []struct {
-		name          string
-		requestTxHash string
-		source        string
-		target        string
-		amount        string
-		requester     string
-		destination   string
-		returnAmount  string
-		expectedErr   error
+		name           string
+		requestTxHash  string
+		source         string
+		target         string
+		amount         string
+		requester      string
+		destination    string
+		returnAmount   string
+		tradeSlipLimit string
+		expectedErr    error
 	}{
 		{
 			name:          "empty-source",
@@ -104,58 +109,185 @@ func (s SwapSuite) TestSwap(c *C) {
 			expectedErr:   errors.New("destination is empty"),
 		},
 		{
-			name:          "pool-not-exist",
-			requestTxHash: "hash",
-			source:        "NOTEXIST",
-			target:        "RUNE",
-			amount:        "100",
-			requester:     "tester",
-			destination:   "don'tknow",
-			returnAmount:  "0",
-			expectedErr:   errors.New("pool-NOTEXIST doesn't exist"),
+			name:           "pool-not-exist",
+			requestTxHash:  "hash",
+			source:         "NOTEXIST",
+			target:         "RUNE",
+			amount:         "100",
+			requester:      "tester",
+			destination:    "don'tknow",
+			returnAmount:   "0",
+			tradeSlipLimit: "1.1",
+			expectedErr:    errors.New("pool-NOTEXIST doesn't exist"),
 		},
 		{
-			name:          "pool-not-exist-1",
-			requestTxHash: "hash",
-			source:        "RUNE",
-			target:        "NOTEXIST",
-			amount:        "100",
-			requester:     "tester",
-			destination:   "don'tknow",
-			returnAmount:  "0",
-			expectedErr:   errors.New("pool-NOTEXIST doesn't exist"),
+			name:           "pool-not-exist-1",
+			requestTxHash:  "hash",
+			source:         "RUNE",
+			target:         "NOTEXIST",
+			amount:         "100",
+			requester:      "tester",
+			destination:    "don'tknow",
+			tradeSlipLimit: "1.2",
+			returnAmount:   "0",
+			expectedErr:    errors.New("pool-NOTEXIST doesn't exist"),
 		},
 		{
-			name:          "swap",
-			requestTxHash: "hash",
-			source:        "RUNE",
-			target:        "BNB",
-			amount:        "5",
-			requester:     "tester",
-			destination:   "don'tknow",
-			returnAmount:  "4.53514739",
-			expectedErr:   nil,
+			name:           "swap-over-global-sliplimit",
+			requestTxHash:  "hash",
+			source:         "RUNE",
+			target:         "BNB",
+			amount:         "50",
+			requester:      "tester",
+			destination:    "don'tknow",
+			returnAmount:   "0",
+			tradeSlipLimit: "0.1",
+			expectedErr:    errors.Errorf("pool slip:1.250000 is over global pool slip limit :%f", settings.GlobalPoolSlip),
 		},
 		{
-			name:          "swap",
-			requestTxHash: "hash",
-			source:        "BTC",
-			target:        "BNB",
-			amount:        "5",
-			requester:     "tester",
-			destination:   "don'tknow",
-			returnAmount:  "4.15017810",
-			expectedErr:   nil,
+			name:           "swap-over-trade-sliplimit",
+			requestTxHash:  "hash",
+			source:         "RUNE",
+			target:         "BNB",
+			amount:         "9",
+			requester:      "tester",
+			destination:    "don'tknow",
+			returnAmount:   "0",
+			tradeSlipLimit: "1.0",
+			expectedErr:    errors.New("user price 1.188100 is more than 10.00 percent different than 1.000000"),
+		},
+		{
+			name:           "swap",
+			requestTxHash:  "hash",
+			source:         "RUNE",
+			target:         "BNB",
+			amount:         "5",
+			requester:      "tester",
+			destination:    "don'tknow",
+			returnAmount:   "4.53514739",
+			tradeSlipLimit: "1.1",
+			expectedErr:    nil,
+		},
+		{
+			name:           "double-swap",
+			requestTxHash:  "hash",
+			source:         "BTC",
+			target:         "BNB",
+			amount:         "5",
+			requester:      "tester",
+			destination:    "don'tknow",
+			returnAmount:   "4.15017810",
+			tradeSlipLimit: "1.1025",
+			expectedErr:    nil,
 		},
 	}
 	for _, item := range inputs {
-		amount, err := swap(ctx, poolStorage, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash)
+		amount, err := swap(ctx, poolStorage, settings, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeSlipLimit)
+		fmt.Println(amount, err)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
 		} else {
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
 		c.Check(item.returnAmount, Equals, amount)
+	}
+}
+
+// TestCalculatePoolSlip the total pool slip
+func (s SwapSuite) TestCalculatePoolSlip(c *C) {
+	inputs := []struct {
+		name             string
+		source           string
+		runeBalance      float64
+		tokenBalance     float64
+		swapAmount       float64
+		expectedPoolSlip float64
+	}{
+		{
+			name:             "normal",
+			source:           "RUNE",
+			runeBalance:      100.0,
+			tokenBalance:     100.0,
+			swapAmount:       5.0,
+			expectedPoolSlip: 0.1025,
+		},
+		{
+			name:             "normal-1",
+			source:           "RUNE",
+			runeBalance:      50.0,
+			tokenBalance:     200.0,
+			swapAmount:       5.0,
+			expectedPoolSlip: 0.21,
+		},
+		{
+			name:             "normal-2",
+			source:           "BNB",
+			runeBalance:      100.0,
+			tokenBalance:     100.0,
+			swapAmount:       5.0,
+			expectedPoolSlip: 0.1025,
+		},
+		{
+			name:             "normal-3",
+			source:           "RUNE",
+			runeBalance:      500.0,
+			tokenBalance:     200.0,
+			swapAmount:       5.0,
+			expectedPoolSlip: 0.0201,
+		},
+	}
+	for _, testCase := range inputs {
+		result := calculatePoolSlip(testCase.source, testCase.runeBalance, testCase.tokenBalance, testCase.swapAmount)
+		c.Check(round(result), Equals, round(testCase.expectedPoolSlip))
+	}
+}
+
+// TestCalculateUserPrice ensure we calculate trade slip correctly
+func (s SwapSuite) TestCalculateUserPrice(c *C) {
+	inputs := []struct {
+		name              string
+		source            string
+		runeBalance       float64
+		tokenBalance      float64
+		swapAmount        float64
+		expectedUserPrice float64
+	}{
+		{
+			name:              "normal",
+			source:            "RUNE",
+			runeBalance:       100.0,
+			tokenBalance:      100.0,
+			swapAmount:        5.0,
+			expectedUserPrice: 1.1025,
+		},
+		{
+			name:              "normal-1",
+			source:            "RUNE",
+			runeBalance:       200.0,
+			tokenBalance:      1000.0,
+			swapAmount:        5,
+			expectedUserPrice: 0.210125,
+		},
+		{
+			name:              "normal-2",
+			source:            "BNB",
+			runeBalance:       200.0,
+			tokenBalance:      1000.0,
+			swapAmount:        5,
+			expectedUserPrice: 5.05,
+		},
+		{
+			name:              "normal-3",
+			source:            "RUNE",
+			runeBalance:       2000.0,
+			tokenBalance:      1000.0,
+			swapAmount:        50,
+			expectedUserPrice: 2.10125,
+		},
+	}
+	for _, testCase := range inputs {
+		result := calculateUserPrice(testCase.source, testCase.runeBalance, testCase.tokenBalance, testCase.swapAmount)
+		c.Check(round(result), Equals, round(testCase.expectedUserPrice))
 	}
 }
 
