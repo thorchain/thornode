@@ -20,9 +20,9 @@ describe "API Tests" do
 
   context "Create a pool" do
     it "create a pool for bnb" do
-      resp = processTx("FE0EC391E62AF2E291A41C38DEB3DF180FB0FD0E21E8B3866EFF8912F65FD1EE")
+      resp = processTx("AF64E866F7EDD74A558BF1519FB12700DDE51CD0DB5166ED37C568BE04E0C7F3")
       puts resp.body
-      expect(resp.body['txhash']).to eq ""
+      expect(resp.code).to eq(200), "Are you working from a clean blockchain?"
     end
   end
 
