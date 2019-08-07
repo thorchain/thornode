@@ -7,12 +7,12 @@ import (
 
 // Shows if a tx hash has been processed
 type QueryTxHash struct {
-	Done     bool `json:"done"`
-	Refunded bool `json:"refunded"`
+	Done     string `json:"done"`
+	Refunded string `json:"refunded"`
 }
 
 func (n QueryTxHash) String() string {
-	return fmt.Sprintf("TxDone: %+v | TxRefunded: %+v", n.Done, n.Refunded)
+	return fmt.Sprintf("TxDone: %s | TxRefunded: %s", n.Done, n.Refunded)
 }
 
 // Query Result Payload for a pools query
