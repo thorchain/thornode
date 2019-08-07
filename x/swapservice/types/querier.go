@@ -1,19 +1,8 @@
 package types
 
 import (
-	"fmt"
 	"strings"
 )
-
-// Shows if a tx hash has been processed
-type QueryTxHash struct {
-	Done     string `json:"done"`
-	Refunded string `json:"refunded"`
-}
-
-func (n QueryTxHash) String() string {
-	return fmt.Sprintf("TxDone: %s | TxRefunded: %s", n.Done, n.Refunded)
-}
 
 // Query Result Payload for a pools query
 type QueryResPoolStructs []PoolStruct
