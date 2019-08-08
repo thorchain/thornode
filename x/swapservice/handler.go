@@ -238,6 +238,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 			continue
 		}
 
+		// save the tx to db to stop duplicate request (aka replay attacks)
 		keeper.SetTxHash(ctx, tx)
 
 		var newMsg sdk.Msg
