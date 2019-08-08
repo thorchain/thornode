@@ -27,7 +27,7 @@ def processTx(hash, mode = 'block')
 
   # write unsigned json to disk
   File.open("/tmp/unSigned.json", "w") { |file| file.puts resp.body}
-  signedTx = `echo "password" | sscli tx sign /tmp/unSigned.json --from jack --node "tcp://daemon:26657"`
+  signedTx = `echo "password" | sscli tx sign /tmp/unSigned.json --from jack`
   signedTx = JSON.parse(signedTx)
   signedJson = {
     'mode': mode,
