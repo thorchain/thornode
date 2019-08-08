@@ -30,6 +30,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdSwapComplete(cdc),
 		GetCmdUnstake(cdc),
 		GetCmdUnStakeComplete(cdc),
+		GetCmdSetTxHash(cdc),
 	)...)
 
 	return swapserviceTxCmd
@@ -142,6 +143,25 @@ func GetCmdUnStakeComplete(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 			msg := types.NewMsgUnStakeComplete(args[0], args[1], cliCtx.GetFromAddress())
+			err := msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdSetTxHash command to send MsgSetTxHash Message from command line
+func GetCmdSetTxHash(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "set-txhash [requestTxHash] ",
+		Short: "mark a txhash Complete",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			msg := types.NewMsgSetTxHash(args[0], cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
