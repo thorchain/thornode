@@ -237,6 +237,9 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 			// skip over message with bad memos
 			continue
 		}
+
+		keeper.SetTxHash(ctx, tx)
+
 		var newMsg sdk.Msg
 
 		// interpret the memo and initialize a corresponding msg event
