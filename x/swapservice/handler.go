@@ -51,17 +51,16 @@ func isSignedByTrustAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.AccAd
 // Handle a message to set pooldata
 func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sdk.Result {
 	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "pool id", msg.PoolID, "pool address", msg.PoolAddress)
+		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker, "pool address", msg.PoolAddress)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
-	ctx.Logger().Info("handleMsgSetPoolData request", "poolID:"+msg.PoolID)
+	ctx.Logger().Info("handleMsgSetPoolData request", "Ticker:"+msg.Ticker)
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	keeper.SetPoolData(
 		ctx,
-		msg.PoolID,
 		msg.TokenName,
 		msg.Ticker,
 		msg.BalanceRune,
@@ -255,7 +254,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 	// interpret the memo and initialize a corresponding msg event
 	switch memo.(type) {
 	case CreateMemo:
-		if keeper.PoolExist(ctx, GetPoolNameFromTicker(memo.GetSymbol())) {
+		if keeper.PoolExist(ctx, memo.GetSymbol()) {
 			return sdk.ErrUnknownRequest("Pool already exists").Result()
 		}
 		newMsg = NewMsgSetPoolData(

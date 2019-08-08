@@ -13,29 +13,28 @@ import (
 type MockPoolStorage struct {
 }
 
-func (mps MockPoolStorage) PoolExist(ctx sdk.Context, poolID string) bool {
-	if strings.EqualFold(poolID, types.PoolDataKeyPrefix+"NOTEXIST") {
+func (mps MockPoolStorage) PoolExist(ctx sdk.Context, ticker string) bool {
+	if strings.EqualFold(ticker, "NOTEXIST") {
 		return false
 	}
 	return true
 }
-func (mps MockPoolStorage) GetPoolStruct(ctx sdk.Context, poolID string) types.PoolStruct {
-	if strings.EqualFold(poolID, types.PoolDataKeyPrefix+"NOTEXIST") {
+func (mps MockPoolStorage) GetPoolStruct(ctx sdk.Context, ticker string) types.PoolStruct {
+	if strings.EqualFold(ticker, "NOTEXIST") {
 		return types.PoolStruct{}
 	} else {
 		return types.PoolStruct{
 			BalanceRune:  "100",
 			BalanceToken: "100",
-			PoolID:       poolID,
 			PoolUnits:    "100",
 			Status:       types.Active.String(),
 			PoolAddress:  "hello",
-			Ticker:       strings.TrimPrefix(types.PoolDataKeyPrefix, poolID),
+			Ticker:       ticker,
 			TokenName:    "BNB",
 		}
 	}
 }
-func (mps MockPoolStorage) SetPoolStruct(ctx sdk.Context, poolID string, ps types.PoolStruct) {
+func (mps MockPoolStorage) SetPoolStruct(ctx sdk.Context, ticker string, ps types.PoolStruct) {
 
 }
 func (mps MockPoolStorage) GetStakerPool(ctx sdk.Context, stakerID string) (types.StakerPool, error) {
@@ -48,13 +47,13 @@ func (mps MockPoolStorage) SetStakerPool(ctx sdk.Context, stakerID string, sp ty
 
 }
 
-func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, poolID string) (types.PoolStaker, error) {
-	if strings.EqualFold(poolID, "NOTEXISTSPOOLID") {
+func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, ticker string) (types.PoolStaker, error) {
+	if strings.EqualFold(ticker, "NOTEXISTSTICKER") {
 		return types.PoolStaker{}, errors.New("you asked for it")
 	}
-	return types.NewPoolStaker(poolID, "100"), nil
+	return types.NewPoolStaker(ticker, "100"), nil
 }
-func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, poolID string, ps types.PoolStaker) {
+func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, ticker string, ps types.PoolStaker) {
 
 }
 func (mps MockPoolStorage) SetSwapRecord(ctx sdk.Context, sr types.SwapRecord) error {

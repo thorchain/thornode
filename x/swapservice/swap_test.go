@@ -116,9 +116,9 @@ func (s SwapSuite) TestSwap(c *C) {
 			amount:         "100",
 			requester:      "tester",
 			destination:    "don'tknow",
-			returnAmount:   "0",
 			tradeSlipLimit: "1.1",
-			expectedErr:    errors.New("pool-NOTEXIST doesn't exist"),
+			returnAmount:   "0",
+			expectedErr:    errors.New("NOTEXIST doesn't exist"),
 		},
 		{
 			name:           "pool-not-exist-1",
@@ -130,7 +130,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:    "don'tknow",
 			tradeSlipLimit: "1.2",
 			returnAmount:   "0",
-			expectedErr:    errors.New("pool-NOTEXIST doesn't exist"),
+			expectedErr:    errors.New("NOTEXIST doesn't exist"),
 		},
 		{
 			name:           "swap-over-global-sliplimit",

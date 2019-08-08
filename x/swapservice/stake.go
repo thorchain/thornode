@@ -7,8 +7,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 const floatPrecision = 8
@@ -57,9 +55,8 @@ func validateStakeMessage(ctx sdk.Context, keeper Keeper, name, ticker, stakeRun
 	if isEmptyString(publicAddress) {
 		return errors.New("public address is empty")
 	}
-	poolID := types.GetPoolNameFromTicker(ticker)
-	if !keeper.PoolExist(ctx, poolID) {
-		return errors.Errorf("%s doesn't exist", poolID)
+	if !keeper.PoolExist(ctx, ticker) {
+		return errors.Errorf("%s doesn't exist", ticker)
 	}
 	return nil
 }
@@ -70,8 +67,7 @@ func stake(ctx sdk.Context, keeper Keeper, name, ticker, stakeRuneAmount, stakeT
 		return errors.Wrap(err, "invalid request")
 	}
 	ticker = strings.ToUpper(ticker)
-	poolID := types.GetPoolNameFromTicker(ticker)
-	pool := keeper.GetPoolStruct(ctx, poolID)
+	pool := keeper.GetPoolStruct(ctx, ticker)
 	fTokenAmt, err := strconv.ParseFloat(stakeTokenAmount, 64)
 	if err != nil {
 		return errors.Wrapf(err, "%s is invalid token_amount", stakeTokenAmount)
@@ -107,9 +103,9 @@ func stake(ctx sdk.Context, keeper Keeper, name, ticker, stakeRuneAmount, stakeT
 	pool.BalanceRune = strconv.FormatFloat(poolRune, 'f', floatPrecision, 64)
 	pool.BalanceToken = strconv.FormatFloat(poolToken, 'f', floatPrecision, 64)
 	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
-	keeper.SetPoolStruct(ctx, poolID, pool)
+	keeper.SetPoolStruct(ctx, ticker, pool)
 	// maintain pool staker structure
-	ps, err := keeper.GetPoolStaker(ctx, poolID)
+	ps, err := keeper.GetPoolStaker(ctx, ticker)
 	if nil != err {
 		return errors.Wrap(err, "fail to get pool staker..")
 	}
@@ -127,13 +123,13 @@ func stake(ctx sdk.Context, keeper Keeper, name, ticker, stakeRuneAmount, stakeT
 	}
 	su.Units = strconv.FormatFloat(stakerUnits, 'f', floatPrecision, 64)
 	ps.UpsertStakerUnit(su)
-	keeper.SetPoolStaker(ctx, poolID, ps)
+	keeper.SetPoolStaker(ctx, ticker, ps)
 	// maintain stake pool structure
 	sp, err := keeper.GetStakerPool(ctx, publicAddress)
 	if nil != err {
 		return errors.Wrap(err, "fail to get stakepool object")
 	}
-	stakerPoolItem := sp.GetStakerPoolItem(poolID)
+	stakerPoolItem := sp.GetStakerPoolItem(ticker)
 	existUnit, err := strconv.ParseFloat(stakerPoolItem.Units, 64)
 	if nil != err {
 		return errors.Wrap(err, "fail to parse exist unit")
