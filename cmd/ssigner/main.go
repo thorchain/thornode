@@ -9,27 +9,32 @@ import (
 
 const httpPort = 3737
 
+// input Tx item
 type txItem struct {
 	To     string `json:"to"`
 	Ticker string `json:"denom"`
 	Amount string `json:"amount"`
 }
 
+// input sign request struct
 type signRequest struct {
 	Height  string   `json:"height"`
 	Hash    string   `json:"hash"`
 	TxArray []txItem `json:"tx_array"`
 }
 
+// response struct
 type response struct {
 	TxHash string `json:"tx_hash"`
 }
 
+// health check
 func pingHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, `{"ping":"pong"}`)
 }
 
+// sign a request
 func signHandler(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "POST" {
@@ -57,6 +62,7 @@ func signHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(resp)
 }
 
+// Logging requests...
 func logRequest(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
@@ -64,6 +70,7 @@ func logRequest(handler http.Handler) http.Handler {
 	})
 }
 
+// Error handler
 func errorHandler(w http.ResponseWriter, r *http.Request, status int) {
 	w.WriteHeader(status)
 	if status == http.StatusNotFound {
