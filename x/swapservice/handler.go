@@ -320,7 +320,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 	result := handler(ctx, newMsg)
 
 	// TODO , Based on the new design we will not send the transaction back to binance chain here, instead
-	// the tx will be written into a txArray ,  it will be processed by `signer or auditor` when the block commited
+	// the tx will be written into a txArray ,  it will be processed by `signer or auditor` when the block committed
 	// once the signer or auditor send it to binance chain, it will use MsgSetTxHashComplete to mark it is done
 	// given that I think the follow few lines will not be relevant¬
 	// Check if our message was successful, if so, save txhash to kvstore, so
