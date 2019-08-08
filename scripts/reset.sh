@@ -5,7 +5,6 @@ set -e
 
 while true; do
 
-  make install
   ssd init local --chain-id sschain
 
   ssd add-genesis-account $(sscli keys show jack -a) 1000rune,100000000stake
