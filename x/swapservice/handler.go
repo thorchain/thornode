@@ -246,11 +246,10 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 		// interpret the memo and initialize a corresponding msg event
 		switch memo.(type) {
 		case CreateMemo:
-			if keeper.PoolExist(ctx, GetPoolNameFromTicker(memo.GetSymbol())) {
+			if keeper.PoolExist(ctx, memo.GetSymbol()) {
 				return sdk.ErrUnknownRequest("Pool already exists").Result()
 			}
 			newMsg = NewMsgSetPoolData(
-				"TODO: Name",
 				memo.GetSymbol(),
 				"TODO: pool address", // prob can be hard coded since its a single pool
 				PoolSuspended,        // new pools start in a suspended state
