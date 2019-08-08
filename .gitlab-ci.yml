@@ -24,6 +24,9 @@ lint_code:
     - make lint
 
 integration_tests:
+  image: docker:latest
   stage: integration
+  services:
+  - docker:dind
   script:
     - make -C tests/integration test
