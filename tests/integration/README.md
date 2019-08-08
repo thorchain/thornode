@@ -1,6 +1,13 @@
 Statechain Integration Tests
 ============================
 
+## Run within Docker
+```
+make test
+```
+
+## Run manually locally
+
 ## Setup
 Clean your environment and setup...
 
@@ -25,7 +32,7 @@ make -C ../.. start-rest
 Once you have start the service, run tests...
 
 ```bash
-make test
+make test-internal
 ```
 
 ## Reset
