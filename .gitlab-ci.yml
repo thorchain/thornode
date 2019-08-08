@@ -36,4 +36,6 @@ integration_tests:
   script:
     - pwd
     - ls
-    - docker run -v ${GOPATH}:/root/go -w /root/go/src/gitlab.com/thorchain/statechain -e GOPATH=/root/go -e GOBIN=/go/bin statechain make -C ./tests/integration install setup run wait-for-blockchain test-internal
+    - ls tests
+    - ls tests/integration
+    - docker run -v ${GOPATH}:/root/go -v .:/root/go/src/gitlab.com/thorchain/statechain -w /root/go/src/gitlab.com/thorchain/statechain -e GOPATH=/root/go -e GOBIN=/go/bin statechain make -C ./tests/integration install setup run wait-for-blockchain test-internal
