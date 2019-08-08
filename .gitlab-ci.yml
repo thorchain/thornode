@@ -26,9 +26,10 @@ lint_code:
 integration_tests:
   image: docker:latest
   stage: integration
-  services:
-    - docker:dind
   tags:
     - docker
+  before_script:
+    - docker info
+    - docker build -t statechain tests/integration
   script:
     - make -C tests/integration test
