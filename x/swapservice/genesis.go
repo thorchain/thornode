@@ -41,15 +41,7 @@ func ValidateGenesis(data GenesisState) error {
 			return fmt.Errorf("invalid trust account record, error: missing account name")
 		}
 		if ta.Address.Empty() {
-			return fmt.Errorf("invalid trust account record, error: missing account address")
-		}
-	}
-	for _, ta := range data.TrustAccounts {
-		if len(ta.Name) == 0 {
-			return fmt.Errorf("invalid trust account record, error: missing account name")
-		}
-		if ta.Address.Empty() {
-			return fmt.Errorf("invalid trust account record, error: missing account address")
+			return fmt.Errorf("invalid trust account record, error: missing account address: %s", ta.Address)
 		}
 	}
 	return nil
@@ -69,6 +61,7 @@ func DefaultGenesisState() GenesisState {
 				Status:       types.Active.String(),
 			},
 		},
+		TrustAccounts: []types.TrustAccount{},
 	}
 }
 
