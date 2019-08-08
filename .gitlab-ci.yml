@@ -24,18 +24,7 @@ lint_code:
     - make lint
 
 integration_tests:
-  image: docker:latest
+  image: cbarraford/golang-ruby
   stage: integration
-  services:
-    - docker:dind
-  tags:
-    - docker
-  before_script:
-    - docker info
-    - docker build -t statechain tests/integration
   script:
-    - pwd
-    - ls
-    - ls tests
-    - ls tests/integration
-    - docker run -v ${GOPATH}:/root/go -v .:/root/go/src/gitlab.com/thorchain/statechain -w /root/go/src/gitlab.com/thorchain/statechain -e GOPATH=/root/go -e GOBIN=/go/bin statechain make -C ./tests/integration install setup run wait-for-blockchain test-internal
+    - make -C ./tests/integration install setup run wait-for-blockchain test-internal
