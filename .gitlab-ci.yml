@@ -26,7 +26,5 @@ lint_code:
 integration_tests:
   image: cbarraford/golang-ruby
   stage: integration
-  before_script:
-    - export GOBIN=/go/bin
   script:
     - make -C ./tests/integration install setup run wait-for-blockchain test-internal
