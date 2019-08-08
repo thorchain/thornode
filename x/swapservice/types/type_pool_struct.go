@@ -46,7 +46,6 @@ func GetPoolStatus(ps string) PoolStatus {
 // PoolStruct is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
 type PoolStruct struct {
-	PoolID       string `json:"pool_id"`       // pool id
 	BalanceRune  string `json:"balance_rune"`  // how many RUNE in the pool
 	BalanceToken string `json:"balance_token"` // how many token in the pool
 	Ticker       string `json:"ticker"`        // what's the token's ticker
@@ -65,10 +64,13 @@ func NewPoolStruct() PoolStruct {
 	}
 }
 
+func (w PoolStruct) Empty() bool {
+	return w.Ticker == ""
+}
+
 // String implement fmt.Stringer
 func (w PoolStruct) String() string {
 	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintln("pool-id: " + w.PoolID))
 	sb.WriteString(fmt.Sprintln("rune-balance: " + w.BalanceRune))
 	sb.WriteString(fmt.Sprintln("token-balance: " + w.BalanceToken))
 	sb.WriteString(fmt.Sprintln("ticker: " + w.Ticker))
@@ -77,9 +79,4 @@ func (w PoolStruct) String() string {
 	sb.WriteString(fmt.Sprintln("pool-address: " + w.PoolAddress))
 	sb.WriteString(fmt.Sprintln("status: " + w.Status))
 	return sb.String()
-}
-
-// GetPoolNameFromTicker convert ticker to pool id
-func GetPoolNameFromTicker(ticker string) string {
-	return fmt.Sprintf("%s%s", PoolDataKeyPrefix, strings.ToUpper(ticker))
 }

@@ -47,8 +47,8 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // GetPoolStruct get the entire PoolStruct metadata struct for a pool ID
-func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
-	key := getKey(prefixPool, poolID)
+func (k Keeper) GetPoolStruct(ctx sdk.Context, ticker string) PoolStruct {
+	key := getKey(prefixPool, ticker)
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return NewPoolStruct()
@@ -69,30 +69,29 @@ func (k Keeper) GetPoolStruct(ctx sdk.Context, poolID string) PoolStruct {
 }
 
 // Sets the entire PoolStruct metadata struct for a pool ID
-func (k Keeper) SetPoolStruct(ctx sdk.Context, poolID string, poolstruct PoolStruct) {
-	poolID = strings.ToUpper(poolID)
+func (k Keeper) SetPoolStruct(ctx sdk.Context, ticker string, poolstruct PoolStruct) {
 	store := ctx.KVStore(k.storeKey)
-	if !store.Has([]byte(poolID)) {
-		if err := k.AddToPoolIndex(ctx, poolID); nil != err {
-			ctx.Logger().Error("fail to add poolID to pool index", "poolID", poolID, "error", err)
+	if !store.Has([]byte(ticker)) {
+		if err := k.AddToPoolIndex(ctx, ticker); nil != err {
+			ctx.Logger().Error("fail to add ticker to pool index", "ticker", ticker, "error", err)
 		}
 	}
-	store.Set([]byte(poolID), k.cdc.MustMarshalBinaryBare(poolstruct))
+	store.Set([]byte(ticker), k.cdc.MustMarshalBinaryBare(poolstruct))
 }
 
-func (k Keeper) GetPoolBalances(ctx sdk.Context, poolID, ticker string) (string, string) {
-	poolstruct := k.GetPoolStruct(ctx, poolID)
-	if strings.EqualFold(ticker, types.RuneTicker) {
+func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 string) (string, string) {
+	poolstruct := k.GetPoolStruct(ctx, ticker)
+	if strings.EqualFold(ticker2, types.RuneTicker) {
 		return poolstruct.BalanceRune, poolstruct.BalanceToken
 	}
 	return poolstruct.BalanceToken, poolstruct.BalanceRune
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
-func (k Keeper) SetPoolData(ctx sdk.Context, poolID, tokenName, ticker, balanceRune, balanceToken, poolAddress string, ps types.PoolStatus) {
-	poolstruct := k.GetPoolStruct(ctx, poolID)
-	if len(poolstruct.PoolID) == 0 {
-		poolstruct.PoolID = types.GetPoolNameFromTicker(ticker)
+func (k Keeper) SetPoolData(ctx sdk.Context, tokenName, ticker, balanceRune, balanceToken, poolAddress string, ps types.PoolStatus) {
+	key := getKey(prefixPool, ticker)
+	poolstruct := k.GetPoolStruct(ctx, key)
+	if poolstruct.PoolUnits == "" {
 		poolstruct.PoolUnits = "0"
 	}
 	poolstruct.PoolAddress = poolAddress
@@ -100,15 +99,15 @@ func (k Keeper) SetPoolData(ctx sdk.Context, poolID, tokenName, ticker, balanceR
 	poolstruct.Ticker = strings.ToUpper(ticker)
 	poolstruct.BalanceRune = balanceRune
 	poolstruct.BalanceToken = balanceToken
-	k.SetPoolStruct(ctx, poolID, poolstruct)
+	k.SetPoolStruct(ctx, ticker, poolstruct)
 }
 
 // SetBalances - sets the current balances of a pool
-func (k Keeper) SetBalances(ctx sdk.Context, poolID, rune, token string) {
-	poolstruct := k.GetPoolStruct(ctx, poolID)
+func (k Keeper) SetBalances(ctx sdk.Context, ticker, rune, token string) {
+	poolstruct := k.GetPoolStruct(ctx, ticker)
 	poolstruct.BalanceRune = rune
 	poolstruct.BalanceToken = token
-	k.SetPoolStruct(ctx, poolID, poolstruct)
+	k.SetPoolStruct(ctx, ticker, poolstruct)
 }
 
 // GetPoolStructDataIterator only iterate pool data
@@ -118,9 +117,9 @@ func (k Keeper) GetPoolStructDataIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // PoolExist check whether the given pool exist in the datastore
-func (k Keeper) PoolExist(ctx sdk.Context, poolID string) bool {
+func (k Keeper) PoolExist(ctx sdk.Context, ticker string) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPool, poolID)
+	key := getKey(prefixPool, ticker)
 	return store.Has([]byte(key))
 }
 
@@ -145,32 +144,32 @@ func (k Keeper) SetPoolIndex(ctx sdk.Context, pi types.PoolIndex) {
 	store.Set([]byte(poolIndexKey), k.cdc.MustMarshalBinaryBare(&pi))
 }
 
-// AddToPoolIndex will add the given poolID into the poolindex
-func (k Keeper) AddToPoolIndex(ctx sdk.Context, poolID string) error {
+// AddToPoolIndex will add the given ticker into the poolindex
+func (k Keeper) AddToPoolIndex(ctx sdk.Context, ticker string) error {
 	pi, err := k.GetPoolIndex(ctx)
 	if nil != err {
 		return err
 	}
 	for _, item := range pi {
-		if strings.EqualFold(item, poolID) {
+		if strings.EqualFold(item, ticker) {
 			// already in the pool index , don't need to add
 			return nil
 		}
 	}
-	pi = append(pi, strings.ToUpper(poolID))
+	pi = append(pi, strings.ToUpper(ticker))
 	k.SetPoolIndex(ctx, pi)
 	return nil
 }
 
-// RemoveFromPoolIndex remove the given poolID from the poolIndex
-func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, poolID string) error {
+// RemoveFromPoolIndex remove the given ticker from the poolIndex
+func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, ticker string) error {
 	pi, err := k.GetPoolIndex(ctx)
 	if nil != err {
 		return err
 	}
 	var newPI types.PoolIndex
 	for _, item := range pi {
-		if !strings.EqualFold(item, poolID) {
+		if !strings.EqualFold(item, ticker) {
 			newPI = append(newPI, item)
 		}
 	}
@@ -179,12 +178,12 @@ func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, poolID string) error {
 }
 
 // GetPoolStaker retrieve poolStaker from the data store
-func (k Keeper) GetPoolStaker(ctx sdk.Context, poolID string) (types.PoolStaker, error) {
+func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker string) (types.PoolStaker, error) {
 	store := ctx.KVStore(k.storeKey)
-	poolStakerKey := types.PoolStakerKeyPrefix + poolID
+	poolStakerKey := types.PoolStakerKeyPrefix + ticker
 	if !store.Has([]byte(poolStakerKey)) {
 		ctx.Logger().Info("NotExist", "poolstakerkey", poolStakerKey)
-		return types.NewPoolStaker(poolID, "0"), nil
+		return types.NewPoolStaker(ticker, "0"), nil
 	}
 	var ps types.PoolStaker
 	buf := store.Get([]byte(poolStakerKey))
@@ -196,9 +195,9 @@ func (k Keeper) GetPoolStaker(ctx sdk.Context, poolID string) (types.PoolStaker,
 }
 
 // SetPoolStaker store the poolstaker to datastore
-func (k Keeper) SetPoolStaker(ctx sdk.Context, poolID string, ps types.PoolStaker) {
+func (k Keeper) SetPoolStaker(ctx sdk.Context, ticker string, ps types.PoolStaker) {
 	store := ctx.KVStore(k.storeKey)
-	poolStakerKey := types.PoolStakerKeyPrefix + poolID
+	poolStakerKey := types.PoolStakerKeyPrefix + ticker
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", poolStakerKey, ps))
 	result := k.cdc.MustMarshalBinaryBare(ps)
 	store.Set([]byte(poolStakerKey), result)
