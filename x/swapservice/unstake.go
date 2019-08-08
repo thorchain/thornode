@@ -34,8 +34,7 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) er
 	if fPercentage <= 0 || fPercentage > 100 {
 		return errors.Errorf("percentage %s is invalid", msg.Percentage)
 	}
-	poolID := types.GetPoolNameFromTicker(msg.Ticker)
-	if !keeper.PoolExist(ctx, poolID) {
+	if !keeper.PoolExist(ctx, msg.Ticker) {
 		// pool doesn't exist
 		return errors.Errorf("pool-%s doesn't exist", msg.Ticker)
 	}
@@ -52,9 +51,8 @@ func unstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) (string, s
 		return "0", "0", errors.Wrapf(err, " %s is invalid percentage", msg.Percentage)
 	}
 	// here fBalance should be valid , because we did the validation above
-	poolID := types.GetPoolNameFromTicker(msg.Ticker)
-	pool := keeper.GetPoolStruct(ctx, poolID)
-	poolStaker, err := keeper.GetPoolStaker(ctx, poolID)
+	pool := keeper.GetPoolStruct(ctx, msg.Ticker)
+	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Ticker)
 	if nil != err {
 		return "0", "0", errors.Wrap(err, "can't find pool staker")
 
@@ -103,15 +101,15 @@ func unstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) (string, s
 		poolStaker.UpsertStakerUnit(stakerUnit)
 	}
 	if unitAfter <= 0 {
-		stakerPool.RemoveStakerPoolItem(poolID)
+		stakerPool.RemoveStakerPoolItem(msg.Ticker)
 	} else {
-		spi := stakerPool.GetStakerPoolItem(poolID)
+		spi := stakerPool.GetStakerPoolItem(msg.Ticker)
 		spi.Units = float64ToString(unitAfter)
 		stakerPool.UpsertStakerPoolItem(spi)
 	}
 	// update staker pool
-	keeper.SetPoolStruct(ctx, poolID, pool)
-	keeper.SetPoolStaker(ctx, poolID, poolStaker)
+	keeper.SetPoolStruct(ctx, msg.Ticker, pool)
+	keeper.SetPoolStaker(ctx, msg.Ticker, poolStaker)
 	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
 	keeper.SetUnStakeRecord(ctx, types.UnstakeRecord{
 		RequestTxHash: msg.RequestTxHash,

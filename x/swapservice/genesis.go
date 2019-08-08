@@ -35,9 +35,6 @@ func ValidateGenesis(data GenesisState) error {
 		if len(record.PoolAddress) == 0 {
 			return fmt.Errorf("invalid PoolStruct, error: missing pool address")
 		}
-		if len(record.PoolID) == 0 {
-			return fmt.Errorf("invalid PoolStruct, error: missing pool id")
-		}
 	}
 	for _, ta := range data.TrustAccounts {
 		if len(ta.Name) == 0 {
@@ -63,7 +60,6 @@ func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		PoolStructRecords: []PoolStruct{
 			{
-				PoolID:       types.GetPoolNameFromTicker("BNB"),
 				BalanceRune:  "0",
 				BalanceToken: "0",
 				TokenName:    "Binance Coin",
@@ -79,7 +75,7 @@ func DefaultGenesisState() GenesisState {
 // InitGenesis read the data in GenesisState and apply it to data store
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.ValidatorUpdate {
 	for _, record := range data.PoolStructRecords {
-		keeper.SetPoolStruct(ctx, types.GetPoolNameFromTicker(record.Ticker), record)
+		keeper.SetPoolStruct(ctx, record.Ticker, record)
 	}
 	for _, ta := range data.TrustAccounts {
 		keeper.SetTrustAccount(ctx, ta)
