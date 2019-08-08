@@ -4,6 +4,7 @@ all: lint install
 install: go.sum
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
+		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssigner
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
