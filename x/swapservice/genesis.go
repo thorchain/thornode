@@ -26,9 +26,6 @@ func NewGenesisState(pools []PoolStruct, trustAccounts []types.TrustAccount) Gen
 // ValidateGenesis validate genesis is valid or not
 func ValidateGenesis(data GenesisState) error {
 	for _, record := range data.PoolStructRecords {
-		if len(record.TokenName) == 0 {
-			return fmt.Errorf("invalid PoolStruct, error: missing token name")
-		}
 		if len(record.Ticker) == 0 {
 			return fmt.Errorf("invalid PoolStruct, error: missing ticker")
 		}
@@ -62,7 +59,6 @@ func DefaultGenesisState() GenesisState {
 			{
 				BalanceRune:  "0",
 				BalanceToken: "0",
-				TokenName:    "Binance Coin",
 				Ticker:       "BNB",
 				PoolUnits:    "0",
 				PoolAddress:  "bnbxxdfdfdfdfdf",
