@@ -1,5 +1,7 @@
 package types
 
+import sdk "github.com/cosmos/cosmos-sdk/types"
+
 type status string
 
 const (
@@ -10,14 +12,20 @@ const (
 
 // Meant to track if we have processed a specific binance tx
 type TxHash struct {
-	Request string `json:"request"` // binance chain request tx hash
-	Status  status `json:"status"`
-	Hash    string `json:"txhash"` // completed binance chain tx hash
+	Request string    `json:"request"` // binance chain request tx hash
+	Status  status    `json:"status"`
+	Hash    string    `json:"txhash"` // completed binance chain tx hash
+	Memo    string    `json:"memo"`   // memo
+	Coins   sdk.Coins `json:"coins"`  // coins sent in tx
+	Sender  string    `json:"sender"`
 }
 
-func NewTxHash(hash string) TxHash {
+func NewTxHash(hash string, coins sdk.Coins, memo, sender string) TxHash {
 	return TxHash{
 		Request: hash,
+		Coins:   coins,
+		Memo:    memo,
+		Sender:  sender,
 		Status:  Incomplete,
 	}
 }

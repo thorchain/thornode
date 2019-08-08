@@ -42,9 +42,19 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/binance/tx", storeName), txHashHandler(cliCtx)).Methods("POST")
 }
 
+type txItem struct {
+	TxHash string    `json:"tx"`
+	Coins  sdk.Coins `json:"coins"`
+	Memo   string    `json:"MEMO"`
+	Sender string    `json:"sender"`
+}
+
 type txHashReq struct {
-	BaseReq rest.BaseReq `json:"base_req"`
-	TxHash  string       `json:"tx_hash"`
+	BaseReq     rest.BaseReq `json:"base_req"`
+	Blockheight int          `json:"blockHeight"`
+	Count       int          `json:"count"`
+	TxArray     []txItem     `json:"txArray"`
+	TxHash      string       `json:"tx_hash"`
 }
 
 func txHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -67,8 +77,13 @@ func txHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		txHashes := make([]types.TxHash, len(req.TxArray))
+		for i, tx := range req.TxArray {
+			txHashes[i] = types.NewTxHash(tx.TxHash, tx.Coins, tx.Memo, tx.Sender)
+		}
+
 		// create the message
-		msg := types.NewMsgSetTxHash(req.TxHash, addr)
+		msg := types.NewMsgSetTxHash(txHashes, addr)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
