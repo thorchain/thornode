@@ -16,14 +16,14 @@ import (
 type dbPrefix string
 
 const (
-	prefixTxHash dbPrefix = "tx"
-	prefixPool   dbPrefix = "pool"
+	prefixTxHash dbPrefix = "tx_"
+	prefixPool   dbPrefix = "pool_"
 )
 
 const poolIndexKey = `poolindexkey`
 
 func getKey(prefix dbPrefix, key string) string {
-	return fmt.Sprintf("%s_%s", prefix, strings.ToUpper(key))
+	return fmt.Sprintf("%s%s", prefix, strings.ToUpper(key))
 }
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
@@ -71,12 +71,13 @@ func (k Keeper) GetPoolStruct(ctx sdk.Context, ticker string) PoolStruct {
 // Sets the entire PoolStruct metadata struct for a pool ID
 func (k Keeper) SetPoolStruct(ctx sdk.Context, ticker string, poolstruct PoolStruct) {
 	store := ctx.KVStore(k.storeKey)
-	if !store.Has([]byte(ticker)) {
+	key := getKey(prefixPool, ticker)
+	if !store.Has([]byte(key)) {
 		if err := k.AddToPoolIndex(ctx, ticker); nil != err {
 			ctx.Logger().Error("fail to add ticker to pool index", "ticker", ticker, "error", err)
 		}
 	}
-	store.Set([]byte(ticker), k.cdc.MustMarshalBinaryBare(poolstruct))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(poolstruct))
 }
 
 func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 string) (string, string) {
@@ -89,8 +90,7 @@ func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 string) (string
 
 // SetPoolData - sets the value string that a pool ID resolves to
 func (k Keeper) SetPoolData(ctx sdk.Context, tokenName, ticker, balanceRune, balanceToken, poolAddress string, ps types.PoolStatus) {
-	key := getKey(prefixPool, ticker)
-	poolstruct := k.GetPoolStruct(ctx, key)
+	poolstruct := k.GetPoolStruct(ctx, ticker)
 	if poolstruct.PoolUnits == "" {
 		poolstruct.PoolUnits = "0"
 	}
@@ -113,7 +113,7 @@ func (k Keeper) SetBalances(ctx sdk.Context, ticker, rune, token string) {
 // GetPoolStructDataIterator only iterate pool data
 func (k Keeper) GetPoolStructDataIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, []byte(types.PoolDataKeyPrefix))
+	return sdk.KVStorePrefixIterator(store, []byte(prefixPool))
 }
 
 // PoolExist check whether the given pool exist in the datastore
