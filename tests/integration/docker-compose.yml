@@ -2,43 +2,13 @@ version: '3'
 
 services:
   rspec:
-    build: docker-ruby
-    image: statechain-ruby
-    links:
-      - "daemon:daemon"
-      - "api:api"
-    depends_on:
-      - daemon
-      - api
+    build: .
+    image: statechain
     volumes:
-      - ~/go:/root/go
+      - ${GOPATH}:/root/go
       - ../..:/root/go/src/gitlab.com/thorchain/statechain
     working_dir: /root/go/src/gitlab.com/thorchain/statechain
+    command: make -C ./tests/integration install setup run wait-for-blockchain test-internal
     environment:
-      APIHOST: api
-      APIPORT: 1317
-      DAEMONHOST: daemon
-      DAEMONPORT: 26657
-    command: make -C ./tests/integration install setup wait-for-blockchain test
-  daemon:
-    build: .
-    image: statechain
-    volumes:
-      - ~/go:/root/go
-      - ../..:/root/go/src/gitlab.com/thorchain/statechain:rw
-    working_dir: /root/go/src/gitlab.com/thorchain/statechain
-    ports:
-      - "26657:26657"
-    expose:
-      - "26657"
-    command: make install setup start-daemon-compose
-  api:
-    build: .
-    image: statechain
-    volumes:
-      - ~/go:/root/go
-      - ../..:/root/go/src/gitlab.com/thorchain/statechain
-    working_dir: /root/go/src/gitlab.com/thorchain/statechain
-    ports:
-      - "1317:1317"
-    command: make install start-rest-compose
+      GOPATH: /root/go
+      GOBIN: /go/bin
