@@ -89,7 +89,7 @@ func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 string) (string
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
-func (k Keeper) SetPoolData(ctx sdk.Context, tokenName, ticker, balanceRune, balanceToken, poolAddress string, ps types.PoolStatus) {
+func (k Keeper) SetPoolData(ctx sdk.Context, ticker, balanceRune, balanceToken, poolAddress string, ps types.PoolStatus) {
 	poolstruct := k.GetPoolStruct(ctx, ticker)
 	if poolstruct.PoolUnits == "" {
 		poolstruct.PoolUnits = "0"

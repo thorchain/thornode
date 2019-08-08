@@ -30,7 +30,6 @@ func (mps MockPoolStorage) GetPoolStruct(ctx sdk.Context, ticker string) types.P
 			Status:       types.Active.String(),
 			PoolAddress:  "hello",
 			Ticker:       ticker,
-			TokenName:    "BNB",
 		}
 	}
 }

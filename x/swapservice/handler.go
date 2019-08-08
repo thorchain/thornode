@@ -61,7 +61,6 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 	}
 	keeper.SetPoolData(
 		ctx,
-		msg.TokenName,
 		msg.Ticker,
 		msg.BalanceRune,
 		msg.BalanceToken,
@@ -87,7 +86,6 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 	if err := stake(
 		ctx,
 		keeper,
-		msg.Name,
 		msg.Ticker,
 		msg.Rune,
 		msg.Token,
@@ -258,7 +256,6 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 			return sdk.ErrUnknownRequest("Pool already exists").Result()
 		}
 		newMsg = NewMsgSetPoolData(
-			"TODO: Name",
 			memo.GetSymbol(),
 			"TODO: pool address", // prob can be hard coded since its a single pool
 			PoolSuspended,        // new pools start in a suspended state

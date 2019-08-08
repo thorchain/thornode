@@ -12,9 +12,6 @@ import (
 const unstakeRecordPrefix = `unstakerecord-`
 
 func validateUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) error {
-	if isEmptyString(msg.Name) {
-		return errors.New("empty name")
-	}
 	if isEmptyString(msg.PublicAddress) {
 		return errors.New("empty public address")
 	}

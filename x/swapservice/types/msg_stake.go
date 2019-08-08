@@ -6,7 +6,6 @@ import (
 
 // MsgSetStakeData defines a SetStakeData message
 type MsgSetStakeData struct {
-	Name          string         `json:"name"`            // token usually is a more user friendly name
 	Ticker        string         `json:"ticker"`          // ticker means the symbol
 	Token         string         `json:"token"`           // the amount of token stake
 	Rune          string         `json:"rune"`            // the amount of rune stake
@@ -18,7 +17,6 @@ type MsgSetStakeData struct {
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
 func NewMsgSetStakeData(name, ticker, r, token, publicAddress, requestTxHash string, owner sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
-		Name:          name,
 		Ticker:        ticker,
 		Token:         token,
 		Rune:          r,
@@ -36,9 +34,6 @@ func (msg MsgSetStakeData) Type() string { return "set_stakedata" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
-	if len(msg.Name) == 0 {
-		return sdk.ErrUnknownRequest("Stake Name cannot be empty")
-	}
 	if len(msg.Ticker) == 0 {
 		return sdk.ErrUnknownRequest("Stake Ticker cannot be empty")
 	}
