@@ -7,8 +7,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 // query endpoints supported by the swapservice Querier
@@ -98,8 +96,7 @@ func queryPoolIndex(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 // queryPoolStakers
 func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	ticker := path[0]
-	poolID := types.GetPoolNameFromTicker(ticker)
-	ps, err := keeper.GetPoolStaker(ctx, poolID)
+	ps, err := keeper.GetPoolStaker(ctx, ticker)
 	if nil != err {
 		ctx.Logger().Error("fail to get pool staker", err)
 		return nil, sdk.ErrInternal("fail to get pool staker")
@@ -131,7 +128,7 @@ func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 // nolint: unparam
 func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	poolstruct := keeper.GetPoolStruct(ctx, path[0])
-	if len(poolstruct.PoolID) == 0 {
+	if poolstruct.Empty() {
 		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("pool: %s doesn't exist", path[0]))
 	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, poolstruct)

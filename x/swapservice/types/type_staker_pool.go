@@ -19,7 +19,7 @@ type StakeTxDetail struct {
 // StakerPoolItem represent the staker's activity in a pool
 // Staker can stake on multiple pool
 type StakerPoolItem struct {
-	PoolID       string          `json:"pool_id"`
+	Ticker       string          `json:"ticker"`
 	Units        string          `json:"units"`
 	StakeDetails []StakeTxDetail `json:"stake_details"`
 }
@@ -32,7 +32,7 @@ type StakerPoolItem struct {
 //    "staker_id": "bnbxasdfaswqerqwe",
 //    "pool_and_units": [
 //        {
-//            "pool_id": "pool-BNB",
+//            "ticker": "BNB",
 //            "units": "200",
 //            "stake_details": [
 //                {
@@ -48,7 +48,7 @@ type StakerPoolItem struct {
 //            ]
 //        },
 //        {
-//            "pool_id": "pool-BTC",
+//            "ticker": "BTC",
 //            "units": "200",
 //            "stake_details": [
 //                {
@@ -91,24 +91,24 @@ func (sp StakerPool) String() string {
 }
 
 // GetStakerPoolItem return the StakerPoolItem with given pool id
-func (sp *StakerPool) GetStakerPoolItem(poolID string) *StakerPoolItem {
+func (sp *StakerPool) GetStakerPoolItem(ticker string) *StakerPoolItem {
 	for _, item := range sp.PoolUnits {
-		if strings.EqualFold(item.PoolID, poolID) {
+		if strings.EqualFold(item.Ticker, ticker) {
 			return item
 		}
 	}
 	return &StakerPoolItem{
-		PoolID:       poolID,
+		Ticker:       ticker,
 		Units:        "0",
 		StakeDetails: []StakeTxDetail{},
 	}
 }
 
 // RemoveStakerPoolItem delete the stakerpoolitem with given pool id from the struct
-func (sp *StakerPool) RemoveStakerPoolItem(poolID string) {
+func (sp *StakerPool) RemoveStakerPoolItem(ticker string) {
 	deleteIdx := -1
 	for idx, item := range sp.PoolUnits {
-		if strings.EqualFold(item.PoolID, poolID) {
+		if strings.EqualFold(item.Ticker, ticker) {
 			deleteIdx = idx
 		}
 	}
@@ -125,7 +125,7 @@ func (sp *StakerPool) RemoveStakerPoolItem(poolID string) {
 func (sp *StakerPool) UpsertStakerPoolItem(stakerPoolItem *StakerPoolItem) {
 	pos := -1
 	for idx, item := range sp.PoolUnits {
-		if strings.EqualFold(item.PoolID, stakerPoolItem.PoolID) {
+		if strings.EqualFold(item.Ticker, stakerPoolItem.Ticker) {
 			pos = idx
 		}
 	}

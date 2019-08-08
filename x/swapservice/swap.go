@@ -44,15 +44,13 @@ func validateMessage(ctx sdk.Context, keeper poolStorage, source, target, amount
 		return errors.New("trade slip limit is empty")
 	}
 	if source != types.RuneTicker {
-		poolID := types.GetPoolNameFromTicker(source)
-		if !keeper.PoolExist(ctx, poolID) {
-			return errors.New(fmt.Sprintf("%s doesn't exist", poolID))
+		if !keeper.PoolExist(ctx, source) {
+			return errors.New(fmt.Sprintf("%s doesn't exist", source))
 		}
 	}
 	if !strings.EqualFold(target, types.RuneTicker) {
-		poolID := types.GetPoolNameFromTicker(target)
-		if !keeper.PoolExist(ctx, poolID) {
-			return errors.New(fmt.Sprintf("%s doesn't exist", poolID))
+		if !keeper.PoolExist(ctx, target) {
+			return errors.New(fmt.Sprintf("%s doesn't exist", target))
 		}
 	}
 	return nil
@@ -64,7 +62,6 @@ func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source,
 		return "0", err
 	}
 	isDoubleSwap := !isRune(source) && !isRune(target)
-
 	source = strings.ToUpper(source)
 	target = strings.ToUpper(target)
 	swapRecord := types.SwapRecord{
@@ -103,13 +100,13 @@ func swapOne(ctx sdk.Context,
 	settings *config.Settings,
 	source, target, amount, requester, destination, tradeSlipLimit string) (string, error) {
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
-	poolID := types.GetPoolNameFromTicker(source)
-
+	ticker := source
 	if isRune(source) {
-		poolID = types.GetPoolNameFromTicker(target)
+		ticker = target
 	}
-	if !keeper.PoolExist(ctx, poolID) {
-		return "0", errors.Errorf("pool %s doesn't exist", poolID)
+	if !keeper.PoolExist(ctx, ticker) {
+		ctx.Logger().Debug(fmt.Sprintf("pool %s doesn't exist", ticker))
+		return "0", errors.New(fmt.Sprintf("pool %s doesn't exist", ticker))
 	}
 
 	amt, err := strconv.ParseFloat(amount, 64)
@@ -121,7 +118,7 @@ func swapOne(ctx sdk.Context,
 		return "0", errors.Wrapf(err, "trade slip limit %s is not valid", tradeSlipLimit)
 	}
 
-	pool := keeper.GetPoolStruct(ctx, poolID)
+	pool := keeper.GetPoolStruct(ctx, ticker)
 
 	balanceRune, err := strconv.ParseFloat(pool.BalanceRune, 64)
 	if err != nil {
@@ -157,7 +154,7 @@ func swapOne(ctx sdk.Context,
 	pool.BalanceRune = strconv.FormatFloat(newBalanceRune, 'f', 8, 64)
 	pool.BalanceToken = strconv.FormatFloat(newBalanceToken, 'f', 8, 64)
 	returnTokenAmount := strconv.FormatFloat(returnAmt, 'f', 8, 64)
-	keeper.SetPoolStruct(ctx, poolID, pool)
+	keeper.SetPoolStruct(ctx, ticker, pool)
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, returnTokenAmount))
 	return returnTokenAmount, nil
 }

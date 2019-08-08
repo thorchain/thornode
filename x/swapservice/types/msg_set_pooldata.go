@@ -10,7 +10,6 @@ import (
 // We keep this for now , as a mechanism to set up a new pool when it is not in the genesis file
 // the pool changes when stake / swap happens
 type MsgSetPoolData struct {
-	PoolID       string         `json:"pool_id"`       // generated automatically based on the ticker
 	BalanceRune  string         `json:"balance_rune"`  // balance rune
 	BalanceToken string         `json:"balance_token"` // balance of token
 	Ticker       string         `json:"ticker"`        // Ticker means the token symbol
@@ -23,7 +22,6 @@ type MsgSetPoolData struct {
 // NewMsgSetPoolData is a constructor function for MsgSetPoolData
 func NewMsgSetPoolData(tokenName, ticker string, poolAddress string, status PoolStatus, owner sdk.AccAddress) MsgSetPoolData {
 	return MsgSetPoolData{
-		PoolID:       GetPoolNameFromTicker(ticker),
 		Ticker:       strings.ToUpper(ticker),
 		TokenName:    tokenName,
 		BalanceRune:  "0",

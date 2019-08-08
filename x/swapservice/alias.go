@@ -14,15 +14,14 @@ const (
 )
 
 var (
-	NewPoolStruct         = types.NewPoolStruct
-	NewMsgSetTxHash       = types.NewMsgSetTxHash
-	NewMsgSetPoolData     = types.NewMsgSetPoolData
-	NewMsgSetStakeData    = types.NewMsgSetStakeData
-	NewMsgSetUnStake      = types.NewMsgSetUnStake
-	NewMsgSwap            = types.NewMsgSwap
-	GetPoolNameFromTicker = types.GetPoolNameFromTicker
-	ModuleCdc             = types.ModuleCdc
-	RegisterCodec         = types.RegisterCodec
+	NewPoolStruct      = types.NewPoolStruct
+	NewMsgSetTxHash    = types.NewMsgSetTxHash
+	NewMsgSetPoolData  = types.NewMsgSetPoolData
+	NewMsgSetStakeData = types.NewMsgSetStakeData
+	NewMsgSetUnStake   = types.NewMsgSetUnStake
+	NewMsgSwap         = types.NewMsgSwap
+	ModuleCdc          = types.ModuleCdc
+	RegisterCodec      = types.RegisterCodec
 )
 
 type (
