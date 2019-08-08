@@ -54,7 +54,6 @@ type txHashReq struct {
 	Blockheight int          `json:"blockHeight"`
 	Count       int          `json:"count"`
 	TxArray     []txItem     `json:"txArray"`
-	TxHash      string       `json:"tx_hash"`
 }
 
 func txHashHandler(cliCtx context.CLIContext) http.HandlerFunc {

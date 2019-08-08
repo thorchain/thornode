@@ -34,6 +34,12 @@ func (msg MsgSetTxHash) ValidateBasic() sdk.Error {
 		if len(tx.Request) == 0 {
 			return sdk.ErrUnknownRequest("Request hash cannot be empty")
 		}
+		if len(tx.Sender) == 0 {
+			return sdk.ErrUnknownRequest("Sender cannot be empty")
+		}
+		if len(tx.Coins) == 0 {
+			return sdk.ErrUnknownRequest("Coins cannot be empty")
+		}
 		if len(tx.Memo) == 0 {
 			return sdk.ErrUnknownRequest("Memo cannot be empty")
 		}

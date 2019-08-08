@@ -14,7 +14,7 @@ const (
 type TxHash struct {
 	Request string    `json:"request"` // binance chain request tx hash
 	Status  status    `json:"status"`
-	Hash    string    `json:"txhash"` // completed binance chain tx hash
+	Done    string    `json:"txhash"` // completed binance chain tx hash
 	Memo    string    `json:"memo"`   // memo
 	Coins   sdk.Coins `json:"coins"`  // coins sent in tx
 	Sender  string    `json:"sender"`
@@ -45,10 +45,10 @@ func (tx TxHash) Key() string {
 
 func (tx *TxHash) SetDone(hash string) {
 	tx.Status = Done
-	tx.Hash = hash
+	tx.Done = hash
 }
 
 func (tx *TxHash) SetReverted(hash string) {
 	tx.Status = Reverted
-	tx.Hash = hash
+	tx.Done = hash
 }
