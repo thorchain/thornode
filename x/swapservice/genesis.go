@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -66,6 +67,7 @@ func DefaultGenesisState() GenesisState {
 				Status:       PoolBootstrap,
 			},
 		},
+		TrustAccounts: []types.TrustAccount{},
 	}
 }
 
