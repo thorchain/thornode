@@ -12,6 +12,14 @@ type TrustAccount struct {
 	Address sdk.AccAddress `json:"address"`
 }
 
+func NewTrustAccount(name string, address string) (TrustAccount, error) {
+	addr, err := sdk.AccAddressFromHex(address)
+	return TrustAccount{
+		Name:    name,
+		Address: addr,
+	}, err
+}
+
 // String implement fmt.Stringer interface
 func (ta TrustAccount) String() string {
 	sb := strings.Builder{}
