@@ -30,13 +30,13 @@ describe "API Tests" do
     end
     sleep(3)
     it "should be able to get the pool" do
-      resp = get("/pool/BNB")
-      expect(resp.body['pool_id']).to eq("pool-TCAN-014"), resp.body
+      resp = get("/pool/TCAN-014")
+      expect(resp.body['ticker']).to eq("TCAN-014"), resp.body
     end
 
     it "should show up in listing of pools" do
       resp = get("/pools")
-      expect(resp.body[1]['pool_id']).to eq("pool-TCAN-014"), resp.body
+      expect(resp.body[1]['ticker']).to eq("TCAN-014"), resp.body
     end
 
   end
