@@ -5,9 +5,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/jpthor/cosmos-swap/exchange"
-
 	"github.com/jpthor/cosmos-swap/config"
+	"github.com/jpthor/cosmos-swap/exchange"
 	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
@@ -227,7 +226,6 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 	}
 
 	binanceClient := exchange.NewClient()
-
 	txResult, err := binanceClient.GetTxInfo(msg.TxHash.Request)
 	if err != nil {
 		return sdk.ErrUnknownRequest(
