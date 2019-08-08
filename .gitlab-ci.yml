@@ -34,4 +34,6 @@ integration_tests:
     - docker info
     - docker build -t statechain tests/integration
   script:
+    - pwd
+    - ls
     - docker run -v ${GOPATH}:/root/go -w /root/go/src/gitlab.com/thorchain/statechain -e GOPATH=/root/go -e GOBIN=/go/bin statechain make -C ./tests/integration install setup run wait-for-blockchain test-internal
