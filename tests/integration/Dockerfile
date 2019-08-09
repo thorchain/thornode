@@ -14,7 +14,7 @@ RUN \
 	:
 
 RUN apk update && \
-    apk add curl make git && \
+    apk add curl jq make git && \
     rm -rf /var/cache/apk/*
 
 RUN apk add --no-cache \
