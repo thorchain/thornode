@@ -22,6 +22,8 @@ var (
 	NewMsgSetUnStake   = types.NewMsgSetUnStake
 	NewMsgSwap         = types.NewMsgSwap
 	NewTxOut           = types.NewTxOut
+	NewPoolStaker      = types.NewPoolStaker
+	NewStakerPool      = types.NewStakerPool
 	ModuleCdc          = types.ModuleCdc
 	RegisterCodec      = types.RegisterCodec
 )
@@ -35,13 +37,17 @@ type (
 	MsgSetTxHash        = types.MsgSetTxHash
 	MsgSwap             = types.MsgSwap
 	QueryResPoolStructs = types.QueryResPoolStructs
+	TrustAccount        = types.TrustAccount
+	SwapRecord          = types.SwapRecord
+	UnstakeRecord       = types.UnstakeRecord
+	PoolStatus          = types.PoolStatus
+	PoolIndex           = types.PoolIndex
 	TxHash              = types.TxHash
 	PoolStruct          = types.PoolStruct
 	PoolStaker          = types.PoolStaker
 	StakerPool          = types.StakerPool
 	StakerUnit          = types.StakerUnit
 	TxOutItem           = types.TxOutItem
-
-	TxOut = types.TxOut
-	Coin  = types.Coin
+	TxOut               = types.TxOut
+	Coin                = types.Coin
 )

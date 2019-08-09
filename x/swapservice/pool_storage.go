@@ -2,8 +2,6 @@ package swapservice
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 // PoolStorage allow us to access the pool struct from key values store
@@ -14,17 +12,17 @@ type poolStorage interface {
 	GetPoolStruct(ctx sdk.Context, ticker string) PoolStruct
 	SetPoolStruct(ctx sdk.Context, ticker string, ps PoolStruct)
 
-	GetStakerPool(ctx sdk.Context, stakerID string) (types.StakerPool, error)
-	SetStakerPool(ctx sdk.Context, stakerID string, sp types.StakerPool)
+	GetStakerPool(ctx sdk.Context, stakerID string) (StakerPool, error)
+	SetStakerPool(ctx sdk.Context, stakerID string, sp StakerPool)
 
-	GetPoolStaker(ctx sdk.Context, ticker string) (types.PoolStaker, error)
-	SetPoolStaker(ctx sdk.Context, ticker string, ps types.PoolStaker)
+	GetPoolStaker(ctx sdk.Context, ticker string) (PoolStaker, error)
+	SetPoolStaker(ctx sdk.Context, ticker string, ps PoolStaker)
 
-	SetSwapRecord(ctx sdk.Context, sr types.SwapRecord) error
-	GetSwapRecord(ctx sdk.Context, requestTxHash string) (types.SwapRecord, error)
+	SetSwapRecord(ctx sdk.Context, sr SwapRecord) error
+	GetSwapRecord(ctx sdk.Context, requestTxHash string) (SwapRecord, error)
 	UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash string) error
 
-	SetUnStakeRecord(ctx sdk.Context, ur types.UnstakeRecord)
-	GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (types.UnstakeRecord, error)
+	SetUnStakeRecord(ctx sdk.Context, ur UnstakeRecord)
+	GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (UnstakeRecord, error)
 	UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash, completeTxHash string) error
 }

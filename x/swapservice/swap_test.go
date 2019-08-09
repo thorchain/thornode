@@ -14,7 +14,6 @@ import (
 
 	"github.com/jpthor/cosmos-swap/config"
 	"github.com/jpthor/cosmos-swap/x/swapservice/mocks"
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 type SwapSuite struct{}
@@ -305,7 +304,7 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 	}{
 		{
 			name:              "negative-balance-rune",
-			source:            types.RuneTicker,
+			source:            RuneTicker,
 			runeBalance:       -1.0,
 			tokenBalance:      100.0,
 			amountToSwap:      5.0,
@@ -316,7 +315,7 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 		},
 		{
 			name:              "zero-balance-rune",
-			source:            types.RuneTicker,
+			source:            RuneTicker,
 			runeBalance:       0.0,
 			tokenBalance:      100.0,
 			amountToSwap:      5.0,
@@ -327,7 +326,7 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 		},
 		{
 			name:              "negative-balance-token",
-			source:            types.RuneTicker,
+			source:            RuneTicker,
 			runeBalance:       100.0,
 			tokenBalance:      -100.0,
 			amountToSwap:      5.0,
@@ -338,7 +337,7 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 		},
 		{
 			name:              "zero-balance-token",
-			source:            types.RuneTicker,
+			source:            RuneTicker,
 			runeBalance:       100.0,
 			tokenBalance:      0.0,
 			amountToSwap:      5.0,
@@ -349,7 +348,7 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 		},
 		{
 			name:              "negative-amount",
-			source:            types.RuneTicker,
+			source:            RuneTicker,
 			runeBalance:       100.0,
 			tokenBalance:      100.0,
 			amountToSwap:      -5.0,
@@ -360,7 +359,7 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 		},
 		{
 			name:              "invalid-amount-0",
-			source:            types.RuneTicker,
+			source:            RuneTicker,
 			runeBalance:       100.0,
 			tokenBalance:      100.0,
 			amountToSwap:      0.0,
@@ -371,7 +370,7 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 		},
 		{
 			name:              "normal-rune",
-			source:            types.RuneTicker,
+			source:            RuneTicker,
 			runeBalance:       100.0,
 			tokenBalance:      100.0,
 			amountToSwap:      5.0,
@@ -381,7 +380,7 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 		},
 		{
 			name:              "normal-rune-1",
-			source:            types.RuneTicker,
+			source:            RuneTicker,
 			runeBalance:       1000.0,
 			tokenBalance:      1000.0,
 			amountToSwap:      20.0,
@@ -391,7 +390,7 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 		},
 		{
 			name:              "normal-rune-2",
-			source:            types.RuneTicker,
+			source:            RuneTicker,
 			runeBalance:       10000.0,
 			tokenBalance:      10000.0,
 			amountToSwap:      20.0,
