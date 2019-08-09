@@ -5,9 +5,6 @@ import (
 	"strings"
 )
 
-// StakerPoolKeyPrefix all staker pool item in the key value store need to have this prefix
-const StakerPoolKeyPrefix = `stakerpool-`
-
 // StakeTxDetail represent all the stake activity
 // Staker can stake on the same pool for multiple times
 type StakeTxDetail struct {
