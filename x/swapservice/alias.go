@@ -15,17 +15,20 @@ const (
 )
 
 var (
-	NewPoolStruct      = types.NewPoolStruct
-	NewMsgSetTxHash    = types.NewMsgSetTxHash
-	NewMsgSetPoolData  = types.NewMsgSetPoolData
-	NewMsgSetStakeData = types.NewMsgSetStakeData
-	NewMsgSetUnStake   = types.NewMsgSetUnStake
-	NewMsgSwap         = types.NewMsgSwap
-	NewTxOut           = types.NewTxOut
-	NewPoolStaker      = types.NewPoolStaker
-	NewStakerPool      = types.NewStakerPool
-	ModuleCdc          = types.ModuleCdc
-	RegisterCodec      = types.RegisterCodec
+	NewPoolStruct        = types.NewPoolStruct
+	NewAdminConfig       = types.NewAdminConfig
+	NewMsgSetTxHash      = types.NewMsgSetTxHash
+	NewMsgSetPoolData    = types.NewMsgSetPoolData
+	NewMsgSetStakeData   = types.NewMsgSetStakeData
+	NewMsgSetUnStake     = types.NewMsgSetUnStake
+	NewMsgSwap           = types.NewMsgSwap
+	NewMsgSetAdminConfig = types.NewMsgSetAdminConfig
+	NewTxOut             = types.NewTxOut
+	NewPoolStaker        = types.NewPoolStaker
+	NewStakerPool        = types.NewStakerPool
+	GetPoolStatus        = types.GetPoolStatus
+	ModuleCdc            = types.ModuleCdc
+	RegisterCodec        = types.RegisterCodec
 )
 
 type (
@@ -36,6 +39,7 @@ type (
 	MsgSetStakeData     = types.MsgSetStakeData
 	MsgSetTxHash        = types.MsgSetTxHash
 	MsgSwap             = types.MsgSwap
+	MsgSetAdminConfig   = types.MsgSetAdminConfig
 	QueryResPoolStructs = types.QueryResPoolStructs
 	TrustAccount        = types.TrustAccount
 	SwapRecord          = types.SwapRecord
@@ -50,4 +54,5 @@ type (
 	TxOutItem           = types.TxOutItem
 	TxOut               = types.TxOut
 	Coin                = types.Coin
+	AdminConfig         = types.AdminConfig
 )
