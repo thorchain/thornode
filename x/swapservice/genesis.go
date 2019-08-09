@@ -5,18 +5,16 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 // GenesisState strcture that used to store the data we put in genesis
 type GenesisState struct {
-	PoolStructRecords []PoolStruct         `json:"poolstruct_records"`
-	TrustAccounts     []types.TrustAccount `json:"trust_accounts"`
+	PoolStructRecords []PoolStruct   `json:"poolstruct_records"`
+	TrustAccounts     []TrustAccount `json:"trust_accounts"`
 }
 
 // NewGenesisState create a new instance of GenesisState
-func NewGenesisState(pools []PoolStruct, trustAccounts []types.TrustAccount) GenesisState {
+func NewGenesisState(pools []PoolStruct, trustAccounts []TrustAccount) GenesisState {
 	return GenesisState{
 		PoolStructRecords: pools,
 		TrustAccounts:     trustAccounts,
@@ -62,7 +60,7 @@ func DefaultGenesisState() GenesisState {
 				Ticker:       "BNB",
 				PoolUnits:    "0",
 				PoolAddress:  "bnbxxdfdfdfdfdf",
-				Status:       types.Active.String(),
+				Status:       PoolActive.String(),
 			},
 		},
 	}
@@ -89,11 +87,11 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &poolstruct)
 		poolRecords = append(poolRecords, poolstruct)
 	}
-	var trustAccounts []types.TrustAccount
+	var trustAccounts []TrustAccount
 	taIterator := k.GetTrustAccountIterator(ctx)
 	defer taIterator.Close()
 	for ; taIterator.Valid(); taIterator.Next() {
-		var ta types.TrustAccount
+		var ta TrustAccount
 		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
 		trustAccounts = append(trustAccounts, ta)
 	}
