@@ -12,7 +12,6 @@ type MsgSwap struct {
 	Requester     string         `json:"requester"`       // request address on Binance chain
 	Destination   string         `json:"destination"`     // destination , used for swap and send , the destination address we send it to
 	Amount        Amount         `json:"amount"`          // amount of token to swap
-	SlipLimit     string         `json:"slip_limit"`      // slip limit, only complete the swap when the pool slip is within limit
 	Owner         sdk.AccAddress `json:"owner"`
 }
 
@@ -25,7 +24,6 @@ func NewMsgSwap(requestTxHash TxID, source, target Ticker, amount Amount, reques
 		Amount:        amount,
 		Requester:     requester,
 		Destination:   destination,
-		SlipLimit:     slipLimit,
 		Owner:         owner,
 	}
 }
