@@ -51,6 +51,8 @@ func ValidateGenesis(data GenesisState) error {
 
 // DefaultGenesisState the default values we put in the Genesis
 func DefaultGenesisState() GenesisState {
+	// TODO: make hard coded address dynamic for integration testing
+	addr, _ := sdk.AccAddressFromBech32("rune1gnaghgzcpd73hcxeturml96maa0fajg9t8m0yj")
 	return GenesisState{
 		AdminConfigs: []AdminConfig{
 			{
@@ -67,7 +69,9 @@ func DefaultGenesisState() GenesisState {
 				Status:       PoolBootstrap,
 			},
 		},
-		TrustAccounts: []TrustAccount{},
+		TrustAccounts: []TrustAccount{
+			{Name: "Jack", Address: addr},
+		},
 	}
 }
 
