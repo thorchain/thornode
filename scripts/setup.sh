@@ -21,6 +21,11 @@ while true; do
 
   echo "password" | ssd gentx --name jack
   ssd collect-gentxs
+
+  # add jack as a trusted account
+  cat ~/.ssd/config/genesis.json | jq ".app_state.swapservice.trust_accounts[0] = {\"name\":\"Jack\", \"address\": \"$(sscli keys show jack -a)\"}" > /tmp/genesis.json
+  mv /tmp/genesis.json ~/.ssd/config/genesis.json
+
   ssd validate-genesis
 
   break
