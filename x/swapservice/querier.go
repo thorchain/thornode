@@ -12,6 +12,7 @@ import (
 
 // query endpoints supported by the swapservice Querier
 const (
+	QueryAdminConfig   = "adminconfig"
 	QueryPoolStruct    = "poolstruct"
 	QueryPoolStructs   = "pools"
 	QueryPoolStakers   = "poolstakers"
@@ -44,6 +45,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryUnStakeRecord(ctx, path[1:], req, keeper)
 		case QueryTxHash:
 			return queryTxHash(ctx, path[1:], req, keeper)
+		case QueryAdminConfig:
+			return queryAdminConfig(ctx, path[1:], req, keeper)
 		case QueryTxOutArray:
 			return queryTxOutArray(ctx, path[1:], req, keeper)
 		default:
@@ -183,6 +186,17 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")
+	}
+	return res, nil
+}
+
+func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	key := path[0]
+	config := keeper.GetAdminConfig(ctx, key)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, config)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal config to json", err)
+		return nil, sdk.ErrInternal("fail to marshal config to json")
 	}
 	return res, nil
 }

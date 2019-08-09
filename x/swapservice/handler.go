@@ -31,6 +31,8 @@ func NewHandler(keeper Keeper, settings *config.Settings, txOutStore *TxOutStore
 			return handleMsgSetUnstakeComplete(ctx, keeper, m)
 		case MsgSetTxHash:
 			return handleMsgSetTxHash(ctx, keeper, settings, txOutStore, m)
+		case MsgSetAdminConfig:
+			return handleMsgSetAdminConfig(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -330,6 +332,26 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 				tx.Request,
 				msg.Signer,
 			)
+		case AdminMemo:
+
+			if memo.GetAdminType() == adminPoolStatus {
+				pool := keeper.GetPoolStruct(ctx, memo.GetKey())
+				if pool.Empty() {
+					return sdk.ErrUnknownRequest("Pool doesn't exist").Result()
+				}
+				status := GetPoolStatus(memo.GetValue())
+				newMsg = NewMsgSetPoolData(
+					memo.GetKey(),
+					pool.PoolAddress,
+					status,
+					msg.Signer,
+				)
+
+			} else if memo.GetAdminType() == adminKey {
+				newMsg = NewMsgSetAdminConfig(memo.GetKey(), memo.GetValue(), msg.Signer)
+			} else {
+				return sdk.ErrUnknownRequest("Invalid admin command type").Result()
+			}
 		case WithdrawMemo:
 			// do nothing. Let the outTx process these
 		case SwapMemo:
@@ -346,5 +368,25 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
 		Data:      []byte(strings.Join(conflicts, ", ")),
+	}
+}
+
+// handleMsgSetAdminConfig process admin config
+func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConfig) sdk.Result {
+	ctx.Logger().Info(fmt.Sprintf("receive MsgSetAdminConfig %s --> %s", msg.AdminConfig.Key, msg.AdminConfig.Value))
+	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account")
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid MsgSetAdminConfig", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	keeper.SetAdminConfig(ctx, msg.AdminConfig)
+
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
 	}
 }
