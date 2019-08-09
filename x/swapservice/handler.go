@@ -2,7 +2,6 @@ package swapservice
 
 import (
 	"fmt"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -339,12 +338,12 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 		}
 
 		// trigger msg event (
-		go handler(ctx, newMsg)
+		handler(ctx, newMsg)
 	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
-		Data:      []byte(strings.Join(conflicts, ", ")),
+		// Data:      []byte(strings.Join(conflicts, ", ")),
 	}
 }
