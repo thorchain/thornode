@@ -52,6 +52,7 @@ func ValidateGenesis(data GenesisState) error {
 // DefaultGenesisState the default values we put in the Genesis
 func DefaultGenesisState() GenesisState {
 	// TODO: make hard coded address dynamic for integration testing
+	// To get your address for jack `sscli key show jack -a`
 	addr, _ := sdk.AccAddressFromBech32("rune1gnaghgzcpd73hcxeturml96maa0fajg9t8m0yj")
 	return GenesisState{
 		AdminConfigs: []AdminConfig{
