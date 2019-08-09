@@ -271,6 +271,20 @@ func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg MsgUnStakeC
 	}
 }
 
+func refundTx(tx TxHash, store *TxOutStore) {
+	toi := &TxOutItem{
+		ToAddress: tx.Request,
+	}
+
+	for _, item := range tx.Coins {
+		toi.Coins = append(toi.Coins, Coin{
+			Denom:  item.Denom,
+			Amount: fmt.Sprintf("%f", item.Amount),
+		})
+	}
+	store.AddTxOutItem(toi)
+}
+
 // handleMsgSetTxHash gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
 func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings, txOutStore *TxOutStore, msg MsgSetTxHash) sdk.Result {
@@ -290,7 +304,9 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 	for _, tx := range todo {
 		memo, err := ParseMemo(tx.Memo)
 		if err != nil {
+			ctx.Logger().Error("fail to parse memo", "memo", memo, "error", err)
 			// skip over message with bad memos
+			refundTx(tx, txOutStore)
 			continue
 		}
 
