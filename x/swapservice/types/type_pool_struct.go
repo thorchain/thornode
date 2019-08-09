@@ -5,9 +5,6 @@ import (
 	"strings"
 )
 
-// PoolDataKeyPrefix used as the key's prefix
-const PoolDataKeyPrefix = "pool-"
-
 // PoolStatus is an indication of what the pool state is
 type PoolStatus int
 

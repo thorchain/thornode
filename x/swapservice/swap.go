@@ -10,7 +10,6 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/jpthor/cosmos-swap/config"
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 // swapRecordKeyPrefix - all swap record store in the datastore need to prefix with this one
@@ -43,12 +42,12 @@ func validateMessage(ctx sdk.Context, keeper poolStorage, source, target, amount
 	if isEmptyString(tradeSlipLimit) {
 		return errors.New("trade slip limit is empty")
 	}
-	if source != types.RuneTicker {
+	if source != RuneTicker {
 		if !keeper.PoolExist(ctx, source) {
 			return errors.New(fmt.Sprintf("%s doesn't exist", source))
 		}
 	}
-	if !strings.EqualFold(target, types.RuneTicker) {
+	if !strings.EqualFold(target, RuneTicker) {
 		if !keeper.PoolExist(ctx, target) {
 			return errors.New(fmt.Sprintf("%s doesn't exist", target))
 		}
@@ -64,7 +63,7 @@ func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source,
 	isDoubleSwap := !isRune(source) && !isRune(target)
 	source = strings.ToUpper(source)
 	target = strings.ToUpper(target)
-	swapRecord := types.SwapRecord{
+	swapRecord := SwapRecord{
 		RequestTxHash:   requestTxHash,
 		SourceTicker:    source,
 		TargetTicker:    target,
@@ -73,11 +72,11 @@ func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source,
 		AmountRequested: amount,
 	}
 	if isDoubleSwap {
-		runeAmount, err := swapOne(ctx, keeper, setting, source, types.RuneTicker, amount, requester, destination, tradeSlipLimit)
+		runeAmount, err := swapOne(ctx, keeper, setting, source, RuneTicker, amount, requester, destination, tradeSlipLimit)
 		if err != nil {
-			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, types.RuneTicker)
+			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, RuneTicker)
 		}
-		tokenAmount, err := swapOne(ctx, keeper, setting, types.RuneTicker, target, runeAmount, requester, destination, tradeSlipLimit)
+		tokenAmount, err := swapOne(ctx, keeper, setting, RuneTicker, target, runeAmount, requester, destination, tradeSlipLimit)
 		swapRecord.AmountPaidBack = tokenAmount
 		if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
 			ctx.Logger().Error("fail to save swap record", "error", err)
@@ -93,7 +92,7 @@ func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source,
 }
 
 func isRune(ticker string) bool {
-	return strings.EqualFold(ticker, types.RuneTicker)
+	return strings.EqualFold(ticker, RuneTicker)
 }
 func swapOne(ctx sdk.Context,
 	keeper poolStorage,
@@ -143,7 +142,7 @@ func swapOne(ctx sdk.Context,
 		}
 	} else {
 		if balanceRune == 0 {
-			return "0", errors.New(types.RuneTicker + " balance is 0, can't swap ")
+			return "0", errors.New(RuneTicker + " balance is 0, can't swap ")
 		}
 	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
