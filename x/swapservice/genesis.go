@@ -11,13 +11,15 @@ import (
 type GenesisState struct {
 	PoolStructRecords []PoolStruct   `json:"poolstruct_records"`
 	TrustAccounts     []TrustAccount `json:"trust_accounts"`
+	AdminConfigs      []AdminConfig  `json:"admin_configs"`
 }
 
 // NewGenesisState create a new instance of GenesisState
-func NewGenesisState(pools []PoolStruct, trustAccounts []TrustAccount) GenesisState {
+func NewGenesisState(pools []PoolStruct, trustAccounts []TrustAccount, configs []AdminConfig) GenesisState {
 	return GenesisState{
 		PoolStructRecords: pools,
 		TrustAccounts:     trustAccounts,
+		AdminConfigs:      configs,
 	}
 }
 
@@ -31,6 +33,16 @@ func ValidateGenesis(data GenesisState) error {
 			return fmt.Errorf("invalid PoolStruct, error: missing pool address")
 		}
 	}
+
+	for _, record := range data.AdminConfigs {
+		if len(record.Key) == 0 {
+			return fmt.Errorf("invalid admin config, error: missing key")
+		}
+		if len(record.Value) == 0 {
+			return fmt.Errorf("invalid admin config, error: missing value")
+		}
+	}
+
 	for _, ta := range data.TrustAccounts {
 		if len(ta.Name) == 0 {
 			return fmt.Errorf("invalid trust account record, error: missing account name")
@@ -53,6 +65,10 @@ func ValidateGenesis(data GenesisState) error {
 // DefaultGenesisState the default values we put in the Genesis
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
+		AdminConfigs: []AdminConfig{
+			{Key: "TSL", Value: "10"},
+			{Key: "GSL", Value: "30"},
+		},
 		PoolStructRecords: []PoolStruct{
 			{
 				BalanceRune:  "0",
@@ -74,6 +90,9 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, ta := range data.TrustAccounts {
 		keeper.SetTrustAccount(ctx, ta)
 	}
+	for _, ta := range data.AdminConfigs {
+		keeper.SetAdminConfig(ctx, ta)
+	}
 	return []abci.ValidatorUpdate{}
 }
 
@@ -87,6 +106,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &poolstruct)
 		poolRecords = append(poolRecords, poolstruct)
 	}
+
 	var trustAccounts []TrustAccount
 	taIterator := k.GetTrustAccountIterator(ctx)
 	defer taIterator.Close()
@@ -95,8 +115,19 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
 		trustAccounts = append(trustAccounts, ta)
 	}
+
+	var configs []AdminConfig
+	configIterator := k.GetAdminConfigIterator(ctx)
+	defer configIterator.Close()
+	for ; configIterator.Valid(); configIterator.Next() {
+		var config AdminConfig
+		k.cdc.MustUnmarshalBinaryBare(configIterator.Value(), &config)
+		configs = append(configs, config)
+	}
+
 	return GenesisState{
 		PoolStructRecords: poolRecords,
 		TrustAccounts:     trustAccounts,
+		AdminConfigs:      configs,
 	}
 }
