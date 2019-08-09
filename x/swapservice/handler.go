@@ -7,31 +7,67 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/jpthor/cosmos-swap/config"
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 // NewHandler returns a handler for "swapservice" type messages.
-func NewHandler(keeper Keeper, settings *config.Settings) sdk.Handler {
+func NewHandler(keeper Keeper, settings *config.Settings, txOutStore *TxOutStore) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
-		switch msg := msg.(type) {
+		switch m := msg.(type) {
 		case MsgSetPoolData:
-			return handleMsgSetPoolData(ctx, keeper, msg)
+			return handleMsgSetPoolData(ctx, keeper, m)
 		case MsgSetStakeData:
-			return handleMsgSetStakeData(ctx, keeper, msg)
+			result := handleMsgSetStakeData(ctx, keeper, m)
+			processRefund(result, txOutStore, m)
+			return result
 		case MsgSwap:
-			return handleMsgSwap(ctx, keeper, settings, msg)
-		case types.MsgSwapComplete:
-			return handleMsgSetSwapComplete(ctx, keeper, msg)
-		case types.MsgSetUnStake:
-			return handleMsgSetUnstake(ctx, keeper, msg)
-		case types.MsgUnStakeComplete:
-			return handleMsgSetUnstakeComplete(ctx, keeper, msg)
+			result := handleMsgSwap(ctx, keeper, settings, txOutStore, m)
+			processRefund(result, txOutStore, m)
+			return result
+		case MsgSwapComplete:
+			return handleMsgSetSwapComplete(ctx, keeper, m)
+		case MsgSetUnStake:
+			return handleMsgSetUnstake(ctx, keeper, txOutStore, m)
+		case MsgUnStakeComplete:
+			return handleMsgSetUnstakeComplete(ctx, keeper, m)
 		case MsgSetTxHash:
-			return handleMsgSetTxHash(ctx, keeper, settings, msg)
+			return handleMsgSetTxHash(ctx, keeper, settings, txOutStore, m)
 		default:
-			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", msg.Type())
+			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
+	}
+}
+
+// processRefund take in the sdk.Result and decide whether we should refund customer
+func processRefund(result sdk.Result, store *TxOutStore, msg sdk.Msg) {
+	if result.IsOK() {
+		return
+	}
+	switch m := msg.(type) {
+	case MsgSetStakeData:
+		toi := &TxOutItem{
+			ToAddress: m.PublicAddress,
+		}
+		toi.Coins = append(toi.Coins, Coin{
+			Denom:  RuneTicker,
+			Amount: m.Rune,
+		})
+		toi.Coins = append(toi.Coins, Coin{
+			Denom:  m.Ticker,
+			Amount: m.Token,
+		})
+		store.AddTxOutItem(toi)
+	case MsgSwap:
+		toi := &TxOutItem{
+			ToAddress: m.Requester,
+		}
+		toi.Coins = append(toi.Coins, Coin{
+			Denom:  m.SourceTicker,
+			Amount: m.Amount,
+		})
+		store.AddTxOutItem(toi)
+	default:
+		return
 	}
 }
 
@@ -50,7 +86,7 @@ func isSignedByTrustAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.AccAd
 
 // Handle a message to set pooldata
 func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sdk.Result {
-	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker, "pool address", msg.PoolAddress)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
@@ -75,7 +111,7 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 // Handle a message to set stake data
 func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) sdk.Result {
 	ctx.Logger().Info("handleMsgSetStakeData request", "stakerid:"+msg.Ticker)
-	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker, "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
@@ -102,8 +138,8 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 }
 
 // Handle a message to set stake data
-func handleMsgSwap(ctx sdk.Context, keeper Keeper, setting *config.Settings, msg MsgSwap) sdk.Result {
-	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+func handleMsgSwap(ctx sdk.Context, keeper Keeper, setting *config.Settings, txOutStore *TxOutStore, msg MsgSwap) sdk.Result {
+	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "source ticker", msg.SourceTicker, "target ticker", msg.TargetTicker)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
@@ -121,6 +157,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, setting *config.Settings, msg
 	) // If so, set the stake data to the value specified in the msg.
 	if err != nil {
 		ctx.Logger().Error("fail to process swap message", "error", err)
+
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
@@ -132,6 +169,14 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, setting *config.Settings, msg
 		ctx.Logger().Error("fail to encode result to json", "error", err)
 		return sdk.ErrInternal("fail to encode result to json").Result()
 	}
+	toi := &TxOutItem{
+		ToAddress: msg.Destination,
+	}
+	toi.Coins = append(toi.Coins, Coin{
+		Denom:  msg.TargetTicker,
+		Amount: amount,
+	})
+	txOutStore.AddTxOutItem(toi)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -140,9 +185,9 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, setting *config.Settings, msg
 }
 
 // handleMsgSetSwapComplete mark a swap as complete , record the tx hash.
-func handleMsgSetSwapComplete(ctx sdk.Context, keeper Keeper, msg types.MsgSwapComplete) sdk.Result {
+func handleMsgSetSwapComplete(ctx sdk.Context, keeper Keeper, msg MsgSwapComplete) sdk.Result {
 	ctx.Logger().Debug("receive MsgSetSwapComplete", "requestTxHash", msg.RequestTxHash, "paytxhash", msg.PayTxHash)
-	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "pay tx hash", msg.PayTxHash)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
@@ -161,9 +206,9 @@ func handleMsgSetSwapComplete(ctx sdk.Context, keeper Keeper, msg types.MsgSwapC
 }
 
 // handleMsgSetUnstake process unstake
-func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) sdk.Result {
+func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetUnStake) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.PublicAddress, msg.Percentage))
-	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress, "ticker", msg.Ticker, "percentage", msg.Percentage)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
@@ -187,6 +232,18 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake
 		ctx.Logger().Error("fail to marshal result to json", "error", err)
 		// if this happen what should we tell the client?
 	}
+	toi := &TxOutItem{
+		ToAddress: msg.PublicAddress,
+	}
+	toi.Coins = append(toi.Coins, Coin{
+		Denom:  RuneTicker,
+		Amount: runeAmt,
+	})
+	toi.Coins = append(toi.Coins, Coin{
+		Denom:  msg.Ticker,
+		Amount: tokenAmount,
+	})
+	txOutStore.AddTxOutItem(toi)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -194,9 +251,9 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake
 	}
 }
 
-func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg types.MsgUnStakeComplete) sdk.Result {
+func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg MsgUnStakeComplete) sdk.Result {
 	ctx.Logger().Debug("receive MsgUnStakeComplete", "requestTxHash", msg.RequestTxHash, "completeTxHash", msg.CompleteTxHash)
-	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
@@ -216,7 +273,7 @@ func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg types.MsgUn
 
 // handleMsgSetTxHash gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
-func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings, msg MsgSetTxHash) sdk.Result {
+func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings, txOutStore *TxOutStore, msg MsgSetTxHash) sdk.Result {
 
 	conflicts := make([]string, 0)
 	todo := make([]TxHash, 0)
@@ -229,8 +286,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 		}
 	}
 
-	handler := NewHandler(keeper, setting)
-
+	handler := NewHandler(keeper, setting, txOutStore)
 	for _, tx := range todo {
 		memo, err := ParseMemo(tx.Memo)
 		if err != nil {
