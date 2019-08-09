@@ -71,6 +71,7 @@ type AppModule struct {
 	keeper     Keeper
 	coinKeeper bank.Keeper
 	settings   *config.Settings
+	txOutStore *TxOutStore
 }
 
 // NewAppModule creates a new AppModule Object
@@ -80,6 +81,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, settings *config.Settings) A
 		keeper:         k,
 		settings:       settings,
 		coinKeeper:     bankKeeper,
+		txOutStore:     NewTxOutStore(k),
 	}
 }
 
@@ -94,7 +96,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.settings)
+	return NewHandler(am.keeper, am.settings, am.txOutStore)
 }
 func (am AppModule) QuerierRoute() string {
 	return ModuleName
@@ -105,10 +107,13 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-
+	ctx.Logger().Info("Begin Block", "height", req.Header.Height)
+	am.txOutStore.NewBlock(req.Header.Height)
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+	ctx.Logger().Info("End Block", "height", req.Height)
+	am.txOutStore.CommitBlock(ctx)
 	return []abci.ValidatorUpdate{}
 }
 

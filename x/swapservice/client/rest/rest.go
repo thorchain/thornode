@@ -23,6 +23,7 @@ const (
 	swapData       = "swapdata"
 	stakeData      = "stakedata"
 	accData        = "accdata"
+	txoutArrayData = "txoutarray"
 )
 
 // TODO add the new features to Restful routes
@@ -40,6 +41,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(fmt.Sprintf("/%s/unstakerecord/{%s}", storeName, swapData), unStakeRecordHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/stake", storeName), setStakeDataHandler(cliCtx)).Methods("PUT")
 	r.HandleFunc(fmt.Sprintf("/%s/binance/tx", storeName), txHashHandler(cliCtx)).Methods("POST")
+	r.HandleFunc(fmt.Sprintf("/%s/txoutarray/{%s}", storeName, txoutArrayData), txOutArrayHandler(cliCtx, storeName)).Methods("GET")
 }
 
 type txItem struct {
@@ -239,6 +241,19 @@ func unStakeRecordHandler(cliCtx context.CLIContext, storeName string) http.Hand
 		vars := mux.Vars(r)
 		paramType := vars[swapData]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/unstakerecord/%s", storeName, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+func txOutArrayHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[txoutArrayData]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/txoutarray/%s", storeName, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return

@@ -27,6 +27,7 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdPoolIndex(storeKey, cdc),
 		GetCmdSwapRecord(storeKey, cdc),
 		GetCmdUnStakeRecord(storeKey, cdc),
+		GetCmdTxOutArray(storeKey, cdc),
 	)...)
 	return swapserviceQueryCmd
 }
@@ -172,6 +173,26 @@ func GetCmdUnStakeRecord(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/unstakerecord/%s", queryRoute, requestTxHash), nil)
 			if err != nil {
 				cmd.Println("could not get query unstake")
+				return nil
+			}
+			cmd.Println(string(res))
+			return nil
+		},
+	}
+}
+
+// GetCmdTxOutArray query txoutarray
+func GetCmdTxOutArray(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "txout [height]",
+		Short: "txout array",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			height := args[0]
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/txoutarray/%s", queryRoute, height), nil)
+			if err != nil {
+				cmd.Println("could not get query txoutarray")
 				return nil
 			}
 			cmd.Println(string(res))

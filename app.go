@@ -218,8 +218,8 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 		staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
 	)
 
-	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName)
+	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName, swapservice.ModuleName)
+	app.mm.SetOrderEndBlockers(staking.ModuleName, swapservice.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	app.mm.SetOrderInitGenesis(

@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -18,6 +19,7 @@ type dbPrefix string
 const (
 	prefixTxHash dbPrefix = "tx_"
 	prefixPool   dbPrefix = "pool_"
+	txOutPrefix  dbPrefix = "txout-"
 )
 
 const poolIndexKey = `poolindexkey`
@@ -383,4 +385,23 @@ func (k Keeper) CheckTxHash(ctx sdk.Context, hash string) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxHash, hash)
 	return store.Has([]byte(key))
+}
+
+// SetTxOut - write the given txout information to key values tore
+func (k Keeper) SetTxOut(ctx sdk.Context, blockOut *TxOut) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(txOutPrefix, strconv.FormatInt(blockOut.Height, 10))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(blockOut))
+}
+
+// GetTxOut - write the given txout information to key values tore
+func (k Keeper) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(txOutPrefix, strconv.FormatInt(height, 10))
+	buf := store.Get([]byte(key))
+	var txOut TxOut
+	if err := k.cdc.UnmarshalBinaryBare(buf, &txOut); nil != err {
+		return nil, errors.Wrap(err, "fail to unmarshal tx out")
+	}
+	return &txOut, nil
 }
