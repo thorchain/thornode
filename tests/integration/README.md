@@ -20,7 +20,7 @@ make -C ../.. clean setup install
 Once you have your chain setup, start the daemon in a terminal window.
 
 ```bash
-make -C ../.. start-daemon
+make -C ../.. install reset start-daemon
 ```
 
 Then also start the rest server in another terminal window
