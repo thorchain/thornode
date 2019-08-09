@@ -422,6 +422,17 @@ func (k Keeper) GetAdminConfig(ctx sdk.Context, key string) AdminConfig {
 	bz := store.Get([]byte(key))
 	var record AdminConfig
 	k.cdc.MustUnmarshalBinaryBare(bz, &record)
+
+	// check if we need to add a default value
+	if record.Value == "" {
+		if record.Key == "GSL" {
+			record.Value = "0.3" // default to 30%
+		}
+		if record.Key == "TSL" {
+			record.Value = "0.1" // default to 10%
+		}
+	}
+
 	return record
 }
 

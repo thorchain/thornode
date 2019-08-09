@@ -8,8 +8,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-
-	"github.com/jpthor/cosmos-swap/config"
 )
 
 func isEmptyString(input string) bool {
@@ -52,7 +50,7 @@ func validateMessage(ctx sdk.Context, keeper poolStorage, source, target Ticker,
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeSlipLimit string) (Amount, error) {
+func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeSlipLimit string) (Amount, error) {
 	if err := validateMessage(ctx, keeper, source, target, amount, requester, destination, requestTxHash, tradeSlipLimit); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
@@ -67,18 +65,18 @@ func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source,
 		AmountRequested: amount,
 	}
 	if isDoubleSwap {
-		runeAmount, err := swapOne(ctx, keeper, setting, source, RuneTicker, amount, requester, destination, tradeSlipLimit)
+		runeAmount, err := swapOne(ctx, keeper, source, RuneTicker, amount, requester, destination, tradeSlipLimit, globalSlipLimit)
 		if err != nil {
 			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, RuneTicker)
 		}
-		tokenAmount, err := swapOne(ctx, keeper, setting, RuneTicker, target, runeAmount, requester, destination, tradeSlipLimit)
+		tokenAmount, err := swapOne(ctx, keeper, RuneTicker, target, runeAmount, requester, destination, tradeSlipLimit, globalSlipLimit)
 		swapRecord.AmountPaidBack = tokenAmount
 		if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
 			ctx.Logger().Error("fail to save swap record", "error", err)
 		}
 		return tokenAmount, err
 	}
-	tokenAmount, err := swapOne(ctx, keeper, setting, source, target, amount, requester, destination, tradeSlipLimit)
+	tokenAmount, err := swapOne(ctx, keeper, source, target, amount, requester, destination, tradeSlipLimit, globalSlipLimit)
 	swapRecord.AmountPaidBack = tokenAmount
 	if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
 		ctx.Logger().Error("fail to save swap record", "error", err)
@@ -88,8 +86,8 @@ func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source,
 
 func swapOne(ctx sdk.Context,
 	keeper poolStorage,
-	settings *config.Settings,
 	source, target Ticker, amount Amount, requester, destination, tradeSlipLimit string) (Amount, error) {
+
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 	ticker := source
 	if IsRune(source) {
@@ -106,6 +104,12 @@ func swapOne(ctx sdk.Context,
 		return "0", errors.Wrapf(err, "trade slip limit %s is not valid", tradeSlipLimit)
 	}
 
+	// Global slip limit
+	gslipLimit, err := strconv.ParseFloat(globalSlipLimit, 64)
+	if err != nil {
+		return "0", errors.Wrapf(err, "trade slip limit %s is not valid", globalSlipLimit)
+	}
+
 	pool := keeper.GetPoolStruct(ctx, ticker)
 	if pool.Status != PoolEnabled {
 		return "0", errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
@@ -113,12 +117,13 @@ func swapOne(ctx sdk.Context,
 	balanceRune := pool.BalanceRune.Float64()
 	balanceToken := pool.BalanceToken.Float64()
 	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
-	if poolSlip > settings.GlobalPoolSlip {
-		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, settings.GlobalPoolSlip)
+	if poolSlip > gslipLimit {
+		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gslipLimit)
 	}
 	userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
-	if math.Abs(userPrice-fslipLimit)/fslipLimit > settings.GlobalTradeSlipLimit {
-		return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, settings.GlobalTradeSlipLimit*100, fslipLimit)
+	fmt.Printf("FOO %+v\n", math.Abs(userPrice-fslipLimit)/fslipLimit)
+	if math.Abs(userPrice-fslipLimit)/fslipLimit > fslipLimit {
+		return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, fslipLimit*100, fslipLimit)
 	}
 	// do we have enough balance to swap?
 	if IsRune(source) {

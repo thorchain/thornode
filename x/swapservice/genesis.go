@@ -66,8 +66,8 @@ func ValidateGenesis(data GenesisState) error {
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		AdminConfigs: []AdminConfig{
-			{Key: "TSL", Value: "10"},
-			{Key: "GSL", Value: "30"},
+			{Key: "TSL", Value: "0.1"}, // default
+			{Key: "GSL", Value: "0.3"}, // default
 		},
 		PoolStructRecords: []PoolStruct{
 			{

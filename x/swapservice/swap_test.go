@@ -12,7 +12,6 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/jpthor/cosmos-swap/config"
 	"github.com/jpthor/cosmos-swap/x/swapservice/mocks"
 )
 
@@ -27,19 +26,20 @@ func (s SwapSuite) TestSwap(c *C) {
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	settings := config.DefaultSettings()
 	ctx := sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
+	globalSlipLimit := "0.200000"
 	inputs := []struct {
-		name           string
-		requestTxHash  TxID
-		source         Ticker
-		target         Ticker
-		amount         Amount
-		requester      string
-		destination    string
-		returnAmount   Amount
-		tradeSlipLimit string
-		expectedErr    error
+		name            string
+		requestTxHash   TxID
+		source          Ticker
+		target          Ticker
+		amount          Amount
+		requester       string
+		destination     string
+		returnAmount    Amount
+		tradeSlipLimit  string
+		globalSlipLimit string
+		expectedErr     error
 	}{
 		{
 			name:          "empty-source",
@@ -108,84 +108,92 @@ func (s SwapSuite) TestSwap(c *C) {
 			expectedErr:   errors.New("destination is empty"),
 		},
 		{
-			name:           "pool-not-exist",
-			requestTxHash:  "hash",
-			source:         "NOTEXIST",
-			target:         "RUNE",
-			amount:         "100",
-			requester:      "tester",
-			destination:    "don'tknow",
-			tradeSlipLimit: "1.1",
-			returnAmount:   "0",
-			expectedErr:    errors.New("NOTEXIST doesn't exist"),
+			name:            "pool-not-exist",
+			requestTxHash:   "hash",
+			source:          "NOTEXIST",
+			target:          "RUNE",
+			amount:          "100",
+			requester:       "tester",
+			destination:     "don'tknow",
+			tradeSlipLimit:  "1.1",
+			globalSlipLimit: globalSlipLimit,
+			returnAmount:    "0",
+			expectedErr:     errors.New("NOTEXIST doesn't exist"),
 		},
 		{
-			name:           "pool-not-exist-1",
-			requestTxHash:  "hash",
-			source:         "RUNE",
-			target:         "NOTEXIST",
-			amount:         "100",
-			requester:      "tester",
-			destination:    "don'tknow",
-			tradeSlipLimit: "1.2",
-			returnAmount:   "0",
-			expectedErr:    errors.New("NOTEXIST doesn't exist"),
+			name:            "pool-not-exist-1",
+			requestTxHash:   "hash",
+			source:          "RUNE",
+			target:          "NOTEXIST",
+			amount:          "100",
+			requester:       "tester",
+			destination:     "don'tknow",
+			tradeSlipLimit:  "1.2",
+			globalSlipLimit: globalSlipLimit,
+			returnAmount:    "0",
+			expectedErr:     errors.New("NOTEXIST doesn't exist"),
 		},
 		{
-			name:           "swap-over-global-sliplimit",
-			requestTxHash:  "hash",
-			source:         "RUNE",
-			target:         "BNB",
-			amount:         "50",
-			requester:      "tester",
-			destination:    "don'tknow",
-			returnAmount:   "0",
-			tradeSlipLimit: "0.1",
-			expectedErr:    errors.Errorf("pool slip:1.250000 is over global pool slip limit :%f", settings.GlobalPoolSlip),
+			name:            "swap-over-global-sliplimit",
+			requestTxHash:   "hash",
+			source:          "RUNE",
+			target:          "BNB",
+			amount:          "50",
+			requester:       "tester",
+			destination:     "don'tknow",
+			returnAmount:    "0",
+			tradeSlipLimit:  "0.1",
+			globalSlipLimit: globalSlipLimit,
+			expectedErr:     errors.Errorf("pool slip:1.250000 is over global pool slip limit :%s", globalSlipLimit),
 		},
 		{
-			name:           "swap-over-trade-sliplimit",
-			requestTxHash:  "hash",
-			source:         "RUNE",
-			target:         "BNB",
-			amount:         "9",
-			requester:      "tester",
-			destination:    "don'tknow",
-			returnAmount:   "0",
-			tradeSlipLimit: "1.0",
-			expectedErr:    errors.New("user price 1.188100 is more than 10.00 percent different than 1.000000"),
+			name:            "swap-over-trade-sliplimit",
+			requestTxHash:   "hash",
+			source:          "RUNE",
+			target:          "BNB",
+			amount:          "9",
+			requester:       "tester",
+			destination:     "don'tknow",
+			returnAmount:    "0",
+			tradeSlipLimit:  "1.0",
+			globalSlipLimit: globalSlipLimit,
+			expectedErr:     errors.New("user price 1.188100 is more than 10.00 percent different than 1.000000"),
 		},
 		{
-			name:           "swap",
-			requestTxHash:  "hash",
-			source:         "RUNE",
-			target:         "BNB",
-			amount:         "5",
-			requester:      "tester",
-			destination:    "don'tknow",
-			returnAmount:   "4.53514739",
-			tradeSlipLimit: "1.1",
-			expectedErr:    nil,
+			name:            "swap",
+			requestTxHash:   "hash",
+			source:          "RUNE",
+			target:          "BNB",
+			amount:          "5",
+			requester:       "tester",
+			destination:     "don'tknow",
+			returnAmount:    "4.53514739",
+			tradeSlipLimit:  "1.1",
+			globalSlipLimit: globalSlipLimit,
+			expectedErr:     nil,
 		},
 		{
-			name:           "double-swap",
-			requestTxHash:  "hash",
-			source:         "BTC",
-			target:         "BNB",
-			amount:         "5",
-			requester:      "tester",
-			destination:    "don'tknow",
-			returnAmount:   "4.15017810",
-			tradeSlipLimit: "1.1025",
-			expectedErr:    nil,
+			name:            "double-swap",
+			requestTxHash:   "hash",
+			source:          "BTC",
+			target:          "BNB",
+			amount:          "5",
+			requester:       "tester",
+			destination:     "don'tknow",
+			returnAmount:    "4.15017810",
+			tradeSlipLimit:  "1.1025",
+			globalSlipLimit: globalSlipLimit,
+			expectedErr:     nil,
 		},
 	}
 	for _, item := range inputs {
-		amount, err := swap(ctx, poolStorage, settings, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeSlipLimit)
-		fmt.Println(amount, err)
+		fmt.Printf("Item: %+v\n", item)
+		fmt.Printf("ItemErr: %+v\n", item.expectedErr)
+		amount, err := swap(ctx, poolStorage, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeSlipLimit, item.globalSlipLimit)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
 		} else {
+			c.Assert(err, NotNil, Commentf("Expected: %s, got nil", item.expectedErr.Error()))
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
 		c.Check(item.returnAmount.Equals(amount), Equals, true)
