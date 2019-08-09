@@ -31,6 +31,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdUnstake(cdc),
 		GetCmdUnStakeComplete(cdc),
 		GetCmdSetTxHash(cdc),
+		GetCmdSetAdminConfig(cdc),
 	)...)
 
 	return swapserviceTxCmd
@@ -169,6 +170,26 @@ func GetCmdSetTxHash(cdc *codec.Codec) *cobra.Command {
 			tx := types.NewTxHash(args[0], coins, args[2], args[3])
 			msg := types.NewMsgSetTxHash([]types.TxHash{tx}, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdSetAdminConfig command to set an admin config
+func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "set-adming-config [key] [value]",
+		Short: "set admin config",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			msg := types.NewMsgSetAdminConfig(args[0], args[1], cliCtx.GetFromAddress())
+			err := msg.ValidateBasic()
 			if err != nil {
 				return err
 			}

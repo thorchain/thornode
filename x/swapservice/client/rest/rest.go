@@ -24,12 +24,14 @@ const (
 	stakeData      = "stakedata"
 	accData        = "accdata"
 	txoutArrayData = "txoutarray"
+	adminConfig    = "adminconfig"
 )
 
 // TODO add the new features to Restful routes
 // pool index etc
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
+	r.HandleFunc(fmt.Sprintf("/%s/admin/{%s}", storeName, adminConfig), getAdminConfig(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", storeName, restTx), getTxHash(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}", storeName, restPoolStruct), poolStructHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}/stakers", storeName, restPoolStaker), poolStakersHandler(cliCtx, storeName)).Methods("GET")
@@ -254,10 +256,26 @@ func txOutArrayHandler(cliCtx context.CLIContext, storeName string) http.Handler
 		vars := mux.Vars(r)
 		paramType := vars[txoutArrayData]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/txoutarray/%s", storeName, paramType), nil)
+
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
 		}
+
+		rest.PostProcessResponse(w, cliCtx, res)
+	}
+}
+
+func getAdminConfig(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		paramType := vars[adminConfig]
+		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/adminconfig/%s", storeName, paramType), nil)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
+			return
+		}
+
 		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

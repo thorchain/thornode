@@ -73,6 +73,18 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Check(memo.GetSlipLimit(), Equals, 0.0)
 	c.Check(memo.GetMemo(), Equals, "hi")
 
+	memo, err = ParseMemo("ADMIN:KEY:TSL:15")
+	c.Assert(err, IsNil)
+	c.Check(memo.GetAdminType(), Equals, adminKey)
+	c.Check(memo.GetKey(), Equals, "TSL")
+	c.Check(memo.GetValue(), Equals, "15")
+
+	memo, err = ParseMemo("ADMIN:poolstatus:BNB:active")
+	c.Assert(err, IsNil)
+	c.Check(memo.GetAdminType(), Equals, adminPoolStatus)
+	c.Check(memo.GetKey(), Equals, "BNB")
+	c.Check(memo.GetValue(), Equals, "active")
+
 	// unhappy paths
 	_, err = ParseMemo("")
 	c.Assert(err, NotNil)
@@ -89,5 +101,9 @@ func (s *MemoSuite) TestParse(c *C) {
 	_, err = ParseMemo("swap:bnb:bad_DES:5.6") // bad destination
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("swap:bnb:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:five") // bad slip limit
+	c.Assert(err, NotNil)
+	_, err = ParseMemo("admin:key:val") // not enough arguments
+	c.Assert(err, NotNil)
+	_, err = ParseMemo("admin:bogus:key:value") // bogus admin command type
 	c.Assert(err, NotNil)
 }
