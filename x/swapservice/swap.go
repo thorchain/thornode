@@ -121,8 +121,7 @@ func swapOne(ctx sdk.Context,
 		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gslipLimit)
 	}
 	userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
-	fmt.Printf("FOO %+v\n", math.Abs(userPrice-fslipLimit)/fslipLimit)
-	if math.Abs(userPrice-fslipLimit)/fslipLimit > fslipLimit {
+	if userPrice > fslipLimit {
 		return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, fslipLimit*100, fslipLimit)
 	}
 	// do we have enough balance to swap?

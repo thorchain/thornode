@@ -1,8 +1,6 @@
 package swapservice
 
 import (
-	"fmt"
-
 	. "gopkg.in/check.v1"
 
 	"github.com/cosmos/cosmos-sdk/store"
@@ -157,7 +155,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			returnAmount:    "0",
 			tradeSlipLimit:  "1.0",
 			globalSlipLimit: globalSlipLimit,
-			expectedErr:     errors.New("user price 1.188100 is more than 10.00 percent different than 1.000000"),
+			expectedErr:     errors.New("user price 1.188100 is more than 100.00 percent different than 1.000000"),
 		},
 		{
 			name:            "swap",
@@ -168,7 +166,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:       "tester",
 			destination:     "don'tknow",
 			returnAmount:    "4.53514739",
-			tradeSlipLimit:  "1.1",
+			tradeSlipLimit:  "1.2",
 			globalSlipLimit: globalSlipLimit,
 			expectedErr:     nil,
 		},
@@ -187,8 +185,6 @@ func (s SwapSuite) TestSwap(c *C) {
 		},
 	}
 	for _, item := range inputs {
-		fmt.Printf("Item: %+v\n", item)
-		fmt.Printf("ItemErr: %+v\n", item.expectedErr)
 		amount, err := swap(ctx, poolStorage, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeSlipLimit, item.globalSlipLimit)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
