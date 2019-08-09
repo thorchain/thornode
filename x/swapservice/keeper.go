@@ -429,3 +429,9 @@ func (k Keeper) GetAdminConfig(ctx sdk.Context, key string) AdminConfig {
 	k.cdc.MustUnmarshalBinaryBare(bz, &record)
 	return record
 }
+
+// GetAdminConfigIterator iterate admin configs
+func (k Keeper) GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIterator(store, []byte(prefixAdmin))
+}
