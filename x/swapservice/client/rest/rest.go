@@ -43,8 +43,8 @@ type txItem struct {
 
 type txHashReq struct {
 	BaseReq     rest.BaseReq `json:"base_req"`
-	Blockheight int          `json:"blockHeight"`
-	Count       int          `json:"count"`
+	Blockheight string       `json:"blockHeight"`
+	Count       string       `json:"count"`
 	TxArray     []txItem     `json:"txArray"`
 }
 

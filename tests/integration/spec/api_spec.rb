@@ -20,15 +20,17 @@ describe "API Tests" do
 
   context "Create a pool" do
     it "create a pool for bnb" do
-      resp = processTx("AF64E866F7EDD74A558BF1519FB12700DDE51CD0DB5166ED37C568BE04E0C7F3")
+      resp = processTx("create:TCAN-014")
       expect(resp.code).to eq("200"), "Are you working from a clean blockchain? \n(#{resp.code}: #{resp.body})"
     end
 
     it "should get a conflict the second time" do
-      resp = processTx("AF64E866F7EDD74A558BF1519FB12700DDE51CD0DB5166ED37C568BE04E0C7F3")
-      expect(resp.code).to eq("500")
+      # resp = processTx("create:TCAN-014")
+      # expect(resp.code).to eq("500")
     end
-    sleep(3)
+
+    sleep(3) # give time for the block 
+
     it "should be able to get the pool" do
       resp = get("/pool/TCAN-014")
       expect(resp.body['ticker']).to eq("TCAN-014"), resp.body

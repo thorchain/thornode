@@ -13,21 +13,37 @@ def get(path)
   return resp
 end
 
-def processTx(hash, mode = 'block')
+def processTx(memo, mode = 'block')
   request = Net::HTTP::Post.new("/swapservice/binance/tx")
   address = `sscli keys show jack -a`.strip!
+  hash = 'AF64E866F7EDD74A558BF1519FB12700DDE51CD0DB5166ED37C568BE04E0C'
   request.body = {
-    'tx_hash': hash,
+    'blockHeight': '376',
+    'count': '1',
     'base_req': {
       'chain_id': "sschain",
       'from': address
-    }
+    },
+    'txArray': [
+      {
+        'tx': hash,
+        'sender': address,
+        'MEMO': memo,
+        'coins': [{
+          'denom': 'BNB',
+          'amount': '1',
+        }],
+      }
+    ],
   }.to_json
+  puts(request.body)
   resp = HTTP.request(request)
 
   # write unsigned json to disk
   File.open("/tmp/unSigned.json", "w") { |file| file.puts resp.body}
   signedTx = `echo "password" | sscli tx sign /tmp/unSigned.json --from jack`
+  puts("hello")
+  puts(signedTx)
   signedTx = JSON.parse(signedTx)
   signedJson = {
     'mode': mode,

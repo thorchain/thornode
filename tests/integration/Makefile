@@ -16,6 +16,4 @@ run:
 	make -C ../.. start-rest > /var/log/rest.log 2>&1 &
 
 test:
-	pwd
-	ls
 	docker run --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/statechain -w /root/go/src/gitlab.com/thorchain/statechain -e GOPATH=/root/go -e GOBIN=/go/bin statechain make -C ./tests/integration install setup run wait-for-blockchain test-internal
