@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -18,7 +19,8 @@ const (
 	QueryPoolIndex     = "poolindex"
 	QuerySwapRecord    = "swaprecord"
 	QueryUnStakeRecord = "unstakerecord"
-	QUeryTxHash        = "txhash"
+	QueryTxHash        = "txhash"
+	QueryTxOutArray    = "txoutarray"
 )
 
 // NewQuerier is the module level router for state queries
@@ -40,8 +42,10 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return querySwapRecord(ctx, path[1:], req, keeper)
 		case QueryUnStakeRecord:
 			return queryUnStakeRecord(ctx, path[1:], req, keeper)
-		case QUeryTxHash:
+		case QueryTxHash:
 			return queryTxHash(ctx, path[1:], req, keeper)
+		case QueryTxOutArray:
+			return queryTxOutArray(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown swapservice query endpoint")
 		}
@@ -156,6 +160,25 @@ func queryPoolStructs(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]
 func queryTxHash(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	hash := path[0]
 	tx := keeper.GetTxHash(ctx, hash)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, tx)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal tx hash to json", err)
+		return nil, sdk.ErrInternal("fail to marshal tx hash to json")
+	}
+	return res, nil
+}
+
+func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	height, err := strconv.ParseInt(path[0], 0, 64)
+	if nil != err {
+		ctx.Logger().Error("fail to parse block height", err)
+		return nil, sdk.ErrInternal("fail to parse block height")
+	}
+	tx, err := keeper.GetTxOut(ctx, height)
+	if nil != err {
+		ctx.Logger().Error("fail to get tx out array from key value store", err)
+		return nil, sdk.ErrInternal("fail to get tx out array from key value store")
+	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, tx)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
