@@ -10,19 +10,20 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
-
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 type dbPrefix string
 
 const (
-	prefixTxHash dbPrefix = "tx_"
-	prefixPool   dbPrefix = "pool_"
-	txOutPrefix  dbPrefix = "txout-"
+	prefixTxHash       dbPrefix = "tx_"
+	prefixPool         dbPrefix = "pool_"
+	prefixTxOut        dbPrefix = "txout_"
+	prefixTrustAccount dbPrefix = "trustaccount_"
+	prefixPoolStaker   dbPrefix = "poolstaker_"
+	prefixStakerPool   dbPrefix = "stakerpool_"
 )
 
-const poolIndexKey = `poolindexkey`
+const poolIndexKey = "poolindexkey"
 
 func getKey(prefix dbPrefix, key string) string {
 	return fmt.Sprintf("%s%s", prefix, strings.ToUpper(key))
@@ -45,7 +46,7 @@ func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) 
 }
 
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
-	return ctx.Logger().With("module", fmt.Sprintf("x/%s", types.ModuleName))
+	return ctx.Logger().With("module", fmt.Sprintf("x/%s", ModuleName))
 }
 
 // GetPoolStruct get the entire PoolStruct metadata struct for a pool ID
@@ -84,14 +85,14 @@ func (k Keeper) SetPoolStruct(ctx sdk.Context, ticker string, poolstruct PoolStr
 
 func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 string) (string, string) {
 	poolstruct := k.GetPoolStruct(ctx, ticker)
-	if strings.EqualFold(ticker2, types.RuneTicker) {
+	if strings.EqualFold(ticker2, RuneTicker) {
 		return poolstruct.BalanceRune, poolstruct.BalanceToken
 	}
 	return poolstruct.BalanceToken, poolstruct.BalanceRune
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
-func (k Keeper) SetPoolData(ctx sdk.Context, ticker, balanceRune, balanceToken, poolAddress string, ps types.PoolStatus) {
+func (k Keeper) SetPoolData(ctx sdk.Context, ticker, balanceRune, balanceToken, poolAddress string, ps PoolStatus) {
 	poolstruct := k.GetPoolStruct(ctx, ticker)
 	if poolstruct.PoolUnits == "" {
 		poolstruct.PoolUnits = "0"
@@ -126,22 +127,22 @@ func (k Keeper) PoolExist(ctx sdk.Context, ticker string) bool {
 }
 
 // GetPoolIndex retrieve pool index from the data store
-func (k Keeper) GetPoolIndex(ctx sdk.Context) (types.PoolIndex, error) {
+func (k Keeper) GetPoolIndex(ctx sdk.Context) (PoolIndex, error) {
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(poolIndexKey)) {
-		return types.PoolIndex{}, nil
+		return PoolIndex{}, nil
 	}
 	buf := store.Get([]byte(poolIndexKey))
-	var pi types.PoolIndex
+	var pi PoolIndex
 	if err := k.cdc.UnmarshalBinaryBare(buf, &pi); nil != err {
 		ctx.Logger().Error(fmt.Sprintf("fail to unmarshal poolindex,err: %s", err))
-		return types.PoolIndex{}, errors.Wrap(err, "fail to unmarshal poolindex")
+		return PoolIndex{}, errors.Wrap(err, "fail to unmarshal poolindex")
 	}
 	return pi, nil
 }
 
 // SetPoolIndex write a pool index into datastore
-func (k Keeper) SetPoolIndex(ctx sdk.Context, pi types.PoolIndex) {
+func (k Keeper) SetPoolIndex(ctx sdk.Context, pi PoolIndex) {
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(poolIndexKey), k.cdc.MustMarshalBinaryBare(&pi))
 }
@@ -169,7 +170,7 @@ func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, ticker string) error {
 	if nil != err {
 		return err
 	}
-	var newPI types.PoolIndex
+	var newPI PoolIndex
 	for _, item := range pi {
 		if !strings.EqualFold(item, ticker) {
 			newPI = append(newPI, item)
@@ -180,58 +181,58 @@ func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, ticker string) error {
 }
 
 // GetPoolStaker retrieve poolStaker from the data store
-func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker string) (types.PoolStaker, error) {
+func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker string) (PoolStaker, error) {
 	store := ctx.KVStore(k.storeKey)
-	poolStakerKey := types.PoolStakerKeyPrefix + ticker
-	if !store.Has([]byte(poolStakerKey)) {
-		ctx.Logger().Info("NotExist", "poolstakerkey", poolStakerKey)
-		return types.NewPoolStaker(ticker, "0"), nil
+	key := getKey(prefixPoolStaker, ticker)
+	if !store.Has([]byte(key)) {
+		ctx.Logger().Info("NotExist", "poolstakerkey", key)
+		return NewPoolStaker(ticker, "0"), nil
 	}
-	var ps types.PoolStaker
-	buf := store.Get([]byte(poolStakerKey))
+	var ps PoolStaker
+	buf := store.Get([]byte(key))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &ps); nil != err {
 		ctx.Logger().Error("fail to unmarshal poolstaker", err)
-		return types.PoolStaker{}, err
+		return PoolStaker{}, err
 	}
 	return ps, nil
 }
 
 // SetPoolStaker store the poolstaker to datastore
-func (k Keeper) SetPoolStaker(ctx sdk.Context, ticker string, ps types.PoolStaker) {
+func (k Keeper) SetPoolStaker(ctx sdk.Context, ticker string, ps PoolStaker) {
 	store := ctx.KVStore(k.storeKey)
-	poolStakerKey := types.PoolStakerKeyPrefix + ticker
-	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", poolStakerKey, ps))
+	key := getKey(prefixPoolStaker, ticker)
+	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", key, ps))
 	result := k.cdc.MustMarshalBinaryBare(ps)
-	store.Set([]byte(poolStakerKey), result)
+	store.Set([]byte(key), result)
 }
 
 // GetStakerPool get the stakerpool from key value store
-func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID string) (types.StakerPool, error) {
+func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID string) (StakerPool, error) {
 	store := ctx.KVStore(k.storeKey)
-	stakerPoolKey := types.StakerPoolKeyPrefix + stakerID
-	ctx.Logger().Info("get staker pool", "stakerpoolkey", stakerPoolKey)
-	if !store.Has([]byte(stakerPoolKey)) {
-		return types.NewStakerPool(stakerID), nil
+	key := getKey(prefixStakerPool, stakerID)
+	ctx.Logger().Info("get staker pool", "stakerpoolkey", key)
+	if !store.Has([]byte(key)) {
+		return NewStakerPool(stakerID), nil
 	}
-	var ps types.StakerPool
-	buf := store.Get([]byte(stakerPoolKey))
+	var ps StakerPool
+	buf := store.Get([]byte(key))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &ps); nil != err {
 		ctx.Logger().Error("fail to unmarshal stakerpool", err)
-		return types.StakerPool{}, errors.Wrap(err, "fail to unmarshal stakerpool")
+		return StakerPool{}, errors.Wrap(err, "fail to unmarshal stakerpool")
 	}
 	return ps, nil
 }
 
 // SetStakerPool save the given stakerpool object to key value store
-func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID string, sp types.StakerPool) {
+func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID string, sp StakerPool) {
 	store := ctx.KVStore(k.storeKey)
-	stakerPoolKey := types.StakerPoolKeyPrefix + stakerID
-	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", stakerPoolKey, sp))
-	store.Set([]byte(stakerPoolKey), k.cdc.MustMarshalBinaryBare(sp))
+	key := getKey(prefixStakerPool, stakerID)
+	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", key, sp))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(sp))
 }
 
 // SetSwapRecord save the swap record to store
-func (k Keeper) SetSwapRecord(ctx sdk.Context, sr types.SwapRecord) error {
+func (k Keeper) SetSwapRecord(ctx sdk.Context, sr SwapRecord) error {
 	store := ctx.KVStore(k.storeKey)
 	swapRecordKey := swapRecordKeyPrefix + sr.RequestTxHash
 	ctx.Logger().Debug("upsert swaprecord", "key", swapRecordKey)
@@ -240,23 +241,23 @@ func (k Keeper) SetSwapRecord(ctx sdk.Context, sr types.SwapRecord) error {
 }
 
 // GetSwapRecord retrieve the swap record from data store.
-func (k Keeper) GetSwapRecord(ctx sdk.Context, requestTxHash string) (types.SwapRecord, error) {
+func (k Keeper) GetSwapRecord(ctx sdk.Context, requestTxHash string) (SwapRecord, error) {
 	if isEmptyString(requestTxHash) {
-		return types.SwapRecord{}, errors.New("request tx hash is empty")
+		return SwapRecord{}, errors.New("request tx hash is empty")
 	}
 	store := ctx.KVStore(k.storeKey)
 	swapRecordKey := swapRecordKeyPrefix + requestTxHash
 	ctx.Logger().Debug("get swap record", "key", swapRecordKey)
 	if !store.Has([]byte(swapRecordKey)) {
 		ctx.Logger().Debug("record not found", "key", swapRecordKey)
-		return types.SwapRecord{
+		return SwapRecord{
 			RequestTxHash: requestTxHash,
 		}, nil
 	}
-	var sw types.SwapRecord
+	var sw SwapRecord
 	buf := store.Get([]byte(swapRecordKey))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &sw); nil != err {
-		return types.SwapRecord{}, errors.Wrap(err, "fail to unmarshal SwapRecord")
+		return SwapRecord{}, errors.Wrap(err, "fail to unmarshal SwapRecord")
 	}
 	return sw, nil
 }
@@ -284,7 +285,7 @@ func (k Keeper) GetSwapRecordIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // SetUnStakeRecord write an UnStake record to key value store
-func (k Keeper) SetUnStakeRecord(ctx sdk.Context, ur types.UnstakeRecord) {
+func (k Keeper) SetUnStakeRecord(ctx sdk.Context, ur UnstakeRecord) {
 	store := ctx.KVStore(k.storeKey)
 	unStakeRecordKey := unstakeRecordPrefix + ur.RequestTxHash
 	ctx.Logger().Debug("upsert UnStake", "key", unStakeRecordKey)
@@ -292,23 +293,23 @@ func (k Keeper) SetUnStakeRecord(ctx sdk.Context, ur types.UnstakeRecord) {
 }
 
 // GetUnStakeRecord query unstake record from Key Value store
-func (k Keeper) GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (types.UnstakeRecord, error) {
+func (k Keeper) GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (UnstakeRecord, error) {
 	if isEmptyString(requestTxHash) {
-		return types.UnstakeRecord{}, errors.New("request tx hash is empty")
+		return UnstakeRecord{}, errors.New("request tx hash is empty")
 	}
 	store := ctx.KVStore(k.storeKey)
 	unStakeRecordKey := unstakeRecordPrefix + requestTxHash
 	ctx.Logger().Debug("get UnStake record", "key", unStakeRecordKey)
 	if !store.Has([]byte(unStakeRecordKey)) {
 		ctx.Logger().Debug("record not found", "key", unStakeRecordKey)
-		return types.UnstakeRecord{
+		return UnstakeRecord{
 			RequestTxHash: requestTxHash,
 		}, nil
 	}
-	var ur types.UnstakeRecord
+	var ur UnstakeRecord
 	buf := store.Get([]byte(unStakeRecordKey))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &ur); nil != err {
-		return types.UnstakeRecord{}, errors.Wrap(err, "fail to unmarshal UnstakeRecord")
+		return UnstakeRecord{}, errors.Wrap(err, "fail to unmarshal UnstakeRecord")
 	}
 	return ur, nil
 }
@@ -340,22 +341,22 @@ func (k Keeper) GetUnstakeRecordIterator(ctx sdk.Context) sdk.Iterator {
 func (k Keeper) IsTrustAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
 	ctx.Logger().Debug("IsTrustAccount", "account address", addr.String())
 	store := ctx.KVStore(k.storeKey)
-	key := types.TrustAccountPrefix + addr.String()
+	key := getKey(prefixTrustAccount, addr.String())
 	return store.Has([]byte(key))
 }
 
 // SetTrustAccount save the given trust account into data store
-func (k Keeper) SetTrustAccount(ctx sdk.Context, ta types.TrustAccount) {
+func (k Keeper) SetTrustAccount(ctx sdk.Context, ta TrustAccount) {
 	ctx.Logger().Debug("SetTrustAccount", "trust account", ta.String())
 	store := ctx.KVStore(k.storeKey)
-	key := types.TrustAccountPrefix + ta.Address.String()
+	key := getKey(prefixTrustAccount, ta.Address.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ta))
 }
 
 // GetTrustAccountIterator iterate trust accounts
 func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, []byte(types.TrustAccountPrefix))
+	return sdk.KVStorePrefixIterator(store, []byte(prefixTrustAccount))
 }
 
 // SetTxHas - saving a given txhash to the KVStore
@@ -390,14 +391,14 @@ func (k Keeper) CheckTxHash(ctx sdk.Context, hash string) bool {
 // SetTxOut - write the given txout information to key values tore
 func (k Keeper) SetTxOut(ctx sdk.Context, blockOut *TxOut) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(txOutPrefix, strconv.FormatInt(blockOut.Height, 10))
+	key := getKey(prefixTxOut, strconv.FormatInt(blockOut.Height, 10))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(blockOut))
 }
 
 // GetTxOut - write the given txout information to key values tore
 func (k Keeper) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(txOutPrefix, strconv.FormatInt(height, 10))
+	key := getKey(prefixTxOut, strconv.FormatInt(height, 10))
 	buf := store.Get([]byte(key))
 	var txOut TxOut
 	if err := k.cdc.UnmarshalBinaryBare(buf, &txOut); nil != err {
