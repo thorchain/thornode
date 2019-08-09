@@ -374,7 +374,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 // handleMsgSetAdminConfig process admin config
 func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConfig) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgSetAdminConfig %s --> %s", msg.AdminConfig.Key, msg.AdminConfig.Value))
-	if isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
