@@ -5,13 +5,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 const unstakeRecordPrefix = `unstakerecord-`
 
-func validateUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) error {
+func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 	if isEmptyString(msg.PublicAddress) {
 		return errors.New("empty public address")
 	}
@@ -39,7 +37,7 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) er
 }
 
 // unstake withdraw all the asset
-func unstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) (string, string, error) {
+func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (string, string, error) {
 	if err := validateUnstake(ctx, keeper, msg); nil != err {
 		return "0", "0", err
 	}
@@ -108,7 +106,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg types.MsgSetUnStake) (string, s
 	keeper.SetPoolStruct(ctx, msg.Ticker, pool)
 	keeper.SetPoolStaker(ctx, msg.Ticker, poolStaker)
 	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
-	keeper.SetUnStakeRecord(ctx, types.UnstakeRecord{
+	keeper.SetUnStakeRecord(ctx, UnstakeRecord{
 		RequestTxHash: msg.RequestTxHash,
 		Ticker:        msg.Ticker,
 		PublicAddress: msg.PublicAddress,
