@@ -3,12 +3,15 @@ package types
 import "fmt"
 
 type AdminConfig struct {
-	Key   string `json:"k"`
-	Value string `json:"v"`
+	Key   string `json:"key"`
+	Value string `json:"value"`
 }
 
-func NewAdminConfig(k, v string) AdminConfig {
-	return AdminConfig{k, v}
+func NewAdminConfig(key, value string) AdminConfig {
+	return AdminConfig{
+		Key:   key,
+		Value: value,
+	}
 }
 
 func (c AdminConfig) Empty() bool {
