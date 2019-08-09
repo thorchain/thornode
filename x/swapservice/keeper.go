@@ -21,6 +21,7 @@ const (
 	prefixTrustAccount dbPrefix = "trustaccount_"
 	prefixPoolStaker   dbPrefix = "poolstaker_"
 	prefixStakerPool   dbPrefix = "stakerpool_"
+	prefixAdmin        dbPrefix = "admin_"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -405,4 +406,32 @@ func (k Keeper) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
 		return nil, errors.Wrap(err, "fail to unmarshal tx out")
 	}
 	return &txOut, nil
+}
+
+// SetAdminConfig - saving a given admin config to the KVStore
+func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixAdmin, config.Key)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(config))
+}
+
+// GetAdminConfig - gets information of a tx hash
+func (k Keeper) GetAdminConfig(ctx sdk.Context, key string) AdminConfig {
+	key = getKey(prefixAdmin, key)
+
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return AdminConfig{}
+	}
+
+	bz := store.Get([]byte(key))
+	var record AdminConfig
+	k.cdc.MustUnmarshalBinaryBare(bz, &record)
+	return record
+}
+
+// GetAdminConfigIterator iterate admin configs
+func (k Keeper) GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIterator(store, []byte(prefixAdmin))
 }

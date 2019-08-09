@@ -9,13 +9,21 @@ import (
 // TXTYPE:STATE1:STATE2:STATE3:FINALMEMO
 
 type txType uint8
+type adminType uint8
 
 const (
 	txCreate txType = iota
 	txStake
 	txWithdraw
 	txSwap
+	txAdmin
 	unknowTx
+)
+
+const (
+	adminUnknown adminType = iota
+	adminKey
+	adminPoolStatus
 )
 
 var stringToTxTypeMap = map[string]txType{
@@ -23,6 +31,7 @@ var stringToTxTypeMap = map[string]txType{
 	"stake":    txStake,
 	"withdraw": txWithdraw,
 	"swap":     txSwap,
+	"admin":    txAdmin,
 }
 
 var txToStringMap = map[txType]string{
@@ -30,6 +39,12 @@ var txToStringMap = map[txType]string{
 	txStake:    "stake",
 	txWithdraw: "withdraw",
 	txSwap:     "swap",
+	txAdmin:    "admin",
+}
+
+var stringToAdminTypeMap = map[string]adminType{
+	"key":        adminKey,
+	"poolstatus": adminPoolStatus,
 }
 
 // converts a string into a txType
@@ -39,6 +54,15 @@ func stringToTxType(s string) (txType, error) {
 		return t, nil
 	}
 	return unknowTx, fmt.Errorf("Invalid tx type: %s", s)
+}
+
+// converts a string into a adminType
+func stringToAdminType(s string) (adminType, error) {
+	sl := strings.ToLower(s)
+	if t, ok := stringToAdminTypeMap[sl]; ok {
+		return t, nil
+	}
+	return adminUnknown, fmt.Errorf("Invalid admin type: %s", s)
 }
 
 // Check if two txTypes are the same
@@ -59,6 +83,9 @@ type Memo interface {
 	GetDestination() string
 	GetSlipLimit() float64
 	GetMemo() string
+	GetAdminType() adminType
+	GetKey() string
+	GetValue() string
 }
 
 type MemoBase struct {
@@ -88,6 +115,13 @@ type SwapMemo struct {
 	Memo        string
 }
 
+type AdminMemo struct {
+	MemoBase
+	Key   string
+	Value string
+	Type  adminType
+}
+
 func ParseMemo(memo string) (Memo, error) {
 	var err error
 	noMemo := MemoBase{}
@@ -101,8 +135,10 @@ func ParseMemo(memo string) (Memo, error) {
 	}
 
 	symbol := strings.ToUpper(parts[1])
-	if err := validateSymbol(symbol); err != nil {
-		return noMemo, err
+	if tx != txAdmin {
+		if err := validateSymbol(symbol); err != nil {
+			return noMemo, err
+		}
 	}
 
 	switch tx {
@@ -151,25 +187,41 @@ func ParseMemo(memo string) (Memo, error) {
 			SlipLimit:   slip,
 			Memo:        mem,
 		}, err
+	case txAdmin:
+		if len(parts) < 4 {
+			return noMemo, fmt.Errorf("Not enough parameters")
+		}
+		a, err := stringToAdminType(parts[1])
+		return AdminMemo{
+			Type:  a,
+			Key:   parts[2],
+			Value: parts[3],
+		}, err
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())
 	}
 }
 
 // Base Functions
-func (m MemoBase) GetType() txType        { return m.TxType }
-func (m MemoBase) IsType(tx txType) bool  { return m.TxType.Equals(tx) }
-func (m MemoBase) GetSymbol() string      { return strings.ToUpper(m.Symbol) }
-func (m MemoBase) GetAmount() string      { return "" }
-func (m MemoBase) GetDestination() string { return "" }
-func (m MemoBase) GetSlipLimit() float64  { return 0 }
-func (m MemoBase) GetMemo() string        { return "" }
+func (m MemoBase) GetType() txType         { return m.TxType }
+func (m MemoBase) IsType(tx txType) bool   { return m.TxType.Equals(tx) }
+func (m MemoBase) GetSymbol() string       { return strings.ToUpper(m.Symbol) }
+func (m MemoBase) GetAmount() string       { return "" }
+func (m MemoBase) GetDestination() string  { return "" }
+func (m MemoBase) GetSlipLimit() float64   { return 0 }
+func (m MemoBase) GetMemo() string         { return "" }
+func (m MemoBase) GetAdminType() adminType { return adminUnknown }
+func (m MemoBase) GetKey() string          { return "" }
+func (m MemoBase) GetValue() string        { return "" }
 
 // Transaction Specific Functions
-func (m WithdrawMemo) GetAmount() string  { return m.Amount }
-func (m SwapMemo) GetDestination() string { return m.Destination }
-func (m SwapMemo) GetSlipLimit() float64  { return m.SlipLimit }
-func (m SwapMemo) GetMemo() string        { return m.Memo }
+func (m WithdrawMemo) GetAmount() string    { return m.Amount }
+func (m SwapMemo) GetDestination() string   { return m.Destination }
+func (m SwapMemo) GetSlipLimit() float64    { return m.SlipLimit }
+func (m SwapMemo) GetMemo() string          { return m.Memo }
+func (m AdminMemo) GetAdminType() adminType { return m.Type }
+func (m AdminMemo) GetKey() string          { return m.Key }
+func (m AdminMemo) GetValue() string        { return m.Value }
 
 // validates the given symbol
 func validateSymbol(sym string) error {
