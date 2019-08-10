@@ -12,9 +12,6 @@ import (
 	"github.com/jpthor/cosmos-swap/config"
 )
 
-// swapRecordKeyPrefix - all swap record store in the datastore need to prefix with this one
-const swapRecordKeyPrefix = `swaprecord-`
-
 func isEmptyString(input string) bool {
 	return strings.TrimSpace(input) == ""
 }

@@ -16,6 +16,8 @@ type dbPrefix string
 
 const (
 	prefixTxHash       dbPrefix = "tx_"
+	prefixSwap         dbPrefix = "swap_"
+	prefixUnStake      dbPrefix = "unstake_"
 	prefixPool         dbPrefix = "pool_"
 	prefixTxOut        dbPrefix = "txout_"
 	prefixTrustAccount dbPrefix = "trustaccount_"
@@ -235,9 +237,9 @@ func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID string, sp StakerPool) {
 // SetSwapRecord save the swap record to store
 func (k Keeper) SetSwapRecord(ctx sdk.Context, sr SwapRecord) error {
 	store := ctx.KVStore(k.storeKey)
-	swapRecordKey := swapRecordKeyPrefix + sr.RequestTxHash
-	ctx.Logger().Debug("upsert swaprecord", "key", swapRecordKey)
-	store.Set([]byte(swapRecordKey), k.cdc.MustMarshalBinaryBare(sr))
+	key := getKey(prefixSwap, sr.RequestTxHash)
+	ctx.Logger().Debug("upsert swaprecord", "key", key)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(sr))
 	return nil
 }
 
@@ -247,16 +249,16 @@ func (k Keeper) GetSwapRecord(ctx sdk.Context, requestTxHash string) (SwapRecord
 		return SwapRecord{}, errors.New("request tx hash is empty")
 	}
 	store := ctx.KVStore(k.storeKey)
-	swapRecordKey := swapRecordKeyPrefix + requestTxHash
-	ctx.Logger().Debug("get swap record", "key", swapRecordKey)
-	if !store.Has([]byte(swapRecordKey)) {
-		ctx.Logger().Debug("record not found", "key", swapRecordKey)
+	key := getKey(prefixSwap, requestTxHash)
+	ctx.Logger().Debug("get swap record", "key", key)
+	if !store.Has([]byte(key)) {
+		ctx.Logger().Debug("record not found", "key", key)
 		return SwapRecord{
 			RequestTxHash: requestTxHash,
 		}, nil
 	}
 	var sw SwapRecord
-	buf := store.Get([]byte(swapRecordKey))
+	buf := store.Get([]byte(key))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &sw); nil != err {
 		return SwapRecord{}, errors.Wrap(err, "fail to unmarshal SwapRecord")
 	}
@@ -282,15 +284,15 @@ func (k Keeper) UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxH
 // GetSwapRecordIterator only iterate swap record
 func (k Keeper) GetSwapRecordIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, []byte(swapRecordKeyPrefix))
+	return sdk.KVStorePrefixIterator(store, []byte(prefixSwap))
 }
 
 // SetUnStakeRecord write an UnStake record to key value store
 func (k Keeper) SetUnStakeRecord(ctx sdk.Context, ur UnstakeRecord) {
 	store := ctx.KVStore(k.storeKey)
-	unStakeRecordKey := unstakeRecordPrefix + ur.RequestTxHash
-	ctx.Logger().Debug("upsert UnStake", "key", unStakeRecordKey)
-	store.Set([]byte(unStakeRecordKey), k.cdc.MustMarshalBinaryBare(ur))
+	key := getKey(prefixUnStake, ur.RequestTxHash)
+	ctx.Logger().Debug("upsert UnStake", "key", key)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ur))
 }
 
 // GetUnStakeRecord query unstake record from Key Value store
@@ -299,16 +301,16 @@ func (k Keeper) GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (Unstake
 		return UnstakeRecord{}, errors.New("request tx hash is empty")
 	}
 	store := ctx.KVStore(k.storeKey)
-	unStakeRecordKey := unstakeRecordPrefix + requestTxHash
-	ctx.Logger().Debug("get UnStake record", "key", unStakeRecordKey)
-	if !store.Has([]byte(unStakeRecordKey)) {
-		ctx.Logger().Debug("record not found", "key", unStakeRecordKey)
+	key := getKey(prefixUnStake, requestTxHash)
+	ctx.Logger().Debug("get UnStake record", "key", key)
+	if !store.Has([]byte(key)) {
+		ctx.Logger().Debug("record not found", "key", key)
 		return UnstakeRecord{
 			RequestTxHash: requestTxHash,
 		}, nil
 	}
 	var ur UnstakeRecord
-	buf := store.Get([]byte(unStakeRecordKey))
+	buf := store.Get([]byte(key))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &ur); nil != err {
 		return UnstakeRecord{}, errors.Wrap(err, "fail to unmarshal UnstakeRecord")
 	}
@@ -335,7 +337,7 @@ func (k Keeper) UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash
 // GetUnstakeRecordIterator only iterate unstake record
 func (k Keeper) GetUnstakeRecordIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, []byte(unstakeRecordPrefix))
+	return sdk.KVStorePrefixIterator(store, []byte(prefixUnStake))
 }
 
 // IsTrustAccount check whether the account is trust , and can send tx
