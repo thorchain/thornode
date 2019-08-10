@@ -16,14 +16,6 @@ func (s *MemoSuite) TestTxType(c *C) {
 	}
 }
 
-func (s *MemoSuite) TestValidateDestination(c *C) {
-	c.Check(validateDestination("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"), IsNil)
-	c.Check(validateDestination("tbnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"), IsNil)
-	c.Check(validateDestination("1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"), NotNil)
-	c.Check(validateDestination("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6X"), NotNil)
-	c.Check(validateDestination("bogus"), NotNil)
-}
-
 func (s *MemoSuite) TestValidateSymbol(c *C) {
 	c.Check(validateSymbol("BNB"), IsNil)
 	c.Check(validateSymbol("RUNE-1BA"), IsNil)
@@ -53,7 +45,7 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
-	c.Check(memo.GetDestination(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit(), Equals, 8.7)
 	c.Check(memo.GetMemo(), Equals, "hello to : : the world!")
 
@@ -61,7 +53,7 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
-	c.Check(memo.GetDestination(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit(), Equals, 0.0)
 	c.Check(memo.GetMemo(), Equals, "")
 
@@ -69,7 +61,7 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
-	c.Check(memo.GetDestination(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit(), Equals, 0.0)
 	c.Check(memo.GetMemo(), Equals, "hi")
 

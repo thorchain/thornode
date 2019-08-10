@@ -126,15 +126,16 @@ func NewBnbAddress(address string) (BnbAddress, error) {
 	}
 
 	// trim the prefix from our address
+	var suffix string
 	for _, pref := range prefixes {
 		if strings.HasPrefix(address, pref) {
-			address = strings.TrimLeft(address, pref)
+			suffix = strings.TrimLeft(address, pref)
 			break
 		}
 	}
 
 	// check address length is valid
-	if len(address) != 39 {
+	if len(suffix) != 39 {
 		return "", fmt.Errorf("Address length is not correct")
 	}
 
