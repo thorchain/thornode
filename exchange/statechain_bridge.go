@@ -38,7 +38,7 @@ func NewStatechainBridge(clictx *context.CLIContext) (*StatechainBridge, error) 
 // in this service,we might need to keep a map between the sender address of binance chain
 // and the address in statechain, if it doesn't exist, we create it automatically
 // thus we can keep a record of who stake what? and how much
-func (b *StatechainBridge) Stake(name string, ticker st.Ticker, r, token, publicAddress, requestTxHash string, owner sdk.AccAddress, passphrase, memo string) (string, error) {
+func (b *StatechainBridge) Stake(name string, ticker st.Ticker, r, token st.Amount, publicAddress, requestTxHash string, owner sdk.AccAddress, passphrase, memo string) (string, error) {
 	if len(memo) > 0 {
 		viper.Set(flags.FlagMemo, memo)
 	}
@@ -70,7 +70,7 @@ func (b *StatechainBridge) Stake(name string, ticker st.Ticker, r, token, public
 // SendSwap send swap request to statechain
 // first return parameter is txHash
 
-func (b *StatechainBridge) SendSwap(requestTxHash st.TxID, source, target st.Ticker, amount, requester, destination string, owner sdk.AccAddress, passphrase, memo, tradeSliplimit string) (string, error) {
+func (b *StatechainBridge) SendSwap(requestTxHash st.TxID, source, target st.Ticker, amount st.Amount, requester, destination string, owner sdk.AccAddress, passphrase, memo, tradeSliplimit string) (string, error) {
 	if len(memo) > 0 {
 		viper.Set(flags.FlagMemo, memo)
 	}

@@ -68,10 +68,10 @@ func GetPoolStatus(ps string) PoolStatus {
 // PoolStruct is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
 type PoolStruct struct {
-	BalanceRune  string     `json:"balance_rune"`  // how many RUNE in the pool
-	BalanceToken string     `json:"balance_token"` // how many token in the pool
+	BalanceRune  Amount     `json:"balance_rune"`  // how many RUNE in the pool
+	BalanceToken Amount     `json:"balance_token"` // how many token in the pool
 	Ticker       Ticker     `json:"ticker"`        // what's the token's ticker
-	PoolUnits    string     `json:"pool_units"`    // total units of the pool
+	PoolUnits    Amount     `json:"pool_units"`    // total units of the pool
 	PoolAddress  string     `json:"pool_address"`  // pool address on binance chain
 	Status       PoolStatus `json:"status"`        // status
 }
@@ -79,9 +79,9 @@ type PoolStruct struct {
 // NewPoolStruct Returns a new PoolStruct
 func NewPoolStruct() PoolStruct {
 	return PoolStruct{
-		BalanceRune:  "0",
-		BalanceToken: "0",
-		PoolUnits:    "0",
+		BalanceRune:  ZeroAmount,
+		BalanceToken: ZeroAmount,
+		PoolUnits:    ZeroAmount,
 		Status:       Bootstrap,
 	}
 }
@@ -93,10 +93,10 @@ func (ps PoolStruct) Empty() bool {
 // String implement fmt.Stringer
 func (ps PoolStruct) String() string {
 	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintln("rune-balance: " + ps.BalanceRune))
-	sb.WriteString(fmt.Sprintln("token-balance: " + ps.BalanceToken))
-	sb.WriteString(fmt.Sprintln("ticker: " + ps.Ticker))
-	sb.WriteString(fmt.Sprintln("pool-units: " + ps.PoolUnits))
+	sb.WriteString(fmt.Sprintln("rune-balance: " + ps.BalanceRune.String()))
+	sb.WriteString(fmt.Sprintln("token-balance: " + ps.BalanceToken.String()))
+	sb.WriteString(fmt.Sprintln("ticker: " + ps.Ticker.String()))
+	sb.WriteString(fmt.Sprintln("pool-units: " + ps.PoolUnits.String()))
 	sb.WriteString(fmt.Sprintln("pool-address: " + ps.PoolAddress))
 	sb.WriteString(fmt.Sprintln("status: " + ps.Status.String()))
 	return sb.String()

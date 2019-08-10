@@ -82,7 +82,17 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSetStakeData(args[0], ticker, args[2], args[3], args[4], txID, cliCtx.GetFromAddress())
+			runeAmt, err := types.NewAmount(args[2])
+			if err != nil {
+				return err
+			}
+
+			tokenAmt, err := types.NewAmount(args[3])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetStakeData(args[0], ticker, runeAmt, tokenAmt, args[4], txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -146,7 +156,12 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSwap(txID, source, target, args[3], args[4], args[5], args[6], cliCtx.GetFromAddress())
+			amt, err := types.NewAmount(args[3])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSwap(txID, source, target, amt, args[4], args[5], args[6], cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -175,7 +190,12 @@ func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSetUnStake(args[0], args[1], args[2], ticker, txID, cliCtx.GetFromAddress())
+			percentage, err := types.NewAmount(args[2])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetUnStake(args[0], args[1], percentage, ticker, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err

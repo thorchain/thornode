@@ -1,8 +1,6 @@
 package swapservice
 
 import (
-	"strconv"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 )
@@ -11,7 +9,7 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 	if isEmptyString(msg.PublicAddress) {
 		return errors.New("empty public address")
 	}
-	if isEmptyString(msg.Percentage) {
+	if msg.Percentage.Empty() {
 		return errors.New("empty percentage")
 	}
 	if msg.RequestTxHash.Empty() {
@@ -20,10 +18,7 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 	if msg.Ticker.Empty() {
 		return errors.New("empty ticker")
 	}
-	fPercentage, err := strconv.ParseFloat(msg.Percentage, 64)
-	if nil != err {
-		return errors.Wrapf(err, "percentage %s is invalid ", msg.Percentage)
-	}
+	fPercentage := msg.Percentage.Float64()
 	if fPercentage <= 0 || fPercentage > 100 {
 		return errors.Errorf("percentage %s is invalid", msg.Percentage)
 	}
@@ -35,14 +30,11 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 }
 
 // unstake withdraw all the asset
-func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (string, string, error) {
+func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (Amount, Amount, error) {
 	if err := validateUnstake(ctx, keeper, msg); nil != err {
 		return "0", "0", err
 	}
-	fPercentage, err := strconv.ParseFloat(msg.Percentage, 64)
-	if nil != err {
-		return "0", "0", errors.Wrapf(err, " %s is invalid percentage", msg.Percentage)
-	}
+	fPercentage := msg.Percentage.Float64()
 	// here fBalance should be valid , because we did the validation above
 	pool := keeper.GetPoolStruct(ctx, msg.Ticker)
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Ticker)
@@ -55,23 +47,12 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (string, string,
 		return "0", "0", errors.Wrap(err, "can't find staker pool")
 
 	}
-	poolUnits, err := strconv.ParseFloat(pool.PoolUnits, 64)
-	if nil != err {
-		return "0", "0", errors.Wrapf(err, "poolUnits :%s is not valid", pool.PoolUnits)
-	}
-	poolRune, err := strconv.ParseFloat(pool.BalanceRune, 64)
-	if nil != err {
-		return "0", "0", errors.Wrapf(err, "pool RUNE balance (%s) is not valid", pool.BalanceRune)
-	}
-	poolToken, err := strconv.ParseFloat(pool.BalanceToken, 64)
-	if nil != err {
-		return "0", "0", errors.Wrapf(err, "pool token balance (%s) is invalid", pool.BalanceToken)
-	}
+	poolUnits := pool.PoolUnits.Float64()
+	poolRune := pool.BalanceRune.Float64()
+	poolToken := pool.BalanceToken.Float64()
 	stakerUnit := poolStaker.GetStakerUnit(msg.PublicAddress)
-	fStakerUnit, err := strconv.ParseFloat(stakerUnit.Units, 64)
-	if nil != err {
-		return "0", "0", errors.Wrapf(err, "staker unit (%s) is invalid", stakerUnit.Units)
-	}
+	fStakerUnit := stakerUnit.Units.Float64()
+
 	ctx.Logger().Info("pool before unstake", "pool unit", poolUnits, "balance RUNE", poolRune, "balance token", poolToken)
 	ctx.Logger().Info("staker before withdraw", "staker unit", fStakerUnit)
 	withdrawRune, withDrawToken, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolToken, fStakerUnit, fPercentage)
@@ -80,9 +61,9 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (string, string,
 	}
 	ctx.Logger().Info("client withdraw", "RUNE", withdrawRune, "token", withDrawToken, "units left", unitAfter)
 	// update pool
-	pool.PoolUnits = float64ToString(poolUnits - fStakerUnit + unitAfter)
-	pool.BalanceRune = float64ToString(poolRune - withdrawRune)
-	pool.BalanceToken = float64ToString(poolToken - withDrawToken)
+	pool.PoolUnits = NewAmountFromFloat(poolUnits - fStakerUnit + unitAfter)
+	pool.BalanceRune = NewAmountFromFloat(poolRune - withdrawRune)
+	pool.BalanceToken = NewAmountFromFloat(poolToken - withDrawToken)
 	ctx.Logger().Info("pool after unstake", "pool unit", pool.PoolUnits, "balance RUNE", pool.BalanceRune, "balance token", pool.BalanceToken)
 	// update pool staker
 	poolStaker.TotalUnits = pool.PoolUnits
@@ -90,14 +71,14 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (string, string,
 		// just remove it
 		poolStaker.RemoveStakerUnit(msg.PublicAddress)
 	} else {
-		stakerUnit.Units = float64ToString(unitAfter)
+		stakerUnit.Units = NewAmountFromFloat(unitAfter)
 		poolStaker.UpsertStakerUnit(stakerUnit)
 	}
 	if unitAfter <= 0 {
 		stakerPool.RemoveStakerPoolItem(msg.Ticker)
 	} else {
 		spi := stakerPool.GetStakerPoolItem(msg.Ticker)
-		spi.Units = float64ToString(unitAfter)
+		spi.Units = NewAmountFromFloat(unitAfter)
 		stakerPool.UpsertStakerPoolItem(spi)
 	}
 	// update staker pool
@@ -110,10 +91,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (string, string,
 		PublicAddress: msg.PublicAddress,
 		Percentage:    msg.Percentage,
 	})
-	return float64ToString(withdrawRune), float64ToString(withDrawToken), nil
-}
-func float64ToString(fvalue float64) string {
-	return strconv.FormatFloat(fvalue, 'f', floatPrecision, 64)
+	return NewAmountFromFloat(withdrawRune), NewAmountFromFloat(withDrawToken), nil
 }
 
 func calculateUnstake(poolUnit, poolRune, poolToken, stakerUnit, percentage float64) (float64, float64, float64, error) {

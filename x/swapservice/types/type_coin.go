@@ -5,5 +5,5 @@ package types
 // TODO remove this struct, and replace it with sdk.Coin
 type Coin struct {
 	Denom  Ticker `json:"denom"`
-	Amount string `json:"amount"`
+	Amount Amount `json:"amount"`
 }
