@@ -12,7 +12,6 @@ const (
 	PoolEnabled      = types.Enabled
 	PoolBootstrap    = types.Bootstrap
 	PoolSuspended    = types.Suspended
-	RuneTicker       = types.RuneTicker
 )
 
 var (
@@ -28,6 +27,9 @@ var (
 	NewPoolStaker        = types.NewPoolStaker
 	NewStakerPool        = types.NewStakerPool
 	GetPoolStatus        = types.GetPoolStatus
+	IsRune               = types.IsRune
+	NewTicker            = types.NewTicker
+	RuneTicker           = types.RuneTicker
 	ModuleCdc            = types.ModuleCdc
 	RegisterCodec        = types.RegisterCodec
 )
@@ -55,5 +57,6 @@ type (
 	TxOutItem           = types.TxOutItem
 	TxOut               = types.TxOut
 	Coin                = types.Coin
+	Ticker              = types.Ticker
 	AdminConfig         = types.AdminConfig
 )

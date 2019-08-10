@@ -121,8 +121,14 @@ func setStakeDataHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		ticker, err := types.NewTicker(req.Ticker)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		// create the message
-		msg := types.NewMsgSetStakeData(req.Name, req.Ticker, req.Rune, req.Token, req.PublicAddress, req.RequestTxHash, cliCtx.GetFromAddress())
+		msg := types.NewMsgSetStakeData(req.Name, ticker, req.Rune, req.Token, req.PublicAddress, req.RequestTxHash, cliCtx.GetFromAddress())
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

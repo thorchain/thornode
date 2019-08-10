@@ -12,6 +12,7 @@ import (
 
 	app "github.com/jpthor/cosmos-swap"
 	"github.com/jpthor/cosmos-swap/exchange"
+	"github.com/jpthor/cosmos-swap/x/swapservice/types"
 )
 
 // getTxDetailCmd
@@ -88,7 +89,18 @@ func getTestSwap() *cobra.Command {
 			if nil != err {
 				return errors.Wrap(err, "fail to create statechain bridge")
 			}
-			txHash, err := sb.SendSwap(args[0], args[1], args[2], args[3], args[4], args[5], clictx.GetFromAddress(), "welcome@1", "", args[6])
+
+			source, err := types.NewTicker(args[1])
+			if err != nil {
+				return err
+			}
+
+			target, err := types.NewTicker(args[2])
+			if err != nil {
+				return err
+			}
+
+			txHash, err := sb.SendSwap(args[0], source, target, args[3], args[4], args[5], clictx.GetFromAddress(), "welcome@1", "", args[6])
 			if nil != err {
 				return errors.Wrap(err, "fail to send tx to statechain")
 			}

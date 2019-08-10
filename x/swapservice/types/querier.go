@@ -11,7 +11,7 @@ type QueryResPoolStructs []PoolStruct
 func (n QueryResPoolStructs) String() string {
 	var tickers []string
 	for _, record := range n {
-		tickers = append(tickers, record.Ticker)
+		tickers = append(tickers, record.Ticker.String())
 	}
 	return strings.Join(tickers[:], "\n")
 }
