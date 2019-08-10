@@ -16,7 +16,7 @@ type StakeTxDetail struct {
 // StakerPoolItem represent the staker's activity in a pool
 // Staker can stake on multiple pool
 type StakerPoolItem struct {
-	Ticker       string          `json:"ticker"`
+	Ticker       Ticker          `json:"ticker"`
 	Units        string          `json:"units"`
 	StakeDetails []StakeTxDetail `json:"stake_details"`
 }
@@ -88,9 +88,9 @@ func (sp StakerPool) String() string {
 }
 
 // GetStakerPoolItem return the StakerPoolItem with given pool id
-func (sp *StakerPool) GetStakerPoolItem(ticker string) *StakerPoolItem {
+func (sp *StakerPool) GetStakerPoolItem(ticker Ticker) *StakerPoolItem {
 	for _, item := range sp.PoolUnits {
-		if strings.EqualFold(item.Ticker, ticker) {
+		if ticker.Equals(item.Ticker) {
 			return item
 		}
 	}
@@ -102,10 +102,10 @@ func (sp *StakerPool) GetStakerPoolItem(ticker string) *StakerPoolItem {
 }
 
 // RemoveStakerPoolItem delete the stakerpoolitem with given pool id from the struct
-func (sp *StakerPool) RemoveStakerPoolItem(ticker string) {
+func (sp *StakerPool) RemoveStakerPoolItem(ticker Ticker) {
 	deleteIdx := -1
 	for idx, item := range sp.PoolUnits {
-		if strings.EqualFold(item.Ticker, ticker) {
+		if item.Ticker.Equals(ticker) {
 			deleteIdx = idx
 		}
 	}
@@ -122,7 +122,7 @@ func (sp *StakerPool) RemoveStakerPoolItem(ticker string) {
 func (sp *StakerPool) UpsertStakerPoolItem(stakerPoolItem *StakerPoolItem) {
 	pos := -1
 	for idx, item := range sp.PoolUnits {
-		if strings.EqualFold(item.Ticker, stakerPoolItem.Ticker) {
+		if item.Ticker.Equals(stakerPoolItem.Ticker) {
 			pos = idx
 		}
 	}

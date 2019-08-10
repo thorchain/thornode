@@ -50,11 +50,11 @@ func processRefund(result sdk.Result, store *TxOutStore, msg sdk.Msg) {
 			ToAddress: m.PublicAddress,
 		}
 		toi.Coins = append(toi.Coins, Coin{
-			Denom:  RuneTicker,
+			Denom:  RuneTicker.String(),
 			Amount: m.Rune,
 		})
 		toi.Coins = append(toi.Coins, Coin{
-			Denom:  m.Ticker,
+			Denom:  m.Ticker.String(),
 			Amount: m.Token,
 		})
 		store.AddTxOutItem(toi)
@@ -63,7 +63,7 @@ func processRefund(result sdk.Result, store *TxOutStore, msg sdk.Msg) {
 			ToAddress: m.Requester,
 		}
 		toi.Coins = append(toi.Coins, Coin{
-			Denom:  m.SourceTicker,
+			Denom:  m.SourceTicker.String(),
 			Amount: m.Amount,
 		})
 		store.AddTxOutItem(toi)
@@ -176,7 +176,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, setting *config.Settings, txO
 		ToAddress: msg.Destination,
 	}
 	toi.Coins = append(toi.Coins, Coin{
-		Denom:  msg.TargetTicker,
+		Denom:  msg.TargetTicker.String(),
 		Amount: amount,
 	})
 	txOutStore.AddTxOutItem(toi)
@@ -243,11 +243,11 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ToAddress: msg.PublicAddress,
 	}
 	toi.Coins = append(toi.Coins, Coin{
-		Denom:  RuneTicker,
+		Denom:  RuneTicker.String(),
 		Amount: runeAmt,
 	})
 	toi.Coins = append(toi.Coins, Coin{
-		Denom:  msg.Ticker,
+		Denom:  msg.Ticker.String(),
 		Amount: tokenAmount,
 	})
 	txOutStore.AddTxOutItem(toi)
@@ -325,16 +325,24 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 		// interpret the memo and initialize a corresponding msg event
 		switch memo.(type) {
 		case CreateMemo:
-			if keeper.PoolExist(ctx, memo.GetSymbol()) {
+			ticker, err := NewTicker(memo.GetSymbol())
+			if err != nil {
+				return sdk.ErrUnknownRequest(err.Error()).Result()
+			}
+			if keeper.PoolExist(ctx, ticker) {
 				return sdk.ErrUnknownRequest("Pool already exists").Result()
 			}
 			newMsg = NewMsgSetPoolData(
-				memo.GetSymbol(),
+				ticker,
 				"TODO: pool address", // prob can be hard coded since its a single pool
 				PoolSuspended,        // new pools start in a suspended state
 				msg.Signer,
 			)
 		case StakeMemo:
+			ticker, err := NewTicker(memo.GetSymbol())
+			if err != nil {
+				return sdk.ErrUnknownRequest(err.Error()).Result()
+			}
 			runeAmount := "0"
 			tokenAmount := "0"
 			for _, coin := range tx.Coins {
@@ -346,7 +354,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 			}
 			newMsg = NewMsgSetStakeData(
 				"TODO: Name",
-				memo.GetSymbol(),
+				ticker,
 				tokenAmount,
 				runeAmount,
 				tx.Sender,
@@ -356,13 +364,17 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 		case AdminMemo:
 
 			if memo.GetAdminType() == adminPoolStatus {
-				pool := keeper.GetPoolStruct(ctx, memo.GetKey())
+				ticker, err := NewTicker(memo.GetKey())
+				if err != nil {
+					return sdk.ErrUnknownRequest(err.Error()).Result()
+				}
+				pool := keeper.GetPoolStruct(ctx, ticker)
 				if pool.Empty() {
 					return sdk.ErrUnknownRequest("Pool doesn't exist").Result()
 				}
 				status := GetPoolStatus(memo.GetValue())
 				newMsg = NewMsgSetPoolData(
-					memo.GetKey(),
+					ticker,
 					pool.PoolAddress,
 					status,
 					msg.Signer,

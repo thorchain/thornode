@@ -48,8 +48,13 @@ func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgSetPoolData(args[0], args[1], types.GetPoolStatus(args[3]), cliCtx.GetFromAddress())
-			err := msg.ValidateBasic()
+			ticker, err := types.NewTicker(args[0])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetPoolData(ticker, args[1], types.GetPoolStatus(args[3]), cliCtx.GetFromAddress())
+			err = msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
@@ -67,8 +72,13 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			msg := types.NewMsgSetStakeData(args[0], args[1], args[2], args[3], args[4], args[5], cliCtx.GetFromAddress())
-			err := msg.ValidateBasic()
+			ticker, err := types.NewTicker(args[1])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetStakeData(args[0], ticker, args[2], args[3], args[4], args[5], cliCtx.GetFromAddress())
+			err = msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
@@ -105,8 +115,18 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			msg := types.NewMsgSwap(args[0], args[1], args[2], args[3], args[4], args[5], args[6], cliCtx.GetFromAddress())
-			err := msg.ValidateBasic()
+			source, err := types.NewTicker(args[1])
+			if err != nil {
+				return err
+			}
+
+			target, err := types.NewTicker(args[2])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSwap(args[0], source, target, args[3], args[4], args[5], args[6], cliCtx.GetFromAddress())
+			err = msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
@@ -124,8 +144,13 @@ func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			msg := types.NewMsgSetUnStake(args[0], args[1], args[2], args[3], args[4], cliCtx.GetFromAddress())
-			err := msg.ValidateBasic()
+			ticker, err := types.NewTicker(args[3])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetUnStake(args[0], args[1], args[2], ticker, args[4], cliCtx.GetFromAddress())
+			err = msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
