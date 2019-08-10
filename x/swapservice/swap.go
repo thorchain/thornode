@@ -115,7 +115,9 @@ func swapOne(ctx sdk.Context,
 	}
 
 	pool := keeper.GetPoolStruct(ctx, ticker)
-
+	if pool.Status != PoolEnabled {
+		return "0", errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
+	}
 	balanceRune, err := strconv.ParseFloat(pool.BalanceRune, 64)
 	if err != nil {
 		return "0", errors.Wrapf(err, "pool rune balance %s is invalid", pool.BalanceRune)
