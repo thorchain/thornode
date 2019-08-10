@@ -7,8 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const unstakeRecordPrefix = `unstakerecord-`
-
 func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 	if isEmptyString(msg.PublicAddress) {
 		return errors.New("empty public address")
