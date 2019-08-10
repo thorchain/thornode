@@ -3,7 +3,7 @@ package types
 // TxOut is a structure represent all the tx we need to return to client
 type TxOut struct {
 	Height  int64        `json:"height"`
-	Hash    string       `json:"hash"`
+	Hash    TxID         `json:"hash"`
 	TxArray []*TxOutItem `json:"tx_array"`
 }
 

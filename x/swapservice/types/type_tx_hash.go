@@ -12,15 +12,15 @@ const (
 
 // Meant to track if we have processed a specific binance tx
 type TxHash struct {
-	Request string    `json:"request"` // binance chain request tx hash
+	Request TxID      `json:"request"` // binance chain request tx hash
 	Status  status    `json:"status"`
-	Done    string    `json:"txhash"` // completed binance chain tx hash
+	Done    TxID      `json:"txhash"` // completed binance chain tx hash
 	Memo    string    `json:"memo"`   // memo
 	Coins   sdk.Coins `json:"coins"`  // coins sent in tx
 	Sender  string    `json:"sender"`
 }
 
-func NewTxHash(hash string, coins sdk.Coins, memo, sender string) TxHash {
+func NewTxHash(hash TxID, coins sdk.Coins, memo, sender string) TxHash {
 	return TxHash{
 		Request: hash,
 		Coins:   coins,
@@ -31,24 +31,24 @@ func NewTxHash(hash string, coins sdk.Coins, memo, sender string) TxHash {
 }
 
 func (tx TxHash) Empty() bool {
-	return tx.Request == ""
+	return tx.Request.Empty()
 }
 
 func (tx TxHash) String() string {
-	return tx.Request
+	return tx.Request.String()
 }
 
 // Generate db key for kvstore
 func (tx TxHash) Key() string {
-	return tx.Request
+	return tx.Request.String()
 }
 
-func (tx *TxHash) SetDone(hash string) {
+func (tx *TxHash) SetDone(hash TxID) {
 	tx.Status = Done
 	tx.Done = hash
 }
 
-func (tx *TxHash) SetReverted(hash string) {
+func (tx *TxHash) SetReverted(hash TxID) {
 	tx.Status = Reverted
 	tx.Done = hash
 }

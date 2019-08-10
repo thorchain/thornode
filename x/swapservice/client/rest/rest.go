@@ -82,7 +82,12 @@ func txHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 		txHashes := make([]types.TxHash, len(req.TxArray))
 		for i, tx := range req.TxArray {
-			txHashes[i] = types.NewTxHash(tx.TxHash, tx.Coins, tx.Memo, tx.Sender)
+			txID, err := types.NewTxID(tx.TxHash)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
+			txHashes[i] = types.NewTxHash(txID, tx.Coins, tx.Memo, tx.Sender)
 		}
 
 		// create the message
@@ -127,8 +132,13 @@ func setStakeDataHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		txID, err := types.NewTxID(req.RequestTxHash)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+		}
+
 		// create the message
-		msg := types.NewMsgSetStakeData(req.Name, ticker, req.Rune, req.Token, req.PublicAddress, req.RequestTxHash, cliCtx.GetFromAddress())
+		msg := types.NewMsgSetStakeData(req.Name, ticker, req.Rune, req.Token, req.PublicAddress, txID, cliCtx.GetFromAddress())
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

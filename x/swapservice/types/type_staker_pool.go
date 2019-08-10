@@ -8,7 +8,7 @@ import (
 // StakeTxDetail represent all the stake activity
 // Staker can stake on the same pool for multiple times
 type StakeTxDetail struct {
-	RequestTxHash string `json:"request_tx_hash"` // the tx hash from binance chain , represent staker send token to the pool
+	RequestTxHash TxID   `json:"request_tx_hash"` // the tx hash from binance chain , represent staker send token to the pool
 	RuneAmount    string `json:"rune_amount"`     // amount of rune that send in at the time
 	TokenAmount   string `json:"token_amount"`    // amount of token that send in at the time
 }
@@ -134,7 +134,7 @@ func (sp *StakerPool) UpsertStakerPoolItem(stakerPoolItem *StakerPoolItem) {
 }
 
 // AddStakerTxDetail to the StakerPool structure
-func (spi *StakerPoolItem) AddStakerTxDetail(requestTxHash, runeAmount, tokenAmount string) {
+func (spi *StakerPoolItem) AddStakerTxDetail(requestTxHash TxID, runeAmount, tokenAmount string) {
 	std := StakeTxDetail{
 		RequestTxHash: requestTxHash,
 		RuneAmount:    runeAmount,

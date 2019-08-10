@@ -27,7 +27,7 @@ func NewTicker(ticker string) (Ticker, error) {
 }
 
 func (t Ticker) Equals(t2 Ticker) bool {
-	return strings.EqualFold(string(t), string(t2))
+	return strings.EqualFold(t.String(), t2.String())
 }
 
 func (t Ticker) Empty() bool {
@@ -41,4 +41,25 @@ func (t Ticker) String() string {
 
 func IsRune(ticker Ticker) bool {
 	return ticker.Equals(RuneTicker)
+}
+
+type TxID string
+
+func NewTxID(hash string) (TxID, error) {
+	if len(hash) != 64 {
+		return TxID(""), fmt.Errorf("TxID Error: Must be 64 characters (got %d)", len(hash))
+	}
+	return TxID(strings.ToUpper(hash)), nil
+}
+
+func (tx TxID) Equals(tx2 TxID) bool {
+	return strings.EqualFold(tx.String(), tx2.String())
+}
+
+func (tx TxID) Empty() bool {
+	return strings.TrimSpace(tx.String()) == ""
+}
+
+func (tx TxID) String() string {
+	return string(tx)
 }

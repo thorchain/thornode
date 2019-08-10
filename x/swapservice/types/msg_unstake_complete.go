@@ -6,14 +6,14 @@ import (
 
 // MsgUnStakeComplete set an unstake to complete state
 type MsgUnStakeComplete struct {
-	RequestTxHash  string `json:"request_tx_hash"`  // the request tx hash from binance chain to request the unstake
-	CompleteTxHash string `json:"complete_tx_hash"` // the tx hash we send token back to user on binance chain
+	RequestTxHash  TxID `json:"request_tx_hash"`  // the request tx hash from binance chain to request the unstake
+	CompleteTxHash TxID `json:"complete_tx_hash"` // the tx hash we send token back to user on binance chain
 	Owner          sdk.AccAddress
 }
 
 // NewMsgUnStakeComplete create a new instance of MsgUnStakeComplete
 // the message is used to mark a unstake as complete record the tx hash on binance chain which indicate we pay user accordingly for audit purpose
-func NewMsgUnStakeComplete(requestTxHash, completeTxHash string, owner sdk.AccAddress) MsgUnStakeComplete {
+func NewMsgUnStakeComplete(requestTxHash, completeTxHash TxID, owner sdk.AccAddress) MsgUnStakeComplete {
 	return MsgUnStakeComplete{
 		RequestTxHash:  requestTxHash,
 		CompleteTxHash: completeTxHash,
@@ -29,10 +29,10 @@ func (msg MsgUnStakeComplete) Type() string { return "set_unstake_complete" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgUnStakeComplete) ValidateBasic() sdk.Error {
-	if len(msg.RequestTxHash) == 0 {
+	if msg.RequestTxHash.Empty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
-	if len(msg.CompleteTxHash) == 0 {
+	if msg.CompleteTxHash.Empty() {
 		return sdk.ErrUnknownRequest("tx hash for paying user can't be empty")
 	}
 	return nil

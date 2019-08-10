@@ -77,7 +77,12 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSetStakeData(args[0], ticker, args[2], args[3], args[4], args[5], cliCtx.GetFromAddress())
+			txID, err := types.NewTxID(args[5])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetStakeData(args[0], ticker, args[2], args[3], args[4], txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -96,8 +101,19 @@ func GetCmdSwapComplete(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			msg := types.NewMsgSwapComplete(args[0], args[1], cliCtx.GetFromAddress())
-			err := msg.ValidateBasic()
+
+			request, err := types.NewTxID(args[0])
+			if err != nil {
+				return err
+			}
+
+			pay, err := types.NewTxID(args[1])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSwapComplete(request, pay, cliCtx.GetFromAddress())
+			err = msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
@@ -125,7 +141,12 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSwap(args[0], source, target, args[3], args[4], args[5], args[6], cliCtx.GetFromAddress())
+			txID, err := types.NewTxID(args[0])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSwap(txID, source, target, args[3], args[4], args[5], args[6], cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -149,7 +170,12 @@ func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSetUnStake(args[0], args[1], args[2], ticker, args[4], cliCtx.GetFromAddress())
+			txID, err := types.NewTxID(args[4])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetUnStake(args[0], args[1], args[2], ticker, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -168,8 +194,19 @@ func GetCmdUnStakeComplete(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			msg := types.NewMsgUnStakeComplete(args[0], args[1], cliCtx.GetFromAddress())
-			err := msg.ValidateBasic()
+
+			request, err := types.NewTxID(args[0])
+			if err != nil {
+				return err
+			}
+
+			pay, err := types.NewTxID(args[1])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgUnStakeComplete(request, pay, cliCtx.GetFromAddress())
+			err = msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
@@ -192,7 +229,12 @@ func GetCmdSetTxHash(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			tx := types.NewTxHash(args[0], coins, args[2], args[3])
+			txID, err := types.NewTxID(args[0])
+			if err != nil {
+				return err
+			}
+
+			tx := types.NewTxHash(txID, coins, args[2], args[3])
 			msg := types.NewMsgSetTxHash([]types.TxHash{tx}, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {

@@ -14,7 +14,7 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 	if isEmptyString(msg.Percentage) {
 		return errors.New("empty percentage")
 	}
-	if isEmptyString(msg.RequestTxHash) {
+	if msg.RequestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
 	if msg.Ticker.Empty() {
@@ -140,11 +140,11 @@ func calculateUnstake(poolUnit, poolRune, poolToken, stakerUnit, percentage floa
 }
 
 // unStakeComplete  mark a swap to be in complete state
-func unStakeComplete(ctx sdk.Context, keeper poolStorage, requestTxHash, completeTxHash string) error {
-	if isEmptyString(requestTxHash) {
+func unStakeComplete(ctx sdk.Context, keeper poolStorage, requestTxHash, completeTxHash TxID) error {
+	if requestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
-	if isEmptyString(completeTxHash) {
+	if completeTxHash.Empty() {
 		return errors.New("complete tx hash is empty")
 	}
 	return keeper.UpdateUnStakeRecordCompleteTxHash(ctx, requestTxHash, completeTxHash)
