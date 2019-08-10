@@ -51,11 +51,11 @@ func processRefund(result sdk.Result, store *TxOutStore, msg sdk.Msg) {
 		}
 		toi.Coins = append(toi.Coins, Coin{
 			Denom:  RuneTicker,
-			Amount: m.Rune,
+			Amount: m.RuneAmount,
 		})
 		toi.Coins = append(toi.Coins, Coin{
 			Denom:  m.Ticker,
-			Amount: m.Token,
+			Amount: m.TokenAmount,
 		})
 		store.AddTxOutItem(toi)
 	case MsgSwap:
@@ -126,8 +126,8 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		ctx,
 		keeper,
 		msg.Ticker,
-		msg.Rune,
-		msg.Token,
+		msg.RuneAmount,
+		msg.TokenAmount,
 		msg.PublicAddress,
 		msg.RequestTxHash); err != nil {
 		ctx.Logger().Error("fail to process stake message", err)
@@ -164,7 +164,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, setting *config.Settings, txO
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
-		Token string `json:"token"`
+		Token Amount `json:"token"`
 	}{
 		Token: amount,
 	})
@@ -229,8 +229,8 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		return sdk.ErrInternal("fail to process UnStake request").Result()
 	}
 	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
-		Rune  string `json:"rune"`
-		Token string `json:"token"`
+		Rune  Amount `json:"rune"`
+		Token Amount `json:"token"`
 	}{
 		Rune:  runeAmt,
 		Token: tokenAmount,
@@ -286,7 +286,7 @@ func refundTx(tx TxHash, store *TxOutStore) {
 	for _, item := range tx.Coins {
 		toi.Coins = append(toi.Coins, Coin{
 			Denom:  Ticker(item.Denom),
-			Amount: fmt.Sprintf("%f", item.Amount),
+			Amount: Amount(item.Amount.String()),
 		})
 	}
 	store.AddTxOutItem(toi)
@@ -343,13 +343,19 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 			if err != nil {
 				return sdk.ErrUnknownRequest(err.Error()).Result()
 			}
-			runeAmount := "0"
-			tokenAmount := "0"
+			runeAmount := ZeroAmount
+			tokenAmount := ZeroAmount
 			for _, coin := range tx.Coins {
 				if coin.Denom == "RUNE-B1A" {
-					runeAmount = fmt.Sprintf("%s", coin.Amount)
+					runeAmount, err = NewAmount(fmt.Sprintf("%f", coin.Amount))
+					if err != nil {
+						return sdk.ErrUnknownRequest(err.Error()).Result()
+					}
 				} else {
-					tokenAmount = fmt.Sprintf("%s", coin.Amount)
+					tokenAmount, err = NewAmount(fmt.Sprintf("%f", coin.Amount))
+					if err != nil {
+						return sdk.ErrUnknownRequest(err.Error()).Result()
+					}
 				}
 			}
 			newMsg = NewMsgSetStakeData(

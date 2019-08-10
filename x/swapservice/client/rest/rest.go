@@ -135,10 +135,23 @@ func setStakeDataHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		txID, err := types.NewTxID(req.RequestTxHash)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		runeAmount, err := types.NewAmount(req.Rune)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		tokenAmount, err := types.NewAmount(req.Token)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
 		}
 
 		// create the message
-		msg := types.NewMsgSetStakeData(req.Name, ticker, req.Rune, req.Token, req.PublicAddress, txID, cliCtx.GetFromAddress())
+		msg := types.NewMsgSetStakeData(req.Name, ticker, runeAmount, tokenAmount, req.PublicAddress, txID, cliCtx.GetFromAddress())
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

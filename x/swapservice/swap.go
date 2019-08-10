@@ -17,7 +17,7 @@ func isEmptyString(input string) bool {
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount, requester, destination string, requestTxHash TxID, tradeSlipLimit string) error {
+func validateMessage(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeSlipLimit string) error {
 	if requestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
@@ -27,7 +27,7 @@ func validateMessage(ctx sdk.Context, keeper poolStorage, source, target Ticker,
 	if target.Empty() {
 		return errors.New("target is empty")
 	}
-	if isEmptyString(amount) {
+	if amount.Empty() {
 		return errors.New("amount is empty")
 	}
 	if isEmptyString(requester) {
@@ -52,7 +52,7 @@ func validateMessage(ctx sdk.Context, keeper poolStorage, source, target Ticker,
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source, target Ticker, amount, requester, destination string, requestTxHash TxID, tradeSlipLimit string) (string, error) {
+func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeSlipLimit string) (Amount, error) {
 	if err := validateMessage(ctx, keeper, source, target, amount, requester, destination, requestTxHash, tradeSlipLimit); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
@@ -89,7 +89,7 @@ func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source,
 func swapOne(ctx sdk.Context,
 	keeper poolStorage,
 	settings *config.Settings,
-	source, target Ticker, amount, requester, destination, tradeSlipLimit string) (string, error) {
+	source, target Ticker, amount Amount, requester, destination, tradeSlipLimit string) (Amount, error) {
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 	ticker := source
 	if IsRune(source) {
@@ -100,10 +100,7 @@ func swapOne(ctx sdk.Context,
 		return "0", errors.New(fmt.Sprintf("pool %s doesn't exist", ticker))
 	}
 
-	amt, err := strconv.ParseFloat(amount, 64)
-	if err != nil {
-		return "0", errors.Wrapf(err, "amount:%s is not valid", amount)
-	}
+	amt := amount.Float64()
 	fslipLimit, err := strconv.ParseFloat(tradeSlipLimit, 64)
 	if err != nil {
 		return "0", errors.Wrapf(err, "trade slip limit %s is not valid", tradeSlipLimit)
@@ -113,14 +110,8 @@ func swapOne(ctx sdk.Context,
 	if pool.Status != PoolEnabled {
 		return "0", errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
 	}
-	balanceRune, err := strconv.ParseFloat(pool.BalanceRune, 64)
-	if err != nil {
-		return "0", errors.Wrapf(err, "pool rune balance %s is invalid", pool.BalanceRune)
-	}
-	balanceToken, err := strconv.ParseFloat(pool.BalanceToken, 64)
-	if err != nil {
-		return "0", errors.Wrapf(err, "pool token balance %s is invalid", pool.BalanceToken)
-	}
+	balanceRune := pool.BalanceRune.Float64()
+	balanceToken := pool.BalanceToken.Float64()
 	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
 	if poolSlip > settings.GlobalPoolSlip {
 		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, settings.GlobalPoolSlip)
@@ -144,9 +135,9 @@ func swapOne(ctx sdk.Context,
 	if nil != err {
 		return "0", errors.Wrap(err, "fail to swap")
 	}
-	pool.BalanceRune = strconv.FormatFloat(newBalanceRune, 'f', 8, 64)
-	pool.BalanceToken = strconv.FormatFloat(newBalanceToken, 'f', 8, 64)
-	returnTokenAmount := strconv.FormatFloat(returnAmt, 'f', 8, 64)
+	pool.BalanceRune = NewAmountFromFloat(newBalanceRune)
+	pool.BalanceToken = NewAmountFromFloat(newBalanceToken)
+	returnTokenAmount := NewAmountFromFloat(returnAmt)
 	keeper.SetPoolStruct(ctx, ticker, pool)
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, returnTokenAmount))
 	return returnTokenAmount, nil

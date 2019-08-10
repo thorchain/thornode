@@ -8,8 +8,8 @@ import (
 // We keep this for now , as a mechanism to set up a new pool when it is not in the genesis file
 // the pool changes when stake / swap happens
 type MsgSetPoolData struct {
-	BalanceRune  string         `json:"balance_rune"`  // balance rune
-	BalanceToken string         `json:"balance_token"` // balance of token
+	BalanceRune  Amount         `json:"balance_rune"`  // balance rune
+	BalanceToken Amount         `json:"balance_token"` // balance of token
 	Ticker       Ticker         `json:"ticker"`        // Ticker means the token symbol
 	PoolAddress  string         `json:"pool_address"`  // Pool Address on binance chain
 	Status       PoolStatus     `json:"status"`        // pool status
@@ -20,8 +20,8 @@ type MsgSetPoolData struct {
 func NewMsgSetPoolData(ticker Ticker, poolAddress string, status PoolStatus, owner sdk.AccAddress) MsgSetPoolData {
 	return MsgSetPoolData{
 		Ticker:       ticker,
-		BalanceRune:  "0",
-		BalanceToken: "0",
+		BalanceRune:  ZeroAmount,
+		BalanceToken: ZeroAmount,
 		PoolAddress:  poolAddress,
 		Status:       status,
 		Owner:        owner,

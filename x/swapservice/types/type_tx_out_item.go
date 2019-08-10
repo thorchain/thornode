@@ -17,7 +17,7 @@ func (toi TxOutItem) String() string {
 	sb.WriteString("to address:" + toi.ToAddress)
 	for _, c := range toi.Coins {
 		sb.WriteString("denom:" + c.Denom.String())
-		sb.WriteString("Amount:" + c.Amount)
+		sb.WriteString("Amount:" + c.Amount.String())
 	}
 	return sb.String()
 }
