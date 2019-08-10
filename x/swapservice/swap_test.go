@@ -17,14 +17,19 @@ type SwapSuite struct{}
 
 var _ = Suite(&SwapSuite{})
 
-func (s SwapSuite) TestSwap(c *C) {
-	poolStorage := mocks.MockPoolStorage{}
-	key := sdk.NewKVStoreKey("test")
+func GetCtx(key string) sdk.Context {
+	keystore := sdk.NewKVStoreKey(key)
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
-	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(keystore, sdk.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
+	return sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
+
+}
+
+func (s SwapSuite) TestSwap(c *C) {
+	poolStorage := mocks.MockPoolStorage{}
+	ctx := GetCtx("test")
 	globalSlipLimit := "0.200000"
 	inputs := []struct {
 		name            string
@@ -425,4 +430,31 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
 	}
+}
+
+func (s SwapSuite) TestIsEmptyString(c *C) {
+	c.Check(isEmptyString(""), Equals, true)
+	c.Check(isEmptyString(" "), Equals, true)
+	c.Check(isEmptyString("				"), Equals, true)
+	c.Check(isEmptyString(`
+
+	`), Equals, true)
+	c.Check(isEmptyString("hello"), Equals, false)
+}
+
+func (s SwapSuite) TestValidatePools(c *C) {
+	keeper := mocks.MockPoolStorage{}
+	ctx := GetCtx("test")
+	c.Check(validatePools(ctx, keeper, "RUNE"), IsNil)
+	c.Check(validatePools(ctx, keeper, "NOTEXIST"), NotNil)
+}
+
+func (s SwapSuite) TestValidateMessage(c *C) {
+	c.Check(validateMessage("txHASH", "RUNE", "BNB", "34.2985", "bnbXXXX", "bnbYYY"), IsNil)
+	c.Check(validateMessage("", "RUNE", "BNB", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", "", "BNB", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", "RUNE", "", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", "RUNE", "BNB", "", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", "RUNE", "BNB", "34.2985", "", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", "RUNE", "BNB", "34.2985", "bnbXXXX", ""), NotNil)
 }
