@@ -27,7 +27,7 @@ func (mps MockPoolStorage) GetPoolStruct(ctx sdk.Context, ticker string) types.P
 			BalanceRune:  "100",
 			BalanceToken: "100",
 			PoolUnits:    "100",
-			Status:       types.Active.String(),
+			Status:       types.Enabled,
 			PoolAddress:  "hello",
 			Ticker:       ticker,
 		}
