@@ -50,11 +50,11 @@ func processRefund(result sdk.Result, store *TxOutStore, msg sdk.Msg) {
 			ToAddress: m.PublicAddress,
 		}
 		toi.Coins = append(toi.Coins, Coin{
-			Denom:  RuneTicker.String(),
+			Denom:  RuneTicker,
 			Amount: m.Rune,
 		})
 		toi.Coins = append(toi.Coins, Coin{
-			Denom:  m.Ticker.String(),
+			Denom:  m.Ticker,
 			Amount: m.Token,
 		})
 		store.AddTxOutItem(toi)
@@ -63,7 +63,7 @@ func processRefund(result sdk.Result, store *TxOutStore, msg sdk.Msg) {
 			ToAddress: m.Requester,
 		}
 		toi.Coins = append(toi.Coins, Coin{
-			Denom:  m.SourceTicker.String(),
+			Denom:  m.SourceTicker,
 			Amount: m.Amount,
 		})
 		store.AddTxOutItem(toi)
@@ -176,7 +176,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, setting *config.Settings, txO
 		ToAddress: msg.Destination,
 	}
 	toi.Coins = append(toi.Coins, Coin{
-		Denom:  msg.TargetTicker.String(),
+		Denom:  msg.TargetTicker,
 		Amount: amount,
 	})
 	txOutStore.AddTxOutItem(toi)
@@ -243,11 +243,11 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ToAddress: msg.PublicAddress,
 	}
 	toi.Coins = append(toi.Coins, Coin{
-		Denom:  RuneTicker.String(),
+		Denom:  RuneTicker,
 		Amount: runeAmt,
 	})
 	toi.Coins = append(toi.Coins, Coin{
-		Denom:  msg.Ticker.String(),
+		Denom:  msg.Ticker,
 		Amount: tokenAmount,
 	})
 	txOutStore.AddTxOutItem(toi)
@@ -285,7 +285,7 @@ func refundTx(tx TxHash, store *TxOutStore) {
 
 	for _, item := range tx.Coins {
 		toi.Coins = append(toi.Coins, Coin{
-			Denom:  item.Denom,
+			Denom:  Ticker(item.Denom),
 			Amount: fmt.Sprintf("%f", item.Amount),
 		})
 	}
