@@ -27,7 +27,7 @@ func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...Ticker) error
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID) error {
+func validateMessage(source, target Ticker, amount Amount, requester, destination BnbAddress, requestTxHash TxID) error {
 	if requestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
@@ -40,16 +40,16 @@ func validateMessage(source, target Ticker, amount Amount, requester, destinatio
 	if amount.Empty() {
 		return errors.New("amount is empty")
 	}
-	if isEmptyString(requester) {
+	if requester.Empty() {
 		return errors.New("requester is empty")
 	}
-	if isEmptyString(destination) {
+	if destination.Empty() {
 		return errors.New("destination is empty")
 	}
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeTarget, tradeSlipLimit, globalSlipLimit Amount) (Amount, error) {
+func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination BnbAddress, requestTxHash TxID, tradeTarget, tradeSlipLimit, globalSlipLimit Amount) (Amount, error) {
 	if err := validateMessage(source, target, amount, requester, destination, requestTxHash); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
@@ -85,7 +85,7 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 
 func swapOne(ctx sdk.Context,
 	keeper poolStorage,
-	source, target Ticker, amount Amount, requester, destination string, tradeTarget, tradeSlipLimit, globalSlipLimit Amount) (Amount, error) {
+	source, target Ticker, amount Amount, requester, destination BnbAddress, tradeTarget, tradeSlipLimit, globalSlipLimit Amount) (Amount, error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 

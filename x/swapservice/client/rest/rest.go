@@ -87,7 +87,14 @@ func txHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			txHashes[i] = types.NewTxHash(txID, tx.Coins, tx.Memo, tx.Sender)
+
+			bnbAddr, err := types.NewBnbAddress(tx.Sender)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
+			txHashes[i] = types.NewTxHash(txID, tx.Coins, tx.Memo, bnbAddr)
 		}
 
 		// create the message
@@ -150,8 +157,14 @@ func setStakeDataHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		bnbAddr, err := types.NewBnbAddress(req.PublicAddress)
+		if err != nil {
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		// create the message
-		msg := types.NewMsgSetStakeData(req.Name, ticker, runeAmount, tokenAmount, req.PublicAddress, txID, cliCtx.GetFromAddress())
+		msg := types.NewMsgSetStakeData(req.Name, ticker, runeAmount, tokenAmount, bnbAddr, txID, cliCtx.GetFromAddress())
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

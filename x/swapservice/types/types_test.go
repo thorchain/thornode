@@ -29,3 +29,18 @@ func (s TypesSuite) TestTicker(c *C) {
 	_, err = NewTicker("too long of a token") // too long
 	c.Assert(err, NotNil)
 }
+
+func (s *TypesSuite) TestBnbAddress(c *C) {
+	_, err := NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Check(err, IsNil)
+	_, err = NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Check(err, IsNil)
+	_, err = NewBnbAddress("tbnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Check(err, IsNil)
+	_, err = NewBnbAddress("1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Check(err, NotNil)
+	_, err = NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6X")
+	c.Check(err, NotNil)
+	_, err = NewBnbAddress("bogus")
+	c.Check(err, NotNil)
+}
