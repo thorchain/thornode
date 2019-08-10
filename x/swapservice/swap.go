@@ -15,7 +15,7 @@ func isEmptyString(input string) bool {
 }
 
 // validate if pools exist
-func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...string) error {
+func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...Ticker) error {
 	for _, ticker := range tickers {
 		if !IsRune(ticker) {
 			if !keeper.PoolExist(ctx, ticker) {
@@ -28,7 +28,7 @@ func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...string) error
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID) error {
+func validateMessage(source, target Ticker, amount, requester, destination string, requestTxHash TxID) error {
 	if requestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
@@ -47,9 +47,6 @@ func validateMessage(source, target Ticker, amount Amount, requester, destinatio
 	if isEmptyString(destination) {
 		return errors.New("destination is empty")
 	}
-	if isEmptyString(tradeSlipLimit) {
-		return errors.New("trade slip limit is empty")
-	}
 	return nil
 }
 
@@ -64,8 +61,6 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 	}
 
 	isDoubleSwap := !IsRune(source) && !IsRune(target)
-	source = strings.ToUpper(source)
-	target = strings.ToUpper(target)
 	swapRecord := NewSwapRecord(requestTxHash, source, target, requester, destination, amount, "", "")
 	if isDoubleSwap {
 		runeAmount, err := swapOne(ctx, keeper, source, RuneTicker, amount, requester, destination, tradeSlipLimit, globalSlipLimit)
