@@ -61,7 +61,9 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 	}
 
 	isDoubleSwap := !IsRune(source) && !IsRune(target)
+
 	swapRecord := NewSwapRecord(requestTxHash, source, target, requester, destination, amount, "", "")
+
 	if isDoubleSwap {
 		runeAmount, err := swapOne(ctx, keeper, source, RuneTicker, amount, requester, destination, tradeSlipLimit, globalSlipLimit)
 		if err != nil {
@@ -84,9 +86,10 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 
 func swapOne(ctx sdk.Context,
 	keeper poolStorage,
-	source, target Ticker, amount Amount, requester, destination, tradeSlipLimit string) (Amount, error) {
+	source, target Ticker, amount Amount, requester, destination, tradeSlipLimit, globalSlipLimit string) (Amount, error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
+
 	ticker := source
 	if IsRune(source) {
 		ticker = target
@@ -114,14 +117,16 @@ func swapOne(ctx sdk.Context,
 	}
 	balanceRune := pool.BalanceRune.Float64()
 	balanceToken := pool.BalanceToken.Float64()
+
 	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
 	if poolSlip > gslipLimit {
 		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gslipLimit)
 	}
 	userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
-	if userPrice > fslipLimit {
-		return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, fslipLimit*100, fslipLimit)
+	if math.Abs(userPrice-fslipLimit)/fslipLimit > gslipLimit {
+		return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, gslipLimit*100, fslipLimit)
 	}
+
 	// do we have enough balance to swap?
 	if IsRune(source) {
 		if balanceToken == 0 {
@@ -132,6 +137,7 @@ func swapOne(ctx sdk.Context,
 			return "0", errors.New(RuneTicker.String() + " balance is 0, can't swap ")
 		}
 	}
+
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
 	newBalanceRune, newBalanceToken, returnAmt, err := calculateSwap(source, balanceRune, balanceToken, amt)
 	if nil != err {
