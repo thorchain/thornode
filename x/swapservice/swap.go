@@ -14,8 +14,21 @@ func isEmptyString(input string) bool {
 	return strings.TrimSpace(input) == ""
 }
 
+// validate if pools exist
+func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...string) error {
+	for _, ticker := range tickers {
+		if !IsRune(ticker) {
+			if !keeper.PoolExist(ctx, ticker) {
+				return errors.New(fmt.Sprintf("%s doesn't exist", ticker))
+			}
+		}
+
+	}
+	return nil
+}
+
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeSlipLimit string) error {
+func validateMessage(source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID) error {
 	if requestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
@@ -37,16 +50,6 @@ func validateMessage(ctx sdk.Context, keeper poolStorage, source, target Ticker,
 	if isEmptyString(tradeSlipLimit) {
 		return errors.New("trade slip limit is empty")
 	}
-	if !IsRune(source) {
-		if !keeper.PoolExist(ctx, source) {
-			return errors.New(fmt.Sprintf("%s doesn't exist", source))
-		}
-	}
-	if !IsRune(target) {
-		if !keeper.PoolExist(ctx, target) {
-			return errors.New(fmt.Sprintf("%s doesn't exist", target))
-		}
-	}
 	return nil
 }
 
@@ -55,15 +58,15 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 		ctx.Logger().Error(err.Error())
 		return "0", err
 	}
-	isDoubleSwap := !IsRune(source) && !IsRune(target)
-	swapRecord := SwapRecord{
-		RequestTxHash:   requestTxHash,
-		SourceTicker:    source,
-		TargetTicker:    target,
-		Requester:       requester,
-		Destination:     destination,
-		AmountRequested: amount,
+	if err := validatePools(ctx, keeper, source, target); nil != err {
+		ctx.Logger().Error(err.Error())
+		return "0", err
 	}
+
+	isDoubleSwap := !IsRune(source) && !IsRune(target)
+	source = strings.ToUpper(source)
+	target = strings.ToUpper(target)
+	swapRecord := NewSwapRecord(requestTxHash, source, target, requester, destination, amount, "", "")
 	if isDoubleSwap {
 		runeAmount, err := swapOne(ctx, keeper, source, RuneTicker, amount, requester, destination, tradeSlipLimit, globalSlipLimit)
 		if err != nil {
