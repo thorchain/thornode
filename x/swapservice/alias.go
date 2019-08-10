@@ -9,7 +9,8 @@ const (
 	RouterKey        = types.RouterKey
 	StoreKey         = types.StoreKey
 	DefaultCodespace = types.DefaultCodespace
-	PoolActive       = types.Active
+	PoolEnabled      = types.Enabled
+	PoolBootstrap    = types.Bootstrap
 	PoolSuspended    = types.Suspended
 	RuneTicker       = types.RuneTicker
 )

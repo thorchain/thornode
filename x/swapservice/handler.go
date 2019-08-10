@@ -99,8 +99,6 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 	keeper.SetPoolData(
 		ctx,
 		msg.Ticker,
-		msg.BalanceRune,
-		msg.BalanceToken,
 		msg.PoolAddress,
 		msg.Status)
 	return sdk.Result{
@@ -115,6 +113,10 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker, "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress)
 		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+	if err := keeper.GetPoolStruct(ctx, msg.Ticker).EnsureValidPoolStatus(msg); nil != err {
+		ctx.Logger().Error("check pool status", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
@@ -212,6 +214,10 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress, "ticker", msg.Ticker, "percentage", msg.Percentage)
 		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+	if err := keeper.GetPoolStruct(ctx, msg.Ticker).EnsureValidPoolStatus(msg); nil != err {
+		ctx.Logger().Error("check pool status", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error("invalid MsgSetUnstake", "error", err)

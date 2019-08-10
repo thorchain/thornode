@@ -76,7 +76,7 @@ func DefaultGenesisState() GenesisState {
 				Ticker:       "BNB",
 				PoolUnits:    "0",
 				PoolAddress:  "bnbxxdfdfdfdfdf",
-				Status:       PoolActive.String(),
+				Status:       PoolBootstrap,
 			},
 		},
 	}
