@@ -3,7 +3,6 @@ package swapservice
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
@@ -36,8 +35,8 @@ func validateStakeAmount(stakers PoolStaker, stakerUnits float64) error {
 }
 
 // validateStakeMessage is to do some validation , and make sure it is legit
-func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker, stakeRuneAmount, stakeTokenAmount, requestTxHash, publicAddress string) error {
-	if isEmptyString(ticker) {
+func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stakeTokenAmount, requestTxHash, publicAddress string) error {
+	if ticker.Empty() {
 		return errors.New("ticker is empty")
 	}
 	if isEmptyString(stakeRuneAmount) {
@@ -58,12 +57,11 @@ func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker, stakeRuneAmoun
 	return nil
 }
 
-func stake(ctx sdk.Context, keeper Keeper, ticker, stakeRuneAmount, stakeTokenAmount, publicAddress, requestTxHash string) error {
+func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stakeTokenAmount, publicAddress, requestTxHash string) error {
 	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", ticker, stakeRuneAmount, stakeTokenAmount))
 	if err := validateStakeMessage(ctx, keeper, ticker, stakeRuneAmount, stakeTokenAmount, requestTxHash, publicAddress); nil != err {
 		return errors.Wrap(err, "invalid request")
 	}
-	ticker = strings.ToUpper(ticker)
 	pool := keeper.GetPoolStruct(ctx, ticker)
 	fTokenAmt, err := strconv.ParseFloat(stakeTokenAmount, 64)
 	if err != nil {

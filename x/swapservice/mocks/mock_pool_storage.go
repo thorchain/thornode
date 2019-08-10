@@ -13,14 +13,15 @@ import (
 type MockPoolStorage struct {
 }
 
-func (mps MockPoolStorage) PoolExist(ctx sdk.Context, ticker string) bool {
-	if strings.EqualFold(ticker, "NOTEXIST") {
+func (mps MockPoolStorage) PoolExist(ctx sdk.Context, ticker types.Ticker) bool {
+	if ticker.Equals(types.Ticker("NOTEXIST")) {
 		return false
 	}
 	return true
 }
-func (mps MockPoolStorage) GetPoolStruct(ctx sdk.Context, ticker string) types.PoolStruct {
-	if strings.EqualFold(ticker, "NOTEXIST") {
+
+func (mps MockPoolStorage) GetPoolStruct(ctx sdk.Context, ticker types.Ticker) types.PoolStruct {
+	if ticker.Equals(types.Ticker("NOTEXIST")) {
 		return types.PoolStruct{}
 	} else {
 		return types.PoolStruct{
@@ -33,7 +34,7 @@ func (mps MockPoolStorage) GetPoolStruct(ctx sdk.Context, ticker string) types.P
 		}
 	}
 }
-func (mps MockPoolStorage) SetPoolStruct(ctx sdk.Context, ticker string, ps types.PoolStruct) {
+func (mps MockPoolStorage) SetPoolStruct(ctx sdk.Context, ticker types.Ticker, ps types.PoolStruct) {
 
 }
 func (mps MockPoolStorage) GetStakerPool(ctx sdk.Context, stakerID string) (types.StakerPool, error) {
@@ -46,15 +47,15 @@ func (mps MockPoolStorage) SetStakerPool(ctx sdk.Context, stakerID string, sp ty
 
 }
 
-func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, ticker string) (types.PoolStaker, error) {
-	if strings.EqualFold(ticker, "NOTEXISTSTICKER") {
+func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, ticker types.Ticker) (types.PoolStaker, error) {
+	if ticker.Equals(types.Ticker("NOTEXISTSTICKER")) {
 		return types.PoolStaker{}, errors.New("you asked for it")
 	}
 	return types.NewPoolStaker(ticker, "100"), nil
 }
-func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, ticker string, ps types.PoolStaker) {
 
-}
+func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, ticker types.Ticker, ps types.PoolStaker) {}
+
 func (mps MockPoolStorage) SetSwapRecord(ctx sdk.Context, sr types.SwapRecord) error {
 	if strings.EqualFold(sr.RequestTxHash, "ASKFORERROR") {
 		return errors.New("you asked for it")

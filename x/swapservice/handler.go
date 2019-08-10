@@ -285,7 +285,7 @@ func refundTx(tx TxHash, store *TxOutStore) {
 
 	for _, item := range tx.Coins {
 		toi.Coins = append(toi.Coins, Coin{
-			Denom:  item.Denom,
+			Denom:  Ticker(item.Denom),
 			Amount: fmt.Sprintf("%f", item.Amount),
 		})
 	}
@@ -325,16 +325,24 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 		// interpret the memo and initialize a corresponding msg event
 		switch memo.(type) {
 		case CreateMemo:
-			if keeper.PoolExist(ctx, memo.GetSymbol()) {
+			ticker, err := NewTicker(memo.GetSymbol())
+			if err != nil {
+				return sdk.ErrUnknownRequest(err.Error()).Result()
+			}
+			if keeper.PoolExist(ctx, ticker) {
 				return sdk.ErrUnknownRequest("Pool already exists").Result()
 			}
 			newMsg = NewMsgSetPoolData(
-				memo.GetSymbol(),
+				ticker,
 				"TODO: pool address", // prob can be hard coded since its a single pool
 				PoolSuspended,        // new pools start in a suspended state
 				msg.Signer,
 			)
 		case StakeMemo:
+			ticker, err := NewTicker(memo.GetSymbol())
+			if err != nil {
+				return sdk.ErrUnknownRequest(err.Error()).Result()
+			}
 			runeAmount := "0"
 			tokenAmount := "0"
 			for _, coin := range tx.Coins {
@@ -346,7 +354,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 			}
 			newMsg = NewMsgSetStakeData(
 				"TODO: Name",
-				memo.GetSymbol(),
+				ticker,
 				tokenAmount,
 				runeAmount,
 				tx.Sender,
@@ -356,13 +364,17 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 		case AdminMemo:
 
 			if memo.GetAdminType() == adminPoolStatus {
-				pool := keeper.GetPoolStruct(ctx, memo.GetKey())
+				ticker, err := NewTicker(memo.GetKey())
+				if err != nil {
+					return sdk.ErrUnknownRequest(err.Error()).Result()
+				}
+				pool := keeper.GetPoolStruct(ctx, ticker)
 				if pool.Empty() {
 					return sdk.ErrUnknownRequest("Pool doesn't exist").Result()
 				}
 				status := GetPoolStatus(memo.GetValue())
 				newMsg = NewMsgSetPoolData(
-					memo.GetKey(),
+					ticker,
 					pool.PoolAddress,
 					status,
 					msg.Signer,

@@ -17,7 +17,7 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 	if isEmptyString(msg.RequestTxHash) {
 		return errors.New("request tx hash is empty")
 	}
-	if isEmptyString(msg.Ticker) {
+	if msg.Ticker.Empty() {
 		return errors.New("empty ticker")
 	}
 	fPercentage, err := strconv.ParseFloat(msg.Percentage, 64)

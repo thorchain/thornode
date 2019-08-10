@@ -21,13 +21,13 @@ type StakerUnit struct {
 //    }
 //}
 type PoolStaker struct {
-	Ticker     string       `json:"ticker"`      // ticker
+	Ticker     Ticker       `json:"ticker"`      // ticker
 	TotalUnits string       `json:"total_units"` // total units in the pool
 	Stakers    []StakerUnit `json:"stakers"`     // key will be staker id , which is the address on binane chain value will be UNITS
 }
 
 // NewPoolStaker create a new instance of PoolStaker
-func NewPoolStaker(ticker string, totalUnits string) PoolStaker {
+func NewPoolStaker(ticker Ticker, totalUnits string) PoolStaker {
 	return PoolStaker{
 		Ticker:     ticker,
 		TotalUnits: totalUnits,
@@ -38,7 +38,7 @@ func NewPoolStaker(ticker string, totalUnits string) PoolStaker {
 // String return the human readable string of PoolStaker
 func (ps PoolStaker) String() string {
 	bs := strings.Builder{}
-	bs.WriteString(fmt.Sprintln("ticker: " + ps.Ticker))
+	bs.WriteString(fmt.Sprintln("ticker: " + ps.Ticker.String()))
 	bs.WriteString(fmt.Sprintln("total units: " + ps.TotalUnits))
 	if nil != ps.Stakers {
 		for _, stakerUnit := range ps.Stakers {

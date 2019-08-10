@@ -6,8 +6,6 @@ const (
 
 	// StoreKey to be used when creating the KVStore
 	StoreKey = ModuleName
-	// RuneTicker
-	RuneTicker = "RUNE"
 
 	RouterKey = ModuleName // this was defined in your key.go file
 )
