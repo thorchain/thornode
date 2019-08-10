@@ -227,7 +227,7 @@ func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID string, sp StakerPool) {
 // SetSwapRecord save the swap record to store
 func (k Keeper) SetSwapRecord(ctx sdk.Context, sr SwapRecord) error {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixSwap, sr.RequestTxHash)
+	key := getKey(prefixSwap, sr.RequestTxHash.String())
 	ctx.Logger().Debug("upsert swaprecord", "key", key)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(sr))
 	return nil
@@ -280,7 +280,7 @@ func (k Keeper) GetSwapRecordIterator(ctx sdk.Context) sdk.Iterator {
 // SetUnStakeRecord write an UnStake record to key value store
 func (k Keeper) SetUnStakeRecord(ctx sdk.Context, ur UnstakeRecord) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixUnStake, ur.RequestTxHash)
+	key := getKey(prefixUnStake, ur.RequestTxHash.String())
 	ctx.Logger().Debug("upsert UnStake", "key", key)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ur))
 }
