@@ -1,8 +1,6 @@
 package types
 
 import (
-	"strings"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -12,16 +10,16 @@ import (
 type MsgSetPoolData struct {
 	BalanceRune  string         `json:"balance_rune"`  // balance rune
 	BalanceToken string         `json:"balance_token"` // balance of token
-	Ticker       string         `json:"ticker"`        // Ticker means the token symbol
+	Ticker       Ticker         `json:"ticker"`        // Ticker means the token symbol
 	PoolAddress  string         `json:"pool_address"`  // Pool Address on binance chain
 	Status       PoolStatus     `json:"status"`        // pool status
 	Owner        sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetPoolData(ticker string, poolAddress string, status PoolStatus, owner sdk.AccAddress) MsgSetPoolData {
+func NewMsgSetPoolData(ticker Ticker, poolAddress string, status PoolStatus, owner sdk.AccAddress) MsgSetPoolData {
 	return MsgSetPoolData{
-		Ticker:       strings.ToUpper(ticker),
+		Ticker:       ticker,
 		BalanceRune:  "0",
 		BalanceToken: "0",
 		PoolAddress:  poolAddress,
@@ -38,7 +36,7 @@ func (msg MsgSetPoolData) Type() string { return "set_pooldata" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
-	if len(msg.Ticker) == 0 {
+	if msg.Ticker.Empty() {
 		return sdk.ErrUnknownRequest("Pool Ticker cannot be empty")
 	}
 	if len(msg.PoolAddress) == 0 {

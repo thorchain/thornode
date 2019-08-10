@@ -32,8 +32,8 @@ func (s SwapSuite) TestSwap(c *C) {
 	inputs := []struct {
 		name           string
 		requestTxHash  string
-		source         string
-		target         string
+		source         Ticker
+		target         Ticker
 		amount         string
 		requester      string
 		destination    string
@@ -44,8 +44,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-source",
 			requestTxHash: "hash",
-			source:        "",
-			target:        "BNB",
+			source:        Ticker(""),
+			target:        Ticker("BNB"),
 			amount:        "100",
 			requester:     "tester",
 			destination:   "whatever",
@@ -55,8 +55,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-target",
 			requestTxHash: "hash",
-			source:        "RUNE",
-			target:        "",
+			source:        Ticker("RUNE"),
+			target:        Ticker(""),
 			amount:        "100",
 			requester:     "tester",
 			destination:   "whatever",
@@ -66,8 +66,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-requestTxHash",
 			requestTxHash: "",
-			source:        "RUNE",
-			target:        "BNB",
+			source:        Ticker("RUNE"),
+			target:        Ticker("BNB"),
 			amount:        "100",
 			requester:     "tester",
 			destination:   "whatever",
@@ -196,7 +196,7 @@ func (s SwapSuite) TestSwap(c *C) {
 func (s SwapSuite) TestCalculatePoolSlip(c *C) {
 	inputs := []struct {
 		name             string
-		source           string
+		source           Ticker
 		runeBalance      float64
 		tokenBalance     float64
 		swapAmount       float64
@@ -245,7 +245,7 @@ func (s SwapSuite) TestCalculatePoolSlip(c *C) {
 func (s SwapSuite) TestCalculateUserPrice(c *C) {
 	inputs := []struct {
 		name              string
-		source            string
+		source            Ticker
 		runeBalance       float64
 		tokenBalance      float64
 		swapAmount        float64
@@ -253,7 +253,7 @@ func (s SwapSuite) TestCalculateUserPrice(c *C) {
 	}{
 		{
 			name:              "normal",
-			source:            "RUNE",
+			source:            Ticker("RUNE"),
 			runeBalance:       100.0,
 			tokenBalance:      100.0,
 			swapAmount:        5.0,
@@ -261,7 +261,7 @@ func (s SwapSuite) TestCalculateUserPrice(c *C) {
 		},
 		{
 			name:              "normal-1",
-			source:            "RUNE",
+			source:            Ticker("RUNE"),
 			runeBalance:       200.0,
 			tokenBalance:      1000.0,
 			swapAmount:        5,
@@ -269,7 +269,7 @@ func (s SwapSuite) TestCalculateUserPrice(c *C) {
 		},
 		{
 			name:              "normal-2",
-			source:            "BNB",
+			source:            Ticker("BNB"),
 			runeBalance:       200.0,
 			tokenBalance:      1000.0,
 			swapAmount:        5,
@@ -277,7 +277,7 @@ func (s SwapSuite) TestCalculateUserPrice(c *C) {
 		},
 		{
 			name:              "normal-3",
-			source:            "RUNE",
+			source:            Ticker("RUNE"),
 			runeBalance:       2000.0,
 			tokenBalance:      1000.0,
 			swapAmount:        50,
@@ -293,7 +293,7 @@ func (s SwapSuite) TestCalculateUserPrice(c *C) {
 func (s SwapSuite) TestSwapCalculation(c *C) {
 	inputs := []struct {
 		name              string
-		source            string
+		source            Ticker
 		runeBalance       float64
 		tokenBalance      float64
 		amountToSwap      float64
@@ -400,7 +400,7 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 		},
 		{
 			name:              "normal-token",
-			source:            "BNB",
+			source:            Ticker("BNB"),
 			runeBalance:       100.0,
 			tokenBalance:      100.0,
 			amountToSwap:      5.0,

@@ -7,16 +7,16 @@ import (
 // PoolStorage allow us to access the pool struct from key values store
 // this is an interface thus we could write unit tests
 type poolStorage interface {
-	PoolExist(ctx sdk.Context, ticker string) bool
+	PoolExist(ctx sdk.Context, ticker Ticker) bool
 
-	GetPoolStruct(ctx sdk.Context, ticker string) PoolStruct
-	SetPoolStruct(ctx sdk.Context, ticker string, ps PoolStruct)
+	GetPoolStruct(ctx sdk.Context, ticker Ticker) PoolStruct
+	SetPoolStruct(ctx sdk.Context, ticker Ticker, ps PoolStruct)
 
 	GetStakerPool(ctx sdk.Context, stakerID string) (StakerPool, error)
 	SetStakerPool(ctx sdk.Context, stakerID string, sp StakerPool)
 
-	GetPoolStaker(ctx sdk.Context, ticker string) (PoolStaker, error)
-	SetPoolStaker(ctx sdk.Context, ticker string, ps PoolStaker)
+	GetPoolStaker(ctx sdk.Context, ticker Ticker) (PoolStaker, error)
+	SetPoolStaker(ctx sdk.Context, ticker Ticker, ps PoolStaker)
 
 	SetSwapRecord(ctx sdk.Context, sr SwapRecord) error
 	GetSwapRecord(ctx sdk.Context, requestTxHash string) (SwapRecord, error)

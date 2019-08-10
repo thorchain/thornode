@@ -102,7 +102,11 @@ func queryPoolIndex(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 
 // queryPoolStakers
 func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	ticker := path[0]
+	ticker, err := NewTicker(path[0])
+	if nil != err {
+		ctx.Logger().Error("fail to get parse ticker", err)
+		return nil, sdk.ErrInternal("fail to parse ticker")
+	}
 	ps, err := keeper.GetPoolStaker(ctx, ticker)
 	if nil != err {
 		ctx.Logger().Error("fail to get pool staker", err)
@@ -134,7 +138,12 @@ func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 
 // nolint: unparam
 func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	poolstruct := keeper.GetPoolStruct(ctx, path[0])
+	ticker, err := NewTicker(path[0])
+	if err != nil {
+		ctx.Logger().Error("fail to parse ticker", err)
+		return nil, sdk.ErrInternal("Could not parse ticker")
+	}
+	poolstruct := keeper.GetPoolStruct(ctx, ticker)
 	if poolstruct.Empty() {
 		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("pool: %s doesn't exist", path[0]))
 	}

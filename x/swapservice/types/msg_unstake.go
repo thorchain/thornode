@@ -2,7 +2,6 @@ package types
 
 import (
 	"strconv"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -11,17 +10,17 @@ import (
 type MsgSetUnStake struct {
 	PublicAddress string         `json:"public_address"`  // it should be the public address
 	Percentage    string         `json:"percentage"`      // unstake percentage
-	Ticker        string         `json:"ticker"`          // ticker token symbol
+	Ticker        Ticker         `json:"ticker"`          // ticker token symbol
 	RequestTxHash string         `json:"request_tx_hash"` // request tx hash on binance chain
 	Owner         sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetUnStake is a constructor function for MsgSetPoolData
-func NewMsgSetUnStake(name, publicAddress, percentage, ticker, requestTxHash string, owner sdk.AccAddress) MsgSetUnStake {
+func NewMsgSetUnStake(name, publicAddress, percentage string, ticker Ticker, requestTxHash string, owner sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
 		PublicAddress: publicAddress,
 		Percentage:    percentage,
-		Ticker:        strings.ToUpper(ticker),
+		Ticker:        ticker,
 		RequestTxHash: requestTxHash,
 		Owner:         owner,
 	}
@@ -35,7 +34,7 @@ func (msg MsgSetUnStake) Type() string { return "set_unstake" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
-	if len(msg.Ticker) == 0 {
+	if msg.Ticker.Empty() {
 		return sdk.ErrUnknownRequest("Pool Ticker cannot be empty")
 	}
 	if len(msg.RequestTxHash) == 0 {

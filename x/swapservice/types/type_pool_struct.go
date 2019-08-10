@@ -70,7 +70,7 @@ func GetPoolStatus(ps string) PoolStatus {
 type PoolStruct struct {
 	BalanceRune  string     `json:"balance_rune"`  // how many RUNE in the pool
 	BalanceToken string     `json:"balance_token"` // how many token in the pool
-	Ticker       string     `json:"ticker"`        // what's the token's ticker
+	Ticker       Ticker     `json:"ticker"`        // what's the token's ticker
 	PoolUnits    string     `json:"pool_units"`    // total units of the pool
 	PoolAddress  string     `json:"pool_address"`  // pool address on binance chain
 	Status       PoolStatus `json:"status"`        // status
