@@ -10,12 +10,12 @@ type MsgSetStakeData struct {
 	Token         string         `json:"token"`           // the amount of token stake
 	Rune          string         `json:"rune"`            // the amount of rune stake
 	PublicAddress string         `json:"public_address"`  // Staker's address on binance chain
-	RequestTxHash string         `json:"request_tx_hash"` // the txhash that represent user send token to our pool address
+	RequestTxHash TxID           `json:"request_tx_hash"` // the txhash that represent user send token to our pool address
 	Owner         sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
-func NewMsgSetStakeData(name string, ticker Ticker, r, token, publicAddress, requestTxHash string, owner sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(name string, ticker Ticker, r, token, publicAddress string, requestTxHash TxID, owner sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		Ticker:        ticker,
 		Token:         token,
@@ -43,7 +43,7 @@ func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
 	if len(msg.Token) == 0 {
 		return sdk.ErrUnknownRequest("Stake Token cannot be empty")
 	}
-	if len(msg.RequestTxHash) == 0 {
+	if msg.RequestTxHash.Empty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
 	if len(msg.PublicAddress) == 0 {
