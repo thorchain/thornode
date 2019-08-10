@@ -27,6 +27,7 @@ var (
 	NewPoolStaker        = types.NewPoolStaker
 	NewStakerPool        = types.NewStakerPool
 	GetPoolStatus        = types.GetPoolStatus
+	NewTxID              = types.NewTxID
 	IsRune               = types.IsRune
 	NewTicker            = types.NewTicker
 	RuneTicker           = types.RuneTicker
@@ -50,6 +51,7 @@ type (
 	PoolStatus          = types.PoolStatus
 	PoolIndex           = types.PoolIndex
 	TxHash              = types.TxHash
+	TxID                = types.TxID
 	PoolStruct          = types.PoolStruct
 	PoolStaker          = types.PoolStaker
 	StakerPool          = types.StakerPool

@@ -31,7 +31,7 @@ func (s SwapSuite) TestSwap(c *C) {
 	ctx := sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
 	inputs := []struct {
 		name           string
-		requestTxHash  string
+		requestTxHash  TxID
 		source         Ticker
 		target         Ticker
 		amount         string

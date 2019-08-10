@@ -19,10 +19,10 @@ type poolStorage interface {
 	SetPoolStaker(ctx sdk.Context, ticker Ticker, ps PoolStaker)
 
 	SetSwapRecord(ctx sdk.Context, sr SwapRecord) error
-	GetSwapRecord(ctx sdk.Context, requestTxHash string) (SwapRecord, error)
-	UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash string) error
+	GetSwapRecord(ctx sdk.Context, requestTxHash TxID) (SwapRecord, error)
+	UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash TxID) error
 
 	SetUnStakeRecord(ctx sdk.Context, ur UnstakeRecord)
-	GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (UnstakeRecord, error)
-	UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash, completeTxHash string) error
+	GetUnStakeRecord(ctx sdk.Context, requestTxHash TxID) (UnstakeRecord, error)
+	UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash, completeTxHash TxID) error
 }

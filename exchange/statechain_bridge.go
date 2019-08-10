@@ -42,7 +42,12 @@ func (b *StatechainBridge) Stake(name string, ticker st.Ticker, r, token, public
 	if len(memo) > 0 {
 		viper.Set(flags.FlagMemo, memo)
 	}
-	msg := st.NewMsgSetStakeData(name, ticker, r, token, publicAddress, requestTxHash, owner)
+	txID, err := st.NewTxID(requestTxHash)
+	if err != nil {
+		return "", errors.Wrap(err, "invalid tx ID")
+	}
+
+	msg := st.NewMsgSetStakeData(name, ticker, r, token, publicAddress, txID, owner)
 	if err := msg.ValidateBasic(); nil != err {
 		return "", errors.Wrap(err, "invalid message")
 	}
@@ -65,7 +70,7 @@ func (b *StatechainBridge) Stake(name string, ticker st.Ticker, r, token, public
 // SendSwap send swap request to statechain
 // first return parameter is txHash
 
-func (b *StatechainBridge) SendSwap(requestTxHash string, source, target st.Ticker, amount, requester, destination string, owner sdk.AccAddress, passphrase, memo, tradeSliplimit string) (string, error) {
+func (b *StatechainBridge) SendSwap(requestTxHash st.TxID, source, target st.Ticker, amount, requester, destination string, owner sdk.AccAddress, passphrase, memo, tradeSliplimit string) (string, error) {
 	if len(memo) > 0 {
 		viper.Set(flags.FlagMemo, memo)
 	}
