@@ -24,6 +24,10 @@ func (tos *TxOutStore) NewBlock(height int64) {
 
 // CommitBlock we write the block into key value store , thus we could send to signer later.
 func (tos *TxOutStore) CommitBlock(ctx sdk.Context) {
+	// if we don't have anything in the array, we don't need to save
+	if len(tos.blockOut.TxArray) == 0 {
+		return
+	}
 	// write the tos to keeper
 	tos.keeper.SetTxOut(ctx, tos.blockOut)
 }

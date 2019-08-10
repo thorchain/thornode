@@ -400,6 +400,9 @@ func (k Keeper) SetTxOut(ctx sdk.Context, blockOut *TxOut) {
 func (k Keeper) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxOut, strconv.FormatInt(height, 10))
+	if !store.Has([]byte(key)) {
+		return NewTxOut(height), nil
+	}
 	buf := store.Get([]byte(key))
 	var txOut TxOut
 	if err := k.cdc.UnmarshalBinaryBare(buf, &txOut); nil != err {
