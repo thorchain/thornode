@@ -145,8 +145,8 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
-	gslConfig := keeper.GetAdminConfig(ctx, "GSL")
 	tslConfig := keeper.GetAdminConfig(ctx, "TSL")
+	gslConfig := keeper.GetAdminConfig(ctx, "GSL")
 
 	amount, err := swap(
 		ctx,
@@ -157,6 +157,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 		msg.Requester,
 		msg.Destination,
 		msg.RequestTxHash,
+		msg.TargetPrice,
 		tslConfig.Value,
 		gslConfig.Value,
 	) // If so, set the stake data to the value specified in the msg.

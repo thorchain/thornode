@@ -50,8 +50,8 @@ func validateMessage(source, target Ticker, amount, requester, destination strin
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeSlipLimit string) (Amount, error) {
-	if err := validateMessage(ctx, keeper, source, target, amount, requester, destination, requestTxHash, tradeSlipLimit); nil != err {
+func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeSlipLimit, globalSlipLimit string) (Amount, error) {
+	if err := validateMessage(source, target, amount, requester, destination, requestTxHash); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
 	}
@@ -65,18 +65,18 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 	swapRecord := NewSwapRecord(requestTxHash, source, target, requester, destination, amount, "", "")
 
 	if isDoubleSwap {
-		runeAmount, err := swapOne(ctx, keeper, source, RuneTicker, amount, requester, destination, tradeSlipLimit, globalSlipLimit)
+		runeAmount, err := swapOne(ctx, keeper, source, RuneTicker, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 		if err != nil {
 			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, RuneTicker)
 		}
-		tokenAmount, err := swapOne(ctx, keeper, RuneTicker, target, runeAmount, requester, destination, tradeSlipLimit, globalSlipLimit)
+		tokenAmount, err := swapOne(ctx, keeper, RuneTicker, target, runeAmount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 		swapRecord.AmountPaidBack = tokenAmount
 		if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
 			ctx.Logger().Error("fail to save swap record", "error", err)
 		}
 		return tokenAmount, err
 	}
-	tokenAmount, err := swapOne(ctx, keeper, source, target, amount, requester, destination, tradeSlipLimit, globalSlipLimit)
+	tokenAmount, err := swapOne(ctx, keeper, source, target, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 	swapRecord.AmountPaidBack = tokenAmount
 	if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
 		ctx.Logger().Error("fail to save swap record", "error", err)
@@ -102,11 +102,23 @@ func swapOne(ctx sdk.Context,
 	amt := amount.Float64()
 	fslipLimit, err := strconv.ParseFloat(tradeSlipLimit, 64)
 	if err != nil {
+		return "0", errors.Wrapf(err, "amount:%s is not valid", amount)
+	}
+
+	// Target Trade
+	tTarget, err := strconv.ParseFloat(tradeTarget, 64)
+	if err != nil {
+		return "0", errors.Wrapf(err, "target trade %s is not valid", tradeTarget)
+	}
+
+	// Trade slip limit
+	tsl, err := strconv.ParseFloat(tradeSlipLimit, 64)
+	if err != nil {
 		return "0", errors.Wrapf(err, "trade slip limit %s is not valid", tradeSlipLimit)
 	}
 
 	// Global slip limit
-	gslipLimit, err := strconv.ParseFloat(globalSlipLimit, 64)
+	gsl, err := strconv.ParseFloat(globalSlipLimit, 64)
 	if err != nil {
 		return "0", errors.Wrapf(err, "trade slip limit %s is not valid", globalSlipLimit)
 	}
@@ -118,13 +130,17 @@ func swapOne(ctx sdk.Context,
 	balanceRune := pool.BalanceRune.Float64()
 	balanceToken := pool.BalanceToken.Float64()
 
+	fmt.Printf("GlobalSlip Limit: %f\n", gsl)
+	fmt.Printf("Trade Slip Limit: %f\n", tsl)
+	fmt.Printf("Target trade    : %f\n", tTarget)
+
 	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
-	if poolSlip > gslipLimit {
-		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gslipLimit)
+	if poolSlip > gsl {
+		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
 	}
 	userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
-	if math.Abs(userPrice-fslipLimit)/fslipLimit > gslipLimit {
-		return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, gslipLimit*100, fslipLimit)
+	if math.Abs(userPrice-tTarget)/tTarget > tsl {
+		return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, tsl*100, tTarget)
 	}
 
 	// do we have enough balance to swap?
