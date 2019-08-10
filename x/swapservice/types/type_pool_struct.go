@@ -72,7 +72,7 @@ type PoolStruct struct {
 	BalanceToken Amount     `json:"balance_token"` // how many token in the pool
 	Ticker       Ticker     `json:"ticker"`        // what's the token's ticker
 	PoolUnits    Amount     `json:"pool_units"`    // total units of the pool
-	PoolAddress  string     `json:"pool_address"`  // pool address on binance chain
+	PoolAddress  BnbAddress `json:"pool_address"`  // pool address on binance chain
 	Status       PoolStatus `json:"status"`        // status
 }
 

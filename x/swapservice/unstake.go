@@ -6,7 +6,7 @@ import (
 )
 
 func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
-	if isEmptyString(msg.PublicAddress) {
+	if msg.PublicAddress.Empty() {
 		return errors.New("empty public address")
 	}
 	if msg.Percentage.Empty() {

@@ -95,7 +95,7 @@ func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 Ticker) (Amount
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
-func (k Keeper) SetPoolData(ctx sdk.Context, ticker Ticker, poolAddress string, ps PoolStatus) {
+func (k Keeper) SetPoolData(ctx sdk.Context, ticker Ticker, poolAddress BnbAddress, ps PoolStatus) {
 	poolstruct := k.GetPoolStruct(ctx, ticker)
 	if poolstruct.PoolUnits == "" {
 		poolstruct.PoolUnits = "0"
@@ -200,9 +200,9 @@ func (k Keeper) SetPoolStaker(ctx sdk.Context, ticker Ticker, ps PoolStaker) {
 }
 
 // GetStakerPool get the stakerpool from key value store
-func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID string) (StakerPool, error) {
+func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID BnbAddress) (StakerPool, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixStakerPool, stakerID)
+	key := getKey(prefixStakerPool, stakerID.String())
 	ctx.Logger().Info("get staker pool", "stakerpoolkey", key)
 	if !store.Has([]byte(key)) {
 		return NewStakerPool(stakerID), nil
@@ -217,9 +217,9 @@ func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID string) (StakerPool, err
 }
 
 // SetStakerPool save the given stakerpool object to key value store
-func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID string, sp StakerPool) {
+func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID BnbAddress, sp StakerPool) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixStakerPool, stakerID)
+	key := getKey(prefixStakerPool, stakerID.String())
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", key, sp))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(sp))
 }

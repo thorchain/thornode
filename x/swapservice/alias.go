@@ -35,6 +35,7 @@ var (
 	NewAmount            = types.NewAmount
 	NewAmountFromFloat   = types.NewAmountFromFloat
 	ZeroAmount           = types.ZeroAmount
+	NewBnbAddress        = types.NewBnbAddress
 	ModuleCdc            = types.ModuleCdc
 	RegisterCodec        = types.RegisterCodec
 )
@@ -66,4 +67,5 @@ type (
 	Ticker              = types.Ticker
 	Amount              = types.Amount
 	AdminConfig         = types.AdminConfig
+	BnbAddress          = types.BnbAddress
 )

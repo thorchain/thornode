@@ -6,7 +6,7 @@ import (
 
 // MsgSetUnStake is used to withdraw
 type MsgSetUnStake struct {
-	PublicAddress string         `json:"public_address"`  // it should be the public address
+	PublicAddress BnbAddress     `json:"public_address"`  // it should be the public address
 	Percentage    Amount         `json:"percentage"`      // unstake percentage
 	Ticker        Ticker         `json:"ticker"`          // ticker token symbol
 	RequestTxHash TxID           `json:"request_tx_hash"` // request tx hash on binance chain
@@ -14,7 +14,7 @@ type MsgSetUnStake struct {
 }
 
 // NewMsgSetUnStake is a constructor function for MsgSetPoolData
-func NewMsgSetUnStake(name, publicAddress string, percentage Amount, ticker Ticker, requestTxHash TxID, owner sdk.AccAddress) MsgSetUnStake {
+func NewMsgSetUnStake(publicAddress BnbAddress, percentage Amount, ticker Ticker, requestTxHash TxID, owner sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
 		PublicAddress: publicAddress,
 		Percentage:    percentage,

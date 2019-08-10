@@ -38,8 +38,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		source          Ticker
 		target          Ticker
 		amount          Amount
-		requester       string
-		destination     string
+		requester       BnbAddress
+		destination     BnbAddress
 		returnAmount    Amount
 		tradeTarget     Amount
 		tradeSlipLimit  Amount
