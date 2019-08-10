@@ -30,7 +30,6 @@ var (
 	IsRune               = types.IsRune
 	GetPoolStatus        = types.GetPoolStatus
 	NewTxID              = types.NewTxID
-	IsRune               = types.IsRune
 	NewTicker            = types.NewTicker
 	RuneTicker           = types.RuneTicker
 	NewAmount            = types.NewAmount
