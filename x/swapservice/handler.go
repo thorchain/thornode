@@ -333,9 +333,9 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 			tokenAmount := "0"
 			for _, coin := range tx.Coins {
 				if coin.Denom == "RUNE-B1A" {
-					runeAmount = fmt.Sprintf("%f", coin.Amount)
+					runeAmount = fmt.Sprintf("%s", coin.Amount)
 				} else {
-					tokenAmount = fmt.Sprintf("%f", coin.Amount)
+					tokenAmount = fmt.Sprintf("%s", coin.Amount)
 				}
 			}
 			newMsg = NewMsgSetStakeData(
