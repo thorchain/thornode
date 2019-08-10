@@ -17,8 +17,8 @@ func isEmptyString(input string) bool {
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount, requester, destination, requestTxHash, tradeSlipLimit string) error {
-	if isEmptyString(requestTxHash) {
+func validateMessage(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount, requester, destination string, requestTxHash TxID, tradeSlipLimit string) error {
+	if requestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
 	if source.Empty() {
@@ -52,7 +52,7 @@ func validateMessage(ctx sdk.Context, keeper poolStorage, source, target Ticker,
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source, target Ticker, amount, requester, destination, requestTxHash, tradeSlipLimit string) (string, error) {
+func swap(ctx sdk.Context, keeper poolStorage, setting *config.Settings, source, target Ticker, amount, requester, destination string, requestTxHash TxID, tradeSlipLimit string) (string, error) {
 	if err := validateMessage(ctx, keeper, source, target, amount, requester, destination, requestTxHash, tradeSlipLimit); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
@@ -195,11 +195,11 @@ func calculateSwap(source Ticker, balanceRune, balanceToken, amt float64) (float
 }
 
 // swapComplete  mark a swap to be in complete state
-func swapComplete(ctx sdk.Context, keeper poolStorage, requestTxHash, payTxHash string) error {
-	if isEmptyString(requestTxHash) {
+func swapComplete(ctx sdk.Context, keeper poolStorage, requestTxHash, payTxHash TxID) error {
+	if requestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
-	if isEmptyString(payTxHash) {
+	if payTxHash.Empty() {
 		return errors.New("pay tx hash is empty")
 	}
 	return keeper.UpdateSwapRecordPayTxHash(ctx, requestTxHash, payTxHash)

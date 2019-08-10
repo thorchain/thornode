@@ -57,7 +57,13 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 
 // queryUnStakeRecord
 func queryUnStakeRecord(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	sr, err := keeper.GetUnStakeRecord(ctx, path[0])
+	txID, err := NewTxID(path[0])
+	if err != nil {
+		ctx.Logger().Error("fail to parse tx ID", err)
+		return nil, sdk.ErrInternal("fail to parse tx ID")
+	}
+
+	sr, err := keeper.GetUnStakeRecord(ctx, txID)
 	if nil != err {
 		ctx.Logger().Error("fail to get UnStake record", err)
 		return nil, sdk.ErrInternal("fail to get UnStake record")
@@ -72,7 +78,13 @@ func queryUnStakeRecord(ctx sdk.Context, path []string, req abci.RequestQuery, k
 
 // querySwapRecord
 func querySwapRecord(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	sr, err := keeper.GetSwapRecord(ctx, path[0])
+	txID, err := NewTxID(path[0])
+	if err != nil {
+		ctx.Logger().Error("fail to parse tx ID", err)
+		return nil, sdk.ErrInternal("fail to parse tx ID")
+	}
+
+	sr, err := keeper.GetSwapRecord(ctx, txID)
 	if nil != err {
 		ctx.Logger().Error("fail to get swaprecord", err)
 		return nil, sdk.ErrInternal("fail to get swap record")

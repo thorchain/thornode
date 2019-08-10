@@ -234,12 +234,12 @@ func (k Keeper) SetSwapRecord(ctx sdk.Context, sr SwapRecord) error {
 }
 
 // GetSwapRecord retrieve the swap record from data store.
-func (k Keeper) GetSwapRecord(ctx sdk.Context, requestTxHash string) (SwapRecord, error) {
-	if isEmptyString(requestTxHash) {
+func (k Keeper) GetSwapRecord(ctx sdk.Context, requestTxHash TxID) (SwapRecord, error) {
+	if requestTxHash.Empty() {
 		return SwapRecord{}, errors.New("request tx hash is empty")
 	}
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixSwap, requestTxHash)
+	key := getKey(prefixSwap, requestTxHash.String())
 	ctx.Logger().Debug("get swap record", "key", key)
 	if !store.Has([]byte(key)) {
 		ctx.Logger().Debug("record not found", "key", key)
@@ -256,11 +256,11 @@ func (k Keeper) GetSwapRecord(ctx sdk.Context, requestTxHash string) (SwapRecord
 }
 
 // UpdateSwapRecordPayTxHash update the swap record with the given paytxhash
-func (k Keeper) UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash string) error {
-	if isEmptyString(requestTxHash) {
+func (k Keeper) UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash TxID) error {
+	if requestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
-	if isEmptyString(payTxHash) {
+	if payTxHash.Empty() {
 		return errors.New("pay tx hash is empty")
 	}
 	sr, err := k.GetSwapRecord(ctx, requestTxHash)
@@ -286,12 +286,12 @@ func (k Keeper) SetUnStakeRecord(ctx sdk.Context, ur UnstakeRecord) {
 }
 
 // GetUnStakeRecord query unstake record from Key Value store
-func (k Keeper) GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (UnstakeRecord, error) {
-	if isEmptyString(requestTxHash) {
+func (k Keeper) GetUnStakeRecord(ctx sdk.Context, requestTxHash TxID) (UnstakeRecord, error) {
+	if requestTxHash.Empty() {
 		return UnstakeRecord{}, errors.New("request tx hash is empty")
 	}
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixUnStake, requestTxHash)
+	key := getKey(prefixUnStake, requestTxHash.String())
 	ctx.Logger().Debug("get UnStake record", "key", key)
 	if !store.Has([]byte(key)) {
 		ctx.Logger().Debug("record not found", "key", key)
@@ -308,11 +308,11 @@ func (k Keeper) GetUnStakeRecord(ctx sdk.Context, requestTxHash string) (Unstake
 }
 
 // UpdateUnStakeRecordCompleteTxHash update the complete txHash
-func (k Keeper) UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash, completeTxHash string) error {
-	if isEmptyString(requestTxHash) {
+func (k Keeper) UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash, completeTxHash TxID) error {
+	if requestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
-	if isEmptyString(completeTxHash) {
+	if completeTxHash.Empty() {
 		return errors.New("complete tx hash is empty")
 	}
 	ur, err := k.GetUnStakeRecord(ctx, requestTxHash)
