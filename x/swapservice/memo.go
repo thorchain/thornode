@@ -80,7 +80,7 @@ type Memo interface {
 
 	GetSymbol() string
 	GetAmount() string
-	GetDestination() string
+	GetDestination() BnbAddress
 	GetSlipLimit() float64
 	GetMemo() string
 	GetAdminType() adminType
@@ -110,7 +110,7 @@ type WithdrawMemo struct {
 
 type SwapMemo struct {
 	MemoBase
-	Destination string
+	Destination BnbAddress
 	SlipLimit   float64
 	Memo        string
 }
@@ -166,9 +166,9 @@ func ParseMemo(memo string) (Memo, error) {
 		if len(parts) < 3 {
 			return noMemo, fmt.Errorf("Missing swap parameters: destination address")
 		}
-		destination := parts[2]
-		if err := validateDestination(destination); err != nil {
-			return noMemo, fmt.Errorf("Destination address is not valid")
+		destination, err := NewBnbAddress(parts[2])
+		if err != nil {
+			return noMemo, err
 		}
 		var slip float64
 		if len(parts) > 3 && len(parts[3]) > 0 {
@@ -203,25 +203,25 @@ func ParseMemo(memo string) (Memo, error) {
 }
 
 // Base Functions
-func (m MemoBase) GetType() txType         { return m.TxType }
-func (m MemoBase) IsType(tx txType) bool   { return m.TxType.Equals(tx) }
-func (m MemoBase) GetSymbol() string       { return strings.ToUpper(m.Symbol) }
-func (m MemoBase) GetAmount() string       { return "" }
-func (m MemoBase) GetDestination() string  { return "" }
-func (m MemoBase) GetSlipLimit() float64   { return 0 }
-func (m MemoBase) GetMemo() string         { return "" }
-func (m MemoBase) GetAdminType() adminType { return adminUnknown }
-func (m MemoBase) GetKey() string          { return "" }
-func (m MemoBase) GetValue() string        { return "" }
+func (m MemoBase) GetType() txType            { return m.TxType }
+func (m MemoBase) IsType(tx txType) bool      { return m.TxType.Equals(tx) }
+func (m MemoBase) GetSymbol() string          { return strings.ToUpper(m.Symbol) }
+func (m MemoBase) GetAmount() string          { return "" }
+func (m MemoBase) GetDestination() BnbAddress { return "" }
+func (m MemoBase) GetSlipLimit() float64      { return 0 }
+func (m MemoBase) GetMemo() string            { return "" }
+func (m MemoBase) GetAdminType() adminType    { return adminUnknown }
+func (m MemoBase) GetKey() string             { return "" }
+func (m MemoBase) GetValue() string           { return "" }
 
 // Transaction Specific Functions
-func (m WithdrawMemo) GetAmount() string    { return m.Amount }
-func (m SwapMemo) GetDestination() string   { return m.Destination }
-func (m SwapMemo) GetSlipLimit() float64    { return m.SlipLimit }
-func (m SwapMemo) GetMemo() string          { return m.Memo }
-func (m AdminMemo) GetAdminType() adminType { return m.Type }
-func (m AdminMemo) GetKey() string          { return m.Key }
-func (m AdminMemo) GetValue() string        { return m.Value }
+func (m WithdrawMemo) GetAmount() string      { return m.Amount }
+func (m SwapMemo) GetDestination() BnbAddress { return m.Destination }
+func (m SwapMemo) GetSlipLimit() float64      { return m.SlipLimit }
+func (m SwapMemo) GetMemo() string            { return m.Memo }
+func (m AdminMemo) GetAdminType() adminType   { return m.Type }
+func (m AdminMemo) GetKey() string            { return m.Key }
+func (m AdminMemo) GetValue() string          { return m.Value }
 
 // validates the given symbol
 func validateSymbol(sym string) error {
@@ -231,39 +231,6 @@ func validateSymbol(sym string) error {
 
 	if len(sym) > 8 {
 		return fmt.Errorf("Symbol Error: Too many characters (%d)", len(sym))
-	}
-
-	return nil
-}
-
-// validates the given binance address
-func validateDestination(des string) error {
-	// bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
-	prefixes := []string{"bnb", "tbnb"}
-
-	// check if our address has one of the prefixes above
-	hasPrefix := false
-	for _, pref := range prefixes {
-		if strings.HasPrefix(des, pref) {
-			hasPrefix = true
-			break
-		}
-	}
-	if !hasPrefix {
-		return fmt.Errorf("Address prefix is not supported")
-	}
-
-	// trim the prefix from our address
-	for _, pref := range prefixes {
-		if strings.HasPrefix(des, pref) {
-			des = strings.TrimLeft(des, pref)
-			break
-		}
-	}
-
-	// check address length is valid
-	if len(des) != 39 {
-		return fmt.Errorf("Address length is not correct")
 	}
 
 	return nil

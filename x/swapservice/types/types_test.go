@@ -31,8 +31,9 @@ func (s TypesSuite) TestTicker(c *C) {
 }
 
 func (s *TypesSuite) TestBnbAddress(c *C) {
-	_, err := NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	addr, err := NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(err, IsNil)
+	c.Check(addr.Equals(BnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")), Equals, true)
 	_, err = NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(err, IsNil)
 	_, err = NewBnbAddress("tbnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
@@ -43,4 +44,6 @@ func (s *TypesSuite) TestBnbAddress(c *C) {
 	c.Check(err, NotNil)
 	_, err = NewBnbAddress("bogus")
 	c.Check(err, NotNil)
+
+	c.Check(NoBnbAddress.Equals(BnbAddress("")), Equals, true)
 }
