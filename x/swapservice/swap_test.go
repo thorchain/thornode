@@ -157,7 +157,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don'tknow",
 			returnAmount:  "0",
 			tradeTarget:   "1.0",
-			expectedErr:   errors.New("user price 1.188100 is more than 100.00 percent different than 1.000000"),
+			expectedErr:   errors.New("user price 1.188100 is more than 10.00 percent different than 1.000000"),
 		},
 		{
 			name:          "swap",
