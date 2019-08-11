@@ -110,10 +110,6 @@ func swapOne(ctx sdk.Context,
 	balanceRune := pool.BalanceRune.Float64()
 	balanceToken := pool.BalanceToken.Float64()
 
-	fmt.Printf("GlobalSlip Limit: %f\n", gsl)
-	fmt.Printf("Trade Slip Limit: %f\n", tsl)
-	fmt.Printf("Target trade    : %f\n", tTarget)
-
 	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
 	if poolSlip > gsl {
 		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
