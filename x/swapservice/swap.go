@@ -3,7 +3,6 @@ package swapservice
 import (
 	"fmt"
 	"math"
-	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -50,7 +49,7 @@ func validateMessage(source, target Ticker, amount Amount, requester, destinatio
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeTarget, tradeSlipLimit, globalSlipLimit string) (Amount, error) {
+func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeTarget, tradeSlipLimit, globalSlipLimit Amount) (Amount, error) {
 	if err := validateMessage(source, target, amount, requester, destination, requestTxHash); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
@@ -86,7 +85,7 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 
 func swapOne(ctx sdk.Context,
 	keeper poolStorage,
-	source, target Ticker, amount Amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit string) (Amount, error) {
+	source, target Ticker, amount Amount, requester, destination string, tradeTarget, tradeSlipLimit, globalSlipLimit Amount) (Amount, error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
@@ -100,24 +99,9 @@ func swapOne(ctx sdk.Context,
 	}
 
 	amt := amount.Float64()
-
-	// Target Trade
-	tTarget, err := strconv.ParseFloat(tradeTarget, 64)
-	if err != nil {
-		return "0", errors.Wrapf(err, "target trade %s is not valid", tradeTarget)
-	}
-
-	// Trade slip limit
-	tsl, err := strconv.ParseFloat(tradeSlipLimit, 64)
-	if err != nil {
-		return "0", errors.Wrapf(err, "trade slip limit %s is not valid", tradeSlipLimit)
-	}
-
-	// Global slip limit
-	gsl, err := strconv.ParseFloat(globalSlipLimit, 64)
-	if err != nil {
-		return "0", errors.Wrapf(err, "trade slip limit %s is not valid", globalSlipLimit)
-	}
+	tTarget := tradeTarget.Float64() // trade target
+	tsl := tradeSlipLimit.Float64()  // trade slip limit
+	gsl := globalSlipLimit.Float64() // global slip limit
 
 	pool := keeper.GetPoolStruct(ctx, ticker)
 	if pool.Status != PoolEnabled {

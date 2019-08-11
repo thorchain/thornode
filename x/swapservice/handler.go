@@ -148,6 +148,16 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 	tslConfig := keeper.GetAdminConfig(ctx, "TSL")
 	gslConfig := keeper.GetAdminConfig(ctx, "GSL")
 
+	tsl, err := NewAmount(tslConfig.Value)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
+	gsl, err := NewAmount(gslConfig.Value)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
 	amount, err := swap(
 		ctx,
 		keeper,
@@ -158,8 +168,8 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 		msg.Destination,
 		msg.RequestTxHash,
 		msg.TargetPrice,
-		tslConfig.Value,
-		gslConfig.Value,
+		tsl,
+		gsl,
 	) // If so, set the stake data to the value specified in the msg.
 	if err != nil {
 		ctx.Logger().Error("fail to process swap message", "error", err)

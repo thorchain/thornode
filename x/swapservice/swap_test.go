@@ -30,8 +30,8 @@ func GetCtx(key string) sdk.Context {
 func (s SwapSuite) TestSwap(c *C) {
 	poolStorage := mocks.MockPoolStorage{}
 	ctx := GetCtx("test")
-	tradeSlipLimit := "0.100000"
-	globalSlipLimit := "0.200000"
+	tradeSlipLimit := Amount("0.100000")
+	globalSlipLimit := Amount("0.200000")
 	inputs := []struct {
 		name            string
 		requestTxHash   TxID
@@ -41,9 +41,9 @@ func (s SwapSuite) TestSwap(c *C) {
 		requester       string
 		destination     string
 		returnAmount    Amount
-		tradeTarget     string
-		tradeSlipLimit  string
-		globalSlipLimit string
+		tradeTarget     Amount
+		tradeSlipLimit  Amount
+		globalSlipLimit Amount
 		expectedErr     error
 	}{
 		{
