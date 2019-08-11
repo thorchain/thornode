@@ -88,12 +88,7 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	fex := su.Units.Float64()
 	stakerUnits += fex
 
-	stakeAmtIntervalConfig := keeper.GetAdminConfig(ctx, "StakerAmtInterval")
-	stakeAmtInterval, err := NewAmount(stakeAmtIntervalConfig.Value)
-	if err != nil {
-		return errors.Wrap(err, "StakerAmtInterval config is invalid")
-	}
-
+	stakeAmtInterval := keeper.GetAdminConfigStakerAmtInterval(ctx)
 	err = validateStakeAmount(ps, stakerUnits, stakeAmtInterval)
 	if err != nil {
 		return errors.Wrapf(err, "invalid stake amount")

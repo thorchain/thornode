@@ -40,7 +40,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 // GetCmdSetPoolData is the CLI command for sending a SetPoolData transaction
 func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-pool [ticker] [poolAddress] [status]",
+		Use:   "set-pool [ticker] [status]",
 		Short: "Set pool data",
 		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -53,12 +53,7 @@ func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			bnbAddr, err := types.NewBnbAddress(args[1])
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewMsgSetPoolData(ticker, bnbAddr, types.GetPoolStatus(args[3]), cliCtx.GetFromAddress())
+			msg := types.NewMsgSetPoolData(ticker, types.GetPoolStatus(args[3]), cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -310,7 +305,9 @@ func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgSetAdminConfig(args[0], args[1], cliCtx.GetFromAddress())
+			key := types.GetAdminConfigKey(args[0])
+
+			msg := types.NewMsgSetAdminConfig(key, args[1], cliCtx.GetFromAddress())
 			err := msg.ValidateBasic()
 			if err != nil {
 				return err
