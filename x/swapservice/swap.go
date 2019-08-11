@@ -3,15 +3,10 @@ package swapservice
 import (
 	"fmt"
 	"math"
-	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 )
-
-func isEmptyString(input string) bool {
-	return strings.TrimSpace(input) == ""
-}
 
 // validate if pools exist
 func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...Ticker) error {
