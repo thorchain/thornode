@@ -54,9 +54,6 @@ func main() {
 		client.LineBreak,
 		keys.Commands(),
 		client.LineBreak,
-		exchangeCmd(),
-		getTxDetailCmd(),
-		getTestSwap(),
 	)
 
 	executor := cli.PrepareMainCmd(rootCmd, "SS", app.DefaultCLIHome)
