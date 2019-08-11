@@ -428,16 +428,6 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 	}
 }
 
-func (s SwapSuite) TestIsEmptyString(c *C) {
-	c.Check(isEmptyString(""), Equals, true)
-	c.Check(isEmptyString(" "), Equals, true)
-	c.Check(isEmptyString("				"), Equals, true)
-	c.Check(isEmptyString(`
-
-	`), Equals, true)
-	c.Check(isEmptyString("hello"), Equals, false)
-}
-
 func (s SwapSuite) TestValidatePools(c *C) {
 	keeper := mocks.MockPoolStorage{}
 	ctx := GetCtx("test")
