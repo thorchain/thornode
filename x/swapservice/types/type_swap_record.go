@@ -9,8 +9,8 @@ type SwapRecord struct {
 	TargetTicker    Ticker `json:"target_ticker"`    // Target ticker
 	Requester       string `json:"requester"`        // Requester , should be the address on binance chain
 	Destination     string `json:"destination"`      // destination , used for swap and send , the destination address we send it to
-	AmountRequested string `json:"amount_requested"` // amount of source token in
-	AmountPaidBack  string `json:"amount_paid_back"` // amount of target token pay out to user
+	AmountRequested Amount `json:"amount_requested"` // amount of source token in
+	AmountPaidBack  Amount `json:"amount_paid_back"` // amount of target token pay out to user
 	PayTxHash       TxID   `json:"pay_tx_hash"`      // TxHash on binance chain represent our pay to user
 }
 
@@ -22,7 +22,7 @@ func (sr SwapRecord) String() string {
 	sb.WriteString("target-ticker:" + sr.TargetTicker.String())
 	sb.WriteString("requester-address:" + sr.Requester)
 	sb.WriteString("destination:" + sr.Destination)
-	sb.WriteString("amount:" + sr.AmountRequested)
-	sb.WriteString("amount-pay-to-user:" + sr.AmountPaidBack)
+	sb.WriteString("amount:" + sr.AmountRequested.String())
+	sb.WriteString("amount-pay-to-user:" + sr.AmountPaidBack.String())
 	return sb.String()
 }

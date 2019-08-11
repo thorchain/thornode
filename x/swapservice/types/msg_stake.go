@@ -7,19 +7,19 @@ import (
 // MsgSetStakeData defines a SetStakeData message
 type MsgSetStakeData struct {
 	Ticker        Ticker         `json:"ticker"`          // ticker means the symbol
-	Token         string         `json:"token"`           // the amount of token stake
-	Rune          string         `json:"rune"`            // the amount of rune stake
+	TokenAmount   Amount         `json:"token"`           // the amount of token stake
+	RuneAmount    Amount         `json:"rune"`            // the amount of rune stake
 	PublicAddress string         `json:"public_address"`  // Staker's address on binance chain
 	RequestTxHash TxID           `json:"request_tx_hash"` // the txhash that represent user send token to our pool address
 	Owner         sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
-func NewMsgSetStakeData(name string, ticker Ticker, r, token, publicAddress string, requestTxHash TxID, owner sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(name string, ticker Ticker, r, token Amount, publicAddress string, requestTxHash TxID, owner sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		Ticker:        ticker,
-		Token:         token,
-		Rune:          r,
+		TokenAmount:   token,
+		RuneAmount:    r,
 		PublicAddress: publicAddress,
 		RequestTxHash: requestTxHash,
 		Owner:         owner,
@@ -37,10 +37,10 @@ func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
 	if msg.Ticker.Empty() {
 		return sdk.ErrUnknownRequest("Stake Ticker cannot be empty")
 	}
-	if len(msg.Rune) == 0 {
+	if msg.RuneAmount.Empty() {
 		return sdk.ErrUnknownRequest("Stake Rune cannot be empty")
 	}
-	if len(msg.Token) == 0 {
+	if msg.TokenAmount.Empty() {
 		return sdk.ErrUnknownRequest("Stake Token cannot be empty")
 	}
 	if msg.RequestTxHash.Empty() {

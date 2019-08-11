@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,6 +11,8 @@ import (
 const (
 	DefaultCodespace sdk.CodespaceType = ModuleName
 )
+
+const floatPrecision = 8
 
 var RuneTicker Ticker = Ticker("RUNE")
 
@@ -62,4 +65,41 @@ func (tx TxID) Empty() bool {
 
 func (tx TxID) String() string {
 	return string(tx)
+}
+
+type Amount string
+
+var ZeroAmount Amount = Amount("0")
+
+func NewAmount(amount string) (Amount, error) {
+	_, err := strconv.ParseFloat(amount, 64)
+	if err != nil {
+		return Amount("o"), err
+	}
+	return Amount(amount), nil
+}
+
+func NewAmountFromFloat(f float64) Amount {
+	return Amount(strconv.FormatFloat(f, 'f', floatPrecision, 64))
+}
+
+func (a Amount) Equals(a2 Amount) bool {
+	return strings.EqualFold(a.String(), a2.String())
+}
+
+func (a Amount) Empty() bool {
+	return strings.TrimSpace(a.String()) == ""
+}
+
+func (a Amount) Zero() bool {
+	return a.Equals(ZeroAmount)
+}
+
+func (a Amount) Float64() float64 {
+	amt, _ := strconv.ParseFloat(a.String(), 64)
+	return amt
+}
+
+func (a Amount) String() string {
+	return string(a)
 }

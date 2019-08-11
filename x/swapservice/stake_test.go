@@ -1,8 +1,6 @@
 package swapservice
 
 import (
-	"fmt"
-
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 )
@@ -93,11 +91,11 @@ func (s StakeSuite) TestValidateAmount(c *C) {
 	makePoolStaker := func(total int, avg float64) PoolStaker {
 		stakers := make([]StakerUnit, total)
 		for i, _ := range stakers {
-			stakers[i] = StakerUnit{Units: fmt.Sprintf("%f", avg)}
+			stakers[i] = StakerUnit{Units: NewAmountFromFloat(avg)}
 		}
 
 		return PoolStaker{
-			TotalUnits: fmt.Sprintf("%f", avg*float64(total)),
+			TotalUnits: NewAmountFromFloat(avg * float64(total)),
 			Stakers:    stakers,
 		}
 	}

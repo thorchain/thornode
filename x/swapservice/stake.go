@@ -2,13 +2,11 @@ package swapservice
 
 import (
 	"fmt"
-	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 )
 
-const floatPrecision = 8
 const stakerLimit = 100.0 // TODO: make configurable
 
 // validateStakeAmount
@@ -18,10 +16,7 @@ func validateStakeAmount(stakers PoolStaker, stakerUnits float64) error {
 	if stakerCount <= stakerLimit {
 		minStakerAmt = 0 // first 100 stakers there are no lower limits
 	} else {
-		totalUnits, err := strconv.ParseFloat(stakers.TotalUnits, 64)
-		if err != nil {
-			return errors.Wrapf(err, "%s is invalid units", stakers.TotalUnits)
-		}
+		totalUnits := stakers.TotalUnits.Float64()
 		avgStake := totalUnits / stakerCount
 
 		minStakerAmt = avgStake * ((stakerCount / stakerLimit) + 0.1) // Increases minStakeAmt by 10% every 100 stakers
@@ -35,14 +30,14 @@ func validateStakeAmount(stakers PoolStaker, stakerUnits float64) error {
 }
 
 // validateStakeMessage is to do some validation , and make sure it is legit
-func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stakeTokenAmount string, requestTxHash TxID, publicAddress string) error {
+func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stakeTokenAmount Amount, requestTxHash TxID, publicAddress string) error {
 	if ticker.Empty() {
 		return errors.New("ticker is empty")
 	}
-	if isEmptyString(stakeRuneAmount) {
+	if stakeRuneAmount.Empty() {
 		return errors.New("stake rune amount is empty")
 	}
-	if isEmptyString(stakeTokenAmount) {
+	if stakeTokenAmount.Empty() {
 		return errors.New("stake token amount is empty")
 	}
 	if requestTxHash.Empty() {
@@ -57,36 +52,21 @@ func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRu
 	return nil
 }
 
-func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stakeTokenAmount, publicAddress string, requestTxHash TxID) error {
+func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stakeTokenAmount Amount, publicAddress string, requestTxHash TxID) error {
 	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", ticker, stakeRuneAmount, stakeTokenAmount))
 	if err := validateStakeMessage(ctx, keeper, ticker, stakeRuneAmount, stakeTokenAmount, requestTxHash, publicAddress); nil != err {
 		return errors.Wrap(err, "invalid request")
 	}
 	pool := keeper.GetPoolStruct(ctx, ticker)
-	fTokenAmt, err := strconv.ParseFloat(stakeTokenAmount, 64)
-	if err != nil {
-		return errors.Wrapf(err, "%s is invalid token_amount", stakeTokenAmount)
-	}
-	fRuneAmt, err := strconv.ParseFloat(stakeRuneAmount, 64)
-	if err != nil {
-		return errors.Wrapf(err, "%s is invalid rune_amount", stakeRuneAmount)
-	}
+	fTokenAmt := stakeTokenAmount.Float64()
+	fRuneAmt := stakeRuneAmount.Float64()
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
 	ctx.Logger().Info(fmt.Sprintf("Staking: %sRUNE %sToken", stakeRuneAmount, stakeTokenAmount))
 
-	balanceRune, err := strconv.ParseFloat(pool.BalanceRune, 64)
-	if err != nil {
-		return errors.Wrapf(err, "%s is invalid pool rune balance", pool.BalanceRune)
-	}
+	balanceRune := pool.BalanceRune.Float64()
+	balanceToken := pool.BalanceToken.Float64()
 
-	balanceToken, err := strconv.ParseFloat(pool.BalanceToken, 64)
-	if err != nil {
-		return errors.Wrapf(err, "%s is invalid pool token balance", pool.BalanceRune)
-	}
-	oldPoolUnits, err := strconv.ParseFloat(pool.PoolUnits, 64)
-	if err != nil {
-		return errors.Wrapf(err, "%s is invalid pool total units", pool.PoolUnits)
-	}
+	oldPoolUnits := pool.PoolUnits.Float64()
 	newPoolUnits, stakerUnits, err := calculatePoolUnits(oldPoolUnits, balanceRune, balanceToken, fRuneAmt, fTokenAmt)
 	if nil != err {
 		return errors.Wrapf(err, "fail to calculate pool units")
@@ -94,9 +74,9 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	ctx.Logger().Info(fmt.Sprintf("current pool units : %f ,staker units : %f", newPoolUnits, stakerUnits))
 	poolRune := balanceRune + fRuneAmt
 	poolToken := balanceToken + fTokenAmt
-	pool.PoolUnits = strconv.FormatFloat(newPoolUnits, 'f', floatPrecision, 64)
-	pool.BalanceRune = strconv.FormatFloat(poolRune, 'f', floatPrecision, 64)
-	pool.BalanceToken = strconv.FormatFloat(poolToken, 'f', floatPrecision, 64)
+	pool.PoolUnits = NewAmountFromFloat(newPoolUnits)
+	pool.BalanceRune = NewAmountFromFloat(poolRune)
+	pool.BalanceToken = NewAmountFromFloat(poolToken)
 	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
 	keeper.SetPoolStruct(ctx, ticker, pool)
 	// maintain pool staker structure
@@ -106,17 +86,13 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	}
 	ps.TotalUnits = pool.PoolUnits
 	su := ps.GetStakerUnit(publicAddress)
-	fex, err := strconv.ParseFloat(su.Units, 64)
-	if nil != err {
-		return errors.Wrap(err, "fail to parse staker's exist stake unit")
-
-	}
+	fex := su.Units.Float64()
 	stakerUnits += fex
 	err = validateStakeAmount(ps, stakerUnits)
 	if err != nil {
 		return errors.Wrapf(err, "invalid stake amount")
 	}
-	su.Units = strconv.FormatFloat(stakerUnits, 'f', floatPrecision, 64)
+	su.Units = NewAmountFromFloat(stakerUnits)
 	ps.UpsertStakerUnit(su)
 	keeper.SetPoolStaker(ctx, ticker, ps)
 	// maintain stake pool structure
@@ -125,12 +101,9 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 		return errors.Wrap(err, "fail to get stakepool object")
 	}
 	stakerPoolItem := sp.GetStakerPoolItem(ticker)
-	existUnit, err := strconv.ParseFloat(stakerPoolItem.Units, 64)
-	if nil != err {
-		return errors.Wrap(err, "fail to parse exist unit")
-	}
+	existUnit := stakerPoolItem.Units.Float64()
 	stakerUnits += existUnit
-	stakerPoolItem.Units = strconv.FormatFloat(stakerUnits, 'f', floatPrecision, 64)
+	stakerPoolItem.Units = NewAmountFromFloat(stakerUnits)
 	stakerPoolItem.AddStakerTxDetail(requestTxHash, stakeRuneAmount, stakeTokenAmount)
 	sp.UpsertStakerPoolItem(stakerPoolItem)
 	keeper.SetStakerPool(ctx, publicAddress, sp)

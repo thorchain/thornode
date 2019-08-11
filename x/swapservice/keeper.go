@@ -86,7 +86,7 @@ func (k Keeper) SetPoolStruct(ctx sdk.Context, ticker Ticker, poolstruct PoolStr
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(poolstruct))
 }
 
-func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 Ticker) (string, string) {
+func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 Ticker) (Amount, Amount) {
 	poolstruct := k.GetPoolStruct(ctx, ticker)
 	if IsRune(ticker2) {
 		return poolstruct.BalanceRune, poolstruct.BalanceToken
