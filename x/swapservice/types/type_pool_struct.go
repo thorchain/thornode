@@ -39,6 +39,13 @@ func (ps PoolStatus) String() string {
 	return ""
 }
 
+func (ps PoolStatus) Valid() error {
+	if ps.String() == "" {
+		return fmt.Errorf("Invalid pool status")
+	}
+	return nil
+}
+
 // MarshalJSON marshal PoolStatus to JSON in string form
 func (ps PoolStatus) MarshalJSON() ([]byte, error) {
 	return json.Marshal(ps.String())
