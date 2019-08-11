@@ -27,11 +27,8 @@ func (msg MsgSetAdminConfig) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if len(msg.AdminConfig.Key) == 0 {
-		return sdk.ErrUnknownRequest("Key cannot be empty")
-	}
-	if len(msg.AdminConfig.Value) == 0 {
-		return sdk.ErrUnknownRequest("Value cannot be empty")
+	if err := msg.AdminConfig.Valid(); err != nil {
+		return sdk.ErrUnknownRequest(err.Error())
 	}
 	return nil
 }
