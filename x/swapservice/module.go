@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/jpthor/cosmos-swap/config"
 	"github.com/jpthor/cosmos-swap/x/swapservice/client/cli"
 	"github.com/jpthor/cosmos-swap/x/swapservice/client/rest"
 )
@@ -70,16 +69,14 @@ type AppModule struct {
 	AppModuleBasic
 	keeper     Keeper
 	coinKeeper bank.Keeper
-	settings   *config.Settings
 	txOutStore *TxOutStore
 }
 
 // NewAppModule creates a new AppModule Object
-func NewAppModule(k Keeper, bankKeeper bank.Keeper, settings *config.Settings) AppModule {
+func NewAppModule(k Keeper, bankKeeper bank.Keeper) AppModule {
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
-		settings:       settings,
 		coinKeeper:     bankKeeper,
 		txOutStore:     NewTxOutStore(k),
 	}
