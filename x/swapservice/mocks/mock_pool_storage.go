@@ -92,3 +92,7 @@ func (mps MockPoolStorage) UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, re
 	}
 	return nil
 }
+
+func (mps MockPoolStorage) GetAdminConfig(ctx sdk.Context, key string) types.AdminConfig {
+	return types.NewAdminConfig(key, "FOOBAR")
+}
