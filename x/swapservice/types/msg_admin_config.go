@@ -9,7 +9,7 @@ type MsgSetAdminConfig struct {
 }
 
 // NewMsgSetAdminConfig is a constructor function for MsgSetAdminConfig
-func NewMsgSetAdminConfig(key, value string, signer sdk.AccAddress) MsgSetAdminConfig {
+func NewMsgSetAdminConfig(key AdminConfigKey, value string, signer sdk.AccAddress) MsgSetAdminConfig {
 	return MsgSetAdminConfig{
 		AdminConfig: NewAdminConfig(key, value),
 		Signer:      signer,

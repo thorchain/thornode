@@ -79,7 +79,7 @@ type PoolStruct struct {
 	BalanceToken Amount     `json:"balance_token"` // how many token in the pool
 	Ticker       Ticker     `json:"ticker"`        // what's the token's ticker
 	PoolUnits    Amount     `json:"pool_units"`    // total units of the pool
-	PoolAddress  BnbAddress `json:"pool_address"`  // pool address on binance chain
+	PoolAddress  BnbAddress `json:"pool_address"`  // bnb liquidity pool address
 	Status       PoolStatus `json:"status"`        // status
 }
 
@@ -104,7 +104,6 @@ func (ps PoolStruct) String() string {
 	sb.WriteString(fmt.Sprintln("token-balance: " + ps.BalanceToken.String()))
 	sb.WriteString(fmt.Sprintln("ticker: " + ps.Ticker.String()))
 	sb.WriteString(fmt.Sprintln("pool-units: " + ps.PoolUnits.String()))
-	sb.WriteString(fmt.Sprintln("pool-address: " + ps.PoolAddress))
 	sb.WriteString(fmt.Sprintln("status: " + ps.Status.String()))
 	return sb.String()
 }

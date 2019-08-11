@@ -22,7 +22,7 @@ type poolStorage interface {
 	GetSwapRecord(ctx sdk.Context, requestTxHash TxID) (SwapRecord, error)
 	UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash TxID) error
 
-	GetAdminConfig(ctx sdk.Context, key string) AdminConfig
+	GetAdminConfig(ctx sdk.Context, key AdminConfigKey) AdminConfig
 
 	SetUnStakeRecord(ctx sdk.Context, ur UnstakeRecord)
 	GetUnStakeRecord(ctx sdk.Context, requestTxHash TxID) (UnstakeRecord, error)

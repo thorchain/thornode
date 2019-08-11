@@ -12,6 +12,12 @@ const (
 	PoolEnabled      = types.Enabled
 	PoolBootstrap    = types.Bootstrap
 	PoolSuspended    = types.Suspended
+
+	// Admin config keys
+	GSLKey               = types.GSLKey
+	TSLKey               = types.TSLKey
+	StakerAmtIntervalKey = types.StakerAmtIntervalKey
+	PoolAddressKey       = types.PoolAddressKey
 )
 
 var (
@@ -29,6 +35,7 @@ var (
 	NewSwapRecord        = types.NewSwapRecord
 	IsRune               = types.IsRune
 	GetPoolStatus        = types.GetPoolStatus
+	GetAdminConfigKey    = types.GetAdminConfigKey
 	NewTxID              = types.NewTxID
 	NewTicker            = types.NewTicker
 	RuneTicker           = types.RuneTicker
@@ -66,6 +73,7 @@ type (
 	Coin                = types.Coin
 	Ticker              = types.Ticker
 	Amount              = types.Amount
+	AdminConfigKey      = types.AdminConfigKey
 	AdminConfig         = types.AdminConfig
 	BnbAddress          = types.BnbAddress
 )
