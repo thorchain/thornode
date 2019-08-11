@@ -39,8 +39,17 @@ func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
 	if msg.Ticker.Empty() {
 		return sdk.ErrUnknownRequest("Pool Ticker cannot be empty")
 	}
+	if msg.BalanceRune.Empty() {
+		return sdk.ErrUnknownRequest("Rune balance cannot be empty")
+	}
+	if msg.BalanceToken.Empty() {
+		return sdk.ErrUnknownRequest("Token balance cannot be empty")
+	}
 	if msg.PoolAddress.Empty() {
-		return sdk.ErrUnknownRequest("pool address can't be empty")
+		return sdk.ErrUnknownRequest("Pool address can't be empty")
+	}
+	if err := msg.Status.Valid(); err != nil {
+		return sdk.ErrUnknownRequest(err.Error())
 	}
 	return nil
 }
