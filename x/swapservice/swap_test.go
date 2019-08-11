@@ -10,7 +10,7 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/jpthor/cosmos-swap/x/swapservice/mocks"
+	"gitlab.com/thorchain/statechain/x/swapservice/mocks"
 )
 
 type SwapSuite struct{}
