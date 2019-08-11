@@ -431,6 +431,9 @@ func (k Keeper) GetAdminConfig(ctx sdk.Context, key string) AdminConfig {
 		if record.Key == "TSL" {
 			record.Value = "0.1" // default to 10%
 		}
+		if record.Key == "StakerAmtInterval" {
+			record.Value = "100" // default to 100
+		}
 	}
 
 	return record
