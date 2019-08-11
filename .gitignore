@@ -19,3 +19,5 @@ jack.txt
 bin/
 ssd
 *.exe
+
+.testCoverage.txt
