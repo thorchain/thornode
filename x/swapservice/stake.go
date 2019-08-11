@@ -7,19 +7,18 @@ import (
 	"github.com/pkg/errors"
 )
 
-const stakerLimit = 100.0 // TODO: make configurable
-
 // validateStakeAmount
-func validateStakeAmount(stakers PoolStaker, stakerUnits float64) error {
+func validateStakeAmount(stakers PoolStaker, stakerUnits float64, stakeAmtInterval Amount) error {
 	var minStakerAmt float64
+	interval := stakeAmtInterval.Float64()
 	stakerCount := float64(len(stakers.Stakers))
-	if stakerCount <= stakerLimit {
+	if stakerCount <= interval {
 		minStakerAmt = 0 // first 100 stakers there are no lower limits
 	} else {
 		totalUnits := stakers.TotalUnits.Float64()
 		avgStake := totalUnits / stakerCount
 
-		minStakerAmt = avgStake * ((stakerCount / stakerLimit) + 0.1) // Increases minStakeAmt by 10% every 100 stakers
+		minStakerAmt = avgStake * ((stakerCount / interval) + 0.1) // Increases minStakeAmt by 10% every interval stakers
 	}
 
 	if stakerUnits < minStakerAmt {
@@ -88,7 +87,14 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	su := ps.GetStakerUnit(publicAddress)
 	fex := su.Units.Float64()
 	stakerUnits += fex
-	err = validateStakeAmount(ps, stakerUnits)
+
+	stakeAmtIntervalConfig := keeper.GetAdminConfig(ctx, "StakerAmtInterval")
+	stakeAmtInterval, err := NewAmount(stakeAmtIntervalConfig.Value)
+	if err != nil {
+		return errors.Wrap(err, "StakerAmtInterval config is invalid")
+	}
+
+	err = validateStakeAmount(ps, stakerUnits, stakeAmtInterval)
 	if err != nil {
 		return errors.Wrapf(err, "invalid stake amount")
 	}
