@@ -11,13 +11,13 @@ type MsgSwap struct {
 	TargetTicker  Ticker         `json:"target_ticker"`   // target token
 	Requester     string         `json:"requester"`       // request address on Binance chain
 	Destination   string         `json:"destination"`     // destination , used for swap and send , the destination address we send it to
-	Amount        string         `json:"amount"`          // amount of token to swap
+	Amount        Amount         `json:"amount"`          // amount of token to swap
 	SlipLimit     string         `json:"slip_limit"`      // slip limit, only complete the swap when the pool slip is within limit
 	Owner         sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSwap is a constructor function for MsgSwap
-func NewMsgSwap(requestTxHash TxID, source, target Ticker, amount, requester, destination, slipLimit string, owner sdk.AccAddress) MsgSwap {
+func NewMsgSwap(requestTxHash TxID, source, target Ticker, amount Amount, requester, destination, slipLimit string, owner sdk.AccAddress) MsgSwap {
 	return MsgSwap{
 		RequestTxHash: requestTxHash,
 		SourceTicker:  source,
@@ -47,7 +47,7 @@ func (msg MsgSwap) ValidateBasic() sdk.Error {
 	if msg.TargetTicker.Empty() {
 		return sdk.ErrUnknownRequest("Swap Target cannot be empty")
 	}
-	if len(msg.Amount) == 0 {
+	if msg.Amount.Empty() {
 		return sdk.ErrUnknownRequest("Swap Amount cannot be empty")
 	}
 	if len(msg.Requester) == 0 {

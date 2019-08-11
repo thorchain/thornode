@@ -31,6 +31,9 @@ var (
 	IsRune               = types.IsRune
 	NewTicker            = types.NewTicker
 	RuneTicker           = types.RuneTicker
+	NewAmount            = types.NewAmount
+	NewAmountFromFloat   = types.NewAmountFromFloat
+	ZeroAmount           = types.ZeroAmount
 	ModuleCdc            = types.ModuleCdc
 	RegisterCodec        = types.RegisterCodec
 )
@@ -60,5 +63,6 @@ type (
 	TxOut               = types.TxOut
 	Coin                = types.Coin
 	Ticker              = types.Ticker
+	Amount              = types.Amount
 	AdminConfig         = types.AdminConfig
 )

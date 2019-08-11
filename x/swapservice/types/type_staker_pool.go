@@ -9,15 +9,15 @@ import (
 // Staker can stake on the same pool for multiple times
 type StakeTxDetail struct {
 	RequestTxHash TxID   `json:"request_tx_hash"` // the tx hash from binance chain , represent staker send token to the pool
-	RuneAmount    string `json:"rune_amount"`     // amount of rune that send in at the time
-	TokenAmount   string `json:"token_amount"`    // amount of token that send in at the time
+	RuneAmount    Amount `json:"rune_amount"`     // amount of rune that send in at the time
+	TokenAmount   Amount `json:"token_amount"`    // amount of token that send in at the time
 }
 
 // StakerPoolItem represent the staker's activity in a pool
 // Staker can stake on multiple pool
 type StakerPoolItem struct {
 	Ticker       Ticker          `json:"ticker"`
-	Units        string          `json:"units"`
+	Units        Amount          `json:"units"`
 	StakeDetails []StakeTxDetail `json:"stake_details"`
 }
 
@@ -81,7 +81,7 @@ func (sp StakerPool) String() string {
 	sb.WriteString(fmt.Sprintln("staker-id: " + sp.StakerID))
 	if nil != sp.PoolUnits {
 		for _, item := range sp.PoolUnits {
-			sb.WriteString(fmt.Sprintf("pool-id: %s, staker unitsL %s", item.Units, item.Units))
+			sb.WriteString(fmt.Sprintf("pool-id: %s, staker unitsL %s", item.Units.String(), item.Units.String()))
 		}
 	}
 	return sb.String()
@@ -96,7 +96,7 @@ func (sp *StakerPool) GetStakerPoolItem(ticker Ticker) *StakerPoolItem {
 	}
 	return &StakerPoolItem{
 		Ticker:       ticker,
-		Units:        "0",
+		Units:        ZeroAmount,
 		StakeDetails: []StakeTxDetail{},
 	}
 }
@@ -134,7 +134,7 @@ func (sp *StakerPool) UpsertStakerPoolItem(stakerPoolItem *StakerPoolItem) {
 }
 
 // AddStakerTxDetail to the StakerPool structure
-func (spi *StakerPoolItem) AddStakerTxDetail(requestTxHash TxID, runeAmount, tokenAmount string) {
+func (spi *StakerPoolItem) AddStakerTxDetail(requestTxHash TxID, runeAmount, tokenAmount Amount) {
 	std := StakeTxDetail{
 		RequestTxHash: requestTxHash,
 		RuneAmount:    runeAmount,

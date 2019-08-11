@@ -34,10 +34,10 @@ func (s SwapSuite) TestSwap(c *C) {
 		requestTxHash  TxID
 		source         Ticker
 		target         Ticker
-		amount         string
+		amount         Amount
 		requester      string
 		destination    string
-		returnAmount   string
+		returnAmount   Amount
 		tradeSlipLimit string
 		expectedErr    error
 	}{
@@ -188,7 +188,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		} else {
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
-		c.Check(item.returnAmount, Equals, amount)
+		c.Check(item.returnAmount.Equals(amount), Equals, true)
 	}
 }
 
