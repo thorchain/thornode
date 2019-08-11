@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"github.com/jpthor/cosmos-swap/x/swapservice/client/cli"
-	"github.com/jpthor/cosmos-swap/x/swapservice/client/rest"
+	"gitlab.com/thorchain/statechain/x/swapservice/client/cli"
+	"gitlab.com/thorchain/statechain/x/swapservice/client/rest"
 )
 
 // type check to ensure the interface is properly implemented

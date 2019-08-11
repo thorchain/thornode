@@ -6,7 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
+	"gitlab.com/thorchain/statechain/x/swapservice/types"
 )
 
 // MockPoolStorage implements PoolStorage interface, thus we can mock the error cases
