@@ -101,15 +101,15 @@ func (s StakeSuite) TestValidateAmount(c *C) {
 	}
 
 	skrs := makePoolStaker(50, 0.001)
-	c.Assert(validateStakeAmount(skrs, 0.001), IsNil)
+	c.Assert(validateStakeAmount(skrs, 0.001, NewAmountFromFloat(100)), IsNil)
 
 	skrs = makePoolStaker(150, 0.0002)
-	c.Assert(validateStakeAmount(skrs, 0.0001), NotNil)
-	c.Assert(validateStakeAmount(skrs, 0.0002), NotNil)
-	c.Assert(validateStakeAmount(skrs, 0.0010), IsNil)
+	c.Assert(validateStakeAmount(skrs, 0.0001, NewAmountFromFloat(100)), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.0002, NewAmountFromFloat(100)), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.0010, NewAmountFromFloat(100)), IsNil)
 
 	skrs = makePoolStaker(300, 0.001)
-	c.Assert(validateStakeAmount(skrs, 0.0001), NotNil)
-	c.Assert(validateStakeAmount(skrs, 0.002), NotNil)
-	c.Assert(validateStakeAmount(skrs, 0.004), IsNil)
+	c.Assert(validateStakeAmount(skrs, 0.0001, NewAmountFromFloat(100)), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.002, NewAmountFromFloat(100)), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.004, NewAmountFromFloat(100)), IsNil)
 }
