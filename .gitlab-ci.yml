@@ -14,7 +14,7 @@ stages:
 
 unit_tests:
   stage: test
-  coverage: '^coverage:\s(\d+(?:\.\d+)?%)'
+  coverage: ^coverage:\s(\d+(?:\.\d+)?%)
   script:
     - go test ./...
 
