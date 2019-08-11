@@ -29,7 +29,6 @@ func (mps MockPoolStorage) GetPoolStruct(ctx sdk.Context, ticker types.Ticker) t
 			BalanceToken: "100",
 			PoolUnits:    "100",
 			Status:       types.Enabled,
-			PoolAddress:  "hello",
 			Ticker:       ticker,
 		}
 	}
@@ -93,6 +92,6 @@ func (mps MockPoolStorage) UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, re
 	return nil
 }
 
-func (mps MockPoolStorage) GetAdminConfig(ctx sdk.Context, key string) types.AdminConfig {
+func (mps MockPoolStorage) GetAdminConfig(ctx sdk.Context, key types.AdminConfigKey) types.AdminConfig {
 	return types.NewAdminConfig(key, "FOOBAR")
 }

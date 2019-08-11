@@ -62,15 +62,17 @@ func (k Keeper) GetPoolStruct(ctx sdk.Context, ticker Ticker) PoolStruct {
 	bz := store.Get([]byte(key))
 	var poolstruct PoolStruct
 	k.cdc.MustUnmarshalBinaryBare(bz, &poolstruct)
-	if poolstruct.BalanceRune == "" {
-		poolstruct.BalanceRune = "0"
+	if poolstruct.BalanceRune.Empty() {
+		poolstruct.BalanceRune = ZeroAmount
 	}
-	if poolstruct.BalanceToken == "" {
-		poolstruct.BalanceToken = "0"
+	if poolstruct.BalanceToken.Empty() {
+		poolstruct.BalanceToken = ZeroAmount
 	}
-	if len(poolstruct.PoolUnits) == 0 {
-		poolstruct.PoolUnits = "0"
+	if poolstruct.PoolUnits.Empty() {
+		poolstruct.PoolUnits = ZeroAmount
 	}
+	poolstruct.PoolAddress = k.GetAdminConfigPoolAddress(ctx)
+
 	return poolstruct
 }
 
@@ -95,12 +97,11 @@ func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 Ticker) (Amount
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
-func (k Keeper) SetPoolData(ctx sdk.Context, ticker Ticker, poolAddress BnbAddress, ps PoolStatus) {
+func (k Keeper) SetPoolData(ctx sdk.Context, ticker Ticker, ps PoolStatus) {
 	poolstruct := k.GetPoolStruct(ctx, ticker)
 	if poolstruct.PoolUnits == "" {
 		poolstruct.PoolUnits = "0"
 	}
-	poolstruct.PoolAddress = poolAddress
 	poolstruct.Status = ps
 	poolstruct.Ticker = ticker
 	k.SetPoolStruct(ctx, ticker, poolstruct)
@@ -406,13 +407,51 @@ func (k Keeper) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
 // SetAdminConfig - saving a given admin config to the KVStore
 func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixAdmin, config.Key)
+	key := getKey(prefixAdmin, config.Key.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(config))
 }
 
+// GetAdminConfigGSL - get the config for GSL
+func (k Keeper) GetAdminConfigGSL(ctx sdk.Context) Amount {
+	return k.GetAdminConfigAmountType(ctx, GSLKey, "0.3")
+}
+
+// GetAdminConfigTSL - get the config for TSL
+func (k Keeper) GetAdminConfigTSL(ctx sdk.Context) Amount {
+	return k.GetAdminConfigAmountType(ctx, TSLKey, "0.1")
+}
+
+// GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
+func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context) Amount {
+	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, "100")
+}
+
+// GetAdminConfigPoolAddress - get the config for PoolAddress
+func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context) BnbAddress {
+	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, "")
+}
+
+// GetAdminConfigBnbAddressType - get the config for TSL
+func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string) BnbAddress {
+	config := k.GetAdminConfig(ctx, key)
+	if config.Value == "" {
+		config.Value = dValue // set default
+	}
+	return BnbAddress(config.Value)
+}
+
+// GetAdminConfigAmountType - get the config for TSL
+func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string) Amount {
+	config := k.GetAdminConfig(ctx, key)
+	if config.Value == "" {
+		config.Value = dValue // set default
+	}
+	return Amount(config.Value)
+}
+
 // GetAdminConfig - gets information of a tx hash
-func (k Keeper) GetAdminConfig(ctx sdk.Context, key string) AdminConfig {
-	key = getKey(prefixAdmin, key)
+func (k Keeper) GetAdminConfig(ctx sdk.Context, kkey AdminConfigKey) AdminConfig {
+	key := getKey(prefixAdmin, kkey.String())
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {

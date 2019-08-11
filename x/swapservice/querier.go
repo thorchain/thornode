@@ -217,7 +217,7 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 }
 
 func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	key := path[0]
+	key := GetAdminConfigKey(path[0])
 	config := keeper.GetAdminConfig(ctx, key)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, config)
 	if nil != err {

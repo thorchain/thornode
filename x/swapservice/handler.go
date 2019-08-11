@@ -86,7 +86,7 @@ func isSignedByTrustAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.AccAd
 // Handle a message to set pooldata
 func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sdk.Result {
 	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker, "pool address", msg.PoolAddress)
+		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	ctx.Logger().Info("handleMsgSetPoolData request", "Ticker:"+msg.Ticker)
@@ -97,7 +97,6 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 	keeper.SetPoolData(
 		ctx,
 		msg.Ticker,
-		msg.PoolAddress,
 		msg.Status)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -145,18 +144,8 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
-	tslConfig := keeper.GetAdminConfig(ctx, "TSL")
-	gslConfig := keeper.GetAdminConfig(ctx, "GSL")
-
-	tsl, err := NewAmount(tslConfig.Value)
-	if err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-
-	gsl, err := NewAmount(gslConfig.Value)
-	if err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
-	}
+	tsl := keeper.GetAdminConfigTSL(ctx)
+	gsl := keeper.GetAdminConfigGSL(ctx)
 
 	amount, err := swap(
 		ctx,
@@ -347,8 +336,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, 
 			}
 			newMsg = NewMsgSetPoolData(
 				ticker,
-				"TODO: pool address", // prob can be hard coded since its a single pool
-				PoolSuspended,        // new pools start in a suspended state
+				PoolSuspended, // new pools start in a suspended state
 				msg.Signer,
 			)
 		case StakeMemo:
@@ -393,13 +381,13 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, 
 				status := GetPoolStatus(memo.GetValue())
 				newMsg = NewMsgSetPoolData(
 					ticker,
-					pool.PoolAddress,
 					status,
 					msg.Signer,
 				)
 
 			} else if memo.GetAdminType() == adminKey {
-				newMsg = NewMsgSetAdminConfig(memo.GetKey(), memo.GetValue(), msg.Signer)
+				key := GetAdminConfigKey(memo.GetKey())
+				newMsg = NewMsgSetAdminConfig(key, memo.GetValue(), msg.Signer)
 			} else {
 				return sdk.ErrUnknownRequest("Invalid admin command type").Result()
 			}
