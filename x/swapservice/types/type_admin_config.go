@@ -2,12 +2,53 @@ package types
 
 import "fmt"
 
-type AdminConfig struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
+type AdminConfigKey string
+
+const (
+	UnknownKey           AdminConfigKey = "Unknown"
+	GSLKey               AdminConfigKey = "GSL"
+	TSLKey               AdminConfigKey = "TSL"
+	StakerAmtIntervalKey AdminConfigKey = "StakerAmtInterval"
+	PoolAddressKey       AdminConfigKey = "PoolAddress"
+)
+
+func (k AdminConfigKey) String() string {
+	return string(k)
 }
 
-func NewAdminConfig(key, value string) AdminConfig {
+func GetAdminConfigKey(key string) AdminConfigKey {
+	switch key {
+	case string(GSLKey):
+		return GSLKey
+	case string(TSLKey):
+		return TSLKey
+	case string(StakerAmtIntervalKey):
+		return StakerAmtIntervalKey
+	case string(PoolAddressKey):
+		return PoolAddressKey
+	default:
+		return UnknownKey
+	}
+}
+
+// Ensure the value for a given key is a valid
+func (k AdminConfigKey) ValidValue(value string) error {
+	var err error
+	switch k {
+	case GSLKey, TSLKey, StakerAmtIntervalKey:
+		_, err = NewAmount(value)
+	case PoolAddressKey:
+		_, err = NewBnbAddress(value)
+	}
+	return err
+}
+
+type AdminConfig struct {
+	Key   AdminConfigKey `json:"key"`
+	Value string         `json:"value"`
+}
+
+func NewAdminConfig(key AdminConfigKey, value string) AdminConfig {
 	return AdminConfig{
 		Key:   key,
 		Value: value,
@@ -22,8 +63,14 @@ func (c AdminConfig) Valid() error {
 	if c.Key == "" {
 		return fmt.Errorf("Key cannot be empty")
 	}
+	if c.Key == UnknownKey {
+		return fmt.Errorf("Key not recognized")
+	}
 	if c.Value == "" {
 		return fmt.Errorf("Value cannot be empty")
+	}
+	if err := c.Key.ValidValue(c.Value); err != nil {
+		return err
 	}
 	return nil
 }

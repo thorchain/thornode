@@ -11,18 +11,16 @@ type MsgSetPoolData struct {
 	BalanceRune  Amount         `json:"balance_rune"`  // balance rune
 	BalanceToken Amount         `json:"balance_token"` // balance of token
 	Ticker       Ticker         `json:"ticker"`        // Ticker means the token symbol
-	PoolAddress  BnbAddress     `json:"pool_address"`  // Pool Address on binance chain
 	Status       PoolStatus     `json:"status"`        // pool status
 	Owner        sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetPoolData(ticker Ticker, poolAddress BnbAddress, status PoolStatus, owner sdk.AccAddress) MsgSetPoolData {
+func NewMsgSetPoolData(ticker Ticker, status PoolStatus, owner sdk.AccAddress) MsgSetPoolData {
 	return MsgSetPoolData{
 		Ticker:       ticker,
 		BalanceRune:  ZeroAmount,
 		BalanceToken: ZeroAmount,
-		PoolAddress:  poolAddress,
 		Status:       status,
 		Owner:        owner,
 	}
@@ -44,9 +42,6 @@ func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
 	}
 	if msg.BalanceToken.Empty() {
 		return sdk.ErrUnknownRequest("Token balance cannot be empty")
-	}
-	if msg.PoolAddress.Empty() {
-		return sdk.ErrUnknownRequest("Pool address can't be empty")
 	}
 	if err := msg.Status.Valid(); err != nil {
 		return sdk.ErrUnknownRequest(err.Error())
