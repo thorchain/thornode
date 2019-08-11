@@ -71,38 +71,38 @@ func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetStakeData is the CLI command for sending a SetStakeData transaction
 func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-stake  [name] [ticker] [runes] [tokens] [stakerAddress] [requestTxHash]",
+		Use:   "set-stake  [ticker] [runes] [tokens] [stakerAddress] [requestTxHash]",
 		Short: "Stake coins into a pool",
 		Args:  cobra.ExactArgs(6),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			ticker, err := types.NewTicker(args[1])
+			ticker, err := types.NewTicker(args[0])
 			if err != nil {
 				return err
 			}
 
-			txID, err := types.NewTxID(args[5])
+			runeAmt, err := types.NewAmount(args[1])
 			if err != nil {
 				return err
 			}
 
-			runeAmt, err := types.NewAmount(args[2])
+			tokenAmt, err := types.NewAmount(args[2])
 			if err != nil {
 				return err
 			}
 
-			tokenAmt, err := types.NewAmount(args[3])
+			bnbAddr, err := types.NewBnbAddress(args[3])
 			if err != nil {
 				return err
 			}
 
-			bnbAddr, err := types.NewBnbAddress(args[4])
+			txID, err := types.NewTxID(args[4])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgSetStakeData(args[0], ticker, runeAmt, tokenAmt, bnbAddr, txID, cliCtx.GetFromAddress())
+			msg := types.NewMsgSetStakeData(ticker, runeAmt, tokenAmt, bnbAddr, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err

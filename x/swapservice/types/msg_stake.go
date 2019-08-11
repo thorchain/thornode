@@ -15,7 +15,7 @@ type MsgSetStakeData struct {
 }
 
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
-func NewMsgSetStakeData(name string, ticker Ticker, r, token Amount, publicAddress BnbAddress, requestTxHash TxID, owner sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(ticker Ticker, r, token Amount, publicAddress BnbAddress, requestTxHash TxID, owner sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		Ticker:        ticker,
 		TokenAmount:   token,
