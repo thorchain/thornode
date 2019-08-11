@@ -53,7 +53,12 @@ func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSetPoolData(ticker, args[1], types.GetPoolStatus(args[3]), cliCtx.GetFromAddress())
+			bnbAddr, err := types.NewBnbAddress(args[1])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetPoolData(ticker, bnbAddr, types.GetPoolStatus(args[3]), cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -92,7 +97,12 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSetStakeData(args[0], ticker, runeAmt, tokenAmt, args[4], txID, cliCtx.GetFromAddress())
+			bnbAddr, err := types.NewBnbAddress(args[4])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetStakeData(args[0], ticker, runeAmt, tokenAmt, bnbAddr, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -161,12 +171,22 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
+			requester, err := types.NewBnbAddress(args[4])
+			if err != nil {
+				return err
+			}
+
+			destination, err := types.NewBnbAddress(args[5])
+			if err != nil {
+				return err
+			}
+
 			price, err := types.NewAmount(args[6])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgSwap(txID, source, target, amt, args[4], args[5], price, cliCtx.GetFromAddress())
+			msg := types.NewMsgSwap(txID, source, target, amt, requester, destination, price, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -179,28 +199,33 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 // GetCmdUnstake command to unstake coins
 func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "unstake [name] [address] [percentage] [ticker] [requestTxHash]",
+		Use:   "unstake [address] [percentage] [ticker] [requestTxHash]",
 		Short: "Withdraw coins",
-		Args:  cobra.ExactArgs(5),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			ticker, err := types.NewTicker(args[3])
+			ticker, err := types.NewTicker(args[2])
 			if err != nil {
 				return err
 			}
 
-			txID, err := types.NewTxID(args[4])
+			txID, err := types.NewTxID(args[3])
 			if err != nil {
 				return err
 			}
 
-			percentage, err := types.NewAmount(args[2])
+			percentage, err := types.NewAmount(args[1])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgSetUnStake(args[0], args[1], percentage, ticker, txID, cliCtx.GetFromAddress())
+			bnbAddr, err := types.NewBnbAddress(args[0])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetUnStake(bnbAddr, percentage, ticker, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -259,7 +284,12 @@ func GetCmdSetTxHash(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			tx := types.NewTxHash(txID, coins, args[2], args[3])
+			bnbAddr, err := types.NewBnbAddress(args[3])
+			if err != nil {
+				return err
+			}
+
+			tx := types.NewTxHash(txID, coins, args[2], bnbAddr)
 			msg := types.NewMsgSetTxHash([]types.TxHash{tx}, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {

@@ -38,8 +38,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		source          Ticker
 		target          Ticker
 		amount          Amount
-		requester       string
-		destination     string
+		requester       BnbAddress
+		destination     BnbAddress
 		returnAmount    Amount
 		tradeTarget     Amount
 		tradeSlipLimit  Amount
@@ -426,16 +426,6 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
 	}
-}
-
-func (s SwapSuite) TestIsEmptyString(c *C) {
-	c.Check(isEmptyString(""), Equals, true)
-	c.Check(isEmptyString(" "), Equals, true)
-	c.Check(isEmptyString("				"), Equals, true)
-	c.Check(isEmptyString(`
-
-	`), Equals, true)
-	c.Check(isEmptyString("hello"), Equals, false)
 }
 
 func (s SwapSuite) TestValidatePools(c *C) {

@@ -9,15 +9,15 @@ type MsgSwap struct {
 	RequestTxHash TxID           `json:"request_tx_hash"` // Request transaction hash on Binance chain
 	SourceTicker  Ticker         `json:"source_ticker"`   // source token
 	TargetTicker  Ticker         `json:"target_ticker"`   // target token
-	Requester     string         `json:"requester"`       // request address on Binance chain
-	Destination   string         `json:"destination"`     // destination , used for swap and send , the destination address we send it to
+	Requester     BnbAddress     `json:"requester"`       // request address on Binance chain
+	Destination   BnbAddress     `json:"destination"`     // destination , used for swap and send , the destination address we send it to
 	Amount        Amount         `json:"amount"`          // amount of token to swap
 	TargetPrice   Amount         `json:"target_price"`
 	Owner         sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSwap is a constructor function for MsgSwap
-func NewMsgSwap(requestTxHash TxID, source, target Ticker, amount Amount, requester, destination string, targetPrice Amount, owner sdk.AccAddress) MsgSwap {
+func NewMsgSwap(requestTxHash TxID, source, target Ticker, amount Amount, requester, destination BnbAddress, targetPrice Amount, owner sdk.AccAddress) MsgSwap {
 	return MsgSwap{
 		RequestTxHash: requestTxHash,
 		SourceTicker:  source,
