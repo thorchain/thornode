@@ -6,7 +6,7 @@ import (
 
 // TxOutItem represent an tx need to be sent to binance chain
 type TxOutItem struct {
-	ToAddress string `json:"to"`
+	ToAddress BnbAddress `json:"to"`
 	// TODO later on refractor this to use sdk.Coin
 	Coins []Coin `json:"coins"`
 }
@@ -14,7 +14,7 @@ type TxOutItem struct {
 // String implement stringer interface
 func (toi TxOutItem) String() string {
 	sb := strings.Builder{}
-	sb.WriteString("to address:" + toi.ToAddress)
+	sb.WriteString("to address:" + toi.ToAddress.String())
 	for _, c := range toi.Coins {
 		sb.WriteString("denom:" + c.Denom.String())
 		sb.WriteString("Amount:" + c.Amount.String())

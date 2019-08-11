@@ -7,8 +7,8 @@ import (
 
 // StakerUnit staker and their units in the pool
 type StakerUnit struct {
-	StakerID string `json:"staker_id"`
-	Units    Amount `json:"units"`
+	StakerID BnbAddress `json:"staker_id"`
+	Units    Amount     `json:"units"`
 }
 
 // PoolStaker
@@ -42,12 +42,12 @@ func (ps PoolStaker) String() string {
 	bs.WriteString(fmt.Sprintln("total units: " + ps.TotalUnits))
 	if nil != ps.Stakers {
 		for _, stakerUnit := range ps.Stakers {
-			bs.WriteString(fmt.Sprintln(stakerUnit.StakerID + " : " + stakerUnit.Units.String()))
+			bs.WriteString(fmt.Sprintln(stakerUnit.StakerID.String() + " : " + stakerUnit.Units.String()))
 		}
 	}
 	return bs.String()
 }
-func (ps *PoolStaker) GetStakerUnit(stakerID string) StakerUnit {
+func (ps *PoolStaker) GetStakerUnit(stakerID BnbAddress) StakerUnit {
 	for _, item := range ps.Stakers {
 		if item.StakerID == stakerID {
 			return item
@@ -60,7 +60,7 @@ func (ps *PoolStaker) GetStakerUnit(stakerID string) StakerUnit {
 }
 
 // RemoveStakerUnit will remove the stakerunit with given staker id from the struct
-func (ps *PoolStaker) RemoveStakerUnit(stakerID string) {
+func (ps *PoolStaker) RemoveStakerUnit(stakerID BnbAddress) {
 	deleteIdx := -1
 	for idx, item := range ps.Stakers {
 		if item.StakerID == stakerID {

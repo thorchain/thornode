@@ -103,3 +103,53 @@ func (a Amount) Float64() float64 {
 func (a Amount) String() string {
 	return string(a)
 }
+
+type BnbAddress string
+
+var NoBnbAddress BnbAddress = BnbAddress("")
+
+func NewBnbAddress(address string) (BnbAddress, error) {
+	// Sample: bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
+
+	prefixes := []string{"bnb", "tbnb"}
+
+	// check if our address has one of the prefixes above
+	hasPrefix := false
+	for _, pref := range prefixes {
+		if strings.HasPrefix(address, pref) {
+			hasPrefix = true
+			break
+		}
+	}
+	if !hasPrefix {
+		return "", fmt.Errorf("Address prefix is not supported")
+	}
+
+	// trim the prefix from our address
+	var suffix string
+	for _, pref := range prefixes {
+		if strings.HasPrefix(address, pref) {
+			suffix = strings.TrimLeft(address, pref)
+			break
+		}
+	}
+
+	// check address length is valid
+	if len(suffix) != 39 {
+		return "", fmt.Errorf("Address length is not correct")
+	}
+
+	return BnbAddress(address), nil
+}
+
+func (bnb BnbAddress) Equals(bnb2 BnbAddress) bool {
+	return strings.EqualFold(bnb.String(), bnb2.String())
+}
+
+func (bnb BnbAddress) Empty() bool {
+	return strings.TrimSpace(bnb.String()) == ""
+}
+
+func (bnb BnbAddress) String() string {
+	return string(bnb)
+}

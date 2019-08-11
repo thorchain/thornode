@@ -12,15 +12,15 @@ const (
 
 // Meant to track if we have processed a specific binance tx
 type TxHash struct {
-	Request TxID      `json:"request"` // binance chain request tx hash
-	Status  status    `json:"status"`
-	Done    TxID      `json:"txhash"` // completed binance chain tx hash
-	Memo    string    `json:"memo"`   // memo
-	Coins   sdk.Coins `json:"coins"`  // coins sent in tx
-	Sender  string    `json:"sender"`
+	Request TxID       `json:"request"` // binance chain request tx hash
+	Status  status     `json:"status"`
+	Done    TxID       `json:"txhash"` // completed binance chain tx hash
+	Memo    string     `json:"memo"`   // memo
+	Coins   sdk.Coins  `json:"coins"`  // coins sent in tx
+	Sender  BnbAddress `json:"sender"`
 }
 
-func NewTxHash(hash TxID, coins sdk.Coins, memo, sender string) TxHash {
+func NewTxHash(hash TxID, coins sdk.Coins, memo string, sender BnbAddress) TxHash {
 	return TxHash{
 		Request: hash,
 		Coins:   coins,

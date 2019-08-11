@@ -63,12 +63,12 @@ type StakerPoolItem struct {
 //    ]
 // }
 type StakerPool struct {
-	StakerID  string            `json:"staker_id"`      // this will be staker's address on binance chain
+	StakerID  BnbAddress        `json:"staker_id"`      // this will be staker's address on binance chain
 	PoolUnits []*StakerPoolItem `json:"pool_and_units"` // the key of this map will be the pool id , value will bt [UNIT,RUNE,TOKEN]
 }
 
 // NewStakerPool create a new instance of StakerPool
-func NewStakerPool(id string) StakerPool {
+func NewStakerPool(id BnbAddress) StakerPool {
 	return StakerPool{
 		StakerID:  id,
 		PoolUnits: []*StakerPoolItem{},
