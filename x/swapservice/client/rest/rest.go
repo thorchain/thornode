@@ -110,7 +110,6 @@ func txHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 type setStakeData struct {
 	BaseReq       rest.BaseReq `json:"base_req"`
-	Name          string       `json:"name"`
 	Ticker        string       `json:"ticker"`
 	Rune          string       `json:"rune_amount"`
 	Token         string       `json:"token_amount"`
@@ -164,7 +163,7 @@ func setStakeDataHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		}
 
 		// create the message
-		msg := types.NewMsgSetStakeData(req.Name, ticker, runeAmount, tokenAmount, bnbAddr, txID, cliCtx.GetFromAddress())
+		msg := types.NewMsgSetStakeData(ticker, runeAmount, tokenAmount, bnbAddr, txID, cliCtx.GetFromAddress())
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

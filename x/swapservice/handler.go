@@ -372,7 +372,6 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, 
 				}
 			}
 			newMsg = NewMsgSetStakeData(
-				"TODO: Name",
 				ticker,
 				tokenAmount,
 				runeAmount,
