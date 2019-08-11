@@ -135,7 +135,7 @@ func GetCmdSwapComplete(cdc *codec.Codec) *cobra.Command {
 // GetCmdSwap is the CLI command for swapping tokens
 func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-swap [requestTxHash] [source] [target] [amount] [requester] [destination] [tradeSlipLimit]",
+		Use:   "set-swap [requestTxHash] [source] [target] [amount] [requester] [destination] [target_price]",
 		Short: "Swap coins",
 		Args:  cobra.ExactArgs(7),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -161,7 +161,12 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSwap(txID, source, target, amt, args[4], args[5], args[6], cliCtx.GetFromAddress())
+			price, err := types.NewAmount(args[6])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSwap(txID, source, target, amt, args[4], args[5], price, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err

@@ -14,6 +14,19 @@ type SwapRecord struct {
 	PayTxHash       TxID   `json:"pay_tx_hash"`      // TxHash on binance chain represent our pay to user
 }
 
+func NewSwapRecord(reqTxHash TxID, source, target Ticker, from, to string, amtReq, amtPaid Amount, payTxHash TxID) SwapRecord {
+	return SwapRecord{
+		RequestTxHash:   reqTxHash,
+		SourceTicker:    source,
+		TargetTicker:    target,
+		Requester:       from,
+		Destination:     to,
+		AmountRequested: amtReq,
+		AmountPaidBack:  amtPaid,
+		PayTxHash:       payTxHash,
+	}
+}
+
 // String implement stringer interface
 func (sr SwapRecord) String() string {
 	sb := strings.Builder{}

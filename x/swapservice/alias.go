@@ -26,9 +26,10 @@ var (
 	NewTxOut             = types.NewTxOut
 	NewPoolStaker        = types.NewPoolStaker
 	NewStakerPool        = types.NewStakerPool
+	NewSwapRecord        = types.NewSwapRecord
+	IsRune               = types.IsRune
 	GetPoolStatus        = types.GetPoolStatus
 	NewTxID              = types.NewTxID
-	IsRune               = types.IsRune
 	NewTicker            = types.NewTicker
 	RuneTicker           = types.RuneTicker
 	NewAmount            = types.NewAmount

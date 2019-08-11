@@ -1,8 +1,6 @@
 package swapservice
 
 import (
-	"fmt"
-
 	. "gopkg.in/check.v1"
 
 	"github.com/cosmos/cosmos-sdk/store"
@@ -12,7 +10,6 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/jpthor/cosmos-swap/config"
 	"github.com/jpthor/cosmos-swap/x/swapservice/mocks"
 )
 
@@ -20,26 +17,34 @@ type SwapSuite struct{}
 
 var _ = Suite(&SwapSuite{})
 
-func (s SwapSuite) TestSwap(c *C) {
-	poolStorage := mocks.MockPoolStorage{}
-	key := sdk.NewKVStoreKey("test")
+func GetCtx(key string) sdk.Context {
+	keystore := sdk.NewKVStoreKey(key)
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
-	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(keystore, sdk.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	settings := config.DefaultSettings()
-	ctx := sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
+	return sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
+
+}
+
+func (s SwapSuite) TestSwap(c *C) {
+	poolStorage := mocks.MockPoolStorage{}
+	ctx := GetCtx("test")
+	tradeSlipLimit := Amount("0.100000")
+	globalSlipLimit := Amount("0.200000")
 	inputs := []struct {
-		name           string
-		requestTxHash  TxID
-		source         Ticker
-		target         Ticker
-		amount         Amount
-		requester      string
-		destination    string
-		returnAmount   Amount
-		tradeSlipLimit string
-		expectedErr    error
+		name            string
+		requestTxHash   TxID
+		source          Ticker
+		target          Ticker
+		amount          Amount
+		requester       string
+		destination     string
+		returnAmount    Amount
+		tradeTarget     Amount
+		tradeSlipLimit  Amount
+		globalSlipLimit Amount
+		expectedErr     error
 	}{
 		{
 			name:          "empty-source",
@@ -108,84 +113,84 @@ func (s SwapSuite) TestSwap(c *C) {
 			expectedErr:   errors.New("destination is empty"),
 		},
 		{
-			name:           "pool-not-exist",
-			requestTxHash:  "hash",
-			source:         "NOTEXIST",
-			target:         "RUNE",
-			amount:         "100",
-			requester:      "tester",
-			destination:    "don'tknow",
-			tradeSlipLimit: "1.1",
-			returnAmount:   "0",
-			expectedErr:    errors.New("NOTEXIST doesn't exist"),
+			name:          "pool-not-exist",
+			requestTxHash: "hash",
+			source:        "NOTEXIST",
+			target:        "RUNE",
+			amount:        "100",
+			requester:     "tester",
+			destination:   "don'tknow",
+			tradeTarget:   "1.1",
+			returnAmount:  "0",
+			expectedErr:   errors.New("NOTEXIST doesn't exist"),
 		},
 		{
-			name:           "pool-not-exist-1",
-			requestTxHash:  "hash",
-			source:         "RUNE",
-			target:         "NOTEXIST",
-			amount:         "100",
-			requester:      "tester",
-			destination:    "don'tknow",
-			tradeSlipLimit: "1.2",
-			returnAmount:   "0",
-			expectedErr:    errors.New("NOTEXIST doesn't exist"),
+			name:          "pool-not-exist-1",
+			requestTxHash: "hash",
+			source:        "RUNE",
+			target:        "NOTEXIST",
+			amount:        "100",
+			requester:     "tester",
+			destination:   "don'tknow",
+			tradeTarget:   "1.2",
+			returnAmount:  "0",
+			expectedErr:   errors.New("NOTEXIST doesn't exist"),
 		},
 		{
-			name:           "swap-over-global-sliplimit",
-			requestTxHash:  "hash",
-			source:         "RUNE",
-			target:         "BNB",
-			amount:         "50",
-			requester:      "tester",
-			destination:    "don'tknow",
-			returnAmount:   "0",
-			tradeSlipLimit: "0.1",
-			expectedErr:    errors.Errorf("pool slip:1.250000 is over global pool slip limit :%f", settings.GlobalPoolSlip),
+			name:          "swap-over-global-sliplimit",
+			requestTxHash: "hash",
+			source:        "RUNE",
+			target:        "BNB",
+			amount:        "50",
+			requester:     "tester",
+			destination:   "don'tknow",
+			returnAmount:  "0",
+			tradeTarget:   "0.1",
+			expectedErr:   errors.Errorf("pool slip:1.250000 is over global pool slip limit :%s", globalSlipLimit),
 		},
 		{
-			name:           "swap-over-trade-sliplimit",
-			requestTxHash:  "hash",
-			source:         "RUNE",
-			target:         "BNB",
-			amount:         "9",
-			requester:      "tester",
-			destination:    "don'tknow",
-			returnAmount:   "0",
-			tradeSlipLimit: "1.0",
-			expectedErr:    errors.New("user price 1.188100 is more than 10.00 percent different than 1.000000"),
+			name:          "swap-over-trade-sliplimit",
+			requestTxHash: "hash",
+			source:        "RUNE",
+			target:        "BNB",
+			amount:        "9",
+			requester:     "tester",
+			destination:   "don'tknow",
+			returnAmount:  "0",
+			tradeTarget:   "1.0",
+			expectedErr:   errors.New("user price 1.188100 is more than 10.00 percent different than 1.000000"),
 		},
 		{
-			name:           "swap",
-			requestTxHash:  "hash",
-			source:         "RUNE",
-			target:         "BNB",
-			amount:         "5",
-			requester:      "tester",
-			destination:    "don'tknow",
-			returnAmount:   "4.53514739",
-			tradeSlipLimit: "1.1",
-			expectedErr:    nil,
+			name:          "swap",
+			requestTxHash: "hash",
+			source:        "RUNE",
+			target:        "BNB",
+			amount:        "5",
+			requester:     "tester",
+			destination:   "don'tknow",
+			returnAmount:  "4.53514739",
+			tradeTarget:   "1.2",
+			expectedErr:   nil,
 		},
 		{
-			name:           "double-swap",
-			requestTxHash:  "hash",
-			source:         "BTC",
-			target:         "BNB",
-			amount:         "5",
-			requester:      "tester",
-			destination:    "don'tknow",
-			returnAmount:   "4.15017810",
-			tradeSlipLimit: "1.1025",
-			expectedErr:    nil,
+			name:          "double-swap",
+			requestTxHash: "hash",
+			source:        "BTC",
+			target:        "BNB",
+			amount:        "5",
+			requester:     "tester",
+			destination:   "don'tknow",
+			returnAmount:  "4.15017810",
+			tradeTarget:   "1.1025",
+			expectedErr:   nil,
 		},
 	}
 	for _, item := range inputs {
-		amount, err := swap(ctx, poolStorage, settings, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeSlipLimit)
-		fmt.Println(amount, err)
+		amount, err := swap(ctx, poolStorage, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeTarget, tradeSlipLimit, globalSlipLimit)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
 		} else {
+			c.Assert(err, NotNil, Commentf("Expected: %s, got nil", item.expectedErr.Error()))
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
 		c.Check(item.returnAmount.Equals(amount), Equals, true)
@@ -421,4 +426,31 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
 	}
+}
+
+func (s SwapSuite) TestIsEmptyString(c *C) {
+	c.Check(isEmptyString(""), Equals, true)
+	c.Check(isEmptyString(" "), Equals, true)
+	c.Check(isEmptyString("				"), Equals, true)
+	c.Check(isEmptyString(`
+
+	`), Equals, true)
+	c.Check(isEmptyString("hello"), Equals, false)
+}
+
+func (s SwapSuite) TestValidatePools(c *C) {
+	keeper := mocks.MockPoolStorage{}
+	ctx := GetCtx("test")
+	c.Check(validatePools(ctx, keeper, "RUNE"), IsNil)
+	c.Check(validatePools(ctx, keeper, "NOTEXIST"), NotNil)
+}
+
+func (s SwapSuite) TestValidateMessage(c *C) {
+	c.Check(validateMessage("txHASH", "RUNE", "BNB", "34.2985", "bnbXXXX", "bnbYYY"), IsNil)
+	c.Check(validateMessage("", "RUNE", "BNB", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", "", "BNB", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", "RUNE", "", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", "RUNE", "BNB", "", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", "RUNE", "BNB", "34.2985", "", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", "RUNE", "BNB", "34.2985", "bnbXXXX", ""), NotNil)
 }

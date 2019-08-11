@@ -70,7 +70,7 @@ func (b *StatechainBridge) Stake(name string, ticker st.Ticker, r, token st.Amou
 // SendSwap send swap request to statechain
 // first return parameter is txHash
 
-func (b *StatechainBridge) SendSwap(requestTxHash st.TxID, source, target st.Ticker, amount st.Amount, requester, destination string, owner sdk.AccAddress, passphrase, memo, tradeSliplimit string) (string, error) {
+func (b *StatechainBridge) SendSwap(requestTxHash st.TxID, source, target st.Ticker, amount st.Amount, requester, destination string, owner sdk.AccAddress, passphrase, memo string, tradeSliplimit st.Amount) (string, error) {
 	if len(memo) > 0 {
 		viper.Set(flags.FlagMemo, memo)
 	}

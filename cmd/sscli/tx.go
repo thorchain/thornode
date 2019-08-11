@@ -110,7 +110,12 @@ func getTestSwap() *cobra.Command {
 				return err
 			}
 
-			txHash, err := sb.SendSwap(txID, source, target, amt, args[4], args[5], clictx.GetFromAddress(), "welcome@1", "", args[6])
+			targetPrice, err := types.NewAmount(args[6])
+			if err != nil {
+				return err
+			}
+
+			txHash, err := sb.SendSwap(txID, source, target, amt, args[4], args[5], clictx.GetFromAddress(), "welcome@1", "", targetPrice)
 			if nil != err {
 				return errors.Wrap(err, "fail to send tx to statechain")
 			}

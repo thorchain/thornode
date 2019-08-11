@@ -4,12 +4,10 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"github.com/jpthor/cosmos-swap/config"
 )
 
 // NewHandler returns a handler for "swapservice" type messages.
-func NewHandler(keeper Keeper, settings *config.Settings, txOutStore *TxOutStore) sdk.Handler {
+func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch m := msg.(type) {
 		case MsgSetPoolData:
@@ -19,7 +17,7 @@ func NewHandler(keeper Keeper, settings *config.Settings, txOutStore *TxOutStore
 			processRefund(result, txOutStore, m)
 			return result
 		case MsgSwap:
-			result := handleMsgSwap(ctx, keeper, settings, txOutStore, m)
+			result := handleMsgSwap(ctx, keeper, txOutStore, m)
 			processRefund(result, txOutStore, m)
 			return result
 		case MsgSwapComplete:
@@ -29,7 +27,7 @@ func NewHandler(keeper Keeper, settings *config.Settings, txOutStore *TxOutStore
 		case MsgUnStakeComplete:
 			return handleMsgSetUnstakeComplete(ctx, keeper, m)
 		case MsgSetTxHash:
-			return handleMsgSetTxHash(ctx, keeper, settings, txOutStore, m)
+			return handleMsgSetTxHash(ctx, keeper, txOutStore, m)
 		case MsgSetAdminConfig:
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		default:
@@ -141,22 +139,37 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 }
 
 // Handle a message to set stake data
-func handleMsgSwap(ctx sdk.Context, keeper Keeper, setting *config.Settings, txOutStore *TxOutStore, msg MsgSwap) sdk.Result {
+func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSwap) sdk.Result {
 	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "source ticker", msg.SourceTicker, "target ticker", msg.TargetTicker)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
+
+	tslConfig := keeper.GetAdminConfig(ctx, "TSL")
+	gslConfig := keeper.GetAdminConfig(ctx, "GSL")
+
+	tsl, err := NewAmount(tslConfig.Value)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
+	gsl, err := NewAmount(gslConfig.Value)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
 	amount, err := swap(
 		ctx,
 		keeper,
-		setting,
 		msg.SourceTicker,
 		msg.TargetTicker,
 		msg.Amount,
 		msg.Requester,
 		msg.Destination,
 		msg.RequestTxHash,
-		msg.SlipLimit,
+		msg.TargetPrice,
+		tsl,
+		gsl,
 	) // If so, set the stake data to the value specified in the msg.
 	if err != nil {
 		ctx.Logger().Error("fail to process swap message", "error", err)
@@ -294,7 +307,7 @@ func refundTx(tx TxHash, store *TxOutStore) {
 
 // handleMsgSetTxHash gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
-func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings, txOutStore *TxOutStore, msg MsgSetTxHash) sdk.Result {
+func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetTxHash) sdk.Result {
 
 	conflicts := make([]string, 0)
 	todo := make([]TxHash, 0)
@@ -307,7 +320,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, setting *config.Settings
 		}
 	}
 
-	handler := NewHandler(keeper, setting, txOutStore)
+	handler := NewHandler(keeper, txOutStore)
 	for _, tx := range todo {
 		memo, err := ParseMemo(tx.Memo)
 		if err != nil {

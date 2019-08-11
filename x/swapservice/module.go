@@ -96,7 +96,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.settings, am.txOutStore)
+	return NewHandler(am.keeper, am.txOutStore)
 }
 func (am AppModule) QuerierRoute() string {
 	return ModuleName
