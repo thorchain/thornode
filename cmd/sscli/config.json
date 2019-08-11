@@ -1,8 +1,0 @@
-{
-  "pools": [
-    "BNB"
-  ],
-  "port": 8080,
-  "dex_base_url": "testnet-dex.binance.org",
-  "is_test_net": true
-}
