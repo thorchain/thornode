@@ -1,6 +1,10 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	"fmt"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 type status string
 
@@ -28,6 +32,23 @@ func NewTxHash(hash TxID, coins sdk.Coins, memo string, sender BnbAddress) TxHas
 		Sender:  sender,
 		Status:  Incomplete,
 	}
+}
+
+func (tx TxHash) Valid() error {
+	if tx.Request.Empty() {
+		return fmt.Errorf("Request TxID cannot be empty")
+	}
+	if tx.Sender.Empty() {
+		return fmt.Errorf("Sender cannot be empty")
+	}
+	if len(tx.Coins) == 0 {
+		return fmt.Errorf("Coins cannot be empty")
+	}
+	if len(tx.Memo) == 0 {
+		return fmt.Errorf("Memo cannot be empty")
+	}
+
+	return nil
 }
 
 func (tx TxHash) Empty() bool {

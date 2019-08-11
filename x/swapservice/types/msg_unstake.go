@@ -32,8 +32,14 @@ func (msg MsgSetUnStake) Type() string { return "set_unstake" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
+	if msg.Owner.Empty() {
+		return sdk.ErrUnknownRequest("Owner cannot be empty")
+	}
 	if msg.Ticker.Empty() {
 		return sdk.ErrUnknownRequest("Pool Ticker cannot be empty")
+	}
+	if msg.PublicAddress.Empty() {
+		return sdk.ErrUnknownRequest("Address cannot be empty")
 	}
 	if msg.RequestTxHash.Empty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
