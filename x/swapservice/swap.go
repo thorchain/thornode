@@ -28,7 +28,7 @@ func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...Ticker) error
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(source, target Ticker, amount, requester, destination string, requestTxHash TxID) error {
+func validateMessage(source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID) error {
 	if requestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
 	}
@@ -50,7 +50,7 @@ func validateMessage(source, target Ticker, amount, requester, destination strin
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeSlipLimit, globalSlipLimit string) (Amount, error) {
+func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination string, requestTxHash TxID, tradeTarget, tradeSlipLimit, globalSlipLimit string) (Amount, error) {
 	if err := validateMessage(source, target, amount, requester, destination, requestTxHash); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
@@ -86,7 +86,7 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 
 func swapOne(ctx sdk.Context,
 	keeper poolStorage,
-	source, target Ticker, amount Amount, requester, destination, tradeSlipLimit, globalSlipLimit string) (Amount, error) {
+	source, target Ticker, amount Amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit string) (Amount, error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
@@ -100,10 +100,6 @@ func swapOne(ctx sdk.Context,
 	}
 
 	amt := amount.Float64()
-	fslipLimit, err := strconv.ParseFloat(tradeSlipLimit, 64)
-	if err != nil {
-		return "0", errors.Wrapf(err, "amount:%s is not valid", amount)
-	}
 
 	// Target Trade
 	tTarget, err := strconv.ParseFloat(tradeTarget, 64)

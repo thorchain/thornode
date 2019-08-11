@@ -41,6 +41,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		requester       string
 		destination     string
 		returnAmount    Amount
+		tradeTarget     string
 		tradeSlipLimit  string
 		globalSlipLimit string
 		expectedErr     error
