@@ -14,7 +14,7 @@ type SwapRecord struct {
 	PayTxHash       TxID       `json:"pay_tx_hash"`      // TxHash on binance chain represent our pay to user
 }
 
-func NewSwapRecord(reqTxHash TxID, source, target Ticker, from, to string, amtReq, amtPaid Amount, payTxHash TxID) SwapRecord {
+func NewSwapRecord(reqTxHash TxID, source, target Ticker, from, to BnbAddress, amtReq, amtPaid Amount, payTxHash TxID) SwapRecord {
 	return SwapRecord{
 		RequestTxHash:   reqTxHash,
 		SourceTicker:    source,
