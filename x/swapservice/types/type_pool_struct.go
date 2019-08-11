@@ -41,7 +41,7 @@ func (ps PoolStatus) String() string {
 
 func (ps PoolStatus) Valid() error {
 	if ps.String() == "" {
-		fmt.Errorf("Invalid pool status")
+		return fmt.Errorf("Invalid pool status")
 	}
 	return nil
 }
