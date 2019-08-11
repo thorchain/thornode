@@ -13,6 +13,9 @@ lint:
 	@golangci-lint run --deadline=15m
 	@go mod verify
 
+test-coverage:
+	@go test -mod=readonly -v -coverprofile .testCoverage.txt ./...
+
 test:
 	@go test -mod=readonly ./...
 
