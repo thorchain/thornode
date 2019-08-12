@@ -1,12 +1,20 @@
 package main
 
-import "gitlab.com/thorchain/bepswap/observe/x/silverback"
+import (
+	"os"
+
+	"gitlab.com/thorchain/bepswap/observe/x/observer"
+	// "gitlab.com/thorchain/bepswap/observe/x/signer"
+)
 
 func main() {
-	binance := silverback.NewBinance()
-	pool := silverback.NewPool(binance.PoolAddress, "RUNE-A1F", "BNB")
+	chainHost := os.Getenv("CHAIN_HOST")
+	poolAddress := os.Getenv("POOL_ADDRESS")
+	dexHost := os.Getenv("DEX_HOST")
+	rpcHost := os.Getenv("RPC_HOST")
+	runeAddress := os.Getenv("RUNE_ADDRESS")
 
-	silverback.SyncBal(*binance)
-	silverback.NewServer(*binance, *pool).Start()
-	silverback.NewClient(*binance, *pool).Start()
+	// signer.NewSigner(poolAddress, dexHost)
+	observer.NewApp(poolAddress, dexHost, rpcHost, chainHost, runeAddress).Start()
+	observer.StartWebServer()
 }
