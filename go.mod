@@ -8,6 +8,7 @@ require (
 	github.com/go-redis/redis v6.15.2+incompatible
 	github.com/google/gofuzz v1.0.0 // indirect
 	github.com/gorilla/websocket v1.4.0
+	github.com/hashicorp/go-retryablehttp v0.5.4
 	github.com/r3labs/diff v0.0.0-20190801153147-a71de73c46ad
 	github.com/rs/zerolog v1.14.3
 )
