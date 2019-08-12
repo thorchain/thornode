@@ -22,7 +22,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 		pingHandler(cliCtx, storeName),
 	).Methods("GET")
 
-	// Dynamically create endpoints of all funcs in handler.go
+	// Dynamically create endpoints of all funcs in querier.go
 	for _, q := range query.Queries {
 		r.HandleFunc(
 			q.Sprintf(storeName, restURLParam),
