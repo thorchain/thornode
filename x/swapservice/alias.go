@@ -1,7 +1,7 @@
 package swapservice
 
 import (
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
+	"gitlab.com/thorchain/statechain/x/swapservice/types"
 )
 
 const (
