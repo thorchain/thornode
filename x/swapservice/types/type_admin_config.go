@@ -10,6 +10,7 @@ const (
 	TSLKey               AdminConfigKey = "TSL"
 	StakerAmtIntervalKey AdminConfigKey = "StakerAmtInterval"
 	PoolAddressKey       AdminConfigKey = "PoolAddress"
+	MRRAKey              AdminConfigKey = `MRRA` // MRRA means MinimumRefundRuneAmount, if the tx send to pool has less then this amount of RUNE , we are not going to refund it
 )
 
 func (k AdminConfigKey) String() string {
