@@ -14,11 +14,11 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			return handleMsgSetPoolData(ctx, keeper, m)
 		case MsgSetStakeData:
 			result := handleMsgSetStakeData(ctx, keeper, m)
-			processRefund(result, txOutStore, m)
+			processRefund(ctx, &result, txOutStore, keeper, m)
 			return result
 		case MsgSwap:
 			result := handleMsgSwap(ctx, keeper, txOutStore, m)
-			processRefund(result, txOutStore, m)
+			processRefund(ctx, &result, txOutStore, keeper, m)
 			return result
 		case MsgSwapComplete:
 			return handleMsgSetSwapComplete(ctx, keeper, m)
@@ -34,39 +34,6 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m.Type())
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
-	}
-}
-
-// processRefund take in the sdk.Result and decide whether we should refund customer
-func processRefund(result sdk.Result, store *TxOutStore, msg sdk.Msg) {
-	if result.IsOK() {
-		return
-	}
-	switch m := msg.(type) {
-	case MsgSetStakeData:
-		toi := &TxOutItem{
-			ToAddress: m.PublicAddress,
-		}
-		toi.Coins = append(toi.Coins, Coin{
-			Denom:  RuneTicker,
-			Amount: m.RuneAmount,
-		})
-		toi.Coins = append(toi.Coins, Coin{
-			Denom:  m.Ticker,
-			Amount: m.TokenAmount,
-		})
-		store.AddTxOutItem(toi)
-	case MsgSwap:
-		toi := &TxOutItem{
-			ToAddress: m.Requester,
-		}
-		toi.Coins = append(toi.Coins, Coin{
-			Denom:  m.SourceTicker,
-			Amount: m.Amount,
-		})
-		store.AddTxOutItem(toi)
-	default:
-		return
 	}
 }
 
@@ -280,16 +247,16 @@ func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg MsgUnStakeC
 	}
 }
 
-func refundTx(tx TxHash, store *TxOutStore) {
+func refundTx(ctx sdk.Context, tx TxHash, store *TxOutStore, keeper RefundStoreAccessor) {
 	toi := &TxOutItem{
 		ToAddress: tx.Sender,
 	}
 
 	for _, item := range tx.Coins {
-		toi.Coins = append(toi.Coins, Coin{
-			Denom:  Ticker(item.Denom),
-			Amount: Amount(item.Amount.String()),
-		})
+		c := getRefundCoin(ctx, item.Denom, item.Amount, keeper)
+		if c.Amount.LargerThanZero() {
+			toi.Coins = append(toi.Coins, c)
+		}
 	}
 	store.AddTxOutItem(toi)
 }
@@ -315,7 +282,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, 
 		if err != nil {
 			ctx.Logger().Error("fail to parse memo", "memo", memo, "error", err)
 			// skip over message with bad memos
-			refundTx(tx, txOutStore)
+			refundTx(ctx, tx, txOutStore, keeper)
 			continue
 		}
 
@@ -347,16 +314,11 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, 
 			runeAmount := ZeroAmount
 			tokenAmount := ZeroAmount
 			for _, coin := range tx.Coins {
-				if coin.Denom == "RUNE-B1A" {
-					runeAmount, err = NewAmount(fmt.Sprintf("%f", coin.Amount))
-					if err != nil {
-						return sdk.ErrUnknownRequest(err.Error()).Result()
-					}
+				ctx.Logger().Info("coin", "denom", coin.Denom.String(), "amount", coin.Amount.String())
+				if IsRune(coin.Denom) {
+					runeAmount = coin.Amount
 				} else {
-					tokenAmount, err = NewAmount(fmt.Sprintf("%f", coin.Amount))
-					if err != nil {
-						return sdk.ErrUnknownRequest(err.Error()).Result()
-					}
+					tokenAmount = coin.Amount
 				}
 			}
 			newMsg = NewMsgSetStakeData(
@@ -406,7 +368,6 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
-		// Data:      []byte(strings.Join(conflicts, ", ")),
 	}
 }
 

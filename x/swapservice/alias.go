@@ -18,6 +18,7 @@ const (
 	TSLKey               = types.TSLKey
 	StakerAmtIntervalKey = types.StakerAmtIntervalKey
 	PoolAddressKey       = types.PoolAddressKey
+	MRRAKey              = types.MRRAKey
 )
 
 var (
@@ -45,6 +46,7 @@ var (
 	NewBnbAddress        = types.NewBnbAddress
 	ModuleCdc            = types.ModuleCdc
 	RegisterCodec        = types.RegisterCodec
+	NewCoin              = types.NewCoin
 )
 
 type (
@@ -71,6 +73,7 @@ type (
 	TxOutItem           = types.TxOutItem
 	TxOut               = types.TxOut
 	Coin                = types.Coin
+	Coins               = types.Coins
 	Ticker              = types.Ticker
 	Amount              = types.Amount
 	AdminConfigKey      = types.AdminConfigKey

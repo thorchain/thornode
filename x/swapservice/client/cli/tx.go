@@ -42,18 +42,16 @@ func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "set-pool [ticker] [status]",
 		Short: "Set pool data",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-
 			ticker, err := types.NewTicker(args[0])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgSetPoolData(ticker, types.GetPoolStatus(args[3]), cliCtx.GetFromAddress())
+			msg := types.NewMsgSetPoolData(ticker, types.GetPoolStatus(args[1]), cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -68,7 +66,7 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "set-stake  [ticker] [runes] [tokens] [stakerAddress] [requestTxHash]",
 		Short: "Stake coins into a pool",
-		Args:  cobra.ExactArgs(6),
+		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -273,7 +271,10 @@ func GetCmdSetTxHash(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
+			stateCoins, err := types.FromSdkCoins(coins)
+			if nil != err {
+				return err
+			}
 			txID, err := types.NewTxID(args[0])
 			if err != nil {
 				return err
@@ -284,7 +285,7 @@ func GetCmdSetTxHash(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			tx := types.NewTxHash(txID, coins, args[2], bnbAddr)
+			tx := types.NewTxHash(txID, stateCoins, args[2], bnbAddr)
 			msg := types.NewMsgSetTxHash([]types.TxHash{tx}, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {

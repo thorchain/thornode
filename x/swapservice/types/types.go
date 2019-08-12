@@ -90,7 +90,9 @@ func (a Amount) Equals(a2 Amount) bool {
 func (a Amount) Empty() bool {
 	return strings.TrimSpace(a.String()) == ""
 }
-
+func (a Amount) LargerThanZero() bool {
+	return a.Float64() > 0
+}
 func (a Amount) Zero() bool {
 	return a.Equals(ZeroAmount)
 }
@@ -98,6 +100,9 @@ func (a Amount) Zero() bool {
 func (a Amount) Float64() float64 {
 	amt, _ := strconv.ParseFloat(a.String(), 64)
 	return amt
+}
+func (a Amount) IsNegative() bool {
+	return a.Float64() < 0
 }
 
 func (a Amount) String() string {
