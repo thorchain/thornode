@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -x
 set -e
@@ -8,8 +8,8 @@ while true; do
   make install
   ssd init local --chain-id sschain
 
-  sscli keys add jack
-  sscli keys add alice
+  echo "password" | sscli keys add jack
+  echo "password" | sscli keys add alice
 
   ssd add-genesis-account $(sscli keys show jack -a) 1000rune,100000000stake
   ssd add-genesis-account $(sscli keys show alice -a) 1000rune,100000000stake
@@ -21,6 +21,11 @@ while true; do
 
   echo "password" | ssd gentx --name jack
   ssd collect-gentxs
+
+  # add jack as a trusted account
+  cat ~/.ssd/config/genesis.json | jq ".app_state.swapservice.trust_accounts[0] = {\"name\":\"Jack\", \"address\": \"$(sscli keys show jack -a)\"}" > /tmp/genesis.json
+  mv /tmp/genesis.json ~/.ssd/config/genesis.json
+
   ssd validate-genesis
 
   break

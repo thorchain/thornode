@@ -66,6 +66,7 @@ func DefaultGenesisState() GenesisState {
 				Status:       PoolBootstrap,
 			},
 		},
+		TrustAccounts: []TrustAccount{},
 	}
 }
 

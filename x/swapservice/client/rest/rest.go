@@ -21,6 +21,7 @@ const (
 // TODO add pool index endpoint
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
+	r.HandleFunc(fmt.Sprintf("/%s/ping", storeName), pingHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/admin/{%s}", storeName, restURLParam), getAdminConfig(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", storeName, restURLParam), getTxHash(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}", storeName, restURLParam), poolStructHandler(cliCtx, storeName)).Methods("GET")
@@ -42,8 +43,8 @@ type txItem struct {
 
 type txHashReq struct {
 	BaseReq     rest.BaseReq `json:"base_req"`
-	Blockheight int          `json:"blockHeight"`
-	Count       int          `json:"count"`
+	Blockheight string       `json:"blockHeight"`
+	Count       string       `json:"count"`
 	TxArray     []txItem     `json:"txArray"`
 }
 
@@ -92,6 +93,13 @@ func txHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+	}
+}
+
+// Ping - endpoint to check that the API is up and available
+func pingHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, string(`{"ping":"pong"}`))
 	}
 }
 

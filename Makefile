@@ -37,7 +37,10 @@ start-rest:
 	sscli rest-server
 
 setup:
-	./scripts/setup.bash
+	./scripts/setup.sh
+
+reset: clean
+	./scripts/reset.sh
 
 clean:
 	rm -rf ~/.ssd
