@@ -1,4 +1,4 @@
-package jungle
+package storage
 
 import (
 	"os"
