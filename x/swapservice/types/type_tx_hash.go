@@ -2,8 +2,6 @@ package types
 
 import (
 	"fmt"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type status string
@@ -20,11 +18,11 @@ type TxHash struct {
 	Status  status     `json:"status"`
 	Done    TxID       `json:"txhash"` // completed binance chain tx hash
 	Memo    string     `json:"memo"`   // memo
-	Coins   sdk.Coins  `json:"coins"`  // coins sent in tx
+	Coins   Coins      `json:"coins"`  // coins sent in tx
 	Sender  BnbAddress `json:"sender"`
 }
 
-func NewTxHash(hash TxID, coins sdk.Coins, memo string, sender BnbAddress) TxHash {
+func NewTxHash(hash TxID, coins Coins, memo string, sender BnbAddress) TxHash {
 	return TxHash{
 		Request: hash,
 		Coins:   coins,

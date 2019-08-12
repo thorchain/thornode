@@ -428,6 +428,12 @@ func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context) BnbAddress {
 	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, "")
 }
 
+// GetAdminConfigMRRA get the config for minimum refund rune amount default to 1 rune
+func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context) Amount {
+	return k.GetAdminConfigAmountType(ctx, MRRAKey, "1")
+
+}
+
 // GetAdminConfigBnbAddressType - get the config for TSL
 func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string) BnbAddress {
 	config := k.GetAdminConfig(ctx, key)
@@ -461,14 +467,17 @@ func (k Keeper) GetAdminConfig(ctx sdk.Context, kkey AdminConfigKey) AdminConfig
 
 	// check if we need to add a default value
 	if record.Value == "" {
-		if record.Key == "GSL" {
+		if record.Key == GSLKey {
 			record.Value = "0.3" // default to 30%
 		}
-		if record.Key == "TSL" {
+		if record.Key == TSLKey {
 			record.Value = "0.1" // default to 10%
 		}
-		if record.Key == "StakerAmtInterval" {
+		if record.Key == StakerAmtIntervalKey {
 			record.Value = "100" // default to 100
+		}
+		if record.Key == MRRAKey {
+			record.Value = "1" // default 1 Rune
 		}
 	}
 

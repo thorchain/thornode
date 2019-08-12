@@ -8,10 +8,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
+	"github.com/gorilla/mux"
 
 	"gitlab.com/thorchain/statechain/x/swapservice/types"
-
-	"github.com/gorilla/mux"
 )
 
 const (
@@ -27,7 +26,6 @@ const (
 	adminConfig    = "adminconfig"
 )
 
-// TODO add the new features to Restful routes
 // pool index etc
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
@@ -47,10 +45,10 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 }
 
 type txItem struct {
-	TxHash string    `json:"tx"`
-	Coins  sdk.Coins `json:"coins"`
-	Memo   string    `json:"MEMO"`
-	Sender string    `json:"sender"`
+	TxHash string      `json:"tx"`
+	Coins  types.Coins `json:"coins"`
+	Memo   string      `json:"MEMO"`
+	Sender string      `json:"sender"`
 }
 
 type txHashReq struct {
