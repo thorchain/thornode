@@ -12,20 +12,20 @@ type Observer struct {
 	PoolAddress string
 	DexHost string
 	SocketClient *SocketClient
-	Scanner *Scanner
+	ScanClient *ScanClient
 	StateChain *StateChain
 }
 
-func NewObserver(poolAddress, dexHost, rpcHost, chainHost, runeAddress string) *Observer {
+func NewObserver(poolAddress, dexHost, rpcHost, chainHost, runeAddress string, txChan chan []byte) *Observer {
 	socketClient := NewSocketClient(poolAddress, dexHost)
-	scanner := NewScanner(poolAddress, dexHost, rpcHost)
-	stateChain := NewStateChain(chainHost, runeAddress)
+	scanClient := NewScanClient(poolAddress, dexHost, rpcHost)
+	stateChain := NewStateChain(chainHost, runeAddress, txChan)
 
 	return &Observer{
 		PoolAddress: poolAddress,
 		DexHost: dexHost,
 		SocketClient: socketClient,
-		Scanner: scanner,
+		ScanClient: scanClient,
 		StateChain: stateChain,
 	}
 }
@@ -56,7 +56,7 @@ func (o *Observer) ProcessTxn(sockChan, scanChan chan []byte) {
 		blocks = append(blocks, inTx.BlockHeight)
 
 		go o.ProcessBlockTxn(scanChan)
-		// go c.Scanner.ProcessBlocks(blocks, scanChan)
+		// go c.ScanClient.ProcessBlocks(blocks, scanChan)
 	}
 }
 

@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 
-	//log "github.com/rs/zerolog/log"
+	// log "github.com/rs/zerolog/log"
 	http "github.com/hashicorp/go-retryablehttp"
 
 	types "gitlab.com/thorchain/bepswap/observe/x/signer/types"
@@ -22,7 +22,24 @@ func NewStateChain(chainHost string) *StateChain {
 	}
 }
 
-func (s *StateChain) Query(blockHeight int64) types.OutTx {
+func (s *StateChain) TxnBlockHeight(txn string) string {
+	uri := url.URL{
+		Scheme: "http",
+		Host: s.ChainHost,
+		Path: fmt.Sprintf("/txs/%s", txn),
+	}
+
+	resp, _ := http.Get(uri.String())
+	body, _ := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+
+	var txs types.Txs
+	json.Unmarshal(body, &txs)
+
+	return txs.Height
+}
+
+func (s *StateChain) TxOut(blockHeight string) types.OutTx {
 	path := fmt.Sprintf("/swapservice/txoutarray/%v", blockHeight)
 	uri := url.URL{
 		Scheme: "http",
