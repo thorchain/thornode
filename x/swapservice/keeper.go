@@ -8,6 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
 )
@@ -34,17 +35,19 @@ func getKey(prefix dbPrefix, key string) string {
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
-	coinKeeper bank.Keeper
-	storeKey   sdk.StoreKey // Unexposed key to access store from sdk.Context
-	cdc        *codec.Codec // The wire codec for binary encoding/decoding.
+	coinKeeper   bank.Keeper
+	supplyKeeper supply.Keeper
+	storeKey     sdk.StoreKey // Unexposed key to access store from sdk.Context
+	cdc          *codec.Codec // The wire codec for binary encoding/decoding.
 }
 
 // NewKeeper creates new instances of the swapservice Keeper
-func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
+func NewKeeper(coinKeeper bank.Keeper, supplyKeeper supply.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
 	return Keeper{
-		coinKeeper: coinKeeper,
-		storeKey:   storeKey,
-		cdc:        cdc,
+		coinKeeper:   coinKeeper,
+		supplyKeeper: supplyKeeper,
+		storeKey:     storeKey,
+		cdc:          cdc,
 	}
 }
 
@@ -482,4 +485,33 @@ func (k Keeper) GetAdminConfig(ctx sdk.Context, kkey AdminConfigKey) AdminConfig
 func (k Keeper) GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixAdmin))
+}
+
+func (k Keeper) MintCoins(ctx sdk.Context, address sdk.AccAddress, coins sdk.Coins) error {
+	err := k.supplyKeeper.MintCoins(ctx, ModuleName, coins)
+	if nil != err {
+		ctx.Logger().Error("fail to mint coins", "error", err)
+		return err
+	}
+
+	if err := k.coinKeeper.SendCoins(ctx, k.supplyKeeper.GetModuleAddress(ModuleName), address, coins); nil != err {
+		ctx.Logger().Error("fail to give you coins", "error", err)
+		return err
+	}
+
+	return nil
+}
+
+func (k Keeper) BurnCoins(ctx sdk.Context, address sdk.AccAddress, coins sdk.Coins) error {
+	err := k.supplyKeeper.BurnCoins(ctx, ModuleName, coins)
+	if nil != err {
+		ctx.Logger().Error("fail to burn coins", "error", err)
+		return err
+	}
+
+	if _, err := k.coinKeeper.SubtractCoins(ctx, address, coins); nil != err {
+		ctx.Logger().Error("fail to give you coins", "error", err)
+		return err
+	}
+	return nil
 }

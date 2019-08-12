@@ -37,6 +37,10 @@ func (t Ticker) Empty() bool {
 	return strings.TrimSpace(t.String()) == ""
 }
 
+func (t Ticker) UnitToken() Ticker {
+	return Ticker(fmt.Printf("%s-U", t.String()))
+}
+
 func (t Ticker) String() string {
 	// uppercasing again just incase someon created a ticker via Ticker("rune")
 	return strings.ToUpper(string(t))
@@ -144,6 +148,22 @@ func NewBnbAddress(address string) (BnbAddress, error) {
 
 func (bnb BnbAddress) Equals(bnb2 BnbAddress) bool {
 	return strings.EqualFold(bnb.String(), bnb2.String())
+}
+
+func (bnb BnbAddress) AccAddress() (sdk.AccAddress, error) {
+	prefixes := []string{"bnb", "tbnb"}
+	address := bnb.String()
+
+	// trim the prefix from our address
+	var suffix string
+	for _, pref := range prefixes {
+		if strings.HasPrefix(address, pref) {
+			suffix = strings.TrimLeft(address, pref)
+			break
+		}
+	}
+
+	return sdk.AccAddressFromBech32(fmt.Sprintf("rune%s", suffix))
 }
 
 func (bnb BnbAddress) Empty() bool {

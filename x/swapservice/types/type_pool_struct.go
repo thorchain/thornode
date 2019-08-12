@@ -78,7 +78,6 @@ type PoolStruct struct {
 	BalanceRune  Amount     `json:"balance_rune"`  // how many RUNE in the pool
 	BalanceToken Amount     `json:"balance_token"` // how many token in the pool
 	Ticker       Ticker     `json:"ticker"`        // what's the token's ticker
-	PoolUnits    Amount     `json:"pool_units"`    // total units of the pool
 	PoolAddress  BnbAddress `json:"pool_address"`  // bnb liquidity pool address
 	Status       PoolStatus `json:"status"`        // status
 }
