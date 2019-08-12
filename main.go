@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"gitlab.com/thorchain/bepswap/observe/x/observer"
-	// "gitlab.com/thorchain/bepswap/observe/x/signer"
+	"gitlab.com/thorchain/bepswap/observe/x/signer"
 )
 
 func main() {
@@ -14,7 +14,8 @@ func main() {
 	rpcHost := os.Getenv("RPC_HOST")
 	runeAddress := os.Getenv("RUNE_ADDRESS")
 
-	// signer.NewSigner(poolAddress, dexHost)
-	observer.NewApp(poolAddress, dexHost, rpcHost, chainHost, runeAddress).Start()
+	observer.NewObserver(poolAddress, dexHost, rpcHost, chainHost, runeAddress).Start()
+	signer.NewSigner(poolAddress, dexHost, chainHost).Start()
+
 	observer.StartWebServer()
 }

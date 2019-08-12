@@ -8,7 +8,7 @@ import (
 	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
 )
 
-type App struct {
+type Observer struct {
 	PoolAddress string
 	DexHost string
 	SocketClient *SocketClient
@@ -16,29 +16,29 @@ type App struct {
 	StateChain *StateChain
 }
 
-func NewApp(poolAddress, dexHost, rpcHost, chainHost, runeAddress string) *App {
-	socketclient := NewSocketClient(poolAddress, dexHost)
+func NewObserver(poolAddress, dexHost, rpcHost, chainHost, runeAddress string) *Observer {
+	socketClient := NewSocketClient(poolAddress, dexHost)
 	scanner := NewScanner(poolAddress, dexHost, rpcHost)
-	statechain := NewStateChain(chainHost, runeAddress)
+	stateChain := NewStateChain(chainHost, runeAddress)
 
-	return &App{
+	return &Observer{
 		PoolAddress: poolAddress,
 		DexHost: dexHost,
-		SocketClient: socketclient,
+		SocketClient: socketClient,
 		Scanner: scanner,
-		StateChain: statechain,
+		StateChain: stateChain,
 	}
 }
 
-func (a *App) Start() {
+func (o *Observer) Start() {
 	sockChan := make(chan []byte)
 	scanChan := make(chan []byte)
 
-	go a.SocketClient.StartClient(sockChan)
-	go a.ProcessTxn(sockChan, scanChan)
+	go o.SocketClient.StartClient(sockChan)
+	go o.ProcessTxn(sockChan, scanChan)
 }
 
-func (a *App) ProcessTxn(sockChan, scanChan chan []byte) {
+func (o *Observer) ProcessTxn(sockChan, scanChan chan []byte) {
 	for {
 		var inTx types.InTx
 		payload := <-sockChan
@@ -50,17 +50,17 @@ func (a *App) ProcessTxn(sockChan, scanChan chan []byte) {
 		}
 
 		log.Info().Msgf("Processing Transaction: %v", inTx)
-		go a.StateChain.Send(inTx)
+		go o.StateChain.Send(inTx)
 
 		var blocks []int
 		blocks = append(blocks, inTx.BlockHeight)
 
-		go a.ProcessBlockTxn(scanChan)
+		go o.ProcessBlockTxn(scanChan)
 		// go c.Scanner.ProcessBlocks(blocks, scanChan)
 	}
 }
 
-func (a *App) ProcessBlockTxn(scanChan chan []byte) {
+func (o *Observer) ProcessBlockTxn(scanChan chan []byte) {
 	for {
 		var inTx types.InTx
 		payload := <-scanChan
@@ -71,6 +71,6 @@ func (a *App) ProcessBlockTxn(scanChan chan []byte) {
 		}
 
 		log.Info().Msgf("Processing Transaction: %v", inTx)
-		go a.StateChain.Send(inTx)
+		go o.StateChain.Send(inTx)
 	}
 }

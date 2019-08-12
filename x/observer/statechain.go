@@ -87,7 +87,7 @@ func (s *StateChain) Send(inTx types.InTx) {
 		Path: "/txs",
 	}
 
-	// Retry until we get a successful reply and log the commit hash.
+	// Retry until we get a successful reply and log the reply.
 	resp, _ := http.Post(uri.String(), "application/json", bytes.NewBuffer(sendSetTx))
 	body, _ := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
@@ -96,4 +96,5 @@ func (s *StateChain) Send(inTx types.InTx) {
 	json.Unmarshal(body, &commit)
 
 	log.Info().Msgf("Commited hash: %v", commit.TxHash)
+	log.Info().Msgf("Commited block: %v", commit.Height)
 }
