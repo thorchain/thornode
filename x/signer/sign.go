@@ -1,11 +1,11 @@
 package signer
 
 import (
-	"encoding/json"
+	"time"
 
 	log "github.com/rs/zerolog/log"
 
-	types "gitlab.com/thorchain/bepswap/observe/x/signer/types"
+	//types "gitlab.com/thorchain/bepswap/observe/x/signer/types"
 )
 
 type Signer struct {
@@ -33,14 +33,13 @@ func (s *Signer) ProcessTxn() {
 	for {
 		txn := <-s.TxChan
 		log.Info().Msgf("Received Transaction: %v", string(txn))
+		time.Sleep(2*time.Second)
 
-		var txs types.Txs
-		json.Unmarshal(txn, &txs)
-
-		blockHeight := s.StateChain.TxnBlockHeight(txs.Height)
+		blockHeight := s.StateChain.TxnBlockHeight(string(txn))
 		txOut := s.StateChain.TxOut(blockHeight)
 
 		hexTx, param := s.Binance.SignTx(txOut)
+		log.Info().Msgf("%v %v", string(hexTx), param)
 		s.Binance.BroadcastTx(hexTx, param)
 	}
 }
