@@ -1,0 +1,47 @@
+FORMAT: 1A
+HOST: http://localhost:1317
+
+# BEPSwap StateChain
+This documentation outlines the API for the [BEPSwap](bepswap.com) statechain API.
+
+NOTE: This document is a **work in progress**.
+
+# Group Health Check
+
+## Ping [/swapservice/ping]
+
+### Ping [GET]
+
++ Response 200 (application/json)
+    {
+        "ping": "pong"
+    }
+
+
+# Group Pools
+This section documents the pools API resources.
+
+## Get a Pool [/swapservice/pool/{ticker}]
+
++ Parameters
+    + ticker: "bnb" (required, string) - The ticker of the pool
+
+### Get a Pool [GET]
++ Response 200 (application/json)
+    + Attributes (Pool)
+
+## Get Pool List [/swapservice/pools]
+
+### Get Pools [GET]
++ Response 200 (application/json)
+    + Attributes (array[Pool])
+
+
+## Data Structures
+
+### Pool
++ balance_rune: Amount of rune the pool has
++ balance_token: Amount of token the pool has
++ ticker: the ticker of the non-rune token
++ pool_units: total number of units within the pool
++ status: the status of the pool
