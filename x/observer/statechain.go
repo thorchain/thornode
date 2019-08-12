@@ -18,12 +18,14 @@ import (
 type StateChain struct {
 	ChainHost string
 	RuneAddress string
+	TxChan chan []byte
 }
 
-func NewStateChain(chainHost, runeAddress string) *StateChain {
+func NewStateChain(chainHost, runeAddress string, txChan chan []byte) *StateChain {
 	return &StateChain{
 		ChainHost: chainHost,
 		RuneAddress: runeAddress,
+		TxChan: txChan,
 	}
 }
 
@@ -96,5 +98,6 @@ func (s *StateChain) Send(inTx types.InTx) {
 	json.Unmarshal(body, &commit)
 
 	log.Info().Msgf("Commited hash: %v", commit.TxHash)
-	log.Info().Msgf("Commited block: %v", commit.Height)
+
+	s.TxChan <- []byte(commit.TxHash)
 }

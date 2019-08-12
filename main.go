@@ -14,8 +14,10 @@ func main() {
 	rpcHost := os.Getenv("RPC_HOST")
 	runeAddress := os.Getenv("RUNE_ADDRESS")
 
-	observer.NewObserver(poolAddress, dexHost, rpcHost, chainHost, runeAddress).Start()
-	signer.NewSigner(poolAddress, dexHost, chainHost).Start()
+	txChan := make(chan []byte)
+
+	observer.NewObserver(poolAddress, dexHost, rpcHost, chainHost, runeAddress, txChan).Start()
+	signer.NewSigner(poolAddress, dexHost, chainHost, txChan).Start()
 
 	observer.StartWebServer()
 }
