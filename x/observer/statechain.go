@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"bytes"
 	"net/url"
-	"net/http"
 	"os/exec"
 	"io/ioutil"
 	"encoding/json"
 
 	log "github.com/rs/zerolog/log"
+	http "github.com/hashicorp/go-retryablehttp"
 
 	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
 )
@@ -18,12 +18,14 @@ import (
 type StateChain struct {
 	ChainHost string
 	RuneAddress string
+	TxChan chan []byte
 }
 
-func NewStateChain(chainHost, runeAddress string) *StateChain {
+func NewStateChain(chainHost, runeAddress string, txChan chan []byte) *StateChain {
 	return &StateChain{
 		ChainHost: chainHost,
 		RuneAddress: runeAddress,
+		TxChan: txChan,
 	}
 }
 
@@ -38,11 +40,11 @@ func (s *StateChain) Send(inTx types.InTx) {
 		coins = append(coins, txItem.Coins)
 
 		txHash := types.TxHash{Request: txItem.Tx,
-														Status: "incomplete",
-														Txhash: txItem.Tx,
-													 	Memo: txItem.Memo,
-													 	Coins: coins,
-													 	Sender: txItem.Sender}
+			Status: "incomplete",
+			Txhash: txItem.Tx,
+			Memo: txItem.Memo,
+			Coins: coins,
+			Sender: txItem.Sender}
 		msg.Type = "swapservice/MsgSetTxHash"
 		msg.Value.TxHashes = append(msg.Value.TxHashes, txHash)
 	}
@@ -87,7 +89,7 @@ func (s *StateChain) Send(inTx types.InTx) {
 		Path: "/txs",
 	}
 
-	// @todo Retry until we get a successful reply and log the reponse.
+	// Retry until we get a successful reply and log the reply.
 	resp, _ := http.Post(uri.String(), "application/json", bytes.NewBuffer(sendSetTx))
 	body, _ := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
@@ -96,4 +98,6 @@ func (s *StateChain) Send(inTx types.InTx) {
 	json.Unmarshal(body, &commit)
 
 	log.Info().Msgf("Commited hash: %v", commit.TxHash)
+
+	s.TxChan <- []byte(commit.TxHash)
 }
