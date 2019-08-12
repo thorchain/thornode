@@ -10,7 +10,7 @@ before_script:
 
 stages:
   - test
-  - install
+  - integration
 
 unit_tests:
   stage: test
@@ -23,7 +23,8 @@ lint_code:
   script:
     - make lint
 
-install:
-  stage: install
+integration_tests:
+  image: cbarraford/golang-ruby
+  stage: integration
   script:
-    - make install
+    - make -C ./tests/integration install setup run wait-for-blockchain test-internal
