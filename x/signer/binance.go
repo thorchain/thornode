@@ -139,6 +139,7 @@ func (b *Binance) SignTx(outTx stypes.OutTx) ([]byte, map[string]string) {
 
 func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) *tx.TxCommitResult {
 	commits, _ := b.Client.PostTx(hexTx, param)
+	log.Info().Msgf("PostTX %v", commits)
 	return &commits[0]
 }
 
