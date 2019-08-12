@@ -7,8 +7,7 @@ import (
 // TxOutItem represent an tx need to be sent to binance chain
 type TxOutItem struct {
 	ToAddress BnbAddress `json:"to"`
-	// TODO later on refractor this to use sdk.Coin
-	Coins []Coin `json:"coins"`
+	Coins     []Coin     `json:"coins"`
 }
 
 // String implement stringer interface

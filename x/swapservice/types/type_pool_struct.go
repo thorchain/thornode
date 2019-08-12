@@ -126,3 +126,11 @@ func (ps PoolStruct) EnsureValidPoolStatus(msg sdk.Msg) error {
 		return errors.Errorf("unknown pool status,%s", ps.Status)
 	}
 }
+
+// TokenPrice is how much 1 token worth in RUNE
+func (ps PoolStruct) TokenPriceInRune() float64 {
+	if ps.BalanceRune.Zero() || ps.BalanceRune.Empty() || ps.BalanceToken.Zero() || ps.BalanceToken.Empty() {
+		return ZeroAmount.Float64()
+	}
+	return ps.BalanceToken.Float64() / ps.BalanceRune.Float64()
+}
