@@ -15,8 +15,6 @@ const (
 	QueryAdminConfig   = "adminconfig"
 	QueryPoolStruct    = "poolstruct"
 	QueryPoolStructs   = "pools"
-	QueryPoolStakers   = "poolstakers"
-	QueryStakerPools   = "stakerpools"
 	QueryPoolIndex     = "poolindex"
 	QuerySwapRecord    = "swaprecord"
 	QueryUnStakeRecord = "unstakerecord"
@@ -33,10 +31,6 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryPoolStruct(ctx, path[1:], req, keeper)
 		case QueryPoolStructs:
 			return queryPoolStructs(ctx, req, keeper)
-		case QueryPoolStakers:
-			return queryPoolStakers(ctx, path[1:], req, keeper)
-		case QueryStakerPools:
-			return queryStakerPool(ctx, path[1:], req, keeper)
 		case QueryPoolIndex:
 			return queryPoolIndex(ctx, path[1:], req, keeper)
 		case QuerySwapRecord:
@@ -108,47 +102,6 @@ func queryPoolIndex(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	if nil != err {
 		ctx.Logger().Error("fail to marshal pool index to json", err)
 		return nil, sdk.ErrInternal("fail to marshal pool index to json")
-	}
-	return res, nil
-}
-
-// queryPoolStakers
-func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	ticker, err := NewTicker(path[0])
-	if nil != err {
-		ctx.Logger().Error("fail to get parse ticker", err)
-		return nil, sdk.ErrInternal("fail to parse ticker")
-	}
-	ps, err := keeper.GetPoolStaker(ctx, ticker)
-	if nil != err {
-		ctx.Logger().Error("fail to get pool staker", err)
-		return nil, sdk.ErrInternal("fail to get pool staker")
-	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, ps)
-	if nil != err {
-		ctx.Logger().Error("fail to marshal pool staker to json", err)
-		return nil, sdk.ErrInternal("fail to marshal pool staker to json")
-	}
-	return res, nil
-}
-
-// queryStakerPool
-func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	addr, err := NewBnbAddress(path[0])
-	if nil != err {
-		ctx.Logger().Error("fail to parse bnb address", err)
-		return nil, sdk.ErrInternal("fail to parse bnb address")
-	}
-
-	ps, err := keeper.GetStakerPool(ctx, addr)
-	if nil != err {
-		ctx.Logger().Error("fail to get staker pool", err)
-		return nil, sdk.ErrInternal("fail to get staker pool")
-	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, ps)
-	if nil != err {
-		ctx.Logger().Error("fail to marshal staker pool to json", err)
-		return nil, sdk.ErrInternal("fail to marshal staker pool to json")
 	}
 	return res, nil
 }

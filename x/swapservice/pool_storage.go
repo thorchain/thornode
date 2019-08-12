@@ -12,12 +12,6 @@ type poolStorage interface {
 	GetPoolStruct(ctx sdk.Context, ticker Ticker) PoolStruct
 	SetPoolStruct(ctx sdk.Context, ticker Ticker, ps PoolStruct)
 
-	GetStakerPool(ctx sdk.Context, stakerID BnbAddress) (StakerPool, error)
-	SetStakerPool(ctx sdk.Context, stakerID BnbAddress, sp StakerPool)
-
-	GetPoolStaker(ctx sdk.Context, ticker Ticker) (PoolStaker, error)
-	SetPoolStaker(ctx sdk.Context, ticker Ticker, ps PoolStaker)
-
 	SetSwapRecord(ctx sdk.Context, sr SwapRecord) error
 	GetSwapRecord(ctx sdk.Context, requestTxHash TxID) (SwapRecord, error)
 	UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash TxID) error

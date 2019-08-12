@@ -34,7 +34,9 @@ func (s *TypesSuite) TestBnbAddress(c *C) {
 	addr, err := NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(err, IsNil)
 	c.Check(addr.Equals(BnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")), Equals, true)
-	c.Check(addr.AccAddress.String(), Equals, "rune1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	acc, err := addr.AccAddress()
+	c.Assert(err, IsNil)
+	c.Check(acc.String(), Equals, "rune1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 
 	_, err = NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(err, IsNil)

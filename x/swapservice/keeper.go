@@ -71,9 +71,6 @@ func (k Keeper) GetPoolStruct(ctx sdk.Context, ticker Ticker) PoolStruct {
 	if poolstruct.BalanceToken.Empty() {
 		poolstruct.BalanceToken = ZeroAmount
 	}
-	if poolstruct.PoolUnits.Empty() {
-		poolstruct.PoolUnits = ZeroAmount
-	}
 	poolstruct.PoolAddress = k.GetAdminConfigPoolAddress(ctx)
 
 	return poolstruct
@@ -102,9 +99,6 @@ func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 Ticker) (Amount
 // SetPoolData - sets the value string that a pool ID resolves to
 func (k Keeper) SetPoolData(ctx sdk.Context, ticker Ticker, ps PoolStatus) {
 	poolstruct := k.GetPoolStruct(ctx, ticker)
-	if poolstruct.PoolUnits == "" {
-		poolstruct.PoolUnits = "0"
-	}
 	poolstruct.Status = ps
 	poolstruct.Ticker = ticker
 	k.SetPoolStruct(ctx, ticker, poolstruct)
@@ -175,57 +169,6 @@ func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, ticker Ticker) error {
 	}
 	k.SetPoolIndex(ctx, pi)
 	return nil
-}
-
-// GetPoolStaker retrieve poolStaker from the data store
-func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker Ticker) (PoolStaker, error) {
-	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPoolStaker, ticker.String())
-	if !store.Has([]byte(key)) {
-		ctx.Logger().Info("NotExist", "poolstakerkey", key)
-		return NewPoolStaker(ticker, "0"), nil
-	}
-	var ps PoolStaker
-	buf := store.Get([]byte(key))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &ps); nil != err {
-		ctx.Logger().Error("fail to unmarshal poolstaker", err)
-		return PoolStaker{}, err
-	}
-	return ps, nil
-}
-
-// SetPoolStaker store the poolstaker to datastore
-func (k Keeper) SetPoolStaker(ctx sdk.Context, ticker Ticker, ps PoolStaker) {
-	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPoolStaker, ticker.String())
-	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", key, ps))
-	result := k.cdc.MustMarshalBinaryBare(ps)
-	store.Set([]byte(key), result)
-}
-
-// GetStakerPool get the stakerpool from key value store
-func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID BnbAddress) (StakerPool, error) {
-	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixStakerPool, stakerID.String())
-	ctx.Logger().Info("get staker pool", "stakerpoolkey", key)
-	if !store.Has([]byte(key)) {
-		return NewStakerPool(stakerID), nil
-	}
-	var ps StakerPool
-	buf := store.Get([]byte(key))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &ps); nil != err {
-		ctx.Logger().Error("fail to unmarshal stakerpool", err)
-		return StakerPool{}, errors.Wrap(err, "fail to unmarshal stakerpool")
-	}
-	return ps, nil
-}
-
-// SetStakerPool save the given stakerpool object to key value store
-func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID BnbAddress, sp StakerPool) {
-	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixStakerPool, stakerID.String())
-	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", key, sp))
-	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(sp))
 }
 
 // SetSwapRecord save the swap record to store
@@ -485,6 +428,17 @@ func (k Keeper) GetAdminConfig(ctx sdk.Context, kkey AdminConfigKey) AdminConfig
 func (k Keeper) GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixAdmin))
+}
+
+func (k Keeper) TotalSupply(ctx sdk.Context, ticker UnitTicker) (sdk.Coin, error) {
+	sup := k.supplyKeeper.GetSupply(ctx)
+	coins := sup.GetTotal()
+	for _, coin := range coins {
+		if coin.Denom == ticker.String() {
+			return coin, nil
+		}
+	}
+	return sdk.Coin{}, fmt.Errorf("Unable to find ticker: %s", ticker.String())
 }
 
 func (k Keeper) MintCoins(ctx sdk.Context, address sdk.AccAddress, coins sdk.Coins) error {

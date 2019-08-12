@@ -30,8 +30,6 @@ var (
 	NewMsgSwap           = types.NewMsgSwap
 	NewMsgSetAdminConfig = types.NewMsgSetAdminConfig
 	NewTxOut             = types.NewTxOut
-	NewPoolStaker        = types.NewPoolStaker
-	NewStakerPool        = types.NewStakerPool
 	NewSwapRecord        = types.NewSwapRecord
 	IsRune               = types.IsRune
 	GetPoolStatus        = types.GetPoolStatus
@@ -65,13 +63,11 @@ type (
 	TxHash              = types.TxHash
 	TxID                = types.TxID
 	PoolStruct          = types.PoolStruct
-	PoolStaker          = types.PoolStaker
-	StakerPool          = types.StakerPool
-	StakerUnit          = types.StakerUnit
 	TxOutItem           = types.TxOutItem
 	TxOut               = types.TxOut
 	Coin                = types.Coin
 	Ticker              = types.Ticker
+	UnitTicker          = types.UnitTicker
 	Amount              = types.Amount
 	AdminConfigKey      = types.AdminConfigKey
 	AdminConfig         = types.AdminConfig

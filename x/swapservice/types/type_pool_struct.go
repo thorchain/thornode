@@ -87,7 +87,6 @@ func NewPoolStruct() PoolStruct {
 	return PoolStruct{
 		BalanceRune:  ZeroAmount,
 		BalanceToken: ZeroAmount,
-		PoolUnits:    ZeroAmount,
 		Status:       Bootstrap,
 	}
 }
@@ -102,7 +101,6 @@ func (ps PoolStruct) String() string {
 	sb.WriteString(fmt.Sprintln("rune-balance: " + ps.BalanceRune.String()))
 	sb.WriteString(fmt.Sprintln("token-balance: " + ps.BalanceToken.String()))
 	sb.WriteString(fmt.Sprintln("ticker: " + ps.Ticker.String()))
-	sb.WriteString(fmt.Sprintln("pool-units: " + ps.PoolUnits.String()))
 	sb.WriteString(fmt.Sprintln("status: " + ps.Status.String()))
 	return sb.String()
 }

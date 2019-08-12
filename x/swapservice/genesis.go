@@ -62,7 +62,6 @@ func DefaultGenesisState() GenesisState {
 				BalanceRune:  "0",
 				BalanceToken: "0",
 				Ticker:       "BNB",
-				PoolUnits:    "0",
 				Status:       PoolBootstrap,
 			},
 		},

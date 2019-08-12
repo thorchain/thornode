@@ -22,8 +22,6 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	swapserviceQueryCmd.AddCommand(client.GetCommands(
 		GetCmdPoolStruct(storeKey, cdc),
 		GetCmdPoolStructs(storeKey, cdc),
-		GetCmdStakerPoolStruct(storeKey, cdc),
-		GetCmdPoolStakerStruct(storeKey, cdc),
 		GetCmdPoolIndex(storeKey, cdc),
 		GetCmdSwapRecord(storeKey, cdc),
 		GetCmdUnStakeRecord(storeKey, cdc),
@@ -50,49 +48,6 @@ func GetCmdPoolStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.PoolStruct
-			cdc.MustUnmarshalJSON(res, &out)
-			return cliCtx.PrintOutput(out)
-		},
-	}
-}
-
-// GetCmdStakerPoolStruct queries staker pool
-func GetCmdStakerPoolStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "stakerpool [stakeraddress]",
-		Short: "Query staker pool info",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			stakerAddress := args[0]
-
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stakerpools/%s", queryRoute, stakerAddress), nil)
-			if err != nil {
-				cmd.Printf("could not resolve stakerpool - %s \n", stakerAddress)
-				return nil
-			}
-
-			var out types.StakerPool
-			cdc.MustUnmarshalJSON(res, &out)
-			return cliCtx.PrintOutput(out)
-		},
-	}
-} // GetCmdPoolStakerStruct queries pool staker
-func GetCmdPoolStakerStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "poolstaker [ticker]",
-		Short: "Query pool staker info",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			ticker := args[0]
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolstakers/%s", queryRoute, ticker), nil)
-			if err != nil {
-				cmd.Printf("could not resolve poolstaker - %s \n", ticker)
-				return nil
-			}
-
-			var out types.PoolStaker
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
