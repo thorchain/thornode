@@ -1,4 +1,4 @@
-module github.com/jpthor/cosmos-swap
+module gitlab.com/thorchain/statechain
 
 go 1.12
 
@@ -26,4 +26,4 @@ require (
 
 replace golang.org/x/crypto => github.com/johnnyluo/crypto v0.0.0-20190722223544-3f5ecfe86f08
 
-replace github.com/jpthor/cosmos-swap => ../cosmos-swap
+replace gitlab.com/thorchain/statechain => ../statechain

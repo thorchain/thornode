@@ -17,8 +17,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	app "github.com/jpthor/cosmos-swap"
-	cmd "github.com/jpthor/cosmos-swap/cmd"
+	app "gitlab.com/thorchain/statechain"
+	cmd "gitlab.com/thorchain/statechain/cmd"
 )
 
 func main() {

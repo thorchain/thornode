@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
+	"gitlab.com/thorchain/statechain/x/swapservice/types"
 
 	"github.com/gorilla/mux"
 )

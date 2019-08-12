@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
-	"github.com/jpthor/cosmos-swap/x/swapservice/types"
+	"gitlab.com/thorchain/statechain/x/swapservice/types"
 )
 
 func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
