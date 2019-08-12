@@ -196,7 +196,6 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 	// The swapserviceKeeper is the Keeper from the module for this tutorial
 	// It handles interactions with the pooldatastore
 	app.ssKeeper = swapservice.NewKeeper(
-		app.bankKeeper,
 		app.keySS,
 		app.cdc,
 	)
@@ -295,7 +294,7 @@ func (app *swapServiceApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keyMain)
 }
 
-//_________________________________________________________
+// _________________________________________________________
 
 func (app *swapServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
 ) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
