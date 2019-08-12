@@ -14,29 +14,23 @@ import (
 )
 
 const (
-	restTx         = "tx"
-	restPoolStruct = "poolstruct"
-	restPoolData   = "pooldata"
-	restPoolStaker = "poolstaker"
-	restStakerPool = "stakerpool"
-	swapData       = "swapdata"
-	txoutArrayData = "txoutarray"
-	adminConfig    = "adminconfig"
+	restURLParam = "param1"
 )
 
-// pool index etc
+// TODO add stake record endpoint
+// TODO add pool index endpoint
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
-	r.HandleFunc(fmt.Sprintf("/%s/admin/{%s}", storeName, adminConfig), getAdminConfig(cliCtx, storeName)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", storeName, restTx), getTxHash(cliCtx, storeName)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}", storeName, restPoolStruct), poolStructHandler(cliCtx, storeName)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}/stakers", storeName, restPoolStaker), poolStakersHandler(cliCtx, storeName)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/staker/{%s}", storeName, restStakerPool), stakerPoolHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/admin/{%s}", storeName, restURLParam), getAdminConfig(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/tx/{%s}", storeName, restURLParam), getTxHash(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}", storeName, restURLParam), poolStructHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/pool/{%s}/stakers", storeName, restURLParam), poolStakersHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/staker/{%s}", storeName, restURLParam), stakerPoolHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/pools", storeName), poolHandler(cliCtx, storeName)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/swaprecord/{%s}", storeName, swapData), swapRecordHandler(cliCtx, storeName)).Methods("GET")
-	r.HandleFunc(fmt.Sprintf("/%s/unstakerecord/{%s}", storeName, swapData), unStakeRecordHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/swaprecord/{%s}", storeName, restURLParam), swapRecordHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/unstakerecord/{%s}", storeName, restURLParam), unStakeRecordHandler(cliCtx, storeName)).Methods("GET")
 	r.HandleFunc(fmt.Sprintf("/%s/binance/tx", storeName), txHashHandler(cliCtx)).Methods("POST")
-	r.HandleFunc(fmt.Sprintf("/%s/txoutarray/{%s}", storeName, txoutArrayData), txOutArrayHandler(cliCtx, storeName)).Methods("GET")
+	r.HandleFunc(fmt.Sprintf("/%s/txoutarray/{%s}", storeName, restURLParam), txOutArrayHandler(cliCtx, storeName)).Methods("GET")
 }
 
 type txItem struct {
@@ -104,7 +98,7 @@ func txHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 func getTxHash(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		paramType := vars[restTx]
+		paramType := vars[restURLParam]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/txhash/%s", storeName, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
@@ -118,7 +112,7 @@ func getTxHash(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 func poolStructHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		paramType := vars[restPoolStruct]
+		paramType := vars[restURLParam]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolstruct/%s", storeName, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
@@ -132,7 +126,7 @@ func poolStructHandler(cliCtx context.CLIContext, storeName string) http.Handler
 func poolStakersHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		paramType := vars[restPoolStaker]
+		paramType := vars[restURLParam]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolstakers/%s", storeName, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
@@ -146,7 +140,7 @@ func poolStakersHandler(cliCtx context.CLIContext, storeName string) http.Handle
 func stakerPoolHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		paramType := vars[restPoolData]
+		paramType := vars[restURLParam]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/stakerpools/%s", storeName, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
@@ -170,7 +164,7 @@ func poolHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 func swapRecordHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		paramType := vars[swapData]
+		paramType := vars[restURLParam]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/swaprecord/%s", storeName, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
@@ -183,7 +177,7 @@ func swapRecordHandler(cliCtx context.CLIContext, storeName string) http.Handler
 func unStakeRecordHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		paramType := vars[swapData]
+		paramType := vars[restURLParam]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/unstakerecord/%s", storeName, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
@@ -196,7 +190,7 @@ func unStakeRecordHandler(cliCtx context.CLIContext, storeName string) http.Hand
 func txOutArrayHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		paramType := vars[txoutArrayData]
+		paramType := vars[restURLParam]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/txoutarray/%s", storeName, paramType), nil)
 
 		if err != nil {
@@ -211,7 +205,7 @@ func txOutArrayHandler(cliCtx context.CLIContext, storeName string) http.Handler
 func getAdminConfig(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
-		paramType := vars[adminConfig]
+		paramType := vars[restURLParam]
 		res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/adminconfig/%s", storeName, paramType), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
