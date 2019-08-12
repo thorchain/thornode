@@ -97,8 +97,6 @@ func (s *Scanner) QueryTxn(inTx types.InTx) types.InTx {
 		var tx types.Tx
 		json.Unmarshal(body, &tx)
 
-		// @todo 	This is similar to what happens inside the socket logic - to keep
-		// 				things DRY, suggest this be handled elsewhere.
 		for _, msg := range tx.Tx.Value.Msg {
 			for i, output := range msg.Value.Outputs {
 				if output.Address == s.PoolAddress {
