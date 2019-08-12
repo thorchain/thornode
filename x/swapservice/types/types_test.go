@@ -3,6 +3,7 @@ package types
 import (
 	"testing"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 )
 
@@ -31,12 +32,15 @@ func (s TypesSuite) TestTicker(c *C) {
 }
 
 func (s *TypesSuite) TestBnbAddress(c *C) {
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount("bnb", "bnbp")
+
 	addr, err := NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(err, IsNil)
 	c.Check(addr.Equals(BnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")), Equals, true)
 	acc, err := addr.AccAddress()
 	c.Assert(err, IsNil)
-	c.Check(acc.String(), Equals, "rune1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Check(acc.String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 
 	_, err = NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(err, IsNil)
