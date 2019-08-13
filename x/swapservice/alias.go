@@ -31,6 +31,7 @@ var (
 	NewMsgSwap           = types.NewMsgSwap
 	NewMsgSetAdminConfig = types.NewMsgSetAdminConfig
 	NewTxOut             = types.NewTxOut
+	NewMsgOutboundTx     = types.NewMsgOutboundTx
 	NewPoolStaker        = types.NewPoolStaker
 	NewStakerPool        = types.NewStakerPool
 	IsRune               = types.IsRune
@@ -60,6 +61,7 @@ type (
 	TrustAccount      = types.TrustAccount
 	PoolStatus        = types.PoolStatus
 	PoolIndex         = types.PoolIndex
+	TxInIndex         = types.TxInIndex
 	TxIn              = types.TxIn
 	TxID              = types.TxID
 	Pool              = types.Pool

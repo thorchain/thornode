@@ -5,6 +5,7 @@ import (
 )
 
 type status string
+type TxInIndex []TxID
 
 const (
 	Incomplete status = "incomplete"
