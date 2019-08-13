@@ -13,9 +13,9 @@ describe "API Tests" do
   context "Check that an empty tx hash returns properly" do
     it "should have no values" do
       resp = get("/tx/bogus")
-      expect(resp.body['request']).to eq(""), resp.body
-      expect(resp.body['status']).to eq(""), resp.body
-      expect(resp.body['txhash']).to eq(""), resp.body
+      expect(resp.body['request']).to eq(""), resp.body.inspect
+      expect(resp.body['status']).to eq(""), resp.body.inspect
+      expect(resp.body['txhash']).to eq(""), resp.body.inspect
     end
   end
 
@@ -24,34 +24,86 @@ describe "API Tests" do
     it "should show up in listing of pools" do
       resp = get("/pools")
       # should have one pool added via genesis
-      expect(resp.body.length).to eq(1), resp.body
+      # If this line is failing, are we starting with a clean blockchain? Or
+      # did we run before genesis could init pools?
+      expect(resp.body.length).to eq(1), "Are you working from a clean blockchain? Did you wait until 1 block was create? \n(#{resp.code}: #{resp.body.inspect})"
     end
 
     it "create a pool for bnb" do
-      resp = processTx("create:TCAN-014")
-      expect(resp.code).to eq("200"), "Are you working from a clean blockchain? \n(#{resp.code}: #{resp.body})"
+      tx = makeTx(memo: "create:TCAN-014")
+      resp = processTx([tx])
+      expect(resp.code).to eq("200"), resp.body.inspect
     end
 
     it "should be able to get the pool" do
       resp = get("/pool/TCAN-014")
-      expect(resp.body['ticker']).to eq("TCAN-014"), resp.body
+      expect(resp.body['ticker']).to eq("TCAN-014"), resp.body.inspect
+      expect(resp.body['status']).to eq("Bootstrap"), resp.body.inspect
+    end
+
+    it "set pool status to active, and that we can do multiple txs" do
+      tx1 = makeTx(memo: "ADMIN:POOLSTATUS:TCAN-014:Enabled")
+      tx2 = makeTx(memo: "ADMIN:POOLSTATUS:BNB:Enabled")
+      resp = processTx([tx1, tx2])
+      expect(resp.code).to eq("200")
+
+      resp = get("/pool/TCAN-014")
+      expect(resp.code).to eq("200")
+      expect(resp.body['status']).to eq("Enabled"), resp.body.inspect
+
+      resp = get("/pool/BNB")
+      expect(resp.code).to eq("200")
+      expect(resp.body['status']).to eq("Enabled"), resp.body.inspect
     end
 
 
     it "should not create a duplicate pool" do
-      resp = processTx("create:TCAN-014")
+      tx = makeTx(memo: "create:TCAN-014")
+      resp = processTx(tx)
       expect(resp.code).to eq("500")
       
       resp = get("/pools")
       # should have one pool added via genesis
-      expect(resp.body.length).to eq(2), resp.body
+      expect(resp.body.length).to eq(2), resp.body.inspect
     end
 
     it "should show up in listing of pools" do
       resp = get("/pools")
-      expect(resp.body[1]['ticker']).to eq("TCAN-014"), resp.body
+      expect(resp.body[1]['ticker']).to eq("TCAN-014"), resp.body.inspect
     end
 
+  end
+  
+  context "Stake/Unstake" do
+
+    coins = [
+      {'denom': "RUNE-B1A", "amount": "23.495"},
+      {'denom': "TCAN-014", "amount": "3.3485"},
+    ]
+    sender = "bnb" + get_rand(39).downcase
+
+    it "should be able to stake" do
+
+      tx = makeTx(memo: "stake:TCAN-014", coins: coins, sender: sender)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200"), resp.body.inspect
+
+      resp = get("/pool/TCAN-014/stakers")
+      expect(resp.code).to eq("200"), resp.body.inspect
+      expect(resp.body['stakers'].length).to eq(1), resp.body['stakers'].inspect
+      expect(resp.body['stakers'][0]['units']).to eq("13.42175000"), resp.body['stakers'][0].inspect
+    end
+
+    it "should be able to unstake" do
+      tx = makeTx(memo: "withdraw:TCAN-014:100", sender: sender)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200"), resp.body.inspect
+
+      resp = get("/pool/TCAN-014/stakers")
+      expect(resp.code).to eq("200"), resp.body.inspect
+      expect(resp.body['stakers'].length).to eq(1), resp.body['stakers'].inspect
+      expect(resp.body['stakers'][0]['units']).to eq("0"), resp.body['stakers'][0].inspect
+    end
   end
 
 end

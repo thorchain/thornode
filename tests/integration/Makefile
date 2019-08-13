@@ -3,7 +3,7 @@ setup:
 	@bundle install
 
 test-internal:
-	@rspec --fail-fast
+	@rspec --fail-fast -f documentation
 
 wait-for-blockchain:
 	@./wait-for-blockchain.sh
