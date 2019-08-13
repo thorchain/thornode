@@ -41,6 +41,13 @@ describe "API Tests" do
       expect(resp.body['status']).to eq("Bootstrap"), resp.body.inspect
     end
 
+    it "check we cannot set pool status as non-admin" do
+      skip "TODO - this check should pass, but doesn't"
+      tx = makeTx(memo: "ADMIN:POOLSTATUS:TCAN-014:Enabled")
+      resp = processTx(tx, user="alice")
+      expect(resp.code).to eq("500")
+    end
+
     it "set pool status to active, and that we can do multiple txs" do
       tx1 = makeTx(memo: "ADMIN:POOLSTATUS:TCAN-014:Enabled")
       tx2 = makeTx(memo: "ADMIN:POOLSTATUS:BNB:Enabled")
