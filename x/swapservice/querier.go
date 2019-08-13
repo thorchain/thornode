@@ -8,20 +8,8 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-)
 
-// query endpoints supported by the swapservice Querier
-const (
-	QueryAdminConfig   = "adminconfig"
-	QueryPoolStruct    = "poolstruct"
-	QueryPoolStructs   = "pools"
-	QueryPoolStakers   = "poolstakers"
-	QueryStakerPools   = "stakerpools"
-	QueryPoolIndex     = "poolindex"
-	QuerySwapRecord    = "swaprecord"
-	QueryUnStakeRecord = "unstakerecord"
-	QueryTxHash        = "txhash"
-	QueryTxOutArray    = "txoutarray"
+	q "gitlab.com/thorchain/statechain/x/swapservice/query"
 )
 
 // NewQuerier is the module level router for state queries
@@ -29,25 +17,25 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		ctx.Logger().Info("query", "path", path[0])
 		switch path[0] {
-		case QueryPoolStruct:
+		case q.QueryPoolStruct.Key:
 			return queryPoolStruct(ctx, path[1:], req, keeper)
-		case QueryPoolStructs:
+		case q.QueryPoolStructs.Key:
 			return queryPoolStructs(ctx, req, keeper)
-		case QueryPoolStakers:
+		case q.QueryPoolStakers.Key:
 			return queryPoolStakers(ctx, path[1:], req, keeper)
-		case QueryStakerPools:
+		case q.QueryStakerPools.Key:
 			return queryStakerPool(ctx, path[1:], req, keeper)
-		case QueryPoolIndex:
+		case q.QueryPoolIndex.Key:
 			return queryPoolIndex(ctx, path[1:], req, keeper)
-		case QuerySwapRecord:
+		case q.QuerySwapRecord.Key:
 			return querySwapRecord(ctx, path[1:], req, keeper)
-		case QueryUnStakeRecord:
+		case q.QueryUnStakeRecord.Key:
 			return queryUnStakeRecord(ctx, path[1:], req, keeper)
-		case QueryTxHash:
+		case q.QueryTxHash.Key:
 			return queryTxHash(ctx, path[1:], req, keeper)
-		case QueryAdminConfig:
+		case q.QueryAdminConfig.Key:
 			return queryAdminConfig(ctx, path[1:], req, keeper)
-		case QueryTxOutArray:
+		case q.QueryTxOutArray.Key:
 			return queryTxOutArray(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest("unknown swapservice query endpoint")
