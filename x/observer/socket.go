@@ -31,15 +31,15 @@ func NewSocket(poolAddress, dexHost string) *Socket {
 func (s *Socket) Start(conChan chan []byte) {
 	conn, err := s.Connect()
 	if err != nil {
-		log.Fatal().Msgf("[OBSERVER] There was an error while starting: %v", err)
+		log.Fatal().Msgf("%s There was an error while starting: %v", LogPrefix(), err)
 	}
 
-	log.Info().Msgf("[OBSERVER] Setting a keepalive of %v", s.PongWait)
+	log.Info().Msgf("%s Setting a keepalive of %v", LogPrefix(), s.PongWait)
 	s.SetKeepAlive(conn)
 
 	ch := make(chan []byte)
 
-	log.Info().Msg("[OBSERVER] Listening for events....")
+	log.Info().Msgf("%s Listening for events....", LogPrefix())
 	s.Process(ch, conChan)
 	s.Read(ch, conn)
 }
@@ -52,7 +52,7 @@ func (s *Socket) Connect() (*websocket.Conn, error) {
 		Path: path,
 	}
 
-	log.Info().Msgf("[OBSERVER] Opening up a connection to: %v", url.String())
+	log.Info().Msgf("%s Opening up a connection to: %v", LogPrefix(), url.String())
 
 	conn, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
 	if err != nil {
@@ -90,7 +90,7 @@ func (s *Socket) Read(ch chan []byte, conn *websocket.Conn) {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			// @todo Reconnect if this fails.
-			log.Error().Msgf("[OBSERVER] Read error: %s", err)
+			log.Error().Msgf("%s Read error: %s", LogPrefix(), err)
 		}
 		ch <- message
 	}
@@ -104,7 +104,7 @@ func (s *Socket) Process(ch, conChan chan []byte) {
 
 			err := json.Unmarshal(payload, &txfr)
 			if err != nil {
-				log.Error().Msgf("[OBSERVER] There was an error while parsing the event: %v", err)
+				log.Error().Msgf("%s There was an error while parsing the event: %v", LogPrefix(), err)
 			}
 
 			if txfr.Stream == "transfers" {
@@ -134,7 +134,7 @@ func (s *Socket) Process(ch, conChan chan []byte) {
 
 					json, err := json.Marshal(inTx)
 					if err != nil {
-						log.Error().Msgf("[OBSERVER] Error: %v", err)
+						log.Error().Msgf("%s Error: %v", LogPrefix(), err)
 					}
 
 					conChan <- json
@@ -145,6 +145,6 @@ func (s *Socket) Process(ch, conChan chan []byte) {
 }
 
 func (s *Socket) Stop() {
-	log.Info().Msg("[OBSERVER] Shutting down....")
+	log.Info().Msgf("%s Shutting down....", LogPrefix())
 	os.Exit(1)
 }
