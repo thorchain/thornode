@@ -11,19 +11,20 @@ import (
 	"github.com/gorilla/websocket"
 	log "github.com/rs/zerolog/log"
 
+	"gitlab.com/thorchain/bepswap/observe/x/binance"
+	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
 	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
 )
 
 type Socket struct {
-	PoolAddress string
-	DEXHost string
+	Binance *binance.Binance
 	PongWait time.Duration
 }
 
 func NewSocket(poolAddress, dexHost string) *Socket {
+	binance := binance.NewBinance(poolAddress, dexHost)
 	return &Socket{
-		PoolAddress: poolAddress,
-		DEXHost: dexHost,
+		Binance: binance,
 		PongWait: 30*time.Second,
 	}
 }
@@ -45,10 +46,10 @@ func (s *Socket) Start(conChan chan []byte) {
 }
 
 func (s *Socket) Connect() (*websocket.Conn, error) {
-	path := fmt.Sprintf("/api/ws/%s", s.PoolAddress)
+	path := fmt.Sprintf("/api/ws/%s", s.Binance.PoolAddress)
 	url := url.URL{
 		Scheme: "wss",
-		Host: s.DEXHost,
+		Host: s.Binance.DEXHost,
 		Path: path,
 	}
 
@@ -108,31 +109,39 @@ func (s *Socket) Process(ch, conChan chan []byte) {
 			}
 
 			if txfr.Stream == "transfers" {
-				if txfr.Data.FromAddr != s.PoolAddress {
-					var inTx types.InTx
+				if txfr.Data.FromAddr != s.Binance.PoolAddress {
+					var inTx ctypes.InTx
 
 					for _, txn := range txfr.Data.T {
+						// Temporary measure to get the memo.
+						var tx types.Tx
+						qp := map[string]string{}
+						txDetails, _, _ := s.Binance.BasicClient.Get("/tx/"+txfr.Data.Hash+"?format=json", qp)
+						json.Unmarshal(txDetails, &tx)
+
+						txItem := ctypes.InTxItem{Tx: txfr.Data.Hash, 
+							Memo: tx.Tx.Value.Memo,
+							Sender: txfr.Data.FromAddr,
+						}
+
 						for _, coin := range txn.Coins {
 							parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
 							amount := parsedAmt*100000000
 
-							txItem := types.TxItem{Tx: txfr.Data.Hash, 
-								Memo: "MEMO", //txfr.Data.Memo,
-								Sender: txfr.Data.FromAddr,
-								Coins: types.Coins{
-									Denom: coin.Asset,
-									Amount: fmt.Sprintf("%.0f", amount),
-								},
-							}
-
-							inTx.TxArray = append(inTx.TxArray, txItem)
+							var token ctypes.Coins
+							token.Denom = coin.Asset
+							token.Amount = fmt.Sprintf("%.0f", amount)
+							txItem.Coins = append(txItem.Coins, token)
 						}
+
+						inTx.TxArray = append(inTx.TxArray, txItem)
 					}
 
 					inTx.BlockHeight = txfr.Data.EventHeight
 					inTx.Count = len(inTx.TxArray)
 
 					json, err := json.Marshal(inTx)
+					log.Info().Msgf("%v", string(json))
 					if err != nil {
 						log.Error().Msgf("%s Error: %v", LogPrefix(), err)
 					}

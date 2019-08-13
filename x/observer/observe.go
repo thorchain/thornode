@@ -5,7 +5,7 @@ import (
 
 	log "github.com/rs/zerolog/log"
 
-	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
+	types "gitlab.com/thorchain/bepswap/observe/common/types"
 )
 
 type Observer struct {
@@ -51,7 +51,7 @@ func (o *Observer) ProcessTxn(sockChan, scanChan chan []byte) {
 		blocks = append(blocks, inTx.BlockHeight)
 
 		go o.Send(scanChan)
-		// go o.Scanner.Scan(blocks, scanChan)
+		//go o.Scanner.Scan(blocks, scanChan)
 	}
 }
 
@@ -70,6 +70,4 @@ func (o *Observer) Send(scanChan chan []byte) {
 	}
 }
 
-func LogPrefix() string {
-	return "[OBSERVER]"
-}
+func LogPrefix() string { return "[OBSERVER]" }
