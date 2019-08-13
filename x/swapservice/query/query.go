@@ -6,13 +6,28 @@ import (
 )
 
 type Query struct {
-	Key      string
-	Endpoint string
+	Key              string
+	EndpointTemplate string
 }
 
-func (q Query) Sprintf(args ...string) string {
-	count := strings.Count(q.Endpoint, "%s")
-	return fmt.Sprintf(q.Endpoint, args[:count])
+func (q Query) Endpoint(args ...string) string {
+	count := strings.Count(q.EndpointTemplate, "%s")
+	a := args[:count]
+
+	in := make([]interface{}, len(a))
+	for i, _ := range in {
+		in[i] = a[i]
+	}
+
+	return fmt.Sprintf(q.EndpointTemplate, in...)
+}
+
+func (q Query) Path(args ...string) string {
+	path := fmt.Sprintf("custom/%s/%s", args[0], q.Key)
+	if len(args) > 1 {
+		path = fmt.Sprintf("%s/%s", path, args[1])
+	}
+	return path
 }
 
 // query endpoints supported by the swapservice Querier

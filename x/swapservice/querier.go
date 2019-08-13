@@ -38,7 +38,9 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 		case q.QueryTxOutArray.Key:
 			return queryTxOutArray(ctx, path[1:], req, keeper)
 		default:
-			return nil, sdk.ErrUnknownRequest("unknown swapservice query endpoint")
+			return nil, sdk.ErrUnknownRequest(
+				fmt.Sprintf("unknown swapservice query endpoint: %s", path[0]),
+			)
 		}
 	}
 }
