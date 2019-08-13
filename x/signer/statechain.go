@@ -11,7 +11,7 @@ import (
 	"github.com/avast/retry-go"
 	log "github.com/rs/zerolog/log"
 
-	types "gitlab.com/thorchain/bepswap/observe/x/signer/types"
+	types "gitlab.com/thorchain/bepswap/observe/common/types"
 )
 
 type StateChain struct {

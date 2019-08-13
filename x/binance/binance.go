@@ -1,8 +1,9 @@
-package signer
+package binance
 
 import (
 	"os"
 	"strconv"
+
 	log "github.com/rs/zerolog/log"
 
 	"github.com/binance-chain/go-sdk/keys"
@@ -13,13 +14,15 @@ import (
 	"github.com/binance-chain/go-sdk/client/basic"
 	sdk "github.com/binance-chain/go-sdk/client"
 
-	stypes "gitlab.com/thorchain/bepswap/observe/x/signer/types"
+	ctypes "gitlab.com/thorchain/bepswap/observe/common/types" 
 )
 
 type Binance struct {
 	PoolAddress string
+	DEXHost string
 	PrivateKey string
 	Client sdk.DexClient
+	BasicClient basic.BasicClient
 	QueryClient query.QueryClient
 	KeyManager keys.KeyManager
 	chainId string
@@ -48,8 +51,11 @@ func NewBinance(poolAddress, dexHost string) *Binance {
 	queryClient := query.NewClient(basicClient)
 
 	return &Binance{
+		PoolAddress: poolAddress,
+		DEXHost: dexHost,
 		PrivateKey: key,
 		Client: bClient,
+		BasicClient: basicClient,
 		QueryClient: queryClient,
 		KeyManager: keyManager,
 		// @todo Get this from the transaction client
@@ -104,7 +110,7 @@ func (b *Binance) ParseTx(transfers []msg.Transfer) msg.SendMsg {
 	return sendMsg
 }
 
-func (b *Binance) SignTx(outTx stypes.OutTx) ([]byte, map[string]string) {
+func (b *Binance) SignTx(outTx ctypes.OutTx) ([]byte, map[string]string) {
 	//var options tx.StdSignMsg
 	//options.Memo = outTx.TxOutID
 
@@ -159,3 +165,5 @@ func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxComm
 	log.Info().Msgf("%s Commit Response from Binance: %v", LogPrefix(), commits[0])
 	return &commits[0], nil
 }
+
+func LogPrefix() string { return "[BINANCE]" }
