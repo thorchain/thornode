@@ -19,6 +19,7 @@ const (
 	txWithdraw
 	txSwap
 	txAdmin
+	txOutbound
 	unknowTx
 )
 
@@ -34,6 +35,7 @@ var stringToTxTypeMap = map[string]txType{
 	"withdraw": txWithdraw,
 	"swap":     txSwap,
 	"admin":    txAdmin,
+	"outbound": txOutbound,
 }
 
 var txToStringMap = map[txType]string{
@@ -42,6 +44,7 @@ var txToStringMap = map[txType]string{
 	txWithdraw: "withdraw",
 	txSwap:     "swap",
 	txAdmin:    "admin",
+	txOutbound: "outbound",
 }
 
 var stringToAdminTypeMap = map[string]adminType{
@@ -88,6 +91,7 @@ type Memo interface {
 	GetAdminType() adminType
 	GetKey() string
 	GetValue() string
+	GetBlockHeight() int64
 }
 
 type MemoBase struct {
@@ -124,6 +128,11 @@ type AdminMemo struct {
 	Type  adminType
 }
 
+type OutboundMemo struct {
+	MemoBase
+	BlockHeight int64
+}
+
 func ParseMemo(memo string) (Memo, error) {
 	var err error
 	noMemo := MemoBase{}
@@ -148,10 +157,12 @@ func ParseMemo(memo string) (Memo, error) {
 		return CreateMemo{
 			MemoBase: MemoBase{TxType: txCreate, Symbol: symbol},
 		}, nil
+
 	case txStake:
 		return StakeMemo{
 			MemoBase: MemoBase{TxType: txStake, Symbol: symbol},
 		}, nil
+
 	case txWithdraw:
 		if len(parts) < 3 {
 			return noMemo, fmt.Errorf("Missing withdrawal unit amount")
@@ -162,6 +173,7 @@ func ParseMemo(memo string) (Memo, error) {
 			MemoBase: MemoBase{TxType: txWithdraw, Symbol: symbol},
 			Amount:   parts[2],
 		}, err
+
 	case txSwap:
 		max := 5
 		parts = strings.SplitN(memo, ":", max)
@@ -196,6 +208,7 @@ func ParseMemo(memo string) (Memo, error) {
 			SlipLimit:   slip,
 			Memo:        mem,
 		}, err
+
 	case txAdmin:
 		if len(parts) < 4 {
 			return noMemo, fmt.Errorf("not enough parameters")
@@ -205,6 +218,15 @@ func ParseMemo(memo string) (Memo, error) {
 			Type:  a,
 			Key:   parts[2],
 			Value: parts[3],
+		}, err
+
+	case txOutbound:
+		if len(parts) < 2 {
+			return noMemo, fmt.Errorf("Not enough parameters")
+		}
+		height, err := strconv.ParseInt("123", 0, 64)
+		return OutboundMemo{
+			BlockHeight: height,
 		}, err
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())
@@ -222,6 +244,7 @@ func (m MemoBase) GetMemo() string            { return "" }
 func (m MemoBase) GetAdminType() adminType    { return adminUnknown }
 func (m MemoBase) GetKey() string             { return "" }
 func (m MemoBase) GetValue() string           { return "" }
+func (m MemoBase) GetBlockHeight() int64      { return 0 }
 
 // Transaction Specific Functions
 func (m WithdrawMemo) GetAmount() string      { return m.Amount }
@@ -231,6 +254,7 @@ func (m SwapMemo) GetMemo() string            { return m.Memo }
 func (m AdminMemo) GetAdminType() adminType   { return m.Type }
 func (m AdminMemo) GetKey() string            { return m.Key }
 func (m AdminMemo) GetValue() string          { return m.Value }
+func (m OutboundMemo) GetBlockHeight() int64  { return m.BlockHeight }
 
 // validates the given symbol
 func validateSymbol(sym string) error {
