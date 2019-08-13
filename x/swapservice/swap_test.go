@@ -60,7 +60,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-target",
 			requestTxHash: "hash",
-			source:        Ticker("RUNE"),
+			source:        RuneTicker,
 			target:        Ticker(""),
 			amount:        "100",
 			requester:     "tester",
@@ -71,7 +71,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-requestTxHash",
 			requestTxHash: "",
-			source:        Ticker("RUNE"),
+			source:        RuneTicker,
 			target:        Ticker("BNB"),
 			amount:        "100",
 			requester:     "tester",
@@ -82,7 +82,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-amount",
 			requestTxHash: "hash",
-			source:        "RUNE",
+			source:        RuneTicker,
 			target:        "BNB",
 			amount:        "",
 			requester:     "tester",
@@ -93,7 +93,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-requester",
 			requestTxHash: "hash",
-			source:        "RUNE",
+			source:        RuneTicker,
 			target:        "BNB",
 			amount:        "100",
 			requester:     "",
@@ -104,7 +104,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-destination",
 			requestTxHash: "hash",
-			source:        "RUNE",
+			source:        RuneTicker,
 			target:        "BNB",
 			amount:        "100",
 			requester:     "tester",
@@ -116,7 +116,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			name:          "pool-not-exist",
 			requestTxHash: "hash",
 			source:        "NOTEXIST",
-			target:        "RUNE",
+			target:        RuneTicker,
 			amount:        "100",
 			requester:     "tester",
 			destination:   "don'tknow",
@@ -127,7 +127,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "pool-not-exist-1",
 			requestTxHash: "hash",
-			source:        "RUNE",
+			source:        RuneTicker,
 			target:        "NOTEXIST",
 			amount:        "100",
 			requester:     "tester",
@@ -139,7 +139,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "swap-over-global-sliplimit",
 			requestTxHash: "hash",
-			source:        "RUNE",
+			source:        RuneTicker,
 			target:        "BNB",
 			amount:        "50",
 			requester:     "tester",
@@ -151,7 +151,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "swap-over-trade-sliplimit",
 			requestTxHash: "hash",
-			source:        "RUNE",
+			source:        RuneTicker,
 			target:        "BNB",
 			amount:        "9",
 			requester:     "tester",
@@ -163,7 +163,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "swap",
 			requestTxHash: "hash",
-			source:        "RUNE",
+			source:        RuneTicker,
 			target:        "BNB",
 			amount:        "5",
 			requester:     "tester",
@@ -209,7 +209,7 @@ func (s SwapSuite) TestCalculatePoolSlip(c *C) {
 	}{
 		{
 			name:             "normal",
-			source:           "RUNE",
+			source:           RuneTicker,
 			runeBalance:      100.0,
 			tokenBalance:     100.0,
 			swapAmount:       5.0,
@@ -217,7 +217,7 @@ func (s SwapSuite) TestCalculatePoolSlip(c *C) {
 		},
 		{
 			name:             "normal-1",
-			source:           "RUNE",
+			source:           RuneTicker,
 			runeBalance:      50.0,
 			tokenBalance:     200.0,
 			swapAmount:       5.0,
@@ -233,7 +233,7 @@ func (s SwapSuite) TestCalculatePoolSlip(c *C) {
 		},
 		{
 			name:             "normal-3",
-			source:           "RUNE",
+			source:           RuneTicker,
 			runeBalance:      500.0,
 			tokenBalance:     200.0,
 			swapAmount:       5.0,
@@ -258,7 +258,7 @@ func (s SwapSuite) TestCalculateUserPrice(c *C) {
 	}{
 		{
 			name:              "normal",
-			source:            Ticker("RUNE"),
+			source:            RuneTicker,
 			runeBalance:       100.0,
 			tokenBalance:      100.0,
 			swapAmount:        5.0,
@@ -266,7 +266,7 @@ func (s SwapSuite) TestCalculateUserPrice(c *C) {
 		},
 		{
 			name:              "normal-1",
-			source:            Ticker("RUNE"),
+			source:            RuneTicker,
 			runeBalance:       200.0,
 			tokenBalance:      1000.0,
 			swapAmount:        5,
@@ -282,7 +282,7 @@ func (s SwapSuite) TestCalculateUserPrice(c *C) {
 		},
 		{
 			name:              "normal-3",
-			source:            Ticker("RUNE"),
+			source:            RuneTicker,
 			runeBalance:       2000.0,
 			tokenBalance:      1000.0,
 			swapAmount:        50,
@@ -431,16 +431,16 @@ func (s SwapSuite) TestSwapCalculation(c *C) {
 func (s SwapSuite) TestValidatePools(c *C) {
 	keeper := mocks.MockPoolStorage{}
 	ctx := GetCtx("test")
-	c.Check(validatePools(ctx, keeper, "RUNE"), IsNil)
+	c.Check(validatePools(ctx, keeper, RuneTicker), IsNil)
 	c.Check(validatePools(ctx, keeper, "NOTEXIST"), NotNil)
 }
 
 func (s SwapSuite) TestValidateMessage(c *C) {
-	c.Check(validateMessage("txHASH", "RUNE", "BNB", "34.2985", "bnbXXXX", "bnbYYY"), IsNil)
-	c.Check(validateMessage("", "RUNE", "BNB", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", RuneTicker, "BNB", "34.2985", "bnbXXXX", "bnbYYY"), IsNil)
+	c.Check(validateMessage("", RuneTicker, "BNB", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
 	c.Check(validateMessage("txHASH", "", "BNB", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
-	c.Check(validateMessage("txHASH", "RUNE", "", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
-	c.Check(validateMessage("txHASH", "RUNE", "BNB", "", "bnbXXXX", "bnbYYY"), NotNil)
-	c.Check(validateMessage("txHASH", "RUNE", "BNB", "34.2985", "", "bnbYYY"), NotNil)
-	c.Check(validateMessage("txHASH", "RUNE", "BNB", "34.2985", "bnbXXXX", ""), NotNil)
+	c.Check(validateMessage("txHASH", RuneTicker, "", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", RuneTicker, "BNB", "", "bnbXXXX", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", RuneTicker, "BNB", "34.2985", "", "bnbYYY"), NotNil)
+	c.Check(validateMessage("txHASH", RuneTicker, "BNB", "34.2985", "bnbXXXX", ""), NotNil)
 }
