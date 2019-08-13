@@ -25,7 +25,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	// Dynamically create endpoints of all funcs in querier.go
 	for _, q := range query.Queries {
 		r.HandleFunc(
-			q.Sprintf(storeName, restURLParam),
+			q.Endpoint(storeName, restURLParam),
 			getHandlerWrapper(q, storeName, cliCtx),
 		).Methods("GET")
 	}
