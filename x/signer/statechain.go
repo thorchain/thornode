@@ -31,8 +31,6 @@ func (s *StateChain) TxnBlockHeight(txn string) string {
 		Path: fmt.Sprintf("/txs/%s", txn),
 	}
 
-	log.Info().Msgf("Querying Height from %v", uri.String())
-
 	body, _ := GetWithRetry(uri.String())
 
 	var txs types.Txs
@@ -50,8 +48,6 @@ func (s *StateChain) TxOut(blockHeight string) types.OutTx {
 		Host: s.ChainHost,
 		Path: fmt.Sprintf("/swapservice/txoutarray/%s", blockHeight),
 	}
-
-	log.Info().Msgf("Querying TxOut array from %v", uri.String())
 
 	body, _ := GetWithRetry(uri.String())
 
