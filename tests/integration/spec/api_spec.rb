@@ -67,7 +67,7 @@ describe "API Tests" do
     it "should not create a duplicate pool" do
       tx = makeTx(memo: "create:TCAN-014")
       resp = processTx(tx)
-      expect(resp.code).to eq("500")
+      expect(resp.code).to eq("200")
       
       resp = get("/pools")
       # should have one pool added via genesis
@@ -102,15 +102,36 @@ describe "API Tests" do
     end
 
     it "should be able to unstake" do
-      skip "Not yet implemented"
       tx = makeTx(memo: "withdraw:TCAN-014:100", sender: sender)
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
 
       resp = get("/pool/TCAN-014/stakers")
       expect(resp.code).to eq("200"), resp.body.inspect
-      expect(resp.body['stakers'].length).to eq(1), resp.body['stakers'].inspect
-      expect(resp.body['stakers'][0]['units']).to eq("0"), resp.body['stakers'][0].inspect
+      expect(resp.body['stakers']).to eq(nil), resp.body.inspect
+    end
+
+    it "swap" do
+      # stake some coins first
+      tx = makeTx(memo: "stake:TCAN-014", coins: coins, sender: sender)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200"), resp.body.inspect
+
+      # make a swap
+      txid = txid()
+      coins = [{'denom': "RUNE-B1A", "amount": "0.2"}]
+      tx = makeTx(
+        memo: "swap:TCAN-014:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:0.160053", 
+        coins: coins,
+        hash: txid,
+      )
+      resp = processTx(tx)
+      expect(resp.code).to eq("200"), resp.body.inspect
+
+      resp = get("/pool/TCAN-014")
+      expect(resp.code).to eq("200")
+      expect(resp.body['balance_rune']).to eq("3.54850000"), resp.body.inspect
+      expect(resp.body['balance_token']).to eq("22.24541406"), resp.body.inspect
     end
   end
 

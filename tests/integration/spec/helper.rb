@@ -24,8 +24,12 @@ def ticker()
   return "#{get_rand(3).upcase}-#{get_rand(3).upcase}"
 end
 
+def txid()
+  get_rand(64).upcase
+end
+
 def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
-  hash ||= get_rand(64).upcase
+  hash ||= txid()
   sender ||= "bnb" + get_rand(39).downcase
   coins ||= [{
     'denom': 'RUNE-B1A',
