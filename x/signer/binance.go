@@ -9,6 +9,8 @@ import (
 	"github.com/binance-chain/go-sdk/types/tx"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/common/types"
+	"github.com/binance-chain/go-sdk/client/query"
+	"github.com/binance-chain/go-sdk/client/basic"
 	sdk "github.com/binance-chain/go-sdk/client"
 
 	stypes "gitlab.com/thorchain/bepswap/observe/x/signer/types"
@@ -19,6 +21,7 @@ type Binance struct {
 	PrivateKey string
 	DexHost string
 	Client sdk.DexClient
+	QueryClient query.QueryClient
 	KeyManager keys.KeyManager
 	chainId string
 }
@@ -42,10 +45,14 @@ func NewBinance(poolAddress, dexHost string) *Binance {
 		os.Exit(1)
 	}
 
+	basicClient := basic.NewClient(dexHost)
+	queryClient := query.NewClient(basicClient)
+
 	return &Binance{
 		PrivateKey: key,
 		DexHost: dexHost,
 		Client: bClient,
+		QueryClient: queryClient,
 		KeyManager: keyManager,
 		// @todo Get this from the transaction client
 		chainId: "Binance-Chain-Nile",
@@ -107,9 +114,7 @@ func (b *Binance) SignTx(outTx stypes.OutTx) ([]byte, map[string]string) {
 	for _, txn := range outTx.TxArray {
 		toAddr, _ := types.AccAddressFromBech32(string(types.AccAddress(txn.To)))
 		for _, coin := range txn.Coins {
-			parsedAmt, _ := strconv.ParseInt(coin.Amount, 10, 64)
-			amount := parsedAmt*100000000
-
+			amount, _ := strconv.ParseInt(coin.Amount, 10, 64)
 			payload = append(payload, msg.Transfer{
 				toAddr,
 				types.Coins{
@@ -123,11 +128,20 @@ func (b *Binance) SignTx(outTx stypes.OutTx) ([]byte, map[string]string) {
 	}
 
 	sendMsg := b.ParseTx(payload)
+
+	fromAddr := b.KeyManager.GetAddr()
+	acc, err := b.QueryClient.GetAccount(fromAddr.String())
+	if err != nil {
+		log.Error().Msgf("Error: %v", err)
+	}
+
 	signMsg := &tx.StdSignMsg{
-		ChainID: b.chainId,
-		Memo:    "", //outTx.TxOutID,
-		Msgs:    []msg.Msg{sendMsg},
-		Source:  tx.Source,
+		ChainID: 				b.chainId,
+		Memo:    				"", //outTx.TxOutID,
+		Msgs:    				[]msg.Msg{sendMsg},
+		Source:  				tx.Source,
+		Sequence: 			acc.Sequence,
+		AccountNumber: 	acc.Number,
 	}
 
 	hexTx, _ := b.KeyManager.Sign(*signMsg)
@@ -137,9 +151,13 @@ func (b *Binance) SignTx(outTx stypes.OutTx) ([]byte, map[string]string) {
 	return hexTx, param
 }
 
-func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) *tx.TxCommitResult {
-	commits, _ := b.Client.PostTx(hexTx, param)
-	log.Info().Msgf("PostTX %v", commits)
-	return &commits[0]
-}
+func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
+	commits, err := b.Client.PostTx(hexTx, param)
+	if err != nil {
+		log.Error().Msgf("Error: %v", err)
+		return nil, err
+	}
 
+	log.Info().Msgf("Info: %v", commits[0])
+	return &commits[0], nil
+}
