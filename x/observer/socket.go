@@ -14,41 +14,45 @@ import (
 	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
 )
 
-type SocketClient struct {
+type Socket struct {
 	PoolAddress string
-	DexHost string
+	DEXHost string
 	PongWait time.Duration
 }
 
-func NewSocketClient(poolAddress, dexHost string) *SocketClient {
-	return &SocketClient{
+func NewSocket(poolAddress, dexHost string) *Socket {
+	return &Socket{
 		PoolAddress: poolAddress,
-		DexHost: dexHost,
-		PongWait: 30 * time.Second,
+		DEXHost: dexHost,
+		PongWait: 30*time.Second,
 	}
 }
 
-func (s *SocketClient) StartClient(conChan chan []byte) {
+func (s *Socket) Start(conChan chan []byte) {
 	conn, err := s.Connect()
 	if err != nil {
-		log.Fatal().Msgf("There was an error while starting: %v", err)
+		log.Fatal().Msgf("[OBSERVER] There was an error while starting: %v", err)
 	}
 
-	log.Info().Msgf("Setting a keepalive of %v", s.PongWait)
+	log.Info().Msgf("[OBSERVER] Setting a keepalive of %v", s.PongWait)
 	s.SetKeepAlive(conn)
 
 	ch := make(chan []byte)
 
-	log.Info().Msg("Listening for events....")
+	log.Info().Msg("[OBSERVER] Listening for events....")
 	s.Process(ch, conChan)
 	s.Read(ch, conn)
 }
 
-func (s *SocketClient) Connect() (*websocket.Conn, error) {
+func (s *Socket) Connect() (*websocket.Conn, error) {
 	path := fmt.Sprintf("/api/ws/%s", s.PoolAddress)
-	url := url.URL{ Scheme: "wss", Host: s.DexHost, Path: path }
+	url := url.URL{
+		Scheme: "wss",
+		Host: s.DEXHost,
+		Path: path,
+	}
 
-	log.Info().Msgf("Opening up a connection to: %v", url.String())
+	log.Info().Msgf("[OBSERVER] Opening up a connection to: %v", url.String())
 
 	conn, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
 	if err != nil {
@@ -58,7 +62,7 @@ func (s *SocketClient) Connect() (*websocket.Conn, error) {
 	return conn, nil
 }
 
-func (s *SocketClient) SetKeepAlive(conn *websocket.Conn) {
+func (s *Socket) SetKeepAlive(conn *websocket.Conn) {
 	lastResponse := time.Now()
 	conn.SetPongHandler(func(msg string) error {
 		lastResponse = time.Now()
@@ -81,18 +85,18 @@ func (s *SocketClient) SetKeepAlive(conn *websocket.Conn) {
 	}()
 }
 
-func (s *SocketClient) Read(ch chan []byte, conn *websocket.Conn) {
+func (s *Socket) Read(ch chan []byte, conn *websocket.Conn) {
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			// @todo Reconnect if this fails.
-			log.Error().Msgf("Read error: %s", err)
+			log.Error().Msgf("[OBSERVER] Read error: %s", err)
 		}
 		ch <- message
 	}
 }
 
-func (s *SocketClient) Process(ch, conChan chan []byte) {
+func (s *Socket) Process(ch, conChan chan []byte) {
 	go func() {
 		for {
 			payload := <-ch
@@ -100,7 +104,7 @@ func (s *SocketClient) Process(ch, conChan chan []byte) {
 
 			err := json.Unmarshal(payload, &txfr)
 			if err != nil {
-				log.Error().Msgf("There was an error while parsing the event: %v", err)
+				log.Error().Msgf("[OBSERVER] There was an error while parsing the event: %v", err)
 			}
 
 			if txfr.Stream == "transfers" {
@@ -113,7 +117,7 @@ func (s *SocketClient) Process(ch, conChan chan []byte) {
 							amount := parsedAmt*100000000
 
 							txItem := types.TxItem{Tx: txfr.Data.Hash, 
-								Memo: "MEMO",
+								Memo: "MEMO", //txfr.Data.Memo,
 								Sender: txfr.Data.FromAddr,
 								Coins: types.Coins{
 									Denom: coin.Asset,
@@ -130,7 +134,7 @@ func (s *SocketClient) Process(ch, conChan chan []byte) {
 
 					json, err := json.Marshal(inTx)
 					if err != nil {
-						log.Error().Msgf("Error: %v", err)
+						log.Error().Msgf("[OBSERVER] Error: %v", err)
 					}
 
 					conChan <- json
@@ -140,7 +144,7 @@ func (s *SocketClient) Process(ch, conChan chan []byte) {
 	}()
 }
 
-func (s *SocketClient) Stop() {
-	log.Info().Msg("Shutting down....")
+func (s *Socket) Stop() {
+	log.Info().Msg("[OBSERVER] Shutting down....")
 	os.Exit(1)
 }
