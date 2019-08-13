@@ -3,6 +3,7 @@ module gitlab.com/thorchain/bepswap/observe
 go 1.12
 
 require (
+	github.com/avast/retry-go v2.4.1+incompatible
 	github.com/binance-chain/go-sdk v1.0.8
 	github.com/cosmos/cosmos-sdk v0.35.0 // indirect
 	github.com/go-redis/redis v6.15.2+incompatible
