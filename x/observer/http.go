@@ -16,7 +16,7 @@ func StartWebServer() {
 
 	err := http.ListenAndServe(":" + os.Getenv("PORT"), nil)
 	if err != nil {
-		log.Fatal().Msgf("[OBSERVER] Error: %v", err)
+		log.Fatal().Msgf("%s Error: %v", LogPrefix(), err)
 	}
 }
 
