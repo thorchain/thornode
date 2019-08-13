@@ -36,7 +36,7 @@ func (s *StateChain) TxnBlockHeight(txn string) string {
 	var txs types.Txs
 	err := json.Unmarshal(body, &txs)
 	if err != nil {
-		log.Error().Msgf("Error: %v", err)
+		log.Error().Msgf("%s Error: %v", LogPrefix(), err)
 	}
 
 	return txs.Height
@@ -54,7 +54,7 @@ func (s *StateChain) TxOut(blockHeight string) types.OutTx {
 	var outTx types.OutTx
 	err := json.Unmarshal(body, &outTx)
 	if err != nil {
-		log.Error().Msgf("Error: %v", err)
+		log.Error().Msgf("%s Error: %v", LogPrefix(), err)
 	}
 
 	return outTx
