@@ -46,7 +46,7 @@ func (s *Scanner) Scan(blocks []int, scanChan chan []byte) {
 	s.setLastBlock(max)
 
 	for block := min; block <= max; block++ {
-		log.Info().Msgf("[OBSERVER] Scanning block %v...", block)
+		log.Info().Msgf("%s Scanning block %v...", LogPrefix(), block)
 
 		uri := url.URL{
 			Scheme: "https",
@@ -134,6 +134,6 @@ func (s *Scanner) getLastBlock() int64 {
 func (s *Scanner) setLastBlock(blockHeight int64) {
 	err := s.Db.Set("lastBlock", blockHeight, 0).Err()
 	if err != nil {
-		log.Error().Msgf("Error: %v", err)
+		log.Error().Msgf("%s Error: %v", LogPrefix(), err)
 	}
 }

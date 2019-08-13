@@ -41,10 +41,10 @@ func (o *Observer) ProcessTxn(sockChan, scanChan chan []byte) {
 
 		err := json.Unmarshal(payload, &inTx)
 		if err != nil {
-			log.Error().Msgf("[OBSERVER] Error: %v", err)
+			log.Error().Msgf("%s Error: %v", LogPrefix(), err)
 		}
 
-		log.Info().Msgf("[OBSERVER] Processing Transaction: %v", inTx)
+		log.Info().Msgf("%s Processing Transaction: %v", LogPrefix(), inTx)
 		go o.StateChain.Send(inTx)
 
 		var blocks []int
@@ -62,10 +62,14 @@ func (o *Observer) Send(scanChan chan []byte) {
 
 		err := json.Unmarshal(payload, &inTx)
 		if err != nil {
-			log.Error().Msgf("[OBSERVER] Error: %v", err)
+			log.Error().Msgf("%s Error: %v", LogPrefix(), err)
 		}
 
-		log.Info().Msgf("[OBSERVER] Processing Transaction: %v", inTx)
+		log.Info().Msgf("%s Processing Transaction: %v", LogPrefix(), inTx)
 		go o.StateChain.Send(inTx)
 	}
+}
+
+func LogPrefix() string {
+	return "[OBSERVER]"
 }

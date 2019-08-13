@@ -130,7 +130,7 @@ func (b *Binance) SignTx(outTx stypes.OutTx) ([]byte, map[string]string) {
 	fromAddr := b.KeyManager.GetAddr()
 	acc, err := b.QueryClient.GetAccount(fromAddr.String())
 	if err != nil {
-		log.Error().Msgf("[SIGNER] Error: %v", err)
+		log.Error().Msgf("%s Error: %v", LogPrefix(), err)
 	}
 
 	signMsg := &tx.StdSignMsg{
@@ -152,10 +152,10 @@ func (b *Binance) SignTx(outTx stypes.OutTx) ([]byte, map[string]string) {
 func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
 	commits, err := b.Client.PostTx(hexTx, param)
 	if err != nil {
-		log.Error().Msgf("[SIGNER] Error: %v", err)
+		log.Error().Msgf("%s Error: %v", LogPrefix(), err)
 		return nil, err
 	}
 
-	log.Info().Msgf("[SIGNER] Commit Response from Binance: %v", commits[0])
+	log.Info().Msgf("%s Commit Response from Binance: %v", LogPrefix(), commits[0])
 	return &commits[0], nil
 }
