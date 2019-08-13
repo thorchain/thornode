@@ -95,6 +95,7 @@ describe "API Tests" do
     end
 
     it "should be able to unstake" do
+      skip "Not yet implemented"
       tx = makeTx(memo: "withdraw:TCAN-014:100", sender: sender)
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
