@@ -38,6 +38,8 @@ func (s *Signer) ProcessTxn() {
 		blockHeight := s.StateChain.TxnBlockHeight(string(txn))
 		txOut := s.StateChain.TxOut(blockHeight)
 
+		log.Info().Msgf("TxOut: %v", txOut)
+
 		hexTx, param := s.Binance.SignTx(txOut)
 		log.Info().Msgf("%v %v", string(hexTx), param)
 		s.Binance.BroadcastTx(hexTx, param)
