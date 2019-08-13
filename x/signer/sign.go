@@ -4,8 +4,6 @@ import (
 	"time"
 
 	log "github.com/rs/zerolog/log"
-
-	//types "gitlab.com/thorchain/bepswap/observe/x/signer/types"
 )
 
 type Signer struct {
@@ -36,10 +34,14 @@ func (s *Signer) ProcessTxn() {
 		time.Sleep(2*time.Second)
 
 		blockHeight := s.StateChain.TxnBlockHeight(string(txn))
+		log.Info().Msgf("Got a block height of %v from StateChain", blockHeight)
+
 		txOut := s.StateChain.TxOut(blockHeight)
+		log.Info().Msgf("Got a TxOut array of %v from StateChain", txOut)
 
 		hexTx, param := s.Binance.SignTx(txOut)
-		log.Info().Msgf("%v %v", string(hexTx), param)
+		log.Info().Msgf("Signature generated: %v", hexTx)
+
 		s.Binance.BroadcastTx(hexTx, param)
 	}
 }

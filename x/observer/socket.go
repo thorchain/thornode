@@ -104,33 +104,37 @@ func (s *SocketClient) Process(ch, conChan chan []byte) {
 			}
 
 			if txfr.Stream == "transfers" {
-				var inTx types.InTx
-				for _, txn := range txfr.Data.T {
-					for _, coin := range txn.Coins {
-						parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
-						amount := parsedAmt*100000000
+				if txfr.Data.FromAddr != s.PoolAddress {
+					var inTx types.InTx
 
-						txItem := types.TxItem{Tx: txfr.Data.Hash, 
-							Memo: "MEMO",
-							Sender: txfr.Data.FromAddr,
-							Coins: types.Coins{
-								Denom: coin.Asset,
-								Amount: fmt.Sprintf("%.0f", amount),
-							},
+					for _, txn := range txfr.Data.T {
+						for _, coin := range txn.Coins {
+							parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
+							amount := parsedAmt*100000000
+
+							txItem := types.TxItem{Tx: txfr.Data.Hash, 
+								Memo: "MEMO",
+								Sender: txfr.Data.FromAddr,
+								Coins: types.Coins{
+									Denom: coin.Asset,
+									Amount: fmt.Sprintf("%.0f", amount),
+								},
+							}
+
+							inTx.TxArray = append(inTx.TxArray, txItem)
 						}
-						inTx.TxArray = append(inTx.TxArray, txItem)
 					}
+
+					inTx.BlockHeight = txfr.Data.EventHeight
+					inTx.Count = len(inTx.TxArray)
+
+					json, err := json.Marshal(inTx)
+					if err != nil {
+						log.Error().Msgf("Error: %v", err)
+					}
+
+					conChan <- json
 				}
-
-				inTx.BlockHeight = txfr.Data.EventHeight
-				inTx.Count = len(inTx.TxArray)
-
-				json, err := json.Marshal(inTx)
-				if err != nil {
-					log.Error().Msgf("Error: %v", err)
-				}
-
-				conChan <- json
 			}
 		}
 	}()

@@ -2,12 +2,14 @@ package signer
 
 import (
 	"fmt"
+	"errors"
 	"net/url"
+	"net/http"
 	"io/ioutil"
 	"encoding/json"
 
+	"github.com/avast/retry-go"
 	log "github.com/rs/zerolog/log"
-	http "github.com/hashicorp/go-retryablehttp"
 
 	types "gitlab.com/thorchain/bepswap/observe/x/signer/types"
 )
@@ -29,11 +31,7 @@ func (s *StateChain) TxnBlockHeight(txn string) string {
 		Path: fmt.Sprintf("/txs/%s", txn),
 	}
 
-	log.Info().Msgf("Querying Height from %v", uri.String())
-
-	resp, _ := http.Get(uri.String())
-	body, _ := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+	body, _ := GetWithRetry(uri.String())
 
 	var txs types.Txs
 	err := json.Unmarshal(body, &txs)
@@ -51,9 +49,7 @@ func (s *StateChain) TxOut(blockHeight string) types.OutTx {
 		Path: fmt.Sprintf("/swapservice/txoutarray/%s", blockHeight),
 	}
 
-	resp, _ := http.Get(uri.String())
-	body, _ := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
+	body, _ := GetWithRetry(uri.String())
 
 	var outTx types.OutTx
 	err := json.Unmarshal(body, &outTx)
@@ -62,4 +58,31 @@ func (s *StateChain) TxOut(blockHeight string) types.OutTx {
 	}
 
 	return outTx
+}
+
+func GetWithRetry(uri string) ([]byte, error) {
+	var body []byte
+
+	err := retry.Do(
+		func() error {
+			resp, err := http.Get(uri)
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode == 404 {
+				return errors.New("404")
+			}
+
+			body, err = ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	)
+
+	return body, err
 }
