@@ -1,6 +1,7 @@
 require 'net/http'
 require 'pp'
 require 'json'
+require 'securerandom'
 # require 'tempfile'
 
 HOST = ENV['APIHOST'] || "localhost"
@@ -14,7 +15,8 @@ def get(path)
 end
 
 def get_rand(len)
-  (1..len).map{ rand(36).to_s(36) }.join
+  str = SecureRandom.hex(len)
+  return str.slice(0, len)
 end
 
 # generates a random ticker
@@ -22,16 +24,25 @@ def ticker()
   return "#{get_rand(3).upcase}-#{get_rand(3).upcase}"
 end
 
-def processTx(memo, hash=nil, sender=nil, mode='block', coins=nil, user="jack")
-  request = Net::HTTP::Post.new("/swapservice/binance/tx")
-  address = `sscli keys show #{user} -a`.strip!
+def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
   hash ||= get_rand(64).upcase
   sender ||= "bnb" + get_rand(39).downcase
   coins ||= [{
-    'denom': 'BNB',
+    'denom': 'RUNE-B1A',
     'amount': '1',
   }]
+  return {
+    'tx': hash,
+    'sender': sender,
+    'MEMO': memo,
+    'coins': coins
+  }
+end
 
+def processTx(txs, user="jack", mode='block')
+  request = Net::HTTP::Post.new("/swapservice/binance/tx")
+  address = `sscli keys show #{user} -a`.strip!
+  txs = [txs].flatten(1) # ensures we are an array, and not just a single hash
   request.body = {
     'blockHeight': '376',
     'count': '1',
@@ -39,15 +50,9 @@ def processTx(memo, hash=nil, sender=nil, mode='block', coins=nil, user="jack")
       'chain_id': "sschain",
       'from': address
     },
-    'txArray': [
-      {
-        'tx': hash,
-        'sender': sender,
-        'MEMO': memo,
-        'coins': coins,
-      }
-    ],
+    'txArray': txs,
   }.to_json
+  # puts(request.body.to_json)
 
   resp = HTTP.request(request)
   if resp.code != "200" 
@@ -64,6 +69,7 @@ def processTx(memo, hash=nil, sender=nil, mode='block', coins=nil, user="jack")
     'tx': signedTx['value'],
   }
   # pp signedJson
+
 
   request = Net::HTTP::Post.new("/txs")
   request.body = signedJson.to_json
