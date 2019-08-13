@@ -13,10 +13,25 @@ def get(path)
   return resp
 end
 
-def processTx(memo, mode = 'block')
+def get_rand(len)
+  (1..len).map{ rand(36).to_s(36) }.join
+end
+
+# generates a random ticker
+def ticker()
+  return "#{get_rand(3).upcase}-#{get_rand(3).upcase}"
+end
+
+def processTx(memo, hash=nil, sender=nil, mode='block', coins=nil, user="jack")
   request = Net::HTTP::Post.new("/swapservice/binance/tx")
-  address = `sscli keys show jack -a`.strip!
-  hash = '7E5DF2DAF3463FEFA633EC1B45ADC434AAE92A55823E210837E975F1FE289BA7'
+  address = `sscli keys show #{user} -a`.strip!
+  hash ||= get_rand(64).upcase
+  sender ||= "bnb" + get_rand(39).downcase
+  coins ||= [{
+    'denom': 'BNB',
+    'amount': '1',
+  }]
+
   request.body = {
     'blockHeight': '376',
     'count': '1',
@@ -27,23 +42,22 @@ def processTx(memo, mode = 'block')
     'txArray': [
       {
         'tx': hash,
-        'sender': "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6",
+        'sender': sender,
         'MEMO': memo,
-        'coins': [{
-          'denom': 'BNB',
-          'amount': '1',
-        }],
+        'coins': coins,
       }
     ],
   }.to_json
-  puts(request.body)
+
   resp = HTTP.request(request)
+  if resp.code != "200" 
+    pp resp.body
+    return resp
+  end
 
   # write unsigned json to disk
   File.open("/tmp/unSigned.json", "w") { |file| file.puts resp.body}
-  signedTx = `echo "password" | sscli tx sign /tmp/unSigned.json --from jack`
-  puts("hello")
-  puts(signedTx)
+  signedTx = `echo "password" | sscli tx sign /tmp/unSigned.json --from #{user}`
   signedTx = JSON.parse(signedTx)
   signedJson = {
     'mode': mode,
