@@ -33,7 +33,7 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 		case MsgSetAdminConfig:
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		default:
-			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m.Type())
+			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
