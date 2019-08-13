@@ -61,13 +61,13 @@ func (s *StateChain) Send(inTx types.InTx) {
 	
 	err := ioutil.WriteFile(file.Name(), payload, 0644)
 	if err != nil {
-		log.Fatal().Msgf("Error: %v", err)
+		log.Fatal().Msgf("[OBSERVER] Error: %v", err)
 	}
 
 	sign := fmt.Sprintf("/bin/echo %v | sscli tx sign %v --from %v", os.Getenv("SIGNER_PASSWD"), file.Name(), s.RuneAddress)
 	out, err := exec.Command("/bin/bash", "-c", sign).Output()
 	if err != nil {
-		log.Fatal().Msgf("Error: %v", err)
+		log.Fatal().Msgf("[OBSERVER] Error: %v", err)
 	}
 	defer os.Remove(file.Name())
 
@@ -97,7 +97,7 @@ func (s *StateChain) Send(inTx types.InTx) {
 	var commit types.Commit
 	json.Unmarshal(body, &commit)
 
-	log.Info().Msgf("Commited hash: %v", commit.TxHash)
+	log.Info().Msgf("[OBSERVER] Received the following response from StateChain: %v", commit)
 
 	s.TxChan <- []byte(commit.TxHash)
 }
