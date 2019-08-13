@@ -21,8 +21,7 @@ func pingHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 func getHandlerWrapper(q query.Query, storeName string, cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := mux.Vars(r)[restURLParam]
-		path := q.Sprintf(storeName, param)
-		res, _, err := cliCtx.QueryWithData(path, nil)
+		res, _, err := cliCtx.QueryWithData(q.Path(storeName, param), nil)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
