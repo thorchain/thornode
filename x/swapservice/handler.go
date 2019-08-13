@@ -3,6 +3,8 @@ package swapservice
 import (
 	"fmt"
 
+	"github.com/pkg/errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -264,7 +266,6 @@ func refundTx(ctx sdk.Context, tx TxHash, store *TxOutStore, keeper RefundStoreA
 // handleMsgSetTxHash gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
 func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetTxHash) sdk.Result {
-
 	conflicts := make([]string, 0)
 	todo := make([]TxHash, 0)
 	for _, tx := range msg.TxHashes {
@@ -278,97 +279,149 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, 
 
 	handler := NewHandler(keeper, txOutStore)
 	for _, tx := range todo {
-		memo, err := ParseMemo(tx.Memo)
-		if err != nil {
-			ctx.Logger().Error("fail to parse memo", "memo", memo, "error", err)
-			// skip over message with bad memos
+		// save the tx to db to stop duplicate request (aka replay attacks)
+		keeper.SetTxHash(ctx, tx)
+		msg, err := processOneTxHash(ctx, keeper, tx, msg.Signer)
+		if nil != err {
+			ctx.Logger().Error("fail to process txHash", "error", err)
 			refundTx(ctx, tx, txOutStore, keeper)
 			continue
 		}
 
-		// save the tx to db to stop duplicate request (aka replay attacks)
-		keeper.SetTxHash(ctx, tx)
-
-		var newMsg sdk.Msg
-
-		// interpret the memo and initialize a corresponding msg event
-		switch memo.(type) {
-		case CreateMemo:
-			ticker, err := NewTicker(memo.GetSymbol())
-			if err != nil {
-				return sdk.ErrUnknownRequest(err.Error()).Result()
-			}
-			if keeper.PoolExist(ctx, ticker) {
-				return sdk.ErrUnknownRequest("Pool already exists").Result()
-			}
-			newMsg = NewMsgSetPoolData(
-				ticker,
-				PoolSuspended, // new pools start in a suspended state
-				msg.Signer,
-			)
-		case StakeMemo:
-			ticker, err := NewTicker(memo.GetSymbol())
-			if err != nil {
-				return sdk.ErrUnknownRequest(err.Error()).Result()
-			}
-			runeAmount := ZeroAmount
-			tokenAmount := ZeroAmount
-			for _, coin := range tx.Coins {
-				ctx.Logger().Info("coin", "denom", coin.Denom.String(), "amount", coin.Amount.String())
-				if IsRune(coin.Denom) {
-					runeAmount = coin.Amount
-				} else {
-					tokenAmount = coin.Amount
-				}
-			}
-			newMsg = NewMsgSetStakeData(
-				ticker,
-				tokenAmount,
-				runeAmount,
-				tx.Sender,
-				tx.Request,
-				msg.Signer,
-			)
-		case AdminMemo:
-
-			if memo.GetAdminType() == adminPoolStatus {
-				ticker, err := NewTicker(memo.GetKey())
-				if err != nil {
-					return sdk.ErrUnknownRequest(err.Error()).Result()
-				}
-				pool := keeper.GetPoolStruct(ctx, ticker)
-				if pool.Empty() {
-					return sdk.ErrUnknownRequest("Pool doesn't exist").Result()
-				}
-				status := GetPoolStatus(memo.GetValue())
-				newMsg = NewMsgSetPoolData(
-					ticker,
-					status,
-					msg.Signer,
-				)
-
-			} else if memo.GetAdminType() == adminKey {
-				key := GetAdminConfigKey(memo.GetKey())
-				newMsg = NewMsgSetAdminConfig(key, memo.GetValue(), msg.Signer)
-			} else {
-				return sdk.ErrUnknownRequest("Invalid admin command type").Result()
-			}
-		case WithdrawMemo:
-			// do nothing. Let the outTx process these
-		case SwapMemo:
-			// do nothing. Let the outTx process these
-		default:
-			return sdk.ErrUnknownRequest("Unable to find memo type").Result()
-		}
-
-		// trigger msg event (
-		handler(ctx, newMsg)
+		handler(ctx, msg)
 	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
 	}
+}
+
+func processOneTxHash(ctx sdk.Context, keeper Keeper, tx TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
+	memo, err := ParseMemo(tx.Memo)
+	if err != nil {
+		return nil, errors.Wrap(err, "fail to parse memo")
+	}
+
+	var newMsg sdk.Msg
+	// interpret the memo and initialize a corresponding msg event
+	switch m := memo.(type) {
+	case CreateMemo:
+		newMsg, err = getMsgSetPoolDataFromMemo(ctx, keeper, m, signer)
+		if nil != err {
+			return nil, errors.Wrap(err, "fail to get MsgSetPoolData from memo")
+		}
+	case StakeMemo:
+		newMsg, err = getMsgStakeFromMemo(ctx, m, &tx, signer)
+		if nil != err {
+			return nil, errors.Wrap(err, "fail to get MsgStake from memo")
+		}
+	case AdminMemo:
+		newMsg, err = getMsgAdminConfigFromMemo(ctx, keeper, m, signer)
+		if nil != err {
+			return nil, errors.Wrap(err, "fail to get MsgAdminConfig from memo")
+		}
+	case WithdrawMemo:
+		newMsg, err = getMsgUnstakeFromMemo(m, tx, signer)
+		if nil != err {
+			return nil, errors.Wrap(err, "fail to get MsgUnstake from memo")
+		}
+	case SwapMemo:
+		newMsg, err = getMsgSwapFromMemo(m, tx, signer)
+		if nil != err {
+			return nil, errors.Wrap(err, "fail to get MsgSwap from memo")
+		}
+	default:
+		return nil, errors.Wrap(err, "Unable to find memo type")
+	}
+	return newMsg, nil
+}
+
+func getMsgSwapFromMemo(memo SwapMemo, tx TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
+	ticker, err := NewTicker(memo.GetSymbol())
+	if err != nil {
+		return nil, err
+	}
+
+	if len(tx.Coins) > 1 {
+		return nil, errors.New("not expecting multiple coins in a swap")
+	}
+	coin := tx.Coins[0]
+	// Looks like at the moment we can only process ont ty
+	return NewMsgSwap(tx.Request, coin.Denom, ticker, coin.Amount, tx.Sender, memo.Destination, NewAmountFromFloat(memo.SlipLimit), signer), nil
+}
+
+func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
+	withdrawAmount, err := NewAmount(memo.GetAmount())
+	if nil != err {
+		return nil, err
+	}
+	ticker, err := NewTicker(memo.GetSymbol())
+	if err != nil {
+		return nil, err
+	}
+	return NewMsgSetUnStake(tx.Sender, withdrawAmount, ticker, tx.Request, signer), nil
+}
+func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, signer sdk.AccAddress) (sdk.Msg, error) {
+	switch memo.GetAdminType() {
+	case adminPoolStatus:
+		ticker, err := NewTicker(memo.GetKey())
+		if err != nil {
+			return nil, err
+		}
+		pool := keeper.GetPoolStruct(ctx, ticker)
+		if pool.Empty() {
+			return nil, errors.New("pool doesn't exist")
+		}
+		status := GetPoolStatus(memo.GetValue())
+		return NewMsgSetPoolData(
+			ticker,
+			status,
+			signer,
+		), nil
+	case adminKey:
+		key := GetAdminConfigKey(memo.GetKey())
+		return NewMsgSetAdminConfig(key, memo.GetValue(), signer), nil
+	}
+	return nil, errors.New("invalid admin command type")
+}
+func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
+	ticker, err := NewTicker(memo.GetSymbol())
+	if err != nil {
+		return nil, err
+	}
+	runeAmount := ZeroAmount
+	tokenAmount := ZeroAmount
+	for _, coin := range tx.Coins {
+		ctx.Logger().Info("coin", "denom", coin.Denom.String(), "amount", coin.Amount.String())
+		if IsRune(coin.Denom) {
+			runeAmount = coin.Amount
+		} else {
+			tokenAmount = coin.Amount
+		}
+	}
+	return NewMsgSetStakeData(
+		ticker,
+		tokenAmount,
+		runeAmount,
+		tx.Sender,
+		tx.Request,
+		signer,
+	), nil
+}
+func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, signer sdk.AccAddress) (sdk.Msg, error) {
+	ticker, err := NewTicker(memo.GetSymbol())
+	if err != nil {
+		return nil, err
+	}
+	if keeper.PoolExist(ctx, ticker) {
+		return nil, errors.New("pool already exists")
+	}
+	return NewMsgSetPoolData(
+		ticker,
+		PoolBootstrap, // new pools start in a Bootstrap state
+		signer,
+	), nil
 }
 
 // handleMsgSetAdminConfig process admin config
