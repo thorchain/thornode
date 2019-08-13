@@ -13,7 +13,9 @@ import (
 	log "github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/bepswap/observe/x/storage"
+	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
 	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
+	
 )
 
 type Scanner struct {
@@ -66,10 +68,10 @@ func (s *Scanner) Scan(blocks []int, scanChan chan []byte) {
 		var block types.Block
 		json.Unmarshal(body, &block)
 
-		var inTx types.InTx
+		var inTx ctypes.InTx
 
 		for _, txn := range block.Result.Txs {
-			inTx.TxArray = append(inTx.TxArray, types.TxItem{Tx: txn.Hash})
+			inTx.TxArray = append(inTx.TxArray, ctypes.InTxItem{Tx: txn.Hash})
 			blockHeight, _ := strconv.ParseInt(txn.Height, 10, 64)
 			inTx.BlockHeight = int(blockHeight)
 
@@ -82,7 +84,7 @@ func (s *Scanner) Scan(blocks []int, scanChan chan []byte) {
 
 // Call the REST API to get specific details of the transaction, and if it was for 
 // our particular pool address.
-func (s *Scanner) QueryTx(inTx types.InTx) types.InTx {
+func (s *Scanner) QueryTx(inTx ctypes.InTx) ctypes.InTx {
 	for _, txItem := range inTx.TxArray {
 		uri := url.URL{
 			Scheme: "https",
@@ -106,14 +108,13 @@ func (s *Scanner) QueryTx(inTx types.InTx) types.InTx {
 						parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
 						amount := parsedAmt*100000000
 
-						txItem := types.TxItem{Tx: tx.Hash,
+						txItem := ctypes.InTxItem{Tx: tx.Hash,
 							Memo: tx.Tx.Value.Memo,
 							Sender: sender.Address,
-							Coins: types.Coins{
-								Denom: coin.Denom,
-								Amount: fmt.Sprintf("%.0f", amount),
-							},
 						}
+
+						token := ctypes.Coins{Denom: coin.Denom, Amount: fmt.Sprintf("%.0f", amount)}
+						txItem.Coins = append(txItem.Coins, token)
 						inTx.TxArray = append(inTx.TxArray, txItem)
 					}				
 				}

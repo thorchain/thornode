@@ -2,27 +2,6 @@ package types
 
 import "time"
 
-type InTx struct {	
-	BlockHeight int `json:"blockHeight"`
-	Count				int `json:"count"`
-	TxArray     []TxItem `json:"txArray"`
-}
-
-type TxItem struct {
-	Tx     string `json:"tx"`
-	Memo   string `json:"MEMO"`
-	Sender string `json:"sender"`
-	Coins  struct {
-		Denom  string `json:"denom"`
-		Amount string `json:"amount"`
-	} `json:"coins"`
-}
-
-type Coins struct {
-	Denom  string `json:"denom"`
-	Amount string `json:"amount"`
-}
-
 type Txfr struct {
 	Stream string `json:"stream"`
 	Data   struct {

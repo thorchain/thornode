@@ -12,7 +12,7 @@ import (
 	log "github.com/rs/zerolog/log"
 	http "github.com/hashicorp/go-retryablehttp"
 
-	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
+	"gitlab.com/thorchain/bepswap/observe/common/types"
 )
 
 type StateChain struct {
@@ -36,15 +36,15 @@ func (s *StateChain) Send(inTx types.InTx) {
 	)
 
 	for _, txItem := range inTx.TxArray {
-		var coins []types.Coins
-		coins = append(coins, txItem.Coins)
-
-		txHash := types.TxHash{Request: txItem.Tx,
+		txHash := types.TxHash{
+			Request: txItem.Tx,
 			Status: "incomplete",
 			Txhash: txItem.Tx,
 			Memo: txItem.Memo,
-			Coins: coins,
-			Sender: txItem.Sender}
+			Coins: txItem.Coins,
+			Sender: txItem.Sender,
+		}
+
 		msg.Type = "swapservice/MsgSetTxHash"
 		msg.Value.TxHashes = append(msg.Value.TxHashes, txHash)
 	}
@@ -67,7 +67,7 @@ func (s *StateChain) Send(inTx types.InTx) {
 	sign := fmt.Sprintf("/bin/echo %v | sscli tx sign %v --from %v", os.Getenv("SIGNER_PASSWD"), file.Name(), s.RuneAddress)
 	out, err := exec.Command("/bin/bash", "-c", sign).Output()
 	if err != nil {
-		log.Fatal().Msgf("%s Error: %v", LogPrefix(), err)
+		log.Fatal().Msgf("%s gError: %v %v", LogPrefix(), err, sign)
 	}
 	defer os.Remove(file.Name())
 
@@ -90,6 +90,7 @@ func (s *StateChain) Send(inTx types.InTx) {
 	}
 
 	// Retry until we get a successful reply and log the reply.
+	log.Info().Msgf("%s Sending to the StateChain %v", string(sendSetTx))
 	resp, _ := http.Post(uri.String(), "application/json", bytes.NewBuffer(sendSetTx))
 	body, _ := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
