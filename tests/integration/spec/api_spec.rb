@@ -14,7 +14,7 @@ describe "API Tests" do
 
   context "Check that an empty tx hash returns properly" do
     it "should have no values" do
-      resp = get("/tx/bogus")
+      resp = get("/tx/A9A65505553D777E5CE957A74153F21EDD8AAA4B0868F2537E97E309945425B9")
       expect(resp.body['request']).to eq(""), resp.body.inspect
       expect(resp.body['status']).to eq(""), resp.body.inspect
       expect(resp.body['txhash']).to eq(""), resp.body.inspect
