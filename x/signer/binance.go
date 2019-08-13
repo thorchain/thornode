@@ -19,7 +19,6 @@ import (
 type Binance struct {
 	PoolAddress string
 	PrivateKey string
-	DexHost string
 	Client sdk.DexClient
 	QueryClient query.QueryClient
 	KeyManager keys.KeyManager
@@ -29,19 +28,19 @@ type Binance struct {
 func NewBinance(poolAddress, dexHost string) *Binance {
 	key := os.Getenv("PRIVATE_KEY")
 	if key == "" {
-		log.Fatal().Msg("No private key set!")
+		log.Fatal().Msg("[SIGNER] No private key set!")
 		os.Exit(1)
 	}
 
 	keyManager, err := keys.NewPrivateKeyManager(key)
 	if err != nil {
-		log.Fatal().Msgf("Error: %v", err)
+		log.Fatal().Msgf("[SIGNER] Error: %v", err)
 		os.Exit(1)
 	}
 
 	bClient, err := sdk.NewDexClient(dexHost, types.TestNetwork, keyManager)
 	if err != nil {
-		log.Fatal().Msgf("Error: %v", err)
+		log.Fatal().Msgf("[SIGNER] Error: %v", err)
 		os.Exit(1)
 	}
 
@@ -50,7 +49,6 @@ func NewBinance(poolAddress, dexHost string) *Binance {
 
 	return &Binance{
 		PrivateKey: key,
-		DexHost: dexHost,
 		Client: bClient,
 		QueryClient: queryClient,
 		KeyManager: keyManager,
@@ -132,7 +130,7 @@ func (b *Binance) SignTx(outTx stypes.OutTx) ([]byte, map[string]string) {
 	fromAddr := b.KeyManager.GetAddr()
 	acc, err := b.QueryClient.GetAccount(fromAddr.String())
 	if err != nil {
-		log.Error().Msgf("Error: %v", err)
+		log.Error().Msgf("[SIGNER] Error: %v", err)
 	}
 
 	signMsg := &tx.StdSignMsg{
@@ -154,10 +152,10 @@ func (b *Binance) SignTx(outTx stypes.OutTx) ([]byte, map[string]string) {
 func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
 	commits, err := b.Client.PostTx(hexTx, param)
 	if err != nil {
-		log.Error().Msgf("Error: %v", err)
+		log.Error().Msgf("[SIGNER] Error: %v", err)
 		return nil, err
 	}
 
-	log.Info().Msgf("Info: %v", commits[0])
+	log.Info().Msgf("[SIGNER] Commit Response from Binance: %v", commits[0])
 	return &commits[0], nil
 }

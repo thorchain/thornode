@@ -16,25 +16,25 @@ import (
 	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
 )
 
-type ScanClient struct {
+type Scanner struct {
 	Db *redis.Client
 	PoolAddress string
-	DexHost string
-	RpcHost string
+	DEXHost string
+	RPCHost string
 }
 
-func NewScanClient(poolAddress, dexHost, rpcHost string) *ScanClient {
-	return &ScanClient{
+func NewScanner(poolAddress, dexHost, rpcHost string) *Scanner {
+	return &Scanner{
 		Db: storage.RedisClient(),
 		PoolAddress: poolAddress,
-		DexHost: dexHost,
-		RpcHost: rpcHost,
+		DEXHost: dexHost,
+		RPCHost: rpcHost,
 	}
 }
 
 // Process blocks as they are placed into the channel. In order to 
 // support multi-send, we need to query the RPC service from a given node.
-func (s *ScanClient) ProcessBlocks(blocks []int, scanChan chan []byte) {
+func (s *Scanner) Scan(blocks []int, scanChan chan []byte) {
 	sort.Ints(blocks)
 
 	min := int64(s.getLastBlock())
@@ -46,11 +46,11 @@ func (s *ScanClient) ProcessBlocks(blocks []int, scanChan chan []byte) {
 	s.setLastBlock(max)
 
 	for block := min; block <= max; block++ {
-		log.Info().Msgf("Scanning block %v...", block)
+		log.Info().Msgf("[OBSERVER] Scanning block %v...", block)
 
 		uri := url.URL{
 			Scheme: "https",
-			Host: s.RpcHost,
+			Host: s.RPCHost,
 			Path: "tx_search",
 		}
 
@@ -73,7 +73,7 @@ func (s *ScanClient) ProcessBlocks(blocks []int, scanChan chan []byte) {
 			blockHeight, _ := strconv.ParseInt(txn.Height, 10, 64)
 			inTx.BlockHeight = int(blockHeight)
 
-			inTx = s.QueryTxn(inTx)
+			inTx = s.QueryTx(inTx)
 			json, _ := json.Marshal(inTx)
 			scanChan <- json
 		}
@@ -82,11 +82,11 @@ func (s *ScanClient) ProcessBlocks(blocks []int, scanChan chan []byte) {
 
 // Call the REST API to get specific details of the transaction, and if it was for 
 // our particular pool address.
-func (s *ScanClient) QueryTxn(inTx types.InTx) types.InTx {
+func (s *Scanner) QueryTx(inTx types.InTx) types.InTx {
 	for _, txItem := range inTx.TxArray {
 		uri := url.URL{
 			Scheme: "https",
-			Host: s.DexHost,
+			Host: s.DEXHost,
 			Path: fmt.Sprintf("api/v1/tx/%v", txItem.Tx),
 		}
 
@@ -124,16 +124,16 @@ func (s *ScanClient) QueryTxn(inTx types.InTx) types.InTx {
 	return inTx
 }
 
-func (s *ScanClient) getLastBlock() int64 {
+func (s *Scanner) getLastBlock() int64 {
 	data, _ := s.Db.Get("lastBlock").Result()
 	blockHeight, _ := strconv.ParseInt(data, 10, 64)
 
 	return blockHeight
 }
 
-func (s *ScanClient) setLastBlock(blockHeight int64) {
+func (s *Scanner) setLastBlock(blockHeight int64) {
 	err := s.Db.Set("lastBlock", blockHeight, 0).Err()
 	if err != nil {
-		log.Fatal().Msgf("Error: %v", err)
+		log.Error().Msgf("Error: %v", err)
 	}
 }

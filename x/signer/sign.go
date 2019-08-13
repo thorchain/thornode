@@ -1,7 +1,7 @@
 package signer
 
 import (
-	"time"
+	//"time"
 
 	log "github.com/rs/zerolog/log"
 )
@@ -30,17 +30,16 @@ func (s *Signer) Start() {
 func (s *Signer) ProcessTxn() {
 	for {
 		txn := <-s.TxChan
-		log.Info().Msgf("Received Transaction: %v", string(txn))
-		time.Sleep(2*time.Second)
+		log.Info().Msgf("[SIGNER] Received Transaction: %v", string(txn))
 
 		blockHeight := s.StateChain.TxnBlockHeight(string(txn))
-		log.Info().Msgf("Got a block height of %v from StateChain", blockHeight)
+		log.Info().Msgf("[SIGNER] Received a Block Height of %v from StateChain", blockHeight)
 
 		txOut := s.StateChain.TxOut(blockHeight)
-		log.Info().Msgf("Got a TxOut array of %v from StateChain", txOut)
+		log.Info().Msgf("[SIGNER] Received a TxOut Array of %v from StateChain", txOut)
 
 		hexTx, param := s.Binance.SignTx(txOut)
-		log.Info().Msgf("Signature generated: %v", hexTx)
+		log.Info().Msgf("[SIGNER] Generated the following signature for Binance: %v", string(hexTx))
 
 		s.Binance.BroadcastTx(hexTx, param)
 	}

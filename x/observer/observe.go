@@ -9,23 +9,19 @@ import (
 )
 
 type Observer struct {
-	PoolAddress string
-	DexHost string
-	SocketClient *SocketClient
-	ScanClient *ScanClient
+	Socket *Socket
+	Scanner *Scanner
 	StateChain *StateChain
 }
 
 func NewObserver(poolAddress, dexHost, rpcHost, chainHost, runeAddress string, txChan chan []byte) *Observer {
-	socketClient := NewSocketClient(poolAddress, dexHost)
-	scanClient := NewScanClient(poolAddress, dexHost, rpcHost)
+	socket := NewSocket(poolAddress, dexHost)
+	scanner := NewScanner(poolAddress, dexHost, rpcHost)
 	stateChain := NewStateChain(chainHost, runeAddress, txChan)
 
 	return &Observer{
-		PoolAddress: poolAddress,
-		DexHost: dexHost,
-		SocketClient: socketClient,
-		ScanClient: scanClient,
+		Socket: socket,
+		Scanner: scanner,
 		StateChain: stateChain,
 	}
 }
@@ -34,7 +30,7 @@ func (o *Observer) Start() {
 	sockChan := make(chan []byte)
 	scanChan := make(chan []byte)
 
-	go o.SocketClient.StartClient(sockChan)
+	go o.Socket.Start(sockChan)
 	go o.ProcessTxn(sockChan, scanChan)
 }
 
@@ -42,35 +38,34 @@ func (o *Observer) ProcessTxn(sockChan, scanChan chan []byte) {
 	for {
 		var inTx types.InTx
 		payload := <-sockChan
-		log.Info().Msgf("Received Transaction: %v", string(payload))
 
 		err := json.Unmarshal(payload, &inTx)
 		if err != nil {
-			log.Error().Msgf("Error: %v", err)
+			log.Error().Msgf("[OBSERVER] Error: %v", err)
 		}
 
-		log.Info().Msgf("Processing Transaction: %v", inTx)
+		log.Info().Msgf("[OBSERVER] Processing Transaction: %v", inTx)
 		go o.StateChain.Send(inTx)
 
 		var blocks []int
 		blocks = append(blocks, inTx.BlockHeight)
 
-		go o.ProcessBlockTxn(scanChan)
-		// go c.ScanClient.ProcessBlocks(blocks, scanChan)
+		go o.Send(scanChan)
+		// go o.Scanner.Scan(blocks, scanChan)
 	}
 }
 
-func (o *Observer) ProcessBlockTxn(scanChan chan []byte) {
+func (o *Observer) Send(scanChan chan []byte) {
 	for {
 		var inTx types.InTx
 		payload := <-scanChan
 
 		err := json.Unmarshal(payload, &inTx)
 		if err != nil {
-			log.Error().Msgf("Error: %v", err)
+			log.Error().Msgf("[OBSERVER] Error: %v", err)
 		}
 
-		log.Info().Msgf("Processing Transaction: %v", inTx)
+		log.Info().Msgf("[OBSERVER] Processing Transaction: %v", inTx)
 		go o.StateChain.Send(inTx)
 	}
 }
