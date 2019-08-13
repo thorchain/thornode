@@ -6,12 +6,14 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 type MsgOutboundTx struct {
 	Height int64          `json:"height"`
 	TxID   TxID           `json:"tx_id"`
+	Sender BnbAddress     `json:"sender"`
 	Signer sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgOutboundTx is a constructor function for MsgOutboundTx
-func NewMsgOutboundTx(txID TxID, height int64, signer sdk.AccAddress) MsgOutboundTx {
+func NewMsgOutboundTx(txID TxID, height int64, sender BnbAddress, signer sdk.AccAddress) MsgOutboundTx {
 	return MsgOutboundTx{
+		Sender: sender,
 		TxID:   txID,
 		Height: height,
 		Signer: signer,
@@ -31,6 +33,9 @@ func (msg MsgOutboundTx) ValidateBasic() sdk.Error {
 	}
 	if msg.Height <= 0 {
 		return sdk.ErrUnknownRequest("Height must be above zero")
+	}
+	if msg.Sender.Empty() {
+		return sdk.ErrUnknownRequest("Sender cannot be empty")
 	}
 	if msg.TxID.Empty() {
 		return sdk.ErrUnknownRequest("TxID cannot be empty")

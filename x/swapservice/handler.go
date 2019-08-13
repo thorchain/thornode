@@ -289,7 +289,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddre
 			return nil, errors.Wrap(err, "fail to get MsgSwap from memo")
 		}
 	case OutboundMemo:
-		newMsg, err = getMsgOutboundFromMemo(m, tx.Request, signer)
+		newMsg, err = getMsgOutboundFromMemo(m, tx.Request, tx.Sender, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
@@ -398,11 +398,12 @@ func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, 
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, txID TxID, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgOutboundFromMemo(memo OutboundMemo, txID TxID, sender BnbAddress, signer sdk.AccAddress) (sdk.Msg, error) {
 	blockHeight := memo.GetBlockHeight()
 	return NewMsgOutboundTx(
 		txID,
 		blockHeight,
+		sender,
 		signer,
 	), nil
 }
@@ -417,6 +418,13 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error("invalid MsgOutboundTx", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	// ensure the bnb address this tx was sent from is from our pool
+	poolAddress := keeper.GetAdminConfigPoolAddress(ctx)
+	if !poolAddress.Equals(msg.Sender) {
+		ctx.Logger().Error("message sent by unauthorized account")
+		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
 	index, err := keeper.GetTxInIndex(ctx, msg.Height)
