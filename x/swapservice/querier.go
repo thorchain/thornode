@@ -27,10 +27,6 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryStakerPool(ctx, path[1:], req, keeper)
 		case q.QueryPoolIndex.Key:
 			return queryPoolIndex(ctx, path[1:], req, keeper)
-		case q.QuerySwapRecord.Key:
-			return querySwapRecord(ctx, path[1:], req, keeper)
-		case q.QueryUnStakeRecord.Key:
-			return queryUnStakeRecord(ctx, path[1:], req, keeper)
 		case q.QueryTxIn.Key:
 			return queryTxIn(ctx, path[1:], req, keeper)
 		case q.QueryAdminConfig.Key:
@@ -43,48 +39,6 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			)
 		}
 	}
-}
-
-// queryUnStakeRecord
-func queryUnStakeRecord(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	txID, err := NewTxID(path[0])
-	if err != nil {
-		ctx.Logger().Error("fail to parse tx ID", err)
-		return nil, sdk.ErrInternal("fail to parse tx ID")
-	}
-
-	sr, err := keeper.GetUnStakeRecord(ctx, txID)
-	if nil != err {
-		ctx.Logger().Error("fail to get UnStake record", err)
-		return nil, sdk.ErrInternal("fail to get UnStake record")
-	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, sr)
-	if nil != err {
-		ctx.Logger().Error("fail to marshal UnStake record to json", err)
-		return nil, sdk.ErrInternal("fail to marshal UnStake record to json")
-	}
-	return res, nil
-}
-
-// querySwapRecord
-func querySwapRecord(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	txID, err := NewTxID(path[0])
-	if err != nil {
-		ctx.Logger().Error("fail to parse tx ID", err)
-		return nil, sdk.ErrInternal("fail to parse tx ID")
-	}
-
-	sr, err := keeper.GetSwapRecord(ctx, txID)
-	if nil != err {
-		ctx.Logger().Error("fail to get swaprecord", err)
-		return nil, sdk.ErrInternal("fail to get swap record")
-	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, sr)
-	if nil != err {
-		ctx.Logger().Error("fail to marshal swap record to json", err)
-		return nil, sdk.ErrInternal("fail to marshal swap record to json")
-	}
-	return res, nil
 }
 
 // queryPoolIndex
