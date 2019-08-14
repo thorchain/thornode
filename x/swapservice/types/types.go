@@ -14,7 +14,11 @@ const (
 
 const floatPrecision = 8
 
-var RuneTicker Ticker = Ticker("RUNE-B1A")
+const (
+	RuneTicker    = Ticker("RUNE")
+	RuneA1FTicker = Ticker("RUNE-A1F")
+	RuneB1ATicker = Ticker("RUNE-B1A")
+)
 
 type Ticker string
 
@@ -43,7 +47,7 @@ func (t Ticker) String() string {
 }
 
 func IsRune(ticker Ticker) bool {
-	return ticker.Equals(RuneTicker)
+	return ticker.Equals(RuneTicker) || ticker.Equals(RuneA1FTicker) || ticker.Equals(RuneB1ATicker)
 }
 
 type TxID string
