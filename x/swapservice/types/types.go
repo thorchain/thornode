@@ -14,7 +14,7 @@ const (
 
 const floatPrecision = 8
 
-var RuneTicker Ticker = Ticker("RUNE")
+var RuneTicker Ticker = Ticker("RUNE-B1A")
 
 type Ticker string
 
@@ -134,14 +134,14 @@ func NewBnbAddress(address string) (BnbAddress, error) {
 	var suffix string
 	for _, pref := range prefixes {
 		if strings.HasPrefix(address, pref) {
-			suffix = strings.TrimLeft(address, pref)
+			suffix = address[len(pref):]
 			break
 		}
 	}
 
 	// check address length is valid
 	if len(suffix) != 39 {
-		return "", fmt.Errorf("Address length is not correct")
+		return "", fmt.Errorf("Address length is not correct: %s (%d != 39)", suffix, len(suffix))
 	}
 
 	return BnbAddress(address), nil
