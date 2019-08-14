@@ -35,4 +35,4 @@ docs:
   image: cbarraford/apib2swagger
   stage: docs
   script:
-    - apib2swagger -i ./docs/api/blueprint.apib -o swagger.json
+    - -i ./docs/api/blueprint.apib -o swagger.json
