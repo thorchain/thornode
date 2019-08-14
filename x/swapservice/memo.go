@@ -224,7 +224,7 @@ func ParseMemo(memo string) (Memo, error) {
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("Not enough parameters")
 		}
-		height, err := strconv.ParseInt("123", 0, 64)
+		height, err := strconv.ParseInt(parts[1], 0, 64)
 		return OutboundMemo{
 			BlockHeight: height,
 		}, err
