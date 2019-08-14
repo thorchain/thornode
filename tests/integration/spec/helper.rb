@@ -1,6 +1,7 @@
 require 'net/http'
 require 'pp'
 require 'json'
+require 'securerandom'
 # require 'tempfile'
 
 HOST = ENV['APIHOST'] || "localhost"
@@ -13,10 +14,39 @@ def get(path)
   return resp
 end
 
-def processTx(memo, mode = 'block')
+def get_rand(len)
+  str = SecureRandom.hex(len)
+  return str.slice(0, len)
+end
+
+# generates a random ticker
+def ticker()
+  return "#{get_rand(3).upcase}-#{get_rand(3).upcase}"
+end
+
+def txid()
+  get_rand(64).upcase
+end
+
+def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
+  hash ||= txid()
+  sender ||= "bnb" + get_rand(39).downcase
+  coins ||= [{
+    'denom': 'RUNE-B1A',
+    'amount': '1',
+  }]
+  return {
+    'tx': hash,
+    'sender': sender,
+    'MEMO': memo,
+    'coins': coins
+  }
+end
+
+def processTx(txs, user="jack", mode='block')
   request = Net::HTTP::Post.new("/swapservice/binance/tx")
-  address = `sscli keys show jack -a`.strip!
-  hash = '7E5DF2DAF3463FEFA633EC1B45ADC434AAE92A55823E210837E975F1FE289BA7'
+  address = `sscli keys show #{user} -a`.strip!
+  txs = [txs].flatten(1) # ensures we are an array, and not just a single hash
   request.body = {
     'blockHeight': '376',
     'count': '1',
@@ -24,32 +54,26 @@ def processTx(memo, mode = 'block')
       'chain_id': "sschain",
       'from': address
     },
-    'txArray': [
-      {
-        'tx': hash,
-        'sender': "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6",
-        'MEMO': memo,
-        'coins': [{
-          'denom': 'BNB',
-          'amount': '1',
-        }],
-      }
-    ],
+    'txArray': txs,
   }.to_json
-  puts(request.body)
+  # puts(request.body.to_json)
+
   resp = HTTP.request(request)
+  if resp.code != "200" 
+    pp resp.body
+    return resp
+  end
 
   # write unsigned json to disk
   File.open("/tmp/unSigned.json", "w") { |file| file.puts resp.body}
-  signedTx = `echo "password" | sscli tx sign /tmp/unSigned.json --from jack`
-  puts("hello")
-  puts(signedTx)
+  signedTx = `echo "password" | sscli tx sign /tmp/unSigned.json --from #{user}`
   signedTx = JSON.parse(signedTx)
   signedJson = {
     'mode': mode,
     'tx': signedTx['value'],
   }
   # pp signedJson
+
 
   request = Net::HTTP::Post.new("/txs")
   request.body = signedJson.to_json
