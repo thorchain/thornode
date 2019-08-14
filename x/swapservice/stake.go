@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"fmt"
+	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
@@ -70,6 +71,7 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	if nil != err {
 		return errors.Wrapf(err, "fail to calculate pool units")
 	}
+
 	ctx.Logger().Info(fmt.Sprintf("current pool units : %f ,staker units : %f", newPoolUnits, stakerUnits))
 	poolRune := balanceRune + fRuneAmt
 	poolToken := balanceToken + fTokenAmt
@@ -125,8 +127,18 @@ func calculatePoolUnits(oldPoolUnits, poolRune, poolToken, stakeRune, stakeToken
 	if stakeToken < 0 {
 		return 0, 0, errors.New("you can't stake negative token")
 	}
+	//
+	if (stakeRune + poolRune) == 0 {
+		return 0, 0, errors.New("total RUNE in the pool is zero")
+	}
+	if (stakeToken + poolToken) == 0 {
+		return 0, 0, errors.New("total token in the pool is zero")
+	}
 	stakerPercentage := ((stakeRune / (stakeRune + poolRune)) + (stakeToken / (stakeToken + poolToken))) / 2
 	stakerUnit := (stakerPercentage*(stakeRune+poolRune) + stakerPercentage*(stakeToken+poolToken)) / 2
+	if math.IsNaN(stakerUnit) {
+		return 0, 0, errors.New("fail to calculate pool units")
+	}
 	newPoolUnit := oldPoolUnits + stakerUnit
 	return newPoolUnit, stakerUnit, nil
 }

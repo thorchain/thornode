@@ -13,15 +13,25 @@ type TypesSuite struct{}
 var _ = Suite(&TypesSuite{})
 
 func (s TypesSuite) TestTicker(c *C) {
-	runeTicker, err := NewTicker("rune-b1a")
+	runeTicker, err := NewTicker("rune")
 	c.Assert(err, IsNil)
 	bnbTicker, err := NewTicker("bnb")
 	c.Assert(err, IsNil)
 	c.Check(runeTicker.Equals(RuneTicker), Equals, true)
 	c.Check(bnbTicker.Equals(RuneTicker), Equals, false)
 	c.Check(IsRune(runeTicker), Equals, true)
+	c.Check(runeTicker.String(), Equals, "RUNE")
+	runeB1aTicker, err := NewTicker("rune-b1a")
+	c.Assert(err, IsNil)
+	c.Check(runeB1aTicker.Equals(RuneB1ATicker), Equals, true)
+	c.Check(IsRune(runeB1aTicker), Equals, true)
+	c.Check(runeB1aTicker.String(), Equals, RuneB1ATicker.String())
 
-	c.Check(runeTicker.String(), Equals, "RUNE-B1A")
+	runeA1fTicker, err := NewTicker("rune-a1f")
+	c.Assert(err, IsNil)
+	c.Check(runeA1fTicker.Equals(RuneA1FTicker), Equals, true)
+	c.Check(IsRune(runeA1fTicker), Equals, true)
+	c.Check(runeA1fTicker.String(), Equals, RuneA1FTicker.String())
 
 	_, err = NewTicker("t") // too short
 	c.Assert(err, NotNil)
