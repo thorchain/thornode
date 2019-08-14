@@ -49,32 +49,32 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", ModuleName))
 }
 
-// GetPoolStruct get the entire PoolStruct metadata struct for a pool ID
-func (k Keeper) GetPoolStruct(ctx sdk.Context, ticker Ticker) PoolStruct {
+// GetPool get the entire Pool metadata struct for a pool ID
+func (k Keeper) GetPool(ctx sdk.Context, ticker Ticker) Pool {
 	key := getKey(prefixPool, ticker.String())
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		return NewPoolStruct()
+		return NewPool()
 	}
 	bz := store.Get([]byte(key))
-	var poolstruct PoolStruct
-	k.cdc.MustUnmarshalBinaryBare(bz, &poolstruct)
-	if poolstruct.BalanceRune.Empty() {
-		poolstruct.BalanceRune = ZeroAmount
+	var pool Pool
+	k.cdc.MustUnmarshalBinaryBare(bz, &pool)
+	if pool.BalanceRune.Empty() {
+		pool.BalanceRune = ZeroAmount
 	}
-	if poolstruct.BalanceToken.Empty() {
-		poolstruct.BalanceToken = ZeroAmount
+	if pool.BalanceToken.Empty() {
+		pool.BalanceToken = ZeroAmount
 	}
-	if poolstruct.PoolUnits.Empty() {
-		poolstruct.PoolUnits = ZeroAmount
+	if pool.PoolUnits.Empty() {
+		pool.PoolUnits = ZeroAmount
 	}
-	poolstruct.PoolAddress = k.GetAdminConfigPoolAddress(ctx)
+	pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx)
 
-	return poolstruct
+	return pool
 }
 
-// Sets the entire PoolStruct metadata struct for a pool ID
-func (k Keeper) SetPoolStruct(ctx sdk.Context, ticker Ticker, poolstruct PoolStruct) {
+// Sets the entire Pool metadata struct for a pool ID
+func (k Keeper) SetPool(ctx sdk.Context, ticker Ticker, pool Pool) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPool, ticker.String())
 	if !store.Has([]byte(key)) {
@@ -82,30 +82,30 @@ func (k Keeper) SetPoolStruct(ctx sdk.Context, ticker Ticker, poolstruct PoolStr
 			ctx.Logger().Error("fail to add ticker to pool index", "ticker", ticker, "error", err)
 		}
 	}
-	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(poolstruct))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
 }
 
 func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 Ticker) (Amount, Amount) {
-	poolstruct := k.GetPoolStruct(ctx, ticker)
+	pool := k.GetPool(ctx, ticker)
 	if IsRune(ticker2) {
-		return poolstruct.BalanceRune, poolstruct.BalanceToken
+		return pool.BalanceRune, pool.BalanceToken
 	}
-	return poolstruct.BalanceToken, poolstruct.BalanceRune
+	return pool.BalanceToken, pool.BalanceRune
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
 func (k Keeper) SetPoolData(ctx sdk.Context, ticker Ticker, ps PoolStatus) {
-	poolstruct := k.GetPoolStruct(ctx, ticker)
-	if poolstruct.PoolUnits == "" {
-		poolstruct.PoolUnits = "0"
+	pool := k.GetPool(ctx, ticker)
+	if pool.PoolUnits == "" {
+		pool.PoolUnits = "0"
 	}
-	poolstruct.Status = ps
-	poolstruct.Ticker = ticker
-	k.SetPoolStruct(ctx, ticker, poolstruct)
+	pool.Status = ps
+	pool.Ticker = ticker
+	k.SetPool(ctx, ticker, pool)
 }
 
-// GetPoolStructDataIterator only iterate pool data
-func (k Keeper) GetPoolStructDataIterator(ctx sdk.Context) sdk.Iterator {
+// GetPoolDataIterator only iterate pool data
+func (k Keeper) GetPoolDataIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixPool))
 }

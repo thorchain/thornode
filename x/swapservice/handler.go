@@ -80,7 +80,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker, "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
-	if err := keeper.GetPoolStruct(ctx, msg.Ticker).EnsureValidPoolStatus(msg); nil != err {
+	if err := keeper.GetPool(ctx, msg.Ticker).EnsureValidPoolStatus(msg); nil != err {
 		ctx.Logger().Error("check pool status", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
@@ -186,7 +186,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress, "ticker", msg.Ticker, "percentage", msg.Percentage)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
-	if err := keeper.GetPoolStruct(ctx, msg.Ticker).EnsureValidPoolStatus(msg); nil != err {
+	if err := keeper.GetPool(ctx, msg.Ticker).EnsureValidPoolStatus(msg); nil != err {
 		ctx.Logger().Error("check pool status", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
@@ -369,7 +369,7 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, s
 		if err != nil {
 			return nil, err
 		}
-		pool := keeper.GetPoolStruct(ctx, ticker)
+		pool := keeper.GetPool(ctx, ticker)
 		if pool.Empty() {
 			return nil, errors.New("pool doesn't exist")
 		}

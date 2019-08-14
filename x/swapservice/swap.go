@@ -98,7 +98,7 @@ func swapOne(ctx sdk.Context,
 	tsl := tradeSlipLimit.Float64()  // trade slip limit
 	gsl := globalSlipLimit.Float64() // global slip limit
 
-	pool := keeper.GetPoolStruct(ctx, ticker)
+	pool := keeper.GetPool(ctx, ticker)
 	if pool.Status != PoolEnabled {
 		return "0", errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
 	}
@@ -133,7 +133,7 @@ func swapOne(ctx sdk.Context,
 	pool.BalanceRune = NewAmountFromFloat(newBalanceRune)
 	pool.BalanceToken = NewAmountFromFloat(newBalanceToken)
 	returnTokenAmount := NewAmountFromFloat(returnAmt)
-	keeper.SetPoolStruct(ctx, ticker, pool)
+	keeper.SetPool(ctx, ticker, pool)
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, returnTokenAmount))
 	return returnTokenAmount, nil
 }
