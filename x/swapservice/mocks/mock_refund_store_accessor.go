@@ -8,7 +8,7 @@ import (
 
 const (
 	RefundAdminConfigKey = `RefundAdminConfigKey`
-	RefundPoolStructKey  = `RefundPoolStructKey`
+	RefundPoolKey        = `RefundPoolKey`
 )
 
 // MockRefundStoreAccessor implements PoolStorage interface, thus we can mock the error cases
@@ -27,11 +27,11 @@ func (mrsa MockRefundStoreAccessor) GetAdminConfigMRRA(ctx sdk.Context) types.Am
 	return types.ZeroAmount
 }
 
-// GetPoolStruct return an instance of PoolStruct
-func (mrsa MockRefundStoreAccessor) GetPoolStruct(ctx sdk.Context, ticker types.Ticker) types.PoolStruct {
-	v := ctx.Value(RefundPoolStructKey)
-	if ps, ok := v.(types.PoolStruct); ok {
+// GetPool return an instance of Pool
+func (mrsa MockRefundStoreAccessor) GetPool(ctx sdk.Context, ticker types.Ticker) types.Pool {
+	v := ctx.Value(RefundPoolKey)
+	if ps, ok := v.(types.Pool); ok {
 		return ps
 	}
-	return types.NewPoolStruct()
+	return types.NewPool()
 }

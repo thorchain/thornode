@@ -28,8 +28,8 @@ func getTestContext() sdk.Context {
 	return sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
 
 }
-func newPoolStructForTest(ticker Ticker, balanceRune, balanceToken Amount) PoolStruct {
-	ps := NewPoolStruct()
+func newPoolForTest(ticker Ticker, balanceRune, balanceToken Amount) Pool {
+	ps := NewPool()
 	ps.BalanceToken = balanceToken
 	ps.BalanceRune = balanceRune
 	ps.Ticker = ticker
@@ -43,7 +43,7 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 	inputs := []struct {
 		name                string
 		minimumRefundAmount Amount
-		poolStruct          PoolStruct
+		pool                Pool
 		ticker              Ticker
 		amount              Amount
 		expectedCoin        Coin
@@ -51,7 +51,7 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 		{
 			name:                "invalid-MRRA",
 			minimumRefundAmount: Amount("invalid"),
-			poolStruct:          newPoolStructForTest(RuneTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			pool:                newPoolForTest(RuneTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
 			ticker:              RuneTicker,
 			amount:              NewAmountFromFloat(100),
 			expectedCoin:        NewCoin(RuneTicker, NewAmountFromFloat(100)),
@@ -59,7 +59,7 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 		{
 			name:                "OneRune-MRRA",
 			minimumRefundAmount: NewAmountFromFloat(1.0),
-			poolStruct:          newPoolStructForTest(RuneTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			pool:                newPoolForTest(RuneTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
 			ticker:              RuneTicker,
 			amount:              NewAmountFromFloat(100),
 			expectedCoin:        NewCoin(RuneTicker, NewAmountFromFloat(99)),
@@ -67,7 +67,7 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 		{
 			name:                "No-Refund",
 			minimumRefundAmount: NewAmountFromFloat(1.0),
-			poolStruct:          newPoolStructForTest(RuneTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			pool:                newPoolForTest(RuneTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
 			ticker:              RuneTicker,
 			amount:              NewAmountFromFloat(0.5),
 			expectedCoin:        NewCoin(RuneTicker, ZeroAmount),
@@ -75,7 +75,7 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 		{
 			name:                "invalid-MRRA-BNB-refund-all",
 			minimumRefundAmount: Amount("invalid"),
-			poolStruct:          newPoolStructForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
 			ticker:              bnbTicker,
 			amount:              NewAmountFromFloat(5),
 			expectedCoin:        NewCoin(bnbTicker, NewAmountFromFloat(5)),
@@ -83,7 +83,7 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 		{
 			name:                "MRRA-BNB-refund-normal",
 			minimumRefundAmount: NewAmountFromFloat(1.0),
-			poolStruct:          newPoolStructForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
 			ticker:              bnbTicker,
 			amount:              NewAmountFromFloat(5),
 			expectedCoin:        NewCoin(bnbTicker, NewAmountFromFloat(4)),
@@ -91,7 +91,7 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 		{
 			name:                "MRRA-BNB-no-refund",
 			minimumRefundAmount: NewAmountFromFloat(1.0),
-			poolStruct:          newPoolStructForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
 			ticker:              bnbTicker,
 			amount:              NewAmountFromFloat(0.5),
 			expectedCoin:        NewCoin(bnbTicker, ZeroAmount),
@@ -100,7 +100,7 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 	for _, item := range inputs {
 		ctx := getTestContext()
 		ctx = ctx.WithValue(mocks.RefundAdminConfigKey, item.minimumRefundAmount).
-			WithValue(mocks.RefundPoolStructKey, item.poolStruct)
+			WithValue(mocks.RefundPoolKey, item.pool)
 		coin := getRefundCoin(ctx, item.ticker, item.amount, refundStoreAccessor)
 		c.Assert(coin, Equals, item.expectedCoin)
 	}
@@ -120,7 +120,7 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 	inputs := []struct {
 		name                string
 		minimumRefundAmount Amount
-		poolStruct          PoolStruct
+		pool                Pool
 		result              sdk.Result
 		msg                 sdk.Msg
 		out                 *TxOutItem
@@ -128,7 +128,7 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 		{
 			name:                "result-ok",
 			minimumRefundAmount: NewAmountFromFloat(1.0),
-			poolStruct:          newPoolStructForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
 			result: sdk.Result{
 				Code: sdk.CodeOK,
 			},
@@ -138,7 +138,7 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 		{
 			name:                "msg-type-setpooldata",
 			minimumRefundAmount: NewAmountFromFloat(1.0),
-			poolStruct:          newPoolStructForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
 			result: sdk.Result{
 				Code: sdk.CodeOK,
 			},
@@ -148,7 +148,7 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 		{
 			name:                "msg-type-swap",
 			minimumRefundAmount: NewAmountFromFloat(1.0),
-			poolStruct:          newPoolStructForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
 			result:              sdk.ErrUnknownRequest("whatever").Result(),
 			msg:                 NewMsgSwap(txID, RuneTicker, bnbTicker, NewAmountFromFloat(5.0), "asdf", "asdf", "1.0", accountAddress),
 			out: &TxOutItem{
@@ -162,7 +162,7 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 	for _, item := range inputs {
 		ctx := getTestContext()
 		ctx = ctx.WithValue(mocks.RefundAdminConfigKey, item.minimumRefundAmount).
-			WithValue(mocks.RefundPoolStructKey, item.poolStruct)
+			WithValue(mocks.RefundPoolKey, item.pool)
 		txStore := &TxOutStore{
 			blockOut: nil,
 		}

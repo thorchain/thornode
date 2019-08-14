@@ -20,10 +20,10 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 	swapserviceQueryCmd.AddCommand(client.GetCommands(
-		GetCmdPoolStruct(storeKey, cdc),
-		GetCmdPoolStructs(storeKey, cdc),
-		GetCmdStakerPoolStruct(storeKey, cdc),
-		GetCmdPoolStakerStruct(storeKey, cdc),
+		GetCmdPool(storeKey, cdc),
+		GetCmdPools(storeKey, cdc),
+		GetCmdStakerPool(storeKey, cdc),
+		GetCmdPoolStaker(storeKey, cdc),
 		GetCmdPoolIndex(storeKey, cdc),
 		GetCmdSwapRecord(storeKey, cdc),
 		GetCmdUnStakeRecord(storeKey, cdc),
@@ -33,31 +33,31 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	return swapserviceQueryCmd
 }
 
-// GetCmdPoolStruct queries information about a domain
-func GetCmdPoolStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdPool queries information about a domain
+func GetCmdPool(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "poolstruct [pooldata]",
-		Short: "Query poolstruct info of pooldata",
+		Use:   "pool [pooldata]",
+		Short: "Query pool info of pooldata",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			pooldata := args[0]
 
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/poolstruct/%s", queryRoute, pooldata), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/pool/%s", queryRoute, pooldata), nil)
 			if err != nil {
-				fmt.Printf("could not resolve poolstruct - %s \n", pooldata)
+				fmt.Printf("could not resolve pool - %s \n", pooldata)
 				return nil
 			}
 
-			var out types.PoolStruct
+			var out types.Pool
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
 	}
 }
 
-// GetCmdStakerPoolStruct queries staker pool
-func GetCmdStakerPoolStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdStakerPool queries staker pool
+func GetCmdStakerPool(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "stakerpool [stakeraddress]",
 		Short: "Query staker pool info",
@@ -77,8 +77,8 @@ func GetCmdStakerPoolStruct(queryRoute string, cdc *codec.Codec) *cobra.Command 
 			return cliCtx.PrintOutput(out)
 		},
 	}
-} // GetCmdPoolStakerStruct queries pool staker
-func GetCmdPoolStakerStruct(queryRoute string, cdc *codec.Codec) *cobra.Command {
+} // GetCmdPoolStaker queries pool staker
+func GetCmdPoolStaker(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "poolstaker [ticker]",
 		Short: "Query pool staker info",
@@ -99,8 +99,8 @@ func GetCmdPoolStakerStruct(queryRoute string, cdc *codec.Codec) *cobra.Command 
 	}
 }
 
-// GetCmdPoolStructs queries a list of all pool data
-func GetCmdPoolStructs(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdPools queries a list of all pool data
+func GetCmdPools(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "pools",
 		Short: "pools",
@@ -113,7 +113,7 @@ func GetCmdPoolStructs(queryRoute string, cdc *codec.Codec) *cobra.Command {
 				return nil
 			}
 
-			var out types.QueryResPoolStructs
+			var out types.QueryResPools
 			cdc.MustUnmarshalJSON(res, &out)
 			return cliCtx.PrintOutput(out)
 		},
