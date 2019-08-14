@@ -1,3 +1,5 @@
+[![pipeline status](https://gitlab.com/thorchain/bepswap/statechain/badges/master/pipeline.svg)](https://gitlab.com/thorchain/bepswap/statechain/commits/master)
+[![coverage report](https://gitlab.com/thorchain/bepswap/statechain/badges/master/coverage.svg)](https://gitlab.com/thorchain/bepswap/statechain/commits/master)
 BEPSwap Statechain
 =======================
 Swaps any two coins on the Binance Exchange on top of the [Cosmos network](cosmos.network)
