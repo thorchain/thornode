@@ -336,11 +336,29 @@ func (k Keeper) IsTrustAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
 	return store.Has([]byte(key))
 }
 
+// IsTrustAccountBnb check whether the account is trust , and can send tx
+func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr BnbAddress) bool {
+	ctx.Logger().Debug("IsTrustAccountBnb", "bnb address", addr.String())
+
+	taIterator := k.GetTrustAccountIterator(ctx)
+	defer taIterator.Close()
+	for ; taIterator.Valid(); taIterator.Next() {
+		var ta TrustAccount
+		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
+		ctx.Logger().Info("IsTrustAccountBnb", "bnb1", addr.String(), "bnb2", ta.BnbAddress)
+		if ta.BnbAddress.Equals(addr) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // SetTrustAccount save the given trust account into data store
 func (k Keeper) SetTrustAccount(ctx sdk.Context, ta TrustAccount) {
 	ctx.Logger().Debug("SetTrustAccount", "trust account", ta.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTrustAccount, ta.Address.String())
+	key := getKey(prefixTrustAccount, ta.RuneAddress.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ta))
 }
 

@@ -299,17 +299,22 @@ func GetCmdSetTxHash(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetAdminConfig command to set an admin config
 func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-adming-config [key] [value]",
+		Use:   "set-adming-config [key] [value] [bnbAddress]",
 		Short: "set admin config",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
+			bnb, err := types.NewBnbAddress(args[2])
+			if err != nil {
+				return err
+			}
+
 			key := types.GetAdminConfigKey(args[0])
 
-			msg := types.NewMsgSetAdminConfig(key, args[1], cliCtx.GetFromAddress())
-			err := msg.ValidateBasic()
+			msg := types.NewMsgSetAdminConfig(key, args[1], bnb, cliCtx.GetFromAddress())
+			err = msg.ValidateBasic()
 			if err != nil {
 				return err
 			}
