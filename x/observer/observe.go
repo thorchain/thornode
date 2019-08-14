@@ -5,28 +5,28 @@ import (
 
 	log "github.com/rs/zerolog/log"
 
-	types "gitlab.com/thorchain/bepswap/observe/common/types"
+	"gitlab.com/thorchain/bepswap/observe/x/statechain"
+	"gitlab.com/thorchain/bepswap/observe/common/types"
 )
 
 type Observer struct {
 	Socket *Socket
 	Scanner *Scanner
-	StateChain *StateChain
+	TxChan chan []byte
 }
 
-func NewObserver(poolAddress, dexHost, rpcHost, chainHost, runeAddress string, txChan chan []byte) *Observer {
-	socket := NewSocket(poolAddress, dexHost)
-	scanner := NewScanner(poolAddress, dexHost, rpcHost)
-	stateChain := NewStateChain(chainHost, runeAddress, txChan)
+func NewObserver(txChan chan []byte) *Observer {
+	socket := NewSocket()
+	scanner := NewScanner()
 
 	return &Observer{
 		Socket: socket,
 		Scanner: scanner,
-		StateChain: stateChain,
+		TxChan: txChan,
 	}
 }
 
-func (o *Observer) Start() {
+func (o Observer) Start() {
 	sockChan := make(chan []byte)
 	scanChan := make(chan []byte)
 
@@ -34,18 +34,19 @@ func (o *Observer) Start() {
 	go o.ProcessTxn(sockChan, scanChan)
 }
 
-func (o *Observer) ProcessTxn(sockChan, scanChan chan []byte) {
+func (o Observer) ProcessTxn(sockChan, scanChan chan []byte) {
 	for {
 		var inTx types.InTx
 		payload := <-sockChan
 
 		err := json.Unmarshal(payload, &inTx)
 		if err != nil {
-			log.Error().Msgf("%s Error: %v", LogPrefix(), err)
+			log.Error().Msgf("Error: %v", err)
 		}
 
-		log.Info().Msgf("%s Processing Transaction: %v", LogPrefix(), inTx)
-		go o.StateChain.Send(inTx)
+		log.Info().Msgf("Processing Transaction: %v", inTx)
+		signed := statechain.Sign(inTx)
+		go statechain.Send(signed, o.TxChan)
 
 		var blocks []int
 		blocks = append(blocks, inTx.BlockHeight)
@@ -55,19 +56,19 @@ func (o *Observer) ProcessTxn(sockChan, scanChan chan []byte) {
 	}
 }
 
-func (o *Observer) Send(scanChan chan []byte) {
+func (o Observer) Send(scanChan chan []byte) {
 	for {
 		var inTx types.InTx
 		payload := <-scanChan
 
 		err := json.Unmarshal(payload, &inTx)
 		if err != nil {
-			log.Error().Msgf("%s Error: %v", LogPrefix(), err)
+			log.Error().Msgf("Error: %v", err)
 		}
 
-		log.Info().Msgf("%s Processing Transaction: %v", LogPrefix(), inTx)
-		go o.StateChain.Send(inTx)
+		log.Info().Msgf("Processing Transaction: %v", inTx)
+
+		signed := statechain.Sign(inTx)
+		go statechain.Send(signed, o.TxChan)
 	}
 }
-
-func LogPrefix() string { return "[OBSERVER]" }

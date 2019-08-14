@@ -21,39 +21,39 @@ type Socket struct {
 	PongWait time.Duration
 }
 
-func NewSocket(poolAddress, dexHost string) *Socket {
-	binance := binance.NewBinance(poolAddress, dexHost)
+func NewSocket() *Socket {
+	binance := binance.NewBinance()
 	return &Socket{
 		Binance: binance,
 		PongWait: 30*time.Second,
 	}
 }
 
-func (s *Socket) Start(conChan chan []byte) {
+func (s Socket) Start(conChan chan []byte) {
 	conn, err := s.Connect()
 	if err != nil {
-		log.Fatal().Msgf("%s There was an error while starting: %v", LogPrefix(), err)
+		log.Fatal().Msgf("There was an error while starting: %v", err)
 	}
 
-	log.Info().Msgf("%s Setting a keepalive of %v", LogPrefix(), s.PongWait)
+	log.Info().Msgf("Setting a keepalive of %v", s.PongWait)
 	s.SetKeepAlive(conn)
 
 	ch := make(chan []byte)
 
-	log.Info().Msgf("%s Listening for events....", LogPrefix())
+	log.Info().Msg("%s Listening for events....")
 	s.Process(ch, conChan)
 	s.Read(ch, conn)
 }
 
-func (s *Socket) Connect() (*websocket.Conn, error) {
-	path := fmt.Sprintf("/api/ws/%s", s.Binance.PoolAddress)
+func (s Socket) Connect() (*websocket.Conn, error) {
+	path := fmt.Sprintf("/api/ws/%s", ctypes.PoolAddress)
 	url := url.URL{
 		Scheme: "wss",
-		Host: s.Binance.DEXHost,
+		Host: ctypes.DEXHost,
 		Path: path,
 	}
 
-	log.Info().Msgf("%s Opening up a connection to: %v", LogPrefix(), url.String())
+	log.Info().Msgf("Opening up a connection to: %v", url.String())
 
 	conn, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
 	if err != nil {
@@ -63,7 +63,7 @@ func (s *Socket) Connect() (*websocket.Conn, error) {
 	return conn, nil
 }
 
-func (s *Socket) SetKeepAlive(conn *websocket.Conn) {
+func (s Socket) SetKeepAlive(conn *websocket.Conn) {
 	lastResponse := time.Now()
 	conn.SetPongHandler(func(msg string) error {
 		lastResponse = time.Now()
@@ -86,18 +86,18 @@ func (s *Socket) SetKeepAlive(conn *websocket.Conn) {
 	}()
 }
 
-func (s *Socket) Read(ch chan []byte, conn *websocket.Conn) {
+func (s Socket) Read(ch chan []byte, conn *websocket.Conn) {
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			// @todo Reconnect if this fails.
-			log.Error().Msgf("%s Read error: %s", LogPrefix(), err)
+			log.Error().Msgf("Read error: %s", err)
 		}
 		ch <- message
 	}
 }
 
-func (s *Socket) Process(ch, conChan chan []byte) {
+func (s Socket) Process(ch, conChan chan []byte) {
 	go func() {
 		for {
 			payload := <-ch
@@ -105,11 +105,11 @@ func (s *Socket) Process(ch, conChan chan []byte) {
 
 			err := json.Unmarshal(payload, &txfr)
 			if err != nil {
-				log.Error().Msgf("%s There was an error while parsing the event: %v", LogPrefix(), err)
+				log.Error().Msgf("There was an error while parsing the event: %v", err)
 			}
 
 			if txfr.Stream == "transfers" {
-				if txfr.Data.FromAddr != s.Binance.PoolAddress {
+				if txfr.Data.FromAddr != ctypes.PoolAddress {
 					var inTx ctypes.InTx
 
 					for _, txn := range txfr.Data.T {
@@ -143,7 +143,7 @@ func (s *Socket) Process(ch, conChan chan []byte) {
 					json, err := json.Marshal(inTx)
 					log.Info().Msgf("%v", string(json))
 					if err != nil {
-						log.Error().Msgf("%s Error: %v", LogPrefix(), err)
+						log.Error().Msgf("Error: %v", err)
 					}
 
 					conChan <- json
@@ -153,7 +153,7 @@ func (s *Socket) Process(ch, conChan chan []byte) {
 	}()
 }
 
-func (s *Socket) Stop() {
-	log.Info().Msgf("%s Shutting down....", LogPrefix())
+func (s Socket) Stop() {
+	log.Info().Msgf("Shutting down....")
 	os.Exit(1)
 }
