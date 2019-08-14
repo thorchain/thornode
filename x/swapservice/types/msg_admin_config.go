@@ -5,13 +5,15 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 // MsgSetAdminConfig defines a MsgSetAdminConfig message
 type MsgSetAdminConfig struct {
 	AdminConfig AdminConfig    `json:"admin_config"`
+	From        BnbAddress     `json:"from"`
 	Signer      sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetAdminConfig is a constructor function for MsgSetAdminConfig
-func NewMsgSetAdminConfig(key AdminConfigKey, value string, signer sdk.AccAddress) MsgSetAdminConfig {
+func NewMsgSetAdminConfig(key AdminConfigKey, value string, from BnbAddress, signer sdk.AccAddress) MsgSetAdminConfig {
 	return MsgSetAdminConfig{
 		AdminConfig: NewAdminConfig(key, value),
+		From:        from,
 		Signer:      signer,
 	}
 }
@@ -26,6 +28,9 @@ func (msg MsgSetAdminConfig) Type() string { return "set_admin_config" }
 func (msg MsgSetAdminConfig) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
+	}
+	if msg.From.Empty() {
+		return sdk.ErrInvalidAddress(msg.From.String())
 	}
 	if err := msg.AdminConfig.Valid(); err != nil {
 		return sdk.ErrUnknownRequest(err.Error())
