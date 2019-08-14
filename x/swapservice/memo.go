@@ -146,7 +146,7 @@ func ParseMemo(memo string) (Memo, error) {
 	}
 
 	symbol := strings.ToUpper(parts[1])
-	if tx != txAdmin {
+	if tx != txAdmin && tx != txOutbound {
 		if err := validateSymbol(symbol); err != nil {
 			return noMemo, err
 		}

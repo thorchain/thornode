@@ -43,6 +43,17 @@ describe "API Tests" do
       expect(resp.body['value']).to eq("0.1"), resp.body.inspect
     end
 
+  poolAddress = bnbAddress() # here so its available in other tests
+  context "Set pool address" do
+    it "should set pool address" do
+      tx = makeTx(memo: "ADMIN:Key:PoolAddress:#{poolAddress}")
+      resp = processTx(tx)
+      expect(resp.code).to eq("200")
+
+      resp = get("/admin/PoolAddress")
+      expect(resp.code).to eq("200")
+      expect(resp.body['value']).to eq(poolAddress), resp.body.inspect
+    end
   end
 
   context "Create a pool" do
@@ -130,6 +141,7 @@ describe "API Tests" do
       expect(resp.body['stakers']).to eq(nil), resp.body.inspect
     end
 
+    txid = txid() # outside it state so its value is available in multiple "it" statements
     it "swap" do
       # stake some coins first
       tx = makeTx(memo: "stake:TCAN-014", coins: coins, sender: sender)
@@ -137,10 +149,9 @@ describe "API Tests" do
       expect(resp.code).to eq("200"), resp.body.inspect
 
       # make a swap
-      txid = txid()
       coins = [{'denom': "RUNE-B1A", "amount": "0.2"}]
       tx = makeTx(
-        memo: "swap:TCAN-014:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:0.160053", 
+        memo: "swap:TCAN-014:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:0.160053", 
         coins: coins,
         hash: txid,
       )
@@ -151,6 +162,34 @@ describe "API Tests" do
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("3.54850000"), resp.body.inspect
       expect(resp.body['balance_token']).to eq("22.24541406"), resp.body.inspect
+    end
+
+    it "Send outbound tx and mark tx'es as complete" do
+      # find the block height of the previous swap transaction
+      i = 1
+      found = false
+      until i > 100
+        resp = get("/txoutarray/#{i}")
+        arr = resp.body['tx_array']
+        unless arr.nil?
+          if arr[0]['to'] == "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX"
+            # we have found the block height of our last swap
+            found = true
+            newTxId = txid()
+            tx = makeTx(memo: "outbound:#{i}", hash:newTxId, sender:poolAddress)
+            resp = processTx(tx)
+            expect(resp.code).to eq("200"), resp.body.inspect
+
+            resp = get("/tx/#{txid}")
+            expect(resp.code).to eq("200")
+            expect(resp.body['txhash']).to eq(newTxId), resp.body.inspect
+          end
+        end
+        i = i + 1
+      end
+
+      expect(found).to eq(true)
+
     end
   end
 
