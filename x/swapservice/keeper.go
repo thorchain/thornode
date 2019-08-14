@@ -14,7 +14,7 @@ import (
 type dbPrefix string
 
 const (
-	prefixTxHash       dbPrefix = "tx_"
+	prefixTxIn         dbPrefix = "tx_"
 	prefixSwap         dbPrefix = "swap_"
 	prefixUnStake      dbPrefix = "unstake_"
 	prefixPool         dbPrefix = "pool_"
@@ -369,23 +369,23 @@ func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // SetTxHas - saving a given txhash to the KVStore
-func (k Keeper) SetTxHash(ctx sdk.Context, tx TxHash) {
+func (k Keeper) SetTxIn(ctx sdk.Context, tx TxIn) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxHash, tx.Key())
+	key := getKey(prefixTxIn, tx.Key())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
-// GetTxHash - gets information of a tx hash
-func (k Keeper) GetTxHash(ctx sdk.Context, hash string) TxHash {
-	key := getKey(prefixTxHash, hash)
+// GetTxIn - gets information of a tx hash
+func (k Keeper) GetTxIn(ctx sdk.Context, hash string) TxIn {
+	key := getKey(prefixTxIn, hash)
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		return TxHash{}
+		return TxIn{}
 	}
 
 	bz := store.Get([]byte(key))
-	var record TxHash
+	var record TxIn
 	k.cdc.MustUnmarshalBinaryBare(bz, &record)
 	return record
 }
@@ -393,7 +393,7 @@ func (k Keeper) GetTxHash(ctx sdk.Context, hash string) TxHash {
 // CheckTxHash - check to see if we have already processed a specific tx
 func (k Keeper) CheckTxHash(ctx sdk.Context, hash string) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxHash, hash)
+	key := getKey(prefixTxIn, hash)
 	return store.Has([]byte(key))
 }
 

@@ -24,7 +24,7 @@ const (
 var (
 	NewPool              = types.NewPool
 	NewAdminConfig       = types.NewAdminConfig
-	NewMsgSetTxHash      = types.NewMsgSetTxHash
+	NewMsgSetTxIn        = types.NewMsgSetTxIn
 	NewMsgSetPoolData    = types.NewMsgSetPoolData
 	NewMsgSetStakeData   = types.NewMsgSetStakeData
 	NewMsgSetUnStake     = types.NewMsgSetUnStake
@@ -55,7 +55,7 @@ type (
 	MsgSwapComplete    = types.MsgSwapComplete
 	MsgSetPoolData     = types.MsgSetPoolData
 	MsgSetStakeData    = types.MsgSetStakeData
-	MsgSetTxHash       = types.MsgSetTxHash
+	MsgSetTxIn         = types.MsgSetTxIn
 	MsgSwap            = types.MsgSwap
 	MsgSetAdminConfig  = types.MsgSetAdminConfig
 	QueryResPools      = types.QueryResPools
@@ -64,7 +64,7 @@ type (
 	UnstakeRecord      = types.UnstakeRecord
 	PoolStatus         = types.PoolStatus
 	PoolIndex          = types.PoolIndex
-	TxHash             = types.TxHash
+	TxIn               = types.TxIn
 	TxID               = types.TxID
 	Pool               = types.Pool
 	PoolStaker         = types.PoolStaker

@@ -13,6 +13,6 @@ type QuerySuite struct{}
 var _ = Suite(&QuerySuite{})
 
 func (s QuerySuite) TestQuery(c *C) {
-	c.Check(QueryTxHash.Endpoint("foo", "bar"), Equals, "/foo/tx/{bar}")
-	c.Check(QueryTxHash.Path("foo", "bar"), Equals, "custom/foo/txhash/bar")
+	c.Check(QueryTxIn.Endpoint("foo", "bar"), Equals, "/foo/tx/{bar}")
+	c.Check(QueryTxIn.Path("foo", "bar"), Equals, "custom/foo/txin/bar")
 }
