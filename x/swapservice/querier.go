@@ -17,10 +17,10 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		ctx.Logger().Info("query", "path", path[0])
 		switch path[0] {
-		case q.QueryPoolStruct.Key:
-			return queryPoolStruct(ctx, path[1:], req, keeper)
-		case q.QueryPoolStructs.Key:
-			return queryPoolStructs(ctx, req, keeper)
+		case q.QueryPool.Key:
+			return queryPool(ctx, path[1:], req, keeper)
+		case q.QueryPools.Key:
+			return queryPools(ctx, req, keeper)
 		case q.QueryPoolStakers.Key:
 			return queryPoolStakers(ctx, path[1:], req, keeper)
 		case q.QueryStakerPools.Key:
@@ -144,30 +144,30 @@ func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 }
 
 // nolint: unparam
-func queryPoolStruct(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	ticker, err := NewTicker(path[0])
 	if err != nil {
 		ctx.Logger().Error("fail to parse ticker", err)
 		return nil, sdk.ErrInternal("Could not parse ticker")
 	}
-	poolstruct := keeper.GetPoolStruct(ctx, ticker)
-	if poolstruct.Empty() {
+	pool := keeper.GetPool(ctx, ticker)
+	if pool.Empty() {
 		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("pool: %s doesn't exist", path[0]))
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, poolstruct)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, pool)
 	if err != nil {
 		return nil, sdk.ErrInternal("could not marshal result to JSON")
 	}
 	return res, nil
 }
 
-func queryPoolStructs(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	var pools QueryResPoolStructs
-	iterator := keeper.GetPoolStructDataIterator(ctx)
+func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	var pools QueryResPools
+	iterator := keeper.GetPoolDataIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
-		var poolstruct PoolStruct
-		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &poolstruct)
-		pools = append(pools, poolstruct)
+		var pool Pool
+		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		pools = append(pools, pool)
 	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pools)
 	if err != nil {

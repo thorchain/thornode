@@ -10,7 +10,7 @@ import (
 // We need this interface thus we can mock the behaviour and write unit test
 type RefundStoreAccessor interface {
 	GetAdminConfigMRRA(ctx sdk.Context) Amount
-	GetPoolStruct(ctx sdk.Context, ticker Ticker) PoolStruct
+	GetPool(ctx sdk.Context, ticker Ticker) Pool
 }
 
 // processRefund take in the sdk.Result and decide whether we should refund customer
@@ -70,8 +70,8 @@ func getRefundCoin(ctx sdk.Context, ticker Ticker, amount Amount, keeper RefundS
 			return NewCoin(ticker, ZeroAmount)
 		}
 	}
-	poolStruct := keeper.GetPoolStruct(ctx, ticker)
-	poolTokenPrice := poolStruct.TokenPriceInRune()
+	pool := keeper.GetPool(ctx, ticker)
+	poolTokenPrice := pool.TokenPriceInRune()
 	totalRuneAmt := amount.Float64() * poolTokenPrice
 	if totalRuneAmt > minimumRefundRune.Float64() {
 		return NewCoin(ticker, NewAmountFromFloat(amount.Float64()-poolTokenPrice*minimumRefundRune.Float64()))

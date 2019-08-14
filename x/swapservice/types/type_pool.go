@@ -72,9 +72,9 @@ func GetPoolStatus(ps string) PoolStatus {
 	return Suspended
 }
 
-// PoolStruct is a struct that contains all the metadata of a pooldata
+// Pool is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
-type PoolStruct struct {
+type Pool struct {
 	BalanceRune  Amount     `json:"balance_rune"`  // how many RUNE in the pool
 	BalanceToken Amount     `json:"balance_token"` // how many token in the pool
 	Ticker       Ticker     `json:"ticker"`        // what's the token's ticker
@@ -83,9 +83,9 @@ type PoolStruct struct {
 	Status       PoolStatus `json:"status"`        // status
 }
 
-// NewPoolStruct Returns a new PoolStruct
-func NewPoolStruct() PoolStruct {
-	return PoolStruct{
+// NewPool Returns a new Pool
+func NewPool() Pool {
+	return Pool{
 		BalanceRune:  ZeroAmount,
 		BalanceToken: ZeroAmount,
 		PoolUnits:    ZeroAmount,
@@ -93,12 +93,12 @@ func NewPoolStruct() PoolStruct {
 	}
 }
 
-func (ps PoolStruct) Empty() bool {
+func (ps Pool) Empty() bool {
 	return ps.Ticker == ""
 }
 
 // String implement fmt.Stringer
-func (ps PoolStruct) String() string {
+func (ps Pool) String() string {
 	sb := strings.Builder{}
 	sb.WriteString(fmt.Sprintln("rune-balance: " + ps.BalanceRune.String()))
 	sb.WriteString(fmt.Sprintln("token-balance: " + ps.BalanceToken.String()))
@@ -109,7 +109,7 @@ func (ps PoolStruct) String() string {
 }
 
 // EnsureValidPoolStatus
-func (ps PoolStruct) EnsureValidPoolStatus(msg sdk.Msg) error {
+func (ps Pool) EnsureValidPoolStatus(msg sdk.Msg) error {
 	switch ps.Status {
 	case Enabled:
 		return nil
@@ -128,7 +128,7 @@ func (ps PoolStruct) EnsureValidPoolStatus(msg sdk.Msg) error {
 }
 
 // TokenPrice is how much 1 token worth in RUNE
-func (ps PoolStruct) TokenPriceInRune() float64 {
+func (ps Pool) TokenPriceInRune() float64 {
 	if ps.BalanceRune.Zero() || ps.BalanceRune.Empty() || ps.BalanceToken.Zero() || ps.BalanceToken.Empty() {
 		return ZeroAmount.Float64()
 	}

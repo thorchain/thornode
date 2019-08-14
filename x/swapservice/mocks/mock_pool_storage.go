@@ -20,11 +20,11 @@ func (mps MockPoolStorage) PoolExist(ctx sdk.Context, ticker types.Ticker) bool 
 	return true
 }
 
-func (mps MockPoolStorage) GetPoolStruct(ctx sdk.Context, ticker types.Ticker) types.PoolStruct {
+func (mps MockPoolStorage) GetPool(ctx sdk.Context, ticker types.Ticker) types.Pool {
 	if ticker.Equals(types.Ticker("NOTEXIST")) {
-		return types.PoolStruct{}
+		return types.Pool{}
 	} else {
-		return types.PoolStruct{
+		return types.Pool{
 			BalanceRune:  "100",
 			BalanceToken: "100",
 			PoolUnits:    "100",
@@ -33,7 +33,7 @@ func (mps MockPoolStorage) GetPoolStruct(ctx sdk.Context, ticker types.Ticker) t
 		}
 	}
 }
-func (mps MockPoolStorage) SetPoolStruct(ctx sdk.Context, ticker types.Ticker, ps types.PoolStruct) {
+func (mps MockPoolStorage) SetPool(ctx sdk.Context, ticker types.Ticker, ps types.Pool) {
 
 }
 func (mps MockPoolStorage) GetStakerPool(ctx sdk.Context, stakerID types.BnbAddress) (types.StakerPool, error) {
