@@ -15,28 +15,21 @@ import (
 	"gitlab.com/thorchain/bepswap/observe/x/storage"
 	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
 	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
-	
 )
 
 type Scanner struct {
 	Db *redis.Client
-	PoolAddress string
-	DEXHost string
-	RPCHost string
 }
 
-func NewScanner(poolAddress, dexHost, rpcHost string) *Scanner {
+func NewScanner() *Scanner {
 	return &Scanner{
 		Db: storage.RedisClient(),
-		PoolAddress: poolAddress,
-		DEXHost: dexHost,
-		RPCHost: rpcHost,
 	}
 }
 
 // Process blocks as they are placed into the channel. In order to 
 // support multi-send, we need to query the RPC service from a given node.
-func (s *Scanner) Scan(blocks []int, scanChan chan []byte) {
+func (s Scanner) Scan(blocks []int, scanChan chan []byte) {
 	sort.Ints(blocks)
 
 	min := int64(s.getLastBlock())
@@ -48,11 +41,11 @@ func (s *Scanner) Scan(blocks []int, scanChan chan []byte) {
 	s.setLastBlock(max)
 
 	for block := min; block <= max; block++ {
-		log.Info().Msgf("%s Scanning block %v...", LogPrefix(), block)
+		log.Info().Msgf("Scanning block %v...", block)
 
 		uri := url.URL{
 			Scheme: "https",
-			Host: s.RPCHost,
+			Host: ctypes.RPCHost,
 			Path: "tx_search",
 		}
 
@@ -84,11 +77,11 @@ func (s *Scanner) Scan(blocks []int, scanChan chan []byte) {
 
 // Call the REST API to get specific details of the transaction, and if it was for 
 // our particular pool address.
-func (s *Scanner) QueryTx(inTx ctypes.InTx) ctypes.InTx {
+func (s Scanner) QueryTx(inTx ctypes.InTx) ctypes.InTx {
 	for _, txItem := range inTx.TxArray {
 		uri := url.URL{
 			Scheme: "https",
-			Host: s.DEXHost,
+			Host: ctypes.DEXHost,
 			Path: fmt.Sprintf("api/v1/tx/%v", txItem.Tx),
 		}
 
@@ -101,7 +94,7 @@ func (s *Scanner) QueryTx(inTx ctypes.InTx) ctypes.InTx {
 
 		for _, msg := range tx.Tx.Value.Msg {
 			for i, output := range msg.Value.Outputs {
-				if output.Address == s.PoolAddress {
+				if output.Address == ctypes.PoolAddress {
 					sender := msg.Value.Inputs[i]
 
 					for _, coin := range sender.Coins {
@@ -125,16 +118,16 @@ func (s *Scanner) QueryTx(inTx ctypes.InTx) ctypes.InTx {
 	return inTx
 }
 
-func (s *Scanner) getLastBlock() int64 {
+func (s Scanner) getLastBlock() int64 {
 	data, _ := s.Db.Get("lastBlock").Result()
 	blockHeight, _ := strconv.ParseInt(data, 10, 64)
 
 	return blockHeight
 }
 
-func (s *Scanner) setLastBlock(blockHeight int64) {
+func (s Scanner) setLastBlock(blockHeight int64) {
 	err := s.Db.Set("lastBlock", blockHeight, 0).Err()
 	if err != nil {
-		log.Error().Msgf("%s Error: %v", LogPrefix(), err)
+		log.Error().Msgf("Error: %v", err)
 	}
 }
