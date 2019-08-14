@@ -104,12 +104,12 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
-	ctx.Logger().Info("Begin Block", "height", req.Header.Height)
+	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
 	am.txOutStore.NewBlock(req.Header.Height)
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
-	ctx.Logger().Info("End Block", "height", req.Height)
+	ctx.Logger().Debug("End Block", "height", req.Height)
 	am.txOutStore.CommitBlock(ctx)
 	return []abci.ValidatorUpdate{}
 }

@@ -41,7 +41,10 @@ func ValidateGenesis(data GenesisState) error {
 		if len(ta.Name) == 0 {
 			return fmt.Errorf("invalid trust account record, error: missing account name")
 		}
-		if ta.Address.Empty() {
+		if ta.BnbAddress.Empty() {
+			return fmt.Errorf("invalid trust account record, error: missing bnb address")
+		}
+		if ta.RuneAddress.Empty() {
 			return fmt.Errorf("invalid trust account record, error: missing account address")
 		}
 	}

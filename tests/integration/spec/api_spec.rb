@@ -1,5 +1,7 @@
 require_relative './helper.rb'
 
+TRUST_BNB_ADDRESS="bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY"
+
 describe "API Tests" do
 
   context "Check /ping responds" do
@@ -17,6 +19,30 @@ describe "API Tests" do
       expect(resp.body['status']).to eq(""), resp.body.inspect
       expect(resp.body['txhash']).to eq(""), resp.body.inspect
     end
+  end
+
+  context "Admin configs" do
+
+    it "set admin config" do
+      tx = makeTx(memo: "ADMIN:KEY:TSL:0.1", sender: TRUST_BNB_ADDRESS)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200")
+
+      resp = get("/admin/TSL")
+      expect(resp.code).to eq("200")
+      expect(resp.body['value']).to eq("0.1"), resp.body.inspect
+    end
+
+    it "check we cannot set admin config as non-admin" do
+      bnb = "bnb" + get_rand(39).downcase
+      tx = makeTx(memo: "ADMIN:Key:TSL:0.5", sender: bnb)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200")
+
+      resp = get("/admin/TSL")
+      expect(resp.body['value']).to eq("0.1"), resp.body.inspect
+    end
+
   end
 
   context "Create a pool" do
@@ -41,16 +67,9 @@ describe "API Tests" do
       expect(resp.body['status']).to eq("Bootstrap"), resp.body.inspect
     end
 
-    it "check we cannot set pool status as non-admin" do
-      skip "TODO - this check should pass, but doesn't"
-      tx = makeTx(memo: "ADMIN:POOLSTATUS:TCAN-014:Enabled")
-      resp = processTx(tx, user="alice")
-      expect(resp.code).to eq("500")
-    end
-
     it "set pool status to active, and that we can do multiple txs" do
-      tx1 = makeTx(memo: "ADMIN:POOLSTATUS:TCAN-014:Enabled")
-      tx2 = makeTx(memo: "ADMIN:POOLSTATUS:BNB:Enabled")
+      tx1 = makeTx(memo: "ADMIN:POOLSTATUS:TCAN-014:Enabled", sender: TRUST_BNB_ADDRESS)
+      tx2 = makeTx(memo: "ADMIN:POOLSTATUS:BNB:Enabled", sender: TRUST_BNB_ADDRESS)
       resp = processTx([tx1, tx2])
       expect(resp.code).to eq("200")
 
@@ -68,7 +87,7 @@ describe "API Tests" do
       tx = makeTx(memo: "create:TCAN-014")
       resp = processTx(tx)
       expect(resp.code).to eq("200")
-      
+
       resp = get("/pools")
       # should have one pool added via genesis
       expect(resp.body.length).to eq(2), resp.body.inspect
@@ -80,7 +99,7 @@ describe "API Tests" do
     end
 
   end
-  
+
   context "Stake/Unstake" do
 
     coins = [
