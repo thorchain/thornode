@@ -265,6 +265,11 @@ func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 func (k Keeper) SetTxIn(ctx sdk.Context, tx TxIn) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxHash, tx.Key().String())
+	if !store.Has([]byte(key)) {
+		if err := k.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.Key()); nil != err {
+			ctx.Logger().Error("fail to add tx id to txin index", "txid", tx.Key(), "error", err)
+		}
+	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
