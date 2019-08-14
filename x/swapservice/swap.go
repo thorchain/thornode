@@ -57,25 +57,15 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 
 	isDoubleSwap := !IsRune(source) && !IsRune(target)
 
-	swapRecord := NewSwapRecord(requestTxHash, source, target, requester, destination, amount, "", "")
-
 	if isDoubleSwap {
 		runeAmount, err := swapOne(ctx, keeper, source, RuneTicker, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 		if err != nil {
 			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, RuneTicker)
 		}
 		tokenAmount, err := swapOne(ctx, keeper, RuneTicker, target, runeAmount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
-		swapRecord.AmountPaidBack = tokenAmount
-		if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
-			ctx.Logger().Error("fail to save swap record", "error", err)
-		}
 		return tokenAmount, err
 	}
 	tokenAmount, err := swapOne(ctx, keeper, source, target, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
-	swapRecord.AmountPaidBack = tokenAmount
-	if err := keeper.SetSwapRecord(ctx, swapRecord); nil != err {
-		ctx.Logger().Error("fail to save swap record", "error", err)
-	}
 	return tokenAmount, err
 }
 
@@ -181,15 +171,4 @@ func calculateSwap(source Ticker, balanceRune, balanceToken, amt float64) (float
 		balanceRune = balanceRune - runeAmt
 		return balanceRune, balanceToken, runeAmt, nil
 	}
-}
-
-// swapComplete  mark a swap to be in complete state
-func swapComplete(ctx sdk.Context, keeper poolStorage, requestTxHash, payTxHash TxID) error {
-	if requestTxHash.Empty() {
-		return errors.New("request tx hash is empty")
-	}
-	if payTxHash.Empty() {
-		return errors.New("pay tx hash is empty")
-	}
-	return keeper.UpdateSwapRecordPayTxHash(ctx, requestTxHash, payTxHash)
 }

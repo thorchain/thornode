@@ -33,7 +33,6 @@ var (
 	NewTxOut             = types.NewTxOut
 	NewPoolStaker        = types.NewPoolStaker
 	NewStakerPool        = types.NewStakerPool
-	NewSwapRecord        = types.NewSwapRecord
 	IsRune               = types.IsRune
 	GetPoolStatus        = types.GetPoolStatus
 	GetAdminConfigKey    = types.GetAdminConfigKey
@@ -51,33 +50,29 @@ var (
 )
 
 type (
-	MsgSetUnStake      = types.MsgSetUnStake
-	MsgUnStakeComplete = types.MsgUnStakeComplete
-	MsgSwapComplete    = types.MsgSwapComplete
-	MsgSetPoolData     = types.MsgSetPoolData
-	MsgSetStakeData    = types.MsgSetStakeData
-	MsgSetTxIn         = types.MsgSetTxIn
-	MsgSwap            = types.MsgSwap
-	MsgSetAdminConfig  = types.MsgSetAdminConfig
-	QueryResPools      = types.QueryResPools
-	TrustAccount       = types.TrustAccount
-	SwapRecord         = types.SwapRecord
-	UnstakeRecord      = types.UnstakeRecord
-	PoolStatus         = types.PoolStatus
-	PoolIndex          = types.PoolIndex
-	TxIn               = types.TxIn
-	TxID               = types.TxID
-	Pool               = types.Pool
-	PoolStaker         = types.PoolStaker
-	StakerPool         = types.StakerPool
-	StakerUnit         = types.StakerUnit
-	TxOutItem          = types.TxOutItem
-	TxOut              = types.TxOut
-	Coin               = types.Coin
-	Coins              = types.Coins
-	Ticker             = types.Ticker
-	Amount             = types.Amount
-	AdminConfigKey     = types.AdminConfigKey
-	AdminConfig        = types.AdminConfig
-	BnbAddress         = types.BnbAddress
+	MsgSetUnStake     = types.MsgSetUnStake
+	MsgSetPoolData    = types.MsgSetPoolData
+	MsgSetStakeData   = types.MsgSetStakeData
+	MsgSetTxIn        = types.MsgSetTxIn
+	MsgSwap           = types.MsgSwap
+	MsgSetAdminConfig = types.MsgSetAdminConfig
+	QueryResPools     = types.QueryResPools
+	TrustAccount      = types.TrustAccount
+	PoolStatus        = types.PoolStatus
+	PoolIndex         = types.PoolIndex
+	TxIn              = types.TxIn
+	TxID              = types.TxID
+	Pool              = types.Pool
+	PoolStaker        = types.PoolStaker
+	StakerPool        = types.StakerPool
+	StakerUnit        = types.StakerUnit
+	TxOutItem         = types.TxOutItem
+	TxOut             = types.TxOut
+	Coin              = types.Coin
+	Coins             = types.Coins
+	Ticker            = types.Ticker
+	Amount            = types.Amount
+	AdminConfigKey    = types.AdminConfigKey
+	AdminConfig       = types.AdminConfig
+	BnbAddress        = types.BnbAddress
 )

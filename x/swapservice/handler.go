@@ -22,12 +22,8 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			result := handleMsgSwap(ctx, keeper, txOutStore, m)
 			processRefund(ctx, &result, txOutStore, keeper, m)
 			return result
-		case MsgSwapComplete:
-			return handleMsgSetSwapComplete(ctx, keeper, m)
 		case MsgSetUnStake:
 			return handleMsgSetUnstake(ctx, keeper, txOutStore, m)
-		case MsgUnStakeComplete:
-			return handleMsgSetUnstakeComplete(ctx, keeper, m)
 		case MsgSetTxIn:
 			return handleMsgSetTxIn(ctx, keeper, txOutStore, m)
 		case MsgSetAdminConfig:
@@ -158,27 +154,6 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 	}
 }
 
-// handleMsgSetSwapComplete mark a swap as complete , record the tx hash.
-func handleMsgSetSwapComplete(ctx sdk.Context, keeper Keeper, msg MsgSwapComplete) sdk.Result {
-	ctx.Logger().Debug("receive MsgSetSwapComplete", "requestTxHash", msg.RequestTxHash, "paytxhash", msg.PayTxHash)
-	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "pay tx hash", msg.PayTxHash)
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgSwapComplete", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	if err := swapComplete(ctx, keeper, msg.RequestTxHash, msg.PayTxHash); nil != err {
-		ctx.Logger().Error("fail to set swap to complete", "requestTxHash", msg.RequestTxHash, "paytxhash", msg.PayTxHash)
-		return sdk.ErrInternal("fail to mark a swap to complete").Result()
-	}
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
 // handleMsgSetUnstake process unstake
 func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetUnStake) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.PublicAddress, msg.Percentage))
@@ -225,26 +200,6 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
-		Codespace: DefaultCodespace,
-	}
-}
-
-func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg MsgUnStakeComplete) sdk.Result {
-	ctx.Logger().Debug("receive MsgUnStakeComplete", "requestTxHash", msg.RequestTxHash, "completeTxHash", msg.CompleteTxHash)
-	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash)
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgUnStakeComplete", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	if err := unStakeComplete(ctx, keeper, msg.RequestTxHash, msg.CompleteTxHash); nil != err {
-		ctx.Logger().Error("fail to set swap to complete", "requestTxHash", msg.RequestTxHash, "completetxhash", msg.CompleteTxHash)
-		return sdk.ErrInternal("fail to mark a swap to complete").Result()
-	}
-	return sdk.Result{
-		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
 	}
 }

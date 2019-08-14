@@ -27,9 +27,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdSetPoolData(cdc),
 		GetCmdSetStakeData(cdc),
 		GetCmdSwap(cdc),
-		GetCmdSwapComplete(cdc),
 		GetCmdUnstake(cdc),
-		GetCmdUnStakeComplete(cdc),
 		GetCmdSetTxIn(cdc),
 		GetCmdSetAdminConfig(cdc),
 	)...)
@@ -96,36 +94,6 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msg := types.NewMsgSetStakeData(ticker, runeAmt, tokenAmt, bnbAddr, txID, cliCtx.GetFromAddress())
-			err = msg.ValidateBasic()
-			if err != nil {
-				return err
-			}
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-// GetCmdSwapComplete command to send MsgSwapComplete Message
-func GetCmdSwapComplete(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "set-swap-complete [requestTxHash] [payTxHash]",
-		Short: "Swap Complete",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			request, err := types.NewTxID(args[0])
-			if err != nil {
-				return err
-			}
-
-			pay, err := types.NewTxID(args[1])
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewMsgSwapComplete(request, pay, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -226,36 +194,6 @@ func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 			}
 
 			msg := types.NewMsgSetUnStake(bnbAddr, percentage, ticker, txID, cliCtx.GetFromAddress())
-			err = msg.ValidateBasic()
-			if err != nil {
-				return err
-			}
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-// GetCmdUnStakeComplete command to send MsgUnStakeComplete Message
-func GetCmdUnStakeComplete(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "set-unstake-complete [requestTxHash] [payTxHash]",
-		Short: "unstake Complete",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			request, err := types.NewTxID(args[0])
-			if err != nil {
-				return err
-			}
-
-			pay, err := types.NewTxID(args[1])
-			if err != nil {
-				return err
-			}
-
-			msg := types.NewMsgUnStakeComplete(request, pay, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
