@@ -11,6 +11,7 @@ before_script:
 stages:
   - test
   - integration
+  - docs
 
 unit_tests:
   stage: test
@@ -29,3 +30,9 @@ integration_tests:
   stage: integration
   script:
     - make -C ./tests/integration install setup run wait-for-blockchain test-internal
+
+docs:
+  image: cbarraford/apib2swagger
+  stage: docs
+  script:
+    - apib2swagger -i ./docs/api/blueprint.apib -o swagger.json
