@@ -18,9 +18,6 @@ import (
 )
 
 type Binance struct {
-	PoolAddress string
-	DEXHost string
-	PrivateKey string
 	Client sdk.DexClient
 	BasicClient basic.BasicClient
 	QueryClient query.QueryClient
@@ -28,32 +25,28 @@ type Binance struct {
 	chainId string
 }
 
-func NewBinance(poolAddress, dexHost string) *Binance {
-	key := os.Getenv("PRIVATE_KEY")
-	if key == "" {
-		log.Fatal().Msg("[SIGNER] No private key set!")
+func NewBinance() *Binance {
+	if ctypes.PrivKey == "" {
+		log.Fatal().Msgf("No private key set!")
 		os.Exit(1)
 	}
 
-	keyManager, err := keys.NewPrivateKeyManager(key)
+	keyManager, err := keys.NewPrivateKeyManager(ctypes.PrivKey)
 	if err != nil {
-		log.Fatal().Msgf("[SIGNER] Error: %v", err)
+		log.Fatal().Msgf("Error: %v", err)
 		os.Exit(1)
 	}
 
-	bClient, err := sdk.NewDexClient(dexHost, types.TestNetwork, keyManager)
+	bClient, err := sdk.NewDexClient(ctypes.DEXHost, types.TestNetwork, keyManager)
 	if err != nil {
-		log.Fatal().Msgf("[SIGNER] Error: %v", err)
+		log.Fatal().Msgf("Error: %v", err)
 		os.Exit(1)
 	}
 
-	basicClient := basic.NewClient(dexHost)
+	basicClient := basic.NewClient(ctypes.DEXHost)
 	queryClient := query.NewClient(basicClient)
 
 	return &Binance{
-		PoolAddress: poolAddress,
-		DEXHost: dexHost,
-		PrivateKey: key,
 		Client: bClient,
 		BasicClient: basicClient,
 		QueryClient: queryClient,
@@ -63,7 +56,7 @@ func NewBinance(poolAddress, dexHost string) *Binance {
 	}
 }
 
-func (b *Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {
+func (b Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {
 	input := msg.Input{
 		Address: addr,
 		Coins:   coins,
@@ -72,7 +65,7 @@ func (b *Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {
 	return input
 }
 
-func (b *Binance) Output(addr types.AccAddress, coins types.Coins) msg.Output {
+func (b Binance) Output(addr types.AccAddress, coins types.Coins) msg.Output {
 	output := msg.Output{
 		Address: addr,
 		Coins:   coins,
@@ -81,11 +74,11 @@ func (b *Binance) Output(addr types.AccAddress, coins types.Coins) msg.Output {
 	return output
 }
 
-func (b *Binance) MsgToSend(in []msg.Input, out []msg.Output) msg.SendMsg {
+func (b Binance) MsgToSend(in []msg.Input, out []msg.Output) msg.SendMsg {
 	return msg.SendMsg{Inputs: in, Outputs: out}
 }
 
-func (b *Binance) CreateMsg(from types.AccAddress, fromCoins types.Coins, transfers []msg.Transfer) msg.SendMsg {
+func (b Binance) CreateMsg(from types.AccAddress, fromCoins types.Coins, transfers []msg.Transfer) msg.SendMsg {
 	input := b.Input(from, fromCoins)
 
 	output := make([]msg.Output, 0, len(transfers))
@@ -98,7 +91,7 @@ func (b *Binance) CreateMsg(from types.AccAddress, fromCoins types.Coins, transf
 	return msg
 }
 
-func (b *Binance) ParseTx(transfers []msg.Transfer) msg.SendMsg {
+func (b Binance) ParseTx(transfers []msg.Transfer) msg.SendMsg {
 	fromAddr := b.KeyManager.GetAddr()
 	fromCoins := types.Coins{}
 	for _, t := range transfers {
@@ -110,7 +103,7 @@ func (b *Binance) ParseTx(transfers []msg.Transfer) msg.SendMsg {
 	return sendMsg
 }
 
-func (b *Binance) SignTx(outTx ctypes.OutTx) ([]byte, map[string]string) {
+func (b Binance) SignTx(outTx ctypes.OutTx) ([]byte, map[string]string) {
 	//var options tx.StdSignMsg
 	//options.Memo = outTx.TxOutID
 
@@ -136,7 +129,7 @@ func (b *Binance) SignTx(outTx ctypes.OutTx) ([]byte, map[string]string) {
 	fromAddr := b.KeyManager.GetAddr()
 	acc, err := b.QueryClient.GetAccount(fromAddr.String())
 	if err != nil {
-		log.Error().Msgf("%s Error: %v", LogPrefix(), err)
+		log.Error().Msgf("Error: %v", err)
 	}
 
 	signMsg := &tx.StdSignMsg{
@@ -155,15 +148,13 @@ func (b *Binance) SignTx(outTx ctypes.OutTx) ([]byte, map[string]string) {
 	return hexTx, param
 }
 
-func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
+func (b Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
 	commits, err := b.Client.PostTx(hexTx, param)
 	if err != nil {
-		log.Error().Msgf("%s Error: %v", LogPrefix(), err)
+		log.Error().Msgf("Error: %v", err)
 		return nil, err
 	}
 
-	log.Info().Msgf("%s Commit Response from Binance: %v", LogPrefix(), commits[0])
+	log.Info().Msgf("Commit Response from Binance: %v", commits[0])
 	return &commits[0], nil
 }
-
-func LogPrefix() string { return "[BINANCE]" }

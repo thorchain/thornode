@@ -1,22 +1,21 @@
-package observer
+package common
 
 import (
-	"os"
 	"fmt"
 	"net/http"
 	"encoding/json"
 
 	log "github.com/rs/zerolog/log"
 
-	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
+	types "gitlab.com/thorchain/bepswap/observe/common/types"
 )
 
 func StartWebServer() {
 	http.HandleFunc("/", StatusHandler)
 
-	err := http.ListenAndServe(":" + os.Getenv("PORT"), nil)
+	err := http.ListenAndServe(":"+types.StatusPort, nil)
 	if err != nil {
-		log.Fatal().Msgf("%s Error: %v", LogPrefix(), err)
+		log.Fatal().Msgf("Error: %v", err)
 	}
 }
 
