@@ -57,7 +57,7 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	if err := validateStakeMessage(ctx, keeper, ticker, stakeRuneAmount, stakeTokenAmount, requestTxHash, publicAddress); nil != err {
 		return errors.Wrap(err, "invalid request")
 	}
-	pool := keeper.GetPoolStruct(ctx, ticker)
+	pool := keeper.GetPool(ctx, ticker)
 	fTokenAmt := stakeTokenAmount.Float64()
 	fRuneAmt := stakeRuneAmount.Float64()
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
@@ -79,7 +79,7 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	pool.BalanceRune = NewAmountFromFloat(poolRune)
 	pool.BalanceToken = NewAmountFromFloat(poolToken)
 	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
-	keeper.SetPoolStruct(ctx, ticker, pool)
+	keeper.SetPool(ctx, ticker, pool)
 	// maintain pool staker structure
 	ps, err := keeper.GetPoolStaker(ctx, ticker)
 	if nil != err {

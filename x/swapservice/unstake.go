@@ -36,7 +36,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (Amount, Amount,
 	}
 	fPercentage := msg.Percentage.Float64()
 	// here fBalance should be valid , because we did the validation above
-	pool := keeper.GetPoolStruct(ctx, msg.Ticker)
+	pool := keeper.GetPool(ctx, msg.Ticker)
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Ticker)
 	if nil != err {
 		return "0", "0", errors.Wrap(err, "can't find pool staker")
@@ -82,7 +82,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (Amount, Amount,
 		stakerPool.UpsertStakerPoolItem(spi)
 	}
 	// update staker pool
-	keeper.SetPoolStruct(ctx, msg.Ticker, pool)
+	keeper.SetPool(ctx, msg.Ticker, pool)
 	keeper.SetPoolStaker(ctx, msg.Ticker, poolStaker)
 	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
 	keeper.SetUnStakeRecord(ctx, UnstakeRecord{

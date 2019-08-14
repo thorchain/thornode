@@ -9,8 +9,8 @@ import (
 type poolStorage interface {
 	PoolExist(ctx sdk.Context, ticker Ticker) bool
 
-	GetPoolStruct(ctx sdk.Context, ticker Ticker) PoolStruct
-	SetPoolStruct(ctx sdk.Context, ticker Ticker, ps PoolStruct)
+	GetPool(ctx sdk.Context, ticker Ticker) Pool
+	SetPool(ctx sdk.Context, ticker Ticker, ps Pool)
 
 	GetStakerPool(ctx sdk.Context, stakerID BnbAddress) (StakerPool, error)
 	SetStakerPool(ctx sdk.Context, stakerID BnbAddress, sp StakerPool)

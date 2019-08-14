@@ -9,25 +9,25 @@ import (
 
 // GenesisState strcture that used to store the data we put in genesis
 type GenesisState struct {
-	PoolStructRecords []PoolStruct   `json:"poolstruct_records"`
-	TrustAccounts     []TrustAccount `json:"trust_accounts"`
-	AdminConfigs      []AdminConfig  `json:"admin_configs"`
+	PoolRecords   []Pool         `json:"pool_records"`
+	TrustAccounts []TrustAccount `json:"trust_accounts"`
+	AdminConfigs  []AdminConfig  `json:"admin_configs"`
 }
 
 // NewGenesisState create a new instance of GenesisState
-func NewGenesisState(pools []PoolStruct, trustAccounts []TrustAccount, configs []AdminConfig) GenesisState {
+func NewGenesisState(pools []Pool, trustAccounts []TrustAccount, configs []AdminConfig) GenesisState {
 	return GenesisState{
-		PoolStructRecords: pools,
-		TrustAccounts:     trustAccounts,
-		AdminConfigs:      configs,
+		PoolRecords:   pools,
+		TrustAccounts: trustAccounts,
+		AdminConfigs:  configs,
 	}
 }
 
 // ValidateGenesis validate genesis is valid or not
 func ValidateGenesis(data GenesisState) error {
-	for _, record := range data.PoolStructRecords {
+	for _, record := range data.PoolRecords {
 		if len(record.Ticker) == 0 {
-			return fmt.Errorf("invalid PoolStruct, error: missing ticker")
+			return fmt.Errorf("invalid Pool, error: missing ticker")
 		}
 	}
 
@@ -60,7 +60,7 @@ func DefaultGenesisState() GenesisState {
 				Value: "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6",
 			},
 		},
-		PoolStructRecords: []PoolStruct{
+		PoolRecords: []Pool{
 			{
 				BalanceRune:  "0",
 				BalanceToken: "0",
@@ -75,8 +75,8 @@ func DefaultGenesisState() GenesisState {
 
 // InitGenesis read the data in GenesisState and apply it to data store
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.ValidatorUpdate {
-	for _, record := range data.PoolStructRecords {
-		keeper.SetPoolStruct(ctx, record.Ticker, record)
+	for _, record := range data.PoolRecords {
+		keeper.SetPool(ctx, record.Ticker, record)
 	}
 
 	for _, config := range data.AdminConfigs {
@@ -91,13 +91,13 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 // ExportGenesis export the data in Genesis
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
-	var poolRecords []PoolStruct
-	iterator := k.GetPoolStructDataIterator(ctx)
+	var poolRecords []Pool
+	iterator := k.GetPoolDataIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
-		var poolstruct PoolStruct
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &poolstruct)
-		poolRecords = append(poolRecords, poolstruct)
+		var pool Pool
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		poolRecords = append(poolRecords, pool)
 	}
 
 	var adminConfigs []AdminConfig
@@ -119,7 +119,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	}
 
 	return GenesisState{
-		PoolStructRecords: poolRecords,
-		TrustAccounts:     trustAccounts,
+		PoolRecords:   poolRecords,
+		TrustAccounts: trustAccounts,
 	}
 }
