@@ -317,7 +317,7 @@ func processOneTxHash(ctx sdk.Context, keeper Keeper, tx TxHash, signer sdk.AccA
 			return nil, errors.Wrap(err, "fail to get MsgStake from memo")
 		}
 	case AdminMemo:
-		newMsg, err = getMsgAdminConfigFromMemo(ctx, keeper, m, signer)
+		newMsg, err = getMsgAdminConfigFromMemo(ctx, keeper, m, tx, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgAdminConfig from memo")
 		}
@@ -362,7 +362,8 @@ func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxHash, signer sdk.AccAddress) 
 	}
 	return NewMsgSetUnStake(tx.Sender, withdrawAmount, ticker, tx.Request, signer), nil
 }
-func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, signer sdk.AccAddress) (sdk.Msg, error) {
+
+func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
 	switch memo.GetAdminType() {
 	case adminPoolStatus:
 		ticker, err := NewTicker(memo.GetKey())
@@ -373,6 +374,9 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, s
 		if pool.Empty() {
 			return nil, errors.New("pool doesn't exist")
 		}
+		if !keeper.IsTrustAccountBnb(ctx, tx.Sender) {
+			return nil, errors.New("Not authorized")
+		}
 		status := GetPoolStatus(memo.GetValue())
 		return NewMsgSetPoolData(
 			ticker,
@@ -381,7 +385,7 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, s
 		), nil
 	case adminKey:
 		key := GetAdminConfigKey(memo.GetKey())
-		return NewMsgSetAdminConfig(key, memo.GetValue(), signer), nil
+		return NewMsgSetAdminConfig(key, memo.GetValue(), tx.Sender, signer), nil
 	}
 	return nil, errors.New("invalid admin command type")
 }
@@ -434,6 +438,11 @@ func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConf
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error("invalid MsgSetAdminConfig", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	if !keeper.IsTrustAccountBnb(ctx, msg.From) {
+		ctx.Logger().Error("message signed by unauthorized account")
+		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
 	keeper.SetAdminConfig(ctx, msg.AdminConfig)
