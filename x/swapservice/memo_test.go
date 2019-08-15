@@ -16,39 +16,32 @@ func (s *MemoSuite) TestTxType(c *C) {
 	}
 }
 
-func (s *MemoSuite) TestValidateSymbol(c *C) {
-	c.Check(validateSymbol("BNB"), IsNil)
-	c.Check(validateSymbol("RUNE-1BA"), IsNil)
-	c.Check(validateSymbol(""), NotNil)
-	c.Check(validateSymbol("this is way tooo long"), NotNil)
-}
-
 func (s *MemoSuite) TestParse(c *C) {
 	// happy paths
 	memo, err := ParseMemo("CREATE:RUNE-1BA")
 	c.Assert(err, IsNil)
-	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
+	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txCreate), Equals, true, Commentf("MEMO: %+v", memo))
 
 	memo, err = ParseMemo("donate:RUNE-1BA")
 	c.Assert(err, IsNil)
-	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
+	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txDonate), Equals, true, Commentf("MEMO: %+v", memo))
 
 	memo, err = ParseMemo("STAKE:RUNE-1BA")
 	c.Assert(err, IsNil)
-	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
+	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txStake), Equals, true, Commentf("MEMO: %+v", memo))
 
 	memo, err = ParseMemo("WITHDRAW:RUNE-1BA:25")
 	c.Assert(err, IsNil)
-	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
+	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txWithdraw), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetAmount(), Equals, "25")
 
 	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:8.7:hello to : : the world!")
 	c.Assert(err, IsNil)
-	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
+	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit(), Equals, 8.7)
@@ -56,7 +49,7 @@ func (s *MemoSuite) TestParse(c *C) {
 
 	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Assert(err, IsNil)
-	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
+	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit(), Equals, 0.0)
@@ -64,7 +57,7 @@ func (s *MemoSuite) TestParse(c *C) {
 
 	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6::hi")
 	c.Assert(err, IsNil)
-	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
+	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit(), Equals, 0.0)

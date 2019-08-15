@@ -24,6 +24,8 @@ const (
 var (
 	NewPool              = types.NewPool
 	NewAdminConfig       = types.NewAdminConfig
+	NewMsgNoOp           = types.NewMsgNoOp
+	NewMsgDonate         = types.NewMsgDonate
 	NewMsgSetTxIn        = types.NewMsgSetTxIn
 	NewMsgSetPoolData    = types.NewMsgSetPoolData
 	NewMsgSetStakeData   = types.NewMsgSetStakeData
@@ -35,6 +37,7 @@ var (
 	NewPoolStaker        = types.NewPoolStaker
 	NewStakerPool        = types.NewStakerPool
 	IsRune               = types.IsRune
+	IsBNB                = types.IsBNB
 	GetPoolStatus        = types.GetPoolStatus
 	GetAdminConfigKey    = types.GetAdminConfigKey
 	NewTxID              = types.NewTxID
@@ -51,6 +54,8 @@ var (
 )
 
 type (
+	MsgNoOp           = types.MsgNoOp
+	MsgDonate         = types.MsgDonate
 	MsgSetUnStake     = types.MsgSetUnStake
 	MsgSetPoolData    = types.MsgSetPoolData
 	MsgSetStakeData   = types.MsgSetStakeData
