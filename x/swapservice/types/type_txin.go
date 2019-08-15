@@ -5,6 +5,7 @@ import (
 )
 
 type status string
+type TxInIndex []TxID
 
 const (
 	Incomplete status = "incomplete"
@@ -58,8 +59,8 @@ func (tx TxIn) String() string {
 }
 
 // Generate db key for kvstore
-func (tx TxIn) Key() string {
-	return tx.Request.String()
+func (tx TxIn) Key() TxID {
+	return tx.Request
 }
 
 func (tx *TxIn) SetDone(hash TxID) {

@@ -21,6 +21,7 @@ const (
 	prefixPoolStaker   dbPrefix = "poolstaker_"
 	prefixStakerPool   dbPrefix = "stakerpool_"
 	prefixAdmin        dbPrefix = "admin_"
+	prefixTxInIndex    dbPrefix = "txinIndex_"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -263,13 +264,18 @@ func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 // SetTxHas - saving a given txhash to the KVStore
 func (k Keeper) SetTxIn(ctx sdk.Context, tx TxIn) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxIn, tx.Key())
+	key := getKey(prefixTxIn, tx.Key().String())
+	if !store.Has([]byte(key)) {
+		if err := k.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.Key()); nil != err {
+			ctx.Logger().Error("fail to add tx id to txin index", "txid", tx.Key(), "error", err)
+		}
+	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
 // GetTxIn - gets information of a tx hash
-func (k Keeper) GetTxIn(ctx sdk.Context, hash string) TxIn {
-	key := getKey(prefixTxIn, hash)
+func (k Keeper) GetTxIn(ctx sdk.Context, hash TxID) TxIn {
+	key := getKey(prefixTxIn, hash.String())
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -283,10 +289,50 @@ func (k Keeper) GetTxIn(ctx sdk.Context, hash string) TxIn {
 }
 
 // CheckTxHash - check to see if we have already processed a specific tx
-func (k Keeper) CheckTxHash(ctx sdk.Context, hash string) bool {
+func (k Keeper) CheckTxHash(ctx sdk.Context, hash TxID) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxIn, hash)
+	key := getKey(prefixTxIn, hash.String())
 	return store.Has([]byte(key))
+}
+
+// GetTxInIndex retrieve txIn by height
+func (k Keeper) GetTxInIndex(ctx sdk.Context, height int64) (TxInIndex, error) {
+	key := getKey(prefixTxInIndex, strconv.FormatInt(height, 10))
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return TxInIndex{}, nil
+	}
+	buf := store.Get([]byte(key))
+	var index TxInIndex
+	if err := k.cdc.UnmarshalBinaryBare(buf, &index); nil != err {
+		ctx.Logger().Error(fmt.Sprintf("fail to unmarshal poolindex,err: %s", err))
+		return TxInIndex{}, errors.Wrap(err, "fail to unmarshal poolindex")
+	}
+	return index, nil
+}
+
+// SetTxInIndex write a TxIn index into datastore
+func (k Keeper) SetTxInIndex(ctx sdk.Context, height int64, index TxInIndex) {
+	key := getKey(prefixTxInIndex, strconv.FormatInt(height, 10))
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&index))
+}
+
+// AddToTxInIndex will add the given txIn into the index
+func (k Keeper) AddToTxInIndex(ctx sdk.Context, height int64, id TxID) error {
+	index, err := k.GetTxInIndex(ctx, height)
+	if nil != err {
+		return err
+	}
+	for _, item := range index {
+		if item.Equals(id) {
+			// already in the index , don't need to add
+			return nil
+		}
+	}
+	index = append(index, id)
+	k.SetTxInIndex(ctx, height, index)
+	return nil
 }
 
 // SetTxOut - write the given txout information to key values tore

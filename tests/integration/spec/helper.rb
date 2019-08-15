@@ -28,9 +28,13 @@ def txid()
   get_rand(64).upcase
 end
 
+def bnbAddress()
+  "bnb" + get_rand(39).downcase
+end
+
 def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
   hash ||= txid()
-  sender ||= "bnb" + get_rand(39).downcase
+  sender ||= bnbAddress
   coins ||= [{
     'denom': 'RUNE-B1A',
     'amount': '1',
