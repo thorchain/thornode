@@ -13,7 +13,7 @@ const (
 )
 
 // Meant to track if we have processed a specific binance tx
-type TxHash struct {
+type TxIn struct {
 	Request TxID       `json:"request"` // binance chain request tx hash
 	Status  status     `json:"status"`
 	Done    TxID       `json:"txhash"` // completed binance chain tx hash
@@ -22,8 +22,8 @@ type TxHash struct {
 	Sender  BnbAddress `json:"sender"`
 }
 
-func NewTxHash(hash TxID, coins Coins, memo string, sender BnbAddress) TxHash {
-	return TxHash{
+func NewTxIn(hash TxID, coins Coins, memo string, sender BnbAddress) TxIn {
+	return TxIn{
 		Request: hash,
 		Coins:   coins,
 		Memo:    memo,
@@ -32,7 +32,7 @@ func NewTxHash(hash TxID, coins Coins, memo string, sender BnbAddress) TxHash {
 	}
 }
 
-func (tx TxHash) Valid() error {
+func (tx TxIn) Valid() error {
 	if tx.Request.Empty() {
 		return fmt.Errorf("Request TxID cannot be empty")
 	}
@@ -49,25 +49,25 @@ func (tx TxHash) Valid() error {
 	return nil
 }
 
-func (tx TxHash) Empty() bool {
+func (tx TxIn) Empty() bool {
 	return tx.Request.Empty()
 }
 
-func (tx TxHash) String() string {
+func (tx TxIn) String() string {
 	return tx.Request.String()
 }
 
 // Generate db key for kvstore
-func (tx TxHash) Key() string {
+func (tx TxIn) Key() string {
 	return tx.Request.String()
 }
 
-func (tx *TxHash) SetDone(hash TxID) {
+func (tx *TxIn) SetDone(hash TxID) {
 	tx.Status = Done
 	tx.Done = hash
 }
 
-func (tx *TxHash) SetReverted(hash TxID) {
+func (tx *TxIn) SetReverted(hash TxID) {
 	tx.Status = Reverted
 	tx.Done = hash
 }
