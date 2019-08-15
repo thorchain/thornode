@@ -1,10 +1,10 @@
 package observer
 
 import (
-	"fmt"
-	"strconv"
-	"net/url"
 	"encoding/json"
+	"fmt"
+	"net/url"
+	"strconv"
 
 	log "github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
@@ -15,16 +15,16 @@ import (
 )
 
 type BlockScan struct {
-	TxInChan chan []byte
-	ScanChan chan int64
+	TxInChan      chan []byte
+	ScanChan      chan int64
 	PreviousBlock int64
 }
 
 func NewBlockScan(txInChan chan []byte) *BlockScan {
 	scanChan := make(chan int64)
 	return &BlockScan{
-		TxInChan: txInChan,
-		ScanChan: scanChan,
+		TxInChan:      txInChan,
+		ScanChan:      scanChan,
 		PreviousBlock: 0,
 	}
 }
@@ -39,8 +39,8 @@ func (b *BlockScan) ScanBlocks() {
 		for {
 			uri := url.URL{
 				Scheme: "https",
-				Host: ctypes.RPCHost,
-				Path: "block",
+				Host:   ctypes.RPCHost,
+				Path:   "block",
 			}
 
 			req := fasthttp.AcquireRequest()
@@ -73,8 +73,8 @@ func (b *BlockScan) TxSearch() {
 
 			uri := url.URL{
 				Scheme: "https",
-				Host: ctypes.RPCHost,
-				Path: "tx_search",
+				Host:   ctypes.RPCHost,
+				Path:   "tx_search",
 			}
 
 			q := uri.Query()
@@ -99,8 +99,8 @@ func (b *BlockScan) TxSearch() {
 				txIn = b.QueryTx(txIn)
 			}
 
-			txIn.BlockHeight = int(block)
-			txIn.Count = len(txIn.TxArray)
+			txIn.BlockHeight = string(block)
+			txIn.Count = string(len(txIn.TxArray))
 
 			json, _ := json.Marshal(txIn)
 			if len(txIn.TxArray) >= 1 {
@@ -116,8 +116,8 @@ func (b *BlockScan) QueryTx(txIn stypes.TxIn) stypes.TxIn {
 	for i, txItem := range txIn.TxArray {
 		uri := url.URL{
 			Scheme: "https",
-			Host: ctypes.RPCHost,
-			Path: fmt.Sprintf("api/v1/tx/%v", txItem.Tx),
+			Host:   ctypes.RPCHost,
+			Path:   fmt.Sprintf("api/v1/tx/%v", txItem.Tx),
 		}
 
 		q := uri.Query()
@@ -143,13 +143,13 @@ func (b *BlockScan) QueryTx(txIn stypes.TxIn) stypes.TxIn {
 
 					for _, coin := range sender.Coins {
 						parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
-						amount := parsedAmt*100000000
+						amount := parsedAmt * 100000000
 
 						txIn.TxArray[i].Memo = tx.Tx.Value.Memo
 						txIn.TxArray[i].Sender = sender.Address
 						token := ctypes.Coin{Denom: coin.Denom, Amount: fmt.Sprintf("%.0f", amount)}
 						txIn.TxArray[i].Coins = append(txIn.TxArray[i].Coins, token)
-					}				
+					}
 				}
 			}
 		}

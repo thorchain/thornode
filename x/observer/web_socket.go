@@ -1,33 +1,33 @@
 package observer
 
 import (
-	"fmt"
-	"time"
-	"strconv"
-	"net/url"
 	"encoding/json"
+	"fmt"
+	"net/url"
+	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 	log "github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/bepswap/observe/x/binance"
 	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	"gitlab.com/thorchain/bepswap/observe/x/binance"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
 type WebSocket struct {
-	TxInChan chan []byte
+	TxInChan   chan []byte
 	SocketChan chan []byte
-	Binance *binance.Binance
+	Binance    *binance.Binance
 }
 
 func NewWebSocket(txChan chan []byte) *WebSocket {
 	binance := binance.NewBinance()
 	return &WebSocket{
-		TxInChan: txChan,
+		TxInChan:   txChan,
 		SocketChan: make(chan []byte),
-		Binance: binance,
+		Binance:    binance,
 	}
 }
 
@@ -48,8 +48,8 @@ func (w *WebSocket) Start() {
 func (w *WebSocket) Connect() (*websocket.Conn, error) {
 	url := url.URL{
 		Scheme: "wss",
-		Host: ctypes.DEXHost,
-		Path: fmt.Sprintf("/api/ws/%s", ctypes.PoolAddress),
+		Host:   ctypes.DEXHost,
+		Path:   fmt.Sprintf("/api/ws/%s", ctypes.PoolAddress),
 	}
 
 	log.Info().Msgf("Opening up a connection to: %v", url.String())
@@ -112,14 +112,14 @@ func (w *WebSocket) ParseMessage() {
 					var txIn stypes.TxIn
 
 					for _, txn := range txfr.Data.T {
-						txItem := stypes.TxInItem{Tx: txfr.Data.Hash, 
-							Memo: txfr.Data.Memo,
+						txItem := stypes.TxInItem{Tx: txfr.Data.Hash,
+							Memo:   txfr.Data.Memo,
 							Sender: txfr.Data.FromAddr,
 						}
 
 						for _, coin := range txn.Coins {
 							parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
-							amount := parsedAmt*100000000
+							amount := parsedAmt * 100000000
 
 							var token ctypes.Coin
 							token.Denom = coin.Asset
@@ -130,8 +130,8 @@ func (w *WebSocket) ParseMessage() {
 						txIn.TxArray = append(txIn.TxArray, txItem)
 					}
 
-					txIn.BlockHeight = txfr.Data.EventHeight
-					txIn.Count = len(txIn.TxArray)
+					txIn.BlockHeight = string(txfr.Data.EventHeight)
+					txIn.Count = string(len(txIn.TxArray))
 
 					json, err := json.Marshal(txIn)
 					if err != nil {
