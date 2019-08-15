@@ -15,7 +15,6 @@ type dbPrefix string
 
 const (
 	prefixTxIn         dbPrefix = "tx_"
-	prefixSwap         dbPrefix = "swap_"
 	prefixPool         dbPrefix = "pool_"
 	prefixTxOut        dbPrefix = "txout_"
 	prefixTrustAccount dbPrefix = "trustaccount_"
