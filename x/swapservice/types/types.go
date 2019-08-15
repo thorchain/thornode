@@ -98,7 +98,7 @@ func (a Amount) LargerThanZero() bool {
 	return a.Float64() > 0
 }
 func (a Amount) Zero() bool {
-	return a.Equals(ZeroAmount)
+	return a.Equals(ZeroAmount) || a.Float64() == ZeroAmount.Float64()
 }
 
 func (a Amount) Float64() float64 {
