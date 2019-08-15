@@ -26,17 +26,17 @@ func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keepe
 		}
 		c := getRefundCoin(ctx, RuneTicker, m.RuneAmount, keeper)
 		c1 := getRefundCoin(ctx, m.Ticker, m.TokenAmount, keeper)
-		if !c.Amount.LargerThanZero() && !c1.Amount.LargerThanZero() {
+		if !c.Amount.GreaterThen(0) && !c1.Amount.GreaterThen(0) {
 			reason := fmt.Sprintf("rune:%s,coin:%s both less than the minimum refund value", m.RuneAmount, m.TokenAmount)
 			result.Events = result.Events.AppendEvent(
 				sdk.NewEvent("no refund", sdk.NewAttribute("reason", reason)))
 			// nothing to refund
 			return
 		}
-		if c.Amount.LargerThanZero() {
+		if c.Amount.GreaterThen(0) {
 			toi.Coins = append(toi.Coins, c)
 		}
-		if c1.Amount.LargerThanZero() {
+		if c1.Amount.GreaterThen(0) {
 			toi.Coins = append(toi.Coins, c1)
 		}
 		store.AddTxOutItem(toi)
