@@ -15,6 +15,7 @@ import (
 	sdk "github.com/binance-chain/go-sdk/client"
 
 	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types" 
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types" 
 )
 
@@ -105,9 +106,6 @@ func (b Binance) ParseTx(transfers []msg.Transfer) msg.SendMsg {
 }
 
 func (b Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string) {
-	//var options tx.StdSignMsg
-	//options.Memo = txOut.TxOutID
-
 	var payload []msg.Transfer
 	for _, txn := range txOut.TxArray {
 		toAddr, _ := types.AccAddressFromBech32(string(types.AccAddress(txn.To)))
@@ -135,7 +133,7 @@ func (b Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string) {
 
 	signMsg := &tx.StdSignMsg{
 		ChainID: 				b.chainId,
-		Memo:    				"", //txOut.TxOutID,
+		Memo:    				btypes.TxOutMemoPrefix+txOut.Height,
 		Msgs:    				[]msg.Msg{sendMsg},
 		Source:  				tx.Source,
 		Sequence: 			acc.Sequence,
