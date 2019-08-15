@@ -264,7 +264,7 @@ func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 // SetTxHas - saving a given txhash to the KVStore
 func (k Keeper) SetTxIn(ctx sdk.Context, tx TxIn) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxHash, tx.Key().String())
+	key := getKey(prefixTxIn, tx.Key().String())
 	if !store.Has([]byte(key)) {
 		if err := k.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.Key()); nil != err {
 			ctx.Logger().Error("fail to add tx id to txin index", "txid", tx.Key(), "error", err)
@@ -273,9 +273,9 @@ func (k Keeper) SetTxIn(ctx sdk.Context, tx TxIn) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
-// GetTxHash - gets information of a tx hash
-func (k Keeper) GetTxHash(ctx sdk.Context, hash TxID) TxHash {
-	key := getKey(prefixTxHash, hash.String())
+// GetTxIn - gets information of a tx hash
+func (k Keeper) GetTxIn(ctx sdk.Context, hash TxID) TxIn {
+	key := getKey(prefixTxIn, hash.String())
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -291,7 +291,7 @@ func (k Keeper) GetTxHash(ctx sdk.Context, hash TxID) TxHash {
 // CheckTxHash - check to see if we have already processed a specific tx
 func (k Keeper) CheckTxHash(ctx sdk.Context, hash TxID) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxHash, hash.String())
+	key := getKey(prefixTxIn, hash.String())
 	return store.Has([]byte(key))
 }
 

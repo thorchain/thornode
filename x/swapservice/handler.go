@@ -223,7 +223,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAcc
 // handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
 func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetTxIn) sdk.Result {
-	conflicts := make([]string, 0)
+	conflicts := make([]TxID, 0)
 	todo := make([]TxIn, 0)
 	for _, tx := range msg.TxIns {
 		// validate there are not conflicts first
@@ -435,9 +435,9 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 
 	// iterate over our index and mark each tx as done
 	for _, txID := range index {
-		txHash := keeper.GetTxHash(ctx, txID)
-		txHash.SetDone(msg.TxID)
-		keeper.SetTxHash(ctx, txHash)
+		in := keeper.GetTxIn(ctx, txID)
+		in.SetDone(msg.TxID)
+		keeper.SetTxIn(ctx, in)
 	}
 
 	// update txOut record with our TxID that sent funds out of the pool
