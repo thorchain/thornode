@@ -1,5 +1,9 @@
 package types
 
+import (
+	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+)
+
 type Msg struct {
 	Type string `json:"type"`
 	Value struct {
@@ -13,6 +17,6 @@ type TxHash struct {
 	Status 	string `json:"status"`
 	Txhash  string `json:"txhash"`
 	Memo    string `json:"memo"`
-	Coins   []Coins `json:"coins"`
+	Coins   []ctypes.Coin `json:"coins"`
 	Sender string `json:"sender"`
 }

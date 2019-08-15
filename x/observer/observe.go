@@ -1,74 +1,64 @@
 package observer
 
 import (
+	"strconv"
 	"encoding/json"
 
 	log "github.com/rs/zerolog/log"
+	"github.com/syndtr/goleveldb/leveldb"
 
 	"gitlab.com/thorchain/bepswap/observe/x/statechain"
-	"gitlab.com/thorchain/bepswap/observe/common/types"
+	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
 type Observer struct {
-	Socket *Socket
-	Scanner *Scanner
-	TxChan chan []byte
+	Db *leveldb.DB
+	WebSocket *WebSocket
+	BlockScan *BlockScan
+	SocketTxChan chan []byte
+	BlockTxChan chan []byte
 }
 
-func NewObserver(txChan chan []byte) *Observer {
-	socket := NewSocket()
-	scanner := NewScanner()
+func NewObserver() *Observer {
+	var db, _ = leveldb.OpenFile(ctypes.ObserverDbPath, nil)
+	socketTxChan := make(chan []byte)
+	blockTxChan := make(chan []byte)
 
 	return &Observer{
-		Socket: socket,
-		Scanner: scanner,
-		TxChan: txChan,
+		Db: db,
+		WebSocket: NewWebSocket(socketTxChan),
+		BlockScan: NewBlockScan(blockTxChan),
+		SocketTxChan: socketTxChan,
+		BlockTxChan: blockTxChan,
 	}
 }
 
-func (o Observer) Start() {
-	sockChan := make(chan []byte)
-	scanChan := make(chan []byte)
-
-	go o.Socket.Start(sockChan)
-	go o.ProcessTxn(sockChan, scanChan)
+func (o *Observer) Start() {
+	go o.ProcessTxnIn(o.SocketTxChan)
+	go o.ProcessTxnIn(o.BlockTxChan)
+	go o.WebSocket.Start()
+	go o.BlockScan.Start()
 }
 
-func (o Observer) ProcessTxn(sockChan, scanChan chan []byte) {
+func (o *Observer) ProcessTxnIn(ch chan []byte) {
 	for {
-		var inTx types.InTx
-		payload := <-sockChan
+		var txIn types.TxIn
+		payload := <-ch
 
-		err := json.Unmarshal(payload, &inTx)
+		err := json.Unmarshal(payload, &txIn)
 		if err != nil {
 			log.Error().Msgf("Error: %v", err)
 		}
 
-		log.Info().Msgf("Processing Transaction: %v", inTx)
-		signed := statechain.Sign(inTx)
-		go statechain.Send(signed, o.TxChan)
-
-		var blocks []int
-		blocks = append(blocks, inTx.BlockHeight)
-
-		go o.Send(scanChan)
-		//go o.Scanner.Scan(blocks, scanChan)
+		//log.Info().Msgf("Processing Transaction: %v", txIn)
+		signed := statechain.Sign(txIn)
+		go statechain.Send(signed)
 	}
 }
 
-func (o Observer) Send(scanChan chan []byte) {
-	for {
-		var inTx types.InTx
-		payload := <-scanChan
-
-		err := json.Unmarshal(payload, &inTx)
-		if err != nil {
-			log.Error().Msgf("Error: %v", err)
-		}
-
-		log.Info().Msgf("Processing Transaction: %v", inTx)
-
-		signed := statechain.Sign(inTx)
-		go statechain.Send(signed, o.TxChan)
-	}
+func (o *Observer) SavePos(block int64) {
+	go func() {
+		o.Db.Put([]byte(strconv.FormatInt(block, 10)), []byte(strconv.FormatInt(1, 10)), nil)
+	}()
 }
