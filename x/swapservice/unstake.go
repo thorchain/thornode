@@ -85,12 +85,6 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (Amount, Amount,
 	keeper.SetPool(ctx, msg.Ticker, pool)
 	keeper.SetPoolStaker(ctx, msg.Ticker, poolStaker)
 	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
-	keeper.SetUnStakeRecord(ctx, UnstakeRecord{
-		RequestTxHash: msg.RequestTxHash,
-		Ticker:        msg.Ticker,
-		PublicAddress: msg.PublicAddress,
-		Percentage:    msg.Percentage,
-	})
 	return NewAmountFromFloat(withdrawRune), NewAmountFromFloat(withDrawToken), nil
 }
 
@@ -115,15 +109,4 @@ func calculateUnstake(poolUnit, poolRune, poolToken, stakerUnit, percentage floa
 	withdrawToken := stakerOwnership * percentage / 100 * poolToken
 	unitAfter := stakerUnit * (100 - percentage) / 100
 	return withdrawRune, withdrawToken, unitAfter, nil
-}
-
-// unStakeComplete  mark a swap to be in complete state
-func unStakeComplete(ctx sdk.Context, keeper poolStorage, requestTxHash, completeTxHash TxID) error {
-	if requestTxHash.Empty() {
-		return errors.New("request tx hash is empty")
-	}
-	if completeTxHash.Empty() {
-		return errors.New("complete tx hash is empty")
-	}
-	return keeper.UpdateUnStakeRecordCompleteTxHash(ctx, requestTxHash, completeTxHash)
 }
