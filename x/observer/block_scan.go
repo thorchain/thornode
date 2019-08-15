@@ -152,6 +152,12 @@ func (b *BlockScan) QueryTx(txIn stypes.TxIn) stypes.TxIn {
 					}
 				}
 			}
+
+			for _, input := range msg.Value.Inputs {
+				if input.Address == ctypes.PoolAddress {
+					txIn.TxArray[i].Memo = tx.Tx.Value.Memo
+				}
+			}
 		}
 	}
 
