@@ -30,6 +30,11 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txCreate), Equals, true, Commentf("MEMO: %+v", memo))
 
+	memo, err = ParseMemo("donate:RUNE-1BA")
+	c.Assert(err, IsNil)
+	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
+	c.Check(memo.IsType(txDonate), Equals, true, Commentf("MEMO: %+v", memo))
+
 	memo, err = ParseMemo("STAKE:RUNE-1BA")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
