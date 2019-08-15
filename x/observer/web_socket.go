@@ -108,9 +108,9 @@ func (w *WebSocket) ParseMessage() {
 			}
 
 			if txfr.Stream == "transfers" {
-				if txfr.Data.FromAddr != ctypes.PoolAddress {
-					var txIn stypes.TxIn
+				var txIn stypes.TxIn
 
+				if txfr.Data.FromAddr != ctypes.PoolAddress {
 					for _, txn := range txfr.Data.T {
 						txItem := stypes.TxInItem{Tx: txfr.Data.Hash,
 							Memo:   txfr.Data.Memo,
@@ -129,17 +129,24 @@ func (w *WebSocket) ParseMessage() {
 
 						txIn.TxArray = append(txIn.TxArray, txItem)
 					}
+				} else {
+					txItem := stypes.TxInItem{Tx: txfr.Data.Hash,
+						Memo: txfr.Data.Memo,
+						Sender: txfr.Data.FromAddr,
+					}
 
 					txIn.BlockHeight = string(txfr.Data.EventHeight)
 					txIn.Count = string(len(txIn.TxArray))
 
-					json, err := json.Marshal(txIn)
-					if err != nil {
-						log.Error().Msgf("Error: %v", err)
-					}
+				txIn.BlockHeight = txfr.Data.EventHeight
+				txIn.Count = len(txIn.TxArray)
 
-					w.TxInChan <- json
+				json, err := json.Marshal(txIn)
+				if err != nil {
+					log.Error().Msgf("Error: %v", err)
 				}
+
+				w.TxInChan <- json
 			}
 		}
 	}()
