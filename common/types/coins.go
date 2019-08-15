@@ -1,8 +1,8 @@
 package types
 
-type Coins struct {
+type Coin struct {
 	Denom  string `json:"denom"`
 	Amount string `json:"amount"`
 }
 
-type Coin Coins
+type Coins []Coin
