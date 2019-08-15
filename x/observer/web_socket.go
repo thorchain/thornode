@@ -1,7 +1,6 @@
 package observer
 
 import (
-	"os"
 	"fmt"
 	"time"
 	"strconv"
@@ -13,44 +12,44 @@ import (
 
 	"gitlab.com/thorchain/bepswap/observe/x/binance"
 	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
-	types "gitlab.com/thorchain/bepswap/observe/x/observer/types"
+	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
+	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
-type Socket struct {
+type WebSocket struct {
+	TxInChan chan []byte
+	SocketChan chan []byte
 	Binance *binance.Binance
-	PongWait time.Duration
 }
 
-func NewSocket() *Socket {
+func NewWebSocket(txChan chan []byte) *WebSocket {
 	binance := binance.NewBinance()
-	return &Socket{
+	return &WebSocket{
+		TxInChan: txChan,
+		SocketChan: make(chan []byte),
 		Binance: binance,
-		PongWait: 30*time.Second,
 	}
 }
 
-func (s Socket) Start(conChan chan []byte) {
-	conn, err := s.Connect()
+func (w *WebSocket) Start() {
+	conn, err := w.Connect()
 	if err != nil {
 		log.Fatal().Msgf("There was an error while starting: %v", err)
 	}
 
-	log.Info().Msgf("Setting a keepalive of %v", s.PongWait)
-	s.SetKeepAlive(conn)
+	log.Info().Msgf("Setting a keepalive of %v", ctypes.SocketPong)
+	w.SetKeepAlive(conn)
 
-	ch := make(chan []byte)
-
-	log.Info().Msg("%s Listening for events....")
-	s.Process(ch, conChan)
-	s.Read(ch, conn)
+	log.Info().Msg("Listening for events....")
+	w.ParseMessage()
+	w.ReadSocket(conn)
 }
 
-func (s Socket) Connect() (*websocket.Conn, error) {
-	path := fmt.Sprintf("/api/ws/%s", ctypes.PoolAddress)
+func (w *WebSocket) Connect() (*websocket.Conn, error) {
 	url := url.URL{
 		Scheme: "wss",
 		Host: ctypes.DEXHost,
-		Path: path,
+		Path: fmt.Sprintf("/api/ws/%s", ctypes.PoolAddress),
 	}
 
 	log.Info().Msgf("Opening up a connection to: %v", url.String())
@@ -63,7 +62,7 @@ func (s Socket) Connect() (*websocket.Conn, error) {
 	return conn, nil
 }
 
-func (s Socket) SetKeepAlive(conn *websocket.Conn) {
+func (w *WebSocket) SetKeepAlive(conn *websocket.Conn) {
 	lastResponse := time.Now()
 	conn.SetPongHandler(func(msg string) error {
 		lastResponse = time.Now()
@@ -77,8 +76,8 @@ func (s Socket) SetKeepAlive(conn *websocket.Conn) {
 				return
 			}
 
-			time.Sleep(s.PongWait / 2)
-			if time.Now().Sub(lastResponse) > s.PongWait {
+			time.Sleep(ctypes.SocketPong / 2)
+			if time.Now().Sub(lastResponse) > ctypes.SocketPong {
 				conn.Close()
 				return
 			}
@@ -86,22 +85,22 @@ func (s Socket) SetKeepAlive(conn *websocket.Conn) {
 	}()
 }
 
-func (s Socket) Read(ch chan []byte, conn *websocket.Conn) {
+func (w *WebSocket) ReadSocket(conn *websocket.Conn) {
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {
 			// @todo Reconnect if this fails.
 			log.Error().Msgf("Read error: %s", err)
 		}
-		ch <- message
+		w.SocketChan <- message
 	}
 }
 
-func (s Socket) Process(ch, conChan chan []byte) {
+func (w *WebSocket) ParseMessage() {
 	go func() {
 		for {
-			payload := <-ch
-			var txfr types.Txfr
+			payload := <-w.SocketChan
+			var txfr btypes.SocketTxfr
 
 			err := json.Unmarshal(payload, &txfr)
 			if err != nil {
@@ -110,17 +109,11 @@ func (s Socket) Process(ch, conChan chan []byte) {
 
 			if txfr.Stream == "transfers" {
 				if txfr.Data.FromAddr != ctypes.PoolAddress {
-					var inTx ctypes.InTx
+					var txIn stypes.TxIn
 
 					for _, txn := range txfr.Data.T {
-						// Temporary measure to get the memo.
-						var tx types.Tx
-						qp := map[string]string{}
-						txDetails, _, _ := s.Binance.BasicClient.Get("/tx/"+txfr.Data.Hash+"?format=json", qp)
-						json.Unmarshal(txDetails, &tx)
-
-						txItem := ctypes.InTxItem{Tx: txfr.Data.Hash, 
-							Memo: tx.Tx.Value.Memo,
+						txItem := stypes.TxInItem{Tx: txfr.Data.Hash, 
+							Memo: txfr.Data.Memo,
 							Sender: txfr.Data.FromAddr,
 						}
 
@@ -128,32 +121,26 @@ func (s Socket) Process(ch, conChan chan []byte) {
 							parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
 							amount := parsedAmt*100000000
 
-							var token ctypes.Coins
+							var token ctypes.Coin
 							token.Denom = coin.Asset
 							token.Amount = fmt.Sprintf("%.0f", amount)
 							txItem.Coins = append(txItem.Coins, token)
 						}
 
-						inTx.TxArray = append(inTx.TxArray, txItem)
+						txIn.TxArray = append(txIn.TxArray, txItem)
 					}
 
-					inTx.BlockHeight = txfr.Data.EventHeight
-					inTx.Count = len(inTx.TxArray)
+					txIn.BlockHeight = txfr.Data.EventHeight
+					txIn.Count = len(txIn.TxArray)
 
-					json, err := json.Marshal(inTx)
-					log.Info().Msgf("%v", string(json))
+					json, err := json.Marshal(txIn)
 					if err != nil {
 						log.Error().Msgf("Error: %v", err)
 					}
 
-					conChan <- json
+					w.TxInChan <- json
 				}
 			}
 		}
 	}()
-}
-
-func (s Socket) Stop() {
-	log.Info().Msgf("Shutting down....")
-	os.Exit(1)
 }

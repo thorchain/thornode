@@ -1,52 +1,58 @@
 package signer
 
 import (
+	"encoding/json"
+
 	log "github.com/rs/zerolog/log"
+	"github.com/syndtr/goleveldb/leveldb"
 
 	"gitlab.com/thorchain/bepswap/observe/x/binance"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain"
+	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
 type Signer struct {
+	Db *leveldb.DB
+	BlockScan *BlockScan
 	Binance *binance.Binance
-	TxChan chan []byte
+	TxOutChan chan []byte
 }
 
-func NewSigner(txChan chan []byte) *Signer {
+func NewSigner() *Signer {
+	var db, _ = leveldb.OpenFile(ctypes.SignerDbPath, nil)
+
+	txOutChan := make(chan []byte)
+	blockScan := NewBlockScan(db, txOutChan)
 	binance := binance.NewBinance()
 
 	return &Signer{
+		Db: db,
+		BlockScan: blockScan,
 		Binance: binance,
-		TxChan: txChan,
+		TxOutChan: txOutChan,
 	}
 }
 
 func (s Signer) Start() {
-	go s.ProcessTxn()
+	go s.ProcessTxnOut()
+	go s.BlockScan.Start()
 }
 
-func (s Signer) ProcessTxn() {
+func (s Signer) ProcessTxnOut() {
 	for {
-		txn := <-s.TxChan
-		log.Info().Msgf("Received a transaction hash of: %v", string(txn))
+		payload := <-s.TxOutChan
 
-		blockHeight := statechain.TxnBlockHeight(string(txn))
-		if blockHeight != "" {
-			log.Info().Msgf("Received a Block Height of %v from the StateChain", blockHeight)
-
-			txOut := statechain.TxOut(blockHeight)
-			if txOut.Height != "0" && len(txOut.TxArray) >= 1 {
-				log.Info().Msgf("Received a TxOut Array of %v from the StateChain", txOut)
-
-				hexTx, param := s.Binance.SignTx(txOut)
-				log.Info().Msgf("Generated a signature for Binance: %v", string(hexTx))
-
-				s.Binance.BroadcastTx(hexTx, param)
-			} else {
-				log.Error().Msg("Received an empty TxOut Array from the StateChain")
-			}
-		} else {
-			log.Error().Msg("Received an empty Block Height from the StateChain")
+		var txOut stypes.TxOut
+		err := json.Unmarshal(payload, &txOut)
+		if err != nil {
+			log.Info().Msgf("Error: %v", err)
 		}
+
+		log.Info().Msgf("Received a TxOut Array of %v from the StateChain", txOut)
+
+		hexTx, param := s.Binance.SignTx(txOut)
+		log.Info().Msgf("Generated a signature for Binance: %v", string(hexTx))
+
+		s.Binance.BroadcastTx(hexTx, param)
 	}
 }

@@ -1,16 +1,14 @@
 package main
 
 import (
-	c "gitlab.com/thorchain/bepswap/observe/common"
 	"gitlab.com/thorchain/bepswap/observe/x/observer"
 	"gitlab.com/thorchain/bepswap/observe/x/signer"
+	common "gitlab.com/thorchain/bepswap/observe/common"	
 )
 
 func main() {
-	txChan := make(chan []byte)
+	observer.NewObserver().Start()
+	signer.NewSigner().Start()
 
-	observer.NewObserver(txChan).Start()
-	signer.NewSigner(txChan).Start()
-
-	c.StartWebServer()
+	common.StartWebServer()
 }

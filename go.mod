@@ -13,6 +13,8 @@ require (
 	github.com/matryer/try v0.0.0-20161228173917-9ac251b645a2
 	github.com/r3labs/diff v0.0.0-20190801153147-a71de73c46ad
 	github.com/rs/zerolog v1.14.3
+	github.com/syndtr/goleveldb v1.0.0
+	github.com/valyala/fasthttp v1.4.0
 )
 
 replace gitlab.com/thorchain/bepswap/observe => ../observe
