@@ -55,6 +55,7 @@ type (
 	MsgSetPoolData    = types.MsgSetPoolData
 	MsgSetStakeData   = types.MsgSetStakeData
 	MsgSetTxIn        = types.MsgSetTxIn
+	MsgOutboundTx     = types.MsgOutboundTx
 	MsgSwap           = types.MsgSwap
 	MsgSetAdminConfig = types.MsgSetAdminConfig
 	QueryResPools     = types.QueryResPools

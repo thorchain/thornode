@@ -42,11 +42,12 @@ describe "API Tests" do
       resp = get("/admin/TSL")
       expect(resp.body['value']).to eq("0.1"), resp.body.inspect
     end
+  end
 
   poolAddress = bnbAddress() # here so its available in other tests
   context "Set pool address" do
     it "should set pool address" do
-      tx = makeTx(memo: "ADMIN:Key:PoolAddress:#{poolAddress}")
+      tx = makeTx(memo: "ADMIN:Key:PoolAddress:#{poolAddress}", sender: TRUST_BNB_ADDRESS)
       resp = processTx(tx)
       expect(resp.code).to eq("200")
 
