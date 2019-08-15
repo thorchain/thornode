@@ -47,6 +47,7 @@ var (
 	ModuleCdc            = types.ModuleCdc
 	RegisterCodec        = types.RegisterCodec
 	NewCoin              = types.NewCoin
+	NoBnbAddress         = types.NoBnbAddress
 )
 
 type (

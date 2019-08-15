@@ -334,6 +334,10 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddre
 	default:
 		return nil, errors.Wrap(err, "Unable to find memo type")
 	}
+
+	if err := newMsg.ValidateBasic(); nil != err {
+		return nil, errors.Wrap(err, "invalid msg")
+	}
 	return newMsg, nil
 }
 
@@ -345,6 +349,9 @@ func getMsgSwapFromMemo(memo SwapMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg,
 
 	if len(tx.Coins) > 1 {
 		return nil, errors.New("not expecting multiple coins in a swap")
+	}
+	if memo.Destination.Empty() {
+		memo.Destination = tx.Sender
 	}
 	coin := tx.Coins[0]
 	// Looks like at the moment we can only process ont ty

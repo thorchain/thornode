@@ -41,6 +41,7 @@ func validateMessage(source, target Ticker, amount Amount, requester, destinatio
 	if destination.Empty() {
 		return errors.New("destination is empty")
 	}
+
 	return nil
 }
 
@@ -80,7 +81,10 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 
 func swapOne(ctx sdk.Context,
 	keeper poolStorage,
-	source, target Ticker, amount Amount, requester, destination BnbAddress, tradeTarget, tradeSlipLimit, globalSlipLimit Amount) (Amount, error) {
+	source, target Ticker,
+	amount Amount, requester,
+	destination BnbAddress,
+	tradeTarget, tradeSlipLimit, globalSlipLimit Amount) (Amount, error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
@@ -94,7 +98,6 @@ func swapOne(ctx sdk.Context,
 	}
 
 	amt := amount.Float64()
-	tTarget := tradeTarget.Float64() // trade target
 	tsl := tradeSlipLimit.Float64()  // trade slip limit
 	gsl := globalSlipLimit.Float64() // global slip limit
 
@@ -104,16 +107,13 @@ func swapOne(ctx sdk.Context,
 	}
 	balanceRune := pool.BalanceRune.Float64()
 	balanceToken := pool.BalanceToken.Float64()
-
-	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
-	if poolSlip > gsl {
-		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
+	if !tradeTarget.Empty() && !tradeTarget.Zero() {
+		tTarget := tradeTarget.Float64() // trade target
+		userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
+		if math.Abs(userPrice-tTarget)/tTarget > tsl {
+			return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, tsl*100, tTarget)
+		}
 	}
-	userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
-	if math.Abs(userPrice-tTarget)/tTarget > tsl {
-		return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, tsl*100, tTarget)
-	}
-
 	// do we have enough balance to swap?
 	if IsRune(source) {
 		if balanceToken == 0 {
@@ -124,7 +124,10 @@ func swapOne(ctx sdk.Context,
 			return "0", errors.New(RuneTicker.String() + " balance is 0, can't swap ")
 		}
 	}
-
+	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
+	if poolSlip > gsl {
+		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
+	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
 	newBalanceRune, newBalanceToken, returnAmt, err := calculateSwap(source, balanceRune, balanceToken, amt)
 	if nil != err {

@@ -56,9 +56,6 @@ func (msg MsgSwap) ValidateBasic() sdk.Error {
 	if msg.Destination.Empty() {
 		return sdk.ErrUnknownRequest("Swap Destination cannot be empty")
 	}
-	if msg.TargetPrice.Empty() {
-		return sdk.ErrUnknownRequest("Swap target price cannot be empty")
-	}
 	return nil
 }
 
