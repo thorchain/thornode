@@ -117,9 +117,12 @@ type BnbAddress string
 
 var NoBnbAddress BnbAddress = BnbAddress("")
 
+// NewBnbAddress create a new BnbAddress
+// Sample: bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
 func NewBnbAddress(address string) (BnbAddress, error) {
-	// Sample: bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
-
+	if len(address) == 0 {
+		return NoBnbAddress, nil
+	}
 	prefixes := []string{"bnb", "tbnb"}
 
 	// check if our address has one of the prefixes above
