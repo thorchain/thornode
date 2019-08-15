@@ -94,7 +94,6 @@ func swapOne(ctx sdk.Context,
 	}
 
 	amt := amount.Float64()
-	tTarget := tradeTarget.Float64() // trade target
 	tsl := tradeSlipLimit.Float64()  // trade slip limit
 	gsl := globalSlipLimit.Float64() // global slip limit
 
@@ -109,9 +108,12 @@ func swapOne(ctx sdk.Context,
 	if poolSlip > gsl {
 		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
 	}
-	userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
-	if math.Abs(userPrice-tTarget)/tTarget > tsl {
-		return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, tsl*100, tTarget)
+	if !tradeTarget.Empty() && !tradeTarget.Zero() {
+		tTarget := tradeTarget.Float64() // trade target
+		userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
+		if math.Abs(userPrice-tTarget)/tTarget > tsl {
+			return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, tsl*100, tTarget)
+		}
 	}
 
 	// do we have enough balance to swap?

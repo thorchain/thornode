@@ -140,7 +140,7 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "set-swap [requestTxHash] [source] [target] [amount] [requester] [destination] [target_price]",
 		Short: "Swap coins",
-		Args:  cobra.ExactArgs(7),
+		Args:  cobra.MinimumNArgs(6),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -173,7 +173,6 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
 			price, err := types.NewAmount(args[6])
 			if err != nil {
 				return err
