@@ -28,8 +28,8 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			return handleMsgSetUnstake(ctx, keeper, txOutStore, m)
 		case MsgUnStakeComplete:
 			return handleMsgSetUnstakeComplete(ctx, keeper, m)
-		case MsgSetTxHash:
-			return handleMsgSetTxHash(ctx, keeper, txOutStore, m)
+		case MsgSetTxIn:
+			return handleMsgSetTxIn(ctx, keeper, txOutStore, m)
 		case MsgSetAdminConfig:
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		default:
@@ -249,7 +249,7 @@ func handleMsgSetUnstakeComplete(ctx sdk.Context, keeper Keeper, msg MsgUnStakeC
 	}
 }
 
-func refundTx(ctx sdk.Context, tx TxHash, store *TxOutStore, keeper RefundStoreAccessor) {
+func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAccessor) {
 	toi := &TxOutItem{
 		ToAddress: tx.Sender,
 	}
@@ -263,12 +263,12 @@ func refundTx(ctx sdk.Context, tx TxHash, store *TxOutStore, keeper RefundStoreA
 	store.AddTxOutItem(toi)
 }
 
-// handleMsgSetTxHash gets a binance tx hash, gets the tx/memo, and triggers
+// handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
-func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetTxHash) sdk.Result {
+func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetTxIn) sdk.Result {
 	conflicts := make([]string, 0)
-	todo := make([]TxHash, 0)
-	for _, tx := range msg.TxHashes {
+	todo := make([]TxIn, 0)
+	for _, tx := range msg.TxIns {
 		// validate there are not conflicts first
 		if keeper.CheckTxHash(ctx, tx.Key()) {
 			conflicts = append(conflicts, tx.Key())
@@ -280,8 +280,8 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, 
 	handler := NewHandler(keeper, txOutStore)
 	for _, tx := range todo {
 		// save the tx to db to stop duplicate request (aka replay attacks)
-		keeper.SetTxHash(ctx, tx)
-		msg, err := processOneTxHash(ctx, keeper, tx, msg.Signer)
+		keeper.SetTxIn(ctx, tx)
+		msg, err := processOneTxIn(ctx, keeper, tx, msg.Signer)
 		if nil != err {
 			ctx.Logger().Error("fail to process txHash", "error", err)
 			refundTx(ctx, tx, txOutStore, keeper)
@@ -297,7 +297,7 @@ func handleMsgSetTxHash(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, 
 	}
 }
 
-func processOneTxHash(ctx sdk.Context, keeper Keeper, tx TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
+func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	memo, err := ParseMemo(tx.Memo)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to parse memo")
@@ -337,7 +337,7 @@ func processOneTxHash(ctx sdk.Context, keeper Keeper, tx TxHash, signer sdk.AccA
 	return newMsg, nil
 }
 
-func getMsgSwapFromMemo(memo SwapMemo, tx TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgSwapFromMemo(memo SwapMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	ticker, err := NewTicker(memo.GetSymbol())
 	if err != nil {
 		return nil, err
@@ -351,7 +351,7 @@ func getMsgSwapFromMemo(memo SwapMemo, tx TxHash, signer sdk.AccAddress) (sdk.Ms
 	return NewMsgSwap(tx.Request, coin.Denom, ticker, coin.Amount, tx.Sender, memo.Destination, NewAmountFromFloat(memo.SlipLimit), signer), nil
 }
 
-func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	withdrawAmount, err := NewAmount(memo.GetAmount())
 	if nil != err {
 		return nil, err
@@ -363,7 +363,7 @@ func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxHash, signer sdk.AccAddress) 
 	return NewMsgSetUnStake(tx.Sender, withdrawAmount, ticker, tx.Request, signer), nil
 }
 
-func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	switch memo.GetAdminType() {
 	case adminPoolStatus:
 		ticker, err := NewTicker(memo.GetKey())
@@ -389,7 +389,7 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, t
 	}
 	return nil, errors.New("invalid admin command type")
 }
-func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	ticker, err := NewTicker(memo.GetSymbol())
 	if err != nil {
 		return nil, err

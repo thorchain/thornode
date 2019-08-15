@@ -30,7 +30,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdSwapComplete(cdc),
 		GetCmdUnstake(cdc),
 		GetCmdUnStakeComplete(cdc),
-		GetCmdSetTxHash(cdc),
+		GetCmdSetTxIn(cdc),
 		GetCmdSetAdminConfig(cdc),
 	)...)
 
@@ -258,8 +258,8 @@ func GetCmdUnStakeComplete(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdSetTxHash command to send MsgSetTxHash Message from command line
-func GetCmdSetTxHash(cdc *codec.Codec) *cobra.Command {
+// GetCmdSetTxIn command to send MsgSetTxIn Message from command line
+func GetCmdSetTxIn(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "set-txhash [requestTxHash] [coins] [memo] [sender]",
 		Short: "add a tx hash",
@@ -285,8 +285,8 @@ func GetCmdSetTxHash(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			tx := types.NewTxHash(txID, stateCoins, args[2], bnbAddr)
-			msg := types.NewMsgSetTxHash([]types.TxHash{tx}, cliCtx.GetFromAddress())
+			tx := types.NewTxIn(txID, stateCoins, args[2], bnbAddr)
+			msg := types.NewMsgSetTxIn([]types.TxIn{tx}, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err

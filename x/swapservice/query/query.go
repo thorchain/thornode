@@ -40,7 +40,7 @@ var (
 	QueryStakerPools   Query = Query{"stakerpools", "/%s/staker/{%s}"}
 	QuerySwapRecord    Query = Query{"swaprecord", "/%s/swaprecord/{%s}"}
 	QueryUnStakeRecord Query = Query{"unstakerecord", "/%s/unstakerecord/{%s}"}
-	QueryTxHash        Query = Query{"txhash", "/%s/tx/{%s}"}
+	QueryTxIn          Query = Query{"txin", "/%s/tx/{%s}"}
 	QueryTxOutArray    Query = Query{"txoutarray", "/%s/txoutarray/{%s}"}
 )
 
@@ -53,6 +53,6 @@ var Queries []Query = []Query{
 	QueryPoolIndex,
 	QuerySwapRecord,
 	QueryUnStakeRecord,
-	QueryTxHash,
+	QueryTxIn,
 	QueryTxOutArray,
 }

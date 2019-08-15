@@ -31,8 +31,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return querySwapRecord(ctx, path[1:], req, keeper)
 		case q.QueryUnStakeRecord.Key:
 			return queryUnStakeRecord(ctx, path[1:], req, keeper)
-		case q.QueryTxHash.Key:
-			return queryTxHash(ctx, path[1:], req, keeper)
+		case q.QueryTxIn.Key:
+			return queryTxIn(ctx, path[1:], req, keeper)
 		case q.QueryAdminConfig.Key:
 			return queryAdminConfig(ctx, path[1:], req, keeper)
 		case q.QueryTxOutArray.Key:
@@ -176,9 +176,9 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, 
 	return res, nil
 }
 
-func queryTxHash(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	hash := path[0]
-	tx := keeper.GetTxHash(ctx, hash)
+	tx := keeper.GetTxIn(ctx, hash)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, tx)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
