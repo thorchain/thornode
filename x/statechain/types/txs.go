@@ -6,10 +6,20 @@ type Txs struct {
 	Height string `json:"height"`
 	Txhash string `json:"txhash"`
 	RawLog string `json:"raw_log"`
-	Logs   []Log `json:"logs"`
+	Logs   []struct {
+		MsgIndex int    `json:"msg_index"`
+		Success  bool   `json:"success"`
+		Log      string `json:"log"`
+	} `json:"logs"`
 	GasWanted string `json:"gas_wanted"`
 	GasUsed   string `json:"gas_used"`
-	Events    []Event `json:"events"`
+	Events    []struct {
+		Type       string `json:"type"`
+		Attributes []struct {
+			Key   string `json:"key"`
+			Value string `json:"value"`
+		} `json:"attributes"`
+	} `json:"events"`
 	Tx struct {
 		Type  string `json:"type"`
 		Value struct {
@@ -23,20 +33,4 @@ type Txs struct {
 		} `json:"value"`
 	} `json:"tx"`
 	Timestamp time.Time `json:"timestamp"`
-}
-
-type Log struct {
-	MsgIndex int    `json:"msg_index"`
-	Success  bool   `json:"success"`
-	Log      string `json:"log"`
-}
-
-type Event struct {
-	Type       string `json:"type"`
-	Attributes []EventAttr `json:"attributes"`
-}
-
-type EventAttr struct {
-	Key   string `json:"key"`
-	Value string `json:"value"`
 }

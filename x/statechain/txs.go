@@ -12,16 +12,17 @@ import (
 	log "github.com/rs/zerolog/log"
 	http "github.com/hashicorp/go-retryablehttp"
 
-	"gitlab.com/thorchain/bepswap/observe/common/types"
+	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
-func Sign(inTx types.InTx) types.StdTx {
+func Sign(txIn types.TxIn) types.StdTx {
 	var (
 		msg types.Msg
 		stdTx types.StdTx
 	)
 
-	for _, txItem := range inTx.TxArray {
+	for _, txItem := range txIn.TxArray {
 		txHash := types.TxHash{
 			Request: txItem.Tx,
 			Status: "incomplete",
@@ -31,11 +32,11 @@ func Sign(inTx types.InTx) types.StdTx {
 			Sender: txItem.Sender,
 		}
 
-		msg.Type = "swapservice/MsgSetTxHash"
 		msg.Value.TxHashes = append(msg.Value.TxHashes, txHash)
 	}
 
-	msg.Value.Signer = types.RuneAddress
+	msg.Type = "swapservice/MsgSetTxHash"
+	msg.Value.Signer = ctypes.RuneAddress
 	stdTx.Type = "cosmos-sdk/StdTx"
 	stdTx.Value.Msg = append(stdTx.Value.Msg, msg)
 
@@ -50,10 +51,10 @@ func Sign(inTx types.InTx) types.StdTx {
 		log.Fatal().Msgf("Error while writing to a temporary file: %v", err)
 	}
 
-	sign := fmt.Sprintf("/bin/echo %v | sscli tx sign %v --from %v", types.SignerPasswd, file.Name(), types.RuneAddress)
+	sign := fmt.Sprintf("/bin/echo %v | sscli tx sign %v --from %v", ctypes.SignerPasswd, file.Name(), ctypes.RuneAddress)
 	out, err := exec.Command("/bin/bash", "-c", sign).Output()
 	if err != nil {
-		log.Fatal().Msgf("Error while signing the request: %v", err)
+		log.Fatal().Msgf("Error while signing the request: %v %v", err, sign)
 	}
 	defer os.Remove(file.Name())
 
@@ -63,7 +64,7 @@ func Sign(inTx types.InTx) types.StdTx {
 	return signed
 }
 
-func Send(signed types.StdTx, txChan chan []byte) {
+func Send(signed types.StdTx) {
 	var setTx types.SetTx
 	setTx.Mode = "sync"
 	setTx.Tx.Msg = signed.Value.Msg
@@ -75,18 +76,19 @@ func Send(signed types.StdTx, txChan chan []byte) {
 
 	uri := url.URL{
 		Scheme: "http",
-		Host: types.ChainHost,
+		Host: ctypes.ChainHost,
 		Path: "/txs",
 	}
 
-	// Retry until we get a successful reply and log the reply.
-	log.Info().Msgf("Sending to the StateChain %v", string(sendSetTx))
-	resp, _ := http.Post(uri.String(), "application/json", bytes.NewBuffer(sendSetTx))
+	resp, err := http.Post(uri.String(), "application/json", bytes.NewBuffer(sendSetTx))
+	if err != nil {
+		log.Error().Msgf("Error %v", err)
+	}
+
 	body, _ := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 
 	var commit types.Commit
 	json.Unmarshal(body, &commit)
-
-	txChan <- []byte(commit.TxHash)
+	log.Info().Msgf("Received a TxHash of %v from the Statechain", commit.TxHash)
 }
