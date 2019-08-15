@@ -79,7 +79,7 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	pool.BalanceRune = NewAmountFromFloat(poolRune)
 	pool.BalanceToken = NewAmountFromFloat(poolToken)
 	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
-	keeper.SetPool(ctx, ticker, pool)
+	keeper.SetPool(ctx, pool)
 	// maintain pool staker structure
 	ps, err := keeper.GetPoolStaker(ctx, ticker)
 	if nil != err {

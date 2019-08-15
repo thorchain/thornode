@@ -73,12 +73,12 @@ func (k Keeper) GetPool(ctx sdk.Context, ticker Ticker) Pool {
 }
 
 // Sets the entire Pool metadata struct for a pool ID
-func (k Keeper) SetPool(ctx sdk.Context, ticker Ticker, pool Pool) {
+func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPool, ticker.String())
+	key := getKey(prefixPool, pool.Ticker.String())
 	if !store.Has([]byte(key)) {
-		if err := k.AddToPoolIndex(ctx, ticker); nil != err {
-			ctx.Logger().Error("fail to add ticker to pool index", "ticker", ticker, "error", err)
+		if err := k.AddToPoolIndex(ctx, pool.Ticker); nil != err {
+			ctx.Logger().Error("fail to add ticker to pool index", "ticker", pool.Ticker, "error", err)
 		}
 	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
@@ -100,7 +100,7 @@ func (k Keeper) SetPoolData(ctx sdk.Context, ticker Ticker, ps PoolStatus) {
 	}
 	pool.Status = ps
 	pool.Ticker = ticker
-	k.SetPool(ctx, ticker, pool)
+	k.SetPool(ctx, pool)
 }
 
 // GetPoolDataIterator only iterate pool data

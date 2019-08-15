@@ -76,7 +76,7 @@ func DefaultGenesisState() GenesisState {
 // InitGenesis read the data in GenesisState and apply it to data store
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.ValidatorUpdate {
 	for _, record := range data.PoolRecords {
-		keeper.SetPool(ctx, record.Ticker, record)
+		keeper.SetPool(ctx, record)
 	}
 
 	for _, config := range data.AdminConfigs {

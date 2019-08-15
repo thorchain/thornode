@@ -126,7 +126,7 @@ func swapOne(ctx sdk.Context,
 	pool.BalanceRune = NewAmountFromFloat(newBalanceRune)
 	pool.BalanceToken = NewAmountFromFloat(newBalanceToken)
 	returnTokenAmount := NewAmountFromFloat(returnAmt)
-	keeper.SetPool(ctx, ticker, pool)
+	keeper.SetPool(ctx, pool)
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, returnTokenAmount))
 	return returnTokenAmount, nil
 }

@@ -10,7 +10,7 @@ type poolStorage interface {
 	PoolExist(ctx sdk.Context, ticker Ticker) bool
 
 	GetPool(ctx sdk.Context, ticker Ticker) Pool
-	SetPool(ctx sdk.Context, ticker Ticker, ps Pool)
+	SetPool(ctx sdk.Context, ps Pool)
 
 	GetStakerPool(ctx sdk.Context, stakerID BnbAddress) (StakerPool, error)
 	SetStakerPool(ctx sdk.Context, stakerID BnbAddress, sp StakerPool)
