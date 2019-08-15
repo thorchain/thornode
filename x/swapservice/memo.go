@@ -14,13 +14,14 @@ type txType uint8
 type adminType uint8
 
 const (
-	txCreate txType = iota
+	txUnknown txType = iota
+	txCreate
 	txStake
 	txWithdraw
 	txSwap
 	txAdmin
 	txOutbound
-	unknowTx
+	txDonate
 )
 
 const (
@@ -36,6 +37,7 @@ var stringToTxTypeMap = map[string]txType{
 	"swap":     txSwap,
 	"admin":    txAdmin,
 	"outbound": txOutbound,
+	"donate":   txDonate,
 }
 
 var txToStringMap = map[txType]string{
@@ -45,6 +47,7 @@ var txToStringMap = map[txType]string{
 	txSwap:     "swap",
 	txAdmin:    "admin",
 	txOutbound: "outbound",
+	txDonate:   "donate",
 }
 
 var stringToAdminTypeMap = map[string]adminType{
@@ -58,7 +61,7 @@ func stringToTxType(s string) (txType, error) {
 	if t, ok := stringToTxTypeMap[sl]; ok {
 		return t, nil
 	}
-	return unknowTx, fmt.Errorf("Invalid tx type: %s", s)
+	return txUnknown, fmt.Errorf("Invalid tx type: %s", s)
 }
 
 // converts a string into a adminType
@@ -103,6 +106,10 @@ type CreateMemo struct {
 	MemoBase
 }
 
+type DonateMemo struct {
+	MemoBase
+}
+
 type StakeMemo struct {
 	MemoBase
 	RuneAmount  string
@@ -140,7 +147,7 @@ func ParseMemo(memo string) (Memo, error) {
 	if len(parts) < 2 {
 		return noMemo, fmt.Errorf("Cannot parse given memo: length %d", len(parts))
 	}
-	tx, err := stringToTxType(parts[0])
+	tx, err := stringToTxType(strings.ToLower(parts[0]))
 	if err != nil {
 		return noMemo, err
 	}
@@ -156,6 +163,11 @@ func ParseMemo(memo string) (Memo, error) {
 	case txCreate:
 		return CreateMemo{
 			MemoBase: MemoBase{TxType: txCreate, Symbol: symbol},
+		}, nil
+
+	case txDonate:
+		return DonateMemo{
+			MemoBase: MemoBase{TxType: txDonate, Symbol: symbol},
 		}, nil
 
 	case txStake:
