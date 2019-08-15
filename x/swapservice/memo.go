@@ -241,9 +241,10 @@ func ParseMemo(memo string) (Memo, error) {
 		}
 		a, err := stringToAdminType(parts[1])
 		return AdminMemo{
-			Type:  a,
-			Key:   parts[2],
-			Value: parts[3],
+			MemoBase: MemoBase{TxType: txAdmin},
+			Type:     a,
+			Key:      parts[2],
+			Value:    parts[3],
 		}, err
 
 	case txOutbound:

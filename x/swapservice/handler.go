@@ -349,16 +349,20 @@ func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxIn, signer sdk.AccAddress) (s
 func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	switch memo.GetAdminType() {
 	case adminPoolStatus:
-		pool := keeper.GetPool(ctx, memo.GetTicker())
+		ticker, err := NewTicker(memo.GetKey())
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("Memo: %+v", memo))
+		}
+		pool := keeper.GetPool(ctx, ticker)
 		if pool.Empty() {
-			return nil, errors.New("pool doesn't exist")
+			return nil, fmt.Errorf("pool doesn't exist: %s", ticker.String())
 		}
 		if !keeper.IsTrustAccountBnb(ctx, tx.Sender) {
 			return nil, errors.New("Not authorized")
 		}
 		status := GetPoolStatus(memo.GetValue())
 		return NewMsgSetPoolData(
-			memo.GetTicker(),
+			ticker,
 			status,
 			signer,
 		), nil
@@ -433,6 +437,7 @@ func getMsgOutboundFromMemo(memo OutboundMemo, txID TxID, sender BnbAddress, sig
 // handleMsgDonate
 func handleMsgDonate(ctx sdk.Context, keeper Keeper, msg MsgDonate) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgDonate %s", msg.TxID))
+	fmt.Printf("Donate: %+v\n", msg)
 	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -449,6 +454,8 @@ func handleMsgDonate(ctx sdk.Context, keeper Keeper, msg MsgDonate) sdk.Result {
 	if msg.RuneAmount.GreaterThen(0) {
 		pool.BalanceRune = pool.BalanceRune.Plus(msg.RuneAmount)
 	}
+
+	keeper.SetPool(ctx, pool)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
