@@ -41,13 +41,12 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Check(memo.IsType(txWithdraw), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetAmount(), Equals, "25")
 
-	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:8.7:hello to : : the world!")
+	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:8.7")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit(), Equals, 8.7)
-	c.Check(memo.GetMemo(), Equals, "hello to : : the world!")
 
 	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Assert(err, IsNil)
@@ -55,15 +54,13 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit(), Equals, 0.0)
-	c.Check(memo.GetMemo(), Equals, "")
 
-	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6::hi")
+	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetSymbol(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit(), Equals, 0.0)
-	c.Check(memo.GetMemo(), Equals, "hi")
 
 	memo, err = ParseMemo("ADMIN:KEY:TSL:15")
 	c.Assert(err, IsNil)
