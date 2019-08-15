@@ -131,7 +131,11 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, 
 }
 
 func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	hash := path[0]
+	hash, err := NewTxID(path[0])
+	if err != nil {
+		ctx.Logger().Error("fail to parse tx id", err)
+		return nil, sdk.ErrInternal("fail to parse tx id")
+	}
 	tx := keeper.GetTxIn(ctx, hash)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, tx)
 	if nil != err {

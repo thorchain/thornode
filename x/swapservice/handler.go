@@ -28,6 +28,8 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			return handleMsgSetTxIn(ctx, keeper, txOutStore, m)
 		case MsgSetAdminConfig:
 			return handleMsgSetAdminConfig(ctx, keeper, m)
+		case MsgOutboundTx:
+			return handleMsgOutboundTx(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -221,7 +223,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAcc
 // handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
 func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetTxIn) sdk.Result {
-	conflicts := make([]string, 0)
+	conflicts := make([]TxID, 0)
 	todo := make([]TxIn, 0)
 	for _, tx := range msg.TxIns {
 		// validate there are not conflicts first
@@ -285,6 +287,11 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddre
 		newMsg, err = getMsgSwapFromMemo(m, tx, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgSwap from memo")
+		}
+	case OutboundMemo:
+		newMsg, err = getMsgOutboundFromMemo(m, tx.Request, tx.Sender, signer)
+		if nil != err {
+			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
 	default:
 		return nil, errors.Wrap(err, "Unable to find memo type")
@@ -375,6 +382,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxIn, signer sdk.A
 		signer,
 	), nil
 }
+
 func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, signer sdk.AccAddress) (sdk.Msg, error) {
 	ticker, err := NewTicker(memo.GetSymbol())
 	if err != nil {
@@ -388,6 +396,63 @@ func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, 
 		PoolBootstrap, // new pools start in a Bootstrap state
 		signer,
 	), nil
+}
+
+func getMsgOutboundFromMemo(memo OutboundMemo, txID TxID, sender BnbAddress, signer sdk.AccAddress) (sdk.Msg, error) {
+	blockHeight := memo.GetBlockHeight()
+	return NewMsgOutboundTx(
+		txID,
+		blockHeight,
+		sender,
+		signer,
+	), nil
+}
+
+// handleMsgOutboundTx processes outbound tx from our pool
+func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.Result {
+	ctx.Logger().Info(fmt.Sprintf("receive MsgOutboundTx %s at height %d", msg.TxID, msg.Height))
+	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account")
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid MsgOutboundTx", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	// ensure the bnb address this tx was sent from is from our pool
+	poolAddress := keeper.GetAdminConfigPoolAddress(ctx)
+	if !poolAddress.Equals(msg.Sender) {
+		ctx.Logger().Error("message sent by unauthorized account")
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+
+	index, err := keeper.GetTxInIndex(ctx, msg.Height)
+	if err != nil {
+		ctx.Logger().Error("invalid TxIn Index", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	// iterate over our index and mark each tx as done
+	for _, txID := range index {
+		in := keeper.GetTxIn(ctx, txID)
+		in.SetDone(msg.TxID)
+		keeper.SetTxIn(ctx, in)
+	}
+
+	// update txOut record with our TxID that sent funds out of the pool
+	txOut, err := keeper.GetTxOut(ctx, msg.Height)
+	if err != nil {
+		ctx.Logger().Error("unable to get txOut record", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+	txOut.Hash = msg.TxID
+	keeper.SetTxOut(ctx, txOut)
+
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
 }
 
 // handleMsgSetAdminConfig process admin config
