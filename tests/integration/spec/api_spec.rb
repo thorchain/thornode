@@ -193,12 +193,12 @@ describe "API Tests" do
 
     end
 
-    it "donate to a pool" do
+    it "add tokens to a pool" do
       coins = [
         {'denom': "RUNE-B1A", "amount": "0.2"},
         {'denom': "TCAN-014", "amount": "0.2"},
       ]
-      tx = makeTx(memo: "donate:TCAN-014", coins: coins, sender: sender)
+      tx = makeTx(memo: "add:TCAN-014", coins: coins, sender: sender)
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
 

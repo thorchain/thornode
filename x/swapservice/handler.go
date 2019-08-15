@@ -22,8 +22,8 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			result := handleMsgSwap(ctx, keeper, txOutStore, m)
 			processRefund(ctx, &result, txOutStore, keeper, m)
 			return result
-		case MsgDonate:
-			return handleMsgDonate(ctx, keeper, m)
+		case MsgAdd:
+			return handleMsgAdd(ctx, keeper, m)
 		case MsgSetUnStake:
 			return handleMsgSetUnstake(ctx, keeper, txOutStore, m)
 		case MsgSetTxIn:
@@ -292,10 +292,10 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddre
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgSwap from memo")
 		}
-	case DonateMemo:
-		newMsg, err = getMsgDonateFromMemo(m, tx, signer)
+	case AddMemo:
+		newMsg, err = getMsgAddFromMemo(m, tx, signer)
 		if err != nil {
-			return nil, errors.Wrap(err, "fail to get MsgDonate from memo")
+			return nil, errors.Wrap(err, "fail to get MsgAdd from memo")
 		}
 	case GasMemo:
 		newMsg, err = getMsgNoOpFromMemo(tx, signer)
@@ -405,7 +405,7 @@ func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, 
 	), nil
 }
 
-func getMsgDonateFromMemo(memo DonateMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgAddFromMemo(memo AddMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	runeAmount := ZeroAmount
 	tokenAmount := ZeroAmount
 	for _, coin := range tx.Coins {
@@ -415,7 +415,7 @@ func getMsgDonateFromMemo(memo DonateMemo, tx TxIn, signer sdk.AccAddress) (sdk.
 			tokenAmount = coin.Amount
 		}
 	}
-	return NewMsgDonate(
+	return NewMsgAdd(
 		memo.GetTicker(),
 		runeAmount,
 		tokenAmount,
@@ -434,10 +434,10 @@ func getMsgOutboundFromMemo(memo OutboundMemo, txID TxID, sender BnbAddress, sig
 	), nil
 }
 
-// handleMsgDonate
-func handleMsgDonate(ctx sdk.Context, keeper Keeper, msg MsgDonate) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgDonate %s", msg.TxID))
-	fmt.Printf("Donate: %+v\n", msg)
+// handleMsgAdd
+func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
+	ctx.Logger().Info(fmt.Sprintf("receive MsgAdd %s", msg.TxID))
+	fmt.Printf("Add: %+v\n", msg)
 	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()

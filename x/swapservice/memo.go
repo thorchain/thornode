@@ -21,7 +21,7 @@ const (
 	txSwap
 	txAdmin
 	txOutbound
-	txDonate
+	txAdd
 	txGas
 )
 
@@ -38,7 +38,7 @@ var stringToTxTypeMap = map[string]txType{
 	"swap":     txSwap,
 	"admin":    txAdmin,
 	"outbound": txOutbound,
-	"donate":   txDonate,
+	"add":      txAdd,
 	"gas":      txGas,
 }
 
@@ -49,7 +49,7 @@ var txToStringMap = map[txType]string{
 	txSwap:     "swap",
 	txAdmin:    "admin",
 	txOutbound: "outbound",
-	txDonate:   "donate",
+	txAdd:      "add",
 	txGas:      "gas",
 }
 
@@ -113,7 +113,7 @@ type GasMemo struct {
 	MemoBase
 }
 
-type DonateMemo struct {
+type AddMemo struct {
 	MemoBase
 }
 
@@ -179,9 +179,9 @@ func ParseMemo(memo string) (Memo, error) {
 			MemoBase: MemoBase{TxType: txCreate, Ticker: ticker},
 		}, nil
 
-	case txDonate:
-		return DonateMemo{
-			MemoBase: MemoBase{TxType: txDonate, Ticker: ticker},
+	case txAdd:
+		return AddMemo{
+			MemoBase: MemoBase{TxType: txAdd, Ticker: ticker},
 		}, nil
 
 	case txStake:
