@@ -4,8 +4,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// MsgDonate defines a donate message
-type MsgDonate struct {
+// MsgAdd defines a add message
+type MsgAdd struct {
 	Ticker      Ticker         `json:"ticker"` // ticker means the symbol
 	TokenAmount Amount         `json:"token"`  // the amount of token
 	RuneAmount  Amount         `json:"rune"`   // the amount of rune
@@ -13,9 +13,9 @@ type MsgDonate struct {
 	Signer      sdk.AccAddress `json:"signer"`
 }
 
-// NewMsgDonate is a constructor function for MsgDonate
-func NewMsgDonate(ticker Ticker, r, token Amount, requestTxHash TxID, signer sdk.AccAddress) MsgDonate {
-	return MsgDonate{
+// NewMsgAdd is a constructor function for MsgAdd
+func NewMsgAdd(ticker Ticker, r, token Amount, requestTxHash TxID, signer sdk.AccAddress) MsgAdd {
+	return MsgAdd{
 		Ticker:      ticker,
 		TokenAmount: token,
 		RuneAmount:  r,
@@ -25,13 +25,13 @@ func NewMsgDonate(ticker Ticker, r, token Amount, requestTxHash TxID, signer sdk
 }
 
 // Route should return the pooldata of the module
-func (msg MsgDonate) Route() string { return RouterKey }
+func (msg MsgAdd) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgDonate) Type() string { return "set_donate" }
+func (msg MsgAdd) Type() string { return "set_add" }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgDonate) ValidateBasic() sdk.Error {
+func (msg MsgAdd) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrUnknownRequest("Signer cannot be empty")
 	}
@@ -51,11 +51,11 @@ func (msg MsgDonate) ValidateBasic() sdk.Error {
 }
 
 // GetSignBytes encodes the message for signing
-func (msg MsgDonate) GetSignBytes() []byte {
+func (msg MsgAdd) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgDonate) GetSigners() []sdk.AccAddress {
+func (msg MsgAdd) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Signer}
 }

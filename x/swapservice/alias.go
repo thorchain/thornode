@@ -25,7 +25,7 @@ var (
 	NewPool              = types.NewPool
 	NewAdminConfig       = types.NewAdminConfig
 	NewMsgNoOp           = types.NewMsgNoOp
-	NewMsgDonate         = types.NewMsgDonate
+	NewMsgAdd            = types.NewMsgAdd
 	NewMsgSetTxIn        = types.NewMsgSetTxIn
 	NewMsgSetPoolData    = types.NewMsgSetPoolData
 	NewMsgSetStakeData   = types.NewMsgSetStakeData
@@ -55,7 +55,7 @@ var (
 
 type (
 	MsgNoOp           = types.MsgNoOp
-	MsgDonate         = types.MsgDonate
+	MsgAdd            = types.MsgAdd
 	MsgSetUnStake     = types.MsgSetUnStake
 	MsgSetPoolData    = types.MsgSetPoolData
 	MsgSetStakeData   = types.MsgSetStakeData
