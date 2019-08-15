@@ -55,43 +55,6 @@ func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, ticker types.Ticker) (
 
 func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, ticker types.Ticker, ps types.PoolStaker) {}
 
-func (mps MockPoolStorage) SetSwapRecord(ctx sdk.Context, sr types.SwapRecord) error {
-	if sr.RequestTxHash.Equals(types.TxID("ASKFORERROR")) {
-		return errors.New("you asked for it")
-	}
-	return nil
-}
-
-func (mps MockPoolStorage) GetSwapRecord(ctx sdk.Context, requestTxHash types.TxID) (types.SwapRecord, error) {
-	if requestTxHash.Equals(types.TxID("ASKFORERROR")) {
-		return types.SwapRecord{}, errors.New("you asked for it")
-	}
-	return types.SwapRecord{}, nil
-}
-
-func (mps MockPoolStorage) UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash types.TxID) error {
-	if requestTxHash.Equals(types.TxID("ASKFORERROR")) {
-		return errors.New("you ask for it")
-	}
-	return nil
-}
-
-func (mps MockPoolStorage) SetUnStakeRecord(ctx sdk.Context, ur types.UnstakeRecord) {}
-
-func (mps MockPoolStorage) GetUnStakeRecord(ctx sdk.Context, requestTxHash types.TxID) (types.UnstakeRecord, error) {
-	if requestTxHash.Equals(types.TxID("ASKFORERROR")) {
-		return types.UnstakeRecord{}, errors.New("you asked for it")
-	}
-	return types.UnstakeRecord{}, nil
-}
-
-func (mps MockPoolStorage) UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash, completeTxHash types.TxID) error {
-	if requestTxHash.Equals(types.TxID("ASKFORERROR")) {
-		return errors.New("you ask for it")
-	}
-	return nil
-}
-
 func (mps MockPoolStorage) GetAdminConfig(ctx sdk.Context, key types.AdminConfigKey) types.AdminConfig {
 	return types.NewAdminConfig(key, "FOOBAR")
 }

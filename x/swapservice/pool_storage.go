@@ -18,13 +18,5 @@ type poolStorage interface {
 	GetPoolStaker(ctx sdk.Context, ticker Ticker) (PoolStaker, error)
 	SetPoolStaker(ctx sdk.Context, ticker Ticker, ps PoolStaker)
 
-	SetSwapRecord(ctx sdk.Context, sr SwapRecord) error
-	GetSwapRecord(ctx sdk.Context, requestTxHash TxID) (SwapRecord, error)
-	UpdateSwapRecordPayTxHash(ctx sdk.Context, requestTxHash, payTxHash TxID) error
-
 	GetAdminConfig(ctx sdk.Context, key AdminConfigKey) AdminConfig
-
-	SetUnStakeRecord(ctx sdk.Context, ur UnstakeRecord)
-	GetUnStakeRecord(ctx sdk.Context, requestTxHash TxID) (UnstakeRecord, error)
-	UpdateUnStakeRecordCompleteTxHash(ctx sdk.Context, requestTxHash, completeTxHash TxID) error
 }
