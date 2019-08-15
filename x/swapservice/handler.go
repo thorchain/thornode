@@ -363,7 +363,7 @@ func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxIn, signer sdk.AccAddress) (s
 	return NewMsgSetUnStake(tx.Sender, withdrawAmount, ticker, tx.Request, signer), nil
 }
 
-func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxHash, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	switch memo.GetAdminType() {
 	case adminPoolStatus:
 		ticker, err := NewTicker(memo.GetKey())
