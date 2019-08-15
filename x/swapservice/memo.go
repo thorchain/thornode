@@ -87,7 +87,6 @@ type Memo interface {
 	GetAmount() string
 	GetDestination() BnbAddress
 	GetSlipLimit() float64
-	GetMemo() string
 	GetAdminType() adminType
 	GetKey() string
 	GetValue() string
@@ -118,7 +117,6 @@ type SwapMemo struct {
 	MemoBase
 	Destination BnbAddress
 	SlipLimit   float64
-	Memo        string
 }
 
 type AdminMemo struct {
@@ -175,8 +173,6 @@ func ParseMemo(memo string) (Memo, error) {
 		}, err
 
 	case txSwap:
-		max := 5
-		parts = strings.SplitN(memo, ":", max)
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("missing swap parameters: memo should in SWAP:SYMBOLXX-XXX:DESTADDR:TRADE-TARGET format")
 		}
@@ -198,15 +194,10 @@ func ParseMemo(memo string) (Memo, error) {
 				return noMemo, err
 			}
 		}
-		var mem string
-		if len(parts) == max {
-			mem = parts[4]
-		}
 		return SwapMemo{
 			MemoBase:    MemoBase{TxType: txSwap, Symbol: symbol},
 			Destination: destination,
 			SlipLimit:   slip,
-			Memo:        mem,
 		}, err
 
 	case txAdmin:
@@ -240,7 +231,6 @@ func (m MemoBase) GetSymbol() string          { return strings.ToUpper(m.Symbol)
 func (m MemoBase) GetAmount() string          { return "" }
 func (m MemoBase) GetDestination() BnbAddress { return "" }
 func (m MemoBase) GetSlipLimit() float64      { return 0 }
-func (m MemoBase) GetMemo() string            { return "" }
 func (m MemoBase) GetAdminType() adminType    { return adminUnknown }
 func (m MemoBase) GetKey() string             { return "" }
 func (m MemoBase) GetValue() string           { return "" }
@@ -250,7 +240,6 @@ func (m MemoBase) GetBlockHeight() int64      { return 0 }
 func (m WithdrawMemo) GetAmount() string      { return m.Amount }
 func (m SwapMemo) GetDestination() BnbAddress { return m.Destination }
 func (m SwapMemo) GetSlipLimit() float64      { return m.SlipLimit }
-func (m SwapMemo) GetMemo() string            { return m.Memo }
 func (m AdminMemo) GetAdminType() adminType   { return m.Type }
 func (m AdminMemo) GetKey() string            { return m.Key }
 func (m AdminMemo) GetValue() string          { return m.Value }
