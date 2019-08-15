@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"gitlab.com/thorchain/statechain/x/swapservice/types"
 )
 
 // TXTYPE:STATE1:STATE2:STATE3:FINALMEMO
@@ -163,13 +165,20 @@ func ParseMemo(memo string) (Memo, error) {
 	case txSwap:
 		max := 5
 		parts = strings.SplitN(memo, ":", max)
-		if len(parts) < 3 {
-			return noMemo, fmt.Errorf("Missing swap parameters: destination address")
+		if len(parts) < 2 {
+			return noMemo, fmt.Errorf("missing swap parameters: memo should in SWAP:SYMBOLXX-XXX:DESTADDR:TRADE-TARGET format")
 		}
-		destination, err := NewBnbAddress(parts[2])
-		if err != nil {
-			return noMemo, err
+		// DESTADDR can be empty , if it is empty , it will swap to the sender address
+		destination := types.NoBnbAddress
+		if len(parts) > 2 {
+			if len(parts[2]) > 0 {
+				destination, err = NewBnbAddress(parts[2])
+				if err != nil {
+					return noMemo, err
+				}
+			}
 		}
+		// trade target can be empty , when it is empty , there is no price protection
 		var slip float64
 		if len(parts) > 3 && len(parts[3]) > 0 {
 			slip, err = strconv.ParseFloat(parts[3], 64)
@@ -189,7 +198,7 @@ func ParseMemo(memo string) (Memo, error) {
 		}, err
 	case txAdmin:
 		if len(parts) < 4 {
-			return noMemo, fmt.Errorf("Not enough parameters")
+			return noMemo, fmt.Errorf("not enough parameters")
 		}
 		a, err := stringToAdminType(parts[1])
 		return AdminMemo{
