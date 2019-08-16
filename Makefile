@@ -14,10 +14,7 @@ lint:
 	go mod verify
 
 build:
-	go build
-
-test:
-	./scripts/test.sh
+	@go build ./...
 
 start:
 	./scripts/start.sh
@@ -25,3 +22,18 @@ start:
 clean:
 	rm ${GOBIN}/observed
 	rm ${GOBIN}/signd
+
+test-coverage:
+	@go test -mod=readonly -v -coverprofile .testCoverage.txt ./...
+
+coverage-report: test-coverage
+	@tool cover -html=.testCoverage.txt
+
+test:
+	@go test -mod=readonly ./...
+
+clear:
+	clear
+
+test-watch: clear
+	@./scripts/watch.bash

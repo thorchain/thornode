@@ -1,48 +1,49 @@
 package signer
 
 import (
+	"encoding/json"
 	"fmt"
-	"time"
 	"net/url"
 	"strconv"
-	"encoding/json"
+	"time"
 
-	"github.com/valyala/fasthttp"
 	log "github.com/rs/zerolog/log"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/valyala/fasthttp"
 
+	"gitlab.com/thorchain/bepswap/common"
 	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
 type BlockScan struct {
-	Db *leveldb.DB
+	Db        *leveldb.DB
 	TxOutChan chan []byte
 }
 
 func NewBlockScan(db *leveldb.DB, txOutChan chan []byte) *BlockScan {
 	return &BlockScan{
-		Db: db,
+		Db:        db,
 		TxOutChan: txOutChan,
 	}
 }
 
 func (b *BlockScan) Start() {
 	for {
-		<-time.After(3*time.Second)
+		<-time.After(3 * time.Second)
 		blockHeight := b.GetLastBlock()
 		log.Info().Msgf("Processing Statechain Block Height: %v", blockHeight+1)
 
-		b.SetLastBlock(blockHeight+1)
-    go b.ScanBlock(blockHeight)
-  }
+		b.SetLastBlock(blockHeight + 1)
+		go b.ScanBlock(blockHeight)
+	}
 }
 
 func (b *BlockScan) ScanBlock(blockHeight int64) {
 	uri := url.URL{
 		Scheme: "http",
-		Host: ctypes.ChainHost,
-		Path: fmt.Sprintf("/swapservice/txoutarray/%v", blockHeight),
+		Host:   ctypes.ChainHost,
+		Path:   fmt.Sprintf("/swapservice/txoutarray/%v", blockHeight),
 	}
 
 	req := fasthttp.AcquireRequest()
@@ -63,9 +64,8 @@ func (b *BlockScan) ScanBlock(blockHeight int64) {
 	if len(txOut.TxArray) >= 1 {
 		for i, txArr := range txOut.TxArray {
 			for j, coin := range txArr.Coins {
-				parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
-				amount := parsedAmt
-				txOut.TxArray[i].Coins[j].Amount = fmt.Sprintf("%.0f", amount)
+				amt := coin.Amount.Float64()
+				txOut.TxArray[i].Coins[j].Amount = common.Amount(fmt.Sprintf("%.0f", amt))
 			}
 		}
 

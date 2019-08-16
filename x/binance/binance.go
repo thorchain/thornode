@@ -2,29 +2,28 @@ package binance
 
 import (
 	"os"
-	"strconv"
 
 	log "github.com/rs/zerolog/log"
 
-	"github.com/binance-chain/go-sdk/keys"
-	"github.com/binance-chain/go-sdk/types/tx"
-	"github.com/binance-chain/go-sdk/types/msg"
-	"github.com/binance-chain/go-sdk/common/types"
-	"github.com/binance-chain/go-sdk/client/query"
-	"github.com/binance-chain/go-sdk/client/basic"
 	sdk "github.com/binance-chain/go-sdk/client"
+	"github.com/binance-chain/go-sdk/client/basic"
+	"github.com/binance-chain/go-sdk/client/query"
+	"github.com/binance-chain/go-sdk/common/types"
+	"github.com/binance-chain/go-sdk/keys"
+	"github.com/binance-chain/go-sdk/types/msg"
+	"github.com/binance-chain/go-sdk/types/tx"
 
 	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
-	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types" 
-	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types" 
+	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
+	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
 type Binance struct {
-	Client sdk.DexClient
+	Client      sdk.DexClient
 	BasicClient basic.BasicClient
 	QueryClient query.QueryClient
-	KeyManager keys.KeyManager
-	chainId string
+	KeyManager  keys.KeyManager
+	chainId     string
 }
 
 func NewBinance() *Binance {
@@ -49,10 +48,10 @@ func NewBinance() *Binance {
 	queryClient := query.NewClient(basicClient)
 
 	return &Binance{
-		Client: bClient,
+		Client:      bClient,
 		BasicClient: basicClient,
 		QueryClient: queryClient,
-		KeyManager: keyManager,
+		KeyManager:  keyManager,
 		// @todo Get this from the transaction client
 		chainId: "Binance-Chain-Nile",
 	}
@@ -110,13 +109,13 @@ func (b Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string) {
 	for _, txn := range txOut.TxArray {
 		toAddr, _ := types.AccAddressFromBech32(string(types.AccAddress(txn.To)))
 		for _, coin := range txn.Coins {
-			amount, _ := strconv.ParseInt(coin.Amount, 10, 64)
+			amount := coin.Amount.Float64()
 			payload = append(payload, msg.Transfer{
 				toAddr,
 				types.Coins{
 					types.Coin{
-						Denom: coin.Denom,
-						Amount: amount,
+						Denom:  coin.Denom.String(),
+						Amount: int64(amount),
 					},
 				},
 			})
@@ -132,12 +131,12 @@ func (b Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string) {
 	}
 
 	signMsg := &tx.StdSignMsg{
-		ChainID: 				b.chainId,
-		Memo:    				btypes.TxOutMemoPrefix+txOut.Height,
-		Msgs:    				[]msg.Msg{sendMsg},
-		Source:  				tx.Source,
-		Sequence: 			acc.Sequence,
-		AccountNumber: 	acc.Number,
+		ChainID:       b.chainId,
+		Memo:          btypes.TxOutMemoPrefix + txOut.Height,
+		Msgs:          []msg.Msg{sendMsg},
+		Source:        tx.Source,
+		Sequence:      acc.Sequence,
+		AccountNumber: acc.Number,
 	}
 
 	hexTx, _ := b.KeyManager.Sign(*signMsg)
