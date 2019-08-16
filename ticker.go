@@ -13,6 +13,7 @@ const (
 )
 
 type Ticker string
+type Tickers []Ticker
 
 func NewTicker(ticker string) (Ticker, error) {
 	noTicker := Ticker("")
