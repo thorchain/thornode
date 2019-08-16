@@ -9,7 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
 	"gitlab.com/thorchain/bepswap/common"
-	"gitlab.com/thorchain/statechain/x/swapservice/types"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
 type txItem struct {
