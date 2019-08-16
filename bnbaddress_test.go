@@ -13,6 +13,7 @@ func (s *BnBAddressSuite) TestBnbAddress(c *C) {
 	c.Check(err, IsNil)
 	c.Check(addr.IsEmpty(), Equals, false)
 	c.Check(addr.Equals(BnbAddress("bnbblejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")), Equals, true)
+	c.Check(addr.String(), Equals, "bnbblejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	_, err = NewBnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(err, IsNil)
 	_, err = NewBnbAddress("tbnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
@@ -26,4 +27,6 @@ func (s *BnBAddressSuite) TestBnbAddress(c *C) {
 	c.Check(BnbAddress("").IsEmpty(), Equals, true)
 
 	c.Check(NoBnbAddress.Equals(BnbAddress("")), Equals, true)
+	_, err = NewBnbAddress("")
+	c.Assert(err, IsNil)
 }
