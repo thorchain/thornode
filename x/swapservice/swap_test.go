@@ -11,7 +11,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"gitlab.com/thorchain/bepswap/common"
-	"gitlab.com/thorchain/statechain/x/swapservice/mocks"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/mocks"
 )
 
 type SwapSuite struct{}

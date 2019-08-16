@@ -10,7 +10,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"gitlab.com/thorchain/bepswap/common"
-	q "gitlab.com/thorchain/statechain/x/swapservice/query"
+	q "gitlab.com/thorchain/bepswap/statechain/x/swapservice/query"
 )
 
 // NewQuerier is the module level router for state queries

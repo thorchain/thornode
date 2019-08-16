@@ -1,4 +1,4 @@
-module gitlab.com/thorchain/statechain
+module gitlab.com/thorchain/bepswap/statechain
 
 go 1.12
 
@@ -25,4 +25,4 @@ require (
 
 replace golang.org/x/crypto => github.com/johnnyluo/crypto v0.0.0-20190722223544-3f5ecfe86f08
 
-replace gitlab.com/thorchain/statechain => ../statechain
+replace gitlab.com/thorchain/bepswap/statechain => ../statechain
