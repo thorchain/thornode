@@ -82,7 +82,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (Amount, Amount,
 		stakerPool.UpsertStakerPoolItem(spi)
 	}
 	// update staker pool
-	keeper.SetPool(ctx, msg.Ticker, pool)
+	keeper.SetPool(ctx, pool)
 	keeper.SetPoolStaker(ctx, msg.Ticker, poolStaker)
 	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
 	return NewAmountFromFloat(withdrawRune), NewAmountFromFloat(withDrawToken), nil

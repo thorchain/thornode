@@ -14,13 +14,15 @@ type txType uint8
 type adminType uint8
 
 const (
-	txCreate txType = iota
+	txUnknown txType = iota
+	txCreate
 	txStake
 	txWithdraw
 	txSwap
 	txAdmin
 	txOutbound
-	unknowTx
+	txAdd
+	txGas
 )
 
 const (
@@ -36,6 +38,8 @@ var stringToTxTypeMap = map[string]txType{
 	"swap":     txSwap,
 	"admin":    txAdmin,
 	"outbound": txOutbound,
+	"add":      txAdd,
+	"gas":      txGas,
 }
 
 var txToStringMap = map[txType]string{
@@ -45,6 +49,8 @@ var txToStringMap = map[txType]string{
 	txSwap:     "swap",
 	txAdmin:    "admin",
 	txOutbound: "outbound",
+	txAdd:      "add",
+	txGas:      "gas",
 }
 
 var stringToAdminTypeMap = map[string]adminType{
@@ -58,7 +64,7 @@ func stringToTxType(s string) (txType, error) {
 	if t, ok := stringToTxTypeMap[sl]; ok {
 		return t, nil
 	}
-	return unknowTx, fmt.Errorf("Invalid tx type: %s", s)
+	return txUnknown, fmt.Errorf("Invalid tx type: %s", s)
 }
 
 // converts a string into a adminType
@@ -83,7 +89,7 @@ func (tx txType) String() string {
 type Memo interface {
 	IsType(tx txType) bool
 
-	GetSymbol() string
+	GetTicker() Ticker
 	GetAmount() string
 	GetDestination() BnbAddress
 	GetSlipLimit() float64
@@ -95,10 +101,18 @@ type Memo interface {
 
 type MemoBase struct {
 	TxType txType
-	Symbol string
+	Ticker Ticker
 }
 
 type CreateMemo struct {
+	MemoBase
+}
+
+type GasMemo struct {
+	MemoBase
+}
+
+type AddMemo struct {
 	MemoBase
 }
 
@@ -143,9 +157,11 @@ func ParseMemo(memo string) (Memo, error) {
 		return noMemo, err
 	}
 
-	symbol := strings.ToUpper(parts[1])
-	if tx != txAdmin && tx != txOutbound {
-		if err := validateSymbol(symbol); err != nil {
+	var ticker Ticker
+	if tx != txGas && tx != txAdmin && tx != txOutbound {
+		var err error
+		ticker, err = NewTicker(parts[1])
+		if err != nil {
 			return noMemo, err
 		}
 	}
@@ -153,12 +169,22 @@ func ParseMemo(memo string) (Memo, error) {
 	switch tx {
 	case txCreate:
 		return CreateMemo{
-			MemoBase: MemoBase{TxType: txCreate, Symbol: symbol},
+			MemoBase: MemoBase{TxType: txCreate, Ticker: ticker},
+		}, nil
+
+	case txGas:
+		return GasMemo{
+			MemoBase: MemoBase{TxType: txGas, Ticker: ticker},
+		}, nil
+
+	case txAdd:
+		return AddMemo{
+			MemoBase: MemoBase{TxType: txAdd, Ticker: ticker},
 		}, nil
 
 	case txStake:
 		return StakeMemo{
-			MemoBase: MemoBase{TxType: txStake, Symbol: symbol},
+			MemoBase: MemoBase{TxType: txStake, Ticker: ticker},
 		}, nil
 
 	case txWithdraw:
@@ -168,7 +194,7 @@ func ParseMemo(memo string) (Memo, error) {
 		// check that amount is parse-able as float64
 		_, err := strconv.ParseFloat(parts[2], 64)
 		return WithdrawMemo{
-			MemoBase: MemoBase{TxType: txWithdraw, Symbol: symbol},
+			MemoBase: MemoBase{TxType: txWithdraw, Ticker: ticker},
 			Amount:   parts[2],
 		}, err
 
@@ -195,7 +221,7 @@ func ParseMemo(memo string) (Memo, error) {
 			}
 		}
 		return SwapMemo{
-			MemoBase:    MemoBase{TxType: txSwap, Symbol: symbol},
+			MemoBase:    MemoBase{TxType: txSwap, Ticker: ticker},
 			Destination: destination,
 			SlipLimit:   slip,
 		}, err
@@ -206,9 +232,10 @@ func ParseMemo(memo string) (Memo, error) {
 		}
 		a, err := stringToAdminType(parts[1])
 		return AdminMemo{
-			Type:  a,
-			Key:   parts[2],
-			Value: parts[3],
+			MemoBase: MemoBase{TxType: txAdmin},
+			Type:     a,
+			Key:      parts[2],
+			Value:    parts[3],
 		}, err
 
 	case txOutbound:
@@ -227,7 +254,7 @@ func ParseMemo(memo string) (Memo, error) {
 // Base Functions
 func (m MemoBase) GetType() txType            { return m.TxType }
 func (m MemoBase) IsType(tx txType) bool      { return m.TxType.Equals(tx) }
-func (m MemoBase) GetSymbol() string          { return strings.ToUpper(m.Symbol) }
+func (m MemoBase) GetTicker() Ticker          { return m.Ticker }
 func (m MemoBase) GetAmount() string          { return "" }
 func (m MemoBase) GetDestination() BnbAddress { return "" }
 func (m MemoBase) GetSlipLimit() float64      { return 0 }
@@ -244,16 +271,3 @@ func (m AdminMemo) GetAdminType() adminType   { return m.Type }
 func (m AdminMemo) GetKey() string            { return m.Key }
 func (m AdminMemo) GetValue() string          { return m.Value }
 func (m OutboundMemo) GetBlockHeight() int64  { return m.BlockHeight }
-
-// validates the given symbol
-func validateSymbol(sym string) error {
-	if len(sym) < 3 {
-		return fmt.Errorf("Symbol Error: Not enough characters (%d)", len(sym))
-	}
-
-	if len(sym) > 8 {
-		return fmt.Errorf("Symbol Error: Too many characters (%d)", len(sym))
-	}
-
-	return nil
-}
