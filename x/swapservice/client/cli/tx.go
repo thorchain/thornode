@@ -167,33 +167,37 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 // GetCmdUnstake command to unstake coins
 func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "unstake [address] [percentage] [ticker] [requestTxHash]",
+		Use:   "unstake [address] [ticker] [requestTxHash] [withdraw basis points]",
 		Short: "Withdraw coins",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.MinimumNArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			ticker, err := types.NewTicker(args[2])
-			if err != nil {
-				return err
-			}
-
-			txID, err := types.NewTxID(args[3])
-			if err != nil {
-				return err
-			}
-
-			percentage, err := types.NewAmount(args[1])
-			if err != nil {
-				return err
-			}
-
 			bnbAddr, err := types.NewBnbAddress(args[0])
 			if err != nil {
 				return err
 			}
 
-			msg := types.NewMsgSetUnStake(bnbAddr, percentage, ticker, txID, cliCtx.GetFromAddress())
+			ticker, err := types.NewTicker(args[1])
+			if err != nil {
+				return err
+			}
+
+			txID, err := types.NewTxID(args[2])
+			if err != nil {
+				return err
+			}
+			withdrawBasisPoints := types.ZeroAmount
+			if len(args) > 3 {
+				withdrawBasisPoints, err = types.NewAmount(args[3])
+				if err != nil {
+					return err
+				}
+			}
+			if !withdrawBasisPoints.GreaterThen(0) {
+				withdrawBasisPoints = types.NewAmountFromFloat(types.MaxWithdrawBasisPoints)
+			}
+			msg := types.NewMsgSetUnStake(bnbAddr, withdrawBasisPoints, ticker, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
