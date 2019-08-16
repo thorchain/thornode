@@ -26,4 +26,7 @@ func (s *AmountSuite) TestAmount(c *C) {
 	c.Check(ZeroAmount.Equals(Amount("0")), Equals, true)
 	c.Check(NewAmountFromFloat(0).IsZero(), Equals, true)
 	c.Check(NewAmountFromFloat(1.45).IsZero(), Equals, false)
+	amt, err = NewAmount("bogus")
+	c.Assert(err, NotNil)
+	c.Check(amt.Equals(ZeroAmount), Equals, true)
 }
