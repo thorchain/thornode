@@ -87,68 +87,68 @@ func (w *WebSocket) SetKeepAlive(conn *websocket.Conn) {
 }
 
 func (w *WebSocket) ReadSocket(conn *websocket.Conn) {
-for {
-_, message, err := conn.ReadMessage()
-if err != nil {
-// @todo Reconnect if this fails.
-log.Error().Msgf("Read error: %s", err)
-}
-w.SocketChan <- message
-}
+	for {
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			// @todo Reconnect if this fails.
+			log.Error().Msgf("Read error: %s", err)
+		}
+		w.SocketChan <- message
+	}
 }
 
 func (w *WebSocket) ParseMessage() {
-go func () {
-	for {
-		payload := <-w.SocketChan
-		var txfr btypes.SocketTxfr
+	go func() {
+		for {
+			payload := <-w.SocketChan
+			var txfr btypes.SocketTxfr
 
-		err := json.Unmarshal(payload, &txfr)
-		if err != nil {
-			log.Error().Msgf("There was an error while parsing the event: %v", err)
-		}
+			err := json.Unmarshal(payload, &txfr)
+			if err != nil {
+				log.Error().Msgf("There was an error while parsing the event: %v", err)
+			}
 
-		if txfr.Stream == "transfers" {
-			var txIn stypes.TxIn
+			if txfr.Stream == "transfers" {
+				var txIn stypes.TxIn
 
-			if txfr.Data.FromAddr != config.PoolAddress {
-				for _, txn := range txfr.Data.T {
+				if txfr.Data.FromAddr != config.PoolAddress {
+					for _, txn := range txfr.Data.T {
+						txItem := stypes.TxInItem{Tx: txfr.Data.Hash,
+							Memo:   txfr.Data.Memo,
+							Sender: txfr.Data.FromAddr,
+						}
+
+						for _, coin := range txn.Coins {
+							parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
+							amount := parsedAmt * 100000000
+
+							var token common.Coin
+							token.Denom = common.Ticker(coin.Asset)
+							token.Amount = common.Amount(fmt.Sprintf("%.0f", amount))
+							txItem.Coins = append(txItem.Coins, token)
+						}
+
+						txIn.TxArray = append(txIn.TxArray, txItem)
+					}
+				} else {
 					txItem := stypes.TxInItem{Tx: txfr.Data.Hash,
 						Memo:   txfr.Data.Memo,
 						Sender: txfr.Data.FromAddr,
 					}
 
-					for _, coin := range txn.Coins {
-						parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
-						amount := parsedAmt * 100000000
-
-						var token common.Coin
-						token.Denom = common.Ticker(coin.Asset)
-						token.Amount = common.Amount(fmt.Sprintf("%.0f", amount))
-						txItem.Coins = append(txItem.Coins, token)
-					}
-
 					txIn.TxArray = append(txIn.TxArray, txItem)
 				}
-			} else {
-				txItem := stypes.TxInItem{Tx: txfr.Data.Hash,
-					Memo:   txfr.Data.Memo,
-					Sender: txfr.Data.FromAddr,
+
+				txIn.BlockHeight = strconv.Itoa(txfr.Data.EventHeight)
+				txIn.Count = strconv.Itoa(len(txIn.TxArray))
+
+				json, err := json.Marshal(txIn)
+				if err != nil {
+					log.Error().Msgf("Error: %v", err)
 				}
 
-				txIn.TxArray = append(txIn.TxArray, txItem)
+				w.TxInChan <- json
 			}
-
-			txIn.BlockHeight = strconv.Itoa(txfr.Data.EventHeight)
-			txIn.Count = strconv.Itoa(len(txIn.TxArray))
-
-			json, err := json.Marshal(txIn)
-			if err != nil {
-				log.Error().Msgf("Error: %v", err)
-			}
-
-			w.TxInChan <- json
 		}
-	}
-}()
+	}()
 }
