@@ -6,6 +6,7 @@ import (
 )
 
 type TxID string
+type TxIDs []TxID
 
 func NewTxID(hash string) (TxID, error) {
 	if len(hash) != 64 {
