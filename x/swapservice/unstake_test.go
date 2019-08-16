@@ -466,12 +466,12 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 			},
 		},
 	}
-	store.SetPoolStaker(ctx, ticker, poolStaker)
+	store.SetPoolStaker(ctx, common.BNBTicker, poolStaker)
 	stakerPool := StakerPool{
 		StakerID: publicAddress,
 		PoolUnits: []*StakerPoolItem{
 			&StakerPoolItem{
-				Ticker: ticker,
+				Ticker: common.BNBTicker,
 				Units:  common.NewAmountFromFloat(100),
 				StakeDetails: []StakeTxDetail{
 					StakeTxDetail{
