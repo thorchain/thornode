@@ -22,6 +22,8 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			result := handleMsgSwap(ctx, keeper, txOutStore, m)
 			processRefund(ctx, &result, txOutStore, keeper, m)
 			return result
+		case MsgAdd:
+			return handleMsgAdd(ctx, keeper, m)
 		case MsgSetUnStake:
 			return handleMsgSetUnstake(ctx, keeper, txOutStore, m)
 		case MsgSetTxIn:
@@ -30,6 +32,8 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		case MsgOutboundTx:
 			return handleMsgOutboundTx(ctx, keeper, m)
+		case MsgNoOp:
+			return handleMsgNoOp(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -213,7 +217,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAcc
 
 	for _, item := range tx.Coins {
 		c := getRefundCoin(ctx, item.Denom, item.Amount, keeper)
-		if c.Amount.LargerThanZero() {
+		if c.Amount.GreaterThen(0) {
 			toi.Coins = append(toi.Coins, c)
 		}
 	}
@@ -288,6 +292,16 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddre
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgSwap from memo")
 		}
+	case AddMemo:
+		newMsg, err = getMsgAddFromMemo(m, tx, signer)
+		if err != nil {
+			return nil, errors.Wrap(err, "fail to get MsgAdd from memo")
+		}
+	case GasMemo:
+		newMsg, err = getMsgNoOpFromMemo(tx, signer)
+		if err != nil {
+			return nil, errors.Wrap(err, "fail to get MsgNoOp from memo")
+		}
 	case OutboundMemo:
 		newMsg, err = getMsgOutboundFromMemo(m, tx.Request, tx.Sender, signer)
 		if nil != err {
@@ -303,12 +317,16 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddre
 	return newMsg, nil
 }
 
-func getMsgSwapFromMemo(memo SwapMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
-	ticker, err := NewTicker(memo.GetSymbol())
-	if err != nil {
-		return nil, err
+func getMsgNoOpFromMemo(tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+	for _, coin := range tx.Coins {
+		if !IsBNB(coin.Denom) {
+			return nil, errors.New("Only accepts BNB coins")
+		}
 	}
+	return NewMsgNoOp(signer), nil
+}
 
+func getMsgSwapFromMemo(memo SwapMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	if len(tx.Coins) > 1 {
 		return nil, errors.New("not expecting multiple coins in a swap")
 	}
@@ -317,7 +335,7 @@ func getMsgSwapFromMemo(memo SwapMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg,
 	}
 	coin := tx.Coins[0]
 	// Looks like at the moment we can only process ont ty
-	return NewMsgSwap(tx.Request, coin.Denom, ticker, coin.Amount, tx.Sender, memo.Destination, NewAmountFromFloat(memo.SlipLimit), signer), nil
+	return NewMsgSwap(tx.Request, coin.Denom, memo.GetTicker(), coin.Amount, tx.Sender, memo.Destination, NewAmountFromFloat(memo.SlipLimit), signer), nil
 }
 
 func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
@@ -325,11 +343,7 @@ func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxIn, signer sdk.AccAddress) (s
 	if nil != err {
 		return nil, err
 	}
-	ticker, err := NewTicker(memo.GetSymbol())
-	if err != nil {
-		return nil, err
-	}
-	return NewMsgSetUnStake(tx.Sender, withdrawAmount, ticker, tx.Request, signer), nil
+	return NewMsgSetUnStake(tx.Sender, withdrawAmount, memo.GetTicker(), tx.Request, signer), nil
 }
 
 func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
@@ -337,11 +351,11 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, t
 	case adminPoolStatus:
 		ticker, err := NewTicker(memo.GetKey())
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "Memo: %+v", memo)
 		}
 		pool := keeper.GetPool(ctx, ticker)
 		if pool.Empty() {
-			return nil, errors.New("pool doesn't exist")
+			return nil, fmt.Errorf("pool doesn't exist: %s", ticker.String())
 		}
 		if !keeper.IsTrustAccountBnb(ctx, tx.Sender) {
 			return nil, errors.New("Not authorized")
@@ -358,11 +372,8 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, t
 	}
 	return nil, errors.New("invalid admin command type")
 }
+
 func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
-	ticker, err := NewTicker(memo.GetSymbol())
-	if err != nil {
-		return nil, err
-	}
 	runeAmount := ZeroAmount
 	tokenAmount := ZeroAmount
 	for _, coin := range tx.Coins {
@@ -374,7 +385,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxIn, signer sdk.A
 		}
 	}
 	return NewMsgSetStakeData(
-		ticker,
+		memo.GetTicker(),
 		tokenAmount,
 		runeAmount,
 		tx.Sender,
@@ -384,16 +395,31 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxIn, signer sdk.A
 }
 
 func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, signer sdk.AccAddress) (sdk.Msg, error) {
-	ticker, err := NewTicker(memo.GetSymbol())
-	if err != nil {
-		return nil, err
-	}
-	if keeper.PoolExist(ctx, ticker) {
+	if keeper.PoolExist(ctx, memo.GetTicker()) {
 		return nil, errors.New("pool already exists")
 	}
 	return NewMsgSetPoolData(
-		ticker,
+		memo.GetTicker(),
 		PoolBootstrap, // new pools start in a Bootstrap state
+		signer,
+	), nil
+}
+
+func getMsgAddFromMemo(memo AddMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+	runeAmount := ZeroAmount
+	tokenAmount := ZeroAmount
+	for _, coin := range tx.Coins {
+		if IsRune(coin.Denom) {
+			runeAmount = coin.Amount
+		} else if memo.GetTicker().Equals(coin.Denom) {
+			tokenAmount = coin.Amount
+		}
+	}
+	return NewMsgAdd(
+		memo.GetTicker(),
+		runeAmount,
+		tokenAmount,
+		tx.Key(),
 		signer,
 	), nil
 }
@@ -406,6 +432,43 @@ func getMsgOutboundFromMemo(memo OutboundMemo, txID TxID, sender BnbAddress, sig
 		sender,
 		signer,
 	), nil
+}
+
+// handleMsgAdd
+func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
+	ctx.Logger().Info(fmt.Sprintf("receive MsgAdd %s", msg.TxID))
+	fmt.Printf("Add: %+v\n", msg)
+	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account")
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid MsgOutboundTx", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	pool := keeper.GetPool(ctx, msg.Ticker)
+	if msg.TokenAmount.GreaterThen(0) {
+		pool.BalanceToken = pool.BalanceToken.Plus(msg.TokenAmount)
+	}
+	if msg.RuneAmount.GreaterThen(0) {
+		pool.BalanceRune = pool.BalanceRune.Plus(msg.RuneAmount)
+	}
+
+	keeper.SetPool(ctx, pool)
+
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
+// handleMsgNoOp doesn't do anything, its a no op
+func handleMsgNoOp(ctx sdk.Context, keeper Keeper, msg MsgNoOp) sdk.Result {
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
 }
 
 // handleMsgOutboundTx processes outbound tx from our pool

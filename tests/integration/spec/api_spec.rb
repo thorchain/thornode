@@ -192,6 +192,31 @@ describe "API Tests" do
       expect(found).to eq(true)
 
     end
+
+    it "add tokens to a pool" do
+      coins = [
+        {'denom': "RUNE-B1A", "amount": "0.2"},
+        {'denom': "TCAN-014", "amount": "0.2"},
+      ]
+      tx = makeTx(memo: "add:TCAN-014", coins: coins, sender: sender)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200"), resp.body.inspect
+
+      resp = get("/pool/TCAN-014")
+      expect(resp.code).to eq("200")
+      expect(resp.body['balance_rune']).to eq("3.74850000"), resp.body.inspect
+      expect(resp.body['balance_token']).to eq("22.44541406"), resp.body.inspect
+    end
+
+    it "adds gas" do
+      coins = [
+        {'denom': "RUNE-B1A", "amount": "0.2"},
+      ]
+      tx = makeTx(memo: "GAS", coins: coins, sender: sender)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200"), resp.body.inspect
+    end
+
   end
 
 end

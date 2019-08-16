@@ -15,6 +15,7 @@ const (
 const floatPrecision = 8
 
 const (
+	BNBTicker     = Ticker("BNB")
 	RuneTicker    = Ticker("RUNE")
 	RuneA1FTicker = Ticker("RUNE-A1F")
 	RuneB1ATicker = Ticker("RUNE-B1A")
@@ -44,6 +45,10 @@ func (t Ticker) Empty() bool {
 func (t Ticker) String() string {
 	// uppercasing again just incase someon created a ticker via Ticker("rune")
 	return strings.ToUpper(string(t))
+}
+
+func IsBNB(ticker Ticker) bool {
+	return ticker.Equals(BNBTicker)
 }
 
 func IsRune(ticker Ticker) bool {
@@ -91,12 +96,26 @@ func (a Amount) Equals(a2 Amount) bool {
 	return strings.EqualFold(a.String(), a2.String())
 }
 
+func (a Amount) Plus(a2 Amount) Amount {
+	return NewAmountFromFloat(a.Float64() + a2.Float64())
+}
+
+func (a Amount) Minus(a2 Amount) Amount {
+	return NewAmountFromFloat(a.Float64() - a2.Float64())
+}
+
 func (a Amount) Empty() bool {
 	return strings.TrimSpace(a.String()) == ""
 }
-func (a Amount) LargerThanZero() bool {
-	return a.Float64() > 0
+
+func (a Amount) GreaterThen(f float64) bool {
+	return a.Float64() > f
 }
+
+func (a Amount) LessThen(f float64) bool {
+	return a.Float64() > f
+}
+
 func (a Amount) Zero() bool {
 	return a.Equals(ZeroAmount) || a.Float64() == ZeroAmount.Float64()
 }
