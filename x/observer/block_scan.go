@@ -9,6 +9,7 @@ import (
 	log "github.com/rs/zerolog/log"
 	"github.com/valyala/fasthttp"
 
+	"gitlab.com/thorchain/bepswap/common"
 	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
@@ -147,7 +148,10 @@ func (b *BlockScan) QueryTx(txIn stypes.TxIn) stypes.TxIn {
 
 						txIn.TxArray[i].Memo = tx.Tx.Value.Memo
 						txIn.TxArray[i].Sender = sender.Address
-						token := ctypes.Coin{Denom: coin.Denom, Amount: fmt.Sprintf("%.0f", amount)}
+						token := common.Coin{
+							Denom:  common.Ticker(coin.Denom),
+							Amount: common.NewAmountFromFloat(amount),
+						}
 						txIn.TxArray[i].Coins = append(txIn.TxArray[i].Coins, token)
 					}
 				}
