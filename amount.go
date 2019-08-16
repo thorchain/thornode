@@ -14,7 +14,7 @@ var ZeroAmount Amount = Amount("0")
 func NewAmount(amount string) (Amount, error) {
 	_, err := strconv.ParseFloat(amount, 64)
 	if err != nil {
-		return Amount("o"), err
+		return ZeroAmount, err
 	}
 	return Amount(amount), nil
 }
