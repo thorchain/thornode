@@ -6,73 +6,93 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
-	"os"
 	"os/exec"
 
 	http "github.com/hashicorp/go-retryablehttp"
+	"github.com/pkg/errors"
 	log "github.com/rs/zerolog/log"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	config "gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+
+	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
-func Sign(txIn types.TxIn) types.StdTx {
+func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (types.StdTx, error) {
 	var (
 		msg   types.Msg
 		stdTx types.StdTx
+		err   error
 	)
 
-	for _, txItem := range txIn.TxArray {
-		txHash := types.TxHash{
-			Request: txItem.Tx,
-			Status:  "incomplete",
-			Txhash:  txItem.Tx,
-			Memo:    txItem.Memo,
-			Coins:   txItem.Coins,
-			Sender:  txItem.Sender,
-		}
-
-		msg.Value.TxHashes = append(msg.Value.TxHashes, txHash)
-	}
-
-	msg.Type = "swapservice/MsgSetTxHash"
-	msg.Value.Signer = config.RuneAddress
+	msg.Type = "swapservice/MsgSetTxIn"
+	msg.Value = stypes.NewMsgSetTxIn(txIns, signer)
 	stdTx.Type = "cosmos-sdk/StdTx"
 	stdTx.Value.Msg = append(stdTx.Value.Msg, msg)
 
-	// @todo What should the gas be set to?
+	// TODO: What should the gas be set to?
 	stdTx.Value.Fee.Gas = "200000"
 
-	payload, _ := json.Marshal(stdTx)
-	file, _ := ioutil.TempFile("/tmp", "tx")
-
-	err := ioutil.WriteFile(file.Name(), payload, 0644)
+	payload, err := json.Marshal(stdTx)
 	if err != nil {
-		log.Fatal().Msgf("Error while writing to a temporary file: %v", err)
+		return stdTx, err
 	}
 
-	sign := fmt.Sprintf("/bin/echo %v | sscli tx sign %v --from %v", config.SignerPasswd, file.Name(), config.RuneAddress)
+	// TODO: sign using the cosmos-sdk instead of writing to disk and utilizing
+	// the cli. Should see a significant performance boost.
+	file, err := ioutil.TempFile("/tmp", "tx")
+	if err != nil {
+		return stdTx, err
+	}
+
+	err = ioutil.WriteFile(file.Name(), payload, 0644)
+	if err != nil {
+		return stdTx, errors.Wrap(err, "Error while writing to a temporary file")
+	}
+	//defer os.Remove(file.Name())
+
+	sign := fmt.Sprintf(
+		"/bin/echo %v | sscli tx sign %v --from %v",
+		config.SignerPasswd,
+		file.Name(),
+		"jack",
+	)
+
+	// TODO: use sh instead of bash. Its available on more linux systems than
+	// others
 	out, err := exec.Command("/bin/bash", "-c", sign).Output()
 	if err != nil {
-		log.Fatal().Msgf("Error while signing the request: %v %v", err, sign)
+		fmt.Printf("ERROR: %s\n", sign)
+		fmt.Printf("Out: %s\n", out)
+		return stdTx, errors.Wrap(err, "Error while signing the request")
 	}
-	defer os.Remove(file.Name())
 
 	var signed types.StdTx
-	_ = json.Unmarshal(out, &signed)
+	err = json.Unmarshal(out, &signed)
+	if err != nil {
+		return stdTx, err
+	}
 
-	return signed
+	return signed, nil
 }
 
-func Send(signed types.StdTx) {
+func Send(signed types.StdTx, mode types.TxMode) error {
+	if !mode.IsValid() {
+		return fmt.Errorf("Transaction Mode (%s) is invalid", mode.String())
+	}
+
 	var setTx types.SetTx
-	setTx.Mode = "sync"
+	setTx.Mode = mode.String()
 	setTx.Tx.Msg = signed.Value.Msg
 	setTx.Tx.Fee = signed.Value.Fee
 	setTx.Tx.Signatures = signed.Value.Signatures
 	setTx.Tx.Memo = signed.Value.Memo
 
-	sendSetTx, _ := json.Marshal(setTx)
+	sendSetTx, err := json.Marshal(setTx)
+	if err != nil {
+		return err
+	}
 
 	uri := url.URL{
 		Scheme: "http",
@@ -82,13 +102,21 @@ func Send(signed types.StdTx) {
 
 	resp, err := http.Post(uri.String(), "application/json", bytes.NewBuffer(sendSetTx))
 	if err != nil {
-		log.Error().Msgf("Error %v", err)
+		return err
 	}
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
+	if err != nil {
+		return err
+	}
 
 	var commit types.Commit
-	_ = json.Unmarshal(body, &commit)
+	err = json.Unmarshal(body, &commit)
+	if err != nil {
+		return err
+	}
+
 	log.Info().Msgf("Received a TxHash of %v from the Statechain", commit.TxHash)
+	return nil
 }

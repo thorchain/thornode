@@ -7,9 +7,13 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/syndtr/goleveldb/leveldb"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/bepswap/common"
 	config "gitlab.com/thorchain/bepswap/observe/config"
+
 	"gitlab.com/thorchain/bepswap/observe/x/statechain"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
 type Observer struct {
@@ -51,9 +55,28 @@ func (o *Observer) ProcessTxnIn(ch chan []byte) {
 			log.Error().Msgf("Error: %v", err)
 		}
 
-		//log.Info().Msgf("Processing Transaction: %v", txIn)
-		signed := statechain.Sign(txIn)
-		go statechain.Send(signed)
+		mode, _ := types.NewMode("sync")
+
+		addr, err := sdk.AccAddressFromBech32(config.RuneAddress)
+		if err != nil {
+			log.Error().Msgf("Error: %v", err)
+		}
+
+		txs := make([]stypes.TxIn, len(txIn.TxArray))
+		for i, item := range txIn.TxArray {
+			// TODO: don't ignore this error
+			txID, _ := common.NewTxID(item.Tx)
+			bnbAddr, _ := common.NewBnbAddress(item.Sender)
+			txs[i] = stypes.NewTxIn(
+				txID,
+				item.Coins,
+				item.Memo,
+				bnbAddr,
+			)
+		}
+
+		signed, _ := statechain.Sign(txs, addr)
+		go statechain.Send(signed, mode)
 	}
 }
 
