@@ -188,14 +188,20 @@ func ParseMemo(memo string) (Memo, error) {
 		}, nil
 
 	case txWithdraw:
-		if len(parts) < 3 {
-			return noMemo, fmt.Errorf("Missing withdrawal unit amount")
+		if len(parts) < 2 {
+			return noMemo, fmt.Errorf("invalid unstake memo")
 		}
-		// check that amount is parse-able as float64
-		_, err := strconv.ParseFloat(parts[2], 64)
+		var withdrawAmount string
+		if len(parts) > 2 {
+			withdrawAmount = parts[2]
+			wa, err := strconv.ParseFloat(withdrawAmount, 10)
+			if nil != err || wa < 0 || wa > MaxWithdrawBasisPoints {
+				return noMemo, fmt.Errorf("withdraw amount :%s is invalid", withdrawAmount)
+			}
+		}
 		return WithdrawMemo{
 			MemoBase: MemoBase{TxType: txWithdraw, Ticker: ticker},
-			Amount:   parts[2],
+			Amount:   withdrawAmount,
 		}, err
 
 	case txSwap:

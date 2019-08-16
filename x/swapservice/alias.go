@@ -14,11 +14,12 @@ const (
 	PoolSuspended    = types.Suspended
 
 	// Admin config keys
-	GSLKey               = types.GSLKey
-	TSLKey               = types.TSLKey
-	StakerAmtIntervalKey = types.StakerAmtIntervalKey
-	PoolAddressKey       = types.PoolAddressKey
-	MRRAKey              = types.MRRAKey
+	GSLKey                 = types.GSLKey
+	TSLKey                 = types.TSLKey
+	StakerAmtIntervalKey   = types.StakerAmtIntervalKey
+	PoolAddressKey         = types.PoolAddressKey
+	MRRAKey                = types.MRRAKey
+	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
 )
 
 var (
@@ -83,4 +84,6 @@ type (
 	AdminConfigKey    = types.AdminConfigKey
 	AdminConfig       = types.AdminConfig
 	BnbAddress        = types.BnbAddress
+	StakerPoolItem    = types.StakerPoolItem
+	StakeTxDetail     = types.StakeTxDetail
 )

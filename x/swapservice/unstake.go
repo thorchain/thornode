@@ -5,12 +5,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
+func validateUnstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) error {
 	if msg.PublicAddress.Empty() {
 		return errors.New("empty public address")
 	}
-	if msg.Percentage.Empty() {
-		return errors.New("empty percentage")
+	if msg.WithdrawBasisPoints.Empty() {
+		return errors.New("empty withdraw basis points")
 	}
 	if msg.RequestTxHash.Empty() {
 		return errors.New("request tx hash is empty")
@@ -18,9 +18,9 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 	if msg.Ticker.Empty() {
 		return errors.New("empty ticker")
 	}
-	fPercentage := msg.Percentage.Float64()
-	if fPercentage <= 0 || fPercentage > 100 {
-		return errors.Errorf("percentage %s is invalid", msg.Percentage)
+	withdrawBasisPoints := msg.WithdrawBasisPoints.Float64()
+	if withdrawBasisPoints <= 0 || withdrawBasisPoints > MaxWithdrawBasisPoints {
+		return errors.Errorf("withdraw basis points %s is invalid", msg.WithdrawBasisPoints)
 	}
 	if !keeper.PoolExist(ctx, msg.Ticker) {
 		// pool doesn't exist
@@ -30,11 +30,11 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 }
 
 // unstake withdraw all the asset
-func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (Amount, Amount, error) {
+func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (Amount, Amount, error) {
 	if err := validateUnstake(ctx, keeper, msg); nil != err {
 		return "0", "0", err
 	}
-	fPercentage := msg.Percentage.Float64()
+	withdrawPercentage := msg.WithdrawBasisPoints.Float64() / 100 // convert from basis point to percentage
 	// here fBalance should be valid , because we did the validation above
 	pool := keeper.GetPool(ctx, msg.Ticker)
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Ticker)
@@ -45,17 +45,20 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (Amount, Amount,
 	stakerPool, err := keeper.GetStakerPool(ctx, msg.PublicAddress)
 	if nil != err {
 		return "0", "0", errors.Wrap(err, "can't find staker pool")
-
 	}
+
 	poolUnits := pool.PoolUnits.Float64()
 	poolRune := pool.BalanceRune.Float64()
 	poolToken := pool.BalanceToken.Float64()
 	stakerUnit := poolStaker.GetStakerUnit(msg.PublicAddress)
 	fStakerUnit := stakerUnit.Units.Float64()
+	if !stakerUnit.Units.GreaterThen(0) {
+		return "0", "0", errors.New("nothing to withdraw")
+	}
 
 	ctx.Logger().Info("pool before unstake", "pool unit", poolUnits, "balance RUNE", poolRune, "balance token", poolToken)
 	ctx.Logger().Info("staker before withdraw", "staker unit", fStakerUnit)
-	withdrawRune, withDrawToken, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolToken, fStakerUnit, fPercentage)
+	withdrawRune, withDrawToken, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolToken, fStakerUnit, withdrawPercentage)
 	if err != nil {
 		return "0", "0", err
 	}
