@@ -10,7 +10,7 @@ import (
 	"os/exec"
 
 	http "github.com/hashicorp/go-retryablehttp"
-	"github.com/rs/zerolog/log"
+	log "github.com/rs/zerolog/log"
 
 	config "gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
