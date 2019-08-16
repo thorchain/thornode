@@ -99,12 +99,12 @@ func (b *BlockScan) TxSearch() {
 				txIn = b.QueryTx(txIn)
 			}
 
-			txIn.BlockHeight = string(block)
-			txIn.Count = string(len(txIn.TxArray))
+			txIn.BlockHeight = strconv.FormatInt(block, 10)
+			txIn.Count = strconv.Itoa(len(txIn.TxArray))
 
 			json, _ := json.Marshal(txIn)
 			if len(txIn.TxArray) >= 1 {
-				log.Info().Msgf("%v", txIn)
+				log.Info().Msgf("%v", string(json))
 			}
 
 			b.TxInChan <- json
