@@ -135,11 +135,11 @@ func (w *WebSocket) ParseMessage() {
 						Sender: txfr.Data.FromAddr,
 					}
 
-					txIn.BlockHeight = string(txfr.Data.EventHeight)
-					txIn.Count = string(len(txIn.TxArray))
+					txIn.TxArray = append(txIn.TxArray, txItem)
+				}
 
-				txIn.BlockHeight = txfr.Data.EventHeight
-				txIn.Count = len(txIn.TxArray)
+				txIn.BlockHeight = strconv.Itoa(txfr.Data.EventHeight)
+				txIn.Count = strconv.Itoa(len(txIn.TxArray))
 
 				json, err := json.Marshal(txIn)
 				if err != nil {

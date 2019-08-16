@@ -1,7 +1,8 @@
 all: lint install
 
 install: go.sum
-	GO111MODULE=on go install -v 
+	GO111MODULE=on go install -v ./cmd/observed
+	GO111MODULE=on go install -v ./cmd/signd
 
 go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"
@@ -22,4 +23,5 @@ start:
 	./scripts/start.sh
 
 clean:
-	rm ${GOBIN}/observe
+	rm ${GOBIN}/observed
+	rm ${GOBIN}/signd

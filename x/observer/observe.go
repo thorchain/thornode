@@ -35,10 +35,10 @@ func NewObserver() *Observer {
 }
 
 func (o *Observer) Start() {
-	go o.ProcessTxnIn(o.SocketTxChan)
 	go o.ProcessTxnIn(o.BlockTxChan)
-	go o.WebSocket.Start()
+	go o.ProcessTxnIn(o.SocketTxChan)
 	go o.BlockScan.Start()
+	o.WebSocket.Start()
 }
 
 func (o *Observer) ProcessTxnIn(ch chan []byte) {
