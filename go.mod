@@ -15,6 +15,7 @@ require (
 	github.com/rs/zerolog v1.14.3
 	github.com/syndtr/goleveldb v1.0.0
 	github.com/valyala/fasthttp v1.4.0
+	gitlab.com/thorchain/bepswap/common v0.0.0-20190816093251-b84c21cee45c
 )
 
 replace gitlab.com/thorchain/bepswap/observe => ../observe

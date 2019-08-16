@@ -1,14 +1,12 @@
 package types
 
-import (
-	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
-)
+import "gitlab.com/thorchain/bepswap/common"
 
 type TxOut struct {
 	Height  string `json:"height"`
 	Hash    string `json:"hash"`
 	TxArray []struct {
-		To    string `json:"to"`
-		Coins []ctypes.Coin `json:"coins"`
+		To    string       `json:"to"`
+		Coins common.Coins `json:"coins"`
 	} `json:"tx_array"`
 }

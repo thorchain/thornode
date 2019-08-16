@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/websocket"
 	log "github.com/rs/zerolog/log"
 
+	"gitlab.com/thorchain/bepswap/common"
 	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
 	"gitlab.com/thorchain/bepswap/observe/x/binance"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
@@ -121,9 +122,9 @@ func (w *WebSocket) ParseMessage() {
 							parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
 							amount := parsedAmt * 100000000
 
-							var token ctypes.Coin
-							token.Denom = coin.Asset
-							token.Amount = fmt.Sprintf("%.0f", amount)
+							var token common.Coin
+							token.Denom = common.Ticker(coin.Asset)
+							token.Amount = common.Amount(fmt.Sprintf("%.0f", amount))
 							txItem.Coins = append(txItem.Coins, token)
 						}
 
@@ -131,7 +132,7 @@ func (w *WebSocket) ParseMessage() {
 					}
 				} else {
 					txItem := stypes.TxInItem{Tx: txfr.Data.Hash,
-						Memo: txfr.Data.Memo,
+						Memo:   txfr.Data.Memo,
 						Sender: txfr.Data.FromAddr,
 					}
 
