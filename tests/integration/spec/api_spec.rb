@@ -133,7 +133,7 @@ describe "API Tests" do
     end
 
     it "should be able to unstake" do
-      tx = makeTx(memo: "withdraw:TCAN-014:100", sender: sender)
+      tx = makeTx(memo: "withdraw:TCAN-014", sender: sender)
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
 

@@ -97,7 +97,7 @@ func swapOne(ctx sdk.Context,
 	}
 	balanceRune := pool.BalanceRune.Float64()
 	balanceToken := pool.BalanceToken.Float64()
-	if !tradeTarget.Empty() && !tradeTarget.Zero() {
+	if tradeTarget.GreaterThen(0) {
 		tTarget := tradeTarget.Float64() // trade target
 		userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
 		if math.Abs(userPrice-tTarget)/tTarget > tsl {
