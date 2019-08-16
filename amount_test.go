@@ -1,4 +1,4 @@
-package types
+package common
 
 import (
 	. "gopkg.in/check.v1"
