@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/bepswap/common"
+
 	"gitlab.com/thorchain/statechain/x/swapservice/types"
 )
 
@@ -59,4 +60,7 @@ func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, ticker common.Ticker, 
 
 func (mps MockPoolStorage) GetAdminConfig(ctx sdk.Context, key types.AdminConfigKey) types.AdminConfig {
 	return types.NewAdminConfig(key, "FOOBAR")
+}
+func (mps MockPoolStorage) GetAdminConfigStakerAmtInterval(ctx sdk.Context) common.Amount {
+	return common.NewAmountFromFloat(100)
 }

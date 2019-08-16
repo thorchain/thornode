@@ -31,7 +31,7 @@ func validateStakeAmount(stakers PoolStaker, stakerUnits float64, stakeAmtInterv
 }
 
 // validateStakeMessage is to do some validation , and make sure it is legit
-func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker common.Ticker, stakeRuneAmount, stakeTokenAmount common.Amount, requestTxHash common.TxID, publicAddress common.BnbAddress) error {
+func validateStakeMessage(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneAmount, stakeTokenAmount common.Amount, requestTxHash common.TxID, publicAddress common.BnbAddress) error {
 	if ticker.IsEmpty() {
 		return errors.New("ticker is empty")
 	}
@@ -53,7 +53,7 @@ func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker common.Ticker, 
 	return nil
 }
 
-func stake(ctx sdk.Context, keeper Keeper, ticker common.Ticker, stakeRuneAmount, stakeTokenAmount common.Amount, publicAddress common.BnbAddress, requestTxHash common.TxID) error {
+func stake(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneAmount, stakeTokenAmount common.Amount, publicAddress common.BnbAddress, requestTxHash common.TxID) error {
 	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", ticker, stakeRuneAmount, stakeTokenAmount))
 	if err := validateStakeMessage(ctx, keeper, ticker, stakeRuneAmount, stakeTokenAmount, requestTxHash, publicAddress); nil != err {
 		return errors.Wrap(err, "invalid request")
