@@ -351,7 +351,7 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, t
 	case adminPoolStatus:
 		ticker, err := NewTicker(memo.GetKey())
 		if err != nil {
-			return nil, errors.Wrap(err, fmt.Sprintf("Memo: %+v", memo))
+			return nil, errors.Wrapf(err, "Memo: %+v", memo)
 		}
 		pool := keeper.GetPool(ctx, ticker)
 		if pool.Empty() {
