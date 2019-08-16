@@ -13,3 +13,4 @@ observe
 # IDE
 .idea/
 *.iml
+.testCoverage.txt

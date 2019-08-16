@@ -1,8 +1,6 @@
 package types
 
-import (
-	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
-)
+import "gitlab.com/thorchain/bepswap/common"
 
 type TxIn struct {
 	BlockHeight string     `json:"blockHeight"`
@@ -11,8 +9,8 @@ type TxIn struct {
 }
 
 type TxInItem struct {
-	Tx     string        `json:"tx"`
-	Memo   string        `json:"MEMO"`
-	Sender string        `json:"sender"`
-	Coins  []ctypes.Coin `json:"coins"`
+	Tx     string       `json:"tx"`
+	Memo   string       `json:"MEMO"`
+	Sender string       `json:"sender"`
+	Coins  common.Coins `json:"coins"`
 }
