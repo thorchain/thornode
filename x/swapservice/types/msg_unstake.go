@@ -4,23 +4,26 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// MaxWithdrawBasisPoints
+const MaxWithdrawBasisPoints = 10000
+
 // MsgSetUnStake is used to withdraw
 type MsgSetUnStake struct {
-	PublicAddress BnbAddress     `json:"public_address"`  // it should be the public address
-	Percentage    Amount         `json:"percentage"`      // unstake percentage
-	Ticker        Ticker         `json:"ticker"`          // ticker token symbol
-	RequestTxHash TxID           `json:"request_tx_hash"` // request tx hash on binance chain
-	Owner         sdk.AccAddress `json:"owner"`
+	PublicAddress       BnbAddress     `json:"public_address"`        // it should be the public address
+	WithdrawBasisPoints Amount         `json:"withdraw_basis_points"` // withdraw basis points
+	Ticker              Ticker         `json:"ticker"`                // ticker token symbol
+	RequestTxHash       TxID           `json:"request_tx_hash"`       // request tx hash on binance chain
+	Owner               sdk.AccAddress `json:"owner"`
 }
 
 // NewMsgSetUnStake is a constructor function for MsgSetPoolData
-func NewMsgSetUnStake(publicAddress BnbAddress, percentage Amount, ticker Ticker, requestTxHash TxID, owner sdk.AccAddress) MsgSetUnStake {
+func NewMsgSetUnStake(publicAddress BnbAddress, withdrawBasisPoints Amount, ticker Ticker, requestTxHash TxID, owner sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
-		PublicAddress: publicAddress,
-		Percentage:    percentage,
-		Ticker:        ticker,
-		RequestTxHash: requestTxHash,
-		Owner:         owner,
+		PublicAddress:       publicAddress,
+		WithdrawBasisPoints: withdrawBasisPoints,
+		Ticker:              ticker,
+		RequestTxHash:       requestTxHash,
+		Owner:               owner,
 	}
 }
 
@@ -44,8 +47,11 @@ func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
 	if msg.RequestTxHash.Empty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
-	if msg.Percentage.Empty() {
-		return sdk.ErrUnknownRequest("Percentage cannot be empty")
+	if msg.WithdrawBasisPoints.IsNegative() {
+		return sdk.ErrUnknownRequest("withdraw basis points is invalid")
+	}
+	if msg.WithdrawBasisPoints.GreaterThen(0) && msg.WithdrawBasisPoints.Float64() > MaxWithdrawBasisPoints {
+		return sdk.ErrUnknownRequest("WithdrawBasisPoints is larger than maximum withdraw basis points")
 	}
 	return nil
 }

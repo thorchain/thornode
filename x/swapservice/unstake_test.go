@@ -1,8 +1,11 @@
 package swapservice
 
 import (
+	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/statechain/x/swapservice/mocks"
 )
 
 type UnstakeSuite struct{}
@@ -109,4 +112,375 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 		c.Check(round(item.expectedWithdrawToken), Equals, withDrawToken)
 		c.Check(round(item.expectedUnitLeft), Equals, unitAfter)
 	}
+}
+
+// TestValidateUnstake is to test validateUnstake function
+func (s UnstakeSuite) TestValidateUnstake(c *C) {
+	accountAddr, err := types.AccAddressFromBech32("rune1375qq0afqr5a6xmh0xspk2jh4wqnmm4024vm6j")
+	if nil != err {
+		c.Errorf("fail to create account address error:%s", err)
+	}
+	publicAddress, err := NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	if nil != err {
+		c.Error("fail to create new BNB Address")
+	}
+	inputs := []struct {
+		name          string
+		msg           MsgSetUnStake
+		expectedError error
+	}{
+		{
+			name: "empty-public-address",
+			msg: MsgSetUnStake{
+				PublicAddress:       "",
+				WithdrawBasisPoints: "100",
+				Ticker:              "BNB",
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			expectedError: errors.New("empty public address"),
+		},
+		{
+			name: "empty-withdraw-basis-points",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "",
+				Ticker:              "BNB",
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			expectedError: errors.New("empty withdraw basis points"),
+		},
+		{
+			name: "empty-request-txhash",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10000",
+				Ticker:              "BNB",
+				RequestTxHash:       "",
+				Owner:               accountAddr,
+			},
+			expectedError: errors.New("request tx hash is empty"),
+		},
+		{
+			name: "empty-ticker",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10000",
+				Ticker:              "",
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			expectedError: errors.New("empty ticker"),
+		},
+		{
+			name: "invalid-basis-point",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "-100",
+				Ticker:              "BNB",
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			expectedError: errors.New("withdraw basis points -100 is invalid"),
+		},
+		{
+			name: "invalid-basis-point",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10001",
+				Ticker:              "BNB",
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			expectedError: errors.New("withdraw basis points 10001 is invalid"),
+		},
+		{
+			name: "invalid-pool-notexist",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10000",
+				Ticker:              Ticker("NOTEXIST"),
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			expectedError: errors.New("pool-NOTEXIST doesn't exist"),
+		},
+		{
+			name: "all-good",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10000",
+				Ticker:              Ticker("BNB"),
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			expectedError: nil,
+		},
+	}
+
+	for _, item := range inputs {
+		ctx := GetCtx("test")
+		ps := mocks.MockPoolStorage{}
+		err := validateUnstake(ctx, ps, item.msg)
+		if item.expectedError != nil {
+			c.Assert(err, NotNil)
+			c.Check(err.Error(), Equals, item.expectedError.Error())
+			continue
+		}
+		c.Assert(err, IsNil)
+
+	}
+}
+func (UnstakeSuite) TestUnstake(c *C) {
+	ps := mocks.MockPoolStorage{}
+	accountAddr, err := types.AccAddressFromBech32("rune1375qq0afqr5a6xmh0xspk2jh4wqnmm4024vm6j")
+	if nil != err {
+		c.Errorf("fail to create account address error:%s", err)
+	}
+	publicAddress, err := NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	if nil != err {
+		c.Error("fail to create new BNB Address")
+	}
+	testCases := []struct {
+		name          string
+		msg           MsgSetUnStake
+		ps            poolStorage
+		runeAmount    Amount
+		tokenAmount   Amount
+		expectedError error
+	}{
+		{
+			name: "empty-public-address",
+			msg: MsgSetUnStake{
+				PublicAddress:       "",
+				WithdrawBasisPoints: "100",
+				Ticker:              "BNB",
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            ps,
+			runeAmount:    ZeroAmount,
+			tokenAmount:   ZeroAmount,
+			expectedError: errors.New("empty public address"),
+		},
+		{
+			name: "empty-withdraw-basis-points",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "",
+				Ticker:              "BNB",
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            ps,
+			runeAmount:    ZeroAmount,
+			tokenAmount:   ZeroAmount,
+			expectedError: errors.New("empty withdraw basis points"),
+		},
+		{
+			name: "empty-request-txhash",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10000",
+				Ticker:              "BNB",
+				RequestTxHash:       "",
+				Owner:               accountAddr,
+			},
+			ps:            ps,
+			runeAmount:    ZeroAmount,
+			tokenAmount:   ZeroAmount,
+			expectedError: errors.New("request tx hash is empty"),
+		},
+		{
+			name: "empty-ticker",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10000",
+				Ticker:              "",
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            ps,
+			runeAmount:    ZeroAmount,
+			tokenAmount:   ZeroAmount,
+			expectedError: errors.New("empty ticker"),
+		},
+		{
+			name: "invalid-basis-point",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "-100",
+				Ticker:              "BNB",
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            ps,
+			runeAmount:    ZeroAmount,
+			tokenAmount:   ZeroAmount,
+			expectedError: errors.New("withdraw basis points -100 is invalid"),
+		},
+		{
+			name: "invalid-basis-point",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10001",
+				Ticker:              "BNB",
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            ps,
+			runeAmount:    ZeroAmount,
+			tokenAmount:   ZeroAmount,
+			expectedError: errors.New("withdraw basis points 10001 is invalid"),
+		},
+		{
+			name: "invalid-pool-notexist",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10000",
+				Ticker:              Ticker("NOTEXIST"),
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            ps,
+			runeAmount:    ZeroAmount,
+			tokenAmount:   ZeroAmount,
+			expectedError: errors.New("pool-NOTEXIST doesn't exist"),
+		},
+		{
+			name: "invalid-pool-staker-notexist",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10000",
+				Ticker:              Ticker("NOTEXISTSTICKER"),
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            ps,
+			runeAmount:    ZeroAmount,
+			tokenAmount:   ZeroAmount,
+			expectedError: errors.New("can't find pool staker: you asked for it"),
+		},
+		{
+			name: "invalid-staker-pool-notexist",
+			msg: MsgSetUnStake{
+				PublicAddress:       BnbAddress("NOTEXISTSTAKER"),
+				WithdrawBasisPoints: "10000",
+				Ticker:              Ticker("BNB"),
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            ps,
+			runeAmount:    ZeroAmount,
+			tokenAmount:   ZeroAmount,
+			expectedError: errors.New("can't find staker pool: you asked for it"),
+		},
+		{
+			name: "nothing-to-withdraw",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10000",
+				Ticker:              Ticker("BNB"),
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            ps,
+			runeAmount:    ZeroAmount,
+			tokenAmount:   ZeroAmount,
+			expectedError: errors.New("nothing to withdraw"),
+		},
+		{
+			name: "all-good",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "10000",
+				Ticker:              Ticker("BNB"),
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            getInMemoryPoolStorageForUnstake(c),
+			runeAmount:    NewAmountFromFloat(100),
+			tokenAmount:   NewAmountFromFloat(100),
+			expectedError: nil,
+		},
+		{
+			name: "all-good-half",
+			msg: MsgSetUnStake{
+				PublicAddress:       publicAddress,
+				WithdrawBasisPoints: "5000",
+				Ticker:              Ticker("BNB"),
+				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
+				Owner:               accountAddr,
+			},
+			ps:            getInMemoryPoolStorageForUnstake(c),
+			runeAmount:    NewAmountFromFloat(50),
+			tokenAmount:   NewAmountFromFloat(50),
+			expectedError: nil,
+		},
+	}
+	for _, tc := range testCases {
+		ctx := GetCtx("test")
+
+		rune, token, err := unstake(ctx, tc.ps, tc.msg)
+		if tc.expectedError != nil {
+			c.Assert(err, NotNil)
+			c.Check(err.Error(), Equals, tc.expectedError.Error())
+			c.Check(rune, Equals, tc.runeAmount)
+			c.Check(token, Equals, tc.tokenAmount)
+			continue
+		}
+		c.Assert(err, IsNil)
+		c.Check(rune, Equals, tc.runeAmount)
+		c.Check(token, Equals, tc.tokenAmount)
+	}
+}
+
+func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
+	publicAddress, err := NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	if nil != err {
+		c.Error("fail to create new BNB Address")
+	}
+
+	ctx := GetCtx("test")
+	ticker, err := NewTicker("BNB")
+	store := NewMockInMemoryPoolStorage()
+	pool := Pool{
+		BalanceRune:  NewAmountFromFloat(100),
+		BalanceToken: NewAmountFromFloat(100),
+		Ticker:       ticker,
+		PoolUnits:    NewAmountFromFloat(100),
+		PoolAddress:  publicAddress,
+		Status:       PoolEnabled,
+	}
+	store.SetPool(ctx, pool)
+	poolStaker := PoolStaker{
+		Ticker:     ticker,
+		TotalUnits: NewAmountFromFloat(100),
+		Stakers: []StakerUnit{
+			StakerUnit{
+				StakerID: publicAddress,
+				Units:    NewAmountFromFloat(100),
+			},
+		},
+	}
+	store.SetPoolStaker(ctx, ticker, poolStaker)
+	stakerPool := StakerPool{
+		StakerID: publicAddress,
+		PoolUnits: []*StakerPoolItem{
+			&StakerPoolItem{
+				Ticker: ticker,
+				Units:  NewAmountFromFloat(100),
+				StakeDetails: []StakeTxDetail{
+					StakeTxDetail{
+						RequestTxHash: TxID("28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE"),
+						RuneAmount:    NewAmountFromFloat(100),
+						TokenAmount:   NewAmountFromFloat(100),
+					},
+				},
+			},
+		},
+	}
+	store.SetStakerPool(ctx, publicAddress, stakerPool)
+	return store
 }

@@ -162,9 +162,9 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 
 // handleMsgSetUnstake process unstake
 func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetUnStake) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.PublicAddress, msg.Percentage))
+	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.PublicAddress, msg.WithdrawBasisPoints))
 	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress, "ticker", msg.Ticker, "percentage", msg.Percentage)
+		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress, "ticker", msg.Ticker, "withdraw basis points", msg.WithdrawBasisPoints)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	if err := keeper.GetPool(ctx, msg.Ticker).EnsureValidPoolStatus(msg); nil != err {
@@ -339,11 +339,16 @@ func getMsgSwapFromMemo(memo SwapMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg,
 }
 
 func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
-	withdrawAmount, err := NewAmount(memo.GetAmount())
-	if nil != err {
-		return nil, err
+	withdrawAmount := NewAmountFromFloat(MaxWithdrawBasisPoints)
+	var err error
+	if len(memo.GetAmount()) > 0 {
+		withdrawAmount, err = NewAmount(memo.GetAmount())
+		if nil != err {
+			return nil, err
+		}
 	}
 	return NewMsgSetUnStake(tx.Sender, withdrawAmount, memo.GetTicker(), tx.Request, signer), nil
+
 }
 
 func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {

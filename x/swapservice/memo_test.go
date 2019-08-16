@@ -81,8 +81,8 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("CREATE:") // bad symbol
 	c.Assert(err, NotNil)
-	_, err = ParseMemo("withdraw:bnb") // no amount
-	c.Assert(err, NotNil)
+	_, err = ParseMemo("withdraw:bnb") // withdraw basis points is optional
+	c.Assert(err, IsNil)
 	_, err = ParseMemo("withdraw:bnb:twenty-two") // bad amount
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("swap:bnb:bad_DES:5.6") // bad destination
