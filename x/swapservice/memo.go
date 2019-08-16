@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gitlab.com/thorchain/statechain/x/swapservice/types"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // TXTYPE:STATE1:STATE2:STATE3:FINALMEMO
@@ -89,9 +89,9 @@ func (tx txType) String() string {
 type Memo interface {
 	IsType(tx txType) bool
 
-	GetTicker() Ticker
+	GetTicker() common.Ticker
 	GetAmount() string
-	GetDestination() BnbAddress
+	GetDestination() common.BnbAddress
 	GetSlipLimit() float64
 	GetAdminType() adminType
 	GetKey() string
@@ -101,7 +101,7 @@ type Memo interface {
 
 type MemoBase struct {
 	TxType txType
-	Ticker Ticker
+	Ticker common.Ticker
 }
 
 type CreateMemo struct {
@@ -129,7 +129,7 @@ type WithdrawMemo struct {
 
 type SwapMemo struct {
 	MemoBase
-	Destination BnbAddress
+	Destination common.BnbAddress
 	SlipLimit   float64
 }
 
@@ -157,10 +157,10 @@ func ParseMemo(memo string) (Memo, error) {
 		return noMemo, err
 	}
 
-	var ticker Ticker
+	var ticker common.Ticker
 	if tx != txGas && tx != txAdmin && tx != txOutbound {
 		var err error
-		ticker, err = NewTicker(parts[1])
+		ticker, err = common.NewTicker(parts[1])
 		if err != nil {
 			return noMemo, err
 		}
@@ -209,10 +209,10 @@ func ParseMemo(memo string) (Memo, error) {
 			return noMemo, fmt.Errorf("missing swap parameters: memo should in SWAP:SYMBOLXX-XXX:DESTADDR:TRADE-TARGET format")
 		}
 		// DESTADDR can be empty , if it is empty , it will swap to the sender address
-		destination := types.NoBnbAddress
+		destination := common.NoBnbAddress
 		if len(parts) > 2 {
 			if len(parts[2]) > 0 {
-				destination, err = NewBnbAddress(parts[2])
+				destination, err = common.NewBnbAddress(parts[2])
 				if err != nil {
 					return noMemo, err
 				}
@@ -258,22 +258,22 @@ func ParseMemo(memo string) (Memo, error) {
 }
 
 // Base Functions
-func (m MemoBase) GetType() txType            { return m.TxType }
-func (m MemoBase) IsType(tx txType) bool      { return m.TxType.Equals(tx) }
-func (m MemoBase) GetTicker() Ticker          { return m.Ticker }
-func (m MemoBase) GetAmount() string          { return "" }
-func (m MemoBase) GetDestination() BnbAddress { return "" }
-func (m MemoBase) GetSlipLimit() float64      { return 0 }
-func (m MemoBase) GetAdminType() adminType    { return adminUnknown }
-func (m MemoBase) GetKey() string             { return "" }
-func (m MemoBase) GetValue() string           { return "" }
-func (m MemoBase) GetBlockHeight() int64      { return 0 }
+func (m MemoBase) GetType() txType                   { return m.TxType }
+func (m MemoBase) IsType(tx txType) bool             { return m.TxType.Equals(tx) }
+func (m MemoBase) GetTicker() common.Ticker          { return m.Ticker }
+func (m MemoBase) GetAmount() string                 { return "" }
+func (m MemoBase) GetDestination() common.BnbAddress { return "" }
+func (m MemoBase) GetSlipLimit() float64             { return 0 }
+func (m MemoBase) GetAdminType() adminType           { return adminUnknown }
+func (m MemoBase) GetKey() string                    { return "" }
+func (m MemoBase) GetValue() string                  { return "" }
+func (m MemoBase) GetBlockHeight() int64             { return 0 }
 
 // Transaction Specific Functions
-func (m WithdrawMemo) GetAmount() string      { return m.Amount }
-func (m SwapMemo) GetDestination() BnbAddress { return m.Destination }
-func (m SwapMemo) GetSlipLimit() float64      { return m.SlipLimit }
-func (m AdminMemo) GetAdminType() adminType   { return m.Type }
-func (m AdminMemo) GetKey() string            { return m.Key }
-func (m AdminMemo) GetValue() string          { return m.Value }
-func (m OutboundMemo) GetBlockHeight() int64  { return m.BlockHeight }
+func (m WithdrawMemo) GetAmount() string             { return m.Amount }
+func (m SwapMemo) GetDestination() common.BnbAddress { return m.Destination }
+func (m SwapMemo) GetSlipLimit() float64             { return m.SlipLimit }
+func (m AdminMemo) GetAdminType() adminType          { return m.Type }
+func (m AdminMemo) GetKey() string                   { return m.Key }
+func (m AdminMemo) GetValue() string                 { return m.Value }
+func (m OutboundMemo) GetBlockHeight() int64         { return m.BlockHeight }

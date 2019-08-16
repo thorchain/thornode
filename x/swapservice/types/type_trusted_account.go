@@ -4,16 +4,17 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	common "gitlab.com/thorchain/bepswap/common"
 )
 
 // TrustAccount represent those accounts we can trust, and can be used to sign tx
 type TrustAccount struct {
-	Name        string         `json:"name"`
-	RuneAddress sdk.AccAddress `json:"rune_address"`
-	BnbAddress  BnbAddress     `json:"bnb_address"`
+	Name        string            `json:"name"`
+	RuneAddress sdk.AccAddress    `json:"rune_address"`
+	BnbAddress  common.BnbAddress `json:"bnb_address"`
 }
 
-func NewTrustAccount(name string, address string, bnb BnbAddress) (TrustAccount, error) {
+func NewTrustAccount(name string, address string, bnb common.BnbAddress) (TrustAccount, error) {
 	addr, err := sdk.AccAddressFromHex(address)
 	return TrustAccount{
 		Name:        name,

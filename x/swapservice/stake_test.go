@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"github.com/pkg/errors"
+	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 )
 
@@ -109,25 +110,25 @@ func (s StakeSuite) TestValidateAmount(c *C) {
 	makePoolStaker := func(total int, avg float64) PoolStaker {
 		stakers := make([]StakerUnit, total)
 		for i, _ := range stakers {
-			stakers[i] = StakerUnit{Units: NewAmountFromFloat(avg)}
+			stakers[i] = StakerUnit{Units: common.NewAmountFromFloat(avg)}
 		}
 
 		return PoolStaker{
-			TotalUnits: NewAmountFromFloat(avg * float64(total)),
+			TotalUnits: common.NewAmountFromFloat(avg * float64(total)),
 			Stakers:    stakers,
 		}
 	}
 
 	skrs := makePoolStaker(50, 0.001)
-	c.Assert(validateStakeAmount(skrs, 0.001, NewAmountFromFloat(100)), IsNil)
+	c.Assert(validateStakeAmount(skrs, 0.001, common.NewAmountFromFloat(100)), IsNil)
 
 	skrs = makePoolStaker(150, 0.0002)
-	c.Assert(validateStakeAmount(skrs, 0.0001, NewAmountFromFloat(100)), NotNil)
-	c.Assert(validateStakeAmount(skrs, 0.0002, NewAmountFromFloat(100)), NotNil)
-	c.Assert(validateStakeAmount(skrs, 0.0010, NewAmountFromFloat(100)), IsNil)
+	c.Assert(validateStakeAmount(skrs, 0.0001, common.NewAmountFromFloat(100)), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.0002, common.NewAmountFromFloat(100)), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.0010, common.NewAmountFromFloat(100)), IsNil)
 
 	skrs = makePoolStaker(300, 0.001)
-	c.Assert(validateStakeAmount(skrs, 0.0001, NewAmountFromFloat(100)), NotNil)
-	c.Assert(validateStakeAmount(skrs, 0.002, NewAmountFromFloat(100)), NotNil)
-	c.Assert(validateStakeAmount(skrs, 0.004, NewAmountFromFloat(100)), IsNil)
+	c.Assert(validateStakeAmount(skrs, 0.0001, common.NewAmountFromFloat(100)), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.002, common.NewAmountFromFloat(100)), NotNil)
+	c.Assert(validateStakeAmount(skrs, 0.004, common.NewAmountFromFloat(100)), IsNil)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+	"gitlab.com/thorchain/bepswap/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -137,7 +138,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
-		Token Amount `json:"token"`
+		Token common.Amount `json:"token"`
 	}{
 		Token: amount,
 	})
@@ -148,7 +149,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 	toi := &TxOutItem{
 		ToAddress: msg.Destination,
 	}
-	toi.Coins = append(toi.Coins, Coin{
+	toi.Coins = append(toi.Coins, common.Coin{
 		Denom:  msg.TargetTicker,
 		Amount: amount,
 	})
@@ -181,8 +182,8 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		return sdk.ErrInternal("fail to process UnStake request").Result()
 	}
 	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
-		Rune  Amount `json:"rune"`
-		Token Amount `json:"token"`
+		Rune  common.Amount `json:"rune"`
+		Token common.Amount `json:"token"`
 	}{
 		Rune:  runeAmt,
 		Token: tokenAmount,
@@ -194,11 +195,11 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	toi := &TxOutItem{
 		ToAddress: msg.PublicAddress,
 	}
-	toi.Coins = append(toi.Coins, Coin{
-		Denom:  RuneTicker,
+	toi.Coins = append(toi.Coins, common.Coin{
+		Denom:  common.RuneTicker,
 		Amount: runeAmt,
 	})
-	toi.Coins = append(toi.Coins, Coin{
+	toi.Coins = append(toi.Coins, common.Coin{
 		Denom:  msg.Ticker,
 		Amount: tokenAmount,
 	})
@@ -227,7 +228,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAcc
 // handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
 func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetTxIn) sdk.Result {
-	conflicts := make([]TxID, 0)
+	conflicts := make(common.TxIDs, 0)
 	todo := make([]TxIn, 0)
 	for _, tx := range msg.TxIns {
 		// validate there are not conflicts first
@@ -319,7 +320,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddre
 
 func getMsgNoOpFromMemo(tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	for _, coin := range tx.Coins {
-		if !IsBNB(coin.Denom) {
+		if !common.IsBNB(coin.Denom) {
 			return nil, errors.New("Only accepts BNB coins")
 		}
 	}
@@ -330,19 +331,19 @@ func getMsgSwapFromMemo(memo SwapMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg,
 	if len(tx.Coins) > 1 {
 		return nil, errors.New("not expecting multiple coins in a swap")
 	}
-	if memo.Destination.Empty() {
+	if memo.Destination.IsEmpty() {
 		memo.Destination = tx.Sender
 	}
 	coin := tx.Coins[0]
 	// Looks like at the moment we can only process ont ty
-	return NewMsgSwap(tx.Request, coin.Denom, memo.GetTicker(), coin.Amount, tx.Sender, memo.Destination, NewAmountFromFloat(memo.SlipLimit), signer), nil
+	return NewMsgSwap(tx.Request, coin.Denom, memo.GetTicker(), coin.Amount, tx.Sender, memo.Destination, common.NewAmountFromFloat(memo.SlipLimit), signer), nil
 }
 
 func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
-	withdrawAmount := NewAmountFromFloat(MaxWithdrawBasisPoints)
+	withdrawAmount := common.NewAmountFromFloat(MaxWithdrawBasisPoints)
 	var err error
 	if len(memo.GetAmount()) > 0 {
-		withdrawAmount, err = NewAmount(memo.GetAmount())
+		withdrawAmount, err = common.NewAmount(memo.GetAmount())
 		if nil != err {
 			return nil, err
 		}
@@ -354,7 +355,7 @@ func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxIn, signer sdk.AccAddress) (s
 func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	switch memo.GetAdminType() {
 	case adminPoolStatus:
-		ticker, err := NewTicker(memo.GetKey())
+		ticker, err := common.NewTicker(memo.GetKey())
 		if err != nil {
 			return nil, errors.Wrapf(err, "Memo: %+v", memo)
 		}
@@ -379,11 +380,11 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, t
 }
 
 func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
-	runeAmount := ZeroAmount
-	tokenAmount := ZeroAmount
+	runeAmount := common.ZeroAmount
+	tokenAmount := common.ZeroAmount
 	for _, coin := range tx.Coins {
 		ctx.Logger().Info("coin", "denom", coin.Denom.String(), "amount", coin.Amount.String())
-		if IsRune(coin.Denom) {
+		if common.IsRune(coin.Denom) {
 			runeAmount = coin.Amount
 		} else {
 			tokenAmount = coin.Amount
@@ -411,10 +412,10 @@ func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, 
 }
 
 func getMsgAddFromMemo(memo AddMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
-	runeAmount := ZeroAmount
-	tokenAmount := ZeroAmount
+	runeAmount := common.ZeroAmount
+	tokenAmount := common.ZeroAmount
 	for _, coin := range tx.Coins {
-		if IsRune(coin.Denom) {
+		if common.IsRune(coin.Denom) {
 			runeAmount = coin.Amount
 		} else if memo.GetTicker().Equals(coin.Denom) {
 			tokenAmount = coin.Amount
@@ -429,7 +430,7 @@ func getMsgAddFromMemo(memo AddMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, e
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, txID TxID, sender BnbAddress, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.BnbAddress, signer sdk.AccAddress) (sdk.Msg, error) {
 	blockHeight := memo.GetBlockHeight()
 	return NewMsgOutboundTx(
 		txID,

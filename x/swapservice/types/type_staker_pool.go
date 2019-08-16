@@ -3,21 +3,23 @@ package types
 import (
 	"fmt"
 	"strings"
+
+	common "gitlab.com/thorchain/bepswap/common"
 )
 
 // StakeTxDetail represent all the stake activity
 // Staker can stake on the same pool for multiple times
 type StakeTxDetail struct {
-	RequestTxHash TxID   `json:"request_tx_hash"` // the tx hash from binance chain , represent staker send token to the pool
-	RuneAmount    Amount `json:"rune_amount"`     // amount of rune that send in at the time
-	TokenAmount   Amount `json:"token_amount"`    // amount of token that send in at the time
+	RequestTxHash common.TxID   `json:"request_tx_hash"` // the tx hash from binance chain , represent staker send token to the pool
+	RuneAmount    common.Amount `json:"rune_amount"`     // amount of rune that send in at the time
+	TokenAmount   common.Amount `json:"token_amount"`    // amount of token that send in at the time
 }
 
 // StakerPoolItem represent the staker's activity in a pool
 // Staker can stake on multiple pool
 type StakerPoolItem struct {
-	Ticker       Ticker          `json:"ticker"`
-	Units        Amount          `json:"units"`
+	Ticker       common.Ticker   `json:"ticker"`
+	Units        common.Amount   `json:"units"`
 	StakeDetails []StakeTxDetail `json:"stake_details"`
 }
 
@@ -63,12 +65,12 @@ type StakerPoolItem struct {
 //    ]
 // }
 type StakerPool struct {
-	StakerID  BnbAddress        `json:"staker_id"`      // this will be staker's address on binance chain
+	StakerID  common.BnbAddress `json:"staker_id"`      // this will be staker's address on binance chain
 	PoolUnits []*StakerPoolItem `json:"pool_and_units"` // the key of this map will be the pool id , value will bt [UNIT,RUNE,TOKEN]
 }
 
 // NewStakerPool create a new instance of StakerPool
-func NewStakerPool(id BnbAddress) StakerPool {
+func NewStakerPool(id common.BnbAddress) StakerPool {
 	return StakerPool{
 		StakerID:  id,
 		PoolUnits: []*StakerPoolItem{},
@@ -88,7 +90,7 @@ func (sp StakerPool) String() string {
 }
 
 // GetStakerPoolItem return the StakerPoolItem with given pool id
-func (sp *StakerPool) GetStakerPoolItem(ticker Ticker) *StakerPoolItem {
+func (sp *StakerPool) GetStakerPoolItem(ticker common.Ticker) *StakerPoolItem {
 	for _, item := range sp.PoolUnits {
 		if ticker.Equals(item.Ticker) {
 			return item
@@ -96,13 +98,13 @@ func (sp *StakerPool) GetStakerPoolItem(ticker Ticker) *StakerPoolItem {
 	}
 	return &StakerPoolItem{
 		Ticker:       ticker,
-		Units:        ZeroAmount,
+		Units:        common.ZeroAmount,
 		StakeDetails: []StakeTxDetail{},
 	}
 }
 
 // RemoveStakerPoolItem delete the stakerpoolitem with given pool id from the struct
-func (sp *StakerPool) RemoveStakerPoolItem(ticker Ticker) {
+func (sp *StakerPool) RemoveStakerPoolItem(ticker common.Ticker) {
 	deleteIdx := -1
 	for idx, item := range sp.PoolUnits {
 		if item.Ticker.Equals(ticker) {
@@ -134,7 +136,7 @@ func (sp *StakerPool) UpsertStakerPoolItem(stakerPoolItem *StakerPoolItem) {
 }
 
 // AddStakerTxDetail to the StakerPool structure
-func (spi *StakerPoolItem) AddStakerTxDetail(requestTxHash TxID, runeAmount, tokenAmount Amount) {
+func (spi *StakerPoolItem) AddStakerTxDetail(requestTxHash common.TxID, runeAmount, tokenAmount common.Amount) {
 	std := StakeTxDetail{
 		RequestTxHash: requestTxHash,
 		RuneAmount:    runeAmount,

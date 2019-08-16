@@ -1,4 +1,6 @@
 package types
 
+import common "gitlab.com/thorchain/bepswap/common"
+
 // PoolIndex just a slice of all the pools
-type PoolIndex []Ticker
+type PoolIndex common.Tickers

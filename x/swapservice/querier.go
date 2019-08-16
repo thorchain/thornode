@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"gitlab.com/thorchain/bepswap/common"
 	q "gitlab.com/thorchain/statechain/x/swapservice/query"
 )
 
@@ -58,7 +59,7 @@ func queryPoolIndex(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 
 // queryPoolStakers
 func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	ticker, err := NewTicker(path[0])
+	ticker, err := common.NewTicker(path[0])
 	if nil != err {
 		ctx.Logger().Error("fail to get parse ticker", err)
 		return nil, sdk.ErrInternal("fail to parse ticker")
@@ -78,7 +79,7 @@ func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 
 // queryStakerPool
 func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	addr, err := NewBnbAddress(path[0])
+	addr, err := common.NewBnbAddress(path[0])
 	if nil != err {
 		ctx.Logger().Error("fail to parse bnb address", err)
 		return nil, sdk.ErrInternal("fail to parse bnb address")
@@ -99,7 +100,7 @@ func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 
 // nolint: unparam
 func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	ticker, err := NewTicker(path[0])
+	ticker, err := common.NewTicker(path[0])
 	if err != nil {
 		ctx.Logger().Error("fail to parse ticker", err)
 		return nil, sdk.ErrInternal("Could not parse ticker")
@@ -131,7 +132,7 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, 
 }
 
 func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	hash, err := NewTxID(path[0])
+	hash, err := common.NewTxID(path[0])
 	if err != nil {
 		ctx.Logger().Error("fail to parse tx id", err)
 		return nil, sdk.ErrInternal("fail to parse tx id")
