@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // GenesisState strcture that used to store the data we put in genesis
@@ -64,7 +65,7 @@ func DefaultGenesisState() GenesisState {
 			{
 				BalanceRune:  "0",
 				BalanceToken: "0",
-				Ticker:       "BNB",
+				Ticker:       common.BNBTicker,
 				PoolUnits:    "0",
 				Status:       PoolBootstrap,
 			},
