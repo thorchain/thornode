@@ -10,6 +10,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 	. "gopkg.in/check.v1"
 
+	"gitlab.com/thorchain/bepswap/common"
 	"gitlab.com/thorchain/statechain/x/swapservice/mocks"
 )
 
@@ -28,7 +29,7 @@ func getTestContext() sdk.Context {
 	return sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
 
 }
-func newPoolForTest(ticker Ticker, balanceRune, balanceToken Amount) Pool {
+func newPoolForTest(ticker common.Ticker, balanceRune, balanceToken common.Amount) Pool {
 	ps := NewPool()
 	ps.BalanceToken = balanceToken
 	ps.BalanceRune = balanceRune
@@ -38,63 +39,63 @@ func newPoolForTest(ticker Ticker, balanceRune, balanceToken Amount) Pool {
 func (*RefundSuite) TestGetRefundCoin(c *C) {
 
 	refundStoreAccessor := mocks.NewMockRefundStoreAccessor()
-	bnbTicker, err := NewTicker("BNB")
+	bnbTicker, err := common.NewTicker("BNB")
 	c.Assert(err, IsNil)
 	inputs := []struct {
 		name                string
-		minimumRefundAmount Amount
+		minimumRefundAmount common.Amount
 		pool                Pool
-		ticker              Ticker
-		amount              Amount
-		expectedCoin        Coin
+		ticker              common.Ticker
+		amount              common.Amount
+		expectedCoin        common.Coin
 	}{
 		{
 			name:                "invalid-MRRA",
-			minimumRefundAmount: Amount("invalid"),
-			pool:                newPoolForTest(RuneTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
-			ticker:              RuneTicker,
-			amount:              NewAmountFromFloat(100),
-			expectedCoin:        NewCoin(RuneTicker, NewAmountFromFloat(100)),
+			minimumRefundAmount: common.Amount("invalid"),
+			pool:                newPoolForTest(common.RuneTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			ticker:              common.RuneTicker,
+			amount:              common.NewAmountFromFloat(100),
+			expectedCoin:        common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(100)),
 		},
 		{
 			name:                "OneRune-MRRA",
-			minimumRefundAmount: NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(RuneTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
-			ticker:              RuneTicker,
-			amount:              NewAmountFromFloat(100),
-			expectedCoin:        NewCoin(RuneTicker, NewAmountFromFloat(99)),
+			minimumRefundAmount: common.NewAmountFromFloat(1.0),
+			pool:                newPoolForTest(common.RuneTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			ticker:              common.RuneTicker,
+			amount:              common.NewAmountFromFloat(100),
+			expectedCoin:        common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(99)),
 		},
 		{
 			name:                "No-Refund",
-			minimumRefundAmount: NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(RuneTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
-			ticker:              RuneTicker,
-			amount:              NewAmountFromFloat(0.5),
-			expectedCoin:        NewCoin(RuneTicker, ZeroAmount),
+			minimumRefundAmount: common.NewAmountFromFloat(1.0),
+			pool:                newPoolForTest(common.RuneTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			ticker:              common.RuneTicker,
+			amount:              common.NewAmountFromFloat(0.5),
+			expectedCoin:        common.NewCoin(common.RuneTicker, common.ZeroAmount),
 		},
 		{
 			name:                "invalid-MRRA-BNB-refund-all",
-			minimumRefundAmount: Amount("invalid"),
-			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			minimumRefundAmount: common.Amount("invalid"),
+			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
 			ticker:              bnbTicker,
-			amount:              NewAmountFromFloat(5),
-			expectedCoin:        NewCoin(bnbTicker, NewAmountFromFloat(5)),
+			amount:              common.NewAmountFromFloat(5),
+			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(5)),
 		},
 		{
 			name:                "MRRA-BNB-refund-normal",
-			minimumRefundAmount: NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			minimumRefundAmount: common.NewAmountFromFloat(1.0),
+			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
 			ticker:              bnbTicker,
-			amount:              NewAmountFromFloat(5),
-			expectedCoin:        NewCoin(bnbTicker, NewAmountFromFloat(4)),
+			amount:              common.NewAmountFromFloat(5),
+			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(4)),
 		},
 		{
 			name:                "MRRA-BNB-no-refund",
-			minimumRefundAmount: NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			minimumRefundAmount: common.NewAmountFromFloat(1.0),
+			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
 			ticker:              bnbTicker,
-			amount:              NewAmountFromFloat(0.5),
-			expectedCoin:        NewCoin(bnbTicker, ZeroAmount),
+			amount:              common.NewAmountFromFloat(0.5),
+			expectedCoin:        common.NewCoin(bnbTicker, common.ZeroAmount),
 		},
 	}
 	for _, item := range inputs {
@@ -111,15 +112,15 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount("rune", "runepub")
 	refundStoreAccessor := mocks.NewMockRefundStoreAccessor()
-	bnbTicker, err := NewTicker("BNB")
+	bnbTicker, err := common.NewTicker("BNB")
 	c.Assert(err, IsNil)
 	accountAddress, err := sdk.AccAddressFromBech32("rune1lz8kde0dc5ru63et7kykzzc97jhu7rg3yp2qxd")
 	c.Assert(err, IsNil)
-	txID, err := NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
+	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
 	inputs := []struct {
 		name                string
-		minimumRefundAmount Amount
+		minimumRefundAmount common.Amount
 		pool                Pool
 		result              sdk.Result
 		msg                 sdk.Msg
@@ -127,8 +128,8 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 	}{
 		{
 			name:                "result-ok",
-			minimumRefundAmount: NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			minimumRefundAmount: common.NewAmountFromFloat(1.0),
+			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
 			result: sdk.Result{
 				Code: sdk.CodeOK,
 			},
@@ -137,8 +138,8 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 		},
 		{
 			name:                "msg-type-setpooldata",
-			minimumRefundAmount: NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			minimumRefundAmount: common.NewAmountFromFloat(1.0),
+			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
 			result: sdk.Result{
 				Code: sdk.CodeOK,
 			},
@@ -147,14 +148,14 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 		},
 		{
 			name:                "msg-type-swap",
-			minimumRefundAmount: NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, NewAmountFromFloat(100), NewAmountFromFloat(100)),
+			minimumRefundAmount: common.NewAmountFromFloat(1.0),
+			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
 			result:              sdk.ErrUnknownRequest("whatever").Result(),
-			msg:                 NewMsgSwap(txID, RuneTicker, bnbTicker, NewAmountFromFloat(5.0), "asdf", "asdf", "1.0", accountAddress),
+			msg:                 NewMsgSwap(txID, common.RuneTicker, bnbTicker, common.NewAmountFromFloat(5.0), "asdf", "asdf", "1.0", accountAddress),
 			out: &TxOutItem{
 				ToAddress: "asdf",
-				Coins: []Coin{
-					NewCoin(RuneTicker, NewAmountFromFloat(4.0)),
+				Coins: common.Coins{
+					common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(4.0)),
 				},
 			},
 		},

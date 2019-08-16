@@ -3,19 +3,20 @@ package swapservice
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 func validateUnstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) error {
-	if msg.PublicAddress.Empty() {
+	if msg.PublicAddress.IsEmpty() {
 		return errors.New("empty public address")
 	}
-	if msg.WithdrawBasisPoints.Empty() {
+	if msg.WithdrawBasisPoints.IsEmpty() {
 		return errors.New("empty withdraw basis points")
 	}
-	if msg.RequestTxHash.Empty() {
+	if msg.RequestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
 	}
-	if msg.Ticker.Empty() {
+	if msg.Ticker.IsEmpty() {
 		return errors.New("empty ticker")
 	}
 	withdrawBasisPoints := msg.WithdrawBasisPoints.Float64()
@@ -30,7 +31,7 @@ func validateUnstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) err
 }
 
 // unstake withdraw all the asset
-func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (Amount, Amount, error) {
+func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (common.Amount, common.Amount, error) {
 	if err := validateUnstake(ctx, keeper, msg); nil != err {
 		return "0", "0", err
 	}
@@ -64,9 +65,9 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (Amount, Am
 	}
 	ctx.Logger().Info("client withdraw", "RUNE", withdrawRune, "token", withDrawToken, "units left", unitAfter)
 	// update pool
-	pool.PoolUnits = NewAmountFromFloat(poolUnits - fStakerUnit + unitAfter)
-	pool.BalanceRune = NewAmountFromFloat(poolRune - withdrawRune)
-	pool.BalanceToken = NewAmountFromFloat(poolToken - withDrawToken)
+	pool.PoolUnits = common.NewAmountFromFloat(poolUnits - fStakerUnit + unitAfter)
+	pool.BalanceRune = common.NewAmountFromFloat(poolRune - withdrawRune)
+	pool.BalanceToken = common.NewAmountFromFloat(poolToken - withDrawToken)
 	ctx.Logger().Info("pool after unstake", "pool unit", pool.PoolUnits, "balance RUNE", pool.BalanceRune, "balance token", pool.BalanceToken)
 	// update pool staker
 	poolStaker.TotalUnits = pool.PoolUnits
@@ -74,21 +75,21 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (Amount, Am
 		// just remove it
 		poolStaker.RemoveStakerUnit(msg.PublicAddress)
 	} else {
-		stakerUnit.Units = NewAmountFromFloat(unitAfter)
+		stakerUnit.Units = common.NewAmountFromFloat(unitAfter)
 		poolStaker.UpsertStakerUnit(stakerUnit)
 	}
 	if unitAfter <= 0 {
 		stakerPool.RemoveStakerPoolItem(msg.Ticker)
 	} else {
 		spi := stakerPool.GetStakerPoolItem(msg.Ticker)
-		spi.Units = NewAmountFromFloat(unitAfter)
+		spi.Units = common.NewAmountFromFloat(unitAfter)
 		stakerPool.UpsertStakerPoolItem(spi)
 	}
 	// update staker pool
 	keeper.SetPool(ctx, pool)
 	keeper.SetPoolStaker(ctx, msg.Ticker, poolStaker)
 	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
-	return NewAmountFromFloat(withdrawRune), NewAmountFromFloat(withDrawToken), nil
+	return common.NewAmountFromFloat(withdrawRune), common.NewAmountFromFloat(withDrawToken), nil
 }
 
 func calculateUnstake(poolUnit, poolRune, poolToken, stakerUnit, percentage float64) (float64, float64, float64, error) {

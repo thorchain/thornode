@@ -6,10 +6,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // validateStakeAmount
-func validateStakeAmount(stakers PoolStaker, stakerUnits float64, stakeAmtInterval Amount) error {
+func validateStakeAmount(stakers PoolStaker, stakerUnits float64, stakeAmtInterval common.Amount) error {
 	var minStakerAmt float64
 	interval := stakeAmtInterval.Float64()
 	stakerCount := float64(len(stakers.Stakers))
@@ -30,20 +31,20 @@ func validateStakeAmount(stakers PoolStaker, stakerUnits float64, stakeAmtInterv
 }
 
 // validateStakeMessage is to do some validation , and make sure it is legit
-func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stakeTokenAmount Amount, requestTxHash TxID, publicAddress BnbAddress) error {
-	if ticker.Empty() {
+func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker common.Ticker, stakeRuneAmount, stakeTokenAmount common.Amount, requestTxHash common.TxID, publicAddress common.BnbAddress) error {
+	if ticker.IsEmpty() {
 		return errors.New("ticker is empty")
 	}
-	if stakeRuneAmount.Empty() {
+	if stakeRuneAmount.IsEmpty() {
 		return errors.New("stake rune amount is empty")
 	}
-	if stakeTokenAmount.Empty() {
+	if stakeTokenAmount.IsEmpty() {
 		return errors.New("stake token amount is empty")
 	}
-	if requestTxHash.Empty() {
+	if requestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
 	}
-	if publicAddress.Empty() {
+	if publicAddress.IsEmpty() {
 		return errors.New("public address is empty")
 	}
 	if !keeper.PoolExist(ctx, ticker) {
@@ -52,7 +53,7 @@ func validateStakeMessage(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRu
 	return nil
 }
 
-func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stakeTokenAmount Amount, publicAddress BnbAddress, requestTxHash TxID) error {
+func stake(ctx sdk.Context, keeper Keeper, ticker common.Ticker, stakeRuneAmount, stakeTokenAmount common.Amount, publicAddress common.BnbAddress, requestTxHash common.TxID) error {
 	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", ticker, stakeRuneAmount, stakeTokenAmount))
 	if err := validateStakeMessage(ctx, keeper, ticker, stakeRuneAmount, stakeTokenAmount, requestTxHash, publicAddress); nil != err {
 		return errors.Wrap(err, "invalid request")
@@ -75,9 +76,9 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	ctx.Logger().Info(fmt.Sprintf("current pool units : %f ,staker units : %f", newPoolUnits, stakerUnits))
 	poolRune := balanceRune + fRuneAmt
 	poolToken := balanceToken + fTokenAmt
-	pool.PoolUnits = NewAmountFromFloat(newPoolUnits)
-	pool.BalanceRune = NewAmountFromFloat(poolRune)
-	pool.BalanceToken = NewAmountFromFloat(poolToken)
+	pool.PoolUnits = common.NewAmountFromFloat(newPoolUnits)
+	pool.BalanceRune = common.NewAmountFromFloat(poolRune)
+	pool.BalanceToken = common.NewAmountFromFloat(poolToken)
 	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
 	keeper.SetPool(ctx, pool)
 	// maintain pool staker structure
@@ -95,7 +96,7 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	if err != nil {
 		return errors.Wrapf(err, "invalid stake amount")
 	}
-	su.Units = NewAmountFromFloat(stakerUnits)
+	su.Units = common.NewAmountFromFloat(stakerUnits)
 	ps.UpsertStakerUnit(su)
 	keeper.SetPoolStaker(ctx, ticker, ps)
 	// maintain stake pool structure
@@ -106,7 +107,7 @@ func stake(ctx sdk.Context, keeper Keeper, ticker Ticker, stakeRuneAmount, stake
 	stakerPoolItem := sp.GetStakerPoolItem(ticker)
 	existUnit := stakerPoolItem.Units.Float64()
 	stakerUnits += existUnit
-	stakerPoolItem.Units = NewAmountFromFloat(stakerUnits)
+	stakerPoolItem.Units = common.NewAmountFromFloat(stakerUnits)
 	stakerPoolItem.AddStakerTxDetail(requestTxHash, stakeRuneAmount, stakeTokenAmount)
 	sp.UpsertStakerPoolItem(stakerPoolItem)
 	keeper.SetStakerPool(ctx, publicAddress, sp)

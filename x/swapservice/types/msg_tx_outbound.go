@@ -1,17 +1,20 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	common "gitlab.com/thorchain/bepswap/common"
+)
 
 // MsgOutboundTx defines a MsgOutboundTx message
 type MsgOutboundTx struct {
-	Height int64          `json:"height"`
-	TxID   TxID           `json:"tx_id"`
-	Sender BnbAddress     `json:"sender"`
-	Signer sdk.AccAddress `json:"signer"`
+	Height int64             `json:"height"`
+	TxID   common.TxID       `json:"tx_id"`
+	Sender common.BnbAddress `json:"sender"`
+	Signer sdk.AccAddress    `json:"signer"`
 }
 
 // NewMsgOutboundTx is a constructor function for MsgOutboundTx
-func NewMsgOutboundTx(txID TxID, height int64, sender BnbAddress, signer sdk.AccAddress) MsgOutboundTx {
+func NewMsgOutboundTx(txID common.TxID, height int64, sender common.BnbAddress, signer sdk.AccAddress) MsgOutboundTx {
 	return MsgOutboundTx{
 		Sender: sender,
 		TxID:   txID,
@@ -34,10 +37,10 @@ func (msg MsgOutboundTx) ValidateBasic() sdk.Error {
 	if msg.Height <= 0 {
 		return sdk.ErrUnknownRequest("Height must be above zero")
 	}
-	if msg.Sender.Empty() {
+	if msg.Sender.IsEmpty() {
 		return sdk.ErrUnknownRequest("Sender cannot be empty")
 	}
-	if msg.TxID.Empty() {
+	if msg.TxID.IsEmpty() {
 		return sdk.ErrUnknownRequest("TxID cannot be empty")
 	}
 	return nil

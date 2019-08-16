@@ -12,6 +12,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
+	common "gitlab.com/thorchain/bepswap/common"
 )
 
 func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
@@ -44,7 +45,7 @@ func GetCmdSetPoolData(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			ticker, err := types.NewTicker(args[0])
+			ticker, err := common.NewTicker(args[0])
 			if err != nil {
 				return err
 			}
@@ -68,27 +69,27 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			ticker, err := types.NewTicker(args[0])
+			ticker, err := common.NewTicker(args[0])
 			if err != nil {
 				return err
 			}
 
-			runeAmt, err := types.NewAmount(args[1])
+			runeAmt, err := common.NewAmount(args[1])
 			if err != nil {
 				return err
 			}
 
-			tokenAmt, err := types.NewAmount(args[2])
+			tokenAmt, err := common.NewAmount(args[2])
 			if err != nil {
 				return err
 			}
 
-			bnbAddr, err := types.NewBnbAddress(args[3])
+			bnbAddr, err := common.NewBnbAddress(args[3])
 			if err != nil {
 				return err
 			}
 
-			txID, err := types.NewTxID(args[4])
+			txID, err := common.NewTxID(args[4])
 			if err != nil {
 				return err
 			}
@@ -112,43 +113,43 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			source, err := types.NewTicker(args[1])
+			source, err := common.NewTicker(args[1])
 			if err != nil {
 				return err
 			}
 
-			target, err := types.NewTicker(args[2])
+			target, err := common.NewTicker(args[2])
 			if err != nil {
 				return err
 			}
 
-			txID, err := types.NewTxID(args[0])
+			txID, err := common.NewTxID(args[0])
 			if err != nil {
 				return err
 			}
 
-			amt, err := types.NewAmount(args[3])
+			amt, err := common.NewAmount(args[3])
 			if err != nil {
 				return err
 			}
 
-			requester, err := types.NewBnbAddress(args[4])
+			requester, err := common.NewBnbAddress(args[4])
 			if err != nil {
 				return err
 			}
-			destination := types.NoBnbAddress
+			destination := common.NoBnbAddress
 			if len(args) > 5 {
-				destination, err = types.NewBnbAddress(args[5])
+				destination, err = common.NewBnbAddress(args[5])
 				if err != nil {
 					return err
 				}
 			}
-			if destination.Empty() {
+			if destination.IsEmpty() {
 				destination = requester
 			}
-			price := types.ZeroAmount
+			price := common.ZeroAmount
 			if len(args) > 6 {
-				price, err = types.NewAmount(args[6])
+				price, err = common.NewAmount(args[6])
 				if err != nil {
 					return err
 				}
@@ -173,29 +174,29 @@ func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			bnbAddr, err := types.NewBnbAddress(args[0])
+			bnbAddr, err := common.NewBnbAddress(args[0])
 			if err != nil {
 				return err
 			}
 
-			ticker, err := types.NewTicker(args[1])
+			ticker, err := common.NewTicker(args[1])
 			if err != nil {
 				return err
 			}
 
-			txID, err := types.NewTxID(args[2])
+			txID, err := common.NewTxID(args[2])
 			if err != nil {
 				return err
 			}
-			withdrawBasisPoints := types.ZeroAmount
+			withdrawBasisPoints := common.ZeroAmount
 			if len(args) > 3 {
-				withdrawBasisPoints, err = types.NewAmount(args[3])
+				withdrawBasisPoints, err = common.NewAmount(args[3])
 				if err != nil {
 					return err
 				}
 			}
 			if !withdrawBasisPoints.GreaterThen(0) {
-				withdrawBasisPoints = types.NewAmountFromFloat(types.MaxWithdrawBasisPoints)
+				withdrawBasisPoints = common.NewAmountFromFloat(types.MaxWithdrawBasisPoints)
 			}
 			msg := types.NewMsgSetUnStake(bnbAddr, withdrawBasisPoints, ticker, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
@@ -224,12 +225,12 @@ func GetCmdSetTxIn(cdc *codec.Codec) *cobra.Command {
 			if nil != err {
 				return err
 			}
-			txID, err := types.NewTxID(args[0])
+			txID, err := common.NewTxID(args[0])
 			if err != nil {
 				return err
 			}
 
-			bnbAddr, err := types.NewBnbAddress(args[3])
+			bnbAddr, err := common.NewBnbAddress(args[3])
 			if err != nil {
 				return err
 			}
@@ -255,7 +256,7 @@ func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			bnb, err := types.NewBnbAddress(args[2])
+			bnb, err := common.NewBnbAddress(args[2])
 			if err != nil {
 				return err
 			}

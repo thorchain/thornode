@@ -8,14 +8,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
+	"gitlab.com/thorchain/bepswap/common"
 	"gitlab.com/thorchain/statechain/x/swapservice/types"
 )
 
 type txItem struct {
-	TxHash string      `json:"tx"`
-	Coins  types.Coins `json:"coins"`
-	Memo   string      `json:"MEMO"`
-	Sender string      `json:"sender"`
+	TxHash string       `json:"tx"`
+	Coins  common.Coins `json:"coins"`
+	Memo   string       `json:"MEMO"`
+	Sender string       `json:"sender"`
 }
 
 type txHashReq struct {
@@ -47,13 +48,13 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 		txHashes := make([]types.TxIn, len(req.TxArray))
 		for i, tx := range req.TxArray {
-			txID, err := types.NewTxID(tx.TxHash)
+			txID, err := common.NewTxID(tx.TxHash)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
 
-			bnbAddr, err := types.NewBnbAddress(tx.Sender)
+			bnbAddr, err := common.NewBnbAddress(tx.Sender)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return

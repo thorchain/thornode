@@ -7,6 +7,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+	common "gitlab.com/thorchain/bepswap/common"
 )
 
 // PoolStatus is an indication of what the pool state is
@@ -75,20 +76,20 @@ func GetPoolStatus(ps string) PoolStatus {
 // Pool is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
 type Pool struct {
-	BalanceRune  Amount     `json:"balance_rune"`  // how many RUNE in the pool
-	BalanceToken Amount     `json:"balance_token"` // how many token in the pool
-	Ticker       Ticker     `json:"ticker"`        // what's the token's ticker
-	PoolUnits    Amount     `json:"pool_units"`    // total units of the pool
-	PoolAddress  BnbAddress `json:"pool_address"`  // bnb liquidity pool address
-	Status       PoolStatus `json:"status"`        // status
+	BalanceRune  common.Amount     `json:"balance_rune"`  // how many RUNE in the pool
+	BalanceToken common.Amount     `json:"balance_token"` // how many token in the pool
+	Ticker       common.Ticker     `json:"ticker"`        // what's the token's ticker
+	PoolUnits    common.Amount     `json:"pool_units"`    // total units of the pool
+	PoolAddress  common.BnbAddress `json:"pool_address"`  // bnb liquidity pool address
+	Status       PoolStatus        `json:"status"`        // status
 }
 
 // NewPool Returns a new Pool
 func NewPool() Pool {
 	return Pool{
-		BalanceRune:  ZeroAmount,
-		BalanceToken: ZeroAmount,
-		PoolUnits:    ZeroAmount,
+		BalanceRune:  common.ZeroAmount,
+		BalanceToken: common.ZeroAmount,
+		PoolUnits:    common.ZeroAmount,
 		Status:       Bootstrap,
 	}
 }
@@ -129,8 +130,8 @@ func (ps Pool) EnsureValidPoolStatus(msg sdk.Msg) error {
 
 // TokenPrice is how much 1 token worth in RUNE
 func (ps Pool) TokenPriceInRune() float64 {
-	if ps.BalanceRune.Zero() || ps.BalanceRune.Empty() || ps.BalanceToken.Zero() || ps.BalanceToken.Empty() {
-		return ZeroAmount.Float64()
+	if ps.BalanceRune.IsZero() || ps.BalanceRune.IsEmpty() || ps.BalanceToken.IsZero() || ps.BalanceToken.IsEmpty() {
+		return common.ZeroAmount.Float64()
 	}
 	return ps.BalanceToken.Float64() / ps.BalanceRune.Float64()
 }
