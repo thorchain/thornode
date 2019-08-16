@@ -9,6 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 type dbPrefix string
@@ -49,7 +50,7 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 }
 
 // GetPool get the entire Pool metadata struct for a pool ID
-func (k Keeper) GetPool(ctx sdk.Context, ticker Ticker) Pool {
+func (k Keeper) GetPool(ctx sdk.Context, ticker common.Ticker) Pool {
 	key := getKey(prefixPool, ticker.String())
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -58,14 +59,14 @@ func (k Keeper) GetPool(ctx sdk.Context, ticker Ticker) Pool {
 	bz := store.Get([]byte(key))
 	var pool Pool
 	k.cdc.MustUnmarshalBinaryBare(bz, &pool)
-	if pool.BalanceRune.Empty() {
-		pool.BalanceRune = ZeroAmount
+	if pool.BalanceRune.IsEmpty() {
+		pool.BalanceRune = common.ZeroAmount
 	}
-	if pool.BalanceToken.Empty() {
-		pool.BalanceToken = ZeroAmount
+	if pool.BalanceToken.IsEmpty() {
+		pool.BalanceToken = common.ZeroAmount
 	}
-	if pool.PoolUnits.Empty() {
-		pool.PoolUnits = ZeroAmount
+	if pool.PoolUnits.IsEmpty() {
+		pool.PoolUnits = common.ZeroAmount
 	}
 	pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx)
 
@@ -84,16 +85,16 @@ func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
 }
 
-func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 Ticker) (Amount, Amount) {
+func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 common.Ticker) (common.Amount, common.Amount) {
 	pool := k.GetPool(ctx, ticker)
-	if IsRune(ticker2) {
+	if common.IsRune(ticker2) {
 		return pool.BalanceRune, pool.BalanceToken
 	}
 	return pool.BalanceToken, pool.BalanceRune
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
-func (k Keeper) SetPoolData(ctx sdk.Context, ticker Ticker, ps PoolStatus) {
+func (k Keeper) SetPoolData(ctx sdk.Context, ticker common.Ticker, ps PoolStatus) {
 	pool := k.GetPool(ctx, ticker)
 	if pool.PoolUnits == "" {
 		pool.PoolUnits = "0"
@@ -110,7 +111,7 @@ func (k Keeper) GetPoolDataIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // PoolExist check whether the given pool exist in the datastore
-func (k Keeper) PoolExist(ctx sdk.Context, ticker Ticker) bool {
+func (k Keeper) PoolExist(ctx sdk.Context, ticker common.Ticker) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPool, ticker.String())
 	return store.Has([]byte(key))
@@ -138,7 +139,7 @@ func (k Keeper) SetPoolIndex(ctx sdk.Context, pi PoolIndex) {
 }
 
 // AddToPoolIndex will add the given ticker into the poolindex
-func (k Keeper) AddToPoolIndex(ctx sdk.Context, ticker Ticker) error {
+func (k Keeper) AddToPoolIndex(ctx sdk.Context, ticker common.Ticker) error {
 	pi, err := k.GetPoolIndex(ctx)
 	if nil != err {
 		return err
@@ -155,7 +156,7 @@ func (k Keeper) AddToPoolIndex(ctx sdk.Context, ticker Ticker) error {
 }
 
 // RemoveFromPoolIndex remove the given ticker from the poolIndex
-func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, ticker Ticker) error {
+func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, ticker common.Ticker) error {
 	pi, err := k.GetPoolIndex(ctx)
 	if nil != err {
 		return err
@@ -171,7 +172,7 @@ func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, ticker Ticker) error {
 }
 
 // GetPoolStaker retrieve poolStaker from the data store
-func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker Ticker) (PoolStaker, error) {
+func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPoolStaker, ticker.String())
 	if !store.Has([]byte(key)) {
@@ -188,7 +189,7 @@ func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker Ticker) (PoolStaker, error
 }
 
 // SetPoolStaker store the poolstaker to datastore
-func (k Keeper) SetPoolStaker(ctx sdk.Context, ticker Ticker, ps PoolStaker) {
+func (k Keeper) SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps PoolStaker) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPoolStaker, ticker.String())
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", key, ps))
@@ -197,7 +198,7 @@ func (k Keeper) SetPoolStaker(ctx sdk.Context, ticker Ticker, ps PoolStaker) {
 }
 
 // GetStakerPool get the stakerpool from key value store
-func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID BnbAddress) (StakerPool, error) {
+func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID common.BnbAddress) (StakerPool, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixStakerPool, stakerID.String())
 	ctx.Logger().Info("get staker pool", "stakerpoolkey", key)
@@ -214,7 +215,7 @@ func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID BnbAddress) (StakerPool,
 }
 
 // SetStakerPool save the given stakerpool object to key value store
-func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID BnbAddress, sp StakerPool) {
+func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID common.BnbAddress, sp StakerPool) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixStakerPool, stakerID.String())
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", key, sp))
@@ -230,7 +231,7 @@ func (k Keeper) IsTrustAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
 }
 
 // IsTrustAccountBnb check whether the account is trust , and can send tx
-func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr BnbAddress) bool {
+func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr common.BnbAddress) bool {
 	ctx.Logger().Debug("IsTrustAccountBnb", "bnb address", addr.String())
 
 	taIterator := k.GetTrustAccountIterator(ctx)
@@ -274,7 +275,7 @@ func (k Keeper) SetTxIn(ctx sdk.Context, tx TxIn) {
 }
 
 // GetTxIn - gets information of a tx hash
-func (k Keeper) GetTxIn(ctx sdk.Context, hash TxID) TxIn {
+func (k Keeper) GetTxIn(ctx sdk.Context, hash common.TxID) TxIn {
 	key := getKey(prefixTxIn, hash.String())
 
 	store := ctx.KVStore(k.storeKey)
@@ -289,7 +290,7 @@ func (k Keeper) GetTxIn(ctx sdk.Context, hash TxID) TxIn {
 }
 
 // CheckTxHash - check to see if we have already processed a specific tx
-func (k Keeper) CheckTxHash(ctx sdk.Context, hash TxID) bool {
+func (k Keeper) CheckTxHash(ctx sdk.Context, hash common.TxID) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxIn, hash.String())
 	return store.Has([]byte(key))
@@ -319,7 +320,7 @@ func (k Keeper) SetTxInIndex(ctx sdk.Context, height int64, index TxInIndex) {
 }
 
 // AddToTxInIndex will add the given txIn into the index
-func (k Keeper) AddToTxInIndex(ctx sdk.Context, height int64, id TxID) error {
+func (k Keeper) AddToTxInIndex(ctx sdk.Context, height int64, id common.TxID) error {
 	index, err := k.GetTxInIndex(ctx, height)
 	if nil != err {
 		return err
@@ -365,47 +366,47 @@ func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
 }
 
 // GetAdminConfigGSL - get the config for GSL
-func (k Keeper) GetAdminConfigGSL(ctx sdk.Context) Amount {
+func (k Keeper) GetAdminConfigGSL(ctx sdk.Context) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, GSLKey, "0.3")
 }
 
 // GetAdminConfigTSL - get the config for TSL
-func (k Keeper) GetAdminConfigTSL(ctx sdk.Context) Amount {
+func (k Keeper) GetAdminConfigTSL(ctx sdk.Context) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, TSLKey, "0.1")
 }
 
 // GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
-func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context) Amount {
+func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, "100")
 }
 
 // GetAdminConfigPoolAddress - get the config for PoolAddress
-func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context) BnbAddress {
+func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context) common.BnbAddress {
 	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, "")
 }
 
 // GetAdminConfigMRRA get the config for minimum refund rune amount default to 1 rune
-func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context) Amount {
+func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, MRRAKey, "1")
 
 }
 
 // GetAdminConfigBnbAddressType - get the config for TSL
-func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string) BnbAddress {
+func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string) common.BnbAddress {
 	config := k.GetAdminConfig(ctx, key)
 	if config.Value == "" {
 		config.Value = dValue // set default
 	}
-	return BnbAddress(config.Value)
+	return common.BnbAddress(config.Value)
 }
 
 // GetAdminConfigAmountType - get the config for TSL
-func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string) Amount {
+func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string) common.Amount {
 	config := k.GetAdminConfig(ctx, key)
 	if config.Value == "" {
 		config.Value = dValue // set default
 	}
-	return Amount(config.Value)
+	return common.Amount(config.Value)
 }
 
 // GetAdminConfig - gets information of a tx hash

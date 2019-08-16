@@ -1,16 +1,19 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	common "gitlab.com/thorchain/bepswap/common"
+)
 
 // MsgSetAdminConfig defines a MsgSetAdminConfig message
 type MsgSetAdminConfig struct {
-	AdminConfig AdminConfig    `json:"admin_config"`
-	From        BnbAddress     `json:"from"`
-	Signer      sdk.AccAddress `json:"signer"`
+	AdminConfig AdminConfig       `json:"admin_config"`
+	From        common.BnbAddress `json:"from"`
+	Signer      sdk.AccAddress    `json:"signer"`
 }
 
 // NewMsgSetAdminConfig is a constructor function for MsgSetAdminConfig
-func NewMsgSetAdminConfig(key AdminConfigKey, value string, from BnbAddress, signer sdk.AccAddress) MsgSetAdminConfig {
+func NewMsgSetAdminConfig(key AdminConfigKey, value string, from common.BnbAddress, signer sdk.AccAddress) MsgSetAdminConfig {
 	return MsgSetAdminConfig{
 		AdminConfig: NewAdminConfig(key, value),
 		From:        from,
@@ -29,7 +32,7 @@ func (msg MsgSetAdminConfig) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if msg.From.Empty() {
+	if msg.From.IsEmpty() {
 		return sdk.ErrInvalidAddress(msg.From.String())
 	}
 	if err := msg.AdminConfig.Valid(); err != nil {

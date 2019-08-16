@@ -1,11 +1,15 @@
 package types
 
-import "strings"
+import (
+	"strings"
+
+	common "gitlab.com/thorchain/bepswap/common"
+)
 
 // TxOutItem represent an tx need to be sent to binance chain
 type TxOutItem struct {
-	ToAddress BnbAddress `json:"to"`
-	Coins     []Coin     `json:"coins"`
+	ToAddress common.BnbAddress `json:"to"`
+	Coins     common.Coins      `json:"coins"`
 }
 
 // String implement stringer interface
@@ -22,7 +26,7 @@ func (toi TxOutItem) String() string {
 // TxOut is a structure represent all the tx we need to return to client
 type TxOut struct {
 	Height  int64        `json:"height"`
-	Hash    TxID         `json:"hash"`
+	Hash    common.TxID  `json:"hash"`
 	TxArray []*TxOutItem `json:"tx_array"`
 }
 

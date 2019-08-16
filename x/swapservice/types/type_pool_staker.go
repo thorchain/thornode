@@ -3,12 +3,14 @@ package types
 import (
 	"fmt"
 	"strings"
+
+	common "gitlab.com/thorchain/bepswap/common"
 )
 
 // StakerUnit staker and their units in the pool
 type StakerUnit struct {
-	StakerID BnbAddress `json:"staker_id"`
-	Units    Amount     `json:"units"`
+	StakerID common.BnbAddress `json:"staker_id"`
+	Units    common.Amount     `json:"units"`
 }
 
 // PoolStaker
@@ -21,13 +23,13 @@ type StakerUnit struct {
 //    }
 //}
 type PoolStaker struct {
-	Ticker     Ticker       `json:"ticker"`      // ticker
-	TotalUnits Amount       `json:"total_units"` // total units in the pool
-	Stakers    []StakerUnit `json:"stakers"`     // key will be staker id , which is the address on binane chain value will be UNITS
+	Ticker     common.Ticker `json:"ticker"`      // ticker
+	TotalUnits common.Amount `json:"total_units"` // total units in the pool
+	Stakers    []StakerUnit  `json:"stakers"`     // key will be staker id , which is the address on binane chain value will be UNITS
 }
 
 // NewPoolStaker create a new instance of PoolStaker
-func NewPoolStaker(ticker Ticker, totalUnits Amount) PoolStaker {
+func NewPoolStaker(ticker common.Ticker, totalUnits common.Amount) PoolStaker {
 	return PoolStaker{
 		Ticker:     ticker,
 		TotalUnits: totalUnits,
@@ -47,7 +49,7 @@ func (ps PoolStaker) String() string {
 	}
 	return bs.String()
 }
-func (ps *PoolStaker) GetStakerUnit(stakerID BnbAddress) StakerUnit {
+func (ps *PoolStaker) GetStakerUnit(stakerID common.BnbAddress) StakerUnit {
 	for _, item := range ps.Stakers {
 		if item.StakerID == stakerID {
 			return item
@@ -55,12 +57,12 @@ func (ps *PoolStaker) GetStakerUnit(stakerID BnbAddress) StakerUnit {
 	}
 	return StakerUnit{
 		StakerID: stakerID,
-		Units:    ZeroAmount,
+		Units:    common.ZeroAmount,
 	}
 }
 
 // RemoveStakerUnit will remove the stakerunit with given staker id from the struct
-func (ps *PoolStaker) RemoveStakerUnit(stakerID BnbAddress) {
+func (ps *PoolStaker) RemoveStakerUnit(stakerID common.BnbAddress) {
 	deleteIdx := -1
 	for idx, item := range ps.Stakers {
 		if item.StakerID == stakerID {
