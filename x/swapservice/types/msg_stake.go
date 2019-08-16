@@ -2,27 +2,28 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	common "gitlab.com/thorchain/bepswap/common"
 )
 
 // MsgSetStakeData defines a SetStakeData message
 type MsgSetStakeData struct {
-	Ticker        Ticker         `json:"ticker"`          // ticker means the symbol
-	TokenAmount   Amount         `json:"token"`           // the amount of token stake
-	RuneAmount    Amount         `json:"rune"`            // the amount of rune stake
-	PublicAddress BnbAddress     `json:"public_address"`  // Staker's address on binance chain
-	RequestTxHash TxID           `json:"request_tx_hash"` // the txhash that represent user send token to our pool address
-	Owner         sdk.AccAddress `json:"owner"`
+	Ticker        common.Ticker     `json:"ticker"`          // ticker means the symbol
+	TokenAmount   common.Amount     `json:"token"`           // the amount of token stake
+	RuneAmount    common.Amount     `json:"rune"`            // the amount of rune stake
+	PublicAddress common.BnbAddress `json:"public_address"`  // Staker's address on binance chain
+	RequestTxHash common.TxID       `json:"request_tx_hash"` // the txhash that represent user send token to our pool address
+	Signer        sdk.AccAddress    `json:"signer"`
 }
 
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
-func NewMsgSetStakeData(ticker Ticker, r, token Amount, publicAddress BnbAddress, requestTxHash TxID, owner sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(ticker common.Ticker, r, token common.Amount, publicAddress common.BnbAddress, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		Ticker:        ticker,
 		TokenAmount:   token,
 		RuneAmount:    r,
 		PublicAddress: publicAddress,
 		RequestTxHash: requestTxHash,
-		Owner:         owner,
+		Signer:        signer,
 	}
 }
 
@@ -34,19 +35,22 @@ func (msg MsgSetStakeData) Type() string { return "set_stakedata" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
-	if msg.Ticker.Empty() {
+	if msg.Signer.Empty() {
+		return sdk.ErrInvalidAddress(msg.Signer.String())
+	}
+	if msg.Ticker.IsEmpty() {
 		return sdk.ErrUnknownRequest("Stake Ticker cannot be empty")
 	}
-	if msg.RuneAmount.Empty() {
+	if msg.RuneAmount.IsEmpty() {
 		return sdk.ErrUnknownRequest("Stake Rune cannot be empty")
 	}
-	if msg.TokenAmount.Empty() {
+	if msg.TokenAmount.IsEmpty() {
 		return sdk.ErrUnknownRequest("Stake Token cannot be empty")
 	}
-	if msg.RequestTxHash.Empty() {
+	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
-	if msg.PublicAddress.Empty() {
+	if msg.PublicAddress.IsEmpty() {
 		return sdk.ErrUnknownRequest("public address cannot be empty")
 	}
 	return nil
@@ -59,5 +63,5 @@ func (msg MsgSetStakeData) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (msg MsgSetStakeData) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Owner}
+	return []sdk.AccAddress{msg.Signer}
 }

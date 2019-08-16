@@ -2,27 +2,28 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	common "gitlab.com/thorchain/bepswap/common"
 )
 
 // MsgSetPoolData defines a SetPoolData message
 // We keep this for now , as a mechanism to set up a new pool when it is not in the genesis file
 // the pool changes when stake / swap happens
 type MsgSetPoolData struct {
-	BalanceRune  Amount         `json:"balance_rune"`  // balance rune
-	BalanceToken Amount         `json:"balance_token"` // balance of token
-	Ticker       Ticker         `json:"ticker"`        // Ticker means the token symbol
+	BalanceRune  common.Amount  `json:"balance_rune"`  // balance rune
+	BalanceToken common.Amount  `json:"balance_token"` // balance of token
+	Ticker       common.Ticker  `json:"ticker"`        // Ticker means the token symbol
 	Status       PoolStatus     `json:"status"`        // pool status
-	Owner        sdk.AccAddress `json:"owner"`
+	Signer       sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetPoolData(ticker Ticker, status PoolStatus, owner sdk.AccAddress) MsgSetPoolData {
+func NewMsgSetPoolData(ticker common.Ticker, status PoolStatus, signer sdk.AccAddress) MsgSetPoolData {
 	return MsgSetPoolData{
 		Ticker:       ticker,
-		BalanceRune:  ZeroAmount,
-		BalanceToken: ZeroAmount,
+		BalanceRune:  common.ZeroAmount,
+		BalanceToken: common.ZeroAmount,
 		Status:       status,
-		Owner:        owner,
+		Signer:       signer,
 	}
 }
 
@@ -34,13 +35,13 @@ func (msg MsgSetPoolData) Type() string { return "set_pooldata" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
-	if msg.Ticker.Empty() {
+	if msg.Ticker.IsEmpty() {
 		return sdk.ErrUnknownRequest("Pool Ticker cannot be empty")
 	}
-	if msg.BalanceRune.Empty() {
+	if msg.BalanceRune.IsEmpty() {
 		return sdk.ErrUnknownRequest("Rune balance cannot be empty")
 	}
-	if msg.BalanceToken.Empty() {
+	if msg.BalanceToken.IsEmpty() {
 		return sdk.ErrUnknownRequest("Token balance cannot be empty")
 	}
 	if err := msg.Status.Valid(); err != nil {
@@ -56,5 +57,5 @@ func (msg MsgSetPoolData) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (msg MsgSetPoolData) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Owner}
+	return []sdk.AccAddress{msg.Signer}
 }

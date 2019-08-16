@@ -1,6 +1,10 @@
 package types
 
-import "fmt"
+import (
+	"fmt"
+
+	common "gitlab.com/thorchain/bepswap/common"
+)
 
 type AdminConfigKey string
 
@@ -37,9 +41,9 @@ func (k AdminConfigKey) ValidValue(value string) error {
 	var err error
 	switch k {
 	case GSLKey, TSLKey, StakerAmtIntervalKey:
-		_, err = NewAmount(value)
+		_, err = common.NewAmount(value)
 	case PoolAddressKey:
-		_, err = NewBnbAddress(value)
+		_, err = common.NewBnbAddress(value)
 	}
 	return err
 }

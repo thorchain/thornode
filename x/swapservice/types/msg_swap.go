@@ -2,22 +2,23 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	common "gitlab.com/thorchain/bepswap/common"
 )
 
 // MsgSwap defines a MsgSwap message
 type MsgSwap struct {
-	RequestTxHash TxID           `json:"request_tx_hash"` // Request transaction hash on Binance chain
-	SourceTicker  Ticker         `json:"source_ticker"`   // source token
-	TargetTicker  Ticker         `json:"target_ticker"`   // target token
-	Requester     BnbAddress     `json:"requester"`       // request address on Binance chain
-	Destination   BnbAddress     `json:"destination"`     // destination , used for swap and send , the destination address we send it to
-	Amount        Amount         `json:"amount"`          // amount of token to swap
-	TargetPrice   Amount         `json:"target_price"`
-	Owner         sdk.AccAddress `json:"owner"`
+	RequestTxHash common.TxID       `json:"request_tx_hash"` // Request transaction hash on Binance chain
+	SourceTicker  common.Ticker     `json:"source_ticker"`   // source token
+	TargetTicker  common.Ticker     `json:"target_ticker"`   // target token
+	Requester     common.BnbAddress `json:"requester"`       // request address on Binance chain
+	Destination   common.BnbAddress `json:"destination"`     // destination , used for swap and send , the destination address we send it to
+	Amount        common.Amount     `json:"amount"`          // amount of token to swap
+	TargetPrice   common.Amount     `json:"target_price"`
+	Signer        sdk.AccAddress    `json:"signer"`
 }
 
 // NewMsgSwap is a constructor function for MsgSwap
-func NewMsgSwap(requestTxHash TxID, source, target Ticker, amount Amount, requester, destination BnbAddress, targetPrice Amount, owner sdk.AccAddress) MsgSwap {
+func NewMsgSwap(requestTxHash common.TxID, source, target common.Ticker, amount common.Amount, requester, destination common.BnbAddress, targetPrice common.Amount, signer sdk.AccAddress) MsgSwap {
 	return MsgSwap{
 		RequestTxHash: requestTxHash,
 		SourceTicker:  source,
@@ -26,7 +27,7 @@ func NewMsgSwap(requestTxHash TxID, source, target Ticker, amount Amount, reques
 		Requester:     requester,
 		Destination:   destination,
 		TargetPrice:   targetPrice,
-		Owner:         owner,
+		Signer:        signer,
 	}
 }
 
@@ -38,22 +39,25 @@ func (msg MsgSwap) Type() string { return "set_swap" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSwap) ValidateBasic() sdk.Error {
-	if msg.RequestTxHash.Empty() {
+	if msg.Signer.Empty() {
+		return sdk.ErrInvalidAddress(msg.Signer.String())
+	}
+	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
-	if msg.SourceTicker.Empty() {
+	if msg.SourceTicker.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Source Ticker cannot be empty")
 	}
-	if msg.TargetTicker.Empty() {
+	if msg.TargetTicker.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Target cannot be empty")
 	}
-	if msg.Amount.Empty() {
+	if msg.Amount.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Amount cannot be empty")
 	}
-	if msg.Requester.Empty() {
+	if msg.Requester.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Requester cannot be empty")
 	}
-	if msg.Destination.Empty() {
+	if msg.Destination.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Destination cannot be empty")
 	}
 	return nil
@@ -66,5 +70,5 @@ func (msg MsgSwap) GetSignBytes() []byte {
 
 // GetSigners defines whose signature is required
 func (msg MsgSwap) GetSigners() []sdk.AccAddress {
-	return []sdk.AccAddress{msg.Owner}
+	return []sdk.AccAddress{msg.Signer}
 }

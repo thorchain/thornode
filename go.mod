@@ -15,12 +15,12 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/tendermint/go-amino v0.15.0
 	github.com/tendermint/tendermint v0.32.1
+	gitlab.com/thorchain/bepswap/common v0.0.0-20190816093251-b84c21cee45c
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/sys v0.0.0-20190329044733-9eb1bfa1ce65 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20190327125643-d831d65fe17d // indirect
-	google.golang.org/grpc v1.19.1 // indirect
-	gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 )
 
 replace golang.org/x/crypto => github.com/johnnyluo/crypto v0.0.0-20190722223544-3f5ecfe86f08

@@ -6,12 +6,13 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // validate if pools exist
-func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...Ticker) error {
+func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...common.Ticker) error {
 	for _, ticker := range tickers {
-		if !IsRune(ticker) {
+		if !common.IsRune(ticker) {
 			if !keeper.PoolExist(ctx, ticker) {
 				return errors.New(fmt.Sprintf("%s doesn't exist", ticker))
 			}
@@ -22,30 +23,30 @@ func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...Ticker) error
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(source, target Ticker, amount Amount, requester, destination BnbAddress, requestTxHash TxID) error {
-	if requestTxHash.Empty() {
+func validateMessage(source, target common.Ticker, amount common.Amount, requester, destination common.BnbAddress, requestTxHash common.TxID) error {
+	if requestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
 	}
-	if source.Empty() {
+	if source.IsEmpty() {
 		return errors.New("source is empty")
 	}
-	if target.Empty() {
+	if target.IsEmpty() {
 		return errors.New("target is empty")
 	}
-	if amount.Empty() {
+	if amount.IsEmpty() {
 		return errors.New("amount is empty")
 	}
-	if requester.Empty() {
+	if requester.IsEmpty() {
 		return errors.New("requester is empty")
 	}
-	if destination.Empty() {
+	if destination.IsEmpty() {
 		return errors.New("destination is empty")
 	}
 
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amount, requester, destination BnbAddress, requestTxHash TxID, tradeTarget, tradeSlipLimit, globalSlipLimit Amount) (Amount, error) {
+func swap(ctx sdk.Context, keeper poolStorage, source, target common.Ticker, amount common.Amount, requester, destination common.BnbAddress, requestTxHash common.TxID, tradeTarget, tradeSlipLimit, globalSlipLimit common.Amount) (common.Amount, error) {
 	if err := validateMessage(source, target, amount, requester, destination, requestTxHash); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
@@ -55,14 +56,14 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 		return "0", err
 	}
 
-	isDoubleSwap := !IsRune(source) && !IsRune(target)
+	isDoubleSwap := !common.IsRune(source) && !common.IsRune(target)
 
 	if isDoubleSwap {
-		runeAmount, err := swapOne(ctx, keeper, source, RuneTicker, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+		runeAmount, err := swapOne(ctx, keeper, source, common.RuneTicker, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 		if err != nil {
-			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, RuneTicker)
+			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneTicker)
 		}
-		tokenAmount, err := swapOne(ctx, keeper, RuneTicker, target, runeAmount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+		tokenAmount, err := swapOne(ctx, keeper, common.RuneTicker, target, runeAmount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 		return tokenAmount, err
 	}
 	tokenAmount, err := swapOne(ctx, keeper, source, target, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
@@ -71,15 +72,15 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target Ticker, amount Amo
 
 func swapOne(ctx sdk.Context,
 	keeper poolStorage,
-	source, target Ticker,
-	amount Amount, requester,
-	destination BnbAddress,
-	tradeTarget, tradeSlipLimit, globalSlipLimit Amount) (Amount, error) {
+	source, target common.Ticker,
+	amount common.Amount, requester,
+	destination common.BnbAddress,
+	tradeTarget, tradeSlipLimit, globalSlipLimit common.Amount) (common.Amount, error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
 	ticker := source
-	if IsRune(source) {
+	if common.IsRune(source) {
 		ticker = target
 	}
 	if !keeper.PoolExist(ctx, ticker) {
@@ -105,13 +106,13 @@ func swapOne(ctx sdk.Context,
 		}
 	}
 	// do we have enough balance to swap?
-	if IsRune(source) {
+	if common.IsRune(source) {
 		if balanceToken == 0 {
 			return "0", errors.New("token :%s balance is 0, can't do swap")
 		}
 	} else {
 		if balanceRune == 0 {
-			return "0", errors.New(RuneTicker.String() + " balance is 0, can't swap ")
+			return "0", errors.New(common.RuneTicker.String() + " balance is 0, can't swap ")
 		}
 	}
 	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
@@ -123,25 +124,25 @@ func swapOne(ctx sdk.Context,
 	if nil != err {
 		return "0", errors.Wrap(err, "fail to swap")
 	}
-	pool.BalanceRune = NewAmountFromFloat(newBalanceRune)
-	pool.BalanceToken = NewAmountFromFloat(newBalanceToken)
-	returnTokenAmount := NewAmountFromFloat(returnAmt)
+	pool.BalanceRune = common.NewAmountFromFloat(newBalanceRune)
+	pool.BalanceToken = common.NewAmountFromFloat(newBalanceToken)
+	returnTokenAmount := common.NewAmountFromFloat(returnAmt)
 	keeper.SetPool(ctx, pool)
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, returnTokenAmount))
 	return returnTokenAmount, nil
 }
 
 // calculateUserPrice return trade slip
-func calculateUserPrice(source Ticker, balanceRune, balanceToken, amt float64) float64 {
-	if IsRune(source) {
+func calculateUserPrice(source common.Ticker, balanceRune, balanceToken, amt float64) float64 {
+	if common.IsRune(source) {
 		return math.Pow(balanceRune+amt, 2.0) / (balanceRune * balanceToken)
 	}
 	return math.Pow(balanceToken+amt, 2.0) / (balanceRune * balanceToken)
 }
 
 // calculatePoolSlip the slip of total pool
-func calculatePoolSlip(source Ticker, balanceRune, balanceToken, amt float64) float64 {
-	if IsRune(source) {
+func calculatePoolSlip(source common.Ticker, balanceRune, balanceToken, amt float64) float64 {
+	if common.IsRune(source) {
 		return amt * (2*balanceRune + amt) / math.Pow(balanceRune, 2.0)
 	}
 	return amt * (2*balanceToken + amt) / math.Pow(balanceToken, 2.0)
@@ -149,14 +150,14 @@ func calculatePoolSlip(source Ticker, balanceRune, balanceToken, amt float64) fl
 
 // calculateSwap how much rune, token and amount to emit
 // return (Rune,Token,Amount)
-func calculateSwap(source Ticker, balanceRune, balanceToken, amt float64) (float64, float64, float64, error) {
+func calculateSwap(source common.Ticker, balanceRune, balanceToken, amt float64) (float64, float64, float64, error) {
 	if amt <= 0.0 {
 		return balanceRune, balanceToken, 0.0, errors.New("amount is invalid")
 	}
 	if balanceRune <= 0 || balanceToken <= 0 {
 		return balanceRune, balanceToken, amt, errors.New("invalid balance")
 	}
-	if IsRune(source) {
+	if common.IsRune(source) {
 		balanceRune += amt
 		tokenAmount := (amt * balanceToken) / balanceRune
 		liquidityFee := math.Pow(amt, 2.0) * balanceToken / math.Pow(balanceRune, 2.0)

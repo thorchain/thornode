@@ -37,21 +37,10 @@ var (
 	NewMsgOutboundTx     = types.NewMsgOutboundTx
 	NewPoolStaker        = types.NewPoolStaker
 	NewStakerPool        = types.NewStakerPool
-	IsRune               = types.IsRune
-	IsBNB                = types.IsBNB
 	GetPoolStatus        = types.GetPoolStatus
 	GetAdminConfigKey    = types.GetAdminConfigKey
-	NewTxID              = types.NewTxID
-	NewTicker            = types.NewTicker
-	RuneTicker           = types.RuneTicker
-	NewAmount            = types.NewAmount
-	NewAmountFromFloat   = types.NewAmountFromFloat
-	ZeroAmount           = types.ZeroAmount
-	NewBnbAddress        = types.NewBnbAddress
 	ModuleCdc            = types.ModuleCdc
 	RegisterCodec        = types.RegisterCodec
-	NewCoin              = types.NewCoin
-	NoBnbAddress         = types.NoBnbAddress
 )
 
 type (
@@ -70,20 +59,14 @@ type (
 	PoolIndex         = types.PoolIndex
 	TxInIndex         = types.TxInIndex
 	TxIn              = types.TxIn
-	TxID              = types.TxID
 	Pool              = types.Pool
 	PoolStaker        = types.PoolStaker
 	StakerPool        = types.StakerPool
 	StakerUnit        = types.StakerUnit
 	TxOutItem         = types.TxOutItem
 	TxOut             = types.TxOut
-	Coin              = types.Coin
-	Coins             = types.Coins
-	Ticker            = types.Ticker
-	Amount            = types.Amount
 	AdminConfigKey    = types.AdminConfigKey
 	AdminConfig       = types.AdminConfig
-	BnbAddress        = types.BnbAddress
 	StakerPoolItem    = types.StakerPoolItem
 	StakeTxDetail     = types.StakeTxDetail
 )
