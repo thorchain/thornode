@@ -154,7 +154,7 @@ func ParseMemo(memo string) (Memo, error) {
 	if len(parts) < 2 {
 		return noMemo, fmt.Errorf("Cannot parse given memo: length %d", len(parts))
 	}
-	tx, err := stringToTxType(strings.ToLower(parts[0]))
+	tx, err := stringToTxType(parts[0])
 	if err != nil {
 		return noMemo, err
 	}
@@ -176,7 +176,7 @@ func ParseMemo(memo string) (Memo, error) {
 
 	case txGas:
 		return GasMemo{
-			MemoBase: MemoBase{TxType: txCreate, Ticker: ticker},
+			MemoBase: MemoBase{TxType: txGas, Ticker: ticker},
 		}, nil
 
 	case txAdd:
