@@ -35,7 +35,7 @@ func NewSigner() *Signer {
 
 func (s Signer) Start() {
 	go s.ProcessTxnOut()
-	go s.BlockScan.Start()
+	s.BlockScan.Start()
 }
 
 func (s Signer) ProcessTxnOut() {
