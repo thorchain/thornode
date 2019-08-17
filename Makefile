@@ -8,10 +8,15 @@ go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"
 	GO111MODULE=on go mod verify
 
-lint:
+lint-pre:
 	@test -z $(gofmt -l .) # checks code is in proper format
-	@golangci-lint run
 	@go mod verify
+
+lint: lint-pre
+	@golangci-lint run
+
+lint-verbose: lint-pre
+	@golangci-lint run -v
 
 build:
 	@go build ./...
