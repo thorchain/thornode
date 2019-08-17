@@ -3,9 +3,9 @@ package swapservice
 import (
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/common"
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/mocks"
 )
 
@@ -135,7 +135,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       "",
 				WithdrawBasisPoints: "100",
-				Ticker:              "BNB",
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -146,7 +146,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "",
-				Ticker:              "BNB",
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -157,7 +157,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "10000",
-				Ticker:              "BNB",
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "",
 				Signer:              accountAddr,
 			},
@@ -179,7 +179,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "-100",
-				Ticker:              "BNB",
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -190,7 +190,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "10001",
-				Ticker:              "BNB",
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -212,7 +212,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "10000",
-				Ticker:              common.Ticker("BNB"),
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -256,7 +256,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       "",
 				WithdrawBasisPoints: "100",
-				Ticker:              "BNB",
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -270,7 +270,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "",
-				Ticker:              "BNB",
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -284,7 +284,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "10000",
-				Ticker:              "BNB",
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "",
 				Signer:              accountAddr,
 			},
@@ -312,7 +312,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "-100",
-				Ticker:              "BNB",
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -326,7 +326,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "10001",
-				Ticker:              "BNB",
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -368,7 +368,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       common.BnbAddress("NOTEXISTSTAKER"),
 				WithdrawBasisPoints: "10000",
-				Ticker:              common.Ticker("BNB"),
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -382,7 +382,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "10000",
-				Ticker:              common.Ticker("BNB"),
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -396,7 +396,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "10000",
-				Ticker:              common.Ticker("BNB"),
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -410,7 +410,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				PublicAddress:       publicAddress,
 				WithdrawBasisPoints: "5000",
-				Ticker:              common.Ticker("BNB"),
+				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -444,19 +444,19 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 	}
 
 	ctx := GetCtx("test")
-	ticker, err := common.NewTicker("BNB")
+
 	store := NewMockInMemoryPoolStorage()
 	pool := Pool{
 		BalanceRune:  common.NewAmountFromFloat(100),
 		BalanceToken: common.NewAmountFromFloat(100),
-		Ticker:       ticker,
+		Ticker:       common.BNBTicker,
 		PoolUnits:    common.NewAmountFromFloat(100),
 		PoolAddress:  publicAddress,
 		Status:       PoolEnabled,
 	}
 	store.SetPool(ctx, pool)
 	poolStaker := PoolStaker{
-		Ticker:     ticker,
+		Ticker:     common.BNBTicker,
 		TotalUnits: common.NewAmountFromFloat(100),
 		Stakers: []StakerUnit{
 			StakerUnit{
@@ -465,12 +465,12 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 			},
 		},
 	}
-	store.SetPoolStaker(ctx, ticker, poolStaker)
+	store.SetPoolStaker(ctx, common.BNBTicker, poolStaker)
 	stakerPool := StakerPool{
 		StakerID: publicAddress,
 		PoolUnits: []*StakerPoolItem{
 			&StakerPoolItem{
-				Ticker: ticker,
+				Ticker: common.BNBTicker,
 				Units:  common.NewAmountFromFloat(100),
 				StakeDetails: []StakeTxDetail{
 					StakeTxDetail{

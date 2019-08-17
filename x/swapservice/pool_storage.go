@@ -20,4 +20,6 @@ type poolStorage interface {
 	SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps PoolStaker)
 
 	GetAdminConfig(ctx sdk.Context, key AdminConfigKey) AdminConfig
+
+	GetAdminConfigStakerAmtInterval(ctx sdk.Context) common.Amount
 }

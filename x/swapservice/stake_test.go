@@ -132,3 +132,101 @@ func (s StakeSuite) TestValidateAmount(c *C) {
 	c.Assert(validateStakeAmount(skrs, 0.002, common.NewAmountFromFloat(100)), NotNil)
 	c.Assert(validateStakeAmount(skrs, 0.004, common.NewAmountFromFloat(100)), IsNil)
 }
+
+// TestValidateStakeMessage
+func (StakeSuite) TestValidateStakeMessage(c *C) {
+	ps := NewMockInMemoryPoolStorage()
+	ctx := GetCtx("test")
+	txId, err := common.NewTxID("4D60A73FEBD42592DB697EF1DA020A214EC3102355D0E1DD07B18557321B106X")
+	if nil != err {
+		c.Errorf("fail to create tx id,%s", err)
+	}
+	bnbAddress, err := common.NewBnbAddress("tbnb1c2yvdphs674vlkp2s2e68cw89garykgau2c8vx")
+	if nil != err {
+		c.Errorf("fail to create bnb address,%s", err)
+	}
+	c.Assert(validateStakeMessage(ctx, ps, common.Ticker(""), common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), txId, bnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, common.Amount(""), common.NewAmountFromFloat(100), txId, bnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.Amount(""), txId, bnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), common.TxID(""), bnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), txId, common.NoBnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), txId, bnbAddress), NotNil)
+	ps.SetPool(ctx, Pool{
+		BalanceRune:  common.NewAmountFromFloat(100),
+		BalanceToken: common.NewAmountFromFloat(100),
+		Ticker:       common.BNBTicker,
+		PoolUnits:    common.NewAmountFromFloat(100),
+		PoolAddress:  bnbAddress,
+		Status:       PoolEnabled,
+	})
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), txId, bnbAddress), Equals, nil)
+}
+
+// TestStake test stake func
+func (StakeSuite) TestStake(c *C) {
+	ps := NewMockInMemoryPoolStorage()
+	ctx := GetCtx("test")
+	txId, err := common.NewTxID("4D60A73FEBD42592DB697EF1DA020A214EC3102355D0E1DD07B18557321B106X")
+	if nil != err {
+		c.Errorf("fail to create tx id,%s", err)
+	}
+	bnbAddress, err := common.NewBnbAddress("tbnb1c2yvdphs674vlkp2s2e68cw89garykgau2c8vx")
+	if nil != err {
+		c.Errorf("fail to create bnb address,%s", err)
+	}
+	c.Assert(stake(ctx, ps, common.Ticker(""), common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId), NotNil)
+	ps.SetPool(ctx, Pool{
+		BalanceRune:  common.NewAmountFromFloat(-100),
+		BalanceToken: common.NewAmountFromFloat(100),
+		Ticker:       common.BNBTicker,
+		PoolUnits:    common.NewAmountFromFloat(100),
+		PoolAddress:  bnbAddress,
+		Status:       PoolEnabled,
+	})
+	c.Assert(stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId), NotNil)
+	ps.SetPool(ctx, Pool{
+		BalanceRune:  common.NewAmountFromFloat(100),
+		BalanceToken: common.NewAmountFromFloat(100),
+		Ticker:       notExistPoolStakerTicker,
+		PoolUnits:    common.NewAmountFromFloat(100),
+		PoolAddress:  bnbAddress,
+		Status:       PoolEnabled,
+	})
+	c.Assert(stake(ctx, ps, notExistPoolStakerTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId), NotNil)
+	ps.SetPool(ctx, Pool{
+		BalanceRune:  common.NewAmountFromFloat(100),
+		BalanceToken: common.NewAmountFromFloat(100),
+		Ticker:       common.BNBTicker,
+		PoolUnits:    common.NewAmountFromFloat(100),
+		PoolAddress:  bnbAddress,
+		Status:       PoolEnabled,
+	})
+	makePoolStaker := func(total int, avg float64) PoolStaker {
+		stakers := make([]StakerUnit, total)
+		for i, _ := range stakers {
+			stakers[i] = StakerUnit{Units: common.NewAmountFromFloat(avg)}
+		}
+
+		return PoolStaker{
+			TotalUnits: common.NewAmountFromFloat(avg * float64(total)),
+			Stakers:    stakers,
+		}
+	}
+	skrs := makePoolStaker(150, 0.0002)
+	ps.SetPoolStaker(ctx, common.BNBTicker, skrs)
+	c.Assert(stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(1), common.NewAmountFromFloat(1), bnbAddress, txId), NotNil)
+
+	c.Assert(stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), notExistStakerPoolAddr, txId), NotNil)
+	ps.SetPool(ctx, Pool{
+		BalanceRune:  common.NewAmountFromFloat(100),
+		BalanceToken: common.NewAmountFromFloat(100),
+		Ticker:       common.BNBTicker,
+		PoolUnits:    common.NewAmountFromFloat(100),
+		PoolAddress:  bnbAddress,
+		Status:       PoolEnabled,
+	})
+	c.Assert(stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId), IsNil)
+	p := ps.GetPool(ctx, common.BNBTicker)
+
+	c.Check(p.PoolUnits.Equals(common.NewAmountFromFloat(200)), Equals, true)
+}
