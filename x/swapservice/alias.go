@@ -1,7 +1,7 @@
 package swapservice
 
 import (
-	"gitlab.com/thorchain/statechain/x/swapservice/types"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
 const (

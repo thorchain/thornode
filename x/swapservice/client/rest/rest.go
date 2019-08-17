@@ -5,7 +5,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/gorilla/mux"
-	"gitlab.com/thorchain/statechain/x/swapservice/query"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/query"
 )
 
 const (

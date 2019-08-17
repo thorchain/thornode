@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
-	"gitlab.com/thorchain/statechain/x/swapservice/types"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
