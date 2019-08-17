@@ -9,9 +9,9 @@ go.sum: go.mod
 	GO111MODULE=on go mod verify
 
 lint:
-	golangci-lint run
-	find . -pooldata '*.go' -type f -not -path "./vendor*" -not -path "*.git*" | xargs gofmt -d -s
-	go mod verify
+	@test -z $(gofmt -l .) # checks code is in proper format
+	@golangci-lint run
+	@go mod verify
 
 build:
 	@go build ./...

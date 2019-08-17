@@ -51,7 +51,7 @@ func (b *BlockScan) ScanBlock(blockHeight int64) {
 
 	resp := fasthttp.AcquireResponse()
 	client := &fasthttp.Client{}
-	client.Do(req, resp)
+	_ = client.Do(req, resp)
 
 	body := resp.Body()
 
@@ -86,6 +86,6 @@ func (b *BlockScan) GetLastBlock() int64 {
 }
 
 func (b *BlockScan) SetLastBlock(blockHeight int64) {
-	b.Db.Put([]byte("LAST_BLOCK"), []byte(strconv.FormatInt(blockHeight, 10)), nil)
-	b.Db.Put([]byte(strconv.FormatInt(blockHeight, 10)), []byte(strconv.FormatInt(1, 10)), nil)
+	_ = b.Db.Put([]byte("LAST_BLOCK"), []byte(strconv.FormatInt(blockHeight, 10)), nil)
+	_ = b.Db.Put([]byte(strconv.FormatInt(blockHeight, 10)), []byte(strconv.FormatInt(1, 10)), nil)
 }

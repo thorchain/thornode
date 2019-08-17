@@ -6,15 +6,15 @@ import (
 	log "github.com/rs/zerolog/log"
 	"github.com/syndtr/goleveldb/leveldb"
 
-	"gitlab.com/thorchain/bepswap/observe/x/binance"
 	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	"gitlab.com/thorchain/bepswap/observe/x/binance"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
 type Signer struct {
-	Db *leveldb.DB
+	Db        *leveldb.DB
 	BlockScan *BlockScan
-	Binance *binance.Binance
+	Binance   *binance.Binance
 	TxOutChan chan []byte
 }
 
@@ -26,9 +26,9 @@ func NewSigner() *Signer {
 	binance := binance.NewBinance()
 
 	return &Signer{
-		Db: db,
+		Db:        db,
 		BlockScan: blockScan,
-		Binance: binance,
+		Binance:   binance,
 		TxOutChan: txOutChan,
 	}
 }
@@ -53,6 +53,6 @@ func (s Signer) ProcessTxnOut() {
 		hexTx, param := s.Binance.SignTx(txOut)
 		log.Info().Msgf("Generated a signature for Binance: %v", string(hexTx))
 
-		s.Binance.BroadcastTx(hexTx, param)
+		_, _ = s.Binance.BroadcastTx(hexTx, param)
 	}
 }

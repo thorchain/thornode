@@ -49,11 +49,11 @@ func (b *BlockScan) ScanBlocks() {
 
 			resp := fasthttp.AcquireResponse()
 			client := &fasthttp.Client{}
-			client.Do(req, resp)
+			_ = client.Do(req, resp)
 
 			body := resp.Body()
 			var tx btypes.RPCBlock
-			json.Unmarshal(body, &tx)
+			_ = json.Unmarshal(body, &tx)
 
 			block := tx.Result.Block.Header.Height
 			parsedBlock, _ := strconv.ParseInt(block, 10, 64)
@@ -88,11 +88,11 @@ func (b *BlockScan) TxSearch() {
 
 			resp := fasthttp.AcquireResponse()
 			client := &fasthttp.Client{}
-			client.Do(req, resp)
+			_ = client.Do(req, resp)
 
 			body := resp.Body()
 			var query btypes.RPCTxSearch
-			json.Unmarshal(body, &query)
+			_ = json.Unmarshal(body, &query)
 
 			var txIn stypes.TxIn
 			for _, txn := range query.Result.Txs {
@@ -130,12 +130,12 @@ func (b *BlockScan) QueryTx(txIn stypes.TxIn) stypes.TxIn {
 
 		resp := fasthttp.AcquireResponse()
 		client := &fasthttp.Client{}
-		client.Do(req, resp)
+		_ = client.Do(req, resp)
 
 		body := resp.Body()
 
 		var tx btypes.ApiTx
-		json.Unmarshal(body, &tx)
+		_ = json.Unmarshal(body, &tx)
 
 		for _, msg := range tx.Tx.Value.Msg {
 			for j, output := range msg.Value.Outputs {
