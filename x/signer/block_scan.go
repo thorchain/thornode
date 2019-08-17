@@ -12,7 +12,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"gitlab.com/thorchain/bepswap/common"
-	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	config "gitlab.com/thorchain/bepswap/observe/config"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
@@ -42,7 +42,7 @@ func (b *BlockScan) Start() {
 func (b *BlockScan) ScanBlock(blockHeight int64) {
 	uri := url.URL{
 		Scheme: "http",
-		Host:   ctypes.ChainHost,
+		Host:   config.ChainHost,
 		Path:   fmt.Sprintf("/swapservice/txoutarray/%v", blockHeight),
 	}
 

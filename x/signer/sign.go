@@ -3,10 +3,10 @@ package signer
 import (
 	"encoding/json"
 
-	log "github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/log"
 	"github.com/syndtr/goleveldb/leveldb"
 
-	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	config "gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/binance"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
@@ -19,7 +19,7 @@ type Signer struct {
 }
 
 func NewSigner() *Signer {
-	var db, _ = leveldb.OpenFile(ctypes.SignerDbPath, nil)
+	var db, _ = leveldb.OpenFile(config.SignerDbPath, nil)
 
 	txOutChan := make(chan []byte)
 	blockScan := NewBlockScan(db, txOutChan)
