@@ -2,10 +2,9 @@ package swapservice
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"gitlab.com/thorchain/bepswap/common"
 
-	"gitlab.com/thorchain/statechain/x/swapservice/types"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
 type MockInMemoryPoolStorage struct {

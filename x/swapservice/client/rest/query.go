@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
-	"gitlab.com/thorchain/statechain/x/swapservice/query"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/query"
 )
 
 // Ping - endpoint to check that the API is up and available

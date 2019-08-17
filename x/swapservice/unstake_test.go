@@ -3,11 +3,10 @@ package swapservice
 import (
 	"github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/common"
-
-	"gitlab.com/thorchain/statechain/x/swapservice/mocks"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/mocks"
 )
 
 type UnstakeSuite struct{}

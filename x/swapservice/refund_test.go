@@ -11,7 +11,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/bepswap/common"
-	"gitlab.com/thorchain/statechain/x/swapservice/mocks"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/mocks"
 )
 
 func Test(t *testing.T) { TestingT(t) }
