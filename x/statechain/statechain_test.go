@@ -76,8 +76,7 @@ func TestSend(t *testing.T) {
 	config.ChainHost = u.Host
 
 	stdTx := types.StdTx{}
-	mode, err := types.NewMode("sync")
-	assert.Equal(t, err, nil)
+	mode := types.TxSync
 
 	txID, err := Send(stdTx, mode)
 	assert.Equal(t, err, nil)

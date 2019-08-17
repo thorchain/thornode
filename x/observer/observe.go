@@ -8,11 +8,12 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/common"
-	config "gitlab.com/thorchain/bepswap/observe/config"
 
+	config "gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+
+	"gitlab.com/thorchain/bepswap/common"
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
@@ -55,7 +56,7 @@ func (o *Observer) ProcessTxnIn(ch chan []byte) {
 			log.Error().Msgf("Error: %v", err)
 		}
 
-		mode, _ := types.NewMode("sync")
+		mode := types.TxSync
 
 		addr, err := sdk.AccAddressFromBech32(config.RuneAddress)
 		if err != nil {
