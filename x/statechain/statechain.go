@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"os/exec"
 
 	http "github.com/hashicorp/go-retryablehttp"
@@ -50,21 +51,17 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (types.StdTx, error) {
 	if err != nil {
 		return stdTx, errors.Wrap(err, "Error while writing to a temporary file")
 	}
-	//defer os.Remove(file.Name())
+	defer os.Remove(file.Name())
 
 	sign := fmt.Sprintf(
 		"/bin/echo %v | sscli tx sign %v --from %v",
 		config.SignerPasswd,
 		file.Name(),
-		"jack",
+		config.SignerName,
 	)
 
-	// TODO: use sh instead of bash. Its available on more linux systems than
-	// others
-	out, err := exec.Command("/bin/bash", "-c", sign).Output()
+	out, err := exec.Command("/bin/sh", "-c", sign).Output()
 	if err != nil {
-		fmt.Printf("ERROR: %s\n", sign)
-		fmt.Printf("Out: %s\n", out)
 		return stdTx, errors.Wrap(err, "Error while signing the request")
 	}
 

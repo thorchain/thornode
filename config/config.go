@@ -15,6 +15,7 @@ var (
 	RPCHost        = os.Getenv("RPC_HOST")
 	PrivKey        = os.Getenv("PRIVATE_KEY")
 	ChainHost      = os.Getenv("CHAIN_HOST")
+	SignerName     = os.Getenv("SIGNER_NAME")
 	SignerPasswd   = os.Getenv("SIGNER_PASSWD")
 	ObserverDbPath = os.Getenv("LEVEL_DB_OBSERVER_PATH")
 	SignerDbPath   = os.Getenv("LEVEL_DB_SIGNER_PATH")
