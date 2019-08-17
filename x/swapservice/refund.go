@@ -19,7 +19,6 @@ func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keepe
 	if result.IsOK() {
 		return
 	}
-
 	switch m := msg.(type) {
 	case MsgSetStakeData:
 		toi := &TxOutItem{
