@@ -111,8 +111,8 @@ func (b Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string) {
 		for _, coin := range txn.Coins {
 			amount := coin.Amount.Float64()
 			payload = append(payload, msg.Transfer{
-				toAddr,
-				types.Coins{
+				ToAddr: toAddr,
+				Coins: types.Coins{
 					types.Coin{
 						Denom:  coin.Denom.String(),
 						Amount: int64(amount),
