@@ -207,6 +207,8 @@ github.com/zondax/ledger-go v0.9.0 h1:oTrtFqPFA4VdCPRvqMaN45mQnJxkPc0JxoVZfCoUpj
 github.com/zondax/ledger-go v0.9.0/go.mod h1:b2vIcu3u9gJoIx4kTWuXOgzGV7FPWeUktqRqVf6feG0=
 gitlab.com/thorchain/bepswap/common v0.0.0-20190816093251-b84c21cee45c h1:YZLdSMFcw89mlQ+4MqX+hnPDGlKC1T96mNwVVHN+F2M=
 gitlab.com/thorchain/bepswap/common v0.0.0-20190816093251-b84c21cee45c/go.mod h1:Cxjrpwid6UitrHIARhFR360IirTbqtYjrVGsT0a2H9k=
+gitlab.com/thorchain/bepswap/statechain v0.0.0-20190817014219-e1e1a77d6935 h1:TpJGMOUI8MZN0FEWI3phnu92MfXET8waDshz3Srvy5k=
+gitlab.com/thorchain/bepswap/statechain v0.0.0-20190817014219-e1e1a77d6935/go.mod h1:sEZ1KONkTOdZTQPnZStpi9iACRmLF1rqXeblhTukLWM=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 golang.org/x/crypto v0.0.0-20170930174604-9419663f5a44/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
 golang.org/x/crypto v0.0.0-20180904163835-0709b304e793/go.mod h1:6SG95UA2DQfeDnfUPMdvaQW0Q7yPrPDi9nlGo2tz2b4=
@@ -258,6 +260,7 @@ google.golang.org/appengine v1.4.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7
 google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8 h1:Nw54tB0rB7hY/N0NQvRW8DG4Yk3Q6T9cu9RcFQDu1tc=
 google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8/go.mod h1:JiN7NxoALGmiZfu7CAH4rXhgtRTLTxftemlI0sWmxmc=
 google.golang.org/genproto v0.0.0-20180831171423-11092d34479b/go.mod h1:JiN7NxoALGmiZfu7CAH4rXhgtRTLTxftemlI0sWmxmc=
+google.golang.org/genproto v0.0.0-20181029155118-b69ba1387ce2 h1:67iHsV9djwGdZpdZNbLuQj6FOzCaZe3w+vhLjn5AcFA=
 google.golang.org/genproto v0.0.0-20181029155118-b69ba1387ce2/go.mod h1:JiN7NxoALGmiZfu7CAH4rXhgtRTLTxftemlI0sWmxmc=
 google.golang.org/genproto v0.0.0-20190327125643-d831d65fe17d h1:XB2jc5XQ9uhizGTS2vWcN01bc4dI6z3C4KY5MQm8SS8=
 google.golang.org/genproto v0.0.0-20190327125643-d831d65fe17d/go.mod h1:VzzqZJRnGkLBvHegQrXjBqPurQTc5/KpmUdxsrq26oE=
