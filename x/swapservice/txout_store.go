@@ -4,16 +4,22 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// TxOutSetter define a method that is required to be used in TxOutStore
+// We need this interface thus we could test the refund logic accordingly
+type TxOutSetter interface {
+	SetTxOut(sdk.Context, *TxOut)
+}
+
 // TxOutStore is going to manage all the outgoing tx
 type TxOutStore struct {
-	keeper   Keeper
-	blockOut *TxOut
+	txOutSetter TxOutSetter
+	blockOut    *TxOut
 }
 
 // NewTxOutStore will create a new instance of TxOutStore.
-func NewTxOutStore(keeper Keeper) *TxOutStore {
+func NewTxOutStore(txOutSetter TxOutSetter) *TxOutStore {
 	return &TxOutStore{
-		keeper: keeper,
+		txOutSetter: txOutSetter,
 	}
 }
 
@@ -29,7 +35,7 @@ func (tos *TxOutStore) CommitBlock(ctx sdk.Context) {
 		return
 	}
 	// write the tos to keeper
-	tos.keeper.SetTxOut(ctx, tos.blockOut)
+	tos.txOutSetter.SetTxOut(ctx, tos.blockOut)
 }
 
 // AddTxOutItem add an item to internal structure

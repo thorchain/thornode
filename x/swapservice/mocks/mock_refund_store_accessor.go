@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	RefundAdminConfigKey = `RefundAdminConfigKey`
-	RefundPoolKey        = `RefundPoolKey`
+	RefundAdminConfigKeyMRRA = `RefundAdminConfigKeyMRRA`
+	RefundPoolKey            = `RefundPoolKey`
 )
 
 // MockRefundStoreAccessor implements PoolStorage interface, thus we can mock the error cases
@@ -21,7 +21,7 @@ func NewMockRefundStoreAccessor() *MockRefundStoreAccessor {
 }
 
 func (mrsa MockRefundStoreAccessor) GetAdminConfigMRRA(ctx sdk.Context) common.Amount {
-	v := ctx.Value(RefundAdminConfigKey)
+	v := ctx.Value(RefundAdminConfigKeyMRRA)
 	if ac, ok := v.(common.Amount); ok {
 		return ac
 	}

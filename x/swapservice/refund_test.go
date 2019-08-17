@@ -8,9 +8,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/common"
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/mocks"
 )
 
@@ -100,7 +100,7 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 	}
 	for _, item := range inputs {
 		ctx := getTestContext()
-		ctx = ctx.WithValue(mocks.RefundAdminConfigKey, item.minimumRefundAmount).
+		ctx = ctx.WithValue(mocks.RefundAdminConfigKeyMRRA, item.minimumRefundAmount).
 			WithValue(mocks.RefundPoolKey, item.pool)
 		coin := getRefundCoin(ctx, item.ticker, item.amount, refundStoreAccessor)
 		c.Assert(coin, Equals, item.expectedCoin)
@@ -162,7 +162,7 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 	}
 	for _, item := range inputs {
 		ctx := getTestContext()
-		ctx = ctx.WithValue(mocks.RefundAdminConfigKey, item.minimumRefundAmount).
+		ctx = ctx.WithValue(mocks.RefundAdminConfigKeyMRRA, item.minimumRefundAmount).
 			WithValue(mocks.RefundPoolKey, item.pool)
 		txStore := &TxOutStore{
 			blockOut: nil,
@@ -178,4 +178,59 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 			c.Assert(item.out.String(), Equals, txStore.blockOut.TxArray[0].String())
 		}
 	}
+}
+
+func (RefundSuite) TestProcessRefund1(c *C) {
+	ctx := getTestContext()
+	refundStoreAccessor := mocks.NewMockRefundStoreAccessor()
+	addr := sdk.AccAddress("rune1gqva7eh03jkz39tk8m3tlw7ch558dz0ncdag0j")
+	store := NewTxOutStore(MockTxOutSetter{})
+	store.NewBlock(1)
+	processRefund(ctx, &sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}, store, refundStoreAccessor, NewMsgNoOp(addr))
+	c.Assert(len(store.blockOut.TxArray), Equals, 0)
+	store.CommitBlock(ctx)
+	txId, err := common.NewTxID("4D60A73FEBD42592DB697EF1DA020A214EC3102355D0E1DD07B18557321B106X")
+	if nil != err {
+		c.Errorf("fail to create tx id,%s", err)
+	}
+	bnbAddress, err := common.NewBnbAddress("tbnb1c2yvdphs674vlkp2s2e68cw89garykgau2c8vx")
+	if nil != err {
+		c.Errorf("fail to create bnb address,%s", err)
+	}
+	ctx = ctx.WithValue(mocks.RefundAdminConfigKeyMRRA, common.NewAmountFromFloat(2))
+	ctx = ctx.WithValue(mocks.RefundPoolKey, newPoolForTest(common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)))
+	// stake refund test
+	stakeMsg := NewMsgSetStakeData(common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId, addr)
+	result := sdk.ErrUnknownRequest("invalid").Result()
+	store.NewBlock(2)
+	processRefund(ctx, &result, store, refundStoreAccessor, stakeMsg)
+	store.CommitBlock(ctx)
+	c.Assert(len(store.blockOut.TxArray) > 0, Equals, true)
+
+	//stake refund test
+	stakeMsg1 := NewMsgSetStakeData(common.BNBTicker, common.NewAmountFromFloat(0.5), common.NewAmountFromFloat(0.5), bnbAddress, txId, addr)
+	result1 := sdk.ErrUnknownRequest("invalid").Result()
+	store.NewBlock(2)
+	processRefund(ctx, &result1, store, refundStoreAccessor, stakeMsg1)
+	store.CommitBlock(ctx)
+	c.Assert(len(result1.Events) > 0, Equals, true)
+	c.Assert(len(store.blockOut.TxArray) > 0, Equals, false)
+
+	//swap refund test
+	swapMsg := NewMsgSwap(txId, common.RuneTicker, common.BNBTicker, common.NewAmountFromFloat(1.5), bnbAddress, bnbAddress, common.NewAmountFromFloat(2.0), addr)
+	resultMsg := sdk.ErrUnknownRequest("invalid").Result()
+	store.NewBlock(3)
+	processRefund(ctx, &resultMsg, store, refundStoreAccessor, swapMsg)
+	store.CommitBlock(ctx)
+	c.Assert(len(resultMsg.Events) > 0, Equals, true)
+
+	swapNoop := NewMsgNoOp(addr)
+	resultNoop := sdk.ErrUnknownRequest("invalid").Result()
+	store.NewBlock(3)
+	processRefund(ctx, &resultNoop, store, refundStoreAccessor, swapNoop)
+	store.CommitBlock(ctx)
+	c.Assert(len(store.blockOut.TxArray), Equals, 0)
 }
