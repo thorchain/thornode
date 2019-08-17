@@ -20,6 +20,21 @@ import (
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
+var execCommand = exec.Command
+var msgType = "swapservice/MsgSetTxIn"
+
+// Signs a file using sscli
+func signFile(file, name, password string) ([]byte, error) {
+	sign := fmt.Sprintf(
+		"/bin/echo %s | sscli tx sign %s --from %s",
+		config.SignerPasswd,
+		file,
+		config.SignerName,
+	)
+
+	return execCommand("/bin/sh", "-c", sign).Output()
+}
+
 func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (types.StdTx, error) {
 	var (
 		msg   types.Msg
@@ -27,7 +42,7 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (types.StdTx, error) {
 		err   error
 	)
 
-	msg.Type = "swapservice/MsgSetTxIn"
+	msg.Type = msgType
 	msg.Value = stypes.NewMsgSetTxIn(txIns, signer)
 	stdTx.Type = "cosmos-sdk/StdTx"
 	stdTx.Value.Msg = append(stdTx.Value.Msg, msg)
@@ -53,14 +68,7 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (types.StdTx, error) {
 	}
 	defer os.Remove(file.Name())
 
-	sign := fmt.Sprintf(
-		"/bin/echo %v | sscli tx sign %v --from %v",
-		config.SignerPasswd,
-		file.Name(),
-		config.SignerName,
-	)
-
-	out, err := exec.Command("/bin/sh", "-c", sign).Output()
+	out, err := signFile(file.Name(), config.SignerName, config.SignerPasswd)
 	if err != nil {
 		return stdTx, errors.Wrap(err, "Error while signing the request")
 	}
