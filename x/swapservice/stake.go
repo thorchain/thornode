@@ -24,7 +24,7 @@ func validateStakeAmount(stakers PoolStaker, stakerUnits float64, stakeAmtInterv
 	}
 
 	if stakerUnits < minStakerAmt {
-		return fmt.Errorf("Not enough to stake (%f/%f)", stakerUnits, minStakerAmt)
+		return fmt.Errorf("not enough to stake (%f/%f)", stakerUnits, minStakerAmt)
 	}
 
 	return nil

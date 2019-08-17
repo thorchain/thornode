@@ -1,10 +1,17 @@
 package swapservice
 
 import (
+	"errors"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
+)
+
+var (
+	notExistPoolStakerTicker = common.Ticker("NotExistPoolStakerTicker")
+	notExistStakerPoolAddr   = common.BnbAddress("4252BA642F73FA402FEF18E3CB4550E5A4A6831299D5EB7E76808C8923FC1XXX")
 )
 
 type MockInMemoryPoolStorage struct {
@@ -30,6 +37,9 @@ func (p *MockInMemoryPoolStorage) SetPool(ctx sdk.Context, ps Pool) {
 	p.store[ps.Ticker.String()] = ps
 }
 func (p *MockInMemoryPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common.BnbAddress) (StakerPool, error) {
+	if stakerID.Equals(notExistStakerPoolAddr) {
+		return NewStakerPool(stakerID), errors.New("simulate error for test")
+	}
 	key := getKey(prefixStakerPool, stakerID.String())
 	if res, ok := p.store[key]; ok {
 		return res.(StakerPool), nil
@@ -41,6 +51,9 @@ func (p *MockInMemoryPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common
 	p.store[key] = sp
 }
 func (p *MockInMemoryPoolStorage) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker, error) {
+	if notExistPoolStakerTicker.Equals(ticker) {
+		return NewPoolStaker(ticker, common.NewAmountFromFloat(0)), errors.New("simulate error for test")
+	}
 	key := getKey(prefixPoolStaker, ticker.String())
 	if res, ok := p.store[key]; ok {
 		return res.(PoolStaker), nil
