@@ -6,7 +6,7 @@ type RPCBlock struct {
 	Result  struct {
 		Block struct {
 			Header struct {
-				Height      string    `json:"height"`
+				Height string `json:"height"`
 			} `json:"header"`
 		} `json:"block"`
 	} `json:"result"`

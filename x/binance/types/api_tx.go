@@ -8,7 +8,7 @@ type ApiTx struct {
 	Tx     struct {
 		Type  string `json:"type"`
 		Value struct {
-			Memo string      `json:"memo"`
+			Memo string `json:"memo"`
 			Msg  []struct {
 				Type  string `json:"type"`
 				Value struct {

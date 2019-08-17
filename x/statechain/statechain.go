@@ -1,16 +1,16 @@
 package statechain
 
 import (
-	"os"
-	"fmt"
 	"bytes"
-	"os/exec"
-	"net/url"
-	"io/ioutil"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/url"
+	"os"
+	"os/exec"
 
-	log "github.com/rs/zerolog/log"
 	http "github.com/hashicorp/go-retryablehttp"
+	log "github.com/rs/zerolog/log"
 
 	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
@@ -18,18 +18,18 @@ import (
 
 func Sign(txIn types.TxIn) types.StdTx {
 	var (
-		msg types.Msg
+		msg   types.Msg
 		stdTx types.StdTx
 	)
 
 	for _, txItem := range txIn.TxArray {
 		txHash := types.TxHash{
 			Request: txItem.Tx,
-			Status: "incomplete",
-			Txhash: txItem.Tx,
-			Memo: txItem.Memo,
-			Coins: txItem.Coins,
-			Sender: txItem.Sender,
+			Status:  "incomplete",
+			Txhash:  txItem.Tx,
+			Memo:    txItem.Memo,
+			Coins:   txItem.Coins,
+			Sender:  txItem.Sender,
 		}
 
 		msg.Value.TxHashes = append(msg.Value.TxHashes, txHash)
@@ -45,7 +45,7 @@ func Sign(txIn types.TxIn) types.StdTx {
 
 	payload, _ := json.Marshal(stdTx)
 	file, _ := ioutil.TempFile("/tmp", "tx")
-	
+
 	err := ioutil.WriteFile(file.Name(), payload, 0644)
 	if err != nil {
 		log.Fatal().Msgf("Error while writing to a temporary file: %v", err)
@@ -59,7 +59,7 @@ func Sign(txIn types.TxIn) types.StdTx {
 	defer os.Remove(file.Name())
 
 	var signed types.StdTx
-	json.Unmarshal(out, &signed)
+	_ = json.Unmarshal(out, &signed)
 
 	return signed
 }
@@ -76,8 +76,8 @@ func Send(signed types.StdTx) {
 
 	uri := url.URL{
 		Scheme: "http",
-		Host: ctypes.ChainHost,
-		Path: "/txs",
+		Host:   ctypes.ChainHost,
+		Path:   "/txs",
 	}
 
 	resp, err := http.Post(uri.String(), "application/json", bytes.NewBuffer(sendSetTx))
@@ -89,6 +89,6 @@ func Send(signed types.StdTx) {
 	resp.Body.Close()
 
 	var commit types.Commit
-	json.Unmarshal(body, &commit)
+	_ = json.Unmarshal(body, &commit)
 	log.Info().Msgf("Received a TxHash of %v from the Statechain", commit.TxHash)
 }

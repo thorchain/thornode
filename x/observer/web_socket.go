@@ -78,7 +78,7 @@ func (w *WebSocket) SetKeepAlive(conn *websocket.Conn) {
 			}
 
 			time.Sleep(ctypes.SocketPong / 2)
-			if time.Now().Sub(lastResponse) > ctypes.SocketPong {
+			if time.Since(lastResponse) > ctypes.SocketPong {
 				conn.Close()
 				return
 			}

@@ -1,0 +1,24 @@
+image: golang:1.11
+
+cache:
+  paths:
+    - .cache
+
+before_script:
+  - mkdir -p .cache
+  - export GOPATH="$CI_PROJECT_DIR/.cache"
+
+stages:
+  - test
+
+unit_tests:
+  stage: test
+  coverage: '/^coverage:\s(\d+(?:\.\d+)?%)/'
+  script:
+    - go test -mod=readonly -v -coverprofile .testCoverage.txt ./...
+
+lint_code:
+  image: golangci/golangci-lint
+  stage: test
+  script:
+    - make lint
