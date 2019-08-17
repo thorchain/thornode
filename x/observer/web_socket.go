@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	log "github.com/rs/zerolog/log"
-
+	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/common"
-	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+
+	config "gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/binance"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
@@ -38,7 +38,7 @@ func (w *WebSocket) Start() {
 		log.Fatal().Msgf("There was an error while starting: %v", err)
 	}
 
-	log.Info().Msgf("Setting a keepalive of %v", ctypes.SocketPong)
+	log.Info().Msgf("Setting a keepalive of %v", config.SocketPong)
 	w.SetKeepAlive(conn)
 
 	log.Info().Msg("Listening for events....")
@@ -49,8 +49,8 @@ func (w *WebSocket) Start() {
 func (w *WebSocket) Connect() (*websocket.Conn, error) {
 	url := url.URL{
 		Scheme: "wss",
-		Host:   ctypes.DEXHost,
-		Path:   fmt.Sprintf("/api/ws/%s", ctypes.PoolAddress),
+		Host:   config.DEXHost,
+		Path:   fmt.Sprintf("/api/ws/%s", config.PoolAddress),
 	}
 
 	log.Info().Msgf("Opening up a connection to: %v", url.String())
@@ -77,8 +77,8 @@ func (w *WebSocket) SetKeepAlive(conn *websocket.Conn) {
 				return
 			}
 
-			time.Sleep(ctypes.SocketPong / 2)
-			if time.Since(lastResponse) > ctypes.SocketPong {
+			time.Sleep(config.SocketPong / 2)
+			if time.Since(lastResponse) > config.SocketPong {
 				conn.Close()
 				return
 			}
@@ -87,68 +87,68 @@ func (w *WebSocket) SetKeepAlive(conn *websocket.Conn) {
 }
 
 func (w *WebSocket) ReadSocket(conn *websocket.Conn) {
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			// @todo Reconnect if this fails.
-			log.Error().Msgf("Read error: %s", err)
-		}
-		w.SocketChan <- message
-	}
+for {
+_, message, err := conn.ReadMessage()
+if err != nil {
+// @todo Reconnect if this fails.
+log.Error().Msgf("Read error: %s", err)
+}
+w.SocketChan <- message
+}
 }
 
 func (w *WebSocket) ParseMessage() {
-	go func() {
-		for {
-			payload := <-w.SocketChan
-			var txfr btypes.SocketTxfr
+go func () {
+	for {
+		payload := <-w.SocketChan
+		var txfr btypes.SocketTxfr
 
-			err := json.Unmarshal(payload, &txfr)
-			if err != nil {
-				log.Error().Msgf("There was an error while parsing the event: %v", err)
-			}
+		err := json.Unmarshal(payload, &txfr)
+		if err != nil {
+			log.Error().Msgf("There was an error while parsing the event: %v", err)
+		}
 
-			if txfr.Stream == "transfers" {
-				var txIn stypes.TxIn
+		if txfr.Stream == "transfers" {
+			var txIn stypes.TxIn
 
-				if txfr.Data.FromAddr != ctypes.PoolAddress {
-					for _, txn := range txfr.Data.T {
-						txItem := stypes.TxInItem{Tx: txfr.Data.Hash,
-							Memo:   txfr.Data.Memo,
-							Sender: txfr.Data.FromAddr,
-						}
-
-						for _, coin := range txn.Coins {
-							parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
-							amount := parsedAmt * 100000000
-
-							var token common.Coin
-							token.Denom = common.Ticker(coin.Asset)
-							token.Amount = common.Amount(fmt.Sprintf("%.0f", amount))
-							txItem.Coins = append(txItem.Coins, token)
-						}
-
-						txIn.TxArray = append(txIn.TxArray, txItem)
-					}
-				} else {
+			if txfr.Data.FromAddr != config.PoolAddress {
+				for _, txn := range txfr.Data.T {
 					txItem := stypes.TxInItem{Tx: txfr.Data.Hash,
 						Memo:   txfr.Data.Memo,
 						Sender: txfr.Data.FromAddr,
 					}
 
+					for _, coin := range txn.Coins {
+						parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
+						amount := parsedAmt * 100000000
+
+						var token common.Coin
+						token.Denom = common.Ticker(coin.Asset)
+						token.Amount = common.Amount(fmt.Sprintf("%.0f", amount))
+						txItem.Coins = append(txItem.Coins, token)
+					}
+
 					txIn.TxArray = append(txIn.TxArray, txItem)
 				}
-
-				txIn.BlockHeight = strconv.Itoa(txfr.Data.EventHeight)
-				txIn.Count = strconv.Itoa(len(txIn.TxArray))
-
-				json, err := json.Marshal(txIn)
-				if err != nil {
-					log.Error().Msgf("Error: %v", err)
+			} else {
+				txItem := stypes.TxInItem{Tx: txfr.Data.Hash,
+					Memo:   txfr.Data.Memo,
+					Sender: txfr.Data.FromAddr,
 				}
 
-				w.TxInChan <- json
+				txIn.TxArray = append(txIn.TxArray, txItem)
 			}
+
+			txIn.BlockHeight = strconv.Itoa(txfr.Data.EventHeight)
+			txIn.Count = strconv.Itoa(len(txIn.TxArray))
+
+			json, err := json.Marshal(txIn)
+			if err != nil {
+				log.Error().Msgf("Error: %v", err)
+			}
+
+			w.TxInChan <- json
 		}
-	}()
+	}
+}()
 }
