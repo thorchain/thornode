@@ -29,7 +29,7 @@ type Txs struct {
 				Gas    string        `json:"gas"`
 			} `json:"fee"`
 			Signatures []Signature `json:"signatures"`
-			Memo string `json:"memo"`
+			Memo       string      `json:"memo"`
 		} `json:"value"`
 	} `json:"tx"`
 	Timestamp time.Time `json:"timestamp"`

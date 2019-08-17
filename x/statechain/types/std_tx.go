@@ -1,14 +1,14 @@
 package types
 
 type StdTx struct {
-	Type string `json:"type"`
+	Type  string `json:"type"`
 	Value struct {
 		Msg []Msg `json:"msg"`
 		Fee struct {
 			Amount []struct{} `json:"amount"`
-			Gas string `json:"gas"`
+			Gas    string     `json:"gas"`
 		} `json:"fee"`
 		Signatures []Signature `json:"signatures"`
-		Memo string `json:"memo"`
+		Memo       string      `json:"memo"`
 	} `json:"value"`
 }
