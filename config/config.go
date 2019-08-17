@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// TODO: Create config struct that reads from config file
+// TODO: validate configuration on startup, panic if invalid
+
 var (
 	PoolAddress    = os.Getenv("POOL_ADDRESS")
 	RuneAddress    = os.Getenv("RUNE_ADDRESS")
@@ -13,9 +16,6 @@ var (
 	PrivKey        = os.Getenv("PRIVATE_KEY")
 	ChainHost      = os.Getenv("CHAIN_HOST")
 	SignerPasswd   = os.Getenv("SIGNER_PASSWD")
-	RedisUrl       = os.Getenv("REDIS_URL")
-	RedisPasswd    = os.Getenv("REDIS_PASSWORD")
-	StatusPort     = os.Getenv("PORT")
 	ObserverDbPath = os.Getenv("LEVEL_DB_OBSERVER_PATH")
 	SignerDbPath   = os.Getenv("LEVEL_DB_SIGNER_PATH")
 )

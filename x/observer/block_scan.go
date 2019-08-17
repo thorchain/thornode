@@ -10,7 +10,7 @@ import (
 	"github.com/valyala/fasthttp"
 
 	"gitlab.com/thorchain/bepswap/common"
-	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	config "gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
@@ -40,7 +40,7 @@ func (b *BlockScan) ScanBlocks() {
 		for {
 			uri := url.URL{
 				Scheme: "https",
-				Host:   ctypes.RPCHost,
+				Host:   config.RPCHost,
 				Path:   "block",
 			}
 
@@ -74,7 +74,7 @@ func (b *BlockScan) TxSearch() {
 
 			uri := url.URL{
 				Scheme: "https",
-				Host:   ctypes.RPCHost,
+				Host:   config.RPCHost,
 				Path:   "tx_search",
 			}
 
@@ -117,7 +117,7 @@ func (b *BlockScan) QueryTx(txIn stypes.TxIn) stypes.TxIn {
 	for i, txItem := range txIn.TxArray {
 		uri := url.URL{
 			Scheme: "https",
-			Host:   ctypes.RPCHost,
+			Host:   config.RPCHost,
 			Path:   fmt.Sprintf("api/v1/tx/%v", txItem.Tx),
 		}
 
@@ -139,7 +139,7 @@ func (b *BlockScan) QueryTx(txIn stypes.TxIn) stypes.TxIn {
 
 		for _, msg := range tx.Tx.Value.Msg {
 			for j, output := range msg.Value.Outputs {
-				if output.Address == ctypes.PoolAddress {
+				if output.Address == config.PoolAddress {
 					sender := msg.Value.Inputs[j]
 
 					for _, coin := range sender.Coins {
@@ -158,7 +158,7 @@ func (b *BlockScan) QueryTx(txIn stypes.TxIn) stypes.TxIn {
 			}
 
 			for _, input := range msg.Value.Inputs {
-				if input.Address == ctypes.PoolAddress {
+				if input.Address == config.PoolAddress {
 					txIn.TxArray[i].Memo = tx.Tx.Value.Memo
 				}
 			}

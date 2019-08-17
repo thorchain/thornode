@@ -10,9 +10,9 @@ import (
 	"os/exec"
 
 	http "github.com/hashicorp/go-retryablehttp"
-	log "github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/log"
 
-	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	config "gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
@@ -36,7 +36,7 @@ func Sign(txIn types.TxIn) types.StdTx {
 	}
 
 	msg.Type = "swapservice/MsgSetTxHash"
-	msg.Value.Signer = ctypes.RuneAddress
+	msg.Value.Signer = config.RuneAddress
 	stdTx.Type = "cosmos-sdk/StdTx"
 	stdTx.Value.Msg = append(stdTx.Value.Msg, msg)
 
@@ -51,7 +51,7 @@ func Sign(txIn types.TxIn) types.StdTx {
 		log.Fatal().Msgf("Error while writing to a temporary file: %v", err)
 	}
 
-	sign := fmt.Sprintf("/bin/echo %v | sscli tx sign %v --from %v", ctypes.SignerPasswd, file.Name(), ctypes.RuneAddress)
+	sign := fmt.Sprintf("/bin/echo %v | sscli tx sign %v --from %v", config.SignerPasswd, file.Name(), config.RuneAddress)
 	out, err := exec.Command("/bin/bash", "-c", sign).Output()
 	if err != nil {
 		log.Fatal().Msgf("Error while signing the request: %v %v", err, sign)
@@ -76,7 +76,7 @@ func Send(signed types.StdTx) {
 
 	uri := url.URL{
 		Scheme: "http",
-		Host:   ctypes.ChainHost,
+		Host:   config.ChainHost,
 		Path:   "/txs",
 	}
 

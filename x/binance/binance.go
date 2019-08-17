@@ -13,7 +13,7 @@ import (
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
 
-	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	config "gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
@@ -27,24 +27,24 @@ type Binance struct {
 }
 
 func NewBinance() *Binance {
-	if ctypes.PrivKey == "" {
+	if config.PrivKey == "" {
 		log.Fatal().Msgf("No private key set!")
 		os.Exit(1)
 	}
 
-	keyManager, err := keys.NewPrivateKeyManager(ctypes.PrivKey)
+	keyManager, err := keys.NewPrivateKeyManager(config.PrivKey)
 	if err != nil {
 		log.Fatal().Msgf("Error: %v", err)
 		os.Exit(1)
 	}
 
-	bClient, err := sdk.NewDexClient(ctypes.DEXHost, types.TestNetwork, keyManager)
+	bClient, err := sdk.NewDexClient(config.DEXHost, types.TestNetwork, keyManager)
 	if err != nil {
 		log.Fatal().Msgf("Error: %v", err)
 		os.Exit(1)
 	}
 
-	basicClient := basic.NewClient(ctypes.DEXHost)
+	basicClient := basic.NewClient(config.DEXHost)
 	queryClient := query.NewClient(basicClient)
 
 	return &Binance{

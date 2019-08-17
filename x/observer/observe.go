@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"strconv"
 
-	log "github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/log"
 	"github.com/syndtr/goleveldb/leveldb"
 
-	ctypes "gitlab.com/thorchain/bepswap/observe/common/types"
+	config "gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
@@ -21,7 +21,7 @@ type Observer struct {
 }
 
 func NewObserver() *Observer {
-	var db, _ = leveldb.OpenFile(ctypes.ObserverDbPath, nil)
+	var db, _ = leveldb.OpenFile(config.ObserverDbPath, nil)
 	socketTxChan := make(chan []byte)
 	blockTxChan := make(chan []byte)
 
