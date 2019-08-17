@@ -14,10 +14,11 @@ import (
 	log "github.com/rs/zerolog/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/common"
+
 	config "gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 
+	"gitlab.com/thorchain/bepswap/common"
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 

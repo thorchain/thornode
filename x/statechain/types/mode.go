@@ -8,24 +8,24 @@ import (
 type TxMode uint8
 
 const (
-	txUnknown TxMode = iota
-	txAsync
-	txSync
-	txBlock
+	TxUnknown TxMode = iota
+	TxAsync
+	TxSync
+	TxBlock
 )
 
 var stringToTxModeMap = map[string]TxMode{
-	"unknown": txUnknown,
-	"async":   txAsync,
-	"sync":    txSync,
-	"block":   txBlock,
+	"unknown": TxUnknown,
+	"async":   TxAsync,
+	"sync":    TxSync,
+	"block":   TxBlock,
 }
 
 var txModeToString = map[TxMode]string{
-	txUnknown: "unknown",
-	txAsync:   "async",
-	txSync:    "sync",
-	txBlock:   "block",
+	TxUnknown: "unknown",
+	TxAsync:   "async",
+	TxSync:    "sync",
+	TxBlock:   "block",
 }
 
 // converts a string into a TxMode
@@ -34,7 +34,7 @@ func stringToTxMode(s string) (TxMode, error) {
 	if t, ok := stringToTxModeMap[sl]; ok {
 		return t, nil
 	}
-	return txUnknown, fmt.Errorf("Invalid tx mode: %s", s)
+	return TxUnknown, fmt.Errorf("Invalid tx mode: %s", s)
 }
 
 func NewMode(mode string) (TxMode, error) {
@@ -42,7 +42,7 @@ func NewMode(mode string) (TxMode, error) {
 }
 
 func (tx TxMode) IsValid() bool {
-	return tx != txUnknown
+	return tx != TxUnknown
 }
 
 func (tx TxMode) String() string {
