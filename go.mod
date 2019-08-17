@@ -17,6 +17,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/r3labs/diff v0.0.0-20190801153147-a71de73c46ad
 	github.com/rs/zerolog v1.14.3
+	github.com/stretchr/testify v1.3.0
 	github.com/syndtr/goleveldb v1.0.1-0.20190318030020-c3a204f8e965
 	github.com/valyala/fasthttp v1.4.0
 	gitlab.com/thorchain/bepswap/common v0.0.0-20190816093251-b84c21cee45c

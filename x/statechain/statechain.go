@@ -14,6 +14,7 @@ import (
 	log "github.com/rs/zerolog/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/bepswap/common"
 	config "gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 
@@ -82,9 +83,10 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (types.StdTx, error) {
 	return signed, nil
 }
 
-func Send(signed types.StdTx, mode types.TxMode) error {
+func Send(signed types.StdTx, mode types.TxMode) (common.TxID, error) {
+	var noTxID = common.TxID("")
 	if !mode.IsValid() {
-		return fmt.Errorf("Transaction Mode (%s) is invalid", mode.String())
+		return noTxID, fmt.Errorf("Transaction Mode (%s) is invalid", mode.String())
 	}
 
 	var setTx types.SetTx
@@ -96,7 +98,7 @@ func Send(signed types.StdTx, mode types.TxMode) error {
 
 	sendSetTx, err := json.Marshal(setTx)
 	if err != nil {
-		return err
+		return noTxID, err
 	}
 
 	uri := url.URL{
@@ -107,21 +109,21 @@ func Send(signed types.StdTx, mode types.TxMode) error {
 
 	resp, err := http.Post(uri.String(), "application/json", bytes.NewBuffer(sendSetTx))
 	if err != nil {
-		return err
+		return noTxID, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		return err
+		return noTxID, err
 	}
 
 	var commit types.Commit
 	err = json.Unmarshal(body, &commit)
 	if err != nil {
-		return err
+		return noTxID, err
 	}
 
 	log.Info().Msgf("Received a TxHash of %v from the Statechain", commit.TxHash)
-	return nil
+	return common.NewTxID(commit.TxHash)
 }
