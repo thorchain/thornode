@@ -76,7 +76,9 @@ func (o *Observer) ProcessTxnIn(ch chan []byte) {
 		}
 
 		signed, _ := statechain.Sign(txs, addr)
-		go statechain.Send(signed, mode)
+		go func() {
+			_, _ = statechain.Send(signed, mode)
+		}()
 	}
 }
 
