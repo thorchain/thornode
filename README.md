@@ -1,3 +1,6 @@
+[![pipeline status](https://gitlab.com/thorchain/bepswap/observe/badges/master/pipeline.svg)](https://gitlab.com/thorchain/bepswap/observe/commits/master)
+[![coverage report](https://gitlab.com/thorchain/bepswap/observe/badges/master/coverage.svg)](https://gitlab.com/thorchain/bepswap/observe/commits/master)
+
 BEPSwap Observe
 ===============
 
