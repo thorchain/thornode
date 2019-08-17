@@ -19,15 +19,6 @@ import (
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
-var mockedExitStatus = 0
-var mockedStdout string
-
-//func TestPackage(t *testing.T) { TestingT(t) }
-
-//type StatechainSuite struct{}
-
-//var _ = Suite(&StatechainSuite{})
-
 var testCase = "case1"
 
 func fakeExecCommand(command string, args ...string) *exec.Cmd {
@@ -74,7 +65,8 @@ func TestSend(t *testing.T) {
 		// Test request parameters
 		assert.Equal(t, req.URL.String(), "/txs")
 		// Send response to be tested
-		rw.Write([]byte(`{"txhash":"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D", "height": "test_height"}`))
+		_, err := rw.Write([]byte(`{"txhash":"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D", "height": "test_height"}`))
+		assert.Equal(t, err, nil)
 	}))
 	// Close the server when test finishes
 	defer server.Close()
