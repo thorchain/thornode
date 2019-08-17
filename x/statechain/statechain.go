@@ -27,6 +27,7 @@ var msgType = "swapservice/MsgSetTxIn"
 
 // Signs a file using sscli
 func signFile(file, name, password string) ([]byte, error) {
+	// TODO: security issue, this logs the password into the bash history
 	sign := fmt.Sprintf(
 		"/bin/echo %s | sscli tx sign %s --from %s",
 		config.SignerPasswd,
