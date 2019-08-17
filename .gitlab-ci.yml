@@ -21,4 +21,4 @@ lint_code:
   image: golangci/golangci-lint
   stage: test
   script:
-    - make lint
+    - make lint-verbose
