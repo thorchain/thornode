@@ -24,7 +24,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
-	"gitlab.com/thorchain/statechain/x/swapservice"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice"
 )
 
 const appPoolData = "swapservice"
