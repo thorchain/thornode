@@ -53,7 +53,7 @@ func (s StatechainSuite) TestSign(c *C) {
 		_, err := rw.Write([]byte(`{
 			  "type": "cosmos-sdk/Account",
 			  "value": {
-				"address": "blahblah",
+				"address": "rune1v5n3r5j7hhvpdsdr4pkquqeq5x8plynnjgpc25",
 				"coins": [
 				  {
 					"denom": "rune",
