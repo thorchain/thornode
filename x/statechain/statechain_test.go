@@ -38,8 +38,12 @@ func (s StatechainSuite) TestSign(c *C) {
 	kb, err := keys.NewKeyBaseFromDir(sscliDir)
 	c.Assert(err, IsNil)
 
+	config.SignerName = "bob"
+	config.SignerPasswd = "password"
 	info, _, err := kb.CreateMnemonic(config.SignerName, cKeys.English, config.SignerPasswd, cKeys.Secp256k1)
 	c.Assert(err, IsNil)
+	i, err := kb.Get("bob")
+	c.Assert(err, IsNil, Commentf("Info: %+v", i))
 
 	cfg := sdk.GetConfig()
 	cfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
