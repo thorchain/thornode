@@ -1,0 +1,11 @@
+{
+  "pool_address": "tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5",
+  "rune_address": "rune1xgvqju6wteta5awwzft5t56wmjj33gev6sgp0c",
+  "dex_host": "testnet-dex.binance.org",
+  "rpc_host": "",
+  "private_key": "",
+  "chain_host": "localhost:1317",
+  "signer_passwd": "welcome@1",
+  "observer_db_path": "data",
+  "signer_db_path": "signerdata"
+}
