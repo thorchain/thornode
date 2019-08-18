@@ -14,3 +14,4 @@ observe
 .idea/
 *.iml
 .testCoverage.txt
+config.json

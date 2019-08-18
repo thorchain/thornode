@@ -29,7 +29,22 @@ func fakeExecCommand(command string, args ...string) *exec.Cmd {
 	cmd.Env = []string{"GO_WANT_HELPER_PROCESS=1", tc}
 	return cmd
 }
-
+func getTestConfiguration() config.Configuration {
+	return config.Configuration{
+		PoolAddress:      "pooladdress",
+		RuneAddress:      "runeaddress",
+		DEXHost:          "dexhost",
+		RPCHost:          "rpchost",
+		PrivateKey:       "privatekey",
+		ChainHost:        "chainhost",
+		SignerName:       "johnny",
+		SignerPasswd:     "johnnysupersecurepassword",
+		ObserverDbPath:   "",
+		SignerDbPath:     "",
+		SocketPoing:      30,
+		MessageProcessor: 10,
+	}
+}
 func TestSign(t *testing.T) {
 	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
@@ -54,7 +69,7 @@ func TestSign(t *testing.T) {
 	execCommand = fakeExecCommand
 	defer func() { execCommand = exec.Command }() // set back to real one.
 
-	signed, err := Sign([]stypes.TxIn{tx}, addr)
+	signed, err := Sign([]stypes.TxIn{tx}, addr, getTestConfiguration())
 	assert.Equal(t, err, nil)
 	assert.Equal(t, signed.Value.Signatures[0].Signature, "8fwtZUvIWz63P5oLFMKnmoQCWBOTv2A96SRM4ITXgR52YalMjK3eMTemm947N0wqL/0OhXtrmhAPTHSSl/Q0sQ==")
 }
