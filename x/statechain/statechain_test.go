@@ -1,14 +1,18 @@
 package statechain
 
 import (
-	b64 "encoding/base64"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os/user"
+	"path/filepath"
 	"testing"
 
 	. "gopkg.in/check.v1"
 
+	"github.com/cosmos/cosmos-sdk/client/keys"
+	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
@@ -27,29 +31,43 @@ type StatechainSuite struct{}
 var _ = Suite(&StatechainSuite{})
 
 func (s StatechainSuite) TestSign(c *C) {
+	// create a user in our keybase
+	usr, err := user.Current()
+	c.Assert(err, IsNil)
+	sscliDir := filepath.Join(usr.HomeDir, ".sscli")
+	kb, err := keys.NewKeyBaseFromDir(sscliDir)
+	c.Assert(err, IsNil)
+
+	info, _, err := kb.CreateMnemonic(config.SignerName, cKeys.English, config.SignerPasswd, cKeys.Secp256k1)
+	c.Assert(err, IsNil)
+
+	cfg := sdk.GetConfig()
+	cfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+	cfg.Seal()
+
 	// Start a local HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		// Test request parameters
-		c.Check(req.URL.String(), Equals, "/auth/accounts/rune1gnaghgzcpd73hcxeturml96maa0fajg9t8m0yj")
+		c.Check(req.URL.String(), Equals, fmt.Sprintf("/auth/accounts/%s", info.GetAddress()))
 		// Send response to be tested
 		_, err := rw.Write([]byte(`{
-  "type": "cosmos-sdk/Account",
-  "value": {
-    "address": "rune1gnaghgzcpd73hcxeturml96maa0fajg9t8m0yj",
-    "coins": [
-      {
-        "denom": "rune",
-        "amount": "1000"
-      }
-    ],
-    "public_key": {
-      "type": "tendermint/PubKeySecp256k1",
-      "value": "A8FfMkUK6aNsD6F6tFAfjMd8FrivIp+TXYZETyvPUbSh"
-    },
-    "account_number": "0",
-    "sequence": "14"
-  }
-}`))
+			  "type": "cosmos-sdk/Account",
+			  "value": {
+				"address": "blahblah",
+				"coins": [
+				  {
+					"denom": "rune",
+					"amount": "1000"
+				  }
+				],
+				"public_key": {
+				  "type": "tendermint/PubKeySecp256k1",
+				  "value": "A8FfMkUK6aNsD6F6tFAfjMd8FrivIp+TXYZETyvPUbSh"
+				},
+				"account_number": "0",
+				"sequence": "14"
+			  }
+			}`))
 		c.Assert(err, IsNil)
 	}))
 	defer server.Close()
@@ -57,13 +75,6 @@ func (s StatechainSuite) TestSign(c *C) {
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
 	config.ChainHost = u.Host
-
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-	config.Seal()
-
-	addr, err := sdk.AccAddressFromBech32("rune1gnaghgzcpd73hcxeturml96maa0fajg9t8m0yj")
-	c.Assert(err, IsNil)
 
 	tx := stypes.NewTxIn(
 		common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"),
@@ -74,19 +85,17 @@ func (s StatechainSuite) TestSign(c *C) {
 		common.BnbAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
 	)
 
-	signed, err := Sign([]stypes.TxIn{tx}, addr)
+	_, err = Sign([]stypes.TxIn{tx}, info.GetAddress())
 	// bz, _ := json.Marshal(signed)
 	c.Assert(err, IsNil)
-	c.Check(
-		b64.StdEncoding.EncodeToString(signed.Signatures[0].Signature),
-		Equals,
-		"8fwtZUvIWz63P5oLFMKnmoQCWBOTv2A96SRM4ITXgR52YalMjK3eMTemm947N0wqL/0OhXtrmhAPTHSSl/Q0sQ==",
-	)
 	/*
+		// This is commented out because each time this runs in CI, it creates a
+		// new user with a different resulting signature. We can figure out a way
+		// later to verify signature is correct.
 		c.Check(
-			signed.Signatures[0].PubKey,
-			Equals, true,
-			Commentf("%+v", string(bz)),
+			b64.StdEncoding.EncodeToString(signed.Signatures[0].Signature),
+			Equals,
+			"8fwtZUvIWz63P5oLFMKnmoQCWBOTv2A96SRM4ITXgR52YalMjK3eMTemm947N0wqL/0OhXtrmhAPTHSSl/Q0sQ==",
 		)
 	*/
 }
