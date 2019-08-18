@@ -37,6 +37,7 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (authtypes.StdTx, error) {
 	// TODO: make keys directory configurable
 	usr, err := user.Current()
 	if err != nil {
+		fmt.Printf("FOO1\n")
 		return stdTx, err
 	}
 	sscliDir := filepath.Join(usr.HomeDir, ".sscli")
@@ -44,12 +45,14 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (authtypes.StdTx, error) {
 	// Get keys database
 	kb, err := keys.NewKeyBaseFromDir(sscliDir)
 	if err != nil {
+		fmt.Printf("FOO2\n")
 		return stdTx, err
 	}
 
 	// Get signer user information
 	info, err := kb.Get(name)
 	if err != nil {
+		fmt.Printf("FOO3\n")
 		return stdTx, err
 	}
 
@@ -62,18 +65,21 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (authtypes.StdTx, error) {
 
 	resp, err := http.Get(uri.String())
 	if err != nil {
+		fmt.Printf("FOO4\n")
 		return stdTx, err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
+		fmt.Printf("FOO5\n")
 		return stdTx, err
 	}
 
 	var baseAccount types.BaseAccount
 	err = json.Unmarshal(body, &baseAccount)
 	if err != nil {
+		fmt.Printf("FOO6\n")
 		return stdTx, err
 	}
 	base := baseAccount.Value
@@ -91,6 +97,7 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (authtypes.StdTx, error) {
 
 	sig, err := authtypes.MakeSignature(kb, name, config.SignerPasswd, stdMsg)
 	if err != nil {
+		fmt.Printf("FOO7\n")
 		return stdTx, err
 	}
 
