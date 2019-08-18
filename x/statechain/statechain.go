@@ -6,14 +6,16 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/url"
-	"os"
-	"os/exec"
+	"os/user"
+	"path/filepath"
+	"strconv"
 
 	http "github.com/hashicorp/go-retryablehttp"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog/log"
 
+	"github.com/cosmos/cosmos-sdk/client/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
@@ -22,70 +24,87 @@ import (
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
-var execCommand = exec.Command
-var msgType = "swapservice/MsgSetTxIn"
-
-// Signs a file using sscli
-func signFile(file, name, password string) ([]byte, error) {
-	// TODO: security issue, this logs the password into the bash history
-	sign := fmt.Sprintf(
-		"/bin/echo %s | sscli tx sign %s --from %s",
-		password,
-		file,
-		name,
+func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (authtypes.StdTx, error) {
+	name := config.SignerName
+	msg := stypes.NewMsgSetTxIn(txIns, signer)
+	stdTx := authtypes.NewStdTx(
+		[]sdk.Msg{msg},                   // messages
+		authtypes.NewStdFee(200000, nil), // fee
+		nil,                              // signatures
+		"",                               // memo
 	)
 
-	return execCommand("/bin/sh", "-c", sign).Output()
-}
+	// TODO: make keys directory configurable
+	usr, err := user.Current()
+	if err != nil {
+		return stdTx, err
+	}
+	sscliDir := filepath.Join(usr.HomeDir, ".sscli")
 
-func Sign(txIns []stypes.TxIn, signer sdk.AccAddress, cfg config.Configuration) (types.StdTx, error) {
-	var (
-		msg   types.Msg
-		stdTx types.StdTx
-		err   error
+	// Get keys database
+	kb, err := keys.NewKeyBaseFromDir(sscliDir)
+	if err != nil {
+		return stdTx, err
+	}
+
+	// Get signer user information
+	info, err := kb.Get(name)
+	if err != nil {
+		return stdTx, err
+	}
+
+	// Get account number and sequence via rest API
+	uri := url.URL{
+		Scheme: "http",
+		Host:   config.ChainHost,
+		Path:   fmt.Sprintf("/auth/accounts/%s", info.GetAddress()),
+	}
+
+	resp, err := http.Get(uri.String())
+	if err != nil {
+		return stdTx, err
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		return stdTx, err
+	}
+
+	var baseAccount types.BaseAccount
+	err = json.Unmarshal(body, &baseAccount)
+	if err != nil {
+		return stdTx, err
+	}
+	base := baseAccount.Value
+	acctNumber, _ := strconv.ParseInt(base.AccountNumber, 10, 64)
+	seq, _ := strconv.ParseInt(base.Sequence, 10, 64)
+
+	stdMsg := authtypes.StdSignMsg{
+		ChainID:       "sschain", // TODO : make this configurable
+		AccountNumber: uint64(acctNumber),
+		Sequence:      uint64(seq),
+		Fee:           stdTx.Fee,
+		Msgs:          stdTx.GetMsgs(),
+		Memo:          stdTx.GetMemo(),
+	}
+
+	sig, err := authtypes.MakeSignature(kb, name, config.SignerPasswd, stdMsg)
+	if err != nil {
+		return stdTx, err
+	}
+
+	signedStdTx := authtypes.NewStdTx(
+		stdTx.GetMsgs(),
+		stdTx.Fee,
+		[]authtypes.StdSignature{sig},
+		stdTx.GetMemo(),
 	)
 
-	msg.Type = msgType
-	msg.Value = stypes.NewMsgSetTxIn(txIns, signer)
-	stdTx.Type = "cosmos-sdk/StdTx"
-	stdTx.Value.Msg = append(stdTx.Value.Msg, msg)
-
-	// TODO: What should the gas be set to?
-	stdTx.Value.Fee.Gas = "200000"
-
-	payload, err := json.Marshal(stdTx)
-	if err != nil {
-		return stdTx, err
-	}
-
-	// TODO: sign using the cosmos-sdk instead of writing to disk and utilizing
-	// the cli. Should see a significant performance boost.
-	file, err := ioutil.TempFile("/tmp", "tx")
-	if err != nil {
-		return stdTx, err
-	}
-
-	err = ioutil.WriteFile(file.Name(), payload, 0644)
-	if err != nil {
-		return stdTx, errors.Wrap(err, "Error while writing to a temporary file")
-	}
-	defer os.Remove(file.Name())
-
-	out, err := signFile(file.Name(), cfg.SignerName, cfg.SignerPasswd)
-	if err != nil {
-		return stdTx, errors.Wrap(err, "Error while signing the request")
-	}
-
-	var signed types.StdTx
-	err = json.Unmarshal(out, &signed)
-	if err != nil {
-		return stdTx, err
-	}
-
-	return signed, nil
+	return signedStdTx, nil
 }
 
-func Send(signed types.StdTx, mode types.TxMode) (common.TxID, error) {
+func Send(signed authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
 	var noTxID = common.TxID("")
 	if !mode.IsValid() {
 		return noTxID, fmt.Errorf("Transaction Mode (%s) is invalid", mode.String())
@@ -93,10 +112,10 @@ func Send(signed types.StdTx, mode types.TxMode) (common.TxID, error) {
 
 	var setTx types.SetTx
 	setTx.Mode = mode.String()
-	setTx.Tx.Msg = signed.Value.Msg
-	setTx.Tx.Fee = signed.Value.Fee
-	setTx.Tx.Signatures = signed.Value.Signatures
-	setTx.Tx.Memo = signed.Value.Memo
+	setTx.Tx.Msg = signed.Msgs
+	setTx.Tx.Fee = signed.Fee
+	setTx.Tx.Signatures = signed.Signatures
+	setTx.Tx.Memo = signed.Memo
 
 	sendSetTx, err := json.Marshal(setTx)
 	if err != nil {
