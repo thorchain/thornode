@@ -95,9 +95,10 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (authtypes.StdTx, error) {
 		Memo:          stdTx.GetMemo(),
 	}
 
+	fmt.Printf("%s / %s", name, config.SignerPasswd)
 	sig, err := authtypes.MakeSignature(kb, name, config.SignerPasswd, stdMsg)
 	if err != nil {
-		fmt.Printf("FOO7\n")
+		fmt.Printf("FOO7: %+v\n", stdMsg)
 		return stdTx, err
 	}
 
