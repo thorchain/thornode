@@ -11,11 +11,11 @@ import (
 
 	http "github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
-	log "github.com/rs/zerolog/log"
+	"github.com/rs/zerolog/log"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	config "gitlab.com/thorchain/bepswap/observe/config"
+	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 
 	"gitlab.com/thorchain/bepswap/common"
@@ -30,15 +30,15 @@ func signFile(file, name, password string) ([]byte, error) {
 	// TODO: security issue, this logs the password into the bash history
 	sign := fmt.Sprintf(
 		"/bin/echo %s | sscli tx sign %s --from %s",
-		config.SignerPasswd,
+		password,
 		file,
-		config.SignerName,
+		name,
 	)
 
 	return execCommand("/bin/sh", "-c", sign).Output()
 }
 
-func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (types.StdTx, error) {
+func Sign(txIns []stypes.TxIn, signer sdk.AccAddress, cfg config.Configuration) (types.StdTx, error) {
 	var (
 		msg   types.Msg
 		stdTx types.StdTx
@@ -71,7 +71,7 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (types.StdTx, error) {
 	}
 	defer os.Remove(file.Name())
 
-	out, err := signFile(file.Name(), config.SignerName, config.SignerPasswd)
+	out, err := signFile(file.Name(), cfg.SignerName, cfg.SignerPasswd)
 	if err != nil {
 		return stdTx, errors.Wrap(err, "Error while signing the request")
 	}
