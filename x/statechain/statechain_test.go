@@ -38,14 +38,16 @@ func (s StatechainSuite) TestSign(c *C) {
 	kb, err := keys.NewKeyBaseFromDir(sscliDir)
 	c.Assert(err, IsNil)
 
-	config.SignerName = "bob"
-	config.SignerPasswd = "password"
-	info, _, err := kb.CreateMnemonic(config.SignerName, cKeys.English, config.SignerPasswd, cKeys.Secp256k1)
+	cfg := config.Configuration{
+		SignerName:   "bob",
+		SignerPasswd: "password",
+	}
+	info, _, err := kb.CreateMnemonic(cfg.SignerName, cKeys.English, cfg.SignerPasswd, cKeys.Secp256k1)
 	c.Assert(err, IsNil)
 
-	cfg := sdk.GetConfig()
-	cfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-	cfg.Seal()
+	cfg2 := sdk.GetConfig()
+	cfg2.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+	cfg2.Seal()
 
 	// Start a local HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -76,7 +78,7 @@ func (s StatechainSuite) TestSign(c *C) {
 
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
-	config.ChainHost = u.Host
+	cfg.ChainHost = u.Host
 
 	tx := stypes.NewTxIn(
 		common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"),
@@ -87,7 +89,7 @@ func (s StatechainSuite) TestSign(c *C) {
 		common.BnbAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
 	)
 
-	_, err = Sign([]stypes.TxIn{tx}, info.GetAddress())
+	_, err = Sign([]stypes.TxIn{tx}, info.GetAddress(), cfg)
 	// bz, _ := json.Marshal(signed)
 	c.Assert(err, IsNil)
 	/*
@@ -116,12 +118,12 @@ func (s StatechainSuite) TestSend(c *C) {
 
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
-	config.ChainHost = u.Host
+	cfg := config.Configuration{ChainHost: u.Host}
 
 	stdTx := authtypes.StdTx{}
 	mode := types.TxSync
 
-	txID, err := Send(stdTx, mode)
+	txID, err := Send(stdTx, mode, cfg)
 	c.Assert(err, IsNil)
 	c.Check(
 		txID.String(),

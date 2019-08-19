@@ -24,8 +24,8 @@ import (
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
-func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (authtypes.StdTx, error) {
-	name := config.SignerName
+func Sign(txIns []stypes.TxIn, signer sdk.AccAddress, cfg config.Configuration) (authtypes.StdTx, error) {
+	name := cfg.SignerName
 	msg := stypes.NewMsgSetTxIn(txIns, signer)
 	stdTx := authtypes.NewStdTx(
 		[]sdk.Msg{msg},                   // messages
@@ -56,7 +56,7 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (authtypes.StdTx, error) {
 	// Get account number and sequence via rest API
 	uri := url.URL{
 		Scheme: "http",
-		Host:   config.ChainHost,
+		Host:   cfg.ChainHost,
 		Path:   fmt.Sprintf("/auth/accounts/%s", info.GetAddress()),
 	}
 
@@ -89,7 +89,7 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (authtypes.StdTx, error) {
 		Memo:          stdTx.GetMemo(),
 	}
 
-	sig, err := authtypes.MakeSignature(kb, name, config.SignerPasswd, stdMsg)
+	sig, err := authtypes.MakeSignature(kb, name, cfg.SignerPasswd, stdMsg)
 	if err != nil {
 		return stdTx, err
 	}
@@ -104,7 +104,7 @@ func Sign(txIns []stypes.TxIn, signer sdk.AccAddress) (authtypes.StdTx, error) {
 	return signedStdTx, nil
 }
 
-func Send(signed authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
+func Send(signed authtypes.StdTx, mode types.TxMode, cfg config.Configuration) (common.TxID, error) {
 	var noTxID = common.TxID("")
 	if !mode.IsValid() {
 		return noTxID, fmt.Errorf("Transaction Mode (%s) is invalid", mode.String())
@@ -124,7 +124,7 @@ func Send(signed authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
 
 	uri := url.URL{
 		Scheme: "http",
-		Host:   config.ChainHost,
+		Host:   cfg.ChainHost,
 		Path:   "/txs",
 	}
 
