@@ -25,35 +25,32 @@ type Observer struct {
 	logger    zerolog.Logger
 	Db        *leveldb.DB
 	WebSocket *WebSocket
-	// TODO not sure how block scan suppose to work, I don't believe we should scan all the blocks
-	BlockScan *BlockScan
-	stopChan  chan struct{}
-	wg        *sync.WaitGroup
+	blockScanner *BlockScanner
+	stopChan     chan struct{}
+	wg           *sync.WaitGroup
 }
 
 // NewObserver create a new instance of Observer
 func NewObserver(cfg config.Configuration) (*Observer, error) {
-
-	if len(cfg.ObserverDbPath) == 0 {
-		return nil, errors.New("observer db path is empty")
-	}
-	db, err := leveldb.OpenFile(cfg.ObserverDbPath, nil)
-	if nil != err {
-		return nil, errors.Wrapf(err, "fail to open level db %s", cfg.ObserverDbPath)
-	}
-
 	webSocket, err := NewWebSocket(cfg)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create web socket instance")
 	}
+	scanStorage, err := NewLevelDBScannerStorage(cfg.BlockScannerConfiguration.ObserverDbPath)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create scan storage")
+	}
+	blockScanner, err := NewBlockScanner(cfg.BlockScannerConfiguration, scanStorage, cfg.DEXHost, cfg.PoolAddress)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create block scanner")
+	}
 	return &Observer{
-		cfg:       cfg,
-		logger:    log.Logger.With().Str("module", "observer").Logger(),
-		Db:        db,
-		WebSocket: webSocket,
-		//BlockScan:    NewBlockScan(blockTxChan),
-		wg:       &sync.WaitGroup{},
-		stopChan: make(chan struct{}),
+		cfg:          cfg,
+		logger:       log.Logger.With().Str("module", "observer").Logger(),
+		WebSocket:    webSocket,
+		blockScanner: blockScanner,
+		wg:           &sync.WaitGroup{},
+		stopChan:     make(chan struct{}),
 	}, nil
 }
 
@@ -61,6 +58,10 @@ func (o *Observer) Start() error {
 	for idx := 1; idx <= o.cfg.MessageProcessor; idx++ {
 		o.wg.Add(1)
 		go o.processTxnIn(o.WebSocket.GetMessages(), idx)
+	}
+	for idx := o.cfg.MessageProcessor; idx <= o.cfg.MessageProcessor*2; idx++ {
+		o.wg.Add(1)
+		go o.processTxnIn(o.blockScanner.GetMessages(), idx)
 	}
 
 	return o.WebSocket.Start()
@@ -113,7 +114,6 @@ func (o *Observer) processTxnIn(ch <-chan types.TxIn, idx int) {
 			o.logger.Debug().Str("txid", txID.String()).Msg("send to statechain successfully")
 
 		}
-
 	}
 }
 
@@ -124,7 +124,10 @@ func (o *Observer) Stop() error {
 	if err := o.WebSocket.Stop(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to stop websocket")
 	}
+	if err := o.blockScanner.Stop(); nil != err {
+		o.logger.Error().Err(err).Msg("fail to close block scanner")
+	}
 	close(o.stopChan)
 	o.wg.Wait()
-	return o.Db.Close()
+	return nil
 }
