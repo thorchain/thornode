@@ -13,10 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"gitlab.com/thorchain/bepswap/common"
-	config "gitlab.com/thorchain/bepswap/observe/config"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
-	cmd "gitlab.com/thorchain/bepswap/statechain/cmd"
+	"gitlab.com/thorchain/bepswap/statechain/cmd"
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
+
+	"gitlab.com/thorchain/bepswap/observe/config"
+	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
 var testCase = "case1"
@@ -39,7 +40,6 @@ func getTestConfiguration() config.Configuration {
 		ChainHost:        "chainhost",
 		SignerName:       "johnny",
 		SignerPasswd:     "johnnysupersecurepassword",
-		ObserverDbPath:   "",
 		SignerDbPath:     "",
 		SocketPoing:      30,
 		MessageProcessor: 10,
