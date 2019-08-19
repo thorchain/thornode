@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/binance-chain/go-sdk v1.0.8
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/cosmos-sdk v0.36.0-rc1
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/go-retryablehttp v0.5.4
