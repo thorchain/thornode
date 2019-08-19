@@ -14,6 +14,9 @@ stages:
 unit_tests:
   stage: test
   coverage: '/^coverage:\s(\d+(?:\.\d+)?%)/'
+  variables:
+    SignerName: "jack"
+    SignerPasswd: "password"
   script:
     - go test -mod=readonly -v -coverprofile .testCoverage.txt ./...
 
