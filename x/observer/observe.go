@@ -106,7 +106,7 @@ func (o *Observer) processTxnIn(ch <-chan types.TxIn, idx int) {
 				o.logger.Error().Err(err).Msg("fail to sign the tx")
 				continue
 			}
-			txID, err := statechain.Send(signed, mode)
+			txID, err := statechain.Send(signed, mode, o.cfg)
 			if nil != err {
 				o.logger.Error().Err(err).Msg("fail to send the tx to statechain")
 				continue
