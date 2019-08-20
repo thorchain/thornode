@@ -15,3 +15,5 @@ observe
 *.iml
 .testCoverage.txt
 config.json
+blockscannertest/
+statechaintest/

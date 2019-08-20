@@ -14,3 +14,9 @@ type TxInItem struct {
 	Sender string       `json:"sender"`
 	Coins  common.Coins `json:"coins"`
 }
+type TxInStatus byte
+
+const (
+	Processing TxInStatus = iota
+	Failed
+)
