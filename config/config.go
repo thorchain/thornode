@@ -11,10 +11,10 @@ import (
 type Configuration struct {
 	PoolAddress               common.BnbAddress         `json:"pool_address" env:"POOL_ADDRESS" required:"true"`
 	DEXHost                   string                    `json:"dex_host" env:"DEX_HOST"`
-	SocketPoing               time.Duration             `json:"socket_poing" default:"30s"`
 	MessageProcessor          int                       `json:"message_processor" default:"10"`
 	BlockScannerConfiguration BlockScannerConfiguration `json:"block_scanner_configuration"`
 	StateChainConfiguration   StateChainConfiguration   `json:"state_chain_configuration"`
+	ObserverRetryInterval     time.Duration             `json:"observer_retry_interval" default:"120s" env:"OBSERVER_RETRY_INTERVAL"`
 }
 
 // BlockScannerConfiguration settings for BlockScanner
