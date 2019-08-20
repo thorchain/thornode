@@ -2,11 +2,11 @@ package observer
 
 import (
 	"sync"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/syndtr/goleveldb/leveldb"
 	"gitlab.com/thorchain/bepswap/common"
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 
@@ -19,9 +19,9 @@ import (
 type Observer struct {
 	cfg              config.Configuration
 	logger           zerolog.Logger
-	Db               *leveldb.DB
 	WebSocket        *WebSocket
 	blockScanner     *BlockScanner
+	storage          TxInStorage
 	stopChan         chan struct{}
 	stateChainBridge *statechain.StateChainBridge
 	wg               *sync.WaitGroup
@@ -53,23 +53,66 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		wg:               &sync.WaitGroup{},
 		stopChan:         make(chan struct{}),
 		stateChainBridge: stateChainBridge,
+		storage:          scanStorage,
 	}, nil
 }
 
 func (o *Observer) Start() error {
 	for idx := 1; idx <= o.cfg.MessageProcessor; idx++ {
 		o.wg.Add(1)
-		go o.processTxnIn(o.WebSocket.GetMessages(), idx)
+		go o.txinsProcessor(o.WebSocket.GetMessages(), idx)
 	}
 	for idx := o.cfg.MessageProcessor; idx <= o.cfg.MessageProcessor*2; idx++ {
 		o.wg.Add(1)
-		go o.processTxnIn(o.blockScanner.GetMessages(), idx)
+		go o.txinsProcessor(o.blockScanner.GetMessages(), idx)
 	}
+	o.retryAllTx()
+	o.wg.Add(1)
+	go o.retryTxProcessor()
 	o.blockScanner.Start()
 	return o.WebSocket.Start()
 }
 
-func (o *Observer) processTxnIn(ch <-chan types.TxIn, idx int) {
+func (o *Observer) retryAllTx() {
+	txIns, err := o.storage.GetTxInForRetry(false)
+	if nil != err {
+		o.logger.Error().Err(err).Msg("fail to get txin for retry")
+		return
+	}
+	for _, item := range txIns {
+		o.processOneTxIn(item)
+	}
+}
+
+func (o *Observer) retryTxProcessor() {
+	o.logger.Info().Msg("start retry process")
+	defer o.logger.Info().Msg("stop retry process")
+	defer o.wg.Done()
+	// retry all
+	t := time.NewTicker(o.cfg.ObserverRetryInterval)
+	defer t.Stop()
+	for {
+		select {
+		case <-o.stopChan:
+			return
+		case <-t.C:
+			txIns, err := o.storage.GetTxInForRetry(true)
+			if nil != err {
+				o.logger.Error().Err(err).Msg("fail to get txin for retry")
+				continue
+			}
+			for _, item := range txIns {
+				select {
+				case <-o.stopChan:
+					return
+				default:
+					o.processOneTxIn(item)
+				}
+			}
+		}
+	}
+}
+func (o *Observer) txinsProcessor(ch <-chan types.TxIn, idx int) {
 	o.logger.Info().Int("idx", idx).Msg("start to process tx in")
 	defer o.logger.Info().Int("idx", idx).Msg("stop to process tx in")
 	defer o.wg.Done()
@@ -84,45 +127,68 @@ func (o *Observer) processTxnIn(ch <-chan types.TxIn, idx int) {
 			}
 			if len(txIn.TxArray) == 0 {
 				o.logger.Debug().Msg("nothing need to forward to statechain")
-			}
-			mode := types.TxSync
-
-			txs := make([]stypes.TxIn, len(txIn.TxArray))
-			for i, item := range txIn.TxArray {
-				o.logger.Info().Str("txhash", item.Tx).Msg("txInItem")
-				txID, err := common.NewTxID(item.Tx)
-				if nil != err {
-					o.logger.Error().Err(err).Str("txhash", item.Tx).Msg("fail to parse tx")
-					// TODO  what should we do, we need to mark the whole tx as unsend
-				}
-				bnbAddr, err := common.NewBnbAddress(item.Sender)
-				if nil != err {
-					o.logger.Error().Err(err).Str("sender", item.Sender).Msg("fail to parse sender")
-					// TODO what should we do here?
-				}
-				txs[i] = stypes.NewTxIn(
-					txID,
-					item.Coins,
-					item.Memo,
-					bnbAddr,
-				)
-			}
-
-			// TODO if the following two step failed , we should retry and
-			signed, err := o.stateChainBridge.Sign(txs)
-			if nil != err {
-				o.logger.Error().Err(err).Msg("fail to sign the tx")
 				continue
 			}
-			txID, err := o.stateChainBridge.Send(*signed, mode)
-			if nil != err {
-				o.logger.Error().Err(err).Msg("fail to send the tx to statechain")
-				continue
-			}
-			o.logger.Info().Str("txid", txID.String()).Msg("send to statechain successfully")
-
+			o.processOneTxIn(txIn)
 		}
 	}
+}
+func (o *Observer) processOneTxIn(txIn types.TxIn) {
+	if err := o.storage.SetTxInStatus(txIn, types.Processing); nil != err {
+		o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
+		return
+	}
+	if err := o.signAndSendToStatechain(txIn); nil != err {
+		o.logger.Error().Err(err).Msg("fail to send to statechain")
+		if err := o.storage.SetTxInStatus(txIn, types.Failed); nil != err {
+			o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
+			return
+		}
+	}
+	if err := o.storage.RemoveTxIn(txIn); nil != err {
+		o.logger.Error().Err(err).Msg("fail to remove txin from local store")
+		return
+	}
+}
+func (o *Observer) signAndSendToStatechain(txIn types.TxIn) error {
+	txs, err := o.getStateChainTxIns(txIn)
+	if nil != err {
+		return errors.Wrap(err, "fail to convert txin to statechain txin")
+	}
+	signed, err := o.stateChainBridge.Sign(txs)
+	if nil != err {
+		return errors.Wrap(err, "fail to sign the tx")
+	}
+	txID, err := o.stateChainBridge.Send(*signed, types.TxSync)
+	if nil != err {
+		return errors.Wrap(err, "fail to send the tx to statechain")
+	}
+	o.logger.Info().Str("block", txIn.BlockHeight).Str("statechain hash", txID.String()).Msg("sign and send to statechain successfully")
+	return nil
+}
+
+// getStateChainTxIns convert to the type statechain expected
+// maybe in later we can just refactor this to use the type in statechain
+func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxIn, error) {
+	txs := make([]stypes.TxIn, len(txIn.TxArray))
+	for i, item := range txIn.TxArray {
+		o.logger.Debug().Str("tx-hash", item.Tx).Msg("txInItem")
+		txID, err := common.NewTxID(item.Tx)
+		if nil != err {
+			return nil, errors.Wrapf(err, "fail to parse tx hash, %s is invalid ", item.Tx)
+		}
+		bnbAddr, err := common.NewBnbAddress(item.Sender)
+		if nil != err {
+			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
+		}
+		txs[i] = stypes.NewTxIn(
+			txID,
+			item.Coins,
+			item.Memo,
+			bnbAddr,
+		)
+	}
+	return txs, nil
 }
 
 // Stop the observer

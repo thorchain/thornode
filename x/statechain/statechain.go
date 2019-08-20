@@ -203,6 +203,7 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 		Host:   scb.cfg.ChainHost,
 		Path:   "/txs",
 	}
+	scb.logger.Debug().Str("payload", string(result)).Msg("post to statechain")
 
 	resp, err := retryablehttp.Post(uri.String(), "application/json", bytes.NewBuffer(result))
 	if err != nil {

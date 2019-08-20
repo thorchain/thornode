@@ -94,6 +94,7 @@ func (b *BlockScanner) Start() {
 
 	b.wg.Add(1)
 	go b.scanBlocks()
+	b.wg.Add(1)
 	go b.retryFailedBlocks()
 }
 
@@ -150,9 +151,9 @@ func (b *BlockScanner) scanBlocks() {
 			if nil != err {
 				b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 			}
-			b.logger.Info().Int64("current block height", currentBlock).Msg("get block height")
+			b.logger.Info().Int64("current block height", currentBlock).Int64("we are at", b.previousBlock).Msg("get block height")
 			if b.previousBlock == currentBlock {
-				// back off
+				// back offß
 				time.Sleep(b.cfg.BlockHeightDiscoverBackoff)
 				continue
 			}
