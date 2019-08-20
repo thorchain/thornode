@@ -1,11 +1,19 @@
 {
+  "chain_id": "statechain",
   "pool_address": "tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5",
   "rune_address": "rune1xgvqju6wteta5awwzft5t56wmjj33gev6sgp0c",
   "dex_host": "testnet-dex.binance.org",
-  "rpc_host": "",
-  "private_key": "",
-  "chain_host": "localhost:1317",
-  "signer_passwd": "welcome@1",
-  "observer_db_path": "data",
-  "signer_db_path": "signerdata"
+  "signer_db_path": "signerdata",
+  "block_scanner_configuration": {
+    "rpc_host": "data-seed-pre-0-s3.binance.org",
+    "observer_db_path": "data",
+    "start_block_height": 34590203,
+    "block_scan_processors": 2
+  },
+  "state_chain_configuration": {
+    "chain_id": "statechain",
+    "chain_host": "localhost:1317",
+    "signer_name": "johnny",
+    "signer_passwd": "welcome@1"
+  }
 }
