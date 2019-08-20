@@ -118,7 +118,7 @@ func (b *BlockScanner) retryBlocks(failedonly bool) {
 	if nil != err {
 		b.logger.Error().Err(err).Msg("fail to get blocks for retry")
 	}
-	b.logger.Debug().Msgf("find %q blocks need to retry", blocks)
+	b.logger.Debug().Msgf("find %v blocks need to retry", blocks)
 	for _, item := range blocks {
 		select {
 		case <-b.stopChan:
@@ -150,7 +150,7 @@ func (b *BlockScanner) scanBlocks() {
 			if nil != err {
 				b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 			}
-			b.logger.Debug().Int64("current block height", currentBlock).Msg("get block height")
+			b.logger.Info().Int64("current block height", currentBlock).Msg("get block height")
 			if b.previousBlock == currentBlock {
 				// back off
 				time.Sleep(b.cfg.BlockHeightDiscoverBackoff)
@@ -294,7 +294,12 @@ func (b *BlockScanner) searchTxInABlockFromServer(block int64, txSearchUrl strin
 		}
 		if nil != txItemIn {
 			txIn.TxArray = append(txIn.TxArray, *txItemIn)
+			b.logger.Info().Str("hash", txn.Hash).Msg("we got one tx")
 		}
+	}
+	if len(txIn.TxArray) == 0 {
+		b.logger.Debug().Int64("block", block).Msg("no tx need to be processed in this block")
+		return nil
 	}
 
 	txIn.BlockHeight = strconv.FormatInt(block, 10)
