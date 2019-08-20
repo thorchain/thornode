@@ -5,20 +5,18 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os/user"
+	"os"
 	"path/filepath"
 	"testing"
-
-	. "gopkg.in/check.v1"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-
 	"gitlab.com/thorchain/bepswap/common"
 	"gitlab.com/thorchain/bepswap/statechain/cmd"
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
+	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
@@ -30,25 +28,33 @@ type StatechainSuite struct{}
 
 var _ = Suite(&StatechainSuite{})
 
-func (s StatechainSuite) TestSign(c *C) {
-	// create a user in our keybase
-	usr, err := user.Current()
-	c.Assert(err, IsNil)
-	sscliDir := filepath.Join(usr.HomeDir, ".sscli")
-	kb, err := keys.NewKeyBaseFromDir(sscliDir)
-	c.Assert(err, IsNil)
-
-	cfg := config.Configuration{
-		SignerName:   "bob",
-		SignerPasswd: "password",
-	}
-	info, _, err := kb.CreateMnemonic(cfg.SignerName, cKeys.English, cfg.SignerPasswd, cKeys.Secp256k1)
-	c.Assert(err, IsNil)
-
+func (*StatechainSuite) SetUpSuite(c *C) {
 	cfg2 := sdk.GetConfig()
 	cfg2.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
 	cfg2.Seal()
+}
 
+func setupStateChainForTest(c *C) (config.StateChainConfiguration, cKeys.Info, func()) {
+	sscliDir := filepath.Join(os.TempDir(), ".sscli")
+	cfg := config.StateChainConfiguration{
+		ChainID:         "statechain",
+		SignerName:      "bob",
+		SignerPasswd:    "password",
+		ChainHomeFolder: sscliDir,
+	}
+	kb, err := keys.NewKeyBaseFromDir(sscliDir)
+	c.Assert(err, IsNil)
+	info, _, err := kb.CreateMnemonic(cfg.SignerName, cKeys.English, cfg.SignerPasswd, cKeys.Secp256k1)
+	c.Assert(err, IsNil)
+	return cfg, info, func() {
+		if err := os.RemoveAll(sscliDir); nil != err {
+			c.Error(err)
+		}
+	}
+}
+func (s StatechainSuite) TestSign(c *C) {
+	cfg, info, cleanup := setupStateChainForTest(c)
+	defer cleanup()
 	// Start a local HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		// Test request parameters
@@ -75,11 +81,9 @@ func (s StatechainSuite) TestSign(c *C) {
 		c.Assert(err, IsNil)
 	}))
 	defer server.Close()
-
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
 	cfg.ChainHost = u.Host
-
 	tx := stypes.NewTxIn(
 		common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"),
 		common.Coins{
@@ -88,23 +92,17 @@ func (s StatechainSuite) TestSign(c *C) {
 		"This is my memo!",
 		common.BnbAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
 	)
-
-	_, err = Sign([]stypes.TxIn{tx}, info.GetAddress(), cfg)
-	// bz, _ := json.Marshal(signed)
+	bridge, err := NewStateChainBridge(cfg)
 	c.Assert(err, IsNil)
-	/*
-		// This is commented out because each time this runs in CI, it creates a
-		// new user with a different resulting signature. We can figure out a way
-		// later to verify signature is correct.
-		c.Check(
-			b64.StdEncoding.EncodeToString(signed.Signatures[0].Signature),
-			Equals,
-			"8fwtZUvIWz63P5oLFMKnmoQCWBOTv2A96SRM4ITXgR52YalMjK3eMTemm947N0wqL/0OhXtrmhAPTHSSl/Q0sQ==",
-		)
-	*/
+	c.Assert(bridge, NotNil)
+	signedMsg, err := bridge.Sign([]stypes.TxIn{tx})
+	c.Assert(signedMsg, NotNil)
+	c.Assert(err, IsNil)
 }
 
 func (s StatechainSuite) TestSend(c *C) {
+	cfg, _, cleanup := setupStateChainForTest(c)
+	defer cleanup()
 	// Start a local HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		// Test request parameters
@@ -118,12 +116,13 @@ func (s StatechainSuite) TestSend(c *C) {
 
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
-	cfg := config.Configuration{ChainHost: u.Host}
-
+	cfg.ChainHost = u.Host
+	bridge, err := NewStateChainBridge(cfg)
+	c.Assert(err, IsNil)
+	c.Assert(bridge, NotNil)
 	stdTx := authtypes.StdTx{}
 	mode := types.TxSync
-
-	txID, err := Send(stdTx, mode, cfg)
+	txID, err := bridge.Send(stdTx, mode)
 	c.Assert(err, IsNil)
 	c.Check(
 		txID.String(),

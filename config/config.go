@@ -10,17 +10,11 @@ import (
 // Configuration values
 type Configuration struct {
 	PoolAddress               common.BnbAddress         `json:"pool_address" env:"POOL_ADDRESS" required:"true"`
-	RuneAddress               string                    `json:"rune_address" env:"RUNE_ADDRESS"`
 	DEXHost                   string                    `json:"dex_host" env:"DEX_HOST"`
-	RPCHost                   string                    `json:"rpc_host" env:"RPC_HOST"`
-	PrivateKey                string                    `json:"private_key" env:"PRIVATE_KEY"`
-	ChainHost                 string                    `json:"chain_host" env:"CHAIN_HOST"`
-	SignerName                string                    `json:"signer_name" env:"SIGNER_NAME"`
-	SignerPasswd              string                    `json:"signer_passwd" env:"SIGNER_PASSWD"`
-	SignerDbPath              string                    `json:"signer_db_path" env:"LEVEL_DB_SIGNER_PATH"`
 	SocketPoing               time.Duration             `json:"socket_poing" default:"30s"`
 	MessageProcessor          int                       `json:"message_processor" default:"10"`
 	BlockScannerConfiguration BlockScannerConfiguration `json:"block_scanner_configuration"`
+	StateChainConfiguration   StateChainConfiguration   `json:"state_chain_configuration"`
 }
 
 // BlockScannerConfiguration settings for BlockScanner
@@ -33,10 +27,18 @@ type BlockScannerConfiguration struct {
 	HttpRequestReadTimeout     time.Duration `json:"http_request_read_timeout" default:"30s"`
 	HttpRequestWriteTimeout    time.Duration `json:"http_request_write_timeout" default:"30s"`
 	MaxHttpRequestRetry        int           `json:"max_http_request_retry" env:"BLOCK_SCAN_MAX_HTTP_RETRY" default:"10"`
-	BlockHeightDiscoverBackoff time.Duration `json:"block_height_discover_back_off"`
+	BlockHeightDiscoverBackoff time.Duration `json:"block_height_discover_back_off" default:"1s"`
 	BlockRetryInterval         time.Duration `json:"block_retry_interval" default:"5m"`
 }
 
+// StateChainConfiguration
+type StateChainConfiguration struct {
+	ChainID         string `json:"chain_id" env:"CHAIN_ID"`
+	ChainHost       string `json:"chain_host" env:"CHAIN_HOST"`
+	ChainHomeFolder string `json:"chain_home_folder" env:"CHAIN_HOME_FOLDER"`
+	SignerName      string `json:"signer_name" env:"SIGNER_NAME"`
+	SignerPasswd    string `json:"signer_passwd" env:"SIGNER_PASSWD"`
+}
 
 // TODO to be removed later
 var (
