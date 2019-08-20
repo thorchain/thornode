@@ -7,27 +7,24 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/syndtr/goleveldb/leveldb"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"gitlab.com/thorchain/bepswap/observe/config"
-
-	"gitlab.com/thorchain/bepswap/observe/x/statechain"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
-
 	"gitlab.com/thorchain/bepswap/common"
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
+
+	"gitlab.com/thorchain/bepswap/observe/config"
+	"gitlab.com/thorchain/bepswap/observe/x/statechain"
+	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
 // Observer observer service
 type Observer struct {
-	cfg       config.Configuration
-	logger    zerolog.Logger
-	Db        *leveldb.DB
-	WebSocket *WebSocket
-	blockScanner *BlockScanner
-	stopChan     chan struct{}
-	wg           *sync.WaitGroup
+	cfg              config.Configuration
+	logger           zerolog.Logger
+	Db               *leveldb.DB
+	WebSocket        *WebSocket
+	blockScanner     *BlockScanner
+	stopChan         chan struct{}
+	stateChainBridge *statechain.StateChainBridge
+	wg               *sync.WaitGroup
 }
 
 // NewObserver create a new instance of Observer
@@ -44,13 +41,18 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
+	stateChainBridge, err := statechain.NewStateChainBridge(cfg.StateChainConfiguration)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create new state chain bridge")
+	}
 	return &Observer{
-		cfg:          cfg,
-		logger:       log.Logger.With().Str("module", "observer").Logger(),
-		WebSocket:    webSocket,
-		blockScanner: blockScanner,
-		wg:           &sync.WaitGroup{},
-		stopChan:     make(chan struct{}),
+		cfg:              cfg,
+		logger:           log.Logger.With().Str("module", "observer").Logger(),
+		WebSocket:        webSocket,
+		blockScanner:     blockScanner,
+		wg:               &sync.WaitGroup{},
+		stopChan:         make(chan struct{}),
+		stateChainBridge: stateChainBridge,
 	}, nil
 }
 
@@ -63,7 +65,7 @@ func (o *Observer) Start() error {
 		o.wg.Add(1)
 		go o.processTxnIn(o.blockScanner.GetMessages(), idx)
 	}
-
+	o.blockScanner.Start()
 	return o.WebSocket.Start()
 }
 
@@ -80,18 +82,24 @@ func (o *Observer) processTxnIn(ch <-chan types.TxIn, idx int) {
 				// channel closed
 				return
 			}
-			mode := types.TxSync
-
-			addr, err := sdk.AccAddressFromBech32(o.cfg.RuneAddress)
-			if err != nil {
-				log.Error().Msgf("Error: %v", err)
+			if len(txIn.TxArray) == 0 {
+				o.logger.Debug().Msg("nothing need to forward to statechain")
 			}
+			mode := types.TxSync
 
 			txs := make([]stypes.TxIn, len(txIn.TxArray))
 			for i, item := range txIn.TxArray {
-				// TODO: don't ignore this error
-				txID, _ := common.NewTxID(item.Tx)
-				bnbAddr, _ := common.NewBnbAddress(item.Sender)
+				o.logger.Info().Str("txhash", item.Tx).Msg("txInItem")
+				txID, err := common.NewTxID(item.Tx)
+				if nil != err {
+					o.logger.Error().Err(err).Str("txhash", item.Tx).Msg("fail to parse tx")
+					// TODO  what should we do, we need to mark the whole tx as unsend
+				}
+				bnbAddr, err := common.NewBnbAddress(item.Sender)
+				if nil != err {
+					o.logger.Error().Err(err).Str("sender", item.Sender).Msg("fail to parse sender")
+					// TODO what should we do here?
+				}
 				txs[i] = stypes.NewTxIn(
 					txID,
 					item.Coins,
@@ -101,17 +109,17 @@ func (o *Observer) processTxnIn(ch <-chan types.TxIn, idx int) {
 			}
 
 			// TODO if the following two step failed , we should retry and
-			signed, err := statechain.Sign(txs, addr, o.cfg)
+			signed, err := o.stateChainBridge.Sign(txs)
 			if nil != err {
 				o.logger.Error().Err(err).Msg("fail to sign the tx")
 				continue
 			}
-			txID, err := statechain.Send(signed, mode, o.cfg)
+			txID, err := o.stateChainBridge.Send(*signed, mode)
 			if nil != err {
 				o.logger.Error().Err(err).Msg("fail to send the tx to statechain")
 				continue
 			}
-			o.logger.Debug().Str("txid", txID.String()).Msg("send to statechain successfully")
+			o.logger.Info().Str("txid", txID.String()).Msg("send to statechain successfully")
 
 		}
 	}

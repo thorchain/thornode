@@ -7,10 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/jinzhu/configor"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	flag "github.com/spf13/pflag"
+	"gitlab.com/thorchain/bepswap/statechain/cmd"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/observer"
@@ -41,6 +43,9 @@ func main() {
 		printVersion()
 		return
 	}
+	cosmosSDKConfg := sdk.GetConfig()
+	cosmosSDKConfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+	cosmosSDKConfg.Seal()
 	initLog(*logLevel, *pretty)
 	var cfg config.Configuration
 	if err := configor.Load(&cfg, *cfgFile); nil != err {
