@@ -391,7 +391,7 @@ func (b *BlockScanner) fromApiTxToTxInItem(txInput btypes.ApiTx) (*stypes.TxInIt
 				if nil != err {
 					return nil, errors.Wrapf(err, "fail to parse coin amount,%s is not valid", coin.Amount)
 				}
-				txInItem.Coins = append(txInItem.Coins, common.NewCoin(ticker, amt))
+				txInItem.Coins = append(txInItem.Coins, common.NewCoin(ticker, common.NewAmountFromFloat(amt.Float64()/100000000)))
 			}
 
 		}
