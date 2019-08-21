@@ -1,58 +1,88 @@
 package signer
 
 import (
-	"encoding/json"
+	"sync"
 
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/syndtr/goleveldb/leveldb"
 
-	config "gitlab.com/thorchain/bepswap/observe/config"
+	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/binance"
-	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
+// Signer will pull the tx out from statechain and then forward it to binance chain
 type Signer struct {
-	Db        *leveldb.DB
-	BlockScan *BlockScan
-	Binance   *binance.Binance
-	TxOutChan chan []byte
+	logger                 zerolog.Logger
+	cfg                    config.SignerConfiguration
+	wg                     *sync.WaitGroup
+	stopChan               chan struct{}
+	stateChainBlockScanner *StateChainBlockScan
+	Binance                *binance.Binance
+	storage                *StateChanBlockScannerStorage
 }
 
-func NewSigner() *Signer {
-	var db, _ = leveldb.OpenFile(config.SignerDbPath, nil)
-
-	txOutChan := make(chan []byte)
-	blockScan := NewBlockScan(db, txOutChan)
-	binance := binance.NewBinance()
-
-	return &Signer{
-		Db:        db,
-		BlockScan: blockScan,
-		Binance:   binance,
-		TxOutChan: txOutChan,
+// NewSigner create a new instance of signer
+func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
+	stateChainScanStorage, err := NewStateChanBlockScannerStorage(cfg.SignerDbPath)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create statechain scan storage")
 	}
+	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScannerConfiguration, stateChainScanStorage, cfg.StateChainConfiguration.ChainHost)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create state chain block scan")
+	}
+	b, err := binance.NewBinance(cfg.Binance)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create binance client")
+	}
+	return &Signer{
+		logger:                 log.With().Str("module", "signer").Logger(),
+		cfg:                    cfg,
+		wg:                     &sync.WaitGroup{},
+		stopChan:               make(chan struct{}),
+		stateChainBlockScanner: stateChainBlockScanner,
+		Binance:                b,
+		storage:                stateChainScanStorage,
+	}, nil
 }
 
-func (s Signer) Start() {
-	go s.ProcessTxnOut()
-	s.BlockScan.Start()
+func (s *Signer) Start() error {
+	for idx := s.cfg.MessageProcessor; idx <= s.cfg.MessageProcessor*2; idx++ {
+		s.wg.Add(1)
+		go s.processTxnOut(s.stateChainBlockScanner.GetMessages(), idx)
+	}
+	return s.stateChainBlockScanner.Start()
 }
 
-func (s Signer) ProcessTxnOut() {
+func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
+	s.logger.Info().Int("idx", idx).Msg("start to process tx out")
+	defer s.logger.Info().Int("idx", idx).Msg("stop to process tx out")
+	defer s.wg.Done()
 	for {
-		payload := <-s.TxOutChan
+		select {
+		case <-s.stopChan:
+			return
+		case txOut, more := <-ch:
+			if !more {
+				return
+			}
+			log.Info().Msgf("Received a TxOut Array of %v from the StateChain", txOut)
+			hexTx, param := s.Binance.SignTx(txOut)
+			log.Info().Msgf("Generated a signature for Binance: %s", string(hexTx))
 
-		var txOut stypes.TxOut
-		err := json.Unmarshal(payload, &txOut)
-		if err != nil {
-			log.Info().Msgf("Error: %v", err)
+			_, _ = s.Binance.BroadcastTx(hexTx, param)
 		}
 
-		log.Info().Msgf("Received a TxOut Array of %v from the StateChain", txOut)
-
-		hexTx, param := s.Binance.SignTx(txOut)
-		log.Info().Msgf("Generated a signature for Binance: %v", string(hexTx))
-
-		_, _ = s.Binance.BroadcastTx(hexTx, param)
 	}
+}
+
+// Stop the signer process
+func (s *Signer) Stop() error {
+	s.logger.Info().Msg("receive request to stop signer")
+	defer s.logger.Info().Msg("signer stopped successfully")
+	close(s.stopChan)
+	s.wg.Wait()
+	return s.storage.Close()
 }

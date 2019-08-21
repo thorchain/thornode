@@ -1,4 +1,4 @@
-package observer
+package blockscanner
 
 import (
 	"encoding/binary"
