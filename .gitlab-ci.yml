@@ -14,7 +14,7 @@ cache:
 before_script:
   - mkdir -p .cache
   - export GOPATH="$CI_PROJECT_DIR/.cache"
-  - export IMAGE_TAG="$(echo $CI_COMMIT_SHA | head -c 8)"
+  - export IMAGE_TAG="$CI_COMMIT_SHORT_SHA"
 
 stages:
   - test
