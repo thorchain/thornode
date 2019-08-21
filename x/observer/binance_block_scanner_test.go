@@ -13,6 +13,7 @@ import (
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
+	"gitlab.com/thorchain/bepswap/observe/x/blockscanner"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -24,7 +25,6 @@ var _ = Suite(&BlockScannerTestSuite{})
 func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 	return config.BlockScannerConfiguration{
 		RPCHost:                    rpcHost,
-		ObserverDbPath:             "/tmp",
 		StartBlockHeight:           0,
 		BlockScanProcessors:        1,
 		HttpRequestTimeout:         time.Second,
@@ -37,19 +37,19 @@ func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 }
 
 func (BlockScannerTestSuite) TestNewBlockScanner(c *C) {
-	bs, err := NewBlockScanner(getConfigForTest(""), NewMockScannerStorage(), "", common.BnbAddress(""))
+	bs, err := NewBinanceBlockScanner(getConfigForTest(""), blockscanner.NewMockScannerStorage(), "", common.BnbAddress(""))
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), NewMockScannerStorage(), "", common.BnbAddress(""))
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), "", common.BnbAddress(""))
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), nil, "127.0.0.1", common.BnbAddress(""))
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), nil, "127.0.0.1", common.BnbAddress(""))
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), NewMockScannerStorage(), "127.0.0.1", common.BnbAddress(""))
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), "127.0.0.1", common.BnbAddress(""))
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), NewMockScannerStorage(), "127.0.0.1", common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), "127.0.0.1", common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 }
@@ -59,7 +59,7 @@ func (BlockScannerTestSuite) TestFromApiTxToTxInItem(c *C) {
 	var apiTx btypes.ApiTx
 	err := json.Unmarshal([]byte(input), &apiTx)
 	c.Assert(err, IsNil)
-	bs, err := NewBlockScanner(getConfigForTest("127.0.0.1"), NewMockScannerStorage(), "127.0.0.1", common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
+	bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), "127.0.0.1", common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 	txIn, err := bs.fromApiTxToTxInItem(apiTx)
@@ -72,7 +72,7 @@ func (BlockScannerTestSuite) TestFromApiTxToTxInItemNotExist(c *C) {
 	var apiTx btypes.ApiTx
 	err := json.Unmarshal([]byte(input), &apiTx)
 	c.Assert(err, IsNil)
-	bs, err := NewBlockScanner(getConfigForTest("127.0.0.1"), NewMockScannerStorage(), "127.0.0.1", common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
+	bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), "127.0.0.1", common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 	txIn, err := bs.fromApiTxToTxInItem(apiTx)
@@ -162,11 +162,11 @@ func (BlockScannerTestSuite) TestGetOneTxFromServer(c *C) {
 	s := httptest.NewTLSServer(h)
 	defer s.Close()
 	addr := s.Listener.Addr().String()
-	bs, err := NewBlockScanner(getConfigForTest(addr), NewMockScannerStorage(), addr, common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
+	bs, err := NewBinanceBlockScanner(getConfigForTest(addr), blockscanner.NewMockScannerStorage(), addr, common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 	singleTxUrl := bs.getSingleTxUrl("22214C3567DCF0120DA779CC24089C8D18F9B8F217A5B1AD4821EFFFDD2BF92F")
-	bs.httpClient.TLSConfig = &tls.Config{
+	bs.commonBlockScanner.GetHttpClient().TLSConfig = &tls.Config{
 		InsecureSkipVerify: true,
 	}
 	inItem, err := bs.getOneTxFromServer("22214C3567DCF0120DA779CC24089C8D18F9B8F217A5B1AD4821EFFFDD2BF92F", singleTxUrl)
