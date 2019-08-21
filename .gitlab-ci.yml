@@ -1,5 +1,12 @@
 image: golang:1.11
 
+variables:
+  REPOSITORY_URL: 526267067157.dkr.ecr.ap-southeast-2.amazonaws.com/statechain
+  REGION: ap-southeast-2
+  TASK_DEFINTION_NAME: statechain
+  CLUSTER_NAME: testnet
+  SERVICE_NAME: statechain
+
 cache:
   paths:
     - .cache
@@ -7,11 +14,13 @@ cache:
 before_script:
   - mkdir -p .cache
   - export GOPATH="$CI_PROJECT_DIR/.cache"
+  - export IMAGE_TAG="$(echo $CI_COMMIT_SHA | head -c 8)"
 
 stages:
   - test
   - integration
   - build
+  - deploy
 
 unit_tests:
   stage: test
@@ -37,14 +46,37 @@ build:
     - docker:dind
   stage: build
   before_script:
-    - export REPOSITORY_URL="526267067157.dkr.ecr.ap-southeast-2.amazonaws.com/statechain"
     - apk add --no-cache curl jq python py-pip
     - pip install awscli
   script:
     - $(aws ecr get-login --no-include-email --region ap-southeast-2)
-    - docker build -t $REPOSITORY_URL .
-    - docker push $REPOSITORY_URL
+    - echo "Building...."
+    - docker build -t $REPOSITORY_URL:latest .
+    - echo "Tagging...."
+    - docker tag $REPOSITORY_URL:latest $REPOSITORY_URL:$IMAGE_TAG
+    - echo "Pushing...."
+    - docker push $REPOSITORY_URL:latest
+    - docker push $REPOSITORY_URL:$IMAGE_TAG
   only:
     - master
   tags:
     - docker
+
+deploy:
+  image: docker:latest
+  services:
+    - docker:dind
+  stage: deploy
+  before_script:
+    - apk add --no-cache curl jq python py-pip
+    - pip install awscli
+  script:
+    - echo $REPOSITORY_URL:$IMAGE_TAG
+    - TASK_DEFINITION=$(aws ecs describe-task-definition --task-definition "$TASK_DEFINITION_NAME" --region "${REGION}")
+    - NEW_CONTAINER_DEFINTIION=$(echo $TASK_DEFINITION | jq --arg IMAGE "$REPOSITORY_URL:$IMAGE_TAG" '.taskDefinition.containerDefinitions[0].image = $IMAGE | .taskDefinition.containerDefinitions[0]')
+    - echo "Registering new container definition..."
+    - aws ecs register-task-definition --region "${REGION}" --family "${TASK_DEFINITION_NAME}" --container-definitions "${NEW_CONTAINER_DEFINTIION}"
+    - echo "Updating the service..."
+    - aws ecs update-service --region "${REGION}" --cluster "${CLUSTER_NAME}" --service "${SERVICE_NAME}" --task-definition "${TASK_DEFINITION_NAME}"
+  only:
+    - master
