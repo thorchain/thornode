@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -38,6 +39,7 @@ func setupStateChainForTest(c *C) (config.StateChainConfiguration, cKeys.Info, f
 	sscliDir := filepath.Join(os.TempDir(), ".sscli")
 	cfg := config.StateChainConfiguration{
 		ChainID:         "statechain",
+		ChainHost:       "localhost",
 		SignerName:      "bob",
 		SignerPasswd:    "password",
 		ChainHomeFolder: sscliDir,
@@ -129,4 +131,254 @@ func (s StatechainSuite) TestSend(c *C) {
 		Equals,
 		"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D",
 	)
+}
+
+func (StatechainSuite) TestNewStateChainBridge(c *C) {
+	var testFunc = func(cfg config.StateChainConfiguration, errChecker Checker, sbChecker Checker) {
+		sb, err := NewStateChainBridge(cfg)
+		c.Assert(err, errChecker)
+		c.Assert(sb, sbChecker)
+	}
+	testFunc(config.StateChainConfiguration{
+		ChainID:         "",
+		ChainHost:       "localhost",
+		ChainHomeFolder: "~/.sscli",
+		SignerName:      "signer",
+		SignerPasswd:    "signerpassword",
+	}, NotNil, IsNil)
+	testFunc(config.StateChainConfiguration{
+		ChainID:         "chainid",
+		ChainHost:       "",
+		ChainHomeFolder: "~/.sscli",
+		SignerName:      "signer",
+		SignerPasswd:    "signerpassword",
+	}, NotNil, IsNil)
+	testFunc(config.StateChainConfiguration{
+		ChainID:         "chainid",
+		ChainHost:       "localhost",
+		ChainHomeFolder: "~/.sscli",
+		SignerName:      "",
+		SignerPasswd:    "signerpassword",
+	}, NotNil, IsNil)
+	testFunc(config.StateChainConfiguration{
+		ChainID:         "chainid",
+		ChainHost:       "localhost",
+		ChainHomeFolder: "~/.sscli",
+		SignerName:      "signer",
+		SignerPasswd:    "",
+	}, NotNil, IsNil)
+	cfg, _, cleanup := setupStateChainForTest(c)
+	testFunc(cfg, IsNil, NotNil)
+	defer cleanup()
+}
+func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
+	testfunc := func(handleFunc http.HandlerFunc, expectedAccNum int64, expectedSeq int64, errChecker Checker) {
+		cfg, keyInfo, cleanup := setupStateChainForTest(c)
+		defer cleanup()
+		scb, err := NewStateChainBridge(cfg)
+		c.Assert(err, IsNil)
+		c.Assert(scb, NotNil)
+		_ = keyInfo
+		if nil != handleFunc {
+			s := httptest.NewServer(handleFunc)
+			defer s.Close()
+			cfg.ChainHost = s.Listener.Addr().String()
+		}
+		requestUrl := scb.getAccountInfoUrl(cfg.ChainHost)
+		if cfg.ChainHost == "localhost" {
+			requestUrl = ""
+		}
+		accountNumber, seqNo, err := scb.getAccountNumberAndSequenceNumber(requestUrl)
+		c.Assert(accountNumber, Equals, accountNumber)
+		c.Assert(seqNo, Equals, seqNo)
+		c.Assert(err, errChecker)
+	}
+	testfunc(nil, 0, 0, NotNil)
+	testfunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusInternalServerError)
+	}, 0, 0, NotNil)
+	testfunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusInternalServerError)
+	}, 0, 0, NotNil)
+	testfunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusAccepted)
+	}, 0, 0, NotNil)
+	testfunc(func(writer http.ResponseWriter, request *http.Request) {
+		if _, err := writer.Write([]byte("whatever")); nil != err {
+			c.Error(err)
+		}
+	}, 0, 0, NotNil)
+	testfunc(func(writer http.ResponseWriter, request *http.Request) {
+		if _, err := writer.Write([]byte("")); nil != err {
+			c.Error(err)
+		}
+	}, 0, 0, NotNil)
+	testfunc(func(writer http.ResponseWriter, request *http.Request) {
+		if _, err := writer.Write([]byte(`{
+"type": "cosmos-sdk/Account",
+"value": {
+"address": "",
+"coins": [],
+"public_key": null,
+"account_number": "asdf",
+"sequence": "0"
+}
+}`)); nil != err {
+			c.Error(err)
+		}
+	}, 0, 0, NotNil)
+	testfunc(func(writer http.ResponseWriter, request *http.Request) {
+		if _, err := writer.Write([]byte(`{
+"type": "cosmos-sdk/Account",
+"value": {
+"address": "",
+"coins": [],
+"public_key": null,
+"account_number": "0",
+"sequence": "whatever"
+}
+}`)); nil != err {
+			c.Error(err)
+		}
+	}, 0, 0, NotNil)
+	testfunc(func(writer http.ResponseWriter, request *http.Request) {
+		if _, err := writer.Write([]byte(`{
+"type": "cosmos-sdk/Account",
+"value": {
+"address": "",
+"coins": [],
+"public_key": null,
+"account_number": "5",
+"sequence": "6"
+}
+}`)); nil != err {
+			c.Error(err)
+		}
+	}, 5, 6, IsNil)
+}
+
+func (StatechainSuite) TestSignEx(c *C) {
+	testFunc := func(in []stypes.TxIn, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
+		cfg, _, cleanup := setupStateChainForTest(c)
+		defer cleanup()
+		if nil != handleFunc {
+			s := httptest.NewServer(handleFunc)
+			defer s.Close()
+			cfg.ChainHost = s.Listener.Addr().String()
+		}
+		scb, err := NewStateChainBridge(cfg)
+		c.Assert(err, IsNil)
+		c.Assert(scb, NotNil)
+		stx, err := scb.Sign(in)
+		c.Assert(stx, resultChecker)
+		c.Assert(err, errChecker)
+	}
+	testFunc(nil, nil, IsNil, NotNil)
+	testBNBAddress, err := common.NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqx")
+	if nil != err {
+		c.Error(err)
+	}
+	testFunc([]stypes.TxIn{
+		{
+			Request: "EBB78FA6FDFBB19EBD188316B5FF9E60799C3149214A263274D31F4F605B8FDE",
+			Status:  stypes.Incomplete,
+			Done:    common.TxID(""),
+			Memo:    "",
+			Coins:   nil,
+			Sender:  testBNBAddress,
+		},
+	}, func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusInternalServerError)
+	}, IsNil, NotNil)
+}
+
+func (StatechainSuite) TestSendEx(c *C) {
+	testFunc := func(in []stypes.TxIn, mode types.TxMode, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
+		cfg, _, cleanup := setupStateChainForTest(c)
+		defer cleanup()
+		if nil != handleFunc {
+			s := httptest.NewServer(handleFunc)
+			defer s.Close()
+			cfg.ChainHost = s.Listener.Addr().String()
+		}
+		scb, err := NewStateChainBridge(cfg)
+		c.Assert(err, IsNil)
+		c.Assert(scb, NotNil)
+		stx, err := scb.Sign(in)
+		c.Assert(stx, NotNil)
+		c.Assert(err, IsNil)
+		_, err = scb.Send(*stx, mode)
+		c.Assert(err, errChecker)
+
+	}
+	testBNBAddress, err := common.NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqx")
+	if nil != err {
+		c.Error(err)
+	}
+	txIns := []stypes.TxIn{
+		{
+			Request: "EBB78FA6FDFBB19EBD188316B5FF9E60799C3149214A263274D31F4F605B8FDE",
+			Status:  stypes.Incomplete,
+			Done:    common.TxID(""),
+			Memo:    "",
+			Coins:   nil,
+			Sender:  testBNBAddress,
+		},
+	}
+	testFunc(txIns, types.TxUnknown, func(writer http.ResponseWriter, request *http.Request) {
+		if _, err := writer.Write([]byte(`{
+"type": "cosmos-sdk/Account",
+"value": {
+"address": "",
+"coins": [],
+"public_key": null,
+"account_number": "5",
+"sequence": "6"
+}
+}`)); nil != err {
+			c.Error(err)
+		}
+	}, IsNil, NotNil)
+	testFunc(txIns, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
+		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
+			if _, err := writer.Write([]byte(`{
+"type": "cosmos-sdk/Account",
+"value": {
+"address": "",
+"coins": [],
+"public_key": null,
+"account_number": "5",
+"sequence": "6"
+}
+}`)); nil != err {
+				c.Error(err)
+			}
+			return
+		}
+		writer.WriteHeader(http.StatusInternalServerError)
+	}, IsNil, NotNil)
+	testFunc(txIns, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
+		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
+			if _, err := writer.Write([]byte(`{
+"type": "cosmos-sdk/Account",
+"value": {
+"address": "",
+"coins": [],
+"public_key": null,
+"account_number": "5",
+"sequence": "6"
+}
+}`)); nil != err {
+				c.Error(err)
+			}
+			return
+		}
+
+		if _, err := writer.Write([]byte(`
+whatever`)); nil != err {
+			c.Error(err)
+		}
+
+	}, IsNil, NotNil)
+
 }
