@@ -20,7 +20,7 @@ type Observer struct {
 	cfg              config.Configuration
 	logger           zerolog.Logger
 	WebSocket        *WebSocket
-	blockScanner     *BlockScanner
+	blockScanner     *BinanceBlockScanner
 	storage          TxInStorage
 	stopChan         chan struct{}
 	stateChainBridge *statechain.StateChainBridge
@@ -33,11 +33,11 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create web socket instance")
 	}
-	scanStorage, err := NewLevelDBScannerStorage(cfg.BlockScannerConfiguration.ObserverDbPath)
+	scanStorage, err := NewBinanceChanBlockScannerStorage(cfg.ObserverDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create scan storage")
 	}
-	blockScanner, err := NewBlockScanner(cfg.BlockScannerConfiguration, scanStorage, cfg.DEXHost, cfg.PoolAddress)
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScannerConfiguration, scanStorage, cfg.DEXHost, cfg.PoolAddress)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}

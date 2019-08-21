@@ -172,7 +172,7 @@ func (w *WebSocket) processMessage(payload []byte) error {
 
 				for _, coin := range txn.Coins {
 					parsedAmt, _ := strconv.ParseFloat(coin.Amount, 64)
-					amount := parsedAmt * 100000000
+					amount := parsedAmt
 
 					var token common.Coin
 					token.Denom = common.Ticker(coin.Asset)
