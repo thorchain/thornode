@@ -1,9 +1,8 @@
 package binance
 
 import (
-	"os"
-
-	log "github.com/rs/zerolog/log"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog/log"
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/client/basic"
@@ -13,7 +12,7 @@ import (
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
 
-	config "gitlab.com/thorchain/bepswap/observe/config"
+	"gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
@@ -26,25 +25,26 @@ type Binance struct {
 	chainId     string
 }
 
-func NewBinance() *Binance {
-	if config.PrivKey == "" {
-		log.Fatal().Msgf("No private key set!")
-		os.Exit(1)
+// NewBinance create new instance of binance client
+func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
+	if len(cfg.PrivateKey) == 0 {
+		return nil, errors.New("no private key")
+	}
+	if len(cfg.DEXHost) == 0 {
+		return nil, errors.New("dex host is empty, set env DEX_HOST")
 	}
 
-	keyManager, err := keys.NewPrivateKeyManager(config.PrivKey)
+	keyManager, err := keys.NewPrivateKeyManager(cfg.PrivateKey)
 	if err != nil {
-		log.Fatal().Msgf("Error: %v", err)
-		os.Exit(1)
+		return nil, errors.Wrap(err, "fail to create private key manager")
 	}
 
-	bClient, err := sdk.NewDexClient(config.DEXHost, types.TestNetwork, keyManager)
+	bClient, err := sdk.NewDexClient(cfg.DEXHost, types.TestNetwork, keyManager)
 	if err != nil {
-		log.Fatal().Msgf("Error: %v", err)
-		os.Exit(1)
+		return nil, errors.Wrap(err, "fail to create binance client")
 	}
 
-	basicClient := basic.NewClient(config.DEXHost)
+	basicClient := basic.NewClient(cfg.DEXHost)
 	queryClient := query.NewClient(basicClient)
 
 	return &Binance{
@@ -52,9 +52,8 @@ func NewBinance() *Binance {
 		BasicClient: basicClient,
 		QueryClient: queryClient,
 		KeyManager:  keyManager,
-		// @todo Get this from the transaction client
-		chainId: "Binance-Chain-Nile",
-	}
+		chainId:     "Binance-Chain-Nile",
+	}, nil
 }
 
 func (b Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {

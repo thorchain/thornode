@@ -1,7 +1,6 @@
 package config
 
 import (
-	"os"
 	"time"
 
 	"gitlab.com/thorchain/bepswap/common"
@@ -12,6 +11,7 @@ type Configuration struct {
 	PoolAddress               common.BnbAddress         `json:"pool_address" env:"POOL_ADDRESS" required:"true"`
 	DEXHost                   string                    `json:"dex_host" env:"DEX_HOST"`
 	MessageProcessor          int                       `json:"message_processor" default:"10"`
+	ObserverDbPath            string                    `json:"observer_db_path" env:"LEVEL_DB_OBSERVER_PATH"`
 	BlockScannerConfiguration BlockScannerConfiguration `json:"block_scanner_configuration"`
 	StateChainConfiguration   StateChainConfiguration   `json:"state_chain_configuration"`
 	ObserverRetryInterval     time.Duration             `json:"observer_retry_interval" default:"120s" env:"OBSERVER_RETRY_INTERVAL"`
@@ -20,7 +20,7 @@ type Configuration struct {
 // BlockScannerConfiguration settings for BlockScanner
 type BlockScannerConfiguration struct {
 	RPCHost                    string        `json:"rpc_host" env:"RPC_HOST"`
-	ObserverDbPath             string        `json:"observer_db_path" env:"LEVEL_DB_OBSERVER_PATH"`
+	Scheme                     string        `json:"scheme" default:"https" env:"RPC_SCHEME"`
 	StartBlockHeight           int64         `json:"start_block_height" env:"START_BLOCK_HEIGHT"`
 	BlockScanProcessors        int           `json:"block_scan_processors" env:"BLOCK_SCAN_PROCESSORS"`
 	HttpRequestTimeout         time.Duration `json:"http_request_timeout" default:"10s"`
@@ -40,15 +40,17 @@ type StateChainConfiguration struct {
 	SignerPasswd    string `json:"signer_passwd" env:"SIGNER_PASSWD"`
 }
 
-// TODO to be removed later
-var (
-	PoolAddress = os.Getenv("POOL_ADDRESS")
-	//RuneAddress    = os.Getenv("RUNE_ADDRESS")
-	DEXHost   = os.Getenv("DEX_HOST")
-	RPCHost   = os.Getenv("RPC_HOST")
-	PrivKey   = os.Getenv("PRIVATE_KEY")
-	ChainHost = os.Getenv("CHAIN_HOST")
-	//SignerPasswd   = os.Getenv("SIGNER_PASSWD")
-	//ObserverDbPath = os.Getenv("LEVEL_DB_OBSERVER_PATH")
-	SignerDbPath = os.Getenv("LEVEL_DB_SIGNER_PATH")
-)
+// SignerConfiguration all the configures need by signer
+type SignerConfiguration struct {
+	SignerDbPath              string                    `json:"signer_db_path" env:"SIGNER_DB_PATH" default:"signer_db" required:"true"`
+	MessageProcessor          int                       `json:"message_processor" default:"10" env:"SIGNER_MESSAGE_PROCESSORS"`
+	BlockScannerConfiguration BlockScannerConfiguration `json:"block_scanner_configuration"`
+	Binance                   BinanceConfiguration      `json:"binance"`
+	StateChainConfiguration   StateChainConfiguration   `json:"state_chain_configuration"`
+}
+
+// BinanceConfiguration all the configurations for binance client
+type BinanceConfiguration struct {
+	DEXHost    string `json:"dex_host" required:"true" env:"DEX_HOST"`
+	PrivateKey string `json:"private_key" required:"true" env:"BINANCE_PRIVATE_KEY"`
+}
