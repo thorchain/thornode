@@ -15,9 +15,7 @@ RUN chown supervisor:supervisor /var/run/supervisor
 RUN mkdir -p /etc/supervisor/conf.d
 ADD supervisor.conf /etc/supervisor.conf
 
-WORKDIR /go/src/app
-RUN git config --global http.sslVerify "false"
-RUN git clone https://gitlab.com/thorchain/bepswap/statechain.git
+ADD . /go/src/app/statechain
 
 # Setup Statechain
 WORKDIR /go/src/app/statechain
