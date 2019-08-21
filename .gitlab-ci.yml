@@ -11,6 +11,7 @@ before_script:
 stages:
   - test
   - integration
+  - build
 
 unit_tests:
   stage: test
@@ -29,3 +30,21 @@ integration_tests:
   stage: integration
   script:
     - make -C ./tests/integration install setup run wait-for-blockchain test-internal
+
+build:
+  image: docker:latest
+  services:
+    - docker:dind
+  stage: build
+  before_script:
+    - export REPOSITORY_URL="526267067157.dkr.ecr.ap-southeast-2.amazonaws.com/statechain"
+    - apk add --no-cache curl jq python py-pip
+    - pip install awscli
+  script:
+    - $(aws ecr get-login --no-include-email --region ap-southeast-2)
+    - docker build -t $REPOSITORY_URL .
+    - docker push $REPOSITORY_URL
+  only:
+    - master
+  tags:
+    - docker
