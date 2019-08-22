@@ -288,21 +288,22 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 		}
 	}
 
+	totalTrusted := keeper.TotalTrustAccounts(ctx)
 	handler := NewHandler(keeper, txOutStore)
 	for _, tx := range todo {
 		voter := keeper.GetTxInVoter(ctx, tx.TxID)
-		preConsensus := voter.HasConensus(4) // TODO: remove hard coded number
+		preConsensus := voter.HasConensus(totalTrusted) // TODO: remove hard coded number
 		voter.Adds(tx.Txs, msg.Signer)
-		postConsensus := voter.HasConensus(4) // TODO: remove hard coded number
+		postConsensus := voter.HasConensus(totalTrusted) // TODO: remove hard coded number
 		keeper.SetTxInVoter(ctx, voter)
 
 		// TODO: if we change the number of trusted accounts, this will double
 		// spend
 		if preConsensus == false && postConsensus == true {
-			msg, err := processOneTxIn(ctx, keeper, voter.TxID, voter.GetTx(4), msg.Signer)
+			msg, err := processOneTxIn(ctx, keeper, voter.TxID, voter.GetTx(totalTrusted), msg.Signer)
 			if nil != err {
 				ctx.Logger().Error("fail to process txHash", "error", err)
-				refundTx(ctx, voter.GetTx(4), txOutStore, keeper)
+				refundTx(ctx, voter.GetTx(totalTrusted), txOutStore, keeper)
 				continue
 			}
 
