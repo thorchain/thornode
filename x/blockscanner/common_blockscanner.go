@@ -134,14 +134,13 @@ func (b *CommonBlockScanner) scanBlocks() {
 			}
 			if currentBlock > b.previousBlock {
 				// scan next block
-				for idx := b.previousBlock; idx <= currentBlock; idx++ {
+				for idx := b.previousBlock; idx < currentBlock; idx++ {
+					b.previousBlock++
 					if err := b.scannerStorage.SetBlockScanStatus(b.previousBlock, NotStarted); err != nil {
 						b.logger.Error().Err(err).Msg("fail to set block status")
-						// alert!!
-						// TODO what should we do if that happen
+						// TODO alert here , because we stop scanning blocks
 						return
 					}
-					b.previousBlock++
 					select {
 					case <-b.stopChan:
 						return // need to bail
