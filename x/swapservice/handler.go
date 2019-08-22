@@ -392,8 +392,8 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxIn, signer sdk.A
 	}
 	return NewMsgSetStakeData(
 		memo.GetTicker(),
-		tokenAmount,
 		runeAmount,
+		tokenAmount,
 		tx.Sender,
 		tx.Request,
 		signer,
