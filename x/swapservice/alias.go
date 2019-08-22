@@ -63,6 +63,7 @@ type (
 	PoolIndex         = types.PoolIndex
 	TxInIndex         = types.TxInIndex
 	TxIn              = types.TxIn
+	TxInVoter         = types.TxInVoter
 	Pool              = types.Pool
 	PoolStaker        = types.PoolStaker
 	StakerPool        = types.StakerPool
