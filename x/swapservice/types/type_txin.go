@@ -10,6 +10,8 @@ import (
 type status string
 type TxInIndex []common.TxID
 
+const majority float64 = 0.666665
+
 const (
 	Incomplete status = "incomplete"
 	Done       status = "done"
@@ -110,12 +112,18 @@ func NewTxInVoter(txID common.TxID, txs []TxIn) TxInVoter {
 	}
 }
 
-func (tx TxInVoter) Key() string {
-	return tx.TxID.String()
+func (tx TxInVoter) Key() common.TxID {
+	return tx.TxID
 }
 
 func (tx TxInVoter) String() string {
 	return tx.TxID.String()
+}
+
+func (tx *TxInVoter) SetDone(hash common.TxID) {
+	for _, transaction := range tx.Txs {
+		transaction.SetDone(hash)
+	}
 }
 
 func (tx *TxInVoter) Add(txIn TxIn, signer sdk.AccAddress) {
@@ -129,9 +137,25 @@ func (tx *TxInVoter) Add(txIn TxIn, signer sdk.AccAddress) {
 	tx.Txs = append(tx.Txs, txIn)
 }
 
+func (tx *TxInVoter) Adds(txs []TxIn, signer sdk.AccAddress) {
+	for _, txIn := range txs {
+		tx.Add(txIn, signer)
+	}
+}
+
+func (tx TxInVoter) HasConensus(totalTrusted int) bool {
+	for _, txIn := range tx.Txs {
+		if float64(len(txIn.Signers))/float64(totalTrusted) > majority {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (tx TxInVoter) GetTx(totalTrusted int) TxIn {
 	for _, txIn := range tx.Txs {
-		if float64(len(txIn.Signers))/float64(totalTrusted) > 0.66666665 {
+		if float64(len(txIn.Signers))/float64(totalTrusted) > majority {
 			return txIn
 		}
 	}

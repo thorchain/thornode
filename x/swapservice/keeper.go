@@ -276,51 +276,24 @@ func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStorePrefixIterator(store, []byte(prefixTrustAccount))
 }
 
-// SetObservedBlockHeight - sets the last binance block height we've seen from a specific observer
-func (k Keeper) SetObservedBlockHeight(ctx sdk.Context, height common.Amount, observer sdk.AccAddress) {
-	current := k.GetObservedBlockHeight(ctx, observer)
-	// if height is less than the current height, ignore it
-	if height.LessThen(current.Float64()) {
-		return
-	}
-	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixBnbBlockHeight, observer.String())
-	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
-}
-
-// GetObservedBlockHeight - gets the last known block height by specific observer
-func (k Keeper) GetObservedBlockHeight(ctx sdk.Context, observer sdk.AccAddress) common.Amount {
-	key := getKey(prefixBnbBlockHeight, observer.String())
-
-	store := ctx.KVStore(k.storeKey)
-	if !store.Has([]byte(key)) {
-		return common.ZeroAmount
-	}
-
-	bz := store.Get([]byte(key))
-	var height common.Amount
-	k.cdc.MustUnmarshalBinaryBare(bz, &height)
-	return height
-}
-
 // SetTxHas - saving a given txhash to the KVStore
-func (k Keeper) SetTxIn(ctx sdk.Context, tx TxIn) {
+func (k Keeper) SetTxInVoter(ctx sdk.Context, tx TxInVoter) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxIn, tx.Key().String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
 // GetTxIn - gets information of a tx hash
-func (k Keeper) GetTxIn(ctx sdk.Context, hash common.TxID) TxIn {
+func (k Keeper) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
 	key := getKey(prefixTxIn, hash.String())
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		return TxIn{}
+		return TxInVoter{}
 	}
 
 	bz := store.Get([]byte(key))
-	var record TxIn
+	var record TxInVoter
 	k.cdc.MustUnmarshalBinaryBare(bz, &record)
 	return record
 }
