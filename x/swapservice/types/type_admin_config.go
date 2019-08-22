@@ -51,7 +51,7 @@ func (k AdminConfigKey) ValidValue(value string) error {
 type AdminConfig struct {
 	Key     AdminConfigKey    `json:"key"`
 	Value   string            `json:"value"`
-	Address common.BnbAddress `json:"signer"`
+	Address common.BnbAddress `json:"address"`
 }
 
 func NewAdminConfig(key AdminConfigKey, value string, address common.BnbAddress) AdminConfig {

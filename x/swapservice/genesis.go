@@ -57,8 +57,9 @@ func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		AdminConfigs: []AdminConfig{
 			{
-				Key:   PoolAddressKey,
-				Value: "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6",
+				Key:     PoolAddressKey,
+				Value:   "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6",
+				Address: common.BnbAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"),
 			},
 		},
 		PoolRecords: []Pool{
