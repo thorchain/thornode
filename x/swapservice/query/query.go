@@ -23,16 +23,14 @@ func (q Query) Endpoint(args ...string) string {
 }
 
 func (q Query) Path(args ...string) string {
-	path := fmt.Sprintf("custom/%s/%s", args[0], q.Key)
-	if len(args) > 1 {
-		path = fmt.Sprintf("%s/%s", path, args[1])
-	}
-	return path
+	temp := []string{args[0], q.Key}
+	args = append(temp, args[1:]...)
+	return fmt.Sprintf("custom/%s", strings.Join(args, "/"))
 }
 
 // query endpoints supported by the swapservice Querier
 var (
-	QueryAdminConfig   Query = Query{"adminconfig", "/%s/admin/{%s}"}
+	QueryAdminConfig   Query = Query{"adminconfig", "/%s/admin/{%s}/{%s}"}
 	QueryPoolIndex     Query = Query{"poolindex", "/%s/pooltickers"}
 	QueryPool          Query = Query{"pool", "/%s/pool/{%s}"}
 	QueryPools         Query = Query{"pools", "/%s/pools"}
