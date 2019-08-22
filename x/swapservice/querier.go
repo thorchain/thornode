@@ -177,7 +177,7 @@ func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 		}
 	}
 	config := NewAdminConfig(key, "", bnb)
-	config.Value = keeper.GetAdminConfig(ctx, key, bnb)
+	config.Value = keeper.GetAdminConigValue(ctx, key, bnb)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, config)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal config to json", err)

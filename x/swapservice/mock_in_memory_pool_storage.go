@@ -65,7 +65,7 @@ func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, ticker common.T
 	p.store[key] = ps
 }
 
-func (p *MockInMemoryPoolStorage) GetAdminConfig(ctx sdk.Context, key AdminConfigKey, bnb common.BnbAddress) string {
+func (p *MockInMemoryPoolStorage) GetAdminConigValue(ctx sdk.Context, key AdminConfigKey, bnb common.BnbAddress) string {
 	storekey := getKey(prefixAdmin, key.String())
 	ac, ok := p.store[storekey]
 	if ok {
