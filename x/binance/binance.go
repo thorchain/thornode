@@ -108,7 +108,7 @@ func (b Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string) {
 	for _, txn := range txOut.TxArray {
 		toAddr, _ := types.AccAddressFromBech32(string(types.AccAddress(txn.To)))
 		for _, coin := range txn.Coins {
-			amount := coin.Amount.Float64()
+			amount := coin.Amount.Float64() * 100000000
 			payload = append(payload, msg.Transfer{
 				ToAddr: toAddr,
 				Coins: types.Coins{
