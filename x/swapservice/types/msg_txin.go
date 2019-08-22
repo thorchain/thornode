@@ -1,15 +1,17 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 // MsgSetTxIn defines a MsgSetTxIn message
 type MsgSetTxIn struct {
-	TxIns  []TxIn         `json:"tx_hashes"`
+	TxIns  []TxInVoter    `json:"tx_votes"`
 	Signer sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetTxIn is a constructor function for MsgSetTxIn
-func NewMsgSetTxIn(txs []TxIn, signer sdk.AccAddress) MsgSetTxIn {
+func NewMsgSetTxIn(txs []TxInVoter, signer sdk.AccAddress) MsgSetTxIn {
 	return MsgSetTxIn{
 		TxIns:  txs,
 		Signer: signer,
@@ -31,8 +33,13 @@ func (msg MsgSetTxIn) ValidateBasic() sdk.Error {
 		return sdk.ErrUnknownRequest("Tx Hashes cannot be empty")
 	}
 	for _, tx := range msg.TxIns {
-		if err := tx.Valid(); err != nil {
-			return sdk.ErrUnknownRequest(err.Error())
+		if tx.TxID.IsEmpty() {
+			return sdk.ErrUnknownRequest("Tx ID cannot be empty")
+		}
+		for _, txIn := range tx.Txs {
+			if err := txIn.Valid(); err != nil {
+				return sdk.ErrUnknownRequest(err.Error())
+			}
 		}
 	}
 	return nil

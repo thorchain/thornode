@@ -23,6 +23,7 @@ const (
 	prefixStakerPool       dbPrefix = "stakerpool_"
 	prefixAdmin            dbPrefix = "admin_"
 	prefixTxInIndex        dbPrefix = "txinIndex_"
+	prefixBnbBlockHeight   dbPrefix = "bnbBlockHeight_"
 	prefixInCompleteEvents dbPrefix = "incomplete_events"
 	prefixCompleteEvent    dbPrefix = "complete_event_"
 	prefixLastEventID      dbPrefix = "last_event_id"
@@ -275,15 +276,37 @@ func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStorePrefixIterator(store, []byte(prefixTrustAccount))
 }
 
+// SetObservedBlockHeight - sets the last binance block height we've seen from a specific observer
+func (k Keeper) SetObservedBlockHeight(ctx sdk.Context, height common.Amount, observer sdk.AccAddress) {
+	current := k.GetObservedBlockHeight(ctx, observer)
+	// if height is less than the current height, ignore it
+	if height.LessThen(current.Float64()) {
+		return
+	}
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixBnbBlockHeight, observer.String())
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
+}
+
+// GetObservedBlockHeight - gets the last known block height by specific observer
+func (k Keeper) GetObservedBlockHeight(ctx sdk.Context, observer sdk.AccAddress) common.Amount {
+	key := getKey(prefixBnbBlockHeight, observer.String())
+
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return common.ZeroAmount
+	}
+
+	bz := store.Get([]byte(key))
+	var height common.Amount
+	k.cdc.MustUnmarshalBinaryBare(bz, &height)
+	return height
+}
+
 // SetTxHas - saving a given txhash to the KVStore
 func (k Keeper) SetTxIn(ctx sdk.Context, tx TxIn) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxIn, tx.Key().String())
-	if !store.Has([]byte(key)) {
-		if err := k.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.Key()); nil != err {
-			ctx.Logger().Error("fail to add tx id to txin index", "txid", tx.Key(), "error", err)
-		}
-	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 

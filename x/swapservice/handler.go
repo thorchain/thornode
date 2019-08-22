@@ -175,6 +175,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 		ctx.Logger().Error("fail to encode result to json", "error", err)
 		return sdk.ErrInternal("fail to encode result to json").Result()
 	}
+
 	toi := &TxOutItem{
 		ToAddress: msg.Destination,
 	}
@@ -286,6 +287,9 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 			todo = append(todo, tx)
 		}
 	}
+
+	// set observer Binance height
+	keeper.SetObservedBlockHeight(ctx, msg.BnbBlockHeight, msg.Signer)
 
 	handler := NewHandler(keeper, txOutStore)
 	for _, tx := range todo {
