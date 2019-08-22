@@ -49,14 +49,16 @@ func (k AdminConfigKey) ValidValue(value string) error {
 }
 
 type AdminConfig struct {
-	Key   AdminConfigKey `json:"key"`
-	Value string         `json:"value"`
+	Key     AdminConfigKey    `json:"key"`
+	Value   string            `json:"value"`
+	Address common.BnbAddress `json:"signer"`
 }
 
-func NewAdminConfig(key AdminConfigKey, value string) AdminConfig {
+func NewAdminConfig(key AdminConfigKey, value string, address common.BnbAddress) AdminConfig {
 	return AdminConfig{
-		Key:   key,
-		Value: value,
+		Key:     key,
+		Value:   value,
+		Address: address,
 	}
 }
 
@@ -65,6 +67,9 @@ func (c AdminConfig) Empty() bool {
 }
 
 func (c AdminConfig) Valid() error {
+	if c.Address.IsEmpty() {
+		return fmt.Errorf("Address cannot be empty")
+	}
 	if c.Key == "" {
 		return fmt.Errorf("Key cannot be empty")
 	}
@@ -78,6 +83,10 @@ func (c AdminConfig) Valid() error {
 		return err
 	}
 	return nil
+}
+
+func (c AdminConfig) DbKey() string {
+	return fmt.Sprintf("%s_%s", c.Key.String(), c.Address.String())
 }
 
 func (c AdminConfig) String() string {

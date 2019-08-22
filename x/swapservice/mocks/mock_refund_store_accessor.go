@@ -20,7 +20,7 @@ func NewMockRefundStoreAccessor() *MockRefundStoreAccessor {
 	return &MockRefundStoreAccessor{}
 }
 
-func (mrsa MockRefundStoreAccessor) GetAdminConfigMRRA(ctx sdk.Context) common.Amount {
+func (mrsa MockRefundStoreAccessor) GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
 	v := ctx.Value(RefundAdminConfigKeyMRRA)
 	if ac, ok := v.(common.Amount); ok {
 		return ac

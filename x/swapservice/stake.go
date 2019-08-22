@@ -91,7 +91,7 @@ func stake(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneA
 	fex := su.Units.Float64()
 	stakerUnits += fex
 
-	stakeAmtInterval := keeper.GetAdminConfigStakerAmtInterval(ctx)
+	stakeAmtInterval := keeper.GetAdminConfigStakerAmtInterval(ctx, common.NoBnbAddress)
 	err = validateStakeAmount(ps, stakerUnits, stakeAmtInterval)
 	if err != nil {
 		return errors.Wrapf(err, "invalid stake amount")
