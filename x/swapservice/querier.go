@@ -30,7 +30,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryPoolIndex(ctx, path[1:], req, keeper)
 		case q.QueryTxIn.Key:
 			return queryTxIn(ctx, path[1:], req, keeper)
-		case q.QueryAdminConfig.Key:
+		case q.QueryAdminConfig.Key, q.QueryAdminConfigBnb.Key:
 			return queryAdminConfig(ctx, path[1:], req, keeper)
 		case q.QueryTxOutArray.Key:
 			return queryTxOutArray(ctx, path[1:], req, keeper)

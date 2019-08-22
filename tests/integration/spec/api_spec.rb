@@ -41,6 +41,10 @@ describe "API Tests" do
 
       resp = get("/admin/TSL")
       expect(resp.body['value']).to eq("0.1"), resp.body.inspect
+
+      # check we can get our own setting
+      resp = get("/admin/TSL/#{TRUST_BNB_ADDRESS}")
+      expect(resp.body['value']).to eq("0.1"), resp.body.inspect
     end
   end
 

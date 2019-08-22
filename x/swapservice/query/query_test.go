@@ -16,6 +16,6 @@ func (s QuerySuite) TestQuery(c *C) {
 	c.Check(QueryTxIn.Endpoint("foo", "bar"), Equals, "/foo/tx/{bar}")
 	c.Check(QueryTxIn.Path("foo", "bar"), Equals, "custom/foo/txin/bar")
 
-	c.Check(QueryAdminConfig.Endpoint("foo", "bar", "baz"), Equals, "/foo/admin/{bar}/{baz}")
-	c.Check(QueryAdminConfig.Path("foo", "bar", "baz"), Equals, "custom/foo/adminconfig/bar/baz")
+	c.Check(QueryAdminConfigBnb.Endpoint("foo", "bar", "baz"), Equals, "/foo/admin/{bar}/{baz}")
+	c.Check(QueryAdminConfigBnb.Path("foo", "bar", "baz"), Equals, "custom/foo/adminconfig/bar/baz")
 }

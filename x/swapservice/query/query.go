@@ -30,20 +30,22 @@ func (q Query) Path(args ...string) string {
 
 // query endpoints supported by the swapservice Querier
 var (
-	QueryAdminConfig   Query = Query{"adminconfig", "/%s/admin/{%s}/{%s}"}
-	QueryPoolIndex     Query = Query{"poolindex", "/%s/pooltickers"}
-	QueryPool          Query = Query{"pool", "/%s/pool/{%s}"}
-	QueryPools         Query = Query{"pools", "/%s/pools"}
-	QueryPoolStakers   Query = Query{"poolstakers", "/%s/pool/{%s}/stakers"}
-	QueryStakerPools   Query = Query{"stakerpools", "/%s/staker/{%s}"}
-	QuerySwapRecord    Query = Query{"swaprecord", "/%s/swaprecord/{%s}"}
-	QueryUnStakeRecord Query = Query{"unstakerecord", "/%s/unstakerecord/{%s}"}
-	QueryTxIn          Query = Query{"txin", "/%s/tx/{%s}"}
-	QueryTxOutArray    Query = Query{"txoutarray", "/%s/txoutarray/{%s}"}
+	QueryAdminConfigBnb Query = Query{"adminconfig", "/%s/admin/{%s}/{%s}"}
+	QueryAdminConfig    Query = Query{"adminconfig", "/%s/admin/{%s}"}
+	QueryPoolIndex      Query = Query{"poolindex", "/%s/pooltickers"}
+	QueryPool           Query = Query{"pool", "/%s/pool/{%s}"}
+	QueryPools          Query = Query{"pools", "/%s/pools"}
+	QueryPoolStakers    Query = Query{"poolstakers", "/%s/pool/{%s}/stakers"}
+	QueryStakerPools    Query = Query{"stakerpools", "/%s/staker/{%s}"}
+	QuerySwapRecord     Query = Query{"swaprecord", "/%s/swaprecord/{%s}"}
+	QueryUnStakeRecord  Query = Query{"unstakerecord", "/%s/unstakerecord/{%s}"}
+	QueryTxIn           Query = Query{"txin", "/%s/tx/{%s}"}
+	QueryTxOutArray     Query = Query{"txoutarray", "/%s/txoutarray/{%s}"}
 )
 
 var Queries []Query = []Query{
 	QueryAdminConfig,
+	QueryAdminConfigBnb,
 	QueryPool,
 	QueryPools,
 	QueryPoolStakers,
