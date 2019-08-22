@@ -177,7 +177,11 @@ func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 		}
 	}
 	config := NewAdminConfig(key, "", bnb)
-	config.Value = keeper.GetAdminConigValue(ctx, key, bnb)
+	config.Value, err = keeper.GetAdminConfigValue(ctx, key, bnb)
+	if nil != err {
+		ctx.Logger().Error("fail to get admin config", err)
+		return nil, sdk.ErrInternal("fail to get admin config")
+	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, config)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal config to json", err)

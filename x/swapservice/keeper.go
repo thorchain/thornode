@@ -222,6 +222,16 @@ func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID common.BnbAddress, sp St
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(sp))
 }
 
+// TotalTrustAccounts counts the number of trust accounts
+func (k Keeper) TotalTrustAccounts(ctx sdk.Context) (count int) {
+	taIterator := k.GetTrustAccountIterator(ctx)
+	defer taIterator.Close()
+	for ; taIterator.Valid(); taIterator.Next() {
+		count += 1
+	}
+	return
+}
+
 // IsTrustAccount check whether the account is trust , and can send tx
 func (k Keeper) IsTrustAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
 	ctx.Logger().Debug("IsTrustAccount", "account address", addr.String())
@@ -392,7 +402,7 @@ func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) commo
 
 // GetAdminConfigBnbAddressType - get the config for TSL
 func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue common.BnbAddress, bnb common.BnbAddress) common.BnbAddress {
-	value := k.GetAdminConigValue(ctx, key, bnb)
+	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
 	if value == "" {
 		return dValue // set default
 	}
@@ -401,15 +411,15 @@ func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey
 
 // GetAdminConfigAmountType - get the config for TSL
 func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue common.Amount, bnb common.BnbAddress) common.Amount {
-	value := k.GetAdminConigValue(ctx, key, bnb)
+	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
 	if value == "" {
 		return dValue // return default
 	}
 	return common.Amount(value)
 }
 
-// GetAdminConfig - gets information of a tx hash
-func (k Keeper) GetAdminConigValue(ctx sdk.Context, kkey AdminConfigKey, bnb common.BnbAddress) string {
+// GetAdminConfigValue - gets the value of a given admin key
+func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb common.BnbAddress) (string, error) {
 
 	// If we have a BNB address, lookup the admin configuration for that
 	// individual
@@ -418,13 +428,14 @@ func (k Keeper) GetAdminConigValue(ctx sdk.Context, kkey AdminConfigKey, bnb com
 		key := getKey(prefixAdmin, config.DbKey())
 		store := ctx.KVStore(k.storeKey)
 		if !store.Has([]byte(key)) {
-			return ""
+			return "", nil
 		}
 		buf := store.Get([]byte(key))
 		if err := k.cdc.UnmarshalBinaryBare(buf, &config); nil != err {
-			return ""
+			ctx.Logger().Error(fmt.Sprintf("fail to unmarshal admin config, err: %s", err))
+			return "", errors.Wrap(err, "fail to unmarshal admin config")
 		}
-		return config.Value
+		return config.Value, nil
 	}
 
 	// We don't have a bnb address, find the majority vote for admin config value
@@ -442,12 +453,7 @@ func (k Keeper) GetAdminConigValue(ctx sdk.Context, kkey AdminConfigKey, bnb com
 	}
 
 	// find total number of trusted account
-	var totalTrusted int
-	taIterator := k.GetTrustAccountIterator(ctx)
-	defer taIterator.Close()
-	for ; taIterator.Valid(); taIterator.Next() {
-		totalTrusted += 1
-	}
+	totalTrusted := k.TotalTrustAccounts(ctx)
 
 	// find the most voted on value
 	var ans string
@@ -461,10 +467,10 @@ func (k Keeper) GetAdminConigValue(ctx sdk.Context, kkey AdminConfigKey, bnb com
 
 	// check if we've hit 2/3rds majority
 	if (float64(ansCount) / float64(totalTrusted)) >= 0.666666665 {
-		return ans
+		return ans, nil
 	}
 
-	return ""
+	return "", nil
 }
 
 // GetAdminConfigIterator iterate admin configs
