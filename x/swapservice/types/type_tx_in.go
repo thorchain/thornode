@@ -121,15 +121,25 @@ func (tx TxInVoter) String() string {
 }
 
 func (tx *TxInVoter) SetDone(hash common.TxID) {
-	for _, transaction := range tx.Txs {
-		transaction.SetDone(hash)
+	for i, _ := range tx.Txs {
+		tx.Txs[i].SetDone(hash)
 	}
 }
 
 func (tx *TxInVoter) Add(txIn TxIn, signer sdk.AccAddress) {
+	// check if this signer has already signed, no take backs allowed
 	for _, transaction := range tx.Txs {
-		if transaction.Equals(txIn) {
-			transaction.Sign(signer)
+		for _, siggy := range transaction.Signers {
+			if siggy.Equals(signer) {
+				return
+			}
+		}
+	}
+
+	for i, _ := range tx.Txs {
+		if tx.Txs[i].Equals(txIn) {
+			tx.Txs[i].Sign(signer)
+			return
 		}
 	}
 
