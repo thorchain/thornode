@@ -307,7 +307,13 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 				continue
 			}
 
-			keeper.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.TxID)
+			err = keeper.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.TxID)
+			if nil != err {
+				ctx.Logger().Error("fail to add to tx index", "error", err)
+				refundTx(ctx, voter.GetTx(totalTrusted), txOutStore, keeper)
+				continue
+			}
+
 			handler(ctx, msg)
 		}
 	}
