@@ -57,7 +57,7 @@ func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) 
 
 func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps types.PoolStaker) {}
 
-func (mps MockPoolStorage) GetAdminConfig(ctx sdk.Context, key types.AdminConfigKey, bnb common.BnbAddress) string {
+func (mps MockPoolStorage) GetAdminConigValue(ctx sdk.Context, key types.AdminConfigKey, bnb common.BnbAddress) string {
 	return "FOOBAR"
 }
 func (mps MockPoolStorage) GetAdminConfigStakerAmtInterval(ctx sdk.Context, bnb common.BnbAddress) common.Amount {

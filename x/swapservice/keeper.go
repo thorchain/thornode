@@ -392,7 +392,7 @@ func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) commo
 
 // GetAdminConfigBnbAddressType - get the config for TSL
 func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue common.BnbAddress, bnb common.BnbAddress) common.BnbAddress {
-	value := k.GetAdminConfig(ctx, key, bnb)
+	value := k.GetAdminConigValue(ctx, key, bnb)
 	if value == "" {
 		return dValue // set default
 	}
@@ -401,7 +401,7 @@ func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey
 
 // GetAdminConfigAmountType - get the config for TSL
 func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue common.Amount, bnb common.BnbAddress) common.Amount {
-	value := k.GetAdminConfig(ctx, key, bnb)
+	value := k.GetAdminConigValue(ctx, key, bnb)
 	if value == "" {
 		return dValue // return default
 	}
@@ -409,7 +409,7 @@ func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dV
 }
 
 // GetAdminConfig - gets information of a tx hash
-func (k Keeper) GetAdminConfig(ctx sdk.Context, kkey AdminConfigKey, bnb common.BnbAddress) string {
+func (k Keeper) GetAdminConigValue(ctx sdk.Context, kkey AdminConfigKey, bnb common.BnbAddress) string {
 
 	// If we have a BNB address, lookup the admin configuration for that
 	// individual
