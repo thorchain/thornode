@@ -81,7 +81,7 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 		return errors.Wrap(err, "fail to unmarshal TxOut")
 	}
 	if len(txOut.TxArray) == 0 {
-		b.logger.Debug().Msg("nothing to process")
+		b.logger.Debug().Int64("block", blockHeight).Msg("nothing to process")
 		return nil
 	}
 
