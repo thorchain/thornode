@@ -150,9 +150,9 @@ describe "API Tests" do
       expect(resp.code).to eq("200"), resp.body.inspect
 
       # make a swap
-      coins = [{'denom': "RUNE-B1A", "amount": "0.2"}]
+      coins = [{'denom': "TCAN-014", "amount": "0.2"}]
       tx = makeTx(
-        memo: "swap:TCAN-014:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:0.160053", 
+        memo: "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:0.160053",
         coins: coins,
         hash: txid,
       )
@@ -161,8 +161,8 @@ describe "API Tests" do
 
       resp = get("/pool/TCAN-014")
       expect(resp.code).to eq("200")
-      expect(resp.body['balance_rune']).to eq("3.54850000"), resp.body.inspect
-      expect(resp.body['balance_token']).to eq("22.24541406"), resp.body.inspect
+      expect(resp.body['balance_rune']).to eq("22.24541406"), resp.body.inspect
+      expect(resp.body['balance_token']).to eq("3.54850000"), resp.body.inspect
     end
 
     it "Send outbound tx and mark tx'es as complete" do
@@ -204,8 +204,8 @@ describe "API Tests" do
 
       resp = get("/pool/TCAN-014")
       expect(resp.code).to eq("200")
-      expect(resp.body['balance_rune']).to eq("3.74850000"), resp.body.inspect
-      expect(resp.body['balance_token']).to eq("22.44541406"), resp.body.inspect
+      expect(resp.body['balance_rune']).to eq("22.44541406"), resp.body.inspect
+      expect(resp.body['balance_token']).to eq("3.74850000"), resp.body.inspect
     end
 
     it "adds gas" do
