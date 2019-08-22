@@ -307,6 +307,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 				continue
 			}
 
+			keeper.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.TxID)
 			handler(ctx, msg)
 		}
 	}
@@ -501,13 +502,12 @@ func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.B
 // handleMsgAdd
 func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgAdd %s", msg.TxID))
-	fmt.Printf("Add: %+v\n", msg)
 	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgOutboundTx", "error", err)
+		ctx.Logger().Error("invalid MsgAdd", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 

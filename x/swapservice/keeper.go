@@ -289,7 +289,7 @@ func (k Keeper) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		return TxInVoter{}
+		return TxInVoter{TxID: hash}
 	}
 
 	bz := store.Get([]byte(key))
