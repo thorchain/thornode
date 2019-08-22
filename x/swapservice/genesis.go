@@ -55,12 +55,7 @@ func ValidateGenesis(data GenesisState) error {
 // DefaultGenesisState the default values we put in the Genesis
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		AdminConfigs: []AdminConfig{
-			{
-				Key:   PoolAddressKey,
-				Value: "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6",
-			},
-		},
+		AdminConfigs: []AdminConfig{},
 		PoolRecords: []Pool{
 			{
 				BalanceRune:  "0",
