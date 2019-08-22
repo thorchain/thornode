@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	restURLParam = "param1"
+	restURLParam  = "param1"
+	restURLParam2 = "param2"
 )
 
 // TODO add stake record endpoint
@@ -25,7 +26,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	// Dynamically create endpoints of all funcs in querier.go
 	for _, q := range query.Queries {
 		r.HandleFunc(
-			q.Endpoint(storeName, restURLParam),
+			q.Endpoint(storeName, restURLParam, restURLParam2),
 			getHandlerWrapper(q, storeName, cliCtx),
 		).Methods("GET")
 	}

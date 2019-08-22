@@ -30,7 +30,7 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryPoolIndex(ctx, path[1:], req, keeper)
 		case q.QueryTxIn.Key:
 			return queryTxIn(ctx, path[1:], req, keeper)
-		case q.QueryAdminConfig.Key:
+		case q.QueryAdminConfig.Key, q.QueryAdminConfigBnb.Key:
 			return queryAdminConfig(ctx, path[1:], req, keeper)
 		case q.QueryTxOutArray.Key:
 			return queryTxOutArray(ctx, path[1:], req, keeper)
@@ -166,8 +166,22 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 }
 
 func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	var err error
 	key := GetAdminConfigKey(path[0])
-	config := keeper.GetAdminConfig(ctx, key)
+	bnb := common.NoBnbAddress
+	if len(path) > 1 {
+		bnb, err = common.NewBnbAddress(path[1])
+		if err != nil {
+			ctx.Logger().Error("fail to parse bnb address", err)
+			return nil, sdk.ErrInternal("fail to parse bnb address")
+		}
+	}
+	config := NewAdminConfig(key, "", bnb)
+	config.Value, err = keeper.GetAdminConfigValue(ctx, key, bnb)
+	if nil != err {
+		ctx.Logger().Error("fail to get admin config", err)
+		return nil, sdk.ErrInternal("fail to get admin config")
+	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, config)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal config to json", err)

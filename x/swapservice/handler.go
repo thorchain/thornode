@@ -116,8 +116,8 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
-	tsl := keeper.GetAdminConfigTSL(ctx)
-	gsl := keeper.GetAdminConfigGSL(ctx)
+	tsl := keeper.GetAdminConfigTSL(ctx, common.NoBnbAddress)
+	gsl := keeper.GetAdminConfigGSL(ctx, common.NoBnbAddress)
 
 	amount, err := swap(
 		ctx,
@@ -490,7 +490,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 	}
 
 	// ensure the bnb address this tx was sent from is from our pool
-	poolAddress := keeper.GetAdminConfigPoolAddress(ctx)
+	poolAddress := keeper.GetAdminConfigPoolAddress(ctx, common.NoBnbAddress)
 	if !poolAddress.Equals(msg.Sender) {
 		ctx.Logger().Error("message sent by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()

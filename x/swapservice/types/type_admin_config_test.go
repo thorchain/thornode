@@ -1,6 +1,7 @@
 package types
 
 import (
+	common "gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 )
 
@@ -18,17 +19,19 @@ func (s AdminConfigSuite) TestGetKey(c *C) {
 
 func (s AdminConfigSuite) TestAdminConfig(c *C) {
 	amts := []string{"GSL", "TSL", "StakerAmtInterval"}
+	addr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	c.Assert(err, IsNil)
 	for _, amt := range amts {
-		config := NewAdminConfig(GetAdminConfigKey(amt), "12") // happy path
+		config := NewAdminConfig(GetAdminConfigKey(amt), "12", addr) // happy path
 		c.Check(config.Valid(), IsNil, Commentf("%s", amt))
-		config = NewAdminConfig(GetAdminConfigKey(amt), "abc") // invalid value
+		config = NewAdminConfig(GetAdminConfigKey(amt), "abc", addr) // invalid value
 		c.Check(config.Valid(), NotNil, Commentf("%s", amt))
 	}
 	bnbs := []string{"PoolAddress"}
 	for _, bnb := range bnbs {
-		config := NewAdminConfig(GetAdminConfigKey(bnb), "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6") // happy path
+		config := NewAdminConfig(GetAdminConfigKey(bnb), "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6", addr) // happy path
 		c.Check(config.Valid(), IsNil, Commentf("%s", bnb))
-		config = NewAdminConfig(GetAdminConfigKey(bnb), "abc") // invalid value
+		config = NewAdminConfig(GetAdminConfigKey(bnb), "abc", addr) // invalid value
 		c.Check(config.Valid(), NotNil, Commentf("%s", bnb))
 	}
 }
