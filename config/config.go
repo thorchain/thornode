@@ -47,6 +47,7 @@ type SignerConfiguration struct {
 	BlockScannerConfiguration BlockScannerConfiguration `json:"block_scanner_configuration"`
 	Binance                   BinanceConfiguration      `json:"binance"`
 	StateChainConfiguration   StateChainConfiguration   `json:"state_chain_configuration"`
+	RetryInterval             time.Duration             `json:"retry_interval" default:"2s" env:"SIGNER_RETRY_INTERVAL"`
 }
 
 // BinanceConfiguration all the configurations for binance client
