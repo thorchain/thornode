@@ -464,8 +464,8 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb co
 		}
 	}
 
-	// check if we've hit 2/3rds majority
-	if (float64(ansCount) / float64(totalTrusted)) >= 0.666666665 {
+	// check if we've hit majority
+	if HasMajority(ansCount, totalTrusted) {
 		return ans, nil
 	}
 

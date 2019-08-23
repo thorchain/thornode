@@ -10,8 +10,6 @@ import (
 type status string
 type TxInIndex []common.TxID
 
-const majority float64 = 0.666665
-
 const (
 	Incomplete status = "incomplete"
 	Done       status = "done"
@@ -156,7 +154,7 @@ func (tx *TxInVoter) Adds(txs []TxIn, signer sdk.AccAddress) {
 
 func (tx TxInVoter) HasConensus(totalTrusted int) bool {
 	for _, txIn := range tx.Txs {
-		if float64(len(txIn.Signers))/float64(totalTrusted) > majority {
+		if HasMajority(len(txIn.Signers), totalTrusted) {
 			return true
 		}
 	}
@@ -166,7 +164,7 @@ func (tx TxInVoter) HasConensus(totalTrusted int) bool {
 
 func (tx TxInVoter) GetTx(totalTrusted int) TxIn {
 	for _, txIn := range tx.Txs {
-		if float64(len(txIn.Signers))/float64(totalTrusted) > majority {
+		if HasMajority(len(txIn.Signers), totalTrusted) {
 			return txIn
 		}
 	}

@@ -41,6 +41,7 @@ var (
 	NewMsgOutboundTx     = types.NewMsgOutboundTx
 	NewPoolStaker        = types.NewPoolStaker
 	NewStakerPool        = types.NewStakerPool
+	HasMajority          = types.HasMajority
 	GetPoolStatus        = types.GetPoolStatus
 	GetAdminConfigKey    = types.GetAdminConfigKey
 	ModuleCdc            = types.ModuleCdc
