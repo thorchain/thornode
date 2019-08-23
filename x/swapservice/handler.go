@@ -297,9 +297,9 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 		postConsensus := voter.HasConensus(totalTrusted)
 		keeper.SetTxInVoter(ctx, voter)
 
-		// TODO: if we change the number of trusted accounts, this will double
-		// spend
-		if preConsensus == false && postConsensus == true {
+		if preConsensus == false && postConsensus == true && !voter.IsProcessed {
+			voter.IsProcessed = true
+			keeper.SetTxInVoter(ctx, voter)
 			msg, err := processOneTxIn(ctx, keeper, tx.TxID, voter.GetTx(totalTrusted), msg.Signer)
 			if nil != err {
 				ctx.Logger().Error("fail to process txHash", "error", err)
@@ -307,13 +307,8 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 				continue
 			}
 
-			err = keeper.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.TxID)
-			if nil != err {
-				ctx.Logger().Error("fail to add to tx index", "error", err)
-				refundTx(ctx, voter.GetTx(totalTrusted), txOutStore, keeper)
-				continue
-			}
-
+			// ignoring the error
+			_ = keeper.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.TxID)
 			handler(ctx, msg)
 		}
 	}
