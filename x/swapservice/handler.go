@@ -454,6 +454,9 @@ func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 	}
 
 	pool := keeper.GetPool(ctx, msg.Ticker)
+	if pool.Ticker.IsEmpty() {
+		return sdk.ErrUnknownRequest(fmt.Sprintf("pool %s not exist", msg.Ticker)).Result()
+	}
 	if msg.TokenAmount.GreaterThen(0) {
 		pool.BalanceToken = pool.BalanceToken.Plus(msg.TokenAmount)
 	}
