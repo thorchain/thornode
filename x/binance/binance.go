@@ -1,8 +1,7 @@
 package binance
 
 import (
-	"github.com/pkg/errors"
-	"github.com/rs/zerolog/log"
+	"net/url"
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/client/basic"
@@ -11,6 +10,9 @@ import (
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
@@ -18,6 +20,8 @@ import (
 )
 
 type Binance struct {
+	logger      zerolog.Logger
+	cfg         config.BinanceConfiguration
 	Client      sdk.DexClient
 	BasicClient basic.BasicClient
 	QueryClient query.QueryClient
@@ -38,8 +42,15 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create private key manager")
 	}
-
-	bClient, err := sdk.NewDexClient(cfg.DEXHost, types.TestNetwork, keyManager)
+	t, err := isTestNet(cfg.DEXHost)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to determinate testnet or mainnet")
+	}
+	chainNetwork := types.TestNetwork
+	if !t {
+		chainNetwork = types.ProdNetwork
+	}
+	bClient, err := sdk.NewDexClient(cfg.DEXHost, chainNetwork, keyManager)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create binance client")
 	}
@@ -48,6 +59,8 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 	queryClient := query.NewClient(basicClient)
 
 	return &Binance{
+		logger:      log.With().Str("module", "binance").Logger(),
+		cfg:         cfg,
 		Client:      bClient,
 		BasicClient: basicClient,
 		QueryClient: queryClient,
@@ -56,57 +69,65 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 	}, nil
 }
 
-func (b Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {
-	input := msg.Input{
+const (
+	testNetUrl = "testnet-dex.binance.org"
+)
+
+func isTestNet(dexHost string) (bool, error) {
+	dexUrl, err := url.Parse(dexHost)
+	if nil != err {
+		return true, errors.Wrapf(err, "fail to parse dexhost(%s)", dexHost)
+	}
+	if dexUrl.Host == testNetUrl {
+		return true, nil
+	}
+	return false, nil
+}
+func (b *Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {
+	return msg.Input{
 		Address: addr,
 		Coins:   coins,
 	}
-
-	return input
 }
 
-func (b Binance) Output(addr types.AccAddress, coins types.Coins) msg.Output {
-	output := msg.Output{
+func (b *Binance) Output(addr types.AccAddress, coins types.Coins) msg.Output {
+	return msg.Output{
 		Address: addr,
 		Coins:   coins,
 	}
-
-	return output
 }
 
-func (b Binance) MsgToSend(in []msg.Input, out []msg.Output) msg.SendMsg {
+func (b *Binance) MsgToSend(in []msg.Input, out []msg.Output) msg.SendMsg {
 	return msg.SendMsg{Inputs: in, Outputs: out}
 }
 
-func (b Binance) CreateMsg(from types.AccAddress, fromCoins types.Coins, transfers []msg.Transfer) msg.SendMsg {
+func (b *Binance) CreateMsg(from types.AccAddress, fromCoins types.Coins, transfers []msg.Transfer) msg.SendMsg {
 	input := b.Input(from, fromCoins)
-
 	output := make([]msg.Output, 0, len(transfers))
 	for _, t := range transfers {
 		t.Coins = t.Coins.Sort()
 		output = append(output, b.Output(t.ToAddr, t.Coins))
 	}
-
-	msg := b.MsgToSend([]msg.Input{input}, output)
-	return msg
+	return b.MsgToSend([]msg.Input{input}, output)
 }
 
-func (b Binance) ParseTx(transfers []msg.Transfer) msg.SendMsg {
+func (b *Binance) ParseTx(transfers []msg.Transfer) msg.SendMsg {
 	fromAddr := b.KeyManager.GetAddr()
 	fromCoins := types.Coins{}
 	for _, t := range transfers {
 		t.Coins = t.Coins.Sort()
 		fromCoins = fromCoins.Plus(t.Coins)
 	}
-
-	sendMsg := b.CreateMsg(fromAddr, fromCoins, transfers)
-	return sendMsg
+	return b.CreateMsg(fromAddr, fromCoins, transfers)
 }
 
-func (b Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string) {
+func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) {
 	var payload []msg.Transfer
 	for _, txn := range txOut.TxArray {
-		toAddr, _ := types.AccAddressFromBech32(string(types.AccAddress(txn.To)))
+		toAddr, err := types.AccAddressFromBech32(txn.To)
+		if nil != err {
+			return nil, nil, errors.Wrapf(err, "fail to parse account address(%s)", txn.To)
+		}
 		for _, coin := range txn.Coins {
 			amount := coin.Amount.Float64() * 100000000
 			payload = append(payload, msg.Transfer{
@@ -120,16 +141,14 @@ func (b Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string) {
 			})
 		}
 	}
-
-	sendMsg := b.ParseTx(payload)
-
 	fromAddr := b.KeyManager.GetAddr()
+	sendMsg := b.ParseTx(payload)
 	acc, err := b.QueryClient.GetAccount(fromAddr.String())
 	if err != nil {
-		log.Error().Msgf("Error: %v", err)
+		return nil, nil, errors.Wrap(err, "fail to get account info")
 	}
 
-	signMsg := &tx.StdSignMsg{
+	signMsg := tx.StdSignMsg{
 		ChainID:       b.chainId,
 		Memo:          btypes.TxOutMemoPrefix + txOut.Height,
 		Msgs:          []msg.Msg{sendMsg},
@@ -138,20 +157,29 @@ func (b Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string) {
 		AccountNumber: acc.Number,
 	}
 
-	hexTx, _ := b.KeyManager.Sign(*signMsg)
-	param := map[string]string{}
-	param["sync"] = "true"
-
-	return hexTx, param
+	hexTx, err := b.KeyManager.Sign(signMsg)
+	if nil != err {
+		return nil, nil, errors.Wrap(err, "fail to sign message")
+	}
+	param := map[string]string{
+		"sync": "true",
+	}
+	return hexTx, param, nil
 }
 
-func (b Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
+func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
 	commits, err := b.Client.PostTx(hexTx, param)
 	if err != nil {
-		log.Error().Msgf("Error: %v", err)
-		return nil, err
+		return nil, errors.Wrap(err, "fail to broadcast tx to ")
 	}
-
-	log.Info().Msgf("Commit Response from Binance: %v", commits[0])
+	for _, commitResult := range commits {
+		b.logger.Debug().
+			Bool("ok", commitResult.Ok).
+			Str("log", commitResult.Log).
+			Str("hash", commitResult.Hash).
+			Int32("code", commitResult.Code).
+			Str("data", commitResult.Data).
+			Msg("get commit response from binance")
+	}
 	return &commits[0], nil
 }
