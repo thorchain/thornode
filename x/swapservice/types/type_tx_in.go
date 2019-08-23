@@ -101,8 +101,9 @@ func (tx *TxIn) SetReverted(hash common.TxID) {
 }
 
 type TxInVoter struct {
-	TxID common.TxID `json:"tx_id"`
-	Txs  []TxIn      `json:"txs"`
+	TxID        common.TxID `json:"tx_id"`
+	Txs         []TxIn      `json:"txs"`
+	IsProcessed bool        `json:"is_processed"`
 }
 
 func NewTxInVoter(txID common.TxID, txs []TxIn) TxInVoter {
