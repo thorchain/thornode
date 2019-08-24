@@ -30,7 +30,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create statechain scan storage")
 	}
-	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScannerConfiguration, stateChainScanStorage, cfg.StateChainConfiguration.ChainHost)
+	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScanner, stateChainScanStorage, cfg.StateChain.ChainHost)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create state chain block scan")
 	}
@@ -50,7 +50,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 }
 
 func (s *Signer) Start() error {
-	for idx := s.cfg.MessageProcessor; idx <= s.cfg.MessageProcessor*2; idx++ {
+	for idx := 1; idx <= s.cfg.MessageProcessor; idx++ {
 		s.wg.Add(1)
 		go s.processTxnOut(s.stateChainBlockScanner.GetMessages(), idx)
 	}
@@ -154,6 +154,10 @@ func (s *Signer) signAndSendToBinanceChain(txOut types.TxOut) error {
 	hexTx, param, err := s.Binance.SignTx(txOut)
 	if nil != err {
 		s.logger.Error().Err(err).Msg("fail to sign txOut")
+	}
+	if nil == hexTx {
+		// nothing need to be send
+		return nil
 	}
 
 	log.Info().Msgf("Generated a signature for Binance: %s", string(hexTx))

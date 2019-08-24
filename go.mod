@@ -8,13 +8,13 @@ require (
 	github.com/cosmos/cosmos-sdk v0.36.0-rc1
 	github.com/gorilla/websocket v1.4.0
 	github.com/hashicorp/go-retryablehttp v0.5.4
-	github.com/jinzhu/configor v1.1.1
 	github.com/pkg/errors v0.8.1
 	github.com/rs/zerolog v1.14.3
 	github.com/spf13/pflag v1.0.3
+	github.com/spf13/viper v1.3.2
 	github.com/syndtr/goleveldb v1.0.1-0.20190318030020-c3a204f8e965
 	github.com/valyala/fasthttp v1.4.0
-	gitlab.com/thorchain/bepswap/common v0.0.0-20190816093251-b84c21cee45c
+	gitlab.com/thorchain/bepswap/common v0.0.0-20190823123750-2e16dc69db55
 	gitlab.com/thorchain/bepswap/statechain v0.0.0-20190817014219-e1e1a77d6935
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 )

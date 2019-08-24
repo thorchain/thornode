@@ -9,7 +9,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gitlab.com/thorchain/bepswap/common"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/blockscanner"
@@ -85,13 +84,6 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 		return nil
 	}
 
-	for i, txArr := range txOut.TxArray {
-
-		for j, coin := range txArr.Coins {
-			amt := coin.Amount.Float64()
-			txOut.TxArray[i].Coins[j].Amount = common.Amount(fmt.Sprintf("%.0f", amt))
-		}
-	}
 	b.txOutChan <- txOut
 	return nil
 }
