@@ -70,11 +70,14 @@ func getRefundCoin(ctx sdk.Context, ticker common.Ticker, amount common.Amount, 
 			return common.NewCoin(ticker, common.ZeroAmount)
 		}
 	}
+	ctx.Logger().Debug("refund coin", "minimumRefundRune", minimumRefundRune)
 	pool := keeper.GetPool(ctx, ticker)
 	poolTokenPrice := pool.TokenPriceInRune()
 	totalRuneAmt := amount.Float64() * poolTokenPrice
+	ctx.Logger().Debug("refund coin", "pool price", poolTokenPrice, "total rune amount", totalRuneAmt)
 	if totalRuneAmt > minimumRefundRune.Float64() {
-		return common.NewCoin(ticker, common.NewAmountFromFloat(amount.Float64()-poolTokenPrice*minimumRefundRune.Float64()))
+		tokenToRefund := (totalRuneAmt - minimumRefundRune.Float64()) / poolTokenPrice
+		return common.NewCoin(ticker, common.NewAmountFromFloat(tokenToRefund))
 	}
 	return common.NewCoin(ticker, common.ZeroAmount)
 }
