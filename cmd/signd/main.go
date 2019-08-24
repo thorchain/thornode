@@ -8,7 +8,6 @@ import (
 	"syscall"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/jinzhu/configor"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	flag "github.com/spf13/pflag"
@@ -36,7 +35,7 @@ func main() {
 	// TODO set the default log level to info later
 	logLevel := flag.StringP("loglevel", "l", "debug", "Log Level")
 	pretty := flag.BoolP("pretty-log", "p", false, "Enables unstructured prettified logging. This is useful for local debugging")
-	cfgFile := flag.StringP("cfg", "c", "config.json", "configuration file path name")
+	cfgFile := flag.StringP("cfg", "c", "config", "configuration file name without extention")
 	flag.Parse()
 	if *showVersion {
 		printVersion()
@@ -46,11 +45,11 @@ func main() {
 	cosmosSDKConfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
 	cosmosSDKConfg.Seal()
 	initLog(*logLevel, *pretty)
-	var cfg config.SignerConfiguration
-	if err := configor.Load(&cfg, *cfgFile); nil != err {
-		log.Fatal().Err(err).Msg("fail to read from config file")
+	cfg, err := config.LoadSignerConfig(*cfgFile)
+	if nil != err {
+		log.Fatal().Err(err).Msg("fail to load signer configuration")
 	}
-	s, err := signer.NewSigner(cfg)
+	s, err := signer.NewSigner(*cfg)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create instance of signer")
 	}

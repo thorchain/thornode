@@ -1,7 +1,7 @@
 package binance
 
 import (
-	"net/url"
+	"strings"
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/client/basic"
@@ -13,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"gitlab.com/thorchain/bepswap/common"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
@@ -42,12 +43,8 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create private key manager")
 	}
-	t, err := isTestNet(cfg.DEXHost)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to determinate testnet or mainnet")
-	}
 	chainNetwork := types.TestNetwork
-	if !t {
+	if !isTestNet(cfg.DEXHost) {
 		chainNetwork = types.ProdNetwork
 	}
 	bClient, err := sdk.NewDexClient(cfg.DEXHost, chainNetwork, keyManager)
@@ -73,15 +70,8 @@ const (
 	testNetUrl = "testnet-dex.binance.org"
 )
 
-func isTestNet(dexHost string) (bool, error) {
-	dexUrl, err := url.Parse(dexHost)
-	if nil != err {
-		return true, errors.Wrapf(err, "fail to parse dexhost(%s)", dexHost)
-	}
-	if dexUrl.Host == testNetUrl {
-		return true, nil
-	}
-	return false, nil
+func isTestNet(dexHost string) bool {
+	return strings.Contains(dexHost, testNetUrl)
 }
 func (b *Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {
 	return msg.Input{
@@ -130,16 +120,23 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 		}
 		for _, coin := range txn.Coins {
 			amount := coin.Amount.Float64() * 100000000
+			ticker := coin.Denom
+			if common.IsRune(coin.Denom) {
+				ticker = common.RuneA1FTicker
+			}
 			payload = append(payload, msg.Transfer{
 				ToAddr: toAddr,
 				Coins: types.Coins{
 					types.Coin{
-						Denom:  coin.Denom.String(),
+						Denom:  ticker.String(),
 						Amount: int64(amount),
 					},
 				},
 			})
 		}
+	}
+	if len(payload) == 0 {
+		return nil, nil, nil
 	}
 	fromAddr := b.KeyManager.GetAddr()
 	sendMsg := b.ParseTx(payload)

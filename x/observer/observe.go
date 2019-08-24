@@ -37,11 +37,11 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create scan storage")
 	}
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScannerConfiguration, scanStorage, cfg.DEXHost, cfg.PoolAddress)
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, cfg.DEXHost, cfg.PoolAddress)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
-	stateChainBridge, err := statechain.NewStateChainBridge(cfg.StateChainConfiguration)
+	stateChainBridge, err := statechain.NewStateChainBridge(cfg.StateChain)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create new state chain bridge")
 	}
@@ -57,10 +57,12 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	}, nil
 }
 
-func (o *Observer) Start() error {
-	for idx := 1; idx <= o.cfg.MessageProcessor; idx++ {
-		o.wg.Add(1)
-		go o.txinsProcessor(o.WebSocket.GetMessages(), idx)
+func (o *Observer) Start(websocket bool) error {
+	if websocket {
+		for idx := 1; idx <= o.cfg.MessageProcessor; idx++ {
+			o.wg.Add(1)
+			go o.txinsProcessor(o.WebSocket.GetMessages(), idx)
+		}
 	}
 	for idx := o.cfg.MessageProcessor; idx <= o.cfg.MessageProcessor*2; idx++ {
 		o.wg.Add(1)
@@ -70,7 +72,10 @@ func (o *Observer) Start() error {
 	o.wg.Add(1)
 	go o.retryTxProcessor()
 	o.blockScanner.Start()
-	return o.WebSocket.Start()
+	if websocket {
+		return o.WebSocket.Start()
+	}
+	return nil
 }
 
 func (o *Observer) retryAllTx() {

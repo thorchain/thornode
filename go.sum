@@ -100,8 +100,6 @@ github.com/hpcloud/tail v1.0.0/go.mod h1:ab1qPbhIpdTxEkNHXyeSf5vhxWSCs/tWer42PpO
 github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NHg9XEKhtSvM=
 github.com/inconshreveable/mousetrap v1.0.0/go.mod h1:PxqpIevigyE2G7u3NXJIT2ANytuPF1OarO4DADm73n8=
 github.com/jessevdk/go-flags v0.0.0-20141203071132-1679536dcc89/go.mod h1:4FA24M0QyGHXBuZZK/XkWh8h0e1EYbRYJSGM75WSRxI=
-github.com/jinzhu/configor v1.1.1 h1:gntDP+ffGhs7aJ0u8JvjCDts2OsxsI7bnz3q+jC+hSY=
-github.com/jinzhu/configor v1.1.1/go.mod h1:nX89/MOmDba7ZX7GCyU/VIaQ2Ar2aizBl2d3JLF/rDc=
 github.com/jmhodges/levigo v0.0.0-20161115193449-c42d9e0ca023/go.mod h1:Q6Qx+uH3RAqyK4rFQroq9RL7mdkABMcfhEI+nNuzMJQ=
 github.com/jmhodges/levigo v1.0.0 h1:q5EC36kV79HWeTBWsod3mG11EgStG3qArTKcvlksN1U=
 github.com/jmhodges/levigo v1.0.0/go.mod h1:Q6Qx+uH3RAqyK4rFQroq9RL7mdkABMcfhEI+nNuzMJQ=
@@ -223,6 +221,8 @@ github.com/zondax/ledger-go v0.9.0 h1:oTrtFqPFA4VdCPRvqMaN45mQnJxkPc0JxoVZfCoUpj
 github.com/zondax/ledger-go v0.9.0/go.mod h1:b2vIcu3u9gJoIx4kTWuXOgzGV7FPWeUktqRqVf6feG0=
 gitlab.com/thorchain/bepswap/common v0.0.0-20190816093251-b84c21cee45c h1:YZLdSMFcw89mlQ+4MqX+hnPDGlKC1T96mNwVVHN+F2M=
 gitlab.com/thorchain/bepswap/common v0.0.0-20190816093251-b84c21cee45c/go.mod h1:Cxjrpwid6UitrHIARhFR360IirTbqtYjrVGsT0a2H9k=
+gitlab.com/thorchain/bepswap/common v0.0.0-20190823123750-2e16dc69db55 h1:v45g8K9JHggVTYo9jn+W+rHZRKvpFn3fGBeDRMBu0ac=
+gitlab.com/thorchain/bepswap/common v0.0.0-20190823123750-2e16dc69db55/go.mod h1:Cxjrpwid6UitrHIARhFR360IirTbqtYjrVGsT0a2H9k=
 gitlab.com/thorchain/bepswap/statechain v0.0.0-20190817014219-e1e1a77d6935 h1:TpJGMOUI8MZN0FEWI3phnu92MfXET8waDshz3Srvy5k=
 gitlab.com/thorchain/bepswap/statechain v0.0.0-20190817014219-e1e1a77d6935/go.mod h1:sEZ1KONkTOdZTQPnZStpi9iACRmLF1rqXeblhTukLWM=
 go.etcd.io/bbolt v1.3.3 h1:MUGmc65QhB3pIlaQ5bB4LwqSj6GIonVJXpZiaKNyaKk=
