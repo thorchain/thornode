@@ -133,5 +133,5 @@ func (ps Pool) TokenPriceInRune() float64 {
 	if ps.BalanceRune.IsZero() || ps.BalanceRune.IsEmpty() || ps.BalanceToken.IsZero() || ps.BalanceToken.IsEmpty() {
 		return common.ZeroAmount.Float64()
 	}
-	return ps.BalanceToken.Float64() / ps.BalanceRune.Float64()
+	return ps.BalanceRune.Float64() / ps.BalanceToken.Float64()
 }
