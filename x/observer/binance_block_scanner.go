@@ -198,19 +198,19 @@ func (b *BinanceBlockScanner) fromApiTxToTxInItem(txInput btypes.ApiTx) (*stypes
 	txInItem := stypes.TxInItem{
 		Tx: txInput.Hash,
 	}
-
 	for _, msg := range txInput.Tx.Value.Msg {
-		// TODO check msg type , we probably only care about transfer
-		for j, output := range msg.Value.Outputs {
+		if len(msg.Value.Inputs) == 0 {
+			continue
+		}
+		sender := msg.Value.Inputs[0]
+		for _, output := range msg.Value.Outputs {
 			if !strings.EqualFold(output.Address, b.poolAddress.String()) {
 				continue
 			}
 			existTx = true
-			sender := msg.Value.Inputs[j]
 			txInItem.Memo = txInput.Tx.Value.Memo
 			txInItem.Sender = sender.Address
-			// TODO shouldn be output
-			for _, coin := range sender.Coins {
+			for _, coin := range output.Coins {
 				ticker, err := common.NewTicker(coin.Denom)
 				if nil != err {
 					return nil, errors.Wrapf(err, "fail to create ticker, %s is not valid", coin.Denom)

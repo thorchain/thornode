@@ -8,7 +8,6 @@ import (
 	"syscall"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/jinzhu/configor"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	flag "github.com/spf13/pflag"
@@ -37,7 +36,8 @@ func main() {
 	// TODO set the default log level to info later
 	logLevel := flag.StringP("log-level", "l", "debug", "Log Level")
 	pretty := flag.BoolP("pretty-log", "p", false, "Enables unstructured prettified logging. This is useful for local debugging")
-	cfgFile := flag.StringP("cfg", "c", "config.json", "configuration file path name")
+	cfgFile := flag.StringP("cfg", "c", "config", "configuration file with extension")
+	websocket := flag.BoolP("websocket", "w", false, "start web socket or not")
 	flag.Parse()
 	if *showVersion {
 		printVersion()
@@ -47,15 +47,15 @@ func main() {
 	cosmosSDKConfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
 	cosmosSDKConfg.Seal()
 	initLog(*logLevel, *pretty)
-	var cfg config.Configuration
-	if err := configor.Load(&cfg, *cfgFile); nil != err {
-		log.Fatal().Err(err).Msg("fail to read from config file")
+	cfg, err := config.LoadObserverConfig(*cfgFile)
+	if nil != err {
+		log.Fatal().Err(err).Msg("fail to load observer config ")
 	}
-	obs, err := observer.NewObserver(cfg)
+	obs, err := observer.NewObserver(*cfg)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create observer")
 	}
-	if err := obs.Start(); nil != err {
+	if err := obs.Start(*websocket); nil != err {
 		log.Fatal().Err(err).Msg("fail to start observer")
 	}
 	ch := make(chan os.Signal, 1)

@@ -129,7 +129,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 			b.logger.Info().Int64("current block height", currentBlock).Int64("we are at", b.previousBlock).Msg("get block height")
 			if b.previousBlock >= currentBlock {
 				// back off
-				time.Sleep(time.Second * 5)
+				time.Sleep(b.cfg.BlockHeightDiscoverBackoff)
 				continue
 			}
 			if currentBlock > b.previousBlock {
@@ -184,9 +184,11 @@ func (b *CommonBlockScanner) GetFromHttpWithRetry(url string) ([]byte, error) {
 func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 	b.logger.Debug().Str("url", url).Msg("http")
 	req := fasthttp.AcquireRequest()
+	req.Reset()
 	defer fasthttp.ReleaseRequest(req)
 	req.SetRequestURI(url)
 	resp := fasthttp.AcquireResponse()
+	resp.Reset()
 	defer fasthttp.ReleaseResponse(resp)
 	if err := b.httpClient.Do(req, resp); nil != err {
 		return nil, errors.Wrapf(err, "fail to get from %s ", url)
@@ -206,6 +208,11 @@ func (b *CommonBlockScanner) getBlockUrl() string {
 	return requestUrl.String()
 }
 func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {
+	defer func() {
+		if err := recover(); nil != err {
+			b.logger.Error().Msgf("fail to get RPCBlock:%s", err)
+		}
+	}()
 	buf, err := b.GetFromHttpWithRetry(requestUrl)
 	if nil != err {
 		return 0, errors.Wrap(err, "fail to get blocks")
