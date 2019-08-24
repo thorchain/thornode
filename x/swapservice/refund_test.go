@@ -90,6 +90,14 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(4)),
 		},
 		{
+			name:                "MRRA-BNB-refund-normal-1",
+			minimumRefundAmount: common.NewAmountFromFloat(1.0),
+			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(1)),
+			ticker:              bnbTicker,
+			amount:              common.NewAmountFromFloat(5),
+			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(4.99)),
+		},
+		{
 			name:                "MRRA-BNB-no-refund",
 			minimumRefundAmount: common.NewAmountFromFloat(1.0),
 			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
@@ -233,4 +241,5 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	processRefund(ctx, &resultNoop, store, refundStoreAccessor, swapNoop)
 	store.CommitBlock(ctx)
 	c.Assert(len(store.blockOut.TxArray), Equals, 0)
+
 }
