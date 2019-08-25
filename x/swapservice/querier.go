@@ -34,6 +34,10 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryAdminConfig(ctx, path[1:], req, keeper)
 		case q.QueryTxOutArray.Key:
 			return queryTxOutArray(ctx, path[1:], req, keeper)
+		case q.QueryIncompleteEvents.Key:
+			return queryInCompleteEvents(ctx, path[1:], req, keeper)
+		case q.QueryCompleteEvents.Key:
+			return queryCompleteEvents(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown swapservice query endpoint: %s", path[0]),
@@ -186,6 +190,46 @@ func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 	if nil != err {
 		ctx.Logger().Error("fail to marshal config to json", err)
 		return nil, sdk.ErrInternal("fail to marshal config to json")
+	}
+	return res, nil
+}
+
+func queryInCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	events, err := keeper.GetIncompleteEvents(ctx)
+	if nil != err {
+		ctx.Logger().Error("fail to get incomplete events", err)
+		return nil, sdk.ErrInternal("fail to get incomplete events")
+	}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, events)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal events to json", err)
+		return nil, sdk.ErrInternal("fail to marshal events to json")
+	}
+	return res, nil
+}
+
+func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	id, err := strconv.ParseInt(path[0], 10, 64)
+	if err != nil {
+		ctx.Logger().Error("fail to discover id number", err)
+		return nil, sdk.ErrInternal("fail to discover id number")
+	}
+
+	limit := int64(100) // limit the number of events, aka pagination
+	var events Events
+	for i := id; i <= id+limit; i++ {
+		event, _ := keeper.GetCompletedEvent(ctx, i)
+		if !event.Empty() {
+			events = append(events, event)
+		} else {
+			break
+		}
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, events)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal events to json", err)
+		return nil, sdk.ErrInternal("fail to marshal events to json")
 	}
 	return res, nil
 }
