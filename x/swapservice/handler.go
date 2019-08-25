@@ -565,6 +565,9 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 		keeper.SetTxIn(ctx, in)
 	}
 
+	// complete events
+	keeper.CompleteEvents(ctx, index, msg.TxID)
+
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := keeper.GetTxOut(ctx, msg.Height)
 	if err != nil {
