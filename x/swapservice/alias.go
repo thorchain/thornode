@@ -69,4 +69,6 @@ type (
 	AdminConfig       = types.AdminConfig
 	StakerPoolItem    = types.StakerPoolItem
 	StakeTxDetail     = types.StakeTxDetail
+	Event             = types.Event
+	Events            = types.Events
 )

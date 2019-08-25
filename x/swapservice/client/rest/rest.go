@@ -25,10 +25,13 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 
 	// Dynamically create endpoints of all funcs in querier.go
 	for _, q := range query.Queries {
-		r.HandleFunc(
-			q.Endpoint(storeName, restURLParam, restURLParam2),
-			getHandlerWrapper(q, storeName, cliCtx),
-		).Methods("GET")
+		q.Endpoint(storeName, restURLParam, restURLParam2)
+		if endpoint != "" { // don't setup REST endpoint if we have no endpoint
+			r.HandleFunc(
+				endpoint,
+				getHandlerWrapper(q, storeName, cliCtx),
+			).Methods("GET")
+		}
 	}
 
 	// Get unsigned json for emitting a binance transaction. Validators only.
