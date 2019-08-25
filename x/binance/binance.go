@@ -54,7 +54,6 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 
 	basicClient := basic.NewClient(cfg.DEXHost)
 	queryClient := query.NewClient(basicClient)
-
 	return &Binance{
 		logger:      log.With().Str("module", "binance").Logger(),
 		cfg:         cfg,
@@ -71,7 +70,7 @@ const (
 )
 
 func isTestNet(dexHost string) bool {
-	return strings.Contains(dexHost, testNetUrl)
+	return strings.Contains(dexHost, testNetUrl) || strings.Contains(dexHost, "127.0.0.1")
 }
 func (b *Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {
 	return msg.Input{
@@ -80,35 +79,35 @@ func (b *Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {
 	}
 }
 
-func (b *Binance) Output(addr types.AccAddress, coins types.Coins) msg.Output {
+func (b *Binance) output(addr types.AccAddress, coins types.Coins) msg.Output {
 	return msg.Output{
 		Address: addr,
 		Coins:   coins,
 	}
 }
 
-func (b *Binance) MsgToSend(in []msg.Input, out []msg.Output) msg.SendMsg {
+func (b *Binance) msgToSend(in []msg.Input, out []msg.Output) msg.SendMsg {
 	return msg.SendMsg{Inputs: in, Outputs: out}
 }
 
-func (b *Binance) CreateMsg(from types.AccAddress, fromCoins types.Coins, transfers []msg.Transfer) msg.SendMsg {
+func (b *Binance) createMsg(from types.AccAddress, fromCoins types.Coins, transfers []msg.Transfer) msg.SendMsg {
 	input := b.Input(from, fromCoins)
 	output := make([]msg.Output, 0, len(transfers))
 	for _, t := range transfers {
 		t.Coins = t.Coins.Sort()
-		output = append(output, b.Output(t.ToAddr, t.Coins))
+		output = append(output, b.output(t.ToAddr, t.Coins))
 	}
-	return b.MsgToSend([]msg.Input{input}, output)
+	return b.msgToSend([]msg.Input{input}, output)
 }
 
-func (b *Binance) ParseTx(transfers []msg.Transfer) msg.SendMsg {
+func (b *Binance) parseTx(transfers []msg.Transfer) msg.SendMsg {
 	fromAddr := b.KeyManager.GetAddr()
 	fromCoins := types.Coins{}
 	for _, t := range transfers {
 		t.Coins = t.Coins.Sort()
 		fromCoins = fromCoins.Plus(t.Coins)
 	}
-	return b.CreateMsg(fromAddr, fromCoins, transfers)
+	return b.createMsg(fromAddr, fromCoins, transfers)
 }
 
 func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) {
@@ -139,7 +138,7 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 		return nil, nil, nil
 	}
 	fromAddr := b.KeyManager.GetAddr()
-	sendMsg := b.ParseTx(payload)
+	sendMsg := b.parseTx(payload)
 	acc, err := b.QueryClient.GetAccount(fromAddr.String())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "fail to get account info")
