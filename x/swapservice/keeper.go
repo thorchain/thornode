@@ -25,6 +25,7 @@ const (
 	prefixTxInIndex        dbPrefix = "txinIndex_"
 	prefixInCompleteEvents dbPrefix = "incomplete_events"
 	prefixCompleteEvent    dbPrefix = "complete_event_"
+	prefixLastEventID      dbPrefix = "last_event_id"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -532,4 +533,27 @@ func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
 	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", event.ID))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event))
+}
+
+// CompleteEvent
+func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxID) {
+	var lastEventID int64
+	key := getKey(prefixLastEventID, "")
+	store := ctx.KVStore(k.storeKey)
+	if store.Has([]byte(key)) {
+		buf := store.Get([]byte(key))
+		_ = k.cdc.UnmarshalBinaryBare(buf, &lastEventID)
+	}
+
+	incomplete, _ := k.GetIncompleteEvents(ctx)
+
+	for _, txID := range in {
+		lastEventID += 1
+		evt := incomplete.GetByInHash(txID)
+		if !evt.Empty() {
+			evt.ID = lastEventID
+			evt.OutHash = out
+			k.SetCompletedEvent(ctx, evt)
+		}
+	}
 }
