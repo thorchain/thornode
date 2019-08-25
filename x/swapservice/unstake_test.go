@@ -423,7 +423,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 	for _, tc := range testCases {
 		ctx := GetCtx("test")
 
-		rune, token, err := unstake(ctx, tc.ps, tc.msg)
+		rune, token, _, err := unstake(ctx, tc.ps, tc.msg)
 		if tc.expectedError != nil {
 			c.Assert(err, NotNil)
 			c.Check(err.Error(), Equals, tc.expectedError.Error())

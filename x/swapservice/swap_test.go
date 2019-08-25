@@ -199,7 +199,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		},
 	}
 	for _, item := range inputs {
-		amount, err := swap(ctx, poolStorage, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeTarget, tradeSlipLimit, globalSlipLimit)
+		amount, _, err := swap(ctx, poolStorage, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeTarget, tradeSlipLimit, globalSlipLimit)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
 		} else {

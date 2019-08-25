@@ -504,6 +504,13 @@ func (k Keeper) SetIncompleteEvents(ctx sdk.Context, events Events) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&events))
 }
 
+// AddIncompleteEvents append to incomplete events
+func (k Keeper) AddIncompleteEvents(ctx sdk.Context, event Event) {
+	events, _ := k.GetIncompleteEvents(ctx)
+	events = append(events, event)
+	k.SetIncompleteEvents(ctx, events)
+}
+
 // GetCompletedEvent retrieve completed event
 func (k Keeper) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
 	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", id))
