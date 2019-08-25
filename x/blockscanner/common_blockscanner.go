@@ -36,6 +36,10 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("host is empty")
 	}
+	// Let's default to use https
+	if len(cfg.Scheme) == 0 {
+		cfg.Scheme = "https"
+	}
 	if nil == scannerStorage {
 		return nil, errors.New("scannerStorage is nil")
 	}
@@ -158,6 +162,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 
 func (b *CommonBlockScanner) GetFromHttpWithRetry(url string) ([]byte, error) {
 	backoffCtrl := backoff.NewExponentialBackOff()
+
 	retry := 1
 	for {
 		res, err := b.getFromHttp(url)
@@ -169,6 +174,9 @@ func (b *CommonBlockScanner) GetFromHttpWithRetry(url string) ([]byte, error) {
 		backOffDuration := backoffCtrl.NextBackOff()
 		if backOffDuration == backoff.Stop {
 			return nil, errors.Wrapf(err, "fail to get from %s after maximum retry", url)
+		}
+		if retry >= b.cfg.MaxHttpRequestRetry {
+			return nil, errors.Errorf("fail to get from %s after maximum retry(%d)", url, b.cfg.MaxHttpRequestRetry)
 		}
 		t := time.NewTicker(backOffDuration)
 		select {
