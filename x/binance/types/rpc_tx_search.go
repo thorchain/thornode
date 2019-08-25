@@ -7,6 +7,7 @@ type RPCTxSearch struct {
 		Txs []struct {
 			Hash   string `json:"hash"`
 			Height string `json:"height"`
+			Tx     string `json:"tx"`
 		} `json:"txs"`
 		TotalCount string `json:"total_count"`
 	} `json:"result"`
