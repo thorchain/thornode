@@ -17,3 +17,8 @@ observe
 config.json
 blockscannertest/
 statechaintest/
+*.log
+*.ldb
+*/observer_db
+*/signer_db
+*.out

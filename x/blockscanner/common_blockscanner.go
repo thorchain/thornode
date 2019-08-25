@@ -2,6 +2,7 @@ package blockscanner
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -12,7 +13,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/valyala/fasthttp"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
@@ -26,7 +26,7 @@ type CommonBlockScanner struct {
 	wg             *sync.WaitGroup
 	scanChan       chan int64
 	stopChan       chan struct{}
-	httpClient     *fasthttp.Client
+	httpClient     *http.Client
 	scannerStorage ScannerStorage
 	previousBlock  int64
 }
@@ -45,9 +45,8 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 		wg:       &sync.WaitGroup{},
 		stopChan: make(chan struct{}),
 		scanChan: make(chan int64, cfg.BlockScanProcessors),
-		httpClient: &fasthttp.Client{
-			ReadTimeout:  cfg.HttpRequestReadTimeout,
-			WriteTimeout: cfg.HttpRequestWriteTimeout,
+		httpClient: &http.Client{
+			Timeout: cfg.HttpRequestTimeout,
 		},
 		scannerStorage: scannerStorage,
 		previousBlock:  cfg.StartBlockHeight,
@@ -56,7 +55,7 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 
 // GetHttpClient return the http client used internal to ourside world
 // right now we need to use this for test
-func (b *CommonBlockScanner) GetHttpClient() *fasthttp.Client {
+func (b *CommonBlockScanner) GetHttpClient() *http.Client {
 	return b.httpClient
 }
 
@@ -183,20 +182,24 @@ func (b *CommonBlockScanner) GetFromHttpWithRetry(url string) ([]byte, error) {
 
 func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 	b.logger.Debug().Str("url", url).Msg("http")
-	req := fasthttp.AcquireRequest()
-	req.Reset()
-	defer fasthttp.ReleaseRequest(req)
-	req.SetRequestURI(url)
-	resp := fasthttp.AcquireResponse()
-	resp.Reset()
-	defer fasthttp.ReleaseResponse(resp)
-	if err := b.httpClient.Do(req, resp); nil != err {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create http request")
+	}
+	resp, err := b.httpClient.Do(req)
+	if nil != err {
 		return nil, errors.Wrapf(err, "fail to get from %s ", url)
 	}
-	if resp.StatusCode() != http.StatusOK {
-		return nil, errors.Errorf("unexpected status code:%d from %s", resp.StatusCode(), url)
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			b.logger.Error().Err(err).Msg("fail to close http response body.")
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
 	}
-	return resp.Body(), nil
+	return ioutil.ReadAll(resp.Body)
 }
 
 func (b *CommonBlockScanner) getBlockUrl() string {
