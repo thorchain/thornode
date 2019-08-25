@@ -1,6 +1,7 @@
 package swapservice
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -91,17 +92,33 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		ctx.Logger().Error(err.Error())
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	if err := stake(
+	stakeUnits, err := stake(
 		ctx,
 		keeper,
 		msg.Ticker,
 		msg.RuneAmount,
 		msg.TokenAmount,
 		msg.PublicAddress,
-		msg.RequestTxHash); err != nil {
+		msg.RequestTxHash,
+	)
+	if err != nil {
 		ctx.Logger().Error("fail to process stake message", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
+
+	stakeEvt := NewEventStake(
+		msg.RuneAmount,
+		msg.TokenAmount,
+		stakeUnits,
+	)
+	stakeBytes, _ := json.Marshal(stakeEvt)
+	evt := NewEvent(
+		stakeEvt.Type(),
+		msg.RequestTxHash,
+		msg.Ticker,
+		stakeBytes,
+	)
+	keeper.AddIncompleteEvents(ctx, evt)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -119,7 +136,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 	tsl := keeper.GetAdminConfigTSL(ctx, common.NoBnbAddress)
 	gsl := keeper.GetAdminConfigGSL(ctx, common.NoBnbAddress)
 
-	amount, err := swap(
+	amount, slip, err := swap(
 		ctx,
 		keeper,
 		msg.SourceTicker,
@@ -137,6 +154,27 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 
 		return sdk.ErrInternal(err.Error()).Result()
 	}
+
+	var pool common.Ticker
+	if common.IsRune(msg.SourceTicker) {
+		pool = msg.TargetTicker
+	} else {
+		pool = msg.SourceTicker
+	}
+	swapEvt := NewEventSwap(
+		common.NewCoin(msg.SourceTicker, msg.Amount),
+		common.NewCoin(msg.TargetTicker, amount),
+		slip,
+	)
+	swapBytes, _ := json.Marshal(swapEvt)
+	evt := NewEvent(
+		swapEvt.Type(),
+		msg.RequestTxHash,
+		pool,
+		swapBytes,
+	)
+	keeper.AddIncompleteEvents(ctx, evt)
+
 	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
 		Token common.Amount `json:"token"`
 	}{
@@ -176,7 +214,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error("invalid MsgSetUnstake", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	runeAmt, tokenAmount, err := unstake(ctx, keeper, msg)
+	runeAmt, tokenAmount, units, err := unstake(ctx, keeper, msg)
 	if nil != err {
 		ctx.Logger().Error("fail to UnStake", "error", err)
 		return sdk.ErrInternal("fail to process UnStake request").Result()
@@ -192,6 +230,21 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error("fail to marshal result to json", "error", err)
 		// if this happen what should we tell the client?
 	}
+
+	unstakeEvt := NewEventUnstake(
+		runeAmt,
+		tokenAmount,
+		units,
+	)
+	unstakeBytes, _ := json.Marshal(unstakeEvt)
+	evt := NewEvent(
+		unstakeEvt.Type(),
+		msg.RequestTxHash,
+		msg.Ticker,
+		unstakeBytes,
+	)
+	keeper.AddIncompleteEvents(ctx, evt)
+
 	toi := &TxOutItem{
 		ToAddress: msg.PublicAddress,
 	}

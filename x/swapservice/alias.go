@@ -34,6 +34,10 @@ var (
 	NewMsgSwap           = types.NewMsgSwap
 	NewMsgSetAdminConfig = types.NewMsgSetAdminConfig
 	NewTxOut             = types.NewTxOut
+	NewEvent             = types.NewEvent
+	NewEventSwap         = types.NewEventSwap
+	NewEventStake        = types.NewEventStake
+	NewEventUnstake      = types.NewEventUnstake
 	NewMsgOutboundTx     = types.NewMsgOutboundTx
 	NewPoolStaker        = types.NewPoolStaker
 	NewStakerPool        = types.NewStakerPool
