@@ -216,7 +216,7 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	}
 
 	limit := int64(100) // limit the number of events, aka pagination
-	var events Events
+	events := make(Events, 0)
 	for i := id; i <= id+limit; i++ {
 		event, _ := keeper.GetCompletedEvent(ctx, i)
 		if !event.Empty() {

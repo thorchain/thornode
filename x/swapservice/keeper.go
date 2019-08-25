@@ -530,30 +530,34 @@ func (k Keeper) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
 
 // SetCompletedEvent write a completed event
 func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
-	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", event.ID))
+	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", int64(event.ID.Float64())))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event))
 }
 
 // CompleteEvent
 func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxID) {
-	var lastEventID int64
+	var lastEventID common.Amount
 	key := getKey(prefixLastEventID, "")
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))
 		_ = k.cdc.UnmarshalBinaryBare(buf, &lastEventID)
 	}
+	eID := lastEventID.Float64()
 
 	incomplete, _ := k.GetIncompleteEvents(ctx)
 
 	for _, txID := range in {
-		lastEventID += 1
+		eID += 1
 		evt := incomplete.GetByInHash(txID)
 		if !evt.Empty() {
-			evt.ID = lastEventID
+			evt.ID = common.NewAmountFromFloat(eID)
 			evt.OutHash = out
 			k.SetCompletedEvent(ctx, evt)
 		}
 	}
+
+	lastEventID = common.NewAmountFromFloat(eID)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(lastEventID))
 }

@@ -21,6 +21,13 @@ describe "API Tests" do
     end
   end
 
+  context "Check we have no completed events" do
+    it "should be a nil" do
+      resp = get("/events/1")
+      expect(resp.body).to eq([]), resp.body.inspect
+    end
+  end
+
   context "Admin configs" do
 
     it "set admin config" do
@@ -195,6 +202,14 @@ describe "API Tests" do
 
       expect(found).to eq(true)
 
+    end
+
+    it "check events are completed" do
+      resp = get("/events/1")
+      expect(resp.body.count).to eq(1), resp.body.inspect
+      expect(resp.body[0]['pool']).to eq("TCAN-014"), resp.body[0].inspect
+      expect(resp.body[0]['type']).to eq("swap"), resp.body[0].inspect
+      expect(resp.body[0]['in_hash']).to eq(txid), resp.body[0].inspect
     end
 
     it "add tokens to a pool" do
