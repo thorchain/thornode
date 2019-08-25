@@ -7,10 +7,10 @@ import (
 )
 
 type Event struct {
-	ID      int64       `json:"id"`
-	Type    string      `json:"type"`
-	InHash  common.TxID `json:"in_hash"`
-	OutHash common.TxID `json:"out_hash"`
+	ID      common.Amount `json:"id"`
+	Type    string        `json:"type"`
+	InHash  common.TxID   `json:"in_hash"`
+	OutHash common.TxID   `json:"out_hash"`
 	// Should we have timestamps and addresses if they are available via the
 	// binance API?
 	// InStamp    time.Time         `json:"in_timestamp"`

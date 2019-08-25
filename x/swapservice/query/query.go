@@ -42,7 +42,7 @@ var (
 	QueryTxIn             Query = Query{"txin", "/%s/tx/{%s}"}
 	QueryTxOutArray       Query = Query{"txoutarray", "/%s/txoutarray/{%s}"}
 	QueryIncompleteEvents Query = Query{"incomplete_events", ""}
-	QueryCompleteEvents   Query = Query{"complete_events", "/%s/complete/{%s}"}
+	QueryCompleteEvents   Query = Query{"complete_events", "/%s/events/{%s}"}
 )
 
 var Queries []Query = []Query{
