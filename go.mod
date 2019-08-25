@@ -13,10 +13,10 @@ require (
 	github.com/spf13/pflag v1.0.3
 	github.com/spf13/viper v1.3.2
 	github.com/syndtr/goleveldb v1.0.1-0.20190318030020-c3a204f8e965
-	github.com/valyala/fasthttp v1.4.0
 	gitlab.com/thorchain/bepswap/common v0.0.0-20190823123750-2e16dc69db55
 	gitlab.com/thorchain/bepswap/statechain v0.0.0-20190817014219-e1e1a77d6935
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
+	gopkg.in/resty.v1 v1.10.3
 )
 
 replace gitlab.com/thorchain/bepswap/observe => ../observe
