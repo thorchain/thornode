@@ -166,9 +166,14 @@ func (BlockScannerTestSuite) TestGetOneTxFromServer(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 	singleTxUrl := bs.getSingleTxUrl("22214C3567DCF0120DA779CC24089C8D18F9B8F217A5B1AD4821EFFFDD2BF92F")
-	bs.commonBlockScanner.GetHttpClient().TLSConfig = &tls.Config{
-		InsecureSkipVerify: true,
+	trSkipVerify := &http.Transport{
+		MaxIdleConnsPerHost: 10,
+		TLSClientConfig: &tls.Config{
+			MaxVersion:         tls.VersionTLS11,
+			InsecureSkipVerify: true,
+		},
 	}
+	bs.commonBlockScanner.GetHttpClient().Transport = trSkipVerify
 	inItem, err := bs.getOneTxFromServer("22214C3567DCF0120DA779CC24089C8D18F9B8F217A5B1AD4821EFFFDD2BF92F", singleTxUrl)
 	c.Assert(err, IsNil)
 	c.Assert(inItem, NotNil)
