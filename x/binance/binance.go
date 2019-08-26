@@ -24,9 +24,9 @@ type Binance struct {
 	logger      zerolog.Logger
 	cfg         config.BinanceConfiguration
 	Client      sdk.DexClient
-	BasicClient basic.BasicClient
-	QueryClient query.QueryClient
-	KeyManager  keys.KeyManager
+	basicClient basic.BasicClient
+	queryClient query.QueryClient
+	keyManager  keys.KeyManager
 	chainId     string
 }
 
@@ -44,7 +44,7 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 		return nil, errors.Wrap(err, "fail to create private key manager")
 	}
 	chainNetwork := types.TestNetwork
-	if !isTestNet(cfg.DEXHost) {
+	if !IsTestNet(cfg.DEXHost) {
 		chainNetwork = types.ProdNetwork
 	}
 	bClient, err := sdk.NewDexClient(cfg.DEXHost, chainNetwork, keyManager)
@@ -58,9 +58,9 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 		logger:      log.With().Str("module", "binance").Logger(),
 		cfg:         cfg,
 		Client:      bClient,
-		BasicClient: basicClient,
-		QueryClient: queryClient,
-		KeyManager:  keyManager,
+		basicClient: basicClient,
+		queryClient: queryClient,
+		keyManager:  keyManager,
 		chainId:     "Binance-Chain-Nile",
 	}, nil
 }
@@ -69,7 +69,7 @@ const (
 	testNetUrl = "testnet-dex.binance.org"
 )
 
-func isTestNet(dexHost string) bool {
+func IsTestNet(dexHost string) bool {
 	return strings.Contains(dexHost, testNetUrl) || strings.Contains(dexHost, "127.0.0.1")
 }
 func (b *Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {
@@ -101,7 +101,7 @@ func (b *Binance) createMsg(from types.AccAddress, fromCoins types.Coins, transf
 }
 
 func (b *Binance) parseTx(transfers []msg.Transfer) msg.SendMsg {
-	fromAddr := b.KeyManager.GetAddr()
+	fromAddr := b.keyManager.GetAddr()
 	fromCoins := types.Coins{}
 	for _, t := range transfers {
 		t.Coins = t.Coins.Sort()
@@ -137,9 +137,9 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 	if len(payload) == 0 {
 		return nil, nil, nil
 	}
-	fromAddr := b.KeyManager.GetAddr()
+	fromAddr := b.keyManager.GetAddr()
 	sendMsg := b.parseTx(payload)
-	acc, err := b.QueryClient.GetAccount(fromAddr.String())
+	acc, err := b.queryClient.GetAccount(fromAddr.String())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "fail to get account info")
 	}
@@ -153,7 +153,7 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 		AccountNumber: acc.Number,
 	}
 
-	hexTx, err := b.KeyManager.Sign(signMsg)
+	hexTx, err := b.keyManager.Sign(signMsg)
 	if nil != err {
 		return nil, nil, errors.Wrap(err, "fail to sign message")
 	}

@@ -11,6 +11,7 @@ import (
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
+	"gitlab.com/thorchain/bepswap/observe/x/binance"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
@@ -37,7 +38,8 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create scan storage")
 	}
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, cfg.DEXHost, cfg.PoolAddress)
+
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), cfg.PoolAddress)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}

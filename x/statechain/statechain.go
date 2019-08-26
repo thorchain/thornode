@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"os/user"
 	"path/filepath"
-	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -102,7 +101,7 @@ func (scb *StateChainBridge) getAccountInfoUrl(chainHost string) string {
 	return uri.String()
 }
 
-func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string) (int64, int64, error) {
+func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, uint64, error) {
 	if len(requestUrl) == 0 {
 		return 0, 0, errors.New("request url is empty")
 	}
@@ -122,22 +121,13 @@ func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "fail to read response body")
 	}
-
-	var baseAccount types.BaseAccount
+	var baseAccount authtypes.BaseAccount
 	err = json.Unmarshal(body, &baseAccount)
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "fail to unmarshal base account")
 	}
-	base := baseAccount.Value
-	acctNumber, err := strconv.ParseInt(base.AccountNumber, 10, 64)
-	if nil != err {
-		return 0, 0, errors.Wrapf(err, "fail to parse AccountNumber(%s) to int", base.AccountNumber)
-	}
-	seq, err := strconv.ParseInt(base.Sequence, 10, 64)
-	if nil != err {
-		return 0, 0, errors.Wrapf(err, "fail to parse sequence(%s) to int", base.Sequence)
-	}
-	return acctNumber, seq, nil
+
+	return baseAccount.AccountNumber, baseAccount.Sequence, nil
 
 }
 
@@ -161,8 +151,8 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxIn) (*authtypes.StdTx, error)
 	}
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
-		AccountNumber: uint64(accNumber),
-		Sequence:      uint64(seqNumber),
+		AccountNumber: accNumber,
+		Sequence:      seqNumber,
 		Fee:           stdTx.Fee,
 		Msgs:          stdTx.GetMsgs(),
 		Memo:          stdTx.GetMemo(),

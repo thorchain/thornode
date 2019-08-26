@@ -172,7 +172,7 @@ func (StatechainSuite) TestNewStateChainBridge(c *C) {
 	defer cleanup()
 }
 func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
-	testfunc := func(handleFunc http.HandlerFunc, expectedAccNum int64, expectedSeq int64, errChecker Checker) {
+	testfunc := func(handleFunc http.HandlerFunc, expectedAccNum uint64, expectedSeq uint64, errChecker Checker) {
 		cfg, keyInfo, cleanup := setupStateChainForTest(c)
 		defer cleanup()
 		scb, err := NewStateChainBridge(cfg)
@@ -226,7 +226,7 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 }`)); nil != err {
 			c.Error(err)
 		}
-	}, 0, 0, NotNil)
+	}, 0, 0, IsNil)
 	testfunc(func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
 "type": "cosmos-sdk/Account",
@@ -240,7 +240,7 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 }`)); nil != err {
 			c.Error(err)
 		}
-	}, 0, 0, NotNil)
+	}, 0, 0, IsNil)
 	testfunc(func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
 "type": "cosmos-sdk/Account",
