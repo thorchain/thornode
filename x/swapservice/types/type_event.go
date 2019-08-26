@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"math"
 
 	common "gitlab.com/thorchain/bepswap/common"
 )
@@ -92,9 +93,9 @@ type EventUnstake struct {
 
 func NewEventUnstake(r, t, s common.Amount) EventUnstake {
 	return EventUnstake{
-		RuneAmount:  r,
-		TokenAmount: t,
-		StakeUnits:  s,
+		RuneAmount:  common.NewAmountFromFloat(-(math.Abs(r.Float64()))),
+		TokenAmount: common.NewAmountFromFloat(-(math.Abs(t.Float64()))),
+		StakeUnits:  common.NewAmountFromFloat(-(math.Abs(s.Float64()))),
 	}
 }
 
