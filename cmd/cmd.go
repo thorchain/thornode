@@ -1,8 +1,8 @@
 package cmd
 
-const Bech32PrefixAccAddr = "rune"
-const Bech32PrefixAccPub = "runepub"
-const Bech32PrefixValAddr = "runev"
-const Bech32PrefixValPub = "runevpub"
-const Bech32PrefixConsAddr = "runec"
-const Bech32PrefixConsPub = "runecpub"
+const Bech32PrefixAccAddr = "bep"
+const Bech32PrefixAccPub = "beppub"
+const Bech32PrefixValAddr = "bepv"
+const Bech32PrefixValPub = "bepvpub"
+const Bech32PrefixConsAddr = "bepc"
+const Bech32PrefixConsPub = "bepcpub"
