@@ -1,6 +1,7 @@
 package observer
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -8,10 +9,14 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/common"
+
+	bmsg "github.com/binance-chain/go-sdk/types/msg"
+	"github.com/binance-chain/go-sdk/types/tx"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
@@ -22,7 +27,6 @@ import (
 // BinanceBlockScanner is to scan the blocks
 type BinanceBlockScanner struct {
 	cfg                config.BlockScannerConfiguration
-	dexHost            string
 	poolAddress        common.BnbAddress
 	logger             zerolog.Logger
 	wg                 *sync.WaitGroup
@@ -33,15 +37,12 @@ type BinanceBlockScanner struct {
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
-func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, DEXHost string, poolAddress common.BnbAddress) (*BinanceBlockScanner, error) {
+func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, poolAddress common.BnbAddress) (*BinanceBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
-	}
-	if len(DEXHost) == 0 {
-		return nil, errors.New("DEXHost is empty")
 	}
 	if poolAddress.IsEmpty() {
 		return nil, errors.New("pool address is empty")
@@ -50,9 +51,11 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create common block scanner")
 	}
+	if isTestNet {
+		types.Network = types.TestNetwork
+	}
 	return &BinanceBlockScanner{
 		cfg:                cfg,
-		dexHost:            DEXHost,
 		poolAddress:        poolAddress,
 		logger:             log.Logger.With().Str("module", "blockscanner").Logger(),
 		wg:                 &sync.WaitGroup{},
@@ -106,6 +109,7 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 	if err := json.Unmarshal(buf, &query); nil != err {
 		return errors.Wrap(err, "fail to unmarshal RPCTxSearch")
 	}
+
 	b.logger.Debug().Int("txs", len(query.Result.Txs)).Str("total", query.Result.TotalCount).Msg("txs")
 	if len(query.Result.Txs) == 0 {
 		b.logger.Debug().Int64("block", block).Msg("there are no txs in this block")
@@ -114,7 +118,7 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 	// TODO implement pagination appropriately
 	var txIn stypes.TxIn
 	for _, txn := range query.Result.Txs {
-		txItemIn, err := b.getOneTxFromServer(txn.Hash, b.getSingleTxUrl(txn.Hash))
+		txItemIn, err := b.fromTxToTxIn(txn.Hash, txn.Height, txn.Tx) //b.getOneTxFromServer(txn.Hash, b.getSingleTxUrl(txn.Hash))
 		if nil != err {
 			b.logger.Error().Err(err).Str("hash", txn.Hash).Msg("fail to get one tx from server")
 			// if we fail to get one tx hash from server, then we should bail, because we might miss tx
@@ -166,66 +170,49 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 		}
 	}
 }
-func (b *BinanceBlockScanner) getSingleTxUrl(txHash string) string {
-	uri := url.URL{
-		Scheme: "https",
-		Host:   b.dexHost,
-		Path:   fmt.Sprintf("api/v1/tx/%s", txHash),
-	}
-	query := uri.Query()
-	query.Set("format", "json")
-	uri.RawQuery = query.Encode()
-	return uri.String()
-}
 
-// getOneTxFromServer
-func (b *BinanceBlockScanner) getOneTxFromServer(txhash string, requestUrl string) (*stypes.TxInItem, error) {
-	b.logger.Debug().Str("txhash", txhash).Str("requesturi", requestUrl).Msg("get one tx from server")
-	buf, err := b.commonBlockScanner.GetFromHttpWithRetry(requestUrl)
+func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*stypes.TxInItem, error) {
+	if len(encodedTx) == 0 {
+		return nil, errors.New("tx is empty")
+	}
+	buf, err := base64.StdEncoding.DecodeString(encodedTx)
 	if nil != err {
-		return nil, errors.Wrap(err, "fail to get query tx detail")
+		return nil, errors.Wrap(err, "fail to decode tx")
 	}
-	var tx btypes.ApiTx
-	if err := json.Unmarshal(buf, &tx); nil != err {
-		return nil, errors.Wrap(err, "fail to unmarshal tx detail")
+	var t tx.StdTx
+	if err := tx.Cdc.UnmarshalBinaryLengthPrefixed(buf, &t); nil != err {
+		return nil, errors.Wrap(err, "fail to unmarshal tx.StdTx")
 	}
-	return b.fromApiTxToTxInItem(tx)
-}
-
-// fromApiTxToTxInItem convert ApiTx to txinitem
-func (b *BinanceBlockScanner) fromApiTxToTxInItem(txInput btypes.ApiTx) (*stypes.TxInItem, error) {
-	var existTx bool
+	existTx := false
 	txInItem := stypes.TxInItem{
-		Tx: txInput.Hash,
+		Tx: hash,
 	}
-	for _, msg := range txInput.Tx.Value.Msg {
-		if len(msg.Value.Inputs) == 0 {
+	for _, msg := range t.Msgs {
+		switch sendMsg := msg.(type) {
+		case bmsg.SendMsg:
+			txInItem.Memo = t.Memo
+			sender := sendMsg.Inputs[0]
+			txInItem.Sender = sender.Address.String()
+			for _, output := range sendMsg.Outputs {
+				if !strings.EqualFold(output.Address.String(), b.poolAddress.String()) {
+					continue
+				}
+				existTx = true
+				for _, coin := range output.Coins {
+					ticker, err := common.NewTicker(coin.Denom)
+					if nil != err {
+						return nil, errors.Wrapf(err, "fail to create ticker, %s is not valid", coin.Denom)
+					}
+					amt := common.NewAmountFromFloat(float64(coin.Amount))
+					txInItem.Coins = append(txInItem.Coins, common.NewCoin(ticker, common.NewAmountFromFloat(amt.Float64()/100000000)))
+				}
+			}
+		default:
 			continue
-		}
-		sender := msg.Value.Inputs[0]
-		for _, output := range msg.Value.Outputs {
-			if !strings.EqualFold(output.Address, b.poolAddress.String()) {
-				continue
-			}
-			existTx = true
-			txInItem.Memo = txInput.Tx.Value.Memo
-			txInItem.Sender = sender.Address
-			for _, coin := range output.Coins {
-				ticker, err := common.NewTicker(coin.Denom)
-				if nil != err {
-					return nil, errors.Wrapf(err, "fail to create ticker, %s is not valid", coin.Denom)
-				}
-				amt, err := common.NewAmount(coin.Amount)
-				if nil != err {
-					return nil, errors.Wrapf(err, "fail to parse coin amount,%s is not valid", coin.Amount)
-				}
-				txInItem.Coins = append(txInItem.Coins, common.NewCoin(ticker, common.NewAmountFromFloat(amt.Float64()/100000000)))
-			}
-
 		}
 	}
 	if !existTx {
-		b.logger.Debug().Str("hash", txInput.Hash).Str("height", txInput.Height).Msg("didn't find any tx that we should process")
+		b.logger.Debug().Str("hash", hash).Str("height", height).Msg("didn't find any tx that we should process")
 		return nil, nil
 	}
 	return &txInItem, nil
