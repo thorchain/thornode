@@ -15,14 +15,17 @@ import (
 type dbPrefix string
 
 const (
-	prefixTxIn         dbPrefix = "tx_"
-	prefixPool         dbPrefix = "pool_"
-	prefixTxOut        dbPrefix = "txout_"
-	prefixTrustAccount dbPrefix = "trustaccount_"
-	prefixPoolStaker   dbPrefix = "poolstaker_"
-	prefixStakerPool   dbPrefix = "stakerpool_"
-	prefixAdmin        dbPrefix = "admin_"
-	prefixTxInIndex    dbPrefix = "txinIndex_"
+	prefixTxIn             dbPrefix = "tx_"
+	prefixPool             dbPrefix = "pool_"
+	prefixTxOut            dbPrefix = "txout_"
+	prefixTrustAccount     dbPrefix = "trustaccount_"
+	prefixPoolStaker       dbPrefix = "poolstaker_"
+	prefixStakerPool       dbPrefix = "stakerpool_"
+	prefixAdmin            dbPrefix = "admin_"
+	prefixTxInIndex        dbPrefix = "txinIndex_"
+	prefixInCompleteEvents dbPrefix = "incomplete_events"
+	prefixCompleteEvent    dbPrefix = "complete_event_"
+	prefixLastEventID      dbPrefix = "last_event_id"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -477,4 +480,94 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb co
 func (k Keeper) GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixAdmin))
+}
+
+// GetIncompleteEvents retrieve incomplete events
+func (k Keeper) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
+	key := getKey(prefixInCompleteEvents, "")
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return Events{}, nil
+	}
+	buf := store.Get([]byte(key))
+	var events Events
+	if err := k.cdc.UnmarshalBinaryBare(buf, &events); nil != err {
+		ctx.Logger().Error(fmt.Sprintf("fail to unmarshal incomplete events, err: %s", err))
+		return Events{}, errors.Wrap(err, "fail to unmarshal incomplete events")
+	}
+	return events, nil
+}
+
+// SetIncompleteEvents write incomplete events
+func (k Keeper) SetIncompleteEvents(ctx sdk.Context, events Events) {
+	key := getKey(prefixInCompleteEvents, "")
+	store := ctx.KVStore(k.storeKey)
+	if len(events) == 0 {
+		store.Delete([]byte(key))
+	} else {
+		store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&events))
+	}
+}
+
+// AddIncompleteEvents append to incomplete events
+func (k Keeper) AddIncompleteEvents(ctx sdk.Context, event Event) {
+	events, _ := k.GetIncompleteEvents(ctx)
+	events = append(events, event)
+	k.SetIncompleteEvents(ctx, events)
+}
+
+// GetCompletedEvent retrieve completed event
+func (k Keeper) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
+	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", id))
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return Event{}, nil
+	}
+	buf := store.Get([]byte(key))
+	var event Event
+	if err := k.cdc.UnmarshalBinaryBare(buf, &event); nil != err {
+		ctx.Logger().Error(fmt.Sprintf("fail to unmarshal complete event, err: %s", err))
+		return Event{}, errors.Wrap(err, "fail to unmarshal complete event")
+	}
+	return event, nil
+}
+
+// SetCompletedEvent write a completed event
+func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
+	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", int64(event.ID.Float64())))
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event))
+}
+
+// CompleteEvent
+func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxID) {
+	var lastEventID common.Amount
+	key := getKey(prefixLastEventID, "")
+	store := ctx.KVStore(k.storeKey)
+	if store.Has([]byte(key)) {
+		buf := store.Get([]byte(key))
+		_ = k.cdc.UnmarshalBinaryBare(buf, &lastEventID)
+	}
+	eID := lastEventID.Float64()
+
+	incomplete, _ := k.GetIncompleteEvents(ctx)
+
+	for _, txID := range in {
+		eID += 1
+		var evts Events
+		evts, incomplete = incomplete.PopByInHash(txID)
+		for _, evt := range evts {
+			if !evt.Empty() {
+				evt.ID = common.NewAmountFromFloat(eID)
+				evt.OutHash = out
+				k.SetCompletedEvent(ctx, evt)
+			}
+		}
+	}
+
+	// save new list of incomplete events
+	k.SetIncompleteEvents(ctx, incomplete)
+
+	lastEventID = common.NewAmountFromFloat(eID)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(lastEventID))
 }

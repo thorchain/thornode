@@ -53,10 +53,10 @@ func validateStakeMessage(ctx sdk.Context, keeper poolStorage, ticker common.Tic
 	return nil
 }
 
-func stake(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneAmount, stakeTokenAmount common.Amount, publicAddress common.BnbAddress, requestTxHash common.TxID) error {
+func stake(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneAmount, stakeTokenAmount common.Amount, publicAddress common.BnbAddress, requestTxHash common.TxID) (common.Amount, error) {
 	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", ticker, stakeRuneAmount, stakeTokenAmount))
 	if err := validateStakeMessage(ctx, keeper, ticker, stakeRuneAmount, stakeTokenAmount, requestTxHash, publicAddress); nil != err {
-		return errors.Wrap(err, "invalid request")
+		return "0", errors.Wrap(err, "invalid request")
 	}
 	pool := keeper.GetPool(ctx, ticker)
 	fTokenAmt := stakeTokenAmount.Float64()
@@ -70,7 +70,7 @@ func stake(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneA
 	oldPoolUnits := pool.PoolUnits.Float64()
 	newPoolUnits, stakerUnits, err := calculatePoolUnits(oldPoolUnits, balanceRune, balanceToken, fRuneAmt, fTokenAmt)
 	if nil != err {
-		return errors.Wrapf(err, "fail to calculate pool units")
+		return "0", errors.Wrapf(err, "fail to calculate pool units")
 	}
 
 	ctx.Logger().Info(fmt.Sprintf("current pool units : %f ,staker units : %f", newPoolUnits, stakerUnits))
@@ -84,34 +84,34 @@ func stake(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneA
 	// maintain pool staker structure
 	ps, err := keeper.GetPoolStaker(ctx, ticker)
 	if nil != err {
-		return errors.Wrap(err, "fail to get pool staker..")
+		return "0", errors.Wrap(err, "fail to get pool staker..")
 	}
 	ps.TotalUnits = pool.PoolUnits
 	su := ps.GetStakerUnit(publicAddress)
 	fex := su.Units.Float64()
-	stakerUnits += fex
+	totalStakerUnits := fex + stakerUnits
 
 	stakeAmtInterval := keeper.GetAdminConfigStakerAmtInterval(ctx, common.NoBnbAddress)
-	err = validateStakeAmount(ps, stakerUnits, stakeAmtInterval)
+	err = validateStakeAmount(ps, totalStakerUnits, stakeAmtInterval)
 	if err != nil {
-		return errors.Wrapf(err, "invalid stake amount")
+		return "0", errors.Wrapf(err, "invalid stake amount")
 	}
-	su.Units = common.NewAmountFromFloat(stakerUnits)
+	su.Units = common.NewAmountFromFloat(totalStakerUnits)
 	ps.UpsertStakerUnit(su)
 	keeper.SetPoolStaker(ctx, ticker, ps)
 	// maintain stake pool structure
 	sp, err := keeper.GetStakerPool(ctx, publicAddress)
 	if nil != err {
-		return errors.Wrap(err, "fail to get stakepool object")
+		return "0", errors.Wrap(err, "fail to get stakepool object")
 	}
 	stakerPoolItem := sp.GetStakerPoolItem(ticker)
 	existUnit := stakerPoolItem.Units.Float64()
-	stakerUnits += existUnit
-	stakerPoolItem.Units = common.NewAmountFromFloat(stakerUnits)
+	totalStakerUnits += existUnit
+	stakerPoolItem.Units = common.NewAmountFromFloat(totalStakerUnits)
 	stakerPoolItem.AddStakerTxDetail(requestTxHash, stakeRuneAmount, stakeTokenAmount)
 	sp.UpsertStakerPoolItem(stakerPoolItem)
 	keeper.SetStakerPool(ctx, publicAddress, sp)
-	return nil
+	return common.NewAmountFromFloat(stakerUnits), nil
 }
 
 // calculatePoolUnits calculate the pool units and staker units

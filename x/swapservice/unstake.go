@@ -31,21 +31,21 @@ func validateUnstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) err
 }
 
 // unstake withdraw all the asset
-func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (common.Amount, common.Amount, error) {
+func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (common.Amount, common.Amount, common.Amount, error) {
 	if err := validateUnstake(ctx, keeper, msg); nil != err {
-		return "0", "0", err
+		return "0", "0", "0", err
 	}
 	withdrawPercentage := msg.WithdrawBasisPoints.Float64() / 100 // convert from basis point to percentage
 	// here fBalance should be valid , because we did the validation above
 	pool := keeper.GetPool(ctx, msg.Ticker)
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Ticker)
 	if nil != err {
-		return "0", "0", errors.Wrap(err, "can't find pool staker")
+		return "0", "0", "0", errors.Wrap(err, "can't find pool staker")
 
 	}
 	stakerPool, err := keeper.GetStakerPool(ctx, msg.PublicAddress)
 	if nil != err {
-		return "0", "0", errors.Wrap(err, "can't find staker pool")
+		return "0", "0", "0", errors.Wrap(err, "can't find staker pool")
 	}
 
 	poolUnits := pool.PoolUnits.Float64()
@@ -54,14 +54,14 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (common.Amo
 	stakerUnit := poolStaker.GetStakerUnit(msg.PublicAddress)
 	fStakerUnit := stakerUnit.Units.Float64()
 	if !stakerUnit.Units.GreaterThen(0) {
-		return "0", "0", errors.New("nothing to withdraw")
+		return "0", "0", "0", errors.New("nothing to withdraw")
 	}
 
 	ctx.Logger().Info("pool before unstake", "pool unit", poolUnits, "balance RUNE", poolRune, "balance token", poolToken)
 	ctx.Logger().Info("staker before withdraw", "staker unit", fStakerUnit)
 	withdrawRune, withDrawToken, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolToken, fStakerUnit, withdrawPercentage)
 	if err != nil {
-		return "0", "0", err
+		return "0", "0", "0", err
 	}
 	ctx.Logger().Info("client withdraw", "RUNE", withdrawRune, "token", withDrawToken, "units left", unitAfter)
 	// update pool
@@ -89,7 +89,7 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (common.Amo
 	keeper.SetPool(ctx, pool)
 	keeper.SetPoolStaker(ctx, msg.Ticker, poolStaker)
 	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
-	return common.NewAmountFromFloat(withdrawRune), common.NewAmountFromFloat(withDrawToken), nil
+	return common.NewAmountFromFloat(withdrawRune), common.NewAmountFromFloat(withDrawToken), common.NewAmountFromFloat(fStakerUnit - unitAfter), nil
 }
 
 func calculateUnstake(poolUnit, poolRune, poolToken, stakerUnit, percentage float64) (float64, float64, float64, error) {
