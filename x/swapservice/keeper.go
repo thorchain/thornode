@@ -23,7 +23,6 @@ const (
 	prefixStakerPool       dbPrefix = "stakerpool_"
 	prefixAdmin            dbPrefix = "admin_"
 	prefixTxInIndex        dbPrefix = "txinIndex_"
-	prefixBnbBlockHeight   dbPrefix = "bnbBlockHeight_"
 	prefixInCompleteEvents dbPrefix = "incomplete_events"
 	prefixCompleteEvent    dbPrefix = "complete_event_"
 	prefixLastEventID      dbPrefix = "last_event_id"
