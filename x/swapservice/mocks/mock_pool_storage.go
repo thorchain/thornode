@@ -63,3 +63,5 @@ func (mps MockPoolStorage) GetAdminConfigValue(ctx sdk.Context, key types.AdminC
 func (mps MockPoolStorage) GetAdminConfigStakerAmtInterval(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
 	return common.NewAmountFromFloat(100)
 }
+
+func (mps MockPoolStorage) AddIncompleteEvents(ctx sdk.Context, event types.Event) {}

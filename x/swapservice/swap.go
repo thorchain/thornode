@@ -1,6 +1,7 @@
 package swapservice
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 
@@ -46,7 +47,7 @@ func validateMessage(source, target common.Ticker, amount common.Amount, request
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, source, target common.Ticker, amount common.Amount, requester, destination common.BnbAddress, requestTxHash common.TxID, tradeTarget, tradeSlipLimit, globalSlipLimit common.Amount) (common.Amount, error) {
+func swap(ctx sdk.Context, keeper poolStorage, txID common.TxID, source, target common.Ticker, amount common.Amount, requester, destination common.BnbAddress, requestTxHash common.TxID, tradeTarget, tradeSlipLimit, globalSlipLimit common.Amount) (common.Amount, error) {
 	if err := validateMessage(source, target, amount, requester, destination, requestTxHash); nil != err {
 		ctx.Logger().Error(err.Error())
 		return "0", err
@@ -59,19 +60,19 @@ func swap(ctx sdk.Context, keeper poolStorage, source, target common.Ticker, amo
 	isDoubleSwap := !common.IsRune(source) && !common.IsRune(target)
 
 	if isDoubleSwap {
-		runeAmount, err := swapOne(ctx, keeper, source, common.RuneTicker, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+		runeAmount, err := swapOne(ctx, keeper, txID, source, common.RuneTicker, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 		if err != nil {
 			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneTicker)
 		}
-		tokenAmount, err := swapOne(ctx, keeper, common.RuneTicker, target, runeAmount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+		tokenAmount, err := swapOne(ctx, keeper, txID, common.RuneTicker, target, runeAmount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 		return tokenAmount, err
 	}
-	tokenAmount, err := swapOne(ctx, keeper, source, target, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+	tokenAmount, err := swapOne(ctx, keeper, txID, source, target, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 	return tokenAmount, err
 }
 
 func swapOne(ctx sdk.Context,
-	keeper poolStorage,
+	keeper poolStorage, txID common.TxID,
 	source, target common.Ticker,
 	amount common.Amount, requester,
 	destination common.BnbAddress,
@@ -129,6 +130,24 @@ func swapOne(ctx sdk.Context,
 	returnTokenAmount := common.NewAmountFromFloat(returnAmt)
 	keeper.SetPool(ctx, pool)
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, returnTokenAmount))
+
+	swapEvt := NewEventSwap(
+		common.NewCoin(source, amount),
+		common.NewCoin(target, returnTokenAmount),
+		common.NewAmountFromFloat(poolSlip),
+	)
+	swapBytes, err := json.Marshal(swapEvt)
+	if err != nil {
+		return "0", errors.Wrap(err, "fail to marshal swap event")
+	}
+	evt := NewEvent(
+		swapEvt.Type(),
+		txID,
+		ticker,
+		swapBytes,
+	)
+	keeper.AddIncompleteEvents(ctx, evt)
+
 	return returnTokenAmount, nil
 }
 

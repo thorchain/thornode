@@ -1,6 +1,7 @@
 package swapservice
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/pkg/errors"
@@ -91,17 +92,43 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		ctx.Logger().Error(err.Error())
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	if err := stake(
+	stakeUnits, err := stake(
 		ctx,
 		keeper,
 		msg.Ticker,
 		msg.RuneAmount,
 		msg.TokenAmount,
 		msg.PublicAddress,
-		msg.RequestTxHash); err != nil {
+		msg.RequestTxHash,
+	)
+	if err != nil {
 		ctx.Logger().Error("fail to process stake message", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
+
+	stakeEvt := NewEventStake(
+		msg.RuneAmount,
+		msg.TokenAmount,
+		stakeUnits,
+	)
+	stakeBytes, err := json.Marshal(stakeEvt)
+	if err != nil {
+		ctx.Logger().Error("fail to save event", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	evt := NewEvent(
+		stakeEvt.Type(),
+		msg.RequestTxHash,
+		msg.Ticker,
+		stakeBytes,
+	)
+	keeper.AddIncompleteEvents(ctx, evt)
+	// since there is no outbound tx for staking, we'll complete the event now
+	blankTxID, _ := common.NewTxID(
+		"0000000000000000000000000000000000000000000000000000000000000000",
+	)
+	keeper.CompleteEvents(ctx, []common.TxID{msg.RequestTxHash}, blankTxID)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -122,6 +149,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 	amount, err := swap(
 		ctx,
 		keeper,
+		msg.RequestTxHash,
 		msg.SourceTicker,
 		msg.TargetTicker,
 		msg.Amount,
@@ -137,6 +165,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 
 		return sdk.ErrInternal(err.Error()).Result()
 	}
+
 	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
 		Token common.Amount `json:"token"`
 	}{
@@ -176,7 +205,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error("invalid MsgSetUnstake", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	runeAmt, tokenAmount, err := unstake(ctx, keeper, msg)
+	runeAmt, tokenAmount, units, err := unstake(ctx, keeper, msg)
 	if nil != err {
 		ctx.Logger().Error("fail to UnStake", "error", err)
 		return sdk.ErrInternal("fail to process UnStake request").Result()
@@ -192,6 +221,25 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error("fail to marshal result to json", "error", err)
 		// if this happen what should we tell the client?
 	}
+
+	unstakeEvt := NewEventUnstake(
+		runeAmt,
+		tokenAmount,
+		units,
+	)
+	unstakeBytes, err := json.Marshal(unstakeEvt)
+	if err != nil {
+		ctx.Logger().Error("fail to save event", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+	evt := NewEvent(
+		unstakeEvt.Type(),
+		msg.RequestTxHash,
+		msg.Ticker,
+		unstakeBytes,
+	)
+	keeper.AddIncompleteEvents(ctx, evt)
+
 	toi := &TxOutItem{
 		ToAddress: msg.PublicAddress,
 	}
@@ -511,6 +559,9 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 		in.SetDone(msg.TxID)
 		keeper.SetTxIn(ctx, in)
 	}
+
+	// complete events
+	keeper.CompleteEvents(ctx, index, msg.TxID)
 
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := keeper.GetTxOut(ctx, msg.Height)

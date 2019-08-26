@@ -174,7 +174,8 @@ func (StakeSuite) TestStake(c *C) {
 	if nil != err {
 		c.Errorf("fail to create bnb address,%s", err)
 	}
-	c.Assert(stake(ctx, ps, common.Ticker(""), common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId), NotNil)
+	_, err = stake(ctx, ps, common.Ticker(""), common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId)
+	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  common.NewAmountFromFloat(-100),
 		BalanceToken: common.NewAmountFromFloat(100),
@@ -183,7 +184,8 @@ func (StakeSuite) TestStake(c *C) {
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	})
-	c.Assert(stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId), NotNil)
+	_, err = stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId)
+	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  common.NewAmountFromFloat(100),
 		BalanceToken: common.NewAmountFromFloat(100),
@@ -192,7 +194,8 @@ func (StakeSuite) TestStake(c *C) {
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	})
-	c.Assert(stake(ctx, ps, notExistPoolStakerTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId), NotNil)
+	_, err = stake(ctx, ps, notExistPoolStakerTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId)
+	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  common.NewAmountFromFloat(100),
 		BalanceToken: common.NewAmountFromFloat(100),
@@ -214,9 +217,11 @@ func (StakeSuite) TestStake(c *C) {
 	}
 	skrs := makePoolStaker(150, 0.0002)
 	ps.SetPoolStaker(ctx, common.BNBTicker, skrs)
-	c.Assert(stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(1), common.NewAmountFromFloat(1), bnbAddress, txId), NotNil)
+	_, err = stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(1), common.NewAmountFromFloat(1), bnbAddress, txId)
+	c.Assert(err, NotNil)
 
-	c.Assert(stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), notExistStakerPoolAddr, txId), NotNil)
+	_, err = stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), notExistStakerPoolAddr, txId)
+	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  common.NewAmountFromFloat(100),
 		BalanceToken: common.NewAmountFromFloat(100),
@@ -225,7 +230,8 @@ func (StakeSuite) TestStake(c *C) {
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	})
-	c.Assert(stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId), IsNil)
+	_, err = stake(ctx, ps, common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId)
+	c.Assert(err, IsNil)
 	p := ps.GetPool(ctx, common.BNBTicker)
 
 	c.Check(p.PoolUnits.Equals(common.NewAmountFromFloat(200)), Equals, true)
