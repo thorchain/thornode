@@ -276,28 +276,23 @@ func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // SetTxHas - saving a given txhash to the KVStore
-func (k Keeper) SetTxIn(ctx sdk.Context, tx TxIn) {
+func (k Keeper) SetTxInVoter(ctx sdk.Context, tx TxInVoter) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxIn, tx.Key().String())
-	if !store.Has([]byte(key)) {
-		if err := k.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.Key()); nil != err {
-			ctx.Logger().Error("fail to add tx id to txin index", "txid", tx.Key(), "error", err)
-		}
-	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
 // GetTxIn - gets information of a tx hash
-func (k Keeper) GetTxIn(ctx sdk.Context, hash common.TxID) TxIn {
+func (k Keeper) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
 	key := getKey(prefixTxIn, hash.String())
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		return TxIn{}
+		return TxInVoter{TxID: hash}
 	}
 
 	bz := store.Get([]byte(key))
-	var record TxIn
+	var record TxInVoter
 	k.cdc.MustUnmarshalBinaryBare(bz, &record)
 	return record
 }
@@ -468,8 +463,8 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb co
 		}
 	}
 
-	// check if we've hit 2/3rds majority
-	if (float64(ansCount) / float64(totalTrusted)) >= 0.666666665 {
+	// check if we've hit majority
+	if HasMajority(ansCount, totalTrusted) {
 		return ans, nil
 	}
 
