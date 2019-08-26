@@ -36,13 +36,16 @@ func (evt Event) Empty() bool {
 
 type Events []Event
 
-func (evts Events) GetByInHash(txID common.TxID) Event {
+// Pops an event out of the event list by hash ID
+func (evts Events) PopByInHash(txID common.TxID) (event Event, events Events) {
 	for _, evt := range evts {
 		if evt.InHash.Equals(txID) {
-			return evt
+			event = evt
+		} else {
+			events = append(events, evt)
 		}
 	}
-	return Event{}
+	return
 }
 
 type EventSwap struct {

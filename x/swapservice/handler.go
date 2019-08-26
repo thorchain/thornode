@@ -111,7 +111,12 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		msg.TokenAmount,
 		stakeUnits,
 	)
-	stakeBytes, _ := json.Marshal(stakeEvt)
+	stakeBytes, err := json.Marshal(stakeEvt)
+	if err != nil {
+		ctx.Logger().Error("fail to save event", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
 	evt := NewEvent(
 		stakeEvt.Type(),
 		msg.RequestTxHash,
@@ -119,6 +124,11 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		stakeBytes,
 	)
 	keeper.AddIncompleteEvents(ctx, evt)
+	// since there is no outbound tx for staking, we'll complete the event now
+	blankTxID, _ := common.NewTxID(
+		"0000000000000000000000000000000000000000000000000000000000000000",
+	)
+	keeper.CompleteEvents(ctx, []common.TxID{msg.RequestTxHash}, blankTxID)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -166,7 +176,11 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 		common.NewCoin(msg.TargetTicker, amount),
 		slip,
 	)
-	swapBytes, _ := json.Marshal(swapEvt)
+	swapBytes, err := json.Marshal(swapEvt)
+	if err != nil {
+		ctx.Logger().Error("fail to save event", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
 	evt := NewEvent(
 		swapEvt.Type(),
 		msg.RequestTxHash,
@@ -236,7 +250,11 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		tokenAmount,
 		units,
 	)
-	unstakeBytes, _ := json.Marshal(unstakeEvt)
+	unstakeBytes, err := json.Marshal(unstakeEvt)
+	if err != nil {
+		ctx.Logger().Error("fail to save event", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
 	evt := NewEvent(
 		unstakeEvt.Type(),
 		msg.RequestTxHash,

@@ -72,9 +72,11 @@ func (s EventSuite) TestEvent(c *C) {
 	)
 
 	events := Events{evt, evt2}
-	event := events.GetByInHash(txID)
+	event, events := events.PopByInHash(txID)
 	c.Check(event.Empty(), Equals, false)
 	c.Check(event.Type, Equals, evt2.Type)
+	c.Assert(events, HasLen, 1)
+	c.Check(events[0].Type, Equals, evt.Type)
 
 	c.Check(Event{}.Empty(), Equals, true)
 }

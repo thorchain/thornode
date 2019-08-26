@@ -25,7 +25,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 
 	// Dynamically create endpoints of all funcs in querier.go
 	for _, q := range query.Queries {
-		q.Endpoint(storeName, restURLParam, restURLParam2)
+		endpoint := q.Endpoint(storeName, restURLParam, restURLParam2)
 		if endpoint != "" { // don't setup REST endpoint if we have no endpoint
 			r.HandleFunc(
 				endpoint,
