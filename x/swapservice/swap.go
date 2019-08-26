@@ -1,6 +1,7 @@
 package swapservice
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 
@@ -46,36 +47,36 @@ func validateMessage(source, target common.Ticker, amount common.Amount, request
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, source, target common.Ticker, amount common.Amount, requester, destination common.BnbAddress, requestTxHash common.TxID, tradeTarget, tradeSlipLimit, globalSlipLimit common.Amount) (common.Amount, common.Amount, error) {
+func swap(ctx sdk.Context, keeper poolStorage, txID common.TxID, source, target common.Ticker, amount common.Amount, requester, destination common.BnbAddress, requestTxHash common.TxID, tradeTarget, tradeSlipLimit, globalSlipLimit common.Amount) (common.Amount, error) {
 	if err := validateMessage(source, target, amount, requester, destination, requestTxHash); nil != err {
 		ctx.Logger().Error(err.Error())
-		return "0", "0", err
+		return "0", err
 	}
 	if err := validatePools(ctx, keeper, source, target); nil != err {
 		ctx.Logger().Error(err.Error())
-		return "0", "0", err
+		return "0", err
 	}
 
 	isDoubleSwap := !common.IsRune(source) && !common.IsRune(target)
 
 	if isDoubleSwap {
-		runeAmount, slip1, err := swapOne(ctx, keeper, source, common.RuneTicker, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+		runeAmount, err := swapOne(ctx, keeper, txID, source, common.RuneTicker, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 		if err != nil {
-			return "0", "0", errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneTicker)
+			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneTicker)
 		}
-		tokenAmount, slip2, err := swapOne(ctx, keeper, common.RuneTicker, target, runeAmount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
-		return tokenAmount, slip1.Plus(slip2), err
+		tokenAmount, err := swapOne(ctx, keeper, txID, common.RuneTicker, target, runeAmount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+		return tokenAmount, err
 	}
-	tokenAmount, slip, err := swapOne(ctx, keeper, source, target, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
-	return tokenAmount, slip, err
+	tokenAmount, err := swapOne(ctx, keeper, txID, source, target, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+	return tokenAmount, err
 }
 
 func swapOne(ctx sdk.Context,
-	keeper poolStorage,
+	keeper poolStorage, txID common.TxID,
 	source, target common.Ticker,
 	amount common.Amount, requester,
 	destination common.BnbAddress,
-	tradeTarget, tradeSlipLimit, globalSlipLimit common.Amount) (common.Amount, common.Amount, error) {
+	tradeTarget, tradeSlipLimit, globalSlipLimit common.Amount) (common.Amount, error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
@@ -85,7 +86,7 @@ func swapOne(ctx sdk.Context,
 	}
 	if !keeper.PoolExist(ctx, ticker) {
 		ctx.Logger().Debug(fmt.Sprintf("pool %s doesn't exist", ticker))
-		return "0", "0", errors.New(fmt.Sprintf("pool %s doesn't exist", ticker))
+		return "0", errors.New(fmt.Sprintf("pool %s doesn't exist", ticker))
 	}
 
 	amt := amount.Float64()
@@ -94,7 +95,7 @@ func swapOne(ctx sdk.Context,
 
 	pool := keeper.GetPool(ctx, ticker)
 	if pool.Status != PoolEnabled {
-		return "0", "0", errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
+		return "0", errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
 	}
 	balanceRune := pool.BalanceRune.Float64()
 	balanceToken := pool.BalanceToken.Float64()
@@ -102,34 +103,52 @@ func swapOne(ctx sdk.Context,
 		tTarget := tradeTarget.Float64() // trade target
 		userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
 		if math.Abs(userPrice-tTarget)/tTarget > tsl {
-			return "0", "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, tsl*100, tTarget)
+			return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, tsl*100, tTarget)
 		}
 	}
 	// do we have enough balance to swap?
 	if common.IsRune(source) {
 		if balanceToken == 0 {
-			return "0", "0", errors.New("token :%s balance is 0, can't do swap")
+			return "0", errors.New("token :%s balance is 0, can't do swap")
 		}
 	} else {
 		if balanceRune == 0 {
-			return "0", "0", errors.New(common.RuneTicker.String() + " balance is 0, can't swap ")
+			return "0", errors.New(common.RuneTicker.String() + " balance is 0, can't swap ")
 		}
 	}
 	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
 	if poolSlip > gsl {
-		return "0", "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
+		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
 	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
 	newBalanceRune, newBalanceToken, returnAmt, err := calculateSwap(source, balanceRune, balanceToken, amt)
 	if nil != err {
-		return "0", "0", errors.Wrap(err, "fail to swap")
+		return "0", errors.Wrap(err, "fail to swap")
 	}
 	pool.BalanceRune = common.NewAmountFromFloat(newBalanceRune)
 	pool.BalanceToken = common.NewAmountFromFloat(newBalanceToken)
 	returnTokenAmount := common.NewAmountFromFloat(returnAmt)
 	keeper.SetPool(ctx, pool)
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, returnTokenAmount))
-	return returnTokenAmount, common.NewAmountFromFloat(poolSlip), nil
+
+	swapEvt := NewEventSwap(
+		common.NewCoin(source, amount),
+		common.NewCoin(target, returnTokenAmount),
+		common.NewAmountFromFloat(poolSlip),
+	)
+	swapBytes, err := json.Marshal(swapEvt)
+	if err != nil {
+		return "0", errors.Wrap(err, "fail to marshal swap event")
+	}
+	evt := NewEvent(
+		swapEvt.Type(),
+		txID,
+		ticker,
+		swapBytes,
+	)
+	keeper.AddIncompleteEvents(ctx, evt)
+
+	return returnTokenAmount, nil
 }
 
 // calculateUserPrice return trade slip

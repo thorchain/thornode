@@ -198,8 +198,10 @@ func (s SwapSuite) TestSwap(c *C) {
 			expectedErr:   nil,
 		},
 	}
+	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
+	c.Assert(err, IsNil)
 	for _, item := range inputs {
-		amount, _, err := swap(ctx, poolStorage, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeTarget, tradeSlipLimit, globalSlipLimit)
+		amount, err := swap(ctx, poolStorage, txID, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeTarget, tradeSlipLimit, globalSlipLimit)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
 		} else {

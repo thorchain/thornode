@@ -22,4 +22,6 @@ type poolStorage interface {
 	GetAdminConfigValue(ctx sdk.Context, key AdminConfigKey, bnb common.BnbAddress) (string, error)
 
 	GetAdminConfigStakerAmtInterval(ctx sdk.Context, bnb common.BnbAddress) common.Amount
+
+	AddIncompleteEvents(ctx sdk.Context, event Event)
 }
