@@ -502,7 +502,11 @@ func (k Keeper) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
 func (k Keeper) SetIncompleteEvents(ctx sdk.Context, events Events) {
 	key := getKey(prefixInCompleteEvents, "")
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&events))
+	if len(events) == 0 {
+		store.Delete([]byte(key))
+	} else {
+		store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&events))
+	}
 }
 
 // AddIncompleteEvents append to incomplete events
