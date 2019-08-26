@@ -550,13 +550,17 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxI
 
 	for _, txID := range in {
 		eID += 1
-		evt := incomplete.GetByInHash(txID)
+		var evt Event
+		evt, incomplete = incomplete.PopByInHash(txID)
 		if !evt.Empty() {
 			evt.ID = common.NewAmountFromFloat(eID)
 			evt.OutHash = out
 			k.SetCompletedEvent(ctx, evt)
 		}
 	}
+
+	// save new list of incomplete events
+	k.SetIncompleteEvents(ctx, incomplete)
 
 	lastEventID = common.NewAmountFromFloat(eID)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(lastEventID))
