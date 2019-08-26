@@ -175,6 +175,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 		ctx.Logger().Error("fail to encode result to json", "error", err)
 		return sdk.ErrInternal("fail to encode result to json").Result()
 	}
+
 	toi := &TxOutItem{
 		ToAddress: msg.Destination,
 	}
@@ -277,7 +278,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAcc
 // another handler to process the request
 func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetTxIn) sdk.Result {
 	conflicts := make(common.TxIDs, 0)
-	todo := make([]TxIn, 0)
+	todo := make([]TxInVoter, 0)
 	for _, tx := range msg.TxIns {
 		// validate there are not conflicts first
 		if keeper.CheckTxHash(ctx, tx.Key()) {
@@ -287,18 +288,29 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 		}
 	}
 
+	totalTrusted := keeper.TotalTrustAccounts(ctx)
 	handler := NewHandler(keeper, txOutStore)
 	for _, tx := range todo {
-		// save the tx to db to stop duplicate request (aka replay attacks)
-		keeper.SetTxIn(ctx, tx)
-		msg, err := processOneTxIn(ctx, keeper, tx, msg.Signer)
-		if nil != err {
-			ctx.Logger().Error("fail to process txHash", "error", err)
-			refundTx(ctx, tx, txOutStore, keeper)
-			continue
-		}
+		voter := keeper.GetTxInVoter(ctx, tx.TxID)
+		preConsensus := voter.HasConensus(totalTrusted)
+		voter.Adds(tx.Txs, msg.Signer)
+		postConsensus := voter.HasConensus(totalTrusted)
+		keeper.SetTxInVoter(ctx, voter)
 
-		handler(ctx, msg)
+		if preConsensus == false && postConsensus == true && !voter.IsProcessed {
+			voter.IsProcessed = true
+			keeper.SetTxInVoter(ctx, voter)
+			msg, err := processOneTxIn(ctx, keeper, tx.TxID, voter.GetTx(totalTrusted), msg.Signer)
+			if nil != err {
+				ctx.Logger().Error("fail to process txHash", "error", err)
+				refundTx(ctx, voter.GetTx(totalTrusted), txOutStore, keeper)
+				continue
+			}
+
+			// ignoring the error
+			_ = keeper.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.TxID)
+			handler(ctx, msg)
+		}
 	}
 
 	return sdk.Result{
@@ -307,7 +319,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 	}
 }
 
-func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	memo, err := ParseMemo(tx.Memo)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to parse memo")
@@ -322,7 +334,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddre
 			return nil, errors.Wrap(err, "fail to get MsgSetPoolData from memo")
 		}
 	case StakeMemo:
-		newMsg, err = getMsgStakeFromMemo(ctx, m, &tx, signer)
+		newMsg, err = getMsgStakeFromMemo(ctx, m, txID, &tx, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgStake from memo")
 		}
@@ -332,17 +344,17 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddre
 			return nil, errors.Wrap(err, "fail to get MsgAdminConfig from memo")
 		}
 	case WithdrawMemo:
-		newMsg, err = getMsgUnstakeFromMemo(m, tx, signer)
+		newMsg, err = getMsgUnstakeFromMemo(m, txID, tx, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgUnstake from memo")
 		}
 	case SwapMemo:
-		newMsg, err = getMsgSwapFromMemo(m, tx, signer)
+		newMsg, err = getMsgSwapFromMemo(m, txID, tx, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgSwap from memo")
 		}
 	case AddMemo:
-		newMsg, err = getMsgAddFromMemo(m, tx, signer)
+		newMsg, err = getMsgAddFromMemo(m, txID, tx, signer)
 		if err != nil {
 			return nil, errors.Wrap(err, "fail to get MsgAdd from memo")
 		}
@@ -352,7 +364,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx TxIn, signer sdk.AccAddre
 			return nil, errors.Wrap(err, "fail to get MsgNoOp from memo")
 		}
 	case OutboundMemo:
-		newMsg, err = getMsgOutboundFromMemo(m, tx.Request, tx.Sender, signer)
+		newMsg, err = getMsgOutboundFromMemo(m, txID, tx.Sender, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
@@ -375,7 +387,7 @@ func getMsgNoOpFromMemo(tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	return NewMsgNoOp(signer), nil
 }
 
-func getMsgSwapFromMemo(memo SwapMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgSwapFromMemo(memo SwapMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	if len(tx.Coins) > 1 {
 		return nil, errors.New("not expecting multiple coins in a swap")
 	}
@@ -384,10 +396,10 @@ func getMsgSwapFromMemo(memo SwapMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg,
 	}
 	coin := tx.Coins[0]
 	// Looks like at the moment we can only process ont ty
-	return NewMsgSwap(tx.Request, coin.Denom, memo.GetTicker(), coin.Amount, tx.Sender, memo.Destination, common.NewAmountFromFloat(memo.SlipLimit), signer), nil
+	return NewMsgSwap(txID, coin.Denom, memo.GetTicker(), coin.Amount, tx.Sender, memo.Destination, common.NewAmountFromFloat(memo.SlipLimit), signer), nil
 }
 
-func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgUnstakeFromMemo(memo WithdrawMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	withdrawAmount := common.NewAmountFromFloat(MaxWithdrawBasisPoints)
 	var err error
 	if len(memo.GetAmount()) > 0 {
@@ -396,7 +408,7 @@ func getMsgUnstakeFromMemo(memo WithdrawMemo, tx TxIn, signer sdk.AccAddress) (s
 			return nil, err
 		}
 	}
-	return NewMsgSetUnStake(tx.Sender, withdrawAmount, memo.GetTicker(), tx.Request, signer), nil
+	return NewMsgSetUnStake(tx.Sender, withdrawAmount, memo.GetTicker(), txID, signer), nil
 
 }
 
@@ -427,7 +439,7 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, t
 	return nil, errors.New("invalid admin command type")
 }
 
-func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	runeAmount := common.ZeroAmount
 	tokenAmount := common.ZeroAmount
 	for _, coin := range tx.Coins {
@@ -443,7 +455,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx *TxIn, signer sdk.A
 		runeAmount,
 		tokenAmount,
 		tx.Sender,
-		tx.Request,
+		txID,
 		signer,
 	), nil
 }
@@ -459,7 +471,7 @@ func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, 
 	), nil
 }
 
-func getMsgAddFromMemo(memo AddMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	runeAmount := common.ZeroAmount
 	tokenAmount := common.ZeroAmount
 	for _, coin := range tx.Coins {
@@ -473,7 +485,7 @@ func getMsgAddFromMemo(memo AddMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, e
 		memo.GetTicker(),
 		runeAmount,
 		tokenAmount,
-		tx.Key(),
+		txID,
 		signer,
 	), nil
 }
@@ -491,13 +503,12 @@ func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.B
 // handleMsgAdd
 func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgAdd %s", msg.TxID))
-	fmt.Printf("Add: %+v\n", msg)
 	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgOutboundTx", "error", err)
+		ctx.Logger().Error("invalid MsgAdd", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
@@ -555,9 +566,9 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 
 	// iterate over our index and mark each tx as done
 	for _, txID := range index {
-		in := keeper.GetTxIn(ctx, txID)
-		in.SetDone(msg.TxID)
-		keeper.SetTxIn(ctx, in)
+		voter := keeper.GetTxInVoter(ctx, txID)
+		voter.SetDone(msg.TxID)
+		keeper.SetTxInVoter(ctx, voter)
 	}
 
 	// complete events

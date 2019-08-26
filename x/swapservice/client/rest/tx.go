@@ -46,7 +46,7 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		txHashes := make([]types.TxIn, len(req.TxArray))
+		voters := make([]types.TxInVoter, len(req.TxArray))
 		for i, tx := range req.TxArray {
 			txID, err := common.NewTxID(tx.TxHash)
 			if err != nil {
@@ -60,11 +60,13 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 				return
 			}
 
-			txHashes[i] = types.NewTxIn(txID, tx.Coins, tx.Memo, bnbAddr)
+			tx := types.NewTxIn(tx.Coins, tx.Memo, bnbAddr)
+
+			voters[i] = types.NewTxInVoter(txID, []types.TxIn{tx})
 		}
 
 		// create the message
-		msg := types.NewMsgSetTxIn(txHashes, addr)
+		msg := types.NewMsgSetTxIn(voters, addr)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

@@ -235,8 +235,9 @@ func GetCmdSetTxIn(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			tx := types.NewTxIn(txID, stateCoins, args[2], bnbAddr)
-			msg := types.NewMsgSetTxIn([]types.TxIn{tx}, cliCtx.GetFromAddress())
+			tx := types.NewTxIn(stateCoins, args[2], bnbAddr)
+			voter := types.NewTxInVoter(txID, []types.TxIn{tx})
+			msg := types.NewMsgSetTxIn([]types.TxInVoter{voter}, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
