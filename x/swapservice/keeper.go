@@ -554,12 +554,14 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxI
 
 	for _, txID := range in {
 		eID += 1
-		var evt Event
-		evt, incomplete = incomplete.PopByInHash(txID)
-		if !evt.Empty() {
-			evt.ID = common.NewAmountFromFloat(eID)
-			evt.OutHash = out
-			k.SetCompletedEvent(ctx, evt)
+		var evts Events
+		evts, incomplete = incomplete.PopByInHash(txID)
+		for _, evt := range evts {
+			if !evt.Empty() {
+				evt.ID = common.NewAmountFromFloat(eID)
+				evt.OutHash = out
+				k.SetCompletedEvent(ctx, evt)
+			}
 		}
 	}
 

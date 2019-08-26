@@ -146,9 +146,10 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 	tsl := keeper.GetAdminConfigTSL(ctx, common.NoBnbAddress)
 	gsl := keeper.GetAdminConfigGSL(ctx, common.NoBnbAddress)
 
-	amount, slip, err := swap(
+	amount, err := swap(
 		ctx,
 		keeper,
+		msg.RequestTxHash,
 		msg.SourceTicker,
 		msg.TargetTicker,
 		msg.Amount,
@@ -164,30 +165,6 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-
-	var pool common.Ticker
-	if common.IsRune(msg.SourceTicker) {
-		pool = msg.TargetTicker
-	} else {
-		pool = msg.SourceTicker
-	}
-	swapEvt := NewEventSwap(
-		common.NewCoin(msg.SourceTicker, msg.Amount),
-		common.NewCoin(msg.TargetTicker, amount),
-		slip,
-	)
-	swapBytes, err := json.Marshal(swapEvt)
-	if err != nil {
-		ctx.Logger().Error("fail to save event", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	evt := NewEvent(
-		swapEvt.Type(),
-		msg.RequestTxHash,
-		pool,
-		swapBytes,
-	)
-	keeper.AddIncompleteEvents(ctx, evt)
 
 	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
 		Token common.Amount `json:"token"`

@@ -37,10 +37,10 @@ func (evt Event) Empty() bool {
 type Events []Event
 
 // Pops an event out of the event list by hash ID
-func (evts Events) PopByInHash(txID common.TxID) (event Event, events Events) {
+func (evts Events) PopByInHash(txID common.TxID) (found Events, events Events) {
 	for _, evt := range evts {
 		if evt.InHash.Equals(txID) {
-			event = evt
+			found = append(found, evt)
 		} else {
 			events = append(events, evt)
 		}
