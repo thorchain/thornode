@@ -65,7 +65,7 @@ func (s StatechainSuite) TestSign(c *C) {
 		_, err := rw.Write([]byte(`{
 			  "type": "cosmos-sdk/Account",
 			  "value": {
-				"address": "rune1v5n3r5j7hhvpdsdr4pkquqeq5x8plynnjgpc25",
+				"address": "bep19ntuk0yy5plar0m5y274dk8ekq862mtedqfyqx",
 				"coins": [
 				  {
 					"denom": "rune",
@@ -86,18 +86,21 @@ func (s StatechainSuite) TestSign(c *C) {
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
 	cfg.ChainHost = u.Host
-	tx := stypes.NewTxIn(
-		common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"),
-		common.Coins{
-			common.NewCoin(common.Ticker("BNB"), common.Amount("1.234")),
-		},
-		"This is my memo!",
-		common.BnbAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
-	)
+	tx := stypes.NewTxInVoter(common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"), []stypes.TxIn{
+		stypes.NewTxIn(
+			common.Coins{
+				common.NewCoin(common.Ticker("BNB"), common.Amount("1.234")),
+			},
+			"This is my memo!",
+			common.BnbAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
+		),
+	})
+
 	bridge, err := NewStateChainBridge(cfg)
 	c.Assert(err, IsNil)
 	c.Assert(bridge, NotNil)
-	signedMsg, err := bridge.Sign([]stypes.TxIn{tx})
+	signedMsg, err := bridge.Sign([]stypes.TxInVoter{tx})
+	c.Log(err)
 	c.Assert(signedMsg, NotNil)
 	c.Assert(err, IsNil)
 }
@@ -189,8 +192,10 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 			requestUrl = ""
 		}
 		accountNumber, seqNo, err := scb.getAccountNumberAndSequenceNumber(requestUrl)
-		c.Assert(accountNumber, Equals, accountNumber)
-		c.Assert(seqNo, Equals, seqNo)
+		c.Log("account Number:", accountNumber)
+		c.Log("seqNo:", seqNo)
+		c.Assert(accountNumber, Equals, expectedAccNum)
+		c.Assert(seqNo, Equals, expectedSeq)
 		c.Assert(err, errChecker)
 	}
 	testfunc(nil, 0, 0, NotNil)
@@ -226,7 +231,7 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 }`)); nil != err {
 			c.Error(err)
 		}
-	}, 0, 0, IsNil)
+	}, 0, 0, NotNil)
 	testfunc(func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
 "type": "cosmos-sdk/Account",
@@ -240,7 +245,7 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 }`)); nil != err {
 			c.Error(err)
 		}
-	}, 0, 0, IsNil)
+	}, 0, 0, NotNil)
 	testfunc(func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
 "type": "cosmos-sdk/Account",
@@ -255,10 +260,41 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 			c.Error(err)
 		}
 	}, 5, 6, IsNil)
+	testfunc(func(writer http.ResponseWriter, request *http.Request) {
+		if _, err := writer.Write([]byte(`{
+  "type": "cosmos-sdk/Account",
+  "value": {
+    "address": "bep192s6yjpffxuarphtppj8x8gdk5yhryk8uk0kk4",
+    "coins": [
+      {
+        "denom": "bnb",
+        "amount": "1000"
+      },
+      {
+        "denom": "btc",
+        "amount": "1000"
+      },
+      {
+        "denom": "runed",
+        "amount": "1000"
+      }
+    ],
+    "public_key": {
+      "type": "tendermint/PubKeySecp256k1",
+      "value": "Awt+sP60ISUqARl9Ff0XvGzNYZFFmayas4L3HJz64f+4"
+    },
+    "account_number": "0",
+    "sequence": "2"
+  }
+}`)); nil != err {
+			c.Error(err)
+		}
+	}, 0, 2, IsNil)
+
 }
 
 func (StatechainSuite) TestSignEx(c *C) {
-	testFunc := func(in []stypes.TxIn, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
+	testFunc := func(in []stypes.TxInVoter, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
 		cfg, _, cleanup := setupStateChainForTest(c)
 		defer cleanup()
 		if nil != handleFunc {
@@ -278,14 +314,18 @@ func (StatechainSuite) TestSignEx(c *C) {
 	if nil != err {
 		c.Error(err)
 	}
-	testFunc([]stypes.TxIn{
+	testFunc([]stypes.TxInVoter{
 		{
-			Request: "EBB78FA6FDFBB19EBD188316B5FF9E60799C3149214A263274D31F4F605B8FDE",
-			Status:  stypes.Incomplete,
-			Done:    common.TxID(""),
-			Memo:    "",
-			Coins:   nil,
-			Sender:  testBNBAddress,
+			TxID: "EBB78FA6FDFBB19EBD188316B5FF9E60799C3149214A263274D31F4F605B8FDE",
+			Txs: []stypes.TxIn{
+				{
+					Status: stypes.Incomplete,
+					Done:   common.TxID(""),
+					Memo:   "",
+					Coins:  nil,
+					Sender: testBNBAddress,
+				},
+			},
 		},
 	}, func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -293,7 +333,7 @@ func (StatechainSuite) TestSignEx(c *C) {
 }
 
 func (StatechainSuite) TestSendEx(c *C) {
-	testFunc := func(in []stypes.TxIn, mode types.TxMode, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
+	testFunc := func(in []stypes.TxInVoter, mode types.TxMode, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
 		cfg, _, cleanup := setupStateChainForTest(c)
 		defer cleanup()
 		if nil != handleFunc {
@@ -317,15 +357,17 @@ func (StatechainSuite) TestSendEx(c *C) {
 	}
 	txIns := []stypes.TxIn{
 		{
-			Request: "EBB78FA6FDFBB19EBD188316B5FF9E60799C3149214A263274D31F4F605B8FDE",
-			Status:  stypes.Incomplete,
-			Done:    common.TxID(""),
-			Memo:    "",
-			Coins:   nil,
-			Sender:  testBNBAddress,
+			Status: stypes.Incomplete,
+			Done:   common.TxID(""),
+			Memo:   "",
+			Coins:  nil,
+			Sender: testBNBAddress,
 		},
 	}
-	testFunc(txIns, types.TxUnknown, func(writer http.ResponseWriter, request *http.Request) {
+	txInVoters := []stypes.TxInVoter{
+		stypes.NewTxInVoter("EBB78FA6FDFBB19EBD188316B5FF9E60799C3149214A263274D31F4F605B8FDE", txIns),
+	}
+	testFunc(txInVoters, types.TxUnknown, func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
 "type": "cosmos-sdk/Account",
 "value": {
@@ -339,7 +381,7 @@ func (StatechainSuite) TestSendEx(c *C) {
 			c.Error(err)
 		}
 	}, IsNil, NotNil)
-	testFunc(txIns, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
+	testFunc(txInVoters, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
 		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
 			if _, err := writer.Write([]byte(`{
 "type": "cosmos-sdk/Account",
@@ -357,7 +399,7 @@ func (StatechainSuite) TestSendEx(c *C) {
 		}
 		writer.WriteHeader(http.StatusInternalServerError)
 	}, IsNil, NotNil)
-	testFunc(txIns, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
+	testFunc(txInVoters, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
 		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
 			if _, err := writer.Write([]byte(`{
 "type": "cosmos-sdk/Account",

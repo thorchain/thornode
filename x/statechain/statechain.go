@@ -122,17 +122,17 @@ func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string
 		return 0, 0, errors.Wrap(err, "fail to read response body")
 	}
 	var baseAccount authtypes.BaseAccount
-	err = json.Unmarshal(body, &baseAccount)
+
+	err = authtypes.ModuleCdc.UnmarshalJSON(body, &baseAccount)
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "fail to unmarshal base account")
 	}
-
 	return baseAccount.AccountNumber, baseAccount.Sequence, nil
 
 }
 
 // Sign the incoming transaction
-func (scb *StateChainBridge) Sign(txIns []stypes.TxIn) (*authtypes.StdTx, error) {
+func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, error) {
 	if len(txIns) == 0 {
 		return nil, errors.New("nothing to be signed")
 	}
@@ -149,6 +149,7 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxIn) (*authtypes.StdTx, error)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to get account number and sequence number from statechain")
 	}
+	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", accNumber).Uint64("sequenceNo", seqNumber).Msg("info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
 		AccountNumber: accNumber,
