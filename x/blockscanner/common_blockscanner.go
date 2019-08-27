@@ -11,11 +11,13 @@ import (
 
 	"github.com/cenkalti/backoff"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
+	"gitlab.com/thorchain/bepswap/observe/x/metrics"
 )
 
 // CommonBlockScanner is used to discover block height
@@ -28,11 +30,13 @@ type CommonBlockScanner struct {
 	stopChan       chan struct{}
 	httpClient     *http.Client
 	scannerStorage ScannerStorage
+	metrics        *metrics.Metrics
 	previousBlock  int64
+	errorCounter   *prometheus.CounterVec
 }
 
 // NewCommonBlockScanner create a new instance of CommonBlockScanner
-func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage ScannerStorage) (*CommonBlockScanner, error) {
+func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage ScannerStorage, m *metrics.Metrics) (*CommonBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("host is empty")
 	}
@@ -42,6 +46,9 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 	}
 	if nil == scannerStorage {
 		return nil, errors.New("scannerStorage is nil")
+	}
+	if nil == m {
+		return nil, errors.New("metrics instance is nil")
 	}
 	return &CommonBlockScanner{
 		cfg:      cfg,
@@ -53,7 +60,9 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 			Timeout: cfg.HttpRequestTimeout,
 		},
 		scannerStorage: scannerStorage,
+		metrics:        m,
 		previousBlock:  cfg.StartBlockHeight,
+		errorCounter:   m.GetCounterVec(metrics.CommonBLockScannerError),
 	}, nil
 }
 
@@ -95,6 +104,7 @@ func (b *CommonBlockScanner) retryBlocks(failedonly bool) {
 	// start up to grab those blocks that we didn't finished
 	blocks, err := b.scannerStorage.GetBlocksForRetry(failedonly)
 	if nil != err {
+		b.errorCounter.WithLabelValues("fail_get_blocks_for_retry", "").Inc()
 		b.logger.Error().Err(err).Msg("fail to get blocks for retry")
 	}
 	b.logger.Debug().Msgf("find %v blocks need to retry", blocks)
@@ -103,6 +113,7 @@ func (b *CommonBlockScanner) retryBlocks(failedonly bool) {
 		case <-b.stopChan:
 			return // need to bail
 		case b.scanChan <- item:
+			b.metrics.GetCounter(metrics.TotalRetryBlocks).Inc()
 		}
 	}
 }
@@ -114,10 +125,12 @@ func (b *CommonBlockScanner) scanBlocks() {
 	defer b.wg.Done()
 	currentPos, err := b.scannerStorage.GetScanPos()
 	if nil != err {
+		b.errorCounter.WithLabelValues("fail_get_scan_pos", "").Inc()
 		b.logger.Error().Err(err).Msgf("fail to get current block scan pos,we will start from %d", b.previousBlock)
 	} else {
 		b.previousBlock = currentPos
 	}
+	b.metrics.GetCounter(metrics.CurrentPosition).Add(float64(currentPos))
 	// start up to grab those blocks that we didn't finished
 	b.retryBlocks(false)
 	for {
@@ -127,6 +140,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 		default:
 			currentBlock, err := b.getRPCBlock(b.getBlockUrl())
 			if nil != err {
+				b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
 				b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 			}
 			b.logger.Info().Int64("current block height", currentBlock).Int64("we are at", b.previousBlock).Msg("get block height")
@@ -139,9 +153,10 @@ func (b *CommonBlockScanner) scanBlocks() {
 				// scan next block
 				for idx := b.previousBlock; idx < currentBlock; idx++ {
 					b.previousBlock++
+					b.metrics.GetCounter(metrics.TotalBlockScanned).Inc()
 					if err := b.scannerStorage.SetBlockScanStatus(b.previousBlock, NotStarted); err != nil {
 						b.logger.Error().Err(err).Msg("fail to set block status")
-						// TODO alert here , because we stop scanning blocks
+						b.errorCounter.WithLabelValues("fail_set_block_status", strconv.FormatInt(b.previousBlock, 10)).Inc()
 						return
 					}
 					select {
@@ -149,7 +164,9 @@ func (b *CommonBlockScanner) scanBlocks() {
 						return // need to bail
 					case b.scanChan <- b.previousBlock:
 					}
+					b.metrics.GetCounter(metrics.CurrentPosition).Inc()
 					if err := b.scannerStorage.SetScanPos(b.previousBlock); nil != err {
+						b.errorCounter.WithLabelValues("fail_save_block_pos", strconv.FormatInt(b.previousBlock, 10)).Inc()
 						b.logger.Error().Err(err).Msg("fail to save block scan pos")
 						// alert!!
 						return
@@ -192,10 +209,12 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 	b.logger.Debug().Str("url", url).Msg("http")
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if nil != err {
+		b.errorCounter.WithLabelValues("fail_create_http_request", url).Inc()
 		return nil, errors.Wrap(err, "fail to create http request")
 	}
 	resp, err := b.httpClient.Do(req)
 	if nil != err {
+		b.errorCounter.WithLabelValues("fail_send_http_request", url).Inc()
 		return nil, errors.Wrapf(err, "fail to get from %s ", url)
 	}
 	defer func() {
@@ -205,6 +224,7 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
+		b.errorCounter.WithLabelValues("unexpected_status_code", resp.Status).Inc()
 		return nil, errors.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
 	}
 	return ioutil.ReadAll(resp.Body)
@@ -219,23 +239,30 @@ func (b *CommonBlockScanner) getBlockUrl() string {
 	return requestUrl.String()
 }
 func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {
+	start := time.Now()
 	defer func() {
 		if err := recover(); nil != err {
 			b.logger.Error().Msgf("fail to get RPCBlock:%s", err)
 		}
+		duration := time.Since(start)
+		b.metrics.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
+
 	buf, err := b.GetFromHttpWithRetry(requestUrl)
 	if nil != err {
+		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
 		return 0, errors.Wrap(err, "fail to get blocks")
 	}
 	var tx btypes.RPCBlock
 	if err := json.Unmarshal(buf, &tx); nil != err {
+		b.errorCounter.WithLabelValues("fail_unmarshal_block", requestUrl).Inc()
 		return 0, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
 	}
 	block := tx.Result.Block.Header.Height
 
 	parsedBlock, err := strconv.ParseInt(block, 10, 64)
 	if nil != err {
+		b.errorCounter.WithLabelValues("fail_parse_block_height", block).Inc()
 		return 0, errors.Wrap(err, "fail to convert block height to int")
 	}
 	return parsedBlock, nil

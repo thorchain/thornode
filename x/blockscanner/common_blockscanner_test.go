@@ -10,6 +10,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
+	"gitlab.com/thorchain/bepswap/observe/x/metrics"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -20,14 +21,27 @@ var _ = Suite(&CommonBlockScannerTestSuite{})
 
 func (CommonBlockScannerTestSuite) TestNewCommonBlockScanner(c *C) {
 	mss := NewMockScannerStorage()
+	m, err := metrics.NewMetrics(config.MetricConfiguration{
+		Enabled:      false,
+		ListenPort:   8080,
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+	})
+	c.Check(m, NotNil)
+	c.Check(err, IsNil)
 	cbs, err := NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "",
-	}, mss)
+	}, mss, m)
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "localhost",
-	}, mss)
+	}, mss, nil)
+	c.Check(cbs, IsNil)
+	c.Check(err, NotNil)
+	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
+		RPCHost: "localhost",
+	}, mss, m)
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 }
@@ -49,6 +63,14 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 	mss := NewMockScannerStorage()
 	s := httptest.NewTLSServer(h)
 	defer s.Close()
+	m, err := metrics.NewMetrics(config.MetricConfiguration{
+		Enabled:      false,
+		ListenPort:   8080,
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+	})
+	c.Check(m, NotNil)
+	c.Check(err, IsNil)
 	cbs, err := NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost:                    s.Listener.Addr().String(),
 		Scheme:                     "https",
@@ -60,7 +82,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 		MaxHttpRequestRetry:        3,
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
-	}, mss)
+	}, mss, m)
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	trSkipVerify := &http.Transport{

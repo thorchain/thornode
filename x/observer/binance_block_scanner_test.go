@@ -15,6 +15,7 @@ import (
 	"gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
 	"gitlab.com/thorchain/bepswap/observe/x/blockscanner"
+	"gitlab.com/thorchain/bepswap/observe/x/metrics"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
@@ -40,19 +41,27 @@ func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 }
 
 func (BlockScannerTestSuite) TestNewBlockScanner(c *C) {
-	bs, err := NewBinanceBlockScanner(getConfigForTest(""), blockscanner.NewMockScannerStorage(), true, common.BnbAddress(""))
+	m, err := metrics.NewMetrics(config.MetricConfiguration{
+		Enabled:      false,
+		ListenPort:   9000,
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+	})
+	c.Assert(m, NotNil)
+	c.Assert(err, IsNil)
+	bs, err := NewBinanceBlockScanner(getConfigForTest(""), blockscanner.NewMockScannerStorage(), true, common.BnbAddress(""), m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, common.BnbAddress(""))
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, common.BnbAddress(""), m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), nil, true, common.BnbAddress(""))
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), nil, true, common.BnbAddress(""), m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, common.BnbAddress(""))
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, common.BnbAddress(""), m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"), m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 }
@@ -197,7 +206,15 @@ func (BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 	})
 	s := httptest.NewTLSServer(h)
 	defer s.Close()
-	bs, err := NewBinanceBlockScanner(getConfigForTest(s.Listener.Addr().String()), blockscanner.NewMockScannerStorage(), true, common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
+	m, err := metrics.NewMetrics(config.MetricConfiguration{
+		Enabled:      false,
+		ListenPort:   9000,
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+	})
+	c.Assert(m, NotNil)
+	c.Assert(err, IsNil)
+	bs, err := NewBinanceBlockScanner(getConfigForTest(s.Listener.Addr().String()), blockscanner.NewMockScannerStorage(), true, common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"), m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 	trSkipVerify := &http.Transport{
@@ -227,7 +244,15 @@ func (BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 		err := json.Unmarshal([]byte(input), &query)
 		c.Check(err, IsNil)
 		c.Check(query.Result.Txs, NotNil)
-		bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"))
+		m, err := metrics.NewMetrics(config.MetricConfiguration{
+			Enabled:      false,
+			ListenPort:   9000,
+			ReadTimeout:  time.Second,
+			WriteTimeout: time.Second,
+		})
+		c.Assert(m, NotNil)
+		c.Assert(err, IsNil)
+		bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, common.BnbAddress("tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"), m)
 		c.Assert(err, IsNil)
 		c.Assert(bs, NotNil)
 		for _, item := range query.Result.Txs {

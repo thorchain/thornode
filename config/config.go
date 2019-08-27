@@ -18,6 +18,7 @@ type Configuration struct {
 	BlockScanner          BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
 	StateChain            StateChainConfiguration   `json:"state_chain" mapstructure:"state_chain"`
 	ObserverRetryInterval time.Duration             `json:"observer_retry_interval" mapstructure:"observer_retry_interval"`
+	Metric                MetricConfiguration       `json:"metric" mapstructure:"metric"`
 }
 
 // BlockScannerConfiguration settings for BlockScanner
@@ -42,6 +43,12 @@ type StateChainConfiguration struct {
 	SignerName      string `json:"signer_name" mapstructure:"signer_name"`
 	SignerPasswd    string `json:"signer_passwd" mapstructure:"signer_passwd"`
 }
+type MetricConfiguration struct {
+	Enabled      bool          `json:"enabled" mapstructure:"enabled"`
+	ListenPort   int           `json:"listen_port" mapstructure:"listen_port"`
+	ReadTimeout  time.Duration `json:"read_timeout" mapstructure:"read_timeout"`
+	WriteTimeout time.Duration `json:"write_timeout" mapstructure:"write_timeout"`
+}
 
 func applyDefaultObserverConfig() {
 	viper.SetDefault("dexhost", "testnet-dex.binance.org")
@@ -51,6 +58,9 @@ func applyDefaultObserverConfig() {
 	applyBlockScannerDefault()
 	viper.SetDefault("state_chain.chain_id", "statechain")
 	viper.SetDefault("state_chain.chain_host", "localhost:1317")
+	viper.SetDefault("metric.listen_port", "9000")
+	viper.SetDefault("metric.read_timeout", "30s")
+	viper.SetDefault("metric.write_timeout", "30s")
 }
 
 // LoadObserveConfig
@@ -78,6 +88,7 @@ type SignerConfiguration struct {
 	Binance          BinanceConfiguration      `json:"binance" mapstructure:"binance"`
 	StateChain       StateChainConfiguration   `json:"state_chain" mapstructure:"state_chain"`
 	RetryInterval    time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
+	Metric           MetricConfiguration       `json:"metric" mapstructure:"metric"`
 }
 
 // BinanceConfiguration all the configurations for binance client
@@ -103,6 +114,9 @@ func applyDefaultSignerConfig() {
 	applyBlockScannerDefault()
 	viper.SetDefault("state_chain.chain_host", "localhost:1317")
 	viper.SetDefault("retry_interval", "2s")
+	viper.SetDefault("metric.listen_port", "9000")
+	viper.SetDefault("metric.read_timeout", "30s")
+	viper.SetDefault("metric.write_timeout", "30s")
 }
 
 // LoadObserveConfig
