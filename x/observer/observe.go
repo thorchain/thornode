@@ -176,8 +176,8 @@ func (o *Observer) signAndSendToStatechain(txIn types.TxIn) error {
 
 // getStateChainTxIns convert to the type statechain expected
 // maybe in later we can just refactor this to use the type in statechain
-func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxIn, error) {
-	txs := make([]stypes.TxIn, len(txIn.TxArray))
+func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, error) {
+	txs := make([]stypes.TxInVoter, len(txIn.TxArray))
 	for i, item := range txIn.TxArray {
 		o.logger.Debug().Str("tx-hash", item.Tx).Msg("txInItem")
 		txID, err := common.NewTxID(item.Tx)
@@ -188,12 +188,12 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxIn, error) {
 		if nil != err {
 			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
 		}
-		txs[i] = stypes.NewTxIn(
-			txID,
-			item.Coins,
-			item.Memo,
-			bnbAddr,
-		)
+		txs[i] = stypes.NewTxInVoter(txID, []stypes.TxIn{
+			stypes.NewTxIn(
+				item.Coins,
+				item.Memo,
+				bnbAddr),
+		})
 	}
 	return txs, nil
 }
