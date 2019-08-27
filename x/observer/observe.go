@@ -12,6 +12,7 @@ import (
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/binance"
+	"gitlab.com/thorchain/bepswap/observe/x/metrics"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
@@ -25,6 +26,7 @@ type Observer struct {
 	storage          TxInStorage
 	stopChan         chan struct{}
 	stateChainBridge *statechain.StateChainBridge
+	m                *metrics.Metrics
 	wg               *sync.WaitGroup
 }
 
@@ -39,7 +41,11 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		return nil, errors.Wrap(err, "fail to create scan storage")
 	}
 
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), cfg.PoolAddress)
+	m, err := metrics.NewMetrics(cfg.Metric)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create metric instance")
+	}
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), cfg.PoolAddress, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
@@ -56,10 +62,14 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		stopChan:         make(chan struct{}),
 		stateChainBridge: stateChainBridge,
 		storage:          scanStorage,
+		m:                m,
 	}, nil
 }
 
 func (o *Observer) Start(websocket bool) error {
+	if err := o.m.Start(); nil != err {
+		o.logger.Error().Err(err).Msg("fail to start metric collector")
+	}
 	if websocket {
 		for idx := 1; idx <= o.cfg.MessageProcessor; idx++ {
 			o.wg.Add(1)
@@ -210,5 +220,5 @@ func (o *Observer) Stop() error {
 	}
 	close(o.stopChan)
 	o.wg.Wait()
-	return nil
+	return o.m.Stop()
 }

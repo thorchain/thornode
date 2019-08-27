@@ -10,6 +10,7 @@ import (
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/binance"
+	"gitlab.com/thorchain/bepswap/observe/x/metrics"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
@@ -22,6 +23,7 @@ type Signer struct {
 	stateChainBlockScanner *StateChainBlockScan
 	Binance                *binance.Binance
 	storage                *StateChanBlockScannerStorage
+	m                      *metrics.Metrics
 }
 
 // NewSigner create a new instance of signer
@@ -30,7 +32,11 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create statechain scan storage")
 	}
-	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScanner, stateChainScanStorage, cfg.StateChain.ChainHost)
+	m, err := metrics.NewMetrics(cfg.Metric)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create metric instance")
+	}
+	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScanner, stateChainScanStorage, cfg.StateChain.ChainHost, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create state chain block scan")
 	}
@@ -45,6 +51,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 		stopChan:               make(chan struct{}),
 		stateChainBlockScanner: stateChainBlockScanner,
 		Binance:                b,
+		m:                      m,
 		storage:                stateChainScanStorage,
 	}, nil
 }
@@ -178,5 +185,8 @@ func (s *Signer) Stop() error {
 	defer s.logger.Info().Msg("signer stopped successfully")
 	close(s.stopChan)
 	s.wg.Wait()
+	if err := s.m.Stop(); nil != err {
+		s.logger.Error().Err(err).Msg("fail to stop metric server")
+	}
 	return s.storage.Close()
 }

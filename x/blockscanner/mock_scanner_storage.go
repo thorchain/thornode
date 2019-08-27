@@ -33,6 +33,8 @@ func (mss *MockScannerStorage) GetScanPos() (int64, error) {
 	return pos, nil
 }
 func (mss *MockScannerStorage) SetScanPos(block int64) error {
+	mss.l.Lock()
+	defer mss.l.Unlock()
 	buf := make([]byte, 8)
 	n := binary.PutVarint(buf, block)
 	mss.store[ScanPosKey] = buf[:n]
