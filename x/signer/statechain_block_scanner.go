@@ -4,14 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 	"sync"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/blockscanner"
+	"gitlab.com/thorchain/bepswap/observe/x/metrics"
 	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
@@ -24,17 +27,22 @@ type StateChainBlockScan struct {
 	scannerStorage     blockscanner.ScannerStorage
 	commonBlockScanner *blockscanner.CommonBlockScanner
 	chainHost          string
+	m                  *metrics.Metrics
+	errCounter         *prometheus.CounterVec
 }
 
 // NewStateChainBlockScan create a new instance of statechain block scanner
-func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chainHost string) (*StateChainBlockScan, error) {
+func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chainHost string, m *metrics.Metrics) (*StateChainBlockScan, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
 	}
-	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage)
+	if nil == m {
+		return nil, errors.New("metric is nil")
+	}
+	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create common block scanner")
 	}
@@ -47,6 +55,7 @@ func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage bl
 		scannerStorage:     scanStorage,
 		commonBlockScanner: commonBlockScanner,
 		chainHost:          chainHost,
+		errCounter:         m.GetCounterVec(metrics.StateChainBlockScanError),
 	}, nil
 }
 
@@ -71,16 +80,20 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 		Host:   b.chainHost,
 		Path:   fmt.Sprintf("/swapservice/txoutarray/%v", blockHeight),
 	}
+	strBlockHeight := strconv.FormatInt(blockHeight, 10)
 	buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())
 	if nil != err {
+		b.errCounter.WithLabelValues("fail_get_tx_out", strBlockHeight)
 		return errors.Wrap(err, "fail to get tx out from a block")
 	}
 	var txOut stypes.TxOut
 	if err := json.Unmarshal(buf, &txOut); err != nil {
+		b.errCounter.WithLabelValues("fail_unmarshal_tx_out", strBlockHeight)
 		return errors.Wrap(err, "fail to unmarshal TxOut")
 	}
 	if len(txOut.TxArray) == 0 {
 		b.logger.Debug().Int64("block", blockHeight).Msg("nothing to process")
+		b.m.GetCounter(metrics.BlockNoTxOut).Inc()
 		return nil
 	}
 
@@ -104,14 +117,17 @@ func (b *StateChainBlockScan) processBlocks(idx int) {
 			b.logger.Debug().Int64("block", block).Msg("processing block")
 			if err := b.processABlock(block); nil != err {
 				if errStatus := b.scannerStorage.SetBlockScanStatus(block, blockscanner.Failed); nil != errStatus {
+					b.errCounter.WithLabelValues("fail_set_block_Status", strconv.FormatInt(block, 10))
 					b.logger.Error().Err(err).Int64("height", block).Msg("fail to set block to fail status")
 				}
+				b.errCounter.WithLabelValues("fail_search_tx", strconv.FormatInt(block, 10))
 				b.logger.Error().Err(err).Int64("height", block).Msg("fail to search tx in block")
 				// we will have a retry go routine to check it.
 				continue
 			}
 			// set a block as success
 			if err := b.scannerStorage.RemoveBlockStatus(block); nil != err {
+				b.errCounter.WithLabelValues("fail_remove_block_Status", strconv.FormatInt(block, 10))
 				b.logger.Error().Err(err).Int64("block", block).Msg("fail to remove block status from data store, thus block will be re processed")
 			}
 		}
