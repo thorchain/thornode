@@ -19,6 +19,7 @@ func (s EventSuite) TestSwapEvent(c *C) {
 		common.Amount("5"),
 		common.Amount("5"),
 		common.Amount("5"),
+		common.Amount("5"),
 	)
 	c.Check(evt.Type(), Equals, "swap")
 }
@@ -48,6 +49,7 @@ func (s EventSuite) TestEvent(c *C) {
 		common.NewCoin(common.Ticker("BNB"), common.Amount("3.2")),
 		common.NewCoin(common.Ticker("RUNE"), common.Amount("4.2")),
 		common.Amount("6"),
+		common.Amount("5"),
 		common.Amount("5"),
 		common.Amount("4"),
 		common.Amount("3"),
