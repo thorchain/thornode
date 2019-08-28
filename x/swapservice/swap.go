@@ -80,61 +80,90 @@ func swapOne(ctx sdk.Context,
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
+	// Set ticker to our non-rune token ticker
 	ticker := source
 	if common.IsRune(source) {
 		ticker = target
 	}
+
+	// Check if pool exists
 	if !keeper.PoolExist(ctx, ticker) {
 		ctx.Logger().Debug(fmt.Sprintf("pool %s doesn't exist", ticker))
 		return "0", errors.New(fmt.Sprintf("pool %s doesn't exist", ticker))
 	}
 
-	amt := amount.Float64()
-	tsl := tradeSlipLimit.Float64()  // trade slip limit
-	gsl := globalSlipLimit.Float64() // global slip limit
-
+	// Get our pool from the KVStore
 	pool := keeper.GetPool(ctx, ticker)
 	if pool.Status != PoolEnabled {
 		return "0", errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
 	}
-	balanceRune := pool.BalanceRune.Float64()
-	balanceToken := pool.BalanceToken.Float64()
+
+	// Get our slip limits
+	tsl := tradeSlipLimit.Float64()  // trade slip limit
+	gsl := globalSlipLimit.Float64() // global slip limit
+
+	// get our X, x, Y values
+	var X, x, Y float64
+	if common.IsRune(source) {
+		X = pool.BalanceRune.Float64()
+		Y = pool.BalanceToken.Float64()
+	} else {
+		Y = pool.BalanceRune.Float64()
+		X = pool.BalanceToken.Float64()
+	}
+	x = amount.Float64()
+
+	// check our X,x,Y values are valid
+	if x <= 0.0 {
+		return "0", errors.New("amount is invalid")
+	}
+	if X <= 0 || Y <= 0 {
+		return "0", errors.New("invalid balance")
+	}
+
+	outputSlip := calcOutputSlip(X, x)
+	liquitityFee := calcLiquitityFee(X, x, Y)
+	priceSlip := calcPriceSlip(X, x)
+	emitTokens := calcTokenEmission(X, x, Y)
+	poolSlip := calcPoolSlip(X, x)
+	fmt.Printf("X: %g\n", X)
+	fmt.Printf("x: %g\n", x)
+	fmt.Printf("Y: %g\n", Y)
+	fmt.Printf("Price Slip: %g\n", priceSlip)
+
+	// do we have enough balance to swap?
+	if emitTokens > Y {
+		return "0", errors.New("token :%s balance is 0, can't do swap")
+	}
+
 	if tradeTarget.GreaterThen(0) {
 		tTarget := tradeTarget.Float64() // trade target
-		userPrice := calculateUserPrice(source, balanceRune, balanceToken, amt)
-		if math.Abs(userPrice-tTarget)/tTarget > tsl {
-			return "0", errors.Errorf("user price %f is more than %.2f percent different than %f", userPrice, tsl*100, tTarget)
+		if math.Abs(priceSlip-tTarget)/tTarget > tsl {
+			return "0", errors.Errorf("trade slip %f is more than %.2f percent different than %f", priceSlip, tsl*100, tTarget)
 		}
 	}
-	// do we have enough balance to swap?
-	if common.IsRune(source) {
-		if balanceToken == 0 {
-			return "0", errors.New("token :%s balance is 0, can't do swap")
-		}
-	} else {
-		if balanceRune == 0 {
-			return "0", errors.New(common.RuneTicker.String() + " balance is 0, can't swap ")
-		}
-	}
-	poolSlip := calculatePoolSlip(source, balanceRune, balanceToken, amt)
 	if poolSlip > gsl {
 		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
 	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
-	newBalanceRune, newBalanceToken, returnAmt, err := calculateSwap(source, balanceRune, balanceToken, amt)
-	if nil != err {
-		return "0", errors.Wrap(err, "fail to swap")
+
+	if common.IsRune(source) {
+		pool.BalanceRune = common.NewAmountFromFloat(X + x)
+		pool.BalanceToken = common.NewAmountFromFloat(Y - emitTokens)
+	} else {
+		pool.BalanceToken = common.NewAmountFromFloat(X + x)
+		pool.BalanceRune = common.NewAmountFromFloat(Y - emitTokens)
 	}
-	pool.BalanceRune = common.NewAmountFromFloat(newBalanceRune)
-	pool.BalanceToken = common.NewAmountFromFloat(newBalanceToken)
-	returnTokenAmount := common.NewAmountFromFloat(returnAmt)
 	keeper.SetPool(ctx, pool)
-	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, returnTokenAmount))
+	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%g ", pool.BalanceRune, pool.BalanceToken, emitTokens))
 
 	swapEvt := NewEventSwap(
-		common.NewCoin(source, amount),
-		common.NewCoin(target, returnTokenAmount),
+		common.NewCoin(source, common.NewAmountFromFloat(x)),
+		common.NewCoin(target, common.NewAmountFromFloat(emitTokens)),
+		common.NewAmountFromFloat(priceSlip),
 		common.NewAmountFromFloat(poolSlip),
+		common.NewAmountFromFloat(outputSlip),
+		common.NewAmountFromFloat(liquitityFee),
 	)
 	swapBytes, err := json.Marshal(swapEvt)
 	if err != nil {
@@ -148,47 +177,34 @@ func swapOne(ctx sdk.Context,
 	)
 	keeper.AddIncompleteEvents(ctx, evt)
 
-	return returnTokenAmount, nil
+	return common.NewAmountFromFloat(emitTokens), nil
 }
 
-// calculateUserPrice return trade slip
-func calculateUserPrice(source common.Ticker, balanceRune, balanceToken, amt float64) float64 {
-	if common.IsRune(source) {
-		return math.Pow(balanceRune+amt, 2.0) / (balanceRune * balanceToken)
-	}
-	return math.Pow(balanceToken+amt, 2.0) / (balanceRune * balanceToken)
+// calcPriceSlip - calculate the price slip (aka trade slip)
+func calcPriceSlip(X, x float64) float64 {
+	// x * ( 2X + x) / ( X * X )
+	return x * (2*X + x) / (x + X)
 }
 
-// calculatePoolSlip the slip of total pool
-func calculatePoolSlip(source common.Ticker, balanceRune, balanceToken, amt float64) float64 {
-	if common.IsRune(source) {
-		return amt * (2*balanceRune + amt) / math.Pow(balanceRune, 2.0)
-	}
-	return amt * (2*balanceToken + amt) / math.Pow(balanceToken, 2.0)
+// calcOutputSlip - calculates the output slip
+func calcOutputSlip(X, x float64) float64 {
+	// ( x ) / ( x + X )
+	return x / (x + X)
 }
 
-// calculateSwap how much rune, token and amount to emit
-// return (Rune,Token,Amount)
-func calculateSwap(source common.Ticker, balanceRune, balanceToken, amt float64) (float64, float64, float64, error) {
-	if amt <= 0.0 {
-		return balanceRune, balanceToken, 0.0, errors.New("amount is invalid")
-	}
-	if balanceRune <= 0 || balanceToken <= 0 {
-		return balanceRune, balanceToken, amt, errors.New("invalid balance")
-	}
-	if common.IsRune(source) {
-		balanceRune += amt
-		tokenAmount := (amt * balanceToken) / balanceRune
-		liquidityFee := math.Pow(amt, 2.0) * balanceToken / math.Pow(balanceRune, 2.0)
-		tokenAmount -= liquidityFee
-		balanceToken = balanceToken - tokenAmount
-		return balanceRune, balanceToken, tokenAmount, nil
-	} else {
-		balanceToken += amt
-		runeAmt := (balanceRune * amt) / balanceToken
-		liquidityFee := (math.Pow(amt, 2.0) * balanceRune) / math.Pow(balanceToken, 2.0)
-		runeAmt -= liquidityFee
-		balanceRune = balanceRune - runeAmt
-		return balanceRune, balanceToken, runeAmt, nil
-	}
+func calcPoolSlip(X, x float64) float64 {
+	// x * ( 2X + x) / ( X * X )
+	return x * (2*X + x) / (X * X)
+}
+
+// calculateFee the fee of the swap
+func calcLiquitityFee(X, x, Y float64) float64 {
+	// ( x^2 *  Y ) / ( x + X )^2
+	return ((x * x) * Y) / ((x + X) * (x + X))
+}
+
+// calculate the number of tokens sent to the address (includes liquidity fee)
+func calcTokenEmission(X, x, Y float64) float64 {
+	// ( x * X * Y ) / ( x + X )^2
+	return (x * X * Y) / ((x + X) * (x + X))
 }
