@@ -53,16 +53,18 @@ type EventSwap struct {
 	SourceCoin common.Coin   `json:"source_coin"`
 	TargetCoin common.Coin   `json:"target_coin"`
 	PriceSlip  common.Amount `json:"price_slip"`
+	TradeSlip  common.Amount `json:"trade_slip"`
 	PoolSlip   common.Amount `json:"pool_slip"`
 	OutputSlip common.Amount `json:"output_slip"`
 	Fee        common.Amount `json:"fee"`
 }
 
-func NewEventSwap(s, t common.Coin, priceSlip, poolSlip, outputSlip, fee common.Amount) EventSwap {
+func NewEventSwap(s, t common.Coin, priceSlip, tradeSlip, poolSlip, outputSlip, fee common.Amount) EventSwap {
 	return EventSwap{
 		SourceCoin: s,
 		TargetCoin: t,
 		PriceSlip:  priceSlip,
+		TradeSlip:  tradeSlip,
 		PoolSlip:   poolSlip,
 		OutputSlip: outputSlip,
 		Fee:        fee,

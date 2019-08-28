@@ -157,6 +157,7 @@ func swapOne(ctx sdk.Context,
 	swapEvt := NewEventSwap(
 		common.NewCoin(source, common.NewAmountFromFloat(x)),
 		common.NewCoin(target, common.NewAmountFromFloat(emitTokens)),
+		common.NewAmountFromFloat(priceSlip),
 		common.NewAmountFromFloat(tradeSlip),
 		common.NewAmountFromFloat(poolSlip),
 		common.NewAmountFromFloat(outputSlip),
