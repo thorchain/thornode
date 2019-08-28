@@ -147,7 +147,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don't know",
 			returnAmount:  "0",
 			tradeTarget:   "0",
-			expectedErr:   errors.Errorf("pool slip:1.250000 is over global pool slip limit :%s", globalSlipLimit),
+			expectedErr:   errors.Errorf("pool slip:0.928571 is over global pool slip limit :%s", globalSlipLimit),
 		},
 		{
 			name:          "swap-over-trade-sliplimit",
@@ -159,7 +159,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don'tknow",
 			returnAmount:  "0",
 			tradeTarget:   "1.0",
-			expectedErr:   errors.New("trade slip 15.832001 is more than 10.00 percent different than 1.000000"),
+			expectedErr:   errors.New("trade slip 1.188100 is more than 10.00 percent different than 1.000000"),
 		},
 		{
 			name:          "swap-no-target-price-no-protection",
@@ -182,7 +182,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     "tester",
 			destination:   "don'tknow",
 			returnAmount:  "4.53514739",
-			tradeTarget:   "0.92",
+			tradeTarget:   "1.2",
 			expectedErr:   nil,
 		},
 		{
@@ -238,7 +238,8 @@ func (s SwapSuite) TestCalculators(c *C) {
 	// https://docs.google.com/spreadsheets/d/1wJHYBRKBdw_WP7nUyVnkySPkOmPUNoiRGsEqgBVVXKU/edit#gid=0
 	c.Check(calcTokenEmission(X, x, Y), Equals, 8.264462809917354)
 	c.Check(calcLiquitityFee(X, x, Y), Equals, 0.8264462809917356)
-	c.Check(calcPoolSlip(X, x), Equals, 0.21)
-	c.Check(calcPriceSlip(X, x), Equals, 0.17355371900826447)
+	c.Check(calcPoolSlip(X, x), Equals, 0.1990990990990991)
+	c.Check(calcTradeSlip(X, x), Equals, 0.21)
+	c.Check(calcPriceSlip(X, x, Y), Equals, 1.2100000000000002)
 	c.Check(calcOutputSlip(X, x), Equals, 0.09090909090909091)
 }

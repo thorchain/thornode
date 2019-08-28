@@ -123,13 +123,10 @@ func swapOne(ctx sdk.Context,
 
 	outputSlip := calcOutputSlip(X, x)
 	liquitityFee := calcLiquitityFee(X, x, Y)
-	priceSlip := calcPriceSlip(X, x)
+	tradeSlip := calcTradeSlip(X, x)
 	emitTokens := calcTokenEmission(X, x, Y)
 	poolSlip := calcPoolSlip(X, x)
-	fmt.Printf("X: %g\n", X)
-	fmt.Printf("x: %g\n", x)
-	fmt.Printf("Y: %g\n", Y)
-	fmt.Printf("Price Slip: %g\n", priceSlip)
+	priceSlip := calcPriceSlip(X, x, Y)
 
 	// do we have enough balance to swap?
 	if emitTokens > Y {
@@ -138,7 +135,7 @@ func swapOne(ctx sdk.Context,
 
 	if tradeTarget.GreaterThen(0) {
 		tTarget := tradeTarget.Float64() // trade target
-		if math.Abs(priceSlip-tTarget)/tTarget > tsl {
+		if math.Abs((priceSlip)-tTarget)/tTarget > tsl {
 			return "0", errors.Errorf("trade slip %f is more than %.2f percent different than %f", priceSlip, tsl*100, tTarget)
 		}
 	}
@@ -160,7 +157,7 @@ func swapOne(ctx sdk.Context,
 	swapEvt := NewEventSwap(
 		common.NewCoin(source, common.NewAmountFromFloat(x)),
 		common.NewCoin(target, common.NewAmountFromFloat(emitTokens)),
-		common.NewAmountFromFloat(priceSlip),
+		common.NewAmountFromFloat(tradeSlip),
 		common.NewAmountFromFloat(poolSlip),
 		common.NewAmountFromFloat(outputSlip),
 		common.NewAmountFromFloat(liquitityFee),
@@ -180,10 +177,16 @@ func swapOne(ctx sdk.Context,
 	return common.NewAmountFromFloat(emitTokens), nil
 }
 
-// calcPriceSlip - calculate the price slip (aka trade slip)
-func calcPriceSlip(X, x float64) float64 {
+// calcPriceSlip - calculate the price slip
+// This calculates the price slip by dividing the number of coins added, by the number of emitted tokens
+func calcPriceSlip(X, x, Y float64) float64 {
+	return x / calcTokenEmission(X, x, Y)
+}
+
+// calcTradeSlip - calculate the trade slip
+func calcTradeSlip(X, x float64) float64 {
 	// x * ( 2X + x) / ( X * X )
-	return x * (2*X + x) / (x + X)
+	return x * (2*X + x) / (X * X)
 }
 
 // calcOutputSlip - calculates the output slip
@@ -192,9 +195,12 @@ func calcOutputSlip(X, x float64) float64 {
 	return x / (x + X)
 }
 
+// Calculates the pool slip
 func calcPoolSlip(X, x float64) float64 {
-	// x * ( 2X + x) / ( X * X )
-	return x * (2*X + x) / (X * X)
+	// (x*(x^2 + 2*x*X + 2 X^2)) / (X*(x^2 + x*X + X^2))
+	x2 := x * x
+	X2 := X * X
+	return (x * (x2 + 2*x*X + 2*X2)) / (X * (x2 + x*X + X2))
 }
 
 // calculateFee the fee of the swap
