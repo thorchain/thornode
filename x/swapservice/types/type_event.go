@@ -52,14 +52,22 @@ func (evts Events) PopByInHash(txID common.TxID) (found Events, events Events) {
 type EventSwap struct {
 	SourceCoin common.Coin   `json:"source_coin"`
 	TargetCoin common.Coin   `json:"target_coin"`
-	Slip       common.Amount `json:"slip"`
+	PriceSlip  common.Amount `json:"price_slip"`
+	TradeSlip  common.Amount `json:"trade_slip"`
+	PoolSlip   common.Amount `json:"pool_slip"`
+	OutputSlip common.Amount `json:"output_slip"`
+	Fee        common.Amount `json:"fee"`
 }
 
-func NewEventSwap(s, t common.Coin, slip common.Amount) EventSwap {
+func NewEventSwap(s, t common.Coin, priceSlip, tradeSlip, poolSlip, outputSlip, fee common.Amount) EventSwap {
 	return EventSwap{
 		SourceCoin: s,
 		TargetCoin: t,
-		Slip:       slip,
+		PriceSlip:  priceSlip,
+		TradeSlip:  tradeSlip,
+		PoolSlip:   poolSlip,
+		OutputSlip: outputSlip,
+		Fee:        fee,
 	}
 }
 

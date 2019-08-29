@@ -147,7 +147,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don't know",
 			returnAmount:  "0",
 			tradeTarget:   "0",
-			expectedErr:   errors.Errorf("pool slip:1.250000 is over global pool slip limit :%s", globalSlipLimit),
+			expectedErr:   errors.Errorf("pool slip:0.928571 is over global pool slip limit :%s", globalSlipLimit),
 		},
 		{
 			name:          "swap-over-trade-sliplimit",
@@ -159,7 +159,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don'tknow",
 			returnAmount:  "0",
 			tradeTarget:   "1.0",
-			expectedErr:   errors.New("user price 1.188100 is more than 10.00 percent different than 1.000000"),
+			expectedErr:   errors.New("trade slip 1.188100 is more than 10.00 percent different than 1.000000"),
 		},
 		{
 			name:          "swap-no-target-price-no-protection",
@@ -212,237 +212,6 @@ func (s SwapSuite) TestSwap(c *C) {
 	}
 }
 
-// TestCalculatePoolSlip the total pool slip
-func (s SwapSuite) TestCalculatePoolSlip(c *C) {
-	inputs := []struct {
-		name             string
-		source           common.Ticker
-		runeBalance      float64
-		tokenBalance     float64
-		swapAmount       float64
-		expectedPoolSlip float64
-	}{
-		{
-			name:             "normal",
-			source:           common.RuneTicker,
-			runeBalance:      100.0,
-			tokenBalance:     100.0,
-			swapAmount:       5.0,
-			expectedPoolSlip: 0.1025,
-		},
-		{
-			name:             "normal-1",
-			source:           common.RuneTicker,
-			runeBalance:      50.0,
-			tokenBalance:     200.0,
-			swapAmount:       5.0,
-			expectedPoolSlip: 0.21,
-		},
-		{
-			name:             "normal-2",
-			source:           common.BNBTicker,
-			runeBalance:      100.0,
-			tokenBalance:     100.0,
-			swapAmount:       5.0,
-			expectedPoolSlip: 0.1025,
-		},
-		{
-			name:             "normal-3",
-			source:           common.RuneTicker,
-			runeBalance:      500.0,
-			tokenBalance:     200.0,
-			swapAmount:       5.0,
-			expectedPoolSlip: 0.0201,
-		},
-	}
-	for _, testCase := range inputs {
-		result := calculatePoolSlip(testCase.source, testCase.runeBalance, testCase.tokenBalance, testCase.swapAmount)
-		c.Check(round(result), Equals, round(testCase.expectedPoolSlip))
-	}
-}
-
-// TestCalculateUserPrice ensure we calculate trade slip correctly
-func (s SwapSuite) TestCalculateUserPrice(c *C) {
-	inputs := []struct {
-		name              string
-		source            common.Ticker
-		runeBalance       float64
-		tokenBalance      float64
-		swapAmount        float64
-		expectedUserPrice float64
-	}{
-		{
-			name:              "normal",
-			source:            common.RuneTicker,
-			runeBalance:       100.0,
-			tokenBalance:      100.0,
-			swapAmount:        5.0,
-			expectedUserPrice: 1.1025,
-		},
-		{
-			name:              "normal-1",
-			source:            common.RuneTicker,
-			runeBalance:       200.0,
-			tokenBalance:      1000.0,
-			swapAmount:        5,
-			expectedUserPrice: 0.210125,
-		},
-		{
-			name:              "normal-2",
-			source:            common.BNBTicker,
-			runeBalance:       200.0,
-			tokenBalance:      1000.0,
-			swapAmount:        5,
-			expectedUserPrice: 5.05,
-		},
-		{
-			name:              "normal-3",
-			source:            common.RuneTicker,
-			runeBalance:       2000.0,
-			tokenBalance:      1000.0,
-			swapAmount:        50,
-			expectedUserPrice: 2.10125,
-		},
-	}
-	for _, testCase := range inputs {
-		result := calculateUserPrice(testCase.source, testCase.runeBalance, testCase.tokenBalance, testCase.swapAmount)
-		c.Check(round(result), Equals, round(testCase.expectedUserPrice))
-	}
-}
-
-func (s SwapSuite) TestSwapCalculation(c *C) {
-	inputs := []struct {
-		name              string
-		source            common.Ticker
-		runeBalance       float64
-		tokenBalance      float64
-		amountToSwap      float64
-		runeBalanceAfter  float64
-		tokenBalanceAfter float64
-		amountToReturn    float64
-		expectedErr       error
-	}{
-		{
-			name:              "negative-balance-rune",
-			source:            common.RuneTicker,
-			runeBalance:       -1.0,
-			tokenBalance:      100.0,
-			amountToSwap:      5.0,
-			runeBalanceAfter:  105.0,
-			tokenBalanceAfter: 95.46,
-			amountToReturn:    4.54,
-			expectedErr:       errors.New("invalid balance"),
-		},
-		{
-			name:              "zero-balance-rune",
-			source:            common.RuneTicker,
-			runeBalance:       0.0,
-			tokenBalance:      100.0,
-			amountToSwap:      5.0,
-			runeBalanceAfter:  105.0,
-			tokenBalanceAfter: 95.46,
-			amountToReturn:    4.54,
-			expectedErr:       errors.New("invalid balance"),
-		},
-		{
-			name:              "negative-balance-token",
-			source:            common.RuneTicker,
-			runeBalance:       100.0,
-			tokenBalance:      -100.0,
-			amountToSwap:      5.0,
-			runeBalanceAfter:  105.0,
-			tokenBalanceAfter: 95.46,
-			amountToReturn:    4.54,
-			expectedErr:       errors.New("invalid balance"),
-		},
-		{
-			name:              "zero-balance-token",
-			source:            common.RuneTicker,
-			runeBalance:       100.0,
-			tokenBalance:      0.0,
-			amountToSwap:      5.0,
-			runeBalanceAfter:  105.0,
-			tokenBalanceAfter: 95.46,
-			amountToReturn:    4.54,
-			expectedErr:       errors.New("invalid balance"),
-		},
-		{
-			name:              "negative-amount",
-			source:            common.RuneTicker,
-			runeBalance:       100.0,
-			tokenBalance:      100.0,
-			amountToSwap:      -5.0,
-			runeBalanceAfter:  105.0,
-			tokenBalanceAfter: 95.46,
-			amountToReturn:    4.54,
-			expectedErr:       errors.New("amount is invalid"),
-		},
-		{
-			name:              "invalid-amount-0",
-			source:            common.RuneTicker,
-			runeBalance:       100.0,
-			tokenBalance:      100.0,
-			amountToSwap:      0.0,
-			runeBalanceAfter:  105.0,
-			tokenBalanceAfter: 95.46,
-			amountToReturn:    4.54,
-			expectedErr:       errors.New("amount is invalid"),
-		},
-		{
-			name:              "normal-rune",
-			source:            common.RuneTicker,
-			runeBalance:       100.0,
-			tokenBalance:      100.0,
-			amountToSwap:      5.0,
-			runeBalanceAfter:  105.0,
-			tokenBalanceAfter: 95.46,
-			amountToReturn:    4.54,
-		},
-		{
-			name:              "normal-rune-1",
-			source:            common.RuneTicker,
-			runeBalance:       1000.0,
-			tokenBalance:      1000.0,
-			amountToSwap:      20.0,
-			runeBalanceAfter:  1020.0,
-			tokenBalanceAfter: 980.78,
-			amountToReturn:    19.22,
-		},
-		{
-			name:              "normal-rune-2",
-			source:            common.RuneTicker,
-			runeBalance:       10000.0,
-			tokenBalance:      10000.0,
-			amountToSwap:      20.0,
-			runeBalanceAfter:  10020.0,
-			tokenBalanceAfter: 9980.08,
-			amountToReturn:    19.92,
-		},
-		{
-			name:              "normal-token",
-			source:            common.BNBTicker,
-			runeBalance:       100.0,
-			tokenBalance:      100.0,
-			amountToSwap:      5.0,
-			runeBalanceAfter:  95.46,
-			tokenBalanceAfter: 105.0,
-			amountToReturn:    4.54,
-		},
-	}
-
-	for _, item := range inputs {
-		r, t, a, err := calculateSwap(item.source, item.runeBalance, item.tokenBalance, item.amountToSwap)
-		if item.expectedErr == nil {
-			c.Assert(err, IsNil)
-			c.Check(round(r), Equals, item.runeBalanceAfter)
-			c.Check(round(t), Equals, item.tokenBalanceAfter)
-			c.Check(round(a), Equals, item.amountToReturn)
-		} else {
-			c.Assert(err.Error(), Equals, item.expectedErr.Error())
-		}
-	}
-}
-
 func (s SwapSuite) TestValidatePools(c *C) {
 	keeper := mocks.MockPoolStorage{}
 	ctx := GetCtx("test")
@@ -458,4 +227,19 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 	c.Check(validateMessage("txHASH", common.RuneTicker, "BNB", "", "bnbXXXX", "bnbYYY"), NotNil)
 	c.Check(validateMessage("txHASH", common.RuneTicker, "BNB", "34.2985", "", "bnbYYY"), NotNil)
 	c.Check(validateMessage("txHASH", common.RuneTicker, "BNB", "34.2985", "bnbXXXX", ""), NotNil)
+}
+
+func (s SwapSuite) TestCalculators(c *C) {
+	X := 100.0
+	x := 10.0
+	Y := 100.0
+
+	// These calculations are verified by using the spreadsheet
+	// https://docs.google.com/spreadsheets/d/1wJHYBRKBdw_WP7nUyVnkySPkOmPUNoiRGsEqgBVVXKU/edit#gid=0
+	c.Check(calcTokenEmission(X, x, Y), Equals, 8.264462809917354)
+	c.Check(calcLiquitityFee(X, x, Y), Equals, 0.8264462809917356)
+	c.Check(calcPoolSlip(X, x), Equals, 0.1990990990990991)
+	c.Check(calcTradeSlip(X, x), Equals, 0.21)
+	c.Check(calcPriceSlip(X, x, Y), Equals, 1.2100000000000002)
+	c.Check(calcOutputSlip(X, x), Equals, 0.09090909090909091)
 }
