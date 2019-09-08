@@ -42,6 +42,25 @@ var stringToTxTypeMap = map[string]txType{
 	"gas":      txGas,
 }
 
+//Swap: >:
+//Stake: +:
+//Withdraw: -:
+//Create: &:
+//Admin: !:
+//Gas: $:
+//Add: %:
+// symbolToTxTypeMap a map from symbol to txType
+// https://gitlab.com/thorchain/bepswap/statechain/issues/64
+var symbolToTxTypeMap = map[string]txType{
+	"&": txCreate,
+	"+": txStake,
+	"-": txWithdraw,
+	">": txSwap,
+	"!": txAdmin,
+	"$": txGas,
+	"%": txAdd,
+}
+
 var txToStringMap = map[txType]string{
 	txCreate:   "create",
 	txStake:    "stake",
@@ -60,11 +79,17 @@ var stringToAdminTypeMap = map[string]adminType{
 
 // converts a string into a txType
 func stringToTxType(s string) (txType, error) {
+	// we can support Abbreviated MEMOs , usually it is only one character
+	if len(s) == 1 {
+		if t, ok := symbolToTxTypeMap[s]; ok {
+			return t, nil
+		}
+	}
 	sl := strings.ToLower(s)
 	if t, ok := stringToTxTypeMap[sl]; ok {
 		return t, nil
 	}
-	return txUnknown, fmt.Errorf("Invalid tx type: %s", s)
+	return txUnknown, fmt.Errorf("invalid tx type: %s", s)
 }
 
 // converts a string into a adminType
@@ -73,7 +98,7 @@ func stringToAdminType(s string) (adminType, error) {
 	if t, ok := stringToAdminTypeMap[sl]; ok {
 		return t, nil
 	}
-	return adminUnknown, fmt.Errorf("Invalid admin type: %s", s)
+	return adminUnknown, fmt.Errorf("invalid admin type: %s", s)
 }
 
 // Check if two txTypes are the same
