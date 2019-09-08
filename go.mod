@@ -1,6 +1,6 @@
 module gitlab.com/thorchain/bepswap/statechain
 
-go 1.12
+go 1.13
 
 require (
 	github.com/cosmos/cosmos-sdk v0.36.0-rc1
@@ -18,7 +18,6 @@ require (
 	gitlab.com/thorchain/bepswap/common v0.0.0-20190816093251-b84c21cee45c
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/sys v0.0.0-20190329044733-9eb1bfa1ce65 // indirect
-	google.golang.org/appengine v1.4.0 // indirect
 	google.golang.org/genproto v0.0.0-20190327125643-d831d65fe17d // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 )
