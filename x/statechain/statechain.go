@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os/user"
 	"path/filepath"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -17,12 +18,14 @@ import (
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/common"
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
+	"gitlab.com/thorchain/bepswap/observe/x/metrics"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
@@ -38,10 +41,12 @@ type StateChainBridge struct {
 	cfg        config.StateChainConfiguration
 	signerInfo ckeys.Info
 	kb         ckeys.Keybase
+	errCounter *prometheus.CounterVec
+	m          *metrics.Metrics
 }
 
 // NewStateChainBridge create a new instance of StateChainBridge
-func NewStateChainBridge(cfg config.StateChainConfiguration) (*StateChainBridge, error) {
+func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics) (*StateChainBridge, error) {
 	if len(cfg.ChainID) == 0 {
 		return nil, errors.New("chain id is empty")
 	}
@@ -69,6 +74,8 @@ func NewStateChainBridge(cfg config.StateChainConfiguration) (*StateChainBridge,
 		cfg:        cfg,
 		signerInfo: signerInfo,
 		kb:         kb,
+		errCounter: m.GetCounterVec(metrics.StateChainBridgeError),
+		m:          m,
 	}, nil
 }
 
@@ -134,8 +141,13 @@ func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string
 // Sign the incoming transaction
 func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, error) {
 	if len(txIns) == 0 {
+		scb.errCounter.WithLabelValues("nothing_to_sign", "").Inc()
 		return nil, errors.New("nothing to be signed")
 	}
+	start := time.Now()
+	defer func() {
+		scb.m.GetHistograms(metrics.SignToStateChainDuration).Observe(time.Since(start).Seconds())
+	}()
 	stdTx := authtypes.NewStdTx(
 		[]sdk.Msg{
 			stypes.NewMsgSetTxIn(txIns, scb.signerInfo.GetAddress()),
@@ -147,9 +159,10 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 
 	accNumber, seqNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
 	if nil != err {
+		scb.errCounter.WithLabelValues("fail_get_account_seq_no", "").Inc()
 		return nil, errors.Wrap(err, "fail to get account number and sequence number from statechain")
 	}
-	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", accNumber).Uint64("sequenceNo", seqNumber).Msg("info")
+	scb.logger.Debug().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", accNumber).Uint64("sequenceNo", seqNumber).Msg("info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
 		AccountNumber: accNumber,
@@ -160,6 +173,7 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 	}
 	sig, err := authtypes.MakeSignature(scb.kb, scb.cfg.SignerName, scb.cfg.SignerPasswd, stdMsg)
 	if err != nil {
+		scb.errCounter.WithLabelValues("fail_sign", "").Inc()
 		return nil, errors.Wrap(err, "fail to sign the message")
 	}
 
@@ -169,6 +183,7 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 		[]authtypes.StdSignature{sig},
 		stdTx.GetMemo(),
 	)
+	scb.m.GetCounter(metrics.TxToStateChainSigned).Inc()
 	return &signedStdTx, nil
 }
 
@@ -178,7 +193,10 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 	if !mode.IsValid() {
 		return noTxID, fmt.Errorf("transaction Mode (%s) is invalid", mode)
 	}
-
+	start := time.Now()
+	defer func() {
+		scb.m.GetHistograms(metrics.SendToStatechainDuration).Observe(time.Since(start).Seconds())
+	}()
 	var setTx types.SetTx
 	setTx.Mode = mode.String()
 	setTx.Tx.Msg = signed.Msgs
@@ -187,7 +205,8 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 	setTx.Tx.Memo = signed.Memo
 	result, err := scb.cdc.MarshalJSON(setTx)
 	if nil != err {
-		return noTxID, errors.Wrap(err, "fail to marsh settx to json")
+		scb.errCounter.WithLabelValues("fail_marshal_settx", "").Inc()
+		return noTxID, errors.Wrap(err, "fail to marshal settx to json")
 	}
 	uri := url.URL{
 		Scheme: "http",
@@ -198,6 +217,7 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 
 	resp, err := retryablehttp.Post(uri.String(), "application/json", bytes.NewBuffer(result))
 	if err != nil {
+		scb.errCounter.WithLabelValues("fail_post_to_statechain", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to post tx to statechain")
 	}
 	defer func() {
@@ -207,14 +227,16 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 	}()
 	body, err := ioutil.ReadAll(resp.Body)
 	if nil != err {
+		scb.errCounter.WithLabelValues("fail_read_statechain_resp", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to read response body")
 	}
 	var commit types.Commit
 	err = json.Unmarshal(body, &commit)
 	if err != nil {
+		scb.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to unmarshal commit")
 	}
-
+	scb.m.GetCounter(metrics.TxToStateChain).Inc()
 	scb.logger.Info().Msgf("Received a TxHash of %v from the statechain", commit.TxHash)
 	return common.NewTxID(commit.TxHash)
 }
