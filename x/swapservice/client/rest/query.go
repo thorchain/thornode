@@ -20,7 +20,11 @@ func pingHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 // Generic wrapper to generate GET handler
 func getHandlerWrapper(q query.Query, storeName string, cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// enableCors(&w)
+		enableCors(&w)
+		if (*r).Method == "OPTIONS" {
+			return
+		}
+
 		param := mux.Vars(r)[restURLParam]
 		res, _, err := cliCtx.QueryWithData(q.Path(storeName, param), nil)
 		if err != nil {
@@ -33,9 +37,9 @@ func getHandlerWrapper(q query.Query, storeName string, cliCtx context.CLIContex
 }
 
 // CORS support
-// func enableCors(w *http.ResponseWriter) {
-// 	(*w).Header().Set("Access-Control-Allow-Origin", "*")
-// 	(*w).Header().Set("Access-Control-Allow-Credentials", "true")
-// 	(*w).Header().Set("Access-Control-Allow-Headers", "Authorization,Accept,Origin,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range")
-// 	(*w).Header().Set("Access-Control-Allow-Methods ", "GET,POST,OPTIONS,PUT,DELETE,PATCH")
-// }
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+	(*w).Header().Set("Access-Control-Allow-Credentials", "true")
+	(*w).Header().Set("Access-Control-Allow-Headers", "Authorization,Accept,Origin,DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range")
+	(*w).Header().Set("Access-Control-Allow-Methods ", "GET,POST,OPTIONS,PUT,DELETE,PATCH")
+}
