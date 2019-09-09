@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
@@ -20,6 +21,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
+	"gitlab.com/thorchain/bepswap/observe/x/metrics"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
 )
 
@@ -96,7 +98,7 @@ func (s StatechainSuite) TestSign(c *C) {
 		),
 	})
 
-	bridge, err := NewStateChainBridge(cfg)
+	bridge, err := NewStateChainBridge(cfg, getMetricForTest(c))
 	c.Assert(err, IsNil)
 	c.Assert(bridge, NotNil)
 	signedMsg, err := bridge.Sign([]stypes.TxInVoter{tx})
@@ -122,7 +124,8 @@ func (s StatechainSuite) TestSend(c *C) {
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
 	cfg.ChainHost = u.Host
-	bridge, err := NewStateChainBridge(cfg)
+
+	bridge, err := NewStateChainBridge(cfg, getMetricForTest(c))
 	c.Assert(err, IsNil)
 	c.Assert(bridge, NotNil)
 	stdTx := authtypes.StdTx{}
@@ -135,10 +138,20 @@ func (s StatechainSuite) TestSend(c *C) {
 		"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D",
 	)
 }
-
+func getMetricForTest(c *C) *metrics.Metrics {
+	m, err := metrics.NewMetrics(config.MetricConfiguration{
+		Enabled:      false,
+		ListenPort:   9000,
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+	})
+	c.Assert(m, NotNil)
+	c.Assert(err, IsNil)
+	return m
+}
 func (StatechainSuite) TestNewStateChainBridge(c *C) {
 	var testFunc = func(cfg config.StateChainConfiguration, errChecker Checker, sbChecker Checker) {
-		sb, err := NewStateChainBridge(cfg)
+		sb, err := NewStateChainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, errChecker)
 		c.Assert(sb, sbChecker)
 	}
@@ -178,7 +191,7 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 	testfunc := func(handleFunc http.HandlerFunc, expectedAccNum uint64, expectedSeq uint64, errChecker Checker) {
 		cfg, keyInfo, cleanup := setupStateChainForTest(c)
 		defer cleanup()
-		scb, err := NewStateChainBridge(cfg)
+		scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
 		_ = keyInfo
@@ -302,7 +315,7 @@ func (StatechainSuite) TestSignEx(c *C) {
 			defer s.Close()
 			cfg.ChainHost = s.Listener.Addr().String()
 		}
-		scb, err := NewStateChainBridge(cfg)
+		scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
 		stx, err := scb.Sign(in)
@@ -341,7 +354,7 @@ func (StatechainSuite) TestSendEx(c *C) {
 			defer s.Close()
 			cfg.ChainHost = s.Listener.Addr().String()
 		}
-		scb, err := NewStateChainBridge(cfg)
+		scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
 		stx, err := scb.Sign(in)
