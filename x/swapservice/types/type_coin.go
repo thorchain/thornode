@@ -3,7 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // FromSdkCoins convert the sdk.Coins type to our own coin type

@@ -3,7 +3,8 @@ package types
 import (
 	"fmt"
 
-	common "gitlab.com/thorchain/bepswap/common"
+	"github.com/pkg/errors"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 type AdminConfigKey string
@@ -68,16 +69,16 @@ func (c AdminConfig) Empty() bool {
 
 func (c AdminConfig) Valid() error {
 	if c.Address.IsEmpty() {
-		return fmt.Errorf("Address cannot be empty")
+		return errors.New("Address cannot be empty")
 	}
 	if c.Key == "" {
-		return fmt.Errorf("Key cannot be empty")
+		return errors.New("Key cannot be empty")
 	}
 	if c.Key == UnknownKey {
-		return fmt.Errorf("Key not recognized")
+		return errors.New("Key not recognized")
 	}
 	if c.Value == "" {
-		return fmt.Errorf("Value cannot be empty")
+		return errors.New("Value cannot be empty")
 	}
 	if err := c.Key.ValidValue(c.Value); err != nil {
 		return err

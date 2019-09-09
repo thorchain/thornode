@@ -12,6 +12,9 @@ const (
 	PoolEnabled      = types.Enabled
 	PoolBootstrap    = types.Bootstrap
 	PoolSuspended    = types.Suspended
+	EventSuccess     = types.Success
+	EventRefund      = types.Refund
+	EventPending     = types.Pending
 
 	// Admin config keys
 	GSLKey                 = types.GSLKey
@@ -37,6 +40,7 @@ var (
 	NewEvent             = types.NewEvent
 	NewEventSwap         = types.NewEventSwap
 	NewEventStake        = types.NewEventStake
+	NewEmptyRefundEvent  = types.NewEmptyRefundEvent
 	NewEventUnstake      = types.NewEventUnstake
 	NewMsgOutboundTx     = types.NewMsgOutboundTx
 	NewPoolStaker        = types.NewPoolStaker
@@ -77,4 +81,5 @@ type (
 	StakeTxDetail     = types.StakeTxDetail
 	Event             = types.Event
 	Events            = types.Events
+	EventStatus       = types.EventStatus
 )
