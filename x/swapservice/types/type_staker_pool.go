@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // StakeTxDetail represent all the stake activity
@@ -115,7 +115,7 @@ func (sp *StakerPool) RemoveStakerPoolItem(ticker common.Ticker) {
 		if deleteIdx == 0 {
 			sp.PoolUnits = []*StakerPoolItem{}
 		} else {
-			sp.PoolUnits = append(sp.PoolUnits[:deleteIdx], sp.PoolUnits[deleteIdx:]...)
+			sp.PoolUnits = append(sp.PoolUnits[:deleteIdx-1], sp.PoolUnits[deleteIdx:]...)
 		}
 	}
 }

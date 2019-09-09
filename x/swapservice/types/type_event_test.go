@@ -3,7 +3,7 @@ package types
 import (
 	"encoding/json"
 
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 )
 
@@ -60,6 +60,7 @@ func (s EventSuite) TestEvent(c *C) {
 		txID,
 		common.Ticker("BNB"),
 		swapBytes,
+		Success,
 	)
 
 	c.Check(evt.Empty(), Equals, false)
@@ -77,6 +78,7 @@ func (s EventSuite) TestEvent(c *C) {
 		txID,
 		common.Ticker("BNB"),
 		stakeBytes,
+		Success,
 	)
 
 	events := Events{evt, evt2}
@@ -88,4 +90,6 @@ func (s EventSuite) TestEvent(c *C) {
 	c.Check(events[0].Type, Equals, evt.Type)
 
 	c.Check(Event{}.Empty(), Equals, true)
+	emptyRefundEvent := NewEmptyRefundEvent()
+	c.Check(emptyRefundEvent.Type(), Equals, "empty-refund")
 }
