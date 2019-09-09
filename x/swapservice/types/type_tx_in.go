@@ -1,10 +1,9 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	common "gitlab.com/thorchain/bepswap/common"
+	"github.com/pkg/errors"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 type status string
@@ -37,15 +36,14 @@ func NewTxIn(coins common.Coins, memo string, sender common.BnbAddress) TxIn {
 
 func (tx TxIn) Valid() error {
 	if tx.Sender.IsEmpty() {
-		return fmt.Errorf("Sender cannot be empty")
+		return errors.New("sender cannot be empty")
 	}
 	if len(tx.Coins) == 0 {
-		return fmt.Errorf("Coins cannot be empty")
+		return errors.New("coins cannot be empty")
 	}
 	if len(tx.Memo) == 0 {
-		return fmt.Errorf("Memo cannot be empty")
+		return errors.New("memo cannot be empty")
 	}
-
 	return nil
 }
 
@@ -53,21 +51,21 @@ func (tx TxIn) Empty() bool {
 	return tx.Sender.IsEmpty()
 }
 
-func (tx1 TxIn) Equals(tx2 TxIn) bool {
-	if tx1.Memo != tx2.Memo {
+func (tx TxIn) Equals(tx2 TxIn) bool {
+	if tx.Memo != tx2.Memo {
 		return false
 	}
-	if !tx1.Sender.Equals(tx2.Sender) {
+	if !tx.Sender.Equals(tx2.Sender) {
 		return false
 	}
-	if len(tx1.Coins) != len(tx2.Coins) {
+	if len(tx.Coins) != len(tx2.Coins) {
 		return false
 	}
-	for i, _ := range tx1.Coins {
-		if !tx1.Coins[i].Denom.Equals(tx2.Coins[i].Denom) {
+	for i, _ := range tx.Coins {
+		if !tx.Coins[i].Denom.Equals(tx2.Coins[i].Denom) {
 			return false
 		}
-		if !tx1.Coins[i].Amount.Equals(tx2.Coins[i].Amount) {
+		if !tx.Coins[i].Amount.Equals(tx2.Coins[i].Amount) {
 			return false
 		}
 	}

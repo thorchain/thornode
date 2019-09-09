@@ -15,7 +15,7 @@ type TrustAccount struct {
 }
 
 func NewTrustAccount(name string, address string, bnb common.BnbAddress) (TrustAccount, error) {
-	addr, err := sdk.AccAddressFromHex(address)
+	addr, err := sdk.AccAddressFromBech32(address)
 	return TrustAccount{
 		Name:        name,
 		RuneAddress: addr,
