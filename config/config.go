@@ -1,6 +1,8 @@
 package config
 
 import (
+	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -67,8 +69,9 @@ func applyDefaultObserverConfig() {
 func LoadObserverConfig(file string) (*Configuration, error) {
 	applyDefaultObserverConfig()
 	var cfg Configuration
-	viper.SetConfigName(file)
 	viper.AddConfigPath(".")
+	viper.AddConfigPath(filepath.Dir(file))
+	viper.SetConfigName(strings.TrimRight(path.Base(file), ".json"))
 	if err := viper.ReadInConfig(); nil != err {
 		return nil, errors.Wrap(err, "fail to read from config file")
 	}
@@ -123,8 +126,10 @@ func applyDefaultSignerConfig() {
 func LoadSignerConfig(file string) (*SignerConfiguration, error) {
 	applyDefaultSignerConfig()
 	var cfg SignerConfiguration
-	viper.SetConfigName(file)
 	viper.AddConfigPath(".")
+	viper.AddConfigPath(".")
+	viper.AddConfigPath(filepath.Dir(file))
+	viper.SetConfigName(strings.TrimRight(path.Base(file), ".json"))
 
 	if err := viper.ReadInConfig(); nil != err {
 		return nil, errors.Wrap(err, "fail to read from config file")
