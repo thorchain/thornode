@@ -2,7 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // MsgSetPoolData defines a SetPoolData message
@@ -36,13 +36,16 @@ func (msg MsgSetPoolData) Type() string { return "set_pooldata" }
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
 	if msg.Ticker.IsEmpty() {
-		return sdk.ErrUnknownRequest("Pool Ticker cannot be empty")
+		return sdk.ErrUnknownRequest("pool Ticker cannot be empty")
+	}
+	if common.IsRune(msg.Ticker) {
+		return sdk.ErrUnknownRequest("invalid pool ticker")
 	}
 	if msg.BalanceRune.IsEmpty() {
-		return sdk.ErrUnknownRequest("Rune balance cannot be empty")
+		return sdk.ErrUnknownRequest("rune balance cannot be empty")
 	}
 	if msg.BalanceToken.IsEmpty() {
-		return sdk.ErrUnknownRequest("Token balance cannot be empty")
+		return sdk.ErrUnknownRequest("token balance cannot be empty")
 	}
 	if err := msg.Status.Valid(); err != nil {
 		return sdk.ErrUnknownRequest(err.Error())
