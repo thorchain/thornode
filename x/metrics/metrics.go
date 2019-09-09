@@ -34,6 +34,18 @@ const (
 
 	BlockDiscoveryDuration MetricName = `block_discovery_duration`
 	SearchTxDuration       MetricName = `search_tx_duration`
+
+	StateChainBridgeError    MetricName = `statechain_bridge_error`
+	TxToStateChain           MetricName = `tx_to_statechain`
+	TxToStateChainSigned     MetricName = `tx_to_statechain_signed`
+	SignToStateChainDuration MetricName = `sign_to_statechain_duration`
+	SendToStatechainDuration MetricName = `send_to_statechain_duration`
+
+	ObserverError                     MetricName = `observer_error`
+	SignerError                       MetricName = `signer_error`
+	TxToBinanceSigned                 MetricName = `tx_to_binance_signed`
+	TxToBinanceSignedBroadcast        MetricName = `tx_to_binance_broadcast`
+	SignAndBroadcastToBinanceDuration MetricName = `sign_and_broadcast_to_binance_duration`
 )
 
 // Metrics used to provide promethus metrics
@@ -88,6 +100,30 @@ var (
 			Name:      "block_no_tx_out",
 			Help:      "block doesn't have any tx out",
 		}),
+		TxToStateChain: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "observer",
+			Subsystem: "statechain_bridge",
+			Name:      "tx_to_statechain",
+			Help:      "number of tx observer post to statechain successfully",
+		}),
+		TxToStateChainSigned: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "observer",
+			Subsystem: "statechain_bridge",
+			Name:      "tx_to_statechain_signed",
+			Help:      "number of tx observer signed successfully",
+		}),
+		TxToBinanceSigned: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "signer",
+			Subsystem: "binance",
+			Name:      "tx_to_binance_signed",
+			Help:      "number of tx signer signed successfully",
+		}),
+		TxToBinanceSignedBroadcast: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: "signer",
+			Subsystem: "binance",
+			Name:      "tx_to_binance_broadcast",
+			Help:      "number of tx observer broadcast to binance successfully",
+		}),
 	}
 	counterVecs = map[MetricName]*prometheus.CounterVec{
 		CommonBLockScannerError: prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -106,11 +142,38 @@ var (
 		}, []string{
 			"error_name", "additional",
 		}),
+
 		StateChainBlockScanError: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "block_scanner",
 			Subsystem: "statechain_block_scanner",
 			Name:      "errors",
 			Help:      "errors in statechain block scanner",
+		}, []string{
+			"error_name", "additional",
+		}),
+
+		StateChainBridgeError: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "statechain",
+			Subsystem: "statechain_bridge",
+			Name:      "errors",
+			Help:      "errors in statechain bridge",
+		}, []string{
+			"error_name", "additional",
+		}),
+
+		ObserverError: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "observer",
+			Subsystem: "observer",
+			Name:      "errors",
+			Help:      "errors in observer",
+		}, []string{
+			"error_name", "additional",
+		}),
+		SignerError: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "signer",
+			Subsystem: "signer",
+			Name:      "errors",
+			Help:      "errors in signer",
 		}, []string{
 			"error_name", "additional",
 		}),
@@ -128,6 +191,24 @@ var (
 			Subsystem: "binance_block_scanner",
 			Name:      "search_tx_duration",
 			Help:      "how long it takes to search tx in a block",
+		}),
+		SignAndBroadcastToBinanceDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
+			Namespace: "signer",
+			Subsystem: "binance",
+			Name:      "sign_and_broadcast_to_binance",
+			Help:      "how long it takes to sign and broadcast to binance",
+		}),
+		SignToStateChainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
+			Namespace: "observer",
+			Subsystem: "statechain",
+			Name:      "sign_to_statechain_duration",
+			Help:      "how long it takes to sign a tx to statechain",
+		}),
+		SendToStatechainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
+			Namespace: "observer",
+			Subsystem: "statechain",
+			Name:      "send_to_statechain_duration",
+			Help:      "how long it takes to sign and broadcast to binance",
 		}),
 	}
 )
