@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/common"
@@ -28,6 +29,7 @@ type Observer struct {
 	stateChainBridge *statechain.StateChainBridge
 	m                *metrics.Metrics
 	wg               *sync.WaitGroup
+	errCounter       *prometheus.CounterVec
 }
 
 // NewObserver create a new instance of Observer
@@ -49,7 +51,7 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
-	stateChainBridge, err := statechain.NewStateChainBridge(cfg.StateChain)
+	stateChainBridge, err := statechain.NewStateChainBridge(cfg.StateChain, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create new state chain bridge")
 	}
@@ -63,6 +65,7 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		stateChainBridge: stateChainBridge,
 		storage:          scanStorage,
 		m:                m,
+		errCounter:       m.GetCounterVec(metrics.ObserverError),
 	}, nil
 }
 
@@ -94,6 +97,7 @@ func (o *Observer) retryAllTx() {
 	txIns, err := o.storage.GetTxInForRetry(false)
 	if nil != err {
 		o.logger.Error().Err(err).Msg("fail to get txin for retry")
+		o.errCounter.WithLabelValues("fail_get_txin_for_retry", "").Inc()
 		return
 	}
 	for _, item := range txIns {
@@ -115,6 +119,7 @@ func (o *Observer) retryTxProcessor() {
 		case <-t.C:
 			txIns, err := o.storage.GetTxInForRetry(true)
 			if nil != err {
+				o.errCounter.WithLabelValues("fail_to_get_txin_for_retry", "").Inc()
 				o.logger.Error().Err(err).Msg("fail to get txin for retry")
 				continue
 			}
@@ -152,17 +157,20 @@ func (o *Observer) txinsProcessor(ch <-chan types.TxIn, idx int) {
 }
 func (o *Observer) processOneTxIn(txIn types.TxIn) {
 	if err := o.storage.SetTxInStatus(txIn, types.Processing); nil != err {
+		o.errCounter.WithLabelValues("fail_save_txin_local", txIn.BlockHeight).Inc()
 		o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
 		return
 	}
 	if err := o.signAndSendToStatechain(txIn); nil != err {
 		o.logger.Error().Err(err).Msg("fail to send to statechain")
+		o.errCounter.WithLabelValues("fail_send_to_statechain", txIn.BlockHeight).Inc()
 		if err := o.storage.SetTxInStatus(txIn, types.Failed); nil != err {
 			o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
 			return
 		}
 	}
 	if err := o.storage.RemoveTxIn(txIn); nil != err {
+		o.errCounter.WithLabelValues("fail_remove_from_local_store", txIn.BlockHeight).Inc()
 		o.logger.Error().Err(err).Msg("fail to remove txin from local store")
 		return
 	}
@@ -174,10 +182,12 @@ func (o *Observer) signAndSendToStatechain(txIn types.TxIn) error {
 	}
 	signed, err := o.stateChainBridge.Sign(txs)
 	if nil != err {
+		o.errCounter.WithLabelValues("fail_to_sign", txIn.BlockHeight).Inc()
 		return errors.Wrap(err, "fail to sign the tx")
 	}
 	txID, err := o.stateChainBridge.Send(*signed, types.TxSync)
 	if nil != err {
+		o.errCounter.WithLabelValues("fail_to_send_to_statechain", txIn.BlockHeight).Inc()
 		return errors.Wrap(err, "fail to send the tx to statechain")
 	}
 	o.logger.Info().Str("block", txIn.BlockHeight).Str("statechain hash", txID.String()).Msg("sign and send to statechain successfully")
@@ -192,10 +202,12 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 		o.logger.Debug().Str("tx-hash", item.Tx).Msg("txInItem")
 		txID, err := common.NewTxID(item.Tx)
 		if nil != err {
+			o.errCounter.WithLabelValues("fail_to_parse_tx_hash", txIn.BlockHeight).Inc()
 			return nil, errors.Wrapf(err, "fail to parse tx hash, %s is invalid ", item.Tx)
 		}
 		bnbAddr, err := common.NewBnbAddress(item.Sender)
 		if nil != err {
+			o.errCounter.WithLabelValues("fail_to_parse_sender", item.Sender).Inc()
 			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
 		}
 		txs[i] = stypes.NewTxInVoter(txID, []stypes.TxIn{
