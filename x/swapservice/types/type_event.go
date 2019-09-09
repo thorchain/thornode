@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"math"
 
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 type Event struct {
@@ -18,16 +18,18 @@ type Event struct {
 	// OutStamp   time.Time         `json:"out_timestamp"`
 	// InAddress  common.BnbAddress `json:"in_address"`
 	// OutAddress common.BnbAddress `json:"out_address"`
-	Pool  common.Ticker   `json:"pool"`
-	Event json.RawMessage `json:"event"`
+	Pool   common.Ticker   `json:"pool"`
+	Event  json.RawMessage `json:"event"`
+	Status EventStatus     `json:"status"`
 }
 
-func NewEvent(typ string, inHash common.TxID, pool common.Ticker, evt json.RawMessage) Event {
+func NewEvent(typ string, inHash common.TxID, pool common.Ticker, evt json.RawMessage, status EventStatus) Event {
 	return Event{
 		Type:   typ,
 		InHash: inHash,
 		Pool:   pool,
 		Event:  evt,
+		Status: status,
 	}
 }
 
@@ -109,4 +111,15 @@ func NewEventUnstake(r, t, s common.Amount) EventUnstake {
 
 func (e EventUnstake) Type() string {
 	return "unstake"
+}
+
+type EmptyRefundEvent struct {
+}
+
+func NewEmptyRefundEvent() EmptyRefundEvent {
+	return EmptyRefundEvent{}
+}
+
+func (e EmptyRefundEvent) Type() string {
+	return "empty-refund"
 }

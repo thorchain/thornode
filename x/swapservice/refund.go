@@ -15,9 +15,11 @@ type RefundStoreAccessor interface {
 }
 
 // processRefund take in the sdk.Result and decide whether we should refund customer
-func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keeper RefundStoreAccessor, msg sdk.Msg) {
+// return value bool indicated whether we actually refund
+// if the tokens in are smaller than our minimum refund threshold, we will swallow it
+func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keeper RefundStoreAccessor, msg sdk.Msg) bool {
 	if result.IsOK() {
-		return
+		return false
 	}
 	switch m := msg.(type) {
 	case MsgSetStakeData:
@@ -31,7 +33,7 @@ func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keepe
 			result.Events = result.Events.AppendEvent(
 				sdk.NewEvent("no refund", sdk.NewAttribute("reason", reason)))
 			// nothing to refund
-			return
+			return false
 		}
 		if c.Amount.GreaterThen(0) {
 			toi.Coins = append(toi.Coins, c)
@@ -39,6 +41,7 @@ func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keepe
 		if c1.Amount.GreaterThen(0) {
 			toi.Coins = append(toi.Coins, c1)
 		}
+
 		store.AddTxOutItem(toi)
 	case MsgSwap:
 		toi := &TxOutItem{
@@ -50,13 +53,14 @@ func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keepe
 			result.Events = result.Events.AppendEvent(
 				sdk.NewEvent("no refund", sdk.NewAttribute("reason", reason)))
 			// nothing to refund
-			return
+			return false
 		}
 		toi.Coins = append(toi.Coins, c)
 		store.AddTxOutItem(toi)
 	default:
-		return
+		return false
 	}
+	return true
 }
 
 // getRefundCoin

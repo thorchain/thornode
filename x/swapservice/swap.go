@@ -172,6 +172,7 @@ func swapOne(ctx sdk.Context,
 		txID,
 		ticker,
 		swapBytes,
+		EventSuccess,
 	)
 	keeper.AddIncompleteEvents(ctx, evt)
 

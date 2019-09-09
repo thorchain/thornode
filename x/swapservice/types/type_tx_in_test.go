@@ -2,7 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 )
 
@@ -17,11 +17,11 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	c.Assert(err, IsNil)
 	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
 	c.Assert(err, IsNil)
-	acc1, err := sdk.AccAddressFromBech32("cosmos1jye8q836gf2ffw7tpc7kvp2uyaq56njfn4fpc4")
+	acc1, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
-	acc2, err := sdk.AccAddressFromBech32("cosmos1nm0rrq86ucezaf8uj35pq9fpwr5r82cl8sc7p5")
+	acc2, err := sdk.AccAddressFromBech32("bep1p4tyz2d243j539n6hrx3q8p77uyqks6ks4ju9u")
 	c.Assert(err, IsNil)
-	acc3, err := sdk.AccAddressFromBech32("cosmos13vf50slxyapl0a9ty9srz54g0pfmd7fr7pq26z")
+	acc3, err := sdk.AccAddressFromBech32("bep1lkasqgxc3k65fqqw9zeurxwxmayfjej3ygwpzl")
 	c.Assert(err, IsNil)
 
 	voter := NewTxInVoter(txID, nil)
@@ -55,9 +55,106 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	c.Check(tx.Empty(), Equals, true)
 	c.Check(voter.HasConensus(3), Equals, true)
 	c.Check(voter.HasConensus(4), Equals, false)
-
+	c.Check(voter.Key().Equals(txID), Equals, true)
+	c.Check(voter.String() == txID.String(), Equals, true)
 	voter.SetDone(txID2)
 	for _, transaction := range voter.Txs {
 		c.Check(transaction.Done.Equals(txID2), Equals, true)
+	}
+
+	txIn.SetReverted(txID2)
+	c.Check(txIn.Done.Equals(txID2), Equals, true)
+	c.Check(len(txIn.String()) > 0, Equals, true)
+	coins := sdk.NewCoins(
+		sdk.NewCoin("rune", sdk.NewInt(100)), sdk.NewCoin("bnb", sdk.NewInt(100)))
+	statechainCoins, err := FromSdkCoins(coins)
+	c.Assert(err, IsNil)
+	c.Assert(statechainCoins, NotNil)
+	inputs := []struct {
+		coins  common.Coins
+		memo   string
+		sender common.BnbAddress
+	}{
+		{
+			coins:  nil,
+			memo:   "test",
+			sender: bnb,
+		},
+		{
+			coins:  common.Coins{},
+			memo:   "test",
+			sender: bnb,
+		},
+		{
+			coins:  statechainCoins,
+			memo:   "",
+			sender: bnb,
+		},
+		{
+			coins:  statechainCoins,
+			memo:   "test",
+			sender: common.NoBnbAddress,
+		},
+	}
+
+	for _, item := range inputs {
+		txIn := NewTxIn(item.coins, item.memo, item.sender)
+		c.Assert(txIn.Valid(), NotNil)
+	}
+}
+
+func (TypeTxInSuite) TestTxInEquals(c *C) {
+	coins1 := common.Coins{
+		common.NewCoin(common.BNBTicker, common.NewAmountFromFloat(100)),
+		common.NewCoin(common.RuneA1FTicker, common.NewAmountFromFloat(100)),
+	}
+	coins2 := common.Coins{
+		common.NewCoin(common.BNBTicker, common.NewAmountFromFloat(100)),
+	}
+	coins3 := common.Coins{
+		common.NewCoin(common.BNBTicker, common.NewAmountFromFloat(200)),
+		common.NewCoin(common.RuneA1FTicker, common.NewAmountFromFloat(100)),
+	}
+	coins4 := common.Coins{
+		common.NewCoin(common.RuneB1ATicker, common.NewAmountFromFloat(100)),
+		common.NewCoin(common.RuneA1FTicker, common.NewAmountFromFloat(100)),
+	}
+	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	c.Assert(err, IsNil)
+	bnb1, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqb")
+	c.Assert(err, IsNil)
+	inputs := []struct {
+		tx    TxIn
+		tx1   TxIn
+		equal bool
+	}{
+		{
+			tx:    NewTxIn(coins1, "memo", bnb),
+			tx1:   NewTxIn(coins1, "memo1", bnb),
+			equal: false,
+		},
+		{
+			tx:    NewTxIn(coins1, "memo", bnb),
+			tx1:   NewTxIn(coins1, "memo", bnb1),
+			equal: false,
+		},
+		{
+			tx:    NewTxIn(coins2, "memo", bnb),
+			tx1:   NewTxIn(coins1, "memo", bnb),
+			equal: false,
+		},
+		{
+			tx:    NewTxIn(coins3, "memo", bnb),
+			tx1:   NewTxIn(coins1, "memo", bnb),
+			equal: false,
+		},
+		{
+			tx:    NewTxIn(coins4, "memo", bnb),
+			tx1:   NewTxIn(coins1, "memo", bnb),
+			equal: false,
+		},
+	}
+	for _, item := range inputs {
+		c.Assert(item.tx.Equals(item.tx1), Equals, item.equal)
 	}
 }

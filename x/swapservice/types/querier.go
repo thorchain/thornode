@@ -13,5 +13,5 @@ func (n QueryResPools) String() string {
 	for _, record := range n {
 		tickers = append(tickers, record.Ticker.String())
 	}
-	return strings.Join(tickers[:], "\n")
+	return strings.Join(tickers, "\n")
 }
