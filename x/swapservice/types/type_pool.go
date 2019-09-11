@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // PoolStatus is an indication of what the pool state is
@@ -82,7 +83,13 @@ type Pool struct {
 	PoolUnits    sdk.Uint          `json:"pool_units"`    // total units of the pool
 	PoolAddress  common.BnbAddress `json:"pool_address"`  // bnb liquidity pool address
 	Status       PoolStatus        `json:"status"`        // status
+	// ExpiryUtc record the time when the pool address will be rotated
+	// Later we will implement feature that will rotate the pool address regularly
+	ExpiryUtc time.Time `json:"expiry_utc"` // when the pool address is going to expire
 }
+
+// #issue 63 , we will set it to 1 Jan 2020 for now
+var PoolAddressExpiryDate = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // NewPool Returns a new Pool
 func NewPool() Pool {
@@ -91,6 +98,7 @@ func NewPool() Pool {
 		BalanceToken: sdk.ZeroUint(),
 		PoolUnits:    sdk.ZeroUint(),
 		Status:       Bootstrap,
+		ExpiryUtc:    PoolAddressExpiryDate,
 	}
 }
 

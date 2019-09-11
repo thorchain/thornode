@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	"gitlab.com/thorchain/bepswap/common"
 )
 
@@ -15,6 +14,7 @@ const (
 	TSLKey               AdminConfigKey = "TSL"
 	StakerAmtIntervalKey AdminConfigKey = "StakerAmtInterval"
 	PoolAddressKey       AdminConfigKey = "PoolAddress"
+	PoolExpiryKey        AdminConfigKey = `PoolExpiry`
 	MRRAKey              AdminConfigKey = `MRRA` // MRRA means MinimumRefundRuneAmount, if the tx send to pool has less then this amount of RUNE , we are not going to refund it
 )
 
@@ -32,6 +32,8 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 		return StakerAmtIntervalKey
 	case string(PoolAddressKey):
 		return PoolAddressKey
+	case string(PoolExpiryKey):
+		return PoolExpiryKey
 	default:
 		return UnknownKey
 	}
@@ -69,16 +71,16 @@ func (c AdminConfig) Empty() bool {
 
 func (c AdminConfig) Valid() error {
 	if c.Address.IsEmpty() {
-		return errors.New("Address cannot be empty")
+		return fmt.Errorf("address cannot be empty")
 	}
 	if c.Key == "" {
-		return errors.New("Key cannot be empty")
+		return fmt.Errorf("key cannot be empty")
 	}
 	if c.Key == UnknownKey {
-		return errors.New("Key not recognized")
+		return fmt.Errorf("key not recognized")
 	}
 	if c.Value == "" {
-		return errors.New("Value cannot be empty")
+		return fmt.Errorf("value cannot be empty")
 	}
 	if err := c.Key.ValidValue(c.Value); err != nil {
 		return err

@@ -10,6 +10,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"gitlab.com/thorchain/bepswap/common"
+
 	q "gitlab.com/thorchain/bepswap/statechain/x/swapservice/query"
 )
 
@@ -126,6 +127,8 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, 
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
 		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		pool.PoolAddress = keeper.GetAdminConfigPoolAddress(ctx, common.NoBnbAddress)
+		pool.ExpiryUtc = keeper.GetAdminConfigPoolExpiry(ctx, common.NoBnbAddress)
 		pools = append(pools, pool)
 	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pools)

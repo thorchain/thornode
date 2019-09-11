@@ -193,14 +193,14 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	ctx := getTestContext()
 	refundStoreAccessor := mocks.NewMockRefundStoreAccessor()
 	addr := sdk.AccAddress("rune1gqva7eh03jkz39tk8m3tlw7ch558dz0ncdag0j")
-	store := NewTxOutStore(MockTxOutSetter{})
-	store.NewBlock(1)
+	s := NewTxOutStore(MockTxOutSetter{})
+	s.NewBlock(1)
 	processRefund(ctx, &sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
-	}, store, refundStoreAccessor, NewMsgNoOp(addr))
-	c.Assert(len(store.blockOut.TxArray), Equals, 0)
-	store.CommitBlock(ctx)
+	}, s, refundStoreAccessor, NewMsgNoOp(addr))
+	c.Assert(len(s.blockOut.TxArray), Equals, 0)
+	s.CommitBlock(ctx)
 	txId, err := common.NewTxID("4D60A73FEBD42592DB697EF1DA020A214EC3102355D0E1DD07B18557321B106X")
 	if nil != err {
 		c.Errorf("fail to create tx id,%s", err)
@@ -214,33 +214,33 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	// stake refund test
 	stakeMsg := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(100*One), sdk.NewUint(100*One), bnbAddress, txId, addr)
 	result := sdk.ErrUnknownRequest("invalid").Result()
-	store.NewBlock(2)
-	processRefund(ctx, &result, store, refundStoreAccessor, stakeMsg)
-	store.CommitBlock(ctx)
-	c.Assert(len(store.blockOut.TxArray) > 0, Equals, true)
+	s.NewBlock(2)
+	processRefund(ctx, &result, s, refundStoreAccessor, stakeMsg)
+	s.CommitBlock(ctx)
+	c.Assert(len(s.blockOut.TxArray) > 0, Equals, true)
 
 	//stake refund test
 	stakeMsg1 := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(One/2), sdk.NewUint(One/2), bnbAddress, txId, addr)
 	result1 := sdk.ErrUnknownRequest("invalid").Result()
-	store.NewBlock(2)
-	processRefund(ctx, &result1, store, refundStoreAccessor, stakeMsg1)
-	store.CommitBlock(ctx)
+	s.NewBlock(2)
+	processRefund(ctx, &result1, s, refundStoreAccessor, stakeMsg1)
+	s.CommitBlock(ctx)
 	c.Assert(len(result1.Events) > 0, Equals, true)
-	c.Assert(len(store.blockOut.TxArray) > 0, Equals, false)
+	c.Assert(len(s.blockOut.TxArray) > 0, Equals, false)
 
 	//swap refund test
 	swapMsg := NewMsgSwap(txId, common.RuneTicker, common.BNBTicker, sdk.NewUint(One*2/3), bnbAddress, bnbAddress, sdk.NewUint(One*2), addr)
 	resultMsg := sdk.ErrUnknownRequest("invalid").Result()
-	store.NewBlock(3)
-	processRefund(ctx, &resultMsg, store, refundStoreAccessor, swapMsg)
-	store.CommitBlock(ctx)
+	s.NewBlock(3)
+	processRefund(ctx, &resultMsg, s, refundStoreAccessor, swapMsg)
+	s.CommitBlock(ctx)
 	c.Assert(len(resultMsg.Events) > 0, Equals, true)
 
 	swapNoop := NewMsgNoOp(addr)
 	resultNoop := sdk.ErrUnknownRequest("invalid").Result()
-	store.NewBlock(3)
-	processRefund(ctx, &resultNoop, store, refundStoreAccessor, swapNoop)
-	store.CommitBlock(ctx)
-	c.Assert(len(store.blockOut.TxArray), Equals, 0)
+	s.NewBlock(3)
+	processRefund(ctx, &resultNoop, s, refundStoreAccessor, swapNoop)
+	s.CommitBlock(ctx)
+	c.Assert(len(s.blockOut.TxArray), Equals, 0)
 
 }
