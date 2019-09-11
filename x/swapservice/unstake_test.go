@@ -408,16 +408,16 @@ func (UnstakeSuite) TestUnstake(c *C) {
 	for _, tc := range testCases {
 		ctx := GetCtx("test")
 		c.Logf("name:%s", tc.name)
-		rune, token, _, err := unstake(ctx, tc.ps, tc.msg)
+		r, token, _, err := unstake(ctx, tc.ps, tc.msg)
 		if tc.expectedError != nil {
 			c.Assert(err, NotNil)
 			c.Check(err.Error(), Equals, tc.expectedError.Error())
-			c.Check(rune.Uint64(), Equals, tc.runeAmount.Uint64())
+			c.Check(r.Uint64(), Equals, tc.runeAmount.Uint64())
 			c.Check(token.Uint64(), Equals, tc.tokenAmount.Uint64())
 			continue
 		}
 		c.Assert(err, IsNil)
-		c.Check(rune.Uint64(), Equals, tc.runeAmount.Uint64())
+		c.Check(r.Uint64(), Equals, tc.runeAmount.Uint64())
 		c.Check(token.Uint64(), Equals, tc.tokenAmount.Uint64())
 	}
 }
