@@ -63,6 +63,7 @@ func DefaultGenesisState() GenesisState {
 				Ticker:       common.BNBTicker,
 				PoolUnits:    sdk.ZeroUint(),
 				Status:       PoolBootstrap,
+				ExpiryUtc:    PoolAddressExpiryDate,
 			},
 		},
 		TrustAccounts: []TrustAccount{},
@@ -87,15 +88,6 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 // ExportGenesis export the data in Genesis
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
-	var poolRecords []Pool
-	iterator := k.GetPoolDataIterator(ctx)
-	defer iterator.Close()
-	for ; iterator.Valid(); iterator.Next() {
-		var pool Pool
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		poolRecords = append(poolRecords, pool)
-	}
-
 	var adminConfigs []AdminConfig
 	configIterator := k.GetAdminConfigIterator(ctx)
 	defer configIterator.Close()
@@ -112,6 +104,16 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		var ta TrustAccount
 		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
 		trustAccounts = append(trustAccounts, ta)
+	}
+	var poolRecords []Pool
+	iterator := k.GetPoolDataIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var pool Pool
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx, common.NoBnbAddress)
+		pool.ExpiryUtc = k.GetAdminConfigPoolExpiry(ctx, common.NoBnbAddress)
+		poolRecords = append(poolRecords, pool)
 	}
 
 	return GenesisState{
