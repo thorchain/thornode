@@ -29,7 +29,7 @@ func getTestContext() sdk.Context {
 	return sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
 
 }
-func newPoolForTest(ticker common.Ticker, balanceRune, balanceToken common.Amount) Pool {
+func newPoolForTest(ticker common.Ticker, balanceRune, balanceToken sdk.Uint) Pool {
 	ps := NewPool()
 	ps.BalanceToken = balanceToken
 	ps.BalanceRune = balanceRune
@@ -43,66 +43,66 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 	c.Assert(err, IsNil)
 	inputs := []struct {
 		name                string
-		minimumRefundAmount common.Amount
+		minimumRefundAmount sdk.Uint
 		pool                Pool
 		ticker              common.Ticker
-		amount              common.Amount
+		amount              sdk.Uint
 		expectedCoin        common.Coin
 	}{
 		{
 			name:                "invalid-MRRA",
-			minimumRefundAmount: common.Amount("invalid"),
-			pool:                newPoolForTest(common.RuneTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			minimumRefundAmount: sdk.ZeroUint(),
+			pool:                newPoolForTest(common.RuneTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
 			ticker:              common.RuneTicker,
-			amount:              common.NewAmountFromFloat(100),
-			expectedCoin:        common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(100)),
+			amount:              sdk.NewUint(100 * One),
+			expectedCoin:        common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(100*float64(One))),
 		},
 		{
 			name:                "OneRune-MRRA",
-			minimumRefundAmount: common.NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(common.RuneTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			minimumRefundAmount: sdk.NewUint(One),
+			pool:                newPoolForTest(common.RuneTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
 			ticker:              common.RuneTicker,
-			amount:              common.NewAmountFromFloat(100),
-			expectedCoin:        common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(99)),
+			amount:              sdk.NewUint(100 * One),
+			expectedCoin:        common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(99*float64(One))),
 		},
 		{
 			name:                "No-Refund",
-			minimumRefundAmount: common.NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(common.RuneTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			minimumRefundAmount: sdk.NewUint(One),
+			pool:                newPoolForTest(common.RuneTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
 			ticker:              common.RuneTicker,
-			amount:              common.NewAmountFromFloat(0.5),
+			amount:              sdk.NewUint(One / 2),
 			expectedCoin:        common.NewCoin(common.RuneTicker, common.ZeroAmount),
 		},
 		{
 			name:                "invalid-MRRA-BNB-refund-all",
-			minimumRefundAmount: common.Amount("invalid"),
-			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			minimumRefundAmount: sdk.ZeroUint(),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
 			ticker:              bnbTicker,
-			amount:              common.NewAmountFromFloat(5),
-			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(5)),
+			amount:              sdk.NewUint(5 * One),
+			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(5*float64(One))),
 		},
 		{
 			name:                "MRRA-BNB-refund-normal",
-			minimumRefundAmount: common.NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			minimumRefundAmount: sdk.NewUint(One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
 			ticker:              bnbTicker,
-			amount:              common.NewAmountFromFloat(5),
-			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(4)),
+			amount:              sdk.NewUint(5 * One),
+			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(4*float64(One))),
 		},
 		{
 			name:                "MRRA-BNB-refund-normal-1",
-			minimumRefundAmount: common.NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(1)),
+			minimumRefundAmount: sdk.NewUint(One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(One)),
 			ticker:              bnbTicker,
-			amount:              common.NewAmountFromFloat(5),
-			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(4.99)),
+			amount:              sdk.NewUint(5 * One),
+			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(4.99*float64(One))),
 		},
 		{
 			name:                "MRRA-BNB-no-refund",
-			minimumRefundAmount: common.NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			minimumRefundAmount: sdk.NewUint(One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
 			ticker:              bnbTicker,
-			amount:              common.NewAmountFromFloat(0.5),
+			amount:              sdk.NewUint(One / 2),
 			expectedCoin:        common.NewCoin(bnbTicker, common.ZeroAmount),
 		},
 	}
@@ -110,6 +110,7 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 		ctx := getTestContext()
 		ctx = ctx.WithValue(mocks.RefundAdminConfigKeyMRRA, item.minimumRefundAmount).
 			WithValue(mocks.RefundPoolKey, item.pool)
+		c.Log(item.name)
 		coin := getRefundCoin(ctx, item.ticker, item.amount, refundStoreAccessor)
 		c.Assert(coin, Equals, item.expectedCoin)
 	}
@@ -128,7 +129,7 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 	c.Assert(err, IsNil)
 	inputs := []struct {
 		name                string
-		minimumRefundAmount common.Amount
+		minimumRefundAmount sdk.Uint
 		pool                Pool
 		result              sdk.Result
 		msg                 sdk.Msg
@@ -136,8 +137,8 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 	}{
 		{
 			name:                "result-ok",
-			minimumRefundAmount: common.NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			minimumRefundAmount: sdk.NewUint(One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
 			result: sdk.Result{
 				Code: sdk.CodeOK,
 			},
@@ -146,8 +147,8 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 		},
 		{
 			name:                "msg-type-setpooldata",
-			minimumRefundAmount: common.NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			minimumRefundAmount: sdk.NewUint(One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
 			result: sdk.Result{
 				Code: sdk.CodeOK,
 			},
@@ -156,14 +157,14 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 		},
 		{
 			name:                "msg-type-swap",
-			minimumRefundAmount: common.NewAmountFromFloat(1.0),
-			pool:                newPoolForTest(bnbTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)),
+			minimumRefundAmount: sdk.NewUint(One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
 			result:              sdk.ErrUnknownRequest("whatever").Result(),
-			msg:                 NewMsgSwap(txID, common.RuneTicker, bnbTicker, common.NewAmountFromFloat(5.0), "asdf", "asdf", "1.0", accountAddress),
+			msg:                 NewMsgSwap(txID, common.RuneTicker, bnbTicker, sdk.NewUint(5*One), "asdf", "asdf", sdk.NewUint(One), accountAddress),
 			out: &TxOutItem{
 				ToAddress: "asdf",
 				Coins: common.Coins{
-					common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(4.0)),
+					common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(4.0*float64(One))),
 				},
 			},
 		},
@@ -208,10 +209,10 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	if nil != err {
 		c.Errorf("fail to create bnb address,%s", err)
 	}
-	ctx = ctx.WithValue(mocks.RefundAdminConfigKeyMRRA, common.NewAmountFromFloat(2))
-	ctx = ctx.WithValue(mocks.RefundPoolKey, newPoolForTest(common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100)))
+	ctx = ctx.WithValue(mocks.RefundAdminConfigKeyMRRA, sdk.NewUint(2*One))
+	ctx = ctx.WithValue(mocks.RefundPoolKey, newPoolForTest(common.BNBTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)))
 	// stake refund test
-	stakeMsg := NewMsgSetStakeData(common.BNBTicker, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100), bnbAddress, txId, addr)
+	stakeMsg := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(100*One), sdk.NewUint(100*One), bnbAddress, txId, addr)
 	result := sdk.ErrUnknownRequest("invalid").Result()
 	store.NewBlock(2)
 	processRefund(ctx, &result, store, refundStoreAccessor, stakeMsg)
@@ -219,7 +220,7 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	c.Assert(len(store.blockOut.TxArray) > 0, Equals, true)
 
 	//stake refund test
-	stakeMsg1 := NewMsgSetStakeData(common.BNBTicker, common.NewAmountFromFloat(0.5), common.NewAmountFromFloat(0.5), bnbAddress, txId, addr)
+	stakeMsg1 := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(One/2), sdk.NewUint(One/2), bnbAddress, txId, addr)
 	result1 := sdk.ErrUnknownRequest("invalid").Result()
 	store.NewBlock(2)
 	processRefund(ctx, &result1, store, refundStoreAccessor, stakeMsg1)
@@ -228,7 +229,7 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	c.Assert(len(store.blockOut.TxArray) > 0, Equals, false)
 
 	//swap refund test
-	swapMsg := NewMsgSwap(txId, common.RuneTicker, common.BNBTicker, common.NewAmountFromFloat(1.5), bnbAddress, bnbAddress, common.NewAmountFromFloat(2.0), addr)
+	swapMsg := NewMsgSwap(txId, common.RuneTicker, common.BNBTicker, sdk.NewUint(One*2/3), bnbAddress, bnbAddress, sdk.NewUint(One*2), addr)
 	resultMsg := sdk.ErrUnknownRequest("invalid").Result()
 	store.NewBlock(3)
 	processRefund(ctx, &resultMsg, store, refundStoreAccessor, swapMsg)

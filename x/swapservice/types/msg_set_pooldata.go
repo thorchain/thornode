@@ -9,8 +9,8 @@ import (
 // We keep this for now , as a mechanism to set up a new pool when it is not in the genesis file
 // the pool changes when stake / swap happens
 type MsgSetPoolData struct {
-	BalanceRune  common.Amount  `json:"balance_rune"`  // balance rune
-	BalanceToken common.Amount  `json:"balance_token"` // balance of token
+	BalanceRune  sdk.Uint       `json:"balance_rune"`  // balance rune
+	BalanceToken sdk.Uint       `json:"balance_token"` // balance of token
 	Ticker       common.Ticker  `json:"ticker"`        // Ticker means the token symbol
 	Status       PoolStatus     `json:"status"`        // pool status
 	Signer       sdk.AccAddress `json:"signer"`
@@ -20,8 +20,8 @@ type MsgSetPoolData struct {
 func NewMsgSetPoolData(ticker common.Ticker, status PoolStatus, signer sdk.AccAddress) MsgSetPoolData {
 	return MsgSetPoolData{
 		Ticker:       ticker,
-		BalanceRune:  common.ZeroAmount,
-		BalanceToken: common.ZeroAmount,
+		BalanceRune:  sdk.ZeroUint(),
+		BalanceToken: sdk.ZeroUint(),
 		Status:       status,
 		Signer:       signer,
 	}
@@ -41,12 +41,7 @@ func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
 	if common.IsRune(msg.Ticker) {
 		return sdk.ErrUnknownRequest("invalid pool ticker")
 	}
-	if msg.BalanceRune.IsEmpty() {
-		return sdk.ErrUnknownRequest("rune balance cannot be empty")
-	}
-	if msg.BalanceToken.IsEmpty() {
-		return sdk.ErrUnknownRequest("token balance cannot be empty")
-	}
+
 	if err := msg.Status.Valid(); err != nil {
 		return sdk.ErrUnknownRequest(err.Error())
 	}

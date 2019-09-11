@@ -20,32 +20,21 @@ func (MsgSetPoolDataSuite) TestMsgSetPoolData(c *C) {
 
 	inputs := []struct {
 		ticker common.Ticker
-		rune   common.Amount
-		token  common.Amount
+		rune   sdk.Uint
+		token  sdk.Uint
 		status PoolStatus
 	}{
 		{
 			ticker: common.Ticker(""),
-			rune:   common.NewAmountFromFloat(1),
-			token:  common.NewAmountFromFloat(1),
+			rune:   sdk.NewUint(100000000),
+			token:  sdk.NewUint(100000000),
 			status: Enabled,
 		},
+
 		{
 			ticker: common.BNBTicker,
-			rune:   common.Amount(""),
-			token:  common.NewAmountFromFloat(1),
-			status: Enabled,
-		},
-		{
-			ticker: common.BNBTicker,
-			rune:   common.NewAmountFromFloat(1),
-			token:  common.Amount(""),
-			status: Enabled,
-		},
-		{
-			ticker: common.BNBTicker,
-			rune:   common.NewAmountFromFloat(1),
-			token:  common.NewAmountFromFloat(1),
+			rune:   sdk.NewUint(100000000),
+			token:  sdk.NewUint(100000000),
 			status: PoolStatus(-1),
 		},
 	}

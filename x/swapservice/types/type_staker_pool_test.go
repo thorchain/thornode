@@ -1,6 +1,7 @@
 package types
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 )
@@ -19,17 +20,17 @@ func (StakerPoolSuite) TestStakerPool(c *C) {
 
 	stakerPoolItem := &StakerPoolItem{
 		Ticker: common.BNBTicker,
-		Units:  common.NewAmountFromFloat(100),
+		Units:  sdk.NewUint(100),
 	}
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
 	txID2, err := common.NewTxID("47B4FE474A63DDF79DF2790C1C5162F4C213484750AB8292CFE7342E4B0B40E2")
 	c.Assert(err, IsNil)
-	stakerPoolItem.AddStakerTxDetail(txID, common.NewAmountFromFloat(100), common.NewAmountFromFloat(100))
+	stakerPoolItem.AddStakerTxDetail(txID, sdk.NewUint(100), sdk.NewUint(100))
 	stakerPool.UpsertStakerPoolItem(stakerPoolItem)
 	c.Assert(stakerPool.PoolUnits, NotNil)
 	c.Assert(len(stakerPool.PoolUnits), Equals, 1)
-	stakerPoolItem.AddStakerTxDetail(txID2, common.NewAmountFromFloat(50), common.NewAmountFromFloat(50))
+	stakerPoolItem.AddStakerTxDetail(txID2, sdk.NewUint(50), sdk.NewUint(50))
 	c.Assert(len(stakerPool.PoolUnits), Equals, 1)
 	c.Assert(stakerPoolItem.StakeDetails, NotNil)
 	spi := stakerPool.GetStakerPoolItem(common.BNBTicker)
@@ -41,7 +42,7 @@ func (StakerPoolSuite) TestStakerPool(c *C) {
 	stakerPool.UpsertStakerPoolItem(stakerPoolItem)
 	stakerPoolItem1 := &StakerPoolItem{
 		Ticker: common.RuneB1ATicker,
-		Units:  common.NewAmountFromFloat(100),
+		Units:  sdk.NewUint(100),
 	}
 	stakerPool.UpsertStakerPoolItem(stakerPoolItem1)
 	stakerPool.UpsertStakerPoolItem(stakerPoolItem)
@@ -49,5 +50,5 @@ func (StakerPoolSuite) TestStakerPool(c *C) {
 	c.Assert(len(stakerPool.PoolUnits), Equals, 1)
 	c.Log(stakerPool.String())
 	spi1 := stakerPool.GetStakerPoolItem(common.RuneA1FTicker)
-	c.Assert(spi1.Units, Equals, common.ZeroAmount)
+	c.Assert(spi1.Units.IsZero(), Equals, true)
 }

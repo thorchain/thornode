@@ -2,7 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // MsgSwap defines a MsgSwap message
@@ -12,13 +12,13 @@ type MsgSwap struct {
 	TargetTicker  common.Ticker     `json:"target_ticker"`   // target token
 	Requester     common.BnbAddress `json:"requester"`       // request address on Binance chain
 	Destination   common.BnbAddress `json:"destination"`     // destination , used for swap and send , the destination address we send it to
-	Amount        common.Amount     `json:"amount"`          // amount of token to swap
-	TargetPrice   common.Amount     `json:"target_price"`
+	Amount        sdk.Uint          `json:"amount"`          // amount of token to swap
+	TargetPrice   sdk.Uint          `json:"target_price"`
 	Signer        sdk.AccAddress    `json:"signer"`
 }
 
 // NewMsgSwap is a constructor function for MsgSwap
-func NewMsgSwap(requestTxHash common.TxID, source, target common.Ticker, amount common.Amount, requester, destination common.BnbAddress, targetPrice common.Amount, signer sdk.AccAddress) MsgSwap {
+func NewMsgSwap(requestTxHash common.TxID, source, target common.Ticker, amount sdk.Uint, requester, destination common.BnbAddress, targetPrice sdk.Uint, signer sdk.AccAddress) MsgSwap {
 	return MsgSwap{
 		RequestTxHash: requestTxHash,
 		SourceTicker:  source,
@@ -51,8 +51,8 @@ func (msg MsgSwap) ValidateBasic() sdk.Error {
 	if msg.TargetTicker.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Target cannot be empty")
 	}
-	if msg.Amount.IsEmpty() {
-		return sdk.ErrUnknownRequest("Swap Amount cannot be empty")
+	if msg.Amount.IsZero() {
+		return sdk.ErrUnknownRequest("Swap Amount cannot be zero")
 	}
 	if msg.Requester.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Requester cannot be empty")

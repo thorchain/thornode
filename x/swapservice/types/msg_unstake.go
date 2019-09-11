@@ -11,14 +11,14 @@ const MaxWithdrawBasisPoints = 10000
 // MsgSetUnStake is used to withdraw
 type MsgSetUnStake struct {
 	PublicAddress       common.BnbAddress `json:"public_address"`        // it should be the public address
-	WithdrawBasisPoints common.Amount     `json:"withdraw_basis_points"` // withdraw basis points
+	WithdrawBasisPoints sdk.Uint          `json:"withdraw_basis_points"` // withdraw basis points
 	Ticker              common.Ticker     `json:"ticker"`                // ticker token symbol
 	RequestTxHash       common.TxID       `json:"request_tx_hash"`       // request tx hash on binance chain
 	Signer              sdk.AccAddress    `json:"signer"`
 }
 
 // NewMsgSetUnStake is a constructor function for MsgSetPoolData
-func NewMsgSetUnStake(publicAddress common.BnbAddress, withdrawBasisPoints common.Amount, ticker common.Ticker, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetUnStake {
+func NewMsgSetUnStake(publicAddress common.BnbAddress, withdrawBasisPoints sdk.Uint, ticker common.Ticker, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
 		PublicAddress:       publicAddress,
 		WithdrawBasisPoints: withdrawBasisPoints,
@@ -48,10 +48,10 @@ func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
-	if msg.WithdrawBasisPoints.IsNegative() {
-		return sdk.ErrUnknownRequest("withdraw basis points is invalid")
+	if msg.WithdrawBasisPoints.IsZero() {
+		return sdk.ErrUnknownRequest("WithdrawBasicPoints can't be zero")
 	}
-	if msg.WithdrawBasisPoints.GreaterThen(0) && msg.WithdrawBasisPoints.Float64() > MaxWithdrawBasisPoints {
+	if msg.WithdrawBasisPoints.GT(sdk.ZeroUint()) && msg.WithdrawBasisPoints.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
 		return sdk.ErrUnknownRequest("WithdrawBasisPoints is larger than maximum withdraw basis points")
 	}
 	return nil

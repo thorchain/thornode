@@ -3,13 +3,14 @@ package types
 import (
 	"strings"
 
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // TxOutItem represent an tx need to be sent to binance chain
 type TxOutItem struct {
 	ToAddress common.BnbAddress `json:"to"`
-	Coins     common.Coins      `json:"coins"`
+	// TODO update common.Coins to use sdk.Coins
+	Coins common.Coins `json:"coins"`
 }
 
 // String implement stringer interface
