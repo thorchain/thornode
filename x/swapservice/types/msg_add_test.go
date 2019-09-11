@@ -27,7 +27,7 @@ func (mas *MsgAddSuite) TestMsgAdd(c *C) {
 	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
 	c.Check(addr.Empty(), Equals, false)
-	ma := NewMsgAdd(common.BNBTicker, common.NewAmountFromFloat(1), common.NewAmountFromFloat(1), txId, addr)
+	ma := NewMsgAdd(common.BNBTicker, sdk.NewUint(100000000), sdk.NewUint(100000000), txId, addr)
 	c.Check(ma.Route(), Equals, RouterKey)
 	c.Check(ma.Type(), Equals, "set_add")
 	err = ma.ValidateBasic()
@@ -41,43 +41,29 @@ func (mas *MsgAddSuite) TestMsgAdd(c *C) {
 
 	inputs := []struct {
 		ticker common.Ticker
-		rune   common.Amount
-		token  common.Amount
+		rune   sdk.Uint
+		token  sdk.Uint
 		txHash common.TxID
 		signer sdk.AccAddress
 	}{
 		{
 			ticker: common.Ticker(""),
-			rune:   common.NewAmountFromFloat(1),
-			token:  common.NewAmountFromFloat(1),
+			rune:   sdk.NewUint(100000000),
+			token:  sdk.NewUint(100000000),
 			txHash: txId,
 			signer: addr,
 		},
 		{
 			ticker: common.BNBTicker,
-			rune:   common.Amount(""),
-			token:  common.NewAmountFromFloat(1),
-			txHash: txId,
-			signer: addr,
-		},
-		{
-			ticker: common.BNBTicker,
-			rune:   common.NewAmountFromFloat(1),
-			token:  common.Amount(""),
-			txHash: txId,
-			signer: addr,
-		},
-		{
-			ticker: common.BNBTicker,
-			rune:   common.NewAmountFromFloat(1),
-			token:  common.NewAmountFromFloat(1),
+			rune:   sdk.NewUint(100000000),
+			token:  sdk.NewUint(100000000),
 			txHash: common.TxID(""),
 			signer: addr,
 		},
 		{
 			ticker: common.BNBTicker,
-			rune:   common.NewAmountFromFloat(1),
-			token:  common.NewAmountFromFloat(1),
+			rune:   sdk.NewUint(100000000),
+			token:  sdk.NewUint(100000000),
 			txHash: txId,
 			signer: sdk.AccAddress{},
 		},

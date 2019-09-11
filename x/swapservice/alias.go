@@ -11,10 +11,8 @@ const (
 	DefaultCodespace = types.DefaultCodespace
 	PoolEnabled      = types.Enabled
 	PoolBootstrap    = types.Bootstrap
-	PoolSuspended    = types.Suspended
 	EventSuccess     = types.Success
 	EventRefund      = types.Refund
-	EventPending     = types.Pending
 
 	// Admin config keys
 	GSLKey                 = types.GSLKey
@@ -23,14 +21,15 @@ const (
 	PoolAddressKey         = types.PoolAddressKey
 	MRRAKey                = types.MRRAKey
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
+	One                    = types.One
 )
 
 var (
-	NewPool              = types.NewPool
-	NewAdminConfig       = types.NewAdminConfig
-	NewMsgNoOp           = types.NewMsgNoOp
-	NewMsgAdd            = types.NewMsgAdd
-	NewMsgSetTxIn        = types.NewMsgSetTxIn
+	NewPool        = types.NewPool
+	NewAdminConfig = types.NewAdminConfig
+	NewMsgNoOp     = types.NewMsgNoOp
+	NewMsgAdd      = types.NewMsgAdd
+	//NewMsgSetTxIn        = types.NewMsgSetTxIn
 	NewMsgSetPoolData    = types.NewMsgSetPoolData
 	NewMsgSetStakeData   = types.NewMsgSetStakeData
 	NewMsgSetUnStake     = types.NewMsgSetUnStake

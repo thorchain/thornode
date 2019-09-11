@@ -4,22 +4,24 @@ import (
 	"fmt"
 	"strings"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/bepswap/common"
 )
 
 // StakeTxDetail represent all the stake activity
 // Staker can stake on the same pool for multiple times
 type StakeTxDetail struct {
-	RequestTxHash common.TxID   `json:"request_tx_hash"` // the tx hash from binance chain , represent staker send token to the pool
-	RuneAmount    common.Amount `json:"rune_amount"`     // amount of rune that send in at the time
-	TokenAmount   common.Amount `json:"token_amount"`    // amount of token that send in at the time
+	RequestTxHash common.TxID `json:"request_tx_hash"` // the tx hash from binance chain , represent staker send token to the pool
+	RuneAmount    sdk.Uint    `json:"rune_amount"`     // amount of rune that send in at the time
+	TokenAmount   sdk.Uint    `json:"token_amount"`    // amount of token that send in at the time
 }
 
 // StakerPoolItem represent the staker's activity in a pool
 // Staker can stake on multiple pool
 type StakerPoolItem struct {
 	Ticker       common.Ticker   `json:"ticker"`
-	Units        common.Amount   `json:"units"`
+	Units        sdk.Uint        `json:"units"`
 	StakeDetails []StakeTxDetail `json:"stake_details"`
 }
 
@@ -98,7 +100,7 @@ func (sp *StakerPool) GetStakerPoolItem(ticker common.Ticker) *StakerPoolItem {
 	}
 	return &StakerPoolItem{
 		Ticker:       ticker,
-		Units:        common.ZeroAmount,
+		Units:        sdk.ZeroUint(),
 		StakeDetails: []StakeTxDetail{},
 	}
 }
@@ -136,7 +138,7 @@ func (sp *StakerPool) UpsertStakerPoolItem(stakerPoolItem *StakerPoolItem) {
 }
 
 // AddStakerTxDetail to the StakerPool structure
-func (spi *StakerPoolItem) AddStakerTxDetail(requestTxHash common.TxID, runeAmount, tokenAmount common.Amount) {
+func (spi *StakerPoolItem) AddStakerTxDetail(requestTxHash common.TxID, runeAmount, tokenAmount sdk.Uint) {
 	std := StakeTxDetail{
 		RequestTxHash: requestTxHash,
 		RuneAmount:    runeAmount,

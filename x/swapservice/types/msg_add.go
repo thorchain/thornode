@@ -8,14 +8,14 @@ import (
 // MsgAdd defines a add message
 type MsgAdd struct {
 	Ticker      common.Ticker  `json:"ticker"` // ticker means the symbol
-	TokenAmount common.Amount  `json:"token"`  // the amount of token
-	RuneAmount  common.Amount  `json:"rune"`   // the amount of rune
+	TokenAmount sdk.Uint       `json:"token"`  // the amount of token
+	RuneAmount  sdk.Uint       `json:"rune"`   // the amount of rune
 	TxID        common.TxID    `json:"tx_id"`  // the txhash that represent user send token to our pool address
 	Signer      sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgAdd is a constructor function for MsgAdd
-func NewMsgAdd(ticker common.Ticker, r, token common.Amount, requestTxHash common.TxID, signer sdk.AccAddress) MsgAdd {
+func NewMsgAdd(ticker common.Ticker, r, token sdk.Uint, requestTxHash common.TxID, signer sdk.AccAddress) MsgAdd {
 	return MsgAdd{
 		Ticker:      ticker,
 		TokenAmount: token,
@@ -37,13 +37,7 @@ func (msg MsgAdd) ValidateBasic() sdk.Error {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
 	if msg.Ticker.IsEmpty() {
-		return sdk.ErrUnknownRequest("Stake Ticker cannot be empty")
-	}
-	if msg.RuneAmount.IsEmpty() {
-		return sdk.ErrUnknownRequest("Stake Rune cannot be empty")
-	}
-	if msg.TokenAmount.IsEmpty() {
-		return sdk.ErrUnknownRequest("Stake Token cannot be empty")
+		return sdk.ErrUnknownRequest("Add Ticker cannot be empty")
 	}
 	if msg.TxID.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")

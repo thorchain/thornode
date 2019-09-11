@@ -62,17 +62,7 @@ func (k Keeper) GetPool(ctx sdk.Context, ticker common.Ticker) Pool {
 	bz := store.Get([]byte(key))
 	var pool Pool
 	k.cdc.MustUnmarshalBinaryBare(bz, &pool)
-	if pool.BalanceRune.IsEmpty() {
-		pool.BalanceRune = common.ZeroAmount
-	}
-	if pool.BalanceToken.IsEmpty() {
-		pool.BalanceToken = common.ZeroAmount
-	}
-	if pool.PoolUnits.IsEmpty() {
-		pool.PoolUnits = common.ZeroAmount
-	}
 	pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx, common.NoBnbAddress)
-
 	return pool
 }
 
@@ -88,7 +78,7 @@ func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
 }
 
-func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 common.Ticker) (common.Amount, common.Amount) {
+func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 common.Ticker) (sdk.Uint, sdk.Uint) {
 	pool := k.GetPool(ctx, ticker)
 	if common.IsRune(ticker2) {
 		return pool.BalanceRune, pool.BalanceToken
@@ -99,9 +89,6 @@ func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 common.Ticker) 
 // SetPoolData - sets the value string that a pool ID resolves to
 func (k Keeper) SetPoolData(ctx sdk.Context, ticker common.Ticker, ps PoolStatus) {
 	pool := k.GetPool(ctx, ticker)
-	if pool.PoolUnits == "" {
-		pool.PoolUnits = "0"
-	}
 	pool.Status = ps
 	pool.Ticker = ticker
 	k.SetPool(ctx, pool)
@@ -180,7 +167,7 @@ func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker
 	key := getKey(prefixPoolStaker, ticker.String())
 	if !store.Has([]byte(key)) {
 		ctx.Logger().Info("NotExist", "poolstakerkey", key)
-		return NewPoolStaker(ticker, "0"), nil
+		return NewPoolStaker(ticker, sdk.ZeroUint()), nil
 	}
 	var ps PoolStaker
 	buf := store.Get([]byte(key))
@@ -394,8 +381,8 @@ func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context, bnb common.BnbAddress
 }
 
 // GetAdminConfigMRRA get the config for minimum refund rune amount default to 1 rune
-func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, MRRAKey, "1", bnb)
+func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) sdk.Uint {
+	return k.GetAdminConfigUintType(ctx, MRRAKey, sdk.NewUint(One), bnb)
 }
 
 // GetAdminConfigBnbAddressType - get the config for TSL
@@ -405,6 +392,18 @@ func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey
 		return dValue // set default
 	}
 	return common.BnbAddress(value)
+}
+
+func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue sdk.Uint, bnb common.BnbAddress) sdk.Uint {
+	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
+	if value == "" {
+		return dValue // return default
+	}
+	amt, err := common.NewAmount(value)
+	if nil != err {
+		ctx.Logger().Error("fail to parse value to float", "value", value)
+	}
+	return amountToUint(amt)
 }
 
 // GetAdminConfigAmountType - get the config for TSL

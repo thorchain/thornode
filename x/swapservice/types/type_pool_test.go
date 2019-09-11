@@ -15,11 +15,11 @@ var _ = Suite(&PoolTestSuite{})
 func (PoolTestSuite) TestPool(c *C) {
 	p := NewPool()
 	c.Check(p.Empty(), Equals, true)
-	c.Check(p.TokenPriceInRune(), Equals, common.ZeroAmount.Float64())
+	c.Check(p.TokenPriceInRune(), Equals, float64(0))
 	p.Ticker = common.BNBTicker
 	c.Check(p.Empty(), Equals, false)
-	p.BalanceRune = common.NewAmountFromFloat(100)
-	p.BalanceToken = common.NewAmountFromFloat(50)
+	p.BalanceRune = sdk.NewUint(100 * One)
+	p.BalanceToken = sdk.NewUint(50 * One)
 	c.Check(p.TokenPriceInRune(), Equals, 2.0)
 	c.Log(p.String())
 
@@ -31,7 +31,7 @@ func (PoolTestSuite) TestPool(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(txID.IsEmpty(), Equals, false)
 
-	m := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, common.NewAmountFromFloat(1), bnbAddress, bnbAddress, common.NewAmountFromFloat(2), addr)
+	m := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(1), bnbAddress, bnbAddress, sdk.NewUint(2), addr)
 
 	c.Check(p.EnsureValidPoolStatus(m), NotNil)
 	msgNoop := NewMsgNoOp(addr)

@@ -7,6 +7,7 @@ import (
 const (
 	DefaultCodespace sdk.CodespaceType = ModuleName
 	Majority         float64           = 0.6666665
+	One              uint64            = 100000000
 )
 
 func HasMajority(signers, total int) bool {

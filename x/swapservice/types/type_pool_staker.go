@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	common "gitlab.com/thorchain/bepswap/common"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // StakerUnit staker and their units in the pool
 type StakerUnit struct {
 	StakerID common.BnbAddress `json:"staker_id"`
-	Units    common.Amount     `json:"units"`
+	Units    sdk.Uint          `json:"units"`
 }
 
 // PoolStaker
@@ -24,12 +25,12 @@ type StakerUnit struct {
 //}
 type PoolStaker struct {
 	Ticker     common.Ticker `json:"ticker"`      // ticker
-	TotalUnits common.Amount `json:"total_units"` // total units in the pool
+	TotalUnits sdk.Uint      `json:"total_units"` // total units in the pool
 	Stakers    []StakerUnit  `json:"stakers"`     // key will be staker id , which is the address on binane chain value will be UNITS
 }
 
 // NewPoolStaker create a new instance of PoolStaker
-func NewPoolStaker(ticker common.Ticker, totalUnits common.Amount) PoolStaker {
+func NewPoolStaker(ticker common.Ticker, totalUnits sdk.Uint) PoolStaker {
 	return PoolStaker{
 		Ticker:     ticker,
 		TotalUnits: totalUnits,
@@ -41,7 +42,7 @@ func NewPoolStaker(ticker common.Ticker, totalUnits common.Amount) PoolStaker {
 func (ps PoolStaker) String() string {
 	bs := strings.Builder{}
 	bs.WriteString(fmt.Sprintln("ticker: " + ps.Ticker.String()))
-	bs.WriteString(fmt.Sprintln("total units: " + ps.TotalUnits))
+	bs.WriteString(fmt.Sprintf("total units: %d", ps.TotalUnits.Uint64()))
 	if nil != ps.Stakers {
 		for _, stakerUnit := range ps.Stakers {
 			bs.WriteString(fmt.Sprintln(stakerUnit.StakerID.String() + " : " + stakerUnit.Units.String()))
@@ -57,7 +58,7 @@ func (ps *PoolStaker) GetStakerUnit(stakerID common.BnbAddress) StakerUnit {
 	}
 	return StakerUnit{
 		StakerID: stakerID,
-		Units:    common.ZeroAmount,
+		Units:    sdk.ZeroUint(),
 	}
 }
 

@@ -26,9 +26,9 @@ func (mps MockPoolStorage) GetPool(ctx sdk.Context, ticker common.Ticker) types.
 		return types.Pool{}
 	} else {
 		return types.Pool{
-			BalanceRune:  "100",
-			BalanceToken: "100",
-			PoolUnits:    "100",
+			BalanceRune:  sdk.NewUint(100).MulUint64(types.One),
+			BalanceToken: sdk.NewUint(100).MulUint64(types.One),
+			PoolUnits:    sdk.NewUint(100).MulUint64(types.One),
 			Status:       types.Enabled,
 			Ticker:       ticker,
 		}
@@ -52,7 +52,7 @@ func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) 
 	if ticker.Equals(common.Ticker("NOTEXISTSTICKER")) {
 		return types.PoolStaker{}, errors.New("you asked for it")
 	}
-	return types.NewPoolStaker(ticker, "100"), nil
+	return types.NewPoolStaker(ticker, sdk.NewUint(100)), nil
 }
 
 func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps types.PoolStaker) {}

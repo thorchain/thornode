@@ -2,21 +2,21 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // MsgSetStakeData defines a SetStakeData message
 type MsgSetStakeData struct {
 	Ticker        common.Ticker     `json:"ticker"`          // ticker means the symbol
-	TokenAmount   common.Amount     `json:"token"`           // the amount of token stake
-	RuneAmount    common.Amount     `json:"rune"`            // the amount of rune stake
+	TokenAmount   sdk.Uint          `json:"token"`           // the amount of token stake
+	RuneAmount    sdk.Uint          `json:"rune"`            // the amount of rune stake
 	PublicAddress common.BnbAddress `json:"public_address"`  // Staker's address on binance chain
 	RequestTxHash common.TxID       `json:"request_tx_hash"` // the txhash that represent user send token to our pool address
 	Signer        sdk.AccAddress    `json:"signer"`
 }
 
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
-func NewMsgSetStakeData(ticker common.Ticker, r, token common.Amount, publicAddress common.BnbAddress, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(ticker common.Ticker, r, token sdk.Uint, publicAddress common.BnbAddress, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		Ticker:        ticker,
 		TokenAmount:   token,
@@ -41,12 +41,7 @@ func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
 	if msg.Ticker.IsEmpty() {
 		return sdk.ErrUnknownRequest("Stake Ticker cannot be empty")
 	}
-	if msg.RuneAmount.IsEmpty() {
-		return sdk.ErrUnknownRequest("Stake Rune cannot be empty")
-	}
-	if msg.TokenAmount.IsEmpty() {
-		return sdk.ErrUnknownRequest("Stake Token cannot be empty")
-	}
+
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
