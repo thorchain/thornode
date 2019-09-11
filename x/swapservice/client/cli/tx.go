@@ -228,9 +228,9 @@ func GetCmdSetTxIn(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetAdminConfig command to set an admin config
 func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-adming-config [key] [value] [bnbAddress]",
+		Use:   "set-admin-config [key] [value] [bnbAddress]",
 		Short: "set admin config",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))

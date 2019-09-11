@@ -87,7 +87,7 @@ func (s StakeSuite) TestCalculatePoolUnits(c *C) {
 func (s StakeSuite) TestValidateAmount(c *C) {
 	makePoolStaker := func(total uint64, avg sdk.Uint) PoolStaker {
 		stakers := make([]StakerUnit, total)
-		for i, _ := range stakers {
+		for i := range stakers {
 			stakers[i] = StakerUnit{Units: avg}
 		}
 
@@ -186,7 +186,7 @@ func (StakeSuite) TestStake(c *C) {
 	})
 	makePoolStaker := func(total int, avg sdk.Uint) PoolStaker {
 		stakers := make([]StakerUnit, total)
-		for i, _ := range stakers {
+		for i := range stakers {
 			stakers[i] = StakerUnit{Units: avg}
 		}
 
