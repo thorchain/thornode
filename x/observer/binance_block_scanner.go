@@ -226,7 +226,7 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 						return nil, errors.Wrapf(err, "fail to create ticker, %s is not valid", coin.Denom)
 					}
 					amt := common.NewAmountFromFloat(float64(coin.Amount))
-					txInItem.Coins = append(txInItem.Coins, common.NewCoin(ticker, common.NewAmountFromFloat(amt.Float64()/100000000)))
+					txInItem.Coins = append(txInItem.Coins, common.NewCoin(ticker, amt))
 				}
 			}
 		default:
