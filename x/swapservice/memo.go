@@ -2,19 +2,22 @@ package swapservice
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/bepswap/common"
 )
 
 // TXTYPE:STATE1:STATE2:STATE3:FINALMEMO
 
-type txType uint8
+type TxType uint8
 type adminType uint8
 
 const (
-	txUnknown txType = iota
+	txUnknown TxType = iota
 	txCreate
 	txStake
 	txWithdraw
@@ -31,7 +34,7 @@ const (
 	adminPoolStatus
 )
 
-var stringToTxTypeMap = map[string]txType{
+var stringToTxTypeMap = map[string]TxType{
 	"create":   txCreate,
 	"stake":    txStake,
 	"withdraw": txWithdraw,
@@ -42,16 +45,16 @@ var stringToTxTypeMap = map[string]txType{
 	"gas":      txGas,
 }
 
-//Swap: >:
-//Stake: +:
-//Withdraw: -:
-//Create: &:
-//Admin: !:
-//Gas: $:
-//Add: %:
+// Swap: >:
+// Stake: +:
+// Withdraw: -:
+// Create: &:
+// Admin: !:
+// Gas: $:
+// Add: %:
 // symbolToTxTypeMap a map from symbol to txType
 // https://gitlab.com/thorchain/bepswap/statechain/issues/64
-var symbolToTxTypeMap = map[string]txType{
+var symbolToTxTypeMap = map[string]TxType{
 	"&": txCreate,
 	"+": txStake,
 	"-": txWithdraw,
@@ -61,7 +64,7 @@ var symbolToTxTypeMap = map[string]txType{
 	"%": txAdd,
 }
 
-var txToStringMap = map[txType]string{
+var txToStringMap = map[TxType]string{
 	txCreate:   "create",
 	txStake:    "stake",
 	txWithdraw: "withdraw",
@@ -78,7 +81,7 @@ var stringToAdminTypeMap = map[string]adminType{
 }
 
 // converts a string into a txType
-func stringToTxType(s string) (txType, error) {
+func stringToTxType(s string) (TxType, error) {
 	// we can support Abbreviated MEMOs , usually it is only one character
 	if len(s) == 1 {
 		if t, ok := symbolToTxTypeMap[s]; ok {
@@ -102,22 +105,22 @@ func stringToAdminType(s string) (adminType, error) {
 }
 
 // Check if two txTypes are the same
-func (tx txType) Equals(tx2 txType) bool {
+func (tx TxType) Equals(tx2 TxType) bool {
 	return tx.String() == tx2.String()
 }
 
 // Converts a txType into a string
-func (tx txType) String() string {
+func (tx TxType) String() string {
 	return txToStringMap[tx]
 }
 
 type Memo interface {
-	IsType(tx txType) bool
+	IsType(tx TxType) bool
 
 	GetTicker() common.Ticker
 	GetAmount() string
 	GetDestination() common.BnbAddress
-	GetSlipLimit() float64
+	GetSlipLimit() sdk.Uint
 	GetAdminType() adminType
 	GetKey() string
 	GetValue() string
@@ -125,7 +128,7 @@ type Memo interface {
 }
 
 type MemoBase struct {
-	TxType txType
+	TxType TxType
 	Ticker common.Ticker
 }
 
@@ -155,7 +158,7 @@ type WithdrawMemo struct {
 type SwapMemo struct {
 	MemoBase
 	Destination common.BnbAddress
-	SlipLimit   float64
+	SlipLimit   sdk.Uint
 }
 
 type AdminMemo struct {
@@ -244,12 +247,14 @@ func ParseMemo(memo string) (Memo, error) {
 			}
 		}
 		// trade target can be empty , when it is empty , there is no price protection
-		var slip float64
+		slip := sdk.ZeroUint()
 		if len(parts) > 3 && len(parts[3]) > 0 {
-			slip, err = strconv.ParseFloat(parts[3], 64)
-			if err != nil {
-				return noMemo, err
+			amount, err := common.NewAmount(parts[3])
+			if nil != err {
+				return noMemo, fmt.Errorf("swap price limit:%s is invalid", parts[3])
 			}
+
+			slip = sdk.NewUint(uint64(math.Round(amount.Float64() * float64(One))))
 		}
 		return SwapMemo{
 			MemoBase:    MemoBase{TxType: txSwap, Ticker: ticker},
@@ -283,12 +288,12 @@ func ParseMemo(memo string) (Memo, error) {
 }
 
 // Base Functions
-func (m MemoBase) GetType() txType                   { return m.TxType }
-func (m MemoBase) IsType(tx txType) bool             { return m.TxType.Equals(tx) }
+func (m MemoBase) GetType() TxType                   { return m.TxType }
+func (m MemoBase) IsType(tx TxType) bool             { return m.TxType.Equals(tx) }
 func (m MemoBase) GetTicker() common.Ticker          { return m.Ticker }
 func (m MemoBase) GetAmount() string                 { return "" }
 func (m MemoBase) GetDestination() common.BnbAddress { return "" }
-func (m MemoBase) GetSlipLimit() float64             { return 0 }
+func (m MemoBase) GetSlipLimit() sdk.Uint            { return sdk.ZeroUint() }
 func (m MemoBase) GetAdminType() adminType           { return adminUnknown }
 func (m MemoBase) GetKey() string                    { return "" }
 func (m MemoBase) GetValue() string                  { return "" }
@@ -297,7 +302,7 @@ func (m MemoBase) GetBlockHeight() int64             { return 0 }
 // Transaction Specific Functions
 func (m WithdrawMemo) GetAmount() string             { return m.Amount }
 func (m SwapMemo) GetDestination() common.BnbAddress { return m.Destination }
-func (m SwapMemo) GetSlipLimit() float64             { return m.SlipLimit }
+func (m SwapMemo) GetSlipLimit() sdk.Uint            { return m.SlipLimit }
 func (m AdminMemo) GetAdminType() adminType          { return m.Type }
 func (m AdminMemo) GetKey() string                   { return m.Key }
 func (m AdminMemo) GetValue() string                 { return m.Value }

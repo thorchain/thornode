@@ -52,13 +52,13 @@ func (p *MockInMemoryPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common
 }
 func (p *MockInMemoryPoolStorage) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker, error) {
 	if notExistPoolStakerTicker.Equals(ticker) {
-		return NewPoolStaker(ticker, common.NewAmountFromFloat(0)), errors.New("simulate error for test")
+		return NewPoolStaker(ticker, sdk.ZeroUint()), errors.New("simulate error for test")
 	}
 	key := getKey(prefixPoolStaker, ticker.String())
 	if res, ok := p.store[key]; ok {
 		return res.(PoolStaker), nil
 	}
-	return NewPoolStaker(ticker, "0"), nil
+	return NewPoolStaker(ticker, sdk.ZeroUint()), nil
 }
 func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps PoolStaker) {
 	key := getKey(prefixPoolStaker, ticker.String())

@@ -24,7 +24,7 @@ func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...common.Ticker
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(source, target common.Ticker, amount common.Amount, requester, destination common.BnbAddress, requestTxHash common.TxID) error {
+func validateMessage(source, target common.Ticker, amount sdk.Uint, requester, destination common.BnbAddress, requestTxHash common.TxID) error {
 	if requestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
 	}
@@ -34,8 +34,8 @@ func validateMessage(source, target common.Ticker, amount common.Amount, request
 	if target.IsEmpty() {
 		return errors.New("target is empty")
 	}
-	if amount.IsEmpty() {
-		return errors.New("amount is empty")
+	if amount.IsZero() {
+		return errors.New("amount is zero")
 	}
 	if requester.IsEmpty() {
 		return errors.New("requester is empty")
@@ -47,14 +47,21 @@ func validateMessage(source, target common.Ticker, amount common.Amount, request
 	return nil
 }
 
-func swap(ctx sdk.Context, keeper poolStorage, txID common.TxID, source, target common.Ticker, amount common.Amount, requester, destination common.BnbAddress, requestTxHash common.TxID, tradeTarget, tradeSlipLimit, globalSlipLimit common.Amount) (common.Amount, error) {
+func swap(ctx sdk.Context,
+	keeper poolStorage, txID common.TxID,
+	source, target common.Ticker,
+	amount sdk.Uint,
+	requester, destination common.BnbAddress,
+	requestTxHash common.TxID,
+	tradeTarget sdk.Uint,
+	tradeSlipLimit, globalSlipLimit common.Amount) (sdk.Uint, error) {
 	if err := validateMessage(source, target, amount, requester, destination, requestTxHash); nil != err {
 		ctx.Logger().Error(err.Error())
-		return "0", err
+		return sdk.ZeroUint(), err
 	}
 	if err := validatePools(ctx, keeper, source, target); nil != err {
 		ctx.Logger().Error(err.Error())
-		return "0", err
+		return sdk.ZeroUint(), err
 	}
 
 	isDoubleSwap := !common.IsRune(source) && !common.IsRune(target)
@@ -62,7 +69,7 @@ func swap(ctx sdk.Context, keeper poolStorage, txID common.TxID, source, target 
 	if isDoubleSwap {
 		runeAmount, err := swapOne(ctx, keeper, txID, source, common.RuneTicker, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 		if err != nil {
-			return "0", errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneTicker)
+			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneTicker)
 		}
 		tokenAmount, err := swapOne(ctx, keeper, txID, common.RuneTicker, target, runeAmount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
 		return tokenAmount, err
@@ -74,9 +81,10 @@ func swap(ctx sdk.Context, keeper poolStorage, txID common.TxID, source, target 
 func swapOne(ctx sdk.Context,
 	keeper poolStorage, txID common.TxID,
 	source, target common.Ticker,
-	amount common.Amount, requester,
+	amount sdk.Uint, requester,
 	destination common.BnbAddress,
-	tradeTarget, tradeSlipLimit, globalSlipLimit common.Amount) (common.Amount, error) {
+	tradeTarget sdk.Uint,
+	tradeSlipLimit, globalSlipLimit common.Amount) (sdk.Uint, error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
@@ -89,13 +97,13 @@ func swapOne(ctx sdk.Context,
 	// Check if pool exists
 	if !keeper.PoolExist(ctx, ticker) {
 		ctx.Logger().Debug(fmt.Sprintf("pool %s doesn't exist", ticker))
-		return "0", errors.New(fmt.Sprintf("pool %s doesn't exist", ticker))
+		return sdk.ZeroUint(), errors.New(fmt.Sprintf("pool %s doesn't exist", ticker))
 	}
 
 	// Get our pool from the KVStore
 	pool := keeper.GetPool(ctx, ticker)
 	if pool.Status != PoolEnabled {
-		return "0", errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
+		return sdk.ZeroUint(), errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
 	}
 
 	// Get our slip limits
@@ -103,22 +111,22 @@ func swapOne(ctx sdk.Context,
 	gsl := globalSlipLimit.Float64() // global slip limit
 
 	// get our X, x, Y values
-	var X, x, Y float64
+	var X, x, Y sdk.Uint
 	if common.IsRune(source) {
-		X = pool.BalanceRune.Float64()
-		Y = pool.BalanceToken.Float64()
+		X = pool.BalanceRune
+		Y = pool.BalanceToken
 	} else {
-		Y = pool.BalanceRune.Float64()
-		X = pool.BalanceToken.Float64()
+		Y = pool.BalanceRune
+		X = pool.BalanceToken
 	}
-	x = amount.Float64()
+	x = amount
 
 	// check our X,x,Y values are valid
-	if x <= 0.0 {
-		return "0", errors.New("amount is invalid")
+	if x.IsZero() {
+		return sdk.ZeroUint(), errors.New("amount is invalid")
 	}
-	if X <= 0 || Y <= 0 {
-		return "0", errors.New("invalid balance")
+	if X.IsZero() || Y.IsZero() {
+		return sdk.ZeroUint(), errors.New("invalid balance")
 	}
 
 	outputSlip := calcOutputSlip(X, x)
@@ -129,43 +137,44 @@ func swapOne(ctx sdk.Context,
 	priceSlip := calcPriceSlip(X, x, Y)
 
 	// do we have enough balance to swap?
-	if emitTokens > Y {
-		return "0", errors.New("token :%s balance is 0, can't do swap")
+	if emitTokens.GT(Y) {
+		return sdk.ZeroUint(), errors.New("token :%s balance is 0, can't do swap")
 	}
-
-	if tradeTarget.GreaterThen(0) {
-		tTarget := tradeTarget.Float64() // trade target
-		if math.Abs((priceSlip)-tTarget)/tTarget > tsl {
-			return "0", errors.Errorf("trade slip %f is more than %.2f percent different than %f", priceSlip, tsl*100, tTarget)
+	// Need to convert to float before the calculation , otherwise 0.1 becomes 0, which is bad
+	amountTradeTraget := uintToFloat64(tradeTarget) / float64(One)
+	if amountTradeTraget > 0 {
+		if math.Abs((priceSlip)-amountTradeTraget)/amountTradeTraget > tsl {
+			return sdk.ZeroUint(), errors.Errorf("trade slip %f is more than %.2f percent different than %f", priceSlip, tsl*100, amountTradeTraget)
 		}
 	}
 	if poolSlip > gsl {
-		return "0", errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
+		fmt.Printf("poolslip:%.2f", poolSlip)
+		return sdk.ZeroUint(), errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
 	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
 
 	if common.IsRune(source) {
-		pool.BalanceRune = common.NewAmountFromFloat(X + x)
-		pool.BalanceToken = common.NewAmountFromFloat(Y - emitTokens)
+		pool.BalanceRune = X.Add(x)
+		pool.BalanceToken = Y.Sub(emitTokens)
 	} else {
-		pool.BalanceToken = common.NewAmountFromFloat(X + x)
-		pool.BalanceRune = common.NewAmountFromFloat(Y - emitTokens)
+		pool.BalanceToken = X.Add(x)
+		pool.BalanceRune = Y.Sub(emitTokens)
 	}
 	keeper.SetPool(ctx, pool)
-	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%g ", pool.BalanceRune, pool.BalanceToken, emitTokens))
+	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, emitTokens))
 
 	swapEvt := NewEventSwap(
-		common.NewCoin(source, common.NewAmountFromFloat(x)),
-		common.NewCoin(target, common.NewAmountFromFloat(emitTokens)),
-		common.NewAmountFromFloat(priceSlip),
-		common.NewAmountFromFloat(tradeSlip),
-		common.NewAmountFromFloat(poolSlip),
-		common.NewAmountFromFloat(outputSlip),
-		common.NewAmountFromFloat(liquitityFee),
+		common.NewCoin(source, uintToAmount(x)),
+		common.NewCoin(target, uintToAmount(emitTokens)),
+		floatToUintMultipleOne(priceSlip),
+		floatToUintMultipleOne(tradeSlip),
+		floatToUintMultipleOne(poolSlip),
+		floatToUintMultipleOne(outputSlip),
+		liquitityFee,
 	)
 	swapBytes, err := json.Marshal(swapEvt)
 	if err != nil {
-		return "0", errors.Wrap(err, "fail to marshal swap event")
+		return sdk.ZeroUint(), errors.Wrap(err, "fail to marshal swap event")
 	}
 	evt := NewEvent(
 		swapEvt.Type(),
@@ -176,43 +185,77 @@ func swapOne(ctx sdk.Context,
 	)
 	keeper.AddIncompleteEvents(ctx, evt)
 
-	return common.NewAmountFromFloat(emitTokens), nil
+	return emitTokens, nil
 }
 
 // calcPriceSlip - calculate the price slip
 // This calculates the price slip by dividing the number of coins added, by the number of emitted tokens
-func calcPriceSlip(X, x, Y float64) float64 {
-	return x / calcTokenEmission(X, x, Y)
+func calcPriceSlip(X, x, Y sdk.Uint) float64 {
+	tokenEmission := calcTokenEmission(X, x, Y)
+	return uintToFloat64(x) / uintToFloat64(tokenEmission)
 }
 
 // calcTradeSlip - calculate the trade slip
-func calcTradeSlip(X, x float64) float64 {
+func calcTradeSlip(iX, ix sdk.Uint) float64 {
 	// x * ( 2X + x) / ( X * X )
+	// have to do this , otherwise numbers are too big
+	// poolSlip is by nature a float
+	x := uintToFloat64(ix) / float64(One)
+	X := uintToFloat64(iX) / float64(One)
 	return x * (2*X + x) / (X * X)
 }
 
 // calcOutputSlip - calculates the output slip
-func calcOutputSlip(X, x float64) float64 {
+func calcOutputSlip(X, x sdk.Uint) float64 {
 	// ( x ) / ( x + X )
-	return x / (x + X)
+	denominator := x.Add(X)
+	return uintToFloat64(x) / uintToFloat64(denominator)
 }
 
 // Calculates the pool slip
-func calcPoolSlip(X, x float64) float64 {
+func calcPoolSlip(X, x sdk.Uint) float64 {
 	// (x*(x^2 + 2*x*X + 2 X^2)) / (X*(x^2 + x*X + X^2))
-	x2 := x * x
-	X2 := X * X
-	return (x * (x2 + 2*x*X + 2*X2)) / (X * (x2 + x*X + X2))
+	// have to do this , otherwise numbers are too big
+	// poolSlip is by nature a float
+	cX := uintToFloat64(X) / float64(One)
+	cx := uintToFloat64(x) / float64(One)
+	x2 := cx * cx
+	X2 := cX * cX
+
+	return (cx * (x2 + 2*cx*cX + 2*X2)) / (cX * (x2 + cx*cX + X2))
 }
 
 // calculateFee the fee of the swap
-func calcLiquitityFee(X, x, Y float64) float64 {
+func calcLiquitityFee(X, x, Y sdk.Uint) sdk.Uint {
 	// ( x^2 *  Y ) / ( x + X )^2
-	return ((x * x) * Y) / ((x + X) * (x + X))
+	numerator := x.Mul(x).Mul(Y)
+	denominator := x.Add(X).Mul(x.Add(X))
+	return numerator.Quo(denominator)
 }
 
 // calculate the number of tokens sent to the address (includes liquidity fee)
-func calcTokenEmission(X, x, Y float64) float64 {
+func calcTokenEmission(X, x, Y sdk.Uint) sdk.Uint {
 	// ( x * X * Y ) / ( x + X )^2
-	return (x * X * Y) / ((x + X) * (x + X))
+	numerator := x.Mul(X).Mul(Y)
+	denominator := x.Add(X).Mul(x.Add(X))
+	return numerator.Quo(denominator)
+}
+
+func uintToFloat64(input sdk.Uint) float64 {
+	return float64(input.Uint64())
+}
+
+func floatToUintMultipleOne(input float64) sdk.Uint {
+	return sdk.NewUint(uint64(input * float64(One)))
+}
+func floatToUint(input float64) sdk.Uint {
+	return sdk.NewUint(uint64(math.Round(input)))
+}
+
+func amountToUint(amount common.Amount) sdk.Uint {
+	return sdk.NewUint(uint64(amount.Float64()))
+}
+
+func uintToAmount(input sdk.Uint) common.Amount {
+	return common.NewAmountFromFloat(float64(input.Uint64()))
 }

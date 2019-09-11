@@ -17,10 +17,11 @@ const (
 
 // Meant to track if we have processed a specific binance tx
 type TxIn struct {
-	Status  status            `json:"status"`
-	Done    common.TxID       `json:"txhash"` // completed binance chain tx hash. This is a slice to track if we've "double spent" an input
-	Memo    string            `json:"memo"`   // memo
-	Coins   common.Coins      `json:"coins"`  // coins sent in tx
+	Status status      `json:"status"`
+	Done   common.TxID `json:"txhash"` // completed binance chain tx hash. This is a slice to track if we've "double spent" an input
+	Memo   string      `json:"memo"`   // memo
+	// TODO update common.Coins to sdk.Coins
+	Coins   common.Coins      `json:"coins"` // coins sent in tx
 	Sender  common.BnbAddress `json:"sender"`
 	Signers []sdk.AccAddress  `json:"signers"` // trust accounts saw this tx
 }
@@ -61,7 +62,7 @@ func (tx TxIn) Equals(tx2 TxIn) bool {
 	if len(tx.Coins) != len(tx2.Coins) {
 		return false
 	}
-	for i, _ := range tx.Coins {
+	for i := range tx.Coins {
 		if !tx.Coins[i].Denom.Equals(tx2.Coins[i].Denom) {
 			return false
 		}
@@ -118,7 +119,7 @@ func (tx TxInVoter) String() string {
 }
 
 func (tx *TxInVoter) SetDone(hash common.TxID) {
-	for i, _ := range tx.Txs {
+	for i := range tx.Txs {
 		tx.Txs[i].SetDone(hash)
 	}
 }
@@ -133,7 +134,7 @@ func (tx *TxInVoter) Add(txIn TxIn, signer sdk.AccAddress) {
 		}
 	}
 
-	for i, _ := range tx.Txs {
+	for i := range tx.Txs {
 		if tx.Txs[i].Equals(txIn) {
 			tx.Txs[i].Sign(signer)
 			return

@@ -2,8 +2,8 @@ package types
 
 import (
 	"encoding/json"
-	"math"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 )
 
@@ -52,16 +52,16 @@ func (evts Events) PopByInHash(txID common.TxID) (found Events, events Events) {
 }
 
 type EventSwap struct {
-	SourceCoin common.Coin   `json:"source_coin"`
-	TargetCoin common.Coin   `json:"target_coin"`
-	PriceSlip  common.Amount `json:"price_slip"`
-	TradeSlip  common.Amount `json:"trade_slip"`
-	PoolSlip   common.Amount `json:"pool_slip"`
-	OutputSlip common.Amount `json:"output_slip"`
-	Fee        common.Amount `json:"fee"`
+	SourceCoin common.Coin `json:"source_coin"`
+	TargetCoin common.Coin `json:"target_coin"`
+	PriceSlip  sdk.Uint    `json:"price_slip"`
+	TradeSlip  sdk.Uint    `json:"trade_slip"`
+	PoolSlip   sdk.Uint    `json:"pool_slip"`
+	OutputSlip sdk.Uint    `json:"output_slip"`
+	Fee        sdk.Uint    `json:"fee"`
 }
 
-func NewEventSwap(s, t common.Coin, priceSlip, tradeSlip, poolSlip, outputSlip, fee common.Amount) EventSwap {
+func NewEventSwap(s, t common.Coin, priceSlip, tradeSlip, poolSlip, outputSlip, fee sdk.Uint) EventSwap {
 	return EventSwap{
 		SourceCoin: s,
 		TargetCoin: t,
@@ -78,12 +78,12 @@ func (e EventSwap) Type() string {
 }
 
 type EventStake struct {
-	RuneAmount  common.Amount `json:"rune_amount"`
-	TokenAmount common.Amount `json:"token_amount"`
-	StakeUnits  common.Amount `json:"stake_units"`
+	RuneAmount  sdk.Uint `json:"rune_amount"`
+	TokenAmount sdk.Uint `json:"token_amount"`
+	StakeUnits  sdk.Uint `json:"stake_units"`
 }
 
-func NewEventStake(r, t, s common.Amount) EventStake {
+func NewEventStake(r, t, s sdk.Uint) EventStake {
 	return EventStake{
 		RuneAmount:  r,
 		TokenAmount: t,
@@ -96,16 +96,16 @@ func (e EventStake) Type() string {
 }
 
 type EventUnstake struct {
-	RuneAmount  common.Amount `json:"rune_amount"`
-	TokenAmount common.Amount `json:"token_amount"`
-	StakeUnits  common.Amount `json:"stake_units"`
+	RuneAmount  sdk.Int `json:"rune_amount"`
+	TokenAmount sdk.Int `json:"token_amount"`
+	StakeUnits  sdk.Int `json:"stake_units"`
 }
 
-func NewEventUnstake(r, t, s common.Amount) EventUnstake {
+func NewEventUnstake(r, t, s sdk.Uint) EventUnstake {
 	return EventUnstake{
-		RuneAmount:  common.NewAmountFromFloat(-(math.Abs(r.Float64()))),
-		TokenAmount: common.NewAmountFromFloat(-(math.Abs(t.Float64()))),
-		StakeUnits:  common.NewAmountFromFloat(-(math.Abs(s.Float64()))),
+		RuneAmount:  sdk.NewInt(-1).Mul(sdk.NewInt(int64(r.Uint64()))),
+		TokenAmount: sdk.NewInt(-1).Mul(sdk.NewInt(int64(t.Uint64()))),
+		StakeUnits:  sdk.NewInt(-1).Mul(sdk.NewInt(int64(s.Uint64()))),
 	}
 }
 

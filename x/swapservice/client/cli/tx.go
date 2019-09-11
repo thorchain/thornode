@@ -12,7 +12,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/auth"
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
@@ -73,17 +73,6 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-
-			runeAmt, err := common.NewAmount(args[1])
-			if err != nil {
-				return err
-			}
-
-			tokenAmt, err := common.NewAmount(args[2])
-			if err != nil {
-				return err
-			}
-
 			bnbAddr, err := common.NewBnbAddress(args[3])
 			if err != nil {
 				return err
@@ -94,7 +83,7 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSetStakeData(ticker, runeAmt, tokenAmt, bnbAddr, txID, cliCtx.GetFromAddress())
+			msg := types.NewMsgSetStakeData(ticker, sdk.NewUintFromString(args[1]), sdk.NewUintFromString(args[2]), bnbAddr, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -128,11 +117,6 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			amt, err := common.NewAmount(args[3])
-			if err != nil {
-				return err
-			}
-
 			requester, err := common.NewBnbAddress(args[4])
 			if err != nil {
 				return err
@@ -147,15 +131,12 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 			if destination.IsEmpty() {
 				destination = requester
 			}
-			price := common.ZeroAmount
+			price := sdk.ZeroUint()
 			if len(args) > 6 {
-				price, err = common.NewAmount(args[6])
-				if err != nil {
-					return err
-				}
+				price = sdk.NewUintFromString(args[6])
 			}
 
-			msg := types.NewMsgSwap(txID, source, target, amt, requester, destination, price, cliCtx.GetFromAddress())
+			msg := types.NewMsgSwap(txID, source, target, sdk.NewUintFromString(args[3]), requester, destination, price, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -188,15 +169,12 @@ func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			withdrawBasisPoints := common.ZeroAmount
+			withdrawBasisPoints := sdk.ZeroUint()
 			if len(args) > 3 {
-				withdrawBasisPoints, err = common.NewAmount(args[3])
-				if err != nil {
-					return err
-				}
+				withdrawBasisPoints = sdk.NewUintFromString(args[3])
 			}
-			if !withdrawBasisPoints.GreaterThen(0) {
-				withdrawBasisPoints = common.NewAmountFromFloat(types.MaxWithdrawBasisPoints)
+			if withdrawBasisPoints.IsZero() {
+				withdrawBasisPoints = sdk.NewUint(types.MaxWithdrawBasisPoints)
 			}
 			msg := types.NewMsgSetUnStake(bnbAddr, withdrawBasisPoints, ticker, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()

@@ -58,10 +58,10 @@ func DefaultGenesisState() GenesisState {
 		AdminConfigs: []AdminConfig{},
 		PoolRecords: []Pool{
 			{
-				BalanceRune:  "0",
-				BalanceToken: "0",
+				BalanceRune:  sdk.ZeroUint(),
+				BalanceToken: sdk.ZeroUint(),
 				Ticker:       common.BNBTicker,
-				PoolUnits:    "0",
+				PoolUnits:    sdk.ZeroUint(),
 				Status:       PoolBootstrap,
 			},
 		},

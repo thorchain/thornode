@@ -19,7 +19,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(txID.IsEmpty(), Equals, false)
 
-	m := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, common.NewAmountFromFloat(1), bnbAddress, bnbAddress, common.NewAmountFromFloat(2), addr)
+	m := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(100000000), bnbAddress, bnbAddress, sdk.NewUint(200000000), addr)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_swap")
 
@@ -27,80 +27,80 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		requestTxHash common.TxID
 		source        common.Ticker
 		target        common.Ticker
-		amount        common.Amount
+		amount        sdk.Uint
 		requester     common.BnbAddress
 		destination   common.BnbAddress
-		targetPrice   common.Amount
+		targetPrice   sdk.Uint
 		signer        sdk.AccAddress
 	}{
 		{
 			requestTxHash: common.TxID(""),
 			source:        common.RuneA1FTicker,
 			target:        common.BNBTicker,
-			amount:        common.NewAmountFromFloat(1),
+			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   bnbAddress,
-			targetPrice:   common.NewAmountFromFloat(2),
+			targetPrice:   sdk.NewUint(200000000),
 			signer:        addr,
 		},
 		{
 			requestTxHash: txID,
 			source:        common.Ticker(""),
 			target:        common.BNBTicker,
-			amount:        common.NewAmountFromFloat(1),
+			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   bnbAddress,
-			targetPrice:   common.NewAmountFromFloat(2),
+			targetPrice:   sdk.NewUint(200000000),
 			signer:        addr,
 		},
 		{
 			requestTxHash: txID,
 			source:        common.RuneA1FTicker,
 			target:        common.Ticker(""),
-			amount:        common.NewAmountFromFloat(1),
+			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   bnbAddress,
-			targetPrice:   common.NewAmountFromFloat(2),
+			targetPrice:   sdk.NewUint(200000000),
 			signer:        addr,
 		},
 		{
 			requestTxHash: txID,
 			source:        common.RuneA1FTicker,
 			target:        common.BNBTicker,
-			amount:        common.Amount(""),
+			amount:        sdk.ZeroUint(),
 			requester:     bnbAddress,
 			destination:   bnbAddress,
-			targetPrice:   common.NewAmountFromFloat(2),
+			targetPrice:   sdk.NewUint(200000000),
 			signer:        addr,
 		},
 		{
 			requestTxHash: txID,
 			source:        common.RuneA1FTicker,
 			target:        common.BNBTicker,
-			amount:        common.NewAmountFromFloat(1),
+			amount:        sdk.NewUint(100000000),
 			requester:     common.NoBnbAddress,
 			destination:   bnbAddress,
-			targetPrice:   common.NewAmountFromFloat(2),
+			targetPrice:   sdk.NewUint(200000000),
 			signer:        addr,
 		},
 		{
 			requestTxHash: txID,
 			source:        common.RuneA1FTicker,
 			target:        common.BNBTicker,
-			amount:        common.NewAmountFromFloat(1),
+			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   common.NoBnbAddress,
-			targetPrice:   common.NewAmountFromFloat(2),
+			targetPrice:   sdk.NewUint(200000000),
 			signer:        addr,
 		},
 		{
 			requestTxHash: txID,
 			source:        common.RuneA1FTicker,
 			target:        common.BNBTicker,
-			amount:        common.NewAmountFromFloat(1),
+			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   bnbAddress,
-			targetPrice:   common.NewAmountFromFloat(2),
+			targetPrice:   sdk.NewUint(200000000),
 			signer:        sdk.AccAddress{},
 		},
 	}
