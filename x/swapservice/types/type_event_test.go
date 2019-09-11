@@ -3,6 +3,7 @@ package types
 import (
 	"encoding/json"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 )
@@ -13,31 +14,31 @@ var _ = Suite(&EventSuite{})
 
 func (s EventSuite) TestSwapEvent(c *C) {
 	evt := NewEventSwap(
-		common.NewCoin(common.Ticker("BNB"), common.Amount("3.2")),
-		common.NewCoin(common.Ticker("RUNE"), common.Amount("4.2")),
-		common.Amount("5"),
-		common.Amount("5"),
-		common.Amount("5"),
-		common.Amount("5"),
-		common.Amount("5"),
+		common.NewCoin(common.BNBTicker, common.NewAmountFromFloat(320000000)),
+		common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(420000000)),
+		sdk.NewUint(5),
+		sdk.NewUint(5),
+		sdk.NewUint(5),
+		sdk.NewUint(5),
+		sdk.NewUint(5),
 	)
 	c.Check(evt.Type(), Equals, "swap")
 }
 
 func (s EventSuite) TestStakeEvent(c *C) {
 	evt := NewEventStake(
-		common.Amount("6"),
-		common.Amount("7"),
-		common.Amount("5"),
+		sdk.NewUint(6),
+		sdk.NewUint(7),
+		sdk.NewUint(5),
 	)
 	c.Check(evt.Type(), Equals, "stake")
 }
 
 func (s EventSuite) TestUnstakeEvent(c *C) {
 	evt := NewEventUnstake(
-		common.Amount("6"),
-		common.Amount("7"),
-		common.Amount("5"),
+		sdk.NewUint(6),
+		sdk.NewUint(7),
+		sdk.NewUint(5),
 	)
 	c.Check(evt.Type(), Equals, "unstake")
 }
@@ -46,19 +47,19 @@ func (s EventSuite) TestEvent(c *C) {
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
 	swap := NewEventSwap(
-		common.NewCoin(common.Ticker("BNB"), common.Amount("3.2")),
-		common.NewCoin(common.Ticker("RUNE"), common.Amount("4.2")),
-		common.Amount("6"),
-		common.Amount("5"),
-		common.Amount("5"),
-		common.Amount("4"),
-		common.Amount("3"),
+		common.NewCoin(common.BNBTicker, common.NewAmountFromFloat(320000000)),
+		common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(420000000)),
+		sdk.NewUint(6),
+		sdk.NewUint(5),
+		sdk.NewUint(5),
+		sdk.NewUint(4),
+		sdk.NewUint(3),
 	)
 	swapBytes, _ := json.Marshal(swap)
 	evt := NewEvent(
 		swap.Type(),
 		txID,
-		common.Ticker("BNB"),
+		common.BNBTicker,
 		swapBytes,
 		Success,
 	)
@@ -68,15 +69,15 @@ func (s EventSuite) TestEvent(c *C) {
 	txID, err = common.NewTxID("B1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
 	stake := NewEventStake(
-		common.Amount("6"),
-		common.Amount("7"),
-		common.Amount("5"),
+		sdk.NewUint(6),
+		sdk.NewUint(7),
+		sdk.NewUint(5),
 	)
 	stakeBytes, _ := json.Marshal(stake)
 	evt2 := NewEvent(
 		stake.Type(),
 		txID,
-		common.Ticker("BNB"),
+		common.BNBTicker,
 		stakeBytes,
 		Success,
 	)

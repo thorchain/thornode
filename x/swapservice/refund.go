@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"fmt"
+	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
@@ -10,7 +11,7 @@ import (
 // RefundStoreAccessor define the method the is required for Refund operation
 // We need this interface thus we can mock the behaviour and write unit test
 type RefundStoreAccessor interface {
-	GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) common.Amount
+	GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) sdk.Uint
 	GetPool(ctx sdk.Context, ticker common.Ticker) Pool
 }
 
@@ -48,7 +49,7 @@ func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keepe
 			ToAddress: m.Requester,
 		}
 		c := getRefundCoin(ctx, m.SourceTicker, m.Amount, keeper)
-		if c.Amount.Equals(common.ZeroAmount) {
+		if c.Amount.IsZero() {
 			reason := fmt.Sprintf("%s less than the minimum refund value", m.Amount)
 			result.Events = result.Events.AppendEvent(
 				sdk.NewEvent("no refund", sdk.NewAttribute("reason", reason)))
@@ -64,12 +65,12 @@ func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keepe
 }
 
 // getRefundCoin
-func getRefundCoin(ctx sdk.Context, ticker common.Ticker, amount common.Amount, keeper RefundStoreAccessor) common.Coin {
+func getRefundCoin(ctx sdk.Context, ticker common.Ticker, amount sdk.Uint, keeper RefundStoreAccessor) common.Coin {
 	minimumRefundRune := keeper.GetAdminConfigMRRA(ctx, common.NoBnbAddress)
 	if common.IsRune(ticker) {
-		if amount.Float64() > minimumRefundRune.Float64() {
+		if amount.GT(minimumRefundRune) {
 			// refund the difference
-			return common.NewCoin(ticker, common.NewAmountFromFloat(amount.Float64()-minimumRefundRune.Float64()))
+			return common.NewCoin(ticker, uintToAmount(amount.Sub(minimumRefundRune)))
 		} else {
 			return common.NewCoin(ticker, common.ZeroAmount)
 		}
@@ -77,10 +78,11 @@ func getRefundCoin(ctx sdk.Context, ticker common.Ticker, amount common.Amount, 
 	ctx.Logger().Debug("refund coin", "minimumRefundRune", minimumRefundRune)
 	pool := keeper.GetPool(ctx, ticker)
 	poolTokenPrice := pool.TokenPriceInRune()
-	totalRuneAmt := amount.Float64() * poolTokenPrice
+	totalRuneAmt := sdk.NewUint(uint64(math.Round(float64(amount.Uint64()) * poolTokenPrice))) //amount.Mul(poolTokenPrice)
 	ctx.Logger().Debug("refund coin", "pool price", poolTokenPrice, "total rune amount", totalRuneAmt)
-	if totalRuneAmt > minimumRefundRune.Float64() {
-		tokenToRefund := (totalRuneAmt - minimumRefundRune.Float64()) / poolTokenPrice
+	if totalRuneAmt.GT(minimumRefundRune) {
+		tokenToRefund := uintToFloat64(totalRuneAmt.Sub(minimumRefundRune)) / poolTokenPrice
+
 		return common.NewCoin(ticker, common.NewAmountFromFloat(tokenToRefund))
 	}
 	return common.NewCoin(ticker, common.ZeroAmount)

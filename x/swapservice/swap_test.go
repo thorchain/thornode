@@ -1,16 +1,19 @@
 package swapservice
 
 import (
+	"fmt"
+
+	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"gitlab.com/thorchain/bepswap/common"
+
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/mocks"
 )
 
@@ -38,11 +41,11 @@ func (s SwapSuite) TestSwap(c *C) {
 		requestTxHash   common.TxID
 		source          common.Ticker
 		target          common.Ticker
-		amount          common.Amount
+		amount          sdk.Uint
 		requester       common.BnbAddress
 		destination     common.BnbAddress
-		returnAmount    common.Amount
-		tradeTarget     common.Amount
+		returnAmount    sdk.Uint
+		tradeTarget     sdk.Uint
 		tradeSlipLimit  common.Amount
 		globalSlipLimit common.Amount
 		expectedErr     error
@@ -52,10 +55,10 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.Ticker(""),
 			target:        common.BNBTicker,
-			amount:        "100",
+			amount:        sdk.NewUint(100 * One),
 			requester:     "tester",
 			destination:   "whatever",
-			returnAmount:  "0",
+			returnAmount:  sdk.ZeroUint(),
 			expectedErr:   errors.New("source is empty"),
 		},
 		{
@@ -63,10 +66,10 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.Ticker(""),
-			amount:        "100",
+			amount:        sdk.NewUint(100 * One),
 			requester:     "tester",
 			destination:   "whatever",
-			returnAmount:  "0",
+			returnAmount:  sdk.ZeroUint(),
 			expectedErr:   errors.New("target is empty"),
 		},
 		{
@@ -74,10 +77,10 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        "100",
+			amount:        sdk.NewUint(100 * One),
 			requester:     "tester",
 			destination:   "whatever",
-			returnAmount:  "0",
+			returnAmount:  sdk.ZeroUint(),
 			expectedErr:   errors.New("request tx hash is empty"),
 		},
 		{
@@ -85,21 +88,21 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        "",
+			amount:        sdk.ZeroUint(),
 			requester:     "tester",
 			destination:   "whatever",
-			returnAmount:  "0",
-			expectedErr:   errors.New("amount is empty"),
+			returnAmount:  sdk.ZeroUint(),
+			expectedErr:   errors.New("amount is zero"),
 		},
 		{
 			name:          "empty-requester",
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        "100",
+			amount:        sdk.NewUint(100 * One),
 			requester:     "",
 			destination:   "whatever",
-			returnAmount:  "0",
+			returnAmount:  sdk.ZeroUint(),
 			expectedErr:   errors.New("requester is empty"),
 		},
 		{
@@ -107,10 +110,10 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        "100",
+			amount:        sdk.NewUint(100 * One),
 			requester:     "tester",
 			destination:   "",
-			returnAmount:  "0",
+			returnAmount:  sdk.ZeroUint(),
 			expectedErr:   errors.New("destination is empty"),
 		},
 		{
@@ -118,11 +121,11 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        "NOTEXIST",
 			target:        common.RuneTicker,
-			amount:        "100",
+			amount:        sdk.NewUint(100 * One),
 			requester:     "tester",
 			destination:   "don'tknow",
-			tradeTarget:   "1.1",
-			returnAmount:  "0",
+			tradeTarget:   sdk.NewUint(110000000),
+			returnAmount:  sdk.ZeroUint(),
 			expectedErr:   errors.New("NOTEXIST doesn't exist"),
 		},
 		{
@@ -130,11 +133,11 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        "NOTEXIST",
-			amount:        "100",
+			amount:        sdk.NewUint(100 * One),
 			requester:     "tester",
 			destination:   "don'tknow",
-			tradeTarget:   "1.2",
-			returnAmount:  "0",
+			tradeTarget:   sdk.NewUint(120000000),
+			returnAmount:  sdk.ZeroUint(),
 			expectedErr:   errors.New("NOTEXIST doesn't exist"),
 		},
 		{
@@ -142,11 +145,11 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        "50",
+			amount:        sdk.NewUint(50 * One),
 			requester:     "tester",
 			destination:   "don't know",
-			returnAmount:  "0",
-			tradeTarget:   "0",
+			returnAmount:  sdk.ZeroUint(),
+			tradeTarget:   sdk.ZeroUint(),
 			expectedErr:   errors.Errorf("pool slip:0.928571 is over global pool slip limit :%s", globalSlipLimit),
 		},
 		{
@@ -154,11 +157,11 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        "9",
+			amount:        sdk.NewUint(9 * One),
 			requester:     "tester",
 			destination:   "don'tknow",
-			returnAmount:  "0",
-			tradeTarget:   "1.0",
+			returnAmount:  sdk.ZeroUint(),
+			tradeTarget:   sdk.NewUint(One),
 			expectedErr:   errors.New("trade slip 1.188100 is more than 10.00 percent different than 1.000000"),
 		},
 		{
@@ -166,11 +169,11 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        "8",
+			amount:        sdk.NewUint(8 * One),
 			requester:     "tester",
 			destination:   "don'tknow",
-			returnAmount:  "6.85871056",
-			tradeTarget:   "0",
+			returnAmount:  sdk.NewUint(685871056),
+			tradeTarget:   sdk.ZeroUint(),
 			expectedErr:   nil,
 		},
 		{
@@ -178,11 +181,11 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        "5",
+			amount:        sdk.NewUint(5 * One),
 			requester:     "tester",
 			destination:   "don'tknow",
-			returnAmount:  "4.53514739",
-			tradeTarget:   "1.2",
+			returnAmount:  sdk.NewUint(453514739),
+			tradeTarget:   sdk.NewUint(120000000),
 			expectedErr:   nil,
 		},
 		{
@@ -190,17 +193,18 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        "BTC",
 			target:        common.BNBTicker,
-			amount:        "5",
+			amount:        sdk.NewUint(5 * One),
 			requester:     "tester",
 			destination:   "don'tknow",
-			returnAmount:  "4.15017810",
-			tradeTarget:   "1.1025",
+			returnAmount:  sdk.NewUint(415017809),
+			tradeTarget:   sdk.NewUint(110250000),
 			expectedErr:   nil,
 		},
 	}
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
 	for _, item := range inputs {
+		c.Logf("test name:%s", item.name)
 		amount, err := swap(ctx, poolStorage, txID, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeTarget, tradeSlipLimit, globalSlipLimit)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
@@ -208,7 +212,8 @@ func (s SwapSuite) TestSwap(c *C) {
 			c.Assert(err, NotNil, Commentf("Expected: %s, got nil", item.expectedErr.Error()))
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
-		c.Check(item.returnAmount.Equals(amount), Equals, true)
+		c.Logf("expected amount:%s,actual amount:%s", item.returnAmount, amount)
+		c.Check(item.returnAmount.Uint64(), Equals, amount.Uint64())
 	}
 }
 
@@ -220,26 +225,27 @@ func (s SwapSuite) TestValidatePools(c *C) {
 }
 
 func (s SwapSuite) TestValidateMessage(c *C) {
-	c.Check(validateMessage("txHASH", common.RuneTicker, "BNB", "34.2985", "bnbXXXX", "bnbYYY"), IsNil)
-	c.Check(validateMessage("", common.RuneTicker, "BNB", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
-	c.Check(validateMessage("txHASH", "", "BNB", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
-	c.Check(validateMessage("txHASH", common.RuneTicker, "", "34.2985", "bnbXXXX", "bnbYYY"), NotNil)
-	c.Check(validateMessage("txHASH", common.RuneTicker, "BNB", "", "bnbXXXX", "bnbYYY"), NotNil)
-	c.Check(validateMessage("txHASH", common.RuneTicker, "BNB", "34.2985", "", "bnbYYY"), NotNil)
-	c.Check(validateMessage("txHASH", common.RuneTicker, "BNB", "34.2985", "bnbXXXX", ""), NotNil)
+	c.Check(validateMessage(common.RuneTicker, "BNB", sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", "txHASH"), IsNil)
+	c.Check(validateMessage(common.RuneTicker, "BNB", sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", ""), NotNil)
+	c.Check(validateMessage("", "BNB", sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", "txHASH"), NotNil)
+	c.Check(validateMessage(common.RuneTicker, "", sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", "txHASH"), NotNil)
+	c.Check(validateMessage(common.RuneTicker, "BNB", sdk.ZeroUint(), "bnbXXXX", "bnbYYY", "txHASH"), NotNil)
+	c.Check(validateMessage(common.RuneTicker, "BNB", sdk.NewUint(3429850000), "", "bnbYYY", "txHASH"), NotNil)
+	c.Check(validateMessage(common.RuneTicker, "BNB", sdk.NewUint(3429850000), "bnbXXXX", "", "txHASH"), NotNil)
 }
 
 func (s SwapSuite) TestCalculators(c *C) {
-	X := 100.0
-	x := 10.0
-	Y := 100.0
+	X := sdk.NewUint(100 * One)
+	x := sdk.NewUint(10 * One)
+	Y := sdk.NewUint(100 * One)
 
 	// These calculations are verified by using the spreadsheet
 	// https://docs.google.com/spreadsheets/d/1wJHYBRKBdw_WP7nUyVnkySPkOmPUNoiRGsEqgBVVXKU/edit#gid=0
-	c.Check(calcTokenEmission(X, x, Y), Equals, 8.264462809917354)
-	c.Check(calcLiquitityFee(X, x, Y), Equals, 0.8264462809917356)
+	fmt.Println("poolslip", calcPoolSlip(X, x))
+	c.Check(calcTokenEmission(X, x, Y).Uint64(), Equals, uint64(826446280))
+	c.Check(calcLiquitityFee(X, x, Y).Uint64(), Equals, uint64(82644628))
 	c.Check(calcPoolSlip(X, x), Equals, 0.1990990990990991)
 	c.Check(calcTradeSlip(X, x), Equals, 0.21)
-	c.Check(calcPriceSlip(X, x, Y), Equals, 1.2100000000000002)
+	c.Check(calcPriceSlip(X, x, Y), Equals, 1.210000001452)
 	c.Check(calcOutputSlip(X, x), Equals, 0.09090909090909091)
 }

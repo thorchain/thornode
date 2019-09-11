@@ -1,6 +1,7 @@
 package swapservice
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 )
 
@@ -9,7 +10,7 @@ type MemoSuite struct{}
 var _ = Suite(&MemoSuite{})
 
 func (s *MemoSuite) TestTxType(c *C) {
-	for _, trans := range []txType{txCreate, txStake, txWithdraw, txSwap} {
+	for _, trans := range []TxType{txCreate, txStake, txWithdraw, txSwap} {
 		tx, err := stringToTxType(trans.String())
 		c.Assert(err, IsNil)
 		c.Check(tx, Equals, trans)
@@ -43,21 +44,22 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
-	c.Check(memo.GetSlipLimit(), Equals, 8.7)
+	c.Log(memo.GetSlipLimit().Uint64())
+	c.Check(memo.GetSlipLimit().Equal(sdk.NewUint(870000000)), Equals, true)
 
 	memo, err = ParseMemo(">:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
-	c.Check(memo.GetSlipLimit(), Equals, 0.0)
+	c.Check(memo.GetSlipLimit().Uint64(), Equals, uint64(0))
 
 	memo, err = ParseMemo(">:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
-	c.Check(memo.GetSlipLimit(), Equals, 0.0)
+	c.Check(memo.GetSlipLimit().Equal(sdk.ZeroUint()), Equals, true)
 
 	memo, err = ParseMemo("!:KEY:TSL:15")
 	c.Assert(err, IsNil)
@@ -121,21 +123,22 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
-	c.Check(memo.GetSlipLimit(), Equals, 8.7)
+	c.Log(memo.GetSlipLimit().String())
+	c.Check(memo.GetSlipLimit().Equal(sdk.NewUint(870000000)), Equals, true)
 
 	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
-	c.Check(memo.GetSlipLimit(), Equals, 0.0)
+	c.Check(memo.GetSlipLimit().Uint64(), Equals, uint64(0))
 
 	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
-	c.Check(memo.GetSlipLimit(), Equals, 0.0)
+	c.Check(memo.GetSlipLimit().Uint64(), Equals, uint64(0))
 
 	memo, err = ParseMemo("ADMIN:KEY:TSL:15")
 	c.Assert(err, IsNil)

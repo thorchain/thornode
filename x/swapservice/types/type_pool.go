@@ -76,10 +76,10 @@ func GetPoolStatus(ps string) PoolStatus {
 // Pool is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
 type Pool struct {
-	BalanceRune  common.Amount     `json:"balance_rune"`  // how many RUNE in the pool
-	BalanceToken common.Amount     `json:"balance_token"` // how many token in the pool
+	BalanceRune  sdk.Uint          `json:"balance_rune"`  // how many RUNE in the pool
+	BalanceToken sdk.Uint          `json:"balance_token"` // how many token in the pool
 	Ticker       common.Ticker     `json:"ticker"`        // what's the token's ticker
-	PoolUnits    common.Amount     `json:"pool_units"`    // total units of the pool
+	PoolUnits    sdk.Uint          `json:"pool_units"`    // total units of the pool
 	PoolAddress  common.BnbAddress `json:"pool_address"`  // bnb liquidity pool address
 	Status       PoolStatus        `json:"status"`        // status
 }
@@ -87,9 +87,9 @@ type Pool struct {
 // NewPool Returns a new Pool
 func NewPool() Pool {
 	return Pool{
-		BalanceRune:  common.ZeroAmount,
-		BalanceToken: common.ZeroAmount,
-		PoolUnits:    common.ZeroAmount,
+		BalanceRune:  sdk.ZeroUint(),
+		BalanceToken: sdk.ZeroUint(),
+		PoolUnits:    sdk.ZeroUint(),
 		Status:       Bootstrap,
 	}
 }
@@ -128,10 +128,10 @@ func (ps Pool) EnsureValidPoolStatus(msg sdk.Msg) error {
 	}
 }
 
-// TokenPrice is how much 1 token worth in RUNE
+// TokenPriceInRune is how much 1 token worth in RUNE
 func (ps Pool) TokenPriceInRune() float64 {
-	if ps.BalanceRune.IsZero() || ps.BalanceRune.IsEmpty() || ps.BalanceToken.IsZero() || ps.BalanceToken.IsEmpty() {
-		return common.ZeroAmount.Float64()
+	if ps.BalanceRune.IsZero() || ps.BalanceToken.IsZero() {
+		return 0
 	}
-	return ps.BalanceRune.Float64() / ps.BalanceToken.Float64()
+	return float64(ps.BalanceRune.Uint64()) / float64(ps.BalanceToken.Uint64())
 }

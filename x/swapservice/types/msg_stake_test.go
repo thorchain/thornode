@@ -18,62 +18,46 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 	txID, err := common.NewTxID("712882AC9587198FA46F8D79BDFF013E77A89B12882702F03FA60FD298C517A4")
 	c.Assert(err, IsNil)
 	c.Check(txID.IsEmpty(), Equals, false)
-	m := NewMsgSetStakeData(common.BNBTicker, common.NewAmountFromFloat(1), common.NewAmountFromFloat(1), bnbAddress, txID, addr)
+	m := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(100000000), sdk.NewUint(100000000), bnbAddress, txID, addr)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_stakedata")
 
 	inputs := []struct {
 		ticker        common.Ticker
-		r             common.Amount
-		token         common.Amount
+		r             sdk.Uint
+		token         sdk.Uint
 		publicAddress common.BnbAddress
 		txHash        common.TxID
 		signer        sdk.AccAddress
 	}{
 		{
 			ticker:        common.Ticker(""),
-			r:             common.NewAmountFromFloat(1),
-			token:         common.NewAmountFromFloat(1),
+			r:             sdk.NewUint(100000000),
+			token:         sdk.NewUint(100000000),
 			publicAddress: bnbAddress,
 			txHash:        txID,
 			signer:        addr,
 		},
 		{
 			ticker:        common.BNBTicker,
-			r:             common.Amount(""),
-			token:         common.NewAmountFromFloat(1),
-			publicAddress: bnbAddress,
-			txHash:        txID,
-			signer:        addr,
-		},
-		{
-			ticker:        common.BNBTicker,
-			r:             common.NewAmountFromFloat(1),
-			token:         common.Amount(""),
-			publicAddress: bnbAddress,
-			txHash:        txID,
-			signer:        addr,
-		},
-		{
-			ticker:        common.BNBTicker,
-			r:             common.NewAmountFromFloat(1),
-			token:         common.NewAmountFromFloat(1),
+			r:             sdk.NewUint(100000000),
+			token:         sdk.NewUint(100000000),
 			publicAddress: common.NoBnbAddress,
 			txHash:        txID,
 			signer:        addr,
 		},
 		{
 			ticker:        common.BNBTicker,
-			r:             common.NewAmountFromFloat(1),
-			token:         common.NewAmountFromFloat(1),
+			r:             sdk.NewUint(100000000),
+			token:         sdk.NewUint(100000000),
 			publicAddress: bnbAddress,
 			txHash:        common.TxID(""),
 			signer:        addr,
 		},
 		{
 			ticker:        common.BNBTicker,
-			r:             common.NewAmountFromFloat(1),
-			token:         common.NewAmountFromFloat(1),
+			r:             sdk.NewUint(100000000),
+			token:         sdk.NewUint(100000000),
 			publicAddress: bnbAddress,
 			txHash:        txID,
 			signer:        sdk.AccAddress{},
