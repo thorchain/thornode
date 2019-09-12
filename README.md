@@ -1,23 +1,27 @@
 [![pipeline status](https://gitlab.com/thorchain/bepswap/statechain/badges/master/pipeline.svg)](https://gitlab.com/thorchain/bepswap/statechain/commits/master)
 [![coverage report](https://gitlab.com/thorchain/bepswap/statechain/badges/master/coverage.svg)](https://gitlab.com/thorchain/bepswap/statechain/commits/master)
-
-BEPSwap Statechain
-=======================
-Swaps any two coins on the Binance Exchange on top of the [Cosmos network](cosmos.network)
 [![Build Status](https://gitlab.com/thorchain/bepswap/statechain/badges/master/build.svg)](https://gitlab.com/thorchain/bepswap/statechain/commits/master)
 
-An account can stake coins into a pool that is composed of `ATOM` and any
-other single token. Once a pool has been created by an account(s) staking
-their coins, people can than swap/trade within that pool to gain one token
-over another.
+# BEPSwap Statechain
+=======================
 
-How many tokens an individual gets from another token is relative to how many
-tokens of each exist in the pool. Say you have a pool of two tokens, `ATOM`
-and `RUNE`. There are 20 `RUNE` tokens, and 50 `ATOM` tokens. If you swap 10
-`RUNE` tokens, we add those to the pool (for a total of 30), see that our
-addition makes up for 1/3rd of the present tokens, which means we get 1/3rd of
-the `ATOM` tokens, which is 16.6666666667. This ensures that we never run out
-of tokens in a pool from swapping.
+Swap any two coins (BEP2 Assets) on Binance Chain using a statechain built with [CosmosSDK.](cosmos.network)
+
+The BEPSwap statechain comes to consensus about events observed on Binance Chain, and then applies logic to these finalised events. Each event causes a state change in the statechain, and some events also result in an output transaction which require assets to be moved. These output transactions are then batched, signed by a threshold signature scheme protocol and broadcast back to Binance Chain. 
+
+The BEPSwap statechain can be thought of an elaborate multi-signature wallet on Binance Chain, which has joint custody of assets and strict, deterministic caveats on how to spend. All BEPSwap validators have a co-located Observer and Signer, which together mean they can all agree on what assets they control, what requests for spending are made by users, and how to perform these spends. 
+
+### Transactions 
+The BEPSwap Statechain facilitates the following transactions, which are made on Binance Chain, and replayed into the statechain via the Observers:
+- **CREATE POOL**: Anyone can create a new BEP2 Pool
+- **STAKE**: Anyone can stake assets in those pools
+- **WITHDRAW**: Anyone who is staking can withdraw their claim on the pool
+- **SWAP**: Anyone can send in assets and swap to another, including sending to a destination address, and including optional price protection. 
+- **ADD**: Anyone can add assets into the pool, which can be claimed by stakers
+- **GAS**: Anyone can add `BNB` gas to ensure transactions can be processed
+- **ADMIN**: Whitelisted admins can request to change global and pool-based parameters, but majority consensus is required. 
+
+The Staking, Withdrawing and Swapping logic is based on the `XYK` continuous liquidity pool concept. 
 
 ## Setup
 Ensure you have a recent version of go (ie `1.121) and enabled go modules
