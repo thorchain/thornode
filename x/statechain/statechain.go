@@ -152,9 +152,9 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 		[]sdk.Msg{
 			stypes.NewMsgSetTxIn(txIns, scb.signerInfo.GetAddress()),
 		}, // messages
-		authtypes.NewStdFee(200000, nil), // fee
-		nil,                              // signatures
-		"",                               // memo
+		authtypes.NewStdFee(100000000, nil), // fee
+		nil,                                 // signatures
+		"",                                  // memo
 	)
 
 	accNumber, seqNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
