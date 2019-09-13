@@ -15,7 +15,7 @@ require (
 	github.com/spf13/viper v1.3.2
 	github.com/tendermint/go-amino v0.15.0
 	github.com/tendermint/tendermint v0.32.1
-	gitlab.com/thorchain/bepswap/common v0.0.0-20190816093251-b84c21cee45c
+	gitlab.com/thorchain/bepswap/common v0.0.0-20190913001611-90083dc8a8ff
 	golang.org/x/crypto v0.0.0-20190701094942-4def268fd1a4 // indirect
 	golang.org/x/sys v0.0.0-20190329044733-9eb1bfa1ce65 // indirect
 	google.golang.org/genproto v0.0.0-20190327125643-d831d65fe17d // indirect
