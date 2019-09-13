@@ -36,32 +36,27 @@ const (
 
 var stringToTxTypeMap = map[string]TxType{
 	"create":   txCreate,
+	"c":        txCreate,
+	"#":        txCreate,
 	"stake":    txStake,
+	"st":       txStake,
+	"+":        txStake,
 	"withdraw": txWithdraw,
+	"wd":       txWithdraw,
+	"-":        txWithdraw,
 	"swap":     txSwap,
+	"s":        txSwap,
+	"=":        txSwap,
 	"admin":    txAdmin,
+	"d":        txAdmin,
+	"!":        txAdmin,
 	"outbound": txOutbound,
 	"add":      txAdd,
+	"a":        txAdd,
+	"%":        txAdd,
 	"gas":      txGas,
-}
-
-// Swap: >:
-// Stake: +:
-// Withdraw: -:
-// Create: &:
-// Admin: !:
-// Gas: $:
-// Add: %:
-// symbolToTxTypeMap a map from symbol to txType
-// https://gitlab.com/thorchain/bepswap/statechain/issues/64
-var symbolToTxTypeMap = map[string]TxType{
-	"&": txCreate,
-	"+": txStake,
-	"-": txWithdraw,
-	">": txSwap,
-	"!": txAdmin,
-	"$": txGas,
-	"%": txAdd,
+	"g":        txGas,
+	"$":        txGas,
 }
 
 var txToStringMap = map[TxType]string{
@@ -83,11 +78,6 @@ var stringToAdminTypeMap = map[string]adminType{
 // converts a string into a txType
 func stringToTxType(s string) (TxType, error) {
 	// we can support Abbreviated MEMOs , usually it is only one character
-	if len(s) == 1 {
-		if t, ok := symbolToTxTypeMap[s]; ok {
-			return t, nil
-		}
-	}
 	sl := strings.ToLower(s)
 	if t, ok := stringToTxTypeMap[sl]; ok {
 		return t, nil
