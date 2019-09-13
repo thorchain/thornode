@@ -32,9 +32,15 @@ func (s TickerSuite) TestTicker(c *C) {
 	c.Check(IsRune(runeA1fTicker), Equals, true)
 	c.Check(runeA1fTicker.String(), Equals, RuneA1FTicker.String())
 
+	tomobTicker, err := NewTicker("TOMOB-1E1")
+	c.Assert(err, IsNil)
+	c.Assert(tomobTicker.String(), Equals, "TOMOB-1E1")
 	_, err = NewTicker("t") // too short
 	c.Assert(err, NotNil)
 
+	maxCharacterTicker, err := NewTicker("TICKER789-XXX")
+	c.Assert(err, IsNil)
+	c.Assert(maxCharacterTicker.IsEmpty(), Equals, false)
 	_, err = NewTicker("too long of a token") // too long
 	c.Assert(err, NotNil)
 }

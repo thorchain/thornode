@@ -20,7 +20,8 @@ func NewTicker(ticker string) (Ticker, error) {
 	if len(ticker) < 3 {
 		return noTicker, fmt.Errorf("Ticker Error: Not enough characters")
 	}
-	if len(ticker) > 8 {
+
+	if len(ticker) > 13 {
 		return noTicker, fmt.Errorf("Ticker Error: Too many characters")
 	}
 	return Ticker(strings.ToUpper(ticker)), nil
