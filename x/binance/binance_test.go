@@ -121,7 +121,7 @@ func (BinancechainSuite) TestSignTx(c *C) {
 	c.Assert(r, IsNil)
 	c.Assert(p, IsNil)
 	c.Assert(err, IsNil)
-	r1, p1, err1 := b2.SignTx(getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [ { "denom": "BNB", "amount": "1.94765912" } ] } ]}`, c))
+	r1, p1, err1 := b2.SignTx(getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [ { "denom": "BNB", "amount": "194765912" } ] } ]}`, c))
 	c.Assert(r1, NotNil)
 	c.Assert(p1, NotNil)
 	c.Assert(err1, IsNil)

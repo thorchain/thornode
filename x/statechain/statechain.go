@@ -128,12 +128,16 @@ func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "fail to read response body")
 	}
+	var accountResp types.AccountResp
+	if err := json.Unmarshal(body, &accountResp); nil != err {
+		return 0, 0, errors.Wrap(err, "fail to unmarshal account resp")
+	}
 	var baseAccount authtypes.BaseAccount
-
-	err = authtypes.ModuleCdc.UnmarshalJSON(body, &baseAccount)
+	err = authtypes.ModuleCdc.UnmarshalJSON(accountResp.Result, &baseAccount)
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "fail to unmarshal base account")
 	}
+
 	return baseAccount.AccountNumber, baseAccount.Sequence, nil
 
 }
