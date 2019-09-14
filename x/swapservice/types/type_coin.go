@@ -14,11 +14,8 @@ func FromSdkCoins(c sdk.Coins) (common.Coins, error) {
 		if nil != err {
 			return nil, errors.Wrapf(err, "fail to convert sdk.Coin to statechain Coin type,ticker:%s invalid", item.Denom)
 		}
-		a, err := common.NewAmount(item.Amount.String())
-		if nil != err {
-			return nil, errors.Wrapf(err, "fail to convert amount %s ", item.Amount)
-		}
-		cs = append(cs, common.NewCoin(t, a))
+
+		cs = append(cs, common.NewCoin(t, sdk.NewUint(uint64(item.Amount.Int64()))))
 	}
 	return cs, nil
 }

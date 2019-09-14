@@ -66,7 +66,7 @@ func (tx TxIn) Equals(tx2 TxIn) bool {
 		if !tx.Coins[i].Denom.Equals(tx2.Coins[i].Denom) {
 			return false
 		}
-		if !tx.Coins[i].Amount.Equals(tx2.Coins[i].Amount) {
+		if !tx.Coins[i].Amount.Equal(tx2.Coins[i].Amount) {
 			return false
 		}
 	}
