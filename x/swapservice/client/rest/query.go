@@ -13,7 +13,7 @@ import (
 // Ping - endpoint to check that the API is up and available
 func pingHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, string(`{"ping":"pong"}`))
+		fmt.Fprintf(w, `{"ping":"pong"}`)
 	}
 }
 
@@ -26,7 +26,8 @@ func getHandlerWrapper(q query.Query, storeName string, cliCtx context.CLIContex
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return
 		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(res)
 
-		rest.PostProcessResponse(w, cliCtx, res)
 	}
 }

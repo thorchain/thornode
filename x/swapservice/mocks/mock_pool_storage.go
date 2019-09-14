@@ -26,9 +26,9 @@ func (mps MockPoolStorage) GetPool(ctx sdk.Context, ticker common.Ticker) types.
 		return types.Pool{}
 	} else {
 		return types.Pool{
-			BalanceRune:  sdk.NewUint(100).MulUint64(types.One),
-			BalanceToken: sdk.NewUint(100).MulUint64(types.One),
-			PoolUnits:    sdk.NewUint(100).MulUint64(types.One),
+			BalanceRune:  sdk.NewUint(100).MulUint64(common.One),
+			BalanceToken: sdk.NewUint(100).MulUint64(common.One),
+			PoolUnits:    sdk.NewUint(100).MulUint64(common.One),
 			Status:       types.Enabled,
 			Ticker:       ticker,
 		}

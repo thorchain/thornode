@@ -22,7 +22,6 @@ const (
 	PoolExpiryKey          = types.PoolExpiryKey
 	MRRAKey                = types.MRRAKey
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
-	One                    = types.One
 )
 
 var (

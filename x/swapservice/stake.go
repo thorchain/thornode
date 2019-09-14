@@ -16,8 +16,8 @@ func validateStakeAmount(stakers PoolStaker, stakerUnits sdk.Uint, stakeAmtInter
 		minStakerAmt = sdk.ZeroUint() // first 100 stakers there are no lower limits
 	} else {
 		totalUnits := stakers.TotalUnits
-		avgStake := uintToFloat64(totalUnits) / stakerCount
-		minStakerAmt = floatToUint(avgStake * ((stakerCount / stakeAmtInterval.Float64()) + 0.1)) // Increases minStakeAmt by 10% every interval stakers
+		avgStake := common.UintToFloat64(totalUnits) / stakerCount
+		minStakerAmt = common.FloatToUint(avgStake * ((stakerCount / stakeAmtInterval.Float64()) + 0.1)) // Increases minStakeAmt by 10% every interval stakers
 	}
 
 	if stakerUnits.LT(minStakerAmt) {
@@ -117,14 +117,14 @@ func calculatePoolUnits(oldPoolUnits, poolRune, poolToken, stakeRune, stakeToken
 	if stakeToken.Add(poolToken).IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), errors.New("total token in the pool is zero")
 	}
-	fStakeRune := uintToFloat64(stakeRune)
-	fStakeToken := uintToFloat64(stakeToken)
+	fStakeRune := common.UintToFloat64(stakeRune)
+	fStakeToken := common.UintToFloat64(stakeToken)
 
-	fPoolRune := uintToFloat64(poolRune)
-	fPoolToken := uintToFloat64(poolToken)
+	fPoolRune := common.UintToFloat64(poolRune)
+	fPoolToken := common.UintToFloat64(poolToken)
 	stakerPercentage := ((fStakeRune / (fStakeRune + fPoolRune)) + (fStakeToken / (fStakeToken + fPoolToken))) / 2
 
 	stakerUnit := (stakerPercentage*(fStakeRune+fPoolRune) + stakerPercentage*(fStakeToken+fPoolToken)) / 2
-	newPoolUnit := oldPoolUnits.Add(floatToUint(stakerUnit))
-	return newPoolUnit, floatToUint(stakerUnit), nil
+	newPoolUnit := oldPoolUnits.Add(common.FloatToUint(stakerUnit))
+	return newPoolUnit, common.FloatToUint(stakerUnit), nil
 }

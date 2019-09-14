@@ -1,6 +1,7 @@
 package types
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 )
@@ -18,7 +19,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	txOutItem := &TxOutItem{
 		ToAddress: bnbAddress,
 		Coins: common.Coins{
-			common.NewCoin(common.BNBTicker, common.NewAmountFromFloat(100)),
+			common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
 		},
 	}
 	txOut.TxArray = append(txOut.TxArray, txOutItem)

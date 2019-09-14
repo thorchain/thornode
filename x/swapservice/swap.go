@@ -141,14 +141,14 @@ func swapOne(ctx sdk.Context,
 		return sdk.ZeroUint(), errors.New("token :%s balance is 0, can't do swap")
 	}
 	// Need to convert to float before the calculation , otherwise 0.1 becomes 0, which is bad
-	amountTradeTraget := uintToFloat64(tradeTarget) / float64(One)
+	amountTradeTraget := common.UintToFloat64(tradeTarget) / common.One
 	if amountTradeTraget > 0 {
 		if math.Abs((priceSlip)-amountTradeTraget)/amountTradeTraget > tsl {
 			return sdk.ZeroUint(), errors.Errorf("trade slip %f is more than %.2f percent different than %f", priceSlip, tsl*100, amountTradeTraget)
 		}
 	}
 	if poolSlip > gsl {
-		fmt.Printf("poolslip:%.2f", poolSlip)
+		ctx.Logger().Info("poolslip over global pool slip limit", "poolslip", fmt.Sprintf("%.2f", poolSlip), "gsl", fmt.Sprintf("%.2f", gsl))
 		return sdk.ZeroUint(), errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
 	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
@@ -164,12 +164,12 @@ func swapOne(ctx sdk.Context,
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, emitTokens))
 
 	swapEvt := NewEventSwap(
-		common.NewCoin(source, uintToAmount(x)),
-		common.NewCoin(target, uintToAmount(emitTokens)),
-		floatToUintMultipleOne(priceSlip),
-		floatToUintMultipleOne(tradeSlip),
-		floatToUintMultipleOne(poolSlip),
-		floatToUintMultipleOne(outputSlip),
+		common.NewCoin(source, x),
+		common.NewCoin(target, emitTokens),
+		common.FloatToUint(priceSlip*common.One),
+		common.FloatToUint(tradeSlip*common.One),
+		common.FloatToUint(poolSlip*common.One),
+		common.FloatToUint(outputSlip*common.One),
 		liquitityFee,
 	)
 	swapBytes, err := json.Marshal(swapEvt)
@@ -192,7 +192,7 @@ func swapOne(ctx sdk.Context,
 // This calculates the price slip by dividing the number of coins added, by the number of emitted tokens
 func calcPriceSlip(X, x, Y sdk.Uint) float64 {
 	tokenEmission := calcTokenEmission(X, x, Y)
-	return uintToFloat64(x) / uintToFloat64(tokenEmission)
+	return common.UintToFloat64(x) / common.UintToFloat64(tokenEmission)
 }
 
 // calcTradeSlip - calculate the trade slip
@@ -200,8 +200,8 @@ func calcTradeSlip(iX, ix sdk.Uint) float64 {
 	// x * ( 2X + x) / ( X * X )
 	// have to do this , otherwise numbers are too big
 	// poolSlip is by nature a float
-	x := uintToFloat64(ix) / float64(One)
-	X := uintToFloat64(iX) / float64(One)
+	x := common.UintToFloat64(ix) / common.One
+	X := common.UintToFloat64(iX) / common.One
 	return x * (2*X + x) / (X * X)
 }
 
@@ -209,7 +209,7 @@ func calcTradeSlip(iX, ix sdk.Uint) float64 {
 func calcOutputSlip(X, x sdk.Uint) float64 {
 	// ( x ) / ( x + X )
 	denominator := x.Add(X)
-	return uintToFloat64(x) / uintToFloat64(denominator)
+	return common.UintToFloat64(x) / common.UintToFloat64(denominator)
 }
 
 // Calculates the pool slip
@@ -217,8 +217,8 @@ func calcPoolSlip(X, x sdk.Uint) float64 {
 	// (x*(x^2 + 2*x*X + 2 X^2)) / (X*(x^2 + x*X + X^2))
 	// have to do this , otherwise numbers are too big
 	// poolSlip is by nature a float
-	cX := uintToFloat64(X) / float64(One)
-	cx := uintToFloat64(x) / float64(One)
+	cX := common.UintToFloat64(X) / common.One
+	cx := common.UintToFloat64(x) / common.One
 	x2 := cx * cx
 	X2 := cX * cX
 
@@ -239,23 +239,4 @@ func calcTokenEmission(X, x, Y sdk.Uint) sdk.Uint {
 	numerator := x.Mul(X).Mul(Y)
 	denominator := x.Add(X).Mul(x.Add(X))
 	return numerator.Quo(denominator)
-}
-
-func uintToFloat64(input sdk.Uint) float64 {
-	return float64(input.Uint64())
-}
-
-func floatToUintMultipleOne(input float64) sdk.Uint {
-	return sdk.NewUint(uint64(input * float64(One)))
-}
-func floatToUint(input float64) sdk.Uint {
-	return sdk.NewUint(uint64(math.Round(input)))
-}
-
-func amountToUint(amount common.Amount) sdk.Uint {
-	return sdk.NewUint(uint64(amount.Float64()))
-}
-
-func uintToAmount(input sdk.Uint) common.Amount {
-	return common.NewAmountFromFloat(float64(input.Uint64()))
 }

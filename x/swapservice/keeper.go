@@ -400,7 +400,7 @@ func (k Keeper) GetAdminConfigPoolExpiry(ctx sdk.Context, bnb common.BnbAddress)
 
 // GetAdminConfigMRRA get the config for minimum refund rune amount default to 1 rune
 func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) sdk.Uint {
-	return k.GetAdminConfigUintType(ctx, MRRAKey, sdk.NewUint(One), bnb)
+	return k.GetAdminConfigUintType(ctx, MRRAKey, sdk.NewUint(common.One), bnb)
 }
 
 // GetAdminConfigBnbAddressType - get the config for TSL
@@ -421,7 +421,7 @@ func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dVal
 	if nil != err {
 		ctx.Logger().Error("fail to parse value to float", "value", value)
 	}
-	return amountToUint(amt)
+	return common.AmountToUint(amt)
 }
 
 // GetAdminConfigAmountType - get the config for TSL
