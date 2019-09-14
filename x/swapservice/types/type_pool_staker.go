@@ -24,7 +24,7 @@ type StakerUnit struct {
 //    }
 //}
 type PoolStaker struct {
-	Ticker     common.Ticker `json:"ticker"`      // ticker
+	Ticker     common.Ticker `json:"symbol"`      // ticker
 	TotalUnits sdk.Uint      `json:"total_units"` // total units in the pool
 	Stakers    []StakerUnit  `json:"stakers"`     // key will be staker id , which is the address on binane chain value will be UNITS
 }

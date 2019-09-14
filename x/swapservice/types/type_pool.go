@@ -79,7 +79,7 @@ func GetPoolStatus(ps string) PoolStatus {
 type Pool struct {
 	BalanceRune  sdk.Uint          `json:"balance_rune"`  // how many RUNE in the pool
 	BalanceToken sdk.Uint          `json:"balance_token"` // how many token in the pool
-	Ticker       common.Ticker     `json:"ticker"`        // what's the token's ticker
+	Ticker       common.Ticker     `json:"symbol"`        // what's the token's ticker
 	PoolUnits    sdk.Uint          `json:"pool_units"`    // total units of the pool
 	PoolAddress  common.BnbAddress `json:"pool_address"`  // bnb liquidity pool address
 	Status       PoolStatus        `json:"status"`        // status

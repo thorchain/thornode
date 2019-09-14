@@ -7,7 +7,7 @@ import (
 
 // MsgAdd defines a add message
 type MsgAdd struct {
-	Ticker      common.Ticker  `json:"ticker"` // ticker means the symbol
+	Ticker      common.Ticker  `json:"symbol"` // ticker means the symbol
 	TokenAmount sdk.Uint       `json:"token"`  // the amount of token
 	RuneAmount  sdk.Uint       `json:"rune"`   // the amount of rune
 	TxID        common.TxID    `json:"tx_id"`  // the txhash that represent user send token to our pool address
