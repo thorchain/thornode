@@ -27,7 +27,7 @@ func (QueryResPoolsSuite) TestFromSdkCoins(c *C) {
 	c.Assert(statechainCoins, NotNil)
 	c.Check(len(statechainCoins) > 0, Equals, true)
 	c.Check(statechainCoins[0].Denom, Equals, common.Ticker("RUNE"))
-	c.Check(statechainCoins[0].Amount, Equals, common.Amount("100"))
+	c.Check(statechainCoins[0].Amount.Uint64(), Equals, uint64(100))
 
 	coins1 := sdk.Coins{
 		sdk.Coin{

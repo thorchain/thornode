@@ -3,6 +3,7 @@ package swapservice
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 func validateUnstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) error {
@@ -104,14 +105,14 @@ func calculateUnstake(poolUnit, poolRune, poolToken, stakerUnit, withdrawBasisPo
 	if withdrawBasisPoints.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.Errorf("withdraw basis point %s is not valid", withdrawBasisPoints.String())
 	}
-	percentage := uintToFloat64(withdrawBasisPoints) / 100
-	stakerOwnership := uintToFloat64(stakerUnit) / uintToFloat64(poolUnit)
+	percentage := common.UintToFloat64(withdrawBasisPoints) / 100
+	stakerOwnership := common.UintToFloat64(stakerUnit) / common.UintToFloat64(poolUnit)
 
 	//withdrawRune := stakerOwnership.Mul(withdrawBasisPoints).Quo(sdk.NewUint(10000)).Mul(poolRune)
 	//withdrawToken := stakerOwnership.Mul(withdrawBasisPoints).Quo(sdk.NewUint(10000)).Mul(poolToken)
 	//unitAfter := stakerUnit.Mul(sdk.NewUint(MaxWithdrawBasisPoints).Sub(withdrawBasisPoints).Quo(sdk.NewUint(10000)))
-	withdrawRune := stakerOwnership * percentage / 100 * uintToFloat64(poolRune)
-	withdrawToken := stakerOwnership * percentage / 100 * uintToFloat64(poolToken)
-	unitAfter := uintToFloat64(stakerUnit) * (100 - percentage) / 100
-	return floatToUint(withdrawRune), floatToUint(withdrawToken), floatToUint(unitAfter), nil
+	withdrawRune := stakerOwnership * percentage / 100 * common.UintToFloat64(poolRune)
+	withdrawToken := stakerOwnership * percentage / 100 * common.UintToFloat64(poolToken)
+	unitAfter := common.UintToFloat64(stakerUnit) * (100 - percentage) / 100
+	return common.FloatToUint(withdrawRune), common.FloatToUint(withdrawToken), common.FloatToUint(unitAfter), nil
 }

@@ -6,8 +6,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 
@@ -52,58 +52,58 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 		{
 			name:                "invalid-MRRA",
 			minimumRefundAmount: sdk.ZeroUint(),
-			pool:                newPoolForTest(common.RuneTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
+			pool:                newPoolForTest(common.RuneTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One)),
 			ticker:              common.RuneTicker,
-			amount:              sdk.NewUint(100 * One),
-			expectedCoin:        common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(100*float64(One))),
+			amount:              sdk.NewUint(100 * common.One),
+			expectedCoin:        common.NewCoin(common.RuneTicker, sdk.NewUint(100*common.One)),
 		},
 		{
 			name:                "OneRune-MRRA",
-			minimumRefundAmount: sdk.NewUint(One),
-			pool:                newPoolForTest(common.RuneTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
+			minimumRefundAmount: sdk.NewUint(common.One),
+			pool:                newPoolForTest(common.RuneTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One)),
 			ticker:              common.RuneTicker,
-			amount:              sdk.NewUint(100 * One),
-			expectedCoin:        common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(99*float64(One))),
+			amount:              sdk.NewUint(100 * common.One),
+			expectedCoin:        common.NewCoin(common.RuneTicker, sdk.NewUint(99*common.One)),
 		},
 		{
 			name:                "No-Refund",
-			minimumRefundAmount: sdk.NewUint(One),
-			pool:                newPoolForTest(common.RuneTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
+			minimumRefundAmount: sdk.NewUint(common.One),
+			pool:                newPoolForTest(common.RuneTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One)),
 			ticker:              common.RuneTicker,
-			amount:              sdk.NewUint(One / 2),
-			expectedCoin:        common.NewCoin(common.RuneTicker, common.ZeroAmount),
+			amount:              sdk.NewUint(common.One / 2),
+			expectedCoin:        common.NewCoin(common.RuneTicker, sdk.ZeroUint()),
 		},
 		{
 			name:                "invalid-MRRA-BNB-refund-all",
 			minimumRefundAmount: sdk.ZeroUint(),
-			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One)),
 			ticker:              bnbTicker,
-			amount:              sdk.NewUint(5 * One),
-			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(5*float64(One))),
+			amount:              sdk.NewUint(5 * common.One),
+			expectedCoin:        common.NewCoin(bnbTicker, sdk.NewUint(5*common.One)),
 		},
 		{
 			name:                "MRRA-BNB-refund-normal",
-			minimumRefundAmount: sdk.NewUint(One),
-			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
+			minimumRefundAmount: sdk.NewUint(common.One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One)),
 			ticker:              bnbTicker,
-			amount:              sdk.NewUint(5 * One),
-			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(4*float64(One))),
+			amount:              sdk.NewUint(5 * common.One),
+			expectedCoin:        common.NewCoin(bnbTicker, sdk.NewUint(4*common.One)),
 		},
 		{
 			name:                "MRRA-BNB-refund-normal-1",
-			minimumRefundAmount: sdk.NewUint(One),
-			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(One)),
+			minimumRefundAmount: sdk.NewUint(common.One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*common.One), sdk.NewUint(common.One)),
 			ticker:              bnbTicker,
-			amount:              sdk.NewUint(5 * One),
-			expectedCoin:        common.NewCoin(bnbTicker, common.NewAmountFromFloat(4.99*float64(One))),
+			amount:              sdk.NewUint(5 * common.One),
+			expectedCoin:        common.NewCoin(bnbTicker, sdk.NewUint(499000000)),
 		},
 		{
 			name:                "MRRA-BNB-no-refund",
-			minimumRefundAmount: sdk.NewUint(One),
-			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
+			minimumRefundAmount: sdk.NewUint(common.One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One)),
 			ticker:              bnbTicker,
-			amount:              sdk.NewUint(One / 2),
-			expectedCoin:        common.NewCoin(bnbTicker, common.ZeroAmount),
+			amount:              sdk.NewUint(common.One / 2),
+			expectedCoin:        common.NewCoin(bnbTicker, sdk.ZeroUint()),
 		},
 	}
 	for _, item := range inputs {
@@ -112,7 +112,8 @@ func (*RefundSuite) TestGetRefundCoin(c *C) {
 			WithValue(mocks.RefundPoolKey, item.pool)
 		c.Log(item.name)
 		coin := getRefundCoin(ctx, item.ticker, item.amount, refundStoreAccessor)
-		c.Assert(coin, Equals, item.expectedCoin)
+		c.Assert(coin.Denom, Equals, item.expectedCoin.Denom)
+		c.Assert(coin.Amount.Uint64(), Equals, item.expectedCoin.Amount.Uint64())
 	}
 }
 
@@ -137,8 +138,8 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 	}{
 		{
 			name:                "result-ok",
-			minimumRefundAmount: sdk.NewUint(One),
-			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
+			minimumRefundAmount: sdk.NewUint(common.One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One)),
 			result: sdk.Result{
 				Code: sdk.CodeOK,
 			},
@@ -147,8 +148,8 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 		},
 		{
 			name:                "msg-type-setpooldata",
-			minimumRefundAmount: sdk.NewUint(One),
-			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
+			minimumRefundAmount: sdk.NewUint(common.One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One)),
 			result: sdk.Result{
 				Code: sdk.CodeOK,
 			},
@@ -157,14 +158,14 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 		},
 		{
 			name:                "msg-type-swap",
-			minimumRefundAmount: sdk.NewUint(One),
-			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)),
+			minimumRefundAmount: sdk.NewUint(common.One),
+			pool:                newPoolForTest(bnbTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One)),
 			result:              sdk.ErrUnknownRequest("whatever").Result(),
-			msg:                 NewMsgSwap(txID, common.RuneTicker, bnbTicker, sdk.NewUint(5*One), "asdf", "asdf", sdk.NewUint(One), accountAddress),
+			msg:                 NewMsgSwap(txID, common.RuneTicker, bnbTicker, sdk.NewUint(5*common.One), "asdf", "asdf", sdk.NewUint(common.One), accountAddress),
 			out: &TxOutItem{
 				ToAddress: "asdf",
 				Coins: common.Coins{
-					common.NewCoin(common.RuneTicker, common.NewAmountFromFloat(4.0*float64(One))),
+					common.NewCoin(common.RuneTicker, sdk.NewUint(4*common.One)),
 				},
 			},
 		},
@@ -209,10 +210,10 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	if nil != err {
 		c.Errorf("fail to create bnb address,%s", err)
 	}
-	ctx = ctx.WithValue(mocks.RefundAdminConfigKeyMRRA, sdk.NewUint(2*One))
-	ctx = ctx.WithValue(mocks.RefundPoolKey, newPoolForTest(common.BNBTicker, sdk.NewUint(100*One), sdk.NewUint(100*One)))
+	ctx = ctx.WithValue(mocks.RefundAdminConfigKeyMRRA, sdk.NewUint(2*common.One))
+	ctx = ctx.WithValue(mocks.RefundPoolKey, newPoolForTest(common.BNBTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One)))
 	// stake refund test
-	stakeMsg := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(100*One), sdk.NewUint(100*One), bnbAddress, txId, addr)
+	stakeMsg := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId, addr)
 	result := sdk.ErrUnknownRequest("invalid").Result()
 	s.NewBlock(2)
 	processRefund(ctx, &result, s, refundStoreAccessor, stakeMsg)
@@ -220,7 +221,7 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	c.Assert(len(s.blockOut.TxArray) > 0, Equals, true)
 
 	//stake refund test
-	stakeMsg1 := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(One/2), sdk.NewUint(One/2), bnbAddress, txId, addr)
+	stakeMsg1 := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(common.One/2), sdk.NewUint(common.One/2), bnbAddress, txId, addr)
 	result1 := sdk.ErrUnknownRequest("invalid").Result()
 	s.NewBlock(2)
 	processRefund(ctx, &result1, s, refundStoreAccessor, stakeMsg1)
@@ -229,7 +230,7 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	c.Assert(len(s.blockOut.TxArray) > 0, Equals, false)
 
 	//swap refund test
-	swapMsg := NewMsgSwap(txId, common.RuneTicker, common.BNBTicker, sdk.NewUint(One*2/3), bnbAddress, bnbAddress, sdk.NewUint(One*2), addr)
+	swapMsg := NewMsgSwap(txId, common.RuneTicker, common.BNBTicker, sdk.NewUint(common.One*2/3), bnbAddress, bnbAddress, sdk.NewUint(common.One*2), addr)
 	resultMsg := sdk.ErrUnknownRequest("invalid").Result()
 	s.NewBlock(3)
 	processRefund(ctx, &resultMsg, s, refundStoreAccessor, swapMsg)
