@@ -437,5 +437,5 @@ func (BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	c.Check(txInItem.Sender, Equals, "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj")
 	c.Check(len(txInItem.Coins), Equals, 1)
 	c.Check(txInItem.Coins[0].Denom.String(), Equals, common.RuneA1FTicker.String())
-	c.Check(txInItem.Coins[0].Amount.Float64(), Equals, float64(9900000000))
+	c.Check(txInItem.Coins[0].Amount.Uint64(), Equals, uint64(9900000000))
 }
