@@ -118,7 +118,7 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 			return nil, nil, errors.Wrapf(err, "fail to parse account address(%s)", txn.To)
 		}
 		for _, coin := range txn.Coins {
-			amount := coin.Amount.Float64()
+			amount := coin.Amount
 			ticker := coin.Denom
 			if common.IsRune(coin.Denom) {
 				// TODO need to change it on mainnet
@@ -129,7 +129,7 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 				Coins: types.Coins{
 					types.Coin{
 						Denom:  ticker.String(),
-						Amount: int64(amount),
+						Amount: int64(amount.Uint64()),
 					},
 				},
 			})

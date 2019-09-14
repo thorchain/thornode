@@ -10,14 +10,14 @@ import (
 	"sync"
 
 	"github.com/binance-chain/go-sdk/common/types"
+	bmsg "github.com/binance-chain/go-sdk/types/msg"
+	"github.com/binance-chain/go-sdk/types/tx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/common"
-
-	bmsg "github.com/binance-chain/go-sdk/types/msg"
-	"github.com/binance-chain/go-sdk/types/tx"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
@@ -225,7 +225,7 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 						b.errCounter.WithLabelValues("fail_create_ticker", coin.Denom).Inc()
 						return nil, errors.Wrapf(err, "fail to create ticker, %s is not valid", coin.Denom)
 					}
-					amt := common.NewAmountFromFloat(float64(coin.Amount))
+					amt := sdk.NewUint(uint64(coin.Amount))
 					txInItem.Coins = append(txInItem.Coins, common.NewCoin(ticker, amt))
 				}
 			}

@@ -65,6 +65,8 @@ func (s StatechainSuite) TestSign(c *C) {
 		c.Check(req.URL.String(), Equals, fmt.Sprintf("/auth/accounts/%s", info.GetAddress()))
 		// Send response to be tested
 		_, err := rw.Write([]byte(`{
+"height":"78",
+"result":{
 			  "type": "cosmos-sdk/Account",
 			  "value": {
 				"address": "bep19ntuk0yy5plar0m5y274dk8ekq862mtedqfyqx",
@@ -81,7 +83,7 @@ func (s StatechainSuite) TestSign(c *C) {
 				"account_number": "0",
 				"sequence": "14"
 			  }
-			}`))
+			}}`))
 		c.Assert(err, IsNil)
 	}))
 	defer server.Close()
@@ -91,7 +93,7 @@ func (s StatechainSuite) TestSign(c *C) {
 	tx := stypes.NewTxInVoter(common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"), []stypes.TxIn{
 		stypes.NewTxIn(
 			common.Coins{
-				common.NewCoin(common.Ticker("BNB"), common.Amount("1.234")),
+				common.NewCoin(common.Ticker("BNB"), sdk.NewUint(123400000)),
 			},
 			"This is my memo!",
 			common.BnbAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
@@ -233,6 +235,8 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 	}, 0, 0, NotNil)
 	testfunc(func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
+"height":"78",
+"result":{
 "type": "cosmos-sdk/Account",
 "value": {
 "address": "",
@@ -241,12 +245,14 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 "account_number": "asdf",
 "sequence": "0"
 }
-}`)); nil != err {
+}}`)); nil != err {
 			c.Error(err)
 		}
 	}, 0, 0, NotNil)
 	testfunc(func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
+"height":"78",
+"result":{
 "type": "cosmos-sdk/Account",
 "value": {
 "address": "",
@@ -255,12 +261,14 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 "account_number": "0",
 "sequence": "whatever"
 }
-}`)); nil != err {
+}}`)); nil != err {
 			c.Error(err)
 		}
 	}, 0, 0, NotNil)
 	testfunc(func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
+"height":"78",
+"result":{
 "type": "cosmos-sdk/Account",
 "value": {
 "address": "",
@@ -269,12 +277,14 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 "account_number": "5",
 "sequence": "6"
 }
-}`)); nil != err {
+}}`)); nil != err {
 			c.Error(err)
 		}
 	}, 5, 6, IsNil)
 	testfunc(func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
+	"height":"78",
+	"result":{
   "type": "cosmos-sdk/Account",
   "value": {
     "address": "bep192s6yjpffxuarphtppj8x8gdk5yhryk8uk0kk4",
@@ -299,7 +309,8 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
     "account_number": "0",
     "sequence": "2"
   }
-}`)); nil != err {
+}}
+`)); nil != err {
 			c.Error(err)
 		}
 	}, 0, 2, IsNil)
@@ -382,6 +393,8 @@ func (StatechainSuite) TestSendEx(c *C) {
 	}
 	testFunc(txInVoters, types.TxUnknown, func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
+"height":"78",
+"result":{
 "type": "cosmos-sdk/Account",
 "value": {
 "address": "",
@@ -390,13 +403,15 @@ func (StatechainSuite) TestSendEx(c *C) {
 "account_number": "5",
 "sequence": "6"
 }
-}`)); nil != err {
+}}`)); nil != err {
 			c.Error(err)
 		}
 	}, IsNil, NotNil)
 	testFunc(txInVoters, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
 		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
 			if _, err := writer.Write([]byte(`{
+"height":"78",
+"result":{
 "type": "cosmos-sdk/Account",
 "value": {
 "address": "",
@@ -405,7 +420,7 @@ func (StatechainSuite) TestSendEx(c *C) {
 "account_number": "5",
 "sequence": "6"
 }
-}`)); nil != err {
+}}`)); nil != err {
 				c.Error(err)
 			}
 			return
@@ -415,6 +430,8 @@ func (StatechainSuite) TestSendEx(c *C) {
 	testFunc(txInVoters, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
 		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
 			if _, err := writer.Write([]byte(`{
+"height":"78",
+"result":{
 "type": "cosmos-sdk/Account",
 "value": {
 "address": "",
@@ -423,7 +440,7 @@ func (StatechainSuite) TestSendEx(c *C) {
 "account_number": "5",
 "sequence": "6"
 }
-}`)); nil != err {
+}}`)); nil != err {
 				c.Error(err)
 			}
 			return

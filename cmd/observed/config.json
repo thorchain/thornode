@@ -1,12 +1,12 @@
 {
   "chain_id": "statechain",
   "pool_address": "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj",
-  "rune_address": "rune1xgvqju6wteta5awwzft5t56wmjj33gev6sgp0c",
+  "rune_address": "bep17p2vz2fck7q9fukjlqjj2nankuys2afl57per3",
   "dex_host": "testnet-dex.binance.org",
   "observer_db_path": "observer_db",
   "block_scanner": {
     "rpc_host": "data-seed-pre-0-s3.binance.org",
-    "start_block_height": 35570196,
+    "start_block_height": 38628715,
     "block_scan_processors": 2,
     "block_height_discover_back_off": "1s",
     "block_retry_interval": "10s"
