@@ -244,7 +244,7 @@ func ParseMemo(memo string) (Memo, error) {
 				return noMemo, fmt.Errorf("swap price limit:%s is invalid", parts[3])
 			}
 
-			slip = sdk.NewUint(uint64(math.Round(amount.Float64() * float64(One))))
+			slip = sdk.NewUint(uint64(math.Round(amount.Float64() * common.One)))
 		}
 		return SwapMemo{
 			MemoBase:    MemoBase{TxType: txSwap, Ticker: ticker},

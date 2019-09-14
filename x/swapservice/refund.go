@@ -29,17 +29,17 @@ func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keepe
 		}
 		c := getRefundCoin(ctx, common.RuneTicker, m.RuneAmount, keeper)
 		c1 := getRefundCoin(ctx, m.Ticker, m.TokenAmount, keeper)
-		if !c.Amount.GreaterThen(0) && !c1.Amount.GreaterThen(0) {
+		if !c.Amount.GT(sdk.ZeroUint()) && !c1.Amount.GT(sdk.ZeroUint()) {
 			reason := fmt.Sprintf("rune:%s,coin:%s both less than the minimum refund value", m.RuneAmount, m.TokenAmount)
 			result.Events = result.Events.AppendEvent(
 				sdk.NewEvent("no refund", sdk.NewAttribute("reason", reason)))
 			// nothing to refund
 			return false
 		}
-		if c.Amount.GreaterThen(0) {
+		if c.Amount.GT(sdk.ZeroUint()) {
 			toi.Coins = append(toi.Coins, c)
 		}
-		if c1.Amount.GreaterThen(0) {
+		if c1.Amount.GT(sdk.ZeroUint()) {
 			toi.Coins = append(toi.Coins, c1)
 		}
 
@@ -70,9 +70,9 @@ func getRefundCoin(ctx sdk.Context, ticker common.Ticker, amount sdk.Uint, keepe
 	if common.IsRune(ticker) {
 		if amount.GT(minimumRefundRune) {
 			// refund the difference
-			return common.NewCoin(ticker, uintToAmount(amount.Sub(minimumRefundRune)))
+			return common.NewCoin(ticker, amount.Sub(minimumRefundRune))
 		} else {
-			return common.NewCoin(ticker, common.ZeroAmount)
+			return common.NewCoin(ticker, sdk.ZeroUint())
 		}
 	}
 	ctx.Logger().Debug("refund coin", "minimumRefundRune", minimumRefundRune)
@@ -81,9 +81,9 @@ func getRefundCoin(ctx sdk.Context, ticker common.Ticker, amount sdk.Uint, keepe
 	totalRuneAmt := sdk.NewUint(uint64(math.Round(float64(amount.Uint64()) * poolTokenPrice))) //amount.Mul(poolTokenPrice)
 	ctx.Logger().Debug("refund coin", "pool price", poolTokenPrice, "total rune amount", totalRuneAmt)
 	if totalRuneAmt.GT(minimumRefundRune) {
-		tokenToRefund := uintToFloat64(totalRuneAmt.Sub(minimumRefundRune)) / poolTokenPrice
+		tokenToRefund := common.UintToFloat64(totalRuneAmt.Sub(minimumRefundRune)) / poolTokenPrice
 
-		return common.NewCoin(ticker, common.NewAmountFromFloat(tokenToRefund))
+		return common.NewCoin(ticker, common.FloatToUint(tokenToRefund))
 	}
-	return common.NewCoin(ticker, common.ZeroAmount)
+	return common.NewCoin(ticker, sdk.ZeroUint())
 }

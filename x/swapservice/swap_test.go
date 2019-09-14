@@ -9,8 +9,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 
 	"gitlab.com/thorchain/bepswap/common"
 
@@ -55,7 +55,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.Ticker(""),
 			target:        common.BNBTicker,
-			amount:        sdk.NewUint(100 * One),
+			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "whatever",
 			returnAmount:  sdk.ZeroUint(),
@@ -66,7 +66,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.Ticker(""),
-			amount:        sdk.NewUint(100 * One),
+			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "whatever",
 			returnAmount:  sdk.ZeroUint(),
@@ -77,7 +77,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        sdk.NewUint(100 * One),
+			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "whatever",
 			returnAmount:  sdk.ZeroUint(),
@@ -99,7 +99,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        sdk.NewUint(100 * One),
+			amount:        sdk.NewUint(100 * common.One),
 			requester:     "",
 			destination:   "whatever",
 			returnAmount:  sdk.ZeroUint(),
@@ -110,7 +110,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        sdk.NewUint(100 * One),
+			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "",
 			returnAmount:  sdk.ZeroUint(),
@@ -121,7 +121,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        "NOTEXIST",
 			target:        common.RuneTicker,
-			amount:        sdk.NewUint(100 * One),
+			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
 			tradeTarget:   sdk.NewUint(110000000),
@@ -133,7 +133,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        "NOTEXIST",
-			amount:        sdk.NewUint(100 * One),
+			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
 			tradeTarget:   sdk.NewUint(120000000),
@@ -145,7 +145,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        sdk.NewUint(50 * One),
+			amount:        sdk.NewUint(50 * common.One),
 			requester:     "tester",
 			destination:   "don't know",
 			returnAmount:  sdk.ZeroUint(),
@@ -157,11 +157,11 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        sdk.NewUint(9 * One),
+			amount:        sdk.NewUint(9 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
 			returnAmount:  sdk.ZeroUint(),
-			tradeTarget:   sdk.NewUint(One),
+			tradeTarget:   sdk.NewUint(common.One),
 			expectedErr:   errors.New("trade slip 1.188100 is more than 10.00 percent different than 1.000000"),
 		},
 		{
@@ -169,7 +169,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        sdk.NewUint(8 * One),
+			amount:        sdk.NewUint(8 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
 			returnAmount:  sdk.NewUint(685871056),
@@ -181,7 +181,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        common.RuneTicker,
 			target:        common.BNBTicker,
-			amount:        sdk.NewUint(5 * One),
+			amount:        sdk.NewUint(5 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
 			returnAmount:  sdk.NewUint(453514739),
@@ -193,7 +193,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requestTxHash: "hash",
 			source:        "BTC",
 			target:        common.BNBTicker,
-			amount:        sdk.NewUint(5 * One),
+			amount:        sdk.NewUint(5 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
 			returnAmount:  sdk.NewUint(415017809),
@@ -235,9 +235,9 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 }
 
 func (s SwapSuite) TestCalculators(c *C) {
-	X := sdk.NewUint(100 * One)
-	x := sdk.NewUint(10 * One)
-	Y := sdk.NewUint(100 * One)
+	X := sdk.NewUint(100 * common.One)
+	x := sdk.NewUint(10 * common.One)
+	Y := sdk.NewUint(100 * common.One)
 
 	// These calculations are verified by using the spreadsheet
 	// https://docs.google.com/spreadsheets/d/1wJHYBRKBdw_WP7nUyVnkySPkOmPUNoiRGsEqgBVVXKU/edit#gid=0

@@ -18,7 +18,7 @@ func (MsgSetTxInSuite) TestMsgSetTxIn(c *C) {
 	acc1, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
 	txIn := NewTxIn(common.Coins{
-		common.NewCoin(common.RuneA1FTicker, common.NewAmountFromFloat(1)),
+		common.NewCoin(common.RuneA1FTicker, sdk.NewUint(1)),
 	}, "hello", bnb)
 	txs := []TxInVoter{
 		NewTxInVoter(txID, []TxIn{txIn}),

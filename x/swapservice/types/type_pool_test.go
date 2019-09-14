@@ -18,8 +18,8 @@ func (PoolTestSuite) TestPool(c *C) {
 	c.Check(p.TokenPriceInRune(), Equals, float64(0))
 	p.Ticker = common.BNBTicker
 	c.Check(p.Empty(), Equals, false)
-	p.BalanceRune = sdk.NewUint(100 * One)
-	p.BalanceToken = sdk.NewUint(50 * One)
+	p.BalanceRune = sdk.NewUint(100 * common.One)
+	p.BalanceToken = sdk.NewUint(50 * common.One)
 	c.Check(p.TokenPriceInRune(), Equals, 2.0)
 	c.Log(p.String())
 

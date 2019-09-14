@@ -7,9 +7,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
+	dbm "github.com/tendermint/tm-db"
 
 	bam "github.com/cosmos/cosmos-sdk/baseapp"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -71,19 +71,8 @@ type swapServiceApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
-	// Keys to access the substores
-	keyMain     *sdk.KVStoreKey
-	keyAccount  *sdk.KVStoreKey
-	keySupply   *sdk.KVStoreKey
-	keyStaking  *sdk.KVStoreKey
-	tkeyStaking *sdk.TransientStoreKey
-	keyDistr    *sdk.KVStoreKey
-	tkeyDistr   *sdk.TransientStoreKey
-	keySS       *sdk.KVStoreKey
-	keyParams   *sdk.KVStoreKey
-	tkeyParams  *sdk.TransientStoreKey
-	keySlashing *sdk.KVStoreKey
-
+	keys  map[string]*sdk.KVStoreKey
+	tkeys map[string]*sdk.TransientStoreKey
 	// Keepers
 	accountKeeper  auth.AccountKeeper
 	bankKeeper     bank.Keeper
@@ -99,34 +88,28 @@ type swapServiceApp struct {
 }
 
 // NewSwpServiceApp is a constructor function for swapServiceApp
-func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
+func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.BaseApp)) *swapServiceApp {
 
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
-	bApp := bam.NewBaseApp(appPoolData, logger, db, auth.DefaultTxDecoder(cdc))
+	bApp := bam.NewBaseApp(appPoolData, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
+	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
+		supply.StoreKey, distr.StoreKey, slashing.StoreKey, swapservice.StoreKey, params.StoreKey)
+	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
 	// Here you initialize your application with the store keys it requires
 	var app = &swapServiceApp{
 		BaseApp: bApp,
 		cdc:     cdc,
 
-		keyMain:     sdk.NewKVStoreKey(bam.MainStoreKey),
-		keyAccount:  sdk.NewKVStoreKey(auth.StoreKey),
-		keySupply:   sdk.NewKVStoreKey(supply.StoreKey),
-		keyStaking:  sdk.NewKVStoreKey(staking.StoreKey),
-		tkeyStaking: sdk.NewTransientStoreKey(staking.TStoreKey),
-		keyDistr:    sdk.NewKVStoreKey(distr.StoreKey),
-		tkeyDistr:   sdk.NewTransientStoreKey(distr.TStoreKey),
-		keySS:       sdk.NewKVStoreKey(swapservice.StoreKey),
-		keyParams:   sdk.NewKVStoreKey(params.StoreKey),
-		tkeyParams:  sdk.NewTransientStoreKey(params.TStoreKey),
-		keySlashing: sdk.NewKVStoreKey(slashing.StoreKey),
+		keys:  keys,
+		tkeys: tkeys,
 	}
 
 	// The ParamsKeeper handles parameter storage for the application
-	app.paramsKeeper = params.NewKeeper(app.cdc, app.keyParams, app.tkeyParams, params.DefaultCodespace)
+	app.paramsKeeper = params.NewKeeper(app.cdc, keys[params.StoreKey], tkeys[params.TStoreKey], params.DefaultCodespace)
 	// Set specific supspaces
 	authSubspace := app.paramsKeeper.Subspace(auth.DefaultParamspace)
 	bankSupspace := app.paramsKeeper.Subspace(bank.DefaultParamspace)
@@ -137,7 +120,7 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
 		app.cdc,
-		app.keyAccount,
+		keys[auth.StoreKey],
 		authSubspace,
 		auth.ProtoBaseAccount,
 	)
@@ -147,21 +130,21 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 		app.accountKeeper,
 		bankSupspace,
 		bank.DefaultCodespace,
+		app.ModuleAccountAddrs(),
 	)
 
 	app.supplyKeeper = supply.NewKeeper(
 		app.cdc,
-		app.keySupply,
+		keys[supply.StoreKey],
 		app.accountKeeper,
 		app.bankKeeper,
-		supply.DefaultCodespace,
 		maccPerms)
 
 	// The staking keeper
 	stakingKeeper := staking.NewKeeper(
 		app.cdc,
-		app.keyStaking,
-		app.tkeyStaking,
+		keys[staking.StoreKey],
+		tkeys[staking.TStoreKey],
 		app.supplyKeeper,
 		stakingSubspace,
 		staking.DefaultCodespace,
@@ -169,17 +152,18 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 
 	app.distrKeeper = distr.NewKeeper(
 		app.cdc,
-		app.keyDistr,
+		keys[distr.StoreKey],
 		distrSubspace,
 		&stakingKeeper,
 		app.supplyKeeper,
 		distr.DefaultCodespace,
 		auth.FeeCollectorName,
+		app.ModuleAccountAddrs(),
 	)
 
 	app.slashingKeeper = slashing.NewKeeper(
 		app.cdc,
-		app.keySlashing,
+		keys[slashing.StoreKey],
 		&stakingKeeper,
 		slashingSubspace,
 		slashing.DefaultCodespace,
@@ -196,7 +180,7 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 	// The swapserviceKeeper is the Keeper from the module for this tutorial
 	// It handles interactions with the pooldatastore
 	app.ssKeeper = swapservice.NewKeeper(
-		app.keySS,
+		keys[swapservice.StoreKey],
 		app.cdc,
 	)
 
@@ -244,21 +228,10 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB) *swapServiceApp {
 		),
 	)
 
-	app.MountStores(
-		app.keyMain,
-		app.keyAccount,
-		app.keySupply,
-		app.keyStaking,
-		app.tkeyStaking,
-		app.keyDistr,
-		app.tkeyDistr,
-		app.keySlashing,
-		app.keySS,
-		app.keyParams,
-		app.tkeyParams,
-	)
+	app.MountKVStores(keys)
+	app.MountTransientStores(tkeys)
 
-	err := app.LoadLatestVersion(app.keyMain)
+	err := app.LoadLatestVersion(app.keys[bam.MainStoreKey])
 	if err != nil {
 		cmn.Exit(err.Error())
 	}
@@ -291,7 +264,17 @@ func (app *swapServiceApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock)
 	return app.mm.EndBlock(ctx, req)
 }
 func (app *swapServiceApp) LoadHeight(height int64) error {
-	return app.LoadVersion(height, app.keyMain)
+	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
+}
+
+// ModuleAccountAddrs returns all the app's module account addresses.
+func (app *swapServiceApp) ModuleAccountAddrs() map[string]bool {
+	modAccAddrs := make(map[string]bool)
+	for acc := range maccPerms {
+		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
+	}
+
+	return modAccAddrs
 }
 
 // _________________________________________________________
