@@ -214,6 +214,13 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 			txInItem.Memo = t.Memo
 			sender := sendMsg.Inputs[0]
 			txInItem.Sender = sender.Address.String()
+			// outbound message from pool, when it is outbound, it does not matter how much coins we send to customer for now
+			if strings.EqualFold(sender.Address.String(), b.poolAddress.String()) {
+				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
+				// Coin is mandatory
+				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.RuneA1FTicker, sdk.NewUint(common.One)))
+				return &txInItem, nil
+			}
 			for _, output := range sendMsg.Outputs {
 				if !strings.EqualFold(output.Address.String(), b.poolAddress.String()) {
 					continue

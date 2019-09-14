@@ -257,6 +257,7 @@ func (BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 		c.Assert(bs, NotNil)
 		for _, item := range query.Result.Txs {
 			txInItem, err := bs.fromTxToTxIn(item.Hash, item.Height, item.Tx)
+			c.Logf("hash:%s", item.Hash)
 			c.Check(txInItem, txInItemCheck)
 			c.Check(err, errCheck)
 			if nil != txInItem {
@@ -343,7 +344,7 @@ func (BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
     ],
     "total_count": "1"
   }
-}`, IsNil, IsNil)
+}`, NotNil, IsNil)
 	testFunc(`
 
 {
