@@ -62,7 +62,7 @@ func DefaultGenesisState() GenesisState {
 				BalanceToken: sdk.ZeroUint(),
 				Ticker:       common.BNBTicker,
 				PoolUnits:    sdk.ZeroUint(),
-				Status:       PoolBootstrap,
+				Status:       PoolEnabled,
 				ExpiryUtc:    PoolAddressExpiryDate,
 			},
 		},

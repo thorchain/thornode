@@ -153,7 +153,13 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker, "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
-	if err := keeper.GetPool(ctx, msg.Ticker).EnsureValidPoolStatus(msg); nil != err {
+	pool := keeper.GetPool(ctx, msg.Ticker)
+	if pool.Empty() {
+		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Ticker, "creator", msg.PublicAddress)
+		pool.Ticker = msg.Ticker
+		keeper.SetPool(ctx, pool)
+	}
+	if err := pool.EnsureValidPoolStatus(msg); nil != err {
 		ctx.Logger().Error("check pool status", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
@@ -391,6 +397,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgSetPoolData from memo")
 		}
+
 	case StakeMemo:
 		newMsg, err = getMsgStakeFromMemo(ctx, m, txID, &tx, signer)
 		if nil != err {
