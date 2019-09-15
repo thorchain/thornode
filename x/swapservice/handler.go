@@ -361,8 +361,12 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 }
 
-func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAccessor, poolAddrMgr *PoolAddressManager) {
+func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, poolAddrMgr *PoolAddressManager) {
 	// Minus the bnb fee from our coins. If we don't have the bnb, don't refund.
+
+	// TODO: if we don't have enough BNB, swap a bit of what we do have into
+	// BNB to pay for the gas. Or build "claims" where people can send BNB to
+	// release their refund.
 
 	batchFee := 30000 // bnb fee for each batch tx
 	txFee := 37500    // bnb fee for a single tx
@@ -477,7 +481,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer, poolAddressMgr)
 			if nil != err {
 				ctx.Logger().Error("fail to process txHash", "error", err)
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, poolAddressMgr)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, poolAddressMgr)
 				ee := NewEmptyRefundEvent()
 				buf, err := json.Marshal(ee)
 				if nil != err {
@@ -496,7 +500,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, poolAddressMgr)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, poolAddressMgr)
 			}
 		}
 	}
