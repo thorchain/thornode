@@ -362,16 +362,33 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 }
 
 func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAccessor, poolAddrMgr *PoolAddressManager) {
-	toi := &TxOutItem{
-		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
-		ToAddress:   tx.Sender,
+	// Minus the bnb fee from our coins. If we don't have the bnb, don't refund.
+
+	batchFee := 30000 // bnb fee for each batch tx
+	txFee := 37500    // bnb fee for a single tx
+
+	okToRefund := false
+	for i, coin := range tx.Coins {
+		if common.IsBNB(coin.Denom) {
+			if len(tx.Coins) > 1 {
+				fee := batchFee * len(tx.Coins)
+				tx.Coins[i].Amount = coin.Amount.Sub(common.FloatToUint(float64(fee)))
+			} else {
+				tx.Coins[i].Amount = coin.Amount.Sub(common.FloatToUint(float64(txFee)))
+			}
+			if tx.Coins[i].Amount.GT(sdk.ZeroUint()) {
+				okToRefund = true
+			}
+		}
 	}
 
-	for _, item := range tx.Coins {
-		c := getRefundCoin(ctx, item.Denom, item.Amount, keeper)
-		if c.Amount.GT(sdk.ZeroUint()) {
-			toi.Coins = append(toi.Coins, c)
+	if okToRefund {
+		toi := &TxOutItem{
+			ToAddress: tx.Sender,
+			Coins:     tx.Coins,
 		}
+
+		store.AddTxOutItem(toi)
 	}
 
 	store.AddTxOutItem(toi)
