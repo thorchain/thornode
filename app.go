@@ -292,6 +292,5 @@ func (app *swapServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailW
 	}
 
 	validators = staking.WriteValidators(ctx, app.stakingKeeper)
-
 	return appState, validators, nil
 }
