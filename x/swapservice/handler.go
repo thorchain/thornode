@@ -142,34 +142,6 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 		Codespace: DefaultCodespace,
 	}
 }
-func processSwapRefundEvent(ctx sdk.Context, keeper Keeper, msg MsgSwap) error {
-	swapEvt := NewEventSwap(
-		common.NewCoin(msg.SourceTicker, msg.Amount),
-		common.NewCoin(msg.TargetTicker, sdk.ZeroUint()),
-		sdk.ZeroUint(),
-		sdk.ZeroUint(),
-		sdk.ZeroUint(),
-		sdk.ZeroUint(),
-		sdk.ZeroUint(),
-	)
-	swapBytes, err := json.Marshal(swapEvt)
-	if err != nil {
-		return errors.Wrap(err, "fail to marshal swap event")
-	}
-	evt := NewEvent(
-		swapEvt.Type(),
-		msg.RequestTxHash,
-		msg.TargetTicker,
-		swapBytes,
-		EventRefund,
-	)
-	keeper.AddIncompleteEvents(ctx, evt)
-	return nil
-}
-
-func processStakeRefundEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint) error {
-	return processStakeEvent(ctx, keeper, msg, stakeUnits, EventRefund)
-}
 
 func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus) error {
 	stakeEvt := NewEventStake(
@@ -206,18 +178,18 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 
 	stakeUnits := sdk.ZeroUint()
 
-	defer func(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits *sdk.Uint) {
+	defer func() {
 		var status EventStatus
 		if result.IsOK() {
 			status = EventSuccess
 		} else {
 			status = EventRefund
 		}
-		if err := processStakeEvent(ctx, keeper, msg, *stakeUnits, status); nil != err {
+		if err := processStakeEvent(ctx, keeper, msg, stakeUnits, status); nil != err {
 			ctx.Logger().Error("fail to save stake event", "error", err)
 			result = sdk.ErrInternal("fail to save stake event").Result()
 		}
-	}(ctx, keeper, msg, &stakeUnits)
+	}()
 
 	ctx.Logger().Info("handleMsgSetStakeData request", "stakerid:"+msg.Ticker)
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
@@ -432,7 +404,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer, poolAddressMgr)
 			if nil != err {
 				ctx.Logger().Error("fail to process txHash", "error", err)
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore)
 				ee := NewEmptyRefundEvent()
 				buf, err := json.Marshal(ee)
 				if nil != err {
@@ -451,7 +423,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, msg)
 			if !result.IsOK() {
-				refundTx(ctx, voter.GetTx(totalTrusted), txOutStore, keeper)
+				refundTx(ctx, voter.GetTx(totalTrusted), txOutStore)
 			}
 		}
 	}
