@@ -33,7 +33,7 @@ func (PoolTestSuite) TestPool(c *C) {
 
 	m := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(1), bnbAddress, bnbAddress, sdk.NewUint(2), addr)
 
-	c.Check(p.EnsureValidPoolStatus(m), NotNil)
+	c.Check(p.EnsureValidPoolStatus(m), IsNil)
 	msgNoop := NewMsgNoOp(addr)
 	c.Check(p.EnsureValidPoolStatus(msgNoop), IsNil)
 	p.Status = Enabled
