@@ -101,6 +101,7 @@ type (
 	StakeTxDetail      = types.StakeTxDetail
 	Event              = types.Event
 	Events             = types.Events
+	EventSwap          = types.EventSwap
 	EventStatus        = types.EventStatus
 	NodeAccount        = types.NodeAccount
 	NodeAccounts       = types.NodeAccounts
