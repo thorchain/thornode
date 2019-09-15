@@ -366,8 +366,9 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, poolAddrMgr *PoolAddr
 
 	// TODO: if we don't have enough BNB, swap a bit of what we do have into
 	// BNB to pay for the gas. Or build "claims" where people can send BNB to
-	// release their refund.
+	// release their refund/tx.
 
+	// TODO: don't hard code these values, pull from binance, or have the observer set them in an admin config
 	batchFee := 30000 // bnb fee for each batch tx
 	txFee := 37500    // bnb fee for a single tx
 
