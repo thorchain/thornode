@@ -87,7 +87,7 @@ describe "API Tests" do
     it "should be able to get the pool" do
       resp = get("/pool/TCAN-014")
       expect(resp.body['ticker']).to eq("TCAN-014"), resp.body.inspect
-      expect(resp.body['status']).to eq("Bootstrap"), resp.body.inspect
+      expect(resp.body['status']).to eq("Enabled"), resp.body.inspect
     end
 
     it "set pool status to active, and that we can do multiple txs" do

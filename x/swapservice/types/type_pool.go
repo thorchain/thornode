@@ -97,7 +97,7 @@ func NewPool() Pool {
 		BalanceRune:  sdk.ZeroUint(),
 		BalanceToken: sdk.ZeroUint(),
 		PoolUnits:    sdk.ZeroUint(),
-		Status:       Bootstrap,
+		Status:       Enabled,
 		ExpiryUtc:    PoolAddressExpiryDate,
 	}
 }

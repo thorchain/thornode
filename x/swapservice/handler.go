@@ -528,7 +528,7 @@ func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, 
 	}
 	return NewMsgSetPoolData(
 		memo.GetTicker(),
-		PoolBootstrap, // new pools start in a Bootstrap state
+		PoolEnabled, // new pools start in a enabled state
 		signer,
 	), nil
 }
