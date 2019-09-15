@@ -494,18 +494,26 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, t
 }
 
 func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+	if len(tx.Coins) > 2 {
+		return nil, errors.New("not expecting more than two coins in a stake")
+	}
 	runeAmount := sdk.ZeroUint()
 	tokenAmount := sdk.ZeroUint()
+	ticker := memo.GetTicker()
 	for _, coin := range tx.Coins {
 		ctx.Logger().Info("coin", "denom", coin.Denom.String(), "amount", coin.Amount.String())
 		if common.IsRune(coin.Denom) {
 			runeAmount = coin.Amount
 		} else {
 			tokenAmount = coin.Amount
+			ticker = coin.Denom // override the memo ticker with coin received
 		}
 	}
+	if ticker.IsEmpty() {
+		return nil, errors.New("Unable to determine the intended pool for this stake")
+	}
 	return NewMsgSetStakeData(
-		memo.GetTicker(),
+		ticker,
 		runeAmount,
 		tokenAmount,
 		tx.Sender,
