@@ -10,6 +10,7 @@ const (
 	StoreKey         = types.StoreKey
 	DefaultCodespace = types.DefaultCodespace
 	PoolEnabled      = types.Enabled
+	PoolSuspended    = types.Suspended
 	PoolBootstrap    = types.Bootstrap
 	EventSuccess     = types.Success
 	EventRefund      = types.Refund
@@ -43,6 +44,7 @@ var (
 	NewMsgOutboundTx      = types.NewMsgOutboundTx
 	NewPoolStaker         = types.NewPoolStaker
 	NewStakerPool         = types.NewStakerPool
+	NewMsgEndPool         = types.NewMsgEndPool
 	HasMajority           = types.HasMajority
 	GetPoolStatus         = types.GetPoolStatus
 	GetAdminConfigKey     = types.GetAdminConfigKey
@@ -61,6 +63,7 @@ type (
 	MsgOutboundTx     = types.MsgOutboundTx
 	MsgSwap           = types.MsgSwap
 	MsgSetAdminConfig = types.MsgSetAdminConfig
+	MsgEndPool        = types.MsgEndPool
 	QueryResPools     = types.QueryResPools
 	TrustAccount      = types.TrustAccount
 	PoolStatus        = types.PoolStatus

@@ -47,6 +47,8 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			return handleMsgOutboundTx(ctx, keeper, m)
 		case MsgNoOp:
 			return handleMsgNoOp(ctx, keeper, m)
+		case MsgEndPool:
+			return handleMsgEndPool(ctx, keeper, txOutStore, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -65,6 +67,44 @@ func isSignedByTrustAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.AccAd
 		}
 	}
 	return true
+}
+
+// handleMsgEndPool
+func handleMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgEndPool) sdk.Result {
+	if !isSignedByTrustAccounts(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker)
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+	ctx.Logger().Info("handle MsgEndPool", "ticker", msg.Ticker, "requester", msg.Requester, "signer", msg.Signer.String())
+	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Ticker)
+	if nil != err {
+		ctx.Logger().Error("fail to get pool staker", err)
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+	// everyone withdraw
+	for _, item := range poolStaker.Stakers {
+		unstakeMsg := NewMsgSetUnStake(
+			item.StakerID,
+			sdk.NewUint(10000),
+			msg.Ticker,
+			msg.RequestTxHash,
+			msg.Signer,
+		)
+
+		result := handleMsgSetUnstake(ctx, keeper, txOutStore, unstakeMsg)
+		if !result.IsOK() {
+			ctx.Logger().Error("fail to unstake", "staker", item.StakerID)
+			return result
+		}
+	}
+	keeper.SetPoolData(
+		ctx,
+		msg.Ticker,
+		PoolSuspended)
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
 }
 
 // Handle a message to set pooldata
@@ -404,7 +444,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 			return nil, errors.Wrap(err, "fail to get MsgStake from memo")
 		}
 	case AdminMemo:
-		newMsg, err = getMsgAdminConfigFromMemo(ctx, keeper, m, tx, signer)
+		newMsg, err = getMsgAdminConfigFromMemo(ctx, keeper, m, tx, txID, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgAdminConfig from memo")
 		}
@@ -473,7 +513,7 @@ func getMsgUnstakeFromMemo(memo WithdrawMemo, txID common.TxID, tx TxIn, signer 
 
 }
 
-func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxIn, requestTxHash common.TxID, signer sdk.AccAddress) (sdk.Msg, error) {
 	switch memo.GetAdminType() {
 	case adminPoolStatus:
 		ticker, err := common.NewTicker(memo.GetKey())
@@ -496,6 +536,12 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, t
 	case adminKey:
 		key := GetAdminConfigKey(memo.GetKey())
 		return NewMsgSetAdminConfig(key, memo.GetValue(), tx.Sender, signer), nil
+	case adminEndPool:
+		ticker, err := common.NewTicker(memo.GetKey())
+		if err != nil {
+			return nil, errors.Wrapf(err, "Memo: %+v", memo)
+		}
+		return NewMsgEndPool(ticker, tx.Sender, requestTxHash, signer), nil
 	}
 	return nil, errors.New("invalid admin command type")
 }

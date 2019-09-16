@@ -32,6 +32,7 @@ const (
 	adminUnknown adminType = iota
 	adminKey
 	adminPoolStatus
+	adminEndPool
 )
 
 var stringToTxTypeMap = map[string]TxType{
@@ -73,6 +74,7 @@ var txToStringMap = map[TxType]string{
 var stringToAdminTypeMap = map[string]adminType{
 	"key":        adminKey,
 	"poolstatus": adminPoolStatus,
+	"end":        adminEndPool,
 }
 
 // converts a string into a txType
@@ -253,17 +255,33 @@ func ParseMemo(memo string) (Memo, error) {
 		}, err
 
 	case txAdmin:
-		if len(parts) < 4 {
+		if len(parts) < 3 {
 			return noMemo, fmt.Errorf("not enough parameters")
 		}
 		a, err := stringToAdminType(parts[1])
-		return AdminMemo{
-			MemoBase: MemoBase{TxType: txAdmin},
-			Type:     a,
-			Key:      parts[2],
-			Value:    parts[3],
-		}, err
-
+		if nil != err {
+			return noMemo, fmt.Errorf("%s is not a valid admin type", parts[1])
+		}
+		switch a {
+		case adminPoolStatus, adminKey:
+			if len(parts) < 4 {
+				return noMemo, fmt.Errorf("not enough parameters")
+			}
+			return AdminMemo{
+				MemoBase: MemoBase{TxType: txAdmin},
+				Type:     a,
+				Key:      parts[2],
+				Value:    parts[3],
+			}, nil
+		case adminEndPool:
+			return AdminMemo{
+				MemoBase: MemoBase{TxType: txAdmin},
+				Type:     a,
+				Key:      parts[2],
+				Value:    "",
+			}, nil
+		}
+		return noMemo, nil
 	case txOutbound:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("Not enough parameters")
