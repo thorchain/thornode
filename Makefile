@@ -45,3 +45,23 @@ reset: clean
 clean:
 	rm -rf ~/.ssd
 	ssd unsafe-reset-all
+
+go-mod-cache: go.sum
+	@echo "--> Download go modules to local cache"
+	@go mod download
+
+build-linux: go.sum
+	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
+#########################################################
+### Local validator nodes using docker and docker-compose
+build-docker-statechainnode:
+	$(MAKE) -C build/local
+
+# Run a 4-node testnet locally
+localnet-start: build-linux localnet-stop
+	@if ! [ -f build/node0/gaiad/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/gaiad:Z tendermint/gaiadnode testnet --v 4 -o . --starting-ip-address 192.168.10.2 ; fi
+	docker-compose up -d
+
+# Stop testnet
+localnet-stop:
+	docker-compose down
