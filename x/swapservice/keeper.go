@@ -255,7 +255,7 @@ func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr common.BnbAddress) bool 
 func (k Keeper) SetTrustAccount(ctx sdk.Context, ta TrustAccount) {
 	ctx.Logger().Debug("SetTrustAccount", "trust account", ta.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTrustAccount, ta.RuneAddress.String())
+	key := getKey(prefixTrustAccount, ta.BepAddress.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ta))
 }
 
