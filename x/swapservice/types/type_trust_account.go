@@ -15,7 +15,7 @@ type TrustAccount struct {
 
 type TrustAccounts []TrustAccount
 
-func NewTrustAccount(name string, address string, bnb common.BnbAddress) (TrustAccount, error) {
+func NewTrustAccount(address string, bnb common.BnbAddress) (TrustAccount, error) {
 	addr, err := sdk.AccAddressFromBech32(address)
 	return TrustAccount{
 		BepAddress: addr,
