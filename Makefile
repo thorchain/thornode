@@ -26,7 +26,8 @@ test-watch: clear
 	@./scripts/watch.bash
 
 build:
-	@go build ./...
+	@go build -o build/ssd ./cmd/ssd
+	@go build -o build/sscli ./cmd/sscli
 
 start: install start-daemon
 
@@ -55,11 +56,11 @@ build-linux: go.sum
 #########################################################
 ### Local validator nodes using docker and docker-compose
 build-docker-statechainnode:
-	$(MAKE) -C build/local
+	$(MAKE) -C networks/local
 
 # Run a 4-node testnet locally
 localnet-start: build-linux localnet-stop
-	@if ! [ -f build/node0/gaiad/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/gaiad:Z tendermint/gaiadnode testnet --v 4 -o . --starting-ip-address 192.168.10.2 ; fi
+	@if ! [ -f build/node0/ssd/config/genesis.json ]; then docker run --rm -v $(CURDIR)/cmd:/ssd:Z thorchain/statechainnode testnet --v 4 -o . --starting-ip-address 192.168.10.2 ; fi
 	docker-compose up -d
 
 # Stop testnet
