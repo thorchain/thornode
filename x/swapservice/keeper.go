@@ -225,16 +225,26 @@ func (k Keeper) TotalTrustAccounts(ctx sdk.Context) (count int) {
 	return
 }
 
-// IsTrustAccount check whether the account is trust , and can send tx
-func (k Keeper) IsTrustAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
+// IsActiveTrustAccount check whether the account is trust , and can send tx
+func (k Keeper) IsActiveTrustAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
 	ctx.Logger().Debug("IsTrustAccount", "account address", addr.String())
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTrustAccount, addr.String())
-	return store.Has([]byte(key))
+	if !store.Has([]byte(key)) {
+		return false
+	}
+	var trust TrustAccount
+	buf := store.Get([]byte(key))
+	if err := k.cdc.UnmarshalBinaryBare(buf, &trust); nil != err {
+		ctx.Logger().Error("fail to unmarshal trust account", err)
+		return false
+	}
+
+	return trust.IsActive()
 }
 
-// IsTrustAccountBnb check whether the account is trust , and can send tx
-func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr common.BnbAddress) bool {
+// IsActiveTrustAccountBnb check whether the account is trust , and can send tx
+func (k Keeper) IsActiveTrustAccountBnb(ctx sdk.Context, addr common.BnbAddress) bool {
 	ctx.Logger().Debug("IsTrustAccountBnb", "bnb address", addr.String())
 
 	taIterator := k.GetTrustAccountIterator(ctx)
@@ -243,7 +253,7 @@ func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr common.BnbAddress) bool 
 		var ta TrustAccount
 		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
 		ctx.Logger().Info("IsTrustAccountBnb", "bnb1", addr.String(), "bnb2", ta.BnbAddress)
-		if ta.BnbAddress.Equals(addr) {
+		if ta.BnbAddress.Equals(addr) && ta.IsActive() {
 			return true
 		}
 	}
@@ -462,7 +472,7 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb co
 		k.cdc.MustUnmarshalBinaryBare(configIterator.Value(), &config)
 		// check that its the key we are asking for and the bnbAddress is a
 		// trust account
-		if kkey == config.Key && k.IsTrustAccountBnb(ctx, config.Address) {
+		if kkey == config.Key && k.IsActiveTrustAccountBnb(ctx, config.Address) {
 			counter[config.Value] += 1
 		}
 	}

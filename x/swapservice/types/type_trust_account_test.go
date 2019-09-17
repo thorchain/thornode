@@ -16,9 +16,15 @@ func (TrustAccountSuite) TestTrustAccount(c *C) {
 	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
 	c.Check(addr.Empty(), Equals, false)
-	trustAccount, err := NewTrustAccount("amazing-account", "bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v", bnb)
+	trustAccount, err := NewTrustAccount("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v", bnb)
 	c.Assert(err, IsNil)
 	c.Assert(trustAccount.BepAddress.Equals(addr), Equals, true)
 	c.Assert(trustAccount.BnbAddress, Equals, bnb)
+	c.Assert(trustAccount.Status, Equals, UnavailableTrustAccount)
+	c.Assert(trustAccount.IsActive(), Equals, false)
+	trustAccount.Status = ActiveTrustAccount
+	c.Assert(trustAccount.IsActive(), Equals, true)
+	trustAccount.Status = InactiveTrustAccount
+	c.Assert(trustAccount.IsInactive(), Equals, true)
 	c.Log(trustAccount.String())
 }

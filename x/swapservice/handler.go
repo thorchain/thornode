@@ -61,7 +61,7 @@ func isSignedByTrustAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.AccAd
 		return false
 	}
 	for _, signer := range signers {
-		if !keeper.IsTrustAccount(ctx, signer) {
+		if !keeper.IsActiveTrustAccount(ctx, signer) {
 			ctx.Logger().Error("unauthorized account", "address", signer.String())
 			return false
 		}
@@ -532,7 +532,7 @@ func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, t
 		if pool.Empty() {
 			return nil, fmt.Errorf("pool doesn't exist: %s", ticker.String())
 		}
-		if !keeper.IsTrustAccountBnb(ctx, tx.Sender) {
+		if !keeper.IsActiveTrustAccountBnb(ctx, tx.Sender) {
 			return nil, errors.New("Not authorized")
 		}
 		status := GetPoolStatus(memo.GetValue())
@@ -724,7 +724,7 @@ func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConf
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
-	if !keeper.IsTrustAccountBnb(ctx, msg.From) {
+	if !keeper.IsActiveTrustAccountBnb(ctx, msg.From) {
 		ctx.Logger().Error("message signed by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}

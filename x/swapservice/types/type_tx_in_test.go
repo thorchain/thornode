@@ -52,15 +52,15 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	c.Assert(voter.Txs[1].Signers, HasLen, 1)
 
 	trusts3 := TrustAccounts{
-		TrustAccount{BepAddress: acc1},
-		TrustAccount{BepAddress: acc2},
-		TrustAccount{BepAddress: acc3},
+		TrustAccount{BepAddress: acc1, Status: ActiveTrustAccount},
+		TrustAccount{BepAddress: acc2, Status: ActiveTrustAccount},
+		TrustAccount{BepAddress: acc3, Status: ActiveTrustAccount},
 	}
 	trusts4 := TrustAccounts{
-		TrustAccount{BepAddress: acc1},
-		TrustAccount{BepAddress: acc2},
-		TrustAccount{BepAddress: acc3},
-		TrustAccount{BepAddress: acc4},
+		TrustAccount{BepAddress: acc1, Status: ActiveTrustAccount},
+		TrustAccount{BepAddress: acc2, Status: ActiveTrustAccount},
+		TrustAccount{BepAddress: acc3, Status: ActiveTrustAccount},
+		TrustAccount{BepAddress: acc4, Status: ActiveTrustAccount},
 	}
 
 	tx := voter.GetTx(trusts3)

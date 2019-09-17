@@ -155,7 +155,7 @@ func (tx TxInVoter) HasConensus(trusts TrustAccounts) bool {
 	for _, txIn := range tx.Txs {
 		var count int
 		for _, signer := range txIn.Signers {
-			if trusts.IsTrustAccount(signer) {
+			if trusts.IsActiveTrustAccount(signer) {
 				count += 1
 			}
 		}
@@ -171,7 +171,7 @@ func (tx TxInVoter) GetTx(trusts TrustAccounts) TxIn {
 	for _, txIn := range tx.Txs {
 		var count int
 		for _, signer := range txIn.Signers {
-			if trusts.IsTrustAccount(signer) {
+			if trusts.IsActiveTrustAccount(signer) {
 				count += 1
 			}
 		}

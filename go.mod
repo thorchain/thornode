@@ -7,6 +7,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.37.0
 	github.com/cosmos/go-bip39 v0.0.0-20180819234021-555e2067c45d // indirect
 	github.com/gogo/protobuf v1.3.0 // indirect
+	github.com/google/uuid v1.1.1
 	github.com/gorilla/mux v1.7.0
 	github.com/libp2p/go-buffer-pool v0.0.2 // indirect
 	github.com/mattn/go-isatty v0.0.7 // indirect
