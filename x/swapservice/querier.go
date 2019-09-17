@@ -145,8 +145,15 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		return nil, sdk.ErrInternal("fail to parse tx id")
 	}
 	voter := keeper.GetTxInVoter(ctx, hash)
-	totalTrusted := keeper.TotalTrustAccounts(ctx)
-	res, err := codec.MarshalJSONIndent(keeper.cdc, voter.GetTx(totalTrusted))
+	var trustAccounts []TrustAccount
+	taIterator := keeper.GetTrustAccountIterator(ctx)
+	defer taIterator.Close()
+	for ; taIterator.Valid(); taIterator.Next() {
+		var ta TrustAccount
+		keeper.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
+		trustAccounts = append(trustAccounts, ta)
+	}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, voter.GetTx(trustAccounts))
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")

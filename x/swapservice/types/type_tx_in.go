@@ -151,9 +151,15 @@ func (tx *TxInVoter) Adds(txs []TxIn, signer sdk.AccAddress) {
 	}
 }
 
-func (tx TxInVoter) HasConensus(totalTrusted int) bool {
+func (tx TxInVoter) HasConensus(trusts TrustAccounts) bool {
 	for _, txIn := range tx.Txs {
-		if HasMajority(len(txIn.Signers), totalTrusted) {
+		var count int
+		for _, signer := range txIn.Signers {
+			if trusts.IsTrustAccount(signer) {
+				count += 1
+			}
+		}
+		if HasMajority(count, len(trusts)) {
 			return true
 		}
 	}
@@ -161,9 +167,15 @@ func (tx TxInVoter) HasConensus(totalTrusted int) bool {
 	return false
 }
 
-func (tx TxInVoter) GetTx(totalTrusted int) TxIn {
+func (tx TxInVoter) GetTx(trusts TrustAccounts) TxIn {
 	for _, txIn := range tx.Txs {
-		if HasMajority(len(txIn.Signers), totalTrusted) {
+		var count int
+		for _, signer := range txIn.Signers {
+			if trusts.IsTrustAccount(signer) {
+				count += 1
+			}
+		}
+		if HasMajority(count, len(trusts)) {
 			return txIn
 		}
 	}

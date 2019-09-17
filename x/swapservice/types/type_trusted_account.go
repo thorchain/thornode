@@ -14,6 +14,8 @@ type TrustAccount struct {
 	BnbAddress  common.BnbAddress `json:"bnb_address"`
 }
 
+type TrustAccounts []TrustAccount
+
 func NewTrustAccount(name string, address string, bnb common.BnbAddress) (TrustAccount, error) {
 	addr, err := sdk.AccAddressFromBech32(address)
 	return TrustAccount{
@@ -30,4 +32,13 @@ func (ta TrustAccount) String() string {
 	sb.WriteString("address:" + ta.RuneAddress.String())
 	sb.WriteString("BNB Address:" + ta.BnbAddress.String())
 	return sb.String()
+}
+
+func (trusts TrustAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
+	for _, trust := range trusts {
+		if trust.RuneAddress.Equals(addr) {
+			return true
+		}
+	}
+	return false
 }
