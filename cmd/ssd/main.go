@@ -18,20 +18,17 @@ import (
 	dbm "github.com/tendermint/tm-db"
 
 	app "gitlab.com/thorchain/bepswap/statechain"
-	cmd "gitlab.com/thorchain/bepswap/statechain/cmd"
+	"gitlab.com/thorchain/bepswap/statechain/cmd"
 )
 
 func main() {
 	cobra.EnableCommandSorting = false
-
 	cdc := app.MakeCodec()
-
 	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
 	config.SetBech32PrefixForValidator(cmd.Bech32PrefixValAddr, cmd.Bech32PrefixValPub)
 	config.SetBech32PrefixForConsensusNode(cmd.Bech32PrefixConsAddr, cmd.Bech32PrefixConsPub)
 	config.Seal()
-
 	ctx := server.NewDefaultContext()
 
 	rootCmd := &cobra.Command{

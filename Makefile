@@ -52,7 +52,9 @@ go-mod-cache: go.sum
 	@go mod download
 
 build-linux: go.sum
-	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 $(MAKE) build
+	LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 go build -o build/ssd ./cmd/ssd
+    LEDGER_ENABLED=false GOOS=linux GOARCH=amd64 go build -o build/sscli ./cmd/sscli
+
 #########################################################
 ### Local validator nodes using docker and docker-compose
 build-docker-statechainnode:
@@ -60,7 +62,7 @@ build-docker-statechainnode:
 
 # Run a 4-node testnet locally
 localnet-start: build-linux localnet-stop
-	@if ! [ -f build/node0/ssd/config/genesis.json ]; then docker run --rm -v $(CURDIR)/cmd:/ssd:Z thorchain/statechainnode testnet --v 4 -o . --starting-ip-address 192.168.10.2 ; fi
+	@if ! [ -f build/node0/ssd/config/genesis.json ]; then docker run --rm -v $(CURDIR)/build:/ssd:Z thorchain/statechainnode; fi
 	docker-compose up -d
 
 # Stop testnet

@@ -13,18 +13,16 @@ import (
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 
 	app "gitlab.com/thorchain/bepswap/statechain"
-	cmd "gitlab.com/thorchain/bepswap/statechain/cmd"
+	"gitlab.com/thorchain/bepswap/statechain/cmd"
 )
 
 func main() {
 	cobra.EnableCommandSorting = false
-
 	cdc := app.MakeCodec()
-
 	// Read in the configuration file for the sdk
 	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
