@@ -18,7 +18,7 @@ ENV SS_HOME="/statechain/$NODE_ID/ssd"
 ENV SSC_HOME="/statechain/$NODE_ID/sscli/"
 VOLUME ["/statechain"]
 
-RUN apk add --update jq
+RUN apk add --update jq curl
 
 WORKDIR /usr/bin
 COPY --from=build /go/src/app/cmd/ssd/ssd /usr/bin/ssd
