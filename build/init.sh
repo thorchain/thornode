@@ -28,7 +28,7 @@ initialize() {
   fi
 
   echo "$SIGNER_PASSWD" | sscli keys add jack
-  ssd init local --chain-id statechain
+  ssd init "$NODE_ID" --chain-id statechain
   ssd add-genesis-account "$(sscli keys show jack -a)" 1000rune,100000000stake
   sscli config chain-id statechain
   sscli config output json
