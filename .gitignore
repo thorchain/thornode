@@ -8,7 +8,6 @@
 # Build
 vendor
 .vendor-new
-build
 
 # IDE
 .idea/
