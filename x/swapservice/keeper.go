@@ -225,6 +225,19 @@ func (k Keeper) TotalTrustAccounts(ctx sdk.Context) (count int) {
 	return
 }
 
+// ListTrustAccounts - gets a list of all trust accounts
+func (k Keeper) ListTrustAccounts(ctx sdk.Context) []TrustAccount {
+	var trustAccounts []TrustAccount
+	taIterator := k.GetTrustAccountIterator(ctx)
+	defer taIterator.Close()
+	for ; taIterator.Valid(); taIterator.Next() {
+		var ta TrustAccount
+		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
+		trustAccounts = append(trustAccounts, ta)
+	}
+	return trustAccounts
+}
+
 // IsTrustAccount check whether the account is trust , and can send tx
 func (k Keeper) IsTrustAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
 	ctx.Logger().Debug("IsTrustAccount", "account address", addr.String())
