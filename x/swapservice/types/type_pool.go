@@ -102,6 +102,14 @@ func NewPool() Pool {
 	}
 }
 
+func (ps Pool) Valid() error {
+	if ps.Empty() {
+		return errors.New("Pool ticker cannot be empty")
+	}
+
+	return nil
+}
+
 func (ps Pool) Empty() bool {
 	return ps.Ticker == ""
 }

@@ -45,3 +45,6 @@ reset: clean
 clean:
 	rm -rf ~/.ssd
 	ssd unsafe-reset-all
+
+export:
+	ssd export

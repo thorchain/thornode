@@ -111,6 +111,20 @@ func NewTxInVoter(txID common.TxID, txs []TxIn) TxInVoter {
 	}
 }
 
+func (tx TxInVoter) Valid() error {
+	if tx.TxID.IsEmpty() {
+		return errors.New("Cannot have an empty tx id")
+	}
+
+	for _, in := range tx.Txs {
+		if err := in.Valid(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (tx TxInVoter) Key() common.TxID {
 	return tx.TxID
 }

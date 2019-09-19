@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 	"gitlab.com/thorchain/bepswap/common"
 )
 
@@ -12,6 +13,14 @@ import (
 type StakerUnit struct {
 	StakerID common.BnbAddress `json:"staker_id"`
 	Units    sdk.Uint          `json:"units"`
+}
+
+func (su StakerUnit) Valid() error {
+	if su.StakerID.IsEmpty() {
+		return errors.New("Staker address cannot be empty")
+	}
+
+	return nil
 }
 
 // PoolStaker
@@ -36,6 +45,20 @@ func NewPoolStaker(ticker common.Ticker, totalUnits sdk.Uint) PoolStaker {
 		TotalUnits: totalUnits,
 		Stakers:    []StakerUnit{},
 	}
+}
+
+func (ps PoolStaker) Valid() error {
+	if ps.Ticker.IsEmpty() {
+		return errors.New("Ticker cannot be empty")
+	}
+
+	for _, staker := range ps.Stakers {
+		if err := staker.Valid(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // String return the human readable string of PoolStaker
