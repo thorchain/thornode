@@ -39,6 +39,8 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryInCompleteEvents(ctx, path[1:], req, keeper)
 		case q.QueryCompleteEvents.Key:
 			return queryCompleteEvents(ctx, path[1:], req, keeper)
+		case q.QueryHeights.Key:
+			return queryHeights(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown swapservice query endpoint: %s", path[0]),
@@ -155,7 +157,7 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 }
 
 func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	height, err := strconv.ParseInt(path[0], 0, 64)
+	height, err := strconv.ParseUint(path[0], 0, 64)
 	if nil != err {
 		ctx.Logger().Error("fail to parse block height", err)
 		return nil, sdk.ErrInternal("fail to parse block height")
@@ -231,6 +233,22 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, events)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal events to json", err)
+		return nil, sdk.ErrInternal("fail to marshal events to json")
+	}
+	return res, nil
+}
+
+func queryHeights(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	binance := keeper.GetLastBinanceHeight(ctx)
+	signed := keeper.GetLastSignedHeight(ctx)
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, QueryResHeights{
+		LastBinanceHeight: binance,
+		LastSignedHeight:  signed,
+		Statechain:        ctx.BlockHeight(),
+	})
 	if nil != err {
 		ctx.Logger().Error("fail to marshal events to json", err)
 		return nil, sdk.ErrInternal("fail to marshal events to json")

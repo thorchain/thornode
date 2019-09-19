@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -46,6 +47,13 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		height := sdk.NewUintFromString(req.Blockheight)
+		if height.IsZero() {
+			err := errors.New("Binance chain block height cannot be zero")
+			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
 		voters := make([]types.TxInVoter, len(req.TxArray))
 		for i, tx := range req.TxArray {
 			txID, err := common.NewTxID(tx.TxHash)
@@ -60,7 +68,7 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 				return
 			}
 
-			tx := types.NewTxIn(tx.Coins, tx.Memo, bnbAddr)
+			tx := types.NewTxIn(tx.Coins, tx.Memo, bnbAddr, height)
 
 			voters[i] = types.NewTxInVoter(txID, []types.TxIn{tx})
 		}

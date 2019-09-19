@@ -238,4 +238,14 @@ describe "API Tests" do
 
   end
 
+  context "Block heights" do
+    it "ensure we have non-zero block height" do
+      resp = get("/lastblock")
+      expect(resp.code).to eq("200")
+      # expect(resp.body['lastobservedin'].to_i).to be > 0, resp.body.inspect
+      expect(resp.body['lastsignedout'].to_i).to be > 0, resp.body.inspect
+      expect(resp.body['statechain'].to_i).to be > 0, resp.body.inspect
+    end
+  end
+
 end

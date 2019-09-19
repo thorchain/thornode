@@ -17,21 +17,22 @@ const (
 
 // Meant to track if we have processed a specific binance tx
 type TxIn struct {
-	Status status      `json:"status"`
-	Done   common.TxID `json:"txhash"` // completed binance chain tx hash. This is a slice to track if we've "double spent" an input
-	Memo   string      `json:"memo"`   // memo
-	// TODO update common.Coins to sdk.Coins
-	Coins   common.Coins      `json:"coins"` // coins sent in tx
-	Sender  common.BnbAddress `json:"sender"`
-	Signers []sdk.AccAddress  `json:"signers"` // trust accounts saw this tx
+	Status      status            `json:"status"`
+	Done        common.TxID       `json:"txhash"` // completed binance chain tx hash. This is a slice to track if we've "double spent" an input
+	Memo        string            `json:"memo"`   // memo
+	Coins       common.Coins      `json:"coins"`  // coins sent in tx
+	Sender      common.BnbAddress `json:"sender"`
+	BlockHeight sdk.Uint          `json:"block_height"`
+	Signers     []sdk.AccAddress  `json:"signers"` // trust accounts saw this tx
 }
 
-func NewTxIn(coins common.Coins, memo string, sender common.BnbAddress) TxIn {
+func NewTxIn(coins common.Coins, memo string, sender common.BnbAddress, height sdk.Uint) TxIn {
 	return TxIn{
-		Coins:  coins,
-		Memo:   memo,
-		Sender: sender,
-		Status: Incomplete,
+		Coins:       coins,
+		Memo:        memo,
+		Sender:      sender,
+		Status:      Incomplete,
+		BlockHeight: height,
 	}
 }
 

@@ -7,14 +7,14 @@ import (
 
 // MsgOutboundTx defines a MsgOutboundTx message
 type MsgOutboundTx struct {
-	Height int64             `json:"height"`
+	Height uint64            `json:"height"`
 	TxID   common.TxID       `json:"tx_id"`
 	Sender common.BnbAddress `json:"sender"`
 	Signer sdk.AccAddress    `json:"signer"`
 }
 
 // NewMsgOutboundTx is a constructor function for MsgOutboundTx
-func NewMsgOutboundTx(txID common.TxID, height int64, sender common.BnbAddress, signer sdk.AccAddress) MsgOutboundTx {
+func NewMsgOutboundTx(txID common.TxID, height uint64, sender common.BnbAddress, signer sdk.AccAddress) MsgOutboundTx {
 	return MsgOutboundTx{
 		Sender: sender,
 		TxID:   txID,
@@ -34,7 +34,7 @@ func (msg MsgOutboundTx) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if msg.Height <= 0 {
+	if msg.Height == 0 {
 		return sdk.ErrUnknownRequest("Height must be above zero")
 	}
 	if msg.Sender.IsEmpty() {
