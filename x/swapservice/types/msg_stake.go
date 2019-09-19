@@ -7,7 +7,7 @@ import (
 
 // MsgSetStakeData defines a SetStakeData message
 type MsgSetStakeData struct {
-	Ticker        common.Ticker     `json:"ticker"`          // ticker means the symbol
+	Ticker        common.Ticker     `json:"symbol"`          // ticker means the symbol
 	TokenAmount   sdk.Uint          `json:"token"`           // the amount of token stake
 	RuneAmount    sdk.Uint          `json:"rune"`            // the amount of rune stake
 	PublicAddress common.BnbAddress `json:"public_address"`  // Staker's address on binance chain
