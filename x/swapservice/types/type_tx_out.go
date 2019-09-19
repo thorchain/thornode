@@ -25,6 +25,7 @@ func (toi TxOutItem) Valid() error {
 	if len(toi.Coins) == 0 {
 		return errors.New("coins cannot be empty")
 	}
+
 	return nil
 }
 
@@ -65,5 +66,19 @@ func (out TxOut) Valid() error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (out TxOut) Valid() error {
+	if out.Hash.IsEmpty() {
+		return errors.New("Hash cannot be empty")
+	}
+
+	for _, tx := range out.TxArray {
+		if err := tx.Valid(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
