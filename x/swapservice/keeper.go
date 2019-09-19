@@ -283,7 +283,7 @@ func (k Keeper) ListActiveTrustAccounts(ctx sdk.Context) TrustAccounts {
 	trusts := make(TrustAccounts, 0)
 	coins, _ := sdk.ParseCoins("1stake")
 	for _, trust := range all {
-		if k.coinKeeper.HasCoins(ctx, trust.BepAddress, coins) {
+		if k.coinKeeper.HasCoins(ctx, trust.ObserverAddress, coins) {
 			trusts = append(trusts, trust)
 		}
 	}
