@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 	common "gitlab.com/thorchain/bepswap/common"
 )
 
@@ -22,6 +23,20 @@ func NewTrustAccount(admin, signer common.BnbAddress, ob sdk.AccAddress) TrustAc
 		SignerAddress:   signer,
 		ObserverAddress: ob,
 	}
+}
+
+func (ta TrustAccount) IsValid() error {
+	if ta.ObserverAddress.Empty() {
+		return errors.New("Observer address cannot be empty")
+	}
+	if ta.AdminAddress.IsEmpty() {
+		return errors.New("Admin address cannot be empty")
+	}
+	if ta.SignerAddress.IsEmpty() {
+		return errors.New("Signer address cannot be empty")
+	}
+
+	return nil
 }
 
 // String implement fmt.Stringer interface

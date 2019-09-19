@@ -49,6 +49,8 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			return handleMsgNoOp(ctx, keeper, m)
 		case MsgEndPool:
 			return handleMsgEndPool(ctx, keeper, txOutStore, m)
+		case MsgAddTrustAccount:
+			return handleAddTrustAccount(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -724,6 +726,33 @@ func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConf
 	}
 
 	keeper.SetAdminConfig(ctx, msg.AdminConfig)
+
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
+// handleAddTrustAccount adds a new trust account
+func handleAddTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgAddTrustAccount) sdk.Result {
+	// check that we are adding a unique trust account
+	trustAccounts := keeper.ListTrustAccounts(ctx)
+	for _, trust := range trustAccounts {
+		if msg.TrustAccount.ObserverAddress.Equals(trust.ObserverAddress) {
+			ctx.Logger().Error("conflict, non unique observer address")
+			return sdk.ErrUnauthorized("Conflict: observer address").Result()
+		}
+		if msg.TrustAccount.AdminAddress.Equals(trust.AdminAddress) {
+			ctx.Logger().Error("conflict, non unique admin address")
+			return sdk.ErrUnauthorized("Conflict: admin address").Result()
+		}
+		if msg.TrustAccount.SignerAddress.Equals(trust.SignerAddress) {
+			ctx.Logger().Error("conflict, non unique signer address")
+			return sdk.ErrUnauthorized("Conflict: signer address").Result()
+		}
+	}
+
+	keeper.SetTrustAccount(ctx, msg.TrustAccount)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
