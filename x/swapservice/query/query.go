@@ -43,6 +43,7 @@ var (
 	QueryTxOutArray       Query = Query{"txoutarray", "/%s/txoutarray/{%s}"}
 	QueryIncompleteEvents Query = Query{"incomplete_events", ""}
 	QueryCompleteEvents   Query = Query{"complete_events", "/%s/events/{%s}"}
+	QueryHeights          Query = Query{"heights", "/%s/lastblock"}
 )
 
 var Queries []Query = []Query{
@@ -59,4 +60,5 @@ var Queries []Query = []Query{
 	QueryTxOutArray,
 	QueryIncompleteEvents,
 	QueryCompleteEvents,
+	QueryHeights,
 }

@@ -65,6 +65,7 @@ type (
 	MsgSetAdminConfig = types.MsgSetAdminConfig
 	MsgEndPool        = types.MsgEndPool
 	QueryResPools     = types.QueryResPools
+	QueryResHeights   = types.QueryResHeights
 	TrustAccount      = types.TrustAccount
 	PoolStatus        = types.PoolStatus
 	PoolIndex         = types.PoolIndex

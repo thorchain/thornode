@@ -116,7 +116,7 @@ type Memo interface {
 	GetAdminType() adminType
 	GetKey() string
 	GetValue() string
-	GetBlockHeight() int64
+	GetBlockHeight() uint64
 }
 
 type MemoBase struct {
@@ -162,7 +162,7 @@ type AdminMemo struct {
 
 type OutboundMemo struct {
 	MemoBase
-	BlockHeight int64
+	BlockHeight uint64
 }
 
 func ParseMemo(memo string) (Memo, error) {
@@ -286,7 +286,7 @@ func ParseMemo(memo string) (Memo, error) {
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("Not enough parameters")
 		}
-		height, err := strconv.ParseInt(parts[1], 0, 64)
+		height, err := strconv.ParseUint(parts[1], 0, 64)
 		return OutboundMemo{
 			BlockHeight: height,
 		}, err
@@ -305,7 +305,7 @@ func (m MemoBase) GetSlipLimit() sdk.Uint            { return sdk.ZeroUint() }
 func (m MemoBase) GetAdminType() adminType           { return adminUnknown }
 func (m MemoBase) GetKey() string                    { return "" }
 func (m MemoBase) GetValue() string                  { return "" }
-func (m MemoBase) GetBlockHeight() int64             { return 0 }
+func (m MemoBase) GetBlockHeight() uint64            { return 0 }
 
 // Transaction Specific Functions
 func (m WithdrawMemo) GetAmount() string             { return m.Amount }
@@ -314,4 +314,4 @@ func (m SwapMemo) GetSlipLimit() sdk.Uint            { return m.SlipLimit }
 func (m AdminMemo) GetAdminType() adminType          { return m.Type }
 func (m AdminMemo) GetKey() string                   { return m.Key }
 func (m AdminMemo) GetValue() string                 { return m.Value }
-func (m OutboundMemo) GetBlockHeight() int64         { return m.BlockHeight }
+func (m OutboundMemo) GetBlockHeight() uint64        { return m.BlockHeight }

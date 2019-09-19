@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"errors"
+
 	"github.com/spf13/cobra"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -83,7 +85,17 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSetStakeData(ticker, sdk.NewUintFromString(args[1]), sdk.NewUintFromString(args[2]), bnbAddr, txID, cliCtx.GetFromAddress())
+			runes, err := sdk.ParseUint(args[1])
+			if err != nil {
+				return err
+			}
+
+			tokens, err := sdk.ParseUint(args[2])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetStakeData(ticker, runes, tokens, bnbAddr, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -133,10 +145,18 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 			}
 			price := sdk.ZeroUint()
 			if len(args) > 6 {
-				price = sdk.NewUintFromString(args[6])
+				price, err = sdk.ParseUint(args[6])
+				if err != nil {
+					return err
+				}
 			}
 
-			msg := types.NewMsgSwap(txID, source, target, sdk.NewUintFromString(args[3]), requester, destination, price, cliCtx.GetFromAddress())
+			amt, err := sdk.ParseUint(args[3])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSwap(txID, source, target, amt, requester, destination, price, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -171,7 +191,10 @@ func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 			}
 			withdrawBasisPoints := sdk.ZeroUint()
 			if len(args) > 3 {
-				withdrawBasisPoints = sdk.NewUintFromString(args[3])
+				withdrawBasisPoints, err = sdk.ParseUint(args[3])
+				if err != nil {
+					return err
+				}
 			}
 			if withdrawBasisPoints.IsZero() {
 				withdrawBasisPoints = sdk.NewUint(types.MaxWithdrawBasisPoints)
@@ -189,13 +212,14 @@ func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetTxIn command to send MsgSetTxIn Message from command line
 func GetCmdSetTxIn(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-txhash [requestTxHash] [coins] [memo] [sender]",
+		Use:   "set-txhash [requestTxHash] [height] [coins] [memo] [sender]",
 		Short: "add a tx hash",
-		Args:  cobra.ExactArgs(4),
+		Args:  cobra.ExactArgs(5),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			coins, err := sdk.ParseCoins(args[1])
+
+			coins, err := sdk.ParseCoins(args[2])
 			if err != nil {
 				return err
 			}
@@ -208,12 +232,20 @@ func GetCmdSetTxIn(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			bnbAddr, err := common.NewBnbAddress(args[3])
+			bnbAddr, err := common.NewBnbAddress(args[4])
 			if err != nil {
 				return err
 			}
 
-			tx := types.NewTxIn(stateCoins, args[2], bnbAddr)
+			height, err := sdk.ParseUint(args[1])
+			if err != nil {
+				return err
+			}
+			if height.IsZero() {
+				return errors.New("Binance chain block height cannot be zero")
+			}
+
+			tx := types.NewTxIn(stateCoins, args[2], bnbAddr, height)
 			voter := types.NewTxInVoter(txID, []types.TxIn{tx})
 			msg := types.NewMsgSetTxIn([]types.TxInVoter{voter}, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
