@@ -85,7 +85,17 @@ func GetCmdSetStakeData(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			msg := types.NewMsgSetStakeData(ticker, sdk.NewUintFromString(args[1]), sdk.NewUintFromString(args[2]), bnbAddr, txID, cliCtx.GetFromAddress())
+			runes, err := sdk.ParseUint(args[1])
+			if err != nil {
+				return err
+			}
+
+			tokens, err := sdk.ParseUint(args[2])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSetStakeData(ticker, runes, tokens, bnbAddr, txID, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -135,10 +145,18 @@ func GetCmdSwap(cdc *codec.Codec) *cobra.Command {
 			}
 			price := sdk.ZeroUint()
 			if len(args) > 6 {
-				price = sdk.NewUintFromString(args[6])
+				price, err = sdk.ParseUint(args[6])
+				if err != nil {
+					return err
+				}
 			}
 
-			msg := types.NewMsgSwap(txID, source, target, sdk.NewUintFromString(args[3]), requester, destination, price, cliCtx.GetFromAddress())
+			amt, err := sdk.ParseUint(args[3])
+			if err != nil {
+				return err
+			}
+
+			msg := types.NewMsgSwap(txID, source, target, amt, requester, destination, price, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
@@ -173,7 +191,10 @@ func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 			}
 			withdrawBasisPoints := sdk.ZeroUint()
 			if len(args) > 3 {
-				withdrawBasisPoints = sdk.NewUintFromString(args[3])
+				withdrawBasisPoints, err = sdk.ParseUint(args[3])
+				if err != nil {
+					return err
+				}
 			}
 			if withdrawBasisPoints.IsZero() {
 				withdrawBasisPoints = sdk.NewUint(types.MaxWithdrawBasisPoints)
@@ -216,7 +237,10 @@ func GetCmdSetTxIn(cdc *codec.Codec) *cobra.Command {
 				return err
 			}
 
-			height := sdk.NewUintFromString(args[1])
+			height, err := sdk.ParseUint(args[1])
+			if err != nil {
+				return err
+			}
 			if height.IsZero() {
 				return errors.New("Binance chain block height cannot be zero")
 			}
