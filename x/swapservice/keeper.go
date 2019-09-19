@@ -16,17 +16,19 @@ import (
 type dbPrefix string
 
 const (
-	prefixTxIn             dbPrefix = "tx_"
-	prefixPool             dbPrefix = "pool_"
-	prefixTxOut            dbPrefix = "txout_"
-	prefixTrustAccount     dbPrefix = "trustaccount_"
-	prefixPoolStaker       dbPrefix = "poolstaker_"
-	prefixStakerPool       dbPrefix = "stakerpool_"
-	prefixAdmin            dbPrefix = "admin_"
-	prefixTxInIndex        dbPrefix = "txinIndex_"
-	prefixInCompleteEvents dbPrefix = "incomplete_events"
-	prefixCompleteEvent    dbPrefix = "complete_event_"
-	prefixLastEventID      dbPrefix = "last_event_id"
+	prefixTxIn              dbPrefix = "tx_"
+	prefixPool              dbPrefix = "pool_"
+	prefixTxOut             dbPrefix = "txout_"
+	prefixTrustAccount      dbPrefix = "trustaccount_"
+	prefixPoolStaker        dbPrefix = "poolstaker_"
+	prefixStakerPool        dbPrefix = "stakerpool_"
+	prefixAdmin             dbPrefix = "admin_"
+	prefixTxInIndex         dbPrefix = "txinIndex_"
+	prefixInCompleteEvents  dbPrefix = "incomplete_events"
+	prefixCompleteEvent     dbPrefix = "complete_event_"
+	prefixLastEventID       dbPrefix = "last_event_id"
+	prefixLastBinanceHeight dbPrefix = "last_binance_height"
+	prefixLastSignedHeight  dbPrefix = "last_signed_height"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -51,6 +53,40 @@ func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
 
 func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", ModuleName))
+}
+
+func (k Keeper) SetLastSignedHeight(ctx sdk.Context, height sdk.Uint) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixLastSignedHeight, "")
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
+}
+
+func (k Keeper) GetLastSignedHeight(ctx sdk.Context) (height sdk.Uint) {
+	key := getKey(prefixLastSignedHeight, "")
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return sdk.ZeroUint()
+	}
+	bz := store.Get([]byte(key))
+	k.cdc.MustUnmarshalBinaryBare(bz, &height)
+	return
+}
+
+func (k Keeper) SetLastBinanceHeight(ctx sdk.Context, height sdk.Uint) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixLastBinanceHeight, "")
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
+}
+
+func (k Keeper) GetLastBinanceHeight(ctx sdk.Context) (height sdk.Uint) {
+	key := getKey(prefixLastBinanceHeight, "")
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return sdk.ZeroUint()
+	}
+	bz := store.Get([]byte(key))
+	k.cdc.MustUnmarshalBinaryBare(bz, &height)
+	return
 }
 
 // GetPool get the entire Pool metadata struct for a pool ID
@@ -295,8 +331,8 @@ func (k Keeper) CheckTxHash(ctx sdk.Context, hash common.TxID) bool {
 }
 
 // GetTxInIndex retrieve txIn by height
-func (k Keeper) GetTxInIndex(ctx sdk.Context, height int64) (TxInIndex, error) {
-	key := getKey(prefixTxInIndex, strconv.FormatInt(height, 10))
+func (k Keeper) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error) {
+	key := getKey(prefixTxInIndex, strconv.FormatUint(height, 10))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return TxInIndex{}, nil
@@ -311,14 +347,14 @@ func (k Keeper) GetTxInIndex(ctx sdk.Context, height int64) (TxInIndex, error) {
 }
 
 // SetTxInIndex write a TxIn index into datastore
-func (k Keeper) SetTxInIndex(ctx sdk.Context, height int64, index TxInIndex) {
-	key := getKey(prefixTxInIndex, strconv.FormatInt(height, 10))
+func (k Keeper) SetTxInIndex(ctx sdk.Context, height uint64, index TxInIndex) {
+	key := getKey(prefixTxInIndex, strconv.FormatUint(height, 10))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&index))
 }
 
 // AddToTxInIndex will add the given txIn into the index
-func (k Keeper) AddToTxInIndex(ctx sdk.Context, height int64, id common.TxID) error {
+func (k Keeper) AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) error {
 	index, err := k.GetTxInIndex(ctx, height)
 	if nil != err {
 		return err
@@ -337,14 +373,14 @@ func (k Keeper) AddToTxInIndex(ctx sdk.Context, height int64, id common.TxID) er
 // SetTxOut - write the given txout information to key values tore
 func (k Keeper) SetTxOut(ctx sdk.Context, blockOut *TxOut) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxOut, strconv.FormatInt(blockOut.Height, 10))
+	key := getKey(prefixTxOut, strconv.FormatUint(blockOut.Height, 10))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(blockOut))
 }
 
 // GetTxOut - write the given txout information to key values tore
-func (k Keeper) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
+func (k Keeper) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxOut, strconv.FormatInt(height, 10))
+	key := getKey(prefixTxOut, strconv.FormatUint(height, 10))
 	if !store.Has([]byte(key)) {
 		return NewTxOut(height), nil
 	}

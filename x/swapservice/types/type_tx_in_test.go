@@ -26,8 +26,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 
 	voter := NewTxInVoter(txID, nil)
 
-	txIn := NewTxIn(nil, "hello", bnb)
-	txIn2 := NewTxIn(nil, "goodbye", bnb)
+	txIn := NewTxIn(nil, "hello", bnb, sdk.ZeroUint())
+	txIn2 := NewTxIn(nil, "goodbye", bnb, sdk.ZeroUint())
 
 	voter.Adds([]TxIn{txIn}, acc1)
 	c.Assert(voter.Txs, HasLen, 1)
@@ -98,7 +98,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	}
 
 	for _, item := range inputs {
-		txIn := NewTxIn(item.coins, item.memo, item.sender)
+		txIn := NewTxIn(item.coins, item.memo, item.sender, sdk.ZeroUint())
 		c.Assert(txIn.Valid(), NotNil)
 	}
 }
@@ -129,28 +129,28 @@ func (TypeTxInSuite) TestTxInEquals(c *C) {
 		equal bool
 	}{
 		{
-			tx:    NewTxIn(coins1, "memo", bnb),
-			tx1:   NewTxIn(coins1, "memo1", bnb),
+			tx:    NewTxIn(coins1, "memo", bnb, sdk.ZeroUint()),
+			tx1:   NewTxIn(coins1, "memo1", bnb, sdk.ZeroUint()),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins1, "memo", bnb),
-			tx1:   NewTxIn(coins1, "memo", bnb1),
+			tx:    NewTxIn(coins1, "memo", bnb, sdk.ZeroUint()),
+			tx1:   NewTxIn(coins1, "memo", bnb1, sdk.ZeroUint()),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins2, "memo", bnb),
-			tx1:   NewTxIn(coins1, "memo", bnb),
+			tx:    NewTxIn(coins2, "memo", bnb, sdk.ZeroUint()),
+			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint()),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins3, "memo", bnb),
-			tx1:   NewTxIn(coins1, "memo", bnb),
+			tx:    NewTxIn(coins3, "memo", bnb, sdk.ZeroUint()),
+			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint()),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins4, "memo", bnb),
-			tx1:   NewTxIn(coins1, "memo", bnb),
+			tx:    NewTxIn(coins4, "memo", bnb, sdk.ZeroUint()),
+			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint()),
 			equal: false,
 		},
 	}
