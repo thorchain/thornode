@@ -375,7 +375,6 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAcc
 			toi.Coins = append(toi.Coins, c)
 		}
 	}
-
 	store.AddTxOutItem(toi)
 }
 
