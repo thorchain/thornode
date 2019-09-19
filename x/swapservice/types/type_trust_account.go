@@ -9,31 +9,33 @@ import (
 
 // TrustAccount represent those accounts we can trust, and can be used to sign tx
 type TrustAccount struct {
-	BepAddress sdk.AccAddress    `json:"bep_address"`
-	BnbAddress common.BnbAddress `json:"bnb_address"`
+	AdminAddress    common.BnbAddress `json:"admin_address"`
+	ObserverAddress sdk.AccAddress    `json:"observer_address"`
+	SignerAddress   common.BnbAddress `json:"signer_address"`
 }
 
 type TrustAccounts []TrustAccount
 
-func NewTrustAccount(address string, bnb common.BnbAddress) (TrustAccount, error) {
-	addr, err := sdk.AccAddressFromBech32(address)
+func NewTrustAccount(admin, signer common.BnbAddress, ob sdk.AccAddress) TrustAccount {
 	return TrustAccount{
-		BepAddress: addr,
-		BnbAddress: bnb,
-	}, err
+		AdminAddress:    admin,
+		SignerAddress:   signer,
+		ObserverAddress: ob,
+	}
 }
 
 // String implement fmt.Stringer interface
 func (ta TrustAccount) String() string {
 	sb := strings.Builder{}
-	sb.WriteString("address:" + ta.BepAddress.String())
-	sb.WriteString("BNB Address:" + ta.BnbAddress.String())
+	sb.WriteString("admin:" + ta.AdminAddress.String())
+	sb.WriteString("signer:" + ta.SignerAddress.String())
+	sb.WriteString("observer:" + ta.ObserverAddress.String())
 	return sb.String()
 }
 
 func (trusts TrustAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
 	for _, trust := range trusts {
-		if trust.BepAddress.Equals(addr) {
+		if trust.ObserverAddress.Equals(addr) {
 			return true
 		}
 	}
