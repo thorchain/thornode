@@ -33,6 +33,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdUnstake(cdc),
 		GetCmdSetTxIn(cdc),
 		GetCmdSetAdminConfig(cdc),
+		GetCmdSetTrustAccount(cdc),
 	)...)
 
 	return swapserviceTxCmd
@@ -275,6 +276,38 @@ func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
 			key := types.GetAdminConfigKey(args[0])
 
 			msg := types.NewMsgSetAdminConfig(key, args[1], bnb, cliCtx.GetFromAddress())
+			err = msg.ValidateBasic()
+			if err != nil {
+				return err
+			}
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
+}
+
+// GetCmdSetTrustAccount command to add a trust account
+func GetCmdSetTrustAccount(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "add-trust-account [admin_address] [signer_address]",
+		Short: "add trust account",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			admin, err := common.NewBnbAddress(args[0])
+			if err != nil {
+				return err
+			}
+
+			signer, err := common.NewBnbAddress(args[1])
+			if err != nil {
+				return err
+			}
+
+			trust := types.NewTrustAccount(admin, signer, cliCtx.GetFromAddress())
+
+			msg := types.NewMsgAddTrustAccount(trust, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err
