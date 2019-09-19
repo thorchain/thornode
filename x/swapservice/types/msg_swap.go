@@ -51,6 +51,9 @@ func (msg MsgSwap) ValidateBasic() sdk.Error {
 	if msg.TargetTicker.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Target cannot be empty")
 	}
+	if msg.SourceTicker.Equals(msg.TargetTicker) {
+		return sdk.ErrUnknownRequest("Swap Source and Target cannot be the same.")
+	}
 	if msg.Amount.IsZero() {
 		return sdk.ErrUnknownRequest("Swap Amount cannot be zero")
 	}
