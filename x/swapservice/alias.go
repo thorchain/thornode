@@ -67,6 +67,7 @@ type (
 	QueryResPools     = types.QueryResPools
 	QueryResHeights   = types.QueryResHeights
 	TrustAccount      = types.TrustAccount
+	TrustAccounts     = types.TrustAccounts
 	PoolStatus        = types.PoolStatus
 	PoolIndex         = types.PoolIndex
 	TxInIndex         = types.TxInIndex
