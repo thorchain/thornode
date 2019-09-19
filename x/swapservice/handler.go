@@ -370,8 +370,6 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore) {
 		c := getRefundCoin(ctx, item.Denom, item.Amount, keeper)
 		if c.Amount.GT(sdk.ZeroUint()) {
 			toi.Coins = append(toi.Coins, c)
-
-			store.AddTxOutItem(toi)
 		}
 	}
 
