@@ -364,6 +364,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore) {
 	toi := &TxOutItem{
 		ToAddress: tx.Sender,
+		Coins:     tx.Coins,
 	}
 
 	for _, item := range tx.Coins {
