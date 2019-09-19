@@ -275,8 +275,13 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 	toi := &TxOutItem{
 		ToAddress: msg.Destination,
 	}
+	ticker := msg.TargetTicker
+	if msg.SourceTicker.Equals(msg.TargetTicker) {
+		// only when source ticker and target ticker is the same , we will send Rune back
+		ticker = common.RuneTicker
+	}
 	toi.Coins = append(toi.Coins, common.Coin{
-		Denom:  msg.TargetTicker,
+		Denom:  ticker,
 		Amount: amount,
 	})
 	txOutStore.AddTxOutItem(toi)
