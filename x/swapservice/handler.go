@@ -412,7 +412,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 			}
 
 			// ignoring the error
-			_ = keeper.AddToTxInIndex(ctx, ctx.BlockHeight(), tx.TxID)
+			_ = keeper.AddToTxInIndex(ctx, uint64(ctx.BlockHeight()), tx.TxID)
 			handler(ctx, msg)
 		}
 	}
@@ -697,6 +697,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 	}
 	txOut.Hash = msg.TxID
 	keeper.SetTxOut(ctx, txOut)
+	keeper.SetLastSignedHeight(ctx, sdk.NewUint(msg.Height))
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,

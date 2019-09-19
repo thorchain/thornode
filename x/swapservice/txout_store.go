@@ -24,7 +24,7 @@ func NewTxOutStore(txOutSetter TxOutSetter) *TxOutStore {
 }
 
 // NewBlock create a new block
-func (tos *TxOutStore) NewBlock(height int64) {
+func (tos *TxOutStore) NewBlock(height uint64) {
 	tos.blockOut = NewTxOut(height)
 }
 

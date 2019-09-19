@@ -23,7 +23,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 
 	inputs := []struct {
 		txID   common.TxID
-		height int64
+		height uint64
 		sender common.BnbAddress
 		signer sdk.AccAddress
 	}{
@@ -35,7 +35,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 		},
 		{
 			txID:   txID,
-			height: -1,
+			height: 0,
 			sender: bnb,
 			signer: acc1,
 		},

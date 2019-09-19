@@ -19,7 +19,7 @@ func (MsgSetTxInSuite) TestMsgSetTxIn(c *C) {
 	c.Assert(err, IsNil)
 	txIn := NewTxIn(common.Coins{
 		common.NewCoin(common.RuneA1FTicker, sdk.NewUint(1)),
-	}, "hello", bnb)
+	}, "hello", bnb, sdk.ZeroUint())
 	txs := []TxInVoter{
 		NewTxInVoter(txID, []TxIn{txIn}),
 	}
@@ -39,7 +39,7 @@ func (MsgSetTxInSuite) TestMsgSetTxIn(c *C) {
 
 	m4 := NewMsgSetTxIn([]TxInVoter{
 		NewTxInVoter(txID, []TxIn{
-			NewTxIn(nil, "hello", bnb),
+			NewTxIn(nil, "hello", bnb, sdk.ZeroUint()),
 		}),
 	}, acc1)
 	c.Assert(m4.ValidateBasic(), NotNil)
