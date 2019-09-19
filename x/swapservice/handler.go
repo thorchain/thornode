@@ -385,14 +385,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 		}
 	}
 
-	var trustAccounts []TrustAccount
-	taIterator := keeper.GetTrustAccountIterator(ctx)
-	defer taIterator.Close()
-	for ; taIterator.Valid(); taIterator.Next() {
-		var ta TrustAccount
-		keeper.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
-		trustAccounts = append(trustAccounts, ta)
-	}
+	trustAccounts := keeper.ListActiveTrustAccounts(ctx)
 
 	handler := NewHandler(keeper, txOutStore)
 	for _, tx := range todo {

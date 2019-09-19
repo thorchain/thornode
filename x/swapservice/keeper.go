@@ -8,6 +8,7 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
 	"gitlab.com/thorchain/bepswap/common"
@@ -39,15 +40,17 @@ func getKey(prefix dbPrefix, key string) string {
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
-	storeKey sdk.StoreKey // Unexposed key to access store from sdk.Context
-	cdc      *codec.Codec // The wire codec for binary encoding/decoding.
+	coinKeeper bank.Keeper
+	storeKey   sdk.StoreKey // Unexposed key to access store from sdk.Context
+	cdc        *codec.Codec // The wire codec for binary encoding/decoding.
 }
 
 // NewKeeper creates new instances of the swapservice Keeper
-func NewKeeper(storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
+func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
 	return Keeper{
-		storeKey: storeKey,
-		cdc:      cdc,
+		coinKeeper: coinKeeper,
+		storeKey:   storeKey,
+		cdc:        cdc,
 	}
 }
 
@@ -262,7 +265,7 @@ func (k Keeper) TotalTrustAccounts(ctx sdk.Context) (count int) {
 }
 
 // ListTrustAccounts - gets a list of all trust accounts
-func (k Keeper) ListTrustAccounts(ctx sdk.Context) []TrustAccount {
+func (k Keeper) ListTrustAccounts(ctx sdk.Context) TrustAccounts {
 	var trustAccounts []TrustAccount
 	taIterator := k.GetTrustAccountIterator(ctx)
 	defer taIterator.Close()
@@ -272,6 +275,19 @@ func (k Keeper) ListTrustAccounts(ctx sdk.Context) []TrustAccount {
 		trustAccounts = append(trustAccounts, ta)
 	}
 	return trustAccounts
+}
+
+// ListActiveTrustAccounts - get a list of active trust accounts
+func (k Keeper) ListActiveTrustAccounts(ctx sdk.Context) TrustAccounts {
+	all := k.ListTrustAccounts(ctx)
+	trusts := make(TrustAccounts, 0)
+	coins, _ := sdk.ParseCoins("1stake")
+	for _, trust := range all {
+		if k.coinKeeper.HasCoins(ctx, trust.BepAddress, coins) {
+			trusts = append(trusts, trust)
+		}
+	}
+	return trusts
 }
 
 // IsTrustAccount check whether the account is trust , and can send tx
