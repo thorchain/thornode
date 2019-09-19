@@ -55,6 +55,16 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
+			source:        common.BNBTicker,
+			target:        common.BNBTicker,
+			amount:        sdk.NewUint(100000000),
+			requester:     bnbAddress,
+			destination:   bnbAddress,
+			targetPrice:   sdk.NewUint(200000000),
+			signer:        addr,
+		},
+		{
+			requestTxHash: txID,
 			source:        common.RuneA1FTicker,
 			target:        common.Ticker(""),
 			amount:        sdk.NewUint(100000000),
