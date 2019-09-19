@@ -20,7 +20,7 @@ type StakeTxDetail struct {
 // StakerPoolItem represent the staker's activity in a pool
 // Staker can stake on multiple pool
 type StakerPoolItem struct {
-	Ticker       common.Ticker   `json:"ticker"`
+	Ticker       common.Ticker   `json:"symbol"`
 	Units        sdk.Uint        `json:"units"`
 	StakeDetails []StakeTxDetail `json:"stake_details"`
 }
@@ -33,7 +33,7 @@ type StakerPoolItem struct {
 //    "staker_id": "bnbxasdfaswqerqwe",
 //    "pool_and_units": [
 //        {
-//            "ticker": "BNB",
+//            "symbol": "BNB",
 //            "units": "200",
 //            "stake_details": [
 //                {
@@ -49,7 +49,7 @@ type StakerPoolItem struct {
 //            ]
 //        },
 //        {
-//            "ticker": "BTC",
+//            "symbol": "BTC",
 //            "units": "200",
 //            "stake_details": [
 //                {

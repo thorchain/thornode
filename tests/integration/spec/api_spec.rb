@@ -86,7 +86,7 @@ describe "API Tests" do
 
     it "should be able to get the pool" do
       resp = get("/pool/TCAN-014")
-      expect(resp.body['ticker']).to eq("TCAN-014"), resp.body.inspect
+      expect(resp.body['symbol']).to eq("TCAN-014"), resp.body.inspect
       expect(resp.body['status']).to eq("Bootstrap"), resp.body.inspect
     end
 
@@ -118,7 +118,7 @@ describe "API Tests" do
 
     it "should show up in listing of pools" do
       resp = get("/pools")
-      expect(resp.body[1]['ticker']).to eq("TCAN-014"), resp.body.inspect
+      expect(resp.body[1]['symbol']).to eq("TCAN-014"), resp.body.inspect
     end
 
   end

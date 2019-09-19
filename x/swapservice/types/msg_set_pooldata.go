@@ -11,7 +11,7 @@ import (
 type MsgSetPoolData struct {
 	BalanceRune  sdk.Uint       `json:"balance_rune"`  // balance rune
 	BalanceToken sdk.Uint       `json:"balance_token"` // balance of token
-	Ticker       common.Ticker  `json:"ticker"`        // Ticker means the token symbol
+	Ticker       common.Ticker  `json:"symbol"`        // Ticker means the token symbol
 	Status       PoolStatus     `json:"status"`        // pool status
 	Signer       sdk.AccAddress `json:"signer"`
 }
