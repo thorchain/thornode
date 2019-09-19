@@ -367,14 +367,10 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAccessor) {
 	toi := &TxOutItem{
 		PoolAddress: tx.ObservePoolAddress,
+		ToAddress:   tx.Sender,
+		Coins:       tx.Coins,
 	}
 
-	for _, item := range tx.Coins {
-		c := getRefundCoin(ctx, item.Denom, item.Amount, keeper)
-		if c.Amount.GT(sdk.ZeroUint()) {
-			toi.Coins = append(toi.Coins, c)
-		}
-	}
 	store.AddTxOutItem(toi)
 }
 
