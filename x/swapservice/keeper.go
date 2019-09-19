@@ -255,8 +255,8 @@ func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr common.BnbAddress) bool 
 	for ; taIterator.Valid(); taIterator.Next() {
 		var ta TrustAccount
 		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
-		ctx.Logger().Info("IsTrustAccountBnb", "bnb1", addr.String(), "bnb2", ta.BnbAddress)
-		if ta.BnbAddress.Equals(addr) {
+		ctx.Logger().Info("IsTrustAccountBnb", "bnb1", addr.String(), "bnb2", ta.AdminAddress)
+		if ta.AdminAddress.Equals(addr) {
 			return true
 		}
 	}
@@ -268,7 +268,7 @@ func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr common.BnbAddress) bool 
 func (k Keeper) SetTrustAccount(ctx sdk.Context, ta TrustAccount) {
 	ctx.Logger().Debug("SetTrustAccount", "trust account", ta.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTrustAccount, ta.BepAddress.String())
+	key := getKey(prefixTrustAccount, ta.ObserverAddress.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ta))
 }
 
