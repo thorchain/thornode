@@ -88,3 +88,6 @@ swap: tools
 
 sweep: tools
 	@sweep -m ${MASTER_KEY} -k ${KEY_LIST}
+
+export:
+	ssd export
