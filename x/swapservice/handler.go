@@ -385,22 +385,30 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 		}
 	}
 
-	totalTrusted := keeper.TotalTrustAccounts(ctx)
+	var trustAccounts []TrustAccount
+	taIterator := keeper.GetTrustAccountIterator(ctx)
+	defer taIterator.Close()
+	for ; taIterator.Valid(); taIterator.Next() {
+		var ta TrustAccount
+		keeper.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
+		trustAccounts = append(trustAccounts, ta)
+	}
+
 	handler := NewHandler(keeper, txOutStore)
 	for _, tx := range todo {
 		voter := keeper.GetTxInVoter(ctx, tx.TxID)
-		preConsensus := voter.HasConensus(totalTrusted)
+		preConsensus := voter.HasConensus(trustAccounts)
 		voter.Adds(tx.Txs, msg.Signer)
-		postConsensus := voter.HasConensus(totalTrusted)
+		postConsensus := voter.HasConensus(trustAccounts)
 		keeper.SetTxInVoter(ctx, voter)
 
 		if preConsensus == false && postConsensus == true && !voter.IsProcessed {
 			voter.IsProcessed = true
 			keeper.SetTxInVoter(ctx, voter)
-			msg, err := processOneTxIn(ctx, keeper, tx.TxID, voter.GetTx(totalTrusted), msg.Signer)
+			msg, err := processOneTxIn(ctx, keeper, tx.TxID, voter.GetTx(trustAccounts), msg.Signer)
 			if nil != err {
 				ctx.Logger().Error("fail to process txHash", "error", err)
-				refundTx(ctx, voter.GetTx(totalTrusted), txOutStore, keeper)
+				refundTx(ctx, voter.GetTx(trustAccounts), txOutStore, keeper)
 				ee := NewEmptyRefundEvent()
 				buf, err := json.Marshal(ee)
 				if nil != err {

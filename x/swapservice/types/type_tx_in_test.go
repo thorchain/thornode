@@ -23,6 +23,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	c.Assert(err, IsNil)
 	acc3, err := sdk.AccAddressFromBech32("bep1lkasqgxc3k65fqqw9zeurxwxmayfjej3ygwpzl")
 	c.Assert(err, IsNil)
+	acc4, err := sdk.AccAddressFromBech32("bep1gnaghgzcpd73hcxeturml96maa0fajg9zrtrez")
+	c.Assert(err, IsNil)
 
 	voter := NewTxInVoter(txID, nil)
 
@@ -49,12 +51,24 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	c.Assert(voter.Txs[0].Signers, HasLen, 2)
 	c.Assert(voter.Txs[1].Signers, HasLen, 1)
 
-	tx := voter.GetTx(3)
+	trusts3 := TrustAccounts{
+		TrustAccount{ObserverAddress: acc1},
+		TrustAccount{ObserverAddress: acc2},
+		TrustAccount{ObserverAddress: acc3},
+	}
+	trusts4 := TrustAccounts{
+		TrustAccount{ObserverAddress: acc1},
+		TrustAccount{ObserverAddress: acc2},
+		TrustAccount{ObserverAddress: acc3},
+		TrustAccount{ObserverAddress: acc4},
+	}
+
+	tx := voter.GetTx(trusts3)
 	c.Check(tx.Memo, Equals, "hello")
-	tx = voter.GetTx(4)
+	tx = voter.GetTx(trusts4)
 	c.Check(tx.Empty(), Equals, true)
-	c.Check(voter.HasConensus(3), Equals, true)
-	c.Check(voter.HasConensus(4), Equals, false)
+	c.Check(voter.HasConensus(trusts3), Equals, true)
+	c.Check(voter.HasConensus(trusts4), Equals, false)
 	c.Check(voter.Key().Equals(txID), Equals, true)
 	c.Check(voter.String() == txID.String(), Equals, true)
 	voter.SetDone(txID2)

@@ -261,6 +261,19 @@ func (k Keeper) TotalTrustAccounts(ctx sdk.Context) (count int) {
 	return
 }
 
+// ListTrustAccounts - gets a list of all trust accounts
+func (k Keeper) ListTrustAccounts(ctx sdk.Context) []TrustAccount {
+	var trustAccounts []TrustAccount
+	taIterator := k.GetTrustAccountIterator(ctx)
+	defer taIterator.Close()
+	for ; taIterator.Valid(); taIterator.Next() {
+		var ta TrustAccount
+		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
+		trustAccounts = append(trustAccounts, ta)
+	}
+	return trustAccounts
+}
+
 // IsTrustAccount check whether the account is trust , and can send tx
 func (k Keeper) IsTrustAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
 	ctx.Logger().Debug("IsTrustAccount", "account address", addr.String())
@@ -278,8 +291,8 @@ func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr common.BnbAddress) bool 
 	for ; taIterator.Valid(); taIterator.Next() {
 		var ta TrustAccount
 		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
-		ctx.Logger().Info("IsTrustAccountBnb", "bnb1", addr.String(), "bnb2", ta.BnbAddress)
-		if ta.BnbAddress.Equals(addr) {
+		ctx.Logger().Info("IsTrustAccountBnb", "bnb1", addr.String(), "bnb2", ta.AdminAddress)
+		if ta.AdminAddress.Equals(addr) {
 			return true
 		}
 	}
@@ -291,7 +304,7 @@ func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr common.BnbAddress) bool 
 func (k Keeper) SetTrustAccount(ctx sdk.Context, ta TrustAccount) {
 	ctx.Logger().Debug("SetTrustAccount", "trust account", ta.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTrustAccount, ta.RuneAddress.String())
+	key := getKey(prefixTrustAccount, ta.ObserverAddress.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ta))
 }
 

@@ -147,8 +147,8 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		return nil, sdk.ErrInternal("fail to parse tx id")
 	}
 	voter := keeper.GetTxInVoter(ctx, hash)
-	totalTrusted := keeper.TotalTrustAccounts(ctx)
-	res, err := codec.MarshalJSONIndent(keeper.cdc, voter.GetTx(totalTrusted))
+	trustAccounts := keeper.ListTrustAccounts(ctx)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, voter.GetTx(trustAccounts))
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")
