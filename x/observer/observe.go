@@ -1,9 +1,11 @@
 package observer
 
 import (
+	"strconv"
 	"sync"
 	"time"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -210,11 +212,17 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 			o.errCounter.WithLabelValues("fail_to_parse_sender", item.Sender).Inc()
 			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
 		}
+		h, err := strconv.ParseUint(txIn.BlockHeight, 10, 64)
+		if nil != err {
+			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
+			return nil, errors.Wrapf(err, "fail to parse block height")
+		}
 		txs[i] = stypes.NewTxInVoter(txID, []stypes.TxIn{
 			stypes.NewTxIn(
 				item.Coins,
 				item.Memo,
-				bnbAddr),
+				bnbAddr,
+				sdk.NewUint(h)),
 		})
 	}
 	return txs, nil
