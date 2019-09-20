@@ -23,7 +23,7 @@ while true; do
   ssd collect-gentxs
 
   # add jack as a trusted account
-  cat ~/.ssd/config/genesis.json | jq ".app_state.swapservice.trust_accounts[0] = {\"name\":\"Jack\", \"bnb_address\": \"bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY\", \"rune_address\": \"$(sscli keys show jack -a)\"}" > /tmp/genesis.json
+  cat ~/.ssd/config/genesis.json | jq ".app_state.swapservice.trust_accounts[0] = {\"signer_address\": \"bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY\", \"admin_address\": \"bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY\", \"observer_address\": \"$(sscli keys show jack -a)\"}" > /tmp/genesis.json
   mv /tmp/genesis.json ~/.ssd/config/genesis.json
 
   ssd validate-genesis
