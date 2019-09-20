@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+  statechainnode0:
+    container_name: statechainnode0
+    image: thorchain/statechainnode
+    environment:
+      - POOL_ADDRESS="tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj"
+      - SIGNER_PASSWD="welcome@1"
+      - TRUSTED_BNB_ADDRESS="tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"
+      - NODE_ID=zero
+      - SS_HOME=/statechain/zero/ssd
+      - SSC_HOME=/statechain/zero/sscli
+    volumes:
+      - ./build:/statechain
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.2
+
+  statechainnode1:
+    container_name: statechainnode1
+    image: thorchain/statechainnode
+    ports:
+      - "26659-26660:26656-26657"
+    environment:
+      - POOL_ADDRESS="tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj"
+      - SIGNER_PASSWD="welcome@1"
+      - TRUSTED_BNB_ADDRESS="tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"
+      - NODE_ID=zero
+      - SS_HOME=/statechain/first/ssd
+      - SSC_HOME=/statechain/first/sscli
+    volumes:
+      - ./build:/statechain
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.3
+
+networks:
+  localnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 192.168.10.0/16
