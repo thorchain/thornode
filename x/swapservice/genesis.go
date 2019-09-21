@@ -107,7 +107,9 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		keeper.SetPool(ctx, record)
 	}
 
-	keeper.SetPoolIndex(ctx, data.PoolIndex)
+	if data.PoolIndex != nil {
+		keeper.SetPoolIndex(ctx, data.PoolIndex)
+	}
 
 	for _, stake := range data.PoolStakers {
 		keeper.SetPoolStaker(ctx, stake.Ticker, stake)
