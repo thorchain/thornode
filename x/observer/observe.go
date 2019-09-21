@@ -24,7 +24,6 @@ import (
 type Observer struct {
 	cfg              config.Configuration
 	logger           zerolog.Logger
-	WebSocket        *WebSocket
 	blockScanner     *BinanceBlockScanner
 	storage          TxInStorage
 	stopChan         chan struct{}
@@ -36,10 +35,6 @@ type Observer struct {
 
 // NewObserver create a new instance of Observer
 func NewObserver(cfg config.Configuration) (*Observer, error) {
-	webSocket, err := NewWebSocket(cfg)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create web socket instance")
-	}
 	scanStorage, err := NewBinanceChanBlockScannerStorage(cfg.ObserverDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create scan storage")
@@ -60,7 +55,6 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	return &Observer{
 		cfg:              cfg,
 		logger:           log.Logger.With().Str("module", "observer").Logger(),
-		WebSocket:        webSocket,
 		blockScanner:     blockScanner,
 		wg:               &sync.WaitGroup{},
 		stopChan:         make(chan struct{}),
@@ -72,26 +66,18 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 }
 
 func (o *Observer) Start(websocket bool) error {
+	if err := o.stateChainBridge.Start(); nil != err {
+		o.logger.Error().Err(err).Msg("fail to start statechain bridge")
+	}
 	if err := o.m.Start(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to start metric collector")
 	}
-	if websocket {
-		for idx := 1; idx <= o.cfg.MessageProcessor; idx++ {
-			o.wg.Add(1)
-			go o.txinsProcessor(o.WebSocket.GetMessages(), idx)
-		}
-	}
-	for idx := o.cfg.MessageProcessor; idx <= o.cfg.MessageProcessor*2; idx++ {
-		o.wg.Add(1)
-		go o.txinsProcessor(o.blockScanner.GetMessages(), idx)
-	}
+	o.wg.Add(1)
+	go o.txinsProcessor(o.blockScanner.GetMessages(), 1)
 	o.retryAllTx()
 	o.wg.Add(1)
 	go o.retryTxProcessor()
 	o.blockScanner.Start()
-	if websocket {
-		return o.WebSocket.Start()
-	}
 	return nil
 }
 
@@ -232,9 +218,7 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 func (o *Observer) Stop() error {
 	o.logger.Debug().Msg("request to stop observer")
 	defer o.logger.Debug().Msg("observer stopped")
-	if err := o.WebSocket.Stop(); nil != err {
-		o.logger.Error().Err(err).Msg("fail to stop websocket")
-	}
+
 	if err := o.blockScanner.Stop(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to close block scanner")
 	}
