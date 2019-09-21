@@ -289,7 +289,7 @@ func (k Keeper) ListActiveTrustAccounts(ctx sdk.Context) TrustAccounts {
 	counter := make(map[string]int)
 	var total int
 	for _, trust := range all {
-		minCoins := k.GetAdminConfigMinStakerCoins(ctx, common.BnbAddress(trust.AdminAddress))
+		minCoins := k.GetAdminConfigMinStakerCoins(ctx, trust.AdminAddress)
 		if k.coinKeeper.HasCoins(ctx, trust.ObserverAddress, minCoins) {
 			counter[minCoins.String()] += 1
 			total += 1
