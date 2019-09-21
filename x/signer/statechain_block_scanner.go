@@ -66,10 +66,10 @@ func (b *StateChainBlockScan) GetMessages() <-chan stypes.TxOut {
 
 // Start to scan blocks
 func (b *StateChainBlockScan) Start() error {
-	for idx := 1; idx < b.cfg.BlockScanProcessors; idx++ {
-		b.wg.Add(1)
-		go b.processBlocks(idx)
-	}
+	//for idx := 1; idx < b.cfg.BlockScanProcessors; idx++ {
+	b.wg.Add(1)
+	go b.processBlocks(1)
+	//}
 	b.commonBlockScanner.Start()
 	return nil
 }
