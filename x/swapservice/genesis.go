@@ -11,7 +11,7 @@ import (
 )
 
 type txIndex struct {
-	Height int64     `json:"height"`
+	Height uint64    `json:"height"`
 	Index  TxInIndex `json:"index"`
 }
 
@@ -215,7 +215,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var index txIndex
-		index.Height, _ = strconv.ParseInt(
+		index.Height, _ = strconv.ParseUint(
 			strings.TrimLeft(string(iterator.Key()), string(prefixTxInIndex)),
 			10,
 			64,
