@@ -534,14 +534,12 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb co
 	// no specific bnb address given, look for consensus value
 	if bnb.IsEmpty() {
 		trustAccounts := k.ListActiveTrustAccounts(ctx)
-		fmt.Printf("Trusts: %+v\n", trustAccounts)
 		counter := make(map[string]int)
 		for _, trust := range trustAccounts {
 			config, err := getConfigValue(trust.AdminAddress)
 			if err != nil {
 				return "", err
 			}
-			fmt.Printf("Config: %s %s\n", config, trust.AdminAddress.String())
 			counter[config] += 1
 		}
 
