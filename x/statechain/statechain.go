@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os/user"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -36,13 +37,15 @@ const (
 
 // StateChainBridge will be used to send tx to statechain
 type StateChainBridge struct {
-	logger     zerolog.Logger
-	cdc        *codec.Codec
-	cfg        config.StateChainConfiguration
-	signerInfo ckeys.Info
-	kb         ckeys.Keybase
-	errCounter *prometheus.CounterVec
-	m          *metrics.Metrics
+	logger        zerolog.Logger
+	cdc           *codec.Codec
+	cfg           config.StateChainConfiguration
+	signerInfo    ckeys.Info
+	kb            ckeys.Keybase
+	errCounter    *prometheus.CounterVec
+	m             *metrics.Metrics
+	accountNumber uint64
+	seqNumber     uint64
 }
 
 // NewStateChainBridge create a new instance of StateChainBridge
@@ -99,6 +102,17 @@ func getKeybase(stateChainHome, signerName string) (ckeys.Keybase, error) {
 	}
 	return keys.NewKeyBaseFromDir(cliDir)
 }
+func (scb *StateChainBridge) Start() error {
+	accountNumber, sequenceNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
+	if nil != err {
+		return errors.Wrap(err, "fail to get account number and sequence number from statechain ")
+	}
+	scb.logger.Info().Uint64("account number", accountNumber).Uint64("sequence no", sequenceNumber).Msg("account information")
+	scb.accountNumber = accountNumber
+	scb.seqNumber = sequenceNumber
+	return nil
+}
+
 func (scb *StateChainBridge) getAccountInfoUrl(chainHost string) string {
 	uri := url.URL{
 		Scheme: "http",
@@ -161,16 +175,17 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 		"",                                  // memo
 	)
 
-	accNumber, seqNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
-	if nil != err {
-		scb.errCounter.WithLabelValues("fail_get_account_seq_no", "").Inc()
-		return nil, errors.Wrap(err, "fail to get account number and sequence number from statechain")
-	}
-	scb.logger.Debug().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", accNumber).Uint64("sequenceNo", seqNumber).Msg("info")
+	//accNumber, seqNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
+	//if nil != err {
+	//	scb.errCounter.WithLabelValues("fail_get_account_seq_no", "").Inc()
+	//	return nil, errors.Wrap(err, "fail to get account number and sequence number from statechain")
+	//}
+
+	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", scb.accountNumber).Uint64("sequenceNo", scb.seqNumber).Msg("info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
-		AccountNumber: accNumber,
-		Sequence:      seqNumber,
+		AccountNumber: scb.accountNumber,
+		Sequence:      scb.seqNumber,
 		Fee:           stdTx.Fee,
 		Msgs:          stdTx.GetMsgs(),
 		Memo:          stdTx.GetMemo(),
@@ -187,6 +202,8 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 		[]authtypes.StdSignature{sig},
 		stdTx.GetMemo(),
 	)
+	nextSeq := atomic.AddUint64(&scb.seqNumber, 1)
+	scb.logger.Info().Uint64("sequence no", nextSeq).Msg("next sequence no")
 	scb.m.GetCounter(metrics.TxToStateChainSigned).Inc()
 	return &signedStdTx, nil
 }
@@ -217,7 +234,7 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 		Host:   scb.cfg.ChainHost,
 		Path:   "/txs",
 	}
-	scb.logger.Debug().Str("payload", string(result)).Msg("post to statechain")
+	scb.logger.Info().Str("payload", string(result)).Msg("post to statechain")
 
 	resp, err := retryablehttp.Post(uri.String(), "application/json", bytes.NewBuffer(result))
 	if err != nil {
