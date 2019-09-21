@@ -281,10 +281,32 @@ func (k Keeper) ListTrustAccounts(ctx sdk.Context) TrustAccounts {
 func (k Keeper) ListActiveTrustAccounts(ctx sdk.Context) TrustAccounts {
 	all := k.ListTrustAccounts(ctx)
 	trusts := make(TrustAccounts, 0)
-	minCoins := k.GetAdminConfigMinStakerCoins(ctx, common.BnbAddress(""))
+
+	// Count the votes for min coins needed to be an active trusted account
+	// We ignore any vote that is more coins than they themselves have. This
+	// ensures that we can never kick out all validators with a super high
+	// number, and that validators who are not active, still cannot vote
+	counter := make(map[string]int)
+	var total int
 	for _, trust := range all {
+		minCoins := k.GetAdminConfigMinStakerCoins(ctx, common.BnbAddress(trust.AdminAddress))
 		if k.coinKeeper.HasCoins(ctx, trust.ObserverAddress, minCoins) {
-			trusts = append(trusts, trust)
+			counter[minCoins.String()] += 1
+			total += 1
+		}
+	}
+
+	// discover the majority min coins vote, and add any trust accounts that
+	// meet that requirement to trusts
+	for min, count := range counter {
+		if HasMajority(count, total) {
+			minCoins, _ := sdk.ParseCoins(min)
+			for _, trust := range all {
+				if k.coinKeeper.HasCoins(ctx, trust.ObserverAddress, minCoins) {
+					trusts = append(trusts, trust)
+				}
+			}
+			break
 		}
 	}
 	return trusts
