@@ -4,6 +4,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -60,10 +61,10 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 }
 
 func (s *Signer) Start() error {
-	for idx := 1; idx <= s.cfg.MessageProcessor; idx++ {
-		s.wg.Add(1)
-		go s.processTxnOut(s.stateChainBlockScanner.GetMessages(), idx)
-	}
+	//for idx := 1; idx <= s.cfg.MessageProcessor; idx++ {
+	s.wg.Add(1)
+	go s.processTxnOut(s.stateChainBlockScanner.GetMessages(), 1)
+	//}
 	if err := s.retryAll(); nil != err {
 		return errors.Wrap(err, "fail to retry txouts")
 	}
@@ -152,7 +153,7 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 				// raise alert
 				return
 			}
-			if err := s.signAndSendToBinanceChain(txOut); nil != err {
+			if err := s.signAndSendToBinanceChainWithRetry(txOut); nil != err {
 				s.errCounter.WithLabelValues("fail_sign_send_to_binance", txOut.Height).Inc()
 				s.logger.Error().Err(err).Msg("fail to send txout to binance chain, will retry later")
 				if err := s.storage.SetTxOutStatus(txOut, Failed); nil != err {
@@ -170,6 +171,35 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 
 	}
 }
+
+// signAndSendToBinanceChainWithRetry retry a few times before we move on to he next block
+func (s *Signer) signAndSendToBinanceChainWithRetry(txOut types.TxOut) error {
+	bf := backoff.NewExponentialBackOff()
+	try := 1
+	for {
+		select {
+		case <-s.stopChan:
+			return errors.New("stop signal received")
+		default:
+			err := s.signAndSendToBinanceChain(txOut)
+			if nil == err {
+				return nil
+			}
+			s.logger.Error().Err(err).Int("try", try).Msg("fail to send to binance chain")
+			interval := bf.NextBackOff()
+			if interval == backoff.Stop {
+				return errors.Wrapf(err, "fail to send to binance chain after retry %d", try)
+			}
+
+			if try == 3 {
+				return errors.Wrapf(err, "fail to send to binance chain after retry %d", try)
+			}
+			try++
+			time.Sleep(interval)
+		}
+	}
+}
+
 func (s *Signer) signAndSendToBinanceChain(txOut types.TxOut) error {
 	start := time.Now()
 	defer func() {

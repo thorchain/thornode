@@ -34,7 +34,7 @@ var _ = Suite(&StatechainSuite{})
 func (*StatechainSuite) SetUpSuite(c *C) {
 	cfg2 := sdk.GetConfig()
 	cfg2.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-	cfg2.Seal()
+
 }
 
 func setupStateChainForTest(c *C) (config.StateChainConfiguration, cKeys.Info, func()) {
@@ -104,6 +104,8 @@ func (s StatechainSuite) TestSign(c *C) {
 	bridge, err := NewStateChainBridge(cfg, getMetricForTest(c))
 	c.Assert(err, IsNil)
 	c.Assert(bridge, NotNil)
+	err = bridge.Start()
+	c.Assert(err, IsNil)
 	signedMsg, err := bridge.Sign([]stypes.TxInVoter{tx})
 	c.Log(err)
 	c.Assert(signedMsg, NotNil)
@@ -190,6 +192,7 @@ func (StatechainSuite) TestNewStateChainBridge(c *C) {
 	testFunc(cfg, IsNil, NotNil)
 	defer cleanup()
 }
+
 func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 	testfunc := func(handleFunc http.HandlerFunc, expectedAccNum uint64, expectedSeq uint64, errChecker Checker) {
 		cfg, keyInfo, cleanup := setupStateChainForTest(c)
@@ -330,11 +333,12 @@ func (StatechainSuite) TestSignEx(c *C) {
 		scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
+		err = scb.Start()
+		c.Assert(err, IsNil)
 		stx, err := scb.Sign(in)
 		c.Assert(stx, resultChecker)
 		c.Assert(err, errChecker)
 	}
-	testFunc(nil, nil, IsNil, NotNil)
 	testBNBAddress, err := common.NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqx")
 	if nil != err {
 		c.Error(err)
@@ -353,8 +357,43 @@ func (StatechainSuite) TestSignEx(c *C) {
 			},
 		},
 	}, func(writer http.ResponseWriter, request *http.Request) {
+		fmt.Printf("RequestURL:%s", request.RequestURI)
+		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
+			n, err := writer.Write([]byte(`{
+				"height":"78",
+					"result":{
+					"type": "cosmos-sdk/Account",
+						"value": {
+						"address": "bep192s6yjpffxuarphtppj8x8gdk5yhryk8uk0kk4",
+							"coins": [
+						{
+							"denom": "bnb",
+							"amount": "1000"
+						},
+						{
+							"denom": "btc",
+							"amount": "1000"
+						},
+						{
+							"denom": "runed",
+							"amount": "1000"
+						}
+		],
+			"public_key": {
+			"type": "tendermint/PubKeySecp256k1",
+			"value": "Awt+sP60ISUqARl9Ff0XvGzNYZFFmayas4L3HJz64f+4"
+			},
+			"account_number": "0",
+			"sequence": "2"
+			}
+		}}
+			`))
+			c.Assert(n > 0, Equals, true)
+			c.Assert(err, IsNil)
+			return
+		}
 		writer.WriteHeader(http.StatusInternalServerError)
-	}, IsNil, NotNil)
+	}, NotNil, IsNil)
 }
 
 func (StatechainSuite) TestSendEx(c *C) {
@@ -369,6 +408,10 @@ func (StatechainSuite) TestSendEx(c *C) {
 		scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
+		err = scb.Start()
+		c.Assert(err, IsNil)
+		c.Assert(scb.seqNumber, Equals, uint64(6))
+		c.Assert(scb.accountNumber, Equals, uint64(5))
 		stx, err := scb.Sign(in)
 		c.Assert(stx, NotNil)
 		c.Assert(err, IsNil)
