@@ -281,7 +281,7 @@ func (k Keeper) ListTrustAccounts(ctx sdk.Context) TrustAccounts {
 func (k Keeper) ListActiveTrustAccounts(ctx sdk.Context) TrustAccounts {
 	all := k.ListTrustAccounts(ctx)
 	trusts := make(TrustAccounts, 0)
-	coins, _ := sdk.ParseCoins("1stake")
+	coins, _ := sdk.ParseCoins("1bep")
 	for _, trust := range all {
 		if k.coinKeeper.HasCoins(ctx, trust.ObserverAddress, coins) {
 			trusts = append(trusts, trust)
@@ -430,22 +430,22 @@ func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
 
 // GetAdminConfigGSL - get the config for GSL
 func (k Keeper) GetAdminConfigGSL(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, GSLKey, "0.3", bnb)
+	return k.GetAdminConfigAmountType(ctx, GSLKey, common.Amount(GSLKey.Default()), bnb)
 }
 
 // GetAdminConfigTSL - get the config for TSL
 func (k Keeper) GetAdminConfigTSL(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, TSLKey, "0.1", bnb)
+	return k.GetAdminConfigAmountType(ctx, TSLKey, common.Amount(TSLKey.Default()), bnb)
 }
 
 // GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
 func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, "100", bnb)
+	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, common.Amount(StakerAmtIntervalKey.Default()), bnb)
 }
 
 // GetAdminConfigPoolAddress - get the config for PoolAddress
 func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context, bnb common.BnbAddress) common.BnbAddress {
-	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, "", bnb)
+	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, common.BnbAddress(PoolAddressKey.Default()), bnb)
 }
 
 // GetAdminConfigPoolExpiry get the config for pool address expiry
@@ -465,7 +465,8 @@ func (k Keeper) GetAdminConfigPoolExpiry(ctx sdk.Context, bnb common.BnbAddress)
 
 // GetAdminConfigMRRA get the config for minimum refund rune amount default to 1 rune
 func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) sdk.Uint {
-	return k.GetAdminConfigUintType(ctx, MRRAKey, sdk.NewUint(common.One), bnb)
+	defaultVal, _ := sdk.ParseUint(MRRAKey.Default())
+	return k.GetAdminConfigUintType(ctx, MRRAKey, defaultVal, bnb)
 }
 
 // GetAdminConfigBnbAddressType - get the config for TSL
@@ -499,11 +500,9 @@ func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dV
 }
 
 // GetAdminConfigValue - gets the value of a given admin key
-func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb common.BnbAddress) (string, error) {
+func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb common.BnbAddress) (val string, err error) {
 
-	// If we have a BNB address, lookup the admin configuration for that
-	// individual
-	if !bnb.IsEmpty() {
+	getConfigValue := func(bnb common.BnbAddress) (string, error) {
 		config := NewAdminConfig(kkey, "", bnb)
 		key := getKey(prefixAdmin, config.DbKey())
 		store := ctx.KVStore(k.storeKey)
@@ -518,39 +517,38 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb co
 		return config.Value, nil
 	}
 
-	// We don't have a bnb address, find the majority vote for admin config value
-	counter := make(map[string]int)
-	configIterator := k.GetAdminConfigIterator(ctx)
-	defer configIterator.Close()
-	for ; configIterator.Valid(); configIterator.Next() {
-		var config AdminConfig
-		k.cdc.MustUnmarshalBinaryBare(configIterator.Value(), &config)
-		// check that its the key we are asking for and the bnbAddress is a
-		// trust account
-		if kkey == config.Key && k.IsTrustAccountBnb(ctx, config.Address) {
-			counter[config.Value] += 1
+	// no specific bnb address given, look for consensus value
+	if bnb.IsEmpty() {
+		trustAccounts := k.ListActiveTrustAccounts(ctx)
+		fmt.Printf("Trusts: %+v\n", trustAccounts)
+		counter := make(map[string]int)
+		for _, trust := range trustAccounts {
+			config, err := getConfigValue(trust.AdminAddress)
+			if err != nil {
+				return "", err
+			}
+			fmt.Printf("Config: %s %s\n", config, trust.AdminAddress.String())
+			counter[config] += 1
+		}
+
+		for k, v := range counter {
+			if HasMajority(v, len(trustAccounts)) {
+				return k, nil
+			}
+		}
+	} else {
+		// lookup admin config set by specific bnb address
+		val, err = getConfigValue(bnb)
+		if err != nil {
+			return val, err
 		}
 	}
 
-	// find total number of trusted account
-	totalTrusted := k.TotalTrustAccounts(ctx)
-
-	// find the most voted on value
-	var ans string
-	var ansCount int
-	for value, num := range counter {
-		if num > ansCount {
-			ans = value
-			ansCount = num
-		}
+	if val == "" {
+		val = kkey.Default()
 	}
 
-	// check if we've hit majority
-	if HasMajority(ansCount, totalTrusted) {
-		return ans, nil
-	}
-
-	return "", nil
+	return val, err
 }
 
 // GetAdminConfigIterator iterate admin configs
