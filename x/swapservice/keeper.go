@@ -281,9 +281,9 @@ func (k Keeper) ListTrustAccounts(ctx sdk.Context) TrustAccounts {
 func (k Keeper) ListActiveTrustAccounts(ctx sdk.Context) TrustAccounts {
 	all := k.ListTrustAccounts(ctx)
 	trusts := make(TrustAccounts, 0)
-	coins, _ := sdk.ParseCoins("1bep")
+	minCoins := k.GetAdminConfigMinStakerCoins(ctx, common.BnbAddress(""))
 	for _, trust := range all {
-		if k.coinKeeper.HasCoins(ctx, trust.ObserverAddress, coins) {
+		if k.coinKeeper.HasCoins(ctx, trust.ObserverAddress, minCoins) {
 			trusts = append(trusts, trust)
 		}
 	}
@@ -430,22 +430,22 @@ func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
 
 // GetAdminConfigGSL - get the config for GSL
 func (k Keeper) GetAdminConfigGSL(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, GSLKey, common.Amount(GSLKey.Default()), bnb)
+	return k.GetAdminConfigAmountType(ctx, GSLKey, GSLKey.Default(), bnb)
 }
 
 // GetAdminConfigTSL - get the config for TSL
 func (k Keeper) GetAdminConfigTSL(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, TSLKey, common.Amount(TSLKey.Default()), bnb)
+	return k.GetAdminConfigAmountType(ctx, TSLKey, TSLKey.Default(), bnb)
 }
 
 // GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
 func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, common.Amount(StakerAmtIntervalKey.Default()), bnb)
+	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, StakerAmtIntervalKey.Default(), bnb)
 }
 
 // GetAdminConfigPoolAddress - get the config for PoolAddress
 func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context, bnb common.BnbAddress) common.BnbAddress {
-	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, common.BnbAddress(PoolAddressKey.Default()), bnb)
+	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, PoolAddressKey.Default(), bnb)
 }
 
 // GetAdminConfigPoolExpiry get the config for pool address expiry
@@ -465,23 +465,27 @@ func (k Keeper) GetAdminConfigPoolExpiry(ctx sdk.Context, bnb common.BnbAddress)
 
 // GetAdminConfigMRRA get the config for minimum refund rune amount default to 1 rune
 func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) sdk.Uint {
-	defaultVal, _ := sdk.ParseUint(MRRAKey.Default())
-	return k.GetAdminConfigUintType(ctx, MRRAKey, defaultVal, bnb)
+	return k.GetAdminConfigUintType(ctx, MRRAKey, MRRAKey.Default(), bnb)
+}
+
+// GetAdminConfigMinStakerCoins - get the min amount of coins needed to be a staker
+func (k Keeper) GetAdminConfigMinStakerCoins(ctx sdk.Context, bnb common.BnbAddress) sdk.Coins {
+	return k.GetAdminConfigCoinsType(ctx, MinStakerCoinsKey, MinStakerCoinsKey.Default(), bnb)
 }
 
 // GetAdminConfigBnbAddressType - get the config for TSL
-func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue common.BnbAddress, bnb common.BnbAddress) common.BnbAddress {
+func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, bnb common.BnbAddress) common.BnbAddress {
 	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
 	if value == "" {
-		return dValue // set default
+		value = dValue
 	}
 	return common.BnbAddress(value)
 }
 
-func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue sdk.Uint, bnb common.BnbAddress) sdk.Uint {
+func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, bnb common.BnbAddress) sdk.Uint {
 	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
 	if value == "" {
-		return dValue // return default
+		value = dValue
 	}
 	amt, err := common.NewAmount(value)
 	if nil != err {
@@ -491,12 +495,22 @@ func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dVal
 }
 
 // GetAdminConfigAmountType - get the config for TSL
-func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue common.Amount, bnb common.BnbAddress) common.Amount {
+func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string, bnb common.BnbAddress) common.Amount {
 	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
 	if value == "" {
-		return dValue // return default
+		value = dValue
 	}
 	return common.Amount(value)
+}
+
+// GetAdminConfigCoinsType - get the config for TSL
+func (k Keeper) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, bnb common.BnbAddress) sdk.Coins {
+	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
+	if value == "" {
+		value = dValue
+	}
+	coins, _ := sdk.ParseCoins(value)
+	return coins
 }
 
 // GetAdminConfigValue - gets the value of a given admin key

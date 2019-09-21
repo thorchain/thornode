@@ -22,6 +22,7 @@ const (
 	PoolAddressKey         = types.PoolAddressKey
 	PoolExpiryKey          = types.PoolExpiryKey
 	MRRAKey                = types.MRRAKey
+	MinStakerCoinsKey      = types.MinStakerCoinsKey
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
 )
 
