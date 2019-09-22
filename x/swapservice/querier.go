@@ -41,12 +41,35 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryCompleteEvents(ctx, path[1:], req, keeper)
 		case q.QueryHeights.Key:
 			return queryHeights(ctx, path[1:], req, keeper)
+		case q.QueryObservers.Key:
+			return queryObservers(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown swapservice query endpoint: %s", path[0]),
 			)
 		}
 	}
+}
+
+func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	iter := keeper.GetTrustAccountIterator(ctx)
+	if nil == iter {
+		return nil, sdk.ErrInternal("fail to get node account iterator")
+	}
+	result := []string{}
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		var ta TrustAccount
+		keeper.cdc.MustUnmarshalBinaryBare(iter.Value(), &ta)
+		result = append(result, ta.ObserverAddress.String())
+	}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, result)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal observers to json", err)
+		return nil, sdk.ErrInternal("fail to marshal observers to json")
+	}
+
+	return res, nil
 }
 
 // queryPoolIndex

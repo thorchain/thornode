@@ -30,23 +30,24 @@ func (q Query) Path(args ...string) string {
 
 // query endpoints supported by the swapservice Querier
 var (
-	QueryAdminConfigBnb   Query = Query{"adminconfig", "/%s/admin/{%s}/{%s}"}
-	QueryAdminConfig      Query = Query{"adminconfig", "/%s/admin/{%s}"}
-	QueryPoolIndex        Query = Query{"poolindex", "/%s/pooltickers"}
-	QueryPool             Query = Query{"pool", "/%s/pool/{%s}"}
-	QueryPools            Query = Query{"pools", "/%s/pools"}
-	QueryPoolStakers      Query = Query{"poolstakers", "/%s/pool/{%s}/stakers"}
-	QueryStakerPools      Query = Query{"stakerpools", "/%s/staker/{%s}"}
-	QuerySwapRecord       Query = Query{"swaprecord", "/%s/swaprecord/{%s}"}
-	QueryUnStakeRecord    Query = Query{"unstakerecord", "/%s/unstakerecord/{%s}"}
-	QueryTxIn             Query = Query{"txin", "/%s/tx/{%s}"}
-	QueryTxOutArray       Query = Query{"txoutarray", "/%s/txoutarray/{%s}"}
-	QueryIncompleteEvents Query = Query{"incomplete_events", ""}
-	QueryCompleteEvents   Query = Query{"complete_events", "/%s/events/{%s}"}
-	QueryHeights          Query = Query{"heights", "/%s/lastblock"}
+	QueryAdminConfigBnb   = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}/{%s}"}
+	QueryAdminConfig      = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}"}
+	QueryPoolIndex        = Query{Key: "poolindex", EndpointTemplate: "/%s/pooltickers"}
+	QueryPool             = Query{Key: "pool", EndpointTemplate: "/%s/pool/{%s}"}
+	QueryPools            = Query{Key: "pools", EndpointTemplate: "/%s/pools"}
+	QueryPoolStakers      = Query{Key: "poolstakers", EndpointTemplate: "/%s/pool/{%s}/stakers"}
+	QueryStakerPools      = Query{Key: "stakerpools", EndpointTemplate: "/%s/staker/{%s}"}
+	QuerySwapRecord       = Query{Key: "swaprecord", EndpointTemplate: "/%s/swaprecord/{%s}"}
+	QueryUnStakeRecord    = Query{Key: "unstakerecord", EndpointTemplate: "/%s/unstakerecord/{%s}"}
+	QueryTxIn             = Query{Key: "txin", EndpointTemplate: "/%s/tx/{%s}"}
+	QueryTxOutArray       = Query{Key: "txoutarray", EndpointTemplate: "/%s/txoutarray/{%s}"}
+	QueryIncompleteEvents = Query{Key: "incomplete_events", EndpointTemplate: ""}
+	QueryCompleteEvents   = Query{Key: "complete_events", EndpointTemplate: "/%s/events/{%s}"}
+	QueryHeights          = Query{Key: "heights", EndpointTemplate: "/%s/lastblock"}
+	QueryObservers        = Query{Key: "observers", EndpointTemplate: "/%s/observers"}
 )
 
-var Queries []Query = []Query{
+var Queries = []Query{
 	QueryAdminConfig,
 	QueryAdminConfigBnb,
 	QueryPool,
@@ -61,4 +62,5 @@ var Queries []Query = []Query{
 	QueryIncompleteEvents,
 	QueryCompleteEvents,
 	QueryHeights,
+	QueryObservers,
 }
