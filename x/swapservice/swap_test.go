@@ -3,6 +3,7 @@ package swapservice
 import (
 	"fmt"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 
@@ -14,26 +15,36 @@ import (
 
 	"gitlab.com/thorchain/bepswap/common"
 
+	"gitlab.com/thorchain/bepswap/statechain/cmd"
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/mocks"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
 type SwapSuite struct{}
 
 var _ = Suite(&SwapSuite{})
+var keyStore = sdk.NewKVStoreKey(StoreKey)
 
-func GetCtx(key string) sdk.Context {
-	keystore := sdk.NewKVStoreKey(key)
+func (s *SwapSuite) SetUpSuite(c *C) {
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+}
+
+func GetCtx() sdk.Context {
+
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
-	cms.MountStoreWithDB(keystore, sdk.StoreTypeIAVL, db)
-	cms.LoadLatestVersion()
+	cms.MountStoreWithDB(keyStore, sdk.StoreTypeIAVL, db)
+	if err := cms.LoadLatestVersion(); nil != err {
+		fmt.Printf("error load latest db version error: %s ", err)
+	}
 	return sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
 
 }
 
 func (s SwapSuite) TestSwap(c *C) {
 	poolStorage := mocks.MockPoolStorage{}
-	ctx := GetCtx("test")
+	ctx := GetCtx()
 	tradeSlipLimit := common.Amount("0.100000")
 	globalSlipLimit := common.Amount("0.200000")
 	inputs := []struct {
@@ -219,7 +230,7 @@ func (s SwapSuite) TestSwap(c *C) {
 
 func (s SwapSuite) TestValidatePools(c *C) {
 	keeper := mocks.MockPoolStorage{}
-	ctx := GetCtx("test")
+	ctx := GetCtx()
 	c.Check(validatePools(ctx, keeper, common.RuneTicker), IsNil)
 	c.Check(validatePools(ctx, keeper, "NOTEXIST"), NotNil)
 }
@@ -248,4 +259,35 @@ func (s SwapSuite) TestCalculators(c *C) {
 	c.Check(calcTradeSlip(X, x), Equals, 0.21)
 	c.Check(calcPriceSlip(X, x, Y), Equals, 1.210000001452)
 	c.Check(calcOutputSlip(X, x), Equals, 0.09090909090909091)
+}
+
+func (s SwapSuite) TestHandleMsgSwap(c *C) {
+	ctx := GetCtx()
+	var cdc = codec.New()
+	RegisterCodec(cdc)
+	sdk.RegisterCodec(cdc)
+	codec.RegisterCrypto(cdc)
+	k := NewKeeper(keyStore, cdc)
+
+	txOutStore := NewTxOutStore(k)
+	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
+	c.Assert(err, IsNil)
+	addr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	c.Assert(err, IsNil)
+	signerAddr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
+	c.Assert(err, IsNil)
+	k.SetTrustAccount(ctx, types.NewTrustAccount(addr, addr, signerAddr))
+	txOutStore.NewBlock(1)
+	// no pool
+	msg := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(common.One), addr, addr, sdk.ZeroUint(), signerAddr)
+	res := handleMsgSwap(ctx, k, txOutStore, msg)
+	c.Assert(res.Code, Equals, sdk.CodeInternal)
+	pool := NewPool()
+	pool.Ticker = common.BNBTicker
+	pool.BalanceToken = sdk.NewUint(100 * common.One)
+	pool.BalanceRune = sdk.NewUint(100 * common.One)
+	k.SetPool(ctx, pool)
+
+	res = handleMsgSwap(ctx, k, txOutStore, msg)
+	c.Assert(res.IsOK(), Equals, true)
 }

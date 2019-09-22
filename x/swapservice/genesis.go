@@ -55,17 +55,8 @@ func ValidateGenesis(data GenesisState) error {
 // DefaultGenesisState the default values we put in the Genesis
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		AdminConfigs: []AdminConfig{},
-		PoolRecords: []Pool{
-			{
-				BalanceRune:  sdk.ZeroUint(),
-				BalanceToken: sdk.ZeroUint(),
-				Ticker:       common.BNBTicker,
-				PoolUnits:    sdk.ZeroUint(),
-				Status:       PoolEnabled,
-				ExpiryUtc:    PoolAddressExpiryDate,
-			},
-		},
+		AdminConfigs:  []AdminConfig{},
+		PoolRecords:   []Pool{},
 		TrustAccounts: []TrustAccount{},
 	}
 }
