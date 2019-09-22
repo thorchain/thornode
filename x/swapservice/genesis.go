@@ -95,7 +95,7 @@ func ValidateGenesis(data GenesisState) error {
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		AdminConfigs:  []AdminConfig{},
-		PoolRecords:   []Pool{},
+		Pools:         []Pool{},
 		TrustAccounts: []TrustAccount{},
 		LastEventID:   common.ZeroAmount,
 	}
