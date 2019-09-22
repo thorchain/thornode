@@ -4,6 +4,10 @@ import (
 	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/codec"
+	"github.com/cosmos/cosmos-sdk/x/auth"
+	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/params"
+	"github.com/cosmos/cosmos-sdk/x/staking"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 
@@ -267,7 +271,30 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
-	k := NewKeeper(keyStore, cdc)
+
+	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
+	paramsKeeper := params.NewKeeper(cdc, keyStore, tkeys[params.TStoreKey], params.DefaultCodespace)
+	// Set specific supspaces
+	authSubspace := paramsKeeper.Subspace(auth.DefaultParamspace)
+	bankSupspace := paramsKeeper.Subspace(bank.DefaultParamspace)
+
+	// The AccountKeeper handles address -> account lookups
+	accountKeeper := auth.NewAccountKeeper(
+		cdc,
+		keyStore,
+		authSubspace,
+		auth.ProtoBaseAccount,
+	)
+
+	// The BankKeeper allows you perform sdk.Coins interactions
+	bankKeeper := bank.NewBaseKeeper(
+		accountKeeper,
+		bankSupspace,
+		bank.DefaultCodespace,
+		nil, // app.ModuleAccountAddrs(),
+	)
+
+	k := NewKeeper(bankKeeper, keyStore, cdc)
 
 	txOutStore := NewTxOutStore(k)
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
