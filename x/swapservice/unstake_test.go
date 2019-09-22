@@ -218,7 +218,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 	}
 
 	for _, item := range inputs {
-		ctx := GetCtx("test")
+		ctx := GetCtx()
 		ps := mocks.MockPoolStorage{}
 		c.Logf("name:%s", item.name)
 		err := validateUnstake(ctx, ps, item.msg)
@@ -406,7 +406,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		},
 	}
 	for _, tc := range testCases {
-		ctx := GetCtx("test")
+		ctx := GetCtx()
 		c.Logf("name:%s", tc.name)
 		r, token, _, err := unstake(ctx, tc.ps, tc.msg)
 		if tc.expectedError != nil {
@@ -428,7 +428,7 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 		c.Error("fail to create new BNB Address")
 	}
 
-	ctx := GetCtx("test")
+	ctx := GetCtx()
 
 	store := NewMockInMemoryPoolStorage()
 	pool := Pool{

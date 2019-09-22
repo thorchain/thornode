@@ -124,7 +124,7 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 }
 
 func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	var pools QueryResPools
+	pools := QueryResPools{}
 	iterator := keeper.GetPoolDataIterator(ctx)
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
