@@ -180,6 +180,7 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.
 	// The swapserviceKeeper is the Keeper from the module for this tutorial
 	// It handles interactions with the pooldatastore
 	app.ssKeeper = swapservice.NewKeeper(
+		app.bankKeeper,
 		keys[swapservice.StoreKey],
 		app.cdc,
 	)

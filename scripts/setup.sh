@@ -11,8 +11,8 @@ while true; do
   echo "password" | sscli keys add jack
   echo "password" | sscli keys add alice
 
-  ssd add-genesis-account $(sscli keys show jack -a) 1000rune,100000000stake
-  ssd add-genesis-account $(sscli keys show alice -a) 1000rune,100000000stake
+  ssd add-genesis-account $(sscli keys show jack -a) 1000bep,100000000stake
+  ssd add-genesis-account $(sscli keys show alice -a) 1000bep,100000000stake
 
   sscli config chain-id sschain
   sscli config output json

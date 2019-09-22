@@ -22,6 +22,7 @@ const (
 	PoolAddressKey         = types.PoolAddressKey
 	PoolExpiryKey          = types.PoolExpiryKey
 	MRRAKey                = types.MRRAKey
+	MinStakerCoinsKey      = types.MinStakerCoinsKey
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
 )
 
@@ -54,35 +55,37 @@ var (
 )
 
 type (
-	MsgNoOp           = types.MsgNoOp
-	MsgAdd            = types.MsgAdd
-	MsgSetUnStake     = types.MsgSetUnStake
-	MsgSetPoolData    = types.MsgSetPoolData
-	MsgSetStakeData   = types.MsgSetStakeData
-	MsgSetTxIn        = types.MsgSetTxIn
-	MsgOutboundTx     = types.MsgOutboundTx
-	MsgSwap           = types.MsgSwap
-	MsgSetAdminConfig = types.MsgSetAdminConfig
-	MsgEndPool        = types.MsgEndPool
-	QueryResPools     = types.QueryResPools
-	QueryResHeights   = types.QueryResHeights
-	TrustAccount      = types.TrustAccount
-	PoolStatus        = types.PoolStatus
-	PoolIndex         = types.PoolIndex
-	TxInIndex         = types.TxInIndex
-	TxIn              = types.TxIn
-	TxInVoter         = types.TxInVoter
-	Pool              = types.Pool
-	PoolStaker        = types.PoolStaker
-	StakerPool        = types.StakerPool
-	StakerUnit        = types.StakerUnit
-	TxOutItem         = types.TxOutItem
-	TxOut             = types.TxOut
-	AdminConfigKey    = types.AdminConfigKey
-	AdminConfig       = types.AdminConfig
-	StakerPoolItem    = types.StakerPoolItem
-	StakeTxDetail     = types.StakeTxDetail
-	Event             = types.Event
-	Events            = types.Events
-	EventStatus       = types.EventStatus
+	MsgNoOp            = types.MsgNoOp
+	MsgAdd             = types.MsgAdd
+	MsgSetUnStake      = types.MsgSetUnStake
+	MsgSetPoolData     = types.MsgSetPoolData
+	MsgSetStakeData    = types.MsgSetStakeData
+	MsgSetTxIn         = types.MsgSetTxIn
+	MsgOutboundTx      = types.MsgOutboundTx
+	MsgSwap            = types.MsgSwap
+	MsgSetAdminConfig  = types.MsgSetAdminConfig
+	MsgAddTrustAccount = types.MsgAddTrustAccount
+	MsgEndPool         = types.MsgEndPool
+	QueryResPools      = types.QueryResPools
+	QueryResHeights    = types.QueryResHeights
+	TrustAccount       = types.TrustAccount
+	TrustAccounts      = types.TrustAccounts
+	PoolStatus         = types.PoolStatus
+	PoolIndex          = types.PoolIndex
+	TxInIndex          = types.TxInIndex
+	TxIn               = types.TxIn
+	TxInVoter          = types.TxInVoter
+	Pool               = types.Pool
+	PoolStaker         = types.PoolStaker
+	StakerPool         = types.StakerPool
+	StakerUnit         = types.StakerUnit
+	TxOutItem          = types.TxOutItem
+	TxOut              = types.TxOut
+	AdminConfigKey     = types.AdminConfigKey
+	AdminConfig        = types.AdminConfig
+	StakerPoolItem     = types.StakerPoolItem
+	StakeTxDetail      = types.StakeTxDetail
+	Event              = types.Event
+	Events             = types.Events
+	EventStatus        = types.EventStatus
 )
