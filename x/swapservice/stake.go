@@ -67,7 +67,7 @@ func stake(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneA
 		return sdk.ZeroUint(), errors.Wrapf(err, "fail to calculate pool units")
 	}
 
-	ctx.Logger().Info(fmt.Sprintf("current pool units : %f ,staker units : %f", newPoolUnits, stakerUnits))
+	ctx.Logger().Info(fmt.Sprintf("current pool units : %s ,staker units : %s", newPoolUnits, stakerUnits))
 	poolRune := balanceRune.Add(fRuneAmt)
 	poolToken := balanceToken.Add(fTokenAmt)
 	pool.PoolUnits = newPoolUnits
