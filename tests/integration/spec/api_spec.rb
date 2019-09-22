@@ -72,13 +72,17 @@ describe "API Tests" do
 
     it "should show up in listing of pools" do
       resp = get("/pools")
-      # should have one pool added via genesis
-      # If this line is failing, are we starting with a clean blockchain? Or
-      # did we run before genesis could init pools?
-      expect(resp.body.length).to eq(1), "Are you working from a clean blockchain? Did you wait until 1 block was create? \n(#{resp.code}: #{resp.body.inspect})"
+      # Previously we add BNB pool in genesis , but now we removed it
+      expect(resp.body).to eq([]), "Are you working from a clean blockchain? Did you wait until 1 block was create? \n(#{resp.code}: #{resp.body})"
     end
 
     it "create a pool for bnb" do
+          tx = makeTx(memo: "create:BNB")
+          resp = processTx([tx])
+          expect(resp.code).to eq("200"), resp.body.inspect
+        end
+
+    it "create a pool for TCAN-014" do
       tx = makeTx(memo: "create:TCAN-014")
       resp = processTx([tx])
       expect(resp.code).to eq("200"), resp.body.inspect

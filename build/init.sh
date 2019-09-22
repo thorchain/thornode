@@ -39,7 +39,7 @@ initialize() {
   {
       jq --arg TRUSTED_BNB_ADDRESS "$TRUSTED_BNB_ADDRESS" '.app_state.swapservice.admin_configs[1] = {"key":"PoolExpiry", "value": "2020-01-01T00:00:00Z" , "address": $TRUSTED_BNB_ADDRESS}' |
       jq --arg POOL_ADDRESS "$POOL_ADDRESS" --arg TRUSTED_BNB_ADDRESS "$TRUSTED_BNB_ADDRESS" '.app_state.swapservice.admin_configs[0] = {"key":"PoolAddress", "value": $POOL_ADDRESS , "address": $TRUSTED_BNB_ADDRESS}' |
-      jq --arg TRUSTED_BNB_ADDRESS "$TRUSTED_BNB_ADDRESS" --arg RUNE_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.trust_accounts[0] = {"name":"Statechain", "bnb_address": $TRUSTED_BNB_ADDRESS, "rune_address": $RUNE_ADDRESS}'
+      jq --arg TRUSTED_BNB_ADDRESS "$TRUSTED_BNB_ADDRESS" --arg RUNE_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.trust_accounts[0] = {"signer_address": $TRUSTED_BNB_ADDRESS, "admin_address": $TRUSTED_BNB_ADDRESS, "observer_address": $RUNE_ADDRESS}'
   } < "$SS_HOME/config/genesis.json" >/tmp/genesis.json
 
   mv /tmp/genesis.json "$SS_HOME/config/genesis.json"
