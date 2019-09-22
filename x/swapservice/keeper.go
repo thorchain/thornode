@@ -17,28 +17,29 @@ import (
 type dbPrefix string
 
 const (
-	prefixTxIn              dbPrefix = "tx_"
-	prefixPool              dbPrefix = "pool_"
-	prefixTxOut             dbPrefix = "txout_"
-	prefixPoolStaker        dbPrefix = "poolstaker_"
-	prefixStakerPool        dbPrefix = "stakerpool_"
-	prefixAdmin             dbPrefix = "admin_"
-	prefixTxInIndex         dbPrefix = "txinIndex_"
+	prefixTxIn              dbPrefix = "tx"
+	prefixPool              dbPrefix = "pool"
+	prefixTxOut             dbPrefix = "txout"
+	prefixTrustAccount      dbPrefix = "trustaccount"
+	prefixPoolStaker        dbPrefix = "poolstaker"
+	prefixStakerPool        dbPrefix = "stakerpool"
+	prefixAdmin             dbPrefix = "admin"
+	prefixTxInIndex         dbPrefix = "txinIndex"
 	prefixInCompleteEvents  dbPrefix = "incomplete_events"
-	prefixCompleteEvent     dbPrefix = "complete_event_"
+	prefixCompleteEvent     dbPrefix = "complete_event"
 	prefixLastEventID       dbPrefix = "last_event_id"
 	prefixLastBinanceHeight dbPrefix = "last_binance_height"
 	prefixLastSignedHeight  dbPrefix = "last_signed_height"
-	prefixNodeAccount       dbPrefix = "node_account_"
-	prefixActiveObserver    dbPrefix = "active_observer_"
+	prefixNodeAccount       dbPrefix = "node_account"
+	prefixActiveObserver    dbPrefix = "active_observer"
 	prefixPoolAddresses     dbPrefix = "pooladdresses"
 	prefixValidatorMeta     dbPrefix = "validator_meta"
 )
 
 const poolIndexKey = "poolindexkey"
 
-func getKey(prefix dbPrefix, key string) string {
-	return fmt.Sprintf("%s%s", prefix, strings.ToUpper(key))
+func getKey(prefix dbPrefix, key string, version int) string {
+	return fmt.Sprintf("%s_%d_%s", prefix, version, strings.ToUpper(key))
 }
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
@@ -65,12 +66,12 @@ func (k Keeper) Logger(ctx sdk.Context) log.Logger {
 
 func (k Keeper) SetLastSignedHeight(ctx sdk.Context, height sdk.Uint) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixLastSignedHeight, "")
+	key := getKey(prefixLastSignedHeight, "", getVersion(ctx.BlockHeight(), prefixLastSignedHeight))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
 }
 
 func (k Keeper) GetLastSignedHeight(ctx sdk.Context) (height sdk.Uint) {
-	key := getKey(prefixLastSignedHeight, "")
+	key := getKey(prefixLastSignedHeight, "", getVersion(ctx.BlockHeight(), prefixLastSignedHeight))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return sdk.ZeroUint()
@@ -86,13 +87,13 @@ func (k Keeper) SetLastBinanceHeight(ctx sdk.Context, height sdk.Uint) error {
 		return errors.Errorf("current block height :%s is larger than %s , block height can't go backward ", currentHeight, height)
 	}
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixLastBinanceHeight, "")
+	key := getKey(prefixLastBinanceHeight, "", getVersion(ctx.BlockHeight(), prefixLastBinanceHeight))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
 	return nil
 }
 
 func (k Keeper) GetLastBinanceHeight(ctx sdk.Context) (height sdk.Uint) {
-	key := getKey(prefixLastBinanceHeight, "")
+	key := getKey(prefixLastBinanceHeight, "", getVersion(ctx.BlockHeight(), prefixLastBinanceHeight))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return sdk.ZeroUint()
@@ -104,7 +105,7 @@ func (k Keeper) GetLastBinanceHeight(ctx sdk.Context) (height sdk.Uint) {
 
 // GetPool get the entire Pool metadata struct for a pool ID
 func (k Keeper) GetPool(ctx sdk.Context, ticker common.Ticker) Pool {
-	key := getKey(prefixPool, ticker.String())
+	key := getKey(prefixPool, ticker.String(), getVersion(ctx.BlockHeight(), prefixPool))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return NewPool()
@@ -119,7 +120,7 @@ func (k Keeper) GetPool(ctx sdk.Context, ticker common.Ticker) Pool {
 // Sets the entire Pool metadata struct for a pool ID
 func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPool, pool.Ticker.String())
+	key := getKey(prefixPool, pool.Ticker.String(), getVersion(ctx.BlockHeight(), prefixPool))
 	if !store.Has([]byte(key)) {
 		if err := k.AddToPoolIndex(ctx, pool.Ticker); nil != err {
 			ctx.Logger().Error("fail to add ticker to pool index", "ticker", pool.Ticker, "error", err)
@@ -153,7 +154,7 @@ func (k Keeper) GetPoolDataIterator(ctx sdk.Context) sdk.Iterator {
 // PoolExist check whether the given pool exist in the datastore
 func (k Keeper) PoolExist(ctx sdk.Context, ticker common.Ticker) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPool, ticker.String())
+	key := getKey(prefixPool, ticker.String(), getVersion(ctx.BlockHeight(), prefixPool))
 	return store.Has([]byte(key))
 }
 
@@ -220,7 +221,7 @@ func (k Keeper) GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator {
 // GetPoolStaker retrieve poolStaker from the data store
 func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPoolStaker, ticker.String())
+	key := getKey(prefixPoolStaker, ticker.String(), getVersion(ctx.BlockHeight(), prefixPoolStaker))
 	if !store.Has([]byte(key)) {
 		ctx.Logger().Info("NotExist", "poolstakerkey", key)
 		return NewPoolStaker(ticker, sdk.ZeroUint()), nil
@@ -237,7 +238,7 @@ func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker
 // SetPoolStaker store the poolstaker to datastore
 func (k Keeper) SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps PoolStaker) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPoolStaker, ticker.String())
+	key := getKey(prefixPoolStaker, ticker.String(), getVersion(ctx.BlockHeight(), prefixPoolStaker))
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", key, ps))
 	result := k.cdc.MustMarshalBinaryBare(ps)
 	store.Set([]byte(key), result)
@@ -252,7 +253,7 @@ func (k Keeper) GetStakerPoolIterator(ctx sdk.Context) sdk.Iterator {
 // GetStakerPool get the stakerpool from key value store
 func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID common.BnbAddress) (StakerPool, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixStakerPool, stakerID.String())
+	key := getKey(prefixStakerPool, stakerID.String(), getVersion(ctx.BlockHeight(), prefixPoolStaker))
 	ctx.Logger().Info("get staker pool", "stakerpoolkey", key)
 	if !store.Has([]byte(key)) {
 		return NewStakerPool(stakerID), nil
@@ -269,7 +270,7 @@ func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID common.BnbAddress) (Stak
 // SetStakerPool save the given stakerpool object to key value store
 func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID common.BnbAddress, sp StakerPool) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixStakerPool, stakerID.String())
+	key := getKey(prefixStakerPool, stakerID.String(), getVersion(ctx.BlockHeight(), prefixPoolStaker))
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", key, sp))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(sp))
 }
@@ -326,7 +327,7 @@ func (k Keeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 func (k Keeper) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool {
 	ctx.Logger().Debug("IsWhitelistedAccount", "account address", addr.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixNodeAccount, addr.String())
+	key := getKey(prefixNodeAccount, addr.String(), getVersion(ctx.BlockHeight(), prefixNodeAccount))
 	return store.Has([]byte(key))
 }
 
@@ -445,7 +446,7 @@ func (k Keeper) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool {
 // SetTxHas - saving a given txhash to the KVStore
 func (k Keeper) SetTxInVoter(ctx sdk.Context, tx TxInVoter) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxIn, tx.Key().String())
+	key := getKey(prefixTxIn, tx.Key().String(), getVersion(ctx.BlockHeight(), prefixTxIn))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
@@ -457,7 +458,7 @@ func (k Keeper) GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator {
 
 // GetTxIn - gets information of a tx hash
 func (k Keeper) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
-	key := getKey(prefixTxIn, hash.String())
+	key := getKey(prefixTxIn, hash.String(), getVersion(ctx.BlockHeight(), prefixTxIn))
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -473,7 +474,7 @@ func (k Keeper) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
 // CheckTxHash - check to see if we have already processed a specific tx
 func (k Keeper) CheckTxHash(ctx sdk.Context, hash common.TxID) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxIn, hash.String())
+	key := getKey(prefixTxIn, hash.String(), getVersion(ctx.BlockHeight(), prefixTxIn))
 	return store.Has([]byte(key))
 }
 
@@ -485,7 +486,7 @@ func (k Keeper) GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator {
 
 // GetTxInIndex retrieve txIn by height
 func (k Keeper) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error) {
-	key := getKey(prefixTxInIndex, strconv.FormatUint(height, 10))
+	key := getKey(prefixTxInIndex, strconv.FormatUint(height, 10), getVersion(ctx.BlockHeight(), prefixTxInIndex))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return TxInIndex{}, nil
@@ -501,7 +502,7 @@ func (k Keeper) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error) 
 
 // SetTxInIndex write a TxIn index into datastore
 func (k Keeper) SetTxInIndex(ctx sdk.Context, height uint64, index TxInIndex) {
-	key := getKey(prefixTxInIndex, strconv.FormatUint(height, 10))
+	key := getKey(prefixTxInIndex, strconv.FormatUint(height, 10), getVersion(ctx.BlockHeight(), prefixTxInIndex))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&index))
 }
@@ -526,7 +527,7 @@ func (k Keeper) AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) e
 // SetTxOut - write the given txout information to key values tore
 func (k Keeper) SetTxOut(ctx sdk.Context, blockOut *TxOut) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxOut, strconv.FormatUint(blockOut.Height, 10))
+	key := getKey(prefixTxOut, strconv.FormatUint(blockOut.Height, 10), getVersion(ctx.BlockHeight(), prefixTxOut))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(blockOut))
 }
 
@@ -539,7 +540,7 @@ func (k Keeper) GetTxOutIterator(ctx sdk.Context) sdk.Iterator {
 // GetTxOut - write the given txout information to key values tore
 func (k Keeper) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxOut, strconv.FormatUint(height, 10))
+	key := getKey(prefixTxOut, strconv.FormatUint(height, 10), getVersion(ctx.BlockHeight(), prefixTxOut))
 	if !store.Has([]byte(key)) {
 		return NewTxOut(height), nil
 	}
@@ -554,7 +555,7 @@ func (k Keeper) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
 // SetAdminConfig - saving a given admin config to the KVStore
 func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixAdmin, config.DbKey())
+	key := getKey(prefixAdmin, config.DbKey(), getVersion(ctx.BlockHeight(), prefixAdmin))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(config))
 }
 
@@ -657,7 +658,7 @@ func (k Keeper) GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue 
 func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error) {
 	getConfigValue := func(nodeAddr sdk.AccAddress) (string, error) {
 		config := NewAdminConfig(kkey, "", nodeAddr)
-		key := getKey(prefixAdmin, config.DbKey())
+		key := getKey(prefixAdmin, config.DbKey(), getVersion(ctx.BlockHeight(), prefixAdmin))
 		store := ctx.KVStore(k.storeKey)
 		if !store.Has([]byte(key)) {
 			return kkey.Default(), nil
@@ -712,7 +713,7 @@ func (k Keeper) GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator {
 
 // GetIncompleteEvents retrieve incomplete events
 func (k Keeper) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
-	key := getKey(prefixInCompleteEvents, "")
+	key := getKey(prefixInCompleteEvents, "", getVersion(ctx.BlockHeight(), prefixInCompleteEvents))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return Events{}, nil
@@ -728,7 +729,7 @@ func (k Keeper) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
 
 // SetIncompleteEvents write incomplete events
 func (k Keeper) SetIncompleteEvents(ctx sdk.Context, events Events) {
-	key := getKey(prefixInCompleteEvents, "")
+	key := getKey(prefixInCompleteEvents, "", getVersion(ctx.BlockHeight(), prefixInCompleteEvents))
 	store := ctx.KVStore(k.storeKey)
 	if len(events) == 0 {
 		store.Delete([]byte(key))
@@ -752,7 +753,7 @@ func (k Keeper) GetCompleteEventIterator(ctx sdk.Context) sdk.Iterator {
 
 // GetCompletedEvent retrieve completed event
 func (k Keeper) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
-	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", id))
+	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", id), getVersion(ctx.BlockHeight(), prefixCompleteEvent))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return Event{}, nil
@@ -768,7 +769,7 @@ func (k Keeper) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
 
 // SetCompletedEvent write a completed event
 func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
-	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", int64(event.ID.Float64())))
+	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", int64(event.ID.Float64())), getVersion(ctx.BlockHeight(), prefixCompleteEvent))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event))
 }
@@ -803,7 +804,7 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxI
 // GetLastEventID get last event id
 func (k Keeper) GetLastEventID(ctx sdk.Context) common.Amount {
 	var lastEventID common.Amount
-	key := getKey(prefixLastEventID, "")
+	key := getKey(prefixLastEventID, "", getVersion(ctx.BlockHeight(), prefixLastEventID))
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))
@@ -814,7 +815,7 @@ func (k Keeper) GetLastEventID(ctx sdk.Context) common.Amount {
 
 // SetLastEventID write a last event id
 func (k Keeper) SetLastEventID(ctx sdk.Context, id common.Amount) {
-	key := getKey(prefixLastEventID, "")
+	key := getKey(prefixLastEventID, "", getVersion(ctx.BlockHeight(), prefixLastEventID))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&id))
 }
