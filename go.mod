@@ -3,7 +3,7 @@ module gitlab.com/thorchain/bepswap/observe
 go 1.12
 
 require (
-	github.com/binance-chain/go-sdk v1.0.8
+	github.com/binance-chain/go-sdk v1.1.3
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/cosmos-sdk v0.37.1
 	github.com/golang/mock v1.3.1 // indirect
