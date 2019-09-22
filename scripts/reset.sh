@@ -7,8 +7,8 @@ while true; do
 
   ssd init local --chain-id sschain
 
-  ssd add-genesis-account $(sscli keys show jack -a) 1000rune,100000000stake
-  ssd add-genesis-account $(sscli keys show alice -a) 1000rune,100000000stake
+  ssd add-genesis-account $(sscli keys show jack -a) 1000bep,100000000stake
+  ssd add-genesis-account $(sscli keys show alice -a) 1000bep,100000000stake
 
   sscli config chain-id sschain
   sscli config output json

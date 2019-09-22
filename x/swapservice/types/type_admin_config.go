@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 )
 
@@ -15,6 +16,7 @@ const (
 	StakerAmtIntervalKey AdminConfigKey = "StakerAmtInterval"
 	PoolAddressKey       AdminConfigKey = "PoolAddress"
 	PoolExpiryKey        AdminConfigKey = `PoolExpiry`
+	MinStakerCoinsKey    AdminConfigKey = "MinStakerCoins"
 	MRRAKey              AdminConfigKey = `MRRA` // MRRA means MinimumRefundRuneAmount, if the tx send to pool has less then this amount of RUNE , we are not going to refund it
 )
 
@@ -34,8 +36,29 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 		return PoolAddressKey
 	case string(PoolExpiryKey):
 		return PoolExpiryKey
+	case string(MinStakerCoinsKey):
+		return MinStakerCoinsKey
+	case string(MRRAKey):
+		return MRRAKey
 	default:
 		return UnknownKey
+	}
+}
+
+func (k AdminConfigKey) Default() string {
+	switch k {
+	case GSLKey:
+		return "0.3"
+	case TSLKey:
+		return "0.1"
+	case StakerAmtIntervalKey:
+		return "100"
+	case MinStakerCoinsKey:
+		return "1bep"
+	case MRRAKey:
+		return sdk.NewUint(common.One).String()
+	default:
+		return ""
 	}
 }
 
