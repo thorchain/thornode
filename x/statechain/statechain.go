@@ -107,6 +107,9 @@ func (scb *StateChainBridge) Start() error {
 	if nil != err {
 		return errors.Wrap(err, "fail to get account number and sequence number from statechain ")
 	}
+	if sequenceNumber == 0 {
+		sequenceNumber = 1
+	}
 	scb.logger.Info().Uint64("account number", accountNumber).Uint64("sequence no", sequenceNumber).Msg("account information")
 	scb.accountNumber = accountNumber
 	scb.seqNumber = sequenceNumber
@@ -175,11 +178,11 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 		"",                                  // memo
 	)
 
-	//accNumber, seqNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
-	//if nil != err {
+	// accNumber, seqNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
+	// if nil != err {
 	//	scb.errCounter.WithLabelValues("fail_get_account_seq_no", "").Inc()
 	//	return nil, errors.Wrap(err, "fail to get account number and sequence number from statechain")
-	//}
+	// }
 
 	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", scb.accountNumber).Uint64("sequenceNo", scb.seqNumber).Msg("info")
 	stdMsg := authtypes.StdSignMsg{
