@@ -400,7 +400,8 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 		if preConsensus == false && postConsensus == true && !voter.IsProcessed {
 			voter.IsProcessed = true
 			keeper.SetTxInVoter(ctx, voter)
-			msg, err := processOneTxIn(ctx, keeper, tx.TxID, voter.GetTx(trustAccounts), msg.Signer)
+			txIn := voter.GetTx(trustAccounts)
+			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer)
 			if nil != err {
 				ctx.Logger().Error("fail to process txHash", "error", err)
 				refundTx(ctx, voter.GetTx(trustAccounts), txOutStore, keeper)
@@ -416,7 +417,11 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 
 			// ignoring the error
 			_ = keeper.AddToTxInIndex(ctx, uint64(ctx.BlockHeight()), tx.TxID)
-			handler(ctx, msg)
+			if err := keeper.SetLastBinanceHeight(ctx, txIn.BlockHeight); nil != err {
+				return sdk.ErrInternal("fail to save last binance height to data store err:" + err.Error()).Result()
+			}
+
+			handler(ctx, m)
 		}
 	}
 
