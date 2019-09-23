@@ -75,10 +75,15 @@ func (k Keeper) GetLastSignedHeight(ctx sdk.Context) (height sdk.Uint) {
 	return
 }
 
-func (k Keeper) SetLastBinanceHeight(ctx sdk.Context, height sdk.Uint) {
+func (k Keeper) SetLastBinanceHeight(ctx sdk.Context, height sdk.Uint) error {
+	currentHeight := k.GetLastBinanceHeight(ctx)
+	if currentHeight.GT(height) {
+		return errors.Errorf("current block height :%s is larger than %s , block height can't go backward ", currentHeight, height)
+	}
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixLastBinanceHeight, "")
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
+	return nil
 }
 
 func (k Keeper) GetLastBinanceHeight(ctx sdk.Context) (height sdk.Uint) {
