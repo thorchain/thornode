@@ -44,17 +44,33 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create metric instance")
 	}
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), cfg.PoolAddress, m)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create block scanner")
-	}
 	stateChainBridge, err := statechain.NewStateChainBridge(cfg.StateChain, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create new state chain bridge")
 	}
+	logger := log.Logger.With().Str("module", "observer").Logger()
+	if !cfg.BlockScanner.EnforceBlockHeight {
+
+		startBlockHeight, err := stateChainBridge.GetBinanceChainStartHeight()
+		if nil != err {
+			return nil, errors.Wrap(err, "fail to get start block height from statechain")
+		}
+
+		if startBlockHeight > 0 {
+			logger.Info().Uint64("height", startBlockHeight).Msg("resume from last block height known by statechain")
+			cfg.BlockScanner.StartBlockHeight = int64(startBlockHeight)
+		} else {
+			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("block height from statechain is 0, thus we will use the value from config file")
+		}
+	}
+
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), cfg.PoolAddress, m)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create block scanner")
+	}
 	return &Observer{
 		cfg:              cfg,
-		logger:           log.Logger.With().Str("module", "observer").Logger(),
+		logger:           logger,
 		blockScanner:     blockScanner,
 		wg:               &sync.WaitGroup{},
 		stopChan:         make(chan struct{}),
