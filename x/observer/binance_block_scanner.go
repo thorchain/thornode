@@ -170,7 +170,7 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 			if !more {
 				return
 			}
-			b.logger.Debug().Int64("block", block).Msg("processing block")
+			b.logger.Info().Int64("block", block).Msg("processing block")
 			if err := b.searchTxInABlockFromServer(block, b.getTxSearchUrl(block, 1, 100)); nil != err {
 				if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); nil != errStatus {
 					b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
