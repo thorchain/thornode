@@ -264,3 +264,35 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 	scb.logger.Info().Msgf("Received a TxHash of %v from the statechain", commit.TxHash)
 	return common.NewTxID(commit.TxHash)
 }
+
+// GetBinanceChainStartHeight
+func (scb *StateChainBridge) GetBinanceChainStartHeight() (uint64, error) {
+	uri := url.URL{
+		Scheme: "http",
+		Host:   scb.cfg.ChainHost,
+		Path:   "/swapservice/lastblock",
+	}
+	resp, err := retryablehttp.Get(uri.String())
+	if nil != err {
+		return 0, errors.Wrap(err, "fail to get last blocks from statechain")
+	}
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			scb.logger.Error().Err(err).Msg("fail to close response body")
+		}
+	}()
+	if resp.StatusCode != http.StatusOK {
+		return 0, errors.New("fail to get last block height from statechain")
+	}
+	var lastBlock stypes.QueryResHeights
+	buf, err := ioutil.ReadAll(resp.Body)
+	if nil != err {
+		return 0, errors.Wrap(err, "fail to read response body")
+	}
+	if err := scb.cdc.UnmarshalJSON(buf, &lastBlock); nil != err {
+		scb.errCounter.WithLabelValues("fail_unmarshal_lastblock", "").Inc()
+		return 0, errors.Wrap(err, "fail to unmarshal last block")
+	}
+
+	return lastBlock.LastBinanceHeight.Uint64(), nil
+}
