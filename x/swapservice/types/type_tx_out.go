@@ -3,6 +3,7 @@ package types
 import (
 	"strings"
 
+	"github.com/pkg/errors"
 	"gitlab.com/thorchain/bepswap/common"
 )
 
@@ -11,6 +12,14 @@ type TxOutItem struct {
 	ToAddress common.BnbAddress `json:"to"`
 	// TODO update common.Coins to use sdk.Coins
 	Coins common.Coins `json:"coins"`
+}
+
+func (toi TxOutItem) Valid() error {
+	if toi.ToAddress.IsEmpty() {
+		return errors.New("To address cannot be empty")
+	}
+
+	return nil
 }
 
 // String implement stringer interface
@@ -37,4 +46,18 @@ func NewTxOut(height uint64) *TxOut {
 		Height:  height,
 		TxArray: nil,
 	}
+}
+
+func (out TxOut) Valid() error {
+	if out.Hash.IsEmpty() {
+		return errors.New("Hash cannot be empty")
+	}
+
+	for _, tx := range out.TxArray {
+		if err := tx.Valid(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
