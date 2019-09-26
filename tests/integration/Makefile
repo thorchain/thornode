@@ -21,5 +21,14 @@ start-daemon:
 start-rest:
 	make -C ../.. start-rest
 
+export:
+	ssd export > genesis.json
+
+validate-genesis:
+	ssd validate-genesis genesis.json
+
+sh:
+	docker run -it --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/bepswap/statechain -w /root/go/src/gitlab.com/thorchain/bepswap/statechain -e GOPATH=/root/go -e GOBIN=/go/bin cbarraford/golang-ruby /bin/sh
+
 test:
-	docker run --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/bepswap/statechain -w /root/go/src/gitlab.com/thorchain/bepswap/statechain -e GOPATH=/root/go -e GOBIN=/go/bin cbarraford/golang-ruby make -C ./tests/integration install setup run wait-for-blockchain test-internal
+	docker run --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/bepswap/statechain -w /root/go/src/gitlab.com/thorchain/bepswap/statechain -e GOPATH=/root/go -e GOBIN=/go/bin cbarraford/golang-ruby make -C ./tests/integration install setup run wait-for-blockchain test-internal export validate-genesis

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/bepswap/common"
 )
@@ -23,6 +24,20 @@ type StakerPoolItem struct {
 	Ticker       common.Ticker   `json:"symbol"`
 	Units        sdk.Uint        `json:"units"`
 	StakeDetails []StakeTxDetail `json:"stake_details"`
+}
+
+func (spi StakerPoolItem) Valid() error {
+	if spi.Ticker.IsEmpty() {
+		return errors.New("Ticker cannot be empty")
+	}
+
+	for _, detail := range spi.StakeDetails {
+		if detail.RequestTxHash.IsEmpty() {
+			return errors.New("Request Tx Hash cannot be empty")
+		}
+	}
+
+	return nil
 }
 
 // StakerPool represent staker and their activities in the pools
@@ -77,6 +92,20 @@ func NewStakerPool(id common.BnbAddress) StakerPool {
 		StakerID:  id,
 		PoolUnits: []*StakerPoolItem{},
 	}
+}
+
+func (sp StakerPool) Valid() error {
+	if sp.StakerID.IsEmpty() {
+		return errors.New("Staker ID cannot be empty")
+	}
+
+	for _, item := range sp.PoolUnits {
+		if err := item.Valid(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // String return a user readable string representation of Staker Pool
