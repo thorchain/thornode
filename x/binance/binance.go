@@ -1,6 +1,7 @@
 package binance
 
 import (
+	"encoding/hex"
 	"strings"
 
 	sdk "github.com/binance-chain/go-sdk/client"
@@ -140,6 +141,9 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 	}
 	fromAddr := b.keyManager.GetAddr()
 	sendMsg := b.parseTx(payload)
+	if err := sendMsg.ValidateBasic(); nil != err {
+		return nil, nil, errors.Wrap(err, "invalid send msg")
+	}
 	acc, err := b.queryClient.GetAccount(fromAddr.String())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "fail to get account info")
@@ -154,10 +158,11 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 		AccountNumber: acc.Number,
 	}
 
-	hexTx, err := b.keyManager.Sign(signMsg)
+	rawBz, err := b.keyManager.Sign(signMsg)
 	if nil != err {
 		return nil, nil, errors.Wrap(err, "fail to sign message")
 	}
+	hexTx := []byte(hex.EncodeToString(rawBz))
 	param := map[string]string{
 		"sync": "true",
 	}
