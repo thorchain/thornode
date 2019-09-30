@@ -16,7 +16,7 @@ lint: lint-pre
 	@golangci-lint run
 
 lint-verbose: lint-pre
-	@golangci-lint run -v --deadline 3m0s
+	@golangci-lint run -v
 
 build:
 	@go build ./...
