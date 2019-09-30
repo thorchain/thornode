@@ -15,6 +15,10 @@ func (TrustAccountSuite) TestTrustAccount(c *C) {
 	c.Assert(err, IsNil)
 	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
+	consensusAddr := "bepcpub1zcjduepqrkasznnv37qcguhn6z33v2ndldpq00f7yldamjrtc2a0sc4vqrqqvr9t8t"
+	pk, err := sdk.GetConsPubKeyBech32(consensusAddr)
+	c.Assert(err, IsNil)
+	c.Assert(pk, NotNil)
 	c.Check(addr.Empty(), Equals, false)
 	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
 	trustAccount := NewTrustAccount(bnb, addr, bepConsPubKey)
