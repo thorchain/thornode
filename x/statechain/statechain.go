@@ -107,9 +107,7 @@ func (scb *StateChainBridge) Start() error {
 	if nil != err {
 		return errors.Wrap(err, "fail to get account number and sequence number from statechain ")
 	}
-	if sequenceNumber == 0 {
-		sequenceNumber = 1
-	}
+
 	scb.logger.Info().Uint64("account number", accountNumber).Uint64("sequence no", sequenceNumber).Msg("account information")
 	scb.accountNumber = accountNumber
 	scb.seqNumber = sequenceNumber
