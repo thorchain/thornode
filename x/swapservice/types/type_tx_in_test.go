@@ -25,6 +25,10 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	c.Assert(err, IsNil)
 	acc4, err := sdk.AccAddressFromBech32("bep1gnaghgzcpd73hcxeturml96maa0fajg9zrtrez")
 	c.Assert(err, IsNil)
+	accConsPub1 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
+	accConsPub2 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrx`
+	accConsPub3 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdry`
+	accConsPub4 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrz`
 
 	voter := NewTxInVoter(txID, nil)
 
@@ -51,16 +55,72 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	c.Assert(voter.Txs[0].Signers, HasLen, 2)
 	c.Assert(voter.Txs[1].Signers, HasLen, 1)
 
-	trusts3 := TrustAccounts{
-		TrustAccount{ObserverAddress: acc1},
-		TrustAccount{ObserverAddress: acc2},
-		TrustAccount{ObserverAddress: acc3},
+	trusts3 := NodeAccounts{
+		NodeAccount{
+			NodeAddress: acc1,
+			Status:      Active,
+			Accounts: TrustAccount{
+				SignerBNBAddress:       bnb,
+				ObserverBEPAddress:     acc1,
+				ValidatorBEPConsPubKey: accConsPub1,
+			},
+		},
+		NodeAccount{
+			NodeAddress: acc2,
+			Status:      Active,
+			Accounts: TrustAccount{
+				SignerBNBAddress:       bnb,
+				ObserverBEPAddress:     acc2,
+				ValidatorBEPConsPubKey: accConsPub2,
+			},
+		},
+		NodeAccount{
+			NodeAddress: acc3,
+			Status:      Active,
+			Accounts: TrustAccount{
+				SignerBNBAddress:       bnb,
+				ObserverBEPAddress:     acc3,
+				ValidatorBEPConsPubKey: accConsPub3,
+			},
+		},
 	}
-	trusts4 := TrustAccounts{
-		TrustAccount{ObserverAddress: acc1},
-		TrustAccount{ObserverAddress: acc2},
-		TrustAccount{ObserverAddress: acc3},
-		TrustAccount{ObserverAddress: acc4},
+	trusts4 := NodeAccounts{
+		NodeAccount{
+			NodeAddress: acc1,
+			Status:      Active,
+			Accounts: TrustAccount{
+				SignerBNBAddress:       bnb,
+				ObserverBEPAddress:     acc1,
+				ValidatorBEPConsPubKey: accConsPub1,
+			},
+		},
+		NodeAccount{
+			NodeAddress: acc2,
+			Status:      Active,
+			Accounts: TrustAccount{
+				SignerBNBAddress:       bnb,
+				ObserverBEPAddress:     acc2,
+				ValidatorBEPConsPubKey: accConsPub2,
+			},
+		},
+		NodeAccount{
+			NodeAddress: acc3,
+			Status:      Active,
+			Accounts: TrustAccount{
+				SignerBNBAddress:       bnb,
+				ObserverBEPAddress:     acc3,
+				ValidatorBEPConsPubKey: accConsPub3,
+			},
+		},
+		NodeAccount{
+			NodeAddress: acc4,
+			Status:      Active,
+			Accounts: TrustAccount{
+				SignerBNBAddress:       bnb,
+				ObserverBEPAddress:     acc4,
+				ValidatorBEPConsPubKey: accConsPub4,
+			},
+		},
 	}
 
 	tx := voter.GetTx(trusts3)

@@ -15,9 +15,11 @@ const (
 	TSLKey               AdminConfigKey = "TSL"
 	StakerAmtIntervalKey AdminConfigKey = "StakerAmtInterval"
 	PoolAddressKey       AdminConfigKey = "PoolAddress"
-	PoolExpiryKey        AdminConfigKey = `PoolExpiry`
+	PoolExpiryKey        AdminConfigKey = "PoolExpiry"
 	MinStakerCoinsKey    AdminConfigKey = "MinStakerCoins"
-	MRRAKey              AdminConfigKey = `MRRA` // MRRA means MinimumRefundRuneAmount, if the tx send to pool has less then this amount of RUNE , we are not going to refund it
+	MRRAKey              AdminConfigKey = "MRRA" // MRRA means MinimumRefundRuneAmount, if the tx send to pool has less then this amount of RUNE , we are not going to refund it
+	MinValidatorBondKey  AdminConfigKey = "MinValidatorBond"
+	WhiteListGasTokenKey AdminConfigKey = "WhiteListGasToken" // How much gas token we mint and send it to the newly whitelisted bep address
 )
 
 func (k AdminConfigKey) String() string {
@@ -40,6 +42,10 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 		return MinStakerCoinsKey
 	case string(MRRAKey):
 		return MRRAKey
+	case string(MinValidatorBondKey):
+		return MinValidatorBondKey
+	case string(WhiteListGasTokenKey):
+		return WhiteListGasTokenKey
 	default:
 		return UnknownKey
 	}
@@ -57,6 +63,10 @@ func (k AdminConfigKey) Default() string {
 		return "1bep"
 	case MRRAKey:
 		return sdk.NewUint(common.One).String()
+	case MinValidatorBondKey:
+		return sdk.NewUint(common.One * 10).String()
+	case WhiteListGasTokenKey:
+		return "1000bep"
 	default:
 		return ""
 	}
@@ -70,17 +80,21 @@ func (k AdminConfigKey) ValidValue(value string) error {
 		_, err = common.NewAmount(value)
 	case PoolAddressKey:
 		_, err = common.NewBnbAddress(value)
+	case MRRAKey, MinValidatorBondKey:
+		_, err = sdk.ParseUint(value)
+	case MinStakerCoinsKey, WhiteListGasTokenKey:
+		_, err = sdk.ParseCoins(value)
 	}
 	return err
 }
 
 type AdminConfig struct {
-	Key     AdminConfigKey    `json:"key"`
-	Value   string            `json:"value"`
-	Address common.BnbAddress `json:"address"`
+	Key     AdminConfigKey `json:"key"`
+	Value   string         `json:"value"`
+	Address sdk.AccAddress `json:"address"`
 }
 
-func NewAdminConfig(key AdminConfigKey, value string, address common.BnbAddress) AdminConfig {
+func NewAdminConfig(key AdminConfigKey, value string, address sdk.AccAddress) AdminConfig {
 	return AdminConfig{
 		Key:     key,
 		Value:   value,
@@ -93,7 +107,7 @@ func (c AdminConfig) Empty() bool {
 }
 
 func (c AdminConfig) Valid() error {
-	if c.Address.IsEmpty() {
+	if c.Address.Empty() {
 		return fmt.Errorf("address cannot be empty")
 	}
 	if c.Key == "" {

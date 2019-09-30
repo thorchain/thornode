@@ -5,35 +5,38 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	common "gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // TrustAccount represent those accounts we can trust, and can be used to sign tx
 type TrustAccount struct {
-	AdminAddress    common.BnbAddress `json:"admin_address"`
-	ObserverAddress sdk.AccAddress    `json:"observer_address"`
-	SignerAddress   common.BnbAddress `json:"signer_address"`
+	SignerBNBAddress       common.BnbAddress `json:"bnb_signer_acc"`
+	ObserverBEPAddress     sdk.AccAddress    `json:"bep_observer_acc"`
+	ValidatorBEPConsPubKey string            `json:"bepv_validator_acc"`
 }
 
+// TrustAccounts just a list of trust account
 type TrustAccounts []TrustAccount
 
-func NewTrustAccount(admin, signer common.BnbAddress, ob sdk.AccAddress) TrustAccount {
+// NewTrustAccount create a new instance of trust account
+func NewTrustAccount(signerBNBAddress common.BnbAddress, observerBepAddress sdk.AccAddress, validatorConsPubKey string) TrustAccount {
 	return TrustAccount{
-		AdminAddress:    admin,
-		SignerAddress:   signer,
-		ObserverAddress: ob,
+		SignerBNBAddress:       signerBNBAddress,
+		ObserverBEPAddress:     observerBepAddress,
+		ValidatorBEPConsPubKey: validatorConsPubKey,
 	}
 }
 
+// IsValid do some basic check make sure all the field has legit value
 func (ta TrustAccount) IsValid() error {
-	if ta.ObserverAddress.Empty() {
-		return errors.New("Observer address cannot be empty")
+	if ta.ObserverBEPAddress.Empty() {
+		return errors.New("Observer BEP address cannot be empty")
 	}
-	if ta.AdminAddress.IsEmpty() {
-		return errors.New("Admin address cannot be empty")
+	if ta.SignerBNBAddress.IsEmpty() {
+		return errors.New("Signer BNB address cannot be empty")
 	}
-	if ta.SignerAddress.IsEmpty() {
-		return errors.New("Signer address cannot be empty")
+	if len(ta.ValidatorBEPConsPubKey) == 0 {
+		return errors.New("Validator BEP consensus public key cannot be empty")
 	}
 
 	return nil
@@ -42,17 +45,8 @@ func (ta TrustAccount) IsValid() error {
 // String implement fmt.Stringer interface
 func (ta TrustAccount) String() string {
 	sb := strings.Builder{}
-	sb.WriteString("admin:" + ta.AdminAddress.String())
-	sb.WriteString("signer:" + ta.SignerAddress.String())
-	sb.WriteString("observer:" + ta.ObserverAddress.String())
+	sb.WriteString("signer_bnb_address:" + ta.SignerBNBAddress.String() + "\n")
+	sb.WriteString("observer_bep_address:" + ta.ObserverBEPAddress.String() + "\n")
+	sb.WriteString("validator_bep_consensus_public_key:" + ta.ValidatorBEPConsPubKey + "\n")
 	return sb.String()
-}
-
-func (trusts TrustAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
-	for _, trust := range trusts {
-		if trust.ObserverAddress.Equals(addr) {
-			return true
-		}
-	}
-	return false
 }

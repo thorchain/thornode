@@ -11,7 +11,7 @@ import (
 // RefundStoreAccessor define the method the is required for Refund operation
 // We need this interface thus we can mock the behaviour and write unit test
 type RefundStoreAccessor interface {
-	GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) sdk.Uint
+	GetAdminConfigMRRA(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint
 	GetPool(ctx sdk.Context, ticker common.Ticker) Pool
 }
 
@@ -66,7 +66,7 @@ func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keepe
 
 // getRefundCoin
 func getRefundCoin(ctx sdk.Context, ticker common.Ticker, amount sdk.Uint, keeper RefundStoreAccessor) common.Coin {
-	minimumRefundRune := keeper.GetAdminConfigMRRA(ctx, common.NoBnbAddress)
+	minimumRefundRune := keeper.GetAdminConfigMRRA(ctx, EmptyAccAddress)
 	if common.IsRune(ticker) {
 		if amount.GT(minimumRefundRune) {
 			// refund the difference

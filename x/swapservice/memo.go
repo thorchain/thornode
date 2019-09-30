@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/bepswap/common"
 )
@@ -26,6 +27,7 @@ const (
 	txOutbound
 	txAdd
 	txGas
+	txApply
 )
 
 const (
@@ -58,6 +60,7 @@ var stringToTxTypeMap = map[string]TxType{
 	"gas":      txGas,
 	"g":        txGas,
 	"$":        txGas,
+	"apply":    txApply,
 }
 
 var txToStringMap = map[TxType]string{
@@ -69,6 +72,7 @@ var txToStringMap = map[TxType]string{
 	txOutbound: "outbound",
 	txAdd:      "add",
 	txGas:      "gas",
+	txApply:    "apply",
 }
 
 var stringToAdminTypeMap = map[string]adminType{
@@ -117,6 +121,7 @@ type Memo interface {
 	GetKey() string
 	GetValue() string
 	GetBlockHeight() uint64
+	GetNodeAddress() sdk.AccAddress
 }
 
 type MemoBase struct {
@@ -165,12 +170,17 @@ type OutboundMemo struct {
 	BlockHeight uint64
 }
 
+type ApplyMemo struct {
+	MemoBase
+	NodeAddress sdk.AccAddress
+}
+
 func ParseMemo(memo string) (Memo, error) {
 	var err error
 	noMemo := MemoBase{}
 	parts := strings.Split(memo, ":")
 	if len(parts) < 2 {
-		return noMemo, fmt.Errorf("Cannot parse given memo: length %d", len(parts))
+		return noMemo, fmt.Errorf("cannot parse given memo: length %d", len(parts))
 	}
 	tx, err := stringToTxType(parts[0])
 	if err != nil {
@@ -178,7 +188,7 @@ func ParseMemo(memo string) (Memo, error) {
 	}
 
 	var ticker common.Ticker
-	if tx != txGas && tx != txAdmin && tx != txOutbound {
+	if tx != txGas && tx != txAdmin && tx != txOutbound && tx != txApply {
 		var err error
 		ticker, err = common.NewTicker(parts[1])
 		if err != nil {
@@ -284,12 +294,25 @@ func ParseMemo(memo string) (Memo, error) {
 		return noMemo, nil
 	case txOutbound:
 		if len(parts) < 2 {
-			return noMemo, fmt.Errorf("Not enough parameters")
+			return noMemo, fmt.Errorf("not enough parameters")
 		}
 		height, err := strconv.ParseUint(parts[1], 0, 64)
+
 		return OutboundMemo{
 			BlockHeight: height,
 		}, err
+	case txApply:
+		if len(parts) < 2 {
+			return noMemo, fmt.Errorf("not enough parameters")
+		}
+		addr, err := sdk.AccAddressFromBech32(parts[1])
+		if nil != err {
+			return noMemo, errors.Wrapf(err, "%s is an invalid bep address", parts[1])
+		}
+		return ApplyMemo{
+			MemoBase:    MemoBase{TxType: txApply},
+			NodeAddress: addr,
+		}, nil
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())
 	}
@@ -306,6 +329,7 @@ func (m MemoBase) GetAdminType() adminType           { return adminUnknown }
 func (m MemoBase) GetKey() string                    { return "" }
 func (m MemoBase) GetValue() string                  { return "" }
 func (m MemoBase) GetBlockHeight() uint64            { return 0 }
+func (m MemoBase) GetNodeAddress() sdk.AccAddress    { return sdk.AccAddress{} }
 
 // Transaction Specific Functions
 func (m WithdrawMemo) GetAmount() string             { return m.Amount }
@@ -315,3 +339,4 @@ func (m AdminMemo) GetAdminType() adminType          { return m.Type }
 func (m AdminMemo) GetKey() string                   { return m.Key }
 func (m AdminMemo) GetValue() string                 { return m.Value }
 func (m OutboundMemo) GetBlockHeight() uint64        { return m.BlockHeight }
+func (m ApplyMemo) GetNodeAddress() sdk.AccAddress   { return m.NodeAddress }

@@ -9,6 +9,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
+	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
 	"gitlab.com/thorchain/bepswap/common"
@@ -20,7 +21,6 @@ const (
 	prefixTxIn              dbPrefix = "tx_"
 	prefixPool              dbPrefix = "pool_"
 	prefixTxOut             dbPrefix = "txout_"
-	prefixTrustAccount      dbPrefix = "trustaccount_"
 	prefixPoolStaker        dbPrefix = "poolstaker_"
 	prefixStakerPool        dbPrefix = "stakerpool_"
 	prefixAdmin             dbPrefix = "admin_"
@@ -30,6 +30,8 @@ const (
 	prefixLastEventID       dbPrefix = "last_event_id"
 	prefixLastBinanceHeight dbPrefix = "last_binance_height"
 	prefixLastSignedHeight  dbPrefix = "last_signed_height"
+	prefixNodeAccount       dbPrefix = "node_account_"
+	prefixActiveObserver    dbPrefix = "active_observer_"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -40,17 +42,19 @@ func getKey(prefix dbPrefix, key string) string {
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type Keeper struct {
-	coinKeeper bank.Keeper
-	storeKey   sdk.StoreKey // Unexposed key to access store from sdk.Context
-	cdc        *codec.Codec // The wire codec for binary encoding/decoding.
+	coinKeeper   bank.Keeper
+	supplyKeeper supply.Keeper
+	storeKey     sdk.StoreKey // Unexposed key to access store from sdk.Context
+	cdc          *codec.Codec // The wire codec for binary encoding/decoding.
 }
 
 // NewKeeper creates new instances of the swapservice Keeper
-func NewKeeper(coinKeeper bank.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
+func NewKeeper(coinKeeper bank.Keeper, supplyKeeper supply.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
 	return Keeper{
-		coinKeeper: coinKeeper,
-		storeKey:   storeKey,
-		cdc:        cdc,
+		coinKeeper:   coinKeeper,
+		supplyKeeper: supplyKeeper,
+		storeKey:     storeKey,
+		cdc:          cdc,
 	}
 }
 
@@ -107,8 +111,8 @@ func (k Keeper) GetPool(ctx sdk.Context, ticker common.Ticker) Pool {
 	bz := store.Get([]byte(key))
 	var pool Pool
 	k.cdc.MustUnmarshalBinaryBare(bz, &pool)
-	pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx, common.NoBnbAddress)
-	pool.ExpiryUtc = k.GetAdminConfigPoolExpiry(ctx, common.NoBnbAddress)
+	pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx, EmptyAccAddress)
+	pool.ExpiryUtc = k.GetAdminConfigPoolExpiry(ctx, EmptyAccAddress)
 
 	return pool
 }
@@ -271,9 +275,9 @@ func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID common.BnbAddress, sp St
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(sp))
 }
 
-// TotalTrustAccounts counts the number of trust accounts
-func (k Keeper) TotalTrustAccounts(ctx sdk.Context) (count int) {
-	taIterator := k.GetTrustAccountIterator(ctx)
+// TotalNodeAccounts counts the number of trust accounts
+func (k Keeper) TotalNodeAccounts(ctx sdk.Context) (count int) {
+	taIterator := k.GetNodeAccountIterator(ctx)
 	defer taIterator.Close()
 	for ; taIterator.Valid(); taIterator.Next() {
 		count += 1
@@ -281,92 +285,139 @@ func (k Keeper) TotalTrustAccounts(ctx sdk.Context) (count int) {
 	return
 }
 
-// ListTrustAccounts - gets a list of all trust accounts
-func (k Keeper) ListTrustAccounts(ctx sdk.Context) TrustAccounts {
-	var trustAccounts []TrustAccount
-	taIterator := k.GetTrustAccountIterator(ctx)
+// TotalActiveNodeAccount count the number of active node account
+func (k Keeper) TotalActiveNodeAccount(ctx sdk.Context) (int, error) {
+	count := 0
+	taIterator := k.GetNodeAccountIterator(ctx)
 	defer taIterator.Close()
 	for ; taIterator.Valid(); taIterator.Next() {
-		var ta TrustAccount
-		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
-		trustAccounts = append(trustAccounts, ta)
-	}
-	return trustAccounts
-}
-
-// ListActiveTrustAccounts - get a list of active trust accounts
-func (k Keeper) ListActiveTrustAccounts(ctx sdk.Context) TrustAccounts {
-	all := k.ListTrustAccounts(ctx)
-	trusts := make(TrustAccounts, 0)
-
-	// Count the votes for min coins needed to be an active trusted account
-	// We ignore any vote that is more coins than they themselves have. This
-	// ensures that we can never kick out all validators with a super high
-	// number, and that validators who are not active, still cannot vote
-	counter := make(map[string]int)
-	var total int
-	for _, trust := range all {
-		minCoins := k.GetAdminConfigMinStakerCoins(ctx, trust.AdminAddress)
-		if k.coinKeeper.HasCoins(ctx, trust.ObserverAddress, minCoins) {
-			counter[minCoins.String()] += 1
-			total += 1
+		var na NodeAccount
+		if err := k.cdc.UnmarshalBinaryBare(taIterator.Value(), &na); nil != err {
+			return 0, errors.Wrapf(err, "fail to unmarshal node account")
+		}
+		if na.Status == NodeActive {
+			count += 1
 		}
 	}
-
-	// discover the majority min coins vote, and add any trust accounts that
-	// meet that requirement to trusts
-	for min, count := range counter {
-		if HasMajority(count, total) {
-			minCoins, _ := sdk.ParseCoins(min)
-			for _, trust := range all {
-				if k.coinKeeper.HasCoins(ctx, trust.ObserverAddress, minCoins) {
-					trusts = append(trusts, trust)
-				}
-			}
-			break
-		}
-	}
-	return trusts
+	return count, nil
 }
 
-// IsTrustAccount check whether the account is trust , and can send tx
-func (k Keeper) IsTrustAccount(ctx sdk.Context, addr sdk.AccAddress) bool {
-	ctx.Logger().Debug("IsTrustAccount", "account address", addr.String())
+// ListNodeAccounts - gets a list of all trust accounts
+func (k Keeper) ListNodeAccounts(ctx sdk.Context) ([]NodeAccount, error) {
+	var nodeAccounts []NodeAccount
+	naIterator := k.GetNodeAccountIterator(ctx)
+	defer naIterator.Close()
+	for ; naIterator.Valid(); naIterator.Next() {
+		var na NodeAccount
+		if err := k.cdc.UnmarshalBinaryBare(naIterator.Value(), &na); nil != err {
+			return nil, errors.Wrap(err, "fail to unmarshal node account")
+		}
+		nodeAccounts = append(nodeAccounts, na)
+	}
+	return nodeAccounts, nil
+}
+
+// ListActiveNodeAccounts - get a list of active trust accounts
+func (k Keeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+	all, err := k.ListNodeAccounts(ctx)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to get all node accounts")
+	}
+	activeNodeAccounts := make(NodeAccounts, 0)
+	for _, item := range all {
+		if item.Status == NodeActive {
+			activeNodeAccounts = append(activeNodeAccounts, item)
+		}
+	}
+	return activeNodeAccounts, nil
+}
+
+// IsWhitelistedAccount check whether the given account is white listed
+func (k Keeper) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool {
+	ctx.Logger().Debug("IsWhitelistedAccount", "account address", addr.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTrustAccount, addr.String())
+	key := getKey(prefixNodeAccount, addr.String())
 	return store.Has([]byte(key))
 }
 
-// IsTrustAccountBnb check whether the account is trust , and can send tx
-func (k Keeper) IsTrustAccountBnb(ctx sdk.Context, addr common.BnbAddress) bool {
-	ctx.Logger().Debug("IsTrustAccountBnb", "bnb address", addr.String())
+// GetNodeAccount try to get node account with the given address from db
+func (k Keeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+	ctx.Logger().Debug("GetNodeAccount", "node account", addr.String())
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixNodeAccount, addr.String())
+	payload := store.Get([]byte(key))
+	var na NodeAccount
+	if err := k.cdc.UnmarshalBinaryBare(payload, &na); nil != err {
+		return na, errors.Wrap(err, "fail to unmarshal node account")
+	}
+	return na, nil
+}
 
-	taIterator := k.GetTrustAccountIterator(ctx)
-	defer taIterator.Close()
-	for ; taIterator.Valid(); taIterator.Next() {
-		var ta TrustAccount
-		k.cdc.MustUnmarshalBinaryBare(taIterator.Value(), &ta)
-		ctx.Logger().Info("IsTrustAccountBnb", "bnb1", addr.String(), "bnb2", ta.AdminAddress)
-		if ta.AdminAddress.Equals(addr) {
-			return true
+// SetNodeAccount save the given node account into datastore
+func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
+	ctx.Logger().Debug("SetNodeAccount", "node account", na.String())
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixNodeAccount, na.NodeAddress.String())
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(na))
+
+	// When a node is in active status, we need to add the observer address to active
+	// if it is not , then we could remove them
+	if na.Status == NodeActive {
+		k.SetActiveObserver(ctx, na.Accounts.ObserverBEPAddress)
+	} else {
+		k.RemoveActiveObserver(ctx, na.Accounts.ObserverBEPAddress)
+	}
+}
+
+func (k Keeper) EnsureTrustAccountUnique(ctx sdk.Context, account TrustAccount) error {
+	iter := k.GetNodeAccountIterator(ctx)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		var na NodeAccount
+		if err := k.cdc.UnmarshalBinaryBare(iter.Value(), &na); nil != err {
+			return errors.Wrap(err, "fail to unmarshal node account")
+		}
+		if na.Accounts.ValidatorBEPConsPubKey == account.ValidatorBEPConsPubKey {
+			return errors.Errorf("%s already exist", account.ValidatorBEPConsPubKey)
+		}
+		if na.Accounts.SignerBNBAddress.Equals(account.SignerBNBAddress) {
+			return errors.Errorf("%s already exist", account.SignerBNBAddress)
+		}
+		if na.Accounts.ObserverBEPAddress.Equals(account.ObserverBEPAddress) {
+			return errors.Errorf("%s already exist", account.ObserverBEPAddress)
 		}
 	}
 
-	return false
-}
-
-// SetTrustAccount save the given trust account into data store
-func (k Keeper) SetTrustAccount(ctx sdk.Context, ta TrustAccount) {
-	ctx.Logger().Debug("SetTrustAccount", "trust account", ta.String())
-	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTrustAccount, ta.ObserverAddress.String())
-	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ta))
+	return nil
 }
 
 // GetTrustAccountIterator iterate trust accounts
-func (k Keeper) GetTrustAccountIterator(ctx sdk.Context) sdk.Iterator {
+func (k Keeper) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, []byte(prefixTrustAccount))
+	return sdk.KVStorePrefixIterator(store, []byte(prefixNodeAccount))
+}
+
+// SetActiveObserver set the given addr as an active observer address
+func (k Keeper) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixActiveObserver, addr.String())
+	ctx.Logger().Info("set_active_observer", "key", key)
+	store.Set([]byte(key), addr.Bytes())
+}
+
+// RemoveActiveObserver remove the given address from active observer
+func (k Keeper) RemoveActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixActiveObserver, addr.String())
+	store.Delete([]byte(key))
+}
+
+// IsActiveObserver check the given account address, whether they are active
+func (k Keeper) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixActiveObserver, addr.String())
+	ctx.Logger().Info("is_active_observer", "key", key)
+	return store.Has([]byte(key))
 }
 
 // SetTxHas - saving a given txhash to the KVStore
@@ -486,28 +537,28 @@ func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
 }
 
 // GetAdminConfigGSL - get the config for GSL
-func (k Keeper) GetAdminConfigGSL(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, GSLKey, GSLKey.Default(), bnb)
+func (k Keeper) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
+	return k.GetAdminConfigAmountType(ctx, GSLKey, GSLKey.Default(), addr)
 }
 
 // GetAdminConfigTSL - get the config for TSL
-func (k Keeper) GetAdminConfigTSL(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, TSLKey, TSLKey.Default(), bnb)
+func (k Keeper) GetAdminConfigTSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
+	return k.GetAdminConfigAmountType(ctx, TSLKey, TSLKey.Default(), addr)
 }
 
 // GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
-func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context, bnb common.BnbAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, StakerAmtIntervalKey.Default(), bnb)
+func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
+	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, StakerAmtIntervalKey.Default(), addr)
 }
 
 // GetAdminConfigPoolAddress - get the config for PoolAddress
-func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context, bnb common.BnbAddress) common.BnbAddress {
-	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, PoolAddressKey.Default(), bnb)
+func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context, addr sdk.AccAddress) common.BnbAddress {
+	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, PoolAddressKey.Default(), addr)
 }
 
 // GetAdminConfigPoolExpiry get the config for pool address expiry
-func (k Keeper) GetAdminConfigPoolExpiry(ctx sdk.Context, bnb common.BnbAddress) time.Time {
-	expiry, err := k.GetAdminConfigValue(ctx, PoolExpiryKey, bnb)
+func (k Keeper) GetAdminConfigPoolExpiry(ctx sdk.Context, addr sdk.AccAddress) time.Time {
+	expiry, err := k.GetAdminConfigValue(ctx, PoolExpiryKey, addr)
 	if nil != err {
 		ctx.Logger().Error("fail to get pool address expiry", "error", err)
 		return time.Time{}
@@ -520,27 +571,37 @@ func (k Keeper) GetAdminConfigPoolExpiry(ctx sdk.Context, bnb common.BnbAddress)
 	return t
 }
 
+// GetAdminConfigMinValidatorBond get the minimum bond to become a validator
+func (k Keeper) GetAdminConfigMinValidatorBond(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint {
+	return k.GetAdminConfigUintType(ctx, MinValidatorBondKey, MinValidatorBondKey.Default(), addr)
+}
+
+// GetAdminConfigWhiteListGasToken
+func (k Keeper) GetAdminConfigWhiteListGasToken(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+	return k.GetAdminConfigCoinsType(ctx, WhiteListGasTokenKey, WhiteListGasTokenKey.Default(), addr)
+}
+
 // GetAdminConfigMRRA get the config for minimum refund rune amount default to 1 rune
-func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context, bnb common.BnbAddress) sdk.Uint {
-	return k.GetAdminConfigUintType(ctx, MRRAKey, MRRAKey.Default(), bnb)
+func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint {
+	return k.GetAdminConfigUintType(ctx, MRRAKey, MRRAKey.Default(), addr)
 }
 
 // GetAdminConfigMinStakerCoins - get the min amount of coins needed to be a staker
-func (k Keeper) GetAdminConfigMinStakerCoins(ctx sdk.Context, bnb common.BnbAddress) sdk.Coins {
-	return k.GetAdminConfigCoinsType(ctx, MinStakerCoinsKey, MinStakerCoinsKey.Default(), bnb)
+func (k Keeper) GetAdminConfigMinStakerCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+	return k.GetAdminConfigCoinsType(ctx, MinStakerCoinsKey, MinStakerCoinsKey.Default(), addr)
 }
 
 // GetAdminConfigBnbAddressType - get the config for TSL
-func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, bnb common.BnbAddress) common.BnbAddress {
-	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
+func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.BnbAddress {
+	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
 		value = dValue
 	}
 	return common.BnbAddress(value)
 }
 
-func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, bnb common.BnbAddress) sdk.Uint {
-	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
+func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint {
+	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
 		value = dValue
 	}
@@ -552,8 +613,8 @@ func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dVal
 }
 
 // GetAdminConfigAmountType - get the config for TSL
-func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string, bnb common.BnbAddress) common.Amount {
-	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
+func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Amount {
+	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
 		value = dValue
 	}
@@ -561,8 +622,8 @@ func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dV
 }
 
 // GetAdminConfigCoinsType - get the config for TSL
-func (k Keeper) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, bnb common.BnbAddress) sdk.Coins {
-	value, _ := k.GetAdminConfigValue(ctx, key, bnb)
+func (k Keeper) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Coins {
+	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
 		value = dValue
 	}
@@ -571,14 +632,13 @@ func (k Keeper) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dVa
 }
 
 // GetAdminConfigValue - gets the value of a given admin key
-func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb common.BnbAddress) (val string, err error) {
-
-	getConfigValue := func(bnb common.BnbAddress) (string, error) {
-		config := NewAdminConfig(kkey, "", bnb)
+func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error) {
+	getConfigValue := func(nodeAddr sdk.AccAddress) (string, error) {
+		config := NewAdminConfig(kkey, "", nodeAddr)
 		key := getKey(prefixAdmin, config.DbKey())
 		store := ctx.KVStore(k.storeKey)
 		if !store.Has([]byte(key)) {
-			return "", nil
+			return kkey.Default(), nil
 		}
 		buf := store.Get([]byte(key))
 		if err := k.cdc.UnmarshalBinaryBare(buf, &config); nil != err {
@@ -587,13 +647,15 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb co
 		}
 		return config.Value, nil
 	}
-
 	// no specific bnb address given, look for consensus value
-	if bnb.IsEmpty() {
-		trustAccounts := k.ListActiveTrustAccounts(ctx)
+	if addr.Empty() {
+		nodeAccounts, err := k.ListActiveNodeAccounts(ctx)
+		if nil != err {
+			return "", errors.Wrap(err, "fail to get active node accounts")
+		}
 		counter := make(map[string]int)
-		for _, trust := range trustAccounts {
-			config, err := getConfigValue(trust.AdminAddress)
+		for _, node := range nodeAccounts {
+			config, err := getConfigValue(node.NodeAddress)
 			if err != nil {
 				return "", err
 			}
@@ -601,13 +663,13 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, bnb co
 		}
 
 		for k, v := range counter {
-			if HasMajority(v, len(trustAccounts)) {
+			if HasMajority(v, len(nodeAccounts)) {
 				return k, nil
 			}
 		}
 	} else {
 		// lookup admin config set by specific bnb address
-		val, err = getConfigValue(bnb)
+		val, err = getConfigValue(addr)
 		if err != nil {
 			return val, err
 		}
