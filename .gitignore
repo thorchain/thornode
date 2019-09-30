@@ -20,3 +20,5 @@ ssd
 *.exe
 
 .testCoverage.txt
+c.out
+*.leveldb/

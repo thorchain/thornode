@@ -18,8 +18,6 @@ while true; do
   sscli config indent true
   sscli config trust-node true
 
-  echo "password" | ssd gentx --name jack
-  ssd collect-gentxs
   # add jack as a trusted account
   {
     jq --arg OBSERVER_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.admin_configs += [{"key":"PoolAddress", "value": "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY", "address":$OBSERVER_ADDRESS}]' |
@@ -29,8 +27,8 @@ while true; do
   {
     jq --arg OBSERVER_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.admin_configs += [{"key":"PoolExpiry", "value": "2020-01-01T00:00:00Z", "address":$OBSERVER_ADDRESS}]'
   } <~/.ssd/config/genesis.json >/tmp/genesis.json
-  mv /tmp/genesis.json ~/.ssd/config/genesis.json
 
+  mv /tmp/genesis.json ~/.ssd/config/genesis.json
   ssd validate-genesis
   cat ~/.ssd/config/genesis.json
   break
