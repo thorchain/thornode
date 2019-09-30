@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"gitlab.com/thorchain/bepswap/common"
 )
 
@@ -117,9 +118,17 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, config := range data.AdminConfigs {
 		keeper.SetAdminConfig(ctx, config)
 	}
-
-	for _, ta := range data.NodeAccounts {
+	validators := make([]abci.ValidatorUpdate, len(data.NodeAccounts))
+	for i, ta := range data.NodeAccounts {
 		keeper.SetNodeAccount(ctx, ta)
+		pk, err := sdk.GetConsPubKeyBech32(ta.Accounts.ValidatorBEPConsPubKey)
+		if nil != err {
+			ctx.Logger().Error("fail to parse consensus public key", "key", ta.Accounts.ValidatorBEPConsPubKey)
+		}
+		validators[i] = abci.ValidatorUpdate{
+			PubKey: tmtypes.TM2PB.PubKey(pk),
+			Power:  int64(100 / len(validators)),
+		}
 	}
 
 	for _, stake := range data.StakerPools {
@@ -146,7 +155,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 	keeper.SetLastEventID(ctx, data.LastEventID)
 
-	return []abci.ValidatorUpdate{}
+	return validators
+
 }
 
 // ExportGenesis export the data in Genesis
