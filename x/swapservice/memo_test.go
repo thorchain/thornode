@@ -3,11 +3,18 @@ package swapservice
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/bepswap/statechain/cmd"
 )
 
 type MemoSuite struct{}
 
 var _ = Suite(&MemoSuite{})
+
+func (s *MemoSuite) SetUpSuite(c *C) {
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+}
 
 func (s *MemoSuite) TestTxType(c *C) {
 	for _, trans := range []TxType{txCreate, txStake, txWithdraw, txSwap} {
@@ -162,6 +169,10 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Check(memo.GetKey(), Equals, "BNB")
 	c.Check(memo.GetValue(), Equals, "")
 
+	memo, err = ParseMemo("apply:bep180xs5jx2szhww4jq4xfmvpza7kzr6rwu9408dm")
+	c.Assert(err, IsNil)
+	c.Assert(memo.IsType(txApply), Equals, true)
+	c.Assert(memo.GetNodeAddress().String(), Equals, "bep180xs5jx2szhww4jq4xfmvpza7kzr6rwu9408dm")
 	// unhappy paths
 	_, err = ParseMemo("")
 	c.Assert(err, NotNil)

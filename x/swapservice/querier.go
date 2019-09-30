@@ -43,6 +43,10 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryHeights(ctx, path[1:], req, keeper)
 		case q.QueryObservers.Key:
 			return queryObservers(ctx, path[1:], req, keeper)
+		case q.QueryNodeAccount.Key:
+			return queryNodeAccount(ctx, path[1:], req, keeper)
+		case q.QueryNodeAccounts.Key:
+			return queryNodeAccounts(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown swapservice query endpoint: %s", path[0]),
@@ -51,17 +55,48 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 	}
 }
 
+func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	nodeAddress := path[0]
+	addr, err := sdk.AccAddressFromBech32(nodeAddress)
+	if nil != err {
+		return nil, sdk.ErrUnknownRequest("invalid account address")
+	}
+
+	nodeAcc, err := keeper.GetNodeAccount(ctx, addr)
+	if nil != err {
+		return nil, sdk.ErrInternal("fail to get node accounts")
+	}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, nodeAcc)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal node account to json", err)
+		return nil, sdk.ErrInternal("fail to marshal node account to json")
+	}
+
+	return res, nil
+}
+func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	nodeAccounts, err := keeper.ListNodeAccounts(ctx)
+	if nil != err {
+		return nil, sdk.ErrInternal("fail to get node accounts")
+	}
+	fmt.Println(nodeAccounts)
+	res, err := codec.MarshalJSONIndent(keeper.cdc, nodeAccounts)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal observers to json", err)
+		return nil, sdk.ErrInternal("fail to marshal observers to json")
+	}
+
+	return res, nil
+}
+
 func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	iter := keeper.GetTrustAccountIterator(ctx)
-	if nil == iter {
+	activeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
+	if nil != err {
 		return nil, sdk.ErrInternal("fail to get node account iterator")
 	}
-	result := []string{}
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		var ta TrustAccount
-		keeper.cdc.MustUnmarshalBinaryBare(iter.Value(), &ta)
-		result = append(result, ta.ObserverAddress.String())
+	var result []string
+	for _, item := range activeAccounts {
+		result = append(result, item.Accounts.ObserverBEPAddress.String())
 	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, result)
 	if nil != err {
@@ -152,8 +187,8 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, 
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
 		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		pool.PoolAddress = keeper.GetAdminConfigPoolAddress(ctx, common.NoBnbAddress)
-		pool.ExpiryUtc = keeper.GetAdminConfigPoolExpiry(ctx, common.NoBnbAddress)
+		pool.PoolAddress = keeper.GetAdminConfigPoolAddress(ctx, EmptyAccAddress)
+		pool.ExpiryUtc = keeper.GetAdminConfigPoolExpiry(ctx, EmptyAccAddress)
 		pools = append(pools, pool)
 	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pools)
@@ -170,7 +205,10 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		return nil, sdk.ErrInternal("fail to parse tx id")
 	}
 	voter := keeper.GetTxInVoter(ctx, hash)
-	trustAccounts := keeper.ListActiveTrustAccounts(ctx)
+	trustAccounts, err := keeper.ListActiveNodeAccounts(ctx)
+	if nil != err {
+		return nil, sdk.ErrInternal("fail to get trust account")
+	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, voter.GetTx(trustAccounts))
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
@@ -201,16 +239,16 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var err error
 	key := GetAdminConfigKey(path[0])
-	bnb := common.NoBnbAddress
+	addr := EmptyAccAddress
 	if len(path) > 1 {
-		bnb, err = common.NewBnbAddress(path[1])
+		addr, err = sdk.AccAddressFromBech32(path[1])
 		if err != nil {
-			ctx.Logger().Error("fail to parse bnb address", err)
-			return nil, sdk.ErrInternal("fail to parse bnb address")
+			ctx.Logger().Error("fail to parse bep address", err)
+			return nil, sdk.ErrInternal("fail to parse bep address")
 		}
 	}
-	config := NewAdminConfig(key, "", bnb)
-	config.Value, err = keeper.GetAdminConfigValue(ctx, key, bnb)
+	config := NewAdminConfig(key, "", addr)
+	config.Value, err = keeper.GetAdminConfigValue(ctx, key, addr)
 	if nil != err {
 		ctx.Logger().Error("fail to get admin config", err)
 		return nil, sdk.ErrInternal("fail to get admin config")

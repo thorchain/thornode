@@ -115,7 +115,7 @@ func (s StakeSuite) TestValidateAmount(c *C) {
 // TestValidateStakeMessage
 func (StakeSuite) TestValidateStakeMessage(c *C) {
 	ps := NewMockInMemoryPoolStorage()
-	ctx := GetCtx()
+	ctx, _ := setupKeeperForTest(c)
 	txId, err := common.NewTxID("4D60A73FEBD42592DB697EF1DA020A214EC3102355D0E1DD07B18557321B106X")
 	if nil != err {
 		c.Errorf("fail to create tx id,%s", err)
@@ -144,7 +144,7 @@ func (StakeSuite) TestValidateStakeMessage(c *C) {
 // TestStake test stake func
 func (StakeSuite) TestStake(c *C) {
 	ps := NewMockInMemoryPoolStorage()
-	ctx := GetCtx()
+	ctx, _ := setupKeeperForTest(c)
 	txId, err := common.NewTxID("4D60A73FEBD42592DB697EF1DA020A214EC3102355D0E1DD07B18557321B106X")
 	if nil != err {
 		c.Errorf("fail to create tx id,%s", err)
