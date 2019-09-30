@@ -3,21 +3,10 @@ package swapservice
 import (
 	"fmt"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/cosmos/cosmos-sdk/x/auth"
-	"github.com/cosmos/cosmos-sdk/x/bank"
-	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/staking"
-	"github.com/pkg/errors"
-	. "gopkg.in/check.v1"
-
-	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
-	dbm "github.com/tendermint/tm-db"
-
+	"github.com/pkg/errors"
 	"gitlab.com/thorchain/bepswap/common"
+	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/bepswap/statechain/cmd"
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/mocks"
@@ -34,21 +23,9 @@ func (s *SwapSuite) SetUpSuite(c *C) {
 	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
 }
 
-func GetCtx() sdk.Context {
-
-	db := dbm.NewMemDB()
-	cms := store.NewCommitMultiStore(db)
-	cms.MountStoreWithDB(keyStore, sdk.StoreTypeIAVL, db)
-	if err := cms.LoadLatestVersion(); nil != err {
-		fmt.Printf("error load latest db version error: %s ", err)
-	}
-	return sdk.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
-
-}
-
 func (s SwapSuite) TestSwap(c *C) {
 	poolStorage := mocks.MockPoolStorage{}
-	ctx := GetCtx()
+	ctx, _ := setupKeeperForTest(c)
 	tradeSlipLimit := common.Amount("0.100000")
 	globalSlipLimit := common.Amount("0.200000")
 	inputs := []struct {
@@ -234,7 +211,7 @@ func (s SwapSuite) TestSwap(c *C) {
 
 func (s SwapSuite) TestValidatePools(c *C) {
 	keeper := mocks.MockPoolStorage{}
-	ctx := GetCtx()
+	ctx, _ := setupKeeperForTest(c)
 	c.Check(validatePools(ctx, keeper, common.RuneTicker), IsNil)
 	c.Check(validatePools(ctx, keeper, "NOTEXIST"), NotNil)
 }
@@ -266,36 +243,7 @@ func (s SwapSuite) TestCalculators(c *C) {
 }
 
 func (s SwapSuite) TestHandleMsgSwap(c *C) {
-	ctx := GetCtx()
-	var cdc = codec.New()
-	RegisterCodec(cdc)
-	sdk.RegisterCodec(cdc)
-	codec.RegisterCrypto(cdc)
-
-	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
-	paramsKeeper := params.NewKeeper(cdc, keyStore, tkeys[params.TStoreKey], params.DefaultCodespace)
-	// Set specific supspaces
-	authSubspace := paramsKeeper.Subspace(auth.DefaultParamspace)
-	bankSupspace := paramsKeeper.Subspace(bank.DefaultParamspace)
-
-	// The AccountKeeper handles address -> account lookups
-	accountKeeper := auth.NewAccountKeeper(
-		cdc,
-		keyStore,
-		authSubspace,
-		auth.ProtoBaseAccount,
-	)
-
-	// The BankKeeper allows you perform sdk.Coins interactions
-	bankKeeper := bank.NewBaseKeeper(
-		accountKeeper,
-		bankSupspace,
-		bank.DefaultCodespace,
-		nil, // app.ModuleAccountAddrs(),
-	)
-
-	k := NewKeeper(bankKeeper, keyStore, cdc)
-
+	ctx, k := setupKeeperForTest(c)
 	txOutStore := NewTxOutStore(k)
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
@@ -303,10 +251,13 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	c.Assert(err, IsNil)
 	signerAddr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
-	k.SetTrustAccount(ctx, types.NewTrustAccount(addr, addr, signerAddr))
+	observerAddr, err := sdk.AccAddressFromBech32("bep1rtgz3lcaw8vw0yfsc8ga0rdgwa3qh9ju7vfsnk")
+	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
+	ta := types.NewTrustAccount(addr, observerAddr, bepConsPubKey)
+	k.SetNodeAccount(ctx, types.NewNodeAccount(signerAddr, NodeActive, ta))
 	txOutStore.NewBlock(1)
 	// no pool
-	msg := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(common.One), addr, addr, sdk.ZeroUint(), signerAddr)
+	msg := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(common.One), addr, addr, sdk.ZeroUint(), observerAddr)
 	res := handleMsgSwap(ctx, k, txOutStore, msg)
 	c.Assert(res.Code, Equals, sdk.CodeInternal)
 	pool := NewPool()

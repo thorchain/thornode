@@ -45,6 +45,8 @@ var (
 	QueryCompleteEvents   = Query{Key: "complete_events", EndpointTemplate: "/%s/events/{%s}"}
 	QueryHeights          = Query{Key: "heights", EndpointTemplate: "/%s/lastblock"}
 	QueryObservers        = Query{Key: "observers", EndpointTemplate: "/%s/observers"}
+	QueryNodeAccounts     = Query{Key: "nodeaccounts", EndpointTemplate: "/%s/nodeaccounts"}
+	QueryNodeAccount      = Query{Key: "nodeaccount", EndpointTemplate: "/%s/nodeaccount/{%s}"}
 )
 
 var Queries = []Query{
@@ -63,4 +65,6 @@ var Queries = []Query{
 	QueryCompleteEvents,
 	QueryHeights,
 	QueryObservers,
+	QueryNodeAccount,
+	QueryNodeAccounts,
 }

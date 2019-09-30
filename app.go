@@ -53,8 +53,9 @@ var (
 	maccPerms = map[string][]string{
 		auth.FeeCollectorName:     nil,
 		distr.ModuleName:          nil,
-		staking.BondedPoolName:    []string{supply.Burner, supply.Staking},
-		staking.NotBondedPoolName: []string{supply.Burner, supply.Staking},
+		staking.BondedPoolName:    {supply.Burner, supply.Staking},
+		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
+		swapservice.ModuleName:    {supply.Minter},
 	}
 )
 
@@ -181,6 +182,7 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.
 	// It handles interactions with the pooldatastore
 	app.ssKeeper = swapservice.NewKeeper(
 		app.bankKeeper,
+		app.supplyKeeper,
 		keys[swapservice.StoreKey],
 		app.cdc,
 	)
@@ -190,7 +192,8 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.
 		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		auth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
-		swapservice.NewAppModule(app.ssKeeper, app.bankKeeper),
+		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
+		swapservice.NewAppModule(app.ssKeeper, app.bankKeeper, app.supplyKeeper),
 		distr.NewAppModule(app.distrKeeper, app.supplyKeeper),
 		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
 		staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
@@ -209,6 +212,7 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.
 		slashing.ModuleName,
 		swapservice.ModuleName,
 		genutil.ModuleName,
+		supply.ModuleName,
 	)
 
 	// register all module routes and module queriers

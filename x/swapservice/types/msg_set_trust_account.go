@@ -4,28 +4,28 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// MsgAddTrustAccount defines a MsgAddTrustAccount message
-type MsgAddTrustAccount struct {
+// MsgSetTrustAccount defines a MsgSetTrustAccount message
+type MsgSetTrustAccount struct {
 	TrustAccount TrustAccount   `json:"trust_account"`
 	Signer       sdk.AccAddress `json:"signer"`
 }
 
-// NewMsgAddTrustAccount is a constructor function for NewMsgAddTrustAccount
-func NewMsgAddTrustAccount(trust TrustAccount, signer sdk.AccAddress) MsgAddTrustAccount {
-	return MsgAddTrustAccount{
-		TrustAccount: trust,
+// NewMsgSetTrustAccount is a constructor function for NewMsgAddTrustAccount
+func NewMsgSetTrustAccount(trustAccount TrustAccount, signer sdk.AccAddress) MsgSetTrustAccount {
+	return MsgSetTrustAccount{
+		TrustAccount: trustAccount,
 		Signer:       signer,
 	}
 }
 
 // Route should return the cmname of the module
-func (msg MsgAddTrustAccount) Route() string { return RouterKey }
+func (msg MsgSetTrustAccount) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgAddTrustAccount) Type() string { return "set_trust_account" }
+func (msg MsgSetTrustAccount) Type() string { return "set_trust_account" }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgAddTrustAccount) ValidateBasic() sdk.Error {
+func (msg MsgSetTrustAccount) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
@@ -36,11 +36,11 @@ func (msg MsgAddTrustAccount) ValidateBasic() sdk.Error {
 }
 
 // GetSignBytes encodes the message for signing
-func (msg MsgAddTrustAccount) GetSignBytes() []byte {
+func (msg MsgSetTrustAccount) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgAddTrustAccount) GetSigners() []sdk.AccAddress {
+func (msg MsgSetTrustAccount) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Signer}
 }

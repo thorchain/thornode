@@ -17,26 +17,26 @@ type txIndex struct {
 
 // GenesisState strcture that used to store the data we put in genesis
 type GenesisState struct {
-	Pools            []Pool         `json:"pools"`
-	PoolIndex        PoolIndex      `json:"pool_index"`
-	PoolStakers      []PoolStaker   `json:"pool_stakers"`
-	StakerPools      []StakerPool   `json:"staker_pools"`
-	TxInVoters       []TxInVoter    `json:"txin_voters"`
-	TxInIndexes      []txIndex      `json:"txin_indexes"`
-	TxOuts           []TxOut        `json:"txouts"`
-	CompleteEvents   Events         `json:"complete_events"`
-	IncompleteEvents Events         `json:"incomplete_events"`
-	TrustAccounts    []TrustAccount `json:"trust_accounts"`
-	AdminConfigs     []AdminConfig  `json:"admin_configs"`
-	LastEventID      common.Amount  `json:"last_event_id"`
+	Pools            []Pool        `json:"pools"`
+	PoolIndex        PoolIndex     `json:"pool_index"`
+	PoolStakers      []PoolStaker  `json:"pool_stakers"`
+	StakerPools      []StakerPool  `json:"staker_pools"`
+	TxInVoters       []TxInVoter   `json:"txin_voters"`
+	TxInIndexes      []txIndex     `json:"txin_indexes"`
+	TxOuts           []TxOut       `json:"txouts"`
+	CompleteEvents   Events        `json:"complete_events"`
+	IncompleteEvents Events        `json:"incomplete_events"`
+	NodeAccounts     NodeAccounts  `json:"node_accounts"`
+	AdminConfigs     []AdminConfig `json:"admin_configs"`
+	LastEventID      common.Amount `json:"last_event_id"`
 }
 
 // NewGenesisState create a new instance of GenesisState
-func NewGenesisState(pools []Pool, trustAccounts []TrustAccount, configs []AdminConfig) GenesisState {
+func NewGenesisState(pools []Pool, nodeAccounts NodeAccounts, configs []AdminConfig) GenesisState {
 	return GenesisState{
-		Pools:         pools,
-		TrustAccounts: trustAccounts,
-		AdminConfigs:  configs,
+		Pools:        pools,
+		NodeAccounts: nodeAccounts,
+		AdminConfigs: configs,
 	}
 }
 
@@ -78,7 +78,7 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
-	for _, ta := range data.TrustAccounts {
+	for _, ta := range data.NodeAccounts {
 		if err := ta.IsValid(); err != nil {
 			return err
 		}
@@ -87,17 +87,16 @@ func ValidateGenesis(data GenesisState) error {
 	if data.LastEventID.IsEmpty() {
 		return errors.New("Missing last event ID")
 	}
-
 	return nil
 }
 
 // DefaultGenesisState the default values we put in the Genesis
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		AdminConfigs:  []AdminConfig{},
-		Pools:         []Pool{},
-		TrustAccounts: []TrustAccount{},
-		LastEventID:   common.ZeroAmount,
+		AdminConfigs: []AdminConfig{},
+		Pools:        []Pool{},
+		NodeAccounts: NodeAccounts{},
+		LastEventID:  common.ZeroAmount,
 	}
 }
 
@@ -119,8 +118,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		keeper.SetAdminConfig(ctx, config)
 	}
 
-	for _, ta := range data.TrustAccounts {
-		keeper.SetTrustAccount(ctx, ta)
+	for _, ta := range data.NodeAccounts {
+		keeper.SetNodeAccount(ctx, ta)
 	}
 
 	for _, stake := range data.StakerPools {
@@ -183,13 +182,13 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		stakerPools = append(stakerPools, sp)
 	}
 
-	var trustAccounts []TrustAccount
-	iterator = k.GetTrustAccountIterator(ctx)
+	var nodeAccounts NodeAccounts
+	iterator = k.GetNodeAccountIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
-		var ta TrustAccount
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &ta)
-		trustAccounts = append(trustAccounts, ta)
+		var na NodeAccount
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &na)
+		nodeAccounts = append(nodeAccounts, na)
 	}
 
 	var poolRecords []Pool
@@ -198,8 +197,8 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
 		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx, common.NoBnbAddress)
-		pool.ExpiryUtc = k.GetAdminConfigPoolExpiry(ctx, common.NoBnbAddress)
+		pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx, sdk.AccAddress{})
+		pool.ExpiryUtc = k.GetAdminConfigPoolExpiry(ctx, sdk.AccAddress{})
 		poolRecords = append(poolRecords, pool)
 	}
 
@@ -249,7 +248,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	return GenesisState{
 		Pools:            poolRecords,
 		PoolIndex:        poolIndex,
-		TrustAccounts:    trustAccounts,
+		NodeAccounts:     nodeAccounts,
 		AdminConfigs:     adminConfigs,
 		LastEventID:      lastEventID,
 		PoolStakers:      poolStakers,

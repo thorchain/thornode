@@ -44,6 +44,7 @@ reset: clean
 
 clean:
 	rm -rf ~/.ssd
+	rm -rf ~/.sscli
 	ssd unsafe-reset-all
 
 export:
