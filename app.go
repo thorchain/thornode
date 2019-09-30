@@ -17,11 +17,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/module"
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
-	distr "github.com/cosmos/cosmos-sdk/x/distribution"
 	"github.com/cosmos/cosmos-sdk/x/genaccounts"
-	"github.com/cosmos/cosmos-sdk/x/genutil"
 	"github.com/cosmos/cosmos-sdk/x/params"
-	"github.com/cosmos/cosmos-sdk/x/slashing"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice"
@@ -39,23 +36,16 @@ var (
 	// ModuleBasicManager is in charge of setting up basic module elemnets
 	ModuleBasics = module.NewBasicManager(
 		genaccounts.AppModuleBasic{},
-		genutil.AppModuleBasic{},
 		auth.AppModuleBasic{},
 		bank.AppModuleBasic{},
-		staking.AppModuleBasic{},
-		distr.AppModuleBasic{},
 		params.AppModuleBasic{},
-		slashing.AppModuleBasic{},
 		supply.AppModuleBasic{},
 		swapservice.AppModule{},
 	)
 	// account permissions
 	maccPerms = map[string][]string{
-		auth.FeeCollectorName:     nil,
-		distr.ModuleName:          nil,
-		staking.BondedPoolName:    {supply.Burner, supply.Staking},
-		staking.NotBondedPoolName: {supply.Burner, supply.Staking},
-		swapservice.ModuleName:    {supply.Minter},
+		auth.FeeCollectorName:  nil,
+		swapservice.ModuleName: {supply.Minter},
 	}
 )
 
@@ -75,14 +65,11 @@ type swapServiceApp struct {
 	keys  map[string]*sdk.KVStoreKey
 	tkeys map[string]*sdk.TransientStoreKey
 	// Keepers
-	accountKeeper  auth.AccountKeeper
-	bankKeeper     bank.Keeper
-	stakingKeeper  staking.Keeper
-	slashingKeeper slashing.Keeper
-	distrKeeper    distr.Keeper
-	supplyKeeper   supply.Keeper
-	paramsKeeper   params.Keeper
-	ssKeeper       swapservice.Keeper
+	accountKeeper auth.AccountKeeper
+	bankKeeper    bank.Keeper
+	supplyKeeper  supply.Keeper
+	paramsKeeper  params.Keeper
+	ssKeeper      swapservice.Keeper
 
 	// Module Manager
 	mm *module.Manager
@@ -96,8 +83,7 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
 	bApp := bam.NewBaseApp(appPoolData, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
-	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, staking.StoreKey,
-		supply.StoreKey, distr.StoreKey, slashing.StoreKey, swapservice.StoreKey, params.StoreKey)
+	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, supply.StoreKey, swapservice.StoreKey, params.StoreKey)
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
 	// Here you initialize your application with the store keys it requires
@@ -114,9 +100,6 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.
 	// Set specific supspaces
 	authSubspace := app.paramsKeeper.Subspace(auth.DefaultParamspace)
 	bankSupspace := app.paramsKeeper.Subspace(bank.DefaultParamspace)
-	stakingSubspace := app.paramsKeeper.Subspace(staking.DefaultParamspace)
-	distrSubspace := app.paramsKeeper.Subspace(distr.DefaultParamspace)
-	slashingSubspace := app.paramsKeeper.Subspace(slashing.DefaultParamspace)
 
 	// The AccountKeeper handles address -> account lookups
 	app.accountKeeper = auth.NewAccountKeeper(
@@ -141,43 +124,6 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.
 		app.bankKeeper,
 		maccPerms)
 
-	// The staking keeper
-	stakingKeeper := staking.NewKeeper(
-		app.cdc,
-		keys[staking.StoreKey],
-		tkeys[staking.TStoreKey],
-		app.supplyKeeper,
-		stakingSubspace,
-		staking.DefaultCodespace,
-	)
-
-	app.distrKeeper = distr.NewKeeper(
-		app.cdc,
-		keys[distr.StoreKey],
-		distrSubspace,
-		&stakingKeeper,
-		app.supplyKeeper,
-		distr.DefaultCodespace,
-		auth.FeeCollectorName,
-		app.ModuleAccountAddrs(),
-	)
-
-	app.slashingKeeper = slashing.NewKeeper(
-		app.cdc,
-		keys[slashing.StoreKey],
-		&stakingKeeper,
-		slashingSubspace,
-		slashing.DefaultCodespace,
-	)
-
-	// register the staking hooks
-	// NOTE: stakingKeeper above is passed by reference, so that it will contain these hooks
-	app.stakingKeeper = *stakingKeeper.SetHooks(
-		staking.NewMultiStakingHooks(
-			app.distrKeeper.Hooks(),
-			app.slashingKeeper.Hooks()),
-	)
-
 	// The swapserviceKeeper is the Keeper from the module for this tutorial
 	// It handles interactions with the pooldatastore
 	app.ssKeeper = swapservice.NewKeeper(
@@ -189,30 +135,22 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.
 
 	app.mm = module.NewManager(
 		genaccounts.NewAppModule(app.accountKeeper),
-		genutil.NewAppModule(app.accountKeeper, app.stakingKeeper, app.BaseApp.DeliverTx),
 		auth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		swapservice.NewAppModule(app.ssKeeper, app.bankKeeper, app.supplyKeeper),
-		distr.NewAppModule(app.distrKeeper, app.supplyKeeper),
-		slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
-		staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
 	)
 
-	app.mm.SetOrderBeginBlockers(distr.ModuleName, slashing.ModuleName, swapservice.ModuleName)
-	app.mm.SetOrderEndBlockers(staking.ModuleName, swapservice.ModuleName)
+	app.mm.SetOrderBeginBlockers(swapservice.ModuleName)
+	app.mm.SetOrderEndBlockers(swapservice.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	app.mm.SetOrderInitGenesis(
 		genaccounts.ModuleName,
-		distr.ModuleName,
-		staking.ModuleName,
 		auth.ModuleName,
 		bank.ModuleName,
-		slashing.ModuleName,
-		swapservice.ModuleName,
-		genutil.ModuleName,
 		supply.ModuleName,
+		swapservice.ModuleName,
 	)
 
 	// register all module routes and module queriers
@@ -295,6 +233,6 @@ func (app *swapServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailW
 		return nil, nil, err
 	}
 
-	validators = staking.WriteValidators(ctx, app.stakingKeeper)
+	//validators = staking.WriteValidators(ctx, app.stakingKeeper)
 	return appState, validators, nil
 }

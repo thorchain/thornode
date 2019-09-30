@@ -21,6 +21,7 @@ var keyStore = sdk.NewKVStoreKey(StoreKey)
 func (s *SwapSuite) SetUpSuite(c *C) {
 	config := sdk.GetConfig()
 	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+	config.SetBech32PrefixForConsensusNode(cmd.Bech32PrefixConsAddr, cmd.Bech32PrefixConsPub)
 }
 
 func (s SwapSuite) TestSwap(c *C) {
@@ -268,4 +269,5 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 
 	res = handleMsgSwap(ctx, k, txOutStore, msg)
 	c.Assert(res.IsOK(), Equals, true)
+
 }

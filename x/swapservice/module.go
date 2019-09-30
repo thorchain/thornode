@@ -114,7 +114,9 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
 	am.txOutStore.CommitBlock(ctx)
-	return []abci.ValidatorUpdate{}
+	var validatorUpdate []abci.ValidatorUpdate
+
+	return validatorUpdate
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
