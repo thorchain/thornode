@@ -24,6 +24,12 @@ const (
 	MRRAKey                = types.MRRAKey
 	MinStakerCoinsKey      = types.MinStakerCoinsKey
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
+	MinValidatorBondKey    = types.MinValidatorBondKey
+	WhiteListGasTokenKey   = types.WhiteListGasTokenKey
+
+	NodeActive      = types.Active
+	NodeWhiteListed = types.WhiteListed
+	NodeDisabled    = types.Disabled
 )
 
 var (
@@ -52,9 +58,13 @@ var (
 	ModuleCdc             = types.ModuleCdc
 	RegisterCodec         = types.RegisterCodec
 	PoolAddressExpiryDate = types.PoolAddressExpiryDate
+	NewTrustAccount       = types.NewTrustAccount
+	NewNodeAccount        = types.NewNodeAccount
+	NewMsgApply           = types.NewMsgApply
 )
 
 type (
+	MsgApply           = types.MsgApply
 	MsgNoOp            = types.MsgNoOp
 	MsgAdd             = types.MsgAdd
 	MsgSetUnStake      = types.MsgSetUnStake
@@ -64,7 +74,7 @@ type (
 	MsgOutboundTx      = types.MsgOutboundTx
 	MsgSwap            = types.MsgSwap
 	MsgSetAdminConfig  = types.MsgSetAdminConfig
-	MsgAddTrustAccount = types.MsgAddTrustAccount
+	MsgSetTrustAccount = types.MsgSetTrustAccount
 	MsgEndPool         = types.MsgEndPool
 	QueryResPools      = types.QueryResPools
 	QueryResHeights    = types.QueryResHeights
@@ -88,4 +98,6 @@ type (
 	Event              = types.Event
 	Events             = types.Events
 	EventStatus        = types.EventStatus
+	NodeAccount        = types.NodeAccount
+	NodeAccounts       = types.NodeAccounts
 )

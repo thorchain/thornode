@@ -40,19 +40,19 @@ describe "API Tests" do
       expect(resp.body['value']).to eq("0.1"), resp.body.inspect
     end
 
-    it "check we cannot set admin config as non-admin" do
-      bnb = "bnb" + get_rand(39).downcase
-      tx = makeTx(memo: "ADMIN:Key:TSL:0.5", sender: bnb)
-      resp = processTx(tx)
-      expect(resp.code).to eq("200")
-
-      resp = get("/admin/TSL")
-      expect(resp.body['value']).to eq("0.1"), resp.body.inspect
-
-      # check we can get our own setting
-      resp = get("/admin/TSL/#{TRUST_BNB_ADDRESS}")
-      expect(resp.body['value']).to eq("0.1"), resp.body.inspect
-    end
+#     it "check we cannot set admin config as non-admin" do
+#       bnb = "bnb" + get_rand(39).downcase
+#       tx = makeTx(memo: "ADMIN:Key:TSL:0.5", sender: bnb)
+#       resp = processTx(tx)
+#       expect(resp.code).to eq("200")
+#
+#       resp = get("/admin/TSL")
+#       expect(resp.body['value']).to eq("0.1"), resp.body.inspect
+#
+#       # check we can get our own setting
+#       resp = get("/admin/TSL/#{TRUST_BNB_ADDRESS}")
+#       expect(resp.body['value']).to eq("0.1"), resp.body.inspect
+#     end
   end
 
   poolAddress = bnbAddress() # here so its available in other tests

@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	"gitlab.com/thorchain/bepswap/common"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 )
 
@@ -12,7 +12,7 @@ type AdminConfigSuite struct{}
 var _ = Suite(&AdminConfigSuite{})
 
 func (s AdminConfigSuite) TestGetKey(c *C) {
-	keys := []string{"GSL", "TSL", "StakerAmtInterval", "PoolAddress", "Unknown"}
+	keys := []string{"GSL", "TSL", "StakerAmtInterval", "PoolAddress", "Unknown", "PoolExpiry", "MinStakerCoins", "MRRA", "MinValidatorBond", "WhiteListGasToken"}
 	for _, key := range keys {
 		c.Check(GetAdminConfigKey(key).String(), Equals, key)
 	}
@@ -21,13 +21,27 @@ func (s AdminConfigSuite) TestGetKey(c *C) {
 
 func (s AdminConfigSuite) TestAdminConfig(c *C) {
 	amts := []string{"GSL", "TSL", "StakerAmtInterval"}
-	addr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
 	for _, amt := range amts {
 		config := NewAdminConfig(GetAdminConfigKey(amt), "12", addr) // happy path
 		c.Check(config.Valid(), IsNil, Commentf("%s", amt))
 		config = NewAdminConfig(GetAdminConfigKey(amt), "abc", addr) // invalid value
 		c.Check(config.Valid(), NotNil, Commentf("%s", amt))
+	}
+	uintAmnt := []string{"MRRA", "MinValidatorBond"}
+	for _, item := range uintAmnt {
+		cfg := NewAdminConfig(GetAdminConfigKey(item), "1000", addr)
+		c.Check(cfg.Valid(), IsNil, Commentf("%s", item))
+		cfg1 := NewAdminConfig(GetAdminConfigKey(item), "whatever", addr)
+		c.Check(cfg1.Valid(), NotNil, Commentf("%s", item))
+	}
+	coinAmt := []string{"MinStakerCoins", "WhiteListGasToken"}
+	for _, item := range coinAmt {
+		cfg := NewAdminConfig(GetAdminConfigKey(item), "100bep", addr)
+		c.Check(cfg.Valid(), IsNil, Commentf("%s is invalid coin", item))
+		cfg1 := NewAdminConfig(GetAdminConfigKey(item), "1233", addr)
+		c.Check(cfg1.Valid(), NotNil, Commentf("%s is not valid coin", item))
 	}
 	bnbs := []string{"PoolAddress"}
 	for _, bnb := range bnbs {
@@ -38,16 +52,16 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 	}
 	adminCfg := NewAdminConfig(GSLKey, "100", addr)
 	c.Check(adminCfg.Empty(), Equals, false)
-	c.Check(adminCfg.DbKey(), Equals, "GSL_bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	c.Check(adminCfg.DbKey(), Equals, "GSL_bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Check(adminCfg.String(), Equals, fmt.Sprintf("Config: %s --> %s", adminCfg.Key, adminCfg.Value))
 
 	inputs := []struct {
-		address common.BnbAddress
+		address sdk.AccAddress
 		key     AdminConfigKey
 		value   string
 	}{
 		{
-			address: common.NoBnbAddress,
+			address: sdk.AccAddress{},
 			key:     GSLKey,
 			value:   "1.0",
 		},
@@ -75,6 +89,11 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 			address: addr,
 			key:     PoolAddressKey,
 			value:   "hahaha",
+		},
+		{
+			address: addr,
+			key:     MinValidatorBondKey,
+			value:   "blab",
 		},
 	}
 	for _, item := range inputs {
