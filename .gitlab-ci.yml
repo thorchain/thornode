@@ -29,5 +29,7 @@ lint_code:
 
 trigger_build_and_deploy:
   stage: deploy
+  only:
+    - master
   script:
     - "curl -X POST -F token=$TOKEN -F ref=master https://gitlab.com/api/v4/projects/14289231/trigger/pipeline"
