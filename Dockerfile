@@ -24,13 +24,13 @@ WORKDIR /usr/bin
 COPY --from=build /go/src/app/cmd/ssd/ssd /usr/bin/ssd
 COPY --from=build /go/src/app/cmd/sscli/sscli /usr/bin/sscli
 
-COPY build/init.sh /usr/bin/init.sh
+COPY build/multiplenodes/init.sh /usr/bin/init.sh
 RUN chmod +x /usr/bin/init.sh
 
-COPY build/second.sh /usr/bin/second.sh
+COPY build/multiplenodes/second.sh /usr/bin/second.sh
 RUN chmod +x /usr/bin/second.sh
 
-COPY build/start.sh /usr/bin/start.sh
+COPY build/multiplenodes/start.sh /usr/bin/start.sh
 RUN chmod +x /usr/bin/start.sh
 
 CMD ["/usr/bin/start.sh"]
