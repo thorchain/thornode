@@ -37,10 +37,8 @@ initialize() {
   #echo "$SIGNER_PASSWD" | ssd gentx --name jack --home-client "$SSC_HOME"
   #ssd collect-gentxs
   {
-      jq --arg TRUSTED_BNB_ADDRESS "$TRUSTED_BNB_ADDRESS" '.app_state.swapservice.admin_configs[1] = {"key":"PoolExpiry", "value": "2020-01-01T00:00:00Z" , "address": $TRUSTED_BNB_ADDRESS}' |
-      jq --arg POOL_ADDRESS "$POOL_ADDRESS" --arg TRUSTED_BNB_ADDRESS "$TRUSTED_BNB_ADDRESS" '.app_state.swapservice.admin_configs[0] = {"key":"PoolAddress", "value": $POOL_ADDRESS , "address": $TRUSTED_BNB_ADDRESS}' |
-      jq --arg TRUSTED_BNB_ADDRESS "$TRUSTED_BNB_ADDRESS" --arg RUNE_ADDRESS "$(sscli keys show jack -a)" --arg VALIDATOR "$(./ssd tendermint show-validator)" '.app_state.swapservice.trust_accounts[0] = {"signer_address": $TRUSTED_BNB_ADDRESS, "admin_address": $TRUSTED_BNB_ADDRESS, "observer_address": $RUNE_ADDRESS, "validator_pub_key": $VALIDATOR}'
-
+      jq --arg NODE_ADDRESS "$(sscli keys show jack -a)" --arg POOL_ADDRESS "$POOL_ADDRESS" '.app_state.swapservice.admin_configs += [{"key":"PoolExpiry", "value": "2020-01-01T00:00:00Z" , "address": $NODE_ADDRESS},{"key":"PoolAddress", "value": $POOL_ADDRESS , "address": $NODE_ADDRESS}]' |
+      jq --arg TRUSTED_BNB_ADDRESS "$POOL_ADDRESS" --arg VALIDATOR "$(ssd tendermint show-validator)" --arg NODE_ADDRESS "$(sscli keys show jack -a)" --arg OBSERVER_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","accounts":{"bnb_signer_acc":$TRUSTED_BNB_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}'
   } < "$SS_HOME/config/genesis.json" >/tmp/genesis.json
 
   mv /tmp/genesis.json "$SS_HOME/config/genesis.json"
