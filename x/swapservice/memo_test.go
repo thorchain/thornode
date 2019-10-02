@@ -46,7 +46,7 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Check(memo.IsType(txWithdraw), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetAmount(), Equals, "25")
 
-	memo, err = ParseMemo("=:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:8.7")
+	memo, err = ParseMemo("=:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:870000000")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
@@ -68,10 +68,10 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit().Equal(sdk.ZeroUint()), Equals, true)
 
-	memo, err = ParseMemo("!:KEY:TSL:15")
+	memo, err = ParseMemo("!:KEY:GSL:15")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetAdminType(), Equals, adminKey)
-	c.Check(memo.GetKey(), Equals, "TSL")
+	c.Check(memo.GetKey(), Equals, "GSL")
 	c.Check(memo.GetValue(), Equals, "15")
 
 	memo, err = ParseMemo("!:poolstatus:BNB:active")
@@ -130,7 +130,7 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Check(memo.IsType(txWithdraw), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetAmount(), Equals, "25")
 
-	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:8.7")
+	memo, err = ParseMemo("SWAP:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:870000000")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetTicker().String(), Equals, "RUNE-1BA")
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))

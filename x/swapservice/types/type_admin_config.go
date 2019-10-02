@@ -12,7 +12,6 @@ type AdminConfigKey string
 const (
 	UnknownKey           AdminConfigKey = "Unknown"
 	GSLKey               AdminConfigKey = "GSL"
-	TSLKey               AdminConfigKey = "TSL"
 	StakerAmtIntervalKey AdminConfigKey = "StakerAmtInterval"
 	PoolAddressKey       AdminConfigKey = "PoolAddress"
 	PoolExpiryKey        AdminConfigKey = "PoolExpiry"
@@ -30,8 +29,6 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 	switch key {
 	case string(GSLKey):
 		return GSLKey
-	case string(TSLKey):
-		return TSLKey
 	case string(StakerAmtIntervalKey):
 		return StakerAmtIntervalKey
 	case string(PoolAddressKey):
@@ -55,8 +52,6 @@ func (k AdminConfigKey) Default() string {
 	switch k {
 	case GSLKey:
 		return "0.3"
-	case TSLKey:
-		return "0.1"
 	case StakerAmtIntervalKey:
 		return "100"
 	case MinStakerCoinsKey:
@@ -76,7 +71,7 @@ func (k AdminConfigKey) Default() string {
 func (k AdminConfigKey) ValidValue(value string) error {
 	var err error
 	switch k {
-	case GSLKey, TSLKey, StakerAmtIntervalKey:
+	case GSLKey, StakerAmtIntervalKey:
 		_, err = common.NewAmount(value)
 	case PoolAddressKey:
 		_, err = common.NewBnbAddress(value)

@@ -12,7 +12,7 @@ type AdminConfigSuite struct{}
 var _ = Suite(&AdminConfigSuite{})
 
 func (s AdminConfigSuite) TestGetKey(c *C) {
-	keys := []string{"GSL", "TSL", "StakerAmtInterval", "PoolAddress", "Unknown", "PoolExpiry", "MinStakerCoins", "MRRA", "MinValidatorBond", "WhiteListGasToken"}
+	keys := []string{"GSL", "StakerAmtInterval", "PoolAddress", "Unknown", "PoolExpiry", "MinStakerCoins", "MRRA", "MinValidatorBond", "WhiteListGasToken"}
 	for _, key := range keys {
 		c.Check(GetAdminConfigKey(key).String(), Equals, key)
 	}
@@ -20,7 +20,7 @@ func (s AdminConfigSuite) TestGetKey(c *C) {
 }
 
 func (s AdminConfigSuite) TestAdminConfig(c *C) {
-	amts := []string{"GSL", "TSL", "StakerAmtInterval"}
+	amts := []string{"GSL", "StakerAmtInterval"}
 	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
 	for _, amt := range amts {

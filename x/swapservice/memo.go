@@ -2,7 +2,6 @@ package swapservice
 
 import (
 	"fmt"
-	"math"
 	"strconv"
 	"strings"
 
@@ -248,15 +247,15 @@ func ParseMemo(memo string) (Memo, error) {
 				}
 			}
 		}
-		// trade target can be empty , when it is empty , there is no price protection
+		// price limit can be empty , when it is empty , there is no price protection
 		slip := sdk.ZeroUint()
 		if len(parts) > 3 && len(parts[3]) > 0 {
-			amount, err := common.NewAmount(parts[3])
+			amount, err := sdk.ParseUint(parts[3])
 			if nil != err {
 				return noMemo, fmt.Errorf("swap price limit:%s is invalid", parts[3])
 			}
 
-			slip = sdk.NewUint(uint64(math.Round(amount.Float64() * common.One)))
+			slip = amount
 		}
 		return SwapMemo{
 			MemoBase:    MemoBase{TxType: txSwap, Ticker: ticker},
