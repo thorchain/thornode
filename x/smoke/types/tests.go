@@ -34,17 +34,17 @@ type Rule struct {
 }
 
 type Coin struct {
-	Denom  string  `json:"denom"`
+	Symbol string  `json:"symbol"`
 	Amount float64 `json:"amount"`
 }
 
 type Check struct {
-	Target string `json:"target"`
-	Wallet []Coin `json:"wallet"`
-	Pool   Pool   `json:"pool"`
+	Target     string     `json:"target"`
+	Binance    []Coin     `json:"binance"`
+	Statechain Statechain `json:"statechain"`
 }
 
-type Pool struct {
+type Statechain struct {
 	Units  float64 `json:"units"`
 	Symbol string  `json:"symbol"`
 	Rune   float64 `json:"rune"`
