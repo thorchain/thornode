@@ -55,7 +55,7 @@ def processTx(txs, user="jack", mode='block')
     'blockHeight': '376',
     'count': '1',
     'base_req': {
-      'chain_id': "sschain",
+      'chain_id': "statechain",
       'from': address
     },
     'txArray': txs,

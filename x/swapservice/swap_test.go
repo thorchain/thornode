@@ -27,7 +27,6 @@ func (s *SwapSuite) SetUpSuite(c *C) {
 func (s SwapSuite) TestSwap(c *C) {
 	poolStorage := mocks.MockPoolStorage{}
 	ctx, _ := setupKeeperForTest(c)
-	tradeSlipLimit := common.Amount("0.100000")
 	globalSlipLimit := common.Amount("0.200000")
 	inputs := []struct {
 		name            string
@@ -39,7 +38,6 @@ func (s SwapSuite) TestSwap(c *C) {
 		destination     common.BnbAddress
 		returnAmount    sdk.Uint
 		tradeTarget     sdk.Uint
-		tradeSlipLimit  common.Amount
 		globalSlipLimit common.Amount
 		expectedErr     error
 	}{
@@ -154,8 +152,8 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     "tester",
 			destination:   "don'tknow",
 			returnAmount:  sdk.ZeroUint(),
-			tradeTarget:   sdk.NewUint(common.One),
-			expectedErr:   errors.New("trade slip 1.188100 is more than 10.00 percent different than 1.000000"),
+			tradeTarget:   sdk.NewUint(9 * common.One),
+			expectedErr:   errors.New("emit token 757511993 less than price limit 900000000"),
 		},
 		{
 			name:          "swap-no-target-price-no-protection",
@@ -178,7 +176,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     "tester",
 			destination:   "don'tknow",
 			returnAmount:  sdk.NewUint(453514739),
-			tradeTarget:   sdk.NewUint(120000000),
+			tradeTarget:   sdk.NewUint(453514738),
 			expectedErr:   nil,
 		},
 		{
@@ -190,7 +188,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     "tester",
 			destination:   "don'tknow",
 			returnAmount:  sdk.NewUint(415017809),
-			tradeTarget:   sdk.NewUint(110250000),
+			tradeTarget:   sdk.NewUint(415017800),
 			expectedErr:   nil,
 		},
 	}
@@ -198,7 +196,7 @@ func (s SwapSuite) TestSwap(c *C) {
 	c.Assert(err, IsNil)
 	for _, item := range inputs {
 		c.Logf("test name:%s", item.name)
-		amount, err := swap(ctx, poolStorage, txID, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeTarget, tradeSlipLimit, globalSlipLimit)
+		amount, err := swap(ctx, poolStorage, txID, item.source, item.target, item.amount, item.requester, item.destination, item.requestTxHash, item.tradeTarget, globalSlipLimit)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
 		} else {
@@ -269,5 +267,32 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 
 	res = handleMsgSwap(ctx, k, txOutStore, msg)
 	c.Assert(res.IsOK(), Equals, true)
+
+	msgSwapPriceProtection := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(common.One), addr, addr, sdk.NewUint(2*common.One), observerAddr)
+	res1 := handleMsgSwap(ctx, k, txOutStore, msgSwapPriceProtection)
+	c.Assert(res1.IsOK(), Equals, false)
+	c.Assert(res1.Code, Equals, sdk.CodeInternal)
+
+	poolTCAN := NewPool()
+	tCanTicker, err := common.NewTicker("TCAN-014")
+	c.Assert(err, IsNil)
+	poolTCAN.Ticker = tCanTicker
+	poolTCAN.BalanceToken = sdk.NewUint(334850000)
+	poolTCAN.BalanceRune = sdk.NewUint(2349500000)
+	k.SetPool(ctx, poolTCAN)
+
+	txID1, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD211")
+	m, err := ParseMemo("swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:124958592")
+
+	txIn := types.NewTxIn(common.Coins{
+		common.NewCoin(tCanTicker, sdk.NewUint(20000000)),
+	}, "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:124958592", addr, sdk.NewUint(1))
+	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txID1, txIn, observerAddr)
+
+	//msgSwapRune := NewMsgSwap(txID1, tCanTicker, common.RuneA1FTicker, sdk.NewUint(20000000), addr, addr, sdk.NewUint(124958593), observerAddr)
+	res2 := handleMsgSwap(ctx, k, txOutStore, msgSwapFromTxIn.(MsgSwap))
+
+	c.Assert(res2.IsOK(), Equals, true)
+	c.Assert(res2.Code, Equals, sdk.CodeOK)
 
 }
