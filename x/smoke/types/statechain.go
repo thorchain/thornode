@@ -2,11 +2,6 @@ package types
 
 import "time"
 
-const (
-	StatechainURL = "https://testnet-chain.bepswap.net/swapservice/pools"
-	PoolSymbol    = "BNB"
-)
-
 type Pools []struct {
 	BalanceRune  string    `json:"balance_rune"`
 	BalanceToken string    `json:"balance_token"`
