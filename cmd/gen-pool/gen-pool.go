@@ -12,10 +12,12 @@ import (
 // main : Generate our pool address.
 func main() {
 	apiAddr := flag.String("a", "testnet-dex.binance.org", "Binance API Address.")
-	network := flag.Uint("n", 0, "The network to use.")
+	network := flag.Int("n", 0, "The network to use.")
 	flag.Parse()
 
-	sdk.NewDexClient(*apiAddr, selectedNet(network), keyManager)
+	keyManager, _ := keys.NewKeyManager()
+	sdk.NewDexClient(*apiAddr, selectedNet(*network), keyManager)
+
 	privKey, _ := keyManager.ExportAsPrivateKey()
 	fmt.Printf("%v\n", privKey)
 }
