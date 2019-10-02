@@ -1,18 +1,18 @@
 package smoke
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"log"
-	"time"
+	"net/http"
 	"strconv"
 	"strings"
-	"net/http"
-	"io/ioutil"
-	"encoding/json"
+	"time"
 
-	"github.com/binance-chain/go-sdk/keys"
-	"github.com/binance-chain/go-sdk/types/msg"
 	sdk "github.com/binance-chain/go-sdk/client"
 	stypes "github.com/binance-chain/go-sdk/common/types"
+	"github.com/binance-chain/go-sdk/keys"
+	"github.com/binance-chain/go-sdk/types/msg"
 
 	"gitlab.com/thorchain/bepswap/statechain/x/smoke/types"
 )
@@ -20,14 +20,25 @@ import (
 // Smoke : wallets.
 type Smoke struct {
 	delay     time.Duration
+	ApiAddr   string
+	Network   stypes.ChainNetwork
 	MasterKey string
 	PoolKey   string
 	Binance   Binance
 	Tests     types.Tests
 }
 
+// selectedNet : Get the Binance network type
+func selectedNet(network int) stypes.ChainNetwork {
+	if network == 0 {
+		return stypes.TestNetwork
+	} else {
+		return stypes.ProdNetwork
+	}
+}
+
 // NewSmoke : create a new Smoke instance
-func NewSmoke(masterKey, poolKey, config string) Smoke {
+func NewSmoke(apiAddr, masterKey, poolKey, config string, network int) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -41,6 +52,8 @@ func NewSmoke(masterKey, poolKey, config string) Smoke {
 
 	return Smoke{
 		delay:     2 * time.Second,
+		ApiAddr:   apiAddr,
+		Network:   selectedNet(network),
 		MasterKey: masterKey,
 		PoolKey:   poolKey,
 		Binance:   NewBinance(true),
@@ -52,7 +65,7 @@ func NewSmoke(masterKey, poolKey, config string) Smoke {
 func (s *Smoke) Setup() {
 	// Master
 	mKey, _ := keys.NewPrivateKeyManager(s.MasterKey)
-	mClient, _ := sdk.NewDexClient(types.TestNet, stypes.TestNetwork, mKey)
+	mClient, _ := sdk.NewDexClient(s.ApiAddr, s.Network, mKey)
 
 	s.Tests.Actors.Master.Key = mKey
 	s.Tests.Actors.Master.Client = mClient
@@ -64,7 +77,7 @@ func (s *Smoke) Setup() {
 
 	// Pool
 	pKey, _ := keys.NewPrivateKeyManager(s.PoolKey)
-	pClient, _ := sdk.NewDexClient(types.TestNet, stypes.TestNetwork, pKey)
+	pClient, _ := sdk.NewDexClient(s.ApiAddr, s.Network, pKey)
 
 	s.Tests.Actors.Pool.Key = pKey
 	s.Tests.Actors.Pool.Client = pClient
@@ -86,7 +99,7 @@ func (s *Smoke) Setup() {
 // ClientKey : instantiate Client and Keys Binance SDK objects.
 func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
 	keyManager, _ := keys.NewKeyManager()
-	client, _ := sdk.NewDexClient("testnet-dex.binance.org", stypes.TestNetwork, keyManager)
+	client, _ := sdk.NewDexClient(s.ApiAddr, s.Network, keyManager)
 
 	return client, keyManager
 }
