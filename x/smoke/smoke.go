@@ -214,7 +214,7 @@ func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg
 func (s *Smoke) GetPools() types.Pools {
 	var pools types.Pools
 
-	resp, err := http.Get(s.Statechain.PoolURL)
+	resp, err := http.Get(s.Statechain.PoolURL())
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
