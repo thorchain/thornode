@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
-	sdk "github.com/binance-chain/go-sdk/client"
-	stypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
+	sdk "github.com/binance-chain/go-sdk/client"
+	stypes "github.com/binance-chain/go-sdk/common/types"
 
 	"gitlab.com/thorchain/bepswap/statechain/x/smoke/types"
 )
@@ -35,7 +35,10 @@ func NewSmoke(masterKey, poolKey, config string) Smoke {
 	}
 
 	var tests types.Tests
-	json.Unmarshal(cfg, &tests)
+
+	if err := json.Unmarshal(cfg, &tests); nil != err {
+		log.Fatal(err)
+	}
 
 	return Smoke{
 		delay:     2 * time.Second,
@@ -192,7 +195,7 @@ func (s *Smoke) CheckBinance(address stypes.AccAddress, check types.Check, memo 
 	for _, coins := range check.Binance {
 		for _, balance := range balances {
 			if coins.Symbol == balance.Symbol {
-				amount := coins.Amount * 100000000
+				amount := coins.Amount * types.Multiplier
 				free := float64(balance.Free)
 
 				if amount != free {
@@ -215,17 +218,20 @@ func (s *Smoke) GetPools() types.Pools {
 	var pools types.Pools
 
 	resp, err := http.Get(types.StatechainURL)
-	defer resp.Body.Close()
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
+
+	defer resp.Body.Close()
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
 
-	json.Unmarshal(data, &pools)
+	if err := json.Unmarshal(data, &pools); nil != err {
+		log.Fatal(err)
+	}
 
 	return pools
 }
