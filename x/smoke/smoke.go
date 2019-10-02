@@ -115,7 +115,7 @@ func (s *Smoke) Run() {
 		var coins []stypes.Coin
 
 		for _, coin := range rule.Coins {
-			coins = append(coins, stypes.Coin{Denom: coin.Symbol, Amount: int64(coin.Amount * 100000000)})
+			coins = append(coins, stypes.Coin{Denom: coin.Symbol, Amount: int64(coin.Amount * types.Multiplier)})
 		}
 
 		for _, to := range rule.To {
@@ -135,7 +135,7 @@ func (s *Smoke) Run() {
 			s.CheckBinance(key.GetAddr(), rule.Check, rule.Description)
 		}
 
-		s.CheckStatechain(rule.Check.Statechain, rule.Description)
+		s.CheckPool(rule.Check.Statechain, rule.Description)
 	}
 }
 
@@ -187,6 +187,29 @@ func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg
 	s.Binance.SendTxn(client, key, payload, memo)
 }
 
+// GetPools : Get our pools.
+func (s *Smoke) GetPools() types.Pools {
+	var pools types.Pools
+
+	resp, err := http.Get(types.StatechainURL)
+	if err != nil {
+		log.Printf("%v\n", err)
+	}
+
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("%v\n", err)
+	}
+
+	if err := json.Unmarshal(data, &pools); nil != err {
+		log.Fatal(err)
+	}
+
+	return pools
+}
+
 // CheckBinance : Check the balances
 func (s *Smoke) CheckBinance(address stypes.AccAddress, check types.Check, memo string) {
 	time.Sleep(s.delay)
@@ -213,31 +236,8 @@ func (s *Smoke) CheckBinance(address stypes.AccAddress, check types.Check, memo 
 	}
 }
 
-// GetPools : Get our pools.
-func (s *Smoke) GetPools() types.Pools {
-	var pools types.Pools
-
-	resp, err := http.Get(types.StatechainURL)
-	if err != nil {
-		log.Printf("%v\n", err)
-	}
-
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("%v\n", err)
-	}
-
-	if err := json.Unmarshal(data, &pools); nil != err {
-		log.Fatal(err)
-	}
-
-	return pools
-}
-
-// CheckStatechain : Check statechain pool
-func (s *Smoke) CheckStatechain(pool types.Statechain, memo string) {
+// CheckPool : Check Statechain pool
+func (s *Smoke) CheckPool(pool types.Statechain, memo string) {
 	pools := s.GetPools()
 
 	for _, p := range pools {
