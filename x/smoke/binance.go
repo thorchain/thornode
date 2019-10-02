@@ -5,9 +5,8 @@ import (
 	"log"
 	"time"
 
-	types "gitlab.com/thorchain/bepswap/statechain/x/smoke/types"
-
 	"github.com/binance-chain/go-sdk/keys"
+	"github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/tx"
 	"github.com/binance-chain/go-sdk/types/msg"
 	sdk "github.com/binance-chain/go-sdk/client"
@@ -22,17 +21,19 @@ type Binance struct {
 	debug   bool
 	delay   time.Duration
 	apiHost string
+	chainId string
 	bClient basic.BasicClient
 	qClient query.QueryClient
 }
 
 // NewBinance : new instnance of Binance.
-func NewBinance(apiHost string, debug bool) Binance {
+func NewBinance(apiHost, chainId string, debug bool) Binance {
 	bClient := basic.NewClient(apiHost)
 	return Binance{
 		debug:   debug,
 		delay:   2 * time.Second,
 		apiHost: apiHost,
+		chainId: chainId,
 		bClient: bClient,
 		qClient: query.NewClient(bClient),
 	}
@@ -108,7 +109,7 @@ func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []ms
 	}
 
 	signMsg := &tx.StdSignMsg{
-		ChainID:       types.ChainId,
+		ChainID:       b.chainId,
 		Memo:          memo,
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,
@@ -120,7 +121,11 @@ func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []ms
 	param := map[string]string{}
 	param["sync"] = "true"
 
-	uri := fmt.Sprintf("%s://%s/%s", types.Scheme, b.apiHost, types.BroadcastTxURI)
+	uri := fmt.Sprintf("%s://%s/%s/broadcast",
+		types.DefaultApiSchema,
+		b.apiHost,
+		types.DefaultAPIVersionPrefix)
+
 	rclient := resty.New()
 	resp, err := rclient.R().
 		SetHeader("Content-Type", "text/plain").

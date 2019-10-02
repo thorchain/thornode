@@ -10,7 +10,8 @@ import (
 	"time"
 
 	sdk "github.com/binance-chain/go-sdk/client"
-	stypes "github.com/binance-chain/go-sdk/common/types"
+	btypes "github.com/binance-chain/go-sdk/types"
+	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
 
@@ -21,7 +22,7 @@ import (
 type Smoke struct {
 	delay      time.Duration
 	ApiAddr    string
-	Network    stypes.ChainNetwork
+	Network    ctypes.ChainNetwork
 	MasterKey  string
 	PoolKey    string
 	Binance    Binance
@@ -30,11 +31,11 @@ type Smoke struct {
 }
 
 // selectedNet : Get the Binance network type
-func selectedNet(network int) stypes.ChainNetwork {
+func selectedNet(network int) (ctypes.ChainNetwork, string) {
 	if network == 0 {
-		return stypes.TestNetwork
+		return ctypes.TestNetwork, btypes.TestnetChainID
 	} else {
-		return stypes.ProdNetwork
+		return ctypes.ProdNetwork, btypes.ProdChainID
 	}
 }
 
@@ -51,13 +52,14 @@ func NewSmoke(apiAddr, masterKey, poolKey, env string, config string, network in
 		log.Fatal(err)
 	}
 
+	binanceNet, chainId := selectedNet(network)
 	return Smoke{
 		delay:      2 * time.Second,
 		ApiAddr:    apiAddr,
-		Network:    selectedNet(network),
+		Network:    binanceNet,
 		MasterKey:  masterKey,
 		PoolKey:    poolKey,
-		Binance:    NewBinance(apiAddr, true),
+		Binance:    NewBinance(apiAddr, chainId,true),
 		Statechain: NewStatechain(env),
 		Tests:      tests,
 	}
@@ -126,10 +128,10 @@ func (s *Smoke) Run() {
 
 	for _, rule := range s.Tests.Rules {
 		var payload []msg.Transfer
-		var coins []stypes.Coin
+		var coins []ctypes.Coin
 
 		for _, coin := range rule.Coins {
-			coins = append(coins, stypes.Coin{Denom: coin.Symbol, Amount: int64(coin.Amount * types.Multiplier)})
+			coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: int64(coin.Amount * types.Multiplier)})
 		}
 
 		for _, to := range rule.To {
@@ -165,7 +167,7 @@ func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
 }
 
 // ToAddr : To address
-func (s *Smoke) ToAddr(to string) stypes.AccAddress {
+func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
 	switch to {
 	case "admin":
 		return s.Tests.Actors.Admin.Key.GetAddr()
@@ -196,7 +198,7 @@ func (s *Smoke) ValidateTest(rule types.Rule) {
 }
 
 // Balances : Get the account balances of a given wallet.
-func (s *Smoke) Balances(address stypes.AccAddress) []stypes.TokenBalance {
+func (s *Smoke) Balances(address ctypes.AccAddress) []ctypes.TokenBalance {
 	acct, err := s.Tests.Actors.Master.Client.GetAccount(address.String())
 	if err != nil {
 		log.Fatal(err)
@@ -234,7 +236,7 @@ func (s *Smoke) GetPools() types.Pools {
 }
 
 // CheckBinance : Check the balances
-func (s *Smoke) CheckBinance(address stypes.AccAddress, check types.Check, memo string) {
+func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo string) {
 	time.Sleep(s.delay)
 	balances := s.Balances(address)
 
