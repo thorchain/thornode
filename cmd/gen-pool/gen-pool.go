@@ -1,8 +1,9 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"log"
+	"flag"
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/common/types"
@@ -16,7 +17,9 @@ func main() {
 	flag.Parse()
 
 	keyManager, _ := keys.NewKeyManager()
-	sdk.NewDexClient(*apiAddr, selectedNet(*network), keyManager)
+	if _, err := sdk.NewDexClient(*apiAddr, selectedNet(*network), keyManager); nil != err {
+		log.Fatalf("%v", err)
+	}
 
 	privKey, _ := keyManager.ExportAsPrivateKey()
 	fmt.Printf("%v\n", privKey)
