@@ -1,14 +1,13 @@
 package smoke
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
 	"log"
-	"net/http"
+	"time"
 	"strconv"
 	"strings"
-	"time"
+	"net/http"
+	"io/ioutil"
+	"encoding/json"
 
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
@@ -95,14 +94,14 @@ func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
 // Summary : Private Keys
 func (s *Smoke) Summary() {
 	privKey, _ := s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
-	fmt.Printf("Admin: %v - %v\n", s.Tests.Actors.Admin.Key.GetAddr(), privKey)
+	log.Printf("Admin: %v - %v\n", s.Tests.Actors.Admin.Key.GetAddr(), privKey)
 
 	privKey, _ = s.Tests.Actors.User.Key.ExportAsPrivateKey()
-	fmt.Printf("User: %v - %v\n", s.Tests.Actors.User.Key.GetAddr(), privKey)
+	log.Printf("User: %v - %v\n", s.Tests.Actors.User.Key.GetAddr(), privKey)
 
 	for idx, staker := range s.Tests.Actors.Stakers {
 		privKey, _ = staker.Key.ExportAsPrivateKey()
-		fmt.Printf("Staker %v: %v - %v\n", idx, staker.Key.GetAddr(), privKey)
+		log.Printf("Staker %v: %v - %v\n", idx, staker.Key.GetAddr(), privKey)
 	}
 }
 
@@ -124,18 +123,12 @@ func (s *Smoke) Run() {
 		}
 
 		client, key := s.FromClientKey(rule.From)
+
+		// Send to Binance.
 		s.SendTxn(client, key, payload, rule.Memo)
 
-		if rule.Check.Target == "to" {
-			for _, to := range rule.To {
-				toAddr := s.ToAddr(to)
-				s.CheckBinance(toAddr, rule.Check, rule.Description)
-			}
-		} else {
-			s.CheckBinance(key.GetAddr(), rule.Check, rule.Description)
-		}
-
-		s.CheckPool(rule.Check.Statechain, rule.Description)
+		// Validate.
+		s.ValidateTest(rule)
 	}
 }
 
@@ -170,6 +163,21 @@ func (s *Smoke) ToAddr(to string) stypes.AccAddress {
 		i, _ := strconv.Atoi(stakerIdx)
 		return s.Tests.Actors.Stakers[i-1].Key.GetAddr()
 	}
+}
+
+// ValidateTest : Determine if the test passed or failed.
+func (s *Smoke) ValidateTest(rule types.Rule) {
+	if rule.Check.Target == "to" {
+		for _, to := range rule.To {
+			toAddr := s.ToAddr(to)
+			s.CheckBinance(toAddr, rule.Check, rule.Description)
+		}
+	} else {
+		_, key := s.FromClientKey(rule.From)
+		s.CheckBinance(key.GetAddr(), rule.Check, rule.Description)
+	}
+
+	s.CheckPool(rule.Check.Statechain, rule.Description)
 }
 
 // Balances : Get the account balances of a given wallet.
