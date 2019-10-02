@@ -21,16 +21,18 @@ import (
 type Binance struct {
 	debug   bool
 	delay   time.Duration
+	apiHost string
 	bClient basic.BasicClient
 	qClient query.QueryClient
 }
 
 // NewBinance : new instnance of Binance.
-func NewBinance(debug bool) Binance {
-	bClient := basic.NewClient(types.TestNet)
+func NewBinance(apiHost string, debug bool) Binance {
+	bClient := basic.NewClient(apiHost)
 	return Binance{
 		debug:   debug,
 		delay:   2 * time.Second,
+		apiHost: apiHost,
 		bClient: bClient,
 		qClient: query.NewClient(bClient),
 	}
@@ -118,7 +120,7 @@ func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []ms
 	param := map[string]string{}
 	param["sync"] = "true"
 
-	uri := fmt.Sprintf("https://%s/%s", types.TestNet, types.ApiUri)
+	uri := fmt.Sprintf("https://%s/%s", b.apiHost, types.BroadcastTxURI)
 	rclient := resty.New()
 	resp, err := rclient.R().
 		SetHeader("Content-Type", "text/plain").
