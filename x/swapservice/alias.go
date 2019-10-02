@@ -17,7 +17,6 @@ const (
 
 	// Admin config keys
 	GSLKey                 = types.GSLKey
-	TSLKey                 = types.TSLKey
 	StakerAmtIntervalKey   = types.StakerAmtIntervalKey
 	PoolAddressKey         = types.PoolAddressKey
 	PoolExpiryKey          = types.PoolExpiryKey

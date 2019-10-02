@@ -541,11 +541,6 @@ func (k Keeper) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.A
 	return k.GetAdminConfigAmountType(ctx, GSLKey, GSLKey.Default(), addr)
 }
 
-// GetAdminConfigTSL - get the config for TSL
-func (k Keeper) GetAdminConfigTSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, TSLKey, TSLKey.Default(), addr)
-}
-
 // GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
 func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, StakerAmtIntervalKey.Default(), addr)

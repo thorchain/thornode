@@ -21,11 +21,14 @@ start-daemon:
 start-rest:
 	make -C ../.. start-rest
 
-export:
+export: stopchain
 	ssd export > genesis.json
 
 validate-genesis:
 	ssd validate-genesis genesis.json
+
+stopchain:
+	killall ssd
 
 sh:
 	docker run -it --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/bepswap/statechain -w /root/go/src/gitlab.com/thorchain/bepswap/statechain -e GOPATH=/root/go -e GOBIN=/go/bin cbarraford/golang-ruby /bin/sh
