@@ -5,7 +5,6 @@ import (
 	"flag"
 
 	"gitlab.com/thorchain/bepswap/statechain/x/smoke"
-	"gitlab.com/thorchain/bepswap/statechain/x/smoke/types"
 )
 
 func main() {
