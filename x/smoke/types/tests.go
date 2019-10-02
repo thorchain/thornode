@@ -1,0 +1,52 @@
+package types
+
+import (
+	sdk "github.com/binance-chain/go-sdk/client"
+	"github.com/binance-chain/go-sdk/keys"
+)
+
+type Tests struct {
+	StakerCount int `json:"staker_count"`
+	Actors      Actors
+	Rules       []Rule `json:"rules"`
+}
+
+type Actors struct {
+	Master  Keys
+	Admin   Keys
+	Stakers []Keys
+	User    Keys
+	Pool    Keys
+}
+
+type Keys struct {
+	Key    keys.KeyManager
+	Client sdk.DexClient
+}
+
+type Rule struct {
+	Description string   `json:"description"`
+	From        string   `json:"from"`
+	To          []string `json:"to"`
+	Coins       []Coin   `json:"coins"`
+	Memo        string   `json:"memo"`
+	Check       Check    `json:"check"`
+}
+
+type Coin struct {
+	Denom  string  `json:"denom"`
+	Amount float64 `json:"amount"`
+}
+
+type Check struct {
+	Target string `json:"target"`
+	Wallet []Coin `json:"wallet"`
+	Pool   Pool   `json:"pool"`
+}
+
+type Pool struct {
+	Units  float64 `json:"units"`
+	Symbol string  `json:"symbol"`
+	Rune   float64 `json:"rune"`
+	Token  float64 `json:"token"`
+}

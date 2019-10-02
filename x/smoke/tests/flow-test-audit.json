@@ -1,0 +1,975 @@
+{
+    "staker_count": 2,
+    "rules": [
+    {
+      "description": "SEED ASSETS",
+      "from": "master",
+      "to": [
+        "user",
+        "staker_1",
+        "staker_2"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.50000000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 500.00000000
+        }
+      ],
+      "memo": "SEED",
+      "check": {
+        "target": "to",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {}
+      }
+    },
+    {
+      "description": "SEED ASSETS",
+      "from": "master",
+      "to": [
+        "admin"
+      ],
+      "coins": [{
+        "denom": "BNB",
+        "amount": 0.10000000
+      }],
+      "memo": "SEED",
+      "check": {
+        "target": "to",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.10000000
+          }
+        ],
+        "pool": {}
+      }
+    },
+    {
+      "description": "ADD GAS TO POOL",
+      "from": "admin",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.05000000
+        }
+      ],
+      "memo": "GAS",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.04962500
+          }
+        ],
+        "pool": {}
+      }
+    },
+    {
+      "description": "STAKE-EMPTY MEMO",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.49940000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 500.00000000
+        }
+      ],
+      "memo": "",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.49842500
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {}
+      }
+    },
+    {
+      "description": "STAKE-BAD MEMO",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.50000000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 500.00000000
+        }
+      ],
+      "memo": "ABDG?",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {}
+      }
+    },
+    {
+      "description": "STAKE-EMPTY ASSET",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.50000000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 500.00000000
+        }
+      ],
+      "memo": "STAKE:",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {}
+      }
+    },
+    {
+      "description": "STAKE-WRONG ASSET",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.50000000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 500.00000000
+        }
+      ],
+      "memo": "STAKE:TCAN-014",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {}
+      }
+    },
+    {
+      "description": "STAKE RUNE",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.50000000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 500.00000000
+        }
+      ],
+      "memo": "STAKE:RUNE-A1F",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {}
+      }
+    },
+    {
+      "description": "NO RUNE",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.50000000
+        }
+      ],
+      "memo": "STAKE:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {}
+      }
+    },
+    {
+      "description": "NO BNB",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 500.00000000
+        }
+      ],
+      "memo": "STAKE:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.49962500
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {}
+      }
+    },
+    {
+      "description": "STAKE BNB",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.49925000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 500.00000000
+        }
+      ],
+      "memo": "STAKE:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.00000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 0.00000000
+          }
+        ],
+        "pool": {
+          "units": 250.25
+        }
+      }
+    },
+    {
+      "description": "ASSYM-BNB",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.10000000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 0.00000000
+        }
+      ],
+      "memo": "STAKE:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.40000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {
+          "units": 271.1083333
+        }
+      }
+    },
+    {
+      "description": "ASSYM-RUNE",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.00000000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 100.00000000
+        }
+      ],
+      "memo": "STAKE:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.40000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 400.00000000
+          }
+        ],
+        "pool": {
+          "units": 296.1333333
+        }
+      }
+    },
+    {
+      "description": "STAKE BNB",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.30000000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 300.00000000
+        }
+      ],
+      "memo": "STAKE:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.10000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 100.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "ADD BNB",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.10000000
+        },
+        {
+          "denom": "RUNE-A1F",
+          "amount": 100.00000000
+        }
+      ],
+      "memo": "STAKE:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.00000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 0.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "SWAP-EMPTY MEMO",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 1.00000000
+        }
+      ],
+      "memo": "",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "SWAP-BAD MEMO",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 1.00000000
+        }
+      ],
+      "memo": "ABDG?",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "SWAP-EMPTY ASSET",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.00000001
+        }
+      ],
+      "memo": "SWAP:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "SWAP-WRONG ASSET",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "BNB",
+          "amount": 0.10000000
+        }
+      ],
+      "memo": "SWAP:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "TWO ASSETS",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 1.00000000
+        },
+        {
+          "denom": "BNB",
+          "amount": 0.10000000
+        }
+      ],
+      "memo": "SWAP:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "EXCEED GSL",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 400.00000000
+        }
+      ],
+      "memo": "SWAP:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "TOO SMALL",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 0.00000001
+        }
+      ],
+      "memo": "SWAP:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "EXCEED TSL",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 100.00000000
+        }
+      ],
+      "memo": "SWAP:BNB::0.001",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.50000000
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "SWAP",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 100.00000000
+        }
+      ],
+      "memo": "SWAP:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.5826446281
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 500.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "SWAPSEND-BAD MEMO",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 100.00000000
+        }
+      ],
+      "memo": "SWAP:BNB:GHG",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.5826446281
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 400.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "WRONG NETWORK",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 1.00000000
+        }
+      ],
+      "memo": "SWAP:BNB:bnb123",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.5826446281
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 300.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "SWAP&SEND",
+      "from": "user",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "denom": "RUNE-A1F",
+          "amount": 100.00000000
+        }
+      ],
+      "memo": "SWAP:BNB:tbnbSTAKER-1",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "BNB",
+            "amount": 0.5826446281
+          },
+          {
+            "denom": "RUNE-A1F",
+            "amount": 200.00000000
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "WITHDRAW-EMPTY MEMO",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [{
+        "denom": "BNB",
+        "amount": 0.00000001
+      }],
+      "memo": "",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "RUNE-A1F",
+            "amount": 0.00000000
+          },
+          {
+            "denom": "BNB",
+            "amount": 0.06513765954
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "WITHDRAW-BAD MEMO",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [{
+        "denom": "BNB",
+        "amount": 0.00000001
+      }],
+      "memo": "ASDJ?",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "RUNE-A1F",
+            "amount": 0.00000000
+          },
+          {
+            "denom": "BNB",
+            "amount": 0.06513765954
+          }
+        ],
+        "pool": {
+          "units": 446.2833333
+        }
+      }
+    },
+    {
+      "description": "WITHDRAW 50%",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [{
+        "denom": "BNB",
+        "amount": 0.00000001
+      }],
+      "memo": "WITHDRAW:BNB:5000",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "RUNE-A1F",
+            "amount": 364.4825783
+          },
+          {
+            "denom": "BNB",
+            "amount": 0.3040749742
+          }
+        ],
+        "pool": {
+          "units": 321.1583333
+        }
+      }
+    },
+    {
+      "description": "WITHDRAW 100%",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [{
+        "denom": "BNB",
+        "amount": 0.00000001
+      }],
+      "memo": "WITHDRAW:BNB:100000",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "RUNE-A1F",
+            "amount": 495.628656
+          },
+          {
+            "denom": "BNB",
+            "amount": 0.3900480591
+          }
+        ],
+        "pool": {
+          "units": 258.5958333
+        }
+      }
+    },
+    {
+      "description": "WITHDRAW ALL",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [{
+        "denom": "BNB",
+        "amount": 0.00000001
+      }],
+      "memo": "WITHDRAW:BNB",
+      "check": {
+        "target": "from",
+        "wallet": [
+          {
+            "denom": "RUNE-A1F",
+            "amount": 495.628656
+          },
+          {
+            "denom": "BNB",
+            "amount": 0.3900480591
+          }
+        ],
+        "pool": {
+          "units": 62.5625
+        }
+      }
+    }
+  ]
+}
