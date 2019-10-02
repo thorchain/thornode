@@ -120,7 +120,7 @@ func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []ms
 	param := map[string]string{}
 	param["sync"] = "true"
 
-	uri := fmt.Sprintf("https://%s/%s", b.apiHost, types.BroadcastTxURI)
+	uri := fmt.Sprintf("%s://%s/%s", types.Scheme, b.apiHost, types.BroadcastTxURI)
 	rclient := resty.New()
 	resp, err := rclient.R().
 		SetHeader("Content-Type", "text/plain").
