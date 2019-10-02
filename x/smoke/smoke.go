@@ -112,7 +112,7 @@ func (s *Smoke) Run() {
 		var coins []stypes.Coin
 
 		for _, coin := range rule.Coins {
-			coins = append(coins, stypes.Coin{Denom: coin.Denom, Amount: int64(coin.Amount * 100000000)})
+			coins = append(coins, stypes.Coin{Denom: coin.Symbol, Amount: int64(coin.Amount * 100000000)})
 		}
 
 		for _, to := range rule.To {
@@ -126,13 +126,13 @@ func (s *Smoke) Run() {
 		if rule.Check.Target == "to" {
 			for _, to := range rule.To {
 				toAddr := s.ToAddr(to)
-				s.CheckWallet(toAddr, rule.Check, rule.Description)
+				s.CheckBinance(toAddr, rule.Check, rule.Description)
 			}
 		} else {
-			s.CheckWallet(key.GetAddr(), rule.Check, rule.Description)
+			s.CheckBinance(key.GetAddr(), rule.Check, rule.Description)
 		}
 
-		s.CheckPool(rule.Check.Pool, rule.Description)
+		s.CheckStatechain(rule.Check.Statechain, rule.Description)
 	}
 }
 
@@ -184,14 +184,14 @@ func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg
 	s.Binance.SendTxn(client, key, payload, memo)
 }
 
-// CheckWallet : Check the balances
-func (s *Smoke) CheckWallet(address stypes.AccAddress, check types.Check, memo string) {
+// CheckBinance : Check the balances
+func (s *Smoke) CheckBinance(address stypes.AccAddress, check types.Check, memo string) {
 	time.Sleep(s.delay)
 	balances := s.Balances(address)
 
-	for _, coins := range check.Wallet {
+	for _, coins := range check.Binance {
 		for _, balance := range balances {
-			if coins.Denom == balance.Symbol {
+			if coins.Symbol == balance.Symbol {
 				amount := coins.Amount * 100000000
 				free := float64(balance.Free)
 
@@ -211,8 +211,8 @@ func (s *Smoke) CheckWallet(address stypes.AccAddress, check types.Check, memo s
 }
 
 // GetPools : Get our pools.
-func (s *Smoke) GetPools() types.StatechainPools {
-	var pools types.StatechainPools
+func (s *Smoke) GetPools() types.Pools {
+	var pools types.Pools
 
 	resp, err := http.Get(types.StatechainURL)
 	defer resp.Body.Close()
@@ -231,8 +231,9 @@ func (s *Smoke) GetPools() types.StatechainPools {
 }
 
 // CheckPoolUnits : Check pool units
-func (s *Smoke) CheckPool(pool types.Pool, memo string) {
+func (s *Smoke) CheckStatechain(pool types.Statechain, memo string) {
 	pools := s.GetPools()
+
 	for _, p := range pools {
 		if p.Symbol == pool.Symbol {
 			if pool.Units != 0 {

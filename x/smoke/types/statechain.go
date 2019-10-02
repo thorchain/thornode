@@ -7,7 +7,7 @@ const (
 	PoolSymbol    = "BNB"
 )
 
-type StatechainPools []struct {
+type Pools []struct {
 	BalanceRune  string    `json:"balance_rune"`
 	BalanceToken string    `json:"balance_token"`
 	Symbol       string    `json:"symbol"`
