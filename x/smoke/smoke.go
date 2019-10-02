@@ -56,7 +56,7 @@ func NewSmoke(apiAddr, masterKey, poolKey, config string, network int) Smoke {
 		Network:   selectedNet(network),
 		MasterKey: masterKey,
 		PoolKey:   poolKey,
-		Binance:   NewBinance(true),
+		Binance:   NewBinance(apiAddr, true),
 		Tests:     tests,
 	}
 }
