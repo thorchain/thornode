@@ -11,6 +11,7 @@ func main() {
 	apiAddr := flag.String("a", "testnet-dex.binance.org", "Binance API Address.")
 	masterKey := flag.String("m", "", "The master private key.")
 	poolKey := flag.String("p", "", "The pool private key.")
+	environment := flag.String("e", "stage", "The environment to use [stage|dev|prod].")
 	config := flag.String("c", "", "Path to the config file.")
 	network := flag.Int("n", 0, "The network to use.")
 	flag.Parse()
@@ -27,6 +28,6 @@ func main() {
 		log.Fatal("No config file provided!")
 	}
 
-	s := smoke.NewSmoke(*apiAddr, *masterKey, *poolKey, *config, *network)
+	s := smoke.NewSmoke(*apiAddr, *masterKey, *poolKey, *environment, *config, *network)
 	s.Run()
 }

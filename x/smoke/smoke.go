@@ -19,13 +19,14 @@ import (
 
 // Smoke : wallets.
 type Smoke struct {
-	delay     time.Duration
-	ApiAddr   string
-	Network   stypes.ChainNetwork
-	MasterKey string
-	PoolKey   string
-	Binance   Binance
-	Tests     types.Tests
+	delay      time.Duration
+	ApiAddr    string
+	Network    stypes.ChainNetwork
+	MasterKey  string
+	PoolKey    string
+	Binance    Binance
+	Statechain Statechain
+	Tests      types.Tests
 }
 
 // selectedNet : Get the Binance network type
@@ -38,7 +39,7 @@ func selectedNet(network int) stypes.ChainNetwork {
 }
 
 // NewSmoke : create a new Smoke instance
-func NewSmoke(apiAddr, masterKey, poolKey, config string, network int) Smoke {
+func NewSmoke(apiAddr, masterKey, poolKey, env string, config string, network int) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -51,13 +52,14 @@ func NewSmoke(apiAddr, masterKey, poolKey, config string, network int) Smoke {
 	}
 
 	return Smoke{
-		delay:     2 * time.Second,
-		ApiAddr:   apiAddr,
-		Network:   selectedNet(network),
-		MasterKey: masterKey,
-		PoolKey:   poolKey,
-		Binance:   NewBinance(apiAddr, true),
-		Tests:     tests,
+		delay:      2 * time.Second,
+		ApiAddr:    apiAddr,
+		Network:    selectedNet(network),
+		MasterKey:  masterKey,
+		PoolKey:    poolKey,
+		Binance:    NewBinance(apiAddr, true),
+		Statechain: NewStatechain(env),
+		Tests:      tests,
 	}
 }
 
@@ -212,7 +214,7 @@ func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg
 func (s *Smoke) GetPools() types.Pools {
 	var pools types.Pools
 
-	resp, err := http.Get(types.StatechainURL)
+	resp, err := http.Get(s.Statechain.PoolURL)
 	if err != nil {
 		log.Printf("%v\n", err)
 	}

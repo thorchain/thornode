@@ -57,7 +57,7 @@ pool: install
 	@echo $(shell gen-pool)
 
 flow-test-audit: install
-	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/flow-test-audit.json
+	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/flow-test-audit.json -e ${ENV}
 
 flow-test-refund: install
-	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/flow-test-refund.json
+	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/flow-test-refund.json -e ${ENV}
