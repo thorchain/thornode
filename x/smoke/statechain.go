@@ -20,6 +20,6 @@ func NewStatechain(env string) Statechain {
 	}
 }
 
-func (s Statechain) PoolURL(stage string) string {
+func (s Statechain) PoolURL() string {
 	return fmt.Sprintf("https://%v/swapservice/pools", endpoints[s.Env])
 }
