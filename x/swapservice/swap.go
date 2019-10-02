@@ -3,7 +3,6 @@ package swapservice
 import (
 	"encoding/json"
 	"fmt"
-	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
@@ -54,7 +53,7 @@ func swap(ctx sdk.Context,
 	requester, destination common.BnbAddress,
 	requestTxHash common.TxID,
 	tradeTarget sdk.Uint,
-	tradeSlipLimit, globalSlipLimit common.Amount) (sdk.Uint, error) {
+	globalSlipLimit common.Amount) (sdk.Uint, error) {
 	if err := validateMessage(source, target, amount, requester, destination, requestTxHash); nil != err {
 		ctx.Logger().Error(err.Error())
 		return sdk.ZeroUint(), err
@@ -67,14 +66,14 @@ func swap(ctx sdk.Context,
 	isDoubleSwap := !common.IsRune(source) && !common.IsRune(target)
 
 	if isDoubleSwap {
-		runeAmount, err := swapOne(ctx, keeper, txID, source, common.RuneTicker, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+		runeAmount, err := swapOne(ctx, keeper, txID, source, common.RuneTicker, amount, requester, destination, tradeTarget, globalSlipLimit)
 		if err != nil {
 			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneTicker)
 		}
-		tokenAmount, err := swapOne(ctx, keeper, txID, common.RuneTicker, target, runeAmount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+		tokenAmount, err := swapOne(ctx, keeper, txID, common.RuneTicker, target, runeAmount, requester, destination, tradeTarget, globalSlipLimit)
 		return tokenAmount, err
 	}
-	tokenAmount, err := swapOne(ctx, keeper, txID, source, target, amount, requester, destination, tradeTarget, tradeSlipLimit, globalSlipLimit)
+	tokenAmount, err := swapOne(ctx, keeper, txID, source, target, amount, requester, destination, tradeTarget, globalSlipLimit)
 	return tokenAmount, err
 }
 
@@ -84,7 +83,7 @@ func swapOne(ctx sdk.Context,
 	amount sdk.Uint, requester,
 	destination common.BnbAddress,
 	tradeTarget sdk.Uint,
-	tradeSlipLimit, globalSlipLimit common.Amount) (sdk.Uint, error) {
+	globalSlipLimit common.Amount) (sdk.Uint, error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
@@ -107,7 +106,6 @@ func swapOne(ctx sdk.Context,
 	}
 
 	// Get our slip limits
-	tsl := tradeSlipLimit.Float64()  // trade slip limit
 	gsl := globalSlipLimit.Float64() // global slip limit
 
 	// get our X, x, Y values
@@ -135,18 +133,16 @@ func swapOne(ctx sdk.Context,
 	emitTokens := calcTokenEmission(X, x, Y)
 	poolSlip := calcPoolSlip(X, x)
 	priceSlip := calcPriceSlip(X, x, Y)
-
 	// do we have enough balance to swap?
+
 	if emitTokens.GT(Y) {
 		return sdk.ZeroUint(), errors.New("token :%s balance is 0, can't do swap")
 	}
 	// Need to convert to float before the calculation , otherwise 0.1 becomes 0, which is bad
-	amountTradeTraget := common.UintToFloat64(tradeTarget) / common.One
-	if amountTradeTraget > 0 {
-		if math.Abs((priceSlip)-amountTradeTraget)/amountTradeTraget > tsl {
-			return sdk.ZeroUint(), errors.Errorf("trade slip %f is more than %.2f percent different than %f", priceSlip, tsl*100, amountTradeTraget)
-		}
+	if !tradeTarget.IsZero() && emitTokens.LT(tradeTarget) {
+		return sdk.ZeroUint(), errors.Errorf("emit token %s less than price limit %s", emitTokens, tradeTarget)
 	}
+
 	if poolSlip > gsl {
 		ctx.Logger().Info("poolslip over global pool slip limit", "poolslip", fmt.Sprintf("%.2f", poolSlip), "gsl", fmt.Sprintf("%.2f", gsl))
 		return sdk.ZeroUint(), errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
