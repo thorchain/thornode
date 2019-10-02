@@ -1,10 +1,12 @@
 include Makefile.ledger
+
 all: lint install
 
 install: go.sum
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/smoke
+		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/gen-pool
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
@@ -50,3 +52,12 @@ clean:
 
 export:
 	ssd export
+
+pool: install
+	@echo $(shell gen-pool)
+
+flow-test-audit: install
+	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/flow-test-audit.json
+
+flow-test-refund: install
+	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/flow-test-refund.json
