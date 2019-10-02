@@ -4,6 +4,7 @@ all: lint install
 install: go.sum
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
+		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/smoke
 
 go.sum: go.mod
 		@echo "--> Ensure dependencies have not been modified"
@@ -44,6 +45,7 @@ reset: clean
 
 clean:
 	rm -rf ~/.ssd
+	rm ${GOBIN}/smoke
 	ssd unsafe-reset-all
 
 export:

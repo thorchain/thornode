@@ -7,13 +7,13 @@ import (
 
 	types "gitlab.com/thorchain/bepswap/statechain/x/smoke/types"
 
+	"github.com/binance-chain/go-sdk/keys"
+	"github.com/binance-chain/go-sdk/types/tx"
+	"github.com/binance-chain/go-sdk/types/msg"
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/client/basic"
 	"github.com/binance-chain/go-sdk/client/query"
 	btypes "github.com/binance-chain/go-sdk/common/types"
-	"github.com/binance-chain/go-sdk/keys"
-	"github.com/binance-chain/go-sdk/types/msg"
-	"github.com/binance-chain/go-sdk/types/tx"
 
 	"github.com/go-resty/resty/v2"
 )

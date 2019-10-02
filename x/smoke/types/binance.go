@@ -1,4 +1,5 @@
 package types
+
 const (
 	ChainId    = "Binance-Chain-Nile"
 	TestNet    = "testnet-dex.binance.org"
