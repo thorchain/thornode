@@ -5,13 +5,10 @@ go 1.12
 require (
 	github.com/binance-chain/go-sdk v1.1.3
 	github.com/cenkalti/backoff v2.2.1+incompatible
-	github.com/cosmos/cosmos-sdk v0.37.1
+	github.com/cosmos/cosmos-sdk v0.37.2
 	github.com/golang/mock v1.3.1 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
-	github.com/gorilla/mux v1.7.3 // indirect
-	github.com/gorilla/websocket v1.4.1
 	github.com/hashicorp/go-retryablehttp v0.5.4
-	github.com/magiconair/properties v1.8.1 // indirect
 	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/onsi/ginkgo v1.9.0 // indirect
 	github.com/onsi/gomega v1.6.0 // indirect
@@ -19,13 +16,10 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.1.0
 	github.com/prometheus/procfs v0.0.5 // indirect
-	github.com/rakyll/statik v0.1.6 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
-	github.com/rs/cors v1.7.0 // indirect
 	github.com/rs/zerolog v1.14.3
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.4.0
-	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/syndtr/goleveldb v1.0.1-0.20190318030020-c3a204f8e965
 	github.com/tendermint/crypto v0.0.0-20190823183015-45b1026d81ae // indirect
 	gitlab.com/thorchain/bepswap/common v1.0.0
