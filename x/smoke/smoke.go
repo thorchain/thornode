@@ -230,7 +230,7 @@ func (s *Smoke) GetPools() types.Pools {
 	return pools
 }
 
-// CheckPoolUnits : Check pool units
+// CheckStatechain : Check statechain pool
 func (s *Smoke) CheckStatechain(pool types.Statechain, memo string) {
 	pools := s.GetPools()
 
@@ -250,11 +250,29 @@ func (s *Smoke) CheckStatechain(pool types.Statechain, memo string) {
 			}
 
 			if pool.Rune != 0 {
-
+				balanceRune, _ := strconv.ParseFloat(p.BalanceRune, 64)
+				if balanceRune != pool.Rune {
+					log.Printf("%v: FAIL: Pool Rune balance does not match - %f versus %f",
+						memo,
+						pool.Rune,
+						balanceRune,
+					)
+				} else {
+					log.Printf("%v: PASS", memo)
+				}
 			}
 
 			if pool.Token != 0 {
-
+				balanceToken, _ := strconv.ParseFloat(p.BalanceToken, 64)
+				if balanceToken != pool.Token {
+					log.Printf("%v: FAIL: Pool Token balance does not match - %f versus %f",
+						memo,
+						pool.Token,
+						balanceToken,
+					)
+				} else {
+					log.Printf("%v: PASS", memo)
+				}
 			}
 		}
 	}
