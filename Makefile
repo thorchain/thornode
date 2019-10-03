@@ -1,6 +1,6 @@
 include Makefile.ledger
 
-POOL:=$(shell cat .pool)
+POOL?=$(shell cat .pool)
 
 all: lint install
 
