@@ -1,6 +1,7 @@
 package smoke
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"time"
@@ -117,11 +118,16 @@ func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []ms
 		AccountNumber: acc.Number,
 	}
 
-	hexTx, _ := key.Sign(*signMsg)
-	param := map[string]string{}
-	param["sync"] = "true"
+	rawBz, err := key.Sign(*signMsg)
+	if nil != err {
+		log.Fatalf("%v", err)
+	}
+	hexTx := []byte(hex.EncodeToString(rawBz))
+	param := map[string]string{
+		"sync": "true",
+	}
 
-	uri := fmt.Sprintf("%s://%s/%s/broadcast",
+	uri := fmt.Sprintf("%s://%s%s/broadcast",
 		types.DefaultApiSchema,
 		b.apiHost,
 		types.DefaultAPIVersionPrefix)

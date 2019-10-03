@@ -8,14 +8,15 @@ config:
 	@echo ${POOL}
 
 install: go.sum
-		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
-		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
-		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/smoke
-		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/gen-pool
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/smoke
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/gen-pool
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sweep
 
 go.sum: go.mod
-		@echo "--> Ensure dependencies have not been modified"
-		GO111MODULE=on go mod verify
+	@echo "--> Ensure dependencies have not been modified"
+	GO111MODULE=on go mod verify
 
 lint:
 	@golangci-lint run --deadline=15m
@@ -66,3 +67,6 @@ flow-test-audit: install
 
 flow-test-refund: install
 	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/flow-test-refund.json -e ${ENV}
+
+sweep: install
+	@sweep -m ${MASTER_KEY} -k ${KEY_LIST}

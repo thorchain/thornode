@@ -10,7 +10,6 @@ import (
 	"time"
 
 	sdk "github.com/binance-chain/go-sdk/client"
-	btypes "github.com/binance-chain/go-sdk/types"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
@@ -28,15 +27,6 @@ type Smoke struct {
 	Binance    Binance
 	Statechain Statechain
 	Tests      types.Tests
-}
-
-// selectedNet : Get the Binance network type
-func selectedNet(network int) (ctypes.ChainNetwork, string) {
-	if network == 0 {
-		return ctypes.TestNetwork, btypes.TestnetChainID
-	} else {
-		return ctypes.ProdNetwork, btypes.ProdChainID
-	}
 }
 
 // NewSmoke : create a new Smoke instance
