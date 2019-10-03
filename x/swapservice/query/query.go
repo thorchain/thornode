@@ -47,6 +47,7 @@ var (
 	QueryObservers        = Query{Key: "observers", EndpointTemplate: "/%s/observers"}
 	QueryNodeAccounts     = Query{Key: "nodeaccounts", EndpointTemplate: "/%s/nodeaccounts"}
 	QueryNodeAccount      = Query{Key: "nodeaccount", EndpointTemplate: "/%s/nodeaccount/{%s}"}
+	QueryPoolAddresses    = Query{Key: "pooladdresses", EndpointTemplate: "/%s/pooladdresses"}
 )
 
 var Queries = []Query{
@@ -67,4 +68,5 @@ var Queries = []Query{
 	QueryObservers,
 	QueryNodeAccount,
 	QueryNodeAccounts,
+	QueryPoolAddresses,
 }

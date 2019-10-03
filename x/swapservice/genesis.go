@@ -207,8 +207,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
 		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx, sdk.AccAddress{})
-		pool.ExpiryUtc = k.GetAdminConfigPoolExpiry(ctx, sdk.AccAddress{})
 		poolRecords = append(poolRecords, pool)
 	}
 

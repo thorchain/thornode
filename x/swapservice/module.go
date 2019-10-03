@@ -72,6 +72,7 @@ type AppModule struct {
 	coinKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
 	txOutStore   *TxOutStore
+	poolMgr      *PoolAddressManager
 }
 
 // NewAppModule creates a new AppModule Object
@@ -82,6 +83,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		coinKeeper:     bankKeeper,
 		supplyKeeper:   supplyKeeper,
 		txOutStore:     NewTxOutStore(k),
+		poolMgr:        NewPoolAddressManager(k),
 	}
 }
 
@@ -96,23 +98,25 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.txOutStore)
+	return NewHandler(am.keeper, am.poolMgr, am.txOutStore)
 }
 func (am AppModule) QuerierRoute() string {
 	return ModuleName
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.keeper)
+	return NewQuerier(am.keeper, am.poolMgr)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
-	am.txOutStore.NewBlock(uint64(req.Header.Height))
+	am.poolMgr.BeginBlock(ctx, req.Header.Height)
+	am.txOutStore.NewBlock(uint64(req.Header.Height), am.poolMgr.GetCurrentPoolAddresses().Current)
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
+	am.poolMgr.EndBlock(ctx, req.Height)
 	am.txOutStore.CommitBlock(ctx)
 	var validatorUpdate []abci.ValidatorUpdate
 

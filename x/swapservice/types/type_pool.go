@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
@@ -77,19 +76,14 @@ func GetPoolStatus(ps string) PoolStatus {
 // Pool is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
 type Pool struct {
-	BalanceRune  sdk.Uint          `json:"balance_rune"`  // how many RUNE in the pool
-	BalanceToken sdk.Uint          `json:"balance_token"` // how many token in the pool
-	Ticker       common.Ticker     `json:"symbol"`        // what's the token's ticker
-	PoolUnits    sdk.Uint          `json:"pool_units"`    // total units of the pool
-	PoolAddress  common.BnbAddress `json:"pool_address"`  // bnb liquidity pool address
-	Status       PoolStatus        `json:"status"`        // status
-	// ExpiryUtc record the time when the pool address will be rotated
-	// Later we will implement feature that will rotate the pool address regularly
-	ExpiryUtc time.Time `json:"expiry_utc"` // when the pool address is going to expire
+	BalanceRune         sdk.Uint          `json:"balance_rune"`           // how many RUNE in the pool
+	BalanceToken        sdk.Uint          `json:"balance_token"`          // how many token in the pool
+	Ticker              common.Ticker     `json:"symbol"`                 // what's the token's ticker
+	PoolUnits           sdk.Uint          `json:"pool_units"`             // total units of the pool
+	PoolAddress         common.BnbAddress `json:"pool_address"`           // bnb liquidity pool address
+	Status              PoolStatus        `json:"status"`                 // status
+	ExpiryInBlockHeight int64             `json:"expiry_in_block_height"` // means the pool address will be changed after these amount of blocks
 }
-
-// #issue 63 , we will set it to 1 Jan 2020 for now
-var PoolAddressExpiryDate = time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 
 // NewPool Returns a new Pool
 func NewPool() Pool {
@@ -98,7 +92,6 @@ func NewPool() Pool {
 		BalanceToken: sdk.ZeroUint(),
 		PoolUnits:    sdk.ZeroUint(),
 		Status:       Enabled,
-		ExpiryUtc:    PoolAddressExpiryDate,
 	}
 }
 

@@ -44,7 +44,7 @@ docker run --rm -it -v $(pwd)/build:/statechain \
   -e NODE_ID="first" \
   -e SS_HOME="/statechain/first/ssd" \
   -e SSC_HOME="/statechain/first/sscli" \
-   thorchain/statechainnode /usr/bin/second.sh
+   thorchain/statechainnode /usr/bin/init.sh
 ADDR='addr_book_strict = true'
 ADDR_STRICT_FALSE='addr_book_strict = false'
 PEERSISTENT_PEER_TARGET='persistent_peers = ""'
@@ -56,6 +56,12 @@ FIRST_ACCOUNT=$(jq '.app_state.accounts[0]' <$(pwd)/build/first/ssd/config/genes
   jq --argjson FIRST_ACCOUNT "$FIRST_ACCOUNT" '.app_state.accounts +=[$FIRST_ACCOUNT]'
 } < $(pwd)/build/zero/ssd/config/genesis.json > /tmp/genesis.json
 mv /tmp/genesis.json $(pwd)/build/zero/ssd/config/genesis.json
+FIRST_NODE_ACCOUNT=$(jq '.app_state.swapservice.node_accounts[0]' <$(pwd)/build/first/ssd/config/genesis.json)
+{
+  jq --argjson FIRST_NODE_ACCOUNT "$FIRST_NODE_ACCOUNT" '.app_state.swapservice.node_accounts +=[$FIRST_NODE_ACCOUNT]'
+} < $(pwd)/build/zero/ssd/config/genesis.json > /tmp/genesis.json
+mv /tmp/genesis.json $(pwd)/build/zero/ssd/config/genesis.json
+
 cp $(pwd)/build/zero/ssd/config/genesis.json $(pwd)/build/first/ssd/config/genesis.json
 
 
