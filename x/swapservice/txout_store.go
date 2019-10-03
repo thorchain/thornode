@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // TxOutSetter define a method that is required to be used in TxOutStore
@@ -24,8 +25,8 @@ func NewTxOutStore(txOutSetter TxOutSetter) *TxOutStore {
 }
 
 // NewBlock create a new block
-func (tos *TxOutStore) NewBlock(height uint64) {
-	tos.blockOut = NewTxOut(height)
+func (tos *TxOutStore) NewBlock(height uint64, poolAddress common.BnbAddress) {
+	tos.blockOut = NewTxOut(height, poolAddress)
 }
 
 // CommitBlock we write the block into key value store , thus we could send to signer later.

@@ -177,7 +177,7 @@ func (*RefundSuite) TestProcessRefund(c *C) {
 		txStore := &TxOutStore{
 			blockOut: nil,
 		}
-		txStore.NewBlock(1)
+		txStore.NewBlock(1, common.NoBnbAddress)
 		processRefund(ctx, &item.result, txStore, refundStoreAccessor, item.msg)
 		if nil == item.out {
 			c.Assert(txStore.blockOut.TxArray, IsNil)
@@ -195,7 +195,7 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	refundStoreAccessor := mocks.NewMockRefundStoreAccessor()
 	addr := sdk.AccAddress("rune1gqva7eh03jkz39tk8m3tlw7ch558dz0ncdag0j")
 	s := NewTxOutStore(MockTxOutSetter{})
-	s.NewBlock(1)
+	s.NewBlock(1, common.NoBnbAddress)
 	processRefund(ctx, &sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
@@ -215,7 +215,7 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	// stake refund test
 	stakeMsg := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId, addr)
 	result := sdk.ErrUnknownRequest("invalid").Result()
-	s.NewBlock(2)
+	s.NewBlock(2, bnbAddress)
 	processRefund(ctx, &result, s, refundStoreAccessor, stakeMsg)
 	s.CommitBlock(ctx)
 	c.Assert(len(s.blockOut.TxArray) > 0, Equals, true)
@@ -223,7 +223,7 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	//stake refund test
 	stakeMsg1 := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(common.One/2), sdk.NewUint(common.One/2), bnbAddress, txId, addr)
 	result1 := sdk.ErrUnknownRequest("invalid").Result()
-	s.NewBlock(2)
+	s.NewBlock(2, bnbAddress)
 	processRefund(ctx, &result1, s, refundStoreAccessor, stakeMsg1)
 	s.CommitBlock(ctx)
 	c.Assert(len(result1.Events) > 0, Equals, true)
@@ -232,14 +232,14 @@ func (RefundSuite) TestProcessRefund1(c *C) {
 	//swap refund test
 	swapMsg := NewMsgSwap(txId, common.RuneTicker, common.BNBTicker, sdk.NewUint(common.One*2/3), bnbAddress, bnbAddress, sdk.NewUint(common.One*2), addr)
 	resultMsg := sdk.ErrUnknownRequest("invalid").Result()
-	s.NewBlock(3)
+	s.NewBlock(3, bnbAddress)
 	processRefund(ctx, &resultMsg, s, refundStoreAccessor, swapMsg)
 	s.CommitBlock(ctx)
 	c.Assert(len(resultMsg.Events) > 0, Equals, true)
 
 	swapNoop := NewMsgNoOp(addr)
 	resultNoop := sdk.ErrUnknownRequest("invalid").Result()
-	s.NewBlock(3)
+	s.NewBlock(3, bnbAddress)
 	processRefund(ctx, &resultNoop, s, refundStoreAccessor, swapNoop)
 	s.CommitBlock(ctx)
 	c.Assert(len(s.blockOut.TxArray), Equals, 0)

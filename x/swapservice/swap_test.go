@@ -254,7 +254,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
 	ta := types.NewTrustAccount(addr, observerAddr, bepConsPubKey)
 	k.SetNodeAccount(ctx, types.NewNodeAccount(signerAddr, NodeActive, ta))
-	txOutStore.NewBlock(1)
+	txOutStore.NewBlock(1, addr)
 	// no pool
 	msg := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(common.One), addr, addr, sdk.ZeroUint(), observerAddr)
 	res := handleMsgSwap(ctx, k, txOutStore, msg)

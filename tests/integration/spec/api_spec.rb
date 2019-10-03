@@ -47,18 +47,6 @@ describe "API Tests" do
   end
 
   poolAddress = bnbAddress() # here so its available in other tests
-  context "Set pool address" do
-    it "should set pool address" do
-      tx = makeTx(memo: "ADMIN:Key:PoolAddress:#{poolAddress}", sender: TRUST_BNB_ADDRESS)
-      resp = processTx(tx)
-      expect(resp.code).to eq("200")
-
-      resp = get("/admin/PoolAddress")
-      expect(resp.code).to eq("200")
-      expect(resp.body['value']).to eq(poolAddress), resp.body.inspect
-    end
-  end
-
   context "Create a pool" do
 
     it "should show up in listing of pools" do
@@ -198,7 +186,7 @@ describe "API Tests" do
             # we have found the block height of our last swap
             found = true
             newTxId = txid()
-            tx = makeTx(memo: "outbound:#{i}", hash:newTxId, sender:poolAddress)
+            tx = makeTx(memo: "outbound:#{i}", hash:newTxId, sender:TRUST_BNB_ADDRESS)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
 

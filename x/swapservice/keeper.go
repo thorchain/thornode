@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -111,8 +110,6 @@ func (k Keeper) GetPool(ctx sdk.Context, ticker common.Ticker) Pool {
 	bz := store.Get([]byte(key))
 	var pool Pool
 	k.cdc.MustUnmarshalBinaryBare(bz, &pool)
-	pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx, EmptyAccAddress)
-	pool.ExpiryUtc = k.GetAdminConfigPoolExpiry(ctx, EmptyAccAddress)
 
 	return pool
 }
@@ -519,7 +516,7 @@ func (k Keeper) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxOut, strconv.FormatUint(height, 10))
 	if !store.Has([]byte(key)) {
-		return NewTxOut(height), nil
+		return NewTxOut(height, common.NoBnbAddress), nil
 	}
 	buf := store.Get([]byte(key))
 	var txOut TxOut
@@ -544,26 +541,6 @@ func (k Keeper) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.A
 // GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
 func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, StakerAmtIntervalKey.Default(), addr)
-}
-
-// GetAdminConfigPoolAddress - get the config for PoolAddress
-func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context, addr sdk.AccAddress) common.BnbAddress {
-	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, PoolAddressKey.Default(), addr)
-}
-
-// GetAdminConfigPoolExpiry get the config for pool address expiry
-func (k Keeper) GetAdminConfigPoolExpiry(ctx sdk.Context, addr sdk.AccAddress) time.Time {
-	expiry, err := k.GetAdminConfigValue(ctx, PoolExpiryKey, addr)
-	if nil != err {
-		ctx.Logger().Error("fail to get pool address expiry", "error", err)
-		return time.Time{}
-	}
-	t, err := time.Parse(time.RFC3339, expiry)
-	if nil != err {
-		ctx.Logger().Error("fail to parse pool address expiry", "error", err)
-		return time.Time{}
-	}
-	return t
 }
 
 // GetAdminConfigMinValidatorBond get the minimum bond to become a validator
