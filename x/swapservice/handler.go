@@ -14,7 +14,7 @@ import (
 var EmptyAccAddress = sdk.AccAddress{}
 
 // NewHandler returns a handler for "swapservice" type messages.
-func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
+func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *TxOutStore) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch m := msg.(type) {
 		case MsgSetPoolData:
@@ -43,11 +43,11 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 		case MsgSetUnStake:
 			return handleMsgSetUnstake(ctx, keeper, txOutStore, m)
 		case MsgSetTxIn:
-			return handleMsgSetTxIn(ctx, keeper, txOutStore, m)
+			return handleMsgSetTxIn(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetAdminConfig:
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		case MsgOutboundTx:
-			return handleMsgOutboundTx(ctx, keeper, m)
+			return handleMsgOutboundTx(ctx, keeper, poolAddressMgr, m)
 		case MsgNoOp:
 			return handleMsgNoOp(ctx, keeper, m)
 		case MsgEndPool:
@@ -402,7 +402,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAcc
 
 // handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
-func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetTxIn) sdk.Result {
+func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddressMgr *PoolAddressManager, msg MsgSetTxIn) sdk.Result {
 	conflicts := make(common.TxIDs, 0)
 	todo := make([]TxInVoter, 0)
 	for _, tx := range msg.TxIns {
@@ -419,7 +419,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 		ctx.Logger().Error("fail to get list of active node accounts", err)
 		return sdk.ErrInternal("fail to get list of active node accounts").Result()
 	}
-	handler := NewHandler(keeper, txOutStore)
+	handler := NewHandler(keeper, poolAddressMgr, txOutStore)
 	for _, tx := range todo {
 		voter := keeper.GetTxInVoter(ctx, tx.TxID)
 		preConsensus := voter.HasConensus(activeNodeAccounts)
@@ -710,7 +710,7 @@ func handleMsgNoOp(ctx sdk.Context, keeper Keeper, msg MsgNoOp) sdk.Result {
 }
 
 // handleMsgOutboundTx processes outbound tx from our pool
-func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.Result {
+func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAddressManager, msg MsgOutboundTx) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgOutboundTx %s at height %d", msg.TxID, msg.Height))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
@@ -721,10 +721,9 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
-	// TODO we need to double check here once we implement the logic to rotate pool
-	// ensure the bnb address this tx was sent from is from our pool
-	poolAddress := keeper.GetAdminConfigPoolAddress(ctx, EmptyAccAddress)
-	if !poolAddress.Equals(msg.Sender) {
+	// it could
+	currentPoolAddr := poolAddressMgr.GetCurrentPoolAddresses()
+	if !currentPoolAddr.Current.Equals(msg.Sender) && !currentPoolAddr.Previous.Equals(msg.Sender) {
 		ctx.Logger().Error("message sent by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
