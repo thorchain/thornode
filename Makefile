@@ -1,6 +1,11 @@
 include Makefile.ledger
 
+POOL:=$(shell cat .pool)
+
 all: lint install
+
+config:
+	@echo ${POOL}
 
 install: go.sum
 		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
@@ -54,7 +59,7 @@ export:
 	ssd export
 
 pool: install
-	@echo $(shell gen-pool)
+	@echo $(shell gen-pool > .pool)
 
 flow-test-audit: install
 	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/flow-test-audit.json -e ${ENV}
