@@ -90,20 +90,20 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.49940000
+          "amount": 0.50000000
         },
         {
           "symbol": "RUNE-A1F",
           "amount": 500.00000000
         }
       ],
-      "memo": "",
+      "memo": " ",
       "check": {
         "target": "from",
         "binance": [
           {
             "symbol": "BNB",
-            "amount": 0.49842500
+            "amount": 0.50000000
           },
           {
             "symbol": "RUNE-A1F",
