@@ -21,15 +21,15 @@ type Sweep struct {
 
 // NewHoover : Create a new instance of Sweep.
 func NewSweep(apiAddr, masterPrivKey string, keyList []string, network int) Sweep {
-	binanceNet, chainId := selectedNet(network)
+	n := NewNetwork(network)
 
 	keyManager, _ := keys.NewPrivateKeyManager(masterPrivKey)
-	client, _ := sdk.NewDexClient(apiAddr, binanceNet, keyManager)
+	client, _ := sdk.NewDexClient(apiAddr, n.Type, keyManager)
 
 	return Sweep{
 		ApiAddr:    apiAddr,
-		Network:    binanceNet,
-		Binance:    NewBinance(apiAddr, chainId,true),
+		Network:    n.Type,
+		Binance:    NewBinance(apiAddr, n.ChainID,true),
 		KeyManager: keyManager,
 		Client:     client,
 		KeyList:    keyList,

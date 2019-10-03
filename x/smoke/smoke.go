@@ -42,14 +42,14 @@ func NewSmoke(apiAddr, masterKey, poolKey, env string, config string, network in
 		log.Fatal(err)
 	}
 
-	binanceNet, chainId := selectedNet(network)
+	n := NewNetwork(network)
 	return Smoke{
 		delay:      2 * time.Second,
 		ApiAddr:    apiAddr,
-		Network:    binanceNet,
+		Network:    n.Type,
 		MasterKey:  masterKey,
 		PoolKey:    poolKey,
-		Binance:    NewBinance(apiAddr, chainId,true),
+		Binance:    NewBinance(apiAddr, n.ChainID,true),
 		Statechain: NewStatechain(env),
 		Tests:      tests,
 	}
