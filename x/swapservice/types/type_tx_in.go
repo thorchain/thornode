@@ -43,9 +43,13 @@ func (tx TxIn) Valid() error {
 	if len(tx.Coins) == 0 {
 		return errors.New("coins cannot be empty")
 	}
-	if len(tx.Memo) == 0 {
-		return errors.New("memo cannot be empty")
+	// ideally memo should not be empty, we check it here, but if we check it empty here, then the tx will be rejected by statechain
+	// given that , we are not going to refund the transaction, thus we will allow TxIn has empty to get into statechain.
+	// and let statechain to refund customer
+	if tx.BlockHeight.IsZero() {
+		return errors.New("block height can't be zero")
 	}
+
 	return nil
 }
 

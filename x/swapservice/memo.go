@@ -177,6 +177,9 @@ type ApplyMemo struct {
 func ParseMemo(memo string) (Memo, error) {
 	var err error
 	noMemo := MemoBase{}
+	if len(memo) == 0 {
+		return noMemo, fmt.Errorf("memo can't be empty")
+	}
 	parts := strings.Split(memo, ":")
 	if len(parts) < 2 {
 		return noMemo, fmt.Errorf("cannot parse given memo: length %d", len(parts))
