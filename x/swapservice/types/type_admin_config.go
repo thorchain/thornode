@@ -13,8 +13,6 @@ const (
 	UnknownKey           AdminConfigKey = "Unknown"
 	GSLKey               AdminConfigKey = "GSL"
 	StakerAmtIntervalKey AdminConfigKey = "StakerAmtInterval"
-	PoolAddressKey       AdminConfigKey = "PoolAddress"
-	PoolExpiryKey        AdminConfigKey = "PoolExpiry"
 	MinStakerCoinsKey    AdminConfigKey = "MinStakerCoins"
 	MRRAKey              AdminConfigKey = "MRRA" // MRRA means MinimumRefundRuneAmount, if the tx send to pool has less then this amount of RUNE , we are not going to refund it
 	MinValidatorBondKey  AdminConfigKey = "MinValidatorBond"
@@ -31,10 +29,6 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 		return GSLKey
 	case string(StakerAmtIntervalKey):
 		return StakerAmtIntervalKey
-	case string(PoolAddressKey):
-		return PoolAddressKey
-	case string(PoolExpiryKey):
-		return PoolExpiryKey
 	case string(MinStakerCoinsKey):
 		return MinStakerCoinsKey
 	case string(MRRAKey):
@@ -73,8 +67,6 @@ func (k AdminConfigKey) ValidValue(value string) error {
 	switch k {
 	case GSLKey, StakerAmtIntervalKey:
 		_, err = common.NewAmount(value)
-	case PoolAddressKey:
-		_, err = common.NewBnbAddress(value)
 	case MRRAKey, MinValidatorBondKey:
 		_, err = sdk.ParseUint(value)
 	case MinStakerCoinsKey, WhiteListGasTokenKey:

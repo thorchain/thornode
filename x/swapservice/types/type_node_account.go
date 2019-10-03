@@ -7,6 +7,9 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/crypto"
+	tmtypes "github.com/tendermint/tendermint/types"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // NodeStatus Represent the Node status
@@ -121,6 +124,16 @@ func (n NodeAccount) String() string {
 	return sb.String()
 }
 
+// GetRandomNodeAccount create a random generated node account , used for test purpose
+func GetRandomNodeAccount(status NodeStatus) NodeAccount {
+	name := RandStringBytesMask(10)
+	addr := sdk.AccAddress(crypto.AddressHash([]byte(name)))
+	bnb, _ := common.NewBnbAddress("tbnb" + RandStringBytesMask(39))
+	v, _ := tmtypes.RandValidator(true, 100)
+	na := NewNodeAccount(addr, status, NewTrustAccount(bnb, addr, v.String()))
+	return na
+}
+
 // NodeAccounts just a list of NodeAccount
 type NodeAccounts []NodeAccount
 
@@ -132,4 +145,25 @@ func (nodeAccounts NodeAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
 		}
 	}
 	return false
+}
+func (nodeAccounts NodeAccounts) Less(i, j int) bool {
+	return nodeAccounts[i].Accounts.SignerBNBAddress.String() < nodeAccounts[j].Accounts.SignerBNBAddress.String()
+}
+func (nodeAccounts NodeAccounts) Len() int { return len(nodeAccounts) }
+func (nodeAccounts NodeAccounts) Swap(i, j int) {
+	nodeAccounts[i], nodeAccounts[j] = nodeAccounts[j], nodeAccounts[i]
+}
+
+func (nodeAccounts NodeAccounts) After(addr common.BnbAddress) NodeAccount {
+	idx := 0
+	for i, na := range nodeAccounts {
+		if na.Accounts.SignerBNBAddress.Equals(addr) {
+			idx = i
+			break
+		}
+	}
+	if idx+1 < len(nodeAccounts) {
+		return nodeAccounts[idx+1]
+	}
+	return nodeAccounts[0]
 }
