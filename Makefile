@@ -53,7 +53,7 @@ reset: clean
 
 clean:
 	rm -rf ~/.ssd
-	rm ${GOBIN}/smoke
+	rm ${GOBIN}/{smoke,gen-pool,sweep}
 	ssd unsafe-reset-all
 
 export:

@@ -1,15 +1,34 @@
 package smoke
 
 import (
-	btypes "github.com/binance-chain/go-sdk/types"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
+	btypes "github.com/binance-chain/go-sdk/types"
 )
 
-// selectedNet : Get the Binance network type
-func selectedNet(network int) (ctypes.ChainNetwork, string) {
+type Network struct {
+	Type    ctypes.ChainNetwork
+	ChainID string
+}
+
+func NewNetwork(network int) Network {
+	return Network{
+		Type:    networkType(network),
+		ChainID: chainID(network),
+	}
+}
+
+func networkType(network int) ctypes.ChainNetwork {
 	if network == 0 {
-		return ctypes.TestNetwork, btypes.TestnetChainID
+		return ctypes.TestNetwork
 	} else {
-		return ctypes.ProdNetwork, btypes.ProdChainID
+		return ctypes.ProdNetwork
+	}
+}
+
+func chainID(network int) string {
+	if network == 0 {
+		return btypes.TestnetChainID
+	} else {
+		return btypes.ProdChainID
 	}
 }
