@@ -10,6 +10,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// TODO: make this admin configs instead of hard coded
+var singleTransactionFee uint64 = 37500
+var batchTransactionFee uint64 = 30000
+
 // EmptyAccAddress empty address
 var EmptyAccAddress = sdk.AccAddress{}
 
@@ -361,16 +365,9 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 }
 
-func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAccessor) {
+func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper) {
 	toi := &TxOutItem{
 		ToAddress: tx.Sender,
-	}
-
-	for _, item := range tx.Coins {
-		c := getRefundCoin(ctx, item.Denom, item.Amount, keeper)
-		if c.Amount.GT(sdk.ZeroUint()) {
-			toi.Coins = append(toi.Coins, c)
-		}
 	}
 
 	for _, item := range tx.Coins {
