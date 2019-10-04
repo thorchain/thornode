@@ -104,7 +104,6 @@ type (
 	EventSwap          = types.EventSwap
 	EventStake         = types.EventStake
 	EventStatus        = types.EventStatus
-	EventStatus        = types.EventStatus
 	NodeAccount        = types.NodeAccount
 	NodeAccounts       = types.NodeAccounts
 	PoolAddresses      = types.PoolAddresses
