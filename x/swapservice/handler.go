@@ -425,9 +425,9 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 				return sdk.ErrInternal("fail to save last binance height to data store err:" + err.Error()).Result()
 			}
 
-			result := handler(ctx, msg)
+			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.GetTx(totalTrusted), txOutStore)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore)
 			}
 		}
 	}

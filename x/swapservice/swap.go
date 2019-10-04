@@ -83,7 +83,7 @@ func swapOne(ctx sdk.Context,
 	amount sdk.Uint, requester,
 	destination common.BnbAddress,
 	tradeTarget sdk.Uint,
-	tradeSlipLimit, globalSlipLimit common.Amount) (amt sdk.Uint, err error) {
+	globalSlipLimit common.Amount) (amt sdk.Uint, err error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
@@ -175,12 +175,12 @@ func swapOne(ctx sdk.Context,
 		return sdk.ZeroUint(), errors.New("invalid balance")
 	}
 
-	outputSlip := calcOutputSlip(X, x)
-	liquitityFee := calcLiquitityFee(X, x, Y)
-	tradeSlip := calcTradeSlip(X, x)
-	emitTokens := calcTokenEmission(X, x, Y)
-	poolSlip := calcPoolSlip(X, x)
-	priceSlip := calcPriceSlip(X, x, Y)
+	outputSlip = calcOutputSlip(X, x)
+	liquitityFee = calcLiquitityFee(X, x, Y)
+	tradeSlip = calcTradeSlip(X, x)
+	emitTokens = calcTokenEmission(X, x, Y)
+	poolSlip = calcPoolSlip(X, x)
+	priceSlip = calcPriceSlip(X, x, Y)
 
 	// do we have enough balance to swap?
 
