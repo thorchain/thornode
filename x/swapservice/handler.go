@@ -366,9 +366,14 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 
 func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAccessor) {
 	toi := &TxOutItem{
-		PoolAddress: tx.ObservePoolAddress,
-		ToAddress:   tx.Sender,
-		Coins:       tx.Coins,
+		ToAddress: tx.Sender,
+	}
+
+	for _, item := range tx.Coins {
+		c := getRefundCoin(ctx, item.Denom, item.Amount, keeper)
+		if c.Amount.GT(sdk.ZeroUint()) {
+			toi.Coins = append(toi.Coins, c)
+		}
 	}
 
 	store.AddTxOutItem(toi)
@@ -408,7 +413,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer, poolAddressMgr)
 			if nil != err {
 				ctx.Logger().Error("fail to process txHash", "error", err)
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper)
 				ee := NewEmptyRefundEvent()
 				buf, err := json.Marshal(ee)
 				if nil != err {
@@ -427,7 +432,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper)
 			}
 		}
 	}
