@@ -286,7 +286,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		Denom:  msg.TargetTicker,
 		Amount: amount,
 	})
-	txOutStore.AddTxOutItem(toi)
+	txOutStore.AddTxOutItem(ctx, keeper, toi)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -357,7 +357,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		Denom:  msg.Ticker,
 		Amount: tokenAmount,
 	})
-	txOutStore.AddTxOutItem(toi)
+	txOutStore.AddTxOutItem(ctx, keeper, toi)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -368,16 +368,10 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper) {
 	toi := &TxOutItem{
 		ToAddress: tx.Sender,
+		Coins:     tx.Coins,
 	}
 
-	for _, item := range tx.Coins {
-		c := getRefundCoin(ctx, item.Denom, item.Amount, keeper)
-		if c.Amount.GT(sdk.ZeroUint()) {
-			toi.Coins = append(toi.Coins, c)
-		}
-	}
-
-	store.AddTxOutItem(toi)
+	store.AddTxOutItem(ctx, keeper, toi)
 }
 
 // handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
