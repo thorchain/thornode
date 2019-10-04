@@ -10,10 +10,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// TODO: make this admin configs instead of hard coded
-var singleTransactionFee uint64 = 37500
-var batchTransactionFee uint64 = 30000
-
 // EmptyAccAddress empty address
 var EmptyAccAddress = sdk.AccAddress{}
 
