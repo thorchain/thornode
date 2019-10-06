@@ -144,6 +144,8 @@ func (b *CommonBlockScanner) scanBlocks() {
 				b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 			}
 			b.logger.Info().Int64("current block height", currentBlock).Int64("we are at", b.previousBlock).Msg("get block height")
+			// make sure we are one block behind , so when we process the block all the necessary data will be available
+			currentBlock = currentBlock - 1
 			if b.previousBlock >= currentBlock {
 				// back off
 				time.Sleep(b.cfg.BlockHeightDiscoverBackoff)
@@ -247,7 +249,7 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {
 		duration := time.Since(start)
 		b.metrics.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
-
+	b.logger.Debug().Str("request_url", requestUrl).Msg("get_block")
 	buf, err := b.GetFromHttpWithRetry(requestUrl)
 	if nil != err {
 		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()

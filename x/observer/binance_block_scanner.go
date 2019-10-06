@@ -29,7 +29,6 @@ import (
 // BinanceBlockScanner is to scan the blocks
 type BinanceBlockScanner struct {
 	cfg                config.BlockScannerConfiguration
-	poolAddress        common.BnbAddress
 	logger             zerolog.Logger
 	wg                 *sync.WaitGroup
 	stopChan           chan struct{}
@@ -38,18 +37,19 @@ type BinanceBlockScanner struct {
 	commonBlockScanner *blockscanner.CommonBlockScanner
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
+	pav                PoolAddressValidator
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
-func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, poolAddress common.BnbAddress, m *metrics.Metrics) (*BinanceBlockScanner, error) {
+func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, pav PoolAddressValidator, m *metrics.Metrics) (*BinanceBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
 	}
-	if poolAddress.IsEmpty() {
-		return nil, errors.New("pool address is empty")
+	if pav == nil {
+		return nil, errors.New("pool address validator is nil")
 	}
 	if nil == m {
 		return nil, errors.New("metrics is nil")
@@ -63,7 +63,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 	}
 	return &BinanceBlockScanner{
 		cfg:                cfg,
-		poolAddress:        poolAddress,
+		pav:                pav,
 		logger:             log.Logger.With().Str("module", "blockscanner").Logger(),
 		wg:                 &sync.WaitGroup{},
 		stopChan:           make(chan struct{}),
@@ -122,7 +122,7 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 		return errors.Wrap(err, "fail to unmarshal RPCTxSearch")
 	}
 
-	b.logger.Debug().Int("txs", len(query.Result.Txs)).Str("total", query.Result.TotalCount).Msg("txs")
+	b.logger.Info().Int64("block", block).Int("txs", len(query.Result.Txs)).Str("total", query.Result.TotalCount).Msg("txs")
 	if len(query.Result.Txs) == 0 {
 		b.m.GetCounter(metrics.BlockWithoutTx).Inc()
 		b.logger.Debug().Int64("block", block).Msg("there are no txs in this block")
@@ -190,6 +190,13 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 	}
 }
 
+func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) bool {
+	// outbound msg from pool address to customer(not our pool address) , it will have a memo like "OUTBOUND:{blockheight}
+	lowerMemo := strings.ToLower(memo)
+	return b.pav.IsValidPoolAddress(addr) &&
+		strings.HasPrefix(lowerMemo, "outbound")
+}
+
 func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*stypes.TxInItem, error) {
 	if len(encodedTx) == 0 {
 		return nil, errors.New("tx is empty")
@@ -215,16 +222,18 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 			sender := sendMsg.Inputs[0]
 			txInItem.Sender = sender.Address.String()
 			// outbound message from pool, when it is outbound, it does not matter how much coins we send to customer for now
-			if strings.EqualFold(sender.Address.String(), b.poolAddress.String()) {
+			if b.isOutboundMsg(sender.Address.String(), t.Memo) {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
+				txInItem.ObservedPoolAddress = sender.Address.String()
 				// Coin is mandatory
 				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.RuneA1FTicker, sdk.NewUint(common.One)))
 				return &txInItem, nil
 			}
 			for _, output := range sendMsg.Outputs {
-				if !strings.EqualFold(output.Address.String(), b.poolAddress.String()) {
+				if !b.pav.IsValidPoolAddress(output.Address.String()) {
 					continue
 				}
+				txInItem.ObservedPoolAddress = output.Address.String()
 				existTx = true
 				for _, coin := range output.Coins {
 					ticker, err := common.NewTicker(coin.Denom)
