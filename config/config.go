@@ -8,12 +8,10 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"gitlab.com/thorchain/bepswap/common"
 )
 
 // Configuration values
 type Configuration struct {
-	PoolAddress           common.BnbAddress         `json:"pool_address" mapstructure:"pool_address"`
 	DEXHost               string                    `json:"dex_host" mapstructure:"dex_host"`
 	ObserverDbPath        string                    `json:"observer_db_path" mapstructure:"observer_db_path"`
 	BlockScanner          BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`

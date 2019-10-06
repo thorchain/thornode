@@ -1,6 +1,7 @@
 package signer
 
 import (
+	"strings"
 	"sync"
 	"time"
 
@@ -95,6 +96,13 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 		case <-s.stopChan:
 			return nil
 		default:
+
+			if !s.shouldSign(item) {
+				s.logger.Debug().
+					Str("signer_address", s.Binance.GetAddress()).
+					Msg("different pool address, ignore")
+				continue
+			}
 			if err := s.signAndSendToBinanceChain(item); nil != err {
 				s.errCounter.WithLabelValues("fail_sign_send_to_binance", item.Height).Inc()
 				s.logger.Error().Err(err).Str("height", item.Height).Msg("fail to sign and send it to binance chain")
@@ -108,6 +116,16 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 		}
 	}
 	return nil
+}
+
+func (s *Signer) shouldSign(txOut types.TxOut) bool {
+	binanceAddr := s.Binance.GetAddress()
+	for _, item := range txOut.TxArray {
+		if strings.EqualFold(binanceAddr, item.PoolAddress.String()) {
+			return true
+		}
+	}
+	return false
 }
 func (s *Signer) retryFailedTxOutProcessor() {
 	s.logger.Info().Msg("start retry process")
@@ -152,6 +170,12 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 				s.logger.Error().Err(err).Msg("fail to update txout local storage")
 				// raise alert
 				return
+			}
+			if !s.shouldSign(txOut) {
+				s.logger.Debug().
+					Str("signer_address", s.Binance.GetAddress()).
+					Msg("different pool address, ignore")
+				continue
 			}
 			if err := s.signAndSendToBinanceChainWithRetry(txOut); nil != err {
 				s.errCounter.WithLabelValues("fail_sign_send_to_binance", txOut.Height).Inc()

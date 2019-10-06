@@ -46,6 +46,8 @@ const (
 	TxToBinanceSigned                 MetricName = `tx_to_binance_signed`
 	TxToBinanceSignedBroadcast        MetricName = `tx_to_binance_broadcast`
 	SignAndBroadcastToBinanceDuration MetricName = `sign_and_broadcast_to_binance_duration`
+
+	PoolAddressManagerError MetricName = `pool_address_manager_error`
 )
 
 // Metrics used to provide promethus metrics
@@ -174,6 +176,14 @@ var (
 			Subsystem: "signer",
 			Name:      "errors",
 			Help:      "errors in signer",
+		}, []string{
+			"error_name", "additional",
+		}),
+		PoolAddressManagerError: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "observer",
+			Subsystem: "pool_addresses_manager",
+			Name:      "errors",
+			Help:      "errors in pool addresses manager",
 		}, []string{
 			"error_name", "additional",
 		}),
