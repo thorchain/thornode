@@ -111,12 +111,12 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
 	am.poolMgr.BeginBlock(ctx, req.Header.Height)
-	am.txOutStore.NewBlock(uint64(req.Header.Height), am.poolMgr.GetCurrentPoolAddresses().Current)
+	am.txOutStore.NewBlock(uint64(req.Header.Height))
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
-	am.poolMgr.EndBlock(ctx, req.Height)
+	am.poolMgr.EndBlock(ctx, req.Height, am.txOutStore)
 	am.txOutStore.CommitBlock(ctx)
 	var validatorUpdate []abci.ValidatorUpdate
 
