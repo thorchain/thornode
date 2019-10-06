@@ -44,7 +44,7 @@ func NewSmoke(apiAddr, masterKey, poolKey, env string, config string, network in
 
 	n := NewNetwork(network)
 	return Smoke{
-		delay:      2 * time.Second,
+		delay:      5 * time.Second,
 		ApiAddr:    apiAddr,
 		Network:    n.Type,
 		MasterKey:  masterKey,
@@ -130,8 +130,6 @@ func (s *Smoke) Run() {
 		}
 
 		client, key := s.FromClientKey(rule.From)
-
-		// Send to Binance.
 		s.SendTxn(client, key, payload, rule.Memo)
 
 		// Validate.
@@ -253,6 +251,7 @@ func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo 
 
 // CheckPool : Check Statechain pool
 func (s *Smoke) CheckPool(pool types.Statechain, memo string) {
+	time.Sleep(s.delay)
 	pools := s.GetPools()
 
 	for _, p := range pools {
