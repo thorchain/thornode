@@ -31,6 +31,7 @@ type Observer struct {
 	m                *metrics.Metrics
 	wg               *sync.WaitGroup
 	errCounter       *prometheus.CounterVec
+	pam              *PoolAddressManager
 }
 
 // NewObserver create a new instance of Observer
@@ -64,7 +65,12 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		}
 	}
 
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), cfg.PoolAddress, m)
+	pam, err := NewPoolAddressManager(cfg.StateChain.ChainHost, m)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create pool address manager")
+	}
+
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), pam, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
@@ -78,15 +84,22 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		storage:          scanStorage,
 		m:                m,
 		errCounter:       m.GetCounterVec(metrics.ObserverError),
+		pam:              pam,
 	}, nil
 }
 
 func (o *Observer) Start(websocket bool) error {
 	if err := o.stateChainBridge.Start(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to start statechain bridge")
+		return errors.Wrap(err, "fail to start statechain bridge")
 	}
 	if err := o.m.Start(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to start metric collector")
+		return errors.Wrap(err, "fail to start metric collector")
+	}
+	if err := o.pam.Start(); nil != err {
+		o.logger.Error().Err(err).Msg("fail to start pool address manager")
+		return errors.Wrap(err, "fail to start pool address manager")
 	}
 	o.wg.Add(1)
 	go o.txinsProcessor(o.blockScanner.GetMessages(), 1)
@@ -219,12 +232,17 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
 			return nil, errors.Wrapf(err, "fail to parse block height")
 		}
+		observedPoolAddress, err := common.NewBnbAddress(item.ObservedPoolAddress)
+		if nil != err {
+			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolAddress).Inc()
+			return nil, errors.Wrapf(err, "fail to parse observed pool address: %s", item.ObservedPoolAddress)
+		}
 		txs[i] = stypes.NewTxInVoter(txID, []stypes.TxIn{
 			stypes.NewTxIn(
 				item.Coins,
 				item.Memo,
 				bnbAddr,
-				sdk.NewUint(h)),
+				sdk.NewUint(h), observedPoolAddress),
 		})
 	}
 	return txs, nil
@@ -238,7 +256,11 @@ func (o *Observer) Stop() error {
 	if err := o.blockScanner.Stop(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to close block scanner")
 	}
+
 	close(o.stopChan)
 	o.wg.Wait()
+	if err := o.pam.Stop(); nil != err {
+		o.logger.Error().Err(err).Msg("fail to stop pool address manager")
+	}
 	return o.m.Stop()
 }

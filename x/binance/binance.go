@@ -111,9 +111,19 @@ func (b *Binance) parseTx(transfers []msg.Transfer) msg.SendMsg {
 	return b.createMsg(fromAddr, fromCoins, transfers)
 }
 
+// GetAddress return current signer address
+func (b *Binance) GetAddress() string {
+	return b.keyManager.GetAddr().String()
+}
+
 func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) {
+	signerAddr := b.GetAddress()
 	var payload []msg.Transfer
 	for _, txn := range txOut.TxArray {
+		if !strings.EqualFold(txn.PoolAddress.String(), signerAddr) {
+			b.logger.Debug().Str("signer addr", signerAddr).Str("pool addr", txn.PoolAddress.String()).Msg("address doesn't match ignore")
+			continue
+		}
 		toAddr, err := types.AccAddressFromBech32(txn.To)
 		if nil != err {
 			return nil, nil, errors.Wrapf(err, "fail to parse account address(%s)", txn.To)

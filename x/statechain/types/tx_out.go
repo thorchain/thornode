@@ -6,7 +6,8 @@ type TxOut struct {
 	Height  string `json:"height"`
 	Hash    string `json:"hash"`
 	TxArray []struct {
-		To    string       `json:"to"`
-		Coins common.Coins `json:"coins"`
+		PoolAddress common.BnbAddress `json:"pool_address"`
+		To          string            `json:"to"`
+		Coins       common.Coins      `json:"coins"`
 	} `json:"tx_array"`
 }
