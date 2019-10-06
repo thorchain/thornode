@@ -254,10 +254,11 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
 	ta := types.NewTrustAccount(addr, observerAddr, bepConsPubKey)
 	k.SetNodeAccount(ctx, types.NewNodeAccount(signerAddr, NodeActive, ta))
-	txOutStore.NewBlock(1, addr)
+	txOutStore.NewBlock(1)
+	poolAddrMgr := NewPoolAddressManager(k)
 	// no pool
 	msg := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(common.One), addr, addr, sdk.ZeroUint(), observerAddr)
-	res := handleMsgSwap(ctx, k, txOutStore, msg)
+	res := handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msg)
 	c.Assert(res.Code, Equals, sdk.CodeInternal)
 	pool := NewPool()
 	pool.Ticker = common.BNBTicker
@@ -265,11 +266,11 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
 	k.SetPool(ctx, pool)
 
-	res = handleMsgSwap(ctx, k, txOutStore, msg)
+	res = handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msg)
 	c.Assert(res.IsOK(), Equals, true)
 
 	msgSwapPriceProtection := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(common.One), addr, addr, sdk.NewUint(2*common.One), observerAddr)
-	res1 := handleMsgSwap(ctx, k, txOutStore, msgSwapPriceProtection)
+	res1 := handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msgSwapPriceProtection)
 	c.Assert(res1.IsOK(), Equals, false)
 	c.Assert(res1.Code, Equals, sdk.CodeInternal)
 
@@ -283,14 +284,15 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 
 	txID1, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD211")
 	m, err := ParseMemo("swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:124958592")
-
+	observePoolAddr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	c.Assert(err, IsNil)
 	txIn := types.NewTxIn(common.Coins{
 		common.NewCoin(tCanTicker, sdk.NewUint(20000000)),
-	}, "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:124958592", addr, sdk.NewUint(1))
+	}, "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:124958592", addr, sdk.NewUint(1), observePoolAddr)
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txID1, txIn, observerAddr)
 
 	//msgSwapRune := NewMsgSwap(txID1, tCanTicker, common.RuneA1FTicker, sdk.NewUint(20000000), addr, addr, sdk.NewUint(124958593), observerAddr)
-	res2 := handleMsgSwap(ctx, k, txOutStore, msgSwapFromTxIn.(MsgSwap))
+	res2 := handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msgSwapFromTxIn.(MsgSwap))
 
 	c.Assert(res2.IsOK(), Equals, true)
 	c.Assert(res2.Code, Equals, sdk.CodeOK)

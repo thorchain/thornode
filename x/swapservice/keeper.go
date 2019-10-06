@@ -31,6 +31,7 @@ const (
 	prefixLastSignedHeight  dbPrefix = "last_signed_height"
 	prefixNodeAccount       dbPrefix = "node_account_"
 	prefixActiveObserver    dbPrefix = "active_observer_"
+	prefixPoolAddresses     dbPrefix = "pooladdresses"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -300,8 +301,8 @@ func (k Keeper) TotalActiveNodeAccount(ctx sdk.Context) (int, error) {
 }
 
 // ListNodeAccounts - gets a list of all trust accounts
-func (k Keeper) ListNodeAccounts(ctx sdk.Context) ([]NodeAccount, error) {
-	var nodeAccounts []NodeAccount
+func (k Keeper) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+	nodeAccounts := make(NodeAccounts, 0)
 	naIterator := k.GetNodeAccountIterator(ctx)
 	defer naIterator.Close()
 	for ; naIterator.Valid(); naIterator.Next() {
@@ -516,7 +517,7 @@ func (k Keeper) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxOut, strconv.FormatUint(height, 10))
 	if !store.Has([]byte(key)) {
-		return NewTxOut(height, common.NoBnbAddress), nil
+		return NewTxOut(height), nil
 	}
 	buf := store.Get([]byte(key))
 	var txOut TxOut
@@ -767,4 +768,23 @@ func (k Keeper) SetLastEventID(ctx sdk.Context, id common.Amount) {
 	key := getKey(prefixLastEventID, "")
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&id))
+}
+
+// SetPoolAddresses save the pool address to key value store
+func (k Keeper) SetPoolAddresses(ctx sdk.Context, addresses PoolAddresses) {
+	key := getKey(prefixPoolAddresses, "")
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(addresses))
+}
+
+// GetPoolAddresses get current pool addresses
+func (k Keeper) GetPoolAddresses(ctx sdk.Context) PoolAddresses {
+	var addr PoolAddresses
+	key := getKey(prefixPoolAddresses, "")
+	store := ctx.KVStore(k.storeKey)
+	if store.Has([]byte(key)) {
+		buf := store.Get([]byte(key))
+		_ = k.cdc.UnmarshalBinaryBare(buf, &addr)
+	}
+	return addr
 }

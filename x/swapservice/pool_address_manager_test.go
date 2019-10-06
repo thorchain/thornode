@@ -1,7 +1,9 @@
 package swapservice
 
 import (
+	"math/rand"
 	"sort"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
@@ -81,10 +83,57 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 	c.Assert(pa4.Next.String(), Equals, nodeAccounts[0].Accounts.SignerBNBAddress.String())
 	c.Logf("%+v", pa4)
 
-	newPa := poolAddrMgr.rotatePoolAddress(ctx, 101, pa4)
+	txOutStore := NewTxOutStore(&MockTxOutSetter{})
+	txOutStore.NewBlock(101)
+	newPa := poolAddrMgr.rotatePoolAddress(ctx, 101, pa4, txOutStore)
 	c.Assert(newPa.IsEmpty(), Equals, false)
 	c.Assert(newPa.Previous.String(), Equals, pa4.Current.String())
 	c.Assert(newPa.Current.String(), Equals, pa4.Next.String())
 	c.Assert(newPa.Next.String(), Equals, nodeAccounts[1].Accounts.SignerBNBAddress.String())
 	c.Assert(newPa.RotateAt, Equals, int64(201))
+	poolBNB := createTempNewPoolForTest(ctx, k, "BNB", c)
+	poolTCan := createTempNewPoolForTest(ctx, k, "TCAN-014", c)
+	poolLoki := createTempNewPoolForTest(ctx, k, "LOK-3C0", c)
+
+	newPa1 := poolAddrMgr.rotatePoolAddress(ctx, 201, newPa, txOutStore)
+	c.Logf("new pool addresses %+v", newPa1)
+	c.Assert(newPa1.IsEmpty(), Equals, false)
+	c.Assert(newPa1.Previous.String(), Equals, newPa.Current.String())
+	c.Assert(newPa1.Current.String(), Equals, newPa.Next.String())
+	c.Assert(newPa1.Next.String(), Equals, nodeAccounts[2].Accounts.SignerBNBAddress.String())
+	c.Assert(newPa1.RotateAt, Equals, int64(301))
+	c.Assert(len(txOutStore.blockOut.TxArray) > 0, Equals, true)
+	c.Assert(txOutStore.blockOut.Valid(), IsNil)
+	for _, item := range txOutStore.blockOut.TxArray {
+		c.Assert(item.Valid(), IsNil)
+		// make sure the fund is sending from previous pool address to current
+		c.Assert(item.ToAddress.String(), Equals, newPa1.Current.String())
+		c.Assert(len(item.Coins) > 0, Equals, true)
+		if item.Coins[0].Denom == poolBNB.Ticker {
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64())
+		}
+		if item.Coins[0].Denom.String() == poolTCan.Ticker.String() {
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64())
+		}
+		if item.Coins[0].Denom.String() == poolLoki.Ticker.String() {
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceToken.Uint64())
+		}
+		if common.IsRune(item.Coins[0].Denom) {
+			totalRune := poolBNB.BalanceRune.Add(poolLoki.BalanceRune).Add(poolTCan.BalanceRune)
+			c.Assert(item.Coins[0].Amount.String(), Equals, totalRune.String())
+		}
+	}
+
+}
+
+func createTempNewPoolForTest(ctx sdk.Context, k Keeper, ticker string, c *C) *Pool {
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	p := NewPool()
+	t, err := common.NewTicker(ticker)
+	c.Assert(err, IsNil)
+	p.Ticker = t
+	p.BalanceRune = sdk.NewUint(r.Uint64())
+	p.BalanceToken = sdk.NewUint(r.Uint64())
+	k.SetPool(ctx, p)
+	return &p
 }

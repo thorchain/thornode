@@ -31,7 +31,7 @@ describe "API Tests" do
   context "Admin configs" do
 
     it "set admin config" do
-      tx = makeTx(memo: "ADMIN:KEY:GSL:0.1", sender: TRUST_BNB_ADDRESS)
+      tx = makeTx(memo: "ADMIN:KEY:GSL:0.1", sender: TRUST_BNB_ADDRESS , poolAddr: TRUST_BNB_ADDRESS)
       resp = processTx(tx)
       expect(resp.code).to eq("200")
 
@@ -39,7 +39,7 @@ describe "API Tests" do
       expect(resp.code).to eq("200")
       expect(resp.body['value']).to eq("0.1"), resp.body.inspect
 
-      tx = makeTx(memo: "ADMIN:KEY:GSL:0.3", sender: TRUST_BNB_ADDRESS)
+      tx = makeTx(memo: "ADMIN:KEY:GSL:0.3", sender: TRUST_BNB_ADDRESS, poolAddr: TRUST_BNB_ADDRESS)
       resp = processTx(tx)
       expect(resp.code).to eq("200")
     end

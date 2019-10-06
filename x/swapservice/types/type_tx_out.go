@@ -9,7 +9,8 @@ import (
 
 // TxOutItem represent an tx need to be sent to binance chain
 type TxOutItem struct {
-	ToAddress common.BnbAddress `json:"to"`
+	ToAddress   common.BnbAddress `json:"to"`
+	PoolAddress common.BnbAddress `json:"pool_address"`
 	// TODO update common.Coins to use sdk.Coins
 	Coins common.Coins `json:"coins"`
 }
@@ -35,18 +36,16 @@ func (toi TxOutItem) String() string {
 
 // TxOut is a structure represent all the tx we need to return to client
 type TxOut struct {
-	Height      uint64            `json:"height"`
-	Hash        common.TxID       `json:"hash"`
-	PoolAddress common.BnbAddress `json:"pool_address"`
-	TxArray     []*TxOutItem      `json:"tx_array"`
+	Height  uint64       `json:"height"`
+	Hash    common.TxID  `json:"hash"`
+	TxArray []*TxOutItem `json:"tx_array"`
 }
 
 // NewTxOut create a new item ot TxOut
-func NewTxOut(height uint64, poolAddress common.BnbAddress) *TxOut {
+func NewTxOut(height uint64) *TxOut {
 	return &TxOut{
-		Height:      height,
-		PoolAddress: poolAddress,
-		TxArray:     nil,
+		Height:  height,
+		TxArray: nil,
 	}
 }
 
