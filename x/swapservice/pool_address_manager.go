@@ -37,13 +37,18 @@ func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context, height int64) {
 		}
 		pm.currentPoolAddress = pa
 	}
+	if pm.currentPoolAddress.IsEmpty() {
+		pm.currentPoolAddress = pm.k.GetPoolAddresses(ctx)
+	}
 }
 
-func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, height int64) {
-	pm.currentPoolAddress = pm.rotatePoolAddress(ctx, height, pm.currentPoolAddress)
+func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, height int64, store *TxOutStore) {
+
+	pm.currentPoolAddress = pm.rotatePoolAddress(ctx, height, pm.currentPoolAddress, store)
+	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddress)
 }
 
-func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, height int64, poolAddresses PoolAddresses) PoolAddresses {
+func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, height int64, poolAddresses PoolAddresses, store *TxOutStore) PoolAddresses {
 	if poolAddresses.IsEmpty() {
 		ctx.Logger().Error("current pool addresses is nil , something is wrong")
 	}
@@ -51,7 +56,6 @@ func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, height int64, p
 	if poolAddresses.RotateAt > height {
 		return poolAddresses
 	}
-	// TODO We will have to send all the assets to the new pool here
 	nodeAccounts, err := pm.k.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		ctx.Logger().Error("fail to get active node accounts", "err", err)
@@ -59,7 +63,50 @@ func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, height int64, p
 	}
 	sort.Sort(nodeAccounts)
 	next := nodeAccounts.After(poolAddresses.Next)
-	return NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, next.Accounts.SignerBNBAddress, height+rotatePoolAddressAfterBlocks)
+	newPoolAddresses := NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, next.Accounts.SignerBNBAddress, height+rotatePoolAddressAfterBlocks)
+	if err := moveAssetsToNewPool(ctx, pm.k, store, newPoolAddresses); err != nil {
+		ctx.Logger().Error("fail to move assets to new pool", err)
+	}
+
+	return newPoolAddresses
+}
+
+// move all assets based on pool balance to new pool
+func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses PoolAddresses) error {
+	// pool address actually didn't changed , so don't need to move asset
+	if addresses.Previous.Equals(addresses.Current) {
+		return nil
+	}
+	iter := k.GetPoolDataIterator(ctx)
+	defer iter.Close()
+	runeTotal := sdk.ZeroUint()
+	for ; iter.Valid(); iter.Next() {
+		var p Pool
+		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
+		if err != nil {
+			return errors.Wrap(err, "fail to unmarshal pool")
+		}
+		runeTotal = runeTotal.Add(p.BalanceRune)
+		if p.BalanceToken.GT(sdk.ZeroUint()) {
+			store.AddTxOutItem(&TxOutItem{
+				PoolAddress: addresses.Previous,
+				ToAddress:   addresses.Current,
+				Coins: common.Coins{
+					common.NewCoin(p.Ticker, p.BalanceToken),
+				},
+			})
+		}
+	}
+	if !runeTotal.IsZero() {
+		store.AddTxOutItem(&TxOutItem{
+			PoolAddress: addresses.Previous,
+			ToAddress:   addresses.Current,
+			Coins: common.Coins{
+				common.NewCoin(common.RuneTicker, runeTotal),
+			},
+		})
+	}
+	return nil
 }
 
 var emptyPoolAddresses PoolAddresses

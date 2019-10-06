@@ -32,16 +32,18 @@ def bnbAddress()
   "bnb" + get_rand(39).downcase
 end
 
-def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
+def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
   hash ||= txid()
   sender ||= bnbAddress
   coins ||= [{
     'denom': 'RUNE-B1A',
     'amount': '1',
   }]
+  poolAddr ||= TRUST_BNB_ADDRESS
   return {
     'tx': hash,
     'sender': sender,
+    'observe_pool_address': poolAddr,
     'MEMO': memo,
     'coins': coins
   }
@@ -60,7 +62,7 @@ def processTx(txs, user="jack", mode='block')
     },
     'txArray': txs,
   }.to_json
-  # puts(request.body.to_json)
+  #puts(request.body.to_json)
 
   resp = HTTP.request(request)
   if resp.code != "200" 
@@ -76,7 +78,7 @@ def processTx(txs, user="jack", mode='block')
     'mode': mode,
     'tx': signedTx['value'],
   }
-  # pp signedJson
+  #pp signedJson
 
 
   request = Net::HTTP::Post.new("/txs")

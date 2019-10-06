@@ -30,10 +30,12 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	accConsPub3 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdry`
 	accConsPub4 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrz`
 
+	observePoolAddr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqb")
+	c.Assert(err, IsNil)
 	voter := NewTxInVoter(txID, nil)
 
-	txIn := NewTxIn(nil, "hello", bnb, sdk.ZeroUint())
-	txIn2 := NewTxIn(nil, "goodbye", bnb, sdk.ZeroUint())
+	txIn := NewTxIn(nil, "hello", bnb, sdk.ZeroUint(), observePoolAddr)
+	txIn2 := NewTxIn(nil, "goodbye", bnb, sdk.ZeroUint(), observePoolAddr)
 
 	voter.Adds([]TxIn{txIn}, acc1)
 	c.Assert(voter.Txs, HasLen, 1)
@@ -145,34 +147,45 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(statechainCoins, NotNil)
 	inputs := []struct {
-		coins  common.Coins
-		memo   string
-		sender common.BnbAddress
+		coins           common.Coins
+		memo            string
+		sender          common.BnbAddress
+		observePoolAddr common.BnbAddress
 	}{
 		{
-			coins:  nil,
-			memo:   "test",
-			sender: bnb,
+			coins:           nil,
+			memo:            "test",
+			sender:          bnb,
+			observePoolAddr: observePoolAddr,
 		},
 		{
-			coins:  common.Coins{},
-			memo:   "test",
-			sender: bnb,
+			coins:           common.Coins{},
+			memo:            "test",
+			sender:          bnb,
+			observePoolAddr: observePoolAddr,
 		},
 		{
-			coins:  statechainCoins,
-			memo:   "",
-			sender: bnb,
+			coins:           statechainCoins,
+			memo:            "",
+			sender:          bnb,
+			observePoolAddr: observePoolAddr,
 		},
 		{
-			coins:  statechainCoins,
-			memo:   "test",
-			sender: common.NoBnbAddress,
+			coins:           statechainCoins,
+			memo:            "test",
+			sender:          common.NoBnbAddress,
+			observePoolAddr: observePoolAddr,
+		},
+		{
+			coins:           statechainCoins,
+			memo:            "test",
+			sender:          bnb,
+			observePoolAddr: common.NoBnbAddress,
 		},
 	}
 
 	for _, item := range inputs {
-		txIn := NewTxIn(item.coins, item.memo, item.sender, sdk.ZeroUint())
+		txIn := NewTxIn(item.coins, item.memo, item.sender, sdk.ZeroUint(), item.observePoolAddr)
 		c.Assert(txIn.Valid(), NotNil)
 	}
 }
@@ -197,34 +210,43 @@ func (TypeTxInSuite) TestTxInEquals(c *C) {
 	c.Assert(err, IsNil)
 	bnb1, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqb")
 	c.Assert(err, IsNil)
+	observePoolAddr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqb")
+	c.Assert(err, IsNil)
+	observePoolAddr1, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqc")
+	c.Assert(err, IsNil)
 	inputs := []struct {
 		tx    TxIn
 		tx1   TxIn
 		equal bool
 	}{
 		{
-			tx:    NewTxIn(coins1, "memo", bnb, sdk.ZeroUint()),
-			tx1:   NewTxIn(coins1, "memo1", bnb, sdk.ZeroUint()),
+			tx:    NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo1", bnb, sdk.ZeroUint(), observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins1, "memo", bnb, sdk.ZeroUint()),
-			tx1:   NewTxIn(coins1, "memo", bnb1, sdk.ZeroUint()),
+			tx:    NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo", bnb1, sdk.ZeroUint(), observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins2, "memo", bnb, sdk.ZeroUint()),
-			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint()),
+			tx:    NewTxIn(coins2, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins3, "memo", bnb, sdk.ZeroUint()),
-			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint()),
+			tx:    NewTxIn(coins3, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins4, "memo", bnb, sdk.ZeroUint()),
-			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint()),
+			tx:    NewTxIn(coins4, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
+			equal: false,
+		},
+		{
+			tx:    NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr1),
 			equal: false,
 		},
 	}
