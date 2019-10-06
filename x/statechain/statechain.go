@@ -73,7 +73,7 @@ func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics)
 
 	return &StateChainBridge{
 		logger:     log.With().Str("module", "statechain_bridge").Logger(),
-		cdc:        makeCodec(),
+		cdc:        MakeCodec(),
 		cfg:        cfg,
 		signerInfo: signerInfo,
 		kb:         kb,
@@ -82,7 +82,7 @@ func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics)
 	}, nil
 }
 
-func makeCodec() *codec.Codec {
+func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
 	sdk.RegisterCodec(cdc)
 	// TODO make we should share this with statechain in common
