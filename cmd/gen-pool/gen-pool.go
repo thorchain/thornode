@@ -22,7 +22,7 @@ func main() {
 	}
 
 	privKey, _ := keyManager.ExportAsPrivateKey()
-	fmt.Printf("%v\n", privKey)
+	fmt.Printf("%v::%v\n", keyManager.GetAddr(), privKey)
 }
 
 // selectedNet : Get the Binance network type
