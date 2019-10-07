@@ -332,7 +332,7 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 			// Check status (used only for enabling a pool)
 			if pool.Status != "" {
 				if pool.Status != p.Status {
-					log.Printf("%v: FAIL - Pool Status - Status does not match! %f versus %f",
+					log.Printf("%v: FAIL - Pool Status - Status does not match! %v versus %v",
 						rule.Description,
 						pool.Status,
 						p.Status,
