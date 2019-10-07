@@ -14,6 +14,7 @@ func main() {
 	environment := flag.String("e", "stage", "The environment to use [stage|dev|prod].")
 	config := flag.String("c", "", "Path to the config file.")
 	network := flag.Int("n", 0, "The network to use.")
+	debug := flag.Bool("d", false, "Enable debugging of the Binance transactions.")
 	flag.Parse()
 
 	if *masterKey == "" {
@@ -28,6 +29,6 @@ func main() {
 		log.Fatal("No config file provided!")
 	}
 
-	s := smoke.NewSmoke(*apiAddr, *masterKey, *poolKey, *environment, *config, *network)
+	s := smoke.NewSmoke(*apiAddr, *masterKey, *poolKey, *environment, *config, *network, *debug)
 	s.Run()
 }

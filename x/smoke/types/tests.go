@@ -49,4 +49,5 @@ type Statechain struct {
 	Symbol string  `json:"symbol"`
 	Rune   float64 `json:"rune"`
 	Token  float64 `json:"token"`
+	Status string  `json:"status"`
 }
