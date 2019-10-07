@@ -17,9 +17,16 @@ import (
 	"gitlab.com/thorchain/bepswap/statechain/x/smoke/types"
 )
 
-// Smoke : wallets.
+// Config : internal config.
+type Config struct {
+	delay   time.Duration
+	debug   bool
+	network int
+}
+
+// Smoke : Rules for our tests.
 type Smoke struct {
-	delay      time.Duration
+	Config     Config
 	ApiAddr    string
 	Network    ctypes.ChainNetwork
 	MasterKey  string
@@ -30,7 +37,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance
-func NewSmoke(apiAddr, masterKey, poolKey, env string, config string, network int) Smoke {
+func NewSmoke(apiAddr, masterKey, poolKey, env string, config string, network int, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -44,12 +51,16 @@ func NewSmoke(apiAddr, masterKey, poolKey, env string, config string, network in
 
 	n := NewNetwork(network)
 	return Smoke{
-		delay:      5 * time.Second,
+		Config: Config{
+			delay:   5 * time.Second,
+			debug:   debug,
+			network: network,
+		},
 		ApiAddr:    apiAddr,
 		Network:    n.Type,
 		MasterKey:  masterKey,
 		PoolKey:    poolKey,
-		Binance:    NewBinance(apiAddr, n.ChainID,true),
+		Binance:    NewBinance(apiAddr, n.ChainID, debug),
 		Statechain: NewStatechain(env),
 		Tests:      tests,
 	}
@@ -124,17 +135,21 @@ func (s *Smoke) Run() {
 			coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: int64(coin.Amount * types.Multiplier)})
 		}
 
-		for _, to := range rule.To {
-			toAddr := s.ToAddr(to)
-			payload = append(payload, msg.Transfer{toAddr, coins})
-		}
+		if len(coins) > 0 {
+			for _, to := range rule.To {
+				toAddr := s.ToAddr(to)
+				payload = append(payload, msg.Transfer{toAddr, coins})
+			}
 
-		client, key := s.FromClientKey(rule.From)
-		s.SendTxn(client, key, payload, rule.Memo)
+			client, key := s.FromClientKey(rule.From)
+			s.SendTxn(client, key, payload, rule.Memo)
+		}
 
 		// Validate.
 		s.ValidateTest(rule)
 	}
+
+	s.Sweep()
 }
 
 // FromClientKey : Client and key based on the rule "from".
@@ -146,6 +161,8 @@ func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
 		return s.Tests.Actors.Admin.Client, s.Tests.Actors.Admin.Key
 	case "user":
 		return s.Tests.Actors.User.Client, s.Tests.Actors.User.Key
+	case "pool":
+		return s.Tests.Actors.Pool.Client, s.Tests.Actors.Pool.Key
 	default:
 		stakerIdx := strings.Split(from, "_")[1]
 		i, _ := strconv.Atoi(stakerIdx)
@@ -182,7 +199,8 @@ func (s *Smoke) ValidateTest(rule types.Rule) {
 		s.CheckBinance(key.GetAddr(), rule.Check, rule.Description)
 	}
 
-	s.CheckPool(rule.Check.Statechain, rule.Description)
+	_, fromKey := s.FromClientKey(rule.From)
+	s.CheckPool(fromKey.GetAddr(), rule)
 }
 
 // Balances : Get the account balances of a given wallet.
@@ -225,7 +243,7 @@ func (s *Smoke) GetPools() types.Pools {
 
 // CheckBinance : Check the balances
 func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo string) {
-	time.Sleep(s.delay)
+	time.Sleep(s.Config.delay)
 	balances := s.Balances(address)
 
 	for _, coins := range check.Binance {
@@ -235,14 +253,19 @@ func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo 
 				free := float64(balance.Free)
 
 				if amount != free {
-					log.Printf("%v: %v - FAIL: Amounts do not match - %f versus %f",
+					log.Printf("%v: FAIL - Binance Balance - %v - Amounts do not match! %f versus %f - %v",
 						memo,
 						address.String(),
 						amount,
 						free,
+						coins.Symbol,
 					)
 				} else {
-					log.Printf("%v: %v - PASS", memo, address.String())
+					log.Printf("%v: PASS - Binance Balance - %v - %v",
+						memo,
+						address.String(),
+						coins.Symbol,
+					)
 				}
 			}
 		}
@@ -250,50 +273,102 @@ func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo 
 }
 
 // CheckPool : Check Statechain pool
-func (s *Smoke) CheckPool(pool types.Statechain, memo string) {
-	time.Sleep(s.delay)
+func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
+	time.Sleep(s.Config.delay)
+
+	pool := rule.Check.Statechain
 	pools := s.GetPools()
 
 	for _, p := range pools {
 		if p.Symbol == pool.Symbol {
-			if pool.Units != 0 {
-				poolUnits, _ := strconv.ParseFloat(p.PoolUnits, 64)
-				if poolUnits != pool.Units {
-					log.Printf("%v: FAIL: Pool Units do not match - %f versus %f",
-						memo,
-						pool.Units,
-						poolUnits,
-					)
-				} else {
-					log.Printf("%v: PASS", memo)
-				}
+			// Check pool units
+			poolUnits, _ := strconv.ParseFloat(p.PoolUnits, 64)
+			if poolUnits != pool.Units {
+				log.Printf("%v: FAIL - Pool Units - Units do not match! %f versus %f",
+					rule.Description,
+					pool.Units,
+					poolUnits,
+				)
+			} else {
+				log.Printf("%v: PASS - Pool Units - %v (%v)",
+					rule.Description,
+					address,
+					rule.Memo,
+				)
 			}
 
-			if pool.Rune != 0 {
-				balanceRune, _ := strconv.ParseFloat(p.BalanceRune, 64)
-				if balanceRune != pool.Rune {
-					log.Printf("%v: FAIL: Pool Rune balance does not match - %f versus %f",
-						memo,
-						pool.Rune,
-						balanceRune,
-					)
-				} else {
-					log.Printf("%v: PASS", memo)
-				}
+			// Check Rune
+			balanceRune, _ := strconv.ParseFloat(p.BalanceRune, 64)
+			if balanceRune != pool.Rune {
+				log.Printf("%v: FAIL - Pool Rune - Balance does not match! %f versus %f",
+					rule.Description,
+					pool.Rune,
+					balanceRune,
+				)
+			} else {
+				log.Printf("%v: PASS - Pool Rune - %v (%v)",
+					rule.Description,
+					address,
+					rule.Memo,
+				)
 			}
 
-			if pool.Token != 0 {
-				balanceToken, _ := strconv.ParseFloat(p.BalanceToken, 64)
-				if balanceToken != pool.Token {
-					log.Printf("%v: FAIL: Pool Token balance does not match - %f versus %f",
-						memo,
-						pool.Token,
-						balanceToken,
+			// Check token
+			balanceToken, _ := strconv.ParseFloat(p.BalanceToken, 64)
+			if balanceToken != pool.Token {
+				log.Printf("%v: FAIL - Pool Token - Balance does not match! %f versus %f",
+					rule.Description,
+					pool.Token,
+					balanceToken,
+				)
+			} else {
+				log.Printf("%v: PASS - Pool Token - %v (%v)",
+					rule.Description,
+					address,
+					rule.Memo,
+				)
+			}
+
+			// Check status (used only for enabling a pool)
+			if pool.Status != "" {
+				if pool.Status != p.Status {
+					log.Printf("%v: FAIL - Pool Status - Status does not match! %f versus %f",
+						rule.Description,
+						pool.Status,
+						p.Status,
 					)
 				} else {
-					log.Printf("%v: PASS", memo)
+					log.Printf("%v: PASS - Pool Status - %v (%v)",
+						rule.Description,
+						address,
+						rule.Memo,
+					)
 				}
 			}
 		}
 	}
+}
+
+// Sweep : Transfer all assets back to master
+func (s *Smoke) Sweep() {
+	keys := make([]string, 5)
+	keys = append(keys, s.PoolKey)
+
+	// Admin
+	aKey, _ := s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
+	keys = append(keys, aKey)
+
+	// Stakers
+	for _, staker := range s.Tests.Actors.Stakers {
+		sKey, _ := staker.Key.ExportAsPrivateKey()
+		keys = append(keys, sKey)
+	}
+
+	// User
+	uKey, _ := s.Tests.Actors.User.Key.ExportAsPrivateKey()
+	keys = append(keys, uKey)
+
+	// Empty the wallets.
+	sweep := NewSweep(s.ApiAddr, s.MasterKey, keys, s.Config.network, s.Config.debug)
+	sweep.EmptyWallets()
 }

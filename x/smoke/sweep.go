@@ -20,7 +20,7 @@ type Sweep struct {
 }
 
 // NewHoover : Create a new instance of Sweep.
-func NewSweep(apiAddr, masterPrivKey string, keyList []string, network int) Sweep {
+func NewSweep(apiAddr, masterPrivKey string, keyList []string, network int, debug bool) Sweep {
 	n := NewNetwork(network)
 
 	keyManager, _ := keys.NewPrivateKeyManager(masterPrivKey)
@@ -29,7 +29,7 @@ func NewSweep(apiAddr, masterPrivKey string, keyList []string, network int) Swee
 	return Sweep{
 		ApiAddr:    apiAddr,
 		Network:    n.Type,
-		Binance:    NewBinance(apiAddr, n.ChainID,true),
+		Binance:    NewBinance(apiAddr, n.ChainID,debug),
 		KeyManager: keyManager,
 		Client:     client,
 		KeyList:    keyList,
@@ -42,19 +42,22 @@ func (s Sweep) EmptyWallets() {
 		keyManager, _ := keys.NewPrivateKeyManager(key)
 		client, _ := sdk.NewDexClient(s.ApiAddr, s.Network, keyManager)
 
+		var coins []btypes.Coin
 		balances := s.Balances(keyManager.GetAddr())
 		for _, token := range balances {
 			free := float64(token.Free)
 			amt := int64(free)
 			if token.Symbol == "BNB" {
-				amt = amt - 375000
+				amt = amt - 210000
 			}
 
-			coins := btypes.Coins{btypes.Coin{Denom: token.Symbol, Amount: amt}}
+			if amt > 0 {
+				coins = append(coins, btypes.Coin{Denom: token.Symbol, Amount: amt})
+			}
+		}
 
-			var payload []msg.Transfer
-			payload = append(payload, msg.Transfer{s.KeyManager.GetAddr(), coins})
-
+		if len(coins) > 0 {
+			payload := []msg.Transfer{msg.Transfer{s.KeyManager.GetAddr(), coins}}
 			s.SendTxn(client, keyManager, payload, "")
 		}
 	}
