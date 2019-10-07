@@ -1185,7 +1185,7 @@
         "binance": [
           {
             "symbol": "BNB",
-            "amount": 0.04774994
+            "amount": 0.04512488
           }
         ],
         "statechain": {}
@@ -1195,7 +1195,49 @@
       "description": "SWEEP:STAKER",
       "from": "pool",
       "to": [
-        "staker_1",
+        "staker_1"
+      ],
+      "coins": [],
+      "memo": "SWEEP",
+      "check": {
+        "target": "to",
+        "binance": [
+          {
+            "symbol": "RUNE-A1F",
+            "amount": 5949.82524572
+          },
+          {
+            "symbol": "BNB",
+            "amount": 0.60278912
+          },
+          {
+            "symbol": "FSN-F1B",
+            "amount": 25.11621316
+          },
+          {
+            "symbol": "FTM-585",
+            "amount": 321.39455783
+          },
+          {
+            "symbol": "LOK-3C0",
+            "amount": 100.46485261
+          },
+          {
+            "symbol": "TCAN-014",
+            "amount": 803.71882087
+          },
+          {
+            "symbol": "TOMOB-1E1",
+            "amount": 35.16269842
+          }
+        ],
+        "statechain": {}
+      }
+    },
+    {
+      "description": "SWEEP:STAKER",
+      "from": "pool",
+      "to": [
         "staker_2"
       ],
       "coins": [],
@@ -1205,11 +1247,11 @@
         "binance": [
           {
             "symbol": "RUNE-A1F",
-            "amount": 5949.825245
+            "amount": 5949.82524570
           },
           {
             "symbol": "BNB",
-            "amount": 0.6027891156
+            "amount": 0.60278912
           },
           {
             "symbol": "FSN-F1B",
@@ -1217,15 +1259,15 @@
           },
           {
             "symbol": "FTM-585",
-            "amount": 321.3945578
+            "amount": 321.39455782
           },
           {
             "symbol": "LOK-3C0",
-            "amount": 100.4648526
+            "amount": 100.46485261
           },
           {
             "symbol": "TCAN-014",
-            "amount": 803.7188209
+            "amount": 803.71882086
           },
           {
             "symbol": "TOMOB-1E1",
@@ -1248,15 +1290,15 @@
         "binance": [
           {
             "symbol": "RUNE-A1F",
-            "amount": 700.34950933
+            "amount": 700.34950858
           },
           {
             "symbol": "BNB",
-            "amount": 0.04992177
+            "amount": 0.04992176
           },
           {
             "symbol": "FSN-F1B",
-            "amount": 2.26757370
+            "amount": 2.26757369
           },
           {
             "symbol": "FTM-585",
@@ -1268,7 +1310,7 @@
           },
           {
             "symbol": "TCAN-014",
-            "amount": 72.56235828
+            "amount": 72.56235827
           },
           {
             "symbol": "TOMOB-1E1",
