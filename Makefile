@@ -6,7 +6,8 @@ install: go.sum
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/smoke
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/binance
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/generate
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/extract
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sweep
 
 go.sum: go.mod
@@ -48,15 +49,18 @@ reset: clean
 
 clean:
 	rm -rf ~/.ssd
-	rm ${GOBIN}/{smoke,binance,sweep}
+	rm ${GOBIN}/{smoke,generate,sweep}
 	ssd unsafe-reset-all
 
 export:
 	ssd export
 
 .envrc: install
-	@binance -t MASTER > .envrc
-	@binance -t POOL >> .envrc
+	@generate -t MASTER > .envrc
+	@generate -t POOL >> .envrc
+
+extract: install
+	@extract -f "${FILE}" -p "${PASSWORD}" -t ${TYPE}
 
 smoke-test-audit: install
 	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-audit.json -e ${ENV}
