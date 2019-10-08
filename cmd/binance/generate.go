@@ -22,9 +22,9 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 
-	fmt.Printf("%v_ADDR=%v\n", *addrType, keyManager.GetAddr())
+	fmt.Printf("export %v_ADDR=%v\n", *addrType, keyManager.GetAddr())
 	privKey, _ := keyManager.ExportAsPrivateKey()
-	fmt.Printf("%v_KEY=%v\n", *addrType, privKey)
+	fmt.Printf("export %v_KEY=%v\n", *addrType, privKey)
 }
 
 // selectedNet : Get the Binance network type
