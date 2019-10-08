@@ -22,3 +22,4 @@ ssd
 .testCoverage.txt
 c.out
 *.leveldb/
+.envrc
