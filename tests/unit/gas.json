@@ -1,0 +1,53 @@
+{
+  "staker_count": 0,
+  "rules": [
+    {
+      "description": "SEED",
+      "from": "master",
+      "to": [
+        "admin"
+      ],
+      "coins": [
+        {
+          "symbol": "BNB",
+          "amount": 0.10000000
+        }
+      ],
+      "memo": "SEED",
+      "check": {
+        "target": "to",
+        "binance": [
+          {
+            "symbol": "BNB",
+            "amount": 0.10000000
+          }
+        ],
+        "statechain": {}
+      }
+    },
+    {
+      "description": "GAS",
+      "from": "admin",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "BNB",
+          "amount": 0.05000000
+        }
+      ],
+      "memo": "GAS",
+      "check": {
+        "target": "from",
+        "binance": [
+          {
+            "symbol": "BNB",
+            "amount": 0.04962500
+          }
+        ],
+        "statechain": {}
+      }
+    }
+  ]
+}
