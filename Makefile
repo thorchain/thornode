@@ -6,7 +6,7 @@ install: go.sum
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/smoke
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/gen-pool
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/binance
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sweep
 
 go.sum: go.mod
@@ -48,28 +48,33 @@ reset: clean
 
 clean:
 	rm -rf ~/.ssd
-	rm ${GOBIN}/{smoke,gen-pool,sweep}
+	rm ${GOBIN}/{smoke,binance,sweep}
 	ssd unsafe-reset-all
 
 export:
 	ssd export
 
-.envrc:
-	@echo export POOL=$(shell gen-pool) > .envrc
-	@echo export POOL_KEY=$(shell gen-pool) > .envrc
-	@echo export MASTER_KEY=$(shell gen-pool) > .envrc
+.envrc: install
+	@binance -t MASTER > .envrc
+	@binance -t POOL >> .envrc
 
 smoke-test-audit: install
-	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/flow-test-audit.json -e ${ENV}
+	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-audit.json -e ${ENV}
 
 smoke-test-refund: install
-	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/flow-test-refund.json -e ${ENV}
+	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-refund.json -e ${ENV}
 
 sweep: install
 	@sweep -m ${MASTER_KEY} -k ${KEY_LIST}
 
-# 1. Sent Gas
+seed: install
+	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/unit/seed.json -e ${ENV}
 
-# 2. Exec tx
+gas: install
+	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/unit/gas.json -e ${ENV}
 
-# 3. units of work...
+stake: gas
+	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/unit/stake.json -e ${ENV}
+
+swap: gas
+	@smoke -m ${MASTER_KEY} -p ${POOL_KEY} -c tests/unit/swap.json -e ${ENV}

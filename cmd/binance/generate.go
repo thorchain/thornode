@@ -1,9 +1,9 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
-	"flag"
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/common/types"
@@ -14,6 +14,7 @@ import (
 func main() {
 	apiAddr := flag.String("a", "testnet-dex.binance.org", "Binance API Address.")
 	network := flag.Int("n", 0, "The network to use.")
+	addrType := flag.String("t", "MASTER", "The type [POOL|MASTER].")
 	flag.Parse()
 
 	keyManager, _ := keys.NewKeyManager()
@@ -21,8 +22,9 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 
+	fmt.Printf("%v_ADDR=%v\n", *addrType, keyManager.GetAddr())
 	privKey, _ := keyManager.ExportAsPrivateKey()
-	fmt.Printf("%v::%v\n", keyManager.GetAddr(), privKey)
+	fmt.Printf("%v_KEY=%v\n", *addrType, privKey)
 }
 
 // selectedNet : Get the Binance network type
