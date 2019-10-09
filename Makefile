@@ -74,10 +74,10 @@ seed: install
 gas: install
 	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/gas.json -e ${ENV} -d ${DEBUG}
 
-stake: gas
+stake: install
 	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/stake.json -e ${ENV} -d ${DEBUG}
 
-swap: gas
+swap: install
 	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/swap.json -e ${ENV} -d ${DEBUG}
 
 sweep: install
