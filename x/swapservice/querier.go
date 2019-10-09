@@ -12,10 +12,11 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 
 	q "gitlab.com/thorchain/bepswap/statechain/x/swapservice/query"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
 // NewQuerier is the module level router for state queries
-func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager) sdk.Querier {
+func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr *ValidatorManager) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		ctx.Logger().Info("query", "path", path[0])
 		switch path[0] {
@@ -49,6 +50,8 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager) sdk.Querier {
 			return queryNodeAccounts(ctx, path[1:], req, keeper)
 		case q.QueryPoolAddresses.Key:
 			return queryPoolAddresses(ctx, path[1:], req, keeper, poolAddressMgr)
+		case q.QueryValidators.Key:
+			return queryValidators(ctx, keeper, validatorMgr)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown swapservice query endpoint: %s", path[0]),
@@ -56,6 +59,35 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager) sdk.Querier {
 		}
 	}
 }
+
+func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorManager) ([]byte, sdk.Error) {
+	activeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
+	if nil != err {
+		ctx.Logger().Error("fail to get all active node accounts", err)
+		return nil, sdk.ErrInternal("fail to get all active accounts")
+	}
+
+	resp := types.ValidatorsResp{
+		ActiveNodes: activeAccounts,
+	}
+	if validatorMgr.Meta != nil {
+		resp.RotateAt = uint64(validatorMgr.Meta.RotateAtBlockHeight)
+		resp.RotateWindowOpenAt = uint64(validatorMgr.Meta.RotateWindowOpenAtBlockHeight)
+		if !validatorMgr.Meta.Nominated.IsEmpty() {
+			resp.Nominated = &validatorMgr.Meta.Nominated
+		}
+		if !validatorMgr.Meta.Queued.IsEmpty() {
+			resp.Queued = &validatorMgr.Meta.Queued
+		}
+	}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, resp)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal validator response to json", err)
+		return nil, sdk.ErrInternal("fail to marshal validator response to json")
+	}
+	return res, nil
+}
+
 func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, manager *PoolAddressManager) ([]byte, sdk.Error) {
 	res, err := codec.MarshalJSONIndent(keeper.cdc, manager.GetCurrentPoolAddresses())
 	if nil != err {
