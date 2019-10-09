@@ -8,12 +8,17 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 )
 
-const rotatePoolAddressAfterBlocks int64 = 100
+// const values used to emit events
+const (
+	EventTypeNewPoolAddress = `pooladdress_new`
+	EventTypePoolAddress    = `pooladdress`
+	PoolAddressAction       = `action`
+)
 
 // PoolAddressManager is going to manage the pool addresses , rotate etc
 type PoolAddressManager struct {
-	k                  Keeper
-	currentPoolAddress PoolAddresses
+	k                    Keeper
+	currentPoolAddresses PoolAddresses
 }
 
 // NewPoolAddressManager create a new PoolAddressManager
@@ -24,7 +29,7 @@ func NewPoolAddressManager(k Keeper) *PoolAddressManager {
 }
 
 func (pm *PoolAddressManager) GetCurrentPoolAddresses() PoolAddresses {
-	return pm.currentPoolAddress
+	return pm.currentPoolAddresses
 }
 
 // BeginBlock
@@ -35,17 +40,17 @@ func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context, height int64) {
 		if nil != err {
 			ctx.Logger().Error("fail to setup initial pool address", err)
 		}
-		pm.currentPoolAddress = pa
+		pm.currentPoolAddresses = pa
 	}
-	if pm.currentPoolAddress.IsEmpty() {
-		pm.currentPoolAddress = pm.k.GetPoolAddresses(ctx)
+	if pm.currentPoolAddresses.IsEmpty() {
+		pm.currentPoolAddresses = pm.k.GetPoolAddresses(ctx)
 	}
 }
 
 func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, height int64, store *TxOutStore) {
 
-	pm.currentPoolAddress = pm.rotatePoolAddress(ctx, height, pm.currentPoolAddress, store)
-	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddress)
+	pm.currentPoolAddresses = pm.rotatePoolAddress(ctx, height, pm.currentPoolAddresses, store)
+	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
 }
 
 func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, height int64, poolAddresses PoolAddresses, store *TxOutStore) PoolAddresses {
@@ -63,7 +68,13 @@ func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, height int64, p
 	}
 	sort.Sort(nodeAccounts)
 	next := nodeAccounts.After(poolAddresses.Next)
-	newPoolAddresses := NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, next.Accounts.SignerBNBAddress, height+rotatePoolAddressAfterBlocks)
+	rotatePerBlockHeight := pm.k.GetAdminConfigRotatePerBlockHeight(ctx, sdk.AccAddress{})
+	newPoolAddresses := NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, next.Accounts.SignerBNBAddress, height+rotatePerBlockHeight)
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(EventTypeNewPoolAddress,
+			sdk.NewAttribute("current pool address", newPoolAddresses.Current.String()),
+			sdk.NewAttribute("next pool address", newPoolAddresses.Next.String()),
+			sdk.NewAttribute("previous pool address", newPoolAddresses.Previous.String())))
 	if err := moveAssetsToNewPool(ctx, pm.k, store, newPoolAddresses); err != nil {
 		ctx.Logger().Error("fail to move assets to new pool", err)
 	}
@@ -80,6 +91,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	iter := k.GetPoolDataIterator(ctx)
 	defer iter.Close()
 	runeTotal := sdk.ZeroUint()
+
 	for ; iter.Valid(); iter.Next() {
 		var p Pool
 		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
@@ -125,18 +137,24 @@ func (pm *PoolAddressManager) setupInitialPoolAddresses(ctx sdk.Context, height 
 	totalActiveAccounts := len(nodeAccounts)
 	if totalActiveAccounts == 0 {
 		ctx.Logger().Error("no active node account")
+
 		return emptyPoolAddresses, errors.New("no active node account")
 	}
+	rotatePerBlockHeight := pm.k.GetAdminConfigRotatePerBlockHeight(ctx, sdk.AccAddress{})
 	if totalActiveAccounts == 1 {
 		na := nodeAccounts[0]
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(EventTypePoolAddress,
+				sdk.NewAttribute(PoolAddressAction, "no pool rotation"),
+				sdk.NewAttribute("reason", "no active node account")))
 		ctx.Logger().Info("only one active node account, no pool rotation")
-		return NewPoolAddresses(common.NoBnbAddress, na.Accounts.SignerBNBAddress, na.Accounts.SignerBNBAddress, height+rotatePoolAddressAfterBlocks), nil
+		return NewPoolAddresses(common.NoBnbAddress, na.Accounts.SignerBNBAddress, na.Accounts.SignerBNBAddress, height+rotatePerBlockHeight), nil
 
 	}
 	sort.Sort(nodeAccounts)
 	na := nodeAccounts[0]
 	sec := nodeAccounts[1]
 	ctx.Logger().Info("two or more active nodes , we will rotate pools")
-	return NewPoolAddresses(common.NoBnbAddress, na.Accounts.SignerBNBAddress, sec.Accounts.SignerBNBAddress, height+rotatePoolAddressAfterBlocks), nil
+	return NewPoolAddresses(common.NoBnbAddress, na.Accounts.SignerBNBAddress, sec.Accounts.SignerBNBAddress, height+rotatePerBlockHeight), nil
 
 }
