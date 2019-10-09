@@ -368,7 +368,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	keeper.AddIncompleteEvents(ctx, evt)
 
 	toi := &TxOutItem{
-		PoolAddress: poolAddrMgr.currentPoolAddress.Current,
+		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
 		ToAddress:   msg.PublicAddress,
 	}
 	toi.Coins = append(toi.Coins, common.Coin{

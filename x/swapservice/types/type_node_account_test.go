@@ -30,12 +30,12 @@ func (NodeAccountSuite) TestGetNodeStatus(c *C) {
 		"Active":      Active,
 		"aCtive":      Active,
 		"ACTIVE":      Active,
-		"queued":      Queued,
-		"Queued":      Queued,
-		"qUeued":      Queued,
 		"disabled":    Disabled,
 		"Disabled":    Disabled,
 		"disabLed":    Disabled,
+		"ready":       Ready,
+		"Ready":       Ready,
+		"rEady":       Ready,
 	}
 	for k, v := range input {
 		r := GetNodeStatus(k)
@@ -118,4 +118,16 @@ func (NodeAccountSuite) TestAfter(c *C) {
 		nextNode := accounts.After(node.Accounts.SignerBNBAddress)
 		c.Assert(accounts[i+1].Accounts.SignerBNBAddress.String(), Equals, nextNode.Accounts.SignerBNBAddress.String())
 	}
+}
+
+func (NodeAccountSuite) TestNodeAccountUpdateStatusAndSort(c *C) {
+	var accounts NodeAccounts
+	for i := 0; i < 10; i++ {
+		na := GetRandomNodeAccount(Active)
+		accounts = append(accounts, na)
+	}
+	isSorted := sort.SliceIsSorted(accounts, func(i, j int) bool {
+		return accounts[i].StatusSince < accounts[j].StatusSince
+	})
+	c.Assert(isSorted, Equals, true)
 }

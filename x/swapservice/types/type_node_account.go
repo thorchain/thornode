@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/tendermint/tendermint/crypto"
@@ -23,10 +24,8 @@ const (
 	Unknown NodeStatus = iota
 	WhiteListed
 	Standby
-	Nominated
 	Ready
 	Active
-	Queued
 	Disabled
 )
 
@@ -34,9 +33,8 @@ var nodeStatusStr = map[string]NodeStatus{
 	"unknown":     Unknown,
 	"whitelisted": WhiteListed,
 	"standby":     Standby,
-	"nominated":   Nominated,
+	"ready":       Ready,
 	"active":      Active,
-	"queued":      Queued,
 	"disabled":    Disabled,
 }
 
@@ -89,16 +87,20 @@ type NodeAccount struct {
 	Status      NodeStatus     `json:"status"`
 	Accounts    TrustAccount   `json:"accounts"`
 	Bond        sdk.Uint       `json:"bond"`
+	// start from when this node account is in current status
+	// StatusSince field is important , it has been used to sort node account , used for validator rotation
+	StatusSince int64 `json:"status_since"`
 }
 
 // NewNodeAccount create new instance of NodeAccount
 func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts TrustAccount) NodeAccount {
-	return NodeAccount{
+	na := NodeAccount{
 		NodeAddress: nodeAddress,
-		Status:      status,
 		Accounts:    accounts,
 		Bond:        sdk.ZeroUint(),
 	}
+	na.UpdateStatus(status)
+	return na
 }
 
 // IsEmpty decide whether NodeAccount is empty
@@ -112,6 +114,21 @@ func (n NodeAccount) IsValid() error {
 		return errors.New("node bep address is empty")
 	}
 	return n.Accounts.IsValid()
+}
+
+// UpdateStatus change the status of node account, in the mean time update StatusSince field
+func (n *NodeAccount) UpdateStatus(status NodeStatus) {
+	n.Status = status
+	n.StatusSince = time.Now().UTC().UnixNano()
+}
+
+// Equals compare two node account, to see whether they are equal
+func (n NodeAccount) Equals(n1 NodeAccount) bool {
+	if n.NodeAddress.Equals(n1.NodeAddress) &&
+		n.Accounts.Equals(n1.Accounts) {
+		return true
+	}
+	return false
 }
 
 // String implement fmt.Stringer interface
@@ -130,7 +147,8 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	addr := sdk.AccAddress(crypto.AddressHash([]byte(name)))
 	bnb, _ := common.NewBnbAddress("tbnb" + RandStringBytesMask(39))
 	v, _ := tmtypes.RandValidator(true, 100)
-	na := NewNodeAccount(addr, status, NewTrustAccount(bnb, addr, v.String()))
+	k, _ := sdk.Bech32ifyConsPub(v.PubKey)
+	na := NewNodeAccount(addr, status, NewTrustAccount(bnb, addr, k))
 	return na
 }
 
@@ -166,4 +184,12 @@ func (nodeAccounts NodeAccounts) After(addr common.BnbAddress) NodeAccount {
 		return nodeAccounts[idx+1]
 	}
 	return nodeAccounts[0]
+}
+
+// First return the first item in the slice
+func (nodeAccounts NodeAccounts) First() NodeAccount {
+	if len(nodeAccounts) > 0 {
+		return nodeAccounts[0]
+	}
+	return NodeAccount{}
 }
