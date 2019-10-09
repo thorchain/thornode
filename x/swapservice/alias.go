@@ -16,17 +16,23 @@ const (
 	EventRefund      = types.Refund
 
 	// Admin config keys
-	GSLKey                 = types.GSLKey
-	StakerAmtIntervalKey   = types.StakerAmtIntervalKey
-	MRRAKey                = types.MRRAKey
-	MinStakerCoinsKey      = types.MinStakerCoinsKey
-	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
-	MinValidatorBondKey    = types.MinValidatorBondKey
-	WhiteListGasTokenKey   = types.WhiteListGasTokenKey
+	GSLKey                    = types.GSLKey
+	StakerAmtIntervalKey      = types.StakerAmtIntervalKey
+	MRRAKey                   = types.MRRAKey
+	MinStakerCoinsKey         = types.MinStakerCoinsKey
+	MaxWithdrawBasisPoints    = types.MaxWithdrawBasisPoints
+	MinValidatorBondKey       = types.MinValidatorBondKey
+	WhiteListGasTokenKey      = types.WhiteListGasTokenKey
+	DesireValidatorSetKey     = types.DesireValidatorSetKey
+	RotatePerBlockHeightKey   = types.RotatePerBlockHeightKey
+	ValidatorsChangeWindowKey = types.ValidatorsChangeWindowKey
 
 	NodeActive      = types.Active
 	NodeWhiteListed = types.WhiteListed
 	NodeDisabled    = types.Disabled
+	NodeReady       = types.Ready
+	NodeStandby     = types.Standby
+	NodeUnknown     = types.Unknown
 )
 
 var (
@@ -99,4 +105,6 @@ type (
 	NodeAccount        = types.NodeAccount
 	NodeAccounts       = types.NodeAccounts
 	PoolAddresses      = types.PoolAddresses
+	NodeStatus         = types.NodeStatus
+	ValidatorMeta      = types.ValidatorMeta
 )

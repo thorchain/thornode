@@ -73,6 +73,7 @@ type AppModule struct {
 	supplyKeeper supply.Keeper
 	txOutStore   *TxOutStore
 	poolMgr      *PoolAddressManager
+	validatorMgr *ValidatorManager
 }
 
 // NewAppModule creates a new AppModule Object
@@ -84,6 +85,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		supplyKeeper:   supplyKeeper,
 		txOutStore:     NewTxOutStore(k),
 		poolMgr:        NewPoolAddressManager(k),
+		validatorMgr:   NewValidatorManager(k),
 	}
 }
 
@@ -105,11 +107,12 @@ func (am AppModule) QuerierRoute() string {
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.keeper, am.poolMgr)
+	return NewQuerier(am.keeper, am.poolMgr, am.validatorMgr)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
+	am.validatorMgr.BeginBlock(ctx, req.Header.Height)
 	am.poolMgr.BeginBlock(ctx, req.Header.Height)
 	am.txOutStore.NewBlock(uint64(req.Header.Height))
 }
@@ -118,9 +121,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	ctx.Logger().Debug("End Block", "height", req.Height)
 	am.poolMgr.EndBlock(ctx, req.Height, am.txOutStore)
 	am.txOutStore.CommitBlock(ctx)
-	var validatorUpdate []abci.ValidatorUpdate
-
-	return validatorUpdate
+	return am.validatorMgr.EndBlock(ctx, req.Height)
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
