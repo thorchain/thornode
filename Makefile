@@ -63,22 +63,22 @@ extract: install
 	@extract -f "${FILE}" -p "${PASSWORD}" -t ${TYPE}
 
 smoke-test-audit: install
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-audit.json -e ${ENV}
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-audit.json -e ${ENV} -d ${DEBUG}
 
 smoke-test-refund: install
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-refund.json -e ${ENV}
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-refund.json -e ${ENV} -d ${DEBUG}
 
 seed: install
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/seed.json -e ${ENV}
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/seed.json -e ${ENV} -d ${DEBUG}
 
 gas: install
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/gas.json -e ${ENV}
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/gas.json -e ${ENV} -d ${DEBUG}
 
 stake: gas
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/stake.json -e ${ENV}
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/stake.json -e ${ENV} -d ${DEBUG}
 
 swap: gas
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/swap.json -e ${ENV}
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/swap.json -e ${ENV} -d ${DEBUG}
 
 sweep: install
-	@sweep -m ${MASTER_KEY} -k ${KEY_LIST}
+	@sweep -m ${MASTER_KEY} -k ${KEY_LIST} -d ${DEBUG}

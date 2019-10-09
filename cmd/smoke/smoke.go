@@ -9,7 +9,7 @@ import (
 
 func main() {
 	apiAddr := flag.String("a", "testnet-dex.binance.org", "Binance API Address.")
-	bankKey := flag.String("m", "", "The bank private key.")
+	bankKey := flag.String("b", "", "The bank private key.")
 	poolKey := flag.String("p", "", "The pool private key.")
 	environment := flag.String("e", "stage", "The environment to use [stage|dev|prod].")
 	config := flag.String("c", "", "Path to the config file.")

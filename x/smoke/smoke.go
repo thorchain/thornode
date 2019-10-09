@@ -184,6 +184,8 @@ func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
 // ToAddr : To address
 func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
 	switch to {
+	case "master":
+		return s.Tests.Actors.Master.Key.GetAddr()
 	case "admin":
 		return s.Tests.Actors.Admin.Key.GetAddr()
 	case "user":
@@ -215,7 +217,7 @@ func (s *Smoke) ValidateTest(rule types.Rule) {
 
 // Balances : Get the account balances of a given wallet.
 func (s *Smoke) Balances(address ctypes.AccAddress) []ctypes.TokenBalance {
-	acct, err := s.Tests.Actors.Master.Client.GetAccount(address.String())
+	acct, err := s.Tests.Actors.Bank.Client.GetAccount(address.String())
 	if err != nil {
 		log.Fatal(err)
 	}
