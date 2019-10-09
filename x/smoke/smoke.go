@@ -29,7 +29,7 @@ type Smoke struct {
 	Config     Config
 	ApiAddr    string
 	Network    ctypes.ChainNetwork
-	MasterKey  string
+	BankKey    string
 	PoolKey    string
 	Binance    Binance
 	Statechain Statechain
@@ -37,7 +37,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance
-func NewSmoke(apiAddr, masterKey, poolKey, env string, config string, network int, debug bool) Smoke {
+func NewSmoke(apiAddr, bankKey, poolKey, env string, config string, network int, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -58,7 +58,7 @@ func NewSmoke(apiAddr, masterKey, poolKey, env string, config string, network in
 		},
 		ApiAddr:    apiAddr,
 		Network:    n.Type,
-		MasterKey:  masterKey,
+		BankKey:    bankKey,
 		PoolKey:    poolKey,
 		Binance:    NewBinance(apiAddr, n.ChainID, debug),
 		Statechain: NewStatechain(env),
@@ -68,10 +68,15 @@ func NewSmoke(apiAddr, masterKey, poolKey, env string, config string, network in
 
 // Setup : Generate/setup our accounts.
 func (s *Smoke) Setup() {
-	// Master
-	mKey, _ := keys.NewPrivateKeyManager(s.MasterKey)
-	mClient, _ := sdk.NewDexClient(s.ApiAddr, s.Network, mKey)
+	// Bank
+	bKey, _ := keys.NewPrivateKeyManager(s.BankKey)
+	bClient, _ := sdk.NewDexClient(s.ApiAddr, s.Network, bKey)
 
+	s.Tests.Actors.Bank.Key = bKey
+	s.Tests.Actors.Bank.Client = bClient
+
+	// Master
+	mClient, mKey := s.ClientKey()
 	s.Tests.Actors.Master.Key = mKey
 	s.Tests.Actors.Master.Client = mClient
 
@@ -111,7 +116,10 @@ func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
 
 // Summary : Private Keys
 func (s *Smoke) Summary() {
-	privKey, _ := s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
+	privKey, _ := s.Tests.Actors.Master.Key.ExportAsPrivateKey()
+	log.Printf("Master: %v - %v\n", s.Tests.Actors.Master.Key.GetAddr(), privKey)
+
+	privKey, _ = s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
 	log.Printf("Admin: %v - %v\n", s.Tests.Actors.Admin.Key.GetAddr(), privKey)
 
 	privKey, _ = s.Tests.Actors.User.Key.ExportAsPrivateKey()
@@ -155,6 +163,8 @@ func (s *Smoke) Run() {
 // FromClientKey : Client and key based on the rule "from".
 func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
 	switch from {
+	case "bank":
+		return s.Tests.Actors.Bank.Client, s.Tests.Actors.Bank.Key
 	case "master":
 		return s.Tests.Actors.Master.Client, s.Tests.Actors.Master.Key
 	case "admin":
@@ -354,6 +364,10 @@ func (s *Smoke) Sweep() {
 	keys := make([]string, 5)
 	keys = append(keys, s.PoolKey)
 
+	// Master
+	mKey, _ := s.Tests.Actors.Master.Key.ExportAsPrivateKey()
+	keys = append(keys, mKey)
+
 	// Admin
 	aKey, _ := s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
 	keys = append(keys, aKey)
@@ -369,6 +383,6 @@ func (s *Smoke) Sweep() {
 	keys = append(keys, uKey)
 
 	// Empty the wallets.
-	sweep := NewSweep(s.ApiAddr, s.MasterKey, keys, s.Config.network, s.Config.debug)
+	sweep := NewSweep(s.ApiAddr, s.BankKey, keys, s.Config.network, s.Config.debug)
 	sweep.EmptyWallets()
 }

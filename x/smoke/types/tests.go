@@ -12,6 +12,7 @@ type Tests struct {
 }
 
 type Actors struct {
+	Bank    Keys
 	Master  Keys
 	Admin   Keys
 	Stakers []Keys
