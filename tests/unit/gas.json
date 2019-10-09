@@ -3,6 +3,30 @@
   "rules": [
     {
       "description": "SEED",
+      "from": "bank",
+      "to": [
+        "master"
+      ],
+      "coins": [
+        {
+          "symbol": "BNB",
+          "amount": 1.38000000
+        }
+      ],
+      "memo": "SEED",
+      "check": {
+        "target": "to",
+        "binance": [
+          {
+            "symbol": "BNB",
+            "amount": 1.38000000
+          }
+        ],
+        "statechain": {}
+      }
+    },
+    {
+      "description": "SEED",
       "from": "master",
       "to": [
         "admin"

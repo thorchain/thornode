@@ -9,7 +9,7 @@ import (
 
 func main() {
 	apiAddr := flag.String("a", "testnet-dex.binance.org", "Binance API Address.")
-	masterKey := flag.String("m", "", "The master private key.")
+	bankKey := flag.String("m", "", "The bank private key.")
 	poolKey := flag.String("p", "", "The pool private key.")
 	environment := flag.String("e", "stage", "The environment to use [stage|dev|prod].")
 	config := flag.String("c", "", "Path to the config file.")
@@ -17,8 +17,8 @@ func main() {
 	debug := flag.Bool("d", false, "Enable debugging of the Binance transactions.")
 	flag.Parse()
 
-	if *masterKey == "" {
-		log.Fatal("No master key set!")
+	if *bankKey == "" {
+		log.Fatal("No bank key set!")
 	}
 
 	if *poolKey == "" {
@@ -29,6 +29,6 @@ func main() {
 		log.Fatal("No config file provided!")
 	}
 
-	s := smoke.NewSmoke(*apiAddr, *masterKey, *poolKey, *environment, *config, *network, *debug)
+	s := smoke.NewSmoke(*apiAddr, *bankKey, *poolKey, *environment, *config, *network, *debug)
 	s.Run()
 }
