@@ -9,16 +9,14 @@ require (
 	github.com/cosmos/cosmos-sdk v0.37.2
 	github.com/golang/mock v1.3.1 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
-	github.com/gorilla/mux v1.7.3 // indirect
 	github.com/hashicorp/go-retryablehttp v0.5.4
 	github.com/mattn/go-isatty v0.0.9 // indirect
 	github.com/onsi/ginkgo v1.9.0 // indirect
 	github.com/onsi/gomega v1.6.0 // indirect
-	github.com/pelletier/go-toml v1.4.0 // indirect
+	github.com/pelletier/go-toml v1.5.0 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.1.0
 	github.com/prometheus/procfs v0.0.5 // indirect
-	github.com/rakyll/statik v0.1.6 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20190826022208-cac0b30c2563 // indirect
 	github.com/rs/zerolog v1.14.3
 	github.com/spf13/pflag v1.0.5
@@ -26,15 +24,14 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20190318030020-c3a204f8e965
 	github.com/tendermint/crypto v0.0.0-20190823183015-45b1026d81ae // indirect
 	gitlab.com/thorchain/bepswap/common v1.0.0
-	gitlab.com/thorchain/bepswap/statechain v0.0.0-20191004032518-43c56e89926f
+	gitlab.com/thorchain/bepswap/statechain v0.0.0-20191006024012-f2356437f55f
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc // indirect
-	golang.org/x/net v0.0.0-20191003171128-d98b1b443823 // indirect
-	golang.org/x/sys v0.0.0-20191003212358-c178f38b412c // indirect
-	google.golang.org/genproto v0.0.0-20191002211648-c459b9ce5143 // indirect
+	golang.org/x/net v0.0.0-20191007182048-72f939374954 // indirect
+	golang.org/x/sys v0.0.0-20191008105621-543471e840be // indirect
+	google.golang.org/genproto v0.0.0-20191007204434-a023cd5227bd // indirect
 	google.golang.org/grpc v1.24.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/resty.v1 v1.12.0
-	gopkg.in/yaml.v2 v2.2.4 // indirect
 )
 
 replace gitlab.com/thorchain/bepswap/observe => ../observe
