@@ -25,13 +25,13 @@ lint:
   script:
     - make lint
 
-integration:
+integration:test:
   image: cbarraford/golang-ruby
   stage: integration
   script:
     - make -C ./tests/integration install setup run wait-for-blockchain test-internal
 
-build:
+build:test:
   stage: build
   image: docker:stable
   except:
