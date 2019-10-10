@@ -42,6 +42,16 @@ func (ta TrustAccount) IsValid() error {
 	return nil
 }
 
+// Equals is used to check whether one trust account equals to another
+func (ta TrustAccount) Equals(ta1 TrustAccount) bool {
+	if strings.EqualFold(ta.ValidatorBEPConsPubKey, ta1.ValidatorBEPConsPubKey) &&
+		ta.SignerBNBAddress.Equals(ta1.SignerBNBAddress) &&
+		ta.ObserverBEPAddress.Equals(ta1.ObserverBEPAddress) {
+		return true
+	}
+	return false
+}
+
 // String implement fmt.Stringer interface
 func (ta TrustAccount) String() string {
 	sb := strings.Builder{}

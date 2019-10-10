@@ -210,9 +210,9 @@ func GetCmdUnstake(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetTxIn command to send MsgSetTxIn Message from command line
 func GetCmdSetTxIn(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-txhash [requestTxHash] [height] [coins] [memo] [sender]",
+		Use:   "set-txhash [requestTxHash] [height] [coins] [memo] [sender] [observe_pool_address]",
 		Short: "add a tx hash",
-		Args:  cobra.ExactArgs(5),
+		Args:  cobra.ExactArgs(6),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
@@ -242,8 +242,11 @@ func GetCmdSetTxIn(cdc *codec.Codec) *cobra.Command {
 			if height.IsZero() {
 				return errors.New("Binance chain block height cannot be zero")
 			}
-
-			tx := types.NewTxIn(stateCoins, args[2], bnbAddr, height)
+			observePoolAddr, err := common.NewBnbAddress(args[5])
+			if err != nil {
+				return errors.Wrap(err, "invalid observe pool address")
+			}
+			tx := types.NewTxIn(stateCoins, args[2], bnbAddr, height, observePoolAddr)
 			voter := types.NewTxInVoter(txID, []types.TxIn{tx})
 			msg := types.NewMsgSetTxIn([]types.TxInVoter{voter}, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()

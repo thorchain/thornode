@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -32,6 +31,8 @@ const (
 	prefixLastSignedHeight  dbPrefix = "last_signed_height"
 	prefixNodeAccount       dbPrefix = "node_account_"
 	prefixActiveObserver    dbPrefix = "active_observer_"
+	prefixPoolAddresses     dbPrefix = "pooladdresses"
+	prefixValidatorMeta     dbPrefix = "validator_meta"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -111,8 +112,6 @@ func (k Keeper) GetPool(ctx sdk.Context, ticker common.Ticker) Pool {
 	bz := store.Get([]byte(key))
 	var pool Pool
 	k.cdc.MustUnmarshalBinaryBare(bz, &pool)
-	pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx, EmptyAccAddress)
-	pool.ExpiryUtc = k.GetAdminConfigPoolExpiry(ctx, EmptyAccAddress)
 
 	return pool
 }
@@ -277,34 +276,19 @@ func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID common.BnbAddress, sp St
 
 // TotalNodeAccounts counts the number of trust accounts
 func (k Keeper) TotalNodeAccounts(ctx sdk.Context) (count int) {
-	taIterator := k.GetNodeAccountIterator(ctx)
-	defer taIterator.Close()
-	for ; taIterator.Valid(); taIterator.Next() {
-		count += 1
-	}
-	return
+	nodes, _ := k.ListActiveNodeAccounts(ctx)
+	return len(nodes)
 }
 
 // TotalActiveNodeAccount count the number of active node account
 func (k Keeper) TotalActiveNodeAccount(ctx sdk.Context) (int, error) {
-	count := 0
-	taIterator := k.GetNodeAccountIterator(ctx)
-	defer taIterator.Close()
-	for ; taIterator.Valid(); taIterator.Next() {
-		var na NodeAccount
-		if err := k.cdc.UnmarshalBinaryBare(taIterator.Value(), &na); nil != err {
-			return 0, errors.Wrapf(err, "fail to unmarshal node account")
-		}
-		if na.Status == NodeActive {
-			count += 1
-		}
-	}
-	return count, nil
+	activeNodes, err := k.ListActiveNodeAccounts(ctx)
+	return len(activeNodes), err
 }
 
 // ListNodeAccounts - gets a list of all trust accounts
-func (k Keeper) ListNodeAccounts(ctx sdk.Context) ([]NodeAccount, error) {
-	var nodeAccounts []NodeAccount
+func (k Keeper) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+	nodeAccounts := make(NodeAccounts, 0)
 	naIterator := k.GetNodeAccountIterator(ctx)
 	defer naIterator.Close()
 	for ; naIterator.Valid(); naIterator.Next() {
@@ -317,19 +301,25 @@ func (k Keeper) ListNodeAccounts(ctx sdk.Context) ([]NodeAccount, error) {
 	return nodeAccounts, nil
 }
 
-// ListActiveNodeAccounts - get a list of active trust accounts
-func (k Keeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
-	all, err := k.ListNodeAccounts(ctx)
+// ListNodeAccountsByStatus - get a list of node accounts with the given status
+// if status = NodeUnknown, then it return everything
+func (k Keeper) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error) {
+	nodeAccounts := make(NodeAccounts, 0)
+	allNodeAccounts, err := k.ListNodeAccounts(ctx)
 	if nil != err {
-		return nil, errors.Wrap(err, "fail to get all node accounts")
+		return nodeAccounts, fmt.Errorf("fail to get all node accounts, %w", err)
 	}
-	activeNodeAccounts := make(NodeAccounts, 0)
-	for _, item := range all {
-		if item.Status == NodeActive {
-			activeNodeAccounts = append(activeNodeAccounts, item)
+	for _, item := range allNodeAccounts {
+		if item.Status == status {
+			nodeAccounts = append(nodeAccounts, item)
 		}
 	}
-	return activeNodeAccounts, nil
+	return nodeAccounts, nil
+}
+
+// ListActiveNodeAccounts - get a list of active trust accounts
+func (k Keeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+	return k.ListNodeAccountsByStatus(ctx, NodeActive)
 }
 
 // IsWhitelistedAccount check whether the given account is white listed
@@ -541,34 +531,9 @@ func (k Keeper) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.A
 	return k.GetAdminConfigAmountType(ctx, GSLKey, GSLKey.Default(), addr)
 }
 
-// GetAdminConfigTSL - get the config for TSL
-func (k Keeper) GetAdminConfigTSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, TSLKey, TSLKey.Default(), addr)
-}
-
 // GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
 func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, StakerAmtIntervalKey.Default(), addr)
-}
-
-// GetAdminConfigPoolAddress - get the config for PoolAddress
-func (k Keeper) GetAdminConfigPoolAddress(ctx sdk.Context, addr sdk.AccAddress) common.BnbAddress {
-	return k.GetAdminConfigBnbAddressType(ctx, PoolAddressKey, PoolAddressKey.Default(), addr)
-}
-
-// GetAdminConfigPoolExpiry get the config for pool address expiry
-func (k Keeper) GetAdminConfigPoolExpiry(ctx sdk.Context, addr sdk.AccAddress) time.Time {
-	expiry, err := k.GetAdminConfigValue(ctx, PoolExpiryKey, addr)
-	if nil != err {
-		ctx.Logger().Error("fail to get pool address expiry", "error", err)
-		return time.Time{}
-	}
-	t, err := time.Parse(time.RFC3339, expiry)
-	if nil != err {
-		ctx.Logger().Error("fail to parse pool address expiry", "error", err)
-		return time.Time{}
-	}
-	return t
 }
 
 // GetAdminConfigMinValidatorBond get the minimum bond to become a validator
@@ -600,6 +565,21 @@ func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey
 	return common.BnbAddress(value)
 }
 
+// GetAdminConfigDesireValidatorSet
+func (k Keeper) GetAdminConfigDesireValidatorSet(ctx sdk.Context, addr sdk.AccAddress) int64 {
+	return k.GetAdminConfigInt64(ctx, DesireValidatorSetKey, DesireValidatorSetKey.Default(), addr)
+}
+
+// GetAdminConfigRotatePerBlockHeight get rotate per block height
+func (k Keeper) GetAdminConfigRotatePerBlockHeight(ctx sdk.Context, addr sdk.AccAddress) int64 {
+	return k.GetAdminConfigInt64(ctx, RotatePerBlockHeightKey, RotatePerBlockHeightKey.Default(), addr)
+}
+
+// GetAdminConfigValidatorsChangeWindow get validator change window
+func (k Keeper) GetAdminConfigValidatorsChangeWindow(ctx sdk.Context, addr sdk.AccAddress) int64 {
+	return k.GetAdminConfigInt64(ctx, ValidatorsChangeWindowKey, ValidatorsChangeWindowKey.Default(), addr)
+}
+
 func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint {
 	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
@@ -629,6 +609,16 @@ func (k Keeper) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dVa
 	}
 	coins, _ := sdk.ParseCoins(value)
 	return coins
+}
+
+// GetAdminConfigInt64 - get the int64 config
+func (k Keeper) GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) int64 {
+	value, _ := k.GetAdminConfigValue(ctx, key, addr)
+	if value == "" {
+		value = dValue
+	}
+	result, _ := strconv.ParseInt(value, 10, 64)
+	return result
 }
 
 // GetAdminConfigValue - gets the value of a given admin key
@@ -795,4 +785,40 @@ func (k Keeper) SetLastEventID(ctx sdk.Context, id common.Amount) {
 	key := getKey(prefixLastEventID, "")
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&id))
+}
+
+// SetPoolAddresses save the pool address to key value store
+func (k Keeper) SetPoolAddresses(ctx sdk.Context, addresses PoolAddresses) {
+	key := getKey(prefixPoolAddresses, "")
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(addresses))
+}
+
+// GetPoolAddresses get current pool addresses
+func (k Keeper) GetPoolAddresses(ctx sdk.Context) PoolAddresses {
+	var addr PoolAddresses
+	key := getKey(prefixPoolAddresses, "")
+	store := ctx.KVStore(k.storeKey)
+	if store.Has([]byte(key)) {
+		buf := store.Get([]byte(key))
+		_ = k.cdc.UnmarshalBinaryBare(buf, &addr)
+	}
+	return addr
+}
+
+func (k Keeper) SetValidatorMeta(ctx sdk.Context, meta ValidatorMeta) {
+	key := getKey(prefixValidatorMeta, "")
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(meta))
+}
+
+func (k Keeper) GetValidatorMeta(ctx sdk.Context) ValidatorMeta {
+	var meta ValidatorMeta
+	key := getKey(prefixValidatorMeta, "")
+	store := ctx.KVStore(k.storeKey)
+	if store.Has([]byte(key)) {
+		buf := store.Get([]byte(key))
+		_ = k.cdc.UnmarshalBinaryBare(buf, &meta)
+	}
+	return meta
 }

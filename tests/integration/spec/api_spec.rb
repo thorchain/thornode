@@ -31,43 +31,22 @@ describe "API Tests" do
   context "Admin configs" do
 
     it "set admin config" do
-      tx = makeTx(memo: "ADMIN:KEY:TSL:0.1", sender: TRUST_BNB_ADDRESS)
+      tx = makeTx(memo: "ADMIN:KEY:GSL:0.1", sender: TRUST_BNB_ADDRESS , poolAddr: TRUST_BNB_ADDRESS)
       resp = processTx(tx)
       expect(resp.code).to eq("200")
 
-      resp = get("/admin/TSL")
+      resp = get("/admin/GSL")
       expect(resp.code).to eq("200")
       expect(resp.body['value']).to eq("0.1"), resp.body.inspect
+
+      tx = makeTx(memo: "ADMIN:KEY:GSL:0.3", sender: TRUST_BNB_ADDRESS, poolAddr: TRUST_BNB_ADDRESS)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200")
     end
 
-#     it "check we cannot set admin config as non-admin" do
-#       bnb = "bnb" + get_rand(39).downcase
-#       tx = makeTx(memo: "ADMIN:Key:TSL:0.5", sender: bnb)
-#       resp = processTx(tx)
-#       expect(resp.code).to eq("200")
-#
-#       resp = get("/admin/TSL")
-#       expect(resp.body['value']).to eq("0.1"), resp.body.inspect
-#
-#       # check we can get our own setting
-#       resp = get("/admin/TSL/#{TRUST_BNB_ADDRESS}")
-#       expect(resp.body['value']).to eq("0.1"), resp.body.inspect
-#     end
   end
 
   poolAddress = bnbAddress() # here so its available in other tests
-  context "Set pool address" do
-    it "should set pool address" do
-      tx = makeTx(memo: "ADMIN:Key:PoolAddress:#{poolAddress}", sender: TRUST_BNB_ADDRESS)
-      resp = processTx(tx)
-      expect(resp.code).to eq("200")
-
-      resp = get("/admin/PoolAddress")
-      expect(resp.code).to eq("200")
-      expect(resp.body['value']).to eq(poolAddress), resp.body.inspect
-    end
-  end
-
   context "Create a pool" do
 
     it "should show up in listing of pools" do
@@ -167,13 +146,28 @@ describe "API Tests" do
       # make a swap
       coins = [{'denom': "TCAN-014", "amount": "20000000"}]
       tx = makeTx(
-        memo: "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:0.160053",
+        memo: "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:124958592",
         coins: coins,
         hash: txid,
       )
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
 
+      resp = get("/pool/TCAN-014")
+      expect(resp.code).to eq("200")
+      expect(resp.body['balance_rune']).to eq("2224541407"), resp.body.inspect
+      expect(resp.body['balance_token']).to eq("354850000"), resp.body.inspect
+
+      # another swap ,it should fail due to price protection
+      tx1 = makeTx(
+         memo: "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:134958590",
+         coins: coins,
+         hash: txid(),
+      )
+      resp = processTx(tx1)
+      expect(resp.code).to eq("200"), resp.body.inspect
+
+      # pool balance should not change
       resp = get("/pool/TCAN-014")
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("2224541407"), resp.body.inspect
@@ -192,7 +186,7 @@ describe "API Tests" do
             # we have found the block height of our last swap
             found = true
             newTxId = txid()
-            tx = makeTx(memo: "outbound:#{i}", hash:newTxId, sender:poolAddress)
+            tx = makeTx(memo: "outbound:#{i}", hash:newTxId, sender:TRUST_BNB_ADDRESS)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
 

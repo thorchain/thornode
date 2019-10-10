@@ -10,14 +10,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
 	"gitlab.com/thorchain/bepswap/common"
+
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
 type txItem struct {
-	TxHash string       `json:"tx"`
-	Coins  common.Coins `json:"coins"`
-	Memo   string       `json:"MEMO"`
-	Sender string       `json:"sender"`
+	TxHash             string       `json:"tx"`
+	Coins              common.Coins `json:"coins"`
+	Memo               string       `json:"MEMO"`
+	Sender             string       `json:"sender"`
+	ObservePoolAddress string       `json:"observe_pool_address"`
 }
 
 type txHashReq struct {
@@ -49,7 +51,7 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 
 		height := sdk.NewUintFromString(req.Blockheight)
 		if height.IsZero() {
-			err := errors.New("Binance chain block height cannot be zero")
+			err := errors.New("binance chain block height cannot be zero")
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
@@ -67,8 +69,11 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
-
-			tx := types.NewTxIn(tx.Coins, tx.Memo, bnbAddr, height)
+			observeBNBAddr, err := common.NewBnbAddress(tx.ObservePoolAddress)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			}
+			tx := types.NewTxIn(tx.Coins, tx.Memo, bnbAddr, height, observeBNBAddr)
 
 			voters[i] = types.NewTxInVoter(txID, []types.TxIn{tx})
 		}

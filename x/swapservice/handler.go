@@ -14,7 +14,7 @@ import (
 var EmptyAccAddress = sdk.AccAddress{}
 
 // NewHandler returns a handler for "swapservice" type messages.
-func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
+func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *TxOutStore) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch m := msg.(type) {
 		case MsgSetPoolData:
@@ -29,7 +29,7 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 			}
 			return result
 		case MsgSwap:
-			result := handleMsgSwap(ctx, keeper, txOutStore, m)
+			result := handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m)
 			if processRefund(ctx, &result, txOutStore, keeper, m) {
 				// refund the swap
 				if err := processSwapRefundEvent(ctx, keeper, m); nil != err {
@@ -41,17 +41,17 @@ func NewHandler(keeper Keeper, txOutStore *TxOutStore) sdk.Handler {
 		case MsgAdd:
 			return handleMsgAdd(ctx, keeper, m)
 		case MsgSetUnStake:
-			return handleMsgSetUnstake(ctx, keeper, txOutStore, m)
+			return handleMsgSetUnstake(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetTxIn:
-			return handleMsgSetTxIn(ctx, keeper, txOutStore, m)
+			return handleMsgSetTxIn(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetAdminConfig:
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		case MsgOutboundTx:
-			return handleMsgOutboundTx(ctx, keeper, m)
+			return handleMsgOutboundTx(ctx, keeper, poolAddressMgr, m)
 		case MsgNoOp:
 			return handleMsgNoOp(ctx, keeper, m)
 		case MsgEndPool:
-			return handleOperatorMsgEndPool(ctx, keeper, txOutStore, m)
+			return handleOperatorMsgEndPool(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetTrustAccount:
 			return handleMsgSetTrustAccount(ctx, keeper, m)
 		case MsgApply:
@@ -99,7 +99,7 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 }
 
 // handleOperatorMsgEndPool operators decide it is time to end the pool
-func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgEndPool) sdk.Result {
+func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgEndPool) sdk.Result {
 
 	if !isSignedByActiveNodeAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker)
@@ -121,7 +121,7 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 			msg.Signer,
 		)
 
-		result := handleMsgSetUnstake(ctx, keeper, txOutStore, unstakeMsg)
+		result := handleMsgSetUnstake(ctx, keeper, txOutStore, poolAddrMgr, unstakeMsg)
 		if !result.IsOK() {
 			ctx.Logger().Error("fail to unstake", "staker", item.StakerID)
 			return result
@@ -139,7 +139,6 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 
 // Handle a message to set pooldata
 func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sdk.Result {
-
 	if !isSignedByActiveNodeAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker)
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -264,14 +263,14 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 }
 
 // Handle a message to set stake data
-func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSwap) sdk.Result {
+func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgSwap) sdk.Result {
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "source ticker", msg.SourceTicker, "target ticker", msg.TargetTicker)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
-	tsl := keeper.GetAdminConfigTSL(ctx, EmptyAccAddress)
 	gsl := keeper.GetAdminConfigGSL(ctx, EmptyAccAddress)
+
 	amount, err := swap(
 		ctx,
 		keeper,
@@ -283,7 +282,6 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 		msg.Destination,
 		msg.RequestTxHash,
 		msg.TargetPrice,
-		tsl,
 		gsl,
 	) // If so, set the stake data to the value specified in the msg.
 	if err != nil {
@@ -303,7 +301,8 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 	}
 
 	toi := &TxOutItem{
-		ToAddress: msg.Destination,
+		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
+		ToAddress:   msg.Destination,
 	}
 	toi.Coins = append(toi.Coins, common.Coin{
 		Denom:  msg.TargetTicker,
@@ -318,7 +317,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg M
 }
 
 // handleMsgSetUnstake process unstake
-func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetUnStake) sdk.Result {
+func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgSetUnStake) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.PublicAddress, msg.WithdrawBasisPoints))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress, "ticker", msg.Ticker, "withdraw basis points", msg.WithdrawBasisPoints)
@@ -369,7 +368,8 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	keeper.AddIncompleteEvents(ctx, evt)
 
 	toi := &TxOutItem{
-		ToAddress: msg.PublicAddress,
+		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
+		ToAddress:   msg.PublicAddress,
 	}
 	toi.Coins = append(toi.Coins, common.Coin{
 		Denom:  common.RuneTicker,
@@ -389,7 +389,8 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 
 func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAccessor) {
 	toi := &TxOutItem{
-		ToAddress: tx.Sender,
+		PoolAddress: tx.ObservePoolAddress,
+		ToAddress:   tx.Sender,
 	}
 
 	for _, item := range tx.Coins {
@@ -403,7 +404,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAcc
 
 // handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
-func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, msg MsgSetTxIn) sdk.Result {
+func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddressMgr *PoolAddressManager, msg MsgSetTxIn) sdk.Result {
 	conflicts := make(common.TxIDs, 0)
 	todo := make([]TxInVoter, 0)
 	for _, tx := range msg.TxIns {
@@ -420,7 +421,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 		ctx.Logger().Error("fail to get list of active node accounts", err)
 		return sdk.ErrInternal("fail to get list of active node accounts").Result()
 	}
-	handler := NewHandler(keeper, txOutStore)
+	handler := NewHandler(keeper, poolAddressMgr, txOutStore)
 	for _, tx := range todo {
 		voter := keeper.GetTxInVoter(ctx, tx.TxID)
 		preConsensus := voter.HasConensus(activeNodeAccounts)
@@ -432,7 +433,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 			voter.IsProcessed = true
 			keeper.SetTxInVoter(ctx, voter)
 			txIn := voter.GetTx(activeNodeAccounts)
-			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer)
+			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer, poolAddressMgr)
 			if nil != err {
 				ctx.Logger().Error("fail to process txHash", "error", err)
 				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper)
@@ -462,7 +463,10 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ms
 	}
 }
 
-func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, signer sdk.AccAddress, poolAddrMgr *PoolAddressManager) (sdk.Msg, error) {
+	if !poolAddrMgr.GetCurrentPoolAddresses().Current.Equals(tx.ObservePoolAddress) {
+		return nil, errors.New("tx sent to the wrong pool address")
+	}
 	memo, err := ParseMemo(tx.Memo)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to parse memo")
@@ -711,7 +715,7 @@ func handleMsgNoOp(ctx sdk.Context, keeper Keeper, msg MsgNoOp) sdk.Result {
 }
 
 // handleMsgOutboundTx processes outbound tx from our pool
-func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.Result {
+func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAddressManager, msg MsgOutboundTx) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgOutboundTx %s at height %d", msg.TxID, msg.Height))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
@@ -722,10 +726,9 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
-	// TODO we need to double check here once we implement the logic to rotate pool
-	// ensure the bnb address this tx was sent from is from our pool
-	poolAddress := keeper.GetAdminConfigPoolAddress(ctx, EmptyAccAddress)
-	if !poolAddress.Equals(msg.Sender) {
+	// it could
+	currentPoolAddr := poolAddressMgr.GetCurrentPoolAddresses()
+	if !currentPoolAddr.Current.Equals(msg.Sender) && !currentPoolAddr.Previous.Equals(msg.Sender) {
 		ctx.Logger().Error("message sent by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}

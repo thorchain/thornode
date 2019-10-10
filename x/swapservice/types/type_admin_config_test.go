@@ -12,7 +12,7 @@ type AdminConfigSuite struct{}
 var _ = Suite(&AdminConfigSuite{})
 
 func (s AdminConfigSuite) TestGetKey(c *C) {
-	keys := []string{"GSL", "TSL", "StakerAmtInterval", "PoolAddress", "Unknown", "PoolExpiry", "MinStakerCoins", "MRRA", "MinValidatorBond", "WhiteListGasToken"}
+	keys := []string{"GSL", "StakerAmtInterval", "Unknown", "MinStakerCoins", "MRRA", "MinValidatorBond", "WhiteListGasToken"}
 	for _, key := range keys {
 		c.Check(GetAdminConfigKey(key).String(), Equals, key)
 	}
@@ -20,7 +20,7 @@ func (s AdminConfigSuite) TestGetKey(c *C) {
 }
 
 func (s AdminConfigSuite) TestAdminConfig(c *C) {
-	amts := []string{"GSL", "TSL", "StakerAmtInterval"}
+	amts := []string{"GSL", "StakerAmtInterval"}
 	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
 	for _, amt := range amts {
@@ -42,13 +42,6 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 		c.Check(cfg.Valid(), IsNil, Commentf("%s is invalid coin", item))
 		cfg1 := NewAdminConfig(GetAdminConfigKey(item), "1233", addr)
 		c.Check(cfg1.Valid(), NotNil, Commentf("%s is not valid coin", item))
-	}
-	bnbs := []string{"PoolAddress"}
-	for _, bnb := range bnbs {
-		config := NewAdminConfig(GetAdminConfigKey(bnb), "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6", addr) // happy path
-		c.Check(config.Valid(), IsNil, Commentf("%s", bnb))
-		config = NewAdminConfig(GetAdminConfigKey(bnb), "abc", addr) // invalid value
-		c.Check(config.Valid(), NotNil, Commentf("%s", bnb))
 	}
 	adminCfg := NewAdminConfig(GSLKey, "100", addr)
 	c.Check(adminCfg.Empty(), Equals, false)
@@ -84,11 +77,6 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 			address: addr,
 			key:     GSLKey,
 			value:   "nothing",
-		},
-		{
-			address: addr,
-			key:     PoolAddressKey,
-			value:   "hahaha",
 		},
 		{
 			address: addr,

@@ -12,17 +12,18 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 
 	q "gitlab.com/thorchain/bepswap/statechain/x/swapservice/query"
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
 // NewQuerier is the module level router for state queries
-func NewQuerier(keeper Keeper) sdk.Querier {
+func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr *ValidatorManager) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		ctx.Logger().Info("query", "path", path[0])
 		switch path[0] {
 		case q.QueryPool.Key:
-			return queryPool(ctx, path[1:], req, keeper)
+			return queryPool(ctx, path[1:], req, keeper, poolAddressMgr)
 		case q.QueryPools.Key:
-			return queryPools(ctx, req, keeper)
+			return queryPools(ctx, req, keeper, poolAddressMgr)
 		case q.QueryPoolStakers.Key:
 			return queryPoolStakers(ctx, path[1:], req, keeper)
 		case q.QueryStakerPools.Key:
@@ -47,12 +48,54 @@ func NewQuerier(keeper Keeper) sdk.Querier {
 			return queryNodeAccount(ctx, path[1:], req, keeper)
 		case q.QueryNodeAccounts.Key:
 			return queryNodeAccounts(ctx, path[1:], req, keeper)
+		case q.QueryPoolAddresses.Key:
+			return queryPoolAddresses(ctx, path[1:], req, keeper, poolAddressMgr)
+		case q.QueryValidators.Key:
+			return queryValidators(ctx, keeper, validatorMgr)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown swapservice query endpoint: %s", path[0]),
 			)
 		}
 	}
+}
+
+func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorManager) ([]byte, sdk.Error) {
+	activeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
+	if nil != err {
+		ctx.Logger().Error("fail to get all active node accounts", err)
+		return nil, sdk.ErrInternal("fail to get all active accounts")
+	}
+
+	resp := types.ValidatorsResp{
+		ActiveNodes: activeAccounts,
+	}
+	if validatorMgr.Meta != nil {
+		resp.RotateAt = uint64(validatorMgr.Meta.RotateAtBlockHeight)
+		resp.RotateWindowOpenAt = uint64(validatorMgr.Meta.RotateWindowOpenAtBlockHeight)
+		if !validatorMgr.Meta.Nominated.IsEmpty() {
+			resp.Nominated = &validatorMgr.Meta.Nominated
+		}
+		if !validatorMgr.Meta.Queued.IsEmpty() {
+			resp.Queued = &validatorMgr.Meta.Queued
+		}
+	}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, resp)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal validator response to json", err)
+		return nil, sdk.ErrInternal("fail to marshal validator response to json")
+	}
+	return res, nil
+}
+
+func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, manager *PoolAddressManager) ([]byte, sdk.Error) {
+	res, err := codec.MarshalJSONIndent(keeper.cdc, manager.GetCurrentPoolAddresses())
+	if nil != err {
+		ctx.Logger().Error("fail to marshal current pool address to json", err)
+		return nil, sdk.ErrInternal("fail to marshal current pool address to json")
+	}
+
+	return res, nil
 }
 
 func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
@@ -164,16 +207,19 @@ func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 }
 
 // nolint: unparam
-func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, poolAddrMgr *PoolAddressManager) ([]byte, sdk.Error) {
 	ticker, err := common.NewTicker(path[0])
 	if err != nil {
 		ctx.Logger().Error("fail to parse ticker", err)
 		return nil, sdk.ErrInternal("Could not parse ticker")
 	}
+	currentPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
 	pool := keeper.GetPool(ctx, ticker)
 	if pool.Empty() {
 		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("pool: %s doesn't exist", path[0]))
 	}
+	pool.PoolAddress = currentPoolAddr.Current
+	pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pool)
 	if err != nil {
 		return nil, sdk.ErrInternal("could not marshal result to JSON")
@@ -181,14 +227,15 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	return res, nil
 }
 
-func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrMgr *PoolAddressManager) ([]byte, sdk.Error) {
 	pools := QueryResPools{}
 	iterator := keeper.GetPoolDataIterator(ctx)
+	currentPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
 		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		pool.PoolAddress = keeper.GetAdminConfigPoolAddress(ctx, EmptyAccAddress)
-		pool.ExpiryUtc = keeper.GetAdminConfigPoolExpiry(ctx, EmptyAccAddress)
+		pool.PoolAddress = currentPoolAddr.Current
+		pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 		pools = append(pools, pool)
 	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pools)
