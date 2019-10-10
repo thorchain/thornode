@@ -8,8 +8,6 @@ before_script:
 
 stages:
   - test
-  - integration
-  - build
   - deploy
 
 unit:test:
@@ -27,12 +25,12 @@ lint:
 
 integration:test:
   image: cbarraford/golang-ruby
-  stage: integration
+  stage: test
   script:
     - make -C ./tests/integration install setup run wait-for-blockchain test-internal
 
 build:test:
-  stage: build
+  stage: test
   image: docker:stable
   except:
     - master
