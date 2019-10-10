@@ -118,16 +118,19 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, config := range data.AdminConfigs {
 		keeper.SetAdminConfig(ctx, config)
 	}
-	validators := make([]abci.ValidatorUpdate, len(data.NodeAccounts))
-	for i, ta := range data.NodeAccounts {
+	validators := make([]abci.ValidatorUpdate, 0, len(data.NodeAccounts))
+	for _, ta := range data.NodeAccounts {
 		keeper.SetNodeAccount(ctx, ta)
-		pk, err := sdk.GetConsPubKeyBech32(ta.Accounts.ValidatorBEPConsPubKey)
-		if nil != err {
-			ctx.Logger().Error("fail to parse consensus public key", "key", ta.Accounts.ValidatorBEPConsPubKey)
-		}
-		validators[i] = abci.ValidatorUpdate{
-			PubKey: tmtypes.TM2PB.PubKey(pk),
-			Power:  int64(100 / len(validators)),
+		// Only Active node will become validator
+		if ta.Status == NodeActive {
+			pk, err := sdk.GetConsPubKeyBech32(ta.Accounts.ValidatorBEPConsPubKey)
+			if nil != err {
+				ctx.Logger().Error("fail to parse consensus public key", "key", ta.Accounts.ValidatorBEPConsPubKey)
+			}
+			validators = append(validators, abci.ValidatorUpdate{
+				PubKey: tmtypes.TM2PB.PubKey(pk),
+				Power:  100,
+			})
 		}
 	}
 
@@ -207,8 +210,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
 		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		pool.PoolAddress = k.GetAdminConfigPoolAddress(ctx, sdk.AccAddress{})
-		pool.ExpiryUtc = k.GetAdminConfigPoolExpiry(ctx, sdk.AccAddress{})
 		poolRecords = append(poolRecords, pool)
 	}
 

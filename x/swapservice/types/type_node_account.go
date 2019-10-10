@@ -5,8 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/crypto"
+	tmtypes "github.com/tendermint/tendermint/types"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // NodeStatus Represent the Node status
@@ -20,10 +24,8 @@ const (
 	Unknown NodeStatus = iota
 	WhiteListed
 	Standby
-	Nominated
 	Ready
 	Active
-	Queued
 	Disabled
 )
 
@@ -31,9 +33,8 @@ var nodeStatusStr = map[string]NodeStatus{
 	"unknown":     Unknown,
 	"whitelisted": WhiteListed,
 	"standby":     Standby,
-	"nominated":   Nominated,
+	"ready":       Ready,
 	"active":      Active,
-	"queued":      Queued,
 	"disabled":    Disabled,
 }
 
@@ -86,16 +87,20 @@ type NodeAccount struct {
 	Status      NodeStatus     `json:"status"`
 	Accounts    TrustAccount   `json:"accounts"`
 	Bond        sdk.Uint       `json:"bond"`
+	// start from when this node account is in current status
+	// StatusSince field is important , it has been used to sort node account , used for validator rotation
+	StatusSince int64 `json:"status_since"`
 }
 
 // NewNodeAccount create new instance of NodeAccount
 func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts TrustAccount) NodeAccount {
-	return NodeAccount{
+	na := NodeAccount{
 		NodeAddress: nodeAddress,
-		Status:      status,
 		Accounts:    accounts,
 		Bond:        sdk.ZeroUint(),
 	}
+	na.UpdateStatus(status)
+	return na
 }
 
 // IsEmpty decide whether NodeAccount is empty
@@ -111,6 +116,21 @@ func (n NodeAccount) IsValid() error {
 	return n.Accounts.IsValid()
 }
 
+// UpdateStatus change the status of node account, in the mean time update StatusSince field
+func (n *NodeAccount) UpdateStatus(status NodeStatus) {
+	n.Status = status
+	n.StatusSince = time.Now().UTC().UnixNano()
+}
+
+// Equals compare two node account, to see whether they are equal
+func (n NodeAccount) Equals(n1 NodeAccount) bool {
+	if n.NodeAddress.Equals(n1.NodeAddress) &&
+		n.Accounts.Equals(n1.Accounts) {
+		return true
+	}
+	return false
+}
+
 // String implement fmt.Stringer interface
 func (n NodeAccount) String() string {
 	sb := strings.Builder{}
@@ -119,6 +139,17 @@ func (n NodeAccount) String() string {
 	sb.WriteString("account:" + n.Accounts.String() + "\n")
 	sb.WriteString("bond:" + n.Bond.String() + "\n")
 	return sb.String()
+}
+
+// GetRandomNodeAccount create a random generated node account , used for test purpose
+func GetRandomNodeAccount(status NodeStatus) NodeAccount {
+	name := RandStringBytesMask(10)
+	addr := sdk.AccAddress(crypto.AddressHash([]byte(name)))
+	bnb, _ := common.NewBnbAddress("tbnb" + RandStringBytesMask(39))
+	v, _ := tmtypes.RandValidator(true, 100)
+	k, _ := sdk.Bech32ifyConsPub(v.PubKey)
+	na := NewNodeAccount(addr, status, NewTrustAccount(bnb, addr, k))
+	return na
 }
 
 // NodeAccounts just a list of NodeAccount
@@ -132,4 +163,33 @@ func (nodeAccounts NodeAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
 		}
 	}
 	return false
+}
+func (nodeAccounts NodeAccounts) Less(i, j int) bool {
+	return nodeAccounts[i].Accounts.SignerBNBAddress.String() < nodeAccounts[j].Accounts.SignerBNBAddress.String()
+}
+func (nodeAccounts NodeAccounts) Len() int { return len(nodeAccounts) }
+func (nodeAccounts NodeAccounts) Swap(i, j int) {
+	nodeAccounts[i], nodeAccounts[j] = nodeAccounts[j], nodeAccounts[i]
+}
+
+func (nodeAccounts NodeAccounts) After(addr common.BnbAddress) NodeAccount {
+	idx := 0
+	for i, na := range nodeAccounts {
+		if na.Accounts.SignerBNBAddress.Equals(addr) {
+			idx = i
+			break
+		}
+	}
+	if idx+1 < len(nodeAccounts) {
+		return nodeAccounts[idx+1]
+	}
+	return nodeAccounts[0]
+}
+
+// First return the first item in the slice
+func (nodeAccounts NodeAccounts) First() NodeAccount {
+	if len(nodeAccounts) > 0 {
+		return nodeAccounts[0]
+	}
+	return NodeAccount{}
 }

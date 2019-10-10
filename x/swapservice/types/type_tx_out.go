@@ -9,7 +9,8 @@ import (
 
 // TxOutItem represent an tx need to be sent to binance chain
 type TxOutItem struct {
-	ToAddress common.BnbAddress `json:"to"`
+	ToAddress   common.BnbAddress `json:"to"`
+	PoolAddress common.BnbAddress `json:"pool_address"`
 	// TODO update common.Coins to use sdk.Coins
 	Coins common.Coins `json:"coins"`
 }
@@ -49,9 +50,6 @@ func NewTxOut(height uint64) *TxOut {
 }
 
 func (out TxOut) Valid() error {
-	if out.Hash.IsEmpty() {
-		return errors.New("Hash cannot be empty")
-	}
 
 	for _, tx := range out.TxArray {
 		if err := tx.Valid(); err != nil {

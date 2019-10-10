@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
@@ -10,16 +11,16 @@ import (
 type AdminConfigKey string
 
 const (
-	UnknownKey           AdminConfigKey = "Unknown"
-	GSLKey               AdminConfigKey = "GSL"
-	TSLKey               AdminConfigKey = "TSL"
-	StakerAmtIntervalKey AdminConfigKey = "StakerAmtInterval"
-	PoolAddressKey       AdminConfigKey = "PoolAddress"
-	PoolExpiryKey        AdminConfigKey = "PoolExpiry"
-	MinStakerCoinsKey    AdminConfigKey = "MinStakerCoins"
-	MRRAKey              AdminConfigKey = "MRRA" // MRRA means MinimumRefundRuneAmount, if the tx send to pool has less then this amount of RUNE , we are not going to refund it
-	MinValidatorBondKey  AdminConfigKey = "MinValidatorBond"
-	WhiteListGasTokenKey AdminConfigKey = "WhiteListGasToken" // How much gas token we mint and send it to the newly whitelisted bep address
+	UnknownKey                AdminConfigKey = "Unknown"
+	GSLKey                    AdminConfigKey = "GSL"
+	StakerAmtIntervalKey      AdminConfigKey = "StakerAmtInterval"
+	MinStakerCoinsKey         AdminConfigKey = "MinStakerCoins"
+	MRRAKey                   AdminConfigKey = "MRRA" // MRRA means MinimumRefundRuneAmount, if the tx send to pool has less then this amount of RUNE , we are not going to refund it
+	MinValidatorBondKey       AdminConfigKey = "MinValidatorBond"
+	WhiteListGasTokenKey      AdminConfigKey = "WhiteListGasToken"      // How much gas token we mint and send it to the newly whitelisted bep address
+	DesireValidatorSetKey     AdminConfigKey = "DesireValidatorSet"     // how much validators we would like to have
+	RotatePerBlockHeightKey   AdminConfigKey = "RotatePerBlockHeight"   // how many blocks we try to rotate validators
+	ValidatorsChangeWindowKey AdminConfigKey = "ValidatorsChangeWindow" // when should we open the rotate window, nominate validators, and identify who should be out
 )
 
 func (k AdminConfigKey) String() string {
@@ -30,14 +31,8 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 	switch key {
 	case string(GSLKey):
 		return GSLKey
-	case string(TSLKey):
-		return TSLKey
 	case string(StakerAmtIntervalKey):
 		return StakerAmtIntervalKey
-	case string(PoolAddressKey):
-		return PoolAddressKey
-	case string(PoolExpiryKey):
-		return PoolExpiryKey
 	case string(MinStakerCoinsKey):
 		return MinStakerCoinsKey
 	case string(MRRAKey):
@@ -46,6 +41,12 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 		return MinValidatorBondKey
 	case string(WhiteListGasTokenKey):
 		return WhiteListGasTokenKey
+	case string(DesireValidatorSetKey):
+		return DesireValidatorSetKey
+	case string(RotatePerBlockHeightKey):
+		return RotatePerBlockHeightKey
+	case string(ValidatorsChangeWindowKey):
+		return ValidatorsChangeWindowKey
 	default:
 		return UnknownKey
 	}
@@ -55,8 +56,6 @@ func (k AdminConfigKey) Default() string {
 	switch k {
 	case GSLKey:
 		return "0.3"
-	case TSLKey:
-		return "0.1"
 	case StakerAmtIntervalKey:
 		return "100"
 	case MinStakerCoinsKey:
@@ -67,6 +66,12 @@ func (k AdminConfigKey) Default() string {
 		return sdk.NewUint(common.One * 10).String()
 	case WhiteListGasTokenKey:
 		return "1000bep"
+	case DesireValidatorSetKey:
+		return "4"
+	case RotatePerBlockHeightKey:
+		return "28800" // a day
+	case ValidatorsChangeWindowKey:
+		return "1200" // one hour
 	default:
 		return ""
 	}
@@ -76,14 +81,14 @@ func (k AdminConfigKey) Default() string {
 func (k AdminConfigKey) ValidValue(value string) error {
 	var err error
 	switch k {
-	case GSLKey, TSLKey, StakerAmtIntervalKey:
+	case GSLKey, StakerAmtIntervalKey:
 		_, err = common.NewAmount(value)
-	case PoolAddressKey:
-		_, err = common.NewBnbAddress(value)
 	case MRRAKey, MinValidatorBondKey:
 		_, err = sdk.ParseUint(value)
 	case MinStakerCoinsKey, WhiteListGasTokenKey:
 		_, err = sdk.ParseCoins(value)
+	case DesireValidatorSetKey, RotatePerBlockHeightKey, ValidatorsChangeWindowKey: // int64
+		_, err = strconv.ParseInt(value, 10, 64)
 	}
 	return err
 }
