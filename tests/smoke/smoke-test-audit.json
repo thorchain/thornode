@@ -1,6 +1,38 @@
 {
-    "staker_count": 2,
-    "rules": [
+  "staker_count": 2,
+  "rules": [
+    {
+      "description": "SEED ASSETS",
+      "from": "bank",
+      "to": [
+        "master"
+      ],
+      "coins": [
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 2000.00000000
+        },
+        {
+          "symbol": "BNB",
+          "amount": 1.60217500
+        }
+      ],
+      "memo": "SEED",
+      "check": {
+        "target": "to",
+        "binance": [
+          {
+            "symbol": "RUNE-A1F",
+            "amount": 2000.00000000
+          },
+          {
+            "symbol": "BNB",
+            "amount": 1.60217500
+          }
+        ],
+        "statechain": {}
+      }
+    },
     {
       "description": "SEED ASSETS",
       "from": "master",
@@ -76,70 +108,6 @@
           {
             "symbol": "BNB",
             "amount": 0.04962500
-          }
-        ],
-        "statechain": {}
-      }
-    },
-    {
-      "description": "STAKE-EMPTY MEMO",
-      "from": "staker_1",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.50000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 500.00000000
-        }
-      ],
-      "memo": " ",
-      "check": {
-        "target": "from",
-        "binance": [
-          {
-            "symbol": "BNB",
-            "amount": 0.50000000
-          },
-          {
-            "symbol": "RUNE-A1F",
-            "amount": 500.00000000
-          }
-        ],
-        "statechain": {}
-      }
-    },
-    {
-      "description": "STAKE-BAD MEMO",
-      "from": "staker_1",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.50000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 500.00000000
-        }
-      ],
-      "memo": "ABDG?",
-      "check": {
-        "target": "from",
-        "binance": [
-          {
-            "symbol": "BNB",
-            "amount": 0.50000000
-          },
-          {
-            "symbol": "RUNE-A1F",
-            "amount": 500.00000000
           }
         ],
         "statechain": {}
@@ -327,7 +295,8 @@
           }
         ],
         "statechain": {
-          "units": 250.25
+          "units": 250.25,
+          "symbol": "BNB"
         }
       }
     },
@@ -361,7 +330,8 @@
           }
         ],
         "statechain": {
-          "units": 271.1083333
+          "units": 271.1083333,
+          "symbol": "BNB"
         }
       }
     },
@@ -395,6 +365,7 @@
           }
         ],
         "statechain": {
+          "symbol": "BNB",
           "units": 296.1333333
         }
       }
@@ -429,6 +400,7 @@
           }
         ],
         "statechain": {
+          "symbol": "BNB",
           "units": 446.2833333
         }
       }
@@ -463,6 +435,7 @@
           }
         ],
         "statechain": {
+          "symbol": "BNB",
           "units": 446.2833333
         }
       }
@@ -494,7 +467,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -525,7 +498,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -533,7 +506,7 @@
       "description": "SWAP-EMPTY ASSET",
       "from": "user",
       "to": [
-        "statechain"
+        "pool"
       ],
       "coins": [
         {
@@ -556,7 +529,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -587,7 +560,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -622,7 +595,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -653,7 +626,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -684,7 +657,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -715,7 +688,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -746,7 +719,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -777,7 +750,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -808,7 +781,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -839,7 +812,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -868,7 +841,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -897,7 +870,7 @@
         ],
         "statechain": {
           "units": 446.2833333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -926,7 +899,7 @@
         ],
         "statechain": {
           "units": 321.1583333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -955,7 +928,7 @@
         ],
         "statechain": {
           "units": 258.5958333,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     },
@@ -984,7 +957,7 @@
         ],
         "statechain": {
           "units": 62.5625,
-          "symbol": "RUNE-A1F"
+          "symbol": "BNB"
         }
       }
     }
