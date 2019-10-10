@@ -5,6 +5,7 @@ import (
 	btypes "github.com/binance-chain/go-sdk/types"
 )
 
+// Network is the different between testnet and mainNet
 type Network struct {
 	Type    ctypes.ChainNetwork
 	ChainID string
