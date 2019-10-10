@@ -1,5 +1,3 @@
-image: golang:1.13
-
 cache:
   paths:
     - .cache
@@ -13,27 +11,28 @@ stages:
   - integration
   - deploy
 
-unit_tests:
+unit:test:
   stage: test
+  image: golang:1.13
   coverage: '/^coverage:\s(\d+(?:\.\d+)?%)/'
   script:
     - go test -mod=readonly -v -coverprofile .testCoverage.txt ./...
 
-lint_code:
+lint:
   image: golangci/golangci-lint
   stage: test
   script:
     - make lint
 
-integration_tests:
+integration:tests:
   image: cbarraford/golang-ruby
   stage: integration
   script:
     - make -C ./tests/integration install setup run wait-for-blockchain test-internal
 
-trigger_build_and_deploy:
-  stage: deploy
-  only:
-    - master
-  script:
-    - "curl -X POST -F token=$TOKEN -F ref=master https://gitlab.com/api/v4/projects/14289231/trigger/pipeline"
+#trigger_build_and_deploy:
+#  stage: deploy
+#  only:
+#    - master
+#  script:
+#    - "curl -X POST -F token=$TOKEN -F ref=master https://gitlab.com/api/v4/projects/14289231/trigger/pipeline"
