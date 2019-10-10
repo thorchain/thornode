@@ -20,3 +20,5 @@ issues:
     - composite
 run:
   tests: false
+  deadline: 15m
+  timeout: 5m
