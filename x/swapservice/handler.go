@@ -755,8 +755,11 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		ctx.Logger().Error("unable to get txOut record", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	txOut.Hash = msg.TxID
-	keeper.SetTxOut(ctx, txOut)
+	// Save TxOut back with the TxID only when the TxOut on the block height is not empty
+	if !txOut.IsEmpty() {
+		txOut.Hash = msg.TxID
+		keeper.SetTxOut(ctx, txOut)
+	}
 	keeper.SetLastSignedHeight(ctx, sdk.NewUint(msg.Height))
 
 	return sdk.Result{
