@@ -7,6 +7,7 @@ import (
 	"gitlab.com/thorchain/bepswap/statechain/x/smoke"
 )
 
+// smoke test run a json config file that is a series of transaction and expected results.
 func main() {
 	apiAddr := flag.String("a", "testnet-dex.binance.org", "Binance API Address.")
 	bankKey := flag.String("b", "", "The bank private key.")
