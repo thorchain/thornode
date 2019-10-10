@@ -16,7 +16,7 @@ unit:test:
   image: golang:1.13
   coverage: '/^coverage:\s(\d+(?:\.\d+)?%)/'
   script:
-    - go test -mod=readonly -v -coverprofile .testCoverage.txt ./...
+    - go test -v -coverprofile .testCoverage.txt ./...
 
 lint:
   image: golangci/golangci-lint
