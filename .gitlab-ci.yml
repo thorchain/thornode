@@ -9,6 +9,7 @@ before_script:
 stages:
   - test
   - integration
+  - build
   - deploy
 
 unit:test:
@@ -24,15 +25,36 @@ lint:
   script:
     - make lint
 
-integration:tests:
+integration:
   image: cbarraford/golang-ruby
   stage: integration
   script:
     - make -C ./tests/integration install setup run wait-for-blockchain test-internal
 
-trigger_build_and_deploy:
-  stage: deploy
-  only:
+build:
+  stage: build
+  image: docker:stable
+  except:
     - master
-  script:
-    - "curl -X POST -F token=$TOKEN -F ref=master https://gitlab.com/api/v4/projects/14289231/trigger/pipeline"
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  environment:
+    name: develop
+  script: make -C ./build/service-node build
+
+
+
+
+#trigger_build_and_deploy:
+#  stage: deploy
+#  only:
+#    - master
+#  script:
+#    - "curl -X POST -F token=$TOKEN -F ref=master https://gitlab.com/api/v4/projects/14289231/trigger/pipeline"
