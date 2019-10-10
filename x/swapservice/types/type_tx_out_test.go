@@ -16,6 +16,8 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	txOut := NewTxOut(1)
 	c.Assert(txOut, NotNil)
 	c.Assert(txOut.TxArray, IsNil)
+	c.Assert(txOut.IsEmpty(), Equals, true)
+	c.Assert(txOut.Valid(), IsNil)
 	txOutItem := &TxOutItem{
 		PoolAddress: bnbAddress,
 		ToAddress:   bnbAddress,
@@ -26,7 +28,36 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	txOut.TxArray = append(txOut.TxArray, txOutItem)
 	c.Assert(txOut.TxArray, NotNil)
 	c.Check(len(txOut.TxArray), Equals, 1)
+	c.Assert(txOut.IsEmpty(), Equals, false)
+	c.Assert(txOut.Valid(), IsNil)
 	strTxOutItem := txOutItem.String()
 	c.Check(len(strTxOutItem) > 0, Equals, true)
 
+	txOut1 := NewTxOut(2)
+	txOut1.TxArray = append(txOut1.TxArray, txOutItem)
+	txOut1.TxArray = append(txOut1.TxArray, &TxOutItem{
+		ToAddress:   bnbAddress,
+		PoolAddress: bnbAddress,
+		Coins:       nil,
+	})
+	c.Assert(txOut1.Valid(), NotNil)
+
+	txOut2 := NewTxOut(3)
+	txOut2.TxArray = append(txOut2.TxArray, &TxOutItem{
+		ToAddress:   "",
+		PoolAddress: bnbAddress,
+		Coins: common.Coins{
+			common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
+		},
+	})
+	c.Assert(txOut2.Valid(), NotNil)
+	txOut3 := NewTxOut(4)
+	txOut3.TxArray = append(txOut3.TxArray, &TxOutItem{
+		ToAddress:   bnbAddress,
+		PoolAddress: "",
+		Coins: common.Coins{
+			common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
+		},
+	})
+	c.Assert(txOut3.Valid(), NotNil)
 }
