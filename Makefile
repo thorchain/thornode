@@ -1,13 +1,18 @@
 include Makefile.ledger
+
 all: lint install
 
 install: go.sum
-		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
-		GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/smoke
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/generate
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/extract
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sweep
 
 go.sum: go.mod
-		@echo "--> Ensure dependencies have not been modified"
-		GO111MODULE=on go mod verify
+	@echo "--> Ensure dependencies have not been modified"
+	GO111MODULE=on go mod verify
 
 lint:
 	@golangci-lint run --deadline=15m
@@ -44,7 +49,36 @@ reset: clean
 
 clean:
 	rm -rf ~/.ssd
+	rm ${GOBIN}/{smoke,generate,sweep}
 	ssd unsafe-reset-all
 
 export:
 	ssd export
+
+.envrc: install
+	@generate -t MASTER > .envrc
+	@generate -t POOL >> .envrc
+
+extract: install
+	@extract -f "${FILE}" -p "${PASSWORD}" -t ${TYPE}
+
+smoke-test-audit: install
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-audit.json -e ${ENV}
+
+smoke-test-refund: install
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-refund.json -e ${ENV}
+
+seed: install
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/seed.json -e ${ENV}
+
+gas: install
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/gas.json -e ${ENV}
+
+stake: install
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/stake.json -e ${ENV}
+
+swap: install
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/swap.json -e ${ENV}
+
+sweep: install
+	@sweep -m ${MASTER_KEY} -k ${KEY_LIST}
