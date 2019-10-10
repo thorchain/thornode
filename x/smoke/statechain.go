@@ -3,6 +3,7 @@ package smoke
 import "fmt"
 
 var endpoints = map[string]string{
+	"local": "localhost",
 	"stage": "testnet-chain.bepswap.io",
 	"dev":   "testnet-chain.bepswap.net",
 	"prod":  "testnet-chain.bepswap.com",
@@ -21,5 +22,11 @@ func NewStatechain(env string) Statechain {
 
 // PoolURL : Return the Pool URL based on the selected environment.
 func (s Statechain) PoolURL() string {
-	return fmt.Sprintf("https://%v/swapservice/pools", endpoints[s.Env])
+	scheme := "https"
+
+	if s.Env == "local" {
+		scheme = "http"
+	}
+
+	return fmt.Sprintf("%v://%v/swapservice/pools", scheme, endpoints[s.Env])
 }
