@@ -19,7 +19,12 @@ func (toi TxOutItem) Valid() error {
 	if toi.ToAddress.IsEmpty() {
 		return errors.New("To address cannot be empty")
 	}
-
+	if toi.PoolAddress.IsEmpty() {
+		return errors.New("pool address cannot be empty")
+	}
+	if len(toi.Coins) == 0 {
+		return errors.New("coins cannot be empty")
+	}
 	return nil
 }
 
@@ -44,18 +49,21 @@ type TxOut struct {
 // NewTxOut create a new item ot TxOut
 func NewTxOut(height uint64) *TxOut {
 	return &TxOut{
-		Height:  height,
-		TxArray: nil,
+		Height: height,
 	}
 }
 
-func (out TxOut) Valid() error {
+// IsEmpty to determinate whether there are txitm in this TxOut
+func (out TxOut) IsEmpty() bool {
+	return len(out.TxArray) == 0
+}
 
+// Valid check every item in it's internal txarray, return an error if it is not valid
+func (out TxOut) Valid() error {
 	for _, tx := range out.TxArray {
 		if err := tx.Valid(); err != nil {
 			return err
 		}
 	}
-
 	return nil
 }
