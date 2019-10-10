@@ -1,10 +1,10 @@
 FROM golang:1.13 as build
 
 WORKDIR /go/src/app
-COPY go.mod .
-COPY go.sum .
+COPY ../../go.mod .
+COPY ../../go.sum .
 RUN go mod download
-COPY ./ ./
+COPY ../.. ./
 WORKDIR /go/src/app/cmd/ssd
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ssd .
 
@@ -24,13 +24,13 @@ WORKDIR /usr/bin
 COPY --from=build /go/src/app/cmd/ssd/ssd /usr/bin/ssd
 COPY --from=build /go/src/app/cmd/sscli/sscli /usr/bin/sscli
 
-COPY build/multiplenodes/init.sh /usr/bin/init.sh
+COPY init.sh /usr/bin/init.sh
 RUN chmod +x /usr/bin/init.sh
 
-COPY build/multiplenodes/second.sh /usr/bin/second.sh
+COPY second.sh /usr/bin/second.sh
 RUN chmod +x /usr/bin/second.sh
 
-COPY build/multiplenodes/start.sh /usr/bin/start.sh
+COPY start.sh /usr/bin/start.sh
 RUN chmod +x /usr/bin/start.sh
 
 CMD ["/usr/bin/start.sh"]
