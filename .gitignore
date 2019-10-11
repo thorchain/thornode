@@ -23,3 +23,4 @@ ssd
 c.out
 *.leveldb/
 .envrc
+log
