@@ -83,15 +83,64 @@ func swapOne(ctx sdk.Context,
 	amount sdk.Uint, requester,
 	destination common.BnbAddress,
 	tradeTarget sdk.Uint,
-	globalSlipLimit common.Amount) (sdk.Uint, error) {
+	globalSlipLimit common.Amount) (amt sdk.Uint, err error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
+
+	var X, x, Y, liquitityFee, emitTokens sdk.Uint
+	var priceSlip, tradeSlip, poolSlip, outputSlip float64
 
 	// Set ticker to our non-rune token ticker
 	ticker := source
 	if common.IsRune(source) {
 		ticker = target
 	}
+
+	// emit swap event at the end of the swap
+	defer func() {
+		var swapEvt EventSwap
+		var status EventStatus
+		if err == nil {
+			status = EventSuccess
+			swapEvt = NewEventSwap(
+				common.NewCoin(source, x),
+				common.NewCoin(target, emitTokens),
+				common.FloatToUint(priceSlip*common.One),
+				common.FloatToUint(tradeSlip*common.One),
+				common.FloatToUint(poolSlip*common.One),
+				common.FloatToUint(outputSlip*common.One),
+				liquitityFee,
+			)
+
+		} else {
+			status = EventRefund
+			swapEvt = NewEventSwap(
+				common.NewCoin(source, x),
+				common.NewCoin(target, sdk.ZeroUint()),
+				sdk.ZeroUint(),
+				sdk.ZeroUint(),
+				sdk.ZeroUint(),
+				sdk.ZeroUint(),
+				sdk.ZeroUint(),
+			)
+		}
+
+		swapBytes, errr := json.Marshal(swapEvt)
+		if errr != nil {
+			amt = sdk.ZeroUint()
+			err = errr
+		}
+		evt := NewEvent(
+			swapEvt.Type(),
+			txID,
+			ticker,
+			swapBytes,
+			status,
+		)
+
+		keeper.AddIncompleteEvents(ctx, evt)
+
+	}()
 
 	// Check if pool exists
 	if !keeper.PoolExist(ctx, ticker) {
@@ -109,7 +158,6 @@ func swapOne(ctx sdk.Context,
 	gsl := globalSlipLimit.Float64() // global slip limit
 
 	// get our X, x, Y values
-	var X, x, Y sdk.Uint
 	if common.IsRune(source) {
 		X = pool.BalanceRune
 		Y = pool.BalanceToken
@@ -127,12 +175,13 @@ func swapOne(ctx sdk.Context,
 		return sdk.ZeroUint(), errors.New("invalid balance")
 	}
 
-	outputSlip := calcOutputSlip(X, x)
-	liquitityFee := calcLiquitityFee(X, x, Y)
-	tradeSlip := calcTradeSlip(X, x)
-	emitTokens := calcTokenEmission(X, x, Y)
-	poolSlip := calcPoolSlip(X, x)
-	priceSlip := calcPriceSlip(X, x, Y)
+	outputSlip = calcOutputSlip(X, x)
+	liquitityFee = calcLiquitityFee(X, x, Y)
+	tradeSlip = calcTradeSlip(X, x)
+	emitTokens = calcTokenEmission(X, x, Y)
+	poolSlip = calcPoolSlip(X, x)
+	priceSlip = calcPriceSlip(X, x, Y)
+
 	// do we have enough balance to swap?
 
 	if emitTokens.GT(Y) {
@@ -158,28 +207,6 @@ func swapOne(ctx sdk.Context,
 	}
 	keeper.SetPool(ctx, pool)
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, emitTokens))
-
-	swapEvt := NewEventSwap(
-		common.NewCoin(source, x),
-		common.NewCoin(target, emitTokens),
-		common.FloatToUint(priceSlip*common.One),
-		common.FloatToUint(tradeSlip*common.One),
-		common.FloatToUint(poolSlip*common.One),
-		common.FloatToUint(outputSlip*common.One),
-		liquitityFee,
-	)
-	swapBytes, err := json.Marshal(swapEvt)
-	if err != nil {
-		return sdk.ZeroUint(), errors.Wrap(err, "fail to marshal swap event")
-	}
-	evt := NewEvent(
-		swapEvt.Type(),
-		txID,
-		ticker,
-		swapBytes,
-		EventSuccess,
-	)
-	keeper.AddIncompleteEvents(ctx, evt)
 
 	return emitTokens, nil
 }
