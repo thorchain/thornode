@@ -84,6 +84,10 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Check(memo.GetAdminType(), Equals, adminEndPool)
 	c.Check(memo.GetKey(), Equals, "BNB")
 	c.Check(memo.GetValue(), Equals, "")
+	memo, err = ParseMemo("nextPool")
+	c.Assert(err, IsNil)
+	memo, err = ParseMemo("nextPool")
+	c.Assert(err, IsNil)
 
 	// unhappy paths
 	_, err = ParseMemo("")
