@@ -47,12 +47,61 @@ build:test:
     name: develop
   script: make -C ./build/service-node build
 
+deploy:develop:
+  stage: deploy
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  except:
+    - schedules
+  environment:
+    name: develop
+  script: make -C ./build/service-node deploy
+  only:
+    - master
 
+deploy:staging:
+  stage: deploy
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  environment:
+    name: staging
+  script: ENV=STAGING make deploy
+  only:
+    - schedules
 
-
-#trigger_build_and_deploy:
-#  stage: deploy
-#  only:
-#    - master
-#  script:
-#    - "curl -X POST -F token=$TOKEN -F ref=master https://gitlab.com/api/v4/projects/14289231/trigger/pipeline"
+deploy:production:
+  stage: deploy
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  except:
+    - schedules
+  environment:
+    name: production
+  script: ENV=PRODUCTION make deploy
+  only:
+    - master
+  when: manual
