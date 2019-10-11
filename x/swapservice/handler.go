@@ -145,19 +145,16 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 
 func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus) error {
 	var stakeEvt EventStake
-	if eventStatus != EventRefund {
-		stakeEvt = NewEventStake(
-			msg.RuneAmount,
-			msg.TokenAmount,
-			stakeUnits,
-		)
-	} else {
-		stakeEvt = NewEventStake(
-			sdk.ZeroUint(),
-			sdk.ZeroUint(),
-			sdk.ZeroUint(),
-		)
+	if eventStatus == EventRefund {
+		// do not log event if the stake failed
+		return nil
 	}
+
+	stakeEvt = NewEventStake(
+		msg.RuneAmount,
+		msg.TokenAmount,
+		stakeUnits,
+	)
 	stakeBytes, err := json.Marshal(stakeEvt)
 	if err != nil {
 		ctx.Logger().Error("fail to save event", err)
