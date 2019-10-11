@@ -27,6 +27,7 @@ const (
 	txAdd
 	txGas
 	txApply
+	txNextPool
 )
 
 const (
@@ -60,6 +61,7 @@ var stringToTxTypeMap = map[string]TxType{
 	"g":        txGas,
 	"$":        txGas,
 	"apply":    txApply,
+	"nextpool": txNextPool,
 }
 
 var txToStringMap = map[TxType]string{
@@ -72,6 +74,7 @@ var txToStringMap = map[TxType]string{
 	txAdd:      "add",
 	txGas:      "gas",
 	txApply:    "apply",
+	txNextPool: "nextpool",
 }
 
 var stringToAdminTypeMap = map[string]adminType{
@@ -174,11 +177,23 @@ type ApplyMemo struct {
 	NodeAddress sdk.AccAddress
 }
 
+type NextPoolMemo struct {
+	MemoBase
+}
+
 func ParseMemo(memo string) (Memo, error) {
 	var err error
 	noMemo := MemoBase{}
 	if len(memo) == 0 {
 		return noMemo, fmt.Errorf("memo can't be empty")
+	}
+	if strings.EqualFold(memo, "nextpool") {
+		return NextPoolMemo{
+			MemoBase: MemoBase{
+				TxType: txNextPool,
+				Ticker: "",
+			},
+		}, nil
 	}
 	parts := strings.Split(memo, ":")
 	if len(parts) < 2 {
