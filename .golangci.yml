@@ -21,3 +21,4 @@ issues:
 run:
   tests: false
   deadline: 5m
+  timeout: 5m
