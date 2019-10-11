@@ -22,7 +22,7 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgSetStakeData:
 			return handleMsgSetStakeData(ctx, keeper, m)
 		case MsgSwap:
-			return handleMsgSwap(ctx, keeper, txOutStore, poolAddrMgr, m)
+			return handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgAdd:
 			return handleMsgAdd(ctx, keeper, m)
 		case MsgSetUnStake:
