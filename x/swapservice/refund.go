@@ -1,7 +1,6 @@
 package swapservice
 
 import (
-	"fmt"
 	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -13,55 +12,6 @@ import (
 type RefundStoreAccessor interface {
 	GetAdminConfigMRRA(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint
 	GetPool(ctx sdk.Context, ticker common.Ticker) Pool
-}
-
-// processRefund take in the sdk.Result and decide whether we should refund customer
-// return value bool indicated whether we actually refund
-// if the tokens in are smaller than our minimum refund threshold, we will swallow it
-func processRefund(ctx sdk.Context, result *sdk.Result, store *TxOutStore, keeper RefundStoreAccessor, msg sdk.Msg) bool {
-	if result.IsOK() {
-		return false
-	}
-	switch m := msg.(type) {
-	case MsgSetStakeData:
-		toi := &TxOutItem{
-			ToAddress: m.PublicAddress,
-		}
-		c := getRefundCoin(ctx, common.RuneTicker, m.RuneAmount, keeper)
-		c1 := getRefundCoin(ctx, m.Ticker, m.TokenAmount, keeper)
-		if !c.Amount.GT(sdk.ZeroUint()) && !c1.Amount.GT(sdk.ZeroUint()) {
-			reason := fmt.Sprintf("rune:%s,coin:%s both less than the minimum refund value", m.RuneAmount, m.TokenAmount)
-			result.Events = result.Events.AppendEvent(
-				sdk.NewEvent("no refund", sdk.NewAttribute("reason", reason)))
-			// nothing to refund
-			return false
-		}
-		if c.Amount.GT(sdk.ZeroUint()) {
-			toi.Coins = append(toi.Coins, c)
-		}
-		if c1.Amount.GT(sdk.ZeroUint()) {
-			toi.Coins = append(toi.Coins, c1)
-		}
-
-		store.AddTxOutItem(toi)
-	case MsgSwap:
-		toi := &TxOutItem{
-			ToAddress: m.Requester,
-		}
-		c := getRefundCoin(ctx, m.SourceTicker, m.Amount, keeper)
-		if c.Amount.IsZero() {
-			reason := fmt.Sprintf("%s less than the minimum refund value", m.Amount)
-			result.Events = result.Events.AppendEvent(
-				sdk.NewEvent("no refund", sdk.NewAttribute("reason", reason)))
-			// nothing to refund
-			return false
-		}
-		toi.Coins = append(toi.Coins, c)
-		store.AddTxOutItem(toi)
-	default:
-		return false
-	}
-	return true
 }
 
 // getRefundCoin

@@ -20,24 +20,9 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgSetPoolData:
 			return handleMsgSetPoolData(ctx, keeper, m)
 		case MsgSetStakeData:
-			result := handleMsgSetStakeData(ctx, keeper, m)
-			if processRefund(ctx, &result, txOutStore, keeper, m) {
-				if err := processStakeRefundEvent(ctx, keeper, m, sdk.ZeroUint()); nil != err {
-					ctx.Logger().Error("fail to process stake event", "error", err)
-					return sdk.ErrInternal("fail to process stake event").Result()
-				}
-			}
-			return result
+			return handleMsgSetStakeData(ctx, keeper, m)
 		case MsgSwap:
-			result := handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m)
-			if processRefund(ctx, &result, txOutStore, keeper, m) {
-				// refund the swap
-				if err := processSwapRefundEvent(ctx, keeper, m); nil != err {
-					ctx.Logger().Error("fail to process swap refund event", "error", err)
-					return sdk.ErrInternal("fail to process swap refund event").Result()
-				}
-			}
-			return result
+			return handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgAdd:
 			return handleMsgAdd(ctx, keeper, m)
 		case MsgSetUnStake:
@@ -159,37 +144,15 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 		Codespace: DefaultCodespace,
 	}
 }
-func processSwapRefundEvent(ctx sdk.Context, keeper Keeper, msg MsgSwap) error {
-	swapEvt := NewEventSwap(
-		common.NewCoin(msg.SourceTicker, msg.Amount),
-		common.NewCoin(msg.TargetTicker, sdk.ZeroUint()),
-		sdk.ZeroUint(),
-		sdk.ZeroUint(),
-		sdk.ZeroUint(),
-		sdk.ZeroUint(),
-		sdk.ZeroUint(),
-	)
-	swapBytes, err := json.Marshal(swapEvt)
-	if err != nil {
-		return errors.Wrap(err, "fail to marshal swap event")
-	}
-	evt := NewEvent(
-		swapEvt.Type(),
-		msg.RequestTxHash,
-		msg.TargetTicker,
-		swapBytes,
-		EventRefund,
-	)
-	keeper.AddIncompleteEvents(ctx, evt)
-	return nil
-}
-
-func processStakeRefundEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint) error {
-	return processStakeEvent(ctx, keeper, msg, stakeUnits, EventRefund)
-}
 
 func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus) error {
-	stakeEvt := NewEventStake(
+	var stakeEvt EventStake
+	if eventStatus == EventRefund {
+		// do not log event if the stake failed
+		return nil
+	}
+
+	stakeEvt = NewEventStake(
 		msg.RuneAmount,
 		msg.TokenAmount,
 		stakeUnits,
@@ -219,7 +182,23 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 }
 
 // Handle a message to set stake data
-func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) sdk.Result {
+func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) (result sdk.Result) {
+
+	stakeUnits := sdk.ZeroUint()
+
+	defer func() {
+		var status EventStatus
+		if result.IsOK() {
+			status = EventSuccess
+		} else {
+			status = EventRefund
+		}
+		if err := processStakeEvent(ctx, keeper, msg, stakeUnits, status); nil != err {
+			ctx.Logger().Error("fail to save stake event", "error", err)
+			result = sdk.ErrInternal("fail to save stake event").Result()
+		}
+	}()
+
 	ctx.Logger().Info("handleMsgSetStakeData request", "stakerid:"+msg.Ticker)
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker, "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress)
@@ -251,11 +230,6 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 	if err != nil {
 		ctx.Logger().Error("fail to process stake message", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	if err := processStakeEvent(ctx, keeper, msg, stakeUnits, EventSuccess); nil != err {
-		ctx.Logger().Error("fail to save stake event", "error", err)
-		return sdk.ErrInternal("fail to save stake event").Result()
 	}
 
 	return sdk.Result{
@@ -391,8 +365,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 
 func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAccessor) {
 	toi := &TxOutItem{
-		PoolAddress: tx.ObservePoolAddress,
-		ToAddress:   tx.Sender,
+		ToAddress: tx.Sender,
 	}
 
 	for _, item := range tx.Coins {
@@ -401,6 +374,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAcc
 			toi.Coins = append(toi.Coins, c)
 		}
 	}
+
 	store.AddTxOutItem(toi)
 }
 
@@ -475,7 +449,10 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 				return sdk.ErrInternal("fail to save last binance height to data store err:" + err.Error()).Result()
 			}
 
-			handler(ctx, m)
+			result := handler(ctx, m)
+			if !result.IsOK() {
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper)
+			}
 		}
 	}
 
