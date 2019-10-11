@@ -17,7 +17,7 @@ unit:test:
   script:
     - go test -v -coverprofile .testCoverage.txt ./...
 
-lint:
+lint:test:
   image: golangci/golangci-lint
   stage: test
   script:
