@@ -295,12 +295,11 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 	for _, p := range pools {
 		if p.Symbol == pool.Symbol {
 			// Check pool units
-			poolUnits := float64(p.PoolUnits)
-			if poolUnits != pool.Units {
+			if p.PoolUnits != pool.Units {
 				log.Printf("%v: FAIL - Pool Units - Units do not match! %f versus %f",
 					rule.Description,
 					pool.Units,
-					poolUnits,
+					p.PoolUnits,
 				)
 			} else {
 				log.Printf("%v: PASS - Pool Units - %v (%v)",
@@ -311,12 +310,11 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 			}
 
 			// Check Rune
-			balanceRune := float64(p.BalanceRune)
-			if balanceRune != pool.Rune {
+			if p.BalanceRune != pool.Rune {
 				log.Printf("%v: FAIL - Pool Rune - Balance does not match! %f versus %f",
 					rule.Description,
 					pool.Rune,
-					balanceRune,
+					p.BalanceRune,
 				)
 			} else {
 				log.Printf("%v: PASS - Pool Rune - %v (%v)",
@@ -327,12 +325,11 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 			}
 
 			// Check token
-			balanceToken := float64(p.BalanceToken)
-			if balanceToken != pool.Token {
+			if p.BalanceToken != pool.Token {
 				log.Printf("%v: FAIL - Pool Token - Balance does not match! %f versus %f",
 					rule.Description,
 					pool.Token,
-					balanceToken,
+					p.BalanceToken,
 				)
 			} else {
 				log.Printf("%v: PASS - Pool Token - %v (%v)",
