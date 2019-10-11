@@ -1,5 +1,7 @@
 include Makefile.ledger
 
+GOBIN?=${GOPATH}/bin
+
 all: lint install
 
 install: go.sum
@@ -41,16 +43,17 @@ start-daemon:
 start-rest:
 	sscli rest-server
 
-setup:
+setup: install
 	./scripts/setup.sh
 
-reset: clean
+reset: clean install
 	./scripts/reset.sh
 
 clean:
 	rm -rf ~/.ssd
-	rm ${GOBIN}/{smoke,generate,sweep}
+	rm -rf ~/.sscli
 	ssd unsafe-reset-all
+	rm ${GOBIN}/{smoke,generate,sweep,sscli,ssd}
 
 export:
 	ssd export

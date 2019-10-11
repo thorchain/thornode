@@ -38,7 +38,7 @@ logger: login
 
 # Step 1
 build: clean logger
-	cd docker/statechain/ && ./build.sh ${ECR_STATECHAIN} | tee ../../log/state-chain-build.log
+	./build.sh ${ECR_STATECHAIN} | tee ./log/state-chain-build.log
 
 # Step 2
 tag: build

@@ -8,7 +8,6 @@ before_script:
 
 stages:
   - test
-  - integration
   - deploy
 
 unit:test:
@@ -18,21 +17,91 @@ unit:test:
   script:
     - go test -v -coverprofile .testCoverage.txt ./...
 
-lint:
+lint:test:
   image: golangci/golangci-lint
   stage: test
   script:
     - make lint
 
-integration:tests:
+integration:test:
   image: cbarraford/golang-ruby
-  stage: integration
+  stage: test
   script:
     - make -C ./tests/integration install setup run wait-for-blockchain test-internal
 
-trigger_build_and_deploy:
+build:test:
+  stage: test
+  image: docker:stable
+  except:
+    - master
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  environment:
+    name: develop
+  script: make -C ./build/service-node build
+
+deploy:develop:
   stage: deploy
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  except:
+    - schedules
+  environment:
+    name: develop
+  script: make -C ./build/service-node deploy
   only:
     - master
-  script:
-    - "curl -X POST -F token=$TOKEN -F ref=master https://gitlab.com/api/v4/projects/14289231/trigger/pipeline"
+
+deploy:staging:
+  stage: deploy
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  environment:
+    name: staging
+  script: ENV=STAGING make deploy
+  only:
+    - schedules
+
+deploy:production:
+  stage: deploy
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  except:
+    - schedules
+  environment:
+    name: production
+  script: ENV=PRODUCTION make deploy
+  only:
+    - master
+  when: manual
