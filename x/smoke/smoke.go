@@ -127,7 +127,7 @@ func (s *Smoke) Summary() {
 
 	for idx, staker := range s.Tests.Actors.Stakers {
 		privKey, _ = staker.Key.ExportAsPrivateKey()
-		log.Printf("Staker %v: %v - %v\n", idx, staker.Key.GetAddr(), privKey)
+		log.Printf("Staker %v: %v - %v\n", idx+1, staker.Key.GetAddr(), privKey)
 	}
 }
 
@@ -213,6 +213,7 @@ func (s *Smoke) ValidateTest(rule types.Rule) {
 
 	_, fromKey := s.FromClientKey(rule.From)
 	s.CheckPool(fromKey.GetAddr(), rule)
+	s.CheckStake(rule)
 }
 
 // Balances : Get the account balances of a given wallet.
@@ -294,7 +295,7 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 	for _, p := range pools {
 		if p.Symbol == pool.Symbol {
 			// Check pool units
-			poolUnits, _ := strconv.ParseFloat(p.PoolUnits, 64)
+			poolUnits := float64(p.PoolUnits)
 			if poolUnits != pool.Units {
 				log.Printf("%v: FAIL - Pool Units - Units do not match! %f versus %f",
 					rule.Description,
@@ -310,7 +311,7 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 			}
 
 			// Check Rune
-			balanceRune, _ := strconv.ParseFloat(p.BalanceRune, 64)
+			balanceRune := float64(p.BalanceRune)
 			if balanceRune != pool.Rune {
 				log.Printf("%v: FAIL - Pool Rune - Balance does not match! %f versus %f",
 					rule.Description,
@@ -326,7 +327,7 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 			}
 
 			// Check token
-			balanceToken, _ := strconv.ParseFloat(p.BalanceToken, 64)
+			balanceToken := float64(p.BalanceToken)
 			if balanceToken != pool.Token {
 				log.Printf("%v: FAIL - Pool Token - Balance does not match! %f versus %f",
 					rule.Description,
@@ -351,6 +352,57 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 					)
 				} else {
 					log.Printf("%v: PASS - Pool Status - %v (%v)",
+						rule.Description,
+						address,
+						rule.Memo,
+					)
+				}
+			}
+		}
+	}
+}
+
+// GetStakes : Get a given staker's stakes.
+func (s *Smoke) GetStakes(address ctypes.AccAddress) types.Staker {
+	var staker types.Staker
+
+	resp, err := http.Get(s.Statechain.StakerURL(address.String()))
+	if err != nil {
+		log.Printf("%v\n", err)
+	}
+
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("%v\n", err)
+	}
+
+	if err := json.Unmarshal(data, &staker); nil != err {
+		log.Fatal(err)
+	}
+
+	return staker
+}
+
+// CheckStake : Check the pool share for a given staker.
+func (s *Smoke) CheckStake(rule types.Rule) {
+	time.Sleep(s.Config.delay)
+
+	for _, stakerUnits := range rule.Check.Statechain.StakerUnits {
+		address := s.ToAddr(stakerUnits.Actor)
+		stake := s.GetStakes(address)
+
+		for _, pool := range stake.PoolAndUnits {
+			if pool.Symbol == rule.Check.Statechain.Symbol {
+				if pool.Units != stakerUnits.Units {
+					log.Printf("%v: FAIL - Staker Units - Units do not match! %f versus %f",
+						rule.Description,
+						stakerUnits.Units,
+						pool.Units,
+					)
+				} else {
+					log.Printf("%v: PASS - Staker Units - %v (%v)",
 						rule.Description,
 						address,
 						rule.Memo,

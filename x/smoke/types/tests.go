@@ -46,9 +46,15 @@ type Check struct {
 }
 
 type Statechain struct {
-	Units  float64 `json:"units"`
-	Symbol string  `json:"symbol"`
-	Rune   float64 `json:"rune"`
-	Token  float64 `json:"token"`
-	Status string  `json:"status"`
+	Units       float64       `json:"units"`
+	Symbol      string        `json:"symbol"`
+	Rune        float64       `json:"rune"`
+	Token       float64       `json:"token"`
+	Status      string        `json:"status"`
+	StakerUnits []StakerUnits `json:"staker_units,omitempty"`
+}
+
+type StakerUnits struct {
+	Actor string  `json:"actor"`
+	Units float64 `json:"units"`
 }
