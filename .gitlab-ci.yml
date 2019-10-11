@@ -32,4 +32,4 @@ trigger_build_and_deploy:
   only:
     - master
   script:
-    - "curl -X POST -F token=$TOKEN -F ref=master https://gitlab.com/api/v4/projects/14289231/trigger/pipeline"
+    - "curl -X POST -F token=$TOKEN -F ref=master https://gitlab.com/api/v4/projects/13422983/trigger/pipeline"
