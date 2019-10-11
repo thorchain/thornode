@@ -100,7 +100,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 		}
 		runeTotal = runeTotal.Add(p.BalanceRune)
 		if p.BalanceToken.GT(sdk.ZeroUint()) {
-			store.AddTxOutItem(&TxOutItem{
+			store.AddTxOutItem(ctx, k, &TxOutItem{
 				PoolAddress: addresses.Previous,
 				ToAddress:   addresses.Current,
 				Coins: common.Coins{
@@ -120,7 +120,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	}
 
 	if !runeTotal.IsZero() {
-		store.AddTxOutItem(&TxOutItem{
+		store.AddTxOutItem(ctx, k, &TxOutItem{
 			PoolAddress: addresses.Previous,
 			ToAddress:   addresses.Current,
 			Coins: common.Coins{
