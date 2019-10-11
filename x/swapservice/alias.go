@@ -36,35 +36,36 @@ const (
 )
 
 var (
-	NewPool              = types.NewPool
-	NewAdminConfig       = types.NewAdminConfig
-	NewMsgNoOp           = types.NewMsgNoOp
-	NewMsgAdd            = types.NewMsgAdd
-	NewMsgSetPoolData    = types.NewMsgSetPoolData
-	NewMsgSetStakeData   = types.NewMsgSetStakeData
-	NewMsgSetUnStake     = types.NewMsgSetUnStake
-	NewMsgSwap           = types.NewMsgSwap
-	NewMsgSetAdminConfig = types.NewMsgSetAdminConfig
-	NewTxOut             = types.NewTxOut
-	NewEvent             = types.NewEvent
-	NewEventSwap         = types.NewEventSwap
-	NewEventStake        = types.NewEventStake
-	NewEmptyRefundEvent  = types.NewEmptyRefundEvent
-	NewEventUnstake      = types.NewEventUnstake
-	NewMsgOutboundTx     = types.NewMsgOutboundTx
-	NewPoolStaker        = types.NewPoolStaker
-	NewStakerPool        = types.NewStakerPool
-	NewMsgEndPool        = types.NewMsgEndPool
-	HasMajority          = types.HasMajority
-	GetPoolStatus        = types.GetPoolStatus
-	GetAdminConfigKey    = types.GetAdminConfigKey
-	ModuleCdc            = types.ModuleCdc
-	RegisterCodec        = types.RegisterCodec
-	NewTrustAccount      = types.NewTrustAccount
-	NewNodeAccount       = types.NewNodeAccount
-	NewMsgApply          = types.NewMsgApply
-	NewPoolAddresses     = types.NewPoolAddresses
-	GetRandomNodeAccount = types.GetRandomNodeAccount
+	NewPool               = types.NewPool
+	NewAdminConfig        = types.NewAdminConfig
+	NewMsgNoOp            = types.NewMsgNoOp
+	NewMsgAdd             = types.NewMsgAdd
+	NewMsgSetPoolData     = types.NewMsgSetPoolData
+	NewMsgSetStakeData    = types.NewMsgSetStakeData
+	NewMsgSetUnStake      = types.NewMsgSetUnStake
+	NewMsgSwap            = types.NewMsgSwap
+	NewMsgSetAdminConfig  = types.NewMsgSetAdminConfig
+	NewTxOut              = types.NewTxOut
+	NewEvent              = types.NewEvent
+	NewEventSwap          = types.NewEventSwap
+	NewEventStake         = types.NewEventStake
+	NewEmptyRefundEvent   = types.NewEmptyRefundEvent
+	NewEventUnstake       = types.NewEventUnstake
+	NewMsgOutboundTx      = types.NewMsgOutboundTx
+	NewPoolStaker         = types.NewPoolStaker
+	NewStakerPool         = types.NewStakerPool
+	NewMsgEndPool         = types.NewMsgEndPool
+	HasMajority           = types.HasMajority
+	GetPoolStatus         = types.GetPoolStatus
+	GetAdminConfigKey     = types.GetAdminConfigKey
+	ModuleCdc             = types.ModuleCdc
+	RegisterCodec         = types.RegisterCodec
+	NewTrustAccount       = types.NewTrustAccount
+	NewNodeAccount        = types.NewNodeAccount
+	NewMsgApply           = types.NewMsgApply
+	NewPoolAddresses      = types.NewPoolAddresses
+	GetRandomNodeAccount  = types.GetRandomNodeAccount
+	NewMsgNextPoolAddress = types.NewMsgNextPoolAddress
 )
 
 type (
@@ -79,6 +80,7 @@ type (
 	MsgSwap            = types.MsgSwap
 	MsgSetAdminConfig  = types.MsgSetAdminConfig
 	MsgSetTrustAccount = types.MsgSetTrustAccount
+	MsgNextPoolAddress = types.MsgNextPoolAddress
 	MsgEndPool         = types.MsgEndPool
 	QueryResPools      = types.QueryResPools
 	QueryResHeights    = types.QueryResHeights

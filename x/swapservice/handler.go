@@ -14,7 +14,7 @@ import (
 var EmptyAccAddress = sdk.AccAddress{}
 
 // NewHandler returns a handler for "swapservice" type messages.
-func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *TxOutStore) sdk.Handler {
+func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *TxOutStore, validatorManager *ValidatorManager) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch m := msg.(type) {
 		case MsgSetPoolData:
@@ -43,7 +43,7 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgSetUnStake:
 			return handleMsgSetUnstake(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetTxIn:
-			return handleMsgSetTxIn(ctx, keeper, txOutStore, poolAddressMgr, m)
+			return handleMsgSetTxIn(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
 		case MsgSetAdminConfig:
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		case MsgOutboundTx:
@@ -56,6 +56,8 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 			return handleMsgSetTrustAccount(ctx, keeper, m)
 		case MsgApply:
 			return handleMsgApply(ctx, keeper, m)
+		case MsgNextPoolAddress:
+			return handleMsgConfirmNextPoolAddress(ctx, keeper, validatorManager, m)
 
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m)
@@ -402,27 +404,47 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAcc
 	store.AddTxOutItem(toi)
 }
 
-// handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
-// another handler to process the request
-func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddressMgr *PoolAddressManager, msg MsgSetTxIn) sdk.Result {
-	conflicts := make(common.TxIDs, 0)
-	todo := make([]TxInVoter, 0)
-	for _, tx := range msg.TxIns {
-		// validate there are not conflicts first
-		if keeper.CheckTxHash(ctx, tx.Key()) {
-			conflicts = append(conflicts, tx.Key())
-		} else {
-			todo = append(todo, tx)
-		}
+// handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
+// MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on binance chain
+func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorManager, msg MsgNextPoolAddress) sdk.Result {
+	ctx.Logger().Info("receive request to set next pool address", "sender", msg.Sender.String())
+	if validatorManager.Meta.Nominated.IsEmpty() {
+		return sdk.ErrUnknownRequest("no nominated node yet").Result()
 	}
 
+	nominated, err := keeper.GetNodeAccount(ctx, validatorManager.Meta.Nominated.NodeAddress)
+	if err != nil {
+		return sdk.ErrInternal(fmt.Sprintf("fail to get nominated node,err:%s", err.Error())).Result()
+	}
+	if !msg.Sender.Equals(nominated.Accounts.SignerBNBAddress) {
+		return sdk.ErrUnknownRequest("nominated node has different signer bnb address").Result()
+	}
+
+	nominated.UpdateStatus(NodeReady)
+	keeper.SetNodeAccount(ctx, nominated)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(EventTypeNodeReady,
+			sdk.NewAttribute("signer bnb address", nominated.Accounts.SignerBNBAddress.String()),
+			sdk.NewAttribute("observer bep address", nominated.Accounts.ObserverBEPAddress.String()),
+			sdk.NewAttribute("bep consensus pub key", nominated.Accounts.ValidatorBEPConsPubKey)))
+
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
+// handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
+// another handler to process the request
+func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddressMgr *PoolAddressManager, validatorManager *ValidatorManager, msg MsgSetTxIn) sdk.Result {
 	activeNodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		ctx.Logger().Error("fail to get list of active node accounts", err)
 		return sdk.ErrInternal("fail to get list of active node accounts").Result()
 	}
-	handler := NewHandler(keeper, poolAddressMgr, txOutStore)
-	for _, tx := range todo {
+	handler := NewHandler(keeper, poolAddressMgr, txOutStore, validatorManager)
+	for _, tx := range msg.TxIns {
 		voter := keeper.GetTxInVoter(ctx, tx.TxID)
 		preConsensus := voter.HasConensus(activeNodeAccounts)
 		voter.Adds(tx.Txs, msg.Signer)
@@ -521,6 +543,8 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgApply from memo")
 		}
+	case NextPoolMemo:
+		newMsg = NewMsgNextPoolAddress(txID, tx.Sender, signer)
 	default:
 		return nil, errors.Wrap(err, "Unable to find memo type")
 	}
@@ -708,6 +732,7 @@ func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 
 // handleMsgNoOp doesn't do anything, its a no op
 func handleMsgNoOp(ctx sdk.Context, keeper Keeper, msg MsgNoOp) sdk.Result {
+	ctx.Logger().Info("receive no op msg")
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
@@ -805,7 +830,6 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 		return sdk.ErrUnknownRequest("MsgUpdateNodeAccount is invalid").Result()
 	}
 
-	ctx.EventManager().EmitEvent(sdk.NewEvent("set_trust_account", sdk.NewAttribute("bep_address", msg.Signer.String())))
 	// You should not able to update node address when the node is in active mode
 	// for example if they update observer address
 	if nodeAccount.Status == NodeActive {
@@ -819,9 +843,17 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 	if err := keeper.EnsureTrustAccountUnique(ctx, msg.TrustAccount); nil != err {
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	// Here make sure we don't change the node account's bound and status
+	// Here make sure we don't change the node account's bond
 	nodeAccount.Accounts = msg.TrustAccount
+	nodeAccount.UpdateStatus(NodeStandby)
 	keeper.SetNodeAccount(ctx, nodeAccount)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent("set_trust_account",
+			sdk.NewAttribute("bep_address", msg.Signer.String()),
+			sdk.NewAttribute("observer_bep_address", msg.TrustAccount.ObserverBEPAddress.String()),
+			sdk.NewAttribute("signer_bnb_address", msg.TrustAccount.SignerBNBAddress.String()),
+			sdk.NewAttribute("validator_consensus_pub_key", msg.TrustAccount.ValidatorBEPConsPubKey)))
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
