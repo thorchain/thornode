@@ -80,6 +80,7 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 		}
 		if nodeAccount.Status != NodeActive {
 			ctx.Logger().Error("unauthorized account, node account not active", "address", signer.String(), "status", nodeAccount.Status)
+			return false
 		}
 	}
 	return true
@@ -485,11 +486,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgStake from memo")
 		}
-	case AdminMemo:
-		newMsg, err = getMsgAdminConfigFromMemo(ctx, keeper, m, tx, txID, signer)
-		if nil != err {
-			return nil, errors.Wrap(err, "fail to get MsgAdminConfig from memo")
-		}
+
 	case WithdrawMemo:
 		newMsg, err = getMsgUnstakeFromMemo(m, txID, tx, signer)
 		if nil != err {
@@ -562,37 +559,6 @@ func getMsgUnstakeFromMemo(memo WithdrawMemo, txID common.TxID, tx TxIn, signer 
 
 }
 
-func getMsgAdminConfigFromMemo(ctx sdk.Context, keeper Keeper, memo AdminMemo, tx TxIn, requestTxHash common.TxID, signer sdk.AccAddress) (sdk.Msg, error) {
-	switch memo.GetAdminType() {
-	case adminPoolStatus:
-		ticker, err := common.NewTicker(memo.GetKey())
-		if err != nil {
-			return nil, errors.Wrapf(err, "Memo: %+v", memo)
-		}
-		pool := keeper.GetPool(ctx, ticker)
-		if pool.Empty() {
-			return nil, fmt.Errorf("pool doesn't exist: %s", ticker.String())
-		}
-
-		status := GetPoolStatus(memo.GetValue())
-		return NewMsgSetPoolData(
-			ticker,
-			status,
-			signer,
-		), nil
-	case adminKey:
-		key := GetAdminConfigKey(memo.GetKey())
-		return NewMsgSetAdminConfig(key, memo.GetValue(), signer), nil
-	case adminEndPool:
-		ticker, err := common.NewTicker(memo.GetKey())
-		if err != nil {
-			return nil, errors.Wrapf(err, "Memo: %+v", memo)
-		}
-		return NewMsgEndPool(ticker, tx.Sender, requestTxHash, signer), nil
-	}
-	return nil, errors.New("invalid admin command type")
-}
-
 func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	if len(tx.Coins) > 2 {
 		return nil, errors.New("not expecting more than two coins in a stake")
@@ -628,7 +594,7 @@ func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, 
 	}
 	return NewMsgSetPoolData(
 		memo.GetTicker(),
-		PoolBootstrap, // new pools start in a Bootstrap state
+		PoolEnabled, // new pools start in a Bootstrap state
 		signer,
 	), nil
 }
