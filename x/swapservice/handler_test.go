@@ -188,3 +188,22 @@ func (HandlerSuite) TestHandleMsgSetTrustAccount(c *C) {
 	c.Check(success.IsOK(), Equals, true)
 
 }
+
+func (HandlerSuite) TestIsSignedByActiveObserver(c *C) {
+	ctx, k := setupKeeperForTest(c)
+	nodeAddr, err := sdk.AccAddressFromBech32("bep1munaxncdrr305vf0ljzydyqryncxx8cp06v65u")
+	c.Check(err, IsNil)
+	c.Check(isSignedByActiveObserver(ctx, k, []sdk.AccAddress{nodeAddr}), Equals, false)
+	c.Check(isSignedByActiveObserver(ctx, k, []sdk.AccAddress{}), Equals, false)
+}
+
+func (HandlerSuite) TestIsSignedByActiveNodeAccounts(c *C) {
+	ctx, k := setupKeeperForTest(c)
+	nodeAddr, err := sdk.AccAddressFromBech32("bep1munaxncdrr305vf0ljzydyqryncxx8cp06v65u")
+	c.Check(err, IsNil)
+	c.Check(isSignedByActiveNodeAccounts(ctx, k, []sdk.AccAddress{}), Equals, false)
+	c.Check(isSignedByActiveNodeAccounts(ctx, k, []sdk.AccAddress{nodeAddr}), Equals, false)
+	nodeAccount1 := GetRandomNodeAccount(NodeWhiteListed)
+	k.SetNodeAccount(ctx, nodeAccount1)
+	c.Check(isSignedByActiveNodeAccounts(ctx, k, []sdk.AccAddress{nodeAccount1.NodeAddress}), Equals, false)
+}
