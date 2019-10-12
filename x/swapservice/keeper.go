@@ -343,6 +343,22 @@ func (k Keeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccoun
 	return na, nil
 }
 
+// GetNodeAccountByObserver
+func (k Keeper) GetNodeAccountByObserver(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+	ctx.Logger().Debug("GetNodeAccountByObserver", "observer address", addr.String())
+	var na NodeAccount
+	nodeAccounts, err := k.ListNodeAccounts(ctx)
+	if nil != err {
+		return na, errors.Wrap(err, "fail to get all node accounts")
+	}
+	for _, item := range nodeAccounts {
+		if item.Accounts.ObserverBEPAddress.Equals(addr) {
+			return item, nil
+		}
+	}
+	return na, nil
+}
+
 // SetNodeAccount save the given node account into datastore
 func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	ctx.Logger().Debug("SetNodeAccount", "node account", na.String())

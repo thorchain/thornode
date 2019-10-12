@@ -29,7 +29,7 @@ func NewSweep(apiAddr, masterPrivKey string, keyList []string, network int, debu
 	return Sweep{
 		ApiAddr:    apiAddr,
 		Network:    n.Type,
-		Binance:    NewBinance(apiAddr, n.ChainID,debug),
+		Binance:    NewBinance(apiAddr, n.ChainID, debug),
 		KeyManager: keyManager,
 		Client:     client,
 		KeyList:    keyList,
