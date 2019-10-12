@@ -88,7 +88,11 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	}, nil
 }
 
-func (o *Observer) Start(websocket bool) error {
+func (o *Observer) Start() error {
+	if err := o.stateChainBridge.EnsureNodeWhitelistedWithTimeout(); nil != err {
+		o.logger.Error().Err(err).Msg("node account is not whitelisted, can't start")
+		return errors.Wrap(err, "node account is not whitelisted, can't start")
+	}
 	if err := o.stateChainBridge.Start(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to start statechain bridge")
 		return errors.Wrap(err, "fail to start statechain bridge")
