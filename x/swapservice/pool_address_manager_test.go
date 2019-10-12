@@ -111,7 +111,7 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 		c.Assert(item.ToAddress.String(), Equals, newPa1.Current.String())
 		c.Assert(len(item.Coins) > 0, Equals, true)
 		if item.Coins[0].Denom == poolBNB.Ticker {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64())
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64()-30000)
 		}
 		if item.Coins[0].Denom.String() == poolTCan.Ticker.String() {
 			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64())
