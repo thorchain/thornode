@@ -6,7 +6,7 @@ import (
 )
 
 // TODO: make this admin configs instead of hard coded
-var singleTransactionFee uint64 = 37500
+// var singleTransactionFee uint64 = 37500
 var batchTransactionFee uint64 = 30000
 
 // TxOutSetter define a method that is required to be used in TxOutStore
@@ -63,11 +63,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 	hasDeductedGas := false // monitor if we've already pulled out coins for gas.
 	for i, item := range toi.Coins {
 		if !hasDeductedGas && common.IsBNB(item.Denom) {
-			if len(toi.Coins) == 1 {
-				item.Amount = item.Amount.SubUint64(singleTransactionFee)
-			} else {
-				item.Amount = item.Amount.SubUint64(batchTransactionFee * uint64(len(toi.Coins)))
-			}
+			item.Amount = item.Amount.SubUint64(batchTransactionFee * uint64(len(toi.Coins)))
 
 			// no need to update the bnb pool with new amounts.
 
@@ -81,18 +77,16 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		if !hasDeductedGas && hasBNB == false && common.IsRune(item.Denom) {
 			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
 
-			var runeAmt uint64
-			if len(toi.Coins) == 1 {
-				runeAmt = (singleTransactionFee / bnbPool.BalanceToken.Uint64()) * (bnbPool.BalanceRune.Uint64())
-			} else {
-				runeAmt = (batchTransactionFee / bnbPool.BalanceToken.Uint64()) * (bnbPool.BalanceRune.Uint64()) * uint64(len(toi.Coins))
-			}
+			var runeAmt, gas uint64
+			runeAmt = (batchTransactionFee / bnbPool.BalanceToken.Uint64()) * (bnbPool.BalanceRune.Uint64()) * uint64(len(toi.Coins))
+			gas = batchTransactionFee * uint64(len(toi.Coins))
 
 			item.Amount = item.Amount.SubUint64(runeAmt)
 			if item.Amount.GT(sdk.ZeroUint()) {
 				// add the rune to the bnb pool that we are subtracting from
 				// the refund
 				bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
+				bnbPool.BalanceToken = bnbPool.BalanceRune.SubUint64(gas)
 				keeper.SetPool(ctx, bnbPool)
 
 				toi.Coins[i] = item
@@ -106,13 +100,8 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			tokenPool := keeper.GetPool(ctx, item.Denom)
 
 			var runeAmt, tokenAmt uint64
-			if len(toi.Coins) == 1 {
-				runeAmt = (singleTransactionFee / bnbPool.BalanceToken.Uint64()) * (bnbPool.BalanceRune.Uint64())
-				tokenAmt = (runeAmt / tokenPool.BalanceRune.Uint64()) * (tokenPool.BalanceToken.Uint64())
-			} else {
-				runeAmt = (batchTransactionFee / bnbPool.BalanceToken.Uint64()) * (bnbPool.BalanceRune.Uint64()) * uint64(len(toi.Coins))
-				tokenAmt = (runeAmt / tokenPool.BalanceRune.Uint64()) * (tokenPool.BalanceToken.Uint64())
-			}
+			runeAmt = (batchTransactionFee / bnbPool.BalanceToken.Uint64()) * (bnbPool.BalanceRune.Uint64()) * uint64(len(toi.Coins))
+			tokenAmt = (runeAmt / tokenPool.BalanceRune.Uint64()) * (tokenPool.BalanceToken.Uint64())
 
 			item.Amount = item.Amount.SubUint64(tokenAmt)
 			if item.Amount.GT(sdk.ZeroUint()) {
@@ -132,5 +121,14 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		}
 	}
 
-	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
+	// count the total coins we are sending to the user.
+	countCoins := sdk.ZeroUint()
+	for _, item := range toi.Coins {
+		countCoins = countCoins.Add(item.Amount)
+	}
+
+	// if we are sending zero coins, don't bother adding to the txarray
+	if !countCoins.IsZero() {
+		tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
+	}
 }
