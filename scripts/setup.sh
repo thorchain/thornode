@@ -18,9 +18,14 @@ while true; do
   sscli config indent true
   sscli config trust-node true
 
+  if [ -z "${POOL_ADDRESS:-}" ];
+  then
+    echo "empty pool address"
+    POOL_ADDRESS=bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY
+  fi
   # add jack as a trusted account
   {
-      jq --arg VALIDATOR "$(ssd tendermint show-validator)" --arg NODE_ADDRESS "$(sscli keys show jack -a)" --arg OBSERVER_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","accounts":{"bnb_signer_acc":"bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY", "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}'
+    jq --arg POOL_ADDRESS "$POOL_ADDRESS" --arg VALIDATOR "$(ssd tendermint show-validator)" --arg NODE_ADDRESS "$(sscli keys show jack -a)" --arg OBSERVER_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","accounts":{"bnb_signer_acc":$POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}'
   } <~/.ssd/config/genesis.json >/tmp/genesis.json
   mv /tmp/genesis.json ~/.ssd/config/genesis.json
 

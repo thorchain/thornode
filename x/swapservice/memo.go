@@ -22,19 +22,11 @@ const (
 	txStake
 	txWithdraw
 	txSwap
-	txAdmin
 	txOutbound
 	txAdd
 	txGas
 	txApply
 	txNextPool
-)
-
-const (
-	adminUnknown adminType = iota
-	adminKey
-	adminPoolStatus
-	adminEndPool
 )
 
 var stringToTxTypeMap = map[string]TxType{
@@ -50,9 +42,6 @@ var stringToTxTypeMap = map[string]TxType{
 	"swap":     txSwap,
 	"s":        txSwap,
 	"=":        txSwap,
-	"admin":    txAdmin,
-	"d":        txAdmin,
-	"!":        txAdmin,
 	"outbound": txOutbound,
 	"add":      txAdd,
 	"a":        txAdd,
@@ -69,18 +58,11 @@ var txToStringMap = map[TxType]string{
 	txStake:    "stake",
 	txWithdraw: "withdraw",
 	txSwap:     "swap",
-	txAdmin:    "admin",
 	txOutbound: "outbound",
 	txAdd:      "add",
 	txGas:      "gas",
 	txApply:    "apply",
 	txNextPool: "nextpool",
-}
-
-var stringToAdminTypeMap = map[string]adminType{
-	"key":        adminKey,
-	"poolstatus": adminPoolStatus,
-	"end":        adminEndPool,
 }
 
 // converts a string into a txType
@@ -91,15 +73,6 @@ func stringToTxType(s string) (TxType, error) {
 		return t, nil
 	}
 	return txUnknown, fmt.Errorf("invalid tx type: %s", s)
-}
-
-// converts a string into a adminType
-func stringToAdminType(s string) (adminType, error) {
-	sl := strings.ToLower(s)
-	if t, ok := stringToAdminTypeMap[sl]; ok {
-		return t, nil
-	}
-	return adminUnknown, fmt.Errorf("invalid admin type: %s", s)
 }
 
 // Check if two txTypes are the same
@@ -119,7 +92,6 @@ type Memo interface {
 	GetAmount() string
 	GetDestination() common.BnbAddress
 	GetSlipLimit() sdk.Uint
-	GetAdminType() adminType
 	GetKey() string
 	GetValue() string
 	GetBlockHeight() uint64
@@ -205,7 +177,7 @@ func ParseMemo(memo string) (Memo, error) {
 	}
 
 	var ticker common.Ticker
-	if tx != txGas && tx != txAdmin && tx != txOutbound && tx != txApply {
+	if tx != txGas && tx != txOutbound && tx != txApply {
 		var err error
 		ticker, err = common.NewTicker(parts[1])
 		if err != nil {
@@ -281,34 +253,6 @@ func ParseMemo(memo string) (Memo, error) {
 			SlipLimit:   slip,
 		}, err
 
-	case txAdmin:
-		if len(parts) < 3 {
-			return noMemo, fmt.Errorf("not enough parameters")
-		}
-		a, err := stringToAdminType(parts[1])
-		if nil != err {
-			return noMemo, fmt.Errorf("%s is not a valid admin type", parts[1])
-		}
-		switch a {
-		case adminPoolStatus, adminKey:
-			if len(parts) < 4 {
-				return noMemo, fmt.Errorf("not enough parameters")
-			}
-			return AdminMemo{
-				MemoBase: MemoBase{TxType: txAdmin},
-				Type:     a,
-				Key:      parts[2],
-				Value:    parts[3],
-			}, nil
-		case adminEndPool:
-			return AdminMemo{
-				MemoBase: MemoBase{TxType: txAdmin},
-				Type:     a,
-				Key:      parts[2],
-				Value:    "",
-			}, nil
-		}
-		return noMemo, nil
 	case txOutbound:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("not enough parameters")
@@ -342,7 +286,6 @@ func (m MemoBase) GetTicker() common.Ticker          { return m.Ticker }
 func (m MemoBase) GetAmount() string                 { return "" }
 func (m MemoBase) GetDestination() common.BnbAddress { return "" }
 func (m MemoBase) GetSlipLimit() sdk.Uint            { return sdk.ZeroUint() }
-func (m MemoBase) GetAdminType() adminType           { return adminUnknown }
 func (m MemoBase) GetKey() string                    { return "" }
 func (m MemoBase) GetValue() string                  { return "" }
 func (m MemoBase) GetBlockHeight() uint64            { return 0 }
@@ -352,7 +295,6 @@ func (m MemoBase) GetNodeAddress() sdk.AccAddress    { return sdk.AccAddress{} }
 func (m WithdrawMemo) GetAmount() string             { return m.Amount }
 func (m SwapMemo) GetDestination() common.BnbAddress { return m.Destination }
 func (m SwapMemo) GetSlipLimit() sdk.Uint            { return m.SlipLimit }
-func (m AdminMemo) GetAdminType() adminType          { return m.Type }
 func (m AdminMemo) GetKey() string                   { return m.Key }
 func (m AdminMemo) GetValue() string                 { return m.Value }
 func (m OutboundMemo) GetBlockHeight() uint64        { return m.BlockHeight }

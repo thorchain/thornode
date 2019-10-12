@@ -28,23 +28,6 @@ describe "API Tests" do
     end
   end
 
-  context "Admin configs" do
-
-    it "set admin config" do
-      tx = makeTx(memo: "ADMIN:KEY:GSL:0.1", sender: TRUST_BNB_ADDRESS , poolAddr: TRUST_BNB_ADDRESS)
-      resp = processTx(tx)
-      expect(resp.code).to eq("200")
-
-      resp = get("/admin/GSL")
-      expect(resp.code).to eq("200")
-      expect(resp.body['value']).to eq("0.1"), resp.body.inspect
-
-      tx = makeTx(memo: "ADMIN:KEY:GSL:0.3", sender: TRUST_BNB_ADDRESS, poolAddr: TRUST_BNB_ADDRESS)
-      resp = processTx(tx)
-      expect(resp.code).to eq("200")
-    end
-
-  end
 
   poolAddress = bnbAddress() # here so its available in other tests
   context "Create a pool" do
@@ -67,17 +50,7 @@ describe "API Tests" do
       expect(resp.code).to eq("200"), resp.body.inspect
     end
 
-    it "should be able to get the pool" do
-      resp = get("/pool/TCAN-014")
-      expect(resp.body['symbol']).to eq("TCAN-014"), resp.body.inspect
-      expect(resp.body['status']).to eq("Bootstrap"), resp.body.inspect
-    end
-
-    it "set pool status to active, and that we can do multiple txs" do
-      tx1 = makeTx(memo: "ADMIN:POOLSTATUS:TCAN-014:Enabled", sender: TRUST_BNB_ADDRESS)
-      tx2 = makeTx(memo: "ADMIN:POOLSTATUS:BNB:Enabled", sender: TRUST_BNB_ADDRESS)
-      resp = processTx([tx1, tx2])
-      expect(resp.code).to eq("200")
+    it "pool should be enabled" do
 
       resp = get("/pool/TCAN-014")
       expect(resp.code).to eq("200")
