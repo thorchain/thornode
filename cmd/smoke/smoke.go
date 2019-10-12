@@ -1,8 +1,8 @@
 package main
 
 import (
-	"log"
 	"flag"
+	"log"
 
 	"gitlab.com/thorchain/bepswap/statechain/x/smoke"
 )

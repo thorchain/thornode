@@ -44,6 +44,8 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 			return queryHeights(ctx, path[1:], req, keeper)
 		case q.QueryObservers.Key:
 			return queryObservers(ctx, path[1:], req, keeper)
+		case q.QueryObserver.Key:
+			return queryObserver(ctx, path[1:], req, keeper)
 		case q.QueryNodeAccount.Key:
 			return queryNodeAccount(ctx, path[1:], req, keeper)
 		case q.QueryNodeAccounts.Key:
@@ -145,6 +147,25 @@ func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	if nil != err {
 		ctx.Logger().Error("fail to marshal observers to json", err)
 		return nil, sdk.ErrInternal("fail to marshal observers to json")
+	}
+
+	return res, nil
+}
+func queryObserver(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	observerAddr := path[0]
+	addr, err := sdk.AccAddressFromBech32(observerAddr)
+	if nil != err {
+		return nil, sdk.ErrUnknownRequest("invalid account address")
+	}
+
+	nodeAcc, err := keeper.GetNodeAccountByObserver(ctx, addr)
+	if nil != err {
+		return nil, sdk.ErrInternal("fail to get node account")
+	}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, nodeAcc)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal node account to json", err)
+		return nil, sdk.ErrInternal("fail to marshal node account to json")
 	}
 
 	return res, nil
