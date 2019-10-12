@@ -207,12 +207,14 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 		if nil != handleFunc {
 			s := httptest.NewServer(handleFunc)
 			defer s.Close()
-			cfg.ChainHost = s.Listener.Addr().String()
+			scb.cfg.ChainHost = s.Listener.Addr().String()
 		}
 		requestUrl := scb.getAccountInfoUrl(cfg.ChainHost)
-		if cfg.ChainHost == "localhost" {
+		c.Logf("requestUrl:%s", requestUrl)
+		if scb.cfg.ChainHost == "localhost" {
 			requestUrl = ""
 		}
+		c.Logf("requestUrl:%s", requestUrl)
 		accountNumber, seqNo, err := scb.getAccountNumberAndSequenceNumber(requestUrl)
 		c.Log("account Number:", accountNumber)
 		c.Log("seqNo:", seqNo)
