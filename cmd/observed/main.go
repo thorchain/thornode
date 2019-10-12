@@ -37,7 +37,6 @@ func main() {
 	logLevel := flag.StringP("log-level", "l", "debug", "Log Level")
 	pretty := flag.BoolP("pretty-log", "p", false, "Enables unstructured prettified logging. This is useful for local debugging")
 	cfgFile := flag.StringP("cfg", "c", "config", "configuration file with extension")
-	websocket := flag.BoolP("websocket", "w", false, "start web socket or not")
 	flag.Parse()
 	if *showVersion {
 		printVersion()
@@ -55,7 +54,7 @@ func main() {
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create observer")
 	}
-	if err := obs.Start(*websocket); nil != err {
+	if err := obs.Start(); nil != err {
 		log.Fatal().Err(err).Msg("fail to start observer")
 	}
 	ch := make(chan os.Signal, 1)

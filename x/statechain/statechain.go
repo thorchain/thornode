@@ -115,12 +115,7 @@ func (scb *StateChainBridge) Start() error {
 }
 
 func (scb *StateChainBridge) getAccountInfoUrl(chainHost string) string {
-	uri := url.URL{
-		Scheme: "http",
-		Host:   chainHost,
-		Path:   fmt.Sprintf("/auth/accounts/%s", scb.signerInfo.GetAddress()),
-	}
-	return uri.String()
+	return scb.getStateChainUrl(fmt.Sprintf("/auth/accounts/%s", scb.signerInfo.GetAddress()))
 }
 
 func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, uint64, error) {
@@ -176,12 +171,6 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 		"",                                  // memo
 	)
 
-	// accNumber, seqNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
-	// if nil != err {
-	//	scb.errCounter.WithLabelValues("fail_get_account_seq_no", "").Inc()
-	//	return nil, errors.Wrap(err, "fail to get account number and sequence number from statechain")
-	// }
-
 	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", scb.accountNumber).Uint64("sequenceNo", scb.seqNumber).Msg("info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
@@ -230,14 +219,9 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 		scb.errCounter.WithLabelValues("fail_marshal_settx", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to marshal settx to json")
 	}
-	uri := url.URL{
-		Scheme: "http",
-		Host:   scb.cfg.ChainHost,
-		Path:   "/txs",
-	}
 	scb.logger.Info().Str("payload", string(result)).Msg("post to statechain")
 
-	resp, err := retryablehttp.Post(uri.String(), "application/json", bytes.NewBuffer(result))
+	resp, err := retryablehttp.Post(scb.getStateChainUrl("/txs"), "application/json", bytes.NewBuffer(result))
 	if err != nil {
 		scb.errCounter.WithLabelValues("fail_post_to_statechain", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to post tx to statechain")
@@ -265,12 +249,8 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 
 // GetBinanceChainStartHeight
 func (scb *StateChainBridge) GetBinanceChainStartHeight() (uint64, error) {
-	uri := url.URL{
-		Scheme: "http",
-		Host:   scb.cfg.ChainHost,
-		Path:   "/swapservice/lastblock",
-	}
-	resp, err := retryablehttp.Get(uri.String())
+
+	resp, err := retryablehttp.Get(scb.getStateChainUrl("/swapservice/lastblock"))
 	if nil != err {
 		return 0, errors.Wrap(err, "fail to get last blocks from statechain")
 	}
@@ -293,4 +273,69 @@ func (scb *StateChainBridge) GetBinanceChainStartHeight() (uint64, error) {
 	}
 
 	return lastBlock.LastBinanceHeight.Uint64(), nil
+}
+
+// getStateChainUrl with the given path
+func (scb *StateChainBridge) getStateChainUrl(path string) string {
+	uri := url.URL{
+		Scheme: "http",
+		Host:   scb.cfg.ChainHost,
+		Path:   path,
+	}
+	return uri.String()
+}
+
+func (scb *StateChainBridge) EnsureNodeWhitelistedWithTimeout() error {
+	for {
+		select {
+		case <-time.After(time.Hour):
+			return errors.New("Observer is not whitelisted yet")
+		default:
+			err := scb.EnsureNodeWhitelisted()
+			if nil == err {
+				// node had been whitelisted
+				return nil
+			}
+			scb.logger.Error().Err(err).Msg("observer is not whitelisted , will retry a bit later")
+			time.Sleep(time.Second * 30)
+		}
+	}
+}
+
+// EnsureNodeWhitelisted will call to statechain to check whether the observer had been whitelist or not
+func (scb *StateChainBridge) EnsureNodeWhitelisted() error {
+	bepAddr := scb.signerInfo.GetAddress().String()
+	if len(bepAddr) == 0 {
+		return errors.New("bep address is empty")
+	}
+	c := retryablehttp.NewClient()
+	requestUrl := scb.getStateChainUrl("/swapservice/observer/" + bepAddr)
+	scb.logger.Debug().Str("request_url", requestUrl).Msg("check node account status")
+	resp, err := c.Get(requestUrl)
+	if nil != err {
+		return errors.Wrap(err, "fail to get node account status")
+	}
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			scb.logger.Error().Err(err).Msg("fail to close response body")
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("fail to get node account from statechain")
+	}
+	var nodeAccount stypes.NodeAccount
+	buf, err := ioutil.ReadAll(resp.Body)
+	if nil != err {
+		return errors.Wrap(err, "fail to read response body")
+	}
+	if err := scb.cdc.UnmarshalJSON(buf, &nodeAccount); nil != err {
+		scb.errCounter.WithLabelValues("fail_unmarshal_nodeaccount", "").Inc()
+		return errors.Wrap(err, "fail to unmarshal node account")
+	}
+
+	if nodeAccount.Status == stypes.Disabled || nodeAccount.Status == stypes.Unknown {
+		return errors.Errorf("node account status %s , will not be able to forward transaction to statechain", nodeAccount.Status)
+	}
+	return nil
 }
