@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/binance-chain/go-sdk v1.1.3
 	github.com/btcsuite/btcd v0.0.0-20190824003749-130ea5bddde3 // indirect
-	github.com/cosmos/cosmos-sdk v0.37.1
+	github.com/cosmos/cosmos-sdk v0.37.2
 	github.com/go-resty/resty/v2 v2.0.0
 	github.com/gorilla/mux v1.7.0
 	github.com/mattn/go-isatty v0.0.7 // indirect
