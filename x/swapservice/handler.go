@@ -395,14 +395,18 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorMa
 		return sdk.ErrUnknownRequest("nominated node has different signer bnb address").Result()
 	}
 
-	nominated.UpdateStatus(NodeReady)
-	keeper.SetNodeAccount(ctx, nominated)
+	nominated.SignerActive = true
+	if nominated.ObserverActive && nominated.SignerActive {
+		// only update their status when both observer and signer are active
+		nominated.UpdateStatus(NodeReady)
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(EventTypeNodeReady,
+				sdk.NewAttribute("signer bnb address", nominated.Accounts.SignerBNBAddress.String()),
+				sdk.NewAttribute("observer bep address", nominated.Accounts.ObserverBEPAddress.String()),
+				sdk.NewAttribute("bep consensus pub key", nominated.Accounts.ValidatorBEPConsPubKey)))
+	}
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeNodeReady,
-			sdk.NewAttribute("signer bnb address", nominated.Accounts.SignerBNBAddress.String()),
-			sdk.NewAttribute("observer bep address", nominated.Accounts.ObserverBEPAddress.String()),
-			sdk.NewAttribute("bep consensus pub key", nominated.Accounts.ValidatorBEPConsPubKey)))
+	keeper.SetNodeAccount(ctx, nominated)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -413,6 +417,31 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorMa
 // handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
 // another handler to process the request
 func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddressMgr *PoolAddressManager, validatorManager *ValidatorManager, msg MsgSetTxIn) sdk.Result {
+	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
+		unAuthorizedResult := sdk.ErrUnauthorized("signer is not authorized").Result()
+		na, err := keeper.GetNodeAccountByObserver(ctx, msg.Signer)
+		if nil != err {
+			ctx.Logger().Error("fail to get node account", err, "signer", msg.Signer.String())
+			return unAuthorizedResult
+		}
+		if na.IsEmpty() {
+			return unAuthorizedResult
+		}
+
+		if na.Status != NodeUnknown &&
+			na.Status != NodeDisabled &&
+			!na.ObserverActive {
+			// tx observed by a standby node, let's mark their observer as active
+			na.ObserverActive = true
+			keeper.SetNodeAccount(ctx, na)
+			return sdk.Result{
+				Code:      sdk.CodeOK,
+				Codespace: DefaultCodespace,
+			}
+		}
+		return unAuthorizedResult
+
+	}
 	activeNodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		ctx.Logger().Error("fail to get list of active node accounts", err)
