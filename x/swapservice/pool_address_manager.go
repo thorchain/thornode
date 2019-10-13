@@ -109,6 +109,16 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 			})
 		}
 	}
+	allNodeAccounts, err := k.ListNodeAccounts(ctx)
+	if nil != err {
+		return errors.Wrap(err, "fail to get all node accounts")
+	}
+
+	// Validator bond paid to the pool as well , let's make sure all the bond get se
+	for _, item := range allNodeAccounts {
+		runeTotal = runeTotal.Add(item.Bond)
+	}
+
 	if !runeTotal.IsZero() {
 		store.AddTxOutItem(&TxOutItem{
 			PoolAddress: addresses.Previous,
