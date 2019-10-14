@@ -60,8 +60,15 @@ Each rule will have:
   {
     "description": "SEED",
     "from": "from",
-    "to": ["to"],
-    "coins": [..],
+    "to": [
+      "to"
+    ],
+    "coins": [
+      {
+        "symbol": "BNB",
+        "amount": 1.00000000
+      }
+    ],
     "memo": "MEMO",
     "check": {}
   }
@@ -73,13 +80,7 @@ Where:
 * `description` is a simple description to describe the definition,
 * `from` is the actor performing the transaction (e.g: `master`, `admin`, `user`, `staker_N` or `pool`),
 * `to` is an array of actors the transaction is for (by using an array, we can support multi-send),
-* `coins` is an array of coin objects:
-```json
-{
-  "symbol": "BNB",
-  "amount": 1.00000000
-}
-```
+* `coins` is an array of coin objects containing the `symbol` and the `amount` to send,
 * `memo` is the memo to use for the transaction, when broadcasting to Binance
 * and `check` defines the rules for validating the transaction (see blow).
 
@@ -95,7 +96,13 @@ After a transaction has been executed, we either check Binance or the Statechain
     "units": 1.00000000,
     "symbol": "BNB",
     "rune": 1.00000000,
-    "token": 1.00000000
+    "token": 1.00000000,
+    "staker_units": [
+      {
+        "actor": "staker_1",
+        "units": 1.00000000
+      }
+    ]
   }
 }
 ```
@@ -104,7 +111,7 @@ Where:
 
 * `target` the target actor Binance wallet to check (only used for checking Binance). This is useful when checking that refunds have been executed correctly,
 * `binance` is an array of coin objects (follows the same structure as above)
-* and `statechain` is an object that contains the pool `units`, `rune` and `token` balances to check for a given pool (determined by the `symbol` supplied).
+* and `statechain` is an object that contains the pool `units`, `rune` and `token` balances to check for a given pool (determined by the `symbol` supplied) as well as a `staker_units` array for validating an actor's share of the pool.
 
 ### Running the Tests
 
@@ -113,6 +120,7 @@ The tests are all run via `make`.
 #### Main test suite
 
 ```shell script
+make BANK_KEY=<bank key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit
 make BANK_KEY=<bank key> POOL_KEY=<pool key> ENV=<env> smoke-test-refund
 ```
 
