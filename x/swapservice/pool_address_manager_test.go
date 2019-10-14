@@ -111,17 +111,17 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 		c.Assert(item.ToAddress.String(), Equals, newPa1.Current.String())
 		c.Assert(len(item.Coins) > 0, Equals, true)
 		if item.Coins[0].Denom == poolBNB.Ticker {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64()-30000)
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64()-batchTransactionFee)
 		}
 		if item.Coins[0].Denom.String() == poolTCan.Ticker.String() {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64())
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64()-batchTransactionFee, Commentf("%s %d", item.Coins[0].Amount.String(), poolTCan.BalanceToken.Uint64()-batchTransactionFee))
 		}
 		if item.Coins[0].Denom.String() == poolLoki.Ticker.String() {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceToken.Uint64())
+			c.Check(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceToken.Uint64()-batchTransactionFee, Commentf("%s %s", item.Coins[0].Amount.String(), poolLoki.BalanceToken.String()))
 		}
 		if common.IsRune(item.Coins[0].Denom) {
 			totalRune := poolBNB.BalanceRune.Add(poolLoki.BalanceRune).Add(poolTCan.BalanceRune)
-			c.Assert(item.Coins[0].Amount.String(), Equals, totalRune.String())
+			c.Assert(item.Coins[0].Amount.String(), Equals, totalRune.String(), Commentf("%s %s", item.Coins[0].Amount.String(), totalRune.String()))
 		}
 	}
 

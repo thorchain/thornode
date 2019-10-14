@@ -1,6 +1,8 @@
 package swapservice
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 )
@@ -60,63 +62,78 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		}
 	}
 
+	// TODO: if we don't have enough coin amount to pay for gas, we just take
+	// it all and don't take the rest from another coin
+
 	hasDeductedGas := false // monitor if we've already pulled out coins for gas.
+	gas := batchTransactionFee * uint64(len(toi.Coins))
 	for i, item := range toi.Coins {
 		if !hasDeductedGas && common.IsBNB(item.Denom) {
-			item.Amount = item.Amount.SubUint64(batchTransactionFee * uint64(len(toi.Coins)))
+			fmt.Println("Fees by BNB")
+			if item.Amount.LT(sdk.NewUint(gas)) {
+				item.Amount = sdk.ZeroUint()
+			} else {
+				item.Amount = item.Amount.SubUint64(gas)
+			}
 
 			// no need to update the bnb pool with new amounts.
 
-			if item.Amount.GT(sdk.ZeroUint()) {
-				toi.Coins[i] = item
-				hasDeductedGas = true
-				continue
-			}
+			toi.Coins[i] = item
+			hasDeductedGas = true
+			continue
 		}
 
 		if !hasDeductedGas && hasBNB == false && common.IsRune(item.Denom) {
+			fmt.Println("Fees by Rune")
 			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
 
-			var runeAmt, gas uint64
-			runeAmt = (batchTransactionFee / bnbPool.BalanceToken.Uint64()) * (bnbPool.BalanceRune.Uint64()) * uint64(len(toi.Coins))
-			gas = batchTransactionFee * uint64(len(toi.Coins))
+			var runeAmt uint64
+			runeAmt = uint64((float64(gas) / float64(bnbPool.BalanceToken.Uint64())) * float64(bnbPool.BalanceRune.Uint64()))
 
-			item.Amount = item.Amount.SubUint64(runeAmt)
-			if item.Amount.GT(sdk.ZeroUint()) {
-				// add the rune to the bnb pool that we are subtracting from
-				// the refund
-				bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
-				bnbPool.BalanceToken = bnbPool.BalanceRune.SubUint64(gas)
-				keeper.SetPool(ctx, bnbPool)
-
-				toi.Coins[i] = item
-				hasDeductedGas = true
-				continue
+			if item.Amount.LT(sdk.NewUint(gas)) {
+				item.Amount = sdk.ZeroUint()
+			} else {
+				item.Amount = item.Amount.SubUint64(runeAmt)
 			}
+
+			// add the rune to the bnb pool that we are subtracting from
+			// the refund
+			bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
+			bnbPool.BalanceToken = bnbPool.BalanceToken.SubUint64(gas)
+			keeper.SetPool(ctx, bnbPool)
+
+			toi.Coins[i] = item
+			hasDeductedGas = true
+			continue
 		}
 
 		if !hasDeductedGas && hasBNB == false && hasRune == false {
+			fmt.Println("Fees by Token")
 			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
 			tokenPool := keeper.GetPool(ctx, item.Denom)
 
 			var runeAmt, tokenAmt uint64
-			runeAmt = (batchTransactionFee / bnbPool.BalanceToken.Uint64()) * (bnbPool.BalanceRune.Uint64()) * uint64(len(toi.Coins))
-			tokenAmt = (runeAmt / tokenPool.BalanceRune.Uint64()) * (tokenPool.BalanceToken.Uint64())
+			runeAmt = uint64((float64(gas) / float64(bnbPool.BalanceToken.Uint64())) * float64(bnbPool.BalanceRune.Uint64()))
+			tokenAmt = uint64((float64(runeAmt) / float64(tokenPool.BalanceRune.Uint64())) * float64(tokenPool.BalanceToken.Uint64()))
 
-			item.Amount = item.Amount.SubUint64(tokenAmt)
-			if item.Amount.GT(sdk.ZeroUint()) {
-				// add the rune to the bnb pool that we are subtracting from
-				// the refund
-				bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
-				keeper.SetPool(ctx, bnbPool)
-				tokenPool.BalanceRune = bnbPool.BalanceRune.SubUint64(runeAmt)
-				tokenPool.BalanceToken = bnbPool.BalanceToken.AddUint64(tokenAmt)
-				keeper.SetPool(ctx, tokenPool)
-
-				toi.Coins[i] = item
-				hasDeductedGas = true
-				continue
+			if item.Amount.LT(sdk.NewUint(tokenAmt)) {
+				item.Amount = sdk.ZeroUint()
+			} else {
+				item.Amount = item.Amount.SubUint64(tokenAmt)
 			}
+
+			// add the rune to the bnb pool that we are subtracting from
+			// the refund
+			bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
+			bnbPool.BalanceToken = bnbPool.BalanceToken.SubUint64(gas)
+			keeper.SetPool(ctx, bnbPool)
+			tokenPool.BalanceRune = tokenPool.BalanceRune.SubUint64(runeAmt)
+			tokenPool.BalanceToken = tokenPool.BalanceToken.AddUint64(tokenAmt)
+			keeper.SetPool(ctx, tokenPool)
+
+			toi.Coins[i] = item
+			hasDeductedGas = true
+			continue
 
 		}
 	}
