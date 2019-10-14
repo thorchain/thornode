@@ -1,6 +1,10 @@
 package observer
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -15,6 +19,7 @@ import (
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/binance"
+	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
 	"gitlab.com/thorchain/bepswap/observe/x/metrics"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain"
 	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
@@ -34,6 +39,34 @@ type Observer struct {
 	pam              *PoolAddressManager
 }
 
+// CurrHeight : Get the Binance current block height.
+func binanceHeight(dexHost string, client http.Client) int64 {
+	uri := url.URL{
+		Scheme: "https",
+		Host:   dexHost,
+		Path:   "/api/v1/validators",
+	}
+
+	resp, err := client.Get(uri.String())
+	if err != nil {
+		log.Fatal().Msgf("%v\n", err)
+	}
+
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Error().Err(err)
+	}
+
+	var validators btypes.Validators
+	if err := json.Unmarshal(data, &validators); nil != err {
+		log.Error().Err(err)
+	}
+
+	return validators.BlockHeight
+}
+
 // NewObserver create a new instance of Observer
 func NewObserver(cfg config.Configuration) (*Observer, error) {
 	scanStorage, err := NewBinanceChanBlockScannerStorage(cfg.ObserverDbPath)
@@ -50,8 +83,8 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		return nil, errors.Wrap(err, "fail to create new state chain bridge")
 	}
 	logger := log.Logger.With().Str("module", "observer").Logger()
-	if !cfg.BlockScanner.EnforceBlockHeight {
 
+	if !cfg.BlockScanner.EnforceBlockHeight {
 		startBlockHeight, err := stateChainBridge.GetBinanceChainStartHeight()
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get start block height from statechain")
@@ -61,7 +94,9 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 			logger.Info().Uint64("height", startBlockHeight).Msg("resume from last block height known by statechain")
 			cfg.BlockScanner.StartBlockHeight = int64(startBlockHeight)
 		} else {
-			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("block height from statechain is 0, thus we will use the value from config file")
+			client := &http.Client{}
+			cfg.BlockScanner.StartBlockHeight = binanceHeight(cfg.DEXHost, *client)
+			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
 		}
 	}
 
