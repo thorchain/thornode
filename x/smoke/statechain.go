@@ -20,13 +20,23 @@ func NewStatechain(env string) Statechain {
 	}
 }
 
-// PoolURL : Return the Pool URL based on the selected environment.
-func (s Statechain) PoolURL() string {
+// Scheme : SSL or not.
+func (s Statechain) scheme() string {
 	scheme := "https"
 
 	if s.Env == "local" {
 		scheme = "http"
 	}
 
-	return fmt.Sprintf("%v://%v/swapservice/pools", scheme, endpoints[s.Env])
+	return scheme
+}
+
+// PoolURL : Return the Pool URL based on the selected environment.
+func (s Statechain) PoolURL() string {
+	return fmt.Sprintf("%v://%v/swapservice/pools", s.scheme(), endpoints[s.Env])
+}
+
+// StakerURL  : Return the Staker URL based on the selected environment.
+func (s Statechain) StakerURL(staker string) string {
+	return fmt.Sprintf("%v://%v/swapservice/staker/%v", s.scheme(), endpoints[s.Env], staker)
 }
