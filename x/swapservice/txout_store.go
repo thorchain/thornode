@@ -1,8 +1,6 @@
 package swapservice
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 )
@@ -69,7 +67,6 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 	gas := batchTransactionFee * uint64(len(toi.Coins))
 	for i, item := range toi.Coins {
 		if !hasDeductedGas && common.IsBNB(item.Denom) {
-			fmt.Println("Fees by BNB")
 			if item.Amount.LT(sdk.NewUint(gas)) {
 				item.Amount = sdk.ZeroUint()
 			} else {
@@ -84,7 +81,6 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		}
 
 		if !hasDeductedGas && hasBNB == false && common.IsRune(item.Denom) {
-			fmt.Println("Fees by Rune")
 			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
 
 			var runeAmt uint64
@@ -108,7 +104,6 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		}
 
 		if !hasDeductedGas && hasBNB == false && hasRune == false {
-			fmt.Println("Fees by Token")
 			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
 			tokenPool := keeper.GetPool(ctx, item.Denom)
 
