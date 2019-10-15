@@ -19,7 +19,7 @@ until curl -s "localhost:1317/swapservice/ping"; do
 done
 
 # sleep a little more to give time to add its first block
-sleep 4
+sleep 8
 
 >&2 echo "Blockchain is up - executing command"
 exec $cmd
