@@ -88,7 +88,6 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 
 // handleOperatorMsgEndPool operators decide it is time to end the pool
 func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgEndPool) sdk.Result {
-
 	if !isSignedByActiveNodeAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker)
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -184,9 +183,7 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 
 // Handle a message to set stake data
 func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) (result sdk.Result) {
-
 	stakeUnits := sdk.ZeroUint()
-
 	defer func() {
 		var status EventStatus
 		if result.IsOK() {
@@ -205,6 +202,10 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Ticker, "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error(err.Error())
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
 	pool := keeper.GetPool(ctx, msg.Ticker)
 	if pool.Empty() {
 		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Ticker, "creator", msg.PublicAddress)
@@ -213,10 +214,6 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 	}
 	if err := pool.EnsureValidPoolStatus(msg); nil != err {
 		ctx.Logger().Error("check pool status", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error(err.Error())
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	stakeUnits, err := stake(
@@ -364,9 +361,10 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 }
 
-func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAccessor) {
+func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper RefundStoreAccessor, poolAddrMgr *PoolAddressManager) {
 	toi := &TxOutItem{
-		ToAddress: tx.Sender,
+		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
+		ToAddress:   tx.Sender,
 	}
 
 	for _, item := range tx.Coins {
@@ -462,7 +460,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer, poolAddressMgr)
 			if nil != err {
 				ctx.Logger().Error("fail to process txHash", "error", err)
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, poolAddressMgr)
 				ee := NewEmptyRefundEvent()
 				buf, err := json.Marshal(ee)
 				if nil != err {
@@ -481,7 +479,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, poolAddressMgr)
 			}
 		}
 	}

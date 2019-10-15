@@ -64,8 +64,10 @@ var (
 	NewNodeAccount        = types.NewNodeAccount
 	NewMsgApply           = types.NewMsgApply
 	NewPoolAddresses      = types.NewPoolAddresses
-	GetRandomNodeAccount  = types.GetRandomNodeAccount
 	NewMsgNextPoolAddress = types.NewMsgNextPoolAddress
+	GetRandomNodeAccount  = types.GetRandomNodeAccount
+	GetRandomBNBAddress   = types.GetRandomBNBAddress
+	GetRandomTxHash       = types.GetRandomTxHash
 )
 
 type (
