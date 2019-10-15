@@ -335,7 +335,7 @@ func (k Keeper) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool {
 func (k Keeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
 	ctx.Logger().Debug("GetNodeAccount", "node account", addr.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixNodeAccount, addr.String())
+	key := getKey(prefixNodeAccount, addr.String(), getVersion(ctx.BlockHeight(), prefixNodeAccount))
 	payload := store.Get([]byte(key))
 	var na NodeAccount
 	if err := k.cdc.UnmarshalBinaryBare(payload, &na); nil != err {
@@ -380,7 +380,7 @@ func (k Keeper) GetNodeAccountBySignerBNBAddress(ctx sdk.Context, addr common.Bn
 func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	ctx.Logger().Debug("SetNodeAccount", "node account", na.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixNodeAccount, na.NodeAddress.String())
+	key := getKey(prefixNodeAccount, na.NodeAddress.String(), getVersion(ctx.BlockHeight(), prefixNodeAccount))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(na))
 
 	// When a node is in active status, we need to add the observer address to active
@@ -423,7 +423,7 @@ func (k Keeper) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator {
 // SetActiveObserver set the given addr as an active observer address
 func (k Keeper) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixActiveObserver, addr.String())
+	key := getKey(prefixActiveObserver, addr.String(), getVersion(ctx.BlockHeight(), prefixActiveObserver))
 	ctx.Logger().Info("set_active_observer", "key", key)
 	store.Set([]byte(key), addr.Bytes())
 }
@@ -431,14 +431,14 @@ func (k Keeper) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 // RemoveActiveObserver remove the given address from active observer
 func (k Keeper) RemoveActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixActiveObserver, addr.String())
+	key := getKey(prefixActiveObserver, addr.String(), getVersion(ctx.BlockHeight(), prefixActiveObserver))
 	store.Delete([]byte(key))
 }
 
 // IsActiveObserver check the given account address, whether they are active
 func (k Keeper) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixActiveObserver, addr.String())
+	key := getKey(prefixActiveObserver, addr.String(), getVersion(ctx.BlockHeight(), prefixActiveObserver))
 	ctx.Logger().Info("is_active_observer", "key", key)
 	return store.Has([]byte(key))
 }
@@ -822,7 +822,7 @@ func (k Keeper) SetLastEventID(ctx sdk.Context, id common.Amount) {
 
 // SetPoolAddresses save the pool address to key value store
 func (k Keeper) SetPoolAddresses(ctx sdk.Context, addresses PoolAddresses) {
-	key := getKey(prefixPoolAddresses, "")
+	key := getKey(prefixPoolAddresses, "", getVersion(ctx.BlockHeight(), prefixPoolAddresses))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(addresses))
 }
@@ -830,7 +830,7 @@ func (k Keeper) SetPoolAddresses(ctx sdk.Context, addresses PoolAddresses) {
 // GetPoolAddresses get current pool addresses
 func (k Keeper) GetPoolAddresses(ctx sdk.Context) PoolAddresses {
 	var addr PoolAddresses
-	key := getKey(prefixPoolAddresses, "")
+	key := getKey(prefixPoolAddresses, "", getVersion(ctx.BlockHeight(), prefixPoolAddresses))
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))
@@ -840,14 +840,14 @@ func (k Keeper) GetPoolAddresses(ctx sdk.Context) PoolAddresses {
 }
 
 func (k Keeper) SetValidatorMeta(ctx sdk.Context, meta ValidatorMeta) {
-	key := getKey(prefixValidatorMeta, "")
+	key := getKey(prefixValidatorMeta, "", getVersion(ctx.BlockHeight(), prefixValidatorMeta))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(meta))
 }
 
 func (k Keeper) GetValidatorMeta(ctx sdk.Context) ValidatorMeta {
 	var meta ValidatorMeta
-	key := getKey(prefixValidatorMeta, "")
+	key := getKey(prefixValidatorMeta, "", getVersion(ctx.BlockHeight(), prefixValidatorMeta))
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))

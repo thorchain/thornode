@@ -66,19 +66,6 @@ func (out TxOut) Valid() error {
 			return err
 		}
 	}
-	return nil
-}
-
-func (out TxOut) Valid() error {
-	if out.Hash.IsEmpty() {
-		return errors.New("Hash cannot be empty")
-	}
-
-	for _, tx := range out.TxArray {
-		if err := tx.Valid(); err != nil {
-			return err
-		}
-	}
 
 	return nil
 }
