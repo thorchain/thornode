@@ -27,7 +27,7 @@ integration:test:
   image: cbarraford/golang-ruby
   stage: test
   script:
-    - make -C ./tests/integration install setup run wait-for-blockchain test-internal
+    - make -C ./test/integration install setup run wait-for-blockchain test-internal
 
 build:test:
   stage: test
