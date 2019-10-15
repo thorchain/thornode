@@ -73,30 +73,6 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
-	for _, stake := range data.StakerPools {
-		if err := stake.Valid(); err != nil {
-			return err
-		}
-	}
-
-	for _, voter := range data.TxInVoters {
-		if err := voter.Valid(); err != nil {
-			return err
-		}
-	}
-
-	for _, index := range data.TxInIndexes {
-		if index.Height == 0 {
-			return errors.New("Tx In Index cannot have a height of zero")
-		}
-	}
-
-	for _, out := range data.TxOuts {
-		if err := out.Valid(); err != nil {
-			return err
-		}
-	}
-
 	for _, config := range data.AdminConfigs {
 		if err := config.Valid(); err != nil {
 			return err
@@ -157,18 +133,6 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 				Power:  100,
 			})
 		}
-	}
-
-	for _, stake := range data.StakerPools {
-		keeper.SetStakerPool(ctx, stake.StakerID, stake)
-	}
-
-	for _, voter := range data.TxInVoters {
-		keeper.SetTxInVoter(ctx, voter)
-	}
-
-	for _, out := range data.TxOuts {
-		keeper.SetTxOut(ctx, &out)
 	}
 
 	for _, stake := range data.StakerPools {
