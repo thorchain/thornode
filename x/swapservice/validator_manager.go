@@ -49,11 +49,16 @@ func (vm *ValidatorManager) BeginBlock(ctx sdk.Context, height int64) {
 
 // EndBlock when block end
 func (vm *ValidatorManager) EndBlock(ctx sdk.Context, height int64) []abci.ValidatorUpdate {
+	if height != vm.Meta.RotateWindowOpenAtBlockHeight &&
+		height != vm.Meta.RotateAtBlockHeight {
+		return nil
+	}
 	if height == vm.Meta.RotateWindowOpenAtBlockHeight {
 		if err := vm.prepareAddNode(ctx, height); nil != err {
 			ctx.Logger().Error("fail to prepare add nodes", err)
 		}
 		vm.k.SetValidatorMeta(ctx, *vm.Meta)
+		return nil
 	}
 	if height == vm.Meta.RotateAtBlockHeight {
 		defer func() {
