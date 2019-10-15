@@ -1,5 +1,3 @@
-include Makefile.ledger
-
 GOBIN?=${GOPATH}/bin
 
 all: lint install
