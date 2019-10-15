@@ -361,10 +361,11 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 }
 
-func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper) {
+func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAddrMgr *PoolAddressManager) {
 	toi := &TxOutItem{
-		ToAddress: tx.Sender,
-		Coins:     tx.Coins,
+		ToAddress:   tx.Sender,
+		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
+		Coins:       tx.Coins,
 	}
 
 	store.AddTxOutItem(ctx, keeper, toi)
@@ -472,7 +473,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, poolAddressMgr)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, poolAddressMgr)
 			}
 		}
 	}
