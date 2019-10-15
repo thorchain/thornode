@@ -139,9 +139,6 @@ func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
 		swapservice.NewAppModule(app.ssKeeper, app.bankKeeper, app.supplyKeeper),
-		// distr.NewAppModule(app.distrKeeper, app.supplyKeeper),
-		// slashing.NewAppModule(app.slashingKeeper, app.stakingKeeper),
-		// staking.NewAppModule(app.stakingKeeper, app.distrKeeper, app.accountKeeper, app.supplyKeeper),
 	)
 
 	app.mm.SetOrderBeginBlockers(swapservice.ModuleName)

@@ -25,7 +25,6 @@ func (toi TxOutItem) Valid() error {
 	if len(toi.Coins) == 0 {
 		return errors.New("coins cannot be empty")
 	}
-
 	return nil
 }
 
@@ -66,6 +65,5 @@ func (out TxOut) Valid() error {
 			return err
 		}
 	}
-
 	return nil
 }

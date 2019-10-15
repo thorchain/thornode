@@ -17,7 +17,6 @@ func (ps *PoolAddressManagerSuite) SetUpSuite(c *C) {
 }
 
 func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
-
 	ctx, k := setupKeeperForTest(c)
 	poolAddrMgr := NewPoolAddressManager(k)
 	c.Assert(poolAddrMgr, NotNil)
