@@ -83,6 +83,12 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		if !hasDeductedGas && hasBNB == false && common.IsRune(item.Denom) {
 			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
 
+			if bnbPool.BalanceRune.IsZero() {
+				toi.Coins[i] = item
+				hasDeductedGas = true
+				continue
+			}
+
 			var runeAmt uint64
 			runeAmt = uint64((float64(gas) / float64(bnbPool.BalanceToken.Uint64())) * float64(bnbPool.BalanceRune.Uint64()))
 
@@ -106,6 +112,12 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		if !hasDeductedGas && hasBNB == false && hasRune == false {
 			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
 			tokenPool := keeper.GetPool(ctx, item.Denom)
+
+			if bnbPool.BalanceRune.IsZero() || tokenPool.BalanceRune.IsZero() {
+				toi.Coins[i] = item
+				hasDeductedGas = true
+				continue
+			}
 
 			var runeAmt, tokenAmt uint64
 			runeAmt = uint64((float64(gas) / float64(bnbPool.BalanceToken.Uint64())) * float64(bnbPool.BalanceRune.Uint64()))
