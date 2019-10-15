@@ -40,33 +40,37 @@ func (p *MockInMemoryPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common
 	if stakerID.Equals(notExistStakerPoolAddr) {
 		return NewStakerPool(stakerID), errors.New("simulate error for test")
 	}
-	key := getKey(prefixStakerPool, stakerID.String(), getVersion(ctx.BlockHeight(), prefixStakerPool))
+	key := getKey(prefixStakerPool, stakerID.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixStakerPool))
 	if res, ok := p.store[key]; ok {
 		return res.(StakerPool), nil
 	}
 	return NewStakerPool(stakerID), nil
 }
 func (p *MockInMemoryPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common.BnbAddress, sp StakerPool) {
-	key := getKey(prefixStakerPool, stakerID.String(), getVersion(ctx.BlockHeight(), prefixStakerPool))
+	key := getKey(prefixStakerPool, stakerID.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixStakerPool))
 	p.store[key] = sp
 }
 func (p *MockInMemoryPoolStorage) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker, error) {
 	if notExistPoolStakerTicker.Equals(ticker) {
 		return NewPoolStaker(ticker, sdk.ZeroUint()), errors.New("simulate error for test")
 	}
-	key := getKey(prefixPoolStaker, ticker.String(), getVersion(ctx.BlockHeight(), prefixPoolStaker))
+	key := getKey(prefixPoolStaker, ticker.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	if res, ok := p.store[key]; ok {
 		return res.(PoolStaker), nil
 	}
 	return NewPoolStaker(ticker, sdk.ZeroUint()), nil
 }
 func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps PoolStaker) {
-	key := getKey(prefixPoolStaker, ticker.String(), getVersion(ctx.BlockHeight(), prefixPoolStaker))
+	key := getKey(prefixPoolStaker, ticker.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	p.store[key] = ps
 }
 
+func (p *MockInMemoryPoolStorage) GetLowestActiveVersion(ctx sdk.Context) int {
+	return 0
+}
+
 func (p *MockInMemoryPoolStorage) GetAdminConfigValue(ctx sdk.Context, key AdminConfigKey, addr sdk.AccAddress) (string, error) {
-	storekey := getKey(prefixAdmin, key.String(), getVersion(ctx.BlockHeight(), prefixAdmin))
+	storekey := getKey(prefixAdmin, key.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixAdmin))
 	ac, ok := p.store[storekey]
 	if ok {
 		return ac.(AdminConfig).Value, nil

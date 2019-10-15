@@ -39,6 +39,8 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 			return handleOperatorMsgEndPool(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetTrustAccount:
 			return handleMsgSetTrustAccount(ctx, keeper, m)
+		case MsgSetVersion:
+			return handleMsgSetVersion(ctx, keeper, m)
 		case MsgApply:
 			return handleMsgApply(ctx, keeper, m)
 		case MsgNextPoolAddress:
@@ -774,6 +776,39 @@ func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConf
 
 	keeper.SetAdminConfig(ctx, msg.AdminConfig)
 
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
+// handleMsgSetVersion Update the node account registered version
+func handleMsgSetVersion(ctx sdk.Context, keeper Keeper, msg MsgSetVersion) sdk.Result {
+	ctx.Logger().Info("receive MsgSetVersion", "trust account info", msg.Version, msg.Signer.String())
+	nodeAccount, err := keeper.GetNodeAccount(ctx, msg.Signer)
+	if err != nil {
+		ctx.Logger().Error("fail to get node account", "error", err, "address", msg.Signer.String())
+		return sdk.ErrUnauthorized(fmt.Sprintf("%s is not authorizaed", msg.Signer)).Result()
+	}
+	if nodeAccount.IsEmpty() {
+		ctx.Logger().Error("unauthorized account", "address", msg.Signer.String())
+		return sdk.ErrUnauthorized(fmt.Sprintf("%s is not authorizaed", msg.Signer)).Result()
+	}
+	if err := msg.ValidateBasic(); err != nil {
+		ctx.Logger().Error("MsgUpdateNodeAccount is invalid", "error", err)
+		return sdk.ErrUnknownRequest("MsgUpdateNodeAccount is invalid").Result()
+	}
+
+	if nodeAccount.Version < msg.Version {
+		nodeAccount.Version = msg.Version
+	}
+
+	keeper.SetNodeAccount(ctx, nodeAccount)
+
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent("set_version",
+			sdk.NewAttribute("bep_address", msg.Signer.String()),
+			sdk.NewAttribute("version", fmt.Sprintf("%d", msg.Version))))
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

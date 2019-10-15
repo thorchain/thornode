@@ -90,6 +90,7 @@ type NodeAccount struct {
 	StatusSince    int64 `json:"status_since"`
 	ObserverActive bool  `json:"observer_active"`
 	SignerActive   bool  `json:"signer_active"`
+	Version        int   `json:"version"`
 }
 
 // NewNodeAccount create new instance of NodeAccount
@@ -138,6 +139,7 @@ func (n NodeAccount) String() string {
 	sb.WriteString("status:" + n.Status.String() + "\n")
 	sb.WriteString("account:" + n.Accounts.String() + "\n")
 	sb.WriteString("bond:" + n.Bond.String() + "\n")
+	sb.WriteString("version:" + fmt.Sprintf("%d", n.Version) + "\n")
 	return sb.String()
 }
 
