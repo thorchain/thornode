@@ -1,3 +1,5 @@
+.PHONY: test 
+
 GOBIN?=${GOPATH}/bin
 
 all: lint install
