@@ -1,4 +1,4 @@
-.PHONY: test 
+.PHONY: test export
 
 GOBIN?=${GOPATH}/bin
 
