@@ -20,7 +20,6 @@ const (
 	prefixTxIn              dbPrefix = "tx"
 	prefixPool              dbPrefix = "pool"
 	prefixTxOut             dbPrefix = "txout"
-	prefixTrustAccount      dbPrefix = "trustaccount"
 	prefixPoolStaker        dbPrefix = "poolstaker"
 	prefixStakerPool        dbPrefix = "stakerpool"
 	prefixAdmin             dbPrefix = "admin"
