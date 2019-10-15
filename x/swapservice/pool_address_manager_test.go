@@ -1,9 +1,7 @@
 package swapservice
 
 import (
-	"math/rand"
 	"sort"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
@@ -111,30 +109,33 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 		c.Assert(item.ToAddress.String(), Equals, newPa1.Current.String())
 		c.Assert(len(item.Coins) > 0, Equals, true)
 		if item.Coins[0].Denom == poolBNB.Ticker {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64())
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64()-batchTransactionFee)
 		}
 		if item.Coins[0].Denom.String() == poolTCan.Ticker.String() {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64())
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64()-batchTransactionFee)
 		}
 		if item.Coins[0].Denom.String() == poolLoki.Ticker.String() {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceToken.Uint64())
+			c.Check(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceToken.Uint64()-batchTransactionFee)
 		}
 		if common.IsRune(item.Coins[0].Denom) {
 			totalRune := poolBNB.BalanceRune.Add(poolLoki.BalanceRune).Add(poolTCan.BalanceRune)
-			c.Assert(item.Coins[0].Amount.String(), Equals, totalRune.String())
+			c.Assert(item.Coins[0].Amount.String(), Equals, totalRune.SubUint64(batchTransactionFee).String())
 		}
 	}
 
 }
 
 func createTempNewPoolForTest(ctx sdk.Context, k Keeper, ticker string, c *C) *Pool {
-	r := rand.New(rand.NewSource(time.Now().Unix()))
 	p := NewPool()
 	t, err := common.NewTicker(ticker)
 	c.Assert(err, IsNil)
 	p.Ticker = t
-	p.BalanceRune = sdk.NewUint(r.Uint64())
-	p.BalanceToken = sdk.NewUint(r.Uint64())
+	// limiting balance to 59 bits, because the math done with floats looses
+	// precision if the number is greater than 59 bits.
+	// https://stackoverflow.com/questions/30897208/how-to-change-a-float64-number-to-uint64-in-a-right-way
+	// https://github.com/golang/go/issues/29463
+	p.BalanceRune = sdk.NewUint(1535169738538008)
+	p.BalanceToken = sdk.NewUint(1535169738538008)
 	k.SetPool(ctx, p)
 	return &p
 }
