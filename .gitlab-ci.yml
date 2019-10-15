@@ -81,7 +81,7 @@ deploy:staging:
     - pip install awscli
   environment:
     name: staging
-  script: ENV=STAGING make deploy
+  script: make -C ./build/service-node deploy
   only:
     - schedules
 
