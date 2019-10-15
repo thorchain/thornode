@@ -83,6 +83,7 @@ type (
 	MsgOutboundTx      = types.MsgOutboundTx
 	MsgSwap            = types.MsgSwap
 	MsgSetAdminConfig  = types.MsgSetAdminConfig
+	MsgSetVersion      = types.MsgSetVersion
 	MsgSetTrustAccount = types.MsgSetTrustAccount
 	MsgNextPoolAddress = types.MsgNextPoolAddress
 	MsgEndPool         = types.MsgEndPool
