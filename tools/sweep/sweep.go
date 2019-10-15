@@ -4,7 +4,7 @@ import (
 	"flag"
 	"strings"
 
-	"gitlab.com/thorchain/bepswap/statechain/x/smoke"
+	"gitlab.com/thorchain/bepswap/statechain/test/smoke"
 )
 
 func main() {

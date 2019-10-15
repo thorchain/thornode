@@ -7,10 +7,12 @@ all: lint install
 install: go.sum
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/smoke
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/generate
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/extract
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sweep
+
+tools: install
+	GO111MODULE=on go install -tags "$(build_tags)" ./tools/smoke
+	GO111MODULE=on go install -tags "$(build_tags)" ./tools/generate
+	GO111MODULE=on go install -tags "$(build_tags)" ./tools/extract
+	GO111MODULE=on go install -tags "$(build_tags)" ./tools/sweep
 
 go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"
@@ -62,26 +64,26 @@ export:
 	@generate -t MASTER > .envrc
 	@generate -t POOL >> .envrc
 
-extract: install
+extract: tools
 	@extract -f "${FILE}" -p "${PASSWORD}" -t ${TYPE}
 
-smoke-test-audit: install
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-audit.json -e ${ENV}
+smoke-test-audit: tools
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/full/smoke-test-audit.json -e ${ENV}
 
-smoke-test-refund: install
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/smoke/smoke-test-refund.json -e ${ENV}
+smoke-test-refund: tools
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/full/smoke-test-refund.json -e ${ENV}
 
-seed: install
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/seed.json -e ${ENV}
+seed: tools
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/seed.json -e ${ENV}
 
-gas: install
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/gas.json -e ${ENV}
+gas: tools
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/gas.json -e ${ENV}
 
-stake: install
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/stake.json -e ${ENV}
+stake: tools
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/stake.json -e ${ENV}
 
-swap: install
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c tests/unit/swap.json -e ${ENV}
+swap: tools
+	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/swap.json -e ${ENV}
 
-sweep: install
+sweep: tools
 	@sweep -m ${MASTER_KEY} -k ${KEY_LIST}
