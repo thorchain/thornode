@@ -46,7 +46,8 @@ start-rest:
 setup: install
 	./scripts/setup.sh
 
-reset: clean install
+reset: clean 
+	make install
 	./scripts/reset.sh
 
 clean:

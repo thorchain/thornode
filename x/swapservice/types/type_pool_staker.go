@@ -66,6 +66,7 @@ func (ps PoolStaker) String() string {
 	bs := strings.Builder{}
 	bs.WriteString(fmt.Sprintln("ticker: " + ps.Ticker.String()))
 	bs.WriteString(fmt.Sprintf("total units: %d", ps.TotalUnits.Uint64()))
+	bs.WriteString(fmt.Sprintf("staker count: %d", len(ps.Stakers)))
 	if nil != ps.Stakers {
 		for _, stakerUnit := range ps.Stakers {
 			bs.WriteString(fmt.Sprintln(stakerUnit.StakerID.String() + " : " + stakerUnit.Units.String()))
