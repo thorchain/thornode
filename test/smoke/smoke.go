@@ -29,7 +29,7 @@ type Smoke struct {
 	Config     Config
 	ApiAddr    string
 	Network    ctypes.ChainNetwork
-	BankKey    string
+	FaucetKey  string
 	PoolKey    string
 	Binance    Binance
 	Statechain Statechain
@@ -37,7 +37,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance
-func NewSmoke(apiAddr, bankKey, poolKey, env string, config string, network int, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -58,7 +58,7 @@ func NewSmoke(apiAddr, bankKey, poolKey, env string, config string, network int,
 		},
 		ApiAddr:    apiAddr,
 		Network:    n.Type,
-		BankKey:    bankKey,
+		FaucetKey:  faucetKey,
 		PoolKey:    poolKey,
 		Binance:    NewBinance(apiAddr, n.ChainID, debug),
 		Statechain: NewStatechain(env),
@@ -68,12 +68,12 @@ func NewSmoke(apiAddr, bankKey, poolKey, env string, config string, network int,
 
 // Setup : Generate/setup our accounts.
 func (s *Smoke) Setup() {
-	// Bank
-	bKey, _ := keys.NewPrivateKeyManager(s.BankKey)
+	// Faucet
+	bKey, _ := keys.NewPrivateKeyManager(s.FaucetKey)
 	bClient, _ := sdk.NewDexClient(s.ApiAddr, s.Network, bKey)
 
-	s.Tests.Actors.Bank.Key = bKey
-	s.Tests.Actors.Bank.Client = bClient
+	s.Tests.Actors.Faucet.Key = bKey
+	s.Tests.Actors.Faucet.Client = bClient
 
 	// Master
 	mClient, mKey := s.ClientKey()
@@ -164,7 +164,7 @@ func (s *Smoke) Run() {
 func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
 	switch from {
 	case "bank":
-		return s.Tests.Actors.Bank.Client, s.Tests.Actors.Bank.Key
+		return s.Tests.Actors.Faucet.Client, s.Tests.Actors.Faucet.Key
 	case "master":
 		return s.Tests.Actors.Master.Client, s.Tests.Actors.Master.Key
 	case "admin":
@@ -218,7 +218,7 @@ func (s *Smoke) ValidateTest(rule types.Rule) {
 
 // Balances : Get the account balances of a given wallet.
 func (s *Smoke) Balances(address ctypes.AccAddress) []ctypes.TokenBalance {
-	acct, err := s.Tests.Actors.Bank.Client.GetAccount(address.String())
+	acct, err := s.Tests.Actors.Faucet.Client.GetAccount(address.String())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -434,6 +434,6 @@ func (s *Smoke) Sweep() {
 	keys = append(keys, uKey)
 
 	// Empty the wallets.
-	sweep := NewSweep(s.ApiAddr, s.BankKey, keys, s.Config.network, s.Config.debug)
+	sweep := NewSweep(s.ApiAddr, s.FaucetKey, keys, s.Config.network, s.Config.debug)
 	sweep.EmptyWallets()
 }

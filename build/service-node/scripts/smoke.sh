@@ -11,7 +11,7 @@
 # Usage
 #
 usage() {
-  echo "Usage: $0 -n <node> -g <target_group>" 1>&2;
+  echo "Usage: $0 -r <rpc host> -g <target_group> -f <faucet key> -p <pool key> -e <environment>" 1>&2;
   exit 1;
 }
 
@@ -45,19 +45,30 @@ check_health() {
 check_block_height() {
   HEIGHT=$(curl -s "$1/block" | jq -r '.result.block_meta.header.height')
 
-  if [ $HEIGHT > 200 ]; then
+  if [ $HEIGHT < 500 ]; then
+    return 0
+  else
     return 1
   fi
 }
 
 # Check the supplied opts.
-while getopts ":n:g:" o; do
+while getopts ":r:g:f:p:e:" o; do
     case "${o}" in
-        n)
-            n=${OPTARG}
+        r)
+            r=${OPTARG}
             ;;
         g)
             g=${OPTARG}
+            ;;
+        f)
+            f=${OPTARG}
+            ;;
+        p)
+            p=${OPTARG}
+            ;;
+        e)
+            e=${OPTARG}
             ;;
         *)
             usage
@@ -66,7 +77,11 @@ while getopts ":n:g:" o; do
 done
 shift $((OPTIND-1))
 
-if [ -z "${n}" ] || [ -z "${g}" ]; then
+if [ -z "${r}" ] ||
+    [ -z "${g}" ] ||
+    [ -z "${f}" ] ||
+    [ -z "${p}" ] ||
+    [ -z "${e}" ]; then
     usage
 fi
 
@@ -74,8 +89,11 @@ fi
 COUNT=0
 MAX_ATTEMPTS=30
 
+# Target group ARN.
+TG_ARN=$(aws elbv2 describe-target-groups | jq -r --arg TG "${g}" '.TargetGroups[] | select(.TargetGroupName==$TG)' | jq -r '.TargetGroupArn')
+
 # Loop through our targets and check the health.
-check_health "${g}"
+check_health $TG_ARN
 
 while [ $? -ne 0 ]; do
   sleep 15
@@ -85,16 +103,20 @@ while [ $? -ne 0 ]; do
     break;
   fi
 
-  check_health "${g}"
+  check_health $TG_ARN
 done
 
-# Get the block height.
+# Run our smoke tests.
 if [ $COUNT -lt $MAX_ATTEMPTS ]; then
   check_block_height "${n}"
   if [ $? -eq 0 ]; then
     # Smoke 'em if you got 'em.
-    echo "Run our tests!"
+    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../../ smoke-test-refund
   else
-    echo "Exiting. Looks like this chain was started a while ago?"
+    echo "Exiting....looks like this chain was started a while ago?"
+    exit
   fi
+else
+  echo "Exiting...max attempts reached. Maybe increase the timeout?"
+  exit
 fi

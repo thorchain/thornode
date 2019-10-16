@@ -20,6 +20,10 @@ config:
 	@echo ECR_CHAIN_SVC: ${ECR_CHAIN_SVC}
 	@echo STATE_CHAIN_IMAGE_HASH: ${STATE_CHAIN_IMAGE_HASH}
 	@echo CHAIN_SERVICE_IMAGE_HASH: ${CHAIN_SERVICE_IMAGE_HASH}
+	@echo RPC_HOST: ${RPC_HOST}
+	@echo TARGET_GROUP_NAME: ${TARGET_GROUP_NAME}
+	@echo FAUCET_KEY: ${BINANCE_PRIVATE_KEY}
+	@echo BINANCE_PRIVATE_KEY: ${BINANCE_PRIVATE_KEY}
 
 .PHONY: clean
 clean:
@@ -52,3 +56,7 @@ push: tag
 # Step 4
 deploy: config push
 	aws ecs update-service --force-new-deployment --cluster ${ECS_CLUSTER} --service ${ECR_STATECHAIN}
+
+# Step 5
+smoke: deploy
+	./scripts/smoke.sh -r ${RPC_HOST} -g ${TARGET_GROUP_NAME} -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}

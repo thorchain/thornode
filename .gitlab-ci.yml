@@ -63,7 +63,7 @@ deploy:develop:
     - schedules
   environment:
     name: develop
-  script: make -C ./build/service-node deploy
+  script: make -C ./build/service-node smoke
   only:
     - master
 
@@ -81,7 +81,7 @@ deploy:staging:
     - pip install awscli
   environment:
     name: staging
-  script: make -C ./build/service-node deploy
+  script: make -C ./build/service-node smoke
   only:
     - schedules
 
