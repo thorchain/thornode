@@ -1,14 +1,14 @@
 package swapservice
 
-func getVersion(version int, prefix dbPrefix) int {
+func getVersion(sversion int, prefix dbPrefix) int {
 	switch prefix {
 	case prefixNodeAccount:
-		return getNodeAccountVersion(version)
+		return getNodeAccountVersion(sversion)
 	default:
 		return 0 // default
 	}
 }
 
-func getNodeAccountVersion(version int) int {
+func getNodeAccountVersion(sversion int) int {
 	return 0 // default
 }

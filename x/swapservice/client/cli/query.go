@@ -8,8 +8,17 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
+	appCmd "gitlab.com/thorchain/bepswap/statechain/cmd"
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
+
+type ver struct {
+	Version int `json:"version"`
+}
+
+func (v ver) String() string {
+	return fmt.Sprintf("%d", v.Version)
+}
 
 func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	swapserviceQueryCmd := &cobra.Command{
@@ -20,6 +29,7 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		RunE:                       client.ValidateCmd,
 	}
 	swapserviceQueryCmd.AddCommand(client.GetCommands(
+		GetCmdGetVersion(storeKey, cdc),
 		GetCmdPool(storeKey, cdc),
 		GetCmdPools(storeKey, cdc),
 		GetCmdStakerPool(storeKey, cdc),
@@ -31,6 +41,21 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdGetAdminConfig(storeKey, cdc),
 	)...)
 	return swapserviceQueryCmd
+}
+
+// GetCmdGetVersion queries current version
+func GetCmdGetVersion(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "version",
+		Short: "Gets the statechain version",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			out := ver{appCmd.Version}
+			return cliCtx.PrintOutput(out)
+		},
+	}
 }
 
 // GetCmdPool queries information about a domain
