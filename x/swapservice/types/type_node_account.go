@@ -139,7 +139,7 @@ func (n NodeAccount) String() string {
 	sb.WriteString("status:" + n.Status.String() + "\n")
 	sb.WriteString("account:" + n.Accounts.String() + "\n")
 	sb.WriteString("bond:" + n.Bond.String() + "\n")
-	sb.WriteString("version:" + fmt.Sprintf("%d", n.Version) + "\n")
+	sb.WriteString("version:" + n.Version.String() + "\n")
 	return sb.String()
 }
 
