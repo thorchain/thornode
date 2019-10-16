@@ -56,10 +56,7 @@ clean:
 	rm -rf ~/.ssd
 	rm -rf ~/.sscli
 	ssd unsafe-reset-all
-	rm ${GOBIN}/{smoke,generate,sweep,sscli,ssd}
-
-export:
-	ssd export
+	rm -f ${GOBIN}/{smoke,generate,sweep,sscli,ssd}
 
 .envrc: install
 	@generate -t MASTER > .envrc
