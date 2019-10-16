@@ -87,10 +87,10 @@ type NodeAccount struct {
 	Bond        sdk.Uint       `json:"bond"`
 	// start from when this node account is in current status
 	// StatusSince field is important , it has been used to sort node account , used for validator rotation
-	StatusSince    int64 `json:"status_since"`
-	ObserverActive bool  `json:"observer_active"`
-	SignerActive   bool  `json:"signer_active"`
-	Version        int   `json:"version"`
+	StatusSince    int64         `json:"status_since"`
+	ObserverActive bool          `json:"observer_active"`
+	SignerActive   bool          `json:"signer_active"`
+	Version        common.Amount `json:"version"`
 }
 
 // NewNodeAccount create new instance of NodeAccount

@@ -326,10 +326,10 @@ func (k Keeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 func (k Keeper) GetLowestActiveVersion(ctx sdk.Context) int {
 	nodes, _ := k.ListActiveNodeAccounts(ctx)
 	if len(nodes) > 0 {
-		version := nodes[0].Version
+		version := int(nodes[0].Version.Float64())
 		for _, na := range nodes {
-			if na.Version < version {
-				version = na.Version
+			if int(na.Version.Float64()) < version {
+				version = int(na.Version.Float64())
 			}
 		}
 		return version
