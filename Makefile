@@ -55,7 +55,6 @@ reset: clean
 clean:
 	rm -rf ~/.ssd
 	rm -rf ~/.sscli
-	ssd unsafe-reset-all
 	rm -f ${GOBIN}/{smoke,generate,sweep,sscli,ssd}
 
 .envrc: install
