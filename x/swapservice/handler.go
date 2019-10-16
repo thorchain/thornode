@@ -795,8 +795,8 @@ func handleMsgSetVersion(ctx sdk.Context, keeper Keeper, msg MsgSetVersion) sdk.
 		return sdk.ErrUnauthorized(fmt.Sprintf("%s is not authorizaed", msg.Signer)).Result()
 	}
 	if err := msg.ValidateBasic(); err != nil {
-		ctx.Logger().Error("MsgUpdateNodeAccount is invalid", "error", err)
-		return sdk.ErrUnknownRequest("MsgUpdateNodeAccount is invalid").Result()
+		ctx.Logger().Error("MsgSetVersion is invalid", "error", err)
+		return sdk.ErrUnknownRequest("MsgSetVersion is invalid").Result()
 	}
 
 	if int(nodeAccount.Version.Float64()) < msg.Version {
