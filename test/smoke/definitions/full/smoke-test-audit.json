@@ -3,7 +3,7 @@
   "rules": [
     {
       "description": "SEED ASSETS",
-      "from": "bank",
+      "from": "faucet",
       "to": [
         "master"
       ],

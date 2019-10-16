@@ -163,7 +163,7 @@ func (s *Smoke) Run() {
 // FromClientKey : Client and key based on the rule "from".
 func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
 	switch from {
-	case "bank":
+	case "faucet":
 		return s.Tests.Actors.Faucet.Client, s.Tests.Actors.Faucet.Key
 	case "master":
 		return s.Tests.Actors.Master.Client, s.Tests.Actors.Master.Key
