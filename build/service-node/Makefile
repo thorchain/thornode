@@ -18,6 +18,8 @@ config:
 	@echo REPOSITORY: ${REPOSITORY}
 	@echo ECR_STATECHAIN: ${ECR_STATECHAIN}
 	@echo ECR_CHAIN_SVC: ${ECR_CHAIN_SVC}
+	@echo ECS_SERVICE: ${ECS_SERVICE}
+	@echo TASK_COUNT: ${TASK_COUNT}
 	@echo STATE_CHAIN_IMAGE_HASH: ${STATE_CHAIN_IMAGE_HASH}
 	@echo CHAIN_SERVICE_IMAGE_HASH: ${CHAIN_SERVICE_IMAGE_HASH}
 	@echo RPC_HOST: ${RPC_HOST}
@@ -59,4 +61,4 @@ deploy: config push
 
 # Step 5
 smoke: deploy
-	./scripts/smoke.sh -r ${RPC_HOST} -g ${TARGET_GROUP_NAME} -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}
+	./scripts/smoke.sh -r ${RPC_HOST} -g ${TARGET_GROUP_NAME} -c ${ECS_CLUSTER} -s ${ECS_SERVICE} -n ${TASK_COUNT} -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}

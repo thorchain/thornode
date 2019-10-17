@@ -11,12 +11,26 @@
 # Usage
 #
 usage() {
-  echo "Usage: $0 -r <rpc host> -g <target_group> -f <faucet key> -p <pool key> -e <environment>" 1>&2;
+  echo "Usage: $0 -r <rpc host> -g <target_group> -c <cluster> -s <service> -n <task count> -f <faucet key> -p <pool key> -e <environment>" 1>&2;
   exit 1;
 }
 
 #
-# Target Group Size
+# Task Count
+#
+task_count() {
+  TASK_COUNT=$(aws ecs describe-services --cluster "${1}" --service "${2}" | jq '.services[0].deployments' | jq length)
+
+  if [ $TASK_COUNT -gt $3 ]; then
+    echo "New task(s) being provisioned. Waiting...."
+    return 1
+  else
+    return 0
+  fi
+}
+
+#
+# Target Group Health
 #
 target_group_health() {
   TG_LENGTH=$(aws elbv2 describe-target-health --target-group-arn "${1}" | jq '.TargetHealthDescriptions' | jq length)
@@ -25,18 +39,24 @@ target_group_health() {
   for i in $(seq $END 0); do
     HEALTH=$(aws elbv2 describe-target-health --target-group-arn "${1}" | jq -r ".TargetHealthDescriptions[$i].TargetHealth.State")
     if [ $HEALTH != 'healthy' ]; then
-      echo "Unhealthy node detected!"
+      echo "Unhealthy node detected. Waiting...."
       return 1
     fi
   done
 }
 
 #
+# Wrapper for task_count()
+#
+check_tasks() {
+  task_count "${1}" "${2}" $3
+}
+
+#
 # Wrapper for target_group_health()
 #
 check_health() {
-  echo "Checking target group health...."
-  target_group_health $1
+  target_group_health "${1}"
 }
 
 #
@@ -45,7 +65,7 @@ check_health() {
 check_block_height() {
   HEIGHT=$(curl -s "$1/block" | jq -r '.result.block_meta.header.height')
 
-  if [ $HEIGHT < 500 ]; then
+  if [ $HEIGHT -lt 500 ]; then
     return 0
   else
     return 1
@@ -53,13 +73,22 @@ check_block_height() {
 }
 
 # Check the supplied opts.
-while getopts ":r:g:f:p:e:" o; do
+while getopts ":r:g:c:s:n:f:p:e:" o; do
     case "${o}" in
         r)
             r=${OPTARG}
             ;;
         g)
             g=${OPTARG}
+            ;;
+        c)
+            c=${OPTARG}
+            ;;
+        s)
+            s=${OPTARG}
+            ;;
+        n)
+            n=${OPTARG}
             ;;
         f)
             f=${OPTARG}
@@ -77,17 +106,53 @@ while getopts ":r:g:f:p:e:" o; do
 done
 shift $((OPTIND-1))
 
+# All opts provided?
 if [ -z "${r}" ] ||
     [ -z "${g}" ] ||
+    [ -z "${c}" ] ||
+    [ -z "${s}" ] ||
+    [ -z "${n}" ] ||
     [ -z "${f}" ] ||
     [ -z "${p}" ] ||
     [ -z "${e}" ]; then
-    usage
+  usage
+fi
+
+# AWS ENV vars set?
+if [ -z "$AWS_ACCESS_KEY_ID" ] ||
+    [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
+  echo "AWS ENV's not set!"
+  exit 1
 fi
 
 # Ensures we don't run forever!
 COUNT=0
 MAX_ATTEMPTS=30
+
+# Check the number of tasks - this tells us if a new task is in the process of being provisioned..
+check_tasks "${c}" "${s}" "${n}"
+
+while [ $? -ne 0 ]; do
+  sleep 15
+
+  COUNT="$((COUNT+1))"
+  if [ $COUNT -eq $MAX_ATTEMPTS ]; then
+    break;
+  fi
+
+  check_tasks "${c}" "${s}" ${n}
+done
+
+# This would happen if the task count supplied did not match
+# (e.g: there are always two running tasks but we supplied a
+# task count of 1 to the script.
+if [ $COUNT -eq $MAX_ATTEMPTS ]; then
+  echo "Exiting. Either the supplied task count is wrong, or the new task(s) are not booting correctly."
+  exit 1
+else
+  # Reset the counter.
+  COUNT=0
+fi
 
 # Target group ARN.
 TG_ARN=$(aws elbv2 describe-target-groups | jq -r --arg TG "${g}" '.TargetGroups[] | select(.TargetGroupName==$TG)' | jq -r '.TargetGroupArn')
@@ -108,15 +173,15 @@ done
 
 # Run our smoke tests.
 if [ $COUNT -lt $MAX_ATTEMPTS ]; then
-  check_block_height "${n}"
+  check_block_height "${r}"
   if [ $? -eq 0 ]; then
     # Smoke 'em if you got 'em.
-    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../../ smoke-test-refund
+    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../../ smoke-test-audit
   else
     echo "Exiting....looks like this chain was started a while ago?"
-    exit
+    exit 1
   fi
 else
   echo "Exiting...max attempts reached. Maybe increase the timeout?"
-  exit
+  exit 1
 fi
