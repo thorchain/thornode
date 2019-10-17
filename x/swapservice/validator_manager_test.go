@@ -5,8 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
-
-	"gitlab.com/thorchain/bepswap/statechain/cmd"
 )
 
 type ValidatorManagerTestSuite struct{}
@@ -14,9 +12,7 @@ type ValidatorManagerTestSuite struct{}
 var _ = Suite(&ValidatorManagerTestSuite{})
 
 func (ps *ValidatorManagerTestSuite) SetUpSuite(c *C) {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-	config.SetBech32PrefixForConsensusNode(cmd.Bech32PrefixConsAddr, cmd.Bech32PrefixConsPub)
+	SetupConfigForTest()
 }
 
 func (ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
