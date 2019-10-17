@@ -19,7 +19,7 @@ while true; do
 
   # add jack as a trusted account
   {
-      jq --arg VALIDATOR "$(ssd tendermint show-validator)" --arg NODE_ADDRESS "$(sscli keys show jack -a)" --arg OBSERVER_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","accounts":{"bnb_signer_acc":"bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY", "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}'
+      jq --arg VERSION "$(sscli query swapservice version | jq -r .version)" --arg VALIDATOR "$(ssd tendermint show-validator)" --arg NODE_ADDRESS "$(sscli keys show jack -a)" --arg OBSERVER_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS, "version": $VERSION, "status":"active","accounts":{"bnb_signer_acc":"bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY", "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}'
   } <~/.ssd/config/genesis.json >/tmp/genesis.json
   mv /tmp/genesis.json ~/.ssd/config/genesis.json
 

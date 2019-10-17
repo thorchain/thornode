@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"gitlab.com/thorchain/bepswap/common"
 
+	appCmd "gitlab.com/thorchain/bepswap/statechain/cmd"
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
@@ -27,9 +28,29 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdSetAdminConfig(cdc),
 		GetCmdSetTrustAccount(cdc),
 		GetCmdEndPool(cdc),
+		GetCmdSetVersion(cdc),
 	)...)
 
 	return swapserviceTxCmd
+}
+
+// GetCmdSetVersion command to set an admin config
+func GetCmdSetVersion(cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "set-version",
+		Short: "update registered version",
+		Args:  cobra.ExactArgs(0),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+
+			msg := types.NewMsgSetVersion(appCmd.Version, cliCtx.GetFromAddress())
+			if err := msg.ValidateBasic(); err != nil {
+				return err
+			}
+			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
+		},
+	}
 }
 
 // GetCmdSetAdminConfig command to set an admin config
