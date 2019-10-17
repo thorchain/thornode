@@ -4,8 +4,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
-
-	"gitlab.com/thorchain/bepswap/statechain/cmd"
 )
 
 type MsgAddSuite struct{}
@@ -13,10 +11,7 @@ type MsgAddSuite struct{}
 var _ = Suite(&MsgAddSuite{})
 
 func (mas *MsgAddSuite) SetUpSuite(c *C) {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-	config.SetBech32PrefixForValidator(cmd.Bech32PrefixValAddr, cmd.Bech32PrefixValPub)
-	config.SetBech32PrefixForConsensusNode(cmd.Bech32PrefixConsAddr, cmd.Bech32PrefixConsPub)
+	SetupConfigForTest()
 }
 func (mas *MsgAddSuite) TestMsgAdd(c *C) {
 

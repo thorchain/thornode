@@ -14,8 +14,7 @@ type UnstakeSuite struct{}
 var _ = Suite(&UnstakeSuite{})
 
 func (s *UnstakeSuite) SetUpSuite(c *C) {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount("rune", "runepub")
+	SetupConfigForTest()
 }
 
 func (s UnstakeSuite) TestCalculateUnsake(c *C) {
@@ -125,10 +124,7 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 
 // TestValidateUnstake is to test validateUnstake function
 func (s UnstakeSuite) TestValidateUnstake(c *C) {
-	accountAddr, err := sdk.AccAddressFromBech32("rune1375qq0afqr5a6xmh0xspk2jh4wqnmm4024vm6j")
-	if nil != err {
-		c.Errorf("fail to create account address error:%s", err)
-	}
+	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
 	publicAddress, err := common.NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
 	if nil != err {
 		c.Error("fail to create new BNB Address")
@@ -233,10 +229,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 }
 func (UnstakeSuite) TestUnstake(c *C) {
 	ps := mocks.MockPoolStorage{}
-	accountAddr, err := sdk.AccAddressFromBech32("rune1375qq0afqr5a6xmh0xspk2jh4wqnmm4024vm6j")
-	if nil != err {
-		c.Errorf("fail to create account address error:%s", err)
-	}
+	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
 	publicAddress, err := common.NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
 	if nil != err {
 		c.Error("fail to create new BNB Address")

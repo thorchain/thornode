@@ -27,6 +27,10 @@ func (k AdminConfigKey) String() string {
 	return string(k)
 }
 
+func (k AdminConfigKey) IsValidKey() bool {
+	key := GetAdminConfigKey(k.String())
+	return key != UnknownKey
+}
 func GetAdminConfigKey(key string) AdminConfigKey {
 	switch key {
 	case string(GSLKey):
@@ -118,7 +122,8 @@ func (c AdminConfig) Valid() error {
 	if c.Key == "" {
 		return fmt.Errorf("key cannot be empty")
 	}
-	if c.Key == UnknownKey {
+
+	if !c.Key.IsValidKey() {
 		return fmt.Errorf("key not recognized")
 	}
 	if c.Value == "" {
