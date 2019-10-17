@@ -65,9 +65,11 @@ var (
 	NewMsgApply           = types.NewMsgApply
 	NewPoolAddresses      = types.NewPoolAddresses
 	NewMsgNextPoolAddress = types.NewMsgNextPoolAddress
+	NewMsgLeave           = types.NewMsgLeave
 	GetRandomNodeAccount  = types.GetRandomNodeAccount
 	GetRandomBNBAddress   = types.GetRandomBNBAddress
 	GetRandomTxHash       = types.GetRandomTxHash
+	SetupConfigForTest    = types.SetupConfigForTest
 )
 
 type (
@@ -84,6 +86,7 @@ type (
 	MsgSetTrustAccount = types.MsgSetTrustAccount
 	MsgNextPoolAddress = types.MsgNextPoolAddress
 	MsgEndPool         = types.MsgEndPool
+	MsgLeave           = types.MsgLeave
 	QueryResPools      = types.QueryResPools
 	QueryResHeights    = types.QueryResHeights
 	TrustAccount       = types.TrustAccount

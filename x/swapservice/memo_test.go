@@ -3,8 +3,6 @@ package swapservice
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
-
-	"gitlab.com/thorchain/bepswap/statechain/cmd"
 )
 
 type MemoSuite struct{}
@@ -12,12 +10,11 @@ type MemoSuite struct{}
 var _ = Suite(&MemoSuite{})
 
 func (s *MemoSuite) SetUpSuite(c *C) {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+	SetupConfigForTest()
 }
 
 func (s *MemoSuite) TestTxType(c *C) {
-	for _, trans := range []TxType{txCreate, txStake, txWithdraw, txSwap} {
+	for _, trans := range []TxType{txCreate, txStake, txWithdraw, txSwap, txOutbound, txAdd, txGas, txApply, txLeave, txNextPool} {
 		tx, err := stringToTxType(trans.String())
 		c.Assert(err, IsNil)
 		c.Check(tx, Equals, trans)
@@ -89,6 +86,8 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("!:bogus:key:value") // bogus admin command type
 	c.Assert(err, NotNil)
+	_, err = ParseMemo("leave:whatever")
+	c.Assert(err, NotNil)
 }
 func (s *MemoSuite) TestParse(c *C) {
 	// happy paths
@@ -139,6 +138,11 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(memo.IsType(txApply), Equals, true)
 	c.Assert(memo.GetNodeAddress().String(), Equals, "bep180xs5jx2szhww4jq4xfmvpza7kzr6rwu9408dm")
+
+	memo, err = ParseMemo("leave:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Assert(err, IsNil)
+	c.Assert(memo.IsType(txLeave), Equals, true)
+	c.Assert(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	// unhappy paths
 	_, err = ParseMemo("")
 	c.Assert(err, NotNil)
