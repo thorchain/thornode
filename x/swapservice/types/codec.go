@@ -19,4 +19,5 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgSetTxIn{}, "swapservice/MsgSetTxIn", nil)
 	cdc.RegisterConcrete(MsgSetAdminConfig{}, "swapservice/MsgSetAdminConfig", nil)
 	cdc.RegisterConcrete(MsgSetTrustAccount{}, "swapservice/MsgSetTrustAccount", nil)
+	cdc.RegisterConcrete(MsgEndPool{}, "swapservice/MsgEndPool", nil)
 }
