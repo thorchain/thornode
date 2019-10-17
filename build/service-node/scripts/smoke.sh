@@ -176,12 +176,16 @@ if [ $COUNT -lt $MAX_ATTEMPTS ]; then
   check_block_height "${r}"
   if [ $? -eq 0 ]; then
     # Smoke 'em if you got 'em.
+    echo "Running: smoke-test-audit...."
     make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../../ smoke-test-audit
+
+    echo "Running: smoke-test-refund...."
+    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../../ smoke-test-refund
   else
-    echo "Exiting....looks like this chain was started a while ago?"
+    echo "Exiting. Looks like this chain was started a while ago?"
     exit 1
   fi
 else
-  echo "Exiting...max attempts reached. Maybe increase the timeout?"
+  echo "Exiting. Max attempts reached. Maybe increase the timeout?"
   exit 1
 fi
