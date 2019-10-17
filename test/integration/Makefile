@@ -34,4 +34,4 @@ sh:
 	docker run -it --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/bepswap/statechain -w /root/go/src/gitlab.com/thorchain/bepswap/statechain -e GOPATH=/root/go -e GOBIN=/go/bin cbarraford/golang-ruby /bin/sh
 
 test:
-	docker run --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/bepswap/statechain -w /root/go/src/gitlab.com/thorchain/bepswap/statechain -e GOPATH=/root/go -e GOBIN=/go/bin cbarraford/golang-ruby make -C ./tests/integration install setup run wait-for-blockchain test-internal export validate-genesis
+	docker run --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/bepswap/statechain -w /root/go/src/gitlab.com/thorchain/bepswap/statechain -e GOPATH=/root/go -e GOBIN=/go/bin cbarraford/golang-ruby make -C ./test/integration install setup run wait-for-blockchain test-internal export validate-genesis

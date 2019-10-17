@@ -1,4 +1,4 @@
-.PHONY: test 
+.PHONY: test export
 
 GOBIN?=${GOPATH}/bin
 
@@ -55,11 +55,7 @@ reset: clean
 clean:
 	rm -rf ~/.ssd
 	rm -rf ~/.sscli
-	ssd unsafe-reset-all
-	rm ${GOBIN}/{smoke,generate,sweep,sscli,ssd}
-
-export:
-	ssd export
+	rm -f ${GOBIN}/{smoke,generate,sweep,sscli,ssd}
 
 .envrc: install
 	@generate -t MASTER > .envrc
@@ -88,3 +84,6 @@ swap: tools
 
 sweep: tools
 	@sweep -m ${MASTER_KEY} -k ${KEY_LIST}
+
+export:
+	ssd export

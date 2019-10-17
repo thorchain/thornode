@@ -88,6 +88,7 @@ func ValidateGenesis(data GenesisState) error {
 	if data.LastEventID.IsEmpty() {
 		return errors.New("Missing last event ID")
 	}
+
 	return nil
 }
 
