@@ -6,6 +6,8 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"gitlab.com/thorchain/bepswap/common"
+
+	"gitlab.com/thorchain/bepswap/statechain/cmd"
 )
 
 // GetRandomNodeAccount create a random generated node account , used for test purpose
@@ -27,4 +29,11 @@ func GetRandomBNBAddress() common.BnbAddress {
 func GetRandomTxHash() common.TxID {
 	txHash, _ := common.NewTxID(RandStringBytesMask(64))
 	return txHash
+}
+
+func SetupConfigForTest() {
+	config := sdk.GetConfig()
+	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+	config.SetBech32PrefixForValidator(cmd.Bech32PrefixValAddr, cmd.Bech32PrefixValPub)
+	config.SetBech32PrefixForConsensusNode(cmd.Bech32PrefixConsAddr, cmd.Bech32PrefixConsPub)
 }

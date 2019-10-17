@@ -43,7 +43,8 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 			return handleMsgApply(ctx, keeper, m)
 		case MsgNextPoolAddress:
 			return handleMsgConfirmNextPoolAddress(ctx, keeper, validatorManager, m)
-
+		case MsgLeave:
+			return handleMsgLeave(ctx, keeper, txOutStore, poolAddressMgr, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -540,6 +541,8 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 		}
 	case NextPoolMemo:
 		newMsg = NewMsgNextPoolAddress(txID, tx.Sender, signer)
+	case LeaveMemo:
+		newMsg = NewMsgLeave(m.GetDestination(), txID, tx.Sender, signer)
 	default:
 		return nil, errors.Wrap(err, "Unable to find memo type")
 	}
@@ -864,6 +867,54 @@ func handleMsgApply(ctx sdk.Context, keeper Keeper, msg MsgApply) sdk.Result {
 	}
 	if err := keeper.supplyKeeper.SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
 		ctx.Logger().Error("fail to send newly minted gas token to node address")
+	}
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
+func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgLeave) sdk.Result {
+	ctx.Logger().Info("receive MsgLeave", "sender", msg.Sender.String(), "request tx hash", msg.RequestTxHash, "destination", msg.Destination)
+	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid MsgLeave", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+	nodeAcc, err := keeper.GetNodeAccountBySignerBNBAddress(ctx, msg.Sender)
+	if nil != err {
+		ctx.Logger().Error("fail to get node account", "error", err)
+		return sdk.ErrInternal("fail to get node account by signer bnb address").Result()
+	}
+	if nodeAcc.IsEmpty() {
+		return sdk.ErrUnknownRequest("node account doesn't exist").Result()
+	}
+	if nodeAcc.Status == NodeActive {
+		return sdk.ErrUnknownRequest("active node can't leave").Result()
+	}
+	curPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
+
+	if curPoolAddr.Current.Equals(msg.Sender) || curPoolAddr.Previous.Equals(msg.Sender) || curPoolAddr.Next.Equals(msg.Sender) {
+		return sdk.ErrUnknownRequest("address still in use , cannot leave now").Result()
+	}
+	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
+		// refund bond
+		txOutItem := &TxOutItem{
+			ToAddress:   msg.Destination,
+			PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
+			Coins: common.Coins{
+				common.NewCoin(common.RuneTicker, nodeAcc.Bond),
+			},
+		}
+		txOut.AddTxOutItem(ctx, keeper, txOutItem)
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent("validator_leave",
+				sdk.NewAttribute("signer bnb address", msg.Sender.String()),
+				sdk.NewAttribute("destination", msg.Destination.String()),
+				sdk.NewAttribute("tx", msg.RequestTxHash.String())))
 	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,

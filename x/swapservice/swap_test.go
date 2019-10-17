@@ -8,7 +8,6 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/statechain/cmd"
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/mocks"
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
@@ -19,9 +18,7 @@ var _ = Suite(&SwapSuite{})
 var keyStore = sdk.NewKVStoreKey(StoreKey)
 
 func (s *SwapSuite) SetUpSuite(c *C) {
-	config := sdk.GetConfig()
-	config.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-	config.SetBech32PrefixForConsensusNode(cmd.Bech32PrefixConsAddr, cmd.Bech32PrefixConsPub)
+	SetupConfigForTest()
 }
 
 func (s SwapSuite) TestSwap(c *C) {
