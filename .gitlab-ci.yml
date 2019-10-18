@@ -10,6 +10,7 @@ stages:
   - test
   - deploy
   - smoke-test
+  - seed
 
 unit:test:
   stage: test
