@@ -593,17 +593,7 @@ func (k Keeper) GetAdminConfigWhiteListGasToken(ctx sdk.Context, addr sdk.AccAdd
 	return k.GetAdminConfigCoinsType(ctx, WhiteListGasTokenKey, WhiteListGasTokenKey.Default(), addr)
 }
 
-// GetAdminConfigMRRA get the config for minimum refund rune amount default to 1 rune
-func (k Keeper) GetAdminConfigMRRA(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint {
-	return k.GetAdminConfigUintType(ctx, MRRAKey, MRRAKey.Default(), addr)
-}
-
-// GetAdminConfigMinStakerCoins - get the min amount of coins needed to be a staker
-func (k Keeper) GetAdminConfigMinStakerCoins(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
-	return k.GetAdminConfigCoinsType(ctx, MinStakerCoinsKey, MinStakerCoinsKey.Default(), addr)
-}
-
-// GetAdminConfigBnbAddressType - get the config for TSL
+// GetAdminConfigBnbAddressType - get the config with return type is BNBAddress
 func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.BnbAddress {
 	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {

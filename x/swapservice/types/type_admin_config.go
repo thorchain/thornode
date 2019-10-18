@@ -14,8 +14,6 @@ const (
 	UnknownKey                AdminConfigKey = "Unknown"
 	GSLKey                    AdminConfigKey = "GSL"
 	StakerAmtIntervalKey      AdminConfigKey = "StakerAmtInterval"
-	MinStakerCoinsKey         AdminConfigKey = "MinStakerCoins"
-	MRRAKey                   AdminConfigKey = "MRRA" // MRRA means MinimumRefundRuneAmount, if the tx send to pool has less then this amount of RUNE , we are not going to refund it
 	MinValidatorBondKey       AdminConfigKey = "MinValidatorBond"
 	WhiteListGasTokenKey      AdminConfigKey = "WhiteListGasToken"      // How much gas token we mint and send it to the newly whitelisted bep address
 	DesireValidatorSetKey     AdminConfigKey = "DesireValidatorSet"     // how much validators we would like to have
@@ -37,10 +35,6 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 		return GSLKey
 	case string(StakerAmtIntervalKey):
 		return StakerAmtIntervalKey
-	case string(MinStakerCoinsKey):
-		return MinStakerCoinsKey
-	case string(MRRAKey):
-		return MRRAKey
 	case string(MinValidatorBondKey):
 		return MinValidatorBondKey
 	case string(WhiteListGasTokenKey):
@@ -62,10 +56,6 @@ func (k AdminConfigKey) Default() string {
 		return "0.3"
 	case StakerAmtIntervalKey:
 		return "100"
-	case MinStakerCoinsKey:
-		return "1bep"
-	case MRRAKey:
-		return sdk.NewUint(common.One).String()
 	case MinValidatorBondKey:
 		return sdk.NewUint(common.One * 10).String()
 	case WhiteListGasTokenKey:
@@ -87,9 +77,9 @@ func (k AdminConfigKey) ValidValue(value string) error {
 	switch k {
 	case GSLKey, StakerAmtIntervalKey:
 		_, err = common.NewAmount(value)
-	case MRRAKey, MinValidatorBondKey:
+	case MinValidatorBondKey:
 		_, err = sdk.ParseUint(value)
-	case MinStakerCoinsKey, WhiteListGasTokenKey:
+	case WhiteListGasTokenKey:
 		_, err = sdk.ParseCoins(value)
 	case DesireValidatorSetKey, RotatePerBlockHeightKey, ValidatorsChangeWindowKey: // int64
 		_, err = strconv.ParseInt(value, 10, 64)
