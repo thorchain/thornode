@@ -75,8 +75,8 @@ type swapServiceApp struct {
 	mm *module.Manager
 }
 
-// NewSwpServiceApp is a constructor function for swapServiceApp
-func NewSwpServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.BaseApp)) *swapServiceApp {
+// NewSwapServiceApp is a constructor function for swapServiceApp
+func NewSwapServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.BaseApp)) *swapServiceApp {
 
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
