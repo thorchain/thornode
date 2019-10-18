@@ -72,9 +72,6 @@ smoke-test-audit: tools
 smoke-test-refund: tools
 	@smoke -f ${FAUCET_KEY} -p ${POOL_KEY} -c test/smoke/definitions/full/smoke-test-refund.json -e ${ENV}
 
-seed: tools
-	@smoke -f ${FAUCET_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/seed.json -e ${ENV}
-
 gas: tools
 	@smoke -f ${FAUCET_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/gas.json -e ${ENV}
 

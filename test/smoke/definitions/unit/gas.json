@@ -10,7 +10,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 1.38000000
+          "amount": 1.00000000
         }
       ],
       "memo": "SEED",
@@ -19,7 +19,7 @@
         "binance": [
           {
             "symbol": "BNB",
-            "amount": 1.38000000
+            "amount": 1.00000000
           }
         ],
         "statechain": {}
