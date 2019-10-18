@@ -24,7 +24,7 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 
-	fmt.Printf("export %v_ADDR=%v\n", *addrType, keyManager.GetAddr())
+	fmt.Printf("export %v=%v\n", *addrType, keyManager.GetAddr())
 	privKey, _ := keyManager.ExportAsPrivateKey()
 	fmt.Printf("export %v_KEY=%v\n", *addrType, privKey)
 }
