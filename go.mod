@@ -6,9 +6,11 @@ require (
 	github.com/binance-chain/go-sdk v1.1.3
 	github.com/btcsuite/btcd v0.0.0-20190824003749-130ea5bddde3 // indirect
 	github.com/cosmos/cosmos-sdk v0.37.2
+	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/go-resty/resty/v2 v2.0.0
 	github.com/gorilla/mux v1.7.0
 	github.com/mattn/go-isatty v0.0.7 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.1.0 // indirect
 	github.com/prometheus/client_model v0.0.0-20190812154241-14fe0d1b01d4 // indirect

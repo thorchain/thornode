@@ -2,8 +2,11 @@ package rest
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
+	"github.com/didip/tollbooth"
+	"github.com/didip/tollbooth/limiter"
 	"github.com/gorilla/mux"
 	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/query"
 )
@@ -23,13 +26,20 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 		pingHandler(cliCtx, storeName),
 	).Methods("GET")
 
+	// limit api calls
+	lmt := tollbooth.NewLimiter(1, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
+	lmt.SetMessage("You have reached maximum request limit.")
+
 	// Dynamically create endpoints of all funcs in querier.go
 	for _, q := range query.Queries {
 		endpoint := q.Endpoint(storeName, restURLParam, restURLParam2)
 		if endpoint != "" { // don't setup REST endpoint if we have no endpoint
-			r.HandleFunc(
+			r.Handle(
 				endpoint,
-				getHandlerWrapper(q, storeName, cliCtx),
+				tollbooth.LimitFuncHandler(
+					lmt,
+					getHandlerWrapper(q, storeName, cliCtx),
+				),
 			).Methods("GET")
 		}
 	}
