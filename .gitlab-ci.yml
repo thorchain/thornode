@@ -88,6 +88,25 @@ smoke-test:develop:
   only:
     - master
 
+seed:develop:
+  stage: seed
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  except:
+    - schedules
+  environment:
+    name: develop
+  script: make -C ./build/service-node seed
+  only:
+    - master
 
 deploy:staging:
   stage: deploy
