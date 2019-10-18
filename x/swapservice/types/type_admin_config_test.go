@@ -12,7 +12,7 @@ type AdminConfigSuite struct{}
 var _ = Suite(&AdminConfigSuite{})
 
 func (s AdminConfigSuite) TestGetKey(c *C) {
-	keys := []string{"GSL", "StakerAmtInterval", "Unknown", "MinStakerCoins", "MRRA", "MinValidatorBond", "WhiteListGasToken"}
+	keys := []string{"GSL", "StakerAmtInterval", "Unknown", "MinValidatorBond", "WhiteListGasToken"}
 	for _, key := range keys {
 		c.Check(GetAdminConfigKey(key).String(), Equals, key)
 	}
@@ -29,14 +29,14 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 		config = NewAdminConfig(GetAdminConfigKey(amt), "abc", addr) // invalid value
 		c.Check(config.Valid(), NotNil, Commentf("%s", amt))
 	}
-	uintAmnt := []string{"MRRA", "MinValidatorBond"}
+	uintAmnt := []string{"MinValidatorBond"}
 	for _, item := range uintAmnt {
 		cfg := NewAdminConfig(GetAdminConfigKey(item), "1000", addr)
 		c.Check(cfg.Valid(), IsNil, Commentf("%s", item))
 		cfg1 := NewAdminConfig(GetAdminConfigKey(item), "whatever", addr)
 		c.Check(cfg1.Valid(), NotNil, Commentf("%s", item))
 	}
-	coinAmt := []string{"MinStakerCoins", "WhiteListGasToken"}
+	coinAmt := []string{"WhiteListGasToken"}
 	for _, item := range coinAmt {
 		cfg := NewAdminConfig(GetAdminConfigKey(item), "100bep", addr)
 		c.Check(cfg.Valid(), IsNil, Commentf("%s is invalid coin", item))

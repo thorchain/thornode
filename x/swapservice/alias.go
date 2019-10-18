@@ -18,8 +18,6 @@ const (
 	// Admin config keys
 	GSLKey                    = types.GSLKey
 	StakerAmtIntervalKey      = types.StakerAmtIntervalKey
-	MRRAKey                   = types.MRRAKey
-	MinStakerCoinsKey         = types.MinStakerCoinsKey
 	MaxWithdrawBasisPoints    = types.MaxWithdrawBasisPoints
 	MinValidatorBondKey       = types.MinValidatorBondKey
 	WhiteListGasTokenKey      = types.WhiteListGasTokenKey
