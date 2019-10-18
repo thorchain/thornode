@@ -5,17 +5,17 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 )
 
-// MsgApply when a user would like to become a validator, and run a full set, they need send an `apply:bepaddress` with a bond to our pool address
-type MsgApply struct {
+// MsgBond when a user would like to become a validator, and run a full set, they need send an `apply:bepaddress` with a bond to our pool address
+type MsgBond struct {
 	NodeAddress   sdk.AccAddress `json:"node_address"`
 	Bond          sdk.Uint       `json:"bond"`
 	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on binance chain
 	Signer        sdk.AccAddress `json:"signer"`
 }
 
-// NewMsgApply create new MsgApply message
-func NewMsgApply(nodeAddr sdk.AccAddress, bond sdk.Uint, requestTxHash common.TxID, signer sdk.AccAddress) MsgApply {
-	return MsgApply{
+// NewMsgBond create new MsgBond message
+func NewMsgBond(nodeAddr sdk.AccAddress, bond sdk.Uint, requestTxHash common.TxID, signer sdk.AccAddress) MsgBond {
+	return MsgBond{
 		NodeAddress:   nodeAddr,
 		Bond:          bond,
 		RequestTxHash: requestTxHash,
@@ -24,13 +24,13 @@ func NewMsgApply(nodeAddr sdk.AccAddress, bond sdk.Uint, requestTxHash common.Tx
 }
 
 // Route should return the router key of the module
-func (msg MsgApply) Route() string { return RouterKey }
+func (msg MsgBond) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgApply) Type() string { return "validator_apply" }
+func (msg MsgBond) Type() string { return "validator_apply" }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgApply) ValidateBasic() sdk.Error {
+func (msg MsgBond) ValidateBasic() sdk.Error {
 	if msg.NodeAddress.Empty() {
 		return sdk.ErrUnknownRequest("node address cannot be empty")
 	}
@@ -47,11 +47,11 @@ func (msg MsgApply) ValidateBasic() sdk.Error {
 }
 
 // GetSignBytes encodes the message for signing
-func (msg MsgApply) GetSignBytes() []byte {
+func (msg MsgBond) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgApply) GetSigners() []sdk.AccAddress {
+func (msg MsgBond) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Signer}
 }
