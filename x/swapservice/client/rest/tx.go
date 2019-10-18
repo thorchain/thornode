@@ -26,6 +26,7 @@ type txHashReq struct {
 	BaseReq     rest.BaseReq `json:"base_req"`
 	Blockheight string       `json:"blockHeight"`
 	Count       string       `json:"count"`
+	Chain       string       `json:"chain"`
 	TxArray     []txItem     `json:"txArray"`
 }
 
@@ -49,33 +50,43 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
+		voters := make([]types.TxInVoter, 0)
 		height := sdk.NewUintFromString(req.Blockheight)
 		if height.IsZero() {
-			err := errors.New("binance chain block height cannot be zero")
+			err := errors.New("chain block height cannot be zero")
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		voters := make([]types.TxInVoter, len(req.TxArray))
-		for i, tx := range req.TxArray {
+		for _, tx := range req.TxArray {
 			txID, err := common.NewTxID(tx.TxHash)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
 
-			bnbAddr, err := common.NewBnbAddress(tx.Sender)
+			bnbAddr, err := common.NewAddress(tx.Sender)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			observeBNBAddr, err := common.NewBnbAddress(tx.ObservePoolAddress)
+			observeAddr, err := common.NewAddress(tx.ObservePoolAddress)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			}
-			tx := types.NewTxIn(tx.Coins, tx.Memo, bnbAddr, height, observeBNBAddr)
 
-			voters[i] = types.NewTxInVoter(txID, []types.TxIn{tx})
+			// set coins to chain
+			myChain, err := common.NewChain(req.Chain)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+			}
+			for i, _ := range tx.Coins {
+				tx.Coins[i].Chain = myChain
+			}
+
+			tx := types.NewTxIn(tx.Coins, tx.Memo, bnbAddr, height, observeAddr)
+
+			voters = append(voters, types.NewTxInVoter(txID, []types.TxIn{tx}))
 		}
 
 		// create the message
