@@ -5,6 +5,7 @@ import (
 )
 
 type Coin struct {
+	Chain  Chain    `json:"chain"`
 	Denom  Ticker   `json:"denom"`
 	Amount sdk.Uint `json:"amount"`
 }
@@ -12,8 +13,9 @@ type Coin struct {
 type Coins []Coin
 
 // NewCoin return a new instance of Coin
-func NewCoin(denom Ticker, amount sdk.Uint) Coin {
+func NewCoin(chain Chain, denom Ticker, amount sdk.Uint) Coin {
 	return Coin{
+		Chain:  chain,
 		Denom:  denom,
 		Amount: amount,
 	}

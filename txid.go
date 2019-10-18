@@ -9,9 +9,19 @@ type TxID string
 type TxIDs []TxID
 
 func NewTxID(hash string) (TxID, error) {
-	if len(hash) != 64 {
-		return TxID(""), fmt.Errorf("TxID Error: Must be 64 characters (got %d)", len(hash))
+	switch len(hash) {
+	case 64:
+		// do nothing
+	case 66: // ETH check
+		if !strings.HasPrefix(hash, "0x") {
+			err := fmt.Errorf("TxID Error: Must be 66 characters (got %d)", len(hash))
+			return TxID(""), err
+		}
+	default:
+		err := fmt.Errorf("TxID Error: Must be 64 characters (got %d)", len(hash))
+		return TxID(""), err
 	}
+
 	return TxID(strings.ToUpper(hash)), nil
 }
 
