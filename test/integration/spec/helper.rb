@@ -7,10 +7,17 @@ require 'securerandom'
 HOST = ENV['APIHOST'] || "localhost"
 PORT = ENV['APIPORT'] || 1317
 HTTP = Net::HTTP.new(HOST, PORT)
+$lastget = Time.now()
 
 def get(path)
+  # since we rate limit our API, check its been more than than a second since
+  # the last query
+  if Time.now() - $lastget < 1
+    sleep(1)
+  end
   resp = Net::HTTP.get_response(HOST, "/swapservice#{path}", PORT)
   resp.body = JSON.parse(resp.body)
+  $lastget = Time.now()
   return resp
 end
 
