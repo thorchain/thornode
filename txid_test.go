@@ -16,6 +16,10 @@ func (s TxIDSuite) TestTxID(c *C) {
 	c.Check(tx.IsEmpty(), Equals, false)
 	c.Check(tx.Equals(TxID(ID)), Equals, true)
 
+	// check eth hash
+	_, err = NewTxID("0xb41cf456e942f3430681298c503def54b79a96e3373ef9d44ea314d7eae41952")
+	c.Assert(err, IsNil)
+
 	_, err = NewTxID("bogus")
 	c.Check(err, NotNil)
 }
