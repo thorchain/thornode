@@ -60,7 +60,7 @@ func main() {
 }
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
-	return app.NewSwpServiceApp(logger, db)
+	return app.NewSwapServiceApp(logger, db)
 
 }
 
@@ -69,7 +69,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
 	if height != -1 {
-		nsApp := app.NewSwpServiceApp(logger, db)
+		nsApp := app.NewSwapServiceApp(logger, db)
 		err := nsApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -77,7 +77,7 @@ func exportAppStateAndTMValidators(
 		return nsApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	nsApp := app.NewSwpServiceApp(logger, db)
+	nsApp := app.NewSwapServiceApp(logger, db)
 
 	return nsApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }
