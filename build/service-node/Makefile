@@ -60,5 +60,5 @@ deploy: config push
 	aws ecs update-service --force-new-deployment --cluster ${ECS_CLUSTER} --service ${ECR_STATECHAIN}
 
 # Step 5
-smoke: deploy
+smoke-test:
 	./scripts/smoke.sh -r ${RPC_HOST} -g ${TARGET_GROUP_NAME} -c ${ECS_CLUSTER} -s ${ECS_SERVICE} -n ${TASK_COUNT} -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}

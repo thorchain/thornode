@@ -9,6 +9,7 @@ before_script:
 stages:
   - test
   - deploy
+  - smoke-test
 
 unit:test:
   stage: test
@@ -63,9 +64,30 @@ deploy:develop:
     - schedules
   environment:
     name: develop
-  script: make -C ./build/service-node smoke
+  script: make -C ./build/service-node deploy
   only:
     - master
+
+smoke-test:develop:
+  stage: smoke-test
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  except:
+    - schedules
+  environment:
+    name: develop
+  script: make -C ./build/service-node smoke-test
+  only:
+    - master
+
 
 deploy:staging:
   stage: deploy
