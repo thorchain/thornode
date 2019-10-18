@@ -60,7 +60,7 @@ var (
 	RegisterCodec         = types.RegisterCodec
 	NewTrustAccount       = types.NewTrustAccount
 	NewNodeAccount        = types.NewNodeAccount
-	NewMsgApply           = types.NewMsgApply
+	NewMsgBond            = types.NewMsgBond
 	NewPoolAddresses      = types.NewPoolAddresses
 	NewMsgNextPoolAddress = types.NewMsgNextPoolAddress
 	NewMsgLeave           = types.NewMsgLeave
@@ -71,7 +71,7 @@ var (
 )
 
 type (
-	MsgApply           = types.MsgApply
+	MsgBond            = types.MsgBond
 	MsgNoOp            = types.MsgNoOp
 	MsgAdd             = types.MsgAdd
 	MsgSetUnStake      = types.MsgSetUnStake

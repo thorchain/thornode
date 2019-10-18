@@ -41,8 +41,8 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 			return handleMsgSetTrustAccount(ctx, keeper, m)
 		case MsgSetVersion:
 			return handleMsgSetVersion(ctx, keeper, m)
-		case MsgApply:
-			return handleMsgApply(ctx, keeper, m)
+		case MsgBond:
+			return handleMsgBond(ctx, keeper, m)
 		case MsgNextPoolAddress:
 			return handleMsgConfirmNextPoolAddress(ctx, keeper, validatorManager, m)
 		case MsgLeave:
@@ -536,10 +536,10 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
-	case ApplyMemo:
-		newMsg, err = getMsgApplyFromMemo(m, txID, tx, signer)
+	case BondMemo:
+		newMsg, err = getMsgBondFromMemo(m, txID, tx, signer)
 		if nil != err {
-			return nil, errors.Wrap(err, "fail to get MsgApply from memo")
+			return nil, errors.Wrap(err, "fail to get MsgBond from memo")
 		}
 	case NextPoolMemo:
 		newMsg = NewMsgNextPoolAddress(txID, tx.Sender, signer)
@@ -653,7 +653,7 @@ func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.B
 		signer,
 	), nil
 }
-func getMsgApplyFromMemo(memo ApplyMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgBondFromMemo(memo BondMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	runeAmount := sdk.ZeroUint()
 	for _, coin := range tx.Coins {
 		if common.IsRune(coin.Denom) {
@@ -665,7 +665,7 @@ func getMsgApplyFromMemo(memo ApplyMemo, txID common.TxID, tx TxIn, signer sdk.A
 	}
 	// later on , we might be able to automatically do a swap for them , but not right now
 
-	return NewMsgApply(memo.GetNodeAddress(), runeAmount, txID, signer), nil
+	return NewMsgBond(memo.GetNodeAddress(), runeAmount, txID, signer), nil
 }
 
 // handleMsgAdd
@@ -862,15 +862,15 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 	}
 }
 
-// handleMsgApply
-func handleMsgApply(ctx sdk.Context, keeper Keeper, msg MsgApply) sdk.Result {
-	ctx.Logger().Info("receive MsgApply", "node address", msg.NodeAddress, "txhash", msg.RequestTxHash, "bond", msg.Bond.String())
+// handleMsgBond
+func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
+	ctx.Logger().Info("receive MsgBond", "node address", msg.NodeAddress, "txhash", msg.RequestTxHash, "bond", msg.Bond.String())
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgApply", "error", err)
+		ctx.Logger().Error("invalid MsgBond", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	nodeAccount, err := keeper.GetNodeAccount(ctx, msg.NodeAddress)

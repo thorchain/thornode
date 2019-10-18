@@ -25,7 +25,7 @@ const (
 	txOutbound
 	txAdd
 	txGas
-	txApply
+	txBond
 	txNextPool
 	txLeave
 )
@@ -50,7 +50,7 @@ var stringToTxTypeMap = map[string]TxType{
 	"gas":      txGas,
 	"g":        txGas,
 	"$":        txGas,
-	"apply":    txApply,
+	"bond":     txBond,
 	"nextpool": txNextPool,
 	"leave":    txLeave,
 }
@@ -63,7 +63,7 @@ var txToStringMap = map[TxType]string{
 	txOutbound: "outbound",
 	txAdd:      "add",
 	txGas:      "gas",
-	txApply:    "apply",
+	txBond:     "bond",
 	txNextPool: "nextpool",
 	txLeave:    "leave",
 }
@@ -147,7 +147,7 @@ type OutboundMemo struct {
 	BlockHeight uint64
 }
 
-type ApplyMemo struct {
+type BondMemo struct {
 	MemoBase
 	NodeAddress sdk.AccAddress
 }
@@ -185,7 +185,7 @@ func ParseMemo(memo string) (Memo, error) {
 	}
 
 	var ticker common.Ticker
-	if tx != txGas && tx != txOutbound && tx != txApply && tx != txLeave {
+	if tx != txGas && tx != txOutbound && tx != txBond && tx != txLeave {
 		var err error
 		ticker, err = common.NewTicker(parts[1])
 		if err != nil {
@@ -270,7 +270,7 @@ func ParseMemo(memo string) (Memo, error) {
 		return OutboundMemo{
 			BlockHeight: height,
 		}, err
-	case txApply:
+	case txBond:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("not enough parameters")
 		}
@@ -278,8 +278,8 @@ func ParseMemo(memo string) (Memo, error) {
 		if nil != err {
 			return noMemo, errors.Wrapf(err, "%s is an invalid bep address", parts[1])
 		}
-		return ApplyMemo{
-			MemoBase:    MemoBase{TxType: txApply},
+		return BondMemo{
+			MemoBase:    MemoBase{TxType: txBond},
 			NodeAddress: addr,
 		}, nil
 	case txLeave:
@@ -318,5 +318,5 @@ func (m SwapMemo) GetSlipLimit() sdk.Uint             { return m.SlipLimit }
 func (m AdminMemo) GetKey() string                    { return m.Key }
 func (m AdminMemo) GetValue() string                  { return m.Value }
 func (m OutboundMemo) GetBlockHeight() uint64         { return m.BlockHeight }
-func (m ApplyMemo) GetNodeAddress() sdk.AccAddress    { return m.NodeAddress }
+func (m BondMemo) GetNodeAddress() sdk.AccAddress     { return m.NodeAddress }
 func (m LeaveMemo) GetDestination() common.BnbAddress { return m.Destination }
