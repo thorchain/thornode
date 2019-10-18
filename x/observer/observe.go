@@ -91,8 +91,8 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		}
 
 		if startBlockHeight > 0 {
-			logger.Info().Uint64("height", startBlockHeight).Msg("resume from last block height known by statechain")
 			cfg.BlockScanner.StartBlockHeight = int64(startBlockHeight)
+			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by statechain")
 		} else {
 			client := &http.Client{}
 			cfg.BlockScanner.StartBlockHeight = binanceHeight(cfg.DEXHost, *client)
