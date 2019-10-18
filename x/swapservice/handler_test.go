@@ -133,41 +133,41 @@ func (HandlerSuite) TestHandleMsgApply(c *C) {
 	bond := sdk.NewUint(100)
 
 	// Not Authorized
-	msgApply := NewMsgApply(w.activeNodeAccount.NodeAddress, bond, GetRandomTxHash(), w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	msgApply := NewMsgBond(w.activeNodeAccount.NodeAddress, bond, GetRandomTxHash(), w.activeNodeAccount.Accounts.ObserverBEPAddress)
 	c.Assert(msgApply.ValidateBasic(), IsNil)
-	result := handleMsgApply(w.ctx, w.keeper, msgApply)
+	result := handleMsgBond(w.ctx, w.keeper, msgApply)
 	c.Assert(result.IsOK(), Equals, false)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
 	// nodeAccoutn already exist
 	w = getHandlerTestWrapper(c, 1, true, false)
-	msgApply = NewMsgApply(w.activeNodeAccount.NodeAddress, bond, GetRandomTxHash(), w.activeNodeAccount.Accounts.ObserverBEPAddress)
-	result = handleMsgApply(w.ctx, w.keeper, msgApply)
+	msgApply = NewMsgBond(w.activeNodeAccount.NodeAddress, bond, GetRandomTxHash(), w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	result = handleMsgBond(w.ctx, w.keeper, msgApply)
 	c.Assert(result.IsOK(), Equals, false)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 
 	// invalid Msg
-	invalidMsgApply := NewMsgApply(sdk.AccAddress{}, bond, GetRandomTxHash(), w.activeNodeAccount.Accounts.ObserverBEPAddress)
-	invalidMsgApplyResult := handleMsgApply(w.ctx, w.keeper, invalidMsgApply)
+	invalidMsgApply := NewMsgBond(sdk.AccAddress{}, bond, GetRandomTxHash(), w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	invalidMsgApplyResult := handleMsgBond(w.ctx, w.keeper, invalidMsgApply)
 	c.Assert(invalidMsgApplyResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Assert(invalidMsgApplyResult.IsOK(), Equals, false)
 
 	newAcc := GetRandomNodeAccount(NodeWhiteListed)
 	// less than minimum bond
-	msgApplyLessThanMinimumBond := NewMsgApply(newAcc.NodeAddress, sdk.NewUint(1000), GetRandomTxHash(), w.activeNodeAccount.Accounts.ObserverBEPAddress)
-	lessThanMinimumBondResult := handleMsgApply(w.ctx, w.keeper, msgApplyLessThanMinimumBond)
+	msgApplyLessThanMinimumBond := NewMsgBond(newAcc.NodeAddress, sdk.NewUint(1000), GetRandomTxHash(), w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	lessThanMinimumBondResult := handleMsgBond(w.ctx, w.keeper, msgApplyLessThanMinimumBond)
 	c.Assert(lessThanMinimumBondResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Assert(lessThanMinimumBondResult.IsOK(), Equals, false)
 
-	msgApply1 := NewMsgApply(newAcc.NodeAddress, sdk.NewUint(100*common.One), GetRandomTxHash(), w.activeNodeAccount.Accounts.ObserverBEPAddress)
-	result = handleMsgApply(w.ctx, w.keeper, msgApply1)
+	msgApply1 := NewMsgBond(newAcc.NodeAddress, sdk.NewUint(100*common.One), GetRandomTxHash(), w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	result = handleMsgBond(w.ctx, w.keeper, msgApply1)
 	c.Assert(result.IsOK(), Equals, true)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 	coins := w.keeper.coinKeeper.GetCoins(w.ctx, newAcc.NodeAddress)
 	c.Assert(coins.AmountOf("bep").Int64(), Equals, int64(1000))
 
 	// apply again shohuld fail
-	resultExist := handleMsgApply(w.ctx, w.keeper, msgApply1)
+	resultExist := handleMsgBond(w.ctx, w.keeper, msgApply1)
 	c.Assert(resultExist.IsOK(), Equals, false)
 	c.Assert(resultExist.Code, Equals, sdk.CodeUnknownRequest)
 
