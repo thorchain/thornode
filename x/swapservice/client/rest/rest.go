@@ -20,18 +20,15 @@ const (
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
 
-	// limit api calls
-	lmt := tollbooth.NewLimiter(10, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
-	lmt.SetMessage("You have reached maximum request limit.")
-
 	// Health Check Endpoint
-	r.Handle(
+	r.HandleFunc(
 		fmt.Sprintf("/%s/ping", storeName),
-		tollbooth.LimitFuncHandler(
-			lmt,
-			pingHandler(cliCtx, storeName),
-		),
+		pingHandler(cliCtx, storeName),
 	).Methods("GET")
+
+	// limit api calls
+	lmt := tollbooth.NewLimiter(1, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
+	lmt.SetMessage("You have reached maximum request limit.")
 
 	// Dynamically create endpoints of all funcs in querier.go
 	for _, q := range query.Queries {
