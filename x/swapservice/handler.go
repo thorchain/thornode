@@ -675,7 +675,7 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.BnbAddress, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.Address, signer sdk.AccAddress) (sdk.Msg, error) {
 	blockHeight := memo.GetBlockHeight()
 	return NewMsgOutboundTx(
 		txID,
@@ -917,7 +917,7 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 		return sdk.ErrUnknownRequest("not enough rune to be whitelisted").Result()
 	}
 	// we don't have the trust account info right now, so leave it empty
-	trustAccount := NewTrustAccount(common.NoBnbAddress, sdk.AccAddress{}, "")
+	trustAccount := NewTrustAccount(common.NoAddress, sdk.AccAddress{}, "")
 	// white list the given bep address
 	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, trustAccount, msg.Bond, msg.BondAddress)
 	keeper.SetNodeAccount(ctx, nodeAccount)

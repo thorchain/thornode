@@ -82,12 +82,12 @@ func (spi StakerPoolItem) Valid() error {
 //    ]
 // }
 type StakerPool struct {
-	StakerID  common.BnbAddress `json:"staker_id"`      // this will be staker's address on binance chain
+	StakerID  common.Address    `json:"staker_id"`      // this will be staker's address on binance chain
 	PoolUnits []*StakerPoolItem `json:"pool_and_units"` // the key of this map will be the pool id , value will bt [UNIT,RUNE,TOKEN]
 }
 
 // NewStakerPool create a new instance of StakerPool
-func NewStakerPool(id common.BnbAddress) StakerPool {
+func NewStakerPool(id common.Address) StakerPool {
 	return StakerPool{
 		StakerID:  id,
 		PoolUnits: []*StakerPoolItem{},

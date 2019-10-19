@@ -11,7 +11,7 @@ type TxOutTestSuite struct{}
 var _ = Suite(&TxOutTestSuite{})
 
 func (TxOutTestSuite) TestTxOut(c *C) {
-	bnbAddress, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	bnbAddress, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
 	txOut := NewTxOut(1)
 	c.Assert(txOut, NotNil)

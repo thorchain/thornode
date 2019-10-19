@@ -121,7 +121,7 @@ func GetCmdEndPool(cdc *codec.Codec) *cobra.Command {
 			if nil != err {
 				return errors.Wrap(err, "invalid ticker")
 			}
-			requester, err := common.NewBnbAddress(args[1])
+			requester, err := common.NewAddress(args[1])
 			if nil != err {
 				return errors.Wrap(err, "invalid requster bnb address")
 			}

@@ -178,7 +178,8 @@ func (HandlerSuite) TestHandleMsgSetTrustAccount(c *C) {
 	nodeAddr := GetRandomBech32Addr()
 	signer := GetRandomBech32Addr()
 	// add observer
-	bnb := GetRandomBNBAddress()
+	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
+	c.Assert(err, IsNil)
 	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
 
 	bondAddr := GetRandomBNBAddress()
@@ -188,14 +189,14 @@ func (HandlerSuite) TestHandleMsgSetTrustAccount(c *C) {
 	c.Check(unAuthorizedResult.Code, Equals, sdk.CodeUnauthorized)
 	c.Check(unAuthorizedResult.IsOK(), Equals, false)
 	bond := sdk.NewUint(common.One * 100)
-	nodeAccount := NewNodeAccount(signer, NodeActive, NewTrustAccount(common.NoBnbAddress, sdk.AccAddress{}, ""), bond, bondAddr)
+	nodeAccount := NewNodeAccount(signer, NodeActive, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr)
 	k.SetNodeAccount(ctx, nodeAccount)
 
 	activeFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
 	c.Check(activeFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(activeFailResult.IsOK(), Equals, false)
 
-	nodeAccount = NewNodeAccount(signer, NodeDisabled, NewTrustAccount(common.NoBnbAddress, sdk.AccAddress{}, ""), bond, bondAddr)
+	nodeAccount = NewNodeAccount(signer, NodeDisabled, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr)
 	k.SetNodeAccount(ctx, nodeAccount)
 
 	disabledFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
@@ -208,7 +209,7 @@ func (HandlerSuite) TestHandleMsgSetTrustAccount(c *C) {
 	c.Check(notUniqueFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(notUniqueFailResult.IsOK(), Equals, false)
 
-	nodeAccount = NewNodeAccount(signer, NodeWhiteListed, NewTrustAccount(common.NoBnbAddress, sdk.AccAddress{}, ""), bond, bondAddr)
+	nodeAccount = NewNodeAccount(signer, NodeWhiteListed, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr)
 	k.SetNodeAccount(ctx, nodeAccount)
 
 	success := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)

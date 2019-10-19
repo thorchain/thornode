@@ -31,7 +31,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	txOutStore := NewTxOutStore(&MockTxOutSetter{})
 	txOutStore.NewBlock(uint64(1))
 
-	bnbAddress, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	bnbAddress, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
 
 	item := &TxOutItem{

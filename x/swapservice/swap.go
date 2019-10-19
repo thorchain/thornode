@@ -23,7 +23,7 @@ func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...common.Ticker
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(source, target common.Ticker, amount sdk.Uint, requester, destination common.BnbAddress, requestTxHash common.TxID) error {
+func validateMessage(source, target common.Ticker, amount sdk.Uint, requester, destination common.Address, requestTxHash common.TxID) error {
 	if requestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
 	}
@@ -50,7 +50,7 @@ func swap(ctx sdk.Context,
 	keeper poolStorage, txID common.TxID,
 	source, target common.Ticker,
 	amount sdk.Uint,
-	requester, destination common.BnbAddress,
+	requester, destination common.Address,
 	requestTxHash common.TxID,
 	tradeTarget sdk.Uint,
 	globalSlipLimit common.Amount) (sdk.Uint, error) {
@@ -81,7 +81,7 @@ func swapOne(ctx sdk.Context,
 	keeper poolStorage, txID common.TxID,
 	source, target common.Ticker,
 	amount sdk.Uint, requester,
-	destination common.BnbAddress,
+	destination common.Address,
 	tradeTarget sdk.Uint,
 	globalSlipLimit common.Amount) (amt sdk.Uint, err error) {
 

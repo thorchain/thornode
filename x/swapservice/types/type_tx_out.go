@@ -9,8 +9,8 @@ import (
 
 // TxOutItem represent an tx need to be sent to binance chain
 type TxOutItem struct {
-	ToAddress   common.BnbAddress `json:"to"`
-	PoolAddress common.BnbAddress `json:"pool_address"`
+	ToAddress   common.Address `json:"to"`
+	PoolAddress common.Address `json:"pool_address"`
 	// TODO update common.Coins to use sdk.Coins
 	Coins common.Coins `json:"coins"`
 }
