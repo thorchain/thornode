@@ -15,7 +15,6 @@ import (
 type SwapSuite struct{}
 
 var _ = Suite(&SwapSuite{})
-var keyStore = sdk.NewKVStoreKey(StoreKey)
 
 func (s *SwapSuite) SetUpSuite(c *C) {
 	SetupConfigForTest()
@@ -241,16 +240,16 @@ func (s SwapSuite) TestCalculators(c *C) {
 func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	txOutStore := NewTxOutStore(k)
-	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
-	c.Assert(err, IsNil)
-	addr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
-	c.Assert(err, IsNil)
-	signerAddr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
-	observerAddr, err := sdk.AccAddressFromBech32("bep1rtgz3lcaw8vw0yfsc8ga0rdgwa3qh9ju7vfsnk")
+
+	txID := GetRandomTxHash()
+	addr := GetRandomBNBAddress()
+	signerAddr := GetRandomBech32Addr()
+	observerAddr := GetRandomBech32Addr()
+	bond := sdk.NewUint(100 * common.One)
+	bondAddr := GetRandomBNBAddress()
 	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
 	ta := types.NewTrustAccount(addr, observerAddr, bepConsPubKey)
-	k.SetNodeAccount(ctx, types.NewNodeAccount(signerAddr, NodeActive, ta))
+	k.SetNodeAccount(ctx, types.NewNodeAccount(signerAddr, NodeActive, ta, bond, bondAddr))
 	txOutStore.NewBlock(1)
 	poolAddrMgr := NewPoolAddressManager(k)
 	// no pool

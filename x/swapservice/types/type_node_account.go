@@ -81,10 +81,11 @@ func GetNodeStatus(ps string) NodeStatus {
 
 // NodeAccount represent node
 type NodeAccount struct {
-	NodeAddress sdk.AccAddress `json:"node_address"`
-	Status      NodeStatus     `json:"status"`
-	Accounts    TrustAccount   `json:"accounts"`
-	Bond        sdk.Uint       `json:"bond"`
+	NodeAddress sdk.AccAddress    `json:"node_address"`
+	Status      NodeStatus        `json:"status"`
+	Accounts    TrustAccount      `json:"accounts"`
+	Bond        sdk.Uint          `json:"bond"`
+	BondAddress common.BnbAddress `json:"bond_address"`
 	// start from when this node account is in current status
 	// StatusSince field is important , it has been used to sort node account , used for validator rotation
 	StatusSince    int64         `json:"status_since"`
@@ -94,11 +95,13 @@ type NodeAccount struct {
 }
 
 // NewNodeAccount create new instance of NodeAccount
-func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts TrustAccount) NodeAccount {
+func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts TrustAccount, bond sdk.Uint, bondAddress common.BnbAddress) NodeAccount {
 	na := NodeAccount{
 		NodeAddress: nodeAddress,
 		Accounts:    accounts,
-		Bond:        sdk.ZeroUint(),
+		Bond:        bond,
+		BondAddress: bondAddress,
+		Version:     common.ZeroAmount,
 	}
 	na.UpdateStatus(status)
 	return na
@@ -114,6 +117,9 @@ func (n NodeAccount) IsValid() error {
 	if n.NodeAddress.Empty() {
 		return errors.New("node bep address is empty")
 	}
+	if n.BondAddress.IsEmpty() {
+		return errors.New("bond address is empty")
+	}
 	return n.Accounts.IsValid()
 }
 
@@ -126,7 +132,10 @@ func (n *NodeAccount) UpdateStatus(status NodeStatus) {
 // Equals compare two node account, to see whether they are equal
 func (n NodeAccount) Equals(n1 NodeAccount) bool {
 	if n.NodeAddress.Equals(n1.NodeAddress) &&
-		n.Accounts.Equals(n1.Accounts) {
+		n.Accounts.Equals(n1.Accounts) &&
+		n.BondAddress.Equals(n1.BondAddress) &&
+		n.Bond.Equal(n1.Bond) &&
+		n.Version.Equals(n1.Version) {
 		return true
 	}
 	return false
@@ -140,6 +149,7 @@ func (n NodeAccount) String() string {
 	sb.WriteString("account:" + n.Accounts.String() + "\n")
 	sb.WriteString("bond:" + n.Bond.String() + "\n")
 	sb.WriteString("version:" + n.Version.String() + "\n")
+	sb.WriteString("bond address:" + n.BondAddress.String() + "\n")
 	return sb.String()
 }
 
