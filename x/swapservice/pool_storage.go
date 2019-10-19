@@ -13,8 +13,8 @@ type poolStorage interface {
 	GetPool(ctx sdk.Context, ticker common.Ticker) Pool
 	SetPool(ctx sdk.Context, ps Pool)
 
-	GetStakerPool(ctx sdk.Context, stakerID common.BnbAddress) (StakerPool, error)
-	SetStakerPool(ctx sdk.Context, stakerID common.BnbAddress, sp StakerPool)
+	GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error)
+	SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool)
 
 	GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker, error)
 	SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps PoolStaker)

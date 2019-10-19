@@ -30,8 +30,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		source          common.Ticker
 		target          common.Ticker
 		amount          sdk.Uint
-		requester       common.BnbAddress
-		destination     common.BnbAddress
+		requester       common.Address
+		destination     common.Address
 		returnAmount    sdk.Uint
 		tradeTarget     sdk.Uint
 		globalSlipLimit common.Amount
@@ -241,12 +241,16 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	txOutStore := NewTxOutStore(k)
 
-	txID := GetRandomTxHash()
-	addr := GetRandomBNBAddress()
-	signerAddr := GetRandomBech32Addr()
-	observerAddr := GetRandomBech32Addr()
 	bond := sdk.NewUint(100 * common.One)
-	bondAddr := GetRandomBNBAddress()
+	bondAddr, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
+	c.Assert(err, IsNil)
+	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
+	c.Assert(err, IsNil)
+	addr, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
+	c.Assert(err, IsNil)
+	signerAddr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
+	c.Assert(err, IsNil)
+	observerAddr, err := sdk.AccAddressFromBech32("bep1rtgz3lcaw8vw0yfsc8ga0rdgwa3qh9ju7vfsnk")
 	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
 	ta := types.NewTrustAccount(addr, observerAddr, bepConsPubKey)
 	k.SetNodeAccount(ctx, types.NewNodeAccount(signerAddr, NodeActive, ta, bond, bondAddr))
@@ -279,12 +283,12 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	k.SetPool(ctx, poolTCAN)
 
 	txID1, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD211")
-	m, err := ParseMemo("swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:124958592")
-	observePoolAddr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
+	observePoolAddr, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
 	txIn := types.NewTxIn(common.Coins{
 		common.NewCoin(common.BNBChain, tCanTicker, sdk.NewUint(20000000)),
-	}, "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:124958592", addr, sdk.NewUint(1), observePoolAddr)
+	}, "swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592", addr, sdk.NewUint(1), observePoolAddr)
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txID1, txIn, observerAddr)
 
 	//msgSwapRune := NewMsgSwap(txID1, tCanTicker, common.RuneA1FTicker, sdk.NewUint(20000000), addr, addr, sdk.NewUint(124958593), observerAddr)

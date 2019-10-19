@@ -6,14 +6,14 @@ import (
 )
 
 type MsgEndPool struct {
-	Ticker        common.Ticker     `json:"ticker"`
-	Requester     common.BnbAddress `json:"requester"`
-	RequestTxHash common.TxID       `json:"request_tx_hash"` // request tx hash on binance chain
-	Signer        sdk.AccAddress    `json:"signer"`
+	Ticker        common.Ticker  `json:"ticker"`
+	Requester     common.Address `json:"requester"`
+	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on binance chain
+	Signer        sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgEndPool create a new instance MsgEndPool
-func NewMsgEndPool(ticker common.Ticker, request common.BnbAddress, requestTxHash common.TxID, signer sdk.AccAddress) MsgEndPool {
+func NewMsgEndPool(ticker common.Ticker, request common.Address, requestTxHash common.TxID, signer sdk.AccAddress) MsgEndPool {
 	return MsgEndPool{
 		Ticker:        ticker,
 		Requester:     request,

@@ -120,15 +120,13 @@ func (StakeSuite) TestValidateStakeMessage(c *C) {
 	if nil != err {
 		c.Errorf("fail to create tx id,%s", err)
 	}
-	bnbAddress, err := common.NewBnbAddress("tbnb1c2yvdphs674vlkp2s2e68cw89garykgau2c8vx")
-	if nil != err {
-		c.Errorf("fail to create bnb address,%s", err)
-	}
+	bnbAddress, err := common.NewAddress("tbnb1e803p76n4rtyeclef7pg3295nurwfuwsw8l36m")
+	c.Assert(err, IsNil)
 	c.Assert(validateStakeMessage(ctx, ps, common.Ticker(""), txId, bnbAddress), NotNil)
 	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, bnbAddress), NotNil)
 	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, bnbAddress), NotNil)
 	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, common.TxID(""), bnbAddress), NotNil)
-	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, common.NoBnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, common.NoAddress), NotNil)
 	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, bnbAddress), NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
@@ -149,10 +147,8 @@ func (StakeSuite) TestStake(c *C) {
 	if nil != err {
 		c.Errorf("fail to create tx id,%s", err)
 	}
-	bnbAddress, err := common.NewBnbAddress("tbnb1c2yvdphs674vlkp2s2e68cw89garykgau2c8vx")
-	if nil != err {
-		c.Errorf("fail to create bnb address,%s", err)
-	}
+	bnbAddress, err := common.NewAddress("tbnb1e803p76n4rtyeclef7pg3295nurwfuwsw8l36m")
+	c.Assert(err, IsNil)
 	_, err = stake(ctx, ps, "", sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
 	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{

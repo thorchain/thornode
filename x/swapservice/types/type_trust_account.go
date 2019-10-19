@@ -10,16 +10,16 @@ import (
 
 // TrustAccount represent those accounts we can trust, and can be used to sign tx
 type TrustAccount struct {
-	SignerBNBAddress       common.BnbAddress `json:"bnb_signer_acc"`
-	ObserverBEPAddress     sdk.AccAddress    `json:"bep_observer_acc"`
-	ValidatorBEPConsPubKey string            `json:"bepv_validator_acc"`
+	SignerBNBAddress       common.Address `json:"bnb_signer_acc"`
+	ObserverBEPAddress     sdk.AccAddress `json:"bep_observer_acc"`
+	ValidatorBEPConsPubKey string         `json:"bepv_validator_acc"`
 }
 
 // TrustAccounts just a list of trust account
 type TrustAccounts []TrustAccount
 
 // NewTrustAccount create a new instance of trust account
-func NewTrustAccount(signerBNBAddress common.BnbAddress, observerBepAddress sdk.AccAddress, validatorConsPubKey string) TrustAccount {
+func NewTrustAccount(signerBNBAddress common.Address, observerBepAddress sdk.AccAddress, validatorConsPubKey string) TrustAccount {
 	return TrustAccount{
 		SignerBNBAddress:       signerBNBAddress,
 		ObserverBEPAddress:     observerBepAddress,

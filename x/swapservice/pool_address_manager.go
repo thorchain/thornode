@@ -158,13 +158,13 @@ func (pm *PoolAddressManager) setupInitialPoolAddresses(ctx sdk.Context, height 
 				sdk.NewAttribute(PoolAddressAction, "no pool rotation"),
 				sdk.NewAttribute("reason", "no active node account")))
 		ctx.Logger().Info("only one active node account, no pool rotation")
-		return NewPoolAddresses(common.NoBnbAddress, na.Accounts.SignerBNBAddress, na.Accounts.SignerBNBAddress, height+rotatePerBlockHeight), nil
+		return NewPoolAddresses(common.NoAddress, na.Accounts.SignerBNBAddress, na.Accounts.SignerBNBAddress, height+rotatePerBlockHeight), nil
 
 	}
 	sort.Sort(nodeAccounts)
 	na := nodeAccounts[0]
 	sec := nodeAccounts[1]
 	ctx.Logger().Info("two or more active nodes , we will rotate pools")
-	return NewPoolAddresses(common.NoBnbAddress, na.Accounts.SignerBNBAddress, sec.Accounts.SignerBNBAddress, height+rotatePerBlockHeight), nil
+	return NewPoolAddresses(common.NoAddress, na.Accounts.SignerBNBAddress, sec.Accounts.SignerBNBAddress, height+rotatePerBlockHeight), nil
 
 }

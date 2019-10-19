@@ -55,11 +55,14 @@ func (NodeAccountSuite) TestGetNodeStatus(c *C) {
 }
 
 func (NodeAccountSuite) TestNodeAccount(c *C) {
-	bnb := GetRandomBNBAddress()
-	addr := GetRandomBech32Addr()
+	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
+	c.Assert(err, IsNil)
+	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
+	c.Assert(err, IsNil)
+	c.Check(addr.Empty(), Equals, false)
 	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
 	trustAccount := NewTrustAccount(bnb, addr, bepConsPubKey)
-	err := trustAccount.IsValid()
+	err = trustAccount.IsValid()
 	c.Assert(err, IsNil)
 	nodeAddress := GetRandomBech32Addr()
 	bondAddr := GetRandomBNBAddress()
@@ -82,12 +85,23 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 
 func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 	var accounts NodeAccounts
-	for i := 0; i < 10; i++ {
-		addr := GetRandomBech32Addr()
-		bnb := GetRandomBNBAddress()
-		na := NewNodeAccount(addr, Active, NewTrustAccount(bnb, addr, ""), sdk.NewUint(common.One), GetRandomBNBAddress())
+	for {
+		na := GetRandomNodeAccount(Active)
+		dup := false
+		for _, node := range accounts {
+			if na.Accounts.SignerBNBAddress.Equals(node.Accounts.SignerBNBAddress) {
+				dup = true
+			}
+		}
+		if dup {
+			continue
+		}
 		accounts = append(accounts, na)
+		if len(accounts) == 10 {
+			break
+		}
 	}
+
 	sort.Sort(accounts)
 
 	for i, na := range accounts {
@@ -103,10 +117,23 @@ func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 
 func (NodeAccountSuite) TestAfter(c *C) {
 	var accounts NodeAccounts
-	for i := 0; i < 10; i++ {
+	for {
 		na := GetRandomNodeAccount(Active)
+		dup := false
+		for _, node := range accounts {
+			if na.Accounts.SignerBNBAddress.Equals(node.Accounts.SignerBNBAddress) {
+				dup = true
+			}
+		}
+		if dup {
+			continue
+		}
 		accounts = append(accounts, na)
+		if len(accounts) == 10 {
+			break
+		}
 	}
+
 	sort.Sort(accounts)
 	for i := 0; i < len(accounts)-1; i++ {
 		node := accounts[i]

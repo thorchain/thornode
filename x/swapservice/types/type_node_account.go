@@ -81,11 +81,11 @@ func GetNodeStatus(ps string) NodeStatus {
 
 // NodeAccount represent node
 type NodeAccount struct {
-	NodeAddress sdk.AccAddress    `json:"node_address"`
-	Status      NodeStatus        `json:"status"`
-	Accounts    TrustAccount      `json:"accounts"`
-	Bond        sdk.Uint          `json:"bond"`
-	BondAddress common.BnbAddress `json:"bond_address"`
+	NodeAddress sdk.AccAddress `json:"node_address"`
+	Status      NodeStatus     `json:"status"`
+	Accounts    TrustAccount   `json:"accounts"`
+	Bond        sdk.Uint       `json:"bond"`
+	BondAddress common.Address `json:"bond_address"`
 	// start from when this node account is in current status
 	// StatusSince field is important , it has been used to sort node account , used for validator rotation
 	StatusSince    int64         `json:"status_since"`
@@ -95,7 +95,7 @@ type NodeAccount struct {
 }
 
 // NewNodeAccount create new instance of NodeAccount
-func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts TrustAccount, bond sdk.Uint, bondAddress common.BnbAddress) NodeAccount {
+func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts TrustAccount, bond sdk.Uint, bondAddress common.Address) NodeAccount {
 	na := NodeAccount{
 		NodeAddress: nodeAddress,
 		Accounts:    accounts,
@@ -173,7 +173,7 @@ func (nodeAccounts NodeAccounts) Swap(i, j int) {
 	nodeAccounts[i], nodeAccounts[j] = nodeAccounts[j], nodeAccounts[i]
 }
 
-func (nodeAccounts NodeAccounts) After(addr common.BnbAddress) NodeAccount {
+func (nodeAccounts NodeAccounts) After(addr common.Address) NodeAccount {
 	idx := 0
 	for i, na := range nodeAccounts {
 		if na.Accounts.SignerBNBAddress.Equals(addr) {

@@ -208,7 +208,7 @@ func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 
 // queryStakerPool
 func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	addr, err := common.NewBnbAddress(path[0])
+	addr, err := common.NewAddress(path[0])
 	if nil != err {
 		ctx.Logger().Error("fail to parse bnb address", err)
 		return nil, sdk.ErrInternal("fail to parse bnb address")

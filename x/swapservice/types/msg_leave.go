@@ -7,13 +7,13 @@ import (
 
 // MsgLeave when an operator don't want to be a validator anymore
 type MsgLeave struct {
-	RequestTxHash common.TxID       `json:"request_tx_hash"`
-	Sender        common.BnbAddress `json:"sender"`
-	Signer        sdk.AccAddress    `json:"signer"`
+	RequestTxHash common.TxID    `json:"request_tx_hash"`
+	Sender        common.Address `json:"sender"`
+	Signer        sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgLeave create a new instance of MsgLeave
-func NewMsgLeave(requestTxHash common.TxID, sender common.BnbAddress, signer sdk.AccAddress) MsgLeave {
+func NewMsgLeave(requestTxHash common.TxID, sender common.Address, signer sdk.AccAddress) MsgLeave {
 	return MsgLeave{
 		RequestTxHash: requestTxHash,
 		Sender:        sender,

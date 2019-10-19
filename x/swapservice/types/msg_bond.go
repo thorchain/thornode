@@ -7,15 +7,15 @@ import (
 
 // MsgBond when a user would like to become a validator, and run a full set, they need send an `apply:bepaddress` with a bond to our pool address
 type MsgBond struct {
-	NodeAddress   sdk.AccAddress    `json:"node_address"`
-	Bond          sdk.Uint          `json:"bond"`
-	BondAddress   common.BnbAddress `json:"bond_address"`
-	RequestTxHash common.TxID       `json:"request_tx_hash"` // request tx hash on binance chain
-	Signer        sdk.AccAddress    `json:"signer"`
+	NodeAddress   sdk.AccAddress `json:"node_address"`
+	Bond          sdk.Uint       `json:"bond"`
+	BondAddress   common.Address `json:"bond_address"`
+	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on binance chain
+	Signer        sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgBond create new MsgBond message
-func NewMsgBond(nodeAddr sdk.AccAddress, bond sdk.Uint, requestTxHash common.TxID, bondAddress common.BnbAddress, signer sdk.AccAddress) MsgBond {
+func NewMsgBond(nodeAddr sdk.AccAddress, bond sdk.Uint, requestTxHash common.TxID, bondAddress common.Address, signer sdk.AccAddress) MsgBond {
 	return MsgBond{
 		NodeAddress:   nodeAddr,
 		Bond:          bond,
