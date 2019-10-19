@@ -11,7 +11,6 @@ const (
 	DefaultCodespace = types.DefaultCodespace
 	PoolEnabled      = types.Enabled
 	PoolSuspended    = types.Suspended
-	PoolBootstrap    = types.Bootstrap
 	EventSuccess     = types.Success
 	EventRefund      = types.Refund
 
@@ -54,7 +53,6 @@ var (
 	NewStakerPool         = types.NewStakerPool
 	NewMsgEndPool         = types.NewMsgEndPool
 	HasMajority           = types.HasMajority
-	GetPoolStatus         = types.GetPoolStatus
 	GetAdminConfigKey     = types.GetAdminConfigKey
 	ModuleCdc             = types.ModuleCdc
 	RegisterCodec         = types.RegisterCodec
@@ -67,6 +65,7 @@ var (
 	GetRandomNodeAccount  = types.GetRandomNodeAccount
 	GetRandomBNBAddress   = types.GetRandomBNBAddress
 	GetRandomTxHash       = types.GetRandomTxHash
+	GetRandomBech32Addr   = types.GetRandomBech32Addr
 	SetupConfigForTest    = types.SetupConfigForTest
 )
 
