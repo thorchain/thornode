@@ -23,6 +23,9 @@ require (
 	github.com/tendermint/tendermint v0.32.6
 	github.com/tendermint/tm-db v0.2.0
 	gitlab.com/thorchain/bepswap/common v1.0.1
+	github.com/btcsuite/btcutil v0.0.0-20180706230648-ab6388e0c60a
+	github.com/go-logfmt/logfmt v0.4.0 // indirect
+	github.com/kr/pretty v0.1.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/resty.v1 v1.12.0
 )

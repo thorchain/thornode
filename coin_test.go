@@ -14,4 +14,8 @@ func (s CoinSuite) TestCoin(c *C) {
 	c.Check(coin.Chain.Equals(Chain("BNB")), Equals, true)
 	c.Check(coin.Denom.Equals(Ticker("BNB")), Equals, true)
 	c.Check(coin.Amount.Uint64(), Equals, uint64(230000000))
+	c.Check(coin.Valid(), IsNil)
+
+	c.Check(Coin{"", "BNB", sdk.NewUint(230000000)}.Valid(), NotNil)
+	c.Check(Coin{"BNB", "", sdk.NewUint(230000000)}.Valid(), NotNil)
 }
