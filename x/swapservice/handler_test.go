@@ -401,8 +401,8 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	txIn := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
-			common.NewCoin(common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
 		},
 		"stake:BNB",
 		GetRandomBNBAddress(),
@@ -436,8 +436,8 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 
 	txIn1 := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
-			common.NewCoin(common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
 		},
 		"stake:BNB",
 		GetRandomBNBAddress(),
@@ -464,7 +464,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	txIn := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.RuneA1FTicker, sdk.NewUint(1*common.One)),
+			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(1*common.One)),
 		},
 		"create:BNB",
 		GetRandomBNBAddress(),
@@ -494,8 +494,8 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	// lets do a stake first, otherwise nothing to withdraw
 	txStake := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
-			common.NewCoin(common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
 		},
 		"stake:BNB",
 		staker,
@@ -513,7 +513,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 
 	txIn := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.RuneA1FTicker, sdk.NewUint(1*common.One)),
+			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(1*common.One)),
 		},
 		"withdraw:BNB",
 		staker,
@@ -595,7 +595,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	// set a txin
 	txIn1 := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.RuneA1FTicker, sdk.NewUint(1*common.One)),
+			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(1*common.One)),
 		},
 		"swap:BNB",
 		GetRandomBNBAddress(),

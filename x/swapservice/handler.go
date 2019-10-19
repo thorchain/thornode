@@ -969,7 +969,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 			ToAddress:   nodeAcc.BondAddress,
 			PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 			Coins: common.Coins{
-				common.NewCoin(common.RuneTicker, nodeAcc.Bond),
+				common.NewCoin(common.BNBChain, common.RuneTicker, nodeAcc.Bond),
 			},
 		}
 		txOut.AddTxOutItem(ctx, keeper, txOutItem)

@@ -20,7 +20,7 @@ func (MsgSetTxInSuite) TestMsgSetTxIn(c *C) {
 	observePoolAddr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqb")
 	c.Assert(err, IsNil)
 	txIn := NewTxIn(common.Coins{
-		common.NewCoin(common.RuneA1FTicker, sdk.NewUint(1)),
+		common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(1)),
 	}, "hello", bnb, sdk.NewUint(1), observePoolAddr)
 	txs := []TxInVoter{
 		NewTxInVoter(txID, []TxIn{txIn}),

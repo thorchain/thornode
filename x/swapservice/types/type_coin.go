@@ -15,7 +15,7 @@ func FromSdkCoins(c sdk.Coins) (common.Coins, error) {
 			return nil, errors.Wrapf(err, "fail to convert sdk.Coin to statechain Coin type,ticker:%s invalid", item.Denom)
 		}
 
-		cs = append(cs, common.NewCoin(t, sdk.NewUint(uint64(item.Amount.Int64()))))
+		cs = append(cs, common.NewCoin(common.BNBChain, t, sdk.NewUint(uint64(item.Amount.Int64()))))
 	}
 	return cs, nil
 }

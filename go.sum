@@ -293,6 +293,8 @@ github.com/zondax/ledger-go v0.9.0 h1:oTrtFqPFA4VdCPRvqMaN45mQnJxkPc0JxoVZfCoUpj
 github.com/zondax/ledger-go v0.9.0/go.mod h1:b2vIcu3u9gJoIx4kTWuXOgzGV7FPWeUktqRqVf6feG0=
 gitlab.com/thorchain/bepswap/common v1.0.0 h1:AKzrB3EVOafRzAHRg24HWBWT3X9jTGaSmIBIK25Mgf8=
 gitlab.com/thorchain/bepswap/common v1.0.0/go.mod h1:SmNECedJ1uIQ/NX0/GQSy2refbHoaQr1R18zHyFeGaU=
+gitlab.com/thorchain/bepswap/common v1.0.1-0.20191018104203-d7f2639b98ff h1:WHnPZAUve3sqc0ja+MO+ihGcnX/eY9VA1l4BNUJ+qOE=
+gitlab.com/thorchain/bepswap/common v1.0.1-0.20191018104203-d7f2639b98ff/go.mod h1:SmNECedJ1uIQ/NX0/GQSy2refbHoaQr1R18zHyFeGaU=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.3 h1:MUGmc65QhB3pIlaQ5bB4LwqSj6GIonVJXpZiaKNyaKk=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=

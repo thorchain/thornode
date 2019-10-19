@@ -283,7 +283,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	observePoolAddr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
 	c.Assert(err, IsNil)
 	txIn := types.NewTxIn(common.Coins{
-		common.NewCoin(tCanTicker, sdk.NewUint(20000000)),
+		common.NewCoin(common.BNBChain, tCanTicker, sdk.NewUint(20000000)),
 	}, "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:124958592", addr, sdk.NewUint(1), observePoolAddr)
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txID1, txIn, observerAddr)
 
