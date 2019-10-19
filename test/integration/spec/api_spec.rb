@@ -1,6 +1,6 @@
 require_relative './helper.rb'
 
-TRUST_BNB_ADDRESS="bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY"
+TRUST_BNB_ADDRESS="bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"
 
 describe "API Tests" do
 
@@ -29,7 +29,6 @@ describe "API Tests" do
   end
 
 
-  poolAddress = bnbAddress() # here so its available in other tests
   context "Create a pool" do
 
     it "should show up in listing of pools" do
@@ -39,10 +38,10 @@ describe "API Tests" do
     end
 
     it "create a pool for bnb" do
-          tx = makeTx(memo: "create:BNB")
-          resp = processTx([tx])
-          expect(resp.code).to eq("200"), resp.body.inspect
-        end
+      tx = makeTx(memo: "create:BNB")
+      resp = processTx([tx])
+      expect(resp.code).to eq("200"), resp.body.inspect
+    end
 
     it "create a pool for TCAN-014" do
       tx = makeTx(memo: "create:TCAN-014")
@@ -51,7 +50,6 @@ describe "API Tests" do
     end
 
     it "pool should be enabled" do
-
       resp = get("/pool/TCAN-014")
       expect(resp.code).to eq("200")
       expect(resp.body['status']).to eq("Enabled"), resp.body.inspect
@@ -85,7 +83,7 @@ describe "API Tests" do
       {'denom': "RUNE-B1A", "amount": "2349500000"},
       {'denom': "TCAN-014", "amount": "334850000"},
     ]
-    sender = "bnb" + get_rand(39).downcase
+    sender = "bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38"
 
     it "should be able to stake" do
 
@@ -119,7 +117,7 @@ describe "API Tests" do
       # make a swap
       coins = [{'denom': "TCAN-014", "amount": "20000000"}]
       tx = makeTx(
-        memo: "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:124958592",
+        memo: "swap:RUNE-B1A:bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq:124958592",
         coins: coins,
         hash: txid,
       )
@@ -133,9 +131,9 @@ describe "API Tests" do
 
       # another swap ,it should fail due to price protection
       tx1 = makeTx(
-         memo: "swap:RUNE-B1A:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX:134958590",
-         coins: coins,
-         hash: txid(),
+        memo: "swap:RUNE-B1A:bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq:134958590",
+        coins: coins,
+        hash: txid(),
       )
       resp = processTx(tx1)
       expect(resp.code).to eq("200"), resp.body.inspect
@@ -153,9 +151,11 @@ describe "API Tests" do
       found = false
       until i > 100
         resp = get("/txoutarray/#{i}")
-        arr = resp.body['tx_array']
-        unless arr.nil?
-          if arr[0]['to'] == "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlXXX"
+        puts resp.body
+        arr = resp.body['chains']['BNB']
+        puts arr
+        unless arr['tx_array'].empty?
+          if arr['tx_array'][0]['to'] == "bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"
             # we have found the block height of our last swap
             found = true
             newTxId = txid()
@@ -166,6 +166,7 @@ describe "API Tests" do
             resp = get("/tx/#{txid}")
             expect(resp.code).to eq("200")
             expect(resp.body['txhash']).to eq(newTxId), resp.body.inspect
+            break
           end
         end
         i = i + 1
