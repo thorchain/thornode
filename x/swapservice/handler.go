@@ -544,7 +544,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 	case NextPoolMemo:
 		newMsg = NewMsgNextPoolAddress(txID, tx.Sender, signer)
 	case LeaveMemo:
-		newMsg = NewMsgLeave(m.GetDestination(), txID, tx.Sender, signer)
+		newMsg = NewMsgLeave(txID, tx.Sender, signer)
 	default:
 		return nil, errors.Wrap(err, "Unable to find memo type")
 	}
@@ -663,9 +663,7 @@ func getMsgBondFromMemo(memo BondMemo, txID common.TxID, tx TxIn, signer sdk.Acc
 	if runeAmount.IsZero() {
 		return nil, errors.New("RUNE amount is 0")
 	}
-	// later on , we might be able to automatically do a swap for them , but not right now
-
-	return NewMsgBond(memo.GetNodeAddress(), runeAmount, txID, signer), nil
+	return NewMsgBond(memo.GetNodeAddress(), runeAmount, txID, tx.Sender, signer), nil
 }
 
 // handleMsgAdd
@@ -890,8 +888,7 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 	// we don't have the trust account info right now, so leave it empty
 	trustAccount := NewTrustAccount(common.NoBnbAddress, sdk.AccAddress{}, "")
 	// white list the given bep address
-	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, trustAccount)
-	nodeAccount.Bond = msg.Bond
+	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, trustAccount, msg.Bond, msg.BondAddress)
 	keeper.SetNodeAccount(ctx, nodeAccount)
 	ctx.EventManager().EmitEvent(sdk.NewEvent("new_node", sdk.NewAttribute("address", msg.NodeAddress.String())))
 	coinsToMint := keeper.GetAdminConfigWhiteListGasToken(ctx, sdk.AccAddress{})
@@ -910,7 +907,7 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 }
 
 func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgLeave) sdk.Result {
-	ctx.Logger().Info("receive MsgLeave", "sender", msg.Sender.String(), "request tx hash", msg.RequestTxHash, "destination", msg.Destination)
+	ctx.Logger().Info("receive MsgLeave", "sender", msg.Sender.String(), "request tx hash", msg.RequestTxHash)
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -919,10 +916,10 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 		ctx.Logger().Error("invalid MsgLeave", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	nodeAcc, err := keeper.GetNodeAccountBySignerBNBAddress(ctx, msg.Sender)
+	nodeAcc, err := keeper.GetNodeAccountByBondAddress(ctx, msg.Sender)
 	if nil != err {
 		ctx.Logger().Error("fail to get node account", "error", err)
-		return sdk.ErrInternal("fail to get node account by signer bnb address").Result()
+		return sdk.ErrInternal("fail to get node account by bond bnb address").Result()
 	}
 	if nodeAcc.IsEmpty() {
 		return sdk.ErrUnknownRequest("node account doesn't exist").Result()
@@ -931,14 +928,14 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 		return sdk.ErrUnknownRequest("active node can't leave").Result()
 	}
 	curPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
-
-	if curPoolAddr.Current.Equals(msg.Sender) || curPoolAddr.Previous.Equals(msg.Sender) || curPoolAddr.Next.Equals(msg.Sender) {
+	signerBNBAddress := nodeAcc.Accounts.SignerBNBAddress
+	if curPoolAddr.Current.Equals(signerBNBAddress) || curPoolAddr.Previous.Equals(signerBNBAddress) || curPoolAddr.Next.Equals(signerBNBAddress) {
 		return sdk.ErrUnknownRequest("address still in use , cannot leave now").Result()
 	}
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
 		// refund bond
 		txOutItem := &TxOutItem{
-			ToAddress:   msg.Destination,
+			ToAddress:   nodeAcc.BondAddress,
 			PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 			Coins: common.Coins{
 				common.NewCoin(common.RuneTicker, nodeAcc.Bond),
@@ -948,9 +945,13 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent("validator_leave",
 				sdk.NewAttribute("signer bnb address", msg.Sender.String()),
-				sdk.NewAttribute("destination", msg.Destination.String()),
+				sdk.NewAttribute("destination", nodeAcc.BondAddress.String()),
 				sdk.NewAttribute("tx", msg.RequestTxHash.String())))
 	}
+	// disable the node account
+	nodeAcc.Bond = sdk.ZeroUint()
+	nodeAcc.UpdateStatus(NodeDisabled)
+	keeper.SetNodeAccount(ctx, nodeAcc)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
