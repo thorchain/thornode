@@ -1,6 +1,8 @@
 package common
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -19,4 +21,15 @@ func NewCoin(chain Chain, denom Ticker, amount sdk.Uint) Coin {
 		Denom:  denom,
 		Amount: amount,
 	}
+}
+
+func (c Coin) Valid() error {
+	if c.Chain.IsEmpty() {
+		return fmt.Errorf("Chain cannot be empty")
+	}
+	if c.Denom.IsEmpty() {
+		return fmt.Errorf("Denom cannot be empty")
+	}
+
+	return nil
 }
