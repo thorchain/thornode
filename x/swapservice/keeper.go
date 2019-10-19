@@ -374,16 +374,16 @@ func (k Keeper) GetNodeAccountByObserver(ctx sdk.Context, addr sdk.AccAddress) (
 	return na, nil
 }
 
-// GetNodeAccountBySignerBNBAddress go through data store to get node account by it's signer bnb address
-func (k Keeper) GetNodeAccountBySignerBNBAddress(ctx sdk.Context, addr common.BnbAddress) (NodeAccount, error) {
-	ctx.Logger().Debug("GetNodeAccountBySignerBNBAddress", "signer bnb address", addr.String())
+// GetNodeAccountByBondAddress go through data store to get node account by it's signer bnb address
+func (k Keeper) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.BnbAddress) (NodeAccount, error) {
+	ctx.Logger().Debug("GetNodeAccountByBondAddress", "signer bnb address", addr.String())
 	var na NodeAccount
 	nodeAccounts, err := k.ListNodeAccounts(ctx)
 	if nil != err {
 		return na, fmt.Errorf("fail to get all node accounts, %w", err)
 	}
 	for _, item := range nodeAccounts {
-		if item.Accounts.SignerBNBAddress.Equals(addr) {
+		if item.BondAddress.Equals(addr) {
 			return item, nil
 		}
 	}

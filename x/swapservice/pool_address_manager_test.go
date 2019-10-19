@@ -29,18 +29,16 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 	c.Assert(err, NotNil)
 	c.Assert(pa1.IsEmpty(), Equals, true)
 
-	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
-	c.Assert(err, IsNil)
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
-	c.Check(addr.Empty(), Equals, false)
+	bnb := GetRandomBNBAddress()
+	addr := GetRandomBech32Addr()
 	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
 	trustAccount := NewTrustAccount(bnb, addr, bepConsPubKey)
 	err = trustAccount.IsValid()
 	c.Assert(err, IsNil)
-	nodeAddress, err := sdk.AccAddressFromBech32("bep1rtgz3lcaw8vw0yfsc8ga0rdgwa3qh9ju7vfsnk")
-	c.Assert(err, IsNil)
-	na := NewNodeAccount(nodeAddress, NodeActive, trustAccount)
+	nodeAddress := GetRandomBech32Addr()
+	bond := sdk.NewUint(100 * common.One)
+	bondAddr := GetRandomBNBAddress()
+	na := NewNodeAccount(nodeAddress, NodeActive, trustAccount, bond, bondAddr)
 	k.SetNodeAccount(ctx, na)
 
 	pa2, err := poolAddrMgr.setupInitialPoolAddresses(ctx, 1)
@@ -53,14 +51,21 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 	na1 := GetRandomNodeAccount(NodeActive)
 	k.SetNodeAccount(ctx, na1)
 
+	// given we have two active node account, thus we will rotate pool , however which pool will be chosen first
+	// it will based on the alphabetic order of their signer BNB address
+	nas := NodeAccounts{
+		na, na1,
+	}
+	sort.Sort(nas)
+
 	// with two active nodes
 	pa3, err := poolAddrMgr.setupInitialPoolAddresses(ctx, 1)
 	c.Assert(err, IsNil)
 	c.Assert(pa3.IsEmpty(), Equals, false)
-	c.Assert(pa3.Current.String(), Equals, bnb.String())
-	c.Assert(pa3.Next.String(), Equals, na1.Accounts.SignerBNBAddress.String())
+	c.Assert(pa3.Current.String(), Equals, nas[0].Accounts.SignerBNBAddress.String())
+	c.Assert(pa3.Next.String(), Equals, nas[1].Accounts.SignerBNBAddress.String())
 
-	nodeAccounts := NodeAccounts{na1}
+	nodeAccounts := NodeAccounts{na, na1}
 	// with more than two  active nodes
 	for i := 0; i < 10; i++ {
 		na2 := GetRandomNodeAccount(NodeActive)
@@ -73,8 +78,8 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 	pa4, err := poolAddrMgr.setupInitialPoolAddresses(ctx, 1)
 	c.Assert(err, IsNil)
 	c.Assert(pa4.IsEmpty(), Equals, false)
-	c.Assert(pa4.Current.String(), Equals, bnb.String())
-	c.Assert(pa4.Next.String(), Equals, nodeAccounts[0].Accounts.SignerBNBAddress.String())
+	c.Assert(pa4.Current.String(), Equals, nodeAccounts[0].Accounts.SignerBNBAddress.String())
+	c.Assert(pa4.Next.String(), Equals, nodeAccounts[1].Accounts.SignerBNBAddress.String())
 	c.Logf("%+v", pa4)
 	rotatePerBlockHeight := k.GetAdminConfigRotatePerBlockHeight(ctx, sdk.AccAddress{})
 	rotateAt := rotatePerBlockHeight + 1
@@ -84,21 +89,27 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 	c.Assert(newPa.IsEmpty(), Equals, false)
 	c.Assert(newPa.Previous.String(), Equals, pa4.Current.String())
 	c.Assert(newPa.Current.String(), Equals, pa4.Next.String())
-	c.Assert(newPa.Next.String(), Equals, nodeAccounts[1].Accounts.SignerBNBAddress.String())
+	c.Assert(newPa.Next.String(), Equals, nodeAccounts[2].Accounts.SignerBNBAddress.String())
 	c.Assert(newPa.RotateAt, Equals, int64(rotatePerBlockHeight*2+1))
+	txOutStore.CommitBlock(ctx)
 	poolBNB := createTempNewPoolForTest(ctx, k, "BNB", c)
 	poolTCan := createTempNewPoolForTest(ctx, k, "TCAN-014", c)
 	poolLoki := createTempNewPoolForTest(ctx, k, "LOK-3C0", c)
 
+	txOutStore.NewBlock(uint64(rotatePerBlockHeight*2 + 1))
 	newPa1 := poolAddrMgr.rotatePoolAddress(ctx, rotatePerBlockHeight*2+1, newPa, txOutStore)
 	c.Logf("new pool addresses %+v", newPa1)
 	c.Assert(newPa1.IsEmpty(), Equals, false)
 	c.Assert(newPa1.Previous.String(), Equals, newPa.Current.String())
 	c.Assert(newPa1.Current.String(), Equals, newPa.Next.String())
-	c.Assert(newPa1.Next.String(), Equals, nodeAccounts[2].Accounts.SignerBNBAddress.String())
+	c.Assert(newPa1.Next.String(), Equals, nodeAccounts[3].Accounts.SignerBNBAddress.String())
 	c.Assert(newPa1.RotateAt, Equals, int64(rotatePerBlockHeight*3+1))
 	c.Assert(len(txOutStore.blockOut.TxArray) > 0, Equals, true)
 	c.Assert(txOutStore.blockOut.Valid(), IsNil)
+	totalBond := sdk.ZeroUint()
+	for _, item := range nodeAccounts {
+		totalBond = totalBond.Add(item.Bond)
+	}
 	for _, item := range txOutStore.blockOut.TxArray {
 		c.Assert(item.Valid(), IsNil)
 		// make sure the fund is sending from previous pool address to current
@@ -114,11 +125,11 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 			c.Check(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceToken.Uint64()-batchTransactionFee)
 		}
 		if common.IsRune(item.Coins[0].Denom) {
-			totalRune := poolBNB.BalanceRune.Add(poolLoki.BalanceRune).Add(poolTCan.BalanceRune)
+			totalRune := poolBNB.BalanceRune.Add(poolLoki.BalanceRune).Add(poolTCan.BalanceRune).Add(totalBond)
 			c.Assert(item.Coins[0].Amount.String(), Equals, totalRune.SubUint64(batchTransactionFee).String())
 		}
 	}
-
+	txOutStore.CommitBlock(ctx)
 }
 
 func createTempNewPoolForTest(ctx sdk.Context, k Keeper, ticker string, c *C) *Pool {

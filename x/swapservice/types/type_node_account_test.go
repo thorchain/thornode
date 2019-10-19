@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/crypto"
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 )
@@ -56,19 +55,15 @@ func (NodeAccountSuite) TestGetNodeStatus(c *C) {
 }
 
 func (NodeAccountSuite) TestNodeAccount(c *C) {
-	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
-	c.Assert(err, IsNil)
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
-	c.Check(addr.Empty(), Equals, false)
+	bnb := GetRandomBNBAddress()
+	addr := GetRandomBech32Addr()
 	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
 	trustAccount := NewTrustAccount(bnb, addr, bepConsPubKey)
-	err = trustAccount.IsValid()
+	err := trustAccount.IsValid()
 	c.Assert(err, IsNil)
-	nodeAddress, err := sdk.AccAddressFromBech32("bep1rtgz3lcaw8vw0yfsc8ga0rdgwa3qh9ju7vfsnk")
-	c.Assert(err, IsNil)
-	na := NewNodeAccount(nodeAddress, Active, trustAccount)
-	na.Bond = sdk.NewUint(common.One)
+	nodeAddress := GetRandomBech32Addr()
+	bondAddr := GetRandomBNBAddress()
+	na := NewNodeAccount(nodeAddress, Active, trustAccount, sdk.NewUint(common.One), bondAddr)
 	c.Assert(na.IsEmpty(), Equals, false)
 	c.Assert(na.IsValid(), IsNil)
 	c.Assert(na.Bond.Uint64(), Equals, uint64(common.One))
@@ -78,19 +73,19 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 	c.Assert(nas.IsTrustAccount(addr), Equals, true)
 	c.Assert(nas.IsTrustAccount(nodeAddress), Equals, false)
 	c.Logf("node account:%s", na)
-	naEmpty := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount)
+	naEmpty := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount, sdk.NewUint(common.One), bondAddr)
 	c.Assert(naEmpty.IsValid(), NotNil)
 	c.Assert(naEmpty.IsEmpty(), Equals, true)
+	invalidBondAddr := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount, sdk.NewUint(common.One), "")
+	c.Assert(invalidBondAddr.IsValid(), NotNil)
 }
 
 func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 	var accounts NodeAccounts
 	for i := 0; i < 10; i++ {
-		name := RandStringBytesMask(10)
-		addr := sdk.AccAddress(crypto.AddressHash([]byte(name)))
-		bnb, err := common.NewBnbAddress("tbnb" + RandStringBytesMask(39))
-		c.Assert(err, IsNil)
-		na := NewNodeAccount(addr, Active, NewTrustAccount(bnb, addr, ""))
+		addr := GetRandomBech32Addr()
+		bnb := GetRandomBNBAddress()
+		na := NewNodeAccount(addr, Active, NewTrustAccount(bnb, addr, ""), sdk.NewUint(common.One), GetRandomBNBAddress())
 		accounts = append(accounts, na)
 	}
 	sort.Sort(accounts)

@@ -139,10 +139,10 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(memo.IsType(txBond), Equals, true)
 	c.Assert(memo.GetNodeAddress().String(), Equals, "bep180xs5jx2szhww4jq4xfmvpza7kzr6rwu9408dm")
 
-	memo, err = ParseMemo("leave:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	memo, err = ParseMemo("leave")
 	c.Assert(err, IsNil)
 	c.Assert(memo.IsType(txLeave), Equals, true)
-	c.Assert(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+
 	// unhappy paths
 	_, err = ParseMemo("")
 	c.Assert(err, NotNil)

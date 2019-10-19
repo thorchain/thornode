@@ -7,16 +7,14 @@ import (
 
 // MsgLeave when an operator don't want to be a validator anymore
 type MsgLeave struct {
-	Destination   common.BnbAddress `json:"destination"`
 	RequestTxHash common.TxID       `json:"request_tx_hash"`
 	Sender        common.BnbAddress `json:"sender"`
 	Signer        sdk.AccAddress    `json:"signer"`
 }
 
 // NewMsgLeave create a new instance of MsgLeave
-func NewMsgLeave(destination common.BnbAddress, requestTxHash common.TxID, sender common.BnbAddress, signer sdk.AccAddress) MsgLeave {
+func NewMsgLeave(requestTxHash common.TxID, sender common.BnbAddress, signer sdk.AccAddress) MsgLeave {
 	return MsgLeave{
-		Destination:   destination,
 		RequestTxHash: requestTxHash,
 		Sender:        sender,
 		Signer:        signer,
@@ -34,9 +32,7 @@ func (msg MsgLeave) ValidateBasic() sdk.Error {
 	if msg.Sender.IsEmpty() {
 		return sdk.ErrUnknownRequest("sender cannot be empty")
 	}
-	if msg.Destination.IsEmpty() {
-		return sdk.ErrUnknownRequest("destination cannot be empty")
-	}
+
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
