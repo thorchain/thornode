@@ -14,7 +14,7 @@ func (s *AddressSuite) TestAddress(c *C) {
 	c.Check(addr.IsEmpty(), Equals, false)
 	c.Check(addr.Equals(Address("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")), Equals, true)
 	c.Check(addr.String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
-	c.Check(addr.IsBNB(), Equals, true)
+	c.Check(addr.IsChain(BNBChain), Equals, true)
 	_, err = NewAddress("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(err, IsNil)
 	_, err = NewAddress("tbnb12ymaslcrhnkj0tvmecyuejdvk25k2nnurqjvyp")

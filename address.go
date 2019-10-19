@@ -25,9 +25,14 @@ func NewAddress(address string) (Address, error) {
 	return Address(address), nil
 }
 
-func (addr Address) IsBNB() bool {
-	prefix, _, _ := bech32.Decode(addr.String())
-	return prefix == "bnb" || prefix == "tbnb"
+func (addr Address) IsChain(chain Chain) bool {
+	switch chain {
+	case BNBChain:
+		prefix, _, _ := bech32.Decode(addr.String())
+		return prefix == "bnb" || prefix == "tbnb"
+	default:
+		return false
+	}
 }
 
 func (addr Address) Equals(addr2 Address) bool {
