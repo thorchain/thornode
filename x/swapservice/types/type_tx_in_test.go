@@ -192,19 +192,19 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 
 func (TypeTxInSuite) TestTxInEquals(c *C) {
 	coins1 := common.Coins{
-		common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
-		common.NewCoin(common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
 	}
 	coins2 := common.Coins{
-		common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
 	}
 	coins3 := common.Coins{
-		common.NewCoin(common.BNBTicker, sdk.NewUint(200*common.One)),
-		common.NewCoin(common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(200*common.One)),
+		common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
 	}
 	coins4 := common.Coins{
-		common.NewCoin(common.RuneB1ATicker, sdk.NewUint(100*common.One)),
-		common.NewCoin(common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.RuneB1ATicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
 	}
 	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
 	c.Assert(err, IsNil)

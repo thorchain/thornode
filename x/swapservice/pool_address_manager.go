@@ -104,7 +104,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 				PoolAddress: addresses.Previous,
 				ToAddress:   addresses.Current,
 				Coins: common.Coins{
-					common.NewCoin(p.Ticker, p.BalanceToken),
+					common.NewCoin(common.BNBChain, p.Ticker, p.BalanceToken),
 				},
 			})
 		}
@@ -124,7 +124,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 			PoolAddress: addresses.Previous,
 			ToAddress:   addresses.Current,
 			Coins: common.Coins{
-				common.NewCoin(common.RuneTicker, runeTotal),
+				common.NewCoin(common.BNBChain, common.RuneTicker, runeTotal),
 			},
 		})
 	}

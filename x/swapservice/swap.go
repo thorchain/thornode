@@ -103,8 +103,8 @@ func swapOne(ctx sdk.Context,
 		if err == nil {
 			status = EventSuccess
 			swapEvt = NewEventSwap(
-				common.NewCoin(source, x),
-				common.NewCoin(target, emitTokens),
+				common.NewCoin(common.BNBChain, source, x),
+				common.NewCoin(common.BNBChain, target, emitTokens),
 				common.FloatToUint(priceSlip*common.One),
 				common.FloatToUint(tradeSlip*common.One),
 				common.FloatToUint(poolSlip*common.One),
@@ -115,8 +115,8 @@ func swapOne(ctx sdk.Context,
 		} else {
 			status = EventRefund
 			swapEvt = NewEventSwap(
-				common.NewCoin(source, x),
-				common.NewCoin(target, sdk.ZeroUint()),
+				common.NewCoin(common.BNBChain, source, x),
+				common.NewCoin(common.BNBChain, target, sdk.ZeroUint()),
 				sdk.ZeroUint(),
 				sdk.ZeroUint(),
 				sdk.ZeroUint(),
