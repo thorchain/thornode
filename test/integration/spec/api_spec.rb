@@ -151,9 +151,7 @@ describe "API Tests" do
       found = false
       until i > 100
         resp = get("/txoutarray/#{i}")
-        puts resp.body
         arr = resp.body['chains']['BNB']
-        puts arr
         unless arr['tx_array'].empty?
           if arr['tx_array'][0]['to'] == "bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"
             # we have found the block height of our last swap
