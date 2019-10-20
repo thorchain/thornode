@@ -139,7 +139,7 @@ RUN sscli config chain-id statechain
 RUN sscli config output json
 RUN sscli config indent true
 RUN sscli config trust-node true
-RUN cat ~/.ssd/config/genesis.json | jq --arg POOL_ADDRESS "$POOL_ADDRESS" --arg NODE_ADDRESS "$(sscli keys show statechain -a)" --arg OBSERVER_ADDRESS "$(sscli keys show statechain -a)" --arg VALIDATOR "$(ssd tendermint show-validator)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","accounts":{"bnb_signer_acc":$POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}' > /tmp/genesis.json
+RUN cat ~/.ssd/config/genesis.json | jq --arg POOL_ADDRESS "$POOL_ADDRESS" --arg NODE_ADDRESS "$(sscli keys show statechain -a)" --arg OBSERVER_ADDRESS "$(sscli keys show statechain -a)" --arg VALIDATOR "$(ssd tendermint show-validator)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","bond_address":$POOL_ADDRESS,"accounts":{"bnb_signer_acc":$POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}' > /tmp/genesis.json
 RUN mv /tmp/genesis.json ~/.ssd/config/genesis.json
 RUN cat ~/.ssd/config/genesis.json
 RUN ssd validate-genesis
