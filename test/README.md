@@ -156,7 +156,7 @@ For each of the tests you must provide:
 
 * `FAUCET_KEY` this is the private key of the faucet. Without this, the tests will fail as nothing will be funded,
 * `POOL_KEY` this is the private key of the pool that that Statechain Observer is listening on
-* and `ENV` is the environment to run the tests against (can be one of `local`, `dev`, `stage` or `prod`).
+* and `ENV` is the environment to run the tests against (can be one of `local`, `develop`, `staging` or `production`).
 
 #### Sweep
 

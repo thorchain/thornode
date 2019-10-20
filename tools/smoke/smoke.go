@@ -12,7 +12,7 @@ func main() {
 	apiAddr := flag.String("a", "testnet-dex.binance.org", "Binance API Address.")
 	faucetKey := flag.String("f", "", "The bank private key.")
 	poolKey := flag.String("p", "", "The pool private key.")
-	environment := flag.String("e", "stage", "The environment to use [local|stage|dev|prod].")
+	environment := flag.String("e", "stage", "The environment to use [local|staging|develop|production].")
 	config := flag.String("c", "", "Path to the config file.")
 	network := flag.Int("n", 0, "The network to use.")
 	debug := flag.Bool("d", false, "Enable debugging of the Binance transactions.")

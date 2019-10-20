@@ -62,3 +62,7 @@ deploy: config push
 # Step 5
 smoke-test:
 	./scripts/smoke.sh -r ${RPC_HOST} -g ${TARGET_GROUP_NAME} -c ${ECS_CLUSTER} -s ${ECS_SERVICE} -n ${TASK_COUNT} -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}
+
+# Step 6
+seed:
+    ./scripts/seed.sh -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}

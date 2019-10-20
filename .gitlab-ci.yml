@@ -123,9 +123,49 @@ deploy:staging:
     - pip install awscli
   environment:
     name: staging
-  script: make -C ./build/service-node smoke
+  script: make -C ./build/service-node deploy
   only:
     - schedules
+
+smoke-test:staging:
+  stage: smoke-test
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  except:
+    - schedules
+  environment:
+    name: develop
+  script: make -C ./build/service-node smoke-test
+  only:
+    - master
+
+seed:staging:
+  stage: seed
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+  except:
+    - schedules
+  environment:
+    name: develop
+  script: make -C ./build/service-node seed
+  only:
+    - master
 
 deploy:production:
   stage: deploy
