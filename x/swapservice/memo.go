@@ -28,6 +28,7 @@ const (
 	txBond
 	txNextPool
 	txLeave
+	txAck
 )
 
 var stringToTxTypeMap = map[string]TxType{
@@ -53,6 +54,7 @@ var stringToTxTypeMap = map[string]TxType{
 	"bond":     txBond,
 	"nextpool": txNextPool,
 	"leave":    txLeave,
+	"ack":      txAck,
 }
 
 var txToStringMap = map[TxType]string{
@@ -66,6 +68,7 @@ var txToStringMap = map[TxType]string{
 	txBond:     "bond",
 	txNextPool: "nextpool",
 	txLeave:    "leave",
+	txAck:      "ack",
 }
 
 // converts a string into a txType
@@ -99,6 +102,7 @@ type Memo interface {
 	GetValue() string
 	GetBlockHeight() uint64
 	GetNodeAddress() sdk.AccAddress
+	GetNextPoolAddress() common.BnbAddress
 }
 
 type MemoBase struct {
@@ -154,9 +158,13 @@ type BondMemo struct {
 
 type NextPoolMemo struct {
 	MemoBase
+	NextPoolAddr common.BnbAddress
 }
 
 type LeaveMemo struct {
+	MemoBase
+}
+type AckMemo struct {
 	MemoBase
 }
 
@@ -166,11 +174,10 @@ func ParseMemo(memo string) (Memo, error) {
 	if len(memo) == 0 {
 		return noMemo, fmt.Errorf("memo can't be empty")
 	}
-	if strings.EqualFold(memo, "nextpool") {
-		return NextPoolMemo{
-			MemoBase: MemoBase{
-				TxType: txNextPool,
-				Ticker: "",
+	if strings.EqualFold(memo, "ack") {
+		return AckMemo{
+			MemoBase{
+				TxType: txAck,
 			},
 		}, nil
 	}
@@ -189,7 +196,7 @@ func ParseMemo(memo string) (Memo, error) {
 	}
 
 	var ticker common.Ticker
-	if tx != txGas && tx != txOutbound && tx != txBond && tx != txLeave {
+	if tx != txGas && tx != txOutbound && tx != txBond && tx != txLeave && tx != txNextPool {
 		var err error
 		ticker, err = common.NewTicker(parts[1])
 		if err != nil {
@@ -286,28 +293,43 @@ func ParseMemo(memo string) (Memo, error) {
 			MemoBase:    MemoBase{TxType: txBond},
 			NodeAddress: addr,
 		}, nil
+
+	case txNextPool:
+		nextPoolAddr, err := common.NewBnbAddress(parts[1])
+		if nil != err {
+			return noMemo, fmt.Errorf("%s is an invalid bnb address,err: %w", parts[1], err)
+		}
+		return NextPoolMemo{
+			MemoBase: MemoBase{
+				TxType: txNextPool,
+				Ticker: "",
+			},
+			NextPoolAddr: nextPoolAddr,
+		}, nil
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())
 	}
 }
 
 // Base Functions
-func (m MemoBase) GetType() TxType                   { return m.TxType }
-func (m MemoBase) IsType(tx TxType) bool             { return m.TxType.Equals(tx) }
-func (m MemoBase) GetTicker() common.Ticker          { return m.Ticker }
-func (m MemoBase) GetAmount() string                 { return "" }
-func (m MemoBase) GetDestination() common.BnbAddress { return "" }
-func (m MemoBase) GetSlipLimit() sdk.Uint            { return sdk.ZeroUint() }
-func (m MemoBase) GetKey() string                    { return "" }
-func (m MemoBase) GetValue() string                  { return "" }
-func (m MemoBase) GetBlockHeight() uint64            { return 0 }
-func (m MemoBase) GetNodeAddress() sdk.AccAddress    { return sdk.AccAddress{} }
+func (m MemoBase) GetType() TxType                       { return m.TxType }
+func (m MemoBase) IsType(tx TxType) bool                 { return m.TxType.Equals(tx) }
+func (m MemoBase) GetTicker() common.Ticker              { return m.Ticker }
+func (m MemoBase) GetAmount() string                     { return "" }
+func (m MemoBase) GetDestination() common.BnbAddress     { return "" }
+func (m MemoBase) GetSlipLimit() sdk.Uint                { return sdk.ZeroUint() }
+func (m MemoBase) GetKey() string                        { return "" }
+func (m MemoBase) GetValue() string                      { return "" }
+func (m MemoBase) GetBlockHeight() uint64                { return 0 }
+func (m MemoBase) GetNodeAddress() sdk.AccAddress        { return sdk.AccAddress{} }
+func (m MemoBase) GetNextPoolAddress() common.BnbAddress { return "" }
 
 // Transaction Specific Functions
-func (m WithdrawMemo) GetAmount() string             { return m.Amount }
-func (m SwapMemo) GetDestination() common.BnbAddress { return m.Destination }
-func (m SwapMemo) GetSlipLimit() sdk.Uint            { return m.SlipLimit }
-func (m AdminMemo) GetKey() string                   { return m.Key }
-func (m AdminMemo) GetValue() string                 { return m.Value }
-func (m OutboundMemo) GetBlockHeight() uint64        { return m.BlockHeight }
-func (m BondMemo) GetNodeAddress() sdk.AccAddress    { return m.NodeAddress }
+func (m WithdrawMemo) GetAmount() string                     { return m.Amount }
+func (m SwapMemo) GetDestination() common.BnbAddress         { return m.Destination }
+func (m SwapMemo) GetSlipLimit() sdk.Uint                    { return m.SlipLimit }
+func (m AdminMemo) GetKey() string                           { return m.Key }
+func (m AdminMemo) GetValue() string                         { return m.Value }
+func (m OutboundMemo) GetBlockHeight() uint64                { return m.BlockHeight }
+func (m BondMemo) GetNodeAddress() sdk.AccAddress            { return m.NodeAddress }
+func (m NextPoolMemo) GetNextPoolAddress() common.BnbAddress { return m.NextPoolAddr }
