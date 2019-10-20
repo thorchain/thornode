@@ -14,7 +14,7 @@ func (s *MemoSuite) SetUpSuite(c *C) {
 }
 
 func (s *MemoSuite) TestTxType(c *C) {
-	for _, trans := range []TxType{txCreate, txStake, txWithdraw, txSwap, txOutbound, txAdd, txGas, txBond, txLeave, txNextPool} {
+	for _, trans := range []TxType{txCreate, txStake, txWithdraw, txSwap, txOutbound, txAdd, txGas, txBond, txLeave, txNextPool, txAck} {
 		tx, err := stringToTxType(trans.String())
 		c.Assert(err, IsNil)
 		c.Check(tx, Equals, trans)
@@ -88,6 +88,10 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("leave:whatever")
 	c.Assert(err, NotNil)
+	_, err = ParseMemo("ack:whatever")
+	c.Assert(err, NotNil)
+	_, err = ParseMemo("nextpool:whatever")
+	c.Assert(err, NotNil)
 }
 func (s *MemoSuite) TestParse(c *C) {
 	// happy paths
@@ -139,9 +143,17 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(memo.IsType(txBond), Equals, true)
 	c.Assert(memo.GetNodeAddress().String(), Equals, "bep180xs5jx2szhww4jq4xfmvpza7kzr6rwu9408dm")
 
+	memo, err = ParseMemo("nextpool:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Assert(err, IsNil)
+	c.Assert(memo.IsType(txNextPool), Equals, true)
+	c.Assert(memo.GetNextPoolAddress().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+
 	memo, err = ParseMemo("leave")
 	c.Assert(err, IsNil)
 	c.Assert(memo.IsType(txLeave), Equals, true)
+	memo, err = ParseMemo("ack")
+	c.Assert(err, IsNil)
+	c.Assert(memo.IsType(txAck), Equals, true)
 
 	// unhappy paths
 	_, err = ParseMemo("")

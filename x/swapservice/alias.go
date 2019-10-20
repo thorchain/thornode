@@ -52,6 +52,7 @@ var (
 	NewPoolStaker         = types.NewPoolStaker
 	NewStakerPool         = types.NewStakerPool
 	NewMsgEndPool         = types.NewMsgEndPool
+	NewMsgAck             = types.NewMsgAck
 	HasMajority           = types.HasMajority
 	GetAdminConfigKey     = types.GetAdminConfigKey
 	ModuleCdc             = types.ModuleCdc
@@ -85,6 +86,7 @@ type (
 	MsgNextPoolAddress = types.MsgNextPoolAddress
 	MsgEndPool         = types.MsgEndPool
 	MsgLeave           = types.MsgLeave
+	MsgAck             = types.MsgAck
 	QueryResPools      = types.QueryResPools
 	QueryResHeights    = types.QueryResHeights
 	TrustAccount       = types.TrustAccount
