@@ -296,7 +296,24 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		ctx.Logger().Error("fail to get tx out array from key value store", err)
 		return nil, sdk.ErrInternal("fail to get tx out array from key value store")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, tx)
+
+	// TODO: currently assuming we are operating on BNB only
+	item := ResTxOut{
+		Height:  tx.Height,
+		Hash:    tx.Hash,
+		Chain:   common.BNBChain,
+		TxArray: make([]TxOutItem, 0),
+	}
+	for _, tx := range tx.TxArray {
+		item.TxArray = append(item.TxArray, *tx)
+	}
+
+	out := make(map[common.Chain]ResTxOut, 0)
+	out[common.BNBChain] = item
+
+	res, err := codec.MarshalJSONIndent(keeper.cdc, QueryResTxOut{
+		Chains: out,
+	})
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")
