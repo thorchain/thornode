@@ -86,18 +86,26 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 		b.errCounter.WithLabelValues("fail_get_tx_out", strBlockHeight)
 		return errors.Wrap(err, "fail to get tx out from a block")
 	}
-	var txOut stypes.TxOut
+
+	type txOut struct {
+		Chains []stypes.TxOut `json:"chains"`
+	}
+
+	var tx txOut
 	if err := json.Unmarshal(buf, &txOut); err != nil {
 		b.errCounter.WithLabelValues("fail_unmarshal_tx_out", strBlockHeight)
 		return errors.Wrap(err, "fail to unmarshal TxOut")
 	}
-	if len(txOut.TxArray) == 0 {
-		b.logger.Debug().Int64("block", blockHeight).Msg("nothing to process")
-		b.m.GetCounter(metrics.BlockNoTxOut).Inc()
-		return nil
+	for _, out := range tx.Chains {
+		if len(out.TxArray) == 0 {
+			b.logger.Debug().Int64("block", blockHeight).Msg("nothing to process")
+			b.m.GetCounter(metrics.BlockNoTxOut).Inc()
+			return nil
+		}
+
+		b.txOutChan <- txOut
 	}
 
-	b.txOutChan <- txOut
 	return nil
 }
 
