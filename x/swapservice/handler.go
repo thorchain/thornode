@@ -285,10 +285,11 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 		ToAddress:   msg.Destination,
 	}
-	toi.Coins = append(toi.Coins, common.Coin{
-		Denom:  msg.TargetTicker,
-		Amount: amount,
-	})
+	toi.Coins = append(toi.Coins, common.NewCoin(
+		common.BNBChain,
+		msg.TargetTicker,
+		amount,
+	))
 	txOutStore.AddTxOutItem(ctx, keeper, toi)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -352,14 +353,16 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
 		ToAddress:   msg.PublicAddress,
 	}
-	toi.Coins = append(toi.Coins, common.Coin{
-		Denom:  common.RuneTicker,
-		Amount: runeAmt,
-	})
-	toi.Coins = append(toi.Coins, common.Coin{
-		Denom:  msg.Ticker,
-		Amount: tokenAmount,
-	})
+	toi.Coins = append(toi.Coins, common.NewCoin(
+		common.BNBChain,
+		common.RuneTicker,
+		runeAmt,
+	))
+	toi.Coins = append(toi.Coins, common.NewCoin(
+		common.BNBChain,
+		msg.Ticker,
+		tokenAmount,
+	))
 	txOutStore.AddTxOutItem(ctx, keeper, toi)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
