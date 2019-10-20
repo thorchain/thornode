@@ -373,8 +373,9 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	msgNextPoolAddr := NewMsgNextPoolAddress(
 		GetRandomTxHash(),
 		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
 		w.activeNodeAccount.Accounts.ObserverBEPAddress)
-	result := handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.validatorMgr, msgNextPoolAddr)
+	result := handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.validatorMgr, w.poolAddrMgr, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 
 	acc2 := GetRandomNodeAccount(NodeStandby)
@@ -386,8 +387,9 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	msgNextPoolAddr1 := NewMsgNextPoolAddress(
 		GetRandomTxHash(),
 		acc2.Accounts.SignerBNBAddress,
+		w.poolAddrMgr.GetCurrentPoolAddresses().Current,
 		acc2.Accounts.ObserverBEPAddress)
-	result1 := handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.validatorMgr, msgNextPoolAddr1)
+	result1 := handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.validatorMgr, w.poolAddrMgr, msgNextPoolAddr1)
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
 	acc2, err := w.keeper.GetNodeAccount(w.ctx, acc2.NodeAddress)
 	c.Assert(err, IsNil)
@@ -655,4 +657,37 @@ func (HandlerSuite) TestHandleMsgAdd(c *C) {
 	c.Assert(pool.BalanceRune.Uint64(), Equals, sdk.NewUint(100*common.One).Uint64())
 	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
 
+}
+func (HandlerSuite) TestHandleMsgAck(c *C) {
+	w := getHandlerTestWrapper(c, 1, true, false)
+	txID := GetRandomTxHash()
+	sender := GetRandomBNBAddress()
+	signer := GetRandomBech32Addr()
+	msgAck := NewMsgAck(txID, sender, signer)
+	result := handleMsgAck(w.ctx, w.keeper, w.validatorMgr, msgAck)
+	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
+	// nominated a node
+	node1 := GetRandomNodeAccount(NodeStandby)
+	w.keeper.SetNodeAccount(w.ctx, node1)
+	w.validatorMgr.BeginBlock(w.ctx, w.validatorMgr.Meta.RotateWindowOpenAtBlockHeight)
+	updates := w.validatorMgr.EndBlock(w.ctx, w.validatorMgr.Meta.RotateWindowOpenAtBlockHeight)
+	c.Assert(updates, IsNil)
+	c.Assert(w.validatorMgr.Meta.Nominated.IsEmpty(), Equals, false)
+
+	resultDifferentSignerAddr := handleMsgAck(w.ctx, w.keeper, w.validatorMgr, msgAck)
+	c.Assert(resultDifferentSignerAddr.Code, Equals, sdk.CodeUnknownRequest)
+
+	nominated := w.validatorMgr.Meta.Nominated
+	msgAckNormal := NewMsgAck(GetRandomTxHash(), nominated.Accounts.SignerBNBAddress, w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	resultNormal := handleMsgAck(w.ctx, w.keeper, w.validatorMgr, msgAckNormal)
+	c.Assert(resultNormal.Code, Equals, sdk.CodeOK)
+
+	nominated.ObserverActive = true
+	w.keeper.SetNodeAccount(w.ctx, nominated)
+	msgAckNormal1 := NewMsgAck(GetRandomTxHash(), nominated.Accounts.SignerBNBAddress, w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	resultNormal1 := handleMsgAck(w.ctx, w.keeper, w.validatorMgr, msgAckNormal1)
+	c.Assert(resultNormal1.Code, Equals, sdk.CodeOK)
+	n, err := w.keeper.GetNodeAccount(w.ctx, nominated.NodeAddress)
+	c.Assert(err, IsNil)
+	c.Assert(n.Status, Equals, NodeReady)
 }

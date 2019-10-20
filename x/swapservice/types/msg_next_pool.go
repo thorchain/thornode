@@ -8,14 +8,16 @@ import (
 // MsgNextPoolAddress is used to set the pool address of the next
 type MsgNextPoolAddress struct {
 	RequestTxHash common.TxID
+	NextPoolAddr  common.BnbAddress
 	Sender        common.BnbAddress
 	Signer        sdk.AccAddress
 }
 
 // NewMsgNextPoolAddress create a new instance of MsgNextPoolAddress
-func NewMsgNextPoolAddress(requestTxHash common.TxID, sender common.BnbAddress, signer sdk.AccAddress) MsgNextPoolAddress {
+func NewMsgNextPoolAddress(requestTxHash common.TxID, nextPoolAddr common.BnbAddress, sender common.BnbAddress, signer sdk.AccAddress) MsgNextPoolAddress {
 	return MsgNextPoolAddress{
 		RequestTxHash: requestTxHash,
+		NextPoolAddr:  nextPoolAddr,
 		Sender:        sender,
 		Signer:        signer,
 	}
@@ -29,8 +31,11 @@ func (msg MsgNextPoolAddress) Type() string { return "set_next_pooladdress" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgNextPoolAddress) ValidateBasic() sdk.Error {
+	if msg.NextPoolAddr.IsEmpty() {
+		return sdk.ErrUnknownRequest("next pool address cannot be empty")
+	}
 	if msg.Sender.IsEmpty() {
-		return sdk.ErrUnknownRequest("sender can't be empty")
+		return sdk.ErrUnknownRequest("sender cannot be empty")
 	}
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
