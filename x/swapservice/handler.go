@@ -8,6 +8,8 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 )
 
 // EmptyAccAddress empty address
@@ -44,9 +46,11 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgBond:
 			return handleMsgBond(ctx, keeper, m)
 		case MsgNextPoolAddress:
-			return handleMsgConfirmNextPoolAddress(ctx, keeper, validatorManager, m)
+			return handleMsgConfirmNextPoolAddress(ctx, keeper, validatorManager, poolAddressMgr, m)
 		case MsgLeave:
 			return handleMsgLeave(ctx, keeper, txOutStore, poolAddressMgr, m)
+		case MsgAck:
+			return handleMsgAck(ctx, keeper, validatorManager, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -376,8 +380,33 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 
 // handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
 // MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on binance chain
-func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorManager, msg MsgNextPoolAddress) sdk.Result {
-	ctx.Logger().Info("receive request to set next pool address", "sender", msg.Sender.String())
+func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorManager, poolAddrManager *PoolAddressManager, msg MsgNextPoolAddress) sdk.Result {
+	ctx.Logger().Info("receive request to set next pool address", "pool address", msg.NextPoolAddr.String())
+	if validatorManager.Meta.Nominated.IsEmpty() {
+		return sdk.ErrUnknownRequest("no nominated node yet").Result()
+	}
+	currentPoolAddr := poolAddrManager.GetCurrentPoolAddresses()
+	if !currentPoolAddr.Current.Equals(msg.Sender) {
+		return sdk.ErrUnknownRequest("next pool should be send with current pool address").Result()
+	}
+	nominated, err := keeper.GetNodeAccount(ctx, validatorManager.Meta.Nominated.NodeAddress)
+	if err != nil {
+		return sdk.ErrInternal(fmt.Sprintf("fail to get nominated node,err:%s", err.Error())).Result()
+	}
+	nominated.Accounts.SignerBNBAddress = msg.NextPoolAddr
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(EventTypeNextPoolAddress, sdk.NewAttribute("next pool address", msg.NextPoolAddr.String())))
+
+	keeper.SetNodeAccount(ctx, nominated)
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
+// handleMsgAck
+func handleMsgAck(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorManager, msg MsgAck) sdk.Result {
+	ctx.Logger().Info("receive ack to next pool address", "sender address", msg.Sender.String())
 	if validatorManager.Meta.Nominated.IsEmpty() {
 		return sdk.ErrUnknownRequest("no nominated node yet").Result()
 	}
@@ -386,11 +415,12 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorMa
 	if err != nil {
 		return sdk.ErrInternal(fmt.Sprintf("fail to get nominated node,err:%s", err.Error())).Result()
 	}
-	if !msg.Sender.Equals(nominated.Accounts.SignerBNBAddress) {
-		return sdk.ErrUnknownRequest("nominated node has different signer bnb address").Result()
+	if !nominated.Accounts.SignerBNBAddress.Equals(msg.Sender) {
+		return sdk.ErrUnknownRequest("nominated node has different signer address").Result()
 	}
-
 	nominated.SignerActive = true
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(EventTypeSignerAct, sdk.NewAttribute("next pool address", msg.Sender.String())))
 	if nominated.ObserverActive && nominated.SignerActive {
 		// only update their status when both observer and signer are active
 		nominated.UpdateStatus(NodeReady)
@@ -402,7 +432,6 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorMa
 	}
 
 	keeper.SetNodeAccount(ctx, nominated)
-
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
@@ -542,7 +571,9 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 			return nil, errors.Wrap(err, "fail to get MsgBond from memo")
 		}
 	case NextPoolMemo:
-		newMsg = NewMsgNextPoolAddress(txID, tx.Sender, signer)
+		newMsg = NewMsgNextPoolAddress(txID, m.NextPoolAddr, tx.Sender, signer)
+	case AckMemo:
+		newMsg = types.NewMsgAck(txID, tx.Sender, signer)
 	case LeaveMemo:
 		newMsg = NewMsgLeave(txID, tx.Sender, signer)
 	default:

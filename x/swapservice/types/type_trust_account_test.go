@@ -11,10 +11,8 @@ type TrustAccountSuite struct{}
 var _ = Suite(&TrustAccountSuite{})
 
 func (TrustAccountSuite) TestTrustAccount(c *C) {
-	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
-	c.Assert(err, IsNil)
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
+	bnb := GetRandomBNBAddress()
+	addr := GetRandomBech32Addr()
 	consensusAddr := "bepcpub1zcjduepqrkasznnv37qcguhn6z33v2ndldpq00f7yldamjrtc2a0sc4vqrqqvr9t8t"
 	pk, err := sdk.GetConsPubKeyBech32(consensusAddr)
 	c.Assert(err, IsNil)
@@ -30,7 +28,7 @@ func (TrustAccountSuite) TestTrustAccount(c *C) {
 	c.Log(trustAccount.String())
 
 	trustAccount1 := NewTrustAccount(common.NoBnbAddress, addr, bepConsPubKey)
-	c.Assert(trustAccount1.IsValid(), NotNil)
+	c.Assert(trustAccount1.IsValid(), IsNil)
 	c.Assert(NewTrustAccount(bnb, sdk.AccAddress{}, bepConsPubKey).IsValid(), NotNil)
 	c.Assert(NewTrustAccount(bnb, addr, "").IsValid(), NotNil)
 }

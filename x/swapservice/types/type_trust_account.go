@@ -32,9 +32,6 @@ func (ta TrustAccount) IsValid() error {
 	if ta.ObserverBEPAddress.Empty() {
 		return errors.New("Observer BEP address cannot be empty")
 	}
-	if ta.SignerBNBAddress.IsEmpty() {
-		return errors.New("Signer BNB address cannot be empty")
-	}
 	if len(ta.ValidatorBEPConsPubKey) == 0 {
 		return errors.New("Validator BEP consensus public key cannot be empty")
 	}
