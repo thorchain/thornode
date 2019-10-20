@@ -90,7 +90,7 @@ func (s StatechainSuite) TestSign(c *C) {
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
 	cfg.ChainHost = u.Host
-	observedAddress, err := common.NewBnbAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq")
+	observedAddress, err := common.NewAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq")
 	c.Assert(err, IsNil)
 	tx := stypes.NewTxInVoter(common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"), []stypes.TxIn{
 		stypes.NewTxIn(
@@ -98,7 +98,7 @@ func (s StatechainSuite) TestSign(c *C) {
 				common.NewCoin(common.Ticker("BNB"), sdk.NewUint(123400000)),
 			},
 			"This is my memo!",
-			common.BnbAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
+			common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
 			sdk.NewUint(1),
 			observedAddress,
 		),
@@ -344,7 +344,7 @@ func (StatechainSuite) TestSignEx(c *C) {
 		c.Assert(stx, resultChecker)
 		c.Assert(err, errChecker)
 	}
-	testBNBAddress, err := common.NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqx")
+	testBNBAddress, err := common.NewAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqx")
 	if nil != err {
 		c.Error(err)
 	}
@@ -424,7 +424,7 @@ func (StatechainSuite) TestSendEx(c *C) {
 		c.Assert(err, errChecker)
 
 	}
-	testBNBAddress, err := common.NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqx")
+	testBNBAddress, err := common.NewAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqx")
 	if nil != err {
 		c.Error(err)
 	}
