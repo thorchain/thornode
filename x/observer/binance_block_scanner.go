@@ -254,7 +254,7 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
 				txInItem.ObservedPoolAddress = sender.Address.String()
 				// Coin is mandatory , so let's just give 0.1 RUNE , thus if we fail to process outbound tx, we won't accidentally refund it.
-				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.RuneA1FTicker, sdk.NewUint(common.One/10)))
+				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(common.One/10)))
 				return &txInItem, nil
 			}
 			if b.isNextPoolMsg(sender.Address.String(), t.Memo, sender.Coins) {

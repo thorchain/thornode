@@ -3,10 +3,10 @@ package types
 import "gitlab.com/thorchain/bepswap/common"
 
 type PoolAddresses struct {
-	Previous common.BnbAddress `json:"previous"`
-	Current  common.BnbAddress `json:"current"`
-	Next     common.BnbAddress `json:"next"`
-	RotateAt int64             `json:"rotate_at"`
+	Previous common.Address `json:"previous"`
+	Current  common.Address `json:"current"`
+	Next     common.Address `json:"next"`
+	RotateAt int64          `json:"rotate_at"`
 }
 
 // IsEmpty check whether PoolAddress is empty

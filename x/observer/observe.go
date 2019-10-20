@@ -261,7 +261,7 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 			o.errCounter.WithLabelValues("fail_to_parse_tx_hash", txIn.BlockHeight).Inc()
 			return nil, errors.Wrapf(err, "fail to parse tx hash, %s is invalid ", item.Tx)
 		}
-		bnbAddr, err := common.NewBnbAddress(item.Sender)
+		bnbAddr, err := common.NewAddress(item.Sender)
 		if nil != err {
 			o.errCounter.WithLabelValues("fail_to_parse_sender", item.Sender).Inc()
 			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
@@ -271,7 +271,7 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
 			return nil, errors.Wrapf(err, "fail to parse block height")
 		}
-		observedPoolAddress, err := common.NewBnbAddress(item.ObservedPoolAddress)
+		observedPoolAddress, err := common.NewAddress(item.ObservedPoolAddress)
 		if nil != err {
 			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolAddress).Inc()
 			return nil, errors.Wrapf(err, "fail to parse observed pool address: %s", item.ObservedPoolAddress)
