@@ -153,6 +153,7 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 
 	txIn.BlockHeight = strconv.FormatInt(block, 10)
 	txIn.Count = strconv.Itoa(len(txIn.TxArray))
+	txIn.Chain = common.BNBChain
 	b.txInChan <- txIn
 	return nil
 }

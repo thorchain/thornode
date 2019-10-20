@@ -3,9 +3,10 @@ package types
 import "gitlab.com/thorchain/bepswap/common"
 
 type TxIn struct {
-	BlockHeight string     `json:"blockHeight"`
-	Count       string     `json:"count"`
-	TxArray     []TxInItem `json:"txArray"`
+	BlockHeight string       `json:"blockHeight"`
+	Count       string       `json:"count"`
+	Chain       common.Chain `json:"chain"`
+	TxArray     []TxInItem   `json:"txArray"`
 }
 
 type TxInItem struct {
