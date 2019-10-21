@@ -11,9 +11,7 @@ type PoolStakerSuite struct{}
 var _ = Suite(&PoolStakerSuite{})
 
 func (PoolStakerSuite) TestPoolStaker(c *C) {
-	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
-	c.Assert(err, IsNil)
-
+	bnb := GetRandomBNBAddress()
 	poolStaker := NewPoolStaker(common.BNBTicker, sdk.NewUint(100))
 	c.Assert(poolStaker.Stakers, NotNil)
 	stakerUnit := StakerUnit{
@@ -32,8 +30,7 @@ func (PoolStakerSuite) TestPoolStaker(c *C) {
 	poolStaker.RemoveStakerUnit(bnb)
 	c.Check(len(poolStaker.Stakers), Equals, 0)
 
-	bnb1, err := common.NewAddress("tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj")
-	c.Assert(err, IsNil)
+	bnb1 := GetRandomBNBAddress()
 	stakerUnit1 := poolStaker.GetStakerUnit(bnb1)
 	c.Check(stakerUnit1.Units.IsZero(), Equals, true)
 

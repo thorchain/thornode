@@ -11,27 +11,19 @@ type TypeTxInSuite struct{}
 var _ = Suite(&TypeTxInSuite{})
 
 func (s TypeTxInSuite) TestVoter(c *C) {
-	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
-	c.Assert(err, IsNil)
-	txID2, err := common.NewTxID("47B4FE474A63DDF79DF2790C1C5162F4C213484750AB8292CFE7342E4B0B40E2")
-	c.Assert(err, IsNil)
-	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
-	c.Assert(err, IsNil)
-	acc1, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
-	acc2, err := sdk.AccAddressFromBech32("bep1p4tyz2d243j539n6hrx3q8p77uyqks6ks4ju9u")
-	c.Assert(err, IsNil)
-	acc3, err := sdk.AccAddressFromBech32("bep1lkasqgxc3k65fqqw9zeurxwxmayfjej3ygwpzl")
-	c.Assert(err, IsNil)
-	acc4, err := sdk.AccAddressFromBech32("bep1gnaghgzcpd73hcxeturml96maa0fajg9zrtrez")
-	c.Assert(err, IsNil)
-	accConsPub1 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
-	accConsPub2 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrx`
-	accConsPub3 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdry`
-	accConsPub4 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrz`
+	txID := GetRandomTxHash()
+	txID2 := GetRandomTxHash()
+	bnb := GetRandomBNBAddress()
+	acc1 := GetRandomBech32Addr()
+	acc2 := GetRandomBech32Addr()
+	acc3 := GetRandomBech32Addr()
+	acc4 := GetRandomBech32Addr()
+	accConsPub1 := GetRandomBech32ConsensusPubKey()
+	accConsPub2 := GetRandomBech32ConsensusPubKey()
+	accConsPub3 := GetRandomBech32ConsensusPubKey()
+	accConsPub4 := GetRandomBech32ConsensusPubKey()
 
-	observePoolAddr, err := common.NewAddress("tbnb1h792qpzue9dmdu8pfpdpyjqfd0s902dljvs4jz")
-	c.Assert(err, IsNil)
+	observePoolAddr := GetRandomBNBAddress()
 	voter := NewTxInVoter(txID, nil)
 
 	txIn := NewTxIn(nil, "hello", bnb, sdk.ZeroUint(), observePoolAddr)

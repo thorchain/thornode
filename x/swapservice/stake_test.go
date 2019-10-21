@@ -116,12 +116,8 @@ func (s StakeSuite) TestValidateAmount(c *C) {
 func (StakeSuite) TestValidateStakeMessage(c *C) {
 	ps := NewMockInMemoryPoolStorage()
 	ctx, _ := setupKeeperForTest(c)
-	txId, err := common.NewTxID("4D60A73FEBD42592DB697EF1DA020A214EC3102355D0E1DD07B18557321B106X")
-	if nil != err {
-		c.Errorf("fail to create tx id,%s", err)
-	}
-	bnbAddress, err := common.NewAddress("tbnb1e803p76n4rtyeclef7pg3295nurwfuwsw8l36m")
-	c.Assert(err, IsNil)
+	txId := GetRandomTxHash()
+	bnbAddress := GetRandomBNBAddress()
 	c.Assert(validateStakeMessage(ctx, ps, common.Ticker(""), txId, bnbAddress), NotNil)
 	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, bnbAddress), NotNil)
 	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, bnbAddress), NotNil)
@@ -143,13 +139,11 @@ func (StakeSuite) TestValidateStakeMessage(c *C) {
 func (StakeSuite) TestStake(c *C) {
 	ps := NewMockInMemoryPoolStorage()
 	ctx, _ := setupKeeperForTest(c)
-	txId, err := common.NewTxID("4D60A73FEBD42592DB697EF1DA020A214EC3102355D0E1DD07B18557321B106X")
-	if nil != err {
-		c.Errorf("fail to create tx id,%s", err)
-	}
-	bnbAddress, err := common.NewAddress("tbnb1e803p76n4rtyeclef7pg3295nurwfuwsw8l36m")
-	c.Assert(err, IsNil)
-	_, err = stake(ctx, ps, "", sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
+	txId := GetRandomTxHash()
+
+	bnbAddress := GetRandomBNBAddress()
+
+	_, err := stake(ctx, ps, "", sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
 	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.ZeroUint(),
