@@ -339,6 +339,8 @@ gitlab.com/thorchain/bepswap/statechain v0.0.0-20191006024012-f2356437f55f h1:bH
 gitlab.com/thorchain/bepswap/statechain v0.0.0-20191006024012-f2356437f55f/go.mod h1:mqsisScoZT3Uev4jZOaYaC3yNdpUtl2qBlqPCrXCn2Q=
 gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021023251-97ccc23d1ead h1:pLEi6g5B7UkmByrbwCPeBPd1knwOo+bM+uttOArqTs8=
 gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021023251-97ccc23d1ead/go.mod h1:kVqWoVSK8Hvj0s+BuT/Nu4Ohf++aDGfh1E1U1TEj1RA=
+gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021053855-16d8c4725028 h1:hOjUv7Rxg+2NJAdMkroO//TdaAUJyHB2VYuOFBFSZDk=
+gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021053855-16d8c4725028/go.mod h1:kVqWoVSK8Hvj0s+BuT/Nu4Ohf++aDGfh1E1U1TEj1RA=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.3 h1:MUGmc65QhB3pIlaQ5bB4LwqSj6GIonVJXpZiaKNyaKk=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
