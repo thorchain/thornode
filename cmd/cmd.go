@@ -1,10 +1,10 @@
 package cmd
 
-const Bech32PrefixAccAddr = "bep"
-const Bech32PrefixAccPub = "beppub"
-const Bech32PrefixValAddr = "bepv"
+const Bech32PrefixAccAddr = "thor"
+const Bech32PrefixAccPub = "thorpub"
+const Bech32PrefixValAddr = "thorv"
 const Bech32PrefixValPub = "bepvpub"
-const Bech32PrefixConsAddr = "bepc"
-const Bech32PrefixConsPub = "bepcpub"
+const Bech32PrefixConsAddr = "thorc"
+const Bech32PrefixConsPub = "thorcpub"
 
 const Version = 0

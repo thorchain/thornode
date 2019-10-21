@@ -2,29 +2,16 @@
 package types
 
 import (
-	"math/rand"
-
+	"github.com/btcsuite/btcutil/bech32"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"gitlab.com/thorchain/bepswap/common"
 
 	"gitlab.com/thorchain/bepswap/statechain/cmd"
 )
-
-var addresses = []string{
-	"bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u",
-	"bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38",
-	"bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq",
-	"bnb1yk882gllgv3rt2rqrsudf6kn2agr94etnxu9a7",
-	"bnb1t3c49u74fum2gtgekwqqdngg5alt4txrq3txad",
-	"bnb1hpa7tfffxadq9nslyu2hu9vc44l2x6ech3767y",
-	"bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq",
-	"bnb1llvmhawaxxjchwmfmj8fjzftvwz4jpdhapp5hr",
-	"bnb1s3f8vxaqum3pft6cefyn99px8wq6uk3jdtyarn",
-	"bnb1e6y59wuz9qqcnqjhjw0cl6hrp2p8dvsyxyx9jm",
-	"bnb1zxseqkfm3en5cw6dh9xgmr85hw6jtwamnd2y2v",
-}
 
 // GetRandomNodeAccount create a random generated node account , used for test purpose
 func GetRandomNodeAccount(status NodeStatus) NodeAccount {
@@ -44,8 +31,29 @@ func GetRandomBech32Addr() sdk.AccAddress {
 	return sdk.AccAddress(crypto.AddressHash([]byte(name)))
 }
 
+func GetRandomBech32ConsensusPubKey() string {
+	_, pubKey, _ := atypes.KeyTestPubAddr()
+	result, err := sdk.Bech32ifyConsPub(pubKey)
+	if nil != err {
+		panic(err)
+	}
+	return result
+}
+
+// ConvertAndEncode converts from a base64 encoded byte string to base32 encoded byte string and then to bech32
+func ConvertAndEncode(hrp string, data []byte) (string, error) {
+	converted, err := bech32.ConvertBits(data, 8, 5, true)
+	if err != nil {
+		return "", errors.Wrap(err, "encoding bech32 failed")
+	}
+	return bech32.Encode(hrp, converted)
+}
+
+// GetRandomBNBAddress will just create a random bnb address used for test purpose
 func GetRandomBNBAddress() common.Address {
-	bnb, _ := common.NewAddress(addresses[rand.Intn(len(addresses))])
+	name := RandStringBytesMask(10)
+	str, _ := ConvertAndEncode("tbnb", crypto.AddressHash([]byte(name)))
+	bnb, _ := common.NewAddress(str)
 	return bnb
 }
 

@@ -29,12 +29,10 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 	c.Assert(err, NotNil)
 	c.Assert(pa1.IsEmpty(), Equals, true)
 
-	bnb, err := common.NewAddress("bnb186yz2nk6at5uy9g064ndr7rt8kle2424ds7wnr")
-	c.Assert(err, IsNil)
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
+	bnb := GetRandomBNBAddress()
+	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
-	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
+	bepConsPubKey := GetRandomBech32ConsensusPubKey()
 	trustAccount := NewTrustAccount(bnb, addr, bepConsPubKey)
 	err = trustAccount.IsValid()
 	c.Assert(err, IsNil)

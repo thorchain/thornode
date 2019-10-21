@@ -33,41 +33,42 @@ const (
 )
 
 var (
-	NewPool               = types.NewPool
-	NewAdminConfig        = types.NewAdminConfig
-	NewMsgNoOp            = types.NewMsgNoOp
-	NewMsgAdd             = types.NewMsgAdd
-	NewMsgSetPoolData     = types.NewMsgSetPoolData
-	NewMsgSetStakeData    = types.NewMsgSetStakeData
-	NewMsgSetUnStake      = types.NewMsgSetUnStake
-	NewMsgSwap            = types.NewMsgSwap
-	NewMsgSetAdminConfig  = types.NewMsgSetAdminConfig
-	NewTxOut              = types.NewTxOut
-	NewEvent              = types.NewEvent
-	NewEventSwap          = types.NewEventSwap
-	NewEventStake         = types.NewEventStake
-	NewEmptyRefundEvent   = types.NewEmptyRefundEvent
-	NewEventUnstake       = types.NewEventUnstake
-	NewMsgOutboundTx      = types.NewMsgOutboundTx
-	NewPoolStaker         = types.NewPoolStaker
-	NewStakerPool         = types.NewStakerPool
-	NewMsgEndPool         = types.NewMsgEndPool
-	NewMsgAck             = types.NewMsgAck
-	HasMajority           = types.HasMajority
-	GetAdminConfigKey     = types.GetAdminConfigKey
-	ModuleCdc             = types.ModuleCdc
-	RegisterCodec         = types.RegisterCodec
-	NewTrustAccount       = types.NewTrustAccount
-	NewNodeAccount        = types.NewNodeAccount
-	NewMsgBond            = types.NewMsgBond
-	NewPoolAddresses      = types.NewPoolAddresses
-	NewMsgNextPoolAddress = types.NewMsgNextPoolAddress
-	NewMsgLeave           = types.NewMsgLeave
-	GetRandomNodeAccount  = types.GetRandomNodeAccount
-	GetRandomBNBAddress   = types.GetRandomBNBAddress
-	GetRandomTxHash       = types.GetRandomTxHash
-	GetRandomBech32Addr   = types.GetRandomBech32Addr
-	SetupConfigForTest    = types.SetupConfigForTest
+	NewPool                        = types.NewPool
+	NewAdminConfig                 = types.NewAdminConfig
+	NewMsgNoOp                     = types.NewMsgNoOp
+	NewMsgAdd                      = types.NewMsgAdd
+	NewMsgSetPoolData              = types.NewMsgSetPoolData
+	NewMsgSetStakeData             = types.NewMsgSetStakeData
+	NewMsgSetUnStake               = types.NewMsgSetUnStake
+	NewMsgSwap                     = types.NewMsgSwap
+	NewMsgSetAdminConfig           = types.NewMsgSetAdminConfig
+	NewTxOut                       = types.NewTxOut
+	NewEvent                       = types.NewEvent
+	NewEventSwap                   = types.NewEventSwap
+	NewEventStake                  = types.NewEventStake
+	NewEmptyRefundEvent            = types.NewEmptyRefundEvent
+	NewEventUnstake                = types.NewEventUnstake
+	NewMsgOutboundTx               = types.NewMsgOutboundTx
+	NewPoolStaker                  = types.NewPoolStaker
+	NewStakerPool                  = types.NewStakerPool
+	NewMsgEndPool                  = types.NewMsgEndPool
+	NewMsgAck                      = types.NewMsgAck
+	HasMajority                    = types.HasMajority
+	GetAdminConfigKey              = types.GetAdminConfigKey
+	ModuleCdc                      = types.ModuleCdc
+	RegisterCodec                  = types.RegisterCodec
+	NewTrustAccount                = types.NewTrustAccount
+	NewNodeAccount                 = types.NewNodeAccount
+	NewMsgBond                     = types.NewMsgBond
+	NewPoolAddresses               = types.NewPoolAddresses
+	NewMsgNextPoolAddress          = types.NewMsgNextPoolAddress
+	NewMsgLeave                    = types.NewMsgLeave
+	GetRandomNodeAccount           = types.GetRandomNodeAccount
+	GetRandomBNBAddress            = types.GetRandomBNBAddress
+	GetRandomTxHash                = types.GetRandomTxHash
+	GetRandomBech32Addr            = types.GetRandomBech32Addr
+	GetRandomBech32ConsensusPubKey = types.GetRandomBech32ConsensusPubKey
+	SetupConfigForTest             = types.SetupConfigForTest
 )
 
 type (

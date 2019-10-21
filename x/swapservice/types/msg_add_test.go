@@ -14,17 +14,14 @@ func (mas *MsgAddSuite) SetUpSuite(c *C) {
 	SetupConfigForTest()
 }
 func (mas *MsgAddSuite) TestMsgAdd(c *C) {
-
-	txId, err := common.NewTxID("712882AC9587198FA46F8D79BDFF013E77A89B12882702F03FA60FD298C517A4")
-	c.Assert(err, IsNil)
+	txId := GetRandomTxHash()
 	c.Check(txId.IsEmpty(), Equals, false)
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
+	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
 	ma := NewMsgAdd(common.BNBTicker, sdk.NewUint(100000000), sdk.NewUint(100000000), txId, addr)
 	c.Check(ma.Route(), Equals, RouterKey)
 	c.Check(ma.Type(), Equals, "set_add")
-	err = ma.ValidateBasic()
+	err := ma.ValidateBasic()
 	c.Assert(err, IsNil)
 	buf := ma.GetSignBytes()
 	c.Assert(buf, NotNil)

@@ -55,14 +55,12 @@ func (NodeAccountSuite) TestGetNodeStatus(c *C) {
 }
 
 func (NodeAccountSuite) TestNodeAccount(c *C) {
-	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
-	c.Assert(err, IsNil)
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
+	bnb := GetRandomBNBAddress()
+	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
-	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
+	bepConsPubKey := GetRandomBech32ConsensusPubKey()
 	trustAccount := NewTrustAccount(bnb, addr, bepConsPubKey)
-	err = trustAccount.IsValid()
+	err := trustAccount.IsValid()
 	c.Assert(err, IsNil)
 	nodeAddress := GetRandomBech32Addr()
 	bondAddr := GetRandomBNBAddress()
