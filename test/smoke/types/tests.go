@@ -3,6 +3,7 @@ package types
 import (
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/keys"
+	"time"
 )
 
 type Tests struct {
@@ -40,9 +41,10 @@ type Coin struct {
 }
 
 type Check struct {
-	Target     string     `json:"target"`
-	Binance    []Coin     `json:"binance"`
-	Statechain Statechain `json:"statechain"`
+	Delay      time.Duration `json:"delay"`
+	Target     string        `json:"target"`
+	Binance    []Coin        `json:"binance"`
+	Statechain Statechain    `json:"statechain"`
 }
 
 type Statechain struct {

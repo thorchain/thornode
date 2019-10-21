@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/hashicorp/go-retryablehttp"
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
@@ -235,7 +236,7 @@ func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg
 func (s *Smoke) GetPools() types.Pools {
 	var pools types.Pools
 
-	resp, err := http.Get(s.Statechain.PoolURL())
+	resp, err := retryablehttp.Get(s.Statechain.PoolURL())
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
@@ -256,7 +257,12 @@ func (s *Smoke) GetPools() types.Pools {
 
 // CheckBinance : Check the balances
 func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo string) {
-	time.Sleep(s.Config.delay)
+	if check.Delay != 0 {
+		time.Sleep(check.Delay * time.Second)
+	} else {
+		time.Sleep(s.Config.delay)
+	}
+
 	balances := s.Balances(address)
 
 	for _, coins := range check.Binance {
@@ -363,7 +369,7 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 func (s *Smoke) GetStakes(address ctypes.AccAddress) types.Staker {
 	var staker types.Staker
 
-	resp, err := http.Get(s.Statechain.StakerURL(address.String()))
+	resp, err := retryablehttp.Get(s.Statechain.StakerURL(address.String()))
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
