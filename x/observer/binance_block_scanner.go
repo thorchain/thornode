@@ -193,8 +193,36 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) bool {
 	// outbound msg from pool address to customer(not our pool address) , it will have a memo like "OUTBOUND:{blockheight}
 	lowerMemo := strings.ToLower(memo)
-	return b.pav.IsValidPoolAddress(addr) &&
-		strings.HasPrefix(lowerMemo, "outbound")
+	return b.pav.IsValidPoolAddress(addr) && strings.HasPrefix(lowerMemo, "outbound")
+}
+func (b *BinanceBlockScanner) isNextPoolMsg(addr, memo string, coins types.Coins) bool {
+	lowerMemo := strings.ToLower(memo)
+	nextPoolCoin := types.Coin{
+		Denom:  common.BNBTicker.String(),
+		Amount: 37501,
+	}
+	hasCorrectCoin := false
+	for _, c := range coins {
+		if c.SameDenomAs(nextPoolCoin) && c.Amount == nextPoolCoin.Amount {
+			hasCorrectCoin = true
+			break
+		}
+	}
+	return b.pav.IsValidPoolAddress(addr) && strings.HasPrefix(lowerMemo, "nextpool") && hasCorrectCoin
+}
+
+func (b *BinanceBlockScanner) getCoinsForTxIn(coins types.Coins) (common.Coins, error) {
+	commonCoins := common.Coins{}
+	for _, c := range coins {
+		ticker, err := common.NewTicker(c.Denom)
+		if nil != err {
+			b.errCounter.WithLabelValues("fail_create_ticker", c.Denom).Inc()
+			return nil, errors.Wrapf(err, "fail to create ticker, %s is not valid", c.Denom)
+		}
+		amt := sdk.NewUint(uint64(c.Amount))
+		commonCoins = append(commonCoins, common.NewCoin(ticker, amt))
+	}
+	return commonCoins, nil
 }
 
 func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*stypes.TxInItem, error) {
@@ -225,25 +253,36 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 			if b.isOutboundMsg(sender.Address.String(), t.Memo) {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
 				txInItem.ObservedPoolAddress = sender.Address.String()
-				// Coin is mandatory
-				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.RuneA1FTicker, sdk.NewUint(common.One)))
+				// Coin is mandatory , so let's just give 0.1 RUNE , thus if we fail to process outbound tx, we won't accidentally refund it.
+				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.RuneA1FTicker, sdk.NewUint(common.One/10)))
 				return &txInItem, nil
 			}
+			if b.isNextPoolMsg(sender.Address.String(), t.Memo, sender.Coins) {
+				b.logger.Debug().Str("memo", txInItem.Memo).Msg("nextpool")
+				txInItem.ObservedPoolAddress = sender.Address.String()
+				txInItem.Memo = "nextpool:" + sendMsg.Outputs[0].Address.String()
+				// Coin is mandatory , so let's just give 0.1 RUNE
+				for _, input := range sendMsg.Inputs {
+					cs, err := b.getCoinsForTxIn(input.Coins)
+					if nil != err {
+						return nil, errors.Wrap(err, "fail to convert coins")
+					}
+					txInItem.Coins = append(txInItem.Coins, cs...)
+				}
+				return &txInItem, nil
+			}
+
 			for _, output := range sendMsg.Outputs {
 				if !b.pav.IsValidPoolAddress(output.Address.String()) {
 					continue
 				}
 				txInItem.ObservedPoolAddress = output.Address.String()
 				existTx = true
-				for _, coin := range output.Coins {
-					ticker, err := common.NewTicker(coin.Denom)
-					if nil != err {
-						b.errCounter.WithLabelValues("fail_create_ticker", coin.Denom).Inc()
-						return nil, errors.Wrapf(err, "fail to create ticker, %s is not valid", coin.Denom)
-					}
-					amt := sdk.NewUint(uint64(coin.Amount))
-					txInItem.Coins = append(txInItem.Coins, common.NewCoin(ticker, amt))
+				cs, err := b.getCoinsForTxIn(output.Coins)
+				if nil != err {
+					return nil, errors.Wrap(err, "fail to convert coins")
 				}
+				txInItem.Coins = append(txInItem.Coins, cs...)
 			}
 		default:
 			continue
