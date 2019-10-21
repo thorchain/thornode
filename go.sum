@@ -366,6 +366,8 @@ gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021053855-16d8c4725028 h1:hO
 gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021053855-16d8c4725028/go.mod h1:kVqWoVSK8Hvj0s+BuT/Nu4Ohf++aDGfh1E1U1TEj1RA=
 gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021103005-9adfd63a9f0b h1:ly/gtlufj9Dmq+zaJnOfRi/wymL6oUjuPk9qh/hhFas=
 gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021103005-9adfd63a9f0b/go.mod h1:/682QTQbhcUY0wb5e1AvZ62jQAl1T1SVwSDz0ugtIJg=
+gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021230332-20852dc91412 h1:lHU1qYNszyW52v2vt4yXshsNCydlpK1bHQ9LoUWOT2o=
+gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021230332-20852dc91412/go.mod h1:A8Zq2dxHJPoroWyFSD98pUW7t4J2bOgVTXaGzZUpvpY=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.3 h1:MUGmc65QhB3pIlaQ5bB4LwqSj6GIonVJXpZiaKNyaKk=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
@@ -410,6 +412,8 @@ golang.org/x/net v0.0.0-20191007182048-72f939374954 h1:JGZucVF/L/TotR719NbujzadO
 golang.org/x/net v0.0.0-20191007182048-72f939374954/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/net v0.0.0-20191014212845-da9a3fd4c582 h1:p9xBe/w/OzkeYVKm234g55gMdD1nSIooTir5kV11kfA=
 golang.org/x/net v0.0.0-20191014212845-da9a3fd4c582/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
+golang.org/x/net v0.0.0-20191021144547-ec77196f6094 h1:5O4U9trLjNpuhpynaDsqwCk+Tw6seqJz1EbqbnzHrc8=
+golang.org/x/net v0.0.0-20191021144547-ec77196f6094/go.mod h1:z5CRVTTTmAJ677TzLLGU+0bjPO0LkuOLi4/5GtJWs/s=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/sync v0.0.0-20180314180146-1d60e4601c6f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
 golang.org/x/sync v0.0.0-20181108010431-42b317875d0f/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=

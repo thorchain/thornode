@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/binance-chain/go-sdk v1.1.3
+	github.com/btcsuite/btcd v0.20.0-beta // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/cosmos-sdk v0.37.3
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
@@ -25,7 +26,8 @@ require (
 	github.com/syndtr/goleveldb v1.0.1-0.20190318030020-c3a204f8e965
 	github.com/tendermint/crypto v0.0.0-20190823183015-45b1026d81ae // indirect
 	gitlab.com/thorchain/bepswap/common v1.0.1
-	gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021103005-9adfd63a9f0b
+	gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021230332-20852dc91412
+	golang.org/x/net v0.0.0-20191021144547-ec77196f6094 // indirect
 	golang.org/x/time v0.0.0-20190921001708-c4c64cad1fd0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/resty.v1 v1.12.0
