@@ -153,6 +153,7 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 
 	txIn.BlockHeight = strconv.FormatInt(block, 10)
 	txIn.Count = strconv.Itoa(len(txIn.TxArray))
+	txIn.Chain = common.BNBChain
 	b.txInChan <- txIn
 	return nil
 }
@@ -220,7 +221,7 @@ func (b *BinanceBlockScanner) getCoinsForTxIn(coins types.Coins) (common.Coins, 
 			return nil, errors.Wrapf(err, "fail to create ticker, %s is not valid", c.Denom)
 		}
 		amt := sdk.NewUint(uint64(c.Amount))
-		commonCoins = append(commonCoins, common.NewCoin(ticker, amt))
+		commonCoins = append(commonCoins, common.NewCoin(common.BNBChain, ticker, amt))
 	}
 	return commonCoins, nil
 }
@@ -254,7 +255,7 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
 				txInItem.ObservedPoolAddress = sender.Address.String()
 				// Coin is mandatory , so let's just give 0.1 RUNE , thus if we fail to process outbound tx, we won't accidentally refund it.
-				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.RuneA1FTicker, sdk.NewUint(common.One/10)))
+				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(common.One/10)))
 				return &txInItem, nil
 			}
 			if b.isNextPoolMsg(sender.Address.String(), t.Memo, sender.Coins) {

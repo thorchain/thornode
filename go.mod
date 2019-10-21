@@ -23,8 +23,8 @@ require (
 	github.com/spf13/viper v1.4.0
 	github.com/syndtr/goleveldb v1.0.1-0.20190318030020-c3a204f8e965
 	github.com/tendermint/crypto v0.0.0-20190823183015-45b1026d81ae // indirect
-	gitlab.com/thorchain/bepswap/common v1.0.0
-	gitlab.com/thorchain/bepswap/statechain v0.0.0-20191006024012-f2356437f55f
+	gitlab.com/thorchain/bepswap/common v1.0.1-0.20191019041734-5bea39d3cf49
+	gitlab.com/thorchain/bepswap/statechain v0.0.0-20191021023251-97ccc23d1ead
 	golang.org/x/crypto v0.0.0-20191002192127-34f69633bfdc // indirect
 	golang.org/x/net v0.0.0-20191007182048-72f939374954 // indirect
 	golang.org/x/sys v0.0.0-20191008105621-543471e840be // indirect
