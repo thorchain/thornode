@@ -2,7 +2,6 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 )
 
@@ -14,12 +13,9 @@ func (*MsgLeaveSuite) SetupSuite(c *C) {
 	SetupConfigForTest()
 }
 func (MsgLeaveSuite) TestMsgLeave(c *C) {
-	nodeAddr, err := sdk.AccAddressFromBech32("bep180xs5jx2szhww4jq4xfmvpza7kzr6rwu9408dm")
-	c.Assert(err, IsNil)
-	txId, err := common.NewTxID("712882AC9587198FA46F8D79BDFF013E77A89B12882702F03FA60FD298C517A4")
-	c.Assert(err, IsNil)
-	senderBNBAddr, err := common.NewAddress("bnb1dvpx8jru4mcyknavp2dtvw8uxg007pv8de35f9")
-	c.Assert(err, IsNil)
+	nodeAddr := GetRandomBech32Addr()
+	txId := GetRandomTxHash()
+	senderBNBAddr := GetRandomBNBAddress()
 	msgLeave := NewMsgLeave(txId, senderBNBAddr, nodeAddr)
 	EnsureMsgBasicCorrect(msgLeave, c)
 	c.Assert(msgLeave.ValidateBasic(), IsNil)

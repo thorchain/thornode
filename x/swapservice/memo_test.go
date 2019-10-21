@@ -138,10 +138,11 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit().Uint64(), Equals, uint64(0))
 
-	memo, err = ParseMemo("bond:bep180xs5jx2szhww4jq4xfmvpza7kzr6rwu9408dm")
+	whiteListAddr := GetRandomBech32Addr()
+	memo, err = ParseMemo("bond:" + whiteListAddr.String())
 	c.Assert(err, IsNil)
 	c.Assert(memo.IsType(txBond), Equals, true)
-	c.Assert(memo.GetNodeAddress().String(), Equals, "bep180xs5jx2szhww4jq4xfmvpza7kzr6rwu9408dm")
+	c.Assert(memo.GetNodeAddress().String(), Equals, whiteListAddr.String())
 
 	memo, err = ParseMemo("nextpool:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Assert(err, IsNil)

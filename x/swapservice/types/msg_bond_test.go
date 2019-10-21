@@ -15,13 +15,10 @@ func (mas *MsgApplySuite) SetUpSuite(c *C) {
 }
 
 func (MsgApplySuite) TestMsgApply(c *C) {
-	nodeAddr, err := sdk.AccAddressFromBech32("bep180xs5jx2szhww4jq4xfmvpza7kzr6rwu9408dm")
-	c.Assert(err, IsNil)
-	txId, err := common.NewTxID("712882AC9587198FA46F8D79BDFF013E77A89B12882702F03FA60FD298C517A4")
-	c.Assert(err, IsNil)
+	nodeAddr := GetRandomBech32Addr()
+	txId := GetRandomTxHash()
 	c.Check(txId.IsEmpty(), Equals, false)
-	signerAddr, err := sdk.AccAddressFromBech32("bep1n93wghyzlksfxyxvrejfc9eh3dfqkdzfs7k8fg")
-	c.Assert(err, IsNil)
+	signerAddr := GetRandomBech32Addr()
 	bondAddr := GetRandomBNBAddress()
 	msgApply := NewMsgBond(nodeAddr, sdk.NewUint(common.One), txId, bondAddr, signerAddr)
 	c.Assert(msgApply.ValidateBasic(), IsNil)

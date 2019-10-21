@@ -21,8 +21,7 @@ func (s AdminConfigSuite) TestGetKey(c *C) {
 
 func (s AdminConfigSuite) TestAdminConfig(c *C) {
 	amts := []string{"GSL", "StakerAmtInterval"}
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
+	addr := GetRandomBech32Addr()
 	for _, amt := range amts {
 		config := NewAdminConfig(GetAdminConfigKey(amt), "12", addr) // happy path
 		c.Check(config.Valid(), IsNil, Commentf("%s", amt))
@@ -45,7 +44,7 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 	}
 	adminCfg := NewAdminConfig(GSLKey, "100", addr)
 	c.Check(adminCfg.Empty(), Equals, false)
-	c.Check(adminCfg.DbKey(), Equals, "GSL_bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
+	c.Check(adminCfg.DbKey(), Equals, "GSL_"+addr.String())
 	c.Check(adminCfg.String(), Equals, fmt.Sprintf("Config: %s --> %s", adminCfg.Key, adminCfg.Value))
 
 	inputs := []struct {

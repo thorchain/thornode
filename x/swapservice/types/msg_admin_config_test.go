@@ -10,8 +10,7 @@ type MsgSetAdminConfigSuite struct{}
 var _ = Suite(&MsgSetAdminConfigSuite{})
 
 func (MsgSetAdminConfigSuite) TestMsgSetAdminConfig(c *C) {
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
+	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
 	msgSetAdminConfig := NewMsgSetAdminConfig(GSLKey, "2.0", addr)
 	c.Assert(msgSetAdminConfig.ValidateBasic(), IsNil)

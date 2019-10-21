@@ -11,12 +11,10 @@ type MsgSwapSuite struct{}
 var _ = Suite(&MsgSwapSuite{})
 
 func (MsgSwapSuite) TestMsgSwap(c *C) {
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
+	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
-	bnbAddress, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
-	txID, err := common.NewTxID("712882AC9587198FA46F8D79BDFF013E77A89B12882702F03FA60FD298C517A4")
-	c.Assert(err, IsNil)
+	bnbAddress := GetRandomBNBAddress()
+	txID := GetRandomTxHash()
 	c.Check(txID.IsEmpty(), Equals, false)
 
 	m := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(100000000), bnbAddress, bnbAddress, sdk.NewUint(200000000), addr)
