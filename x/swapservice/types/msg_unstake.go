@@ -10,15 +10,15 @@ const MaxWithdrawBasisPoints = 10000
 
 // MsgSetUnStake is used to withdraw
 type MsgSetUnStake struct {
-	PublicAddress       common.BnbAddress `json:"public_address"`        // it should be the public address
-	WithdrawBasisPoints sdk.Uint          `json:"withdraw_basis_points"` // withdraw basis points
-	Ticker              common.Ticker     `json:"symbol"`                // ticker token symbol
-	RequestTxHash       common.TxID       `json:"request_tx_hash"`       // request tx hash on binance chain
-	Signer              sdk.AccAddress    `json:"signer"`
+	PublicAddress       common.Address `json:"public_address"`        // it should be the public address
+	WithdrawBasisPoints sdk.Uint       `json:"withdraw_basis_points"` // withdraw basis points
+	Ticker              common.Ticker  `json:"symbol"`                // ticker token symbol
+	RequestTxHash       common.TxID    `json:"request_tx_hash"`       // request tx hash on binance chain
+	Signer              sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetUnStake is a constructor function for MsgSetPoolData
-func NewMsgSetUnStake(publicAddress common.BnbAddress, withdrawBasisPoints sdk.Uint, ticker common.Ticker, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetUnStake {
+func NewMsgSetUnStake(publicAddress common.Address, withdrawBasisPoints sdk.Uint, ticker common.Ticker, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
 		PublicAddress:       publicAddress,
 		WithdrawBasisPoints: withdrawBasisPoints,

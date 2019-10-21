@@ -89,6 +89,8 @@ type (
 	MsgAck             = types.MsgAck
 	QueryResPools      = types.QueryResPools
 	QueryResHeights    = types.QueryResHeights
+	QueryResTxOut      = types.QueryResTxOut
+	ResTxOut           = types.ResTxOut
 	TrustAccount       = types.TrustAccount
 	TrustAccounts      = types.TrustAccounts
 	PoolStatus         = types.PoolStatus

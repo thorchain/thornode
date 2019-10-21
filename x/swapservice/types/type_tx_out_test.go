@@ -11,7 +11,7 @@ type TxOutTestSuite struct{}
 var _ = Suite(&TxOutTestSuite{})
 
 func (TxOutTestSuite) TestTxOut(c *C) {
-	bnbAddress, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	bnbAddress, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
 	txOut := NewTxOut(1)
 	c.Assert(txOut, NotNil)
@@ -22,7 +22,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		PoolAddress: bnbAddress,
 		ToAddress:   bnbAddress,
 		Coins: common.Coins{
-			common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
 		},
 	}
 	txOut.TxArray = append(txOut.TxArray, txOutItem)
@@ -47,7 +47,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		ToAddress:   "",
 		PoolAddress: bnbAddress,
 		Coins: common.Coins{
-			common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
 		},
 	})
 	c.Assert(txOut2.Valid(), NotNil)
@@ -56,7 +56,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		ToAddress:   bnbAddress,
 		PoolAddress: "",
 		Coins: common.Coins{
-			common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
 		},
 	})
 	c.Assert(txOut3.Valid(), NotNil)

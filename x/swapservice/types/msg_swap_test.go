@@ -14,7 +14,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
 	c.Check(addr.Empty(), Equals, false)
-	bnbAddress, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	bnbAddress, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	txID, err := common.NewTxID("712882AC9587198FA46F8D79BDFF013E77A89B12882702F03FA60FD298C517A4")
 	c.Assert(err, IsNil)
 	c.Check(txID.IsEmpty(), Equals, false)
@@ -28,8 +28,8 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		source        common.Ticker
 		target        common.Ticker
 		amount        sdk.Uint
-		requester     common.BnbAddress
-		destination   common.BnbAddress
+		requester     common.Address
+		destination   common.Address
 		targetPrice   sdk.Uint
 		signer        sdk.AccAddress
 	}{
@@ -88,7 +88,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 			source:        common.RuneA1FTicker,
 			target:        common.BNBTicker,
 			amount:        sdk.NewUint(100000000),
-			requester:     common.NoBnbAddress,
+			requester:     common.NoAddress,
 			destination:   bnbAddress,
 			targetPrice:   sdk.NewUint(200000000),
 			signer:        addr,
@@ -99,7 +99,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 			target:        common.BNBTicker,
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
-			destination:   common.NoBnbAddress,
+			destination:   common.NoAddress,
 			targetPrice:   sdk.NewUint(200000000),
 			signer:        addr,
 		},

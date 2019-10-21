@@ -250,7 +250,7 @@ func (k Keeper) GetStakerPoolIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // GetStakerPool get the stakerpool from key value store
-func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID common.BnbAddress) (StakerPool, error) {
+func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixStakerPool, stakerID.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	ctx.Logger().Info("get staker pool", "stakerpoolkey", key)
@@ -267,7 +267,7 @@ func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID common.BnbAddress) (Stak
 }
 
 // SetStakerPool save the given stakerpool object to key value store
-func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID common.BnbAddress, sp StakerPool) {
+func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixStakerPool, stakerID.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", key, sp))
@@ -375,7 +375,7 @@ func (k Keeper) GetNodeAccountByObserver(ctx sdk.Context, addr sdk.AccAddress) (
 }
 
 // GetNodeAccountByBondAddress go through data store to get node account by it's signer bnb address
-func (k Keeper) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.BnbAddress) (NodeAccount, error) {
+func (k Keeper) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error) {
 	ctx.Logger().Debug("GetNodeAccountByBondAddress", "signer bnb address", addr.String())
 	var na NodeAccount
 	nodeAccounts, err := k.ListNodeAccounts(ctx)
@@ -594,12 +594,12 @@ func (k Keeper) GetAdminConfigWhiteListGasToken(ctx sdk.Context, addr sdk.AccAdd
 }
 
 // GetAdminConfigBnbAddressType - get the config with return type is BNBAddress
-func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.BnbAddress {
+func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address {
 	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
 		value = dValue
 	}
-	return common.BnbAddress(value)
+	return common.Address(value)
 }
 
 // GetAdminConfigDesireValidatorSet

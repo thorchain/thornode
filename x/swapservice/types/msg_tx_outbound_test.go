@@ -13,7 +13,7 @@ var _ = Suite(&MsgOutboundTxSuite{})
 func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
-	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
 	acc1, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
@@ -24,7 +24,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 	inputs := []struct {
 		txID   common.TxID
 		height uint64
-		sender common.BnbAddress
+		sender common.Address
 		signer sdk.AccAddress
 	}{
 		{
@@ -42,7 +42,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 		{
 			txID:   txID,
 			height: 1,
-			sender: common.NoBnbAddress,
+			sender: common.NoAddress,
 			signer: acc1,
 		},
 		{

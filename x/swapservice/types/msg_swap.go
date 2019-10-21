@@ -7,18 +7,18 @@ import (
 
 // MsgSwap defines a MsgSwap message
 type MsgSwap struct {
-	RequestTxHash common.TxID       `json:"request_tx_hash"` // Request transaction hash on Binance chain
-	SourceTicker  common.Ticker     `json:"source_symbol"`   // source token
-	TargetTicker  common.Ticker     `json:"target_symbol"`   // target token
-	Requester     common.BnbAddress `json:"requester"`       // request address on Binance chain
-	Destination   common.BnbAddress `json:"destination"`     // destination , used for swap and send , the destination address we send it to
-	Amount        sdk.Uint          `json:"amount"`          // amount of token to swap
-	TargetPrice   sdk.Uint          `json:"target_price"`
-	Signer        sdk.AccAddress    `json:"signer"`
+	RequestTxHash common.TxID    `json:"request_tx_hash"` // Request transaction hash on Binance chain
+	SourceTicker  common.Ticker  `json:"source_symbol"`   // source token
+	TargetTicker  common.Ticker  `json:"target_symbol"`   // target token
+	Requester     common.Address `json:"requester"`       // request address on Binance chain
+	Destination   common.Address `json:"destination"`     // destination , used for swap and send , the destination address we send it to
+	Amount        sdk.Uint       `json:"amount"`          // amount of token to swap
+	TargetPrice   sdk.Uint       `json:"target_price"`
+	Signer        sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSwap is a constructor function for MsgSwap
-func NewMsgSwap(requestTxHash common.TxID, source, target common.Ticker, amount sdk.Uint, requester, destination common.BnbAddress, targetPrice sdk.Uint, signer sdk.AccAddress) MsgSwap {
+func NewMsgSwap(requestTxHash common.TxID, source, target common.Ticker, amount sdk.Uint, requester, destination common.Address, targetPrice sdk.Uint, signer sdk.AccAddress) MsgSwap {
 	return MsgSwap{
 		RequestTxHash: requestTxHash,
 		SourceTicker:  source,

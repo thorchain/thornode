@@ -31,14 +31,14 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	txOutStore := NewTxOutStore(&MockTxOutSetter{})
 	txOutStore.NewBlock(uint64(1))
 
-	bnbAddress, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	bnbAddress, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
 
 	item := &TxOutItem{
 		PoolAddress: bnbAddress,
 		ToAddress:   bnbAddress,
 		Coins: common.Coins{
-			common.NewCoin(common.BNBTicker, sdk.NewUint(3980500*common.One)),
+			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(3980500*common.One)),
 		},
 	}
 
@@ -49,7 +49,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	c.Assert(item.Coins[0].Amount.String(), Equals, "398049999970000")
 
 	item.Coins = common.Coins{
-		common.NewCoin(common.BNBTicker, sdk.NewUint(1)),
+		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(1)),
 	}
 
 	txOutStore.AddTxOutItem(ctx, k, item)
@@ -57,7 +57,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	c.Assert(item.Coins[0].Amount.String(), Equals, "0")
 
 	item.Coins = common.Coins{
-		common.NewCoin(common.RuneTicker, sdk.NewUint(20*common.One)),
+		common.NewCoin(common.BNBChain, common.RuneTicker, sdk.NewUint(20*common.One)),
 	}
 
 	txOutStore.AddTxOutItem(ctx, k, item)
@@ -68,7 +68,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	c.Assert(item.Coins[0].Amount.String(), Equals, "1999970000")
 
 	item.Coins = common.Coins{
-		common.NewCoin(loki.Ticker, sdk.NewUint(20*common.One)),
+		common.NewCoin(common.BNBChain, loki.Ticker, sdk.NewUint(20*common.One)),
 	}
 	txOutStore.AddTxOutItem(ctx, k, item)
 	lokiPool := k.GetPool(ctx, loki.Ticker)

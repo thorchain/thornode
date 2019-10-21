@@ -29,8 +29,11 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 	c.Assert(err, NotNil)
 	c.Assert(pa1.IsEmpty(), Equals, true)
 
-	bnb := GetRandomBNBAddress()
-	addr := GetRandomBech32Addr()
+	bnb, err := common.NewAddress("bnb186yz2nk6at5uy9g064ndr7rt8kle2424ds7wnr")
+	c.Assert(err, IsNil)
+	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
+	c.Assert(err, IsNil)
+	c.Check(addr.Empty(), Equals, false)
 	bepConsPubKey := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrg`
 	trustAccount := NewTrustAccount(bnb, addr, bepConsPubKey)
 	err = trustAccount.IsValid()
@@ -67,10 +70,22 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 
 	nodeAccounts := NodeAccounts{na, na1}
 	// with more than two  active nodes
-	for i := 0; i < 10; i++ {
+	for {
 		na2 := GetRandomNodeAccount(NodeActive)
+		dup := false
+		for _, node := range nodeAccounts {
+			if na2.Accounts.SignerBNBAddress.Equals(node.Accounts.SignerBNBAddress) {
+				dup = true
+			}
+		}
+		if dup {
+			continue
+		}
 		k.SetNodeAccount(ctx, na2)
 		nodeAccounts = append(nodeAccounts, na2)
+		if len(nodeAccounts) == 10 {
+			break
+		}
 	}
 
 	sort.Sort(nodeAccounts)

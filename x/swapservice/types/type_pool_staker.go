@@ -11,8 +11,8 @@ import (
 
 // StakerUnit staker and their units in the pool
 type StakerUnit struct {
-	StakerID common.BnbAddress `json:"staker_id"`
-	Units    sdk.Uint          `json:"units"`
+	StakerID common.Address `json:"staker_id"`
+	Units    sdk.Uint       `json:"units"`
 }
 
 func (su StakerUnit) Valid() error {
@@ -74,7 +74,7 @@ func (ps PoolStaker) String() string {
 	}
 	return bs.String()
 }
-func (ps *PoolStaker) GetStakerUnit(stakerID common.BnbAddress) StakerUnit {
+func (ps *PoolStaker) GetStakerUnit(stakerID common.Address) StakerUnit {
 	for _, item := range ps.Stakers {
 		if item.StakerID == stakerID {
 			return item
@@ -87,7 +87,7 @@ func (ps *PoolStaker) GetStakerUnit(stakerID common.BnbAddress) StakerUnit {
 }
 
 // RemoveStakerUnit will remove the stakerunit with given staker id from the struct
-func (ps *PoolStaker) RemoveStakerUnit(stakerID common.BnbAddress) {
+func (ps *PoolStaker) RemoveStakerUnit(stakerID common.Address) {
 	deleteIdx := -1
 	for idx, item := range ps.Stakers {
 		if item.StakerID == stakerID {

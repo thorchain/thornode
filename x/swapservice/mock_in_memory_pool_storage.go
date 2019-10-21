@@ -11,7 +11,7 @@ import (
 
 var (
 	notExistPoolStakerTicker = common.Ticker("NotExistPoolStakerTicker")
-	notExistStakerPoolAddr   = common.BnbAddress("4252BA642F73FA402FEF18E3CB4550E5A4A6831299D5EB7E76808C8923FC1XXX")
+	notExistStakerPoolAddr   = common.Address("4252BA642F73FA402FEF18E3CB4550E5A4A6831299D5EB7E76808C8923FC1XXX")
 )
 
 type MockInMemoryPoolStorage struct {
@@ -36,7 +36,7 @@ func (p *MockInMemoryPoolStorage) GetPool(ctx sdk.Context, ticker common.Ticker)
 func (p *MockInMemoryPoolStorage) SetPool(ctx sdk.Context, ps Pool) {
 	p.store[ps.Ticker.String()] = ps
 }
-func (p *MockInMemoryPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common.BnbAddress) (StakerPool, error) {
+func (p *MockInMemoryPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error) {
 	if stakerID.Equals(notExistStakerPoolAddr) {
 		return NewStakerPool(stakerID), errors.New("simulate error for test")
 	}
@@ -46,7 +46,7 @@ func (p *MockInMemoryPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common
 	}
 	return NewStakerPool(stakerID), nil
 }
-func (p *MockInMemoryPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common.BnbAddress, sp StakerPool) {
+func (p *MockInMemoryPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool) {
 	key := getKey(prefixStakerPool, stakerID.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixStakerPool))
 	p.store[key] = sp
 }

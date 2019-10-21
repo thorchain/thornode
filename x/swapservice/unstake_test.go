@@ -125,7 +125,7 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 // TestValidateUnstake is to test validateUnstake function
 func (s UnstakeSuite) TestValidateUnstake(c *C) {
 	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
-	publicAddress, err := common.NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	publicAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if nil != err {
 		c.Error("fail to create new BNB Address")
 	}
@@ -230,7 +230,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 func (UnstakeSuite) TestUnstake(c *C) {
 	ps := mocks.MockPoolStorage{}
 	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
-	publicAddress, err := common.NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	publicAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if nil != err {
 		c.Error("fail to create new BNB Address")
 	}
@@ -344,7 +344,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		{
 			name: "invalid-staker-pool-notexist",
 			msg: MsgSetUnStake{
-				PublicAddress:       common.BnbAddress("NOTEXISTSTAKER"),
+				PublicAddress:       common.Address("NOTEXISTSTAKER"),
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Ticker:              common.BNBTicker,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -416,7 +416,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 }
 
 func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
-	publicAddress, err := common.NewBnbAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	publicAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if nil != err {
 		c.Error("fail to create new BNB Address")
 	}

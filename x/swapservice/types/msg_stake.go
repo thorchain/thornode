@@ -7,16 +7,16 @@ import (
 
 // MsgSetStakeData defines a SetStakeData message
 type MsgSetStakeData struct {
-	Ticker        common.Ticker     `json:"symbol"`          // ticker means the symbol
-	TokenAmount   sdk.Uint          `json:"token"`           // the amount of token stake
-	RuneAmount    sdk.Uint          `json:"rune"`            // the amount of rune stake
-	PublicAddress common.BnbAddress `json:"public_address"`  // Staker's address on binance chain
-	RequestTxHash common.TxID       `json:"request_tx_hash"` // the txhash that represent user send token to our pool address
-	Signer        sdk.AccAddress    `json:"signer"`
+	Ticker        common.Ticker  `json:"symbol"`          // ticker means the symbol
+	TokenAmount   sdk.Uint       `json:"token"`           // the amount of token stake
+	RuneAmount    sdk.Uint       `json:"rune"`            // the amount of rune stake
+	PublicAddress common.Address `json:"public_address"`  // Staker's address on binance chain
+	RequestTxHash common.TxID    `json:"request_tx_hash"` // the txhash that represent user send token to our pool address
+	Signer        sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
-func NewMsgSetStakeData(ticker common.Ticker, r, token sdk.Uint, publicAddress common.BnbAddress, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(ticker common.Ticker, r, token sdk.Uint, publicAddress common.Address, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		Ticker:        ticker,
 		TokenAmount:   token,

@@ -37,14 +37,14 @@ func (mps MockPoolStorage) GetPool(ctx sdk.Context, ticker common.Ticker) types.
 
 func (mps MockPoolStorage) SetPool(ctx sdk.Context, ps types.Pool) {}
 
-func (mps MockPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common.BnbAddress) (types.StakerPool, error) {
+func (mps MockPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common.Address) (types.StakerPool, error) {
 	if strings.EqualFold(stakerID.String(), "NOTEXISTSTAKER") {
 		return types.StakerPool{}, errors.New("you asked for it")
 	}
 	return types.NewStakerPool(stakerID), nil
 }
 
-func (mps MockPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common.BnbAddress, sp types.StakerPool) {
+func (mps MockPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp types.StakerPool) {
 
 }
 

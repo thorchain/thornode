@@ -8,13 +8,13 @@ import (
 // MsgNextPoolAddress is used to set the pool address of the next
 type MsgNextPoolAddress struct {
 	RequestTxHash common.TxID
-	NextPoolAddr  common.BnbAddress
-	Sender        common.BnbAddress
+	NextPoolAddr  common.Address
+	Sender        common.Address
 	Signer        sdk.AccAddress
 }
 
 // NewMsgNextPoolAddress create a new instance of MsgNextPoolAddress
-func NewMsgNextPoolAddress(requestTxHash common.TxID, nextPoolAddr common.BnbAddress, sender common.BnbAddress, signer sdk.AccAddress) MsgNextPoolAddress {
+func NewMsgNextPoolAddress(requestTxHash common.TxID, nextPoolAddr common.Address, sender common.Address, signer sdk.AccAddress) MsgNextPoolAddress {
 	return MsgNextPoolAddress{
 		RequestTxHash: requestTxHash,
 		NextPoolAddr:  nextPoolAddr,

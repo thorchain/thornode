@@ -11,7 +11,7 @@ type StakerPoolSuite struct{}
 var _ = Suite(&StakerPoolSuite{})
 
 func (StakerPoolSuite) TestStakerPool(c *C) {
-	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
 
 	stakerPool := NewStakerPool(bnb)

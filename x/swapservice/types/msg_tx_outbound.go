@@ -7,14 +7,14 @@ import (
 
 // MsgOutboundTx defines a MsgOutboundTx message
 type MsgOutboundTx struct {
-	Height uint64            `json:"height"`
-	TxID   common.TxID       `json:"tx_id"`
-	Sender common.BnbAddress `json:"sender"`
-	Signer sdk.AccAddress    `json:"signer"`
+	Height uint64         `json:"height"`
+	TxID   common.TxID    `json:"tx_id"`
+	Sender common.Address `json:"sender"`
+	Signer sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgOutboundTx is a constructor function for MsgOutboundTx
-func NewMsgOutboundTx(txID common.TxID, height uint64, sender common.BnbAddress, signer sdk.AccAddress) MsgOutboundTx {
+func NewMsgOutboundTx(txID common.TxID, height uint64, sender common.Address, signer sdk.AccAddress) MsgOutboundTx {
 	return MsgOutboundTx{
 		Sender: sender,
 		TxID:   txID,
