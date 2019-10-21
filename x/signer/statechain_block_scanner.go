@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"gitlab.com/thorchain/bepswap/common"
 
 	"gitlab.com/thorchain/bepswap/observe/config"
 	"gitlab.com/thorchain/bepswap/observe/x/blockscanner"
@@ -88,7 +89,7 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 	}
 
 	type txOut struct {
-		Chains []stypes.TxOut `json:"chains"`
+		Chains map[common.Chain]stypes.TxOut `json:"chains"`
 	}
 
 	var tx txOut
@@ -96,7 +97,8 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 		b.errCounter.WithLabelValues("fail_unmarshal_tx_out", strBlockHeight)
 		return errors.Wrap(err, "fail to unmarshal TxOut")
 	}
-	for _, out := range tx.Chains {
+	for c, out := range tx.Chains {
+		b.logger.Debug().Str("chain", c.String()).Msg("chain")
 		if len(out.TxArray) == 0 {
 			b.logger.Debug().Int64("block", blockHeight).Msg("nothing to process")
 			b.m.GetCounter(metrics.BlockNoTxOut).Inc()
@@ -105,7 +107,6 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 
 		b.txOutChan <- out
 	}
-
 	return nil
 }
 
