@@ -33,7 +33,7 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	bnb := GetRandomBNBAddress()
 	v, _ := tmtypes.RandValidator(true, 100)
 	k, _ := sdk.Bech32ifyConsPub(v.PubKey)
-	bondAddr, _ := common.NewAddress(addresses[rand.Intn(len(addresses))])
+	bondAddr := GetRandomBNBAddress()
 	na := NewNodeAccount(addr, status, NewTrustAccount(bnb, addr, k), sdk.NewUint(100*common.One), bondAddr)
 	return na
 }
