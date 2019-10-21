@@ -69,17 +69,17 @@ func (s StatechainSuite) TestSign(c *C) {
 "result":{
 			  "type": "cosmos-sdk/Account",
 			  "value": {
-				"address": "bep19ntuk0yy5plar0m5y274dk8ekq862mtedqfyqx",
+				"address": "thor1vx80hen38j5w0jn6gqh3crqvktj9stnhw56kn0",
 				"coins": [
 				  {
-					"denom": "rune",
+					"denom": "thor",
 					"amount": "1000"
 				  }
 				],
 				"public_key": {
-				  "type": "tendermint/PubKeySecp256k1",
-				  "value": "A8FfMkUK6aNsD6F6tFAfjMd8FrivIp+TXYZETyvPUbSh"
-				},
+        "type": "tendermint/PubKeySecp256k1",
+        "value": "ArYQdiiY4s1MgIEKm+7LXYQsH+ptH09neh9OWqY5VHYr"
+      },
 				"account_number": "0",
 				"sequence": "14"
 			  }
@@ -296,7 +296,7 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 	"result":{
   "type": "cosmos-sdk/Account",
   "value": {
-    "address": "bep192s6yjpffxuarphtppj8x8gdk5yhryk8uk0kk4",
+    "address": "thor1vx80hen38j5w0jn6gqh3crqvktj9stnhw56kn0",
     "coins": [
       {
         "denom": "bnb",
@@ -312,9 +312,9 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
       }
     ],
     "public_key": {
-      "type": "tendermint/PubKeySecp256k1",
-      "value": "Awt+sP60ISUqARl9Ff0XvGzNYZFFmayas4L3HJz64f+4"
-    },
+        "type": "tendermint/PubKeySecp256k1",
+        "value": "ArYQdiiY4s1MgIEKm+7LXYQsH+ptH09neh9OWqY5VHYr"
+      },
     "account_number": "0",
     "sequence": "2"
   }
@@ -369,7 +369,7 @@ func (StatechainSuite) TestSignEx(c *C) {
 					"result":{
 					"type": "cosmos-sdk/Account",
 						"value": {
-						"address": "bep192s6yjpffxuarphtppj8x8gdk5yhryk8uk0kk4",
+						"address": "thor1vx80hen38j5w0jn6gqh3crqvktj9stnhw56kn0",
 							"coins": [
 						{
 							"denom": "bnb",
@@ -385,9 +385,9 @@ func (StatechainSuite) TestSignEx(c *C) {
 						}
 		],
 			"public_key": {
-			"type": "tendermint/PubKeySecp256k1",
-			"value": "Awt+sP60ISUqARl9Ff0XvGzNYZFFmayas4L3HJz64f+4"
-			},
+        "type": "tendermint/PubKeySecp256k1",
+        "value": "ArYQdiiY4s1MgIEKm+7LXYQsH+ptH09neh9OWqY5VHYr"
+      },
 			"account_number": "0",
 			"sequence": "2"
 			}
