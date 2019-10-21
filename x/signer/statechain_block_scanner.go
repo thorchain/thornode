@@ -92,7 +92,7 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 	}
 
 	var tx txOut
-	if err := json.Unmarshal(buf, &txOut); err != nil {
+	if err := json.Unmarshal(buf, &tx); err != nil {
 		b.errCounter.WithLabelValues("fail_unmarshal_tx_out", strBlockHeight)
 		return errors.Wrap(err, "fail to unmarshal TxOut")
 	}
@@ -103,7 +103,7 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 			return nil
 		}
 
-		b.txOutChan <- txOut
+		b.txOutChan <- out
 	}
 
 	return nil

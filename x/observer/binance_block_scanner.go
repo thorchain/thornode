@@ -221,7 +221,7 @@ func (b *BinanceBlockScanner) getCoinsForTxIn(coins types.Coins) (common.Coins, 
 			return nil, errors.Wrapf(err, "fail to create ticker, %s is not valid", c.Denom)
 		}
 		amt := sdk.NewUint(uint64(c.Amount))
-		commonCoins = append(commonCoins, common.NewCoin(ticker, amt))
+		commonCoins = append(commonCoins, common.NewCoin(common.BNBChain, ticker, amt))
 	}
 	return commonCoins, nil
 }
