@@ -424,7 +424,7 @@ func (StatechainSuite) TestSendEx(c *C) {
 		c.Assert(err, errChecker)
 
 	}
-	testBNBAddress, err := common.NewAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqx")
+	testBNBAddress, err := common.NewAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
 	if nil != err {
 		c.Error(err)
 	}
