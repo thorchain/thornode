@@ -282,7 +282,7 @@ func (BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	c.Check(txInItem.Sender, Equals, "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj")
 	c.Check(len(txInItem.Coins), Equals, 1)
 	c.Check(txInItem.Coins[0].Denom.String(), Equals, common.RuneA1FTicker.String())
-	c.Check(txInItem.Coins[0].Amount.Uint64(), Equals, uint64(common.One))
+	c.Check(txInItem.Coins[0].Amount.Uint64(), Equals, uint64(common.One/10))
 	txInItem1 := testFunc(binanceTxSwapLOKToBNB, NotNil, IsNil)
 	c.Check(txInItem1, NotNil)
 	c.Check(txInItem1.Memo, Equals, "SWAP:BNB")
