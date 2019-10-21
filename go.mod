@@ -22,7 +22,7 @@ require (
 	github.com/tendermint/go-amino v0.15.0
 	github.com/tendermint/tendermint v0.32.5
 	github.com/tendermint/tm-db v0.2.0
-	gitlab.com/thorchain/bepswap/common v1.0.0
+	gitlab.com/thorchain/bepswap/common v1.0.1-0.20191019041734-5bea39d3cf49
 	golang.org/x/crypto v0.0.0-20190911031432-227b76d455e7 // indirect
 	golang.org/x/net v0.0.0-20190912160710-24e19bdeb0f2 // indirect
 	golang.org/x/sys v0.0.0-20190912141932-bc967efca4b8 // indirect

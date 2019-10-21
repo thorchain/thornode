@@ -10,8 +10,8 @@ while true; do
   echo "password" | sscli keys add jack
   echo "password" | sscli keys add alice
 
-  ssd add-genesis-account $(sscli keys show jack -a) 1000bep,100000000stake
-  ssd add-genesis-account $(sscli keys show alice -a) 1000bep,100000000stake
+  ssd add-genesis-account $(sscli keys show jack -a) 1000bep,100000000bepv
+  ssd add-genesis-account $(sscli keys show alice -a) 1000bep,100000000bepv
 
   sscli config chain-id statechain
   sscli config output json
@@ -20,11 +20,11 @@ while true; do
 
   if [ -z "${POOL_ADDRESS:-}" ]; then
     echo "empty pool address"
-    POOL_ADDRESS=bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlYYY
+    POOL_ADDRESS=bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
   fi
   # add jack as a trusted account
   {
-    jq --arg VERSION "$(sscli query swapservice version | jq -r .version)" --arg POOL_ADDRESS "$POOL_ADDRESS" --arg VALIDATOR "$(ssd tendermint show-validator)" --arg NODE_ADDRESS "$(sscli keys show jack -a)" --arg OBSERVER_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS, "version": $VERSION, "status":"active","bond_address":$POOL_ADDRESS,"accounts":{"bnb_signer_acc":$POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}'
+    jq --arg VERSION "$(sscli query swapservice version | jq -r .version)" --arg POOL_ADDRESS "$POOL_ADDRESS" --arg VALIDATOR "$(ssd tendermint show-validator)" --arg NODE_ADDRESS "$(sscli keys show jack -a)" --arg OBSERVER_ADDRESS "$(sscli keys show jack -a)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS, "version": $VERSION, "status":"active","bond_address":$POOL_ADDRESS,"accounts":{"bnb_signer_acc": $POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}'
   } <~/.ssd/config/genesis.json >/tmp/genesis.json
   mv /tmp/genesis.json ~/.ssd/config/genesis.json
 

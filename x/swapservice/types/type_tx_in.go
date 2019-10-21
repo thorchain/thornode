@@ -17,17 +17,17 @@ const (
 
 // Meant to track if we have processed a specific binance tx
 type TxIn struct {
-	Status             status            `json:"status"`
-	Done               common.TxID       `json:"txhash"` // completed binance chain tx hash. This is a slice to track if we've "double spent" an input
-	Memo               string            `json:"memo"`   // memo
-	Coins              common.Coins      `json:"coins"`  // coins sent in tx
-	Sender             common.BnbAddress `json:"sender"`
-	BlockHeight        sdk.Uint          `json:"block_height"`
-	Signers            []sdk.AccAddress  `json:"signers"` // trust accounts saw this tx
-	ObservePoolAddress common.BnbAddress `json:"pool_address"`
+	Status             status           `json:"status"`
+	Done               common.TxID      `json:"txhash"` // completed binance chain tx hash. This is a slice to track if we've "double spent" an input
+	Memo               string           `json:"memo"`   // memo
+	Coins              common.Coins     `json:"coins"`  // coins sent in tx
+	Sender             common.Address   `json:"sender"`
+	BlockHeight        sdk.Uint         `json:"block_height"`
+	Signers            []sdk.AccAddress `json:"signers"` // trust accounts saw this tx
+	ObservePoolAddress common.Address   `json:"pool_address"`
 }
 
-func NewTxIn(coins common.Coins, memo string, sender common.BnbAddress, height sdk.Uint, observePoolAddress common.BnbAddress) TxIn {
+func NewTxIn(coins common.Coins, memo string, sender common.Address, height sdk.Uint, observePoolAddress common.Address) TxIn {
 	return TxIn{
 		Coins:              coins,
 		Memo:               memo,
@@ -44,6 +44,11 @@ func (tx TxIn) Valid() error {
 	}
 	if len(tx.Coins) == 0 {
 		return errors.New("coins cannot be empty")
+	}
+	for _, coin := range tx.Coins {
+		if err := coin.Valid(); err != nil {
+			return err
+		}
 	}
 	// ideally memo should not be empty, we check it here, but if we check it empty here, then the tx will be rejected by statechain
 	// given that , we are not going to refund the transaction, thus we will allow TxIn has empty to get into statechain.
@@ -75,6 +80,9 @@ func (tx TxIn) Equals(tx2 TxIn) bool {
 		return false
 	}
 	for i := range tx.Coins {
+		if !tx.Coins[i].Chain.Equals(tx2.Coins[i].Chain) {
+			return false
+		}
 		if !tx.Coins[i].Denom.Equals(tx2.Coins[i].Denom) {
 			return false
 		}

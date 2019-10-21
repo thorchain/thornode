@@ -8,12 +8,12 @@ import (
 // MsgAck is used to confirm the next pool address
 type MsgAck struct {
 	RequestTxHash common.TxID
-	Sender        common.BnbAddress
+	Sender        common.Address
 	Signer        sdk.AccAddress
 }
 
 // NewMsgAck create a new instance of NewMsgAck
-func NewMsgAck(requestTxHash common.TxID, sender common.BnbAddress, signer sdk.AccAddress) MsgAck {
+func NewMsgAck(requestTxHash common.TxID, sender common.Address, signer sdk.AccAddress) MsgAck {
 	return MsgAck{
 		RequestTxHash: requestTxHash,
 		Sender:        sender,

@@ -16,8 +16,8 @@ type Event struct {
 	// binance API?
 	// InStamp    time.Time         `json:"in_timestamp"`
 	// OutStamp   time.Time         `json:"out_timestamp"`
-	// InAddress  common.BnbAddress `json:"in_address"`
-	// OutAddress common.BnbAddress `json:"out_address"`
+	// InAddress  common.Address `json:"in_address"`
+	// OutAddress common.Address `json:"out_address"`
 	Pool   common.Ticker   `json:"pool"`
 	Event  json.RawMessage `json:"event"`
 	Status EventStatus     `json:"status"`

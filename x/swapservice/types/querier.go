@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/bepswap/common"
 )
 
 // Query Result Payload for a pools query
@@ -27,4 +28,15 @@ type QueryResHeights struct {
 
 func (h QueryResHeights) String() string {
 	return fmt.Sprintf("Binance: %d, Signed: %d, Statechain: %d", h.LastBinanceHeight, h.LastSignedHeight, h.Statechain)
+}
+
+type ResTxOut struct {
+	Height  uint64       `json:"height"`
+	Hash    common.TxID  `json:"hash"`
+	Chain   common.Chain `json:"chain"`
+	TxArray []TxOutItem  `json:"tx_array"`
+}
+
+type QueryResTxOut struct {
+	Chains map[common.Chain]ResTxOut `json:"chains"`
 }

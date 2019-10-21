@@ -76,13 +76,13 @@ func GetPoolStatus(ps string) PoolStatus {
 // Pool is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
 type Pool struct {
-	BalanceRune         sdk.Uint          `json:"balance_rune"`           // how many RUNE in the pool
-	BalanceToken        sdk.Uint          `json:"balance_token"`          // how many token in the pool
-	Ticker              common.Ticker     `json:"symbol"`                 // what's the token's ticker
-	PoolUnits           sdk.Uint          `json:"pool_units"`             // total units of the pool
-	PoolAddress         common.BnbAddress `json:"pool_address"`           // bnb liquidity pool address
-	Status              PoolStatus        `json:"status"`                 // status
-	ExpiryInBlockHeight int64             `json:"expiry_in_block_height"` // means the pool address will be changed after these amount of blocks
+	BalanceRune         sdk.Uint       `json:"balance_rune"`           // how many RUNE in the pool
+	BalanceToken        sdk.Uint       `json:"balance_token"`          // how many token in the pool
+	Ticker              common.Ticker  `json:"symbol"`                 // what's the token's ticker
+	PoolUnits           sdk.Uint       `json:"pool_units"`             // total units of the pool
+	PoolAddress         common.Address `json:"pool_address"`           // bnb liquidity pool address
+	Status              PoolStatus     `json:"status"`                 // status
+	ExpiryInBlockHeight int64          `json:"expiry_in_block_height"` // means the pool address will be changed after these amount of blocks
 }
 
 // NewPool Returns a new Pool

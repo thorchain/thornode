@@ -15,7 +15,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	c.Assert(err, IsNil)
 	txID2, err := common.NewTxID("47B4FE474A63DDF79DF2790C1C5162F4C213484750AB8292CFE7342E4B0B40E2")
 	c.Assert(err, IsNil)
-	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
 	acc1, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
@@ -30,7 +30,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	accConsPub3 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdry`
 	accConsPub4 := `bepcpub1zcjduepq4kn64fcjhf0fp20gp8var0rm25ca9jy6jz7acem8gckh0nkplznq85gdrz`
 
-	observePoolAddr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqb")
+	observePoolAddr, err := common.NewAddress("tbnb1h792qpzue9dmdu8pfpdpyjqfd0s902dljvs4jz")
 	c.Assert(err, IsNil)
 	voter := NewTxInVoter(txID, nil)
 
@@ -149,8 +149,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	inputs := []struct {
 		coins           common.Coins
 		memo            string
-		sender          common.BnbAddress
-		observePoolAddr common.BnbAddress
+		sender          common.Address
+		observePoolAddr common.Address
 	}{
 		{
 			coins:           nil,
@@ -173,14 +173,14 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 		{
 			coins:           statechainCoins,
 			memo:            "test",
-			sender:          common.NoBnbAddress,
+			sender:          common.NoAddress,
 			observePoolAddr: observePoolAddr,
 		},
 		{
 			coins:           statechainCoins,
 			memo:            "test",
 			sender:          bnb,
-			observePoolAddr: common.NoBnbAddress,
+			observePoolAddr: common.NoAddress,
 		},
 	}
 
@@ -192,27 +192,27 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 
 func (TypeTxInSuite) TestTxInEquals(c *C) {
 	coins1 := common.Coins{
-		common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
-		common.NewCoin(common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
 	}
 	coins2 := common.Coins{
-		common.NewCoin(common.BNBTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
 	}
 	coins3 := common.Coins{
-		common.NewCoin(common.BNBTicker, sdk.NewUint(200*common.One)),
-		common.NewCoin(common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(200*common.One)),
+		common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
 	}
 	coins4 := common.Coins{
-		common.NewCoin(common.RuneB1ATicker, sdk.NewUint(100*common.One)),
-		common.NewCoin(common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.RuneB1ATicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
 	}
-	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
-	bnb1, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqb")
+	bnb1, err := common.NewAddress("bnb1yk882gllgv3rt2rqrsudf6kn2agr94etnxu9a7")
 	c.Assert(err, IsNil)
-	observePoolAddr, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqb")
+	observePoolAddr, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	c.Assert(err, IsNil)
-	observePoolAddr1, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqc")
+	observePoolAddr1, err := common.NewAddress("bnb1zxseqkfm3en5cw6dh9xgmr85hw6jtwamnd2y2v")
 	c.Assert(err, IsNil)
 	inputs := []struct {
 		tx    TxIn

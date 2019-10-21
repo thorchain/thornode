@@ -285,10 +285,11 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 		ToAddress:   msg.Destination,
 	}
-	toi.Coins = append(toi.Coins, common.Coin{
-		Denom:  msg.TargetTicker,
-		Amount: amount,
-	})
+	toi.Coins = append(toi.Coins, common.NewCoin(
+		common.BNBChain,
+		msg.TargetTicker,
+		amount,
+	))
 	txOutStore.AddTxOutItem(ctx, keeper, toi)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -352,14 +353,16 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
 		ToAddress:   msg.PublicAddress,
 	}
-	toi.Coins = append(toi.Coins, common.Coin{
-		Denom:  common.RuneTicker,
-		Amount: runeAmt,
-	})
-	toi.Coins = append(toi.Coins, common.Coin{
-		Denom:  msg.Ticker,
-		Amount: tokenAmount,
-	})
+	toi.Coins = append(toi.Coins, common.NewCoin(
+		common.BNBChain,
+		common.RuneTicker,
+		runeAmt,
+	))
+	toi.Coins = append(toi.Coins, common.NewCoin(
+		common.BNBChain,
+		msg.Ticker,
+		tokenAmount,
+	))
 	txOutStore.AddTxOutItem(ctx, keeper, toi)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -675,7 +678,7 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.BnbAddress, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.Address, signer sdk.AccAddress) (sdk.Msg, error) {
 	blockHeight := memo.GetBlockHeight()
 	return NewMsgOutboundTx(
 		txID,
@@ -917,7 +920,7 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 		return sdk.ErrUnknownRequest("not enough rune to be whitelisted").Result()
 	}
 	// we don't have the trust account info right now, so leave it empty
-	trustAccount := NewTrustAccount(common.NoBnbAddress, sdk.AccAddress{}, "")
+	trustAccount := NewTrustAccount(common.NoAddress, sdk.AccAddress{}, "")
 	// white list the given bep address
 	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, trustAccount, msg.Bond, msg.BondAddress)
 	keeper.SetNodeAccount(ctx, nodeAccount)
@@ -969,7 +972,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 			ToAddress:   nodeAcc.BondAddress,
 			PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 			Coins: common.Coins{
-				common.NewCoin(common.RuneTicker, nodeAcc.Bond),
+				common.NewCoin(common.BNBChain, common.RuneTicker, nodeAcc.Bond),
 			},
 		}
 		txOut.AddTxOutItem(ctx, keeper, txOutItem)

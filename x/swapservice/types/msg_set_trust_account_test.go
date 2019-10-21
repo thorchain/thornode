@@ -11,7 +11,7 @@ type MsgSetTrustAccountSuite struct{}
 var _ = Suite(&MsgSetTrustAccountSuite{})
 
 func (MsgSetTrustAccountSuite) TestMsgSetTrustAccount(c *C) {
-	bnb, err := common.NewBnbAddress("bnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
+	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
 	acc1, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
 	c.Assert(err, IsNil)
