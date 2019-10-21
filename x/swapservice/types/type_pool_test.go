@@ -23,13 +23,9 @@ func (PoolTestSuite) TestPool(c *C) {
 	c.Check(p.TokenPriceInRune(), Equals, 2.0)
 	c.Log(p.String())
 
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
-	c.Check(addr.Empty(), Equals, false)
-	bnbAddress, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
-	txID, err := common.NewTxID("712882AC9587198FA46F8D79BDFF013E77A89B12882702F03FA60FD298C517A4")
-	c.Assert(err, IsNil)
-	c.Check(txID.IsEmpty(), Equals, false)
+	addr := GetRandomBech32Addr()
+	bnbAddress := GetRandomBNBAddress()
+	txID := GetRandomTxHash()
 
 	m := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(1), bnbAddress, bnbAddress, sdk.NewUint(2), addr)
 

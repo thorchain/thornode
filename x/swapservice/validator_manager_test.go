@@ -96,15 +96,13 @@ func (ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(vMgr2.Meta.Nominated.IsEmpty(), Equals, false)
 	c.Assert(vMgr2.Meta.Queued.IsEmpty(), Equals, false)
 	c.Assert(vMgr2.Meta.Nominated.Equals(standbyNode), Equals, true)
+	allNodes, err := k.ListActiveNodeAccounts(ctx)
+	c.Assert(err, IsNil)
+	sort.Slice(allNodes, func(i, j int) bool {
+		return allNodes[i].StatusSince < allNodes[j].StatusSince
+	})
 
-	allNodes := NodeAccounts{
-		activeNode, activeNode1, activeNode2, readyNode,
-	}
-
-	sort.Sort(allNodes)
-
-	// TODO fix this test
-	// c.Assert(vMgr2.Meta.Queued.Equals(allNodes.First()), Equals, true, Commentf("%s %s", vMgr2.Meta.Queued.NodeAddress, allNodes.First().NodeAddress))
+	c.Assert(vMgr2.Meta.Queued.Equals(allNodes.First()), Equals, true, Commentf("%s %s", vMgr2.Meta.Queued.NodeAddress, allNodes.First().NodeAddress))
 
 	nominatedNode := vMgr2.Meta.Nominated
 	// nominated node is not in ready status abandon the rotation

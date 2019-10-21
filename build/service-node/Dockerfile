@@ -134,7 +134,7 @@ RUN rm /tmp/config.json
 
 # Setup statechain.
 RUN ssd init local --chain-id statechain
-RUN ssd add-genesis-account $(sscli keys show statechain -a) 100000000000bepgas,100000000000bep
+RUN ssd add-genesis-account $(sscli keys show statechain -a) 100000000000thor
 RUN sscli config chain-id statechain
 RUN sscli config output json
 RUN sscli config indent true

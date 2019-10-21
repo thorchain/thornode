@@ -1,7 +1,6 @@
 package types
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 )
@@ -12,13 +11,10 @@ var _ = Suite(&MsgEndPoolTestSuite{})
 
 func (MsgEndPoolTestSuite) TestMsgEndPool(c *C) {
 	ticker := common.BNBTicker
-	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
-	c.Assert(err, IsNil)
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
+	bnb := GetRandomBNBAddress()
+	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
-	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
-	c.Assert(err, IsNil)
+	txID := GetRandomTxHash()
 	msgEndPool := NewMsgEndPool(ticker, bnb, txID, addr)
 	c.Assert(msgEndPool.Route(), Equals, RouterKey)
 	c.Assert(msgEndPool.Type(), Equals, "set_poolend")

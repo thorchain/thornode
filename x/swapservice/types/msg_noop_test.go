@@ -10,8 +10,7 @@ type MsgNoopSuite struct{}
 var _ = Suite(&MsgNoopSuite{})
 
 func (MsgNoopSuite) TestMsgNoop(c *C) {
-	addr, err := sdk.AccAddressFromBech32("bep1jtpv39zy5643vywg7a9w73ckg880lpwuqd444v")
-	c.Assert(err, IsNil)
+	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
 	m := NewMsgNoOp(addr)
 	c.Check(m.ValidateBasic(), IsNil)
