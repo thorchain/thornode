@@ -692,3 +692,45 @@ func (HandlerSuite) TestHandleMsgAck(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(n.Status, Equals, NodeReady)
 }
+
+func (HandlerSuite) TestRefund(c *C) {
+	w := getHandlerTestWrapper(c, 1, true, false)
+
+	pool := Pool{
+		Ticker:       common.BNBTicker,
+		BalanceRune:  sdk.NewUint(100 * common.One),
+		BalanceToken: sdk.NewUint(100 * common.One),
+	}
+	w.keeper.SetPool(w.ctx, pool)
+
+	// test we create a refund transaction
+	txin := TxIn{
+		Sender: GetRandomBNBAddress(),
+		Coins: common.Coins{
+			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+		},
+	}
+
+	refundTx(w.ctx, txin, w.txOutStore, w.keeper, w.poolAddrMgr)
+	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
+
+	// check we DONT create a refund transaction when we don't have a pool for
+	// the asset sent.
+	txin = TxIn{
+		Sender: GetRandomBNBAddress(),
+		Coins: common.Coins{
+			common.NewCoin(common.BNBChain, "LOKI", sdk.NewUint(100*common.One)),
+		},
+	}
+
+	refundTx(w.ctx, txin, w.txOutStore, w.keeper, w.poolAddrMgr)
+	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
+	pool = w.keeper.GetPool(w.ctx, "LOKI")
+	c.Assert(pool.BalanceToken.Equal(sdk.NewUint(100*common.One)), Equals, true)
+
+	// doing it a second time should add the tokens again.
+	refundTx(w.ctx, txin, w.txOutStore, w.keeper, w.poolAddrMgr)
+	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
+	pool = w.keeper.GetPool(w.ctx, "LOKI")
+	c.Assert(pool.BalanceToken.Equal(sdk.NewUint(200*common.One)), Equals, true)
+}
