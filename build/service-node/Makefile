@@ -65,4 +65,4 @@ smoke-test:
 
 # Step 6
 seed:
-	./scripts/seed.sh -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}
+	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}

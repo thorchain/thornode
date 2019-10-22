@@ -7,7 +7,9 @@ import (
 )
 
 type Tests struct {
-	StakerCount int `json:"staker_count"`
+	WithActors  bool `json:"with_actors"`
+	StakerCount int  `json:"staker_count"`
+	SweepOnExit bool `json:"sweep_on_exit"`
 	Actors      Actors
 	Rules       []Rule `json:"rules"`
 }

@@ -76,16 +76,6 @@ func (s *Smoke) Setup() {
 	s.Tests.Actors.Faucet.Key = bKey
 	s.Tests.Actors.Faucet.Client = bClient
 
-	// Master
-	mClient, mKey := s.ClientKey()
-	s.Tests.Actors.Master.Key = mKey
-	s.Tests.Actors.Master.Client = mClient
-
-	// Admin
-	aClient, aKey := s.ClientKey()
-	s.Tests.Actors.Admin.Key = aKey
-	s.Tests.Actors.Admin.Client = aClient
-
 	// Pool
 	pKey, _ := keys.NewPrivateKeyManager(s.PoolKey)
 	pClient, _ := sdk.NewDexClient(s.ApiAddr, s.Network, pKey)
@@ -93,16 +83,28 @@ func (s *Smoke) Setup() {
 	s.Tests.Actors.Pool.Key = pKey
 	s.Tests.Actors.Pool.Client = pClient
 
-	// Stakers
-	for i := 1; i <= s.Tests.StakerCount; i++ {
-		sClient, sKey := s.ClientKey()
-		s.Tests.Actors.Stakers = append(s.Tests.Actors.Stakers, types.Keys{Key: sKey, Client: sClient})
-	}
+	if s.Tests.WithActors {
+		// Master
+		mClient, mKey := s.ClientKey()
+		s.Tests.Actors.Master.Key = mKey
+		s.Tests.Actors.Master.Client = mClient
 
-	// User
-	uClient, uKey := s.ClientKey()
-	s.Tests.Actors.User.Key = uKey
-	s.Tests.Actors.User.Client = uClient
+		// Admin
+		aClient, aKey := s.ClientKey()
+		s.Tests.Actors.Admin.Key = aKey
+		s.Tests.Actors.Admin.Client = aClient
+
+		// User
+		uClient, uKey := s.ClientKey()
+		s.Tests.Actors.User.Key = uKey
+		s.Tests.Actors.User.Client = uClient
+
+		// Stakers
+		for i := 1; i <= s.Tests.StakerCount; i++ {
+			sClient, sKey := s.ClientKey()
+			s.Tests.Actors.Stakers = append(s.Tests.Actors.Stakers, types.Keys{Key: sKey, Client: sClient})
+		}
+	}
 
 	s.Summary()
 }
@@ -117,18 +119,20 @@ func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
 
 // Summary : Private Keys
 func (s *Smoke) Summary() {
-	privKey, _ := s.Tests.Actors.Master.Key.ExportAsPrivateKey()
-	log.Printf("Master: %v - %v\n", s.Tests.Actors.Master.Key.GetAddr(), privKey)
+	if s.Tests.WithActors {
+		privKey, _ := s.Tests.Actors.Master.Key.ExportAsPrivateKey()
+		log.Printf("Master: %v - %v\n", s.Tests.Actors.Master.Key.GetAddr(), privKey)
 
-	privKey, _ = s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
-	log.Printf("Admin: %v - %v\n", s.Tests.Actors.Admin.Key.GetAddr(), privKey)
+		privKey, _ = s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
+		log.Printf("Admin: %v - %v\n", s.Tests.Actors.Admin.Key.GetAddr(), privKey)
 
-	privKey, _ = s.Tests.Actors.User.Key.ExportAsPrivateKey()
-	log.Printf("User: %v - %v\n", s.Tests.Actors.User.Key.GetAddr(), privKey)
+		privKey, _ = s.Tests.Actors.User.Key.ExportAsPrivateKey()
+		log.Printf("User: %v - %v\n", s.Tests.Actors.User.Key.GetAddr(), privKey)
 
-	for idx, staker := range s.Tests.Actors.Stakers {
-		privKey, _ = staker.Key.ExportAsPrivateKey()
-		log.Printf("Staker %v: %v - %v\n", idx+1, staker.Key.GetAddr(), privKey)
+		for idx, staker := range s.Tests.Actors.Stakers {
+			privKey, _ = staker.Key.ExportAsPrivateKey()
+			log.Printf("Staker %v: %v - %v\n", idx+1, staker.Key.GetAddr(), privKey)
+		}
 	}
 }
 
@@ -158,7 +162,9 @@ func (s *Smoke) Run() {
 		s.ValidateTest(rule)
 	}
 
-	s.Sweep()
+	if s.Tests.SweepOnExit {
+		s.Sweep()
+	}
 }
 
 // FromClientKey : Client and key based on the rule "from".
