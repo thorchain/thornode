@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	// TODO: This is a hack given the current API limits (1 request per second).
+	"github.com/hashicorp/go-retryablehttp"
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
@@ -29,7 +31,7 @@ type Smoke struct {
 	Config     Config
 	ApiAddr    string
 	Network    ctypes.ChainNetwork
-	BankKey    string
+	FaucetKey  string
 	PoolKey    string
 	Binance    Binance
 	Statechain Statechain
@@ -37,7 +39,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance
-func NewSmoke(apiAddr, bankKey, poolKey, env string, config string, network int, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -58,7 +60,7 @@ func NewSmoke(apiAddr, bankKey, poolKey, env string, config string, network int,
 		},
 		ApiAddr:    apiAddr,
 		Network:    n.Type,
-		BankKey:    bankKey,
+		FaucetKey:  faucetKey,
 		PoolKey:    poolKey,
 		Binance:    NewBinance(apiAddr, n.ChainID, debug),
 		Statechain: NewStatechain(env),
@@ -68,22 +70,12 @@ func NewSmoke(apiAddr, bankKey, poolKey, env string, config string, network int,
 
 // Setup : Generate/setup our accounts.
 func (s *Smoke) Setup() {
-	// Bank
-	bKey, _ := keys.NewPrivateKeyManager(s.BankKey)
+	// Faucet
+	bKey, _ := keys.NewPrivateKeyManager(s.FaucetKey)
 	bClient, _ := sdk.NewDexClient(s.ApiAddr, s.Network, bKey)
 
-	s.Tests.Actors.Bank.Key = bKey
-	s.Tests.Actors.Bank.Client = bClient
-
-	// Master
-	mClient, mKey := s.ClientKey()
-	s.Tests.Actors.Master.Key = mKey
-	s.Tests.Actors.Master.Client = mClient
-
-	// Admin
-	aClient, aKey := s.ClientKey()
-	s.Tests.Actors.Admin.Key = aKey
-	s.Tests.Actors.Admin.Client = aClient
+	s.Tests.Actors.Faucet.Key = bKey
+	s.Tests.Actors.Faucet.Client = bClient
 
 	// Pool
 	pKey, _ := keys.NewPrivateKeyManager(s.PoolKey)
@@ -92,16 +84,28 @@ func (s *Smoke) Setup() {
 	s.Tests.Actors.Pool.Key = pKey
 	s.Tests.Actors.Pool.Client = pClient
 
-	// Stakers
-	for i := 1; i <= s.Tests.StakerCount; i++ {
-		sClient, sKey := s.ClientKey()
-		s.Tests.Actors.Stakers = append(s.Tests.Actors.Stakers, types.Keys{Key: sKey, Client: sClient})
-	}
+	if s.Tests.WithActors {
+		// Master
+		mClient, mKey := s.ClientKey()
+		s.Tests.Actors.Master.Key = mKey
+		s.Tests.Actors.Master.Client = mClient
 
-	// User
-	uClient, uKey := s.ClientKey()
-	s.Tests.Actors.User.Key = uKey
-	s.Tests.Actors.User.Client = uClient
+		// Admin
+		aClient, aKey := s.ClientKey()
+		s.Tests.Actors.Admin.Key = aKey
+		s.Tests.Actors.Admin.Client = aClient
+
+		// User
+		uClient, uKey := s.ClientKey()
+		s.Tests.Actors.User.Key = uKey
+		s.Tests.Actors.User.Client = uClient
+
+		// Stakers
+		for i := 1; i <= s.Tests.StakerCount; i++ {
+			sClient, sKey := s.ClientKey()
+			s.Tests.Actors.Stakers = append(s.Tests.Actors.Stakers, types.Keys{Key: sKey, Client: sClient})
+		}
+	}
 
 	s.Summary()
 }
@@ -116,18 +120,20 @@ func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
 
 // Summary : Private Keys
 func (s *Smoke) Summary() {
-	privKey, _ := s.Tests.Actors.Master.Key.ExportAsPrivateKey()
-	log.Printf("Master: %v - %v\n", s.Tests.Actors.Master.Key.GetAddr(), privKey)
+	if s.Tests.WithActors {
+		privKey, _ := s.Tests.Actors.Master.Key.ExportAsPrivateKey()
+		log.Printf("Master: %v - %v\n", s.Tests.Actors.Master.Key.GetAddr(), privKey)
 
-	privKey, _ = s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
-	log.Printf("Admin: %v - %v\n", s.Tests.Actors.Admin.Key.GetAddr(), privKey)
+		privKey, _ = s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
+		log.Printf("Admin: %v - %v\n", s.Tests.Actors.Admin.Key.GetAddr(), privKey)
 
-	privKey, _ = s.Tests.Actors.User.Key.ExportAsPrivateKey()
-	log.Printf("User: %v - %v\n", s.Tests.Actors.User.Key.GetAddr(), privKey)
+		privKey, _ = s.Tests.Actors.User.Key.ExportAsPrivateKey()
+		log.Printf("User: %v - %v\n", s.Tests.Actors.User.Key.GetAddr(), privKey)
 
-	for idx, staker := range s.Tests.Actors.Stakers {
-		privKey, _ = staker.Key.ExportAsPrivateKey()
-		log.Printf("Staker %v: %v - %v\n", idx+1, staker.Key.GetAddr(), privKey)
+		for idx, staker := range s.Tests.Actors.Stakers {
+			privKey, _ = staker.Key.ExportAsPrivateKey()
+			log.Printf("Staker %v: %v - %v\n", idx+1, staker.Key.GetAddr(), privKey)
+		}
 	}
 }
 
@@ -157,14 +163,20 @@ func (s *Smoke) Run() {
 		s.ValidateTest(rule)
 	}
 
-	s.Sweep()
+	if s.Tests.SweepOnExit {
+		s.Sweep()
+	}
 }
 
 // FromClientKey : Client and key based on the rule "from".
 func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
+	if !s.Tests.WithActors && !s.PrimaryActor(from) {
+		log.Panic("Please check your test definitions. Only actors `faucet` or `pool` are supported with `with_actors` is `false`.")
+	}
+
 	switch from {
-	case "bank":
-		return s.Tests.Actors.Bank.Client, s.Tests.Actors.Bank.Key
+	case "faucet":
+		return s.Tests.Actors.Faucet.Client, s.Tests.Actors.Faucet.Key
 	case "master":
 		return s.Tests.Actors.Master.Client, s.Tests.Actors.Master.Key
 	case "admin":
@@ -183,6 +195,10 @@ func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
 
 // ToAddr : To address
 func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
+	if !s.Tests.WithActors && !s.PrimaryActor(to) {
+		log.Panic("Please check your test definitions. Only actors `faucet` or `pool` are supported with `with_actors` is `false`.")
+	}
+
 	switch to {
 	case "master":
 		return s.Tests.Actors.Master.Key.GetAddr()
@@ -197,6 +213,18 @@ func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
 		i, _ := strconv.Atoi(stakerIdx)
 		return s.Tests.Actors.Stakers[i-1].Key.GetAddr()
 	}
+}
+
+// PrimaryActor : Primary actor is "faucet" or "pool", as these are
+// not auto-generated addresses.
+func (s *Smoke) PrimaryActor(actor string) bool {
+	for _, a := range []string{"faucet", "pool"} {
+		if a == actor {
+			return true
+		}
+	}
+
+	return false
 }
 
 // ValidateTest : Determine if the test passed or failed.
@@ -218,7 +246,7 @@ func (s *Smoke) ValidateTest(rule types.Rule) {
 
 // Balances : Get the account balances of a given wallet.
 func (s *Smoke) Balances(address ctypes.AccAddress) []ctypes.TokenBalance {
-	acct, err := s.Tests.Actors.Bank.Client.GetAccount(address.String())
+	acct, err := s.Tests.Actors.Faucet.Client.GetAccount(address.String())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -235,7 +263,7 @@ func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg
 func (s *Smoke) GetPools() types.Pools {
 	var pools types.Pools
 
-	resp, err := http.Get(s.Statechain.PoolURL())
+	resp, err := retryablehttp.Get(s.Statechain.PoolURL())
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
@@ -256,7 +284,12 @@ func (s *Smoke) GetPools() types.Pools {
 
 // CheckBinance : Check the balances
 func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo string) {
-	time.Sleep(s.Config.delay)
+	if check.Delay != 0 {
+		time.Sleep(check.Delay * time.Second)
+	} else {
+		time.Sleep(s.Config.delay)
+	}
+
 	balances := s.Balances(address)
 
 	for _, coins := range check.Binance {
@@ -363,7 +396,7 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 func (s *Smoke) GetStakes(address ctypes.AccAddress) types.Staker {
 	var staker types.Staker
 
-	resp, err := http.Get(s.Statechain.StakerURL(address.String()))
+	resp, err := retryablehttp.Get(s.Statechain.StakerURL(address.String()))
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
@@ -434,6 +467,6 @@ func (s *Smoke) Sweep() {
 	keys = append(keys, uKey)
 
 	// Empty the wallets.
-	sweep := NewSweep(s.ApiAddr, s.BankKey, keys, s.Config.network, s.Config.debug)
+	sweep := NewSweep(s.ApiAddr, s.FaucetKey, keys, s.Config.network, s.Config.debug)
 	sweep.EmptyWallets()
 }

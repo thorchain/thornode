@@ -54,3 +54,10 @@ docker-push: docker-tag
 ecs-deploy: config docker-push
 	aws ecs update-service --force-new-deployment --cluster ${ECS_CLUSTER} --service ${ECR_STATECHAIN}
 
+# Step 5
+smoke-test:
+	./scripts/smoke.sh -r ${RPC_HOST} -g ${TARGET_GROUP_NAME} -c ${ECS_CLUSTER} -s ${ECS_SERVICE} -n ${TASK_COUNT} -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}
+
+# Step 6
+seed: sweep
+	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c seed/seed.json -d true
