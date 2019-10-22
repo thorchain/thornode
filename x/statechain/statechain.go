@@ -23,6 +23,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/common"
+
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/config"
@@ -46,6 +47,7 @@ type StateChainBridge struct {
 	m             *metrics.Metrics
 	accountNumber uint64
 	seqNumber     uint64
+	client        *retryablehttp.Client
 }
 
 // NewStateChainBridge create a new instance of StateChainBridge
@@ -78,6 +80,7 @@ func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics)
 		signerInfo: signerInfo,
 		kb:         kb,
 		errCounter: m.GetCounterVec(metrics.StateChainBridgeError),
+		client:     retryablehttp.NewClient(),
 		m:          m,
 	}, nil
 }
@@ -102,6 +105,11 @@ func getKeybase(stateChainHome, signerName string) (ckeys.Keybase, error) {
 	}
 	return keys.NewKeyBaseFromDir(cliDir)
 }
+
+func (scb *StateChainBridge) WithRetryableHttpClient(c *retryablehttp.Client) {
+	scb.client = c
+}
+
 func (scb *StateChainBridge) Start() error {
 	accountNumber, sequenceNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
 	if nil != err {
@@ -122,7 +130,8 @@ func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string
 	if len(requestUrl) == 0 {
 		return 0, 0, errors.New("request url is empty")
 	}
-	resp, err := retryablehttp.Get(requestUrl)
+
+	resp, err := scb.client.Get(requestUrl)
 	if err != nil {
 		return 0, 0, errors.Wrapf(err, "fail to get response from %s", requestUrl)
 	}
@@ -221,7 +230,7 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 	}
 	scb.logger.Info().Str("payload", string(result)).Msg("post to statechain")
 
-	resp, err := retryablehttp.Post(scb.getStateChainUrl("/txs"), "application/json", bytes.NewBuffer(result))
+	resp, err := scb.client.Post(scb.getStateChainUrl("/txs"), "application/json", bytes.NewBuffer(result))
 	if err != nil {
 		scb.errCounter.WithLabelValues("fail_post_to_statechain", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to post tx to statechain")
@@ -250,7 +259,7 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 // GetBinanceChainStartHeight
 func (scb *StateChainBridge) GetBinanceChainStartHeight() (uint64, error) {
 
-	resp, err := retryablehttp.Get(scb.getStateChainUrl("/swapservice/lastblock"))
+	resp, err := scb.client.Get(scb.getStateChainUrl("/swapservice/lastblock"))
 	if nil != err {
 		return 0, errors.Wrap(err, "fail to get last blocks from statechain")
 	}
@@ -308,10 +317,10 @@ func (scb *StateChainBridge) EnsureNodeWhitelisted() error {
 	if len(bepAddr) == 0 {
 		return errors.New("bep address is empty")
 	}
-	c := retryablehttp.NewClient()
+
 	requestUrl := scb.getStateChainUrl("/swapservice/observer/" + bepAddr)
 	scb.logger.Debug().Str("request_url", requestUrl).Msg("check node account status")
-	resp, err := c.Get(requestUrl)
+	resp, err := scb.client.Get(requestUrl)
 	if nil != err {
 		return errors.Wrap(err, "fail to get node account status")
 	}

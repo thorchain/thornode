@@ -48,7 +48,12 @@ func (tos *TxOutStore) GetOutboundItems() []*TxOutItem {
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem) {
+func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, deductFee bool) {
+
+	if !deductFee {
+		tos.addToBlockOut(toi)
+		return
+	}
 
 	// detect if one of our coins is bnb or rune. We use this to help determine
 	// which coin we should deduct fees from. The priority, in order, is BNB,
@@ -148,7 +153,10 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 
 		}
 	}
+	tos.addToBlockOut(toi)
 
+}
+func (tos *TxOutStore) addToBlockOut(toi *TxOutItem) {
 	// count the total coins we are sending to the user.
 	countCoins := sdk.ZeroUint()
 	for _, item := range toi.Coins {
