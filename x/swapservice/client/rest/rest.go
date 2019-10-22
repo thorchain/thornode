@@ -8,7 +8,7 @@ import (
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gorilla/mux"
-	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice/query"
+	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/query"
 )
 
 const (

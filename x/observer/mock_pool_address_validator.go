@@ -3,7 +3,7 @@ package observer
 import (
 	"strings"
 
-	"gitlab.com/thorchain/bepswap/thor-node/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
 )
 
 type MockPoolAddressValidator struct {
