@@ -25,7 +25,6 @@ c.out
 *.leveldb/
 .envrc
 log
-config.json
 blockscannertest/
 statechaintest/
 *.log

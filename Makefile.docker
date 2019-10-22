@@ -39,8 +39,6 @@ logger:
 
 # Step 1
 docker-build: logger
-	pwd
-	ls -l
 	./scripts/build.sh ${ECR_STATECHAIN} | tee ./log/state-chain-build.log
 
 # Step 2
