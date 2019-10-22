@@ -378,7 +378,31 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 		Coins:       tx.Coins,
 	}
 
-	store.AddTxOutItem(ctx, keeper, toi)
+	// If we recognize one of the coins, and therefore able to refund
+	// withholding fees, refund all coins.
+	for _, coin := range tx.Coins {
+		pool := keeper.GetPool(ctx, coin.Denom)
+		if common.IsRune(coin.Denom) || !pool.BalanceRune.IsZero() {
+			store.AddTxOutItem(ctx, keeper, toi)
+			return
+		}
+	}
+
+	// Since we have tokens, we don't have a pool for, we don't know how to
+	// refund and withhold for fees. Instead, we'll create a pool with the
+	// amount of tokens, and associate them with no stakers (meaning up for
+	// grabs). This could be like an airdrop scenario, for example.
+	// Don't assume this is the first time we've seen this coin (ie second
+	// airdrop).
+	for _, coin := range tx.Coins {
+		pool := keeper.GetPool(ctx, coin.Denom)
+		pool.Ticker = coin.Denom
+		pool.BalanceToken = pool.BalanceToken.Add(coin.Amount)
+		if pool.BalanceRune.IsZero() {
+			pool.Status = PoolSuspended
+		}
+		keeper.SetPool(ctx, pool)
+	}
 }
 
 // handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
