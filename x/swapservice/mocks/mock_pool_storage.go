@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 )

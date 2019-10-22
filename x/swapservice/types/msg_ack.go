@@ -2,7 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // MsgAck is used to confirm the next pool address

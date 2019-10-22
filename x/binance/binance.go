@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	"gitlab.com/thorchain/bepswap/thornode/config"
 	btypes "gitlab.com/thorchain/bepswap/thornode/x/binance/types"
