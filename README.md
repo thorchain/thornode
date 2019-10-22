@@ -1,6 +1,6 @@
-[![pipeline status](https://gitlab.com/thorchain/bepswap/statechain/badges/master/pipeline.svg)](https://gitlab.com/thorchain/bepswap/statechain/commits/master)
-[![coverage report](https://gitlab.com/thorchain/bepswap/statechain/badges/master/coverage.svg)](https://gitlab.com/thorchain/bepswap/statechain/commits/master)
-[![Build Status](https://gitlab.com/thorchain/bepswap/statechain/badges/master/build.svg)](https://gitlab.com/thorchain/bepswap/statechain/commits/master)
+[![pipeline status](https://gitlab.com/thorchain/bepswap/thor-node/badges/master/pipeline.svg)](https://gitlab.com/thorchain/bepswap/thor-node/commits/master)
+[![coverage report](https://gitlab.com/thorchain/bepswap/thor-node/badges/master/coverage.svg)](https://gitlab.com/thorchain/bepswap/thor-node/commits/master)
+[![Build Status](https://gitlab.com/thorchain/bepswap/thor-node/badges/master/build.svg)](https://gitlab.com/thorchain/bepswap/thor-node/commits/master)
 
 # BEPSwap Statechain
 =======================

@@ -15,9 +15,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/bepswap/statechain/config"
-	btypes "gitlab.com/thorchain/bepswap/statechain/x/binance/types"
-	"gitlab.com/thorchain/bepswap/statechain/x/metrics"
+	"gitlab.com/thorchain/bepswap/thor-node/config"
+	btypes "gitlab.com/thorchain/bepswap/thor-node/x/binance/types"
+	"gitlab.com/thorchain/bepswap/thor-node/x/metrics"
 )
 
 // CommonBlockScanner is used to discover block height

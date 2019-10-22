@@ -15,9 +15,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/bepswap/statechain/x/metrics"
-	"gitlab.com/thorchain/bepswap/statechain/x/statechain"
-	"gitlab.com/thorchain/bepswap/statechain/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/thor-node/x/metrics"
+	"gitlab.com/thorchain/bepswap/thor-node/x/statechain"
+	"gitlab.com/thorchain/bepswap/thor-node/x/statechain/types"
 )
 
 type PoolAddressValidator interface {
