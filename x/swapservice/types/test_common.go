@@ -10,7 +10,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	"gitlab.com/thorchain/bepswap/common"
 
-	"gitlab.com/thorchain/bepswap/statechain/cmd"
+	"gitlab.com/thorchain/bepswap/thor-node/cmd"
 )
 
 // GetRandomNodeAccount create a random generated node account , used for test purpose

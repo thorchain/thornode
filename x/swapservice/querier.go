@@ -11,8 +11,8 @@ import (
 
 	"gitlab.com/thorchain/bepswap/common"
 
-	q "gitlab.com/thorchain/bepswap/statechain/x/swapservice/query"
-	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
+	q "gitlab.com/thorchain/bepswap/thor-node/x/swapservice/query"
+	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice/types"
 )
 
 // NewQuerier is the module level router for state queries

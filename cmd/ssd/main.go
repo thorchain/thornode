@@ -17,8 +17,8 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	dbm "github.com/tendermint/tm-db"
 
-	app "gitlab.com/thorchain/bepswap/statechain"
-	cmd "gitlab.com/thorchain/bepswap/statechain/cmd"
+	app "gitlab.com/thorchain/bepswap/thor-node"
+	cmd "gitlab.com/thorchain/bepswap/thor-node/cmd"
 )
 
 func main() {

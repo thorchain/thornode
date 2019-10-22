@@ -21,7 +21,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
-	"gitlab.com/thorchain/bepswap/statechain/x/swapservice"
+	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice"
 )
 
 const appPoolData = "swapservice"

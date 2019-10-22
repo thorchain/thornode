@@ -6,7 +6,7 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/mocks"
+	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice/mocks"
 )
 
 type UnstakeSuite struct{}

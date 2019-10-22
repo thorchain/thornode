@@ -11,8 +11,8 @@ import (
 	"github.com/spf13/cobra"
 	"gitlab.com/thorchain/bepswap/common"
 
-	appCmd "gitlab.com/thorchain/bepswap/statechain/cmd"
-	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
+	appCmd "gitlab.com/thorchain/bepswap/thor-node/cmd"
+	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice/types"
 )
 
 func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {

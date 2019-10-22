@@ -16,8 +16,8 @@ import (
 	amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 
-	app "gitlab.com/thorchain/bepswap/statechain"
-	cmd "gitlab.com/thorchain/bepswap/statechain/cmd"
+	app "gitlab.com/thorchain/bepswap/thor-node"
+	cmd "gitlab.com/thorchain/bepswap/thor-node/cmd"
 )
 
 func main() {
