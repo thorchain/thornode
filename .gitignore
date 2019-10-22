@@ -8,6 +8,7 @@
 # Build
 vendor
 .vendor-new
+observe
 
 # IDE
 .idea/
@@ -24,3 +25,12 @@ c.out
 *.leveldb/
 .envrc
 log
+config.json
+blockscannertest/
+statechaintest/
+*.log
+*.ldb
+*/observer_db
+*/signer_db
+*.out
+build.sh
