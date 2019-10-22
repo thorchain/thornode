@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
 
-	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice/types"
+	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 )
 
 var (
