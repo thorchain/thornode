@@ -7,6 +7,8 @@ all: lint install
 install: go.sum
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
+	GO111MODULE=on go install -v ./cmd/observed
+	GO111MODULE=on go install -v ./cmd/signd
 
 tools: install
 	GO111MODULE=on go install -tags "$(build_tags)" ./tools/smoke
@@ -18,26 +20,37 @@ go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"
 	GO111MODULE=on go mod verify
 
-lint:
-	@golangci-lint run --deadline=15m
-	@go mod verify
-
 test-coverage:
-	@go test -mod=readonly -v -coverprofile .testCoverage.txt ./...
+	@go test -v -coverprofile .testCoverage.txt ./...
 
-test:
-	@go test -mod=readonly ./...
+coverage-report: test-coverage
+	@tool cover -html=.testCoverage.txt
 
 clear:
 	clear
 
+test:
+	@go test -mod=readonly ./...
+
 test-watch: clear
 	@./scripts/watch.bash
+
+lint-pre:
+	@test -z $(gofmt -l .) # checks code is in proper format
+	@go mod verify
+
+lint: lint-pre
+	@golangci-lint run
+	@go mod verify
+
+lint-verbose: lint-pre
+	@golangci-lint run -v
 
 build:
 	@go build ./...
 
-start: install start-daemon
+start-observe:
+	observe
 
 start-daemon:
 	ssd start
@@ -55,7 +68,7 @@ reset: clean
 clean:
 	rm -rf ~/.ssd
 	rm -rf ~/.sscli
-	rm -f ${GOBIN}/{smoke,generate,sweep,sscli,ssd}
+	rm -f ${GOBIN}/{smoke,generate,sweep,sscli,ssd,observe,signd}
 
 .envrc: install
 	@generate -t MASTER > .envrc
@@ -87,3 +100,4 @@ sweep: tools
 
 export:
 	ssd export
+

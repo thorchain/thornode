@@ -1,3 +1,5 @@
+image: golang:1.13
+
 cache:
   paths:
     - .cache
@@ -10,18 +12,20 @@ stages:
   - test
   - deploy
 
-unit:test:
+unit_tests:
   stage: test
-  image: golang:1.13
   coverage: '/^coverage:\s(\d+(?:\.\d+)?%)/'
+  variables:
+    SignerName: "jack"
+    SignerPasswd: "password"
   script:
-    - go test -v -coverprofile .testCoverage.txt ./...
+    - go test -mod=readonly -v -coverprofile .testCoverage.txt ./...
 
-lint:test:
+lint_code:
   image: golangci/golangci-lint
   stage: test
   script:
-    - make lint
+    - make lint-verbose
 
 integration:test:
   image: cbarraford/golang-ruby
@@ -103,3 +107,10 @@ deploy:production:
   only:
     - master
   when: manual
+
+trigger_build_and_deploy:
+  stage: deploy
+  only:
+    - master
+  script:
+    - "curl -X POST -F token=$TOKEN -F ref=master https://gitlab.com/api/v4/projects/13422983/trigger/pipeline"
