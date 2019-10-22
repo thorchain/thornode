@@ -91,12 +91,17 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	iter := k.GetPoolDataIterator(ctx)
 	defer iter.Close()
 	runeTotal := sdk.ZeroUint()
-
+	poolRefundGas := k.GetAdminConfigInt64(ctx, PoolRefundGasKey, PoolRefundGasKey.Default(), sdk.AccAddress{})
 	for ; iter.Valid(); iter.Next() {
 		var p Pool
 		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
 		if err != nil {
 			return errors.Wrap(err, "fail to unmarshal pool")
+		}
+		tokenAmount := p.BalanceToken
+		// we only take BNB for now
+		if common.IsBNB(p.Ticker) {
+			tokenAmount = tokenAmount.Sub(sdk.NewUint(uint64(poolRefundGas)))
 		}
 		runeTotal = runeTotal.Add(p.BalanceRune)
 		if p.BalanceToken.GT(sdk.ZeroUint()) {
@@ -104,7 +109,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 				PoolAddress: addresses.Previous,
 				ToAddress:   addresses.Current,
 				Coins: common.Coins{
-					common.NewCoin(common.BNBChain, p.Ticker, p.BalanceToken),
+					common.NewCoin(common.BNBChain, p.Ticker, tokenAmount),
 				},
 			})
 		}
