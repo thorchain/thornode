@@ -11,6 +11,7 @@ require (
 	github.com/go-resty/resty/v2 v2.0.0
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/go-retryablehttp v0.6.2
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.2.1
 	github.com/rs/zerolog v1.15.0
@@ -22,7 +23,6 @@ require (
 	github.com/tendermint/tendermint v0.32.6
 	github.com/tendermint/tm-db v0.2.0
 	gitlab.com/thorchain/bepswap/common v1.0.1
-	gitlab.com/thorchain/bepswap/observe v0.0.0-20191021233509-855f5763f0ad
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 	gopkg.in/resty.v1 v1.12.0
 )

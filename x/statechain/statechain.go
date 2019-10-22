@@ -17,7 +17,7 @@ import (
 	ckeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/hashicorp/go-retryablehttp"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -25,9 +25,9 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 
-	"gitlab.com/thorchain/bepswap/observe/config"
-	"gitlab.com/thorchain/bepswap/observe/x/metrics"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/statechain/config"
+	"gitlab.com/thorchain/bepswap/statechain/x/metrics"
+	"gitlab.com/thorchain/bepswap/statechain/x/statechain/types"
 )
 
 const (

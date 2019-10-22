@@ -11,10 +11,10 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/bepswap/observe/config"
-	"gitlab.com/thorchain/bepswap/observe/x/binance"
-	"gitlab.com/thorchain/bepswap/observe/x/metrics"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/statechain/config"
+	"gitlab.com/thorchain/bepswap/statechain/x/binance"
+	"gitlab.com/thorchain/bepswap/statechain/x/metrics"
+	"gitlab.com/thorchain/bepswap/statechain/x/statechain/types"
 )
 
 // Signer will pull the tx out from statechain and then forward it to binance chain

@@ -13,10 +13,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/common"
 
-	"gitlab.com/thorchain/bepswap/observe/config"
-	"gitlab.com/thorchain/bepswap/observe/x/blockscanner"
-	"gitlab.com/thorchain/bepswap/observe/x/metrics"
-	stypes "gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/statechain/config"
+	"gitlab.com/thorchain/bepswap/statechain/x/blockscanner"
+	"gitlab.com/thorchain/bepswap/statechain/x/metrics"
+	stypes "gitlab.com/thorchain/bepswap/statechain/x/statechain/types"
 )
 
 type StateChainBlockScan struct {
