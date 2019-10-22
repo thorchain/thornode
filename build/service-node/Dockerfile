@@ -14,6 +14,9 @@ RUN git config --global http.sslVerify "false"
 RUN git clone https://gitlab.com/thorchain/bepswap/statechain.git
 
 WORKDIR /tmp/statechain
+RUN git checkout $CI_COMMIT_REF_NAME
+
+WORKDIR /tmp/statechain
 RUN GO111MODULE=on go mod verify
 
 WORKDIR /tmp/statechain/cmd/ssd
