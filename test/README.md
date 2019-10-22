@@ -48,10 +48,18 @@ At the top level we define how many stakers we wish to create as well as our mai
 
 ```json
 {
+  "with_actors": true,
   "staker_count": 2,
+  "sweep_on_exit": true,
   "rules" [...]
 }
 ```
+
+Where:
+
+* `with_actors` create the actors or not (this will override `staker_count`),
+* `staker_count` the number of stakers to create,
+* `sweep_on_exit` sweep up the pool (and return to the faucet) on completion. We only ever set this to `false` when performing an actual seed of the pools on the `dev` and `staging` environments.
 
 Each rule will have:
 

@@ -169,6 +169,10 @@ func (s *Smoke) Run() {
 
 // FromClientKey : Client and key based on the rule "from".
 func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
+	if !s.Tests.WithActors && !s.PrimaryActor(from) {
+		log.Panic("Please check your test definitions. Only actors `faucet` or `pool` are supported with `with_actors` is `false`.")
+	}
+
 	switch from {
 	case "faucet":
 		return s.Tests.Actors.Faucet.Client, s.Tests.Actors.Faucet.Key
@@ -190,6 +194,10 @@ func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
 
 // ToAddr : To address
 func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
+	if !s.Tests.WithActors && !s.PrimaryActor(from) {
+		log.Panic("Please check your test definitions. Only actors `faucet` or `pool` are supported with `with_actors` is `false`.")
+	}
+
 	switch to {
 	case "master":
 		return s.Tests.Actors.Master.Key.GetAddr()
@@ -204,6 +212,18 @@ func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
 		i, _ := strconv.Atoi(stakerIdx)
 		return s.Tests.Actors.Stakers[i-1].Key.GetAddr()
 	}
+}
+
+// PrimaryActor : Primary actor is "faucet" or "pool", as these are
+// not auto-generated addresses.
+func (s *Smoke) PrimaryActor(actor string) bool {
+	for _, a := range []string{"faucet", "pool"} {
+		if a == actor {
+			return true
+		}
+	}
+
+	return false
 }
 
 // ValidateTest : Determine if the test passed or failed.
