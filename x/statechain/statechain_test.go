@@ -11,15 +11,15 @@ import (
 	"testing"
 	"time"
 
+	. "gopkg.in/check.v1"
+
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/hashicorp/go-retryablehttp"
-	"gitlab.com/thorchain/bepswap/common"
-	. "gopkg.in/check.v1"
-
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/config"

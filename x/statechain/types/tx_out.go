@@ -1,6 +1,6 @@
 package types
 
-import "gitlab.com/thorchain/bepswap/common"
+import "gitlab.com/thorchain/bepswap/thornode/common"
 
 type TxOut struct {
 	Height  string `json:"height"`
