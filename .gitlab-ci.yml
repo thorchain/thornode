@@ -76,7 +76,7 @@ deploy:develop:
 
 smoke-test:develop:
   stage: smoke-test
-  image: docker:stable
+  image: golang:1.13
   services:
     - docker:dind
   variables:
@@ -85,20 +85,18 @@ smoke-test:develop:
   before_script:
     - apk update
     - apk add python py-pip make git
-    - pip install awscli
-    - make aws-login
   except:
     - schedules
   environment:
     name: develop
-  script: make smoke-test
+  script: make -C ./build/service-node smoke-test
   only:
     - master
   when: manual
 
 seed:develop:
   stage: seed
-  image: docker:stable
+  image: golang:1.13
   services:
     - docker:dind
   variables:
@@ -107,15 +105,14 @@ seed:develop:
   before_script:
     - apk update
     - apk add python py-pip make git
-    - pip install awscli
-    - make aws-login
   except:
     - schedules
   environment:
     name: develop
-  script: make seed
+  script: make -C ./build/service-node seed
   only:
     - master
+  when: manual
 
 deploy:staging:
   stage: deploy
@@ -138,7 +135,7 @@ deploy:staging:
 
 smoke-test:staging:
   stage: smoke-test
-  image: docker:stable
+  image: golang:1.13
   services:
     - docker:dind
   variables:
@@ -147,20 +144,18 @@ smoke-test:staging:
   before_script:
     - apk update
     - apk add python py-pip make git
-    - pip install awscli
-    - make aws-login
   except:
     - schedules
   environment:
-    name: staging
-  script: make smoke-test
+    name: develop
+  script: make -C ./build/service-node smoke-test
   only:
     - master
   when: manual
 
 seed:staging:
   stage: seed
-  image: docker:stable
+  image: golang:1.13
   services:
     - docker:dind
   variables:
@@ -169,15 +164,14 @@ seed:staging:
   before_script:
     - apk update
     - apk add python py-pip make git
-    - pip install awscli
-    - make aws-login
   except:
     - schedules
   environment:
-    name: staging
-  script: make seed
+    name: develop
+  script: make -C ./build/service-node seed
   only:
     - master
+  when: manual
 
 deploy:production:
   stage: deploy
