@@ -13,12 +13,12 @@ type MsgSwap struct {
 	Requester     common.Address `json:"requester"`       // request address on Binance chain
 	Destination   common.Address `json:"destination"`     // destination , used for swap and send , the destination address we send it to
 	Amount        sdk.Uint       `json:"amount"`          // amount of token to swap
-	TargetPrice   sdk.Uint       `json:"target_price"`
+	TradeTarget   sdk.Uint       `json:"trade_target"`
 	Signer        sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSwap is a constructor function for MsgSwap
-func NewMsgSwap(requestTxHash common.TxID, source, target common.Ticker, amount sdk.Uint, requester, destination common.Address, targetPrice sdk.Uint, signer sdk.AccAddress) MsgSwap {
+func NewMsgSwap(requestTxHash common.TxID, source, target common.Ticker, amount sdk.Uint, requester, destination common.Address, tradeTarget sdk.Uint, signer sdk.AccAddress) MsgSwap {
 	return MsgSwap{
 		RequestTxHash: requestTxHash,
 		SourceTicker:  source,
@@ -26,7 +26,7 @@ func NewMsgSwap(requestTxHash common.TxID, source, target common.Ticker, amount 
 		Amount:        amount,
 		Requester:     requester,
 		Destination:   destination,
-		TargetPrice:   targetPrice,
+		TradeTarget:   tradeTarget,
 		Signer:        signer,
 	}
 }

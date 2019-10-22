@@ -66,14 +66,19 @@ func swap(ctx sdk.Context,
 	isDoubleSwap := !common.IsRune(source) && !common.IsRune(target)
 
 	if isDoubleSwap {
-		runeAmount, err := swapOne(ctx, keeper, txID, source, common.RuneTicker, amount, requester, destination, tradeTarget, globalSlipLimit)
+		var err error
+		amount, err = swapOne(ctx, keeper, txID, source, common.RuneTicker, amount, requester, destination, globalSlipLimit)
 		if err != nil {
 			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneTicker)
 		}
-		tokenAmount, err := swapOne(ctx, keeper, txID, common.RuneTicker, target, runeAmount, requester, destination, tradeTarget, globalSlipLimit)
-		return tokenAmount, err
+		source = common.RuneTicker
 	}
-	tokenAmount, err := swapOne(ctx, keeper, txID, source, target, amount, requester, destination, tradeTarget, globalSlipLimit)
+
+	tokenAmount, err := swapOne(ctx, keeper, txID, source, target, amount, requester, destination, globalSlipLimit)
+	if !tradeTarget.IsZero() && tokenAmount.LT(tradeTarget) {
+		return sdk.ZeroUint(), errors.Errorf("emit token %s less than price limit %s", tokenAmount, tradeTarget)
+	}
+
 	return tokenAmount, err
 }
 
@@ -82,7 +87,6 @@ func swapOne(ctx sdk.Context,
 	source, target common.Ticker,
 	amount sdk.Uint, requester,
 	destination common.Address,
-	tradeTarget sdk.Uint,
 	globalSlipLimit common.Amount) (amt sdk.Uint, err error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
@@ -188,9 +192,6 @@ func swapOne(ctx sdk.Context,
 		return sdk.ZeroUint(), errors.New("token :%s balance is 0, can't do swap")
 	}
 	// Need to convert to float before the calculation , otherwise 0.1 becomes 0, which is bad
-	if !tradeTarget.IsZero() && emitTokens.LT(tradeTarget) {
-		return sdk.ZeroUint(), errors.Errorf("emit token %s less than price limit %s", emitTokens, tradeTarget)
-	}
 
 	if poolSlip > gsl {
 		ctx.Logger().Info("poolslip over global pool slip limit", "poolslip", fmt.Sprintf("%.2f", poolSlip), "gsl", fmt.Sprintf("%.2f", gsl))

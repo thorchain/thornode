@@ -262,7 +262,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		msg.Requester,
 		msg.Destination,
 		msg.RequestTxHash,
-		msg.TargetPrice,
+		msg.TradeTarget,
 		gsl,
 	) // If so, set the stake data to the value specified in the msg.
 	if err != nil {
