@@ -27,6 +27,6 @@ require (
 	gopkg.in/resty.v1 v1.12.0
 )
 
-replace gitlab.com/thorchain/bepswap/thor-node => ../statechain
+replace gitlab.com/thorchain/bepswap/thor-node => ../thornode
 
 replace github.com/tendermint/go-amino => github.com/binance-chain/bnc-go-amino v0.14.1-binance.1
