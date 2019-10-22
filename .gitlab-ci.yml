@@ -11,6 +11,8 @@ before_script:
 stages:
   - test
   - deploy
+  - smoke-test
+  - seed
 
 unit_tests:
   stage: test
@@ -72,6 +74,49 @@ deploy:develop:
   only:
     - master
 
+smoke-test:develop:
+  stage: smoke-test
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+    - make aws-login
+  except:
+    - schedules
+  environment:
+    name: develop
+  script: make smoke-test
+  only:
+    - master
+  when: manual
+
+seed:develop:
+  stage: seed
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+    - make aws-login
+  except:
+    - schedules
+  environment:
+    name: develop
+  script: make seed
+  only:
+    - master
+
 deploy:staging:
   stage: deploy
   image: docker:stable
@@ -90,6 +135,49 @@ deploy:staging:
   script: make ecs-deploy
   only:
     - schedules
+
+smoke-test:staging:
+  stage: smoke-test
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+    - make aws-login
+  except:
+    - schedules
+  environment:
+    name: staging
+  script: make smoke-test
+  only:
+    - master
+  when: manual
+
+seed:staging:
+  stage: seed
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - pip install awscli
+    - make aws-login
+  except:
+    - schedules
+  environment:
+    name: staging
+  script: make seed
+  only:
+    - master
 
 deploy:production:
   stage: deploy
