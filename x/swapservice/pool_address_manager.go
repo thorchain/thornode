@@ -92,6 +92,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	defer iter.Close()
 	runeTotal := sdk.ZeroUint()
 	poolRefundGas := k.GetAdminConfigInt64(ctx, PoolRefundGasKey, PoolRefundGasKey.Default(), sdk.AccAddress{})
+	coins := common.Coins{}
 	for ; iter.Valid(); iter.Next() {
 		var p Pool
 		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
@@ -105,15 +106,10 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 		}
 		runeTotal = runeTotal.Add(p.BalanceRune)
 		if p.BalanceToken.GT(sdk.ZeroUint()) {
-			store.AddTxOutItem(ctx, k, &TxOutItem{
-				PoolAddress: addresses.Previous,
-				ToAddress:   addresses.Current,
-				Coins: common.Coins{
-					common.NewCoin(common.BNBChain, p.Ticker, tokenAmount),
-				},
-			})
+			coins = append(coins, common.NewCoin(common.BNBChain, p.Ticker, tokenAmount))
 		}
 	}
+
 	allNodeAccounts, err := k.ListNodeAccounts(ctx)
 	if nil != err {
 		return errors.Wrap(err, "fail to get all node accounts")
@@ -125,13 +121,14 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	}
 
 	if !runeTotal.IsZero() {
+		coins = append(coins, common.NewCoin(common.BNBChain, common.RuneTicker, runeTotal))
+	}
+	if len(coins) > 0 {
 		store.AddTxOutItem(ctx, k, &TxOutItem{
 			PoolAddress: addresses.Previous,
 			ToAddress:   addresses.Current,
-			Coins: common.Coins{
-				common.NewCoin(common.BNBChain, common.RuneTicker, runeTotal),
-			},
-		})
+			Coins:       coins,
+		}, true)
 	}
 	return nil
 }

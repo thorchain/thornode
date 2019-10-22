@@ -132,18 +132,20 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 		// make sure the fund is sending from previous pool address to current
 		c.Assert(item.ToAddress.String(), Equals, newPa1.Current.String())
 		c.Assert(len(item.Coins) > 0, Equals, true)
+		// given we on
 		if item.Coins[0].Denom == poolBNB.Ticker {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64()-batchTransactionFee-uint64(poolGas))
+			// there are four coins , BNB,TCAN-014,LOK-3C0 and RUNE
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64()-batchTransactionFee*4-uint64(poolGas))
 		}
 		if item.Coins[0].Denom.String() == poolTCan.Ticker.String() {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64()-batchTransactionFee)
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64())
 		}
 		if item.Coins[0].Denom.String() == poolLoki.Ticker.String() {
-			c.Check(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceToken.Uint64()-batchTransactionFee)
+			c.Check(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceToken.Uint64())
 		}
 		if common.IsRune(item.Coins[0].Denom) {
 			totalRune := poolBNB.BalanceRune.Add(poolLoki.BalanceRune).Add(poolTCan.BalanceRune).Add(totalBond)
-			c.Assert(item.Coins[0].Amount.String(), Equals, totalRune.SubUint64(batchTransactionFee).String())
+			c.Assert(item.Coins[0].Amount.String(), Equals, totalRune.String())
 		}
 	}
 	txOutStore.CommitBlock(ctx)

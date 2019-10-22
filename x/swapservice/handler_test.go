@@ -708,8 +708,8 @@ func (HandlerSuite) TestRefund(c *C) {
 			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
 		},
 	}
-
-	refundTx(w.ctx, txin, w.txOutStore, w.keeper, w.poolAddrMgr)
+	currentPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current
+	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 
 	// check we DONT create a refund transaction when we don't have a pool for
@@ -721,13 +721,13 @@ func (HandlerSuite) TestRefund(c *C) {
 		},
 	}
 
-	refundTx(w.ctx, txin, w.txOutStore, w.keeper, w.poolAddrMgr)
+	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, "LOKI")
 	c.Assert(pool.BalanceToken.Equal(sdk.NewUint(100*common.One)), Equals, true)
 
 	// doing it a second time should add the tokens again.
-	refundTx(w.ctx, txin, w.txOutStore, w.keeper, w.poolAddrMgr)
+	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, "LOKI")
 	c.Assert(pool.BalanceToken.Equal(sdk.NewUint(200*common.One)), Equals, true)

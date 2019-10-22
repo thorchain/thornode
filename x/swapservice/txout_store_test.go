@@ -42,7 +42,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 		},
 	}
 
-	txOutStore.AddTxOutItem(ctx, k, item)
+	txOutStore.AddTxOutItem(ctx, k, item, true)
 	bnbPool := k.GetPool(ctx, common.BNBTicker)
 	// happy path
 	c.Assert(bnbPool.BalanceToken.String(), Equals, "10000000000")
@@ -52,7 +52,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(1)),
 	}
 
-	txOutStore.AddTxOutItem(ctx, k, item)
+	txOutStore.AddTxOutItem(ctx, k, item, true)
 	// test not enough coins to pay for gas
 	c.Assert(item.Coins[0].Amount.String(), Equals, "0")
 
@@ -60,7 +60,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 		common.NewCoin(common.BNBChain, common.RuneTicker, sdk.NewUint(20*common.One)),
 	}
 
-	txOutStore.AddTxOutItem(ctx, k, item)
+	txOutStore.AddTxOutItem(ctx, k, item, true)
 	bnbPool = k.GetPool(ctx, common.BNBTicker)
 	// test takes gas out of rune
 	c.Assert(bnbPool.BalanceToken.String(), Equals, "9999970000")
@@ -70,7 +70,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	item.Coins = common.Coins{
 		common.NewCoin(common.BNBChain, loki.Ticker, sdk.NewUint(20*common.One)),
 	}
-	txOutStore.AddTxOutItem(ctx, k, item)
+	txOutStore.AddTxOutItem(ctx, k, item, true)
 	lokiPool := k.GetPool(ctx, loki.Ticker)
 	bnbPool = k.GetPool(ctx, common.BNBTicker)
 	// test takes gas out of loki pool
