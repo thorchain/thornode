@@ -19,6 +19,7 @@ const (
 	DesireValidatorSetKey     AdminConfigKey = "DesireValidatorSet"     // how much validators we would like to have
 	RotatePerBlockHeightKey   AdminConfigKey = "RotatePerBlockHeight"   // how many blocks we try to rotate validators
 	ValidatorsChangeWindowKey AdminConfigKey = "ValidatorsChangeWindow" // when should we open the rotate window, nominate validators, and identify who should be out
+	PoolRefundGasKey          AdminConfigKey = "PoolRefundGas"          // when we move assets from one pool to another , we leave this amount of BNB behind, thus we could refund customer if they send fund to the previous pool
 )
 
 func (k AdminConfigKey) String() string {
@@ -45,6 +46,8 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 		return RotatePerBlockHeightKey
 	case string(ValidatorsChangeWindowKey):
 		return ValidatorsChangeWindowKey
+	case string(PoolRefundGasKey):
+		return PoolRefundGasKey
 	default:
 		return UnknownKey
 	}
@@ -66,6 +69,8 @@ func (k AdminConfigKey) Default() string {
 		return "28800" // a day
 	case ValidatorsChangeWindowKey:
 		return "1200" // one hour
+	case PoolRefundGasKey:
+		return strconv.Itoa(common.One / 10)
 	default:
 		return ""
 	}
@@ -81,7 +86,7 @@ func (k AdminConfigKey) ValidValue(value string) error {
 		_, err = sdk.ParseUint(value)
 	case WhiteListGasTokenKey:
 		_, err = sdk.ParseCoins(value)
-	case DesireValidatorSetKey, RotatePerBlockHeightKey, ValidatorsChangeWindowKey: // int64
+	case DesireValidatorSetKey, RotatePerBlockHeightKey, ValidatorsChangeWindowKey, PoolRefundGasKey: // int64
 		_, err = strconv.ParseInt(value, 10, 64)
 	}
 	return err

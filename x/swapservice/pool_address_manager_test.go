@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"sort"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/common"
@@ -123,13 +124,16 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 	for _, item := range nodeAccounts {
 		totalBond = totalBond.Add(item.Bond)
 	}
+	defaultPoolGas := PoolRefundGasKey.Default()
+	poolGas, err := strconv.Atoi(defaultPoolGas)
+	c.Assert(err, IsNil)
 	for _, item := range txOutStore.blockOut.TxArray {
 		c.Assert(item.Valid(), IsNil)
 		// make sure the fund is sending from previous pool address to current
 		c.Assert(item.ToAddress.String(), Equals, newPa1.Current.String())
 		c.Assert(len(item.Coins) > 0, Equals, true)
 		if item.Coins[0].Denom == poolBNB.Ticker {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64()-batchTransactionFee)
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64()-batchTransactionFee-uint64(poolGas))
 		}
 		if item.Coins[0].Denom.String() == poolTCan.Ticker.String() {
 			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64()-batchTransactionFee)
