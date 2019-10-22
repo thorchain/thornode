@@ -82,4 +82,7 @@ swap: tools
 	@smoke -f ${FAUCET_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/swap.json -e ${ENV}
 
 sweep: tools
-	@sweep -m ${MASTER_KEY} -k ${KEY_LIST}
+	@sweep -m ${FAUCET_KEY} -k ${POOL_KEY} -d true
+
+seed: sweep
+	@smoke -f ${FAUCET_KEY} -p ${POOL_KEY} -e ${ENV} -c seed/seed.json -d true

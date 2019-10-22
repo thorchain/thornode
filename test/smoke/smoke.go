@@ -195,7 +195,7 @@ func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
 
 // ToAddr : To address
 func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
-	if !s.Tests.WithActors && !s.PrimaryActor(from) {
+	if !s.Tests.WithActors && !s.PrimaryActor(to) {
 		log.Panic("Please check your test definitions. Only actors `faucet` or `pool` are supported with `with_actors` is `false`.")
 	}
 
