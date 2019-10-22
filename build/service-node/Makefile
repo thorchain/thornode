@@ -64,5 +64,9 @@ smoke-test:
 	./scripts/smoke.sh -r ${RPC_HOST} -g ${TARGET_GROUP_NAME} -c ${ECS_CLUSTER} -s ${ECS_SERVICE} -n ${TASK_COUNT} -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}
 
 # Step 6
-seed:
-	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV}
+sweep:
+	@sweep -m ${FAUCET_KEY} -k ${BINANCE_PRIVATE_KEY}
+
+# Step 7
+seed: sweep
+	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c ./seed.json
