@@ -147,7 +147,7 @@ smoke-test:staging:
   except:
     - schedules
   environment:
-    name: develop
+    name: staging
   script: make -C ./build/service-node smoke-test
   only:
     - master
@@ -167,7 +167,7 @@ seed:staging:
   except:
     - schedules
   environment:
-    name: develop
+    name: staging
   script: make -C ./build/service-node seed
   only:
     - master
