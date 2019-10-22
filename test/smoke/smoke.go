@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	// TODO: This is a hack given the current API limits (1 request per second).
 	"github.com/hashicorp/go-retryablehttp"
 
 	sdk "github.com/binance-chain/go-sdk/client"
