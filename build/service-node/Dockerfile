@@ -9,8 +9,8 @@ FROM golang:1.13 AS build
 
 WORKDIR /tmp
 RUN git config --global http.sslVerify "false"
+
 # TODO Move away from the embed clone as this will only work for master branchs
-RUN git clone https://gitlab.com/thorchain/bepswap/observe.git
 RUN git clone https://gitlab.com/thorchain/bepswap/statechain.git
 
 WORKDIR /tmp/statechain
@@ -22,13 +22,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ssd .
 WORKDIR /tmp/statechain/cmd/sscli
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o sscli .
 
-WORKDIR /tmp/observe
-RUN GO111MODULE=on go mod verify
-
-WORKDIR /tmp/observe/cmd/observed
+WORKDIR /tmp/statechain/cmd/observed
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o observed .
 
-WORKDIR /tmp/observe/cmd/signd
+WORKDIR /tmp/statechain/cmd/signd
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o signd .
 
 #
@@ -70,8 +67,8 @@ ENV PATH="${PATH}:/go/bin"
 # Copy the compiled binaires over.
 COPY --from=build /tmp/statechain/cmd/ssd/ssd /go/bin/ssd
 COPY --from=build /tmp/statechain/cmd/sscli/sscli /go/bin/sscli
-COPY --from=build /tmp/observe/cmd/observed/observed /go/bin/observed
-COPY --from=build /tmp/observe/cmd/signd/signd /go/bin/signd
+COPY --from=build /tmp/statechain/cmd/observed/observed /go/bin/observed
+COPY --from=build /tmp/statechain/cmd/signd/signd /go/bin/signd
 
 RUN mkdir -p $DB_PATH/observer
 RUN mkdir $DB_PATH/signer
