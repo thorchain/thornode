@@ -23,6 +23,7 @@ const (
 	DesireValidatorSetKey     = types.DesireValidatorSetKey
 	RotatePerBlockHeightKey   = types.RotatePerBlockHeightKey
 	ValidatorsChangeWindowKey = types.ValidatorsChangeWindowKey
+	PoolRefundGasKey          = types.PoolRefundGasKey
 
 	NodeActive      = types.Active
 	NodeWhiteListed = types.WhiteListed
