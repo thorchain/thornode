@@ -16,13 +16,13 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"gitlab.com/thorchain/bepswap/common"
-	"gitlab.com/thorchain/bepswap/thor-node/cmd"
-	stypes "gitlab.com/thorchain/bepswap/thor-node/x/swapservice/types"
+	"gitlab.com/thorchain/bepswap/thornode/cmd"
+	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/thor-node/config"
-	"gitlab.com/thorchain/bepswap/thor-node/x/metrics"
-	"gitlab.com/thorchain/bepswap/thor-node/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/config"
+	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
+	"gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }

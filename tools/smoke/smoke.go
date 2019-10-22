@@ -4,7 +4,7 @@ import (
 	"flag"
 	"log"
 
-	"gitlab.com/thorchain/bepswap/thor-node/test/smoke"
+	"gitlab.com/thorchain/bepswap/thornode/test/smoke"
 )
 
 // smoke test run a json config file that is a series of transaction and expected results.

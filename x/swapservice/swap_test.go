@@ -8,8 +8,8 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice/mocks"
-	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice/types"
+	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/mocks"
+	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 )
 
 type SwapSuite struct{}

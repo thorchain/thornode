@@ -9,8 +9,8 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/thor-node/config"
-	"gitlab.com/thorchain/bepswap/thor-node/x/metrics"
+	"gitlab.com/thorchain/bepswap/thornode/config"
+	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
 )
 
 func Test(t *testing.T) { TestingT(t) }

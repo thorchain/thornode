@@ -15,14 +15,14 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/common"
-	stypes "gitlab.com/thorchain/bepswap/thor-node/x/swapservice/types"
+	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 
-	"gitlab.com/thorchain/bepswap/thor-node/config"
-	"gitlab.com/thorchain/bepswap/thor-node/x/binance"
-	btypes "gitlab.com/thorchain/bepswap/thor-node/x/binance/types"
-	"gitlab.com/thorchain/bepswap/thor-node/x/metrics"
-	"gitlab.com/thorchain/bepswap/thor-node/x/statechain"
-	"gitlab.com/thorchain/bepswap/thor-node/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/config"
+	"gitlab.com/thorchain/bepswap/thornode/x/binance"
+	btypes "gitlab.com/thorchain/bepswap/thornode/x/binance/types"
+	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
+	"gitlab.com/thorchain/bepswap/thornode/x/statechain"
+	"gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
 )
 
 // Observer observer service

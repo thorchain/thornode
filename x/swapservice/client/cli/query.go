@@ -8,8 +8,8 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
-	appCmd "gitlab.com/thorchain/bepswap/thor-node/cmd"
-	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice/types"
+	appCmd "gitlab.com/thorchain/bepswap/thornode/cmd"
+	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 )
 
 type ver struct {
