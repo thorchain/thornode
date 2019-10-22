@@ -79,26 +79,22 @@ extract: tools
 	@extract -f "${FILE}" -p "${PASSWORD}" -t ${TYPE}
 
 smoke-test-audit: tools
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/full/smoke-test-audit.json -e ${ENV}
+	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-audit.json -e ${ENV}
 
 smoke-test-refund: tools
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/full/smoke-test-refund.json -e ${ENV}
-
-seed: tools
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/seed.json -e ${ENV}
+	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-refund.json -e ${ENV}
 
 gas: tools
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/gas.json -e ${ENV}
+	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/gas.json -e ${ENV}
 
 stake: tools
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/stake.json -e ${ENV}
+	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/stake.json -e ${ENV}
 
 swap: tools
-	@smoke -b ${BANK_KEY} -p ${POOL_KEY} -c test/smoke/definitions/unit/swap.json -e ${ENV}
+	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/swap.json -e ${ENV}
 
 sweep: tools
-	@sweep -m ${MASTER_KEY} -k ${KEY_LIST}
+	@sweep -m ${FAUCET_KEY} -k ${BINANCE_PRIVATE_KEY} -d true
 
 export:
 	ssd export
-
