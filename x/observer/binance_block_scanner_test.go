@@ -12,11 +12,11 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/thor-node/config"
-	btypes "gitlab.com/thorchain/bepswap/thor-node/x/binance/types"
-	"gitlab.com/thorchain/bepswap/thor-node/x/blockscanner"
-	"gitlab.com/thorchain/bepswap/thor-node/x/metrics"
-	"gitlab.com/thorchain/bepswap/thor-node/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/config"
+	btypes "gitlab.com/thorchain/bepswap/thornode/x/binance/types"
+	"gitlab.com/thorchain/bepswap/thornode/x/blockscanner"
+	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
+	"gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
 )
 
 func Test(t *testing.T) { TestingT(t) }

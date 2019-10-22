@@ -14,7 +14,7 @@ import (
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
 
-	"gitlab.com/thorchain/bepswap/thor-node/test/smoke/types"
+	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
 )
 
 // Config : internal config.
