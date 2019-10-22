@@ -15,10 +15,12 @@ import (
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	"github.com/hashicorp/go-retryablehttp"
 	"gitlab.com/thorchain/bepswap/common"
+	. "gopkg.in/check.v1"
+
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
-	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/bepswap/thornode/config"
 	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
@@ -203,12 +205,20 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 		scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
+		client := retryablehttp.NewClient()
+		client.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
+			return time.Millisecond * 100
+		}
+		client.RetryMax = 3
+		client.RetryWaitMax = 3 * time.Second
+		scb.WithRetryableHttpClient(client)
 		_ = keyInfo
 		if nil != handleFunc {
 			s := httptest.NewServer(handleFunc)
 			defer s.Close()
 			scb.cfg.ChainHost = s.Listener.Addr().String()
 		}
+
 		requestUrl := scb.getAccountInfoUrl(cfg.ChainHost)
 		c.Logf("requestUrl:%s", requestUrl)
 		if scb.cfg.ChainHost == "localhost" {
@@ -413,6 +423,13 @@ func (StatechainSuite) TestSendEx(c *C) {
 		scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
+		client := retryablehttp.NewClient()
+		client.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
+			return time.Millisecond * 100
+		}
+		client.RetryMax = 3
+		client.RetryWaitMax = 3 * time.Second
+		scb.WithRetryableHttpClient(client)
 		err = scb.Start()
 		c.Assert(err, IsNil)
 		c.Assert(scb.seqNumber, Equals, uint64(6))
