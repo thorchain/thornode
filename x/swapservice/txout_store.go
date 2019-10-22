@@ -2,7 +2,7 @@ package swapservice
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // TODO: make this admin configs instead of hard coded

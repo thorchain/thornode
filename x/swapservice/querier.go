@@ -9,7 +9,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	q "gitlab.com/thorchain/bepswap/thornode/x/swapservice/query"
 	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"

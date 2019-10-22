@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/bepswap/thornode/config"
