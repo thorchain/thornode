@@ -8,7 +8,7 @@ import (
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/keys"
 
-	"gitlab.com/thorchain/bepswap/statechain/test/smoke"
+	"gitlab.com/thorchain/bepswap/thor-node/test/smoke"
 )
 
 // main : Generate our pool address.

@@ -19,11 +19,11 @@ import (
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/common"
 
-	"gitlab.com/thorchain/bepswap/statechain/config"
-	btypes "gitlab.com/thorchain/bepswap/statechain/x/binance/types"
-	"gitlab.com/thorchain/bepswap/statechain/x/blockscanner"
-	"gitlab.com/thorchain/bepswap/statechain/x/metrics"
-	stypes "gitlab.com/thorchain/bepswap/statechain/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/thor-node/config"
+	btypes "gitlab.com/thorchain/bepswap/thor-node/x/binance/types"
+	"gitlab.com/thorchain/bepswap/thor-node/x/blockscanner"
+	"gitlab.com/thorchain/bepswap/thor-node/x/metrics"
+	stypes "gitlab.com/thorchain/bepswap/thor-node/x/statechain/types"
 )
 
 // BinanceBlockScanner is to scan the blocks
