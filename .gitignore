@@ -9,7 +9,6 @@
 vendor
 .vendor-new
 observe
-build
 
 # IDE
 .idea/

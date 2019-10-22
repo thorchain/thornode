@@ -158,3 +158,4 @@ make start
 Run tests
 ```bash
 make test
+```
