@@ -43,6 +43,10 @@ func (tos *TxOutStore) CommitBlock(ctx sdk.Context) {
 	tos.txOutSetter.SetTxOut(ctx, tos.blockOut)
 }
 
+func (tos *TxOutStore) GetOutboundItems() []*TxOutItem {
+	return tos.blockOut.TxArray
+}
+
 // AddTxOutItem add an item to internal structure
 func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem) {
 
