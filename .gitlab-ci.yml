@@ -198,4 +198,3 @@ deploy:production:
   only:
     - master
   when: manual
-
