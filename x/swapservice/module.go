@@ -14,8 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/client/cli"
-	"gitlab.com/thorchain/bepswap/statechain/x/swapservice/client/rest"
+	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice/client/cli"
+	"gitlab.com/thorchain/bepswap/thor-node/x/swapservice/client/rest"
 )
 
 // type check to ensure the interface is properly implemented

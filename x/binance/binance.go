@@ -16,9 +16,9 @@ import (
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/common"
 
-	"gitlab.com/thorchain/bepswap/statechain/config"
-	btypes "gitlab.com/thorchain/bepswap/statechain/x/binance/types"
-	stypes "gitlab.com/thorchain/bepswap/statechain/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/thor-node/config"
+	btypes "gitlab.com/thorchain/bepswap/thor-node/x/binance/types"
+	stypes "gitlab.com/thorchain/bepswap/thor-node/x/statechain/types"
 )
 
 type Binance struct {
