@@ -63,6 +63,7 @@ deploy:develop:
     - apk update
     - apk add python py-pip make git
     - pip install awscli
+    - make aws-login
   except:
     - schedules
   environment:
@@ -83,6 +84,7 @@ deploy:staging:
     - apk update
     - apk add python py-pip make git
     - pip install awscli
+    - make aws-login
   environment:
     name: staging
   script: make ecs-deploy
@@ -101,6 +103,7 @@ deploy:production:
     - apk update
     - apk add python py-pip make git
     - pip install awscli
+    - make aws-login
   environment:
     name: production
   script: make ecs-deploy
