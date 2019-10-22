@@ -290,7 +290,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		msg.TargetTicker,
 		amount,
 	))
-	txOutStore.AddTxOutItem(ctx, keeper, toi)
+	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -363,7 +363,8 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		msg.Ticker,
 		tokenAmount,
 	))
-	txOutStore.AddTxOutItem(ctx, keeper, toi)
+	// for unstake , we should deduct fees
+	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -371,10 +372,10 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 }
 
-func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAddrMgr *PoolAddressManager) {
+func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.Address, deductFee bool) {
 	toi := &TxOutItem{
 		ToAddress:   tx.Sender,
-		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
+		PoolAddress: poolAddr,
 		Coins:       tx.Coins,
 	}
 
@@ -383,7 +384,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 	for _, coin := range tx.Coins {
 		pool := keeper.GetPool(ctx, coin.Denom)
 		if common.IsRune(coin.Denom) || !pool.BalanceRune.IsZero() {
-			store.AddTxOutItem(ctx, keeper, toi)
+			store.AddTxOutItem(ctx, keeper, toi, deductFee)
 			return
 		}
 	}
@@ -510,10 +511,17 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			voter.IsProcessed = true
 			keeper.SetTxInVoter(ctx, voter)
 			txIn := voter.GetTx(activeNodeAccounts)
-			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer, poolAddressMgr)
+			currentPoolAddress := poolAddressMgr.GetCurrentPoolAddresses().Current
+			if !currentPoolAddress.Equals(txIn.ObservePoolAddress) {
+				ctx.Logger().Error("wrong pool address,refund without deduct fee")
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, txIn.ObservePoolAddress, false)
+				continue
+			}
+
+			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer)
 			if nil != err {
-				ctx.Logger().Error("fail to process txHash", "error", err)
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, poolAddressMgr)
+				ctx.Logger().Error("fail to process txIn", "error", err, "txhash", tx.TxID.String())
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress, true)
 				ee := NewEmptyRefundEvent()
 				buf, err := json.Marshal(ee)
 				if nil != err {
@@ -532,7 +540,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, poolAddressMgr)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress, true)
 			}
 		}
 	}
@@ -543,10 +551,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 	}
 }
 
-func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, signer sdk.AccAddress, poolAddrMgr *PoolAddressManager) (sdk.Msg, error) {
-	if !poolAddrMgr.GetCurrentPoolAddresses().Current.Equals(tx.ObservePoolAddress) {
-		return nil, errors.New("tx sent to the wrong pool address")
-	}
+func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	memo, err := ParseMemo(tx.Memo)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to parse memo")
@@ -999,7 +1004,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 				common.NewCoin(common.BNBChain, common.RuneTicker, nodeAcc.Bond),
 			},
 		}
-		txOut.AddTxOutItem(ctx, keeper, txOutItem)
+		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent("validator_leave",
 				sdk.NewAttribute("signer bnb address", msg.Sender.String()),
