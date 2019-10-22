@@ -3,7 +3,7 @@ package swapservice
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	"gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 func validateUnstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) error {

@@ -1,6 +1,6 @@
 package types
 
-import "gitlab.com/thorchain/bepswap/common"
+import "gitlab.com/thorchain/bepswap/thornode/common"
 
 type PoolAddresses struct {
 	Previous common.Address `json:"previous"`

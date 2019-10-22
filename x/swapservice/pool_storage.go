@@ -2,7 +2,7 @@ package swapservice
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/common"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // PoolStorage allow us to access the pool struct from key values store
