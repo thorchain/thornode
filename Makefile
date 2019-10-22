@@ -1,4 +1,4 @@
-include Makefile.docker
+include Makefile.cicd
 .PHONY: test export
 
 GOBIN?=${GOPATH}/bin

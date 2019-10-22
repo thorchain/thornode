@@ -89,7 +89,6 @@ ADD etc/supervisor/conf.d/*.ini /etc/supervisor/conf.d/
 ADD etc/nginx/nginx.conf /etc/nginx/
 
 # Generate a new key.
-# TODO add back in.
 RUN echo $SIGNER_PASSWD | sscli keys add statechain
 
 # Setup Observer/Signer.
