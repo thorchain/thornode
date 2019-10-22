@@ -7,28 +7,24 @@
 #
 FROM golang:1.13 AS build
 
-WORKDIR /tmp
+WORKDIR /go/src/app
 RUN git config --global http.sslVerify "false"
-# TODO Move away from the embed clone as this will only work for master branchs
-RUN git clone https://gitlab.com/thorchain/bepswap/observe.git
-RUN git clone https://gitlab.com/thorchain/bepswap/statechain.git
 
-WORKDIR /tmp/statechain
+COPY . .
+
 RUN GO111MODULE=on go mod verify
+RUN GO111MODULE=on go get -d -v ./...
 
-WORKDIR /tmp/statechain/cmd/ssd
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ssd .
+WORKDIR /go/src/app/cmd/ssd
+RUN GO111MODULE=on CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ssd .
 
-WORKDIR /tmp/statechain/cmd/sscli
+WORKDIR /go/src/app/cmd/sscli
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o sscli .
 
-WORKDIR /tmp/observe
-RUN GO111MODULE=on go mod verify
-
-WORKDIR /tmp/observe/cmd/observed
+WORKDIR /go/src/app/cmd/observed
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o observed .
 
-WORKDIR /tmp/observe/cmd/signd
+WORKDIR /go/src/app/cmd/signd
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o signd .
 
 #
@@ -68,10 +64,10 @@ RUN apk add --update jq supervisor nginx && \
 ENV PATH="${PATH}:/go/bin"
 
 # Copy the compiled binaires over.
-COPY --from=build /tmp/statechain/cmd/ssd/ssd /go/bin/ssd
-COPY --from=build /tmp/statechain/cmd/sscli/sscli /go/bin/sscli
-COPY --from=build /tmp/observe/cmd/observed/observed /go/bin/observed
-COPY --from=build /tmp/observe/cmd/signd/signd /go/bin/signd
+COPY --from=build /go/src/app/cmd/ssd/ssd /go/bin/ssd
+COPY --from=build /go/src/app/cmd/sscli/sscli /go/bin/sscli
+COPY --from=build /go/src/app/cmd/observed/observed /go/bin/observed
+COPY --from=build /go/src/app/cmd/signd/signd /go/bin/signd
 
 RUN mkdir -p $DB_PATH/observer
 RUN mkdir $DB_PATH/signer
@@ -98,8 +94,8 @@ RUN echo $SIGNER_PASSWD | sscli keys add statechain
 # Setup Observer/Signer.
 RUN mkdir -p /etc/observe/observed
 RUN mkdir /etc/observe/signd
-ADD config.json /tmp/config.json
-RUN cat /tmp/config.json | jq \
+ADD etc/config.json /go/src/app/etc/config.json
+RUN cat /go/src/app/etc/config.json | jq \
   --arg START_BLOCK_HEIGHT "$START_BLOCK_HEIGHT" \
   --arg CHAIN_ID "$CHAIN_ID" \
   --arg POOL_ADDRESS "$POOL_ADDRESS" \
@@ -130,7 +126,6 @@ RUN cat /tmp/config.json | jq \
 RUN cat /etc/observe/observed/config.json | jq \
   '.block_scanner["start_block_height"] = 1 | \
   .block_scanner["rpc_host"] = "127.0.0.1:26657"' > /etc/observe/signd/config.json
-RUN rm /tmp/config.json
 
 # Setup statechain.
 RUN ssd init local --chain-id statechain
@@ -139,8 +134,8 @@ RUN sscli config chain-id statechain
 RUN sscli config output json
 RUN sscli config indent true
 RUN sscli config trust-node true
-RUN cat ~/.ssd/config/genesis.json | jq --arg POOL_ADDRESS "$POOL_ADDRESS" --arg NODE_ADDRESS "$(sscli keys show statechain -a)" --arg OBSERVER_ADDRESS "$(sscli keys show statechain -a)" --arg VALIDATOR "$(ssd tendermint show-validator)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","bond_address":$POOL_ADDRESS,"accounts":{"bnb_signer_acc":$POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}' > /tmp/genesis.json
-RUN mv /tmp/genesis.json ~/.ssd/config/genesis.json
+RUN cat ~/.ssd/config/genesis.json | jq --arg POOL_ADDRESS "$POOL_ADDRESS" --arg NODE_ADDRESS "$(sscli keys show statechain -a)" --arg OBSERVER_ADDRESS "$(sscli keys show statechain -a)" --arg VALIDATOR "$(ssd tendermint show-validator)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","bond_address":$POOL_ADDRESS,"accounts":{"bnb_signer_acc":$POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}' > /go/src/app/genesis.json
+RUN mv /go/src/app/genesis.json ~/.ssd/config/genesis.json
 RUN cat ~/.ssd/config/genesis.json
 RUN ssd validate-genesis
 

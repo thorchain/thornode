@@ -49,7 +49,7 @@ build:test:
     - pip install awscli
   environment:
     name: develop
-  script: make -C ./build/service-node build
+  script: make docker-build
 
 deploy:develop:
   stage: deploy
@@ -67,7 +67,7 @@ deploy:develop:
     - schedules
   environment:
     name: develop
-  script: make -C ./build/service-node deploy
+  script: make ecs-deploy
   only:
     - master
 
@@ -85,7 +85,7 @@ deploy:staging:
     - pip install awscli
   environment:
     name: staging
-  script: make -C ./build/service-node deploy
+  script: make ecs-deploy
   only:
     - schedules
 
@@ -103,7 +103,7 @@ deploy:production:
     - pip install awscli
   environment:
     name: production
-  script: ENV=PRODUCTION make deploy
+  script: make ecs-deploy
   only:
     - master
   when: manual
