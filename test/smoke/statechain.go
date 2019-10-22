@@ -3,10 +3,10 @@ package smoke
 import "fmt"
 
 var endpoints = map[string]string{
-	"local": "localhost",
-	"stage": "testnet-chain.bepswap.io",
-	"dev":   "testnet-chain.bepswap.net",
-	"prod":  "testnet-chain.bepswap.com",
+	"local":      "localhost:1317",
+	"staging":    "testnet-chain.bepswap.io",
+	"develop":    "testnet-chain.bepswap.net",
+	"production": "testnet-chain.bepswap.com",
 }
 
 type Statechain struct {

@@ -1,9 +1,9 @@
 {
-  "staker_count": 0,
+  "staker_count": 1,
   "rules": [
     {
       "description": "SEED",
-      "from": "bank",
+      "from": "faucet",
       "to": [
         "master"
       ],
@@ -68,6 +68,102 @@
           {
             "symbol": "TOMOB-1E1",
             "amount": 73.50000000
+          }
+        ],
+        "statechain": {}
+      }
+    },
+    {
+      "description": "SEED",
+      "from": "master",
+      "to": [
+        "admin"
+      ],
+      "coins": [
+        {
+          "symbol": "BNB",
+          "amount": 0.10000000
+        }
+      ],
+      "memo": "SEED",
+      "check": {
+        "target": "to",
+        "binance": [
+          {
+            "symbol": "BNB",
+            "amount": 0.10000000
+          }
+        ],
+        "statechain": {}
+      }
+    },
+    {
+      "description": "SEED",
+      "from": "master",
+      "to": [
+        "staker_1"
+      ],
+      "coins": [
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 6000.00000000
+        },
+        {
+          "symbol": "BNB",
+          "amount": 0.61000000
+        },
+        {
+          "symbol": "FSN-F1B",
+          "amount": 25.00000000
+        },
+        {
+          "symbol": "FTM-585",
+          "amount": 300.00000000
+        },
+        {
+          "symbol": "LOK-3C0",
+          "amount": 100.00000000
+        },
+        {
+          "symbol": "TCAN-014",
+          "amount": 800.00000000
+        },
+        {
+          "symbol": "TOMOB-1E1",
+          "amount": 35.00000000
+        }
+      ],
+      "memo": "SEED",
+      "check": {
+        "target": "to",
+        "binance": [
+          {
+            "symbol": "RUNE-A1F",
+            "amount": 6000.00000000
+          },
+          {
+            "symbol": "BNB",
+            "amount": 0.61000000
+          },
+          {
+            "symbol": "FSN-F1B",
+            "amount": 25.00000000
+          },
+          {
+            "symbol": "FTM-585",
+            "amount": 300.00000000
+          },
+          {
+            "symbol": "LOK-3C0",
+            "amount": 100.00000000
+          },
+          {
+            "symbol": "TCAN-014",
+            "amount": 800.00000000
+          },
+          {
+            "symbol": "TOMOB-1E1",
+            "amount": 35.00000000
           }
         ],
         "statechain": {}
@@ -170,6 +266,228 @@
       }
     },
     {
+      "description": "STAKE",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "BNB",
+          "amount": 0.60000000
+        },
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 1000.00000000
+        }
+      ],
+      "memo": "STAKE:BNB",
+      "check": {
+        "target": "from",
+        "binance": [
+          {
+            "symbol": "BNB",
+            "amount": 0.00940000
+          },
+          {
+            "symbol": "RUNE-A1F",
+            "amount": 5000.00000000
+          }
+        ],
+        "statechain": {
+          "units": 50030000000.000000,
+          "symbol": "BNB",
+          "rune": 100000000000.000000,
+          "token": 60000000.000000
+        }
+      }
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "FSN-F1B",
+          "amount": 25.00000000
+        },
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 1000.00000000
+        }
+      ],
+      "memo": "STAKE:FSN-F1B",
+      "check": {
+        "target": "from",
+        "binance": [
+          {
+            "symbol": "FSN-F1B",
+            "amount": 0.00000000
+          },
+          {
+            "symbol": "RUNE-A1F",
+            "amount": 4000.00000000
+          }
+        ],
+        "statechain": {
+          "units": 51250000000.000000,
+          "symbol": "FSN-F1B",
+          "rune": 100000000000.000000,
+          "token": 2500000000.000000
+        }
+      }
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "FTM-585",
+          "amount": 300.00000000
+        },
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 1000.00000000
+        }
+      ],
+      "memo": "STAKE:FTM-585",
+      "check": {
+        "target": "from",
+        "binance": [
+          {
+            "symbol": "FTM-585",
+            "amount": 0.00000000
+          },
+          {
+            "symbol": "RUNE-A1F",
+            "amount": 3000.00000000
+          }
+        ],
+        "statechain": {
+          "units": 65000000000.000000,
+          "symbol": "FTM-585",
+          "rune": 100000000000.000000,
+          "token": 30000000000.000000
+        }
+      }
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "LOK-3C0",
+          "amount": 100.00000000
+        },
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 1000.00000000
+        }
+      ],
+      "memo": "STAKE:LOK-3C0",
+      "check": {
+        "target": "from",
+        "binance": [
+          {
+            "symbol": "LOK-3C0",
+            "amount": 0.00000000
+          },
+          {
+            "symbol": "RUNE-A1F",
+            "amount": 2000.00000000
+          }
+        ],
+        "statechain": {
+          "units": 55000000000.000000,
+          "symbol": "LOK-3C0",
+          "rune": 100000000000.000000,
+          "token": 10000000000.000000
+        }
+      }
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "TCAN-014",
+          "amount": 800.00000000
+        },
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 1000.00000000
+        }
+      ],
+      "memo": "STAKE:TCAN-014",
+      "check": {
+        "target": "from",
+        "binance": [
+          {
+            "symbol": "TCAN-014",
+            "amount": 0.00000000
+          },
+          {
+            "symbol": "RUNE-A1F",
+            "amount": 1000.00000000
+          }
+        ],
+        "statechain": {
+          "units": 90000000000.000000,
+          "symbol": "TCAN-014",
+          "rune": 100000000000.000000,
+          "token": 80000000000.000000
+        }
+      }
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "TOMOB-1E1",
+          "amount": 35.00000000
+        },
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 1000.00000000
+        }
+      ],
+      "memo": "STAKE:TOMOB-1E1",
+      "check": {
+        "target": "from",
+        "binance": [
+          {
+            "symbol": "TOMOB-1E1",
+            "amount": 0.00000000
+          },
+          {
+            "symbol": "RUNE-A1F",
+            "amount": 0.00000000
+          }
+        ],
+        "statechain": {
+          "units": 51750000000.000000,
+          "symbol": "TOMOB-1E1",
+          "rune": 100000000000.000000,
+          "token": 3500000000.000000
+        }
+      }
+    },
+    {
       "description": "SWAP",
       "from": "user",
       "to": [
@@ -184,10 +502,10 @@
       "memo": "SWAP:BNB",
       "check": {
         "statechain": {
-          "units": 100060000000.000000,
+          "units": 50030000000.000000,
           "symbol": "BNB",
-          "rune": 210000000000.000000,
-          "token": 114557824.000000
+          "rune": 110000000000.000000,
+          "token": 55041323.000000
         }
       }
     },
@@ -206,10 +524,10 @@
       "memo": "SWAP:FSN-F1B",
       "check": {
         "statechain": {
-          "units": 102500000000.000000,
+          "units": 51250000000.000000,
           "symbol": "FSN-F1B",
-          "rune": 210000000000.000000,
-          "token": 4773242631.000000
+          "rune": 109940045046.000000,
+          "token": 2294638429.000000
         }
       }
     },
@@ -228,10 +546,10 @@
       "memo": "SWAP:FTM-585",
       "check": {
         "statechain": {
-          "units": 130000000000.000000,
+          "units": 65000000000.000000,
           "symbol": "FTM-585",
-          "rune": 210000000000.000000,
-          "token": 57278911565.000000
+          "rune": 109939979654.000000,
+          "token": 27535677518.000000
         }
       }
     },
@@ -250,10 +568,10 @@
       "memo": "SWAP:LOK-3C0",
       "check": {
         "statechain": {
-          "units": 110000000000.000000,
+          "units": 55000000000.000000,
           "symbol": "LOK-3C0",
-          "rune": 210000000000.000000,
-          "token": 19092970522.000000
+          "rune": 109939914155.000000,
+          "token": 9178564635.000000
         }
       }
     },
@@ -272,10 +590,10 @@
       "memo": "SWAP:TCAN-014",
       "check": {
         "statechain": {
-          "units": 180000000000.000000,
+          "units": 90000000000.000000,
           "symbol": "TCAN-014",
-          "rune": 210000000000.000000,
-          "token": 152743764173.000000
+          "rune": 109939848549.000000,
+          "token": 73428560848.000000
         }
       }
     },
@@ -294,16 +612,16 @@
       "memo": "SWAP:TOMOB-1E1",
       "check": {
         "statechain": {
-          "units": 103500000000.000000,
+          "units": 51750000000.000000,
           "symbol": "TOMOB-1E1",
-          "rune": 210000000000.000000,
-          "token": 6682539683.000000
+          "rune": 109939782835.000000,
+          "token": 3212501455.000000
         }
       }
     },
     {
-      "description": "ADMIN:END",
-      "from": "admin",
+      "description": "WITHDRAW ALL",
+      "from": "staker_1",
       "to": [
         "pool"
       ],
@@ -313,19 +631,26 @@
           "amount": 0.00000001
         }
       ],
-      "memo": "ADMIN:END:BNB",
+      "memo": "WITHDRAW:BNB",
       "check": {
+        "binance": [{}],
         "statechain": {
-          "units": 0.00000000,
+          "units": 0.000000,
           "symbol": "BNB",
-          "rune": 0.00000000,
-          "token": 0.00000000
+          "rune": 0.000000,
+          "token": 0.000000,
+          "staker_units": [
+            {
+              "actor": "staker_1",
+              "units": 0.000000
+            }
+          ]
         }
       }
     },
     {
-      "description": "ADMIN:END",
-      "from": "admin",
+      "description": "WITHDRAW ALL",
+      "from": "staker_1",
       "to": [
         "pool"
       ],
@@ -335,19 +660,26 @@
           "amount": 0.00000001
         }
       ],
-      "memo": "ADMIN:END:FSN-F1B",
+      "memo": "WITHDRAW:FSN-F1B",
       "check": {
+        "binance": [{}],
         "statechain": {
-          "units": 0.00000000,
+          "units": 0.000000,
           "symbol": "FSN-F1B",
-          "rune": 0.00000000,
-          "token": 0.00000000
+          "rune": 0.000000,
+          "token": 0.000000,
+          "staker_units": [
+            {
+              "actor": "staker_1",
+              "units": 0.000000
+            }
+          ]
         }
       }
     },
     {
-      "description": "ADMIN:END",
-      "from": "admin",
+      "description": "WITHDRAW ALL",
+      "from": "staker_1",
       "to": [
         "pool"
       ],
@@ -357,131 +689,26 @@
           "amount": 0.00000001
         }
       ],
-      "memo": "ADMIN:END:FTM-585",
+      "memo": "WITHDRAW:FTM-585",
       "check": {
+        "binance": [{}],
         "statechain": {
-          "units": 0.00000000,
-          "symbol": "FTM-585",
-          "rune": 0.00000000,
-          "token": 0.00000000
-        }
-      }
-    },
-    {
-      "description": "ADMIN:END",
-      "from": "admin",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.00000001
-        }
-      ],
-      "memo": "ADMIN:END:LOK-3C0",
-      "check": {
-        "statechain": {
-          "units": 0.00000000,
-          "symbol": "LOK-3C0",
-          "rune": 0.00000000,
-          "token": 0.00000000
-        }
-      }
-    },
-    {
-      "description": "ADMIN:END",
-      "from": "admin",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.00000001
-        }
-      ],
-      "memo": "ADMIN:END:TCAN-014",
-      "check": {
-        "statechain": {
-          "units": 0.00000000,
-          "symbol": "TCAN-014",
-          "rune": 0.00000000,
-          "token": 0.00000000
-        }
-      }
-    },
-    {
-      "description": "ADMIN:END",
-      "from": "admin",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.00000001
-        }
-      ],
-      "memo": "ADMIN:END:TOMOB-1E1",
-      "check": {
-        "statechain": {
-          "units": 0.00000000,
-          "symbol": "TOMOB-1E1",
-          "rune": 0.00000000,
-          "token": 0.00000000
-        }
-      }
-    },
-    {
-      "description": "ADMIN:ENABLE",
-      "from": "admin",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.00000001
-        }
-      ],
-      "memo": "ADMIN:POOLSTATUS:BNB:ENABLED",
-      "check": {
-        "statechain": {
-          "units": 0.00000000,
-          "symbol": "BNB",
-          "rune": 0.00000000,
-          "token": 0.00000000,
-          "status": "Enabled"
-        }
-      }
-    },
-    {
-      "description": "ADMIN:ENABLE",
-      "from": "admin",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.00000001
-        }
-      ],
-      "memo": "ADMIN:POOLSTATUS:FSN-F1B:ENABLED",
-      "check": {
-        "statechain": {
-          "units": 0.00000000,
+          "units": 0.0000000,
           "symbol": "FSN-F1B",
-          "rune": 0.00000000,
-          "token": 0.00000000,
-          "status": "Enabled"
+          "rune": 0.000000,
+          "token": 0.000000,
+          "staker_units": [
+            {
+              "actor": "staker_1",
+              "units": 0.000000
+            }
+          ]
         }
       }
     },
     {
-      "description": "ADMIN:ENABLE",
-      "from": "admin",
+      "description": "WITHDRAW ALL",
+      "from": "staker_1",
       "to": [
         "pool"
       ],
@@ -491,43 +718,26 @@
           "amount": 0.00000001
         }
       ],
-      "memo": "ADMIN:POOLSTATUS:FTM-585:ENABLED",
+      "memo": "WITHDRAW:LOK-3C0",
       "check": {
+        "binance": [{}],
         "statechain": {
-          "units": 0.00000000,
-          "symbol": "FTM-585",
-          "rune": 0.00000000,
-          "token": 0.00000000,
-          "status": "Enabled"
-        }
-      }
-    },
-    {
-      "description": "ADMIN:ENABLE",
-      "from": "admin",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.00000001
-        }
-      ],
-      "memo": "ADMIN:POOLSTATUS:LOK-3C0:ENABLED",
-      "check": {
-        "statechain": {
-          "units": 0.00000000,
+          "units": 0.000000,
           "symbol": "LOK-3C0",
-          "rune": 0.00000000,
-          "token": 0.00000000,
-          "status": "Enabled"
+          "rune": 0.000000,
+          "token": 0.000000,
+          "staker_units": [
+            {
+              "actor": "staker_1",
+              "units": 0.000000
+            }
+          ]
         }
       }
     },
     {
-      "description": "ADMIN:ENABLE",
-      "from": "admin",
+      "description": "WITHDRAW ALL",
+      "from": "staker_1",
       "to": [
         "pool"
       ],
@@ -537,20 +747,26 @@
           "amount": 0.00000001
         }
       ],
-      "memo": "ADMIN:POOLSTATUS:TCAN-014:ENABLED",
+      "memo": "WITHDRAW:TCAN-014",
       "check": {
+        "binance": [{}],
         "statechain": {
-          "units": 0.00000000,
+          "units": 0.000000,
           "symbol": "TCAN-014",
-          "rune": 0.00000000,
-          "token": 0.00000000,
-          "status": "Enabled"
+          "rune": 0.000000,
+          "token": 0.000000,
+          "staker_units": [
+            {
+              "actor": "staker_1",
+              "units": 0.000000
+            }
+          ]
         }
       }
     },
     {
-      "description": "ADMIN:ENABLE",
-      "from": "admin",
+      "description": "WITHDRAW ALL",
+      "from": "staker_1",
       "to": [
         "pool"
       ],
@@ -560,14 +776,20 @@
           "amount": 0.00000001
         }
       ],
-      "memo": "ADMIN:POOLSTATUS:TOMOB-1E1:ENABLED",
+      "memo": "WITHDRAW:TOMOB-1E1",
       "check": {
+        "binance": [{}],
         "statechain": {
-          "units": 0.00000000,
+          "units": 0.000000,
           "symbol": "TOMOB-1E1",
-          "rune": 0.00000000,
-          "token": 0.00000000,
-          "status": "Enabled"
+          "rune": 0.000000,
+          "token": 0.000000,
+          "staker_units": [
+            {
+              "actor": "staker_1",
+              "units": 0.000000
+            }
+          ]
         }
       }
     }

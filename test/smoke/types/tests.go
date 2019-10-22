@@ -3,16 +3,19 @@ package types
 import (
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/keys"
+	"time"
 )
 
 type Tests struct {
-	StakerCount int `json:"staker_count"`
+	WithActors  bool `json:"with_actors"`
+	StakerCount int  `json:"staker_count"`
+	SweepOnExit bool `json:"sweep_on_exit"`
 	Actors      Actors
 	Rules       []Rule `json:"rules"`
 }
 
 type Actors struct {
-	Bank    Keys
+	Faucet  Keys
 	Master  Keys
 	Admin   Keys
 	Stakers []Keys
@@ -40,9 +43,10 @@ type Coin struct {
 }
 
 type Check struct {
-	Target     string     `json:"target"`
-	Binance    []Coin     `json:"binance"`
-	Statechain Statechain `json:"statechain"`
+	Delay      time.Duration `json:"delay"`
+	Target     string        `json:"target"`
+	Binance    []Coin        `json:"binance"`
+	Statechain Statechain    `json:"statechain"`
 }
 
 type Statechain struct {
