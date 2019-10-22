@@ -21,13 +21,16 @@ go.sum: go.mod
 	GO111MODULE=on go mod verify
 
 test-coverage:
-	@go test -mod=readonly -v -coverprofile .testCoverage.txt ./...
+	@go test -v -coverprofile .testCoverage.txt ./...
 
 coverage-report: test-coverage
 	@tool cover -html=.testCoverage.txt
 
 clear:
 	clear
+
+test:
+	@go test -mod=readonly ./...
 
 test-watch: clear
 	@./scripts/watch.bash
