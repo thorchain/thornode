@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	. "gopkg.in/check.v1"
-	"gopkg.in/resty.v1"
+	resty "gopkg.in/resty.v1"
 
-	"gitlab.com/thorchain/bepswap/observe/config"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/statechain/config"
+	"gitlab.com/thorchain/bepswap/statechain/x/statechain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }

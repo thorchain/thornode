@@ -8,8 +8,8 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
-	"gitlab.com/thorchain/bepswap/observe/x/blockscanner"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/statechain/x/blockscanner"
+	"gitlab.com/thorchain/bepswap/statechain/x/statechain/types"
 )
 
 const DefaultObserverLevelDBFolder = `observer_data`

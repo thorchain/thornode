@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/bepswap/observe/config"
+	"gitlab.com/thorchain/bepswap/statechain/config"
 )
 
 // MetricName

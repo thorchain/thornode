@@ -17,12 +17,12 @@ import (
 	"gitlab.com/thorchain/bepswap/common"
 	stypes "gitlab.com/thorchain/bepswap/statechain/x/swapservice/types"
 
-	"gitlab.com/thorchain/bepswap/observe/config"
-	"gitlab.com/thorchain/bepswap/observe/x/binance"
-	btypes "gitlab.com/thorchain/bepswap/observe/x/binance/types"
-	"gitlab.com/thorchain/bepswap/observe/x/metrics"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/statechain/config"
+	"gitlab.com/thorchain/bepswap/statechain/x/binance"
+	btypes "gitlab.com/thorchain/bepswap/statechain/x/binance/types"
+	"gitlab.com/thorchain/bepswap/statechain/x/metrics"
+	"gitlab.com/thorchain/bepswap/statechain/x/statechain"
+	"gitlab.com/thorchain/bepswap/statechain/x/statechain/types"
 )
 
 // Observer observer service

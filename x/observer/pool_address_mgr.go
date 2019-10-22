@@ -9,15 +9,15 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/hashicorp/go-retryablehttp"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/bepswap/observe/x/metrics"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain"
-	"gitlab.com/thorchain/bepswap/observe/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/statechain/x/metrics"
+	"gitlab.com/thorchain/bepswap/statechain/x/statechain"
+	"gitlab.com/thorchain/bepswap/statechain/x/statechain/types"
 )
 
 type PoolAddressValidator interface {
