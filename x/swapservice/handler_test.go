@@ -742,3 +742,39 @@ func (HandlerSuite) TestRefund(c *C) {
 	pool = w.keeper.GetPool(w.ctx, "LOKI")
 	c.Assert(pool.BalanceToken.Equal(sdk.NewUint(200*common.One)), Equals, true)
 }
+
+func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
+	m, err := ParseMemo("swap:BNB")
+	swapMemo, ok := m.(SwapMemo)
+	c.Assert(ok, Equals, true)
+	c.Assert(err, IsNil)
+	txin := TxIn{
+		Sender: GetRandomBNBAddress(),
+		Coins: common.Coins{
+			common.NewCoin(common.BNBChain,
+				common.BNBTicker,
+				sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBChain,
+				common.RuneTicker,
+				sdk.NewUint(100*common.One)),
+		},
+	}
+	// more than one coin
+	resultMsg, err := getMsgSwapFromMemo(swapMemo, GetRandomTxHash(), txin, GetRandomBech32Addr())
+	c.Assert(err, NotNil)
+	c.Assert(resultMsg, IsNil)
+
+	txin1 := TxIn{
+		Sender: GetRandomBNBAddress(),
+		Coins: common.Coins{
+			common.NewCoin(common.BNBChain,
+				common.BNBTicker,
+				sdk.NewUint(100*common.One)),
+		},
+	}
+
+	// coin and the ticker is the same, thus no point to swap
+	resultMsg1, err := getMsgSwapFromMemo(swapMemo, GetRandomTxHash(), txin1, GetRandomBech32Addr())
+	c.Assert(resultMsg1, IsNil)
+	c.Assert(err, NotNil)
+}
