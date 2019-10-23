@@ -76,6 +76,7 @@ func GetPoolStatus(ps string) PoolStatus {
 // Pool is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
 type Pool struct {
+	Chain               common.Chain   `json:"chain"`                  // the blockchain the token is on
 	BalanceRune         sdk.Uint       `json:"balance_rune"`           // how many RUNE in the pool
 	BalanceToken        sdk.Uint       `json:"balance_token"`          // how many token in the pool
 	Ticker              common.Ticker  `json:"symbol"`                 // what's the token's ticker
@@ -99,6 +100,9 @@ func (ps Pool) Valid() error {
 	if ps.Empty() {
 		return errors.New("Pool ticker cannot be empty")
 	}
+	if ps.Chain.IsEmpty() {
+		return errors.New("Pool chain cannot be empty")
+	}
 
 	return nil
 }
@@ -110,6 +114,7 @@ func (ps Pool) Empty() bool {
 // String implement fmt.Stringer
 func (ps Pool) String() string {
 	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintln("chain: " + ps.Chain.String()))
 	sb.WriteString(fmt.Sprintln("rune-balance: " + ps.BalanceRune.String()))
 	sb.WriteString(fmt.Sprintln("token-balance: " + ps.BalanceToken.String()))
 	sb.WriteString(fmt.Sprintln("ticker: " + ps.Ticker.String()))
