@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -408,7 +409,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 		pool.Ticker = coin.Denom
 		pool.BalanceToken = pool.BalanceToken.Add(coin.Amount)
 		if pool.BalanceRune.IsZero() {
-			pool.Status = PoolSuspended
+			pool.Status = PoolBootstrap
 		}
 		keeper.SetPool(ctx, pool)
 	}
