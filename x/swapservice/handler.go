@@ -217,6 +217,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 	if pool.Empty() {
 		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Ticker, "creator", msg.PublicAddress)
 		pool.Ticker = msg.Ticker
+		pool.Chain = msg.Chain
 		keeper.SetPool(ctx, pool)
 	}
 	if err := pool.EnsureValidPoolStatus(msg); nil != err {
@@ -281,12 +282,18 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		return sdk.ErrInternal("fail to encode result to json").Result()
 	}
 
+	chain := common.BNBChain
+	if !common.IsRune(msg.TargetTicker) {
+		pool := keeper.GetPool(ctx, msg.TargetTicker)
+		chain = pool.Chain
+	}
+
 	toi := &TxOutItem{
 		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 		ToAddress:   msg.Destination,
 	}
 	toi.Coins = append(toi.Coins, common.NewCoin(
-		common.BNBChain,
+		chain,
 		msg.TargetTicker,
 		amount,
 	))
@@ -358,8 +365,9 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		common.RuneTicker,
 		runeAmt,
 	))
+	pool := keeper.GetPool(ctx, msg.Ticker)
 	toi.Coins = append(toi.Coins, common.NewCoin(
-		common.BNBChain,
+		pool.Chain,
 		msg.Ticker,
 		tokenAmount,
 	))
@@ -655,6 +663,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 	runeAmount := sdk.ZeroUint()
 	tokenAmount := sdk.ZeroUint()
 	ticker := memo.GetTicker()
+	chain := common.BNBChain
 	for _, coin := range tx.Coins {
 		ctx.Logger().Info("coin", "denom", coin.Denom.String(), "amount", coin.Amount.String())
 		if common.IsRune(coin.Denom) {
@@ -662,12 +671,14 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 		} else {
 			tokenAmount = coin.Amount
 			ticker = coin.Denom // override the memo ticker with coin received
+			chain = coin.Chain
 		}
 	}
 	if ticker.IsEmpty() {
 		return nil, errors.New("Unable to determine the intended pool for this stake")
 	}
 	return NewMsgSetStakeData(
+		chain,
 		ticker,
 		runeAmount,
 		tokenAmount,

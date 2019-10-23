@@ -16,11 +16,12 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 	bnbAddress := GetRandomBNBAddress()
 	txID := GetRandomTxHash()
 	c.Check(txID.IsEmpty(), Equals, false)
-	m := NewMsgSetStakeData(common.BNBTicker, sdk.NewUint(100000000), sdk.NewUint(100000000), bnbAddress, txID, addr)
+	m := NewMsgSetStakeData(common.BNBChain, common.BNBTicker, sdk.NewUint(100000000), sdk.NewUint(100000000), bnbAddress, txID, addr)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_stakedata")
 
 	inputs := []struct {
+		chain         common.Chain
 		ticker        common.Ticker
 		r             sdk.Uint
 		token         sdk.Uint
@@ -29,6 +30,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 		signer        sdk.AccAddress
 	}{
 		{
+			chain:         common.BNBChain,
 			ticker:        common.Ticker(""),
 			r:             sdk.NewUint(100000000),
 			token:         sdk.NewUint(100000000),
@@ -37,6 +39,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 			signer:        addr,
 		},
 		{
+			chain:         common.BNBChain,
 			ticker:        common.BNBTicker,
 			r:             sdk.NewUint(100000000),
 			token:         sdk.NewUint(100000000),
@@ -45,6 +48,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 			signer:        addr,
 		},
 		{
+			chain:         common.BNBChain,
 			ticker:        common.BNBTicker,
 			r:             sdk.NewUint(100000000),
 			token:         sdk.NewUint(100000000),
@@ -53,6 +57,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 			signer:        addr,
 		},
 		{
+			chain:         common.BNBChain,
 			ticker:        common.BNBTicker,
 			r:             sdk.NewUint(100000000),
 			token:         sdk.NewUint(100000000),
@@ -60,9 +65,18 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 			txHash:        txID,
 			signer:        sdk.AccAddress{},
 		},
+		{
+			chain:         "",
+			ticker:        common.BNBTicker,
+			r:             sdk.NewUint(100000000),
+			token:         sdk.NewUint(100000000),
+			publicAddress: bnbAddress,
+			txHash:        txID,
+			signer:        addr,
+		},
 	}
 	for _, item := range inputs {
-		m := NewMsgSetStakeData(item.ticker, item.r, item.token, item.publicAddress, item.txHash, item.signer)
+		m := NewMsgSetStakeData(item.chain, item.ticker, item.r, item.token, item.publicAddress, item.txHash, item.signer)
 		c.Assert(m.ValidateBasic(), NotNil)
 	}
 }

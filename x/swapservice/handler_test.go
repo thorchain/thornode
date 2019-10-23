@@ -252,7 +252,9 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	k.SetNodeAccount(ctx, acc1)
 	poolAddrMgr.BeginBlock(ctx, 1)
 	stakeTxHash := GetRandomTxHash()
-	msgSetStake := NewMsgSetStakeData(common.BNBTicker,
+	msgSetStake := NewMsgSetStakeData(
+		common.BNBChain,
+		common.BNBTicker,
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
 		bnbAddr,
@@ -315,7 +317,9 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	bnbAddr := GetRandomBNBAddress()
 	stakeTxHash := GetRandomTxHash()
-	msgSetStake := NewMsgSetStakeData(common.BNBTicker,
+	msgSetStake := NewMsgSetStakeData(
+		common.BNBChain,
+		common.BNBTicker,
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
 		bnbAddr,
@@ -326,7 +330,9 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 
 	p := w.keeper.GetPool(w.ctx, common.BNBTicker)
 	c.Assert(p.Empty(), Equals, true)
-	msgSetStake = NewMsgSetStakeData(common.BNBTicker,
+	msgSetStake = NewMsgSetStakeData(
+		common.BNBChain,
+		common.BNBTicker,
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
 		bnbAddr,
@@ -348,7 +354,9 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 	// Suspended pool should not allow stake
 	w.keeper.SetPoolData(w.ctx, common.BNBTicker, PoolSuspended)
 
-	msgSetStake1 := NewMsgSetStakeData(common.BNBTicker,
+	msgSetStake1 := NewMsgSetStakeData(
+		common.BNBChain,
+		common.BNBTicker,
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
 		GetRandomBNBAddress(),
@@ -357,7 +365,9 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 	stakeResult2 := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake1)
 	c.Assert(stakeResult2.Code, Equals, sdk.CodeUnknownRequest)
 
-	msgSetStake2 := NewMsgSetStakeData(common.BNBTicker,
+	msgSetStake2 := NewMsgSetStakeData(
+		common.BNBChain,
+		common.BNBTicker,
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
 		"",
