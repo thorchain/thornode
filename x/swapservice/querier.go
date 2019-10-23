@@ -298,33 +298,22 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	}
 
 	out := make(map[common.Chain]ResTxOut, 0)
-	chains := make([]common.Chain, 0)
 	for _, item := range tx.TxArray {
-		if len(item.Coins) > 0 {
-			found := false
-			for _, chain := range chains {
-				if chain.Equals(item.Coins[0].Chain) {
-					found = true
-				}
-			}
-			if !found {
-				res := ResTxOut{
-					Height:  tx.Height,
-					Hash:    tx.Hash, // TODO: this should be unique to chain
-					Chain:   item.Coins[0].Chain,
-					TxArray: make([]TxOutItem, 0),
-				}
-				out[item.Coins[0].Chain] = res
+		if len(item.Coins) == 0 {
+			continue
+		}
+		res, ok := out[item.Coins[0].Chain]
+		if !ok {
+			res = ResTxOut{
+				Height:  tx.Height,
+				Hash:    tx.Hash, // TODO: this should be unique to chain
+				Chain:   item.Coins[0].Chain,
+				TxArray: make([]TxOutItem, 0),
 			}
 		}
-	}
+		res.TxArray = append(res.TxArray, *item)
+		out[item.Coins[0].Chain] = res
 
-	for _, item := range tx.TxArray {
-		if len(item.Coins) > 0 {
-			res := out[item.Coins[0].Chain]
-			res.TxArray = append(res.TxArray, *item)
-			out[item.Coins[0].Chain] = res
-		}
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, QueryResTxOut{
