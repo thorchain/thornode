@@ -10,6 +10,7 @@ const (
 	StoreKey         = types.StoreKey
 	DefaultCodespace = types.DefaultCodespace
 	PoolEnabled      = types.Enabled
+	PoolBootstrap    = types.Bootstrap
 	PoolSuspended    = types.Suspended
 	EventSuccess     = types.Success
 	EventRefund      = types.Refund
