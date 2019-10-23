@@ -141,8 +141,7 @@ smoke-test:staging:
     name: staging
   script: make smoke-test
   only:
-    - master
-  when: manual
+    - schedules
 
 seed:staging:
   stage: seed
@@ -158,8 +157,7 @@ seed:staging:
     name: staging
   script: make seed
   only:
-    - master
-  when: manual
+    - schedules
 
 deploy:production:
   stage: deploy
