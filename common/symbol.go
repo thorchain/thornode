@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	BNBSymbol  = Symbol("BNB")
-	RuneSymbol = Symbol("RUNE-A1F")
+	BNBSymbol     = Symbol("BNB")
+	RuneA1FSymbol = Symbol("RUNE-A1F")
+	RuneB1ASymbol = Symbol("RUNE-B1A")
 )
 
 var isAlpha = regexp.MustCompile(`^[A-Za-z0-9-]+$`).MatchString
@@ -46,5 +47,5 @@ func IsBNBSymbol(s Symbol) bool {
 }
 
 func IsRuneSymbol(s Symbol) bool {
-	return s.Equals(RuneSymbol)
+	return s.Equals(RuneB1ASymbol) || s.Equals(RuneA1FSymbol)
 }

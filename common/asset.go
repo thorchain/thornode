@@ -10,8 +10,6 @@ var (
 	RuneAsset = Asset{"Rune", "BNB", "RUNE-A1F", "RUNE"}
 )
 
-var badAssetFormat error = fmt.Errorf("bad asset format")
-
 type Asset struct {
 	Name   string `json:"name"`
 	Chain  Chain  `json:"chain"`
@@ -25,7 +23,7 @@ func NewAsset(input string) (Asset, error) {
 	asset := Asset{}
 	parts := strings.Split(input, ".")
 	if len(parts) != 2 {
-		return Asset{}, badAssetFormat
+		return Asset{}, fmt.Errorf("bad asset format")
 	}
 	asset.Chain, err = NewChain(parts[0])
 	if err != nil {
