@@ -151,6 +151,11 @@ describe "API Tests" do
       found = false
       until i > 100
         resp = get("/txoutarray/#{i}")
+        puts resp.body
+        if not resp.body['chains'].include?("BNB")
+          i = i + 1
+          next
+        end
         arr = resp.body['chains']['BNB']
         unless arr['tx_array'].empty?
           if arr['tx_array'][0]['to'] == "bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"
