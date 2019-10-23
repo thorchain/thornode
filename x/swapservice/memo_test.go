@@ -65,6 +65,17 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit().Equal(sdk.ZeroUint()), Equals, true)
 
+	memo, err = ParseMemo("leave:whatever")
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txLeave), Equals, true)
+	memo, err = ParseMemo("ack:whatever")
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txAck), Equals, true)
+
+	memo, err = ParseMemo("gas")
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txGas), Equals, true)
+
 	// unhappy paths
 	_, err = ParseMemo("")
 	c.Assert(err, NotNil)
@@ -86,12 +97,9 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("!:bogus:key:value") // bogus admin command type
 	c.Assert(err, NotNil)
-	_, err = ParseMemo("leave:whatever")
-	c.Assert(err, NotNil)
-	_, err = ParseMemo("ack:whatever")
-	c.Assert(err, NotNil)
 	_, err = ParseMemo("nextpool:whatever")
 	c.Assert(err, NotNil)
+
 }
 func (s *MemoSuite) TestParse(c *C) {
 	// happy paths
@@ -155,6 +163,10 @@ func (s *MemoSuite) TestParse(c *C) {
 	memo, err = ParseMemo("ack")
 	c.Assert(err, IsNil)
 	c.Assert(memo.IsType(txAck), Equals, true)
+
+	memo, err = ParseMemo("gas")
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txGas), Equals, true)
 
 	// unhappy paths
 	_, err = ParseMemo("")
