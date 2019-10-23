@@ -642,7 +642,11 @@ func getMsgSwapFromMemo(memo SwapMemo, txID common.TxID, tx TxIn, signer sdk.Acc
 	if memo.Destination.IsEmpty() {
 		memo.Destination = tx.Sender
 	}
+
 	coin := tx.Coins[0]
+	if memo.Ticker.Equals(coin.Denom) {
+		return nil, errors.Errorf("swap from %s to %s is noop, refund", memo.Ticker, coin.Denom)
+	}
 	// Looks like at the moment we can only process ont ty
 	return NewMsgSwap(txID, coin.Denom, memo.GetTicker(), coin.Amount, tx.Sender, memo.Destination, memo.SlipLimit, signer), nil
 }
