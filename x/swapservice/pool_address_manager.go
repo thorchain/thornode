@@ -106,7 +106,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 		}
 		runeTotal = runeTotal.Add(p.BalanceRune)
 		if p.BalanceToken.GT(sdk.ZeroUint()) {
-			coins = append(coins, common.NewCoin(common.BNBChain, p.Ticker, tokenAmount))
+			coins = append(coins, common.NewCoin(p.Chain, p.Ticker, tokenAmount))
 		}
 	}
 
