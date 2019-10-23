@@ -137,7 +137,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don't know",
 			returnAmount:  sdk.ZeroUint(),
 			tradeTarget:   sdk.ZeroUint(),
-			expectedErr:   errors.Errorf("pool slip:0.928571 is over global pool slip limit :%s", globalSlipLimit),
+			expectedErr:   errors.Errorf("fail to swap from RUNE to BNB: pool slip:0.928571 is over global pool slip limit :%s", globalSlipLimit),
 		},
 		{
 			name:          "swap-over-trade-sliplimit",
