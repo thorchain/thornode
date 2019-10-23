@@ -89,7 +89,7 @@ smoke-test:develop:
     - schedules
   environment:
     name: develop
-  script: make -C ./build/service-node smoke-test
+  script: make smoke-test
   only:
     - master
   when: manual
@@ -109,7 +109,7 @@ seed:develop:
     - schedules
   environment:
     name: develop
-  script: make -C ./build/service-node seed
+  script: make seed
   only:
     - master
   when: manual
@@ -148,7 +148,7 @@ smoke-test:staging:
     - schedules
   environment:
     name: staging
-  script: make -C ./build/service-node smoke-test
+  script: make smoke-test
   only:
     - master
   when: manual
@@ -168,7 +168,7 @@ seed:staging:
     - schedules
   environment:
     name: staging
-  script: make -C ./build/service-node seed
+  script: make seed
   only:
     - master
   when: manual
