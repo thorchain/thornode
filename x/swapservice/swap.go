@@ -16,6 +16,10 @@ func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...common.Ticker
 			if !keeper.PoolExist(ctx, ticker) {
 				return errors.New(fmt.Sprintf("%s doesn't exist", ticker))
 			}
+			pool := keeper.GetPool(ctx, ticker)
+			if pool.Status != PoolEnabled {
+				return errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
+			}
 		}
 
 	}
@@ -63,27 +67,50 @@ func swap(ctx sdk.Context,
 		return sdk.ZeroUint(), err
 	}
 
+	pools := make([]Pool, 0)
+
 	isDoubleSwap := !common.IsRune(source) && !common.IsRune(target)
 
 	if isDoubleSwap {
-		runeAmount, err := swapOne(ctx, keeper, txID, source, common.RuneTicker, amount, requester, destination, tradeTarget, globalSlipLimit)
+		var err error
+		sourcePool := keeper.GetPool(ctx, source)
+		amount, sourcePool, err = swapOne(ctx, keeper, txID, sourcePool, source, common.RuneTicker, amount, requester, destination, globalSlipLimit)
 		if err != nil {
 			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneTicker)
 		}
-		tokenAmount, err := swapOne(ctx, keeper, txID, common.RuneTicker, target, runeAmount, requester, destination, tradeTarget, globalSlipLimit)
-		return tokenAmount, err
+		pools = append(pools, sourcePool)
+		source = common.RuneTicker
 	}
-	tokenAmount, err := swapOne(ctx, keeper, txID, source, target, amount, requester, destination, tradeTarget, globalSlipLimit)
-	return tokenAmount, err
+
+	// Set ticker to our non-rune token ticker
+	ticker := source
+	if common.IsRune(source) {
+		ticker = target
+	}
+	pool := keeper.GetPool(ctx, ticker)
+	tokenAmount, pool, err := swapOne(ctx, keeper, txID, pool, source, target, amount, requester, destination, globalSlipLimit)
+	if err != nil {
+		return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, target)
+	}
+	pools = append(pools, pool)
+	if !tradeTarget.IsZero() && tokenAmount.LT(tradeTarget) {
+		return sdk.ZeroUint(), errors.Errorf("emit token %s less than price limit %s", tokenAmount, tradeTarget)
+	}
+
+	// update pools
+	for _, pool := range pools {
+		keeper.SetPool(ctx, pool)
+	}
+	return tokenAmount, nil
 }
 
 func swapOne(ctx sdk.Context,
 	keeper poolStorage, txID common.TxID,
+	pool Pool,
 	source, target common.Ticker,
 	amount sdk.Uint, requester,
 	destination common.Address,
-	tradeTarget sdk.Uint,
-	globalSlipLimit common.Amount) (amt sdk.Uint, err error) {
+	globalSlipLimit common.Amount) (amt sdk.Uint, poolResult Pool, err error) {
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
@@ -145,13 +172,13 @@ func swapOne(ctx sdk.Context,
 	// Check if pool exists
 	if !keeper.PoolExist(ctx, ticker) {
 		ctx.Logger().Debug(fmt.Sprintf("pool %s doesn't exist", ticker))
-		return sdk.ZeroUint(), errors.New(fmt.Sprintf("pool %s doesn't exist", ticker))
+		return sdk.ZeroUint(), Pool{}, errors.New(fmt.Sprintf("pool %s doesn't exist", ticker))
 	}
 
 	// Get our pool from the KVStore
-	pool := keeper.GetPool(ctx, ticker)
+	pool = keeper.GetPool(ctx, ticker)
 	if pool.Status != PoolEnabled {
-		return sdk.ZeroUint(), errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
+		return sdk.ZeroUint(), pool, errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
 	}
 
 	// Get our slip limits
@@ -169,10 +196,10 @@ func swapOne(ctx sdk.Context,
 
 	// check our X,x,Y values are valid
 	if x.IsZero() {
-		return sdk.ZeroUint(), errors.New("amount is invalid")
+		return sdk.ZeroUint(), pool, errors.New("amount is invalid")
 	}
 	if X.IsZero() || Y.IsZero() {
-		return sdk.ZeroUint(), errors.New("invalid balance")
+		return sdk.ZeroUint(), pool, errors.New("invalid balance")
 	}
 
 	outputSlip = calcOutputSlip(X, x)
@@ -185,16 +212,13 @@ func swapOne(ctx sdk.Context,
 	// do we have enough balance to swap?
 
 	if emitTokens.GT(Y) {
-		return sdk.ZeroUint(), errors.New("token :%s balance is 0, can't do swap")
+		return sdk.ZeroUint(), pool, errors.New("token :%s balance is 0, can't do swap")
 	}
 	// Need to convert to float before the calculation , otherwise 0.1 becomes 0, which is bad
-	if !tradeTarget.IsZero() && emitTokens.LT(tradeTarget) {
-		return sdk.ZeroUint(), errors.Errorf("emit token %s less than price limit %s", emitTokens, tradeTarget)
-	}
 
 	if poolSlip > gsl {
 		ctx.Logger().Info("poolslip over global pool slip limit", "poolslip", fmt.Sprintf("%.2f", poolSlip), "gsl", fmt.Sprintf("%.2f", gsl))
-		return sdk.ZeroUint(), errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
+		return sdk.ZeroUint(), pool, errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
 	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
 
@@ -205,10 +229,9 @@ func swapOne(ctx sdk.Context,
 		pool.BalanceToken = X.Add(x)
 		pool.BalanceRune = Y.Sub(emitTokens)
 	}
-	keeper.SetPool(ctx, pool)
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, emitTokens))
 
-	return emitTokens, nil
+	return emitTokens, pool, nil
 }
 
 // calcPriceSlip - calculate the price slip
