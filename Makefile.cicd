@@ -60,4 +60,4 @@ smoke-test:
 
 # Step 6
 seed: sweep
-	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c seed/seed.json -d true
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c seed/seed.json -d true
