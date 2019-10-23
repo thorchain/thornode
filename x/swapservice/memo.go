@@ -174,29 +174,17 @@ func ParseMemo(memo string) (Memo, error) {
 	if len(memo) == 0 {
 		return noMemo, fmt.Errorf("memo can't be empty")
 	}
-	if strings.EqualFold(memo, "ack") {
-		return AckMemo{
-			MemoBase{
-				TxType: txAck,
-			},
-		}, nil
-	}
-	if strings.EqualFold(memo, "leave") {
-		return LeaveMemo{
-			MemoBase: MemoBase{TxType: txLeave},
-		}, nil
-	}
 	parts := strings.Split(memo, ":")
-	if len(parts) < 2 {
-		return noMemo, fmt.Errorf("cannot parse given memo: length %d", len(parts))
-	}
 	tx, err := stringToTxType(parts[0])
 	if err != nil {
 		return noMemo, err
 	}
 
 	var ticker common.Ticker
-	if tx != txGas && tx != txOutbound && tx != txBond && tx != txLeave && tx != txNextPool {
+	if tx != txGas && tx != txOutbound && tx != txBond && tx != txLeave && tx != txAck && tx != txNextPool {
+		if len(parts) < 2 {
+			return noMemo, fmt.Errorf("cannot parse given memo: length %d", len(parts))
+		}
 		var err error
 		ticker, err = common.NewTicker(parts[1])
 		if err != nil {
@@ -212,9 +200,18 @@ func ParseMemo(memo string) (Memo, error) {
 
 	case txGas:
 		return GasMemo{
-			MemoBase: MemoBase{TxType: txGas, Ticker: ticker},
+			MemoBase: MemoBase{TxType: txGas},
 		}, nil
-
+	case txLeave:
+		return LeaveMemo{
+			MemoBase: MemoBase{TxType: txLeave},
+		}, nil
+	case txAck:
+		return AckMemo{
+			MemoBase: MemoBase{
+				TxType: txAck,
+			},
+		}, nil
 	case txAdd:
 		return AddMemo{
 			MemoBase: MemoBase{TxType: txAdd, Ticker: ticker},
