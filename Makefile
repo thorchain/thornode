@@ -12,7 +12,7 @@ install: go.sum
 	GO111MODULE=on go install -v ./cmd/signd
 
 tools: install
-	GO111MODULE=on go install -tags "$(build_tags)" ./tools/smoke
+	GO111MODULE=on go install -tags "$(build_tags)" ./tools/bsinner
 	GO111MODULE=on go install -tags "$(build_tags)" ./tools/generate
 	GO111MODULE=on go install -tags "$(build_tags)" ./tools/extract
 	GO111MODULE=on go install -tags "$(build_tags)" ./tools/sweep
@@ -69,7 +69,7 @@ reset: clean
 clean:
 	rm -rf ~/.ssd
 	rm -rf ~/.sscli
-	rm -f ${GOBIN}/{smoke,generate,sweep,sscli,ssd,observe,signd}
+	rm -f ${GOBIN}/{bsinner,generate,sweep,sscli,ssd,observe,signd}
 
 .envrc: install
 	@generate -t MASTER > .envrc
@@ -79,19 +79,19 @@ extract: tools
 	@extract -f "${FILE}" -p "${PASSWORD}" -t ${TYPE}
 
 smoke-test-audit: tools
-	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-audit.json -e ${ENV}
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-audit.json -e ${ENV}
 
 smoke-test-refund: tools
-	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-refund.json -e ${ENV}
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-refund.json -e ${ENV}
 
 gas: tools
-	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/gas.json -e ${ENV}
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/gas.json -e ${ENV}
 
 stake: tools
-	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/stake.json -e ${ENV}
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/stake.json -e ${ENV}
 
 swap: tools
-	@smoke -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/swap.json -e ${ENV}
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/swap.json -e ${ENV}
 
 sweep: tools
 	@sweep -m ${FAUCET_KEY} -k ${BINANCE_PRIVATE_KEY} -d true

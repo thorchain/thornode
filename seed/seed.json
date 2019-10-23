@@ -88,7 +88,7 @@
         },
         {
           "symbol": "BNB",
-          "amount": 0.61000000
+          "amount": 0.60370000
         },
         {
           "symbol": "FSN-F1B",
@@ -121,7 +121,7 @@
           },
           {
             "symbol": "BNB",
-            "amount": 0.61000000
+            "amount": 0.60370000
           },
           {
             "symbol": "FSN-F1B",
@@ -142,30 +142,6 @@
           {
             "symbol": "TOMOB-1E1",
             "amount": 35.00000000
-          }
-        ],
-        "statechain": {}
-      }
-    },
-    {
-      "description": "GAS",
-      "from": "faucet",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.05000000
-        }
-      ],
-      "memo": "GAS",
-      "check": {
-        "target": "from",
-        "binance": [
-          {
-            "symbol": "BNB",
-            "amount": 0.04962500
           }
         ],
         "statechain": {}
@@ -193,7 +169,7 @@
         "binance": [
           {
             "symbol": "BNB",
-            "amount": 0.00940000
+            "amount": 0.00310000
           },
           {
             "symbol": "RUNE-A1F",
