@@ -82,9 +82,6 @@ smoke-test:develop:
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
-  before_script:
-    - apk update
-    - apk add python py-pip make git
   except:
     - schedules
   environment:
@@ -102,9 +99,6 @@ seed:develop:
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
-  before_script:
-    - apk update
-    - apk add python py-pip make git
   except:
     - schedules
   environment:
@@ -141,17 +135,13 @@ smoke-test:staging:
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
-  before_script:
-    - apk update
-    - apk add python py-pip make git
   except:
     - schedules
   environment:
     name: staging
   script: make smoke-test
   only:
-    - master
-  when: manual
+    - schedules
 
 seed:staging:
   stage: seed
@@ -161,17 +151,13 @@ seed:staging:
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
-  before_script:
-    - apk update
-    - apk add python py-pip make git
   except:
     - schedules
   environment:
     name: staging
   script: make seed
   only:
-    - master
-  when: manual
+    - schedules
 
 deploy:production:
   stage: deploy
