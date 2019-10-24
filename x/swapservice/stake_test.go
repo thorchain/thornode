@@ -118,21 +118,21 @@ func (StakeSuite) TestValidateStakeMessage(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	txId := GetRandomTxHash()
 	bnbAddress := GetRandomBNBAddress()
-	c.Assert(validateStakeMessage(ctx, ps, common.Ticker(""), txId, bnbAddress), NotNil)
-	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, bnbAddress), NotNil)
-	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, bnbAddress), NotNil)
-	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, common.TxID(""), bnbAddress), NotNil)
-	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, common.NoAddress), NotNil)
-	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, bnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.Asset{}, txId, bnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, txId, bnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, txId, bnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, common.TxID(""), bnbAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, txId, common.NoAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, txId, bnbAddress), NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
 		BalanceToken: sdk.NewUint(100 * common.One),
-		Ticker:       common.BNBTicker,
+		Asset:        common.BNBAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	})
-	c.Assert(validateStakeMessage(ctx, ps, common.BNBTicker, txId, bnbAddress), Equals, nil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, txId, bnbAddress), Equals, nil)
 }
 
 // TestStake test stake func
@@ -143,33 +143,33 @@ func (StakeSuite) TestStake(c *C) {
 
 	bnbAddress := GetRandomBNBAddress()
 
-	_, err := stake(ctx, ps, "", sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
+	_, err := stake(ctx, ps, common.Asset{}, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
 	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.ZeroUint(),
 		BalanceToken: sdk.NewUint(100 * common.One),
-		Ticker:       common.BNBTicker,
+		Asset:        common.BNBAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	})
-	stakerUnit, err := stake(ctx, ps, common.BNBTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
+	stakerUnit, err := stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
 	c.Assert(stakerUnit.Equal(sdk.NewUint(11250000000)), Equals, true)
 	c.Assert(err, IsNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
 		BalanceToken: sdk.NewUint(100 * common.One),
-		Ticker:       notExistPoolStakerTicker,
+		Asset:        notExistPoolStakerAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	})
-	_, err = stake(ctx, ps, notExistPoolStakerTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
+	_, err = stake(ctx, ps, notExistPoolStakerAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
 	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
 		BalanceToken: sdk.NewUint(100 * common.One),
-		Ticker:       common.BNBTicker,
+		Asset:        common.BNBAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
@@ -186,23 +186,23 @@ func (StakeSuite) TestStake(c *C) {
 		}
 	}
 	skrs := makePoolStaker(150, sdk.NewUint(common.One/5000))
-	ps.SetPoolStaker(ctx, common.BNBTicker, skrs)
-	_, err = stake(ctx, ps, common.BNBTicker, sdk.NewUint(common.One), sdk.NewUint(common.One), bnbAddress, txId)
+	ps.SetPoolStaker(ctx, common.BNBAsset, skrs)
+	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(common.One), sdk.NewUint(common.One), bnbAddress, txId)
 	c.Assert(err, NotNil)
 
-	_, err = stake(ctx, ps, common.BNBTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), notExistStakerPoolAddr, txId)
+	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), notExistStakerPoolAddr, txId)
 	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
 		BalanceToken: sdk.NewUint(100 * common.One),
-		Ticker:       common.BNBTicker,
+		Asset:        common.BNBAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	})
-	_, err = stake(ctx, ps, common.BNBTicker, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
+	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
 	c.Assert(err, IsNil)
-	p := ps.GetPool(ctx, common.BNBTicker)
+	p := ps.GetPool(ctx, common.BNBAsset)
 
 	c.Check(p.PoolUnits.Equal(sdk.NewUint(200*common.One)), Equals, true)
 }

@@ -282,10 +282,6 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		return sdk.ErrInternal("fail to encode result to json").Result()
 	}
 
-	if !common.IsRuneAsset(msg.TargetAsset) {
-		pool := keeper.GetPool(ctx, msg.TargetAsset)
-	}
-
 	toi := &TxOutItem{
 		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 		ToAddress:   msg.Destination,
@@ -361,7 +357,6 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		common.RuneA1FAsset,
 		runeAmt,
 	))
-	pool := keeper.GetPool(ctx, msg.Asset)
 	toi.Coins = append(toi.Coins, common.NewCoin(
 		msg.Asset,
 		tokenAmount,
@@ -749,7 +744,7 @@ func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 	}
 
 	pool := keeper.GetPool(ctx, msg.Asset)
-	if pool.Ticker.IsEmpty() {
+	if pool.Asset.IsEmpty() {
 		return sdk.ErrUnknownRequest(fmt.Sprintf("pool %s not exist", msg.Asset.String())).Result()
 	}
 	if msg.TokenAmount.GT(sdk.ZeroUint()) {

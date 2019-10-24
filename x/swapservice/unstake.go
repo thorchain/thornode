@@ -13,16 +13,16 @@ func validateUnstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) err
 	if msg.RequestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
 	}
-	if msg.Ticker.IsEmpty() {
-		return errors.New("empty ticker")
+	if msg.Asset.IsEmpty() {
+		return errors.New("empty asset")
 	}
 	withdrawBasisPoints := msg.WithdrawBasisPoints
 	if withdrawBasisPoints.GT(sdk.ZeroUint()) && withdrawBasisPoints.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
 		return errors.Errorf("withdraw basis points %s is invalid", msg.WithdrawBasisPoints)
 	}
-	if !keeper.PoolExist(ctx, msg.Ticker) {
+	if !keeper.PoolExist(ctx, msg.Asset) {
 		// pool doesn't exist
-		return errors.Errorf("pool-%s doesn't exist", msg.Ticker)
+		return errors.Errorf("pool-%s doesn't exist", msg.Asset)
 	}
 	return nil
 }
@@ -34,8 +34,8 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 	}
 
 	// here fBalance should be valid , because we did the validation above
-	pool := keeper.GetPool(ctx, msg.Ticker)
-	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Ticker)
+	pool := keeper.GetPool(ctx, msg.Asset)
+	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.Wrap(err, "can't find pool staker")
 
@@ -76,15 +76,15 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 		poolStaker.UpsertStakerUnit(stakerUnit)
 	}
 	if unitAfter.IsZero() {
-		stakerPool.RemoveStakerPoolItem(msg.Ticker)
+		stakerPool.RemoveStakerPoolItem(msg.Asset)
 	} else {
-		spi := stakerPool.GetStakerPoolItem(msg.Ticker)
+		spi := stakerPool.GetStakerPoolItem(msg.Asset)
 		spi.Units = unitAfter
 		stakerPool.UpsertStakerPoolItem(spi)
 	}
 	// update staker pool
 	keeper.SetPool(ctx, pool)
-	keeper.SetPoolStaker(ctx, msg.Ticker, poolStaker)
+	keeper.SetPoolStaker(ctx, msg.Asset, poolStaker)
 	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
 	return withdrawRune, withDrawToken, fStakerUnit.Sub(unitAfter), nil
 }

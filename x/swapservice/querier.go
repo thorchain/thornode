@@ -188,12 +188,12 @@ func queryPoolIndex(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 
 // queryPoolStakers
 func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	ticker, err := common.NewTicker(path[0])
+	asset, err := common.NewAsset(path[0])
 	if nil != err {
-		ctx.Logger().Error("fail to get parse ticker", err)
-		return nil, sdk.ErrInternal("fail to parse ticker")
+		ctx.Logger().Error("fail to get parse asset", err)
+		return nil, sdk.ErrInternal("fail to parse asset")
 	}
-	ps, err := keeper.GetPoolStaker(ctx, ticker)
+	ps, err := keeper.GetPoolStaker(ctx, asset)
 	if nil != err {
 		ctx.Logger().Error("fail to get pool staker", err)
 		return nil, sdk.ErrInternal("fail to get pool staker")
@@ -229,13 +229,13 @@ func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 
 // nolint: unparam
 func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, poolAddrMgr *PoolAddressManager) ([]byte, sdk.Error) {
-	ticker, err := common.NewTicker(path[0])
+	asset, err := common.NewAsset(path[0])
 	if err != nil {
-		ctx.Logger().Error("fail to parse ticker", err)
-		return nil, sdk.ErrInternal("Could not parse ticker")
+		ctx.Logger().Error("fail to parse asset", err)
+		return nil, sdk.ErrInternal("Could not parse asset")
 	}
 	currentPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
-	pool := keeper.GetPool(ctx, ticker)
+	pool := keeper.GetPool(ctx, asset)
 	if pool.Empty() {
 		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("pool: %s doesn't exist", path[0]))
 	}
