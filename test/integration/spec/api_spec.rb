@@ -54,7 +54,7 @@ describe "API Tests" do
       expect(resp.code).to eq("200")
       expect(resp.body['status']).to eq("Enabled"), resp.body.inspect
 
-      resp = get("/pool/BNB")
+      resp = get("/pool/BNB.BNB")
       expect(resp.code).to eq("200")
       expect(resp.body['status']).to eq("Enabled"), resp.body.inspect
     end
@@ -72,7 +72,7 @@ describe "API Tests" do
 
     it "should show up in listing of pools" do
       resp = get("/pools")
-      expect(resp.body[1]['symbol']).to eq("TCAN-014"), resp.body.inspect
+      expect(resp.body[1]['asset']['symbol']).to eq("TCAN-014"), resp.body.inspect
     end
 
   end
@@ -102,7 +102,7 @@ describe "API Tests" do
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
 
-      resp = get("/pool/TCAN-014/stakers")
+      resp = get("/pool/BNB.TCAN-014/stakers")
       expect(resp.code).to eq("200"), resp.body.inspect
       expect(resp.body['stakers']).to eq(nil), resp.body.inspect
     end
@@ -110,7 +110,7 @@ describe "API Tests" do
     txid = txid() # outside it state so its value is available in multiple "it" statements
     it "swap" do
       # stake some coins first
-      tx = makeTx(memo: "stake:TCAN-014", coins: coins, sender: sender)
+      tx = makeTx(memo: "stake:BNB.TCAN-014", coins: coins, sender: sender)
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
 
@@ -141,7 +141,7 @@ describe "API Tests" do
       expect(resp.code).to eq("200"), resp.body.inspect
 
       # pool balance should not change
-      resp = get("/pool/TCAN-014")
+      resp = get("/pool/BNB.TCAN-014")
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("2224541407"), resp.body.inspect
       expect(resp.body['balance_token']).to eq("354850000"), resp.body.inspect
@@ -186,7 +186,7 @@ describe "API Tests" do
     it "check events are completed" do
       resp = get("/events/1")
       expect(resp.body.count).to eq(3), resp.body.inspect
-      expect(resp.body[2]['pool']).to eq("TCAN-014"), resp.body[2].inspect
+      expect(resp.body[2]['pool']['symbol']).to eq("TCAN-014"), resp.body[2].inspect
       expect(resp.body[2]['type']).to eq("swap"), resp.body[2].inspect
       expect(resp.body[2]['in_hash']).to eq(txid), resp.body[2].inspect
     end
