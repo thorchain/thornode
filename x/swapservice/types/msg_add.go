@@ -7,18 +7,18 @@ import (
 
 // MsgAdd defines a add message
 type MsgAdd struct {
-	Asset       common.Asset   `json:"asset"` // asset of the token
-	TokenAmount sdk.Uint       `json:"token"` // the amount of token
+	Asset       common.Asset   `json:"asset"` // asset of the asset
+	AssetAmount sdk.Uint       `json:"asset"` // the amount of asset
 	RuneAmount  sdk.Uint       `json:"rune"`  // the amount of rune
-	TxID        common.TxID    `json:"tx_id"` // the txhash that represent user send token to our pool address
+	TxID        common.TxID    `json:"tx_id"` // the txhash that represent user send asset to our pool address
 	Signer      sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgAdd is a constructor function for MsgAdd
-func NewMsgAdd(asset common.Asset, r, token sdk.Uint, requestTxHash common.TxID, signer sdk.AccAddress) MsgAdd {
+func NewMsgAdd(asset common.Asset, r, asset sdk.Uint, requestTxHash common.TxID, signer sdk.AccAddress) MsgAdd {
 	return MsgAdd{
 		Asset:       asset,
-		TokenAmount: token,
+		AssetAmount: asset,
 		RuneAmount:  r,
 		TxID:        requestTxHash,
 		Signer:      signer,

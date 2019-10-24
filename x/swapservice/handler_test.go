@@ -108,7 +108,7 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		p.Asset = common.BNBAsset
 		p.Status = PoolEnabled
 		p.BalanceRune = sdk.NewUint(100 * common.One)
-		p.BalanceToken = sdk.NewUint(100 * common.One)
+		p.BalanceAsset = sdk.NewUint(100 * common.One)
 		k.SetPool(ctx, p)
 	}
 	poolAddrMgr := NewPoolAddressManager(k)
@@ -266,7 +266,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	p := k.GetPool(ctx, common.BNBAsset)
 	c.Assert(p.Empty(), Equals, false)
 	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
-	c.Assert(p.BalanceToken.Uint64(), Equals, msgSetStake.TokenAmount.Uint64())
+	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
 	c.Assert(p.Status, Equals, PoolEnabled)
 	txOutStore.NewBlock(1)
 	// EndPool again
@@ -275,13 +275,13 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
 	p1 := k.GetPool(ctx, common.BNBAsset)
 	c.Check(p1.Status, Equals, PoolSuspended)
-	c.Check(p1.BalanceToken.Uint64(), Equals, uint64(0))
+	c.Check(p1.BalanceAsset.Uint64(), Equals, uint64(0))
 	c.Check(p1.BalanceRune.Uint64(), Equals, uint64(0))
 	txOut := txOutStore.blockOut
 	c.Check(txOut, NotNil)
 	c.Check(len(txOut.TxArray) > 0, Equals, true)
 	c.Check(txOut.Height, Equals, uint64(1))
-	totalToken := sdk.ZeroUint()
+	totalAsset := sdk.ZeroUint()
 	totalRune := sdk.ZeroUint()
 	for _, item := range txOut.TxArray {
 		c.Assert(item.Valid(), IsNil)
@@ -290,11 +290,11 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 			if common.IsRuneAsset(co.Asset) {
 				totalRune = totalRune.Add(co.Amount)
 			} else {
-				totalToken = totalToken.Add(co.Amount)
+				totalAsset = totalAsset.Add(co.Amount)
 			}
 		}
 	}
-	c.Assert(totalToken.Equal(msgSetStake.TokenAmount.SubUint64(2*batchTransactionFee)), Equals, true)
+	c.Assert(totalAsset.Equal(msgSetStake.AssetAmount.SubUint64(2*batchTransactionFee)), Equals, true)
 	c.Assert(totalRune.Equal(msgSetStake.RuneAmount), Equals, true)
 }
 
@@ -343,7 +343,7 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 	p = w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(p.Empty(), Equals, false)
 	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
-	c.Assert(p.BalanceToken.Uint64(), Equals, msgSetStake.TokenAmount.Uint64())
+	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
 	e, err := w.keeper.GetCompletedEvent(w.ctx, 1)
 	c.Assert(err, IsNil)
 	c.Assert(e.Pool.Equals(common.BNBAsset), Equals, true)
@@ -491,7 +491,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	c.Assert(pool.Status, Equals, PoolEnabled)
 	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
 	c.Assert(pool.BalanceRune.Uint64(), Equals, uint64(0))
-	c.Assert(pool.BalanceToken.Uint64(), Equals, uint64(0))
+	c.Assert(pool.BalanceAsset.Uint64(), Equals, uint64(0))
 }
 
 func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
@@ -539,7 +539,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	c.Assert(pool.Status, Equals, PoolEnabled)
 	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
 	c.Assert(pool.BalanceRune.Uint64(), Equals, uint64(0))
-	c.Assert(pool.BalanceToken.Uint64(), Equals, uint64(0))
+	c.Assert(pool.BalanceAsset.Uint64(), Equals, uint64(0))
 
 }
 
@@ -659,7 +659,7 @@ func (HandlerSuite) TestHandleMsgAdd(c *C) {
 	c.Assert(result3.Code, Equals, sdk.CodeOK)
 	pool = w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(pool.Status, Equals, PoolEnabled)
-	c.Assert(pool.BalanceToken.Uint64(), Equals, sdk.NewUint(100*common.One).Uint64())
+	c.Assert(pool.BalanceAsset.Uint64(), Equals, sdk.NewUint(100*common.One).Uint64())
 	c.Assert(pool.BalanceRune.Uint64(), Equals, sdk.NewUint(100*common.One).Uint64())
 	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
 
@@ -704,7 +704,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	pool := Pool{
 		Asset:        common.BNBAsset,
 		BalanceRune:  sdk.NewUint(100 * common.One),
-		BalanceToken: sdk.NewUint(100 * common.One),
+		BalanceAsset: sdk.NewUint(100 * common.One),
 	}
 	w.keeper.SetPool(w.ctx, pool)
 
@@ -732,13 +732,13 @@ func (HandlerSuite) TestRefund(c *C) {
 	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, lokiAsset)
-	c.Assert(pool.BalanceToken.Equal(sdk.NewUint(100*common.One)), Equals, true)
+	c.Assert(pool.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true)
 
-	// doing it a second time should add the tokens again.
+	// doing it a second time should add the assets again.
 	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, lokiAsset)
-	c.Assert(pool.BalanceToken.Equal(sdk.NewUint(200*common.One)), Equals, true)
+	c.Assert(pool.BalanceAsset.Equal(sdk.NewUint(200*common.One)), Equals, true)
 }
 
 func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {

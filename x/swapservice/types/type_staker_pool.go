@@ -13,9 +13,9 @@ import (
 // StakeTxDetail represent all the stake activity
 // Staker can stake on the same pool for multiple times
 type StakeTxDetail struct {
-	RequestTxHash common.TxID `json:"request_tx_hash"` // the tx hash from binance chain , represent staker send token to the pool
+	RequestTxHash common.TxID `json:"request_tx_hash"` // the tx hash from binance chain , represent staker send asset to the pool
 	RuneAmount    sdk.Uint    `json:"rune_amount"`     // amount of rune that send in at the time
-	TokenAmount   sdk.Uint    `json:"token_amount"`    // amount of token that send in at the time
+	AssetAmount   sdk.Uint    `json:"asset_amount"`    // amount of asset that send in at the time
 }
 
 // StakerPoolItem represent the staker's activity in a pool
@@ -54,12 +54,12 @@ func (spi StakerPoolItem) Valid() error {
 //                {
 //                    "request_tx_hash": "txhash from binance chain",
 //                    "rune_amount": "100",
-//                    "token_amount": "100"
+//                    "asset_amount": "100"
 //                },
 //                {
 //                    "request_tx_hash": "another hash",
 //                    "rune_amount": "100",
-//                    "token_amount": "100"
+//                    "asset_amount": "100"
 //                }
 //            ]
 //        },
@@ -70,12 +70,12 @@ func (spi StakerPoolItem) Valid() error {
 //                {
 //                    "request_tx_hash": "txhash from binance chain",
 //                    "rune_amount": "100",
-//                    "token_amount": "100"
+//                    "asset_amount": "100"
 //                },
 //                {
 //                    "request_tx_hash": "another hash",
 //                    "rune_amount": "100",
-//                    "token_amount": "100"
+//                    "asset_amount": "100"
 //                }
 //            ]
 //        }
@@ -167,11 +167,11 @@ func (sp *StakerPool) UpsertStakerPoolItem(stakerPoolItem *StakerPoolItem) {
 }
 
 // AddStakerTxDetail to the StakerPool structure
-func (spi *StakerPoolItem) AddStakerTxDetail(requestTxHash common.TxID, runeAmount, tokenAmount sdk.Uint) {
+func (spi *StakerPoolItem) AddStakerTxDetail(requestTxHash common.TxID, runeAmount, assetAmount sdk.Uint) {
 	std := StakeTxDetail{
 		RequestTxHash: requestTxHash,
 		RuneAmount:    runeAmount,
-		TokenAmount:   tokenAmount,
+		AssetAmount:   assetAmount,
 	}
 	spi.StakeDetails = append(spi.StakeDetails, std)
 }

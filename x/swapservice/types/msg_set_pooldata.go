@@ -10,8 +10,8 @@ import (
 // the pool changes when stake / swap happens
 type MsgSetPoolData struct {
 	BalanceRune  sdk.Uint       `json:"balance_rune"`  // balance rune
-	BalanceToken sdk.Uint       `json:"balance_token"` // balance of token
-	Asset        common.Asset   `json:"asset"`         // Asset means the token asset
+	BalanceAsset sdk.Uint       `json:"balance_asset"` // balance of asset
+	Asset        common.Asset   `json:"asset"`         // Asset means the asset asset
 	Status       PoolStatus     `json:"status"`        // pool status
 	Signer       sdk.AccAddress `json:"signer"`
 }
@@ -21,7 +21,7 @@ func NewMsgSetPoolData(asset common.Asset, status PoolStatus, signer sdk.AccAddr
 	return MsgSetPoolData{
 		Asset:        asset,
 		BalanceRune:  sdk.ZeroUint(),
-		BalanceToken: sdk.ZeroUint(),
+		BalanceAsset: sdk.ZeroUint(),
 		Status:       status,
 		Signer:       signer,
 	}

@@ -79,14 +79,14 @@ func (e EventSwap) Type() string {
 
 type EventStake struct {
 	RuneAmount  sdk.Uint `json:"rune_amount"`
-	TokenAmount sdk.Uint `json:"token_amount"`
+	AssetAmount sdk.Uint `json:"asset_amount"`
 	StakeUnits  sdk.Uint `json:"stake_units"`
 }
 
 func NewEventStake(r, t, s sdk.Uint) EventStake {
 	return EventStake{
 		RuneAmount:  r,
-		TokenAmount: t,
+		AssetAmount: t,
 		StakeUnits:  s,
 	}
 }
@@ -97,14 +97,14 @@ func (e EventStake) Type() string {
 
 type EventUnstake struct {
 	RuneAmount  sdk.Int `json:"rune_amount"`
-	TokenAmount sdk.Int `json:"token_amount"`
+	AssetAmount sdk.Int `json:"asset_amount"`
 	StakeUnits  sdk.Int `json:"stake_units"`
 }
 
 func NewEventUnstake(r, t, s sdk.Uint) EventUnstake {
 	return EventUnstake{
 		RuneAmount:  sdk.NewInt(-1).Mul(sdk.NewInt(int64(r.Uint64()))),
-		TokenAmount: sdk.NewInt(-1).Mul(sdk.NewInt(int64(t.Uint64()))),
+		AssetAmount: sdk.NewInt(-1).Mul(sdk.NewInt(int64(t.Uint64()))),
 		StakeUnits:  sdk.NewInt(-1).Mul(sdk.NewInt(int64(s.Uint64()))),
 	}
 }

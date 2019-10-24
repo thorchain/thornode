@@ -12,7 +12,7 @@ type AdminConfigSuite struct{}
 var _ = Suite(&AdminConfigSuite{})
 
 func (s AdminConfigSuite) TestGetKey(c *C) {
-	keys := []string{"GSL", "StakerAmtInterval", "Unknown", "MinValidatorBond", "WhiteListGasToken", "PoolRefundGas"}
+	keys := []string{"GSL", "StakerAmtInterval", "Unknown", "MinValidatorBond", "WhiteListGasAsset", "PoolRefundGas"}
 	for _, key := range keys {
 		c.Check(GetAdminConfigKey(key).String(), Equals, key)
 	}
@@ -35,7 +35,7 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 		cfg1 := NewAdminConfig(GetAdminConfigKey(item), "whatever", addr)
 		c.Check(cfg1.Valid(), NotNil, Commentf("%s", item))
 	}
-	coinAmt := []string{"WhiteListGasToken"}
+	coinAmt := []string{"WhiteListGasAsset"}
 	for _, item := range coinAmt {
 		cfg := NewAdminConfig(GetAdminConfigKey(item), "100bep", addr)
 		c.Check(cfg.Valid(), IsNil, Commentf("%s is invalid coin", item))

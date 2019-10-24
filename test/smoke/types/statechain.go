@@ -2,7 +2,7 @@ package types
 
 type Pools []struct {
 	BalanceRune  float64 `json:"balance_rune,string"`
-	BalanceToken float64 `json:"balance_token,string"`
+	BalanceAsset float64 `json:"balance_asset,string"`
 	Symbol       string  `json:"symbol"`
 	PoolUnits    float64 `json:"pool_units,string"`
 	PoolAddress  string  `json:"pool_address"`

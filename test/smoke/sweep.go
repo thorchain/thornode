@@ -44,15 +44,15 @@ func (s Sweep) EmptyWallets() {
 
 		var coins []btypes.Coin
 		balances := s.Balances(keyManager.GetAddr())
-		for _, token := range balances {
-			free := float64(token.Free)
+		for _, asset := range balances {
+			free := float64(asset.Free)
 			amt := int64(free)
-			if token.Symbol == "BNB" {
+			if asset.Symbol == "BNB" {
 				amt = amt - 210000
 			}
 
 			if amt > 0 {
-				coins = append(coins, btypes.Coin{Denom: token.Symbol, Amount: amt})
+				coins = append(coins, btypes.Coin{Denom: asset.Symbol, Amount: amt})
 			}
 		}
 
@@ -64,7 +64,7 @@ func (s Sweep) EmptyWallets() {
 }
 
 // Balances : Get the account balances of a given wallet.
-func (s Sweep) Balances(address btypes.AccAddress) []btypes.TokenBalance {
+func (s Sweep) Balances(address btypes.AccAddress) []btypes.AssetBalance {
 	acct, err := s.Client.GetAccount(address.String())
 	if err != nil {
 		log.Fatal(err)

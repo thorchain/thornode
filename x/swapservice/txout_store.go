@@ -99,7 +99,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			}
 
 			var runeAmt uint64
-			runeAmt = uint64((float64(gas) / float64(bnbPool.BalanceToken.Uint64())) * float64(bnbPool.BalanceRune.Uint64()))
+			runeAmt = uint64((float64(gas) / float64(bnbPool.BalanceAsset.Uint64())) * float64(bnbPool.BalanceRune.Uint64()))
 
 			if item.Amount.LT(sdk.NewUint(gas)) {
 				item.Amount = sdk.ZeroUint()
@@ -110,7 +110,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			// add the rune to the bnb pool that we are subtracting from
 			// the refund
 			bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
-			bnbPool.BalanceToken = bnbPool.BalanceToken.SubUint64(gas)
+			bnbPool.BalanceAsset = bnbPool.BalanceAsset.SubUint64(gas)
 			keeper.SetPool(ctx, bnbPool)
 
 			toi.Coins[i] = item
@@ -120,32 +120,32 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 
 		if !hasDeductedGas && hasBNB == false && hasRune == false {
 			bnbPool := keeper.GetPool(ctx, common.BNBAsset)
-			tokenPool := keeper.GetPool(ctx, item.Asset)
+			assetPool := keeper.GetPool(ctx, item.Asset)
 
-			if bnbPool.BalanceRune.IsZero() || tokenPool.BalanceRune.IsZero() {
+			if bnbPool.BalanceRune.IsZero() || assetPool.BalanceRune.IsZero() {
 				toi.Coins[i] = item
 				hasDeductedGas = true
 				continue
 			}
 
-			var runeAmt, tokenAmt uint64
-			runeAmt = uint64((float64(gas) / float64(bnbPool.BalanceToken.Uint64())) * float64(bnbPool.BalanceRune.Uint64()))
-			tokenAmt = uint64((float64(runeAmt) / float64(tokenPool.BalanceRune.Uint64())) * float64(tokenPool.BalanceToken.Uint64()))
+			var runeAmt, assetAmt uint64
+			runeAmt = uint64((float64(gas) / float64(bnbPool.BalanceAsset.Uint64())) * float64(bnbPool.BalanceRune.Uint64()))
+			assetAmt = uint64((float64(runeAmt) / float64(assetPool.BalanceRune.Uint64())) * float64(assetPool.BalanceAsset.Uint64()))
 
-			if item.Amount.LT(sdk.NewUint(tokenAmt)) {
+			if item.Amount.LT(sdk.NewUint(assetAmt)) {
 				item.Amount = sdk.ZeroUint()
 			} else {
-				item.Amount = item.Amount.SubUint64(tokenAmt)
+				item.Amount = item.Amount.SubUint64(assetAmt)
 			}
 
 			// add the rune to the bnb pool that we are subtracting from
 			// the refund
 			bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
-			bnbPool.BalanceToken = bnbPool.BalanceToken.SubUint64(gas)
+			bnbPool.BalanceAsset = bnbPool.BalanceAsset.SubUint64(gas)
 			keeper.SetPool(ctx, bnbPool)
-			tokenPool.BalanceRune = tokenPool.BalanceRune.SubUint64(runeAmt)
-			tokenPool.BalanceToken = tokenPool.BalanceToken.AddUint64(tokenAmt)
-			keeper.SetPool(ctx, tokenPool)
+			assetPool.BalanceRune = assetPool.BalanceRune.SubUint64(runeAmt)
+			assetPool.BalanceAsset = assetPool.BalanceAsset.AddUint64(assetAmt)
+			keeper.SetPool(ctx, assetPool)
 
 			toi.Coins[i] = item
 			hasDeductedGas = true

@@ -33,34 +33,34 @@ func (mas *MsgAddSuite) TestMsgAdd(c *C) {
 	inputs := []struct {
 		ticker common.Asset
 		rune   sdk.Uint
-		token  sdk.Uint
+		asset  sdk.Uint
 		txHash common.TxID
 		signer sdk.AccAddress
 	}{
 		{
 			ticker: common.Asset{},
 			rune:   sdk.NewUint(100000000),
-			token:  sdk.NewUint(100000000),
+			asset:  sdk.NewUint(100000000),
 			txHash: txId,
 			signer: addr,
 		},
 		{
 			ticker: common.BNBAsset,
 			rune:   sdk.NewUint(100000000),
-			token:  sdk.NewUint(100000000),
+			asset:  sdk.NewUint(100000000),
 			txHash: common.TxID(""),
 			signer: addr,
 		},
 		{
 			ticker: common.BNBAsset,
 			rune:   sdk.NewUint(100000000),
-			token:  sdk.NewUint(100000000),
+			asset:  sdk.NewUint(100000000),
 			txHash: txId,
 			signer: sdk.AccAddress{},
 		},
 	}
 	for _, item := range inputs {
-		msgAdd := NewMsgAdd(item.ticker, item.rune, item.token, item.txHash, item.signer)
+		msgAdd := NewMsgAdd(item.ticker, item.rune, item.asset, item.txHash, item.signer)
 		err := msgAdd.ValidateBasic()
 		c.Assert(err, NotNil)
 	}

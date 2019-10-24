@@ -72,13 +72,13 @@ This section documents the pools API resources.
 
 ### Pool
 + balance_rune: Amount of rune the pool has
-+ balance_token: Amount of token the pool has
-+ ticker: the ticker of the non-rune token
++ balance_asset: Amount of asset the pool has
++ ticker: the ticker of the non-rune asset
 + pool_units: total number of units within the pool
 + status: the status of the pool
 
 ### PoolStaker
-+ ticker: the ticker of the non-rune token
++ ticker: the ticker of the non-rune asset
 + total_units: the total number of units of the pool
 + stakers: (array[StakerUnit]) a list of stakers in this pool
 
@@ -89,10 +89,10 @@ This section documents the pools API resources.
 ### StakeTxDetail
 + request_tx_hash: the binance tx has of the request
 + rune_amount: the amount of rune
-+ token_amount: the amount of token 
++ asset_amount: the amount of asset 
 
 ### StakerPoolItem
-+ ticker: the ticker of the non-rune token
++ ticker: the ticker of the non-rune asset
 + units: the amount of units
 + stake_details: (array[StakeTxDetail]) a list of stake tx details
 

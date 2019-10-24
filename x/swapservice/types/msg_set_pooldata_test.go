@@ -20,20 +20,20 @@ func (MsgSetPoolDataSuite) TestMsgSetPoolData(c *C) {
 	inputs := []struct {
 		asset  common.Asset
 		rune   sdk.Uint
-		token  sdk.Uint
+		asset  sdk.Uint
 		status PoolStatus
 	}{
 		{
 			asset:  common.Asset{},
 			rune:   sdk.NewUint(100000000),
-			token:  sdk.NewUint(100000000),
+			asset:  sdk.NewUint(100000000),
 			status: Enabled,
 		},
 
 		{
 			asset:  common.BNBAsset,
 			rune:   sdk.NewUint(100000000),
-			token:  sdk.NewUint(100000000),
+			asset:  sdk.NewUint(100000000),
 			status: PoolStatus(-1),
 		},
 	}
@@ -41,7 +41,7 @@ func (MsgSetPoolDataSuite) TestMsgSetPoolData(c *C) {
 	for _, item := range inputs {
 		m := NewMsgSetPoolData(item.asset, item.status, addr)
 		m.BalanceRune = item.rune
-		m.BalanceToken = item.token
+		m.BalanceAsset = item.asset
 		c.Assert(m.ValidateBasic(), NotNil)
 	}
 }

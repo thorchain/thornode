@@ -12,7 +12,7 @@ const MaxWithdrawBasisPoints = 10000
 type MsgSetUnStake struct {
 	PublicAddress       common.Address `json:"public_address"`        // it should be the public address
 	WithdrawBasisPoints sdk.Uint       `json:"withdraw_basis_points"` // withdraw basis points
-	Asset               common.Asset   `json:"asset"`                 // asset token asset
+	Asset               common.Asset   `json:"asset"`                 // asset asset asset
 	RequestTxHash       common.TxID    `json:"request_tx_hash"`       // request tx hash on binance chain
 	Signer              sdk.AccAddress `json:"signer"`
 }
