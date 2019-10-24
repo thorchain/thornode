@@ -80,8 +80,8 @@ describe "API Tests" do
   context "Stake/Unstake" do
 
     coins = [
-      {'denom': "RUNE-B1A", "amount": "2349500000"},
-      {'denom': "TCAN-014", "amount": "334850000"},
+      {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "2349500000"},
+      {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "334850000"},
     ]
     sender = "bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38"
 
@@ -115,7 +115,9 @@ describe "API Tests" do
       expect(resp.code).to eq("200"), resp.body.inspect
 
       # make a swap
-      coins = [{'denom': "TCAN-014", "amount": "20000000"}]
+      coins = [
+        {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "20000000"},
+      ]
       tx = makeTx(
         memo: "swap:RUNE-B1A:bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq:124958592",
         coins: coins,
@@ -191,8 +193,8 @@ describe "API Tests" do
 
     it "add tokens to a pool" do
       coins = [
-        {'denom': "RUNE-B1A", "amount": "20000000"},
-        {'denom': "TCAN-014", "amount": "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "20000000"},
       ]
       tx = makeTx(memo: "add:TCAN-014", coins: coins, sender: sender)
       resp = processTx(tx)
@@ -206,7 +208,7 @@ describe "API Tests" do
 
     it "adds gas" do
       coins = [
-        {'denom': "RUNE-B1A", "amount": "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "20000000"},
       ]
       tx = makeTx(memo: "GAS", coins: coins, sender: sender)
       resp = processTx(tx)

@@ -33,7 +33,7 @@ func (toi TxOutItem) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("to address:" + toi.ToAddress.String())
 	for _, c := range toi.Coins {
-		sb.WriteString("denom:" + c.Denom.String())
+		sb.WriteString("asset:" + c.Asset.String())
 		sb.WriteString("Amount:" + c.Amount.String())
 	}
 	return sb.String()

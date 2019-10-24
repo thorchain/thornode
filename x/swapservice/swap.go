@@ -131,16 +131,18 @@ func swapOne(ctx sdk.Context,
 		if !common.IsRune(source) {
 			sourceChain = pool.Chain
 		}
+		sourceAsset, _ := common.NewAsset(fmt.Sprintf("%s.%s", sourceChain, source))
 		targetChain := common.BNBChain
 		if !common.IsRune(target) {
 			targetChain = pool.Chain
 		}
+		targetAsset, _ := common.NewAsset(fmt.Sprintf("%s.%s", targetChain, target))
 		if err == nil {
 			status = EventSuccess
 
 			swapEvt = NewEventSwap(
-				common.NewCoin(sourceChain, source, x),
-				common.NewCoin(targetChain, target, emitTokens),
+				common.NewCoin(sourceAsset, x),
+				common.NewCoin(targetAsset, emitTokens),
 				common.FloatToUint(priceSlip*common.One),
 				common.FloatToUint(tradeSlip*common.One),
 				common.FloatToUint(poolSlip*common.One),
@@ -151,8 +153,8 @@ func swapOne(ctx sdk.Context,
 		} else {
 			status = EventRefund
 			swapEvt = NewEventSwap(
-				common.NewCoin(sourceChain, source, x),
-				common.NewCoin(targetChain, target, sdk.ZeroUint()),
+				common.NewCoin(sourceAsset, x),
+				common.NewCoin(targetAsset, sdk.ZeroUint()),
 				sdk.ZeroUint(),
 				sdk.ZeroUint(),
 				sdk.ZeroUint(),

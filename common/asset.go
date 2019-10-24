@@ -6,12 +6,12 @@ import (
 )
 
 var (
-	BNBAsset  = Asset{"Binance", "BNB", "BNB", "BNB"}
-	RuneAsset = Asset{"Rune", "BNB", "RUNE-A1F", "RUNE"}
+	BNBAsset     = Asset{"BNB", "BNB", "BNB"}
+	RuneA1FAsset = Asset{"BNB", "RUNE-A1F", "RUNE"}
+	RuneB1AAsset = Asset{"BNB", "RUNE-B1A", "RUNE"}
 )
 
 type Asset struct {
-	Name   string `json:"name"`
 	Chain  Chain  `json:"chain"`
 	Symbol Symbol `json:"symbol"`
 	Ticker Ticker `json:"ticker"`
@@ -61,5 +61,5 @@ func IsBNBAsset(a Asset) bool {
 }
 
 func IsRuneAsset(a Asset) bool {
-	return a.Equals(RuneAsset)
+	return a.Equals(RuneA1FAsset) || a.Equals(RuneB1AAsset)
 }

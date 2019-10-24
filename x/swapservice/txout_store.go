@@ -61,10 +61,10 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 	hasBNB := false
 	hasRune := false
 	for _, item := range toi.Coins {
-		if common.IsBNB(item.Denom) {
+		if common.IsBNBAsset(item.Asset) {
 			hasBNB = true
 		}
-		if common.IsRune(item.Denom) {
+		if common.IsRuneAsset(item.Asset) {
 			hasRune = true
 		}
 	}
@@ -75,7 +75,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 	hasDeductedGas := false // monitor if we've already pulled out coins for gas.
 	gas := batchTransactionFee * uint64(len(toi.Coins))
 	for i, item := range toi.Coins {
-		if !hasDeductedGas && common.IsBNB(item.Denom) {
+		if !hasDeductedGas && common.IsBNBAsset(item.Asset) {
 			if item.Amount.LT(sdk.NewUint(gas)) {
 				item.Amount = sdk.ZeroUint()
 			} else {
@@ -89,7 +89,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			continue
 		}
 
-		if !hasDeductedGas && hasBNB == false && common.IsRune(item.Denom) {
+		if !hasDeductedGas && hasBNB == false && common.IsRuneAsset(item.Asset) {
 			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
 
 			if bnbPool.BalanceRune.IsZero() {
@@ -120,7 +120,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 
 		if !hasDeductedGas && hasBNB == false && hasRune == false {
 			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
-			tokenPool := keeper.GetPool(ctx, item.Denom)
+			tokenPool := keeper.GetPool(ctx, item.Asset.Ticker)
 
 			if bnbPool.BalanceRune.IsZero() || tokenPool.BalanceRune.IsZero() {
 				toi.Coins[i] = item

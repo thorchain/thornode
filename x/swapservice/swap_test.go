@@ -281,10 +281,21 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
 	observePoolAddr, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
-	txIn := types.NewTxIn(common.Coins{
-		common.NewCoin(common.BNBChain, tCanTicker, sdk.NewUint(20000000)),
-	}, "swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592", signerBNBAddr, sdk.NewUint(1), observePoolAddr)
+	tCanAsset, _ := common.NewAsset(fmt.Sprintf("%s.%s", common.BNBChain, tCanTicker))
+	fmt.Println(tCanAsset)
+
+	txIn := types.NewTxIn(
+		common.Coins{
+			common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
+		},
+		"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
+		signerBNBAddr,
+		sdk.NewUint(1),
+		observePoolAddr,
+	)
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txID1, txIn, observerAddr)
+	c.Assert(err, IsNil)
+	fmt.Printf("MSG: %+v\n", msgSwapFromTxIn)
 
 	//msgSwapRune := NewMsgSwap(txID1, tCanTicker, common.RuneA1FTicker, sdk.NewUint(20000000), addr, addr, sdk.NewUint(124958593), observerAddr)
 	res2 := handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msgSwapFromTxIn.(MsgSwap))

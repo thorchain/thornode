@@ -293,9 +293,9 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 		ToAddress:   msg.Destination,
 	}
+	asset, _ := common.NewAsset(fmt.Sprintf("%s.%s", chain, msg.TargetTicker)) // TODO: temporary
 	toi.Coins = append(toi.Coins, common.NewCoin(
-		chain,
-		msg.TargetTicker,
+		asset,
 		amount,
 	))
 	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
@@ -362,14 +362,13 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ToAddress:   msg.PublicAddress,
 	}
 	toi.Coins = append(toi.Coins, common.NewCoin(
-		common.BNBChain,
-		common.RuneTicker,
+		common.RuneA1FAsset,
 		runeAmt,
 	))
 	pool := keeper.GetPool(ctx, msg.Ticker)
+	asset, _ := common.NewAsset(fmt.Sprintf("%s.%s", pool.Chain, msg.Ticker))
 	toi.Coins = append(toi.Coins, common.NewCoin(
-		pool.Chain,
-		msg.Ticker,
+		asset,
 		tokenAmount,
 	))
 	// for unstake , we should deduct fees
@@ -391,8 +390,8 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 	// If we recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Coins {
-		pool := keeper.GetPool(ctx, coin.Denom)
-		if common.IsRune(coin.Denom) || !pool.BalanceRune.IsZero() {
+		pool := keeper.GetPool(ctx, common.Ticker(coin.Asset.Symbol))
+		if common.IsRuneAsset(coin.Asset) || !pool.BalanceRune.IsZero() {
 			store.AddTxOutItem(ctx, keeper, toi, deductFee)
 			return
 		}
@@ -405,8 +404,8 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 	// Don't assume this is the first time we've seen this coin (ie second
 	// airdrop).
 	for _, coin := range tx.Coins {
-		pool := keeper.GetPool(ctx, coin.Denom)
-		pool.Ticker = coin.Denom
+		pool := keeper.GetPool(ctx, common.Ticker(coin.Asset.Symbol))
+		pool.Ticker = common.Ticker(coin.Asset.Symbol)
 		pool.BalanceToken = pool.BalanceToken.Add(coin.Amount)
 		if pool.BalanceRune.IsZero() {
 			pool.Status = PoolBootstrap
@@ -629,7 +628,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 
 func getMsgNoOpFromMemo(tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	for _, coin := range tx.Coins {
-		if !common.IsBNB(coin.Denom) {
+		if !common.IsBNBAsset(coin.Asset) {
 			return nil, errors.New("Only accepts BNB coins")
 		}
 	}
@@ -645,11 +644,11 @@ func getMsgSwapFromMemo(memo SwapMemo, txID common.TxID, tx TxIn, signer sdk.Acc
 	}
 
 	coin := tx.Coins[0]
-	if memo.Ticker.Equals(coin.Denom) {
-		return nil, errors.Errorf("swap from %s to %s is noop, refund", memo.Ticker, coin.Denom)
+	if memo.Ticker.Equals(common.Ticker(coin.Asset.Symbol)) {
+		return nil, errors.Errorf("swap from %s to %s is noop, refund", memo.Ticker, coin.Asset.Symbol)
 	}
 	// Looks like at the moment we can only process ont ty
-	return NewMsgSwap(txID, coin.Denom, memo.GetTicker(), coin.Amount, tx.Sender, memo.Destination, memo.SlipLimit, signer), nil
+	return NewMsgSwap(txID, common.Ticker(coin.Asset.Symbol), memo.GetTicker(), coin.Amount, tx.Sender, memo.Destination, memo.SlipLimit, signer), nil
 }
 
 func getMsgUnstakeFromMemo(memo WithdrawMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
@@ -670,13 +669,13 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 	ticker := memo.GetTicker()
 	chain := common.BNBChain
 	for _, coin := range tx.Coins {
-		ctx.Logger().Info("coin", "denom", coin.Denom.String(), "amount", coin.Amount.String())
-		if common.IsRune(coin.Denom) {
+		ctx.Logger().Info("coin", "ticker", coin.Asset.Symbol.String(), "amount", coin.Amount.String())
+		if common.IsRuneAsset(coin.Asset) {
 			runeAmount = coin.Amount
 		} else {
 			tokenAmount = coin.Amount
-			ticker = coin.Denom // override the memo ticker with coin received
-			chain = coin.Chain
+			ticker = common.Ticker(coin.Asset.Symbol) // override the memo ticker with coin received
+			chain = coin.Asset.Chain
 		}
 	}
 	if ticker.IsEmpty() {
@@ -708,9 +707,9 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	runeAmount := sdk.ZeroUint()
 	tokenAmount := sdk.ZeroUint()
 	for _, coin := range tx.Coins {
-		if common.IsRune(coin.Denom) {
+		if common.IsRuneAsset(coin.Asset) {
 			runeAmount = coin.Amount
-		} else if memo.GetTicker().Equals(coin.Denom) {
+		} else if memo.GetTicker().Equals(common.Ticker(coin.Asset.Symbol)) {
 			tokenAmount = coin.Amount
 		}
 	}
@@ -735,7 +734,7 @@ func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.A
 func getMsgBondFromMemo(memo BondMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	runeAmount := sdk.ZeroUint()
 	for _, coin := range tx.Coins {
-		if common.IsRune(coin.Denom) {
+		if common.IsRuneAsset(coin.Asset) {
 			runeAmount = coin.Amount
 		}
 	}
@@ -1017,7 +1016,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 			ToAddress:   nodeAcc.BondAddress,
 			PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 			Coins: common.Coins{
-				common.NewCoin(common.BNBChain, common.RuneTicker, nodeAcc.Bond),
+				common.NewCoin(common.RuneA1FAsset, nodeAcc.Bond),
 			},
 		}
 		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)

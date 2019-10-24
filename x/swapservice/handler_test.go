@@ -1,6 +1,8 @@
 package swapservice
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -286,7 +288,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 		c.Assert(item.Valid(), IsNil)
 		c.Assert(item.ToAddress.Equals(bnbAddr), Equals, true)
 		for _, co := range item.Coins {
-			if common.IsRune(co.Denom) {
+			if common.IsRuneAsset(co.Asset) {
 				totalRune = totalRune.Add(co.Amount)
 			} else {
 				totalToken = totalToken.Add(co.Amount)
@@ -410,8 +412,8 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	txIn := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
-			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100*common.One)),
 		},
 		"stake:BNB",
 		GetRandomBNBAddress(),
@@ -445,8 +447,8 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 
 	txIn1 := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
-			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100*common.One)),
 		},
 		"stake:BNB",
 		GetRandomBNBAddress(),
@@ -473,7 +475,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	txIn := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(1*common.One)),
+			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(1*common.One)),
 		},
 		"create:BNB",
 		GetRandomBNBAddress(),
@@ -503,8 +505,8 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	// lets do a stake first, otherwise nothing to withdraw
 	txStake := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
-			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100*common.One)),
 		},
 		"stake:BNB",
 		staker,
@@ -522,7 +524,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 
 	txIn := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(1*common.One)),
+			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(1*common.One)),
 		},
 		"withdraw:BNB",
 		staker,
@@ -604,7 +606,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	// set a txin
 	txIn1 := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(1*common.One)),
+			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(1*common.One)),
 		},
 		"swap:BNB",
 		GetRandomBNBAddress(),
@@ -715,7 +717,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	txin := TxIn{
 		Sender: GetRandomBNBAddress(),
 		Coins: common.Coins{
-			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},
 	}
 	currentPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current
@@ -724,10 +726,11 @@ func (HandlerSuite) TestRefund(c *C) {
 
 	// check we DONT create a refund transaction when we don't have a pool for
 	// the asset sent.
+	lokiAsset, _ := common.NewAsset(fmt.Sprintf("BNB.LOKI"))
 	txin = TxIn{
 		Sender: GetRandomBNBAddress(),
 		Coins: common.Coins{
-			common.NewCoin(common.BNBChain, "LOKI", sdk.NewUint(100*common.One)),
+			common.NewCoin(lokiAsset, sdk.NewUint(100*common.One)),
 		},
 	}
 
@@ -751,12 +754,14 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 	txin := TxIn{
 		Sender: GetRandomBNBAddress(),
 		Coins: common.Coins{
-			common.NewCoin(common.BNBChain,
-				common.BNBTicker,
-				sdk.NewUint(100*common.One)),
-			common.NewCoin(common.BNBChain,
-				common.RuneTicker,
-				sdk.NewUint(100*common.One)),
+			common.NewCoin(
+				common.BNBAsset,
+				sdk.NewUint(100*common.One),
+			),
+			common.NewCoin(
+				common.RuneA1FAsset,
+				sdk.NewUint(100*common.One),
+			),
 		},
 	}
 	// more than one coin
@@ -767,9 +772,10 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 	txin1 := TxIn{
 		Sender: GetRandomBNBAddress(),
 		Coins: common.Coins{
-			common.NewCoin(common.BNBChain,
-				common.BNBTicker,
-				sdk.NewUint(100*common.One)),
+			common.NewCoin(
+				common.BNBAsset,
+				sdk.NewUint(100*common.One),
+			),
 		},
 	}
 
