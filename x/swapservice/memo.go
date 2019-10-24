@@ -125,7 +125,7 @@ type AddMemo struct {
 type StakeMemo struct {
 	MemoBase
 	RuneAmount  string
-	TokenAmount string
+	AssetAmount string
 }
 
 type WithdrawMemo struct {

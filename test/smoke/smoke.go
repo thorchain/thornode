@@ -9,12 +9,12 @@ import (
 	"time"
 
 	// TODO: This is a hack given the current API limits (1 request per second).
-	"github.com/hashicorp/go-retryablehttp"
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
 )
@@ -357,15 +357,15 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 				)
 			}
 
-			// Check token
-			if p.BalanceToken != pool.Token {
-				log.Printf("%v: FAIL - Pool Token - Balance does not match! %f versus %f",
+			// Check asset
+			if p.BalanceAsset != pool.Asset {
+				log.Printf("%v: FAIL - Pool Asset - Balance does not match! %f versus %f",
 					rule.Description,
-					pool.Token,
-					p.BalanceToken,
+					pool.Asset,
+					p.BalanceAsset,
 				)
 			} else {
-				log.Printf("%v: PASS - Pool Token - %v (%v)",
+				log.Printf("%v: PASS - Pool Asset - %v (%v)",
 					rule.Description,
 					address,
 					rule.Memo,

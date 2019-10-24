@@ -162,7 +162,7 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 
 	stakeEvt = NewEventStake(
 		msg.RuneAmount,
-		msg.TokenAmount,
+		msg.AssetAmount,
 		stakeUnits,
 	)
 	stakeBytes, err := json.Marshal(stakeEvt)
@@ -229,7 +229,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		keeper,
 		msg.Asset,
 		msg.RuneAmount,
-		msg.TokenAmount,
+		msg.AssetAmount,
 		msg.PublicAddress,
 		msg.RequestTxHash,
 	)
@@ -273,9 +273,9 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 	}
 
 	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
-		Token sdk.Uint `json:"token"`
+		Asset sdk.Uint `json:"asset"`
 	}{
-		Token: amount,
+		Asset: amount,
 	})
 	if nil != err {
 		ctx.Logger().Error("fail to encode result to json", "error", err)
@@ -313,17 +313,17 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error("invalid MsgSetUnstake", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	runeAmt, tokenAmount, units, err := unstake(ctx, keeper, msg)
+	runeAmt, assetAmount, units, err := unstake(ctx, keeper, msg)
 	if nil != err {
 		ctx.Logger().Error("fail to UnStake", "error", err)
 		return sdk.ErrInternal("fail to process UnStake request").Result()
 	}
 	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
 		Rune  sdk.Uint `json:"rune"`
-		Token sdk.Uint `json:"token"`
+		Asset sdk.Uint `json:"asset"`
 	}{
 		Rune:  runeAmt,
-		Token: tokenAmount,
+		Asset: assetAmount,
 	})
 	if nil != err {
 		ctx.Logger().Error("fail to marshal result to json", "error", err)
@@ -332,7 +332,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 
 	unstakeEvt := NewEventUnstake(
 		runeAmt,
-		tokenAmount,
+		assetAmount,
 		units,
 	)
 	unstakeBytes, err := json.Marshal(unstakeEvt)
@@ -359,7 +359,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	))
 	toi.Coins = append(toi.Coins, common.NewCoin(
 		msg.Asset,
-		tokenAmount,
+		assetAmount,
 	))
 	// for unstake , we should deduct fees
 	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
@@ -387,15 +387,15 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 		}
 	}
 
-	// Since we have tokens, we don't have a pool for, we don't know how to
+	// Since we have assets, we don't have a pool for, we don't know how to
 	// refund and withhold for fees. Instead, we'll create a pool with the
-	// amount of tokens, and associate them with no stakers (meaning up for
+	// amount of assets, and associate them with no stakers (meaning up for
 	// grabs). This could be like an airdrop scenario, for example.
 	// Don't assume this is the first time we've seen this coin (ie second
 	// airdrop).
 	for _, coin := range tx.Coins {
 		pool := keeper.GetPool(ctx, coin.Asset)
-		pool.BalanceToken = pool.BalanceToken.Add(coin.Amount)
+		pool.BalanceAsset = pool.BalanceAsset.Add(coin.Amount)
 		pool.Asset = coin.Asset
 		if pool.BalanceRune.IsZero() {
 			pool.Status = PoolBootstrap
@@ -655,14 +655,14 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 		return nil, errors.New("not expecting more than two coins in a stake")
 	}
 	runeAmount := sdk.ZeroUint()
-	tokenAmount := sdk.ZeroUint()
+	assetAmount := sdk.ZeroUint()
 	asset := memo.GetAsset()
 	for _, coin := range tx.Coins {
 		ctx.Logger().Info("coin", "ticker", coin.Asset.Symbol.String(), "amount", coin.Amount.String())
 		if common.IsRuneAsset(coin.Asset) {
 			runeAmount = coin.Amount
 		} else {
-			tokenAmount = coin.Amount
+			assetAmount = coin.Amount
 			asset = coin.Asset // override the memo ticker with coin received
 		}
 	}
@@ -672,7 +672,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 	return NewMsgSetStakeData(
 		asset,
 		runeAmount,
-		tokenAmount,
+		assetAmount,
 		tx.Sender,
 		txID,
 		signer,
@@ -692,18 +692,18 @@ func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, 
 
 func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	runeAmount := sdk.ZeroUint()
-	tokenAmount := sdk.ZeroUint()
+	assetAmount := sdk.ZeroUint()
 	for _, coin := range tx.Coins {
 		if common.IsRuneAsset(coin.Asset) {
 			runeAmount = coin.Amount
 		} else if memo.GetAsset().Equals(coin.Asset) {
-			tokenAmount = coin.Amount
+			assetAmount = coin.Amount
 		}
 	}
 	return NewMsgAdd(
 		memo.GetAsset(),
 		runeAmount,
-		tokenAmount,
+		assetAmount,
 		txID,
 		signer,
 	), nil
@@ -747,8 +747,8 @@ func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 	if pool.Asset.IsEmpty() {
 		return sdk.ErrUnknownRequest(fmt.Sprintf("pool %s not exist", msg.Asset.String())).Result()
 	}
-	if msg.TokenAmount.GT(sdk.ZeroUint()) {
-		pool.BalanceToken = pool.BalanceToken.Add(msg.TokenAmount)
+	if msg.AssetAmount.GT(sdk.ZeroUint()) {
+		pool.BalanceAsset = pool.BalanceAsset.Add(msg.AssetAmount)
 	}
 	if msg.RuneAmount.GT(sdk.ZeroUint()) {
 		pool.BalanceRune = pool.BalanceRune.Add(msg.RuneAmount)
@@ -956,14 +956,14 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, trustAccount, msg.Bond, msg.BondAddress)
 	keeper.SetNodeAccount(ctx, nodeAccount)
 	ctx.EventManager().EmitEvent(sdk.NewEvent("new_node", sdk.NewAttribute("address", msg.NodeAddress.String())))
-	coinsToMint := keeper.GetAdminConfigWhiteListGasToken(ctx, sdk.AccAddress{})
-	// mint some gas token
+	coinsToMint := keeper.GetAdminConfigWhiteListGasAsset(ctx, sdk.AccAddress{})
+	// mint some gas asset
 	err = keeper.supplyKeeper.MintCoins(ctx, ModuleName, coinsToMint)
 	if nil != err {
-		ctx.Logger().Error("fail to mint gas tokens", "err", err)
+		ctx.Logger().Error("fail to mint gas assets", "err", err)
 	}
 	if err := keeper.supplyKeeper.SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
-		ctx.Logger().Error("fail to send newly minted gas token to node address")
+		ctx.Logger().Error("fail to send newly minted gas asset to node address")
 	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,

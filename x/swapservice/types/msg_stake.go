@@ -8,18 +8,18 @@ import (
 // MsgSetStakeData defines a SetStakeData message
 type MsgSetStakeData struct {
 	Asset         common.Asset   `json:"asset"`           // ticker means the asset
-	TokenAmount   sdk.Uint       `json:"token"`           // the amount of token stake
+	AssetAmount   sdk.Uint       `json:"asset_amt"`       // the amount of asset stake
 	RuneAmount    sdk.Uint       `json:"rune"`            // the amount of rune stake
 	PublicAddress common.Address `json:"public_address"`  // Staker's address on binance chain
-	RequestTxHash common.TxID    `json:"request_tx_hash"` // the txhash that represent user send token to our pool address
+	RequestTxHash common.TxID    `json:"request_tx_hash"` // the txhash that represent user send asset to our pool address
 	Signer        sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
-func NewMsgSetStakeData(asset common.Asset, r, token sdk.Uint, publicAddress common.Address, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(asset common.Asset, r, amount sdk.Uint, publicAddress common.Address, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		Asset:         asset,
-		TokenAmount:   token,
+		AssetAmount:   amount,
 		RuneAmount:    r,
 		PublicAddress: publicAddress,
 		RequestTxHash: requestTxHash,
