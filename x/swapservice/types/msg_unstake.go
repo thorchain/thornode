@@ -12,17 +12,17 @@ const MaxWithdrawBasisPoints = 10000
 type MsgSetUnStake struct {
 	PublicAddress       common.Address `json:"public_address"`        // it should be the public address
 	WithdrawBasisPoints sdk.Uint       `json:"withdraw_basis_points"` // withdraw basis points
-	Ticker              common.Ticker  `json:"symbol"`                // ticker token symbol
+	Asset               common.Asset   `json:"asset"`                 // asset token asset
 	RequestTxHash       common.TxID    `json:"request_tx_hash"`       // request tx hash on binance chain
 	Signer              sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetUnStake is a constructor function for MsgSetPoolData
-func NewMsgSetUnStake(publicAddress common.Address, withdrawBasisPoints sdk.Uint, ticker common.Ticker, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetUnStake {
+func NewMsgSetUnStake(publicAddress common.Address, withdrawBasisPoints sdk.Uint, asset common.Asset, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
 		PublicAddress:       publicAddress,
 		WithdrawBasisPoints: withdrawBasisPoints,
-		Ticker:              ticker,
+		Asset:               asset,
 		RequestTxHash:       requestTxHash,
 		Signer:              signer,
 	}
@@ -39,8 +39,8 @@ func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if msg.Ticker.IsEmpty() {
-		return sdk.ErrUnknownRequest("Pool Ticker cannot be empty")
+	if msg.Asset.IsEmpty() {
+		return sdk.ErrUnknownRequest("Pool Asset cannot be empty")
 	}
 	if msg.PublicAddress.IsEmpty() {
 		return sdk.ErrUnknownRequest("Address cannot be empty")

@@ -23,12 +23,12 @@ func NewMockInMemoryPoolStorage() *MockInMemoryPoolStorage {
 	return &MockInMemoryPoolStorage{store: make(map[string]interface{})}
 }
 
-func (p *MockInMemoryPoolStorage) PoolExist(ctx sdk.Context, ticker common.Ticker) bool {
-	_, ok := p.store[ticker.String()]
+func (p *MockInMemoryPoolStorage) PoolExist(ctx sdk.Context, asset common.Asset) bool {
+	_, ok := p.store[asset.String()]
 	return ok
 }
-func (p *MockInMemoryPoolStorage) GetPool(ctx sdk.Context, ticker common.Ticker) Pool {
-	if p, ok := p.store[ticker.String()]; ok {
+func (p *MockInMemoryPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) Pool {
+	if p, ok := p.store[asset.String()]; ok {
 		return p.(Pool)
 	}
 	return types.NewPool()

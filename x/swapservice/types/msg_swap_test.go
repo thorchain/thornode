@@ -17,14 +17,14 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 	txID := GetRandomTxHash()
 	c.Check(txID.IsEmpty(), Equals, false)
 
-	m := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(100000000), bnbAddress, bnbAddress, sdk.NewUint(200000000), addr)
+	m := NewMsgSwap(txID, common.RuneA1FAsset, common.BNBAsset, sdk.NewUint(100000000), bnbAddress, bnbAddress, sdk.NewUint(200000000), addr)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_swap")
 
 	inputs := []struct {
 		requestTxHash common.TxID
-		source        common.Ticker
-		target        common.Ticker
+		source        common.Asset
+		target        common.Asset
 		amount        sdk.Uint
 		requester     common.Address
 		destination   common.Address
@@ -33,8 +33,8 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 	}{
 		{
 			requestTxHash: common.TxID(""),
-			source:        common.RuneA1FTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   bnbAddress,
@@ -43,8 +43,8 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.Ticker(""),
-			target:        common.BNBTicker,
+			source:        common.Asset{},
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   bnbAddress,
@@ -53,8 +53,8 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.BNBTicker,
-			target:        common.BNBTicker,
+			source:        common.BNBAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   bnbAddress,
@@ -63,8 +63,8 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.RuneA1FTicker,
-			target:        common.Ticker(""),
+			source:        common.RuneA1FAsset,
+			target:        common.Asset{},
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   bnbAddress,
@@ -73,8 +73,8 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.RuneA1FTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.ZeroUint(),
 			requester:     bnbAddress,
 			destination:   bnbAddress,
@@ -83,8 +83,8 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.RuneA1FTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100000000),
 			requester:     common.NoAddress,
 			destination:   bnbAddress,
@@ -93,8 +93,8 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.RuneA1FTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   common.NoAddress,
@@ -103,8 +103,8 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.RuneA1FTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
 			destination:   bnbAddress,

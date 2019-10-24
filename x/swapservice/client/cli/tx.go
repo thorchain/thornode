@@ -111,15 +111,15 @@ func GetCmdSetTrustAccount(cdc *codec.Codec) *cobra.Command {
 // GetCmdEndPool
 func GetCmdEndPool(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-end-pool [ticker ][requester_bnb_address] [request_txhash]",
+		Use:   "set-end-pool [asset] [requester_bnb_address] [request_txhash]",
 		Short: "set end pool",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			ticker, err := common.NewTicker(args[0])
+			asset, err := common.NewAsset(args[0])
 			if nil != err {
-				return errors.Wrap(err, "invalid ticker")
+				return errors.Wrap(err, "invalid asset")
 			}
 			requester, err := common.NewAddress(args[1])
 			if nil != err {
@@ -130,7 +130,7 @@ func GetCmdEndPool(cdc *codec.Codec) *cobra.Command {
 				return errors.Wrap(err, "invalid tx hash")
 			}
 
-			msg := types.NewMsgEndPool(ticker, requester, txID, cliCtx.GetFromAddress())
+			msg := types.NewMsgEndPool(asset, requester, txID, cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

@@ -11,15 +11,15 @@ import (
 type MsgSetPoolData struct {
 	BalanceRune  sdk.Uint       `json:"balance_rune"`  // balance rune
 	BalanceToken sdk.Uint       `json:"balance_token"` // balance of token
-	Ticker       common.Ticker  `json:"symbol"`        // Ticker means the token symbol
+	Asset        common.Asset   `json:"asset"`         // Asset means the token asset
 	Status       PoolStatus     `json:"status"`        // pool status
 	Signer       sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetPoolData(ticker common.Ticker, status PoolStatus, signer sdk.AccAddress) MsgSetPoolData {
+func NewMsgSetPoolData(asset common.Asset, status PoolStatus, signer sdk.AccAddress) MsgSetPoolData {
 	return MsgSetPoolData{
-		Ticker:       ticker,
+		Asset:        asset,
 		BalanceRune:  sdk.ZeroUint(),
 		BalanceToken: sdk.ZeroUint(),
 		Status:       status,
@@ -35,11 +35,11 @@ func (msg MsgSetPoolData) Type() string { return "set_pooldata" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
-	if msg.Ticker.IsEmpty() {
-		return sdk.ErrUnknownRequest("pool Ticker cannot be empty")
+	if msg.Asset.IsEmpty() {
+		return sdk.ErrUnknownRequest("pool Asset cannot be empty")
 	}
-	if common.IsRune(msg.Ticker) {
-		return sdk.ErrUnknownRequest("invalid pool ticker")
+	if common.IsRuneAsset(msg.Asset) {
+		return sdk.ErrUnknownRequest("invalid pool asset")
 	}
 
 	if err := msg.Status.Valid(); err != nil {

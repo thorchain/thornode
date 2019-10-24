@@ -18,7 +18,7 @@ func (mas *MsgAddSuite) TestMsgAdd(c *C) {
 	c.Check(txId.IsEmpty(), Equals, false)
 	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
-	ma := NewMsgAdd(common.BNBTicker, sdk.NewUint(100000000), sdk.NewUint(100000000), txId, addr)
+	ma := NewMsgAdd(common.BNBAsset, sdk.NewUint(100000000), sdk.NewUint(100000000), txId, addr)
 	c.Check(ma.Route(), Equals, RouterKey)
 	c.Check(ma.Type(), Equals, "set_add")
 	err := ma.ValidateBasic()
@@ -31,28 +31,28 @@ func (mas *MsgAddSuite) TestMsgAdd(c *C) {
 	c.Check(len(signer) > 0, Equals, true)
 
 	inputs := []struct {
-		ticker common.Ticker
+		ticker common.Asset
 		rune   sdk.Uint
 		token  sdk.Uint
 		txHash common.TxID
 		signer sdk.AccAddress
 	}{
 		{
-			ticker: common.Ticker(""),
+			ticker: common.Asset{},
 			rune:   sdk.NewUint(100000000),
 			token:  sdk.NewUint(100000000),
 			txHash: txId,
 			signer: addr,
 		},
 		{
-			ticker: common.BNBTicker,
+			ticker: common.BNBAsset,
 			rune:   sdk.NewUint(100000000),
 			token:  sdk.NewUint(100000000),
 			txHash: common.TxID(""),
 			signer: addr,
 		},
 		{
-			ticker: common.BNBTicker,
+			ticker: common.BNBAsset,
 			rune:   sdk.NewUint(100000000),
 			token:  sdk.NewUint(100000000),
 			txHash: txId,
