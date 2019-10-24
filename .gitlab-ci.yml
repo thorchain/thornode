@@ -69,7 +69,6 @@ gitlabs:build:testing:
   environment:
     name: develop
   script:
-    - make docker-gitlabs-push
     - make docker-gitlabs-push-nightly
 
 deploy:develop:
