@@ -15,10 +15,10 @@ type MsgAdd struct {
 }
 
 // NewMsgAdd is a constructor function for MsgAdd
-func NewMsgAdd(asset common.Asset, r, asset sdk.Uint, requestTxHash common.TxID, signer sdk.AccAddress) MsgAdd {
+func NewMsgAdd(asset common.Asset, r, amount sdk.Uint, requestTxHash common.TxID, signer sdk.AccAddress) MsgAdd {
 	return MsgAdd{
 		Asset:       asset,
-		AssetAmount: asset,
+		AssetAmount: amount,
 		RuneAmount:  r,
 		TxID:        requestTxHash,
 		Signer:      signer,

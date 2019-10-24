@@ -14,6 +14,7 @@ import (
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
 )
@@ -244,7 +245,7 @@ func (s *Smoke) ValidateTest(rule types.Rule) {
 }
 
 // Balances : Get the account balances of a given wallet.
-func (s *Smoke) Balances(address ctypes.AccAddress) []ctypes.AssetBalance {
+func (s *Smoke) Balances(address ctypes.AccAddress) []ctypes.TokenBalance {
 	acct, err := s.Tests.Actors.Faucet.Client.GetAccount(address.String())
 	if err != nil {
 		log.Fatal(err)

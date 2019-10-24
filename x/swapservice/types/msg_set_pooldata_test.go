@@ -19,29 +19,29 @@ func (MsgSetPoolDataSuite) TestMsgSetPoolData(c *C) {
 
 	inputs := []struct {
 		asset  common.Asset
-		rune   sdk.Uint
-		asset  sdk.Uint
+		rAmt   sdk.Uint
+		aAmt   sdk.Uint
 		status PoolStatus
 	}{
 		{
 			asset:  common.Asset{},
-			rune:   sdk.NewUint(100000000),
-			asset:  sdk.NewUint(100000000),
+			rAmt:   sdk.NewUint(100000000),
+			aAmt:   sdk.NewUint(100000000),
 			status: Enabled,
 		},
 
 		{
 			asset:  common.BNBAsset,
-			rune:   sdk.NewUint(100000000),
-			asset:  sdk.NewUint(100000000),
+			rAmt:   sdk.NewUint(100000000),
+			aAmt:   sdk.NewUint(100000000),
 			status: PoolStatus(-1),
 		},
 	}
 
 	for _, item := range inputs {
 		m := NewMsgSetPoolData(item.asset, item.status, addr)
-		m.BalanceRune = item.rune
-		m.BalanceAsset = item.asset
+		m.BalanceRune = item.rAmt
+		m.BalanceAsset = item.aAmt
 		c.Assert(m.ValidateBasic(), NotNil)
 	}
 }

@@ -16,10 +16,10 @@ type MsgSetStakeData struct {
 }
 
 // NewMsgSetStakeData is a constructor function for MsgSetStakeData
-func NewMsgSetStakeData(asset common.Asset, r, asset sdk.Uint, publicAddress common.Address, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetStakeData {
+func NewMsgSetStakeData(asset common.Asset, r, amount sdk.Uint, publicAddress common.Address, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetStakeData {
 	return MsgSetStakeData{
 		Asset:         asset,
-		AssetAmount:   asset,
+		AssetAmount:   amount,
 		RuneAmount:    r,
 		PublicAddress: publicAddress,
 		RequestTxHash: requestTxHash,
