@@ -130,16 +130,16 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 		}
 		for _, coin := range txn.Coins {
 			amount := coin.Amount
-			ticker := coin.Denom
-			if common.IsRune(coin.Denom) {
+			asset := coin.Asset
+			if common.IsRuneAsset(coin.Asset) {
 				// TODO need to change it on mainnet
-				ticker = common.RuneA1FTicker
+				asset = common.RuneA1FAsset
 			}
 			payload = append(payload, msg.Transfer{
 				ToAddr: toAddr,
 				Coins: types.Coins{
 					types.Coin{
-						Denom:  ticker.String(),
+						Denom:  asset.Ticker.String(),
 						Amount: int64(amount.Uint64()),
 					},
 				},
