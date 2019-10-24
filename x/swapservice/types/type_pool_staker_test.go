@@ -12,7 +12,7 @@ var _ = Suite(&PoolStakerSuite{})
 
 func (PoolStakerSuite) TestPoolStaker(c *C) {
 	bnb := GetRandomBNBAddress()
-	poolStaker := NewPoolStaker(common.BNBTicker, sdk.NewUint(100))
+	poolStaker := NewPoolStaker(common.BNBAsset, sdk.NewUint(100))
 	c.Assert(poolStaker.Stakers, NotNil)
 	stakerUnit := StakerUnit{
 		StakerID: bnb,

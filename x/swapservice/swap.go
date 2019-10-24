@@ -10,15 +10,15 @@ import (
 )
 
 // validate if pools exist
-func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...common.Ticker) error {
-	for _, ticker := range tickers {
-		if !common.IsRune(ticker) {
-			if !keeper.PoolExist(ctx, ticker) {
-				return errors.New(fmt.Sprintf("%s doesn't exist", ticker))
+func validatePools(ctx sdk.Context, keeper poolStorage, assets ...common.Asset) error {
+	for _, asset := range assets {
+		if !common.IsRuneAsset(asset) {
+			if !keeper.PoolExist(ctx, asset) {
+				return errors.New(fmt.Sprintf("%s doesn't exist", asset))
 			}
-			pool := keeper.GetPool(ctx, ticker)
+			pool := keeper.GetPool(ctx, asset)
 			if pool.Status != PoolEnabled {
-				return errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
+				return errors.Errorf("pool %s is in %s status, can't swap", asset, pool.Status)
 			}
 		}
 
@@ -27,7 +27,7 @@ func validatePools(ctx sdk.Context, keeper poolStorage, tickers ...common.Ticker
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(source, target common.Ticker, amount sdk.Uint, requester, destination common.Address, requestTxHash common.TxID) error {
+func validateMessage(source, target common.Asset, amount sdk.Uint, requester, destination common.Address, requestTxHash common.TxID) error {
 	if requestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
 	}
@@ -52,7 +52,7 @@ func validateMessage(source, target common.Ticker, amount sdk.Uint, requester, d
 
 func swap(ctx sdk.Context,
 	keeper poolStorage, txID common.TxID,
-	source, target common.Ticker,
+	source, target common.Asset,
 	amount sdk.Uint,
 	requester, destination common.Address,
 	requestTxHash common.TxID,
@@ -69,25 +69,25 @@ func swap(ctx sdk.Context,
 
 	pools := make([]Pool, 0)
 
-	isDoubleSwap := !common.IsRune(source) && !common.IsRune(target)
+	isDoubleSwap := !common.IsRuneAsset(source) && !common.IsRuneAsset(target)
 
 	if isDoubleSwap {
 		var err error
 		sourcePool := keeper.GetPool(ctx, source)
-		amount, sourcePool, err = swapOne(ctx, keeper, txID, sourcePool, source, common.RuneTicker, amount, requester, destination, globalSlipLimit)
+		amount, sourcePool, err = swapOne(ctx, keeper, txID, sourcePool, source, common.RuneA1FAsset, amount, requester, destination, globalSlipLimit)
 		if err != nil {
-			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneTicker)
+			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneA1FAsset)
 		}
 		pools = append(pools, sourcePool)
-		source = common.RuneTicker
+		source = common.RuneA1FAsset
 	}
 
-	// Set ticker to our non-rune token ticker
-	ticker := source
-	if common.IsRune(source) {
-		ticker = target
+	// Set asset to our non-rune token asset
+	asset := source
+	if common.IsRuneAsset(source) {
+		asset = target
 	}
-	pool := keeper.GetPool(ctx, ticker)
+	pool := keeper.GetPool(ctx, asset)
 	tokenAmount, pool, err := swapOne(ctx, keeper, txID, pool, source, target, amount, requester, destination, globalSlipLimit)
 	if err != nil {
 		return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, target)
@@ -107,7 +107,7 @@ func swap(ctx sdk.Context,
 func swapOne(ctx sdk.Context,
 	keeper poolStorage, txID common.TxID,
 	pool Pool,
-	source, target common.Ticker,
+	source, target common.Asset,
 	amount sdk.Uint, requester,
 	destination common.Address,
 	globalSlipLimit common.Amount) (amt sdk.Uint, poolResult Pool, err error) {
@@ -117,32 +117,21 @@ func swapOne(ctx sdk.Context,
 	var X, x, Y, liquitityFee, emitTokens sdk.Uint
 	var priceSlip, tradeSlip, poolSlip, outputSlip float64
 
-	// Set ticker to our non-rune token ticker
-	ticker := source
-	if common.IsRune(source) {
-		ticker = target
+	// Set asset to our non-rune token asset
+	asset := source
+	if common.IsRuneAsset(source) {
+		asset = target
 	}
 
 	// emit swap event at the end of the swap
 	defer func() {
 		var swapEvt EventSwap
 		var status EventStatus
-		sourceChain := common.BNBChain
-		if !common.IsRune(source) {
-			sourceChain = pool.Chain
-		}
-		sourceAsset, _ := common.NewAsset(fmt.Sprintf("%s.%s", sourceChain, source))
-		targetChain := common.BNBChain
-		if !common.IsRune(target) {
-			targetChain = pool.Chain
-		}
-		targetAsset, _ := common.NewAsset(fmt.Sprintf("%s.%s", targetChain, target))
 		if err == nil {
 			status = EventSuccess
-
 			swapEvt = NewEventSwap(
-				common.NewCoin(sourceAsset, x),
-				common.NewCoin(targetAsset, emitTokens),
+				common.NewCoin(source, x),
+				common.NewCoin(target, emitTokens),
 				common.FloatToUint(priceSlip*common.One),
 				common.FloatToUint(tradeSlip*common.One),
 				common.FloatToUint(poolSlip*common.One),
@@ -153,8 +142,8 @@ func swapOne(ctx sdk.Context,
 		} else {
 			status = EventRefund
 			swapEvt = NewEventSwap(
-				common.NewCoin(sourceAsset, x),
-				common.NewCoin(targetAsset, sdk.ZeroUint()),
+				common.NewCoin(source, x),
+				common.NewCoin(target, sdk.ZeroUint()),
 				sdk.ZeroUint(),
 				sdk.ZeroUint(),
 				sdk.ZeroUint(),
@@ -171,7 +160,7 @@ func swapOne(ctx sdk.Context,
 		evt := NewEvent(
 			swapEvt.Type(),
 			txID,
-			ticker,
+			asset,
 			swapBytes,
 			status,
 		)
@@ -181,22 +170,22 @@ func swapOne(ctx sdk.Context,
 	}()
 
 	// Check if pool exists
-	if !keeper.PoolExist(ctx, ticker) {
-		ctx.Logger().Debug(fmt.Sprintf("pool %s doesn't exist", ticker))
-		return sdk.ZeroUint(), Pool{}, errors.New(fmt.Sprintf("pool %s doesn't exist", ticker))
+	if !keeper.PoolExist(ctx, asset) {
+		ctx.Logger().Debug(fmt.Sprintf("pool %s doesn't exist", asset))
+		return sdk.ZeroUint(), Pool{}, errors.New(fmt.Sprintf("pool %s doesn't exist", asset))
 	}
 
 	// Get our pool from the KVStore
-	pool = keeper.GetPool(ctx, ticker)
+	pool = keeper.GetPool(ctx, asset)
 	if pool.Status != PoolEnabled {
-		return sdk.ZeroUint(), pool, errors.Errorf("pool %s is in %s status, can't swap", ticker, pool.Status)
+		return sdk.ZeroUint(), pool, errors.Errorf("pool %s is in %s status, can't swap", asset.String(), pool.Status)
 	}
 
 	// Get our slip limits
 	gsl := globalSlipLimit.Float64() // global slip limit
 
 	// get our X, x, Y values
-	if common.IsRune(source) {
+	if common.IsRuneAsset(source) {
 		X = pool.BalanceRune
 		Y = pool.BalanceToken
 	} else {
@@ -233,7 +222,7 @@ func swapOne(ctx sdk.Context,
 	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
 
-	if common.IsRune(source) {
+	if common.IsRuneAsset(source) {
 		pool.BalanceRune = X.Add(x)
 		pool.BalanceToken = Y.Sub(emitTokens)
 	} else {

@@ -33,23 +33,23 @@ func (su StakerUnit) Valid() error {
 //    }
 //}
 type PoolStaker struct {
-	Ticker     common.Ticker `json:"symbol"`      // ticker
-	TotalUnits sdk.Uint      `json:"total_units"` // total units in the pool
-	Stakers    []StakerUnit  `json:"stakers"`     // key will be staker id , which is the address on binane chain value will be UNITS
+	Asset      common.Asset `json:"asset"`       // asset
+	TotalUnits sdk.Uint     `json:"total_units"` // total units in the pool
+	Stakers    []StakerUnit `json:"stakers"`     // key will be staker id , which is the address on binane chain value will be UNITS
 }
 
 // NewPoolStaker create a new instance of PoolStaker
-func NewPoolStaker(ticker common.Ticker, totalUnits sdk.Uint) PoolStaker {
+func NewPoolStaker(asset common.Asset, totalUnits sdk.Uint) PoolStaker {
 	return PoolStaker{
-		Ticker:     ticker,
+		Asset:      asset,
 		TotalUnits: totalUnits,
 		Stakers:    []StakerUnit{},
 	}
 }
 
 func (ps PoolStaker) Valid() error {
-	if ps.Ticker.IsEmpty() {
-		return errors.New("Ticker cannot be empty")
+	if ps.Asset.IsEmpty() {
+		return errors.New("Asset cannot be empty")
 	}
 
 	for _, staker := range ps.Stakers {
@@ -64,7 +64,7 @@ func (ps PoolStaker) Valid() error {
 // String return the human readable string of PoolStaker
 func (ps PoolStaker) String() string {
 	bs := strings.Builder{}
-	bs.WriteString(fmt.Sprintln("ticker: " + ps.Ticker.String()))
+	bs.WriteString(fmt.Sprintln("asset: " + ps.Asset.String()))
 	bs.WriteString(fmt.Sprintf("total units: %d", ps.TotalUnits.Uint64()))
 	bs.WriteString(fmt.Sprintf("staker count: %d", len(ps.Stakers)))
 	if nil != ps.Stakers {
