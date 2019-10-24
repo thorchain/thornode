@@ -390,7 +390,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 	// If we recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Coins {
-		pool := keeper.GetPool(ctx, coin.Asset.Ticker)
+		pool := keeper.GetPool(ctx, common.Ticker(coin.Asset.Symbol))
 		if common.IsRuneAsset(coin.Asset) || !pool.BalanceRune.IsZero() {
 			store.AddTxOutItem(ctx, keeper, toi, deductFee)
 			return
@@ -404,8 +404,8 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 	// Don't assume this is the first time we've seen this coin (ie second
 	// airdrop).
 	for _, coin := range tx.Coins {
-		pool := keeper.GetPool(ctx, coin.Asset.Ticker)
-		pool.Ticker = coin.Asset.Ticker
+		pool := keeper.GetPool(ctx, common.Ticker(coin.Asset.Symbol))
+		pool.Ticker = common.Ticker(coin.Asset.Symbol)
 		pool.BalanceToken = pool.BalanceToken.Add(coin.Amount)
 		if pool.BalanceRune.IsZero() {
 			pool.Status = PoolBootstrap
@@ -644,8 +644,8 @@ func getMsgSwapFromMemo(memo SwapMemo, txID common.TxID, tx TxIn, signer sdk.Acc
 	}
 
 	coin := tx.Coins[0]
-	if memo.Ticker.Equals(coin.Asset.Ticker) {
-		return nil, errors.Errorf("swap from %s to %s is noop, refund", memo.Ticker, coin.Asset.Ticker)
+	if memo.Ticker.Equals(common.Ticker(coin.Asset.Symbol)) {
+		return nil, errors.Errorf("swap from %s to %s is noop, refund", memo.Ticker, coin.Asset.Symbol)
 	}
 	// Looks like at the moment we can only process ont ty
 	return NewMsgSwap(txID, common.Ticker(coin.Asset.Symbol), memo.GetTicker(), coin.Amount, tx.Sender, memo.Destination, memo.SlipLimit, signer), nil
@@ -669,12 +669,12 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 	ticker := memo.GetTicker()
 	chain := common.BNBChain
 	for _, coin := range tx.Coins {
-		ctx.Logger().Info("coin", "ticker", coin.Asset.Ticker.String(), "amount", coin.Amount.String())
+		ctx.Logger().Info("coin", "ticker", coin.Asset.Symbol.String(), "amount", coin.Amount.String())
 		if common.IsRuneAsset(coin.Asset) {
 			runeAmount = coin.Amount
 		} else {
 			tokenAmount = coin.Amount
-			ticker = coin.Asset.Ticker // override the memo ticker with coin received
+			ticker = common.Ticker(coin.Asset.Symbol) // override the memo ticker with coin received
 			chain = coin.Asset.Chain
 		}
 	}
@@ -709,7 +709,7 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	for _, coin := range tx.Coins {
 		if common.IsRuneAsset(coin.Asset) {
 			runeAmount = coin.Amount
-		} else if memo.GetTicker().Equals(coin.Asset.Ticker) {
+		} else if memo.GetTicker().Equals(common.Ticker(coin.Asset.Symbol)) {
 			tokenAmount = coin.Amount
 		}
 	}
