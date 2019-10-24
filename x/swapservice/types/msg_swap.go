@@ -8,8 +8,8 @@ import (
 // MsgSwap defines a MsgSwap message
 type MsgSwap struct {
 	RequestTxHash common.TxID    `json:"request_tx_hash"` // Request transaction hash on Binance chain
-	SourceTicker  common.Ticker  `json:"source_symbol"`   // source token
-	TargetTicker  common.Ticker  `json:"target_symbol"`   // target token
+	SourceAsset   common.Asset   `json:"source_asset"`    // source token
+	TargetAsset   common.Asset   `json:"target_asset"`    // target token
 	Requester     common.Address `json:"requester"`       // request address on Binance chain
 	Destination   common.Address `json:"destination"`     // destination , used for swap and send , the destination address we send it to
 	Amount        sdk.Uint       `json:"amount"`          // amount of token to swap
@@ -18,11 +18,11 @@ type MsgSwap struct {
 }
 
 // NewMsgSwap is a constructor function for MsgSwap
-func NewMsgSwap(requestTxHash common.TxID, source, target common.Ticker, amount sdk.Uint, requester, destination common.Address, tradeTarget sdk.Uint, signer sdk.AccAddress) MsgSwap {
+func NewMsgSwap(requestTxHash common.TxID, source, target common.Asset, amount sdk.Uint, requester, destination common.Address, tradeTarget sdk.Uint, signer sdk.AccAddress) MsgSwap {
 	return MsgSwap{
 		RequestTxHash: requestTxHash,
-		SourceTicker:  source,
-		TargetTicker:  target,
+		SourceAsset:   source,
+		TargetAsset:   target,
 		Amount:        amount,
 		Requester:     requester,
 		Destination:   destination,
@@ -45,13 +45,13 @@ func (msg MsgSwap) ValidateBasic() sdk.Error {
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
-	if msg.SourceTicker.IsEmpty() {
-		return sdk.ErrUnknownRequest("Swap Source Ticker cannot be empty")
+	if msg.SourceAsset.IsEmpty() {
+		return sdk.ErrUnknownRequest("Swap Source Asset cannot be empty")
 	}
-	if msg.TargetTicker.IsEmpty() {
+	if msg.TargetAsset.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Target cannot be empty")
 	}
-	if msg.SourceTicker.Equals(msg.TargetTicker) {
+	if msg.SourceAsset.Equals(msg.TargetAsset) {
 		return sdk.ErrUnknownRequest("Swap Source and Target cannot be the same.")
 	}
 	if msg.Amount.IsZero() {

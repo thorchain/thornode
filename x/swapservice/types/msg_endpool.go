@@ -6,16 +6,16 @@ import (
 )
 
 type MsgEndPool struct {
-	Ticker        common.Ticker  `json:"ticker"`
+	Asset         common.Asset   `json:"asset"`
 	Requester     common.Address `json:"requester"`
 	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on binance chain
 	Signer        sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgEndPool create a new instance MsgEndPool
-func NewMsgEndPool(ticker common.Ticker, request common.Address, requestTxHash common.TxID, signer sdk.AccAddress) MsgEndPool {
+func NewMsgEndPool(asset common.Asset, request common.Address, requestTxHash common.TxID, signer sdk.AccAddress) MsgEndPool {
 	return MsgEndPool{
-		Ticker:        ticker,
+		Asset:         asset,
 		Requester:     request,
 		RequestTxHash: requestTxHash,
 		Signer:        signer,
@@ -30,11 +30,11 @@ func (msg MsgEndPool) Type() string { return "set_poolend" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgEndPool) ValidateBasic() sdk.Error {
-	if msg.Ticker.IsEmpty() {
-		return sdk.ErrUnknownRequest("pool Ticker cannot be empty")
+	if msg.Asset.IsEmpty() {
+		return sdk.ErrUnknownRequest("pool Asset cannot be empty")
 	}
-	if common.IsRune(msg.Ticker) {
-		return sdk.ErrUnknownRequest("invalid pool ticker")
+	if common.IsRuneAsset(msg.Asset) {
+		return sdk.ErrUnknownRequest("invalid pool asset")
 	}
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")

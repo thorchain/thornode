@@ -106,9 +106,9 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 	c.Assert(newPa.Next.String(), Equals, nodeAccounts[2].Accounts.SignerBNBAddress.String())
 	c.Assert(newPa.RotateAt, Equals, int64(rotatePerBlockHeight*2+1))
 	txOutStore.CommitBlock(ctx)
-	poolBNB := createTempNewPoolForTest(ctx, k, "BNB", c)
-	poolTCan := createTempNewPoolForTest(ctx, k, "TCAN-014", c)
-	poolLoki := createTempNewPoolForTest(ctx, k, "LOK-3C0", c)
+	poolBNB := createTempNewPoolForTest(ctx, k, "BNB.BNB", c)
+	poolTCan := createTempNewPoolForTest(ctx, k, "BNB.TCAN-014", c)
+	poolLoki := createTempNewPoolForTest(ctx, k, "BNB.LOK-3C0", c)
 
 	txOutStore.NewBlock(uint64(rotatePerBlockHeight*2 + 1))
 	newPa1 := poolAddrMgr.rotatePoolAddress(ctx, rotatePerBlockHeight*2+1, newPa, txOutStore)
@@ -133,17 +133,17 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 		c.Assert(item.ToAddress.String(), Equals, newPa1.Current.String())
 		c.Assert(len(item.Coins) > 0, Equals, true)
 		// given we on
-		if item.Coins[0].Asset.Ticker == poolBNB.Ticker {
+		if item.Coins[0].Asset.Equals(poolBNB.Asset) {
 			// there are four coins , BNB,TCAN-014,LOK-3C0 and RUNE
 			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64()-batchTransactionFee*4-uint64(poolGas))
 		}
-		if item.Coins[0].Asset.Ticker.String() == poolTCan.Ticker.String() {
+		if item.Coins[0].Asset.Equals(poolTCan.Asset) {
 			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64())
 		}
-		if item.Coins[0].Asset.Ticker.String() == poolLoki.Ticker.String() {
+		if item.Coins[0].Asset.Equals(poolLoki.Asset) {
 			c.Check(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceToken.Uint64())
 		}
-		if common.IsRune(item.Coins[0].Asset.Ticker) {
+		if common.IsRuneAsset(item.Coins[0].Asset) {
 			totalRune := poolBNB.BalanceRune.Add(poolLoki.BalanceRune).Add(poolTCan.BalanceRune).Add(totalBond)
 			c.Assert(item.Coins[0].Amount.String(), Equals, totalRune.String())
 		}
@@ -151,11 +151,11 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 	txOutStore.CommitBlock(ctx)
 }
 
-func createTempNewPoolForTest(ctx sdk.Context, k Keeper, ticker string, c *C) *Pool {
+func createTempNewPoolForTest(ctx sdk.Context, k Keeper, input string, c *C) *Pool {
 	p := NewPool()
-	t, err := common.NewTicker(ticker)
+	asset, err := common.NewAsset(input)
 	c.Assert(err, IsNil)
-	p.Ticker = t
+	p.Asset = asset
 	// limiting balance to 59 bits, because the math done with floats looses
 	// precision if the number is greater than 59 bits.
 	// https://stackoverflow.com/questions/30897208/how-to-change-a-float64-number-to-uint64-in-a-right-way

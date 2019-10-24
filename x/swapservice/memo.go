@@ -94,7 +94,7 @@ func (tx TxType) String() string {
 type Memo interface {
 	IsType(tx TxType) bool
 
-	GetTicker() common.Ticker
+	GetAsset() common.Asset
 	GetAmount() string
 	GetDestination() common.Address
 	GetSlipLimit() sdk.Uint
@@ -107,7 +107,7 @@ type Memo interface {
 
 type MemoBase struct {
 	TxType TxType
-	Ticker common.Ticker
+	Asset  common.Asset
 }
 
 type CreateMemo struct {
@@ -180,13 +180,14 @@ func ParseMemo(memo string) (Memo, error) {
 		return noMemo, err
 	}
 
-	var ticker common.Ticker
+	var asset common.Asset
 	if tx != txGas && tx != txOutbound && tx != txBond && tx != txLeave && tx != txAck && tx != txNextPool {
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("cannot parse given memo: length %d", len(parts))
 		}
 		var err error
-		ticker, err = common.NewTicker(parts[1])
+		fmt.Printf("Parts: %+v\n", parts)
+		asset, err = common.NewAsset(parts[1])
 		if err != nil {
 			return noMemo, err
 		}
@@ -195,7 +196,7 @@ func ParseMemo(memo string) (Memo, error) {
 	switch tx {
 	case txCreate:
 		return CreateMemo{
-			MemoBase: MemoBase{TxType: txCreate, Ticker: ticker},
+			MemoBase: MemoBase{TxType: txCreate, Asset: asset},
 		}, nil
 
 	case txGas:
@@ -214,12 +215,12 @@ func ParseMemo(memo string) (Memo, error) {
 		}, nil
 	case txAdd:
 		return AddMemo{
-			MemoBase: MemoBase{TxType: txAdd, Ticker: ticker},
+			MemoBase: MemoBase{TxType: txAdd, Asset: asset},
 		}, nil
 
 	case txStake:
 		return StakeMemo{
-			MemoBase: MemoBase{TxType: txStake, Ticker: ticker},
+			MemoBase: MemoBase{TxType: txStake, Asset: asset},
 		}, nil
 
 	case txWithdraw:
@@ -235,7 +236,7 @@ func ParseMemo(memo string) (Memo, error) {
 			}
 		}
 		return WithdrawMemo{
-			MemoBase: MemoBase{TxType: txWithdraw, Ticker: ticker},
+			MemoBase: MemoBase{TxType: txWithdraw, Asset: asset},
 			Amount:   withdrawAmount,
 		}, err
 
@@ -264,7 +265,7 @@ func ParseMemo(memo string) (Memo, error) {
 			slip = amount
 		}
 		return SwapMemo{
-			MemoBase:    MemoBase{TxType: txSwap, Ticker: ticker},
+			MemoBase:    MemoBase{TxType: txSwap, Asset: asset},
 			Destination: destination,
 			SlipLimit:   slip,
 		}, err
@@ -299,7 +300,7 @@ func ParseMemo(memo string) (Memo, error) {
 		return NextPoolMemo{
 			MemoBase: MemoBase{
 				TxType: txNextPool,
-				Ticker: "",
+				Asset:  common.Asset{},
 			},
 			NextPoolAddr: nextPoolAddr,
 		}, nil
@@ -311,7 +312,7 @@ func ParseMemo(memo string) (Memo, error) {
 // Base Functions
 func (m MemoBase) GetType() TxType                    { return m.TxType }
 func (m MemoBase) IsType(tx TxType) bool              { return m.TxType.Equals(tx) }
-func (m MemoBase) GetTicker() common.Ticker           { return m.Ticker }
+func (m MemoBase) GetAsset() common.Asset             { return m.Asset }
 func (m MemoBase) GetAmount() string                  { return "" }
 func (m MemoBase) GetDestination() common.Address     { return "" }
 func (m MemoBase) GetSlipLimit() sdk.Uint             { return sdk.ZeroUint() }

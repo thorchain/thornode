@@ -59,7 +59,7 @@ func (s EventSuite) TestEvent(c *C) {
 	evt := NewEvent(
 		swap.Type(),
 		txID,
-		common.BNBTicker,
+		common.BNBAsset,
 		swapBytes,
 		Success,
 	)
@@ -77,7 +77,7 @@ func (s EventSuite) TestEvent(c *C) {
 	evt2 := NewEvent(
 		stake.Type(),
 		txID,
-		common.BNBTicker,
+		common.BNBAsset,
 		stakeBytes,
 		Success,
 	)

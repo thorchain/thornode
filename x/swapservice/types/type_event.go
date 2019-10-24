@@ -18,12 +18,12 @@ type Event struct {
 	// OutStamp   time.Time         `json:"out_timestamp"`
 	// InAddress  common.Address `json:"in_address"`
 	// OutAddress common.Address `json:"out_address"`
-	Pool   common.Ticker   `json:"pool"`
+	Pool   common.Asset    `json:"pool"`
 	Event  json.RawMessage `json:"event"`
 	Status EventStatus     `json:"status"`
 }
 
-func NewEvent(typ string, inHash common.TxID, pool common.Ticker, evt json.RawMessage, status EventStatus) Event {
+func NewEvent(typ string, inHash common.TxID, pool common.Asset, evt json.RawMessage, status EventStatus) Event {
 	return Event{
 		Type:   typ,
 		InHash: inHash,

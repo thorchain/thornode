@@ -103,8 +103,8 @@ func (k Keeper) GetLastBinanceHeight(ctx sdk.Context) (height sdk.Uint) {
 }
 
 // GetPool get the entire Pool metadata struct for a pool ID
-func (k Keeper) GetPool(ctx sdk.Context, ticker common.Ticker) Pool {
-	key := getKey(prefixPool, ticker.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
+func (k Keeper) GetPool(ctx sdk.Context, asset common.Asset) Pool {
+	key := getKey(prefixPool, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return NewPool()
@@ -119,28 +119,28 @@ func (k Keeper) GetPool(ctx sdk.Context, ticker common.Ticker) Pool {
 // Sets the entire Pool metadata struct for a pool ID
 func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPool, pool.Ticker.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
+	key := getKey(prefixPool, pool.Asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
 	if !store.Has([]byte(key)) {
-		if err := k.AddToPoolIndex(ctx, pool.Ticker); nil != err {
-			ctx.Logger().Error("fail to add ticker to pool index", "ticker", pool.Ticker, "error", err)
+		if err := k.AddToPoolIndex(ctx, pool.Asset); nil != err {
+			ctx.Logger().Error("fail to add asset to pool index", "asset", pool.Asset, "error", err)
 		}
 	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
 }
 
-func (k Keeper) GetPoolBalances(ctx sdk.Context, ticker, ticker2 common.Ticker) (sdk.Uint, sdk.Uint) {
-	pool := k.GetPool(ctx, ticker)
-	if common.IsRune(ticker2) {
+func (k Keeper) GetPoolBalances(ctx sdk.Context, asset, asset2 common.Asset) (sdk.Uint, sdk.Uint) {
+	pool := k.GetPool(ctx, asset)
+	if common.IsRuneAsset(asset2) {
 		return pool.BalanceRune, pool.BalanceToken
 	}
 	return pool.BalanceToken, pool.BalanceRune
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
-func (k Keeper) SetPoolData(ctx sdk.Context, ticker common.Ticker, ps PoolStatus) {
-	pool := k.GetPool(ctx, ticker)
+func (k Keeper) SetPoolData(ctx sdk.Context, asset common.Asset, ps PoolStatus) {
+	pool := k.GetPool(ctx, asset)
 	pool.Status = ps
-	pool.Ticker = ticker
+	pool.Asset = asset
 	k.SetPool(ctx, pool)
 }
 
@@ -151,9 +151,10 @@ func (k Keeper) GetPoolDataIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // PoolExist check whether the given pool exist in the datastore
-func (k Keeper) PoolExist(ctx sdk.Context, ticker common.Ticker) bool {
+func (k Keeper) PoolExist(ctx sdk.Context, asset common.Asset) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPool, ticker.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
+	key := getKey(prefixPool, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
+	fmt.Printf("Pool Exist Key: %s\n", key)
 	return store.Has([]byte(key))
 }
 
@@ -178,32 +179,32 @@ func (k Keeper) SetPoolIndex(ctx sdk.Context, pi PoolIndex) {
 	store.Set([]byte(poolIndexKey), k.cdc.MustMarshalBinaryBare(&pi))
 }
 
-// AddToPoolIndex will add the given ticker into the poolindex
-func (k Keeper) AddToPoolIndex(ctx sdk.Context, ticker common.Ticker) error {
+// AddToPoolIndex will add the given asset into the poolindex
+func (k Keeper) AddToPoolIndex(ctx sdk.Context, asset common.Asset) error {
 	pi, err := k.GetPoolIndex(ctx)
 	if nil != err {
 		return err
 	}
 	for _, item := range pi {
-		if item.Equals(ticker) {
+		if item.Equals(asset) {
 			// already in the pool index , don't need to add
 			return nil
 		}
 	}
-	pi = append(pi, ticker)
+	pi = append(pi, asset)
 	k.SetPoolIndex(ctx, pi)
 	return nil
 }
 
-// RemoveFromPoolIndex remove the given ticker from the poolIndex
-func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, ticker common.Ticker) error {
+// RemoveFromPoolIndex remove the given asset from the poolIndex
+func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, asset common.Asset) error {
 	pi, err := k.GetPoolIndex(ctx)
 	if nil != err {
 		return err
 	}
 	var newPI PoolIndex
 	for _, item := range pi {
-		if !item.Equals(ticker) {
+		if !item.Equals(asset) {
 			newPI = append(newPI, item)
 		}
 	}
@@ -218,12 +219,12 @@ func (k Keeper) GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // GetPoolStaker retrieve poolStaker from the data store
-func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker, error) {
+func (k Keeper) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPoolStaker, ticker.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
+	key := getKey(prefixPoolStaker, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	if !store.Has([]byte(key)) {
 		ctx.Logger().Info("NotExist", "poolstakerkey", key)
-		return NewPoolStaker(ticker, sdk.ZeroUint()), nil
+		return NewPoolStaker(asset, sdk.ZeroUint()), nil
 	}
 	var ps PoolStaker
 	buf := store.Get([]byte(key))
@@ -235,9 +236,9 @@ func (k Keeper) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker
 }
 
 // SetPoolStaker store the poolstaker to datastore
-func (k Keeper) SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps PoolStaker) {
+func (k Keeper) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPoolStaker, ticker.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
+	key := getKey(prefixPoolStaker, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", key, ps))
 	result := k.cdc.MustMarshalBinaryBare(ps)
 	store.Set([]byte(key), result)
