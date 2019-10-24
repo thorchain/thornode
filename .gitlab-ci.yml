@@ -51,7 +51,24 @@ build:test:
     - pip install awscli
   environment:
     name: develop
-  script: make docker-build
+  script: make docker-aws-build
+
+gitlabs:build:testing:
+  stage: test
+  image: docker:stable
+  except:
+    - master
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+  environment:
+    name: develop
+  script: make docker-gitlabs-push
 
 deploy:develop:
   stage: deploy
@@ -70,7 +87,7 @@ deploy:develop:
     - schedules
   environment:
     name: develop
-  script: make ecs-deploy
+  script: make aws-ecs-deploy
   only:
     - master
 
@@ -127,7 +144,7 @@ deploy:staging:
     - make aws-login
   environment:
     name: staging
-  script: make ecs-deploy
+  script: make aws-ecs-deploy
   only:
     - schedules
 
@@ -182,7 +199,7 @@ deploy:production:
     - make aws-login
   environment:
     name: production
-  script: make ecs-deploy
+  script: make aws-ecs-deploy
   only:
     - master
   when: manual
