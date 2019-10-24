@@ -104,7 +104,7 @@ After a transaction has been executed, we either check Binance or the Statechain
     "units": 1.00000000,
     "symbol": "BNB",
     "rune": 1.00000000,
-    "token": 1.00000000,
+    "asset": 1.00000000,
     "staker_units": [
       {
         "actor": "staker_1",
@@ -119,7 +119,7 @@ Where:
 
 * `target` the target actor Binance wallet to check (only used for checking Binance). This is useful when checking that refunds have been executed correctly,
 * `binance` is an array of coin objects (follows the same structure as above)
-* and `statechain` is an object that contains the pool `units`, `rune` and `token` balances to check for a given pool (determined by the `symbol` supplied) as well as a `staker_units` array for validating an actor's share of the pool.
+* and `statechain` is an object that contains the pool `units`, `rune` and `asset` balances to check for a given pool (determined by the `symbol` supplied) as well as a `staker_units` array for validating an actor's share of the pool.
 
 ### Running the Tests
 

@@ -47,25 +47,25 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 
 	poolUnits := pool.PoolUnits
 	poolRune := pool.BalanceRune
-	poolToken := pool.BalanceToken
+	poolAsset := pool.BalanceAsset
 	stakerUnit := poolStaker.GetStakerUnit(msg.PublicAddress)
 	fStakerUnit := stakerUnit.Units
 	if !stakerUnit.Units.GT(sdk.ZeroUint()) {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("nothing to withdraw")
 	}
 
-	ctx.Logger().Info("pool before unstake", "pool unit", poolUnits, "balance RUNE", poolRune, "balance token", poolToken)
+	ctx.Logger().Info("pool before unstake", "pool unit", poolUnits, "balance RUNE", poolRune, "balance asset", poolAsset)
 	ctx.Logger().Info("staker before withdraw", "staker unit", fStakerUnit)
-	withdrawRune, withDrawToken, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolToken, fStakerUnit, msg.WithdrawBasisPoints)
+	withdrawRune, withDrawAsset, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolAsset, fStakerUnit, msg.WithdrawBasisPoints)
 	if err != nil {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
 	}
-	ctx.Logger().Info("client withdraw", "RUNE", withdrawRune, "token", withDrawToken, "units left", unitAfter)
+	ctx.Logger().Info("client withdraw", "RUNE", withdrawRune, "asset", withDrawAsset, "units left", unitAfter)
 	// update pool
 	pool.PoolUnits = poolUnits.Sub(fStakerUnit).Add(unitAfter)
 	pool.BalanceRune = poolRune.Sub(withdrawRune)
-	pool.BalanceToken = poolToken.Sub(withDrawToken)
-	ctx.Logger().Info("pool after unstake", "pool unit", pool.PoolUnits, "balance RUNE", pool.BalanceRune, "balance token", pool.BalanceToken)
+	pool.BalanceAsset = poolAsset.Sub(withDrawAsset)
+	ctx.Logger().Info("pool after unstake", "pool unit", pool.PoolUnits, "balance RUNE", pool.BalanceRune, "balance asset", pool.BalanceAsset)
 	// update pool staker
 	poolStaker.TotalUnits = pool.PoolUnits
 	if unitAfter.IsZero() {
@@ -86,18 +86,18 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 	keeper.SetPool(ctx, pool)
 	keeper.SetPoolStaker(ctx, msg.Asset, poolStaker)
 	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
-	return withdrawRune, withDrawToken, fStakerUnit.Sub(unitAfter), nil
+	return withdrawRune, withDrawAsset, fStakerUnit.Sub(unitAfter), nil
 }
 
-func calculateUnstake(poolUnit, poolRune, poolToken, stakerUnit, withdrawBasisPoints sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint, error) {
+func calculateUnstake(poolUnit, poolRune, poolAsset, stakerUnit, withdrawBasisPoints sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint, error) {
 	if poolUnit.IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("poolUnits can't be zero")
 	}
 	if poolRune.IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("pool rune balance can't be zero")
 	}
-	if poolToken.IsZero() {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("pool token balance can't be zero")
+	if poolAsset.IsZero() {
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("pool asset balance can't be zero")
 	}
 	if stakerUnit.IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("staker unit can't be zero")
@@ -109,10 +109,10 @@ func calculateUnstake(poolUnit, poolRune, poolToken, stakerUnit, withdrawBasisPo
 	stakerOwnership := common.UintToFloat64(stakerUnit) / common.UintToFloat64(poolUnit)
 
 	//withdrawRune := stakerOwnership.Mul(withdrawBasisPoints).Quo(sdk.NewUint(10000)).Mul(poolRune)
-	//withdrawToken := stakerOwnership.Mul(withdrawBasisPoints).Quo(sdk.NewUint(10000)).Mul(poolToken)
+	//withdrawAsset := stakerOwnership.Mul(withdrawBasisPoints).Quo(sdk.NewUint(10000)).Mul(poolAsset)
 	//unitAfter := stakerUnit.Mul(sdk.NewUint(MaxWithdrawBasisPoints).Sub(withdrawBasisPoints).Quo(sdk.NewUint(10000)))
 	withdrawRune := stakerOwnership * percentage / 100 * common.UintToFloat64(poolRune)
-	withdrawToken := stakerOwnership * percentage / 100 * common.UintToFloat64(poolToken)
+	withdrawAsset := stakerOwnership * percentage / 100 * common.UintToFloat64(poolAsset)
 	unitAfter := common.UintToFloat64(stakerUnit) * (100 - percentage) / 100
-	return common.FloatToUint(withdrawRune), common.FloatToUint(withdrawToken), common.FloatToUint(unitAfter), nil
+	return common.FloatToUint(withdrawRune), common.FloatToUint(withdrawAsset), common.FloatToUint(unitAfter), nil
 }

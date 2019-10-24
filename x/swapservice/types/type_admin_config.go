@@ -15,7 +15,7 @@ const (
 	GSLKey                    AdminConfigKey = "GSL"
 	StakerAmtIntervalKey      AdminConfigKey = "StakerAmtInterval"
 	MinValidatorBondKey       AdminConfigKey = "MinValidatorBond"
-	WhiteListGasTokenKey      AdminConfigKey = "WhiteListGasToken"      // How much gas token we mint and send it to the newly whitelisted bep address
+	WhiteListGasAssetKey      AdminConfigKey = "WhiteListGasAsset"      // How much gas asset we mint and send it to the newly whitelisted bep address
 	DesireValidatorSetKey     AdminConfigKey = "DesireValidatorSet"     // how much validators we would like to have
 	RotatePerBlockHeightKey   AdminConfigKey = "RotatePerBlockHeight"   // how many blocks we try to rotate validators
 	ValidatorsChangeWindowKey AdminConfigKey = "ValidatorsChangeWindow" // when should we open the rotate window, nominate validators, and identify who should be out
@@ -38,8 +38,8 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 		return StakerAmtIntervalKey
 	case string(MinValidatorBondKey):
 		return MinValidatorBondKey
-	case string(WhiteListGasTokenKey):
-		return WhiteListGasTokenKey
+	case string(WhiteListGasAssetKey):
+		return WhiteListGasAssetKey
 	case string(DesireValidatorSetKey):
 		return DesireValidatorSetKey
 	case string(RotatePerBlockHeightKey):
@@ -61,7 +61,7 @@ func (k AdminConfigKey) Default() string {
 		return "100"
 	case MinValidatorBondKey:
 		return sdk.NewUint(common.One * 10).String()
-	case WhiteListGasTokenKey:
+	case WhiteListGasAssetKey:
 		return "1000bep"
 	case DesireValidatorSetKey:
 		return "4"
@@ -84,7 +84,7 @@ func (k AdminConfigKey) ValidValue(value string) error {
 		_, err = common.NewAmount(value)
 	case MinValidatorBondKey:
 		_, err = sdk.ParseUint(value)
-	case WhiteListGasTokenKey:
+	case WhiteListGasAssetKey:
 		_, err = sdk.ParseCoins(value)
 	case DesireValidatorSetKey, RotatePerBlockHeightKey, ValidatorsChangeWindowKey, PoolRefundGasKey: // int64
 		_, err = strconv.ParseInt(value, 10, 64)

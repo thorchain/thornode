@@ -135,13 +135,13 @@ func (PoolAddressManagerSuite) TestSetupInitialPoolAddresses(c *C) {
 		// given we on
 		if item.Coins[0].Asset.Equals(poolBNB.Asset) {
 			// there are four coins , BNB,TCAN-014,LOK-3C0 and RUNE
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceToken.Uint64()-batchTransactionFee*4-uint64(poolGas))
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceAsset.Uint64()-batchTransactionFee*4-uint64(poolGas))
 		}
 		if item.Coins[0].Asset.Equals(poolTCan.Asset) {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceToken.Uint64())
+			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceAsset.Uint64())
 		}
 		if item.Coins[0].Asset.Equals(poolLoki.Asset) {
-			c.Check(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceToken.Uint64())
+			c.Check(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceAsset.Uint64())
 		}
 		if common.IsRuneAsset(item.Coins[0].Asset) {
 			totalRune := poolBNB.BalanceRune.Add(poolLoki.BalanceRune).Add(poolTCan.BalanceRune).Add(totalBond)
@@ -161,7 +161,7 @@ func createTempNewPoolForTest(ctx sdk.Context, k Keeper, input string, c *C) *Po
 	// https://stackoverflow.com/questions/30897208/how-to-change-a-float64-number-to-uint64-in-a-right-way
 	// https://github.com/golang/go/issues/29463
 	p.BalanceRune = sdk.NewUint(1535169738538008)
-	p.BalanceToken = sdk.NewUint(1535169738538008)
+	p.BalanceAsset = sdk.NewUint(1535169738538008)
 	k.SetPool(ctx, p)
 	return &p
 }

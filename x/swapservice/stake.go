@@ -44,36 +44,36 @@ func validateStakeMessage(ctx sdk.Context, keeper poolStorage, asset common.Asse
 	return nil
 }
 
-func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmount, stakeTokenAmount sdk.Uint, publicAddress common.Address, requestTxHash common.TxID) (sdk.Uint, error) {
-	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", asset, stakeRuneAmount, stakeTokenAmount))
+func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmount, stakeAssetAmount sdk.Uint, publicAddress common.Address, requestTxHash common.TxID) (sdk.Uint, error) {
+	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", asset, stakeRuneAmount, stakeAssetAmount))
 	if err := validateStakeMessage(ctx, keeper, asset, requestTxHash, publicAddress); nil != err {
 		return sdk.ZeroUint(), errors.Wrap(err, "invalid request")
 	}
-	if stakeTokenAmount.IsZero() && stakeTokenAmount.IsZero() {
-		return sdk.ZeroUint(), errors.New("both rune and token is zero")
+	if stakeAssetAmount.IsZero() && stakeAssetAmount.IsZero() {
+		return sdk.ZeroUint(), errors.New("both rune and asset is zero")
 	}
 	pool := keeper.GetPool(ctx, asset)
-	fTokenAmt := stakeTokenAmount
+	fAssetAmt := stakeAssetAmount
 	fRuneAmt := stakeRuneAmount
-	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
-	ctx.Logger().Info(fmt.Sprintf("Staking: %sRUNE %sToken", stakeRuneAmount, stakeTokenAmount))
+	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRUNE %sAsset", pool.BalanceRune, pool.BalanceAsset))
+	ctx.Logger().Info(fmt.Sprintf("Staking: %sRUNE %sAsset", stakeRuneAmount, stakeAssetAmount))
 
 	balanceRune := pool.BalanceRune
-	balanceToken := pool.BalanceToken
+	balanceAsset := pool.BalanceAsset
 
 	oldPoolUnits := pool.PoolUnits
-	newPoolUnits, stakerUnits, err := calculatePoolUnits(oldPoolUnits, balanceRune, balanceToken, fRuneAmt, fTokenAmt)
+	newPoolUnits, stakerUnits, err := calculatePoolUnits(oldPoolUnits, balanceRune, balanceAsset, fRuneAmt, fAssetAmt)
 	if nil != err {
 		return sdk.ZeroUint(), errors.Wrapf(err, "fail to calculate pool units")
 	}
 
 	ctx.Logger().Info(fmt.Sprintf("current pool units : %s ,staker units : %s", newPoolUnits, stakerUnits))
 	poolRune := balanceRune.Add(fRuneAmt)
-	poolToken := balanceToken.Add(fTokenAmt)
+	poolAsset := balanceAsset.Add(fAssetAmt)
 	pool.PoolUnits = newPoolUnits
 	pool.BalanceRune = poolRune
-	pool.BalanceToken = poolToken
-	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
+	pool.BalanceAsset = poolAsset
+	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sAsset", pool.BalanceRune, pool.BalanceAsset))
 	keeper.SetPool(ctx, pool)
 	// maintain pool staker structure
 	ps, err := keeper.GetPoolStaker(ctx, asset)
@@ -101,7 +101,7 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 	stakerPoolItem := sp.GetStakerPoolItem(asset)
 	existUnit := stakerPoolItem.Units
 	stakerPoolItem.Units = totalStakerUnits.Add(existUnit)
-	stakerPoolItem.AddStakerTxDetail(requestTxHash, stakeRuneAmount, stakeTokenAmount)
+	stakerPoolItem.AddStakerTxDetail(requestTxHash, stakeRuneAmount, stakeAssetAmount)
 	sp.UpsertStakerPoolItem(stakerPoolItem)
 	keeper.SetStakerPool(ctx, publicAddress, sp)
 	return stakerUnits, nil
@@ -109,22 +109,22 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 
 // calculatePoolUnits calculate the pool units and staker units
 // returns newPoolUnit,stakerUnit, error
-func calculatePoolUnits(oldPoolUnits, poolRune, poolToken, stakeRune, stakeToken sdk.Uint) (sdk.Uint, sdk.Uint, error) {
+func calculatePoolUnits(oldPoolUnits, poolRune, poolAsset, stakeRune, stakeAsset sdk.Uint) (sdk.Uint, sdk.Uint, error) {
 
 	if stakeRune.Add(poolRune).IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), errors.New("total RUNE in the pool is zero")
 	}
-	if stakeToken.Add(poolToken).IsZero() {
-		return sdk.ZeroUint(), sdk.ZeroUint(), errors.New("total token in the pool is zero")
+	if stakeAsset.Add(poolAsset).IsZero() {
+		return sdk.ZeroUint(), sdk.ZeroUint(), errors.New("total asset in the pool is zero")
 	}
 	fStakeRune := common.UintToFloat64(stakeRune)
-	fStakeToken := common.UintToFloat64(stakeToken)
+	fStakeAsset := common.UintToFloat64(stakeAsset)
 
 	fPoolRune := common.UintToFloat64(poolRune)
-	fPoolToken := common.UintToFloat64(poolToken)
-	stakerPercentage := ((fStakeRune / (fStakeRune + fPoolRune)) + (fStakeToken / (fStakeToken + fPoolToken))) / 2
+	fPoolAsset := common.UintToFloat64(poolAsset)
+	stakerPercentage := ((fStakeRune / (fStakeRune + fPoolRune)) + (fStakeAsset / (fStakeAsset + fPoolAsset))) / 2
 
-	stakerUnit := (stakerPercentage*(fStakeRune+fPoolRune) + stakerPercentage*(fStakeToken+fPoolToken)) / 2
+	stakerUnit := (stakerPercentage*(fStakeRune+fPoolRune) + stakerPercentage*(fStakeAsset+fPoolAsset)) / 2
 	newPoolUnit := oldPoolUnits.Add(common.FloatToUint(stakerUnit))
 	return newPoolUnit, common.FloatToUint(stakerUnit), nil
 }

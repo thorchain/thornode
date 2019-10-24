@@ -131,9 +131,9 @@ func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
 func (k Keeper) GetPoolBalances(ctx sdk.Context, asset, asset2 common.Asset) (sdk.Uint, sdk.Uint) {
 	pool := k.GetPool(ctx, asset)
 	if common.IsRuneAsset(asset2) {
-		return pool.BalanceRune, pool.BalanceToken
+		return pool.BalanceRune, pool.BalanceAsset
 	}
-	return pool.BalanceToken, pool.BalanceRune
+	return pool.BalanceAsset, pool.BalanceRune
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
@@ -589,9 +589,9 @@ func (k Keeper) GetAdminConfigMinValidatorBond(ctx sdk.Context, addr sdk.AccAddr
 	return k.GetAdminConfigUintType(ctx, MinValidatorBondKey, MinValidatorBondKey.Default(), addr)
 }
 
-// GetAdminConfigWhiteListGasToken
-func (k Keeper) GetAdminConfigWhiteListGasToken(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
-	return k.GetAdminConfigCoinsType(ctx, WhiteListGasTokenKey, WhiteListGasTokenKey.Default(), addr)
+// GetAdminConfigWhiteListGasAsset
+func (k Keeper) GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+	return k.GetAdminConfigCoinsType(ctx, WhiteListGasAssetKey, WhiteListGasAssetKey.Default(), addr)
 }
 
 // GetAdminConfigBnbAddressType - get the config with return type is BNBAddress

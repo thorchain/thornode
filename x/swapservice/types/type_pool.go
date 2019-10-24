@@ -77,8 +77,8 @@ func GetPoolStatus(ps string) PoolStatus {
 // This is the structure we will saved to the key value store
 type Pool struct {
 	BalanceRune         sdk.Uint       `json:"balance_rune"`           // how many RUNE in the pool
-	BalanceToken        sdk.Uint       `json:"balance_token"`          // how many token in the pool
-	Asset               common.Asset   `json:"asset"`                  // what's the token's asset
+	BalanceAsset        sdk.Uint       `json:"balance_asset"`          // how many asset in the pool
+	Asset               common.Asset   `json:"asset"`                  // what's the asset's asset
 	PoolUnits           sdk.Uint       `json:"pool_units"`             // total units of the pool
 	PoolAddress         common.Address `json:"pool_address"`           // bnb liquidity pool address
 	Status              PoolStatus     `json:"status"`                 // status
@@ -89,7 +89,7 @@ type Pool struct {
 func NewPool() Pool {
 	return Pool{
 		BalanceRune:  sdk.ZeroUint(),
-		BalanceToken: sdk.ZeroUint(),
+		BalanceAsset: sdk.ZeroUint(),
 		PoolUnits:    sdk.ZeroUint(),
 		Status:       Enabled,
 	}
@@ -111,7 +111,7 @@ func (ps Pool) Empty() bool {
 func (ps Pool) String() string {
 	sb := strings.Builder{}
 	sb.WriteString(fmt.Sprintln("rune-balance: " + ps.BalanceRune.String()))
-	sb.WriteString(fmt.Sprintln("token-balance: " + ps.BalanceToken.String()))
+	sb.WriteString(fmt.Sprintln("asset-balance: " + ps.BalanceAsset.String()))
 	sb.WriteString(fmt.Sprintln("asset: " + ps.Asset.String()))
 	sb.WriteString(fmt.Sprintln("pool-units: " + ps.PoolUnits.String()))
 	sb.WriteString(fmt.Sprintln("status: " + ps.Status.String()))
@@ -137,10 +137,10 @@ func (ps Pool) EnsureValidPoolStatus(msg sdk.Msg) error {
 	}
 }
 
-// TokenPriceInRune is how much 1 token worth in RUNE
-func (ps Pool) TokenPriceInRune() float64 {
-	if ps.BalanceRune.IsZero() || ps.BalanceToken.IsZero() {
+// AssetPriceInRune is how much 1 asset worth in RUNE
+func (ps Pool) AssetPriceInRune() float64 {
+	if ps.BalanceRune.IsZero() || ps.BalanceAsset.IsZero() {
 		return 0
 	}
-	return float64(ps.BalanceRune.Uint64()) / float64(ps.BalanceToken.Uint64())
+	return float64(ps.BalanceRune.Uint64()) / float64(ps.BalanceAsset.Uint64())
 }

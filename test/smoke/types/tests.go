@@ -1,9 +1,10 @@
 package types
 
 import (
+	"time"
+
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/keys"
-	"time"
 )
 
 type Tests struct {
@@ -53,7 +54,7 @@ type Statechain struct {
 	Units       float64       `json:"units"`
 	Symbol      string        `json:"symbol"`
 	Rune        float64       `json:"rune"`
-	Token       float64       `json:"token"`
+	Asset       float64       `json:"asset"`
 	Status      string        `json:"status"`
 	StakerUnits []StakerUnits `json:"staker_units,omitempty"`
 }

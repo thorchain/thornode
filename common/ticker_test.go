@@ -41,6 +41,6 @@ func (s TickerSuite) TestTicker(c *C) {
 	maxCharacterTicker, err := NewTicker("TICKER789-XXX")
 	c.Assert(err, IsNil)
 	c.Assert(maxCharacterTicker.IsEmpty(), Equals, false)
-	_, err = NewTicker("too long of a token") // too long
+	_, err = NewTicker("too long of a ticker") // too long
 	c.Assert(err, NotNil)
 }

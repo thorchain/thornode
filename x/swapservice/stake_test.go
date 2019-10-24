@@ -16,9 +16,9 @@ func (s StakeSuite) TestCalculatePoolUnits(c *C) {
 		name         string
 		oldPoolUnits sdk.Uint
 		poolRune     sdk.Uint
-		poolToken    sdk.Uint
+		poolAsset    sdk.Uint
 		stakeRune    sdk.Uint
-		stakeToken   sdk.Uint
+		stakeAsset   sdk.Uint
 		poolUnits    sdk.Uint
 		stakerUnits  sdk.Uint
 		expectedErr  error
@@ -27,31 +27,31 @@ func (s StakeSuite) TestCalculatePoolUnits(c *C) {
 			name:         "first-stake-zero-rune",
 			oldPoolUnits: sdk.ZeroUint(),
 			poolRune:     sdk.ZeroUint(),
-			poolToken:    sdk.ZeroUint(),
+			poolAsset:    sdk.ZeroUint(),
 			stakeRune:    sdk.ZeroUint(),
-			stakeToken:   sdk.NewUint(100 * common.One),
+			stakeAsset:   sdk.NewUint(100 * common.One),
 			poolUnits:    sdk.ZeroUint(),
 			stakerUnits:  sdk.ZeroUint(),
 			expectedErr:  errors.New("total RUNE in the pool is zero"),
 		},
 		{
-			name:         "first-stake-zero-token",
+			name:         "first-stake-zero-asset",
 			oldPoolUnits: sdk.ZeroUint(),
 			poolRune:     sdk.ZeroUint(),
-			poolToken:    sdk.ZeroUint(),
+			poolAsset:    sdk.ZeroUint(),
 			stakeRune:    sdk.NewUint(100 * common.One),
-			stakeToken:   sdk.ZeroUint(),
+			stakeAsset:   sdk.ZeroUint(),
 			poolUnits:    sdk.ZeroUint(),
 			stakerUnits:  sdk.ZeroUint(),
-			expectedErr:  errors.New("total token in the pool is zero"),
+			expectedErr:  errors.New("total asset in the pool is zero"),
 		},
 		{
 			name:         "first-stake",
 			oldPoolUnits: sdk.ZeroUint(),
 			poolRune:     sdk.ZeroUint(),
-			poolToken:    sdk.ZeroUint(),
+			poolAsset:    sdk.ZeroUint(),
 			stakeRune:    sdk.NewUint(100 * common.One),
-			stakeToken:   sdk.NewUint(100 * common.One),
+			stakeAsset:   sdk.NewUint(100 * common.One),
 			poolUnits:    sdk.NewUint(100 * common.One),
 			stakerUnits:  sdk.NewUint(100 * common.One),
 			expectedErr:  nil,
@@ -60,9 +60,9 @@ func (s StakeSuite) TestCalculatePoolUnits(c *C) {
 			name:         "second-stake",
 			oldPoolUnits: sdk.NewUint(500 * common.One),
 			poolRune:     sdk.NewUint(500 * common.One),
-			poolToken:    sdk.NewUint(500 * common.One),
+			poolAsset:    sdk.NewUint(500 * common.One),
 			stakeRune:    sdk.NewUint(345 * common.One),
-			stakeToken:   sdk.NewUint(234 * common.One),
+			stakeAsset:   sdk.NewUint(234 * common.One),
 			poolUnits:    sdk.NewUint(78701684859),
 			stakerUnits:  sdk.NewUint(28701684859),
 			expectedErr:  nil,
@@ -70,7 +70,7 @@ func (s StakeSuite) TestCalculatePoolUnits(c *C) {
 	}
 
 	for _, item := range inputs {
-		poolUnits, stakerUnits, err := calculatePoolUnits(item.oldPoolUnits, item.poolRune, item.poolToken, item.stakeRune, item.stakeToken)
+		poolUnits, stakerUnits, err := calculatePoolUnits(item.oldPoolUnits, item.poolRune, item.poolAsset, item.stakeRune, item.stakeAsset)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
 		} else {
@@ -126,7 +126,7 @@ func (StakeSuite) TestValidateStakeMessage(c *C) {
 	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, txId, bnbAddress), NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
-		BalanceToken: sdk.NewUint(100 * common.One),
+		BalanceAsset: sdk.NewUint(100 * common.One),
 		Asset:        common.BNBAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
@@ -147,7 +147,7 @@ func (StakeSuite) TestStake(c *C) {
 	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.ZeroUint(),
-		BalanceToken: sdk.NewUint(100 * common.One),
+		BalanceAsset: sdk.NewUint(100 * common.One),
 		Asset:        common.BNBAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
@@ -158,7 +158,7 @@ func (StakeSuite) TestStake(c *C) {
 	c.Assert(err, IsNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
-		BalanceToken: sdk.NewUint(100 * common.One),
+		BalanceAsset: sdk.NewUint(100 * common.One),
 		Asset:        notExistPoolStakerAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
@@ -168,7 +168,7 @@ func (StakeSuite) TestStake(c *C) {
 	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
-		BalanceToken: sdk.NewUint(100 * common.One),
+		BalanceAsset: sdk.NewUint(100 * common.One),
 		Asset:        common.BNBAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
@@ -194,7 +194,7 @@ func (StakeSuite) TestStake(c *C) {
 	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
-		BalanceToken: sdk.NewUint(100 * common.One),
+		BalanceAsset: sdk.NewUint(100 * common.One),
 		Asset:        common.BNBAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  bnbAddress,
