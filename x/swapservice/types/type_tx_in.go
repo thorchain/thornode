@@ -80,10 +80,7 @@ func (tx TxIn) Equals(tx2 TxIn) bool {
 		return false
 	}
 	for i := range tx.Coins {
-		if !tx.Coins[i].Chain.Equals(tx2.Coins[i].Chain) {
-			return false
-		}
-		if !tx.Coins[i].Denom.Equals(tx2.Coins[i].Denom) {
+		if !tx.Coins[i].Asset.Equals(tx2.Coins[i].Asset) {
 			return false
 		}
 		if !tx.Coins[i].Amount.Equal(tx2.Coins[i].Amount) {

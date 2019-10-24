@@ -14,8 +14,8 @@ var _ = Suite(&EventSuite{})
 
 func (s EventSuite) TestSwapEvent(c *C) {
 	evt := NewEventSwap(
-		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(320000000)),
-		common.NewCoin(common.BNBChain, common.RuneTicker, sdk.NewUint(420000000)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
+		common.NewCoin(common.RuneA1FAsset, sdk.NewUint(420000000)),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
@@ -47,8 +47,8 @@ func (s EventSuite) TestEvent(c *C) {
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
 	swap := NewEventSwap(
-		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(320000000)),
-		common.NewCoin(common.BNBChain, common.RuneTicker, sdk.NewUint(420000000)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
+		common.NewCoin(common.RuneA1FAsset, sdk.NewUint(420000000)),
 		sdk.NewUint(6),
 		sdk.NewUint(5),
 		sdk.NewUint(5),

@@ -281,7 +281,7 @@ func (BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	c.Check(txInItem.Memo, Equals, "OUTBOUND:825")
 	c.Check(txInItem.Sender, Equals, "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj")
 	c.Check(len(txInItem.Coins), Equals, 1)
-	c.Check(txInItem.Coins[0].Denom.String(), Equals, common.RuneA1FTicker.String())
+	c.Check(txInItem.Coins[0].Asset.String(), Equals, common.RuneA1FAsset.String())
 	c.Check(txInItem.Coins[0].Amount.Uint64(), Equals, uint64(common.One/10))
 	txInItem1 := testFunc(binanceTxSwapLOKToBNB, NotNil, IsNil)
 	c.Check(txInItem1, NotNil)
@@ -289,6 +289,6 @@ func (BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	c.Check(txInItem1.Sender, Equals, "tbnb190tgp5uchnlcpsk7n7nffypkwlzhcqge27xkfh")
 	c.Check(txInItem1.ObservedPoolAddress, Equals, "tbnb1hzwfk6t3sqjfuzlr0ur9lj920gs37gg92gtay9")
 	c.Check(len(txInItem1.Coins), Equals, 1)
-	c.Check(txInItem1.Coins[0].Denom.String(), Equals, "LOK-3C0")
+	c.Check(txInItem1.Coins[0].Asset.String(), Equals, "BNB.LOK-3C0")
 	c.Check(txInItem1.Coins[0].Amount.Uint64(), Equals, uint64(common.One))
 }

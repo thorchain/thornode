@@ -302,18 +302,17 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		if len(item.Coins) == 0 {
 			continue
 		}
-		res, ok := out[item.Coins[0].Chain]
+		res, ok := out[item.Coins[0].Asset.Chain]
 		if !ok {
 			res = ResTxOut{
 				Height:  tx.Height,
 				Hash:    tx.Hash, // TODO: this should be unique to chain
-				Chain:   item.Coins[0].Chain,
+				Chain:   item.Coins[0].Asset.Chain,
 				TxArray: make([]TxOutItem, 0),
 			}
 		}
 		res.TxArray = append(res.TxArray, *item)
-		out[item.Coins[0].Chain] = res
-
+		out[item.Coins[0].Asset.Chain] = res
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, QueryResTxOut{

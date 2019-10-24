@@ -133,11 +133,10 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	txIn.SetReverted(txID2)
 	c.Check(txIn.Done.Equals(txID2), Equals, true)
 	c.Check(len(txIn.String()) > 0, Equals, true)
-	coins := sdk.NewCoins(
-		sdk.NewCoin("rune", sdk.NewInt(100)), sdk.NewCoin("bnb", sdk.NewInt(100)))
-	statechainCoins, err := FromSdkCoins(coins)
-	c.Assert(err, IsNil)
-	c.Assert(statechainCoins, NotNil)
+	statechainCoins := common.Coins{
+		common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(100)),
+	}
 	inputs := []struct {
 		coins           common.Coins
 		memo            string
@@ -184,19 +183,19 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 
 func (TypeTxInSuite) TestTxInEquals(c *C) {
 	coins1 := common.Coins{
-		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
-		common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100*common.One)),
 	}
 	coins2 := common.Coins{
-		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 	}
 	coins3 := common.Coins{
-		common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(200*common.One)),
-		common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
+		common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100*common.One)),
 	}
 	coins4 := common.Coins{
-		common.NewCoin(common.BNBChain, common.RuneB1ATicker, sdk.NewUint(100*common.One)),
-		common.NewCoin(common.BNBChain, common.RuneA1FTicker, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.RuneB1AAsset, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100*common.One)),
 	}
 	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)

@@ -6,8 +6,9 @@ import (
 )
 
 var (
-	BNBAsset  = Asset{"Binance", "BNB", "BNB", "BNB"}
-	RuneAsset = Asset{"Rune", "BNB", "RUNE-A1F", "RUNE"}
+	BNBAsset     = Asset{"Binance", "BNB", "BNB", "BNB"}
+	RuneA1FAsset = Asset{"Rune", "BNB", "RUNE-A1F", "RUNE"}
+	RuneB1AAsset = Asset{"Rune", "BNB", "RUNE-B1A", "RUNE"}
 )
 
 type Asset struct {
@@ -61,5 +62,5 @@ func IsBNBAsset(a Asset) bool {
 }
 
 func IsRuneAsset(a Asset) bool {
-	return a.Equals(RuneAsset)
+	return a.Equals(RuneA1FAsset) || a.Equals(RuneB1AAsset)
 }
