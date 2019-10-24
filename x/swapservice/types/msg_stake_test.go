@@ -23,7 +23,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 	inputs := []struct {
 		asset         common.Asset
 		r             sdk.Uint
-		token         sdk.Uint
+		amt           sdk.Uint
 		publicAddress common.Address
 		txHash        common.TxID
 		signer        sdk.AccAddress
@@ -31,7 +31,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 		{
 			asset:         common.Asset{},
 			r:             sdk.NewUint(100000000),
-			token:         sdk.NewUint(100000000),
+			amt:           sdk.NewUint(100000000),
 			publicAddress: bnbAddress,
 			txHash:        txID,
 			signer:        addr,
@@ -39,7 +39,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 		{
 			asset:         common.BNBAsset,
 			r:             sdk.NewUint(100000000),
-			token:         sdk.NewUint(100000000),
+			amt:           sdk.NewUint(100000000),
 			publicAddress: common.NoAddress,
 			txHash:        txID,
 			signer:        addr,
@@ -47,7 +47,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 		{
 			asset:         common.BNBAsset,
 			r:             sdk.NewUint(100000000),
-			token:         sdk.NewUint(100000000),
+			amt:           sdk.NewUint(100000000),
 			publicAddress: bnbAddress,
 			txHash:        common.TxID(""),
 			signer:        addr,
@@ -55,14 +55,14 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 		{
 			asset:         common.BNBAsset,
 			r:             sdk.NewUint(100000000),
-			token:         sdk.NewUint(100000000),
+			amt:           sdk.NewUint(100000000),
 			publicAddress: bnbAddress,
 			txHash:        txID,
 			signer:        sdk.AccAddress{},
 		},
 	}
 	for i, item := range inputs {
-		m := NewMsgSetStakeData(item.asset, item.r, item.token, item.publicAddress, item.txHash, item.signer)
+		m := NewMsgSetStakeData(item.asset, item.r, item.amt, item.publicAddress, item.txHash, item.signer)
 		c.Assert(m.ValidateBasic(), NotNil, Commentf("%d) %s\n", i, m))
 	}
 }

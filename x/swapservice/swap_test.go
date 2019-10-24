@@ -149,7 +149,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don'tknow",
 			returnAmount:  sdk.ZeroUint(),
 			tradeTarget:   sdk.NewUint(9 * common.One),
-			expectedErr:   errors.New("emit token 757511993 less than price limit 900000000"),
+			expectedErr:   errors.New("emit asset 757511993 less than price limit 900000000"),
 		},
 		{
 			name:          "swap-no-target-price-no-protection",
@@ -228,7 +228,7 @@ func (s SwapSuite) TestCalculators(c *C) {
 	// These calculations are verified by using the spreadsheet
 	// https://docs.google.com/spreadsheets/d/1wJHYBRKBdw_WP7nUyVnkySPkOmPUNoiRGsEqgBVVXKU/edit#gid=0
 	fmt.Println("poolslip", calcPoolSlip(X, x))
-	c.Check(calcTokenEmission(X, x, Y).Uint64(), Equals, uint64(826446280))
+	c.Check(calcAssetEmission(X, x, Y).Uint64(), Equals, uint64(826446280))
 	c.Check(calcLiquitityFee(X, x, Y).Uint64(), Equals, uint64(82644628))
 	c.Check(calcPoolSlip(X, x), Equals, 0.1990990990990991)
 	c.Check(calcTradeSlip(X, x), Equals, 0.21)
@@ -257,7 +257,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	c.Assert(res.Code, Equals, sdk.CodeInternal)
 	pool := NewPool()
 	pool.Asset = common.BNBAsset
-	pool.BalanceToken = sdk.NewUint(100 * common.One)
+	pool.BalanceAsset = sdk.NewUint(100 * common.One)
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
 	k.SetPool(ctx, pool)
 
@@ -273,7 +273,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	tCanAsset, err := common.NewAsset("BNB.TCAN-014")
 	c.Assert(err, IsNil)
 	poolTCAN.Asset = tCanAsset
-	poolTCAN.BalanceToken = sdk.NewUint(334850000)
+	poolTCAN.BalanceAsset = sdk.NewUint(334850000)
 	poolTCAN.BalanceRune = sdk.NewUint(2349500000)
 	k.SetPool(ctx, poolTCAN)
 

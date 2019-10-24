@@ -20,7 +20,7 @@ const (
 	StakerAmtIntervalKey      = types.StakerAmtIntervalKey
 	MaxWithdrawBasisPoints    = types.MaxWithdrawBasisPoints
 	MinValidatorBondKey       = types.MinValidatorBondKey
-	WhiteListGasTokenKey      = types.WhiteListGasTokenKey
+	WhiteListGasAssetKey      = types.WhiteListGasAssetKey
 	DesireValidatorSetKey     = types.DesireValidatorSetKey
 	RotatePerBlockHeightKey   = types.RotatePerBlockHeightKey
 	ValidatorsChangeWindowKey = types.ValidatorsChangeWindowKey

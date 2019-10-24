@@ -82,26 +82,26 @@ func swap(ctx sdk.Context,
 		source = common.RuneA1FAsset
 	}
 
-	// Set asset to our non-rune token asset
+	// Set asset to our non-rune asset asset
 	asset := source
 	if common.IsRuneAsset(source) {
 		asset = target
 	}
 	pool := keeper.GetPool(ctx, asset)
-	tokenAmount, pool, err := swapOne(ctx, keeper, txID, pool, source, target, amount, requester, destination, globalSlipLimit)
+	assetAmount, pool, err := swapOne(ctx, keeper, txID, pool, source, target, amount, requester, destination, globalSlipLimit)
 	if err != nil {
 		return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, target)
 	}
 	pools = append(pools, pool)
-	if !tradeTarget.IsZero() && tokenAmount.LT(tradeTarget) {
-		return sdk.ZeroUint(), errors.Errorf("emit token %s less than price limit %s", tokenAmount, tradeTarget)
+	if !tradeTarget.IsZero() && assetAmount.LT(tradeTarget) {
+		return sdk.ZeroUint(), errors.Errorf("emit asset %s less than price limit %s", assetAmount, tradeTarget)
 	}
 
 	// update pools
 	for _, pool := range pools {
 		keeper.SetPool(ctx, pool)
 	}
-	return tokenAmount, nil
+	return assetAmount, nil
 }
 
 func swapOne(ctx sdk.Context,
@@ -114,10 +114,10 @@ func swapOne(ctx sdk.Context,
 
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
 
-	var X, x, Y, liquitityFee, emitTokens sdk.Uint
+	var X, x, Y, liquitityFee, emitAssets sdk.Uint
 	var priceSlip, tradeSlip, poolSlip, outputSlip float64
 
-	// Set asset to our non-rune token asset
+	// Set asset to our non-rune asset asset
 	asset := source
 	if common.IsRuneAsset(source) {
 		asset = target
@@ -131,7 +131,7 @@ func swapOne(ctx sdk.Context,
 			status = EventSuccess
 			swapEvt = NewEventSwap(
 				common.NewCoin(source, x),
-				common.NewCoin(target, emitTokens),
+				common.NewCoin(target, emitAssets),
 				common.FloatToUint(priceSlip*common.One),
 				common.FloatToUint(tradeSlip*common.One),
 				common.FloatToUint(poolSlip*common.One),
@@ -187,10 +187,10 @@ func swapOne(ctx sdk.Context,
 	// get our X, x, Y values
 	if common.IsRuneAsset(source) {
 		X = pool.BalanceRune
-		Y = pool.BalanceToken
+		Y = pool.BalanceAsset
 	} else {
 		Y = pool.BalanceRune
-		X = pool.BalanceToken
+		X = pool.BalanceAsset
 	}
 	x = amount
 
@@ -205,14 +205,14 @@ func swapOne(ctx sdk.Context,
 	outputSlip = calcOutputSlip(X, x)
 	liquitityFee = calcLiquitityFee(X, x, Y)
 	tradeSlip = calcTradeSlip(X, x)
-	emitTokens = calcTokenEmission(X, x, Y)
+	emitAssets = calcAssetEmission(X, x, Y)
 	poolSlip = calcPoolSlip(X, x)
 	priceSlip = calcPriceSlip(X, x, Y)
 
 	// do we have enough balance to swap?
 
-	if emitTokens.GT(Y) {
-		return sdk.ZeroUint(), pool, errors.New("token :%s balance is 0, can't do swap")
+	if emitAssets.GT(Y) {
+		return sdk.ZeroUint(), pool, errors.New("asset :%s balance is 0, can't do swap")
 	}
 	// Need to convert to float before the calculation , otherwise 0.1 becomes 0, which is bad
 
@@ -220,25 +220,25 @@ func swapOne(ctx sdk.Context,
 		ctx.Logger().Info("poolslip over global pool slip limit", "poolslip", fmt.Sprintf("%.2f", poolSlip), "gsl", fmt.Sprintf("%.2f", gsl))
 		return sdk.ZeroUint(), pool, errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
 	}
-	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sToken", pool.BalanceRune, pool.BalanceToken))
+	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sAsset", pool.BalanceRune, pool.BalanceAsset))
 
 	if common.IsRuneAsset(source) {
 		pool.BalanceRune = X.Add(x)
-		pool.BalanceToken = Y.Sub(emitTokens)
+		pool.BalanceAsset = Y.Sub(emitAssets)
 	} else {
-		pool.BalanceToken = X.Add(x)
-		pool.BalanceRune = Y.Sub(emitTokens)
+		pool.BalanceAsset = X.Add(x)
+		pool.BalanceRune = Y.Sub(emitAssets)
 	}
-	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sToken , user get:%s ", pool.BalanceRune, pool.BalanceToken, emitTokens))
+	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sAsset , user get:%s ", pool.BalanceRune, pool.BalanceAsset, emitAssets))
 
-	return emitTokens, pool, nil
+	return emitAssets, pool, nil
 }
 
 // calcPriceSlip - calculate the price slip
-// This calculates the price slip by dividing the number of coins added, by the number of emitted tokens
+// This calculates the price slip by dividing the number of coins added, by the number of emitted assets
 func calcPriceSlip(X, x, Y sdk.Uint) float64 {
-	tokenEmission := calcTokenEmission(X, x, Y)
-	return common.UintToFloat64(x) / common.UintToFloat64(tokenEmission)
+	assetEmission := calcAssetEmission(X, x, Y)
+	return common.UintToFloat64(x) / common.UintToFloat64(assetEmission)
 }
 
 // calcTradeSlip - calculate the trade slip
@@ -279,8 +279,8 @@ func calcLiquitityFee(X, x, Y sdk.Uint) sdk.Uint {
 	return numerator.Quo(denominator)
 }
 
-// calculate the number of tokens sent to the address (includes liquidity fee)
-func calcTokenEmission(X, x, Y sdk.Uint) sdk.Uint {
+// calculate the number of assets sent to the address (includes liquidity fee)
+func calcAssetEmission(X, x, Y sdk.Uint) sdk.Uint {
 	// ( x * X * Y ) / ( x + X )^2
 	numerator := x.Mul(X).Mul(Y)
 	denominator := x.Add(X).Mul(x.Add(X))

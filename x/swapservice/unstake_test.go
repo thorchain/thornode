@@ -22,11 +22,11 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 		name                  string
 		poolUnit              sdk.Uint
 		poolRune              sdk.Uint
-		poolToken             sdk.Uint
+		poolAsset             sdk.Uint
 		stakerUnit            sdk.Uint
 		percentage            sdk.Uint
 		expectedWithdrawRune  sdk.Uint
-		expectedWithdrawToken sdk.Uint
+		expectedWithdrawAsset sdk.Uint
 		expectedUnitLeft      sdk.Uint
 		expectedErr           error
 	}{
@@ -34,11 +34,11 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 			name:                  "zero-poolunit",
 			poolUnit:              sdk.ZeroUint(),
 			poolRune:              sdk.ZeroUint(),
-			poolToken:             sdk.ZeroUint(),
+			poolAsset:             sdk.ZeroUint(),
 			stakerUnit:            sdk.ZeroUint(),
 			percentage:            sdk.ZeroUint(),
 			expectedWithdrawRune:  sdk.ZeroUint(),
-			expectedWithdrawToken: sdk.ZeroUint(),
+			expectedWithdrawAsset: sdk.ZeroUint(),
 			expectedUnitLeft:      sdk.ZeroUint(),
 			expectedErr:           errors.New("poolUnits can't be zero"),
 		},
@@ -47,36 +47,36 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 			name:                  "zero-poolrune",
 			poolUnit:              sdk.NewUint(500 * common.One),
 			poolRune:              sdk.ZeroUint(),
-			poolToken:             sdk.ZeroUint(),
+			poolAsset:             sdk.ZeroUint(),
 			stakerUnit:            sdk.ZeroUint(),
 			percentage:            sdk.ZeroUint(),
 			expectedWithdrawRune:  sdk.ZeroUint(),
-			expectedWithdrawToken: sdk.ZeroUint(),
+			expectedWithdrawAsset: sdk.ZeroUint(),
 			expectedUnitLeft:      sdk.ZeroUint(),
 			expectedErr:           errors.New("pool rune balance can't be zero"),
 		},
 
 		{
-			name:                  "zero-pooltoken",
+			name:                  "zero-poolasset",
 			poolUnit:              sdk.NewUint(500 * common.One),
 			poolRune:              sdk.NewUint(500 * common.One),
-			poolToken:             sdk.ZeroUint(),
+			poolAsset:             sdk.ZeroUint(),
 			stakerUnit:            sdk.ZeroUint(),
 			percentage:            sdk.ZeroUint(),
 			expectedWithdrawRune:  sdk.ZeroUint(),
-			expectedWithdrawToken: sdk.ZeroUint(),
+			expectedWithdrawAsset: sdk.ZeroUint(),
 			expectedUnitLeft:      sdk.ZeroUint(),
-			expectedErr:           errors.New("pool token balance can't be zero"),
+			expectedErr:           errors.New("pool asset balance can't be zero"),
 		},
 		{
 			name:                  "negative-stakerUnit",
 			poolUnit:              sdk.NewUint(500 * common.One),
 			poolRune:              sdk.NewUint(500 * common.One),
-			poolToken:             sdk.NewUint(5100 * common.One),
+			poolAsset:             sdk.NewUint(5100 * common.One),
 			stakerUnit:            sdk.ZeroUint(),
 			percentage:            sdk.ZeroUint(),
 			expectedWithdrawRune:  sdk.ZeroUint(),
-			expectedWithdrawToken: sdk.ZeroUint(),
+			expectedWithdrawAsset: sdk.ZeroUint(),
 			expectedUnitLeft:      sdk.ZeroUint(),
 			expectedErr:           errors.New("staker unit can't be zero"),
 		},
@@ -85,11 +85,11 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 			name:                  "percentage-larger-than-100",
 			poolUnit:              sdk.NewUint(500 * common.One),
 			poolRune:              sdk.NewUint(500 * common.One),
-			poolToken:             sdk.NewUint(500 * common.One),
+			poolAsset:             sdk.NewUint(500 * common.One),
 			stakerUnit:            sdk.NewUint(100 * common.One),
 			percentage:            sdk.NewUint(12000),
 			expectedWithdrawRune:  sdk.ZeroUint(),
-			expectedWithdrawToken: sdk.ZeroUint(),
+			expectedWithdrawAsset: sdk.ZeroUint(),
 			expectedUnitLeft:      sdk.ZeroUint(),
 			expectedErr:           errors.Errorf("withdraw basis point %s is not valid", sdk.NewUint(12000)),
 		},
@@ -97,11 +97,11 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 			name:                  "unstake-1",
 			poolUnit:              sdk.NewUint(700 * common.One),
 			poolRune:              sdk.NewUint(700 * common.One),
-			poolToken:             sdk.NewUint(700 * common.One),
+			poolAsset:             sdk.NewUint(700 * common.One),
 			stakerUnit:            sdk.NewUint(200 * common.One),
 			percentage:            sdk.NewUint(10000),
 			expectedUnitLeft:      sdk.ZeroUint(),
-			expectedWithdrawToken: sdk.NewUint(200 * common.One),
+			expectedWithdrawAsset: sdk.NewUint(200 * common.One),
 			expectedWithdrawRune:  sdk.NewUint(200 * common.One),
 			expectedErr:           nil,
 		},
@@ -109,7 +109,7 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 
 	for _, item := range inputs {
 		c.Logf("name:%s", item.name)
-		withDrawRune, withDrawToken, unitAfter, err := calculateUnstake(item.poolUnit, item.poolRune, item.poolToken, item.stakerUnit, item.percentage)
+		withDrawRune, withDrawAsset, unitAfter, err := calculateUnstake(item.poolUnit, item.poolRune, item.poolAsset, item.stakerUnit, item.percentage)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
 		} else {
@@ -117,7 +117,7 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 		}
 		c.Logf("expected rune:%s,rune:%s", item.expectedWithdrawRune, withDrawRune)
 		c.Check(item.expectedWithdrawRune.Uint64(), Equals, withDrawRune.Uint64())
-		c.Check(item.expectedWithdrawToken.Uint64(), Equals, withDrawToken.Uint64())
+		c.Check(item.expectedWithdrawAsset.Uint64(), Equals, withDrawAsset.Uint64())
 		c.Check(item.expectedUnitLeft.Uint64(), Equals, unitAfter.Uint64())
 	}
 }
@@ -239,7 +239,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		msg           MsgSetUnStake
 		ps            poolStorage
 		runeAmount    sdk.Uint
-		tokenAmount   sdk.Uint
+		assetAmount   sdk.Uint
 		expectedError error
 	}{
 		{
@@ -253,7 +253,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
-			tokenAmount:   sdk.ZeroUint(),
+			assetAmount:   sdk.ZeroUint(),
 			expectedError: errors.New("empty public address"),
 		},
 		{
@@ -267,7 +267,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
-			tokenAmount:   sdk.ZeroUint(),
+			assetAmount:   sdk.ZeroUint(),
 			expectedError: errors.New("nothing to withdraw"),
 		},
 		{
@@ -281,7 +281,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
-			tokenAmount:   sdk.ZeroUint(),
+			assetAmount:   sdk.ZeroUint(),
 			expectedError: errors.New("request tx hash is empty"),
 		},
 		{
@@ -295,7 +295,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
-			tokenAmount:   sdk.ZeroUint(),
+			assetAmount:   sdk.ZeroUint(),
 			expectedError: errors.New("empty asset"),
 		},
 
@@ -310,7 +310,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
-			tokenAmount:   sdk.ZeroUint(),
+			assetAmount:   sdk.ZeroUint(),
 			expectedError: errors.New("withdraw basis points 10001 is invalid"),
 		},
 		{
@@ -324,7 +324,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
-			tokenAmount:   sdk.ZeroUint(),
+			assetAmount:   sdk.ZeroUint(),
 			expectedError: errors.New("pool-BNB.NOTEXIST doesn't exist"),
 		},
 		{
@@ -338,7 +338,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
-			tokenAmount:   sdk.ZeroUint(),
+			assetAmount:   sdk.ZeroUint(),
 			expectedError: errors.New("can't find pool staker: you asked for it"),
 		},
 		{
@@ -352,7 +352,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
-			tokenAmount:   sdk.ZeroUint(),
+			assetAmount:   sdk.ZeroUint(),
 			expectedError: errors.New("can't find staker pool: you asked for it"),
 		},
 		{
@@ -366,7 +366,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
-			tokenAmount:   sdk.ZeroUint(),
+			assetAmount:   sdk.ZeroUint(),
 			expectedError: errors.New("nothing to withdraw"),
 		},
 		{
@@ -380,7 +380,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            getInMemoryPoolStorageForUnstake(c),
 			runeAmount:    sdk.NewUint(100 * common.One),
-			tokenAmount:   sdk.NewUint(100 * common.One),
+			assetAmount:   sdk.NewUint(100 * common.One),
 			expectedError: nil,
 		},
 		{
@@ -394,24 +394,24 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            getInMemoryPoolStorageForUnstake(c),
 			runeAmount:    sdk.NewUint(50 * common.One),
-			tokenAmount:   sdk.NewUint(50 * common.One),
+			assetAmount:   sdk.NewUint(50 * common.One),
 			expectedError: nil,
 		},
 	}
 	for _, tc := range testCases {
 		ctx, _ := setupKeeperForTest(c)
 		c.Logf("name:%s", tc.name)
-		r, token, _, err := unstake(ctx, tc.ps, tc.msg)
+		r, asset, _, err := unstake(ctx, tc.ps, tc.msg)
 		if tc.expectedError != nil {
 			c.Assert(err, NotNil)
 			c.Check(err.Error(), Equals, tc.expectedError.Error())
 			c.Check(r.Uint64(), Equals, tc.runeAmount.Uint64())
-			c.Check(token.Uint64(), Equals, tc.tokenAmount.Uint64())
+			c.Check(asset.Uint64(), Equals, tc.assetAmount.Uint64())
 			continue
 		}
 		c.Assert(err, IsNil)
 		c.Check(r.Uint64(), Equals, tc.runeAmount.Uint64())
-		c.Check(token.Uint64(), Equals, tc.tokenAmount.Uint64())
+		c.Check(asset.Uint64(), Equals, tc.assetAmount.Uint64())
 	}
 }
 
@@ -426,7 +426,7 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 	store := NewMockInMemoryPoolStorage()
 	pool := Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
-		BalanceToken: sdk.NewUint(100 * common.One),
+		BalanceAsset: sdk.NewUint(100 * common.One),
 		Asset:        common.BNBAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
 		PoolAddress:  publicAddress,
@@ -454,7 +454,7 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 					StakeTxDetail{
 						RequestTxHash: common.TxID("28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE"),
 						RuneAmount:    sdk.NewUint(100 * common.One),
-						TokenAmount:   sdk.NewUint(100 * common.One),
+						AssetAmount:   sdk.NewUint(100 * common.One),
 					},
 				},
 			},

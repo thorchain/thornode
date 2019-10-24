@@ -129,7 +129,7 @@ describe "API Tests" do
       resp = get("/pool/TCAN-014")
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("2224541407"), resp.body.inspect
-      expect(resp.body['balance_token']).to eq("354850000"), resp.body.inspect
+      expect(resp.body['balance_asset']).to eq("354850000"), resp.body.inspect
 
       # another swap ,it should fail due to price protection
       tx1 = makeTx(
@@ -144,7 +144,7 @@ describe "API Tests" do
       resp = get("/pool/BNB.TCAN-014")
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("2224541407"), resp.body.inspect
-      expect(resp.body['balance_token']).to eq("354850000"), resp.body.inspect
+      expect(resp.body['balance_asset']).to eq("354850000"), resp.body.inspect
     end
 
     it "Send outbound tx and mark tx'es as complete" do
@@ -191,7 +191,7 @@ describe "API Tests" do
       expect(resp.body[2]['in_hash']).to eq(txid), resp.body[2].inspect
     end
 
-    it "add tokens to a pool" do
+    it "add assets to a pool" do
       coins = [
         {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "20000000"},
         {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "20000000"},
@@ -203,7 +203,7 @@ describe "API Tests" do
       resp = get("/pool/TCAN-014")
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("2244541407"), resp.body.inspect
-      expect(resp.body['balance_token']).to eq("374850000"), resp.body.inspect
+      expect(resp.body['balance_asset']).to eq("374850000"), resp.body.inspect
     end
 
     it "adds gas" do

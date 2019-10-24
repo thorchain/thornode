@@ -14,7 +14,7 @@ import (
 // NodeStatus Represent the Node status
 type NodeStatus uint8
 
-// As soon as user donate a certain amount of token(defined later)
+// As soon as user donate a certain amount of asset(defined later)
 // their node adddress will be whitelisted
 // once we discover their observer had send tx in to statechain , then their status will be standby
 // once we rotate them in , then they will be active

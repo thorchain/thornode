@@ -27,7 +27,7 @@ func (mps MockPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) types.Po
 	} else {
 		return types.Pool{
 			BalanceRune:  sdk.NewUint(100).MulUint64(common.One),
-			BalanceToken: sdk.NewUint(100).MulUint64(common.One),
+			BalanceAsset: sdk.NewUint(100).MulUint64(common.One),
 			PoolUnits:    sdk.NewUint(100).MulUint64(common.One),
 			Status:       types.Enabled,
 			Asset:        asset,

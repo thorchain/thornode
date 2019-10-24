@@ -99,14 +99,14 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 		if err != nil {
 			return errors.Wrap(err, "fail to unmarshal pool")
 		}
-		tokenAmount := p.BalanceToken
+		assetAmount := p.BalanceAsset
 		// we only take BNB for now
 		if common.IsBNBAsset(p.Asset) {
-			tokenAmount = tokenAmount.Sub(sdk.NewUint(uint64(poolRefundGas)))
+			assetAmount = assetAmount.Sub(sdk.NewUint(uint64(poolRefundGas)))
 		}
 		runeTotal = runeTotal.Add(p.BalanceRune)
-		if p.BalanceToken.GT(sdk.ZeroUint()) {
-			coins = append(coins, common.NewCoin(p.Asset, tokenAmount))
+		if p.BalanceAsset.GT(sdk.ZeroUint()) {
+			coins = append(coins, common.NewCoin(p.Asset, assetAmount))
 		}
 	}
 
