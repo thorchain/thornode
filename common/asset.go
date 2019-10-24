@@ -22,20 +22,24 @@ func NewAsset(input string) (Asset, error) {
 
 	asset := Asset{}
 	parts := strings.Split(input, ".")
-	if len(parts) != 2 {
-		return Asset{}, fmt.Errorf("bad asset format")
+	var sym string
+	if len(parts) == 1 {
+		asset.Chain = BNBChain
+		sym = parts[0]
+	} else {
+		asset.Chain, err = NewChain(parts[0])
+		if err != nil {
+			return Asset{}, err
+		}
+		sym = parts[1]
 	}
-	asset.Chain, err = NewChain(parts[0])
+
+	asset.Symbol, err = NewSymbol(sym)
 	if err != nil {
 		return Asset{}, err
 	}
 
-	asset.Symbol, err = NewSymbol(parts[1])
-	if err != nil {
-		return Asset{}, err
-	}
-
-	parts = strings.Split(parts[1], "-")
+	parts = strings.Split(sym, "-")
 	asset.Ticker, err = NewTicker(parts[0])
 	if err != nil {
 		return Asset{}, err

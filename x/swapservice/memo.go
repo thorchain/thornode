@@ -186,7 +186,8 @@ func ParseMemo(memo string) (Memo, error) {
 			return noMemo, fmt.Errorf("cannot parse given memo: length %d", len(parts))
 		}
 		var err error
-		asset, err = common.NewAsset(fmt.Sprintf("%s.%s", common.BNBChain, parts[1]))
+		fmt.Printf("Parts: %+v\n", parts)
+		asset, err = common.NewAsset(parts[1])
 		if err != nil {
 			return noMemo, err
 		}
