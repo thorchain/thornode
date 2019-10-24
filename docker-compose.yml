@@ -1,0 +1,5 @@
+version: '3'
+services:
+  service-node:
+    context: ./build/images
+    build: ./${TYPE}/Dockerfile
