@@ -64,7 +64,7 @@ func (s Sweep) EmptyWallets() {
 }
 
 // Balances : Get the account balances of a given wallet.
-func (s Sweep) Balances(address btypes.AccAddress) []btypes.AssetBalance {
+func (s Sweep) Balances(address btypes.AccAddress) []btypes.TokenBalance {
 	acct, err := s.Client.GetAccount(address.String())
 	if err != nil {
 		log.Fatal(err)
