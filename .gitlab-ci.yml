@@ -140,13 +140,12 @@ smoke-test:staging:
     DOCKER_DRIVER: overlay2
   before_script:
     - export GOBIN=$GOPATH/bin
-  except:
-    - schedules
   environment:
     name: staging
   script: make smoke-test
   only:
     - schedules
+  when: manual
 
 seed:staging:
   stage: seed
@@ -158,8 +157,6 @@ seed:staging:
     DOCKER_DRIVER: overlay2
   before_script:
     - export GOBIN=$GOPATH/bin
-  except:
-    - schedules
   environment:
     name: staging
   script: make seed
