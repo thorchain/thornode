@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	BNBTicker     = Ticker("BNB")
-	RuneTicker    = Ticker("RUNE")
+	BNBTicker  = Ticker("BNB")
+	RuneTicker = Ticker("RUNE")
+	// TODO these are not tickers, they are symbols, delete them
 	RuneA1FTicker = Ticker("RUNE-A1F")
 	RuneB1ATicker = Ticker("RUNE-B1A")
 )
