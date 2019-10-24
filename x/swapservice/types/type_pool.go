@@ -76,10 +76,9 @@ func GetPoolStatus(ps string) PoolStatus {
 // Pool is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
 type Pool struct {
-	Chain               common.Chain   `json:"chain"`                  // the blockchain the token is on
 	BalanceRune         sdk.Uint       `json:"balance_rune"`           // how many RUNE in the pool
 	BalanceToken        sdk.Uint       `json:"balance_token"`          // how many token in the pool
-	Ticker              common.Ticker  `json:"symbol"`                 // what's the token's ticker
+	Asset               common.Asset   `json:"asset"`                  // what's the token's asset
 	PoolUnits           sdk.Uint       `json:"pool_units"`             // total units of the pool
 	PoolAddress         common.Address `json:"pool_address"`           // bnb liquidity pool address
 	Status              PoolStatus     `json:"status"`                 // status
@@ -98,26 +97,22 @@ func NewPool() Pool {
 
 func (ps Pool) Valid() error {
 	if ps.Empty() {
-		return errors.New("Pool ticker cannot be empty")
-	}
-	if ps.Chain.IsEmpty() {
-		return errors.New("Pool chain cannot be empty")
+		return errors.New("Pool asset cannot be empty")
 	}
 
 	return nil
 }
 
 func (ps Pool) Empty() bool {
-	return ps.Ticker == ""
+	return ps.Asset.IsEmpty()
 }
 
 // String implement fmt.Stringer
 func (ps Pool) String() string {
 	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintln("chain: " + ps.Chain.String()))
 	sb.WriteString(fmt.Sprintln("rune-balance: " + ps.BalanceRune.String()))
 	sb.WriteString(fmt.Sprintln("token-balance: " + ps.BalanceToken.String()))
-	sb.WriteString(fmt.Sprintln("ticker: " + ps.Ticker.String()))
+	sb.WriteString(fmt.Sprintln("asset: " + ps.Asset.String()))
 	sb.WriteString(fmt.Sprintln("pool-units: " + ps.PoolUnits.String()))
 	sb.WriteString(fmt.Sprintln("status: " + ps.Status.String()))
 	return sb.String()

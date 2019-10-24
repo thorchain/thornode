@@ -14,15 +14,15 @@ import (
 type MockPoolStorage struct {
 }
 
-func (mps MockPoolStorage) PoolExist(ctx sdk.Context, ticker common.Ticker) bool {
-	if ticker.Equals(common.Ticker("NOTEXIST")) {
+func (mps MockPoolStorage) PoolExist(ctx sdk.Context, asset common.Asset) bool {
+	if asset.Equals(common.Asset{Chain: "BNB", Ticker: "NOTEXIST"}) {
 		return false
 	}
 	return true
 }
 
-func (mps MockPoolStorage) GetPool(ctx sdk.Context, ticker common.Ticker) types.Pool {
-	if ticker.Equals(common.Ticker("NOTEXIST")) {
+func (mps MockPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) types.Pool {
+	if asset.Equals(common.Asset{Chain: "BNB", Ticker: "NOTEXIST"}) {
 		return types.Pool{}
 	} else {
 		return types.Pool{
@@ -30,7 +30,7 @@ func (mps MockPoolStorage) GetPool(ctx sdk.Context, ticker common.Ticker) types.
 			BalanceToken: sdk.NewUint(100).MulUint64(common.One),
 			PoolUnits:    sdk.NewUint(100).MulUint64(common.One),
 			Status:       types.Enabled,
-			Ticker:       ticker,
+			Asset:        asset,
 		}
 	}
 }
@@ -48,14 +48,14 @@ func (mps MockPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common.Addres
 
 }
 
-func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (types.PoolStaker, error) {
-	if ticker.Equals(common.Ticker("NOTEXISTSTICKER")) {
+func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (types.PoolStaker, error) {
+	if asset.Equals(common.Asset{Chain: "BNB", Ticker: "NOTEXISTSTICKER"}) {
 		return types.PoolStaker{}, errors.New("you asked for it")
 	}
-	return types.NewPoolStaker(ticker, sdk.NewUint(100)), nil
+	return types.NewPoolStaker(asset, sdk.NewUint(100)), nil
 }
 
-func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps types.PoolStaker) {}
+func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps types.PoolStaker) {}
 
 func (mps MockPoolStorage) GetAdminConfigValue(ctx sdk.Context, key types.AdminConfigKey, addr sdk.AccAddress) (string, error) {
 	return "FOOBAR", nil

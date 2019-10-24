@@ -13,25 +13,25 @@ var _ = Suite(&MsgSetPoolDataSuite{})
 func (MsgSetPoolDataSuite) TestMsgSetPoolData(c *C) {
 	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
-	m := NewMsgSetPoolData(common.BNBTicker, Enabled, addr)
+	m := NewMsgSetPoolData(common.BNBAsset, Enabled, addr)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_pooldata")
 
 	inputs := []struct {
-		ticker common.Ticker
+		asset  common.Asset
 		rune   sdk.Uint
 		token  sdk.Uint
 		status PoolStatus
 	}{
 		{
-			ticker: common.Ticker(""),
+			asset:  common.Asset{},
 			rune:   sdk.NewUint(100000000),
 			token:  sdk.NewUint(100000000),
 			status: Enabled,
 		},
 
 		{
-			ticker: common.BNBTicker,
+			asset:  common.BNBAsset,
 			rune:   sdk.NewUint(100000000),
 			token:  sdk.NewUint(100000000),
 			status: PoolStatus(-1),
@@ -39,7 +39,7 @@ func (MsgSetPoolDataSuite) TestMsgSetPoolData(c *C) {
 	}
 
 	for _, item := range inputs {
-		m := NewMsgSetPoolData(item.ticker, item.status, addr)
+		m := NewMsgSetPoolData(item.asset, item.status, addr)
 		m.BalanceRune = item.rune
 		m.BalanceToken = item.token
 		c.Assert(m.ValidateBasic(), NotNil)

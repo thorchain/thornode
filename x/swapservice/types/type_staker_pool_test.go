@@ -19,8 +19,8 @@ func (StakerPoolSuite) TestStakerPool(c *C) {
 	c.Assert(stakerPool.PoolUnits, NotNil)
 
 	stakerPoolItem := &StakerPoolItem{
-		Ticker: common.BNBTicker,
-		Units:  sdk.NewUint(100),
+		Asset: common.BNBAsset,
+		Units: sdk.NewUint(100),
 	}
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
@@ -33,22 +33,22 @@ func (StakerPoolSuite) TestStakerPool(c *C) {
 	stakerPoolItem.AddStakerTxDetail(txID2, sdk.NewUint(50), sdk.NewUint(50))
 	c.Assert(len(stakerPool.PoolUnits), Equals, 1)
 	c.Assert(stakerPoolItem.StakeDetails, NotNil)
-	spi := stakerPool.GetStakerPoolItem(common.BNBTicker)
+	spi := stakerPool.GetStakerPoolItem(common.BNBAsset)
 	c.Assert(spi, NotNil)
 	c.Assert(len(spi.StakeDetails), Equals, 2)
-	stakerPool.RemoveStakerPoolItem(common.RuneA1FTicker)
-	stakerPool.RemoveStakerPoolItem(common.BNBTicker)
+	stakerPool.RemoveStakerPoolItem(common.RuneA1FAsset)
+	stakerPool.RemoveStakerPoolItem(common.BNBAsset)
 	c.Assert(len(stakerPool.PoolUnits), Equals, 0)
 	stakerPool.UpsertStakerPoolItem(stakerPoolItem)
 	stakerPoolItem1 := &StakerPoolItem{
-		Ticker: common.RuneB1ATicker,
-		Units:  sdk.NewUint(100),
+		Asset: common.RuneB1AAsset,
+		Units: sdk.NewUint(100),
 	}
 	stakerPool.UpsertStakerPoolItem(stakerPoolItem1)
 	stakerPool.UpsertStakerPoolItem(stakerPoolItem)
-	stakerPool.RemoveStakerPoolItem(common.RuneB1ATicker)
+	stakerPool.RemoveStakerPoolItem(common.RuneB1AAsset)
 	c.Assert(len(stakerPool.PoolUnits), Equals, 1)
 	c.Log(stakerPool.String())
-	spi1 := stakerPool.GetStakerPoolItem(common.RuneA1FTicker)
+	spi1 := stakerPool.GetStakerPoolItem(common.RuneA1FAsset)
 	c.Assert(spi1.Units.IsZero(), Equals, true)
 }

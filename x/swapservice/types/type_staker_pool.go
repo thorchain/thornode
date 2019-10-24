@@ -21,14 +21,14 @@ type StakeTxDetail struct {
 // StakerPoolItem represent the staker's activity in a pool
 // Staker can stake on multiple pool
 type StakerPoolItem struct {
-	Ticker       common.Ticker   `json:"symbol"`
+	Asset        common.Asset    `json:"asset"`
 	Units        sdk.Uint        `json:"units"`
 	StakeDetails []StakeTxDetail `json:"stake_details"`
 }
 
 func (spi StakerPoolItem) Valid() error {
-	if spi.Ticker.IsEmpty() {
-		return errors.New("Ticker cannot be empty")
+	if spi.Asset.IsEmpty() {
+		return errors.New("Asset cannot be empty")
 	}
 
 	for _, detail := range spi.StakeDetails {
@@ -48,7 +48,7 @@ func (spi StakerPoolItem) Valid() error {
 //    "staker_id": "bnbxasdfaswqerqwe",
 //    "pool_and_units": [
 //        {
-//            "symbol": "BNB",
+//            "asset": "BNB",
 //            "units": "200",
 //            "stake_details": [
 //                {
@@ -64,7 +64,7 @@ func (spi StakerPoolItem) Valid() error {
 //            ]
 //        },
 //        {
-//            "symbol": "BTC",
+//            "asset": "BTC",
 //            "units": "200",
 //            "stake_details": [
 //                {
@@ -121,24 +121,24 @@ func (sp StakerPool) String() string {
 }
 
 // GetStakerPoolItem return the StakerPoolItem with given pool id
-func (sp *StakerPool) GetStakerPoolItem(ticker common.Ticker) *StakerPoolItem {
+func (sp *StakerPool) GetStakerPoolItem(asset common.Asset) *StakerPoolItem {
 	for _, item := range sp.PoolUnits {
-		if ticker.Equals(item.Ticker) {
+		if asset.Equals(item.Asset) {
 			return item
 		}
 	}
 	return &StakerPoolItem{
-		Ticker:       ticker,
+		Asset:        asset,
 		Units:        sdk.ZeroUint(),
 		StakeDetails: []StakeTxDetail{},
 	}
 }
 
 // RemoveStakerPoolItem delete the stakerpoolitem with given pool id from the struct
-func (sp *StakerPool) RemoveStakerPoolItem(ticker common.Ticker) {
+func (sp *StakerPool) RemoveStakerPoolItem(asset common.Asset) {
 	deleteIdx := -1
 	for idx, item := range sp.PoolUnits {
-		if item.Ticker.Equals(ticker) {
+		if item.Asset.Equals(asset) {
 			deleteIdx = idx
 		}
 	}
@@ -155,7 +155,7 @@ func (sp *StakerPool) RemoveStakerPoolItem(ticker common.Ticker) {
 func (sp *StakerPool) UpsertStakerPoolItem(stakerPoolItem *StakerPoolItem) {
 	pos := -1
 	for idx, item := range sp.PoolUnits {
-		if item.Ticker.Equals(stakerPoolItem.Ticker) {
+		if item.Asset.Equals(stakerPoolItem.Asset) {
 			pos = idx
 		}
 	}

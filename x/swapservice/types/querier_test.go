@@ -11,9 +11,9 @@ var _ = Suite(&QueryResPoolsSuite{})
 
 func (QueryResPoolsSuite) TestQueryResPools(c *C) {
 	p := NewPool()
-	p.Ticker = common.BNBTicker
+	p.Asset = common.BNBAsset
 	var qrp QueryResPools
 	qrp = append(qrp, p)
-	c.Check(qrp.String(), Equals, "BNB")
+	c.Check(qrp.String(), Equals, "BNB.BNB")
 
 }

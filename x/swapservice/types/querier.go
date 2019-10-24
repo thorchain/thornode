@@ -13,11 +13,11 @@ type QueryResPools []Pool
 
 // implement fmt.Stringer
 func (n QueryResPools) String() string {
-	var tickers []string
+	var assets []string
 	for _, record := range n {
-		tickers = append(tickers, record.Ticker.String())
+		assets = append(assets, record.Asset.String())
 	}
-	return strings.Join(tickers, "\n")
+	return strings.Join(assets, "\n")
 }
 
 type QueryResHeights struct {

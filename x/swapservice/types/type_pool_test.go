@@ -16,7 +16,7 @@ func (PoolTestSuite) TestPool(c *C) {
 	p := NewPool()
 	c.Check(p.Empty(), Equals, true)
 	c.Check(p.TokenPriceInRune(), Equals, float64(0))
-	p.Ticker = common.BNBTicker
+	p.Asset = common.BNBAsset
 	c.Check(p.Empty(), Equals, false)
 	p.BalanceRune = sdk.NewUint(100 * common.One)
 	p.BalanceToken = sdk.NewUint(50 * common.One)
@@ -27,7 +27,7 @@ func (PoolTestSuite) TestPool(c *C) {
 	bnbAddress := GetRandomBNBAddress()
 	txID := GetRandomTxHash()
 
-	m := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(1), bnbAddress, bnbAddress, sdk.NewUint(2), addr)
+	m := NewMsgSwap(txID, common.RuneA1FAsset, common.BNBAsset, sdk.NewUint(1), bnbAddress, bnbAddress, sdk.NewUint(2), addr)
 
 	c.Check(p.EnsureValidPoolStatus(m), IsNil)
 	msgNoop := NewMsgNoOp(addr)
