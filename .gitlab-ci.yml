@@ -68,7 +68,9 @@ gitlabs:build:testing:
     - apk add python py-pip make git
   environment:
     name: develop
-  script: make docker-gitlabs-push
+  script:
+    - make docker-gitlabs-push
+    - make docker-gitlabs-push-nightly
 
 deploy:develop:
   stage: deploy

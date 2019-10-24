@@ -68,10 +68,18 @@ docker-gitlabs-login: logger
 	docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
 
 docker-gitlabs-build: docker-gitlabs-login
-	./scripts/build.sh registry.gitlab.com/thorchain/bepswap/thornode:latest | tee ./log/state-chain-build.log
+	./scripts/build.sh registry.gitlab.com/thorchain/bepswap/thornode:develop | tee ./log/state-chain-build.log
 
 docker-gitlabs-tag: docker-gitlabs-build
-	docker tag registry.gitlab.com/thorchain/bepswap/thornode:latest registry.gitlab.com/thorchain/bepswap/thornode:${STATE_CHAIN_IMAGE_HASH}
+	docker tag registry.gitlab.com/thorchain/bepswap/thornode:develop registry.gitlab.com/thorchain/bepswap/thornode:${STATE_CHAIN_IMAGE_HASH}
 
 docker-gitlabs-push: docker-gitlabs-tag
-	docker push registry.gitlab.com/thorchain/bepswap/thornode:latest
+	docker push registry.gitlab.com/thorchain/bepswap/thornode:develop
+
+# nightly
+
+docker-gitlabs-build-nightly: docker-gitlabs-login
+	./scripts/build.sh registry.gitlab.com/thorchain/bepswap/thornode:nightly | tee ./log/state-chain-build.log
+
+docker-gitlabs-push-nightly: docker-gitlabs-build-nightly
+	docker push registry.gitlab.com/thorchain/bepswap/thornode:develop
