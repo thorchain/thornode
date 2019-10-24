@@ -15,14 +15,14 @@ type MockPoolStorage struct {
 }
 
 func (mps MockPoolStorage) PoolExist(ctx sdk.Context, asset common.Asset) bool {
-	if asset.Equals(common.Asset{Chain: "BNB", Ticker: "NOTEXIST"}) {
+	if asset.Equals(common.Asset{Chain: "BNB", Symbol: "NOTEXIST", Ticker: "NOTEXIST"}) {
 		return false
 	}
 	return true
 }
 
 func (mps MockPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) types.Pool {
-	if asset.Equals(common.Asset{Chain: "BNB", Ticker: "NOTEXIST"}) {
+	if asset.Equals(common.Asset{Chain: "BNB", Symbol: "NOTEXIST", Ticker: "NOTEXIST"}) {
 		return types.Pool{}
 	} else {
 		return types.Pool{
@@ -49,7 +49,7 @@ func (mps MockPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common.Addres
 }
 
 func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (types.PoolStaker, error) {
-	if asset.Equals(common.Asset{Chain: "BNB", Ticker: "NOTEXISTSTICKER"}) {
+	if asset.Equals(common.Asset{Chain: "BNB", Symbol: "NOTEXISTSTICKER", Ticker: "NOTEXISTSTICKER"}) {
 		return types.PoolStaker{}, errors.New("you asked for it")
 	}
 	return types.NewPoolStaker(asset, sdk.NewUint(100)), nil

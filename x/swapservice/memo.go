@@ -299,7 +299,7 @@ func ParseMemo(memo string) (Memo, error) {
 		return NextPoolMemo{
 			MemoBase: MemoBase{
 				TxType: txNextPool,
-				Ticker: "",
+				Asset:  common.Asset{},
 			},
 			NextPoolAddr: nextPoolAddr,
 		}, nil

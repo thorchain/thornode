@@ -27,8 +27,8 @@ func (s SwapSuite) TestSwap(c *C) {
 	inputs := []struct {
 		name            string
 		requestTxHash   common.TxID
-		source          common.Ticker
-		target          common.Ticker
+		source          common.Asset
+		target          common.Asset
 		amount          sdk.Uint
 		requester       common.Address
 		destination     common.Address
@@ -40,8 +40,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-source",
 			requestTxHash: "hash",
-			source:        common.Ticker(""),
-			target:        common.BNBTicker,
+			source:        common.Asset{},
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "whatever",
@@ -51,8 +51,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-target",
 			requestTxHash: "hash",
-			source:        common.RuneTicker,
-			target:        common.Ticker(""),
+			source:        common.RuneA1FAsset,
+			target:        common.Asset{},
 			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "whatever",
@@ -62,8 +62,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-requestTxHash",
 			requestTxHash: "",
-			source:        common.RuneTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "whatever",
@@ -73,8 +73,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-amount",
 			requestTxHash: "hash",
-			source:        common.RuneTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.ZeroUint(),
 			requester:     "tester",
 			destination:   "whatever",
@@ -84,8 +84,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-requester",
 			requestTxHash: "hash",
-			source:        common.RuneTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100 * common.One),
 			requester:     "",
 			destination:   "whatever",
@@ -95,8 +95,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "empty-destination",
 			requestTxHash: "hash",
-			source:        common.RuneTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "",
@@ -106,44 +106,44 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "pool-not-exist",
 			requestTxHash: "hash",
-			source:        "NOTEXIST",
-			target:        common.RuneTicker,
+			source:        common.Asset{Chain: "BNB", Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
+			target:        common.RuneA1FAsset,
 			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
 			tradeTarget:   sdk.NewUint(110000000),
 			returnAmount:  sdk.ZeroUint(),
-			expectedErr:   errors.New("NOTEXIST doesn't exist"),
+			expectedErr:   errors.New("BNB.NOTEXIST doesn't exist"),
 		},
 		{
 			name:          "pool-not-exist-1",
 			requestTxHash: "hash",
-			source:        common.RuneTicker,
-			target:        "NOTEXIST",
+			source:        common.RuneA1FAsset,
+			target:        common.Asset{Chain: "BNB", Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
 			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
 			tradeTarget:   sdk.NewUint(120000000),
 			returnAmount:  sdk.ZeroUint(),
-			expectedErr:   errors.New("NOTEXIST doesn't exist"),
+			expectedErr:   errors.New("BNB.NOTEXIST doesn't exist"),
 		},
 		{
 			name:          "swap-over-global-sliplimit",
 			requestTxHash: "hash",
-			source:        common.RuneTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(50 * common.One),
 			requester:     "tester",
 			destination:   "don't know",
 			returnAmount:  sdk.ZeroUint(),
 			tradeTarget:   sdk.ZeroUint(),
-			expectedErr:   errors.Errorf("fail to swap from RUNE to BNB: pool slip:0.928571 is over global pool slip limit :%s", globalSlipLimit),
+			expectedErr:   errors.Errorf("fail to swap from BNB.RUNE-A1F to BNB.BNB: pool slip:0.928571 is over global pool slip limit :%s", globalSlipLimit),
 		},
 		{
 			name:          "swap-over-trade-sliplimit",
 			requestTxHash: "hash",
-			source:        common.RuneTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(9 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
@@ -154,8 +154,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "swap-no-target-price-no-protection",
 			requestTxHash: "hash",
-			source:        common.RuneTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(8 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
@@ -166,8 +166,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "swap",
 			requestTxHash: "hash",
-			source:        common.RuneTicker,
-			target:        common.BNBTicker,
+			source:        common.RuneA1FAsset,
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(5 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
@@ -178,8 +178,8 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "double-swap",
 			requestTxHash: "hash",
-			source:        "BTC",
-			target:        common.BNBTicker,
+			source:        common.Asset{Chain: "BTC", Ticker: "BTC", Symbol: "BTC"},
+			target:        common.BNBAsset,
 			amount:        sdk.NewUint(5 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
@@ -206,18 +206,18 @@ func (s SwapSuite) TestSwap(c *C) {
 func (s SwapSuite) TestValidatePools(c *C) {
 	keeper := mocks.MockPoolStorage{}
 	ctx, _ := setupKeeperForTest(c)
-	c.Check(validatePools(ctx, keeper, common.RuneTicker), IsNil)
-	c.Check(validatePools(ctx, keeper, "NOTEXIST"), NotNil)
+	c.Check(validatePools(ctx, keeper, common.RuneA1FAsset), IsNil)
+	c.Check(validatePools(ctx, keeper, common.Asset{Chain: "BNB", Ticker: "NOTEXIST", Symbol: "NOTEXIST"}), NotNil)
 }
 
 func (s SwapSuite) TestValidateMessage(c *C) {
-	c.Check(validateMessage(common.RuneTicker, "BNB", sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", "txHASH"), IsNil)
-	c.Check(validateMessage(common.RuneTicker, "BNB", sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", ""), NotNil)
-	c.Check(validateMessage("", "BNB", sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", "txHASH"), NotNil)
-	c.Check(validateMessage(common.RuneTicker, "", sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", "txHASH"), NotNil)
-	c.Check(validateMessage(common.RuneTicker, "BNB", sdk.ZeroUint(), "bnbXXXX", "bnbYYY", "txHASH"), NotNil)
-	c.Check(validateMessage(common.RuneTicker, "BNB", sdk.NewUint(3429850000), "", "bnbYYY", "txHASH"), NotNil)
-	c.Check(validateMessage(common.RuneTicker, "BNB", sdk.NewUint(3429850000), "bnbXXXX", "", "txHASH"), NotNil)
+	c.Check(validateMessage(common.RuneA1FAsset, common.BNBAsset, sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", "txHASH"), IsNil)
+	c.Check(validateMessage(common.RuneA1FAsset, common.BNBAsset, sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", ""), NotNil)
+	c.Check(validateMessage(common.Asset{}, common.BNBAsset, sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", "txHASH"), NotNil)
+	c.Check(validateMessage(common.RuneA1FAsset, common.Asset{}, sdk.NewUint(3429850000), "bnbXXXX", "bnbYYY", "txHASH"), NotNil)
+	c.Check(validateMessage(common.RuneA1FAsset, common.BNBAsset, sdk.ZeroUint(), "bnbXXXX", "bnbYYY", "txHASH"), NotNil)
+	c.Check(validateMessage(common.RuneA1FAsset, common.BNBAsset, sdk.NewUint(3429850000), "", "bnbYYY", "txHASH"), NotNil)
+	c.Check(validateMessage(common.RuneA1FAsset, common.BNBAsset, sdk.NewUint(3429850000), "bnbXXXX", "", "txHASH"), NotNil)
 }
 
 func (s SwapSuite) TestCalculators(c *C) {
@@ -252,11 +252,11 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	txOutStore.NewBlock(1)
 	poolAddrMgr := NewPoolAddressManager(k)
 	// no pool
-	msg := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(common.One), signerBNBAddr, signerBNBAddr, sdk.ZeroUint(), observerAddr)
+	msg := NewMsgSwap(txID, common.RuneA1FAsset, common.BNBAsset, sdk.NewUint(common.One), signerBNBAddr, signerBNBAddr, sdk.ZeroUint(), observerAddr)
 	res := handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msg)
 	c.Assert(res.Code, Equals, sdk.CodeInternal)
 	pool := NewPool()
-	pool.Ticker = common.BNBTicker
+	pool.Asset = common.BNBAsset
 	pool.BalanceToken = sdk.NewUint(100 * common.One)
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
 	k.SetPool(ctx, pool)
@@ -264,15 +264,15 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	res = handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msg)
 	c.Assert(res.IsOK(), Equals, true)
 
-	msgSwapPriceProtection := NewMsgSwap(txID, common.RuneA1FTicker, common.BNBTicker, sdk.NewUint(common.One), signerBNBAddr, signerBNBAddr, sdk.NewUint(2*common.One), observerAddr)
+	msgSwapPriceProtection := NewMsgSwap(txID, common.RuneA1FAsset, common.BNBAsset, sdk.NewUint(common.One), signerBNBAddr, signerBNBAddr, sdk.NewUint(2*common.One), observerAddr)
 	res1 := handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msgSwapPriceProtection)
 	c.Assert(res1.IsOK(), Equals, false)
 	c.Assert(res1.Code, Equals, sdk.CodeInternal)
 
 	poolTCAN := NewPool()
-	tCanTicker, err := common.NewTicker("TCAN-014")
+	tCanAsset, err := common.NewAsset("BNB.TCAN-014")
 	c.Assert(err, IsNil)
-	poolTCAN.Ticker = tCanTicker
+	poolTCAN.Asset = tCanAsset
 	poolTCAN.BalanceToken = sdk.NewUint(334850000)
 	poolTCAN.BalanceRune = sdk.NewUint(2349500000)
 	k.SetPool(ctx, poolTCAN)
@@ -281,9 +281,6 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
 	observePoolAddr, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
-	tCanAsset, _ := common.NewAsset(fmt.Sprintf("%s.%s", common.BNBChain, tCanTicker))
-	fmt.Println(tCanAsset)
-
 	txIn := types.NewTxIn(
 		common.Coins{
 			common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
@@ -295,9 +292,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	)
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txID1, txIn, observerAddr)
 	c.Assert(err, IsNil)
-	fmt.Printf("MSG: %+v\n", msgSwapFromTxIn)
 
-	//msgSwapRune := NewMsgSwap(txID1, tCanTicker, common.RuneA1FTicker, sdk.NewUint(20000000), addr, addr, sdk.NewUint(124958593), observerAddr)
 	res2 := handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msgSwapFromTxIn.(MsgSwap))
 
 	c.Assert(res2.IsOK(), Equals, true)

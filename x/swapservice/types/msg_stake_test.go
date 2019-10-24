@@ -60,18 +60,10 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 			txHash:        txID,
 			signer:        sdk.AccAddress{},
 		},
-		{
-			asset:         common.BNBAsset,
-			r:             sdk.NewUint(100000000),
-			token:         sdk.NewUint(100000000),
-			publicAddress: bnbAddress,
-			txHash:        txID,
-			signer:        addr,
-		},
 	}
-	for _, item := range inputs {
+	for i, item := range inputs {
 		m := NewMsgSetStakeData(item.asset, item.r, item.token, item.publicAddress, item.txHash, item.signer)
-		c.Assert(m.ValidateBasic(), NotNil)
+		c.Assert(m.ValidateBasic(), NotNil, Commentf("%d) %s\n", i, m))
 	}
 }
 

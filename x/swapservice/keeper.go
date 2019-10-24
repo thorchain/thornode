@@ -154,6 +154,7 @@ func (k Keeper) GetPoolDataIterator(ctx sdk.Context) sdk.Iterator {
 func (k Keeper) PoolExist(ctx sdk.Context, asset common.Asset) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPool, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
+	fmt.Printf("Pool Exist Key: %s\n", key)
 	return store.Has([]byte(key))
 }
 

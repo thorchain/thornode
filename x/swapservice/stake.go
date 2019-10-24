@@ -28,9 +28,9 @@ func validateStakeAmount(stakers PoolStaker, stakerUnits sdk.Uint, stakeAmtInter
 }
 
 // validateStakeMessage is to do some validation , and make sure it is legit
-func validateStakeMessage(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, requestTxHash common.TxID, publicAddress common.Address) error {
-	if ticker.IsEmpty() {
-		return errors.New("ticker is empty")
+func validateStakeMessage(ctx sdk.Context, keeper poolStorage, asset common.Asset, requestTxHash common.TxID, publicAddress common.Address) error {
+	if asset.IsEmpty() {
+		return errors.New("asset is empty")
 	}
 	if requestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
@@ -38,21 +38,21 @@ func validateStakeMessage(ctx sdk.Context, keeper poolStorage, ticker common.Tic
 	if publicAddress.IsEmpty() {
 		return errors.New("public address is empty")
 	}
-	if !keeper.PoolExist(ctx, ticker) {
-		return errors.Errorf("%s doesn't exist", ticker)
+	if !keeper.PoolExist(ctx, asset) {
+		return errors.Errorf("%s doesn't exist", asset)
 	}
 	return nil
 }
 
-func stake(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneAmount, stakeTokenAmount sdk.Uint, publicAddress common.Address, requestTxHash common.TxID) (sdk.Uint, error) {
-	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", ticker, stakeRuneAmount, stakeTokenAmount))
-	if err := validateStakeMessage(ctx, keeper, ticker, requestTxHash, publicAddress); nil != err {
+func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmount, stakeTokenAmount sdk.Uint, publicAddress common.Address, requestTxHash common.TxID) (sdk.Uint, error) {
+	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", asset, stakeRuneAmount, stakeTokenAmount))
+	if err := validateStakeMessage(ctx, keeper, asset, requestTxHash, publicAddress); nil != err {
 		return sdk.ZeroUint(), errors.Wrap(err, "invalid request")
 	}
 	if stakeTokenAmount.IsZero() && stakeTokenAmount.IsZero() {
 		return sdk.ZeroUint(), errors.New("both rune and token is zero")
 	}
-	pool := keeper.GetPool(ctx, ticker)
+	pool := keeper.GetPool(ctx, asset)
 	fTokenAmt := stakeTokenAmount
 	fRuneAmt := stakeRuneAmount
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
@@ -76,7 +76,7 @@ func stake(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneA
 	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sToken", pool.BalanceRune, pool.BalanceToken))
 	keeper.SetPool(ctx, pool)
 	// maintain pool staker structure
-	ps, err := keeper.GetPoolStaker(ctx, ticker)
+	ps, err := keeper.GetPoolStaker(ctx, asset)
 	if nil != err {
 		return sdk.ZeroUint(), errors.Wrap(err, "fail to get pool staker..")
 	}
@@ -92,13 +92,13 @@ func stake(ctx sdk.Context, keeper poolStorage, ticker common.Ticker, stakeRuneA
 	}
 	su.Units = totalStakerUnits
 	ps.UpsertStakerUnit(su)
-	keeper.SetPoolStaker(ctx, ticker, ps)
+	keeper.SetPoolStaker(ctx, asset, ps)
 	// maintain stake pool structure
 	sp, err := keeper.GetStakerPool(ctx, publicAddress)
 	if nil != err {
 		return sdk.ZeroUint(), errors.Wrap(err, "fail to get stakepool object")
 	}
-	stakerPoolItem := sp.GetStakerPoolItem(ticker)
+	stakerPoolItem := sp.GetStakerPoolItem(asset)
 	existUnit := stakerPoolItem.Units
 	stakerPoolItem.Units = totalStakerUnits.Add(existUnit)
 	stakerPoolItem.AddStakerTxDetail(requestTxHash, stakeRuneAmount, stakeTokenAmount)

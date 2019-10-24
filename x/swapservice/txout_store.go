@@ -90,7 +90,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		}
 
 		if !hasDeductedGas && hasBNB == false && common.IsRuneAsset(item.Asset) {
-			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
+			bnbPool := keeper.GetPool(ctx, common.BNBAsset)
 
 			if bnbPool.BalanceRune.IsZero() {
 				toi.Coins[i] = item
@@ -119,8 +119,8 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		}
 
 		if !hasDeductedGas && hasBNB == false && hasRune == false {
-			bnbPool := keeper.GetPool(ctx, common.BNBTicker)
-			tokenPool := keeper.GetPool(ctx, item.Asset.Ticker)
+			bnbPool := keeper.GetPool(ctx, common.BNBAsset)
+			tokenPool := keeper.GetPool(ctx, item.Asset)
 
 			if bnbPool.BalanceRune.IsZero() || tokenPool.BalanceRune.IsZero() {
 				toi.Coins[i] = item

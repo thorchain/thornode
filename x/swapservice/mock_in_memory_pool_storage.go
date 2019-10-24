@@ -10,8 +10,8 @@ import (
 )
 
 var (
-	notExistPoolStakerTicker = common.Ticker("NotExistPoolStakerTicker")
-	notExistStakerPoolAddr   = common.Address("4252BA642F73FA402FEF18E3CB4550E5A4A6831299D5EB7E76808C8923FC1XXX")
+	notExistPoolStakerAsset, _ = common.NewAsset("BNB.NotExistPoolStakerAsset")
+	notExistStakerPoolAddr     = common.Address("4252BA642F73FA402FEF18E3CB4550E5A4A6831299D5EB7E76808C8923FC1XXX")
 )
 
 type MockInMemoryPoolStorage struct {
@@ -34,7 +34,7 @@ func (p *MockInMemoryPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) P
 	return types.NewPool()
 }
 func (p *MockInMemoryPoolStorage) SetPool(ctx sdk.Context, ps Pool) {
-	p.store[ps.Ticker.String()] = ps
+	p.store[ps.Asset.String()] = ps
 }
 func (p *MockInMemoryPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error) {
 	if stakerID.Equals(notExistStakerPoolAddr) {
@@ -50,18 +50,18 @@ func (p *MockInMemoryPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common
 	key := getKey(prefixStakerPool, stakerID.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixStakerPool))
 	p.store[key] = sp
 }
-func (p *MockInMemoryPoolStorage) GetPoolStaker(ctx sdk.Context, ticker common.Ticker) (PoolStaker, error) {
-	if notExistPoolStakerTicker.Equals(ticker) {
-		return NewPoolStaker(ticker, sdk.ZeroUint()), errors.New("simulate error for test")
+func (p *MockInMemoryPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {
+	if notExistPoolStakerAsset.Equals(asset) {
+		return NewPoolStaker(asset, sdk.ZeroUint()), errors.New("simulate error for test")
 	}
-	key := getKey(prefixPoolStaker, ticker.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixPoolStaker))
+	key := getKey(prefixPoolStaker, asset.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	if res, ok := p.store[key]; ok {
 		return res.(PoolStaker), nil
 	}
-	return NewPoolStaker(ticker, sdk.ZeroUint()), nil
+	return NewPoolStaker(asset, sdk.ZeroUint()), nil
 }
-func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, ticker common.Ticker, ps PoolStaker) {
-	key := getKey(prefixPoolStaker, ticker.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixPoolStaker))
+func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker) {
+	key := getKey(prefixPoolStaker, asset.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	p.store[key] = ps
 }
 
