@@ -110,7 +110,6 @@ seed:develop:
   script: make seed
   only:
     - master
-  when: manual
 
 deploy:staging:
   stage: deploy
