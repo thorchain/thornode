@@ -56,8 +56,11 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
   hash ||= txid()
   sender ||= bnbAddress
   coins ||= [{
-    'chain': "bnb",
-    'denom': 'RUNE-B1A',
+    'asset': {
+      'chain': 'BNB',
+      'symbol': 'RUNE-B1A',
+      'ticker': 'RUNE',
+    },
     'amount': '1',
   }]
   poolAddr ||= TRUST_BNB_ADDRESS

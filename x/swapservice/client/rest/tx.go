@@ -75,15 +75,6 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			}
 
-			// set coins to chain
-			myChain, err := common.NewChain(req.Chain)
-			if err != nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			}
-			for i, _ := range tx.Coins {
-				tx.Coins[i].Chain = myChain
-			}
-
 			tx := types.NewTxIn(tx.Coins, tx.Memo, bnbAddr, height, observeAddr)
 
 			voters = append(voters, types.NewTxInVoter(txID, []types.TxIn{tx}))

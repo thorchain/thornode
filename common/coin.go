@@ -7,27 +7,22 @@ import (
 )
 
 type Coin struct {
-	Chain  Chain    `json:"chain"`
-	Denom  Ticker   `json:"denom"`
+	Asset  Asset    `json:"asset"`
 	Amount sdk.Uint `json:"amount"`
 }
 
 type Coins []Coin
 
 // NewCoin return a new instance of Coin
-func NewCoin(chain Chain, denom Ticker, amount sdk.Uint) Coin {
+func NewCoin(asset Asset, amount sdk.Uint) Coin {
 	return Coin{
-		Chain:  chain,
-		Denom:  denom,
+		Asset:  asset,
 		Amount: amount,
 	}
 }
 
 func (c Coin) Valid() error {
-	if c.Chain.IsEmpty() {
-		return fmt.Errorf("Chain cannot be empty")
-	}
-	if c.Denom.IsEmpty() {
+	if c.Asset.IsEmpty() {
 		return fmt.Errorf("Denom cannot be empty")
 	}
 

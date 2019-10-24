@@ -1,6 +1,7 @@
 package swapservice
 
 import (
+	"fmt"
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -106,7 +107,8 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 		}
 		runeTotal = runeTotal.Add(p.BalanceRune)
 		if p.BalanceToken.GT(sdk.ZeroUint()) {
-			coins = append(coins, common.NewCoin(p.Chain, p.Ticker, tokenAmount))
+			asset, _ := common.NewAsset(fmt.Sprintf("%s.%s", p.Chain, p.Ticker))
+			coins = append(coins, common.NewCoin(asset, tokenAmount))
 		}
 	}
 
@@ -121,7 +123,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	}
 
 	if !runeTotal.IsZero() {
-		coins = append(coins, common.NewCoin(common.BNBChain, common.RuneTicker, runeTotal))
+		coins = append(coins, common.NewCoin(common.RuneA1FAsset, runeTotal))
 	}
 	if len(coins) > 0 {
 		store.AddTxOutItem(ctx, k, &TxOutItem{

@@ -97,7 +97,7 @@ func (s StatechainSuite) TestSign(c *C) {
 	tx := stypes.NewTxInVoter(common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"), []stypes.TxIn{
 		stypes.NewTxIn(
 			common.Coins{
-				common.NewCoin(common.BNBChain, common.Ticker("BNB"), sdk.NewUint(123400000)),
+				common.NewCoin(common.BNBAsset, sdk.NewUint(123400000)),
 			},
 			"This is my memo!",
 			common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),

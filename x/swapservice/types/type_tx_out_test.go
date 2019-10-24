@@ -22,7 +22,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		PoolAddress: bnbAddress,
 		ToAddress:   bnbAddress,
 		Coins: common.Coins{
-			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},
 	}
 	txOut.TxArray = append(txOut.TxArray, txOutItem)
@@ -47,7 +47,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		ToAddress:   "",
 		PoolAddress: bnbAddress,
 		Coins: common.Coins{
-			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},
 	})
 	c.Assert(txOut2.Valid(), NotNil)
@@ -56,7 +56,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		ToAddress:   bnbAddress,
 		PoolAddress: "",
 		Coins: common.Coins{
-			common.NewCoin(common.BNBChain, common.BNBTicker, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},
 	})
 	c.Assert(txOut3.Valid(), NotNil)
