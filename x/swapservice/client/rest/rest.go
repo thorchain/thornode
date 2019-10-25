@@ -2,12 +2,14 @@ package rest
 
 import (
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/didip/tollbooth"
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gorilla/mux"
+
 	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/query"
 )
 
@@ -24,7 +26,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(
 		fmt.Sprintf("/%s/ping", storeName),
 		pingHandler(cliCtx, storeName),
-	).Methods("GET")
+	).Methods(http.MethodGet, http.MethodOptions)
 
 	// limit api calls
 	lmt := tollbooth.NewLimiter(1, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
@@ -40,13 +42,23 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 					lmt,
 					getHandlerWrapper(q, storeName, cliCtx),
 				),
-			).Methods("GET")
+			).Methods(http.MethodGet, http.MethodOptions)
 		}
 	}
-
 	// Get unsigned json for emitting a binance transaction. Validators only.
 	r.HandleFunc(
 		fmt.Sprintf("/%s/binance/tx", storeName),
 		postTxHashHandler(cliCtx),
-	).Methods("POST")
+	).Methods(http.MethodPost)
+	r.Use(mux.CORSMethodMiddleware(r))
+	r.Use(customCORSHeader())
+}
+
+func customCORSHeader() mux.MiddlewareFunc {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			next.ServeHTTP(w, req)
+		})
+	}
 }
