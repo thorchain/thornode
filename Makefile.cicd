@@ -39,7 +39,7 @@ logger:
 
 # Step 1
 docker-aws-build: logger
-	./scripts/build.sh 526267067157.dkr.ecr.ap-southeast-2.amazonaws.com/${ECR_STATECHAIN}:latest | tee ./log/state-chain-build.log
+	./scripts/build.sh ${REGISTRY_ID}.${REPOSITORY}/${ECR_STATECHAIN}:latest | tee ./log/state-chain-build.log
 
 # Step 2
 docker-aws-tag: docker-build
