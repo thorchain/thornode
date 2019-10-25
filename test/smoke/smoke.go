@@ -309,7 +309,7 @@ func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo 
 				free := balance.Free.ToInt64()
 
 				if amount != free {
-					log.Printf("%v: FAIL - Binance Balance - %v - Amounts do not match! %f versus %f - %v",
+					log.Printf("%v: FAIL - Binance Balance - %v - Amounts do not match! %v versus %v - %v",
 						memo,
 						address.String(),
 						amount,
