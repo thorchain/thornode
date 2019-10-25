@@ -64,22 +64,28 @@ seed:
 
 # ------------------------------- GitLabs ------------------------------- #
 
-docker-gitlabs-login: logger
+docker-gitlabs-login:
 	docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
 
-docker-gitlabs-build: docker-gitlabs-login
-	./scripts/build.sh registry.gitlab.com/thorchain/bepswap/thornode:develop | tee ./log/state-chain-build.log
+# Build a docker image and tag with the CI_COMMIT_SHA
+docker-gitlabs-build: logger
+	./scripts/build.sh ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} | tee ./log/state-chain-build.log
 
-docker-gitlabs-tag: docker-gitlabs-build
-	docker tag registry.gitlab.com/thorchain/bepswap/thornode:develop registry.gitlab.com/thorchain/bepswap/thornode:${STATE_CHAIN_IMAGE_HASH}
+# Push the docker image with the CI_COMMIT_SHA
+docker-gitlabs-push:
+	docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
 
-docker-gitlabs-push: docker-gitlabs-tag
-	docker push registry.gitlab.com/thorchain/bepswap/thornode:develop
 
-# nightly
+# BUILD_FLAD's
 
-docker-gitlabs-build-nightly: docker-gitlabs-login
-	./scripts/build.sh registry.gitlab.com/thorchain/bepswap/thornode:nightly | tee ./log/state-chain-build.log
+# Pull a image from the CI_COMMIT_SHA
+docker-gitlabs-pull:
+	docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
 
-docker-gitlabs-push-nightly: docker-gitlabs-build-nightly
-	docker push registry.gitlab.com/thorchain/bepswap/thornode:develop
+# Tag an image with the BUILD_FLAG i.e develop, nightly, lastest
+docker-gitlabs-tag-build-flag:
+	docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:${BUILD_FLAG}
+
+# Push BUILD_FLAG image
+docker-gitlabs-push-build-flag:
+	docker push ${CI_REGISTRY_IMAGE}:${BUILD_FLAG}
