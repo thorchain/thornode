@@ -35,6 +35,7 @@ type Rule struct {
 	To          []string `json:"to"`
 	Coins       []Coin   `json:"coins"`
 	Memo        string   `json:"memo"`
+	SendTo      string   `json:"send_to"`
 	Check       Check    `json:"check"`
 }
 

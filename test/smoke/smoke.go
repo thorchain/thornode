@@ -155,8 +155,14 @@ func (s *Smoke) Run() {
 				payload = append(payload, msg.Transfer{toAddr, coins})
 			}
 
+			memo := rule.Memo
+			if rule.SendTo != "" {
+				sendTo := s.ToAddr(rule.SendTo)
+				memo = memo + ":" + sendTo.String()
+			}
+
 			client, key := s.FromClientKey(rule.From)
-			s.SendTxn(client, key, payload, rule.Memo)
+			s.SendTxn(client, key, payload, memo)
 		}
 
 		// Validate.
@@ -170,9 +176,7 @@ func (s *Smoke) Run() {
 
 // FromClientKey : Client and key based on the rule "from".
 func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
-	if !s.Tests.WithActors && !s.PrimaryActor(from) {
-		log.Panic("Please check your test definitions. Only actors `faucet` or `pool` are supported with `with_actors` is `false`.")
-	}
+	s.ValidateAddr(from)
 
 	switch from {
 	case "faucet":
@@ -195,9 +199,7 @@ func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
 
 // ToAddr : To address
 func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
-	if !s.Tests.WithActors && !s.PrimaryActor(to) {
-		log.Panic("Please check your test definitions. Only actors `faucet` or `pool` are supported with `with_actors` is `false`.")
-	}
+	s.ValidateAddr(to)
 
 	switch to {
 	case "master":
@@ -212,6 +214,13 @@ func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
 		stakerIdx := strings.Split(to, "_")[1]
 		i, _ := strconv.Atoi(stakerIdx)
 		return s.Tests.Actors.Stakers[i-1].Key.GetAddr()
+	}
+}
+
+// ValidateAddr : Check the address, based on the config.
+func (s *Smoke) ValidateAddr(actor string) {
+	if !s.Tests.WithActors && !s.PrimaryActor(actor) {
+		log.Panic("Please check your test definitions. Only actors `faucet` or `pool` are supported with `with_actors` is `false`.")
 	}
 }
 
@@ -295,8 +304,9 @@ func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo 
 	for _, coins := range check.Binance {
 		for _, balance := range balances {
 			if coins.Symbol == balance.Symbol {
-				amount := coins.Amount * types.Multiplier
-				free := float64(balance.Free)
+				amt := coins.Amount * types.Multiplier
+				amount := int64(amt)
+				free := balance.Free.ToInt64()
 
 				if amount != free {
 					log.Printf("%v: FAIL - Binance Balance - %v - Amounts do not match! %f versus %f - %v",
@@ -326,7 +336,7 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 	pools := s.GetPools()
 
 	for _, p := range pools {
-		if p.Symbol == pool.Symbol {
+		if p.Asset.Symbol == pool.Symbol {
 			// Check pool units
 			if p.PoolUnits != pool.Units {
 				log.Printf("%v: FAIL - Pool Units - Units do not match! %f versus %f",
@@ -424,7 +434,7 @@ func (s *Smoke) CheckStake(rule types.Rule) {
 		stake := s.GetStakes(address)
 
 		for _, pool := range stake.PoolAndUnits {
-			if pool.Symbol == rule.Check.Statechain.Symbol {
+			if pool.Asset.Symbol == rule.Check.Statechain.Symbol {
 				if pool.Units != stakerUnits.Units {
 					log.Printf("%v: FAIL - Staker Units - Units do not match! %f versus %f",
 						rule.Description,
