@@ -139,7 +139,7 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 				ToAddr: toAddr,
 				Coins: types.Coins{
 					types.Coin{
-						Denom:  asset.Ticker.String(),
+						Denom:  asset.Symbol.String(),
 						Amount: int64(amount.Uint64()),
 					},
 				},
