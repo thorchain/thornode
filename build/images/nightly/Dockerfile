@@ -1,0 +1,1 @@
+FROM registry.gitlab.com/thorchain/bepswap/thornode:nightly
