@@ -42,7 +42,7 @@ docker-aws-build: logger
 	./scripts/build.sh ${REGISTRY_ID}.${REPOSITORY}/${ECR_STATECHAIN}:latest | tee ./log/state-chain-build.log
 
 # Step 2
-docker-aws-tag: docker-build
+docker-aws-tag: docker-aws-build
 	docker tag ${REGISTRY_ID}.${REPOSITORY}/${ECR_STATECHAIN}:latest ${REGISTRY_ID}.${REPOSITORY}/${ECR_STATECHAIN}:${STATE_CHAIN_IMAGE_HASH}
 
 # Step 3
