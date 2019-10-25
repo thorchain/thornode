@@ -67,12 +67,12 @@ build:
   before_script:
     - apk update
     - apk add python py-pip make git
-    - docker-gitlabs-login
+    - make docker-gitlab-login
   environment:
     name: develop
   script:
-    - make docker-gitlabs-build
-    - make docker-gitlabs-push
+    - make docker-gitlab-build
+    - make docker-gitlab-push
 
 push:
   stage: push
@@ -86,11 +86,11 @@ push:
   before_script:
     - apk update
     - apk add python py-pip make git
-    - docker-gitlabs-login
+    - make docker-gitlab-login
   script:
-    - make docker-gitlabs-pull
-    - BUILD_FLAG=develop make docker-gitlabs-tag-build-flag
-    - BUILD_FLAG=develop make docker-gitlabs-push-build-flag
+    - make docker-gitlab-pull
+    - BUILD_FLAG=develop make docker-gitlab-tag-build-flag
+    - BUILD_FLAG=develop make docker-gitlab-push-build-flag
 
 
 
