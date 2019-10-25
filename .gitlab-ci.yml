@@ -10,6 +10,8 @@ before_script:
 
 stages:
   - test
+  - build
+  - push
   - deploy
   - smoke-test
   - seed
@@ -53,11 +55,10 @@ build:test:
     name: develop
   script: make docker-aws-build
 
-gitlabs:build:testing:
-  stage: test
+# Build docker image
+build:
+  stage: build
   image: docker:stable
-  except:
-    - master
   services:
     - docker:dind
   variables:
@@ -66,10 +67,41 @@ gitlabs:build:testing:
   before_script:
     - apk update
     - apk add python py-pip make git
+    - docker-gitlabs-login
   environment:
     name: develop
   script:
-    - make docker-gitlabs-push-nightly
+    - make docker-gitlabs-build
+    - make docker-gitlabs-push
+
+push:
+  stage: push
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: none
+  before_script:
+    - apk update
+    - apk add python py-pip make git
+    - docker-gitlabs-login
+  script:
+    - make docker-gitlabs-pull
+    - BUILD_FLAG=develop make docker-gitlabs-tag-build-flag
+    - BUILD_FLAG=develop make docker-gitlabs-push-build-flag
+
+
+
+
+
+
+
+
+
+
+
 
 deploy:develop:
   stage: deploy
