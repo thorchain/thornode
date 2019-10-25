@@ -62,30 +62,30 @@ smoke-test:
 seed:
 	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c seed/seed.json -d true
 
-# ------------------------------- GitLabs ------------------------------- #
+# ------------------------------- GitLab ------------------------------- #
 
-docker-gitlabs-login:
+docker-gitlab-login:
 	docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
 
 # Build a docker image and tag with the CI_COMMIT_SHA
-docker-gitlabs-build: logger
+docker-gitlab-build: logger
 	./scripts/build.sh ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} | tee ./log/state-chain-build.log
 
 # Push the docker image with the CI_COMMIT_SHA
-docker-gitlabs-push:
+docker-gitlab-push:
 	docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
 
 
 # BUILD_FLAD's
 
 # Pull a image from the CI_COMMIT_SHA
-docker-gitlabs-pull:
+docker-gitlab-pull:
 	docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
 
 # Tag an image with the BUILD_FLAG i.e develop, nightly, lastest
-docker-gitlabs-tag-build-flag:
+docker-gitlab-tag-build-flag:
 	docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:${BUILD_FLAG}
 
 # Push BUILD_FLAG image
-docker-gitlabs-push-build-flag:
+docker-gitlab-push-build-flag:
 	docker push ${CI_REGISTRY_IMAGE}:${BUILD_FLAG}
