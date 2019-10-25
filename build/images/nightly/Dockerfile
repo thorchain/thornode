@@ -1,2 +1,1 @@
-ARG THORCHAIN_TAG
-FROM thorchain:$THORCHAIN_TAG
+FROM registry.gitlab.com/thorchain/bepswap/thornode:nightly
