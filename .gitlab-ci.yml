@@ -74,6 +74,7 @@ build:
     - make docker-gitlab-build
     - make docker-gitlab-push
 
+# push docker:develop images
 push:develop:
   stage: push
   image: docker:stable
@@ -90,6 +91,7 @@ push:develop:
     - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:develop
     - docker push ${CI_REGISTRY_IMAGE}:develop
 
+# push docker:nightly images
 push:nightly:
   stage: push
   image: docker:stable
@@ -108,26 +110,41 @@ push:nightly:
     - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:nightly
     - docker push ${CI_REGISTRY_IMAGE}:nightly
 
-#push:latest:
-#  stage: push
-#  image: docker:stable
-#  services:
-#    - docker:dind
-#  variables:
-#    DOCKER_HOST: tcp://docker:2375
-#    DOCKER_DRIVER: overlay2
-#    GIT_STRATEGY: none
-#  before_script:
-#    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
-#  script:
-#    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
-#    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:latest
-#    - docker push ${CI_REGISTRY_IMAGE}:latest
-#
+# push docker:tag images
+push:tag:
+  stage: push
+  image: docker:stable
+  only:
+    - tags
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: none
+  before_script:
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+  script:
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}
+    - docker push ${CI_REGISTRY_IMAGE}:nightly
 
-
-
-
+# push docker:latest images
+push:latest:
+  stage: push
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: none
+  before_script:
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+  script:
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:latest
+    - docker push ${CI_REGISTRY_IMAGE}:latest
 
 deploy:develop:
   stage: deploy
