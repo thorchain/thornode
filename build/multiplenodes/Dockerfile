@@ -1,36 +1,73 @@
-FROM golang:1.13 as build
+#
+# Observer, Signer, Statechain
+#
+
+#
+# Build
+#
+FROM golang:1.13 AS build
 
 WORKDIR /go/src/app
-COPY ../../go.mod .
-COPY ../../go.sum .
-RUN go mod download
-COPY ../.. ./
+RUN git config --global http.sslVerify "false"
+
+COPY . .
+
+RUN GO111MODULE=on go mod verify
+RUN GO111MODULE=on go get -d -v ./...
+
 WORKDIR /go/src/app/cmd/ssd
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ssd .
+RUN GO111MODULE=on CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ssd .
 
 WORKDIR /go/src/app/cmd/sscli
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o sscli .
 
-FROM alpine:latest
-ARG node_id
-ENV NODE_ID=$node_id
-ENV SS_HOME="/statechain/$NODE_ID/ssd"
-ENV SSC_HOME="/statechain/$NODE_ID/sscli/"
-VOLUME ["/statechain"]
+WORKDIR /go/src/app/cmd/observed
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o observed .
 
-RUN apk add --update jq curl
+WORKDIR /go/src/app/cmd/signd
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o signd .
 
-WORKDIR /usr/bin
-COPY --from=build /go/src/app/cmd/ssd/ssd /usr/bin/ssd
-COPY --from=build /go/src/app/cmd/sscli/sscli /usr/bin/sscli
+#
+# Main
+#
+FROM golang:1.13.3-alpine
 
-COPY init.sh /usr/bin/init.sh
-RUN chmod +x /usr/bin/init.sh
+RUN apk add --update linux-headers build-base jq supervisor git nginx && \
+    rm -rf /var/cache/apk/*
 
-COPY second.sh /usr/bin/second.sh
-RUN chmod +x /usr/bin/second.sh
+ENV PATH="${PATH}:/go/bin"
+ENV GOPATH=/go
 
-COPY start.sh /usr/bin/start.sh
-RUN chmod +x /usr/bin/start.sh
+# Copy the compiled binaires over.
+COPY --from=build /go/src/app/cmd/ssd/ssd /go/bin/ssd
+COPY --from=build /go/src/app/cmd/sscli/sscli /go/bin/sscli
+COPY --from=build /go/src/app/cmd/observed/observed /go/bin/observed
+COPY --from=build /go/src/app/cmd/signd/signd /go/bin/signd
 
-CMD ["/usr/bin/start.sh"]
+# Add users.
+RUN adduser -Ds /bin/sh supervisor
+RUN adduser -Ds /bin/sh www-data -G www-data
+
+# TODO Move away from needing supervisor
+# Setup supervisor.
+RUN mkdir -p /var/log/supervisor
+RUN mkdir -p /var/run/supervisor
+RUN mkdir -p /etc/supervisor/conf.d
+ADD etc/supervisor.conf /etc/
+ADD etc/supervisor/conf.d/*.ini /etc/supervisor/conf.d/
+
+# TODO Move away from needing nginx
+# Setup Nginx.
+ADD etc/nginx/nginx.conf /etc/nginx/
+
+# Setup Observer/Signer.
+RUN mkdir -p /etc/observe/observed
+RUN mkdir /etc/observe/signd
+
+EXPOSE 9000
+EXPOSE 1317
+EXPOSE 81
+
+# COPY ./scripts/entrypoint.sh /entrypoint.sh
+# ENTRYPOINT /entrypoint.sh
+CMD ["supervisord", "-c", "/etc/supervisor.conf"]
