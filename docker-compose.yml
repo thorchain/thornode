@@ -1,5 +1,11 @@
 version: '3'
 services:
-  service-node:
-    context: ./build/images
-    build: ./${TYPE}/Dockerfile
+  THORNode:
+    build:
+      context: ./build/images
+      dockerfile: ./${BUILD_FLAG}/Dockerfile
+    image: "thornode"
+  #    volumes:
+  #      - ./thornode:/xxx/
+  #    environment:
+  #      - GEN_URL: ${URL}
