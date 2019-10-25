@@ -74,7 +74,7 @@ build:
     - make docker-gitlab-build
     - make docker-gitlab-push
 
-push:
+push:develop:
   stage: push
   image: docker:stable
   services:
@@ -84,13 +84,11 @@ push:
     DOCKER_DRIVER: overlay2
     GIT_STRATEGY: none
   before_script:
-    - apk update
-    - apk add python py-pip make git
-    - make docker-gitlab-login
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
   script:
-    - make docker-gitlab-pull
-    - BUILD_FLAG=develop make docker-gitlab-tag-build-flag
-    - BUILD_FLAG=develop make docker-gitlab-push-build-flag
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:develop
+    - docker push ${CI_REGISTRY_IMAGE}:develop
 
 
 

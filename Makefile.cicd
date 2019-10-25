@@ -74,18 +74,3 @@ docker-gitlab-build: logger
 # Push the docker image with the CI_COMMIT_SHA
 docker-gitlab-push:
 	docker push ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
-
-
-# BUILD_FLAD's
-
-# Pull a image from the CI_COMMIT_SHA
-docker-gitlab-pull:
-	docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
-
-# Tag an image with the BUILD_FLAG i.e develop, nightly, lastest
-docker-gitlab-tag-build-flag:
-	docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:${BUILD_FLAG}
-
-# Push BUILD_FLAG image
-docker-gitlab-push-build-flag:
-	docker push ${CI_REGISTRY_IMAGE}:${BUILD_FLAG}
