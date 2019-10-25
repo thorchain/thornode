@@ -37,24 +37,6 @@ integration:test:
   script:
     - make -C ./test/integration install setup run wait-for-blockchain test-internal
 
-build:test:
-  stage: test
-  image: docker:stable
-  except:
-    - master
-  services:
-    - docker:dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-  before_script:
-    - apk update
-    - apk add python py-pip make git
-    - pip install awscli
-  environment:
-    name: develop
-  script: make docker-aws-build
-
 # Build docker image
 build:
   stage: build
