@@ -13,8 +13,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
-	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 )
@@ -778,4 +779,67 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 	resultMsg1, err := getMsgSwapFromMemo(swapMemo, GetRandomTxHash(), txin1, GetRandomBech32Addr())
 	c.Assert(resultMsg1, IsNil)
 	c.Assert(err, NotNil)
+}
+
+func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
+	w := getHandlerTestWrapper(c, 1, true, false)
+	m, err := ParseMemo("stake:BNB")
+	c.Assert(err, IsNil)
+	stakeMemo, ok := m.(StakeMemo)
+	c.Assert(ok, Equals, true)
+	c.Assert(err, IsNil)
+	tcanAsset, err := common.NewAsset("BNB.TCAN-014")
+	c.Assert(err, IsNil)
+	runeAsset, err := common.NewAsset("BNB.RUNE-A1F")
+	c.Assert(err, IsNil)
+	txin := TxIn{
+		Sender: GetRandomBNBAddress(),
+		Coins: common.Coins{
+			common.NewCoin(tcanAsset,
+				sdk.NewUint(100*common.One)),
+			common.NewCoin(runeAsset,
+				sdk.NewUint(100*common.One)),
+		},
+	}
+	msg, err := getMsgStakeFromMemo(w.ctx, stakeMemo, GetRandomTxHash(), &txin, GetRandomBech32Addr())
+	c.Assert(msg, IsNil)
+	c.Assert(err, NotNil)
+	txin1 := TxIn{
+		Sender: GetRandomBNBAddress(),
+		Coins: common.Coins{
+			common.NewCoin(runeAsset,
+				sdk.NewUint(100*common.One)),
+		},
+	}
+	// stake only rune should be fine
+	msg1, err1 := getMsgStakeFromMemo(w.ctx, stakeMemo, GetRandomTxHash(), &txin1, GetRandomBech32Addr())
+	c.Assert(msg1, NotNil)
+	c.Assert(err1, IsNil)
+	bnbAsset, err := common.NewAsset("BNB.BNB")
+	c.Assert(err, IsNil)
+	txin2 := TxIn{
+		Sender: GetRandomBNBAddress(),
+		Coins: common.Coins{
+			common.NewCoin(bnbAsset,
+				sdk.NewUint(100*common.One)),
+		},
+	}
+	// stake only token should be fine
+	msg2, err2 := getMsgStakeFromMemo(w.ctx, stakeMemo, GetRandomTxHash(), &txin2, GetRandomBech32Addr())
+	c.Assert(msg2, NotNil)
+	c.Assert(err2, IsNil)
+	lokiAsset, _ := common.NewAsset(fmt.Sprintf("BNB.LOKI"))
+	txin3 := TxIn{
+		Sender: GetRandomBNBAddress(),
+		Coins: common.Coins{
+			common.NewCoin(tcanAsset,
+				sdk.NewUint(100*common.One)),
+			common.NewCoin(lokiAsset,
+				sdk.NewUint(100*common.One)),
+		},
+	}
+	// stake only token should be fine
+	msg3, err3 := getMsgStakeFromMemo(w.ctx, stakeMemo, GetRandomTxHash(), &txin3, GetRandomBech32Addr())
+	c.Assert(msg3, IsNil)
+	c.Assert(err3, NotNil)
 }
