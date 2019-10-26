@@ -49,7 +49,7 @@ func (s Sweep) EmptyWallets() {
 
 			// Binance fees.
 			if len(balances) > 1 && asset.Symbol == "BNB" {
-				amount = amount - 60000
+				amount = amount - (int64(len(balances)) * 30000)
 			} else if asset.Symbol == "BNB" {
 				amount = amount - 37500
 			}

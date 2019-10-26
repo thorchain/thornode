@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -14,13 +15,10 @@ import (
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
 
-	// TODO: This is a hack given the current API limits (1 request per second).
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
-
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
 )
 
-// For converting amoints to 10-^8
+// For converting amounts to 10-^8
 const precision = 8
 var Fixed8Decimals = math.Pow10(precision)
 
@@ -275,9 +273,12 @@ func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg
 
 // GetPools : Get our pools.
 func (s *Smoke) GetPools() types.Pools {
+	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
+	time.Sleep(1 * time.Second)
+
 	var pools types.Pools
 
-	resp, err := retryablehttp.Get(s.Statechain.PoolURL())
+	resp, err := http.Get(s.Statechain.PoolURL())
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
@@ -409,9 +410,12 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 
 // GetStakes : Get a given staker's stakes.
 func (s *Smoke) GetStakes(address ctypes.AccAddress) types.Staker {
+	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
+	time.Sleep(1 * time.Second)
+
 	var staker types.Staker
 
-	resp, err := retryablehttp.Get(s.Statechain.StakerURL(address.String()))
+	resp, err := http.Get(s.Statechain.StakerURL(address.String()))
 	if err != nil {
 		log.Printf("%v\n", err)
 	}
