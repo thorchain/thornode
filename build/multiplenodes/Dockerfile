@@ -68,6 +68,4 @@ EXPOSE 9000
 EXPOSE 1317
 EXPOSE 81
 
-# COPY ./scripts/entrypoint.sh /entrypoint.sh
-# ENTRYPOINT /entrypoint.sh
 CMD ["supervisord", "-c", "/etc/supervisor.conf"]
