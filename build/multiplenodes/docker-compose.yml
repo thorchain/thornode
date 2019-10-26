@@ -3,9 +3,11 @@ version: '3'
 services:
   node1:
     hostname: node1
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
     image: thornode
     environment:
-      - MASTER=node1
       - NODES=4
     entrypoint:
       /build/entrypoint.sh
@@ -20,9 +22,12 @@ services:
 
   node2:
     hostname: node2
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
+
     image: thornode
     environment:
-      - MASTER=node1
       - NODES=4
     entrypoint:
       /build/entrypoint.sh
@@ -33,9 +38,11 @@ services:
 
   node3:
     hostname: node3
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
     image: thornode
     environment:
-      - MASTER=node1
       - NODES=4
     entrypoint:
       /build/entrypoint.sh
@@ -46,9 +53,11 @@ services:
 
   node4:
     hostname: node4
+    build:
+      context: ../..
+      dockerfile: ./Dockerfile
     image: thornode
     environment:
-      - MASTER=node1
       - NODES=4
     entrypoint:
       /build/entrypoint.sh
