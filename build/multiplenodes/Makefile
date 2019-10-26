@@ -11,5 +11,5 @@ clean:
 build:
 	docker build -t thornode -f Dockerfile ../..
 
-sh: clean
-	@docker-compose run --rm --no-deps -e NODES=1 node1 /bin/sh
+single: clean
+	@docker-compose run --rm --no-deps -e NODES=1 node1
