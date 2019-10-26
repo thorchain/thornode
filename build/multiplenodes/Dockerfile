@@ -12,37 +12,39 @@ RUN git config --global http.sslVerify "false"
 
 COPY . .
 
-RUN GO111MODULE=on go mod verify
-RUN GO111MODULE=on go get -d -v ./...
+ENV GO111MODULE=on
+ENV GOPATH=/go
+ENV GOBIN=/go/bin
+ENV CGO_ENABLED=0
+ENV GOOS=linux
 
-WORKDIR /go/src/app/cmd/ssd
-RUN GO111MODULE=on CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ssd .
+RUN go mod verify
+RUN go get -d -v ./...
 
-WORKDIR /go/src/app/cmd/sscli
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o sscli .
-
-WORKDIR /go/src/app/cmd/observed
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o observed .
-
-WORKDIR /go/src/app/cmd/signd
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o signd .
+RUN go build -a -installsuffix cgo -o generate ./tools/generate
+RUN go build -a -installsuffix cgo -o ssd ./cmd/ssd
+RUN go build -a -installsuffix cgo -o sscli ./cmd/sscli
+RUN go build -a -installsuffix cgo -o observed ./cmd/observed
+RUN go build -a -installsuffix cgo -o signd ./cmd/signd
 
 #
 # Main
 #
-FROM golang:1.13.3-alpine
+FROM golang:alpine
 
-RUN apk add --update linux-headers build-base jq supervisor git nginx && \
+RUN apk add --update jq supervisor nginx && \
     rm -rf /var/cache/apk/*
 
 ENV PATH="${PATH}:/go/bin"
 ENV GOPATH=/go
+ENV GOBIN=/go/bin
 
 # Copy the compiled binaires over.
-COPY --from=build /go/src/app/cmd/ssd/ssd /go/bin/ssd
-COPY --from=build /go/src/app/cmd/sscli/sscli /go/bin/sscli
-COPY --from=build /go/src/app/cmd/observed/observed /go/bin/observed
-COPY --from=build /go/src/app/cmd/signd/signd /go/bin/signd
+COPY --from=build /go/src/app/generate /go/bin
+COPY --from=build /go/src/app/ssd /go/bin
+COPY --from=build /go/src/app/sscli /go/bin
+COPY --from=build /go/src/app/observed /go/bin
+COPY --from=build /go/src/app/signd /go/bin
 
 # Add users.
 RUN adduser -Ds /bin/sh supervisor
@@ -59,10 +61,6 @@ ADD etc/supervisor/conf.d/*.ini /etc/supervisor/conf.d/
 # TODO Move away from needing nginx
 # Setup Nginx.
 ADD etc/nginx/nginx.conf /etc/nginx/
-
-# Setup Observer/Signer.
-RUN mkdir -p /etc/observe/observed
-RUN mkdir /etc/observe/signd
 
 EXPOSE 9000
 EXPOSE 1317

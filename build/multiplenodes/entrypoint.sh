@@ -44,6 +44,8 @@ OBSERVER_PATH=$DB_PATH/observer/
 SIGNER_PATH=$DB_PATH/signer/
 mkdir -p $OBSERVER_PATH
 mkdir -p $SIGNER_PATH
+mkdir -p /etc/observe/observed
+mkdir -p /etc/observe/signd
 
 node() {
     echo "{\"node_address\": \"$1\" ,\"status\":\"active\",\"bond_address\":\"$2\",\"accounts\":{\"bnb_signer_acc\":\"$2\", \"bepv_validator_acc\": \"$3\", \"bep_observer_acc\": \"$1\"}}" > /tmp/shared/$1.json
