@@ -4,29 +4,34 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"math"
 	"strconv"
 	"strings"
 	"time"
-
-	// TODO: This is a hack given the current API limits (1 request per second).
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
+
+	// TODO: This is a hack given the current API limits (1 request per second).
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
 )
 
-// Config : internal config.
+// For converting amoints to 10-^8
+const precision = 8
+var Fixed8Decimals = math.Pow10(precision)
+
+// Config : test config
 type Config struct {
 	delay   time.Duration
 	debug   bool
 	network int
 }
 
-// Smoke : Rules for our tests.
+// Smoke : test instructions.
 type Smoke struct {
 	Config     Config
 	ApiAddr    string
@@ -38,7 +43,7 @@ type Smoke struct {
 	Tests      types.Tests
 }
 
-// NewSmoke : create a new Smoke instance
+// NewSmoke : create a new Smoke instance.
 func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
@@ -46,7 +51,6 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 	}
 
 	var tests types.Tests
-
 	if err := json.Unmarshal(cfg, &tests); nil != err {
 		log.Fatal(err)
 	}
@@ -146,7 +150,8 @@ func (s *Smoke) Run() {
 		var coins []ctypes.Coin
 
 		for _, coin := range rule.Coins {
-			coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: int64(coin.Amount * types.Multiplier)})
+			amount := int64(Fixed8Decimals * coin.Amount)
+			coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: amount})
 		}
 
 		if len(coins) > 0 {
@@ -220,7 +225,7 @@ func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
 // ValidateAddr : Check the address, based on the config.
 func (s *Smoke) ValidateAddr(actor string) {
 	if !s.Tests.WithActors && !s.PrimaryActor(actor) {
-		log.Panic("Please check your test definitions. Only actors `faucet` or `pool` are supported with `with_actors` is `false`.")
+		log.Panic("Only actors `faucet` and `pool` supported when `with_actors` = false.")
 	}
 }
 
@@ -238,7 +243,7 @@ func (s *Smoke) PrimaryActor(actor string) bool {
 
 // ValidateTest : Determine if the test passed or failed.
 func (s *Smoke) ValidateTest(rule types.Rule) {
-	if rule.Check.Target == "to" {
+	if rule.Check.Binance.Target == "to" {
 		for _, to := range rule.To {
 			toAddr := s.ToAddr(to)
 			s.CheckBinance(toAddr, rule.Check, rule.Description)
@@ -300,12 +305,10 @@ func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo 
 	}
 
 	balances := s.Balances(address)
-
-	for _, coins := range check.Binance {
+	for _, coin := range check.Binance.Coins {
 		for _, balance := range balances {
-			if coins.Symbol == balance.Symbol {
-				amt := coins.Amount * types.Multiplier
-				amount := int64(amt)
+			if coin.Symbol == balance.Symbol {
+				amount := int64(Fixed8Decimals * coin.Amount)
 				free := balance.Free.ToInt64()
 
 				if amount != free {
@@ -314,13 +317,13 @@ func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo 
 						address.String(),
 						amount,
 						free,
-						coins.Symbol,
+						coin.Symbol,
 					)
 				} else {
 					log.Printf("%v: PASS - Binance Balance - %v - %v",
 						memo,
 						address.String(),
-						coins.Symbol,
+						coin.Symbol,
 					)
 				}
 			}
@@ -332,70 +335,72 @@ func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo 
 func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 	time.Sleep(s.Config.delay)
 
-	pool := rule.Check.Statechain
+	chain := rule.Check.Statechain
 	pools := s.GetPools()
 
 	for _, p := range pools {
-		if p.Asset.Symbol == pool.Symbol {
-			// Check pool units
-			if p.PoolUnits != pool.Units {
-				log.Printf("%v: FAIL - Pool Units - Units do not match! %f versus %f",
-					rule.Description,
-					pool.Units,
-					p.PoolUnits,
-				)
-			} else {
-				log.Printf("%v: PASS - Pool Units - %v (%v)",
-					rule.Description,
-					address,
-					rule.Memo,
-				)
-			}
-
-			// Check Rune
-			if p.BalanceRune != pool.Rune {
-				log.Printf("%v: FAIL - Pool Rune - Balance does not match! %f versus %f",
-					rule.Description,
-					pool.Rune,
-					p.BalanceRune,
-				)
-			} else {
-				log.Printf("%v: PASS - Pool Rune - %v (%v)",
-					rule.Description,
-					address,
-					rule.Memo,
-				)
-			}
-
-			// Check asset
-			if p.BalanceAsset != pool.Asset {
-				log.Printf("%v: FAIL - Pool Asset - Balance does not match! %f versus %f",
-					rule.Description,
-					pool.Asset,
-					p.BalanceAsset,
-				)
-			} else {
-				log.Printf("%v: PASS - Pool Asset - %v (%v)",
-					rule.Description,
-					address,
-					rule.Memo,
-				)
-			}
-
-			// Check status (used only for enabling a pool)
-			if pool.Status != "" {
-				if pool.Status != p.Status {
-					log.Printf("%v: FAIL - Pool Status - Status does not match! %v versus %v",
+		for _, pool := range chain {
+			if p.Asset.Symbol == pool.Symbol {
+				// Check pool units
+				if p.PoolUnits != pool.Units {
+					log.Printf("%v: FAIL - Pool Units - Units do not match! %f versus %f",
 						rule.Description,
-						pool.Status,
-						p.Status,
+						pool.Units,
+						p.PoolUnits,
 					)
 				} else {
-					log.Printf("%v: PASS - Pool Status - %v (%v)",
+					log.Printf("%v: PASS - Pool Units - %v (%v)",
 						rule.Description,
 						address,
 						rule.Memo,
 					)
+				}
+
+				// Check Rune
+				if p.BalanceRune != pool.Rune {
+					log.Printf("%v: FAIL - Pool Rune - Balance does not match! %f versus %f",
+						rule.Description,
+						pool.Rune,
+						p.BalanceRune,
+					)
+				} else {
+					log.Printf("%v: PASS - Pool Rune - %v (%v)",
+						rule.Description,
+						address,
+						rule.Memo,
+					)
+				}
+
+				// Check asset
+				if p.BalanceAsset != pool.Asset {
+					log.Printf("%v: FAIL - Pool Asset - Balance does not match! %f versus %f",
+						rule.Description,
+						pool.Asset,
+						p.BalanceAsset,
+					)
+				} else {
+					log.Printf("%v: PASS - Pool Asset - %v (%v)",
+						rule.Description,
+						address,
+						rule.Memo,
+					)
+				}
+
+				// Check status (used only for enabling a pool)
+				if pool.Status != "" {
+					if pool.Status != p.Status {
+						log.Printf("%v: FAIL - Pool Status - Status does not match! %v versus %v",
+							rule.Description,
+							pool.Status,
+							p.Status,
+						)
+					} else {
+						log.Printf("%v: PASS - Pool Status - %v (%v)",
+							rule.Description,
+							address,
+							rule.Memo,
+						)
+					}
 				}
 			}
 		}
@@ -429,31 +434,33 @@ func (s *Smoke) GetStakes(address ctypes.AccAddress) types.Staker {
 func (s *Smoke) CheckStake(rule types.Rule) {
 	time.Sleep(s.Config.delay)
 
-	for _, stakerUnits := range rule.Check.Statechain.StakerUnits {
-		address := s.ToAddr(stakerUnits.Actor)
-		stake := s.GetStakes(address)
+	for _, chain := range rule.Check.Statechain {
+		for _, stakerUnits := range chain.StakerUnits {
+			address := s.ToAddr(stakerUnits.Actor)
+			stake := s.GetStakes(address)
 
-		for _, pool := range stake.PoolAndUnits {
-			if pool.Asset.Symbol == rule.Check.Statechain.Symbol {
-				if pool.Units != stakerUnits.Units {
-					log.Printf("%v: FAIL - Staker Units - Units do not match! %f versus %f",
-						rule.Description,
-						stakerUnits.Units,
-						pool.Units,
-					)
-				} else {
-					log.Printf("%v: PASS - Staker Units - %v (%v)",
-						rule.Description,
-						address,
-						rule.Memo,
-					)
+			for _, pool := range stake.PoolAndUnits {
+				if pool.Asset.Symbol == chain.Symbol {
+					if pool.Units != stakerUnits.Units {
+						log.Printf("%v: FAIL - Staker Units - Units do not match! %f versus %f",
+							rule.Description,
+							stakerUnits.Units,
+							pool.Units,
+						)
+					} else {
+						log.Printf("%v: PASS - Staker Units - %v (%v)",
+							rule.Description,
+							address,
+							rule.Memo,
+						)
+					}
 				}
 			}
 		}
 	}
 }
 
-// Sweep : Transfer all assets back to master
+// Sweep : Transfer all assets back to the faucet.
 func (s *Smoke) Sweep() {
 	keys := make([]string, 5)
 	keys = append(keys, s.PoolKey)

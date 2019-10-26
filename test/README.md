@@ -51,7 +51,7 @@ At the top level we define how many stakers we wish to create as well as our mai
   "with_actors": true,
   "staker_count": 2,
   "sweep_on_exit": true,
-  "rules" [...]
+  "rules": [...]
 }
 ```
 
@@ -98,28 +98,33 @@ After a transaction has been executed, we either check Binance or the Statechain
 
 ```json
 {
-  "target": "from",
-  "binance": [...],
-  "statechain": {
-    "units": 1.00000000,
-    "symbol": "BNB",
-    "rune": 1.00000000,
-    "asset": 1.00000000,
-    "staker_units": [
-      {
-        "actor": "staker_1",
-        "units": 1.00000000
-      }
-    ]
-  }
+  "delay": 10,
+  "binance": {
+    "target": "from",
+    "coins": [...]
+  },
+  "statechain": [
+    {
+      "units": 1.00000000,
+      "symbol": "BNB",
+      "rune": 1.00000000,
+      "asset": 1.00000000,
+      "staker_units": [
+        {
+          "actor": "staker_1",
+          "units": 1.00000000
+        }
+      ]
+    }
+  ]
 }
 ```
 
 Where:
 
-* `target` the target actor Binance wallet to check (only used for checking Binance). This is useful when checking that refunds have been executed correctly,
-* `binance` is an array of coin objects (follows the same structure as above)
-* and `statechain` is an object that contains the pool `units`, `rune` and `asset` balances to check for a given pool (determined by the `symbol` supplied) as well as a `staker_units` array for validating an actor's share of the pool.
+* `delay` is the number of second to delay running the checks (to ensure ample time is given to both Binance and the Statechain),
+* `binance` is an object that contains the `target` actor Binance wallet to check and an array of coin objects (the expected balances - follows the same structure as above)
+* and `statechain` is an array of objects that contains the pool `units`, `rune` and `asset` balances to check for a given pool (determined by the `symbol` supplied) as well as a `staker_units` array for validating an actor's share of the pool.
 
 ### Running the Tests
 
@@ -128,7 +133,8 @@ The tests are all run via `make`.
 #### Main test suite
 
 ```shell script
-make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit
+make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit-1p
+make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit-2p
 make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-refund
 ```
 

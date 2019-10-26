@@ -46,9 +46,13 @@ type Coin struct {
 
 type Check struct {
 	Delay      time.Duration `json:"delay"`
-	Target     string        `json:"target"`
-	Binance    []Coin        `json:"binance"`
-	Statechain Statechain    `json:"statechain"`
+	Binance    Binance       `json:"binance"`
+	Statechain []Statechain  `json:"statechain"`
+}
+
+type Binance struct {
+	Target string `json:"target"`
+	Coins  []Coin `json:"coins"`
 }
 
 type Statechain struct {

@@ -78,8 +78,11 @@ clean:
 extract: tools
 	@extract -f "${FILE}" -p "${PASSWORD}" -t ${TYPE}
 
-smoke-test-audit: tools
-	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-audit.json -e ${ENV}
+smoke-test-audit-1p: tools
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-audit-1p.json -e ${ENV}
+
+smoke-test-audit-2p: tools
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-audit-2p.json -e ${ENV}
 
 smoke-test-refund: tools
 	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-refund.json -e ${ENV}
