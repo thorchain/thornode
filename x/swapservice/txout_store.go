@@ -55,6 +55,19 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		return
 	}
 
+	if len(toi.Coins) > 0 {
+		switch toi.Coins[0].Asset.Chain {
+		case common.BNBChain:
+			tos.ApplyBNBFees(ctx, keeper, toi)
+		default:
+			// No gas policy for this chain (yet)
+		}
+
+		tos.addToBlockOut(toi)
+	}
+}
+
+func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutItem) {
 	// detect if one of our coins is bnb or rune. We use this to help determine
 	// which coin we should deduct fees from. The priority, in order, is BNB,
 	// Rune, other.
@@ -153,9 +166,8 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 
 		}
 	}
-	tos.addToBlockOut(toi)
-
 }
+
 func (tos *TxOutStore) addToBlockOut(toi *TxOutItem) {
 	// count the total coins we are sending to the user.
 	countCoins := sdk.ZeroUint()
