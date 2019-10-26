@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x
+set -ex
 
 CHAIN_ID="${CHAIN_ID:=thorchain}"
 DEX_HOST="${DEX_HOST:=testnet-dex.binance.org}"
@@ -11,15 +11,19 @@ SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 BINANCE_TESTNET="${BINANCE_TESTNET:=Binance-Chain-Nile}"
 START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=0}"
 NODES="${NODES:=1}"
+MASTER="${MASTER:=node1}" # the hostname of the master node
 
 if [ -z ${ADDRESS+x} ]; then
-    echo "GENERATING BNB ADDRESSES"
-    # go get -v
-    GO111MODULE=on go run generate.go > /tmp/bnb 
-    ADDRESS=$(cat /tmp/bnb | grep MASTER= | awk -F= '{print $NF}')
-    BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
-    echo "ADDRESS $ADDRESS"
-    echo "KEY $BINANCE_PRIVATE_KEY"
+  echo "GENERATING BNB ADDRESSES"
+  # because the generate command can get API rate limited, we may need to retry
+  n=0
+  until [ $n -ge 60 ]; do
+    generate > /tmp/bnb && break
+    n=$[$n+1]
+    sleep 1
+  done
+  ADDRESS=$(cat /tmp/bnb | grep MASTER= | awk -F= '{print $NF}')
+  BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
 fi
 
 # create statechain user
@@ -28,8 +32,13 @@ echo $SIGNER_PASSWD | sscli keys add statechain
 VALIDATOR=$(ssd tendermint show-validator)
 OBSERVER_ADDRESS=$(sscli keys show statechain -a)
 NODE_ADDRESS=$(sscli keys show statechain -a)
-NODE_ID=$(ssd tendermint show-node-id)
-POOL_ADDRESS=$ADDRESS
+
+echo $(hostname)
+if [[ "$MASTER" == "$(hostname)" ]]; then
+  echo "I AM THE MASTER NODE"
+  ssd tendermint show-node-id > /tmp/shared/node.txt
+  echo $ADDRESS > /tmp/shared/pool_address.txt
+fi
 
 OBSERVER_PATH=$DB_PATH/observer/
 SIGNER_PATH=$DB_PATH/signer/
@@ -37,16 +46,18 @@ mkdir -p $OBSERVER_PATH
 mkdir -p $SIGNER_PATH
 
 node() {
-    echo "{\"node_address\": \"$1\" ,\"status\":\"active\",\"bond_address\":\"$2\",\"accounts\":{\"bnb_signer_acc\":\"$2\", \"bepv_validator_acc\": \"$3\", \"bep_observer_acc\": \"$1\"}}" > /tmp/$1.json
+    echo "{\"node_address\": \"$1\" ,\"status\":\"active\",\"bond_address\":\"$2\",\"accounts\":{\"bnb_signer_acc\":\"$2\", \"bepv_validator_acc\": \"$3\", \"bep_observer_acc\": \"$1\"}}" > /tmp/shared/$1.json
 }
 
-node $NODE_ADDRESS $POOL_ADDRESS $VALIDATOR
+node $NODE_ADDRESS $ADDRESS $VALIDATOR
 
 # wait until we have the correct number of nodes in our directory before continuing
-while [[ "$(ls -1 /tmp/*.json | wc -l)" != "$NODES" ]]; do
-    echo "Waiting... '$(ls -1 /tmp/ | wc -l)' '$NODES'"
+while [[ "$(ls -1 /tmp/shared/*.json | wc -l)" != "$NODES" ]]; do
+    # echo "Waiting... '$(ls -1 /tmp/shared | wc -l)' '$NODES'"
     sleep 1
 done
+
+POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
 
 # Observer config file
 echo "{
@@ -110,7 +121,7 @@ echo "{
 }" > /etc/observe/signd/config.json
 
 ssd init local --chain-id statechain
-for f in /tmp/*.json; do 
+for f in /tmp/shared/*.json; do 
     ssd add-genesis-account $(cat $f | jq -r .node_address) 100000000000thor
 done
 sscli config chain-id statechain
@@ -119,7 +130,7 @@ sscli config indent true
 sscli config trust-node true
 
 # add node accounts to genesis file
-for f in /tmp/*.json; do 
+for f in /tmp/shared/*.json; do 
     jq --argjson nodeInfo "$(cat $f)" '.app_state.swapservice.node_accounts += [$nodeInfo]' ~/.ssd/config/genesis.json > /tmp/genesis.json
     mv /tmp/genesis.json ~/.ssd/config/genesis.json
 done
@@ -127,4 +138,18 @@ done
 cat ~/.ssd/config/genesis.json
 ssd validate-genesis
 
+# setup peer connection
+if [[ "$MASTER" != "$(hostname)" ]]; then
+  echo "I AM NOT THE MASTER"
+  NODE_ID=$(cat /tmp/shared/node.txt)
+  PEER="$NODE_ID@$MASTER:26656"
+  ADDR='addr_book_strict = true'
+  ADDR_STRICT_FALSE='addr_book_strict = false'
+  PEERSISTENT_PEER_TARGET='persistent_peers = ""'
+
+  sed -i -e "s/$ADDR/$ADDR_STRICT_FALSE/g" ~/.ssd/config/config.toml
+  sed -i -e "s/$PEERSISTENT_PEER_TARGET/persistent_peers = \"$PEER\"/g" ~/.ssd/config/config.toml
+fi
+
+echo "$@"
 exec "$@"

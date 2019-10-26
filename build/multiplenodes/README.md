@@ -1,17 +1,11 @@
-## 
-Files in this folder will allow you to run two nodes in docker composer
+Multinode Thorchain
+===================
+
+Files in this folder will allow you to run fou4 nodes in docker composer
+
 ## Build docker image
 ```shell script
-docker build  -t thorchain/statechainnode .
-
-```
-
-## setup
-```shell script
-export SIGNER_PASSWD = "passwd"
-export POOL_ADDRESS = "pool address"
-export $TRUSTED_BNB_ADDRESS = ""
-./setup.sh
+make build
 ```
 
 ## run it
@@ -19,4 +13,4 @@ export $TRUSTED_BNB_ADDRESS = ""
 docker-compose up
 ```
 
-After this , you will have two nodes running in docker composer , they will talk to each other
+After this , you will have four nodes running in docker composer , they will talk to each other

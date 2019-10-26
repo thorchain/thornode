@@ -1,44 +1,58 @@
 version: '3'
 
 services:
-  statechainnode0:
-    container_name: statechainnode0
-    image: thorchain/statechainnode
+  node1:
+    hostname: node1
+    image: thornode
     environment:
-      - POOL_ADDRESS="tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj"
-      - SIGNER_PASSWD="welcome@1"
-      - TRUSTED_BNB_ADDRESS="tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"
-      - NODE_ID=zero
-      - SS_HOME=/statechain/zero/ssd
-      - SSC_HOME=/statechain/zero/sscli
+      - MASTER=node1
+      - NODES=4
+    entrypoint:
+      /build/entrypoint.sh
+    links:
+      - node2
+      - node3
+      - node4
     volumes:
-      - ./build:/statechain
-    networks:
-      localnet:
-        ipv4_address: 192.168.10.2
+      - /tmp/genesis:/tmp/shared
+      - .:/build
+    command: ["supervisord", "-c", "/etc/supervisor.conf"]
 
-  statechainnode1:
-    container_name: statechainnode1
-    image: thorchain/statechainnode
-    ports:
-      - "26659-26660:26656-26657"
+  node2:
+    hostname: node2
+    image: thornode
     environment:
-      - POOL_ADDRESS="tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj"
-      - SIGNER_PASSWD="welcome@1"
-      - TRUSTED_BNB_ADDRESS="tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"
-      - NODE_ID=zero
-      - SS_HOME=/statechain/first/ssd
-      - SSC_HOME=/statechain/first/sscli
+      - MASTER=node1
+      - NODES=4
+    entrypoint:
+      /build/entrypoint.sh
     volumes:
-      - ./build:/statechain
-    networks:
-      localnet:
-        ipv4_address: 192.168.10.3
+      - /tmp/genesis:/tmp/shared
+      - .:/build
+    command: ["supervisord", "-c", "/etc/supervisor.conf"]
 
-networks:
-  localnet:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: 192.168.10.0/16
+  node3:
+    hostname: node3
+    image: thornode
+    environment:
+      - MASTER=node1
+      - NODES=4
+    entrypoint:
+      /build/entrypoint.sh
+    volumes:
+      - /tmp/genesis:/tmp/shared
+      - .:/build
+    command: ["supervisord", "-c", "/etc/supervisor.conf"]
+
+  node4:
+    hostname: node4
+    image: thornode
+    environment:
+      - MASTER=node1
+      - NODES=4
+    entrypoint:
+      /build/entrypoint.sh
+    volumes:
+      - /tmp/genesis:/tmp/shared
+      - .:/build
+    command: ["supervisord", "-c", "/etc/supervisor.conf"]
