@@ -151,5 +151,4 @@ if [[ "$MASTER" != "$(hostname)" ]]; then
   sed -i -e "s/$PEERSISTENT_PEER_TARGET/persistent_peers = \"$PEER\"/g" ~/.ssd/config/config.toml
 fi
 
-echo "$@"
 exec "$@"
