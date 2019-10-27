@@ -126,7 +126,6 @@ func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	if nil != err {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
-	fmt.Println(nodeAccounts)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, nodeAccounts)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal observers to json", err)
@@ -393,7 +392,6 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 }
 
 func queryHeights(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	fmt.Printf("Height Path: (%d) %+v\n", len(path), path)
 	var chain common.Chain
 	if path[0] == "" {
 		chain = common.BNBChain
