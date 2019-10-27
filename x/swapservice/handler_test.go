@@ -409,7 +409,7 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	txIn := types.NewTxIn(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
-			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
 		},
 		"stake:BNB",
 		GetRandomBNBAddress(),
@@ -444,7 +444,7 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	txIn1 := types.NewTxIn(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
-			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
 		},
 		"stake:BNB",
 		GetRandomBNBAddress(),
@@ -471,7 +471,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	txIn := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(1*common.One)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
 		},
 		"create:BNB",
 		GetRandomBNBAddress(),
@@ -502,7 +502,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	txStake := types.NewTxIn(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
-			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
 		},
 		"stake:BNB",
 		staker,
@@ -520,7 +520,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 
 	txIn := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(1*common.One)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
 		},
 		"withdraw:BNB",
 		staker,
@@ -602,7 +602,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	// set a txin
 	txIn1 := types.NewTxIn(
 		common.Coins{
-			common.NewCoin(common.RuneA1FAsset, sdk.NewUint(1*common.One)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
 		},
 		"swap:BNB",
 		GetRandomBNBAddress(),
@@ -755,7 +755,7 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 				sdk.NewUint(100*common.One),
 			),
 			common.NewCoin(
-				common.RuneA1FAsset,
+				common.RuneAsset(),
 				sdk.NewUint(100*common.One),
 			),
 		},
@@ -790,7 +790,7 @@ func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 	c.Assert(err, IsNil)
 	tcanAsset, err := common.NewAsset("BNB.TCAN-014")
 	c.Assert(err, IsNil)
-	runeAsset, err := common.NewAsset("BNB.RUNE-A1F")
+	runeAsset := common.RuneAsset()
 	c.Assert(err, IsNil)
 	txin := TxIn{
 		Sender: GetRandomBNBAddress(),

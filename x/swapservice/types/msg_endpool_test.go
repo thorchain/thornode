@@ -25,7 +25,7 @@ func (MsgEndPoolTestSuite) TestMsgEndPool(c *C) {
 
 	errEndPool := NewMsgEndPool(common.Asset{}, bnb, txID, addr)
 	c.Assert(errEndPool.ValidateBasic(), NotNil)
-	errEndPool1 := NewMsgEndPool(common.RuneA1FAsset, bnb, txID, addr)
+	errEndPool1 := NewMsgEndPool(common.RuneAsset(), bnb, txID, addr)
 	c.Assert(errEndPool1.ValidateBasic(), NotNil)
 	errEndPool2 := NewMsgEndPool(common.BNBAsset, bnb, "", addr)
 	c.Assert(errEndPool2.ValidateBasic(), NotNil)

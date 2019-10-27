@@ -15,7 +15,7 @@ var _ = Suite(&EventSuite{})
 func (s EventSuite) TestSwapEvent(c *C) {
 	evt := NewEventSwap(
 		common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
-		common.NewCoin(common.RuneA1FAsset, sdk.NewUint(420000000)),
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
@@ -48,7 +48,7 @@ func (s EventSuite) TestEvent(c *C) {
 	c.Assert(err, IsNil)
 	swap := NewEventSwap(
 		common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
-		common.NewCoin(common.RuneA1FAsset, sdk.NewUint(420000000)),
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
 		sdk.NewUint(6),
 		sdk.NewUint(5),
 		sdk.NewUint(5),

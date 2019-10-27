@@ -74,12 +74,12 @@ func swap(ctx sdk.Context,
 	if isDoubleSwap {
 		var err error
 		sourcePool := keeper.GetPool(ctx, source)
-		amount, sourcePool, err = swapOne(ctx, keeper, txID, sourcePool, source, common.RuneA1FAsset, amount, requester, destination, globalSlipLimit)
+		amount, sourcePool, err = swapOne(ctx, keeper, txID, sourcePool, source, common.RuneAsset(), amount, requester, destination, globalSlipLimit)
 		if err != nil {
-			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneA1FAsset)
+			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneAsset())
 		}
 		pools = append(pools, sourcePool)
-		source = common.RuneA1FAsset
+		source = common.RuneAsset()
 	}
 
 	// Set asset to our non-rune asset asset
