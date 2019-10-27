@@ -412,12 +412,12 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, txin TxIn, 
 	if !poolAddrManager.IsRotateWindowOpen {
 		return sdk.ErrUnknownRequest("pool address rotate window not open yet").Result()
 	}
-	if len(txin.Coins) == 0 {
-		return sdk.ErrUnknownRequest("no coin found").Result()
-	}
 	currentPoolAddr := poolAddrManager.GetCurrentPoolAddresses()
 	if !currentPoolAddr.Next.IsEmpty() {
 		return sdk.ErrUnknownRequest("next pool had been confirmed already").Result()
+	}
+	if len(txin.Coins) == 0 {
+		return sdk.ErrUnknownRequest("no coin found").Result()
 	}
 	chain := txin.Coins[0].Asset.Chain
 	addr, err := currentPoolAddr.Current.GetAddress(chain)
@@ -439,33 +439,40 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, txin TxIn, 
 }
 
 // handleMsgAck
-func handleMsgAck(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorManager, msg MsgAck) sdk.Result {
+func handleMsgAck(ctx sdk.Context, keeper Keeper, txin TxIn, poolAddrMgr *PoolAddressManager, msg MsgAck) sdk.Result {
 	ctx.Logger().Info("receive ack to next pool pub key", "sender address", msg.Sender.String())
-	if validatorManager.Meta.Nominated.IsEmpty() {
-		return sdk.ErrUnknownRequest("no nominated node yet").Result()
+	if !poolAddrMgr.IsRotateWindowOpen {
+		return sdk.ErrUnknownRequest("pool rotation window not open").Result()
 	}
 
-	nominated, err := keeper.GetNodeAccount(ctx, validatorManager.Meta.Nominated.NodeAddress)
-	if err != nil {
-		return sdk.ErrInternal(fmt.Sprintf("fail to get nominated node,err:%s", err.Error())).Result()
+	if poolAddrMgr.ObservedNextPoolAddrPubKey.IsEmpty() {
+		return sdk.ErrUnknownRequest("didn't observe next pool address pub key").Result()
 	}
-	if !nominated.Accounts.SignerBNBAddress.Equals(msg.Sender) {
-		return sdk.ErrUnknownRequest("nominated node has different signer address").Result()
+
+	// need all chain to ack
+	if len(txin.Coins) == 0 {
+		return sdk.ErrUnknownRequest("no coin found").Result()
 	}
-	nominated.SignerActive = true
+
+	chain := txin.Coins[0].Asset.Chain
+	addr, err := poolAddrMgr.ObservedNextPoolAddrPubKey.GetAddress(chain)
+	if nil != err {
+		return sdk.ErrInternal("fail to get next pool address").Result()
+	}
+	if !addr.Equals(msg.Sender) {
+		return sdk.ErrUnknownRequest("observed next pool address and ack address is different").Result()
+	}
+	// need to have all chain confirmed the next pool address
+	poolAddrMgr.currentPoolAddresses.Next = poolAddrMgr.ObservedNextPoolAddrPubKey
+	poolAddrMgr.ObservedNextPoolAddrPubKey = common.EmptyPubKey
+
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeSignerAct, sdk.NewAttribute("next pool address", msg.Sender.String())))
-	if nominated.ObserverActive && nominated.SignerActive {
-		// only update their status when both observer and signer are active
-		nominated.UpdateStatus(NodeReady)
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeNodeReady,
-				sdk.NewAttribute("signer bnb address", nominated.Accounts.SignerBNBAddress.String()),
-				sdk.NewAttribute("observer bep address", nominated.Accounts.ObserverBEPAddress.String()),
-				sdk.NewAttribute("bep consensus pub key", nominated.Accounts.ValidatorBEPConsPubKey)))
-	}
+		sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
+			sdk.NewAttribute("address", msg.Sender.String()),
+			sdk.NewAttribute("chain", chain.String())))
+	// we have a pool address confirmed by a chain
+	keeper.SetPoolAddresses(ctx, poolAddrMgr.currentPoolAddresses)
 
-	keeper.SetNodeAccount(ctx, nominated)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
