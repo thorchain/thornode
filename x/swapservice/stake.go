@@ -76,6 +76,12 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 	}
 	if su.AssetAddress.IsEmpty() {
 		su.AssetAddress = assetAddr
+	} else {
+		if !su.AssetAddress.Equals(assetAddr) {
+			// mismatch of asset addresses from what is known to the address
+			// given. Refund it.
+			return sdk.ZeroUint(), errors.Wrap(err, "Mismatch of asset addresses")
+		}
 	}
 
 	if !common.IsBNBChain(asset.Chain) {
