@@ -88,6 +88,7 @@ echo "{
   \"binance\": {
     \"private_key\": \"$BINANCE_PRIVATE_KEY\",
     \"dex_host\": \"$DEX_HOST\"
+  }
 }" > /etc/observe/observed/config.json
 
 # Generate Signer config file
@@ -118,10 +119,10 @@ echo "{
   \"binance\": {
     \"private_key\": \"$BINANCE_PRIVATE_KEY\",
     \"dex_host\": \"$DEX_HOST\"
+  }
 }" > /etc/observe/signd/config.json
 
-
-
+# Setup SSD
 ssd init local --chain-id statechain
 for f in /tmp/shared/*.json; do 
     ssd add-genesis-account $(cat $f | jq -r .node_address) 100000000000thor
