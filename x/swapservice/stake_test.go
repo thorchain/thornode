@@ -125,6 +125,8 @@ func (StakeSuite) TestValidateStakeMessage(c *C) {
 	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, common.TxID(""), bnbAddress, assetAddress), NotNil)
 	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, txId, common.NoAddress, common.NoAddress), NotNil)
 	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, txId, bnbAddress, assetAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BNBAsset, txId, common.NoAddress, assetAddress), NotNil)
+	c.Assert(validateStakeMessage(ctx, ps, common.BTCAsset, txId, bnbAddress, common.NoAddress), NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
 		BalanceAsset: sdk.NewUint(100 * common.One),
@@ -144,8 +146,10 @@ func (StakeSuite) TestStake(c *C) {
 
 	bnbAddress := GetRandomBNBAddress()
 	assetAddress := GetRandomBNBAddress()
+	btcAddress, err := common.NewAddress("bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej")
+	c.Assert(err, IsNil)
 
-	_, err := stake(ctx, ps, common.Asset{}, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txId)
+	_, err = stake(ctx, ps, common.Asset{}, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txId)
 	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.ZeroUint(),
@@ -213,4 +217,28 @@ func (StakeSuite) TestStake(c *C) {
 	p := ps.GetPool(ctx, common.BNBAsset)
 
 	c.Check(p.PoolUnits.Equal(sdk.NewUint(200*common.One)), Equals, true)
+
+	// Test atomic cross chain staking
+	// create BTC pool
+	ps.SetPool(ctx, Pool{
+		BalanceRune:  sdk.ZeroUint(),
+		BalanceAsset: sdk.ZeroUint(),
+		Asset:        common.BTCAsset,
+		PoolUnits:    sdk.ZeroUint(),
+		PoolAddress:  btcAddress,
+		Status:       PoolEnabled,
+	})
+
+	// stake rune
+	stakerUnit, err = stake(ctx, ps, common.BTCAsset, sdk.NewUint(100*common.One), sdk.ZeroUint(), bnbAddress, btcAddress, txId)
+	c.Assert(err, IsNil)
+	c.Check(stakerUnit.IsZero(), Equals, true)
+	// stake btc
+	stakerUnit, err = stake(ctx, ps, common.BTCAsset, sdk.ZeroUint(), sdk.NewUint(100*common.One), common.NoAddress, btcAddress, txId)
+	c.Assert(err, IsNil)
+	c.Check(stakerUnit.IsZero(), Equals, false)
+	p = ps.GetPool(ctx, common.BTCAsset)
+	c.Check(p.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true, Commentf("%d", p.BalanceAsset.Uint64()))
+	c.Check(p.BalanceRune.Equal(sdk.NewUint(100*common.One)), Equals, true, Commentf("%d", p.BalanceRune.Uint64()))
+	c.Check(p.PoolUnits.Equal(sdk.NewUint(100*common.One)), Equals, true, Commentf("%d", p.PoolUnits.Uint64()))
 }
