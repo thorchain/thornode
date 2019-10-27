@@ -18,7 +18,7 @@ const (
 type PoolAddressManager struct {
 	k                          Keeper
 	currentPoolAddresses       PoolAddresses
-	ObservedNextPoolAddrPubKey string
+	ObservedNextPoolAddrPubKey common.PubKey
 }
 
 // NewPoolAddressManager create a new PoolAddressManager

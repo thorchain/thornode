@@ -1,6 +1,7 @@
 package common
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -23,6 +24,16 @@ func NewPubKeyFromHexString(key string) (PubKey, error) {
 		return nil, fmt.Errorf("fail to decode hex string,err:%w", err)
 	}
 	return PubKey(buf), nil
+}
+
+// Equals check whether two are the same
+func (pubKey PubKey) Equals(pubKey1 PubKey) bool {
+	return bytes.Equal(pubKey, pubKey1)
+}
+
+// IsEmpty to check whether it is empty
+func (pubKey PubKey) IsEmpty() bool {
+	return len(pubKey) == 0
 }
 
 // String stringer implementation
