@@ -87,7 +87,8 @@ func (ps *PoolStaker) GetStakerUnit(addr common.Address) StakerUnit {
 		}
 	}
 	return StakerUnit{
-		Units: sdk.ZeroUint(),
+		Units:       sdk.ZeroUint(),
+		PendingRune: sdk.ZeroUint(),
 	}
 }
 

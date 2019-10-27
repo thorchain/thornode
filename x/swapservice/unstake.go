@@ -60,6 +60,12 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 	if err != nil {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
 	}
+
+	if !stakerUnit.PendingRune.IsZero() {
+		withdrawRune = withdrawRune.Add(stakerUnit.PendingRune) // extract pending rune
+		stakerUnit.PendingRune = sdk.ZeroUint()                 // reset pending to zero
+	}
+
 	ctx.Logger().Info("client withdraw", "RUNE", withdrawRune, "asset", withDrawAsset, "units left", unitAfter)
 	// update pool
 	pool.PoolUnits = poolUnits.Sub(fStakerUnit).Add(unitAfter)

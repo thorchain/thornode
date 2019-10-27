@@ -296,7 +296,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 			}
 		}
 	}
-	c.Assert(totalAsset.Equal(msgSetStake.AssetAmount.SubUint64(2*batchTransactionFee)), Equals, true)
+	c.Assert(totalAsset.Equal(msgSetStake.AssetAmount.SubUint64(batchTransactionFee)), Equals, true)
 	c.Assert(totalRune.Equal(msgSetStake.RuneAmount), Equals, true)
 }
 
