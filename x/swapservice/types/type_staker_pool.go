@@ -82,20 +82,21 @@ func (spi StakerPoolItem) Valid() error {
 //    ]
 // }
 type StakerPool struct {
-	StakerID  common.Address    `json:"staker_id"`      // this will be staker's address on chain
-	PoolUnits []*StakerPoolItem `json:"pool_and_units"` // the key of this map will be the pool id , value will bt [UNIT,RUNE,TOKEN]
+	RuneAddress  common.Address    `json:"rune_address"`   // staker's rune address
+	AssetAddress common.Address    `json:"asset_address"`  // staker's asset address
+	PoolUnits    []*StakerPoolItem `json:"pool_and_units"` // the key of this map will be the pool id , value will bt [UNIT,RUNE,TOKEN]
 }
 
 // NewStakerPool create a new instance of StakerPool
 func NewStakerPool(id common.Address) StakerPool {
 	return StakerPool{
-		StakerID:  id,
-		PoolUnits: []*StakerPoolItem{},
+		RuneAddress: id,
+		PoolUnits:   []*StakerPoolItem{},
 	}
 }
 
 func (sp StakerPool) Valid() error {
-	if sp.StakerID.IsEmpty() {
+	if sp.RuneAddress.IsEmpty() {
 		return errors.New("Staker ID cannot be empty")
 	}
 
@@ -111,7 +112,7 @@ func (sp StakerPool) Valid() error {
 // String return a user readable string representation of Staker Pool
 func (sp StakerPool) String() string {
 	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintln("staker-id: " + sp.StakerID))
+	sb.WriteString(fmt.Sprintln("staker-id: " + sp.RuneAddress))
 	if nil != sp.PoolUnits {
 		for _, item := range sp.PoolUnits {
 			sb.WriteString(fmt.Sprintf("pool-id: %s, staker unitsL %s", item.Units.String(), item.Units.String()))
