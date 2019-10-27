@@ -42,6 +42,8 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 			return queryCompleteEvents(ctx, path[1:], req, keeper)
 		case q.QueryHeights.Key:
 			return queryHeights(ctx, path[1:], req, keeper)
+		case q.QueryChainHeights.Key:
+			return queryHeights(ctx, path[1:], req, keeper)
 		case q.QueryObservers.Key:
 			return queryObservers(ctx, path[1:], req, keeper)
 		case q.QueryObserver.Key:
@@ -124,7 +126,6 @@ func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	if nil != err {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
-	fmt.Println(nodeAccounts)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, nodeAccounts)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal observers to json", err)
@@ -391,13 +392,25 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 }
 
 func queryHeights(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	binance := keeper.GetLastBinanceHeight(ctx)
+	var chain common.Chain
+	if path[0] == "" {
+		chain = common.BNBChain
+	} else {
+		var err error
+		chain, err = common.NewChain(path[0])
+		if err != nil {
+			ctx.Logger().Error("fail to retrieve chain", err)
+			return nil, sdk.ErrInternal("fail to retrieve chain")
+		}
+	}
+	chainHeight := keeper.GetLastChainHeight(ctx, chain)
 	signed := keeper.GetLastSignedHeight(ctx)
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, QueryResHeights{
-		LastBinanceHeight: binance,
-		LastSignedHeight:  signed,
-		Statechain:        ctx.BlockHeight(),
+		Chain:            chain,
+		LastChainHeight:  chainHeight,
+		LastSignedHeight: signed,
+		Statechain:       ctx.BlockHeight(),
 	})
 	if nil != err {
 		ctx.Logger().Error("fail to marshal events to json", err)
