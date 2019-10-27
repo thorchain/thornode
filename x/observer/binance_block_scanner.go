@@ -255,7 +255,6 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
 				txInItem.ObservedPoolAddress = sender.Address.String()
 				// Coin is mandatory , so let's just give 0.1 RUNE , thus if we fail to process outbound tx, we won't accidentally refund it.
-				// TODO we need to use correct asset base on environment , given RUNE has different symbol on mainnet vs test net
 				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One/10)))
 				return &txInItem, nil
 			}
