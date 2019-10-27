@@ -3,19 +3,21 @@ package types
 import "gitlab.com/thorchain/bepswap/thornode/common"
 
 type PoolAddresses struct {
-	Previous common.PubKey `json:"previous"`
-	Current  common.PubKey `json:"current"`
-	Next     common.PubKey `json:"next"`
-	RotateAt int64         `json:"rotate_at"`
+	Previous           common.PubKey `json:"previous"`
+	Current            common.PubKey `json:"current"`
+	Next               common.PubKey `json:"next"`
+	RotateAt           int64         `json:"rotate_at"`
+	RotateWindowOpenAt int64         `json:"rotate_window_open_at"`
 }
 
 // NewPoolAddresses create a new instance of PoolAddress
-func NewPoolAddresses(previous, current, next common.PubKey, rotateAt int64) PoolAddresses {
+func NewPoolAddresses(previous, current, next common.PubKey, rotateAt, rotateWindowOpenAt int64) PoolAddresses {
 	return PoolAddresses{
-		Previous: previous,
-		Current:  current,
-		Next:     next,
-		RotateAt: rotateAt,
+		Previous:           previous,
+		Current:            current,
+		Next:               next,
+		RotateAt:           rotateAt,
+		RotateWindowOpenAt: rotateWindowOpenAt,
 	}
 }
 

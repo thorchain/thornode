@@ -407,20 +407,31 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 
 // handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
 // MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on chain
-func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorManager, poolAddrManager *PoolAddressManager, msg MsgNextPoolAddress) sdk.Result {
-	ctx.Logger().Info("receive request to set next pool address", "pool address", msg.NextPoolAddr.String())
-	if validatorManager.Meta.Nominated.IsEmpty() {
-		return sdk.ErrUnknownRequest("no nominated node yet").Result()
+func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, txin TxIn, poolAddrManager *PoolAddressManager, msg MsgNextPoolAddress) sdk.Result {
+	ctx.Logger().Info("receive request to set next pool pub key", "pool pub key", msg.NextPoolPubKey.String())
+	if !poolAddrManager.IsRotateWindowOpen {
+		return sdk.ErrUnknownRequest("pool address rotate window not open yet").Result()
+	}
+	if len(txin.Coins) == 0 {
+		return sdk.ErrUnknownRequest("no coin found").Result()
 	}
 	currentPoolAddr := poolAddrManager.GetCurrentPoolAddresses()
-	if !currentPoolAddr.Current.Equals(msg.Sender) {
-		return sdk.ErrUnknownRequest("next pool should be send with current pool address").Result()
+	if !currentPoolAddr.Next.IsEmpty() {
+		return sdk.ErrUnknownRequest("next pool had been confirmed already").Result()
+	}
+	chain := txin.Coins[0].Asset.Chain
+	addr, err := currentPoolAddr.Current.GetAddress(chain)
+	if nil != err {
+		return sdk.ErrInternal("fail to get current pool address").Result()
 	}
 
-	currentPoolAddr.Next = msg.NextPoolAddr
-	keeper.SetPoolAddresses(ctx, currentPoolAddr)
+	if !addr.Equals(msg.Sender) {
+		return sdk.ErrUnknownRequest("next pool should be send with current pool address").Result()
+	}
+	poolAddrManager.ObservedNextPoolAddrPubKey = msg.NextPoolPubKey
+
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeNextPoolAddress, sdk.NewAttribute("next pool address", msg.NextPoolAddr.String())))
+		sdk.NewEvent(EventTypeNextPoolPubKeyObserved, sdk.NewAttribute("next pool pub key", msg.NextPoolPubKey.String())))
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
@@ -429,7 +440,7 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorMa
 
 // handleMsgAck
 func handleMsgAck(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorManager, msg MsgAck) sdk.Result {
-	ctx.Logger().Info("receive ack to next pool address", "sender address", msg.Sender.String())
+	ctx.Logger().Info("receive ack to next pool pub key", "sender address", msg.Sender.String())
 	if validatorManager.Meta.Nominated.IsEmpty() {
 		return sdk.ErrUnknownRequest("no nominated node yet").Result()
 	}

@@ -12,6 +12,9 @@ import (
 // PubKey used in statechain
 type PubKey []byte
 
+// EmptyPubKey
+var EmptyPubKey PubKey
+
 // NewPubKey create a new instance of PubKey
 func NewPubKey(b []byte) PubKey {
 	return PubKey(b)
