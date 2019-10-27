@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -171,6 +172,27 @@ func (k Keeper) GetPoolIndex(ctx sdk.Context) (PoolIndex, error) {
 		return PoolIndex{}, errors.Wrap(err, "fail to unmarshal poolindex")
 	}
 	return pi, nil
+}
+
+// GetChains will go through all the pools we have , and return a list of chains
+func (k Keeper) GetChains(ctx sdk.Context) ([]common.Chain, error) {
+	chainMap := make(map[common.Chain]bool)
+	chains := make([]common.Chain, 0)
+	iter := k.GetPoolDataIterator(ctx)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		var p Pool
+		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
+		if err != nil {
+			return nil, errors.Wrap(err, "fail to unmarshal pool")
+		}
+		if chainMap[p.Asset.Chain] {
+			continue
+		}
+		chains = append(chains, p.Asset.Chain)
+		chainMap[p.Asset.Chain] = true
+	}
+	return chains, nil
 }
 
 // SetPoolIndex write a pool index into datastore

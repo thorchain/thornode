@@ -22,6 +22,7 @@ type PoolAddressManager struct {
 	currentPoolAddresses       PoolAddresses
 	ObservedNextPoolAddrPubKey common.PubKey
 	IsRotateWindowOpen         bool
+	chainConfirmed             map[common.Chain]bool
 }
 
 // NewPoolAddressManager create a new PoolAddressManager
@@ -43,8 +44,36 @@ func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context, height int64) {
 	}
 
 	if height >= pm.currentPoolAddresses.RotateWindowOpenAt && height < pm.currentPoolAddresses.RotateAt {
+		if pm.IsRotateWindowOpen {
+			return
+		}
+		chains, err := pm.k.GetChains(ctx)
+		if nil != err {
+			ctx.Logger().Error("fail to get all chains", "err", err)
+			return
+		}
+		chainConfirmMap := make(map[common.Chain]bool)
+		for _, c := range chains {
+			chainConfirmMap[c] = false
+		}
+		pm.chainConfirmed = chainConfirmMap
 		pm.IsRotateWindowOpen = true
 	}
+}
+
+// PoolConfirmed set one chain to be confirmed
+func (pm *PoolAddressManager) PoolConfirmed(c common.Chain) {
+	pm.chainConfirmed[c] = true
+}
+
+// IsAllChainConfirmed will return true when all chain conf
+func (pm *PoolAddressManager) IsAllChainConfirmed() bool {
+	for _, v := range pm.chainConfirmed {
+		if !v {
+			return false
+		}
+	}
+	return true
 }
 
 func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, height int64, store *TxOutStore) {
@@ -78,33 +107,13 @@ func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, height int64, p
 	return newPoolAddresses
 }
 
-func getAllChains(ctx sdk.Context, k Keeper) ([]common.Chain, error) {
-	chainMap := make(map[common.Chain]bool)
-	chains := make([]common.Chain, 0)
-	iter := k.GetPoolDataIterator(ctx)
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		var p Pool
-		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
-		if err != nil {
-			return nil, errors.Wrap(err, "fail to unmarshal pool")
-		}
-		if chainMap[p.Asset.Chain] {
-			continue
-		}
-		chains = append(chains, p.Asset.Chain)
-		chainMap[p.Asset.Chain] = true
-	}
-	return chains, nil
-}
-
 // move all assets based on pool balance to new pool
 func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses PoolAddresses) error {
 	// pool address actually didn't changed , so don't need to move asset
 	if addresses.Previous.Equals(addresses.Current) {
 		return nil
 	}
-	chains, err := getAllChains(ctx, k)
+	chains, err := k.GetChains(ctx)
 	if nil != err {
 		return fmt.Errorf("fail to get all chains from pool,err:%w", err)
 	}

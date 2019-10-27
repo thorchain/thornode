@@ -462,17 +462,19 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, txin TxIn, poolAddrMgr *PoolAd
 	if !addr.Equals(msg.Sender) {
 		return sdk.ErrUnknownRequest("observed next pool address and ack address is different").Result()
 	}
-	// need to have all chain confirmed the next pool address
-	poolAddrMgr.currentPoolAddresses.Next = poolAddrMgr.ObservedNextPoolAddrPubKey
-	poolAddrMgr.ObservedNextPoolAddrPubKey = common.EmptyPubKey
+	poolAddrMgr.PoolConfirmed(chain)
+	if poolAddrMgr.IsAllChainConfirmed() {
+		// need to have all chain confirmed the next pool address
+		poolAddrMgr.currentPoolAddresses.Next = poolAddrMgr.ObservedNextPoolAddrPubKey
+		poolAddrMgr.ObservedNextPoolAddrPubKey = common.EmptyPubKey
 
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
-			sdk.NewAttribute("address", msg.Sender.String()),
-			sdk.NewAttribute("chain", chain.String())))
-	// we have a pool address confirmed by a chain
-	keeper.SetPoolAddresses(ctx, poolAddrMgr.currentPoolAddresses)
-
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
+				sdk.NewAttribute("address", msg.Sender.String()),
+				sdk.NewAttribute("chain", chain.String())))
+		// we have a pool address confirmed by a chain
+		keeper.SetPoolAddresses(ctx, poolAddrMgr.currentPoolAddresses)
+	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
