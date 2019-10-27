@@ -61,70 +61,66 @@ done
 
 POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
 
-# Observer config file
-echo <<EOF
-{
-  "chain_id": "$CHAIN_ID",
-  "dex_host": "$DEX_HOST",
-  "observer_db_path": "$OBSERVER_PATH",
-  "block_scanner": {
-    "rpc_host": "$RPC_HOST",
-    "start_block_height": "$START_BLOCK_HEIGHT",
-    "enforce_block_height": false,
-    "block_scan_processors": 1,
-    "block_height_discover_back_off": "1s",
-    "block_retry_interval": "10s"
+# Generate observer config file
+echo "{
+  \"chain_id\": \"$CHAIN_ID\",
+  \"dex_host\": \"$DEX_HOST\",
+  \"observer_db_path\": \"$OBSERVER_PATH\",
+  \"block_scanner\": {
+    \"rpc_host\": \"$RPC_HOST\",
+    \"start_block_height\": \"$START_BLOCK_HEIGHT\",
+    \"enforce_block_height\": false,
+    \"block_scan_processors\": 1,
+    \"block_height_discover_back_off\": \"1s\",
+    \"block_retry_interval\": \"10s\"
   },
-  "state_chain": {
-    "chain_id": "$CHAIN_ID",
-    "chain_host": "$CHAIN_HOST",
-    "signer_name": "$SIGNER_NAME",
-    "signer_passwd": "$SIGNER_PASSWD"
+  \"state_chain\": {
+    \"chain_id\": \"$CHAIN_ID\",
+    \"chain_host\": \"$CHAIN_HOST\",
+    \"signer_name\": \"$SIGNER_NAME\",
+    \"signer_passwd\": \"$SIGNER_PASSWD\"
   },
-  "metric": {
-    "enabled": true
+  \"metric\": {
+    \"enabled\": true
   },
-  "pool_address": "$POOL_ADDRESS",
-  "signer_db_path": "$SIGNER_PATH",
-  "binance": {
-    "private_key": "$BINANCE_PRIVATE_KEY",
-    "dex_host": "$DEX_HOST"
-  }
-}
-EOF > /etc/observe/observed/config.json
+  \"pool_address\": \"$POOL_ADDRESS\",
+  \"signer_db_path\": \"$SIGNER_PATH\",
+  \"binance\": {
+    \"private_key\": \"$BINANCE_PRIVATE_KEY\",
+    \"dex_host\": \"$DEX_HOST\"
+}" > /etc/observe/observed/config.json
 
 # Generate Signer config file
-echo <<EOF
-{
-  "chain_id": "$CHAIN_ID",
-  "dex_host": "$DEX_HOST",
-  "observer_db_path": "$OBSERVER_PATH",
-  "block_scanner": {
-    "rpc_host": "$RPC_HOST",
-    "start_block_height": $START_BLOCK_HEIGHT,
-    "enforce_block_height": false,
-    "block_scan_processors": 1,
-    "block_height_discover_back_off": "1s",
-    "block_retry_interval": "10s",
-    "scheme": "http"
+echo "{
+  \"chain_id\": \"$CHAIN_ID\",
+  \"dex_host\": \"$DEX_HOST\",
+  \"observer_db_path\": \"$OBSERVER_PATH\",
+  \"block_scanner\": {
+    \"rpc_host\": \"$RPC_HOST\",
+    \"start_block_height\": $START_BLOCK_HEIGHT,
+    \"enforce_block_height\": false,
+    \"block_scan_processors\": 1,
+    \"block_height_discover_back_off\": \"1s\",
+    \"block_retry_interval\": \"10s\",
+    \"scheme\": \"http\"
   },
-  "state_chain": {
-    "chain_id": "statechain",
-    "chain_host": "localhost:1317",
-    "signer_name": "statechain",
-    "signer_passwd": "PASSWORD1234"
+  \"state_chain\": {
+    \"chain_id\": \"statechain\",
+    \"chain_host\": \"localhost:1317\",
+    \"signer_name\": \"statechain\",
+    \"signer_passwd\": \"PASSWORD1234\"
   },
-  "metric": {
-    "enabled": true
+  \"metric\": {
+    \"enabled\": true
   },
-  "pool_address": "$POOL_ADDRESS",
-  "signer_db_path": "$SIGNER_PATH",
-  "binance": {
-    "private_key": "$BINANCE_PRIVATE_KEY",
-    "dex_host": "$DEX_HOST"
-  }
-}
-EOF > /etc/observe/signd/config.json
+  \"pool_address\": \"$POOL_ADDRESS\",
+  \"signer_db_path\": \"$SIGNER_PATH\",
+  \"binance\": {
+    \"private_key\": \"$BINANCE_PRIVATE_KEY\",
+    \"dex_host\": \"$DEX_HOST\"
+}" > /etc/observe/signd/config.json
+
+
 
 ssd init local --chain-id statechain
 for f in /tmp/shared/*.json; do 
