@@ -62,7 +62,7 @@ func (a Asset) String() string {
 }
 
 func RuneAsset() Asset {
-	if strings.EqualFold(strings.ToLower(os.Getenv("NET")), "testnet") {
+	if strings.EqualFold(os.Getenv("NET"), "testnet") {
 		return RuneA1FAsset
 	}
 	return RuneB1AAsset
