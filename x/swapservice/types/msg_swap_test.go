@@ -17,7 +17,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 	txID := GetRandomTxHash()
 	c.Check(txID.IsEmpty(), Equals, false)
 
-	m := NewMsgSwap(txID, common.RuneA1FAsset, common.BNBAsset, sdk.NewUint(100000000), bnbAddress, bnbAddress, sdk.NewUint(200000000), addr)
+	m := NewMsgSwap(txID, common.RuneAsset(), common.BNBAsset, sdk.NewUint(100000000), bnbAddress, bnbAddress, sdk.NewUint(200000000), addr)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_swap")
 
@@ -33,7 +33,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 	}{
 		{
 			requestTxHash: common.TxID(""),
-			source:        common.RuneA1FAsset,
+			source:        common.RuneAsset(),
 			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
@@ -63,7 +63,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.RuneA1FAsset,
+			source:        common.RuneAsset(),
 			target:        common.Asset{},
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
@@ -73,7 +73,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.RuneA1FAsset,
+			source:        common.RuneAsset(),
 			target:        common.BNBAsset,
 			amount:        sdk.ZeroUint(),
 			requester:     bnbAddress,
@@ -83,7 +83,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.RuneA1FAsset,
+			source:        common.RuneAsset(),
 			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100000000),
 			requester:     common.NoAddress,
@@ -93,7 +93,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.RuneA1FAsset,
+			source:        common.RuneAsset(),
 			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,
@@ -103,7 +103,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 		{
 			requestTxHash: txID,
-			source:        common.RuneA1FAsset,
+			source:        common.RuneAsset(),
 			target:        common.BNBAsset,
 			amount:        sdk.NewUint(100000000),
 			requester:     bnbAddress,

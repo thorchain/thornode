@@ -2,13 +2,14 @@ package common
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
 var (
 	BNBAsset     = Asset{"BNB", "BNB", "BNB"}
-	RuneA1FAsset = Asset{"BNB", "RUNE-A1F", "RUNE"}
-	RuneB1AAsset = Asset{"BNB", "RUNE-B1A", "RUNE"}
+	RuneA1FAsset = Asset{"BNB", "RUNE-A1F", "RUNE"} // testnet
+	RuneB1AAsset = Asset{"BNB", "RUNE-B1A", "RUNE"} // mainnet
 )
 
 type Asset struct {
@@ -58,6 +59,13 @@ func (a Asset) IsEmpty() bool {
 
 func (a Asset) String() string {
 	return fmt.Sprintf("%s.%s", a.Chain.String(), a.Symbol.String())
+}
+
+func RuneAsset() Asset {
+	if strings.EqualFold(strings.ToLower(os.Getenv("NET")), "testnet") {
+		return RuneA1FAsset
+	}
+	return RuneB1AAsset
 }
 
 func IsBNBAsset(a Asset) bool {
