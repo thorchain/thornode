@@ -358,7 +358,6 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	)
 	keeper.AddIncompleteEvents(ctx, evt)
 
-	// Sent Rune
 	toi := &TxOutItem{
 		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
 		ToAddress:   stakerUnit.RuneAddress,

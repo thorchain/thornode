@@ -451,7 +451,7 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 			common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
 		},
-		"stake:BNB.BNB",
+		"stake:BNB",
 		GetRandomBNBAddress(),
 		sdk.NewUint(1024),
 		w.activeNodeAccount.Accounts.SignerBNBAddress)
