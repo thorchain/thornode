@@ -8,19 +8,13 @@ import (
 )
 
 type Event struct {
-	ID      common.Amount `json:"id"`
-	Type    string        `json:"type"`
-	InHash  common.TxID   `json:"in_hash"`
-	OutHash common.TxID   `json:"out_hash"`
-	// Should we have timestamps and addresses if they are available via the
-	// binance API?
-	// InStamp    time.Time         `json:"in_timestamp"`
-	// OutStamp   time.Time         `json:"out_timestamp"`
-	// InAddress  common.Address `json:"in_address"`
-	// OutAddress common.Address `json:"out_address"`
-	Pool   common.Asset    `json:"pool"`
-	Event  json.RawMessage `json:"event"`
-	Status EventStatus     `json:"status"`
+	ID      common.Amount   `json:"id"`
+	Type    string          `json:"type"`
+	InHash  common.TxID     `json:"in_hash"`
+	OutHash common.TxID     `json:"out_hash"`
+	Pool    common.Asset    `json:"pool"`
+	Event   json.RawMessage `json:"event"`
+	Status  EventStatus     `json:"status"`
 }
 
 func NewEvent(typ string, inHash common.TxID, pool common.Asset, evt json.RawMessage, status EventStatus) Event {

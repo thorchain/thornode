@@ -15,10 +15,10 @@ const (
 	Reverted   status = "reverted"
 )
 
-// Meant to track if we have processed a specific binance tx
+// Meant to track if we have processed a specific tx
 type TxIn struct {
 	Status             status           `json:"status"`
-	Done               common.TxID      `json:"txhash"` // completed binance chain tx hash. This is a slice to track if we've "double spent" an input
+	Done               common.TxID      `json:"txhash"` // completed chain tx hash. This is a slice to track if we've "double spent" an input
 	Memo               string           `json:"memo"`   // memo
 	Coins              common.Coins     `json:"coins"`  // coins sent in tx
 	Sender             common.Address   `json:"sender"`

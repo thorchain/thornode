@@ -7,10 +7,10 @@ import (
 
 // MsgSwap defines a MsgSwap message
 type MsgSwap struct {
-	RequestTxHash common.TxID    `json:"request_tx_hash"` // Request transaction hash on Binance chain
+	RequestTxHash common.TxID    `json:"request_tx_hash"` // Request transaction hash on chain
 	SourceAsset   common.Asset   `json:"source_asset"`    // source asset
 	TargetAsset   common.Asset   `json:"target_asset"`    // target asset
-	Requester     common.Address `json:"requester"`       // request address on Binance chain
+	Requester     common.Address `json:"requester"`       // request address on chain
 	Destination   common.Address `json:"destination"`     // destination , used for swap and send , the destination address we send it to
 	Amount        sdk.Uint       `json:"amount"`          // amount of asset to swap
 	TradeTarget   sdk.Uint       `json:"trade_target"`

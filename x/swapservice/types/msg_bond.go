@@ -10,7 +10,7 @@ type MsgBond struct {
 	NodeAddress   sdk.AccAddress `json:"node_address"`
 	Bond          sdk.Uint       `json:"bond"`
 	BondAddress   common.Address `json:"bond_address"`
-	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on binance chain
+	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on chain
 	Signer        sdk.AccAddress `json:"signer"`
 }
 
