@@ -716,12 +716,19 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 		return nil, errors.Errorf("did not find %s ", asset)
 	}
 
+	runeAddr := tx.Sender
+	assetAddr := memo.GetDestination()
+	if !runeAddr.IsChain(common.BNBChain) {
+		runeAddr = memo.GetDestination()
+		assetAddr = tx.Sender
+	}
+
 	return NewMsgSetStakeData(
 		asset,
 		runeAmount,
 		assetAmount,
-		tx.Sender,
-		memo.GetAssetAddress(),
+		runeAddr,
+		assetAddr,
 		txID,
 		signer,
 	), nil

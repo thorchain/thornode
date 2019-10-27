@@ -234,7 +234,7 @@ func (StakeSuite) TestStake(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(stakerUnit.IsZero(), Equals, true)
 	// stake btc
-	stakerUnit, err = stake(ctx, ps, common.BTCAsset, sdk.ZeroUint(), sdk.NewUint(100*common.One), common.NoAddress, btcAddress, txId)
+	stakerUnit, err = stake(ctx, ps, common.BTCAsset, sdk.ZeroUint(), sdk.NewUint(100*common.One), bnbAddress, btcAddress, txId)
 	c.Assert(err, IsNil)
 	c.Check(stakerUnit.IsZero(), Equals, false)
 	p = ps.GetPool(ctx, common.BTCAsset)
