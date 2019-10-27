@@ -12,6 +12,7 @@ const (
 )
 
 type Chain string
+type Chains []Chain
 
 func NewChain(chain string) (Chain, error) {
 	noChain := Chain("")
