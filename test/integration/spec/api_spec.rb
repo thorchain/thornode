@@ -153,7 +153,6 @@ describe "API Tests" do
       found = false
       until i > 100
         resp = get("/txoutarray/#{i}")
-        puts resp.body
         if not resp.body['chains'].include?("BNB")
           i = i + 1
           next
@@ -221,9 +220,17 @@ describe "API Tests" do
     it "ensure we have non-zero block height" do
       resp = get("/lastblock")
       expect(resp.code).to eq("200")
-      # expect(resp.body['lastobservedin'].to_i).to be > 0, resp.body.inspect
+      expect(resp.body['chain']).to eq("BNB"), resp.body.inspect
+      expect(resp.body['lastobservedin']).to eq("376"), resp.body.inspect
       expect(resp.body['lastsignedout'].to_i).to be > 0, resp.body.inspect
-      expect(resp.body['statechain'].to_i).to be > 0, resp.body.inspect
+      expect(resp.body['statechain'].to_i).to be > 1, resp.body.inspect
+
+      resp = get("/lastblock/bnb")
+      expect(resp.code).to eq("200")
+      expect(resp.body['chain']).to eq("BNB"), resp.body.inspect
+      expect(resp.body['lastobservedin']).to eq("376"), resp.body.inspect
+      expect(resp.body['lastsignedout'].to_i).to be > 0, resp.body.inspect
+      expect(resp.body['statechain'].to_i).to be > 1, resp.body.inspect
     end
   end
 

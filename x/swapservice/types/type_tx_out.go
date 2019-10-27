@@ -7,7 +7,7 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
-// TxOutItem represent an tx need to be sent to binance chain
+// TxOutItem represent an tx need to be sent to chain
 type TxOutItem struct {
 	ToAddress   common.Address `json:"to"`
 	PoolAddress common.Address `json:"pool_address"`

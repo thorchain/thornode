@@ -13,7 +13,7 @@ import (
 // StakeTxDetail represent all the stake activity
 // Staker can stake on the same pool for multiple times
 type StakeTxDetail struct {
-	RequestTxHash common.TxID `json:"request_tx_hash"` // the tx hash from binance chain , represent staker send asset to the pool
+	RequestTxHash common.TxID `json:"request_tx_hash"` // the tx hash from chain , represent staker send asset to the pool
 	RuneAmount    sdk.Uint    `json:"rune_amount"`     // amount of rune that send in at the time
 	AssetAmount   sdk.Uint    `json:"asset_amount"`    // amount of asset that send in at the time
 }
@@ -52,7 +52,7 @@ func (spi StakerPoolItem) Valid() error {
 //            "units": "200",
 //            "stake_details": [
 //                {
-//                    "request_tx_hash": "txhash from binance chain",
+//                    "request_tx_hash": "txhash from chain",
 //                    "rune_amount": "100",
 //                    "asset_amount": "100"
 //                },
@@ -68,7 +68,7 @@ func (spi StakerPoolItem) Valid() error {
 //            "units": "200",
 //            "stake_details": [
 //                {
-//                    "request_tx_hash": "txhash from binance chain",
+//                    "request_tx_hash": "txhash from chain",
 //                    "rune_amount": "100",
 //                    "asset_amount": "100"
 //                },
@@ -82,7 +82,7 @@ func (spi StakerPoolItem) Valid() error {
 //    ]
 // }
 type StakerPool struct {
-	StakerID  common.Address    `json:"staker_id"`      // this will be staker's address on binance chain
+	StakerID  common.Address    `json:"staker_id"`      // this will be staker's address on chain
 	PoolUnits []*StakerPoolItem `json:"pool_and_units"` // the key of this map will be the pool id , value will bt [UNIT,RUNE,TOKEN]
 }
 

@@ -45,9 +45,9 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 			).Methods(http.MethodGet, http.MethodOptions)
 		}
 	}
-	// Get unsigned json for emitting a binance transaction. Validators only.
+	// Get unsigned json for emitting a transaction. Validators only.
 	r.HandleFunc(
-		fmt.Sprintf("/%s/binance/tx", storeName),
+		fmt.Sprintf("/%s/tx", storeName),
 		postTxHashHandler(cliCtx),
 	).Methods(http.MethodPost)
 	r.Use(mux.CORSMethodMiddleware(r))

@@ -17,22 +17,22 @@ import (
 type dbPrefix string
 
 const (
-	prefixTxIn              dbPrefix = "tx_"
-	prefixPool              dbPrefix = "pool_"
-	prefixTxOut             dbPrefix = "txout_"
-	prefixPoolStaker        dbPrefix = "poolstaker_"
-	prefixStakerPool        dbPrefix = "stakerpool_"
-	prefixAdmin             dbPrefix = "admin_"
-	prefixTxInIndex         dbPrefix = "txinIndex_"
-	prefixInCompleteEvents  dbPrefix = "incomplete_events_"
-	prefixCompleteEvent     dbPrefix = "complete_event_"
-	prefixLastEventID       dbPrefix = "last_event_id_"
-	prefixLastBinanceHeight dbPrefix = "last_binance_height_"
-	prefixLastSignedHeight  dbPrefix = "last_signed_height_"
-	prefixNodeAccount       dbPrefix = "node_account_"
-	prefixActiveObserver    dbPrefix = "active_observer_"
-	prefixPoolAddresses     dbPrefix = "pooladdresses_"
-	prefixValidatorMeta     dbPrefix = "validator_meta_"
+	prefixTxIn             dbPrefix = "tx_"
+	prefixPool             dbPrefix = "pool_"
+	prefixTxOut            dbPrefix = "txout_"
+	prefixPoolStaker       dbPrefix = "poolstaker_"
+	prefixStakerPool       dbPrefix = "stakerpool_"
+	prefixAdmin            dbPrefix = "admin_"
+	prefixTxInIndex        dbPrefix = "txinIndex_"
+	prefixInCompleteEvents dbPrefix = "incomplete_events_"
+	prefixCompleteEvent    dbPrefix = "complete_event_"
+	prefixLastEventID      dbPrefix = "last_event_id_"
+	prefixLastChainHeight  dbPrefix = "last_chain_height_"
+	prefixLastSignedHeight dbPrefix = "last_signed_height_"
+	prefixNodeAccount      dbPrefix = "node_account_"
+	prefixActiveObserver   dbPrefix = "active_observer_"
+	prefixPoolAddresses    dbPrefix = "pooladdresses_"
+	prefixValidatorMeta    dbPrefix = "validator_meta_"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -80,19 +80,19 @@ func (k Keeper) GetLastSignedHeight(ctx sdk.Context) (height sdk.Uint) {
 	return
 }
 
-func (k Keeper) SetLastBinanceHeight(ctx sdk.Context, height sdk.Uint) error {
-	currentHeight := k.GetLastBinanceHeight(ctx)
+func (k Keeper) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height sdk.Uint) error {
+	currentHeight := k.GetLastChainHeight(ctx, chain)
 	if currentHeight.GT(height) {
 		return errors.Errorf("current block height :%s is larger than %s , block height can't go backward ", currentHeight, height)
 	}
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixLastBinanceHeight, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastBinanceHeight))
+	key := getKey(prefixLastChainHeight, chain.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixLastChainHeight))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
 	return nil
 }
 
-func (k Keeper) GetLastBinanceHeight(ctx sdk.Context) (height sdk.Uint) {
-	key := getKey(prefixLastBinanceHeight, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastBinanceHeight))
+func (k Keeper) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (height sdk.Uint) {
+	key := getKey(prefixLastChainHeight, chain.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixLastChainHeight))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return sdk.ZeroUint()

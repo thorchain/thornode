@@ -406,7 +406,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 }
 
 // handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
-// MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on binance chain
+// MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on chain
 func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorManager, poolAddrManager *PoolAddressManager, msg MsgNextPoolAddress) sdk.Result {
 	ctx.Logger().Info("receive request to set next pool address", "pool address", msg.NextPoolAddr.String())
 	if validatorManager.Meta.Nominated.IsEmpty() {
@@ -465,7 +465,7 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorMan
 	}
 }
 
-// handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
+// handleMsgSetTxIn gets a tx hash, gets the tx/memo, and triggers
 // another handler to process the request
 func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddressMgr *PoolAddressManager, validatorManager *ValidatorManager, msg MsgSetTxIn) sdk.Result {
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
@@ -517,8 +517,13 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 				continue
 			}
 
+			var chain common.Chain
+			if len(txIn.Coins) > 0 {
+				chain = txIn.Coins[0].Asset.Chain
+			}
+
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer)
-			if nil != err {
+			if nil != err || chain.IsEmpty() {
 				ctx.Logger().Error("fail to process txIn", "error", err, "txhash", tx.TxID.String())
 				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress, true)
 				ee := NewEmptyRefundEvent()
@@ -533,8 +538,8 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			// ignoring the error
 			_ = keeper.AddToTxInIndex(ctx, uint64(ctx.BlockHeight()), tx.TxID)
-			if err := keeper.SetLastBinanceHeight(ctx, txIn.BlockHeight); nil != err {
-				return sdk.ErrInternal("fail to save last binance height to data store err:" + err.Error()).Result()
+			if err := keeper.SetLastChainHeight(ctx, chain, txIn.BlockHeight); nil != err {
+				return sdk.ErrInternal("fail to save last height to data store err:" + err.Error()).Result()
 			}
 
 			result := handler(ctx, m)
