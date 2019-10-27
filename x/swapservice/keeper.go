@@ -86,13 +86,13 @@ func (k Keeper) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height s
 		return errors.Errorf("current block height :%s is larger than %s , block height can't go backward ", currentHeight, height)
 	}
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixLastChainHeight, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastChainHeight))
+	key := getKey(prefixLastChainHeight, chain.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixLastChainHeight))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
 	return nil
 }
 
 func (k Keeper) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (height sdk.Uint) {
-	key := getKey(prefixLastChainHeight, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastChainHeight))
+	key := getKey(prefixLastChainHeight, chain.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixLastChainHeight))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return sdk.ZeroUint()
