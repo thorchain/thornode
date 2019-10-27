@@ -103,6 +103,7 @@ type Memo interface {
 	GetBlockHeight() uint64
 	GetNodeAddress() sdk.AccAddress
 	GetNextPoolAddress() common.Address
+	GetAssetAddress() common.Address
 }
 
 type MemoBase struct {
@@ -124,8 +125,9 @@ type AddMemo struct {
 
 type StakeMemo struct {
 	MemoBase
-	RuneAmount  string
-	AssetAmount string
+	RuneAmount   string
+	AssetAmount  string
+	AssetAddress common.Address
 }
 
 type WithdrawMemo struct {
@@ -218,8 +220,23 @@ func ParseMemo(memo string) (Memo, error) {
 		}, nil
 
 	case txStake:
+		var addr common.Address
+		if !common.IsBNBChain(asset.Chain) {
+			if len(parts) < 3 {
+				// cannot stake into a non BNB-based pool when we don't have an
+				// associated address
+				return noMemo, fmt.Errorf(
+					"Invalid stake. Cannot stake to a non BNB-based pool without providing an associated address",
+				)
+			}
+			addr, err = common.NewAddress(parts[2])
+			if err != nil {
+				return noMemo, err
+			}
+		}
 		return StakeMemo{
-			MemoBase: MemoBase{TxType: txStake, Asset: asset},
+			MemoBase:     MemoBase{TxType: txStake, Asset: asset},
+			AssetAddress: addr,
 		}, nil
 
 	case txWithdraw:
@@ -319,6 +336,7 @@ func (m MemoBase) GetKey() string                     { return "" }
 func (m MemoBase) GetValue() string                   { return "" }
 func (m MemoBase) GetBlockHeight() uint64             { return 0 }
 func (m MemoBase) GetNodeAddress() sdk.AccAddress     { return sdk.AccAddress{} }
+func (m MemoBase) GetAssetAddress() common.Address    { return "" }
 func (m MemoBase) GetNextPoolAddress() common.Address { return "" }
 
 // Transaction Specific Functions
@@ -330,3 +348,4 @@ func (m AdminMemo) GetValue() string                      { return m.Value }
 func (m OutboundMemo) GetBlockHeight() uint64             { return m.BlockHeight }
 func (m BondMemo) GetNodeAddress() sdk.AccAddress         { return m.NodeAddress }
 func (m NextPoolMemo) GetNextPoolAddress() common.Address { return m.NextPoolAddr }
+func (m StakeMemo) GetAssetAddress() common.Address       { return m.AssetAddress }
