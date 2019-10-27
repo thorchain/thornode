@@ -416,15 +416,11 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorMa
 	if !currentPoolAddr.Current.Equals(msg.Sender) {
 		return sdk.ErrUnknownRequest("next pool should be send with current pool address").Result()
 	}
-	nominated, err := keeper.GetNodeAccount(ctx, validatorManager.Meta.Nominated.NodeAddress)
-	if err != nil {
-		return sdk.ErrInternal(fmt.Sprintf("fail to get nominated node,err:%s", err.Error())).Result()
-	}
-	nominated.Accounts.SignerBNBAddress = msg.NextPoolAddr
+
+	currentPoolAddr.Next = msg.NextPoolAddr
+	keeper.SetPoolAddresses(ctx, currentPoolAddr)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNextPoolAddress, sdk.NewAttribute("next pool address", msg.NextPoolAddr.String())))
-
-	keeper.SetNodeAccount(ctx, nominated)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

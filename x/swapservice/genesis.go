@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -30,6 +31,7 @@ type GenesisState struct {
 	NodeAccounts     NodeAccounts  `json:"node_accounts"`
 	AdminConfigs     []AdminConfig `json:"admin_configs"`
 	LastEventID      common.Amount `json:"last_event_id"`
+	PoolAddresses    PoolAddresses `json:"pool_addresses"`
 }
 
 // NewGenesisState create a new instance of GenesisState
@@ -83,6 +85,9 @@ func ValidateGenesis(data GenesisState) error {
 		if err := ta.IsValid(); err != nil {
 			return err
 		}
+	}
+	if data.PoolAddresses.IsEmpty() {
+		return errors.New("missing pool addresses")
 	}
 
 	if data.LastEventID.IsEmpty() {
@@ -156,7 +161,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, event := range data.CompleteEvents {
 		keeper.SetCompletedEvent(ctx, event)
 	}
-
+	keeper.SetPoolAddresses(ctx, data.PoolAddresses)
 	keeper.SetLastEventID(ctx, data.LastEventID)
 
 	return validators

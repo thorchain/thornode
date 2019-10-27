@@ -1,10 +1,9 @@
 package swapservice
 
 import (
-	"sort"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -17,8 +16,9 @@ const (
 
 // PoolAddressManager is going to manage the pool addresses , rotate etc
 type PoolAddressManager struct {
-	k                    Keeper
-	currentPoolAddresses PoolAddresses
+	k                          Keeper
+	currentPoolAddresses       PoolAddresses
+	ObservedNextPoolAddrPubKey string
 }
 
 // NewPoolAddressManager create a new PoolAddressManager
@@ -35,20 +35,12 @@ func (pm *PoolAddressManager) GetCurrentPoolAddresses() PoolAddresses {
 // BeginBlock
 func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context, height int64) {
 	// decide pool addresses
-	if height == 1 {
-		pa, err := pm.setupInitialPoolAddresses(ctx, height)
-		if nil != err {
-			ctx.Logger().Error("fail to setup initial pool address", err)
-		}
-		pm.currentPoolAddresses = pa
-	}
 	if pm.currentPoolAddresses.IsEmpty() {
 		pm.currentPoolAddresses = pm.k.GetPoolAddresses(ctx)
 	}
 }
 
 func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, height int64, store *TxOutStore) {
-
 	pm.currentPoolAddresses = pm.rotatePoolAddress(ctx, height, pm.currentPoolAddresses, store)
 	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
 }
@@ -61,15 +53,8 @@ func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, height int64, p
 	if poolAddresses.RotateAt > height {
 		return poolAddresses
 	}
-	nodeAccounts, err := pm.k.ListActiveNodeAccounts(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get active node accounts", "err", err)
-		return poolAddresses
-	}
-	sort.Sort(nodeAccounts)
-	next := nodeAccounts.After(poolAddresses.Next)
 	rotatePerBlockHeight := pm.k.GetAdminConfigRotatePerBlockHeight(ctx, sdk.AccAddress{})
-	newPoolAddresses := NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, next.Accounts.SignerBNBAddress, height+rotatePerBlockHeight)
+	newPoolAddresses := NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, common.NoAddress, height+rotatePerBlockHeight)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNewPoolAddress,
 			sdk.NewAttribute("current pool address", newPoolAddresses.Current.String()),
@@ -131,42 +116,4 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 		}, true)
 	}
 	return nil
-}
-
-var emptyPoolAddresses PoolAddresses
-
-func (pm *PoolAddressManager) setupInitialPoolAddresses(ctx sdk.Context, height int64) (PoolAddresses, error) {
-	// this method will only take effect when statechain started
-	if height != 1 {
-		return emptyPoolAddresses, errors.New("only setup initial pool address when chain start")
-	}
-	ctx.Logger().Info("setup initial pool addresses")
-	nodeAccounts, err := pm.k.ListActiveNodeAccounts(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get active node accounts", "err", err)
-		return emptyPoolAddresses, errors.Wrap(err, "fail to get active node accounts")
-	}
-	totalActiveAccounts := len(nodeAccounts)
-	if totalActiveAccounts == 0 {
-		ctx.Logger().Error("no active node account")
-
-		return emptyPoolAddresses, errors.New("no active node account")
-	}
-	rotatePerBlockHeight := pm.k.GetAdminConfigRotatePerBlockHeight(ctx, sdk.AccAddress{})
-	if totalActiveAccounts == 1 {
-		na := nodeAccounts[0]
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypePoolAddress,
-				sdk.NewAttribute(PoolAddressAction, "no pool rotation"),
-				sdk.NewAttribute("reason", "no active node account")))
-		ctx.Logger().Info("only one active node account, no pool rotation")
-		return NewPoolAddresses(common.NoAddress, na.Accounts.SignerBNBAddress, na.Accounts.SignerBNBAddress, height+rotatePerBlockHeight), nil
-
-	}
-	sort.Sort(nodeAccounts)
-	na := nodeAccounts[0]
-	sec := nodeAccounts[1]
-	ctx.Logger().Info("two or more active nodes , we will rotate pools")
-	return NewPoolAddresses(common.NoAddress, na.Accounts.SignerBNBAddress, sec.Accounts.SignerBNBAddress, height+rotatePerBlockHeight), nil
-
 }
