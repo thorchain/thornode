@@ -314,6 +314,14 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error("invalid MsgSetUnstake", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
+
+	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
+	if nil != err {
+		ctx.Logger().Error("fail to get pool staker", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+	stakerUnit := poolStaker.GetStakerUnit(msg.PublicAddress)
+
 	runeAmt, assetAmount, units, err := unstake(ctx, keeper, msg)
 	if nil != err {
 		ctx.Logger().Error("fail to UnStake", "error", err)
@@ -350,20 +358,31 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	)
 	keeper.AddIncompleteEvents(ctx, evt)
 
+	// Sent Rune
 	toi := &TxOutItem{
 		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
-		ToAddress:   msg.PublicAddress,
+		ToAddress:   stakerUnit.RuneAddress,
 	}
 	toi.Coins = append(toi.Coins, common.NewCoin(
 		common.RuneAsset(),
 		runeAmt,
 	))
+
+	// for unstake , we should deduct fees
+	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
+
+	// Send assets
+	toi = &TxOutItem{
+		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
+		ToAddress:   stakerUnit.AssetAddress,
+	}
 	toi.Coins = append(toi.Coins, common.NewCoin(
 		msg.Asset,
 		assetAmount,
 	))
 	// for unstake , we should deduct fees
 	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,

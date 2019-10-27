@@ -440,6 +440,7 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 			StakerUnit{
 				RuneAddress: publicAddress,
 				Units:       sdk.NewUint(100 * common.One),
+				PendingRune: sdk.ZeroUint(),
 			},
 		},
 	}
