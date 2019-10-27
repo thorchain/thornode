@@ -36,11 +36,11 @@ RUN apk add --update jq supervisor nginx && \
 ENV PATH="${PATH}:/go/bin"
 
 # Copy the compiled binaires over.
-COPY --from=build /go/src/app/generate /go/bin
-COPY --from=build /go/src/app/ssd /go/bin
-COPY --from=build /go/src/app/sscli /go/bin
-COPY --from=build /go/src/app/observed /go/bin
-COPY --from=build /go/src/app/signd /go/bin
+COPY --from=build /go/src/app/generate /go/bin/
+COPY --from=build /go/src/app/ssd /go/bin/
+COPY --from=build /go/src/app/sscli /go/bin/
+COPY --from=build /go/src/app/observed /go/bin/
+COPY --from=build /go/src/app/signd /go/bin/
 
 # Add users.
 RUN adduser -Ds /bin/sh supervisor
