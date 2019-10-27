@@ -281,7 +281,7 @@ func (scb *StateChainBridge) GetBinanceChainStartHeight() (uint64, error) {
 		return 0, errors.Wrap(err, "fail to unmarshal last block")
 	}
 
-	return lastBlock.LastBinanceHeight.Uint64(), nil
+	return lastBlock.LastChainHeight.Uint64(), nil
 }
 
 // getStateChainUrl with the given path

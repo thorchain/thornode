@@ -39,11 +39,9 @@ def bnbAddress()
   [ 
 	"bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u",
 	"bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38",
-	"bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq",
 	"bnb1yk882gllgv3rt2rqrsudf6kn2agr94etnxu9a7",
 	"bnb1t3c49u74fum2gtgekwqqdngg5alt4txrq3txad",
 	"bnb1hpa7tfffxadq9nslyu2hu9vc44l2x6ech3767y",
-	"bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq",
 	"bnb1llvmhawaxxjchwmfmj8fjzftvwz4jpdhapp5hr",
 	"bnb1s3f8vxaqum3pft6cefyn99px8wq6uk3jdtyarn",
 	"bnb1e6y59wuz9qqcnqjhjw0cl6hrp2p8dvsyxyx9jm",
@@ -74,7 +72,7 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
 end
 
 def processTx(txs, user="jack", mode='block')
-  request = Net::HTTP::Post.new("/swapservice/binance/tx")
+  request = Net::HTTP::Post.new("/swapservice/tx")
   address = `sscli keys show #{user} -a`.strip!
   txs = [txs].flatten(1) # ensures we are an array, and not just a single hash
   request.body = {

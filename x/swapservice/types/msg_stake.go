@@ -10,7 +10,7 @@ type MsgSetStakeData struct {
 	Asset         common.Asset   `json:"asset"`           // ticker means the asset
 	AssetAmount   sdk.Uint       `json:"asset_amt"`       // the amount of asset stake
 	RuneAmount    sdk.Uint       `json:"rune"`            // the amount of rune stake
-	PublicAddress common.Address `json:"public_address"`  // Staker's address on binance chain
+	PublicAddress common.Address `json:"public_address"`  // Staker's address on chain
 	RequestTxHash common.TxID    `json:"request_tx_hash"` // the txhash that represent user send asset to our pool address
 	Signer        sdk.AccAddress `json:"signer"`
 }

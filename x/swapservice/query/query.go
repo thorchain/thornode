@@ -44,6 +44,7 @@ var (
 	QueryIncompleteEvents = Query{Key: "incomplete_events", EndpointTemplate: ""}
 	QueryCompleteEvents   = Query{Key: "complete_events", EndpointTemplate: "/%s/events/{%s}"}
 	QueryHeights          = Query{Key: "heights", EndpointTemplate: "/%s/lastblock"}
+	QueryChainHeights     = Query{Key: "chainheights", EndpointTemplate: "/%s/lastblock/{%s}"}
 	QueryObservers        = Query{Key: "observers", EndpointTemplate: "/%s/observers"}
 	QueryObserver         = Query{Key: "observer", EndpointTemplate: "/%s/observer/{%s}"}
 	QueryNodeAccounts     = Query{Key: "nodeaccounts", EndpointTemplate: "/%s/nodeaccounts"}
@@ -67,6 +68,7 @@ var Queries = []Query{
 	QueryIncompleteEvents,
 	QueryCompleteEvents,
 	QueryHeights,
+	QueryChainHeights,
 	QueryObservers,
 	QueryObserver,
 	QueryNodeAccount,
