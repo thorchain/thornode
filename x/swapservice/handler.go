@@ -368,18 +368,26 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		runeAmt,
 	))
 
-	// for unstake , we should deduct fees
-	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
+	if stakerUnit.AssetAddress.Equals(stakerUnit.RuneAddress) {
+		toi.Coins = append(toi.Coins, common.NewCoin(
+			msg.Asset,
+			assetAmount,
+		))
+	} else {
 
-	// Send assets
-	toi = &TxOutItem{
-		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
-		ToAddress:   stakerUnit.AssetAddress,
+		// for unstake , we should deduct fees
+		txOutStore.AddTxOutItem(ctx, keeper, toi, true)
+
+		toi = &TxOutItem{
+			PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
+			ToAddress:   stakerUnit.AssetAddress,
+		}
+		toi.Coins = append(toi.Coins, common.NewCoin(
+			msg.Asset,
+			assetAmount,
+		))
 	}
-	toi.Coins = append(toi.Coins, common.NewCoin(
-		msg.Asset,
-		assetAmount,
-	))
+
 	// for unstake , we should deduct fees
 	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
 
