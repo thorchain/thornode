@@ -28,15 +28,21 @@ func validateStakeAmount(stakers PoolStaker, stakerUnits sdk.Uint, stakeAmtInter
 }
 
 // validateStakeMessage is to do some validation , and make sure it is legit
-func validateStakeMessage(ctx sdk.Context, keeper poolStorage, asset common.Asset, requestTxHash common.TxID, publicAddress common.Address) error {
+func validateStakeMessage(ctx sdk.Context, keeper poolStorage, asset common.Asset, requestTxHash common.TxID, runeAddr, assetAddr common.Address) error {
 	if asset.IsEmpty() {
 		return errors.New("asset is empty")
 	}
 	if requestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
 	}
-	if publicAddress.IsEmpty() {
-		return errors.New("public address is empty")
+	if common.IsBNBChain(asset.Chain) {
+		if runeAddr.IsEmpty() {
+			return errors.New("rune address is empty")
+		}
+	} else {
+		if assetAddr.IsEmpty() {
+			return errors.New("asset address is empty")
+		}
 	}
 	if !keeper.PoolExist(ctx, asset) {
 		return errors.Errorf("%s doesn't exist", asset)
@@ -44,15 +50,45 @@ func validateStakeMessage(ctx sdk.Context, keeper poolStorage, asset common.Asse
 	return nil
 }
 
-func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmount, stakeAssetAmount sdk.Uint, publicAddress common.Address, requestTxHash common.TxID) (sdk.Uint, error) {
+func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmount, stakeAssetAmount sdk.Uint, runeAddr, assetAddr common.Address, requestTxHash common.TxID) (sdk.Uint, error) {
 	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", asset, stakeRuneAmount, stakeAssetAmount))
-	if err := validateStakeMessage(ctx, keeper, asset, requestTxHash, publicAddress); nil != err {
+	if err := validateStakeMessage(ctx, keeper, asset, requestTxHash, runeAddr, assetAddr); nil != err {
 		return sdk.ZeroUint(), errors.Wrap(err, "invalid request")
 	}
 	if stakeRuneAmount.IsZero() && stakeAssetAmount.IsZero() {
 		return sdk.ZeroUint(), errors.New("both rune and asset is zero")
 	}
 	pool := keeper.GetPool(ctx, asset)
+
+	ps, err := keeper.GetPoolStaker(ctx, asset)
+	if nil != err {
+		return sdk.ZeroUint(), errors.Wrap(err, "fail to get pool staker..")
+	}
+
+	addr := assetAddr
+	if addr.IsEmpty() {
+		addr = runeAddr
+	}
+
+	su := ps.GetStakerUnit(addr)
+	if su.RuneAddress.IsEmpty() {
+		su.RuneAddress = runeAddr
+	}
+	if su.AssetAddress.IsEmpty() {
+		su.AssetAddress = assetAddr
+	}
+
+	if !common.IsBNBChain(asset.Chain) {
+		if stakeAssetAmount.IsZero() {
+			su.PendingRune = su.PendingRune.Add(stakeRuneAmount)
+			return sdk.ZeroUint(), nil
+		}
+		if stakeRuneAmount.IsZero() {
+			stakeRuneAmount = su.PendingRune
+			su.PendingRune = sdk.ZeroUint()
+		}
+	}
+
 	fAssetAmt := stakeAssetAmount
 	fRuneAmt := stakeRuneAmount
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRUNE %sAsset", pool.BalanceRune, pool.BalanceAsset))
@@ -76,12 +112,8 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sAsset", pool.BalanceRune, pool.BalanceAsset))
 	keeper.SetPool(ctx, pool)
 	// maintain pool staker structure
-	ps, err := keeper.GetPoolStaker(ctx, asset)
-	if nil != err {
-		return sdk.ZeroUint(), errors.Wrap(err, "fail to get pool staker..")
-	}
+
 	ps.TotalUnits = pool.PoolUnits
-	su := ps.GetStakerUnit(publicAddress)
 	fex := su.Units
 	totalStakerUnits := fex.Add(stakerUnits)
 
@@ -94,7 +126,7 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 	ps.UpsertStakerUnit(su)
 	keeper.SetPoolStaker(ctx, asset, ps)
 	// maintain stake pool structure
-	sp, err := keeper.GetStakerPool(ctx, publicAddress)
+	sp, err := keeper.GetStakerPool(ctx, runeAddr)
 	if nil != err {
 		return sdk.ZeroUint(), errors.Wrap(err, "fail to get stakepool object")
 	}
@@ -103,7 +135,7 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 	stakerPoolItem.Units = totalStakerUnits.Add(existUnit)
 	stakerPoolItem.AddStakerTxDetail(requestTxHash, stakeRuneAmount, stakeAssetAmount)
 	sp.UpsertStakerPoolItem(stakerPoolItem)
-	keeper.SetStakerPool(ctx, publicAddress, sp)
+	keeper.SetStakerPool(ctx, runeAddr, sp)
 	return stakerUnits, nil
 }
 

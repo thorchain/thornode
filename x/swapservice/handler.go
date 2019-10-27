@@ -109,7 +109,7 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 	// everyone withdraw
 	for _, item := range poolStaker.Stakers {
 		unstakeMsg := NewMsgSetUnStake(
-			item.StakerID,
+			item.RuneAddress,
 			sdk.NewUint(10000),
 			msg.Asset,
 			msg.RequestTxHash,
@@ -118,7 +118,7 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 
 		result := handleMsgSetUnstake(ctx, keeper, txOutStore, poolAddrMgr, unstakeMsg)
 		if !result.IsOK() {
-			ctx.Logger().Error("fail to unstake", "staker", item.StakerID)
+			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
 			return result
 		}
 	}
@@ -207,7 +207,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 
 	ctx.Logger().Info("handleMsgSetStakeData request", "stakerid:"+msg.Asset.String())
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset.String(), "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress)
+		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset.String(), "request tx hash", msg.RequestTxHash, "rune address", msg.RuneAddress)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	if err := msg.ValidateBasic(); nil != err {
@@ -216,7 +216,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 	}
 	pool := keeper.GetPool(ctx, msg.Asset)
 	if pool.Empty() {
-		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Asset.String(), "creator", msg.PublicAddress)
+		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Asset.String(), "creator", msg.RuneAddress)
 		pool.Asset = msg.Asset
 		keeper.SetPool(ctx, pool)
 	}
@@ -230,7 +230,8 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		msg.Asset,
 		msg.RuneAmount,
 		msg.AssetAmount,
-		msg.PublicAddress,
+		msg.RuneAddress,
+		msg.AssetAddress,
 		msg.RequestTxHash,
 	)
 	if err != nil {
@@ -694,6 +695,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 		runeAmount,
 		assetAmount,
 		tx.Sender,
+		memo.GetAssetAddress(),
 		txID,
 		signer,
 	), nil

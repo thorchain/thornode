@@ -438,14 +438,14 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 		TotalUnits: sdk.NewUint(100 * common.One),
 		Stakers: []StakerUnit{
 			StakerUnit{
-				StakerID: publicAddress,
-				Units:    sdk.NewUint(100 * common.One),
+				RuneAddress: publicAddress,
+				Units:       sdk.NewUint(100 * common.One),
 			},
 		},
 	}
 	store.SetPoolStaker(ctx, common.BNBAsset, poolStaker)
 	stakerPool := StakerPool{
-		StakerID: publicAddress,
+		RuneAddress: publicAddress,
 		PoolUnits: []*StakerPoolItem{
 			&StakerPoolItem{
 				Asset: common.BNBAsset,

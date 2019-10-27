@@ -15,8 +15,8 @@ func (PoolStakerSuite) TestPoolStaker(c *C) {
 	poolStaker := NewPoolStaker(common.BNBAsset, sdk.NewUint(100))
 	c.Assert(poolStaker.Stakers, NotNil)
 	stakerUnit := StakerUnit{
-		StakerID: bnb,
-		Units:    sdk.NewUint(100),
+		RuneAddress: bnb,
+		Units:       sdk.NewUint(100),
 	}
 	poolStaker.UpsertStakerUnit(stakerUnit)
 	poolStaker.UpsertStakerUnit(stakerUnit)
@@ -24,7 +24,7 @@ func (PoolStakerSuite) TestPoolStaker(c *C) {
 	c.Assert(poolStaker.Stakers, NotNil)
 	c.Check(len(poolStaker.Stakers), Equals, 1)
 	newStakerUnit := poolStaker.GetStakerUnit(bnb)
-	c.Check(newStakerUnit.StakerID, Equals, bnb)
+	c.Check(newStakerUnit.RuneAddress, Equals, bnb)
 	c.Check(newStakerUnit.Units.Equal(sdk.NewUint(100)), Equals, true)
 
 	poolStaker.RemoveStakerUnit(bnb)
