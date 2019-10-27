@@ -12,8 +12,6 @@ RUN git config --global http.sslVerify "false"
 
 COPY . .
 
-ENV GO111MODULE=on
-ENV GOPATH=/go
 ENV GOBIN=/go/bin
 ENV CGO_ENABLED=0
 ENV GOOS=linux
@@ -30,14 +28,12 @@ RUN go build -a -installsuffix cgo -o signd ./cmd/signd
 #
 # Main
 #
-FROM golang:alpine
+FROM alpine
 
 RUN apk add --update jq supervisor nginx && \
     rm -rf /var/cache/apk/*
 
 ENV PATH="${PATH}:/go/bin"
-ENV GOPATH=/go
-ENV GOBIN=/go/bin
 
 # Copy the compiled binaires over.
 COPY --from=build /go/src/app/generate /go/bin
