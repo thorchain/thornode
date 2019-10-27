@@ -14,7 +14,7 @@ type StakerUnit struct {
 	RuneAddress  common.Address `json:"rune_address"`
 	AssetAddress common.Address `json:"asset_address"`
 	Units        sdk.Uint       `json:"units"`
-	PendingRune  sdk.Uint       `json:"pending_rune"`
+	PendingRune  sdk.Uint       `json:"pending_rune"` // number of rune coins
 }
 
 func (su StakerUnit) Valid() error {

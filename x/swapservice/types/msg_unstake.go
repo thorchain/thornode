@@ -45,6 +45,9 @@ func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
 	if msg.PublicAddress.IsEmpty() {
 		return sdk.ErrUnknownRequest("Address cannot be empty")
 	}
+	if !msg.PublicAddress.IsChain(common.BNBChain) {
+		return sdk.ErrUnknownRequest("Address must be a BNB address")
+	}
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}

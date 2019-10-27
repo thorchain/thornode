@@ -87,12 +87,12 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 	if !common.IsBNBChain(asset.Chain) {
 		if stakeAssetAmount.IsZero() {
 			su.PendingRune = su.PendingRune.Add(stakeRuneAmount)
+			ps.UpsertStakerUnit(su)
+			keeper.SetPoolStaker(ctx, asset, ps)
 			return sdk.ZeroUint(), nil
 		}
-		if stakeRuneAmount.IsZero() {
-			stakeRuneAmount = su.PendingRune
-			su.PendingRune = sdk.ZeroUint()
-		}
+		stakeRuneAmount = su.PendingRune.Add(stakeRuneAmount)
+		su.PendingRune = sdk.ZeroUint()
 	}
 
 	fAssetAmt := stakeAssetAmount
