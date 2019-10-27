@@ -58,6 +58,10 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 	if stakeRuneAmount.IsZero() && stakeAssetAmount.IsZero() {
 		return sdk.ZeroUint(), errors.New("both rune and asset is zero")
 	}
+	if runeAddr.IsEmpty() {
+		return sdk.ZeroUint(), errors.New("Rune address cannot be empty")
+	}
+
 	pool := keeper.GetPool(ctx, asset)
 
 	ps, err := keeper.GetPoolStaker(ctx, asset)
@@ -65,12 +69,7 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 		return sdk.ZeroUint(), errors.Wrap(err, "fail to get pool staker..")
 	}
 
-	addr := assetAddr
-	if addr.IsEmpty() {
-		addr = runeAddr
-	}
-
-	su := ps.GetStakerUnit(addr)
+	su := ps.GetStakerUnit(runeAddr)
 	if su.RuneAddress.IsEmpty() {
 		su.RuneAddress = runeAddr
 	}

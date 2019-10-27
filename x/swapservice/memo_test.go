@@ -122,7 +122,7 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(err, NotNil)
 	memo, err = ParseMemo("STAKE:BTC.BTC:bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej")
 	c.Assert(err, IsNil)
-	c.Check(memo.GetAssetAddress().String(), Equals, "bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej")
+	c.Check(memo.GetDestination().String(), Equals, "bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej")
 	c.Check(memo.IsType(txStake), Equals, true, Commentf("MEMO: %+v", memo))
 
 	memo, err = ParseMemo("WITHDRAW:RUNE-1BA:25")

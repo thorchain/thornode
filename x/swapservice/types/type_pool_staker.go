@@ -82,7 +82,7 @@ func (ps PoolStaker) String() string {
 
 func (ps *PoolStaker) GetStakerUnit(addr common.Address) StakerUnit {
 	for _, item := range ps.Stakers {
-		if item.RuneAddress == addr || item.AssetAddress == addr {
+		if item.RuneAddress == addr {
 			return item
 		}
 	}
