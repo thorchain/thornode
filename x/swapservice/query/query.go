@@ -33,6 +33,7 @@ var (
 	QueryAdminConfigBnb   = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}/{%s}"}
 	QueryAdminConfig      = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}"}
 	QueryPoolIndex        = Query{Key: "poolindex", EndpointTemplate: "/%s/pooltickers"}
+	QueryChains           = Query{Key: "chains", EndpointTemplate: "/%s/chains"}
 	QueryPool             = Query{Key: "pool", EndpointTemplate: "/%s/pool/{%s}"}
 	QueryPools            = Query{Key: "pools", EndpointTemplate: "/%s/pools"}
 	QueryPoolStakers      = Query{Key: "poolstakers", EndpointTemplate: "/%s/pool/{%s}/stakers"}
@@ -58,6 +59,7 @@ var Queries = []Query{
 	QueryAdminConfigBnb,
 	QueryPool,
 	QueryPools,
+	QueryChains,
 	QueryPoolStakers,
 	QueryStakerPools,
 	QueryPoolIndex,
