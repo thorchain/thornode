@@ -121,7 +121,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	}
 
 	if !runeTotal.IsZero() {
-		coins = append(coins, common.NewCoin(common.RuneA1FAsset, runeTotal))
+		coins = append(coins, common.NewCoin(common.RuneAsset(), runeTotal))
 	}
 	if len(coins) > 0 {
 		store.AddTxOutItem(ctx, k, &TxOutItem{

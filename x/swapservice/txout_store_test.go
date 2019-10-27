@@ -57,7 +57,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	c.Assert(item.Coins[0].Amount.String(), Equals, "0")
 
 	item.Coins = common.Coins{
-		common.NewCoin(common.RuneA1FAsset, sdk.NewUint(20*common.One)),
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One)),
 	}
 
 	txOutStore.AddTxOutItem(ctx, k, item, true)
