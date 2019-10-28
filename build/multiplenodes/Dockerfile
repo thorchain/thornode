@@ -1,36 +1,65 @@
-FROM golang:1.13 as build
+#
+# Observer, Signer, Statechain
+#
+
+#
+# Build
+#
+FROM golang:1.13 AS build
 
 WORKDIR /go/src/app
-COPY ../../go.mod .
-COPY ../../go.sum .
-RUN go mod download
-COPY ../.. ./
-WORKDIR /go/src/app/cmd/ssd
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o ssd .
+RUN git config --global http.sslVerify "false"
 
-WORKDIR /go/src/app/cmd/sscli
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o sscli .
+COPY . .
 
-FROM alpine:latest
-ARG node_id
-ENV NODE_ID=$node_id
-ENV SS_HOME="/statechain/$NODE_ID/ssd"
-ENV SSC_HOME="/statechain/$NODE_ID/sscli/"
-VOLUME ["/statechain"]
+ENV GOBIN=/go/bin
+ENV CGO_ENABLED=0
+ENV GOOS=linux
 
-RUN apk add --update jq curl
+RUN go mod verify
+RUN go get -d -v ./...
 
-WORKDIR /usr/bin
-COPY --from=build /go/src/app/cmd/ssd/ssd /usr/bin/ssd
-COPY --from=build /go/src/app/cmd/sscli/sscli /usr/bin/sscli
+RUN go build -a -installsuffix cgo -o generate ./tools/generate
+RUN go build -a -installsuffix cgo -o ssd ./cmd/ssd
+RUN go build -a -installsuffix cgo -o sscli ./cmd/sscli
+RUN go build -a -installsuffix cgo -o observed ./cmd/observed
+RUN go build -a -installsuffix cgo -o signd ./cmd/signd
 
-COPY init.sh /usr/bin/init.sh
-RUN chmod +x /usr/bin/init.sh
+#
+# Main
+#
+FROM alpine
 
-COPY second.sh /usr/bin/second.sh
-RUN chmod +x /usr/bin/second.sh
+RUN apk add --update jq supervisor nginx && \
+    rm -rf /var/cache/apk/*
 
-COPY start.sh /usr/bin/start.sh
-RUN chmod +x /usr/bin/start.sh
+ENV PATH="${PATH}:/go/bin"
 
-CMD ["/usr/bin/start.sh"]
+# Copy the compiled binaires over.
+COPY --from=build /go/src/app/generate /go/bin/
+COPY --from=build /go/src/app/ssd /go/bin/
+COPY --from=build /go/src/app/sscli /go/bin/
+COPY --from=build /go/src/app/observed /go/bin/
+COPY --from=build /go/src/app/signd /go/bin/
+
+# Add users.
+RUN adduser -Ds /bin/sh supervisor
+RUN adduser -Ds /bin/sh www-data -G www-data
+
+# TODO Move away from needing supervisor
+# Setup supervisor.
+RUN mkdir -p /var/log/supervisor
+RUN mkdir -p /var/run/supervisor
+RUN mkdir -p /etc/supervisor/conf.d
+ADD etc/supervisor.conf /etc/
+ADD etc/supervisor/conf.d/*.ini /etc/supervisor/conf.d/
+
+# TODO Move away from needing nginx
+# Setup Nginx.
+ADD etc/nginx/nginx.conf /etc/nginx/
+
+EXPOSE 9000
+EXPOSE 1317
+EXPOSE 81
+
+CMD ["supervisord", "-c", "/etc/supervisor.conf"]
