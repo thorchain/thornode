@@ -8,11 +8,10 @@ CHAIN_HOST="${CHAIN_HOST:=127.0.0.1:1317}"
 RPC_HOST="${RPC_HOST:=data-seed-pre-0-s3.binance.org}"
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
-BINANCE_TESTNET="${BINANCE_TESTNET:=Binance-Chain-Nile}"
 START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=0}"
 NODES="${NODES:=1}"
 MASTER="${MASTER:=node1}" # the hostname of the master node
-ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=180}" # how often the pools in statechain should rotate
+ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=0}" # how often the pools in statechain should rotate
 
 if [ -z ${ADDRESS+x} ]; then
   echo "GENERATING BNB ADDRESSES"
@@ -49,7 +48,9 @@ mkdir -p /etc/observe/signd
 
 node() {
     echo "{\"node_address\": \"$1\" ,\"status\":\"active\",\"bond_address\":\"$2\",\"accounts\":{\"bnb_signer_acc\":\"$2\", \"bepv_validator_acc\": \"$3\", \"bep_observer_acc\": \"$1\"}}" > /tmp/shared/node_$1.json
-    echo "{\"address\": \"$1\" ,\"key\":\"RotatePerBlockHeight\",\"value\":\"$ROTATE_BLOCK_HEIGHT\"}" > /tmp/shared/config_$1.json
+    if [[ "$ROTATE_BLOCK_HEIGHT" != "0" ]]; then
+        echo "{\"address\": \"$1\" ,\"key\":\"RotatePerBlockHeight\",\"value\":\"$ROTATE_BLOCK_HEIGHT\"}" > /tmp/shared/config_$1.json
+    fi
 }
 
 node $NODE_ADDRESS $ADDRESS $VALIDATOR
@@ -143,7 +144,6 @@ for f in /tmp/shared/config_*.json; do
     jq --argjson config "$(cat $f)" '.app_state.swapservice.admin_configs += [$config]' ~/.ssd/config/genesis.json > /tmp/genesis.json
     mv /tmp/genesis.json ~/.ssd/config/genesis.json
 done
-
 
 cat ~/.ssd/config/genesis.json
 ssd validate-genesis
