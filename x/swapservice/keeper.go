@@ -33,6 +33,7 @@ const (
 	prefixActiveObserver   dbPrefix = "active_observer_"
 	prefixPoolAddresses    dbPrefix = "pooladdresses_"
 	prefixValidatorMeta    dbPrefix = "validator_meta_"
+	prefixSupportedChains  dbPrefix = "supported_chains_"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -859,4 +860,36 @@ func (k Keeper) GetValidatorMeta(ctx sdk.Context) ValidatorMeta {
 		_ = k.cdc.UnmarshalBinaryBare(buf, &meta)
 	}
 	return meta
+}
+
+func (k Keeper) GetChains(ctx sdk.Context) common.Chains {
+	chains := make(common.Chains, 0)
+	key := getKey(prefixSupportedChains, "", getVersion(k.GetLowestActiveVersion(ctx), prefixSupportedChains))
+	store := ctx.KVStore(k.storeKey)
+	if store.Has([]byte(key)) {
+		buf := store.Get([]byte(key))
+		_ = k.cdc.UnmarshalBinaryBare(buf, &chains)
+	}
+	return chains
+}
+
+func (k Keeper) SupportedChain(ctx sdk.Context, chain common.Chain) bool {
+	for _, ch := range k.GetChains(ctx) {
+		if ch.Equals(chain) {
+			return true
+		}
+	}
+	return false
+}
+
+func (k Keeper) AddChain(ctx sdk.Context, chain common.Chain) {
+	key := getKey(prefixSupportedChains, "", getVersion(k.GetLowestActiveVersion(ctx), prefixSupportedChains))
+	if k.SupportedChain(ctx, chain) {
+		// already added
+		return
+	}
+	chains := k.GetChains(ctx)
+	chains = append(chains, chain)
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(chains))
 }
