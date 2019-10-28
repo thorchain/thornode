@@ -11,7 +11,7 @@ import (
 
 // const values used to emit events
 const (
-	EventTypeNewPoolAddress = `pooladdress_new`
+	EventTypeNewPoolAddress = `NewPoolAddress`
 )
 
 // PoolAddressManager is going to manage the pool addresses , rotate etc
@@ -94,39 +94,17 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	}
 	runeTotal := sdk.ZeroUint()
 	for _, c := range chains {
+		if c.Equals(common.BNBChain) {
+			continue
+		}
 		runeAmount, err := moveChainAssetToNewPool(ctx, k, store, c, addresses)
 		if nil != err {
 			return fmt.Errorf("fail to move asset for chain %s,%w", c, err)
 		}
 		runeTotal = runeTotal.Add(runeAmount)
 	}
-
-	allNodeAccounts, err := k.ListNodeAccounts(ctx)
-	if nil != err {
-		return errors.Wrap(err, "fail to get all node accounts")
-	}
-
-	// Validator bond paid to the pool as well , let's make sure all the bond get sent to new pool
-	for _, item := range allNodeAccounts {
-		runeTotal = runeTotal.Add(item.Bond)
-	}
-
-	if !runeTotal.IsZero() {
-		// RUNE only lives on BNB chain
-		toAddr, err := addresses.Current.GetAddress(common.BNBChain)
-		if nil != err {
-			return fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", common.BNBChain, addresses.Current, err)
-		}
-		store.AddTxOutItem(ctx, k, &TxOutItem{
-			PoolAddress: addresses.Previous,
-			ToAddress:   toAddr,
-			Coins: common.Coins{
-				common.NewCoin(common.RuneA1FAsset, runeTotal),
-			},
-		}, true)
-	}
-
-	return nil
+	// we must have BNB chain
+	return moveBNBChainAssetToNewPool(ctx, k, store, runeTotal, addresses)
 }
 
 func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain common.Chain, addresses PoolAddresses) (sdk.Uint, error) {
@@ -140,6 +118,9 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
 		if err != nil {
 			return runeTotal, errors.Wrap(err, "fail to unmarshal pool")
+		}
+		if !p.Asset.Chain.Equals(chain) {
+			continue
 		}
 		assetAmount := p.BalanceAsset
 		// we only take BNB for now
@@ -165,4 +146,57 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 		}, true)
 	}
 	return runeTotal, nil
+}
+
+func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, runeTotal sdk.Uint, addresses PoolAddresses) error {
+	iter := k.GetPoolDataIterator(ctx)
+	defer iter.Close()
+
+	poolRefundGas := k.GetAdminConfigInt64(ctx, PoolRefundGasKey, PoolRefundGasKey.Default(), sdk.AccAddress{})
+	coins := common.Coins{}
+	for ; iter.Valid(); iter.Next() {
+		var p Pool
+		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
+		if err != nil {
+			return errors.Wrap(err, "fail to unmarshal pool")
+		}
+		if !p.Asset.Chain.Equals(common.BNBChain) {
+			continue
+		}
+		assetAmount := p.BalanceAsset
+		// we only take BNB for now
+		if common.IsBNBAsset(p.Asset) {
+			assetAmount = assetAmount.Sub(sdk.NewUint(uint64(poolRefundGas)))
+		}
+		runeTotal = runeTotal.Add(p.BalanceRune)
+		if p.BalanceAsset.GT(sdk.ZeroUint()) {
+			coins = append(coins, common.NewCoin(p.Asset, assetAmount))
+		}
+
+	}
+	allNodeAccounts, err := k.ListNodeAccounts(ctx)
+	if nil != err {
+		return errors.Wrap(err, "fail to get all node accounts")
+	}
+
+	// Validator bond paid to the pool as well , let's make sure all the bond get sent to new pool
+	for _, item := range allNodeAccounts {
+		runeTotal = runeTotal.Add(item.Bond)
+	}
+
+	if !runeTotal.IsZero() {
+		coins = append(coins, common.NewCoin(common.RuneAsset(), runeTotal))
+	}
+	toAddr, err := addresses.Current.GetAddress(common.BNBChain)
+	if nil != err {
+		return fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", common.BNBChain, addresses.Current, err)
+	}
+	if len(coins) > 0 {
+		store.AddTxOutItem(ctx, k, &TxOutItem{
+			PoolAddress: addresses.Previous,
+			ToAddress:   toAddr,
+			Coins:       coins,
+		}, true)
+	}
+	return nil
 }

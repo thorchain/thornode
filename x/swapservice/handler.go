@@ -443,7 +443,6 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 		ctx.Logger().Error("invalid ack msg", "err", err)
 		return err.Result()
 	}
-
 	if !poolAddrMgr.IsRotateWindowOpen {
 		return sdk.ErrUnknownRequest("pool rotation window not open").Result()
 	}
@@ -575,7 +574,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to parse memo")
 	}
-	// we should not have one tx across chain, if it is cross chain it should be seperate tx
+	// we should not have one tx across chain, if it is cross chain it should be separate tx
 	chain := tx.Coins[0].Asset.Chain
 	var newMsg sdk.Msg
 	// interpret the memo and initialize a corresponding msg event

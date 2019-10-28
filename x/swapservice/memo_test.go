@@ -152,10 +152,12 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(memo.IsType(txBond), Equals, true)
 	c.Assert(memo.GetNodeAddress().String(), Equals, whiteListAddr.String())
 
-	memo, err = ParseMemo("nextpool:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	pubKey := GetRandomPubKey()
+	memo, err = ParseMemo("nextpool:" + pubKey.String())
 	c.Assert(err, IsNil)
 	c.Assert(memo.IsType(txNextPool), Equals, true)
-	c.Assert(memo.GetNextPoolAddress().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Assert(memo.GetNextPoolAddress().String(), Equals, pubKey.String())
+	c.Assert(memo.GetNextPoolAddress().Equals(pubKey), Equals, true)
 
 	memo, err = ParseMemo("leave")
 	c.Assert(err, IsNil)
