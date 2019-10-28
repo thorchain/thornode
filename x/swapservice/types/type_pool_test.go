@@ -27,7 +27,7 @@ func (PoolTestSuite) TestPool(c *C) {
 	bnbAddress := GetRandomBNBAddress()
 	txID := GetRandomTxHash()
 
-	m := NewMsgSwap(txID, common.RuneA1FAsset, common.BNBAsset, sdk.NewUint(1), bnbAddress, bnbAddress, sdk.NewUint(2), addr)
+	m := NewMsgSwap(txID, common.RuneAsset(), common.BNBAsset, sdk.NewUint(1), bnbAddress, bnbAddress, sdk.NewUint(2), addr)
 
 	c.Check(p.EnsureValidPoolStatus(m), IsNil)
 	msgNoop := NewMsgNoOp(addr)

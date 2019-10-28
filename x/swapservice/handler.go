@@ -353,9 +353,8 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
 		ToAddress:   msg.PublicAddress,
 	}
-	// TODO  this will be a problem , because the RUNE symbol on mainnet and testnet will be different
 	toi.Coins = append(toi.Coins, common.NewCoin(
-		common.RuneA1FAsset,
+		common.RuneAsset(),
 		runeAmt,
 	))
 	toi.Coins = append(toi.Coins, common.NewCoin(
@@ -1037,7 +1036,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 			ToAddress:   nodeAcc.BondAddress,
 			PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 			Coins: common.Coins{
-				common.NewCoin(common.RuneA1FAsset, nodeAcc.Bond),
+				common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 			},
 		}
 		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)

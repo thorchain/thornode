@@ -81,11 +81,11 @@ func GetNodeStatus(ps string) NodeStatus {
 
 // NodeAccount represent node
 type NodeAccount struct {
-	NodeAddress sdk.AccAddress `json:"node_address"`
+	NodeAddress sdk.AccAddress `json:"node_address"` // Thor address which is an operator address
 	Status      NodeStatus     `json:"status"`
 	Accounts    TrustAccount   `json:"accounts"`
 	Bond        sdk.Uint       `json:"bond"`
-	BondAddress common.Address `json:"bond_address"`
+	BondAddress common.Address `json:"bond_address"` // BNB Address to send bond from. It also indicates the operator address to whilelist and associate.
 	// start from when this node account is in current status
 	// StatusSince field is important , it has been used to sort node account , used for validator rotation
 	StatusSince    int64         `json:"status_since"`

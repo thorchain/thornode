@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	"fmt"
+	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
@@ -167,10 +168,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 		var p Pool
 		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
 		if err != nil {
-			return sdk.ZeroUint(), errors.Wrap(err, "fail to unmarshal pool")
-		}
-		if !chain.Equals(p.Asset.Chain) {
-			continue
+			return errors.Wrap(err, "fail to unmarshal pool")
 		}
 		assetAmount := p.BalanceAsset
 		// we only take BNB for now
