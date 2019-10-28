@@ -1,15 +1,6 @@
 version: '3'
 
 services:
-  binance:
-    hostname: binance-fullnode
-    image: binance-fullnode
-    build:
-      context: ../binance
-      dockerfile: ../binance/Dockerfile
-    volumes:
-      - /opt/binance-data:/opt/bnbchaind
-
   node1:
     hostname: node1
     build:

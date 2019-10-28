@@ -1,3 +1,6 @@
+clean:
+	rm -rf /tmp/binance-data
+
 build:
 	docker build -t binance-fullnode .
 
