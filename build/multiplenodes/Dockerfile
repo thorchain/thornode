@@ -8,7 +8,6 @@
 FROM golang:1.13 AS build
 
 WORKDIR /go/src/app
-RUN git config --global http.sslVerify "false"
 
 COPY . .
 
