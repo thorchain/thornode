@@ -2,7 +2,6 @@ package swapservice
 
 import (
 	"fmt"
-	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
@@ -13,8 +12,6 @@ import (
 // const values used to emit events
 const (
 	EventTypeNewPoolAddress = `pooladdress_new`
-	EventTypePoolAddress    = `pooladdress`
-	PoolAddressAction       = `action`
 )
 
 // PoolAddressManager is going to manage the pool addresses , rotate etc
@@ -23,7 +20,6 @@ type PoolAddressManager struct {
 	currentPoolAddresses       PoolAddresses
 	ObservedNextPoolAddrPubKey common.PubKey
 	IsRotateWindowOpen         bool
-	chainConfirmed             map[common.Chain]bool
 }
 
 // NewPoolAddressManager create a new PoolAddressManager
@@ -33,11 +29,12 @@ func NewPoolAddressManager(k Keeper) *PoolAddressManager {
 	}
 }
 
+// GetCurrentPoolAddresses return current pool addresses
 func (pm *PoolAddressManager) GetCurrentPoolAddresses() PoolAddresses {
 	return pm.currentPoolAddresses
 }
 
-// BeginBlock
+// BeginBlock should be called when BeginBlock
 func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context, height int64) {
 	// decide pool addresses
 	if pm.currentPoolAddresses.IsEmpty() {
@@ -48,35 +45,12 @@ func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context, height int64) {
 		if pm.IsRotateWindowOpen {
 			return
 		}
-		chains, err := pm.k.GetChains(ctx)
-		if nil != err {
-			ctx.Logger().Error("fail to get all chains", "err", err)
-			return
-		}
-		chainConfirmMap := make(map[common.Chain]bool)
-		for _, c := range chains {
-			chainConfirmMap[c] = false
-		}
-		pm.chainConfirmed = chainConfirmMap
+
 		pm.IsRotateWindowOpen = true
 	}
 }
 
-// PoolConfirmed set one chain to be confirmed
-func (pm *PoolAddressManager) PoolConfirmed(c common.Chain) {
-	pm.chainConfirmed[c] = true
-}
-
-// IsAllChainConfirmed will return true when all chain conf
-func (pm *PoolAddressManager) IsAllChainConfirmed() bool {
-	for _, v := range pm.chainConfirmed {
-		if !v {
-			return false
-		}
-	}
-	return true
-}
-
+// EndBlock contains some actions we need to take when block commit
 func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, height int64, store *TxOutStore) {
 	pm.currentPoolAddresses = pm.rotatePoolAddress(ctx, height, pm.currentPoolAddresses, store)
 	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
@@ -132,22 +106,19 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 		return errors.Wrap(err, "fail to get all node accounts")
 	}
 
-	// Validator bond paid to the pool as well , let's make sure all the bond get se
+	// Validator bond paid to the pool as well , let's make sure all the bond get sent to new pool
 	for _, item := range allNodeAccounts {
 		runeTotal = runeTotal.Add(item.Bond)
 	}
 
 	if !runeTotal.IsZero() {
-		fromAddr, err := addresses.Previous.GetAddress(common.BNBChain)
-		if nil != err {
-			return fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", common.BNBChain, addresses.Previous, err)
-		}
+		// RUNE only lives on BNB chain
 		toAddr, err := addresses.Current.GetAddress(common.BNBChain)
 		if nil != err {
 			return fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", common.BNBChain, addresses.Current, err)
 		}
 		store.AddTxOutItem(ctx, k, &TxOutItem{
-			PoolAddress: fromAddr,
+			PoolAddress: addresses.Previous,
 			ToAddress:   toAddr,
 			Coins: common.Coins{
 				common.NewCoin(common.RuneA1FAsset, runeTotal),
@@ -168,7 +139,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 		var p Pool
 		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
 		if err != nil {
-			return errors.Wrap(err, "fail to unmarshal pool")
+			return runeTotal, errors.Wrap(err, "fail to unmarshal pool")
 		}
 		assetAmount := p.BalanceAsset
 		// we only take BNB for now
@@ -181,17 +152,14 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 		}
 
 	}
-	fromAddr, err := addresses.Previous.GetAddress(chain)
-	if nil != err {
-		return sdk.ZeroUint(), fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", chain, addresses.Previous, err)
-	}
+
 	toAddr, err := addresses.Current.GetAddress(chain)
 	if nil != err {
 		return sdk.ZeroUint(), fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", chain, addresses.Current, err)
 	}
 	if len(coins) > 0 {
 		store.AddTxOutItem(ctx, k, &TxOutItem{
-			PoolAddress: fromAddr,
+			PoolAddress: addresses.Previous,
 			ToAddress:   toAddr,
 			Coins:       coins,
 		}, true)

@@ -7,17 +7,18 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // PoolStatus is an indication of what the pool state is
 type PoolStatus int
 
-//| State | ADMIN-MEMO | Swapping | Staking | Withdrawing | Refunding |
-//| ------ | ------ | ------ | ------ | ------ | ------ |
-//| `bootstrap` |  `ADMIN:POOL:BOOTSTRAP` | no | yes | yes | Refund Invalid Stakes && all Swaps |
-//| `enabled` |  `ADMIN:POOL:ENABLE` | yes | yes | yes | Refund Invalid Tx |
-//| `suspended` | `ADMIN:POOL:SUSPEND` | no | no | no | Refund all |
+// | State | ADMIN-MEMO | Swapping | Staking | Withdrawing | Refunding |
+// | ------ | ------ | ------ | ------ | ------ | ------ |
+// | `bootstrap` |  `ADMIN:POOL:BOOTSTRAP` | no | yes | yes | Refund Invalid Stakes && all Swaps |
+// | `enabled` |  `ADMIN:POOL:ENABLE` | yes | yes | yes | Refund Invalid Tx |
+// | `suspended` | `ADMIN:POOL:SUSPEND` | no | no | no | Refund all |
 const (
 	Enabled PoolStatus = iota
 	Bootstrap
@@ -76,13 +77,13 @@ func GetPoolStatus(ps string) PoolStatus {
 // Pool is a struct that contains all the metadata of a pooldata
 // This is the structure we will saved to the key value store
 type Pool struct {
-	BalanceRune         sdk.Uint       `json:"balance_rune"`           // how many RUNE in the pool
-	BalanceAsset        sdk.Uint       `json:"balance_asset"`          // how many asset in the pool
-	Asset               common.Asset   `json:"asset"`                  // what's the asset's asset
-	PoolUnits           sdk.Uint       `json:"pool_units"`             // total units of the pool
-	PoolAddress         common.Address `json:"pool_address"`           // bnb liquidity pool address
-	Status              PoolStatus     `json:"status"`                 // status
-	ExpiryInBlockHeight int64          `json:"expiry_in_block_height"` // means the pool address will be changed after these amount of blocks
+	BalanceRune         sdk.Uint      `json:"balance_rune"`           // how many RUNE in the pool
+	BalanceAsset        sdk.Uint      `json:"balance_asset"`          // how many asset in the pool
+	Asset               common.Asset  `json:"asset"`                  // what's the asset's asset
+	PoolUnits           sdk.Uint      `json:"pool_units"`             // total units of the pool
+	PoolAddress         common.PubKey `json:"pool_address"`           // bnb liquidity pool address
+	Status              PoolStatus    `json:"status"`                 // status
+	ExpiryInBlockHeight int64         `json:"expiry_in_block_height"` // means the pool address will be changed after these amount of blocks
 }
 
 // NewPool Returns a new Pool

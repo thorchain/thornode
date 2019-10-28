@@ -44,6 +44,7 @@ func IsBNBChain(c Chain) bool {
 	return c.Equals(BNBChain)
 }
 
+// AddressPrefix return the address prefix used by the given network (testnet/mainnet)
 func (c Chain) AddressPrefix(cn ChainNetwork) string {
 	switch cn {
 	case TestNetwork:
@@ -57,4 +58,5 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 			return btypes.ProdNetwork.Bech32Prefixes()
 		}
 	}
+	return ""
 }

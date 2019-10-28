@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
-
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 )
 
@@ -47,11 +45,11 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgBond:
 			return handleMsgBond(ctx, keeper, m)
 		case MsgNextPoolAddress:
-			return handleMsgConfirmNextPoolAddress(ctx, keeper, validatorManager, poolAddressMgr, m)
+			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, m)
 		case MsgLeave:
 			return handleMsgLeave(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgAck:
-			return handleMsgAck(ctx, keeper, validatorManager, m)
+			return handleMsgAck(ctx, keeper, poolAddressMgr, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized swapservice Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -370,7 +368,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 }
 
-func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.Address, deductFee bool) {
+func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, deductFee bool) {
 	toi := &TxOutItem{
 		ToAddress:   tx.Sender,
 		PoolAddress: poolAddr,
@@ -406,8 +404,11 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 
 // handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
 // MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on chain
-func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, txin TxIn, poolAddrManager *PoolAddressManager, msg MsgNextPoolAddress) sdk.Result {
+func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrManager *PoolAddressManager, msg MsgNextPoolAddress) sdk.Result {
 	ctx.Logger().Info("receive request to set next pool pub key", "pool pub key", msg.NextPoolPubKey.String())
+	if err := msg.ValidateBasic(); nil != err {
+		return err.Result()
+	}
 	if !poolAddrManager.IsRotateWindowOpen {
 		return sdk.ErrUnknownRequest("pool address rotate window not open yet").Result()
 	}
@@ -415,20 +416,18 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, txin TxIn, 
 	if !currentPoolAddr.Next.IsEmpty() {
 		return sdk.ErrUnknownRequest("next pool had been confirmed already").Result()
 	}
-	if len(txin.Coins) == 0 {
-		return sdk.ErrUnknownRequest("no coin found").Result()
-	}
-	chain := txin.Coins[0].Asset.Chain
-	addr, err := currentPoolAddr.Current.GetAddress(chain)
+
+	addr, err := currentPoolAddr.Current.GetAddress(msg.Chain)
 	if nil != err {
 		return sdk.ErrInternal("fail to get current pool address").Result()
 	}
 
+	// nextpool memo need to be initiated by current pool
 	if !addr.Equals(msg.Sender) {
 		return sdk.ErrUnknownRequest("next pool should be send with current pool address").Result()
 	}
+	// statechain observed the next pool address memo, but it has not been confirmed yet
 	poolAddrManager.ObservedNextPoolAddrPubKey = msg.NextPoolPubKey
-
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNextPoolPubKeyObserved, sdk.NewAttribute("next pool pub key", msg.NextPoolPubKey.String())))
 	return sdk.Result{
@@ -438,8 +437,13 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, txin TxIn, 
 }
 
 // handleMsgAck
-func handleMsgAck(ctx sdk.Context, keeper Keeper, txin TxIn, poolAddrMgr *PoolAddressManager, msg MsgAck) sdk.Result {
+func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManager, msg MsgAck) sdk.Result {
 	ctx.Logger().Info("receive ack to next pool pub key", "sender address", msg.Sender.String())
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid ack msg", "err", err)
+		return err.Result()
+	}
+
 	if !poolAddrMgr.IsRotateWindowOpen {
 		return sdk.ErrUnknownRequest("pool rotation window not open").Result()
 	}
@@ -448,32 +452,25 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, txin TxIn, poolAddrMgr *PoolAd
 		return sdk.ErrUnknownRequest("didn't observe next pool address pub key").Result()
 	}
 
-	// need all chain to ack
-	if len(txin.Coins) == 0 {
-		return sdk.ErrUnknownRequest("no coin found").Result()
-	}
-
-	chain := txin.Coins[0].Asset.Chain
-	addr, err := poolAddrMgr.ObservedNextPoolAddrPubKey.GetAddress(chain)
+	addr, err := poolAddrMgr.ObservedNextPoolAddrPubKey.GetAddress(msg.Chain)
 	if nil != err {
 		return sdk.ErrInternal("fail to get next pool address").Result()
 	}
+
 	if !addr.Equals(msg.Sender) {
 		return sdk.ErrUnknownRequest("observed next pool address and ack address is different").Result()
 	}
-	poolAddrMgr.PoolConfirmed(chain)
-	if poolAddrMgr.IsAllChainConfirmed() {
-		// need to have all chain confirmed the next pool address
-		poolAddrMgr.currentPoolAddresses.Next = poolAddrMgr.ObservedNextPoolAddrPubKey
-		poolAddrMgr.ObservedNextPoolAddrPubKey = common.EmptyPubKey
+	poolAddrMgr.currentPoolAddresses.Next = poolAddrMgr.ObservedNextPoolAddrPubKey
+	poolAddrMgr.ObservedNextPoolAddrPubKey = common.EmptyPubKey
 
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
-				sdk.NewAttribute("address", msg.Sender.String()),
-				sdk.NewAttribute("chain", chain.String())))
-		// we have a pool address confirmed by a chain
-		keeper.SetPoolAddresses(ctx, poolAddrMgr.currentPoolAddresses)
-	}
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
+			sdk.NewAttribute("pubkey", poolAddrMgr.currentPoolAddresses.Next.String()),
+			sdk.NewAttribute("address", msg.Sender.String()),
+			sdk.NewAttribute("chain", msg.Chain.String())))
+	// we have a pool address confirmed by a chain
+	keeper.SetPoolAddresses(ctx, poolAddrMgr.currentPoolAddresses)
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
@@ -571,11 +568,15 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 }
 
 func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+	if len(tx.Coins) == 0 {
+		return nil, fmt.Errorf("no coin found")
+	}
 	memo, err := ParseMemo(tx.Memo)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to parse memo")
 	}
-
+	// we should not have one tx across chain, if it is cross chain it should be seperate tx
+	chain := tx.Coins[0].Asset.Chain
 	var newMsg sdk.Msg
 	// interpret the memo and initialize a corresponding msg event
 	switch m := memo.(type) {
@@ -612,7 +613,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 			return nil, errors.Wrap(err, "fail to get MsgNoOp from memo")
 		}
 	case OutboundMemo:
-		newMsg, err = getMsgOutboundFromMemo(m, txID, tx.Sender, signer)
+		newMsg, err = getMsgOutboundFromMemo(m, txID, tx.Sender, chain, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
@@ -622,9 +623,9 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 			return nil, errors.Wrap(err, "fail to get MsgBond from memo")
 		}
 	case NextPoolMemo:
-		newMsg = NewMsgNextPoolAddress(txID, m.NextPoolAddr, tx.Sender, signer)
+		newMsg = NewMsgNextPoolAddress(txID, m.NextPoolAddr, tx.Sender, chain, signer)
 	case AckMemo:
-		newMsg = types.NewMsgAck(txID, tx.Sender, signer)
+		newMsg = types.NewMsgAck(txID, tx.Sender, chain, signer)
 	case LeaveMemo:
 		newMsg = NewMsgLeave(txID, tx.Sender, signer)
 	default:
@@ -742,12 +743,13 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.Address, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.Address, chain common.Chain, signer sdk.AccAddress) (sdk.Msg, error) {
 	blockHeight := memo.GetBlockHeight()
 	return NewMsgOutboundTx(
 		txID,
 		blockHeight,
 		sender,
+		chain,
 		signer,
 	), nil
 }
@@ -813,12 +815,21 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	}
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error("invalid MsgOutboundTx", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
+		return err.Result()
 	}
 
 	// it could
-	currentPoolAddr := poolAddressMgr.GetCurrentPoolAddresses()
-	if !currentPoolAddr.Current.Equals(msg.Sender) && !currentPoolAddr.Previous.Equals(msg.Sender) {
+	currentPoolAddr, err := poolAddressMgr.GetCurrentPoolAddresses().Current.GetAddress(msg.Chain)
+	if nil != err {
+		ctx.Logger().Error("fail to get current pool address", "error", err)
+		return sdk.ErrUnknownRequest("fail to get current pool address").Result()
+	}
+	previousPoolAddr, err := poolAddressMgr.GetCurrentPoolAddresses().Previous.GetAddress(msg.Chain)
+	if nil != err {
+		ctx.Logger().Error("fail to get previous pool address", "error", err)
+		return sdk.ErrUnknownRequest("fail to get previous pool address").Result()
+	}
+	if !currentPoolAddr.Equals(msg.Sender) && !previousPoolAddr.Equals(msg.Sender) {
 		ctx.Logger().Error("message sent by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
@@ -1017,7 +1028,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 	nodeAcc, err := keeper.GetNodeAccountByBondAddress(ctx, msg.Sender)
 	if nil != err {
 		ctx.Logger().Error("fail to get node account", "error", err)
-		return sdk.ErrInternal("fail to get node account by bond bnb address").Result()
+		return sdk.ErrInternal("fail to get node account by bond address").Result()
 	}
 	if nodeAcc.IsEmpty() {
 		return sdk.ErrUnknownRequest("node account doesn't exist").Result()
@@ -1025,11 +1036,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 	if nodeAcc.Status == NodeActive {
 		return sdk.ErrUnknownRequest("active node can't leave").Result()
 	}
-	curPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
-	signerBNBAddress := nodeAcc.Accounts.SignerBNBAddress
-	if curPoolAddr.Current.Equals(signerBNBAddress) || curPoolAddr.Previous.Equals(signerBNBAddress) || curPoolAddr.Next.Equals(signerBNBAddress) {
-		return sdk.ErrUnknownRequest("address still in use , cannot leave now").Result()
-	}
+	// TODO need to check whether the address is used as satellite pool
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
 		// refund bond
 		txOutItem := &TxOutItem{

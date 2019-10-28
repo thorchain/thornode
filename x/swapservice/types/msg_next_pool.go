@@ -12,15 +12,17 @@ type MsgNextPoolAddress struct {
 	NextPoolPubKey common.PubKey
 	Sender         common.Address
 	Signer         sdk.AccAddress
+	Chain          common.Chain
 }
 
 // NewMsgNextPoolAddress create a new instance of MsgNextPoolAddress
-func NewMsgNextPoolAddress(requestTxHash common.TxID, nextPoolPubKey common.PubKey, sender common.Address, signer sdk.AccAddress) MsgNextPoolAddress {
+func NewMsgNextPoolAddress(requestTxHash common.TxID, nextPoolPubKey common.PubKey, sender common.Address, chain common.Chain, signer sdk.AccAddress) MsgNextPoolAddress {
 	return MsgNextPoolAddress{
 		RequestTxHash:  requestTxHash,
 		NextPoolPubKey: nextPoolPubKey,
 		Sender:         sender,
 		Signer:         signer,
+		Chain:          chain,
 	}
 }
 
@@ -40,6 +42,12 @@ func (msg MsgNextPoolAddress) ValidateBasic() sdk.Error {
 	}
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
+	}
+	if msg.Chain.IsEmpty() {
+		return sdk.ErrUnknownRequest("chain cannot be empty")
+	}
+	if !common.IsBNBChain(msg.Chain) {
+		return sdk.ErrUnknownRequest("nextpool memo will only happen on BNB chain")
 	}
 
 	return nil

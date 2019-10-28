@@ -2,6 +2,7 @@ package types
 
 import "gitlab.com/thorchain/bepswap/thornode/common"
 
+// PoolAddresses is a struct to represent the address of pool also facilitate pool rotation
 type PoolAddresses struct {
 	Previous           common.PubKey `json:"previous"`
 	Current            common.PubKey `json:"current"`

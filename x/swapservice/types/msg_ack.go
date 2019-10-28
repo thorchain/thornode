@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -10,14 +11,16 @@ type MsgAck struct {
 	RequestTxHash common.TxID
 	Sender        common.Address
 	Signer        sdk.AccAddress
+	Chain         common.Chain // which chain this ack is from
 }
 
 // NewMsgAck create a new instance of NewMsgAck
-func NewMsgAck(requestTxHash common.TxID, sender common.Address, signer sdk.AccAddress) MsgAck {
+func NewMsgAck(requestTxHash common.TxID, sender common.Address, chain common.Chain, signer sdk.AccAddress) MsgAck {
 	return MsgAck{
 		RequestTxHash: requestTxHash,
 		Sender:        sender,
 		Signer:        signer,
+		Chain:         chain,
 	}
 }
 
@@ -34,6 +37,13 @@ func (msg MsgAck) ValidateBasic() sdk.Error {
 	}
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
+	}
+	if msg.Chain.IsEmpty() {
+		return sdk.ErrUnknownRequest("chain cannot be empty")
+	}
+
+	if !common.IsBNBChain(msg.Chain) {
+		return sdk.ErrUnknownRequest("ack memo only happen on BNB chan")
 	}
 
 	return nil
