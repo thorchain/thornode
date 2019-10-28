@@ -395,7 +395,18 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	w.poolAddrMgr.currentPoolAddresses.Next = GetRandomPubKey()
 	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
+	senderAddr, err := w.poolAddrMgr.currentPoolAddresses.Current.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+	w.poolAddrMgr.currentPoolAddresses.Next = common.EmptyPubKey
+	msgNextPoolAddr = NewMsgNextPoolAddress(
+		GetRandomTxHash(),
+		GetRandomPubKey(),
+		senderAddr,
+		common.BNBChain,
+		w.activeNodeAccount.Accounts.ObserverBEPAddress)
 
+	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, msgNextPoolAddr)
+	c.Assert(result.Code, Equals, sdk.CodeOK)
 }
 
 func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
