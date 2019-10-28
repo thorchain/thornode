@@ -10,9 +10,9 @@ import (
 
 // TrustAccount represent those accounts we can trust, and can be used to sign tx
 type TrustAccount struct {
-	SignerBNBAddress       common.Address `json:"bnb_signer_acc"`
-	ObserverBEPAddress     sdk.AccAddress `json:"bep_observer_acc"`
-	ValidatorBEPConsPubKey string         `json:"bepv_validator_acc"`
+	SignerBNBAddress       common.Address `json:"bnb_signer_acc"`     // Is used by the signer to sign outbound tx.
+	ObserverBEPAddress     sdk.AccAddress `json:"bep_observer_acc"`   // Thor address used to relay chain observations
+	ValidatorBEPConsPubKey string         `json:"bepv_validator_acc"` // Used to sign tendermint blocks. Can be fetched via `ssd tendermint show-validator`
 }
 
 // TrustAccounts just a list of trust account
