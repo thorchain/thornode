@@ -12,6 +12,7 @@ BINANCE_TESTNET="${BINANCE_TESTNET:=Binance-Chain-Nile}"
 START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=0}"
 NODES="${NODES:=1}"
 MASTER="${MASTER:=node1}" # the hostname of the master node
+ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=180}" # how often the pools in statechain should rotate
 
 if [ -z ${ADDRESS+x} ]; then
   echo "GENERATING BNB ADDRESSES"
@@ -47,13 +48,14 @@ mkdir -p /etc/observe/observed
 mkdir -p /etc/observe/signd
 
 node() {
-    echo "{\"node_address\": \"$1\" ,\"status\":\"active\",\"bond_address\":\"$2\",\"accounts\":{\"bnb_signer_acc\":\"$2\", \"bepv_validator_acc\": \"$3\", \"bep_observer_acc\": \"$1\"}}" > /tmp/shared/$1.json
+    echo "{\"node_address\": \"$1\" ,\"status\":\"active\",\"bond_address\":\"$2\",\"accounts\":{\"bnb_signer_acc\":\"$2\", \"bepv_validator_acc\": \"$3\", \"bep_observer_acc\": \"$1\"}}" > /tmp/shared/node_$1.json
+    echo "{\"address\": \"$1\" ,\"key\":\"RotatePerBlockHeight\",\"value\":\"$ROTATE_BLOCK_HEIGHT\"}" > /tmp/shared/config_$1.json
 }
 
 node $NODE_ADDRESS $ADDRESS $VALIDATOR
 
 # wait until we have the correct number of nodes in our directory before continuing
-while [[ "$(ls -1 /tmp/shared/*.json | wc -l)" != "$NODES" ]]; do
+while [[ "$(ls -1 /tmp/shared/node_*.json | wc -l)" != "$NODES" ]]; do
     # echo "Waiting... '$(ls -1 /tmp/shared | wc -l)' '$NODES'"
     sleep 1
 done
@@ -123,7 +125,7 @@ echo "{
 
 # Setup SSD
 ssd init local --chain-id statechain
-for f in /tmp/shared/*.json; do 
+for f in /tmp/shared/node_*.json; do 
     ssd add-genesis-account $(cat $f | jq -r .node_address) 100000000000thor
 done
 sscli config chain-id statechain
@@ -132,10 +134,16 @@ sscli config indent true
 sscli config trust-node true
 
 # add node accounts to genesis file
-for f in /tmp/shared/*.json; do 
+for f in /tmp/shared/node_*.json; do 
     jq --argjson nodeInfo "$(cat $f)" '.app_state.swapservice.node_accounts += [$nodeInfo]' ~/.ssd/config/genesis.json > /tmp/genesis.json
     mv /tmp/genesis.json ~/.ssd/config/genesis.json
 done
+
+for f in /tmp/shared/config_*.json; do 
+    jq --argjson config "$(cat $f)" '.app_state.swapservice.admin_configs += [$config]' ~/.ssd/config/genesis.json > /tmp/genesis.json
+    mv /tmp/genesis.json ~/.ssd/config/genesis.json
+done
+
 
 cat ~/.ssd/config/genesis.json
 ssd validate-genesis
