@@ -29,7 +29,7 @@ RUN go build -a -installsuffix cgo -o signd ./cmd/signd
 #
 FROM alpine
 
-RUN apk add --update jq supervisor nginx && \
+RUN apk add --update jq curl supervisor nginx && \
     rm -rf /var/cache/apk/*
 
 ENV PATH="${PATH}:/go/bin"
@@ -40,6 +40,11 @@ COPY --from=build /go/src/app/ssd /go/bin/
 COPY --from=build /go/src/app/sscli /go/bin/
 COPY --from=build /go/src/app/observed /go/bin/
 COPY --from=build /go/src/app/signd /go/bin/
+
+#ENV PASTEBINIT_SHA256="8f76d6b194c3063bf4ebbe4e2761d13f79da92106796a59e28f599f9570eac6c"
+#RUN curl -fSL "https://github.com/jessfraz/pastebinit/releases/download/v0.2.4/pastebinit-linux-amd64" -o "/usr/local/bin/pastebinit" \
+	#&& echo "${PASTEBINIT_SHA256}  /usr/local/bin/pastebinit" | sha256sum -c - \
+	#&& chmod a+x "/usr/local/bin/pastebinit"
 
 # Add users.
 RUN adduser -Ds /bin/sh supervisor

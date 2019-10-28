@@ -153,4 +153,9 @@ if [[ "$MASTER" != "$(hostname)" ]]; then
   sed -i -e "s/$PEERSISTENT_PEER_TARGET/persistent_peers = \"$PEER\"/g" ~/.ssd/config/config.toml
 fi
 
+if [[ "$MASTER" == "$(hostname)" ]]; then
+    # copy the genesis file to shared directory, so we can access it later
+    cp ~/.ssd/config/genesis.json /tmp/shared
+fi
+
 exec "$@"
