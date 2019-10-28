@@ -9,28 +9,29 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"gitlab.com/thorchain/bepswap/thornode/common"
 	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
 	"gitlab.com/thorchain/bepswap/thornode/x/statechain"
-	"gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 )
 
 type PoolAddressValidator interface {
-	IsValidPoolAddress(addr string) bool
+	IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo)
 }
 
 // PoolAddressManager it manage the pool address
 type PoolAddressManager struct {
 	cdc           *codec.Codec
-	poolAddresses types.PoolAddresses
+	poolAddresses types.PoolAddresses // current pool addresses
 	rwMutex       *sync.RWMutex
 	logger        zerolog.Logger
-	chainHost     string
+	chainHost     string // statechain host
 	errCounter    *prometheus.CounterVec
 	m             *metrics.Metrics
 	wg            *sync.WaitGroup
@@ -93,25 +94,42 @@ func (pam *PoolAddressManager) updatePoolAddresses() {
 	}
 }
 
-// IsFromValidPoolAddress check whether the given address is a pool addr
-func (pam *PoolAddressManager) IsValidPoolAddress(addr string) bool {
+func matchAddress(addr string, chain common.Chain, key common.PubKey) (bool, common.ChainPoolInfo) {
+	cpi, err := common.NewChainPoolInfo(chain, key)
+	if nil != err {
+		return false, common.EmptyChainPoolInfo
+	}
+	if strings.EqualFold(cpi.PoolAddress.String(), addr) {
+		return true, cpi
+	}
+	return false, common.EmptyChainPoolInfo
+}
+
+// IsValidPoolAddress check whether the given address is a pool addr
+func (pam *PoolAddressManager) IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo) {
 	pam.rwMutex.RLock()
 	defer pam.rwMutex.RUnlock()
 	pa := pam.poolAddresses
-	if strings.EqualFold(pa.Current.String(), addr) ||
-		strings.EqualFold(pa.Previous.String(), addr) ||
-		strings.EqualFold(pa.Next.String(), addr) {
-		return true
+	matchCurrent, cpi := matchAddress(addr, chain, pa.Current)
+	if matchCurrent {
+		return matchCurrent, cpi
+	}
+	matchPrevious, cpi := matchAddress(addr, chain, pa.Previous)
+	if matchPrevious {
+		return matchPrevious, cpi
+	}
+	matchNext, cpi := matchAddress(addr, chain, pa.Next)
+	if matchNext {
+		return matchNext, cpi
 	}
 	pam.logger.Debug().Str("previous", pa.Previous.String()).
 		Str("current", pa.Current.String()).
 		Str("next", pa.Next.String()).
 		Str("addr", addr).Msg("doesn't match")
-
-	return false
+	return false, common.EmptyChainPoolInfo
 }
 
-// getPoolAddresses
+// getPoolAddresses from statechain
 func (pam *PoolAddressManager) getPoolAddresses() (types.PoolAddresses, error) {
 	uri := url.URL{
 		Scheme: "http",

@@ -27,3 +27,5 @@ func (pa PoolAddresses) IsEmpty() bool {
 	// when current pool address is empty then we think it is empty , even the others are not, that will not matter
 	return len(pa.Current) == 0
 }
+
+var EmptyPoolAddress PoolAddresses
