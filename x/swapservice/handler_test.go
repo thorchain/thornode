@@ -396,26 +396,6 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 
-	// acc2 := GetRandomNodeAccount(NodeStandby)
-	// w.keeper.SetNodeAccount(w.ctx, acc2)
-	// updates := w.validatorMgr.EndBlock(w.ctx, w.validatorMgr.Meta.RotateWindowOpenAtBlockHeight)
-	// c.Assert(updates, IsNil)
-	// // we nominated a node account
-	// c.Assert(w.validatorMgr.Meta.Nominated.IsEmpty(), Equals, false)
-	// addr, err := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetAddress(common.BNBChain)
-	// c.Assert(err, IsNil)
-	// msgNextPoolAddr1 := NewMsgNextPoolAddress(
-	// 	GetRandomTxHash(),
-	// 	GetRandomPubKey(),
-	// 	addr,
-	// 	common.BNBChain,
-	// 	acc2.Accounts.ObserverBEPAddress)
-	// result1 := handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.validatorMgr, w.poolAddrMgr, msgNextPoolAddr1)
-	// c.Assert(result1.Code, Equals, sdk.CodeOK)
-	// acc2, err := w.keeper.GetNodeAccount(w.ctx, acc2.NodeAddress)
-	// c.Assert(err, IsNil)
-	// c.Assert(acc2.Status, Equals, NodeStandby)
-
 }
 
 func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {

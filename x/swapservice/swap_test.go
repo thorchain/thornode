@@ -5,8 +5,9 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/mocks"
 	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
@@ -137,7 +138,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don't know",
 			returnAmount:  sdk.ZeroUint(),
 			tradeTarget:   sdk.ZeroUint(),
-			expectedErr:   errors.Errorf("fail to swap from BNB.RUNE-B1A to BNB.BNB: pool slip:0.928571 is over global pool slip limit :%s", globalSlipLimit),
+			expectedErr:   errors.Errorf("fail to swap from %s to BNB.BNB: pool slip:0.928571 is over global pool slip limit :%s", common.RuneAsset(), globalSlipLimit),
 		},
 		{
 			name:          "swap-over-trade-sliplimit",
