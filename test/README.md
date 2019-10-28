@@ -135,7 +135,6 @@ The tests are all run via `make`.
 ```shell script
 make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit-1p
 make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit-2p
-make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-refund
 ```
 
 #### Individual (Unit) Tests
