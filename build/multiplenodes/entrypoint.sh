@@ -33,7 +33,6 @@ VALIDATOR=$(ssd tendermint show-validator)
 OBSERVER_ADDRESS=$(sscli keys show statechain -a)
 NODE_ADDRESS=$(sscli keys show statechain -a)
 
-echo $(hostname)
 if [[ "$MASTER" == "$(hostname)" ]]; then
   echo "I AM THE MASTER NODE"
   ssd tendermint show-node-id > /tmp/shared/node.txt
