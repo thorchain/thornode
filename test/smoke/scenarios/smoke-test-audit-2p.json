@@ -227,7 +227,7 @@
       ],
       "memo": "STAKE:BNB.BNB",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -262,7 +262,7 @@
       ],
       "memo": "STAKE:BNB.LOK-3C0",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -293,7 +293,7 @@
       ],
       "memo": "",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -304,6 +304,270 @@
             {
               "symbol": "BNB",
               "amount": 0.66546667
+            }
+          ]
+        },
+        "statechain": []
+      }
+    },
+    {
+      "description": "STAKE-BAD MEMO",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 500.00000000
+        },
+        {
+          "symbol": "BNB",
+          "amount": 0.50000000
+        }
+      ],
+      "memo": "ABDG?",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 500.00000000
+            },
+            {
+              "symbol": "BNB",
+              "amount": 0.66426667
+            }
+          ]
+        },
+        "statechain": []
+      }
+    },
+    {
+      "description": "STAKE-EMPTY ASSET",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 500.00000000
+        },
+        {
+          "symbol": "BNB",
+          "amount": 0.50000000
+        }
+      ],
+      "memo": "STAKE:",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 500.00000000
+            },
+            {
+              "symbol": "BNB",
+              "amount": 0.66306667
+            }
+          ]
+        },
+        "statechain": []
+      }
+    },
+    {
+      "description": "STAKE-WRONG ASSET",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 500.00000000
+        },
+        {
+          "symbol": "BNB",
+          "amount": 0.50000000
+        }
+      ],
+      "memo": "STAKE:BNB.TCAN-014",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 500.00000000
+            },
+            {
+              "symbol": "BNB",
+              "amount": 0.66186667
+            }
+          ]
+        },
+        "statechain": []
+      }
+    },
+    {
+      "description": "STAKE RUNE",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 500.00000000
+        },
+        {
+          "symbol": "BNB",
+          "amount": 0.50000000
+        }
+      ],
+      "memo": "STAKE:RUNE-A1F",
+      "check": {
+        "delay": 15,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 500.00000000
+            },
+            {
+              "symbol": "BNB",
+              "amount": 0.66066667
+            }
+          ]
+        },
+        "statechain": []
+      }
+    },
+    {
+      "description": "ASSYM-BNB",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "BNB",
+          "amount": 0.10000000
+        }
+      ],
+      "memo": "STAKE:BNB.BNB",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 0.56029167
+            }
+          ]
+        },
+        "statechain": []
+      }
+    },
+    {
+      "description": "ASSYM-RUNE",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 100.00000000
+        }
+      ],
+      "memo": "STAKE:BNB.BNB",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 400.00000000
+            },
+            {
+              "symbol": "BNB",
+              "amount": 0.55916667
+            }
+          ]
+        },
+        "statechain": []
+      }
+    },
+    {
+      "description": "STAKE BNB",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 300.00000000
+        },
+        {
+          "symbol": "BNB",
+          "amount": 0.30000000
+        }
+      ],
+      "memo": "STAKE:BNB.BNB",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100.00000000
+            },
+            {
+              "symbol": "BNB",
+              "amount": 0.25931667
+            }
+          ]
+        },
+        "statechain": []
+      }
+    },
+    {
+      "description": "ADD BNB",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "RUNE-A1F",
+          "amount": 100.00000000
+        },
+        {
+          "symbol": "BNB",
+          "amount": 0.10000000
+        }
+      ],
+      "memo": "ADD:BNB.BNB",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 0.15871667
             }
           ]
         },
@@ -323,6 +587,20 @@
         }
       ],
       "memo": "WITHDRAW:BNB"
+    },
+    {
+      "description": "WITHDRAW ALL",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "BNB",
+          "amount": 0.00000001
+        }
+      ],
+      "memo": "WITHDRAW:LOK-3C0"
     },
     {
       "description": "WITHDRAW ALL",

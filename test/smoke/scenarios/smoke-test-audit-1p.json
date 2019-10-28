@@ -192,7 +192,7 @@
       ],
       "memo": "STAKE:BNB",
       "check": {
-        "delay": 20,
+        "delay": 25,
         "binance": {
           "target": "to",
           "coins": [
@@ -236,7 +236,7 @@
       ],
       "memo": "STAKE:BNB",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -282,7 +282,7 @@
       ],
       "memo": "STAKE:BNB",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -334,7 +334,7 @@
       ],
       "memo": "STAKE:BNB",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -386,7 +386,7 @@
       ],
       "memo": "ADD:BNB",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -430,7 +430,7 @@
       ],
       "memo": "SWAP:BNB",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -478,7 +478,7 @@
       ],
       "memo": "SWAP:BNB",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -526,7 +526,7 @@
       ],
       "memo": "SWAP:BNB",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -575,7 +575,7 @@
       "memo": "SWAP:BNB",
       "send_to": "staker_1",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
@@ -623,7 +623,7 @@
       ],
       "memo": "",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "statechain": [
           {
             "units": 41297739043.000000,
@@ -658,7 +658,7 @@
       ],
       "memo": "ASDJ?",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "statechain": [
           {
             "units": 41297739043.000000,
@@ -693,7 +693,7 @@
       ],
       "memo": "WITHDRAW:BNB:5000",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "statechain": [
           {
             "units": 28785239043.000000,
@@ -728,7 +728,7 @@
       ],
       "memo": "WITHDRAW:BNB:10000",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "statechain": [
           {
             "units": 16272739043.000000,

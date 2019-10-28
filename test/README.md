@@ -31,20 +31,19 @@ A full smoke test lifecycle is as follows:
 * Generate the actors;
 * SEED the master with funds from the faucet (faucet);
 * then SEED the other accounts (admin, user and staker(s));
-* then GAS the pool;
+* then GAS the pool(s);
 * then STAKE;
 * then SWAP;
-* then END;
-* then re-enable the pools;
+* then WITHDRAW;
 * then SWEEP all assets back to the faucet from the various actors.
 
 Unit tests (where we've broken the SWAPs and STAKEs into their own test definitions) still follow a variant of the above (as we still need to SEED the actors; GAS, END and ENABLE the pool).
 
-### Definitions
+### Scenarios
 
-The test definitions are all written in JSON and follow a fairly simple format, that should be easy to read.
+The test scenarios are all written in JSON and follow a fairly simple format, that should be easy to read.
 
-At the top level we define how many stakers we wish to create as well as our main rules array. 
+At the top level we define how many stakers we wish to create, other runtime options as well as our main rules array. 
 
 ```json
 {
@@ -132,7 +131,10 @@ The tests are all run via `make`.
 
 #### Main test suite
 
+Please see the test specs [here](https://docs.google.com/spreadsheets/d/1sLK0FE-s6LInWijqKgxAzQk2RiSDZO1GL58kAD62ch0)
+
 ```shell script
+make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-refund
 make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit-1p
 make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit-2p
 ```
@@ -168,7 +170,7 @@ make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> swap
 For each of the tests you must provide:
 
 * `FAUCET_KEY` this is the private key of the faucet. Without this, the tests will fail as nothing will be funded,
-* `POOL_KEY` this is the private key of the pool that that Statechain Observer is listening on
+* `POOL_KEY` this is the private key of the pool that that Statechain Observer is observing
 * and `ENV` is the environment to run the tests against (can be one of `local`, `develop`, `staging` or `production`).
 
 #### Sweep
