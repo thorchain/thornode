@@ -44,6 +44,7 @@ ARG binance_private_key
 ARG binance_test_net
 ARG trusted_bnb_address
 ARG start_block_height
+ARG net
 
 ENV CHAIN_ID=$chain_id
 ENV POOL_ADDRESS=$pool_address
@@ -57,6 +58,7 @@ ENV BINANCE_PRIVATE_KEY=$binance_private_key
 ENV BINANCE_TESTNET=$binance_test_net
 ENV TRUSTED_BNB_ADDRESS=$trusted_bnb_address
 ENV START_BLOCK_HEIGHT=$start_block_height
+ENV NET=$net
 
 RUN apk add --update jq supervisor nginx && \
     rm -rf /var/cache/apk/*

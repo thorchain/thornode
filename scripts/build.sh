@@ -14,4 +14,5 @@ docker build $CACHE \
 --build-arg binance_private_key=$BINANCE_PRIVATE_KEY \
 --build-arg binance_test_net=Binance-Chain-Nile \
 --build-arg trusted_bnb_address=$TRUSTED_BNB_ADDRESS \
+--build-arg net=$NET \
 -t $1 .
