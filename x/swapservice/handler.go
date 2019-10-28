@@ -97,7 +97,7 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 // handleOperatorMsgEndPool operators decide it is time to end the pool
 func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgEndPool) sdk.Result {
 	if !isSignedByActiveNodeAccounts(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "ticker", msg.Asset)
+		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	ctx.Logger().Info("handle MsgEndPool", "asset", msg.Asset, "requester", msg.Requester, "signer", msg.Signer.String())
@@ -354,7 +354,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ToAddress:   msg.PublicAddress,
 	}
 	toi.Coins = append(toi.Coins, common.NewCoin(
-		common.RuneA1FAsset,
+		common.RuneAsset(),
 		runeAmt,
 	))
 	toi.Coins = append(toi.Coins, common.NewCoin(
@@ -405,7 +405,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 }
 
 // handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
-// MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on binance chain
+// MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on chain
 func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorManager, poolAddrManager *PoolAddressManager, msg MsgNextPoolAddress) sdk.Result {
 	ctx.Logger().Info("receive request to set next pool address", "pool address", msg.NextPoolAddr.String())
 	if validatorManager.Meta.Nominated.IsEmpty() {
@@ -464,7 +464,7 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, validatorManager *ValidatorMan
 	}
 }
 
-// handleMsgSetTxIn gets a binance tx hash, gets the tx/memo, and triggers
+// handleMsgSetTxIn gets a tx hash, gets the tx/memo, and triggers
 // another handler to process the request
 func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddressMgr *PoolAddressManager, validatorManager *ValidatorManager, msg MsgSetTxIn) sdk.Result {
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
@@ -516,8 +516,13 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 				continue
 			}
 
+			var chain common.Chain
+			if len(txIn.Coins) > 0 {
+				chain = txIn.Coins[0].Asset.Chain
+			}
+
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer)
-			if nil != err {
+			if nil != err || chain.IsEmpty() {
 				ctx.Logger().Error("fail to process txIn", "error", err, "txhash", tx.TxID.String())
 				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress, true)
 				ee := NewEmptyRefundEvent()
@@ -532,8 +537,8 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			// ignoring the error
 			_ = keeper.AddToTxInIndex(ctx, uint64(ctx.BlockHeight()), tx.TxID)
-			if err := keeper.SetLastBinanceHeight(ctx, txIn.BlockHeight); nil != err {
-				return sdk.ErrInternal("fail to save last binance height to data store err:" + err.Error()).Result()
+			if err := keeper.SetLastChainHeight(ctx, chain, txIn.BlockHeight); nil != err {
+				return sdk.ErrInternal("fail to save last height to data store err:" + err.Error()).Result()
 			}
 
 			result := handler(ctx, m)
@@ -647,7 +652,6 @@ func getMsgUnstakeFromMemo(memo WithdrawMemo, txID common.TxID, tx TxIn, signer 
 		withdrawAmount = sdk.NewUintFromString(memo.GetAmount())
 	}
 	return NewMsgSetUnStake(tx.Sender, withdrawAmount, memo.GetAsset(), txID, signer), nil
-
 }
 
 func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
@@ -657,18 +661,31 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 	runeAmount := sdk.ZeroUint()
 	assetAmount := sdk.ZeroUint()
 	asset := memo.GetAsset()
-	for _, coin := range tx.Coins {
-		ctx.Logger().Info("coin", "ticker", coin.Asset.Symbol.String(), "amount", coin.Amount.String())
-		if common.IsRuneAsset(coin.Asset) {
-			runeAmount = coin.Amount
-		} else {
-			assetAmount = coin.Amount
-			asset = coin.Asset // override the memo ticker with coin received
-		}
-	}
 	if asset.IsEmpty() {
 		return nil, errors.New("Unable to determine the intended pool for this stake")
 	}
+	if common.IsRuneAsset(asset) {
+		return nil, errors.New("invalid pool asset")
+	}
+	for _, coin := range tx.Coins {
+		ctx.Logger().Info("coin", "asset", coin.Asset.String(), "amount", coin.Amount.String())
+		if common.IsRuneAsset(coin.Asset) {
+			runeAmount = coin.Amount
+		}
+		if asset.Equals(coin.Asset) {
+			assetAmount = coin.Amount
+		}
+	}
+
+	if runeAmount.IsZero() && assetAmount.IsZero() {
+		return nil, errors.New("did not find any valid coins for stake")
+	}
+
+	// when we receive two coins, but we didn't find the coin specify by asset, then user might send in the wrong coin
+	if assetAmount.IsZero() && len(tx.Coins) == 2 {
+		return nil, errors.Errorf("did not find %s ", asset)
+	}
+
 	return NewMsgSetStakeData(
 		asset,
 		runeAmount,
@@ -1003,7 +1020,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 			ToAddress:   nodeAcc.BondAddress,
 			PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
 			Coins: common.Coins{
-				common.NewCoin(common.RuneA1FAsset, nodeAcc.Bond),
+				common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 			},
 		}
 		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)

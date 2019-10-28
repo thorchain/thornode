@@ -4,11 +4,10 @@
   "observer_db_path": "observer_db",
   "block_scanner": {
     "rpc_host": "data-seed-pre-0-s3.binance.org",
-    "start_block_height": "43971658",
-    "enforce_block_height": true,
     "block_scan_processors": 1,
     "block_height_discover_back_off": "1s",
-    "block_retry_interval": "10s"
+    "block_retry_interval": "10s",
+    "start_block_height": "45885861"
   },
   "state_chain": {
     "chain_id": "statechain",
@@ -18,5 +17,6 @@
   },
   "metric": {
     "enabled": true
-  }
+  },
+  "rune_address": "thor12f74mue6kkdjmsdllwnecr572qp5nxqd5nw5vl"
 }

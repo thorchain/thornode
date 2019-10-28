@@ -10,6 +10,8 @@ before_script:
 
 stages:
   - test
+  - build
+  - push
   - deploy
   - smoke-test
   - seed
@@ -35,11 +37,10 @@ integration:test:
   script:
     - make -C ./test/integration install setup run wait-for-blockchain test-internal
 
-build:test:
-  stage: test
+# Build docker image
+build:
+  stage: build
   image: docker:stable
-  except:
-    - master
   services:
     - docker:dind
   variables:
@@ -48,10 +49,84 @@ build:test:
   before_script:
     - apk update
     - apk add python py-pip make git
-    - pip install awscli
+    - make docker-gitlab-login
   environment:
     name: develop
-  script: make docker-build
+  script:
+    - make docker-gitlab-build
+    - make docker-gitlab-push
+
+# push docker:develop images
+push:develop:
+  stage: push
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: none
+  before_script:
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+  script:
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:develop
+    - docker push ${CI_REGISTRY_IMAGE}:develop
+
+# push docker:nightly images
+push:nightly:
+  stage: push
+  image: docker:stable
+  only:
+    - schedules
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: none
+  before_script:
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+  script:
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:nightly
+    - docker push ${CI_REGISTRY_IMAGE}:nightly
+
+# push docker:tag images
+push:tag:
+  stage: push
+  image: docker:stable
+  only:
+    - tags
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: none
+  before_script:
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+  script:
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}
+    - docker push ${CI_REGISTRY_IMAGE}:nightly
+
+# push docker:latest images
+push:latest:
+  stage: push
+  image: docker:stable
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: none
+  before_script:
+    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+  script:
+    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
+    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:latest
+    - docker push ${CI_REGISTRY_IMAGE}:latest
 
 deploy:develop:
   stage: deploy
@@ -70,7 +145,7 @@ deploy:develop:
     - schedules
   environment:
     name: develop
-  script: make ecs-deploy
+  script: make aws-ecs-deploy
   only:
     - master
 
@@ -126,7 +201,7 @@ deploy:staging:
     - make aws-login
   environment:
     name: staging
-  script: make ecs-deploy
+  script: make aws-ecs-deploy
   only:
     - schedules
 
@@ -178,7 +253,7 @@ deploy:production:
     - make aws-login
   environment:
     name: production
-  script: make ecs-deploy
+  script: make aws-ecs-deploy
   only:
     - master
   when: manual

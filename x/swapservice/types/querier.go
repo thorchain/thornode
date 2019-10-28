@@ -21,13 +21,14 @@ func (n QueryResPools) String() string {
 }
 
 type QueryResHeights struct {
-	LastBinanceHeight sdk.Uint `json:"lastobservedin"`
-	LastSignedHeight  sdk.Uint `json:"lastsignedout"`
-	Statechain        int64    `json:"statechain"`
+	Chain            common.Chain `json:"chain"`
+	LastChainHeight  sdk.Uint     `json:"lastobservedin"`
+	LastSignedHeight sdk.Uint     `json:"lastsignedout"`
+	Statechain       int64        `json:"statechain"`
 }
 
 func (h QueryResHeights) String() string {
-	return fmt.Sprintf("Binance: %d, Signed: %d, Statechain: %d", h.LastBinanceHeight, h.LastSignedHeight, h.Statechain)
+	return fmt.Sprintf("Chain: %d, Signed: %d, Statechain: %d", h.LastChainHeight, h.LastSignedHeight, h.Statechain)
 }
 
 type ResTxOut struct {

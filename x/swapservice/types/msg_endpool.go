@@ -8,7 +8,7 @@ import (
 type MsgEndPool struct {
 	Asset         common.Asset   `json:"asset"`
 	Requester     common.Address `json:"requester"`
-	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on binance chain
+	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on chain
 	Signer        sdk.AccAddress `json:"signer"`
 }
 

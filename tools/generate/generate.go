@@ -19,12 +19,19 @@ func main() {
 	flag.Parse()
 
 	n := smoke.NewNetwork(*network)
-	keyManager, _ := keys.NewKeyManager()
+	keyManager, err := keys.NewKeyManager()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
+
 	if _, err := sdk.NewDexClient(*apiAddr, n.Type, keyManager); nil != err {
 		log.Fatalf("%v", err)
 	}
 
 	fmt.Printf("export %v=%v\n", *addrType, keyManager.GetAddr())
-	privKey, _ := keyManager.ExportAsPrivateKey()
+	privKey, err := keyManager.ExportAsPrivateKey()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 	fmt.Printf("export %v_KEY=%v\n", *addrType, privKey)
 }
