@@ -241,21 +241,16 @@ func (HandlerSuite) TestIsSignedByActiveNodeAccounts(c *C) {
 }
 
 func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
-	ctx, k := setupKeeperForTest(c)
-	txOutStore := NewTxOutStore(k)
-	poolAddrMgr := NewPoolAddressManager(k)
+	w := getHandlerTestWrapper(c, 1, true, false)
 	acc1 := GetRandomNodeAccount(NodeWhiteListed)
 	bnbAddr := GetRandomBNBAddress()
 	txHash := GetRandomTxHash()
 	msgEndPool := NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, acc1.NodeAddress)
-	result := handleOperatorMsgEndPool(ctx, k, txOutStore, poolAddrMgr, msgEndPool)
+	result := handleOperatorMsgEndPool(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgEndPool)
 	c.Assert(result.IsOK(), Equals, false)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
-
-	// do some stake
-	acc1.UpdateStatus(NodeActive)
-	k.SetNodeAccount(ctx, acc1)
-	poolAddrMgr.BeginBlock(ctx, 1)
+	msgEndPool = NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, w.activeNodeAccount.NodeAddress)
+	w.poolAddrMgr.BeginBlock(w.ctx, 1)
 	stakeTxHash := GetRandomTxHash()
 	msgSetStake := NewMsgSetStakeData(
 		common.BNBAsset,
@@ -263,24 +258,24 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 		sdk.NewUint(100*common.One),
 		bnbAddr,
 		stakeTxHash,
-		acc1.Accounts.ObserverBEPAddress)
-	stakeResult := handleMsgSetStakeData(ctx, k, msgSetStake)
+		w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	stakeResult := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
 	c.Assert(stakeResult.Code, Equals, sdk.CodeOK)
-	p := k.GetPool(ctx, common.BNBAsset)
+	p := w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(p.Empty(), Equals, false)
 	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
 	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
 	c.Assert(p.Status, Equals, PoolEnabled)
-	txOutStore.NewBlock(1)
+	w.txOutStore.NewBlock(1)
 	// EndPool again
-	msgEndPool1 := NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, acc1.NodeAddress)
-	result1 := handleOperatorMsgEndPool(ctx, k, txOutStore, poolAddrMgr, msgEndPool1)
+	msgEndPool1 := NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, w.activeNodeAccount.NodeAddress)
+	result1 := handleOperatorMsgEndPool(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgEndPool1)
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
-	p1 := k.GetPool(ctx, common.BNBAsset)
+	p1 := w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Check(p1.Status, Equals, PoolSuspended)
 	c.Check(p1.BalanceAsset.Uint64(), Equals, uint64(0))
 	c.Check(p1.BalanceRune.Uint64(), Equals, uint64(0))
-	txOut := txOutStore.blockOut
+	txOut := w.txOutStore.blockOut
 	c.Check(txOut, NotNil)
 	c.Check(len(txOut.TxArray) > 0, Equals, true)
 	c.Check(txOut.Height, Equals, uint64(1))
@@ -623,9 +618,11 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	c.Assert(result2.Code, Equals, sdk.CodeUnauthorized)
 
 	w = getHandlerTestWrapper(c, 1, true, true)
+	currentPoolAddr, err := w.poolAddrMgr.currentPoolAddresses.Current.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
 	msgOutboundTxNormal := NewMsgOutboundTx(GetRandomTxHash(),
 		1,
-		w.activeNodeAccount.Accounts.SignerBNBAddress,
+		currentPoolAddr,
 		common.BNBChain,
 		w.activeNodeAccount.Accounts.ObserverBEPAddress)
 	result3 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal)
@@ -652,7 +649,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	w.txOutStore.CommitBlock(ctx)
 	msgOutboundTxNormal1 := NewMsgOutboundTx(GetRandomTxHash(),
 		2,
-		w.activeNodeAccount.Accounts.SignerBNBAddress,
+		currentPoolAddr,
 		common.BNBChain,
 		w.activeNodeAccount.Accounts.ObserverBEPAddress)
 	result4 := handleMsgOutboundTx(ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal1)
