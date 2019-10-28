@@ -541,6 +541,9 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 				return sdk.ErrInternal("fail to save last height to data store err:" + err.Error()).Result()
 			}
 
+			// add this chain to our list of supported chains
+			keeper.AddChain(ctx, chain)
+
 			result := handler(ctx, m)
 			if !result.IsOK() {
 				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress, true)
