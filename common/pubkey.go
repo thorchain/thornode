@@ -49,9 +49,10 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 	if pubKey.IsEmpty() {
 		return NoAddress, nil
 	}
+	chainNetwork := GetCurrentChainNetwork()
 	switch chain {
 	case BNBChain:
-		str, err := bech32.Encode(chain.AddressPrefix(TestNetwork), pubKey)
+		str, err := bech32.Encode(chain.AddressPrefix(chainNetwork), pubKey)
 		if nil != err {
 			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
 		}

@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto"
 	tmtypes "github.com/tendermint/tendermint/types"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
@@ -15,7 +16,7 @@ import (
 
 // GetRandomNodeAccount create a random generated node account , used for test purpose
 func GetRandomNodeAccount(status NodeStatus) NodeAccount {
-	name := RandStringBytesMask(10)
+	name := common.RandStringBytesMask(10)
 	addr := sdk.AccAddress(crypto.AddressHash([]byte(name)))
 	bnb := GetRandomBNBAddress()
 	v, _ := tmtypes.RandValidator(true, 100)
@@ -27,7 +28,7 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 
 // GetRandomBech32Addr is an account address used for test
 func GetRandomBech32Addr() sdk.AccAddress {
-	name := RandStringBytesMask(10)
+	name := common.RandStringBytesMask(10)
 	return sdk.AccAddress(crypto.AddressHash([]byte(name)))
 }
 
@@ -51,7 +52,7 @@ func ConvertAndEncode(hrp string, data []byte) (string, error) {
 
 // GetRandomBNBAddress will just create a random bnb address used for test purpose
 func GetRandomBNBAddress() common.Address {
-	name := RandStringBytesMask(10)
+	name := common.RandStringBytesMask(10)
 	str, _ := ConvertAndEncode("tbnb", crypto.AddressHash([]byte(name)))
 	bnb, _ := common.NewAddress(str)
 	return bnb
@@ -59,7 +60,7 @@ func GetRandomBNBAddress() common.Address {
 
 // GetRandomTxHash create a random txHash used for test purpose
 func GetRandomTxHash() common.TxID {
-	txHash, _ := common.NewTxID(RandStringBytesMask(64))
+	txHash, _ := common.NewTxID(common.RandStringBytesMask(64))
 	return txHash
 }
 

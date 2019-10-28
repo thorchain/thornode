@@ -5,10 +5,13 @@ import (
 	"strings"
 )
 
+// ChainNetwork is to indicate which chain environment we are working with
 type ChainNetwork uint8
 
 const (
+	// TestNetwork for test
 	TestNetwork ChainNetwork = iota
+	// ProdNetwork for main net
 	ProdNetwork
 )
 
