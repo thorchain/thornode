@@ -2,16 +2,13 @@
 package types
 
 import (
-	"github.com/btcsuite/btcutil/bech32"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
-
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // GetRandomNodeAccount create a random generated node account , used for test purpose
@@ -41,19 +38,10 @@ func GetRandomBech32ConsensusPubKey() string {
 	return result
 }
 
-// ConvertAndEncode converts from a base64 encoded byte string to base32 encoded byte string and then to bech32
-func ConvertAndEncode(hrp string, data []byte) (string, error) {
-	converted, err := bech32.ConvertBits(data, 8, 5, true)
-	if err != nil {
-		return "", errors.Wrap(err, "encoding bech32 failed")
-	}
-	return bech32.Encode(hrp, converted)
-}
-
 // GetRandomBNBAddress will just create a random bnb address used for test purpose
 func GetRandomBNBAddress() common.Address {
 	name := common.RandStringBytesMask(10)
-	str, _ := ConvertAndEncode("tbnb", crypto.AddressHash([]byte(name)))
+	str, _ := common.ConvertAndEncode("tbnb", crypto.AddressHash([]byte(name)))
 	bnb, _ := common.NewAddress(str)
 	return bnb
 }
@@ -62,6 +50,11 @@ func GetRandomBNBAddress() common.Address {
 func GetRandomTxHash() common.TxID {
 	txHash, _ := common.NewTxID(common.RandStringBytesMask(64))
 	return txHash
+}
+
+func GetRandomPubKey() common.PubKey {
+	_, pubKey, _ := atypes.KeyTestPubAddr()
+	return common.NewPubKey(pubKey.Bytes())
 }
 
 // SetupConfigForTest used for test purpose

@@ -52,7 +52,7 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 	chainNetwork := GetCurrentChainNetwork()
 	switch chain {
 	case BNBChain:
-		str, err := bech32.Encode(chain.AddressPrefix(chainNetwork), pubKey)
+		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pubKey)
 		if nil != err {
 			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
 		}
@@ -80,4 +80,13 @@ func (pubKey *PubKey) UnmarshalJSON(data []byte) error {
 	}
 	*pubKey = pKey
 	return nil
+}
+
+// ConvertAndEncode converts from a base64 encoded byte string to base32 encoded byte string and then to bech32
+func ConvertAndEncode(hrp string, data []byte) (string, error) {
+	converted, err := bech32.ConvertBits(data, 8, 5, true)
+	if err != nil {
+		return "", fmt.Errorf("encoding bech32 failed,%w", err)
+	}
+	return bech32.Encode(hrp, converted)
 }
