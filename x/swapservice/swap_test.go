@@ -2,11 +2,13 @@ package swapservice
 
 import (
 	"fmt"
+	"os"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/mocks"
 	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
@@ -17,6 +19,8 @@ type SwapSuite struct{}
 var _ = Suite(&SwapSuite{})
 
 func (s *SwapSuite) SetUpSuite(c *C) {
+	err := os.Setenv("NET", "testnet")
+	c.Assert(err, IsNil)
 	SetupConfigForTest()
 }
 
