@@ -14,8 +14,8 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gitlab.com/thorchain/bepswap/thornode/common"
 
+	"gitlab.com/thorchain/bepswap/thornode/common"
 	"gitlab.com/thorchain/bepswap/thornode/config"
 	btypes "gitlab.com/thorchain/bepswap/thornode/x/binance/types"
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
@@ -29,6 +29,7 @@ type Binance struct {
 	queryClient query.QueryClient
 	keyManager  keys.KeyManager
 	chainId     string
+	isTestNet   bool
 }
 
 // NewBinance create new instance of binance client
@@ -39,16 +40,25 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 	if len(cfg.DEXHost) == 0 {
 		return nil, errors.New("dex host is empty, set env DEX_HOST")
 	}
-
-	keyManager, err := keys.NewPrivateKeyManager(cfg.PrivateKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "fail to create private key manager")
+	var km keys.KeyManager
+	var err error
+	if cfg.UseTSS {
+		km, err = NewTSSSigner(cfg.TSS, cfg.TSSAddress)
+		if nil != err {
+			return nil, errors.Wrap(err, "fail to create tss signer")
+		}
+	} else {
+		km, err = keys.NewPrivateKeyManager(cfg.PrivateKey)
+		if err != nil {
+			return nil, errors.Wrap(err, "fail to create private key manager")
+		}
 	}
 	chainNetwork := types.TestNetwork
-	if !IsTestNet(cfg.DEXHost) {
+	isTestNet := IsTestNet(cfg.DEXHost)
+	if !isTestNet {
 		chainNetwork = types.ProdNetwork
 	}
-	bClient, err := sdk.NewDexClient(cfg.DEXHost, chainNetwork, keyManager)
+	bClient, err := sdk.NewDexClient(cfg.DEXHost, chainNetwork, km)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create binance client")
 	}
@@ -61,7 +71,8 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 		Client:      bClient,
 		basicClient: basicClient,
 		queryClient: queryClient,
-		keyManager:  keyManager,
+		keyManager:  km,
+		isTestNet:   isTestNet,
 		chainId:     "Binance-Chain-Nile",
 	}, nil
 }
@@ -102,13 +113,17 @@ func (b *Binance) createMsg(from types.AccAddress, fromCoins types.Coins, transf
 }
 
 func (b *Binance) parseTx(transfers []msg.Transfer) msg.SendMsg {
-	fromAddr := b.keyManager.GetAddr()
+	fromAddr := b.GetAddress()
+	addr, err := types.AccAddressFromBech32(fromAddr)
+	if nil != err {
+		b.logger.Error().Str("address", fromAddr).Err(err).Msg("fail to parse address")
+	}
 	fromCoins := types.Coins{}
 	for _, t := range transfers {
 		t.Coins = t.Coins.Sort()
 		fromCoins = fromCoins.Plus(t.Coins)
 	}
-	return b.createMsg(fromAddr, fromCoins, transfers)
+	return b.createMsg(addr, fromCoins, transfers)
 }
 
 // GetAddress return current signer address
@@ -132,6 +147,11 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 			amount := coin.Amount
 			asset := coin.Asset
 			if common.IsRuneAsset(coin.Asset) {
+				if b.isTestNet {
+					asset = common.RuneA1FAsset
+				} else {
+					asset = common.RuneB1AAsset
+				}
 				asset = common.RuneAsset()
 			}
 			payload = append(payload, msg.Transfer{
@@ -148,12 +168,12 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 	if len(payload) == 0 {
 		return nil, nil, nil
 	}
-	fromAddr := b.keyManager.GetAddr()
+	fromAddr := b.GetAddress()
 	sendMsg := b.parseTx(payload)
 	if err := sendMsg.ValidateBasic(); nil != err {
 		return nil, nil, errors.Wrap(err, "invalid send msg")
 	}
-	acc, err := b.queryClient.GetAccount(fromAddr.String())
+	acc, err := b.queryClient.GetAccount(fromAddr)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "fail to get account info")
 	}
@@ -166,15 +186,14 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 		Sequence:      acc.Sequence,
 		AccountNumber: acc.Number,
 	}
-
+	param := map[string]string{
+		"sync": "true",
+	}
 	rawBz, err := b.keyManager.Sign(signMsg)
 	if nil != err {
 		return nil, nil, errors.Wrap(err, "fail to sign message")
 	}
 	hexTx := []byte(hex.EncodeToString(rawBz))
-	param := map[string]string{
-		"sync": "true",
-	}
 	return hexTx, param, nil
 }
 

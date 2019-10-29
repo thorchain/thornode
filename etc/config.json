@@ -21,7 +21,8 @@
   },
   "binance": {
     "private_key": "",
-    "dex_host": "testnet-dex.binance.org"
+    "dex_host": "testnet-dex.binance.org",
+    "use_tss": false
   },
   "metric": {
     "enabled": true
