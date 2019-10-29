@@ -175,9 +175,10 @@ describe "API Tests" do
             tx = makeTx(memo: "outbound:#{i}", hash:newTxId, sender:TRUST_BNB_ADDRESS)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
+            puts resp.body.inspect
 
             # wait for 1s give statechain more time to process the tx
-            sleep(1)
+            sleep(6)
             resp = get("/tx/#{txid}")
             expect(resp.code).to eq("200")
             expect(resp.body['txhash']).to eq(newTxId), resp.body.inspect
