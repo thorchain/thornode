@@ -1,0 +1,72 @@
+version: '3'
+
+services:
+  observer:
+    hostname: observer
+    build:
+      context: ..
+      dockerfile: ./docker/dockerfiles/observer.Dockerfile
+    image: thornode-observer
+    restart: unless-stopped
+    environment:
+      CHAIN_HOST: thorapi:1317
+    entrypoint:
+      /docker/scripts/observer.sh
+    depends_on:
+      - thord
+    links:
+      - thord
+    volumes:
+      - ${PWD}:/docker
+      - ${HOME}/.thornode/standalone/.ssd:/root/.ssd
+    command: ["observed", "-c", "/etc/observe/observed/config.json"]
+
+  signer:
+    hostname: signer
+    build:
+      context: ..
+      dockerfile: ./docker/dockerfiles/signer.Dockerfile
+    image: thornode-signer
+    restart: unless-stopped
+    environment:
+      CHAIN_HOST: thorapi:1317
+    entrypoint:
+      /docker/scripts/signer.sh
+    depends_on:
+      - thord
+    links:
+      - thord
+    volumes:
+      - ${PWD}:/docker
+      - ${HOME}/.thornode/standalone/keys:/root/.signer
+    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+
+  thord:
+    hostname: thord
+    build:
+      context: ..
+      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
+    image: thornode-statechain
+    environment:
+      - NODES=1
+    entrypoint:
+      /docker/scripts/genesis.sh
+    volumes:
+      - /tmp/genesis:/tmp/shared
+      - ${PWD}:/docker
+      - ${HOME}/.thornode/standalone/.ssd:/root/.ssd
+    command: ["ssd", "start", "--rpc.laddr tcp://0.0.0.0:26657"]
+
+  thorapi:
+    hostname: thorapi
+    build:
+      context: ..
+      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
+    depends_on:
+      - thord
+    links:
+      - thord
+    image: thornode-statechain
+    volumes:
+      - ${HOME}/.thornode/standalone/.sscli:/root/.sscli
+    command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317"]

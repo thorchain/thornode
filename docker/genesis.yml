@@ -1,0 +1,63 @@
+version: '3'
+
+services:
+  observer1:
+    hostname: observer1
+    build:
+      context: ..
+      dockerfile: ./dockerfiles/observer.Dockerfile
+    image: thornode-observer
+    environment:
+      CHAIN_HOST: thorapi1:1317
+    entrypoint:
+      ./scripts/observer.sh
+    depends_on:
+      statechain1
+    links:
+      - statechain1
+    volumes:
+      - .:.
+
+  signer1:
+    hostname: signer1
+    build:
+      context: ..
+      dockerfile: ./dockerfiles/signer.Dockerfile
+    image: thornode-signer
+    environment:
+      CHAIN_HOST: thorapi1:1317
+    entrypoint:
+      ./scripts/signer.sh
+    depends_on:
+      statechain1
+    links:
+      statechain1
+    volumes:
+      - .:.
+
+  thord1:
+    hostname: thord1
+    build:
+      context: ..
+      dockerfile: ./dockerfiles/statechain.Dockerfile
+    image: thornode-statechain
+    environment:
+      - NODES=1
+    entrypoint:
+      ./scripts/genesis.sh
+    volumes:
+      - /tmp/genesis:/tmp/shared
+      - .:.
+    command: ["ssd", "start", "--rpc.laddr tcp://0.0.0.0:26657"]
+
+  thorapi1:
+    hostname: thorapi1
+    build:
+      context: ..
+      dockerfile: ./dockerfiles/statechain.Dockerfile
+    depends_on:
+      - thord1
+    links:
+      - thord1
+    image: thornode-statechain
+    command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317"]
