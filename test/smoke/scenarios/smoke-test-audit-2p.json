@@ -586,7 +586,7 @@
             },
             {
               "symbol": "BNB",
-              "amount": 0.55916667
+              "amount": 0.55991667
             }
           ]
         },
@@ -789,7 +789,7 @@
             },
             {
               "symbol": "BNB",
-              "amount": 0.39849999
+              "amount": 0.49819999
             }
           ]
         }
@@ -827,7 +827,7 @@
             },
             {
               "symbol": "BNB",
-              "amount": 0.29789999
+              "amount": 0.49699999
             }
           ]
         }
@@ -853,7 +853,7 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 499.14935682
+              "amount": 499.09945968
             },
             {
               "symbol": "LOK-3C0",
@@ -861,7 +861,7 @@
             },
             {
               "symbol": "BNB",
-              "amount": 0.29752499
+              "amount": 0.49662499
             }
           ]
         }
@@ -887,7 +887,7 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 499.14935681
+              "amount": 499.09945967
             },
             {
               "symbol": "LOK-3C0",
@@ -895,7 +895,7 @@
             },
             {
               "symbol": "BNB",
-              "amount": 0.29714999
+              "amount": 0.49624999
             }
           ]
         }
@@ -922,7 +922,7 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 498.89876827
+              "amount": 498.79891902
             },
             {
               "symbol": "LOK-3C0",
@@ -930,7 +930,7 @@
             },
             {
               "symbol": "BNB",
-              "amount": 0.29714999
+              "amount": 0.49587499
             }
           ]
         }
@@ -956,7 +956,7 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 398.89876827
+              "amount": 398.79891902
             },
             {
               "symbol": "LOK-3C0",
@@ -990,7 +990,7 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 477.21600557
+              "amount": 489.89671246
             },
             {
               "symbol": "LOK-3C0",
@@ -1026,7 +1026,7 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 476.94017861
+              "amount": 489.56595523
             },
             {
               "symbol": "LOK-3C0",
@@ -1062,7 +1062,7 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 376.94017861
+              "amount": 389.56595523
             },
             {
               "symbol": "LOK-3C0",
@@ -1097,7 +1097,7 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 376.94017861
+              "amount": 389.56595523
             },
             {
               "symbol": "LOK-3C0",
@@ -1131,7 +1131,7 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 418.02018408
+              "amount": 430.61217995
             },
             {
               "symbol": "LOK-3C0",
@@ -1139,7 +1139,7 @@
             },
             {
               "symbol": "BNB",
-              "amount": 0.09452499
+              "amount": 0.29332499
             }
           ]
         }
@@ -1165,15 +1165,15 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 368.02018408
+              "amount": 380.61217995
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 498.45710312
+              "amount": 498.41655232
             },
             {
               "symbol": "BNB",
-              "amount": 0.09414999
+              "amount": 0.29294999
             }
           ]
         }
@@ -1199,15 +1199,15 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 368.02018408
+              "amount": 380.61217995
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 448.45710312
+              "amount": 448.41655232
             },
             {
               "symbol": "BNB",
-              "amount": 0.14139339
+              "amount": 0.33424417
             }
           ]
         }
@@ -1233,15 +1233,15 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 368.02018408
+              "amount": 380.61217995
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 488.58527035
+              "amount": 492.73362293
             },
             {
               "symbol": "BNB",
-              "amount": 0.09101839
+              "amount": 0.28386917
             }
           ]
         }
