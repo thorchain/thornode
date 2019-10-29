@@ -3,7 +3,6 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/binance-chain/go-sdk/common/types"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -39,9 +38,6 @@ func (PubKeyTestSuite) TestPubKey(c *C) {
 	c.Assert(pk2.Equals(pk), Equals, true)
 }
 func (PubKeyTestSuite) TestStuff(c *C) {
-	if err := os.Setenv("NET", "testnet"); nil != err {
-		panic(err)
-	}
 	address := "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"
 	buf1, err := types.GetFromBech32(address, "bnb")
 	c.Assert(err, IsNil)

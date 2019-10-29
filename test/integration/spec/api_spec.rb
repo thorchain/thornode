@@ -78,6 +78,13 @@ describe "API Tests" do
 
   end
 
+  context "Show supporting chains" do
+    it "should have BNB in the list of support chains" do
+      resp = get("/chains")
+      expect(resp.body[0]).to eq("BNB"), resp.body.inspect
+    end
+  end
+
   context "Stake/Unstake" do
 
     coins = [

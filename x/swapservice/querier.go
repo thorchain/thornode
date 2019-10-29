@@ -20,6 +20,8 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		ctx.Logger().Info("query", "path", path[0])
 		switch path[0] {
+		case q.QueryChains.Key:
+			return queryChains(ctx, req, keeper)
 		case q.QueryPool.Key:
 			return queryPool(ctx, path[1:], req, keeper, poolAddressMgr)
 		case q.QueryPools.Key:
@@ -89,6 +91,20 @@ func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorMana
 		ctx.Logger().Error("fail to marshal validator response to json", err)
 		return nil, sdk.ErrInternal("fail to marshal validator response to json")
 	}
+	return res, nil
+}
+
+func queryChains(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	chains, err := keeper.GetChains(ctx)
+	if nil != err {
+		return nil, sdk.ErrInternal("fail to get chains")
+	}
+	res, err := codec.MarshalJSONIndent(keeper.cdc, chains)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal current chains to json", err)
+		return nil, sdk.ErrInternal("fail to marshal chains to json")
+	}
+
 	return res, nil
 }
 

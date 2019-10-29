@@ -469,7 +469,7 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	ps, err := w.keeper.GetPoolStaker(w.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	c.Assert(ps.TotalUnits.GT(sdk.ZeroUint()), Equals, true)
-
+	c.Check(w.keeper.SupportedChain(w.ctx, common.BNBChain), Equals, true)
 }
 
 func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
