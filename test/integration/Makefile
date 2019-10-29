@@ -12,6 +12,7 @@ install:
 	make -C ../.. setup
 
 run:
+	env
 	NET=oops make -C ../.. start-daemon > /dev/stdout 2>&1 &
 	NET=oops make -C ../.. start-rest > /var/log/rest.log 2>&1 &
 
