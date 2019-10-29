@@ -10,7 +10,7 @@ const MaxWithdrawBasisPoints = 10000
 
 // MsgSetUnStake is used to withdraw
 type MsgSetUnStake struct {
-	PublicAddress       common.Address `json:"public_address"`        // it should be the public address
+	RuneAddress         common.Address `json:"rune_address"`          // it should be the rune address
 	WithdrawBasisPoints sdk.Uint       `json:"withdraw_basis_points"` // withdraw basis points
 	Asset               common.Asset   `json:"asset"`                 // asset asset asset
 	RequestTxHash       common.TxID    `json:"request_tx_hash"`       // request tx hash on chain
@@ -18,9 +18,9 @@ type MsgSetUnStake struct {
 }
 
 // NewMsgSetUnStake is a constructor function for MsgSetPoolData
-func NewMsgSetUnStake(publicAddress common.Address, withdrawBasisPoints sdk.Uint, asset common.Asset, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetUnStake {
+func NewMsgSetUnStake(runeAddress common.Address, withdrawBasisPoints sdk.Uint, asset common.Asset, requestTxHash common.TxID, signer sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
-		PublicAddress:       publicAddress,
+		RuneAddress:         runeAddress,
 		WithdrawBasisPoints: withdrawBasisPoints,
 		Asset:               asset,
 		RequestTxHash:       requestTxHash,
@@ -42,10 +42,10 @@ func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
 	if msg.Asset.IsEmpty() {
 		return sdk.ErrUnknownRequest("Pool Asset cannot be empty")
 	}
-	if msg.PublicAddress.IsEmpty() {
+	if msg.RuneAddress.IsEmpty() {
 		return sdk.ErrUnknownRequest("Address cannot be empty")
 	}
-	if !msg.PublicAddress.IsChain(common.BNBChain) {
+	if !msg.RuneAddress.IsChain(common.BNBChain) {
 		return sdk.ErrUnknownRequest("Address must be a BNB address")
 	}
 	if msg.RequestTxHash.IsEmpty() {
