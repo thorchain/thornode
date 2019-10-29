@@ -36,6 +36,7 @@ type Rule struct {
 	Coins       []Coin   `json:"coins"`
 	Memo        string   `json:"memo"`
 	SendTo      string   `json:"send_to"`
+	SlipLimit   int64    `json:"slip_limit"`
 	Check       Check    `json:"check"`
 }
 

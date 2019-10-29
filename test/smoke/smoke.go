@@ -1,6 +1,7 @@
 package smoke
 
 import (
+	"fmt"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -162,6 +163,10 @@ func (s *Smoke) Run() {
 			if rule.SendTo != "" {
 				sendTo := s.ToAddr(rule.SendTo)
 				memo = memo + ":" + sendTo.String()
+			}
+
+			if rule.SlipLimit != 0 {
+				memo = fmt.Sprintf("%s:%v", memo, rule.SlipLimit)
 			}
 
 			client, key := s.FromClientKey(rule.From)
@@ -344,14 +349,16 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 			if p.Asset.Symbol == pool.Symbol {
 				// Check pool units
 				if p.PoolUnits != pool.Units {
-					log.Printf("%v: FAIL - Pool Units - Units do not match! %f versus %f",
+					log.Printf("%v: FAIL - Pool Units (%v) - Units do not match! %f versus %f",
 						rule.Description,
+						p.Asset.Symbol,
 						pool.Units,
 						p.PoolUnits,
 					)
 				} else {
-					log.Printf("%v: PASS - Pool Units - %v (%v)",
+					log.Printf("%v: PASS - Pool Units (%v) - %v (%v)",
 						rule.Description,
+						p.Asset.Symbol,
 						address,
 						rule.Memo,
 					)
@@ -359,14 +366,16 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 
 				// Check Rune
 				if p.BalanceRune != pool.Rune {
-					log.Printf("%v: FAIL - Pool Rune - Balance does not match! %f versus %f",
+					log.Printf("%v: FAIL - Pool Rune (%v) - Balance does not match! %f versus %f",
 						rule.Description,
+						p.Asset.Symbol,
 						pool.Rune,
 						p.BalanceRune,
 					)
 				} else {
-					log.Printf("%v: PASS - Pool Rune - %v (%v)",
+					log.Printf("%v: PASS - Pool Rune (%v) - %v (%v)",
 						rule.Description,
+						p.Asset.Symbol,
 						address,
 						rule.Memo,
 					)
@@ -374,34 +383,19 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 
 				// Check asset
 				if p.BalanceAsset != pool.Asset {
-					log.Printf("%v: FAIL - Pool Asset - Balance does not match! %f versus %f",
+					log.Printf("%v: FAIL - Pool Asset (%v) - Balance does not match! %f versus %f",
 						rule.Description,
+						p.Asset.Symbol,
 						pool.Asset,
 						p.BalanceAsset,
 					)
 				} else {
-					log.Printf("%v: PASS - Pool Asset - %v (%v)",
+					log.Printf("%v: PASS - Pool Asset (%v) - %v (%v)",
 						rule.Description,
+						p.Asset.Symbol,
 						address,
 						rule.Memo,
 					)
-				}
-
-				// Check status (used only for enabling a pool)
-				if pool.Status != "" {
-					if pool.Status != p.Status {
-						log.Printf("%v: FAIL - Pool Status - Status does not match! %v versus %v",
-							rule.Description,
-							pool.Status,
-							p.Status,
-						)
-					} else {
-						log.Printf("%v: PASS - Pool Status - %v (%v)",
-							rule.Description,
-							address,
-							rule.Memo,
-						)
-					}
 				}
 			}
 		}
