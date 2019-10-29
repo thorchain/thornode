@@ -7,7 +7,7 @@ cache:
 before_script:
   - mkdir -p .cache
   - export GOPATH="$CI_PROJECT_DIR/.cache"
-  - echo "Commit: $(git rev-parse --verify HEAD)"
+  - git rev-parse --verify HEAD
 
 stages:
   - test
