@@ -62,6 +62,11 @@ func (pam *PoolAddressManager) Start() error {
 	pam.rwMutex.Lock()
 	defer pam.rwMutex.Unlock()
 	pam.poolAddresses = pa
+	currentAddr, err := pa.Current.GetAddress(common.BNBChain)
+	if nil != err {
+		return err
+	}
+	pam.logger.Info().Str("addr", currentAddr.String()).Msg("current pool address")
 	go pam.updatePoolAddresses()
 	return nil
 }

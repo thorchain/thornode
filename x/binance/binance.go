@@ -115,12 +115,24 @@ func (b *Binance) parseTx(transfers []msg.Transfer) msg.SendMsg {
 func (b *Binance) GetAddress() string {
 	return b.keyManager.GetAddr().String()
 }
-
+func (b *Binance) isSignerAddressMatch(poolAddr, signerAddr string) bool {
+	pubKey, err := common.NewPubKeyFromHexString(poolAddr)
+	if nil != err {
+		b.logger.Error().Err(err).Msg("fail to create pub key from the pool address")
+		return false
+	}
+	bnbAddress, err := pubKey.GetAddress(common.BNBChain)
+	if nil != err {
+		b.logger.Error().Err(err).Msg("fail to create bnb address from the pub key")
+		return false
+	}
+	return strings.EqualFold(bnbAddress.String(), signerAddr)
+}
 func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) {
 	signerAddr := b.GetAddress()
 	var payload []msg.Transfer
 	for _, txn := range txOut.TxArray {
-		if !strings.EqualFold(txn.PoolAddress.String(), signerAddr) {
+		if !b.isSignerAddressMatch(txn.PoolAddress.String(), signerAddr) {
 			b.logger.Debug().Str("signer addr", signerAddr).Str("pool addr", txn.PoolAddress.String()).Msg("address doesn't match ignore")
 			continue
 		}

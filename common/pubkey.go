@@ -5,8 +5,10 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/btcsuite/btcutil/bech32"
+	"github.com/cosmos/cosmos-sdk/types"
 )
 
 // PubKey used in statechain
@@ -27,6 +29,14 @@ func NewPubKeyFromHexString(key string) (PubKey, error) {
 		return nil, fmt.Errorf("fail to decode hex string,err:%w", err)
 	}
 	return PubKey(buf), nil
+}
+
+func NewPubKeyFromBech32(key, prefix string) (PubKey, error) {
+	buf, err := types.GetFromBech32(key, prefix)
+	if nil != err {
+		return EmptyPubKey, fmt.Errorf("fail to decode pub key from bech 32")
+	}
+	return NewPubKey(buf), nil
 }
 
 // Equals check whether two are the same
@@ -72,6 +82,15 @@ func (pubKey *PubKey) UnmarshalJSON(data []byte) error {
 	var s string
 	err := json.Unmarshal(data, &s)
 	if err != nil {
+		return nil
+	}
+	// this it to make our genesis easier, cause we can get the public key from tbnbc
+	if strings.HasPrefix(s, "tbnb") {
+		pKey, err := NewPubKeyFromBech32(s, "tbnb")
+		if nil != err {
+			return err
+		}
+		*pubKey = pKey
 		return nil
 	}
 	pKey, err := NewPubKeyFromHexString(s)

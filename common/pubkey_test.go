@@ -3,10 +3,11 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
+	"github.com/binance-chain/go-sdk/common/types"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/tendermint/tendermint/crypto"
-
 	. "gopkg.in/check.v1"
 )
 
@@ -36,4 +37,15 @@ func (PubKeyTestSuite) TestPubKey(c *C) {
 	err = json.Unmarshal(result, &pk2)
 	c.Assert(err, IsNil)
 	c.Assert(pk2.Equals(pk), Equals, true)
+}
+func (PubKeyTestSuite) TestStuff(c *C) {
+	if err := os.Setenv("NET", "testnet"); nil != err {
+		panic(err)
+	}
+	address := "tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"
+	buf1, err := types.GetFromBech32(address, "tbnb")
+	c.Assert(err, IsNil)
+	pk1 := NewPubKey(buf1)
+	addr, err := pk1.GetAddress(BNBChain)
+	fmt.Println(addr.String())
 }
