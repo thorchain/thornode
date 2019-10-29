@@ -178,8 +178,6 @@ describe "API Tests" do
             puts "here"
             puts resp.body.inspect
 
-            # wait for 1s give statechain more time to process the tx
-            sleep(6)
             resp = get("/tx/#{txid}")
             expect(resp.code).to eq("200")
             expect(resp.body['txhash']).to eq(newTxId), resp.body.inspect

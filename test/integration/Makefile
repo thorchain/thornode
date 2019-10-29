@@ -12,8 +12,8 @@ install:
 	make -C ../.. setup
 
 run:
-	make -C ../.. start-daemon > /dev/stdout 2>&1 &
-	make -C ../.. start-rest > /var/log/rest.log 2>&1 &
+	NET=oops make -C ../.. start-daemon > /dev/stdout 2>&1 &
+	NET=oops make -C ../.. start-rest > /var/log/rest.log 2>&1 &
 
 start-daemon:
 	make -C ../.. reset start-daemon
