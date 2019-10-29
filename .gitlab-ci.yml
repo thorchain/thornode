@@ -37,7 +37,12 @@ integration:test:
   variables:
     NET: "prod" #as long as it is not test net
   script:
-    - make -C ./test/integration install setup run wait-for-blockchain test-internal; cat /var/log/daemon.log
+    - make -C ./test/integration install setup run wait-for-blockchain test-internal
+  artifacts:
+    paths:
+      - /var/log/daemon.log
+      - /var/log/rest.log
+    expire_in: 1 week
 
 # Build docker image
 build:

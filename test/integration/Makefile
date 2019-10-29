@@ -12,7 +12,7 @@ install:
 	make -C ../.. setup
 
 run:
-	make -C ../.. start-daemon --log_level "*:debug" > /var/log/daemon.log 2>&1 &
+	make -C ../.. start-daemon > /var/log/daemon.log 2>&1 &
 	make -C ../.. start-rest > /var/log/rest.log 2>&1 &
 
 start-daemon:
