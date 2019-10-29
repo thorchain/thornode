@@ -32,8 +32,8 @@ import (
 )
 
 const (
-	// folder name for statechain sscli
-	StatechainCliFolderName = `.sscli`
+	// folder name for statechain thorcli
+	StatechainCliFolderName = `.thorcli`
 )
 
 // StateChainBridge will be used to send tx to statechain

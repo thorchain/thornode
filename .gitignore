@@ -17,7 +17,7 @@ observe
 alice.txt
 jack.txt
 bin/
-ssd
+thord
 *.exe
 
 .testCoverage.txt
