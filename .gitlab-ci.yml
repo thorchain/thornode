@@ -1,8 +1,12 @@
 image: golang:1.13
 
+cache:
+  paths:
+    - .cache
+
 before_script:
-  - git rev-parse --verify HEAD
-  - env
+  - mkdir -p .cache
+  - export GOPATH="$CI_PROJECT_DIR/.cache"
 
 stages:
   - test
