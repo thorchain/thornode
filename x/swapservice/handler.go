@@ -301,9 +301,9 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 
 // handleMsgSetUnstake process unstake
 func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgSetUnStake) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.PublicAddress, msg.WithdrawBasisPoints))
+	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.RuneAddress, msg.WithdrawBasisPoints))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress, "asset", msg.Asset, "withdraw basis points", msg.WithdrawBasisPoints)
+		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "rune address", msg.RuneAddress, "asset", msg.Asset, "withdraw basis points", msg.WithdrawBasisPoints)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	if err := keeper.GetPool(ctx, msg.Asset).EnsureValidPoolStatus(msg); nil != err {
@@ -320,7 +320,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error("fail to get pool staker", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	stakerUnit := poolStaker.GetStakerUnit(msg.PublicAddress)
+	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 
 	runeAmt, assetAmount, units, err := unstake(ctx, keeper, msg)
 	if nil != err {

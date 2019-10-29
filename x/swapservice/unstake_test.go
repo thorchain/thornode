@@ -125,7 +125,7 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 // TestValidateUnstake is to test validateUnstake function
 func (s UnstakeSuite) TestValidateUnstake(c *C) {
 	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
-	publicAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
+	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if nil != err {
 		c.Error("fail to create new BNB Address")
 	}
@@ -135,20 +135,20 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 		expectedError error
 	}{
 		{
-			name: "empty-public-address",
+			name: "empty-rune-address",
 			msg: MsgSetUnStake{
-				PublicAddress:       "",
+				RuneAddress:         "",
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
-			expectedError: errors.New("empty public address"),
+			expectedError: errors.New("empty rune address"),
 		},
 		{
 			name: "empty-withdraw-basis-points",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.ZeroUint(),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -159,7 +159,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 		{
 			name: "empty-request-txhash",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "",
@@ -170,7 +170,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 		{
 			name: "empty-asset",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.Asset{},
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -181,7 +181,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 		{
 			name: "invalid-basis-point",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10001),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -192,7 +192,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 		{
 			name: "invalid-pool-notexist",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.Asset{Chain: "BNB", Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -203,7 +203,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 		{
 			name: "all-good",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -230,7 +230,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 func (UnstakeSuite) TestUnstake(c *C) {
 	ps := mocks.MockPoolStorage{}
 	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
-	publicAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
+	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if nil != err {
 		c.Error("fail to create new BNB Address")
 	}
@@ -243,9 +243,9 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		expectedError error
 	}{
 		{
-			name: "empty-public-address",
+			name: "empty-rune-address",
 			msg: MsgSetUnStake{
-				PublicAddress:       "",
+				RuneAddress:         "",
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -254,12 +254,12 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("empty public address"),
+			expectedError: errors.New("empty rune address"),
 		},
 		{
 			name: "empty-withdraw-basis-points",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.ZeroUint(),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -273,7 +273,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		{
 			name: "empty-request-txhash",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "",
@@ -287,7 +287,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		{
 			name: "empty-asset",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.Asset{},
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -302,7 +302,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		{
 			name: "invalid-basis-point",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10001),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -316,7 +316,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		{
 			name: "invalid-pool-notexist",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.Asset{Chain: "BNB", Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -330,7 +330,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		{
 			name: "invalid-pool-staker-notexist",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.Asset{Chain: "BNB", Ticker: "NOTEXISTSTICKER", Symbol: "NOTEXISTSTICKER"},
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -344,7 +344,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		{
 			name: "invalid-staker-pool-notexist",
 			msg: MsgSetUnStake{
-				PublicAddress:       common.Address("NOTEXISTSTAKER"),
+				RuneAddress:         common.Address("NOTEXISTSTAKER"),
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -358,7 +358,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		{
 			name: "nothing-to-withdraw",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -372,7 +372,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		{
 			name: "all-good",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -386,7 +386,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 		{
 			name: "all-good-half",
 			msg: MsgSetUnStake{
-				PublicAddress:       publicAddress,
+				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(5000),
 				Asset:               common.BNBAsset,
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
@@ -416,7 +416,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 }
 
 func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
-	publicAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
+	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if nil != err {
 		c.Error("fail to create new BNB Address")
 	}
@@ -429,7 +429,7 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 		BalanceAsset: sdk.NewUint(100 * common.One),
 		Asset:        common.BNBAsset,
 		PoolUnits:    sdk.NewUint(100 * common.One),
-		PoolAddress:  publicAddress,
+		PoolAddress:  runeAddress,
 		Status:       PoolEnabled,
 	}
 	store.SetPool(ctx, pool)
@@ -438,7 +438,7 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 		TotalUnits: sdk.NewUint(100 * common.One),
 		Stakers: []StakerUnit{
 			StakerUnit{
-				RuneAddress: publicAddress,
+				RuneAddress: runeAddress,
 				Units:       sdk.NewUint(100 * common.One),
 				PendingRune: sdk.ZeroUint(),
 			},
@@ -446,7 +446,7 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 	}
 	store.SetPoolStaker(ctx, common.BNBAsset, poolStaker)
 	stakerPool := StakerPool{
-		RuneAddress: publicAddress,
+		RuneAddress: runeAddress,
 		PoolUnits: []*StakerPoolItem{
 			&StakerPoolItem{
 				Asset: common.BNBAsset,
@@ -461,6 +461,6 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 			},
 		},
 	}
-	store.SetStakerPool(ctx, publicAddress, stakerPool)
+	store.SetStakerPool(ctx, runeAddress, stakerPool)
 	return store
 }

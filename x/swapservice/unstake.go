@@ -7,8 +7,8 @@ import (
 )
 
 func validateUnstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) error {
-	if msg.PublicAddress.IsEmpty() {
-		return errors.New("empty public address")
+	if msg.RuneAddress.IsEmpty() {
+		return errors.New("empty rune address")
 	}
 	if msg.RequestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
@@ -40,7 +40,7 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.Wrap(err, "can't find pool staker")
 
 	}
-	stakerPool, err := keeper.GetStakerPool(ctx, msg.PublicAddress)
+	stakerPool, err := keeper.GetStakerPool(ctx, msg.RuneAddress)
 	if nil != err {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.Wrap(err, "can't find staker pool")
 	}
@@ -48,7 +48,7 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 	poolUnits := pool.PoolUnits
 	poolRune := pool.BalanceRune
 	poolAsset := pool.BalanceAsset
-	stakerUnit := poolStaker.GetStakerUnit(msg.PublicAddress)
+	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 	fStakerUnit := stakerUnit.Units
 	if !stakerUnit.Units.GT(sdk.ZeroUint()) {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("nothing to withdraw")
@@ -74,7 +74,7 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 	poolStaker.TotalUnits = pool.PoolUnits
 	if unitAfter.IsZero() {
 		// just remove it
-		poolStaker.RemoveStakerUnit(msg.PublicAddress)
+		poolStaker.RemoveStakerUnit(msg.RuneAddress)
 	} else {
 		stakerUnit.Units = unitAfter
 		poolStaker.UpsertStakerUnit(stakerUnit)
@@ -89,7 +89,7 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 	// update staker pool
 	keeper.SetPool(ctx, pool)
 	keeper.SetPoolStaker(ctx, msg.Asset, poolStaker)
-	keeper.SetStakerPool(ctx, msg.PublicAddress, stakerPool)
+	keeper.SetStakerPool(ctx, msg.RuneAddress, stakerPool)
 	return withdrawRune, withDrawAsset, fStakerUnit.Sub(unitAfter), nil
 }
 
