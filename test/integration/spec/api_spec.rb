@@ -161,6 +161,7 @@ describe "API Tests" do
       found = false
       until i > 100
         resp = get("/txoutarray/#{i}")
+        puts resp.body
         if not resp.body['chains'].include?("BNB")
           i = i + 1
           next
