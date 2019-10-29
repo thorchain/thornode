@@ -49,7 +49,7 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 	if err := validateStakeMessage(ctx, keeper, asset, requestTxHash, publicAddress); nil != err {
 		return sdk.ZeroUint(), errors.Wrap(err, "invalid request")
 	}
-	if stakeAssetAmount.IsZero() && stakeAssetAmount.IsZero() {
+	if stakeRuneAmount.IsZero() && stakeAssetAmount.IsZero() {
 		return sdk.ZeroUint(), errors.New("both rune and asset is zero")
 	}
 	pool := keeper.GetPool(ctx, asset)
