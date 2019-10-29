@@ -95,10 +95,7 @@ func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorMana
 }
 
 func queryChains(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	chains, err := keeper.GetChains(ctx)
-	if nil != err {
-		return nil, sdk.ErrInternal("fail to get chains")
-	}
+	chains := keeper.GetChains(ctx)
 	res, err := codec.MarshalJSONIndent(keeper.cdc, chains)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal current chains to json", err)

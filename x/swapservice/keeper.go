@@ -176,7 +176,7 @@ func (k Keeper) GetPoolIndex(ctx sdk.Context) (PoolIndex, error) {
 }
 
 // GetChains will go through all the pools we have , and return a list of chains
-func (k Keeper) GetChains(ctx sdk.Context) ([]common.Chain, error) {
+func (k Keeper) GetChainsFromPool(ctx sdk.Context) ([]common.Chain, error) {
 	chainMap := make(map[common.Chain]bool)
 	chains := make([]common.Chain, 0)
 	iter := k.GetPoolDataIterator(ctx)

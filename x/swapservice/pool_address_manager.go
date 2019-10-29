@@ -88,7 +88,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	if addresses.Previous.Equals(addresses.Current) {
 		return nil
 	}
-	chains, err := k.GetChains(ctx)
+	chains, err := k.GetChainsFromPool(ctx)
 	if nil != err {
 		return fmt.Errorf("fail to get all chains from pool,err:%w", err)
 	}
