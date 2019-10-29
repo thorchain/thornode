@@ -18,6 +18,9 @@ while true; do
   sscli config indent true
   sscli config trust-node true
 
+  if [ -z "${NET:-}" ]; then
+    echo "ProdNetwork"
+  fi
   if [ -z "${POOL_ADDRESS:-}" ]; then
     echo "empty pool address"
     POOL_ADDRESS=bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
