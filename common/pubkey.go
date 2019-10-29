@@ -84,10 +84,21 @@ func (pubKey *PubKey) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return nil
 	}
-	// this it to make our genesis easier, cause we can get the public key from tbnbc
-	chainNetWork := GetCurrentChainNetwork()
-	if strings.HasPrefix(s, BNBChain.AddressPrefix(chainNetWork)) {
-		pKey, err := NewPubKeyFromBech32(s, BNBChain.AddressPrefix(chainNetWork))
+	// this is temporary to make setup our genesis easier, because usually it is easier to get the pool BNB address
+	// get the pub key , you will need to convert it.
+	addrPrefix := ""
+	isBNBAddr := false
+	if strings.HasPrefix(s, BNBChain.AddressPrefix(TestNetwork)) {
+		isBNBAddr = true
+		addrPrefix = BNBChain.AddressPrefix(TestNetwork)
+	}
+	if strings.HasPrefix(s, BNBChain.AddressPrefix(ProdNetwork)) {
+		isBNBAddr = true
+		addrPrefix = BNBChain.AddressPrefix(ProdNetwork)
+	}
+
+	if isBNBAddr {
+		pKey, err := NewPubKeyFromBech32(s, addrPrefix)
 		if nil != err {
 			return err
 		}
