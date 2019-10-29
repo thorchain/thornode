@@ -164,6 +164,12 @@ func (StakeSuite) TestStake(c *C) {
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	})
+	// stake asymmetically
+	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.ZeroUint(), bnbAddress, txId)
+	c.Assert(err, IsNil)
+	_, err = stake(ctx, ps, common.BNBAsset, sdk.ZeroUint(), sdk.NewUint(100*common.One), bnbAddress, txId)
+	c.Assert(err, IsNil)
+
 	_, err = stake(ctx, ps, notExistPoolStakerAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, txId)
 	c.Assert(err, NotNil)
 	ps.SetPool(ctx, Pool{
