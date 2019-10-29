@@ -2,6 +2,7 @@ image: golang:1.13
 
 before_script:
   - git rev-parse --verify HEAD
+  - env
 
 stages:
   - test
