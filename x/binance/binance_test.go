@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	. "gopkg.in/check.v1"
@@ -29,6 +30,7 @@ func (*BinancechainSuite) SetUpSuite(c *C) {
 		},
 	}
 	resty.DefaultClient.SetTransport(trSkipVerify)
+	c.Assert(os.Setenv("NET", "testnet"), IsNil)
 }
 
 const binanceNodeInfo = `{"node_info":{"protocol_version":{"p2p":7,"block":10,"app":0},"id":"7bbe02b44f45fb8f73981c13bb21b19b30e2658d","listen_addr":"10.201.42.4:27146","network":"Binance-Chain-Nile","version":"0.31.5","channels":"3640202122233038","moniker":"Kita","other":{"tx_index":"on","rpc_address":"tcp://0.0.0.0:27147"}},"sync_info":{"latest_block_hash":"BFADEA1DC558D23CB80564AA3C08C863929E4CC93E43C4925D96219114489DC0","latest_app_hash":"1115D879135E2492A947CF3EB9FE055B9813581084EFE3686A6466C2EC12DB7A","latest_block_height":35493230,"latest_block_time":"2019-08-25T00:54:02.906908056Z","catching_up":false},"validator_info":{"address":"E0DD72609CC106210D1AA13936CB67B93A0AEE21","pub_key":[4,34,67,57,104,143,1,46,100,157,228,142,36,24,128,9,46,170,143,106,160,244,241,75,252,249,224,199,105,23,192,182],"voting_power":100000000000}}`
@@ -117,11 +119,11 @@ func (BinancechainSuite) TestSignTx(c *C) {
 	})
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
-	r, p, err := b2.SignTx(getTxOutFromJsonInput(`{ "height": "1440", "hash": "", "tx_array": [ { "pool_address":"tbnb1fds7yhw7qt9rkxw9pn65jyj004x858ny4xf2dk","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": null } ]}`, c))
+	r, p, err := b2.SignTx(getTxOutFromJsonInput(`{ "height": "1440", "hash": "", "tx_array": [ { "pool_address":"4b61e25dde02ca3b19c50cf549124f7d4c7a1e64","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": null } ]}`, c))
 	c.Assert(r, IsNil)
 	c.Assert(p, IsNil)
 	c.Assert(err, IsNil)
-	r1, p1, err1 := b2.SignTx(getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "pool_address":"tbnb1fds7yhw7qt9rkxw9pn65jyj004x858ny4xf2dk","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [ { "denom": "BNB", "amount": "194765912" } ] } ]}`, c))
+	r1, p1, err1 := b2.SignTx(getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "pool_address":"4b61e25dde02ca3b19c50cf549124f7d4c7a1e64","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [ { "denom": "BNB", "amount": "194765912" } ] } ]}`, c))
 	c.Assert(r1, NotNil)
 	c.Assert(p1, NotNil)
 	c.Assert(err1, IsNil)
