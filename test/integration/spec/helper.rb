@@ -61,6 +61,7 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
     },
     'amount': '1',
   }]
+  puts "Sender #{sender}"
   poolAddr ||= POOL_PUB_KEY
   return {
     'tx': hash,
@@ -85,7 +86,7 @@ def processTx(txs, user="jack", mode='block')
       'from': address
     },
   }.to_json
-  # puts(request.body.to_json)
+  puts(request.body.to_json)
 
   resp = HTTP.request(request)
   if resp.code != "200" 
