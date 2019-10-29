@@ -1,8 +1,8 @@
 require_relative './helper.rb'
 
 # this is a hex encoded public key of bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
-TRUST_BNB_ADDRESS = "fe6431ad7d2e103a953cbfacbe460d6df2f4a7ce"
-
+POOL_PUB_KEY = "fe6431ad7d2e103a953cbfacbe460d6df2f4a7ce"
+TRUST_BNB_ADDRESS = "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"
 describe "API Tests" do
 
   context "Check /ping responds" do
@@ -81,8 +81,8 @@ describe "API Tests" do
   context "Stake/Unstake" do
 
     coins = [
-        {'asset' : {'chain' : 'BNB', 'symbol' : 'RUNE-B1A', 'ticker' : 'RUNE'}, "amount" : "2349500000"},
-        {'asset' : {'chain' : 'BNB', 'symbol' : 'TCAN-014', 'ticker' : 'TCAN'}, "amount" : "334850000"},
+      {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "2349500000"},
+      {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "334850000"},
     ]
     sender = "bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38"
 
@@ -117,12 +117,12 @@ describe "API Tests" do
 
       # make a swap
       coins = [
-          {'asset' : {'chain' : 'BNB', 'symbol' : 'TCAN-014', 'ticker' : 'TCAN'}, "amount" : "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "20000000"},
       ]
       tx = makeTx(
-          memo: "swap:RUNE-B1A:bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq:124958592",
-          coins: coins,
-          hash: txid,
+        memo: "swap:RUNE-B1A:bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq:124958592",
+        coins: coins,
+        hash: txid,
       )
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
@@ -134,9 +134,9 @@ describe "API Tests" do
 
       # another swap ,it should fail due to price protection
       tx1 = makeTx(
-          memo: "swap:RUNE-B1A:bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq:134958590",
-          coins: coins,
-          hash: txid(),
+        memo: "swap:RUNE-B1A:bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq:134958590",
+        coins: coins,
+        hash: txid(),
       )
       resp = processTx(tx1)
       expect(resp.code).to eq("200"), resp.body.inspect
@@ -164,7 +164,7 @@ describe "API Tests" do
             # we have found the block height of our last swap
             found = true
             newTxId = txid()
-            tx = makeTx(memo: "outbound:#{i}", hash: newTxId, sender: TRUST_BNB_ADDRESS)
+            tx = makeTx(memo: "outbound:#{i}", hash:newTxId, sender:TRUST_BNB_ADDRESS)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
 
@@ -193,8 +193,8 @@ describe "API Tests" do
 
     it "add assets to a pool" do
       coins = [
-          {'asset' : {'chain' : 'BNB', 'symbol' : 'RUNE-B1A', 'ticker' : 'RUNE'}, "amount" : "20000000"},
-          {'asset' : {'chain' : 'BNB', 'symbol' : 'TCAN-014', 'ticker' : 'TCAN'}, "amount" : "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "20000000"},
       ]
       tx = makeTx(memo: "add:TCAN-014", coins: coins, sender: sender)
       resp = processTx(tx)
@@ -208,7 +208,7 @@ describe "API Tests" do
 
     it "adds gas" do
       coins = [
-          {'asset' : {'chain' : 'BNB', 'symbol' : 'RUNE-B1A', 'ticker' : 'RUNE'}, "amount" : "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "20000000"},
       ]
       tx = makeTx(memo: "GAS", coins: coins, sender: sender)
       resp = processTx(tx)
