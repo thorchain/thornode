@@ -1,7 +1,7 @@
 require_relative './helper.rb'
 
-# this is a hex encoded public key
-TRUST_BNB_ADDRESS = "c509d5d869cd284aae469a16ff2f6e710b7c2b01"
+# this is a hex encoded public key of bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
+TRUST_BNB_ADDRESS = "fe6431ad7d2e103a953cbfacbe460d6df2f4a7ce"
 
 describe "API Tests" do
 

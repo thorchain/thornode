@@ -42,10 +42,11 @@ func (PubKeyTestSuite) TestStuff(c *C) {
 	if err := os.Setenv("NET", "testnet"); nil != err {
 		panic(err)
 	}
-	address := "tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5"
-	buf1, err := types.GetFromBech32(address, "tbnb")
+	address := "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"
+	buf1, err := types.GetFromBech32(address, "bnb")
 	c.Assert(err, IsNil)
 	pk1 := NewPubKey(buf1)
+	fmt.Println(pk1.String())
 	addr, err := pk1.GetAddress(BNBChain)
 	fmt.Println(addr.String())
 }

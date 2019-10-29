@@ -85,8 +85,9 @@ func (pubKey *PubKey) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	// this it to make our genesis easier, cause we can get the public key from tbnbc
-	if strings.HasPrefix(s, "tbnb") {
-		pKey, err := NewPubKeyFromBech32(s, "tbnb")
+	chainNetWork := GetCurrentChainNetwork()
+	if strings.HasPrefix(s, BNBChain.AddressPrefix(chainNetWork)) {
+		pKey, err := NewPubKeyFromBech32(s, BNBChain.AddressPrefix(chainNetWork))
 		if nil != err {
 			return err
 		}
