@@ -8,6 +8,7 @@ before_script:
   - mkdir -p .cache
   - export GOPATH="$CI_PROJECT_DIR/.cache"
   - git rev-parse --verify HEAD
+  - cat x/swapservice/swap_test.go
 
 stages:
   - test
