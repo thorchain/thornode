@@ -75,6 +75,8 @@ services:
     image: thornode-statechain
     environment:
       CHAIN_DAEMON: thor-daemon:26657
+    expose:
+      - "1317"
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
