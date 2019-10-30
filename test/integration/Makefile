@@ -12,8 +12,8 @@ install:
 	make -C ../.. setup
 
 run:
-	make -C ../.. start-daemon > /var/log/daemon.log 2>&1 &
-	make -C ../.. start-rest > /var/log/rest.log 2>&1 &
+	NET=oops make -C ../.. start-daemon > /dev/stdout 2>&1 &
+	NET=oops make -C ../.. start-rest > /var/log/rest.log 2>&1 &
 
 start-daemon:
 	make -C ../.. reset start-daemon
@@ -34,4 +34,4 @@ sh:
 	docker run -it --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/bepswap/thornode -w /root/go/src/gitlab.com/thorchain/bepswap/thornode -e GOPATH=/root/go -e GOBIN=/go/bin cbarraford/golang-ruby /bin/sh
 
 test:
-	docker run --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/bepswap/thornode -w /root/go/src/gitlab.com/thorchain/bepswap/thornode -e GOPATH=/root/go -e GOBIN=/go/bin cbarraford/golang-ruby make -C ./test/integration install setup run wait-for-blockchain test-internal export validate-genesis
+	docker run --rm -v ${GOPATH}:/root/go -v $(shell pwd)/../..:/root/go/src/gitlab.com/thorchain/bepswap/thornode -w /root/go/src/gitlab.com/thorchain/bepswap/thornode -e GOPATH=/root/go -e GOBIN=/go/bin  cbarraford/golang-ruby make -C ./test/integration install setup run wait-for-blockchain test-internal export validate-genesis

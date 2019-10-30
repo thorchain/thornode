@@ -35,7 +35,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	c.Assert(err, IsNil)
 
 	item := &TxOutItem{
-		PoolAddress: bnbAddress,
+		PoolAddress: GetRandomPubKey(),
 		ToAddress:   bnbAddress,
 		Coins: common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(3980500*common.One)),

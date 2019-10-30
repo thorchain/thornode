@@ -11,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/supply"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -155,7 +156,6 @@ func (k Keeper) GetPoolDataIterator(ctx sdk.Context) sdk.Iterator {
 func (k Keeper) PoolExist(ctx sdk.Context, asset common.Asset) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPool, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
-	fmt.Printf("Pool Exist Key: %s\n", key)
 	return store.Has([]byte(key))
 }
 
@@ -418,9 +418,6 @@ func (k Keeper) EnsureTrustAccountUnique(ctx sdk.Context, account TrustAccount) 
 		}
 		if na.Accounts.ValidatorBEPConsPubKey == account.ValidatorBEPConsPubKey {
 			return errors.Errorf("%s already exist", account.ValidatorBEPConsPubKey)
-		}
-		if na.Accounts.SignerBNBAddress.Equals(account.SignerBNBAddress) {
-			return errors.Errorf("%s already exist", account.SignerBNBAddress)
 		}
 		if na.Accounts.ObserverBEPAddress.Equals(account.ObserverBEPAddress) {
 			return errors.Errorf("%s already exist", account.ObserverBEPAddress)

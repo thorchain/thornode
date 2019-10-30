@@ -3,6 +3,8 @@ package common
 import (
 	"fmt"
 	"strings"
+
+	btypes "github.com/binance-chain/go-sdk/common/types"
 )
 
 const (
@@ -41,4 +43,21 @@ func (c Chain) String() string {
 
 func IsBNBChain(c Chain) bool {
 	return c.Equals(BNBChain)
+}
+
+// AddressPrefix return the address prefix used by the given network (testnet/mainnet)
+func (c Chain) AddressPrefix(cn ChainNetwork) string {
+	switch cn {
+	case TestNet:
+		switch c {
+		case BNBChain:
+			return btypes.TestNetwork.Bech32Prefixes()
+		}
+	case MainNet:
+		switch c {
+		case BNBChain:
+			return btypes.ProdNetwork.Bech32Prefixes()
+		}
+	}
+	return ""
 }
