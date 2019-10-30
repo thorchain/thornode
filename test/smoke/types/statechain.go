@@ -8,9 +8,9 @@ type Pools []struct {
 		Symbol string `json:"symbol"`
 		Ticker string `json:"string"`
 	} `json:"asset"`
-	PoolUnits   int64 `json:"pool_units,string"`
-	PoolAddress string  `json:"pool_address"`
-	Status      string  `json:"status"`
+	PoolUnits   int64  `json:"pool_units,string"`
+	PoolAddress string `json:"pool_address"`
+	Status      string `json:"status"`
 }
 
 type Staker struct {

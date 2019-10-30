@@ -41,8 +41,8 @@ type Rule struct {
 }
 
 type Coin struct {
-	Symbol string  `json:"symbol"`
-	Amount int64 `json:"amount"`
+	Symbol string `json:"symbol"`
+	Amount int64  `json:"amount"`
 }
 
 type Check struct {
@@ -57,15 +57,15 @@ type Binance struct {
 }
 
 type Statechain struct {
-	Units       int64       `json:"units"`
+	Units       int64         `json:"units"`
 	Symbol      string        `json:"symbol"`
-	Rune        int64       `json:"rune"`
-	Asset       int64       `json:"asset"`
+	Rune        int64         `json:"rune"`
+	Asset       int64         `json:"asset"`
 	Status      string        `json:"status"`
 	StakerUnits []StakerUnits `json:"staker_units,omitempty"`
 }
 
 type StakerUnits struct {
-	Actor string  `json:"actor"`
-	Units int64 `json:"units"`
+	Actor string `json:"actor"`
+	Units int64  `json:"units"`
 }
