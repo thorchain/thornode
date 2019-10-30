@@ -8,10 +8,9 @@ CHAIN_HOST="${CHAIN_HOST:=127.0.0.1:1317}"
 RPC_HOST="${RPC_HOST:=data-seed-pre-0-s3.binance.org}"
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
-START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=0}"
-NODES="${NODES:=1}"
-MASTER="${MASTER:=node1}" # the hostname of the master node
-ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=0}" # how often the pools in statechain should rotate
+START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=$(curl -s "$RPC_HOST/block" | jq .result.block.header.height)}"
+
+$(dirname "$0")/wait-for-statechain-api.sh $CHAIN_HOST
 
 OBSERVER_PATH=$DB_PATH/observer/
 mkdir -p $OBSERVER_PATH
@@ -46,5 +45,4 @@ echo "{
   }
 }" > /etc/observe/observed/config.json
 
-ls /go/bin
 exec "$@"

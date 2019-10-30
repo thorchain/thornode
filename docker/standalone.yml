@@ -9,16 +9,17 @@ services:
     image: thornode-observer
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thorapi:1317
+      CHAIN_HOST: thor-api:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
-      - thord
+      - thor-api
     links:
-      - thord
+      - thor-api
     volumes:
       - ${PWD}:/docker
       - ${HOME}/.thornode/standalone/.ssd:/root/.ssd
+      - ${HOME}/.thornode/standalone/.sscli:/root/.sscli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
   signer:
@@ -29,44 +30,54 @@ services:
     image: thornode-signer
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thorapi:1317
+      CHAIN_HOST: thor-api:1317
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
-      - thord
+      - thor-api
     links:
-      - thord
+      - thor-api
     volumes:
       - ${PWD}:/docker
+      - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/standalone/keys:/root/.signer
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
 
-  thord:
-    hostname: thord
+  thor-daemon:
+    hostname: thor-daemon
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
     image: thornode-statechain
     environment:
-      - NODES=1
+      NODES: 1
+      SEED: thor-daemon
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
       - ${PWD}:/docker
       - ${HOME}/.thornode/standalone/.ssd:/root/.ssd
-    command: ["ssd", "start", "--rpc.laddr tcp://0.0.0.0:26657"]
+      - ${HOME}/.thornode/standalone/.sscli:/root/.sscli
+      - ${HOME}/.thornode/standalone/keys:/root/.signer
+    command: ["ssd", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
-  thorapi:
-    hostname: thorapi
+  thor-api:
+    hostname: thor-api
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
     depends_on:
-      - thord
+      - thor-daemon
     links:
-      - thord
+      - thor-daemon
     image: thornode-statechain
+    environment:
+      CHAIN_DAEMON: thor-daemon:26657
+    entrypoint:
+      /docker/scripts/rest.sh
     volumes:
+      - ${PWD}:/docker
+      - ${HOME}/.thornode/standalone/.ssd:/root/.ssd
       - ${HOME}/.thornode/standalone/.sscli:/root/.sscli
-    command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317"]
+    command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]

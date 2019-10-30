@@ -1,12 +1,31 @@
 #!/bin/sh
 set -ex
 
+SIGNER_NAME="${SIGNER_NAME:=statechain}"
+SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 NODES="${NODES:=1}"
 SEED="${SEED:=node1}" # the hostname of the master node
 ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=0}" # how often the pools in statechain should rotate
 
+if [ -f ~/.signer/private_key.txt ]; then
+  ADDRESS=$(cat ~/.signer/address.txt)
+else
+  echo "GENERATING BNB ADDRESSES"
+  # because the generate command can get API rate limited, we may need to retry
+  n=0
+  until [ $n -ge 60 ]; do
+    generate > /tmp/bnb && break
+    n=$[$n+1]
+    sleep 1
+  done
+  ADDRESS=$(cat /tmp/bnb | grep MASTER= | awk -F= '{print $NF}')
+  echo $ADDRESS > ~/.signer/address.txt
+  BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
+  echo $BINANCE_PRIVATE_KEY > ~/.signer/private_key.txt
+fi
+
 # create statechain user
-echo $SIGNER_PASSWD | sscli keys add statechain
+echo $SIGNER_PASSWD | sscli keys add $SIGNER_NAME
 
 VALIDATOR=$(ssd tendermint show-validator)
 OBSERVER_ADDRESS=$(sscli keys show statechain -a)
@@ -18,14 +37,12 @@ if [[ "$SEED" == "$(hostname)" ]]; then
   echo $ADDRESS > /tmp/shared/pool_address.txt
 fi
 
-node() {
-    echo "{\"node_address\": \"$1\" ,\"status\":\"active\",\"bond_address\":\"$2\",\"accounts\":{\"bnb_signer_acc\":\"$2\", \"bepv_validator_acc\": \"$3\", \"bep_observer_acc\": \"$1\"}}" > /tmp/shared/node_$1.json
-    if [[ "$ROTATE_BLOCK_HEIGHT" != "0" ]]; then
-        echo "{\"address\": \"$1\" ,\"key\":\"RotatePerBlockHeight\",\"value\":\"$ROTATE_BLOCK_HEIGHT\"}" > /tmp/shared/config_$1.json
-    fi
-}
-
-node $NODE_ADDRESS $ADDRESS $VALIDATOR
+# write node account data to json file in shared directory
+echo "{\"node_address\": \"$NODE_ADDRESS\" ,\"status\":\"active\",\"bond_address\":\"$ADDRESS\",\"accounts\":{\"bnb_signer_acc\":\"$ADDRESS\", \"bepv_validator_acc\": \"$VALIDATOR\", \"bep_observer_acc\": \"$NODE_ADDRESS\"}}" > /tmp/shared/node_$NODE_ADDRESS.json
+# write rotate block height as config file
+if [[ "$ROTATE_BLOCK_HEIGHT" != "0" ]]; then
+  echo "{\"address\": \"$NODE_ADDRESS\" ,\"key\":\"RotatePerBlockHeight\",\"value\":\"$ROTATE_BLOCK_HEIGHT\"}" > /tmp/shared/config_$NODE_ADDRESS.json
+fi
 
 # wait until we have the correct number of nodes in our directory before continuing
 while [[ "$(ls -1 /tmp/shared/node_*.json | wc -l)" != "$NODES" ]]; do
@@ -49,10 +66,12 @@ for f in /tmp/shared/node_*.json; do
     mv /tmp/genesis.json ~/.ssd/config/genesis.json
 done
 
-for f in /tmp/shared/config_*.json; do 
+if [[ -f /tmp/shared/config_*.json ]]; then
+  for f in /tmp/shared/config_*.json; do 
     jq --argjson config "$(cat $f)" '.app_state.swapservice.admin_configs += [$config]' ~/.ssd/config/genesis.json > /tmp/genesis.json
     mv /tmp/genesis.json ~/.ssd/config/genesis.json
-done
+  done
+fi
 
 cat ~/.ssd/config/genesis.json
 ssd validate-genesis
