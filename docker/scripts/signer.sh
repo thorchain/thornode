@@ -16,8 +16,8 @@ GENESIS_URL="${GENESIS_URL:=none}"
 $(dirname "$0")/wait-for-statechain-api.sh $CHAIN_HOST
 
 if [ -f ~/.signer/private_key.txt ]; then
-  ADDRESS=$(cat ~/.signer/address.txt)
   BINANCE_PRIVATE_KEY=$(cat ~/.signer/private_key.txt)
+  PUBKEY=$(cat ~/.signer/pubkey.txt)
 else
   echo "GENERATING BNB ADDRESSES"
   # because the generate command can get API rate limited, we may need to retry
@@ -27,10 +27,10 @@ else
     n=$[$n+1]
     sleep 1
   done
-  ADDRESS=$(cat /tmp/bnb | grep MASTER= | awk -F= '{print $NF}')
-  echo $ADDRESS > ~/.signer/address.txt
   BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
   echo $BINANCE_PRIVATE_KEY > ~/.signer/private_key.txt
+  PUBKEY=$(cat /tmp/bnb | grep MASTER_PUBKEY= | awk -F= '{print $NF}')
+  echo $PUBKEY > ~/.signer/pubkey.txt
 fi
 
 SIGNER_PATH=$DB_PATH/signer/

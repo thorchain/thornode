@@ -8,7 +8,7 @@ SEED="${SEED:=node1}" # the hostname of the master node
 ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=0}" # how often the pools in statechain should rotate
 
 if [ -f ~/.signer/private_key.txt ]; then
-  ADDRESS=$(cat ~/.signer/address.txt)
+  PUBKEY=$(cat ~/.signer/pubkey.txt)
 else
   echo "GENERATING BNB ADDRESSES"
   # because the generate command can get API rate limited, we may need to retry
@@ -18,10 +18,10 @@ else
     n=$[$n+1]
     sleep 1
   done
-  ADDRESS=$(cat /tmp/bnb | grep MASTER= | awk -F= '{print $NF}')
-  echo $ADDRESS > ~/.signer/address.txt
   BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
   echo $BINANCE_PRIVATE_KEY > ~/.signer/private_key.txt
+  PUBKEY=$(cat /tmp/bnb | grep MASTER_PUBKEY= | awk -F= '{print $NF}')
+  echo $PUBKEY > ~/.signer/pubkey.txt
 fi
 
 # create statechain user
@@ -34,11 +34,11 @@ NODE_ADDRESS=$(sscli keys show statechain -a)
 if [[ "$SEED" == "$(hostname)" ]]; then
   echo "I AM THE SEED NODE"
   ssd tendermint show-node-id > /tmp/shared/node.txt
-  echo $ADDRESS > /tmp/shared/pool_address.txt
+  echo $PUBKEY > /tmp/shared/pubkey.txt
 fi
 
 # write node account data to json file in shared directory
-echo "{\"node_address\": \"$NODE_ADDRESS\" ,\"status\":\"active\",\"bond_address\":\"$ADDRESS\",\"accounts\":{\"bnb_signer_acc\":\"$ADDRESS\", \"bepv_validator_acc\": \"$VALIDATOR\", \"bep_observer_acc\": \"$NODE_ADDRESS\"}}" > /tmp/shared/node_$NODE_ADDRESS.json
+echo "{\"node_address\": \"$NODE_ADDRESS\" ,\"status\":\"active\",\"bond_address\":\"$PUBKEY\",\"accounts\":{\"bnb_signer_acc\":\"$PUBKEY\", \"bepv_validator_acc\": \"$VALIDATOR\", \"bep_observer_acc\": \"$NODE_ADDRESS\"}}" > /tmp/shared/node_$NODE_ADDRESS.json
 # write rotate block height as config file
 if [[ "$ROTATE_BLOCK_HEIGHT" != "0" ]]; then
   echo "{\"address\": \"$NODE_ADDRESS\" ,\"key\":\"RotatePerBlockHeight\",\"value\":\"$ROTATE_BLOCK_HEIGHT\"}" > /tmp/shared/config_$NODE_ADDRESS.json
@@ -49,6 +49,10 @@ while [[ "$(ls -1 /tmp/shared/node_*.json | wc -l)" != "$NODES" ]]; do
     # echo "Waiting... '$(ls -1 /tmp/shared | wc -l)' '$NODES'"
     sleep 1
 done
+
+POOL_ADDRESS=$(cat /tmp/shared/pubkey.txt)
+echo "{\"current\":\"$POOL_ADDRESS\"}" > /tmp/shared/pool_addresses.json
+
 
 if [ ! -f ~/.ssd/config/genesis.json ]; then
     # Setup SSD
@@ -66,6 +70,9 @@ if [ ! -f ~/.ssd/config/genesis.json ]; then
         jq --argjson nodeInfo "$(cat $f)" '.app_state.swapservice.node_accounts += [$nodeInfo]' ~/.ssd/config/genesis.json > /tmp/genesis.json
         mv /tmp/genesis.json ~/.ssd/config/genesis.json
     done
+
+    jq --argjson addr "$(cat /tmp/shared/pool_addresses.json)" '.app_state.swapservice.pool_addresses = $addr' ~/.ssd/config/genesis.json > /tmp/genesis.json
+    mv /tmp/genesis.json ~/.ssd/config/genesis.json
 
     if [[ -f /tmp/shared/config_*.json ]]; then
         for f in /tmp/shared/config_*.json; do 
