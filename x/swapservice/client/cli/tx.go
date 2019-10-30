@@ -77,19 +77,24 @@ func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetTrustAccount command to add a trust account
 func GetCmdSetTrustAccount(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-trust-account  [observer_address] [validator_consensus_pub_key]",
+		Use:   "set-trust-account  [signer_address] [observer_address] [validator_consensus_pub_key]",
 		Short: "set trust account, the account use to sign this tx has to be whitelist first",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			observer, err := sdk.AccAddressFromBech32(args[0])
+			signer, err := common.NewBnbAddress(args[0])
+			if err != nil {
+				return errors.Wrap(err, "fail to parse signer BNB address")
+			}
+
+			observer, err := sdk.AccAddressFromBech32(args[1])
 			if err != nil {
 				return errors.Wrap(err, "fail to parse observer address")
 			}
 
-			validatorConsPubKey, err := sdk.GetConsPubKeyBech32(args[1])
+			validatorConsPubKey, err := sdk.GetConsPubKeyBech32(args[2])
 			if err != nil {
 				return errors.Wrap(err, "fail to parse validator consensus public key")
 			}
@@ -97,7 +102,7 @@ func GetCmdSetTrustAccount(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "fail to convert public key to string")
 			}
-			trust := types.NewTrustAccount("", observer, validatorConsPubKeyStr)
+			trust := types.NewTrustAccount(signer, observer, validatorConsPubKeyStr)
 			msg := types.NewMsgSetTrustAccount(trust, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
