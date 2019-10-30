@@ -40,9 +40,11 @@ integration:test:
     - make -C ./test/integration install setup run wait-for-blockchain test-internal
 
 # Build docker image
-build:
+build-observer:
   stage: build
   image: docker:stable
+  only:
+    - master
   services:
     - docker:dind
   variables:
@@ -52,83 +54,44 @@ build:
     - apk update
     - apk add python py-pip make git jq curl
     - make docker-gitlab-login
-  environment:
-    name: develop
   script:
-    - make docker-gitlab-build
-    - make docker-gitlab-push
+    - make docker-gitlab-build-observer
+    - make docker-gitlab-push-observer
 
-# push docker:develop images
-push:develop:
-  stage: push
-  image: docker:stable
-  services:
-    - docker:dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    GIT_STRATEGY: none
-  before_script:
-    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
-  script:
-    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
-    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:develop
-    - docker push ${CI_REGISTRY_IMAGE}:develop
-
-# push docker:nightly images
-push:nightly:
-  stage: push
+build-signer:
+  stage: build
   image: docker:stable
   only:
-    - schedules
+    - master
   services:
     - docker:dind
   variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    GIT_STRATEGY: none
+    docker_host: tcp://docker:2375
+    docker_driver: overlay2
   before_script:
-    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - apk update
+    - apk add python py-pip make git
   script:
-    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
-    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:nightly
-    - docker push ${CI_REGISTRY_IMAGE}:nightly
+    - make docker-gitlab-build-signer
+    - make docker-gitlab-push-signer
 
-# push docker:tag images
-push:tag:
-  stage: push
+build-statechain:
+  stage: build
   image: docker:stable
   only:
-    - tags
+    - master
   services:
     - docker:dind
   variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    GIT_STRATEGY: none
+    docker_host: tcp://docker:2375
+    docker_driver: overlay2
   before_script:
-    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
+    - apk update
+    - apk add python py-pip make git
+    - make docker-gitlab-login
   script:
-    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
-    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:${CI_COMMIT_REF_NAME}
-    - docker push ${CI_REGISTRY_IMAGE}:nightly
-
-# push docker:latest images
-push:latest:
-  stage: push
-  image: docker:stable
-  services:
-    - docker:dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-    GIT_STRATEGY: none
-  before_script:
-    - docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
-  script:
-    - docker pull ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA}
-    - docker tag ${CI_REGISTRY_IMAGE}:${CI_COMMIT_SHA} ${CI_REGISTRY_IMAGE}:latest
-    - docker push ${CI_REGISTRY_IMAGE}:latest
+    - make docker-gitlab-build-statechain
+    - make docker-gitlab-push-statechain
 
 deploy:develop:
   stage: deploy
