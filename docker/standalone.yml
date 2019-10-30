@@ -31,6 +31,7 @@ services:
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api:1317
+      RPC_HOST: thor-daemon:26657
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:

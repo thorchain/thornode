@@ -8,7 +8,7 @@ CHAIN_HOST="${CHAIN_HOST:=127.0.0.1:1317}"
 RPC_HOST="${RPC_HOST:=data-seed-pre-0-s3.binance.org}"
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
-START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=$(curl -s "$RPC_HOST/block" | jq .result.block.header.height)}"
+START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
 NODE_ID="${NODE_ID:=none}"
 SEED="${SEED:=none}" # the hostname of a seed node
 GENESIS_URL="${GENESIS_URL:=none}"
