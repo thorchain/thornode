@@ -8,12 +8,14 @@ CHAIN_HOST="${CHAIN_HOST:=127.0.0.1:1317}"
 RPC_HOST="${RPC_HOST:=data-seed-pre-0-s3.binance.org}"
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
-START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=0}"
+START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=$(curl -s "$RPC_HOST/block" | jq .result.block.header.height)}"
 NODE_ID="${NODE_ID:=none}"
 SEED="${SEED:=none}" # the hostname of a seed node
 GENESIS_URL="${GENESIS_URL:=none}"
 
-if [ -f ~/.signer/private_key.txt]; then
+$(dirname "$0")/wait-for-statechain-api.sh $CHAIN_HOST
+
+if [ -f ~/.signer/private_key.txt ]; then
   ADDRESS=$(cat ~/.signer/address.txt)
   BINANCE_PRIVATE_KEY=$(cat ~/.signer/private_key.txt)
 else
@@ -51,9 +53,9 @@ echo "{
   },
   \"state_chain\": {
     \"chain_id\": \"statechain\",
-    \"chain_host\": \"localhost:1317\",
-    \"signer_name\": \"statechain\",
-    \"signer_passwd\": \"PASSWORD1234\"
+    \"chain_host\": \"$CHAIN_HOST\",
+    \"signer_name\": \"$SIGNER_NAME\",
+    \"signer_passwd\": \"$SIGNER_PASSWD\"
   },
   \"metric\": {
     \"enabled\": true
