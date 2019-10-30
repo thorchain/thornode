@@ -2,24 +2,27 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // MsgNextPoolAddress is used to set the pool address of the next
 type MsgNextPoolAddress struct {
-	RequestTxHash common.TxID
-	NextPoolAddr  common.Address
-	Sender        common.Address
-	Signer        sdk.AccAddress
+	RequestTxHash  common.TxID
+	NextPoolPubKey common.PubKey
+	Sender         common.Address
+	Signer         sdk.AccAddress
+	Chain          common.Chain
 }
 
 // NewMsgNextPoolAddress create a new instance of MsgNextPoolAddress
-func NewMsgNextPoolAddress(requestTxHash common.TxID, nextPoolAddr common.Address, sender common.Address, signer sdk.AccAddress) MsgNextPoolAddress {
+func NewMsgNextPoolAddress(requestTxHash common.TxID, nextPoolPubKey common.PubKey, sender common.Address, chain common.Chain, signer sdk.AccAddress) MsgNextPoolAddress {
 	return MsgNextPoolAddress{
-		RequestTxHash: requestTxHash,
-		NextPoolAddr:  nextPoolAddr,
-		Sender:        sender,
-		Signer:        signer,
+		RequestTxHash:  requestTxHash,
+		NextPoolPubKey: nextPoolPubKey,
+		Sender:         sender,
+		Signer:         signer,
+		Chain:          chain,
 	}
 }
 
@@ -31,14 +34,20 @@ func (msg MsgNextPoolAddress) Type() string { return "set_next_pooladdress" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgNextPoolAddress) ValidateBasic() sdk.Error {
-	if msg.NextPoolAddr.IsEmpty() {
-		return sdk.ErrUnknownRequest("next pool address cannot be empty")
+	if msg.NextPoolPubKey.IsEmpty() {
+		return sdk.ErrUnknownRequest("next pool pub key cannot be empty")
 	}
 	if msg.Sender.IsEmpty() {
 		return sdk.ErrUnknownRequest("sender cannot be empty")
 	}
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
+	}
+	if msg.Chain.IsEmpty() {
+		return sdk.ErrUnknownRequest("chain cannot be empty")
+	}
+	if !common.IsBNBChain(msg.Chain) {
+		return sdk.ErrUnknownRequest("nextpool memo will only happen on BNB chain")
 	}
 
 	return nil

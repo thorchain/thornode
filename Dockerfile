@@ -134,7 +134,7 @@ RUN sscli config chain-id statechain
 RUN sscli config output json
 RUN sscli config indent true
 RUN sscli config trust-node true
-RUN cat ~/.ssd/config/genesis.json | jq --arg POOL_ADDRESS "$POOL_ADDRESS" --arg NODE_ADDRESS "$(sscli keys show statechain -a)" --arg OBSERVER_ADDRESS "$(sscli keys show statechain -a)" --arg VALIDATOR "$(ssd tendermint show-validator)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","bond_address":$POOL_ADDRESS,"accounts":{"bnb_signer_acc":$POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}' > /go/src/app/genesis.json
+RUN cat ~/.ssd/config/genesis.json | jq --arg POOL_ADDRESS "$POOL_ADDRESS" --arg NODE_ADDRESS "$(sscli keys show statechain -a)" --arg OBSERVER_ADDRESS "$(sscli keys show statechain -a)" --arg VALIDATOR "$(ssd tendermint show-validator)" '.app_state.swapservice.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","bond_address":$POOL_ADDRESS,"accounts":{"bnb_signer_acc":$POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}} | .app_state.swapservice.pool_addresses.rotate_at="28800" | .app_state.swapservice.pool_addresses.rotate_window_open_at="27800" | .app_state.swapservice.pool_addresses.current = $POOL_ADDRESS' > /go/src/app/genesis.json
 RUN mv /go/src/app/genesis.json ~/.ssd/config/genesis.json
 RUN cat ~/.ssd/config/genesis.json
 RUN ssd validate-genesis

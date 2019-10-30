@@ -2,8 +2,9 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 type TypeTxInSuite struct{}
@@ -23,7 +24,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	accConsPub3 := GetRandomBech32ConsensusPubKey()
 	accConsPub4 := GetRandomBech32ConsensusPubKey()
 
-	observePoolAddr := GetRandomBNBAddress()
+	observePoolAddr := GetRandomPubKey()
 	voter := NewTxInVoter(txID, nil)
 
 	txIn := NewTxIn(nil, "hello", bnb, sdk.ZeroUint(), observePoolAddr)
@@ -141,7 +142,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 		coins           common.Coins
 		memo            string
 		sender          common.Address
-		observePoolAddr common.Address
+		observePoolAddr common.PubKey
 	}{
 		{
 			coins:           nil,
@@ -171,7 +172,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 			coins:           statechainCoins,
 			memo:            "test",
 			sender:          bnb,
-			observePoolAddr: common.NoAddress,
+			observePoolAddr: nil,
 		},
 	}
 
@@ -201,10 +202,8 @@ func (TypeTxInSuite) TestTxInEquals(c *C) {
 	c.Assert(err, IsNil)
 	bnb1, err := common.NewAddress("bnb1yk882gllgv3rt2rqrsudf6kn2agr94etnxu9a7")
 	c.Assert(err, IsNil)
-	observePoolAddr, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
-	c.Assert(err, IsNil)
-	observePoolAddr1, err := common.NewAddress("bnb1zxseqkfm3en5cw6dh9xgmr85hw6jtwamnd2y2v")
-	c.Assert(err, IsNil)
+	observePoolAddr := GetRandomPubKey()
+	observePoolAddr1 := GetRandomPubKey()
 	inputs := []struct {
 		tx    TxIn
 		tx1   TxIn
