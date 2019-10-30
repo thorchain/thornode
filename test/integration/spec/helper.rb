@@ -61,7 +61,7 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
     },
     'amount': '1',
   }]
-  poolAddr ||= TRUST_BNB_ADDRESS
+  poolAddr ||= POOL_PUB_KEY
   return {
     'tx': hash,
     'sender': sender,

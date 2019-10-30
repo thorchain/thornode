@@ -17,6 +17,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	"gitlab.com/thorchain/bepswap/thornode/config"
@@ -131,7 +132,7 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 	// TODO implement pagination appropriately
 	var txIn stypes.TxIn
 	for _, txn := range query.Result.Txs {
-		txItemIn, err := b.fromTxToTxIn(txn.Hash, txn.Height, txn.Tx) //b.getOneTxFromServer(txn.Hash, b.getSingleTxUrl(txn.Hash))
+		txItemIn, err := b.fromTxToTxIn(txn.Hash, txn.Height, txn.Tx) // b.getOneTxFromServer(txn.Hash, b.getSingleTxUrl(txn.Hash))
 		if nil != err {
 			b.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
 			b.logger.Error().Err(err).Str("hash", txn.Hash).Msg("fail to get one tx from server")
@@ -191,13 +192,28 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 	}
 }
 
-func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) bool {
+func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) (bool, common.ChainPoolInfo) {
+	match, cpi := b.pav.IsValidPoolAddress(addr, common.BNBChain)
+	if !match {
+		return false, common.EmptyChainPoolInfo
+	}
 	// outbound msg from pool address to customer(not our pool address) , it will have a memo like "OUTBOUND:{blockheight}
 	lowerMemo := strings.ToLower(memo)
-	return b.pav.IsValidPoolAddress(addr) && strings.HasPrefix(lowerMemo, "outbound")
+	if strings.HasPrefix(lowerMemo, "outbound") {
+		return true, cpi
+	}
+	return false, common.EmptyChainPoolInfo
 }
-func (b *BinanceBlockScanner) isNextPoolMsg(addr, memo string, coins types.Coins) bool {
+func (b *BinanceBlockScanner) isNextPoolMsg(addr, memo string, coins types.Coins) (bool, common.ChainPoolInfo) {
+	match, cpi := b.pav.IsValidPoolAddress(addr, common.BNBChain)
+	if !match {
+		return false, common.EmptyChainPoolInfo
+	}
 	lowerMemo := strings.ToLower(memo)
+	if !strings.HasPrefix(lowerMemo, "nextpool") {
+		return false, common.EmptyChainPoolInfo
+	}
+
 	nextPoolCoin := types.Coin{
 		Denom:  common.BNBTicker.String(),
 		Amount: 37501,
@@ -209,7 +225,10 @@ func (b *BinanceBlockScanner) isNextPoolMsg(addr, memo string, coins types.Coins
 			break
 		}
 	}
-	return b.pav.IsValidPoolAddress(addr) && strings.HasPrefix(lowerMemo, "nextpool") && hasCorrectCoin
+	if hasCorrectCoin {
+		return true, cpi
+	}
+	return false, common.EmptyChainPoolInfo
 }
 
 func (b *BinanceBlockScanner) getCoinsForTxIn(coins types.Coins) (common.Coins, error) {
@@ -251,17 +270,18 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 			sender := sendMsg.Inputs[0]
 			txInItem.Sender = sender.Address.String()
 			// outbound message from pool, when it is outbound, it does not matter how much coins we send to customer for now
-			if b.isOutboundMsg(sender.Address.String(), t.Memo) {
+			match, cpi := b.isOutboundMsg(sender.Address.String(), t.Memo)
+			if match {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
-				txInItem.ObservedPoolAddress = sender.Address.String()
+				txInItem.ObservedPoolAddress = cpi.PubKey.String()
 				// Coin is mandatory , so let's just give 0.1 RUNE , thus if we fail to process outbound tx, we won't accidentally refund it.
 				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One/10)))
 				return &txInItem, nil
 			}
-			if b.isNextPoolMsg(sender.Address.String(), t.Memo, sender.Coins) {
+			matchNextPool, cpi := b.isNextPoolMsg(sender.Address.String(), t.Memo, sender.Coins)
+			if matchNextPool {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("nextpool")
-				txInItem.ObservedPoolAddress = sender.Address.String()
-				txInItem.Memo = "nextpool:" + sendMsg.Outputs[0].Address.String()
+				txInItem.ObservedPoolAddress = cpi.PubKey.String()
 				// Coin is mandatory , so let's just give 0.1 RUNE
 				for _, input := range sendMsg.Inputs {
 					cs, err := b.getCoinsForTxIn(input.Coins)
@@ -274,10 +294,11 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 			}
 
 			for _, output := range sendMsg.Outputs {
-				if !b.pav.IsValidPoolAddress(output.Address.String()) {
+				match, cpi := b.pav.IsValidPoolAddress(output.Address.String(), common.BNBChain)
+				if !match {
 					continue
 				}
-				txInItem.ObservedPoolAddress = output.Address.String()
+				txInItem.ObservedPoolAddress = cpi.PubKey.String()
 				existTx = true
 				cs, err := b.getCoinsForTxIn(output.Coins)
 				if nil != err {

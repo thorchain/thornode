@@ -287,7 +287,8 @@ func (BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	c.Check(txInItem1, NotNil)
 	c.Check(txInItem1.Memo, Equals, "SWAP:BNB")
 	c.Check(txInItem1.Sender, Equals, "tbnb190tgp5uchnlcpsk7n7nffypkwlzhcqge27xkfh")
-	c.Check(txInItem1.ObservedPoolAddress, Equals, "tbnb1hzwfk6t3sqjfuzlr0ur9lj920gs37gg92gtay9")
+	// observed pool address should be the hex encoded pubkey
+	c.Check(txInItem1.ObservedPoolAddress, Equals, "b89c9b697180249e0be37f065fc8aa7a211f2105")
 	c.Check(len(txInItem1.Coins), Equals, 1)
 	c.Check(txInItem1.Coins[0].Asset.String(), Equals, "BNB.LOK-3C0")
 	c.Check(txInItem1.Coins[0].Amount.Uint64(), Equals, uint64(common.One))

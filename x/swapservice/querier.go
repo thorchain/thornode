@@ -253,7 +253,11 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	if pool.Empty() {
 		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("pool: %s doesn't exist", path[0]))
 	}
-	pool.PoolAddress = currentPoolAddr.Current
+	bnbPoolAddr, err := currentPoolAddr.Current.GetAddress(common.BNBChain)
+	if nil != err {
+		return nil, sdk.ErrInternal("fail to get current address")
+	}
+	pool.PoolAddress = bnbPoolAddr
 	pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pool)
 	if err != nil {
@@ -266,10 +270,14 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrM
 	pools := QueryResPools{}
 	iterator := keeper.GetPoolDataIterator(ctx)
 	currentPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
+	bnbPoolAddr, err := currentPoolAddr.Current.GetAddress(common.BNBChain)
+	if nil != err {
+		return nil, sdk.ErrInternal("could not get current pool address")
+	}
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
 		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		pool.PoolAddress = currentPoolAddr.Current
+		pool.PoolAddress = bnbPoolAddr
 		pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 		pools = append(pools, pool)
 	}
