@@ -79,3 +79,21 @@ services:
       - ${HOME}/.thornode/validator/.ssd:/root/.ssd
       - ${HOME}/.thornode/validator/.sscli:/root/.sscli
     command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+
+  binance:
+    hostname: binance-fullnode
+    image: varnav/binance-node
+    restart: unless-stopped
+    environment:
+      BNET: "prod"
+    ports:
+      - "27146:27146" 
+      - "27147:27147"
+      - "26660:26660"
+    ulimits:
+    nofile:
+      soft: "16000"
+      hard: "16000"
+    security-opt: no-new-privileges
+    volumes:
+      - ${HOME}/.thornode/binance:/opt/bnbchaind
