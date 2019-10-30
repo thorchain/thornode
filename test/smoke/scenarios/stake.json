@@ -215,7 +215,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:BNB",
+      "memo": "STAKE:BNB.BNB",
       "check": {
         "binance": {
           "target": "from",
@@ -256,7 +256,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:FSN-F1B",
+      "memo": "STAKE:BNB.FSN-F1B",
       "check": {
         "binance": {
           "target": "from",
@@ -293,7 +293,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:FTM-585",
+      "memo": "STAKE:BNB.FTM-585",
       "check": {
         "binance": {
           "target": "from",
@@ -330,7 +330,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:LOK-3C0",
+      "memo": "STAKE:BNB.LOK-3C0",
       "check": {
         "binance": {
           "target": "from",
@@ -367,7 +367,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:TCAN-014",
+      "memo": "STAKE:BNB.TCAN-014",
       "check": {
         "binance": {
           "target": "from",
@@ -404,7 +404,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:TOMOB-1E1",
+      "memo": "STAKE:BNB.TOMOB-1E1",
       "check": {
         "statechain": [
           {
@@ -428,7 +428,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:BNB",
+      "memo": "WITHDRAW:BNB.BNB",
       "check": {
         "statechain": [
           {
@@ -458,7 +458,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:FSN-F1B",
+      "memo": "WITHDRAW:BNB.FSN-F1B",
       "check": {
         "statechain": [
           {
@@ -488,7 +488,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:FTM-585",
+      "memo": "WITHDRAW:BNB.FTM-585",
       "check": {
         "statechain": [
           {
@@ -518,7 +518,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:LOK-3C0",
+      "memo": "WITHDRAW:BNB.LOK-3C0",
       "check": {
         "statechain": [
           {
@@ -548,7 +548,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:TCAN-014",
+      "memo": "WITHDRAW:BNB.TCAN-014",
       "check": {
         "statechain": [
           {
@@ -578,7 +578,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:TOMOB-1E1",
+      "memo": "WITHDRAW:BNB.TOMOB-1E1",
       "check": {
         "statechain": [
           {

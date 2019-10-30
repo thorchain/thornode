@@ -234,7 +234,7 @@
           "amount": 10000000
         }
       ],
-      "memo": "STAKE:BNB",
+      "memo": "STAKE:BNB.BNB",
       "check": {
         "delay": 25,
         "binance": {
@@ -280,7 +280,7 @@
           "amount": 10000000000
         }
       ],
-      "memo": "STAKE:BNB",
+      "memo": "STAKE:BNB.BNB",
       "check": {
         "delay": 25,
         "binance": {
@@ -332,7 +332,7 @@
           "amount": 30000000000
         }
       ],
-      "memo": "STAKE:BNB",
+      "memo": "STAKE:BNB.BNB",
       "check": {
         "delay": 25,
         "binance": {
@@ -384,7 +384,7 @@
           "amount": 10000000000
         }
       ],
-      "memo": "ADD:BNB",
+      "memo": "ADD:BNB.BNB",
       "check": {
         "delay": 25,
         "binance": {
@@ -428,7 +428,7 @@
           "amount": 1
         }
       ],
-      "memo": "SWAP:BNB",
+      "memo": "SWAP:BNB.BNB",
       "check": {
         "delay": 25,
         "binance": {
@@ -476,7 +476,7 @@
           "amount": 1
         }
       ],
-      "memo": "SWAP:BNB",
+      "memo": "SWAP:BNB.BNB",
       "check": {
         "delay": 25,
         "binance": {
@@ -524,7 +524,7 @@
           "amount": 10000000000
         }
       ],
-      "memo": "SWAP:BNB",
+      "memo": "SWAP:BNB.BNB",
       "check": {
         "delay": 25,
         "binance": {
@@ -572,7 +572,7 @@
           "amount": 10000000000
         }
       ],
-      "memo": "SWAP:BNB",
+      "memo": "SWAP:BNB.BNB",
       "send_to": "staker_1",
       "check": {
         "delay": 25,
@@ -691,7 +691,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:BNB:5000",
+      "memo": "WITHDRAW:BNB.BNB:5000",
       "check": {
         "delay": 25,
         "statechain": [
@@ -726,7 +726,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:BNB:10000",
+      "memo": "WITHDRAW:BNB.BNB:10000",
       "check": {
         "delay": 25,
         "statechain": [
@@ -757,7 +757,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:BNB"
+      "memo": "WITHDRAW:BNB.BNB"
     }
   ]
 }

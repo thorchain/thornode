@@ -289,7 +289,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:BNB",
+      "memo": "STAKE:BNB.BNB",
       "check": {
 
         "binance": {
@@ -331,7 +331,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:FSN-F1B",
+      "memo": "STAKE:BNB.FSN-F1B",
       "check": {
         "binance": {
           "target": "from",
@@ -368,7 +368,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:FTM-585",
+      "memo": "STAKE:BNB.FTM-585",
       "check": {
         "binance": {
           "target": "from",
@@ -405,7 +405,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:LOK-3C0",
+      "memo": "STAKE:BNB.LOK-3C0",
       "check": {
         "binance": {
           "target": "from",
@@ -442,7 +442,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:TCAN-014",
+      "memo": "STAKE:BNB.TCAN-014",
       "check": {
         "binance": {
           "target": "from",
@@ -479,7 +479,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:TOMOB-1E1",
+      "memo": "STAKE:BNB.TOMOB-1E1",
       "check": {
         "statechain": [
           {
@@ -507,7 +507,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:BNB",
+      "memo": "STAKE:BNB.BNB",
       "check": {
         "binance": {
           "target": "from",
@@ -548,7 +548,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:FSN-F1B",
+      "memo": "STAKE:BNB.FSN-F1B",
       "check": {
         "binance": {
           "target": "from",
@@ -585,7 +585,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:FTM-585",
+      "memo": "STAKE:BNB.FTM-585",
       "check": {
         "binance": {
           "target": "from",
@@ -622,7 +622,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:LOK-3C0",
+      "memo": "STAKE:BNB.LOK-3C0",
       "check": {
         "binance": {
           "target": "from",
@@ -659,7 +659,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:TCAN-014",
+      "memo": "STAKE:BNB.TCAN-014",
       "check": {
         "binance": {
           "target": "from",
@@ -696,7 +696,7 @@
           "amount": 100000000000
         }
       ],
-      "memo": "STAKE:TOMOB-1E1",
+      "memo": "STAKE:BNB.TOMOB-1E1",
       "check": {
         "statechain": [
           {
@@ -720,7 +720,7 @@
           "amount": 10000000000
         }
       ],
-      "memo": "SWAP:BNB",
+      "memo": "SWAP:BNB.BNB",
       "check": {
         "statechain": [
           {
@@ -744,7 +744,7 @@
           "amount": 10000000000
         }
       ],
-      "memo": "SWAP:FSN-F1B",
+      "memo": "SWAP:BNB.FSN-F1B",
       "check": {
         "statechain": [
           {
@@ -768,7 +768,7 @@
           "amount": 10000000000
         }
       ],
-      "memo": "SWAP:FTM-585",
+      "memo": "SWAP:BNB.FTM-585",
       "check": {
         "statechain": [
           {
@@ -792,7 +792,7 @@
           "amount": 10000000000
         }
       ],
-      "memo": "SWAP:LOK-3C0",
+      "memo": "SWAP:BNB.LOK-3C0",
       "check": {
         "statechain": [
           {
@@ -816,7 +816,7 @@
           "amount": 10000000000
         }
       ],
-      "memo": "SWAP:TCAN-014",
+      "memo": "SWAP:BNB.TCAN-014",
       "check": {
         "statechain": [
           {
@@ -840,7 +840,7 @@
           "amount": 10000000000
         }
       ],
-      "memo": "SWAP:TOMOB-1E1",
+      "memo": "SWAP:BNB.TOMOB-1E1",
       "check": {
         "statechain": [
           {
@@ -864,7 +864,7 @@
           "amount": 6000000
         }
       ],
-      "memo": "SWAP:RUNE-A1F",
+      "memo": "SWAP:BNB.RUNE-A1F",
       "check": {
         "statechain": [
           {
@@ -888,7 +888,7 @@
           "amount": 250000000
         }
       ],
-      "memo": "SWAP:RUNE-A1F",
+      "memo": "SWAP:BNB.RUNE-A1F",
       "check": {
         "statechain": [
           {
@@ -912,7 +912,7 @@
           "amount": 7000000000
         }
       ],
-      "memo": "SWAP:RUNE-A1F",
+      "memo": "SWAP:BNB.RUNE-A1F",
       "check": {
         "statechain": [
           {
@@ -936,7 +936,7 @@
           "amount": 1000000000
         }
       ],
-      "memo": "SWAP:RUNE-A1F",
+      "memo": "SWAP:BNB.RUNE-A1F",
       "check": {
         "statechain": [
           {
@@ -960,7 +960,7 @@
           "amount": 8000000000
         }
       ],
-      "memo": "SWAP:RUNE-A1F",
+      "memo": "SWAP:BNB.RUNE-A1F",
       "check": {
         "statechain": [
           {
@@ -984,7 +984,7 @@
           "amount": 350000000
         }
       ],
-      "memo": "SWAP:RUNE-A1F",
+      "memo": "SWAP:BNB.RUNE-A1F",
       "check": {
         "statechain": [
           {
@@ -1008,7 +1008,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:BNB"
+      "memo": "WITHDRAW:BNB.BNB"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1022,7 +1022,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:FSN-F1B"
+      "memo": "WITHDRAW:BNB.FSN-F1B"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1036,7 +1036,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:FTM-585"
+      "memo": "WITHDRAW:BNB.FTM-585"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1050,7 +1050,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:LOK-3C0"
+      "memo": "WITHDRAW:BNB.LOK-3C0"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1064,7 +1064,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:TCAN-014"
+      "memo": "WITHDRAW:BNB.TCAN-014"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1078,7 +1078,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:TOMOB-1E1"
+      "memo": "WITHDRAW:BNB.TOMOB-1E1"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1092,7 +1092,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:BNB"
+      "memo": "WITHDRAW:BNB.BNB"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1106,7 +1106,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:FSN-F1B"
+      "memo": "WITHDRAW:BNB.FSN-F1B"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1120,7 +1120,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:FTM-585"
+      "memo": "WITHDRAW:BNB.FTM-585"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1134,7 +1134,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:LOK-3C0"
+      "memo": "WITHDRAW:BNB.LOK-3C0"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1148,7 +1148,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:TCAN-014"
+      "memo": "WITHDRAW:BNB.TCAN-014"
     },
     {
       "description": "WITHDRAW ALL",
@@ -1162,7 +1162,7 @@
           "amount": 1
         }
       ],
-      "memo": "WITHDRAW:TOMOB-1E1"
+      "memo": "WITHDRAW:BNB.TOMOB-1E1"
     }
   ]
 }
