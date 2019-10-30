@@ -12,31 +12,31 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 12600.00000000
+          "amount": 1260000000000
         },
         {
           "symbol": "BNB",
-          "amount": 1.38667500
+          "amount": 138667500
         },
         {
           "symbol": "FSN-F1B",
-          "amount": 52.50000000
+          "amount": 5250000000
         },
         {
           "symbol": "FTM-585",
-          "amount": 670.00000000
+          "amount": 67000000000
         },
         {
           "symbol": "LOK-3C0",
-          "amount": 210.00000000
+          "amount": 21000000000
         },
         {
           "symbol": "TCAN-014",
-          "amount": 1680.00000000
+          "amount": 168000000000
         },
         {
           "symbol": "TOMOB-1E1",
-          "amount": 73.50000000
+          "amount": 7350000000
         }
       ],
       "memo": "SEED",
@@ -46,31 +46,31 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 12600.00000000
+              "amount": 1260000000000
             },
             {
               "symbol": "BNB",
-              "amount": 1.38667500
+              "amount": 138667500
             },
             {
               "symbol": "FSN-F1B",
-              "amount": 52.50000000
+              "amount": 5250000000
             },
             {
               "symbol": "FTM-585",
-              "amount": 670.00000000
+              "amount": 67000000000
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 210.00000000
+              "amount": 21000000000
             },
             {
               "symbol": "TCAN-014",
-              "amount": 1680.00000000
+              "amount": 168000000000
             },
             {
               "symbol": "TOMOB-1E1",
-              "amount": 73.50000000
+              "amount": 7350000000
             }
           ]
         }
@@ -85,7 +85,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         }
       ],
       "memo": "SEED",
@@ -95,7 +95,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.10000000
+              "amount": 10000000
             }
           ]
         }
@@ -111,31 +111,31 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 6000.00000000
+          "amount": 600000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.61000000
+          "amount": 61000000
         },
         {
           "symbol": "FSN-F1B",
-          "amount": 25.00000000
+          "amount": 2500000000
         },
         {
           "symbol": "FTM-585",
-          "amount": 300.00000000
+          "amount": 30000000000
         },
         {
           "symbol": "LOK-3C0",
-          "amount": 100.00000000
+          "amount": 10000000000
         },
         {
           "symbol": "TCAN-014",
-          "amount": 800.00000000
+          "amount": 80000000000
         },
         {
           "symbol": "TOMOB-1E1",
-          "amount": 35.00000000
+          "amount": 3500000000
         }
       ],
       "memo": "SEED",
@@ -145,31 +145,31 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 6000.00000000
+              "amount": 600000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.61000000
+              "amount": 61000000
             },
             {
               "symbol": "FSN-F1B",
-              "amount": 25.00000000
+              "amount": 2500000000
             },
             {
               "symbol": "FTM-585",
-              "amount": 300.00000000
+              "amount": 30000000000
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 100.00000000
+              "amount": 10000000000
             },
             {
               "symbol": "TCAN-014",
-              "amount": 800.00000000
+              "amount": 80000000000
             },
             {
               "symbol": "TOMOB-1E1",
-              "amount": 35.00000000
+              "amount": 3500000000
             }
           ]
         }
@@ -184,31 +184,31 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 600.00000000
+          "amount": 60000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.06000000
+          "amount": 6000000
         },
         {
           "symbol": "FSN-F1B",
-          "amount": 2.50000000
+          "amount": 250000000
         },
         {
           "symbol": "FTM-585",
-          "amount": 70.00000000
+          "amount": 7000000000
         },
         {
           "symbol": "LOK-3C0",
-          "amount": 10.00000000
+          "amount": 1000000000
         },
         {
           "symbol": "TCAN-014",
-          "amount": 80.00000000
+          "amount": 8000000000
         },
         {
           "symbol": "TOMOB-1E1",
-          "amount": 3.50000000
+          "amount": 350000000
         }
       ],
       "memo": "SEED",
@@ -218,31 +218,31 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 600.00000000
+              "amount": 60000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.06000000
+              "amount": 6000000
             },
             {
               "symbol": "FSN-F1B",
-              "amount": 2.50000000
+              "amount": 250000000
             },
             {
               "symbol": "FTM-585",
-              "amount": 70.00000000
+              "amount": 7000000000
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 10.00000000
+              "amount": 1000000000
             },
             {
               "symbol": "TCAN-014",
-              "amount": 80.00000000
+              "amount": 8000000000
             },
             {
               "symbol": "TOMOB-1E1",
-              "amount": 3.50000000
+              "amount": 350000000
             }
           ]
         }
@@ -257,7 +257,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.05000000
+          "amount": 5000000
         }
       ],
       "memo": "GAS",
@@ -267,7 +267,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.04962500
+              "amount": 4962500
             }
           ]
         }
@@ -282,11 +282,11 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.60000000
+          "amount": 60000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:BNB",
@@ -297,20 +297,20 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.00940000
+              "amount": 940000
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 5000.00000000
+              "amount": 500000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 50030000000.000000,
+            "units": 50030000000,
             "symbol": "BNB",
-            "rune": 100000000000.000000,
-            "asset": 60000000.000000
+            "rune": 100000000000,
+            "asset": 60000000
           }
         ]
       }
@@ -324,11 +324,11 @@
       "coins": [
         {
           "symbol": "FSN-F1B",
-          "amount": 25.00000000
+          "amount": 2500000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:FSN-F1B",
@@ -337,21 +337,17 @@
           "target": "from",
           "coins": [
             {
-              "symbol": "FSN-F1B",
-              "amount": 0.00000000
-            },
-            {
               "symbol": "RUNE-A1F",
-              "amount": 4000.00000000
+              "amount": 400000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 51250000000.000000,
+            "units": 51250000000,
             "symbol": "FSN-F1B",
-            "rune": 100000000000.000000,
-            "asset": 2500000000.000000
+            "rune": 100000000000,
+            "asset": 2500000000
           }
         ]
       }
@@ -365,11 +361,11 @@
       "coins": [
         {
           "symbol": "FTM-585",
-          "amount": 300.00000000
+          "amount": 30000000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:FTM-585",
@@ -378,21 +374,17 @@
           "target": "from",
           "coins": [
             {
-              "symbol": "FTM-585",
-              "amount": 0.00000000
-            },
-            {
               "symbol": "RUNE-A1F",
-              "amount": 3000.00000000
+              "amount": 300000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 65000000000.000000,
+            "units": 65000000000,
             "symbol": "FTM-585",
-            "rune": 100000000000.000000,
-            "asset": 30000000000.000000
+            "rune": 100000000000,
+            "asset": 30000000000
           }
         ]
       }
@@ -406,11 +398,11 @@
       "coins": [
         {
           "symbol": "LOK-3C0",
-          "amount": 100.00000000
+          "amount": 10000000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:LOK-3C0",
@@ -419,21 +411,17 @@
           "target": "from",
           "coins": [
             {
-              "symbol": "LOK-3C0",
-              "amount": 0.00000000
-            },
-            {
               "symbol": "RUNE-A1F",
-              "amount": 2000.00000000
+              "amount": 200000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 55000000000.000000,
+            "units": 55000000000,
             "symbol": "LOK-3C0",
-            "rune": 100000000000.000000,
-            "asset": 10000000000.000000
+            "rune": 100000000000,
+            "asset": 10000000000
           }
         ]
       }
@@ -447,11 +435,11 @@
       "coins": [
         {
           "symbol": "TCAN-014",
-          "amount": 800.00000000
+          "amount": 80000000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:TCAN-014",
@@ -460,21 +448,17 @@
           "target": "from",
           "coins": [
             {
-              "symbol": "TCAN-014",
-              "amount": 0.00000000
-            },
-            {
               "symbol": "RUNE-A1F",
-              "amount": 1000.00000000
+              "amount": 100000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 90000000000.000000,
+            "units": 90000000000,
             "symbol": "TCAN-014",
-            "rune": 100000000000.000000,
-            "asset": 80000000000.000000
+            "rune": 100000000000,
+            "asset": 80000000000
           }
         ]
       }
@@ -488,34 +472,21 @@
       "coins": [
         {
           "symbol": "TOMOB-1E1",
-          "amount": 35.00000000
+          "amount": 3500000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:TOMOB-1E1",
       "check": {
-        "binance": {
-          "target": "from",
-          "coins": [
-            {
-              "symbol": "TOMOB-1E1",
-              "amount": 0.00000000
-            },
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 0.00000000
-            }
-          ]
-        },
         "statechain": [
           {
-            "units": 51750000000.000000,
+            "units": 51750000000,
             "symbol": "TOMOB-1E1",
-            "rune": 100000000000.000000,
-            "asset": 3500000000.000000
+            "rune": 100000000000,
+            "asset": 3500000000
           }
         ]
       }
@@ -529,11 +500,11 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.60000000
+          "amount": 60000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:BNB",
@@ -543,20 +514,20 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.00940000
+              "amount": 940000
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 5000.00000000
+              "amount": 500000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 100060000000.000000,
+            "units": 100060000000,
             "symbol": "BNB",
-            "rune": 200000000000.000000,
-            "asset": 120000000.000000
+            "rune": 200000000000,
+            "asset": 120000000
           }
         ]
       }
@@ -570,11 +541,11 @@
       "coins": [
         {
           "symbol": "FSN-F1B",
-          "amount": 25.00000000
+          "amount": 2500000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:FSN-F1B",
@@ -583,21 +554,17 @@
           "target": "from",
           "coins": [
             {
-              "symbol": "FSN-F1B",
-              "amount": 0.00000000
-            },
-            {
               "symbol": "RUNE-A1F",
-              "amount": 4000.00000000
+              "amount": 400000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 102500000000.000000,
+            "units": 102500000000,
             "symbol": "FSN-F1B",
-            "rune": 200000000000.000000,
-            "asset": 5000000000.000000
+            "rune": 200000000000,
+            "asset": 5000000000
           }
         ]
       }
@@ -611,11 +578,11 @@
       "coins": [
         {
           "symbol": "FTM-585",
-          "amount": 300.00000000
+          "amount": 30000000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:FTM-585",
@@ -624,21 +591,17 @@
           "target": "from",
           "coins": [
             {
-              "symbol": "FTM-585",
-              "amount": 0.00000000
-            },
-            {
               "symbol": "RUNE-A1F",
-              "amount": 3000.00000000
+              "amount": 300000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 130000000000.000000,
+            "units": 130000000000,
             "symbol": "FTM-585",
-            "rune": 200000000000.000000,
-            "asset": 60000000000.000000
+            "rune": 200000000000,
+            "asset": 60000000000
           }
         ]
       }
@@ -652,11 +615,11 @@
       "coins": [
         {
           "symbol": "LOK-3C0",
-          "amount": 100.00000000
+          "amount": 10000000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:LOK-3C0",
@@ -665,21 +628,17 @@
           "target": "from",
           "coins": [
             {
-              "symbol": "LOK-3C0",
-              "amount": 0.00000000
-            },
-            {
               "symbol": "RUNE-A1F",
-              "amount": 2000.00000000
+              "amount": 200000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 110000000000.000000,
+            "units": 110000000000,
             "symbol": "LOK-3C0",
-            "rune": 200000000000.000000,
-            "asset": 20000000000.000000
+            "rune": 200000000000,
+            "asset": 20000000000
           }
         ]
       }
@@ -693,11 +652,11 @@
       "coins": [
         {
           "symbol": "TCAN-014",
-          "amount": 800.00000000
+          "amount": 80000000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:TCAN-014",
@@ -706,21 +665,17 @@
           "target": "from",
           "coins": [
             {
-              "symbol": "TCAN-014",
-              "amount": 0.00000000
-            },
-            {
               "symbol": "RUNE-A1F",
-              "amount": 1000.00000000
+              "amount": 100000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 180000000000.000000,
+            "units": 180000000000,
             "symbol": "TCAN-014",
-            "rune": 200000000000.000000,
-            "asset": 160000000000.000000
+            "rune": 200000000000,
+            "asset": 160000000000
           }
         ]
       }
@@ -734,34 +689,21 @@
       "coins": [
         {
           "symbol": "TOMOB-1E1",
-          "amount": 35.00000000
+          "amount": 3500000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         }
       ],
       "memo": "STAKE:TOMOB-1E1",
       "check": {
-        "binance": {
-          "target": "from",
-          "coins": [
-            {
-              "symbol": "TOMOB-1E1",
-              "amount": 0.00000000
-            },
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 0.00000000
-            }
-          ]
-        },
         "statechain": [
           {
-            "units": 103500000000.000000,
+            "units": 103500000000,
             "symbol": "TOMOB-1E1",
-            "rune": 200000000000.000000,
-            "asset": 7000000000.000000
+            "rune": 200000000000,
+            "asset": 7000000000
           }
         ]
       }
@@ -775,17 +717,17 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "SWAP:BNB",
       "check": {
         "statechain": [
           {
-            "units": 100060000000.000000,
+            "units": 100060000000,
             "symbol": "BNB",
-            "rune": 210000000000.000000,
-            "asset": 114557824.000000
+            "rune": 210000000000,
+            "asset": 114557824
           }
         ]
       }
@@ -799,17 +741,17 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "SWAP:FSN-F1B",
       "check": {
         "statechain": [
           {
-            "units": 102500000000.000000,
+            "units": 102500000000,
             "symbol": "FSN-F1B",
-            "rune": 209945005939.000000,
-            "asset": 4774492630.000000
+            "rune": 209945005939,
+            "asset": 4774492630
           }
         ]
       }
@@ -823,17 +765,17 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "SWAP:FTM-585",
       "check": {
         "statechain": [
           {
-            "units": 130000000000.000000,
+            "units": 130000000000,
             "symbol": "FTM-585",
-            "rune": 209944977128.000000,
-            "asset": 57293919423.000000
+            "rune": 209944977128,
+            "asset": 57293919423
           }
         ]
       }
@@ -847,17 +789,17 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "SWAP:LOK-3C0",
       "check": {
         "statechain": [
           {
-            "units": 110000000000.000000,
+            "units": 110000000000,
             "symbol": "LOK-3C0",
-            "rune": 209944948295.000000,
-            "asset": 19097975762.000000
+            "rune": 209944948295,
+            "asset": 19097975762
           }
         ]
       }
@@ -871,17 +813,17 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "SWAP:TCAN-014",
       "check": {
         "statechain": [
           {
-            "units": 180000000000.000000,
+            "units": 180000000000,
             "symbol": "TCAN-014",
-            "rune": 209944919439.000000,
-            "asset": 152783827088.000000
+            "rune": 209944919439,
+            "asset": 152783827088
           }
         ]
       }
@@ -895,17 +837,17 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "SWAP:TOMOB-1E1",
       "check": {
         "statechain": [
           {
-            "units": 103500000000.000000,
+            "units": 103500000000,
             "symbol": "TOMOB-1E1",
-            "rune": 209944890560.000000,
-            "asset": 6684293354.000000
+            "rune": 209944890560,
+            "asset": 6684293354
           }
         ]
       }
@@ -919,17 +861,17 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.06000000
+          "amount": 6000000
         }
       ],
       "memo": "SWAP:RUNE-A1F",
       "check": {
         "statechain": [
           {
-            "units": 100060000000.000000,
+            "units": 100060000000,
             "symbol": "BNB",
-            "rune": 200369149389.000000,
-            "asset": 120377824.000000
+            "rune": 200369149389,
+            "asset": 120377824
           }
         ]
       }
@@ -943,17 +885,17 @@
       "coins": [
         {
           "symbol": "FSN-F1B",
-          "amount": 2.50000000
+          "amount": 250000000
         }
       ],
       "memo": "SWAP:RUNE-A1F",
       "check": {
         "statechain": [
           {
-            "units": 102500000000.000000,
+            "units": 102500000000,
             "symbol": "FSN-F1B",
-            "rune": 200018683984.000000,
-            "asset": 5024492630.000000
+            "rune": 200018683984,
+            "asset": 5024492630
           }
         ]
       }
@@ -967,17 +909,17 @@
       "coins": [
         {
           "symbol": "FTM-585",
-          "amount": 70.00000000
+          "amount": 7000000000
         }
       ],
       "memo": "SWAP:RUNE-A1F",
       "check": {
         "statechain": [
           {
-            "units": 130000000000.000000,
+            "units": 130000000000,
             "symbol": "FTM-585",
-            "rune": 189575857516.000000,
-            "asset": 64293919423.000000
+            "rune": 189575857516,
+            "asset": 64293919423
           }
         ]
       }
@@ -991,17 +933,17 @@
       "coins": [
         {
           "symbol": "LOK-3C0",
-          "amount": 10.00000000
+          "amount": 1000000000
         }
       ],
       "memo": "SWAP:RUNE-A1F",
       "check": {
         "statechain": [
           {
-            "units": 110000000000.000000,
+            "units": 110000000000,
             "symbol": "LOK-3C0",
-            "rune": 200018631519.000000,
-            "asset": 20097975762.000000
+            "rune": 200018631519,
+            "asset": 20097975762
           }
         ]
       }
@@ -1015,17 +957,17 @@
       "coins": [
         {
           "symbol": "TCAN-014",
-          "amount": 80.00000000
+          "amount": 8000000000
         }
       ],
       "memo": "SWAP:RUNE-A1F",
       "check": {
         "statechain": [
           {
-            "units": 180000000000.000000,
+            "units": 180000000000,
             "symbol": "TCAN-014",
-            "rune": 200018605255.000000,
-            "asset": 160783827088.000000
+            "rune": 200018605255,
+            "asset": 160783827088
           }
         ]
       }
@@ -1039,17 +981,17 @@
       "coins": [
         {
           "symbol": "TOMOB-1E1",
-          "amount": 3.50000000
+          "amount": 350000000
         }
       ],
       "memo": "SWAP:RUNE-A1F",
       "check": {
         "statechain": [
           {
-            "units": 103500000000.000000,
+            "units": 103500000000,
             "symbol": "TOMOB-1E1",
-            "rune": 200018578970.000000,
-            "asset": 7034293354.000000
+            "rune": 200018578970,
+            "asset": 7034293354
           }
         ]
       }
@@ -1063,7 +1005,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:BNB"
@@ -1077,7 +1019,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:FSN-F1B"
@@ -1091,7 +1033,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:FTM-585"
@@ -1105,7 +1047,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:LOK-3C0"
@@ -1119,7 +1061,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:TCAN-014"
@@ -1133,7 +1075,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:TOMOB-1E1"
@@ -1147,7 +1089,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:BNB"
@@ -1161,7 +1103,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:FSN-F1B"
@@ -1175,7 +1117,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:FTM-585"
@@ -1189,7 +1131,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:LOK-3C0"
@@ -1203,7 +1145,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:TCAN-014"
@@ -1217,7 +1159,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:TOMOB-1E1"

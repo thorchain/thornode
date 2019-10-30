@@ -12,11 +12,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 2000.00000000
+          "amount": 200000000000
         },
         {
           "symbol": "BNB",
-          "amount": 2.00000000
+          "amount": 200000000
         }
       ],
       "memo": "SEED",
@@ -26,11 +26,11 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 2000.00000000
+              "amount": 200000000000
             },
             {
               "symbol": "BNB",
-              "amount": 2.00000000
+              "amount": 200000000
             }
           ]
         }
@@ -45,11 +45,11 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.50780000
+          "amount": 50780000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         }
       ],
       "memo": "SEED",
@@ -59,11 +59,11 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.50780000
+              "amount": 50780000
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             }
           ]
         }
@@ -78,11 +78,11 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.50097501
+          "amount": 50097501
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         }
       ],
       "memo": "SEED",
@@ -92,11 +92,11 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.50097501
+              "amount": 50097501
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             }
           ]
         }
@@ -111,11 +111,11 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.50937500
+          "amount": 50937500
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         }
       ],
       "memo": "SEED",
@@ -125,11 +125,11 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.50937500
+              "amount": 50937500
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             }
           ]
         }
@@ -144,7 +144,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         }
       ],
       "memo": "SEED",
@@ -154,7 +154,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.10000000
+              "amount": 10000000
             }
           ]
         }
@@ -169,7 +169,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.05000000
+          "amount": 5000000
         }
       ],
       "memo": "GAS"
@@ -183,11 +183,11 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.50000000
+          "amount": 50000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         }
       ],
       "memo": "STAKE:BNB",
@@ -198,24 +198,24 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.55000000
+              "amount": 55000000
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 25025000000.000000,
+            "units": 25025000000,
             "symbol": "BNB",
-            "rune": 50000000000.000000,
-            "asset": 50000000.000000,
+            "rune": 50000000000,
+            "asset": 50000000,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 25025000000.000000
+                "units": 25025000000
               }
             ]
           }
@@ -231,7 +231,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         }
       ],
       "memo": "STAKE:BNB",
@@ -242,27 +242,27 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.40900000
+              "amount": 40900000
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             }
           ]
         },
         "statechain": [{
-          "units": 27110833333.000000,
+          "units": 27110833333,
           "symbol": "BNB",
-          "rune": 50000000000.000000,
-          "asset": 60000000.000000,
+          "rune": 50000000000,
+          "asset": 60000000,
           "staker_units": [
             {
               "actor": "staker_1",
-              "units": 25025000000.000000
+              "units": 25025000000
             },
             {
               "actor": "staker_2",
-              "units": 2085833333.000000
+              "units": 2085833333
             }
           ]
         }]
@@ -277,7 +277,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "STAKE:BNB",
@@ -288,28 +288,28 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.40862500
+              "amount": 40862500
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 400.00000000
+              "amount": 40000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 27110833333.000000,
+            "units": 29613333333,
             "symbol": "BNB",
-            "rune": 50025000000.000000,
-            "asset": 59970000.000000,
+            "rune": 60000000000,
+            "asset": 60000000,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 25025000000.000000
+                "units": 25025000000
               },
               {
                 "actor": "staker_2",
-                "units": 2085833333.000000
+                "units": 6674166666
               }
             ]
           }
@@ -325,11 +325,11 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.30000000
+          "amount": 30000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 300.00000000
+          "amount": 30000000000
         }
       ],
       "memo": "STAKE:BNB",
@@ -340,28 +340,28 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.10802500
+              "amount": 10802500
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 100.00000000
+              "amount": 10000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 41297739043.000000,
+            "units": 44628333333,
             "symbol": "BNB",
-            "rune": 80025000000.000000,
-            "asset":89970000.000000,
+            "rune": 90000000000,
+            "asset": 90000000,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 25025000000.000000
+                "units": 25025000000
               },
               {
                 "actor": "staker_2",
-                "units": 18358572376.000000
+                "units": 26277499999
               }
             ]
           }
@@ -377,11 +377,11 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         },
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "ADD:BNB",
@@ -392,24 +392,24 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.00742500
+              "amount": 742500
             }
           ]
         },
         "statechain": [
           {
-            "units": 41297739043.000000,
+            "units": 44628333333,
             "symbol": "BNB",
-            "rune": 90025000000.000000,
-            "asset": 99970000.000000,
+            "rune": 100000000000,
+            "asset": 100000000,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 25025000000.000000
+                "units": 25025000000
               },
               {
                 "actor": "staker_2",
-                "units": 18358572376.000000
+                "units": 26277499999
               }
             ]
           }
@@ -425,7 +425,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "SWAP:BNB",
@@ -436,28 +436,28 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.50742499
+              "amount": 50742499
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             }
           ]
         },
         "statechain": [
           {
-            "units": 41297739043.000000,
+            "units": 44628333333,
             "symbol": "BNB",
-            "rune": 90025000000.000000,
-            "asset": 99970000.000000,
+            "rune": 100000000000,
+            "asset": 100000000,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 25025000000.000000
+                "units": 25025000000
               },
               {
                 "actor": "staker_2",
-                "units": 18358572376.000000
+                "units": 26277499999
               }
             ]
           }
@@ -473,7 +473,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "SWAP:BNB",
@@ -484,28 +484,28 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.50704998
+              "amount": 50704999
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 499.99999999
+              "amount": 49999999999
             }
           ]
         },
         "statechain": [
           {
-            "units": 41297739043.000000,
+            "units": 44628333333,
             "symbol": "BNB",
-            "rune": 90025000001.000000,
-            "asset": 99970000.000000,
+            "rune": 100000000001,
+            "asset": 100000000,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 25025000000.000000
+                "units": 25025000000
               },
               {
                 "actor": "staker_2",
-                "units": 18358572376.000000
+                "units": 26277499999
               }
             ]
           }
@@ -521,7 +521,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "SWAP:BNB",
@@ -532,28 +532,28 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.59632800
+              "amount": 58901961
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 399.99999999
+              "amount": 39999999999
             }
           ]
         },
         "statechain": [
           {
-            "units": 41297739043.000000,
+            "units": 44628333333,
             "symbol": "BNB",
-            "rune": 100025000001.000000,
-            "asset":90974699.000000,
+            "rune": 110000000001,
+            "asset": 91735538,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 25025000000.000000
+                "units": 25025000000
               },
               {
                 "actor": "staker_2",
-                "units": 18358572376.000000
+                "units": 26277499999
               }
             ]
           }
@@ -569,7 +569,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "SWAP:BNB",
@@ -581,28 +581,28 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.59595299
+              "amount": 58864461
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 299.99999999
+              "amount": 29999999999
             }
           ]
         },
         "statechain": [
           {
-            "units": 41297739043.000000,
+            "units": 44628333333,
             "symbol": "BNB",
-            "rune": 110025000001.000000,
-            "asset": 83457667.000000,
+            "rune": 120000000001,
+            "asset": 84727963,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 25025000000.000000
+                "units": 25025000000
               },
               {
                 "actor": "staker_2",
-                "units": 18358572376.000000
+                "units": 26277499999
               }
             ]
           }
@@ -618,7 +618,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "",
@@ -626,18 +626,18 @@
         "delay": 25,
         "statechain": [
           {
-            "units": 41297739043.000000,
+            "units": 44628333333,
             "symbol": "BNB",
-            "rune": 110025000001.000000,
-            "asset": 83457667.000000,
+            "rune": 120000000001,
+            "asset": 84727963,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 25025000000.000000
+                "units": 25025000000
               },
               {
                 "actor": "staker_2",
-                "units": 18358572376.000000
+                "units": 26277499999
               }
             ]
           }
@@ -653,7 +653,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "ASDJ?",
@@ -661,18 +661,18 @@
         "delay": 25,
         "statechain": [
           {
-            "units": 41297739043.000000,
+            "units": 44628333333,
             "symbol": "BNB",
-            "rune": 110025000001.000000,
-            "asset": 83457667.000000,
+            "rune": 120000000001,
+            "asset": 84727963,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 25025000000.000000
+                "units": 25025000000
               },
               {
                 "actor": "staker_2",
-                "units": 18358572376.000000
+                "units": 26277499999
               }
             ]
           }
@@ -688,7 +688,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:BNB:5000",
@@ -696,18 +696,18 @@
         "delay": 25,
         "statechain": [
           {
-            "units": 28785239043.000000,
+            "units": 32115833333,
             "symbol": "BNB",
-            "rune": 76689329710.000000,
-            "asset": 58171439.000000,
+            "rune": 86355454308,
+            "asset": 60972681,
             "staker_units": [
               {
                 "actor": "staker_1",
-                "units": 12512500000.000000
+                "units": 12512500000
               },
               {
                 "actor": "staker_2",
-                "units": 18358572376.000000
+                "units": 26277499999
               }
             ]
           }
@@ -723,7 +723,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:BNB:10000",
@@ -731,14 +731,14 @@
         "delay": 25,
         "statechain": [
           {
-            "units": 16272739043.000000,
+            "units": 19603333333,
             "symbol": "BNB",
-            "rune": 43353659419.000000,
-            "asset": 32885211.000000,
+            "rune": 52710908615,
+            "asset": 37217399,
             "staker_units": [
               {
                 "actor": "staker_2",
-                "units": 18358572376.000000
+                "units": 26277499999
               }
             ]
           }
@@ -754,7 +754,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "WITHDRAW:BNB"

@@ -70,6 +70,8 @@ Each rule will have:
     "to": [
       "to"
     ],
+    "send_to": "staker_1",
+    "slip_limit": 1234567,
     "coins": [
       {
         "symbol": "BNB",
@@ -88,7 +90,9 @@ Where:
 * `from` is the actor performing the transaction (e.g: `master`, `admin`, `user`, `staker_N` or `pool`),
 * `to` is an array of actors the transaction is for (by using an array, we can support multi-send),
 * `coins` is an array of coin objects containing the `symbol` and the `amount` to send,
-* `memo` is the memo to use for the transaction, when broadcasting to Binance
+* `send_to` is the actor to send to, when performing a swap and send (appended to the memo sent),
+* `slip_limit` is to set the slip limit (appended to the memo sent)
+* `memo` is the memo to use for the transaction
 * and `check` defines the rules for validating the transaction (see blow).
 
 #### Validation
@@ -141,18 +145,12 @@ make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit-2p
 
 #### Individual (Unit) Tests
 
-These are really only intended to be run when debugging locally - e.g.: you wish to generate noise (without running the full suite) to see what the Chain Service or other components within the stack observe/report.
+These are really only intended to be run when debugging locally - e.g.: you wish to generate noise (without running the entire suite) to see what the Chain Service or other components within the stack observe/report.
 
 ##### Gas
 
 ```shell script
 make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> gas
-```
-
-##### Seed
-
-```shell script
-make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> seed
 ```
 
 ##### Stake

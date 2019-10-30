@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -18,10 +17,6 @@ import (
 
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
 )
-
-// For converting amounts to 10-^8
-const precision = 8
-var Fixed8Decimals = math.Pow10(precision)
 
 // Config : test config
 type Config struct {
@@ -149,8 +144,7 @@ func (s *Smoke) Run() {
 		var coins []ctypes.Coin
 
 		for _, coin := range rule.Coins {
-			amount := int64(Fixed8Decimals * coin.Amount)
-			coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: amount})
+			coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: coin.Amount})
 		}
 
 		if len(coins) > 0 {
@@ -314,21 +308,19 @@ func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo 
 	for _, coin := range check.Binance.Coins {
 		for _, balance := range balances {
 			if coin.Symbol == balance.Symbol {
-				amount := int64(Fixed8Decimals * coin.Amount)
+				amount := coin.Amount
 				free := balance.Free.ToInt64()
 
 				if amount != free {
-					log.Printf("%v: FAIL - Binance Balance - %v - Amounts do not match! %v versus %v - %v",
+					log.Printf("%v: FAIL - Binance Balance (%v) - Amounts do not match! Expected: %v, but got: %v",
 						memo,
-						address.String(),
+						coin.Symbol,
 						amount,
 						free,
-						coin.Symbol,
 					)
 				} else {
-					log.Printf("%v: PASS - Binance Balance - %v - %v",
+					log.Printf("%v: PASS - Binance Balance (%v)",
 						memo,
-						address.String(),
 						coin.Symbol,
 					)
 				}
@@ -349,7 +341,7 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 			if p.Asset.Symbol == pool.Symbol {
 				// Check pool units
 				if p.PoolUnits != pool.Units {
-					log.Printf("%v: FAIL - Pool Units (%v) - Units do not match! %f versus %f",
+					log.Printf("%v: FAIL - Pool Units (%v) - Units do not match! Expected: %v, but got: %v",
 						rule.Description,
 						p.Asset.Symbol,
 						pool.Units,
@@ -366,7 +358,7 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 
 				// Check Rune
 				if p.BalanceRune != pool.Rune {
-					log.Printf("%v: FAIL - Pool Rune (%v) - Balance does not match! %f versus %f",
+					log.Printf("%v: FAIL - Pool Rune (%v) - Balance does not match! Expected: %v, but got: %v",
 						rule.Description,
 						p.Asset.Symbol,
 						pool.Rune,
@@ -383,7 +375,7 @@ func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
 
 				// Check asset
 				if p.BalanceAsset != pool.Asset {
-					log.Printf("%v: FAIL - Pool Asset (%v) - Balance does not match! %f versus %f",
+					log.Printf("%v: FAIL - Pool Asset (%v) - Balance does not match! Expected: %v, but got: %v",
 						rule.Description,
 						p.Asset.Symbol,
 						pool.Asset,
@@ -440,7 +432,7 @@ func (s *Smoke) CheckStake(rule types.Rule) {
 			for _, pool := range stake.PoolAndUnits {
 				if pool.Asset.Symbol == chain.Symbol {
 					if pool.Units != stakerUnits.Units {
-						log.Printf("%v: FAIL - Staker Units - Units do not match! %f versus %f",
+						log.Printf("%v: FAIL - Staker Units - Units do not match! %v versus %v",
 							rule.Description,
 							stakerUnits.Units,
 							pool.Units,

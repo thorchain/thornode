@@ -12,7 +12,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 1.00000000
+          "amount": 100000000
         }
       ],
       "memo": "SEED",
@@ -22,7 +22,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 1.00000000
+              "amount": 100000000
             }
           ]
         }
@@ -37,7 +37,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         }
       ],
       "memo": "SEED",
@@ -47,7 +47,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.10000000
+              "amount": 10000000
             }
           ]
         }
@@ -62,7 +62,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.05000000
+          "amount": 5000000
         }
       ],
       "memo": "GAS",
@@ -72,7 +72,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.04962500
+              "amount": 4962500
             }
           ]
         }

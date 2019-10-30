@@ -12,15 +12,15 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 2000.00000000
+          "amount": 200000000000
         },
         {
           "symbol": "LOK-3C0",
-          "amount": 1000.00000000
+          "amount": 100000000000
         },
         {
           "symbol": "BNB",
-          "amount": 2.00000000
+          "amount": 200000000
         }
       ],
       "memo": "SEED",
@@ -30,15 +30,15 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 2000.00000000
+              "amount": 200000000000
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 1000.00000000
+              "amount": 100000000000
             },
             {
               "symbol": "BNB",
-              "amount": 2.00000000
+              "amount": 200000000
             }
           ]
         }
@@ -53,7 +53,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.06666667
+          "amount": 6666667
         }
       ],
       "memo": "SEED",
@@ -63,7 +63,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.06666667
+              "amount": 6666667
             }
           ]
         }
@@ -78,15 +78,15 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "LOK-3C0",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.50000000
+          "amount": 50000000
         }
       ],
       "memo": "SEED",
@@ -96,15 +96,15 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.50000000
+              "amount": 50000000
             }
           ]
         }
@@ -119,15 +119,15 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 1000.00000000
+          "amount": 100000000000
         },
         {
           "symbol": "LOK-3C0",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.66666667
+          "amount": 66666667
         }
       ],
       "memo": "SEED",
@@ -137,15 +137,15 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 1000.00000000
+              "amount": 100000000000
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.66666667
+              "amount": 66666667
             }
           ]
         }
@@ -160,11 +160,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.66666667
+          "amount": 66666667
         }
       ],
       "memo": "SEED",
@@ -174,11 +174,11 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.66666667
+              "amount": 66666667
             }
           ]
         }
@@ -193,7 +193,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.03333333
+          "amount": 3333333
         }
       ],
       "memo": "GAS",
@@ -203,7 +203,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.03295833
+              "amount": 3295833
             }
           ]
         }
@@ -218,11 +218,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.50000000
+          "amount": 50000000
         }
       ],
       "memo": "STAKE:BNB.BNB",
@@ -233,20 +233,20 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.16606667
+              "amount": 16606667
             }
           ]
         },
         "statechain": [
           {
-            "units": 25025000000.00000,
+            "units": 25025000000,
             "symbol": "BNB",
-            "rune": 50000000000.000000,
-            "asset": 50000000.000000
+            "rune": 50000000000,
+            "asset": 50000000
           }
         ]
       }
@@ -260,11 +260,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "LOK-3C0",
-          "amount": 500.00000000
+          "amount": 50000000000
         }
       ],
       "memo": "STAKE:BNB.LOK-3C0",
@@ -275,22 +275,22 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.16546667
+              "amount": 16546667
             }
           ]
         },
         "statechain": [
           {
-            "units": 25025000000.00000,
+            "units": 25025000000,
             "symbol": "BNB",
-            "rune": 50000000000.000000,
-            "asset": 50000000.000000
+            "rune": 50000000000,
+            "asset": 50000000
           },
           {
-            "units": 50000000000.000000,
+            "units": 50000000000,
             "symbol": "LOK-3C0",
-            "rune": 50000000000.000000,
-            "asset": 50000000000.00000
+            "rune": 50000000000,
+            "asset": 50000000000
           }
         ]
       }
@@ -304,11 +304,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.50000000
+          "amount": 50000000
         }
       ],
       "memo": "",
@@ -319,26 +319,26 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.66546667
+              "amount": 66546667
             }
           ]
         },
         "statechain": [
           {
-            "units": 25025000000.00000,
+            "units": 25025000000,
             "symbol": "BNB",
-            "rune": 50000000000.000000,
-            "asset": 50000000.000000
+            "rune": 50000000000,
+            "asset": 50000000
           },
           {
-            "units": 50000000000.000000,
+            "units": 50000000000,
             "symbol": "LOK-3C0",
-            "rune": 50000000000.000000,
-            "asset": 50000000000.00000
+            "rune": 50000000000,
+            "asset": 50000000000
           }
         ]
       }
@@ -352,11 +352,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.50000000
+          "amount": 50000000
         }
       ],
       "memo": "ABDG?",
@@ -367,26 +367,26 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.66426667
+              "amount": 66426667
             }
           ]
         },
         "statechain": [
           {
-            "units": 25025000000.00000,
+            "units": 25025000000,
             "symbol": "BNB",
-            "rune": 50000000000.000000,
-            "asset": 50000000.000000
+            "rune": 50000000000,
+            "asset": 50000000
           },
           {
-            "units": 50000000000.000000,
+            "units": 50000000000,
             "symbol": "LOK-3C0",
-            "rune": 50000000000.000000,
-            "asset": 50000000000.00000
+            "rune": 50000000000,
+            "asset": 50000000000
           }
         ]
       }
@@ -400,11 +400,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.50000000
+          "amount": 50000000
         }
       ],
       "memo": "STAKE:",
@@ -415,26 +415,26 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.66306667
+              "amount": 66306667
             }
           ]
         },
         "statechain": [
           {
-            "units": 25025000000.00000,
+            "units": 25025000000,
             "symbol": "BNB",
-            "rune": 50000000000.000000,
-            "asset": 50000000.000000
+            "rune": 50000000000,
+            "asset": 50000000
           },
           {
-            "units": 50000000000.000000,
+            "units": 50000000000,
             "symbol": "LOK-3C0",
-            "rune": 50000000000.000000,
-            "asset": 50000000000.00000
+            "rune": 50000000000,
+            "asset": 50000000000
           }
         ]
       }
@@ -448,11 +448,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.50000000
+          "amount": 50000000
         }
       ],
       "memo": "STAKE:BNB.TCAN-014",
@@ -463,26 +463,26 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.66186667
+              "amount": 66186667
             }
           ]
         },
         "statechain": [
           {
-            "units": 25025000000.00000,
+            "units": 25025000000,
             "symbol": "BNB",
-            "rune": 50000000000.000000,
-            "asset": 50000000.000000
+            "rune": 50000000000,
+            "asset": 50000000
           },
           {
-            "units": 50000000000.000000,
+            "units": 50000000000,
             "symbol": "LOK-3C0",
-            "rune": 50000000000.000000,
-            "asset": 50000000000.00000
+            "rune": 50000000000,
+            "asset": 50000000000
           }
         ]
       }
@@ -496,41 +496,41 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 500.00000000
+          "amount": 50000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.50000000
+          "amount": 50000000
         }
       ],
       "memo": "STAKE:RUNE-A1F",
       "check": {
-        "delay": 15,
+        "delay": 25,
         "binance": {
           "target": "from",
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.66066667
+              "amount": 66066667
             }
           ]
         },
         "statechain": [
           {
-            "units": 25025000000.00000,
+            "units": 25025000000,
             "symbol": "BNB",
-            "rune": 50000000000.000000,
-            "asset": 50000000.000000
+            "rune": 50000000000,
+            "asset": 50000000
           },
           {
-            "units": 50000000000.000000,
+            "units": 50000000000,
             "symbol": "LOK-3C0",
-            "rune": 50000000000.000000,
-            "asset": 50000000000.00000
+            "rune": 50000000000,
+            "asset": 50000000000
           }
         ]
       }
@@ -544,7 +544,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         }
       ],
       "memo": "STAKE:BNB.BNB",
@@ -555,11 +555,24 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.56029167
+              "amount": 56029167
             }
           ]
         },
-        "statechain": []
+        "statechain": [
+          {
+            "units": 27110833333,
+            "symbol": "BNB",
+            "rune": 50000000000,
+            "asset": 60000000
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -571,7 +584,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "STAKE:BNB.BNB",
@@ -582,15 +595,28 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 400.00000000
+              "amount": 40000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.55991667
+              "amount": 55991667
             }
           ]
         },
-        "statechain": []
+        "statechain": [
+          {
+            "units": 29613333333,
+            "symbol": "BNB",
+            "rune": 60000000000,
+            "asset": 60000000
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -602,11 +628,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 300.00000000
+          "amount": 30000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.30000000
+          "amount": 30000000
         }
       ],
       "memo": "STAKE:BNB.BNB",
@@ -617,15 +643,28 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 100.00000000
+              "amount": 10000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.25931667
+              "amount": 25931667
             }
           ]
         },
-        "statechain": []
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 90000000000,
+            "asset": 90000000
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -637,11 +676,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         }
       ],
       "memo": "ADD:BNB.BNB",
@@ -652,11 +691,24 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 0.15871667
+              "amount": 15871667
             }
           ]
         },
-        "statechain": []
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100000000000,
+            "asset": 100000000
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -668,7 +720,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 1.00000000
+          "amount": 100000000
         }
       ],
       "memo": "",
@@ -679,18 +731,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 499.70000000
+              "amount": 49970000000
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.49962500
+              "amount": 49962500
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100030000000,
+            "asset": 99970000
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -702,7 +768,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 1.00000000
+          "amount": 100000000
         }
       ],
       "memo": "ABDG?",
@@ -713,18 +779,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 499.39981995
+              "amount": 49939981995
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.49925000
+              "amount": 49925000
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100060018005,
+            "asset": 99940000
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -736,7 +816,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "SWAP:BNB.BNB",
@@ -747,18 +827,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 499.39981995
+              "amount": 49939981995
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.49887499
+              "amount": 49887499
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100060018005,
+            "asset": 99940001
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -770,7 +864,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         }
       ],
       "memo": "SWAP:BNB.BNB",
@@ -781,18 +875,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 499.39981995
+              "amount": 49939981995
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.49819999
+              "amount": 49819999
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100060018005,
+            "asset": 99940001
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -804,11 +912,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 1.00000000
+          "amount": 100000000
         },
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         }
       ],
       "memo": "SWAP:BNB.BNB",
@@ -819,18 +927,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 499.39981995
+              "amount": 49939981995
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.49699999
+              "amount": 49699999
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100060018005,
+            "asset": 99940001
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -842,7 +964,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 400.00000000
+          "amount": 40000000000
         }
       ],
       "memo": "SWAP:BNB.BNB",
@@ -853,18 +975,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 499.09945968
+              "amount": 49909945968
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.49662499
+              "amount": 49662499
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100090054032,
+            "asset": 99910001
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -876,7 +1012,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
       "memo": "SWAP:BNB.BNB",
@@ -887,18 +1023,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 499.09945967
+              "amount": 49909945967
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.49624999
+              "amount": 49624999
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100090054033,
+            "asset": 99910001
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -910,10 +1060,10 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
-      "slip_limit": 10192460,
+      "slip_limit": 8498474,
       "memo": "SWAP:BNB.BNB:",
       "check": {
         "delay": 25,
@@ -922,18 +1072,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 498.79891902
+              "amount": 49879891902
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.49587499
+              "amount": 49587499
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100120108098,
+            "asset": 99880001
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -945,7 +1109,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "memo": "SWAP:BNB.BNB",
@@ -956,18 +1120,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 398.79891902
+              "amount": 39879891902
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.29639999
+              "amount": 57766441
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 110120108096,
+            "asset": 91633559
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -979,7 +1157,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         }
       ],
       "memo": "SWAP:BNB.RUNE-A1F",
@@ -990,18 +1168,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 489.89671246
+              "amount": 49612767701
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.19602499
+              "amount": 47728941
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100387232299,
+            "asset": 101603559
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -1013,11 +1205,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "send_to": "staker_1",
-      "slip_limit": 10840995,
+      "slip_limit": 8621582,
       "memo": "SWAP:BNB.BNB",
       "check": {
         "delay": 25,
@@ -1026,18 +1218,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 489.56595523
+              "amount": 49576715372
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.19564999
+              "amount": 47691441
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100423284628,
+            "asset": 101573559
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -1049,11 +1255,11 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 100.00000000
+          "amount": 10000000000
         }
       ],
       "send_to": "staker_1",
-      "slip_limit": 10204858,
+      "slip_limit": 8114570,
       "memo": "SWAP:BNB.BNB",
       "check": {
         "delay": 25,
@@ -1062,18 +1268,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 389.56595523
+              "amount": 39576715372
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.19527499
+              "amount": 47653941
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 110423284628,
+            "asset": 93208023
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -1085,7 +1305,7 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.10000000
+          "amount": 10000000
         }
       ],
       "send_to": "staker_1",
@@ -1097,18 +1317,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 389.56595523
+              "amount": 39576715372
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 500.00000000
+              "amount": 50000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.09489999
+              "amount": 37616441
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100796380467,
+            "asset": 103178023
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50000000000,
+            "asset": 50000000000
+          }
+        ]
       }
     },
     {
@@ -1120,7 +1354,7 @@
       "coins": [
         {
           "symbol": "LOK-3C0",
-          "amount": 50.00000000
+          "amount": 5000000000
         }
       ],
       "memo": "SWAP:BNB.RUNE-A1F",
@@ -1131,18 +1365,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 430.61217995
+              "amount": 43679639263
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 450.00000000
+              "amount": 45000000000
             },
             {
               "symbol": "BNB",
-              "amount": 0.29332499
+              "amount": 37578941
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100825687981,
+            "asset": 103148023
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 45867768595,
+            "asset": 55000000000
+          }
+        ]
       }
     },
     {
@@ -1154,7 +1402,7 @@
       "coins": [
         {
           "symbol": "RUNE-A1F",
-          "amount": 50.00000000
+          "amount": 5000000000
         }
       ],
       "memo": "SWAP:BNB.LOK-3C0",
@@ -1165,18 +1413,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 380.61217995
+              "amount": 38679639263
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 498.41655232
+              "amount": 49839615957
             },
             {
               "symbol": "BNB",
-              "amount": 0.29294999
+              "amount": 37541441
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100855012544,
+            "asset": 103118023
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 50838444033,
+            "asset": 50160384043
+          }
+        ]
       }
     },
     {
@@ -1188,7 +1450,7 @@
       "coins": [
         {
           "symbol": "LOK-3C0",
-          "amount": 50.00000000
+          "amount": 5000000000
         }
       ],
       "memo": "SWAP:BNB.BNB",
@@ -1199,18 +1461,32 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 380.61217995
+              "amount": 38679639263
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 448.41655232
+              "amount": 44839615957
             },
             {
               "symbol": "BNB",
-              "amount": 0.33424417
+              "amount": 41423470
             }
           ]
-        }
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 105045538595,
+            "asset": 99168494
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 46647917982,
+            "asset": 55160384043
+          }
+        ]
       }
     },
     {
@@ -1222,10 +1498,10 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.05000000
+          "amount": 5000000
         }
       ],
-      "memo": "SWAP:BNB.BNB",
+      "memo": "SWAP:BNB.LOK-3C0",
       "check": {
         "delay": 25,
         "binance": {
@@ -1233,18 +1509,164 @@
           "coins": [
             {
               "symbol": "RUNE-A1F",
-              "amount": 380.61217995
+              "amount": 38679639263
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 492.73362293
+              "amount": 49471203629
             },
             {
               "symbol": "BNB",
-              "amount": 0.28386917
+              "amount": 36385970
             }
           ]
+        },
+        "statechain": [
+          {
+            "units": 44628333333,
+            "symbol": "BNB",
+            "rune": 100245457608,
+            "asset": 104138494
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 51447998969,
+            "asset": 50528796371
+          }
+        ]
+      }
+    },
+    {
+      "description": "WITHDRAW 50%",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "BNB",
+          "amount": 1
         }
+      ],
+      "memo": "WITHDRAW:BNB.BNB:5000",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 37732844819
+            },
+            {
+              "symbol": "BNB",
+              "amount": 54042139
+            }
+          ]
+        },
+        "statechain": [
+          {
+            "units": 32115833333,
+            "symbol": "BNB",
+            "rune": 72139516950,
+            "asset": 74941058
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 51447998969,
+            "asset": 50528796371
+          }
+        ]
+      }
+    },
+    {
+      "description": "WITHDRAW 100%",
+      "from": "staker_1",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "BNB",
+          "amount": 1
+        }
+      ],
+      "memo": "WITHDRAW:BNB.BNB:10000",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 65838785476
+            },
+            {
+              "symbol": "BNB",
+              "amount": 83202073
+            }
+          ]
+        },
+        "statechain": [
+          {
+            "units": 19603333333,
+            "symbol": "BNB",
+            "rune": 44033576292,
+            "asset": 45743623
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 51447998969,
+            "asset": 50528796371
+          }
+        ]
+      }
+    },
+    {
+      "description": "WITHDRAW ALL",
+      "from": "staker_2",
+      "to": [
+        "pool"
+      ],
+      "coins": [
+        {
+          "symbol": "BNB",
+          "amount": 1
+        }
+      ],
+      "memo": "WITHDRAW:BNB.BNB",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 44033576292
+            },
+            {
+              "symbol": "BNB",
+              "amount": 61577789
+            }
+          ]
+        },
+        "statechain": [
+          {
+            "units": 0,
+            "symbol": "BNB",
+            "rune": 0,
+            "asset": 1
+          },
+          {
+            "units": 50000000000,
+            "symbol": "LOK-3C0",
+            "rune": 51447998969,
+            "asset": 50528796371
+          }
+        ]
       }
     },
     {
@@ -1256,38 +1678,44 @@
       "coins": [
         {
           "symbol": "BNB",
-          "amount": 0.00000001
+          "amount": 1
         }
       ],
-      "memo": "WITHDRAW:BNB"
-    },
-    {
-      "description": "WITHDRAW ALL",
-      "from": "staker_1",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.00000001
-        }
-      ],
-      "memo": "WITHDRAW:LOK-3C0"
-    },
-    {
-      "description": "WITHDRAW ALL",
-      "from": "staker_2",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 0.00000001
-        }
-      ],
-      "memo": "WITHDRAW:BNB"
+      "memo": "WITHDRAW:BNB.LOK-3C0",
+      "check": {
+        "delay": 25,
+        "binance": {
+          "target": "from",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 117286784445
+            },
+            {
+              "symbol": "LOK-3C0",
+              "amount": 50528796371
+            },
+            {
+              "symbol": "BNB",
+              "amount": 83164572
+            }
+          ]
+        },
+        "statechain": [
+          {
+            "units": 0,
+            "symbol": "BNB",
+            "rune": 0,
+            "asset": 2
+          },
+          {
+            "units": 0,
+            "symbol": "LOK-3C0",
+            "rune": 0,
+            "asset": 0
+          }
+        ]
+      }
     }
   ]
 }
