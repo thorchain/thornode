@@ -2,8 +2,9 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 type MsgOutboundTxSuite struct{}
@@ -14,7 +15,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 	txID := GetRandomTxHash()
 	bnb := GetRandomBNBAddress()
 	acc1 := GetRandomBech32Addr()
-	m := NewMsgOutboundTx(txID, 1, bnb, acc1)
+	m := NewMsgOutboundTx(txID, 1, bnb, common.BNBChain, acc1)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_tx_outbound")
 
@@ -50,7 +51,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 		},
 	}
 	for _, item := range inputs {
-		m := NewMsgOutboundTx(item.txID, item.height, item.sender, item.signer)
+		m := NewMsgOutboundTx(item.txID, item.height, item.sender, common.BNBChain, item.signer)
 		c.Assert(m.ValidateBasic(), NotNil)
 	}
 }

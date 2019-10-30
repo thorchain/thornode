@@ -17,7 +17,8 @@ import (
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/go-retryablehttp"
+
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
 	"gitlab.com/thorchain/bepswap/thornode/common"
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
@@ -92,7 +93,7 @@ func (s StatechainSuite) TestSign(c *C) {
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
 	cfg.ChainHost = u.Host
-	observedAddress, err := common.NewAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq")
+	observedAddress := stypes.GetRandomPubKey()
 	c.Assert(err, IsNil)
 	tx := stypes.NewTxInVoter(common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"), []stypes.TxIn{
 		stypes.NewTxIn(

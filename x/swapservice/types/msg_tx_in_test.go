@@ -14,7 +14,7 @@ func (MsgSetTxInSuite) TestMsgSetTxIn(c *C) {
 	txID := GetRandomTxHash()
 	bnb := GetRandomBNBAddress()
 	acc1 := GetRandomBech32Addr()
-	observePoolAddr := GetRandomBNBAddress()
+	observePoolAddr := GetRandomPubKey()
 	txIn := NewTxIn(common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(1)),
 	}, "hello", bnb, sdk.NewUint(1), observePoolAddr)

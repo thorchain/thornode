@@ -3,6 +3,7 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -24,10 +25,10 @@ type TxIn struct {
 	Sender             common.Address   `json:"sender"`
 	BlockHeight        sdk.Uint         `json:"block_height"`
 	Signers            []sdk.AccAddress `json:"signers"` // trust accounts saw this tx
-	ObservePoolAddress common.Address   `json:"pool_address"`
+	ObservePoolAddress common.PubKey    `json:"pool_address"`
 }
 
-func NewTxIn(coins common.Coins, memo string, sender common.Address, height sdk.Uint, observePoolAddress common.Address) TxIn {
+func NewTxIn(coins common.Coins, memo string, sender common.Address, height sdk.Uint, observePoolAddress common.PubKey) TxIn {
 	return TxIn{
 		Coins:              coins,
 		Memo:               memo,
