@@ -50,27 +50,29 @@ while [[ "$(ls -1 /tmp/shared/node_*.json | wc -l)" != "$NODES" ]]; do
     sleep 1
 done
 
-# Setup SSD
-ssd init local --chain-id statechain
-for f in /tmp/shared/node_*.json; do 
-    ssd add-genesis-account $(cat $f | jq -r .node_address) 100000000000thor
-done
-sscli config chain-id statechain
-sscli config output json
-sscli config indent true
-sscli config trust-node true
+if [ ! -f ~/.ssd/config/genesis.json ]; then
+    # Setup SSD
+    ssd init local --chain-id statechain
+    for f in /tmp/shared/node_*.json; do 
+        ssd add-genesis-account $(cat $f | jq -r .node_address) 100000000000thor
+    done
+    sscli config chain-id statechain
+    sscli config output json
+    sscli config indent true
+    sscli config trust-node true
 
-# add node accounts to genesis file
-for f in /tmp/shared/node_*.json; do 
-    jq --argjson nodeInfo "$(cat $f)" '.app_state.swapservice.node_accounts += [$nodeInfo]' ~/.ssd/config/genesis.json > /tmp/genesis.json
-    mv /tmp/genesis.json ~/.ssd/config/genesis.json
-done
+    # add node accounts to genesis file
+    for f in /tmp/shared/node_*.json; do 
+        jq --argjson nodeInfo "$(cat $f)" '.app_state.swapservice.node_accounts += [$nodeInfo]' ~/.ssd/config/genesis.json > /tmp/genesis.json
+        mv /tmp/genesis.json ~/.ssd/config/genesis.json
+    done
 
-if [[ -f /tmp/shared/config_*.json ]]; then
-  for f in /tmp/shared/config_*.json; do 
-    jq --argjson config "$(cat $f)" '.app_state.swapservice.admin_configs += [$config]' ~/.ssd/config/genesis.json > /tmp/genesis.json
-    mv /tmp/genesis.json ~/.ssd/config/genesis.json
-  done
+    if [[ -f /tmp/shared/config_*.json ]]; then
+        for f in /tmp/shared/config_*.json; do 
+            jq --argjson config "$(cat $f)" '.app_state.swapservice.admin_configs += [$config]' ~/.ssd/config/genesis.json > /tmp/genesis.json
+            mv /tmp/genesis.json ~/.ssd/config/genesis.json
+        done
+    fi
 fi
 
 cat ~/.ssd/config/genesis.json
