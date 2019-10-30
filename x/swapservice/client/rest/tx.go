@@ -70,7 +70,7 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
-			observeAddr, err := common.NewAddress(tx.ObservePoolAddress)
+			observeAddr, err := common.NewPubKeyFromHexString(tx.ObservePoolAddress)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			}
