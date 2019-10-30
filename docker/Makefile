@@ -13,9 +13,17 @@ build-statechain:
 
 clean:
 	@rm -rf /tmp/genesis
-	@rm -rf ~/.thornode/standalone
+	@rm -rf ~/.thornode
 	@mkdir /tmp/genesis
+	@mkdir ~/.thornode
 	@mkdir ~/.thornode/standalone
+	@mkdir ~/.thornode/genesis_1
+	@mkdir ~/.thornode/genesis_2
+	@mkdir ~/.thornode/genesis_3
+	@mkdir ~/.thornode/genesis_4
 
 run-standalone: clean
 	docker-compose -f standalone.yml up --force-recreate --remove-orphans
+
+run-genesis: clean
+	docker-compose -f genesis.yml up --force-recreate --remove-orphans
