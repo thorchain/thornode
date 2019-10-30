@@ -14,55 +14,61 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
 	bnbAddress := GetRandomBNBAddress()
+	assetAddress := GetRandomBNBAddress()
 	txID := GetRandomTxHash()
 	c.Check(txID.IsEmpty(), Equals, false)
-	m := NewMsgSetStakeData(common.BNBAsset, sdk.NewUint(100000000), sdk.NewUint(100000000), bnbAddress, txID, addr)
+	m := NewMsgSetStakeData(common.BNBAsset, sdk.NewUint(100000000), sdk.NewUint(100000000), bnbAddress, assetAddress, txID, addr)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_stakedata")
 
 	inputs := []struct {
-		asset         common.Asset
-		r             sdk.Uint
-		amt           sdk.Uint
-		publicAddress common.Address
-		txHash        common.TxID
-		signer        sdk.AccAddress
+		asset     common.Asset
+		r         sdk.Uint
+		amt       sdk.Uint
+		runeAddr  common.Address
+		assetAddr common.Address
+		txHash    common.TxID
+		signer    sdk.AccAddress
 	}{
 		{
-			asset:         common.Asset{},
-			r:             sdk.NewUint(100000000),
-			amt:           sdk.NewUint(100000000),
-			publicAddress: bnbAddress,
-			txHash:        txID,
-			signer:        addr,
+			asset:     common.Asset{},
+			r:         sdk.NewUint(100000000),
+			amt:       sdk.NewUint(100000000),
+			runeAddr:  bnbAddress,
+			assetAddr: assetAddress,
+			txHash:    txID,
+			signer:    addr,
 		},
 		{
-			asset:         common.BNBAsset,
-			r:             sdk.NewUint(100000000),
-			amt:           sdk.NewUint(100000000),
-			publicAddress: common.NoAddress,
-			txHash:        txID,
-			signer:        addr,
+			asset:     common.BNBAsset,
+			r:         sdk.NewUint(100000000),
+			amt:       sdk.NewUint(100000000),
+			runeAddr:  common.NoAddress,
+			assetAddr: common.NoAddress,
+			txHash:    txID,
+			signer:    addr,
 		},
 		{
-			asset:         common.BNBAsset,
-			r:             sdk.NewUint(100000000),
-			amt:           sdk.NewUint(100000000),
-			publicAddress: bnbAddress,
-			txHash:        common.TxID(""),
-			signer:        addr,
+			asset:     common.BNBAsset,
+			r:         sdk.NewUint(100000000),
+			amt:       sdk.NewUint(100000000),
+			runeAddr:  bnbAddress,
+			assetAddr: assetAddress,
+			txHash:    common.TxID(""),
+			signer:    addr,
 		},
 		{
-			asset:         common.BNBAsset,
-			r:             sdk.NewUint(100000000),
-			amt:           sdk.NewUint(100000000),
-			publicAddress: bnbAddress,
-			txHash:        txID,
-			signer:        sdk.AccAddress{},
+			asset:     common.BNBAsset,
+			r:         sdk.NewUint(100000000),
+			amt:       sdk.NewUint(100000000),
+			runeAddr:  bnbAddress,
+			assetAddr: assetAddress,
+			txHash:    txID,
+			signer:    sdk.AccAddress{},
 		},
 	}
 	for i, item := range inputs {
-		m := NewMsgSetStakeData(item.asset, item.r, item.amt, item.publicAddress, item.txHash, item.signer)
+		m := NewMsgSetStakeData(item.asset, item.r, item.amt, item.runeAddr, item.assetAddr, item.txHash, item.signer)
 		c.Assert(m.ValidateBasic(), NotNil, Commentf("%d) %s\n", i, m))
 	}
 }

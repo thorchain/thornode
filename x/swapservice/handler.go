@@ -109,7 +109,7 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 	// everyone withdraw
 	for _, item := range poolStaker.Stakers {
 		unstakeMsg := NewMsgSetUnStake(
-			item.StakerID,
+			item.RuneAddress,
 			sdk.NewUint(10000),
 			msg.Asset,
 			msg.RequestTxHash,
@@ -118,7 +118,7 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 
 		result := handleMsgSetUnstake(ctx, keeper, txOutStore, poolAddrMgr, unstakeMsg)
 		if !result.IsOK() {
-			ctx.Logger().Error("fail to unstake", "staker", item.StakerID)
+			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
 			return result
 		}
 	}
@@ -207,7 +207,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 
 	ctx.Logger().Info("handleMsgSetStakeData request", "stakerid:"+msg.Asset.String())
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset.String(), "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress)
+		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset.String(), "request tx hash", msg.RequestTxHash, "rune address", msg.RuneAddress)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	if err := msg.ValidateBasic(); nil != err {
@@ -216,7 +216,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 	}
 	pool := keeper.GetPool(ctx, msg.Asset)
 	if pool.Empty() {
-		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Asset.String(), "creator", msg.PublicAddress)
+		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Asset.String(), "creator", msg.RuneAddress)
 		pool.Asset = msg.Asset
 		keeper.SetPool(ctx, pool)
 	}
@@ -230,7 +230,8 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		msg.Asset,
 		msg.RuneAmount,
 		msg.AssetAmount,
-		msg.PublicAddress,
+		msg.RuneAddress,
+		msg.AssetAddress,
 		msg.RequestTxHash,
 	)
 	if err != nil {
@@ -300,9 +301,9 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 
 // handleMsgSetUnstake process unstake
 func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgSetUnStake) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.PublicAddress, msg.WithdrawBasisPoints))
+	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.RuneAddress, msg.WithdrawBasisPoints))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "public address", msg.PublicAddress, "asset", msg.Asset, "withdraw basis points", msg.WithdrawBasisPoints)
+		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "rune address", msg.RuneAddress, "asset", msg.Asset, "withdraw basis points", msg.WithdrawBasisPoints)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	if err := keeper.GetPool(ctx, msg.Asset).EnsureValidPoolStatus(msg); nil != err {
@@ -313,6 +314,14 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error("invalid MsgSetUnstake", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
+
+	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
+	if nil != err {
+		ctx.Logger().Error("fail to get pool staker", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
+
 	runeAmt, assetAmount, units, err := unstake(ctx, keeper, msg)
 	if nil != err {
 		ctx.Logger().Error("fail to UnStake", "error", err)
@@ -351,18 +360,36 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 
 	toi := &TxOutItem{
 		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
-		ToAddress:   msg.PublicAddress,
+		ToAddress:   stakerUnit.RuneAddress,
 	}
 	toi.Coins = append(toi.Coins, common.NewCoin(
 		common.RuneAsset(),
 		runeAmt,
 	))
-	toi.Coins = append(toi.Coins, common.NewCoin(
-		msg.Asset,
-		assetAmount,
-	))
+
+	if stakerUnit.AssetAddress.Equals(stakerUnit.RuneAddress) {
+		toi.Coins = append(toi.Coins, common.NewCoin(
+			msg.Asset,
+			assetAmount,
+		))
+	} else {
+
+		// for unstake , we should deduct fees
+		txOutStore.AddTxOutItem(ctx, keeper, toi, true)
+
+		toi = &TxOutItem{
+			PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
+			ToAddress:   stakerUnit.AssetAddress,
+		}
+		toi.Coins = append(toi.Coins, common.NewCoin(
+			msg.Asset,
+			assetAmount,
+		))
+	}
+
 	// for unstake , we should deduct fees
 	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -689,11 +716,19 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 		return nil, errors.Errorf("did not find %s ", asset)
 	}
 
+	runeAddr := tx.Sender
+	assetAddr := memo.GetDestination()
+	if !runeAddr.IsChain(common.BNBChain) {
+		runeAddr = memo.GetDestination()
+		assetAddr = tx.Sender
+	}
+
 	return NewMsgSetStakeData(
 		asset,
 		runeAmount,
 		assetAmount,
-		tx.Sender,
+		runeAddr,
+		assetAddr,
 		txID,
 		signer,
 	), nil

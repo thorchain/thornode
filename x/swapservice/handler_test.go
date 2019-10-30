@@ -260,6 +260,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
 		bnbAddr,
+		bnbAddr,
 		stakeTxHash,
 		acc1.Accounts.ObserverBEPAddress)
 	stakeResult := handleMsgSetStakeData(ctx, k, msgSetStake)
@@ -324,6 +325,7 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
 		bnbAddr,
+		bnbAddr,
 		stakeTxHash,
 		w.notActiveNodeAccount.Accounts.ObserverBEPAddress)
 	stakeResult := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
@@ -335,6 +337,7 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 		common.BNBAsset,
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
+		bnbAddr,
 		bnbAddr,
 		stakeTxHash,
 		w.activeNodeAccount.Accounts.ObserverBEPAddress)
@@ -359,6 +362,7 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
 		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
 		GetRandomTxHash(),
 		w.activeNodeAccount.Accounts.ObserverBEPAddress)
 	stakeResult2 := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake1)
@@ -368,6 +372,7 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 		common.BNBAsset,
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
+		"",
 		"",
 		"",
 		w.activeNodeAccount.Accounts.ObserverBEPAddress)

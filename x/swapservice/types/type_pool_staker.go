@@ -11,13 +11,18 @@ import (
 
 // StakerUnit staker and their units in the pool
 type StakerUnit struct {
-	StakerID common.Address `json:"staker_id"`
-	Units    sdk.Uint       `json:"units"`
+	RuneAddress  common.Address `json:"rune_address"`
+	AssetAddress common.Address `json:"asset_address"`
+	Units        sdk.Uint       `json:"units"`
+	PendingRune  sdk.Uint       `json:"pending_rune"` // number of rune coins
 }
 
 func (su StakerUnit) Valid() error {
-	if su.StakerID.IsEmpty() {
-		return errors.New("Staker address cannot be empty")
+	if su.RuneAddress.IsEmpty() {
+		return errors.New("Rune address cannot be empty")
+	}
+	if su.AssetAddress.IsEmpty() {
+		return errors.New("Asset address cannot be empty")
 	}
 
 	return nil
@@ -69,28 +74,29 @@ func (ps PoolStaker) String() string {
 	bs.WriteString(fmt.Sprintf("staker count: %d", len(ps.Stakers)))
 	if nil != ps.Stakers {
 		for _, stakerUnit := range ps.Stakers {
-			bs.WriteString(fmt.Sprintln(stakerUnit.StakerID.String() + " : " + stakerUnit.Units.String()))
+			bs.WriteString(fmt.Sprintln(stakerUnit.RuneAddress.String() + " : " + stakerUnit.Units.String()))
 		}
 	}
 	return bs.String()
 }
-func (ps *PoolStaker) GetStakerUnit(stakerID common.Address) StakerUnit {
+
+func (ps *PoolStaker) GetStakerUnit(addr common.Address) StakerUnit {
 	for _, item := range ps.Stakers {
-		if item.StakerID == stakerID {
+		if item.RuneAddress == addr {
 			return item
 		}
 	}
 	return StakerUnit{
-		StakerID: stakerID,
-		Units:    sdk.ZeroUint(),
+		Units:       sdk.ZeroUint(),
+		PendingRune: sdk.ZeroUint(),
 	}
 }
 
 // RemoveStakerUnit will remove the stakerunit with given staker id from the struct
-func (ps *PoolStaker) RemoveStakerUnit(stakerID common.Address) {
+func (ps *PoolStaker) RemoveStakerUnit(runeAddr common.Address) {
 	deleteIdx := -1
 	for idx, item := range ps.Stakers {
-		if item.StakerID == stakerID {
+		if item.RuneAddress == runeAddr {
 			deleteIdx = idx
 		}
 	}
@@ -105,7 +111,7 @@ func (ps *PoolStaker) RemoveStakerUnit(stakerID common.Address) {
 func (ps *PoolStaker) UpsertStakerUnit(stakerUnit StakerUnit) {
 	pos := -1
 	for idx, item := range ps.Stakers {
-		if item.StakerID == stakerUnit.StakerID {
+		if item.RuneAddress == stakerUnit.RuneAddress {
 			pos = idx
 		}
 	}
