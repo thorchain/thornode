@@ -15,7 +15,7 @@ func (StakerPoolSuite) TestStakerPool(c *C) {
 	c.Assert(err, IsNil)
 
 	stakerPool := NewStakerPool(bnb)
-	c.Check(stakerPool.StakerID, Equals, bnb)
+	c.Check(stakerPool.RuneAddress, Equals, bnb)
 	c.Assert(stakerPool.PoolUnits, NotNil)
 
 	stakerPoolItem := &StakerPoolItem{

@@ -126,6 +126,7 @@ type StakeMemo struct {
 	MemoBase
 	RuneAmount  string
 	AssetAmount string
+	Address     common.Address
 }
 
 type WithdrawMemo struct {
@@ -218,8 +219,23 @@ func ParseMemo(memo string) (Memo, error) {
 		}, nil
 
 	case txStake:
+		var addr common.Address
+		if !common.IsBNBChain(asset.Chain) {
+			if len(parts) < 3 {
+				// cannot stake into a non BNB-based pool when we don't have an
+				// associated address
+				return noMemo, fmt.Errorf(
+					"Invalid stake. Cannot stake to a non BNB-based pool without providing an associated address",
+				)
+			}
+			addr, err = common.NewAddress(parts[2])
+			if err != nil {
+				return noMemo, err
+			}
+		}
 		return StakeMemo{
 			MemoBase: MemoBase{TxType: txStake, Asset: asset},
+			Address:  addr,
 		}, nil
 
 	case txWithdraw:
@@ -330,3 +346,4 @@ func (m AdminMemo) GetValue() string                      { return m.Value }
 func (m OutboundMemo) GetBlockHeight() uint64             { return m.BlockHeight }
 func (m BondMemo) GetNodeAddress() sdk.AccAddress         { return m.NodeAddress }
 func (m NextPoolMemo) GetNextPoolAddress() common.Address { return m.NextPoolAddr }
+func (m StakeMemo) GetDestination() common.Address        { return m.Address }

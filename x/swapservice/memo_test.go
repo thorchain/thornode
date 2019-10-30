@@ -118,6 +118,13 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Check(memo.GetAsset().String(), Equals, "BNB.RUNE-1BA")
 	c.Check(memo.IsType(txStake), Equals, true, Commentf("MEMO: %+v", memo))
 
+	memo, err = ParseMemo("STAKE:BTC.BTC")
+	c.Assert(err, NotNil)
+	memo, err = ParseMemo("STAKE:BTC.BTC:bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej")
+	c.Assert(err, IsNil)
+	c.Check(memo.GetDestination().String(), Equals, "bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej")
+	c.Check(memo.IsType(txStake), Equals, true, Commentf("MEMO: %+v", memo))
+
 	memo, err = ParseMemo("WITHDRAW:RUNE-1BA:25")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetAsset().String(), Equals, "BNB.RUNE-1BA")
