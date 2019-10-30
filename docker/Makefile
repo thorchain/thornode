@@ -21,9 +21,13 @@ clean:
 	@mkdir ~/.thornode/genesis_2
 	@mkdir ~/.thornode/genesis_3
 	@mkdir ~/.thornode/genesis_4
+	@mkdir ~/.thornode/validator
 
 run-standalone: clean
 	docker-compose -f standalone.yml up --force-recreate --remove-orphans
 
 run-genesis: clean
 	docker-compose -f genesis.yml up --force-recreate --remove-orphans
+
+run-validator: clean
+	docker-compose -f validator.yml up --force-recreate --remove-orphans
