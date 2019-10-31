@@ -1,5 +1,5 @@
 up: clean
-	@docker-compose up
+	@docker-compose up --force-recreate
 
 down:
 	@docker-compose down

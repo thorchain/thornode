@@ -1,58 +1,58 @@
 version: '3'
 
 services:
-  observer_1:
-    hostname: observer_1
+  observer:
+    hostname: observer
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/observer.Dockerfile
-    image: thornode-observer
+    image: registry.gitlab.com/thorchain/bepswap/thornode-observer
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api_1:1317
+      CHAIN_HOST: thor-api:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
-      - thor-api_1
+      - thor-api
     links:
-      - thor-api_1
+      - thor-api
     volumes:
       - ${PWD}:/docker
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
-  signer_1:
-    hostname: signer_1
+  signer:
+    hostname: signer
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/signer.Dockerfile
-    image: thornode-signer
+    image: registry.gitlab.com/thorchain/bepswap/thornode-signer
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api_1:1317
-      RPC_HOST: thor-daemon_1:26657
+      CHAIN_HOST: thor-api:1317
+      RPC_HOST: thor-daemon:26657
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
-      - thor-api_1
+      - thor-api
     links:
-      - thor-api_1
+      - thor-api
     volumes:
       - ${PWD}:/docker
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
 
-  thor-daemon_1:
-    hostname: thor-daemon_1
+  thor-daemon:
+    hostname: thor-daemon
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
-    image: thornode-statechain
+    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
     environment:
       NODES: 4
-      SEED: thor-daemon_1
+      SEED: thor-daemon
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
@@ -63,18 +63,20 @@ services:
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
     command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
-  thor-api_1:
-    hostname: thor-api_1
+  thor-api:
+    hostname: thor-api
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
     depends_on:
-      - thor-daemon_1
+      - thor-daemon
     links:
-      - thor-daemon_1
-    image: thornode-statechain
+      - thor-daemon
+    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
     environment:
-      CHAIN_DAEMON: thor-daemon_1:26657
+      CHAIN_DAEMON: thor-daemon:26657
+    expose:
+      - "1317"
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
@@ -83,59 +85,58 @@ services:
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
 
-
-  observer_2:
-    hostname: observer_2
+  observer2:
+    hostname: observer2
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/observer.Dockerfile
-    image: thornode-observer
+    image: registry.gitlab.com/thorchain/bepswap/thornode-observer
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api_2:1317
+      CHAIN_HOST: thor-api2:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
-      - thor-api_2
+      - thor-api2
     links:
-      - thor-api_2
+      - thor-api2
     volumes:
       - ${PWD}:/docker
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
-  signer_2:
-    hostname: signer_2
+  signer2:
+    hostname: signer2
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/signer.Dockerfile
-    image: thornode-signer
+    image: registry.gitlab.com/thorchain/bepswap/thornode-signer
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api_2:1317
-      RPC_HOST: thor-daemon_2:26657
+      CHAIN_HOST: thor-api2:1317
+      RPC_HOST: thor-daemon2:26657
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
-      - thor-api_2
+      - thor-api2
     links:
-      - thor-api_2
+      - thor-api2
     volumes:
       - ${PWD}:/docker
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
 
-  thor-daemon_2:
-    hostname: thor-daemon_2
+  thor-daemon2:
+    hostname: thor-daemon2
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
-    image: thornode-statechain
+    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
     environment:
       NODES: 4
-      SEED: thor-daemon_1
+      SEED: thor-daemon
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
@@ -146,18 +147,18 @@ services:
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
     command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
-  thor-api_2:
-    hostname: thor-api_2
+  thor-api2:
+    hostname: thor-api2
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
     depends_on:
-      - thor-daemon_2
+      - thor-daemon2
     links:
-      - thor-daemon_2
-    image: thornode-statechain
+      - thor-daemon2
+    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
     environment:
-      CHAIN_DAEMON: thor-daemon_2:26657
+      CHAIN_DAEMON: thor-daemon2:26657
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
@@ -167,58 +168,58 @@ services:
     command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
 
 
-  observer_3:
-    hostname: observer_3
+  observer3:
+    hostname: observer3
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/observer.Dockerfile
-    image: thornode-observer
+    image: registry.gitlab.com/thorchain/bepswap/thornode-observer
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api_3:1317
+      CHAIN_HOST: thor-api3:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
-      - thor-api_3
+      - thor-api3
     links:
-      - thor-api_3
+      - thor-api3
     volumes:
       - ${PWD}:/docker
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
-  signer_3:
-    hostname: signer_3
+  signer3:
+    hostname: signer3
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/signer.Dockerfile
-    image: thornode-signer
+    image: registry.gitlab.com/thorchain/bepswap/thornode-signer
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api_3:1317
-      RPC_HOST: thor-daemon_3:26657
+      CHAIN_HOST: thor-api3:1317
+      RPC_HOST: thor-daemon3:26657
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
-      - thor-api_3
+      - thor-api3
     links:
-      - thor-api_3
+      - thor-api3
     volumes:
       - ${PWD}:/docker
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
 
-  thor-daemon_3:
-    hostname: thor-daemon_3
+  thor-daemon3:
+    hostname: thor-daemon3
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
-    image: thornode-statechain
+    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
     environment:
       NODES: 4
-      SEED: thor-daemon_1
+      SEED: thor-daemon
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
@@ -229,18 +230,18 @@ services:
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
     command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
-  thor-api_3:
-    hostname: thor-api_3
+  thor-api3:
+    hostname: thor-api3
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
     depends_on:
-      - thor-daemon_3
+      - thor-daemon3
     links:
-      - thor-daemon_3
-    image: thornode-statechain
+      - thor-daemon3
+    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
     environment:
-      CHAIN_DAEMON: thor-daemon_3:26657
+      CHAIN_DAEMON: thor-daemon3:26657
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
@@ -250,58 +251,58 @@ services:
     command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
 
 
-  observer_4:
-    hostname: observer_4
+  observer4:
+    hostname: observer4
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/observer.Dockerfile
-    image: thornode-observer
+    image: registry.gitlab.com/thorchain/bepswap/thornode-observer
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api_4:1317
+      CHAIN_HOST: thor-api4:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
-      - thor-api_4
+      - thor-api4
     links:
-      - thor-api_4
+      - thor-api4
     volumes:
       - ${PWD}:/docker
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
-  signer_4:
-    hostname: signer_4
+  signer4:
+    hostname: signer4
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/signer.Dockerfile
-    image: thornode-signer
+    image: registry.gitlab.com/thorchain/bepswap/thornode-signer
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api_4:1317
-      RPC_HOST: thor-daemon_4:26657
+      CHAIN_HOST: thor-api4:1317
+      RPC_HOST: thor-daemon4:26657
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
-      - thor-api_4
+      - thor-api4
     links:
-      - thor-api_4
+      - thor-api4
     volumes:
       - ${PWD}:/docker
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
 
-  thor-daemon_4:
-    hostname: thor-daemon_4
+  thor-daemon4:
+    hostname: thor-daemon4
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
-    image: thornode-statechain
+    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
     environment:
       NODES: 4
-      SEED: thor-daemon_1
+      SEED: thor-daemon
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
@@ -312,18 +313,18 @@ services:
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
     command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
-  thor-api_4:
-    hostname: thor-api_4
+  thor-api4:
+    hostname: thor-api4
     build:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
     depends_on:
-      - thor-daemon_4
+      - thor-daemon4
     links:
-      - thor-daemon_4
-    image: thornode-statechain
+      - thor-daemon4
+    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
     environment:
-      CHAIN_DAEMON: thor-daemon_4:26657
+      CHAIN_DAEMON: thor-daemon4:26657
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
