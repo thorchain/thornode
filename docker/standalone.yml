@@ -18,8 +18,8 @@ services:
       - thor-api
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/standalone/.ssd:/root/.ssd
-      - ${HOME}/.thornode/standalone/.sscli:/root/.sscli
+      - ${HOME}/.thornode/standalone/.thord:/root/.thord
+      - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
   signer:
@@ -58,10 +58,10 @@ services:
     volumes:
       - /tmp/genesis:/tmp/shared
       - ${PWD}:/docker
-      - ${HOME}/.thornode/standalone/.ssd:/root/.ssd
-      - ${HOME}/.thornode/standalone/.sscli:/root/.sscli
+      - ${HOME}/.thornode/standalone/.thord:/root/.thord
+      - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/standalone/keys:/root/.signer
-    command: ["ssd", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api:
     hostname: thor-api
@@ -81,6 +81,6 @@ services:
       /docker/scripts/rest.sh
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/standalone/.ssd:/root/.ssd
-      - ${HOME}/.thornode/standalone/.sscli:/root/.sscli
-    command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+      - ${HOME}/.thornode/standalone/.thord:/root/.thord
+      - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
+    command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]

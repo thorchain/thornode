@@ -5,7 +5,7 @@ NODE_ID="${NODE_ID:=none}"
 SEED="${SEED:=none}" # the hostname of a seed node
 GENESIS_URL="${GENESIS_URL:=none}"
 
-if [ ! -f ~/.ssd/config/genesis.json ]; then
+if [ ! -f ~/.thord/config/genesis.json ]; then
     if [[ "$NODE_ID" == "none" ]]; then
         echo "Mising NODE_ID"
         exit 1
@@ -39,29 +39,29 @@ if [ ! -f ~/.ssd/config/genesis.json ]; then
     fi
 
     # create statechain user
-    echo $SIGNER_PASSWD | sscli keys add statechain
+    echo $SIGNER_PASSWD | thorcli keys add statechain
 
-    NODE_ADDRESS=$(sscli keys show statechain -a)
+    NODE_ADDRESS=$(thorcli keys show statechain -a)
     echo "YOUR NODE ADDRESS: $NODE_ADDRESS. Send your bond with this as your address."
 
     # Setup SSD
-    ssd init local --chain-id statechain
-    sscli config chain-id statechain
-    sscli config output json
-    sscli config indent true
-    sscli config trust-node true
+    thord init local --chain-id statechain
+    thorcli config chain-id statechain
+    thorcli config output json
+    thorcli config indent true
+    thorcli config trust-node true
 
-    curl $GENESIS_URL --output ~/.ssd/config/genesis.json
+    curl $GENESIS_URL --output ~/.thord/config/genesis.json
 
-    ssd validate-genesis
+    thord validate-genesis
 
     PEER="$NODE_ID@$SEED:26656"
     ADDR='addr_book_strict = true'
     ADDR_STRICT_FALSE='addr_book_strict = false'
     PEERSISTENT_PEER_TARGET='persistent_peers = ""'
 
-    sed -i -e "s/$ADDR/$ADDR_STRICT_FALSE/g" ~/.ssd/config/config.toml
-    sed -i -e "s/$PEERSISTENT_PEER_TARGET/persistent_peers = \"$PEER\"/g" ~/.ssd/config/config.toml
+    sed -i -e "s/$ADDR/$ADDR_STRICT_FALSE/g" ~/.thord/config/config.toml
+    sed -i -e "s/$PEERSISTENT_PEER_TARGET/persistent_peers = \"$PEER\"/g" ~/.thord/config/config.toml
 
 fi
 

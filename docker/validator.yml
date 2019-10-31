@@ -18,8 +18,8 @@ services:
       - thor-api
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/validator/.ssd:/root/.ssd
-      - ${HOME}/.thornode/validator/.sscli:/root/.sscli
+      - ${HOME}/.thornode/validator/.thord:/root/.thord
+      - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
   signer:
@@ -55,10 +55,10 @@ services:
     volumes:
       - /tmp/genesis:/tmp/shared
       - ${PWD}:/docker
-      - ${HOME}/.thornode/validator/.ssd:/root/.ssd
-      - ${HOME}/.thornode/validator/.sscli:/root/.sscli
+      - ${HOME}/.thornode/validator/.thord:/root/.thord
+      - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/validator/keys:/root/.signer
-    command: ["ssd", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api:
     hostname: thor-api
@@ -76,9 +76,9 @@ services:
       /docker/scripts/rest.sh
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/validator/.ssd:/root/.ssd
-      - ${HOME}/.thornode/validator/.sscli:/root/.sscli
-    command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+      - ${HOME}/.thornode/validator/.thord:/root/.thord
+      - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
+    command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
 
   binance:
     hostname: binance-fullnode
