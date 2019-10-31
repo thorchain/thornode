@@ -18,8 +18,8 @@ services:
       - thor-api_1
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_1/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_1/.sscli:/root/.sscli
+      - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
   signer_1:
@@ -58,10 +58,10 @@ services:
     volumes:
       - /tmp/genesis:/tmp/shared
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_1/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_1/.sscli:/root/.sscli
+      - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
-    command: ["ssd", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api_1:
     hostname: thor-api_1
@@ -79,9 +79,9 @@ services:
       /docker/scripts/rest.sh
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_1/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_1/.sscli:/root/.sscli
-    command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+      - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
+    command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
 
 
   observer_2:
@@ -101,8 +101,8 @@ services:
       - thor-api_2
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_2/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_2/.sscli:/root/.sscli
+      - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
   signer_2:
@@ -141,10 +141,10 @@ services:
     volumes:
       - /tmp/genesis:/tmp/shared
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_2/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_2/.sscli:/root/.sscli
+      - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
-    command: ["ssd", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api_2:
     hostname: thor-api_2
@@ -162,9 +162,9 @@ services:
       /docker/scripts/rest.sh
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_2/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_2/.sscli:/root/.sscli
-    command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+      - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
+    command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
 
 
   observer_3:
@@ -184,8 +184,8 @@ services:
       - thor-api_3
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_3/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_3/.sscli:/root/.sscli
+      - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
   signer_3:
@@ -224,10 +224,10 @@ services:
     volumes:
       - /tmp/genesis:/tmp/shared
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_3/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_3/.sscli:/root/.sscli
+      - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
-    command: ["ssd", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api_3:
     hostname: thor-api_3
@@ -245,9 +245,9 @@ services:
       /docker/scripts/rest.sh
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_3/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_3/.sscli:/root/.sscli
-    command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+      - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
+    command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
 
 
   observer_4:
@@ -267,8 +267,8 @@ services:
       - thor-api_4
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_4/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_4/.sscli:/root/.sscli
+      - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
 
   signer_4:
@@ -307,10 +307,10 @@ services:
     volumes:
       - /tmp/genesis:/tmp/shared
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_4/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_4/.sscli:/root/.sscli
+      - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
-    command: ["ssd", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api_4:
     hostname: thor-api_4
@@ -328,7 +328,7 @@ services:
       /docker/scripts/rest.sh
     volumes:
       - ${PWD}:/docker
-      - ${HOME}/.thornode/genesis_4/.ssd:/root/.ssd
-      - ${HOME}/.thornode/genesis_4/.sscli:/root/.sscli
-    command: ["sscli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+      - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
+    command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
 

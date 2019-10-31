@@ -15,8 +15,8 @@ RUN go mod verify
 RUN go get -d -v ./...
 
 RUN go build -a -installsuffix cgo -o generate ./tools/generate
-RUN go build -a -installsuffix cgo -o ssd ./cmd/ssd
-RUN go build -a -installsuffix cgo -o sscli ./cmd/sscli
+RUN go build -a -installsuffix cgo -o thord ./cmd/thord
+RUN go build -a -installsuffix cgo -o thorcli ./cmd/thorcli
 
 #
 # Statechain
@@ -30,8 +30,8 @@ ENV PATH="${PATH}:/go/bin"
 
 # Copy the compiled binaires over.
 COPY --from=build /go/src/app/generate /go/bin/
-COPY --from=build /go/src/app/ssd /go/bin/
-COPY --from=build /go/src/app/sscli /go/bin/
+COPY --from=build /go/src/app/thord /go/bin/
+COPY --from=build /go/src/app/thorcli /go/bin/
 
 # Add users.
 RUN adduser -Ds /bin/sh www-data -G www-data

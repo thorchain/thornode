@@ -28,15 +28,15 @@ else
 fi
 
 # create statechain user
-echo $SIGNER_PASSWD | sscli keys add $SIGNER_NAME
+echo $SIGNER_PASSWD | thorcli keys add $SIGNER_NAME
 
-VALIDATOR=$(ssd tendermint show-validator)
-OBSERVER_ADDRESS=$(sscli keys show statechain -a)
-NODE_ADDRESS=$(sscli keys show statechain -a)
+VALIDATOR=$(thord tendermint show-validator)
+OBSERVER_ADDRESS=$(thorcli keys show statechain -a)
+NODE_ADDRESS=$(thorcli keys show statechain -a)
 
 if [[ "$SEED" == "$(hostname)" ]]; then
   echo "I AM THE SEED NODE"
-  ssd tendermint show-node-id > /tmp/shared/node.txt
+  thord tendermint show-node-id > /tmp/shared/node.txt
   echo $PUBKEY > /tmp/shared/pubkey.txt
 fi
 
@@ -57,36 +57,36 @@ POOL_ADDRESS=$(cat /tmp/shared/pubkey.txt)
 echo "{\"current\":\"$POOL_ADDRESS\"}" > /tmp/shared/pool_addresses.json
 
 
-if [ ! -f ~/.ssd/config/genesis.json ]; then
+if [ ! -f ~/.thord/config/genesis.json ]; then
     # Setup SSD
-    ssd init local --chain-id statechain
+    thord init local --chain-id statechain
     for f in /tmp/shared/node_*.json; do 
-        ssd add-genesis-account $(cat $f | jq -r .node_address) 100000000000thor
+        thord add-genesis-account $(cat $f | jq -r .node_address) 100000000000thor
     done
-    sscli config chain-id statechain
-    sscli config output json
-    sscli config indent true
-    sscli config trust-node true
+    thorcli config chain-id statechain
+    thorcli config output json
+    thorcli config indent true
+    thorcli config trust-node true
 
     # add node accounts to genesis file
     for f in /tmp/shared/node_*.json; do 
-        jq --argjson nodeInfo "$(cat $f)" '.app_state.swapservice.node_accounts += [$nodeInfo]' ~/.ssd/config/genesis.json > /tmp/genesis.json
-        mv /tmp/genesis.json ~/.ssd/config/genesis.json
+        jq --argjson nodeInfo "$(cat $f)" '.app_state.swapservice.node_accounts += [$nodeInfo]' ~/.thord/config/genesis.json > /tmp/genesis.json
+        mv /tmp/genesis.json ~/.thord/config/genesis.json
     done
 
-    jq --argjson addr "$(cat /tmp/shared/pool_addresses.json)" '.app_state.swapservice.pool_addresses = $addr' ~/.ssd/config/genesis.json > /tmp/genesis.json
-    mv /tmp/genesis.json ~/.ssd/config/genesis.json
+    jq --argjson addr "$(cat /tmp/shared/pool_addresses.json)" '.app_state.swapservice.pool_addresses = $addr' ~/.thord/config/genesis.json > /tmp/genesis.json
+    mv /tmp/genesis.json ~/.thord/config/genesis.json
 
     if [[ -f /tmp/shared/config_*.json ]]; then
         for f in /tmp/shared/config_*.json; do 
-            jq --argjson config "$(cat $f)" '.app_state.swapservice.admin_configs += [$config]' ~/.ssd/config/genesis.json > /tmp/genesis.json
-            mv /tmp/genesis.json ~/.ssd/config/genesis.json
+            jq --argjson config "$(cat $f)" '.app_state.swapservice.admin_configs += [$config]' ~/.thord/config/genesis.json > /tmp/genesis.json
+            mv /tmp/genesis.json ~/.thord/config/genesis.json
         done
     fi
 fi
 
-cat ~/.ssd/config/genesis.json
-ssd validate-genesis
+cat ~/.thord/config/genesis.json
+thord validate-genesis
 
 # setup peer connection
 if [[ "$SEED" != "$(hostname)" ]]; then
@@ -97,13 +97,13 @@ if [[ "$SEED" != "$(hostname)" ]]; then
   ADDR_STRICT_FALSE='addr_book_strict = false'
   PEERSISTENT_PEER_TARGET='persistent_peers = ""'
 
-  sed -i -e "s/$ADDR/$ADDR_STRICT_FALSE/g" ~/.ssd/config/config.toml
-  sed -i -e "s/$PEERSISTENT_PEER_TARGET/persistent_peers = \"$PEER\"/g" ~/.ssd/config/config.toml
+  sed -i -e "s/$ADDR/$ADDR_STRICT_FALSE/g" ~/.thord/config/config.toml
+  sed -i -e "s/$PEERSISTENT_PEER_TARGET/persistent_peers = \"$PEER\"/g" ~/.thord/config/config.toml
 fi
 
 if [[ "$SEED" == "$(hostname)" ]]; then
     # copy the genesis file to shared directory, so we can access it later
-    cp ~/.ssd/config/genesis.json /tmp/shared
+    cp ~/.thord/config/genesis.json /tmp/shared
 fi
 
 exec "$@"
