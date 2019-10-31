@@ -9,6 +9,7 @@ ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=0}" # how often the pools in statech
 
 if [ -f ~/.signer/private_key.txt ]; then
   PUBKEY=$(cat ~/.signer/pubkey.txt)
+  ADDRESS=$(cat ~/.signer/address.txt)
 else
   echo "GENERATING BNB ADDRESSES"
   # because the generate command can get API rate limited, we may need to retry
@@ -18,6 +19,8 @@ else
     n=$[$n+1]
     sleep 1
   done
+  ADDRESS=$(cat /tmp/bnb | grep MASTER= | awk -F= '{print $NF}')
+  echo $ADDRESS > ~/.signer/address.txt
   BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
   echo $BINANCE_PRIVATE_KEY > ~/.signer/private_key.txt
   PUBKEY=$(cat /tmp/bnb | grep MASTER_PUBKEY= | awk -F= '{print $NF}')
@@ -38,7 +41,7 @@ if [[ "$SEED" == "$(hostname)" ]]; then
 fi
 
 # write node account data to json file in shared directory
-echo "{\"node_address\": \"$NODE_ADDRESS\" ,\"status\":\"active\",\"bond_address\":\"$PUBKEY\",\"accounts\":{\"bnb_signer_acc\":\"$PUBKEY\", \"bepv_validator_acc\": \"$VALIDATOR\", \"bep_observer_acc\": \"$NODE_ADDRESS\"}}" > /tmp/shared/node_$NODE_ADDRESS.json
+echo "{\"node_address\": \"$NODE_ADDRESS\" ,\"status\":\"active\",\"bond_address\":\"$ADDRESS\",\"accounts\":{\"bnb_signer_acc\":\"$PUBKEY\", \"bepv_validator_acc\": \"$VALIDATOR\", \"bep_observer_acc\": \"$NODE_ADDRESS\"}}" > /tmp/shared/node_$NODE_ADDRESS.json
 # write rotate block height as config file
 if [[ "$ROTATE_BLOCK_HEIGHT" != "0" ]]; then
   echo "{\"address\": \"$NODE_ADDRESS\" ,\"key\":\"RotatePerBlockHeight\",\"value\":\"$ROTATE_BLOCK_HEIGHT\"}" > /tmp/shared/config_$NODE_ADDRESS.json
