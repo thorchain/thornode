@@ -33,7 +33,7 @@ func main() {
 	config.Seal()
 
 	rootCmd := &cobra.Command{
-		Use:   "sscli",
+		Use:   "thorcli",
 		Short: "swapservice Client",
 	}
 

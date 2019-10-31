@@ -46,11 +46,11 @@ Install via this `make` command.
 make install
 ```
 
-Once you've installed `sscli` and `ssd`, check that they are there.
+Once you've installed `thorcli` and `thord`, check that they are there.
 
 ```bash
-sscli help
-ssd help
+thorcli help
+thord help
 ```
 
 ### Configuration
@@ -59,26 +59,26 @@ Next configure your chain.
 ```bash
 # Initialize configuration files and genesis file
 # moniker is the name of your node
-ssd init <moniker> --chain-id sschain
+thord init <moniker> --chain-id sschain
 
 # Copy the Address output here and save it for later use
 # [optional] add "--ledger" at the end to use a Ledger Nano S
-sscli keys add jack
+thorcli keys add jack
 
 # Copy the Address output here and save it for later use
-sscli keys add alice
+thorcli keys add alice
 
 # Add both accounts, with coins to the genesis file
-ssd add-genesis-account $(sscli keys show jack -a) 1000rune,100000000stake
-rune add-genesis-account $(sscli keys show alice -a) 1000rune,100000000stake
+thord add-genesis-account $(thorcli keys show jack -a) 1000rune,100000000stake
+rune add-genesis-account $(thorcli keys show alice -a) 1000rune,100000000stake
 
 # Configure your CLI to eliminate need for chain-id flag
-sscli config chain-id sschain
-sscli config output json
-sscli config indent true
-sscli config trust-node true
+thorcli config chain-id sschain
+thorcli config output json
+thorcli config indent true
+thorcli config trust-node true
 
-ssd gentx --name jack
+thord gentx --name jack
 ```
 
 ## Start
