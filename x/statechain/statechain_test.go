@@ -41,20 +41,20 @@ func (*StatechainSuite) SetUpSuite(c *C) {
 }
 
 func setupStateChainForTest(c *C) (config.StateChainConfiguration, cKeys.Info, func()) {
-	sscliDir := filepath.Join(os.TempDir(), ".sscli")
+	thorcliDir := filepath.Join(os.TempDir(), ".thorcli")
 	cfg := config.StateChainConfiguration{
 		ChainID:         "statechain",
 		ChainHost:       "localhost",
 		SignerName:      "bob",
 		SignerPasswd:    "password",
-		ChainHomeFolder: sscliDir,
+		ChainHomeFolder: thorcliDir,
 	}
-	kb, err := keys.NewKeyBaseFromDir(sscliDir)
+	kb, err := keys.NewKeyBaseFromDir(thorcliDir)
 	c.Assert(err, IsNil)
 	info, _, err := kb.CreateMnemonic(cfg.SignerName, cKeys.English, cfg.SignerPasswd, cKeys.Secp256k1)
 	c.Assert(err, IsNil)
 	return cfg, info, func() {
-		if err := os.RemoveAll(sscliDir); nil != err {
+		if err := os.RemoveAll(thorcliDir); nil != err {
 			c.Error(err)
 		}
 	}
@@ -169,28 +169,28 @@ func (StatechainSuite) TestNewStateChainBridge(c *C) {
 	testFunc(config.StateChainConfiguration{
 		ChainID:         "",
 		ChainHost:       "localhost",
-		ChainHomeFolder: "~/.sscli",
+		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
 	testFunc(config.StateChainConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "",
-		ChainHomeFolder: "~/.sscli",
+		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
 	testFunc(config.StateChainConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "localhost",
-		ChainHomeFolder: "~/.sscli",
+		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
 	testFunc(config.StateChainConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "localhost",
-		ChainHomeFolder: "~/.sscli",
+		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "",
 	}, NotNil, IsNil)
