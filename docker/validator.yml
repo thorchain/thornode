@@ -51,7 +51,7 @@ services:
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
     image: thornode-statechain
     entrypoint:
-      /docker/scripts/genesis.sh
+      /docker/scripts/validator.sh
     volumes:
       - /tmp/genesis:/tmp/shared
       - ${PWD}:/docker
@@ -91,9 +91,8 @@ services:
       - "27147:27147"
       - "26660:26660"
     ulimits:
-    nofile:
-      soft: "16000"
-      hard: "16000"
-    security-opt: no-new-privileges
+      nofile:
+        soft: "16000"
+        hard: "16000"
     volumes:
       - ${HOME}/.thornode/binance:/opt/bnbchaind
