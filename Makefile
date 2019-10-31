@@ -6,8 +6,8 @@ GOBIN?=${GOPATH}/bin
 all: lint install
 
 install: go.sum
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/sscli
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/ssd
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/thorcli
+	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/thord
 	GO111MODULE=on go install -v ./cmd/observed
 	GO111MODULE=on go install -v ./cmd/signd
 
@@ -54,10 +54,10 @@ start-observe:
 	observe
 
 start-daemon:
-	ssd start
+	thord start
 
 start-rest:
-	sscli rest-server
+	thorcli rest-server
 
 setup: install
 	./scripts/setup.sh
@@ -67,9 +67,9 @@ reset: clean
 	./scripts/reset.sh
 
 clean:
-	rm -rf ~/.ssd
-	rm -rf ~/.sscli
-	rm -f ${GOBIN}/{bsinner,generate,sweep,sscli,ssd,observe,signd}
+	rm -rf ~/.thord
+	rm -rf ~/.thorcli
+	rm -f ${GOBIN}/{bsinner,generate,sweep,thorcli,thord,observe,signd}
 
 .envrc: install
 	@generate -t MASTER > .envrc
@@ -100,4 +100,4 @@ sweep: tools
 	@sweep -m ${FAUCET_KEY} -k ${BINANCE_PRIVATE_KEY} -d true
 
 export:
-	ssd export
+	thord export

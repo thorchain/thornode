@@ -73,7 +73,7 @@ end
 
 def processTx(txs, user="jack", mode='block')
   request = Net::HTTP::Post.new("/swapservice/tx")
-  address = `sscli keys show #{user} -a`.strip!
+  address = `thorcli keys show #{user} -a`.strip!
   txs = [txs].flatten(1) # ensures we are an array, and not just a single hash
   request.body = {
     'blockHeight': '376',
@@ -95,7 +95,7 @@ def processTx(txs, user="jack", mode='block')
 
   # write unsigned json to disk
   File.open("/tmp/unSigned.json", "w") { |file| file.puts resp.body}
-  signedTx = `echo "password" | sscli tx sign /tmp/unSigned.json --from #{user}`
+  signedTx = `echo "password" | thorcli tx sign /tmp/unSigned.json --from #{user}`
   signedTx = JSON.parse(signedTx)
   signedJson = {
     'mode': mode,
