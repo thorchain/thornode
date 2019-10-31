@@ -6,7 +6,7 @@ DEX_HOST="${DEX_HOST:=testnet-dex.binance.org}"
 DB_PATH="${DB_PATH:=/var/data}"
 CHAIN_HOST="${CHAIN_HOST:=127.0.0.1:1317}"
 RPC_HOST="${RPC_HOST:=data-seed-pre-0-s3.binance.org}"
-SIGNER_NAME="${SIGNER_NAME:=statechain}"
+SIGNER_NAME="${SIGNER_NAME:=statechain2}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=0}"
 NODES="${NODES:=1}"
@@ -27,11 +27,13 @@ if [ -z ${ADDRESS+x} ]; then
 fi
 
 # create statechain user
-echo $SIGNER_PASSWD | sscli keys add statechain
+which sscli
+sscli keys list
+echo $SIGNER_PASSWD | sscli keys add $SIGNER_NAME
 
 VALIDATOR=$(ssd tendermint show-validator)
-OBSERVER_ADDRESS=$(sscli keys show statechain -a)
-NODE_ADDRESS=$(sscli keys show statechain -a)
+OBSERVER_ADDRESS=$(sscli keys show $SIGNER_NAME -a)
+NODE_ADDRESS=$(sscli keys show $SIGNER_NAME -a)
 
 if [[ "$MASTER" == "$(hostname)" ]]; then
   echo "I AM THE MASTER NODE"
@@ -110,8 +112,8 @@ echo "{
   \"state_chain\": {
     \"chain_id\": \"statechain\",
     \"chain_host\": \"localhost:1317\",
-    \"signer_name\": \"statechain\",
-    \"signer_passwd\": \"PASSWORD1234\"
+    \"signer_name\": \"$SIGNER_NAME\",
+    \"signer_passwd\": \"$SIGNER_PASSWD\"
   },
   \"metric\": {
     \"enabled\": true
@@ -140,10 +142,12 @@ for f in /tmp/shared/node_*.json; do
     mv /tmp/genesis.json ~/.ssd/config/genesis.json
 done
 
+if [[ -f /tmp/shared/config_*.json ]]; then
 for f in /tmp/shared/config_*.json; do 
     jq --argjson config "$(cat $f)" '.app_state.swapservice.admin_configs += [$config]' ~/.ssd/config/genesis.json > /tmp/genesis.json
     mv /tmp/genesis.json ~/.ssd/config/genesis.json
 done
+fi
 
 cat ~/.ssd/config/genesis.json
 ssd validate-genesis
