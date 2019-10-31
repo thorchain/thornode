@@ -112,7 +112,7 @@ func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			}
 
 			var runeAmt uint64
-			runeAmt = uint64((float64(gas) / float64(bnbPool.BalanceAsset.Uint64())) * float64(bnbPool.BalanceRune.Uint64()))
+			runeAmt = uint64((float64(bnbPool.BalanceRune.Uint64()) / (float64(bnbPool.BalanceAsset.Uint64()) / float64(gas))))
 
 			if item.Amount.LT(sdk.NewUint(gas)) {
 				item.Amount = sdk.ZeroUint()
@@ -142,8 +142,8 @@ func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			}
 
 			var runeAmt, assetAmt uint64
-			runeAmt = uint64((float64(gas) / float64(bnbPool.BalanceAsset.Uint64())) * float64(bnbPool.BalanceRune.Uint64()))
-			assetAmt = uint64((float64(runeAmt) / float64(assetPool.BalanceRune.Uint64())) * float64(assetPool.BalanceAsset.Uint64()))
+			runeAmt = uint64(float64(bnbPool.BalanceRune.Uint64()) / (float64(bnbPool.BalanceAsset.Uint64()) / float64(gas)))
+			assetAmt = uint64(float64(assetPool.BalanceRune.Uint64()) / (float64(assetPool.BalanceAsset.Uint64()) / float64(runeAmt)))
 
 			if item.Amount.LT(sdk.NewUint(assetAmt)) {
 				item.Amount = sdk.ZeroUint()
