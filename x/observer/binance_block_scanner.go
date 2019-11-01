@@ -9,9 +9,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/binance-chain/go-sdk/common/types"
-	bmsg "github.com/binance-chain/go-sdk/types/msg"
-	"github.com/binance-chain/go-sdk/types/tx"
+	"github.com/cbarraford/go-sdk/common/types"
+	bmsg "github.com/cbarraford/go-sdk/types/msg"
+	"github.com/cbarraford/go-sdk/types/tx"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"

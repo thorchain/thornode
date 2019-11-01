@@ -1,8 +1,8 @@
 package smoke
 
 import (
-	ctypes "github.com/binance-chain/go-sdk/common/types"
-	btypes "github.com/binance-chain/go-sdk/types"
+	ctypes "github.com/cbarraford/go-sdk/common/types"
+	btypes "github.com/cbarraford/go-sdk/types"
 )
 
 // Network is the different between testnet and mainNet

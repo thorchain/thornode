@@ -10,10 +10,10 @@ import (
 
 	// TODO: This is a hack given the current API limits (1 request per second).
 
-	sdk "github.com/binance-chain/go-sdk/client"
-	ctypes "github.com/binance-chain/go-sdk/common/types"
-	"github.com/binance-chain/go-sdk/keys"
-	"github.com/binance-chain/go-sdk/types/msg"
+	sdk "github.com/cbarraford/go-sdk/client"
+	ctypes "github.com/cbarraford/go-sdk/common/types"
+	"github.com/cbarraford/go-sdk/keys"
+	"github.com/cbarraford/go-sdk/types/msg"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"

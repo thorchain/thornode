@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	sdk "github.com/binance-chain/go-sdk/client"
-	"github.com/binance-chain/go-sdk/keys"
+	sdk "github.com/cbarraford/go-sdk/client"
+	"github.com/cbarraford/go-sdk/keys"
 
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke"
 )

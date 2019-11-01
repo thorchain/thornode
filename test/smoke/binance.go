@@ -6,16 +6,16 @@ import (
 	"log"
 	"time"
 
-	sdk "github.com/binance-chain/go-sdk/client"
-	"github.com/binance-chain/go-sdk/client/basic"
-	"github.com/binance-chain/go-sdk/client/query"
-	btypes "github.com/binance-chain/go-sdk/common/types"
-	"github.com/binance-chain/go-sdk/keys"
-	"github.com/binance-chain/go-sdk/types"
-	"github.com/binance-chain/go-sdk/types/msg"
-	"github.com/binance-chain/go-sdk/types/tx"
+	resty "gopkg.in/resty.v1"
 
-	"github.com/go-resty/resty/v2"
+	sdk "github.com/cbarraford/go-sdk/client"
+	"github.com/cbarraford/go-sdk/client/basic"
+	"github.com/cbarraford/go-sdk/client/query"
+	btypes "github.com/cbarraford/go-sdk/common/types"
+	"github.com/cbarraford/go-sdk/keys"
+	"github.com/cbarraford/go-sdk/types"
+	"github.com/cbarraford/go-sdk/types/msg"
+	"github.com/cbarraford/go-sdk/types/tx"
 )
 
 type Binance struct {

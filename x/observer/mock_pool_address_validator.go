@@ -7,7 +7,7 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/common"
 	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
 
-	b "github.com/binance-chain/go-sdk/common/types"
+	b "github.com/cbarraford/go-sdk/common/types"
 )
 
 var (

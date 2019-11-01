@@ -64,7 +64,7 @@ func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics)
 	if len(cfg.SignerPasswd) == 0 {
 		return nil, errors.New("signer password is empty")
 	}
-	kb, err := getKeybase(cfg.ChainHomeFolder, cfg.SignerName)
+	kb, err := GetKeybase(cfg.ChainHomeFolder, cfg.SignerName)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to get keybase")
 	}
@@ -94,7 +94,7 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
-func getKeybase(stateChainHome, signerName string) (ckeys.Keybase, error) {
+func GetKeybase(stateChainHome, signerName string) (ckeys.Keybase, error) {
 	cliDir := stateChainHome
 	if len(stateChainHome) == 0 {
 		usr, err := user.Current()

@@ -3,9 +3,9 @@ module gitlab.com/thorchain/bepswap/thornode
 go 1.13
 
 require (
-	github.com/binance-chain/go-sdk v1.1.3
 	github.com/btcsuite/btcd v0.0.0-20190115013929-ed77733ec07d
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
+	github.com/cbarraford/go-sdk v1.1.4-0.20191101034120-ff3609523204
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/cosmos-sdk v0.37.3
 	github.com/didip/tollbooth v4.0.2+incompatible

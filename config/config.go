@@ -94,11 +94,13 @@ type SignerConfiguration struct {
 
 // BinanceConfiguration all the configurations for binance client
 type BinanceConfiguration struct {
-	DEXHost    string           `json:"dex_host" mapstructure:"dex_host"`
-	PrivateKey string           `json:"private_key" mapstructure:"private_key"`
-	UseTSS     bool             `json:"use_tss" mapstructure:"use_tss"`
-	TSS        TSSConfiguration `json:"tss" mapstructure:"tss"`
-	TSSAddress string           `json:"tss_address" mapstructure:"tss_address"`
+	DEXHost         string           `json:"dex_host" mapstructure:"dex_host"`
+	ChainHomeFolder string           `json:"chain_home_folder" mapstructure:"chain_home_folder"`
+	SignerName      string           `json:"signer_name" mapstructure:"signer_name"`
+	SignerPasswd    string           `json:"signer_passwd" mapstructure:"signer_passwd"`
+	UseTSS          bool             `json:"use_tss" mapstructure:"use_tss"`
+	TSS             TSSConfiguration `json:"tss" mapstructure:"tss"`
+	TSSAddress      string           `json:"tss_address" mapstructure:"tss_address"`
 }
 
 // TSSConfiguration

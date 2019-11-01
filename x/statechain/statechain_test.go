@@ -1,6 +1,7 @@
 package statechain
 
 import (
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -13,11 +14,12 @@ import (
 
 	. "gopkg.in/check.v1"
 
+	bkeys "github.com/cbarraford/go-sdk/keys"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/hashicorp/go-retryablehttp"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
 	"gitlab.com/thorchain/bepswap/thornode/common"
@@ -37,7 +39,6 @@ var _ = Suite(&StatechainSuite{})
 func (*StatechainSuite) SetUpSuite(c *C) {
 	cfg2 := sdk.GetConfig()
 	cfg2.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-
 }
 
 func setupStateChainForTest(c *C) (config.StateChainConfiguration, cKeys.Info, func()) {
@@ -335,6 +336,28 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 		}
 	}, 0, 2, IsNil)
 
+}
+
+func (StatechainSuite) TestPrivKey(c *C) {
+	cfg, _, cleanup := setupStateChainForTest(c)
+	defer cleanup()
+
+	scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
+	c.Assert(err, IsNil)
+
+	priv, err := scb.kb.ExportPrivateKeyObject(scb.cfg.SignerName, scb.cfg.SignerPasswd)
+	c.Assert(err, IsNil)
+
+	fmt.Printf("PubKey: %s\n", hex.EncodeToString(priv.PubKey().Bytes()))
+	fmt.Printf("PrivA: %s\n", hex.EncodeToString(priv.Bytes()))
+
+	fmt.Printf("Priv Bytes: %s (%d)\n", string(priv.Bytes()), len(priv.Bytes()))
+	km := bkeys.NewKeyManagerPriv(priv)
+	bnbPriv := km.GetPrivKey()
+	fmt.Printf("PubKey: %s\n", hex.EncodeToString(bnbPriv.PubKey().Bytes()))
+	fmt.Printf("Privb: %s\n", hex.EncodeToString(bnbPriv.Bytes()))
+
+	//c.Check(true, Equals, false)
 }
 
 func (StatechainSuite) TestSignEx(c *C) {

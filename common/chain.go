@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	btypes "github.com/binance-chain/go-sdk/common/types"
+	btypes "github.com/cbarraford/go-sdk/common/types"
 )
 
 const (

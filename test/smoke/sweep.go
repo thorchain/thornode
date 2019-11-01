@@ -3,10 +3,10 @@ package smoke
 import (
 	"log"
 
-	sdk "github.com/binance-chain/go-sdk/client"
-	btypes "github.com/binance-chain/go-sdk/common/types"
-	"github.com/binance-chain/go-sdk/keys"
-	"github.com/binance-chain/go-sdk/types/msg"
+	sdk "github.com/cbarraford/go-sdk/client"
+	btypes "github.com/cbarraford/go-sdk/common/types"
+	"github.com/cbarraford/go-sdk/keys"
+	"github.com/cbarraford/go-sdk/types/msg"
 )
 
 // Sweep : our main sweep type.

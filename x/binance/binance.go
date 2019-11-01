@@ -4,13 +4,13 @@ import (
 	"encoding/hex"
 	"strings"
 
-	sdk "github.com/binance-chain/go-sdk/client"
-	"github.com/binance-chain/go-sdk/client/basic"
-	"github.com/binance-chain/go-sdk/client/query"
-	"github.com/binance-chain/go-sdk/common/types"
-	"github.com/binance-chain/go-sdk/keys"
-	"github.com/binance-chain/go-sdk/types/msg"
-	"github.com/binance-chain/go-sdk/types/tx"
+	sdk "github.com/cbarraford/go-sdk/client"
+	"github.com/cbarraford/go-sdk/client/basic"
+	"github.com/cbarraford/go-sdk/client/query"
+	"github.com/cbarraford/go-sdk/common/types"
+	"github.com/cbarraford/go-sdk/keys"
+	"github.com/cbarraford/go-sdk/types/msg"
+	"github.com/cbarraford/go-sdk/types/tx"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -18,6 +18,7 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/common"
 	"gitlab.com/thorchain/bepswap/thornode/config"
 	btypes "gitlab.com/thorchain/bepswap/thornode/x/binance/types"
+	"gitlab.com/thorchain/bepswap/thornode/x/statechain"
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
 )
 
@@ -34,9 +35,6 @@ type Binance struct {
 
 // NewBinance create new instance of binance client
 func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
-	if len(cfg.PrivateKey) == 0 {
-		return nil, errors.New("no private key")
-	}
 	if len(cfg.DEXHost) == 0 {
 		return nil, errors.New("dex host is empty, set env DEX_HOST")
 	}
@@ -48,10 +46,15 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 			return nil, errors.Wrap(err, "fail to create tss signer")
 		}
 	} else {
-		km, err = keys.NewPrivateKeyManager(cfg.PrivateKey)
+		kb, err := statechain.GetKeybase(cfg.ChainHomeFolder, cfg.SignerName)
 		if err != nil {
-			return nil, errors.Wrap(err, "fail to create private key manager")
+			return nil, errors.Wrap(err, "fail to get statechain keybase")
 		}
+		priv, err := kb.ExportPrivateKeyObject(cfg.SignerName, cfg.SignerPasswd)
+		if err != nil {
+			return nil, errors.Wrap(err, "fail to get private key")
+		}
+		km = keys.NewKeyManagerPriv(priv)
 	}
 	chainNetwork := types.TestNetwork
 	isTestNet := IsTestNet(cfg.DEXHost)
@@ -186,6 +189,7 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 	if err := sendMsg.ValidateBasic(); nil != err {
 		return nil, nil, errors.Wrap(err, "invalid send msg")
 	}
+
 	acc, err := b.queryClient.GetAccount(fromAddr)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "fail to get account info")
