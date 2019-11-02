@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -95,7 +95,7 @@ type NodeAccount struct {
 }
 
 // NewNodeAccount create new instance of NodeAccount
-func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts TrustAccount, bond sdk.Uint, bondAddress common.Address) NodeAccount {
+func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts TrustAccount, bond sdk.Uint, bondAddress common.Address, height int64) NodeAccount {
 	na := NodeAccount{
 		NodeAddress: nodeAddress,
 		Accounts:    accounts,
@@ -103,7 +103,7 @@ func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts Trus
 		BondAddress: bondAddress,
 		Version:     common.ZeroAmount,
 	}
-	na.UpdateStatus(status)
+	na.UpdateStatus(status, height)
 	return na
 }
 
@@ -124,9 +124,9 @@ func (n NodeAccount) IsValid() error {
 }
 
 // UpdateStatus change the status of node account, in the mean time update StatusSince field
-func (n *NodeAccount) UpdateStatus(status NodeStatus) {
+func (n *NodeAccount) UpdateStatus(status NodeStatus, height int64) {
 	n.Status = status
-	n.StatusSince = time.Now().UTC().UnixNano()
+	n.StatusSince = height
 }
 
 // Equals compare two node account, to see whether they are equal
@@ -165,7 +165,15 @@ func (nodeAccounts NodeAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
 	}
 	return false
 }
+
+// NodeAccount sort interface , it will sort by StatusSince field, and then by SignerBNBAddress
 func (nodeAccounts NodeAccounts) Less(i, j int) bool {
+	if nodeAccounts[i].StatusSince < nodeAccounts[j].StatusSince {
+		return true
+	}
+	if nodeAccounts[i].StatusSince > nodeAccounts[j].StatusSince {
+		return false
+	}
 	return nodeAccounts[i].Accounts.SignerBNBAddress.String() < nodeAccounts[j].Accounts.SignerBNBAddress.String()
 }
 func (nodeAccounts NodeAccounts) Len() int { return len(nodeAccounts) }
