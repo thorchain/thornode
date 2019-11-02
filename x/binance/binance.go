@@ -34,7 +34,8 @@ type Binance struct {
 
 // NewBinance create new instance of binance client
 func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
-	if len(cfg.PrivateKey) == 0 {
+
+	if !cfg.UseTSS && len(cfg.PrivateKey) == 0 {
 		return nil, errors.New("no private key")
 	}
 	if len(cfg.DEXHost) == 0 {
