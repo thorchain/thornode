@@ -53,8 +53,8 @@ services:
     environment:
       NODES: 1
       SEED: thor-daemon
-    expose:
-      - "26657"
+    ports:
+      - "26657:26657"
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
@@ -77,8 +77,8 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
     environment:
       CHAIN_DAEMON: thor-daemon:26657
-    expose:
-      - "1317"
+    ports:
+      - "1317:1317"
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
