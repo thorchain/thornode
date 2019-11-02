@@ -38,6 +38,7 @@ if [[ "$SEED" == "$(hostname)" ]]; then
     echo "I AM THE SEED NODE"
     thord tendermint show-node-id > /tmp/shared/node.txt
     echo $PUBKEY > /tmp/shared/pubkey.txt
+    echo $ADDRESS > /tmp/shared/pool_address.txt
 fi
 
 # write node account data to json file in shared directory
@@ -53,7 +54,7 @@ while [[ "$(ls -1 /tmp/shared/node_*.json | wc -l)" != "$NODES" ]]; do
     sleep 1
 done
 
-POOL_ADDRESS=$(cat /tmp/shared/address.txt)
+POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
 echo "{\"current\":\"$POOL_ADDRESS\",\"rotate_at\":\"28800\",\"rotate_window_open_at\":\"27800\"}" > /tmp/shared/pool_addresses.json
 
 if [[ "$SEED" == "$(hostname)" ]]; then
