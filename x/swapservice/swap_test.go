@@ -252,7 +252,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	observerAddr := GetRandomBech32Addr()
 	bepConsPubKey := GetRandomBech32ConsensusPubKey()
 	ta := types.NewTrustAccount(signerBNBAddr, observerAddr, bepConsPubKey)
-	k.SetNodeAccount(ctx, types.NewNodeAccount(signerAddr, NodeActive, ta, bond, bondAddr))
+	k.SetNodeAccount(ctx, types.NewNodeAccount(signerAddr, NodeActive, ta, bond, bondAddr, 1))
 	txOutStore.NewBlock(1)
 	poolAddrMgr := NewPoolAddressManager(k)
 	// no pool
