@@ -135,7 +135,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, height int64) 
 		vm.Meta.Nominated = NodeAccount{}
 		vm.Meta.Queued = NodeAccount{}
 		// set them to standby
-		nominatedNodeAccount.UpdateStatus(NodeStandby)
+		nominatedNodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		vm.k.SetNodeAccount(ctx, nominatedNodeAccount)
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(EventTypeValidatorManager,
@@ -146,7 +146,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, height int64) 
 	}
 
 	// set to active
-	nominatedNodeAccount.UpdateStatus(NodeActive)
+	nominatedNodeAccount.UpdateStatus(NodeActive, ctx.BlockHeight())
 	vm.k.SetNodeAccount(ctx, nominatedNodeAccount)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeValidatorActive,
@@ -155,7 +155,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, height int64) 
 
 	if !vm.Meta.Queued.IsEmpty() {
 		outNode := vm.Meta.Queued
-		vm.Meta.Queued.UpdateStatus(NodeStandby)
+		vm.Meta.Queued.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		vm.k.SetNodeAccount(ctx, vm.Meta.Queued)
 
 		ctx.EventManager().EmitEvent(
@@ -176,7 +176,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 	defer func() {
 		vm.Meta.RotateWindowOpenAtBlockHeight += rotatePerBlockHeight
 	}()
-	// who should be added , an who need to removed
+	// who should be added , and who need to removed
 	standbyNodes, err := vm.k.ListNodeAccountsByStatus(ctx, NodeStandby)
 	if nil != err {
 		return errors.Wrap(err, "fail to get all standby nodes")
@@ -189,9 +189,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 				sdk.NewAttribute("reason", "no standby nodes")))
 		return nil
 	}
-	sort.Slice(standbyNodes, func(i, j int) bool {
-		return standbyNodes[i].StatusSince < standbyNodes[j].StatusSince
-	})
+	sort.Sort(standbyNodes)
 	vm.Meta.Nominated = standbyNodes.First()
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNominatedValidator,
@@ -204,9 +202,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 	}
 	desireValidatorSet := vm.k.GetAdminConfigDesireValidatorSet(ctx, sdk.AccAddress{})
 	if int64(len(activeNodes)) >= desireValidatorSet {
-		sort.Slice(activeNodes, func(i, j int) bool {
-			return activeNodes[i].StatusSince < activeNodes[j].StatusSince
-		})
+		sort.Sort(activeNodes)
 		vm.Meta.Queued = activeNodes.First()
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(EventTypeQueuedValidator,
@@ -239,7 +235,7 @@ func (vm *ValidatorManager) setupValidatorNodes(ctx sdk.Context, height int64) e
 			readyNodes = append(readyNodes, na)
 		case NodeActive:
 			activeCandidateNodes = append(activeCandidateNodes, na)
-			//vm.ValidatorNodes.ActiveValidators = append(vm.ValidatorNodes.ActiveValidators, na)
+			// vm.ValidatorNodes.ActiveValidators = append(vm.ValidatorNodes.ActiveValidators, na)
 		}
 	}
 	totalActiveValidators := len(activeCandidateNodes)
@@ -254,10 +250,10 @@ func (vm *ValidatorManager) setupValidatorNodes(ctx sdk.Context, height int64) e
 	desireValidatorSet := vm.k.GetAdminConfigDesireValidatorSet(ctx, sdk.AccAddress{})
 	for idx, item := range activeCandidateNodes {
 		if int64(idx) < desireValidatorSet {
-			item.UpdateStatus(NodeActive)
+			item.UpdateStatus(NodeActive, ctx.BlockHeight())
 
 		} else {
-			item.UpdateStatus(NodeStandby)
+			item.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 		vm.k.SetNodeAccount(ctx, item)
 	}

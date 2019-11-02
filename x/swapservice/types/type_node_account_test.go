@@ -6,8 +6,9 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 type NodeAccountSuite struct{}
@@ -64,7 +65,7 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 	c.Assert(err, IsNil)
 	nodeAddress := GetRandomBech32Addr()
 	bondAddr := GetRandomBNBAddress()
-	na := NewNodeAccount(nodeAddress, Active, trustAccount, sdk.NewUint(common.One), bondAddr)
+	na := NewNodeAccount(nodeAddress, Active, trustAccount, sdk.NewUint(common.One), bondAddr, 1)
 	c.Assert(na.IsEmpty(), Equals, false)
 	c.Assert(na.IsValid(), IsNil)
 	c.Assert(na.Bond.Uint64(), Equals, uint64(common.One))
@@ -74,10 +75,10 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 	c.Assert(nas.IsTrustAccount(addr), Equals, true)
 	c.Assert(nas.IsTrustAccount(nodeAddress), Equals, false)
 	c.Logf("node account:%s", na)
-	naEmpty := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount, sdk.NewUint(common.One), bondAddr)
+	naEmpty := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount, sdk.NewUint(common.One), bondAddr, 1)
 	c.Assert(naEmpty.IsValid(), NotNil)
 	c.Assert(naEmpty.IsEmpty(), Equals, true)
-	invalidBondAddr := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount, sdk.NewUint(common.One), "")
+	invalidBondAddr := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount, sdk.NewUint(common.One), "", 1)
 	c.Assert(invalidBondAddr.IsValid(), NotNil)
 }
 
