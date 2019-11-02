@@ -1,23 +1,19 @@
 #!/bin/sh
 set -ex
 
-NODE_ID="${NODE_ID:=none}"
-SEED="${SEED:=none}" # the hostname of a seed node
+PEER="${PEER:=none}" # the hostname of a seed node
 GENESIS_URL="${GENESIS_URL:=none}"
+SIGNER_NAME="${SIGNER_NAME:=statechain}"
+SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 
 if [ ! -f ~/.thord/config/genesis.json ]; then
-    if [[ "$NODE_ID" == "none" ]]; then
-        echo "Mising NODE_ID"
-        exit 1
-    fi
-
-    if [[ "$SEED" == "none" ]]; then
-        echo "Mising SEED"
+    if [[ "$PEER" == "none" ]]; then
+        echo "Missing PEER"
         exit 1
     fi
 
     if [[ "$GENESIS_URL" == "none" ]]; then
-        echo "Mising GENESIS_URL"
+        echo "Missing GENESIS_URL"
         exit 1
     fi
 
@@ -39,7 +35,7 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
     fi
 
     # create statechain user
-    echo $SIGNER_PASSWD | thorcli keys add statechain
+    echo $SIGNER_PASSWD | thorcli keys add $SIGNER_NAME
 
     NODE_ADDRESS=$(thorcli keys show statechain -a)
     echo "YOUR NODE ADDRESS: $NODE_ADDRESS. Send your bond with this as your address."
@@ -55,7 +51,8 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
 
     thord validate-genesis
 
-    PEER="$NODE_ID@$SEED:26656"
+    NODE_ID=$(curl $PEER/status | jq -r .result.node_info.id)
+    PEER="$NODE_ID@$PEER"
     ADDR='addr_book_strict = true'
     ADDR_STRICT_FALSE='addr_book_strict = false'
     PEERSISTENT_PEER_TARGET='persistent_peers = ""'

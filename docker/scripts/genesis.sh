@@ -5,7 +5,7 @@ SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 NODES="${NODES:=1}"
 SEED="${SEED:=thor-daemon}" # the hostname of the master node
-ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=0}" # how often the pools in statechain should rotate
+ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in statechain should rotate
 
 if [ -f ~/.signer/private_key.txt ]; then
     PUBKEY=$(cat ~/.signer/pubkey.txt)
