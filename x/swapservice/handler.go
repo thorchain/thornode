@@ -991,7 +991,7 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 	}
 	// Here make sure we don't change the node account's bond
 	nodeAccount.Accounts = msg.TrustAccount
-	nodeAccount.UpdateStatus(NodeStandby)
+	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAccount)
 
 	ctx.EventManager().EmitEvent(
@@ -1034,7 +1034,7 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 	// we don't have the trust account info right now, so leave it empty
 	trustAccount := NewTrustAccount(common.NoAddress, sdk.AccAddress{}, "")
 	// white list the given bep address
-	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, trustAccount, msg.Bond, msg.BondAddress)
+	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, trustAccount, msg.Bond, msg.BondAddress, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAccount)
 	ctx.EventManager().EmitEvent(sdk.NewEvent("new_node", sdk.NewAttribute("address", msg.NodeAddress.String())))
 	coinsToMint := keeper.GetAdminConfigWhiteListGasAsset(ctx, sdk.AccAddress{})
@@ -1092,7 +1092,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 	}
 	// disable the node account
 	nodeAcc.Bond = sdk.ZeroUint()
-	nodeAcc.UpdateStatus(NodeDisabled)
+	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAcc)
 	return sdk.Result{
 		Code:      sdk.CodeOK,

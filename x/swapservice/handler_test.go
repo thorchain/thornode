@@ -180,6 +180,7 @@ func (HandlerSuite) TestHandleMsgApply(c *C) {
 
 func (HandlerSuite) TestHandleMsgSetTrustAccount(c *C) {
 	ctx, k := setupKeeperForTest(c)
+	ctx = ctx.WithBlockHeight(1)
 	nodeAddr := GetRandomBech32Addr()
 	signer := GetRandomBech32Addr()
 	// add observer
@@ -194,27 +195,27 @@ func (HandlerSuite) TestHandleMsgSetTrustAccount(c *C) {
 	c.Check(unAuthorizedResult.Code, Equals, sdk.CodeUnauthorized)
 	c.Check(unAuthorizedResult.IsOK(), Equals, false)
 	bond := sdk.NewUint(common.One * 100)
-	nodeAccount := NewNodeAccount(signer, NodeActive, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr)
+	nodeAccount := NewNodeAccount(signer, NodeActive, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr, ctx.BlockHeight())
 	k.SetNodeAccount(ctx, nodeAccount)
 
 	activeFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
 	c.Check(activeFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(activeFailResult.IsOK(), Equals, false)
 
-	nodeAccount = NewNodeAccount(signer, NodeDisabled, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr)
+	nodeAccount = NewNodeAccount(signer, NodeDisabled, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr, ctx.BlockHeight())
 	k.SetNodeAccount(ctx, nodeAccount)
 
 	disabledFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
 	c.Check(disabledFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(disabledFailResult.IsOK(), Equals, false)
 
-	k.SetNodeAccount(ctx, NewNodeAccount(signer, NodeWhiteListed, NewTrustAccount(bnb, nodeAddr, bepConsPubKey), bond, bondAddr))
+	k.SetNodeAccount(ctx, NewNodeAccount(signer, NodeWhiteListed, NewTrustAccount(bnb, nodeAddr, bepConsPubKey), bond, bondAddr, ctx.BlockHeight()))
 
 	notUniqueFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
 	c.Check(notUniqueFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(notUniqueFailResult.IsOK(), Equals, false)
 
-	nodeAccount = NewNodeAccount(signer, NodeWhiteListed, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr)
+	nodeAccount = NewNodeAccount(signer, NodeWhiteListed, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr, ctx.BlockHeight())
 	k.SetNodeAccount(ctx, nodeAccount)
 
 	success := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
