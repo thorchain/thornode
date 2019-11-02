@@ -53,8 +53,8 @@ while [[ "$(ls -1 /tmp/shared/node_*.json | wc -l)" != "$NODES" ]]; do
     sleep 1
 done
 
-POOL_ADDRESS=$(cat /tmp/shared/pubkey.txt)
-echo "{\"current\":\"$POOL_ADDRESS\"}" > /tmp/shared/pool_addresses.json
+POOL_ADDRESS=$(cat /tmp/shared/address.txt)
+echo "{\"current\":\"$POOL_ADDRESS\",\"rotate_at\":\"28800\",\"rotate_window_open_at\":\"27800\"}" > /tmp/shared/pool_addresses.json
 
 if [[ "$SEED" == "$(hostname)" ]]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
@@ -95,7 +95,7 @@ fi
 if [[ "$SEED" != "$(hostname)" ]]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
         echo "I AM NOT THE SEED"
-
+        
         thord init local --chain-id statechain
         thorcli config chain-id statechain
         thorcli config output json
@@ -117,8 +117,6 @@ if [[ "$SEED" != "$(hostname)" ]]; then
         done
 
         cp /tmp/shared/genesis.json ~/.thord/config/genesis.json
-
-        sleep 30
 
         cat ~/.thord/config/genesis.json
         thord validate-genesis
