@@ -50,6 +50,8 @@ services:
       context: ..
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+    ports:
+      - "26658:26657"
     entrypoint:
       /docker/scripts/validator.sh
     volumes:
@@ -70,6 +72,8 @@ services:
     links:
       - thor-daemon
     image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+    ports:
+      - "1318:1317"
     environment:
       CHAIN_DAEMON: thor-daemon:26657
     entrypoint:
