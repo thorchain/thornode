@@ -3,7 +3,6 @@ package binance
 import (
 	"bytes"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -139,8 +138,8 @@ func (s *TSSSigner) Sign(msg tx.StdSignMsg) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	// return bz, nil
-	return []byte(hex.EncodeToString(bz)), nil
+	return bz, nil
+	//return []byte(hex.EncodeToString(bz)), nil
 }
 
 func (s *TSSSigner) remoteSign(msg []byte) (SignPack, error) {
@@ -171,13 +170,13 @@ func (s *TSSSigner) remoteSign(msg []byte) (SignPack, error) {
 	if err := json.Unmarshal(data, &signPack); nil != err {
 		return signPack, errors.Wrap(err, "fail to unmarshal result to signPack")
 	}
-
 	return signPack, nil
 }
 func (s *TSSSigner) getTSSLocalUrl() string {
 	u := url.URL{
 		Scheme: s.cfg.Scheme,
 		Host:   fmt.Sprintf("%s:%d", s.cfg.Host, s.cfg.Port),
+		Path:   "recvmsg",
 	}
 	return u.String()
 }
