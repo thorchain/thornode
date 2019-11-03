@@ -51,7 +51,8 @@ services:
       dockerfile: ./docker/dockerfiles/statechain.Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
     ports:
-      - "26658:26657"
+      - "26657:26657"
+      - "26656:26656"
     environment:
       PEER: ${PEER}
       GENESIS_URL: ${GENESIS_URL}
