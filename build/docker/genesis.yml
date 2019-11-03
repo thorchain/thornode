@@ -55,6 +55,7 @@ services:
       SEED: thor-daemon
     ports:
       - "26657:26657"
+      - "26656:26656"
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
