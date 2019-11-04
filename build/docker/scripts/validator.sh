@@ -2,18 +2,12 @@
 set -ex
 
 PEER="${PEER:=none}" # the hostname of a seed node
-GENESIS_URL="${GENESIS_URL:=none}"
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 
 if [ ! -f ~/.thord/config/genesis.json ]; then
     if [[ "$PEER" == "none" ]]; then
         echo "Missing PEER"
-        exit 1
-    fi
-
-    if [[ "$GENESIS_URL" == "none" ]]; then
-        echo "Missing GENESIS_URL"
         exit 1
     fi
 
@@ -47,7 +41,7 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
     thorcli config indent true
     thorcli config trust-node true
 
-    curl $GENESIS_URL --output ~/.thord/config/genesis.json
+    curl $PEER/genesis | jq .result.genesis > ~/.thord/config/genesis.json
 
     thord validate-genesis
 
