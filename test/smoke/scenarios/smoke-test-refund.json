@@ -1,48 +1,13 @@
 {
   "sweep_on_exit": true,
-  "with_actors": true,
-  "staker_count": 2,
+  "actor_list": ["master", "admin", "user", "staker_1", "staker_2"],
   "rules": [
     {
-      "description": "SEED",
+      "description": "SEED ASSETS",
       "from": "faucet",
       "to": [
-        "master"
-      ],
-      "coins": [
         {
-          "symbol": "RUNE-A1F",
-          "amount": 1260000000000
-        },
-        {
-          "symbol": "BNB",
-          "amount": 138667500
-        },
-        {
-          "symbol": "FSN-F1B",
-          "amount": 5250000000
-        },
-        {
-          "symbol": "FTM-585",
-          "amount": 67000000000
-        },
-        {
-          "symbol": "LOK-3C0",
-          "amount": 21000000000
-        },
-        {
-          "symbol": "TCAN-014",
-          "amount": 168000000000
-        },
-        {
-          "symbol": "TOMOB-1E1",
-          "amount": 7350000000
-        }
-      ],
-      "memo": "SEED",
-      "check": {
-        "binance": {
-          "target": "to",
+          "actor": "master",
           "coins": [
             {
               "symbol": "RUNE-A1F",
@@ -74,74 +39,24 @@
             }
           ]
         }
-      }
+      ],
+      "memo": "SEED"
     },
     {
-      "description": "SEED",
+      "description": "SEED ASSETS",
       "from": "master",
       "to": [
-        "admin"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 10000000
-        }
-      ],
-      "memo": "SEED",
-      "check": {
-        "binance": {
-          "target": "to",
+          "actor": "admin",
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 10000000
+              "amount": 200000000
             }
           ]
-        }
-      }
-    },
-    {
-      "description": "SEED",
-      "from": "master",
-      "to": [
-        "staker_1",
-        "staker_2"
-      ],
-      "coins": [
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 600000000000
         },
         {
-          "symbol": "BNB",
-          "amount": 61000000
-        },
-        {
-          "symbol": "FSN-F1B",
-          "amount": 2500000000
-        },
-        {
-          "symbol": "FTM-585",
-          "amount": 30000000000
-        },
-        {
-          "symbol": "LOK-3C0",
-          "amount": 10000000000
-        },
-        {
-          "symbol": "TCAN-014",
-          "amount": 80000000000
-        },
-        {
-          "symbol": "TOMOB-1E1",
-          "amount": 3500000000
-        }
-      ],
-      "memo": "SEED",
-      "check": {
-        "binance": {
-          "target": "to",
+          "actor": "staker_1",
           "coins": [
             {
               "symbol": "RUNE-A1F",
@@ -172,49 +87,42 @@
               "amount": 3500000000
             }
           ]
-        }
-      }
-    },
-    {
-      "description": "SEED",
-      "from": "master",
-      "to": [
-        "user"
-      ],
-      "coins": [
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 60000000000
         },
         {
-          "symbol": "BNB",
-          "amount": 6000000
+          "actor": "staker_2",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 600000000000
+            },
+            {
+              "symbol": "BNB",
+              "amount": 61000000
+            },
+            {
+              "symbol": "FSN-F1B",
+              "amount": 2500000000
+            },
+            {
+              "symbol": "FTM-585",
+              "amount": 30000000000
+            },
+            {
+              "symbol": "LOK-3C0",
+              "amount": 10000000000
+            },
+            {
+              "symbol": "TCAN-014",
+              "amount": 80000000000
+            },
+            {
+              "symbol": "TOMOB-1E1",
+              "amount": 3500000000
+            }
+          ]
         },
         {
-          "symbol": "FSN-F1B",
-          "amount": 250000000
-        },
-        {
-          "symbol": "FTM-585",
-          "amount": 7000000000
-        },
-        {
-          "symbol": "LOK-3C0",
-          "amount": 1000000000
-        },
-        {
-          "symbol": "TCAN-014",
-          "amount": 8000000000
-        },
-        {
-          "symbol": "TOMOB-1E1",
-          "amount": 350000000
-        }
-      ],
-      "memo": "SEED",
-      "check": {
-        "binance": {
-          "target": "to",
+          "actor": "user",
           "coins": [
             {
               "symbol": "RUNE-A1F",
@@ -246,766 +154,469 @@
             }
           ]
         }
-      }
+      ],
+      "memo": "SEED"
     },
     {
       "description": "GAS",
       "from": "admin",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 5000000
-        }
-      ],
-      "memo": "GAS",
-      "check": {
-        "binance": {
-          "target": "from",
+          "actor": "pool",
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 4962500
+              "amount": 5000000
             }
           ]
         }
-      }
+      ],
+      "memo": "GAS"
     },
     {
       "description": "STAKE",
       "from": "staker_1",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 60000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.BNB",
-      "check": {
-
-        "binance": {
-          "target": "from",
+          "actor": "pool",
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 940000
+              "amount": 60000000
             },
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 500000000000
-            }
-          ]
-        },
-        "statechain": [
-          {
-            "units": 50030000000,
-            "symbol": "BNB",
-            "rune": 100000000000,
-            "asset": 60000000
-          }
-        ]
-      }
-    },
-    {
-      "description": "STAKE",
-      "from": "staker_1",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "FSN-F1B",
-          "amount": 2500000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.FSN-F1B",
-      "check": {
-        "binance": {
-          "target": "from",
-          "coins": [
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 400000000000
-            }
-          ]
-        },
-        "statechain": [
-          {
-            "units": 51250000000,
-            "symbol": "FSN-F1B",
-            "rune": 100000000000,
-            "asset": 2500000000
-          }
-        ]
-      }
-    },
-    {
-      "description": "STAKE",
-      "from": "staker_1",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "FTM-585",
-          "amount": 30000000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.FTM-585",
-      "check": {
-        "binance": {
-          "target": "from",
-          "coins": [
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 300000000000
-            }
-          ]
-        },
-        "statechain": [
-          {
-            "units": 65000000000,
-            "symbol": "FTM-585",
-            "rune": 100000000000,
-            "asset": 30000000000
-          }
-        ]
-      }
-    },
-    {
-      "description": "STAKE",
-      "from": "staker_1",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "LOK-3C0",
-          "amount": 10000000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.LOK-3C0",
-      "check": {
-        "binance": {
-          "target": "from",
-          "coins": [
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 200000000000
-            }
-          ]
-        },
-        "statechain": [
-          {
-            "units": 55000000000,
-            "symbol": "LOK-3C0",
-            "rune": 100000000000,
-            "asset": 10000000000
-          }
-        ]
-      }
-    },
-    {
-      "description": "STAKE",
-      "from": "staker_1",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "TCAN-014",
-          "amount": 80000000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.TCAN-014",
-      "check": {
-        "binance": {
-          "target": "from",
-          "coins": [
             {
               "symbol": "RUNE-A1F",
               "amount": 100000000000
             }
           ]
-        },
-        "statechain": [
-          {
-            "units": 90000000000,
-            "symbol": "TCAN-014",
-            "rune": 100000000000,
-            "asset": 80000000000
-          }
-        ]
-      }
+        }
+      ],
+      "memo": "STAKE:BNB.BNB"
     },
     {
       "description": "STAKE",
       "from": "staker_1",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "TOMOB-1E1",
-          "amount": 3500000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.TOMOB-1E1",
-      "check": {
-        "statechain": [
-          {
-            "units": 51750000000,
-            "symbol": "TOMOB-1E1",
-            "rune": 100000000000,
-            "asset": 3500000000
-          }
-        ]
-      }
-    },
-    {
-      "description": "STAKE",
-      "from": "staker_2",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "BNB",
-          "amount": 60000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.BNB",
-      "check": {
-        "binance": {
-          "target": "from",
+          "actor": "pool",
           "coins": [
             {
-              "symbol": "BNB",
-              "amount": 940000
+              "symbol": "FSN-F1B",
+              "amount": 2500000000
             },
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 500000000000
-            }
-          ]
-        },
-        "statechain": [
-          {
-            "units": 100060000000,
-            "symbol": "BNB",
-            "rune": 200000000000,
-            "asset": 120000000
-          }
-        ]
-      }
-    },
-    {
-      "description": "STAKE",
-      "from": "staker_2",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "FSN-F1B",
-          "amount": 2500000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.FSN-F1B",
-      "check": {
-        "binance": {
-          "target": "from",
-          "coins": [
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 400000000000
-            }
-          ]
-        },
-        "statechain": [
-          {
-            "units": 102500000000,
-            "symbol": "FSN-F1B",
-            "rune": 200000000000,
-            "asset": 5000000000
-          }
-        ]
-      }
-    },
-    {
-      "description": "STAKE",
-      "from": "staker_2",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "FTM-585",
-          "amount": 30000000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.FTM-585",
-      "check": {
-        "binance": {
-          "target": "from",
-          "coins": [
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 300000000000
-            }
-          ]
-        },
-        "statechain": [
-          {
-            "units": 130000000000,
-            "symbol": "FTM-585",
-            "rune": 200000000000,
-            "asset": 60000000000
-          }
-        ]
-      }
-    },
-    {
-      "description": "STAKE",
-      "from": "staker_2",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "LOK-3C0",
-          "amount": 10000000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.LOK-3C0",
-      "check": {
-        "binance": {
-          "target": "from",
-          "coins": [
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 200000000000
-            }
-          ]
-        },
-        "statechain": [
-          {
-            "units": 110000000000,
-            "symbol": "LOK-3C0",
-            "rune": 200000000000,
-            "asset": 20000000000
-          }
-        ]
-      }
-    },
-    {
-      "description": "STAKE",
-      "from": "staker_2",
-      "to": [
-        "pool"
-      ],
-      "coins": [
-        {
-          "symbol": "TCAN-014",
-          "amount": 80000000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
-        }
-      ],
-      "memo": "STAKE:BNB.TCAN-014",
-      "check": {
-        "binance": {
-          "target": "from",
-          "coins": [
             {
               "symbol": "RUNE-A1F",
               "amount": 100000000000
             }
           ]
-        },
-        "statechain": [
-          {
-            "units": 180000000000,
-            "symbol": "TCAN-014",
-            "rune": 200000000000,
-            "asset": 160000000000
-          }
-        ]
-      }
+        }
+      ],
+      "memo": "STAKE:BNB.FSN-F1B"
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_1",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "FTM-585",
+              "amount": 30000000000
+            },
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100000000000
+            }
+          ]
+        }
+      ],
+      "memo": "STAKE:BNB.FTM-585"
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_1",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "LOK-3C0",
+              "amount": 10000000000
+            },
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100000000000
+            }
+          ]
+        }
+      ],
+      "memo": "STAKE:BNB.LOK-3C0"
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_1",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "TCAN-014",
+              "amount": 80000000000
+            },
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100000000000
+            }
+          ]
+        }
+      ],
+      "memo": "STAKE:BNB.TCAN-014"
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_1",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "TOMOB-1E1",
+              "amount": 3500000000
+            },
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100000000000
+            }
+          ]
+        }
+      ],
+      "memo": "STAKE:BNB.TOMOB-1E1"
     },
     {
       "description": "STAKE",
       "from": "staker_2",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "TOMOB-1E1",
-          "amount": 3500000000
-        },
-        {
-          "symbol": "RUNE-A1F",
-          "amount": 100000000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 60000000
+            },
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100000000000
+            }
+          ]
         }
       ],
-      "memo": "STAKE:BNB.TOMOB-1E1",
-      "check": {
-        "statechain": [
-          {
-            "units": 103500000000,
-            "symbol": "TOMOB-1E1",
-            "rune": 200000000000,
-            "asset": 7000000000
-          }
-        ]
-      }
+      "memo": "STAKE:BNB.BNB"
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_2",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "FSN-F1B",
+              "amount": 2500000000
+            },
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100000000000
+            }
+          ]
+        }
+      ],
+      "memo": "STAKE:BNB.FSN-F1B"
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_2",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "FTM-585",
+              "amount": 30000000000
+            },
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100000000000
+            }
+          ]
+        }
+      ],
+      "memo": "STAKE:BNB.FTM-585"
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_2",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "LOK-3C0",
+              "amount": 10000000000
+            },
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100000000000
+            }
+          ]
+        }
+      ],
+      "memo": "STAKE:BNB.LOK-3C0"
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_2",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "TCAN-014",
+              "amount": 80000000000
+            },
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100000000000
+            }
+          ]
+        }
+      ],
+      "memo": "STAKE:BNB.TCAN-014"
+    },
+    {
+      "description": "STAKE",
+      "from": "staker_2",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "TOMOB-1E1",
+              "amount": 3500000000
+            },
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 100000000000
+            }
+          ]
+        }
+      ],
+      "memo": "STAKE:BNB.TOMOB-1E1"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "RUNE-A1F",
-          "amount": 10000000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 10000000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.BNB",
-      "check": {
-        "statechain": [
-          {
-            "units": 100060000000,
-            "symbol": "BNB",
-            "rune": 210000000000,
-            "asset": 114557824
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.BNB"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "RUNE-A1F",
-          "amount": 10000000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 10000000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.FSN-F1B",
-      "check": {
-        "statechain": [
-          {
-            "units": 102500000000,
-            "symbol": "FSN-F1B",
-            "rune": 209945005939,
-            "asset": 4774492630
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.FSN-F1B"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "RUNE-A1F",
-          "amount": 10000000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 10000000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.FTM-585",
-      "check": {
-        "statechain": [
-          {
-            "units": 130000000000,
-            "symbol": "FTM-585",
-            "rune": 209944977128,
-            "asset": 57293919423
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.FTM-585"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "RUNE-A1F",
-          "amount": 10000000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 10000000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.LOK-3C0",
-      "check": {
-        "statechain": [
-          {
-            "units": 110000000000,
-            "symbol": "LOK-3C0",
-            "rune": 209944948295,
-            "asset": 19097975762
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.LOK-3C0"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "RUNE-A1F",
-          "amount": 10000000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 10000000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.TCAN-014",
-      "check": {
-        "statechain": [
-          {
-            "units": 180000000000,
-            "symbol": "TCAN-014",
-            "rune": 209944919439,
-            "asset": 152783827088
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.TCAN-014"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "RUNE-A1F",
-          "amount": 10000000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "RUNE-A1F",
+              "amount": 10000000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.TOMOB-1E1",
-      "check": {
-        "statechain": [
-          {
-            "units": 103500000000,
-            "symbol": "TOMOB-1E1",
-            "rune": 209944890560,
-            "asset": 6684293354
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.TOMOB-1E1"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 6000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 6000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check": {
-        "statechain": [
-          {
-            "units": 100060000000,
-            "symbol": "BNB",
-            "rune": 200369149389,
-            "asset": 120377824
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.RUNE-A1F"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "FSN-F1B",
-          "amount": 250000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "FSN-F1B",
+              "amount": 250000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check": {
-        "statechain": [
-          {
-            "units": 102500000000,
-            "symbol": "FSN-F1B",
-            "rune": 200018683984,
-            "asset": 5024492630
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.RUNE-A1F"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "FTM-585",
-          "amount": 7000000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "FTM-585",
+              "amount": 7000000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check": {
-        "statechain": [
-          {
-            "units": 130000000000,
-            "symbol": "FTM-585",
-            "rune": 189575857516,
-            "asset": 64293919423
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.RUNE-A1F"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "LOK-3C0",
-          "amount": 1000000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "LOK-3C0",
+              "amount": 1000000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check": {
-        "statechain": [
-          {
-            "units": 110000000000,
-            "symbol": "LOK-3C0",
-            "rune": 200018631519,
-            "asset": 20097975762
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.RUNE-A1F"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "TCAN-014",
-          "amount": 8000000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "TCAN-014",
+              "amount": 8000000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check": {
-        "statechain": [
-          {
-            "units": 180000000000,
-            "symbol": "TCAN-014",
-            "rune": 200018605255,
-            "asset": 160783827088
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.RUNE-A1F"
     },
     {
       "description": "SWAP",
       "from": "user",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "TOMOB-1E1",
-          "amount": 350000000
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "TOMOB-1E1",
+              "amount": 350000000
+            }
+          ]
         }
       ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check": {
-        "statechain": [
-          {
-            "units": 103500000000,
-            "symbol": "TOMOB-1E1",
-            "rune": 200018578970,
-            "asset": 7034293354
-          }
-        ]
-      }
+      "memo": "SWAP:BNB.RUNE-A1F"
     },
     {
       "description": "WITHDRAW ALL",
       "from": "staker_1",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.BNB"
@@ -1014,12 +625,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_1",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.FSN-F1B"
@@ -1028,12 +641,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_1",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.FTM-585"
@@ -1042,12 +657,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_1",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.LOK-3C0"
@@ -1056,12 +673,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_1",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.TCAN-014"
@@ -1070,12 +689,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_1",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.TOMOB-1E1"
@@ -1084,12 +705,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_2",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.BNB"
@@ -1098,12 +721,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_2",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.FSN-F1B"
@@ -1112,12 +737,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_2",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.FTM-585"
@@ -1126,12 +753,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_2",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.LOK-3C0"
@@ -1140,12 +769,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_2",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.TCAN-014"
@@ -1154,12 +785,14 @@
       "description": "WITHDRAW ALL",
       "from": "staker_2",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 1
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
         }
       ],
       "memo": "WITHDRAW:BNB.TOMOB-1E1"

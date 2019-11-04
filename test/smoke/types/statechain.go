@@ -1,6 +1,6 @@
 package types
 
-type Pools []struct {
+type StatechainPools []struct {
 	BalanceRune  int64 `json:"balance_rune,string"`
 	BalanceAsset int64 `json:"balance_asset,string"`
 	Asset        struct {

@@ -6,8 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	sdk "github.com/binance-chain/go-sdk/client"
@@ -23,6 +21,7 @@ type Config struct {
 	delay   time.Duration
 	debug   bool
 	network int
+	logFile string
 }
 
 // Smoke : test instructions.
@@ -35,10 +34,11 @@ type Smoke struct {
 	Binance    Binance
 	Statechain Statechain
 	Tests      types.Tests
+	Results    []types.Output
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, logFile string, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -49,12 +49,14 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 		log.Fatal(err)
 	}
 
+	var results []types.Output
 	n := NewNetwork(network)
 	return Smoke{
 		Config: Config{
 			delay:   5 * time.Second,
 			debug:   debug,
 			network: network,
+			logFile: logFile,
 		},
 		ApiAddr:    apiAddr,
 		Network:    n.Type,
@@ -63,47 +65,28 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 		Binance:    NewBinance(apiAddr, n.ChainID, debug),
 		Statechain: NewStatechain(env),
 		Tests:      tests,
+		Results:	results,
 	}
 }
 
 // Setup : Generate/setup our accounts.
 func (s *Smoke) Setup() {
-	// Faucet
-	bKey, _ := keys.NewPrivateKeyManager(s.FaucetKey)
-	bClient, _ := sdk.NewDexClient(s.ApiAddr, s.Network, bKey)
+	s.Tests.ActorKeys = make(map[string]types.Keys)
 
-	s.Tests.Actors.Faucet.Key = bKey
-	s.Tests.Actors.Faucet.Client = bClient
+	// Faucet
+	key, _ := keys.NewPrivateKeyManager(s.FaucetKey)
+	client, _ := sdk.NewDexClient(s.ApiAddr, s.Network, key)
+	s.Tests.ActorKeys["faucet"] = types.Keys{Key: key, Client: client}
+
+	for _, actor := range s.Tests.ActorList {
+		client, key = s.ClientKey()
+		s.Tests.ActorKeys[actor] = types.Keys{Key: key, Client: client}
+	}
 
 	// Pool
-	pKey, _ := keys.NewPrivateKeyManager(s.PoolKey)
-	pClient, _ := sdk.NewDexClient(s.ApiAddr, s.Network, pKey)
-
-	s.Tests.Actors.Pool.Key = pKey
-	s.Tests.Actors.Pool.Client = pClient
-
-	if s.Tests.WithActors {
-		// Master
-		mClient, mKey := s.ClientKey()
-		s.Tests.Actors.Master.Key = mKey
-		s.Tests.Actors.Master.Client = mClient
-
-		// Admin
-		aClient, aKey := s.ClientKey()
-		s.Tests.Actors.Admin.Key = aKey
-		s.Tests.Actors.Admin.Client = aClient
-
-		// User
-		uClient, uKey := s.ClientKey()
-		s.Tests.Actors.User.Key = uKey
-		s.Tests.Actors.User.Client = uClient
-
-		// Stakers
-		for i := 1; i <= s.Tests.StakerCount; i++ {
-			sClient, sKey := s.ClientKey()
-			s.Tests.Actors.Stakers = append(s.Tests.Actors.Stakers, types.Keys{Key: sKey, Client: sClient})
-		}
-	}
+	key, _ = keys.NewPrivateKeyManager(s.PoolKey)
+	client, _ = sdk.NewDexClient(s.ApiAddr, s.Network, key)
+	s.Tests.ActorKeys["pool"] = types.Keys{Key: key, Client: client}
 
 	s.Summary()
 }
@@ -118,20 +101,9 @@ func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
 
 // Summary : Private Keys
 func (s *Smoke) Summary() {
-	if s.Tests.WithActors {
-		privKey, _ := s.Tests.Actors.Master.Key.ExportAsPrivateKey()
-		log.Printf("Master: %v - %v\n", s.Tests.Actors.Master.Key.GetAddr(), privKey)
-
-		privKey, _ = s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
-		log.Printf("Admin: %v - %v\n", s.Tests.Actors.Admin.Key.GetAddr(), privKey)
-
-		privKey, _ = s.Tests.Actors.User.Key.ExportAsPrivateKey()
-		log.Printf("User: %v - %v\n", s.Tests.Actors.User.Key.GetAddr(), privKey)
-
-		for idx, staker := range s.Tests.Actors.Stakers {
-			privKey, _ = staker.Key.ExportAsPrivateKey()
-			log.Printf("Staker %v: %v - %v\n", idx+1, staker.Key.GetAddr(), privKey)
-		}
+	for name, actor := range s.Tests.ActorKeys {
+		privKey, _ := actor.Key.ExportAsPrivateKey()
+		log.Printf("%v: %v - %v\n", name, actor.Key.GetAddr(), privKey)
 	}
 }
 
@@ -139,125 +111,91 @@ func (s *Smoke) Summary() {
 func (s *Smoke) Run() {
 	s.Setup()
 
-	for _, rule := range s.Tests.Rules {
+	for tx, rule := range s.Tests.Rules {
 		var payload []msg.Transfer
-		var coins []ctypes.Coin
 
-		for _, coin := range rule.Coins {
-			coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: coin.Amount})
+		for _, to := range rule.To {
+			var coins []ctypes.Coin
+
+			for _, coin := range to.Coins {
+				coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: coin.Amount})
+			}
+
+			toAddr := s.Tests.ActorKeys[to.Actor].Key.GetAddr()
+			payload = append(payload, msg.Transfer{toAddr, coins})
 		}
 
-		if len(coins) > 0 {
-			for _, to := range rule.To {
-				toAddr := s.ToAddr(to)
-				payload = append(payload, msg.Transfer{toAddr, coins})
-			}
-
-			memo := rule.Memo
-			if rule.SendTo != "" {
-				sendTo := s.ToAddr(rule.SendTo)
-				memo = memo + ":" + sendTo.String()
-			}
-
-			if rule.SlipLimit != 0 {
-				memo = fmt.Sprintf("%s:%v", memo, rule.SlipLimit)
-			}
-
-			client, key := s.FromClientKey(rule.From)
-			s.SendTxn(client, key, payload, memo)
+		memo := rule.Memo
+		if rule.SendTo != "" {
+			sendTo := s.Tests.ActorKeys[rule.SendTo].Key.GetAddr()
+			memo = memo + ":" + sendTo.String()
 		}
+
+		if rule.SlipLimit != 0 {
+			memo = fmt.Sprintf("%s:%v", memo, rule.SlipLimit)
+		}
+
+		from := s.Tests.ActorKeys[rule.From]
+		s.SendTxn(from.Client, from.Key, payload, memo)
 
 		// Validate.
-		s.ValidateTest(rule)
+		delay := time.Second * rule.CheckDelay
+		s.LogResults(tx, delay)
 	}
 
 	if s.Tests.SweepOnExit {
 		s.Sweep()
 	}
+
+	// Save the log.
+	s.SaveLog()
 }
 
-// FromClientKey : Client and key based on the rule "from".
-func (s *Smoke) FromClientKey(from string) (sdk.DexClient, keys.KeyManager) {
-	s.ValidateAddr(from)
-
-	switch from {
-	case "faucet":
-		return s.Tests.Actors.Faucet.Client, s.Tests.Actors.Faucet.Key
-	case "master":
-		return s.Tests.Actors.Master.Client, s.Tests.Actors.Master.Key
-	case "admin":
-		return s.Tests.Actors.Admin.Client, s.Tests.Actors.Admin.Key
-	case "user":
-		return s.Tests.Actors.User.Client, s.Tests.Actors.User.Key
-	case "pool":
-		return s.Tests.Actors.Pool.Client, s.Tests.Actors.Pool.Key
-	default:
-		stakerIdx := strings.Split(from, "_")[1]
-		i, _ := strconv.Atoi(stakerIdx)
-		staker := s.Tests.Actors.Stakers[i-1]
-		return staker.Client, staker.Key
-	}
+// SaveLog : Save the log file.
+func (s *Smoke) SaveLog() {
+	output, _ := json.Marshal(s.Results)
+	_ = ioutil.WriteFile(s.Config.logFile, output, 0644)
 }
 
-// ToAddr : To address
-func (s *Smoke) ToAddr(to string) ctypes.AccAddress {
-	s.ValidateAddr(to)
+// LogResults : Log our results.
+func (s *Smoke) LogResults(tx int, delay time.Duration) {
+	time.Sleep(delay)
 
-	switch to {
-	case "master":
-		return s.Tests.Actors.Master.Key.GetAddr()
-	case "admin":
-		return s.Tests.Actors.Admin.Key.GetAddr()
-	case "user":
-		return s.Tests.Actors.User.Key.GetAddr()
-	case "pool":
-		return s.Tests.Actors.Pool.Key.GetAddr()
-	default:
-		stakerIdx := strings.Split(to, "_")[1]
-		i, _ := strconv.Atoi(stakerIdx)
-		return s.Tests.Actors.Stakers[i-1].Key.GetAddr()
-	}
+	s.BinanceState(tx)
+	s.StatechainState(tx)
 }
 
-// ValidateAddr : Check the address, based on the config.
-func (s *Smoke) ValidateAddr(actor string) {
-	if !s.Tests.WithActors && !s.PrimaryActor(actor) {
-		log.Panic("Only actors `faucet` and `pool` supported when `with_actors` = false.")
-	}
-}
+// BinanceState : Compare expected vs actual Binance wallet values.
+func (s *Smoke) BinanceState(tx int) {
+	client := s.Tests.ActorKeys["faucet"].Client
+	var output types.Output
 
-// PrimaryActor : Primary actor is "faucet" or "pool", as these are
-// not auto-generated addresses.
-func (s *Smoke) PrimaryActor(actor string) bool {
-	for _, a := range []string{"faucet", "pool"} {
-		if a == actor {
-			return true
+	for _, actor := range s.Tests.ActorList {
+		balances := s.GetBinance(client, s.Tests.ActorKeys[actor].Key.GetAddr())
+		parsed := s.ParseBinance(balances)
+
+		output.Tx = tx + 1
+
+		switch actor {
+		case "master":
+			output.Master = parsed
+		case "admin":
+			output.Admin = parsed
+		case "user":
+			output.User = parsed
+		case "staker_1":
+			output.Staker1 = parsed
+		case "staker_2":
+			output.Staker2 = parsed
 		}
 	}
 
-	return false
+	s.Results = append(s.Results, output)
 }
 
-// ValidateTest : Determine if the test passed or failed.
-func (s *Smoke) ValidateTest(rule types.Rule) {
-	if rule.Check.Binance.Target == "to" {
-		for _, to := range rule.To {
-			toAddr := s.ToAddr(to)
-			s.CheckBinance(toAddr, rule.Check, rule.Description)
-		}
-	} else {
-		_, key := s.FromClientKey(rule.From)
-		s.CheckBinance(key.GetAddr(), rule.Check, rule.Description)
-	}
-
-	_, fromKey := s.FromClientKey(rule.From)
-	s.CheckPool(fromKey.GetAddr(), rule)
-	s.CheckStake(rule)
-}
-
-// Balances : Get the account balances of a given wallet.
-func (s *Smoke) Balances(address ctypes.AccAddress) []ctypes.TokenBalance {
-	acct, err := s.Tests.Actors.Faucet.Client.GetAccount(address.String())
+// GetBinance : Get Binance account balance.
+func (s *Smoke) GetBinance(client sdk.DexClient, address ctypes.AccAddress) []ctypes.TokenBalance {
+	acct, err := client.GetAccount(address.String())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -265,17 +203,50 @@ func (s *Smoke) Balances(address ctypes.AccAddress) []ctypes.TokenBalance {
 	return acct.Balances
 }
 
-// SendTxn : Send the transaction to Binance.
-func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {
-	s.Binance.SendTxn(client, key, payload, memo)
+// ParseBinance : Parse Binance account balance
+func (s *Smoke) ParseBinance(balances []ctypes.TokenBalance) types.Balance {
+	var parsed types.Balance
+
+	for _, balance := range balances {
+		amount := balance.Free.ToInt64()
+
+		switch balance.Symbol {
+		case "RUNE-A1F":
+			parsed.Rune = amount
+		case "BNB":
+			parsed.Bnb = amount
+		case "LOK-3C0":
+			parsed.Lok = amount
+		}
+	}
+
+	return parsed
 }
 
-// GetPools : Get our pools.
-func (s *Smoke) GetPools() types.Pools {
+// StatechainState : Current Statechain state.
+func (s *Smoke) StatechainState(tx int) {
+	statechain := s.GetStatechain()
+
+	for _, pools := range statechain {
+		amount := pools.BalanceAsset
+
+		switch pools.Asset.Symbol {
+		case "RUNE-A1F":
+			s.Results[tx].Pool.Rune = amount
+		case "BNB":
+			s.Results[tx].Pool.Bnb = amount
+		case "LOK-3C0":
+			s.Results[tx].Pool.Lok = amount
+		}
+	}
+}
+
+// GetStatechain : Get the Statehcain pools.
+func (s *Smoke) GetStatechain() types.StatechainPools {
 	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
 	time.Sleep(1 * time.Second)
 
-	var pools types.Pools
+	var pools types.StatechainPools
 
 	resp, err := http.Get(s.Statechain.PoolURL())
 	if err != nil {
@@ -296,184 +267,25 @@ func (s *Smoke) GetPools() types.Pools {
 	return pools
 }
 
-// CheckBinance : Check the balances
-func (s *Smoke) CheckBinance(address ctypes.AccAddress, check types.Check, memo string) {
-	if check.Delay != 0 {
-		time.Sleep(check.Delay * time.Second)
-	} else {
-		time.Sleep(s.Config.delay)
-	}
-
-	balances := s.Balances(address)
-	for _, coin := range check.Binance.Coins {
-		for _, balance := range balances {
-			if coin.Symbol == balance.Symbol {
-				amount := coin.Amount
-				free := balance.Free.ToInt64()
-
-				if amount != free {
-					log.Printf("%v: FAIL - Binance Balance (%v) - Amounts do not match! Expected: %v, but got: %v",
-						memo,
-						coin.Symbol,
-						amount,
-						free,
-					)
-				} else {
-					log.Printf("%v: PASS - Binance Balance (%v)",
-						memo,
-						coin.Symbol,
-					)
-				}
-			}
-		}
-	}
-}
-
-// CheckPool : Check Statechain pool
-func (s *Smoke) CheckPool(address ctypes.AccAddress, rule types.Rule) {
-	time.Sleep(s.Config.delay)
-
-	chain := rule.Check.Statechain
-	pools := s.GetPools()
-
-	for _, p := range pools {
-		for _, pool := range chain {
-			if p.Asset.Symbol == pool.Symbol {
-				// Check pool units
-				if p.PoolUnits != pool.Units {
-					log.Printf("%v: FAIL - Pool Units (%v) - Units do not match! Expected: %v, but got: %v",
-						rule.Description,
-						p.Asset.Symbol,
-						pool.Units,
-						p.PoolUnits,
-					)
-				} else {
-					log.Printf("%v: PASS - Pool Units (%v) - %v (%v)",
-						rule.Description,
-						p.Asset.Symbol,
-						address,
-						rule.Memo,
-					)
-				}
-
-				// Check Rune
-				if p.BalanceRune != pool.Rune {
-					log.Printf("%v: FAIL - Pool Rune (%v) - Balance does not match! Expected: %v, but got: %v",
-						rule.Description,
-						p.Asset.Symbol,
-						pool.Rune,
-						p.BalanceRune,
-					)
-				} else {
-					log.Printf("%v: PASS - Pool Rune (%v) - %v (%v)",
-						rule.Description,
-						p.Asset.Symbol,
-						address,
-						rule.Memo,
-					)
-				}
-
-				// Check asset
-				if p.BalanceAsset != pool.Asset {
-					log.Printf("%v: FAIL - Pool Asset (%v) - Balance does not match! Expected: %v, but got: %v",
-						rule.Description,
-						p.Asset.Symbol,
-						pool.Asset,
-						p.BalanceAsset,
-					)
-				} else {
-					log.Printf("%v: PASS - Pool Asset (%v) - %v (%v)",
-						rule.Description,
-						p.Asset.Symbol,
-						address,
-						rule.Memo,
-					)
-				}
-			}
-		}
-	}
-}
-
-// GetStakes : Get a given staker's stakes.
-func (s *Smoke) GetStakes(address ctypes.AccAddress) types.Staker {
-	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
-	time.Sleep(1 * time.Second)
-
-	var staker types.Staker
-
-	resp, err := http.Get(s.Statechain.StakerURL(address.String()))
-	if err != nil {
-		log.Printf("%v\n", err)
-	}
-
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Printf("%v\n", err)
-	}
-
-	if err := json.Unmarshal(data, &staker); nil != err {
-		log.Fatal(err)
-	}
-
-	return staker
-}
-
-// CheckStake : Check the pool share for a given staker.
-func (s *Smoke) CheckStake(rule types.Rule) {
-	time.Sleep(s.Config.delay)
-
-	for _, chain := range rule.Check.Statechain {
-		for _, stakerUnits := range chain.StakerUnits {
-			address := s.ToAddr(stakerUnits.Actor)
-			stake := s.GetStakes(address)
-
-			for _, pool := range stake.PoolAndUnits {
-				if pool.Asset.Symbol == chain.Symbol {
-					if pool.Units != stakerUnits.Units {
-						log.Printf("%v: FAIL - Staker Units - Units do not match! %v versus %v",
-							rule.Description,
-							stakerUnits.Units,
-							pool.Units,
-						)
-					} else {
-						log.Printf("%v: PASS - Staker Units - %v (%v)",
-							rule.Description,
-							address,
-							rule.Memo,
-						)
-					}
-				}
-			}
-		}
-	}
-}
-
 // Sweep : Transfer all assets back to the faucet.
 func (s *Smoke) Sweep() {
-	keys := make([]string, 5)
-	keys = append(keys, s.PoolKey)
+	keys := make([]string, len(s.Tests.ActorList)+1)
+	key, _ := s.Tests.ActorKeys["pool"].Key.ExportAsPrivateKey()
+	keys = append(keys, key)
 
-	// Master
-	mKey, _ := s.Tests.Actors.Master.Key.ExportAsPrivateKey()
-	keys = append(keys, mKey)
-
-	// Admin
-	aKey, _ := s.Tests.Actors.Admin.Key.ExportAsPrivateKey()
-	keys = append(keys, aKey)
-
-	// Stakers
-	for _, staker := range s.Tests.Actors.Stakers {
-		sKey, _ := staker.Key.ExportAsPrivateKey()
-		keys = append(keys, sKey)
+	for _, actor := range s.Tests.ActorList {
+		key, _ = s.Tests.ActorKeys[actor].Key.ExportAsPrivateKey()
+		if key != s.FaucetKey {
+			keys = append(keys, key)
+		}
 	}
-
-	// User
-	uKey, _ := s.Tests.Actors.User.Key.ExportAsPrivateKey()
-	keys = append(keys, uKey)
 
 	// Empty the wallets.
 	sweep := NewSweep(s.ApiAddr, s.FaucetKey, keys, s.Config.network, s.Config.debug)
 	sweep.EmptyWallets()
+}
+
+// SendTxn : Send the transaction to Binance.
+func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {
+	s.Binance.SendTxn(client, key, payload, memo)
 }

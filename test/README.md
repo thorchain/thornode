@@ -37,7 +37,7 @@ A full smoke test lifecycle is as follows:
 * then WITHDRAW;
 * then SWEEP all assets back to the faucet from the various actors.
 
-Unit tests (where we've broken the SWAPs and STAKEs into their own test definitions) still follow a variant of the above (as we still need to SEED the actors; GAS, END and ENABLE the pool).
+Unit tests (where we've broken the SWAPs and STAKEs into their own test definitions) still follow a variant of the above (as we still need to SEED the actors; GAS and WITHDRAW the pool).
 
 ### Scenarios
 
@@ -47,8 +47,7 @@ At the top level we define how many stakers we wish to create, other runtime opt
 
 ```json
 {
-  "with_actors": true,
-  "staker_count": 2,
+  "actor_list": ["master", "admin", "user", "staker_1", "staker_2"],
   "sweep_on_exit": true,
   "rules": [...]
 }
@@ -56,9 +55,8 @@ At the top level we define how many stakers we wish to create, other runtime opt
 
 Where:
 
-* `with_actors` create the actors or not (this will override `staker_count`),
-* `staker_count` the number of stakers to create,
-* `sweep_on_exit` sweep up the pool (and return to the faucet) on completion. We only ever set this to `false` when performing an actual seed of the pools on the `dev` and `staging` environments.
+* `actor_list` is a list of all the actors to create
+* and `sweep_on_exit` will sweep up the pool (and return to the faucet) on completion. We only ever set this to `false` when performing an actual seed of the pools on the `dev` and `staging` environments.
 
 Each rule will have:
 
@@ -66,20 +64,22 @@ Each rule will have:
 {
   {
     "description": "SEED",
-    "from": "from",
+    "from": "faucet",
     "to": [
-      "to"
+      {
+        "actor": "master",
+        "coins": [
+          {
+            "symbol": "BNB",
+            "amount": 100000000
+          }
+        ]
+      }
     ],
     "send_to": "staker_1",
     "slip_limit": 1234567,
-    "coins": [
-      {
-        "symbol": "BNB",
-        "amount": 1.00000000
-      }
-    ],
     "memo": "MEMO",
-    "check": {}
+    "check_delay": 10
   }
 }
 ```
@@ -88,46 +88,15 @@ Where:
 
 * `description` is a simple description to describe the definition,
 * `from` is the actor performing the transaction (e.g: `master`, `admin`, `user`, `staker_N` or `pool`),
-* `to` is an array of actors the transaction is for (by using an array, we can support multi-send),
-* `coins` is an array of coin objects containing the `symbol` and the `amount` to send,
+* `to` is an array of actors and the coins to send (an array means that we can support multi-send),
 * `send_to` is the actor to send to, when performing a swap and send (appended to the memo sent),
 * `slip_limit` is to set the slip limit (appended to the memo sent)
 * `memo` is the memo to use for the transaction
-* and `check` defines the rules for validating the transaction (see blow).
+* and `check_delay` is the delay between broadcasting the transaction to Binance, and checking the balances (Binance and Statechain).
 
 #### Validation
 
-After a transaction has been executed, we either check Binance or the Statechain (or sometimes both), to ensure that the resulting balances are inline with our business rules. If this is empty, then the transaction will still be executed, but the result won't be validated.
-
-```json
-{
-  "delay": 10,
-  "binance": {
-    "target": "from",
-    "coins": [...]
-  },
-  "statechain": [
-    {
-      "units": 1.00000000,
-      "symbol": "BNB",
-      "rune": 1.00000000,
-      "asset": 1.00000000,
-      "staker_units": [
-        {
-          "actor": "staker_1",
-          "units": 1.00000000
-        }
-      ]
-    }
-  ]
-}
-```
-
-Where:
-
-* `delay` is the number of second to delay running the checks (to ensure ample time is given to both Binance and the Statechain),
-* `binance` is an object that contains the `target` actor Binance wallet to check and an array of coin objects (the expected balances - follows the same structure as above)
-* and `statechain` is an array of objects that contains the pool `units`, `rune` and `asset` balances to check for a given pool (determined by the `symbol` supplied) as well as a `staker_units` array for validating an actor's share of the pool.
+After a transaction has been executed, we check Binance and the Statechain. The output is saved as JSON into `/tmp/smoke.json` by default.
 
 ### Running the Tests
 

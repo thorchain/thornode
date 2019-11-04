@@ -1,24 +1,13 @@
 {
   "sweep_on_exit": true,
-  "with_actors": true,
-  "staker_count": 0,
+  "actor_list": ["master", "admin"],
   "rules": [
     {
       "description": "SEED",
       "from": "faucet",
       "to": [
-        "master"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 100000000
-        }
-      ],
-      "memo": "SEED",
-      "check": {
-        "binance": {
-          "target": "to",
+          "actor": "master",
           "coins": [
             {
               "symbol": "BNB",
@@ -26,24 +15,15 @@
             }
           ]
         }
-      }
+      ],
+      "memo": "SEED"
     },
     {
       "description": "SEED",
       "from": "master",
       "to": [
-        "admin"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 10000000
-        }
-      ],
-      "memo": "SEED",
-      "check": {
-        "binance": {
-          "target": "to",
+          "actor": "admin",
           "coins": [
             {
               "symbol": "BNB",
@@ -51,32 +31,24 @@
             }
           ]
         }
-      }
+      ],
+      "memo": "SEED"
     },
     {
       "description": "GAS",
       "from": "admin",
       "to": [
-        "pool"
-      ],
-      "coins": [
         {
-          "symbol": "BNB",
-          "amount": 5000000
-        }
-      ],
-      "memo": "GAS",
-      "check": {
-        "binance": {
-          "target": "from",
+          "actor": "pool",
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 4962500
+              "amount": 5000000
             }
           ]
         }
-      }
+      ],
+      "memo": "GAS"
     }
   ]
 }
