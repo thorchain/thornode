@@ -15,7 +15,7 @@
             },
             {
               "symbol": "BNB",
-              "amount": 138667500
+              "amount": 138660000
             },
             {
               "symbol": "FSN-F1B",
@@ -52,7 +52,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 200000000
+              "amount": 10000000
             }
           ]
         },
@@ -140,7 +140,8 @@
           ]
         }
       ],
-      "memo": "GAS"
+      "memo": "GAS",
+      "check_delay": 10
     },
     {
       "description": "STAKE",
@@ -160,7 +161,8 @@
           ]
         }
       ],
-      "memo": "STAKE:BNB.BNB"
+      "memo": "STAKE:BNB.BNB",
+      "check_delay": 10
     },
     {
       "description": "STAKE",
