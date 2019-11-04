@@ -161,7 +161,9 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, event := range data.CompleteEvents {
 		keeper.SetCompletedEvent(ctx, event)
 	}
-	keeper.SetPoolAddresses(ctx, data.PoolAddresses)
+	if !data.PoolAddresses.IsEmpty() {
+		keeper.SetPoolAddresses(ctx, &data.PoolAddresses)
+	}
 	keeper.SetLastEventID(ctx, data.LastEventID)
 
 	return validators

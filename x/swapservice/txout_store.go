@@ -2,6 +2,7 @@ package swapservice
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -19,12 +20,14 @@ type TxOutSetter interface {
 type TxOutStore struct {
 	txOutSetter TxOutSetter
 	blockOut    *TxOut
+	poolAddrMgr *PoolAddressManager
 }
 
 // NewTxOutStore will create a new instance of TxOutStore.
-func NewTxOutStore(txOutSetter TxOutSetter) *TxOutStore {
+func NewTxOutStore(txOutSetter TxOutSetter, poolAddrMgr *PoolAddressManager) *TxOutStore {
 	return &TxOutStore{
 		txOutSetter: txOutSetter,
+		poolAddrMgr: poolAddrMgr,
 	}
 }
 
@@ -39,6 +42,7 @@ func (tos *TxOutStore) CommitBlock(ctx sdk.Context) {
 	if len(tos.blockOut.TxArray) == 0 {
 		return
 	}
+
 	// write the tos to keeper
 	tos.txOutSetter.SetTxOut(ctx, tos.blockOut)
 }
@@ -177,6 +181,27 @@ func (tos *TxOutStore) addToBlockOut(toi *TxOutItem) {
 
 	// if we are sending zero coins, don't bother adding to the txarray
 	if !countCoins.IsZero() {
+		toi.SeqNo = tos.getSeqNo(toi.Chain)
 		tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 	}
+}
+func (tos *TxOutStore) getSeqNo(chain common.Chain) uint64 {
+	// need to get the sequence no
+	currentChainPoolAddr := tos.poolAddrMgr.currentPoolAddresses.Current.GetByChain(chain)
+	if nil != currentChainPoolAddr {
+		return currentChainPoolAddr.GetSeqNo()
+	}
+	if nil != tos.poolAddrMgr.currentPoolAddresses.Previous {
+		previousChainPoolAddr := tos.poolAddrMgr.currentPoolAddresses.Previous.GetByChain(chain)
+		if nil != previousChainPoolAddr {
+			return previousChainPoolAddr.GetSeqNo()
+		}
+	}
+	if nil != tos.poolAddrMgr.currentPoolAddresses.Next {
+		nextChainPoolAddr := tos.poolAddrMgr.currentPoolAddresses.Next.GetByChain(chain)
+		if nil != nextChainPoolAddr {
+			return nextChainPoolAddr.GetSeqNo()
+		}
+	}
+	return uint64(0)
 }
