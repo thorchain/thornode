@@ -28,10 +28,10 @@ const appPoolData = "swapservice"
 
 var (
 	// default home directories for the application CLI
-	DefaultCLIHome = os.ExpandEnv("$HOME/.sscli")
+	DefaultCLIHome = os.ExpandEnv("$HOME/.thorcli")
 
 	// DefaultNodeHome sets the folder where the applcation data and configuration will be stored
-	DefaultNodeHome = os.ExpandEnv("$HOME/.ssd")
+	DefaultNodeHome = os.ExpandEnv("$HOME/.thord")
 
 	// ModuleBasicManager is in charge of setting up basic module elemnets
 	ModuleBasics = module.NewBasicManager(

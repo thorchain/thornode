@@ -271,7 +271,7 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
 			return nil, errors.Wrapf(err, "fail to parse block height")
 		}
-		observedPoolAddress, err := common.NewAddress(item.ObservedPoolAddress)
+		observedPoolPubKey, err := common.NewPubKeyFromHexString(item.ObservedPoolAddress)
 		if nil != err {
 			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolAddress).Inc()
 			return nil, errors.Wrapf(err, "fail to parse observed pool address: %s", item.ObservedPoolAddress)
@@ -281,7 +281,8 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 				item.Coins,
 				item.Memo,
 				bnbAddr,
-				sdk.NewUint(h), observedPoolAddress),
+				sdk.NewUint(h),
+				observedPoolPubKey),
 		})
 	}
 	return txs, nil

@@ -118,6 +118,13 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Check(memo.GetAsset().String(), Equals, "BNB.RUNE-1BA")
 	c.Check(memo.IsType(txStake), Equals, true, Commentf("MEMO: %+v", memo))
 
+	memo, err = ParseMemo("STAKE:BTC.BTC")
+	c.Assert(err, NotNil)
+	memo, err = ParseMemo("STAKE:BTC.BTC:bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej")
+	c.Assert(err, IsNil)
+	c.Check(memo.GetDestination().String(), Equals, "bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej")
+	c.Check(memo.IsType(txStake), Equals, true, Commentf("MEMO: %+v", memo))
+
 	memo, err = ParseMemo("WITHDRAW:RUNE-1BA:25")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetAsset().String(), Equals, "BNB.RUNE-1BA")
@@ -152,10 +159,12 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(memo.IsType(txBond), Equals, true)
 	c.Assert(memo.GetNodeAddress().String(), Equals, whiteListAddr.String())
 
-	memo, err = ParseMemo("nextpool:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	pubKey := GetRandomPubKey()
+	memo, err = ParseMemo("nextpool:" + pubKey.String())
 	c.Assert(err, IsNil)
 	c.Assert(memo.IsType(txNextPool), Equals, true)
-	c.Assert(memo.GetNextPoolAddress().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
+	c.Assert(memo.GetNextPoolAddress().String(), Equals, pubKey.String())
+	c.Assert(memo.GetNextPoolAddress().Equals(pubKey), Equals, true)
 
 	memo, err = ParseMemo("leave")
 	c.Assert(err, IsNil)

@@ -17,7 +17,8 @@ import (
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/go-retryablehttp"
+
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
 	"gitlab.com/thorchain/bepswap/thornode/common"
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
@@ -40,20 +41,20 @@ func (*StatechainSuite) SetUpSuite(c *C) {
 }
 
 func setupStateChainForTest(c *C) (config.StateChainConfiguration, cKeys.Info, func()) {
-	sscliDir := filepath.Join(os.TempDir(), ".sscli")
+	thorcliDir := filepath.Join(os.TempDir(), ".thorcli")
 	cfg := config.StateChainConfiguration{
 		ChainID:         "statechain",
 		ChainHost:       "localhost",
 		SignerName:      "bob",
 		SignerPasswd:    "password",
-		ChainHomeFolder: sscliDir,
+		ChainHomeFolder: thorcliDir,
 	}
-	kb, err := keys.NewKeyBaseFromDir(sscliDir)
+	kb, err := keys.NewKeyBaseFromDir(thorcliDir)
 	c.Assert(err, IsNil)
 	info, _, err := kb.CreateMnemonic(cfg.SignerName, cKeys.English, cfg.SignerPasswd, cKeys.Secp256k1)
 	c.Assert(err, IsNil)
 	return cfg, info, func() {
-		if err := os.RemoveAll(sscliDir); nil != err {
+		if err := os.RemoveAll(thorcliDir); nil != err {
 			c.Error(err)
 		}
 	}
@@ -92,7 +93,7 @@ func (s StatechainSuite) TestSign(c *C) {
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
 	cfg.ChainHost = u.Host
-	observedAddress, err := common.NewAddress("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq")
+	observedAddress := stypes.GetRandomPubKey()
 	c.Assert(err, IsNil)
 	tx := stypes.NewTxInVoter(common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"), []stypes.TxIn{
 		stypes.NewTxIn(
@@ -168,28 +169,28 @@ func (StatechainSuite) TestNewStateChainBridge(c *C) {
 	testFunc(config.StateChainConfiguration{
 		ChainID:         "",
 		ChainHost:       "localhost",
-		ChainHomeFolder: "~/.sscli",
+		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
 	testFunc(config.StateChainConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "",
-		ChainHomeFolder: "~/.sscli",
+		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
 	testFunc(config.StateChainConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "localhost",
-		ChainHomeFolder: "~/.sscli",
+		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
 	testFunc(config.StateChainConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "localhost",
-		ChainHomeFolder: "~/.sscli",
+		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "",
 	}, NotNil, IsNil)

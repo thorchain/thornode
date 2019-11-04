@@ -35,7 +35,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	c.Assert(err, IsNil)
 
 	item := &TxOutItem{
-		PoolAddress: bnbAddress,
+		PoolAddress: GetRandomPubKey(),
 		ToAddress:   bnbAddress,
 		Coins: common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(3980500*common.One)),
@@ -60,6 +60,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One)),
 	}
 
+	fmt.Printf("Pool: %+v\n", bnbPool)
 	txOutStore.AddTxOutItem(ctx, k, item, true)
 	bnbPool = k.GetPool(ctx, common.BNBAsset)
 	// test takes gas out of rune
@@ -79,4 +80,15 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	c.Assert(lokiPool.BalanceRune.String(), Equals, "9999970000", Commentf("%+v\n", lokiPool))
 	c.Assert(item.Coins[0].Amount.String(), Equals, "1999970000")
 
+	bnbPool = k.GetPool(ctx, common.BNBAsset)
+	bnbPool.BalanceAsset = sdk.NewUint(1 * common.One)
+	bnbPool.BalanceRune = sdk.NewUint(1000 * common.One)
+	k.SetPool(ctx, bnbPool)
+	item.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(10000*common.One)),
+	}
+	txOutStore.AddTxOutItem(ctx, k, item, true)
+	bnbPool = k.GetPool(ctx, common.BNBAsset)
+	// test takes gas out of loki pool
+	c.Assert(bnbPool.BalanceRune.String(), Equals, "100030000000")
 }
