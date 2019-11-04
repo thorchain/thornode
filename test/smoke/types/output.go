@@ -7,7 +7,7 @@ type Output struct {
 	User    Balance `json:"USER-1"`
 	Staker1 Balance `json:"STAKER-1"`
 	Staker2 Balance `json:"STAKER-2"`
-	Pool Balance `json:"POOL"`
+	Pool    Balance `json:"POOL"`
 }
 
 type Balance struct {

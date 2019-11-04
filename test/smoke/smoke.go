@@ -65,7 +65,7 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 		Binance:    NewBinance(apiAddr, n.ChainID, debug),
 		Statechain: NewStatechain(env),
 		Tests:      tests,
-		Results:	results,
+		Results:    results,
 	}
 }
 
