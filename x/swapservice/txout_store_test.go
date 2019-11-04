@@ -4,8 +4,9 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 type TxOutStoreSuite struct{}
@@ -27,14 +28,18 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	loki.BalanceRune = sdk.NewUint(100 * common.One)
 	loki.BalanceAsset = sdk.NewUint(100 * common.One)
 	k.SetPool(ctx, loki)
+	poolAddrMgr := NewPoolAddressManager(k)
+	ctx = ctx.WithBlockHeight(1)
+	poolAddrMgr.BeginBlock(ctx)
 
-	txOutStore := NewTxOutStore(&MockTxOutSetter{})
+	txOutStore := NewTxOutStore(&MockTxOutSetter{}, poolAddrMgr)
 	txOutStore.NewBlock(uint64(1))
 
 	bnbAddress, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
 
 	item := &TxOutItem{
+		Chain:       common.BNBChain,
 		PoolAddress: GetRandomPubKey(),
 		ToAddress:   bnbAddress,
 		Coins: common.Coins{

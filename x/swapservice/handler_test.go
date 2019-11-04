@@ -112,13 +112,16 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		p.BalanceAsset = sdk.NewUint(100 * common.One)
 		k.SetPool(ctx, p)
 	}
-	genesisPoolAddress := NewPoolAddresses(common.EmptyPubKey, GetRandomPubKey(), common.EmptyPubKey, 100, 90)
+	genesisPoolPubKey := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	genesisPoolAddress := NewPoolAddresses(common.EmptyPoolPubKeys, common.PoolPubKeys{
+		genesisPoolPubKey,
+	}, common.EmptyPoolPubKeys, 100, 90)
 	k.SetPoolAddresses(ctx, genesisPoolAddress)
 	poolAddrMgr := NewPoolAddressManager(k)
 	validatorMgr := NewValidatorManager(k)
-	poolAddrMgr.BeginBlock(ctx, height)
+	poolAddrMgr.BeginBlock(ctx)
 	validatorMgr.BeginBlock(ctx, height)
-	txOutStore := NewTxOutStore(k)
+	txOutStore := NewTxOutStore(k, poolAddrMgr)
 	txOutStore.NewBlock(uint64(height))
 
 	return &handlerTestWrapper{
@@ -251,7 +254,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	c.Assert(result.IsOK(), Equals, false)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 	msgEndPool = NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, w.activeNodeAccount.NodeAddress)
-	w.poolAddrMgr.BeginBlock(w.ctx, 1)
+	w.poolAddrMgr.BeginBlock(w.ctx)
 	stakeTxHash := GetRandomTxHash()
 	msgSetStake := NewMsgSetStakeData(
 		common.BNBAsset,
@@ -397,13 +400,18 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	result := handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 	// next pool had been confirmed already
-	w.poolAddrMgr.BeginBlock(w.ctx, w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt)
-	w.poolAddrMgr.currentPoolAddresses.Next = GetRandomPubKey()
+	w.ctx = w.ctx.WithBlockHeight(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt)
+	w.poolAddrMgr.BeginBlock(w.ctx)
+
+	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{
+		common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey()),
+	}
 	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
-	senderAddr, err := w.poolAddrMgr.currentPoolAddresses.Current.GetAddress(common.BNBChain)
+	chainSenderAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	senderAddr, err := chainSenderAddr.GetAddress()
 	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Next = common.EmptyPubKey
+	w.poolAddrMgr.currentPoolAddresses.Next = common.EmptyPoolPubKeys
 	msgNextPoolAddr = NewMsgNextPoolAddress(
 		GetRandomTxHash(),
 		GetRandomPubKey(),
@@ -452,6 +460,8 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	// expect to refund two coins
 	c.Assert(len(w.txOutStore.blockOut.TxArray[0].Coins), Equals, 2)
 
+	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	c.Assert(currentChainPool, NotNil)
 	txIn1 := types.NewTxIn(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
@@ -460,7 +470,7 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 		"stake:BNB",
 		GetRandomBNBAddress(),
 		sdk.NewUint(1024),
-		w.poolAddrMgr.currentPoolAddresses.Current)
+		currentChainPool.PubKey)
 	msgSetTxIn1 := types.NewMsgSetTxIn(
 		[]TxInVoter{
 			types.NewTxInVoter(GetRandomTxHash(), []TxIn{txIn1}),
@@ -480,6 +490,8 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 
 func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	c.Assert(currentChainPool, NotNil)
 	txIn := types.NewTxIn(
 		common.Coins{
 			common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
@@ -487,7 +499,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 		"create:BNB",
 		GetRandomBNBAddress(),
 		sdk.NewUint(1024),
-		w.poolAddrMgr.GetCurrentPoolAddresses().Current)
+		currentChainPool.PubKey)
 
 	msgSetTxIn := types.NewMsgSetTxIn(
 		[]TxInVoter{
@@ -508,6 +520,8 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 
 func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	c.Assert(currentChainPool, NotNil)
 	staker := GetRandomBNBAddress()
 	// lets do a stake first, otherwise nothing to withdraw
 	txStake := types.NewTxIn(
@@ -518,7 +532,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 		"stake:BNB",
 		staker,
 		sdk.NewUint(1024),
-		w.poolAddrMgr.currentPoolAddresses.Current)
+		currentChainPool.PubKey)
 
 	msgStake := types.NewMsgSetTxIn(
 		[]TxInVoter{
@@ -536,7 +550,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 		"withdraw:BNB",
 		staker,
 		sdk.NewUint(1025),
-		w.poolAddrMgr.GetCurrentPoolAddresses().Current)
+		currentChainPool.PubKey)
 
 	msgSetTxIn := types.NewMsgSetTxIn(
 		[]TxInVoter{
@@ -615,7 +629,9 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	c.Assert(result2.Code, Equals, sdk.CodeUnauthorized)
 
 	w = getHandlerTestWrapper(c, 1, true, true)
-	currentPoolAddr, err := w.poolAddrMgr.currentPoolAddresses.Current.GetAddress(common.BNBChain)
+	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	c.Assert(currentChainPool, NotNil)
+	currentPoolAddr, err := currentChainPool.GetAddress()
 	c.Assert(err, IsNil)
 	msgOutboundTxNormal := NewMsgOutboundTx(GetRandomTxHash(),
 		1,
@@ -634,7 +650,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		"swap:BNB",
 		GetRandomBNBAddress(),
 		sdk.NewUint(1024),
-		w.poolAddrMgr.currentPoolAddresses.Current)
+		currentChainPool.PubKey)
 	msgSetTxIn1 := types.NewMsgSetTxIn(
 		[]TxInVoter{
 			types.NewTxInVoter(GetRandomTxHash(), []TxIn{txIn1}),
@@ -712,13 +728,16 @@ func (HandlerSuite) TestHandleMsgAck(c *C) {
 	result = handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, msgAck)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 
+	w.ctx = w.ctx.WithBlockHeight(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt)
 	// open the window
-	w.poolAddrMgr.BeginBlock(w.ctx, w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt)
+	w.poolAddrMgr.BeginBlock(w.ctx)
 	// didn't observe next pool address
 	result = handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, msgAck)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
-
-	w.poolAddrMgr.ObservedNextPoolAddrPubKey = nextPoolPubKey
+	nextChainPoolPubKey := common.NewPoolPubKey(common.BNBChain, 0, nextPoolPubKey)
+	w.poolAddrMgr.ObservedNextPoolAddrPubKey = common.PoolPubKeys{
+		nextChainPoolPubKey,
+	}
 	// sender is not the same as the observed next pool public key
 	result = handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, msgAck)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
@@ -748,8 +767,9 @@ func (HandlerSuite) TestRefund(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},
 	}
-	currentPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current
-	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr, true)
+	currentPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
+	c.Assert(currentPoolAddr, NotNil)
+	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 
 	// check we DONT create a refund transaction when we don't have a pool for
@@ -762,13 +782,13 @@ func (HandlerSuite) TestRefund(c *C) {
 		},
 	}
 
-	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr, true)
+	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(pool.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true)
 
 	// doing it a second time should add the assets again.
-	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr, true)
+	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(pool.BalanceAsset.Equal(sdk.NewUint(200*common.One)), Equals, true)

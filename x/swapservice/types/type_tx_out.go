@@ -10,13 +10,18 @@ import (
 
 // TxOutItem represent an tx need to be sent to chain
 type TxOutItem struct {
+	Chain       common.Chain   `json:"chain"`
 	ToAddress   common.Address `json:"to"`
 	PoolAddress common.PubKey  `json:"pool_address"`
+	SeqNo       uint64         `json:"seq_no"`
 	// TODO update common.Coins to use sdk.Coins
 	Coins common.Coins `json:"coins"`
 }
 
 func (toi TxOutItem) Valid() error {
+	if toi.Chain.IsEmpty() {
+		return errors.New("chain cannot be empty")
+	}
 	if toi.ToAddress.IsEmpty() {
 		return errors.New("To address cannot be empty")
 	}

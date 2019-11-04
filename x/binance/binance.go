@@ -2,6 +2,7 @@ package binance
 
 import (
 	"encoding/hex"
+	"strconv"
 	"strings"
 
 	sdk "github.com/binance-chain/go-sdk/client"
@@ -145,40 +146,39 @@ func (b *Binance) isSignerAddressMatch(poolAddr, signerAddr string) bool {
 	return strings.EqualFold(bnbAddress.String(), signerAddr)
 }
 
-func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) {
+func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[string]string, error) {
 	signerAddr := b.GetAddress()
 	var payload []msg.Transfer
-	for _, txn := range txOut.TxArray {
-		if !b.isSignerAddressMatch(txn.PoolAddress.String(), signerAddr) {
-			b.logger.Debug().Str("signer addr", signerAddr).Str("pool addr", txn.PoolAddress.String()).Msg("address doesn't match ignore")
-			continue
-		}
-		toAddr, err := types.AccAddressFromBech32(txn.To)
-		if nil != err {
-			return nil, nil, errors.Wrapf(err, "fail to parse account address(%s)", txn.To)
-		}
-		for _, coin := range txn.Coins {
-			amount := coin.Amount
-			asset := coin.Asset
-			if common.IsRuneAsset(coin.Asset) {
-				if b.isTestNet {
-					asset = common.RuneA1FAsset
-				} else {
-					asset = common.RuneB1AAsset
-				}
-				asset = common.RuneAsset()
-			}
-			payload = append(payload, msg.Transfer{
-				ToAddr: toAddr,
-				Coins: types.Coins{
-					types.Coin{
-						Denom:  asset.Symbol.String(),
-						Amount: int64(amount.Uint64()),
-					},
-				},
-			})
-		}
+
+	if !b.isSignerAddressMatch(tai.PoolAddress.String(), signerAddr) {
+		b.logger.Info().Str("signer addr", signerAddr).Str("pool addr", tai.PoolAddress.String()).Msg("address doesn't match ignore")
+		return nil, nil, nil
 	}
+	toAddr, err := types.AccAddressFromBech32(tai.To)
+	if nil != err {
+		return nil, nil, errors.Wrapf(err, "fail to parse account address(%s)", tai.To)
+	}
+	seqNo, err := strconv.ParseInt(tai.SeqNo, 10, 64)
+	if nil != err {
+		return nil, nil, errors.Wrapf(err, "fail to parse seq no %s", tai.SeqNo)
+	}
+	for _, coin := range tai.Coins {
+		amount := coin.Amount
+		asset := coin.Asset
+		if common.IsRuneAsset(coin.Asset) {
+			asset = common.RuneAsset()
+		}
+		payload = append(payload, msg.Transfer{
+			ToAddr: toAddr,
+			Coins: types.Coins{
+				types.Coin{
+					Denom:  asset.Symbol.String(),
+					Amount: int64(amount.Uint64()),
+				},
+			},
+		})
+	}
+
 	if len(payload) == 0 {
 		return nil, nil, nil
 	}
@@ -194,10 +194,10 @@ func (b *Binance) SignTx(txOut stypes.TxOut) ([]byte, map[string]string, error) 
 
 	signMsg := tx.StdSignMsg{
 		ChainID:       b.chainId,
-		Memo:          btypes.TxOutMemoPrefix + txOut.Height,
+		Memo:          btypes.TxOutMemoPrefix + strconv.FormatInt(height, 10),
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,
-		Sequence:      acc.Sequence,
+		Sequence:      seqNo, // acc.Sequence,
 		AccountNumber: acc.Number,
 	}
 	param := map[string]string{

@@ -1,11 +1,12 @@
 package signer
 
 import (
+	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -95,14 +96,13 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 		case <-s.stopChan:
 			return nil
 		default:
-
-			if !s.shouldSign(item) {
-				s.logger.Debug().
-					Str("signer_address", s.Binance.GetAddress()).
-					Msg("different pool address, ignore")
+			if !item.Chain.Equals(common.BNBChain) {
+				s.logger.Debug().Str("chain", item.Chain.String()).
+					Msg("not binance chain , we don't sign it")
 				continue
 			}
-			if err := s.signAndSendToBinanceChain(item); nil != err {
+
+			if err := s.signTxOutAndSendToBinanceChain(item); nil != err {
 				s.errCounter.WithLabelValues("fail_sign_send_to_binance", item.Height).Inc()
 				s.logger.Error().Err(err).Str("height", item.Height).Msg("fail to sign and send it to binance chain")
 				continue
@@ -117,25 +117,24 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 	return nil
 }
 
-func (s *Signer) shouldSign(txOut types.TxOut) bool {
+func (s *Signer) shouldSign(tai types.TxArrayItem) bool {
 	binanceAddr := s.Binance.GetAddress()
 	s.logger.Info().Str("address", binanceAddr).Msg("current signer address")
-	for _, item := range txOut.TxArray {
-		pubKey, err := common.NewPubKeyFromHexString(item.PoolAddress.String())
-		if nil != err {
-			s.logger.Error().Err(err).Msg("fail to parse pool address")
-			return false
-		}
-		address, err := pubKey.GetAddress(common.BNBChain)
-		if nil != err {
-			s.logger.Error().Err(err).Msg("fail to get address")
-			return false
-		}
-		s.logger.Info().Str("address", address.String()).Msg("whateverasdfasd")
-		if strings.EqualFold(binanceAddr, address.String()) {
-			return true
-		}
+	pubKey, err := common.NewPubKeyFromHexString(tai.PoolAddress.String())
+	if nil != err {
+		s.logger.Error().Err(err).Msg("fail to parse pool address")
+		return false
 	}
+	address, err := pubKey.GetAddress(common.BNBChain)
+	if nil != err {
+		s.logger.Error().Err(err).Msg("fail to get address")
+		return false
+	}
+	s.logger.Info().Str("address", address.String()).Msg("")
+	if strings.EqualFold(binanceAddr, address.String()) {
+		return true
+	}
+
 	return false
 }
 func (s *Signer) retryFailedTxOutProcessor() {
@@ -182,13 +181,8 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 				// raise alert
 				return
 			}
-			if !s.shouldSign(txOut) {
-				s.logger.Debug().
-					Str("signer_address", s.Binance.GetAddress()).
-					Msg("different pool address, ignore")
-				continue
-			}
-			if err := s.signAndSendToBinanceChainWithRetry(txOut); nil != err {
+
+			if err := s.signTxOutAndSendToBinanceChain(txOut); nil != err {
 				s.errCounter.WithLabelValues("fail_sign_send_to_binance", txOut.Height).Inc()
 				s.logger.Error().Err(err).Msg("fail to send txout to binance chain, will retry later")
 				if err := s.storage.SetTxOutStatus(txOut, Failed); nil != err {
@@ -208,41 +202,39 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 }
 
 // signAndSendToBinanceChainWithRetry retry a few times before we move on to he next block
-func (s *Signer) signAndSendToBinanceChainWithRetry(txOut types.TxOut) error {
-	bf := backoff.NewExponentialBackOff()
-	try := 1
-	for {
-		select {
-		case <-s.stopChan:
-			return errors.New("stop signal received")
-		default:
-			err := s.signAndSendToBinanceChain(txOut)
-			if nil == err {
-				return nil
-			}
-			s.logger.Error().Err(err).Int("try", try).Msg("fail to send to binance chain")
-			interval := bf.NextBackOff()
-			if interval == backoff.Stop {
-				return errors.Wrapf(err, "fail to send to binance chain after retry %d", try)
-			}
-
-			if try == 3 {
-				return errors.Wrapf(err, "fail to send to binance chain after retry %d", try)
-			}
-			try++
-			time.Sleep(interval)
+func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
+	// most case , there should be only one item in txOut.TxArray, but sometimes there might be more than one
+	// especially when we get populate , more and more transactions
+	for _, item := range txOut.TxArray {
+		if !s.shouldSign(item) {
+			s.logger.Debug().
+				Str("signer_address", s.Binance.GetAddress()).
+				Msg("different pool address, ignore")
+			continue
 		}
+		height, err := strconv.ParseInt(txOut.Height, 10, 64)
+		if nil != err {
+			return errors.Wrapf(err, "fail to parse block height: %s ", txOut.Height)
+		}
+		err = s.signAndSendToBinanceChain(item, height)
+		if nil == err {
+			return nil
+		}
+		s.logger.Error().Err(err).Int("try", 1).Msg("fail to send to binance chain")
+		return fmt.Errorf("fail to send to binance chain,err:%w", err)
 	}
+	return nil
 }
 
-func (s *Signer) signAndSendToBinanceChain(txOut types.TxOut) error {
+func (s *Signer) signAndSendToBinanceChain(tai types.TxArrayItem, height int64) error {
 	start := time.Now()
 	defer func() {
 		s.m.GetHistograms(metrics.SignAndBroadcastToBinanceDuration).Observe(time.Since(start).Seconds())
 	}()
-	hexTx, param, err := s.Binance.SignTx(txOut)
+	strHeight := strconv.FormatInt(height, 10)
+	hexTx, param, err := s.Binance.SignTx(tai, height)
 	if nil != err {
-		s.errCounter.WithLabelValues("fail_sign_txout", txOut.Height).Inc()
+		s.errCounter.WithLabelValues("fail_sign_txout", strHeight).Inc()
 		s.logger.Error().Err(err).Msg("fail to sign txOut")
 	}
 	if nil == hexTx {
@@ -253,7 +245,7 @@ func (s *Signer) signAndSendToBinanceChain(txOut types.TxOut) error {
 	log.Info().Msgf("Generated a signature for Binance: %s", string(hexTx))
 	commitResult, err := s.Binance.BroadcastTx(hexTx, param)
 	if nil != err {
-		s.errCounter.WithLabelValues("fail_broadcast_txout", txOut.Height).Inc()
+		s.errCounter.WithLabelValues("fail_broadcast_txout", strHeight).Inc()
 		s.logger.Error().Err(err).Msg("fail to broadcast a tx to binance chain")
 		return errors.Wrap(err, "fail to broadcast a tx to binance chain")
 	}

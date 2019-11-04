@@ -67,10 +67,8 @@ func (b *StateChainBlockScan) GetMessages() <-chan stypes.TxOut {
 
 // Start to scan blocks
 func (b *StateChainBlockScan) Start() error {
-	//for idx := 1; idx < b.cfg.BlockScanProcessors; idx++ {
 	b.wg.Add(1)
 	go b.processBlocks(1)
-	//}
 	b.commonBlockScanner.Start()
 	return nil
 }
@@ -104,7 +102,7 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 			b.m.GetCounter(metrics.BlockNoTxOut).Inc()
 			return nil
 		}
-
+		// TODO here we will need to dispatch to different chain processor
 		b.txOutChan <- out
 	}
 	return nil
