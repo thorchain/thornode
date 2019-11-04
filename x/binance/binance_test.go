@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	. "gopkg.in/check.v1"
-	resty "gopkg.in/resty.v1"
+	"gopkg.in/resty.v1"
 
 	"gitlab.com/thorchain/bepswap/thornode/config"
 	"gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
@@ -123,11 +123,13 @@ func (BinancechainSuite) TestSignTx(c *C) {
 	})
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
-	r, p, err := b2.SignTx(getTxOutFromJsonInput(`{ "height": "1440", "hash": "", "tx_array": [ { "pool_address":"4b61e25dde02ca3b19c50cf549124f7d4c7a1e64","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": null } ]}`, c))
+	txOut := getTxOutFromJsonInput(`{ "height": "1440", "hash": "", "tx_array": [ { "pool_address":"4b61e25dde02ca3b19c50cf549124f7d4c7a1e64","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": null } ]}`, c)
+	r, p, err := b2.SignTx(txOut.TxArray[0], 1440)
 	c.Assert(r, IsNil)
 	c.Assert(p, IsNil)
 	c.Assert(err, IsNil)
-	r1, p1, err1 := b2.SignTx(getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "pool_address":"4b61e25dde02ca3b19c50cf549124f7d4c7a1e64","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [ { "denom": "BNB", "amount": "194765912" } ] } ]}`, c))
+	txOut1 := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "pool_address":"4b61e25dde02ca3b19c50cf549124f7d4c7a1e64","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [ { "denom": "BNB", "amount": "194765912" } ] } ]}`, c)
+	r1, p1, err1 := b2.SignTx(txOut1.TxArray[0], 1718)
 	c.Assert(r1, NotNil)
 	c.Assert(p1, NotNil)
 	c.Assert(err1, IsNil)

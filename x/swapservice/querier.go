@@ -253,11 +253,15 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	if pool.Empty() {
 		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("pool: %s doesn't exist", path[0]))
 	}
-	bnbPoolAddr, err := currentPoolAddr.Current.GetAddress(common.BNBChain)
-	if nil != err {
+	bnbPoolPubKey := currentPoolAddr.Current.GetByChain(common.BNBChain)
+	if bnbPoolPubKey == nil || bnbPoolPubKey.IsEmpty() {
 		return nil, sdk.ErrInternal("fail to get current address")
 	}
-	pool.PoolAddress = bnbPoolAddr
+	addr, err := bnbPoolPubKey.GetAddress()
+	if nil != err {
+		return nil, sdk.ErrInternal("fail to get bnb chain pool address")
+	}
+	pool.PoolAddress = addr
 	pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 	res, err := codec.MarshalJSONIndent(keeper.cdc, pool)
 	if err != nil {
@@ -270,14 +274,18 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrM
 	pools := QueryResPools{}
 	iterator := keeper.GetPoolDataIterator(ctx)
 	currentPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
-	bnbPoolAddr, err := currentPoolAddr.Current.GetAddress(common.BNBChain)
+	bnbPoolPubKey := currentPoolAddr.Current.GetByChain(common.BNBChain)
+	if bnbPoolPubKey == nil || bnbPoolPubKey.IsEmpty() {
+		return nil, sdk.ErrInternal("fail to get current address")
+	}
+	addr, err := bnbPoolPubKey.GetAddress()
 	if nil != err {
-		return nil, sdk.ErrInternal("could not get current pool address")
+		return nil, sdk.ErrInternal("fail to get bnb chain pool address")
 	}
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
 		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		pool.PoolAddress = bnbPoolAddr
+		pool.PoolAddress = addr
 		pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 		pools = append(pools, pool)
 	}
@@ -324,7 +332,7 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		if len(item.Coins) == 0 {
 			continue
 		}
-		res, ok := out[item.Coins[0].Asset.Chain]
+		res, ok := out[item.Chain]
 		if !ok {
 			res = ResTxOut{
 				Height:  tx.Height,
@@ -334,7 +342,7 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 			}
 		}
 		res.TxArray = append(res.TxArray, *item)
-		out[item.Coins[0].Asset.Chain] = res
+		out[item.Chain] = res
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.cdc, QueryResTxOut{

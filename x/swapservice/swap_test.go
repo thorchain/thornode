@@ -241,35 +241,27 @@ func (s SwapSuite) TestCalculators(c *C) {
 }
 
 func (s SwapSuite) TestHandleMsgSwap(c *C) {
-	ctx, k := setupKeeperForTest(c)
-	txOutStore := NewTxOutStore(k)
-
-	bond := sdk.NewUint(100 * common.One)
-	bondAddr := GetRandomBNBAddress()
+	w := getHandlerTestWrapper(c, 1, true, false)
+	txOutStore := NewTxOutStore(w.keeper, w.poolAddrMgr)
 	txID := GetRandomTxHash()
 	signerBNBAddr := GetRandomBNBAddress()
-	signerAddr := GetRandomBech32Addr()
-	observerAddr := GetRandomBech32Addr()
-	bepConsPubKey := GetRandomBech32ConsensusPubKey()
-	ta := types.NewTrustAccount(signerBNBAddr, observerAddr, bepConsPubKey)
-	k.SetNodeAccount(ctx, types.NewNodeAccount(signerAddr, NodeActive, ta, bond, bondAddr, 1))
+	observerAddr := w.activeNodeAccount.Accounts.ObserverBEPAddress
 	txOutStore.NewBlock(1)
-	poolAddrMgr := NewPoolAddressManager(k)
 	// no pool
 	msg := NewMsgSwap(txID, common.RuneAsset(), common.BNBAsset, sdk.NewUint(common.One), signerBNBAddr, signerBNBAddr, sdk.ZeroUint(), observerAddr)
-	res := handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msg)
+	res := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg)
 	c.Assert(res.Code, Equals, sdk.CodeInternal)
 	pool := NewPool()
 	pool.Asset = common.BNBAsset
 	pool.BalanceAsset = sdk.NewUint(100 * common.One)
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
-	k.SetPool(ctx, pool)
+	w.keeper.SetPool(w.ctx, pool)
 
-	res = handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msg)
+	res = handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg)
 	c.Assert(res.IsOK(), Equals, true)
 
 	msgSwapPriceProtection := NewMsgSwap(txID, common.RuneAsset(), common.BNBAsset, sdk.NewUint(common.One), signerBNBAddr, signerBNBAddr, sdk.NewUint(2*common.One), observerAddr)
-	res1 := handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msgSwapPriceProtection)
+	res1 := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msgSwapPriceProtection)
 	c.Assert(res1.IsOK(), Equals, false)
 	c.Assert(res1.Code, Equals, sdk.CodeInternal)
 
@@ -279,11 +271,12 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	poolTCAN.Asset = tCanAsset
 	poolTCAN.BalanceAsset = sdk.NewUint(334850000)
 	poolTCAN.BalanceRune = sdk.NewUint(2349500000)
-	k.SetPool(ctx, poolTCAN)
+	w.keeper.SetPool(w.ctx, poolTCAN)
 
 	txID1, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD211")
 	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
-
+	currentChainPoolAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	c.Assert(currentChainPoolAddr, NotNil)
 	txIn := types.NewTxIn(
 		common.Coins{
 			common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
@@ -291,12 +284,12 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 		"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
 		signerBNBAddr,
 		sdk.NewUint(1),
-		poolAddrMgr.currentPoolAddresses.Current,
+		currentChainPoolAddr.PubKey,
 	)
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txID1, txIn, observerAddr)
 	c.Assert(err, IsNil)
 
-	res2 := handleMsgSwap(ctx, k, txOutStore, poolAddrMgr, msgSwapFromTxIn.(MsgSwap))
+	res2 := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msgSwapFromTxIn.(MsgSwap))
 
 	c.Assert(res2.IsOK(), Equals, true)
 	c.Assert(res2.Code, Equals, sdk.CodeOK)
