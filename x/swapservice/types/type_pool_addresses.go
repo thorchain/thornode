@@ -4,16 +4,16 @@ import "gitlab.com/thorchain/bepswap/thornode/common"
 
 // PoolAddresses is a struct to represent the address of pool also facilitate pool rotation
 type PoolAddresses struct {
-	Previous           common.PubKey `json:"previous"`
-	Current            common.PubKey `json:"current"`
-	Next               common.PubKey `json:"next"`
-	RotateAt           int64         `json:"rotate_at"`
-	RotateWindowOpenAt int64         `json:"rotate_window_open_at"`
+	Previous           common.PoolPubKeys `json:"previous"`
+	Current            common.PoolPubKeys `json:"current"`
+	Next               common.PoolPubKeys `json:"next"`
+	RotateAt           int64              `json:"rotate_at"`
+	RotateWindowOpenAt int64              `json:"rotate_window_open_at"`
 }
 
 // NewPoolAddresses create a new instance of PoolAddress
-func NewPoolAddresses(previous, current, next common.PubKey, rotateAt, rotateWindowOpenAt int64) PoolAddresses {
-	return PoolAddresses{
+func NewPoolAddresses(previous, current, next common.PoolPubKeys, rotateAt, rotateWindowOpenAt int64) *PoolAddresses {
+	return &PoolAddresses{
 		Previous:           previous,
 		Current:            current,
 		Next:               next,
@@ -28,4 +28,4 @@ func (pa PoolAddresses) IsEmpty() bool {
 	return len(pa.Current) == 0
 }
 
-var EmptyPoolAddress PoolAddresses
+var EmptyPoolAddresses PoolAddresses

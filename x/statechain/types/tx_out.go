@@ -2,12 +2,15 @@ package types
 
 import "gitlab.com/thorchain/bepswap/thornode/common"
 
+type TxArrayItem struct {
+	PoolAddress common.PubKey `json:"pool_address"`
+	SeqNo       string        `json:"seq_no"`
+	To          string        `json:"to"`
+	Coins       common.Coins  `json:"coins"`
+}
 type TxOut struct {
-	Height  string `json:"height"`
-	Hash    string `json:"hash"`
-	TxArray []struct {
-		PoolAddress common.PubKey `json:"pool_address"`
-		To          string        `json:"to"`
-		Coins       common.Coins  `json:"coins"`
-	} `json:"tx_array"`
+	Height  string        `json:"height"`
+	Hash    string        `json:"hash"`
+	Chain   common.Chain  `json:"chain"`
+	TxArray []TxArrayItem `json:"tx_array"`
 }

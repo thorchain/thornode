@@ -824,10 +824,10 @@ func (k Keeper) SetLastEventID(ctx sdk.Context, id common.Amount) {
 }
 
 // SetPoolAddresses save the pool address to key value store
-func (k Keeper) SetPoolAddresses(ctx sdk.Context, addresses PoolAddresses) {
+func (k Keeper) SetPoolAddresses(ctx sdk.Context, addresses *PoolAddresses) {
 	key := getKey(prefixPoolAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolAddresses))
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(addresses))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(*addresses))
 }
 
 // GetPoolAddresses get current pool addresses

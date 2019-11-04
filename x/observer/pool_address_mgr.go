@@ -62,7 +62,7 @@ func (pam *PoolAddressManager) Start() error {
 	pam.rwMutex.Lock()
 	defer pam.rwMutex.Unlock()
 	pam.poolAddresses = pa
-	currentAddr, err := pa.Current.GetAddress(common.BNBChain)
+	currentAddr, err := pa.Current.GetByChain(common.BNBChain).GetAddress()
 	if nil != err {
 		return err
 	}
@@ -115,17 +115,28 @@ func (pam *PoolAddressManager) IsValidPoolAddress(addr string, chain common.Chai
 	pam.rwMutex.RLock()
 	defer pam.rwMutex.RUnlock()
 	pa := pam.poolAddresses
-	matchCurrent, cpi := matchAddress(addr, chain, pa.Current)
+	bnbChainCurrent := pa.Current.GetByChain(common.BNBChain)
+	if nil == bnbChainCurrent {
+		return false, common.EmptyChainPoolInfo
+	}
+
+	matchCurrent, cpi := matchAddress(addr, chain, bnbChainCurrent.PubKey)
 	if matchCurrent {
 		return matchCurrent, cpi
 	}
-	matchPrevious, cpi := matchAddress(addr, chain, pa.Previous)
-	if matchPrevious {
-		return matchPrevious, cpi
+	bnbChainPrevious := pa.Previous.GetByChain(common.BNBChain)
+	if nil != bnbChainPrevious {
+		matchPrevious, cpi := matchAddress(addr, chain, bnbChainPrevious.PubKey)
+		if matchPrevious {
+			return matchPrevious, cpi
+		}
 	}
-	matchNext, cpi := matchAddress(addr, chain, pa.Next)
-	if matchNext {
-		return matchNext, cpi
+	bnbChainNext := pa.Previous.GetByChain(common.BNBChain)
+	if nil != bnbChainNext {
+		matchNext, cpi := matchAddress(addr, chain, bnbChainNext.PubKey)
+		if matchNext {
+			return matchNext, cpi
+		}
 	}
 	pam.logger.Debug().Str("previous", pa.Previous.String()).
 		Str("current", pa.Current.String()).
@@ -143,7 +154,7 @@ func (pam *PoolAddressManager) getPoolAddresses() (types.PoolAddresses, error) {
 	}
 	resp, err := retryablehttp.Get(uri.String())
 	if nil != err {
-		return types.EmptyPoolAddress, errors.Wrap(err, "fail to get pool addresses from statechain")
+		return types.EmptyPoolAddresses, errors.Wrap(err, "fail to get pool addresses from statechain")
 	}
 	defer func() {
 		if err := resp.Body.Close(); nil != err {
@@ -151,16 +162,16 @@ func (pam *PoolAddressManager) getPoolAddresses() (types.PoolAddresses, error) {
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		return types.EmptyPoolAddress, errors.Wrap(err, "fail to get pool addresses from statechain")
+		return types.EmptyPoolAddresses, errors.Wrap(err, "fail to get pool addresses from statechain")
 	}
 	var pa types.PoolAddresses
 	buf, err := ioutil.ReadAll(resp.Body)
 	if nil != err {
-		return types.EmptyPoolAddress, errors.Wrap(err, "fail to read response body")
+		return types.EmptyPoolAddresses, errors.Wrap(err, "fail to read response body")
 	}
 	if err := pam.cdc.UnmarshalJSON(buf, &pa); nil != err {
 		pam.errCounter.WithLabelValues("fail_unmarshal_pool_address", "").Inc()
-		return types.EmptyPoolAddress, errors.Wrap(err, "fail to unmarshal pool address")
+		return types.EmptyPoolAddresses, errors.Wrap(err, "fail to unmarshal pool address")
 	}
 	return pa, nil
 }

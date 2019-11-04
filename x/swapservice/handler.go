@@ -35,7 +35,7 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgOutboundTx:
 			return handleMsgOutboundTx(ctx, keeper, poolAddressMgr, m)
 		case MsgNoOp:
-			return handleMsgNoOp(ctx, keeper, m)
+			return handleMsgNoOp(ctx)
 		case MsgEndPool:
 			return handleOperatorMsgEndPool(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetTrustAccount:
@@ -249,9 +249,14 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "source asset", msg.SourceAsset, "target asset", msg.TargetAsset)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
-
 	gsl := keeper.GetAdminConfigGSL(ctx, EmptyAccAddress)
-
+	chain := msg.TargetAsset.Chain
+	currentAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
+	if nil == currentAddr {
+		msg := fmt.Sprintf("don't have pool address for chain : %s", chain)
+		ctx.Logger().Error(msg)
+		return sdk.ErrInternal(msg).Result()
+	}
 	amount, err := swap(
 		ctx,
 		keeper,
@@ -282,7 +287,8 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 	}
 
 	toi := &TxOutItem{
-		PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
+		Chain:       currentAddr.Chain,
+		PoolAddress: currentAddr.PubKey,
 		ToAddress:   msg.Destination,
 	}
 	toi.Coins = append(toi.Coins, common.NewCoin(
@@ -303,6 +309,19 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "rune address", msg.RuneAddress, "asset", msg.Asset, "withdraw basis points", msg.WithdrawBasisPoints)
 		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+
+	bnbPoolAddr := poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	if nil == bnbPoolAddr {
+		msg := fmt.Sprintf("we don't have pool for chain : %s ", common.BNBChain)
+		ctx.Logger().Error(msg)
+		return sdk.ErrUnknownRequest(msg).Result()
+	}
+	currentAddr := poolAddrMgr.currentPoolAddresses.Current.GetByChain(msg.Asset.Chain)
+	if nil == currentAddr {
+		msg := fmt.Sprintf("we don't have pool for chain : %s ", msg.Asset.Chain)
+		ctx.Logger().Error(msg)
+		return sdk.ErrUnknownRequest(msg).Result()
 	}
 	if err := keeper.GetPool(ctx, msg.Asset).EnsureValidPoolStatus(msg); nil != err {
 		ctx.Logger().Error("check pool status", "error", err)
@@ -355,9 +374,9 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		EventSuccess,
 	)
 	keeper.AddIncompleteEvents(ctx, evt)
-
 	toi := &TxOutItem{
-		PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
+		Chain:       common.BNBChain,
+		PoolAddress: bnbPoolAddr.PubKey,
 		ToAddress:   stakerUnit.RuneAddress,
 	}
 	toi.Coins = append(toi.Coins, common.NewCoin(
@@ -365,18 +384,19 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		runeAmt,
 	))
 
-	if stakerUnit.AssetAddress.Equals(stakerUnit.RuneAddress) {
+	// if it is on bnb chain , we should just add an coin instead of add another item
+	// only when the asset live on another chain , we need to add another item
+	if stakerUnit.AssetAddress.IsEmpty() || stakerUnit.AssetAddress.IsChain(common.BNBChain) {
 		toi.Coins = append(toi.Coins, common.NewCoin(
 			msg.Asset,
 			assetAmount,
 		))
 	} else {
-
 		// for unstake , we should deduct fees
 		txOutStore.AddTxOutItem(ctx, keeper, toi, true)
-
 		toi = &TxOutItem{
-			PoolAddress: poolAddrMgr.currentPoolAddresses.Current,
+			Chain:       currentAddr.Chain,
+			PoolAddress: currentAddr.PubKey,
 			ToAddress:   stakerUnit.AssetAddress,
 		}
 		toi.Coins = append(toi.Coins, common.NewCoin(
@@ -395,8 +415,9 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 }
 
-func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, deductFee bool) {
+func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) {
 	toi := &TxOutItem{
+		Chain:       chain,
 		ToAddress:   tx.Sender,
 		PoolAddress: poolAddr,
 		Coins:       tx.Coins,
@@ -439,14 +460,22 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 	if !poolAddrManager.IsRotateWindowOpen {
 		return sdk.ErrUnknownRequest("pool address rotate window not open yet").Result()
 	}
-	currentPoolAddr := poolAddrManager.GetCurrentPoolAddresses()
-	if !currentPoolAddr.Next.IsEmpty() {
-		return sdk.ErrUnknownRequest("next pool had been confirmed already").Result()
+	currentPoolAddresses := poolAddrManager.GetCurrentPoolAddresses()
+	currentChainPoolAddr := currentPoolAddresses.Next.GetByChain(msg.Chain)
+	if nil != currentChainPoolAddr {
+		ctx.Logger().Error(fmt.Sprintf("next pool for chain %s had been confirmed already", msg.Chain))
+		return sdk.ErrUnknownRequest(fmt.Sprintf("next pool for chain %s had been confirmed already", msg.Chain)).Result()
 	}
-
-	addr, err := currentPoolAddr.Current.GetAddress(msg.Chain)
+	currentAddr := currentPoolAddresses.Current.GetByChain(msg.Chain)
+	if nil == currentAddr || currentAddr.IsEmpty() {
+		msg := fmt.Sprintf("we donnot have pool for chain %s", msg.Chain)
+		ctx.Logger().Error(msg)
+		return sdk.ErrUnknownRequest(msg).Result()
+	}
+	addr, err := currentAddr.PubKey.GetAddress(msg.Chain)
 	if nil != err {
-		return sdk.ErrInternal("fail to get current pool address").Result()
+		ctx.Logger().Error("fail to get address from pub key", "chain", msg.Chain, err)
+		return sdk.ErrInternal("fail to get address from pub key").Result()
 	}
 
 	// nextpool memo need to be initiated by current pool
@@ -454,9 +483,12 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 		return sdk.ErrUnknownRequest("next pool should be send with current pool address").Result()
 	}
 	// statechain observed the next pool address memo, but it has not been confirmed yet
-	poolAddrManager.ObservedNextPoolAddrPubKey = msg.NextPoolPubKey
+	pkey := common.NewPoolPubKey(msg.Chain, 0, msg.NextPoolPubKey)
+	poolAddrManager.ObservedNextPoolAddrPubKey = poolAddrManager.ObservedNextPoolAddrPubKey.TryAddKey(pkey)
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeNextPoolPubKeyObserved, sdk.NewAttribute("next pool pub key", msg.NextPoolPubKey.String())))
+		sdk.NewEvent(EventTypeNextPoolPubKeyObserved,
+			sdk.NewAttribute("next pool pub key", msg.NextPoolPubKey.String()),
+			sdk.NewAttribute("chain", msg.Chain.String())))
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
@@ -470,6 +502,7 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 		ctx.Logger().Error("invalid ack msg", "err", err)
 		return err.Result()
 	}
+
 	if !poolAddrMgr.IsRotateWindowOpen {
 		return sdk.ErrUnknownRequest("pool rotation window not open").Result()
 	}
@@ -477,17 +510,24 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 	if poolAddrMgr.ObservedNextPoolAddrPubKey.IsEmpty() {
 		return sdk.ErrUnknownRequest("didn't observe next pool address pub key").Result()
 	}
-
-	addr, err := poolAddrMgr.ObservedNextPoolAddrPubKey.GetAddress(msg.Chain)
-	if nil != err {
-		return sdk.ErrInternal("fail to get next pool address").Result()
+	chainPubKey := poolAddrMgr.ObservedNextPoolAddrPubKey.GetByChain(msg.Chain)
+	if nil == chainPubKey {
+		msg := fmt.Sprintf("we donnot have pool for chain %s", msg.Chain)
+		ctx.Logger().Error(msg)
+		return sdk.ErrUnknownRequest(msg).Result()
 	}
-
+	addr, err := chainPubKey.PubKey.GetAddress(msg.Chain)
+	if nil != err {
+		ctx.Logger().Error("fail to get address from pub key", "chain", msg.Chain, err)
+		return sdk.ErrInternal("fail to get address from pub key").Result()
+	}
 	if !addr.Equals(msg.Sender) {
+		ctx.Logger().Error("observed next pool address and ack address is different", "chain", msg.Chain)
 		return sdk.ErrUnknownRequest("observed next pool address and ack address is different").Result()
 	}
-	poolAddrMgr.currentPoolAddresses.Next = poolAddrMgr.ObservedNextPoolAddrPubKey
-	poolAddrMgr.ObservedNextPoolAddrPubKey = common.EmptyPubKey
+
+	poolAddrMgr.currentPoolAddresses.Next = poolAddrMgr.currentPoolAddresses.Next.TryAddKey(chainPubKey)
+	poolAddrMgr.ObservedNextPoolAddrPubKey = poolAddrMgr.ObservedNextPoolAddrPubKey.TryRemoveKey(chainPubKey)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
@@ -548,22 +588,21 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			voter.IsProcessed = true
 			keeper.SetTxInVoter(ctx, voter)
 			txIn := voter.GetTx(activeNodeAccounts)
-			currentPoolAddress := poolAddressMgr.GetCurrentPoolAddresses().Current
-			if !currentPoolAddress.Equals(txIn.ObservePoolAddress) {
-				ctx.Logger().Error("wrong pool address,refund without deduct fee")
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, txIn.ObservePoolAddress, false)
-				continue
-			}
-
 			var chain common.Chain
 			if len(txIn.Coins) > 0 {
 				chain = txIn.Coins[0].Asset.Chain
+			}
+			currentPoolAddress := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
+			if !currentPoolAddress.PubKey.Equals(txIn.ObservePoolAddress) {
+				ctx.Logger().Error("wrong pool address,refund without deduct fee")
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
+				continue
 			}
 
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer)
 			if nil != err || chain.IsEmpty() {
 				ctx.Logger().Error("fail to process txIn", "error", err, "txhash", tx.TxID.String())
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress, true)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
 				ee := NewEmptyRefundEvent()
 				buf, err := json.Marshal(ee)
 				if nil != err {
@@ -585,7 +624,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress, true)
+				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
 			}
 		}
 	}
@@ -835,7 +874,7 @@ func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 }
 
 // handleMsgNoOp doesn't do anything, its a no op
-func handleMsgNoOp(ctx sdk.Context, keeper Keeper, msg MsgNoOp) sdk.Result {
+func handleMsgNoOp(ctx sdk.Context) sdk.Result {
 	ctx.Logger().Info("receive no op msg")
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -854,18 +893,28 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		ctx.Logger().Error("invalid MsgOutboundTx", "error", err)
 		return err.Result()
 	}
+	currentChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(msg.Chain)
+	if nil == currentChainPoolAddr {
+		msg := fmt.Sprintf("we don't have pool for chain %s", msg.Chain)
+		ctx.Logger().Error(msg)
+		return sdk.ErrUnknownRequest(msg).Result()
+	}
 
-	// it could
-	currentPoolAddr, err := poolAddressMgr.GetCurrentPoolAddresses().Current.GetAddress(msg.Chain)
+	currentPoolAddr, err := currentChainPoolAddr.GetAddress()
 	if nil != err {
 		ctx.Logger().Error("fail to get current pool address", "error", err)
 		return sdk.ErrUnknownRequest("fail to get current pool address").Result()
 	}
-	previousPoolAddr, err := poolAddressMgr.GetCurrentPoolAddresses().Previous.GetAddress(msg.Chain)
-	if nil != err {
-		ctx.Logger().Error("fail to get previous pool address", "error", err)
-		return sdk.ErrUnknownRequest("fail to get previous pool address").Result()
+	previousChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Previous.GetByChain(msg.Chain)
+	previousPoolAddr := common.NoAddress
+	if nil != previousChainPoolAddr {
+		previousPoolAddr, err = previousChainPoolAddr.GetAddress()
+		if nil != err {
+			ctx.Logger().Error("fail to get previous pool address", "error", err)
+			return sdk.ErrUnknownRequest("fail to get previous pool address").Result()
+		}
 	}
+
 	if !currentPoolAddr.Equals(msg.Sender) && !previousPoolAddr.Equals(msg.Sender) {
 		ctx.Logger().Error("message sent by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -1073,12 +1122,22 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 	if nodeAcc.Status == NodeActive {
 		return sdk.ErrUnknownRequest("active node can't leave").Result()
 	}
+	// since bond is paid in RUNE , which lives on BNB chain
+	chain := common.BNBChain
+	currentChainPoolAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
+	if nil == currentChainPoolAddr || currentChainPoolAddr.IsEmpty() {
+		msg := fmt.Sprintf("we don't have pool for chain %s", chain)
+		ctx.Logger().Error(msg)
+		return sdk.ErrUnknownRequest(msg).Result()
+	}
+
 	// TODO need to check whether the address is used as satellite pool
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
 		// refund bond
 		txOutItem := &TxOutItem{
+			Chain:       chain,
 			ToAddress:   nodeAcc.BondAddress,
-			PoolAddress: poolAddrMgr.GetCurrentPoolAddresses().Current,
+			PoolAddress: currentChainPoolAddr.PubKey,
 			Coins: common.Coins{
 				common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 			},
