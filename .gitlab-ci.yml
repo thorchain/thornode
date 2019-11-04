@@ -50,7 +50,7 @@ build:
     DOCKER_DRIVER: overlay2
   before_script:
     - apk update
-    - apk add python py-pip make git
+    - apk add python py-pip make git jq curl
     - make docker-gitlab-login
   environment:
     name: develop
