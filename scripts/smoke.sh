@@ -177,13 +177,13 @@ if [ $COUNT -lt $MAX_ATTEMPTS ]; then
   if [ $? -eq 0 ]; then
     # Smoke 'em if you got 'em.
     echo "Running: smoke-test-audit-1p...."
-    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../../ smoke-test-audit-1p
+    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../ smoke-test-audit-1p
 
     echo "Running: smoke-test-audit-2p...."
-    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../../ smoke-test-audit-2p
+    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../ smoke-test-audit-2p
 
     echo "Running: smoke-test-refund...."
-    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../../ smoke-test-refund
+    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../ smoke-test-refund
   else
     echo "Exiting. Looks like this chain was started a while ago?"
     exit 1
