@@ -4,13 +4,14 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // TxOutItem represent an tx need to be sent to chain
 type TxOutItem struct {
 	ToAddress   common.Address `json:"to"`
-	PoolAddress common.Address `json:"pool_address"`
+	PoolAddress common.PubKey  `json:"pool_address"`
 	// TODO update common.Coins to use sdk.Coins
 	Coins common.Coins `json:"coins"`
 }

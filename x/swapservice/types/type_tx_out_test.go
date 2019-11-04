@@ -2,8 +2,9 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 type TxOutTestSuite struct{}
@@ -11,8 +12,8 @@ type TxOutTestSuite struct{}
 var _ = Suite(&TxOutTestSuite{})
 
 func (TxOutTestSuite) TestTxOut(c *C) {
-	bnbAddress, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
-	c.Assert(err, IsNil)
+	bnbAddress := GetRandomPubKey()
+	toAddr := GetRandomBNBAddress()
 	txOut := NewTxOut(1)
 	c.Assert(txOut, NotNil)
 	c.Assert(txOut.TxArray, IsNil)
@@ -20,7 +21,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	c.Assert(txOut.Valid(), IsNil)
 	txOutItem := &TxOutItem{
 		PoolAddress: bnbAddress,
-		ToAddress:   bnbAddress,
+		ToAddress:   toAddr,
 		Coins: common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},
@@ -36,7 +37,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	txOut1 := NewTxOut(2)
 	txOut1.TxArray = append(txOut1.TxArray, txOutItem)
 	txOut1.TxArray = append(txOut1.TxArray, &TxOutItem{
-		ToAddress:   bnbAddress,
+		ToAddress:   toAddr,
 		PoolAddress: bnbAddress,
 		Coins:       nil,
 	})
@@ -53,8 +54,8 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	c.Assert(txOut2.Valid(), NotNil)
 	txOut3 := NewTxOut(4)
 	txOut3.TxArray = append(txOut3.TxArray, &TxOutItem{
-		ToAddress:   bnbAddress,
-		PoolAddress: "",
+		ToAddress:   toAddr,
+		PoolAddress: nil,
 		Coins: common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},

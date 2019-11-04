@@ -7,17 +7,18 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // PoolStatus is an indication of what the pool state is
 type PoolStatus int
 
-//| State | ADMIN-MEMO | Swapping | Staking | Withdrawing | Refunding |
-//| ------ | ------ | ------ | ------ | ------ | ------ |
-//| `bootstrap` |  `ADMIN:POOL:BOOTSTRAP` | no | yes | yes | Refund Invalid Stakes && all Swaps |
-//| `enabled` |  `ADMIN:POOL:ENABLE` | yes | yes | yes | Refund Invalid Tx |
-//| `suspended` | `ADMIN:POOL:SUSPEND` | no | no | no | Refund all |
+// | State | ADMIN-MEMO | Swapping | Staking | Withdrawing | Refunding |
+// | ------ | ------ | ------ | ------ | ------ | ------ |
+// | `bootstrap` |  `ADMIN:POOL:BOOTSTRAP` | no | yes | yes | Refund Invalid Stakes && all Swaps |
+// | `enabled` |  `ADMIN:POOL:ENABLE` | yes | yes | yes | Refund Invalid Tx |
+// | `suspended` | `ADMIN:POOL:SUSPEND` | no | no | no | Refund all |
 const (
 	Enabled PoolStatus = iota
 	Bootstrap

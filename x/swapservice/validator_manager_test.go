@@ -98,10 +98,7 @@ func (ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(vMgr2.Meta.Nominated.Equals(standbyNode), Equals, true)
 	allNodes, err := k.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
-	sort.Slice(allNodes, func(i, j int) bool {
-		return allNodes[i].StatusSince < allNodes[j].StatusSince
-	})
-
+	sort.Sort(allNodes)
 	c.Assert(vMgr2.Meta.Queued.Equals(allNodes.First()), Equals, true, Commentf("%s %s", vMgr2.Meta.Queued.NodeAddress, allNodes.First().NodeAddress))
 
 	nominatedNode := vMgr2.Meta.Nominated
@@ -120,7 +117,7 @@ func (ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	openWindow = vMgr2.Meta.RotateWindowOpenAtBlockHeight
 	validatorUpdates = vMgr2.EndBlock(ctx, openWindow)
 	c.Assert(validatorUpdates, IsNil)
-	nominatedNode.UpdateStatus(NodeReady)
+	nominatedNode.UpdateStatus(NodeReady, openWindow)
 	k.SetNodeAccount(ctx, nominatedNode)
 	queueNode := vMgr2.Meta.Queued
 

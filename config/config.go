@@ -94,8 +94,18 @@ type SignerConfiguration struct {
 
 // BinanceConfiguration all the configurations for binance client
 type BinanceConfiguration struct {
-	DEXHost    string `json:"dex_host" mapstructure:"dex_host"`
-	PrivateKey string `json:"private_key" mapstructure:"private_key"`
+	DEXHost    string           `json:"dex_host" mapstructure:"dex_host"`
+	PrivateKey string           `json:"private_key" mapstructure:"private_key"`
+	UseTSS     bool             `json:"use_tss" mapstructure:"use_tss"`
+	TSS        TSSConfiguration `json:"tss" mapstructure:"tss"`
+	TSSAddress string           `json:"tss_address" mapstructure:"tss_address"`
+}
+
+// TSSConfiguration
+type TSSConfiguration struct {
+	Scheme string `json:"scheme" mapstructure:"scheme"`
+	Host   string `json:"host" mapstructure:"host"`
+	Port   int    `json:"port" mapstructure:"port"`
 }
 
 func applyBlockScannerDefault() {

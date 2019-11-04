@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"gitlab.com/thorchain/bepswap/thornode/common"
 	"gitlab.com/thorchain/bepswap/thornode/config"
 	"gitlab.com/thorchain/bepswap/thornode/x/binance"
 	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
@@ -62,10 +63,8 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 }
 
 func (s *Signer) Start() error {
-	//for idx := 1; idx <= s.cfg.MessageProcessor; idx++ {
 	s.wg.Add(1)
 	go s.processTxnOut(s.stateChainBlockScanner.GetMessages(), 1)
-	//}
 	if err := s.retryAll(); nil != err {
 		return errors.Wrap(err, "fail to retry txouts")
 	}
@@ -120,8 +119,20 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 
 func (s *Signer) shouldSign(txOut types.TxOut) bool {
 	binanceAddr := s.Binance.GetAddress()
+	s.logger.Info().Str("address", binanceAddr).Msg("current signer address")
 	for _, item := range txOut.TxArray {
-		if strings.EqualFold(binanceAddr, item.PoolAddress.String()) {
+		pubKey, err := common.NewPubKeyFromHexString(item.PoolAddress.String())
+		if nil != err {
+			s.logger.Error().Err(err).Msg("fail to parse pool address")
+			return false
+		}
+		address, err := pubKey.GetAddress(common.BNBChain)
+		if nil != err {
+			s.logger.Error().Err(err).Msg("fail to get address")
+			return false
+		}
+		s.logger.Info().Str("address", address.String()).Msg("whateverasdfasd")
+		if strings.EqualFold(binanceAddr, address.String()) {
 			return true
 		}
 	}

@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -11,14 +12,16 @@ type MsgOutboundTx struct {
 	TxID   common.TxID    `json:"tx_id"`
 	Sender common.Address `json:"sender"`
 	Signer sdk.AccAddress `json:"signer"`
+	Chain  common.Chain   `json:"chain"`
 }
 
 // NewMsgOutboundTx is a constructor function for MsgOutboundTx
-func NewMsgOutboundTx(txID common.TxID, height uint64, sender common.Address, signer sdk.AccAddress) MsgOutboundTx {
+func NewMsgOutboundTx(txID common.TxID, height uint64, sender common.Address, chain common.Chain, signer sdk.AccAddress) MsgOutboundTx {
 	return MsgOutboundTx{
 		Sender: sender,
 		TxID:   txID,
 		Height: height,
+		Chain:  chain,
 		Signer: signer,
 	}
 }
@@ -42,6 +45,9 @@ func (msg MsgOutboundTx) ValidateBasic() sdk.Error {
 	}
 	if msg.TxID.IsEmpty() {
 		return sdk.ErrUnknownRequest("TxID cannot be empty")
+	}
+	if msg.Chain.IsEmpty() {
+		return sdk.ErrUnknownRequest("chain cannot be empty")
 	}
 	return nil
 }
