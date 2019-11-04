@@ -7,7 +7,7 @@ import (
 )
 
 // TODO: make this admin configs instead of hard coded
-// var singleTransactionFee uint64 = 37500
+var singleTransactionFee uint64 = 37500
 var batchTransactionFee uint64 = 30000
 
 // TxOutSetter define a method that is required to be used in TxOutStore
@@ -90,7 +90,12 @@ func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 	// it all and don't take the rest from another coin
 
 	hasDeductedGas := false // monitor if we've already pulled out coins for gas.
-	gas := batchTransactionFee * uint64(len(toi.Coins))
+	var gas uint64
+	if len(toi.Coins) == 1 {
+		gas = singleTransactionFee
+	} else {
+		gas = batchTransactionFee * uint64(len(toi.Coins))
+	}
 	for i, item := range toi.Coins {
 		if !hasDeductedGas && common.IsBNBAsset(item.Asset) {
 			if item.Amount.LT(sdk.NewUint(gas)) {
@@ -116,7 +121,7 @@ func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			}
 
 			var runeAmt uint64
-			runeAmt = uint64((float64(bnbPool.BalanceRune.Uint64()) / (float64(bnbPool.BalanceAsset.Uint64()) / float64(gas))))
+			runeAmt = uint64(float64(bnbPool.BalanceRune.Uint64()) / (float64(bnbPool.BalanceAsset.Uint64()) / float64(gas)))
 
 			if item.Amount.LT(sdk.NewUint(gas)) {
 				item.Amount = sdk.ZeroUint()

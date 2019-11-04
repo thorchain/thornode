@@ -51,7 +51,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	bnbPool := k.GetPool(ctx, common.BNBAsset)
 	// happy path
 	c.Assert(bnbPool.BalanceAsset.String(), Equals, "10000000000")
-	c.Assert(item.Coins[0].Amount.String(), Equals, "398049999970000")
+	c.Assert(item.Coins[0].Amount.String(), Equals, "398049999962500")
 
 	item.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
@@ -69,9 +69,9 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	txOutStore.AddTxOutItem(ctx, k, item, true)
 	bnbPool = k.GetPool(ctx, common.BNBAsset)
 	// test takes gas out of rune
-	c.Assert(bnbPool.BalanceAsset.String(), Equals, "9999970000")
-	c.Assert(bnbPool.BalanceRune.String(), Equals, "10000030000")
-	c.Assert(item.Coins[0].Amount.String(), Equals, "1999970000")
+	c.Assert(bnbPool.BalanceAsset.String(), Equals, "9999962500")
+	c.Assert(bnbPool.BalanceRune.String(), Equals, "10000037500")
+	c.Assert(item.Coins[0].Amount.String(), Equals, "1999962500")
 
 	item.Coins = common.Coins{
 		common.NewCoin(loki.Asset, sdk.NewUint(20*common.One)),
@@ -80,10 +80,10 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	lokiPool := k.GetPool(ctx, loki.Asset)
 	bnbPool = k.GetPool(ctx, common.BNBAsset)
 	// test takes gas out of loki pool
-	c.Assert(bnbPool.BalanceAsset.String(), Equals, "9999940000")
-	c.Assert(bnbPool.BalanceRune.String(), Equals, "10000060000")
-	c.Assert(lokiPool.BalanceRune.String(), Equals, "9999970000", Commentf("%+v\n", lokiPool))
-	c.Assert(item.Coins[0].Amount.String(), Equals, "1999970000")
+	c.Assert(bnbPool.BalanceAsset.String(), Equals, "9999925000")
+	c.Assert(bnbPool.BalanceRune.String(), Equals, "10000075000")
+	c.Assert(lokiPool.BalanceRune.String(), Equals, "9999962500", Commentf("%+v\n", lokiPool))
+	c.Assert(item.Coins[0].Amount.String(), Equals, "1999962500")
 
 	bnbPool = k.GetPool(ctx, common.BNBAsset)
 	bnbPool.BalanceAsset = sdk.NewUint(1 * common.One)
@@ -95,5 +95,5 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	txOutStore.AddTxOutItem(ctx, k, item, true)
 	bnbPool = k.GetPool(ctx, common.BNBAsset)
 	// test takes gas out of loki pool
-	c.Assert(bnbPool.BalanceRune.String(), Equals, "100030000000")
+	c.Assert(bnbPool.BalanceRune.String(), Equals, "100037500000")
 }
