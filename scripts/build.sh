@@ -1,7 +1,8 @@
 #!/bin/sh
 
 echo "CACHE": $CACHE
-
+SEQNO=$(curl https://testnet-dex.binance.org/api/v1/account/${POOL_ADDRESS} | jq '.sequence | tonumber')
+echo $SEQNO
 docker build $CACHE \
 --build-arg chain_id=statechain \
 --build-arg pool_address=$POOL_ADDRESS \
@@ -15,4 +16,5 @@ docker build $CACHE \
 --build-arg binance_test_net=Binance-Chain-Nile \
 --build-arg trusted_bnb_address=$TRUSTED_BNB_ADDRESS \
 --build-arg net=$NET \
+--build-arg seqno=$SEQNO \
 -t $1 .
