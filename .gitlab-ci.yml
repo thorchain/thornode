@@ -140,7 +140,7 @@ deploy:develop:
     DOCKER_DRIVER: overlay2
   before_script:
     - apk update
-    - apk add python py-pip make git
+    - apk add python py-pip make git jq curl
     - pip install awscli
     - make aws-login
   except:
@@ -198,7 +198,7 @@ deploy:staging:
     DOCKER_DRIVER: overlay2
   before_script:
     - apk update
-    - apk add python py-pip make git
+    - apk add python py-pip make git jq curl
     - pip install awscli
     - make aws-login
   environment:
@@ -250,7 +250,7 @@ deploy:production:
     DOCKER_DRIVER: overlay2
   before_script:
     - apk update
-    - apk add python py-pip make git
+    - apk add python py-pip make git jq curl
     - pip install awscli
     - make aws-login
   environment:
