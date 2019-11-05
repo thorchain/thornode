@@ -5,7 +5,7 @@ set -exuf -o pipefail
 
 source $(dirname "$0")/core.sh
 
-init_chain statechain
+init_chain statechain password
 
 if [ -z "${POOL_ADDRESS:-}" ]; then
     echo "empty pool address"
