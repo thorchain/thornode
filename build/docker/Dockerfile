@@ -41,11 +41,6 @@ COPY --from=build /go/src/app/thorcli /go/bin/
 COPY --from=build /go/src/app/observed /go/bin/
 COPY --from=build /go/src/app/signd /go/bin/
 
-#ENV PASTEBINIT_SHA256="8f76d6b194c3063bf4ebbe4e2761d13f79da92106796a59e28f599f9570eac6c"
-#RUN curl -fSL "https://github.com/jessfraz/pastebinit/releases/download/v0.2.4/pastebinit-linux-amd64" -o "/usr/local/bin/pastebinit" \
-	#&& echo "${PASTEBINIT_SHA256}  /usr/local/bin/pastebinit" | sha256sum -c - \
-	#&& chmod a+x "/usr/local/bin/pastebinit"
-
 # Add users.
 RUN adduser -Ds /bin/sh supervisor
 RUN adduser -Ds /bin/sh www-data -G www-data

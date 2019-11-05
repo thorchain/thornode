@@ -26,6 +26,8 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
         echo $ADDRESS > ~/.signer/address.txt
         BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
         echo $BINANCE_PRIVATE_KEY > ~/.signer/private_key.txt
+        PUBKEY=$(cat /tmp/bnb | grep MASTER_PUBKEY= | awk -F= '{print $NF}')
+        echo $PUBKEY > ~/.signer/pubkey.txt
     fi
 
     # create statechain user

@@ -17,7 +17,7 @@ services:
     links:
       - thor-api
     volumes:
-      - ${PWD}:/docker
+      - ${PWD}/../scripts:/docker/scripts
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -39,7 +39,7 @@ services:
     links:
       - thor-api
     volumes:
-      - ${PWD}:/docker
+      - ${PWD}/../scripts:/docker/scripts
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/validator/keys:/root/.signer
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
@@ -60,7 +60,7 @@ services:
       /docker/scripts/validator.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - ${PWD}:/docker
+      - ${PWD}/../scripts:/docker/scripts
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/validator/keys:/root/.signer
@@ -83,7 +83,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - ${PWD}:/docker
+      - ${PWD}/../scripts:/docker/scripts
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
