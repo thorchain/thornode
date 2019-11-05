@@ -4,9 +4,9 @@ services:
   observer:
     hostname: observer
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/observer.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-observer
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api:1317
@@ -25,9 +25,9 @@ services:
   signer:
     hostname: signer
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/signer.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-signer
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api:1317
@@ -47,9 +47,9 @@ services:
   thor-daemon:
     hostname: thor-daemon
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
       NODES: 4
       SEED: thor-daemon
@@ -69,13 +69,13 @@ services:
   thor-api:
     hostname: thor-api
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon
     links:
       - thor-daemon
-    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
       CHAIN_DAEMON: thor-daemon:26657
     ports:
@@ -91,9 +91,9 @@ services:
   observer2:
     hostname: observer2
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/observer.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-observer
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api2:1317
@@ -112,9 +112,9 @@ services:
   signer2:
     hostname: signer2
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/signer.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-signer
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api2:1317
@@ -134,9 +134,9 @@ services:
   thor-daemon2:
     hostname: thor-daemon2
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
       NODES: 4
       SEED: thor-daemon
@@ -153,13 +153,13 @@ services:
   thor-api2:
     hostname: thor-api2
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon2
     links:
       - thor-daemon2
-    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
       CHAIN_DAEMON: thor-daemon2:26657
     entrypoint:
@@ -174,9 +174,9 @@ services:
   observer3:
     hostname: observer3
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/observer.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-observer
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api3:1317
@@ -195,9 +195,9 @@ services:
   signer3:
     hostname: signer3
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/signer.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-signer
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api3:1317
@@ -217,9 +217,9 @@ services:
   thor-daemon3:
     hostname: thor-daemon3
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
       NODES: 4
       SEED: thor-daemon
@@ -236,13 +236,13 @@ services:
   thor-api3:
     hostname: thor-api3
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon3
     links:
       - thor-daemon3
-    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
       CHAIN_DAEMON: thor-daemon3:26657
     entrypoint:
@@ -257,9 +257,9 @@ services:
   observer4:
     hostname: observer4
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/observer.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-observer
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api4:1317
@@ -278,9 +278,9 @@ services:
   signer4:
     hostname: signer4
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/signer.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-signer
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api4:1317
@@ -300,9 +300,9 @@ services:
   thor-daemon4:
     hostname: thor-daemon4
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
       NODES: 4
       SEED: thor-daemon
@@ -319,13 +319,13 @@ services:
   thor-api4:
     hostname: thor-api4
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon4
     links:
       - thor-daemon4
-    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
       CHAIN_DAEMON: thor-daemon4:26657
     entrypoint:
