@@ -43,6 +43,8 @@ integration:test:
 build-thornode:
   stage: build
   image: docker:stable
+  only:
+    - master
   services:
     - docker:dind
   variables:
