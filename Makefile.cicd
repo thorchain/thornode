@@ -77,10 +77,10 @@ docker-gitlab-push-statechain:
 	docker push registry.gitlab.com/thorchain/bepswap/thornode-statechain:latest
 
 docker-gitlab-build-observer:
-	docker build -t registry.gitlab.com/thorchain/bepswap/thornode-observer:latest -f docker/dockerfiles/observer.Dockerfile .
+	docker build -t registry.gitlab.com/thorchain/bepswap/thornode-observer:latest -f build/docker/dockerfiles/observer.Dockerfile .
 
 docker-gitlab-build-signer:
-	docker build -t registry.gitlab.com/thorchain/bepswap/thornode-signer:latest -f docker/dockerfiles/signer.Dockerfile .
+	docker build -t registry.gitlab.com/thorchain/bepswap/thornode-signer:latest -f build/docker/dockerfiles/signer.Dockerfile .
 
 docker-gitlab-build-statechain:
-	docker build -t registry.gitlab.com/thorchain/bepswap/thornode-statechain:latest -f docker/dockerfiles/statechain.Dockerfile .
+	docker build -t registry.gitlab.com/thorchain/bepswap/thornode-statechain:latest -f build/docker/dockerfiles/statechain.Dockerfile .
