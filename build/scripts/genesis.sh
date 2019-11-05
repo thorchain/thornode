@@ -1,13 +1,11 @@
-#!/bin/bash
+#!/bin/sh
 set -ex
 
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 NODES="${NODES:=1}"
-SEED="${SEED:=thor1}" # the hostname of the master node
+SEED="${SEED:=thor-daemon}" # the hostname of the master node
 ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in statechain should rotate
-
-mkdir -p /tmp/shared
 
 if [ -f ~/.signer/private_key.txt ]; then
     PUBKEY=$(cat ~/.signer/pubkey.txt)
@@ -22,7 +20,6 @@ else
         sleep 1
     done
     ADDRESS=$(cat /tmp/bnb | grep MASTER= | awk -F= '{print $NF}')
-    mkdir -p ~/.signer
     echo $ADDRESS > ~/.signer/address.txt
     BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
     echo $BINANCE_PRIVATE_KEY > ~/.signer/private_key.txt
@@ -37,7 +34,7 @@ VALIDATOR=$(thord tendermint show-validator)
 OBSERVER_ADDRESS=$(thorcli keys show statechain -a)
 NODE_ADDRESS=$(thorcli keys show statechain -a)
 
-if [ "$SEED" == "$(hostname)" ]; then
+if [[ "$SEED" == "$(hostname)" ]]; then
     echo "I AM THE SEED NODE"
     thord tendermint show-node-id > /tmp/shared/node.txt
     echo $PUBKEY > /tmp/shared/pubkey.txt
@@ -47,20 +44,20 @@ fi
 # write node account data to json file in shared directory
 echo "{\"node_address\": \"$NODE_ADDRESS\" ,\"status\":\"active\",\"bond_address\":\"$ADDRESS\",\"accounts\":{\"bnb_signer_acc\":\"$PUBKEY\", \"bepv_validator_acc\": \"$VALIDATOR\", \"bep_observer_acc\": \"$NODE_ADDRESS\"}}" > /tmp/shared/node_$NODE_ADDRESS.json
 # write rotate block height as config file
-if [ "$ROTATE_BLOCK_HEIGHT" != "0" ]; then
+if [[ "$ROTATE_BLOCK_HEIGHT" != "0" ]]; then
     echo "{\"address\": \"$NODE_ADDRESS\" ,\"key\":\"RotatePerBlockHeight\",\"value\":\"$ROTATE_BLOCK_HEIGHT\"}" > /tmp/shared/config_$NODE_ADDRESS.json
 fi
 
 # wait until we have the correct number of nodes in our directory before continuing
-while [ "$(ls -1 /tmp/shared/node_*.json | wc -l)" != "$NODES" ]; do
+while [[ "$(ls -1 /tmp/shared/node_*.json | wc -l)" != "$NODES" ]]; do
     # echo "Waiting... '$(ls -1 /tmp/shared | wc -l)' '$NODES'"
     sleep 1
 done
 
 POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
-echo "{\"previous\": null, \"current\":[{\"chain\": \"BNB\", \"seq_no\": 0, \"pub_key\": \"$POOL_ADDRESS\"}],\"rotate_at\":\"28800\",\"rotate_window_open_at\":\"27800\"}" > /tmp/shared/pool_addresses.json
+echo "{\"previous\": null, \"current\":[{\"chain\": \"BNB\", \"seq_no\": \"0\", \"pub_key\": \"$POOL_ADDRESS\"}],\"rotate_at\":\"28800\",\"rotate_window_open_at\":\"27800\"}" > /tmp/shared/pool_addresses.json
 
-if [ "$SEED" == "$(hostname)" ]; then
+if [[ "$SEED" == "$(hostname)" ]]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
         # Setup SSD
         thord init local --chain-id statechain
@@ -96,7 +93,7 @@ if [ "$SEED" == "$(hostname)" ]; then
 fi
 
 # setup peer connection
-if [ "$SEED" != "$(hostname)" ]; then
+if [[ "$SEED" != "$(hostname)" ]]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
         echo "I AM NOT THE SEED"
         
@@ -127,4 +124,4 @@ if [ "$SEED" != "$(hostname)" ]; then
     fi
 fi
 
-thord start --rpc.laddr tcp://0.0.0.0:26657 &> ~/daemon.log &
+exec "$@"
