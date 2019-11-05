@@ -19,8 +19,8 @@ RUN go mod verify
 RUN go get -d -v ./...
 
 RUN go build -a -installsuffix cgo -o generate ./tools/generate
-RUN go build -a -installsuffix cgo -o ssd ./cmd/ssd
-RUN go build -a -installsuffix cgo -o sscli ./cmd/sscli
+RUN go build -a -installsuffix cgo -o thord ./cmd/thord
+RUN go build -a -installsuffix cgo -o thorcli ./cmd/thorcli
 RUN go build -a -installsuffix cgo -o observed ./cmd/observed
 RUN go build -a -installsuffix cgo -o signd ./cmd/signd
 
@@ -29,29 +29,20 @@ RUN go build -a -installsuffix cgo -o signd ./cmd/signd
 #
 FROM alpine
 
-RUN apk add --update jq supervisor nginx && \
+RUN apk add --update jq curl nginx && \
     rm -rf /var/cache/apk/*
 
 ENV PATH="${PATH}:/go/bin"
 
 # Copy the compiled binaires over.
 COPY --from=build /go/src/app/generate /go/bin/
-COPY --from=build /go/src/app/ssd /go/bin/
-COPY --from=build /go/src/app/sscli /go/bin/
+COPY --from=build /go/src/app/thord /go/bin/
+COPY --from=build /go/src/app/thorcli /go/bin/
 COPY --from=build /go/src/app/observed /go/bin/
 COPY --from=build /go/src/app/signd /go/bin/
 
 # Add users.
-RUN adduser -Ds /bin/sh supervisor
 RUN adduser -Ds /bin/sh www-data -G www-data
-
-# TODO Move away from needing supervisor
-# Setup supervisor.
-RUN mkdir -p /var/log/supervisor
-RUN mkdir -p /var/run/supervisor
-RUN mkdir -p /etc/supervisor/conf.d
-ADD etc/supervisor.conf /etc/
-ADD etc/supervisor/conf.d/*.ini /etc/supervisor/conf.d/
 
 # TODO Move away from needing nginx
 # Setup Nginx.
@@ -60,5 +51,3 @@ ADD etc/nginx/nginx.conf /etc/nginx/
 EXPOSE 9000
 EXPOSE 1317
 EXPOSE 81
-
-CMD ["supervisord", "-c", "/etc/supervisor.conf"]

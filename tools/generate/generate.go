@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
@@ -34,4 +35,7 @@ func main() {
 		log.Fatalf("%v", err)
 	}
 	fmt.Printf("export %v_KEY=%v\n", *addrType, privKey)
+
+	pubKey := keyManager.GetPrivKey().PubKey().Bytes()
+	fmt.Printf("export %v_PUBKEY=%v\n", *addrType, hex.EncodeToString(pubKey))
 }
