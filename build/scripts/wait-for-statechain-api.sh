@@ -5,7 +5,7 @@ set -e
 
 echo "Waiting for Statechain API..."
 
-until curl -s "$1/swapservice/ping"; do
+until curl -s "$1/thorchain/ping"; do
   # echo "Rest server is unavailable - sleeping"
   sleep 1
 done
