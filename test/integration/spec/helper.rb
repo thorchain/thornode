@@ -15,7 +15,7 @@ def get(path)
   if Time.now() - $lastget < 1
     sleep(1)
   end
-  resp = Net::HTTP.get_response(HOST, "/swapservice#{path}", PORT)
+  resp = Net::HTTP.get_response(HOST, "/thorchain#{path}", PORT)
   resp.body = JSON.parse(resp.body)
   $lastget = Time.now()
   return resp
@@ -72,7 +72,7 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
 end
 
 def processTx(txs, user="statechain", mode='block')
-  request = Net::HTTP::Post.new("/swapservice/tx")
+  request = Net::HTTP::Post.new("/thorchain/tx")
   address = `thorcli keys show #{user} -a`.strip!
   txs = [txs].flatten(1) # ensures we are an array, and not just a single hash
   request.body = {

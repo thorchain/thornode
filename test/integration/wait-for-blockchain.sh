@@ -13,7 +13,7 @@ until curl -s "localhost:26657"; do
   sleep 1
 done
 
-until curl -s "localhost:1317/swapservice/ping"; do
+until curl -s "localhost:1317/thorchain/ping"; do
   >&2 echo "Rest server is unavailable - sleeping"
   sleep 1
 done

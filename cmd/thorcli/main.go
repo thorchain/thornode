@@ -34,7 +34,7 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use:   "thorcli",
-		Short: "swapservice Client",
+		Short: "thorchain Client",
 	}
 
 	// Add --chain-id to persistent flags and mark it required

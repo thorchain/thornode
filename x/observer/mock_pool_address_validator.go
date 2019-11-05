@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
-	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
+	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 
 	b "github.com/binance-chain/go-sdk/common/types"
 )

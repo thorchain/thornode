@@ -1,7 +1,7 @@
 package types
 
 import (
-	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
+	stypes "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 )
 
 type Msg struct {

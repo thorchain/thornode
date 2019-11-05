@@ -5,7 +5,7 @@ add_node_account () {
     OBSERVER_ADDRESS=$3
     VERSION=$4
     POOL_ADDRESS=$5
-    jq --arg VERSION "$VERSION" --arg POOL_ADDRESS "$POOL_ADDRESS" --arg VALIDATOR "$VALIDATOR" --arg NODE_ADDRESS "$NODE_ADDRESS" --arg OBSERVER_ADDRESS "$OBSERVER_ADDRESS" '.app_state.swapservice.node_accounts += [{"node_address": $NODE_ADDRESS, "version": $VERSION, "status":"active","bond_address":$POOL_ADDRESS,"accounts":{"bnb_signer_acc": $POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}]' <~/.thord/config/genesis.json >/tmp/genesis.json
+    jq --arg VERSION "$VERSION" --arg POOL_ADDRESS "$POOL_ADDRESS" --arg VALIDATOR "$VALIDATOR" --arg NODE_ADDRESS "$NODE_ADDRESS" --arg OBSERVER_ADDRESS "$OBSERVER_ADDRESS" '.app_state.thorchain.node_accounts += [{"node_address": $NODE_ADDRESS, "version": $VERSION, "status":"active","bond_address":$POOL_ADDRESS,"accounts":{"bnb_signer_acc": $POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}}]' <~/.thord/config/genesis.json >/tmp/genesis.json
     mv /tmp/genesis.json ~/.thord/config/genesis.json
 }
 
@@ -13,12 +13,12 @@ add_node_account () {
 add_pool_address () {
     POOL_ADDRESS=$1
     SEQNO=$2
-    jq --arg SEQNO "$SEQNO" --arg POOL_ADDRESS "$POOL_ADDRESS" '.app_state.swapservice.pool_addresses.rotate_at="28800" | .app_state.swapservice.pool_addresses.rotate_window_open_at="27800" | .app_state.swapservice.pool_addresses.current += [{"chain":"BNB","seq_no":$SEQNO,"pub_key":$POOL_ADDRESS}]' <~/.thord/config/genesis.json >/tmp/genesis.json
+    jq --arg SEQNO "$SEQNO" --arg POOL_ADDRESS "$POOL_ADDRESS" '.app_state.thorchain.pool_addresses.rotate_at="28800" | .app_state.thorchain.pool_addresses.rotate_window_open_at="27800" | .app_state.thorchain.pool_addresses.current += [{"chain":"BNB","seq_no":$SEQNO,"pub_key":$POOL_ADDRESS}]' <~/.thord/config/genesis.json >/tmp/genesis.json
     mv /tmp/genesis.json ~/.thord/config/genesis.json
 }
 
 add_admin_config () {
-    jq --arg NODE_ADDRESS "$3" --arg KEY "$1" --arg VALUE "$2" '.app_state.swapservice.admin_configs += [{"address": $NODE_ADDRESS ,"key":$KEY, "value":$VALUE}]' ~/.thord/config/genesis.json > /tmp/genesis.json
+    jq --arg NODE_ADDRESS "$3" --arg KEY "$1" --arg VALUE "$2" '.app_state.thorchain.admin_configs += [{"address": $NODE_ADDRESS ,"key":$KEY, "value":$VALUE}]' ~/.thord/config/genesis.json > /tmp/genesis.json
 }
 
 # inits a statechain with a comman separate list of usernames
@@ -84,5 +84,5 @@ fetch_node_id () {
 }
 
 fetch_version () {
-    thorcli query swapservice version --chain-id statechain --trust-node --output json | jq -r .version
+    thorcli query thorchain version --chain-id statechain --trust-node --output json | jq -r .version
 }

@@ -8,7 +8,7 @@ NOTE: This document is a **work in progress**.
 
 # Group Health Check
 
-## Ping [/swapservice/ping]
+## Ping [/thorchain/ping]
 
 ### Ping [GET]
 
@@ -21,7 +21,7 @@ NOTE: This document is a **work in progress**.
 # Group Pools
 This section documents the pools API resources.
 
-## Get a Pool [/swapservice/pool/{ticker}]
+## Get a Pool [/thorchain/pool/{ticker}]
 
 + Parameters
     + ticker: "bnb" (required, string) - The ticker of the pool
@@ -30,13 +30,13 @@ This section documents the pools API resources.
 + Response 200 (application/json)
     + Attributes (Pool)
 
-## Get Pool List [/swapservice/pools]
+## Get Pool List [/thorchain/pools]
 
 ### Get Pools [GET]
 + Response 200 (application/json)
     + Attributes (array[Pool])
 
-## Get List of stakers for a pool [/swapservice/pool/{ticker}/stakers]
+## Get List of stakers for a pool [/thorchain/pool/{ticker}/stakers]
 
 + Parameters
     + ticker: "bnb" (required, string) - The ticker of the pool
@@ -45,7 +45,7 @@ This section documents the pools API resources.
 + Response 200 (application/json)
     + Attributes (PoolStaker)
 
-## Get List of pools for a staker [/swapservice/staker/{ticker}]
+## Get List of pools for a staker [/thorchain/staker/{ticker}]
 
 + Parameters
     + ticker: "bnb" (required, string) - The ticker of the pool
@@ -57,7 +57,7 @@ This section documents the pools API resources.
 
 # Group Tx
 
-## Get a Tx [/swapservice/tx/{hash}]
+## Get a Tx [/thorchain/tx/{hash}]
 
 + Parameters
     + ticker: "E17A0906E015F0C343691C18E475C8CB5F3F6C63F5BCDE0F3A341909763CC92B" (required, string) - Tx hash of a binance transaction
