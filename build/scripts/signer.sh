@@ -5,7 +5,7 @@ CHAIN_ID="${CHAIN_ID:=thorchain}"
 DEX_HOST="${DEX_HOST:=testnet-dex.binance.org}"
 DB_PATH="${DB_PATH:=/var/data}"
 CHAIN_HOST="${CHAIN_HOST:=127.0.0.1:1317}"
-RPC_HOST="${RPC_HOST:=data-seed-pre-0-s3.binance.org}"
+RPC_HOST="${RPC_HOST:=127.0.0.1:26657}"
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
@@ -44,7 +44,6 @@ echo "{
   \"observer_db_path\": \"$OBSERVER_PATH\",
   \"block_scanner\": {
     \"rpc_host\": \"$RPC_HOST\",
-    \"start_block_height\": $START_BLOCK_HEIGHT,
     \"enforce_block_height\": false,
     \"block_scan_processors\": 1,
     \"block_height_discover_back_off\": \"1s\",
