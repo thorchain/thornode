@@ -4,8 +4,8 @@ services:
   observer:
     hostname: observer
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/observer.Dockerfile
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode-observer
     restart: unless-stopped
     environment:
@@ -25,9 +25,9 @@ services:
   signer:
     hostname: signer
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/signer.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-signer
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api:1317
@@ -47,9 +47,9 @@ services:
   thor-daemon:
     hostname: thor-daemon
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     ports:
       - "26657:26657"
       - "26656:26656"
@@ -68,13 +68,13 @@ services:
   thor-api:
     hostname: thor-api
     build:
-      context: ..
-      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon
     links:
       - thor-daemon
-    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     ports:
       - "1318:1317"
     environment:
