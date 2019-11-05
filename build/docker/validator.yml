@@ -55,7 +55,6 @@ services:
       - "26656:26656"
     environment:
       PEER: ${PEER}
-      GENESIS_URL: ${GENESIS_URL}
     entrypoint:
       /docker/scripts/validator.sh
     volumes:
