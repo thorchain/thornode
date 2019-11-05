@@ -66,7 +66,7 @@ func (k AdminConfigKey) Default() string {
 	case DesireValidatorSetKey:
 		return "4"
 	case RotatePerBlockHeightKey:
-		return "28800" // a day
+		return "17280" // with 5 second block times, this is a day
 	case ValidatorsChangeWindowKey:
 		return "1200" // one hour
 	case PoolRefundGasKey:

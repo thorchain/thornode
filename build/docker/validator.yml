@@ -1,0 +1,105 @@
+version: '3'
+
+services:
+  observer:
+    hostname: observer
+    build:
+      context: ..
+      dockerfile: ./docker/dockerfiles/observer.Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode-observer
+    restart: unless-stopped
+    environment:
+      CHAIN_HOST: thor-api:1317
+    entrypoint:
+      /docker/scripts/observer.sh
+    depends_on:
+      - thor-api
+    links:
+      - thor-api
+    volumes:
+      - ${PWD}/../scripts:/docker/scripts
+      - ${HOME}/.thornode/validator/.thord:/root/.thord
+      - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
+    command: ["observed", "-c", "/etc/observe/observed/config.json"]
+
+  signer:
+    hostname: signer
+    build:
+      context: ..
+      dockerfile: ./docker/dockerfiles/signer.Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode-signer
+    restart: unless-stopped
+    environment:
+      CHAIN_HOST: thor-api:1317
+      RPC_HOST: thor-daemon:26657
+    entrypoint:
+      /docker/scripts/signer.sh
+    depends_on:
+      - thor-api
+    links:
+      - thor-api
+    volumes:
+      - ${PWD}/../scripts:/docker/scripts
+      - /tmp/genesis:/tmp/shared
+      - ${HOME}/.thornode/validator/keys:/root/.signer
+    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+
+  thor-daemon:
+    hostname: thor-daemon
+    build:
+      context: ..
+      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
+    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+    ports:
+      - "26657:26657"
+      - "26656:26656"
+    environment:
+      PEER: ${PEER}
+    entrypoint:
+      /docker/scripts/validator.sh
+    volumes:
+      - /tmp/genesis:/tmp/shared
+      - ${PWD}/../scripts:/docker/scripts
+      - ${HOME}/.thornode/validator/.thord:/root/.thord
+      - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
+      - ${HOME}/.thornode/validator/keys:/root/.signer
+    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+
+  thor-api:
+    hostname: thor-api
+    build:
+      context: ..
+      dockerfile: ./docker/dockerfiles/statechain.Dockerfile
+    depends_on:
+      - thor-daemon
+    links:
+      - thor-daemon
+    image: registry.gitlab.com/thorchain/bepswap/thornode-statechain
+    ports:
+      - "1318:1317"
+    environment:
+      CHAIN_DAEMON: thor-daemon:26657
+    entrypoint:
+      /docker/scripts/rest.sh
+    volumes:
+      - ${PWD}/../scripts:/docker/scripts
+      - ${HOME}/.thornode/validator/.thord:/root/.thord
+      - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
+    command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+
+  binance:
+    hostname: binance-fullnode
+    image: varnav/binance-node
+    restart: unless-stopped
+    environment:
+      BNET: "prod"
+    ports:
+      - "27146:27146" 
+      - "27147:27147"
+      - "26660:26660"
+    ulimits:
+      nofile:
+        soft: "16000"
+        hard: "16000"
+    volumes:
+      - ${HOME}/.thornode/binance:/opt/bnbchaind
