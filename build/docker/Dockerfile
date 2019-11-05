@@ -19,11 +19,11 @@ ENV GOOS=linux
 RUN go mod verify
 RUN go get -d -v ./...
 
-RUN go build -a -installsuffix cgo -o generate ./tools/generate
-RUN go build -a -installsuffix cgo -o thord ./cmd/thord
-RUN go build -a -installsuffix cgo -o thorcli ./cmd/thorcli
-RUN go build -a -installsuffix cgo -o observed ./cmd/observed
-RUN go build -a -installsuffix cgo -o signd ./cmd/signd
+RUN go build -a -installsuffix cgo -o $GOBIN/thord ./cmd/thord
+RUN go build -a -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
+RUN go build -a -installsuffix cgo -o $GOBIN/observed ./cmd/observed
+RUN go build -a -installsuffix cgo -o $GOBIN/signd ./cmd/signd
+RUN go build -a -installsuffix cgo -o $GOBIN/generate ./tools/generate
 
 #
 # Main
@@ -33,14 +33,12 @@ FROM alpine
 RUN apk add --update jq curl nginx && \
     rm -rf /var/cache/apk/*
 
-ENV PATH="${PATH}:/go/bin"
-
 # Copy the compiled binaires over.
-COPY --from=build /app/generate /go/bin/
-COPY --from=build /app/thord /go/bin/
-COPY --from=build /app/thorcli /go/bin/
-COPY --from=build /app/observed /go/bin/
-COPY --from=build /app/signd /go/bin/
+COPY --from=build /go/bin/generate /usr/bin/
+COPY --from=build /go/bin/thord /usr/bin/
+COPY --from=build /go/bin/thorcli /usr/bin/
+COPY --from=build /go/bin/observed /usr/bin/
+COPY --from=build /go/bin/signd /usr/bin/
 
 # Add users.
 RUN adduser -Ds /bin/sh www-data -G www-data
