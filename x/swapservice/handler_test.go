@@ -575,17 +575,17 @@ func (HandlerSuite) TestHandleMsgLeave(c *C) {
 	senderBNB := GetRandomBNBAddress()
 	msgLeave := NewMsgLeave(txID, senderBNB, w.notActiveNodeAccount.Accounts.ObserverBEPAddress)
 	c.Assert(msgLeave.ValidateBasic(), IsNil)
-	result := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgLeave)
+	result := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgLeave)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
 	msgLeaveInvalidSender := NewMsgLeave(txID, senderBNB, w.activeNodeAccount.Accounts.ObserverBEPAddress)
 	// try to leave, invalid sender
-	result1 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgLeaveInvalidSender)
+	result1 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgLeaveInvalidSender)
 	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest)
 
 	// active node can't leave
 	msgLeaveActiveNode := NewMsgLeave(GetRandomTxHash(), w.activeNodeAccount.Accounts.SignerBNBAddress, w.activeNodeAccount.Accounts.ObserverBEPAddress)
-	resultActiveNode := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgLeaveActiveNode)
+	resultActiveNode := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgLeaveActiveNode)
 	c.Assert(resultActiveNode.Code, Equals, sdk.CodeUnknownRequest)
 
 	acc2 := GetRandomNodeAccount(NodeStandby)
@@ -593,15 +593,22 @@ func (HandlerSuite) TestHandleMsgLeave(c *C) {
 	w.keeper.SetNodeAccount(w.ctx, acc2)
 
 	msgLeave1 := NewMsgLeave(GetRandomTxHash(), acc2.BondAddress, w.activeNodeAccount.Accounts.ObserverBEPAddress)
-	result2 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgLeave1)
+	result2 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgLeave1)
 	c.Assert(result2.Code, Equals, sdk.CodeOK)
 	c.Assert(w.txOutStore.blockOut.Valid(), IsNil)
 	c.Assert(w.txOutStore.blockOut.IsEmpty(), Equals, false)
 	c.Assert(len(w.txOutStore.blockOut.TxArray) > 0, Equals, true)
 
 	invalidMsg := NewMsgLeave("", acc2.Accounts.SignerBNBAddress, w.activeNodeAccount.Accounts.ObserverBEPAddress)
-	result3 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, invalidMsg)
+	result3 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, invalidMsg)
 	c.Assert(result3.Code, Equals, sdk.CodeUnknownRequest)
+
+	// Ragnarok check. Ensure all bonders have a zero bond balance
+	nodeAccs, err := w.keeper.ListNodeAccounts(w.ctx)
+	c.Assert(err, IsNil)
+	for _, na := range nodeAccs {
+		c.Assert(na.Bond.IsZero(), Equals, true)
+	}
 }
 
 func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {

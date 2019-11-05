@@ -47,7 +47,7 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgNextPoolAddress:
 			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, m)
 		case MsgLeave:
-			return handleMsgLeave(ctx, keeper, txOutStore, poolAddressMgr, m)
+			return handleMsgLeave(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
 		case MsgAck:
 			return handleMsgAck(ctx, keeper, poolAddressMgr, m)
 		default:
@@ -1101,7 +1101,7 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 	}
 }
 
-func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgLeave) sdk.Result {
+func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, validatorManager *ValidatorManager, msg MsgLeave) sdk.Result {
 	ctx.Logger().Info("receive MsgLeave", "sender", msg.Sender.String(), "request tx hash", msg.RequestTxHash)
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
@@ -1131,28 +1131,66 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 		return sdk.ErrUnknownRequest(msg).Result()
 	}
 
-	// TODO need to check whether the address is used as satellite pool
-	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
-		// refund bond
-		txOutItem := &TxOutItem{
-			Chain:       chain,
-			ToAddress:   nodeAcc.BondAddress,
-			PoolAddress: currentChainPoolAddr.PubKey,
-			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
-			},
+	refundBond := func(ctx sdk.Context, na NodeAccount, txOut *TxOutStore) {
+		// TODO need to check whether the address is used as satellite pool
+		if nodeAcc.Bond.GT(sdk.ZeroUint()) {
+			// refund bond
+			txOutItem := &TxOutItem{
+				Chain:       chain,
+				ToAddress:   nodeAcc.BondAddress,
+				PoolAddress: currentChainPoolAddr.PubKey,
+				Coins: common.Coins{
+					common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
+				},
+			}
+			txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent("validator_leave",
+					sdk.NewAttribute("signer bnb address", msg.Sender.String()),
+					sdk.NewAttribute("destination", nodeAcc.BondAddress.String()),
+					sdk.NewAttribute("tx", msg.RequestTxHash.String())))
 		}
-		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent("validator_leave",
-				sdk.NewAttribute("signer bnb address", msg.Sender.String()),
-				sdk.NewAttribute("destination", nodeAcc.BondAddress.String()),
-				sdk.NewAttribute("tx", msg.RequestTxHash.String())))
 	}
+
+	refundBond(ctx, nodeAcc, txOut)
 	// disable the node account
 	nodeAcc.Bond = sdk.ZeroUint()
 	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAcc)
+
+	// Ragnarok Protocol
+	// If we can no longer be BFT, do a graceful shutdown of the entire network.
+	// 1) Refund all stakers from all pools
+	// 2) Refund all bonds to all node accounts
+	if keeper.TotalNodeAccounts(ctx) < 4 {
+		index, err := keeper.GetPoolIndex(ctx)
+		if nil != err {
+			ctx.Logger().Error("fail to get pool index", "err", err)
+			return sdk.ErrInternal("fail to get pool index").Result()
+		}
+
+		handler := NewHandler(keeper, poolAddrMgr, txOut, validatorManager)
+		for _, asset := range index {
+			endMsg := NewMsgEndPool(asset, msg.Sender, msg.RequestTxHash, msg.Signer)
+			handler(ctx, endMsg)
+		}
+
+		nodeAccounts, err := keeper.ListNodeAccounts(ctx)
+		if nil != err {
+			ctx.Logger().Error("fail to get node accounts", "err", err)
+			return sdk.ErrInternal("fail to get node accounts").Result()
+		}
+		// Refund all the bonds
+		for _, na := range nodeAccounts {
+			refundBond(ctx, na, txOut)
+			// disable the node account
+			na.Bond = sdk.ZeroUint()
+			// We are not updating status so the final validators stay as
+			// "active" so they can commit the final block
+			keeper.SetNodeAccount(ctx, na)
+		}
+	}
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
