@@ -78,20 +78,23 @@ clean:
 extract: tools
 	@extract -f "${FILE}" -p "${PASSWORD}" -t ${TYPE}
 
-smoke-test-audit: tools
-	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-audit.json -e ${ENV}
+smoke-test-audit-1p: tools
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c test/smoke/scenarios/smoke-test-audit-1p.json -l /tmp/smoke-test-audit-1p.json
+
+smoke-test-audit-2p: tools
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c test/smoke/scenarios/smoke-test-audit-2p.json -l /tmp/smoke-test-audit-2p.json
 
 smoke-test-refund: tools
-	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/full/smoke-test-refund.json -e ${ENV}
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c test/smoke/scenarios/smoke-test-refund.json -l /tmp/smoke-test-refund.json
 
 gas: tools
-	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/gas.json -e ${ENV}
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c test/smoke/scenarios/gas.json -l /tmp/gas.json
 
 stake: tools
-	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/stake.json -e ${ENV}
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c test/smoke/scenarios/stake.json -l /tmp/stake.json
 
 swap: tools
-	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -c test/smoke/definitions/unit/swap.json -e ${ENV}
+	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c test/smoke/scenarios/swap.json -l /tmp/swap.json
 
 sweep: tools
 	@sweep -m ${FAUCET_KEY} -k ${BINANCE_PRIVATE_KEY} -d true
