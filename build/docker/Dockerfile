@@ -29,7 +29,7 @@ RUN go build -a -installsuffix cgo -o signd ./cmd/signd
 #
 FROM alpine
 
-RUN apk add --update jq curl supervisor nginx && \
+RUN apk add --update jq curl nginx && \
     rm -rf /var/cache/apk/*
 
 ENV PATH="${PATH}:/go/bin"
