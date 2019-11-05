@@ -71,7 +71,7 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
   }
 end
 
-def processTx(txs, user="jack", mode='block')
+def processTx(txs, user="statechain", mode='block')
   request = Net::HTTP::Post.new("/swapservice/tx")
   address = `thorcli keys show #{user} -a`.strip!
   txs = [txs].flatten(1) # ensures we are an array, and not just a single hash
