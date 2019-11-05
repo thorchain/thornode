@@ -7,14 +7,16 @@
 #
 FROM golang:1.13 AS build
 
-WORKDIR /go/src/app
+WORKDIR /app
 
 COPY . .
 
 ENV GOBIN=/go/bin
+ENV GOPATH=/go
 ENV CGO_ENABLED=0
 ENV GOOS=linux
 
+RUN ls
 RUN go mod verify
 RUN go get -d -v ./...
 

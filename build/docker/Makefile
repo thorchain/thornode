@@ -1,15 +1,7 @@
 .PHONY: build
 
-build: build-observer build-signer build-statechain
-
-build-observer:
-	docker build -t registry.gitlab.com/thorchain/bepswap/thornode-observer -f dockerfiles/observer.Dockerfile ../..
-
-build-signer:
-	docker build -t registry.gitlab.com/thorchain/bepswap/thornode-signer -f dockerfiles/signer.Dockerfile ../..
-
-build-statechain:
-	docker build -t registry.gitlab.com/thorchain/bepswap/thornode-statechain -f dockerfiles/statechain.Dockerfile ../..
+build: 
+	docker build -t registry.gitlab.com/thorchain/bepswap/thornode -f dockerfiles/observer.Dockerfile ../..
 
 clean:
 	@rm -rf /tmp/genesis
