@@ -71,5 +71,5 @@ docker-gitlab-push:
 	docker push registry.gitlab.com/thorchain/bepswap/thornode:latest
 
 docker-gitlab-build:
-	docker build -t registry.gitlab.com/thorchain/bepswap/thornode:$$(git rev-parse --short HEAD) -f build/docker/Dockerfile .
-	docker tag registry.gitlab.com/thorchain/bepswap/thornode latest
+	docker build -t registry.gitlab.com/thorchain/bepswap/thornode -f build/docker/Dockerfile .
+	docker tag registry.gitlab.com/thorchain/bepswap/thornode $$(git rev-parse --short HEAD)
