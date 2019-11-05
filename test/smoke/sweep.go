@@ -45,14 +45,17 @@ func (s Sweep) EmptyWallets() {
 		var coins []btypes.Coin
 		balances := s.Balances(keyManager.GetAddr())
 		for _, asset := range balances {
-			free := float64(asset.Free)
-			amt := int64(free)
-			if asset.Symbol == "BNB" {
-				amt = amt - 210000
+			amount := asset.Free.ToInt64()
+
+			// Binance fees.
+			if len(balances) > 1 && asset.Symbol == "BNB" {
+				amount = amount - (int64(len(balances)) * 30000)
+			} else if asset.Symbol == "BNB" {
+				amount = amount - 37500
 			}
 
-			if amt > 0 {
-				coins = append(coins, btypes.Coin{Denom: asset.Symbol, Amount: amt})
+			if amount > 0 {
+				coins = append(coins, btypes.Coin{Denom: asset.Symbol, Amount: amount})
 			}
 		}
 
