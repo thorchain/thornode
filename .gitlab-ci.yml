@@ -40,11 +40,9 @@ integration:test:
     - make -C ./test/integration install setup run wait-for-blockchain test-internal
 
 # Build docker image
-build-observer:
+build-thornode:
   stage: build
   image: docker:stable
-  only:
-    - master
   services:
     - docker:dind
   variables:
@@ -55,43 +53,8 @@ build-observer:
     - apk add python py-pip make git jq curl
     - make docker-gitlab-login
   script:
-    - make docker-gitlab-build-observer
-    - make docker-gitlab-push-observer
-
-build-signer:
-  stage: build
-  image: docker:stable
-  only:
-    - master
-  services:
-    - docker:dind
-  variables:
-    docker_host: tcp://docker:2375
-    docker_driver: overlay2
-  before_script:
-    - apk update
-    - apk add python py-pip make git
-  script:
-    - make docker-gitlab-build-signer
-    - make docker-gitlab-push-signer
-
-build-statechain:
-  stage: build
-  image: docker:stable
-  only:
-    - master
-  services:
-    - docker:dind
-  variables:
-    docker_host: tcp://docker:2375
-    docker_driver: overlay2
-  before_script:
-    - apk update
-    - apk add python py-pip make git
-    - make docker-gitlab-login
-  script:
-    - make docker-gitlab-build-statechain
-    - make docker-gitlab-push-statechain
+    - make docker-gitlab-build
+    - make docker-gitlab-push
 
 deploy:develop:
   stage: deploy
