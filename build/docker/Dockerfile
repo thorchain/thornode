@@ -42,16 +42,7 @@ COPY --from=build /go/src/app/observed /go/bin/
 COPY --from=build /go/src/app/signd /go/bin/
 
 # Add users.
-RUN adduser -Ds /bin/sh supervisor
 RUN adduser -Ds /bin/sh www-data -G www-data
-
-# TODO Move away from needing supervisor
-# Setup supervisor.
-RUN mkdir -p /var/log/supervisor
-RUN mkdir -p /var/run/supervisor
-RUN mkdir -p /etc/supervisor/conf.d
-ADD etc/supervisor.conf /etc/
-ADD etc/supervisor/conf.d/*.ini /etc/supervisor/conf.d/
 
 # TODO Move away from needing nginx
 # Setup Nginx.
@@ -60,5 +51,3 @@ ADD etc/nginx/nginx.conf /etc/nginx/
 EXPOSE 9000
 EXPOSE 1317
 EXPOSE 81
-
-CMD ["supervisord", "-c", "/etc/supervisor.conf"]
