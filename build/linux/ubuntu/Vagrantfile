@@ -4,16 +4,16 @@
 Vagrant.configure("2") do |config|
   config.vm.box = "ubuntu/bionic64"
   config.vm.synced_folder ".", "/vagrant_data"
-  config.vm.synced_folder "/tmp/genesis", "/tmp/shared"
-  config.vm.synced_folder "~/go", "/root/go"
+  # config.vm.synced_folder "/tmp/genesis", "/tmp/shared"
+  # config.vm.synced_folder "~/go", "/root/go"
 
   config.vm.define "thor1" do |thor1|
     thor1.vm.hostname = "thor1"
-    thor1.vm.network "forwarded_port", guest: 1317, host: 1317
-    thor1.vm.network "forwarded_port", guest: 26657, host: 26657
-    thor1.vm.network "forwarded_port", guest: 26656, host: 26656
+    # thor1.vm.network "forwarded_port", guest: 1317, host: 1317
+    # thor1.vm.network "forwarded_port", guest: 26657, host: 26657
+    # thor1.vm.network "forwarded_port", guest: 26656, host: 26656
   
-    thor1.vm.network "private_network", ip: "192.168.33.1"
+    thor1.vm.network "public_network", ip: "192.168.33.2"
 
     thor1.vm.provision "shell", inline: <<-SHELL
       /vagrant_data/thornode.bash
@@ -26,11 +26,11 @@ Vagrant.configure("2") do |config|
   
   config.vm.define "thor2" do |thor2|
     thor2.vm.hostname = "thor2"
-    thor2.vm.network "private_network", ip: "192.168.33.2"
+    thor2.vm.network "public_network", ip: "192.168.33.3"
 
     thor2.vm.provision "shell", inline: <<-SHELL
       /vagrant_data/thornode.bash
-      PEER=192.168.33.1:26657 /vagrant_data/scripts/validator.sh 
+      PEER=192.168.33.2 /vagrant_data/scripts/validator.sh 
       /vagrant_data/scripts/rest.sh 
       /vagrant_data/scripts/observer.sh 
       /vagrant_data/scripts/signer.sh 

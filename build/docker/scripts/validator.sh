@@ -41,12 +41,12 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
     thorcli config indent true
     thorcli config trust-node true
 
-    curl $PEER/genesis | jq .result.genesis > ~/.thord/config/genesis.json
+    curl $PEER:26657/genesis | jq .result.genesis > ~/.thord/config/genesis.json
 
     thord validate-genesis
 
-    NODE_ID=$(curl $PEER/status | jq -r .result.node_info.id)
-    PEER="$NODE_ID@$PEER"
+    NODE_ID=$(curl $PEER:26657/status | jq -r .result.node_info.id)
+    PEER="$NODE_ID@$PEER:26656"
     ADDR='addr_book_strict = true'
     ADDR_STRICT_FALSE='addr_book_strict = false'
     PEERSISTENT_PEER_TARGET='persistent_peers = ""'

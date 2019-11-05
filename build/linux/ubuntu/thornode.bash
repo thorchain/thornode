@@ -11,10 +11,17 @@ rm go1.13.3.linux-amd64.tar.gz # cleanup
 
 export GOROOT=/usr/local/go
 export GOPATH=~/go
-export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
+export GOBIN=$GOPATH/bin
+export PATH=$GOBIN:$GOROOT/bin:$PATH
 
 git clone https://gitlab.com/thorchain/bepswap/thornode.git ~/go/src/gitlab.com/thorchain/bepswap/thornode
 
 cd ~/go/src/gitlab.com/thorchain/bepswap/thornode
 go get -v
 make install tools
+
+cp $GOBIN/thord /usr/bin/
+cp $GOBIN/thorcli /usr/bin/
+cp $GOBIN/observed /usr/bin/
+cp $GOBIN/signd /usr/bin/
+cp $GOBIN/generate /usr/bin/
