@@ -12,11 +12,11 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/binance"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
 	"gitlab.com/thorchain/bepswap/thornode/common"
-	"gitlab.com/thorchain/bepswap/thornode/config"
-	"gitlab.com/thorchain/bepswap/thornode/x/binance"
-	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
 )
 
 // Signer will pull the tx out from statechain and then forward it to binance chain
