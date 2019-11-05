@@ -43,8 +43,6 @@ integration:test:
 build-observer:
   stage: build
   image: docker:stable
-  only:
-    - master
   services:
     - docker:dind
   variables:
@@ -61,8 +59,6 @@ build-observer:
 build-signer:
   stage: build
   image: docker:stable
-  only:
-    - master
   services:
     - docker:dind
   variables:
@@ -78,8 +74,6 @@ build-signer:
 build-statechain:
   stage: build
   image: docker:stable
-  only:
-    - master
   services:
     - docker:dind
   variables:
