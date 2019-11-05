@@ -12,9 +12,9 @@ import (
 	"github.com/rs/zerolog/log"
 	flag "github.com/spf13/pflag"
 
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/signer"
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
-	"gitlab.com/thorchain/bepswap/thornode/config"
-	"gitlab.com/thorchain/bepswap/thornode/x/signer"
 )
 
 // we define version / revision here , so we could inject the version from CI pipeline if we want to

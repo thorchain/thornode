@@ -15,9 +15,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain"
 	"gitlab.com/thorchain/bepswap/thornode/common"
-	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/x/statechain"
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 )
 

@@ -16,10 +16,10 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	btypes "gitlab.com/thorchain/bepswap/thornode/bifrost/binance/types"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
+	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
 	"gitlab.com/thorchain/bepswap/thornode/common"
-	"gitlab.com/thorchain/bepswap/thornode/config"
-	btypes "gitlab.com/thorchain/bepswap/thornode/x/binance/types"
-	stypes "gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
 )
 
 type Binance struct {
