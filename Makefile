@@ -62,9 +62,8 @@ start-rest:
 setup: install
 	./scripts/setup.sh
 
-reset: clean 
-	make install
-	./scripts/reset.sh
+reset: clean install
+	./scripts/setup.sh
 
 clean:
 	rm -rf ~/.thord
