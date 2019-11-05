@@ -77,7 +77,7 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 	uri := url.URL{
 		Scheme: "http",
 		Host:   b.chainHost,
-		Path:   fmt.Sprintf("/swapservice/txoutarray/%v", blockHeight),
+		Path:   fmt.Sprintf("/thorchain/txoutarray/%v", blockHeight),
 	}
 	strBlockHeight := strconv.FormatInt(blockHeight, 10)
 	buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())

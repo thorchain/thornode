@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
-	"github.com/hashicorp/go-retryablehttp"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -18,7 +18,7 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/common"
 	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
 	"gitlab.com/thorchain/bepswap/thornode/x/statechain"
-	"gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
+	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 )
 
 type PoolAddressValidator interface {
@@ -150,7 +150,7 @@ func (pam *PoolAddressManager) getPoolAddresses() (types.PoolAddresses, error) {
 	uri := url.URL{
 		Scheme: "http",
 		Host:   pam.chainHost,
-		Path:   "/swapservice/pooladdresses",
+		Path:   "/thorchain/pooladdresses",
 	}
 	resp, err := retryablehttp.Get(uri.String())
 	if nil != err {

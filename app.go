@@ -21,10 +21,10 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/params"
 	"github.com/cosmos/cosmos-sdk/x/staking"
 
-	"gitlab.com/thorchain/bepswap/thornode/x/swapservice"
+	"gitlab.com/thorchain/bepswap/thornode/x/thorchain"
 )
 
-const appPoolData = "swapservice"
+const appPoolData = "thorchain"
 
 var (
 	// default home directories for the application CLI
@@ -40,12 +40,12 @@ var (
 		bank.AppModuleBasic{},
 		params.AppModuleBasic{},
 		supply.AppModuleBasic{},
-		swapservice.AppModule{},
+		thorchain.AppModule{},
 	)
 	// account permissions
 	maccPerms = map[string][]string{
-		auth.FeeCollectorName:  nil,
-		swapservice.ModuleName: {supply.Minter},
+		auth.FeeCollectorName: nil,
+		thorchain.ModuleName:  {supply.Minter},
 	}
 )
 
@@ -58,7 +58,7 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
-type swapServiceApp struct {
+type thorChainApp struct {
 	*bam.BaseApp
 	cdc *codec.Codec
 
@@ -69,25 +69,25 @@ type swapServiceApp struct {
 	bankKeeper    bank.Keeper
 	supplyKeeper  supply.Keeper
 	paramsKeeper  params.Keeper
-	ssKeeper      swapservice.Keeper
+	ssKeeper      thorchain.Keeper
 
 	// Module Manager
 	mm *module.Manager
 }
 
-// NewSwapServiceApp is a constructor function for swapServiceApp
-func NewSwapServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.BaseApp)) *swapServiceApp {
+// NewThorchainApp is a constructor function for thorChainApp
+func NewThorchainApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.BaseApp)) *thorChainApp {
 
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
 
 	// BaseApp handles interactions with Tendermint through the ABCI protocol
 	bApp := bam.NewBaseApp(appPoolData, logger, db, auth.DefaultTxDecoder(cdc), baseAppOptions...)
-	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, supply.StoreKey, swapservice.StoreKey, params.StoreKey)
+	keys := sdk.NewKVStoreKeys(bam.MainStoreKey, auth.StoreKey, supply.StoreKey, thorchain.StoreKey, params.StoreKey)
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
 	// Here you initialize your application with the store keys it requires
-	var app = &swapServiceApp{
+	var app = &thorChainApp{
 		BaseApp: bApp,
 		cdc:     cdc,
 
@@ -124,12 +124,12 @@ func NewSwapServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam
 		app.bankKeeper,
 		maccPerms)
 
-	// The swapserviceKeeper is the Keeper from the module for this tutorial
+	// The thorchainKeeper is the Keeper from the module for this tutorial
 	// It handles interactions with the pooldatastore
-	app.ssKeeper = swapservice.NewKeeper(
+	app.ssKeeper = thorchain.NewKeeper(
 		app.bankKeeper,
 		app.supplyKeeper,
-		keys[swapservice.StoreKey],
+		keys[thorchain.StoreKey],
 		app.cdc,
 	)
 
@@ -138,11 +138,11 @@ func NewSwapServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam
 		auth.NewAppModule(app.accountKeeper),
 		bank.NewAppModule(app.bankKeeper, app.accountKeeper),
 		supply.NewAppModule(app.supplyKeeper, app.accountKeeper),
-		swapservice.NewAppModule(app.ssKeeper, app.bankKeeper, app.supplyKeeper),
+		thorchain.NewAppModule(app.ssKeeper, app.bankKeeper, app.supplyKeeper),
 	)
 
-	app.mm.SetOrderBeginBlockers(swapservice.ModuleName)
-	app.mm.SetOrderEndBlockers(swapservice.ModuleName)
+	app.mm.SetOrderBeginBlockers(thorchain.ModuleName)
+	app.mm.SetOrderEndBlockers(thorchain.ModuleName)
 
 	// Sets the order of Genesis - Order matters, genutil is to always come last
 	app.mm.SetOrderInitGenesis(
@@ -150,7 +150,7 @@ func NewSwapServiceApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam
 		auth.ModuleName,
 		bank.ModuleName,
 		supply.ModuleName,
-		swapservice.ModuleName,
+		thorchain.ModuleName,
 	)
 
 	// register all module routes and module queriers
@@ -188,7 +188,7 @@ func NewDefaultGenesisState() GenesisState {
 	return ModuleBasics.DefaultGenesis()
 }
 
-func (app *swapServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *thorChainApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	var genesisState GenesisState
 
 	err := app.cdc.UnmarshalJSON(req.AppStateBytes, &genesisState)
@@ -199,18 +199,18 @@ func (app *swapServiceApp) InitChainer(ctx sdk.Context, req abci.RequestInitChai
 	return app.mm.InitGenesis(ctx, genesisState)
 }
 
-func (app *swapServiceApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+func (app *thorChainApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return app.mm.BeginBlock(ctx, req)
 }
-func (app *swapServiceApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+func (app *thorChainApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
 }
-func (app *swapServiceApp) LoadHeight(height int64) error {
+func (app *thorChainApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
 }
 
 // ModuleAccountAddrs returns all the app's module account addresses.
-func (app *swapServiceApp) ModuleAccountAddrs() map[string]bool {
+func (app *thorChainApp) ModuleAccountAddrs() map[string]bool {
 	modAccAddrs := make(map[string]bool)
 	for acc := range maccPerms {
 		modAccAddrs[supply.NewModuleAddress(acc).String()] = true
@@ -221,7 +221,7 @@ func (app *swapServiceApp) ModuleAccountAddrs() map[string]bool {
 
 // _________________________________________________________
 
-func (app *swapServiceApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
+func (app *thorChainApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
 ) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
 
 	// as if they could withdraw from the start of the next block

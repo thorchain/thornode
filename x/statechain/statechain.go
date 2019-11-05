@@ -24,7 +24,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
-	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
+	stypes "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/config"
 	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
@@ -89,7 +89,7 @@ func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
 	sdk.RegisterCodec(cdc)
 	// TODO make we should share this with statechain in common
-	cdc.RegisterConcrete(stypes.MsgSetTxIn{}, "swapservice/MsgSetTxIn", nil)
+	cdc.RegisterConcrete(stypes.MsgSetTxIn{}, "thorchain/MsgSetTxIn", nil)
 	codec.RegisterCrypto(cdc)
 	return cdc
 }
@@ -259,7 +259,7 @@ func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (co
 // GetBinanceChainStartHeight
 func (scb *StateChainBridge) GetBinanceChainStartHeight() (uint64, error) {
 
-	resp, err := scb.client.Get(scb.getStateChainUrl("/swapservice/lastblock"))
+	resp, err := scb.client.Get(scb.getStateChainUrl("/thorchain/lastblock"))
 	if nil != err {
 		return 0, errors.Wrap(err, "fail to get last blocks from statechain")
 	}
@@ -318,7 +318,7 @@ func (scb *StateChainBridge) EnsureNodeWhitelisted() error {
 		return errors.New("bep address is empty")
 	}
 
-	requestUrl := scb.getStateChainUrl("/swapservice/observer/" + bepAddr)
+	requestUrl := scb.getStateChainUrl("/thorchain/observer/" + bepAddr)
 	scb.logger.Debug().Str("request_url", requestUrl).Msg("check node account status")
 	resp, err := scb.client.Get(requestUrl)
 	if nil != err {
