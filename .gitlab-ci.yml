@@ -20,7 +20,7 @@ unit_tests:
   stage: test
   coverage: '/^coverage:\s(\d+(?:\.\d+)?%)/'
   variables:
-    SignerName: "jack"
+    SignerName: "statechain"
     SignerPasswd: "password"
   script:
     - go test -mod=readonly -v -coverprofile .testCoverage.txt ./...
