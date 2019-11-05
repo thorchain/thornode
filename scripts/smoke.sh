@@ -176,11 +176,22 @@ if [ $COUNT -lt $MAX_ATTEMPTS ]; then
   check_block_height "${r}"
   if [ $? -eq 0 ]; then
     # Smoke 'em if you got 'em.
-    echo "Running: smoke-test-audit...."
-    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../../ smoke-test-audit
+    echo "Running: smoke-test-audit-2p...."
+    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../ smoke-test-audit-2p
 
-    echo "Running: smoke-test-refund...."
-    make FAUCET_KEY="${f}" POOL_KEY="${p}" ENV="${e}" -C ../../ smoke-test-refund
+    # Validate the output generated.
+    LOG_FILE="/tmp/smoke-test-audit-2p.json"
+    if [ -f "$LOG_FILE" ]; then
+      CHECKSUM=$(cat ../test/smoke/checksum)
+      VALID=$(echo "$CHECKSUM $LOG_FILE" | sha256sum --check)
+
+      if [[ $VALID =~ "FAILED" ]]; then
+        exit 1
+      fi
+    else
+      echo "No output file generated. Exiting."
+      exit 1
+    fi
   else
     echo "Exiting. Looks like this chain was started a while ago?"
     exit 1
