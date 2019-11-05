@@ -17,11 +17,11 @@ import (
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/hashicorp/go-retryablehttp"
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
 	"gitlab.com/thorchain/bepswap/thornode/common"
-	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
+	stypes "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/config"
 	"gitlab.com/thorchain/bepswap/thornode/x/metrics"

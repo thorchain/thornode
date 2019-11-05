@@ -15,7 +15,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/bepswap/thornode/common"
-	stypes "gitlab.com/thorchain/bepswap/thornode/x/swapservice/types"
+	stypes "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/config"
 	"gitlab.com/thorchain/bepswap/thornode/x/binance"

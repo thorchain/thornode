@@ -36,7 +36,7 @@ func main() {
 
 	rootCmd := &cobra.Command{
 		Use:               "thord",
-		Short:             "swapservice App Daemon (server)",
+		Short:             "thorchain App Daemon (server)",
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}
 	// CLI commands to initialize the chain
@@ -60,7 +60,7 @@ func main() {
 }
 
 func newApp(logger log.Logger, db dbm.DB, traceStore io.Writer) abci.Application {
-	return app.NewSwapServiceApp(logger, db)
+	return app.NewThorchainApp(logger, db)
 
 }
 
@@ -69,7 +69,7 @@ func exportAppStateAndTMValidators(
 ) (json.RawMessage, []tmtypes.GenesisValidator, error) {
 
 	if height != -1 {
-		nsApp := app.NewSwapServiceApp(logger, db)
+		nsApp := app.NewThorchainApp(logger, db)
 		err := nsApp.LoadHeight(height)
 		if err != nil {
 			return nil, nil, err
@@ -77,7 +77,7 @@ func exportAppStateAndTMValidators(
 		return nsApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 	}
 
-	nsApp := app.NewSwapServiceApp(logger, db)
+	nsApp := app.NewThorchainApp(logger, db)
 
 	return nsApp.ExportAppStateAndValidators(forZeroHeight, jailWhiteList)
 }

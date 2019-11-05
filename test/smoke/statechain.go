@@ -33,10 +33,10 @@ func (s Statechain) scheme() string {
 
 // PoolURL : Return the Pool URL based on the selected environment.
 func (s Statechain) PoolURL() string {
-	return fmt.Sprintf("%v://%v/swapservice/pools", s.scheme(), endpoints[s.Env])
+	return fmt.Sprintf("%v://%v/thorchain/pools", s.scheme(), endpoints[s.Env])
 }
 
 // StakerURL  : Return the Staker URL based on the selected environment.
 func (s Statechain) StakerURL(staker string) string {
-	return fmt.Sprintf("%v://%v/swapservice/staker/%v", s.scheme(), endpoints[s.Env], staker)
+	return fmt.Sprintf("%v://%v/thorchain/staker/%v", s.scheme(), endpoints[s.Env], staker)
 }
