@@ -17,7 +17,7 @@ if [ -z "${SEQNO:-}" ]; then
     echo $SEQNO
 fi
 
-VERSION="$(thorcli query swapservice version | jq -r .version)"
+VERSION="$(thorcli query thorchain version | jq -r .version)"
 VALIDATOR="$(thord tendermint show-validator)"
 NODE_ADDRESS="$(thorcli keys show statechain -a)"
 OBSERVER_ADDRESS="$(thorcli keys show statechain -a)"

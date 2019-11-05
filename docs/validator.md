@@ -100,7 +100,7 @@ Once you have done that, you can then use the `thorcli` to
 register your other addresses.
 
 ```bash
-thorcli tx swapservice set-trust-account $(thorcli keys show observer --address) $(thord tendermint show-validator)
+thorcli tx thorchain set-trust-account $(thorcli keys show observer --address) $(thord tendermint show-validator)
 ```
 
 Once you have done this, your node is ready to be rotated into the active
