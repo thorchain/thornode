@@ -16,7 +16,6 @@ ENV GOPATH=/go
 ENV CGO_ENABLED=0
 ENV GOOS=linux
 
-RUN ls
 RUN go mod verify
 RUN go get -d -v ./...
 

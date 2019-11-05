@@ -1,7 +1,7 @@
 .PHONY: build
 
 build: 
-	docker build -t registry.gitlab.com/thorchain/bepswap/thornode -f dockerfiles/observer.Dockerfile ../..
+	docker build -t registry.gitlab.com/thorchain/bepswap/thornode -f Dockerfile ../..
 
 clean:
 	@rm -rf /tmp/genesis
