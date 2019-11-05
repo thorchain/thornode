@@ -1,1 +1,0 @@
-web: ./scripts/start.sh
