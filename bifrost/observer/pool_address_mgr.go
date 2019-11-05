@@ -21,13 +21,14 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 )
 
-type PoolAddressValidator interface {
+type AddressValidator interface {
 	IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo)
 }
 
-// PoolAddressManager it manage the pool address
-type PoolAddressManager struct {
+// AddressManager it manage the pool address
+type AddressManager struct {
 	cdc           *codec.Codec
+	addresses     common.PubKeys
 	poolAddresses types.PoolAddresses // current pool addresses
 	rwMutex       *sync.RWMutex
 	logger        zerolog.Logger
@@ -38,13 +39,13 @@ type PoolAddressManager struct {
 	stopChan      chan struct{}
 }
 
-// NewPoolAddressManager create a new instance of PoolAddressManager
-func NewPoolAddressManager(chainHost string, m *metrics.Metrics) (*PoolAddressManager, error) {
-	return &PoolAddressManager{
+// NewAddressManager create a new instance of AddressManager
+func NewAddressManager(chainHost string, m *metrics.Metrics) (*AddressManager, error) {
+	return &AddressManager{
 		cdc:        statechain.MakeCodec(),
 		logger:     log.With().Str("module", "statechain_bridge").Logger(),
 		chainHost:  chainHost,
-		errCounter: m.GetCounterVec(metrics.PoolAddressManagerError),
+		errCounter: m.GetCounterVec(metrics.AddressManagerError),
 		m:          m,
 		wg:         &sync.WaitGroup{},
 		stopChan:   make(chan struct{}),
@@ -53,7 +54,7 @@ func NewPoolAddressManager(chainHost string, m *metrics.Metrics) (*PoolAddressMa
 }
 
 // Start to poll poll addresses from statechain
-func (pam *PoolAddressManager) Start() error {
+func (pam *AddressManager) Start() error {
 	pam.wg.Add(1)
 	pa, err := pam.getPoolAddresses()
 	if nil != err {
@@ -72,14 +73,41 @@ func (pam *PoolAddressManager) Start() error {
 }
 
 // Stop pool address manager
-func (pam *PoolAddressManager) Stop() error {
+func (pam *AddressManager) Stop() error {
 	defer pam.logger.Info().Msg("pool address manager stopped")
 	close(pam.stopChan)
 	pam.wg.Wait()
 	return nil
 }
 
-func (pam *PoolAddressManager) updatePoolAddresses() {
+func (pam *AddressManager) AddPubKey(pk common.PubKey) {
+	pam.rwMutex.Lock()
+	found := false
+	for _, pubkey := range pam.addresses {
+		if pk.Equals(pubkey) {
+			break
+		}
+	}
+	if !found {
+		pam.addresses = append(pam.addresses, pk)
+	}
+	pam.rwMutex.Unlock()
+}
+
+func (pam *AddressManager) RemovePubKey(pk common.PubKey) {
+	pam.rwMutex.Lock()
+	for i, pubkey := range pam.addresses {
+		if pk.Equals(pubkey) {
+			pam.addresses[i] = pam.addresses[len(pam.addresses)-1]   // Copy last element to index i.
+			pam.addresses[len(pam.addresses)-1] = common.EmptyPubKey // Erase last element (write zero value).
+			pam.addresses = pam.addresses[:len(pam.addresses)-1]     // Truncate slice.
+			break
+		}
+	}
+	pam.rwMutex.Unlock()
+}
+
+func (pam *AddressManager) updatePoolAddresses() {
 	pam.logger.Info().Msg("start to update pool addresses")
 	defer pam.logger.Info().Msg("stop to update pool addresses")
 	defer pam.wg.Done()
@@ -110,8 +138,24 @@ func matchAddress(addr string, chain common.Chain, key common.PubKey) (bool, com
 	return false, common.EmptyChainPoolInfo
 }
 
+// IsValidAddress check whether the given address is a monitored address
+func (pam *AddressManager) IsValidAddress(addr string, chain common.Chain) bool {
+	pam.rwMutex.RLock()
+	defer pam.rwMutex.RUnlock()
+
+	for _, pk := range pam.addresses {
+		pkAddr := pk.GetAddress(chain)
+		address, _ := common.Address(addr)
+		if address.Equals(pkAddr) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // IsValidPoolAddress check whether the given address is a pool addr
-func (pam *PoolAddressManager) IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo) {
+func (pam *AddressManager) IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo) {
 	pam.rwMutex.RLock()
 	defer pam.rwMutex.RUnlock()
 	pa := pam.poolAddresses
@@ -146,7 +190,7 @@ func (pam *PoolAddressManager) IsValidPoolAddress(addr string, chain common.Chai
 }
 
 // getPoolAddresses from statechain
-func (pam *PoolAddressManager) getPoolAddresses() (types.PoolAddresses, error) {
+func (pam *AddressManager) getPoolAddresses() (types.PoolAddresses, error) {
 	uri := url.URL{
 		Scheme: "http",
 		Host:   pam.chainHost,
