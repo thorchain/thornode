@@ -7,6 +7,8 @@ NODES="${NODES:=1}"
 SEED="${SEED:=thor1}" # the hostname of the master node
 ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in statechain should rotate
 
+mkdir -p /tmp/shared
+
 if [ -f ~/.signer/private_key.txt ]; then
     PUBKEY=$(cat ~/.signer/pubkey.txt)
     ADDRESS=$(cat ~/.signer/address.txt)
@@ -56,7 +58,7 @@ while [ "$(ls -1 /tmp/shared/node_*.json | wc -l)" != "$NODES" ]; do
 done
 
 POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
-echo "{\"current\":\"$POOL_ADDRESS\",\"rotate_at\":\"28800\",\"rotate_window_open_at\":\"27800\"}" > /tmp/shared/pool_addresses.json
+echo "{\"previous\": null, \"current\":[{\"chain\": \"BNB\", \"seq_no\": 0, \"pub_key\": \"$POOL_ADDRESS\"}],\"rotate_at\":\"28800\",\"rotate_window_open_at\":\"27800\"}" > /tmp/shared/pool_addresses.json
 
 if [ "$SEED" == "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
