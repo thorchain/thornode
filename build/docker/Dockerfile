@@ -36,11 +36,11 @@ RUN apk add --update jq curl nginx && \
 ENV PATH="${PATH}:/go/bin"
 
 # Copy the compiled binaires over.
-COPY --from=build /go/src/app/generate /go/bin/
-COPY --from=build /go/src/app/thord /go/bin/
-COPY --from=build /go/src/app/thorcli /go/bin/
-COPY --from=build /go/src/app/observed /go/bin/
-COPY --from=build /go/src/app/signd /go/bin/
+COPY --from=build /app/generate /go/bin/
+COPY --from=build /app/thord /go/bin/
+COPY --from=build /app/thorcli /go/bin/
+COPY --from=build /app/observed /go/bin/
+COPY --from=build /app/signd /go/bin/
 
 # Add users.
 RUN adduser -Ds /bin/sh www-data -G www-data
