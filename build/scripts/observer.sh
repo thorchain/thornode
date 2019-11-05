@@ -8,7 +8,6 @@ CHAIN_HOST="${CHAIN_HOST:=127.0.0.1:1317}"
 RPC_HOST="${RPC_HOST:=data-seed-pre-0-s3.binance.org}"
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
-START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
 
 $(dirname "$0")/wait-for-statechain-api.sh $CHAIN_HOST
 

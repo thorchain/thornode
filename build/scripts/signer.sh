@@ -44,6 +44,7 @@ echo "{
   \"observer_db_path\": \"$OBSERVER_PATH\",
   \"block_scanner\": {
     \"rpc_host\": \"$RPC_HOST\",
+    \"start_block_height\": $START_BLOCK_HEIGHT,
     \"enforce_block_height\": false,
     \"block_scan_processors\": 1,
     \"block_height_discover_back_off\": \"1s\",
