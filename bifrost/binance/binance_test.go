@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	. "gopkg.in/check.v1"
+	resty "gopkg.in/resty.v1"
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
