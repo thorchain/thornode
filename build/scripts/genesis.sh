@@ -20,7 +20,6 @@ echo $SIGNER_PASSWD | thorcli keys add $SIGNER_NAME
 VALIDATOR=$(thord tendermint show-validator)
 OBSERVER_ADDRESS=$(thorcli keys show statechain -a)
 NODE_ADDRESS=$(thorcli keys show statechain -a)
-thorcli query swapservice version --chain-id statechain --trust-node --output json
 VERSION=$(fetch_version)
 
 if [[ "$SEED" == "$(hostname)" ]]; then
