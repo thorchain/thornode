@@ -60,10 +60,10 @@ start-rest:
 	thorcli rest-server
 
 setup: install
-	./scripts/setup.sh
+	./build/scripts/localdev.sh
 
 reset: clean install
-	./scripts/setup.sh
+	./build/scripts/localdev.sh
 
 clean:
 	rm -rf ~/.thord
