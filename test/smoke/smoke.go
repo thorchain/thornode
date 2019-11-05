@@ -225,7 +225,7 @@ func (s *Smoke) StatechainState(tx int) {
 
 		switch pools.Asset.Symbol {
 		case "RUNE-A1F":
-			s.Results[tx].Rune.Pool = amount
+			s.Results[tx].Rune.Pool = pools.BalanceRune
 		case "LOK-3C0":
 			s.Results[tx].Lok.Pool = amount
 		case "BNB":
