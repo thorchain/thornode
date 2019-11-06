@@ -4,6 +4,7 @@
 *.swo
 .vscode
 .idea
+.env*
 
 # Build
 vendor
