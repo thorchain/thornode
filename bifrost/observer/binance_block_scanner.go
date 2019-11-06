@@ -293,10 +293,10 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 		case bmsg.SendMsg:
 			txInItem.Memo = stdTx.Memo
 			sender := sendMsg.Inputs[0]
-			reciever := sendMsg.Outputs[0]
+			receiver := sendMsg.Outputs[0]
 			txInItem.Sender = sender.Address.String()
-			txInItem.To = reciever.Address.String()
-			txInItem.Coins, err = b.getCoinsForTxIn(reciever.Coins)
+			txInItem.To = receiver.Address.String()
+			txInItem.Coins, err = b.getCoinsForTxIn(receiver.Coins)
 			if nil != err {
 				return nil, errors.Wrap(err, "fail to convert coins")
 			}
