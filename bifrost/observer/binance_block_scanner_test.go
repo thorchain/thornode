@@ -17,9 +17,9 @@ import (
 
 	btypes "gitlab.com/thorchain/bepswap/thornode/bifrost/binance/types"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/blockscanner"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
 	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
-	"gitlab.com/thorchain/bepswap/thornode/config"
 )
 
 func Test(t *testing.T) { TestingT(t) }
