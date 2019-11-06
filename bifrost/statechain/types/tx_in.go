@@ -13,6 +13,7 @@ type TxInItem struct {
 	Tx                  string       `json:"tx"`
 	Memo                string       `json:"MEMO"`
 	Sender              string       `json:"sender"`
+	To                  string       `json:"to"` // to adddress
 	Coins               common.Coins `json:"coins"`
 	ObservedPoolAddress string       `json:"observed_pool_address"`
 }

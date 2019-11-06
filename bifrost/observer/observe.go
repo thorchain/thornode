@@ -36,7 +36,7 @@ type Observer struct {
 	m                *metrics.Metrics
 	wg               *sync.WaitGroup
 	errCounter       *prometheus.CounterVec
-	pam              *PoolAddressManager
+	addrMgr          *AddressManager
 }
 
 // CurrHeight : Get the Binance current block height.
@@ -100,12 +100,12 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		}
 	}
 
-	pam, err := NewPoolAddressManager(cfg.StateChain.ChainHost, m)
+	addrMgr, err := NewAddressManager(cfg.StateChain.ChainHost, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create pool address manager")
 	}
 
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), pam, m)
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), addrMgr, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
@@ -119,7 +119,7 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		storage:          scanStorage,
 		m:                m,
 		errCounter:       m.GetCounterVec(metrics.ObserverError),
-		pam:              pam,
+		addrMgr:          addrMgr,
 	}, nil
 }
 
@@ -136,7 +136,7 @@ func (o *Observer) Start() error {
 		o.logger.Error().Err(err).Msg("fail to start metric collector")
 		return errors.Wrap(err, "fail to start metric collector")
 	}
-	if err := o.pam.Start(); nil != err {
+	if err := o.addrMgr.Start(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to start pool address manager")
 		return errors.Wrap(err, "fail to start pool address manager")
 	}
@@ -299,7 +299,7 @@ func (o *Observer) Stop() error {
 
 	close(o.stopChan)
 	o.wg.Wait()
-	if err := o.pam.Stop(); nil != err {
+	if err := o.addrMgr.Stop(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to stop pool address manager")
 	}
 	return o.m.Stop()
