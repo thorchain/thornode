@@ -21,18 +21,18 @@ add_admin_config () {
     jq --arg NODE_ADDRESS "$3" --arg KEY "$1" --arg VALUE "$2" '.app_state.thorchain.admin_configs += [{"address": $NODE_ADDRESS ,"key":$KEY, "value":$VALUE}]' ~/.thord/config/genesis.json > /tmp/genesis.json
 }
 
-# inits a statechain with a comman separate list of usernames
+# inits a thorchain with a comman separate list of usernames
 init_chain () {
     export IFS=","
 
-    thord init local --chain-id statechain
+    thord init local --chain-id thorchain
 
     for user in $1; do # iterate over our list of comma separated users "alice,jack"
         echo "$2" | thorcli keys add $user
         thord add-genesis-account $(thorcli keys show $user -a) 1000thor
     done
 
-    thorcli config chain-id statechain
+    thorcli config chain-id thorchain
     thorcli config output json
     thorcli config indent true
     thorcli config trust-node true
@@ -84,5 +84,5 @@ fetch_node_id () {
 }
 
 fetch_version () {
-    thorcli query thorchain version --chain-id statechain --trust-node --output json | jq -r .version
+    thorcli query thorchain version --chain-id thorchain --trust-node --output json | jq -r .version
 }
