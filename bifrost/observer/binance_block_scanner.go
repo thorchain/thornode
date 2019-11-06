@@ -275,11 +275,11 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 		return nil, errors.Wrap(err, "fail to unmarshal tx.StdTx")
 	}
 
-	return b.fromStdTx(hash, height, t)
+	return b.fromStdTx(hash, t)
 }
 
 // fromStdTx - process a stdTx
-func (b *BinanceBlockScanner) fromStdTx(hash, height string, stdTx tx.StdTx) (*stypes.TxInItem, error) {
+func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.TxInItem, error) {
 	var err error
 	txInItem := stypes.TxInItem{
 		Tx: hash,
@@ -300,12 +300,14 @@ func (b *BinanceBlockScanner) fromStdTx(hash, height string, stdTx tx.StdTx) (*s
 			if nil != err {
 				return nil, errors.Wrap(err, "fail to convert coins")
 			}
-			for _, output := range sendMsg.Outputs {
-				match, cpi := b.addrVal.IsValidPoolAddress(output.Address.String(), common.BNBChain)
-				if match {
-					txInItem.ObservedPoolAddress = cpi.PubKey.String()
-				}
-				continue
+
+			// check if the from address is a valid pool
+			if ok, cpi := b.addrVal.IsValidPoolAddress(txInItem.Sender, common.BNBChain); ok {
+				txInItem.ObservedPoolAddress = cpi.PubKey.String()
+			}
+			// check if the to address is a valid pool address
+			if ok, cpi := b.addrVal.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
+				txInItem.ObservedPoolAddress = cpi.PubKey.String()
 			}
 
 			// Check if our pool is registering a new yggdrasil pool. Ie
