@@ -23,6 +23,9 @@ import (
 
 type AddressValidator interface {
 	IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo)
+	IsValidAddress(addr string, chain common.Chain) bool
+	AddPubKey(pk common.PubKey)
+	RemovePubKey(pk common.PubKey)
 }
 
 // AddressManager it manage the pool address
@@ -45,7 +48,7 @@ func NewAddressManager(chainHost string, m *metrics.Metrics) (*AddressManager, e
 		cdc:        statechain.MakeCodec(),
 		logger:     log.With().Str("module", "statechain_bridge").Logger(),
 		chainHost:  chainHost,
-		errCounter: m.GetCounterVec(metrics.AddressManagerError),
+		errCounter: m.GetCounterVec(metrics.PoolAddressManagerError),
 		m:          m,
 		wg:         &sync.WaitGroup{},
 		stopChan:   make(chan struct{}),
@@ -144,9 +147,9 @@ func (pam *AddressManager) IsValidAddress(addr string, chain common.Chain) bool 
 	defer pam.rwMutex.RUnlock()
 
 	for _, pk := range pam.addresses {
-		pkAddr := pk.GetAddress(chain)
-		address, _ := common.Address(addr)
-		if address.Equals(pkAddr) {
+		pkAddr, _ := pk.GetAddress(chain)
+		address, _ := common.NewAddress(addr)
+		if address.Equals(pkAddr) && !pkAddr.IsEmpty() && !address.IsEmpty() {
 			return true
 		}
 	}

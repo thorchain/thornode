@@ -38,18 +38,18 @@ type BinanceBlockScanner struct {
 	commonBlockScanner *blockscanner.CommonBlockScanner
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
-	pav                PoolAddressValidator
+	addrVal            AddressValidator
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
-func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, pav PoolAddressValidator, m *metrics.Metrics) (*BinanceBlockScanner, error) {
+func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, addrVal AddressValidator, m *metrics.Metrics) (*BinanceBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
 	}
-	if pav == nil {
+	if addrVal == nil {
 		return nil, errors.New("pool address validator is nil")
 	}
 	if nil == m {
@@ -64,7 +64,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 	}
 	return &BinanceBlockScanner{
 		cfg:                cfg,
-		pav:                pav,
+		addrVal:            addrVal,
 		logger:             log.Logger.With().Str("module", "blockscanner").Logger(),
 		wg:                 &sync.WaitGroup{},
 		stopChan:           make(chan struct{}),
@@ -193,54 +193,28 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 }
 
 // Check if memo is for registering a Yggdrasil pool
-func (b *BinanceBlockScanner) isRegisterYggdrasil(addr, memo string) (bool, common.ChainPoolInfo) {
-	ok, cpi := b.pav.IsValidPoolAddress(addr, common.BNBChain)
-	if !ok {
-		return false, common.EmptyChainPoolInfo
-	}
-	// TODO: use swapservice.Memo to verify this
-	lowerMemo := strings.ToLower(memo)
-	if strings.HasPrefix(lowerMemo, "yggdrasil+") {
-		return true, cpi
-	}
-	return false, common.EmptyChainPoolInfo
+func (b *BinanceBlockScanner) isRegisterYggdrasil(addr, memo string) bool {
+	return b.isAddrWithMemo(addr, memo, "yggdrasil+")
 }
 
 // Check if memo is for de registering a Yggdrasil pool
 func (b *BinanceBlockScanner) isDeregisterYggdrasil(addr, memo string) bool {
-	ok, cpi := b.pav.IsValidPoolAddress(addr, common.BNBChain)
-	if !ok {
-		return false, common.EmptyChainPoolInfo
-	}
-	// TODO: use swapservice.Memo to verify this
-	lowerMemo := strings.ToLower(memo)
-	if strings.HasPrefix(lowerMemo, "yggdrasil-") {
-		return true, cpi
-	}
-	return false, common.EmptyChainPoolInfo
+	return b.isAddrWithMemo(addr, memo, "yggdrasil-")
 }
 
-func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) (bool, common.ChainPoolInfo) {
-	match, cpi := b.pav.IsValidPoolAddress(addr, common.BNBChain)
-	if !match {
-		return false, common.EmptyChainPoolInfo
-	}
-	// outbound msg from pool address to customer(not our pool address) , it will have a memo like "OUTBOUND:{blockheight}
-	lowerMemo := strings.ToLower(memo)
-	if strings.HasPrefix(lowerMemo, "outbound") {
-		return true, cpi
-	}
-	return false, common.EmptyChainPoolInfo
+// Check if we have an outbound yggdrasil transaction
+func (b *BinanceBlockScanner) isYggdrasil(addr string) bool {
+	ok, _ := b.addrVal.IsValidPoolAddress(addr, common.BNBChain)
+	return ok
 }
 
-func (b *BinanceBlockScanner) isNextPoolMsg(addr, memo string, coins types.Coins) (bool, common.ChainPoolInfo) {
-	match, cpi := b.pav.IsValidPoolAddress(addr, common.BNBChain)
-	if !match {
-		return false, common.EmptyChainPoolInfo
-	}
-	lowerMemo := strings.ToLower(memo)
-	if !strings.HasPrefix(lowerMemo, "nextpool") {
-		return false, common.EmptyChainPoolInfo
+func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) bool {
+	return b.isAddrWithMemo(addr, memo, "outbound")
+}
+
+func (b *BinanceBlockScanner) isNextPoolMsg(addr, memo string, coins types.Coins) bool {
+	if ok := b.isAddrWithMemo(addr, memo, "nextpool"); !ok {
+		return false
 	}
 
 	nextPoolCoin := types.Coin{
@@ -255,23 +229,35 @@ func (b *BinanceBlockScanner) isNextPoolMsg(addr, memo string, coins types.Coins
 		}
 	}
 	if hasCorrectCoin {
-		return true, cpi
+		return true
 	}
-	return false, common.EmptyChainPoolInfo
+	return false
+}
+
+func (b *BinanceBlockScanner) isAddrWithMemo(addr, memo, targetMemo string) bool {
+	match, _ := b.addrVal.IsValidPoolAddress(addr, common.BNBChain)
+	if !match {
+		return false
+	}
+	lowerMemo := strings.ToLower(memo)
+	if strings.HasPrefix(lowerMemo, targetMemo) {
+		return true
+	}
+	return false
 }
 
 func (b *BinanceBlockScanner) getCoinsForTxIn(coins types.Coins) (common.Coins, error) {
-	commonCoins := common.Coins{}
-	for _, c := range coins {
+	cc := make(common.Coins, len(coins))
+	for i, c := range coins {
 		asset, err := common.NewAsset(fmt.Sprintf("BNB.%s", c.Denom))
 		if nil != err {
 			b.errCounter.WithLabelValues("fail_create_ticker", c.Denom).Inc()
 			return nil, errors.Wrapf(err, "fail to create asset, %s is not valid", c.Denom)
 		}
 		amt := sdk.NewUint(uint64(c.Amount))
-		commonCoins = append(commonCoins, common.NewCoin(asset, amt))
+		cc[i] = common.NewCoin(asset, amt)
 	}
-	return commonCoins, nil
+	return cc, nil
 }
 
 func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*stypes.TxInItem, error) {
@@ -288,100 +274,104 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 		b.errCounter.WithLabelValues("fail_unmarshal_tx", hash).Inc()
 		return nil, errors.Wrap(err, "fail to unmarshal tx.StdTx")
 	}
-	existTx := false
+
+	return b.fromStdTx(hash, height, t)
+}
+
+// fromStdTx - process a stdTx
+func (b *BinanceBlockScanner) fromStdTx(hash, height string, stdTx tx.StdTx) (*stypes.TxInItem, error) {
+	var err error
 	txInItem := stypes.TxInItem{
 		Tx: hash,
 	}
-	for _, msg := range t.Msgs {
+	// TODO: it is possible to have multiple `SendMsg` in a single stdTx, which
+	// we are currently not accounting for. It is also possible to have
+	// multiple inputs/outputs within a single stdTx, which we are not yet
+	// accounting for.
+	for _, msg := range stdTx.Msgs {
 		switch sendMsg := msg.(type) {
 		case bmsg.SendMsg:
-			txInItem.Memo = t.Memo
+			txInItem.Memo = stdTx.Memo
 			sender := sendMsg.Inputs[0]
 			reciever := sendMsg.Outputs[0]
 			txInItem.Sender = sender.Address.String()
+			txInItem.To = reciever.Address.String()
+			txInItem.Coins, err = b.getCoinsForTxIn(reciever.Coins)
+			if nil != err {
+				return nil, errors.Wrap(err, "fail to convert coins")
+			}
+			for _, output := range sendMsg.Outputs {
+				match, cpi := b.addrVal.IsValidPoolAddress(output.Address.String(), common.BNBChain)
+				if match {
+					txInItem.ObservedPoolAddress = cpi.PubKey.String()
+				}
+				continue
+			}
 
-			// Check if our pool is registering a yggdrasil pool
+			// Check if our pool is registering a new yggdrasil pool. Ie
+			// sending the staked assets to the user
 			// TODO: add tests, no sample binance tx to utilize quite yet
-			if ok, cpi := b.isRegisterYggdrasil(sender.Address.String(), t.Memo); ok {
+			if ok := b.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
-				txInItem.ObservedPoolAddress = cpi.PubKey.String()
 
 				// **IMPORTANT** If this fails, we won't monitor the address and could lose funds!
 				var pk common.PubKey
-				if strings.HasPrefix(reciever.Address.String(), "tbnb") {
-					pk, _ = common.NewPubKeyFromBech32(reciever.Address.String(), "tbnb")
+				if strings.HasPrefix(txInItem.To, "tbnb") {
+					pk, _ = common.NewPubKeyFromBech32(txInItem.To, "tbnb")
 				} else {
-					pk, _ = common.NewPubKeyFromBech32(reciever.Address.String(), "bnb")
+					pk, _ = common.NewPubKeyFromBech32(txInItem.To, "bnb")
 				}
-				b.pav.AddPubKey(pk)
+				b.addrVal.AddPubKey(pk)
 				return &txInItem, nil
 			}
 
-			// Check if out pool is de registering a yggdrasil pool
+			// Check if out pool is de registering a yggdrasil pool. Ie sending
+			// the bond back to the user
 			// TODO: add tests, no sample binance tx to utilize quite yet
-			if ok, cpi := b.isDeregisterYggdrasil(sender.Address.String(), t.Memo); ok {
+			if ok := b.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
-				txInItem.ObservedPoolAddress = cpi.PubKey.String()
 
 				// **IMPORTANT** If this fails, we may slash a yggdrasil pool inappropriately
 				var pk common.PubKey
-				if strings.HasPrefix(reciever.Address.String(), "tbnb") {
-					pk, _ = common.NewPubKeyFromBech32(reciever.Address.String(), "tbnb")
+				if strings.HasPrefix(txInItem.To, "tbnb") {
+					pk, _ = common.NewPubKeyFromBech32(txInItem.To, "tbnb")
 				} else {
-					pk, _ = common.NewPubKeyFromBech32(reciever.Address.String(), "bnb")
+					pk, _ = common.NewPubKeyFromBech32(txInItem.To, "bnb")
 				}
-				b.pav.RemovePubKey(pk)
+				b.addrVal.RemovePubKey(pk)
 
+				return &txInItem, nil
+			}
+
+			// Check if we are sending from a yggdrasil address
+			// TODO: add tests, no sample binance tx to utilize quite yet
+			if ok := b.isYggdrasil(txInItem.Sender); ok {
+				b.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
+				return &txInItem, nil
+			}
+
+			// Check if we are sending to a yggdrasil address
+			// TODO: add tests, no sample binance tx to utilize quite yet
+			if ok := b.isYggdrasil(txInItem.To); ok {
+				b.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
 				return &txInItem, nil
 			}
 
 			// outbound message from pool, when it is outbound, it does not matter how much coins we send to customer for now
-			match, cpi := b.isOutboundMsg(sender.Address.String(), t.Memo)
-			if match {
+			if ok := b.isOutboundMsg(txInItem.Sender, txInItem.Memo); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
-				txInItem.ObservedPoolAddress = cpi.PubKey.String()
-				// Coin is mandatory , so let's just give 0.1 RUNE , thus if we fail to process outbound tx, we won't accidentally refund it.
-				txInItem.Coins = append(txInItem.Coins, common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One/10)))
 				return &txInItem, nil
 			}
 
-			matchNextPool, cpi := b.isNextPoolMsg(sender.Address.String(), t.Memo, sender.Coins)
-			if matchNextPool {
+			if ok := b.isNextPoolMsg(txInItem.Sender, txInItem.Memo, sender.Coins); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("nextpool")
-				txInItem.ObservedPoolAddress = cpi.PubKey.String()
-				// Coin is mandatory , so let's just give 0.1 RUNE
-				for _, input := range sendMsg.Inputs {
-					cs, err := b.getCoinsForTxIn(input.Coins)
-					if nil != err {
-						return nil, errors.Wrap(err, "fail to convert coins")
-					}
-					txInItem.Coins = append(txInItem.Coins, cs...)
-				}
 				return &txInItem, nil
-			}
-
-			for _, output := range sendMsg.Outputs {
-				match, cpi := b.pav.IsValidPoolAddress(output.Address.String(), common.BNBChain)
-				if !match {
-					continue
-				}
-				txInItem.ObservedPoolAddress = cpi.PubKey.String()
-				existTx = true
-				cs, err := b.getCoinsForTxIn(output.Coins)
-				if nil != err {
-					return nil, errors.Wrap(err, "fail to convert coins")
-				}
-				txInItem.Coins = append(txInItem.Coins, cs...)
 			}
 		default:
 			continue
 		}
 	}
-	if !existTx {
-		b.logger.Debug().Str("hash", hash).Str("height", height).Msg("didn't find any tx that we should process")
-		return nil, nil
-	}
-	return &txInItem, nil
+	return nil, nil
 }
 
 func (b *BinanceBlockScanner) Stop() error {
