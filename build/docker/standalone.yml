@@ -10,6 +10,7 @@ services:
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api:1317
+      NET: ${NET}
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
@@ -32,6 +33,7 @@ services:
     environment:
       CHAIN_HOST: thor-api:1317
       RPC_HOST: thor-daemon:26657
+      NET: ${NET}
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
@@ -53,6 +55,7 @@ services:
     environment:
       NODES: 1
       SEED: thor-daemon
+      NET: ${NET}
     ports:
       - "26657:26657"
       - "26656:26656"
@@ -78,6 +81,7 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
       CHAIN_DAEMON: thor-daemon:26657
+      NET: ${NET}
     ports:
       - "1317:1317"
     entrypoint:
@@ -86,4 +90,4 @@ services:
       - ${PWD}/../scripts:/docker/scripts
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
-    command: ["thorcli", "rest-server", "--chain-id", "statechain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+    command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
