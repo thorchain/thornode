@@ -30,10 +30,11 @@ type StateChainBlockScan struct {
 	chainHost          string
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
+	pkm                *PubKeyManager
 }
 
 // NewStateChainBlockScan create a new instance of statechain block scanner
-func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chainHost string, m *metrics.Metrics) (*StateChainBlockScan, error) {
+func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chainHost string, m *metrics.Metrics, pkm *PubKeyManager) (*StateChainBlockScan, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
@@ -57,6 +58,7 @@ func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage bl
 		commonBlockScanner: commonBlockScanner,
 		chainHost:          chainHost,
 		errCounter:         m.GetCounterVec(metrics.StateChainBlockScanError),
+		pkm:                pkm,
 	}, nil
 }
 
@@ -74,36 +76,38 @@ func (b *StateChainBlockScan) Start() error {
 }
 
 func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
-	uri := url.URL{
-		Scheme: "http",
-		Host:   b.chainHost,
-		Path:   fmt.Sprintf("/thorchain/txoutarray/%v", blockHeight),
-	}
-	strBlockHeight := strconv.FormatInt(blockHeight, 10)
-	buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())
-	if nil != err {
-		b.errCounter.WithLabelValues("fail_get_tx_out", strBlockHeight)
-		return errors.Wrap(err, "fail to get tx out from a block")
-	}
-
-	type txOut struct {
-		Chains map[common.Chain]stypes.TxOut `json:"chains"`
-	}
-
-	var tx txOut
-	if err := json.Unmarshal(buf, &tx); err != nil {
-		b.errCounter.WithLabelValues("fail_unmarshal_tx_out", strBlockHeight)
-		return errors.Wrap(err, "fail to unmarshal TxOut")
-	}
-	for c, out := range tx.Chains {
-		b.logger.Debug().Str("chain", c.String()).Msg("chain")
-		if len(out.TxArray) == 0 {
-			b.logger.Debug().Int64("block", blockHeight).Msg("nothing to process")
-			b.m.GetCounter(metrics.BlockNoTxOut).Inc()
-			return nil
+	for _, pk := range b.pkm.pks {
+		uri := url.URL{
+			Scheme: "http",
+			Host:   b.chainHost,
+			Path:   fmt.Sprintf("/thorchain/txoutarray/%d/%s", blockHeight, pk.String()),
 		}
-		// TODO here we will need to dispatch to different chain processor
-		b.txOutChan <- out
+		strBlockHeight := strconv.FormatInt(blockHeight, 10)
+		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())
+		if nil != err {
+			b.errCounter.WithLabelValues("fail_get_tx_out", strBlockHeight)
+			return errors.Wrap(err, "fail to get tx out from a block")
+		}
+
+		type txOut struct {
+			Chains map[common.Chain]stypes.TxOut `json:"chains"`
+		}
+
+		var tx txOut
+		if err := json.Unmarshal(buf, &tx); err != nil {
+			b.errCounter.WithLabelValues("fail_unmarshal_tx_out", strBlockHeight)
+			return errors.Wrap(err, "fail to unmarshal TxOut")
+		}
+		for c, out := range tx.Chains {
+			b.logger.Debug().Str("chain", c.String()).Msg("chain")
+			if len(out.TxArray) == 0 {
+				b.logger.Debug().Int64("block", blockHeight).Msg("nothing to process")
+				b.m.GetCounter(metrics.BlockNoTxOut).Inc()
+				return nil
+			}
+			// TODO here we will need to dispatch to different chain processor
+			b.txOutChan <- out
+		}
 	}
 	return nil
 }
