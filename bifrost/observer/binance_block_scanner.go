@@ -20,11 +20,11 @@ import (
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
 
-	"gitlab.com/thorchain/bepswap/thornode/config"
-	btypes "gitlab.com/thorchain/bepswap/thornode/x/binance/types"
-	"gitlab.com/thorchain/bepswap/thornode/x/blockscanner"
-	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
-	stypes "gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
+	btypes "gitlab.com/thorchain/bepswap/thornode/bifrost/binance/types"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/blockscanner"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
+	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
 )
 
 // BinanceBlockScanner is to scan the blocks

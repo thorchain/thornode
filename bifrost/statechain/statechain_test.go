@@ -23,9 +23,9 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/common"
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 
-	"gitlab.com/thorchain/bepswap/thornode/config"
-	"gitlab.com/thorchain/bepswap/thornode/x/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }

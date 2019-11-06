@@ -22,7 +22,7 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
-	"gitlab.com/thorchain/bepswap/thornode/config"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 )
 
 // TSSSigner is a proxy between signer and TSS
