@@ -9,10 +9,10 @@ import (
 	"testing"
 
 	. "gopkg.in/check.v1"
-	"gopkg.in/resty.v1"
+	resty "gopkg.in/resty.v1"
 
-	"gitlab.com/thorchain/bepswap/thornode/config"
-	"gitlab.com/thorchain/bepswap/thornode/x/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
