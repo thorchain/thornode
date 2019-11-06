@@ -212,6 +212,10 @@ func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) bool {
 	return b.isAddrWithMemo(addr, memo, "outbound")
 }
 
+func (b *BinanceBlockScanner) isPoolAck(addr, memo string) bool {
+	return b.isAddrWithMemo(addr, memo, "ack")
+}
+
 func (b *BinanceBlockScanner) isNextPoolMsg(addr, memo string, coins types.Coins) bool {
 	if ok := b.isAddrWithMemo(addr, memo, "nextpool"); !ok {
 		return false
@@ -312,7 +316,6 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 
 			// Check if our pool is registering a new yggdrasil pool. Ie
 			// sending the staked assets to the user
-			// TODO: add tests, no sample binance tx to utilize quite yet
 			if ok := b.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
 
@@ -329,7 +332,6 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 
 			// Check if out pool is de registering a yggdrasil pool. Ie sending
 			// the bond back to the user
-			// TODO: add tests, no sample binance tx to utilize quite yet
 			if ok := b.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
 
@@ -346,14 +348,12 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 			}
 
 			// Check if we are sending from a yggdrasil address
-			// TODO: add tests, no sample binance tx to utilize quite yet
 			if ok := b.isYggdrasil(txInItem.Sender); ok {
 				b.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
 				return &txInItem, nil
 			}
 
 			// Check if we are sending to a yggdrasil address
-			// TODO: add tests, no sample binance tx to utilize quite yet
 			if ok := b.isYggdrasil(txInItem.To); ok {
 				b.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
 				return &txInItem, nil
@@ -362,6 +362,15 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 			// outbound message from pool, when it is outbound, it does not matter how much coins we send to customer for now
 			if ok := b.isOutboundMsg(txInItem.Sender, txInItem.Memo); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
+				return &txInItem, nil
+			}
+
+			// Check that if we've gotten an ack from the next pool
+			if ok := b.isPoolAck(txInItem.Sender, txInItem.Memo); ok {
+				b.logger.Debug().Str("memo", txInItem.Memo).Msg("ack")
+				// We've added a new pool, we should refresh our list of pools
+				// from thorchain
+				b.addrVal.UpdatePoolAddresses()
 				return &txInItem, nil
 			}
 

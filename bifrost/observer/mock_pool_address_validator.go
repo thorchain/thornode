@@ -36,6 +36,7 @@ func matchTestAddress(addr, testAddr string, chain common.Chain) (bool, common.C
 	return false, common.EmptyChainPoolInfo
 }
 
+func (mpa *MockPoolAddressValidator) UpdatePoolAddresses()          {}
 func (mpa *MockPoolAddressValidator) AddPubKey(pk common.PubKey)    {}
 func (mpa *MockPoolAddressValidator) RemovePubKey(pk common.PubKey) {}
 

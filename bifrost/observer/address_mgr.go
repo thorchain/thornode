@@ -26,6 +26,7 @@ type AddressValidator interface {
 	IsValidAddress(addr string, chain common.Chain) bool
 	AddPubKey(pk common.PubKey)
 	RemovePubKey(pk common.PubKey)
+	UpdatePoolAddresses()
 }
 
 // AddressManager it manage the pool address
@@ -71,7 +72,7 @@ func (pam *AddressManager) Start() error {
 		return err
 	}
 	pam.logger.Info().Str("addr", currentAddr.String()).Msg("current pool address")
-	go pam.updatePoolAddresses()
+	go pam.UpdatePoolAddresses()
 	return nil
 }
 
@@ -110,7 +111,7 @@ func (pam *AddressManager) RemovePubKey(pk common.PubKey) {
 	pam.rwMutex.Unlock()
 }
 
-func (pam *AddressManager) updatePoolAddresses() {
+func (pam *AddressManager) UpdatePoolAddresses() {
 	pam.logger.Info().Msg("start to update pool addresses")
 	defer pam.logger.Info().Msg("stop to update pool addresses")
 	defer pam.wg.Done()
