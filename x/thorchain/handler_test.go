@@ -141,7 +141,7 @@ func (HandlerSuite) TestHandleMsgApply(c *C) {
 	bond := sdk.NewUint(100)
 	bondAddr := GetRandomBNBAddress()
 	// Not Authorized
-	msgApply := NewMsgBond(w.activeNodeAccount.NodeAddress, bond, GetRandomTxHash(), bondAddr, w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	msgApply := NewMsgBond(w.activeNodeAccount.PubKey, bond, GetRandomTxHash(), bondAddr, w.activeNodeAccount.Accounts.ObserverBEPAddress)
 	c.Assert(msgApply.ValidateBasic(), IsNil)
 	result := handleMsgBond(w.ctx, w.keeper, msgApply)
 	c.Assert(result.IsOK(), Equals, false)
@@ -149,29 +149,30 @@ func (HandlerSuite) TestHandleMsgApply(c *C) {
 
 	// nodeAccoutn already exist
 	w = getHandlerTestWrapper(c, 1, true, false)
-	msgApply = NewMsgBond(w.activeNodeAccount.NodeAddress, bond, GetRandomTxHash(), bondAddr, w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	msgApply = NewMsgBond(w.activeNodeAccount.PubKey, bond, GetRandomTxHash(), bondAddr, w.activeNodeAccount.Accounts.ObserverBEPAddress)
 	result = handleMsgBond(w.ctx, w.keeper, msgApply)
 	c.Assert(result.IsOK(), Equals, false)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 
 	// invalid Msg
-	invalidMsgApply := NewMsgBond(sdk.AccAddress{}, bond, GetRandomTxHash(), bondAddr, w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	invalidMsgApply := NewMsgBond(common.EmptyPubKey, bond, GetRandomTxHash(), bondAddr, w.activeNodeAccount.Accounts.ObserverBEPAddress)
 	invalidMsgApplyResult := handleMsgBond(w.ctx, w.keeper, invalidMsgApply)
 	c.Assert(invalidMsgApplyResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Assert(invalidMsgApplyResult.IsOK(), Equals, false)
 
 	newAcc := GetRandomNodeAccount(NodeWhiteListed)
 	// less than minimum bond
-	msgApplyLessThanMinimumBond := NewMsgBond(newAcc.NodeAddress, sdk.NewUint(1000), GetRandomTxHash(), bondAddr, w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	msgApplyLessThanMinimumBond := NewMsgBond(newAcc.PubKey, sdk.NewUint(1000), GetRandomTxHash(), bondAddr, w.activeNodeAccount.Accounts.ObserverBEPAddress)
 	lessThanMinimumBondResult := handleMsgBond(w.ctx, w.keeper, msgApplyLessThanMinimumBond)
 	c.Assert(lessThanMinimumBondResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Assert(lessThanMinimumBondResult.IsOK(), Equals, false)
 
-	msgApply1 := NewMsgBond(newAcc.NodeAddress, sdk.NewUint(100*common.One), GetRandomTxHash(), bondAddr, w.activeNodeAccount.Accounts.ObserverBEPAddress)
+	msgApply1 := NewMsgBond(newAcc.PubKey, sdk.NewUint(100*common.One), GetRandomTxHash(), bondAddr, w.activeNodeAccount.Accounts.ObserverBEPAddress)
 	result = handleMsgBond(w.ctx, w.keeper, msgApply1)
 	c.Assert(result.IsOK(), Equals, true)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
-	coins := w.keeper.coinKeeper.GetCoins(w.ctx, newAcc.NodeAddress)
+	addr := sdk.AccAddress(newAcc.PubKey.GetThorAddress())
+	coins := w.keeper.coinKeeper.GetCoins(w.ctx, addr)
 	c.Assert(coins.AmountOf("bep").Int64(), Equals, int64(1000))
 
 	// apply again shohuld fail
@@ -186,6 +187,7 @@ func (HandlerSuite) TestHandleMsgSetTrustAccount(c *C) {
 	ctx = ctx.WithBlockHeight(1)
 	nodeAddr := GetRandomBech32Addr()
 	signer := GetRandomBech32Addr()
+	pubkey, _ := common.NewPubKeyFromBech32(signer.String())
 	// add observer
 	bnb, err := common.NewAddress("bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38")
 	c.Assert(err, IsNil)
@@ -198,33 +200,32 @@ func (HandlerSuite) TestHandleMsgSetTrustAccount(c *C) {
 	c.Check(unAuthorizedResult.Code, Equals, sdk.CodeUnauthorized)
 	c.Check(unAuthorizedResult.IsOK(), Equals, false)
 	bond := sdk.NewUint(common.One * 100)
-	nodeAccount := NewNodeAccount(signer, NodeActive, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr, ctx.BlockHeight())
+	nodeAccount := NewNodeAccount(pubkey, NodeActive, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr, ctx.BlockHeight())
 	k.SetNodeAccount(ctx, nodeAccount)
 
 	activeFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
 	c.Check(activeFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(activeFailResult.IsOK(), Equals, false)
 
-	nodeAccount = NewNodeAccount(signer, NodeDisabled, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr, ctx.BlockHeight())
+	nodeAccount = NewNodeAccount(pubkey, NodeDisabled, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr, ctx.BlockHeight())
 	k.SetNodeAccount(ctx, nodeAccount)
 
 	disabledFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
 	c.Check(disabledFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(disabledFailResult.IsOK(), Equals, false)
 
-	k.SetNodeAccount(ctx, NewNodeAccount(signer, NodeWhiteListed, NewTrustAccount(bnb, nodeAddr, bepConsPubKey), bond, bondAddr, ctx.BlockHeight()))
+	k.SetNodeAccount(ctx, NewNodeAccount(pubkey, NodeWhiteListed, NewTrustAccount(bnb, nodeAddr, bepConsPubKey), bond, bondAddr, ctx.BlockHeight()))
 
 	notUniqueFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
 	c.Check(notUniqueFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(notUniqueFailResult.IsOK(), Equals, false)
 
-	nodeAccount = NewNodeAccount(signer, NodeWhiteListed, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr, ctx.BlockHeight())
+	nodeAccount = NewNodeAccount(pubkey, NodeWhiteListed, NewTrustAccount(common.NoAddress, sdk.AccAddress{}, ""), bond, bondAddr, ctx.BlockHeight())
 	k.SetNodeAccount(ctx, nodeAccount)
 
 	success := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
 	c.Check(success.Code, Equals, sdk.CodeOK)
 	c.Check(success.IsOK(), Equals, true)
-
 }
 
 func (HandlerSuite) TestIsSignedByActiveObserver(c *C) {
@@ -241,7 +242,8 @@ func (HandlerSuite) TestIsSignedByActiveNodeAccounts(c *C) {
 	c.Check(isSignedByActiveNodeAccounts(ctx, k, []sdk.AccAddress{nodeAddr}), Equals, false)
 	nodeAccount1 := GetRandomNodeAccount(NodeWhiteListed)
 	k.SetNodeAccount(ctx, nodeAccount1)
-	c.Check(isSignedByActiveNodeAccounts(ctx, k, []sdk.AccAddress{nodeAccount1.NodeAddress}), Equals, false)
+	accountAddr := sdk.AccAddress(nodeAccount1.PubKey.GetThorAddress())
+	c.Check(isSignedByActiveNodeAccounts(ctx, k, []sdk.AccAddress{accountAddr}), Equals, false)
 }
 
 func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
@@ -249,11 +251,11 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	acc1 := GetRandomNodeAccount(NodeWhiteListed)
 	bnbAddr := GetRandomBNBAddress()
 	txHash := GetRandomTxHash()
-	msgEndPool := NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, acc1.NodeAddress)
+	msgEndPool := NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, acc1.GetNodeAddress())
 	result := handleOperatorMsgEndPool(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgEndPool)
 	c.Assert(result.IsOK(), Equals, false)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
-	msgEndPool = NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, w.activeNodeAccount.NodeAddress)
+	msgEndPool = NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, w.activeNodeAccount.GetNodeAddress())
 	w.poolAddrMgr.BeginBlock(w.ctx)
 	stakeTxHash := GetRandomTxHash()
 	msgSetStake := NewMsgSetStakeData(
@@ -272,8 +274,11 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
 	c.Assert(p.Status, Equals, PoolEnabled)
 	w.txOutStore.NewBlock(1)
+
+	fmt.Printf("Active Node Account: %+v\n", w.activeNodeAccount)
 	// EndPool again
-	msgEndPool1 := NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, w.activeNodeAccount.NodeAddress)
+	msgEndPool1 := NewMsgEndPool(common.BNBAsset, bnbAddr, txHash, w.activeNodeAccount.GetNodeAddress())
+	fmt.Println("START HERE")
 	result1 := handleOperatorMsgEndPool(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgEndPool1)
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
 	p1 := w.keeper.GetPool(w.ctx, common.BNBAsset)

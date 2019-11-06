@@ -340,18 +340,18 @@ func (k Keeper) GetLowestActiveVersion(ctx sdk.Context) int {
 }
 
 // IsWhitelistedAccount check whether the given account is white listed
-func (k Keeper) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool {
-	ctx.Logger().Debug("IsWhitelistedAccount", "account address", addr.String())
+func (k Keeper) IsWhitelistedNode(ctx sdk.Context, pk common.PubKey) bool {
+	ctx.Logger().Debug("IsWhitelistedAccount", "account pubkey", pk.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixNodeAccount, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
+	key := getKey(prefixNodeAccount, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
 	return store.Has([]byte(key))
 }
 
 // GetNodeAccount try to get node account with the given address from db
-func (k Keeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
-	ctx.Logger().Debug("GetNodeAccount", "node account", addr.String())
+func (k Keeper) GetNodeAccount(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
+	ctx.Logger().Debug("GetNodeAccount", "node account", pk.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixNodeAccount, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
+	key := getKey(prefixNodeAccount, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
 	payload := store.Get([]byte(key))
 	var na NodeAccount
 	if err := k.cdc.UnmarshalBinaryBare(payload, &na); nil != err {
@@ -396,7 +396,7 @@ func (k Keeper) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address
 func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	ctx.Logger().Debug("SetNodeAccount", "node account", na.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixNodeAccount, na.NodeAddress.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
+	key := getKey(prefixNodeAccount, na.PubKey.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(na))
 
 	// When a node is in active status, we need to add the observer address to active
@@ -659,7 +659,15 @@ func (k Keeper) GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue 
 
 // GetAdminConfigValue - gets the value of a given admin key
 func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error) {
-	getConfigValue := func(nodeAddr sdk.AccAddress) (string, error) {
+	getConfigValue := func(pk common.PubKey) (string, error) {
+		addr, err := pk.GetAddress(common.ThorChain)
+		if err != nil {
+			return "", err
+		}
+		nodeAddr, err := sdk.AccAddressFromBech32(addr.String())
+		if err != nil {
+			return "", err
+		}
 		config := NewAdminConfig(kkey, "", nodeAddr)
 		key := getKey(prefixAdmin, config.DbKey(), getVersion(k.GetLowestActiveVersion(ctx), prefixAdmin))
 		store := ctx.KVStore(k.storeKey)
@@ -681,7 +689,7 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr s
 		}
 		counter := make(map[string]int)
 		for _, node := range nodeAccounts {
-			config, err := getConfigValue(node.NodeAddress)
+			config, err := getConfigValue(node.PubKey)
 			if err != nil {
 				return "", err
 			}
@@ -695,7 +703,11 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr s
 		}
 	} else {
 		// lookup admin config set by specific bnb address
-		val, err = getConfigValue(addr)
+		pk, err := common.NewPubKeyFromBech32(addr.String())
+		if err != nil {
+			return "", err
+		}
+		val, err = getConfigValue(pk)
 		if err != nil {
 			return val, err
 		}

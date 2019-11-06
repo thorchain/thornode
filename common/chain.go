@@ -8,9 +8,10 @@ import (
 )
 
 const (
-	BNBChain = Chain("BNB")
-	ETHChain = Chain("ETH")
-	BTCChain = Chain("BTC")
+	ThorChain = Chain("THOR")
+	BNBChain  = Chain("BNB")
+	ETHChain  = Chain("ETH")
+	BTCChain  = Chain("BTC")
 )
 
 type Chain string
@@ -52,11 +53,15 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 		switch c {
 		case BNBChain:
 			return btypes.TestNetwork.Bech32Prefixes()
+		case ThorChain:
+			return "tthor"
 		}
 	case MainNet:
 		switch c {
 		case BNBChain:
 			return btypes.ProdNetwork.Bech32Prefixes()
+		case ThorChain:
+			return "thor"
 		}
 	}
 	return ""

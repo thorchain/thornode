@@ -75,17 +75,22 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 		return false
 	}
 	for _, signer := range signers {
-		nodeAccount, err := keeper.GetNodeAccount(ctx, signer)
+		fmt.Printf("Signer: %s\n", signer.String())
+		pk, _ := common.NewPubKeyFromBech32(signer.String())
+		nodeAccount, err := keeper.GetNodeAccount(ctx, pk)
 		if err != nil {
 			ctx.Logger().Error("unauthorized account", "address", signer.String())
+			fmt.Println("BAR1")
 			return false
 		}
 		if nodeAccount.IsEmpty() {
 			ctx.Logger().Error("unauthorized account", "address", signer.String())
+			fmt.Printf("BAR2: %+v\n", nodeAccount)
 			return false
 		}
 		if nodeAccount.Status != NodeActive {
 			ctx.Logger().Error("unauthorized account, node account not active", "address", signer.String(), "status", nodeAccount.Status)
+			fmt.Println("BAR3")
 			return false
 		}
 	}
@@ -96,12 +101,14 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgEndPool) sdk.Result {
 	if !isSignedByActiveNodeAccounts(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset)
+		fmt.Println("FOO1")
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	ctx.Logger().Info("handle MsgEndPool", "asset", msg.Asset, "requester", msg.Requester, "signer", msg.Signer.String())
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
 		ctx.Logger().Error("fail to get pool staker", err)
+		fmt.Println("FOO2")
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	// everyone withdraw
@@ -116,6 +123,7 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 
 		result := handleMsgSetUnstake(ctx, keeper, txOutStore, poolAddrMgr, unstakeMsg)
 		if !result.IsOK() {
+			fmt.Println("FOO3")
 			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
 			return result
 		}
@@ -839,7 +847,8 @@ func getMsgBondFromMemo(memo BondMemo, txID common.TxID, tx TxIn, signer sdk.Acc
 	if runeAmount.IsZero() {
 		return nil, errors.New("RUNE amount is 0")
 	}
-	return NewMsgBond(memo.GetNodeAddress(), runeAmount, txID, tx.Sender, signer), nil
+	pk, _ := common.NewPubKeyFromBech32(memo.GetNodeAddress().String())
+	return NewMsgBond(pk, runeAmount, txID, tx.Sender, signer), nil
 }
 
 // handleMsgAdd
@@ -978,7 +987,8 @@ func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConf
 // handleMsgSetVersion Update the node account registered version
 func handleMsgSetVersion(ctx sdk.Context, keeper Keeper, msg MsgSetVersion) sdk.Result {
 	ctx.Logger().Info("receive MsgSetVersion", "trust account info", msg.Version, msg.Signer.String())
-	nodeAccount, err := keeper.GetNodeAccount(ctx, msg.Signer)
+	pk, _ := common.NewPubKeyFromBech32(msg.Signer.String())
+	nodeAccount, err := keeper.GetNodeAccount(ctx, pk)
 	if err != nil {
 		ctx.Logger().Error("fail to get node account", "error", err, "address", msg.Signer.String())
 		return sdk.ErrUnauthorized(fmt.Sprintf("%s is not authorizaed", msg.Signer)).Result()
@@ -1011,7 +1021,8 @@ func handleMsgSetVersion(ctx sdk.Context, keeper Keeper, msg MsgSetVersion) sdk.
 // handleMsgSetTrustAccount Update node account
 func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAccount) sdk.Result {
 	ctx.Logger().Info("receive MsgSetTrustAccount", "trust account info", msg.TrustAccount.String())
-	nodeAccount, err := keeper.GetNodeAccount(ctx, msg.Signer)
+	pk, _ := common.NewPubKeyFromBech32(msg.Signer.String())
+	nodeAccount, err := keeper.GetNodeAccount(ctx, pk)
 	if err != nil {
 		ctx.Logger().Error("fail to get node account", "error", err, "address", msg.Signer.String())
 		return sdk.ErrUnauthorized(fmt.Sprintf("%s is not authorizaed", msg.Signer)).Result()
@@ -1028,11 +1039,11 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 	// You should not able to update node address when the node is in active mode
 	// for example if they update observer address
 	if nodeAccount.Status == NodeActive {
-		ctx.Logger().Error(fmt.Sprintf("node %s is active, so it can't update itself", nodeAccount.NodeAddress))
+		ctx.Logger().Error(fmt.Sprintf("node %s is active, so it can't update itself", nodeAccount.PubKey))
 		return sdk.ErrUnknownRequest("node is active can't update").Result()
 	}
 	if nodeAccount.Status == NodeDisabled {
-		ctx.Logger().Error(fmt.Sprintf("node %s is disabled, so it can't update itself", nodeAccount.NodeAddress))
+		ctx.Logger().Error(fmt.Sprintf("node %s is disabled, so it can't update itself", nodeAccount.PubKey))
 		return sdk.ErrUnknownRequest("node is disabled can't update").Result()
 	}
 	if err := keeper.EnsureTrustAccountUnique(ctx, msg.TrustAccount); nil != err {
@@ -1057,7 +1068,7 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 
 // handleMsgBond
 func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
-	ctx.Logger().Info("receive MsgBond", "node address", msg.NodeAddress, "txhash", msg.RequestTxHash, "bond", msg.Bond.String())
+	ctx.Logger().Info("receive MsgBond", "pubkey", msg.PubKey, "txhash", msg.RequestTxHash, "bond", msg.Bond.String())
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -1066,13 +1077,13 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 		ctx.Logger().Error("invalid MsgBond", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	nodeAccount, err := keeper.GetNodeAccount(ctx, msg.NodeAddress)
+	nodeAccount, err := keeper.GetNodeAccount(ctx, msg.PubKey)
 	if nil != err {
-		ctx.Logger().Error("fail to get node account", "err", err, "address", msg.NodeAddress)
+		ctx.Logger().Error("fail to get node account", "err", err, "pubkey", msg.PubKey)
 		return sdk.ErrInternal("fail to get node account").Result()
 	}
 	if !nodeAccount.IsEmpty() {
-		ctx.Logger().Error("node account already exist", "address", msg.NodeAddress, "status", nodeAccount.Status)
+		ctx.Logger().Error("node account already exist", "pubkey", msg.PubKey, "status", nodeAccount.Status)
 		return sdk.ErrUnknownRequest("node account already exist").Result()
 	}
 	minValidatorBond := keeper.GetAdminConfigMinValidatorBond(ctx, sdk.AccAddress{})
@@ -1083,16 +1094,18 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 	// we don't have the trust account info right now, so leave it empty
 	trustAccount := NewTrustAccount(common.NoAddress, sdk.AccAddress{}, "")
 	// white list the given bep address
-	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, trustAccount, msg.Bond, msg.BondAddress, ctx.BlockHeight())
+	nodeAccount = NewNodeAccount(msg.PubKey, NodeWhiteListed, trustAccount, msg.Bond, msg.BondAddress, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAccount)
-	ctx.EventManager().EmitEvent(sdk.NewEvent("new_node", sdk.NewAttribute("address", msg.NodeAddress.String())))
+	ctx.EventManager().EmitEvent(sdk.NewEvent("new_node", sdk.NewAttribute("pubkey", msg.PubKey.String())))
 	coinsToMint := keeper.GetAdminConfigWhiteListGasAsset(ctx, sdk.AccAddress{})
 	// mint some gas asset
 	err = keeper.supplyKeeper.MintCoins(ctx, ModuleName, coinsToMint)
 	if nil != err {
 		ctx.Logger().Error("fail to mint gas assets", "err", err)
 	}
-	if err := keeper.supplyKeeper.SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
+	addr := sdk.AccAddress(msg.PubKey.GetThorAddress())
+
+	if err := keeper.supplyKeeper.SendCoinsFromModuleToAccount(ctx, ModuleName, addr, coinsToMint); nil != err {
 		ctx.Logger().Error("fail to send newly minted gas asset to node address")
 	}
 	return sdk.Result{

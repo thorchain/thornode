@@ -15,6 +15,10 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	txID := GetRandomTxHash()
 	txID2 := GetRandomTxHash()
 	bnb := GetRandomBNBAddress()
+	pk1 := GetRandomPubKey()
+	pk2 := GetRandomPubKey()
+	pk3 := GetRandomPubKey()
+	pk4 := GetRandomPubKey()
 	acc1 := GetRandomBech32Addr()
 	acc2 := GetRandomBech32Addr()
 	acc3 := GetRandomBech32Addr()
@@ -52,8 +56,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 
 	trusts3 := NodeAccounts{
 		NodeAccount{
-			NodeAddress: acc1,
-			Status:      Active,
+			PubKey: pk1,
+			Status: Active,
 			Accounts: TrustAccount{
 				SignerBNBAddress:       bnb,
 				ObserverBEPAddress:     acc1,
@@ -61,8 +65,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 			},
 		},
 		NodeAccount{
-			NodeAddress: acc2,
-			Status:      Active,
+			PubKey: pk2,
+			Status: Active,
 			Accounts: TrustAccount{
 				SignerBNBAddress:       bnb,
 				ObserverBEPAddress:     acc2,
@@ -70,8 +74,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 			},
 		},
 		NodeAccount{
-			NodeAddress: acc3,
-			Status:      Active,
+			PubKey: pk3,
+			Status: Active,
 			Accounts: TrustAccount{
 				SignerBNBAddress:       bnb,
 				ObserverBEPAddress:     acc3,
@@ -81,8 +85,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	}
 	trusts4 := NodeAccounts{
 		NodeAccount{
-			NodeAddress: acc1,
-			Status:      Active,
+			PubKey: pk1,
+			Status: Active,
 			Accounts: TrustAccount{
 				SignerBNBAddress:       bnb,
 				ObserverBEPAddress:     acc1,
@@ -90,8 +94,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 			},
 		},
 		NodeAccount{
-			NodeAddress: acc2,
-			Status:      Active,
+			PubKey: pk2,
+			Status: Active,
 			Accounts: TrustAccount{
 				SignerBNBAddress:       bnb,
 				ObserverBEPAddress:     acc2,
@@ -99,8 +103,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 			},
 		},
 		NodeAccount{
-			NodeAddress: acc3,
-			Status:      Active,
+			PubKey: pk3,
+			Status: Active,
 			Accounts: TrustAccount{
 				SignerBNBAddress:       bnb,
 				ObserverBEPAddress:     acc3,
@@ -108,8 +112,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 			},
 		},
 		NodeAccount{
-			NodeAddress: acc4,
-			Status:      Active,
+			PubKey: pk4,
+			Status: Active,
 			Accounts: TrustAccount{
 				SignerBNBAddress:       bnb,
 				ObserverBEPAddress:     acc4,

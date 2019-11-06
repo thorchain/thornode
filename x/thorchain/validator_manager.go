@@ -127,7 +127,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, height int64) 
 		return false, nil
 	}
 
-	nominatedNodeAccount, err := vm.k.GetNodeAccount(ctx, vm.Meta.Nominated.NodeAddress)
+	nominatedNodeAccount, err := vm.k.GetNodeAccount(ctx, vm.Meta.Nominated.PubKey)
 	if nil != err {
 		return false, errors.Wrap(err, "fail to get nominated account from data store")
 	}
@@ -150,7 +150,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, height int64) 
 	vm.k.SetNodeAccount(ctx, nominatedNodeAccount)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeValidatorActive,
-			sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
+			sdk.NewAttribute("pub_key", nominatedNodeAccount.PubKey.String()),
 			sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.Accounts.ValidatorBEPConsPubKey)))
 
 	if !vm.Meta.Queued.IsEmpty() {
@@ -160,7 +160,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, height int64) 
 
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(EventTypeValidatorStandby,
-				sdk.NewAttribute("bep_address", outNode.NodeAddress.String()),
+				sdk.NewAttribute("pub_key", outNode.PubKey.String()),
 				sdk.NewAttribute("consensus_public_key", outNode.Accounts.ValidatorBEPConsPubKey)))
 	}
 
@@ -193,7 +193,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 	vm.Meta.Nominated = standbyNodes.First()
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNominatedValidator,
-			sdk.NewAttribute("bep_address", vm.Meta.Nominated.NodeAddress.String()),
+			sdk.NewAttribute("pub_key", vm.Meta.Nominated.PubKey.String()),
 			sdk.NewAttribute("consensus_public_key", vm.Meta.Nominated.Accounts.ValidatorBEPConsPubKey)))
 
 	activeNodes, err := vm.k.ListActiveNodeAccounts(ctx)
@@ -206,7 +206,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 		vm.Meta.Queued = activeNodes.First()
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(EventTypeQueuedValidator,
-				sdk.NewAttribute("bep_address", vm.Meta.Queued.NodeAddress.String()),
+				sdk.NewAttribute("pub_key", vm.Meta.Queued.PubKey.String()),
 				sdk.NewAttribute("consensus_public_key", vm.Meta.Queued.Accounts.ValidatorBEPConsPubKey)))
 	}
 	return nil

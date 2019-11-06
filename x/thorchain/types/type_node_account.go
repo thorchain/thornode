@@ -81,7 +81,7 @@ func GetNodeStatus(ps string) NodeStatus {
 
 // NodeAccount represent node
 type NodeAccount struct {
-	NodeAddress sdk.AccAddress `json:"node_address"` // Thor address which is an operator address
+	PubKey      common.PubKey  `json:"pub_key"` // the pubkey to generate various addresses
 	Status      NodeStatus     `json:"status"`
 	Accounts    TrustAccount   `json:"accounts"`
 	Bond        sdk.Uint       `json:"bond"`
@@ -95,9 +95,9 @@ type NodeAccount struct {
 }
 
 // NewNodeAccount create new instance of NodeAccount
-func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts TrustAccount, bond sdk.Uint, bondAddress common.Address, height int64) NodeAccount {
+func NewNodeAccount(pk common.PubKey, status NodeStatus, accounts TrustAccount, bond sdk.Uint, bondAddress common.Address, height int64) NodeAccount {
 	na := NodeAccount{
-		NodeAddress: nodeAddress,
+		PubKey:      pk,
 		Accounts:    accounts,
 		Bond:        bond,
 		BondAddress: bondAddress,
@@ -107,18 +107,22 @@ func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts Trus
 	return na
 }
 
+func (n NodeAccount) GetNodeAddress() sdk.AccAddress {
+	return sdk.AccAddress(n.PubKey.GetThorAddress())
+}
+
 // IsEmpty decide whether NodeAccount is empty
 func (n NodeAccount) IsEmpty() bool {
-	return n.NodeAddress.Empty()
+	return n.PubKey.IsEmpty()
 }
 
 // IsValid check whether NodeAccount has all necessary values
 func (n NodeAccount) IsValid() error {
-	if n.NodeAddress.Empty() {
-		return errors.New("node bep address is empty")
+	if n.PubKey.IsEmpty() {
+		return errors.New("pubkey cannot be empty")
 	}
 	if n.BondAddress.IsEmpty() {
-		return errors.New("bond address is empty")
+		return errors.New("bond address cannot be empty")
 	}
 	return n.Accounts.IsValid()
 }
@@ -131,7 +135,7 @@ func (n *NodeAccount) UpdateStatus(status NodeStatus, height int64) {
 
 // Equals compare two node account, to see whether they are equal
 func (n NodeAccount) Equals(n1 NodeAccount) bool {
-	if n.NodeAddress.Equals(n1.NodeAddress) &&
+	if n.PubKey.Equals(n1.PubKey) &&
 		n.Accounts.Equals(n1.Accounts) &&
 		n.BondAddress.Equals(n1.BondAddress) &&
 		n.Bond.Equal(n1.Bond) &&
@@ -144,7 +148,7 @@ func (n NodeAccount) Equals(n1 NodeAccount) bool {
 // String implement fmt.Stringer interface
 func (n NodeAccount) String() string {
 	sb := strings.Builder{}
-	sb.WriteString("node:" + n.NodeAddress.String() + "\n")
+	sb.WriteString("pubkey:" + n.PubKey.String() + "\n")
 	sb.WriteString("status:" + n.Status.String() + "\n")
 	sb.WriteString("account:" + n.Accounts.String() + "\n")
 	sb.WriteString("bond:" + n.Bond.String() + "\n")

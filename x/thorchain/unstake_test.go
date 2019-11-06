@@ -124,7 +124,8 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 
 // TestValidateUnstake is to test validateUnstake function
 func (s UnstakeSuite) TestValidateUnstake(c *C) {
-	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
+	na := GetRandomNodeAccount(NodeWhiteListed)
+	accountAddr := sdk.AccAddress(na.PubKey.GetThorAddress())
 	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if nil != err {
 		c.Error("fail to create new BNB Address")
@@ -229,7 +230,8 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 
 func (UnstakeSuite) TestUnstake(c *C) {
 	ps := mocks.MockPoolStorage{}
-	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
+	na := GetRandomNodeAccount(NodeWhiteListed)
+	accountAddr := sdk.AccAddress(na.PubKey.GetThorAddress())
 	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if nil != err {
 		c.Error("fail to create new BNB Address")

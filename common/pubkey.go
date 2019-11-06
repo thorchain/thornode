@@ -31,7 +31,17 @@ func NewPubKeyFromHexString(key string) (PubKey, error) {
 	return PubKey(buf), nil
 }
 
-func NewPubKeyFromBech32(key, prefix string) (PubKey, error) {
+func NewPubKeyFromBech32(key string) (PubKey, error) {
+	prefixes := []string{"bnb", "thor", "tbnb", "tthor"}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(key, prefix) {
+			return NewPubKeyFromBech32WithPrefix(key, prefix)
+		}
+	}
+	return EmptyPubKey, fmt.Errorf("Unable to find pubkey")
+}
+
+func NewPubKeyFromBech32WithPrefix(key, prefix string) (PubKey, error) {
 	buf, err := types.GetFromBech32(key, prefix)
 	if nil != err {
 		return EmptyPubKey, fmt.Errorf("fail to decode pub key from bech 32")
@@ -59,17 +69,21 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 	if pubKey.IsEmpty() {
 		return NoAddress, nil
 	}
-	chainNetwork := GetCurrentChainNetwork()
-	switch chain {
-	case BNBChain:
-		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pubKey)
-		if nil != err {
-			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
-		}
-		return NewAddress(str)
+	addrPrefix := chain.AddressPrefix(GetCurrentChainNetwork())
+	if addrPrefix == "" {
+		return NoAddress, nil
 	}
 
-	return NoAddress, nil
+	str, err := ConvertAndEncode(addrPrefix, pubKey)
+	if nil != err {
+		return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
+	}
+	return NewAddress(str)
+}
+
+func (pubKey PubKey) GetThorAddress() Address {
+	addr, _ := pubKey.GetAddress(ThorChain)
+	return addr
 }
 
 // MarshalJSON to Marshals to JSON using Bech32
@@ -98,7 +112,7 @@ func (pubKey *PubKey) UnmarshalJSON(data []byte) error {
 	}
 
 	if isBNBAddr {
-		pKey, err := NewPubKeyFromBech32(s, addrPrefix)
+		pKey, err := NewPubKeyFromBech32WithPrefix(s, addrPrefix)
 		if nil != err {
 			return err
 		}

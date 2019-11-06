@@ -63,9 +63,9 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 	trustAccount := NewTrustAccount(bnb, addr, bepConsPubKey)
 	err := trustAccount.IsValid()
 	c.Assert(err, IsNil)
-	nodeAddress := GetRandomBech32Addr()
+	pubkey := GetRandomPubKey()
 	bondAddr := GetRandomBNBAddress()
-	na := NewNodeAccount(nodeAddress, Active, trustAccount, sdk.NewUint(common.One), bondAddr, 1)
+	na := NewNodeAccount(pubkey, Active, trustAccount, sdk.NewUint(common.One), bondAddr, 1)
 	c.Assert(na.IsEmpty(), Equals, false)
 	c.Assert(na.IsValid(), IsNil)
 	c.Assert(na.Bond.Uint64(), Equals, uint64(common.One))
@@ -73,12 +73,10 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 		na,
 	}
 	c.Assert(nas.IsTrustAccount(addr), Equals, true)
-	c.Assert(nas.IsTrustAccount(nodeAddress), Equals, false)
-	c.Logf("node account:%s", na)
-	naEmpty := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount, sdk.NewUint(common.One), bondAddr, 1)
+	naEmpty := NewNodeAccount(common.EmptyPubKey, Active, trustAccount, sdk.NewUint(common.One), bondAddr, 1)
 	c.Assert(naEmpty.IsValid(), NotNil)
 	c.Assert(naEmpty.IsEmpty(), Equals, true)
-	invalidBondAddr := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount, sdk.NewUint(common.One), "", 1)
+	invalidBondAddr := NewNodeAccount(common.EmptyPubKey, Active, trustAccount, sdk.NewUint(common.One), "", 1)
 	c.Assert(invalidBondAddr.IsValid(), NotNil)
 }
 

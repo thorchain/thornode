@@ -99,7 +99,7 @@ func (ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	allNodes, err := k.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
 	sort.Sort(allNodes)
-	c.Assert(vMgr2.Meta.Queued.Equals(allNodes.First()), Equals, true, Commentf("%s %s", vMgr2.Meta.Queued.NodeAddress, allNodes.First().NodeAddress))
+	c.Assert(vMgr2.Meta.Queued.Equals(allNodes.First()), Equals, true, Commentf("%s %s", vMgr2.Meta.Queued.PubKey, allNodes.First().PubKey))
 
 	nominatedNode := vMgr2.Meta.Nominated
 	// nominated node is not in ready status abandon the rotation
@@ -108,7 +108,7 @@ func (ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(validatorUpdates, IsNil)
 	c.Assert(vMgr2.Meta.Nominated.IsEmpty(), Equals, true)
 	c.Assert(vMgr2.Meta.Queued.IsEmpty(), Equals, true)
-	nominatedNode, err = k.GetNodeAccount(ctx, nominatedNode.NodeAddress)
+	nominatedNode, err = k.GetNodeAccount(ctx, nominatedNode.PubKey)
 	c.Assert(err, IsNil)
 	c.Assert(nominatedNode.Status, Equals, NodeStandby)
 
@@ -127,10 +127,10 @@ func (ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(vMgr2.Meta.Nominated.IsEmpty(), Equals, true)
 	c.Assert(vMgr2.Meta.Queued.IsEmpty(), Equals, true)
 	// get the node account from data store again
-	nominatedNode, err = k.GetNodeAccount(ctx, nominatedNode.NodeAddress)
+	nominatedNode, err = k.GetNodeAccount(ctx, nominatedNode.PubKey)
 	c.Assert(err, IsNil)
 	c.Assert(nominatedNode.Status, Equals, NodeActive)
-	queueNode, err = k.GetNodeAccount(ctx, queueNode.NodeAddress)
+	queueNode, err = k.GetNodeAccount(ctx, queueNode.PubKey)
 	c.Assert(err, IsNil)
 	c.Assert(queueNode.Status, Equals, NodeStandby)
 }

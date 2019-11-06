@@ -7,7 +7,7 @@ import (
 
 // MsgBond when a user would like to become a validator, and run a full set, they need send an `apply:bepaddress` with a bond to our pool address
 type MsgBond struct {
-	NodeAddress   sdk.AccAddress `json:"node_address"`
+	PubKey        common.PubKey  `json:"pub_key"`
 	Bond          sdk.Uint       `json:"bond"`
 	BondAddress   common.Address `json:"bond_address"`
 	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on chain
@@ -15,9 +15,9 @@ type MsgBond struct {
 }
 
 // NewMsgBond create new MsgBond message
-func NewMsgBond(nodeAddr sdk.AccAddress, bond sdk.Uint, requestTxHash common.TxID, bondAddress common.Address, signer sdk.AccAddress) MsgBond {
+func NewMsgBond(pk common.PubKey, bond sdk.Uint, requestTxHash common.TxID, bondAddress common.Address, signer sdk.AccAddress) MsgBond {
 	return MsgBond{
-		NodeAddress:   nodeAddr,
+		PubKey:        pk,
 		Bond:          bond,
 		BondAddress:   bondAddress,
 		RequestTxHash: requestTxHash,
@@ -33,8 +33,8 @@ func (msg MsgBond) Type() string { return "validator_apply" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgBond) ValidateBasic() sdk.Error {
-	if msg.NodeAddress.Empty() {
-		return sdk.ErrUnknownRequest("node address cannot be empty")
+	if msg.PubKey.IsEmpty() {
+		return sdk.ErrUnknownRequest("pubkey cannot be empty")
 	}
 	if msg.Bond.IsZero() {
 		return sdk.ErrUnknownRequest("bond cannot be zero")

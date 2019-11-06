@@ -15,11 +15,12 @@ import (
 func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	name := common.RandStringBytesMask(10)
 	addr := sdk.AccAddress(crypto.AddressHash([]byte(name)))
+	pubkey, _ := common.NewPubKeyFromBech32(addr.String())
 	bnb := GetRandomBNBAddress()
 	v, _ := tmtypes.RandValidator(true, 100)
 	k, _ := sdk.Bech32ifyConsPub(v.PubKey)
 	bondAddr := GetRandomBNBAddress()
-	na := NewNodeAccount(addr, status, NewTrustAccount(bnb, addr, k), sdk.NewUint(100*common.One), bondAddr, 1)
+	na := NewNodeAccount(pubkey, status, NewTrustAccount(bnb, addr, k), sdk.NewUint(100*common.One), bondAddr, 1)
 	return na
 }
 

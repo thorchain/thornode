@@ -116,13 +116,12 @@ func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, k
 }
 
 func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	nodeAddress := path[0]
-	addr, err := sdk.AccAddressFromBech32(nodeAddress)
+	pk, err := common.NewPubKeyFromBech32(path[0])
 	if nil != err {
 		return nil, sdk.ErrUnknownRequest("invalid account address")
 	}
 
-	nodeAcc, err := keeper.GetNodeAccount(ctx, addr)
+	nodeAcc, err := keeper.GetNodeAccount(ctx, pk)
 	if nil != err {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
