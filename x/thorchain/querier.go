@@ -334,7 +334,7 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		}
 	}
 
-	txs, err := keeper.GetTxOut(ctx, height, pk)
+	txs, err := keeper.GetTxOut(ctx, height)
 	if nil != err {
 		ctx.Logger().Error("fail to get tx out array from key value store", err)
 		return nil, sdk.ErrInternal("fail to get tx out array from key value store")
@@ -348,22 +348,22 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 				// the order of the TxArray
 				// https://yourbasic.org/golang/delete-element-slice/
 				txs.TxArray[i] = txs.TxArray[len(txs.TxArray)-1] // Copy last element to index i.
-				txs.TxArray[len(txs.TxArray)-1] = ""             // Erase last element (write zero value).
+				txs.TxArray[len(txs.TxArray)-1] = nil            // Erase last element (write zero value).
 				txs.TxArray = txs.TxArray[:len(txs.TxArray)-1]   // Truncate slice.
 			}
 		}
 	}
 
 	out := make(map[common.Chain]ResTxOut, 0)
-	for _, item := range tx.TxArray {
+	for _, item := range txs.TxArray {
 		if len(item.Coins) == 0 {
 			continue
 		}
 		res, ok := out[item.Chain]
 		if !ok {
 			res = ResTxOut{
-				Height:  tx.Height,
-				Hash:    tx.Hash, // TODO: this should be unique to chain
+				Height:  txs.Height,
+				Hash:    txs.Hash, // TODO: this should be unique to chain
 				Chain:   item.Coins[0].Asset.Chain,
 				TxArray: make([]TxOutItem, 0),
 			}
