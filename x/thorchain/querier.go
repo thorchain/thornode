@@ -38,6 +38,8 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 			return queryAdminConfig(ctx, path[1:], req, keeper)
 		case q.QueryTxOutArray.Key:
 			return queryTxOutArray(ctx, path[1:], req, keeper)
+		case q.QueryTxOutArrayPubkey.Key:
+			return queryTxOutArray(ctx, path[1:], req, keeper)
 		case q.QueryIncompleteEvents.Key:
 			return queryInCompleteEvents(ctx, path[1:], req, keeper)
 		case q.QueryCompleteEvents.Key:
@@ -316,15 +318,40 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 }
 
 func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	var err error
 	height, err := strconv.ParseUint(path[0], 0, 64)
 	if nil != err {
 		ctx.Logger().Error("fail to parse block height", err)
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
-	tx, err := keeper.GetTxOut(ctx, height)
+
+	pk := common.EmptyPubKey
+	if len(path) > 1 {
+		pk, err = common.NewPubKeyFromHexString(path[1])
+		if nil != err {
+			ctx.Logger().Error("fail to parse pubkey", err)
+			return nil, sdk.ErrInternal("fail to parse pubkey")
+		}
+	}
+
+	txs, err := keeper.GetTxOut(ctx, height, pk)
 	if nil != err {
 		ctx.Logger().Error("fail to get tx out array from key value store", err)
 		return nil, sdk.ErrInternal("fail to get tx out array from key value store")
+	}
+
+	if !pk.IsEmpty() {
+		for i, tx := range txs.TxArray {
+			if !pk.Equals(tx.PoolAddress) {
+				// we found a pubkey that is NOT the one we requested,
+				// eliminate it. This code performs quickly, but does change
+				// the order of the TxArray
+				// https://yourbasic.org/golang/delete-element-slice/
+				txs.TxArray[i] = txs.TxArray[len(txs.TxArray)-1] // Copy last element to index i.
+				txs.TxArray[len(txs.TxArray)-1] = ""             // Erase last element (write zero value).
+				txs.TxArray = txs.TxArray[:len(txs.TxArray)-1]   // Truncate slice.
+			}
+		}
 	}
 
 	out := make(map[common.Chain]ResTxOut, 0)
