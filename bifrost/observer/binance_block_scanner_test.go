@@ -9,14 +9,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/binance-chain/go-sdk/common/types"
+	"github.com/binance-chain/go-sdk/types/msg"
+	"github.com/binance-chain/go-sdk/types/tx"
 	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
 
 	btypes "gitlab.com/thorchain/bepswap/thornode/bifrost/binance/types"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/blockscanner"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
+	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/config"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -38,6 +41,21 @@ func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 	}
+}
+
+func getStdTx(f, t string, coins []types.Coin, memo string) (tx.StdTx, error) {
+	types.Network = types.TestNetwork
+	from, err := types.AccAddressFromBech32(f)
+	if err != nil {
+		return tx.StdTx{}, err
+	}
+	to, err := types.AccAddressFromBech32(t)
+	if err != nil {
+		return tx.StdTx{}, err
+	}
+	transfers := []msg.Transfer{msg.Transfer{to, coins}}
+	m := msg.CreateSendMsg(from, coins, transfers)
+	return tx.NewStdTx([]msg.Msg{m}, nil, memo, 0, nil), nil
 }
 
 func (BlockScannerTestSuite) TestNewBlockScanner(c *C) {
@@ -241,7 +259,7 @@ func (BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 }
 
 func (BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
-	testFunc := func(input string, txInItemCheck, errCheck Checker) *types.TxInItem {
+	testFunc := func(input string, txInItemCheck, errCheck Checker) *stypes.TxInItem {
 		var query btypes.RPCTxSearch
 		err := json.Unmarshal([]byte(input), &query)
 		c.Check(err, IsNil)
@@ -291,4 +309,78 @@ func (BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	c.Check(len(txInItem1.Coins), Equals, 1)
 	c.Check(txInItem1.Coins[0].Asset.String(), Equals, "BNB.LOK-3C0")
 	c.Check(txInItem1.Coins[0].Amount.Uint64(), Equals, uint64(common.One))
+}
+
+func (BlockScannerTestSuite) TestFromStdTx(c *C) {
+	m, err := metrics.NewMetrics(config.MetricConfiguration{
+		Enabled:      false,
+		ListenPort:   9000,
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+	})
+	c.Assert(err, IsNil)
+
+	bs, err := NewBinanceBlockScanner(
+		getConfigForTest("127.0.0.1"),
+		blockscanner.NewMockScannerStorage(),
+		true,
+		NewMockPoolAddressValidator(),
+		m,
+	)
+	c.Assert(err, IsNil)
+
+	// happy path
+	stdTx, err := getStdTx(
+		"tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj",
+		"tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj",
+		types.Coins{types.Coin{Denom: "BNB", Amount: 194765912}},
+		"outbound:256",
+	)
+	c.Assert(err, IsNil)
+
+	item, err := bs.fromStdTx("abcd", stdTx)
+	c.Assert(err, IsNil)
+	c.Check(item.Tx, Equals, "abcd")
+	c.Check(item.Memo, Equals, "outbound:256")
+	c.Check(item.Sender, Equals, "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj")
+	c.Check(item.To, Equals, "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj")
+	pk, err := common.NewPubKeyFromBech32(item.Sender, "tbnb")
+	c.Assert(err, IsNil)
+	c.Check(item.ObservedPoolAddress, Equals, pk.String())
+
+	// ignore this transaction
+	stdTx, err = getStdTx(
+		"tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj",
+		"tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj",
+		types.Coins{types.Coin{Denom: "BNB", Amount: 194765912}},
+		"",
+	)
+	c.Assert(err, IsNil)
+	item, err = bs.fromStdTx("abcd", stdTx)
+	c.Assert(err, IsNil)
+	c.Assert(item, IsNil)
+
+	// register yggdrasil
+	stdTx, err = getStdTx(
+		"tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj",
+		"tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj",
+		types.Coins{types.Coin{Denom: "BNB", Amount: 194765912}},
+		"yggdrasil+",
+	)
+	c.Assert(err, IsNil)
+	item, err = bs.fromStdTx("abcd", stdTx)
+	c.Assert(err, IsNil)
+	c.Check(item.Memo, Equals, "yggdrasil+")
+
+	// un-register yggdrasil
+	stdTx, err = getStdTx(
+		"tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj",
+		"tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj",
+		types.Coins{types.Coin{Denom: "BNB", Amount: 194765912}},
+		"yggdrasil-",
+	)
+	c.Assert(err, IsNil)
+	item, err = bs.fromStdTx("abcd", stdTx)
+	c.Assert(err, IsNil)
+	c.Check(item.Memo, Equals, "yggdrasil-")
 }
