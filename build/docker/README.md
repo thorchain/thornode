@@ -7,7 +7,7 @@ thornode.
 ### Standalone Node
 To run a single isolated node...
 ```bash
-make run-standalone
+NET=<NET> make run-standalone
 ```
 
 ### Genesis Ceremony
