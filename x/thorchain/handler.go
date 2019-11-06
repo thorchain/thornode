@@ -85,7 +85,7 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 		}
 		if nodeAccount.IsEmpty() {
 			ctx.Logger().Error("unauthorized account", "address", signer.String())
-			fmt.Printf("BAR2: %+v\n", nodeAccount)
+			fmt.Printf("BAR2")
 			return false
 		}
 		if nodeAccount.Status != NodeActive {

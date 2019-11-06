@@ -108,7 +108,8 @@ func NewNodeAccount(pk common.PubKey, status NodeStatus, accounts TrustAccount, 
 }
 
 func (n NodeAccount) GetNodeAddress() sdk.AccAddress {
-	return sdk.AccAddress(n.PubKey.GetThorAddress())
+	addr, _ := sdk.AccAddressFromBech32(n.PubKey.GetThorAddress().String())
+	return addr
 }
 
 // IsEmpty decide whether NodeAccount is empty

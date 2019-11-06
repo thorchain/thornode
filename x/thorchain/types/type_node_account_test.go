@@ -15,6 +15,10 @@ type NodeAccountSuite struct{}
 
 var _ = Suite(&NodeAccountSuite{})
 
+func (s *NodeAccountSuite) SetUpSuite(c *C) {
+	SetupConfigForTest()
+}
+
 func (NodeAccountSuite) TestGetNodeStatus(c *C) {
 	input := map[string]NodeStatus{
 		"unknown":     Unknown,
@@ -63,11 +67,12 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 	trustAccount := NewTrustAccount(bnb, addr, bepConsPubKey)
 	err := trustAccount.IsValid()
 	c.Assert(err, IsNil)
-	pubkey := GetRandomPubKey()
+	pubkey, _ := common.NewPubKeyFromBech32(addr.String())
 	bondAddr := GetRandomBNBAddress()
 	na := NewNodeAccount(pubkey, Active, trustAccount, sdk.NewUint(common.One), bondAddr, 1)
 	c.Assert(na.IsEmpty(), Equals, false)
 	c.Assert(na.IsValid(), IsNil)
+	c.Assert(na.PubKey.GetThorAddress().String(), Equals, na.GetNodeAddress().String())
 	c.Assert(na.Bond.Uint64(), Equals, uint64(common.One))
 	nas := NodeAccounts{
 		na,
