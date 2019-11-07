@@ -19,6 +19,7 @@ type poolStorage interface {
 	GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error)
 	SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker)
 
+	GetAdminConfigDefaultPoolStatus(ctx sdk.Context, add sdk.AccAddress) PoolStatus
 	GetAdminConfigValue(ctx sdk.Context, key AdminConfigKey, addr sdk.AccAddress) (string, error)
 
 	GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount

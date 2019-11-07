@@ -20,6 +20,7 @@ const (
 	RotatePerBlockHeightKey   AdminConfigKey = "RotatePerBlockHeight"   // how many blocks we try to rotate validators
 	ValidatorsChangeWindowKey AdminConfigKey = "ValidatorsChangeWindow" // when should we open the rotate window, nominate validators, and identify who should be out
 	PoolRefundGasKey          AdminConfigKey = "PoolRefundGas"          // when we move assets from one pool to another , we leave this amount of BNB behind, thus we could refund customer if they send fund to the previous pool
+	DefaultPoolStatus         AdminConfigKey = "DefaultPoolStatus"
 )
 
 func (k AdminConfigKey) String() string {
@@ -48,6 +49,8 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 		return ValidatorsChangeWindowKey
 	case string(PoolRefundGasKey):
 		return PoolRefundGasKey
+	case string(DefaultPoolStatus):
+		return DefaultPoolStatus
 	default:
 		return UnknownKey
 	}
@@ -71,6 +74,8 @@ func (k AdminConfigKey) Default() string {
 		return "1200" // one hour
 	case PoolRefundGasKey:
 		return strconv.Itoa(common.One / 10)
+	case DefaultPoolStatus:
+		return "Enabled"
 	default:
 		return ""
 	}

@@ -69,6 +69,10 @@ func (p *MockInMemoryPoolStorage) GetLowestActiveVersion(ctx sdk.Context) int {
 	return 0
 }
 
+func (p *MockInMemoryPoolStorage) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
+	return PoolBootstrap
+}
+
 func (p *MockInMemoryPoolStorage) GetAdminConfigValue(ctx sdk.Context, key AdminConfigKey, addr sdk.AccAddress) (string, error) {
 	storekey := getKey(prefixAdmin, key.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixAdmin))
 	ac, ok := p.store[storekey]

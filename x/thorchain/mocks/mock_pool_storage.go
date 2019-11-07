@@ -58,6 +58,10 @@ func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (t
 
 func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps types.PoolStaker) {}
 
+func (mps MockPoolStorage) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) types.PoolStatus {
+	return types.Bootstrap
+}
+
 func (mps MockPoolStorage) GetAdminConfigValue(ctx sdk.Context, key types.AdminConfigKey, addr sdk.AccAddress) (string, error) {
 	return "FOOBAR", nil
 }

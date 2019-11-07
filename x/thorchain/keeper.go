@@ -152,6 +152,32 @@ func (k Keeper) GetPoolDataIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStorePrefixIterator(store, []byte(prefixPool))
 }
 
+// Picks the most "deserving" pool (by most staked rune) to be enabled and
+// enables it
+func (k Keeper) EnableAPool(ctx sdk.Context) {
+	var pools []Pool
+	iterator := k.GetPoolDataIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var pool Pool
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		if pool.Status == PoolBootstrap {
+			pools = append(pools, pool)
+		}
+	}
+
+	if len(pools) > 0 {
+		pool := pools[0]
+		for _, p := range pools {
+			if pool.BalanceRune.LT(p.BalanceRune) {
+				pool = p
+			}
+		}
+		pool.Status = PoolEnabled
+		k.SetPool(ctx, pool)
+	}
+}
+
 // PoolExist check whether the given pool exist in the datastore
 func (k Keeper) PoolExist(ctx sdk.Context, asset common.Asset) bool {
 	store := ctx.KVStore(k.storeKey)
@@ -554,6 +580,15 @@ func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixAdmin, config.DbKey(), getVersion(k.GetLowestActiveVersion(ctx), prefixAdmin))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(config))
+}
+
+// GetAdminConfigDefaultPoolStatus - get the config for Default Pool Status
+func (k Keeper) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
+	name, _ := k.GetAdminConfigValue(ctx, DefaultPoolStatus, addr)
+	if name == "" {
+		name = DefaultPoolStatus.Default()
+	}
+	return GetPoolStatus(name)
 }
 
 // GetAdminConfigGSL - get the config for GSL
