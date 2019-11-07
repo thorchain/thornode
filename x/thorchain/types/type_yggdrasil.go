@@ -43,12 +43,7 @@ func (ygg Yggdrasil) HasFunds() bool {
 
 // Check if this yggdrasil has a particular asset
 func (ygg Yggdrasil) HasAsset(asset common.Asset) bool {
-	for _, coin := range ygg.Coins {
-		if coin.Asset.Equals(asset) {
-			return true
-		}
-	}
-	return false
+	return !ygg.GetCoin(asset).Amount.IsZero()
 }
 
 func (ygg Yggdrasil) GetCoin(asset common.Asset) common.Coin {

@@ -1142,6 +1142,9 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, msg MsgYggdrasil) sdk.Re
 		ygg.AddFunds(msg.Coins)
 	} else {
 		ygg.SubFunds(msg.Coins)
+		// TODO: if we get here we should be recieving all coins the Yggdrasil
+		// pool has. If we are short some amount, slash their bond the
+		// remainder amount of coins and assume a disorderly exit
 	}
 	keeper.SetYggdrasil(ctx, ygg)
 
