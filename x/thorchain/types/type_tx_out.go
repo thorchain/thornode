@@ -14,8 +14,8 @@ type TxOutItem struct {
 	ToAddress   common.Address `json:"to"`
 	PoolAddress common.PubKey  `json:"pool_address"`
 	SeqNo       uint64         `json:"seq_no"`
-	// TODO update common.Coins to use sdk.Coins
-	Coins common.Coins `json:"coins"`
+	Coins       common.Coins   `json:"coins"`
+	Memo        string         `json:"memo"`
 }
 
 func (toi TxOutItem) Valid() error {
