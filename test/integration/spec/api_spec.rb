@@ -2,7 +2,7 @@ require_relative './helper.rb'
 
 # this is a hex encoded public key of bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
 POOL_PUB_KEY = "thorpub1addwnpepq2kdyjkm6y9aa3kxl8wfaverka6pvkek2ygrmhx6sj3ec6h0fegwsgeslue"
-TRUST_BNB_ADDRESS = "tbnb1tdfqy34uptx207scymqsy4k5uzfmry5s8lujqt"
+# TRUST_BNB_ADDRESS = "thor1jk5h99ztgqe7tkuck0lvj0h8qmkfqejn8hw5p0"
 describe "API Tests" do
 
   context "Check /ping responds" do
@@ -13,6 +13,9 @@ describe "API Tests" do
     end
   end
 
+  resp = get("/nodeaccounts")
+  puts resp.body
+  TRUST_BNB_ADDRESS = resp.body[0]['node_address']
   context "Check that an empty tx hash returns properly" do
     it "should have no values" do
       resp = get("/tx/A9A65505553D777E5CE957A74153F21EDD8AAA4B0868F2537E97E309945425B9")
@@ -117,14 +120,18 @@ describe "API Tests" do
 
     txid = txid() # outside it state so its value is available in multiple "it" statements
     it "swap" do
+      coins = [
+        {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "2349500000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'BOLT-014', 'ticker': 'BOLT'}, "amount": "334850000"},
+      ]
       # stake some coins first
-      tx = makeTx(memo: "stake:BNB.TCAN-014", coins: coins, sender: sender)
+      tx = makeTx(memo: "stake:BNB.BOLT-014", coins: coins, sender: sender)
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
 
       # make a swap
       coins = [
-        {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'BOLT-014', 'ticker': 'BOLT'}, "amount": "20000000"},
       ]
       tx = makeTx(
         memo: "swap:RUNE-B1A:bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq:124958592",
@@ -134,7 +141,7 @@ describe "API Tests" do
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
 
-      resp = get("/pool/TCAN-014")
+      resp = get("/pool/BOLT-014")
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("2224541407"), resp.body.inspect
       expect(resp.body['balance_asset']).to eq("354850000"), resp.body.inspect
@@ -149,7 +156,7 @@ describe "API Tests" do
       expect(resp.code).to eq("200"), resp.body.inspect
 
       # pool balance should not change
-      resp = get("/pool/BNB.TCAN-014")
+      resp = get("/pool/BNB.BOLT-014")
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("2224541407"), resp.body.inspect
       expect(resp.body['balance_asset']).to eq("354850000"), resp.body.inspect
@@ -166,6 +173,7 @@ describe "API Tests" do
           next
         end
         arr = resp.body['chains']['BNB']
+        puts arr
         unless arr['tx_array'].empty?
           if arr['tx_array'][0]['to'] == "bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"
             # we have found the block height of our last swap
@@ -193,7 +201,7 @@ describe "API Tests" do
     it "check events are completed" do
       resp = get("/events/1")
       expect(resp.body.count).to eq(3), resp.body.inspect
-      expect(resp.body[2]['pool']['symbol']).to eq("TCAN-014"), resp.body[2].inspect
+      expect(resp.body[2]['pool']['symbol']).to eq("BOLT-014"), resp.body[2].inspect
       expect(resp.body[2]['type']).to eq("swap"), resp.body[2].inspect
       expect(resp.body[2]['in_hash']).to eq(txid), resp.body[2].inspect
     end
