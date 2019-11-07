@@ -44,6 +44,8 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 			return handleMsgSetVersion(ctx, keeper, m)
 		case MsgBond:
 			return handleMsgBond(ctx, keeper, m)
+		case MsgYggdrasil:
+			return handleMsgYggdrasil(ctx, keeper, m)
 		case MsgNextPoolAddress:
 			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, m)
 		case MsgLeave:
@@ -1107,6 +1109,33 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 	if err := keeper.supplyKeeper.SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
 		ctx.Logger().Error("fail to send newly minted gas asset to node address")
 	}
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
+// handleMsgYggdrasil
+func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, msg MsgYggdrasil) sdk.Result {
+	ctx.Logger().Info("receive MsgYggdrasil", "pubkey", msg.PubKey.String(), "add_funds", msg.AddFunds, "coins", msg.Coins)
+
+	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid MsgYggdrasil", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	ygg := keeper.GetYggdrasil(ctx, msg.PubKey)
+	if msg.AddFunds {
+		ygg.AddFunds(msg.Coins)
+	} else {
+		ygg.SubFunds(msg.Coins)
+	}
+	keeper.SetYggdrasil(ctx, ygg)
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

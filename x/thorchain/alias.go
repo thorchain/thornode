@@ -95,6 +95,7 @@ type (
 	MsgEndPool         = types.MsgEndPool
 	MsgLeave           = types.MsgLeave
 	MsgAck             = types.MsgAck
+	MsgYggdrasil       = types.MsgYggdrasil
 	QueryResPools      = types.QueryResPools
 	QueryResHeights    = types.QueryResHeights
 	QueryResTxOut      = types.QueryResTxOut
