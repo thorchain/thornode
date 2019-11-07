@@ -341,17 +341,16 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	}
 
 	if !pk.IsEmpty() {
-		for i, tx := range txs.TxArray {
-			if !pk.Equals(tx.PoolAddress) {
-				// we found a pubkey that is NOT the one we requested,
-				// eliminate it. This code performs quickly, but does change
-				// the order of the TxArray
-				// https://yourbasic.org/golang/delete-element-slice/
-				txs.TxArray[i] = txs.TxArray[len(txs.TxArray)-1] // Copy last element to index i.
-				txs.TxArray[len(txs.TxArray)-1] = nil            // Erase last element (write zero value).
-				txs.TxArray = txs.TxArray[:len(txs.TxArray)-1]   // Truncate slice.
+		newTxs := &TxOut{
+			Height: txs.Height,
+			Hash:   txs.Hash,
+		}
+		for _, tx := range txs.TxArray {
+			if pk.Equals(tx.PoolAddress) {
+				newTxs.TxArray = append(newTxs.TxArray, tx)
 			}
 		}
+		txs = newTxs
 	}
 
 	out := make(map[common.Chain]ResTxOut, 0)
