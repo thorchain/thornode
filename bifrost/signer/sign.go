@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/binance-chain/go-sdk/keys"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -42,7 +43,16 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create metric instance")
 	}
-	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScanner, stateChainScanStorage, cfg.StateChain.ChainHost, m)
+
+	// Create pubkey manager and add our private key (Yggdrasil pubkey)
+	pkm := NewPubKeyManager()
+	km, err := keys.NewPrivateKeyManager(cfg.Binance.PrivateKey)
+	if err != nil {
+		return nil, errors.Wrap(err, "fail to create private key manager")
+	}
+	pkm.Add(common.PubKey(km.GetPrivKey().PubKey().Bytes()))
+
+	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScanner, stateChainScanStorage, cfg.StateChain.ChainHost, m, pkm)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create state chain block scan")
 	}
