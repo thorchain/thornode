@@ -162,6 +162,7 @@ func (StakeSuite) TestStake(c *C) {
 	stakerUnit, err := stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txId)
 	c.Assert(stakerUnit.Equal(sdk.NewUint(11250000000)), Equals, true)
 	c.Assert(err, IsNil)
+
 	ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
 		BalanceAsset: sdk.NewUint(100 * common.One),

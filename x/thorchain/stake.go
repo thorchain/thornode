@@ -63,6 +63,11 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 	}
 
 	pool := keeper.GetPool(ctx, asset)
+	// if we have no balance, set the default pool status
+	if pool.BalanceAsset.IsZero() && pool.BalanceRune.IsZero() {
+		status := keeper.GetAdminConfigDefaultPoolStatus(ctx, nil)
+		pool.Status = status
+	}
 
 	ps, err := keeper.GetPoolStaker(ctx, asset)
 	if nil != err {
