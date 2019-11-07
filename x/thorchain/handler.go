@@ -702,10 +702,10 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 	case LeaveMemo:
 		newMsg = NewMsgLeave(txID, tx.Sender, signer)
 	case YggdrasilFundMemo:
-		pk, _ := tx.To.PubKey()
+		pk := keeper.FindPubKeyOfAddress(ctx, tx.To, tx.Coins[0].Asset.Chain)
 		newMsg = NewMsgYggdrasil(pk, true, tx.Coins, signer)
 	case YggdrasilReturnMemo:
-		pk, _ := tx.Sender.PubKey()
+		pk := keeper.FindPubKeyOfAddress(ctx, tx.Sender, tx.Coins[0].Asset.Chain)
 		newMsg = NewMsgYggdrasil(pk, false, tx.Coins, signer)
 	default:
 		return nil, errors.Wrap(err, "Unable to find memo type")
@@ -962,8 +962,8 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	keeper.SetLastSignedHeight(ctx, sdk.NewUint(msg.Height))
 
 	// If we are sending from a yggdrasil pool, decrement coins on record
-	pk, _ := msg.Sender.PubKey()
-	if !pk.IsEmpty() && keeper.YggdrasilExists(ctx, pk) {
+	pk := keeper.FindPubKeyOfAddress(ctx, msg.Sender, msg.Chain)
+	if !pk.IsEmpty() {
 		ygg := keeper.GetYggdrasil(ctx, pk)
 		ygg.SubFunds(msg.Coins)
 		keeper.SetYggdrasil(ctx, ygg)

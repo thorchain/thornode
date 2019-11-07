@@ -25,11 +25,6 @@ func NewAddress(address string) (Address, error) {
 	return Address(address), nil
 }
 
-func (addr Address) PubKey() (PubKey, error) {
-	prefix, _, _ := bech32.Decode(addr.String())
-	return NewPubKeyFromBech32(addr.String(), prefix)
-}
-
 func (addr Address) IsChain(chain Chain) bool {
 	switch chain {
 	case BNBChain:

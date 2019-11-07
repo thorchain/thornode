@@ -648,9 +648,8 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	currentPoolAddr, err := currentChainPool.GetAddress()
 	c.Assert(err, IsNil)
 
-	pk, err := currentPoolAddr.PubKey()
 	c.Assert(err, IsNil)
-	ygg := NewYggdrasil(pk)
+	ygg := NewYggdrasil(currentChainPool.PubKey)
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(500*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(400*common.One)),
@@ -669,7 +668,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		w.activeNodeAccount.NodeAddress)
 	result3 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal)
 	c.Assert(result3.Code, Equals, sdk.CodeOK)
-	ygg = w.keeper.GetYggdrasil(w.ctx, pk)
+	ygg = w.keeper.GetYggdrasil(w.ctx, currentChainPool.PubKey)
 	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(300*common.One)), Equals, true)
 	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)
 

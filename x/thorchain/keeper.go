@@ -882,16 +882,24 @@ func (k Keeper) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStorePrefixIterator(store, []byte(prefixYggdrasilPool))
 }
 
+func (k Keeper) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) common.PubKey {
+	iterator := k.GetYggdrasilIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var ygg Yggdrasil
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &ygg)
+		address, _ := ygg.PubKey.GetAddress(chain)
+		if !address.IsEmpty() && address.Equals(addr) {
+			return ygg.PubKey
+		}
+	}
+	return common.EmptyPubKey
+}
+
 func (k Keeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
 	key := getKey(prefixYggdrasilPool, ygg.PubKey.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ygg))
-}
-
-func (k Keeper) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool {
-	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
-	store := ctx.KVStore(k.storeKey)
-	return store.Has([]byte(key))
 }
 
 func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {

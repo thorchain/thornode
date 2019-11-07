@@ -2,8 +2,6 @@ package common
 
 import (
 	. "gopkg.in/check.v1"
-
-	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
 type AddressSuite struct{}
@@ -32,12 +30,4 @@ func (s *AddressSuite) TestAddress(c *C) {
 	c.Check(NoAddress.Equals(Address("")), Equals, true)
 	_, err = NewAddress("")
 	c.Assert(err, IsNil)
-
-	_, pubKey, _ := atypes.KeyTestPubAddr()
-	pk := NewPubKey(pubKey.Bytes())
-	addr, err = pk.GetAddress(BNBChain)
-	c.Assert(err, IsNil)
-	pk2, err := addr.PubKey()
-	c.Assert(err, IsNil)
-	c.Check(pk.Equals(pk2), Equals, true)
 }
