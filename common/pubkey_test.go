@@ -4,9 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/binance-chain/go-sdk/common/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/tendermint/tendermint/crypto"
 	. "gopkg.in/check.v1"
 )
 
@@ -17,11 +16,13 @@ var _ = Suite(&PubKeyTestSuite{})
 // TestPubKey implementation
 func (PubKeyTestSuite) TestPubKey(c *C) {
 	_, pubKey, _ := atypes.KeyTestPubAddr()
-	inputBytes := crypto.AddressHash(pubKey.Bytes())
-	pk := NewPubKey(inputBytes)
+	spk, err := sdk.Bech32ifyAccPub(pubKey)
+	c.Assert(err, IsNil)
+	pk, err := NewPubKey(spk)
+	c.Assert(err, IsNil)
 	hexStr := pk.String()
 	c.Assert(len(hexStr) > 0, Equals, true)
-	pk1, err := NewPubKeyFromHexString(hexStr)
+	pk1, err := NewPubKey(hexStr)
 	c.Assert(err, IsNil)
 	c.Assert(pk.Equals(pk1), Equals, true)
 
@@ -36,13 +37,4 @@ func (PubKeyTestSuite) TestPubKey(c *C) {
 	err = json.Unmarshal(result, &pk2)
 	c.Assert(err, IsNil)
 	c.Assert(pk2.Equals(pk), Equals, true)
-}
-func (PubKeyTestSuite) TestStuff(c *C) {
-	address := "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"
-	buf1, err := types.GetFromBech32(address, "bnb")
-	c.Assert(err, IsNil)
-	pk1 := NewPubKey(buf1)
-	fmt.Println(pk1.String())
-	addr, err := pk1.GetAddress(BNBChain)
-	fmt.Println(addr.String())
 }

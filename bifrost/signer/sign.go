@@ -130,7 +130,7 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 func (s *Signer) shouldSign(tai types.TxArrayItem) bool {
 	binanceAddr := s.Binance.GetAddress()
 	s.logger.Info().Str("address", binanceAddr).Msg("current signer address")
-	pubKey, err := common.NewPubKeyFromHexString(tai.PoolAddress.String())
+	pubKey, err := common.NewPubKey(tai.PoolAddress.String())
 	if nil != err {
 		s.logger.Error().Err(err).Msg("fail to parse pool address")
 		return false

@@ -85,7 +85,7 @@ def processTx(txs, user="statechain", mode='block')
       'from': address
     },
   }.to_json
-  # puts(request.body.to_json)
+   #puts(request.body.to_json)
 
   resp = HTTP.request(request)
   if resp.code != "200" 
@@ -101,7 +101,7 @@ def processTx(txs, user="statechain", mode='block')
     'mode': mode,
     'tx': signedTx['value'],
   }
-  #pp signedJson
+ #pp signedJson
 
 
   request = Net::HTTP::Post.new("/txs")

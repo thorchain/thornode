@@ -21,10 +21,10 @@ func (MsgNextPoolTestSuite) TestMsgNextPool(c *C) {
 	EnsureMsgBasicCorrect(msgNextPool, c)
 	msgNextPool1 := NewMsgNextPoolAddress("", bnb, sender, common.BNBChain, addr)
 	c.Assert(msgNextPool1.ValidateBasic(), NotNil)
-	msgNextPool2 := NewMsgNextPoolAddress(txID, nil, sender, common.BNBChain, addr)
+	msgNextPool2 := NewMsgNextPoolAddress(txID, common.EmptyPubKey, sender, common.BNBChain, addr)
 	c.Assert(msgNextPool2.ValidateBasic(), NotNil)
 	msgNextPool3 := NewMsgNextPoolAddress(txID, bnb, "", common.BNBChain, addr)
 	c.Assert(msgNextPool3.ValidateBasic(), NotNil)
-	msgEmptyChain := NewMsgNextPoolAddress(txID, bnb, sender, "", addr)
+	msgEmptyChain := NewMsgNextPoolAddress(txID, bnb, sender, common.EmptyChain, addr)
 	c.Assert(msgEmptyChain.ValidateBasic(), NotNil)
 }

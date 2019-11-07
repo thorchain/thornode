@@ -24,14 +24,14 @@ import (
 type AddressValidator interface {
 	IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo)
 	IsValidAddress(addr string, chain common.Chain) bool
-	AddPubKey(pk common.PubKey)
-	RemovePubKey(pk common.PubKey)
+	AddPubKey(pk common.PubKeys)
+	RemovePubKey(pk common.PubKeys)
 }
 
 // AddressManager it manage the pool address
 type AddressManager struct {
 	cdc           *codec.Codec
-	addresses     common.PubKeys
+	addresses     []common.PubKeys
 	poolAddresses types.PoolAddresses // current pool addresses
 	rwMutex       *sync.RWMutex
 	logger        zerolog.Logger
@@ -83,7 +83,7 @@ func (pam *AddressManager) Stop() error {
 	return nil
 }
 
-func (pam *AddressManager) AddPubKey(pk common.PubKey) {
+func (pam *AddressManager) AddPubKey(pk common.PubKeys) {
 	pam.rwMutex.Lock()
 	found := false
 	for _, pubkey := range pam.addresses {
@@ -97,13 +97,13 @@ func (pam *AddressManager) AddPubKey(pk common.PubKey) {
 	pam.rwMutex.Unlock()
 }
 
-func (pam *AddressManager) RemovePubKey(pk common.PubKey) {
+func (pam *AddressManager) RemovePubKey(pk common.PubKeys) {
 	pam.rwMutex.Lock()
 	for i, pubkey := range pam.addresses {
 		if pk.Equals(pubkey) {
-			pam.addresses[i] = pam.addresses[len(pam.addresses)-1]   // Copy last element to index i.
-			pam.addresses[len(pam.addresses)-1] = common.EmptyPubKey // Erase last element (write zero value).
-			pam.addresses = pam.addresses[:len(pam.addresses)-1]     // Truncate slice.
+			pam.addresses[i] = pam.addresses[len(pam.addresses)-1] // Copy last element to index i.
+			pam.addresses[len(pam.addresses)-1] = common.PubKeys{} // Erase last element (write zero value).
+			pam.addresses = pam.addresses[:len(pam.addresses)-1]   // Truncate slice.
 			break
 		}
 	}

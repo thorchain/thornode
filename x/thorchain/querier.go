@@ -150,6 +150,7 @@ func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	return res, nil
 }
 
+// queryObservers will only return all the active accounts
 func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	activeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
@@ -157,7 +158,7 @@ func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	}
 	var result []string
 	for _, item := range activeAccounts {
-		result = append(result, item.Accounts.ObserverBEPAddress.String())
+		result = append(result, item.NodeAddress.String())
 	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, result)
 	if nil != err {
@@ -167,6 +168,7 @@ func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 
 	return res, nil
 }
+
 func queryObserver(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	observerAddr := path[0]
 	addr, err := sdk.AccAddressFromBech32(observerAddr)
@@ -174,7 +176,7 @@ func queryObserver(ctx sdk.Context, path []string, req abci.RequestQuery, keeper
 		return nil, sdk.ErrUnknownRequest("invalid account address")
 	}
 
-	nodeAcc, err := keeper.GetNodeAccountByObserver(ctx, addr)
+	nodeAcc, err := keeper.GetNodeAccount(ctx, addr)
 	if nil != err {
 		return nil, sdk.ErrInternal("fail to get node account")
 	}
@@ -327,7 +329,7 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 
 	pk := common.EmptyPubKey
 	if len(path) > 1 {
-		pk, err = common.NewPubKeyFromHexString(path[1])
+		pk, err = common.NewPubKey(path[1])
 		if nil != err {
 			ctx.Logger().Error("fail to parse pubkey", err)
 			return nil, sdk.ErrInternal("fail to parse pubkey")

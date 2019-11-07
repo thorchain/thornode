@@ -320,10 +320,10 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
 
 				// **IMPORTANT** If this fails, we won't monitor the address and could lose funds!
-				var pk common.PubKey
-				chainNetwork := common.GetCurrentChainNetwork()
-				pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
-				b.addrVal.AddPubKey(pk)
+				//var pk common.PubKey
+				//chainNetwork := common.GetCurrentChainNetwork()
+				//pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
+				//b.addrVal.AddPubKey(pk)
 				return &txInItem, nil
 			}
 
@@ -333,10 +333,10 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
 
 				// **IMPORTANT** If this fails, we may slash a yggdrasil pool inappropriately
-				var pk common.PubKey
-				chainNetwork := common.GetCurrentChainNetwork()
-				pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
-				b.addrVal.RemovePubKey(pk)
+				//var pk common.PubKey
+				//chainNetwork := common.GetCurrentChainNetwork()
+				//pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
+				//b.addrVal.RemovePubKey(pk)
 
 				return &txInItem, nil
 			}

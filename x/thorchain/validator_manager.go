@@ -78,9 +78,9 @@ func (vm *ValidatorManager) EndBlock(ctx sdk.Context, height int64) []abci.Valid
 			}
 			validators := make([]abci.ValidatorUpdate, 0, len(activeNodes))
 			for _, item := range activeNodes {
-				pk, err := sdk.GetConsPubKeyBech32(item.Accounts.ValidatorBEPConsPubKey)
+				pk, err := sdk.GetConsPubKeyBech32(item.ValidatorConsPubKey)
 				if nil != err {
-					ctx.Logger().Error("fail to parse consensus public key", "key", item.Accounts.ValidatorBEPConsPubKey)
+					ctx.Logger().Error("fail to parse consensus public key", "key", item.ValidatorConsPubKey)
 					continue
 				}
 				validators = append(validators, abci.ValidatorUpdate{
@@ -90,9 +90,9 @@ func (vm *ValidatorManager) EndBlock(ctx sdk.Context, height int64) []abci.Valid
 			}
 			if !queueNode.IsEmpty() {
 				// node to be removed as validator
-				pk, err := sdk.GetConsPubKeyBech32(queueNode.Accounts.ValidatorBEPConsPubKey)
+				pk, err := sdk.GetConsPubKeyBech32(queueNode.ValidatorConsPubKey)
 				if nil != err {
-					ctx.Logger().Error("fail to parse consensus public key", "key", queueNode.Accounts.ValidatorBEPConsPubKey)
+					ctx.Logger().Error("fail to parse consensus public key", "key", queueNode.ValidatorConsPubKey)
 				}
 				validators = append(validators, abci.ValidatorUpdate{
 					PubKey: tmtypes.TM2PB.PubKey(pk),
@@ -151,7 +151,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, height int64) 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeValidatorActive,
 			sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
-			sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.Accounts.ValidatorBEPConsPubKey)))
+			sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.ValidatorConsPubKey)))
 
 	if !vm.Meta.Queued.IsEmpty() {
 		outNode := vm.Meta.Queued
@@ -161,7 +161,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, height int64) 
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(EventTypeValidatorStandby,
 				sdk.NewAttribute("bep_address", outNode.NodeAddress.String()),
-				sdk.NewAttribute("consensus_public_key", outNode.Accounts.ValidatorBEPConsPubKey)))
+				sdk.NewAttribute("consensus_public_key", outNode.ValidatorConsPubKey)))
 	}
 
 	return true, nil
@@ -194,7 +194,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNominatedValidator,
 			sdk.NewAttribute("bep_address", vm.Meta.Nominated.NodeAddress.String()),
-			sdk.NewAttribute("consensus_public_key", vm.Meta.Nominated.Accounts.ValidatorBEPConsPubKey)))
+			sdk.NewAttribute("consensus_public_key", vm.Meta.Nominated.ValidatorConsPubKey)))
 
 	activeNodes, err := vm.k.ListActiveNodeAccounts(ctx)
 	if nil != err {
@@ -207,7 +207,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(EventTypeQueuedValidator,
 				sdk.NewAttribute("bep_address", vm.Meta.Queued.NodeAddress.String()),
-				sdk.NewAttribute("consensus_public_key", vm.Meta.Queued.Accounts.ValidatorBEPConsPubKey)))
+				sdk.NewAttribute("consensus_public_key", vm.Meta.Queued.ValidatorConsPubKey)))
 	}
 	return nil
 }

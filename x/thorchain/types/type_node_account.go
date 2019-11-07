@@ -81,11 +81,12 @@ func GetNodeStatus(ps string) NodeStatus {
 
 // NodeAccount represent node
 type NodeAccount struct {
-	NodeAddress sdk.AccAddress `json:"node_address"` // Thor address which is an operator address
-	Status      NodeStatus     `json:"status"`
-	Accounts    TrustAccount   `json:"accounts"`
-	Bond        sdk.Uint       `json:"bond"`
-	BondAddress common.Address `json:"bond_address"` // BNB Address to send bond from. It also indicates the operator address to whilelist and associate.
+	NodeAddress         sdk.AccAddress `json:"node_address"` // Thor address which is an operator address
+	Status              NodeStatus     `json:"status"`
+	NodePubKey          common.PubKeys `json:"node_pub_keys"`
+	ValidatorConsPubKey string         `json:"validator_cons_pub_key"`
+	Bond                sdk.Uint       `json:"bond"`
+	BondAddress         common.Address `json:"bond_address"` // BNB Address to send bond from. It also indicates the operator address to whilelist and associate.
 	// start from when this node account is in current status
 	// StatusSince field is important , it has been used to sort node account , used for validator rotation
 	StatusSince    int64         `json:"status_since"`
@@ -95,13 +96,14 @@ type NodeAccount struct {
 }
 
 // NewNodeAccount create new instance of NodeAccount
-func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, accounts TrustAccount, bond sdk.Uint, bondAddress common.Address, height int64) NodeAccount {
+func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, nodePubKeys common.PubKeys, validatorConsPubKey string, bond sdk.Uint, bondAddress common.Address, height int64) NodeAccount {
 	na := NodeAccount{
-		NodeAddress: nodeAddress,
-		Accounts:    accounts,
-		Bond:        bond,
-		BondAddress: bondAddress,
-		Version:     common.ZeroAmount,
+		NodeAddress:         nodeAddress,
+		NodePubKey:          nodePubKeys,
+		ValidatorConsPubKey: validatorConsPubKey,
+		Bond:                bond,
+		BondAddress:         bondAddress,
+		Version:             common.ZeroAmount,
 	}
 	na.UpdateStatus(status, height)
 	return na
@@ -120,7 +122,8 @@ func (n NodeAccount) IsValid() error {
 	if n.BondAddress.IsEmpty() {
 		return errors.New("bond address is empty")
 	}
-	return n.Accounts.IsValid()
+
+	return nil
 }
 
 // UpdateStatus change the status of node account, in the mean time update StatusSince field
@@ -132,7 +135,8 @@ func (n *NodeAccount) UpdateStatus(status NodeStatus, height int64) {
 // Equals compare two node account, to see whether they are equal
 func (n NodeAccount) Equals(n1 NodeAccount) bool {
 	if n.NodeAddress.Equals(n1.NodeAddress) &&
-		n.Accounts.Equals(n1.Accounts) &&
+		n.NodePubKey.Equals(n1.NodePubKey) &&
+		n.ValidatorConsPubKey == n1.ValidatorConsPubKey &&
 		n.BondAddress.Equals(n1.BondAddress) &&
 		n.Bond.Equal(n1.Bond) &&
 		n.Version.Equals(n1.Version) {
@@ -146,7 +150,8 @@ func (n NodeAccount) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("node:" + n.NodeAddress.String() + "\n")
 	sb.WriteString("status:" + n.Status.String() + "\n")
-	sb.WriteString("account:" + n.Accounts.String() + "\n")
+	sb.WriteString("node pubkeys:" + n.NodePubKey.String() + "\n")
+	sb.WriteString("validator consensus pub key:" + n.ValidatorConsPubKey + "\n")
 	sb.WriteString("bond:" + n.Bond.String() + "\n")
 	sb.WriteString("version:" + n.Version.String() + "\n")
 	sb.WriteString("bond address:" + n.BondAddress.String() + "\n")
@@ -159,7 +164,7 @@ type NodeAccounts []NodeAccount
 // IsTrustAccount validate whether the given account address is an observer address
 func (nodeAccounts NodeAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
 	for _, na := range nodeAccounts {
-		if na.Status == Active && na.Accounts.ObserverBEPAddress.Equals(addr) {
+		if na.Status == Active && addr.Equals(na.NodeAddress) {
 			return true
 		}
 	}
@@ -174,25 +179,11 @@ func (nodeAccounts NodeAccounts) Less(i, j int) bool {
 	if nodeAccounts[i].StatusSince > nodeAccounts[j].StatusSince {
 		return false
 	}
-	return nodeAccounts[i].Accounts.SignerBNBAddress.String() < nodeAccounts[j].Accounts.SignerBNBAddress.String()
+	return nodeAccounts[i].NodeAddress.String() < nodeAccounts[j].NodeAddress.String()
 }
 func (nodeAccounts NodeAccounts) Len() int { return len(nodeAccounts) }
 func (nodeAccounts NodeAccounts) Swap(i, j int) {
 	nodeAccounts[i], nodeAccounts[j] = nodeAccounts[j], nodeAccounts[i]
-}
-
-func (nodeAccounts NodeAccounts) After(addr common.Address) NodeAccount {
-	idx := 0
-	for i, na := range nodeAccounts {
-		if na.Accounts.SignerBNBAddress.Equals(addr) {
-			idx = i
-			break
-		}
-	}
-	if idx+1 < len(nodeAccounts) {
-		return nodeAccounts[idx+1]
-	}
-	return nodeAccounts[0]
 }
 
 // First return the first item in the slice
