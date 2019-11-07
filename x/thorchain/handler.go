@@ -699,6 +699,12 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 		newMsg = types.NewMsgAck(txID, tx.Sender, chain, signer)
 	case LeaveMemo:
 		newMsg = NewMsgLeave(txID, tx.Sender, signer)
+	case YggdrasilFundMemo:
+		pk, _ := tx.To.PubKey()
+		newMsg = NewMsgYggdrasil(pk, true, tx.Coins, signer)
+	case YggdrasilReturnMemo:
+		pk, _ := tx.Sender.PubKey()
+		newMsg = NewMsgYggdrasil(pk, false, tx.Coins, signer)
 	default:
 		return nil, errors.Wrap(err, "Unable to find memo type")
 	}

@@ -430,6 +430,7 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 		},
 		"stake:BNB",
 		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
 		sdk.NewUint(1024),
 		GetRandomPubKey())
 
@@ -467,6 +468,7 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 		},
 		"stake:BNB",
 		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
 		sdk.NewUint(1024),
 		currentChainPool.PubKey)
 	msgSetTxIn1 := types.NewMsgSetTxIn(
@@ -495,6 +497,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 			common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
 		},
 		"create:BNB",
+		GetRandomBNBAddress(),
 		GetRandomBNBAddress(),
 		sdk.NewUint(1024),
 		currentChainPool.PubKey)
@@ -529,6 +532,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 		},
 		"stake:BNB",
 		staker,
+		GetRandomBNBAddress(),
 		sdk.NewUint(1024),
 		currentChainPool.PubKey)
 
@@ -547,6 +551,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 		},
 		"withdraw:BNB",
 		staker,
+		GetRandomBNBAddress(),
 		sdk.NewUint(1025),
 		currentChainPool.PubKey)
 
@@ -654,6 +659,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 			common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
 		},
 		"swap:BNB",
+		GetRandomBNBAddress(),
 		GetRandomBNBAddress(),
 		sdk.NewUint(1024),
 		currentChainPool.PubKey)
