@@ -86,6 +86,16 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 		spi.Units = unitAfter
 		stakerPool.UpsertStakerPoolItem(spi)
 	}
+
+	// if we have no assets, set pool back to bootstrap status
+	if pool.BalanceAsset.IsZero() {
+		pool.Status = PoolBootstrap
+	}
+	// if we have no rune, set pool back to bootstrap status
+	if pool.BalanceRune.IsZero() {
+		pool.Status = PoolBootstrap
+	}
+
 	// update staker pool
 	keeper.SetPool(ctx, pool)
 	keeper.SetPoolStaker(ctx, msg.Asset, poolStaker)
