@@ -123,7 +123,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 
 	// Enable a pool every 50,000 blocks (3 days)
 	if ctx.BlockHeight()%50000 == 0 {
-		ak.keeper.EnableAPool(ctx)
+		am.keeper.EnableAPool(ctx)
 	}
 
 	am.poolMgr.EndBlock(ctx, am.txOutStore)
