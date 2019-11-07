@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/btcsuite/btcutil/bech32"
@@ -23,6 +24,16 @@ func NewAddress(address string) (Address, error) {
 	}
 
 	return Address(address), nil
+}
+
+func (addr Address) PubKey() (PubKey, error) {
+	prefixes := []string{"bnb", "tbnb", "thor", "tthor"}
+	for _, prefix := range prefixes {
+		if strings.HasPrefix(addr.String(), prefix) {
+			return NewPubKeyFromBech32(addr.String(), prefix)
+		}
+	}
+	return EmptyPubKey, fmt.Errorf("Unable to generate pubkey")
 }
 
 func (addr Address) IsChain(chain Chain) bool {
