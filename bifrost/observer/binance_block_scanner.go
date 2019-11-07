@@ -321,11 +321,8 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 
 				// **IMPORTANT** If this fails, we won't monitor the address and could lose funds!
 				var pk common.PubKey
-				if strings.HasPrefix(txInItem.To, "tbnb") {
-					pk, _ = common.NewPubKeyFromBech32(txInItem.To, "tbnb")
-				} else {
-					pk, _ = common.NewPubKeyFromBech32(txInItem.To, "bnb")
-				}
+				chainNetwork := common.GetCurrentChainNetwork()
+				pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
 				b.addrVal.AddPubKey(pk)
 				return &txInItem, nil
 			}
@@ -337,11 +334,8 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 
 				// **IMPORTANT** If this fails, we may slash a yggdrasil pool inappropriately
 				var pk common.PubKey
-				if strings.HasPrefix(txInItem.To, "tbnb") {
-					pk, _ = common.NewPubKeyFromBech32(txInItem.To, "tbnb")
-				} else {
-					pk, _ = common.NewPubKeyFromBech32(txInItem.To, "bnb")
-				}
+				chainNetwork := common.GetCurrentChainNetwork()
+				pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
 				b.addrVal.RemovePubKey(pk)
 
 				return &txInItem, nil
@@ -368,9 +362,7 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 			// Check that if we've gotten an ack from the next pool
 			if ok := b.isPoolAck(txInItem.Sender, txInItem.Memo); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("ack")
-				// We've added a new pool, we should refresh our list of pools
-				// from thorchain
-				b.addrVal.UpdatePoolAddresses()
+				// TODO: looks like we've added a new pool, add it to the list of pools to monitor.
 				return &txInItem, nil
 			}
 
