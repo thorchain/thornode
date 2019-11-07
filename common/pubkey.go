@@ -13,6 +13,7 @@ import (
 
 // PubKey used in statechain
 type PubKey []byte
+type PubKeys []PubKey
 
 // EmptyPubKey
 var EmptyPubKey PubKey

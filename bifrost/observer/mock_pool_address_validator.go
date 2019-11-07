@@ -23,6 +23,7 @@ type MockPoolAddressValidator struct {
 func NewMockPoolAddressValidator() *MockPoolAddressValidator {
 	return &MockPoolAddressValidator{}
 }
+
 func matchTestAddress(addr, testAddr string, chain common.Chain) (bool, common.ChainPoolInfo) {
 	if strings.EqualFold(testAddr, addr) {
 		buffer, err := b.GetFromBech32(testAddr, "tbnb")
@@ -34,6 +35,15 @@ func matchTestAddress(addr, testAddr string, chain common.Chain) (bool, common.C
 	}
 	return false, common.EmptyChainPoolInfo
 }
+
+func (mpa *MockPoolAddressValidator) AddPubKey(pk common.PubKey)    {}
+func (mpa *MockPoolAddressValidator) RemovePubKey(pk common.PubKey) {}
+
+func (mpa *MockPoolAddressValidator) IsValidAddress(addr string, chain common.Chain) bool {
+	ok, _ := mpa.IsValidPoolAddress(addr, chain)
+	return ok
+}
+
 func (mpa *MockPoolAddressValidator) IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo) {
 	matchCurrent, cpi := matchTestAddress(addr, current, chain)
 	if matchCurrent {
