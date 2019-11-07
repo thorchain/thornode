@@ -560,7 +560,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
 	pool := w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(pool.Empty(), Equals, false)
-	c.Assert(pool.Status, Equals, PoolEnabled)
+	c.Assert(pool.Status, Equals, PoolBootstrap)
 	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
 	c.Assert(pool.BalanceRune.Uint64(), Equals, uint64(0))
 	c.Assert(pool.BalanceAsset.Uint64(), Equals, uint64(0))
