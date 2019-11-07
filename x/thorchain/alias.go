@@ -61,6 +61,8 @@ var (
 	RegisterCodec                  = types.RegisterCodec
 	NewTrustAccount                = types.NewTrustAccount
 	NewNodeAccount                 = types.NewNodeAccount
+	NewYggdrasil                   = types.NewYggdrasil
+	NewMsgYggdrasil                = types.NewMsgYggdrasil
 	NewMsgBond                     = types.NewMsgBond
 	NewPoolAddresses               = types.NewPoolAddresses
 	NewMsgNextPoolAddress          = types.NewMsgNextPoolAddress
@@ -119,6 +121,8 @@ type (
 	EventSwap          = types.EventSwap
 	EventStake         = types.EventStake
 	EventStatus        = types.EventStatus
+	Yggdrasil          = types.Yggdrasil
+	Yggdrasils         = types.Yggdrasils
 	NodeAccount        = types.NodeAccount
 	NodeAccounts       = types.NodeAccounts
 	PoolAddresses      = types.PoolAddresses
