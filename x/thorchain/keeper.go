@@ -896,5 +896,8 @@ func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
 		buf := store.Get([]byte(key))
 		_ = k.cdc.UnmarshalBinaryBare(buf, &ygg)
 	}
+	if ygg.PubKey.IsEmpty() {
+		ygg.PubKey = pk
+	}
 	return ygg
 }
