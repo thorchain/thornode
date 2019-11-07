@@ -14,15 +14,22 @@ var _ = Suite(&TypeTxInSuite{})
 func (s TypeTxInSuite) TestVoter(c *C) {
 	txID := GetRandomTxHash()
 	txID2 := GetRandomTxHash()
+
 	bnb := GetRandomBNBAddress()
 	acc1 := GetRandomBech32Addr()
 	acc2 := GetRandomBech32Addr()
 	acc3 := GetRandomBech32Addr()
 	acc4 := GetRandomBech32Addr()
+
 	accConsPub1 := GetRandomBech32ConsensusPubKey()
 	accConsPub2 := GetRandomBech32ConsensusPubKey()
 	accConsPub3 := GetRandomBech32ConsensusPubKey()
 	accConsPub4 := GetRandomBech32ConsensusPubKey()
+
+	accPubKeys1 := GetRandomPubKeys()
+	accPubKeys2 := GetRandomPubKeys()
+	accPubKeys3 := GetRandomPubKeys()
+	accPubKeys4 := GetRandomPubKeys()
 
 	observePoolAddr := GetRandomPubKey()
 	voter := NewTxInVoter(txID, nil)
@@ -52,69 +59,48 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 
 	trusts3 := NodeAccounts{
 		NodeAccount{
-			NodeAddress: acc1,
-			Status:      Active,
-			Accounts: TrustAccount{
-				SignerBNBAddress:       bnb,
-				ObserverBEPAddress:     acc1,
-				ValidatorBEPConsPubKey: accConsPub1,
-			},
+			NodeAddress:         acc1,
+			Status:              Active,
+			NodePubKey:          accPubKeys1,
+			ValidatorConsPubKey: accConsPub1,
 		},
 		NodeAccount{
-			NodeAddress: acc2,
-			Status:      Active,
-			Accounts: TrustAccount{
-				SignerBNBAddress:       bnb,
-				ObserverBEPAddress:     acc2,
-				ValidatorBEPConsPubKey: accConsPub2,
-			},
+			NodeAddress:         acc2,
+			Status:              Active,
+			NodePubKey:          accPubKeys2,
+			ValidatorConsPubKey: accConsPub2,
 		},
 		NodeAccount{
-			NodeAddress: acc3,
-			Status:      Active,
-			Accounts: TrustAccount{
-				SignerBNBAddress:       bnb,
-				ObserverBEPAddress:     acc3,
-				ValidatorBEPConsPubKey: accConsPub3,
-			},
+			NodeAddress:         acc3,
+			Status:              Active,
+			NodePubKey:          accPubKeys3,
+			ValidatorConsPubKey: accConsPub3,
 		},
 	}
 	trusts4 := NodeAccounts{
 		NodeAccount{
-			NodeAddress: acc1,
-			Status:      Active,
-			Accounts: TrustAccount{
-				SignerBNBAddress:       bnb,
-				ObserverBEPAddress:     acc1,
-				ValidatorBEPConsPubKey: accConsPub1,
-			},
+			NodeAddress:         acc1,
+			Status:              Active,
+			NodePubKey:          accPubKeys1,
+			ValidatorConsPubKey: accConsPub1,
 		},
 		NodeAccount{
-			NodeAddress: acc2,
-			Status:      Active,
-			Accounts: TrustAccount{
-				SignerBNBAddress:       bnb,
-				ObserverBEPAddress:     acc2,
-				ValidatorBEPConsPubKey: accConsPub2,
-			},
+			NodeAddress:         acc2,
+			Status:              Active,
+			NodePubKey:          accPubKeys2,
+			ValidatorConsPubKey: accConsPub2,
 		},
 		NodeAccount{
-			NodeAddress: acc3,
-			Status:      Active,
-			Accounts: TrustAccount{
-				SignerBNBAddress:       bnb,
-				ObserverBEPAddress:     acc3,
-				ValidatorBEPConsPubKey: accConsPub3,
-			},
+			NodeAddress:         acc3,
+			Status:              Active,
+			NodePubKey:          accPubKeys3,
+			ValidatorConsPubKey: accConsPub3,
 		},
 		NodeAccount{
-			NodeAddress: acc4,
-			Status:      Active,
-			Accounts: TrustAccount{
-				SignerBNBAddress:       bnb,
-				ObserverBEPAddress:     acc4,
-				ValidatorBEPConsPubKey: accConsPub4,
-			},
+			NodeAddress:         acc4,
+			Status:              Active,
+			NodePubKey:          accPubKeys4,
+			ValidatorConsPubKey: accConsPub4,
 		},
 	}
 
@@ -172,7 +158,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 			coins:           statechainCoins,
 			memo:            "test",
 			sender:          bnb,
-			observePoolAddr: nil,
+			observePoolAddr: common.EmptyPubKey,
 		},
 	}
 

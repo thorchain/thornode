@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 
@@ -52,7 +53,11 @@ func binanceHeight(dexHost string, client http.Client) int64 {
 		log.Fatal().Msgf("%v\n", err)
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			log.Error().Err(err).Msg("fail to close resp body")
+		}
+	}()
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -271,7 +276,7 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
 			return nil, errors.Wrapf(err, "fail to parse block height")
 		}
-		observedPoolPubKey, err := common.NewPubKeyFromHexString(item.ObservedPoolAddress)
+		observedPoolPubKey, err := common.NewPubKey(item.ObservedPoolAddress)
 		if nil != err {
 			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolAddress).Inc()
 			return nil, errors.Wrapf(err, "fail to parse observed pool address: %s", item.ObservedPoolAddress)

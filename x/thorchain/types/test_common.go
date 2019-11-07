@@ -15,11 +15,14 @@ import (
 func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	name := common.RandStringBytesMask(10)
 	addr := sdk.AccAddress(crypto.AddressHash([]byte(name)))
-	bnb := GetRandomBNBAddress()
 	v, _ := tmtypes.RandValidator(true, 100)
 	k, _ := sdk.Bech32ifyConsPub(v.PubKey)
 	bondAddr := GetRandomBNBAddress()
-	na := NewNodeAccount(addr, status, NewTrustAccount(bnb, addr, k), sdk.NewUint(100*common.One), bondAddr, 1)
+	pubKeys := common.PubKeys{
+		Secp256k1: GetRandomPubKey(),
+		Ed25519:   GetRandomPubKey(),
+	}
+	na := NewNodeAccount(addr, status, pubKeys, k, sdk.NewUint(100*common.One), bondAddr, 1)
 	return na
 }
 
@@ -52,9 +55,16 @@ func GetRandomTxHash() common.TxID {
 	return txHash
 }
 
+// GetRandomPubKeys return a random common.PubKeys for test purpose
+func GetRandomPubKeys() common.PubKeys {
+	return common.NewPubKeys(GetRandomPubKey(), GetRandomPubKey())
+}
+
 func GetRandomPubKey() common.PubKey {
 	_, pubKey, _ := atypes.KeyTestPubAddr()
-	return common.NewPubKey(pubKey.Bytes())
+	bech32PubKey, _ := sdk.Bech32ifyAccPub(pubKey)
+	pk, _ := common.NewPubKey(bech32PubKey)
+	return pk
 }
 
 // SetupConfigForTest used for test purpose

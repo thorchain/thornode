@@ -360,22 +360,6 @@ func (k Keeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccoun
 	return na, nil
 }
 
-// GetNodeAccountByObserver
-func (k Keeper) GetNodeAccountByObserver(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
-	ctx.Logger().Debug("GetNodeAccountByObserver", "observer address", addr.String())
-	var na NodeAccount
-	nodeAccounts, err := k.ListNodeAccounts(ctx)
-	if nil != err {
-		return na, errors.Wrap(err, "fail to get all node accounts")
-	}
-	for _, item := range nodeAccounts {
-		if item.Accounts.ObserverBEPAddress.Equals(addr) {
-			return item, nil
-		}
-	}
-	return na, nil
-}
-
 // GetNodeAccountByBondAddress go through data store to get node account by it's signer bnb address
 func (k Keeper) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error) {
 	ctx.Logger().Debug("GetNodeAccountByBondAddress", "signer bnb address", addr.String())
@@ -402,13 +386,13 @@ func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	// When a node is in active status, we need to add the observer address to active
 	// if it is not , then we could remove them
 	if na.Status == NodeActive {
-		k.SetActiveObserver(ctx, na.Accounts.ObserverBEPAddress)
+		k.SetActiveObserver(ctx, na.NodeAddress)
 	} else {
-		k.RemoveActiveObserver(ctx, na.Accounts.ObserverBEPAddress)
+		k.RemoveActiveObserver(ctx, na.NodeAddress)
 	}
 }
 
-func (k Keeper) EnsureTrustAccountUnique(ctx sdk.Context, account TrustAccount) error {
+func (k Keeper) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
 	iter := k.GetNodeAccountIterator(ctx)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -416,11 +400,11 @@ func (k Keeper) EnsureTrustAccountUnique(ctx sdk.Context, account TrustAccount) 
 		if err := k.cdc.UnmarshalBinaryBare(iter.Value(), &na); nil != err {
 			return errors.Wrap(err, "fail to unmarshal node account")
 		}
-		if na.Accounts.ValidatorBEPConsPubKey == account.ValidatorBEPConsPubKey {
-			return errors.Errorf("%s already exist", account.ValidatorBEPConsPubKey)
+		if na.ValidatorConsPubKey == consensusPubKey {
+			return errors.Errorf("%s already exist", na.ValidatorConsPubKey)
 		}
-		if na.Accounts.ObserverBEPAddress.Equals(account.ObserverBEPAddress) {
-			return errors.Errorf("%s already exist", account.ObserverBEPAddress)
+		if na.NodePubKey.Equals(pubKeys) {
+			return errors.Errorf("%s already exist", pubKeys)
 		}
 	}
 

@@ -133,7 +133,7 @@ func (b *Binance) GetAddress() string {
 	return b.keyManager.GetAddr().String()
 }
 func (b *Binance) isSignerAddressMatch(poolAddr, signerAddr string) bool {
-	pubKey, err := common.NewPubKeyFromHexString(poolAddr)
+	pubKey, err := common.NewPubKey(poolAddr)
 	if nil != err {
 		b.logger.Error().Err(err).Msg("fail to create pub key from the pool address")
 		return false
@@ -143,6 +143,7 @@ func (b *Binance) isSignerAddressMatch(poolAddr, signerAddr string) bool {
 		b.logger.Error().Err(err).Msg("fail to create bnb address from the pub key")
 		return false
 	}
+	b.logger.Info().Msg(bnbAddress.String())
 	return strings.EqualFold(bnbAddress.String(), signerAddr)
 }
 

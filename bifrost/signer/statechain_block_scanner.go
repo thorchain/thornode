@@ -11,12 +11,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
 	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 type StateChainBlockScan struct {

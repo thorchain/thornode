@@ -7,7 +7,7 @@
     "block_scan_processors": 1,
     "block_height_discover_back_off": "1s",
     "block_retry_interval": "10s",
-    "start_block_height": "46504289"
+    "start_block_height": "47917320"
   },
   "state_chain": {
     "chain_id": "statechain",
@@ -17,5 +17,6 @@
   },
   "metric": {
     "enabled": true
-  }
+  },
+  "rune_address": "thor1ply65cysml949kdajmpugamzat964xttx4hgtv"
 }

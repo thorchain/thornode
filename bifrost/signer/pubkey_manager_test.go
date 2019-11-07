@@ -4,16 +4,19 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 )
 
 type PukKeyManagerSuite struct{}
 
 var _ = Suite(&PukKeyManagerSuite{})
 
+func (s *PukKeyManagerSuite) SetUpSuite(c *C) {
+	types.SetupConfigForTest()
+}
 func (s *PukKeyManagerSuite) TestPubKeyManager(c *C) {
 	pkm := NewPubKeyManager()
-
-	pk, err := common.NewPubKeyFromBech32("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa", "tbnb")
+	pk, err := common.NewPubKey("thorpub1addwnpepqfzklu4h6ztp39ndcvyys2v9ljqh496wnhrkgpawd5w3yqxxhvm8sjp85z9")
 	c.Assert(err, IsNil)
 	c.Assert(pkm.pks, HasLen, 0)
 

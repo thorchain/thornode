@@ -308,7 +308,7 @@ func ParseMemo(memo string) (Memo, error) {
 		}, nil
 
 	case txNextPool:
-		nextPoolAddr, err := common.NewPubKeyFromHexString(parts[1])
+		nextPoolAddr, err := common.NewPubKey(parts[1])
 		if nil != err {
 			return noMemo, fmt.Errorf("%s is an invalid hex encoded pub key,err: %w", parts[1], err)
 		}
@@ -335,7 +335,7 @@ func (m MemoBase) GetKey() string                    { return "" }
 func (m MemoBase) GetValue() string                  { return "" }
 func (m MemoBase) GetBlockHeight() uint64            { return 0 }
 func (m MemoBase) GetNodeAddress() sdk.AccAddress    { return sdk.AccAddress{} }
-func (m MemoBase) GetNextPoolAddress() common.PubKey { return nil }
+func (m MemoBase) GetNextPoolAddress() common.PubKey { return common.EmptyPubKey }
 
 // Transaction Specific Functions
 func (m WithdrawMemo) GetAmount() string                 { return m.Amount }
