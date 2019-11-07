@@ -35,7 +35,7 @@ integration:test:
   image: cbarraford/golang-ruby
   stage: test
   variables:
-    NET: "testnet" #as long as it is not test net
+    NET: "testnet"
   script:
     - make -C ./test/integration install setup run wait-for-blockchain test-internal
 

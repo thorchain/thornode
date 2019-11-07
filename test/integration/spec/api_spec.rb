@@ -2,7 +2,7 @@ require_relative './helper.rb'
 
 # this is a hex encoded public key of bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
 POOL_PUB_KEY = "thorpub1addwnpepq2kdyjkm6y9aa3kxl8wfaverka6pvkek2ygrmhx6sj3ec6h0fegwsgeslue"
-# TRUST_BNB_ADDRESS = "thor1jk5h99ztgqe7tkuck0lvj0h8qmkfqejn8hw5p0"
+TRUST_BNB_ADDRESS = "tbnb1tdfqy34uptx207scymqsy4k5uzfmry5s8lujqt"
 describe "API Tests" do
 
   context "Check /ping responds" do
@@ -13,9 +13,6 @@ describe "API Tests" do
     end
   end
 
-  resp = get("/nodeaccounts")
-  puts resp.body
-  TRUST_BNB_ADDRESS = resp.body[0]['node_address']
   context "Check that an empty tx hash returns properly" do
     it "should have no values" do
       resp = get("/tx/A9A65505553D777E5CE957A74153F21EDD8AAA4B0868F2537E97E309945425B9")
@@ -173,7 +170,6 @@ describe "API Tests" do
           next
         end
         arr = resp.body['chains']['BNB']
-        puts arr
         unless arr['tx_array'].empty?
           if arr['tx_array'][0]['to'] == "bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"
             # we have found the block height of our last swap
