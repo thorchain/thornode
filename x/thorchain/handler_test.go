@@ -620,6 +620,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	msgOutboundTx := NewMsgOutboundTx(GetRandomTxHash(), 1,
 		bnbAddr,
 		common.BNBChain,
+		nil,
 		w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTx)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
@@ -627,6 +628,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	msgInvalidOutboundTx := NewMsgOutboundTx("", 1,
 		bnbAddr,
 		common.BNBChain,
+		nil,
 		w.activeNodeAccount.NodeAddress)
 	result1 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidOutboundTx)
 	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest)
@@ -635,6 +637,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		1,
 		GetRandomBNBAddress(),
 		common.BNBChain,
+		nil,
 		w.activeNodeAccount.NodeAddress)
 	result2 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidPool)
 	c.Assert(result2.Code, Equals, sdk.CodeUnauthorized)
@@ -644,13 +647,31 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	c.Assert(currentChainPool, NotNil)
 	currentPoolAddr, err := currentChainPool.GetAddress()
 	c.Assert(err, IsNil)
+
+	pk, err := currentPoolAddr.PubKey()
+	c.Assert(err, IsNil)
+	ygg := NewYggdrasil(pk)
+	ygg.Coins = common.Coins{
+		common.NewCoin(common.BNBAsset, sdk.NewUint(500*common.One)),
+		common.NewCoin(common.BTCAsset, sdk.NewUint(400*common.One)),
+	}
+	w.keeper.SetYggdrasil(w.ctx, ygg)
+	coins := common.Coins{
+		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
+		common.NewCoin(common.BTCAsset, sdk.NewUint(200*common.One)),
+	}
+
 	msgOutboundTxNormal := NewMsgOutboundTx(GetRandomTxHash(),
 		1,
 		currentPoolAddr,
 		common.BNBChain,
+		coins,
 		w.activeNodeAccount.NodeAddress)
 	result3 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal)
 	c.Assert(result3.Code, Equals, sdk.CodeOK)
+	ygg = w.keeper.GetYggdrasil(w.ctx, pk)
+	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(300*common.One)), Equals, true)
+	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)
 
 	w.txOutStore.NewBlock(2)
 	// set a txin
@@ -676,6 +697,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		2,
 		currentPoolAddr,
 		common.BNBChain,
+		nil,
 		w.activeNodeAccount.NodeAddress)
 	result4 := handleMsgOutboundTx(ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal1)
 	c.Assert(result4.Code, Equals, sdk.CodeOK)

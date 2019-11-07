@@ -686,7 +686,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 			return nil, errors.Wrap(err, "fail to get MsgNoOp from memo")
 		}
 	case OutboundMemo:
-		newMsg, err = getMsgOutboundFromMemo(m, txID, tx.Sender, chain, signer)
+		newMsg, err = getMsgOutboundFromMemo(m, txID, tx.Sender, chain, tx.Coins, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
@@ -830,13 +830,14 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.Address, chain common.Chain, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.Address, chain common.Chain, coins common.Coins, signer sdk.AccAddress) (sdk.Msg, error) {
 	blockHeight := memo.GetBlockHeight()
 	return NewMsgOutboundTx(
 		txID,
 		blockHeight,
 		sender,
 		chain,
+		coins,
 		signer,
 	), nil
 }
@@ -959,6 +960,14 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		keeper.SetTxOut(ctx, txOut)
 	}
 	keeper.SetLastSignedHeight(ctx, sdk.NewUint(msg.Height))
+
+	// If we are sending from a yggdrasil pool, decrement coins on record
+	pk, _ := msg.Sender.PubKey()
+	if !pk.IsEmpty() && keeper.YggdrasilExists(ctx, pk) {
+		ygg := keeper.GetYggdrasil(ctx, pk)
+		ygg.SubFunds(msg.Coins)
+		keeper.SetYggdrasil(ctx, ygg)
+	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
