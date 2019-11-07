@@ -52,7 +52,7 @@ echo "{
     \"scheme\": \"http\"
   },
   \"state_chain\": {
-    \"chain_id\": \"statechain\",
+    \"chain_id\": \"$CHAIN_ID\",
     \"chain_host\": \"$CHAIN_HOST\",
     \"signer_name\": \"$SIGNER_NAME\",
     \"signer_passwd\": \"$SIGNER_PASSWD\"
