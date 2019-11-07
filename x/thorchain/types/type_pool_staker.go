@@ -13,11 +13,15 @@ import (
 type StakerUnit struct {
 	RuneAddress  common.Address `json:"rune_address"`
 	AssetAddress common.Address `json:"asset_address"`
+	Height       sdk.Uint       `json:"height"`
 	Units        sdk.Uint       `json:"units"`
 	PendingRune  sdk.Uint       `json:"pending_rune"` // number of rune coins
 }
 
 func (su StakerUnit) Valid() error {
+	if su.Height.IsZero() {
+		return errors.New("Height cannot be empty")
+	}
 	if su.RuneAddress.IsEmpty() {
 		return errors.New("Rune address cannot be empty")
 	}
