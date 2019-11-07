@@ -38,6 +38,8 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 			return queryAdminConfig(ctx, path[1:], req, keeper)
 		case q.QueryTxOutArray.Key:
 			return queryTxOutArray(ctx, path[1:], req, keeper)
+		case q.QueryTxOutArrayPubkey.Key:
+			return queryTxOutArray(ctx, path[1:], req, keeper)
 		case q.QueryIncompleteEvents.Key:
 			return queryInCompleteEvents(ctx, path[1:], req, keeper)
 		case q.QueryCompleteEvents.Key:
@@ -316,27 +318,51 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 }
 
 func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	var err error
 	height, err := strconv.ParseUint(path[0], 0, 64)
 	if nil != err {
 		ctx.Logger().Error("fail to parse block height", err)
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
-	tx, err := keeper.GetTxOut(ctx, height)
+
+	pk := common.EmptyPubKey
+	if len(path) > 1 {
+		pk, err = common.NewPubKeyFromHexString(path[1])
+		if nil != err {
+			ctx.Logger().Error("fail to parse pubkey", err)
+			return nil, sdk.ErrInternal("fail to parse pubkey")
+		}
+	}
+
+	txs, err := keeper.GetTxOut(ctx, height)
 	if nil != err {
 		ctx.Logger().Error("fail to get tx out array from key value store", err)
 		return nil, sdk.ErrInternal("fail to get tx out array from key value store")
 	}
 
+	if !pk.IsEmpty() {
+		newTxs := &TxOut{
+			Height: txs.Height,
+			Hash:   txs.Hash,
+		}
+		for _, tx := range txs.TxArray {
+			if pk.Equals(tx.PoolAddress) {
+				newTxs.TxArray = append(newTxs.TxArray, tx)
+			}
+		}
+		txs = newTxs
+	}
+
 	out := make(map[common.Chain]ResTxOut, 0)
-	for _, item := range tx.TxArray {
+	for _, item := range txs.TxArray {
 		if len(item.Coins) == 0 {
 			continue
 		}
 		res, ok := out[item.Chain]
 		if !ok {
 			res = ResTxOut{
-				Height:  tx.Height,
-				Hash:    tx.Hash, // TODO: this should be unique to chain
+				Height:  txs.Height,
+				Hash:    txs.Hash, // TODO: this should be unique to chain
 				Chain:   item.Coins[0].Asset.Chain,
 				TxArray: make([]TxOutItem, 0),
 			}
