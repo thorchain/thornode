@@ -27,6 +27,6 @@ func (mas *MsgAckSuite) TestMsgAck(c *C) {
 	c.Assert(emptySender.ValidateBasic(), NotNil)
 	emptyHash := NewMsgAck("", sender, common.BNBChain, signer)
 	c.Assert(emptyHash.ValidateBasic(), NotNil)
-	emptyChain := NewMsgAck(txID, sender, "", signer)
+	emptyChain := NewMsgAck(txID, sender, common.EmptyChain, signer)
 	c.Assert(emptyChain.ValidateBasic(), NotNil)
 }

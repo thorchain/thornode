@@ -110,7 +110,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "pool-not-exist",
 			requestTxHash: "hash",
-			source:        common.Asset{Chain: "BNB", Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
+			source:        common.Asset{Chain: common.BNBChain, Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
 			target:        common.RuneAsset(),
 			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
@@ -123,7 +123,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			name:          "pool-not-exist-1",
 			requestTxHash: "hash",
 			source:        common.RuneAsset(),
-			target:        common.Asset{Chain: "BNB", Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
+			target:        common.Asset{Chain: common.BNBChain, Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
 			amount:        sdk.NewUint(100 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
@@ -182,7 +182,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		{
 			name:          "double-swap",
 			requestTxHash: "hash",
-			source:        common.Asset{Chain: "BTC", Ticker: "BTC", Symbol: "BTC"},
+			source:        common.Asset{Chain: common.BTCChain, Ticker: "BTC", Symbol: "BTC"},
 			target:        common.BNBAsset,
 			amount:        sdk.NewUint(5 * common.One),
 			requester:     "tester",
@@ -211,7 +211,7 @@ func (s SwapSuite) TestValidatePools(c *C) {
 	keeper := mocks.MockPoolStorage{}
 	ctx, _ := setupKeeperForTest(c)
 	c.Check(validatePools(ctx, keeper, common.RuneAsset()), IsNil)
-	c.Check(validatePools(ctx, keeper, common.Asset{Chain: "BNB", Ticker: "NOTEXIST", Symbol: "NOTEXIST"}), NotNil)
+	c.Check(validatePools(ctx, keeper, common.Asset{Chain: common.BNBChain, Ticker: "NOTEXIST", Symbol: "NOTEXIST"}), NotNil)
 }
 
 func (s SwapSuite) TestValidateMessage(c *C) {
@@ -245,7 +245,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	txOutStore := NewTxOutStore(w.keeper, w.poolAddrMgr)
 	txID := GetRandomTxHash()
 	signerBNBAddr := GetRandomBNBAddress()
-	observerAddr := w.activeNodeAccount.Accounts.ObserverBEPAddress
+	observerAddr := w.activeNodeAccount.NodeAddress
 	txOutStore.NewBlock(1)
 	// no pool
 	msg := NewMsgSwap(txID, common.RuneAsset(), common.BNBAsset, sdk.NewUint(common.One), signerBNBAddr, signerBNBAddr, sdk.ZeroUint(), observerAddr)

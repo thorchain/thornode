@@ -1,8 +1,8 @@
 require_relative './helper.rb'
 
 # this is a hex encoded public key of bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6
-POOL_PUB_KEY = "fe6431ad7d2e103a953cbfacbe460d6df2f4a7ce"
-TRUST_BNB_ADDRESS = "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"
+POOL_PUB_KEY = "thorpub1addwnpepq2kdyjkm6y9aa3kxl8wfaverka6pvkek2ygrmhx6sj3ec6h0fegwsgeslue"
+TRUST_BNB_ADDRESS = "tbnb1tdfqy34uptx207scymqsy4k5uzfmry5s8lujqt"
 describe "API Tests" do
 
   context "Check /ping responds" do

@@ -6,8 +6,6 @@ import (
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
-
-	b "github.com/binance-chain/go-sdk/common/types"
 )
 
 var (
@@ -26,18 +24,16 @@ func NewMockPoolAddressValidator() *MockPoolAddressValidator {
 
 func matchTestAddress(addr, testAddr string, chain common.Chain) (bool, common.ChainPoolInfo) {
 	if strings.EqualFold(testAddr, addr) {
-		buffer, err := b.GetFromBech32(testAddr, "tbnb")
-		fmt.Println(err)
-		pk := common.NewPubKey(buffer)
-		cpi, err := common.NewChainPoolInfo(chain, pk)
+		cpi, err := common.NewChainPoolInfo(chain, types.GetRandomPubKey())
+		cpi.PoolAddress = common.Address(testAddr)
 		fmt.Println(err)
 		return true, cpi
 	}
 	return false, common.EmptyChainPoolInfo
 }
 
-func (mpa *MockPoolAddressValidator) AddPubKey(pk common.PubKey)    {}
-func (mpa *MockPoolAddressValidator) RemovePubKey(pk common.PubKey) {}
+func (mpa *MockPoolAddressValidator) AddPubKey(pk common.PubKeys)    {}
+func (mpa *MockPoolAddressValidator) RemovePubKey(pk common.PubKeys) {}
 
 func (mpa *MockPoolAddressValidator) IsValidAddress(addr string, chain common.Chain) bool {
 	ok, _ := mpa.IsValidPoolAddress(addr, chain)
