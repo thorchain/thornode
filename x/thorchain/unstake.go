@@ -59,8 +59,8 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 	// check if we need to rate limit unstaking
 	// https://gitlab.com/thorchain/bepswap/thornode/issues/166
 	if !msg.Asset.Chain.Equals(common.BNBChain) {
-		height := sdk.NewUint(uint64(ctx.BlockHeight()))
-		if height.LT(stakerUnit.Height.Add(sdk.NewUint(17280))) {
+		height := ctx.BlockHeight()
+		if height < (stakerUnit.Height + 17280) {
 			err := fmt.Errorf("You cannot unstake for 24 hours after staking for this blockchain")
 			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
 		}
