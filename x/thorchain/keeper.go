@@ -882,18 +882,21 @@ func (k Keeper) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator {
 	return sdk.KVStorePrefixIterator(store, []byte(prefixYggdrasilPool))
 }
 
-func (k Keeper) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) common.PubKey {
+func (k Keeper) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error) {
 	iterator := k.GetYggdrasilIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var ygg Yggdrasil
 		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &ygg)
-		address, _ := ygg.PubKey.GetAddress(chain)
+		address, err := ygg.PubKey.GetAddress(chain)
+		if err != nil {
+			return common.EmptyPubKey, err
+		}
 		if !address.IsEmpty() && address.Equals(addr) {
-			return ygg.PubKey
+			return ygg.PubKey, nil
 		}
 	}
-	return common.EmptyPubKey
+	return common.EmptyPubKey, nil
 }
 
 func (k Keeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
