@@ -23,16 +23,18 @@ type TxIn struct {
 	Memo               string           `json:"memo"`   // memo
 	Coins              common.Coins     `json:"coins"`  // coins sent in tx
 	Sender             common.Address   `json:"sender"`
+	To                 common.Address   `json:"to"` // to address
 	BlockHeight        sdk.Uint         `json:"block_height"`
 	Signers            []sdk.AccAddress `json:"signers"` // trust accounts saw this tx
 	ObservePoolAddress common.PubKey    `json:"pool_address"`
 }
 
-func NewTxIn(coins common.Coins, memo string, sender common.Address, height sdk.Uint, observePoolAddress common.PubKey) TxIn {
+func NewTxIn(coins common.Coins, memo string, sender, to common.Address, height sdk.Uint, observePoolAddress common.PubKey) TxIn {
 	return TxIn{
 		Coins:              coins,
 		Memo:               memo,
 		Sender:             sender,
+		To:                 to,
 		Status:             Incomplete,
 		BlockHeight:        height,
 		ObservePoolAddress: observePoolAddress,
@@ -43,6 +45,9 @@ func (tx TxIn) Valid() error {
 	if tx.Sender.IsEmpty() {
 		return errors.New("sender cannot be empty")
 	}
+	if tx.To.IsEmpty() {
+		return errors.New("to address cannot be empty")
+	}
 	if len(tx.Coins) == 0 {
 		return errors.New("coins cannot be empty")
 	}
@@ -51,9 +56,10 @@ func (tx TxIn) Valid() error {
 			return err
 		}
 	}
-	// ideally memo should not be empty, we check it here, but if we check it empty here, then the tx will be rejected by statechain
-	// given that , we are not going to refund the transaction, thus we will allow TxIn has empty to get into statechain.
-	// and let statechain to refund customer
+	// ideally memo should not be empty, we check it here, but if we check it
+	// empty here, then the tx will be rejected by statechain given that , we
+	// are not going to refund the transaction, thus we will allow TxIn has
+	// empty to get into statechain. and let statechain to refund customer
 	if tx.BlockHeight.IsZero() {
 		return errors.New("block height can't be zero")
 	}
@@ -72,6 +78,9 @@ func (tx TxIn) Equals(tx2 TxIn) bool {
 		return false
 	}
 	if !tx.Sender.Equals(tx2.Sender) {
+		return false
+	}
+	if !tx.To.Equals(tx2.To) {
 		return false
 	}
 	if !tx.ObservePoolAddress.Equals(tx2.ObservePoolAddress) {

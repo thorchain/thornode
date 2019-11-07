@@ -283,6 +283,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 		},
 		"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
 		signerBNBAddr,
+		GetRandomBNBAddress(),
 		sdk.NewUint(1),
 		currentChainPoolAddr.PubKey,
 	)
