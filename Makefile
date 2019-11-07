@@ -42,7 +42,6 @@ lint-pre:
 
 lint: lint-pre
 	@golangci-lint run
-	@go mod verify
 
 lint-verbose: lint-pre
 	@golangci-lint run -v
