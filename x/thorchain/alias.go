@@ -25,6 +25,7 @@ const (
 	RotatePerBlockHeightKey   = types.RotatePerBlockHeightKey
 	ValidatorsChangeWindowKey = types.ValidatorsChangeWindowKey
 	PoolRefundGasKey          = types.PoolRefundGasKey
+	DefaultPoolStatus         = types.DefaultPoolStatus
 
 	NodeActive      = types.Active
 	NodeWhiteListed = types.WhiteListed
@@ -65,6 +66,7 @@ var (
 	NewPoolAddresses               = types.NewPoolAddresses
 	NewMsgNextPoolAddress          = types.NewMsgNextPoolAddress
 	NewMsgLeave                    = types.NewMsgLeave
+	GetPoolStatus                  = types.GetPoolStatus
 	GetRandomNodeAccount           = types.GetRandomNodeAccount
 	GetRandomBNBAddress            = types.GetRandomBNBAddress
 	GetRandomTxHash                = types.GetRandomTxHash

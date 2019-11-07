@@ -120,6 +120,12 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
+
+	// Enable a pool every 50,000 blocks (3 days)
+	if ctx.BlockHeight()%50000 == 0 {
+		am.keeper.EnableAPool(ctx)
+	}
+
 	am.poolMgr.EndBlock(ctx, am.txOutStore)
 	am.txOutStore.CommitBlock(ctx)
 	return am.validatorMgr.EndBlock(ctx, req.Height)
