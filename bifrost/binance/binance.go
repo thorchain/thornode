@@ -16,7 +16,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	btypes "gitlab.com/thorchain/bepswap/thornode/bifrost/binance/types"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
 	"gitlab.com/thorchain/bepswap/thornode/common"
@@ -195,7 +194,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 
 	signMsg := tx.StdSignMsg{
 		ChainID:       b.chainId,
-		Memo:          btypes.TxOutMemoPrefix + strconv.FormatInt(height, 10),
+		Memo:          tai.Memo,
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,
 		Sequence:      seqNo, // acc.Sequence,
