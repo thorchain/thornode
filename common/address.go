@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/btcsuite/btcutil/bech32"
@@ -27,13 +26,8 @@ func NewAddress(address string) (Address, error) {
 }
 
 func (addr Address) PubKey() (PubKey, error) {
-	prefixes := []string{"bnb", "tbnb", "thor", "tthor"}
-	for _, prefix := range prefixes {
-		if strings.HasPrefix(addr.String(), prefix) {
-			return NewPubKeyFromBech32(addr.String(), prefix)
-		}
-	}
-	return EmptyPubKey, fmt.Errorf("Unable to generate pubkey")
+	prefix, _, _ := bech32.Decode(addr.String())
+	return NewPubKeyFromBech32(addr.String(), prefix)
 }
 
 func (addr Address) IsChain(chain Chain) bool {
@@ -41,6 +35,9 @@ func (addr Address) IsChain(chain Chain) bool {
 	case BNBChain:
 		prefix, _, _ := bech32.Decode(addr.String())
 		return prefix == "bnb" || prefix == "tbnb"
+	case ThorChain:
+		prefix, _, _ := bech32.Decode(addr.String())
+		return prefix == "thor" || prefix == "tthor"
 	default:
 		return true // if we don't specifically check a chain yet, assume its ok.
 	}
