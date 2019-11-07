@@ -290,6 +290,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		Chain:       currentAddr.Chain,
 		PoolAddress: currentAddr.PubKey,
 		ToAddress:   msg.Destination,
+		Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 	}
 	toi.Coins = append(toi.Coins, common.NewCoin(
 		msg.TargetAsset,
@@ -398,6 +399,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 			Chain:       currentAddr.Chain,
 			PoolAddress: currentAddr.PubKey,
 			ToAddress:   stakerUnit.AssetAddress,
+			Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 		}
 		toi.Coins = append(toi.Coins, common.NewCoin(
 			msg.Asset,
@@ -421,6 +423,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 		ToAddress:   tx.Sender,
 		PoolAddress: poolAddr,
 		Coins:       tx.Coins,
+		Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 	}
 
 	// If we recognize one of the coins, and therefore able to refund
@@ -1139,6 +1142,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 				Chain:       chain,
 				ToAddress:   nodeAcc.BondAddress,
 				PoolAddress: currentChainPoolAddr.PubKey,
+				Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 				Coins: common.Coins{
 					common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 				},

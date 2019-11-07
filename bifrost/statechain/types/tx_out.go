@@ -7,6 +7,7 @@ type TxArrayItem struct {
 	SeqNo       string        `json:"seq_no"`
 	To          string        `json:"to"`
 	Coins       common.Coins  `json:"coins"`
+	Memo        string        `json:"memo"`
 }
 type TxOut struct {
 	Height  string        `json:"height"`
