@@ -18,6 +18,5 @@ func (s ChainSuite) TestChain(c *C) {
 
 	_, err = NewChain("B") // too short
 	c.Assert(err, NotNil)
-	_, err = NewChain("BOGUS") // too long
-	c.Assert(err, NotNil)
+
 }

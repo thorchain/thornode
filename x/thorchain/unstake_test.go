@@ -194,7 +194,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 			msg: MsgSetUnStake{
 				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
-				Asset:               common.Asset{Chain: "BNB", Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
+				Asset:               common.Asset{Chain: common.BNBChain, Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -318,7 +318,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
-				Asset:               common.Asset{Chain: "BNB", Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
+				Asset:               common.Asset{Chain: common.BNBChain, Ticker: "NOTEXIST", Symbol: "NOTEXIST"},
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -332,7 +332,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			msg: MsgSetUnStake{
 				RuneAddress:         runeAddress,
 				WithdrawBasisPoints: sdk.NewUint(10000),
-				Asset:               common.Asset{Chain: "BNB", Ticker: "NOTEXISTSTICKER", Symbol: "NOTEXISTSTICKER"},
+				Asset:               common.Asset{Chain: common.BNBChain, Ticker: "NOTEXISTSTICKER", Symbol: "NOTEXISTSTICKER"},
 				RequestTxHash:       "28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE",
 				Signer:              accountAddr,
 			},
@@ -437,7 +437,7 @@ func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
 		Asset:      common.BNBAsset,
 		TotalUnits: sdk.NewUint(100 * common.One),
 		Stakers: []StakerUnit{
-			StakerUnit{
+			{
 				RuneAddress: runeAddress,
 				Units:       sdk.NewUint(100 * common.One),
 				PendingRune: sdk.ZeroUint(),

@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -9,6 +11,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 
 	appCmd "gitlab.com/thorchain/bepswap/thornode/cmd"
@@ -77,19 +80,22 @@ func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
 // GetCmdSetTrustAccount command to add a trust account
 func GetCmdSetTrustAccount(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-trust-account  [observer_address] [validator_consensus_pub_key]",
+		Use:   "set-trust-account  [secp256k1] [ed25519] [validator_consensus_pub_key]",
 		Short: "set trust account, the account use to sign this tx has to be whitelist first",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			observer, err := sdk.AccAddressFromBech32(args[0])
-			if err != nil {
-				return errors.Wrap(err, "fail to parse observer address")
+			secp256k1Key, err := common.NewPubKey(args[0])
+			if nil != err {
+				return fmt.Errorf("fail to parse secp256k1 pub key ,err:%w", err)
 			}
-
-			validatorConsPubKey, err := sdk.GetConsPubKeyBech32(args[1])
+			ed25519Key, err := common.NewPubKey(args[1])
+			if nil != err {
+				return fmt.Errorf("fail to parse ed25519 pub key ,err:%w", err)
+			}
+			pk := common.NewPubKeys(secp256k1Key, ed25519Key)
+			validatorConsPubKey, err := sdk.GetConsPubKeyBech32(args[2])
 			if err != nil {
 				return errors.Wrap(err, "fail to parse validator consensus public key")
 			}
@@ -97,8 +103,7 @@ func GetCmdSetTrustAccount(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "fail to convert public key to string")
 			}
-			trust := types.NewTrustAccount("", observer, validatorConsPubKeyStr)
-			msg := types.NewMsgSetTrustAccount(trust, cliCtx.GetFromAddress())
+			msg := types.NewMsgSetTrustAccount(pk, validatorConsPubKeyStr, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err

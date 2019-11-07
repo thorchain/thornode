@@ -56,29 +56,30 @@ func (NodeAccountSuite) TestGetNodeStatus(c *C) {
 }
 
 func (NodeAccountSuite) TestNodeAccount(c *C) {
-	bnb := GetRandomBNBAddress()
 	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
 	bepConsPubKey := GetRandomBech32ConsensusPubKey()
-	trustAccount := NewTrustAccount(bnb, addr, bepConsPubKey)
-	err := trustAccount.IsValid()
-	c.Assert(err, IsNil)
 	nodeAddress := GetRandomBech32Addr()
 	bondAddr := GetRandomBNBAddress()
-	na := NewNodeAccount(nodeAddress, Active, trustAccount, sdk.NewUint(common.One), bondAddr, 1)
+	pubKeys := common.PubKeys{
+		Secp256k1: GetRandomPubKey(),
+		Ed25519:   GetRandomPubKey(),
+	}
+
+	na := NewNodeAccount(nodeAddress, Active, pubKeys, bepConsPubKey, sdk.NewUint(common.One), bondAddr, 1)
 	c.Assert(na.IsEmpty(), Equals, false)
 	c.Assert(na.IsValid(), IsNil)
 	c.Assert(na.Bond.Uint64(), Equals, uint64(common.One))
 	nas := NodeAccounts{
 		na,
 	}
-	c.Assert(nas.IsTrustAccount(addr), Equals, true)
-	c.Assert(nas.IsTrustAccount(nodeAddress), Equals, false)
+	c.Assert(nas.IsTrustAccount(addr), Equals, false)
+	c.Assert(nas.IsTrustAccount(nodeAddress), Equals, true)
 	c.Logf("node account:%s", na)
-	naEmpty := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount, sdk.NewUint(common.One), bondAddr, 1)
+	naEmpty := NewNodeAccount(sdk.AccAddress{}, Active, pubKeys, bepConsPubKey, sdk.NewUint(common.One), bondAddr, 1)
 	c.Assert(naEmpty.IsValid(), NotNil)
 	c.Assert(naEmpty.IsEmpty(), Equals, true)
-	invalidBondAddr := NewNodeAccount(sdk.AccAddress{}, Active, trustAccount, sdk.NewUint(common.One), "", 1)
+	invalidBondAddr := NewNodeAccount(sdk.AccAddress{}, Active, pubKeys, bepConsPubKey, sdk.NewUint(common.One), "", 1)
 	c.Assert(invalidBondAddr.IsValid(), NotNil)
 }
 
@@ -88,7 +89,7 @@ func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 		na := GetRandomNodeAccount(Active)
 		dup := false
 		for _, node := range accounts {
-			if na.Accounts.SignerBNBAddress.Equals(node.Accounts.SignerBNBAddress) {
+			if na.NodeAddress.Equals(node.NodeAddress) {
 				dup = true
 			}
 		}
@@ -107,37 +108,10 @@ func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 		if i == 0 {
 			continue
 		}
-		if na.Accounts.SignerBNBAddress.String() < accounts[i].Accounts.SignerBNBAddress.String() {
-			c.Errorf("%s should be before %s", na.Accounts.SignerBNBAddress, accounts[i].Accounts.SignerBNBAddress)
+		if na.NodeAddress.String() < accounts[i].NodeAddress.String() {
+			c.Errorf("%s should be before %s", na.NodeAddress, accounts[i].NodeAddress)
 		}
 
-	}
-}
-
-func (NodeAccountSuite) TestAfter(c *C) {
-	var accounts NodeAccounts
-	for {
-		na := GetRandomNodeAccount(Active)
-		dup := false
-		for _, node := range accounts {
-			if na.Accounts.SignerBNBAddress.Equals(node.Accounts.SignerBNBAddress) {
-				dup = true
-			}
-		}
-		if dup {
-			continue
-		}
-		accounts = append(accounts, na)
-		if len(accounts) == 10 {
-			break
-		}
-	}
-
-	sort.Sort(accounts)
-	for i := 0; i < len(accounts)-1; i++ {
-		node := accounts[i]
-		nextNode := accounts.After(node.Accounts.SignerBNBAddress)
-		c.Assert(accounts[i+1].Accounts.SignerBNBAddress.String(), Equals, nextNode.Accounts.SignerBNBAddress.String())
 	}
 }
 

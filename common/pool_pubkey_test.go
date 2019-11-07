@@ -1,6 +1,7 @@
 package common
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	. "gopkg.in/check.v1"
 )
@@ -39,7 +40,9 @@ func (PoolPubKeySuite) TestGetSeqNo(c *C) {
 }
 func GetPubKeyForTest() PubKey {
 	_, pubKey, _ := atypes.KeyTestPubAddr()
-	return NewPubKey(pubKey.Bytes())
+	spk, _ := sdk.Bech32ifyAccPub(pubKey)
+	pk, _ := NewPubKey(spk)
+	return pk
 }
 
 func (PoolPubKeySuite) TestPoolPubKeys(c *C) {
@@ -59,7 +62,7 @@ func (PoolPubKeySuite) TestPoolPubKeys(c *C) {
 	current = current.TryAddKey(ppk)
 	c.Assert(current.IsEmpty(), Equals, false)
 	c.Assert(len(current), Equals, 3)
-	ppk1 := NewPoolPubKey("TestChain", 1, GetPubKeyForTest())
+	ppk1 := NewPoolPubKey(Chain("TestChain"), 1, GetPubKeyForTest())
 	c.Assert(ppk1, NotNil)
 	current = current.TryAddKey(ppk1)
 	c.Assert(len(current), Equals, 4)

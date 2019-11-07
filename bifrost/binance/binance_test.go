@@ -13,6 +13,8 @@ import (
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
+
+	types2 "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -22,6 +24,7 @@ type BinancechainSuite struct{}
 var _ = Suite(&BinancechainSuite{})
 
 func (*BinancechainSuite) SetUpSuite(c *C) {
+	types2.SetupConfigForTest()
 	trSkipVerify := &http.Transport{
 		MaxIdleConnsPerHost: 10,
 		TLSClientConfig: &tls.Config{
@@ -123,12 +126,12 @@ func (BinancechainSuite) TestSignTx(c *C) {
 	})
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
-	txOut := getTxOutFromJsonInput(`{ "height": "1440", "hash": "", "tx_array": [ { "pool_address":"4b61e25dde02ca3b19c50cf549124f7d4c7a1e64","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": null } ]}`, c)
+	txOut := getTxOutFromJsonInput(`{ "height": "1440", "hash": "", "tx_array": [ { "pool_address":"thorpub1addwnpepqd5r97je7uw94e3t27r2jhxdxuglp5q5dr2muhckcpek96365dutx8frl9w","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": null } ]}`, c)
 	r, p, err := b2.SignTx(txOut.TxArray[0], 1440)
 	c.Assert(r, IsNil)
 	c.Assert(p, IsNil)
 	c.Assert(err, IsNil)
-	txOut1 := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "pool_address":"4b61e25dde02ca3b19c50cf549124f7d4c7a1e64","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [ { "denom": "BNB", "amount": "194765912" } ] } ]}`, c)
+	txOut1 := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "pool_address":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [ { "denom": "BNB", "amount": "194765912" } ] } ]}`, c)
 	r1, p1, err1 := b2.SignTx(txOut1.TxArray[0], 1718)
 	c.Assert(r1, NotNil)
 	c.Assert(p1, NotNil)
@@ -166,13 +169,13 @@ func (BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 			match:      false,
 		},
 		{
-			poolAddr:   "fe6431ad7d2e103a953cbfacbe460d6df2f4a7ce",
+			poolAddr:   "thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy",
 			signerAddr: "blabab",
 			match:      false,
 		},
 		{
-			poolAddr:   "fe6431ad7d2e103a953cbfacbe460d6df2f4a7ce",
-			signerAddr: "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6",
+			poolAddr:   "thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy",
+			signerAddr: "bnb1fds7yhw7qt9rkxw9pn65jyj004x858nymnqwd8",
 			match:      true,
 		},
 	}

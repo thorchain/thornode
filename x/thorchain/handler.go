@@ -548,7 +548,7 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddressMgr *PoolAddressManager, validatorManager *ValidatorManager, msg MsgSetTxIn) sdk.Result {
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		unAuthorizedResult := sdk.ErrUnauthorized("signer is not authorized").Result()
-		na, err := keeper.GetNodeAccountByObserver(ctx, msg.Signer)
+		na, err := keeper.GetNodeAccount(ctx, msg.Signer)
 		if nil != err {
 			ctx.Logger().Error("fail to get node account", err, "signer", msg.Signer.String())
 			return unAuthorizedResult
@@ -594,7 +594,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			}
 			currentPoolAddress := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
 			if !currentPoolAddress.PubKey.Equals(txIn.ObservePoolAddress) {
-				ctx.Logger().Error("wrong pool address,refund without deduct fee")
+				ctx.Logger().Error("wrong pool address,refund without deduct fee", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", txIn.ObservePoolAddress)
 				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
 				continue
 			}
@@ -916,7 +916,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	}
 
 	if !currentPoolAddr.Equals(msg.Sender) && !previousPoolAddr.Equals(msg.Sender) {
-		ctx.Logger().Error("message sent by unauthorized account")
+		ctx.Logger().Error("message sent by unauthorized account", "sender", msg.Sender.String(), "current pool addr", currentPoolAddr.String())
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
@@ -1010,7 +1010,7 @@ func handleMsgSetVersion(ctx sdk.Context, keeper Keeper, msg MsgSetVersion) sdk.
 
 // handleMsgSetTrustAccount Update node account
 func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAccount) sdk.Result {
-	ctx.Logger().Info("receive MsgSetTrustAccount", "trust account info", msg.TrustAccount.String())
+	ctx.Logger().Info("receive MsgSetTrustAccount", "validator consensus pub key", msg.ValidatorConsPubKey, "pubkey", msg.NodePubKeys.String())
 	nodeAccount, err := keeper.GetNodeAccount(ctx, msg.Signer)
 	if err != nil {
 		ctx.Logger().Error("fail to get node account", "error", err, "address", msg.Signer.String())
@@ -1035,20 +1035,20 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 		ctx.Logger().Error(fmt.Sprintf("node %s is disabled, so it can't update itself", nodeAccount.NodeAddress))
 		return sdk.ErrUnknownRequest("node is disabled can't update").Result()
 	}
-	if err := keeper.EnsureTrustAccountUnique(ctx, msg.TrustAccount); nil != err {
+	if err := keeper.EnsureTrustAccountUnique(ctx, msg.ValidatorConsPubKey, msg.NodePubKeys); nil != err {
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	// Here make sure we don't change the node account's bond
-	nodeAccount.Accounts = msg.TrustAccount
+
 	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAccount)
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent("set_trust_account",
-			sdk.NewAttribute("bep_address", msg.Signer.String()),
-			sdk.NewAttribute("observer_bep_address", msg.TrustAccount.ObserverBEPAddress.String()),
-			sdk.NewAttribute("signer_bnb_address", msg.TrustAccount.SignerBNBAddress.String()),
-			sdk.NewAttribute("validator_consensus_pub_key", msg.TrustAccount.ValidatorBEPConsPubKey)))
+			sdk.NewAttribute("node_address", msg.Signer.String()),
+			sdk.NewAttribute("node_secp256k1_pubkey", msg.NodePubKeys.Secp256k1.String()),
+			sdk.NewAttribute("node_ed25519_pubkey", msg.NodePubKeys.Ed25519.String()),
+			sdk.NewAttribute("validator_consensus_pub_key", msg.ValidatorConsPubKey)))
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
@@ -1080,10 +1080,13 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 		ctx.Logger().Error("not enough rune to be whitelisted", "rune", msg.Bond, "min validator bond", minValidatorBond.String())
 		return sdk.ErrUnknownRequest("not enough rune to be whitelisted").Result()
 	}
-	// we don't have the trust account info right now, so leave it empty
-	trustAccount := NewTrustAccount(common.NoAddress, sdk.AccAddress{}, "")
+	// we will not have pub keys at the moment, so have to leave it empty
+	emptyPubKeys := common.PubKeys{
+		Secp256k1: common.EmptyPubKey,
+		Ed25519:   common.EmptyPubKey,
+	}
 	// white list the given bep address
-	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, trustAccount, msg.Bond, msg.BondAddress, ctx.BlockHeight())
+	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, emptyPubKeys, "", msg.Bond, msg.BondAddress, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAccount)
 	ctx.EventManager().EmitEvent(sdk.NewEvent("new_node", sdk.NewAttribute("address", msg.NodeAddress.String())))
 	coinsToMint := keeper.GetAdminConfigWhiteListGasAsset(ctx, sdk.AccAddress{})

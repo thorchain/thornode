@@ -2,19 +2,23 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // MsgSetTrustAccount defines a MsgSetTrustAccount message
 type MsgSetTrustAccount struct {
-	TrustAccount TrustAccount   `json:"trust_account"`
-	Signer       sdk.AccAddress `json:"signer"`
+	NodePubKeys         common.PubKeys `json:"node_pub_keys"`
+	ValidatorConsPubKey string         `json:"validator_cons_pub_key"`
+	Signer              sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetTrustAccount is a constructor function for NewMsgAddTrustAccount
-func NewMsgSetTrustAccount(trustAccount TrustAccount, signer sdk.AccAddress) MsgSetTrustAccount {
+func NewMsgSetTrustAccount(nodePubKeys common.PubKeys, validatorConsPubKey string, signer sdk.AccAddress) MsgSetTrustAccount {
 	return MsgSetTrustAccount{
-		TrustAccount: trustAccount,
-		Signer:       signer,
+		NodePubKeys:         nodePubKeys,
+		ValidatorConsPubKey: validatorConsPubKey,
+		Signer:              signer,
 	}
 }
 
@@ -29,8 +33,11 @@ func (msg MsgSetTrustAccount) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if err := msg.TrustAccount.IsValid(); err != nil {
-		return sdk.ErrUnknownRequest(err.Error())
+	if len(msg.ValidatorConsPubKey) == 0 {
+		return sdk.ErrUnknownRequest("validator consensus pubkey cannot be empty")
+	}
+	if msg.NodePubKeys.IsEmpty() {
+		return sdk.ErrUnknownRequest("node pub keys cannot be empty")
 	}
 	return nil
 }

@@ -59,7 +59,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	txOut3.TxArray = append(txOut3.TxArray, &TxOutItem{
 		Chain:       common.BNBChain,
 		ToAddress:   toAddr,
-		PoolAddress: nil,
+		PoolAddress: common.EmptyPubKey,
 		Coins: common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},

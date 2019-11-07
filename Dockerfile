@@ -46,6 +46,8 @@ ARG trusted_bnb_address
 ARG start_block_height
 ARG net
 ARG seqno
+ARG bond_address
+ARG pool_pub_key
 
 ENV CHAIN_ID=$chain_id
 ENV POOL_ADDRESS=$pool_address
@@ -61,6 +63,8 @@ ENV TRUSTED_BNB_ADDRESS=$trusted_bnb_address
 ENV START_BLOCK_HEIGHT=$start_block_height
 ENV NET=$net
 ENV SEQNO=$seqno
+ENV BOND_ADDRESS=$bond_address
+ENV POOL_PUB_KEY=$pool_pub_key
 
 RUN apk add --update jq supervisor nginx && \
     rm -rf /var/cache/apk/*
@@ -138,7 +142,7 @@ RUN thorcli config chain-id statechain
 RUN thorcli config output json
 RUN thorcli config indent true
 RUN thorcli config trust-node true
-RUN cat ~/.thord/config/genesis.json | jq --arg SEQNO "$SEQNO" --arg POOL_ADDRESS "$POOL_ADDRESS" --arg NODE_ADDRESS "$(thorcli keys show statechain -a)" --arg OBSERVER_ADDRESS "$(thorcli keys show statechain -a)" --arg VALIDATOR "$(thord tendermint show-validator)" '.app_state.thorchain.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","bond_address":$POOL_ADDRESS,"accounts":{"bnb_signer_acc":$POOL_ADDRESS, "bepv_validator_acc": $VALIDATOR, "bep_observer_acc": $OBSERVER_ADDRESS}} | .app_state.thorchain.pool_addresses.rotate_at="28800" | .app_state.thorchain.pool_addresses.rotate_window_open_at="27800" | .app_state.thorchain.pool_addresses.current[0] = {"chain":"BNB","seq_no":$SEQNO,"pub_key":$POOL_ADDRESS}' > /go/src/app/genesis.json
+RUN cat ~/.thord/config/genesis.json | jq --arg SEQNO "$SEQNO" --arg BOND_ADDRESS "$BOND_ADDRESS" --arg POOL_PUB_KEY "$POOL_PUB_KEY"  --arg NODE_ADDRESS "$(thorcli keys show statechain -a)" --arg OBSERVER_ADDRESS "$(thorcli keys show statechain -a)" --arg VALIDATOR "$(thord tendermint show-validator)" '.app_state.thorchain.node_accounts[0] = {"node_address": $NODE_ADDRESS ,"status":"active","bond_address":$BOND_ADDRESS,"validator_cons_pub_key":$VALIDATOR,"node_pub_keys":{"secp256k1":$NODE_PUB_KEY,"ed25519":$NODE_PUB_KEY}} | .app_state.swapservice.pool_addresses.rotate_at="28800" | .app_state.thorchain.pool_addresses.rotate_window_open_at="27800" | .app_state.thorchain.pool_addresses.current[0] = {"chain":"BNB","seq_no":$SEQNO,"pub_key":$POOL_PUB_KEY}' > /go/src/app/genesis.json
 RUN mv /go/src/app/genesis.json ~/.thord/config/genesis.json
 RUN cat ~/.thord/config/genesis.json
 RUN thord validate-genesis
