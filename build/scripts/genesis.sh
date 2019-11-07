@@ -46,13 +46,7 @@ POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
 
 if [[ "$SEED" == "$(hostname)" ]]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
-
-        for f in /tmp/genesis/node_*.json; do
-            NAMES="$NAMES,$(cat $f | jq -r .node_address)"
-        done
-        NAMES=$(echo $NAMES | sed 's/^,*//g')
-
-        init_chain $NAMES
+        init_chain $SIGNER_NAME $SIGNER_PASSWD
 
         # add node accounts to genesis file
         for f in /tmp/shared/node_*.json; do 
