@@ -205,13 +205,13 @@ describe "API Tests" do
     it "add assets to a pool" do
       coins = [
         {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "20000000"},
-        {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'BOLT-014', 'ticker': 'BOLT'}, "amount": "20000000"},
       ]
-      tx = makeTx(memo: "add:TCAN-014", coins: coins, sender: sender)
+      tx = makeTx(memo: "add:BOLT-014", coins: coins, sender: sender)
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
 
-      resp = get("/pool/TCAN-014")
+      resp = get("/pool/BOLT-014")
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("2244541407"), resp.body.inspect
       expect(resp.body['balance_asset']).to eq("374850000"), resp.body.inspect
