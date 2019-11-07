@@ -888,6 +888,12 @@ func (k Keeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ygg))
 }
 
+func (k Keeper) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool {
+	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
+	store := ctx.KVStore(k.storeKey)
+	return store.Has([]byte(key))
+}
+
 func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
 	var ygg Yggdrasil
 	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
