@@ -75,6 +75,7 @@ func stake(ctx sdk.Context, keeper poolStorage, asset common.Asset, stakeRuneAmo
 	}
 
 	su := ps.GetStakerUnit(runeAddr)
+	su.Height = ctx.BlockHeight()
 	if su.RuneAddress.IsEmpty() {
 		su.RuneAddress = runeAddr
 	}

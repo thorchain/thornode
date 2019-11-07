@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/bepswap/thornode/common"
@@ -52,6 +54,16 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 	fStakerUnit := stakerUnit.Units
 	if !stakerUnit.Units.GT(sdk.ZeroUint()) {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("nothing to withdraw")
+	}
+
+	// check if we need to rate limit unstaking
+	// https://gitlab.com/thorchain/bepswap/thornode/issues/166
+	if !msg.Asset.Chain.Equals(common.BNBChain) {
+		height := ctx.BlockHeight()
+		if height < (stakerUnit.Height + 17280) {
+			err := fmt.Errorf("You cannot unstake for 24 hours after staking for this blockchain")
+			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
+		}
 	}
 
 	ctx.Logger().Info("pool before unstake", "pool unit", poolUnits, "balance RUNE", poolRune, "balance asset", poolAsset)
