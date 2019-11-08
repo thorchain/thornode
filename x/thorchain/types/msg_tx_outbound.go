@@ -13,15 +13,17 @@ type MsgOutboundTx struct {
 	Sender common.Address `json:"sender"`
 	Signer sdk.AccAddress `json:"signer"`
 	Chain  common.Chain   `json:"chain"`
+	Coins  common.Coins   `json:"coins"`
 }
 
 // NewMsgOutboundTx is a constructor function for MsgOutboundTx
-func NewMsgOutboundTx(txID common.TxID, height uint64, sender common.Address, chain common.Chain, signer sdk.AccAddress) MsgOutboundTx {
+func NewMsgOutboundTx(txID common.TxID, height uint64, sender common.Address, chain common.Chain, coins common.Coins, signer sdk.AccAddress) MsgOutboundTx {
 	return MsgOutboundTx{
 		Sender: sender,
 		TxID:   txID,
 		Height: height,
 		Chain:  chain,
+		Coins:  coins,
 		Signer: signer,
 	}
 }

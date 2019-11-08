@@ -30,6 +30,9 @@ func (addr Address) IsChain(chain Chain) bool {
 	case BNBChain:
 		prefix, _, _ := bech32.Decode(addr.String())
 		return prefix == "bnb" || prefix == "tbnb"
+	case THORChain:
+		prefix, _, _ := bech32.Decode(addr.String())
+		return prefix == "thor" || prefix == "tthor"
 	default:
 		return true // if we don't specifically check a chain yet, assume its ok.
 	}

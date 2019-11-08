@@ -44,6 +44,8 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 			return handleMsgSetVersion(ctx, keeper, m)
 		case MsgBond:
 			return handleMsgBond(ctx, keeper, m)
+		case MsgYggdrasil:
+			return handleMsgYggdrasil(ctx, keeper, m)
 		case MsgNextPoolAddress:
 			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, validatorManager, m)
 		case MsgLeave:
@@ -692,7 +694,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 			return nil, errors.Wrap(err, "fail to get MsgNoOp from memo")
 		}
 	case OutboundMemo:
-		newMsg, err = getMsgOutboundFromMemo(m, txID, tx.Sender, chain, signer)
+		newMsg, err = getMsgOutboundFromMemo(m, txID, tx.Sender, chain, tx.Coins, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
@@ -707,6 +709,18 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 		newMsg = types.NewMsgAck(txID, tx.Sender, chain, signer)
 	case LeaveMemo:
 		newMsg = NewMsgLeave(txID, tx.Sender, signer)
+	case YggdrasilFundMemo:
+		pk, err := keeper.FindPubKeyOfAddress(ctx, tx.To, tx.Coins[0].Asset.Chain)
+		if err != nil {
+			return nil, errors.Wrap(err, "fail to find Yggdrasil pubkey")
+		}
+		newMsg = NewMsgYggdrasil(pk, true, tx.Coins, signer)
+	case YggdrasilReturnMemo:
+		pk, err := keeper.FindPubKeyOfAddress(ctx, tx.Sender, tx.Coins[0].Asset.Chain)
+		if err != nil {
+			return nil, errors.Wrap(err, "fail to find Yggdrasil pubkey")
+		}
+		newMsg = NewMsgYggdrasil(pk, false, tx.Coins, signer)
 	default:
 		return nil, errors.Wrap(err, "Unable to find memo type")
 	}
@@ -830,13 +844,14 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.Address, chain common.Chain, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.Address, chain common.Chain, coins common.Coins, signer sdk.AccAddress) (sdk.Msg, error) {
 	blockHeight := memo.GetBlockHeight()
 	return NewMsgOutboundTx(
 		txID,
 		blockHeight,
 		sender,
 		chain,
+		coins,
 		signer,
 	), nil
 }
@@ -959,6 +974,18 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		keeper.SetTxOut(ctx, txOut)
 	}
 	keeper.SetLastSignedHeight(ctx, sdk.NewUint(msg.Height))
+
+	// If we are sending from a yggdrasil pool, decrement coins on record
+	pk, err := keeper.FindPubKeyOfAddress(ctx, msg.Sender, msg.Chain)
+	if err != nil {
+		ctx.Logger().Error("unable to find Yggdrasil pubkey", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+	if !pk.IsEmpty() {
+		ygg := keeper.GetYggdrasil(ctx, pk)
+		ygg.SubFunds(msg.Coins)
+		keeper.SetYggdrasil(ctx, ygg)
+	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -1109,6 +1136,36 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 	if err := keeper.supplyKeeper.SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
 		ctx.Logger().Error("fail to send newly minted gas asset to node address")
 	}
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
+// handleMsgYggdrasil
+func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, msg MsgYggdrasil) sdk.Result {
+	ctx.Logger().Info("receive MsgYggdrasil", "pubkey", msg.PubKey.String(), "add_funds", msg.AddFunds, "coins", msg.Coins)
+
+	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error("invalid MsgYggdrasil", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	ygg := keeper.GetYggdrasil(ctx, msg.PubKey)
+	if msg.AddFunds {
+		ygg.AddFunds(msg.Coins)
+	} else {
+		ygg.SubFunds(msg.Coins)
+		// TODO: if we get here we should be receiving all coins the Yggdrasil
+		// pool has. If we are short some amount, slash their bond the
+		// remainder amount of coins and assume a disorderly exit
+	}
+	keeper.SetYggdrasil(ctx, ygg)
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
