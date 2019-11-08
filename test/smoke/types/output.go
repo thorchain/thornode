@@ -1,6 +1,6 @@
 package types
 
-type Output struct {
+type TestResults struct {
 	Tx   int     `json:"TX"`
 	Rune Balance `json:"BNB.RUNE-A1F"`
 	Lok  Balance `json:"BNB.LOK-3C0"`

@@ -15,7 +15,8 @@ func main() {
 	environment := flag.String("e", "stage", "The environment to use [local|staging|develop|production].")
 	config := flag.String("c", "", "Path to the config file.")
 	network := flag.Int("n", 0, "The network to use.")
-	logFile := flag.String("l", "/tmp/smoke.json", "The path to the log file [/tmp/smoke.json].")
+	resultsFile := flag.String("l", "/tmp/smoke.json", "Where test results will be saved [/tmp/smoke.json].")
+	thorchainFile := flag.String("t", "/tmp/thorchain.json", "Where Thorchain state results will be saved [/tmp/thorchain.json].")
 	debug := flag.Bool("d", false, "Enable debugging of the Binance transactions.")
 	flag.Parse()
 
@@ -31,6 +32,6 @@ func main() {
 		log.Fatal("No config file provided!")
 	}
 
-	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *config, *network, *logFile, *debug)
+	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *config, *network, *resultsFile, *thorchainFile, *debug)
 	s.Run()
 }

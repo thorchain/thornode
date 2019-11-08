@@ -18,27 +18,29 @@ import (
 
 // Config : test config
 type Config struct {
-	delay   time.Duration
-	debug   bool
-	network int
-	logFile string
+	delay         time.Duration
+	debug         bool
+	network       int
+	resultsFile   string
+	thorchainFile string
 }
 
 // Smoke : test instructions.
 type Smoke struct {
-	Config     Config
-	ApiAddr    string
-	Network    ctypes.ChainNetwork
-	FaucetKey  string
-	PoolKey    string
-	Binance    Binance
-	Statechain Statechain
-	Tests      types.Tests
-	Results    []types.Output
+	Config           Config
+	ApiAddr          string
+	Network          ctypes.ChainNetwork
+	FaucetKey        string
+	PoolKey          string
+	Binance          Binance
+	Thorchain        Thorchain
+	Tests            types.Tests
+	TestResults      []types.TestResults
+	ThorchainResults []types.ThorchainResults
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, logFile string, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, resultsFile, thorchainFile string, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -49,23 +51,26 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 		log.Fatal(err)
 	}
 
-	var results []types.Output
+	var testResults []types.TestResults
+	var thorchainResults []types.ThorchainResults
 	n := NewNetwork(network)
 	return Smoke{
 		Config: Config{
-			delay:   5 * time.Second,
-			debug:   debug,
-			network: network,
-			logFile: logFile,
+			delay:         5 * time.Second,
+			debug:         debug,
+			network:       network,
+			resultsFile:   resultsFile,
+			thorchainFile: thorchainFile,
 		},
-		ApiAddr:    apiAddr,
-		Network:    n.Type,
-		FaucetKey:  faucetKey,
-		PoolKey:    poolKey,
-		Binance:    NewBinance(apiAddr, n.ChainID, debug),
-		Statechain: NewStatechain(env),
-		Tests:      tests,
-		Results:    results,
+		ApiAddr:          apiAddr,
+		Network:          n.Type,
+		FaucetKey:        faucetKey,
+		PoolKey:          poolKey,
+		Binance:          NewBinance(apiAddr, n.ChainID, debug),
+		Thorchain:        NewThorchain(env),
+		Tests:            tests,
+		TestResults:      testResults,
+		ThorchainResults: thorchainResults,
 	}
 }
 
@@ -140,38 +145,41 @@ func (s *Smoke) Run() {
 
 		// Validate.
 		delay := time.Second * rule.CheckDelay
-		s.LogResults(tx, delay)
+		s.LogTestResults(tx, delay)
 	}
 
 	if s.Tests.SweepOnExit {
 		s.Sweep()
 	}
 
-	// Save the log.
-	s.SaveLog()
+	// Save the test results.
+	s.SaveResults()
 }
 
 // SaveLog : Save the log file.
-func (s *Smoke) SaveLog() {
-	output, _ := json.Marshal(s.Results)
-	_ = ioutil.WriteFile(s.Config.logFile, output, 0644)
+func (s *Smoke) SaveResults() {
+	testOutput, _ := json.Marshal(s.TestResults)
+	_ = ioutil.WriteFile(s.Config.resultsFile, testOutput, 0644)
+
+	thorchainOutput, _ := json.Marshal(s.ThorchainResults)
+	_ = ioutil.WriteFile(s.Config.thorchainFile, thorchainOutput, 0644)
 }
 
 // LogResults : Log our results.
-func (s *Smoke) LogResults(tx int, delay time.Duration) {
+func (s *Smoke) LogTestResults(tx int, delay time.Duration) {
 	time.Sleep(delay)
 
 	s.BinanceState(tx)
-	s.StatechainState(tx)
+	s.ThorchainState(tx)
 }
 
 // BinanceState : Compare expected vs actual Binance wallet values.
 func (s *Smoke) BinanceState(tx int) {
 	client := s.Tests.ActorKeys["faucet"].Client
-	var output types.Output
+	var output types.TestResults
 	output.Tx = tx + 1
 
-	s.Results = append(s.Results, output)
+	s.TestResults = append(s.TestResults, output)
 
 	for _, actor := range s.Tests.ActorList {
 		balances := s.GetBinance(client, s.Tests.ActorKeys[actor].Key.GetAddr())
@@ -180,11 +188,11 @@ func (s *Smoke) BinanceState(tx int) {
 
 			switch balance.Symbol {
 			case "RUNE-A1F":
-				s.ActorAmount(amount, &s.Results[tx].Rune, actor)
+				s.ActorAmount(amount, &s.TestResults[tx].Rune, actor)
 			case "BNB":
-				s.ActorAmount(amount, &s.Results[tx].Bnb, actor)
+				s.ActorAmount(amount, &s.TestResults[tx].Bnb, actor)
 			case "LOK-3C0":
-				s.ActorAmount(amount, &s.Results[tx].Lok, actor)
+				s.ActorAmount(amount, &s.TestResults[tx].Lok, actor)
 			}
 		}
 	}
@@ -216,32 +224,39 @@ func (s *Smoke) ActorAmount(amount int64, output *types.Balance, actor string) {
 	}
 }
 
-// StatechainState : Current Statechain state.
-func (s *Smoke) StatechainState(tx int) {
-	statechain := s.GetStatechain()
+// ThorchainState : Current Thorchain state.
+func (s *Smoke) ThorchainState(tx int) {
+	thorchain := s.GetThorchain()
 
-	for _, pools := range statechain {
-		amount := pools.BalanceAsset
+	var amount int64
+	for _, pools := range thorchain {
+		amount += pools.BalanceRune
 
 		switch pools.Asset.Symbol {
-		case "RUNE-A1F":
-			s.Results[tx].Rune.Pool = pools.BalanceRune
 		case "LOK-3C0":
-			s.Results[tx].Lok.Pool = amount
+			s.TestResults[tx].Lok.Pool = pools.BalanceAsset
 		case "BNB":
-			s.Results[tx].Bnb.Pool = amount
+			s.TestResults[tx].Bnb.Pool = pools.BalanceAsset
 		}
 	}
+
+	// Record to our test summary.
+	s.TestResults[tx].Rune.Pool = amount
+
+	// Save for auditing purposes.
+	s.ThorchainResults = append(s.ThorchainResults,
+		types.ThorchainResults{tx, thorchain},
+	)
 }
 
-// GetStatechain : Get the Statehcain pools.
-func (s *Smoke) GetStatechain() types.StatechainPools {
+// GetThorchain : Get the Thorchain pools.
+func (s *Smoke) GetThorchain() types.ThorchainPools {
 	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
 	time.Sleep(1 * time.Second)
 
-	var pools types.StatechainPools
+	var pools types.ThorchainPools
 
-	resp, err := http.Get(s.Statechain.PoolURL())
+	resp, err := http.Get(s.Thorchain.PoolURL())
 	if err != nil {
 		log.Printf("%v\n", err)
 	}

@@ -9,22 +9,22 @@ var endpoints = map[string]string{
 	"production": "testnet-chain.bepswap.com",
 }
 
-type Statechain struct {
+type Thorchain struct {
 	Env string
 }
 
 // NewStatechain : Create a new Statechain instance.
-func NewStatechain(env string) Statechain {
-	return Statechain{
+func NewThorchain(env string) Thorchain {
+	return Thorchain{
 		Env: env,
 	}
 }
 
 // Scheme : SSL or not.
-func (s Statechain) scheme() string {
+func (t Thorchain) scheme() string {
 	scheme := "https"
 
-	if s.Env == "local" {
+	if t.Env == "local" {
 		scheme = "http"
 	}
 
@@ -32,11 +32,11 @@ func (s Statechain) scheme() string {
 }
 
 // PoolURL : Return the Pool URL based on the selected environment.
-func (s Statechain) PoolURL() string {
-	return fmt.Sprintf("%v://%v/thorchain/pools", s.scheme(), endpoints[s.Env])
+func (t Thorchain) PoolURL() string {
+	return fmt.Sprintf("%v://%v/thorchain/pools", t.scheme(), endpoints[t.Env])
 }
 
 // StakerURL  : Return the Staker URL based on the selected environment.
-func (s Statechain) StakerURL(staker string) string {
-	return fmt.Sprintf("%v://%v/thorchain/staker/%v", s.scheme(), endpoints[s.Env], staker)
+func (t Thorchain) StakerURL(staker string) string {
+	return fmt.Sprintf("%v://%v/thorchain/staker/%v", t.scheme(), endpoints[t.Env], staker)
 }
