@@ -5,7 +5,7 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
-func Fund(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManager, txOutStore *TxOutStore, ygg Yggdrasil) error {
+func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ygg Yggdrasil) error {
 	nodeAcc, err := keeper.GetNodeAccountByPubKey(ctx, ygg.PubKey)
 	if err != nil {
 		return err
@@ -24,7 +24,7 @@ func Fund(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManager, txOut
 			return err
 		}
 
-		return sendCoinsToYggdrasil(ctx, keeper, coins, ygg, poolAddrMgr, txOutStore)
+		return sendCoinsToYggdrasil(ctx, keeper, coins, ygg, txOutStore)
 	}
 
 	return nil
@@ -32,20 +32,18 @@ func Fund(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManager, txOut
 
 // sendCoinsToYggdrasil - adds outbound txs to send the given coins to a
 // yggdrasil pool
-func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Yggdrasil, poolAddrMgr *PoolAddressManager, txOutStore *TxOutStore) error {
+func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Yggdrasil, txOutStore *TxOutStore) error {
 	for _, coin := range coins {
-		currentAddr := poolAddrMgr.currentPoolAddresses.Current.GetByChain(coin.Asset.Chain)
 		to, err := ygg.PubKey.GetAddress(coin.Asset.Chain)
 		if err != nil {
 			return err
 		}
 
 		toi := &TxOutItem{
-			Chain:       currentAddr.Chain,
-			PoolAddress: currentAddr.PubKey,
-			ToAddress:   to,
-			Memo:        "yggdrasil+",
-			Coins:       common.Coins{coin},
+			Chain:     coin.Asset.Chain,
+			ToAddress: to,
+			Memo:      "yggdrasil+",
+			Coins:     common.Coins{coin},
 		}
 		txOutStore.AddTxOutItem(ctx, keeper, toi, true)
 	}
