@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
 	"os"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -231,7 +230,6 @@ func (s SwapSuite) TestCalculators(c *C) {
 
 	// These calculations are verified by using the spreadsheet
 	// https://docs.google.com/spreadsheets/d/1wJHYBRKBdw_WP7nUyVnkySPkOmPUNoiRGsEqgBVVXKU/edit#gid=0
-	fmt.Println("poolslip", calcPoolSlip(X, x))
 	c.Check(calcAssetEmission(X, x, Y).Uint64(), Equals, uint64(826446280))
 	c.Check(calcLiquitityFee(X, x, Y).Uint64(), Equals, uint64(82644628))
 	c.Check(calcPoolSlip(X, x), Equals, 0.1990990990990991)
