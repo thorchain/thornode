@@ -15,12 +15,12 @@ var _ = Suite(&PoolTestSuite{})
 func (PoolTestSuite) TestPool(c *C) {
 	p := NewPool()
 	c.Check(p.Empty(), Equals, true)
-	c.Check(p.AssetPriceInRune(), Equals, float64(0))
 	p.Asset = common.BNBAsset
 	c.Check(p.Empty(), Equals, false)
 	p.BalanceRune = sdk.NewUint(100 * common.One)
 	p.BalanceAsset = sdk.NewUint(50 * common.One)
-	c.Check(p.AssetPriceInRune(), Equals, 2.0)
+	c.Check(p.AssetValueInRune(sdk.NewUint(25*common.One)).Equal(sdk.NewUint(50*common.One)), Equals, true)
+	c.Check(p.RuneValueInAsset(sdk.NewUint(50*common.One)).Equal(sdk.NewUint(25*common.One)), Equals, true)
 	c.Log(p.String())
 
 	addr := GetRandomBech32Addr()
