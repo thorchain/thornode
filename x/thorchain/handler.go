@@ -45,7 +45,7 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgBond:
 			return handleMsgBond(ctx, keeper, m)
 		case MsgNextPoolAddress:
-			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, m)
+			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, validatorManager, m)
 		case MsgLeave:
 			return handleMsgLeave(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
 		case MsgAck:
@@ -455,7 +455,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 
 // handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
 // MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on chain
-func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrManager *PoolAddressManager, msg MsgNextPoolAddress) sdk.Result {
+func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrManager *PoolAddressManager, validatorMgr *ValidatorManager, msg MsgNextPoolAddress) sdk.Result {
 	ctx.Logger().Info("receive request to set next pool pub key", "pool pub key", msg.NextPoolPubKey.String())
 	if err := msg.ValidateBasic(); nil != err {
 		return err.Result()
@@ -488,6 +488,14 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 	// statechain observed the next pool address memo, but it has not been confirmed yet
 	pkey := common.NewPoolPubKey(msg.Chain, 0, msg.NextPoolPubKey)
 	poolAddrManager.ObservedNextPoolAddrPubKey = poolAddrManager.ObservedNextPoolAddrPubKey.TryAddKey(pkey)
+
+	// if we observed a valid nextpool transaction, that means the nominated validator had join the signing committee to generate a new pub key
+	// with TSS, if they don't join , then the key won't be generated
+	nominatedAccount := validatorMgr.Meta.Nominated
+	if !nominatedAccount.IsEmpty() {
+		nominatedAccount.SignerActive = true
+		keeper.SetNodeAccount(ctx, nominatedAccount)
+	}
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNextPoolPubKeyObserved,
 			sdk.NewAttribute("next pool pub key", msg.NextPoolPubKey.String()),

@@ -87,7 +87,7 @@ type NodeAccount struct {
 	ValidatorConsPubKey string         `json:"validator_cons_pub_key"`
 	Bond                sdk.Uint       `json:"bond"`
 	BondAddress         common.Address `json:"bond_address"` // BNB Address to send bond from. It also indicates the operator address to whilelist and associate.
-	// start from when this node account is in current status
+	// start from which block height this node account is in current status
 	// StatusSince field is important , it has been used to sort node account , used for validator rotation
 	StatusSince    int64         `json:"status_since"`
 	ObserverActive bool          `json:"observer_active"`
@@ -161,7 +161,7 @@ func (n NodeAccount) String() string {
 // NodeAccounts just a list of NodeAccount
 type NodeAccounts []NodeAccount
 
-// IsTrustAccount validate whether the given account address is an observer address
+// IsTrustAccount validate whether the given account address belongs to an currently active validator
 func (nodeAccounts NodeAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
 	for _, na := range nodeAccounts {
 		if na.Status == Active && addr.Equals(na.NodeAddress) {
