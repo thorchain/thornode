@@ -1,13 +1,14 @@
 package main
 
 import (
-	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
 
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/keys"
+
+	bech32 "github.com/btcsuite/btcutil/bech32"
 
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke"
 )
@@ -34,8 +35,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
+
 	fmt.Printf("export %v_KEY=%v\n", *addrType, privKey)
 
-	pubKey := keyManager.GetPrivKey().PubKey().Bytes()
-	fmt.Printf("export %v_PUBKEY=%v\n", *addrType, hex.EncodeToString(pubKey))
+	keyBytes := keyManager.GetPrivKey().PubKey().Bytes()
+	conv, _ := bech32.ConvertBits(keyBytes, 8, 5, true)
+	pubKey, _ := bech32.Encode("bnbp", conv)
+	fmt.Printf("export %v_PUBKEY=%v\n", *addrType, pubKey)
 }
