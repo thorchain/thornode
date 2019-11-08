@@ -18,7 +18,7 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 		pools[i] = keeper.GetPool(ctx, asset)
 	}
 
-	// find total bond
+	// find total bonded
 	totalBond := sdk.ZeroUint()
 	nodeAccs, err := keeper.ListActiveNodeAccounts(ctx)
 	if err != nil {
@@ -28,31 +28,36 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 		totalBond = totalBond.Add(na.Bond)
 	}
 
-	// Iterate over each node account and figure out if we need to send them
-	// assets.
-	for _, na := range nodeAccs {
-		// get a list of coin/amounts this yggdrasil pool should have, ideally.
-		ygg := keeper.GetYggdrasil(ctx, na.NodePubKey.Secp256k1)
-		targetCoins, err := calcTargetYggCoins(pools, na.Bond, totalBond)
-		if err != nil {
-			return err
-		}
+	// We don't want to check all Yggdrasil pools every time we run this
+	// function. So we use modulus to determine which Ygg we process. This
+	// should behave as a "round robin" approach checking one Ygg per block.
+	// With 100 Ygg pools, we should check each pool every 8.33 minutes.
+	na := nodeAccs[ctx.BlockHeight()%int64(len(nodeAccs))]
 
-		var sendCoins common.Coins
-		for _, targetCoin := range targetCoins {
-			yggCoin := ygg.GetCoin(targetCoin.Asset)
-			// check if the amount the ygg pool has is less that 50% of what
-			// they are suppose to have, ideally. We refill them if they drop
-			// below this line
-			if yggCoin.Amount.LT(targetCoin.Amount.QuoUint64(2)) {
-				sendCoins = append(
-					sendCoins,
-					common.NewCoin(
-						targetCoin.Asset,
-						targetCoin.Amount.Sub(yggCoin.Amount),
-					),
-				)
-			}
+	// figure out if we need to send them assets.
+	// get a list of coin/amounts this yggdrasil pool should have, ideally.
+	ygg := keeper.GetYggdrasil(ctx, na.NodePubKey.Secp256k1)
+	targetCoins, err := calcTargetYggCoins(pools, na.Bond, totalBond)
+	if err != nil {
+		return err
+	}
+
+	var sendCoins common.Coins
+	// iterate over each target coin amount and figure if we need to reimburse
+	// a Ygg pool of this particular asset.
+	for _, targetCoin := range targetCoins {
+		yggCoin := ygg.GetCoin(targetCoin.Asset)
+		// check if the amount the ygg pool has is less that 50% of what
+		// they are suppose to have, ideally. We refill them if they drop
+		// below this line
+		if yggCoin.Amount.LT(targetCoin.Amount.QuoUint64(2)) {
+			sendCoins = append(
+				sendCoins,
+				common.NewCoin(
+					targetCoin.Asset,
+					targetCoin.Amount.Sub(yggCoin.Amount),
+				),
+			)
 		}
 
 		return sendCoinsToYggdrasil(ctx, keeper, sendCoins, ygg, txOutStore)
