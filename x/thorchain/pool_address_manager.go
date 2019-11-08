@@ -11,7 +11,8 @@ import (
 
 // const values used to emit events
 const (
-	EventTypeNewPoolAddress = `NewPoolAddress`
+	EventTypeNewPoolAddress    = `NewPoolAddress`
+	EventTypeAbortPoolRotation = "AbortPoolRotation"
 )
 
 // PoolAddressManager is going to manage the pool addresses , rotate etc
@@ -80,6 +81,13 @@ func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, store *TxOutSto
 	height := ctx.BlockHeight()
 	// it is not time to rotate yet
 	if poolAddresses.RotateAt > height {
+		return
+	}
+
+	if poolAddresses.Next.IsEmpty() {
+		ctx.Logger().Error("next pool address has not been confirmed , abort pool rotation")
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent(EventTypeAbortPoolRotation, sdk.NewAttribute("reason", "no next pool address")))
 		return
 	}
 
