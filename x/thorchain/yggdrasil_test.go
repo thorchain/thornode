@@ -10,68 +10,29 @@ type YggdrasilSuite struct{}
 
 var _ = Suite(&YggdrasilSuite{})
 
-func (s YggdrasilSuite) TestGetHoldings(c *C) {
-	pk := GetRandomPubKey()
-	ygg := NewYggdrasil(pk)
-	ygg.AddFunds(
-		common.Coins{
-			common.NewCoin(common.RuneAsset(), sdk.NewUint(50*common.One)),
-			common.NewCoin(common.BNBAsset, sdk.NewUint(50*common.One)),
-		},
-	)
-
+func (s YggdrasilSuite) TestCalcTargetAmounts(c *C) {
+	var pools []Pool
 	p := NewPool()
 	p.Asset = common.BNBAsset
 	p.BalanceRune = sdk.NewUint(1000 * common.One)
 	p.BalanceAsset = sdk.NewUint(500 * common.One)
-
-	w := getHandlerTestWrapper(c, 1, true, false)
-	w.keeper.SetPool(w.ctx, p)
-
-	amt := getHoldingsValue(w.ctx, w.keeper, ygg)
-	expected := sdk.NewUint(150 * common.One).Uint64()
-	c.Check(
-		amt.Uint64(),
-		Equals,
-		expected,
-		Commentf("%d vs %d", amt.Uint64(), expected),
-	)
-}
-
-func (s YggdrasilSuite) TestCalcTopUp(c *C) {
-	pk := GetRandomPubKey()
-	ygg := NewYggdrasil(pk)
-	ygg.AddFunds(
-		common.Coins{
-			common.NewCoin(common.RuneAsset(), sdk.NewUint(50*common.One)),
-			common.NewCoin(common.BNBAsset, sdk.NewUint(50*common.One)),
-		},
-	)
-
-	w := getHandlerTestWrapper(c, 1, true, false)
-	addr, err := pk.GetThorAddress()
-	c.Assert(err, IsNil)
-	w.keeper.SetNodeAccount(w.ctx, NodeAccount{
-		NodeAddress: addr,
-		Bond:        sdk.NewUint(1500 * common.One),
-	})
-	p := NewPool()
-	p.Asset = common.BNBAsset
-	p.BalanceRune = sdk.NewUint(1000 * common.One)
-	p.BalanceAsset = sdk.NewUint(500 * common.One)
-	w.keeper.SetPool(w.ctx, p)
+	pools = append(pools, p)
 
 	p = NewPool()
 	p.Asset = common.BTCAsset
 	p.BalanceRune = sdk.NewUint(3000 * common.One)
 	p.BalanceAsset = sdk.NewUint(225 * common.One)
-	w.keeper.SetPool(w.ctx, p)
+	pools = append(pools, p)
 
-	target := sdk.NewUint(200 * common.One)
-	coins, err := calculateTopUpYgg(w.ctx, w.keeper, target, ygg)
+	totalBond := sdk.NewUint(8000 * common.One)
+	bond := sdk.NewUint(200 * common.One)
+	coins, err := calcTargetYggCoins(pools, bond, totalBond)
 	c.Assert(err, IsNil)
 	c.Assert(coins, HasLen, 3)
 	c.Check(coins[0].Asset.String(), Equals, common.BNBAsset.String())
+	c.Check(coins[0].Amount.Uint64(), Equals, sdk.NewUint(6.25*common.One).Uint64(), Commentf("%d vs %d", coins[0].Amount.Uint64(), sdk.NewUint(6.25*common.One).Uint64()))
 	c.Check(coins[1].Asset.String(), Equals, common.BTCAsset.String())
+	c.Check(coins[1].Amount.Uint64(), Equals, sdk.NewUint(2.8125*common.One).Uint64(), Commentf("%d vs %d", coins[1].Amount.Uint64(), sdk.NewUint(2.8125*common.One).Uint64()))
 	c.Check(coins[2].Asset.String(), Equals, common.RuneAsset().String())
+	c.Check(coins[2].Amount.Uint64(), Equals, sdk.NewUint(50*common.One).Uint64(), Commentf("%d vs %d", coins[2].Amount.Uint64(), sdk.NewUint(50*common.One).Uint64()))
 }
