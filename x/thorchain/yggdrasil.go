@@ -36,6 +36,7 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 
 	// figure out if we need to send them assets.
 	// get a list of coin/amounts this yggdrasil pool should have, ideally.
+	// TODO: We are assuming here that the pub key is Secp256K1
 	ygg := keeper.GetYggdrasil(ctx, na.NodePubKey.Secp256k1)
 	targetCoins, err := calcTargetYggCoins(pools, na.Bond, totalBond)
 	if err != nil {
