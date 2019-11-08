@@ -63,16 +63,16 @@ func calculateTopUpYgg(ctx sdk.Context, keeper Keeper, target sdk.Uint, ygg Yggd
 	runeCoin := common.NewCoin(common.RuneAsset(), sdk.ZeroUint())
 	var coins common.Coins
 
-	totalUnits := sdk.ZeroUint()
+	totalRune := sdk.ZeroUint()
 	var pools []Pool
 	for _, asset := range assets {
 		pool := keeper.GetPool(ctx, asset)
-		totalUnits = totalUnits.Add(pool.PoolUnits)
+		totalRune = totalRune.Add(pool.BalanceRune)
 		pools = append(pools, pool)
 	}
 
 	for _, pool := range pools {
-		ratio := pool.PoolUnits.Quo(totalUnits)
+		ratio := pool.BalanceRune.Quo(totalRune)
 		totalAmt := target.Mul(ratio)
 		runeAmt := totalAmt.QuoUint64(2)
 		runeCoin.Amount = runeCoin.Amount.Add(runeAmt)
