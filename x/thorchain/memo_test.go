@@ -76,6 +76,13 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txGas), Equals, true)
 
+	memo, err = ParseMemo("yggdrasil+")
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txYggdrasilFund), Equals, true)
+	memo, err = ParseMemo("yggdrasil-")
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txYggdrasilReturn), Equals, true)
+
 	// unhappy paths
 	_, err = ParseMemo("")
 	c.Assert(err, NotNil)

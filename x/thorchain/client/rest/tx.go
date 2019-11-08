@@ -19,6 +19,7 @@ type txItem struct {
 	Coins              common.Coins `json:"coins"`
 	Memo               string       `json:"MEMO"`
 	Sender             string       `json:"sender"`
+	To                 string       `json:"to"`
 	ObservePoolAddress string       `json:"observe_pool_address"`
 }
 
@@ -65,17 +66,24 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 				return
 			}
 
-			bnbAddr, err := common.NewAddress(tx.Sender)
+			sender, err := common.NewAddress(tx.Sender)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
+
+			to, err := common.NewAddress(tx.To)
+			if err != nil {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
+
 			observeAddr, err := common.NewPubKey(tx.ObservePoolAddress)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			}
 
-			tx := types.NewTxIn(tx.Coins, tx.Memo, bnbAddr, height, observeAddr)
+			tx := types.NewTxIn(tx.Coins, tx.Memo, sender, to, height, observeAddr)
 
 			voters = append(voters, types.NewTxInVoter(txID, []types.TxIn{tx}))
 		}
