@@ -577,6 +577,16 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 
 func (HandlerSuite) TestHandleMsgLeave(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+
+	ygg := NewYggdrasil(w.activeNodeAccount.NodePubKey.Secp256k1)
+	ygg.AddFunds(
+		common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(500*common.One)),
+			common.NewCoin(common.BTCAsset, sdk.NewUint(400*common.One)),
+		},
+	)
+	w.keeper.SetYggdrasil(w.ctx, ygg)
+
 	txID := GetRandomTxHash()
 	senderBNB := GetRandomBNBAddress()
 	msgLeave := NewMsgLeave(txID, senderBNB, w.notActiveNodeAccount.NodeAddress)
@@ -598,6 +608,10 @@ func (HandlerSuite) TestHandleMsgLeave(c *C) {
 	acc2.Bond = sdk.NewUint(100 * common.One)
 	w.keeper.SetNodeAccount(w.ctx, acc2)
 
+	invalidMsg := NewMsgLeave("", acc2.BondAddress, w.activeNodeAccount.NodeAddress)
+	result3 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, invalidMsg)
+	c.Assert(result3.Code, Equals, sdk.CodeUnknownRequest)
+
 	msgLeave1 := NewMsgLeave(GetRandomTxHash(), acc2.BondAddress, w.activeNodeAccount.NodeAddress)
 	result2 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgLeave1)
 	c.Assert(result2.Code, Equals, sdk.CodeOK)
@@ -605,15 +619,11 @@ func (HandlerSuite) TestHandleMsgLeave(c *C) {
 	c.Assert(w.txOutStore.blockOut.IsEmpty(), Equals, false)
 	c.Assert(len(w.txOutStore.blockOut.TxArray) > 0, Equals, true)
 
-	invalidMsg := NewMsgLeave("", acc2.BondAddress, w.activeNodeAccount.NodeAddress)
-	result3 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, invalidMsg)
-	c.Assert(result3.Code, Equals, sdk.CodeUnknownRequest)
-
 	// Ragnarok check. Ensure all bonders have a zero bond balance
-	nodeAccs, err := w.keeper.ListNodeAccounts(w.ctx)
-	c.Assert(err, IsNil)
-	for _, na := range nodeAccs {
-		c.Assert(na.Bond.IsZero(), Equals, true)
+	outbound := w.txOutStore.GetOutboundItems()
+	c.Assert(outbound, HasLen, 1)
+	for _, tx := range outbound {
+		c.Check(tx.Memo, Equals, "yggdrasil-")
 	}
 }
 
