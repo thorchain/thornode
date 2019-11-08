@@ -12,6 +12,7 @@ ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in statech
 # find or generate our BNB address
 gen_bnb_address
 ADDRESS=$(cat ~/.signer/address.txt)
+PUBKEY=$(cat ~/.signer/pubkey.txt)
 
 # create statechain user
 echo $SIGNER_PASSWD | thorcli keys add $SIGNER_NAME
@@ -51,7 +52,7 @@ if [[ "$SEED" == "$(hostname)" ]]; then
             add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}')
         done
 
-        add_pool_address $NODE_PUB_KEY "0"
+        add_pool_address $PUBKEY "0"
 
         if [[ -f /tmp/shared/config_*.json ]]; then
             for f in /tmp/shared/config_*.json; do 
