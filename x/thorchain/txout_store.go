@@ -56,6 +56,9 @@ func (tos *TxOutStore) GetOutboundItems() []*TxOutItem {
 
 // AddTxOutItem add an item to internal structure
 func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, deductFee bool) {
+	if toi.PoolAddress.IsEmpty() {
+		toi.PoolAddress = tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(toi.Chain).PubKey
+	}
 
 	if deductFee {
 		switch toi.Coin.Asset.Chain {
