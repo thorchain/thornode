@@ -142,6 +142,7 @@ func (tos *TxOutStore) addToBlockOut(toi *TxOutItem) {
 		tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 	}
 }
+
 func (tos *TxOutStore) getSeqNo(chain common.Chain) uint64 {
 	// need to get the sequence no
 	currentChainPoolAddr := tos.poolAddrMgr.currentPoolAddresses.Current.GetByChain(chain)

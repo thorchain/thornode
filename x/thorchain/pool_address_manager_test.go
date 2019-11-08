@@ -46,7 +46,7 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	rotatePerBlockHeight := w.keeper.GetAdminConfigRotatePerBlockHeight(w.ctx, sdk.AccAddress{})
 	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateAt, Equals, 100+rotatePerBlockHeight)
 	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt, Equals, 100+rotatePerBlockHeight-windowOpen)
-	c.Assert(len(w.txOutStore.blockOut.TxArray) > 0, Equals, true)
+	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 1)
 	c.Assert(w.txOutStore.blockOut.Valid(), IsNil)
 	totalBond := sdk.ZeroUint()
 	nodeAccounts, err := w.keeper.ListNodeAccounts(w.ctx)
