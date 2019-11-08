@@ -1,30 +1,58 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
-func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, ygg Yggdrasil) error {
-	nodeAcc, err := keeper.GetNodeAccountByPubKey(ctx, ygg.PubKey)
+func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
+	// Gather list of all pools
+	assets, err := keeper.GetPoolIndex(ctx)
 	if err != nil {
 		return err
 	}
+	pools := make([]Pool, len(assets))
+	for i, asset := range assets {
+		pools[i] = keeper.GetPool(ctx, asset)
+	}
 
-	yggHoldings := getHoldingsValue(ctx, keeper, ygg)
-	// calculate amount of assets (in rune) the ygg is entitled to (which is
-	// half their bond)
-	yggTarget := nodeAcc.Bond.QuoUint64(2).Sub(yggHoldings)
+	// find total bond
+	totalBond := sdk.ZeroUint()
+	nodeAccs, err := keeper.ListActiveNodeAccounts(ctx)
+	for _, na := range nodeAccs {
+		totalBond = totalBond.Add(na.Bond)
+	}
 
-	// check if their target rune is greater than 1/4 of their bond, top up if
-	// it is true
-	if yggTarget.GT(nodeAcc.Bond.QuoUint64(4)) {
-		coins, err := calculateTopUpYgg(ctx, keeper, yggTarget, ygg)
+	// Iterate over each node account and figure out if we need to send them
+	// assets.
+	for _, na := range nodeAccs {
+		// get a list of coin/amounts this yggdrasil pool should have, ideally.
+		ygg := keeper.GetYggdrasil(ctx, na.NodePubKey.Secp256k1)
+		targetCoins, err := calcTargetYggCoins(pools, na.Bond, totalBond)
 		if err != nil {
 			return err
 		}
 
-		return sendCoinsToYggdrasil(ctx, keeper, coins, ygg, txOutStore)
+		var sendCoins common.Coins
+		for _, targetCoin := range targetCoins {
+			yggCoin := ygg.GetCoin(targetCoin.Asset)
+			// check if the amount the ygg pool has is less that 50% of what
+			// they are suppose to have, ideally. We refill them if they drop
+			// below this line
+			if yggCoin.Amount.LT(targetCoin.Amount.QuoUint64(2)) {
+				sendCoins = append(
+					sendCoins,
+					common.NewCoin(
+						targetCoin.Asset,
+						targetCoin.Amount.Sub(yggCoin.Amount),
+					),
+				)
+			}
+		}
+
+		return sendCoinsToYggdrasil(ctx, keeper, sendCoins, ygg, txOutStore)
 	}
 
 	return nil
@@ -51,51 +79,68 @@ func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, yg
 	return nil
 }
 
-// calculateTopUpYgg - with a given target (total value in rune), calculate
-// yggdrasil pool assets from all pools, equally distributed relative to pool
-// depth
-func calculateTopUpYgg(ctx sdk.Context, keeper Keeper, target sdk.Uint, ygg Yggdrasil) (common.Coins, error) {
-	assets, err := keeper.GetPoolIndex(ctx)
-	if err != nil {
-		return nil, err
-	}
-
+// calcTargetYggCoins - calculate the amount of coins of each pool a yggdrasil
+// pool should have, relative to how much they have bonded (which should be
+// target == bond / 2).
+func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins, error) {
 	runeCoin := common.NewCoin(common.RuneAsset(), sdk.ZeroUint())
 	var coins common.Coins
 
+	// calculate total rune in our pools
 	totalRune := sdk.ZeroUint()
-	var pools []Pool
-	for _, asset := range assets {
-		pool := keeper.GetPool(ctx, asset)
-		totalRune = totalRune.Add(pool.BalanceRune)
-		pools = append(pools, pool)
-	}
-
 	for _, pool := range pools {
-		ratio := pool.BalanceRune.Quo(totalRune)
-		totalAmt := target.Mul(ratio)
-		runeAmt := totalAmt.QuoUint64(2)
-		runeCoin.Amount = runeCoin.Amount.Add(runeAmt)
-		assetAmt := pool.RuneValueInAsset(runeAmt)
-		coins = append(coins, common.NewCoin(pool.Asset, assetAmt))
+		totalRune = totalRune.Add(pool.BalanceRune)
+	}
+	if totalRune.IsZero() {
+		// if nothing is staked, no coins should be issued
+		return nil, nil
 	}
 
-	coins = append(coins, runeCoin)
-	return coins, nil
-}
+	// figure out what percentage of the bond this yggdrasil pool has. They
+	// should get half of that value.
+	ratio := float64(yggBond.QuoUint64(2).Uint64()) / float64(totalBond.Uint64())
 
-// getHoldingsValue - adds up all assets a yggdrasil pool has in rune
-func getHoldingsValue(ctx sdk.Context, keeper Keeper, ygg Yggdrasil) sdk.Uint {
-	yggHoldingsInRune := sdk.ZeroUint()
-	for _, coin := range ygg.Coins {
-		if coin.Asset.IsRune() {
-			yggHoldingsInRune = yggHoldingsInRune.Add(coin.Amount)
-		} else {
-			pool := keeper.GetPool(ctx, coin.Asset)
-			runeValue := pool.AssetValueInRune(coin.Amount)
-			yggHoldingsInRune = yggHoldingsInRune.Add(runeValue)
+	targetRune := sdk.NewUint(uint64(ratio * float64(totalRune.Uint64())))
+	// check if more rune would be allocated to this pool than their bond allows
+	if targetRune.GT(yggBond.QuoUint64(2)) {
+		targetRune = yggBond.QuoUint64(2)
+	}
+	ratio = float64(targetRune.Uint64()) / float64(totalRune.Uint64())
+
+	// track how much value (in rune) we've associated with this ygg pool. This
+	// is here just to be absolutely sure we never send too many assets to the
+	// ygg by accident.
+	counter := sdk.ZeroUint()
+	for _, pool := range pools {
+		runeAmt := sdk.NewUint(uint64(
+			float64(pool.BalanceRune.Uint64()) * ratio,
+		))
+		fmt.Printf("%d * %f / 2 = %d\n", pool.BalanceRune.Uint64(), ratio, runeAmt.Uint64())
+		runeCoin.Amount = runeCoin.Amount.Add(runeAmt)
+
+		assetAmt := sdk.NewUint(uint64(
+			float64(pool.BalanceAsset.Uint64()) * ratio,
+		))
+		if !assetAmt.IsZero() {
+			// add rune amt (not asset since the two are considered to be equal)
+			counter = counter.Add(runeAmt)
+
+			coin := common.NewCoin(pool.Asset, assetAmt)
+			coins = append(coins, coin)
 		}
 	}
 
-	return yggHoldingsInRune
+	if !runeCoin.Amount.IsZero() {
+		counter = counter.Add(runeCoin.Amount)
+		coins = append(coins, runeCoin)
+	}
+
+	// ensure we don't send too much value in coins to the ygg pool
+	if counter.GT(yggBond.QuoUint64(2)) {
+		fmt.Printf("%d > %d", counter.Uint64(), yggBond.QuoUint64(2).Uint64())
+		return nil, fmt.Errorf("Exceeded safe amounts of assets for given Yggdrasil pool")
+	}
+	fmt.Printf("Counter: %d %d", counter.Uint64(), yggBond.QuoUint64(2).Uint64())
+
+	return coins, nil
 }
