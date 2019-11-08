@@ -1,4 +1,4 @@
-.PHONY: build
+.PHONY: build smoke tools
 
 build: 
 	docker build -t registry.gitlab.com/thorchain/bepswap/thornode -f Dockerfile ../..
@@ -20,10 +20,17 @@ clean-validator:
 	@mkdir ~/.thornode/validator
 
 run-standalone: clean
-	docker-compose -f standalone.yml up --force-recreate --remove-orphans
+	docker-compose -f standalone.yml up --force-recreate --remove-orphans -d
 
 run-genesis: clean
-	docker-compose -f genesis.yml up --force-recreate --remove-orphans
+	docker-compose -f genesis.yml up --force-recreate --remove-orphans -d
 
 run-validator: clean-validator
-	docker-compose -f validator.yml --project-name validator up --force-recreate
+	docker-compose -f validator.yml --project-name validator up --force-recreate -d
+
+tools:
+	@make -C ../../ tools
+
+smoke-test: run-standalone tools
+	@make PRIV_KEY=$(shell cat ~/.thornode/standalone/keys/private_key.txt) ENV=local -C ../../ smoke-test
+

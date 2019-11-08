@@ -79,6 +79,8 @@ gen_bnb_address () {
     fi
 }
 
+
+
 fetch_genesis () {
     until curl -s "$1:26657" > /dev/null; do
         sleep 3
