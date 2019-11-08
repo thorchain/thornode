@@ -21,6 +21,9 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 	// find total bond
 	totalBond := sdk.ZeroUint()
 	nodeAccs, err := keeper.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return err
+	}
 	for _, na := range nodeAccs {
 		totalBond = totalBond.Add(na.Bond)
 	}
