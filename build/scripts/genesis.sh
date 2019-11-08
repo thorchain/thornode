@@ -11,26 +11,24 @@ ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in statech
 
 # find or generate our BNB address
 gen_bnb_address
-PUBKEY=$(cat ~/.signer/pubkey.txt)
 ADDRESS=$(cat ~/.signer/address.txt)
 
 # create statechain user
 echo $SIGNER_PASSWD | thorcli keys add $SIGNER_NAME
 
 VALIDATOR=$(thord tendermint show-validator)
-OBSERVER_ADDRESS=$(thorcli keys show statechain -a)
 NODE_ADDRESS=$(thorcli keys show statechain -a)
+NODE_PUB_KEY=$(thorcli keys show statechain -p)
 VERSION=$(fetch_version)
 
 if [[ "$SEED" == "$(hostname)" ]]; then
     echo "I AM THE SEED NODE"
     thord tendermint show-node-id > /tmp/shared/node.txt
-    echo $PUBKEY > /tmp/shared/pubkey.txt
     echo $ADDRESS > /tmp/shared/pool_address.txt
 fi
 
 # write node account data to json file in shared directory
-echo "$NODE_ADDRESS $VALIDATOR $OBSERVER_ADDRESS $VERSION $ADDRESS" > /tmp/shared/node_$NODE_ADDRESS.json
+echo "$NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $ADDRESS" > /tmp/shared/node_$NODE_ADDRESS.json
 
 # write rotate block height as config file
 if [[ "$ROTATE_BLOCK_HEIGHT" != "0" ]]; then
@@ -53,7 +51,7 @@ if [[ "$SEED" == "$(hostname)" ]]; then
             add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}')
         done
 
-        add_pool_address $POOL_ADDRESS "0"
+        add_pool_address $NODE_PUB_KEY "0"
 
         if [[ -f /tmp/shared/config_*.json ]]; then
             for f in /tmp/shared/config_*.json; do 
