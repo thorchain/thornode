@@ -100,13 +100,14 @@ func (tx TxType) String() string {
 type Memo interface {
 	IsType(tx TxType) bool
 
+	String() string
 	GetAsset() common.Asset
 	GetAmount() string
 	GetDestination() common.Address
 	GetSlipLimit() sdk.Uint
 	GetKey() string
 	GetValue() string
-	GetBlockHeight() uint64
+	GetTxID() common.TxID
 	GetNodeAddress() sdk.AccAddress
 	GetNextPoolAddress() common.PubKey
 }
@@ -155,7 +156,7 @@ type AdminMemo struct {
 
 type OutboundMemo struct {
 	MemoBase
-	BlockHeight uint64
+	TxID common.TxID
 }
 
 type BondMemo struct {
@@ -182,6 +183,12 @@ type YggdrasilFundMemo struct {
 
 type YggdrasilReturnMemo struct {
 	MemoBase
+}
+
+func NewOutboundMemo(txID common.TxID) OutboundMemo {
+	return OutboundMemo{
+		TxID: txID,
+	}
 }
 
 func ParseMemo(memo string) (Memo, error) {
@@ -316,11 +323,9 @@ func ParseMemo(memo string) (Memo, error) {
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("not enough parameters")
 		}
-		height, err := strconv.ParseUint(parts[1], 0, 64)
+		txID, err := common.NewTxID(parts[1])
 
-		return OutboundMemo{
-			BlockHeight: height,
-		}, err
+		return NewOutboundMemo(txID), err
 	case txBond:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("not enough parameters")
@@ -360,6 +365,7 @@ func ParseMemo(memo string) (Memo, error) {
 }
 
 // Base Functions
+func (m MemoBase) String() string                    { return "" }
 func (m MemoBase) GetType() TxType                   { return m.TxType }
 func (m MemoBase) IsType(tx TxType) bool             { return m.TxType.Equals(tx) }
 func (m MemoBase) GetAsset() common.Asset            { return m.Asset }
@@ -368,7 +374,7 @@ func (m MemoBase) GetDestination() common.Address    { return "" }
 func (m MemoBase) GetSlipLimit() sdk.Uint            { return sdk.ZeroUint() }
 func (m MemoBase) GetKey() string                    { return "" }
 func (m MemoBase) GetValue() string                  { return "" }
-func (m MemoBase) GetBlockHeight() uint64            { return 0 }
+func (m MemoBase) GetTxID() common.TxID              { return "" }
 func (m MemoBase) GetNodeAddress() sdk.AccAddress    { return sdk.AccAddress{} }
 func (m MemoBase) GetNextPoolAddress() common.PubKey { return common.EmptyPubKey }
 
@@ -378,7 +384,10 @@ func (m SwapMemo) GetDestination() common.Address        { return m.Destination 
 func (m SwapMemo) GetSlipLimit() sdk.Uint                { return m.SlipLimit }
 func (m AdminMemo) GetKey() string                       { return m.Key }
 func (m AdminMemo) GetValue() string                     { return m.Value }
-func (m OutboundMemo) GetBlockHeight() uint64            { return m.BlockHeight }
 func (m BondMemo) GetNodeAddress() sdk.AccAddress        { return m.NodeAddress }
 func (m NextPoolMemo) GetNextPoolAddress() common.PubKey { return m.NextPoolAddr }
 func (m StakeMemo) GetDestination() common.Address       { return m.Address }
+func (m OutboundMemo) GetTxID() common.TxID              { return m.TxID }
+func (m OutboundMemo) String() string {
+	return fmt.Sprintf("OUTBOUND:%s", m.TxID.String())
+}

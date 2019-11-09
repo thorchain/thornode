@@ -23,6 +23,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		Chain:       common.BNBChain,
 		PoolAddress: bnbAddress,
 		ToAddress:   toAddr,
+		InHash:      GetRandomTxHash(),
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 	}
 	txOut.TxArray = append(txOut.TxArray, txOutItem)
@@ -37,6 +38,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	txOut1.TxArray = append(txOut1.TxArray, txOutItem)
 	txOut1.TxArray = append(txOut1.TxArray, &TxOutItem{
 		Chain:       common.BNBChain,
+		InHash:      GetRandomTxHash(),
 		ToAddress:   toAddr,
 		PoolAddress: bnbAddress,
 		Coin:        common.NoCoin,
@@ -46,6 +48,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	txOut2 := NewTxOut(3)
 	txOut2.TxArray = append(txOut2.TxArray, &TxOutItem{
 		Chain:       common.BNBChain,
+		InHash:      GetRandomTxHash(),
 		ToAddress:   "",
 		PoolAddress: bnbAddress,
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
@@ -54,6 +57,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	txOut3 := NewTxOut(4)
 	txOut3.TxArray = append(txOut3.TxArray, &TxOutItem{
 		Chain:       common.BNBChain,
+		InHash:      GetRandomTxHash(),
 		ToAddress:   toAddr,
 		PoolAddress: common.EmptyPubKey,
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),

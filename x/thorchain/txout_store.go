@@ -58,6 +58,10 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		toi.PoolAddress = tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(toi.Chain).PubKey
 	}
 
+	if toi.Memo == "" {
+		toi.Memo = NewOutboundMemo(toi.InHash).String()
+	}
+
 	if deductFee {
 		switch toi.Coin.Asset.Chain {
 		case common.BNBChain:

@@ -135,9 +135,9 @@ func (tx *TxIn) GetCommonTx(txid common.TxID) common.Tx {
 }
 
 type TxInVoter struct {
-	TxID        common.TxID `json:"tx_id"`
-	Txs         []TxIn      `json:"txs"`
-	IsProcessed bool        `json:"is_processed"`
+	TxID   common.TxID `json:"tx_id"`
+	Txs    []TxIn      `json:"txs"`
+	Height int64       `json:"height"`
 }
 
 func NewTxInVoter(txID common.TxID, txs []TxIn) TxInVoter {

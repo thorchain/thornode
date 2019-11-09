@@ -676,17 +676,17 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
 		"",
 	)
-	msgOutboundTx := NewMsgOutboundTx(tx, 1, w.notActiveNodeAccount.NodeAddress)
+	msgOutboundTx := NewMsgOutboundTx(tx, 1, txID, w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTx)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
 	tx.ID = ""
-	msgInvalidOutboundTx := NewMsgOutboundTx(tx, 1, w.activeNodeAccount.NodeAddress)
+	msgInvalidOutboundTx := NewMsgOutboundTx(tx, 1, txID, w.activeNodeAccount.NodeAddress)
 	result1 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidOutboundTx)
 	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest, Commentf("%+v\n", result1))
 
 	tx.ID = txID
-	msgInvalidPool := NewMsgOutboundTx(tx, 1, w.activeNodeAccount.NodeAddress)
+	msgInvalidPool := NewMsgOutboundTx(tx, 1, txID, w.activeNodeAccount.NodeAddress)
 	result2 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidPool)
 	c.Assert(result2.Code, Equals, sdk.CodeUnauthorized, Commentf("%+v\n", result2))
 
@@ -708,9 +708,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(200*common.One)),
 	}
-	msgOutboundTxNormal := NewMsgOutboundTx(tx, 1, w.activeNodeAccount.NodeAddress)
-	fmt.Println("==================================================")
-	fmt.Printf("NA: %+v\n", w.activeNodeAccount)
+	msgOutboundTxNormal := NewMsgOutboundTx(tx, 1, txID, w.activeNodeAccount.NodeAddress)
 	result3 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal)
 	c.Assert(result3.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result3))
 	ygg = w.keeper.GetYggdrasil(w.ctx, currentChainPool.PubKey)
@@ -737,7 +735,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	resultTxIn := handleMsgSetTxIn(ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn1)
 	c.Assert(resultTxIn.Code, Equals, sdk.CodeOK)
 	w.txOutStore.CommitBlock(ctx)
-	msgOutboundTxNormal1 := NewMsgOutboundTx(tx, 2, w.activeNodeAccount.NodeAddress)
+	msgOutboundTxNormal1 := NewMsgOutboundTx(tx, 2, txID, w.activeNodeAccount.NodeAddress)
 	result4 := handleMsgOutboundTx(ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal1)
 	c.Assert(result4.Code, Equals, sdk.CodeOK)
 }
@@ -845,7 +843,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	}
 	currentPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
 	c.Assert(currentPoolAddr, NotNil)
-	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
+	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 
 	// check we DONT create a refund transaction when we don't have a pool for
@@ -858,13 +856,13 @@ func (HandlerSuite) TestRefund(c *C) {
 		},
 	}
 
-	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
+	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(pool.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true)
 
 	// doing it a second time should add the assets again.
-	refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
+	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(pool.BalanceAsset.Equal(sdk.NewUint(200*common.One)), Equals, true)
