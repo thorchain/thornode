@@ -25,8 +25,3 @@ type Staker struct {
 	StakerID     string       `json:"staker_id"`
 	PoolAndUnits PoolAndUnits `json:"pool_and_units"`
 }
-
-type ThorchainResults struct {
-	Tx             int          `json:"TX"`
-	ThorchainPools ThorchainPools `json:"thorchain_pools"`
-}
