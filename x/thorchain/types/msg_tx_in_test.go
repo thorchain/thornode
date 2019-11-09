@@ -15,9 +15,16 @@ func (MsgSetTxInSuite) TestMsgSetTxIn(c *C) {
 	bnb := GetRandomBNBAddress()
 	acc1 := GetRandomBech32Addr()
 	observePoolAddr := GetRandomPubKey()
-	txIn := NewTxIn(common.Coins{
-		common.NewCoin(common.RuneAsset(), sdk.NewUint(1)),
-	}, "hello", bnb, sdk.NewUint(1), observePoolAddr)
+	txIn := NewTxIn(
+		common.Coins{
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(1)),
+		},
+		"hello",
+		bnb,
+		GetRandomBNBAddress(),
+		sdk.NewUint(1),
+		observePoolAddr,
+	)
 	txs := []TxInVoter{
 		NewTxInVoter(txID, []TxIn{txIn}),
 	}
@@ -37,7 +44,7 @@ func (MsgSetTxInSuite) TestMsgSetTxIn(c *C) {
 
 	m4 := NewMsgSetTxIn([]TxInVoter{
 		NewTxInVoter(txID, []TxIn{
-			NewTxIn(nil, "hello", bnb, sdk.NewUint(1), observePoolAddr),
+			NewTxIn(nil, "hello", bnb, GetRandomBNBAddress(), sdk.NewUint(1), observePoolAddr),
 		}),
 	}, acc1)
 	c.Assert(m4.ValidateBasic(), NotNil)

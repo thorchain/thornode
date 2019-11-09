@@ -114,7 +114,6 @@ func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 
 	}
 }
-
 func (NodeAccountSuite) TestNodeAccountUpdateStatusAndSort(c *C) {
 	var accounts NodeAccounts
 	for i := 0; i < 10; i++ {
@@ -125,4 +124,26 @@ func (NodeAccountSuite) TestNodeAccountUpdateStatusAndSort(c *C) {
 		return accounts[i].StatusSince < accounts[j].StatusSince
 	})
 	c.Assert(isSorted, Equals, true)
+}
+
+func (NodeAccountSuite) TestTryAddSignerPubKey(c *C) {
+	na := NewNodeAccount(GetRandomBech32Addr(), Active, GetRandomPubKeys(), GetRandomBech32ConsensusPubKey(), sdk.NewUint(100*common.One), GetRandomBNBAddress(), 1)
+	pk := GetRandomPubKey()
+	emptyPK := common.EmptyPubKey
+	// make sure it get added
+	na.TryAddSignerPubKey(pk)
+	c.Assert(na.SignerMembership, NotNil)
+	c.Assert(na.SignerMembership, HasLen, 1)
+	na.TryAddSignerPubKey(emptyPK)
+	c.Assert(na.SignerMembership, HasLen, 1)
+
+	// add the same key again should be a noop
+	na.TryAddSignerPubKey(pk)
+	c.Assert(len(na.SignerMembership), Equals, 1)
+	na.TryRemoveSignerPubKey(emptyPK)
+	c.Assert(len(na.SignerMembership), Equals, 1)
+
+	na.TryRemoveSignerPubKey(pk)
+	c.Assert(na.SignerMembership, HasLen, 0)
+
 }

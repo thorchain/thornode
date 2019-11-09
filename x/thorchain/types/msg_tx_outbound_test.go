@@ -15,7 +15,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 	txID := GetRandomTxHash()
 	bnb := GetRandomBNBAddress()
 	acc1 := GetRandomBech32Addr()
-	m := NewMsgOutboundTx(txID, 1, bnb, common.BNBChain, acc1)
+	m := NewMsgOutboundTx(txID, 1, bnb, common.BNBChain, nil, acc1)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_tx_outbound")
 
@@ -51,7 +51,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 		},
 	}
 	for _, item := range inputs {
-		m := NewMsgOutboundTx(item.txID, item.height, item.sender, common.BNBChain, item.signer)
+		m := NewMsgOutboundTx(item.txID, item.height, item.sender, common.BNBChain, nil, item.signer)
 		c.Assert(m.ValidateBasic(), NotNil)
 	}
 }

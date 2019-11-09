@@ -35,6 +35,7 @@ const (
 	prefixPoolAddresses    dbPrefix = "pooladdresses_"
 	prefixValidatorMeta    dbPrefix = "validator_meta_"
 	prefixSupportedChains  dbPrefix = "supported_chains_"
+	prefixYggdrasilPool    dbPrefix = "yggdrasil_"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -912,4 +913,47 @@ func (k Keeper) AddChain(ctx sdk.Context, chain common.Chain) {
 	chains = append(chains, chain)
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(chains))
+}
+
+// GetYggdrasilIterator only iterate yggdrasil pools
+func (k Keeper) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIterator(store, []byte(prefixYggdrasilPool))
+}
+
+func (k Keeper) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error) {
+	iterator := k.GetYggdrasilIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var ygg Yggdrasil
+		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &ygg)
+		address, err := ygg.PubKey.GetAddress(chain)
+		if err != nil {
+			return common.EmptyPubKey, err
+		}
+		if !address.IsEmpty() && address.Equals(addr) {
+			return ygg.PubKey, nil
+		}
+	}
+	return common.EmptyPubKey, nil
+}
+
+func (k Keeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
+	key := getKey(prefixYggdrasilPool, ygg.PubKey.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ygg))
+}
+
+func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
+	var ygg Yggdrasil
+	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
+	store := ctx.KVStore(k.storeKey)
+	if store.Has([]byte(key)) {
+		buf := store.Get([]byte(key))
+		_ = k.cdc.UnmarshalBinaryBare(buf, &ygg)
+	}
+	if ygg.PubKey.IsEmpty() {
+		ygg.PubKey = pk
+	}
+	return ygg
 }
