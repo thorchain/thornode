@@ -39,7 +39,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, resultsFile, thorchainFile string, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, resultsFile string, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -265,7 +265,7 @@ func (s *Smoke) GetThorchain() types.ThorchainPools {
 func (s *Smoke) Sweep() {
 	keys := make([]string, len(s.Tests.ActorList))
 	for _, actor := range s.Tests.ActorList {
-		key, _ = s.Tests.ActorKeys[actor].Key.ExportAsPrivateKey()
+		key, _ := s.Tests.ActorKeys[actor].Key.ExportAsPrivateKey()
 		if key != s.FaucetKey {
 			keys = append(keys, key)
 		}
