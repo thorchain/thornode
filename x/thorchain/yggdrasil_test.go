@@ -36,3 +36,24 @@ func (s YggdrasilSuite) TestCalcTargetAmounts(c *C) {
 	c.Check(coins[2].Asset.String(), Equals, common.RuneAsset().String())
 	c.Check(coins[2].Amount.Uint64(), Equals, sdk.NewUint(50*common.One).Uint64(), Commentf("%d vs %d", coins[2].Amount.Uint64(), sdk.NewUint(50*common.One).Uint64()))
 }
+
+func (s YggdrasilSuite) TestCalcTargetAmounts2(c *C) {
+	// Adding specific test per PR request
+	// https://gitlab.com/thorchain/bepswap/thornode/merge_requests/246#note_241913460
+	var pools []Pool
+	p := NewPool()
+	p.Asset = common.BNBAsset
+	p.BalanceRune = sdk.NewUint(1000000 * common.One)
+	p.BalanceAsset = sdk.NewUint(1 * common.One)
+	pools = append(pools, p)
+
+	totalBond := sdk.NewUint(3000000 * common.One)
+	bond := sdk.NewUint(1000000 * common.One)
+	coins, err := calcTargetYggCoins(pools, bond, totalBond)
+	c.Assert(err, IsNil)
+	c.Assert(coins, HasLen, 2)
+	c.Check(coins[0].Asset.String(), Equals, common.BNBAsset.String())
+	c.Check(coins[0].Amount.Uint64(), Equals, sdk.NewUint(0.16666666*common.One).Uint64(), Commentf("%d vs %d", coins[0].Amount.Uint64(), sdk.NewUint(0.16666666*common.One).Uint64()))
+	c.Check(coins[1].Asset.String(), Equals, common.RuneAsset().String())
+	c.Check(coins[1].Amount.Uint64(), Equals, sdk.NewUint(166666.66666666*common.One).Uint64(), Commentf("%d vs %d", coins[1].Amount.Uint64(), sdk.NewUint(166666.66666666*common.One).Uint64()))
+}

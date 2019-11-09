@@ -107,8 +107,7 @@ func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins
 
 	// figure out what percentage of the bond this yggdrasil pool has. They
 	// should get half of that value.
-	ratio := float64(yggBond.QuoUint64(2).Uint64()) / float64(totalBond.Uint64())
-
+	ratio := float64(yggBond.Uint64()) / (2 * float64(totalBond.Uint64()))
 	targetRune := sdk.NewUint(uint64(ratio * float64(totalRune.Uint64())))
 	// check if more rune would be allocated to this pool than their bond allows
 	if targetRune.GT(yggBond.QuoUint64(2)) {
@@ -124,7 +123,6 @@ func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins
 		runeAmt := sdk.NewUint(uint64(
 			float64(pool.BalanceRune.Uint64()) * ratio,
 		))
-		fmt.Printf("%d * %f / 2 = %d\n", pool.BalanceRune.Uint64(), ratio, runeAmt.Uint64())
 		runeCoin.Amount = runeCoin.Amount.Add(runeAmt)
 
 		assetAmt := sdk.NewUint(uint64(
@@ -145,11 +143,10 @@ func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins
 	}
 
 	// ensure we don't send too much value in coins to the ygg pool
+	fmt.Printf("Counter: %d GT %d\n", counter.Uint64(), yggBond.QuoUint64(2).Uint64())
 	if counter.GT(yggBond.QuoUint64(2)) {
-		fmt.Printf("%d > %d", counter.Uint64(), yggBond.QuoUint64(2).Uint64())
 		return nil, fmt.Errorf("Exceeded safe amounts of assets for given Yggdrasil pool")
 	}
-	fmt.Printf("Counter: %d %d", counter.Uint64(), yggBond.QuoUint64(2).Uint64())
 
 	return coins, nil
 }
