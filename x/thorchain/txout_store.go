@@ -136,6 +136,12 @@ func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 }
 
 func (tos *TxOutStore) addToBlockOut(toi *TxOutItem) {
+	// Ensure we are not sending from and to the same address
+	fromAddr, _ := toi.PoolAddress.GetAddress(toi.Chain)
+	if fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
+		return
+	}
+
 	// if we are sending zero coins, don't bother adding to the txarray
 	if !toi.Coin.IsEmpty() {
 		toi.SeqNo = tos.getSeqNo(toi.Chain)
