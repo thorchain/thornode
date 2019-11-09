@@ -65,6 +65,7 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
   return {
     'tx': hash,
     'sender': sender,
+    'to': bnbAddress,
     'observe_pool_address': poolAddr,
     'MEMO': memo,
     'coins': coins

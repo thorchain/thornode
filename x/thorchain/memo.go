@@ -29,46 +29,52 @@ const (
 	txNextPool
 	txLeave
 	txAck
+	txYggdrasilFund
+	txYggdrasilReturn
 )
 
 var stringToTxTypeMap = map[string]TxType{
-	"create":   txCreate,
-	"c":        txCreate,
-	"#":        txCreate,
-	"stake":    txStake,
-	"st":       txStake,
-	"+":        txStake,
-	"withdraw": txWithdraw,
-	"wd":       txWithdraw,
-	"-":        txWithdraw,
-	"swap":     txSwap,
-	"s":        txSwap,
-	"=":        txSwap,
-	"outbound": txOutbound,
-	"add":      txAdd,
-	"a":        txAdd,
-	"%":        txAdd,
-	"gas":      txGas,
-	"g":        txGas,
-	"$":        txGas,
-	"bond":     txBond,
-	"nextpool": txNextPool,
-	"leave":    txLeave,
-	"ack":      txAck,
+	"create":     txCreate,
+	"c":          txCreate,
+	"#":          txCreate,
+	"stake":      txStake,
+	"st":         txStake,
+	"+":          txStake,
+	"withdraw":   txWithdraw,
+	"wd":         txWithdraw,
+	"-":          txWithdraw,
+	"swap":       txSwap,
+	"s":          txSwap,
+	"=":          txSwap,
+	"outbound":   txOutbound,
+	"add":        txAdd,
+	"a":          txAdd,
+	"%":          txAdd,
+	"gas":        txGas,
+	"g":          txGas,
+	"$":          txGas,
+	"bond":       txBond,
+	"nextpool":   txNextPool,
+	"leave":      txLeave,
+	"ack":        txAck,
+	"yggdrasil+": txYggdrasilFund,
+	"yggdrasil-": txYggdrasilReturn,
 }
 
 var txToStringMap = map[TxType]string{
-	txCreate:   "create",
-	txStake:    "stake",
-	txWithdraw: "withdraw",
-	txSwap:     "swap",
-	txOutbound: "outbound",
-	txAdd:      "add",
-	txGas:      "gas",
-	txBond:     "bond",
-	txNextPool: "nextpool",
-	txLeave:    "leave",
-	txAck:      "ack",
+	txCreate:          "create",
+	txStake:           "stake",
+	txWithdraw:        "withdraw",
+	txSwap:            "swap",
+	txOutbound:        "outbound",
+	txAdd:             "add",
+	txGas:             "gas",
+	txBond:            "bond",
+	txNextPool:        "nextpool",
+	txLeave:           "leave",
+	txAck:             "ack",
+	txYggdrasilFund:   "yggdrasil+",
+	txYggdrasilReturn: "yggdrasil-",
 }
 
 // converts a string into a txType
@@ -165,7 +171,16 @@ type NextPoolMemo struct {
 type LeaveMemo struct {
 	MemoBase
 }
+
 type AckMemo struct {
+	MemoBase
+}
+
+type YggdrasilFundMemo struct {
+	MemoBase
+}
+
+type YggdrasilReturnMemo struct {
 	MemoBase
 }
 
@@ -181,8 +196,20 @@ func ParseMemo(memo string) (Memo, error) {
 		return noMemo, err
 	}
 
+	// list of memo types that do not contain an asset in their memo
+	noAssetMemos := []TxType{
+		txGas, txOutbound, txBond, txLeave, txAck, txNextPool,
+		txYggdrasilFund, txYggdrasilReturn,
+	}
+	hasAsset := true
+	for _, memoType := range noAssetMemos {
+		if tx == memoType {
+			hasAsset = false
+		}
+	}
+
 	var asset common.Asset
-	if tx != txGas && tx != txOutbound && tx != txBond && tx != txLeave && tx != txAck && tx != txNextPool {
+	if hasAsset {
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("cannot parse given memo: length %d", len(parts))
 		}
@@ -318,6 +345,14 @@ func ParseMemo(memo string) (Memo, error) {
 				Asset:  common.Asset{},
 			},
 			NextPoolAddr: nextPoolAddr,
+		}, nil
+	case txYggdrasilFund:
+		return YggdrasilFundMemo{
+			MemoBase: MemoBase{TxType: txYggdrasilFund},
+		}, nil
+	case txYggdrasilReturn:
+		return YggdrasilReturnMemo{
+			MemoBase: MemoBase{TxType: txYggdrasilReturn},
 		}, nil
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())

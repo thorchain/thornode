@@ -102,6 +102,7 @@ func (s StatechainSuite) TestSign(c *C) {
 			},
 			"This is my memo!",
 			common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
+			common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
 			sdk.NewUint(1),
 			observedAddress,
 		),

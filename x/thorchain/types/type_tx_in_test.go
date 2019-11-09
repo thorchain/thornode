@@ -34,8 +34,8 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	observePoolAddr := GetRandomPubKey()
 	voter := NewTxInVoter(txID, nil)
 
-	txIn := NewTxIn(nil, "hello", bnb, sdk.ZeroUint(), observePoolAddr)
-	txIn2 := NewTxIn(nil, "goodbye", bnb, sdk.ZeroUint(), observePoolAddr)
+	txIn := NewTxIn(nil, "hello", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr)
+	txIn2 := NewTxIn(nil, "goodbye", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr)
 
 	voter.Adds([]TxIn{txIn}, acc1)
 	c.Assert(voter.Txs, HasLen, 1)
@@ -163,7 +163,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	}
 
 	for _, item := range inputs {
-		txIn := NewTxIn(item.coins, item.memo, item.sender, sdk.ZeroUint(), item.observePoolAddr)
+		txIn := NewTxIn(item.coins, item.memo, item.sender, GetRandomBNBAddress(), sdk.ZeroUint(), item.observePoolAddr)
 		c.Assert(txIn.Valid(), NotNil)
 	}
 }
@@ -196,33 +196,33 @@ func (TypeTxInSuite) TestTxInEquals(c *C) {
 		equal bool
 	}{
 		{
-			tx:    NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewTxIn(coins1, "memo1", bnb, sdk.ZeroUint(), observePoolAddr),
+			tx:    NewTxIn(coins1, "memo", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo1", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewTxIn(coins1, "memo", bnb1, sdk.ZeroUint(), observePoolAddr),
+			tx:    NewTxIn(coins1, "memo", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo", bnb1, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins2, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
+			tx:    NewTxIn(coins2, "memo", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins3, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
+			tx:    NewTxIn(coins3, "memo", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins4, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
+			tx:    NewTxIn(coins4, "memo", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewTxIn(coins1, "memo", bnb, sdk.ZeroUint(), observePoolAddr1),
+			tx:    NewTxIn(coins1, "memo", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr),
+			tx1:   NewTxIn(coins1, "memo", bnb, GetRandomBNBAddress(), sdk.ZeroUint(), observePoolAddr1),
 			equal: false,
 		},
 	}
