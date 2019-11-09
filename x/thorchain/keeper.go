@@ -133,7 +133,7 @@ func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
 
 func (k Keeper) GetPoolBalances(ctx sdk.Context, asset, asset2 common.Asset) (sdk.Uint, sdk.Uint) {
 	pool := k.GetPool(ctx, asset)
-	if common.IsRuneAsset(asset2) {
+	if asset2.IsRune() {
 		return pool.BalanceRune, pool.BalanceAsset
 	}
 	return pool.BalanceAsset, pool.BalanceRune

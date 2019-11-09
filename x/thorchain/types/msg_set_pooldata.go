@@ -38,7 +38,7 @@ func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
 	if msg.Asset.IsEmpty() {
 		return sdk.ErrUnknownRequest("pool Asset cannot be empty")
 	}
-	if common.IsRuneAsset(msg.Asset) {
+	if msg.Asset.IsRune() {
 		return sdk.ErrUnknownRequest("invalid pool asset")
 	}
 

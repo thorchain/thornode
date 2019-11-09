@@ -76,6 +76,14 @@ describe "API Tests" do
       expect(resp.body[1]['asset']['symbol']).to eq("TCAN-014"), resp.body.inspect
     end
 
+    it "adds gas" do
+      coins = [
+        {'asset': {'chain': 'BNB', 'symbol': 'BNB', 'ticker': 'RUNE'}, "amount": "20000000"},
+      ]
+      tx = makeTx(memo: "GAS", coins: coins)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200"), resp.body.inspect
+    end
   end
 
   context "Show supporting chains" do
@@ -125,6 +133,10 @@ describe "API Tests" do
       tx = makeTx(memo: "stake:BNB.BOLT-014", coins: coins, sender: sender)
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
+      resp = get("/pool/BOLT-014")
+      expect(resp.code).to eq("200")
+      expect(resp.body['balance_rune']).to eq("2349500000"), resp.body.inspect
+      expect(resp.body['balance_asset']).to eq("334850000"), resp.body.inspect
 
       # make a swap
       coins = [
@@ -215,15 +227,6 @@ describe "API Tests" do
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("2244541407"), resp.body.inspect
       expect(resp.body['balance_asset']).to eq("374850000"), resp.body.inspect
-    end
-
-    it "adds gas" do
-      coins = [
-        {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "20000000"},
-      ]
-      tx = makeTx(memo: "GAS", coins: coins, sender: sender)
-      resp = processTx(tx)
-      expect(resp.code).to eq("200"), resp.body.inspect
     end
 
   end

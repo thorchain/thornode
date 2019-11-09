@@ -37,7 +37,7 @@ func (msg MsgYggdrasil) ValidateBasic() sdk.Error {
 		return sdk.ErrUnknownRequest("pubkey cannot be empty")
 	}
 	for _, coin := range msg.Coins {
-		if err := coin.Valid(); err != nil {
+		if err := coin.IsValid(); err != nil {
 			return sdk.ErrUnknownRequest(err.Error())
 		}
 	}
