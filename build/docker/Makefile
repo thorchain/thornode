@@ -34,5 +34,5 @@ tools:
 smoke-test: run-standalone tools
 	@make PRIV_KEY=$(shell cat ~/.thornode/standalone/keys/private_key.txt) ENV=local -C ../../ smoke-test
 
-validate-smoke-test:
+validate-smoke-test: smoke-test
 	@echo "$(shell cat ../../test/smoke/checksum) /tmp/smoke-test.json" | sha256sum --check
