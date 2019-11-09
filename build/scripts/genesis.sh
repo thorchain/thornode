@@ -53,6 +53,7 @@ if [[ "$SEED" == "$(hostname)" ]]; then
         done
 
         add_pool_address $PUBKEY "0"
+        add_last_event_id 1
 
         if [[ -f /tmp/shared/config_*.json ]]; then
             for f in /tmp/shared/config_*.json; do 
