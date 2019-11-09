@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
@@ -54,138 +56,84 @@ func (tos *TxOutStore) GetOutboundItems() []*TxOutItem {
 // AddTxOutItem add an item to internal structure
 func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, deductFee bool) {
 
-	if !deductFee {
-		tos.addToBlockOut(toi)
-		return
-	}
-
-	if len(toi.Coins) > 0 {
-		switch toi.Coins[0].Asset.Chain {
+	if deductFee {
+		switch toi.Coin.Asset.Chain {
 		case common.BNBChain:
 			tos.ApplyBNBFees(ctx, keeper, toi)
 		default:
 			// No gas policy for this chain (yet)
 		}
+	}
 
+	if !toi.Coin.IsEmpty() {
 		tos.addToBlockOut(toi)
 	}
 }
 
 func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutItem) {
-	// detect if one of our coins is bnb or rune. We use this to help determine
-	// which coin we should deduct fees from. The priority, in order, is BNB,
-	// Rune, other.
-	hasBNB := false
-	hasRune := false
-	for _, item := range toi.Coins {
-		if common.IsBNBAsset(item.Asset) {
-			hasBNB = true
-		}
-		if common.IsRuneAsset(item.Asset) {
-			hasRune = true
-		}
-	}
+	gas := singleTransactionFee
 
-	// TODO: if we don't have enough coin amount to pay for gas, we just take
-	// it all and don't take the rest from another coin
+	if toi.Coin.Asset.IsBNB() {
+		if toi.Coin.Amount.LTE(sdk.NewUint(gas)) {
+			toi.Coin.Amount = sdk.ZeroUint()
+		} else {
+			toi.Coin.Amount = toi.Coin.Amount.SubUint64(gas)
+		}
 
-	hasDeductedGas := false // monitor if we've already pulled out coins for gas.
-	var gas uint64
-	if len(toi.Coins) == 1 {
-		gas = singleTransactionFee
+		// no need to update the bnb pool with new amounts.
+
+	} else if toi.Coin.Asset.IsRune() {
+		bnbPool := keeper.GetPool(ctx, common.BNBAsset)
+
+		if bnbPool.BalanceAsset.LT(sdk.NewUint(gas)) {
+			fmt.Printf("BNB Pool: %d\n", bnbPool.BalanceAsset.Uint64())
+			// not enough gas to be able to send coins
+			return
+		}
+
+		var runeAmt uint64
+		runeAmt = uint64(float64(bnbPool.BalanceRune.Uint64()) / (float64(bnbPool.BalanceAsset.Uint64()) / float64(gas)))
+
+		if toi.Coin.Amount.LTE(sdk.NewUint(runeAmt)) {
+			toi.Coin.Amount = sdk.ZeroUint()
+		} else {
+			toi.Coin.Amount = toi.Coin.Amount.SubUint64(runeAmt)
+		}
+
+		// add the rune to the bnb pool that we are subtracting from
+		// the refund
+		bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
+		bnbPool.BalanceAsset = bnbPool.BalanceAsset.SubUint64(gas)
+		keeper.SetPool(ctx, bnbPool)
+
 	} else {
-		gas = batchTransactionFee * uint64(len(toi.Coins))
-	}
-	for i, item := range toi.Coins {
-		if !hasDeductedGas && common.IsBNBAsset(item.Asset) {
-			if item.Amount.LT(sdk.NewUint(gas)) {
-				item.Amount = sdk.ZeroUint()
-			} else {
-				item.Amount = item.Amount.SubUint64(gas)
-			}
+		bnbPool := keeper.GetPool(ctx, common.BNBAsset)
+		assetPool := keeper.GetPool(ctx, toi.Coin.Asset)
 
-			// no need to update the bnb pool with new amounts.
+		var runeAmt, assetAmt uint64
+		runeAmt = uint64(float64(bnbPool.BalanceRune.Uint64()) / (float64(bnbPool.BalanceAsset.Uint64()) / float64(gas)))
+		assetAmt = uint64(float64(assetPool.BalanceRune.Uint64()) / (float64(assetPool.BalanceAsset.Uint64()) / float64(runeAmt)))
 
-			toi.Coins[i] = item
-			hasDeductedGas = true
-			continue
+		if toi.Coin.Amount.LTE(sdk.NewUint(assetAmt)) {
+			toi.Coin.Amount = sdk.ZeroUint()
+		} else {
+			toi.Coin.Amount = toi.Coin.Amount.SubUint64(assetAmt)
 		}
 
-		if !hasDeductedGas && hasBNB == false && common.IsRuneAsset(item.Asset) {
-			bnbPool := keeper.GetPool(ctx, common.BNBAsset)
-
-			if bnbPool.BalanceRune.IsZero() {
-				toi.Coins[i] = item
-				hasDeductedGas = true
-				continue
-			}
-
-			var runeAmt uint64
-			runeAmt = uint64(float64(bnbPool.BalanceRune.Uint64()) / (float64(bnbPool.BalanceAsset.Uint64()) / float64(gas)))
-
-			if item.Amount.LT(sdk.NewUint(gas)) {
-				item.Amount = sdk.ZeroUint()
-			} else {
-				item.Amount = item.Amount.SubUint64(runeAmt)
-			}
-
-			// add the rune to the bnb pool that we are subtracting from
-			// the refund
-			bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
-			bnbPool.BalanceAsset = bnbPool.BalanceAsset.SubUint64(gas)
-			keeper.SetPool(ctx, bnbPool)
-
-			toi.Coins[i] = item
-			hasDeductedGas = true
-			continue
-		}
-
-		if !hasDeductedGas && hasBNB == false && hasRune == false {
-			bnbPool := keeper.GetPool(ctx, common.BNBAsset)
-			assetPool := keeper.GetPool(ctx, item.Asset)
-
-			if bnbPool.BalanceRune.IsZero() || assetPool.BalanceRune.IsZero() {
-				toi.Coins[i] = item
-				hasDeductedGas = true
-				continue
-			}
-
-			var runeAmt, assetAmt uint64
-			runeAmt = uint64(float64(bnbPool.BalanceRune.Uint64()) / (float64(bnbPool.BalanceAsset.Uint64()) / float64(gas)))
-			assetAmt = uint64(float64(assetPool.BalanceRune.Uint64()) / (float64(assetPool.BalanceAsset.Uint64()) / float64(runeAmt)))
-
-			if item.Amount.LT(sdk.NewUint(assetAmt)) {
-				item.Amount = sdk.ZeroUint()
-			} else {
-				item.Amount = item.Amount.SubUint64(assetAmt)
-			}
-
-			// add the rune to the bnb pool that we are subtracting from
-			// the refund
-			bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
-			bnbPool.BalanceAsset = bnbPool.BalanceAsset.SubUint64(gas)
-			keeper.SetPool(ctx, bnbPool)
-			assetPool.BalanceRune = assetPool.BalanceRune.SubUint64(runeAmt)
-			assetPool.BalanceAsset = assetPool.BalanceAsset.AddUint64(assetAmt)
-			keeper.SetPool(ctx, assetPool)
-
-			toi.Coins[i] = item
-			hasDeductedGas = true
-			continue
-
-		}
+		// add the rune to the bnb pool that we are subtracting from
+		// the refund
+		bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
+		bnbPool.BalanceAsset = bnbPool.BalanceAsset.SubUint64(gas)
+		keeper.SetPool(ctx, bnbPool)
+		assetPool.BalanceRune = assetPool.BalanceRune.SubUint64(runeAmt)
+		assetPool.BalanceAsset = assetPool.BalanceAsset.AddUint64(assetAmt)
+		keeper.SetPool(ctx, assetPool)
 	}
 }
 
 func (tos *TxOutStore) addToBlockOut(toi *TxOutItem) {
-	// count the total coins we are sending to the user.
-	countCoins := sdk.ZeroUint()
-	for _, item := range toi.Coins {
-		countCoins = countCoins.Add(item.Amount)
-	}
-
 	// if we are sending zero coins, don't bother adding to the txarray
-	if !countCoins.IsZero() {
+	if !toi.Coin.IsEmpty() {
 		toi.SeqNo = tos.getSeqNo(toi.Chain)
 		tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 	}

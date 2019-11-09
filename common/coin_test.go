@@ -13,5 +13,7 @@ func (s CoinSuite) TestCoin(c *C) {
 	coin := NewCoin(BNBAsset, sdk.NewUint(230000000))
 	c.Check(coin.Asset.Equals(BNBAsset), Equals, true)
 	c.Check(coin.Amount.Uint64(), Equals, uint64(230000000))
-	c.Check(coin.Valid(), IsNil)
+	c.Check(coin.IsValid(), IsNil)
+	c.Check(coin.IsEmpty(), Equals, false)
+	c.Check(NoCoin.IsEmpty(), Equals, true)
 }
