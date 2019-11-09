@@ -1,4 +1,4 @@
-.PHONY: build smoke tools
+.PHONY: build smoke-test tools
 
 build: 
 	docker build -t registry.gitlab.com/thorchain/bepswap/thornode -f Dockerfile ../..
@@ -32,7 +32,7 @@ tools:
 	@make -C ../../ tools
 
 smoke-test: run-standalone tools
-	@make PRIV_KEY=$(shell cat ~/.thornode/standalone/keys/private_key.txt) ENV=local -C ../../ smoke-test
+	@bsinner -f ${FAUCET_KEY} -p $(shell cat ~/.thornode/standalone/keys/private_key.txt) -e local -c ../../test/smoke/scenarios/smoke-test-audit-2p.json -l /tmp/smoke-test.json -d true
 
 validate-smoke-test: smoke-test
 	@echo "$(shell cat ../../test/smoke/checksum) /tmp/smoke-test.json" | sha256sum --check

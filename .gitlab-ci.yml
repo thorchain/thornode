@@ -73,7 +73,7 @@ smoke-test:thornode:
     - schedules
   environment:
     name: develop
-  script: make -C ./buld/docker smoke-test
+  script: ./build/scripts/smoke.sh testnet
   when: manual
 
 deploy:develop:

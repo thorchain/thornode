@@ -76,9 +76,6 @@ clean:
 extract: tools
 	@extract -f "${FILE}" -p "${PASSWORD}" -t ${TYPE}
 
-smoke-test: tools
-	@bsinner -f ${FAUCET_KEY} -p ${PRIV_KEY} -e ${ENV} -c test/smoke/scenarios/smoke-test-audit-2p.json -l /tmp/smoke-test.json -d true
-
 sweep: tools
 	@sweep -m ${FAUCET_KEY} -k ${PRIV_KEY} -d true
 
