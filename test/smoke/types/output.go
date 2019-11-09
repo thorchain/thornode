@@ -14,4 +14,6 @@ type Balance struct {
 	Staker1 int64 `json:"STAKER-1"`
 	Staker2 int64 `json:"STAKER-2"`
 	Pool    int64 `json:"POOL"`
+	PoolBnb int64 `json:"POOL-BNB"`
+	PoolLok int64 `json:"POOL-LOK"`
 }

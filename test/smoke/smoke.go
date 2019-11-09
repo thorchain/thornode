@@ -36,7 +36,6 @@ type Smoke struct {
 	Thorchain        Thorchain
 	Tests            types.Tests
 	TestResults      []types.TestResults
-	ThorchainResults []types.ThorchainResults
 }
 
 // NewSmoke : create a new Smoke instance.
@@ -52,7 +51,6 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 	}
 
 	var testResults []types.TestResults
-	var thorchainResults []types.ThorchainResults
 	n := NewNetwork(network)
 	return Smoke{
 		Config: Config{
@@ -60,7 +58,6 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 			debug:         debug,
 			network:       network,
 			resultsFile:   resultsFile,
-			thorchainFile: thorchainFile,
 		},
 		ApiAddr:          apiAddr,
 		Network:          n.Type,
@@ -70,7 +67,6 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 		Thorchain:        NewThorchain(env),
 		Tests:            tests,
 		TestResults:      testResults,
-		ThorchainResults: thorchainResults,
 	}
 }
 
@@ -92,7 +88,9 @@ func (s *Smoke) Setup() {
 	key, _ = keys.NewPrivateKeyManager(s.PoolKey)
 	client, _ = sdk.NewDexClient(s.ApiAddr, s.Network, key)
 	s.Tests.ActorKeys["pool"] = types.Keys{Key: key, Client: client}
+	s.Tests.ActorList = append(s.Tests.ActorList, "pool")
 
+	// Output a summary of all actors
 	s.Summary()
 }
 
@@ -160,9 +158,6 @@ func (s *Smoke) Run() {
 func (s *Smoke) SaveResults() {
 	testOutput, _ := json.Marshal(s.TestResults)
 	_ = ioutil.WriteFile(s.Config.resultsFile, testOutput, 0644)
-
-	thorchainOutput, _ := json.Marshal(s.ThorchainResults)
-	_ = ioutil.WriteFile(s.Config.thorchainFile, thorchainOutput, 0644)
 }
 
 // LogResults : Log our results.
@@ -228,26 +223,16 @@ func (s *Smoke) ActorAmount(amount int64, output *types.Balance, actor string) {
 func (s *Smoke) ThorchainState(tx int) {
 	thorchain := s.GetThorchain()
 
-	var amount int64
 	for _, pools := range thorchain {
-		amount += pools.BalanceRune
-
 		switch pools.Asset.Symbol {
-		case "LOK-3C0":
-			s.TestResults[tx].Lok.Pool = pools.BalanceAsset
 		case "BNB":
-			s.TestResults[tx].Bnb.Pool = pools.BalanceAsset
+			s.TestResults[tx].Bnb.PoolBnb = pools.BalanceAsset
+			s.TestResults[tx].Rune.PoolBnb = pools.BalanceRune
+		case "LOK-3C0":
+			s.TestResults[tx].Lok.PoolLok = pools.BalanceAsset
+			s.TestResults[tx].Rune.PoolBnb = pools.BalanceRune
 		}
 	}
-
-	// Record to our test summary.
-	s.TestResults[tx].Rune.Pool = amount
-
-	// Save for auditing purposes.
-	idx := tx + 1
-	s.ThorchainResults = append(s.ThorchainResults,
-		types.ThorchainResults{idx, thorchain},
-	)
 }
 
 // GetThorchain : Get the Thorchain pools.
@@ -278,10 +263,7 @@ func (s *Smoke) GetThorchain() types.ThorchainPools {
 
 // Sweep : Transfer all assets back to the faucet.
 func (s *Smoke) Sweep() {
-	keys := make([]string, len(s.Tests.ActorList)+1)
-	key, _ := s.Tests.ActorKeys["pool"].Key.ExportAsPrivateKey()
-	keys = append(keys, key)
-
+	keys := make([]string, len(s.Tests.ActorList))
 	for _, actor := range s.Tests.ActorList {
 		key, _ = s.Tests.ActorKeys[actor].Key.ExportAsPrivateKey()
 		if key != s.FaucetKey {

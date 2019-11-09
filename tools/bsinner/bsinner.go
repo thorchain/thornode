@@ -16,7 +16,6 @@ func main() {
 	config := flag.String("c", "", "Path to the config file.")
 	network := flag.Int("n", 0, "The network to use.")
 	resultsFile := flag.String("l", "/tmp/smoke.json", "Where test results will be saved [/tmp/smoke.json].")
-	thorchainFile := flag.String("t", "/tmp/thorchain.json", "Where Thorchain state results will be saved [/tmp/thorchain.json].")
 	debug := flag.Bool("d", false, "Enable debugging of the Binance transactions.")
 	flag.Parse()
 
@@ -32,6 +31,6 @@ func main() {
 		log.Fatal("No config file provided!")
 	}
 
-	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *config, *network, *resultsFile, *thorchainFile, *debug)
+	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *config, *network, *resultsFile, *debug)
 	s.Run()
 }
