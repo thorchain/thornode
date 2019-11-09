@@ -292,12 +292,9 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		Chain:       currentAddr.Chain,
 		PoolAddress: currentAddr.PubKey,
 		ToAddress:   msg.Destination,
+		Coin:        common.NewCoin(msg.TargetAsset, amount),
 		Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 	}
-	toi.Coins = append(toi.Coins, common.NewCoin(
-		msg.TargetAsset,
-		amount,
-	))
 	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -381,34 +378,19 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		Chain:       common.BNBChain,
 		PoolAddress: bnbPoolAddr.PubKey,
 		ToAddress:   stakerUnit.RuneAddress,
+		Coin:        common.NewCoin(common.RuneAsset(), runeAmt),
+		Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 	}
-	toi.Coins = append(toi.Coins, common.NewCoin(
-		common.RuneAsset(),
-		runeAmt,
-	))
+	// for unstake , we should deduct fees
+	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
 
-	// if it is on bnb chain , we should just add an coin instead of add another item
-	// only when the asset live on another chain , we need to add another item
-	if stakerUnit.AssetAddress.IsEmpty() || stakerUnit.AssetAddress.IsChain(common.BNBChain) {
-		toi.Coins = append(toi.Coins, common.NewCoin(
-			msg.Asset,
-			assetAmount,
-		))
-	} else {
-		// for unstake , we should deduct fees
-		txOutStore.AddTxOutItem(ctx, keeper, toi, true)
-		toi = &TxOutItem{
-			Chain:       currentAddr.Chain,
-			PoolAddress: currentAddr.PubKey,
-			ToAddress:   stakerUnit.AssetAddress,
-			Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
-		}
-		toi.Coins = append(toi.Coins, common.NewCoin(
-			msg.Asset,
-			assetAmount,
-		))
+	toi = &TxOutItem{
+		Chain:       msg.Asset.Chain,
+		PoolAddress: currentAddr.PubKey,
+		ToAddress:   stakerUnit.AssetAddress,
+		Coin:        common.NewCoin(msg.Asset, assetAmount),
+		Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 	}
-
 	// for unstake , we should deduct fees
 	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
 
@@ -420,38 +402,36 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 }
 
 func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) {
-	toi := &TxOutItem{
-		Chain:       chain,
-		ToAddress:   tx.Sender,
-		PoolAddress: poolAddr,
-		Coins:       tx.Coins,
-		Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
-	}
-
 	// If we recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Coins {
 		pool := keeper.GetPool(ctx, coin.Asset)
-		if common.IsRuneAsset(coin.Asset) || !pool.BalanceRune.IsZero() {
+		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
+			toi := &TxOutItem{
+				Chain:       chain,
+				ToAddress:   tx.Sender,
+				PoolAddress: poolAddr,
+				Coin:        coin,
+				Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
+			}
 			store.AddTxOutItem(ctx, keeper, toi, deductFee)
-			return
+		} else {
+			// Since we have assets, we don't have a pool for, we don't know how to
+			// refund and withhold for fees. Instead, we'll create a pool with the
+			// amount of assets, and associate them with no stakers (meaning up for
+			// grabs). This could be like an airdrop scenario, for example.
+			// Don't assume this is the first time we've seen this coin (ie second
+			// airdrop).
+			for _, coin := range tx.Coins {
+				pool := keeper.GetPool(ctx, coin.Asset)
+				pool.BalanceAsset = pool.BalanceAsset.Add(coin.Amount)
+				pool.Asset = coin.Asset
+				if pool.BalanceRune.IsZero() {
+					pool.Status = PoolBootstrap
+				}
+				keeper.SetPool(ctx, pool)
+			}
 		}
-	}
-
-	// Since we have assets, we don't have a pool for, we don't know how to
-	// refund and withhold for fees. Instead, we'll create a pool with the
-	// amount of assets, and associate them with no stakers (meaning up for
-	// grabs). This could be like an airdrop scenario, for example.
-	// Don't assume this is the first time we've seen this coin (ie second
-	// airdrop).
-	for _, coin := range tx.Coins {
-		pool := keeper.GetPool(ctx, coin.Asset)
-		pool.BalanceAsset = pool.BalanceAsset.Add(coin.Amount)
-		pool.Asset = coin.Asset
-		if pool.BalanceRune.IsZero() {
-			pool.Status = PoolBootstrap
-		}
-		keeper.SetPool(ctx, pool)
 	}
 }
 
@@ -751,7 +731,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 
 func getMsgNoOpFromMemo(tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	for _, coin := range tx.Coins {
-		if !common.IsBNBAsset(coin.Asset) {
+		if !coin.Asset.IsBNB() {
 			return nil, errors.New("Only accepts BNB coins")
 		}
 	}
@@ -792,12 +772,12 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 	if asset.IsEmpty() {
 		return nil, errors.New("Unable to determine the intended pool for this stake")
 	}
-	if common.IsRuneAsset(asset) {
+	if asset.IsRune() {
 		return nil, errors.New("invalid pool asset")
 	}
 	for _, coin := range tx.Coins {
 		ctx.Logger().Info("coin", "asset", coin.Asset.String(), "amount", coin.Amount.String())
-		if common.IsRuneAsset(coin.Asset) {
+		if coin.Asset.IsRune() {
 			runeAmount = coin.Amount
 		}
 		if asset.Equals(coin.Asset) {
@@ -847,7 +827,7 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	runeAmount := sdk.ZeroUint()
 	assetAmount := sdk.ZeroUint()
 	for _, coin := range tx.Coins {
-		if common.IsRuneAsset(coin.Asset) {
+		if coin.Asset.IsRune() {
 			runeAmount = coin.Amount
 		} else if memo.GetAsset().Equals(coin.Asset) {
 			assetAmount = coin.Amount
@@ -876,7 +856,7 @@ func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.A
 func getMsgBondFromMemo(memo BondMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	runeAmount := sdk.ZeroUint()
 	for _, coin := range tx.Coins {
-		if common.IsRuneAsset(coin.Asset) {
+		if coin.Asset.IsRune() {
 			runeAmount = coin.Amount
 		}
 	}
@@ -1229,9 +1209,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 				ToAddress:   nodeAcc.BondAddress,
 				PoolAddress: currentChainPoolAddr.PubKey,
 				Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
-				Coins: common.Coins{
-					common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
-				},
+				Coin:        common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 			}
 			txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
 			ctx.EventManager().EmitEvent(

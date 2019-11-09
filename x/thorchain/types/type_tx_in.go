@@ -52,7 +52,7 @@ func (tx TxIn) Valid() error {
 		return errors.New("coins cannot be empty")
 	}
 	for _, coin := range tx.Coins {
-		if err := coin.Valid(); err != nil {
+		if err := coin.IsValid(); err != nil {
 			return err
 		}
 	}
