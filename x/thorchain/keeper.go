@@ -796,7 +796,7 @@ func (k Keeper) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
 
 // SetCompletedEvent write a completed event
 func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
-	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", int64(event.ID.Float64())), getVersion(k.GetLowestActiveVersion(ctx), prefixCompleteEvent))
+	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", event.ID), getVersion(k.GetLowestActiveVersion(ctx), prefixCompleteEvent))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event))
 }
@@ -804,17 +804,16 @@ func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
 // CompleteEvent
 func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxID) {
 	lastEventID := k.GetLastEventID(ctx)
-	eID := lastEventID.Float64()
 
 	incomplete, _ := k.GetIncompleteEvents(ctx)
 
 	for _, txID := range in {
-		eID += 1
+		lastEventID += 1
 		var evts Events
 		evts, incomplete = incomplete.PopByInHash(txID)
 		for _, evt := range evts {
 			if !evt.Empty() {
-				evt.ID = common.NewAmountFromFloat(eID)
+				evt.ID = lastEventID
 				evt.OutHash = out
 				k.SetCompletedEvent(ctx, evt)
 			}
@@ -824,13 +823,12 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxI
 	// save new list of incomplete events
 	k.SetIncompleteEvents(ctx, incomplete)
 
-	lastEventID = common.NewAmountFromFloat(eID)
 	k.SetLastEventID(ctx, lastEventID)
 }
 
 // GetLastEventID get last event id
-func (k Keeper) GetLastEventID(ctx sdk.Context) common.Amount {
-	var lastEventID common.Amount
+func (k Keeper) GetLastEventID(ctx sdk.Context) int64 {
+	var lastEventID int64
 	key := getKey(prefixLastEventID, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastEventID))
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
@@ -841,7 +839,7 @@ func (k Keeper) GetLastEventID(ctx sdk.Context) common.Amount {
 }
 
 // SetLastEventID write a last event id
-func (k Keeper) SetLastEventID(ctx sdk.Context, id common.Amount) {
+func (k Keeper) SetLastEventID(ctx sdk.Context, id int64) {
 	key := getKey(prefixLastEventID, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastEventID))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&id))
