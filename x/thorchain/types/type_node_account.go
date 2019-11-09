@@ -89,10 +89,11 @@ type NodeAccount struct {
 	BondAddress         common.Address `json:"bond_address"` // BNB Address to send bond from. It also indicates the operator address to whilelist and associate.
 	// start from which block height this node account is in current status
 	// StatusSince field is important , it has been used to sort node account , used for validator rotation
-	StatusSince    int64         `json:"status_since"`
-	ObserverActive bool          `json:"observer_active"`
-	SignerActive   bool          `json:"signer_active"`
-	Version        common.Amount `json:"version"`
+	StatusSince      int64           `json:"status_since"`
+	ObserverActive   bool            `json:"observer_active"`
+	SignerActive     bool            `json:"signer_active"`
+	Version          common.Amount   `json:"version"`
+	SignerMembership []common.PubKey `json:"signer_membership"`
 }
 
 // NewNodeAccount create new instance of NodeAccount
@@ -156,6 +157,35 @@ func (n NodeAccount) String() string {
 	sb.WriteString("version:" + n.Version.String() + "\n")
 	sb.WriteString("bond address:" + n.BondAddress.String() + "\n")
 	return sb.String()
+}
+
+// AddSignerPubKey add a key to node account
+func (n *NodeAccount) TryAddSignerPubKey(key common.PubKey) {
+	if key.IsEmpty() {
+		return
+	}
+	for _, item := range n.SignerMembership {
+		if item.Equals(key) {
+			return
+		}
+	}
+	n.SignerMembership = append(n.SignerMembership, key)
+}
+
+// TryRemoveSignerPubKey remove the given pubkey from
+func (n *NodeAccount) TryRemoveSignerPubKey(key common.PubKey) {
+	if key.IsEmpty() {
+		return
+	}
+	idxToDelete := -1
+	for idx, item := range n.SignerMembership {
+		if item.Equals(key) {
+			idxToDelete = idx
+		}
+	}
+	if idxToDelete != -1 {
+		n.SignerMembership = append(n.SignerMembership[:idxToDelete], n.SignerMembership[idxToDelete+1:]...)
+	}
 }
 
 // NodeAccounts just a list of NodeAccount

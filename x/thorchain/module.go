@@ -113,8 +113,8 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
-	am.validatorMgr.BeginBlock(ctx, req.Header.Height)
 	am.poolMgr.BeginBlock(ctx)
+	am.validatorMgr.BeginBlock(ctx, req.Header.Height)
 	am.txOutStore.NewBlock(uint64(req.Header.Height))
 }
 
