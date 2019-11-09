@@ -287,15 +287,13 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	for _, item := range txOut.TxArray {
 		c.Assert(item.Valid(), IsNil)
 		c.Assert(item.ToAddress.Equals(bnbAddr), Equals, true)
-		for _, co := range item.Coins {
-			if common.IsRuneAsset(co.Asset) {
-				totalRune = totalRune.Add(co.Amount)
-			} else {
-				totalAsset = totalAsset.Add(co.Amount)
-			}
+		if item.Coin.Asset.IsRune() {
+			totalRune = totalRune.Add(item.Coin.Amount)
+		} else {
+			totalAsset = totalAsset.Add(item.Coin.Amount)
 		}
 	}
-	c.Assert(totalAsset.Equal(msgSetStake.AssetAmount.SubUint64(2*batchTransactionFee)), Equals, true)
+	c.Assert(totalAsset.Equal(msgSetStake.AssetAmount.SubUint64(singleTransactionFee)), Equals, true, Commentf("%d %d", totalAsset.Uint64(), msgSetStake.AssetAmount.SubUint64(singleTransactionFee).Uint64()))
 	c.Assert(totalRune.Equal(msgSetStake.RuneAmount), Equals, true)
 }
 
@@ -423,6 +421,11 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 
 func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+	w.keeper.SetPool(w.ctx, Pool{
+		Asset:        common.BNBAsset,
+		BalanceRune:  sdk.NewUint(100 * common.One),
+		BalanceAsset: sdk.NewUint(100 * common.One),
+	})
 	txIn := types.NewTxIn(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
@@ -455,9 +458,9 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	c.Assert(w.txOutStore.blockOut, NotNil)
 	c.Assert(w.txOutStore.blockOut.Valid(), IsNil)
 	c.Assert(w.txOutStore.blockOut.IsEmpty(), Equals, false)
-	c.Assert(len(w.txOutStore.blockOut.TxArray), Equals, 1)
+	c.Assert(len(w.txOutStore.blockOut.TxArray), Equals, 2)
 	// expect to refund two coins
-	c.Assert(len(w.txOutStore.blockOut.TxArray[0].Coins), Equals, 2)
+	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 2, Commentf("Len %d", len(w.txOutStore.GetOutboundItems())))
 
 	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPool, NotNil)

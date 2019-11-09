@@ -62,17 +62,17 @@ func (a Asset) String() string {
 	return fmt.Sprintf("%s.%s", a.Chain.String(), a.Symbol.String())
 }
 
+func (a Asset) IsRune() bool {
+	return a.Equals(RuneA1FAsset) || a.Equals(RuneB1AAsset)
+}
+
+func (a Asset) IsBNB() bool {
+	return a.Equals(BNBAsset)
+}
+
 func RuneAsset() Asset {
 	if strings.EqualFold(os.Getenv("NET"), "testnet") {
 		return RuneA1FAsset
 	}
 	return RuneB1AAsset
-}
-
-func IsBNBAsset(a Asset) bool {
-	return a.Equals(BNBAsset)
-}
-
-func IsRuneAsset(a Asset) bool {
-	return a.Equals(RuneA1FAsset) || a.Equals(RuneB1AAsset)
 }

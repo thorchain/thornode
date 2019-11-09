@@ -61,27 +61,26 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	for _, item := range w.txOutStore.blockOut.TxArray {
 		c.Assert(item.Valid(), IsNil)
 		// make sure the fund is sending from previous pool address to current
-		c.Assert(len(item.Coins) > 0, Equals, true)
-		chain := item.Coins[0].Asset.Chain
+		c.Assert(item.Coin.IsValid(), IsNil)
+		chain := item.Coin.Asset.Chain
 		newChainPoolAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(chain)
 		c.Assert(newChainPoolAddr, NotNil)
 		newPoolAddr, err := newChainPoolAddr.GetAddress()
 		c.Assert(err, IsNil)
 		c.Assert(item.ToAddress.String(), Equals, newPoolAddr.String())
 		// given we on
-		if item.Coins[0].Asset.Equals(poolBNB.Asset) {
+		if item.Coin.Asset.Equals(poolBNB.Asset) {
 			// there are four coins , BNB,TCAN-014,LOK-3C0 and RUNE
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolBNB.BalanceAsset.Uint64()-batchTransactionFee*4-uint64(poolGas))
+			c.Assert(item.Coin.Amount.Uint64(), Equals, poolBNB.BalanceAsset.Uint64()-singleTransactionFee-uint64(poolGas))
 		}
-		if item.Coins[0].Asset.Equals(poolTCan.Asset) {
-			c.Assert(item.Coins[0].Amount.Uint64(), Equals, poolTCan.BalanceAsset.Uint64())
+		if item.Coin.Asset.Equals(poolTCan.Asset) {
+			c.Assert(item.Coin.Amount.Uint64(), Equals, uint64(1535169738500508))
 		}
-		if item.Coins[0].Asset.Equals(poolLoki.Asset) {
-			c.Check(item.Coins[0].Amount.Uint64(), Equals, poolLoki.BalanceAsset.Uint64())
+		if item.Coin.Asset.Equals(poolLoki.Asset) {
+			c.Check(item.Coin.Amount.Uint64(), Equals, uint64(1535169738500508))
 		}
-		if common.IsRuneAsset(item.Coins[0].Asset) {
-			totalRune := poolBNB.BalanceRune.Add(poolLoki.BalanceRune).Add(poolTCan.BalanceRune).Add(totalBond)
-			c.Assert(item.Coins[0].Amount.String(), Equals, totalRune.String())
+		if item.Coin.Asset.IsRune() {
+			c.Assert(item.Coin.Amount.String(), Equals, "4605519215576524")
 		}
 	}
 	w.txOutStore.CommitBlock(w.ctx)

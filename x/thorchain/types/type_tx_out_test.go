@@ -23,9 +23,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		Chain:       common.BNBChain,
 		PoolAddress: bnbAddress,
 		ToAddress:   toAddr,
-		Coins: common.Coins{
-			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
-		},
+		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 	}
 	txOut.TxArray = append(txOut.TxArray, txOutItem)
 	c.Assert(txOut.TxArray, NotNil)
@@ -41,7 +39,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		Chain:       common.BNBChain,
 		ToAddress:   toAddr,
 		PoolAddress: bnbAddress,
-		Coins:       nil,
+		Coin:        common.NoCoin,
 	})
 	c.Assert(txOut1.Valid(), NotNil)
 
@@ -50,9 +48,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		Chain:       common.BNBChain,
 		ToAddress:   "",
 		PoolAddress: bnbAddress,
-		Coins: common.Coins{
-			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
-		},
+		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 	})
 	c.Assert(txOut2.Valid(), NotNil)
 	txOut3 := NewTxOut(4)
@@ -60,9 +56,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		Chain:       common.BNBChain,
 		ToAddress:   toAddr,
 		PoolAddress: common.EmptyPubKey,
-		Coins: common.Coins{
-			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
-		},
+		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 	})
 	c.Assert(txOut3.Valid(), NotNil)
 }
