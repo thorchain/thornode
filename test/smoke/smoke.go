@@ -244,8 +244,9 @@ func (s *Smoke) ThorchainState(tx int) {
 	s.TestResults[tx].Rune.Pool = amount
 
 	// Save for auditing purposes.
+	idx := tx + 1
 	s.ThorchainResults = append(s.ThorchainResults,
-		types.ThorchainResults{tx, thorchain},
+		types.ThorchainResults{idx, thorchain},
 	)
 }
 
