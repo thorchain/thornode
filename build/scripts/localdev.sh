@@ -34,7 +34,6 @@ NODE_PUB_KEY="$(thorcli keys show statechain -p)"
 
 add_node_account $NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $BOND_ADDRESS $POOL_PUB_KEY
 add_pool_address $POOL_PUB_KEY $SEQNO
-add_last_event_id 1
 
 cat ~/.thord/config/genesis.json
 thord validate-genesis
