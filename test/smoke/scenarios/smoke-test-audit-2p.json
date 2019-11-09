@@ -489,7 +489,7 @@
           ]
         }
       ],
-      "slip_limit": 8498474,
+      "slip_limit": 8494995,
       "memo": "SWAP:BNB.BNB:",
       "check_delay": 25
     },
@@ -542,7 +542,7 @@
         }
       ],
       "send_to": "staker_1",
-      "slip_limit": 8621582,
+      "slip_limit": 8616374,
       "memo": "SWAP:BNB.BNB",
       "check_delay": 25
     },
@@ -561,7 +561,7 @@
         }
       ],
       "send_to": "staker_1",
-      "slip_limit": 8114570,
+      "slip_limit": 8108473,
       "memo": "SWAP:BNB.BNB",
       "check_delay": 30
     },
