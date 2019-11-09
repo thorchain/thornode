@@ -1170,7 +1170,8 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, msg M
 			return sdk.ErrUnknownRequest(err.Error()).Result()
 		}
 		// TODO: slash their bond for any Yggdrasil funds that are unaccounted
-		// for before sending their bond back.
+		// for before sending their bond back. Keep in mind that we won't get
+		// back 100% of the funds (due to gas).
 		RefundBond(ctx, na, keeper, txOut)
 	}
 	keeper.SetYggdrasil(ctx, ygg)
