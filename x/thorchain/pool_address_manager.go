@@ -148,7 +148,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 		}
 		assetAmount := p.BalanceAsset
 		// we only take BNB for now
-		if common.IsBNBAsset(p.Asset) {
+		if p.Asset.IsBNB() {
 			assetAmount = assetAmount.Sub(sdk.NewUint(uint64(poolRefundGas)))
 		}
 		runeTotal = runeTotal.Add(p.BalanceRune)
@@ -162,12 +162,12 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 	if nil != err {
 		return sdk.ZeroUint(), fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", chain, addresses.Current, err)
 	}
-	if len(coins) > 0 {
+	for _, coin := range coins {
 		store.AddTxOutItem(ctx, k, &TxOutItem{
 			Chain:       currentAddr.Chain,
 			PoolAddress: currentAddr.PubKey,
 			ToAddress:   toAddr,
-			Coins:       coins,
+			Coin:        coin,
 		}, true)
 	}
 	return runeTotal, nil
@@ -196,7 +196,7 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, ru
 		}
 		assetAmount := p.BalanceAsset
 		// we only take BNB for now
-		if common.IsBNBAsset(p.Asset) {
+		if p.Asset.IsBNB() {
 			assetAmount = assetAmount.Sub(sdk.NewUint(uint64(poolRefundGas)))
 		}
 		runeTotal = runeTotal.Add(p.BalanceRune)
@@ -222,12 +222,12 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, ru
 	if nil != err {
 		return fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", common.BNBChain, addresses.Current, err)
 	}
-	if len(coins) > 0 {
+	for _, coin := range coins {
 		store.AddTxOutItem(ctx, k, &TxOutItem{
 			Chain:       currentAddr.Chain,
 			PoolAddress: currentAddr.PubKey,
 			ToAddress:   toAddr,
-			Coins:       coins,
+			Coin:        coin,
 		}, true)
 	}
 	return nil

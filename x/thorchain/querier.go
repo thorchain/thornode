@@ -357,7 +357,7 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 
 	out := make(map[common.Chain]ResTxOut, 0)
 	for _, item := range txs.TxArray {
-		if len(item.Coins) == 0 {
+		if item.Coin.IsEmpty() {
 			continue
 		}
 		res, ok := out[item.Chain]
@@ -365,7 +365,7 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 			res = ResTxOut{
 				Height:  txs.Height,
 				Hash:    txs.Hash, // TODO: this should be unique to chain
-				Chain:   item.Coins[0].Asset.Chain,
+				Chain:   item.Coin.Asset.Chain,
 				TxArray: make([]TxOutItem, 0),
 			}
 		}
