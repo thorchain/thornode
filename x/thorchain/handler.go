@@ -51,7 +51,7 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgLeave:
 			return handleMsgLeave(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
 		case MsgAck:
-			return handleMsgAck(ctx, keeper, poolAddressMgr, m)
+			return handleMsgAck(ctx, keeper, poolAddressMgr, validatorManager, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -509,7 +509,7 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 }
 
 // handleMsgAck
-func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManager, msg MsgAck) sdk.Result {
+func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManager, validatorMgr *ValidatorManager, msg MsgAck) sdk.Result {
 	ctx.Logger().Info("receive ack to next pool pub key", "sender address", msg.Sender.String())
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error("invalid ack msg", "err", err)
@@ -541,6 +541,24 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 
 	poolAddrMgr.currentPoolAddresses.Next = poolAddrMgr.currentPoolAddresses.Next.TryAddKey(chainPubKey)
 	poolAddrMgr.ObservedNextPoolAddrPubKey = poolAddrMgr.ObservedNextPoolAddrPubKey.TryRemoveKey(chainPubKey)
+
+	nominatedNode := validatorMgr.Meta.Nominated
+	queuedNode := validatorMgr.Meta.Queued
+	nominatedNode.TryAddSignerPubKey(chainPubKey.PubKey)
+	keeper.SetNodeAccount(ctx, nominatedNode)
+	activeNodes, err := keeper.ListActiveNodeAccounts(ctx)
+	if nil != err {
+		ctx.Logger().Error("fail to get all active node accounts", "error", err)
+		return sdk.ErrInternal("fail to get all active node accounts").Result()
+	}
+
+	for _, item := range activeNodes {
+		if item.Equals(queuedNode) {
+			continue
+		}
+		item.TryAddSignerPubKey(chainPubKey.PubKey)
+		keeper.SetNodeAccount(ctx, item)
+	}
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
