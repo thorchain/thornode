@@ -23,7 +23,7 @@ type poolStorage interface {
 	GetAdminConfigValue(ctx sdk.Context, key AdminConfigKey, addr sdk.AccAddress) (string, error)
 
 	GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount
-	GetLowestActiveVersion(ctx sdk.Context) int
+	GetLowestActiveVersion(ctx sdk.Context) int64
 
 	AddIncompleteEvents(ctx sdk.Context, event Event)
 }

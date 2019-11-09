@@ -8,12 +8,12 @@ import (
 
 // MsgSetVersion defines a MsgSetVersion message
 type MsgSetVersion struct {
-	Version int            `json:"version"`
+	Version int64          `json:"version"`
 	Signer  sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetVersion is a constructor function for NewMsgSetVersion
-func NewMsgSetVersion(version int, signer sdk.AccAddress) MsgSetVersion {
+func NewMsgSetVersion(version int64, signer sdk.AccAddress) MsgSetVersion {
 	return MsgSetVersion{
 		Version: version,
 		Signer:  signer,
