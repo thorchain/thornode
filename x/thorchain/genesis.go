@@ -126,9 +126,15 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	}
 	validators := make([]abci.ValidatorUpdate, 0, len(data.NodeAccounts))
 	for _, ta := range data.NodeAccounts {
-		keeper.SetNodeAccount(ctx, ta)
-		// Only Active node will become validator
 		if ta.Status == NodeActive {
+			if !data.PoolAddresses.IsEmpty() {
+				// add all the pool pub key to active validators
+				for _, item := range data.PoolAddresses.Current {
+					ta.TryAddSignerPubKey(item.PubKey)
+				}
+			}
+
+			// Only Active node will become validator
 			pk, err := sdk.GetConsPubKeyBech32(ta.ValidatorConsPubKey)
 			if nil != err {
 				ctx.Logger().Error("fail to parse consensus public key", "key", ta.ValidatorConsPubKey)
@@ -138,6 +144,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 				Power:  100,
 			})
 		}
+
+		keeper.SetNodeAccount(ctx, ta)
 	}
 
 	for _, stake := range data.StakerPools {
