@@ -165,7 +165,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	for _, coin := range tai.Coins {
 		amount := coin.Amount
 		asset := coin.Asset
-		if common.IsRuneAsset(coin.Asset) {
+		if coin.Asset.IsRune() {
 			asset = common.RuneAsset()
 		}
 		payload = append(payload, msg.Transfer{
