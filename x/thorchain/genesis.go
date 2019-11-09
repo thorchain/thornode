@@ -88,10 +88,6 @@ func ValidateGenesis(data GenesisState) error {
 		return errors.New("missing pool addresses")
 	}
 
-	if data.LastEventID == 0 {
-		return errors.New("Missing last event ID")
-	}
-
 	return nil
 }
 
