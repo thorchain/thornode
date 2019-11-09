@@ -8,8 +8,6 @@ import (
 	"github.com/pkg/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
-
-	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 type txIndex struct {
@@ -30,7 +28,7 @@ type GenesisState struct {
 	IncompleteEvents Events        `json:"incomplete_events"`
 	NodeAccounts     NodeAccounts  `json:"node_accounts"`
 	AdminConfigs     []AdminConfig `json:"admin_configs"`
-	LastEventID      common.Amount `json:"last_event_id"`
+	LastEventID      int64         `json:"last_event_id"`
 	PoolAddresses    PoolAddresses `json:"pool_addresses"`
 }
 
@@ -90,7 +88,7 @@ func ValidateGenesis(data GenesisState) error {
 		return errors.New("missing pool addresses")
 	}
 
-	if data.LastEventID.IsEmpty() {
+	if data.LastEventID == 0 {
 		return errors.New("Missing last event ID")
 	}
 
@@ -103,7 +101,6 @@ func DefaultGenesisState() GenesisState {
 		AdminConfigs: []AdminConfig{},
 		Pools:        []Pool{},
 		NodeAccounts: NodeAccounts{},
-		LastEventID:  common.ZeroAmount,
 	}
 }
 
