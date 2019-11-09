@@ -11,6 +11,8 @@ type Coin struct {
 	Amount sdk.Uint `json:"amount"`
 }
 
+var NoCoin = Coin{}
+
 type Coins []Coin
 
 // NewCoin return a new instance of Coin
@@ -21,9 +23,22 @@ func NewCoin(asset Asset, amount sdk.Uint) Coin {
 	}
 }
 
-func (c Coin) Valid() error {
+func (c Coin) IsEmpty() bool {
+	if c.Asset.IsEmpty() {
+		return true
+	}
+	if c.Amount.IsZero() {
+		return true
+	}
+	return false
+}
+
+func (c Coin) IsValid() error {
 	if c.Asset.IsEmpty() {
 		return fmt.Errorf("Denom cannot be empty")
+	}
+	if c.Amount.IsZero() {
+		return fmt.Errorf("Amount cannot be zero")
 	}
 
 	return nil

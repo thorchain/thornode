@@ -12,7 +12,7 @@ import (
 // validate if pools exist
 func validatePools(ctx sdk.Context, keeper poolStorage, assets ...common.Asset) error {
 	for _, asset := range assets {
-		if !common.IsRuneAsset(asset) {
+		if !asset.IsRune() {
 			if !keeper.PoolExist(ctx, asset) {
 				return errors.New(fmt.Sprintf("%s doesn't exist", asset))
 			}
@@ -69,7 +69,7 @@ func swap(ctx sdk.Context,
 
 	pools := make([]Pool, 0)
 
-	isDoubleSwap := !common.IsRuneAsset(source) && !common.IsRuneAsset(target)
+	isDoubleSwap := !source.IsRune() && !target.IsRune()
 
 	if isDoubleSwap {
 		var err error
@@ -84,7 +84,7 @@ func swap(ctx sdk.Context,
 
 	// Set asset to our non-rune asset asset
 	asset := source
-	if common.IsRuneAsset(source) {
+	if source.IsRune() {
 		asset = target
 	}
 	pool := keeper.GetPool(ctx, asset)
@@ -119,7 +119,7 @@ func swapOne(ctx sdk.Context,
 
 	// Set asset to our non-rune asset asset
 	asset := source
-	if common.IsRuneAsset(source) {
+	if source.IsRune() {
 		asset = target
 	}
 
@@ -185,7 +185,7 @@ func swapOne(ctx sdk.Context,
 	gsl := globalSlipLimit.Float64() // global slip limit
 
 	// get our X, x, Y values
-	if common.IsRuneAsset(source) {
+	if source.IsRune() {
 		X = pool.BalanceRune
 		Y = pool.BalanceAsset
 	} else {
@@ -222,7 +222,7 @@ func swapOne(ctx sdk.Context,
 	}
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sAsset", pool.BalanceRune, pool.BalanceAsset))
 
-	if common.IsRuneAsset(source) {
+	if source.IsRune() {
 		pool.BalanceRune = X.Add(x)
 		pool.BalanceAsset = Y.Sub(emitAssets)
 	} else {

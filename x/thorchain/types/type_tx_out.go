@@ -14,7 +14,7 @@ type TxOutItem struct {
 	ToAddress   common.Address `json:"to"`
 	PoolAddress common.PubKey  `json:"pool_address"`
 	SeqNo       uint64         `json:"seq_no"`
-	Coins       common.Coins   `json:"coins"`
+	Coin        common.Coin    `json:"coin"`
 	Memo        string         `json:"memo"`
 }
 
@@ -28,8 +28,8 @@ func (toi TxOutItem) Valid() error {
 	if toi.PoolAddress.IsEmpty() {
 		return errors.New("pool address cannot be empty")
 	}
-	if len(toi.Coins) == 0 {
-		return errors.New("coins cannot be empty")
+	if err := toi.Coin.IsValid(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -37,11 +37,9 @@ func (toi TxOutItem) Valid() error {
 // String implement stringer interface
 func (toi TxOutItem) String() string {
 	sb := strings.Builder{}
-	sb.WriteString("to address:" + toi.ToAddress.String())
-	for _, c := range toi.Coins {
-		sb.WriteString("asset:" + c.Asset.String())
-		sb.WriteString("Amount:" + c.Amount.String())
-	}
+	sb.WriteString("To Address:" + toi.ToAddress.String())
+	sb.WriteString("Asset:" + toi.Coin.Asset.String())
+	sb.WriteString("Amount:" + toi.Coin.Amount.String())
 	return sb.String()
 }
 
