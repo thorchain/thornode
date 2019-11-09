@@ -266,11 +266,18 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 			o.errCounter.WithLabelValues("fail_to_parse_tx_hash", txIn.BlockHeight).Inc()
 			return nil, errors.Wrapf(err, "fail to parse tx hash, %s is invalid ", item.Tx)
 		}
-		bnbAddr, err := common.NewAddress(item.Sender)
+		sender, err := common.NewAddress(item.Sender)
 		if nil != err {
 			o.errCounter.WithLabelValues("fail_to_parse_sender", item.Sender).Inc()
 			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
 		}
+
+		to, err := common.NewAddress(item.To)
+		if nil != err {
+			o.errCounter.WithLabelValues("fail_to_parse_sender", item.Sender).Inc()
+			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
+		}
+
 		h, err := strconv.ParseUint(txIn.BlockHeight, 10, 64)
 		if nil != err {
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
@@ -285,7 +292,8 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 			stypes.NewTxIn(
 				item.Coins,
 				item.Memo,
-				bnbAddr,
+				sender,
+				to,
 				sdk.NewUint(h),
 				observedPoolPubKey),
 		})
