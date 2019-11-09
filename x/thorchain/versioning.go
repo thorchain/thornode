@@ -1,6 +1,6 @@
 package thorchain
 
-func getVersion(sversion int, prefix dbPrefix) int {
+func getVersion(sversion int64, prefix dbPrefix) int64 {
 	switch prefix {
 	case prefixNodeAccount:
 		return getNodeAccountVersion(sversion)
@@ -9,6 +9,6 @@ func getVersion(sversion int, prefix dbPrefix) int {
 	}
 }
 
-func getNodeAccountVersion(sversion int) int {
+func getNodeAccountVersion(sversion int64) int64 {
 	return 0 // default
 }

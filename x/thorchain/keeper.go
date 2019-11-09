@@ -40,7 +40,7 @@ const (
 
 const poolIndexKey = "poolindexkey"
 
-func getKey(prefix dbPrefix, key string, version int) string {
+func getKey(prefix dbPrefix, key string, version int64) string {
 	return fmt.Sprintf("%s_%d_%s", prefix, version, strings.ToUpper(key))
 }
 
@@ -356,13 +356,13 @@ func (k Keeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 }
 
 // GetLowestActiveVersion - get version number of lowest active node
-func (k Keeper) GetLowestActiveVersion(ctx sdk.Context) int {
+func (k Keeper) GetLowestActiveVersion(ctx sdk.Context) int64 {
 	nodes, _ := k.ListActiveNodeAccounts(ctx)
 	if len(nodes) > 0 {
-		version := int(nodes[0].Version.Float64())
+		version := nodes[0].Version
 		for _, na := range nodes {
-			if int(na.Version.Float64()) < version {
-				version = int(na.Version.Float64())
+			if na.Version < version {
+				version = na.Version
 			}
 		}
 		return version
