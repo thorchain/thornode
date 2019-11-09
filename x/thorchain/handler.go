@@ -181,10 +181,7 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 	keeper.AddIncompleteEvents(ctx, evt)
 	if eventStatus != EventRefund {
 		// since there is no outbound tx for staking, we'll complete the event now
-		blankTxID, _ := common.NewTxID(
-			"0000000000000000000000000000000000000000000000000000000000000000",
-		)
-		tx := common.Tx{ID: blankTxID}
+		tx := common.Tx{ID: common.BlankTxID}
 		keeper.CompleteEvents(ctx, []common.TxID{msg.Tx.ID}, tx)
 	}
 	return nil
@@ -287,10 +284,10 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 
 	toi := &TxOutItem{
 		Chain:       currentAddr.Chain,
+		InHash:      msg.Tx.ID,
 		PoolAddress: currentAddr.PubKey,
 		ToAddress:   msg.Destination,
 		Coin:        common.NewCoin(msg.TargetAsset, amount),
-		Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 	}
 	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
 	return sdk.Result{
@@ -374,20 +371,20 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	keeper.AddIncompleteEvents(ctx, evt)
 	toi := &TxOutItem{
 		Chain:       common.BNBChain,
+		InHash:      msg.Tx.ID,
 		PoolAddress: bnbPoolAddr.PubKey,
 		ToAddress:   stakerUnit.RuneAddress,
 		Coin:        common.NewCoin(common.RuneAsset(), runeAmt),
-		Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 	}
 	// for unstake , we should deduct fees
 	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
 
 	toi = &TxOutItem{
 		Chain:       msg.Asset.Chain,
+		InHash:      msg.Tx.ID,
 		PoolAddress: currentAddr.PubKey,
 		ToAddress:   stakerUnit.AssetAddress,
 		Coin:        common.NewCoin(msg.Asset, assetAmount),
-		Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 	}
 	// for unstake , we should deduct fees
 	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
@@ -399,7 +396,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 }
 
-func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) {
+func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) {
 	// If we recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Coins {
@@ -407,10 +404,10 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
 			toi := &TxOutItem{
 				Chain:       chain,
+				InHash:      txID,
 				ToAddress:   tx.Sender,
 				PoolAddress: poolAddr,
 				Coin:        coin,
-				Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 			}
 			store.AddTxOutItem(ctx, keeper, toi, deductFee)
 		} else {
@@ -602,8 +599,8 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 		postConsensus := voter.HasConensus(activeNodeAccounts)
 		keeper.SetTxInVoter(ctx, voter)
 
-		if preConsensus == false && postConsensus == true && !voter.IsProcessed {
-			voter.IsProcessed = true
+		if preConsensus == false && postConsensus == true && voter.Height == 0 {
+			voter.Height = ctx.BlockHeight()
 			keeper.SetTxInVoter(ctx, voter)
 			txIn := voter.GetTx(activeNodeAccounts)
 			var chain common.Chain
@@ -613,14 +610,14 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			currentPoolAddress := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
 			if !currentPoolAddress.PubKey.Equals(txIn.ObservePoolAddress) {
 				ctx.Logger().Error("wrong pool address,refund without deduct fee", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", txIn.ObservePoolAddress)
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
+				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
 				continue
 			}
 
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer)
 			if nil != err || chain.IsEmpty() {
 				ctx.Logger().Error("fail to process txIn", "error", err, "txhash", tx.TxID.String())
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
 				ee := NewEmptyRefundEvent()
 				buf, err := json.Marshal(ee)
 				if nil != err {
@@ -648,7 +645,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
 			}
 		}
 	}
@@ -706,7 +703,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 		}
 	case OutboundMemo:
 		tx := tx.GetCommonTx(txID)
-		newMsg, err = getMsgOutboundFromMemo(m, tx, signer)
+		newMsg, err = getMsgOutboundFromMemo(m, ctx.BlockHeight(), tx, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
@@ -861,11 +858,11 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, tx common.Tx, signer sdk.AccAddress) (sdk.Msg, error) {
-	blockHeight := memo.GetBlockHeight()
+func getMsgOutboundFromMemo(memo OutboundMemo, blockHeight int64, tx common.Tx, signer sdk.AccAddress) (sdk.Msg, error) {
 	return NewMsgOutboundTx(
 		tx,
 		blockHeight,
+		memo.GetTxID(),
 		signer,
 	), nil
 }
@@ -960,34 +957,29 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
-	index, err := keeper.GetTxInIndex(ctx, msg.Height)
-	if err != nil {
-		ctx.Logger().Error("invalid TxIn Index", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	// iterate over our index and mark each tx as done
-	for _, txID := range index {
-		voter := keeper.GetTxInVoter(ctx, txID)
-		voter.SetDone(msg.Tx.ID)
-		keeper.SetTxInVoter(ctx, voter)
-	}
+	voter := keeper.GetTxInVoter(ctx, msg.Tx.ID)
+	voter.SetDone(msg.Tx.ID)
+	keeper.SetTxInVoter(ctx, voter)
 
 	// complete events
-	keeper.CompleteEvents(ctx, index, msg.Tx)
+	keeper.CompleteEvents(ctx, []common.TxID{msg.InTxID}, msg.Tx)
 
 	// update txOut record with our TxID that sent funds out of the pool
-	txOut, err := keeper.GetTxOut(ctx, msg.Height)
+	txOut, err := keeper.GetTxOut(ctx, uint64(voter.Height))
 	if err != nil {
 		ctx.Logger().Error("unable to get txOut record", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	// Save TxOut back with the TxID only when the TxOut on the block height is not empty
 	if !txOut.IsEmpty() {
-		txOut.Hash = msg.Tx.ID
+		for i, tx := range txOut.TxArray {
+			if tx.InHash.Equals(msg.InTxID) && tx.OutHash.IsEmpty() {
+				txOut.TxArray[i].OutHash = msg.Tx.ID
+			}
+		}
 		keeper.SetTxOut(ctx, txOut)
 	}
-	keeper.SetLastSignedHeight(ctx, sdk.NewUint(msg.Height))
+	keeper.SetLastSignedHeight(ctx, sdk.NewUint(uint64(voter.Height)))
 
 	// If we are sending from a yggdrasil pool, decrement coins on record
 	pk, err := keeper.FindPubKeyOfAddress(ctx, msg.Tx.FromAddress, msg.Tx.Chain)
@@ -1188,7 +1180,7 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, msg M
 		// TODO: slash their bond for any Yggdrasil funds that are unaccounted
 		// for before sending their bond back. Keep in mind that we won't get
 		// back 100% of the funds (due to gas).
-		RefundBond(ctx, na, keeper, txOut)
+		RefundBond(ctx, msg.RequestTxHash, na, keeper, txOut)
 	}
 	keeper.SetYggdrasil(ctx, ygg)
 
@@ -1198,12 +1190,13 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, msg M
 	}
 }
 
-func RefundBond(ctx sdk.Context, nodeAcc NodeAccount, keeper Keeper, txOut *TxOutStore) {
+func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut *TxOutStore) {
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
 		// refund bond
 		txOutItem := &TxOutItem{
 			Chain:     common.BNBChain,
 			ToAddress: nodeAcc.BondAddress,
+			InHash:    txID,
 			Memo:      fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 			Coin:      common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
@@ -1282,6 +1275,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 				txOutItem := &TxOutItem{
 					Chain:       coin.Asset.Chain,
 					ToAddress:   toAddr,
+					InHash:      msg.Tx.ID,
 					PoolAddress: ygg.PubKey,
 					Memo:        "yggdrasil-",
 					Coin:        coin,
@@ -1304,7 +1298,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 		if ygg.HasFunds() {
 			requestYggReturn(ctx, ygg, txOut)
 		} else {
-			RefundBond(ctx, na, keeper, txOut)
+			RefundBond(ctx, msg.Tx.ID, na, keeper, txOut)
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent("validator_leave",
 					sdk.NewAttribute("signer bnb address", msg.Tx.FromAddress.String()),
