@@ -37,15 +37,15 @@ end
 
 def bnbAddress()
   [ 
-	"bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u",
-	"bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38",
-	"bnb1yk882gllgv3rt2rqrsudf6kn2agr94etnxu9a7",
-	"bnb1t3c49u74fum2gtgekwqqdngg5alt4txrq3txad",
-	"bnb1hpa7tfffxadq9nslyu2hu9vc44l2x6ech3767y",
-	"bnb1llvmhawaxxjchwmfmj8fjzftvwz4jpdhapp5hr",
-	"bnb1s3f8vxaqum3pft6cefyn99px8wq6uk3jdtyarn",
-	"bnb1e6y59wuz9qqcnqjhjw0cl6hrp2p8dvsyxyx9jm",
-	"bnb1zxseqkfm3en5cw6dh9xgmr85hw6jtwamnd2y2v",
+    "bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u",
+    "bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38",
+    "bnb1yk882gllgv3rt2rqrsudf6kn2agr94etnxu9a7",
+    "bnb1t3c49u74fum2gtgekwqqdngg5alt4txrq3txad",
+    "bnb1hpa7tfffxadq9nslyu2hu9vc44l2x6ech3767y",
+    "bnb1llvmhawaxxjchwmfmj8fjzftvwz4jpdhapp5hr",
+    "bnb1s3f8vxaqum3pft6cefyn99px8wq6uk3jdtyarn",
+    "bnb1e6y59wuz9qqcnqjhjw0cl6hrp2p8dvsyxyx9jm",
+    "bnb1zxseqkfm3en5cw6dh9xgmr85hw6jtwamnd2y2v",
   ].sample
 
 end
@@ -83,32 +83,33 @@ def processTx(txs, user="statechain", mode='block')
     'txArray': txs,
     'base_req': {
       'chain_id': "statechain",
-      'from': address
+      'from': address,
+      'gas': 'auto',
     },
   }.to_json
-   #puts(request.body.to_json)
+    #puts(request.body.to_json)
 
-  resp = HTTP.request(request)
-  if resp.code != "200" 
-    pp resp.body
+    resp = HTTP.request(request)
+    if resp.code != "200" 
+      pp resp.body
+      return resp
+    end
+
+    # write unsigned json to disk
+    File.open("/tmp/unSigned.json", "w") { |file| file.puts resp.body}
+    signedTx = `echo "password" | thorcli tx sign /tmp/unSigned.json --from #{user}`
+    signedTx = JSON.parse(signedTx)
+    signedJson = {
+      'mode': mode,
+      'tx': signedTx['value'],
+    }
+    #pp signedJson
+
+
+    request = Net::HTTP::Post.new("/txs")
+    request.body = signedJson.to_json
+    resp = HTTP.request(request)
+    resp.body = JSON.parse(resp.body)
+
     return resp
-  end
-
-  # write unsigned json to disk
-  File.open("/tmp/unSigned.json", "w") { |file| file.puts resp.body}
-  signedTx = `echo "password" | thorcli tx sign /tmp/unSigned.json --from #{user}`
-  signedTx = JSON.parse(signedTx)
-  signedJson = {
-    'mode': mode,
-    'tx': signedTx['value'],
-  }
- #pp signedJson
-
-
-  request = Net::HTTP::Post.new("/txs")
-  request.body = signedJson.to_json
-  resp = HTTP.request(request)
-  resp.body = JSON.parse(resp.body)
-
-  return resp
 end

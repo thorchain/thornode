@@ -10,7 +10,8 @@ import (
 
 // TODO: make this admin configs instead of hard coded
 var singleTransactionFee uint64 = 37500
-var batchTransactionFee uint64 = 30000
+
+// var batchTransactionFee uint64 = 30000
 
 // TxOutSetter define a method that is required to be used in TxOutStore
 // We need this interface thus we could test the refund logic accordingly
