@@ -45,7 +45,7 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgBond:
 			return handleMsgBond(ctx, keeper, m)
 		case MsgYggdrasil:
-			return handleMsgYggdrasil(ctx, keeper, m)
+			return handleMsgYggdrasil(ctx, keeper, txOutStore, m)
 		case MsgNextPoolAddress:
 			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, validatorManager, m)
 		case MsgLeave:
@@ -712,13 +712,13 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 		if err != nil {
 			return nil, errors.Wrap(err, "fail to find Yggdrasil pubkey")
 		}
-		newMsg = NewMsgYggdrasil(pk, true, tx.Coins, signer)
+		newMsg = NewMsgYggdrasil(pk, true, tx.Coins, txID, signer)
 	case YggdrasilReturnMemo:
 		pk, err := keeper.FindPubKeyOfAddress(ctx, tx.Sender, tx.Coins[0].Asset.Chain)
 		if err != nil {
 			return nil, errors.Wrap(err, "fail to find Yggdrasil pubkey")
 		}
-		newMsg = NewMsgYggdrasil(pk, false, tx.Coins, signer)
+		newMsg = NewMsgYggdrasil(pk, false, tx.Coins, txID, signer)
 	default:
 		return nil, errors.Wrap(err, "Unable to find memo type")
 	}
@@ -1141,7 +1141,7 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 }
 
 // handleMsgYggdrasil
-func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, msg MsgYggdrasil) sdk.Result {
+func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, msg MsgYggdrasil) sdk.Result {
 	ctx.Logger().Info("receive MsgYggdrasil", "pubkey", msg.PubKey.String(), "add_funds", msg.AddFunds, "coins", msg.Coins)
 
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
@@ -1158,9 +1158,21 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, msg MsgYggdrasil) sdk.Re
 		ygg.AddFunds(msg.Coins)
 	} else {
 		ygg.SubFunds(msg.Coins)
-		// TODO: if we get here we should be receiving all coins the Yggdrasil
-		// pool has. If we are short some amount, slash their bond the
-		// remainder amount of coins and assume a disorderly exit
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent("yggdrasil_return",
+				sdk.NewAttribute("pubkey", ygg.PubKey.String()),
+				sdk.NewAttribute("coins", msg.Coins.String()),
+				sdk.NewAttribute("tx", msg.RequestTxHash.String())))
+
+		na, err := keeper.GetNodeAccountByPubKey(ctx, msg.PubKey)
+		if err != nil {
+			ctx.Logger().Error("unable to get node account", "error", err)
+			return sdk.ErrUnknownRequest(err.Error()).Result()
+		}
+		// TODO: slash their bond for any Yggdrasil funds that are unaccounted
+		// for before sending their bond back. Keep in mind that we won't get
+		// back 100% of the funds (due to gas).
+		RefundBond(ctx, na, keeper, txOut)
 	}
 	keeper.SetYggdrasil(ctx, ygg)
 
@@ -1168,6 +1180,26 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, msg MsgYggdrasil) sdk.Re
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
 	}
+}
+
+func RefundBond(ctx sdk.Context, nodeAcc NodeAccount, keeper Keeper, txOut *TxOutStore) {
+	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
+		// refund bond
+		txOutItem := &TxOutItem{
+			Chain:     common.BNBChain,
+			ToAddress: nodeAcc.BondAddress,
+			Memo:      fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
+			Coin:      common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
+		}
+
+		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
+	}
+
+	// disable the node account
+	nodeAcc.Bond = sdk.ZeroUint()
+	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
+	keeper.SetNodeAccount(ctx, nodeAcc)
+
 }
 
 func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, validatorManager *ValidatorManager, msg MsgLeave) sdk.Result {
@@ -1191,46 +1223,14 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 	if nodeAcc.Status == NodeActive {
 		return sdk.ErrUnknownRequest("active node can't leave").Result()
 	}
-	// since bond is paid in RUNE , which lives on BNB chain
-	chain := common.BNBChain
-	currentChainPoolAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
-	if nil == currentChainPoolAddr || currentChainPoolAddr.IsEmpty() {
-		msg := fmt.Sprintf("we don't have pool for chain %s", chain)
-		ctx.Logger().Error(msg)
-		return sdk.ErrUnknownRequest(msg).Result()
-	}
 
-	refundBond := func(ctx sdk.Context, na NodeAccount, txOut *TxOutStore) {
-		// TODO need to check whether the address is used as satellite pool
-		if nodeAcc.Bond.GT(sdk.ZeroUint()) {
-			// refund bond
-			txOutItem := &TxOutItem{
-				Chain:       chain,
-				ToAddress:   nodeAcc.BondAddress,
-				PoolAddress: currentChainPoolAddr.PubKey,
-				Memo:        fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
-				Coin:        common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
-			}
-			txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
-			ctx.EventManager().EmitEvent(
-				sdk.NewEvent("validator_leave",
-					sdk.NewAttribute("signer bnb address", msg.Sender.String()),
-					sdk.NewAttribute("destination", nodeAcc.BondAddress.String()),
-					sdk.NewAttribute("tx", msg.RequestTxHash.String())))
-		}
-	}
-
-	refundBond(ctx, nodeAcc, txOut)
-	// disable the node account
-	nodeAcc.Bond = sdk.ZeroUint()
-	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
-	keeper.SetNodeAccount(ctx, nodeAcc)
+	nodeAccs := []NodeAccount{nodeAcc}
 
 	// Ragnarok Protocol
 	// If we can no longer be BFT, do a graceful shutdown of the entire network.
 	// 1) Refund all stakers from all pools
 	// 2) Refund all bonds to all node accounts
-	if keeper.TotalNodeAccounts(ctx) < 4 {
+	if keeper.TotalNodeAccounts(ctx) <= 4 {
 		index, err := keeper.GetPoolIndex(ctx)
 		if nil != err {
 			ctx.Logger().Error("fail to get pool index", "err", err)
@@ -1243,19 +1243,58 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 			handler(ctx, endMsg)
 		}
 
-		nodeAccounts, err := keeper.ListNodeAccounts(ctx)
+		nodeAccs, err = keeper.ListNodeAccounts(ctx)
 		if nil != err {
 			ctx.Logger().Error("fail to get node accounts", "err", err)
 			return sdk.ErrInternal("fail to get node accounts").Result()
 		}
-		// Refund all the bonds
-		for _, na := range nodeAccounts {
-			refundBond(ctx, na, txOut)
-			// disable the node account
-			na.Bond = sdk.ZeroUint()
-			// We are not updating status so the final validators stay as
-			// "active" so they can commit the final block
-			keeper.SetNodeAccount(ctx, na)
+	}
+
+	// since bond is paid in RUNE , which lives on BNB chain
+	chain := common.BNBChain
+	currentChainPoolAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
+	if nil == currentChainPoolAddr || currentChainPoolAddr.IsEmpty() {
+		msg := fmt.Sprintf("we don't have pool for chain %s", chain)
+		ctx.Logger().Error(msg)
+		return sdk.ErrUnknownRequest(msg).Result()
+	}
+
+	requestYggReturn := func(ctx sdk.Context, ygg Yggdrasil, txOut *TxOutStore) {
+		for _, coin := range ygg.Coins {
+			toAddr, err := currentChainPoolAddr.PubKey.GetAddress(coin.Asset.Chain)
+			if !toAddr.IsEmpty() {
+				txOutItem := &TxOutItem{
+					Chain:       coin.Asset.Chain,
+					ToAddress:   toAddr,
+					PoolAddress: ygg.PubKey,
+					Memo:        "yggdrasil-",
+					Coin:        coin,
+				}
+				txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
+			} else {
+				wrapper := fmt.Sprintf(
+					"fail to get pool address (%s) for chain (%s)",
+					toAddr.String(),
+					coin.Asset.Chain.String(),
+				)
+				ctx.Logger().Error(wrapper, "error", err)
+			}
+		}
+	}
+
+	// Refund all the bonds
+	for _, na := range nodeAccs {
+		ygg := keeper.GetYggdrasil(ctx, na.NodePubKey.Secp256k1)
+		if ygg.HasFunds() {
+			requestYggReturn(ctx, ygg, txOut)
+		} else {
+			RefundBond(ctx, na, keeper, txOut)
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent("validator_leave",
+					sdk.NewAttribute("signer bnb address", msg.Sender.String()),
+					sdk.NewAttribute("destination", na.BondAddress.String()),
+					sdk.NewAttribute("tx", msg.RequestTxHash.String())))
+
 		}
 	}
 

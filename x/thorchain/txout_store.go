@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
@@ -90,7 +88,6 @@ func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		bnbPool := keeper.GetPool(ctx, common.BNBAsset)
 
 		if bnbPool.BalanceAsset.LT(sdk.NewUint(gas)) {
-			fmt.Printf("BNB Pool: %d\n", bnbPool.BalanceAsset.Uint64())
 			// not enough gas to be able to send coins
 			return
 		}
