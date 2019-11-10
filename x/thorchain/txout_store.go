@@ -71,11 +71,46 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		}
 	}
 
-	// Ensure we are not sending from and to the same address
-	// we check for a
-	fromAddr, err := toi.PoolAddress.GetAddress(toi.Chain)
-	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
-		return
+	// If we don't have a pool already selected to send from, discover one.
+	if toi.PoolAddress.IsEmpty() {
+		if !asguard {
+			// in the event of an error here, we will default to the asguard pool
+			activeNodeAccounts, _ := keeper.ListActiveNodeAccounts(ctx)
+			voter := keeper.GetTxInVoter(ctx, toi.InHash)
+			tx := voter.GetTx(activeNodeAccounts)
+
+			// collect yggdrasil pools
+			var yggs Yggdrasils
+			iterator := keeper.GetYggdrasilIterator(ctx)
+			defer iterator.Close()
+			for ; iterator.Valid(); iterator.Next() {
+				var ygg Yggdrasil
+				keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &ygg)
+				// if we are already sending assets from this ygg pool, deduct
+				// them.
+				addr, _ := ygg.PubKey.GetThorAddress()
+				if tx.HasSigned(addr) {
+					for _, tx := range tos.blockOut.TxArray {
+						if tx.PoolAddress.Equals(ygg.PubKey) {
+							for i, yggcoin := range ygg.Coins {
+								if yggcoin.Asset.Equals(tx.Coin.Asset) {
+									ygg.Coins[i].Amount = ygg.Coins[i].Amount.Sub(tx.Coin.Amount)
+								}
+							}
+						}
+					}
+					yggs = append(yggs, ygg)
+				}
+			}
+
+			// use the ygg pool with the highest quantity of our coin
+			slice.Sort(yggs[:], func(i, j int) bool {
+				return yggs[i].GetCoin(tx.Coin.Asset).Amount.LT(yggs[j].GetCoin(tx.Coin.Asset))
+			})
+		}
+		if toi.PoolAddress.IsEmpty() {
+			toi.PoolAddress = tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(toi.Chain).PubKey
+		}
 	}
 
 	if toi.Coin.IsEmpty() {

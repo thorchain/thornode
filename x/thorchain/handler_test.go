@@ -663,6 +663,7 @@ func (HandlerSuite) TestHandleMsgLeave(c *C) {
 	c.Assert(outbound, HasLen, 2)
 	memo := NewOutboundMemo(tx.ID)
 	c.Check(outbound[0].Memo, Equals, memo.String())
+	c.Check(outbound[0].Memo, Equals, "OUTBOUND:1")
 	c.Check(outbound[1].Memo, Equals, "yggdrasil-")
 }
 

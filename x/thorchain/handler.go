@@ -1203,8 +1203,8 @@ func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
 	}
 
-	// disable the node account
 	nodeAcc.Bond = sdk.ZeroUint()
+	// disable the node account
 	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAcc)
 }

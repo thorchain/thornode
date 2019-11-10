@@ -111,13 +111,20 @@ func (tx TxIn) String() string {
 	return strings.Join(hashes, ", ")
 }
 
-func (tx *TxIn) Sign(signer sdk.AccAddress) {
+// HasSigned - check if given address has signed
+func (tx TxIn) HasSigned(signer sdk.AccAddress) bool {
 	for _, sign := range tx.Signers {
 		if sign.Equals(signer) {
-			return // do nothing
+			return true
 		}
 	}
-	tx.Signers = append(tx.Signers, signer)
+	return false
+}
+
+func (tx *TxIn) Sign(signer sdk.AccAddress) {
+	if !tx.HasSigned(signer) {
+		tx.Signers = append(tx.Signers, signer)
+	}
 }
 
 func (tx *TxIn) SetOutHash(s status, hash common.TxID, numOuts int64) {
