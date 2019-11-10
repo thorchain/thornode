@@ -187,7 +187,7 @@ describe "API Tests" do
             # we have found the block height of our last swap
             found = true
             newTxId = txid()
-            tx = makeTx(memo: "outbound:#{i}", hash:newTxId, sender:TRUST_BNB_ADDRESS)
+            tx = makeTx(memo: arr['tx_array'][0]['memo'], hash:newTxId, sender:TRUST_BNB_ADDRESS)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
 
