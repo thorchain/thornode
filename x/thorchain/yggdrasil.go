@@ -146,7 +146,6 @@ func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins
 	}
 
 	// ensure we don't send too much value in coins to the ygg pool
-	fmt.Printf("Counter: %d GT %d\n", counter.Uint64(), yggBond.QuoUint64(2).Uint64())
 	if counter.GT(yggBond.QuoUint64(2)) {
 		return nil, fmt.Errorf("Exceeded safe amounts of assets for given Yggdrasil pool")
 	}
