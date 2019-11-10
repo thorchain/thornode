@@ -13,8 +13,6 @@ import (
 
 // GetRandomNodeAccount create a random generated node account , used for test purpose
 func GetRandomNodeAccount(status NodeStatus) NodeAccount {
-	name := common.RandStringBytesMask(10)
-	addr := sdk.AccAddress(crypto.AddressHash([]byte(name)))
 	v, _ := tmtypes.RandValidator(true, 100)
 	k, _ := sdk.Bech32ifyConsPub(v.PubKey)
 	bondAddr := GetRandomBNBAddress()
@@ -22,6 +20,7 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 		Secp256k1: GetRandomPubKey(),
 		Ed25519:   GetRandomPubKey(),
 	}
+	addr, _ := pubKeys.Secp256k1.GetThorAddress()
 	na := NewNodeAccount(addr, status, pubKeys, k, sdk.NewUint(100*common.One), bondAddr, 1)
 	return na
 }
