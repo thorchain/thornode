@@ -1189,9 +1189,7 @@ func RefundBond(ctx sdk.Context, nodeAcc NodeAccount, keeper Keeper, txOut *TxOu
 			Chain:     common.BNBChain,
 			ToAddress: nodeAcc.BondAddress,
 			Memo:      fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
-			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
-			},
+			Coin:      common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
 
 		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
@@ -1275,9 +1273,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 					ToAddress:   toAddr,
 					PoolAddress: ygg.PubKey,
 					Memo:        "yggdrasil-",
-					Coins: common.Coins{
-						coin,
-					},
+					Coin:        coin,
 				}
 				txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
 			} else {
