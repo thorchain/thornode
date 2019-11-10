@@ -138,10 +138,22 @@ func (ps Pool) EnsureValidPoolStatus(msg sdk.Msg) error {
 	}
 }
 
-// AssetPriceInRune is how much 1 asset worth in RUNE
-func (ps Pool) AssetPriceInRune() float64 {
+// convert a specific amount of asset amt into its rune value
+func (ps Pool) AssetValueInRune(amt sdk.Uint) sdk.Uint {
 	if ps.BalanceRune.IsZero() || ps.BalanceAsset.IsZero() {
-		return 0
+		return sdk.ZeroUint()
 	}
-	return float64(ps.BalanceRune.Uint64()) / float64(ps.BalanceAsset.Uint64())
+	return sdk.NewUint(uint64(
+		(float64(ps.BalanceRune.Uint64()) / float64(ps.BalanceAsset.Uint64())) * float64(amt.Uint64()),
+	))
+}
+
+// convert a specific amount of rune amt into its asset value
+func (ps Pool) RuneValueInAsset(amt sdk.Uint) sdk.Uint {
+	if ps.BalanceRune.IsZero() || ps.BalanceAsset.IsZero() {
+		return sdk.ZeroUint()
+	}
+	return sdk.NewUint(uint64(
+		(float64(ps.BalanceAsset.Uint64()) / float64(ps.BalanceRune.Uint64())) * float64(amt.Uint64()),
+	))
 }

@@ -391,6 +391,15 @@ func (k Keeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccoun
 	return na, nil
 }
 
+// GetNodeAccountByPubKey try to get node account with the given pubkey from db
+func (k Keeper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
+	addr, err := pk.GetThorAddress()
+	if err != nil {
+		return NodeAccount{}, err
+	}
+	return k.GetNodeAccount(ctx, addr)
+}
+
 // GetNodeAccountByBondAddress go through data store to get node account by it's signer bnb address
 func (k Keeper) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error) {
 	ctx.Logger().Debug("GetNodeAccountByBondAddress", "signer bnb address", addr.String())
