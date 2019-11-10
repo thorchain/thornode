@@ -716,6 +716,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)
 
 	w.txOutStore.NewBlock(2)
+	inTxID := GetRandomTxHash()
 	// set a txin
 	txIn1 := types.NewTxIn(
 		common.Coins{
@@ -728,16 +729,30 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		currentChainPool.PubKey)
 	msgSetTxIn1 := types.NewMsgSetTxIn(
 		[]TxInVoter{
-			types.NewTxInVoter(GetRandomTxHash(), []TxIn{txIn1}),
+			types.NewTxInVoter(inTxID, []TxIn{txIn1}),
 		},
 		w.activeNodeAccount.NodeAddress)
 	ctx := w.ctx.WithBlockHeight(2)
 	resultTxIn := handleMsgSetTxIn(ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn1)
 	c.Assert(resultTxIn.Code, Equals, sdk.CodeOK)
 	w.txOutStore.CommitBlock(ctx)
-	msgOutboundTxNormal1 := NewMsgOutboundTx(tx, 2, txID, w.activeNodeAccount.NodeAddress)
+	tx.FromAddress = currentPoolAddr
+	tx.ID = inTxID
+	msgOutboundTxNormal1 := NewMsgOutboundTx(tx, 2, inTxID, w.activeNodeAccount.NodeAddress)
 	result4 := handleMsgOutboundTx(ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal1)
 	c.Assert(result4.Code, Equals, sdk.CodeOK)
+	iterator := w.keeper.GetCompleteEventIterator(w.ctx)
+	found := false
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var evt Event
+		w.keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &evt)
+		if evt.InTx.ID.Equals(inTxID) {
+			found = true
+			break
+		}
+	}
+	c.Assert(found, Equals, true)
 }
 
 func (HandlerSuite) TestHandleMsgSetAdminConfig(c *C) {
