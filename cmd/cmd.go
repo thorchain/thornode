@@ -7,4 +7,4 @@ const Bech32PrefixValPub = "thorvpub"
 const Bech32PrefixConsAddr = "thorc"
 const Bech32PrefixConsPub = "thorcpub"
 
-const Version = 0
+const Version = 1

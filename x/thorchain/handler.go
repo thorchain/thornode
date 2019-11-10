@@ -1028,8 +1028,8 @@ func handleMsgSetVersion(ctx sdk.Context, keeper Keeper, msg MsgSetVersion) sdk.
 		return sdk.ErrUnknownRequest("MsgSetVersion is invalid").Result()
 	}
 
-	if int(nodeAccount.Version.Float64()) < msg.Version {
-		nodeAccount.Version = common.Amount(msg.Version)
+	if nodeAccount.Version < msg.Version {
+		nodeAccount.Version = msg.Version
 	}
 
 	keeper.SetNodeAccount(ctx, nodeAccount)

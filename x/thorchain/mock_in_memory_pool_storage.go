@@ -65,7 +65,7 @@ func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, asset common.As
 	p.store[key] = ps
 }
 
-func (p *MockInMemoryPoolStorage) GetLowestActiveVersion(ctx sdk.Context) int {
+func (p *MockInMemoryPoolStorage) GetLowestActiveVersion(ctx sdk.Context) int64 {
 	return 0
 }
 
