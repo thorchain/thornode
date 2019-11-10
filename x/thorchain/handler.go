@@ -1205,27 +1205,22 @@ func RefundBond(ctx sdk.Context, nodeAcc NodeAccount, keeper Keeper, txOut *TxOu
 func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, validatorManager *ValidatorManager, msg MsgLeave) sdk.Result {
 	ctx.Logger().Info("receive MsgLeave", "sender", msg.Sender.String(), "request tx hash", msg.RequestTxHash)
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		fmt.Println("FOO4")
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	if err := msg.ValidateBasic(); nil != err {
-		fmt.Println("FOO1")
 		ctx.Logger().Error("invalid MsgLeave", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	nodeAcc, err := keeper.GetNodeAccountByBondAddress(ctx, msg.Sender)
 	if nil != err {
-		fmt.Println("FOO5")
 		ctx.Logger().Error("fail to get node account", "error", err)
 		return sdk.ErrInternal("fail to get node account by bond address").Result()
 	}
 	if nodeAcc.IsEmpty() {
-		fmt.Println("FOO2")
 		return sdk.ErrUnknownRequest("node account doesn't exist").Result()
 	}
 	if nodeAcc.Status == NodeActive {
-		fmt.Println("FOO3")
 		return sdk.ErrUnknownRequest("active node can't leave").Result()
 	}
 
@@ -1248,7 +1243,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 			handler(ctx, endMsg)
 		}
 
-		nodeAccs, err = keeper.ListActiveNodeAccounts(ctx)
+		nodeAccs, err = keeper.ListNodeAccounts(ctx)
 		if nil != err {
 			ctx.Logger().Error("fail to get node accounts", "err", err)
 			return sdk.ErrInternal("fail to get node accounts").Result()

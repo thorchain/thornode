@@ -621,10 +621,9 @@ func (HandlerSuite) TestHandleMsgLeave(c *C) {
 
 	// Ragnarok check. Ensure all bonders have a zero bond balance
 	outbound := w.txOutStore.GetOutboundItems()
-	c.Assert(outbound, HasLen, 1)
-	for _, tx := range outbound {
-		c.Check(tx.Memo, Equals, "yggdrasil-")
-	}
+	c.Assert(outbound, HasLen, 2)
+	c.Check(outbound[0].Memo, Equals, "OUTBOUND:1")
+	c.Check(outbound[1].Memo, Equals, "yggdrasil-")
 }
 
 func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
