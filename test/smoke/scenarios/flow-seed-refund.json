@@ -15,7 +15,7 @@
             },
             {
               "symbol": "BNB",
-              "amount": 138660000
+              "amount": 139110000
             },
             {
               "symbol": "FSN-F1B",
@@ -41,7 +41,7 @@
         }
       ],
       "memo": "SEED",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "SEED ASSETS",
@@ -131,7 +131,7 @@
             },
             {
               "symbol": "BNB",
-              "amount": 6000000
+              "amount": 6450000
             },
             {
               "symbol": "FSN-F1B",
@@ -157,7 +157,7 @@
         }
       ],
       "memo": "SEED",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "GAS",
@@ -174,7 +174,7 @@
         }
       ],
       "memo": "GAS",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -195,7 +195,7 @@
         }
       ],
       "memo": "STAKE:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -216,7 +216,7 @@
         }
       ],
       "memo": "STAKE:BNB.FSN-F1B",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -237,7 +237,7 @@
         }
       ],
       "memo": "STAKE:BNB.FTM-585",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -258,7 +258,7 @@
         }
       ],
       "memo": "STAKE:BNB.LOK-3C0",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -279,7 +279,7 @@
         }
       ],
       "memo": "STAKE:BNB.TCAN-014",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -300,7 +300,7 @@
         }
       ],
       "memo": "STAKE:BNB.TOMOB-1E1",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -321,7 +321,7 @@
         }
       ],
       "memo": "STAKE:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -342,7 +342,7 @@
         }
       ],
       "memo": "STAKE:BNB.FSN-F1B",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -363,7 +363,7 @@
         }
       ],
       "memo": "STAKE:BNB.FTM-585",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -384,7 +384,7 @@
         }
       ],
       "memo": "STAKE:BNB.LOK-3C0",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -405,7 +405,7 @@
         }
       ],
       "memo": "STAKE:BNB.TCAN-014",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "STAKE",
@@ -426,7 +426,7 @@
         }
       ],
       "memo": "STAKE:BNB.TOMOB-1E1",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "SWAP",
@@ -443,7 +443,7 @@
         }
       ],
       "memo": "SWAP:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "SWAP",
@@ -460,7 +460,7 @@
         }
       ],
       "memo": "SWAP:BNB.FSN-F1B",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "SWAP",
@@ -477,7 +477,7 @@
         }
       ],
       "memo": "SWAP:BNB.FTM-585",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "SWAP",
@@ -494,7 +494,7 @@
         }
       ],
       "memo": "SWAP:BNB.LOK-3C0",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "SWAP",
@@ -511,7 +511,7 @@
         }
       ],
       "memo": "SWAP:BNB.TCAN-014",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "SWAP",
@@ -528,109 +528,7 @@
         }
       ],
       "memo": "SWAP:BNB.TOMOB-1E1",
-      "check_delay": 10
-    },
-    {
-      "description": "SWAP",
-      "from": "user",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "BNB",
-              "amount": 6000000
-            }
-          ]
-        }
-      ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check_delay": 10
-    },
-    {
-      "description": "SWAP",
-      "from": "user",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "FSN-F1B",
-              "amount": 250000000
-            }
-          ]
-        }
-      ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check_delay": 10
-    },
-    {
-      "description": "SWAP",
-      "from": "user",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "FTM-585",
-              "amount": 7000000000
-            }
-          ]
-        }
-      ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check_delay": 10
-    },
-    {
-      "description": "SWAP",
-      "from": "user",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "LOK-3C0",
-              "amount": 1000000000
-            }
-          ]
-        }
-      ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check_delay": 10
-    },
-    {
-      "description": "SWAP",
-      "from": "user",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "TCAN-014",
-              "amount": 8000000000
-            }
-          ]
-        }
-      ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check_delay": 10
-    },
-    {
-      "description": "SWAP",
-      "from": "user",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "TOMOB-1E1",
-              "amount": 350000000
-            }
-          ]
-        }
-      ],
-      "memo": "SWAP:BNB.RUNE-A1F",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -647,7 +545,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -664,7 +562,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.FSN-F1B",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -681,7 +579,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.FTM-585",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -698,7 +596,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.LOK-3C0",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -715,7 +613,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.TCAN-014",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -732,7 +630,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.TOMOB-1E1",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -749,7 +647,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -766,7 +664,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.FSN-F1B",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -783,7 +681,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.FTM-585",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -800,7 +698,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.LOK-3C0",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -817,7 +715,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.TCAN-014",
-      "check_delay": 10
+      "check_delay": 25
     },
     {
       "description": "WITHDRAW ALL",
@@ -834,7 +732,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.TOMOB-1E1",
-      "check_delay": 10
+      "check_delay": 25
     }
   ]
 }
