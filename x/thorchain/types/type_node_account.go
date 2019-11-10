@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -153,7 +154,7 @@ func (n NodeAccount) String() string {
 	sb.WriteString("node pubkeys:" + n.NodePubKey.String() + "\n")
 	sb.WriteString("validator consensus pub key:" + n.ValidatorConsPubKey + "\n")
 	sb.WriteString("bond:" + n.Bond.String() + "\n")
-	sb.WriteString("version:" + string(n.Version) + "\n")
+	sb.WriteString("version:" + strconv.FormatInt(n.Version, 10) + "\n")
 	sb.WriteString("bond address:" + n.BondAddress.String() + "\n")
 	return sb.String()
 }
