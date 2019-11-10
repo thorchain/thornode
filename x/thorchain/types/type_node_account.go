@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -92,8 +93,8 @@ type NodeAccount struct {
 	StatusSince      int64           `json:"status_since"`
 	ObserverActive   bool            `json:"observer_active"`
 	SignerActive     bool            `json:"signer_active"`
-	Version          common.Amount   `json:"version"`
 	SignerMembership []common.PubKey `json:"signer_membership"`
+	Version          int64           `json:"version"`
 }
 
 // NewNodeAccount create new instance of NodeAccount
@@ -104,7 +105,6 @@ func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, nodePubKeys c
 		ValidatorConsPubKey: validatorConsPubKey,
 		Bond:                bond,
 		BondAddress:         bondAddress,
-		Version:             common.ZeroAmount,
 	}
 	na.UpdateStatus(status, height)
 	return na
@@ -140,7 +140,7 @@ func (n NodeAccount) Equals(n1 NodeAccount) bool {
 		n.ValidatorConsPubKey == n1.ValidatorConsPubKey &&
 		n.BondAddress.Equals(n1.BondAddress) &&
 		n.Bond.Equal(n1.Bond) &&
-		n.Version.Equals(n1.Version) {
+		n.Version == n1.Version {
 		return true
 	}
 	return false
@@ -154,7 +154,7 @@ func (n NodeAccount) String() string {
 	sb.WriteString("node pubkeys:" + n.NodePubKey.String() + "\n")
 	sb.WriteString("validator consensus pub key:" + n.ValidatorConsPubKey + "\n")
 	sb.WriteString("bond:" + n.Bond.String() + "\n")
-	sb.WriteString("version:" + n.Version.String() + "\n")
+	sb.WriteString("version:" + strconv.FormatInt(n.Version, 10) + "\n")
 	sb.WriteString("bond address:" + n.BondAddress.String() + "\n")
 	return sb.String()
 }

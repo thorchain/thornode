@@ -86,6 +86,14 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 	return NoAddress, nil
 }
 
+func (pubKey PubKey) GetThorAddress() (sdk.AccAddress, error) {
+	addr, err := pubKey.GetAddress(THORChain)
+	if err != nil {
+		return nil, err
+	}
+	return sdk.AccAddressFromBech32(addr.String())
+}
+
 // MarshalJSON to Marshals to JSON using Bech32
 func (pubKey PubKey) MarshalJSON() ([]byte, error) {
 	return json.Marshal(pubKey.String())

@@ -165,7 +165,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 	for _, coin := range coins {
 		store.AddTxOutItem(ctx, k, &TxOutItem{
 			Chain:       currentAddr.Chain,
-			PoolAddress: currentAddr.PubKey,
+			PoolAddress: previousAddr.PubKey,
 			ToAddress:   toAddr,
 			Coin:        coin,
 		}, true)
@@ -225,7 +225,7 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, ru
 	for _, coin := range coins {
 		store.AddTxOutItem(ctx, k, &TxOutItem{
 			Chain:       currentAddr.Chain,
-			PoolAddress: currentAddr.PubKey,
+			PoolAddress: previousAddr.PubKey,
 			ToAddress:   toAddr,
 			Coin:        coin,
 		}, true)

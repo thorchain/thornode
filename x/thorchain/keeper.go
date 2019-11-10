@@ -40,7 +40,7 @@ const (
 
 const poolIndexKey = "poolindexkey"
 
-func getKey(prefix dbPrefix, key string, version int) string {
+func getKey(prefix dbPrefix, key string, version int64) string {
 	return fmt.Sprintf("%s_%d_%s", prefix, version, strings.ToUpper(key))
 }
 
@@ -356,13 +356,13 @@ func (k Keeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 }
 
 // GetLowestActiveVersion - get version number of lowest active node
-func (k Keeper) GetLowestActiveVersion(ctx sdk.Context) int {
+func (k Keeper) GetLowestActiveVersion(ctx sdk.Context) int64 {
 	nodes, _ := k.ListActiveNodeAccounts(ctx)
 	if len(nodes) > 0 {
-		version := int(nodes[0].Version.Float64())
+		version := nodes[0].Version
 		for _, na := range nodes {
-			if int(na.Version.Float64()) < version {
-				version = int(na.Version.Float64())
+			if na.Version < version {
+				version = na.Version
 			}
 		}
 		return version
@@ -389,6 +389,15 @@ func (k Keeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccoun
 		return na, errors.Wrap(err, "fail to unmarshal node account")
 	}
 	return na, nil
+}
+
+// GetNodeAccountByPubKey try to get node account with the given pubkey from db
+func (k Keeper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
+	addr, err := pk.GetThorAddress()
+	if err != nil {
+		return NodeAccount{}, err
+	}
+	return k.GetNodeAccount(ctx, addr)
 }
 
 // GetNodeAccountByBondAddress go through data store to get node account by it's signer bnb address
@@ -796,7 +805,7 @@ func (k Keeper) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
 
 // SetCompletedEvent write a completed event
 func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
-	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", int64(event.ID.Float64())), getVersion(k.GetLowestActiveVersion(ctx), prefixCompleteEvent))
+	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", event.ID), getVersion(k.GetLowestActiveVersion(ctx), prefixCompleteEvent))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event))
 }
@@ -804,17 +813,16 @@ func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
 // CompleteEvent
 func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxID) {
 	lastEventID := k.GetLastEventID(ctx)
-	eID := lastEventID.Float64()
 
 	incomplete, _ := k.GetIncompleteEvents(ctx)
 
 	for _, txID := range in {
-		eID += 1
+		lastEventID += 1
 		var evts Events
 		evts, incomplete = incomplete.PopByInHash(txID)
 		for _, evt := range evts {
 			if !evt.Empty() {
-				evt.ID = common.NewAmountFromFloat(eID)
+				evt.ID = lastEventID
 				evt.OutHash = out
 				k.SetCompletedEvent(ctx, evt)
 			}
@@ -824,13 +832,12 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxI
 	// save new list of incomplete events
 	k.SetIncompleteEvents(ctx, incomplete)
 
-	lastEventID = common.NewAmountFromFloat(eID)
 	k.SetLastEventID(ctx, lastEventID)
 }
 
 // GetLastEventID get last event id
-func (k Keeper) GetLastEventID(ctx sdk.Context) common.Amount {
-	var lastEventID common.Amount
+func (k Keeper) GetLastEventID(ctx sdk.Context) int64 {
+	var lastEventID int64
 	key := getKey(prefixLastEventID, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastEventID))
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
@@ -841,7 +848,7 @@ func (k Keeper) GetLastEventID(ctx sdk.Context) common.Amount {
 }
 
 // SetLastEventID write a last event id
-func (k Keeper) SetLastEventID(ctx sdk.Context, id common.Amount) {
+func (k Keeper) SetLastEventID(ctx sdk.Context, id int64) {
 	key := getKey(prefixLastEventID, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastEventID))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&id))
