@@ -8,7 +8,7 @@ import (
 )
 
 type Event struct {
-	ID      common.Amount   `json:"id"`
+	ID      int64           `json:"id"`
 	Type    string          `json:"type"`
 	InHash  common.TxID     `json:"in_hash"`
 	OutHash common.TxID     `json:"out_hash"`
