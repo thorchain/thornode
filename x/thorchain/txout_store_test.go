@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -14,7 +12,6 @@ type TxOutStoreSuite struct{}
 var _ = Suite(&TxOutStoreSuite{})
 
 func (s TxOutStoreSuite) TestMinusGas(c *C) {
-	fmt.Println("Testing tx out store")
 	ctx, k := setupKeeperForTest(c)
 
 	p := NewPool()

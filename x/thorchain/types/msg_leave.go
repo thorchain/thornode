@@ -32,7 +32,6 @@ func (msg MsgLeave) ValidateBasic() sdk.Error {
 	if msg.Sender.IsEmpty() {
 		return sdk.ErrUnknownRequest("sender cannot be empty")
 	}
-
 	if msg.RequestTxHash.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}

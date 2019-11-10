@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -42,4 +43,16 @@ func (c Coin) IsValid() error {
 	}
 
 	return nil
+}
+
+func (c Coin) String() string {
+	return fmt.Sprintf("%s%s", c.Asset.String(), c.Amount.String())
+}
+
+func (cs Coins) String() string {
+	coins := make([]string, len(cs))
+	for i, c := range cs {
+		coins[i] = c.String()
+	}
+	return strings.Join(coins, ", ")
 }
