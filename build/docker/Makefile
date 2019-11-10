@@ -32,7 +32,7 @@ tools:
 	@make -C ../../ tools
 
 smoke-test: run-standalone tools
-	@bsinner -f ${FAUCET_KEY} -p $(shell cat ~/.thornode/standalone/keys/private_key.txt) -e local -c ../../test/smoke/scenarios/smoke-test-audit-2p.json -l /tmp/smoke-test.json -d true
+	@bsinner -f ${FAUCET_KEY} -p $(shell cat ~/.thornode/standalone/keys/private_key.txt) -e local -c ../../test/smoke/scenarios/flow-test-audit-1p.json -l /tmp/smoke-test.json -d true
 
 validate-smoke-test: smoke-test
 	@echo "$(shell cat ../../test/smoke/checksum) /tmp/smoke-test.json" | sha256sum --check

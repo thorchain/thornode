@@ -6,10 +6,11 @@
 # Run our smoke tests against a Thorchain instance.
 #
 
-# Set the current working directory.
-cd "$(dirname "$0")"
+cd "$(dirname "$0")"/../docker
+NET=$1
 
-# Move into our Docker directory.
-cd ../docker
+if [ -z "$NET" ]; then
+  NET="testnet"
+fi
 
-make NET="$1" smoke-test
+make NET="$NET" validate-smoke-test
