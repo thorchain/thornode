@@ -61,6 +61,9 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 			)
 		}
 
+	}
+
+	if len(sendCoins) > 0 {
 		return sendCoinsToYggdrasil(ctx, keeper, sendCoins, ygg, txOutStore)
 	}
 
