@@ -1197,7 +1197,6 @@ func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 			Chain:     common.BNBChain,
 			ToAddress: nodeAcc.BondAddress,
 			InHash:    txID,
-			Memo:      fmt.Sprintf("OUTBOUND:%d", ctx.BlockHeight()),
 			Coin:      common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
 
@@ -1208,7 +1207,6 @@ func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 	nodeAcc.Bond = sdk.ZeroUint()
 	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAcc)
-
 }
 
 func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, validatorManager *ValidatorManager, msg MsgLeave) sdk.Result {

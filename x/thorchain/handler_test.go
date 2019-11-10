@@ -656,12 +656,13 @@ func (HandlerSuite) TestHandleMsgLeave(c *C) {
 	c.Assert(result2.Code, Equals, sdk.CodeOK)
 	c.Assert(w.txOutStore.blockOut.Valid(), IsNil)
 	c.Assert(w.txOutStore.blockOut.IsEmpty(), Equals, false)
-	c.Assert(len(w.txOutStore.blockOut.TxArray) > 0, Equals, true)
+	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 2)
 
 	// Ragnarok check. Ensure all bonders have a zero bond balance
 	outbound := w.txOutStore.GetOutboundItems()
 	c.Assert(outbound, HasLen, 2)
-	c.Check(outbound[0].Memo, Equals, "OUTBOUND:1")
+	memo := NewOutboundMemo(tx.ID)
+	c.Check(outbound[0].Memo, Equals, memo.String())
 	c.Check(outbound[1].Memo, Equals, "yggdrasil-")
 }
 
