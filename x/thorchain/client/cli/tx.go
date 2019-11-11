@@ -135,7 +135,12 @@ func GetCmdEndPool(cdc *codec.Codec) *cobra.Command {
 				return errors.Wrap(err, "invalid tx hash")
 			}
 
-			msg := types.NewMsgEndPool(asset, requester, txID, cliCtx.GetFromAddress())
+			tx := common.Tx{
+				ID:          txID,
+				FromAddress: requester,
+			}
+
+			msg := types.NewMsgEndPool(asset, tx, cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

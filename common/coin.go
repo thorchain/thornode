@@ -24,6 +24,16 @@ func NewCoin(asset Asset, amount sdk.Uint) Coin {
 	}
 }
 
+func (c Coin) Equals(cc Coin) bool {
+	if !c.Asset.Equals(cc.Asset) {
+		return false
+	}
+	if !c.Amount.Equal(cc.Amount) {
+		return false
+	}
+	return true
+}
+
 func (c Coin) IsEmpty() bool {
 	if c.Asset.IsEmpty() {
 		return true
@@ -47,6 +57,16 @@ func (c Coin) IsValid() error {
 
 func (c Coin) String() string {
 	return fmt.Sprintf("%s%s", c.Asset.String(), c.Amount.String())
+}
+
+func (cs Coins) IsValid() error {
+	for _, coin := range cs {
+		if err := coin.IsValid(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (cs Coins) String() string {

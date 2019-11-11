@@ -8,27 +8,28 @@ import (
 )
 
 type Event struct {
-	ID      int64           `json:"id"`
-	Type    string          `json:"type"`
-	InHash  common.TxID     `json:"in_hash"`
-	OutHash common.TxID     `json:"out_hash"`
-	Pool    common.Asset    `json:"pool"`
-	Event   json.RawMessage `json:"event"`
-	Status  EventStatus     `json:"status"`
+	ID     int64           `json:"id"`
+	Height int64           `json:"height"`
+	Type   string          `json:"type"`
+	InTx   common.Tx       `json:"in_tx"`
+	OutTx  common.Tx       `json:"out_tx"`
+	Gas    common.Coins    `json:"gas"`
+	Event  json.RawMessage `json:"event"`
+	Status EventStatus     `json:"status"`
 }
 
-func NewEvent(typ string, inHash common.TxID, pool common.Asset, evt json.RawMessage, status EventStatus) Event {
+func NewEvent(typ string, ht int64, inTx common.Tx, evt json.RawMessage, status EventStatus) Event {
 	return Event{
+		Height: ht,
 		Type:   typ,
-		InHash: inHash,
-		Pool:   pool,
+		InTx:   inTx,
 		Event:  evt,
 		Status: status,
 	}
 }
 
 func (evt Event) Empty() bool {
-	return evt.InHash.IsEmpty()
+	return evt.InTx.ID.IsEmpty()
 }
 
 type Events []Event
@@ -36,7 +37,7 @@ type Events []Event
 // Pops an event out of the event list by hash ID
 func (evts Events) PopByInHash(txID common.TxID) (found Events, events Events) {
 	for _, evt := range evts {
-		if evt.InHash.Equals(txID) {
+		if evt.InTx.ID.Equals(txID) {
 			found = append(found, evt)
 		} else {
 			events = append(events, evt)
@@ -46,24 +47,18 @@ func (evts Events) PopByInHash(txID common.TxID) (found Events, events Events) {
 }
 
 type EventSwap struct {
-	SourceCoin common.Coin `json:"source_coin"`
-	TargetCoin common.Coin `json:"target_coin"`
-	PriceSlip  sdk.Uint    `json:"price_slip"`
-	TradeSlip  sdk.Uint    `json:"trade_slip"`
-	PoolSlip   sdk.Uint    `json:"pool_slip"`
-	OutputSlip sdk.Uint    `json:"output_slip"`
-	Fee        sdk.Uint    `json:"fee"`
+	Pool         common.Asset `json:"pool"`
+	PriceTarget  sdk.Uint     `json:"price_target"`
+	TradeSlip    sdk.Dec      `json:"trade_slip"`
+	LiquidityFee sdk.Uint     `json:"liquidity_fee"`
 }
 
-func NewEventSwap(s, t common.Coin, priceSlip, tradeSlip, poolSlip, outputSlip, fee sdk.Uint) EventSwap {
+func NewEventSwap(pool common.Asset, priceTarget, fee sdk.Uint, tradeSlip sdk.Dec) EventSwap {
 	return EventSwap{
-		SourceCoin: s,
-		TargetCoin: t,
-		PriceSlip:  priceSlip,
-		TradeSlip:  tradeSlip,
-		PoolSlip:   poolSlip,
-		OutputSlip: outputSlip,
-		Fee:        fee,
+		Pool:         pool,
+		PriceTarget:  priceTarget,
+		TradeSlip:    tradeSlip,
+		LiquidityFee: fee,
 	}
 }
 
@@ -72,16 +67,14 @@ func (e EventSwap) Type() string {
 }
 
 type EventStake struct {
-	RuneAmount  sdk.Uint `json:"rune_amount"`
-	AssetAmount sdk.Uint `json:"asset_amount"`
-	StakeUnits  sdk.Uint `json:"stake_units"`
+	Pool       common.Asset `json:"pool"`
+	StakeUnits sdk.Uint     `json:"stake_units"`
 }
 
-func NewEventStake(r, t, s sdk.Uint) EventStake {
+func NewEventStake(pool common.Asset, su sdk.Uint) EventStake {
 	return EventStake{
-		RuneAmount:  r,
-		AssetAmount: t,
-		StakeUnits:  s,
+		Pool:       pool,
+		StakeUnits: su,
 	}
 }
 
@@ -90,16 +83,18 @@ func (e EventStake) Type() string {
 }
 
 type EventUnstake struct {
-	RuneAmount  sdk.Int `json:"rune_amount"`
-	AssetAmount sdk.Int `json:"asset_amount"`
-	StakeUnits  sdk.Int `json:"stake_units"`
+	Pool        common.Asset `json:"pool"`
+	StakeUnits  sdk.Uint     `json:"stake_units"`
+	BasisPoints int64        `json:"basis_points"` // 1 ==> 10,0000
+	Asymmetry   sdk.Dec      `json:"asymmetry"`    // -1.0 <==> 1.0
 }
 
-func NewEventUnstake(r, t, s sdk.Uint) EventUnstake {
+func NewEventUnstake(pool common.Asset, su sdk.Uint, basisPts int64, asym sdk.Dec) EventUnstake {
 	return EventUnstake{
-		RuneAmount:  sdk.NewInt(-1).Mul(sdk.NewInt(int64(r.Uint64()))),
-		AssetAmount: sdk.NewInt(-1).Mul(sdk.NewInt(int64(t.Uint64()))),
-		StakeUnits:  sdk.NewInt(-1).Mul(sdk.NewInt(int64(s.Uint64()))),
+		Pool:        pool,
+		StakeUnits:  su,
+		BasisPoints: basisPts,
+		Asymmetry:   asym,
 	}
 }
 
