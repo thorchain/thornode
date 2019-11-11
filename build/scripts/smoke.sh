@@ -84,6 +84,7 @@ NET=${NET:-testnet}
 FAUCET_KEY=${FAUCET_KEY}
 
 setup
+clear_vars
 run_services
 
 PRIV_KEY=$(cat ~/.signer/private_key.txt)
