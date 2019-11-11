@@ -10,15 +10,7 @@
 # Clean/prep the environment.
 #
 setup() {
-  rm -rf ~/.signer
-  rm -rf ~/.thor*
-  rm -rf /tmp/shared
-
-  mkdir ~/.signer
-  mkdir -p /tmp/shared
-
   make -C $(dirname "$0")/../docker clean
-  make -C $(dirname "$0")/../../ install tools
 }
 
 #

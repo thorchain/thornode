@@ -79,5 +79,8 @@ extract: tools
 sweep: tools
 	@sweep -m ${FAUCET_KEY} -k ${PRIV_KEY} -d true
 
+smoke-test: tools install
+	./build/scripts/smoke.sh
+
 export:
 	thord export

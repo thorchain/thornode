@@ -73,8 +73,7 @@ smoke-test:thornode:
     - schedules
   environment:
     name: develop
-  script: ./build/scripts/smoke.sh
-  when: manual
+  script: make smoke-test
 
 deploy:develop:
   stage: deploy
