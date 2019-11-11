@@ -31,9 +31,8 @@ run-validator: clean-validator
 tools:
 	@make -C ../../ tools
 
-smoke-test: run-standalone tools
-	ls -la ~/.thornode/standalone/
-	@bsinner -f ${FAUCET_KEY} -p $(shell cat ~/.signer/private_key.txt) -e local -c ../../test/smoke/scenarios/flow-test-audit-1p.json -l /tmp/smoke-test.json -d true
+smoke-test:
+	@bsinner -f ${FAUCET_KEY} -p ${PRIV_KEY} -e local -c ../../test/smoke/scenarios/flow-test-audit-1p.json -l /tmp/smoke-test.json -d true
 
 validate-smoke-test: smoke-test
 	@echo "$(shell cat ../../test/smoke/checksum) /tmp/smoke-test.json" | sha256sum --check

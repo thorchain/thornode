@@ -37,7 +37,7 @@ if [[ "$ROTATE_BLOCK_HEIGHT" != "0" ]]; then
 fi
 
 # wait until we have the correct number of nodes in our directory before continuing
-while [[ "$(ls -1 /tmp/shared/node_*.json | wc -l)" != "$NODES" ]]; do
+while [[ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODES" ]]; do
     sleep 1
 done
 
