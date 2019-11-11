@@ -124,6 +124,16 @@ func (tx *TxIn) SetReverted(hash common.TxID) {
 	tx.Done = hash
 }
 
+func (tx *TxIn) GetCommonTx(txid common.TxID) common.Tx {
+	return common.NewTx(
+		txid,
+		tx.Sender,
+		tx.To,
+		tx.Coins,
+		tx.Memo,
+	)
+}
+
 type TxInVoter struct {
 	TxID        common.TxID `json:"tx_id"`
 	Txs         []TxIn      `json:"txs"`

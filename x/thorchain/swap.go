@@ -27,21 +27,12 @@ func validatePools(ctx sdk.Context, keeper poolStorage, assets ...common.Asset) 
 }
 
 // validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
-func validateMessage(source, target common.Asset, amount sdk.Uint, requester, destination common.Address, requestTxHash common.TxID) error {
-	if requestTxHash.IsEmpty() {
-		return errors.New("request tx hash is empty")
-	}
-	if source.IsEmpty() {
-		return errors.New("source is empty")
+func validateMessage(tx common.Tx, target common.Asset, destination common.Address) error {
+	if err := tx.IsValid(); err != nil {
+		return err
 	}
 	if target.IsEmpty() {
 		return errors.New("target is empty")
-	}
-	if amount.IsZero() {
-		return errors.New("amount is zero")
-	}
-	if requester.IsEmpty() {
-		return errors.New("requester is empty")
 	}
 	if destination.IsEmpty() {
 		return errors.New("destination is empty")
@@ -51,17 +42,16 @@ func validateMessage(source, target common.Asset, amount sdk.Uint, requester, de
 }
 
 func swap(ctx sdk.Context,
-	keeper poolStorage, txID common.TxID,
-	source, target common.Asset,
-	amount sdk.Uint,
-	requester, destination common.Address,
-	requestTxHash common.TxID,
+	keeper poolStorage, tx common.Tx,
+	target common.Asset,
+	destination common.Address,
 	tradeTarget sdk.Uint,
 	globalSlipLimit common.Amount) (sdk.Uint, error) {
-	if err := validateMessage(source, target, amount, requester, destination, requestTxHash); nil != err {
+	if err := validateMessage(tx, target, destination); nil != err {
 		ctx.Logger().Error(err.Error())
 		return sdk.ZeroUint(), err
 	}
+	source := tx.Coins[0].Asset
 	if err := validatePools(ctx, keeper, source, target); nil != err {
 		ctx.Logger().Error(err.Error())
 		return sdk.ZeroUint(), err
@@ -74,12 +64,12 @@ func swap(ctx sdk.Context,
 	if isDoubleSwap {
 		var err error
 		sourcePool := keeper.GetPool(ctx, source)
-		amount, sourcePool, err = swapOne(ctx, keeper, txID, sourcePool, source, common.RuneAsset(), amount, requester, destination, globalSlipLimit)
+		tx.Coins[0].Amount, sourcePool, err = swapOne(ctx, keeper, tx, sourcePool, common.RuneAsset(), destination, tradeTarget, globalSlipLimit)
 		if err != nil {
 			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneAsset())
 		}
 		pools = append(pools, sourcePool)
-		source = common.RuneAsset()
+		tx.Coins[0].Asset = common.RuneAsset()
 	}
 
 	// Set asset to our non-rune asset asset
@@ -88,7 +78,7 @@ func swap(ctx sdk.Context,
 		asset = target
 	}
 	pool := keeper.GetPool(ctx, asset)
-	assetAmount, pool, err := swapOne(ctx, keeper, txID, pool, source, target, amount, requester, destination, globalSlipLimit)
+	assetAmount, pool, err := swapOne(ctx, keeper, tx, pool, target, destination, tradeTarget, globalSlipLimit)
 	if err != nil {
 		return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, target)
 	}
@@ -105,17 +95,18 @@ func swap(ctx sdk.Context,
 }
 
 func swapOne(ctx sdk.Context,
-	keeper poolStorage, txID common.TxID,
-	pool Pool,
-	source, target common.Asset,
-	amount sdk.Uint, requester,
+	keeper poolStorage, tx common.Tx, pool Pool,
+	target common.Asset,
 	destination common.Address,
+	tradeTarget sdk.Uint,
 	globalSlipLimit common.Amount) (amt sdk.Uint, poolResult Pool, err error) {
 
-	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", requester, source, amount, target, destination))
+	source := tx.Coins[0].Asset
+	amount := tx.Coins[0].Amount
+	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", tx.FromAddress, source, tx.Coins[0].Amount, target, destination))
 
 	var X, x, Y, liquitityFee, emitAssets sdk.Uint
-	var priceSlip, tradeSlip, poolSlip, outputSlip float64
+	var tradeSlip, poolSlip float64
 
 	// Set asset to our non-rune asset asset
 	asset := source
@@ -130,25 +121,19 @@ func swapOne(ctx sdk.Context,
 		if err == nil {
 			status = EventSuccess
 			swapEvt = NewEventSwap(
-				common.NewCoin(source, x),
-				common.NewCoin(target, emitAssets),
-				common.FloatToUint(priceSlip*common.One),
-				common.FloatToUint(tradeSlip*common.One),
-				common.FloatToUint(poolSlip*common.One),
-				common.FloatToUint(outputSlip*common.One),
+				source,
+				tradeTarget,
 				liquitityFee,
+				common.FloatToDec(tradeSlip),
 			)
 
 		} else {
 			status = EventRefund
 			swapEvt = NewEventSwap(
-				common.NewCoin(source, x),
-				common.NewCoin(target, sdk.ZeroUint()),
+				source,
+				tradeTarget,
 				sdk.ZeroUint(),
-				sdk.ZeroUint(),
-				sdk.ZeroUint(),
-				sdk.ZeroUint(),
-				sdk.ZeroUint(),
+				sdk.ZeroDec(),
 			)
 		}
 
@@ -159,8 +144,8 @@ func swapOne(ctx sdk.Context,
 		}
 		evt := NewEvent(
 			swapEvt.Type(),
-			txID,
-			asset,
+			ctx.BlockHeight(),
+			tx,
 			swapBytes,
 			status,
 		)
@@ -202,12 +187,10 @@ func swapOne(ctx sdk.Context,
 		return sdk.ZeroUint(), pool, errors.New("invalid balance")
 	}
 
-	outputSlip = calcOutputSlip(X, x)
 	liquitityFee = calcLiquitityFee(X, x, Y)
 	tradeSlip = calcTradeSlip(X, x)
 	emitAssets = calcAssetEmission(X, x, Y)
 	poolSlip = calcPoolSlip(X, x)
-	priceSlip = calcPriceSlip(X, x, Y)
 
 	// do we have enough balance to swap?
 

@@ -100,19 +100,20 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
-	ctx.Logger().Info("handle MsgEndPool", "asset", msg.Asset, "requester", msg.Requester, "signer", msg.Signer.String())
+	ctx.Logger().Info("handle MsgEndPool", "asset", msg.Asset, "requester", msg.Tx.FromAddress, "signer", msg.Signer.String())
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
 		ctx.Logger().Error("fail to get pool staker", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
+
 	// everyone withdraw
 	for _, item := range poolStaker.Stakers {
 		unstakeMsg := NewMsgSetUnStake(
+			msg.Tx,
 			item.RuneAddress,
 			sdk.NewUint(10000),
 			msg.Asset,
-			msg.RequestTxHash,
 			msg.Signer,
 		)
 
@@ -161,8 +162,7 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 	}
 
 	stakeEvt = NewEventStake(
-		msg.RuneAmount,
-		msg.AssetAmount,
+		msg.Asset,
 		stakeUnits,
 	)
 	stakeBytes, err := json.Marshal(stakeEvt)
@@ -173,8 +173,8 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 
 	evt := NewEvent(
 		stakeEvt.Type(),
-		msg.RequestTxHash,
-		msg.Asset,
+		ctx.BlockHeight(),
+		msg.Tx,
 		stakeBytes,
 		eventStatus,
 	)
@@ -184,7 +184,7 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 		blankTxID, _ := common.NewTxID(
 			"0000000000000000000000000000000000000000000000000000000000000000",
 		)
-		keeper.CompleteEvents(ctx, []common.TxID{msg.RequestTxHash}, blankTxID)
+		keeper.CompleteEvents(ctx, []common.TxID{msg.Tx.ID}, blankTxID)
 	}
 	return nil
 }
@@ -207,7 +207,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 
 	ctx.Logger().Info("handleMsgSetStakeData request", "stakerid:"+msg.Asset.String())
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset.String(), "request tx hash", msg.RequestTxHash, "rune address", msg.RuneAddress)
+		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset.String(), "request tx hash", msg.Tx.ID, "rune address", msg.RuneAddress)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	if err := msg.ValidateBasic(); nil != err {
@@ -232,7 +232,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		msg.AssetAmount,
 		msg.RuneAddress,
 		msg.AssetAddress,
-		msg.RequestTxHash,
+		msg.Tx.ID,
 	)
 	if err != nil {
 		ctx.Logger().Error("fail to process stake message", err)
@@ -248,7 +248,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 // Handle a message to set stake data
 func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgSwap) sdk.Result {
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "source asset", msg.SourceAsset, "target asset", msg.TargetAsset)
+		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.Tx.ID, "source asset", msg.Tx.Coins[0].Asset, "target asset", msg.TargetAsset)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 	gsl := keeper.GetAdminConfigGSL(ctx, EmptyAccAddress)
@@ -262,13 +262,9 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 	amount, err := swap(
 		ctx,
 		keeper,
-		msg.RequestTxHash,
-		msg.SourceAsset,
+		msg.Tx,
 		msg.TargetAsset,
-		msg.Amount,
-		msg.Requester,
 		msg.Destination,
-		msg.RequestTxHash,
 		msg.TradeTarget,
 		gsl,
 	) // If so, set the stake data to the value specified in the msg.
@@ -307,7 +303,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, msg MsgSetUnStake) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.RuneAddress, msg.WithdrawBasisPoints))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.RequestTxHash, "rune address", msg.RuneAddress, "asset", msg.Asset, "withdraw basis points", msg.WithdrawBasisPoints)
+		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.Tx.ID, "rune address", msg.RuneAddress, "asset", msg.Asset, "withdraw basis points", msg.WithdrawBasisPoints)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
@@ -357,9 +353,10 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 
 	unstakeEvt := NewEventUnstake(
-		runeAmt,
-		assetAmount,
+		msg.Asset,
 		units,
+		0,             // TODO: make this real data
+		sdk.ZeroDec(), // TODO: make this real data
 	)
 	unstakeBytes, err := json.Marshal(unstakeEvt)
 	if err != nil {
@@ -368,8 +365,8 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 	evt := NewEvent(
 		unstakeEvt.Type(),
-		msg.RequestTxHash,
-		msg.Asset,
+		ctx.BlockHeight(),
+		msg.Tx,
 		unstakeBytes,
 		EventSuccess,
 	)
@@ -619,7 +616,13 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 				if nil != err {
 					return sdk.ErrInternal("fail to marshal EmptyRefund event to json").Result()
 				}
-				event := NewEvent(ee.Type(), tx.TxID, common.Asset{}, buf, EventRefund)
+				event := NewEvent(
+					ee.Type(),
+					ctx.BlockHeight(),
+					txIn.GetCommonTx(tx.TxID),
+					buf,
+					EventRefund,
+				)
 				keeper.AddIncompleteEvents(ctx, event)
 				continue
 			}
@@ -706,7 +709,8 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 	case AckMemo:
 		newMsg = types.NewMsgAck(txID, tx.Sender, chain, signer)
 	case LeaveMemo:
-		newMsg = NewMsgLeave(txID, tx.Sender, signer)
+		tx := tx.GetCommonTx(txID)
+		newMsg = NewMsgLeave(tx, signer)
 	case YggdrasilFundMemo:
 		pk, err := keeper.FindPubKeyOfAddress(ctx, tx.To, tx.Coins[0].Asset.Chain)
 		if err != nil {
@@ -750,20 +754,22 @@ func getMsgSwapFromMemo(memo SwapMemo, txID common.TxID, tx TxIn, signer sdk.Acc
 	if memo.Asset.Equals(coin.Asset) {
 		return nil, errors.Errorf("swap from %s to %s is noop, refund", memo.Asset.String(), coin.Asset.String())
 	}
+
 	// Looks like at the moment we can only process ont ty
-	return NewMsgSwap(txID, coin.Asset, memo.GetAsset(), coin.Amount, tx.Sender, memo.Destination, memo.SlipLimit, signer), nil
+	return NewMsgSwap(tx.GetCommonTx(txID), memo.GetAsset(), memo.Destination, memo.SlipLimit, signer), nil
 }
 
-func getMsgUnstakeFromMemo(memo WithdrawMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgUnstakeFromMemo(memo WithdrawMemo, txID common.TxID, txIn TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	withdrawAmount := sdk.NewUint(MaxWithdrawBasisPoints)
 	if len(memo.GetAmount()) > 0 {
 		withdrawAmount = sdk.NewUintFromString(memo.GetAmount())
 	}
-	return NewMsgSetUnStake(tx.Sender, withdrawAmount, memo.GetAsset(), txID, signer), nil
+	tx := txIn.GetCommonTx(txID)
+	return NewMsgSetUnStake(tx, txIn.Sender, withdrawAmount, memo.GetAsset(), signer), nil
 }
 
-func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
-	if len(tx.Coins) > 2 {
+func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, txIn *TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+	if len(txIn.Coins) > 2 {
 		return nil, errors.New("not expecting more than two coins in a stake")
 	}
 	runeAmount := sdk.ZeroUint()
@@ -775,7 +781,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 	if asset.IsRune() {
 		return nil, errors.New("invalid pool asset")
 	}
-	for _, coin := range tx.Coins {
+	for _, coin := range txIn.Coins {
 		ctx.Logger().Info("coin", "asset", coin.Asset.String(), "amount", coin.Amount.String())
 		if coin.Asset.IsRune() {
 			runeAmount = coin.Amount
@@ -790,24 +796,26 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, tx *
 	}
 
 	// when we receive two coins, but we didn't find the coin specify by asset, then user might send in the wrong coin
-	if assetAmount.IsZero() && len(tx.Coins) == 2 {
+	if assetAmount.IsZero() && len(txIn.Coins) == 2 {
 		return nil, errors.Errorf("did not find %s ", asset)
 	}
 
-	runeAddr := tx.Sender
+	runeAddr := txIn.Sender
 	assetAddr := memo.GetDestination()
 	if !runeAddr.IsChain(common.BNBChain) {
 		runeAddr = memo.GetDestination()
-		assetAddr = tx.Sender
+		assetAddr = txIn.Sender
 	}
 
+	tx := txIn.GetCommonTx(txID)
+
 	return NewMsgSetStakeData(
+		tx,
 		asset,
 		runeAmount,
 		assetAmount,
 		runeAddr,
 		assetAddr,
-		txID,
 		signer,
 	), nil
 }
@@ -1203,7 +1211,7 @@ func RefundBond(ctx sdk.Context, nodeAcc NodeAccount, keeper Keeper, txOut *TxOu
 }
 
 func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, validatorManager *ValidatorManager, msg MsgLeave) sdk.Result {
-	ctx.Logger().Info("receive MsgLeave", "sender", msg.Sender.String(), "request tx hash", msg.RequestTxHash)
+	ctx.Logger().Info("receive MsgLeave", "sender", msg.Tx.FromAddress.String(), "request tx hash", msg.Tx.ID)
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -1212,7 +1220,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 		ctx.Logger().Error("invalid MsgLeave", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	nodeAcc, err := keeper.GetNodeAccountByBondAddress(ctx, msg.Sender)
+	nodeAcc, err := keeper.GetNodeAccountByBondAddress(ctx, msg.Tx.FromAddress)
 	if nil != err {
 		ctx.Logger().Error("fail to get node account", "error", err)
 		return sdk.ErrInternal("fail to get node account by bond address").Result()
@@ -1239,7 +1247,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 
 		handler := NewHandler(keeper, poolAddrMgr, txOut, validatorManager)
 		for _, asset := range index {
-			endMsg := NewMsgEndPool(asset, msg.Sender, msg.RequestTxHash, msg.Signer)
+			endMsg := NewMsgEndPool(asset, msg.Tx, msg.Signer)
 			handler(ctx, endMsg)
 		}
 
@@ -1291,9 +1299,9 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 			RefundBond(ctx, na, keeper, txOut)
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent("validator_leave",
-					sdk.NewAttribute("signer bnb address", msg.Sender.String()),
+					sdk.NewAttribute("signer bnb address", msg.Tx.FromAddress.String()),
 					sdk.NewAttribute("destination", na.BondAddress.String()),
-					sdk.NewAttribute("tx", msg.RequestTxHash.String())))
+					sdk.NewAttribute("tx", msg.Tx.ID.String())))
 
 		}
 	}

@@ -13,9 +13,18 @@ var _ = Suite(&MsgUnstakeSuite{})
 
 func (MsgUnstakeSuite) TestMsgUnstake(c *C) {
 	txID := GetRandomTxHash()
+	tx := common.NewTx(
+		txID,
+		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
+		common.Coins{
+			common.NewCoin(common.BTCAsset, sdk.NewUint(100000000)),
+		},
+		"",
+	)
 	bnb := GetRandomBNBAddress()
 	acc1 := GetRandomBech32Addr()
-	m := NewMsgSetUnStake(bnb, sdk.NewUint(10000), common.BNBAsset, txID, acc1)
+	m := NewMsgSetUnStake(tx, bnb, sdk.NewUint(10000), common.BNBAsset, acc1)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_unstake")
 
@@ -70,7 +79,8 @@ func (MsgUnstakeSuite) TestMsgUnstake(c *C) {
 		},
 	}
 	for _, item := range inputs {
-		m := NewMsgSetUnStake(item.publicAddress, item.withdrawBasisPoints, item.asset, item.requestTxHash, item.signer)
+		tx := common.Tx{ID: item.requestTxHash}
+		m := NewMsgSetUnStake(tx, item.publicAddress, item.withdrawBasisPoints, item.asset, item.signer)
 		c.Assert(m.ValidateBasic(), NotNil)
 	}
 }

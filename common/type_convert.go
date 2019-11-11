@@ -28,7 +28,6 @@ func IntToUint64(input sdk.Int) uint64 {
 	return uint64(input.Int64())
 }
 
-
 func FloatToUintAndMultipleOne(input float64) sdk.Uint {
 	return sdk.NewUint(uint64(math.Round(input * One)))
 }
@@ -42,4 +41,9 @@ func AmountToUint(amount Amount) sdk.Uint {
 
 func UintToAmount(input sdk.Uint) Amount {
 	return NewAmountFromFloat(float64(input.Uint64()))
+}
+
+func FloatToDec(input float64) sdk.Dec {
+	i := int64(input * One)
+	return sdk.NewDecWithPrec(i, 8)
 }
