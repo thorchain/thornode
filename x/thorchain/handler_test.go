@@ -661,57 +661,51 @@ func (HandlerSuite) TestHandleMsgLeave(c *C) {
 func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	bnbAddr := GetRandomBNBAddress()
-	msgOutboundTx := NewMsgOutboundTx(GetRandomTxHash(), 1,
+	txID := GetRandomTxHash()
+	tx := common.NewTx(
+		txID,
 		bnbAddr,
-		common.BNBChain,
-		nil,
-		w.notActiveNodeAccount.NodeAddress)
+		GetRandomBNBAddress(),
+		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		"",
+	)
+	msgOutboundTx := NewMsgOutboundTx(tx, 1, w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTx)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
-	msgInvalidOutboundTx := NewMsgOutboundTx("", 1,
-		bnbAddr,
-		common.BNBChain,
-		nil,
-		w.activeNodeAccount.NodeAddress)
+	tx.ID = ""
+	msgInvalidOutboundTx := NewMsgOutboundTx(tx, 1, w.activeNodeAccount.NodeAddress)
 	result1 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidOutboundTx)
-	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest)
+	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest, Commentf("%+v\n", result1))
 
-	msgInvalidPool := NewMsgOutboundTx(GetRandomTxHash(),
-		1,
-		GetRandomBNBAddress(),
-		common.BNBChain,
-		nil,
-		w.activeNodeAccount.NodeAddress)
+	tx.ID = txID
+	msgInvalidPool := NewMsgOutboundTx(tx, 1, w.activeNodeAccount.NodeAddress)
 	result2 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidPool)
-	c.Assert(result2.Code, Equals, sdk.CodeUnauthorized)
+	c.Assert(result2.Code, Equals, sdk.CodeUnauthorized, Commentf("%+v\n", result2))
 
 	w = getHandlerTestWrapper(c, 1, true, true)
 	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPool, NotNil)
-	currentPoolAddr, err := currentChainPool.GetAddress()
-	c.Assert(err, IsNil)
 
-	c.Assert(err, IsNil)
 	ygg := NewYggdrasil(currentChainPool.PubKey)
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(500*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(400*common.One)),
 	}
 	w.keeper.SetYggdrasil(w.ctx, ygg)
-	coins := common.Coins{
+
+	currentPoolAddr, err := currentChainPool.GetAddress()
+	c.Assert(err, IsNil)
+	tx.FromAddress = currentPoolAddr
+	tx.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(200*common.One)),
 	}
-
-	msgOutboundTxNormal := NewMsgOutboundTx(GetRandomTxHash(),
-		1,
-		currentPoolAddr,
-		common.BNBChain,
-		coins,
-		w.activeNodeAccount.NodeAddress)
+	msgOutboundTxNormal := NewMsgOutboundTx(tx, 1, w.activeNodeAccount.NodeAddress)
+	fmt.Println("==================================================")
+	fmt.Printf("NA: %+v\n", w.activeNodeAccount)
 	result3 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal)
-	c.Assert(result3.Code, Equals, sdk.CodeOK)
+	c.Assert(result3.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result3))
 	ygg = w.keeper.GetYggdrasil(w.ctx, currentChainPool.PubKey)
 	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(300*common.One)), Equals, true)
 	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)
@@ -736,12 +730,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	resultTxIn := handleMsgSetTxIn(ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn1)
 	c.Assert(resultTxIn.Code, Equals, sdk.CodeOK)
 	w.txOutStore.CommitBlock(ctx)
-	msgOutboundTxNormal1 := NewMsgOutboundTx(GetRandomTxHash(),
-		2,
-		currentPoolAddr,
-		common.BNBChain,
-		nil,
-		w.activeNodeAccount.NodeAddress)
+	msgOutboundTxNormal1 := NewMsgOutboundTx(tx, 2, w.activeNodeAccount.NodeAddress)
 	result4 := handleMsgOutboundTx(ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal1)
 	c.Assert(result4.Code, Equals, sdk.CodeOK)
 }

@@ -184,7 +184,8 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 		blankTxID, _ := common.NewTxID(
 			"0000000000000000000000000000000000000000000000000000000000000000",
 		)
-		keeper.CompleteEvents(ctx, []common.TxID{msg.Tx.ID}, blankTxID)
+		tx := common.Tx{ID: blankTxID}
+		keeper.CompleteEvents(ctx, []common.TxID{msg.Tx.ID}, tx)
 	}
 	return nil
 }
@@ -695,7 +696,8 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 			return nil, errors.Wrap(err, "fail to get MsgNoOp from memo")
 		}
 	case OutboundMemo:
-		newMsg, err = getMsgOutboundFromMemo(m, txID, tx.Sender, chain, tx.Coins, signer)
+		tx := tx.GetCommonTx(txID)
+		newMsg, err = getMsgOutboundFromMemo(m, tx, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
@@ -850,14 +852,11 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, txID common.TxID, sender common.Address, chain common.Chain, coins common.Coins, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgOutboundFromMemo(memo OutboundMemo, tx common.Tx, signer sdk.AccAddress) (sdk.Msg, error) {
 	blockHeight := memo.GetBlockHeight()
 	return NewMsgOutboundTx(
-		txID,
+		tx,
 		blockHeight,
-		sender,
-		chain,
-		coins,
 		signer,
 	), nil
 }
@@ -916,7 +915,7 @@ func handleMsgNoOp(ctx sdk.Context) sdk.Result {
 
 // handleMsgOutboundTx processes outbound tx from our pool
 func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAddressManager, msg MsgOutboundTx) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgOutboundTx %s at height %d", msg.TxID, msg.Height))
+	ctx.Logger().Info(fmt.Sprintf("receive MsgOutboundTx %s at height %d", msg.Tx.ID, msg.Height))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -925,9 +924,9 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		ctx.Logger().Error("invalid MsgOutboundTx", "error", err)
 		return err.Result()
 	}
-	currentChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(msg.Chain)
+	currentChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(msg.Tx.Chain)
 	if nil == currentChainPoolAddr {
-		msg := fmt.Sprintf("we don't have pool for chain %s", msg.Chain)
+		msg := fmt.Sprintf("we don't have pool for chain %s", msg.Tx.Chain)
 		ctx.Logger().Error(msg)
 		return sdk.ErrUnknownRequest(msg).Result()
 	}
@@ -937,7 +936,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		ctx.Logger().Error("fail to get current pool address", "error", err)
 		return sdk.ErrUnknownRequest("fail to get current pool address").Result()
 	}
-	previousChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Previous.GetByChain(msg.Chain)
+	previousChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Previous.GetByChain(msg.Tx.Chain)
 	previousPoolAddr := common.NoAddress
 	if nil != previousChainPoolAddr {
 		previousPoolAddr, err = previousChainPoolAddr.GetAddress()
@@ -947,8 +946,8 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		}
 	}
 
-	if !currentPoolAddr.Equals(msg.Sender) && !previousPoolAddr.Equals(msg.Sender) {
-		ctx.Logger().Error("message sent by unauthorized account", "sender", msg.Sender.String(), "current pool addr", currentPoolAddr.String())
+	if !currentPoolAddr.Equals(msg.Tx.FromAddress) && !previousPoolAddr.Equals(msg.Tx.FromAddress) {
+		ctx.Logger().Error("message sent by unauthorized account", "sender", msg.Tx.FromAddress.String(), "current pool addr", currentPoolAddr.String())
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
@@ -961,12 +960,12 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	// iterate over our index and mark each tx as done
 	for _, txID := range index {
 		voter := keeper.GetTxInVoter(ctx, txID)
-		voter.SetDone(msg.TxID)
+		voter.SetDone(msg.Tx.ID)
 		keeper.SetTxInVoter(ctx, voter)
 	}
 
 	// complete events
-	keeper.CompleteEvents(ctx, index, msg.TxID)
+	keeper.CompleteEvents(ctx, index, msg.Tx)
 
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := keeper.GetTxOut(ctx, msg.Height)
@@ -976,20 +975,20 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	}
 	// Save TxOut back with the TxID only when the TxOut on the block height is not empty
 	if !txOut.IsEmpty() {
-		txOut.Hash = msg.TxID
+		txOut.Hash = msg.Tx.ID
 		keeper.SetTxOut(ctx, txOut)
 	}
 	keeper.SetLastSignedHeight(ctx, sdk.NewUint(msg.Height))
 
 	// If we are sending from a yggdrasil pool, decrement coins on record
-	pk, err := keeper.FindPubKeyOfAddress(ctx, msg.Sender, msg.Chain)
+	pk, err := keeper.FindPubKeyOfAddress(ctx, msg.Tx.FromAddress, msg.Tx.Chain)
 	if err != nil {
 		ctx.Logger().Error("unable to find Yggdrasil pubkey", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	if !pk.IsEmpty() {
 		ygg := keeper.GetYggdrasil(ctx, pk)
-		ygg.SubFunds(msg.Coins)
+		ygg.SubFunds(msg.Tx.Coins)
 		keeper.SetYggdrasil(ctx, ygg)
 	}
 

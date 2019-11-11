@@ -811,7 +811,7 @@ func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
 }
 
 // CompleteEvent
-func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxID) {
+func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.Tx) {
 	lastEventID := k.GetLastEventID(ctx)
 
 	incomplete, _ := k.GetIncompleteEvents(ctx)
@@ -823,7 +823,7 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxI
 		for _, evt := range evts {
 			if !evt.Empty() {
 				evt.ID = lastEventID
-				evt.OutTx.ID = out // TODO: have complete tx out info
+				evt.OutTx = out
 				k.SetCompletedEvent(ctx, evt)
 			}
 		}
