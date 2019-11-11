@@ -759,15 +759,16 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 func (HandlerSuite) TestHandleMsgSetAdminConfig(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 
-	msgSetAdminCfg := NewMsgSetAdminConfig(GSLKey, "0.5", w.notActiveNodeAccount.NodeAddress)
+	tx := GetRandomTx()
+	msgSetAdminCfg := NewMsgSetAdminConfig(tx, GSLKey, "0.5", w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgSetAdminConfig(w.ctx, w.keeper, msgSetAdminCfg)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
-	msgSetAdminCfg = NewMsgSetAdminConfig(GSLKey, "0.5", w.activeNodeAccount.NodeAddress)
+	msgSetAdminCfg = NewMsgSetAdminConfig(tx, GSLKey, "0.5", w.activeNodeAccount.NodeAddress)
 	result1 := handleMsgSetAdminConfig(w.ctx, w.keeper, msgSetAdminCfg)
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
 
-	msgInvalidSetAdminCfg := NewMsgSetAdminConfig("Whatever", "blablab", w.activeNodeAccount.NodeAddress)
+	msgInvalidSetAdminCfg := NewMsgSetAdminConfig(tx, "Whatever", "blablab", w.activeNodeAccount.NodeAddress)
 	result2 := handleMsgSetAdminConfig(w.ctx, w.keeper, msgInvalidSetAdminCfg)
 	c.Assert(result2.Code, Equals, sdk.CodeUnknownRequest)
 }

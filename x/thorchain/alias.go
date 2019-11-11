@@ -47,6 +47,7 @@ var (
 	NewMsgSetAdminConfig           = types.NewMsgSetAdminConfig
 	NewTxOut                       = types.NewTxOut
 	NewEvent                       = types.NewEvent
+	NewEventAdminConfig            = types.NewEventAdminConfig
 	NewEventSwap                   = types.NewEventSwap
 	NewEventStake                  = types.NewEventStake
 	NewEmptyRefundEvent            = types.NewEmptyRefundEvent
@@ -69,6 +70,7 @@ var (
 	NewMsgNextPoolAddress          = types.NewMsgNextPoolAddress
 	NewMsgLeave                    = types.NewMsgLeave
 	GetPoolStatus                  = types.GetPoolStatus
+	GetRandomTx                    = types.GetRandomTx
 	GetRandomNodeAccount           = types.GetRandomNodeAccount
 	GetRandomBNBAddress            = types.GetRandomBNBAddress
 	GetRandomTxHash                = types.GetRandomTxHash
