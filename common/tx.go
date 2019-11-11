@@ -36,3 +36,25 @@ func (tx TxID) IsEmpty() bool {
 func (tx TxID) String() string {
 	return string(tx)
 }
+
+type Tx struct {
+	ID          TxID
+	FromAddress Address
+	ToAddress   Address
+	Coins       Coins
+	Memo        string
+}
+
+func NewTx(txID TxID, from Address, to Address, coins Coins, memo string) Tx {
+	return Tx{
+		ID:          txID,
+		FromAddress: from,
+		ToAddress:   to,
+		Coins:       coins,
+		Memo:        memo,
+	}
+}
+
+func (tx Tx) IsEmpty() bool {
+	return tx.ID.IsEmpty()
+}
