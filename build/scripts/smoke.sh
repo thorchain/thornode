@@ -14,14 +14,21 @@ setup() {
 }
 
 #
+# Clear those ENV vars that we don't want to use
+#
+clear_vars() {
+  unset CHAIN_HOST
+  unset RPC_HOST
+  unset SIGNER_NAME
+  unset SIGNER_PASSWD
+}
+
+#
 # Configure and run all services.
 #
 run_services() {
   export NODES=1
   export SEED="$(hostname)"
-
-  unset CHAIN_HOST
-  unset RPC_HOST
 
   $(dirname "$0")/genesis.sh
   run_thord
