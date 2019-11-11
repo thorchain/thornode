@@ -17,8 +17,8 @@ setup() {
   mkdir ~/.signer
   mkdir -p /tmp/shared
 
-  make -C ../docker clean
-  make -C ../../ install tools
+  make -C $(dirname "$0")/../docker clean
+  make -C $(dirname "$0")/../../ install tools
 }
 
 #
@@ -28,18 +28,18 @@ run_services() {
   export NODES=1
   export SEED="$(hostname)"
 
-  ./genesis.sh
+  $(dirname "$0")/genesis.sh
   run_thord
 
-  ./rest.sh
+  $(dirname "$0")/rest.sh
   run_rest
 
   sleep 5
 
-  ./observer.sh
+  $(dirname "$0")/observer.sh
   run_observed
 
-  ./signer.sh
+  $(dirname "$0")/signer.sh
   run_signd
 }
 
@@ -77,8 +77,6 @@ run_rest() {
 run_tests() {
   make -C ../docker NET="$1" FAUCET_KEY="$2" PRIV_KEY="$3" validate-smoke-test
 }
-
-cd "$(dirname "$0")"
 
 NET=${NET:-testnet}
 FAUCET_KEY=${FAUCET_KEY}
