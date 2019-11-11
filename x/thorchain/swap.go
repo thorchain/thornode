@@ -217,12 +217,14 @@ func swapOne(ctx sdk.Context,
 	return emitAssets, pool, nil
 }
 
+/*
 // calcPriceSlip - calculate the price slip
 // This calculates the price slip by dividing the number of coins added, by the number of emitted assets
 func calcPriceSlip(X, x, Y sdk.Uint) float64 {
 	assetEmission := calcAssetEmission(X, x, Y)
 	return common.UintToFloat64(x) / common.UintToFloat64(assetEmission)
 }
+*/
 
 // calcTradeSlip - calculate the trade slip
 func calcTradeSlip(iX, ix sdk.Uint) float64 {
@@ -234,12 +236,14 @@ func calcTradeSlip(iX, ix sdk.Uint) float64 {
 	return x * (2*X + x) / (X * X)
 }
 
+/*
 // calcOutputSlip - calculates the output slip
 func calcOutputSlip(X, x sdk.Uint) float64 {
 	// ( x ) / ( x + X )
 	denominator := x.Add(X)
 	return common.UintToFloat64(x) / common.UintToFloat64(denominator)
 }
+*/
 
 // Calculates the pool slip
 func calcPoolSlip(X, x sdk.Uint) float64 {
