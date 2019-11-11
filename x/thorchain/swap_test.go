@@ -202,6 +202,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			},
 			"",
 		)
+		tx.Chain = common.BNBChain
 		amount, err := swap(ctx, poolStorage, tx, item.target, item.destination, item.tradeTarget, globalSlipLimit)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
@@ -326,8 +327,8 @@ func (s SwapSuite) TestCalculators(c *C) {
 	c.Check(calcLiquitityFee(X, x, Y).Uint64(), Equals, uint64(82644628))
 	c.Check(calcPoolSlip(X, x), Equals, 0.1990990990990991)
 	c.Check(calcTradeSlip(X, x), Equals, 0.21)
-	c.Check(calcPriceSlip(X, x, Y), Equals, 1.210000001452)
-	c.Check(calcOutputSlip(X, x), Equals, 0.09090909090909091)
+	// c.Check(calcPriceSlip(X, x, Y), Equals, 1.210000001452)
+	// c.Check(calcOutputSlip(X, x), Equals, 0.09090909090909091)
 }
 
 func (s SwapSuite) TestHandleMsgSwap(c *C) {

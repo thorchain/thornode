@@ -39,6 +39,7 @@ func (tx TxID) String() string {
 
 type Tx struct {
 	ID          TxID    `json:"id"`
+	Chain       Chain   `json:"chain"`
 	FromAddress Address `json:"from_address"`
 	ToAddress   Address `json:"to_address"`
 	Coins       Coins   `json:"coins"`
@@ -46,8 +47,14 @@ type Tx struct {
 }
 
 func NewTx(txID TxID, from Address, to Address, coins Coins, memo string) Tx {
+	var chain Chain
+	for _, coin := range coins {
+		chain = coin.Asset.Chain
+		break
+	}
 	return Tx{
 		ID:          txID,
+		Chain:       chain,
 		FromAddress: from,
 		ToAddress:   to,
 		Coins:       coins,
@@ -68,6 +75,9 @@ func (tx Tx) IsValid() error {
 	}
 	if tx.ToAddress.IsEmpty() {
 		return fmt.Errorf("To address cannot be empty")
+	}
+	if tx.Chain.IsEmpty() {
+		return fmt.Errorf("Chain cannot be empty")
 	}
 	if len(tx.Coins) == 0 {
 		return fmt.Errorf("Must have at least 1 coin")
