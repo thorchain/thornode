@@ -22,7 +22,7 @@ NODE_ADDRESS=$(thorcli keys show statechain -a)
 NODE_PUB_KEY=$(thorcli keys show statechain -p)
 VERSION=$(fetch_version)
 
-if [[ "$SEED" == "$(hostname)" ]]; then
+if [ "$SEED" == "$(hostname)" ]; then
     echo "I AM THE SEED NODE"
     thord tendermint show-node-id > /tmp/shared/node.txt
     echo $ADDRESS > /tmp/shared/pool_address.txt
