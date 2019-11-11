@@ -6,7 +6,7 @@ type TxArrayItem struct {
 	PoolAddress common.PubKey `json:"pool_address"`
 	SeqNo       string        `json:"seq_no"`
 	To          string        `json:"to"`
-	Coins       common.Coins  `json:"coins"`
+	Coin        common.Coin   `json:"coin"`
 	Memo        string        `json:"memo"`
 }
 type TxOut struct {
