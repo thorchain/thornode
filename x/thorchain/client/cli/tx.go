@@ -68,7 +68,7 @@ func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
 
 			key := types.GetAdminConfigKey(args[0])
 
-			msg := types.NewMsgSetAdminConfig(key, args[1], cliCtx.GetFromAddress())
+			msg := types.NewMsgSetAdminConfig(common.Tx{}, key, args[1], cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

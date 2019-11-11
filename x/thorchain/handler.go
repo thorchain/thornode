@@ -1011,7 +1011,41 @@ func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConf
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
+	prevVal, err := keeper.GetAdminConfigValue(ctx, msg.AdminConfig.Key, nil)
+	if err != nil {
+		ctx.Logger().Error("unable to get admin config", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
 	keeper.SetAdminConfig(ctx, msg.AdminConfig)
+
+	newVal, err := keeper.GetAdminConfigValue(ctx, msg.AdminConfig.Key, nil)
+	if err != nil {
+		ctx.Logger().Error("unable to get admin config", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	if newVal != "" && prevVal != newVal {
+		adminEvt := NewEventAdminConfig(
+			msg.AdminConfig.Key.String(),
+			msg.AdminConfig.Value,
+		)
+		stakeBytes, err := json.Marshal(adminEvt)
+		if err != nil {
+			ctx.Logger().Error("fail to save event", err)
+			err = errors.Wrap(err, "fail to marshal admin config event to json")
+			return sdk.ErrUnknownRequest(err.Error()).Result()
+		}
+
+		evt := NewEvent(
+			adminEvt.Type(),
+			ctx.BlockHeight(),
+			msg.Tx,
+			stakeBytes,
+			EventSuccess,
+		)
+		keeper.SetCompletedEvent(ctx, evt)
+	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,

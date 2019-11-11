@@ -102,6 +102,22 @@ func (e EventUnstake) Type() string {
 	return "unstake"
 }
 
+type EventAdminConfig struct {
+	Key   string
+	Value string
+}
+
+func NewEventAdminConfig(key, value string) EventAdminConfig {
+	return EventAdminConfig{
+		Key:   key,
+		Value: value,
+	}
+}
+
+func (e EventAdminConfig) Type() string {
+	return "admin_config"
+}
+
 type EmptyRefundEvent struct {
 }
 
