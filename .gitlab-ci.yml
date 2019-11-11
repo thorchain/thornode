@@ -64,14 +64,13 @@ smoke-test:thornode:
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
-    NET: testnet
   before_script:
     - export GOBIN=$GOPATH/bin
   except:
     - schedules
   environment:
     name: develop
-  script: ./build/scripts/smoke.sh $NET $FAUCET_KEY
+  script: ./build/scripts/smoke.sh
   when: manual
 
 deploy:develop:
