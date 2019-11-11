@@ -6,10 +6,6 @@
 # Run our smoke tests against a Thorchain instance.
 #
 
-cd "$(dirname "$0")"/../docker
-NET=$1
-FAUCET_KEY=$2
-
 #
 # Clean/prep the environment.
 #
@@ -18,11 +14,11 @@ setup() {
   rm -rf ~/.thor*
   rm -rf /tmp/shared
 
-  make clean
-  make -C ../../ install tools
-
   mkdir ~/.signer
   mkdir -p /tmp/shared
+
+  make -C ../docker clean
+  make -C ../../ install tools
 }
 
 #
@@ -32,18 +28,18 @@ run_services() {
   export NODES=1
   export SEED="$(hostname)"
 
-  ../scripts/genesis.sh
+  ./genesis.sh
   run_thord
 
-  ../scripts/rest.sh
+  ./rest.sh
   run_rest
 
   sleep 5
 
-  ../scripts/observer.sh
+  ./observer.sh
   run_observed
 
-  ../scripts/signer.sh
+  ./signer.sh
   run_signd
 }
 
@@ -79,8 +75,13 @@ run_rest() {
 # Smoke Tests
 #
 run_tests() {
-  make NET="$1" FAUCET_KEY="$2" PRIV_KEY="$3" validate-smoke-test
+  make -C ../docker NET="$1" FAUCET_KEY="$2" PRIV_KEY="$3" validate-smoke-test
 }
+
+cd "$(dirname "$0")"
+
+NET=${NET:-testnet}
+FAUCET_KEY=${FAUCET_KEY}
 
 setup
 run_services
