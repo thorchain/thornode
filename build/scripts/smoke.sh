@@ -75,7 +75,7 @@ run_rest() {
 # Smoke Tests
 #
 run_tests() {
-  make -C ../docker NET="$1" FAUCET_KEY="$2" PRIV_KEY="$3" validate-smoke-test
+  make -C $(dirname "$0")/../docker NET="$1" FAUCET_KEY="$2" PRIV_KEY="$3" validate-smoke-test
 }
 
 NET=${NET:-testnet}
