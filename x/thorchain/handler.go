@@ -839,21 +839,22 @@ func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, 
 	), nil
 }
 
-func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgAddFromMemo(memo AddMemo, txID common.TxID, txIn TxIn, signer sdk.AccAddress) (sdk.Msg, error) {
 	runeAmount := sdk.ZeroUint()
 	assetAmount := sdk.ZeroUint()
-	for _, coin := range tx.Coins {
+	for _, coin := range txIn.Coins {
 		if coin.Asset.IsRune() {
 			runeAmount = coin.Amount
 		} else if memo.GetAsset().Equals(coin.Asset) {
 			assetAmount = coin.Amount
 		}
 	}
+	tx := txIn.GetCommonTx(txID)
 	return NewMsgAdd(
+		tx,
 		memo.GetAsset(),
 		runeAmount,
 		assetAmount,
-		txID,
 		signer,
 	), nil
 }
@@ -880,7 +881,7 @@ func getMsgBondFromMemo(memo BondMemo, txID common.TxID, tx TxIn, signer sdk.Acc
 
 // handleMsgAdd
 func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgAdd %s", msg.TxID))
+	ctx.Logger().Info(fmt.Sprintf("receive MsgAdd %s", msg.Tx.ID))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account")
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -902,6 +903,26 @@ func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 	}
 
 	keeper.SetPool(ctx, pool)
+
+	// emit event
+	addEvt := NewEventAdd(
+		pool.Asset,
+	)
+	stakeBytes, err := json.Marshal(addEvt)
+	if err != nil {
+		ctx.Logger().Error("fail to save event", err)
+		err = errors.Wrap(err, "fail to marshal add event to json")
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+
+	evt := NewEvent(
+		addEvt.Type(),
+		ctx.BlockHeight(),
+		msg.Tx,
+		stakeBytes,
+		EventSuccess,
+	)
+	keeper.SetCompletedEvent(ctx, evt)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,

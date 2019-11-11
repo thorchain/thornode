@@ -779,15 +779,16 @@ func (HandlerSuite) TestHandleMsgSetAdminConfig(c *C) {
 
 func (HandlerSuite) TestHandleMsgAdd(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	msgAdd := NewMsgAdd(common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), GetRandomTxHash(), w.notActiveNodeAccount.NodeAddress)
+	tx := GetRandomTx()
+	msgAdd := NewMsgAdd(tx, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgAdd(w.ctx, w.keeper, msgAdd)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
-	msgInvalidAdd := NewMsgAdd(common.Asset{}, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), GetRandomTxHash(), w.activeNodeAccount.NodeAddress)
+	msgInvalidAdd := NewMsgAdd(tx, common.Asset{}, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), w.activeNodeAccount.NodeAddress)
 	result1 := handleMsgAdd(w.ctx, w.keeper, msgInvalidAdd)
 	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest)
 
-	msgAdd = NewMsgAdd(common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), GetRandomTxHash(), w.activeNodeAccount.NodeAddress)
+	msgAdd = NewMsgAdd(tx, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), w.activeNodeAccount.NodeAddress)
 	result2 := handleMsgAdd(w.ctx, w.keeper, msgAdd)
 	c.Assert(result2.Code, Equals, sdk.CodeUnknownRequest)
 

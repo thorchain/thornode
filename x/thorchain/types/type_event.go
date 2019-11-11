@@ -118,6 +118,20 @@ func (e EventAdminConfig) Type() string {
 	return "admin_config"
 }
 
+type EventAdd struct {
+	Pool common.Asset `json:"pool"`
+}
+
+func NewEventAdd(pool common.Asset) EventAdd {
+	return EventAdd{
+		Pool: pool,
+	}
+}
+
+func (e EventAdd) Type() string {
+	return "add"
+}
+
 type EmptyRefundEvent struct {
 }
 

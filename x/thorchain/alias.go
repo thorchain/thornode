@@ -48,6 +48,7 @@ var (
 	NewTxInVoter                   = types.NewTxInVoter
 	NewTxOut                       = types.NewTxOut
 	NewEvent                       = types.NewEvent
+	NewEventAdd                    = types.NewEventAdd
 	NewEventAdminConfig            = types.NewEventAdminConfig
 	NewEventSwap                   = types.NewEventSwap
 	NewEventStake                  = types.NewEventStake
