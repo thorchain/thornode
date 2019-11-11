@@ -7,17 +7,15 @@ import (
 
 // MsgLeave when an operator don't want to be a validator anymore
 type MsgLeave struct {
-	RequestTxHash common.TxID    `json:"request_tx_hash"`
-	Sender        common.Address `json:"sender"`
-	Signer        sdk.AccAddress `json:"signer"`
+	Tx     common.Tx      `json:"tx"`
+	Signer sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgLeave create a new instance of MsgLeave
-func NewMsgLeave(requestTxHash common.TxID, sender common.Address, signer sdk.AccAddress) MsgLeave {
+func NewMsgLeave(tx common.Tx, signer sdk.AccAddress) MsgLeave {
 	return MsgLeave{
-		RequestTxHash: requestTxHash,
-		Sender:        sender,
-		Signer:        signer,
+		Tx:     tx,
+		Signer: signer,
 	}
 }
 
@@ -29,11 +27,11 @@ func (msg MsgLeave) Type() string { return "validator_leave" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgLeave) ValidateBasic() sdk.Error {
-	if msg.Sender.IsEmpty() {
-		return sdk.ErrUnknownRequest("sender cannot be empty")
+	if msg.Tx.FromAddress.IsEmpty() {
+		return sdk.ErrUnknownRequest("from address cannot be empty")
 	}
-	if msg.RequestTxHash.IsEmpty() {
-		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
+	if msg.Tx.ID.IsEmpty() {
+		return sdk.ErrUnknownRequest("tx id hash cannot be empty")
 	}
 	if msg.Signer.Empty() {
 		return sdk.ErrUnknownRequest("signer cannot be empty ")

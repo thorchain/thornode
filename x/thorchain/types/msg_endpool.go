@@ -6,19 +6,17 @@ import (
 )
 
 type MsgEndPool struct {
-	Asset         common.Asset   `json:"asset"`
-	Requester     common.Address `json:"requester"`
-	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on chain
-	Signer        sdk.AccAddress `json:"signer"`
+	Asset  common.Asset   `json:"asset"`
+	Tx     common.Tx      `json:"tx"`
+	Signer sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgEndPool create a new instance MsgEndPool
-func NewMsgEndPool(asset common.Asset, request common.Address, requestTxHash common.TxID, signer sdk.AccAddress) MsgEndPool {
+func NewMsgEndPool(asset common.Asset, tx common.Tx, signer sdk.AccAddress) MsgEndPool {
 	return MsgEndPool{
-		Asset:         asset,
-		Requester:     request,
-		RequestTxHash: requestTxHash,
-		Signer:        signer,
+		Asset:  asset,
+		Tx:     tx,
+		Signer: signer,
 	}
 }
 
@@ -36,11 +34,11 @@ func (msg MsgEndPool) ValidateBasic() sdk.Error {
 	if msg.Asset.IsRune() {
 		return sdk.ErrUnknownRequest("invalid pool asset")
 	}
-	if msg.RequestTxHash.IsEmpty() {
-		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
+	if msg.Tx.ID.IsEmpty() {
+		return sdk.ErrUnknownRequest("Tx ID cannot be empty")
 	}
-	if msg.Requester.IsEmpty() {
-		return sdk.ErrUnknownRequest("invalid requester")
+	if msg.Tx.FromAddress.IsEmpty() {
+		return sdk.ErrUnknownRequest("From address cannot be empty")
 	}
 	return nil
 }
