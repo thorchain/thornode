@@ -2,9 +2,7 @@
 set -ex
 
 echo '-----'
-echo $(pwd)
-echo '******'
-echo $(dirname "$0")
+echo $(ls -la)
 echo '-----'
 
 source $(dirname "$0")/core.sh
