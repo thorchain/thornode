@@ -28,8 +28,8 @@ run_services() {
   export NODES=1
   export SEED="$(hostname)"
 
-  unset $CHAIN_HOST
-  unset $RPC_HOST
+  unset CHAIN_HOST
+  unset RPC_HOST
 
   $(dirname "$0")/genesis.sh
   run_thord
