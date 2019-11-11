@@ -1,6 +1,12 @@
 #!/bin/sh
 set -ex
 
+echo '-----'
+echo $(pwd)
+echo '******'
+echo $(dirname "$0")
+echo '-----'
+
 source $(dirname "$0")/core.sh
 
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
