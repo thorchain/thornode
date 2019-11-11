@@ -70,6 +70,7 @@ func (mps MockPoolStorage) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr
 }
 
 func (mps MockPoolStorage) AddIncompleteEvents(ctx sdk.Context, event types.Event) {}
+func (mps MockPoolStorage) SetCompletedEvent(ctx sdk.Context, event types.Event)   {}
 
 func (mps MockPoolStorage) GetLowestActiveVersion(ctx sdk.Context) int64 {
 	return 0
