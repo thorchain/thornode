@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"encoding/json"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -106,6 +107,19 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 	// if we have no rune, set pool back to bootstrap status
 	if pool.BalanceRune.IsZero() {
 		pool.Status = PoolBootstrap
+	}
+
+	// Create a pool event if we have no rune or assets
+	if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
+		poolEvt := NewEventPool(pool.Asset, pool.Status)
+		bytes, _ := json.Marshal(poolEvt)
+		evt := Event{
+			Height: ctx.BlockHeight(),
+			Event:  bytes,
+			Status: EventSuccess,
+		}
+
+		keeper.SetCompletedEvent(ctx, evt)
 	}
 
 	// update staker pool

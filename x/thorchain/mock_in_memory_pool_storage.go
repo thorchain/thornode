@@ -87,3 +87,4 @@ func (p *MockInMemoryPoolStorage) GetAdminConfigStakerAmtInterval(ctx sdk.Contex
 }
 
 func (p *MockInMemoryPoolStorage) AddIncompleteEvents(ctx sdk.Context, event Event) {}
+func (p *MockInMemoryPoolStorage) SetCompletedEvent(ctx sdk.Context, event Event)   {}
