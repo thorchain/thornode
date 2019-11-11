@@ -60,22 +60,18 @@ build-thornode:
 
 smoke-test:thornode:
   stage: smoke-test
-  image: golang:alpine
-  services:
-    - docker:dind
+  image: golang:1.13
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
+    NET: testnet
   before_script:
-    - apk update
-    - apk add py-pip python-dev libffi-dev openssl-dev gcc libc-dev make
-    - pip install docker-compose
     - export GOBIN=$GOPATH/bin
   except:
     - schedules
   environment:
     name: develop
-  script: ./build/scripts/smoke.sh testnet
+  script: ./build/scripts/smoke.sh $NET $FAUCET_KEY
   when: manual
 
 deploy:develop:
