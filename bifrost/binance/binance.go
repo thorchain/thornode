@@ -162,22 +162,16 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	if nil != err {
 		return nil, nil, errors.Wrapf(err, "fail to parse seq no %s", tai.SeqNo)
 	}
-	for _, coin := range tai.Coins {
-		amount := coin.Amount
-		asset := coin.Asset
-		if coin.Asset.IsRune() {
-			asset = common.RuneAsset()
-		}
-		payload = append(payload, msg.Transfer{
-			ToAddr: toAddr,
-			Coins: types.Coins{
-				types.Coin{
-					Denom:  asset.Symbol.String(),
-					Amount: int64(amount.Uint64()),
-				},
+
+	payload = append(payload, msg.Transfer{
+		ToAddr: toAddr,
+		Coins: types.Coins{
+			types.Coin{
+				Denom:  tai.Coin.Asset.Symbol.String(),
+				Amount: int64(tai.Coin.Amount.Uint64()),
 			},
-		})
-	}
+		},
+	})
 
 	if len(payload) == 0 {
 		return nil, nil, nil
