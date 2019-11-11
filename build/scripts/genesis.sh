@@ -1,11 +1,7 @@
 #!/bin/sh
 set -ex
 
-echo '-----'
-echo $(ls -la)
-echo '-----'
-
-source $(dirname "$0")/core.sh
+. $(dirname "$0")/core.sh
 
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
