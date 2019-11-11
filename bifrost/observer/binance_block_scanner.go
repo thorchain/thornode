@@ -250,16 +250,18 @@ func (b *BinanceBlockScanner) isAddrWithMemo(addr, memo, targetMemo string) bool
 	return false
 }
 
-func (b *BinanceBlockScanner) getCoinsForTxIn(coins types.Coins) (common.Coins, error) {
-	cc := make(common.Coins, len(coins))
-	for i, c := range coins {
-		asset, err := common.NewAsset(fmt.Sprintf("BNB.%s", c.Denom))
-		if nil != err {
-			b.errCounter.WithLabelValues("fail_create_ticker", c.Denom).Inc()
-			return nil, errors.Wrapf(err, "fail to create asset, %s is not valid", c.Denom)
+func (b *BinanceBlockScanner) getCoinsForTxIn(outputs []bmsg.Output) (common.Coins, error) {
+	cc := common.Coins{}
+	for _, output := range outputs {
+		for _, c := range output.Coins {
+			asset, err := common.NewAsset(fmt.Sprintf("BNB.%s", c.Denom))
+			if nil != err {
+				b.errCounter.WithLabelValues("fail_create_ticker", c.Denom).Inc()
+				return nil, errors.Wrapf(err, "fail to create asset, %s is not valid", c.Denom)
+			}
+			amt := sdk.NewUint(uint64(c.Amount))
+			cc = append(cc, common.NewCoin(asset, amt))
 		}
-		amt := sdk.NewUint(uint64(c.Amount))
-		cc[i] = common.NewCoin(asset, amt)
 	}
 	return cc, nil
 }
@@ -296,11 +298,13 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 		switch sendMsg := msg.(type) {
 		case bmsg.SendMsg:
 			txInItem.Memo = stdTx.Memo
+			// we take the first Input as sender, first Output as receiver
+			// so if we send to multiple different receiver within one tx, this won't be able to process it.
 			sender := sendMsg.Inputs[0]
 			receiver := sendMsg.Outputs[0]
 			txInItem.Sender = sender.Address.String()
 			txInItem.To = receiver.Address.String()
-			txInItem.Coins, err = b.getCoinsForTxIn(receiver.Coins)
+			txInItem.Coins, err = b.getCoinsForTxIn(sendMsg.Outputs)
 			if nil != err {
 				return nil, errors.Wrap(err, "fail to convert coins")
 			}
@@ -320,10 +324,10 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
 
 				// **IMPORTANT** If this fails, we won't monitor the address and could lose funds!
-				//var pk common.PubKey
-				//chainNetwork := common.GetCurrentChainNetwork()
-				//pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
-				//b.addrVal.AddPubKey(pk)
+				// var pk common.PubKey
+				// chainNetwork := common.GetCurrentChainNetwork()
+				// pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
+				// b.addrVal.AddPubKey(pk)
 				return &txInItem, nil
 			}
 
@@ -333,10 +337,10 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
 
 				// **IMPORTANT** If this fails, we may slash a yggdrasil pool inappropriately
-				//var pk common.PubKey
-				//chainNetwork := common.GetCurrentChainNetwork()
-				//pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
-				//b.addrVal.RemovePubKey(pk)
+				// var pk common.PubKey
+				// chainNetwork := common.GetCurrentChainNetwork()
+				// pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
+				// b.addrVal.RemovePubKey(pk)
 
 				return &txInItem, nil
 			}
