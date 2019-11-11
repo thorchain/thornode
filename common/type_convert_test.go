@@ -43,3 +43,8 @@ func (TypeConvertTestSuite) TestUintToAmount(c *C) {
 	u = sdk.NewUint(123456789)
 	c.Check(UintToAmount(u).Float64(), Equals, 123456789.0)
 }
+
+func (TypeConvertTestSuite) TestFloatToDec(c *C) {
+	dec := FloatToDec(34.275)
+	c.Check(dec.String(), Equals, "34.275000000000000000")
+}

@@ -823,7 +823,7 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.TxI
 		for _, evt := range evts {
 			if !evt.Empty() {
 				evt.ID = lastEventID
-				evt.OutHash = out
+				evt.OutTx.ID = out // TODO: have complete tx out info
 				k.SetCompletedEvent(ctx, evt)
 			}
 		}

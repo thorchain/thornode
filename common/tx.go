@@ -58,3 +58,23 @@ func NewTx(txID TxID, from Address, to Address, coins Coins, memo string) Tx {
 func (tx Tx) IsEmpty() bool {
 	return tx.ID.IsEmpty()
 }
+
+func (tx Tx) IsValid() error {
+	if tx.ID.IsEmpty() {
+		return fmt.Errorf("Tx ID cannot be empty")
+	}
+	if tx.FromAddress.IsEmpty() {
+		return fmt.Errorf("From address cannot be empty")
+	}
+	if tx.ToAddress.IsEmpty() {
+		return fmt.Errorf("To address cannot be empty")
+	}
+	if len(tx.Coins) == 0 {
+		return fmt.Errorf("Must have at least 1 coin")
+	}
+	if err := tx.Coins.IsValid(); err != nil {
+		return err
+	}
+
+	return nil
+}
