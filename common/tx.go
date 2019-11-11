@@ -38,11 +38,11 @@ func (tx TxID) String() string {
 }
 
 type Tx struct {
-	ID          TxID
-	FromAddress Address
-	ToAddress   Address
-	Coins       Coins
-	Memo        string
+	ID          TxID    `json:"id"`
+	FromAddress Address `json:"from_address"`
+	ToAddress   Address `json:"to_address"`
+	Coins       Coins   `json:"coins"`
+	Memo        string  `json:"memo"`
 }
 
 func NewTx(txID TxID, from Address, to Address, coins Coins, memo string) Tx {
