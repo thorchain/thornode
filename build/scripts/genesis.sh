@@ -32,18 +32,18 @@ fi
 echo "$NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $ADDRESS" > /tmp/shared/node_$NODE_ADDRESS.json
 
 # write rotate block height as config file
-if [[ "$ROTATE_BLOCK_HEIGHT" != "0" ]]; then
+if [ "$ROTATE_BLOCK_HEIGHT" != "0" ]; then
     echo "$KEY $VALUE $NODE_ADDRESS" > /tmp/shared/config_$NODE_ADDRESS.json
 fi
 
 # wait until we have the correct number of nodes in our directory before continuing
-while [[ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODES" ]]; do
+while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODES" ]; do
     sleep 1
 done
 
 POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
 
-if [[ "$SEED" == "$(hostname)" ]]; then
+if [ "$SEED" == "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
         init_chain $SIGNER_NAME $SIGNER_PASSWD
 
@@ -54,11 +54,9 @@ if [[ "$SEED" == "$(hostname)" ]]; then
 
         add_pool_address $PUBKEY "0"
 
-        if [[ -f /tmp/shared/config_*.json ]]; then
-            for f in /tmp/shared/config_*.json; do 
-                add_admin_config $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}')
-            done
-        fi
+        for f in /tmp/shared/config_*.json; do
+          add_admin_config $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}')
+        done
 
         cat ~/.thord/config/genesis.json
         thord validate-genesis
@@ -66,7 +64,7 @@ if [[ "$SEED" == "$(hostname)" ]]; then
 fi
 
 # setup peer connection
-if [[ "$SEED" != "$(hostname)" ]]; then
+if [ "$SEED" != "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
         echo "I AM NOT THE SEED"
         
