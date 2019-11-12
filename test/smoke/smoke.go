@@ -220,18 +220,19 @@ func (s *Smoke) ActorAmount(amount int64, output *types.Balance, actor string) {
 func (s *Smoke) StatechainState(tx int) {
 	statechain := s.GetStatechain()
 
+	var amount int64
 	for _, pools := range statechain {
-		amount := pools.BalanceAsset
+		amount += pools.BalanceRune
 
 		switch pools.Asset.Symbol {
-		case "RUNE-A1F":
-			s.Results[tx].Rune.Pool = pools.BalanceRune
 		case "LOK-3C0":
-			s.Results[tx].Lok.Pool = amount
+			s.Results[tx].Lok.Pool = pools.BalanceAsset
 		case "BNB":
-			s.Results[tx].Bnb.Pool = amount
+			s.Results[tx].Bnb.Pool = pools.BalanceAsset
 		}
 	}
+
+	s.Results[tx].Rune.Pool = amount
 }
 
 // GetStatechain : Get the Statehcain pools.

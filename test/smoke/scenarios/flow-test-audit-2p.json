@@ -25,7 +25,7 @@
         }
       ],
       "memo": "SEED",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "SEED ASSETS",
@@ -66,7 +66,7 @@
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 50000000000
+              "amount": 40000000000
             },
             {
               "symbol": "BNB",
@@ -82,6 +82,10 @@
               "amount": 50000000000
             },
             {
+              "symbol": "LOK-3C0",
+              "amount": 10000000000
+            },
+            {
               "symbol": "BNB",
               "amount": 66666667
             }
@@ -89,7 +93,7 @@
         }
       ],
       "memo": "SEED",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "ADD GAS TO POOL",
@@ -106,7 +110,7 @@
         }
       ],
       "memo": "GAS",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "STAKE BNB",
@@ -127,7 +131,24 @@
         }
       ],
       "memo": "STAKE:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
+    },
+    {
+      "description": "ZOMBIE",
+      "from": "staker_2",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "LOK-3C0",
+              "amount": 10000000000
+            }
+          ]
+        }
+      ],
+      "memo": "",
+      "check_delay": 30
     },
     {
       "description": "STAKE LOK",
@@ -142,13 +163,13 @@
             },
             {
               "symbol": "LOK-3C0",
-              "amount": 50000000000
+              "amount": 40000000000
             }
           ]
         }
       ],
       "memo": "STAKE:BNB.LOK-3C0",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "STAKE-EMPTY MEMO",
@@ -270,7 +291,7 @@
         }
       ],
       "memo": "STAKE:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "ASSYM-RUNE",
@@ -287,7 +308,7 @@
         }
       ],
       "memo": "STAKE:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "STAKE BNB",
@@ -308,7 +329,7 @@
         }
       ],
       "memo": "STAKE:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "ADD BNB",
@@ -329,7 +350,7 @@
         }
       ],
       "memo": "ADD:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "SWAP-EMPTY MEMO",
@@ -380,7 +401,7 @@
         }
       ],
       "memo": "SWAP:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "SWAP-WRONG ASSET",
@@ -452,7 +473,7 @@
         }
       ],
       "memo": "SWAP:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "EXCEED LIM BY 3%",
@@ -468,7 +489,7 @@
           ]
         }
       ],
-      "slip_limit": 8498474,
+      "slip_limit": 8494995,
       "memo": "SWAP:BNB.BNB:",
       "check_delay": 25
     },
@@ -487,7 +508,7 @@
         }
       ],
       "memo": "SWAP:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "SELL BNB",
@@ -504,7 +525,7 @@
         }
       ],
       "memo": "SWAP:BNB.RUNE-A1F",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "SWAP&SENDWithTGT",
@@ -521,7 +542,7 @@
         }
       ],
       "send_to": "staker_1",
-      "slip_limit": 8621582,
+      "slip_limit": 8616374,
       "memo": "SWAP:BNB.BNB",
       "check_delay": 25
     },
@@ -540,9 +561,9 @@
         }
       ],
       "send_to": "staker_1",
-      "slip_limit": 8114570,
+      "slip_limit": 8108473,
       "memo": "SWAP:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "SWAP&SEND (SELL BNB)",
@@ -560,7 +581,7 @@
       ],
       "send_to": "staker_1",
       "memo": "SWAP:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "SELL LOKI",
@@ -577,7 +598,7 @@
         }
       ],
       "memo": "SWAP:BNB.RUNE-A1F",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "BUY LOKI",
@@ -594,7 +615,7 @@
         }
       ],
       "memo": "SWAP:BNB.LOK-3C0",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "SELL LOKI BUY BNB",
@@ -611,7 +632,7 @@
         }
       ],
       "memo": "SWAP:BNB.BNB",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "SELL BNB BUY LOK",
@@ -628,7 +649,7 @@
         }
       ],
       "memo": "SWAP:BNB.LOK-3C0",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "WITHDRAW 50%",

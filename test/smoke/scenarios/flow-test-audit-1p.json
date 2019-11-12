@@ -20,7 +20,8 @@
           ]
         }
       ],
-      "memo": "SEED"
+      "memo": "SEED",
+      "check_delay": 30
     },
     {
       "description": "SEED ASSETS",
@@ -40,11 +41,11 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 50780000
+              "amount": 37500
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 50000000000
+              "amount": 10000000000
             }
           ]
         },
@@ -53,7 +54,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 50097501
+              "amount": 50135002
             },
             {
               "symbol": "RUNE-A1F",
@@ -66,7 +67,7 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 50937500
+              "amount": 50135002
             },
             {
               "symbol": "RUNE-A1F",
@@ -75,7 +76,8 @@
           ]
         }
       ],
-      "memo": "SEED"
+      "memo": "SEED",
+      "check_delay": 30
     },
     {
       "description": "ADD GAS TO POOL",
@@ -92,7 +94,7 @@
         }
       ],
       "memo": "GAS",
-      "check_delay": 10
+      "check_delay": 30
     },
     {
       "description": "STAKE BNB",
@@ -113,41 +115,7 @@
         }
       ],
       "memo": "STAKE:BNB",
-      "check_delay": 25
-    },
-    {
-      "description": "ASSYM-BNB",
-      "from": "staker_2",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "BNB",
-              "amount": 10000000
-            }
-          ]
-        }
-      ],
-      "memo": "STAKE:BNB.BNB",
-      "check_delay": 25
-    },
-    {
-      "description": "ASSYM-RUNE",
-      "from": "staker_2",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 10000000000
-            }
-          ]
-        }
-      ],
-      "memo": "STAKE:BNB.BNB",
-      "check_delay": 25
+      "check_delay": 30
     },
     {
       "description": "STAKE BNB",
@@ -158,72 +126,17 @@
           "coins": [
             {
               "symbol": "BNB",
-              "amount": 30000000
+              "amount": 50000000
             },
             {
               "symbol": "RUNE-A1F",
-              "amount": 30000000000
+              "amount": 50000000000
             }
           ]
         }
       ],
-      "memo": "STAKE:BNB.BNB",
-      "check_delay": 25
-    },
-    {
-      "description": "ADD BNB",
-      "from": "staker_2",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "BNB",
-              "amount": 10000000
-            },
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 10000000000
-            }
-          ]
-        }
-      ],
-      "memo": "ADD:BNB.BNB",
-      "check_delay": 25
-    },
-    {
-      "description": "SWAP-EMPTY ASSET",
-      "from": "user",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "BNB",
-              "amount": 1
-            }
-          ]
-        }
-      ],
-      "memo": "SWAP:BNB.BNB",
-      "check_delay": 25
-    },
-    {
-      "description": "TOO SMALL",
-      "from": "user",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 1
-            }
-          ]
-        }
-      ],
-      "memo": "SWAP:BNB.BNB",
-      "check_delay": 25
+      "memo": "STAKE:BNB",
+      "check_delay": 30
     },
     {
       "description": "SWAP",
@@ -240,59 +153,7 @@
         }
       ],
       "memo": "SWAP:BNB.BNB",
-      "check_delay": 25
-    },
-    {
-      "description": "SWAP&SEND",
-      "from": "user",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "RUNE-A1F",
-              "amount": 10000000000
-            }
-          ]
-        }
-      ],
-      "memo": "SWAP:BNB.BNB",
-      "send_to": "staker_1",
-      "check_delay": 25
-    },
-    {
-      "description": "WITHDRAW-EMPTY MEMO",
-      "from": "staker_1",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "BNB",
-              "amount": 1
-            }
-          ]
-        }
-      ],
-      "memo": "",
-      "check_delay": 25
-    },
-    {
-      "description": "WITHDRAW-BAD MEMO",
-      "from": "staker_1",
-      "to": [
-        {
-          "actor": "pool",
-          "coins": [
-            {
-              "symbol": "BNB",
-              "amount": 1
-            }
-          ]
-        }
-      ],
-      "memo": "ASDJ?",
-      "check_delay": 25
+      "check_delay": 30
     },
     {
       "description": "WITHDRAW 50%",
@@ -309,7 +170,7 @@
         }
       ],
       "memo": "WITHDRAW:BNB.BNB:5000",
-      "check_delay": 25
+      "check_delay": 30
     },
     {
       "description": "WITHDRAW 100%",
@@ -326,10 +187,10 @@
         }
       ],
       "memo": "WITHDRAW:BNB.BNB:10000",
-      "check_delay": 25
+      "check_delay": 30
     },
     {
-      "description": "WITHDRAW ALL",
+      "description": "WITHDRAW 50%",
       "from": "staker_2",
       "to": [
         {
@@ -342,8 +203,25 @@
           ]
         }
       ],
-      "memo": "WITHDRAW:BNB.BNB",
-      "check_delay": 25
+      "memo": "WITHDRAW:BNB.BNB:5000",
+      "check_delay": 30
+    },
+    {
+      "description": "WITHDRAW 100%",
+      "from": "staker_2",
+      "to": [
+        {
+          "actor": "pool",
+          "coins": [
+            {
+              "symbol": "BNB",
+              "amount": 1
+            }
+          ]
+        }
+      ],
+      "memo": "WITHDRAW:BNB.BNB:10000",
+      "check_delay": 30
     }
   ]
 }

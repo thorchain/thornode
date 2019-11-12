@@ -38,7 +38,7 @@ init_chain () {
         # Only create if it doesn't exist!
         EXISTS=""
         for name in $(thorcli keys list --output json | jq -r '.[].name'); do
-          if [[ "$name" == "$user" ]]; then
+          if [ "$name" = "$user" ]; then
             EXISTS="true"
           fi
         done
@@ -84,6 +84,8 @@ gen_bnb_address () {
         echo $PUBKEY > ~/.signer/pubkey.txt
     fi
 }
+
+
 
 fetch_genesis () {
     until curl -s "$1:26657" > /dev/null; do

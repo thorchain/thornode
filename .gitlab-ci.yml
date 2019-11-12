@@ -11,9 +11,9 @@ before_script:
 stages:
   - test
   - build
+  - smoke-test
   - push
   - deploy
-  - smoke-test
   - seed
 
 unit_tests:
@@ -58,6 +58,23 @@ build-thornode:
     - make docker-gitlab-build
     - make docker-gitlab-push
 
+smoke-test:thornode:
+  stage: smoke-test
+  image: golang:1.13
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    NODES: 1
+  before_script:
+    - apt-get update
+    - apt-get install -y jq
+    - export GOBIN=$GOPATH/bin
+  except:
+    - schedules
+  environment:
+    name: develop
+  script: make smoke-test
+
 deploy:develop:
   stage: deploy
   image: docker:stable
@@ -78,25 +95,6 @@ deploy:develop:
   script: make aws-ecs-deploy
   only:
     - master
-
-smoke-test:develop:
-  stage: smoke-test
-  image: golang:1.13
-  services:
-    - docker:dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-  before_script:
-    - export GOBIN=$GOPATH/bin
-  except:
-    - schedules
-  environment:
-    name: develop
-  script: make smoke-test
-  only:
-    - master
-  when: manual
 
 seed:develop:
   stage: seed
@@ -134,23 +132,6 @@ deploy:staging:
   script: make aws-ecs-deploy
   only:
     - schedules
-
-smoke-test:staging:
-  stage: smoke-test
-  image: golang:1.13
-  services:
-    - docker:dind
-  variables:
-    DOCKER_HOST: tcp://docker:2375
-    DOCKER_DRIVER: overlay2
-  before_script:
-    - export GOBIN=$GOPATH/bin
-  environment:
-    name: staging
-  script: make smoke-test
-  only:
-    - schedules
-  when: manual
 
 seed:staging:
   stage: seed
