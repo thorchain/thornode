@@ -193,8 +193,10 @@ func (s *Smoke) BinanceState(tx int) {
 // GetBinance : Get Binance account balance.
 func (s *Smoke) GetBinance(client sdk.DexClient, address ctypes.AccAddress) []ctypes.TokenBalance {
 	acct, err := client.GetAccount(address.String())
+
+	// The account does not exist on Binance yet.
 	if err != nil {
-		log.Fatal(err)
+		return make([]ctypes.TokenBalance, 0)
 	}
 
 	return acct.Balances
