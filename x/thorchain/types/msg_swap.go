@@ -7,27 +7,21 @@ import (
 
 // MsgSwap defines a MsgSwap message
 type MsgSwap struct {
-	RequestTxHash common.TxID    `json:"request_tx_hash"` // Request transaction hash on chain
-	SourceAsset   common.Asset   `json:"source_asset"`    // source asset
-	TargetAsset   common.Asset   `json:"target_asset"`    // target asset
-	Requester     common.Address `json:"requester"`       // request address on chain
-	Destination   common.Address `json:"destination"`     // destination , used for swap and send , the destination address we send it to
-	Amount        sdk.Uint       `json:"amount"`          // amount of asset to swap
-	TradeTarget   sdk.Uint       `json:"trade_target"`
-	Signer        sdk.AccAddress `json:"signer"`
+	Tx          common.Tx      `json:"tx"`           // request tx
+	TargetAsset common.Asset   `json:"target_asset"` // target asset
+	Destination common.Address `json:"destination"`  // destination , used for swap and send , the destination address we send it to
+	TradeTarget sdk.Uint       `json:"trade_target"`
+	Signer      sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSwap is a constructor function for MsgSwap
-func NewMsgSwap(requestTxHash common.TxID, source, target common.Asset, amount sdk.Uint, requester, destination common.Address, tradeTarget sdk.Uint, signer sdk.AccAddress) MsgSwap {
+func NewMsgSwap(tx common.Tx, target common.Asset, destination common.Address, tradeTarget sdk.Uint, signer sdk.AccAddress) MsgSwap {
 	return MsgSwap{
-		RequestTxHash: requestTxHash,
-		SourceAsset:   source,
-		TargetAsset:   target,
-		Amount:        amount,
-		Requester:     requester,
-		Destination:   destination,
-		TradeTarget:   tradeTarget,
-		Signer:        signer,
+		Tx:          tx,
+		TargetAsset: target,
+		Destination: destination,
+		TradeTarget: tradeTarget,
+		Signer:      signer,
 	}
 }
 
@@ -42,23 +36,16 @@ func (msg MsgSwap) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if msg.RequestTxHash.IsEmpty() {
-		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
-	}
-	if msg.SourceAsset.IsEmpty() {
-		return sdk.ErrUnknownRequest("Swap Source Asset cannot be empty")
+	if err := msg.Tx.IsValid(); err != nil {
+		return sdk.ErrUnknownRequest(err.Error())
 	}
 	if msg.TargetAsset.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Target cannot be empty")
 	}
-	if msg.SourceAsset.Equals(msg.TargetAsset) {
-		return sdk.ErrUnknownRequest("Swap Source and Target cannot be the same.")
-	}
-	if msg.Amount.IsZero() {
-		return sdk.ErrUnknownRequest("Swap Amount cannot be zero")
-	}
-	if msg.Requester.IsEmpty() {
-		return sdk.ErrUnknownRequest("Swap Requester cannot be empty")
+	for _, coin := range msg.Tx.Coins {
+		if coin.Asset.Equals(msg.TargetAsset) {
+			return sdk.ErrUnknownRequest("Swap Source and Target cannot be the same.")
+		}
 	}
 	if msg.Destination.IsEmpty() {
 		return sdk.ErrUnknownRequest("Swap Destination cannot be empty")

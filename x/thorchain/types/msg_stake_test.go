@@ -17,7 +17,16 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 	assetAddress := GetRandomBNBAddress()
 	txID := GetRandomTxHash()
 	c.Check(txID.IsEmpty(), Equals, false)
-	m := NewMsgSetStakeData(common.BNBAsset, sdk.NewUint(100000000), sdk.NewUint(100000000), bnbAddress, assetAddress, txID, addr)
+	tx := common.NewTx(
+		txID,
+		bnbAddress,
+		GetRandomBNBAddress(),
+		common.Coins{
+			common.NewCoin(common.BTCAsset, sdk.NewUint(100000000)),
+		},
+		"",
+	)
+	m := NewMsgSetStakeData(tx, common.BNBAsset, sdk.NewUint(100000000), sdk.NewUint(100000000), bnbAddress, assetAddress, addr)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_stakedata")
 
@@ -68,7 +77,16 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 		},
 	}
 	for i, item := range inputs {
-		m := NewMsgSetStakeData(item.asset, item.r, item.amt, item.runeAddr, item.assetAddr, item.txHash, item.signer)
+		tx := common.NewTx(
+			item.txHash,
+			item.runeAddr,
+			GetRandomBNBAddress(),
+			common.Coins{
+				common.NewCoin(item.asset, item.r),
+			},
+			"",
+		)
+		m := NewMsgSetStakeData(tx, item.asset, item.r, item.amt, item.runeAddr, item.assetAddr, item.signer)
 		c.Assert(m.ValidateBasic(), NotNil, Commentf("%d) %s\n", i, m))
 	}
 }

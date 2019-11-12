@@ -23,14 +23,23 @@ func (PoolTestSuite) TestPool(c *C) {
 	c.Check(p.RuneValueInAsset(sdk.NewUint(50*common.One)).Equal(sdk.NewUint(25*common.One)), Equals, true)
 	c.Log(p.String())
 
-	addr := GetRandomBech32Addr()
+	signer := GetRandomBech32Addr()
 	bnbAddress := GetRandomBNBAddress()
 	txID := GetRandomTxHash()
 
-	m := NewMsgSwap(txID, common.RuneAsset(), common.BNBAsset, sdk.NewUint(1), bnbAddress, bnbAddress, sdk.NewUint(2), addr)
+	tx := common.NewTx(
+		txID,
+		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
+		common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
+		},
+		"",
+	)
+	m := NewMsgSwap(tx, common.BNBAsset, bnbAddress, sdk.NewUint(2), signer)
 
 	c.Check(p.EnsureValidPoolStatus(m), IsNil)
-	msgNoop := NewMsgNoOp(addr)
+	msgNoop := NewMsgNoOp(signer)
 	c.Check(p.EnsureValidPoolStatus(msgNoop), IsNil)
 	p.Status = Enabled
 	c.Check(p.EnsureValidPoolStatus(m), IsNil)

@@ -9,21 +9,15 @@ import (
 // MsgOutboundTx defines a MsgOutboundTx message
 type MsgOutboundTx struct {
 	Height uint64         `json:"height"`
-	TxID   common.TxID    `json:"tx_id"`
-	Sender common.Address `json:"sender"`
+	Tx     common.Tx      `json:"tx"`
 	Signer sdk.AccAddress `json:"signer"`
-	Chain  common.Chain   `json:"chain"`
-	Coins  common.Coins   `json:"coins"`
 }
 
 // NewMsgOutboundTx is a constructor function for MsgOutboundTx
-func NewMsgOutboundTx(txID common.TxID, height uint64, sender common.Address, chain common.Chain, coins common.Coins, signer sdk.AccAddress) MsgOutboundTx {
+func NewMsgOutboundTx(tx common.Tx, height uint64, signer sdk.AccAddress) MsgOutboundTx {
 	return MsgOutboundTx{
-		Sender: sender,
-		TxID:   txID,
+		Tx:     tx,
 		Height: height,
-		Chain:  chain,
-		Coins:  coins,
 		Signer: signer,
 	}
 }
@@ -42,14 +36,8 @@ func (msg MsgOutboundTx) ValidateBasic() sdk.Error {
 	if msg.Height == 0 {
 		return sdk.ErrUnknownRequest("Height must be above zero")
 	}
-	if msg.Sender.IsEmpty() {
-		return sdk.ErrUnknownRequest("Sender cannot be empty")
-	}
-	if msg.TxID.IsEmpty() {
-		return sdk.ErrUnknownRequest("TxID cannot be empty")
-	}
-	if msg.Chain.IsEmpty() {
-		return sdk.ErrUnknownRequest("chain cannot be empty")
+	if err := msg.Tx.IsValid(); err != nil {
+		return sdk.ErrUnknownRequest(err.Error())
 	}
 	return nil
 }
