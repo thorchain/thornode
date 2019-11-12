@@ -957,7 +957,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
-	voter := keeper.GetTxInVoter(ctx, msg.Tx.ID)
+	voter := keeper.GetTxInVoter(ctx, msg.InTxID)
 	voter.SetDone(msg.Tx.ID)
 	keeper.SetTxInVoter(ctx, voter)
 
@@ -970,6 +970,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		ctx.Logger().Error("unable to get txOut record", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
+
 	// Save TxOut back with the TxID only when the TxOut on the block height is not empty
 	if !txOut.IsEmpty() {
 		for i, tx := range txOut.TxArray {
