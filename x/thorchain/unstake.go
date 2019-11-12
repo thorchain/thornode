@@ -12,7 +12,7 @@ func validateUnstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) err
 	if msg.RuneAddress.IsEmpty() {
 		return errors.New("empty rune address")
 	}
-	if msg.RequestTxHash.IsEmpty() {
+	if msg.Tx.ID.IsEmpty() {
 		return errors.New("request tx hash is empty")
 	}
 	if msg.Asset.IsEmpty() {

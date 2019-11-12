@@ -14,21 +14,17 @@ var _ = Suite(&EventSuite{})
 
 func (s EventSuite) TestSwapEvent(c *C) {
 	evt := NewEventSwap(
-		common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
-		common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
+		common.BNBAsset,
 		sdk.NewUint(5),
 		sdk.NewUint(5),
-		sdk.NewUint(5),
-		sdk.NewUint(5),
-		sdk.NewUint(5),
+		sdk.NewDec(5),
 	)
 	c.Check(evt.Type(), Equals, "swap")
 }
 
 func (s EventSuite) TestStakeEvent(c *C) {
 	evt := NewEventStake(
-		sdk.NewUint(6),
-		sdk.NewUint(7),
+		common.BNBAsset,
 		sdk.NewUint(5),
 	)
 	c.Check(evt.Type(), Equals, "stake")
@@ -36,9 +32,10 @@ func (s EventSuite) TestStakeEvent(c *C) {
 
 func (s EventSuite) TestUnstakeEvent(c *C) {
 	evt := NewEventUnstake(
+		common.BNBAsset,
 		sdk.NewUint(6),
-		sdk.NewUint(7),
-		sdk.NewUint(5),
+		5000,
+		sdk.NewDec(0),
 	)
 	c.Check(evt.Type(), Equals, "unstake")
 }
@@ -47,19 +44,26 @@ func (s EventSuite) TestEvent(c *C) {
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
 	swap := NewEventSwap(
-		common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
-		common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
-		sdk.NewUint(6),
+		common.BNBAsset,
 		sdk.NewUint(5),
 		sdk.NewUint(5),
-		sdk.NewUint(4),
-		sdk.NewUint(3),
+		sdk.NewDec(5),
 	)
+
 	swapBytes, _ := json.Marshal(swap)
 	evt := NewEvent(
 		swap.Type(),
-		txID,
-		common.BNBAsset,
+		12,
+		common.NewTx(
+			txID,
+			GetRandomBNBAddress(),
+			GetRandomBNBAddress(),
+			common.Coins{
+				common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
+				common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
+			},
+			"SWAP:BNB.BNB",
+		),
 		swapBytes,
 		Success,
 	)
@@ -69,15 +73,23 @@ func (s EventSuite) TestEvent(c *C) {
 	txID, err = common.NewTxID("B1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)
 	stake := NewEventStake(
-		sdk.NewUint(6),
-		sdk.NewUint(7),
+		common.BNBAsset,
 		sdk.NewUint(5),
 	)
 	stakeBytes, _ := json.Marshal(stake)
 	evt2 := NewEvent(
 		stake.Type(),
-		txID,
-		common.BNBAsset,
+		12,
+		common.NewTx(
+			txID,
+			GetRandomBNBAddress(),
+			GetRandomBNBAddress(),
+			common.Coins{
+				common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
+				common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
+			},
+			"SWAP:BNB.BNB",
+		),
 		stakeBytes,
 		Success,
 	)

@@ -17,7 +17,17 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 	txID := GetRandomTxHash()
 	c.Check(txID.IsEmpty(), Equals, false)
 
-	m := NewMsgSwap(txID, common.RuneAsset(), common.BNBAsset, sdk.NewUint(100000000), bnbAddress, bnbAddress, sdk.NewUint(200000000), addr)
+	tx := common.NewTx(
+		txID,
+		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
+		common.Coins{
+			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
+		},
+		"SWAP:BNB.BNB",
+	)
+
+	m := NewMsgSwap(tx, common.BNBAsset, bnbAddress, sdk.NewUint(200000000), addr)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_swap")
 
@@ -113,7 +123,17 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		},
 	}
 	for _, item := range inputs {
-		m := NewMsgSwap(item.requestTxHash, item.source, item.target, item.amount, item.requester, item.destination, item.targetPrice, item.signer)
+		tx := common.NewTx(
+			item.requestTxHash,
+			item.requester,
+			item.destination,
+			common.Coins{
+				common.NewCoin(item.source, item.amount),
+			},
+			"SWAP:BNB.BNB",
+		)
+
+		m := NewMsgSwap(tx, item.target, item.destination, item.targetPrice, item.signer)
 		c.Assert(m.ValidateBasic(), NotNil)
 	}
 }
