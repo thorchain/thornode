@@ -1,12 +1,17 @@
-.PHONY: build
+.PHONY: build smoke-test tools
 
 build: 
 	docker build -t registry.gitlab.com/thorchain/bepswap/thornode -f Dockerfile ../..
 
 clean:
 	@rm -rf /tmp/genesis
-	@rm -rf ~/.thornode
+	@rm -rf ~/.thor*
+	@rm -rf ~/.signer
+	@rm -rf /tmp/shared
 	@mkdir /tmp/genesis
+	@mkdir /tmp/shared
+	@mkdir ~/.thord
+	@mkdir ~/.signer
 	@mkdir ~/.thornode
 	@mkdir ~/.thornode/standalone
 	@mkdir ~/.thornode/genesis_1
@@ -20,10 +25,16 @@ clean-validator:
 	@mkdir ~/.thornode/validator
 
 run-standalone: clean
-	docker-compose -f standalone.yml up --force-recreate --remove-orphans
+	docker-compose -f standalone.yml up --force-recreate --remove-orphans -d
 
 run-genesis: clean
-	docker-compose -f genesis.yml up --force-recreate --remove-orphans
+	docker-compose -f genesis.yml up --force-recreate --remove-orphans -d
 
 run-validator: clean-validator
-	docker-compose -f validator.yml --project-name validator up --force-recreate
+	docker-compose -f validator.yml --project-name validator up --force-recreate -d
+
+smoke-test:
+	@bsinner -f ${FAUCET_KEY} -p ${PRIV_KEY} -e local -c ../../test/smoke/scenarios/flow-test-audit-1p.json -l /tmp/smoke-test.json -d true
+
+validate-smoke-test: smoke-test
+	@echo "$(shell cat ../../test/smoke/checksum) /tmp/smoke-test.json" | sha256sum --check
