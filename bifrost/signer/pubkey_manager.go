@@ -22,15 +22,22 @@ func NewPubKeyManager() *PubKeyManager {
 func (pkm *PubKeyManager) Add(pk common.PubKey) {
 	pkm.rwMutex.Lock()
 	defer pkm.rwMutex.Unlock()
-	found := false
 	for _, pubkey := range pkm.pks {
 		if pk.Equals(pubkey) {
-			break
+			return
 		}
 	}
-	if !found {
-		pkm.pks = append(pkm.pks, pk)
+	pkm.pks = append(pkm.pks, pk)
+}
+
+// HasKey determinate whether the given key is in the PubKeyManager
+func (pkm *PubKeyManager) HasKey(pk common.PubKey) bool {
+	for _, item := range pkm.pks {
+		if item.Equals(pk) {
+			return true
+		}
 	}
+	return false
 }
 
 func (pkm *PubKeyManager) Remove(pk common.PubKey) {

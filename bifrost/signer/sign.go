@@ -2,12 +2,12 @@ package signer
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/binance-chain/go-sdk/keys"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -16,7 +16,9 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/binance"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/tss"
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -31,36 +33,48 @@ type Signer struct {
 	storage                *StateChanBlockScannerStorage
 	m                      *metrics.Metrics
 	errCounter             *prometheus.CounterVec
+	tssKeygen              *tss.KeyGen
+	thorKeys               *thorclient.Keys
+	pkm                    *PubKeyManager
 }
 
 // NewSigner create a new instance of signer
 func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	stateChainScanStorage, err := NewStateChanBlockScannerStorage(cfg.SignerDbPath)
 	if nil != err {
-		return nil, errors.Wrap(err, "fail to create statechain scan storage")
+		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
 	}
 	m, err := metrics.NewMetrics(cfg.Metric)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create metric instance")
 	}
+	pkm := NewPubKeyManager()
+	thorKeys, err := thorclient.NewKeys(cfg.StateChain.ChainHomeFolder, cfg.StateChain.SignerName, cfg.StateChain.SignerPasswd)
+	if nil != err {
+		return nil, fmt.Errorf("fail to load keys,err:%w", err)
+	}
+	httpClient := &http.Client{
+		Timeout: time.Second * 30,
+	}
+	na, err := thorclient.GetNodeAccount(httpClient, cfg.StateChain.ChainHost, thorKeys.GetSignerInfo().GetAddress().String())
+	if nil != err {
+		return nil, fmt.Errorf("fail to get node account from thorchain,err:%w", err)
+	}
+	for _, item := range na.SignerMembership {
+		pkm.Add(item)
+	}
 
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
-	pkm := NewPubKeyManager()
-	km, err := keys.NewPrivateKeyManager(cfg.Binance.PrivateKey)
-	if err != nil {
-		return nil, errors.Wrap(err, "fail to create private key manager")
-	}
-	pkm.Add(common.PubKey(km.GetPrivKey().PubKey().Bytes()))
-
 	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScanner, stateChainScanStorage, cfg.StateChain.ChainHost, m, pkm)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create state chain block scan")
 	}
-	b, err := binance.NewBinance(cfg.Binance)
+	b, err := binance.NewBinance(cfg.Binance, cfg.UseTSS, cfg.KeySign)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create binance client")
 	}
-	return &Signer{
+
+	signer := &Signer{
 		logger:                 log.With().Str("module", "signer").Logger(),
 		cfg:                    cfg,
 		wg:                     &sync.WaitGroup{},
@@ -70,7 +84,17 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 		m:                      m,
 		storage:                stateChainScanStorage,
 		errCounter:             m.GetCounterVec(metrics.SignerError),
-	}, nil
+		pkm:                    pkm,
+	}
+
+	if cfg.UseTSS {
+		kg, err := tss.NewTssKeyGen(cfg.KeyGen, thorKeys)
+		if nil != err {
+			return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
+		}
+		signer.tssKeygen = kg
+	}
+	return signer, nil
 }
 
 func (s *Signer) Start() error {
@@ -128,24 +152,7 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 }
 
 func (s *Signer) shouldSign(tai types.TxArrayItem) bool {
-	binanceAddr := s.Binance.GetAddress()
-	s.logger.Info().Str("address", binanceAddr).Msg("current signer address")
-	pubKey, err := common.NewPubKey(tai.PoolAddress.String())
-	if nil != err {
-		s.logger.Error().Err(err).Msg("fail to parse pool address")
-		return false
-	}
-	address, err := pubKey.GetAddress(common.BNBChain)
-	if nil != err {
-		s.logger.Error().Err(err).Msg("fail to get address")
-		return false
-	}
-	s.logger.Info().Str("address", address.String()).Msg("")
-	if strings.EqualFold(binanceAddr, address.String()) {
-		return true
-	}
-
-	return false
+	return s.pkm.HasKey(tai.PoolAddress)
 }
 func (s *Signer) retryFailedTxOutProcessor() {
 	s.logger.Info().Msg("start retry process")
@@ -211,20 +218,49 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 	}
 }
 
+const nextPoolPrefix = `nextpool`
+
+func (s *Signer) processTssKeyGenCeremony(tai types.TxArrayItem) (types.TxArrayItem, error) {
+	if !strings.HasPrefix(tai.Memo, nextPoolPrefix) {
+		return tai, nil
+	}
+	pubKey, err := s.tssKeygen.GenerateNewKey()
+	if nil != err {
+		return tai, fmt.Errorf("fail to generate new pool pub key,err:%w", err)
+	}
+	if pubKey.IsEmpty() {
+		return tai, fmt.Errorf("fail to generate new pool pub key")
+	}
+	tai.Memo = fmt.Sprintf("%s:%s", nextPoolPrefix, pubKey.Secp256k1.String())
+	addr, err := pubKey.GetAddress(common.BNBChain)
+	if nil != err {
+		return tai, fmt.Errorf("fail to get address,err:%w", err)
+	}
+	tai.To = addr.String()
+	return tai, nil
+}
+
 // signAndSendToBinanceChainWithRetry retry a few times before we move on to he next block
 func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 	// most case , there should be only one item in txOut.TxArray, but sometimes there might be more than one
 	// especially when we get populate , more and more transactions
 	for _, item := range txOut.TxArray {
 		if !s.shouldSign(item) {
-			s.logger.Debug().
-				Str("signer_address", s.Binance.GetAddress()).
+			s.logger.Info().
+				Str("signer_address", s.Binance.GetAddress(item.PoolAddress)).
 				Msg("different pool address, ignore")
 			continue
 		}
 		height, err := strconv.ParseInt(txOut.Height, 10, 64)
 		if nil != err {
 			return errors.Wrapf(err, "fail to parse block height: %s ", txOut.Height)
+		}
+		if s.tssKeygen != nil && strings.HasPrefix(item.Memo, nextPoolPrefix) {
+			tai, err := s.processTssKeyGenCeremony(item)
+			if nil != err {
+				return fmt.Errorf("fail to get get next pool address,err:%w", err)
+			}
+			item = tai
 		}
 		err = s.signAndSendToBinanceChain(item, height)
 		if nil == err {
@@ -248,6 +284,7 @@ func (s *Signer) signAndSendToBinanceChain(tai types.TxArrayItem, height int64) 
 		s.logger.Error().Err(err).Msg("fail to sign txOut")
 	}
 	if nil == hexTx {
+		s.logger.Error().Msg("nothing need to be send")
 		// nothing need to be send
 		return nil
 	}

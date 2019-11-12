@@ -22,8 +22,8 @@ import (
 	btypes "gitlab.com/thorchain/bepswap/thornode/bifrost/binance/types"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
 )
 
 // Observer observer service
@@ -33,7 +33,7 @@ type Observer struct {
 	blockScanner     *BinanceBlockScanner
 	storage          TxInStorage
 	stopChan         chan struct{}
-	stateChainBridge *statechain.StateChainBridge
+	stateChainBridge *thorclient.StateChainBridge
 	m                *metrics.Metrics
 	wg               *sync.WaitGroup
 	errCounter       *prometheus.CounterVec
@@ -83,7 +83,7 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create metric instance")
 	}
-	stateChainBridge, err := statechain.NewStateChainBridge(cfg.StateChain, m)
+	stateChainBridge, err := thorclient.NewStateChainBridge(cfg.StateChain, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create new state chain bridge")
 	}

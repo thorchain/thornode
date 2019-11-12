@@ -21,7 +21,7 @@ import (
 )
 
 // CommonBlockScanner is used to discover block height
-// since both binance and statechain use cosmos, so this part logic should be the same
+// since both binance and thorchain use cosmos, so this part logic should be the same
 type CommonBlockScanner struct {
 	cfg            config.BlockScannerConfiguration
 	logger         zerolog.Logger
