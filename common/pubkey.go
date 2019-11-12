@@ -8,6 +8,7 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/crypto"
 	cryptoAmino "github.com/tendermint/tendermint/crypto/encoding/amino"
 )
 
@@ -19,6 +20,9 @@ type PubKey string
 
 // EmptyPubKey
 var EmptyPubKey PubKey
+
+// EmptyPubKeys
+var EmptyPubKeys PubKeys
 
 // PubKeys contains two pub keys , secp256k1 and ed25519
 type PubKeys struct {
@@ -37,6 +41,15 @@ func NewPubKey(key string) (PubKey, error) {
 		return EmptyPubKey, fmt.Errorf("%s is not bech32 encoded pub key,err : %w", key, err)
 	}
 	return PubKey(key), nil
+}
+
+// NewPubKeyFromCrypto
+func NewPubKeyFromCrypto(pk crypto.PubKey) (PubKey, error) {
+	s, err := sdk.Bech32ifyAccPub(pk)
+	if nil != err {
+		return EmptyPubKey, fmt.Errorf("fail to create PubKey from crypto.PubKey,err:%w", err)
+	}
+	return PubKey(s), nil
 }
 
 // Equals check whether two are the same

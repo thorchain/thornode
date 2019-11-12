@@ -9,7 +9,7 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/util"
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/blockscanner"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
 )
 
 const DefaultObserverLevelDBFolder = `observer_data`

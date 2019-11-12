@@ -64,7 +64,7 @@ func setupKeeperForTest(c *C) (sdk.Context, Keeper) {
 	err := ms.LoadLatestVersion()
 	c.Assert(err, IsNil)
 
-	ctx := sdk.NewContext(ms, abci.Header{ChainID: "statechain"}, false, log.NewNopLogger())
+	ctx := sdk.NewContext(ms, abci.Header{ChainID: "thorchain"}, false, log.NewNopLogger())
 	cdc := makeTestCodec()
 
 	pk := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
@@ -405,7 +405,8 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 		common.EmptyPubKey,
 		GetRandomBNBAddress(), common.BNBChain,
 		w.activeNodeAccount.NodeAddress)
-	c.Assert(handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgNextPoolAddrInvalid).Code, Equals, sdk.CodeUnknownRequest)
+
+	c.Assert(handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddrInvalid).Code, Equals, sdk.CodeUnknownRequest)
 	// rotation window not open
 	msgNextPoolAddr := NewMsgNextPoolAddress(
 		GetRandomTxHash(),
@@ -413,7 +414,7 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 		GetRandomBNBAddress(),
 		common.BNBChain,
 		w.activeNodeAccount.NodeAddress)
-	result := handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgNextPoolAddr)
+	result := handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 	// next pool had been confirmed already
 	w.ctx = w.ctx.WithBlockHeight(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt)
@@ -422,7 +423,7 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{
 		common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey()),
 	}
-	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgNextPoolAddr)
+	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 	chainSenderAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
 	senderAddr, err := chainSenderAddr.GetAddress()
@@ -434,9 +435,15 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 		senderAddr,
 		common.BNBChain,
 		w.activeNodeAccount.NodeAddress)
-
-	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgNextPoolAddr)
+	w.txOutStore.NewBlock(1)
+	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
+	c.Assert(w.txOutStore.blockOut, NotNil)
+	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 1)
+	tai := w.txOutStore.blockOut.TxArray[0]
+	c.Assert(tai, NotNil)
+	c.Assert(tai.Memo, Equals, "ack")
+	c.Assert(tai.Coin.Amount.Uint64(), Equals, uint64(1))
 }
 
 func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {

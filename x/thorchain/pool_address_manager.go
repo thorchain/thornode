@@ -48,7 +48,6 @@ func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context) {
 		if pm.IsRotateWindowOpen {
 			return
 		}
-
 		pm.IsRotateWindowOpen = true
 	}
 }
@@ -57,6 +56,18 @@ func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context) {
 func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, store *TxOutStore) {
 	if nil == pm.currentPoolAddresses {
 		return
+	}
+	// pool rotation window open
+	if pm.IsRotateWindowOpen && ctx.BlockHeight() == pm.currentPoolAddresses.RotateWindowOpenAt {
+		// instruct signer to kick off tss keygen ceremony
+		store.AddTxOutItem(ctx, pm.k, &TxOutItem{
+			Chain: common.BNBChain,
+			// Leave ToAddress empty on purpose, signer will observe this txout, and then kick of tss keygen ceremony
+			ToAddress:   "",
+			PoolAddress: pm.currentPoolAddresses.Current.GetByChain(common.BNBChain).PubKey,
+			Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(37501)),
+			Memo:        "nextpool",
+		}, false)
 	}
 	pm.rotatePoolAddress(ctx, store)
 	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
