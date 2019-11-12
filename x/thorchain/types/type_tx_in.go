@@ -21,7 +21,6 @@ const (
 // Meant to track if we have processed a specific tx
 type TxIn struct {
 	Status             status           `json:"status"`
-	NumOuts            int64            `json:"num_outs"`
 	OutHashes          common.TxIDs     `json:"out_hashes"` // completed chain tx hash. This is a slice to track if we've "double spent" an input
 	Memo               string           `json:"memo"`       // memo
 	Coins              common.Coins     `json:"coins"`      // coins sent in tx
@@ -121,24 +120,24 @@ func (tx *TxIn) Sign(signer sdk.AccAddress) {
 	tx.Signers = append(tx.Signers, signer)
 }
 
-func (tx *TxIn) SetOutHash(s status, hash common.TxID) {
+func (tx *TxIn) SetOutHash(s status, hash common.TxID, numOuts int64) {
 	for _, done := range tx.OutHashes {
 		if done.Equals(hash) {
 			return
 		}
 	}
 	tx.OutHashes = append(tx.OutHashes, hash)
-	if int64(len(tx.OutHashes)) >= tx.NumOuts {
+	if int64(len(tx.OutHashes)) >= numOuts {
 		tx.Status = s
 	}
 }
 
-func (tx *TxIn) SetDone(hash common.TxID) {
-	tx.SetOutHash(Done, hash)
+func (tx *TxIn) SetDone(hash common.TxID, numOuts int64) {
+	tx.SetOutHash(Done, hash, numOuts)
 }
 
-func (tx *TxIn) SetReverted(hash common.TxID) {
-	tx.SetOutHash(Reverted, hash)
+func (tx *TxIn) SetReverted(hash common.TxID, numOuts int64) {
+	tx.SetOutHash(Reverted, hash, numOuts)
 }
 
 func (tx *TxIn) GetCommonTx(txid common.TxID) common.Tx {
@@ -152,9 +151,10 @@ func (tx *TxIn) GetCommonTx(txid common.TxID) common.Tx {
 }
 
 type TxInVoter struct {
-	TxID   common.TxID `json:"tx_id"`
-	Txs    []TxIn      `json:"txs"`
-	Height int64       `json:"height"`
+	TxID    common.TxID `json:"tx_id"`
+	Txs     []TxIn      `json:"txs"`
+	NumOuts int64       `json:"num_outs"`
+	Height  int64       `json:"height"`
 }
 
 func NewTxInVoter(txID common.TxID, txs []TxIn) TxInVoter {
@@ -188,7 +188,7 @@ func (tx TxInVoter) String() string {
 
 func (tx *TxInVoter) SetDone(hash common.TxID) {
 	for i := range tx.Txs {
-		tx.Txs[i].SetDone(hash)
+		tx.Txs[i].SetDone(hash, tx.NumOuts)
 	}
 }
 

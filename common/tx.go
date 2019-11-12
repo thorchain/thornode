@@ -48,6 +48,8 @@ type Tx struct {
 	Memo        string  `json:"memo"`
 }
 
+type Txs []Tx
+
 func NewTx(txID TxID, from Address, to Address, coins Coins, memo string) Tx {
 	var chain Chain
 	for _, coin := range coins {
