@@ -210,7 +210,7 @@ describe "API Tests" do
       expect(resp.body[2]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[2].inspect
       expect(resp.body[2]['type']).to eq("swap"), resp.body[2].inspect
       expect(resp.body[2]['in_tx']['id']).to eq(txid), resp.body[2].inspect
-      expect(resp.body[2]['out_tx']['id'].length).to eq(64), resp.body[2].inspect
+      expect(resp.body[2]['out_txs'][0]['id'].length).to eq(64), resp.body[2].inspect
     end
 
     it "add assets to a pool" do
