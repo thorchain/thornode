@@ -117,7 +117,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 		c.Check(transaction.OutHashes[0].Equals(txID2), Equals, true)
 	}
 
-	txIn.SetReverted(txID2)
+	txIn.SetReverted(txID2, 1)
 	c.Check(txIn.OutHashes[0].Equals(txID2), Equals, true)
 	c.Check(len(txIn.String()) > 0, Equals, true)
 	statechainCoins := common.Coins{
