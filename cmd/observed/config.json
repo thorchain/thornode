@@ -1,5 +1,5 @@
 {
-  "chain_id": "statechain",
+  "chain_id": "thorchain",
   "dex_host": "testnet-dex.binance.org",
   "observer_db_path": "observer_db",
   "block_scanner": {
@@ -7,16 +7,16 @@
     "block_scan_processors": 1,
     "block_height_discover_back_off": "1s",
     "block_retry_interval": "10s",
-    "start_block_height": "47917320"
+    "start_block_height": "49097832"
   },
   "state_chain": {
-    "chain_id": "statechain",
+    "chain_id": "thorchain",
     "chain_host": "localhost:1317",
-    "signer_name": "jack",
+    "signer_name": "statechain",
     "signer_passwd": "password"
   },
   "metric": {
     "enabled": true
   },
-  "rune_address": "thor1ply65cysml949kdajmpugamzat964xttx4hgtv"
+  "rune_address": "thor135fqguwz0dgzf45kuhn46wjuhrp6dd7vt3qj5d"
 }

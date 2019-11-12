@@ -1,4 +1,4 @@
-package statechain
+package thorclient
 
 import (
 	"fmt"
@@ -17,7 +17,7 @@ import (
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/go-retryablehttp"
 
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
 	"gitlab.com/thorchain/bepswap/thornode/common"
@@ -25,7 +25,7 @@ import (
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -37,7 +37,6 @@ var _ = Suite(&StatechainSuite{})
 func (*StatechainSuite) SetUpSuite(c *C) {
 	cfg2 := sdk.GetConfig()
 	cfg2.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-
 }
 
 func setupStateChainForTest(c *C) (config.StateChainConfiguration, cKeys.Info, func()) {

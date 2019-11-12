@@ -212,7 +212,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 	return nil
 }
 
-// setupValidatorNodes only works when statechain start up
+// setupValidatorNodes only works when thorchain start up
 func (vm *ValidatorManager) setupValidatorNodes(ctx sdk.Context, height int64) error {
 	if height != 1 {
 		ctx.Logger().Info("only need to setup validator node when start up", "height", height)

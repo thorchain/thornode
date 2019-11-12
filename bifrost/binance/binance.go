@@ -15,9 +15,11 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/tendermint/tendermint/crypto"
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
-	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
+	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/tss"
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
@@ -30,12 +32,12 @@ type Binance struct {
 	keyManager  keys.KeyManager
 	chainId     string
 	isTestNet   bool
+	useTSS      bool
 }
 
 // NewBinance create new instance of binance client
-func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
-
-	if !cfg.UseTSS && len(cfg.PrivateKey) == 0 {
+func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.TSSConfiguration) (*Binance, error) {
+	if !useTSS && len(cfg.PrivateKey) == 0 {
 		return nil, errors.New("no private key")
 	}
 	if len(cfg.DEXHost) == 0 {
@@ -43,8 +45,8 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 	}
 	var km keys.KeyManager
 	var err error
-	if cfg.UseTSS {
-		km, err = NewTSSSigner(cfg.TSS, cfg.TSSAddress)
+	if useTSS {
+		km, err = tss.NewKeySign(keySignCfg)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to create tss signer")
 		}
@@ -75,6 +77,7 @@ func NewBinance(cfg config.BinanceConfiguration) (*Binance, error) {
 		keyManager:  km,
 		isTestNet:   isTestNet,
 		chainId:     "Binance-Chain-Nile",
+		useTSS:      useTSS,
 	}, nil
 }
 
@@ -85,7 +88,7 @@ const (
 func IsTestNet(dexHost string) bool {
 	return strings.Contains(dexHost, testNetUrl) || strings.Contains(dexHost, "127.0.0.1")
 }
-func (b *Binance) Input(addr types.AccAddress, coins types.Coins) msg.Input {
+func (b *Binance) input(addr types.AccAddress, coins types.Coins) msg.Input {
 	return msg.Input{
 		Address: addr,
 		Coins:   coins,
@@ -104,7 +107,7 @@ func (b *Binance) msgToSend(in []msg.Input, out []msg.Output) msg.SendMsg {
 }
 
 func (b *Binance) createMsg(from types.AccAddress, fromCoins types.Coins, transfers []msg.Transfer) msg.SendMsg {
-	input := b.Input(from, fromCoins)
+	input := b.input(from, fromCoins)
 	output := make([]msg.Output, 0, len(transfers))
 	for _, t := range transfers {
 		t.Coins = t.Coins.Sort()
@@ -113,8 +116,7 @@ func (b *Binance) createMsg(from types.AccAddress, fromCoins types.Coins, transf
 	return b.msgToSend([]msg.Input{input}, output)
 }
 
-func (b *Binance) parseTx(transfers []msg.Transfer) msg.SendMsg {
-	fromAddr := b.GetAddress()
+func (b *Binance) parseTx(fromAddr string, transfers []msg.Transfer) msg.SendMsg {
 	addr, err := types.AccAddressFromBech32(fromAddr)
 	if nil != err {
 		b.logger.Error().Str("address", fromAddr).Err(err).Msg("fail to parse address")
@@ -127,9 +129,17 @@ func (b *Binance) parseTx(transfers []msg.Transfer) msg.SendMsg {
 	return b.createMsg(addr, fromCoins, transfers)
 }
 
-// GetAddress return current signer address
-func (b *Binance) GetAddress() string {
-	return b.keyManager.GetAddr().String()
+// GetAddress return current signer address, it will be bech32 encoded address
+func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
+	if !b.useTSS {
+		return b.keyManager.GetAddr().String()
+	}
+	addr, err := poolPubKey.GetAddress(common.BNBChain)
+	if nil != err {
+		b.logger.Error().Err(err).Str("pool_pub_key", poolPubKey.String()).Msg("fail to get pool address")
+		return ""
+	}
+	return addr.String()
 }
 func (b *Binance) isSignerAddressMatch(poolAddr, signerAddr string) bool {
 	pubKey, err := common.NewPubKey(poolAddr)
@@ -147,7 +157,7 @@ func (b *Binance) isSignerAddressMatch(poolAddr, signerAddr string) bool {
 }
 
 func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[string]string, error) {
-	signerAddr := b.GetAddress()
+	signerAddr := b.GetAddress(tai.PoolAddress)
 	var payload []msg.Transfer
 
 	if !b.isSignerAddressMatch(tai.PoolAddress.String(), signerAddr) {
@@ -174,10 +184,11 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	})
 
 	if len(payload) == 0 {
+		b.logger.Error().Msg("payload is empty , this should not happen")
 		return nil, nil, nil
 	}
-	fromAddr := b.GetAddress()
-	sendMsg := b.parseTx(payload)
+	fromAddr := b.GetAddress(tai.PoolAddress)
+	sendMsg := b.parseTx(fromAddr, payload)
 	if err := sendMsg.ValidateBasic(); nil != err {
 		return nil, nil, errors.Wrap(err, "invalid send msg")
 	}
@@ -220,4 +231,9 @@ func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxComm
 			Msg("get commit response from binance")
 	}
 	return &commits[0], nil
+}
+
+// GetPubKey return the pub key
+func (b *Binance) GetPubKey() crypto.PubKey {
+	return b.keyManager.GetPrivKey().PubKey()
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain"
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/bepswap/thornode/common"
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 )
@@ -45,7 +45,7 @@ type AddressManager struct {
 // NewAddressManager create a new instance of AddressManager
 func NewAddressManager(chainHost string, m *metrics.Metrics) (*AddressManager, error) {
 	return &AddressManager{
-		cdc:        statechain.MakeCodec(),
+		cdc:        thorclient.MakeCodec(),
 		logger:     log.With().Str("module", "statechain_bridge").Logger(),
 		chainHost:  chainHost,
 		errCounter: m.GetCounterVec(metrics.PoolAddressManagerError),

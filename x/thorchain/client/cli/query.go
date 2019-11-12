@@ -47,7 +47,7 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 func GetCmdGetVersion(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
-		Short: "Gets the statechain version",
+		Short: "Gets the thorchain version",
 		Args:  cobra.ExactArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
