@@ -33,7 +33,7 @@ run-genesis: clean
 run-validator: clean-validator
 	docker-compose -f validator.yml --project-name validator up --force-recreate -d
 
-smoke-test: clean
+smoke-test:
 	@bsinner -f ${FAUCET_KEY} -p ${PRIV_KEY} -e local -c ../../test/smoke/scenarios/flow-test-audit-1p.json -l /tmp/smoke-test.json -d true
 
 validate-smoke-test: smoke-test
