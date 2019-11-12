@@ -1,4 +1,4 @@
-package binance
+package tss
 
 import (
 	"bytes"
@@ -12,7 +12,6 @@ import (
 	"time"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
-	"github.com/binance-chain/go-sdk/common/uuid"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/tx"
 	"github.com/btcsuite/btcd/btcec"
@@ -25,63 +24,56 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 )
 
-// TSSSigner is a proxy between signer and TSS
-type TSSSigner struct {
+// KeySign is a proxy between signer and TSS
+type KeySign struct {
 	cfg    config.TSSConfiguration
 	logger zerolog.Logger
 	client *http.Client
-	addr   ctypes.AccAddress
 }
 
-// NewTSSSigner create a new instance of TSSSigner
-func NewTSSSigner(cfg config.TSSConfiguration, addr string) (*TSSSigner, error) {
-	if len(addr) == 0 {
-		return nil, errors.New("tss address is empty")
-	}
+// NewKeySign create a new instance of KeySign
+func NewKeySign(cfg config.TSSConfiguration) (*KeySign, error) {
+
 	if len(cfg.Host) == 0 {
 		return nil, errors.New("TSS host is empty")
 	}
 	if cfg.Port == 0 {
 		return nil, errors.New("TSS port not specified")
 	}
-	accountAddr, err := ctypes.AccAddressFromBech32(addr)
-	if nil != err {
-		return nil, errors.Wrap(err, "invalid tss account address")
-	}
-	return &TSSSigner{
+
+	return &KeySign{
 		cfg:    cfg,
 		logger: log.With().Str("module", "tss_signer").Logger(),
 		client: &http.Client{
 			Timeout: time.Second * 30,
 		},
-		addr: accountAddr,
 	}, nil
 }
 
 // GetPrivKey we don't actually have any private key , but just return something
-func (s *TSSSigner) GetPrivKey() crypto.PrivKey {
+func (s *KeySign) GetPrivKey() crypto.PrivKey {
 	return nil
 }
 
-func (s *TSSSigner) GetAddr() ctypes.AccAddress {
-	return s.addr
+func (s *KeySign) GetAddr() ctypes.AccAddress {
+	return nil
 }
 
 // ExportAsMnemonic we don't need this function for TSS, just keep it to fulfill KeyManager interface
-func (s *TSSSigner) ExportAsMnemonic() (string, error) {
+func (s *KeySign) ExportAsMnemonic() (string, error) {
 	return "", nil
 }
 
 // ExportAsPrivateKey we don't need this function for TSS, just keep it to fulfill KeyManager interface
-func (s *TSSSigner) ExportAsPrivateKey() (string, error) {
+func (s *KeySign) ExportAsPrivateKey() (string, error) {
 	return "", nil
 }
 
 // ExportAsKeyStore we don't need this function for TSS, just keep it to fulfill KeyManager interface
-func (s *TSSSigner) ExportAsKeyStore(password string) (*keys.EncryptedKeyJSON, error) {
+func (s *KeySign) ExportAsKeyStore(password string) (*keys.EncryptedKeyJSON, error) {
 	return nil, nil
 }
-func (s *TSSSigner) makeSignature(msg tx.StdSignMsg) (sig tx.StdSignature, err error) {
+func (s *KeySign) makeSignature(msg tx.StdSignMsg) (sig tx.StdSignature, err error) {
 	var stdSignature tx.StdSignature
 	signPack, err := s.remoteSign(msg.Bytes())
 	if err != nil {
@@ -128,7 +120,7 @@ func (s *TSSSigner) makeSignature(msg tx.StdSignMsg) (sig tx.StdSignature, err e
 	}, nil
 }
 
-func (s *TSSSigner) Sign(msg tx.StdSignMsg) ([]byte, error) {
+func (s *KeySign) Sign(msg tx.StdSignMsg) ([]byte, error) {
 	sig, err := s.makeSignature(msg)
 	if err != nil {
 		return nil, err
@@ -139,21 +131,15 @@ func (s *TSSSigner) Sign(msg tx.StdSignMsg) ([]byte, error) {
 		return nil, err
 	}
 	return bz, nil
-	//return []byte(hex.EncodeToString(bz)), nil
 }
 
-func (s *TSSSigner) remoteSign(msg []byte) (SignPack, error) {
+func (s *KeySign) remoteSign(msg []byte) (SignPack, error) {
 	var signPack SignPack
 	if len(msg) == 0 {
 		return signPack, nil
 	}
-	channel, err := uuid.NewV4()
-	if nil != err {
-		return signPack, errors.Wrap(err, "fail to create a new uuid")
-	}
-
 	encodedMsg := base64.StdEncoding.EncodeToString(msg)
-	signature, err := s.toLocalTSSSigner(channel.String(), encodedMsg)
+	signature, err := s.toLocalTSSSigner(s.cfg.NodeId, encodedMsg)
 	if nil != err {
 		return signPack, errors.Wrap(err, "fail to tss sign")
 	}
@@ -172,7 +158,7 @@ func (s *TSSSigner) remoteSign(msg []byte) (SignPack, error) {
 	}
 	return signPack, nil
 }
-func (s *TSSSigner) getTSSLocalUrl() string {
+func (s *KeySign) getTSSLocalUrl() string {
 	u := url.URL{
 		Scheme: s.cfg.Scheme,
 		Host:   fmt.Sprintf("%s:%d", s.cfg.Host, s.cfg.Port),
@@ -182,7 +168,7 @@ func (s *TSSSigner) getTSSLocalUrl() string {
 }
 
 // toLocalTSSSigner will send the request to local signer
-func (s *TSSSigner) toLocalTSSSigner(nodeid, sendmsg string) (string, error) {
+func (s *KeySign) toLocalTSSSigner(nodeid, sendmsg string) (string, error) {
 	tssMsg := struct {
 		NodeID string `json:"Nodeid"`
 		Msg    string `json:"Msg"`

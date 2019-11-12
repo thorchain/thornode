@@ -32,8 +32,8 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 		common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey()),
 	}
 	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
-	// no asset get moved , because we just opened window
-	c.Assert(w.txOutStore.blockOut.IsEmpty(), Equals, true)
+	// no asset get moved , because we just opened window, however we should instruct signer to kick off key sign process
+	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 1)
 	poolBNB := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.BNB", c)
 	poolTCan := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.TCAN-014", c)
 	poolLoki := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.LOK-3C0", c)

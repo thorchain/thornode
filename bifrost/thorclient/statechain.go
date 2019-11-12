@@ -1,4 +1,4 @@
-package statechain
+package thorclient
 
 import (
 	"bytes"
@@ -7,17 +7,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os/user"
-	"path/filepath"
 	"sync/atomic"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/codec"
-	ckeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
+	"github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -28,12 +24,7 @@ import (
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
-)
-
-const (
-	// folder name for statechain thorcli
-	StatechainCliFolderName = `.thorcli`
+	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
 )
 
 // StateChainBridge will be used to send tx to statechain
@@ -41,8 +32,7 @@ type StateChainBridge struct {
 	logger        zerolog.Logger
 	cdc           *codec.Codec
 	cfg           config.StateChainConfiguration
-	signerInfo    ckeys.Info
-	kb            ckeys.Keybase
+	keys          *Keys
 	errCounter    *prometheus.CounterVec
 	m             *metrics.Metrics
 	accountNumber uint64
@@ -64,21 +54,15 @@ func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics)
 	if len(cfg.SignerPasswd) == 0 {
 		return nil, errors.New("signer password is empty")
 	}
-	kb, err := getKeybase(cfg.ChainHomeFolder, cfg.SignerName)
+	k, err := NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
 	if nil != err {
-		return nil, errors.Wrap(err, "fail to get keybase")
+		return nil, fmt.Errorf("fail to get keybase,err:%w", err)
 	}
-	signerInfo, err := kb.Get(cfg.SignerName)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to get signer info")
-	}
-
 	return &StateChainBridge{
 		logger:     log.With().Str("module", "statechain_bridge").Logger(),
 		cdc:        MakeCodec(),
 		cfg:        cfg,
-		signerInfo: signerInfo,
-		kb:         kb,
+		keys:       k,
 		errCounter: m.GetCounterVec(metrics.StateChainBridgeError),
 		client:     retryablehttp.NewClient(),
 		m:          m,
@@ -92,18 +76,6 @@ func MakeCodec() *codec.Codec {
 	cdc.RegisterConcrete(stypes.MsgSetTxIn{}, "thorchain/MsgSetTxIn", nil)
 	codec.RegisterCrypto(cdc)
 	return cdc
-}
-
-func getKeybase(stateChainHome, signerName string) (ckeys.Keybase, error) {
-	cliDir := stateChainHome
-	if len(stateChainHome) == 0 {
-		usr, err := user.Current()
-		if nil != err {
-			return nil, errors.Wrap(err, "fail to get current user")
-		}
-		cliDir = filepath.Join(usr.HomeDir, StatechainCliFolderName)
-	}
-	return keys.NewKeyBaseFromDir(cliDir)
 }
 
 func (scb *StateChainBridge) WithRetryableHttpClient(c *retryablehttp.Client) {
@@ -123,7 +95,7 @@ func (scb *StateChainBridge) Start() error {
 }
 
 func (scb *StateChainBridge) getAccountInfoUrl(chainHost string) string {
-	return scb.getStateChainUrl(fmt.Sprintf("/auth/accounts/%s", scb.signerInfo.GetAddress()))
+	return scb.getStateChainUrl(fmt.Sprintf("/auth/accounts/%s", scb.keys.GetSignerInfo().GetAddress()))
 }
 
 func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, uint64, error) {
@@ -173,7 +145,7 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 	}()
 	stdTx := authtypes.NewStdTx(
 		[]sdk.Msg{
-			stypes.NewMsgSetTxIn(txIns, scb.signerInfo.GetAddress()),
+			stypes.NewMsgSetTxIn(txIns, scb.keys.GetSignerInfo().GetAddress()),
 		}, // messages
 		authtypes.NewStdFee(100000000, nil), // fee
 		nil,                                 // signatures
@@ -189,7 +161,7 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 		Msgs:          stdTx.GetMsgs(),
 		Memo:          stdTx.GetMemo(),
 	}
-	sig, err := authtypes.MakeSignature(scb.kb, scb.cfg.SignerName, scb.cfg.SignerPasswd, stdMsg)
+	sig, err := authtypes.MakeSignature(scb.keys.GetKeybase(), scb.cfg.SignerName, scb.cfg.SignerPasswd, stdMsg)
 	if err != nil {
 		scb.errCounter.WithLabelValues("fail_sign", "").Inc()
 		return nil, errors.Wrap(err, "fail to sign the message")
@@ -313,7 +285,7 @@ func (scb *StateChainBridge) EnsureNodeWhitelistedWithTimeout() error {
 
 // EnsureNodeWhitelisted will call to statechain to check whether the observer had been whitelist or not
 func (scb *StateChainBridge) EnsureNodeWhitelisted() error {
-	bepAddr := scb.signerInfo.GetAddress().String()
+	bepAddr := scb.keys.GetSignerInfo().GetAddress().String()
 	if len(bepAddr) == 0 {
 		return errors.New("bep address is empty")
 	}

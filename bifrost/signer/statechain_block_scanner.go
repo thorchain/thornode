@@ -15,7 +15,7 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
-	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/statechain/types"
+	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 

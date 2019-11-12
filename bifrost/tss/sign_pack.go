@@ -1,4 +1,4 @@
-package binance
+package tss
 
 // SignPack
 type SignPack struct {

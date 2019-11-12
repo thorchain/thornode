@@ -47,7 +47,7 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		case MsgYggdrasil:
 			return handleMsgYggdrasil(ctx, keeper, txOutStore, m)
 		case MsgNextPoolAddress:
-			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, validatorManager, m)
+			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, validatorManager, txOutStore, m)
 		case MsgLeave:
 			return handleMsgLeave(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
 		case MsgAck:
@@ -435,7 +435,7 @@ func refundTx(ctx sdk.Context, tx TxIn, store *TxOutStore, keeper Keeper, poolAd
 
 // handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
 // MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on chain
-func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrManager *PoolAddressManager, validatorMgr *ValidatorManager, msg MsgNextPoolAddress) sdk.Result {
+func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrManager *PoolAddressManager, validatorMgr *ValidatorManager, txOut *TxOutStore, msg MsgNextPoolAddress) sdk.Result {
 	ctx.Logger().Info("receive request to set next pool pub key", "pool pub key", msg.NextPoolPubKey.String())
 	if err := msg.ValidateBasic(); nil != err {
 		return err.Result()
@@ -465,7 +465,7 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 	if !addr.Equals(msg.Sender) {
 		return sdk.ErrUnknownRequest("next pool should be send with current pool address").Result()
 	}
-	// statechain observed the next pool address memo, but it has not been confirmed yet
+	// thorchain observed the next pool address memo, but it has not been confirmed yet
 	pkey := common.NewPoolPubKey(msg.Chain, 0, msg.NextPoolPubKey)
 	poolAddrManager.ObservedNextPoolAddrPubKey = poolAddrManager.ObservedNextPoolAddrPubKey.TryAddKey(pkey)
 
@@ -480,6 +480,15 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 		sdk.NewEvent(EventTypeNextPoolPubKeyObserved,
 			sdk.NewAttribute("next pool pub key", msg.NextPoolPubKey.String()),
 			sdk.NewAttribute("chain", msg.Chain.String())))
+
+	txOut.AddTxOutItem(ctx, keeper, &TxOutItem{
+		Chain:       common.BNBChain,
+		ToAddress:   addr,
+		PoolAddress: msg.NextPoolPubKey,
+		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
+		Memo:        "ack",
+	}, false)
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
