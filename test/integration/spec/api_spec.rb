@@ -18,7 +18,7 @@ describe "API Tests" do
       resp = get("/tx/A9A65505553D777E5CE957A74153F21EDD8AAA4B0868F2537E97E309945425B9")
       expect(resp.body['memo']).to eq(""), resp.body.inspect
       expect(resp.body['status']).to eq(""), resp.body.inspect
-      expect(resp.body['txhash']).to eq(""), resp.body.inspect
+      expect(resp.body['out_hashes']).to eq(nil), resp.body.inspect
     end
   end
 
@@ -193,7 +193,7 @@ describe "API Tests" do
 
             resp = get("/tx/#{txid}")
             expect(resp.code).to eq("200")
-            expect(resp.body['txhash']).to eq(newTxId), resp.body.inspect
+            expect(resp.body['out_hashes']).to eq([newTxId]), resp.body.inspect
             break
           end
         end
