@@ -49,28 +49,28 @@ run_services() {
 # Statechain
 #
 run_thord() {
-  thord start --rpc.laddr tcp://0.0.0.0:26657 &>/dev/null &
+  thord start --rpc.laddr tcp://0.0.0.0:26657 &
 }
 
 #
 # Observer
 #
 run_observed() {
-  observed -c /etc/observe/observed/config.json &>/dev/null &
+  observed -c /etc/observe/observed/config.json &
 }
 
 #
 # Signer
 #
 run_signd() {
-  signd -c /etc/observe/signd/config.json &>/dev/null &
+  signd -c /etc/observe/signd/config.json &
 }
 
 #
 # Statechain REST API
 #
 run_rest() {
-  thorcli rest-server --chain-id thorchain --laddr tcp://0.0.0.0:1317 --node tcp://localhost:26657 &>/dev/null &
+  thorcli rest-server --chain-id thorchain --laddr tcp://0.0.0.0:1317 --node tcp://localhost:26657 &
 }
 
 #

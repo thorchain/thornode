@@ -10,6 +10,7 @@ clean:
 	@rm -rf /tmp/shared
 	@mkdir /tmp/genesis
 	@mkdir /tmp/shared
+	@mkdir ~/.thord
 	@mkdir ~/.signer
 	@mkdir ~/.thornode
 	@mkdir ~/.thornode/standalone
