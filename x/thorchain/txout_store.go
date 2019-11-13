@@ -94,18 +94,21 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 					// if we are already sending assets from this ygg pool, deduct
 					// them.
 					addr, _ := ygg.PubKey.GetThorAddress()
-					if tx.HasSigned(addr) {
-						for _, tx := range tos.blockOut.TxArray {
-							if tx.PoolAddress.Equals(ygg.PubKey) {
-								for i, yggcoin := range ygg.Coins {
-									if yggcoin.Asset.Equals(tx.Coin.Asset) {
-										ygg.Coins[i].Amount = ygg.Coins[i].Amount.Sub(tx.Coin.Amount)
-									}
-								}
-							}
-						}
-						yggs = append(yggs, ygg)
+					if !tx.HasSigned(addr) {
+						continue
 					}
+					for _, tx := range tos.blockOut.TxArray {
+						if !tx.PoolAddress.Equals(ygg.PubKey) {
+							continue
+						}
+						for i, yggcoin := range ygg.Coins {
+							if !yggcoin.Asset.Equals(tx.Coin.Asset) {
+								continue
+							}
+							ygg.Coins[i].Amount = ygg.Coins[i].Amount.Sub(tx.Coin.Amount)
+						}
+					}
+					yggs = append(yggs, ygg)
 				}
 
 				// use the ygg pool with the highest quantity of our coin
