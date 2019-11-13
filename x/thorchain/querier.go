@@ -345,7 +345,6 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	if !pk.IsEmpty() {
 		newTxs := &TxOut{
 			Height: txs.Height,
-			Hash:   txs.Hash,
 		}
 		for _, tx := range txs.TxArray {
 			if pk.Equals(tx.PoolAddress) {
@@ -364,7 +363,6 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		if !ok {
 			res = ResTxOut{
 				Height:  txs.Height,
-				Hash:    txs.Hash, // TODO: this should be unique to chain
 				Chain:   item.Coin.Asset.Chain,
 				TxArray: make([]TxOutItem, 0),
 			}
