@@ -16,7 +16,7 @@ const (
 	StakerAmtIntervalKey      AdminConfigKey = "StakerAmtInterval"
 	MinValidatorBondKey       AdminConfigKey = "MinValidatorBond"
 	WhiteListGasAssetKey      AdminConfigKey = "WhiteListGasAsset"      // How much gas asset we mint and send it to the newly whitelisted bep address
-	DesireValidatorSetKey     AdminConfigKey = "DesireValidatorSet"     // how much validators we would like to have
+	DesireValidatorSetKey     AdminConfigKey = "DesireValidatorSet"     // how much validators we would like to have. Replace with Dynamic N.
 	RotatePerBlockHeightKey   AdminConfigKey = "RotatePerBlockHeight"   // how many blocks we try to rotate validators
 	ValidatorsChangeWindowKey AdminConfigKey = "ValidatorsChangeWindow" // when should we open the rotate window, nominate validators, and identify who should be out
 	PoolRefundGasKey          AdminConfigKey = "PoolRefundGas"          // when we move assets from one pool to another , we leave this amount of BNB behind, thus we could refund customer if they send fund to the previous pool

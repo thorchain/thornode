@@ -40,6 +40,13 @@ func (s EventSuite) TestUnstakeEvent(c *C) {
 	c.Check(evt.Type(), Equals, "unstake")
 }
 
+func (s EventSuite) TestAdminConfig(c *C) {
+	evt := NewEventAdminConfig("foo", "bar")
+	c.Check(evt.Type(), Equals, "admin_config")
+	c.Check(evt.Key, Equals, "foo")
+	c.Check(evt.Value, Equals, "bar")
+}
+
 func (s EventSuite) TestEvent(c *C) {
 	txID, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD218")
 	c.Assert(err, IsNil)

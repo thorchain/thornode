@@ -26,6 +26,17 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	return na
 }
 
+// GetRandomTx
+func GetRandomTx() common.Tx {
+	return common.NewTx(
+		GetRandomTxHash(),
+		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
+		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		"",
+	)
+}
+
 // GetRandomBech32Addr is an account address used for test
 func GetRandomBech32Addr() sdk.AccAddress {
 	name := common.RandStringBytesMask(10)

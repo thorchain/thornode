@@ -12,7 +12,8 @@ var _ = Suite(&MsgSetAdminConfigSuite{})
 func (MsgSetAdminConfigSuite) TestMsgSetAdminConfig(c *C) {
 	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
-	msgSetAdminConfig := NewMsgSetAdminConfig(GSLKey, "2.0", addr)
+	tx := GetRandomTx()
+	msgSetAdminConfig := NewMsgSetAdminConfig(tx, GSLKey, "2.0", addr)
 	c.Assert(msgSetAdminConfig.ValidateBasic(), IsNil)
 	buf := msgSetAdminConfig.GetSignBytes()
 	c.Assert(buf, NotNil)
@@ -38,7 +39,7 @@ func (MsgSetAdminConfigSuite) TestMsgSetAdminConfig(c *C) {
 	}
 
 	for _, item := range inputs {
-		m := NewMsgSetAdminConfig(GSLKey, item.value, item.signer)
+		m := NewMsgSetAdminConfig(tx, GSLKey, item.value, item.signer)
 		err := m.ValidateBasic()
 		c.Assert(err, NotNil)
 	}
