@@ -749,7 +749,6 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	for ; iterator.Valid(); iterator.Next() {
 		var evt Event
 		w.keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &evt)
-		fmt.Printf("Evnt: %+v\n", evt)
 		if evt.InTx.ID.Equals(inTxID) {
 			found = true
 			break
