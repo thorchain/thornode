@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"sort"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
@@ -53,11 +55,8 @@ func (tos *TxOutStore) GetOutboundItems() []*TxOutItem {
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, deductFee bool) {
-	if toi.PoolAddress.IsEmpty() {
-		toi.PoolAddress = tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(toi.Chain).PubKey
-	}
-
+func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, deductFee, asgard bool) {
+	// Default the memo to the standard outbound memo
 	if toi.Memo == "" {
 		toi.Memo = NewOutboundMemo(toi.InHash).String()
 	}
@@ -69,6 +68,71 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		default:
 			// No gas policy for this chain (yet)
 		}
+	}
+
+	// If we don't have a pool already selected to send from, discover one.
+	if toi.PoolAddress.IsEmpty() {
+		if !asgard {
+			// When deciding which Yggdrasil pool will send out our tx out, we
+			// should consider which ones observed the inbound request tx, as
+			// yggdrasil pools can go offline. Here we get the voter record and
+			// only consider Yggdrasils where their observed saw the "correct"
+			// tx.
+
+			activeNodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
+			if len(activeNodeAccounts) > 0 && err == nil {
+				voter := keeper.GetTxInVoter(ctx, toi.InHash)
+				tx := voter.GetTx(activeNodeAccounts)
+
+				// collect yggdrasil pools
+				var yggs Yggdrasils
+				iterator := keeper.GetYggdrasilIterator(ctx)
+				defer iterator.Close()
+				for ; iterator.Valid(); iterator.Next() {
+					var ygg Yggdrasil
+					keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &ygg)
+					// if we are already sending assets from this ygg pool, deduct
+					// them.
+					addr, _ := ygg.PubKey.GetThorAddress()
+					if !tx.HasSigned(addr) {
+						continue
+					}
+					for _, tx := range tos.blockOut.TxArray {
+						if !tx.PoolAddress.Equals(ygg.PubKey) {
+							continue
+						}
+						for i, yggcoin := range ygg.Coins {
+							if !yggcoin.Asset.Equals(tx.Coin.Asset) {
+								continue
+							}
+							ygg.Coins[i].Amount = ygg.Coins[i].Amount.Sub(tx.Coin.Amount)
+						}
+					}
+					yggs = append(yggs, ygg)
+				}
+
+				// use the ygg pool with the highest quantity of our coin
+				sort.Slice(yggs[:], func(i, j int) bool {
+					return yggs[i].GetCoin(toi.Coin.Asset).Amount.GT(
+						yggs[j].GetCoin(toi.Coin.Asset).Amount,
+					)
+				})
+
+				// if none of our Yggdrasil pools have enough funds to fulfil
+				// the order, fallback to our Asguard pool
+				if len(yggs) > 0 {
+					if toi.Coin.Amount.LT(yggs[0].GetCoin(toi.Coin.Asset).Amount) {
+						toi.PoolAddress = yggs[0].PubKey
+					}
+				}
+
+			}
+		}
+
+	}
+
+	if toi.PoolAddress.IsEmpty() {
+		toi.PoolAddress = tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(toi.Chain).PubKey
 	}
 
 	// Ensure we are not sending from and to the same address

@@ -85,7 +85,7 @@ func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, yg
 			Memo:      "yggdrasil+",
 			Coin:      coin,
 		}
-		txOutStore.AddTxOutItem(ctx, keeper, toi, true)
+		txOutStore.AddTxOutItem(ctx, keeper, toi, true, false)
 	}
 
 	return nil
