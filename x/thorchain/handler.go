@@ -703,7 +703,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 		}
 	case OutboundMemo:
 		tx := tx.GetCommonTx(txID)
-		newMsg, err = getMsgOutboundFromMemo(m, ctx.BlockHeight(), tx, signer)
+		newMsg, err = getMsgOutboundFromMemo(m, tx, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
@@ -858,10 +858,9 @@ func getMsgAddFromMemo(memo AddMemo, txID common.TxID, tx TxIn, signer sdk.AccAd
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, blockHeight int64, tx common.Tx, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgOutboundFromMemo(memo OutboundMemo, tx common.Tx, signer sdk.AccAddress) (sdk.Msg, error) {
 	return NewMsgOutboundTx(
 		tx,
-		blockHeight,
 		memo.GetTxID(),
 		signer,
 	), nil
@@ -921,7 +920,7 @@ func handleMsgNoOp(ctx sdk.Context) sdk.Result {
 
 // handleMsgOutboundTx processes outbound tx from our pool
 func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAddressManager, msg MsgOutboundTx) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgOutboundTx %s at height %d", msg.Tx.ID, msg.Height))
+	ctx.Logger().Info(fmt.Sprintf("receive MsgOutboundTx %s", msg.Tx.ID))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
 		return sdk.ErrUnauthorized("Not authorized").Result()

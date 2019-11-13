@@ -677,17 +677,17 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
 		"",
 	)
-	msgOutboundTx := NewMsgOutboundTx(tx, 1, txID, w.notActiveNodeAccount.NodeAddress)
+	msgOutboundTx := NewMsgOutboundTx(tx, txID, w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTx)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
 	tx.ID = ""
-	msgInvalidOutboundTx := NewMsgOutboundTx(tx, 1, txID, w.activeNodeAccount.NodeAddress)
+	msgInvalidOutboundTx := NewMsgOutboundTx(tx, txID, w.activeNodeAccount.NodeAddress)
 	result1 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidOutboundTx)
 	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest, Commentf("%+v\n", result1))
 
 	tx.ID = txID
-	msgInvalidPool := NewMsgOutboundTx(tx, 1, txID, w.activeNodeAccount.NodeAddress)
+	msgInvalidPool := NewMsgOutboundTx(tx, txID, w.activeNodeAccount.NodeAddress)
 	result2 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidPool)
 	c.Assert(result2.Code, Equals, sdk.CodeUnauthorized, Commentf("%+v\n", result2))
 
@@ -709,7 +709,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(200*common.One)),
 	}
-	msgOutboundTxNormal := NewMsgOutboundTx(tx, 1, txID, w.activeNodeAccount.NodeAddress)
+	msgOutboundTxNormal := NewMsgOutboundTx(tx, txID, w.activeNodeAccount.NodeAddress)
 	result3 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal)
 	c.Assert(result3.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result3))
 	ygg = w.keeper.GetYggdrasil(w.ctx, currentChainPool.PubKey)
@@ -739,7 +739,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	w.txOutStore.CommitBlock(ctx)
 	tx.FromAddress = currentPoolAddr
 	tx.ID = inTxID
-	msgOutboundTxNormal1 := NewMsgOutboundTx(tx, 2, inTxID, w.activeNodeAccount.NodeAddress)
+	msgOutboundTxNormal1 := NewMsgOutboundTx(tx, inTxID, w.activeNodeAccount.NodeAddress)
 	result4 := handleMsgOutboundTx(ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal1)
 	c.Assert(result4.Code, Equals, sdk.CodeOK)
 	iterator := w.keeper.GetCompleteEventIterator(w.ctx)
