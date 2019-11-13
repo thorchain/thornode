@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
@@ -662,8 +663,10 @@ func (HandlerSuite) TestHandleMsgLeave(c *C) {
 	outbound := w.txOutStore.GetOutboundItems()
 	c.Assert(outbound, HasLen, 2)
 	memo := NewOutboundMemo(tx.ID)
-	c.Check(outbound[0].Memo, Equals, memo.String())
-	c.Check(outbound[1].Memo, Equals, "yggdrasil-")
+	memos := []string{outbound[0].Memo, outbound[1].Memo}
+	sort.Strings(memos)
+	c.Check(memos[0], Equals, memo.String())
+	c.Check(memos[1], Equals, "yggdrasil-")
 }
 
 func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
