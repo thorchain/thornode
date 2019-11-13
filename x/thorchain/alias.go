@@ -37,6 +37,7 @@ const (
 
 var (
 	NewPool                        = types.NewPool
+	NewVaultData                   = types.NewVaultData
 	NewAdminConfig                 = types.NewAdminConfig
 	NewMsgNoOp                     = types.NewMsgNoOp
 	NewMsgAdd                      = types.NewMsgAdd

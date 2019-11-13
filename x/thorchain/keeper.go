@@ -1000,7 +1000,7 @@ func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
 
 //////////////////////// Vault Data //////////////////////////
 func (k Keeper) GetVaultData(ctx sdk.Context) VaultData {
-	var data VaultData
+	data := NewVaultData()
 	key := getKey(prefixVaultData, "", getVersion(k.GetLowestActiveVersion(ctx), prefixVaultData))
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
