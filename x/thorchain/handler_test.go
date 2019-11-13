@@ -742,12 +742,14 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	msgOutboundTxNormal1 := NewMsgOutboundTx(tx, inTxID, w.activeNodeAccount.NodeAddress)
 	result4 := handleMsgOutboundTx(ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal1)
 	c.Assert(result4.Code, Equals, sdk.CodeOK)
+
 	iterator := w.keeper.GetCompleteEventIterator(w.ctx)
 	found := false
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var evt Event
 		w.keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &evt)
+		fmt.Printf("Evnt: %+v\n", evt)
 		if evt.InTx.ID.Equals(inTxID) {
 			found = true
 			break
