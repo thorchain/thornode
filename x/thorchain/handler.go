@@ -289,7 +289,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		ToAddress:   msg.Destination,
 		Coin:        common.NewCoin(msg.TargetAsset, amount),
 	}
-	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
+	txOutStore.AddTxOutItem(ctx, keeper, toi, true, false)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -377,7 +377,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		Coin:        common.NewCoin(common.RuneAsset(), runeAmt),
 	}
 	// for unstake , we should deduct fees
-	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
+	txOutStore.AddTxOutItem(ctx, keeper, toi, true, false)
 
 	toi = &TxOutItem{
 		Chain:       msg.Asset.Chain,
@@ -387,7 +387,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		Coin:        common.NewCoin(msg.Asset, assetAmount),
 	}
 	// for unstake , we should deduct fees
-	txOutStore.AddTxOutItem(ctx, keeper, toi, true)
+	txOutStore.AddTxOutItem(ctx, keeper, toi, true, false)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -409,7 +409,7 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 				PoolAddress: poolAddr,
 				Coin:        coin,
 			}
-			store.AddTxOutItem(ctx, keeper, toi, deductFee)
+			store.AddTxOutItem(ctx, keeper, toi, deductFee, false)
 		} else {
 			// Since we have assets, we don't have a pool for, we don't know how to
 			// refund and withhold for fees. Instead, we'll create a pool with the
@@ -484,7 +484,7 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 		PoolAddress: msg.NextPoolPubKey,
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
 		Memo:        "ack",
-	}, false)
+	}, false, true)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -1234,11 +1234,11 @@ func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 			Coin:      common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
 
-		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
+		txOut.AddTxOutItem(ctx, keeper, txOutItem, true, true)
 	}
 
-	// disable the node account
 	nodeAcc.Bond = sdk.ZeroUint()
+	// disable the node account
 	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAcc)
 }
@@ -1312,7 +1312,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrM
 					Memo:        "yggdrasil-",
 					Coin:        coin,
 				}
-				txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
+				txOut.AddTxOutItem(ctx, keeper, txOutItem, true, false)
 			} else {
 				wrapper := fmt.Sprintf(
 					"fail to get pool address (%s) for chain (%s)",

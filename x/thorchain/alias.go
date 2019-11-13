@@ -45,6 +45,7 @@ var (
 	NewMsgSetUnStake               = types.NewMsgSetUnStake
 	NewMsgSwap                     = types.NewMsgSwap
 	NewMsgSetAdminConfig           = types.NewMsgSetAdminConfig
+	NewTxInVoter                   = types.NewTxInVoter
 	NewTxOut                       = types.NewTxOut
 	NewEvent                       = types.NewEvent
 	NewEventAdminConfig            = types.NewEventAdminConfig
