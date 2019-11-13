@@ -36,6 +36,7 @@ const (
 	prefixValidatorMeta    dbPrefix = "validator_meta_"
 	prefixSupportedChains  dbPrefix = "supported_chains_"
 	prefixYggdrasilPool    dbPrefix = "yggdrasil_"
+	prefixVaultData        dbPrefix = "vault_data_"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -421,6 +422,32 @@ func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	ctx.Logger().Debug("SetNodeAccount", "node account", na.String())
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixNodeAccount, na.NodeAddress.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
+	if na.Status == NodeActive {
+		if na.ActiveBlockHeight == 0 {
+			// the na is active, and does not have a block height when they
+			// became active. This must be the first block they are active, so
+			// we will set it now.
+			na.ActiveBlockHeight = ctx.BlockHeight()
+		}
+	} else {
+		if na.ActiveBlockHeight > 0 {
+			// The na seems to have become a non active na. Therefore, lets
+			// give them their bond rewards.
+			vault := k.GetVaultData(ctx)
+			// Find number of blocks they have been active for
+			blocks := sdk.NewUint(uint64(ctx.BlockHeight() - na.ActiveBlockHeight))
+			// calc number of rune they are awarded
+			reward := calcNodeRewards(blocks, vault.TotalBondUnits, vault.BondRewardRune)
+			na.Bond = na.Bond.Add(reward)
+
+			// Minus the number of units na has
+			vault.TotalBondUnits.Sub(blocks)
+			// Minus the number of rune we have awarded them
+			vault.BondRewardRune.Sub(reward)
+			k.SetVaultData(ctx, vault)
+		}
+		na.ActiveBlockHeight = 0
+	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(na))
 
 	// When a node is in active status, we need to add the observer address to active
@@ -975,3 +1002,56 @@ func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
 	}
 	return ygg
 }
+
+//////////////////////// Vault Data //////////////////////////
+func (k Keeper) GetVaultData(ctx sdk.Context) VaultData {
+	data := NewVaultData()
+	key := getKey(prefixVaultData, "", getVersion(k.GetLowestActiveVersion(ctx), prefixVaultData))
+	store := ctx.KVStore(k.storeKey)
+	if store.Has([]byte(key)) {
+		buf := store.Get([]byte(key))
+		_ = k.cdc.UnmarshalBinaryBare(buf, &data)
+	}
+	return data
+}
+
+func (k Keeper) SetVaultData(ctx sdk.Context, data VaultData) {
+	key := getKey(prefixVaultData, "", getVersion(k.GetLowestActiveVersion(ctx), prefixVaultData))
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(data))
+}
+
+// Update the vault data to reflect changing in this block
+func (k Keeper) UpdateVaultData(ctx sdk.Context) {
+	vault := k.GetVaultData(ctx)
+
+	bondReward, totalPoolRewards := calcBlockRewards(vault.TotalReserve)
+	vault.TotalReserve = vault.TotalReserve.Sub(bondReward).Sub(totalPoolRewards)
+	vault.BondRewardRune = vault.BondRewardRune.Add(bondReward)
+
+	// Pass out block rewards to stakers via placing rune into pools relative
+	// to the pool's depth (amount of rune).
+	totalRune := sdk.ZeroUint()
+	assets, _ := k.GetPoolIndex(ctx)
+	var pools []Pool
+	for _, asset := range assets {
+		pool := k.GetPool(ctx, asset)
+		if pool.IsEnabled() && !pool.BalanceRune.IsZero() {
+			totalRune = totalRune.Add(pool.BalanceRune)
+			pools = append(pools, pool)
+		}
+	}
+	poolRewards := calcPoolRewards(totalPoolRewards, totalRune, pools)
+	for i, reward := range poolRewards {
+		pool := pools[i]
+		pool.BalanceRune = pool.BalanceRune.Add(reward)
+		k.SetPool(ctx, pool)
+	}
+
+	i, _ := k.TotalActiveNodeAccount(ctx)
+	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i)))
+
+	k.SetVaultData(ctx, vault)
+}
+
+///////////////////////////////////////////////////////

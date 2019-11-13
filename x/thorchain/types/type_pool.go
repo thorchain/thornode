@@ -104,6 +104,10 @@ func (ps Pool) Valid() error {
 	return nil
 }
 
+func (ps Pool) IsEnabled() bool {
+	return ps.Status == Enabled
+}
+
 func (ps Pool) Empty() bool {
 	return ps.Asset.IsEmpty()
 }

@@ -8,3 +8,4 @@ const Bech32PrefixConsAddr = "thorc"
 const Bech32PrefixConsPub = "thorcpub"
 
 const Version = 1
+const SecondsPerBlock = 5 // number of seconds per thorchain block
