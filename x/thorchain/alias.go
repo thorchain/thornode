@@ -131,4 +131,5 @@ type (
 	PoolAddresses      = types.PoolAddresses
 	NodeStatus         = types.NodeStatus
 	ValidatorMeta      = types.ValidatorMeta
+	VaultData          = types.VaultData
 )
