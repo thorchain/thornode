@@ -132,6 +132,13 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		toi.PoolAddress = tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(toi.Chain).PubKey
 	}
 
+	// Ensure we are not sending from and to the same address
+	// we check for a
+	fromAddr, err := toi.PoolAddress.GetAddress(toi.Chain)
+	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
+		return
+	}
+
 	if toi.Coin.IsEmpty() {
 		return
 	}

@@ -44,7 +44,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(3980500*common.One)),
 	}
 
-	txOutStore.AddTxOutItem(ctx, k, item, true)
+	txOutStore.AddTxOutItem(ctx, k, item, true, false)
 	bnbPool := k.GetPool(ctx, common.BNBAsset)
 	// happy path
 	c.Assert(bnbPool.BalanceAsset.String(), Equals, "10000000000")
@@ -52,13 +52,13 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 
 	item.Coin = common.NewCoin(common.BNBAsset, sdk.NewUint(1))
 
-	txOutStore.AddTxOutItem(ctx, k, item, true)
+	txOutStore.AddTxOutItem(ctx, k, item, true, false)
 	// test not enough coins to pay for gas
 	c.Assert(item.Coin.Amount.String(), Equals, "0")
 
 	item.Coin = common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One))
 
-	txOutStore.AddTxOutItem(ctx, k, item, true)
+	txOutStore.AddTxOutItem(ctx, k, item, true, false)
 	bnbPool = k.GetPool(ctx, common.BNBAsset)
 	// test takes gas out of rune
 	c.Assert(bnbPool.BalanceAsset.String(), Equals, "9999962500")
@@ -66,7 +66,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	c.Assert(item.Coin.Amount.String(), Equals, "1999962500")
 
 	item.Coin = common.NewCoin(loki.Asset, sdk.NewUint(20*common.One))
-	txOutStore.AddTxOutItem(ctx, k, item, true)
+	txOutStore.AddTxOutItem(ctx, k, item, true, false)
 	lokiPool := k.GetPool(ctx, loki.Asset)
 	bnbPool = k.GetPool(ctx, common.BNBAsset)
 	// test takes gas out of loki pool
@@ -80,7 +80,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 	bnbPool.BalanceRune = sdk.NewUint(1000 * common.One)
 	k.SetPool(ctx, bnbPool)
 	item.Coin = common.NewCoin(common.RuneAsset(), sdk.NewUint(10000*common.One))
-	txOutStore.AddTxOutItem(ctx, k, item, true)
+	txOutStore.AddTxOutItem(ctx, k, item, true, false)
 	bnbPool = k.GetPool(ctx, common.BNBAsset)
 	// test takes gas out of loki pool
 	c.Assert(bnbPool.BalanceRune.String(), Equals, "100037500000")
