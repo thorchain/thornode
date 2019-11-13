@@ -1032,7 +1032,7 @@ func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConf
 		)
 		stakeBytes, err := json.Marshal(adminEvt)
 		if err != nil {
-			ctx.Logger().Error("fail to save event", err)
+			ctx.Logger().Error("fail to unmarshal admin config event", err)
 			err = errors.Wrap(err, "fail to marshal admin config event to json")
 			return sdk.ErrUnknownRequest(err.Error()).Result()
 		}
