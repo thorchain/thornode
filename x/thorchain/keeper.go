@@ -424,9 +424,28 @@ func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	key := getKey(prefixNodeAccount, na.NodeAddress.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
 	if na.Status == NodeActive {
 		if na.ActiveBlockHeight == 0 {
+			// the na is active, and does not have a block height when they
+			// became active. This must be the first block they are active, so
+			// we will set it now.
 			na.ActiveBlockHeight = ctx.BlockHeight()
 		}
 	} else {
+		if na.ActiveBlockHeight > 0 {
+			// The na seems to have become a non active na. Therefore, lets
+			// give them their bond rewards.
+			vault := k.GetVaultData(ctx)
+			// Find number of blocks they have been active for
+			blocks := sdk.NewUint(uint64(ctx.BlockHeight() - na.ActiveBlockHeight))
+			// calc number of rune they are awarded
+			reward := calcNodeRewards(blocks, vault.TotalBondUnits, vault.BondRewardRune)
+			na.Bond = na.Bond.Add(reward)
+
+			// Minus the number of units na has
+			vault.TotalBondUnits.Sub(blocks)
+			// Minus the number of rune we have awarded them
+			vault.BondRewardRune.Sub(reward)
+			k.SetVaultData(ctx, vault)
+		}
 		na.ActiveBlockHeight = 0
 	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(na))
@@ -1025,7 +1044,7 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 	}
 
 	i, _ := k.TotalActiveNodeAccount(ctx)
-	vault.BondUnits = vault.BondUnits.Add(sdk.NewUint(uint64(i)))
+	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i)))
 
 	k.SetVaultData(ctx, vault)
 }
