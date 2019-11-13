@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -140,7 +138,6 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(20*common.One)),
 	}
 
-	fmt.Println("==============================================")
 	w.txOutStore.AddTxOutItem(w.ctx, w.keeper, item, false, false)
 	msgs := w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 1)
@@ -155,7 +152,6 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(20*common.One)),
 	}
 
-	fmt.Println("==============================================")
 	w.txOutStore.AddTxOutItem(w.ctx, w.keeper, item, false, false)
 	msgs = w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 2)
