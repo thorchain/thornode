@@ -136,6 +136,9 @@ func (s *Smoke) Run() {
 		}
 
 		from := s.Tests.ActorKeys[rule.From]
+		fmt.Println("---------------------------------------------")
+		fmt.Printf("TX: %v\n", tx + 1)
+		fmt.Printf("Test: %v\n", rule.Description)
 		s.SendTxn(from.Client, from.Key, payload, memo)
 
 		// Validate.

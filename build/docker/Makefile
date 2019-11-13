@@ -25,7 +25,7 @@ clean-validator:
 	@mkdir ~/.thornode/validator
 
 run-standalone: clean
-	docker-compose -f standalone.yml up --force-recreate --remove-orphans -d
+	docker-compose -f standalone.yml up --force-recreate --remove-orphans
 
 run-genesis: clean
 	docker-compose -f genesis.yml up --force-recreate --remove-orphans -d
@@ -34,7 +34,7 @@ run-validator: clean-validator
 	docker-compose -f validator.yml --project-name validator up --force-recreate -d
 
 smoke-test:
-	@bsinner -f ${FAUCET_KEY} -p ${PRIV_KEY} -e local -c ../../test/smoke/scenarios/flow-test-audit-1p.json -l /tmp/smoke-test.json -d true
+	@bsinner -f ${FAUCET_KEY} -p ${PRIV_KEY} -e local -c ../../test/smoke/scenarios/gen_events.json -l /tmp/smoke-test.json -d true
 
 validate-smoke-test: smoke-test
 	@echo "$(shell cat ../../test/smoke/checksum) /tmp/smoke-test.json" | sha256sum --check
