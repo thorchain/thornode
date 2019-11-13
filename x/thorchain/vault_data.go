@@ -7,6 +7,14 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
 )
 
+// calculate node rewards
+func calcNodeRewards(naBlocks, totalUnits, totalRuneReward sdk.Uint) sdk.Uint {
+	reward := sdk.NewUint(uint64(
+		float64(totalRuneReward.Uint64()) / (float64(totalUnits.Uint64()) / float64(naBlocks.Uint64())),
+	))
+	return reward
+}
+
 // calculate pool rewards
 func calcPoolRewards(totalPoolRewards, totalStakedRune sdk.Uint, pools []Pool) []sdk.Uint {
 	var amts []sdk.Uint
