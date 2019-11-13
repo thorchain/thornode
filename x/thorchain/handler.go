@@ -910,7 +910,7 @@ func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 	)
 	stakeBytes, err := json.Marshal(addEvt)
 	if err != nil {
-		ctx.Logger().Error("fail to save event", err)
+		ctx.Logger().Error("fail to marshal add event", err)
 		err = errors.Wrap(err, "fail to marshal add event to json")
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
