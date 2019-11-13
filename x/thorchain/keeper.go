@@ -817,18 +817,23 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.Tx)
 	incomplete, _ := k.GetIncompleteEvents(ctx)
 
 	for _, txID := range in {
-		lastEventID += 1
 		var evts Events
 		evts, incomplete = incomplete.PopByInHash(txID)
 		for _, evt := range evts {
 			if !evt.Empty() {
-				evt.ID = lastEventID
-				evt.OutTx = append(evt.OutTx, out)
 				voter := k.GetTxInVoter(ctx, txID)
+				evt.OutTx = append(evt.OutTx, out)
+				// Check if we've seen enough OutTx to the number expected to
+				// have seen by the voter.
+				// Sometimes we can have voter.NumOuts be zero, for example,
+				// when someone is staking there are no out txs.
 				if int64(len(evt.OutTx)) >= voter.NumOuts {
+					lastEventID += 1
+					evt.ID = lastEventID
 					k.SetCompletedEvent(ctx, evt)
 				} else {
-					// since we have more out event, add event back to incomplete evts
+					// since we have more out event, add event back to
+					// incomplete evts
 					incomplete = append(incomplete, evt)
 				}
 			}
