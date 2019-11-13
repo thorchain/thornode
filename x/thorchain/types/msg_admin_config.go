@@ -2,17 +2,20 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // MsgSetAdminConfig defines a MsgSetAdminConfig message
 type MsgSetAdminConfig struct {
+	Tx          common.Tx      `json:"tx"`
 	AdminConfig AdminConfig    `json:"admin_config"`
 	Signer      sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetAdminConfig is a constructor function for MsgSetAdminConfig
-func NewMsgSetAdminConfig(key AdminConfigKey, value string, signer sdk.AccAddress) MsgSetAdminConfig {
+func NewMsgSetAdminConfig(tx common.Tx, key AdminConfigKey, value string, signer sdk.AccAddress) MsgSetAdminConfig {
 	return MsgSetAdminConfig{
+		Tx:          tx,
 		AdminConfig: NewAdminConfig(key, value, signer),
 		Signer:      signer,
 	}
@@ -26,6 +29,11 @@ func (msg MsgSetAdminConfig) Type() string { return "set_admin_config" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgSetAdminConfig) ValidateBasic() sdk.Error {
+	if err := msg.Tx.IsValid(); err != nil {
+		// Not validaing Tx because its inputted by cli, so it may not have an
+		// In Tx.
+		// return sdk.ErrUnknownRequest(err.Error())
+	}
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
