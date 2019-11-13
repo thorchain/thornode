@@ -208,12 +208,38 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	param := map[string]string{
 		"sync": "true",
 	}
-	rawBz, err := b.keyManager.Sign(signMsg)
+	rawBz, err := b.signWithRetry(signMsg, fromAddr)
 	if nil != err {
 		return nil, nil, errors.Wrap(err, "fail to sign message")
 	}
+
+	if len(rawBz) == 0 {
+		return nil, nil, nil
+	}
 	hexTx := []byte(hex.EncodeToString(rawBz))
 	return hexTx, param, nil
+}
+
+// signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
+func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string) ([]byte, error) {
+	for {
+		rawBytes, err := b.keyManager.Sign(signMsg)
+		if nil == err {
+			return rawBytes, nil
+		}
+		b.logger.Error().Err(err).Msgf("fail to sign msg with memo: %s", signMsg.Memo)
+		// should we give up? let's check the seq no on binance chain
+		// keep in mind, when we don't run our own binance full node, we might get rate limited by binance
+		acc, err := b.queryClient.GetAccount(from)
+		if nil != err {
+			b.logger.Error().Err(err).Msg("fail to get account info from binance chain")
+			continue
+		}
+		if acc.Sequence > signMsg.Sequence {
+			b.logger.Debug().Msgf("msg with memo: %s , seqNo: %d had been processed", signMsg.Memo, signMsg.Sequence)
+			return nil, nil
+		}
+	}
 }
 
 func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
