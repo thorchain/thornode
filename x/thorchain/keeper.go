@@ -465,21 +465,21 @@ func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 // NOTE: Should be careful not to slash too much, and have their Yggdrasil
 // vault have more in funds than their bond. This could trigger them to have a
 // untimely exit, stealing an amount of funds from stakers.
-func (k Keeper) SlashNodeAccountBond(ctx sdk.Context, na NodeAccount, bond sdk.Uint) {
-	if bond.GT(na.Bond) {
+func (k Keeper) SlashNodeAccountBond(ctx sdk.Context, na *NodeAccount, slash sdk.Uint) {
+	if slash.GT(na.Bond) {
 		na.Bond = sdk.ZeroUint()
 	} else {
-		na.Bond = na.Bond.Sub(bond)
+		na.Bond = na.Bond.Sub(slash)
 	}
-	k.SetNodeAccount(ctx, na)
+	k.SetNodeAccount(ctx, *na)
 }
 
 // Slash the rewards of a node account
 // NOTE: if we slash their rewards so much, they may do an orderly exit and
 // rotate out of the active vault, wait in line to rejoin later.
-func (k Keeper) SlashNodeAccountRewards(ctx sdk.Context, na NodeAccount, pts int64) {
+func (k Keeper) SlashNodeAccountRewards(ctx sdk.Context, na *NodeAccount, pts int64) {
 	na.SlashPoints += pts
-	k.SetNodeAccount(ctx, na)
+	k.SetNodeAccount(ctx, *na)
 }
 
 func (k Keeper) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
