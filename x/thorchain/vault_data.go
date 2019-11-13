@@ -8,7 +8,7 @@ import (
 )
 
 // With feedback from the community, the block reward emission curve has been
-// modified to target 2% emission after 10 years (similiar to Bitcoin).
+// modified to target 2% emission after 10 years (similar to Bitcoin).
 // This reduces the return in the first year, but allows it to be spread
 // forward into the future. Since RUNE is a strictly-scarce fixed supply asset,
 // emissions need to be carefully considered for greatest network prosperity.
