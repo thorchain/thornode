@@ -58,6 +58,10 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		toi.PoolAddress = tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(toi.Chain).PubKey
 	}
 
+	if toi.Memo == "" {
+		toi.Memo = NewOutboundMemo(toi.InHash).String()
+	}
+
 	if deductFee {
 		switch toi.Coin.Asset.Chain {
 		case common.BNBChain:
@@ -67,9 +71,24 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		}
 	}
 
-	if !toi.Coin.IsEmpty() {
-		tos.addToBlockOut(toi)
+	// Ensure we are not sending from and to the same address
+	// we check for a
+	fromAddr, err := toi.PoolAddress.GetAddress(toi.Chain)
+	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
+		return
 	}
+
+	if toi.Coin.IsEmpty() {
+		return
+	}
+
+	// increment out number of out tx for this in tx
+	voter := keeper.GetTxInVoter(ctx, toi.InHash)
+	voter.NumOuts += 1
+	keeper.SetTxInVoter(ctx, voter)
+
+	// add tx to block out
+	tos.addToBlockOut(toi)
 }
 
 func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutItem) {
@@ -133,17 +152,8 @@ func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 }
 
 func (tos *TxOutStore) addToBlockOut(toi *TxOutItem) {
-	// Ensure we are not sending from and to the same address
-	fromAddr, _ := toi.PoolAddress.GetAddress(toi.Chain)
-	if fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
-		return
-	}
-
-	// if we are sending zero coins, don't bother adding to the txarray
-	if !toi.Coin.IsEmpty() {
-		toi.SeqNo = tos.getSeqNo(toi.Chain)
-		tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
-	}
+	toi.SeqNo = tos.getSeqNo(toi.Chain)
+	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 }
 
 func (tos *TxOutStore) getSeqNo(chain common.Chain) uint64 {

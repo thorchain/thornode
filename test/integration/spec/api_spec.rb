@@ -18,7 +18,7 @@ describe "API Tests" do
       resp = get("/tx/A9A65505553D777E5CE957A74153F21EDD8AAA4B0868F2537E97E309945425B9")
       expect(resp.body['memo']).to eq(""), resp.body.inspect
       expect(resp.body['status']).to eq(""), resp.body.inspect
-      expect(resp.body['txhash']).to eq(""), resp.body.inspect
+      expect(resp.body['out_hashes']).to eq(nil), resp.body.inspect
     end
   end
 
@@ -187,15 +187,13 @@ describe "API Tests" do
             # we have found the block height of our last swap
             found = true
             newTxId = txid()
-            tx = makeTx(memo: "outbound:#{i}", hash:newTxId, sender:TRUST_BNB_ADDRESS)
+            tx = makeTx(memo: arr['tx_array'][0]['memo'], hash:newTxId, sender:TRUST_BNB_ADDRESS)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
 
-            # wait for 1s give statechain more time to process the tx
-            sleep(1)
             resp = get("/tx/#{txid}")
             expect(resp.code).to eq("200")
-            expect(resp.body['txhash']).to eq(newTxId), resp.body.inspect
+            expect(resp.body['out_hashes']).to eq([newTxId]), resp.body.inspect
             break
           end
         end
@@ -212,7 +210,7 @@ describe "API Tests" do
       expect(resp.body[2]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[2].inspect
       expect(resp.body[2]['type']).to eq("swap"), resp.body[2].inspect
       expect(resp.body[2]['in_tx']['id']).to eq(txid), resp.body[2].inspect
-      expect(resp.body[2]['out_tx']['id'].length).to eq(64), resp.body[2].inspect
+      expect(resp.body[2]['out_txs'][0]['id'].length).to eq(64), resp.body[2].inspect
     end
 
     it "add assets to a pool" do

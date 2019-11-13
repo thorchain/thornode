@@ -8,6 +8,8 @@ import (
 type TxID string
 type TxIDs []TxID
 
+var BlankTxID = TxID("0000000000000000000000000000000000000000000000000000000000000000")
+
 func NewTxID(hash string) (TxID, error) {
 	switch len(hash) {
 	case 64:
@@ -45,6 +47,8 @@ type Tx struct {
 	Coins       Coins   `json:"coins"`
 	Memo        string  `json:"memo"`
 }
+
+type Txs []Tx
 
 func NewTx(txID TxID, from Address, to Address, coins Coins, memo string) Tx {
 	var chain Chain

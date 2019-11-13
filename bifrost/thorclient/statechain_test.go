@@ -364,11 +364,11 @@ func (StatechainSuite) TestSignEx(c *C) {
 			TxID: "EBB78FA6FDFBB19EBD188316B5FF9E60799C3149214A263274D31F4F605B8FDE",
 			Txs: []stypes.TxIn{
 				{
-					Status: stypes.Incomplete,
-					Done:   common.TxID(""),
-					Memo:   "",
-					Coins:  nil,
-					Sender: testBNBAddress,
+					Status:    stypes.Incomplete,
+					OutHashes: nil,
+					Memo:      "",
+					Coins:     nil,
+					Sender:    testBNBAddress,
 				},
 			},
 		},
@@ -448,11 +448,11 @@ func (StatechainSuite) TestSendEx(c *C) {
 	}
 	txIns := []stypes.TxIn{
 		{
-			Status: stypes.Incomplete,
-			Done:   common.TxID(""),
-			Memo:   "",
-			Coins:  nil,
-			Sender: testBNBAddress,
+			Status:    stypes.Incomplete,
+			OutHashes: nil,
+			Memo:      "",
+			Coins:     nil,
+			Sender:    testBNBAddress,
 		},
 	}
 	txInVoters := []stypes.TxInVoter{

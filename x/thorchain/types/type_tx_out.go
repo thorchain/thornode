@@ -16,11 +16,16 @@ type TxOutItem struct {
 	SeqNo       uint64         `json:"seq_no"`
 	Coin        common.Coin    `json:"coin"`
 	Memo        string         `json:"memo"`
+	InHash      common.TxID    `json:"in_hash"`
+	OutHash     common.TxID    `json:"out_hash"`
 }
 
 func (toi TxOutItem) Valid() error {
 	if toi.Chain.IsEmpty() {
 		return errors.New("chain cannot be empty")
+	}
+	if toi.InHash.IsEmpty() {
+		return errors.New("In Hash cannot be empty")
 	}
 	if toi.ToAddress.IsEmpty() {
 		return errors.New("To address cannot be empty")
@@ -46,7 +51,6 @@ func (toi TxOutItem) String() string {
 // TxOut is a structure represent all the tx we need to return to client
 type TxOut struct {
 	Height  uint64       `json:"height"`
-	Hash    common.TxID  `json:"hash"`
 	TxArray []*TxOutItem `json:"tx_array"`
 }
 
