@@ -428,6 +428,7 @@ func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 			// became active. This must be the first block they are active, so
 			// we will set it now.
 			na.ActiveBlockHeight = ctx.BlockHeight()
+			na.SlashPoints = 0 // reset slash points
 		}
 	} else {
 		if na.ActiveBlockHeight > 0 {
@@ -435,13 +436,14 @@ func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 			// give them their bond rewards.
 			vault := k.GetVaultData(ctx)
 			// Find number of blocks they have been active for
-			blocks := sdk.NewUint(uint64(ctx.BlockHeight() - na.ActiveBlockHeight))
+			blockCount := ctx.BlockHeight() - na.ActiveBlockHeight
+			blocks := calculateNodeAccountBondUints(ctx.BlockHeight(), na.ActiveBlockHeight, na.SlashPoints)
 			// calc number of rune they are awarded
 			reward := calcNodeRewards(blocks, vault.TotalBondUnits, vault.BondRewardRune)
 			na.Bond = na.Bond.Add(reward)
 
-			// Minus the number of units na has
-			vault.TotalBondUnits.Sub(blocks)
+			// Minus the number of units na has (do not include slash points)
+			vault.TotalBondUnits.Sub(sdk.NewUint(uint64(blockCount)))
 			// Minus the number of rune we have awarded them
 			vault.BondRewardRune.Sub(reward)
 			k.SetVaultData(ctx, vault)
@@ -457,6 +459,11 @@ func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	} else {
 		k.RemoveActiveObserver(ctx, na.NodeAddress)
 	}
+}
+
+func (k Keeper) SlashNodeAccount(ctx sdk.Context, na NodeAccount, pts int64) {
+	na.SlashPoints += pts
+	k.SetNodeAccount(ctx, na)
 }
 
 func (k Keeper) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
