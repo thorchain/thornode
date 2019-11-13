@@ -1031,7 +1031,7 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 	var pools []Pool
 	for _, asset := range assets {
 		pool := k.GetPool(ctx, asset)
-		if pool.IsEnabled() {
+		if pool.IsEnabled() && !pool.BalanceRune.IsZero() {
 			totalRune = totalRune.Add(pool.BalanceRune)
 			pools = append(pools, pool)
 		}
