@@ -126,7 +126,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		am.keeper.EnableAPool(ctx)
 	}
 
-	// increase number of bond units (awarding active bonders)
+	// update vault data to account for block rewards and reward units
 	am.keeper.UpdateVaultData(ctx)
 
 	am.poolMgr.EndBlock(ctx, am.txOutStore)
