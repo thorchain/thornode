@@ -33,6 +33,7 @@ func (s TxSuite) TestTx(c *C) {
 		Address("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"),
 		Address("bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6"),
 		Coins{NewCoin(BNBAsset, sdk.NewUint(5*One))},
+		BNBGasFeeSingleton,
 		"hello memo",
 	)
 	c.Check(tx.ID.Equals(id), Equals, true)

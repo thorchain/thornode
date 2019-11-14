@@ -24,6 +24,7 @@ type TxIn struct {
 	OutHashes          common.TxIDs     `json:"out_hashes"` // completed chain tx hash. This is a slice to track if we've "double spent" an input
 	Memo               string           `json:"memo"`       // memo
 	Coins              common.Coins     `json:"coins"`      // coins sent in tx
+	Gas                common.Gas       `json:"gas"`
 	Sender             common.Address   `json:"sender"`
 	To                 common.Address   `json:"to"` // to address
 	BlockHeight        sdk.Uint         `json:"block_height"`
@@ -31,12 +32,13 @@ type TxIn struct {
 	ObservePoolAddress common.PubKey    `json:"pool_address"`
 }
 
-func NewTxIn(coins common.Coins, memo string, sender, to common.Address, height sdk.Uint, observePoolAddress common.PubKey) TxIn {
+func NewTxIn(coins common.Coins, memo string, sender, to common.Address, gas common.Gas, height sdk.Uint, observePoolAddress common.PubKey) TxIn {
 	return TxIn{
 		Coins:              coins,
 		Memo:               memo,
 		Sender:             sender,
 		To:                 to,
+		Gas:                gas,
 		Status:             Incomplete,
 		BlockHeight:        height,
 		ObservePoolAddress: observePoolAddress,
@@ -53,10 +55,14 @@ func (tx TxIn) Valid() error {
 	if len(tx.Coins) == 0 {
 		return errors.New("coins cannot be empty")
 	}
-	for _, coin := range tx.Coins {
-		if err := coin.IsValid(); err != nil {
-			return err
-		}
+	if err := tx.Coins.IsValid(); err != nil {
+		return err
+	}
+	if len(tx.Gas) == 0 {
+		return errors.New("gas cannot be empty")
+	}
+	if err := tx.Gas.IsValid(); err != nil {
+		return err
 	}
 	// ideally memo should not be empty, we check it here, but if we check it
 	// empty here, then the tx will be rejected by thorchain given that , we
@@ -92,10 +98,15 @@ func (tx TxIn) Equals(tx2 TxIn) bool {
 		return false
 	}
 	for i := range tx.Coins {
-		if !tx.Coins[i].Asset.Equals(tx2.Coins[i].Asset) {
+		if !tx.Coins[i].Equals(tx2.Coins[i]) {
 			return false
 		}
-		if !tx.Coins[i].Amount.Equal(tx2.Coins[i].Amount) {
+	}
+	if len(tx.Gas) != len(tx2.Gas) {
+		return false
+	}
+	for i := range tx.Gas {
+		if !tx.Gas[i].Equals(tx2.Gas[i]) {
 			return false
 		}
 	}
@@ -153,6 +164,7 @@ func (tx *TxIn) GetCommonTx(txid common.TxID) common.Tx {
 		tx.Sender,
 		tx.To,
 		tx.Coins,
+		tx.Gas,
 		tx.Memo,
 	)
 }
