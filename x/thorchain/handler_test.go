@@ -310,7 +310,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 			totalAsset = totalAsset.Add(item.Coin.Amount)
 		}
 	}
-	c.Assert(totalAsset.Equal(msgSetStake.AssetAmount.SubUint64(singleTransactionFee)), Equals, true, Commentf("%d %d", totalAsset.Uint64(), msgSetStake.AssetAmount.SubUint64(singleTransactionFee).Uint64()))
+	c.Assert(totalAsset.Equal(msgSetStake.AssetAmount), Equals, true, Commentf("%d %d", totalAsset.Uint64(), msgSetStake.AssetAmount.Uint64()))
 	c.Assert(totalRune.Equal(msgSetStake.RuneAmount), Equals, true)
 }
 
@@ -805,14 +805,16 @@ func (HandlerSuite) TestHandleMsgAdd(c *C) {
 
 	pool := w.keeper.GetPool(w.ctx, common.BNBAsset)
 	pool.Asset = common.BNBAsset
+	pool.BalanceRune = sdk.NewUint(10 * common.One)
+	pool.BalanceAsset = sdk.NewUint(20 * common.One)
 	pool.Status = PoolEnabled
 	w.keeper.SetPool(w.ctx, pool)
 	result3 := handleMsgAdd(w.ctx, w.keeper, msgAdd)
 	c.Assert(result3.Code, Equals, sdk.CodeOK)
 	pool = w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(pool.Status, Equals, PoolEnabled)
-	c.Assert(pool.BalanceAsset.Uint64(), Equals, sdk.NewUint(100*common.One).Uint64())
-	c.Assert(pool.BalanceRune.Uint64(), Equals, sdk.NewUint(100*common.One).Uint64())
+	c.Assert(pool.BalanceAsset.Uint64(), Equals, sdk.NewUint(120*common.One).Uint64())
+	c.Assert(pool.BalanceRune.Uint64(), Equals, sdk.NewUint(110*common.One).Uint64())
 	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
 
 }

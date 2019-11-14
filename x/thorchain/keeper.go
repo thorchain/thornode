@@ -129,6 +129,7 @@ func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
 			ctx.Logger().Error("fail to add asset to pool index", "asset", pool.Asset, "error", err)
 		}
 	}
+
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
 }
 
