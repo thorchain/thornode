@@ -294,6 +294,7 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 				item.Memo,
 				sender,
 				to,
+				common.BNBGasFeeSingleton,
 				sdk.NewUint(h),
 				observedPoolPubKey),
 		})
