@@ -319,14 +319,10 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 			// Calculate gas for this tx
 			if len(txInItem.Coins) > 1 {
 				// Multisend gas fees
-				txInItem.Gas = common.Gas{
-					{common.BNBAsset, sdk.NewUint(uint64(30000 * len(txInItem.Coins)))},
-				}
+				txInItem.Gas = common.GetBNBGasFeeMulti(uint64(len(txInItem.Coins)))
 			} else {
 				// Single transaction gas fees
-				txInItem.Gas = common.Gas{
-					{common.BNBAsset, sdk.NewUint(uint64(37500))},
-				}
+				txInItem.Gas = common.BNBGasFeeSingleton
 			}
 
 			// check if the from address is a valid pool
