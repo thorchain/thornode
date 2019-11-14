@@ -291,7 +291,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		ToAddress:   msg.Destination,
 		Coin:        common.NewCoin(msg.TargetAsset, amount),
 	}
-	txOutStore.AddTxOutItem(ctx, keeper, toi, true, false)
+	txOutStore.AddTxOutItem(ctx, keeper, toi, false)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -379,7 +379,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		Coin:        common.NewCoin(common.RuneAsset(), runeAmt),
 	}
 	// for unstake , we should deduct fees
-	txOutStore.AddTxOutItem(ctx, keeper, toi, true, false)
+	txOutStore.AddTxOutItem(ctx, keeper, toi, false)
 
 	toi = &TxOutItem{
 		Chain:       msg.Asset.Chain,
@@ -389,7 +389,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		Coin:        common.NewCoin(msg.Asset, assetAmount),
 	}
 	// for unstake , we should deduct fees
-	txOutStore.AddTxOutItem(ctx, keeper, toi, true, false)
+	txOutStore.AddTxOutItem(ctx, keeper, toi, false)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -411,8 +411,7 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 				PoolAddress: poolAddr,
 				Coin:        coin,
 			}
-			store.AddTxOutItem(ctx, keeper, toi, deductFee, false)
-			continue
+			store.AddTxOutItem(ctx, keeper, toi, false)
 		}
 
 		// Since we have assets, we don't have a pool for, we don't know how to
@@ -492,7 +491,7 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 		PoolAddress: msg.NextPoolPubKey,
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
 		Memo:        "ack",
-	}, false, true)
+	}, true)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -1026,6 +1025,17 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	// complete events
 	keeper.CompleteEvents(ctx, []common.TxID{msg.InTxID}, msg.Tx)
 
+	// Apply Gas fees
+	activeNodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		ctx.Logger().Error("unable to get active node accounts", "error", err)
+		return sdk.ErrUnknownRequest(err.Error()).Result()
+	}
+	inTx := voter.GetTx(activeNodeAccounts)
+	tx := inTx.GetCommonTx(msg.InTxID)
+	tx.Gas = msg.Tx.Gas // get gas from outbound tx, and replace the inbound gas for applying gas
+	ApplyGasFees(ctx, keeper, tx)
+
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := keeper.GetTxOut(ctx, uint64(voter.Height))
 	if err != nil {
@@ -1033,7 +1043,8 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
-	// Save TxOut back with the TxID only when the TxOut on the block height is not empty
+	// Save TxOut back with the TxID only when the TxOut on the block height is
+	// not empty
 	if !txOut.IsEmpty() {
 		for i, tx := range txOut.TxArray {
 
@@ -1313,7 +1324,7 @@ func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 			Coin:      common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
 
-		txOut.AddTxOutItem(ctx, keeper, txOutItem, true, true)
+		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
 	}
 
 	nodeAcc.Bond = sdk.ZeroUint()

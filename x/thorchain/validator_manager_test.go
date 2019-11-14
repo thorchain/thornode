@@ -316,6 +316,7 @@ func (ValidatorManagerTestSuite) TestRagnarokProtocol(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(common.One*100)),
 			common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One*100)),
 		},
+		nil,
 		"stake:BNB",
 	)
 	msg := NewMsgSetStakeData(tx,
