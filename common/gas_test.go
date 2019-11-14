@@ -7,18 +7,28 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type GasSuite struct{}
+type GSuite struct{}
 
-var _ = Suite(&GasSuite{})
+var _ = Suite(&GSuite{})
 
-func (s GasSuite) TestMultiGasCalc(c *C) {
+func (s *GSuite) TestMultiGasCalc(c *C) {
 	fmt.Println("FOO1")
 	gas := GetBNBGasFeeMulti(1)
 	amt := gas[0].Amount
-	c.Check(amt.Equal(sdk.NewUint(30000)), Equals, true, Commentf("%d", amt.Uint64()))
+	c.Check(
+		amt.Equal(sdk.NewUint(30000)),
+		Equals,
+		true,
+		Commentf("%d", amt.Uint64()),
+	)
 
 	fmt.Println("BAR1")
 	gas = GetBNBGasFeeMulti(3)
 	amt = gas[0].Amount
-	c.Check(amt.Equal(sdk.NewUint(90000)), Equals, true, Commentf("%d", amt.Uint64()))
+	c.Check(
+		amt.Equal(sdk.NewUint(90000)),
+		Equals,
+		true,
+		Commentf("%d", amt.Uint64()),
+	)
 }

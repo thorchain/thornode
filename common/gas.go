@@ -6,20 +6,23 @@ import (
 
 type Gas Coins
 
+var bnbSingleTxFee = sdk.NewUint(37500)
+var bnbMultiTxFee = sdk.NewUint(30000)
+
 // Gas Fees
 var BNBGasFeeSingleton = Gas{
-	{Asset: BNBAsset, Amount: sdk.NewUint(37500)},
+	{Asset: BNBAsset, Amount: bnbSingleTxFee},
 }
 
 var BNBGasFeeMulti = Gas{
-	{Asset: BNBAsset, Amount: sdk.NewUint(30000)},
+	{Asset: BNBAsset, Amount: bnbMultiTxFee},
 }
 
 // Calculates the amount of gas for x number of coins in a single tx.
 func GetBNBGasFeeMulti(count uint64) Gas {
-	gas := BNBGasFeeMulti
-	gas[0].Amount = gas[0].Amount.MulUint64(count)
-	return gas
+	return Gas{
+		{Asset: BNBAsset, Amount: bnbMultiTxFee.MulUint64(count)},
+	}
 }
 
 func (g Gas) IsValid() error {
