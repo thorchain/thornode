@@ -53,6 +53,14 @@ end
 def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
   hash ||= txid()
   sender ||= bnbAddress
+  gas ||= [{
+    'asset': {
+      'chain': 'BNB',
+      'symbol': 'BNB',
+      'ticker': 'BNB',
+    },
+    'amount': '13750',
+  }]
   coins ||= [{
     'asset': {
       'chain': 'BNB',
@@ -67,8 +75,9 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
     'sender': sender,
     'to': bnbAddress,
     'observe_pool_address': poolAddr,
-    'MEMO': memo,
-    'coins': coins
+    'memo': memo,
+    'coins': coins,
+    'gas': gas,
   }
 end
 
