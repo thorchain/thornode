@@ -32,6 +32,7 @@ func GetRandomTx() common.Tx {
 		GetRandomBNBAddress(),
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		common.BNBGasFeeSingleton,
 		"",
 	)
 }

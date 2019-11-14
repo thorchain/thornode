@@ -11,10 +11,11 @@ type TxIn struct {
 
 type TxInItem struct {
 	Tx                  string       `json:"tx"`
-	Memo                string       `json:"MEMO"`
+	Memo                string       `json:"memo"`
 	Sender              string       `json:"sender"`
 	To                  string       `json:"to"` // to adddress
 	Coins               common.Coins `json:"coins"`
+	Gas                 common.Coins `json:"gas"`
 	ObservedPoolAddress string       `json:"observed_pool_address"`
 }
 type TxInStatus byte
