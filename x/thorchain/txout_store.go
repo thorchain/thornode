@@ -239,7 +239,7 @@ func ApplyGasFees(ctx sdk.Context, keeper Keeper, tx common.Tx) {
 			gasPool.BalanceAsset = gasPool.BalanceAsset.Sub(gas)
 		}
 		keeper.SetPool(ctx, gasPool)
-		if txPool.BalanceRune.LT(sdk.NewUint(uint64(runeAmt))) {
+		if txPool.BalanceRune.LT(sdk.NewUint(runeAmt)) {
 			txPool.BalanceRune = sdk.ZeroUint()
 			txPool.Status = PoolBootstrap
 		} else {
