@@ -17,7 +17,8 @@ import (
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/hashicorp/go-retryablehttp"
+
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
 	"gitlab.com/thorchain/bepswap/thornode/common"
@@ -102,6 +103,7 @@ func (s StatechainSuite) TestSign(c *C) {
 			"This is my memo!",
 			common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
 			common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
+			common.BNBGasFeeSingleton,
 			sdk.NewUint(1),
 			observedAddress,
 		),

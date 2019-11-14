@@ -253,6 +253,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 		bnbAddr,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		common.BNBGasFeeSingleton,
 		"",
 	)
 	msgEndPool := NewMsgEndPool(common.BNBAsset, tx, acc1.NodeAddress)
@@ -267,6 +268,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 		bnbAddr,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		common.BNBGasFeeSingleton,
 		"",
 	)
 	msgSetStake := NewMsgSetStakeData(
@@ -337,6 +339,7 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 		bnbAddr,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		common.BNBGasFeeSingleton,
 		"",
 	)
 	msgSetStake := NewMsgSetStakeData(
@@ -462,6 +465,7 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 		"stake:BNB",
 		GetRandomBNBAddress(),
 		GetRandomBNBAddress(),
+		common.BNBGasFeeSingleton,
 		sdk.NewUint(1024),
 		GetRandomPubKey())
 
@@ -500,6 +504,7 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 		"stake:BNB",
 		GetRandomBNBAddress(),
 		GetRandomBNBAddress(),
+		common.BNBGasFeeSingleton,
 		sdk.NewUint(1024),
 		currentChainPool.PubKey)
 	msgSetTxIn1 := types.NewMsgSetTxIn(
@@ -530,6 +535,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 		"create:BNB",
 		GetRandomBNBAddress(),
 		GetRandomBNBAddress(),
+		common.BNBGasFeeSingleton,
 		sdk.NewUint(1024),
 		currentChainPool.PubKey)
 
@@ -564,6 +570,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 		"stake:BNB",
 		staker,
 		GetRandomBNBAddress(),
+		common.BNBGasFeeSingleton,
 		sdk.NewUint(1024),
 		currentChainPool.PubKey)
 
@@ -583,6 +590,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 		"withdraw:BNB",
 		staker,
 		GetRandomBNBAddress(),
+		common.BNBGasFeeSingleton,
 		sdk.NewUint(1025),
 		currentChainPool.PubKey)
 
@@ -622,6 +630,7 @@ func (HandlerSuite) TestHandleMsgLeave(c *C) {
 		senderBNB,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		common.BNBGasFeeSingleton,
 		"",
 	)
 	msgLeave := NewMsgLeave(tx, w.notActiveNodeAccount.NodeAddress)
@@ -666,6 +675,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		bnbAddr,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		common.BNBGasFeeSingleton,
 		"",
 	)
 	msgOutboundTx := NewMsgOutboundTx(tx, txID, w.notActiveNodeAccount.NodeAddress)
@@ -717,6 +727,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		"swap:BNB",
 		GetRandomBNBAddress(),
 		GetRandomBNBAddress(),
+		common.BNBGasFeeSingleton,
 		sdk.NewUint(1024),
 		currentChainPool.PubKey)
 	msgSetTxIn1 := types.NewMsgSetTxIn(
