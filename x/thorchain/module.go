@@ -15,7 +15,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 	"gitlab.com/thorchain/bepswap/thornode/constants"
 
-	"gitlab.com/thorchain/bepswap/thornode/constants"
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/client/cli"
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/client/rest"
 )
