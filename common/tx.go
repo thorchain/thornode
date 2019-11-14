@@ -66,6 +66,7 @@ func GetRagnarokTx(chain Chain) Tx {
 		Memo: "Ragnarok",
 	}
 }
+
 func NewTx(txID TxID, from Address, to Address, coins Coins, gas Gas, memo string) Tx {
 	var chain Chain
 	for _, coin := range coins {
