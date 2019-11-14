@@ -28,7 +28,7 @@ run-standalone: clean
 	docker-compose -f standalone.yml up --force-recreate --remove-orphans -d
 
 run-genesis: clean
-	docker-compose -f genesis.yml up --force-recreate --remove-orphans -d
+	docker-compose -f genesis.yml up --force-recreate --remove-orphans
 
 run-validator: clean-validator
 	docker-compose -f validator.yml --project-name validator up --force-recreate -d
