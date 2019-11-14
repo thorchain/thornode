@@ -72,16 +72,16 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 		// given we on
 		if item.Coin.Asset.Equals(poolBNB.Asset) {
 			// there are four coins , BNB,TCAN-014,LOK-3C0 and RUNE
-			c.Assert(item.Coin.Amount.Uint64(), Equals, poolBNB.BalanceAsset.Uint64()-singleTransactionFee-uint64(poolGas))
+			c.Assert(item.Coin.Amount.Uint64(), Equals, poolBNB.BalanceAsset.Uint64()-uint64(poolGas))
 		}
 		if item.Coin.Asset.Equals(poolTCan.Asset) {
-			c.Assert(item.Coin.Amount.Uint64(), Equals, uint64(1535169738500508))
+			c.Assert(item.Coin.Amount.Uint64(), Equals, uint64(1535169738538008), Commentf("%d", item.Coin.Amount.Uint64()))
 		}
 		if item.Coin.Asset.Equals(poolLoki.Asset) {
-			c.Check(item.Coin.Amount.Uint64(), Equals, uint64(1535169738500508))
+			c.Check(item.Coin.Amount.Uint64(), Equals, uint64(1535169738538008), Commentf("%d", item.Coin.Amount.Uint64()))
 		}
 		if item.Coin.Asset.IsRune() {
-			c.Assert(item.Coin.Amount.String(), Equals, "4605519215576524")
+			c.Assert(item.Coin.Amount.String(), Equals, "4605519215614024")
 		}
 	}
 	w.txOutStore.CommitBlock(w.ctx)

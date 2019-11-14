@@ -1,17 +1,13 @@
 package thorchain
 
 import (
+	"fmt"
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
-
-// TODO: make this admin configs instead of hard coded
-var singleTransactionFee uint64 = 37500
-
-// var batchTransactionFee uint64 = 30000
 
 // TxOutSetter define a method that is required to be used in TxOutStore
 // We need this interface thus we could test the refund logic accordingly
@@ -55,19 +51,10 @@ func (tos *TxOutStore) GetOutboundItems() []*TxOutItem {
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, deductFee, asgard bool) {
+func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, asgard bool) {
 	// Default the memo to the standard outbound memo
 	if toi.Memo == "" {
 		toi.Memo = NewOutboundMemo(toi.InHash).String()
-	}
-
-	if deductFee {
-		switch toi.Coin.Asset.Chain {
-		case common.BNBChain:
-			tos.ApplyBNBFees(ctx, keeper, toi)
-		default:
-			// No gas policy for this chain (yet)
-		}
 	}
 
 	// If we don't have a pool already selected to send from, discover one.
@@ -155,66 +142,6 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 	tos.addToBlockOut(toi)
 }
 
-func (tos *TxOutStore) ApplyBNBFees(ctx sdk.Context, keeper Keeper, toi *TxOutItem) {
-	gas := singleTransactionFee
-
-	if toi.Coin.Asset.IsBNB() {
-		if toi.Coin.Amount.LTE(sdk.NewUint(gas)) {
-			toi.Coin.Amount = sdk.ZeroUint()
-		} else {
-			toi.Coin.Amount = toi.Coin.Amount.SubUint64(gas)
-		}
-
-		// no need to update the bnb pool with new amounts.
-
-	} else if toi.Coin.Asset.IsRune() {
-		bnbPool := keeper.GetPool(ctx, common.BNBAsset)
-
-		if bnbPool.BalanceAsset.LT(sdk.NewUint(gas)) {
-			// not enough gas to be able to send coins
-			return
-		}
-
-		var runeAmt uint64
-		runeAmt = uint64(float64(bnbPool.BalanceRune.Uint64()) / (float64(bnbPool.BalanceAsset.Uint64()) / float64(gas)))
-
-		if toi.Coin.Amount.LTE(sdk.NewUint(runeAmt)) {
-			toi.Coin.Amount = sdk.ZeroUint()
-		} else {
-			toi.Coin.Amount = toi.Coin.Amount.SubUint64(runeAmt)
-		}
-
-		// add the rune to the bnb pool that we are subtracting from
-		// the refund
-		bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
-		bnbPool.BalanceAsset = bnbPool.BalanceAsset.SubUint64(gas)
-		keeper.SetPool(ctx, bnbPool)
-
-	} else {
-		bnbPool := keeper.GetPool(ctx, common.BNBAsset)
-		assetPool := keeper.GetPool(ctx, toi.Coin.Asset)
-
-		var runeAmt, assetAmt uint64
-		runeAmt = uint64(float64(bnbPool.BalanceRune.Uint64()) / (float64(bnbPool.BalanceAsset.Uint64()) / float64(gas)))
-		assetAmt = uint64(float64(assetPool.BalanceRune.Uint64()) / (float64(assetPool.BalanceAsset.Uint64()) / float64(runeAmt)))
-
-		if toi.Coin.Amount.LTE(sdk.NewUint(assetAmt)) {
-			toi.Coin.Amount = sdk.ZeroUint()
-		} else {
-			toi.Coin.Amount = toi.Coin.Amount.SubUint64(assetAmt)
-		}
-
-		// add the rune to the bnb pool that we are subtracting from
-		// the refund
-		bnbPool.BalanceRune = bnbPool.BalanceRune.AddUint64(runeAmt)
-		bnbPool.BalanceAsset = bnbPool.BalanceAsset.SubUint64(gas)
-		keeper.SetPool(ctx, bnbPool)
-		assetPool.BalanceRune = assetPool.BalanceRune.SubUint64(runeAmt)
-		assetPool.BalanceAsset = assetPool.BalanceAsset.AddUint64(assetAmt)
-		keeper.SetPool(ctx, assetPool)
-	}
-}
-
 func (tos *TxOutStore) addToBlockOut(toi *TxOutItem) {
 	toi.SeqNo = tos.getSeqNo(toi.Chain)
 	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
@@ -239,4 +166,86 @@ func (tos *TxOutStore) getSeqNo(chain common.Chain) uint64 {
 		}
 	}
 	return uint64(0)
+}
+
+func ApplyGasFees(ctx sdk.Context, keeper Keeper, tx common.Tx) {
+
+	for _, gasCoin := range tx.Gas {
+		if len(tx.Coins) == 0 {
+			return
+		}
+		// find our coin to take gas from. Prefer non-rune coin so its easier
+		// to know which pool to take gas from and move it to the coin the gas
+		// was paid in.
+		txCoin := tx.Coins[0]
+		for _, coin := range tx.Coins {
+			if !coin.Asset.IsRune() {
+				txCoin = coin
+			}
+		}
+
+		gasPool := keeper.GetPool(ctx, gasCoin.Asset)
+		gas := gasCoin.Amount
+
+		if txCoin.Asset.Equals(gasCoin.Asset) {
+			gasPool.BalanceAsset = gasPool.BalanceAsset.Sub(gas)
+			keeper.SetPool(ctx, gasPool)
+			return
+		}
+
+		if txCoin.Asset.IsRune() {
+			// Try to detect the pool the tx was made from the memo
+			memo, err := ParseMemo(tx.Memo)
+			if err != nil {
+				fmt.Printf("Unable to parse memo for gas deduction: %s\n", tx.Memo)
+				return
+			}
+			asset := memo.GetAsset()
+			if asset.IsEmpty() {
+				fmt.Printf("Unable to determine which pool this rune came from: %s\n", tx.Memo)
+				return
+			}
+
+			txPool := keeper.GetPool(ctx, asset)
+
+			// add the rune to the bnb pool that we are subtracting from
+			// the refund
+			if txPool.BalanceRune.LT(gas) {
+				// we don't have enough asset to pay for gas. Set it to zero
+				txPool.BalanceRune = sdk.ZeroUint()
+				txPool.Status = PoolBootstrap
+			} else {
+				txPool.BalanceRune = txPool.BalanceRune.Sub(gas)
+				gasPool.BalanceRune = gasPool.BalanceRune.Sub(gas)
+			}
+			keeper.SetPool(ctx, gasPool)
+			keeper.SetPool(ctx, txPool)
+			return
+		}
+
+		txPool := keeper.GetPool(ctx, txCoin.Asset)
+
+		var runeAmt, assetAmt uint64
+		runeAmt = uint64(float64(gasPool.BalanceRune.Uint64()) / (float64(gasPool.BalanceAsset.Uint64()) / float64(gas.Uint64())))
+		assetAmt = uint64(float64(txPool.BalanceRune.Uint64()) / (float64(txPool.BalanceAsset.Uint64()) / float64(runeAmt)))
+
+		// add the rune to the bnb pool that we are subtracting from
+		// the refund
+		if gasPool.BalanceAsset.LT(gas) {
+			gasPool.BalanceAsset = sdk.ZeroUint()
+			gasPool.Status = PoolBootstrap
+		} else {
+			gasPool.BalanceRune = gasPool.BalanceRune.AddUint64(runeAmt)
+			gasPool.BalanceAsset = gasPool.BalanceAsset.Sub(gas)
+		}
+		keeper.SetPool(ctx, gasPool)
+		if txPool.BalanceRune.LT(sdk.NewUint(uint64(runeAmt))) {
+			txPool.BalanceRune = sdk.ZeroUint()
+			txPool.Status = PoolBootstrap
+		} else {
+			txPool.BalanceRune = txPool.BalanceRune.SubUint64(runeAmt)
+			txPool.BalanceAsset = txPool.BalanceAsset.AddUint64(assetAmt)
+		}
+		keeper.SetPool(ctx, txPool)
+	}
 }
