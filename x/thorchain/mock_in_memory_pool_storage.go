@@ -36,6 +36,18 @@ func (p *MockInMemoryPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) P
 func (p *MockInMemoryPoolStorage) SetPool(ctx sdk.Context, ps Pool) {
 	p.store[ps.Asset.String()] = ps
 }
+
+func (p *MockInMemoryPoolStorage) AddToLiquidityFees(ctx sdk.Context, ps Pool, fs sdk.Uint) {
+}
+
+func (p *MockInMemoryPoolStorage) GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint, error) {
+	return sdk.ZeroUint(), nil
+}
+
+func (p *MockInMemoryPoolStorage) GetPoolLiquidityFees(ctx sdk.Context, height uint64, pool Pool) (sdk.Uint, error) {
+	return sdk.ZeroUint(), nil
+}
+
 func (p *MockInMemoryPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error) {
 	if stakerID.Equals(notExistStakerPoolAddr) {
 		return NewStakerPool(stakerID), errors.New("simulate error for test")

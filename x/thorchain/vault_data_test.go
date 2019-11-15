@@ -16,12 +16,12 @@ func (s VaultSuite) TestCalcBlockRewards(c *C) {
 	c.Check(poolR.Uint64(), Equals, uint64(880), Commentf("%d", poolR.Uint64()))
 	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 
-	bondR, poolR, stakerD := calcBlockRewards(sdk.NewUint(1000*common.One), 3000)
+	bondR, poolR, stakerD = calcBlockRewards(sdk.NewUint(1000*common.One), sdk.NewUint(3000))
 	c.Check(bondR.Uint64(), Equals, uint64(3760), Commentf("%d", bondR.Uint64()))
 	c.Check(poolR.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 	c.Check(stakerD.Uint64(), Equals, uint64(1120), Commentf("%d", poolR.Uint64()))
 
-	bondR, poolR, stakerD = calcBlockRewards(sdk.ZeroUint())
+	bondR, poolR, stakerD = calcBlockRewards(sdk.ZeroUint(), sdk.ZeroUint())
 	c.Check(bondR.Uint64(), Equals, uint64(0), Commentf("%d", bondR.Uint64()))
 	c.Check(poolR.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
@@ -74,7 +74,7 @@ func (s VaultSuite) TestCalcPoolRewards(c *C) {
 func (s VaultSuite) TestCalcPoolDeficit(c *C) {
 	pool1Fees := sdk.NewUint(1000)
 	pool2Fees := sdk.NewUint(3000)
-	totalFees = sdk.NewUint(4000)
+	totalFees := sdk.NewUint(4000)
 
 	stakerDeficit := sdk.NewUint(1120)
 	amt1 := calcPoolDeficit(stakerDeficit, totalFees, pool1Fees)
