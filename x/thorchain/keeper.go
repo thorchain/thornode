@@ -698,6 +698,208 @@ func (k Keeper) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
 	return &txOut, nil
 }
 
+// AddToLiquidityFees - measure of fees collected in each block
+func (k Keeper) AddToLiquidityFees(ctx sdk.Context, pool Pool, fee sdk.Uint) {
+	store := ctx.KVStore(k.storeKey)
+	currentHeight := ctx.BlockHeight()
+	totalFees, _ := k.GetTotalLiquidityFees(ctx, currentHeight)
+	poolFees, _ := k.GetPoolLiquidityFees(ctx, currentHeight, pool)
+	totalFees = totalFees.Add(fee)
+	poolFees = poolFees.Add(fee)
+	key := getKey(prefixTotalLiquidityFee, strconv.FormatUint(currentHeight, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTotalLiquidityFee))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(totalFees))
+	key2 := getKey(prefixPoolLiquidityFee, strconv.FormatUint(currentHeight, 10), pool.Asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolLiquidityFee))
+	store.Set([]byte(key2), k.cdc.MustMarshalBinaryBare(poolFees))
+}
+
+// GetTotalLiquidityFees - total of all fees collected in each block
+func (k Keeper) GetTotalLiquidityFees(ctx sdk.Context, height sdk.Uint) (LiquidityFees, error) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixTotalLiquidityFee, strconv.FormatUint(height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTotalLiquidityFee))
+	if !store.Has([]byte(key)) {
+		return sdk.ZeroUint(), nil
+	}
+	buf := store.Get([]byte(key))
+	var liquidityFees sdk.Uint
+	if err := k.cdc.UnmarshalBinaryBare(buf, &liquidityFees); nil != err {
+		return nil, errors.Wrap(err, "fail to unmarshal liquidityFees")
+	}
+	return &liquidityFees, nil
+}
+
+// GetPoolLiquidityFees - total of fees collected in each block per pool
+func (k Keeper) GetPoolLiquidityFees(ctx sdk.Context, height sdk.Uint, pool Pool) (PoolFees, error) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixPoolLiquidityFee, strconv.FormatUint(height, 10), pool.Asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolLiquidityFee))
+	if !store.Has([]byte(key)) {
+		return sdk.ZeroUint(), nil
+	}
+	buf := store.Get([]byte(key))
+	var poolFees sdk.Uint
+	if err := k.cdc.UnmarshalBinaryBare(buf, &poolFees); nil != err {
+		return nil, errors.Wrap(err, "fail to unmarshal poolFees")
+	}
+	return &poolFees, nil
+}
+
+// SetAdminConfig - saving a given admin config to the KVStore
+func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixAdmin, config.DbKey(), getVersion(k.GetLowestActiveVersion(ctx), prefixAdmin))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(config))
+}
+
+// GetAdminConfigDefaultPoolStatus - get the config for Default Pool Status
+func (k Keeper) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
+	name, _ := k.GetAdminConfigValue(ctx, DefaultPoolStatus, addr)
+	if name == "" {
+		name = DefaultPoolStatus.Default()
+	}
+	return GetPoolStatus(name)
+}
+
+// GetAdminConfigGSL - get the config for GSL
+func (k Keeper) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
+	return k.GetAdminConfigAmountType(ctx, GSLKey, GSLKey.Default(), addr)
+}
+
+// GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
+func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
+	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, StakerAmtIntervalKey.Default(), addr)
+}
+
+// GetAdminConfigMinValidatorBond get the minimum bond to become a validator
+func (k Keeper) GetAdminConfigMinValidatorBond(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint {
+	return k.GetAdminConfigUintType(ctx, MinValidatorBondKey, MinValidatorBondKey.Default(), addr)
+}
+
+// GetAdminConfigWhiteListGasAsset
+func (k Keeper) GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+	return k.GetAdminConfigCoinsType(ctx, WhiteListGasAssetKey, WhiteListGasAssetKey.Default(), addr)
+}
+
+// GetAdminConfigBnbAddressType - get the config with return type is BNBAddress
+func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address {
+	value, _ := k.GetAdminConfigValue(ctx, key, addr)
+	if value == "" {
+		value = dValue
+	}
+	return common.Address(value)
+}
+
+// GetAdminConfigDesireValidatorSet
+func (k Keeper) GetAdminConfigDesireValidatorSet(ctx sdk.Context, addr sdk.AccAddress) int64 {
+	return k.GetAdminConfigInt64(ctx, DesireValidatorSetKey, DesireValidatorSetKey.Default(), addr)
+}
+
+// GetAdminConfigRotatePerBlockHeight get rotate per block height
+func (k Keeper) GetAdminConfigRotatePerBlockHeight(ctx sdk.Context, addr sdk.AccAddress) int64 {
+	return k.GetAdminConfigInt64(ctx, RotatePerBlockHeightKey, RotatePerBlockHeightKey.Default(), addr)
+}
+
+// GetAdminConfigValidatorsChangeWindow get validator change window
+func (k Keeper) GetAdminConfigValidatorsChangeWindow(ctx sdk.Context, addr sdk.AccAddress) int64 {
+	return k.GetAdminConfigInt64(ctx, ValidatorsChangeWindowKey, ValidatorsChangeWindowKey.Default(), addr)
+}
+
+func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint {
+	value, _ := k.GetAdminConfigValue(ctx, key, addr)
+	if value == "" {
+		value = dValue
+	}
+	amt, err := common.NewAmount(value)
+	if nil != err {
+		ctx.Logger().Error("fail to parse value to float", "value", value)
+	}
+	return common.AmountToUint(amt)
+}
+
+// GetAdminConfigAmountType - get the config for TSL
+func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Amount {
+	value, _ := k.GetAdminConfigValue(ctx, key, addr)
+	if value == "" {
+		value = dValue
+	}
+	return common.Amount(value)
+}
+
+// GetAdminConfigCoinsType - get the config for TSL
+func (k Keeper) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Coins {
+	value, _ := k.GetAdminConfigValue(ctx, key, addr)
+	if value == "" {
+		value = dValue
+	}
+	coins, _ := sdk.ParseCoins(value)
+	return coins
+}
+
+// GetAdminConfigInt64 - get the int64 config
+func (k Keeper) GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) int64 {
+	value, _ := k.GetAdminConfigValue(ctx, key, addr)
+	if value == "" {
+		value = dValue
+	}
+	result, _ := strconv.ParseInt(value, 10, 64)
+	return result
+}
+
+// GetAdminConfigValue - gets the value of a given admin key
+func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error) {
+	getConfigValue := func(nodeAddr sdk.AccAddress) (string, error) {
+		config := NewAdminConfig(kkey, "", nodeAddr)
+		key := getKey(prefixAdmin, config.DbKey(), getVersion(k.GetLowestActiveVersion(ctx), prefixAdmin))
+		store := ctx.KVStore(k.storeKey)
+		if !store.Has([]byte(key)) {
+			return kkey.Default(), nil
+		}
+		buf := store.Get([]byte(key))
+		if err := k.cdc.UnmarshalBinaryBare(buf, &config); nil != err {
+			ctx.Logger().Error(fmt.Sprintf("fail to unmarshal admin config, err: %s", err))
+			return "", errors.Wrap(err, "fail to unmarshal admin config")
+		}
+		return config.Value, nil
+	}
+	// no specific bnb address given, look for consensus value
+	if addr.Empty() {
+		nodeAccounts, err := k.ListActiveNodeAccounts(ctx)
+		if nil != err {
+			return "", errors.Wrap(err, "fail to get active node accounts")
+		}
+		counter := make(map[string]int)
+		for _, node := range nodeAccounts {
+			config, err := getConfigValue(node.NodeAddress)
+			if err != nil {
+				return "", err
+			}
+			counter[config] += 1
+		}
+
+		for k, v := range counter {
+			if HasMajority(v, len(nodeAccounts)) {
+				return k, nil
+			}
+		}
+	} else {
+		// lookup admin config set by specific bnb address
+		val, err = getConfigValue(addr)
+		if err != nil {
+			return val, err
+		}
+	}
+
+	if val == "" {
+		val = kkey.Default()
+	}
+
+	return val, err
+}
+
+// GetAdminConfigIterator iterate admin configs
+func (k Keeper) GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator {
+	store := ctx.KVStore(k.storeKey)
+	return sdk.KVStorePrefixIterator(store, []byte(prefixAdmin))
+}
+
 // GetIncompleteEvents retrieve incomplete events
 func (k Keeper) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
 	key := getKey(prefixInCompleteEvents, "", getVersion(k.GetLowestActiveVersion(ctx), prefixInCompleteEvents))
@@ -979,8 +1181,10 @@ func (k Keeper) SetVaultData(ctx sdk.Context, data VaultData) {
 // Update the vault data to reflect changing in this block
 func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 	vault := k.GetVaultData(ctx)
+	totalFees := k.GetTotalLiquidityFees(ctx)
+	currentHeight := ctx.BlockHeight()
 
-	bondReward, totalPoolRewards := calcBlockRewards(vault.TotalReserve)
+	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees)
 	vault.TotalReserve = vault.TotalReserve.Sub(bondReward).Sub(totalPoolRewards)
 	vault.BondRewardRune = vault.BondRewardRune.Add(bondReward)
 
@@ -996,11 +1200,23 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 			pools = append(pools, pool)
 		}
 	}
-	poolRewards := calcPoolRewards(totalPoolRewards, totalRune, pools)
-	for i, reward := range poolRewards {
-		pool := pools[i]
-		pool.BalanceRune = pool.BalanceRune.Add(reward)
-		k.SetPool(ctx, pool)
+	if totalPoolRewards > 0 {
+		// Add pool rewards
+		poolRewards := calcPoolRewards(totalPoolRewards, totalRune, pools)
+		for i, reward := range poolRewards {
+			pool := pools[i]
+			pool.BalanceRune = pool.BalanceRune.Add(reward)
+			k.SetPool(ctx, pool)
+		}
+	} else {
+		// Deduct pool deficit
+		totalFees = k.GetTotalLiquidityFees(ctx, currentHeight)
+		for _, pool := range pools {
+			poolFees = k.GetPoolLiquidityFees(ctx, currentHeight, pool)
+			poolDeficit := calcPoolDeficit(stakerDeficit, totalFees, poolFee)
+			pool.BalanceRune = pool.BalanceRune.Sub(poolDeficit)
+			k.SetPool(ctx, pool)
+		}
 	}
 
 	i, _ := k.TotalActiveNodeAccount(ctx)
