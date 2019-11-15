@@ -4,7 +4,7 @@ import (
 	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/thornode/const"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 // calculate node rewards
@@ -38,9 +38,9 @@ func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.U
 
 // Calculate the block rewards that bonders and stakers should receive
 func calcBlockRewards(totalReserve sdk.Uint, totalLiquidityFees sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint) {
-	blocksPerYear := const.secondsPerYear / const.secondsPerBlock
+	blocksPerYear := constants.SecondsPerYear / constants.SecondsPerBlock
 	blockRewards := sdk.NewUint(uint64(
-		(float64(totalReserve.Uint64()) / float64(emissionCurve)) / float64(blocksPerYear),
+		(float64(totalReserve.Uint64()) / float64(constants.EmissionCurve)) / float64(blocksPerYear),
 	))
 
 	systemIncome := blockRewards.Add(totalLiquidityFees) // Get total system income for block
