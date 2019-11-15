@@ -145,8 +145,9 @@ func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []ms
 
 	if err != nil {
 		log.Printf("%v\n", err);
+		log.Println("=================", err);
 		time.Sleep(1 * time.Second)
-
+      
 	}else {
 		break
     }
