@@ -51,7 +51,7 @@ func calcBlockRewards(totalReserve sdk.Uint, totalLiquidityFees sdk.Uint) (sdk.U
 	bonderSplit := systemIncome.Sub(stakerSplit)         // 2/3rd to Bonders
 
 	stakerDeficit := sdk.ZeroUint()
-	poolReward := sdk.NewUint()
+	poolReward := sdk.ZeroUint()
 	if stakerSplit.GTE(totalLiquidityFees) {
 		// Stakers have not been paid enough already, pay more
 		poolReward = stakerSplit.Sub(totalLiquidityFees) // Get how much to divert to add to staker split
