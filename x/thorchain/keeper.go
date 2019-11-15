@@ -1126,10 +1126,10 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 	}
 	if !totalPoolRewards.IsZero() {
 		// First get how much gas was consumed
-		runeGas := sdk.ZeroUint()
+
 		for _, coin := range vault.Gas {
 			pool := k.GetPool(ctx, coin.Asset)
-			runeGas = pool.AssetValueInRune(coin.Amount)
+			runeGas := pool.AssetValueInRune(coin.Amount)
 			pool.BalanceRune = pool.BalanceRune.Add(runeGas)
 			k.SetPool(ctx, pool)
 			totalPoolRewards = totalPoolRewards.Sub(runeGas)
