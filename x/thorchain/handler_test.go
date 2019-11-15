@@ -405,7 +405,7 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	// invalid msg
 	msgNextPoolAddrInvalid := NewMsgNextPoolAddress(
-		GetRandomTxHash(),
+		GetRandomTx(),
 		common.EmptyPubKey,
 		GetRandomBNBAddress(), common.BNBChain,
 		w.activeNodeAccount.NodeAddress)
@@ -413,7 +413,7 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	c.Assert(handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddrInvalid).Code, Equals, sdk.CodeUnknownRequest)
 	// rotation window not open
 	msgNextPoolAddr := NewMsgNextPoolAddress(
-		GetRandomTxHash(),
+		GetRandomTx(),
 		GetRandomPubKey(),
 		GetRandomBNBAddress(),
 		common.BNBChain,
@@ -434,7 +434,7 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	c.Assert(err, IsNil)
 	w.poolAddrMgr.currentPoolAddresses.Next = common.EmptyPoolPubKeys
 	msgNextPoolAddr = NewMsgNextPoolAddress(
-		GetRandomTxHash(),
+		GetRandomTx(),
 		GetRandomPubKey(),
 		senderAddr,
 		common.BNBChain,
@@ -808,17 +808,16 @@ func (HandlerSuite) TestHandleMsgAdd(c *C) {
 }
 func (HandlerSuite) TestHandleMsgAck(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	txID := GetRandomTxHash()
 	sender := GetRandomBNBAddress()
 	signer := GetRandomBech32Addr()
 	nextPoolPubKey := GetRandomPubKey()
 	// invalid msg
-	msgAckInvalid := NewMsgAck("", sender, common.BNBChain, signer)
+	msgAckInvalid := NewMsgAck(common.Tx{}, sender, common.BNBChain, signer)
 	result := handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgAckInvalid)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 
 	// Pool rotation window didn't open
-	msgAck := NewMsgAck(txID, sender, common.BNBChain, signer)
+	msgAck := NewMsgAck(GetRandomTx(), sender, common.BNBChain, signer)
 	result = handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgAck)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 
@@ -838,7 +837,7 @@ func (HandlerSuite) TestHandleMsgAck(c *C) {
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 	senderAddr, err := nextPoolPubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
-	msgAck1 := NewMsgAck(txID, senderAddr, common.BNBChain, signer)
+	msgAck1 := NewMsgAck(GetRandomTx(), senderAddr, common.BNBChain, signer)
 	result = handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgAck1)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 	c.Assert(w.poolAddrMgr.ObservedNextPoolAddrPubKey.IsEmpty(), Equals, true)
