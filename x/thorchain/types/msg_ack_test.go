@@ -15,18 +15,19 @@ func (mas *MsgAckSuite) SetUpSuite(c *C) {
 }
 
 func (mas *MsgAckSuite) TestMsgAck(c *C) {
-	txID := GetRandomTxHash()
+	tx := GetRandomTx()
 	sender := GetRandomBNBAddress()
 	signer := GetRandomBech32Addr()
 
-	msgAck := NewMsgAck(txID, sender, common.BNBChain, signer)
+	msgAck := NewMsgAck(tx, sender, common.BNBChain, signer)
 	c.Assert(msgAck.Type(), Equals, "set_ack")
 	EnsureMsgBasicCorrect(msgAck, c)
 
-	emptySender := NewMsgAck(txID, "", common.BNBChain, signer)
+	emptySender := NewMsgAck(tx, "", common.BNBChain, signer)
 	c.Assert(emptySender.ValidateBasic(), NotNil)
-	emptyHash := NewMsgAck("", sender, common.BNBChain, signer)
-	c.Assert(emptyHash.ValidateBasic(), NotNil)
-	emptyChain := NewMsgAck(txID, sender, common.EmptyChain, signer)
+	emptyChain := NewMsgAck(tx, sender, common.EmptyChain, signer)
 	c.Assert(emptyChain.ValidateBasic(), NotNil)
+	tx.ID = ""
+	emptyHash := NewMsgAck(tx, sender, common.BNBChain, signer)
+	c.Assert(emptyHash.ValidateBasic(), NotNil)
 }
