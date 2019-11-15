@@ -1225,6 +1225,9 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 		totalFees, _ = k.GetTotalLiquidityFees(ctx, currentHeight)
 		for _, pool := range pools {
 			poolFees, _ := k.GetPoolLiquidityFees(ctx, currentHeight, pool)
+			if !poolFees.IsZero() {
+				continue
+			}
 			poolDeficit := calcPoolDeficit(stakerDeficit, totalFees, poolFees)
 			pool.BalanceRune = pool.BalanceRune.Sub(poolDeficit)
 			k.SetPool(ctx, pool)
