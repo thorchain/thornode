@@ -15,6 +15,21 @@ import (
 // Day 0 Emission is now 25%, Year 1 Emission is 20%.
 const emissionCurve = 5
 
+// calculate node account bond units
+func calculateNodeAccountBondUints(height, activeBlock, slashPts int64) sdk.Uint {
+	if height < 0 || activeBlock < 0 || slashPts < 0 {
+		return sdk.ZeroUint()
+	}
+	blockCount := height - activeBlock
+	// Minus slash points
+	bCount := blockCount
+	if bCount < slashPts {
+		bCount = slashPts
+	}
+
+	return sdk.NewUint(uint64(bCount - slashPts))
+}
+
 // calculate node rewards
 func calcNodeRewards(naBlocks, totalUnits, totalRuneReward sdk.Uint) sdk.Uint {
 	reward := sdk.NewUint(uint64(

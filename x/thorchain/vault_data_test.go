@@ -84,3 +84,20 @@ func (s VaultSuite) TestCalcNodeRewards(c *C) {
 	reward = calcNodeRewards(blocks, totalUnits, totalReward)
 	c.Check(reward.Uint64(), Equals, uint64(0))
 }
+
+func (s VaultSuite) TestCalculateNodeAccountBondUints(c *C) {
+	blocks := calculateNodeAccountBondUints(50, 30, 2)
+	c.Check(blocks.Uint64(), Equals, uint64(18))
+
+	blocks = calculateNodeAccountBondUints(50, 30, 100000)
+	c.Check(blocks.Uint64(), Equals, uint64(0))
+
+	blocks = calculateNodeAccountBondUints(50, 100, 0)
+	c.Check(blocks.Uint64(), Equals, uint64(0))
+
+	blocks = calculateNodeAccountBondUints(-50, 30, 0)
+	c.Check(blocks.Uint64(), Equals, uint64(0))
+
+	blocks = calculateNodeAccountBondUints(50, -100, 0)
+	c.Check(blocks.Uint64(), Equals, uint64(0))
+}
