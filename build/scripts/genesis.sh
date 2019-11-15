@@ -25,8 +25,6 @@ VERSION=$(fetch_version)
 if [ "$SEED" = "$(hostname)" ]; then
     echo "I AM THE SEED NODE"
     thord tendermint show-node-id > /tmp/shared/node.txt
-
-    echo $ADDRESS > /tmp/shared/pool_address.txt
 fi
 
 # write node account data to json file in shared directory
@@ -41,6 +39,15 @@ fi
 while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODES" ]; do
     sleep 1
 done
+
+# wait for TSS keysign agent to become available
+$(dirname "$0")/wait-for-tss-keygen.sh $TSSKEYSIGN
+
+KEYCLIENT="keysignclient --name $SIGNER_NAME --password $SIGNER_PASSWD -u http://$TSSKEYSIGN:8322/keygen"
+for f in /tmp/shared/node_*.json; do
+  KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $1}')"
+done
+exec "$KEYCLIENT"
 
 POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
 
