@@ -34,3 +34,23 @@ func (g Gas) IsValid() error {
 
 	return nil
 }
+
+// This function combines two gas objects into one, adding amounts where needed
+// or appending new coins.
+func (g Gas) Add(g2 Gas) Gas {
+	var newGasCoins Gas
+	for _, gc2 := range g2 {
+		matched := false
+		for i, gc1 := range g {
+			if gc1.Asset.Equals(gc2.Asset) {
+				g[i].Amount = g[i].Amount.Add(gc2.Amount)
+				matched = true
+			}
+		}
+		if !matched {
+			newGasCoins = append(newGasCoins, gc2)
+		}
+	}
+
+	return append(g, newGasCoins...)
+}

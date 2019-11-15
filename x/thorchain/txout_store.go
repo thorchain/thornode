@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -168,84 +167,8 @@ func (tos *TxOutStore) getSeqNo(chain common.Chain) uint64 {
 	return uint64(0)
 }
 
-func ApplyGasFees(ctx sdk.Context, keeper Keeper, tx common.Tx) {
-
-	for _, gasCoin := range tx.Gas {
-		if len(tx.Coins) == 0 {
-			return
-		}
-		// find our coin to take gas from. Prefer non-rune coin so its easier
-		// to know which pool to take gas from and move it to the coin the gas
-		// was paid in.
-		txCoin := tx.Coins[0]
-		for _, coin := range tx.Coins {
-			if !coin.Asset.IsRune() {
-				txCoin = coin
-			}
-		}
-
-		gasPool := keeper.GetPool(ctx, gasCoin.Asset)
-		gas := gasCoin.Amount
-
-		if txCoin.Asset.Equals(gasCoin.Asset) {
-			gasPool.BalanceAsset = gasPool.BalanceAsset.Sub(gas)
-			keeper.SetPool(ctx, gasPool)
-			return
-		}
-
-		if txCoin.Asset.IsRune() {
-			// Try to detect the pool the tx was made from the memo
-			memo, err := ParseMemo(tx.Memo)
-			if err != nil {
-				fmt.Printf("Unable to parse memo for gas deduction: %s\n", tx.Memo)
-				return
-			}
-			asset := memo.GetAsset()
-			if asset.IsEmpty() {
-				fmt.Printf("Unable to determine which pool this rune came from: %s\n", tx.Memo)
-				return
-			}
-
-			txPool := keeper.GetPool(ctx, asset)
-
-			// add the rune to the bnb pool that we are subtracting from
-			// the refund
-			if txPool.BalanceRune.LT(gas) {
-				// we don't have enough asset to pay for gas. Set it to zero
-				txPool.BalanceRune = sdk.ZeroUint()
-				txPool.Status = PoolBootstrap
-			} else {
-				txPool.BalanceRune = txPool.BalanceRune.Sub(gas)
-				gasPool.BalanceRune = gasPool.BalanceRune.Sub(gas)
-			}
-			keeper.SetPool(ctx, gasPool)
-			keeper.SetPool(ctx, txPool)
-			return
-		}
-
-		txPool := keeper.GetPool(ctx, txCoin.Asset)
-
-		var runeAmt, assetAmt uint64
-		runeAmt = uint64(float64(gasPool.BalanceRune.Uint64()) / (float64(gasPool.BalanceAsset.Uint64()) / float64(gas.Uint64())))
-		assetAmt = uint64(float64(txPool.BalanceRune.Uint64()) / (float64(txPool.BalanceAsset.Uint64()) / float64(runeAmt)))
-
-		// add the rune to the bnb pool that we are subtracting from
-		// the refund
-		if gasPool.BalanceAsset.LT(gas) {
-			gasPool.BalanceAsset = sdk.ZeroUint()
-			gasPool.Status = PoolBootstrap
-		} else {
-			gasPool.BalanceRune = gasPool.BalanceRune.AddUint64(runeAmt)
-			gasPool.BalanceAsset = gasPool.BalanceAsset.Sub(gas)
-		}
-		keeper.SetPool(ctx, gasPool)
-		if txPool.BalanceRune.LT(sdk.NewUint(runeAmt)) {
-			txPool.BalanceRune = sdk.ZeroUint()
-			txPool.Status = PoolBootstrap
-		} else {
-			txPool.BalanceRune = txPool.BalanceRune.SubUint64(runeAmt)
-			txPool.BalanceAsset = txPool.BalanceAsset.AddUint64(assetAmt)
-		}
-		keeper.SetPool(ctx, txPool)
-	}
+func AddGasFees(ctx sdk.Context, keeper Keeper, gas common.Gas) {
+	vault := keeper.GetVaultData(ctx)
+	vault.Gas = vault.Gas.Add(gas)
+	keeper.SetVaultData(ctx, vault)
 }
