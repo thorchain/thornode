@@ -5,11 +5,11 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type GSuite struct{}
+type GasSuite struct{}
 
-var _ = Suite(&GSuite{})
+var _ = Suite(&GasSuite{})
 
-func (s *GSuite) TestMultiGasCalc(c *C) {
+func (s *GasSuite) TestMultiGasCalc(c *C) {
 	gas := GetBNBGasFeeMulti(1)
 	amt := gas[0].Amount
 	c.Check(
@@ -29,7 +29,7 @@ func (s *GSuite) TestMultiGasCalc(c *C) {
 	)
 }
 
-func (s *GSuite) TestCombineGas(c *C) {
+func (s *GasSuite) TestCombineGas(c *C) {
 	gas1 := Gas{
 		{Asset: BNBAsset, Amount: sdk.NewUint(11 * One)},
 	}
