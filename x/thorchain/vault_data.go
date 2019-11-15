@@ -64,23 +64,24 @@ func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.U
 
 // Calculate the block rewards that bonders and stakers should receive
 func calcBlockRewards(totalReserve sdk.Uint, totalLiquidityFees sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint) {
-	blocksPerYear := secondsPerYear / cmd.SecondsPerBlock
+	blocksPerYear := const.secondsPerYear / const.secondsPerBlock
 	blockRewards := sdk.NewUint(uint64(
 		(float64(totalReserve.Uint64()) / float64(constants.EmissionCurve)) / float64(constants.BlocksPerYear),
 	))
 
-	systemIncome = blockRewards.Add(totalLiquidityFees) // Get total system income for block
-	stakerSplit := systemIncome.QuoUint64(3)            // 1/3rd to Stakers
-	bonderSplit := systemIncome.Sub(stakerSplit)        // 2/3rd to Bonders
+	systemIncome := blockRewards.Add(totalLiquidityFees) // Get total system income for block
+	stakerSplit := systemIncome.QuoUint64(3)             // 1/3rd to Stakers
+	bonderSplit := systemIncome.Sub(stakerSplit)         // 2/3rd to Bonders
 
 	stakerDeficit := sdk.ZeroUint()
-	if stakerSplit >= totalLiquidityFees {
+	poolReward := sdk.NewUint()
+	if stakerSplit.GTE(totalLiquidityFees) {
 		// Stakers have not been paid enough already, pay more
-		poolReward := stakerSplit.Sub(totalLiquidityFees) // Get how much to divert to add to staker split
+		poolReward = stakerSplit.Sub(totalLiquidityFees) // Get how much to divert to add to staker split
 	} else {
 		// Stakers have been paid too much, calculate deficit
-		stakerDeficit := totalLiquidityFees.Sub(stakerSplit) // Deduct existing income from split
-		poolReward := sdk.ZeroUint()                         // Nothing to pay stakers now
+		stakerDeficit = totalLiquidityFees.Sub(stakerSplit) // Deduct existing income from split
+		poolReward = sdk.ZeroUint()                         // Nothing to pay stakers now
 	}
 
 	bondReward := bonderSplit // Give bonders their cut
