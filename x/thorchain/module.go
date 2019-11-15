@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 
 	"gitlab.com/thorchain/bepswap/thornode/constants"
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/client/cli"
@@ -125,7 +126,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	// slash node accounts for not observing any accepted inbound tx
 	slashForObservingAddresses(ctx, am.keeper)
 
-	// Enable a pool every 50,000 blocks (3 days)
+	// Enable a pool every newPoolCycle
 	if ctx.BlockHeight()%constants.NewPoolCycle == 0 {
 		am.keeper.EnableAPool(ctx)
 	}
