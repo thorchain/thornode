@@ -107,38 +107,12 @@ The tests are all run via `make`.
 Please see the test specs [here](https://docs.google.com/spreadsheets/d/1sLK0FE-s6LInWijqKgxAzQk2RiSDZO1GL58kAD62ch0)
 
 ```shell script
-make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-refund
-make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit-1p
-make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> smoke-test-audit-2p
+make FAUCET_KEY=<faucet key> smoke-test
 ```
 
-#### Individual (Unit) Tests
+You must provide:
 
-These are really only intended to be run when debugging locally - e.g.: you wish to generate noise (without running the entire suite) to see what the Chain Service or other components within the stack observe/report.
-
-##### Gas
-
-```shell script
-make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> gas
-```
-
-##### Stake
-
-```shell script
-make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> stake
-```
-
-##### Swap
-
-```shell script
-make FAUCET_KEY=<faucet key> POOL_KEY=<pool key> ENV=<env> swap
-```
-
-For each of the tests you must provide:
-
-* `FAUCET_KEY` this is the private key of the faucet. Without this, the tests will fail as nothing will be funded,
-* `POOL_KEY` this is the private key of the pool that that Statechain Observer is observing
-* and `ENV` is the environment to run the tests against (can be one of `local`, `develop`, `staging` or `production`).
+* `FAUCET_KEY` this is the private key of the faucet. Without this, the tests will fail as nothing will be funded.
 
 #### Sweep
 
@@ -152,3 +126,7 @@ Where:
 
 * `MASTER_KEY` is the private key of the wallet we wish to transfer assets to
 * and `KEY_LIST` is a comma-separated list of private keys we wish to sweep up the assets from.
+
+#### Results
+
+Results will be saved to `/tmp/smoke-test.json`.

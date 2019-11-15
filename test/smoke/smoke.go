@@ -136,6 +136,9 @@ func (s *Smoke) Run() {
 		}
 
 		from := s.Tests.ActorKeys[rule.From]
+
+		// Test summary information.
+		s.OutputInfo(rule, tx)
 		s.SendTxn(from.Client, from.Key, payload, memo)
 
 		// Validate.
@@ -149,6 +152,15 @@ func (s *Smoke) Run() {
 
 	// Save the log.
 	s.SaveLog()
+}
+
+// OutputInfo : Test output information
+func (s *Smoke) OutputInfo(rule types.Rule, tx int) {
+	if s.Config.debug == true {
+		fmt.Println("---------------------------------------------")
+		fmt.Printf("TX: %v\n", tx + 1)
+		fmt.Printf("Test: %v\n", rule.Description)
+	}
 }
 
 // SaveLog : Save the log file.
