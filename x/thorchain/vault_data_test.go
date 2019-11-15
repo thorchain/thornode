@@ -11,13 +11,20 @@ type VaultSuite struct{}
 var _ = Suite(&VaultSuite{})
 
 func (s VaultSuite) TestCalcBlockRewards(c *C) {
-	bondR, poolR := calcBlockRewards(sdk.NewUint(1000 * common.One))
+	bondR, poolR, stakerD := calcBlockRewards(sdk.NewUint(1000*common.One), sdk.ZeroUint())
 	c.Check(bondR.Uint64(), Equals, uint64(1760), Commentf("%d", bondR.Uint64()))
 	c.Check(poolR.Uint64(), Equals, uint64(880), Commentf("%d", poolR.Uint64()))
+	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 
-	bondR, poolR = calcBlockRewards(sdk.ZeroUint())
+	bondR, poolR, stakerD := calcBlockRewards(sdk.NewUint(1000*common.One), 3000)
+	c.Check(bondR.Uint64(), Equals, uint64(3760), Commentf("%d", bondR.Uint64()))
+	c.Check(poolR.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
+	c.Check(stakerD.Uint64(), Equals, uint64(1120), Commentf("%d", poolR.Uint64()))
+
+	bondR, poolR, stakerD = calcBlockRewards(sdk.ZeroUint())
 	c.Check(bondR.Uint64(), Equals, uint64(0), Commentf("%d", bondR.Uint64()))
 	c.Check(poolR.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
+	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 }
 
 func (s VaultSuite) TestCalcPoolRewards(c *C) {
@@ -62,6 +69,19 @@ func (s VaultSuite) TestCalcPoolRewards(c *C) {
 	c.Assert(amts, HasLen, 2)
 	c.Check(amts[0].IsZero(), Equals, true, Commentf("%d", amts[0].Uint64()))
 	c.Check(amts[1].IsZero(), Equals, true, Commentf("%d", amts[1].Uint64()))
+}
+
+func (s VaultSuite) TestCalcPoolDeficit(c *C) {
+	pool1Fees := sdk.NewUint(1000)
+	pool2Fees := sdk.NewUint(3000)
+	totalFees = sdk.NewUint(4000)
+
+	stakerDeficit := sdk.NewUint(1120)
+	amt1 := calcPoolDeficit(stakerDeficit, totalFees, pool1Fees)
+	amt2 := calcPoolDeficit(stakerDeficit, totalFees, pool2Fees)
+
+	c.Check(amt1.Equal(sdk.NewUint(280)), Equals, true, Commentf("%d", amt1.Uint64()))
+	c.Check(amt2.Equal(sdk.NewUint(840)), Equals, true, Commentf("%d", amt2.Uint64()))
 }
 
 func (s VaultSuite) TestCalcNodeRewards(c *C) {
