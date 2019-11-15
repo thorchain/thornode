@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"gitlab.com/thorchain/bepswap/thornode/const"
 
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/client/cli"
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/client/rest"
@@ -121,8 +122,8 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
 
-	// Enable a pool every 50,000 blocks (3 days)
-	if ctx.BlockHeight()%50000 == 0 {
+	// Enable a pool every newPoolCycle
+	if ctx.BlockHeight()%const.newPoolCycle == 0 {
 		am.keeper.EnableAPool(ctx)
 	}
 
