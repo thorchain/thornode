@@ -1,4 +1,4 @@
-package app
+package constants
 
 // The emission curve targets a ~2% emission after 10 years (similar to Bitcoin).
 // The secondsPerBlock directly affects emission rate, and should be updated if markedly different in production
