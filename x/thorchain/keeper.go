@@ -1073,7 +1073,8 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 	vault := k.GetVaultData(ctx)
 	totalFees := k.GetTotalLiquidityFees(ctx)
 	currentHeight := ctx.BlockHeight()
-
+	
+	
 	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees)
 	vault.TotalReserve = vault.TotalReserve.Sub(bondReward).Sub(totalPoolRewards)
 	vault.BondRewardRune = vault.BondRewardRune.Add(bondReward)
@@ -1091,6 +1092,16 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 		}
 	}
 	if totalPoolRewards > 0 {
+		// First get how much gas was consumed
+		var runeGas sdk.ZeroUint()
+		for (_, coin := range vault.Gas) {
+			pool := k.GetPool(ctx, coin.Asset)
+			runeGas = pool.AssetValueInRune(coin.Amount)
+			pool.BalanceRune = pool.BalanceRune.Add(runeGas)
+			k.SetPool(ctx, pool)
+			totalPoolRewards = totalPoolRewards.Sub(runeGas)
+		}
+		
 		// Add pool rewards
 		poolRewards := calcPoolRewards(totalPoolRewards, totalRune, pools)
 		for i, reward := range poolRewards {
