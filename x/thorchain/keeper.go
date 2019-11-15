@@ -722,7 +722,7 @@ func (k Keeper) GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint,
 	}
 	buf := store.Get([]byte(key))
 	var liquidityFees sdk.Uint
-	if err := k.cdc.UnmarshalBinaryBare(buf, liquidityFees); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &liquidityFees); nil != err {
 		return sdk.ZeroUint(), errors.Wrap(err, "fail to unmarshal liquidityFees")
 	}
 	return liquidityFees, nil

@@ -332,7 +332,7 @@ func (s SwapSuite) TestCalculators(c *C) {
 	// These calculations are verified by using the spreadsheet
 	// https://docs.google.com/spreadsheets/d/1wJHYBRKBdw_WP7nUyVnkySPkOmPUNoiRGsEqgBVVXKU/edit#gid=0
 	c.Check(calcAssetEmission(X, x, Y).Uint64(), Equals, uint64(826446280))
-	c.Check(calcLiquitityFee(X, x, Y).Uint64(), Equals, uint64(82644628))
+	c.Check(calcLiquidityFee(X, x, Y).Uint64(), Equals, uint64(82644628))
 	c.Check(calcPoolSlip(X, x), Equals, 0.1990990990990991)
 	c.Check(calcTradeSlip(X, x), Equals, 0.21)
 	// c.Check(calcPriceSlip(X, x, Y), Equals, 1.210000001452)
