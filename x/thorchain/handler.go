@@ -972,7 +972,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	inTx := voter.GetTx(activeNodeAccounts)
 	tx := inTx.GetCommonTx(msg.InTxID)
 	tx.Gas = msg.Tx.Gas // get gas from outbound tx, and replace the inbound gas for applying gas
-	ApplyGasFees(ctx, keeper, tx)
+	AddGasFees(ctx, keeper, tx.Gas)
 
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := keeper.GetTxOut(ctx, uint64(voter.Height))

@@ -11,46 +11,15 @@ type TxOutStoreSuite struct{}
 
 var _ = Suite(&TxOutStoreSuite{})
 
-func (s TxOutStoreSuite) TestApplyGasFees(c *C) {
+func (s TxOutStoreSuite) TestAddGasFees(c *C) {
 	ctx, k := setupKeeperForTest(c)
 
-	p := NewPool()
-	p.Asset = common.BNBAsset
-	p.BalanceRune = sdk.NewUint(100 * common.One)
-	p.BalanceAsset = sdk.NewUint(100 * common.One)
-	k.SetPool(ctx, p)
-
-	loki := NewPool()
-	loki.Asset, _ = common.NewAsset("BNB.LOKI")
-	loki.BalanceRune = sdk.NewUint(100 * common.One)
-	loki.BalanceAsset = sdk.NewUint(100 * common.One)
-	k.SetPool(ctx, loki)
-
-	tx := GetRandomTx()
-	tx.Coins = common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(3980500*common.One))}
-	tx.Gas = common.BNBGasFeeSingleton
-	ApplyGasFees(ctx, k, tx)
-	bnbPool := k.GetPool(ctx, common.BNBAsset)
-	// happy path
-	c.Assert(bnbPool.BalanceAsset.String(), Equals, "9999962500")
-
-	tx.Coins = common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One))}
-	tx.Memo = "SWAP:BNB.BNB"
-
-	ApplyGasFees(ctx, k, tx)
-	bnbPool = k.GetPool(ctx, common.BNBAsset)
-	// test takes gas out of rune
-	c.Assert(bnbPool.BalanceAsset.String(), Equals, "9999962500")
-	c.Assert(bnbPool.BalanceRune.String(), Equals, "9999962500")
-
-	tx.Coins = common.Coins{common.NewCoin(loki.Asset, sdk.NewUint(20*common.One))}
-	ApplyGasFees(ctx, k, tx)
-	lokiPool := k.GetPool(ctx, loki.Asset)
-	bnbPool = k.GetPool(ctx, common.BNBAsset)
-	// test takes gas out of loki pool
-	c.Assert(bnbPool.BalanceAsset.String(), Equals, "9999925000")
-	c.Assert(bnbPool.BalanceRune.String(), Equals, "10000000000")
-	c.Assert(lokiPool.BalanceRune.String(), Equals, "9999962500", Commentf("%+v\n", lokiPool))
+	gas := common.BNBGasFeeSingleton
+	AddGasFees(ctx, k, gas)
+	vault := k.GetVaultData(ctx)
+	c.Assert(vault.Gas, HasLen, 1)
+	c.Check(vault.Gas[0].Asset.Equals(common.BNBAsset), Equals, true)
+	c.Check(vault.Gas[0].Amount.Equal(sdk.NewUint(37500)), Equals, true)
 }
 
 func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
