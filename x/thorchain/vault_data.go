@@ -4,15 +4,8 @@ import (
 	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/thornode/cmd"
+	"gitlab.com/thorchain/bepswap/thornode/const"
 )
-
-// The block reward emission curve targets a ~2% emission after 10 years (similar to Bitcoin).
-// Since RUNE is a strictly-scarce asset, emissions need to be carefully considered for greatest network prosperity.
-// Day 0 Emission is ~25%, Year 1 Emission is ~20%.
-
-const emissionCurve = 6         // An arbitrary factor to target desired curve
-const secondsPerYear = 31556952 // 365.2425 * 86400
 
 // calculate node rewards
 func calcNodeRewards(naBlocks, totalUnits, totalRuneReward sdk.Uint) sdk.Uint {
@@ -37,7 +30,7 @@ func calcPoolRewards(totalPoolRewards, totalStakedRune sdk.Uint, pools []Pool) [
 // Calculate pool deficit based on the pool's accrued fees compared with total fees.
 func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.Uint {
 	var amt sdk.Uint
-	amt := sdk.NewUint(uint64(math.Round(
+	amt = sdk.NewUint(uint64(math.Round(
 		float64(stakerDeficit.Uint64()) / (float64(totalFees.Uint64()) / float64(poolFees.Uint64())),
 	)))
 	return amt
@@ -45,23 +38,24 @@ func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.U
 
 // Calculate the block rewards that bonders and stakers should receive
 func calcBlockRewards(totalReserve sdk.Uint, totalLiquidityFees sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint) {
-	blocksPerYear := secondsPerYear / cmd.SecondsPerBlock
+	blocksPerYear := const.secondsPerYear / const.secondsPerBlock
 	blockRewards := sdk.NewUint(uint64(
 		(float64(totalReserve.Uint64()) / float64(emissionCurve)) / float64(blocksPerYear),
 	))
 
-	systemIncome = blockRewards.Add(totalLiquidityFees) // Get total system income for block
-	stakerSplit := systemIncome.QuoUint64(3)            // 1/3rd to Stakers
-	bonderSplit := systemIncome.Sub(stakerSplit)        // 2/3rd to Bonders
+	systemIncome := blockRewards.Add(totalLiquidityFees) // Get total system income for block
+	stakerSplit := systemIncome.QuoUint64(3)             // 1/3rd to Stakers
+	bonderSplit := systemIncome.Sub(stakerSplit)         // 2/3rd to Bonders
 
 	stakerDeficit := sdk.ZeroUint()
-	if stakerSplit >= totalLiquidityFees {
+	poolReward := sdk.NewUint()
+	if stakerSplit.GTE(totalLiquidityFees) {
 		// Stakers have not been paid enough already, pay more
-		poolReward := stakerSplit.Sub(totalLiquidityFees) // Get how much to divert to add to staker split
+		poolReward = stakerSplit.Sub(totalLiquidityFees) // Get how much to divert to add to staker split
 	} else {
 		// Stakers have been paid too much, calculate deficit
-		stakerDeficit := totalLiquidityFees.Sub(stakerSplit) // Deduct existing income from split
-		poolReward := sdk.ZeroUint()                         // Nothing to pay stakers now
+		stakerDeficit = totalLiquidityFees.Sub(stakerSplit) // Deduct existing income from split
+		poolReward = sdk.ZeroUint()                         // Nothing to pay stakers now
 	}
 
 	bondReward := bonderSplit // Give bonders their cut

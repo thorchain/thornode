@@ -16,6 +16,8 @@ type poolStorage interface {
 	GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error)
 	SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool)
 
+	AddToLiquidityFees(ctx sdk.Context, pool Pool, fee sdk.Uint)
+
 	GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error)
 	SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker)
 
