@@ -549,6 +549,8 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 		keeper.SetNodeAccount(ctx, item)
 	}
 
+	AddGasFees(ctx, keeper, msg.Tx.Gas)
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
 			sdk.NewAttribute("pubkey", poolAddrMgr.currentPoolAddresses.Next.String()),
@@ -718,9 +720,11 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 			return nil, errors.Wrap(err, "fail to get MsgBond from memo")
 		}
 	case NextPoolMemo:
-		newMsg = NewMsgNextPoolAddress(txID, m.NextPoolAddr, tx.Sender, chain, signer)
+		txIn := tx.GetCommonTx(txID)
+		newMsg = NewMsgNextPoolAddress(txIn, m.NextPoolAddr, tx.Sender, chain, signer)
 	case AckMemo:
-		newMsg = types.NewMsgAck(txID, tx.Sender, chain, signer)
+		txIn := tx.GetCommonTx(txID)
+		newMsg = types.NewMsgAck(txIn, tx.Sender, chain, signer)
 	case LeaveMemo:
 		tx := tx.GetCommonTx(txID)
 		newMsg = NewMsgLeave(tx, signer)
