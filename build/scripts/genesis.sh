@@ -47,9 +47,10 @@ KEYCLIENT="/usr/bin/keygenclient --name $SIGNER_NAME --password $SIGNER_PASSWD -
 for f in /tmp/shared/node_*.json; do
   KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $3}')"
 done
-sh -c "$KEYCLIENT"
+sh -c "$KEYCLIENT > /tmp/keygenclient.output"
 
-POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
+PUBKEY=$(cat /tmp/keygenclient.output | tail -2 | head -1)
+POOL_ADDRESS=$(cat /tmp/keygenclient.output | tail -1)
 
 if [ "$SEED" = "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
