@@ -22,6 +22,9 @@ services:
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 192.168.30.32
 
   signer:
     hostname: signer
@@ -110,6 +113,9 @@ services:
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+    networks:
+      localnet:
+        ipv4_address: 192.168.40.32
 
   tssKeygen:
     hostname: tssKeygen
@@ -181,6 +187,9 @@ services:
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 192.168.30.33
 
   signer2:
     hostname: signer2
@@ -260,6 +269,9 @@ services:
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+    networks:
+      localnet:
+        ipv4_address: 192.168.40.33
 
   tssKeygen2:
     hostname: tssKeygen2
@@ -330,6 +342,9 @@ services:
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 192.168.30.34
 
   signer3:
     hostname: signer3
@@ -409,6 +424,9 @@ services:
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+    networks:
+      localnet:
+        ipv4_address: 192.168.40.34
 
   tssKeygen3:
     hostname: tssKeygen3
@@ -478,6 +496,9 @@ services:
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 192.168.30.35
 
   signer4:
     hostname: signer4
@@ -559,6 +580,9 @@ services:
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+    networks:
+      localnet:
+        ipv4_address: 192.168.40.35
 
   tssKeygen4:
     hostname: tssKeygen4
