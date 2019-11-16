@@ -15,4 +15,5 @@ while [ "$(cat $CONFIGFILE | jq .nodeid)" != "waiting" ]; do
     sleep 3
 done
 
+echo "$@"
 exec "$@"
