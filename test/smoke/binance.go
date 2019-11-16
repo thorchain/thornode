@@ -93,7 +93,7 @@ func (b Binance) ParseTx(key keys.KeyManager, transfers []msg.Transfer) msg.Send
 }
 
 // SendTxn : prep and broadcast the transaction to Binance.
-func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {
+func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {	
 	time.Sleep(b.delay)
 
 	if b.debug == true {
@@ -133,6 +133,10 @@ func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []ms
 		types.DefaultAPIVersionPrefix)
 
 	rclient := resty.New()
+
+	for i := 1;  i<=5; i++ {
+	 
+
 	resp, err := rclient.R().
 		SetHeader("Content-Type", "text/plain").
 		SetBody(hexTx).
@@ -140,10 +144,16 @@ func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []ms
 		Post(uri)
 
 	if err != nil {
-		log.Printf("%v\n", err)
-	}
+		log.Printf("%v\n", err);
+		log.Println("==============", err);
+		time.Sleep(1 * time.Second)
+      
+	}else {
+		break
+    }
 
 	if b.debug == true {
 		log.Printf("Commit Response from Binance: %v", string(resp.Body()))
 	}
+}
 }
