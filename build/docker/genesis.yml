@@ -122,7 +122,7 @@ services:
       SIGNERSERVER: "0.0.0.0:8321"
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 1
-      RUST_BACKTRACE: 1
+      RUST_BACKTRACE: "full"
       TSS_NODE_ID: "waiting"
       CONFIGFILE: ~/.tss/config_1.json
     expose:
@@ -145,7 +145,7 @@ services:
     dns: 8.8.8.8
     environment:
       CONFIGFILE: ~/.tss/config_1.json
-      RUST_BACKTRACE: 1
+      RUST_BACKTRACE: "full"
     expose:
       - "8321"
       - "5455"
@@ -222,7 +222,7 @@ services:
     environment:
       NODES: 4
       SEED: thor-daemon
-      TSSKEYSIGN: 192.168.10.2
+      TSSKEYSIGN: 192.168.10.3
     depends_on:
       - tssKeygen2
     links:
@@ -371,7 +371,7 @@ services:
     environment:
       NODES: 4
       SEED: thor-daemon
-      TSSKEYSIGN: 192.168.10.2
+      TSSKEYSIGN: 192.168.10.4
     depends_on:
       - tssKeygen3
     links:
@@ -521,7 +521,7 @@ services:
     environment:
       NODES: 4
       SEED: thor-daemon
-      TSSKEYSIGN: 192.168.10.2
+      TSSKEYSIGN: 192.168.10.5
     entrypoint:
       /docker/scripts/genesis.sh
     depends_on:
