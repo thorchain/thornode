@@ -51,6 +51,9 @@ services:
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.32
 
   thor-daemon:
     hostname: thor-daemon
@@ -61,6 +64,7 @@ services:
     environment:
       NODES: 4
       SEED: thor-daemon
+      TSSKEYSIGN: 122.122.10.2
     depends_on:
       - tssKeygen
     links:
@@ -77,6 +81,9 @@ services:
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
     command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.22
 
   thor-api:
     hostname: thor-api
@@ -111,25 +118,37 @@ services:
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 1
       TSS_NODE_ID: "waiting"
-      CONFIGFILE: ~/.tss/config/config_1.json
+      CONFIGFILE: ~/.tss/config_1.json
+    expose:
+      - "8322"
     entrypoint:
       /docker/scripts/tss_keygen.sh
     volumes:
       - ${PWD}/../scripts:/docker/scripts
-      - ${HOME}/.thornode/standalone/.tss:/root/.tss
-    command: "tss_keygen ~/.tss/config/config_1.json ~/.tss/private.key /ip4/tssSign/tcp/5455"
+      - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
+    command: "/app/tss_keygen ~/.tss/config_1.json ~/.tss/private.key /ip4/122.122.10.2/tcp/5455"
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.2
+
 
   tssSign:
     hostname: tssSign
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
-      CONFIGFILE: ~/.tss/config/config_1.json
+      CONFIGFILE: ~/.tss/config_1.json
+    expose:
+      - "8321"
     entrypoint:
       /docker/scripts/tss_sign.sh
     volumes:
       - ${PWD}/../scripts:/docker/scripts
-      - ${HOME}/.thornode/standalone/.tss:/root/.tss
-    command: "tss_sign ~/.tss/private.key ~/.tss/config/config_1.json /ip4/tssKeygen/tcp/5455"
+      - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
+    command: "/app/tss_sign ~/.tss/private.key ~/.tss/config_1.json /ip4/122.122.10.12/tcp/5455"
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.12
+
 
   observer2:
     hostname: observer2
@@ -177,6 +196,9 @@ services:
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.33
 
   thor-daemon2:
     hostname: thor-daemon2
@@ -187,6 +209,7 @@ services:
     environment:
       NODES: 4
       SEED: thor-daemon
+      TSSKEYSIGN: 122.122.10.2
     depends_on:
       - tssKeygen2
     links:
@@ -200,6 +223,9 @@ services:
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
     command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.23
 
   thor-api2:
     hostname: thor-api2
@@ -227,30 +253,40 @@ services:
     environment:
       PARTIES: 4
       THRESHOLD: 3
-      BOOTSTRAPNODE: "/ip4/tssKeygen/tcp/5433"
+      BOOTSTRAPNODE: "/ip4/122.122.10.2/tcp/5433"
       SIGNERSERVER: "0.0.0.0:8321"
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 2
       TSS_NODE_ID: "waiting"
-      CONFIGFILE: ~/.tss/config/config_2.json
+      CONFIGFILE: ~/.tss/config_2.json
+    expose:
+      - "8322"
     entrypoint:
       /docker/scripts/tss_keygen.sh
     volumes:
       - ${PWD}/../scripts:/docker/scripts
-      - ${HOME}/.thornode/standalone/.tss:/root/.tss
-    command: "tss_keygen ~/.tss/config/config_2.json ~/.tss/private.key /ip4/tssSign2/tcp/5455"
+      - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
+    command: "/app/tss_keygen ~/.tss/config_2.json ~/.tss/private.key /ip4/122.122.10.3/tcp/5455"
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.3
 
   tssSign2:
     hostname: tssSign2
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
-      CONFIGFILE: ~/.tss/config/config_2.json
+      CONFIGFILE: ~/.tss/config_2.json
+    expose:
+      - "8321"
     entrypoint:
       /docker/scripts/tss_sign.sh
     volumes:
       - ${PWD}/../scripts:/docker/scripts
-      - ${HOME}/.thornode/standalone/.tss:/root/.tss
-    command: "tss_sign ~/.tss/private.key ~/.tss/config/config_2.json /ip4/tssKeygen2/tcp/5455"
+      - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
+    command: "/app/tss_sign ~/.tss/private.key ~/.tss/config_2.json /ip4/122.122.10.13/tcp/5455"
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.13
 
 
   observer3:
@@ -299,6 +335,9 @@ services:
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.34
 
   thor-daemon3:
     hostname: thor-daemon3
@@ -309,6 +348,7 @@ services:
     environment:
       NODES: 4
       SEED: thor-daemon
+      TSSKEYSIGN: 122.122.10.2
     depends_on:
       - tssKeygen3
     links:
@@ -322,6 +362,9 @@ services:
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
     command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.24
 
   thor-api3:
     hostname: thor-api3
@@ -349,30 +392,40 @@ services:
     environment:
       PARTIES: 4
       THRESHOLD: 3
-      BOOTSTRAPNODE: "/ip4/tssKeygen/tcp/5433"
+      BOOTSTRAPNODE: "/ip4/122.122.10.2/tcp/5433"
       SIGNERSERVER: "0.0.0.0:8321"
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 3
       TSS_NODE_ID: "waiting"
-      CONFIGFILE: ~/.tss/config/config_3.json
+      CONFIGFILE: ~/.tss/config_3.json
+    expose:
+      - "8322"
     entrypoint:
       /docker/scripts/tss_keygen.sh
     volumes:
       - ${PWD}/../scripts:/docker/scripts
-      - ${HOME}/.thornode/standalone/.tss:/root/.tss
-    command: "tss_keygen ~/.tss/config/config_3.json ~/.tss/private.key /ip4/tssSign3/tcp/5455"
+      - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
+    command: "/app/tss_keygen ~/.tss/config_3.json ~/.tss/private.key /ip4/122.122.10.4/tcp/5455"
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.4
 
   tssSign3:
     hostname: tssSign3
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
-      CONFIGFILE: ~/.tss/config/config_3.json
+      CONFIGFILE: ~/.tss/config_3.json
+    expose:
+      - "8321"
     entrypoint:
       /docker/scripts/tss_sign.sh
     volumes:
       - ${PWD}/../scripts:/docker/scripts
-      - ${HOME}/.thornode/standalone/.tss:/root/.tss
-    command: "tss_sign ~/.tss/private.key ~/.tss/config/config_3.json /ip4/tssKeygen3/tcp/5455"
+      - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
+    command: "/app/tss_sign ~/.tss/private.key ~/.tss/config_3.json /ip4/122.122.10.14/tcp/5455"
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.14
 
   observer4:
     hostname: observer4
@@ -422,6 +475,9 @@ services:
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.35
 
   thor-daemon4:
     hostname: thor-daemon4
@@ -432,6 +488,7 @@ services:
     environment:
       NODES: 4
       SEED: thor-daemon
+      TSSKEYSIGN: 122.122.10.2
     entrypoint:
       /docker/scripts/genesis.sh
     depends_on:
@@ -445,6 +502,9 @@ services:
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
     command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.25
 
   thor-api4:
     hostname: thor-api4
@@ -472,27 +532,46 @@ services:
     environment:
       PARTIES: 4
       THRESHOLD: 3
-      BOOTSTRAPNODE: "/ip4/tssKeygen/tcp/5433"
+      BOOTSTRAPNODE: "/ip4/122.122.10.2/tcp/5433"
       SIGNERSERVER: "0.0.0.0:8321"
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 4
       TSS_NODE_ID: "waiting"
-      CONFIGFILE: ~/.tss/config/config_4.json
+      CONFIGFILE: ~/.tss/config_4.json
+    expose:
+      - "8322"
     entrypoint:
       /docker/scripts/tss_keygen.sh
     volumes:
       - ${PWD}/../scripts:/docker/scripts
-      - ${HOME}/.thornode/standalone/.tss:/root/.tss
-    command: "tss_keygen ~/.tss/config/config_4.json ~/.tss/private.key /ip4/tssSign4/tcp/5455"
+      - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
+    command: "/app/tss_keygen ~/.tss/config_4.json ~/.tss/private.key /ip4/122.122.10.5/tcp/5455"
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.5
 
   tssSign4:
     hostname: tssSign4
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
-      CONFIGFILE: ~/.tss/config/config_4.json
+      CONFIGFILE: ~/.tss/config_4.json
+    expose:
+      - "8321"
     entrypoint:
       /docker/scripts/tss_sign.sh
     volumes:
       - ${PWD}/../scripts:/docker/scripts
-      - ${HOME}/.thornode/standalone/.tss:/root/.tss
-    command: "tss_sign ~/.tss/private.key ~/.tss/config/config_4.json /ip4/tssKeygen4/tcp/5455"
+      - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
+    command: "/app/tss_sign ~/.tss/private.key ~/.tss/config_4.json /ip4/122.122.10.15/tcp/5455"
+    networks:
+      localnet:
+        ipv4_address: 122.122.10.15
+
+networks:
+  localnet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        -
+          subnet: 122.122.10.0/16

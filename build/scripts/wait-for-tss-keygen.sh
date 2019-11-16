@@ -5,8 +5,8 @@ set -xe
 
 echo "Waiting for TSS Keygen..."
 
-until curl -s "$1"; do
-  echo "TSS Keysign is unavailable - sleeping ($1)"
+until curl -s "$1:8322"; do
+  echo "TSS Keysign is unavailable - sleeping ($1:8322)"
   sleep 3
 done
 
