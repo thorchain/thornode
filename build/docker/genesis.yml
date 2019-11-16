@@ -118,7 +118,7 @@ services:
     environment:
       PARTIES: 4
       THRESHOLD: 3
-      BOOTSTRAPNODE: ""
+      BOOTSTRAPNODE: "/ip4/192.168.10.210/tcp/5433"
       SIGNERSERVER: "0.0.0.0:8321"
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 1
@@ -268,7 +268,7 @@ services:
     environment:
       PARTIES: 4
       THRESHOLD: 3
-      BOOTSTRAPNODE: "/ip4/192.168.10.2/tcp/5433"
+      BOOTSTRAPNODE: "/ip4/192.168.10.210/tcp/5433"
       SIGNERSERVER: "0.0.0.0:8321"
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 2
@@ -417,7 +417,7 @@ services:
     environment:
       PARTIES: 4
       THRESHOLD: 3
-      BOOTSTRAPNODE: "/ip4/192.168.10.2/tcp/5433"
+      BOOTSTRAPNODE: "/ip4/192.168.10.210/tcp/5433"
       SIGNERSERVER: "0.0.0.0:8321"
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 3
@@ -567,7 +567,7 @@ services:
     environment:
       PARTIES: 4
       THRESHOLD: 3
-      BOOTSTRAPNODE: "/ip4/192.168.10.2/tcp/5433"
+      BOOTSTRAPNODE: "/ip4/192.168.10.210/tcp/5433"
       SIGNERSERVER: "0.0.0.0:8321"
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 4
@@ -606,6 +606,15 @@ services:
     networks:
       localnet:
         ipv4_address: 192.168.10.15
+
+  bootnode:
+    image: froyobin/bootnode:latest
+    command: /bootnode /ip4/192.168.10.210/tcp/5433
+    stdin_open: true
+    tty: true
+    networks:
+      localnet:
+        ipv4_address: 192.168.10.210
 
 networks:
   localnet:
