@@ -10,17 +10,17 @@ type MsgAdd struct {
 	Asset       common.Asset   `json:"asset"`     // asset of the asset
 	AssetAmount sdk.Uint       `json:"asset_amt"` // the amount of asset
 	RuneAmount  sdk.Uint       `json:"rune"`      // the amount of rune
-	TxID        common.TxID    `json:"tx_id"`     // the txhash that represent user send asset to our pool address
+	Tx          common.Tx      `json:"tx"`
 	Signer      sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgAdd is a constructor function for MsgAdd
-func NewMsgAdd(asset common.Asset, r, amount sdk.Uint, requestTxHash common.TxID, signer sdk.AccAddress) MsgAdd {
+func NewMsgAdd(tx common.Tx, asset common.Asset, r, amount sdk.Uint, signer sdk.AccAddress) MsgAdd {
 	return MsgAdd{
 		Asset:       asset,
 		AssetAmount: amount,
 		RuneAmount:  r,
-		TxID:        requestTxHash,
+		Tx:          tx,
 		Signer:      signer,
 	}
 }
@@ -39,8 +39,8 @@ func (msg MsgAdd) ValidateBasic() sdk.Error {
 	if msg.Asset.IsEmpty() {
 		return sdk.ErrUnknownRequest("Add Asset cannot be empty")
 	}
-	if msg.TxID.IsEmpty() {
-		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
+	if err := msg.Tx.IsValid(); err != nil {
+		return sdk.ErrUnknownRequest(err.Error())
 	}
 	return nil
 }
