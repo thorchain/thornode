@@ -87,4 +87,6 @@ if [ "$SEED" != "$(hostname)" ]; then
     fi
 fi
 
+echo "POOL ADDRESS: $POOL_ADDRESS"
+
 exec "$@"
