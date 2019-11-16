@@ -14,11 +14,10 @@ func (mas *MsgAddSuite) SetUpSuite(c *C) {
 	SetupConfigForTest()
 }
 func (mas *MsgAddSuite) TestMsgAdd(c *C) {
-	txId := GetRandomTxHash()
-	c.Check(txId.IsEmpty(), Equals, false)
+	tx := GetRandomTx()
 	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
-	ma := NewMsgAdd(common.BNBAsset, sdk.NewUint(100000000), sdk.NewUint(100000000), txId, addr)
+	ma := NewMsgAdd(tx, common.BNBAsset, sdk.NewUint(100000000), sdk.NewUint(100000000), addr)
 	c.Check(ma.Route(), Equals, RouterKey)
 	c.Check(ma.Type(), Equals, "set_add")
 	err := ma.ValidateBasic()
@@ -41,7 +40,7 @@ func (mas *MsgAddSuite) TestMsgAdd(c *C) {
 			ticker: common.Asset{},
 			rune:   sdk.NewUint(100000000),
 			asset:  sdk.NewUint(100000000),
-			txHash: txId,
+			txHash: tx.ID,
 			signer: addr,
 		},
 		{
@@ -55,12 +54,14 @@ func (mas *MsgAddSuite) TestMsgAdd(c *C) {
 			ticker: common.BNBAsset,
 			rune:   sdk.NewUint(100000000),
 			asset:  sdk.NewUint(100000000),
-			txHash: txId,
+			txHash: tx.ID,
 			signer: sdk.AccAddress{},
 		},
 	}
 	for _, item := range inputs {
-		msgAdd := NewMsgAdd(item.ticker, item.rune, item.asset, item.txHash, item.signer)
+		tx := GetRandomTx()
+		tx.ID = item.txHash
+		msgAdd := NewMsgAdd(tx, item.ticker, item.rune, item.asset, item.signer)
 		err := msgAdd.ValidateBasic()
 		c.Assert(err, NotNil)
 	}
