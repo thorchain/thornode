@@ -117,6 +117,7 @@ services:
       SIGNERSERVER: "0.0.0.0:8321"
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 1
+      RUST_BACKTRACE: 1
       TSS_NODE_ID: "waiting"
       CONFIGFILE: ~/.tss/config_1.json
     expose:
@@ -137,6 +138,7 @@ services:
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
       CONFIGFILE: ~/.tss/config_1.json
+      RUST_BACKTRACE: 1
     expose:
       - "8321"
     entrypoint:
@@ -258,6 +260,7 @@ services:
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 2
       TSS_NODE_ID: "waiting"
+      RUST_BACKTRACE: 1
       CONFIGFILE: ~/.tss/config_2.json
     expose:
       - "8322"
@@ -276,6 +279,7 @@ services:
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
       CONFIGFILE: ~/.tss/config_2.json
+      RUST_BACKTRACE: 1
     expose:
       - "8321"
     entrypoint:
@@ -397,6 +401,7 @@ services:
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 3
       TSS_NODE_ID: "waiting"
+      RUST_BACKTRACE: 1
       CONFIGFILE: ~/.tss/config_3.json
     expose:
       - "8322"
@@ -415,6 +420,7 @@ services:
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
       CONFIGFILE: ~/.tss/config_3.json
+      RUST_BACKTRACE: 1
     expose:
       - "8321"
     entrypoint:
@@ -537,6 +543,7 @@ services:
       KEYGENSERVER: "0.0.0.0:8322"
       PARTYNUM: 4
       TSS_NODE_ID: "waiting"
+      RUST_BACKTRACE: 1
       CONFIGFILE: ~/.tss/config_4.json
     expose:
       - "8322"
@@ -555,6 +562,7 @@ services:
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
       CONFIGFILE: ~/.tss/config_4.json
+      RUST_BACKTRACE: 1
     expose:
       - "8321"
     entrypoint:

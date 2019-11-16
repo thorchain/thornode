@@ -43,11 +43,11 @@ done
 # wait for TSS keysign agent to become available
 $(dirname "$0")/wait-for-tss-keygen.sh $TSSKEYSIGN
 
-KEYCLIENT="keygenclient --name $SIGNER_NAME --password $SIGNER_PASSWD -u http://$TSSKEYSIGN:8322/keygen"
+KEYCLIENT="/usr/bin/keygenclient --name $SIGNER_NAME --password $SIGNER_PASSWD -u http://$TSSKEYSIGN:8322/keygen"
 for f in /tmp/shared/node_*.json; do
   KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $3}')"
 done
-exec "$KEYCLIENT"
+sh -c "$KEYCLIENT"
 
 POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
 
