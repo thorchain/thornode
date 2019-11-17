@@ -2,7 +2,7 @@ package thorchain
 
 import (
 	"math"
-
+    
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
