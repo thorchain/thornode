@@ -29,7 +29,8 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	).Methods(http.MethodGet, http.MethodOptions)
 
 	// limit api calls
-	lmt := tollbooth.NewLimiter(1, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
+	// limit it to 60 per minute
+	lmt := tollbooth.NewLimiter(60, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
 	lmt.SetMessage("You have reached maximum request limit.")
 
 	// Dynamically create endpoints of all funcs in querier.go

@@ -410,23 +410,20 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 				Coin:        coin,
 			}
 			store.AddTxOutItem(ctx, keeper, toi, deductFee, false)
-		} else {
-			// Since we have assets, we don't have a pool for, we don't know how to
-			// refund and withhold for fees. Instead, we'll create a pool with the
-			// amount of assets, and associate them with no stakers (meaning up for
-			// grabs). This could be like an airdrop scenario, for example.
-			// Don't assume this is the first time we've seen this coin (ie second
-			// airdrop).
-			for _, coin := range tx.Coins {
-				pool := keeper.GetPool(ctx, coin.Asset)
-				pool.BalanceAsset = pool.BalanceAsset.Add(coin.Amount)
-				pool.Asset = coin.Asset
-				if pool.BalanceRune.IsZero() {
-					pool.Status = PoolBootstrap
-				}
-				keeper.SetPool(ctx, pool)
-			}
+			continue
 		}
+		// Since we have assets, we don't have a pool for, we don't know how to
+		// refund and withhold for fees. Instead, we'll create a pool with the
+		// amount of assets, and associate them with no stakers (meaning up for
+		// grabs). This could be like an airdrop scenario, for example.
+		// Don't assume this is the first time we've seen this coin (ie second
+		// airdrop).
+		pool.BalanceAsset = pool.BalanceAsset.Add(coin.Amount)
+		pool.Asset = coin.Asset
+		if pool.BalanceRune.IsZero() {
+			pool.Status = PoolBootstrap
+		}
+		keeper.SetPool(ctx, pool)
 	}
 }
 
