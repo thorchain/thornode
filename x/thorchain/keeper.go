@@ -1187,11 +1187,13 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 	totalFees, _ := k.GetTotalLiquidityFees(ctx, currentHeight)
 
 	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees)
-	vault.TotalReserve = vault.TotalReserve.Sub(bondReward).Sub(totalPoolRewards)
-	vault.BondRewardRune = vault.BondRewardRune.Add(bondReward)
+	if !vault.TotalReserve.IsZero(){
+		// Move Rune from the Reserve to the Bond and Pool Rewards
+		vault.TotalReserve = vault.TotalReserve.Sub(bondReward).Sub(totalPoolRewards)  // Subtract Bond and Pool rewards
+		vault.BondRewardRune = vault.BondRewardRune.Add(bondReward)		// Add here for individual Node collection later
+	}
 
-	// Pass out block rewards to stakers via placing rune into pools relative
-	// to the pool's depth (amount of rune).
+	// Get all the pools that are active
 	totalRune := sdk.ZeroUint()
 	assets, _ := k.GetPoolIndex(ctx)
 	var pools []Pool
@@ -1202,9 +1204,9 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 			pools = append(pools, pool)
 		}
 	}
-	if !totalPoolRewards.IsZero() {
-		// First get how much gas was consumed
 
+	if !totalPoolRewards.IsZero() {				// If Pool Rewards to hand out
+		// First subsidise the gas that was consumed
 		for _, coin := range vault.Gas {
 			pool := k.GetPool(ctx, coin.Asset)
 			runeGas := pool.AssetValueInRune(coin.Amount)
@@ -1213,19 +1215,19 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 			totalPoolRewards = totalPoolRewards.Sub(runeGas)
 		}
 
-		// Add pool rewards
+		// Then add pool rewards
 		poolRewards := calcPoolRewards(totalPoolRewards, totalRune, pools)
 		for i, reward := range poolRewards {
 			pool := pools[i]
 			pool.BalanceRune = pool.BalanceRune.Add(reward)
 			k.SetPool(ctx, pool)
 		}
-	} else {
-		// Deduct pool deficit
+	} else {									// Else deduct pool deficit
+		// Get total fees, then find individual pool deficits, then deduct
 		totalFees, _ = k.GetTotalLiquidityFees(ctx, currentHeight)
 		for _, pool := range pools {
 			poolFees, _ := k.GetPoolLiquidityFees(ctx, currentHeight, pool)
-			if !poolFees.IsZero() {
+			if !pool.BalanceRune.IsZero() || !poolFees.IsZero(){			// Safety checks
 				continue
 			}
 			poolDeficit := calcPoolDeficit(stakerDeficit, totalFees, poolFees)
@@ -1235,7 +1237,7 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 	}
 
 	i, _ := k.TotalActiveNodeAccount(ctx)
-	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i)))
+	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i)))		// Add 1 unit for each active Node
 
 	k.SetVaultData(ctx, vault)
 }
