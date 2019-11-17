@@ -396,7 +396,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	}
 }
 
-func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) {
+func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain) {
 	// If we recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Coins {
@@ -409,7 +409,7 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 				PoolAddress: poolAddr,
 				Coin:        coin,
 			}
-			store.AddTxOutItem(ctx, keeper, toi, deductFee, false)
+			store.AddTxOutItem(ctx, keeper, toi, false)
 			continue
 		}
 		// Since we have assets, we don't have a pool for, we don't know how to
@@ -614,14 +614,14 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			currentPoolAddress := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
 			if !currentPoolAddress.PubKey.Equals(txIn.ObservePoolAddress) {
 				ctx.Logger().Error("wrong pool address,refund without deduct fee", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", txIn.ObservePoolAddress)
-				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
+				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, txIn.ObservePoolAddress, chain)
 				continue
 			}
 
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer)
 			if nil != err || chain.IsEmpty() {
 				ctx.Logger().Error("fail to process txIn", "error", err, "txhash", tx.TxID.String())
-				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain)
 				ee := NewEmptyRefundEvent()
 				buf, err := json.Marshal(ee)
 				if nil != err {
@@ -649,7 +649,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain)
 			}
 		}
 	}

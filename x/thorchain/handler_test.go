@@ -877,7 +877,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	}
 	currentPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
 	c.Assert(currentPoolAddr, NotNil)
-	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
+	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 
 	// check we DONT create a refund transaction when we don't have a pool for
@@ -890,13 +890,13 @@ func (HandlerSuite) TestRefund(c *C) {
 		},
 	}
 
-	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
+	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(pool.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true)
 
 	// doing it a second time should add the assets again.
-	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
+	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(pool.BalanceAsset.Equal(sdk.NewUint(200*common.One)), Equals, true)
