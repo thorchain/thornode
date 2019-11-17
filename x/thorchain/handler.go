@@ -409,24 +409,21 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 				PoolAddress: poolAddr,
 				Coin:        coin,
 			}
-			store.AddTxOutItem(ctx, keeper, toi, false)
-		} else {
-			// Since we have assets, we don't have a pool for, we don't know how to
-			// refund and withhold for fees. Instead, we'll create a pool with the
-			// amount of assets, and associate them with no stakers (meaning up for
-			// grabs). This could be like an airdrop scenario, for example.
-			// Don't assume this is the first time we've seen this coin (ie second
-			// airdrop).
-			for _, coin := range tx.Coins {
-				pool := keeper.GetPool(ctx, coin.Asset)
-				pool.BalanceAsset = pool.BalanceAsset.Add(coin.Amount)
-				pool.Asset = coin.Asset
-				if pool.BalanceRune.IsZero() {
-					pool.Status = PoolBootstrap
-				}
-				keeper.SetPool(ctx, pool)
-			}
+			store.AddTxOutItem(ctx, keeper, toi, deductFee, false)
+			continue
 		}
+		// Since we have assets, we don't have a pool for, we don't know how to
+		// refund and withhold for fees. Instead, we'll create a pool with the
+		// amount of assets, and associate them with no stakers (meaning up for
+		// grabs). This could be like an airdrop scenario, for example.
+		// Don't assume this is the first time we've seen this coin (ie second
+		// airdrop).
+		pool.BalanceAsset = pool.BalanceAsset.Add(coin.Amount)
+		pool.Asset = coin.Asset
+		if pool.BalanceRune.IsZero() {
+			pool.Status = PoolBootstrap
+		}
+		keeper.SetPool(ctx, pool)
 	}
 }
 
@@ -1020,7 +1017,13 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	// not empty
 	if !txOut.IsEmpty() {
 		for i, tx := range txOut.TxArray {
-			if tx.InHash.Equals(msg.InTxID) && tx.OutHash.IsEmpty() {
+
+			// withdraw , refund etc, one inbound tx might result two outbound txes, we have to correlate outbound tx back to the
+			// inbound, and also txitem , thus we could record both outbound tx hash correctly
+			// given every tx item will only have one coin in it , given that , we could use that to identify which txit
+			if tx.InHash.Equals(msg.InTxID) &&
+				tx.OutHash.IsEmpty() &&
+				msg.Tx.Coins.Contains(tx.Coin) {
 				txOut.TxArray[i].OutHash = msg.Tx.ID
 			}
 		}
