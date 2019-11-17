@@ -4,6 +4,7 @@ import (
 	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/bepswap/thornode/cmd"
 )
 
@@ -32,6 +33,9 @@ func calculateNodeAccountBondUints(height, activeBlock, slashPts int64) sdk.Uint
 
 // calculate node rewards
 func calcNodeRewards(naBlocks, totalUnits, totalRuneReward sdk.Uint) sdk.Uint {
+	if totalUnits.Equal(sdk.ZeroUint()) || naBlocks.Equal(sdk.ZeroUint()) {
+		return sdk.ZeroUint()
+	}
 	reward := sdk.NewUint(uint64(
 		float64(totalRuneReward.Uint64()) / (float64(totalUnits.Uint64()) / float64(naBlocks.Uint64())),
 	))

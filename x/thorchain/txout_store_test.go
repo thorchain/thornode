@@ -85,7 +85,7 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 }
 
 func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
-	w := getHandlerTestWrapper(c, 1, false, false)
+	w := getHandlerTestWrapper(c, 1, true, false)
 	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{
 		common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey()),
 	}
@@ -125,7 +125,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	inTxID := GetRandomTxHash()
 	voter := NewTxInVoter(inTxID, []TxIn{
 		TxIn{
-			Signers: []sdk.AccAddress{acc1.NodeAddress, acc2.NodeAddress},
+			Signers: []sdk.AccAddress{w.activeNodeAccount.NodeAddress, acc1.NodeAddress, acc2.NodeAddress},
 		},
 	})
 	w.keeper.SetTxInVoter(w.ctx, voter)
