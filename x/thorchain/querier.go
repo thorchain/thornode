@@ -82,10 +82,10 @@ func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorMana
 		resp.RotateAt = uint64(validatorMgr.Meta.RotateAtBlockHeight)
 		resp.RotateWindowOpenAt = uint64(validatorMgr.Meta.RotateWindowOpenAtBlockHeight)
 		if !validatorMgr.Meta.Nominated.IsEmpty() {
-			resp.Nominated = &validatorMgr.Meta.Nominated
+			resp.Nominated = validatorMgr.Meta.Nominated
 		}
 		if !validatorMgr.Meta.Queued.IsEmpty() {
-			resp.Queued = &validatorMgr.Meta.Queued
+			resp.Queued = validatorMgr.Meta.Queued
 		}
 	}
 	res, err := codec.MarshalJSONIndent(keeper.cdc, resp)

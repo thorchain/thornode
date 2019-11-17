@@ -83,6 +83,19 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 	c.Assert(invalidBondAddr.IsValid(), NotNil)
 }
 
+func (NodeAccountSuite) TestNodeAccountsSortWithSlash(c *C) {
+	var accounts NodeAccountsBySlashingPoint
+	for i := 0; i < 100; i++ {
+		n := GetRandomNodeAccount(Active)
+		n.SlashPoints = int64(i)
+		accounts = append(accounts, n)
+	}
+	sort.Sort(accounts)
+	for idx, a := range accounts {
+		c.Assert(a.SlashPoints, Equals, int64(99-idx))
+	}
+
+}
 func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 	var accounts NodeAccounts
 	for {

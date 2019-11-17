@@ -61,11 +61,14 @@ func (kg *KeyGen) getValidatorKeys() ([]common.PubKey, error) {
 	}
 	pKeys := make([]common.PubKey, 0, len(resp.ActiveNodes)+1)
 	if !resp.Nominated.IsEmpty() {
-		pKeys = append(pKeys, resp.Nominated.NodePubKey.Secp256k1)
+		for _, item := range resp.Nominated {
+			pKeys = append(pKeys, item.NodePubKey.Secp256k1)
+		}
+
 	}
 	queued := resp.Queued
 	for _, item := range resp.ActiveNodes {
-		if queued != nil && item.NodePubKey.Secp256k1.Equals(queued.NodePubKey.Secp256k1) {
+		if queued.Contains(item) {
 			continue
 		}
 		pKeys = append(pKeys, item.NodePubKey.Secp256k1)

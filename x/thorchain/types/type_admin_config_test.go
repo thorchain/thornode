@@ -2,9 +2,12 @@ package types
 
 import (
 	"fmt"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 type AdminConfigSuite struct{}
@@ -12,7 +15,21 @@ type AdminConfigSuite struct{}
 var _ = Suite(&AdminConfigSuite{})
 
 func (s AdminConfigSuite) TestGetKey(c *C) {
-	keys := []string{"GSL", "StakerAmtInterval", "Unknown", "MinValidatorBond", "WhiteListGasAsset", "PoolRefundGas"}
+	keys := []string{
+		"GSL",
+		"StakerAmtInterval",
+		"Unknown",
+		"MinValidatorBond",
+		"WhiteListGasAsset",
+		"PoolRefundGas",
+		"DefaultPoolStatus",
+		"DesireValidatorSet",
+		"RotatePerBlockHeight",
+		"ValidatorsChangeWindow",
+		"ValidatorRotateInNumBeforeFull",
+		"ValidatorRotateOutNumbBeforeFull",
+		"ValidatorRotateNumAfterFull",
+	}
 	for _, key := range keys {
 		c.Check(GetAdminConfigKey(key).String(), Equals, key)
 	}
@@ -28,13 +45,17 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 		config = NewAdminConfig(GetAdminConfigKey(amt), "abc", addr) // invalid value
 		c.Check(config.Valid(), NotNil, Commentf("%s", amt))
 	}
-	uintAmnt := []string{"MinValidatorBond", "PoolRefundGas"}
+	uintAmnt := []string{
+		"MinValidatorBond", "PoolRefundGas", "RotatePerBlockHeight",
+		"ValidatorsChangeWindow", "ValidatorRotateInNumBeforeFull",
+		"ValidatorRotateOutNumbBeforeFull", "ValidatorRotateNumAfterFull"}
 	for _, item := range uintAmnt {
 		cfg := NewAdminConfig(GetAdminConfigKey(item), "1000", addr)
 		c.Check(cfg.Valid(), IsNil, Commentf("%s", item))
 		cfg1 := NewAdminConfig(GetAdminConfigKey(item), "whatever", addr)
 		c.Check(cfg1.Valid(), NotNil, Commentf("%s", item))
 	}
+
 	coinAmt := []string{"WhiteListGasAsset"}
 	for _, item := range coinAmt {
 		cfg := NewAdminConfig(GetAdminConfigKey(item), "100bep", addr)
@@ -87,9 +108,51 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 			key:     PoolRefundGasKey,
 			value:   "whatever",
 		},
+		{
+			address: addr,
+			key:     DefaultPoolStatus,
+			value:   "123",
+		},
+		{
+			address: addr,
+			key:     ValidatorRotateInNumBeforeFullKey,
+			value:   "whatever",
+		},
+		{
+			address: addr,
+			key:     ValidatorRotateOutNumBeforeFullKey,
+			value:   "whatever",
+		},
+		{
+			address: addr,
+			key:     ValidatorRotateNumAfterFullKey,
+			value:   "whatever",
+		},
 	}
 	for _, item := range inputs {
 		adminCfg := NewAdminConfig(item.key, item.value, item.address)
 		c.Assert(adminCfg.Valid(), NotNil)
+	}
+}
+
+func (AdminConfigSuite) TestDefault(c *C) {
+	input := map[AdminConfigKey]string{
+		GSLKey:                             "0.3",
+		StakerAmtIntervalKey:               "100",
+		MinValidatorBondKey:                sdk.NewUint(common.One * 10).String(),
+		WhiteListGasAssetKey:               "1000bep",
+		DesireValidatorSetKey:              "33",
+		RotatePerBlockHeightKey:            "17280",
+		ValidatorsChangeWindowKey:          "1200",
+		PoolRefundGasKey:                   strconv.Itoa(common.One / 10),
+		DefaultPoolStatus:                  "Enabled",
+		ValidatorRotateInNumBeforeFullKey:  "2",
+		ValidatorRotateOutNumBeforeFullKey: "1",
+		ValidatorRotateNumAfterFullKey:     "1",
+	}
+	for k, v := range input {
+		if k.Default() != v {
+			c.Errorf("expected: %s , however we got: %s", v, k.Default())
+		}
 	}
 }
