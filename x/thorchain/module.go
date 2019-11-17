@@ -126,6 +126,12 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		am.keeper.EnableAPool(ctx)
 	}
 
+	// Fill up Yggdrasil vaults
+	err := Fund(ctx, am.keeper, am.txOutStore)
+	if err != nil {
+		ctx.Logger().Error("Unable to fund Yggdrasil", err)
+	}
+
 	// update vault data to account for block rewards and reward units
 	am.keeper.UpdateVaultData(ctx)
 	am.poolMgr.EndBlock(ctx, am.txOutStore)
