@@ -2,16 +2,24 @@ package thorchain
 
 import (
 	"math"
-
+    
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 // calculate node rewards
-func calcNodeRewards(naBlocks, totalUnits, totalRuneReward sdk.Uint) sdk.Uint {
+func calcNodeRewards(nodeUnits, totalUnits, totalRuneReward sdk.Uint) sdk.Uint {
+	// (nodeUnits / totalUnits) * totalRuneReward
+
 	reward := sdk.NewUint(uint64(
-		float64(totalRuneReward.Uint64()) / (float64(totalUnits.Uint64()) / float64(naBlocks.Uint64())),
+		float64(totalRuneReward.Uint64()) / (float64(totalUnits.Uint64()) / float64(nodeUnits.Uint64())),
 	))
+
+	// nUDec := NewDec(nodeUnits)
+	// tUDec := NewDec(totalUnits)
+	// tRRDec := NewDec(totalRuneReward)
+	// reward := sdk.NewUint(uint64((nUDec.Quo(tUDec).Mul(tRRDec)).TruncateInt64()))
+
 	return reward
 }
 
@@ -30,8 +38,11 @@ func calcPoolRewards(totalPoolRewards, totalStakedRune sdk.Uint, pools []Pool) [
 // Calculate pool deficit based on the pool's accrued fees compared with total fees.
 func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.Uint {
 	var amt sdk.Uint
+	// amt = sdk.NewUint(uint64(math.Round(
+	// 	float64(stakerDeficit.Uint64()) / (float64(totalFees.Uint64()) / float64(poolFees.Uint64())),
+	// )))
 	amt = sdk.NewUint(uint64(math.Round(
-		float64(stakerDeficit.Uint64()) / (float64(totalFees.Uint64()) / float64(poolFees.Uint64())),
+		float64(stakerDeficit.Uint64()) * (float64(poolFees.Uint64()) / float64(totalFees.Uint64())),
 	)))
 	return amt
 }
@@ -45,7 +56,7 @@ func calcBlockRewards(totalReserve sdk.Uint, totalLiquidityFees sdk.Uint) (sdk.U
 	))
 
 	systemIncome := blockRewards.Add(totalLiquidityFees) // Get total system income for block
-	stakerSplit := systemIncome.QuoUint64(3)             // 1/3rd to Stakers
+	stakerSplit := systemIncome.Quo(sdk.NewUint(3))             // 1/3rd to Stakers
 	bonderSplit := systemIncome.Sub(stakerSplit)         // 2/3rd to Bonders
 
 	stakerDeficit := sdk.ZeroUint()
@@ -59,7 +70,7 @@ func calcBlockRewards(totalReserve sdk.Uint, totalLiquidityFees sdk.Uint) (sdk.U
 		stakerDeficit = totalLiquidityFees.Sub(stakerSplit) // Deduct existing income from split
 	}
 
-	bondReward := bonderSplit // Give bonders their cut
+	bondReward := bonderSplit // Give bonders their split
 
 	return bondReward, poolReward, stakerDeficit
 }
