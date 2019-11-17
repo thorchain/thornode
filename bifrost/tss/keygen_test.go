@@ -3,7 +3,9 @@ package tss
 import (
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
+	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
@@ -30,7 +32,9 @@ const (
 )
 
 func (*KeyGenTestSuite) setupKeysForTest(c *C) string {
-	thorcliDir := filepath.Join(os.TempDir(), ".thorcli")
+	ns := strconv.Itoa(time.Now().Nanosecond())
+	thorcliDir := filepath.Join(os.TempDir(), ns, ".thorcli")
+	c.Logf("thorcliDir:%s", thorcliDir)
 	kb, err := keys.NewKeyBaseFromDir(thorcliDir)
 	c.Assert(err, IsNil)
 	_, _, err = kb.CreateMnemonic(signerNameForTest, cKeys.English, signerPasswordForTest, cKeys.Secp256k1)
