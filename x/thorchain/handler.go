@@ -1001,7 +1001,13 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	// Save TxOut back with the TxID only when the TxOut on the block height is not empty
 	if !txOut.IsEmpty() {
 		for i, tx := range txOut.TxArray {
-			if tx.InHash.Equals(msg.InTxID) && tx.OutHash.IsEmpty() {
+
+			// withdraw , refund etc, one inbound tx might result two outbound txes, we have to correlate outbound tx back to the
+			// inbound, and also txitem , thus we could record both outbound tx hash correctly
+			// given every tx item will only have one coin in it , given that , we could use that to identify which txit
+			if tx.InHash.Equals(msg.InTxID) &&
+				tx.OutHash.IsEmpty() &&
+				msg.Tx.Coins.Contains(tx.Coin) {
 				txOut.TxArray[i].OutHash = msg.Tx.ID
 			}
 		}
