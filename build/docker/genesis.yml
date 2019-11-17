@@ -20,6 +20,9 @@ services:
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 172.32.30.32
 
   signer:
     hostname: signer
@@ -56,6 +59,7 @@ services:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
+    restart: unless-stopped
     environment:
       NET: ${NET}
       NODES: 4
@@ -66,6 +70,9 @@ services:
     ports:
       - "26657:26657"
       - "26656:26656"
+    expose:
+      - "26656"
+      - "26657"
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
@@ -87,11 +94,14 @@ services:
     depends_on:
       - thor-daemon
     image: registry.gitlab.com/thorchain/bepswap/thornode
+    restart: unless-stopped
     environment:
       NET: ${NET}
       CHAIN_DAEMON: 172.32.10.22:26657
     ports:
       - "1317:1317"
+    expose:
+      - "1317"
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
@@ -106,6 +116,7 @@ services:
   tssKeygen:
     hostname: tssKeygen
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
+    restart: unless-stopped
     environment:
       NET: ${NET}
       PARTIES: 4
@@ -134,6 +145,7 @@ services:
   tssSign:
     hostname: tssSign
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
+    restart: unless-stopped
     environment:
       NET: ${NET}
       CONFIGFILE: ~/.tss/config_1.json
@@ -208,6 +220,7 @@ services:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
+    restart: unless-stopped
     environment:
       NET: ${NET}
       NODES: 4
@@ -236,6 +249,7 @@ services:
     depends_on:
       - thor-daemon2
     image: registry.gitlab.com/thorchain/bepswap/thornode
+    restart: unless-stopped
     environment:
       NET: ${NET}
       CHAIN_DAEMON: 172.32.10.23:26657
@@ -253,6 +267,7 @@ services:
   tssKeygen2:
     hostname: tssKeygen2
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
+    restart: unless-stopped
     environment:
       NET: ${NET}
       PARTIES: 4
@@ -280,6 +295,7 @@ services:
   tssSign2:
     hostname: tssSign2
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
+    restart: unless-stopped
     environment:
       NET: ${NET}
       CONFIGFILE: ~/.tss/config_2.json
@@ -354,6 +370,7 @@ services:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
+    restart: unless-stopped
     environment:
       NET: ${NET}
       NODES: 4
@@ -382,6 +399,7 @@ services:
     depends_on:
       - thor-daemon3
     image: registry.gitlab.com/thorchain/bepswap/thornode
+    restart: unless-stopped
     environment:
       NET: ${NET}
       CHAIN_DAEMON: 172.32.10.24:26657
@@ -399,6 +417,7 @@ services:
   tssKeygen3:
     hostname: tssKeygen3
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
+    restart: unless-stopped
     environment:
       NET: ${NET}
       PARTIES: 4
@@ -426,6 +445,7 @@ services:
   tssSign3:
     hostname: tssSign3
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
+    restart: unless-stopped
     environment:
       NET: ${NET}
       CONFIGFILE: ~/.tss/config_3.json
@@ -500,6 +520,7 @@ services:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
+    restart: unless-stopped
     environment:
       NET: ${NET}
       NODES: 4
@@ -528,6 +549,7 @@ services:
     depends_on:
       - thor-daemon4
     image: registry.gitlab.com/thorchain/bepswap/thornode
+    restart: unless-stopped
     environment:
       NET: ${NET}
       CHAIN_DAEMON: 172.32.10.25:26657
@@ -545,6 +567,7 @@ services:
   tssKeygen4:
     hostname: tssKeygen4
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
+    restart: unless-stopped
     environment:
       NET: ${NET}
       PARTIES: 4
@@ -572,6 +595,7 @@ services:
   tssSign4:
     hostname: tssSign4
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
+    restart: unless-stopped
     environment:
       NET: ${NET}
       CONFIGFILE: ~/.tss/config_4.json
