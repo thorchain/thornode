@@ -20,6 +20,7 @@ func (s *MemoSuite) TestTxType(c *C) {
 		c.Check(tx, Equals, trans)
 	}
 }
+
 func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	// happy paths
 	memo, err := ParseMemo("c:RUNE-1BA")

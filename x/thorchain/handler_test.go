@@ -931,11 +931,11 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 
 func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+	// Stake BNB, however we send T-CAN as coin , which is incorrect, should result in an error
 	m, err := ParseMemo("stake:BNB")
 	c.Assert(err, IsNil)
 	stakeMemo, ok := m.(StakeMemo)
 	c.Assert(ok, Equals, true)
-	c.Assert(err, IsNil)
 	tcanAsset, err := common.NewAsset("BNB.TCAN-014")
 	c.Assert(err, IsNil)
 	runeAsset := common.RuneAsset()
@@ -952,6 +952,8 @@ func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 	msg, err := getMsgStakeFromMemo(w.ctx, stakeMemo, GetRandomTxHash(), &txin, GetRandomBech32Addr())
 	c.Assert(msg, IsNil)
 	c.Assert(err, NotNil)
+
+	// Asymentic stake should works fine, only RUNE
 	txin1 := TxIn{
 		Sender: GetRandomBNBAddress(),
 		Coins: common.Coins{
@@ -959,10 +961,12 @@ func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 				sdk.NewUint(100*common.One)),
 		},
 	}
+
 	// stake only rune should be fine
 	msg1, err1 := getMsgStakeFromMemo(w.ctx, stakeMemo, GetRandomTxHash(), &txin1, GetRandomBech32Addr())
 	c.Assert(msg1, NotNil)
 	c.Assert(err1, IsNil)
+
 	bnbAsset, err := common.NewAsset("BNB.BNB")
 	c.Assert(err, IsNil)
 	txin2 := TxIn{
@@ -972,10 +976,11 @@ func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 				sdk.NewUint(100*common.One)),
 		},
 	}
-	// stake only token should be fine
+	// stake only token(BNB) should be fine
 	msg2, err2 := getMsgStakeFromMemo(w.ctx, stakeMemo, GetRandomTxHash(), &txin2, GetRandomBech32Addr())
 	c.Assert(msg2, NotNil)
 	c.Assert(err2, IsNil)
+
 	lokiAsset, _ := common.NewAsset(fmt.Sprintf("BNB.LOKI"))
 	txin3 := TxIn{
 		Sender: GetRandomBNBAddress(),
@@ -990,4 +995,24 @@ func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 	msg3, err3 := getMsgStakeFromMemo(w.ctx, stakeMemo, GetRandomTxHash(), &txin3, GetRandomBech32Addr())
 	c.Assert(msg3, IsNil)
 	c.Assert(err3, NotNil)
+
+	// Make sure the RUNE Address and Asset Address set correctly
+	txIn4 := TxIn{
+		Sender: GetRandomBNBAddress(),
+		Coins: common.Coins{
+			common.NewCoin(runeAsset,
+				sdk.NewUint(100*common.One)),
+			common.NewCoin(lokiAsset,
+				sdk.NewUint(100*common.One)),
+		},
+	}
+	lokiStakeMemo, err := ParseMemo("stake:BNB.LOKI")
+	c.Assert(err, IsNil)
+	msg4, err4 := getMsgStakeFromMemo(w.ctx, lokiStakeMemo.(StakeMemo), GetRandomTxHash(), &txIn4, GetRandomBech32Addr())
+	c.Assert(err4, IsNil)
+	c.Assert(msg4, NotNil)
+	msgStake := msg4.(MsgSetStakeData)
+	c.Assert(msgStake, NotNil)
+	c.Assert(msgStake.RuneAddress, Equals, txIn4.Sender)
+	c.Assert(msgStake.AssetAddress, Equals, txIn4.Sender)
 }
