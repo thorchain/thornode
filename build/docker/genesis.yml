@@ -9,12 +9,11 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api:1317
+      NET: ${NET}
+      CHAIN_HOST: 172.32.40.32:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
-      - thor-api
-    links:
       - thor-api
     volumes:
       - ${PWD}/../scripts:/docker/scripts
@@ -30,21 +29,16 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api:1317
-      RPC_HOST: thor-daemon:26657
+      NET: ${NET}
+      CHAIN_HOST: 172.32.40.32:1317
+      RPC_HOST: 172.32.10.22:26657
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
       - tssKeygen
       - tssSign
       - thor-api
-    links:
-      - tssKeygen
-      - tssSign
-      - thor-api
     depends_on:
-      - thor-api
-    links:
       - thor-api
     volumes:
       - ${PWD}/../scripts:/docker/scripts
@@ -63,12 +57,11 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
+      NET: ${NET}
       NODES: 4
       SEED: thor-daemon
       TSSKEYSIGN: 172.32.10.2
     depends_on:
-      - tssKeygen
-    links:
       - tssKeygen
     ports:
       - "26657:26657"
@@ -93,11 +86,10 @@ services:
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon
-    links:
-      - thor-daemon
     image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
-      CHAIN_DAEMON: thor-daemon:26657
+      NET: ${NET}
+      CHAIN_DAEMON: 172.32.10.22:26657
     ports:
       - "1317:1317"
     entrypoint:
@@ -115,6 +107,7 @@ services:
     hostname: tssKeygen
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
+      NET: ${NET}
       PARTIES: 4
       THRESHOLD: 3
       BOOTSTRAPNODE: "/ip4/172.32.10.210/tcp/5433"
@@ -142,6 +135,7 @@ services:
     hostname: tssSign
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
+      NET: ${NET}
       CONFIGFILE: ~/.tss/config_1.json
       RUST_BACKTRACE: "full"
     expose:
@@ -166,12 +160,11 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api2:1317
+      NET: ${NET}
+      CHAIN_HOST: 172.32.40.33:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
-      - thor-api2
-    links:
       - thor-api2
     volumes:
       - ${PWD}/../scripts:/docker/scripts
@@ -190,15 +183,12 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api2:1317
-      RPC_HOST: thor-daemon2:26657
+      NET: ${NET}
+      CHAIN_HOST: 172.32.40.33:1317
+      RPC_HOST: 172.32.10.23:26657
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
-      - tssKeygen2
-      - tssSign2
-      - thor-api2
-    links:
       - tssKeygen2
       - tssSign2
       - thor-api2
@@ -219,12 +209,11 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
+      NET: ${NET}
       NODES: 4
       SEED: thor-daemon
       TSSKEYSIGN: 172.32.10.3
     depends_on:
-      - tssKeygen2
-    links:
       - tssKeygen2
     entrypoint:
       /docker/scripts/genesis.sh
@@ -246,11 +235,10 @@ services:
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon2
-    links:
-      - thor-daemon2
     image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
-      CHAIN_DAEMON: thor-daemon2:26657
+      NET: ${NET}
+      CHAIN_DAEMON: 172.32.10.23:26657
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
@@ -266,6 +254,7 @@ services:
     hostname: tssKeygen2
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
+      NET: ${NET}
       PARTIES: 4
       THRESHOLD: 3
       BOOTSTRAPNODE: "/ip4/172.32.10.210/tcp/5433"
@@ -292,6 +281,7 @@ services:
     hostname: tssSign2
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
+      NET: ${NET}
       CONFIGFILE: ~/.tss/config_2.json
       RUST_BACKTRACE: 1
     expose:
@@ -316,12 +306,11 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api3:1317
+      NET: ${NET}
+      CHAIN_HOST: 172.32.40.34:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
-      - thor-api3
-    links:
       - thor-api3
     volumes:
       - ${PWD}/../scripts:/docker/scripts
@@ -340,15 +329,12 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api3:1317
-      RPC_HOST: thor-daemon3:26657
+      NET: ${NET}
+      CHAIN_HOST: 172.32.40.34:1317
+      RPC_HOST: 172.32.10.24:26657
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
-      - tssKeygen3
-      - tssSign3
-      - thor-api3
-    links:
       - tssKeygen3
       - tssSign3
       - thor-api3
@@ -369,12 +355,11 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
+      NET: ${NET}
       NODES: 4
       SEED: thor-daemon
       TSSKEYSIGN: 172.32.10.4
     depends_on:
-      - tssKeygen3
-    links:
       - tssKeygen3
     entrypoint:
       /docker/scripts/genesis.sh
@@ -396,11 +381,10 @@ services:
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon3
-    links:
-      - thor-daemon3
     image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
-      CHAIN_DAEMON: thor-daemon3:26657
+      NET: ${NET}
+      CHAIN_DAEMON: 172.32.10.24:26657
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
@@ -416,6 +400,7 @@ services:
     hostname: tssKeygen3
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
+      NET: ${NET}
       PARTIES: 4
       THRESHOLD: 3
       BOOTSTRAPNODE: "/ip4/172.32.10.210/tcp/5433"
@@ -442,6 +427,7 @@ services:
     hostname: tssSign3
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
+      NET: ${NET}
       CONFIGFILE: ~/.tss/config_3.json
       RUST_BACKTRACE: 1
     expose:
@@ -465,12 +451,11 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api4:1317
+      NET: ${NET}
+      CHAIN_HOST: 172.32.40.35:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
-      - thor-api4
-    links:
       - thor-api4
     volumes:
       - ${PWD}/../scripts:/docker/scripts
@@ -489,19 +474,15 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api4:1317
-      RPC_HOST: thor-daemon4:26657
+      NET: ${NET}
+      CHAIN_HOST: 172.32.40.35:1317
+      RPC_HOST: 172.32.10.25:26657
     depends_on:
-      - tssKeygen4
-      - tssSign4
-    links:
       - tssKeygen4
       - tssSign4
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
-      - thor-api4
-    links:
       - thor-api4
     volumes:
       - ${PWD}/../scripts:/docker/scripts
@@ -520,14 +501,13 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
+      NET: ${NET}
       NODES: 4
       SEED: thor-daemon
       TSSKEYSIGN: 172.32.10.5
     entrypoint:
       /docker/scripts/genesis.sh
     depends_on:
-      - tssKeygen4
-    links:
       - tssKeygen4
     volumes:
       - /tmp/genesis:/tmp/shared
@@ -547,11 +527,10 @@ services:
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon4
-    links:
-      - thor-daemon4
     image: registry.gitlab.com/thorchain/bepswap/thornode
     environment:
-      CHAIN_DAEMON: thor-daemon4:26657
+      NET: ${NET}
+      CHAIN_DAEMON: 172.32.10.25:26657
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
@@ -567,6 +546,7 @@ services:
     hostname: tssKeygen4
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
+      NET: ${NET}
       PARTIES: 4
       THRESHOLD: 3
       BOOTSTRAPNODE: "/ip4/172.32.10.210/tcp/5433"
@@ -593,6 +573,7 @@ services:
     hostname: tssSign4
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
     environment:
+      NET: ${NET}
       CONFIGFILE: ~/.tss/config_4.json
       RUST_BACKTRACE: 1
     expose:
