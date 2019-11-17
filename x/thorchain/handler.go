@@ -470,8 +470,10 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 	// with TSS, if they don't join , then the key won't be generated
 	nominatedAccount := validatorMgr.Meta.Nominated
 	if !nominatedAccount.IsEmpty() {
-		nominatedAccount.SignerActive = true
-		keeper.SetNodeAccount(ctx, nominatedAccount)
+		for _, item := range nominatedAccount {
+			item.SignerActive = true
+			keeper.SetNodeAccount(ctx, item)
+		}
 	}
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNextPoolPubKeyObserved,
@@ -528,8 +530,10 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 
 	nominatedNode := validatorMgr.Meta.Nominated
 	queuedNode := validatorMgr.Meta.Queued
-	nominatedNode.TryAddSignerPubKey(chainPubKey.PubKey)
-	keeper.SetNodeAccount(ctx, nominatedNode)
+	for _, item := range nominatedNode {
+		item.TryAddSignerPubKey(chainPubKey.PubKey)
+		keeper.SetNodeAccount(ctx, item)
+	}
 	activeNodes, err := keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		ctx.Logger().Error("fail to get all active node accounts", "error", err)
@@ -537,7 +541,8 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 	}
 
 	for _, item := range activeNodes {
-		if item.Equals(queuedNode) {
+		if queuedNode.Contains(item) {
+			// queued node doesn't join the signing committee
 			continue
 		}
 		item.TryAddSignerPubKey(chainPubKey.PubKey)

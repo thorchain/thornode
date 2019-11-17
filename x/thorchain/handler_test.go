@@ -138,11 +138,11 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 
 func (HandlerSuite) TestHandleMsgApply(c *C) {
 
-	w := getHandlerTestWrapper(c, 1, false, false)
+	w := getHandlerTestWrapper(c, 1, true, false)
 	bond := sdk.NewUint(100)
 	bondAddr := GetRandomBNBAddress()
 	// Not Authorized
-	msgApply := NewMsgBond(w.activeNodeAccount.NodeAddress, bond, GetRandomTxHash(), bondAddr, w.activeNodeAccount.NodeAddress)
+	msgApply := NewMsgBond(w.activeNodeAccount.NodeAddress, bond, GetRandomTxHash(), bondAddr, w.notActiveNodeAccount.NodeAddress)
 	c.Assert(msgApply.ValidateBasic(), IsNil)
 	result := handleMsgBond(w.ctx, w.keeper, msgApply)
 	c.Assert(result.IsOK(), Equals, false)
