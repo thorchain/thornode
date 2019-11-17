@@ -1,9 +1,5 @@
 #!/bin/sh
 
-# TODO: move this command to the tss docker image
-apt-get update -q
-apt-get install -y jq
-
 # wait for our config file to exist
 while [ ! -f $CONFIGFILE ]; do
     sleep 3
@@ -15,5 +11,4 @@ while [ "$(cat $CONFIGFILE | jq .nodeid)" != "waiting" ]; do
     sleep 3
 done
 
-echo "$@"
 exec "$@"

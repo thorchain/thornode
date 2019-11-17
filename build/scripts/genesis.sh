@@ -39,17 +39,21 @@ while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODE
     sleep 1
 done
 
-# wait for TSS keysign agent to become available
-$(dirname "$0")/wait-for-tss-keygen.sh $TSSKEYSIGN
+if [ -x ${TSSKEYSIGN+x} ]; then
+    # wait for TSS keysign agent to become available
+    $(dirname "$0")/wait-for-tss-keygen.sh $TSSKEYSIGN
 
-KEYCLIENT="/usr/bin/keygenclient --name $SIGNER_NAME --password $SIGNER_PASSWD -u http://$TSSKEYSIGN:8322/keygen"
-for f in /tmp/shared/node_*.json; do
-  KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $3}')"
-done
-sh -c "$KEYCLIENT > /tmp/keygenclient.output"
+    KEYCLIENT="/usr/bin/keygenclient --name $SIGNER_NAME --password $SIGNER_PASSWD -u http://$TSSKEYSIGN:8322/keygen"
+    for f in /tmp/shared/node_*.json; do
+        KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $3}')"
+    done
+    sh -c "$KEYCLIENT > /tmp/keygenclient.output"
 
-PUBKEY=$(cat /tmp/keygenclient.output | tail -2 | head -1)
-POOL_ADDRESS=$(cat /tmp/keygenclient.output | tail -1)
+    PUBKEY=$(cat /tmp/keygenclient.output | tail -2 | head -1)
+    POOL_ADDRESS=$(cat /tmp/keygenclient.output | tail -1)
+else
+    POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
+fi
 
 if [ "$SEED" = "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
