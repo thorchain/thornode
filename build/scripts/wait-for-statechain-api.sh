@@ -1,7 +1,7 @@
 #!/bin/sh
 # https://docs.docker.com/compose/startup-order/
 
-set -e
+set -xe
 
 echo "Waiting for Statechain API..."
 

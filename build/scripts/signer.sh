@@ -1,6 +1,8 @@
 #!/bin/sh
 set -ex
 
+. $(dirname "$0")/core.sh
+
 CHAIN_ID="${CHAIN_ID:=thorchain}"
 DEX_HOST="${DEX_HOST:=testnet-dex.binance.org}"
 DB_PATH="${DB_PATH:=/var/data}"
