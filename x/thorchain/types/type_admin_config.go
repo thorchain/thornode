@@ -1,26 +1,31 @@
 package types
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 type AdminConfigKey string
 
 const (
-	UnknownKey                AdminConfigKey = "Unknown"
-	GSLKey                    AdminConfigKey = "GSL"
-	StakerAmtIntervalKey      AdminConfigKey = "StakerAmtInterval"
-	MinValidatorBondKey       AdminConfigKey = "MinValidatorBond"
-	WhiteListGasAssetKey      AdminConfigKey = "WhiteListGasAsset"      // How much gas asset we mint and send it to the newly whitelisted bep address
-	DesireValidatorSetKey     AdminConfigKey = "DesireValidatorSet"     // how much validators we would like to have. Replace with Dynamic N.
-	RotatePerBlockHeightKey   AdminConfigKey = "RotatePerBlockHeight"   // how many blocks we try to rotate validators
-	ValidatorsChangeWindowKey AdminConfigKey = "ValidatorsChangeWindow" // when should we open the rotate window, nominate validators, and identify who should be out
-	PoolRefundGasKey          AdminConfigKey = "PoolRefundGas"          // when we move assets from one pool to another , we leave this amount of BNB behind, thus we could refund customer if they send fund to the previous pool
-	DefaultPoolStatus         AdminConfigKey = "DefaultPoolStatus"
+	UnknownKey                         AdminConfigKey = "Unknown"
+	GSLKey                             AdminConfigKey = "GSL"
+	StakerAmtIntervalKey               AdminConfigKey = "StakerAmtInterval"
+	MinValidatorBondKey                AdminConfigKey = "MinValidatorBond"
+	WhiteListGasAssetKey               AdminConfigKey = "WhiteListGasAsset"                // How much gas asset we mint and send it to the newly whitelisted bep address
+	DesireValidatorSetKey              AdminConfigKey = "DesireValidatorSet"               // How much validators we would like to have. Replace with Dynamic N.
+	RotatePerBlockHeightKey            AdminConfigKey = "RotatePerBlockHeight"             // How many blocks we try to rotate validators
+	ValidatorsChangeWindowKey          AdminConfigKey = "ValidatorsChangeWindow"           // When should we open the rotate window, nominate validators, and identify who should be out
+	PoolRefundGasKey                   AdminConfigKey = "PoolRefundGas"                    // When we move assets from one pool to another , we leave this amount of BNB behind, thus we could refund customer if they send fund to the previous pool
+	DefaultPoolStatus                  AdminConfigKey = "DefaultPoolStatus"                // When a pool get created automatically , what status do we set it in
+	ValidatorRotateInNumBeforeFullKey  AdminConfigKey = "ValidatorRotateInNumBeforeFull"   // How many validators should we nominate before we reach the desire validator set
+	ValidatorRotateOutNumBeforeFullKey AdminConfigKey = "ValidatorRotateOutNumbBeforeFull" // How many validators should we queued to be rotate out before we reach the desire validator set)
+	ValidatorRotateNumAfterFullKey     AdminConfigKey = "ValidatorRotateNumAfterFull"      // How many validators should we nominate after we reach the desire validator set
 )
 
 func (k AdminConfigKey) String() string {
@@ -51,6 +56,12 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 		return PoolRefundGasKey
 	case string(DefaultPoolStatus):
 		return DefaultPoolStatus
+	case string(ValidatorRotateInNumBeforeFullKey):
+		return ValidatorRotateInNumBeforeFullKey
+	case string(ValidatorRotateOutNumBeforeFullKey):
+		return ValidatorRotateOutNumBeforeFullKey
+	case string(ValidatorRotateNumAfterFullKey):
+		return ValidatorRotateNumAfterFullKey
 	default:
 		return UnknownKey
 	}
@@ -67,7 +78,7 @@ func (k AdminConfigKey) Default() string {
 	case WhiteListGasAssetKey:
 		return "1000bep"
 	case DesireValidatorSetKey:
-		return "4"
+		return "33"
 	case RotatePerBlockHeightKey:
 		return "17280" // with 5 second block times, this is a day
 	case ValidatorsChangeWindowKey:
@@ -76,6 +87,12 @@ func (k AdminConfigKey) Default() string {
 		return strconv.Itoa(common.One / 10)
 	case DefaultPoolStatus:
 		return "Enabled"
+	case ValidatorRotateInNumBeforeFullKey:
+		return "2"
+	case ValidatorRotateOutNumBeforeFullKey:
+		return "1"
+	case ValidatorRotateNumAfterFullKey:
+		return "1"
 	default:
 		return ""
 	}
@@ -91,7 +108,12 @@ func (k AdminConfigKey) ValidValue(value string) error {
 		_, err = sdk.ParseUint(value)
 	case WhiteListGasAssetKey:
 		_, err = sdk.ParseCoins(value)
-	case DesireValidatorSetKey, RotatePerBlockHeightKey, ValidatorsChangeWindowKey, PoolRefundGasKey: // int64
+	case DefaultPoolStatus:
+		if GetPoolStatus(value) == Suspended {
+			return errors.New("invalid pool status")
+		}
+	case DesireValidatorSetKey, RotatePerBlockHeightKey, ValidatorsChangeWindowKey, PoolRefundGasKey,
+		ValidatorRotateInNumBeforeFullKey, ValidatorRotateOutNumBeforeFullKey, ValidatorRotateNumAfterFullKey: // int64
 		_, err = strconv.ParseInt(value, 10, 64)
 	}
 	return err

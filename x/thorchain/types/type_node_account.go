@@ -193,9 +193,14 @@ func (n *NodeAccount) TryRemoveSignerPubKey(key common.PubKey) {
 // NodeAccounts just a list of NodeAccount
 type NodeAccounts []NodeAccount
 
+// IsEmpty to check whether the NodeAccounts is empty
+func (nas NodeAccounts) IsEmpty() bool {
+	return len(nas) == 0
+}
+
 // IsTrustAccount validate whether the given account address belongs to an currently active validator
-func (nodeAccounts NodeAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
-	for _, na := range nodeAccounts {
+func (nas NodeAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
+	for _, na := range nas {
 		if na.Status == Active && addr.Equals(na.NodeAddress) {
 			return true
 		}
@@ -204,24 +209,57 @@ func (nodeAccounts NodeAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
 }
 
 // NodeAccount sort interface , it will sort by StatusSince field, and then by SignerBNBAddress
-func (nodeAccounts NodeAccounts) Less(i, j int) bool {
-	if nodeAccounts[i].StatusSince < nodeAccounts[j].StatusSince {
+func (nas NodeAccounts) Less(i, j int) bool {
+	if nas[i].StatusSince < nas[j].StatusSince {
 		return true
 	}
-	if nodeAccounts[i].StatusSince > nodeAccounts[j].StatusSince {
+	if nas[i].StatusSince > nas[j].StatusSince {
 		return false
 	}
-	return nodeAccounts[i].NodeAddress.String() < nodeAccounts[j].NodeAddress.String()
+	return nas[i].NodeAddress.String() < nas[j].NodeAddress.String()
 }
-func (nodeAccounts NodeAccounts) Len() int { return len(nodeAccounts) }
-func (nodeAccounts NodeAccounts) Swap(i, j int) {
-	nodeAccounts[i], nodeAccounts[j] = nodeAccounts[j], nodeAccounts[i]
+func (nas NodeAccounts) Len() int { return len(nas) }
+func (nas NodeAccounts) Swap(i, j int) {
+	nas[i], nas[j] = nas[j], nas[i]
 }
 
 // First return the first item in the slice
-func (nodeAccounts NodeAccounts) First() NodeAccount {
-	if len(nodeAccounts) > 0 {
-		return nodeAccounts[0]
+func (nas NodeAccounts) First() NodeAccount {
+	if len(nas) > 0 {
+		return nas[0]
 	}
 	return NodeAccount{}
+}
+
+// Contains will check whether the given nodeaccount is in the list
+func (nas NodeAccounts) Contains(na NodeAccount) bool {
+	for _, item := range nas {
+		if item.Equals(na) {
+			return true
+		}
+	}
+	return false
+}
+
+type NodeAccountsBySlashingPoint []NodeAccount
+
+// NodeAccountsBySlashingPoint sort interface , it will sort by StatusSince field, and then by SignerBNBAddress
+func (nas NodeAccountsBySlashingPoint) Less(i, j int) bool {
+	if nas[i].SlashPoints > nas[j].SlashPoints {
+		return true
+	}
+	if nas[i].SlashPoints < nas[j].SlashPoints {
+		return false
+	}
+	if nas[i].StatusSince < nas[j].StatusSince {
+		return true
+	}
+	if nas[i].StatusSince > nas[j].StatusSince {
+		return false
+	}
+	return nas[i].NodeAddress.String() < nas[j].NodeAddress.String()
+}
+func (nas NodeAccountsBySlashingPoint) Len() int { return len(nas) }
+func (nas NodeAccountsBySlashingPoint) Swap(i, j int) {
+	nas[i], nas[j] = nas[j], nas[i]
 }
