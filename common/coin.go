@@ -76,3 +76,13 @@ func (cs Coins) String() string {
 	}
 	return strings.Join(coins, ", ")
 }
+
+// Contains check whether the given coin is in the list
+func (cs Coins) Contains(c Coin) bool {
+	for _, item := range cs {
+		if c.Equals(item) {
+			return true
+		}
+	}
+	return false
+}
