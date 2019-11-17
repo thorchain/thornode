@@ -262,12 +262,16 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 			}
 			item = tai
 		}
-		err = s.signAndSendToBinanceChain(item, height)
-		if nil == err {
-			return nil
+		if len(item.To) == 0 {
+			s.logger.Info().Msg("To address is empty, we don't know where to send the fund , ignore")
+			continue
 		}
-		s.logger.Error().Err(err).Int("try", 1).Msg("fail to send to binance chain")
-		return fmt.Errorf("fail to send to binance chain,err:%w", err)
+		err = s.signAndSendToBinanceChain(item, height)
+		if nil != err {
+			s.logger.Error().Err(err).Int("try", 1).Msg("fail to send to binance chain")
+			// This might happen when we signed it successfully however somehow fail to broadcast to binance chain
+			// given we run a node locally , this should be rare let's log it and move on for now.
+		}
 	}
 	return nil
 }
@@ -277,6 +281,10 @@ func (s *Signer) signAndSendToBinanceChain(tai types.TxArrayItem, height int64) 
 	defer func() {
 		s.m.GetHistograms(metrics.SignAndBroadcastToBinanceDuration).Observe(time.Since(start).Seconds())
 	}()
+	if !tai.OutHash.IsEmpty() {
+		s.logger.Info().Str("OutHash", tai.OutHash.String()).Msg("tx had been sent out before")
+		return nil
+	}
 	strHeight := strconv.FormatInt(height, 10)
 	hexTx, param, err := s.Binance.SignTx(tai, height)
 	if nil != err {
