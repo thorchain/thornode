@@ -818,6 +818,11 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, txIn
 	if !runeAddr.IsChain(common.BNBChain) {
 		runeAddr = memo.GetDestination()
 		assetAddr = txIn.Sender
+	} else {
+		// if it is on BNB chain , while the asset addr is empty, then the asset addr is runeAddr
+		if assetAddr.IsEmpty() {
+			assetAddr = runeAddr
+		}
 	}
 
 	tx := txIn.GetCommonTx(txID)

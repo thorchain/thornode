@@ -258,9 +258,7 @@ func ParseMemo(memo string) (Memo, error) {
 			if len(parts) < 3 {
 				// cannot stake into a non BNB-based pool when we don't have an
 				// associated address
-				return noMemo, fmt.Errorf(
-					"Invalid stake. Cannot stake to a non BNB-based pool without providing an associated address",
-				)
+				return noMemo, fmt.Errorf("invalid stake. Cannot stake to a non BNB-based pool without providing an associated address")
 			}
 			addr, err = common.NewAddress(parts[2])
 			if err != nil {
