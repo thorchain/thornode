@@ -12,7 +12,6 @@ ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in statech
 # find or generate our BNB address
 gen_bnb_address
 ADDRESS=$(cat ~/.signer/address.txt)
-PUBKEY=$(cat ~/.signer/pubkey.txt)
 
 # create statechain user
 echo $SIGNER_PASSWD | thorcli keys add $SIGNER_NAME
