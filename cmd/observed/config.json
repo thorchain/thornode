@@ -7,7 +7,7 @@
     "block_scan_processors": 1,
     "block_height_discover_back_off": "1s",
     "block_retry_interval": "10s",
-    "start_block_height": "49097832"
+    "start_block_height": "50113607"
   },
   "state_chain": {
     "chain_id": "thorchain",
@@ -18,5 +18,5 @@
   "metric": {
     "enabled": true
   },
-  "rune_address": "thor135fqguwz0dgzf45kuhn46wjuhrp6dd7vt3qj5d"
+  "rune_address": "thor1ply65cysml949kdajmpugamzat964xttx4hgtv"
 }
