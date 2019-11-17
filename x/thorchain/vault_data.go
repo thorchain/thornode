@@ -2,10 +2,25 @@ package thorchain
 
 import (
 	"math"
-    
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
+
+// calculate node account bond units
+func calculateNodeAccountBondUints(height, activeBlock, slashPts int64) sdk.Uint {
+	if height < 0 || activeBlock < 0 || slashPts < 0 {
+		return sdk.ZeroUint()
+	}
+	blockCount := height - activeBlock
+	// Minus slash points
+	bCount := blockCount
+	if bCount < slashPts {
+		bCount = slashPts
+	}
+
+	return sdk.NewUint(uint64(bCount - slashPts))
+}
 
 // calculate node rewards
 func calcNodeRewards(nodeUnits, totalUnits, totalRuneReward sdk.Uint) sdk.Uint {
