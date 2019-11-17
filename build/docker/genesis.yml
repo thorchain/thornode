@@ -8,7 +8,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_HOST: thor-api:1317
     entrypoint:
@@ -33,7 +33,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_HOST: thor-api:1317
       RPC_HOST: thor-daemon:26657
@@ -55,6 +55,7 @@ services:
       - ${PWD}/../scripts:/docker/scripts
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
     networks:
       localnet:
@@ -66,7 +67,7 @@ services:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       NODES: 4
       SEED: thor-daemon
@@ -101,7 +102,7 @@ services:
     links:
       - thor-daemon
     image: registry.gitlab.com/thorchain/bepswap/thornode
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_DAEMON: thor-daemon:26657
     ports:
@@ -120,7 +121,7 @@ services:
   tssKeygen:
     hostname: tssKeygen
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       PARTIES: 4
       THRESHOLD: 3
@@ -148,7 +149,7 @@ services:
   tssSign:
     hostname: tssSign
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CONFIGFILE: ~/.tss/config_1.json
       RUST_BACKTRACE: "full"
@@ -173,7 +174,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_HOST: thor-api2:1317
     entrypoint:
@@ -198,7 +199,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_HOST: thor-api2:1317
       RPC_HOST: thor-daemon2:26657
@@ -216,6 +217,7 @@ services:
       - ${PWD}/../scripts:/docker/scripts
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
     networks:
       localnet:
@@ -227,7 +229,7 @@ services:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       NODES: 4
       SEED: thor-daemon
@@ -259,7 +261,7 @@ services:
     links:
       - thor-daemon2
     image: registry.gitlab.com/thorchain/bepswap/thornode
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_DAEMON: thor-daemon2:26657
     entrypoint:
@@ -276,7 +278,7 @@ services:
   tssKeygen2:
     hostname: tssKeygen2
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       PARTIES: 4
       THRESHOLD: 3
@@ -303,7 +305,7 @@ services:
   tssSign2:
     hostname: tssSign2
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CONFIGFILE: ~/.tss/config_2.json
       RUST_BACKTRACE: 1
@@ -328,7 +330,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_HOST: thor-api3:1317
     entrypoint:
@@ -353,7 +355,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_HOST: thor-api3:1317
       RPC_HOST: thor-daemon3:26657
@@ -371,6 +373,7 @@ services:
       - ${PWD}/../scripts:/docker/scripts
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
     networks:
       localnet:
@@ -382,7 +385,7 @@ services:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       NODES: 4
       SEED: thor-daemon
@@ -414,7 +417,7 @@ services:
     links:
       - thor-daemon3
     image: registry.gitlab.com/thorchain/bepswap/thornode
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_DAEMON: thor-daemon3:26657
     entrypoint:
@@ -431,7 +434,7 @@ services:
   tssKeygen3:
     hostname: tssKeygen3
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       PARTIES: 4
       THRESHOLD: 3
@@ -458,7 +461,7 @@ services:
   tssSign3:
     hostname: tssSign3
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CONFIGFILE: ~/.tss/config_3.json
       RUST_BACKTRACE: 1
@@ -482,7 +485,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_HOST: thor-api4:1317
     entrypoint:
@@ -507,7 +510,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_HOST: thor-api4:1317
       RPC_HOST: thor-daemon4:26657
@@ -527,6 +530,7 @@ services:
       - ${PWD}/../scripts:/docker/scripts
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
     networks:
       localnet:
@@ -538,7 +542,7 @@ services:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       NODES: 4
       SEED: thor-daemon
@@ -570,7 +574,7 @@ services:
     links:
       - thor-daemon4
     image: registry.gitlab.com/thorchain/bepswap/thornode
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CHAIN_DAEMON: thor-daemon4:26657
     entrypoint:
@@ -587,7 +591,7 @@ services:
   tssKeygen4:
     hostname: tssKeygen4
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       PARTIES: 4
       THRESHOLD: 3
@@ -614,7 +618,7 @@ services:
   tssSign4:
     hostname: tssSign4
     image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
-    dns: 8.8.8.8
+    dns: "8.8.8.8"
     environment:
       CONFIGFILE: ~/.tss/config_4.json
       RUST_BACKTRACE: 1
@@ -643,6 +647,6 @@ services:
 networks:
   localnet:
     ipam:
-      driver: default
+      driver: overlay
       config:
         - subnet: 192.168.10.0/16
