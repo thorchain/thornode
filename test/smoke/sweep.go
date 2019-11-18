@@ -27,10 +27,7 @@ func NewSweep(apiAddr, masterPrivKey string, keyList []string, network int, debu
 	if err != nil {
 		log.Fatalf("Error creating key manager: %s", err)
 	}
-	client, err := sdk.NewDexClient(apiAddr, n.Type, keyManager)
-	if err != nil {
-		log.Fatalf("Error creating client: %s", err)
-	}
+	client := GetClient(apiAddr, n.Type, keyManager)
 
 	return Sweep{
 		ApiAddr:    apiAddr,
