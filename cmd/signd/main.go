@@ -33,7 +33,7 @@ func printVersion() {
 func main() {
 	showVersion := flag.Bool("version", false, "Shows version")
 	// TODO set the default log level to info later
-	logLevel := flag.StringP("loglevel", "l", "debug", "Log Level")
+	logLevel := flag.StringP("loglevel", "l", "info", "Log Level")
 	pretty := flag.BoolP("pretty-log", "p", false, "Enables unstructured prettified logging. This is useful for local debugging")
 	cfgFile := flag.StringP("cfg", "c", "config", "configuration file name without extension")
 	flag.Parse()
