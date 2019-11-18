@@ -39,7 +39,8 @@ while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODE
     sleep 1
 done
 
-if [ -z ${TSSKEYSIGN+x} ]; then
+echo $TSSKEYSIGN
+if [ ! -z ${TSSKEYSIGN+x} ]; then
     # wait for TSS keysign agent to become available
     $(dirname "$0")/wait-for-tss-keygen.sh $TSSKEYSIGN
 
