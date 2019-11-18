@@ -6,7 +6,6 @@ import (
 	"log"
 	"time"
 
-	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/client/basic"
 	"github.com/binance-chain/go-sdk/client/query"
 	btypes "github.com/binance-chain/go-sdk/common/types"
@@ -14,8 +13,7 @@ import (
 	"github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
-
-	"github.com/go-resty/resty/v2"
+	resty "github.com/go-resty/resty/v2"
 )
 
 type Binance struct {
@@ -93,7 +91,7 @@ func (b Binance) ParseTx(key keys.KeyManager, transfers []msg.Transfer) msg.Send
 }
 
 // SendTxn : prep and broadcast the transaction to Binance.
-func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {	
+func (b Binance) SendTxn(key keys.KeyManager, payload []msg.Transfer, memo string) {
 	time.Sleep(b.delay)
 
 	if b.debug == true {
@@ -134,26 +132,24 @@ func (b Binance) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []ms
 
 	rclient := resty.New()
 
-	for i := 1;  i<=5; i++ {
-	 
+	for i := 1; i <= 5; i++ {
+		resp, err := rclient.R().
+			SetHeader("Content-Type", "text/plain").
+			SetBody(hexTx).
+			SetQueryParams(param).
+			Post(uri)
 
-	resp, err := rclient.R().
-		SetHeader("Content-Type", "text/plain").
-		SetBody(hexTx).
-		SetQueryParams(param).
-		Post(uri)
+		if err != nil {
+			log.Printf("%v\n", err)
+			log.Println("==============", err)
+			time.Sleep(1 * time.Second)
 
-	if err != nil {
-		log.Printf("%v\n", err);
-		log.Println("==============", err);
-		time.Sleep(1 * time.Second)
-      
-	}else {
-		break
-    }
+		} else {
+			break
+		}
 
-	if b.debug == true {
-		log.Printf("Commit Response from Binance: %v", string(resp.Body()))
+		if b.debug == true {
+			log.Printf("Commit Response from Binance: %v", string(resp.Body()))
+		}
 	}
-}
 }

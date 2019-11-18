@@ -78,5 +78,5 @@ func (s Sweep) Balances(address btypes.AccAddress) []btypes.TokenBalance {
 
 // SendTxn : Send our transaction to Binance
 func (s Sweep) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {
-	s.Binance.SendTxn(client, key, payload, memo)
+	s.Binance.SendTxn(key, payload, memo)
 }
