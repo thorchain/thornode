@@ -53,7 +53,7 @@ if [ ! -z ${TSSKEYSIGN+x} ]; then
     PUBKEY=$(cat /tmp/keygenclient.output | tail -2 | head -1)
     POOL_ADDRESS=$(cat /tmp/keygenclient.output | tail -1)
 else
-    POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
+    POOL_ADDRESS=$(cat ~/.signer/address.txt)
 fi
 
 if [ "$SEED" = "$(hostname)" ]; then
