@@ -35,6 +35,10 @@ services:
       NET: ${NET}
       CHAIN_HOST: 172.32.40.32:1317
       RPC_HOST: 172.32.10.22:26657
+      USE_TSS: true
+      TSS_SCHEME: http
+      TSS_HOST: 172.32.10.12
+      TSS_PORT: 8321
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
@@ -198,6 +202,10 @@ services:
       NET: ${NET}
       CHAIN_HOST: 172.32.40.33:1317
       RPC_HOST: 172.32.10.23:26657
+      USE_TSS: true
+      TSS_SCHEME: http
+      TSS_HOST: 172.32.10.13
+      TSS_PORT: 8321
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
@@ -348,6 +356,10 @@ services:
       NET: ${NET}
       CHAIN_HOST: 172.32.40.34:1317
       RPC_HOST: 172.32.10.24:26657
+      USE_TSS: true
+      TSS_SCHEME: http
+      TSS_HOST: 172.32.10.14
+      TSS_PORT: 8321
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
@@ -497,6 +509,10 @@ services:
       NET: ${NET}
       CHAIN_HOST: 172.32.40.35:1317
       RPC_HOST: 172.32.10.25:26657
+      USE_TSS: true
+      TSS_SCHEME: http
+      TSS_HOST: 172.32.10.15
+      TSS_PORT: 8321
     depends_on:
       - tssKeygen4
       - tssSign4

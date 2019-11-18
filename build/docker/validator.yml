@@ -36,6 +36,10 @@ services:
       NET: ${NET}
       CHAIN_HOST: 172.52.20.2:1317
       RPC_HOST: 172.52.10.2:26657
+      USE_TSS: true
+      TSS_SCHEME: http
+      TSS_HOST: 172.52.70.2
+      TSS_PORT: 8321
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:

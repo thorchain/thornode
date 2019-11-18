@@ -11,6 +11,11 @@ RPC_HOST="${RPC_HOST:=127.0.0.1:26657}"
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
+USE_TSS="${USE_TSS:=false}"
+TSS_SCHEME="${TSS_SCHEME:=http}"
+TSS_HOST="${TSS_HOST:=127.0.0.1}"
+TSS_PORT="${TSS_PORT:=8321}"
+NODE_ID="${NODE_ID:=none}"
 
 $(dirname "$0")/wait-for-statechain-api.sh $CHAIN_HOST
 
