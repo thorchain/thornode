@@ -48,6 +48,19 @@ echo "{
   \"binance\": {
     \"private_key\": \"$BINANCE_PRIVATE_KEY\",
     \"dex_host\": \"$DEX_HOST\"
+  },
+  \"use_tss\": $USE_TSS,
+  \"key_gen\": {
+    \"scheme\": \"$TSS_SCHEME\",
+    \"host\": \"$TSS_HOST\",
+    \"port\": $TSS_PORT,
+    \"node_id\": $NODE_ID,
+  },
+  \"key_sign\": {
+    \"scheme\": \"$TSS_SCHEME\",
+    \"host\": \"$TSS_HOST\",
+    \"port\": $TSS_PORT,
+    \"node_id\": $NODE_ID,
   }
 }" > /etc/observe/signd/config.json
 
