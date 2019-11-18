@@ -71,6 +71,7 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 
 // Setup : Generate/setup our accounts.
 func (s *Smoke) Setup() {
+	fmt.Println("Running SETUP")
 	s.Tests.ActorKeys = make(map[string]types.Keys)
 
 	// Faucet
@@ -87,6 +88,7 @@ func (s *Smoke) Setup() {
 	key, _ = keys.NewPrivateKeyManager(s.PoolKey)
 	client, _ = sdk.NewDexClient(s.ApiAddr, s.Network, key)
 	s.Tests.ActorKeys["pool"] = types.Keys{Key: key, Client: client}
+	fmt.Printf("Setup ActorKeys: %+v\n", s.Tests.ActorKeys)
 
 	s.Summary()
 }
@@ -285,5 +287,5 @@ func (s *Smoke) Sweep() {
 
 // SendTxn : Send the transaction to Binance.
 func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {
-	s.Binance.SendTxn(client, key, payload, memo)
+	s.Binance.SendTxn(key, payload, memo)
 }
