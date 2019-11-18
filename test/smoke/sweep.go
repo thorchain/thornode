@@ -23,8 +23,14 @@ type Sweep struct {
 func NewSweep(apiAddr, masterPrivKey string, keyList []string, network int, debug bool) Sweep {
 	n := NewNetwork(network)
 
-	keyManager, _ := keys.NewPrivateKeyManager(masterPrivKey)
-	client, _ := sdk.NewDexClient(apiAddr, n.Type, keyManager)
+	keyManager, err := keys.NewPrivateKeyManager(masterPrivKey)
+	if err != nil {
+		log.Fatalf("Error creating key manager: %s", err)
+	}
+	client, err := sdk.NewDexClient(apiAddr, n.Type, keyManager)
+	if err != nil {
+		log.Fatalf("Error creating client: %s", err)
+	}
 
 	return Sweep{
 		ApiAddr:    apiAddr,
