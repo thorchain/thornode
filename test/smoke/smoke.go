@@ -167,6 +167,7 @@ func (s *Smoke) LogResults(tx int, delay time.Duration) {
 
 // BinanceState : Compare expected vs actual Binance wallet values.
 func (s *Smoke) BinanceState(tx int) {
+	fmt.Printf("ActorKeys: %+v\n", s.Tests.ActorKeys)
 	client := s.Tests.ActorKeys["faucet"].Client
 	var output types.Output
 	output.Tx = tx + 1
@@ -192,6 +193,7 @@ func (s *Smoke) BinanceState(tx int) {
 
 // GetBinance : Get Binance account balance.
 func (s *Smoke) GetBinance(client sdk.DexClient, address ctypes.AccAddress) []ctypes.TokenBalance {
+	fmt.Printf("GetBinance: %+v\n", client)
 	acct, err := client.GetAccount(address.String())
 
 	// The account does not exist on Binance yet.
