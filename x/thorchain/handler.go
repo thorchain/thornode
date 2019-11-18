@@ -423,18 +423,7 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 		pool.Asset = coin.Asset
 		if pool.BalanceRune.IsZero() && pool.Status != PoolBootstrap {
 			pool.Status = PoolBootstrap
-			poolEvt := NewEventPool(pool.Asset, pool.Status)
-			bytes, err := json.Marshal(poolEvt)
-			if err != nil {
-				ctx.Logger().Error("failed to marshal pool event", err)
-			}
-			evt := Event{
-				Height: ctx.BlockHeight(),
-				Event:  bytes,
-				Status: EventSuccess,
-			}
-
-			keeper.SetCompletedEvent(ctx, evt)
+			eventPoolStatusWrapper(ctx, keeper, pool)
 		}
 		keeper.SetPool(ctx, pool)
 	}

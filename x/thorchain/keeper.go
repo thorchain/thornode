@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -183,15 +182,7 @@ func (k Keeper) EnableAPool(ctx sdk.Context) {
 		pool.Status = PoolEnabled
 		k.SetPool(ctx, pool)
 
-		poolEvt := NewEventPool(pool.Asset, pool.Status)
-		bytes, _ := json.Marshal(poolEvt)
-		evt := Event{
-			Height: ctx.BlockHeight(),
-			Event:  bytes,
-			Status: EventSuccess,
-		}
-
-		k.SetCompletedEvent(ctx, evt)
+		eventPoolStatusWrapper(ctx, k, pool)
 	}
 }
 
