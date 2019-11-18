@@ -123,7 +123,7 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 		return errors.Wrap(err, "fail to unmarshal RPCTxSearch")
 	}
 
-	b.logger.Info().Int64("block", block).Int("txs", len(query.Result.Txs)).Str("total", query.Result.TotalCount).Msg("txs")
+	b.logger.Debug().Int64("block", block).Int("txs", len(query.Result.Txs)).Str("total", query.Result.TotalCount).Msg("txs")
 	if len(query.Result.Txs) == 0 {
 		b.m.GetCounter(metrics.BlockWithoutTx).Inc()
 		b.logger.Debug().Int64("block", block).Msg("there are no txs in this block")
@@ -172,7 +172,7 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 			if !more {
 				return
 			}
-			b.logger.Info().Int64("block", block).Msg("processing block")
+			b.logger.Debug().Int64("block", block).Msg("processing block")
 			if err := b.searchTxInABlockFromServer(block, b.getTxSearchUrl(block, 1, 100)); nil != err {
 				if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); nil != errStatus {
 					b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
