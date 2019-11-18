@@ -22,6 +22,10 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	}
 	addr, _ := pubKeys.Secp256k1.GetThorAddress()
 	na := NewNodeAccount(addr, status, pubKeys, k, sdk.NewUint(100*common.One), bondAddr, 1)
+	if na.Status == Active {
+		na.ActiveBlockHeight = 10
+	}
+
 	return na
 }
 
