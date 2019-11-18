@@ -140,10 +140,9 @@ func (b Binance) SendTxn(key keys.KeyManager, payload []msg.Transfer, memo strin
 			Post(uri)
 
 		if err != nil {
-			log.Printf("%v\n", err)
+			log.Printf("Failed to broadcast: %v\n", err)
 			log.Println("==============", err)
 			time.Sleep(1 * time.Second)
-
 		} else {
 			break
 		}

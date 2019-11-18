@@ -43,7 +43,6 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("Config: %+v\n", cfg)
 
 	var tests types.Tests
 	if err := json.Unmarshal(cfg, &tests); nil != err {
@@ -72,17 +71,16 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 
 // Setup : Generate/setup our accounts.
 func (s *Smoke) Setup() {
-	fmt.Println("Running SETUP")
 	s.Tests.ActorKeys = make(map[string]types.Keys)
 
 	// Faucet
 	key, err := keys.NewPrivateKeyManager(s.FaucetKey)
 	if err != nil {
-		log.Printf("Failed to create key manager: %s", err)
+		log.Fatalf("Failed to create key manager: %s", err)
 	}
 	client, err := sdk.NewDexClient(s.ApiAddr, s.Network, key)
 	if err != nil {
-		log.Printf("Failed to create client: %s", err)
+		log.Fatalf("Failed to create client: %s", err)
 	}
 	s.Tests.ActorKeys["faucet"] = types.Keys{Key: key, Client: client}
 
@@ -94,14 +92,13 @@ func (s *Smoke) Setup() {
 	// Pool
 	key, err = keys.NewPrivateKeyManager(s.PoolKey)
 	if err != nil {
-		log.Printf("Failed to create key manager for pool: %s", err)
+		log.Fatalf("Failed to create key manager for pool: %s", err)
 	}
 	client, err = sdk.NewDexClient(s.ApiAddr, s.Network, key)
 	if err != nil {
-		log.Printf("Failed to create client for pool: %s", err)
+		log.Fatalf("Failed to create client for pool: %s", err)
 	}
 	s.Tests.ActorKeys["pool"] = types.Keys{Key: key, Client: client}
-	fmt.Printf("Setup ActorKeys: %+v\n", s.Tests.ActorKeys)
 
 	s.Summary()
 }
@@ -110,11 +107,11 @@ func (s *Smoke) Setup() {
 func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
 	keyManager, err := keys.NewKeyManager()
 	if err != nil {
-		log.Printf("Error creating key manager: %s", err)
+		log.Fatalf("Error creating key manager: %s", err)
 	}
 	client, err := sdk.NewDexClient(s.ApiAddr, s.Network, keyManager)
 	if err != nil {
-		log.Printf("Error creating client: %s", err)
+		log.Fatalf("Error creating client: %s", err)
 	}
 
 	return client, keyManager
@@ -188,7 +185,6 @@ func (s *Smoke) LogResults(tx int, delay time.Duration) {
 
 // BinanceState : Compare expected vs actual Binance wallet values.
 func (s *Smoke) BinanceState(tx int) {
-	fmt.Printf("ActorKeys: %+v\n", s.Tests.ActorKeys)
 	client := s.Tests.ActorKeys["faucet"].Client
 	var output types.Output
 	output.Tx = tx + 1
@@ -214,7 +210,6 @@ func (s *Smoke) BinanceState(tx int) {
 
 // GetBinance : Get Binance account balance.
 func (s *Smoke) GetBinance(client sdk.DexClient, address ctypes.AccAddress) []ctypes.TokenBalance {
-	fmt.Printf("GetBinance: %+v\n", client)
 	acct, err := client.GetAccount(address.String())
 
 	// The account does not exist on Binance yet.
@@ -269,18 +264,18 @@ func (s *Smoke) GetStatechain() types.StatechainPools {
 
 	resp, err := http.Get(s.Statechain.PoolURL())
 	if err != nil {
-		log.Printf("%v\n", err)
+		log.Fatalf("Failed getting statechain: %v\n", err)
 	}
 
 	defer resp.Body.Close()
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("%v\n", err)
+		log.Fatalf("Failed reading body: %v\n", err)
 	}
 
 	if err := json.Unmarshal(data, &pools); nil != err {
-		log.Fatal(err)
+		log.Fatalf("Failed to unmarshal pools: %s", err)
 	}
 
 	return pools
