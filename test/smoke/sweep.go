@@ -23,8 +23,11 @@ type Sweep struct {
 func NewSweep(apiAddr, masterPrivKey string, keyList []string, network int, debug bool) Sweep {
 	n := NewNetwork(network)
 
-	keyManager, _ := keys.NewPrivateKeyManager(masterPrivKey)
-	client, _ := sdk.NewDexClient(apiAddr, n.Type, keyManager)
+	keyManager, err := keys.NewPrivateKeyManager(masterPrivKey)
+	if err != nil {
+		log.Fatalf("Error creating key manager: %s", err)
+	}
+	client := GetClient(apiAddr, n.Type, keyManager)
 
 	return Sweep{
 		ApiAddr:    apiAddr,
@@ -78,5 +81,5 @@ func (s Sweep) Balances(address btypes.AccAddress) []btypes.TokenBalance {
 
 // SendTxn : Send our transaction to Binance
 func (s Sweep) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {
-	s.Binance.SendTxn(client, key, payload, memo)
+	s.Binance.SendTxn(key, payload, memo)
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 
@@ -71,11 +72,16 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 
 // Setup : Generate/setup our accounts.
 func (s *Smoke) Setup() {
+	rand.Seed(time.Now().UnixNano())
+
 	s.Tests.ActorKeys = make(map[string]types.Keys)
 
 	// Faucet
-	key, _ := keys.NewPrivateKeyManager(s.FaucetKey)
-	client, _ := sdk.NewDexClient(s.ApiAddr, s.Network, key)
+	key, err := keys.NewPrivateKeyManager(s.FaucetKey)
+	if err != nil {
+		log.Fatalf("Failed to create key manager: %s", err)
+	}
+	client := s.GetClient(key)
 	s.Tests.ActorKeys["faucet"] = types.Keys{Key: key, Client: client}
 
 	for _, actor := range s.Tests.ActorList {
@@ -84,19 +90,28 @@ func (s *Smoke) Setup() {
 	}
 
 	// Pool
-	key, _ = keys.NewPrivateKeyManager(s.PoolKey)
-	client, _ = sdk.NewDexClient(s.ApiAddr, s.Network, key)
+	key, err = keys.NewPrivateKeyManager(s.PoolKey)
+	if err != nil {
+		log.Fatalf("Failed to create key manager for pool: %s", err)
+	}
+	client = s.GetClient(key)
 	s.Tests.ActorKeys["pool"] = types.Keys{Key: key, Client: client}
 
 	s.Summary()
 }
 
+// Get Client, retry if we fail to get it (ie API Rate limited)
+func (s *Smoke) GetClient(k keys.KeyManager) sdk.DexClient {
+	return GetClient(s.ApiAddr, s.Network, k)
+}
+
 // ClientKey : instantiate Client and Keys Binance SDK objects.
 func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
-	keyManager, _ := keys.NewKeyManager()
-	client, _ := sdk.NewDexClient(s.ApiAddr, s.Network, keyManager)
-
-	return client, keyManager
+	keyManager, err := keys.NewKeyManager()
+	if err != nil {
+		log.Fatalf("Error creating key manager: %s", err)
+	}
+	return s.GetClient(keyManager), keyManager
 }
 
 // Summary : Private Keys
@@ -246,18 +261,18 @@ func (s *Smoke) GetStatechain() types.StatechainPools {
 
 	resp, err := http.Get(s.Statechain.PoolURL())
 	if err != nil {
-		log.Printf("%v\n", err)
+		log.Fatalf("Failed getting statechain: %v\n", err)
 	}
 
 	defer resp.Body.Close()
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("%v\n", err)
+		log.Fatalf("Failed reading body: %v\n", err)
 	}
 
 	if err := json.Unmarshal(data, &pools); nil != err {
-		log.Fatal(err)
+		log.Fatalf("Failed to unmarshal pools: %s", err)
 	}
 
 	return pools
@@ -283,5 +298,29 @@ func (s *Smoke) Sweep() {
 
 // SendTxn : Send the transaction to Binance.
 func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {
-	s.Binance.SendTxn(client, key, payload, memo)
+	s.Binance.SendTxn(key, payload, memo)
+}
+
+// Get Client, retry if we fail to get it (ie API Rate limited)
+func GetClient(addr string, network ctypes.ChainNetwork, k keys.KeyManager) sdk.DexClient {
+	// we can get rate limited, so have a retry system.
+	attempts := 25 // number of attempts
+	sleep := 5 * time.Second
+	var err error
+	var client sdk.DexClient
+	if attempts--; attempts > 0 {
+		client, err = sdk.NewDexClient(addr, network, k)
+		if err != nil {
+			// Add some randomness to prevent creating a Thundering Herd
+			jitter := time.Duration(rand.Int63n(int64(sleep)))
+			sleep = sleep + jitter/2
+
+			time.Sleep(sleep)
+		}
+		return client
+	}
+	if err != nil {
+		log.Fatalf("Failed to create client: %s", err)
+	}
+	return client
 }
