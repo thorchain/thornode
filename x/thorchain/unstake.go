@@ -100,17 +100,9 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 		stakerPool.UpsertStakerPoolItem(spi)
 	}
 
-	// if we have no assets, set pool back to bootstrap status
-	if pool.BalanceAsset.IsZero() {
-		pool.Status = PoolBootstrap
-	}
-	// if we have no rune, set pool back to bootstrap status
-	if pool.BalanceRune.IsZero() {
-		pool.Status = PoolBootstrap
-	}
-
 	// Create a pool event if we have no rune or assets
 	if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
+		pool.Status = PoolBootstrap
 		poolEvt := NewEventPool(pool.Asset, pool.Status)
 		bytes, _ := json.Marshal(poolEvt)
 		evt := Event{
