@@ -121,6 +121,9 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
 
+	// slash node accounts for not observing any accepted inbound tx
+	slashForObservingAddresses(ctx, am.keeper)
+
 	// Enable a pool every 50,000 blocks (3 days)
 	if ctx.BlockHeight()%50000 == 0 {
 		am.keeper.EnableAPool(ctx)

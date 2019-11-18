@@ -612,14 +612,14 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			currentPoolAddress := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
 			if !currentPoolAddress.PubKey.Equals(txIn.ObservePoolAddress) {
 				ctx.Logger().Error("wrong pool address,refund without deduct fee", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", txIn.ObservePoolAddress)
-				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
+				refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
 				continue
 			}
 
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer)
 			if nil != err || chain.IsEmpty() {
 				ctx.Logger().Error("fail to process txIn", "error", err, "txhash", tx.TxID.String())
-				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+				refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
 				ee := NewEmptyRefundEvent()
 				buf, err := json.Marshal(ee)
 				if nil != err {
@@ -645,9 +645,13 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			// add this chain to our list of supported chains
 			keeper.AddChain(ctx, chain)
 
+			// add addresses to observing addresses. This is used to detect
+			// active/inactive observing node accounts
+			keeper.AddObservingAddresses(ctx, txIn.Signers)
+
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.TxID, voter.GetTx(activeNodeAccounts), txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+				refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
 			}
 		}
 	}

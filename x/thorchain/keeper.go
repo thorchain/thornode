@@ -18,25 +18,26 @@ import (
 type dbPrefix string
 
 const (
-	prefixTxIn             dbPrefix = "tx_"
-	prefixPool             dbPrefix = "pool_"
-	prefixTxOut            dbPrefix = "txout_"
-	prefixPoolStaker       dbPrefix = "poolstaker_"
-	prefixStakerPool       dbPrefix = "stakerpool_"
-	prefixAdmin            dbPrefix = "admin_"
-	prefixTxInIndex        dbPrefix = "txinIndex_"
-	prefixInCompleteEvents dbPrefix = "incomplete_events_"
-	prefixCompleteEvent    dbPrefix = "complete_event_"
-	prefixLastEventID      dbPrefix = "last_event_id_"
-	prefixLastChainHeight  dbPrefix = "last_chain_height_"
-	prefixLastSignedHeight dbPrefix = "last_signed_height_"
-	prefixNodeAccount      dbPrefix = "node_account_"
-	prefixActiveObserver   dbPrefix = "active_observer_"
-	prefixPoolAddresses    dbPrefix = "pooladdresses_"
-	prefixValidatorMeta    dbPrefix = "validator_meta_"
-	prefixSupportedChains  dbPrefix = "supported_chains_"
-	prefixYggdrasilPool    dbPrefix = "yggdrasil_"
-	prefixVaultData        dbPrefix = "vault_data_"
+	prefixTxIn               dbPrefix = "tx_"
+	prefixPool               dbPrefix = "pool_"
+	prefixTxOut              dbPrefix = "txout_"
+	prefixPoolStaker         dbPrefix = "poolstaker_"
+	prefixStakerPool         dbPrefix = "stakerpool_"
+	prefixAdmin              dbPrefix = "admin_"
+	prefixTxInIndex          dbPrefix = "txinIndex_"
+	prefixInCompleteEvents   dbPrefix = "incomplete_events_"
+	prefixCompleteEvent      dbPrefix = "complete_event_"
+	prefixLastEventID        dbPrefix = "last_event_id_"
+	prefixLastChainHeight    dbPrefix = "last_chain_height_"
+	prefixLastSignedHeight   dbPrefix = "last_signed_height_"
+	prefixNodeAccount        dbPrefix = "node_account_"
+	prefixActiveObserver     dbPrefix = "active_observer_"
+	prefixPoolAddresses      dbPrefix = "pooladdresses_"
+	prefixValidatorMeta      dbPrefix = "validator_meta_"
+	prefixSupportedChains    dbPrefix = "supported_chains_"
+	prefixYggdrasilPool      dbPrefix = "yggdrasil_"
+	prefixVaultData          dbPrefix = "vault_data_"
+	prefixObservingAddresses dbPrefix = "observing_addresses_"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -539,7 +540,52 @@ func (k Keeper) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool {
 	return store.Has([]byte(key))
 }
 
-// SetTxHas - saving a given txhash to the KVStore
+// GetObservingAddresses - get list of observed addresses. This is a list of
+// addresses that have recently contributed via observing a tx that got 2/3rds
+// majority
+func (k Keeper) GetObservingAddresses(ctx sdk.Context) []sdk.AccAddress {
+	key := getKey(prefixObservingAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixObservingAddresses))
+
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return nil
+	}
+
+	bz := store.Get([]byte(key))
+	var addresses []sdk.AccAddress
+	k.cdc.MustUnmarshalBinaryBare(bz, &addresses)
+	return addresses
+}
+
+// AddObservingAddresses - add a list of addresses that have been helpful in
+// getting enough observations to process an inbound tx.
+func (k Keeper) AddObservingAddresses(ctx sdk.Context, inAddresses []sdk.AccAddress) {
+	// combine addresses
+	all := append(k.GetObservingAddresses(ctx), inAddresses...)
+
+	// ensure uniqueness
+	uniq := make([]sdk.AccAddress, 0, len(all))
+	m := make(map[string]bool)
+	for _, val := range all {
+		if _, ok := m[val.String()]; !ok {
+			m[val.String()] = true
+			uniq = append(uniq, val)
+		}
+	}
+
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixObservingAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixObservingAddresses))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(uniq))
+}
+
+// ClearObservingAddresses - clear all observing addresses
+func (k Keeper) ClearObservingAddresses(ctx sdk.Context) {
+	key := getKey(prefixObservingAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixObservingAddresses))
+	store := ctx.KVStore(k.storeKey)
+	store.Delete([]byte(key))
+}
+
+// SetTxInVoter - save a txin voter object
 func (k Keeper) SetTxInVoter(ctx sdk.Context, tx TxInVoter) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxIn, tx.Key().String(), getVersion(k.GetLowestActiveVersion(ctx), prefixTxIn))
