@@ -43,6 +43,7 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Printf("Config: %+v\n", cfg)
 
 	var tests types.Tests
 	if err := json.Unmarshal(cfg, &tests); nil != err {
@@ -75,8 +76,14 @@ func (s *Smoke) Setup() {
 	s.Tests.ActorKeys = make(map[string]types.Keys)
 
 	// Faucet
-	key, _ := keys.NewPrivateKeyManager(s.FaucetKey)
-	client, _ := sdk.NewDexClient(s.ApiAddr, s.Network, key)
+	key, err := keys.NewPrivateKeyManager(s.FaucetKey)
+	if err != nil {
+		log.Printf("Failed to create key manager: %s", err)
+	}
+	client, err := sdk.NewDexClient(s.ApiAddr, s.Network, key)
+	if err != nil {
+		log.Printf("Failed to create client: %s", err)
+	}
 	s.Tests.ActorKeys["faucet"] = types.Keys{Key: key, Client: client}
 
 	for _, actor := range s.Tests.ActorList {
@@ -85,8 +92,14 @@ func (s *Smoke) Setup() {
 	}
 
 	// Pool
-	key, _ = keys.NewPrivateKeyManager(s.PoolKey)
-	client, _ = sdk.NewDexClient(s.ApiAddr, s.Network, key)
+	key, err = keys.NewPrivateKeyManager(s.PoolKey)
+	if err != nil {
+		log.Printf("Failed to create key manager for pool: %s", err)
+	}
+	client, err = sdk.NewDexClient(s.ApiAddr, s.Network, key)
+	if err != nil {
+		log.Printf("Failed to create client for pool: %s", err)
+	}
 	s.Tests.ActorKeys["pool"] = types.Keys{Key: key, Client: client}
 	fmt.Printf("Setup ActorKeys: %+v\n", s.Tests.ActorKeys)
 
@@ -95,8 +108,14 @@ func (s *Smoke) Setup() {
 
 // ClientKey : instantiate Client and Keys Binance SDK objects.
 func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
-	keyManager, _ := keys.NewKeyManager()
-	client, _ := sdk.NewDexClient(s.ApiAddr, s.Network, keyManager)
+	keyManager, err := keys.NewKeyManager()
+	if err != nil {
+		log.Printf("Error creating key manager: %s", err)
+	}
+	client, err := sdk.NewDexClient(s.ApiAddr, s.Network, keyManager)
+	if err != nil {
+		log.Printf("Error creating client: %s", err)
+	}
 
 	return client, keyManager
 }
