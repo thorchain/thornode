@@ -6,21 +6,24 @@ services:
     build:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode-observer
+    image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api:1317
+      NET: ${NET}
+      CHAIN_HOST: 172.52.20.2:1317
+      RPC_HOST: 172.52.50.2:26660
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
-      - thor-api
-    links:
       - thor-api
     volumes:
       - ${PWD}/../scripts:/docker/scripts
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
+    networks:
+      validatornet:
+        ipv4_address: 172.52.30.2
 
   signer:
     hostname: signer
@@ -30,19 +33,26 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api:1317
-      RPC_HOST: thor-daemon:26657
+      NET: ${NET}
+      CHAIN_HOST: 172.52.20.2:1317
+      RPC_HOST: 172.52.10.2:26657
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
+      - tssKeygen
+      - tssSign
       - thor-api
-    links:
+    depends_on:
       - thor-api
     volumes:
       - ${PWD}/../scripts:/docker/scripts
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/validator/keys:/root/.signer
+      - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    networks:
+      validatornet:
+        ipv4_address: 172.52.40.2
 
   thor-daemon:
     hostname: thor-daemon
@@ -50,11 +60,18 @@ services:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/bepswap/thornode
+    restart: unless-stopped
+    depends_on:
+      - tssKeygen
     ports:
       - "26657:26657"
       - "26656:26656"
     environment:
+      NET: ${NET}
       PEER: ${PEER}
+    expose:
+      - "26656"
+      - "26657"
     entrypoint:
       /docker/scripts/validator.sh
     volumes:
@@ -64,6 +81,9 @@ services:
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/validator/keys:/root/.signer
     command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    networks:
+      validatornet:
+        ipv4_address: 172.52.10.2
 
   thor-api:
     hostname: thor-api
@@ -72,20 +92,25 @@ services:
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon
-    links:
-      - thor-daemon
     image: registry.gitlab.com/thorchain/bepswap/thornode
-    ports:
-      - "1318:1317"
+    restart: unless-stopped
     environment:
-      CHAIN_DAEMON: thor-daemon:26657
+      NET: ${NET}
+      CHAIN_DAEMON: 172.52.10.2:26657
+    ports:
+      - "1317:1317"
+    expose:
+      - "1317"
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
       - ${PWD}/../scripts:/docker/scripts
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
-    command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+    command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://172.52.10.2:26657"]
+    networks:
+      validatornet:
+        ipv4_address: 172.52.20.2
 
   binance:
     hostname: binance-fullnode
@@ -94,7 +119,7 @@ services:
     environment:
       BNET: "prod"
     ports:
-      - "27146:27146" 
+      - "27146:27146"
       - "27147:27147"
       - "26660:26660"
     ulimits:
@@ -103,3 +128,68 @@ services:
         hard: "16000"
     volumes:
       - ${HOME}/.thornode/binance:/opt/bnbchaind
+    networks:
+      validatornet:
+        ipv4_address: 172.52.50.2
+
+  tssKeygen:
+    hostname: tssKeygen
+    image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
+    restart: unless-stopped
+    environment:
+      NET: ${NET}
+      PARTIES: 4
+      THRESHOLD: 3
+      BOOTSTRAPNODE: /ip4/${PEER}/tcp/5433
+      SIGNERSERVER: "0.0.0.0:8321"
+      KEYGENSERVER: "0.0.0.0:8322"
+      PARTYNUM: 1
+      RUST_BACKTRACE: "full"
+      TSS_NODE_ID: "waiting"
+      CONFIGFILE: ~/.tss/config_1.json
+    expose:
+      - "8322"
+      - "5455"
+    entrypoint:
+      /docker/scripts/tss_keygen.sh
+    volumes:
+      - ${PWD}/../scripts:/docker/scripts
+      - ${HOME}/.thornode/validator/.tss:/root/.tss
+    command: "/app/tss_keygen ~/.tss/config_1.json ~/.tss/private.key /ip4/172.52.60.2/tcp/5455"
+    networks:
+      validatornet:
+        ipv4_address: 172.52.60.2
+
+
+  tssSign:
+    hostname: tssSign
+    image: registry.gitlab.com/thorchain/tss/multi-party-ecdsa-docker
+    restart: unless-stopped
+    environment:
+      NET: ${NET}
+      CONFIGFILE: ~/.tss/config_1.json
+      RUST_BACKTRACE: "full"
+    expose:
+      - "8321"
+      - "5455"
+    entrypoint:
+      /docker/scripts/tss_sign.sh
+    volumes:
+      - ${PWD}/../scripts:/docker/scripts
+      - ${HOME}/.thornode/validator/.tss:/root/.tss
+    command: "/app/tss_sign ~/.tss/private.key ~/.tss/config_1.json /ip4/172.52.70.2/tcp/5455"
+    networks:
+      validatornet:
+        ipv4_address: 172.52.70.2
+
+networks:
+  validatornet:
+    driver_opts:
+      com.docker.network.driver.mtu: 1500
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.enable_ip_masquerade: "true"
+      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.52.10.0/16
