@@ -412,6 +412,7 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 			store.AddTxOutItem(ctx, keeper, toi, deductFee, false)
 			continue
 		}
+
 		// Since we have assets, we don't have a pool for, we don't know how to
 		// refund and withhold for fees. Instead, we'll create a pool with the
 		// amount of assets, and associate them with no stakers (meaning up for
@@ -420,8 +421,9 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 		// airdrop).
 		pool.BalanceAsset = pool.BalanceAsset.Add(coin.Amount)
 		pool.Asset = coin.Asset
-		if pool.BalanceRune.IsZero() {
+		if pool.BalanceRune.IsZero() && pool.Status != PoolBootstrap {
 			pool.Status = PoolBootstrap
+			eventPoolStatusWrapper(ctx, keeper, pool)
 		}
 		keeper.SetPool(ctx, pool)
 	}

@@ -40,6 +40,13 @@ func (s EventSuite) TestUnstakeEvent(c *C) {
 	c.Check(evt.Type(), Equals, "unstake")
 }
 
+func (s EventSuite) TestPool(c *C) {
+	evt := NewEventPool(common.BNBAsset, Enabled)
+	c.Check(evt.Type(), Equals, "pool")
+	c.Check(evt.Pool.String(), Equals, common.BNBAsset.String())
+	c.Check(evt.Status.String(), Equals, Enabled.String())
+}
+
 func (s EventSuite) TestAdminConfig(c *C) {
 	evt := NewEventAdminConfig("foo", "bar")
 	c.Check(evt.Type(), Equals, "admin_config")
