@@ -642,8 +642,10 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			if len(txIn.Coins) > 0 {
 				chain = txIn.Coins[0].Asset.Chain
 			}
+
 			currentPoolAddress := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
-			if !currentPoolAddress.PubKey.Equals(txIn.ObservePoolAddress) {
+			yggExists := keeper.YggdrasilExists(ctx, txIn.ObservePoolAddress)
+			if !currentPoolAddress.PubKey.Equals(txIn.ObservePoolAddress) && !yggExists {
 				ctx.Logger().Error("wrong pool address,refund without deduct fee", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", txIn.ObservePoolAddress)
 				refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
 				continue
@@ -652,20 +654,55 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			m, err := processOneTxIn(ctx, keeper, tx.TxID, txIn, msg.Signer)
 			if nil != err || chain.IsEmpty() {
 				ctx.Logger().Error("fail to process txIn", "error", err, "txhash", tx.TxID.String())
-				refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
-				ee := NewEmptyRefundEvent()
-				buf, err := json.Marshal(ee)
-				if nil != err {
-					return sdk.ErrInternal("fail to marshal EmptyRefund event to json").Result()
+				// Detect if the txIn is to the thorchain network or from the
+				// thorchain network
+				addr, err := txIn.ObservePoolAddress.GetAddress(chain)
+				if err != nil {
+					ctx.Logger().Error("fail to get address", "error", err, "txhash", tx.TxID.String())
+					continue
 				}
-				event := NewEvent(
-					ee.Type(),
-					ctx.BlockHeight(),
-					txIn.GetCommonTx(tx.TxID),
-					buf,
-					EventRefund,
-				)
-				keeper.AddIncompleteEvents(ctx, event)
+
+				if addr.Equals(txIn.Sender) {
+					// From thorchain network
+					ygg := keeper.GetYggdrasil(ctx, txIn.ObservePoolAddress)
+					if !ygg.IsEmpty() {
+						na, err := keeper.GetNodeAccountByPubKey(ctx, ygg.PubKey)
+						if err != nil {
+							ctx.Logger().Error("fail to get node account", "error", err, "txhash", tx.TxID.String())
+							return sdk.ErrInternal("fail to get node account").Result()
+						}
+
+						// Slash the node account, since we are unable to
+						// process the tx (ie unscheduled tx)
+						for _, coin := range txIn.Coins {
+							if coin.Asset.IsRune() {
+								na.SubBond(coin.Amount)
+							} else {
+								pool := keeper.GetPool(ctx, coin.Asset)
+								if !pool.Empty() {
+									na.SubBond(pool.AssetValueInRune(coin.Amount))
+								}
+							}
+						}
+						keeper.SetNodeAccount(ctx, na)
+					}
+				} else {
+					// To thorchain network
+					refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+					ee := NewEmptyRefundEvent()
+					buf, err := json.Marshal(ee)
+					if nil != err {
+						return sdk.ErrInternal("fail to marshal EmptyRefund event to json").Result()
+					}
+					event := NewEvent(
+						ee.Type(),
+						ctx.BlockHeight(),
+						txIn.GetCommonTx(tx.TxID),
+						buf,
+						EventRefund,
+					)
+					keeper.AddIncompleteEvents(ctx, event)
+				}
 				continue
 			}
 
