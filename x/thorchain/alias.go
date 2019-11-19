@@ -70,7 +70,9 @@ var (
 	NewTrustAccount                = types.NewTrustAccount
 	NewNodeAccount                 = types.NewNodeAccount
 	NewYggdrasil                   = types.NewYggdrasil
+	NewReserveContributor          = types.NewReserveContributor
 	NewMsgYggdrasil                = types.NewMsgYggdrasil
+	NewMsgReserveContributor       = types.NewMsgReserveContributor
 	NewMsgBond                     = types.NewMsgBond
 	NewPoolAddresses               = types.NewPoolAddresses
 	NewMsgNextPoolAddress          = types.NewMsgNextPoolAddress
@@ -105,6 +107,7 @@ type (
 	MsgEndPool                  = types.MsgEndPool
 	MsgLeave                    = types.MsgLeave
 	MsgAck                      = types.MsgAck
+	MsgReserveContributor       = types.MsgReserveContributor
 	MsgYggdrasil                = types.MsgYggdrasil
 	QueryResPools               = types.QueryResPools
 	QueryResHeights             = types.QueryResHeights
@@ -132,6 +135,8 @@ type (
 	EventSwap                   = types.EventSwap
 	EventStake                  = types.EventStake
 	EventStatus                 = types.EventStatus
+	ReserveContributor          = types.ReserveContributor
+	ReserveContributors         = types.ReserveContributors
 	Yggdrasil                   = types.Yggdrasil
 	Yggdrasils                  = types.Yggdrasils
 	NodeAccount                 = types.NodeAccount

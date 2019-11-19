@@ -31,6 +31,7 @@ const (
 	txAck
 	txYggdrasilFund
 	txYggdrasilReturn
+	txReserves
 )
 
 var stringToTxTypeMap = map[string]TxType{
@@ -59,6 +60,7 @@ var stringToTxTypeMap = map[string]TxType{
 	"ack":        txAck,
 	"yggdrasil+": txYggdrasilFund,
 	"yggdrasil-": txYggdrasilReturn,
+	"reserves":   txReserves,
 }
 
 var txToStringMap = map[TxType]string{
@@ -75,6 +77,7 @@ var txToStringMap = map[TxType]string{
 	txAck:             "ack",
 	txYggdrasilFund:   "yggdrasil+",
 	txYggdrasilReturn: "yggdrasil-",
+	txReserves:        "reserves",
 }
 
 // converts a string into a txType
@@ -185,6 +188,10 @@ type YggdrasilReturnMemo struct {
 	MemoBase
 }
 
+type ReservesMemo struct {
+	MemoBase
+}
+
 func NewOutboundMemo(txID common.TxID) OutboundMemo {
 	return OutboundMemo{
 		TxID: txID,
@@ -206,7 +213,7 @@ func ParseMemo(memo string) (Memo, error) {
 	// list of memo types that do not contain an asset in their memo
 	noAssetMemos := []TxType{
 		txGas, txOutbound, txBond, txLeave, txAck, txNextPool,
-		txYggdrasilFund, txYggdrasilReturn,
+		txYggdrasilFund, txYggdrasilReturn, txReserves,
 	}
 	hasAsset := true
 	for _, memoType := range noAssetMemos {
@@ -355,6 +362,10 @@ func ParseMemo(memo string) (Memo, error) {
 		}, nil
 	case txYggdrasilReturn:
 		return YggdrasilReturnMemo{
+			MemoBase: MemoBase{TxType: txYggdrasilReturn},
+		}, nil
+	case txReserves:
+		return ReservesMemo{
 			MemoBase: MemoBase{TxType: txYggdrasilReturn},
 		}, nil
 	default:
