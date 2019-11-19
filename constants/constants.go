@@ -20,3 +20,7 @@ const (
 	ValidatorsChangeWindow          = 1200  // When should we open the rotate window, nominate validators, and identify who should be out
 	LeaveProcessPerBlockHeight      = 4320  // after how many blocks we will process leave queue
 )
+
+// Slashing
+const LackOfObservationPenalty int64 = 2   // add two slash point for each block where a node does not observe
+const SigningTransactionPeriod int64 = 100 // how many blocks before a request to sign a tx by yggdrasil pool, is counted as delinquent.
