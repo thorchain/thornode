@@ -701,6 +701,10 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 									if !pool.Empty() {
 										minusRune = pool.AssetValueInRune(diff)
 										minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
+										// Update pool balances
+										pool.BalanceRune = pool.BalanceRune.Add(minusRune)
+										pool.BalanceAsset = pool.BalanceAsset.Sub(diff)
+										keeper.SetPool(ctx, pool)
 									}
 								}
 							}
