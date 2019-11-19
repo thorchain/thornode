@@ -505,6 +505,10 @@ func handleMsgReserveContributor(ctx sdk.Context, keeper Keeper, msg MsgReserveC
 	reses = reses.Add(msg.Contributor)
 	keeper.SetReserveContributors(ctx, reses)
 
+	vault := keeper.GetVaultData(ctx)
+	vault.TotalReserve = vault.TotalReserve.Add(msg.Contributor.Amount)
+	keeper.SetVaultData(ctx, vault)
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
