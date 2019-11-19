@@ -1,6 +1,8 @@
 #!/bin/sh
 set -ex
 
+. $(dirname "$0")/core.sh
+
 CHAIN_ID="${CHAIN_ID:=thorchain}"
 DEX_HOST="${DEX_HOST:=testnet-dex.binance.org}"
 DB_PATH="${DB_PATH:=/var/data}"
@@ -9,29 +11,16 @@ RPC_HOST="${RPC_HOST:=127.0.0.1:26657}"
 SIGNER_NAME="${SIGNER_NAME:=statechain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
+USE_TSS="${USE_TSS:=false}"
+TSS_SCHEME="${TSS_SCHEME:=http}"
+TSS_HOST="${TSS_HOST:=127.0.0.1}"
+TSS_PORT="${TSS_PORT:=8321}"
 NODE_ID="${NODE_ID:=none}"
-SEED="${SEED:=none}" # the hostname of a seed node
-GENESIS_URL="${GENESIS_URL:=none}"
 
 $(dirname "$0")/wait-for-statechain-api.sh $CHAIN_HOST
 
-if [ -f ~/.signer/private_key.txt ]; then
-  BINANCE_PRIVATE_KEY=$(cat ~/.signer/private_key.txt)
-  PUBKEY=$(cat ~/.signer/pubkey.txt)
-else
-  echo "GENERATING BNB ADDRESSES"
-  # because the generate command can get API rate limited, we may need to retry
-  n=0
-  until [ $n -ge 60 ]; do
-    generate > /tmp/bnb && break
-    n=$[$n+1]
-    sleep 1
-  done
-  BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
-  echo $BINANCE_PRIVATE_KEY > ~/.signer/private_key.txt
-  PUBKEY=$(cat /tmp/bnb | grep MASTER_PUBKEY= | awk -F= '{print $NF}')
-  echo $PUBKEY > ~/.signer/pubkey.txt
-fi
+gen_bnb_address
+BINANCE_PRIVATE_KEY=$(cat ~/.signer/private_key.txt)
 
 SIGNER_PATH=$DB_PATH/signer/
 mkdir -p $SIGNER_PATH
@@ -64,6 +53,19 @@ echo "{
   \"binance\": {
     \"private_key\": \"$BINANCE_PRIVATE_KEY\",
     \"dex_host\": \"$DEX_HOST\"
+  },
+  \"use_tss\": $USE_TSS,
+  \"key_gen\": {
+    \"scheme\": \"$TSS_SCHEME\",
+    \"host\": \"$TSS_HOST\",
+    \"port\": $TSS_PORT,
+    \"node_id\": $NODE_ID,
+  },
+  \"key_sign\": {
+    \"scheme\": \"$TSS_SCHEME\",
+    \"host\": \"$TSS_HOST\",
+    \"port\": $TSS_PORT,
+    \"node_id\": $NODE_ID,
   }
 }" > /etc/observe/signd/config.json
 

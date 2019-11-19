@@ -12,7 +12,6 @@ ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in statech
 # find or generate our BNB address
 gen_bnb_address
 ADDRESS=$(cat ~/.signer/address.txt)
-PUBKEY=$(cat ~/.signer/pubkey.txt)
 
 # create statechain user
 echo $SIGNER_PASSWD | thorcli keys add $SIGNER_NAME
@@ -25,7 +24,6 @@ VERSION=$(fetch_version)
 if [ "$SEED" = "$(hostname)" ]; then
     echo "I AM THE SEED NODE"
     thord tendermint show-node-id > /tmp/shared/node.txt
-    echo $ADDRESS > /tmp/shared/pool_address.txt
 fi
 
 # write node account data to json file in shared directory
@@ -41,7 +39,22 @@ while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODE
     sleep 1
 done
 
-POOL_ADDRESS=$(cat /tmp/shared/pool_address.txt)
+echo $TSSKEYSIGN
+if [ ! -z ${TSSKEYSIGN+x} ]; then
+    # wait for TSS keysign agent to become available
+    $(dirname "$0")/wait-for-tss-keygen.sh $TSSKEYSIGN
+
+    KEYCLIENT="/usr/bin/keygenclient --name $SIGNER_NAME --password $SIGNER_PASSWD -u http://$TSSKEYSIGN:8322/keygen"
+    for f in /tmp/shared/node_*.json; do
+        KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $3}')"
+    done
+    sh -c "$KEYCLIENT > /tmp/keygenclient.output"
+
+    PUBKEY=$(cat /tmp/keygenclient.output | tail -2 | head -1)
+    POOL_ADDRESS=$(cat /tmp/keygenclient.output | tail -1)
+else
+    POOL_ADDRESS=$(cat ~/.signer/address.txt)
+fi
 
 if [ "$SEED" = "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
@@ -77,5 +90,7 @@ if [ "$SEED" != "$(hostname)" ]; then
         cat ~/.thord/config/genesis.json
     fi
 fi
+
+echo "POOL ADDRESS: $POOL_ADDRESS"
 
 exec "$@"
