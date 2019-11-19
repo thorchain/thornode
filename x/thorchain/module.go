@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/client/cli"
 	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/client/rest"
 )
@@ -125,7 +126,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	slashForObservingAddresses(ctx, am.keeper)
 
 	// Enable a pool every 50,000 blocks (3 days)
-	if ctx.BlockHeight()%50000 == 0 {
+	if ctx.BlockHeight()%constants.NewPoolCycle == 0 {
 		am.keeper.EnableAPool(ctx)
 	}
 
