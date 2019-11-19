@@ -88,7 +88,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 		3,
 		inTx,
 		swapBytes,
-		EventPending,
+		EventSuccess,
 	)
 
 	k.AddIncompleteEvents(ctx, evt)

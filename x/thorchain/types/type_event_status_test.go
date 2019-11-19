@@ -13,7 +13,7 @@ var _ = Suite(&EventStatusSuite{})
 
 func (EventStatusSuite) TestEventStatus(c *C) {
 	input := []string{
-		"success", "refund", "pending", "failed",
+		"success", "refund", "pending",
 	}
 	for _, item := range input {
 		es := GetEventStatus(item)
