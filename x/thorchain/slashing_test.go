@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 	. "gopkg.in/check.v1"
 )
 
@@ -39,13 +40,13 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 	c.Assert(err, IsNil)
 
 	c.Assert(na1.SlashPoints, Equals, int64(0))
-	c.Assert(na2.SlashPoints, Equals, int64(observingPenalty))
+	c.Assert(na2.SlashPoints, Equals, int64(constants.LackOfObservationPenalty))
 
 	// since we have cleared all node addresses in slashForObservingAddresses,
 	// running it a second time should result in slashing nobody.
 	slashForObservingAddresses(ctx, k)
 	c.Assert(na1.SlashPoints, Equals, int64(0))
-	c.Assert(na2.SlashPoints, Equals, int64(observingPenalty))
+	c.Assert(na2.SlashPoints, Equals, int64(constants.LackOfObservationPenalty))
 }
 
 func (s *SlashingSuite) TestNotSigningSlash(c *C) {

@@ -3,12 +3,7 @@ package thorchain
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/thornode/common"
-)
-
-// TODO: move to constants.go
-const (
-	observingPenalty         int64 = 2 // add two slash point for each offense
-	signingTransactionPeriod int64 = 100
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 // Slash node accounts that didn't observe a single inbound txn
@@ -38,7 +33,7 @@ func slashForObservingAddresses(ctx sdk.Context, keeper Keeper) {
 
 		// this na is not found, therefore it should be slashed
 		if !found {
-			na.SlashPoints += observingPenalty
+			na.SlashPoints += constants.LackOfObservationPenalty
 			keeper.SetNodeAccount(ctx, na)
 		}
 	}
@@ -59,7 +54,7 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) 
 	for _, evt := range incomplete {
 		// NOTE: not checking the event type because all non-swap/unstake/etc
 		// are completed immediately.
-		if evt.Height+signingTransactionPeriod > ctx.BlockHeight() {
+		if evt.Height+constants.SigningTransactionPeriod > ctx.BlockHeight() {
 			txs, err := keeper.GetTxOut(ctx, uint64(evt.Height))
 			if err != nil {
 				ctx.Logger().Error("Unable to get tx out list", err)
@@ -75,7 +70,7 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) 
 						ctx.Logger().Error("Unable to get node account", err)
 						continue
 					}
-					na.SlashPoints += signingTransactionPeriod * 2
+					na.SlashPoints += constants.SigningTransactionPeriod * 2
 					keeper.SetNodeAccount(ctx, na)
 
 					// Save the tx to as a new tx, select Asgard to send it this time.
