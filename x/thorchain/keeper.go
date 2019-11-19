@@ -922,6 +922,20 @@ func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
 	}
 	return ygg
 }
+func (k Keeper) HasValidYggdrasilPools(ctx sdk.Context) (bool, error) {
+	iterator := k.GetYggdrasilIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var ygg Yggdrasil
+		if err := k.cdc.UnmarshalBinaryBare(iterator.Value(), &ygg); nil != err {
+			return false, fmt.Errorf("fail to unmarshal yggdrasil: %w", err)
+		}
+		if ygg.HasFunds() {
+			return true, nil
+		}
+	}
+	return false, nil
+}
 
 // ////////////////////// Vault Data //////////////////////////
 func (k Keeper) GetVaultData(ctx sdk.Context) VaultData {
