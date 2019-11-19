@@ -9,6 +9,7 @@ import (
 type Address string
 
 var NoAddress Address = Address("")
+var RagnarokAddr Address = Address("Ragnarok")
 
 // NewAddress create a new Address
 // Sample: bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6

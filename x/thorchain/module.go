@@ -87,7 +87,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		supplyKeeper:   supplyKeeper,
 		txOutStore:     NewTxOutStore(k, poolAddrMgr),
 		poolMgr:        poolAddrMgr,
-		validatorMgr:   NewValidatorManager(k),
+		validatorMgr:   NewValidatorManager(k, poolAddrMgr),
 	}
 }
 
@@ -115,7 +115,7 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
 	am.poolMgr.BeginBlock(ctx)
-	am.validatorMgr.BeginBlock(ctx, req.Header.Height)
+	am.validatorMgr.BeginBlock(ctx)
 	am.txOutStore.NewBlock(uint64(req.Header.Height))
 }
 
@@ -134,7 +134,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	am.keeper.UpdateVaultData(ctx)
 	am.poolMgr.EndBlock(ctx, am.txOutStore)
 	am.txOutStore.CommitBlock(ctx)
-	return am.validatorMgr.EndBlock(ctx)
+	return am.validatorMgr.EndBlock(ctx, am.txOutStore)
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
