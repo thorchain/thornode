@@ -8,23 +8,25 @@ import (
 
 // ValidatorRotationPolicy store all the relevant parameters we need to perform validator rotation
 type ValidatorRotationPolicy struct {
-	RotateInNumBeforeFull  int64
-	RotateOutNumBeforeFull int64
-	RotateNumAfterFull     int64
-	RotatePerBlockHeight   int64
-	ValidatorChangeWindow  int64
-	DesireValidatorSet     int64
+	RotateInNumBeforeFull      int64
+	RotateOutNumBeforeFull     int64
+	RotateNumAfterFull         int64
+	RotatePerBlockHeight       int64
+	ValidatorChangeWindow      int64
+	DesireValidatorSet         int64
+	LeaveProcessPerBlockHeight int64
 }
 
 // GetValidatorRotationPolicy from data store
 func GetValidatorRotationPolicy(ctx sdk.Context, k Keeper) ValidatorRotationPolicy {
 	return ValidatorRotationPolicy{
-		RotateInNumBeforeFull:  k.GetAdminConfigValidatorRotateInNumBeforeFull(ctx, nil),
-		RotateOutNumBeforeFull: k.GetAdminConfigValidatorRotateOutNumBeforeFull(ctx, nil),
-		RotateNumAfterFull:     k.GetAdminConfigValidatorRotateNumAfterFull(ctx, nil),
-		RotatePerBlockHeight:   k.GetAdminConfigRotatePerBlockHeight(ctx, nil),
-		ValidatorChangeWindow:  k.GetAdminConfigValidatorsChangeWindow(ctx, nil),
-		DesireValidatorSet:     k.GetAdminConfigDesireValidatorSet(ctx, nil),
+		RotateInNumBeforeFull:      k.GetAdminConfigValidatorRotateInNumBeforeFull(ctx, nil),
+		RotateOutNumBeforeFull:     k.GetAdminConfigValidatorRotateOutNumBeforeFull(ctx, nil),
+		RotateNumAfterFull:         k.GetAdminConfigValidatorRotateNumAfterFull(ctx, nil),
+		RotatePerBlockHeight:       k.GetAdminConfigRotatePerBlockHeight(ctx, nil),
+		ValidatorChangeWindow:      k.GetAdminConfigValidatorsChangeWindow(ctx, nil),
+		DesireValidatorSet:         k.GetAdminConfigDesireValidatorSet(ctx, nil),
+		LeaveProcessPerBlockHeight: 4320,
 	}
 }
 func (vp ValidatorRotationPolicy) IsValid() error {

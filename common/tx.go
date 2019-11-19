@@ -3,6 +3,8 @@ package common
 import (
 	"fmt"
 	"strings"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type TxID string
@@ -50,6 +52,19 @@ type Tx struct {
 
 type Txs []Tx
 
+func GetRagnarokTx(chain Chain) Tx {
+	return Tx{
+		Chain:       chain,
+		ID:          BlankTxID,
+		FromAddress: RagnarokAddr,
+		ToAddress:   RagnarokAddr,
+		Coins: Coins{
+			// used for ragnarok, so doesn't really matter
+			NewCoin(RuneAsset(), sdk.OneUint()),
+		},
+		Memo: "Ragnarok",
+	}
+}
 func NewTx(txID TxID, from Address, to Address, coins Coins, memo string) Tx {
 	var chain Chain
 	for _, coin := range coins {
