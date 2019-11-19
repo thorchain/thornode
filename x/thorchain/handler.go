@@ -687,20 +687,28 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 						// Slash the node account, since we are unable to
 						// process the tx (ie unscheduled tx)
-						for _, coin := range txIn.Coins {
+						var minusCoins common.Coins       // track funds to subtract from ygg pool
+						minusRune := sdk.ZeroUint()       // track amt of rune to slash from bond
+						for _, coin := range txIn.Coins { // assumes coins are asset uniq
 							expectedCoin := expectedCoins.GetCoin(coin.Asset)
 							if expectedCoin.Amount.LT(coin.Amount) {
+								diff := coin.Amount.Sub(expectedCoin.Amount)
 								if coin.Asset.IsRune() {
-									na.SubBond(coin.Amount.Sub(expectedCoin.Amount))
+									minusRune = coin.Amount.Sub(diff)
+									minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
 								} else {
 									pool := keeper.GetPool(ctx, coin.Asset)
 									if !pool.Empty() {
-										na.SubBond(pool.AssetValueInRune(coin.Amount))
+										minusRune = pool.AssetValueInRune(diff)
+										minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
 									}
 								}
 							}
 						}
+						na.SubBond(minusRune)
 						keeper.SetNodeAccount(ctx, na)
+						ygg.SubFunds(minusCoins)
+						keeper.SetYggdrasil(ctx, ygg)
 					}
 				} else {
 					// To thorchain network
