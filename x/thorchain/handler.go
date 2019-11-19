@@ -185,7 +185,7 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 	if eventStatus != EventRefund {
 		// since there is no outbound tx for staking, we'll complete the event now
 		tx := common.Tx{ID: common.BlankTxID}
-		keeper.CompleteEvents(ctx, []common.TxID{msg.Tx.ID}, EventSuccess, tx)
+		keeper.CompleteEvents(ctx, []common.TxID{msg.Tx.ID}, tx)
 	}
 	return nil
 }
@@ -1028,7 +1028,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	keeper.SetTxInVoter(ctx, voter)
 
 	// complete events
-	keeper.CompleteEvents(ctx, []common.TxID{msg.InTxID}, EventSuccess, msg.Tx)
+	keeper.CompleteEvents(ctx, []common.TxID{msg.InTxID}, msg.Tx)
 
 	// Apply Gas fees
 	activeNodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)

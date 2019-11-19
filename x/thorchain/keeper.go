@@ -819,7 +819,7 @@ func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
 }
 
 // CompleteEvent
-func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, status EventStatus, out common.Tx) {
+func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.Tx) {
 	lastEventID := k.GetLastEventID(ctx)
 
 	incomplete, _ := k.GetIncompleteEvents(ctx)
@@ -838,7 +838,6 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, status EventSt
 				if int64(len(evt.OutTx)) >= voter.NumOuts {
 					lastEventID += 1
 					evt.ID = lastEventID
-					evt.Status = status
 					k.SetCompletedEvent(ctx, evt)
 				} else {
 					// since we have more out event, add event back to
