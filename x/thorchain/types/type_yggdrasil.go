@@ -1,6 +1,8 @@
 package types
 
 import (
+	"sort"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/bepswap/thornode/common"
@@ -81,4 +83,15 @@ func (ygg *Yggdrasil) SubFunds(coins common.Coins) {
 			}
 		}
 	}
+}
+
+func (yggs Yggdrasils) SortBy(sortBy common.Asset) Yggdrasils {
+	// use the ygg pool with the highest quantity of our coin
+	sort.Slice(yggs[:], func(i, j int) bool {
+		return yggs[i].GetCoin(sortBy).Amount.GT(
+			yggs[j].GetCoin(sortBy).Amount,
+		)
+	})
+
+	return yggs
 }

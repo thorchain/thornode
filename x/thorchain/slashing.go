@@ -2,11 +2,13 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
 // TODO: move to constants.go
 const (
-	observingPenalty int64 = 2 // add two slash point for each offense
+	observingPenalty         int64 = 2 // add two slash point for each offense
+	signingTransactionPeriod int64 = 100
 )
 
 // Slash node accounts that didn't observe a single inbound txn
@@ -45,4 +47,50 @@ func slashForObservingAddresses(ctx sdk.Context, keeper Keeper) {
 	keeper.ClearObservingAddresses(ctx)
 
 	return
+}
+
+func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) {
+	incomplete, err := keeper.GetIncompleteEvents(ctx)
+	if err != nil {
+		ctx.Logger().Error("Unable to get list of active accounts", err)
+		return
+	}
+
+	for _, evt := range incomplete {
+		// NOTE: not checking the event type because all non-swap/unstake/etc
+		// are completed immediately.
+		if evt.Height+signingTransactionPeriod > ctx.BlockHeight() {
+			txs, err := keeper.GetTxOut(ctx, uint64(evt.Height))
+			if err != nil {
+				ctx.Logger().Error("Unable to get tx out list", err)
+				continue
+			}
+
+			for i, tx := range txs.TxArray {
+				if tx.InHash.Equals(evt.InTx.ID) && tx.OutHash.IsEmpty() {
+					// mark this tx as not sent
+					txs.TxArray[i].OutHash = common.BlankTxID
+					evt.Status = EventFailed
+					keeper.SetCompletedEvent(ctx, evt)
+
+					// Slash our node account for not sending funds
+					na, err := keeper.GetNodeAccountByPubKey(ctx, tx.PoolAddress)
+					if err != nil {
+						ctx.Logger().Error("Unable to get node account", err)
+						continue
+					}
+					na.SlashPoints += signingTransactionPeriod * 2
+					keeper.SetNodeAccount(ctx, na)
+
+					// Save the tx to as a new tx, select Asgard to send it this time.
+					// Set the pool address to empty, it will overwrite it with the
+					// current Asgard vault
+					tx.PoolAddress = common.EmptyPubKey
+					txOutStore.AddTxOutItem(ctx, keeper, tx, true, true)
+				}
+			}
+
+			keeper.SetTxOut(ctx, txs)
+		}
+	}
 }

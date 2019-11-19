@@ -14,6 +14,7 @@ const (
 	PoolSuspended    = types.Suspended
 	EventSuccess     = types.Success
 	EventRefund      = types.Refund
+	EventFailed      = types.Failed
 
 	// Admin config keys
 	GSLKey                 = types.GSLKey
