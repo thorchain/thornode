@@ -182,6 +182,8 @@ func (k Keeper) EnableAPool(ctx sdk.Context) {
 		}
 		pool.Status = PoolEnabled
 		k.SetPool(ctx, pool)
+
+		eventPoolStatusWrapper(ctx, k, pool)
 	}
 }
 

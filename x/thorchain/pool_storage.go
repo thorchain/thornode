@@ -26,4 +26,5 @@ type poolStorage interface {
 	GetLowestActiveVersion(ctx sdk.Context) int64
 
 	AddIncompleteEvents(ctx sdk.Context, event Event)
+	SetCompletedEvent(ctx sdk.Context, event Event)
 }

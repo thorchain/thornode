@@ -132,6 +132,22 @@ func (e EventAdd) Type() string {
 	return "add"
 }
 
+type EventPool struct {
+	Pool   common.Asset `json:"pool"`
+	Status PoolStatus   `json:"status"`
+}
+
+func NewEventPool(pool common.Asset, status PoolStatus) EventPool {
+	return EventPool{
+		Pool:   pool,
+		Status: status,
+	}
+}
+
+func (e EventPool) Type() string {
+	return "pool"
+}
+
 type EmptyRefundEvent struct {
 }
 
