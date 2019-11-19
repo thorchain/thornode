@@ -66,9 +66,10 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) 
 				continue
 			}
 
-			for _, tx := range txs.TxArray {
+			for i, tx := range txs.TxArray {
 				if tx.InHash.Equals(evt.InTx.ID) && tx.OutHash.IsEmpty() {
 					// Slash our node account for not sending funds
+					txs.TxArray[i].OutHash = common.BlankTxID
 					na, err := keeper.GetNodeAccountByPubKey(ctx, tx.PoolAddress)
 					if err != nil {
 						ctx.Logger().Error("Unable to get node account", err)
