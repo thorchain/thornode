@@ -13,7 +13,7 @@ var _ = Suite(&EventStatusSuite{})
 
 func (EventStatusSuite) TestEventStatus(c *C) {
 	input := []string{
-		"success", "refund", "pending",
+		"success", "refund", "pending", "failed",
 	}
 	for _, item := range input {
 		es := GetEventStatus(item)
@@ -21,7 +21,7 @@ func (EventStatusSuite) TestEventStatus(c *C) {
 		c.Assert(err, IsNil)
 		c.Check(strings.EqualFold(es.String(), item), Equals, true)
 	}
-	invalidEventStatus := EventStatus(3)
+	invalidEventStatus := EventStatus(len(input) + 100)
 	c.Assert(invalidEventStatus.Valid(), NotNil)
 
 	es := GetEventStatus("success")

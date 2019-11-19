@@ -13,12 +13,14 @@ const (
 	Success EventStatus = iota
 	Refund
 	Pending
+	Failed
 )
 
 var eventStatusStr = map[string]EventStatus{
 	"Success": Success,
 	"Refund":  Refund,
 	"Pending": Pending,
+	"Failed":  Failed,
 }
 
 // String implement fmt.Stringer, convert from EventStatus to string
