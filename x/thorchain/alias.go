@@ -15,6 +15,7 @@ const (
 	EventSuccess     = types.Success
 	EventRefund      = types.Refund
 	EventFailed      = types.Failed
+	EventPending     = types.Pending
 
 	// Admin config keys
 	GSLKey                 = types.GSLKey
