@@ -66,13 +66,8 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) 
 				continue
 			}
 
-			for i, tx := range txs.TxArray {
+			for _, tx := range txs.TxArray {
 				if tx.InHash.Equals(evt.InTx.ID) && tx.OutHash.IsEmpty() {
-					// mark this tx as not sent
-					txs.TxArray[i].OutHash = common.BlankTxID
-					out := common.Tx{ID: common.BlankTxID}
-					keeper.CompleteEvents(ctx, []common.TxID{evt.InTx.ID}, EventFailed, out)
-
 					// Slash our node account for not sending funds
 					na, err := keeper.GetNodeAccountByPubKey(ctx, tx.PoolAddress)
 					if err != nil {
