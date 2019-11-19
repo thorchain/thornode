@@ -138,23 +138,23 @@ func (tx *TxIn) Sign(signer sdk.AccAddress) {
 	}
 }
 
-func (tx *TxIn) SetOutHash(s status, hash common.TxID, numOuts int64) {
+func (tx *TxIn) SetOutHash(s status, hash common.TxID, numOuts int) {
 	for _, done := range tx.OutHashes {
 		if done.Equals(hash) {
 			return
 		}
 	}
 	tx.OutHashes = append(tx.OutHashes, hash)
-	if int64(len(tx.OutHashes)) >= numOuts {
+	if len(tx.OutHashes) >= numOuts {
 		tx.Status = s
 	}
 }
 
-func (tx *TxIn) SetDone(hash common.TxID, numOuts int64) {
+func (tx *TxIn) SetDone(hash common.TxID, numOuts int) {
 	tx.SetOutHash(Done, hash, numOuts)
 }
 
-func (tx *TxIn) SetReverted(hash common.TxID, numOuts int64) {
+func (tx *TxIn) SetReverted(hash common.TxID, numOuts int) {
 	tx.SetOutHash(Reverted, hash, numOuts)
 }
 
@@ -170,10 +170,10 @@ func (tx *TxIn) GetCommonTx(txid common.TxID) common.Tx {
 }
 
 type TxInVoter struct {
-	TxID    common.TxID `json:"tx_id"`
-	Txs     []TxIn      `json:"txs"`
-	NumOuts int64       `json:"num_outs"`
-	Height  int64       `json:"height"`
+	TxID   common.TxID `json:"tx_id"`
+	Txs    []TxIn      `json:"txs"`
+	OutTxs []TxOutItem `json:"out_txs"`
+	Height int64       `json:"height"`
 }
 
 func NewTxInVoter(txID common.TxID, txs []TxIn) TxInVoter {
@@ -207,7 +207,7 @@ func (tx TxInVoter) String() string {
 
 func (tx *TxInVoter) SetDone(hash common.TxID) {
 	for i := range tx.Txs {
-		tx.Txs[i].SetDone(hash, tx.NumOuts)
+		tx.Txs[i].SetDone(hash, len(tx.OutTxs))
 	}
 }
 
