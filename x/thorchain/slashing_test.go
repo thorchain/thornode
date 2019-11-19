@@ -1,7 +1,10 @@
 package thorchain
 
 import (
+	"encoding/json"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/bepswap/thornode/common"
 	. "gopkg.in/check.v1"
 )
 
@@ -43,4 +46,82 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 	slashForObservingAddresses(ctx, k)
 	c.Assert(na1.SlashPoints, Equals, int64(0))
 	c.Assert(na2.SlashPoints, Equals, int64(observingPenalty))
+}
+
+func (s *SlashingSuite) TestNotSigningSlash(c *C) {
+	ctx, k := setupKeeperForTest(c)
+	ctx.WithBlockHeight(201) // set blockheight
+	poolAddrMgr := NewPoolAddressManager(k)
+	poolAddrMgr.BeginBlock(ctx)
+	poolPubKey := GetRandomPubKey()
+	poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{
+		common.NewPoolPubKey(common.BNBChain, 0, poolPubKey),
+	}
+	txOutStore := NewTxOutStore(k, poolAddrMgr)
+	txOutStore.NewBlock(uint64(201))
+
+	na := GetRandomNodeAccount(NodeActive)
+	k.SetNodeAccount(ctx, na)
+
+	swapEvt := NewEventSwap(
+		common.BNBAsset,
+		sdk.NewUint(5),
+		sdk.NewUint(5),
+		sdk.NewDec(5),
+	)
+
+	inTx := common.NewTx(
+		GetRandomTxHash(),
+		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
+		common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
+		},
+		"SWAP:BNB.BNB",
+	)
+
+	swapBytes, _ := json.Marshal(swapEvt)
+	evt := NewEvent(
+		swapEvt.Type(),
+		3,
+		inTx,
+		swapBytes,
+		EventPending,
+	)
+
+	k.AddIncompleteEvents(ctx, evt)
+
+	txOutItem := &TxOutItem{
+		Chain:       common.BNBChain,
+		InHash:      inTx.ID,
+		PoolAddress: na.NodePubKey.Secp256k1,
+		ToAddress:   GetRandomBNBAddress(),
+		Coin: common.NewCoin(
+			common.BNBAsset, sdk.NewUint(3980500*common.One),
+		),
+	}
+	txs := NewTxOut(uint64(evt.Height))
+	txs.TxArray = append(txs.TxArray, txOutItem)
+	k.SetTxOut(ctx, txs)
+
+	outItems := txOutStore.GetOutboundItems()
+	c.Assert(outItems, HasLen, 0)
+
+	slashForNotSigning(ctx, k, txOutStore)
+
+	incomplete, err := k.GetIncompleteEvents(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(incomplete, HasLen, 0)
+
+	txOut, err := k.GetTxOut(ctx, uint64(evt.Height))
+	c.Assert(txOut.TxArray[0].OutHash.Equals(common.BlankTxID), Equals, true)
+
+	na, err = k.GetNodeAccount(ctx, na.NodeAddress)
+	c.Assert(err, IsNil)
+	c.Check(na.SlashPoints, Equals, int64(200), Commentf("%+v\n", na))
+
+	outItems = txOutStore.GetOutboundItems()
+	c.Assert(outItems, HasLen, 1)
+	c.Assert(outItems[0].PoolAddress.Equals(poolPubKey), Equals, true)
 }
