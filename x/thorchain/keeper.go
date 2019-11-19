@@ -986,6 +986,14 @@ func (k Keeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ygg))
 }
 
+// YggdrasilExists check whether the given pubkey is associated with a
+// yggdrasil vault
+func (k Keeper) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
+	return store.Has([]byte(key))
+}
+
 func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
 	var ygg Yggdrasil
 	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
@@ -1031,7 +1039,7 @@ func (k Keeper) SetReserveContributors(ctx sdk.Context, contribs ReserveContribu
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(contribs))
 }
 
-// ////////////////////// Vault Data //////////////////////////
+///////////////////////// Vault Data //////////////////////////
 func (k Keeper) GetVaultData(ctx sdk.Context) VaultData {
 	data := NewVaultData()
 	key := getKey(prefixVaultData, "", getVersion(k.GetLowestActiveVersion(ctx), prefixVaultData))
