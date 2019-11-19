@@ -665,7 +665,20 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 				if addr.Equals(txIn.Sender) {
 					// From thorchain network
 					ygg := keeper.GetYggdrasil(ctx, txIn.ObservePoolAddress)
-					if !ygg.IsEmpty() {
+					if keeper.YggdrasilExists(ctx, txIn.ObservePoolAddress) {
+						var expectedCoins common.Coins
+						memo, _ := ParseMemo(txIn.Memo)
+						switch memo.GetType() {
+						case txYggdrasilReturn:
+							ygg := keeper.GetYggdrasil(ctx, txIn.ObservePoolAddress)
+							expectedCoins = ygg.Coins
+						case txOutbound:
+							txID := memo.GetTxID()
+							inVoter := keeper.GetTxInVoter(ctx, txID)
+							origTx := inVoter.GetTx(activeNodeAccounts)
+							expectedCoins = origTx.Coins
+						}
+
 						na, err := keeper.GetNodeAccountByPubKey(ctx, ygg.PubKey)
 						if err != nil {
 							ctx.Logger().Error("fail to get node account", "error", err, "txhash", tx.TxID.String())
@@ -675,12 +688,15 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 						// Slash the node account, since we are unable to
 						// process the tx (ie unscheduled tx)
 						for _, coin := range txIn.Coins {
-							if coin.Asset.IsRune() {
-								na.SubBond(coin.Amount)
-							} else {
-								pool := keeper.GetPool(ctx, coin.Asset)
-								if !pool.Empty() {
-									na.SubBond(pool.AssetValueInRune(coin.Amount))
+							expectedCoin := expectedCoins.GetCoin(coin.Asset)
+							if expectedCoin.Amount.LT(coin.Amount) {
+								if coin.Asset.IsRune() {
+									na.SubBond(coin.Amount.Sub(expectedCoin.Amount))
+								} else {
+									pool := keeper.GetPool(ctx, coin.Asset)
+									if !pool.Empty() {
+										na.SubBond(pool.AssetValueInRune(coin.Amount))
+									}
 								}
 							}
 						}
