@@ -52,6 +52,8 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 			return handleMsgLeave(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
 		case MsgAck:
 			return handleMsgAck(ctx, keeper, poolAddressMgr, validatorManager, m)
+		case MsgReserveContributor:
+			return handleMsgReserveContributor(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -484,6 +486,24 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
 		Memo:        "ack",
 	}, false, true)
+
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
+// handleMsgReserveContributor
+func handleMsgReserveContributor(ctx sdk.Context, keeper Keeper, msg MsgReserveContributor) sdk.Result {
+	ctx.Logger().Info(fmt.Sprintf("receive MsgReserveContributor from : %s reserve %s (%s)", msg, msg.Contributor.Address.String(), msg.Contributor.Amount.String()))
+	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account")
+		return sdk.ErrUnauthorized("Not authorized").Result()
+	}
+
+	reses := keeper.GetReservesContributors(ctx)
+	reses = reses.Add(msg.Contributor)
+	keeper.SetReserveContributors(ctx, reses)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,

@@ -22,4 +22,12 @@ func RegisterCodec(cdc *codec.Codec) {
 	cdc.RegisterConcrete(MsgEndPool{}, "thorchain/MsgEndPool", nil)
 	cdc.RegisterConcrete(MsgAck{}, "thorchain/MsgAck", nil)
 	cdc.RegisterConcrete(MsgNextPoolAddress{}, "thorchain/MsgNextPoolAddress", nil)
+	cdc.RegisterConcrete(MsgAdd{}, "thorchain/MsgAdd", nil)
+	cdc.RegisterConcrete(MsgBond{}, "thorchain/MsgBond", nil)
+	cdc.RegisterConcrete(MsgLeave{}, "thorchain/MsgLeave", nil)
+	cdc.RegisterConcrete(MsgNoOp{}, "thorchain/MsgNoOp", nil)
+	cdc.RegisterConcrete(MsgOutboundTx{}, "thorchain/MsgOutboundTx", nil)
+	cdc.RegisterConcrete(MsgSetVersion{}, "thorchain/MsgSetVersion", nil)
+	cdc.RegisterConcrete(MsgYggdrasil{}, "thorchain/MsgYggdrasil", nil)
+	cdc.RegisterConcrete(MsgReserveContributor{}, "thorchain/MsgReserveContributor", nil)
 }
