@@ -692,7 +692,10 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 						for _, coin := range txIn.Coins { // assumes coins are asset uniq
 							expectedCoin := expectedCoins.GetCoin(coin.Asset)
 							if expectedCoin.Amount.LT(coin.Amount) {
-								diff := coin.Amount.Sub(expectedCoin.Amount)
+								// take an additional 25% to ensure a penalty
+								// is made by multiplying by 5, then divide by
+								// 4
+								diff := coin.Amount.Sub(expectedCoin.Amount).MulUint64(5).QuoUint64(4)
 								if coin.Asset.IsRune() {
 									minusRune = coin.Amount.Sub(diff)
 									minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
