@@ -35,12 +35,12 @@ func (CommonBlockScannerTestSuite) TestNewCommonBlockScanner(c *C) {
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
-		RPCHost: "localhost",
+		RPCHost: "http://localhost",
 	}, mss, nil)
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
-		RPCHost: "localhost",
+		RPCHost: "http://localhost",
 	}, mss, m)
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
@@ -72,8 +72,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 	c.Check(m, NotNil)
 	c.Check(err, IsNil)
 	cbs, err := NewCommonBlockScanner(config.BlockScannerConfiguration{
-		RPCHost:                    s.Listener.Addr().String(),
-		Scheme:                     "https",
+		RPCHost:                    s.URL,
 		StartBlockHeight:           0,
 		BlockScanProcessors:        1,
 		HttpRequestTimeout:         time.Second,

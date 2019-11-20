@@ -1,11 +1,16 @@
 package binance
 
 import (
+	"crypto/tls"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
-	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/client/basic"
 	"github.com/binance-chain/go-sdk/client/query"
 	"github.com/binance-chain/go-sdk/common/types"
@@ -26,12 +31,10 @@ import (
 type Binance struct {
 	logger      zerolog.Logger
 	cfg         config.BinanceConfiguration
-	Client      sdk.DexClient
 	basicClient basic.BasicClient
 	queryClient query.QueryClient
 	keyManager  keys.KeyManager
 	chainId     string
-	isTestNet   bool
 	useTSS      bool
 }
 
@@ -40,7 +43,7 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 	if !useTSS && len(cfg.PrivateKey) == 0 {
 		return nil, errors.New("no private key")
 	}
-	if len(cfg.DEXHost) == 0 {
+	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("dex host is empty, set env DEX_HOST")
 	}
 	var km keys.KeyManager
@@ -56,27 +59,25 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 			return nil, errors.Wrap(err, "fail to create private key manager")
 		}
 	}
-	chainNetwork := types.TestNetwork
-	isTestNet := IsTestNet(cfg.DEXHost)
-	if !isTestNet {
-		chainNetwork = types.ProdNetwork
+
+	host := cfg.RPCHost
+	// drop http/https prefix
+	if strings.HasPrefix(cfg.RPCHost, "http://") {
+		host = cfg.RPCHost[7:len(cfg.RPCHost)]
 	}
-	bClient, err := sdk.NewDexClient(cfg.DEXHost, chainNetwork, km)
-	if err != nil {
-		return nil, errors.Wrap(err, "fail to create binance client")
+	if strings.HasPrefix(cfg.RPCHost, "https://") {
+		host = cfg.RPCHost[8:len(cfg.RPCHost)]
 	}
 
-	basicClient := basic.NewClient(cfg.DEXHost)
+	basicClient := basic.NewClient(host)
 	queryClient := query.NewClient(basicClient)
 	return &Binance{
 		logger:      log.With().Str("module", "binance").Logger(),
 		cfg:         cfg,
-		Client:      bClient,
 		basicClient: basicClient,
 		queryClient: queryClient,
 		keyManager:  km,
-		isTestNet:   isTestNet,
-		chainId:     "Binance-Chain-Nile",
+		chainId:     "Binance-Chain-Nile", // TODO: this should be configurable
 		useTSS:      useTSS,
 	}, nil
 }
@@ -86,8 +87,57 @@ const (
 )
 
 func IsTestNet(dexHost string) bool {
-	return strings.Contains(dexHost, testNetUrl) || strings.Contains(dexHost, "127.0.0.1")
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	client := &http.Client{Transport: tr}
+
+	u, err := url.Parse(dexHost)
+	if err != nil {
+		fmt.Printf("Unable to parse dex host: %s\n", dexHost)
+	}
+
+	uri := url.URL{
+		Scheme: u.Scheme,
+		Host:   u.Host,
+		Path:   "/status",
+	}
+
+	resp, err := client.Get(uri.String())
+	if err != nil {
+		log.Fatal().Msgf("%v\n", err)
+	}
+
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			log.Error().Err(err).Msg("fail to close resp body")
+		}
+	}()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Error().Err(err)
+	}
+
+	type Status struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			NodeInfo struct {
+				Network string `json:"network"`
+			} `json:"node_info"`
+		} `json:"result"`
+	}
+
+	var status Status
+	if err := json.Unmarshal(data, &status); nil != err {
+		log.Error().Err(err)
+	}
+
+	return status.Result.NodeInfo.Network == "Binance-Chain-Nile"
 }
+
 func (b *Binance) input(addr types.AccAddress, coins types.Coins) msg.Input {
 	return msg.Input{
 		Address: addr,
@@ -243,7 +293,7 @@ func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string) ([]byte, err
 }
 
 func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
-	commits, err := b.Client.PostTx(hexTx, param)
+	commits, err := b.basicClient.PostTx(hexTx, param)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to broadcast tx to ")
 	}

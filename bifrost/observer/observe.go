@@ -2,6 +2,7 @@ package observer
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -19,7 +20,6 @@ import (
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/binance"
-	btypes "gitlab.com/thorchain/bepswap/thornode/bifrost/binance/types"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient"
@@ -42,10 +42,15 @@ type Observer struct {
 
 // CurrHeight : Get the Binance current block height.
 func binanceHeight(dexHost string, client http.Client) int64 {
+	u, err := url.Parse(dexHost)
+	if err != nil {
+		fmt.Printf("Unable to parse dex host: %s\n", dexHost)
+	}
+
 	uri := url.URL{
-		Scheme: "https",
-		Host:   dexHost,
-		Path:   "/api/v1/validators",
+		Scheme: u.Scheme,
+		Host:   u.Host,
+		Path:   "/abci_info",
 	}
 
 	resp, err := client.Get(uri.String())
@@ -64,12 +69,23 @@ func binanceHeight(dexHost string, client http.Client) int64 {
 		log.Error().Err(err)
 	}
 
-	var validators btypes.Validators
-	if err := json.Unmarshal(data, &validators); nil != err {
+	type ABCIinfo struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			Response struct {
+				BlockHeight string `json:"last_block_height"`
+			} `json:"response"`
+		} `json:"result"`
+	}
+
+	var abci ABCIinfo
+	if err := json.Unmarshal(data, &abci); nil != err {
 		log.Error().Err(err)
 	}
 
-	return validators.BlockHeight
+	n, _ := strconv.ParseInt(abci.Result.Response.BlockHeight, 10, 64)
+	return n
 }
 
 // NewObserver create a new instance of Observer
@@ -100,7 +116,7 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by statechain")
 		} else {
 			client := &http.Client{}
-			cfg.BlockScanner.StartBlockHeight = binanceHeight(cfg.DEXHost, *client)
+			cfg.BlockScanner.StartBlockHeight = binanceHeight(cfg.BinanceHost, *client)
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
 		}
 	}
@@ -110,7 +126,7 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		return nil, errors.Wrap(err, "fail to create pool address manager")
 	}
 
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), addrMgr, m)
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.BinanceHost), addrMgr, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}

@@ -2,6 +2,7 @@ package blockscanner
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -39,10 +40,6 @@ type CommonBlockScanner struct {
 func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage ScannerStorage, m *metrics.Metrics) (*CommonBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("host is empty")
-	}
-	// Let's default to use https
-	if len(cfg.Scheme) == 0 {
-		cfg.Scheme = "https"
 	}
 	if nil == scannerStorage {
 		return nil, errors.New("scannerStorage is nil")
@@ -233,13 +230,26 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 }
 
 func (b *CommonBlockScanner) getBlockUrl() string {
+	u, err := url.Parse(b.cfg.RPCHost)
+	if err != nil {
+		fmt.Printf("Failed to parse rpc host: %s\n", b.cfg.RPCHost)
+	}
+	if u == nil {
+		requestUrl := url.URL{
+			Scheme: "http",
+			Host:   b.cfg.RPCHost,
+			Path:   "block",
+		}
+		return requestUrl.String()
+	}
 	requestUrl := url.URL{
-		Scheme: b.cfg.Scheme,
-		Host:   b.cfg.RPCHost,
+		Scheme: u.Scheme,
+		Host:   u.Host,
 		Path:   "block",
 	}
 	return requestUrl.String()
 }
+
 func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {
 	start := time.Now()
 	defer func() {
