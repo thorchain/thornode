@@ -3,39 +3,45 @@ package smoke
 import (
 	"encoding/hex"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/binance-chain/go-sdk/client/basic"
 	"github.com/binance-chain/go-sdk/client/query"
+	"github.com/binance-chain/go-sdk/client/rpc"
 	btypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
-	"github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
-	resty "github.com/go-resty/resty/v2"
+	"github.com/pkg/errors"
 )
 
 type Binance struct {
-	debug   bool
-	delay   time.Duration
-	apiHost string
-	chainId string
-	bClient basic.BasicClient
-	qClient query.QueryClient
+	debug     bool
+	delay     time.Duration
+	apiHost   string
+	chainId   btypes.ChainNetwork
+	bClient   basic.BasicClient
+	qClient   query.QueryClient
+	rpcClient *rpc.HTTP
 }
 
 // NewBinance : new instnance of Binance.
-func NewBinance(apiHost, chainId string, debug bool) Binance {
+func NewBinance(apiHost string, chainId btypes.ChainNetwork, debug bool) Binance {
+	rpcClient := rpc.NewRPCClient(apiHost, chainId)
 	bClient := basic.NewClient(apiHost)
 	return Binance{
-		debug:   debug,
-		delay:   2 * time.Second,
-		apiHost: apiHost,
-		chainId: chainId,
-		bClient: bClient,
-		qClient: query.NewClient(bClient),
+		debug:     debug,
+		delay:     2 * time.Second,
+		apiHost:   apiHost,
+		chainId:   chainId,
+		bClient:   bClient,
+		qClient:   query.NewClient(bClient),
+		rpcClient: rpcClient,
 	}
+}
+
+func (b Binance) GetBalances(addr btypes.AccAddress) ([]btypes.TokenBalance, error) {
+	return b.rpcClient.GetBalances(addr)
 }
 
 // Input : Prep our input message.
@@ -78,7 +84,7 @@ func (b Binance) CreateMsg(from btypes.AccAddress, fromCoins btypes.Coins, trans
 }
 
 // ParseTx : Parse the transaction.
-func (b Binance) ParseTx(key keys.KeyManager, transfers []msg.Transfer) msg.SendMsg {
+func (b Binance) ParseTx(key keys.KeyManager, transfers []msg.Transfer) (msg.SendMsg, error) {
 	fromAddr := key.GetAddr()
 	fromCoins := btypes.Coins{}
 	for _, t := range transfers {
@@ -87,68 +93,51 @@ func (b Binance) ParseTx(key keys.KeyManager, transfers []msg.Transfer) msg.Send
 	}
 
 	sendMsg := b.CreateMsg(fromAddr, fromCoins, transfers)
-	return sendMsg
+	err := sendMsg.ValidateBasic()
+	return sendMsg, err
 }
 
-// SendTxn : prep and broadcast the transaction to Binance.
-func (b Binance) SendTxn(key keys.KeyManager, payload []msg.Transfer, memo string) {
-	time.Sleep(b.delay)
-
-	if b.debug == true {
-		log.Printf("\tFrom: %v", key.GetAddr().String())
-		log.Printf("\tMemo: %v\n", memo)
-		log.Printf("\tPayload for Binance: %v\n", payload)
-	}
-
-	sendMsg := b.ParseTx(key, payload)
-
+func (b Binance) SignTx(key keys.KeyManager, sendMsg msg.SendMsg, memo string) ([]byte, map[string]string, error) {
 	acc, err := b.qClient.GetAccount(key.GetAddr().String())
 	if err != nil {
-		log.Printf("Error: %v", err)
+		return nil, nil, errors.Wrap(err, "fail to get account info")
 	}
 
-	signMsg := &tx.StdSignMsg{
-		ChainID:       b.chainId,
+	chainId := "Binance-Chain-Tigris"
+	if b.chainId == btypes.TestNetwork {
+		chainId = "Binance-Chain-Nile"
+	}
+
+	signMsg := tx.StdSignMsg{
+		ChainID:       chainId,
 		Memo:          memo,
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,
 		Sequence:      acc.Sequence,
 		AccountNumber: acc.Number,
 	}
-
-	rawBz, err := key.Sign(*signMsg)
-	if nil != err {
-		log.Fatalf("%v", err)
-	}
-	hexTx := []byte(hex.EncodeToString(rawBz))
 	param := map[string]string{
 		"sync": "true",
 	}
-
-	uri := fmt.Sprintf("%s://%s%s/broadcast",
-		types.DefaultApiSchema,
-		b.apiHost,
-		types.DefaultAPIVersionPrefix)
-
-	rclient := resty.New()
-
-	for i := 1; i <= 5; i++ {
-		resp, err := rclient.R().
-			SetHeader("Content-Type", "text/plain").
-			SetBody(hexTx).
-			SetQueryParams(param).
-			Post(uri)
-
-		if err != nil {
-			log.Printf("Failed to broadcast: %v\n", err)
-			log.Println("==============", err)
-			time.Sleep(1 * time.Second)
-		} else {
-			break
-		}
-
-		if b.debug == true {
-			log.Printf("Commit Response from Binance: %v", string(resp.Body()))
-		}
+	rawBz, err := key.Sign(signMsg)
+	if nil != err {
+		return nil, nil, errors.Wrap(err, "fail to sign message")
 	}
+
+	if len(rawBz) == 0 {
+		return nil, nil, nil
+	}
+	hexTx := []byte(hex.EncodeToString(rawBz))
+	return hexTx, param, nil
+}
+
+func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
+	commits, err := b.bClient.PostTx(hexTx, param)
+	if err != nil {
+		return nil, errors.Wrap(err, "fail to broadcast tx to ")
+	}
+	for _, commitResult := range commits {
+		fmt.Printf("Commit Result: %+v\n", commitResult)
+	}
+	return &commits[0], nil
 }

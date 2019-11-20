@@ -4,6 +4,7 @@ import (
 	"flag"
 	"strings"
 
+	btypes "github.com/binance-chain/go-sdk/common/types"
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke"
 )
 
@@ -17,6 +18,11 @@ func main() {
 
 	keys := strings.Split(*keyList, ",")
 
-	h := smoke.NewSweep(*apiAddr, *masterKey, keys, *network, *debug)
+	net := btypes.TestNetwork
+	if *network > 0 {
+		net = btypes.ProdNetwork
+	}
+
+	h := smoke.NewSweep(*apiAddr, *masterKey, keys, net, *debug)
 	h.EmptyWallets()
 }
