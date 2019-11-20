@@ -10,6 +10,7 @@ services:
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api:1317
+      BINANCE_HOST: ${BINANCE_HOST:-https://testnet-dex.binance.org}
       NET: ${NET}
     entrypoint:
       /docker/scripts/observer.sh
@@ -32,7 +33,7 @@ services:
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api:1317
-      RPC_HOST: thor-daemon:26657
+      BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
       NET: ${NET}
     entrypoint:
       /docker/scripts/signer.sh

@@ -25,7 +25,7 @@ clean-validator:
 	@mkdir ~/.thornode/validator
 
 run-standalone: clean
-	docker-compose -f standalone.yml up --force-recreate --remove-orphans
+	docker-compose -f standalone.yml up --force-recreate --remove-orphans -d
 
 run-genesis: clean
 	docker-compose -f genesis.yml up --force-recreate --remove-orphans -d
