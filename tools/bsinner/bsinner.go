@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 
+	btypes "github.com/binance-chain/go-sdk/common/types"
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke"
 )
 
@@ -31,6 +32,11 @@ func main() {
 		log.Fatal("No config file provided!")
 	}
 
-	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *config, *network, *logFile, *debug)
+	net := btypes.TestNetwork
+	if *network > 0 {
+		net = btypes.ProdNetwork
+	}
+
+	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *config, net, *logFile, *debug)
 	s.Run()
 }

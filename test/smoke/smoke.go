@@ -21,7 +21,7 @@ import (
 type Config struct {
 	delay   time.Duration
 	debug   bool
-	network int
+	network ctypes.ChainNetwork
 	logFile string
 }
 
@@ -39,7 +39,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, logFile string, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network ctypes.ChainNetwork, logFile string, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +51,6 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 	}
 
 	var results []types.Output
-	n := NewNetwork(network)
 	return Smoke{
 		Config: Config{
 			delay:   5 * time.Second,
@@ -60,10 +59,10 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network in
 			logFile: logFile,
 		},
 		ApiAddr:    apiAddr,
-		Network:    n.Type,
+		Network:    network,
 		FaucetKey:  faucetKey,
 		PoolKey:    poolKey,
-		Binance:    NewBinance(apiAddr, n.ChainID, debug),
+		Binance:    NewBinance(apiAddr, network, debug),
 		Statechain: NewStatechain(env),
 		Tests:      tests,
 		Results:    results,
@@ -151,7 +150,7 @@ func (s *Smoke) Run() {
 		}
 
 		from := s.Tests.ActorKeys[rule.From]
-		s.SendTxn(from.Client, from.Key, payload, memo)
+		s.SendTxn(from.Key, payload, memo)
 
 		// Validate.
 		delay := time.Second * rule.CheckDelay
@@ -297,8 +296,19 @@ func (s *Smoke) Sweep() {
 }
 
 // SendTxn : Send the transaction to Binance.
-func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {
-	s.Binance.SendTxn(key, payload, memo)
+func (s *Smoke) SendTxn(key keys.KeyManager, payload []msg.Transfer, memo string) error {
+	sendMsg, err := s.Binance.ParseTx(key, payload)
+	if err != nil {
+		return err
+	}
+
+	hex, params, err := s.Binance.SignTx(key, sendMsg, memo)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.Binance.BroadcastTx(hex, params)
+	return err
 }
 
 // Get Client, retry if we fail to get it (ie API Rate limited)
