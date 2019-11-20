@@ -5,9 +5,22 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
+
+	// find total bonded
+	totalBond := sdk.ZeroUint()
+	nodeAccs, err := keeper.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return err
+	}
+
+	if len(nodeAccs) <= constants.MinmumNodesForYggdrasil {
+		return nil
+	}
+
 	// Gather list of all pools
 	assets, err := keeper.GetPoolIndex(ctx)
 	if err != nil {
@@ -18,12 +31,6 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 		pools[i] = keeper.GetPool(ctx, asset)
 	}
 
-	// find total bonded
-	totalBond := sdk.ZeroUint()
-	nodeAccs, err := keeper.ListActiveNodeAccounts(ctx)
-	if err != nil {
-		return err
-	}
 	for _, na := range nodeAccs {
 		totalBond = totalBond.Add(na.Bond)
 	}

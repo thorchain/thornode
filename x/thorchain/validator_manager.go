@@ -10,6 +10,7 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 const (
@@ -393,6 +394,12 @@ func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutS
 	totalActive := len(activeNodes)
 	afterLeave := totalActive + len(vm.Meta.Nominated) - len(vm.Meta.Queued)
 
+	if afterLeave <= constants.MinmumNodesForYggdrasil {
+		if err := vm.recallYggFunds(ctx, activeNodes, txOut); nil != err {
+			return fmt.Errorf("fail to recall yggdrasil funds")
+		}
+	}
+
 	if afterLeave > minValidatorSet { // we still have enough validators for BFT
 		// trigger pool rotate next
 		vm.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt = height + 1
@@ -411,7 +418,6 @@ func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutS
 
 // ragnarokProtocolStep1 - request all yggdrasil pool to return the fund
 // when we observe the node return fund successfully, the node's bound will be refund.
-//
 func (vm *ValidatorManager) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut *TxOutStore) error {
 	vm.Meta.Ragnarok = true
 	// do we have yggdrasil pool?
@@ -426,13 +432,16 @@ func (vm *ValidatorManager) ragnarokProtocolStep1(ctx sdk.Context, activeNodes N
 		}
 		return nil
 	}
+	return vm.recallYggFunds(ctx, activeNodes, txOut)
+}
+
+func (vm *ValidatorManager) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts, txOut *TxOutStore) error {
 	// request every node to return fund
 	for _, na := range activeNodes {
 		if err := vm.requestYggReturn(ctx, na, vm.poolAddrMgr, txOut); nil != err {
 			return fmt.Errorf("fail to request yggdrasil fund back: %w", err)
 		}
 	}
-
 	return nil
 }
 
@@ -484,10 +493,16 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 	}
 
 	if rotateOut > 0 {
-		activeNodesBySlash := NodeAccountsBySlashingPoint(activeNodes)
-		sort.Sort(activeNodesBySlash)
-		// Queue the first few nodes to be rotated out
-		vm.Meta.Queued = NodeAccounts(activeNodesBySlash[:rotateOut])
+		mod := (ctx.BlockHeight() / vm.rotationPolicy.RotatePerBlockHeight) % 2
+		if mod == 0 {
+			activeNodesBySlash := NodeAccountsBySlashingPoint(activeNodes)
+			sort.Sort(activeNodesBySlash)
+			// Queue the first few nodes to be rotated out
+			vm.Meta.Queued = NodeAccounts(activeNodesBySlash[:rotateOut])
+		} else {
+			sort.Sort(activeNodes)
+			vm.Meta.Queued = activeNodes[:rotateOut]
+		}
 		for _, item := range vm.Meta.Queued {
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent(EventTypeQueuedValidator,
