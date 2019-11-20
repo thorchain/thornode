@@ -31,7 +31,6 @@ var _ = Suite(&BlockScannerTestSuite{})
 
 func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 	return config.BlockScannerConfiguration{
-		Scheme:                     "https",
 		RPCHost:                    rpcHost,
 		StartBlockHeight:           0,
 		BlockScanProcessors:        1,
