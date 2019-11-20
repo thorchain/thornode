@@ -82,10 +82,6 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 	}, nil
 }
 
-const (
-	testNetUrl = "testnet-dex.binance.org"
-)
-
 func IsTestNet(dexHost string) bool {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
