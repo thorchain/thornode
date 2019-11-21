@@ -16,19 +16,13 @@ const (
 	EventRefund      = types.Refund
 
 	// Admin config keys
-	GSLKey                             = types.GSLKey
-	StakerAmtIntervalKey               = types.StakerAmtIntervalKey
-	MaxWithdrawBasisPoints             = types.MaxWithdrawBasisPoints
-	MinValidatorBondKey                = types.MinValidatorBondKey
-	WhiteListGasAssetKey               = types.WhiteListGasAssetKey
-	DesireValidatorSetKey              = types.DesireValidatorSetKey
-	RotatePerBlockHeightKey            = types.RotatePerBlockHeightKey
-	ValidatorsChangeWindowKey          = types.ValidatorsChangeWindowKey
-	PoolRefundGasKey                   = types.PoolRefundGasKey
-	DefaultPoolStatus                  = types.DefaultPoolStatus
-	ValidatorRotateInNumBeforeFullKey  = types.ValidatorRotateInNumBeforeFullKey
-	ValidatorRotateOutNumBeforeFullKey = types.ValidatorRotateOutNumBeforeFullKey
-	ValidatorRotateNumAfterFullKey     = types.ValidatorRotateNumAfterFullKey
+	GSLKey                 = types.GSLKey
+	StakerAmtIntervalKey   = types.StakerAmtIntervalKey
+	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
+	MinValidatorBondKey    = types.MinValidatorBondKey
+	WhiteListGasAssetKey   = types.WhiteListGasAssetKey
+	PoolRefundGasKey       = types.PoolRefundGasKey
+	DefaultPoolStatus      = types.DefaultPoolStatus
 
 	NodeActive      = types.Active
 	NodeWhiteListed = types.WhiteListed

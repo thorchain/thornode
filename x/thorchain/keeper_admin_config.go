@@ -17,21 +17,6 @@ func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(config))
 }
 
-// GetAdminConfigValidatorRotateInNumBeforeFull
-func (k Keeper) GetAdminConfigValidatorRotateInNumBeforeFull(ctx sdk.Context, addr sdk.AccAddress) int64 {
-	return k.GetAdminConfigInt64(ctx, ValidatorRotateInNumBeforeFullKey, ValidatorRotateInNumBeforeFullKey.Default(), addr)
-}
-
-// GetAdminConfigValidatorRotateOutNumBeforeFull
-func (k Keeper) GetAdminConfigValidatorRotateOutNumBeforeFull(ctx sdk.Context, addr sdk.AccAddress) int64 {
-	return k.GetAdminConfigInt64(ctx, ValidatorRotateOutNumBeforeFullKey, ValidatorRotateOutNumBeforeFullKey.Default(), addr)
-}
-
-// GetAdminConfigValidatorRotateNumAfterFull
-func (k Keeper) GetAdminConfigValidatorRotateNumAfterFull(ctx sdk.Context, addr sdk.AccAddress) int64 {
-	return k.GetAdminConfigInt64(ctx, ValidatorRotateNumAfterFullKey, ValidatorRotateNumAfterFullKey.Default(), addr)
-}
-
 // GetAdminConfigDefaultPoolStatus - get the config for Default Pool Status
 func (k Keeper) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
 	name, _ := k.GetAdminConfigValue(ctx, DefaultPoolStatus, addr)
@@ -68,21 +53,6 @@ func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey
 		value = dValue
 	}
 	return common.Address(value)
-}
-
-// GetAdminConfigDesireValidatorSet
-func (k Keeper) GetAdminConfigDesireValidatorSet(ctx sdk.Context, addr sdk.AccAddress) int64 {
-	return k.GetAdminConfigInt64(ctx, DesireValidatorSetKey, DesireValidatorSetKey.Default(), addr)
-}
-
-// GetAdminConfigRotatePerBlockHeight get rotate per block height
-func (k Keeper) GetAdminConfigRotatePerBlockHeight(ctx sdk.Context, addr sdk.AccAddress) int64 {
-	return k.GetAdminConfigInt64(ctx, RotatePerBlockHeightKey, RotatePerBlockHeightKey.Default(), addr)
-}
-
-// GetAdminConfigValidatorsChangeWindow get validator change window
-func (k Keeper) GetAdminConfigValidatorsChangeWindow(ctx sdk.Context, addr sdk.AccAddress) int64 {
-	return k.GetAdminConfigInt64(ctx, ValidatorsChangeWindowKey, ValidatorsChangeWindowKey.Default(), addr)
 }
 
 func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint {
