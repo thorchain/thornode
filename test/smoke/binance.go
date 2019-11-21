@@ -1,8 +1,14 @@
 package smoke
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/binance-chain/go-sdk/client/basic"
@@ -10,6 +16,7 @@ import (
 	"github.com/binance-chain/go-sdk/client/rpc"
 	btypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
+	ttypes "github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
 	"github.com/pkg/errors"
@@ -42,6 +49,49 @@ func NewBinance(apiHost string, chainId btypes.ChainNetwork, debug bool) Binance
 
 func (b Binance) GetBalances(addr btypes.AccAddress) ([]btypes.TokenBalance, error) {
 	return b.rpcClient.GetBalances(addr)
+}
+
+func (b Binance) GetAccount(addr btypes.AccAddress) (btypes.BaseAccount, error) {
+	path := fmt.Sprintf("/abci_query?path=\"/account/%s\"", addr.String())
+	// TODO: don't hard code to http protocol
+	resp, err := http.Get(fmt.Sprintf("http://%s%s", b.apiHost, path))
+	if err != nil {
+		return btypes.BaseAccount{}, err
+	}
+	defer resp.Body.Close()
+
+	type queryResult struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			Response struct {
+				Key         string `json:"key"`
+				Value       string `json:"value"`
+				BlockHeight string `json:"height"`
+			} `json:"response"`
+		} `json:"result"`
+	}
+
+	var result queryResult
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return btypes.BaseAccount{}, err
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return btypes.BaseAccount{}, err
+	}
+
+	data, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
+	if err != nil {
+		return btypes.BaseAccount{}, err
+	}
+
+	cdc := ttypes.NewCodec()
+	var acc btypes.BaseAccount
+	err = cdc.UnmarshalBinaryBare(data, &acc)
+
+	return acc, err
 }
 
 // Input : Prep our input message.
@@ -98,7 +148,7 @@ func (b Binance) ParseTx(key keys.KeyManager, transfers []msg.Transfer) (msg.Sen
 }
 
 func (b Binance) SignTx(key keys.KeyManager, sendMsg msg.SendMsg, memo string) ([]byte, map[string]string, error) {
-	acc, err := b.qClient.GetAccount(key.GetAddr().String())
+	acc, err := b.GetAccount(key.GetAddr())
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "fail to get account info")
 	}
@@ -113,8 +163,8 @@ func (b Binance) SignTx(key keys.KeyManager, sendMsg msg.SendMsg, memo string) (
 		Memo:          memo,
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,
-		Sequence:      acc.Sequence,
-		AccountNumber: acc.Number,
+		Sequence:      acc.GetSequence(),
+		AccountNumber: acc.GetAccountNumber(),
 	}
 	param := map[string]string{
 		"sync": "true",
@@ -132,12 +182,24 @@ func (b Binance) SignTx(key keys.KeyManager, sendMsg msg.SendMsg, memo string) (
 }
 
 func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
-	commits, err := b.bClient.PostTx(hexTx, param)
+	uri := url.URL{
+		Scheme: "http", // TODO: don't hard code this
+		Host:   b.apiHost,
+		Path:   "broadcast_tx_commit",
+		// TODO: add params as query args
+
+	}
+	resp, err := http.Post(uri.String(), "", bytes.NewReader(hexTx))
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to broadcast tx to ")
 	}
-	for _, commitResult := range commits {
-		fmt.Printf("Commit Result: %+v\n", commitResult)
+	if b.debug {
+		defer resp.Body.Close()
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		fmt.Printf("Broadcast: %s\n", body)
 	}
-	return &commits[0], nil
+	return nil, nil
 }

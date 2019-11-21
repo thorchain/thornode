@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"net/url"
 	"time"
 
 	sdk "github.com/binance-chain/go-sdk/client"
@@ -15,6 +16,7 @@ import (
 	"github.com/binance-chain/go-sdk/keys"
 	ttypes "github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
+	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
 )
@@ -131,6 +133,7 @@ func (s *Smoke) Run() {
 				coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: coin.Amount})
 			}
 
+			fmt.Printf("Actor keys: %+v\n", s.Tests.ActorKeys)
 			toAddr := s.Tests.ActorKeys[to.Actor].Key.GetAddr()
 			payload = append(payload, msg.Transfer{toAddr, coins})
 		}
@@ -179,7 +182,7 @@ func (s *Smoke) LogResults(tx int, delay time.Duration) error {
 
 	err := s.BinanceState(tx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get binance state:")
 	}
 	s.StatechainState(tx)
 
@@ -196,7 +199,7 @@ func (s *Smoke) BinanceState(tx int) error {
 	for _, actor := range s.Tests.ActorList {
 		balances, err := s.GetBalances(s.Tests.ActorKeys[actor].Key.GetAddr())
 		if err != nil {
-			return err
+			return errors.Wrap(err, "failed to get balances")
 		}
 		for _, coin := range balances {
 			switch coin.Denom {
@@ -216,9 +219,17 @@ func (s *Smoke) BinanceState(tx int) error {
 // GetBinance : Get Binance account balance.
 func (s *Smoke) GetBalances(address ctypes.AccAddress) (ctypes.Coins, error) {
 	key := append([]byte("account:"), address.Bytes()...)
-	path := fmt.Sprintf("/abci_query?path=\"/store/acc/key\"&data=0x%x", key)
-	resp, err := http.Get(fmt.Sprintf("%s%s", s.ApiAddr, path))
+	args := fmt.Sprintf("path=\"/store/acc/key\"&data=0x%x", key)
+	uri := url.URL{
+		Scheme:   "http", // TODO: don't hard code this
+		Host:     s.ApiAddr,
+		Path:     "abci_query",
+		RawQuery: args,
+	}
+	fmt.Printf("URL: %s\n", uri.String())
+	resp, err := http.Get(uri.String())
 	if err != nil {
+		fmt.Println("FOO1")
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -237,22 +248,28 @@ func (s *Smoke) GetBalances(address ctypes.AccAddress) (ctypes.Coins, error) {
 
 	var result queryResult
 	body, err := ioutil.ReadAll(resp.Body)
+	fmt.Printf("Body: %s\n", body)
 	if err != nil {
+		fmt.Println("FOO2")
 		return nil, err
 	}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
+		fmt.Println("FOO3")
 		return nil, err
 	}
 
 	data, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
 	if err != nil {
+		fmt.Println("FOO4")
 		return nil, err
 	}
 
 	cdc := ttypes.NewCodec()
 	var acc ctypes.AppAccount
 	err = cdc.UnmarshalBinaryBare(data, &acc)
+	fmt.Println("FOO5")
+	fmt.Printf("Data: %s\n", data)
 
 	return acc.BaseAccount.Coins, err
 }
@@ -343,16 +360,20 @@ func (s *Smoke) Sweep() {
 func (s *Smoke) SendTxn(key keys.KeyManager, payload []msg.Transfer, memo string) error {
 	sendMsg, err := s.Binance.ParseTx(key, payload)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse tx:")
 	}
 
 	hex, params, err := s.Binance.SignTx(key, sendMsg, memo)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed to sign tx:")
 	}
 
 	_, err = s.Binance.BroadcastTx(hex, params)
-	return err
+	if err != nil {
+		return errors.Wrap(err, "failed to broadcast tx:")
+	}
+
+	return nil
 }
 
 // Get Client, retry if we fail to get it (ie API Rate limited)
