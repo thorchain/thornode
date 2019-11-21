@@ -10,7 +10,7 @@ type YggdrasilSuite struct{}
 
 var _ = Suite(&YggdrasilSuite{})
 
-func (s *NodeAccountSuite) TestYggdrasil(c *C) {
+func (s *YggdrasilSuite) TestYggdrasil(c *C) {
 	pk := GetRandomPubKey()
 
 	ygg := Yggdrasil{}
