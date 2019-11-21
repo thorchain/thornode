@@ -1,6 +1,7 @@
 package smoke
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -12,6 +13,7 @@ import (
 	sdk "github.com/binance-chain/go-sdk/client"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
+	ttypes "github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
@@ -151,7 +153,10 @@ func (s *Smoke) Run() {
 
 		// Validate.
 		delay := time.Second * rule.CheckDelay
-		s.LogResults(tx, delay)
+		err = s.LogResults(tx, delay)
+		if err != nil {
+			log.Fatalf("Log Results failed: %s", err)
+		}
 	}
 
 	if s.SweepOnExit {
@@ -169,48 +174,87 @@ func (s *Smoke) SaveLog() {
 }
 
 // LogResults : Log our results.
-func (s *Smoke) LogResults(tx int, delay time.Duration) {
+func (s *Smoke) LogResults(tx int, delay time.Duration) error {
 	time.Sleep(delay)
 
-	s.BinanceState(tx)
+	err := s.BinanceState(tx)
+	if err != nil {
+		return err
+	}
 	s.StatechainState(tx)
+
+	return nil
 }
 
 // BinanceState : Compare expected vs actual Binance wallet values.
-func (s *Smoke) BinanceState(tx int) {
-	client := s.Tests.ActorKeys["faucet"].Client
+func (s *Smoke) BinanceState(tx int) error {
 	var output types.Output
 	output.Tx = tx + 1
 
 	s.Results = append(s.Results, output)
 
 	for _, actor := range s.Tests.ActorList {
-		balances := s.GetBinance(client, s.Tests.ActorKeys[actor].Key.GetAddr())
-		for _, balance := range balances {
-			amount := balance.Free.ToInt64()
-
-			switch balance.Symbol {
+		balances, err := s.GetBalances(s.Tests.ActorKeys[actor].Key.GetAddr())
+		if err != nil {
+			return err
+		}
+		for _, coin := range balances {
+			switch coin.Denom {
 			case "RUNE-A1F":
-				s.ActorAmount(amount, &s.Results[tx].Rune, actor)
+				s.ActorAmount(coin.Amount, &s.Results[tx].Rune, actor)
 			case "BNB":
-				s.ActorAmount(amount, &s.Results[tx].Bnb, actor)
+				s.ActorAmount(coin.Amount, &s.Results[tx].Bnb, actor)
 			case "LOK-3C0":
-				s.ActorAmount(amount, &s.Results[tx].Lok, actor)
+				s.ActorAmount(coin.Amount, &s.Results[tx].Lok, actor)
 			}
 		}
 	}
+
+	return nil
 }
 
 // GetBinance : Get Binance account balance.
-func (s *Smoke) GetBinance(client sdk.DexClient, address ctypes.AccAddress) []ctypes.TokenBalance {
-	acct, err := client.GetAccount(address.String())
-
-	// The account does not exist on Binance yet.
+func (s *Smoke) GetBalances(address ctypes.AccAddress) (ctypes.Coins, error) {
+	key := append([]byte("account:"), address.Bytes()...)
+	path := fmt.Sprintf("/abci_query?path=\"/store/acc/key\"&data=0x%x", key)
+	resp, err := http.Get(fmt.Sprintf("%s%s", s.ApiAddr, path))
 	if err != nil {
-		return make([]ctypes.TokenBalance, 0)
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	type queryResult struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			Response struct {
+				Key         string `json:"key"`
+				Value       string `json:"value"`
+				BlockHeight string `json:"height"`
+			} `json:"response"`
+		} `json:"result"`
 	}
 
-	return acct.Balances
+	var result queryResult
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	cdc := ttypes.NewCodec()
+	var acc ctypes.AppAccount
+	err = cdc.UnmarshalBinaryBare(data, &acc)
+
+	return acc.BaseAccount.Coins, err
 }
 
 // ActorAmount : Amount for a given actor
