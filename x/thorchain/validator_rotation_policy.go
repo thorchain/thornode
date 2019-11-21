@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 // ValidatorRotationPolicy store all the relevant parameters we need to perform validator rotation
@@ -20,13 +22,13 @@ type ValidatorRotationPolicy struct {
 // GetValidatorRotationPolicy from data store
 func GetValidatorRotationPolicy(ctx sdk.Context, k Keeper) ValidatorRotationPolicy {
 	return ValidatorRotationPolicy{
-		RotateInNumBeforeFull:      k.GetAdminConfigValidatorRotateInNumBeforeFull(ctx, nil),
-		RotateOutNumBeforeFull:     k.GetAdminConfigValidatorRotateOutNumBeforeFull(ctx, nil),
-		RotateNumAfterFull:         k.GetAdminConfigValidatorRotateNumAfterFull(ctx, nil),
-		RotatePerBlockHeight:       k.GetAdminConfigRotatePerBlockHeight(ctx, nil),
-		ValidatorChangeWindow:      k.GetAdminConfigValidatorsChangeWindow(ctx, nil),
-		DesireValidatorSet:         k.GetAdminConfigDesireValidatorSet(ctx, nil),
-		LeaveProcessPerBlockHeight: 4320,
+		RotateInNumBeforeFull:      constants.ValidatorRotateInNumBeforeFull,
+		RotateOutNumBeforeFull:     constants.ValidatorRotateOutNumBeforeFull,
+		RotateNumAfterFull:         constants.ValidatorRotateNumAfterFull,
+		RotatePerBlockHeight:       constants.RotatePerBlockHeight,
+		ValidatorChangeWindow:      constants.ValidatorsChangeWindow,
+		DesireValidatorSet:         constants.DesireValidatorSet,
+		LeaveProcessPerBlockHeight: constants.LeaveProcessPerBlockHeight,
 	}
 }
 func (vp ValidatorRotationPolicy) IsValid() error {

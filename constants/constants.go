@@ -9,3 +9,14 @@ const BlocksPerYear = 6311390 // (365.2425 * 86400) / (Seconds per THORChain blo
 // A new pool is enabled on a cycle
 const NewPoolCycle = 50000        // Enable a pool every 50,000 blocks (~3 days)
 const MinmumNodesForYggdrasil = 6 // No yggdrasil pools if we have less than 6 active nodes
+
+// validator rotation
+const (
+	ValidatorRotateInNumBeforeFull  = 2     // How many validators should we nominate before we reach the desire validator set
+	ValidatorRotateOutNumBeforeFull = 1     // How many validators should we queued to be rotate out before we reach the desire validator set)
+	ValidatorRotateNumAfterFull     = 1     // How many validators should we nominate after we reach the desire validator set
+	DesireValidatorSet              = 33    // desire validator set
+	RotatePerBlockHeight            = 17280 // How many blocks we try to rotate validators
+	ValidatorsChangeWindow          = 1200  // When should we open the rotate window, nominate validators, and identify who should be out
+	LeaveProcessPerBlockHeight      = 4320  // after how many blocks we will process leave queue
+)

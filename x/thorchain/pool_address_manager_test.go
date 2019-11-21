@@ -7,6 +7,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 type PoolAddressManagerSuite struct{}
@@ -42,8 +43,8 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	w.txOutStore.NewBlock(uint64(rotatePoolHeight))
 	w.poolAddrMgr.BeginBlock(w.ctx)
 	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
-	windowOpen := w.keeper.GetAdminConfigValidatorsChangeWindow(w.ctx, sdk.AccAddress{})
-	rotatePerBlockHeight := w.keeper.GetAdminConfigRotatePerBlockHeight(w.ctx, sdk.AccAddress{})
+	windowOpen := int64(constants.ValidatorsChangeWindow)
+	rotatePerBlockHeight := int64(constants.RotatePerBlockHeight)
 	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateAt, Equals, 100+rotatePerBlockHeight)
 	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt, Equals, 100+rotatePerBlockHeight-windowOpen)
 	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 4)
