@@ -2,7 +2,6 @@ package blockscanner
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -232,7 +231,7 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 func (b *CommonBlockScanner) getBlockUrl() string {
 	u, err := url.Parse(b.cfg.RPCHost)
 	if err != nil {
-		fmt.Printf("Failed to parse rpc host: %s\n", b.cfg.RPCHost)
+		log.Fatalf("Error parsing rpc (%s): %s", c.cfg.RPCHost, err)
 	}
 	if u == nil {
 		requestUrl := url.URL{

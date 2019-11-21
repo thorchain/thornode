@@ -1,10 +1,8 @@
 package binance
 
 import (
-	"crypto/tls"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -63,10 +61,10 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 	host := cfg.RPCHost
 	// drop http/https prefix
 	if strings.HasPrefix(cfg.RPCHost, "http://") {
-		host = cfg.RPCHost[7:len(cfg.RPCHost)]
+		host = cfg.RPCHost[7:]
 	}
 	if strings.HasPrefix(cfg.RPCHost, "https://") {
-		host = cfg.RPCHost[8:len(cfg.RPCHost)]
+		host = cfg.RPCHost[8:]
 	}
 
 	basicClient := basic.NewClient(host)
@@ -83,15 +81,11 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 }
 
 func IsTestNet(dexHost string) bool {
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-
-	client := &http.Client{Transport: tr}
+	client := &http.Client{}
 
 	u, err := url.Parse(dexHost)
 	if err != nil {
-		fmt.Printf("Unable to parse dex host: %s\n", dexHost)
+		log.Fatal().Msgf("Unable to parse dex host: %s\n", dexHost)
 	}
 
 	uri := url.URL{
