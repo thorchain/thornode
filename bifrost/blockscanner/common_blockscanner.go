@@ -231,7 +231,7 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 func (b *CommonBlockScanner) getBlockUrl() string {
 	u, err := url.Parse(b.cfg.RPCHost)
 	if err != nil {
-		log.Fatalf("Error parsing rpc (%s): %s", c.cfg.RPCHost, err)
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.cfg.RPCHost, err)
 	}
 	if u == nil {
 		requestUrl := url.URL{
