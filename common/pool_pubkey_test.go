@@ -12,10 +12,12 @@ var _ = Suite(&PoolPubKeySuite{})
 
 func (PoolPubKeySuite) TestNewPoolPubKey(c *C) {
 	pKey := GetPubKeyForTest()
-	ppk := NewPoolPubKey(BNBChain, 1024, pKey)
+	ppk, err := NewPoolPubKey(BNBChain, 1024, pKey)
+	c.Assert(err, IsNil)
 	c.Assert(ppk, NotNil)
 	c.Assert(ppk.IsEmpty(), Equals, false)
-	ppk1 := NewPoolPubKey(BNBChain, 1024, pKey)
+	ppk1, err := NewPoolPubKey(BNBChain, 1024, pKey)
+	c.Assert(err, IsNil)
 	c.Assert(ppk1, NotNil)
 	c.Assert(ppk1.IsEmpty(), Equals, false)
 	c.Assert(ppk1.Equals(ppk), Equals, true)
@@ -29,7 +31,8 @@ func (PoolPubKeySuite) TestNewPoolPubKey(c *C) {
 
 func (PoolPubKeySuite) TestGetSeqNo(c *C) {
 	pKey := GetPubKeyForTest()
-	ppk := NewPoolPubKey(BNBChain, 0, pKey)
+	ppk, err := NewPoolPubKey(BNBChain, 0, pKey)
+	c.Assert(err, IsNil)
 	c.Assert(ppk, NotNil)
 	c.Assert(ppk.IsEmpty(), Equals, false)
 	c.Assert(ppk.GetSeqNo(), Equals, uint64(0))
@@ -47,22 +50,26 @@ func GetPubKeyForTest() PubKey {
 
 func (PoolPubKeySuite) TestPoolPubKeys(c *C) {
 	c.Assert(EmptyPoolPubKeys.IsEmpty(), Equals, true)
-	current := PoolPubKeys{
-		NewPoolPubKey(BNBChain, 0, GetPubKeyForTest()),
-		NewPoolPubKey(BTCChain, 0, GetPubKeyForTest()),
-		NewPoolPubKey(ETHChain, 0, GetPubKeyForTest()),
-	}
+	pk1, err := NewPoolPubKey(BNBChain, 0, GetPubKeyForTest())
+	c.Assert(err, IsNil)
+	pk2, err := NewPoolPubKey(BTCChain, 0, GetPubKeyForTest())
+	c.Assert(err, IsNil)
+	pk3, err := NewPoolPubKey(ETHChain, 0, GetPubKeyForTest())
+	c.Assert(err, IsNil)
+	current := PoolPubKeys{pk1, pk2, pk3}
 	c.Assert(current.IsEmpty(), Equals, false)
 	c.Assert(current.GetByChain(BNBChain), NotNil)
 	// Try add nil should be safe
 	result := current.TryAddKey(nil)
 	c.Assert(result, NotNil)
 	c.Assert(len(result), Equals, 3)
-	ppk := NewPoolPubKey(BNBChain, 1024, GetPubKeyForTest())
+	ppk, err := NewPoolPubKey(BNBChain, 1024, GetPubKeyForTest())
+	c.Assert(err, IsNil)
 	current = current.TryAddKey(ppk)
 	c.Assert(current.IsEmpty(), Equals, false)
 	c.Assert(len(current), Equals, 3)
-	ppk1 := NewPoolPubKey(Chain("TestChain"), 1, GetPubKeyForTest())
+	ppk1, err := NewPoolPubKey(Chain("TestChain"), 1, GetPubKeyForTest())
+	c.Assert(err, IsNil)
 	c.Assert(ppk1, NotNil)
 	current = current.TryAddKey(ppk1)
 	c.Assert(len(current), Equals, 4)

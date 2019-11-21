@@ -13,14 +13,18 @@ type PoolAddressesSuite struct{}
 var _ = Suite(&PoolAddressesSuite{})
 
 func (PoolAddressesSuite) TestNewPoolAddresses(c *C) {
-	previous := common.PoolPubKeys{
-		common.NewPoolPubKey(common.BNBChain, 1024, GetRandomPubKey()),
-	}
-	current := common.PoolPubKeys{
-		common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey()),
-		common.NewPoolPubKey(common.BTCChain, 0, GetRandomPubKey()),
-		common.NewPoolPubKey(common.ETHChain, 0, GetRandomPubKey()),
-	}
+	pk1, err := common.NewPoolPubKey(common.BNBChain, 1024, GetRandomPubKey())
+	c.Assert(err, IsNil)
+	previous := common.PoolPubKeys{pk1}
+
+	pk2, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	c.Assert(err, IsNil)
+	pk3, err := common.NewPoolPubKey(common.BTCChain, 0, GetRandomPubKey())
+	c.Assert(err, IsNil)
+	pk4, err := common.NewPoolPubKey(common.ETHChain, 0, GetRandomPubKey())
+	c.Assert(err, IsNil)
+	current := common.PoolPubKeys{pk2, pk3, pk4}
+	c.Assert(err, IsNil)
 	next := common.PoolPubKeys{}
 	poolAddr := NewPoolAddresses(previous, current, next, 28800, 27800)
 	result, err := json.MarshalIndent(poolAddr, "", "	")

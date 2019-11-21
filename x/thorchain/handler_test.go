@@ -112,7 +112,8 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		p.BalanceAsset = sdk.NewUint(100 * common.One)
 		k.SetPool(ctx, p)
 	}
-	genesisPoolPubKey := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	genesisPoolPubKey, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	c.Assert(err, IsNil)
 	genesisPoolAddress := NewPoolAddresses(common.EmptyPoolPubKeys, common.PoolPubKeys{
 		genesisPoolPubKey,
 	}, common.EmptyPoolPubKeys, 100, 90)
@@ -420,9 +421,9 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	w.ctx = w.ctx.WithBlockHeight(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt)
 	w.poolAddrMgr.BeginBlock(w.ctx)
 
-	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{
-		common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey()),
-	}
+	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	c.Assert(err, IsNil)
+	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{pk1}
 	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
 	chainSenderAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
@@ -814,7 +815,8 @@ func (HandlerSuite) TestHandleMsgAck(c *C) {
 	// didn't observe next pool address
 	result = handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgAck)
 	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
-	nextChainPoolPubKey := common.NewPoolPubKey(common.BNBChain, 0, nextPoolPubKey)
+	nextChainPoolPubKey, err := common.NewPoolPubKey(common.BNBChain, 0, nextPoolPubKey)
+	c.Assert(err, IsNil)
 	w.poolAddrMgr.ObservedNextPoolAddrPubKey = common.PoolPubKeys{
 		nextChainPoolPubKey,
 	}

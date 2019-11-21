@@ -86,9 +86,9 @@ func (s TxOutStoreSuite) TestMinusGas(c *C) {
 
 func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{
-		common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey()),
-	}
+	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	c.Assert(err, IsNil)
+	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
 
 	acc1 := GetRandomNodeAccount(NodeActive)
 	acc2 := GetRandomNodeAccount(NodeActive)
