@@ -27,19 +27,20 @@ type Config struct {
 
 // Smoke : test instructions.
 type Smoke struct {
-	Config     Config
-	ApiAddr    string
-	Network    ctypes.ChainNetwork
-	FaucetKey  string
-	PoolKey    string
-	Binance    Binance
-	Statechain Statechain
-	Tests      types.Tests
-	Results    []types.Output
+	Config      Config
+	ApiAddr     string
+	Network     ctypes.ChainNetwork
+	FaucetKey   string
+	PoolAddress string
+	Binance     Binance
+	Statechain  Statechain
+	Tests       types.Tests
+	Results     []types.Output
+	SweepOnExit bool
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network ctypes.ChainNetwork, logFile string, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey, poolAddr, env string, config string, network ctypes.ChainNetwork, logFile string, sweep, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -58,14 +59,15 @@ func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network ct
 			network: network,
 			logFile: logFile,
 		},
-		ApiAddr:    apiAddr,
-		Network:    network,
-		FaucetKey:  faucetKey,
-		PoolKey:    poolKey,
-		Binance:    NewBinance(apiAddr, network, debug),
-		Statechain: NewStatechain(env),
-		Tests:      tests,
-		Results:    results,
+		ApiAddr:     apiAddr,
+		Network:     network,
+		FaucetKey:   faucetKey,
+		PoolAddress: poolAddr,
+		Binance:     NewBinance(apiAddr, network, debug),
+		Statechain:  NewStatechain(env),
+		Tests:       tests,
+		Results:     results,
+		SweepOnExit: sweep,
 	}
 }
 
@@ -87,14 +89,6 @@ func (s *Smoke) Setup() {
 		client, key = s.ClientKey()
 		s.Tests.ActorKeys[actor] = types.Keys{Key: key, Client: client}
 	}
-
-	// Pool
-	key, err = keys.NewPrivateKeyManager(s.PoolKey)
-	if err != nil {
-		log.Fatalf("Failed to create key manager for pool: %s", err)
-	}
-	client = s.GetClient(key)
-	s.Tests.ActorKeys["pool"] = types.Keys{Key: key, Client: client}
 
 	s.Summary()
 }
@@ -150,14 +144,17 @@ func (s *Smoke) Run() {
 		}
 
 		from := s.Tests.ActorKeys[rule.From]
-		s.SendTxn(from.Key, payload, memo)
+		err := s.SendTxn(from.Key, payload, memo)
+		if err != nil {
+			log.Fatalf("Send Tx failure: %s", err)
+		}
 
 		// Validate.
 		delay := time.Second * rule.CheckDelay
 		s.LogResults(tx, delay)
 	}
 
-	if s.Tests.SweepOnExit {
+	if s.SweepOnExit {
 		s.Sweep()
 	}
 
@@ -279,20 +276,23 @@ func (s *Smoke) GetStatechain() types.StatechainPools {
 
 // Sweep : Transfer all assets back to the faucet.
 func (s *Smoke) Sweep() {
-	keys := make([]string, len(s.Tests.ActorList)+1)
-	key, _ := s.Tests.ActorKeys["pool"].Key.ExportAsPrivateKey()
-	keys = append(keys, key)
+	// TODO: send statechain txs to cause ragnarok
+	/*
+		keys := make([]string, len(s.Tests.ActorList)+1)
+		key, _ := s.Tests.ActorKeys["pool"].Key.ExportAsPrivateKey()
+		keys = append(keys, key)
 
-	for _, actor := range s.Tests.ActorList {
-		key, _ = s.Tests.ActorKeys[actor].Key.ExportAsPrivateKey()
-		if key != s.FaucetKey {
-			keys = append(keys, key)
+		for _, actor := range s.Tests.ActorList {
+			key, _ = s.Tests.ActorKeys[actor].Key.ExportAsPrivateKey()
+			if key != s.FaucetKey {
+				keys = append(keys, key)
+			}
 		}
-	}
 
-	// Empty the wallets.
-	sweep := NewSweep(s.ApiAddr, s.FaucetKey, keys, s.Config.network, s.Config.debug)
-	sweep.EmptyWallets()
+		// Empty the wallets.
+		sweep := NewSweep(s.ApiAddr, s.FaucetKey, keys, s.Config.network, s.Config.debug)
+		sweep.EmptyWallets()
+	*/
 }
 
 // SendTxn : Send the transaction to Binance.
