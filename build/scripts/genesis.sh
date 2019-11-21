@@ -8,6 +8,7 @@ SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 NODES="${NODES:=1}"
 SEED="${SEED:=thor-daemon}" # the hostname of the master node
 ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in statechain should rotate
+BINANCE_HOST="${BINANCE_HOST:=https://data-seed-pre-0-s3.binance.org}"
 
 # find or generate our BNB address
 gen_bnb_address
