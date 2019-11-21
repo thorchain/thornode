@@ -2,7 +2,6 @@ package observer
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -41,11 +40,13 @@ type Observer struct {
 }
 
 // CurrHeight : Get the Binance current block height.
-func binanceHeight(dexHost string, client http.Client) int64 {
+// TODO: this func is a duplicate of `getBlockUrl` and `getRPCBlock`. We don't
+// need two funcs that return the current block height. Consolidate and remove
+// one from `mock-binance`
+func binanceHeight(dexHost string, client http.Client) (int64, error) {
 	u, err := url.Parse(dexHost)
 	if err != nil {
-		fmt.Printf("Unable to parse dex host: %s\n", dexHost)
-		return 0
+		return 0, errors.Wrap(err, "Unable to parse dex host")
 	}
 
 	uri := url.URL{
@@ -56,7 +57,7 @@ func binanceHeight(dexHost string, client http.Client) int64 {
 
 	resp, err := client.Get(uri.String())
 	if err != nil {
-		log.Fatal().Msgf("%v\n", err)
+		return 0, errors.Wrap(err, "Get request failed")
 	}
 
 	defer func() {
@@ -67,7 +68,7 @@ func binanceHeight(dexHost string, client http.Client) int64 {
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error().Err(err)
+		return 0, errors.Wrap(err, "fail to read resp body")
 	}
 
 	type ABCIinfo struct {
@@ -82,11 +83,11 @@ func binanceHeight(dexHost string, client http.Client) int64 {
 
 	var abci ABCIinfo
 	if err := json.Unmarshal(data, &abci); nil != err {
-		log.Error().Err(err)
+		return 0, errors.Wrap(err, "failed to unmarshal")
 	}
 
 	n, _ := strconv.ParseInt(abci.Result.Response.BlockHeight, 10, 64)
-	return n
+	return n, nil
 }
 
 // NewObserver create a new instance of Observer
@@ -117,7 +118,10 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by statechain")
 		} else {
 			client := &http.Client{}
-			cfg.BlockScanner.StartBlockHeight = binanceHeight(cfg.BinanceHost, *client)
+			cfg.BlockScanner.StartBlockHeight, err = binanceHeight(cfg.BinanceHost, *client)
+			if nil != err {
+				return nil, errors.Wrap(err, "fail to get binance height")
+			}
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
 		}
 	}
