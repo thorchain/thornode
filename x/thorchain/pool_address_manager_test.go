@@ -29,9 +29,9 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	w.txOutStore.NewBlock(uint64(rotateWindowOpenHeight))
 	c.Assert(w.poolAddrMgr.IsRotateWindowOpen, Equals, true)
 
-	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{
-		common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey()),
-	}
+	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	c.Assert(err, IsNil)
+	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{pk1}
 	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
 	// no asset get moved , because we just opened window, however we should instruct signer to kick off key sign process
 	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 1)
