@@ -5,6 +5,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 type ValidatorManagerTestSuite struct{}
@@ -15,21 +16,11 @@ func (vts *ValidatorManagerTestSuite) SetUpSuite(c *C) {
 	SetupConfigForTest()
 }
 
-func (vts *ValidatorManagerTestSuite) setDesireValidatorSet(c *C, ctx sdk.Context, k Keeper) {
-	activeAccounts, err := k.ListActiveNodeAccounts(ctx)
-	c.Assert(err, IsNil)
-	for _, item := range activeAccounts {
-		k.SetAdminConfig(ctx, NewAdminConfig(DesireValidatorSetKey, "4", item.NodeAddress))
-	}
-	currentDesireValidatorSet := k.GetAdminConfigDesireValidatorSet(ctx, nil)
-	c.Logf("current desire validator set: %d", currentDesireValidatorSet)
-}
-
 func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1)
-	rotatePerBlockHeight := k.GetAdminConfigRotatePerBlockHeight(ctx, sdk.AccAddress{})
-	validatorChangeWindow := k.GetAdminConfigValidatorsChangeWindow(ctx, sdk.AccAddress{})
+	rotatePerBlockHeight := int64(constants.RotatePerBlockHeight)
+	validatorChangeWindow := int64(constants.ValidatorsChangeWindow)
 	poolAddrMgr := NewPoolAddressManager(k)
 	vMgr := NewValidatorManager(k, poolAddrMgr)
 	vMgr.Meta = &ValidatorMeta{}

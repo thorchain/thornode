@@ -7,6 +7,7 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 // const values used to emit events
@@ -102,10 +103,10 @@ func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, store *TxOutSto
 		return
 	}
 
-	rotatePerBlockHeight := pm.k.GetAdminConfigRotatePerBlockHeight(ctx, sdk.AccAddress{})
-	windowOpen := pm.k.GetAdminConfigValidatorsChangeWindow(ctx, sdk.AccAddress{})
-	rotateAt := height + rotatePerBlockHeight
-	windowOpenAt := rotateAt - windowOpen
+	rotatePerBlockHeight := constants.RotatePerBlockHeight
+	windowOpen := constants.ValidatorsChangeWindow
+	rotateAt := height + int64(rotatePerBlockHeight)
+	windowOpenAt := rotateAt - int64(windowOpen)
 	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, common.EmptyPoolPubKeys, rotateAt, windowOpenAt)
 
 	ctx.EventManager().EmitEvent(
