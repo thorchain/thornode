@@ -66,7 +66,7 @@ if [ "$SEED" = "$(hostname)" ]; then
             add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}')
         done
 
-        add_pool_address $PUBKEY "0"
+        add_pool_address $POOL_ADDRESS $PUBKEY "0"
 
         for f in /tmp/shared/config_*.json; do
           add_admin_config $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}')
