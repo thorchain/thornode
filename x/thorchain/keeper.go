@@ -38,6 +38,7 @@ const (
 	prefixYggdrasilPool      dbPrefix = "yggdrasil_"
 	prefixVaultData          dbPrefix = "vault_data_"
 	prefixObservingAddresses dbPrefix = "observing_addresses_"
+	prefixReserves           dbPrefix = "reserves_"
 )
 
 const poolIndexKey = "poolindexkey"
@@ -937,6 +938,23 @@ func (k Keeper) HasValidYggdrasilPools(ctx sdk.Context) (bool, error) {
 		}
 	}
 	return false, nil
+}
+
+func (k Keeper) GetReservesContributors(ctx sdk.Context) ReserveContributors {
+	contribs := make(ReserveContributors, 0)
+	key := getKey(prefixReserves, "", getVersion(k.GetLowestActiveVersion(ctx), prefixReserves))
+	store := ctx.KVStore(k.storeKey)
+	if store.Has([]byte(key)) {
+		buf := store.Get([]byte(key))
+		_ = k.cdc.UnmarshalBinaryBare(buf, &contribs)
+	}
+	return contribs
+}
+
+func (k Keeper) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) {
+	key := getKey(prefixReserves, "", getVersion(k.GetLowestActiveVersion(ctx), prefixReserves))
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(contribs))
 }
 
 // ////////////////////// Vault Data //////////////////////////
