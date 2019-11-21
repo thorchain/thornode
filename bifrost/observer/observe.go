@@ -45,6 +45,7 @@ func binanceHeight(dexHost string, client http.Client) int64 {
 	u, err := url.Parse(dexHost)
 	if err != nil {
 		fmt.Printf("Unable to parse dex host: %s\n", dexHost)
+		return 0
 	}
 
 	uri := url.URL{
