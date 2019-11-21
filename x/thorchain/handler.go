@@ -464,7 +464,12 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 		return sdk.ErrUnknownRequest("next pool should be send with current pool address").Result()
 	}
 	// thorchain observed the next pool address memo, but it has not been confirmed yet
-	pkey := common.NewPoolPubKey(msg.Chain, 0, msg.NextPoolPubKey)
+	pkey, err := common.NewPoolPubKey(msg.Chain, 0, msg.NextPoolPubKey)
+	if nil != err {
+		ctx.Logger().Error("fail to get pool pubkey", "chain", msg.Chain, err)
+		return sdk.ErrInternal("fail to get pool pubkey").Result()
+	}
+
 	poolAddrManager.ObservedNextPoolAddrPubKey = poolAddrManager.ObservedNextPoolAddrPubKey.TryAddKey(pkey)
 
 	// if we observed a valid nextpool transaction, that means the nominated validator had join the signing committee to generate a new pub key
