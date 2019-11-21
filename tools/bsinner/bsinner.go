@@ -13,10 +13,11 @@ func main() {
 	apiAddr := flag.String("a", "testnet-dex.binance.org", "Binance API Address.")
 	faucetKey := flag.String("f", "", "The faucet private key.")
 	poolAddr := flag.String("p", "", "The pool address.")
+	poolKey := flag.String("k", "", "The pool key.")
 	environment := flag.String("e", "stage", "The environment to use [local|staging|develop|production].")
 	config := flag.String("c", "", "Path to the config file.")
 	network := flag.Int("n", 0, "The network to use.")
-	sweep := flag.Bool("s", true, "Sweep funds back on exit [Default: true]")
+	sweep := flag.Bool("s", false, "Sweep funds back on exit [Default: false]")
 	logFile := flag.String("l", "/tmp/smoke.json", "The path to the log file [/tmp/smoke.json].")
 	debug := flag.Bool("d", false, "Enable debugging of the Binance transactions.")
 	flag.Parse()
@@ -25,8 +26,8 @@ func main() {
 		log.Fatal("No faucet key set!")
 	}
 
-	if *poolAddr == "" {
-		log.Fatal("No pool address set!")
+	if *poolAddr == "" && *poolKey == "" {
+		log.Fatal("No pool address or pool key set!")
 	}
 
 	if *config == "" {
@@ -38,6 +39,6 @@ func main() {
 		net = btypes.ProdNetwork
 	}
 
-	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolAddr, *environment, *config, net, *logFile, *sweep, *debug)
+	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolAddr, *poolKey, *environment, *config, net, *logFile, *sweep, *debug)
 	s.Run()
 }

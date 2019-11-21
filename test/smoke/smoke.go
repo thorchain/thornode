@@ -36,6 +36,7 @@ type Smoke struct {
 	Network     ctypes.ChainNetwork
 	FaucetKey   string
 	PoolAddress string
+	PoolKey     string
 	Binance     Binance
 	Statechain  Statechain
 	Tests       types.Tests
@@ -44,7 +45,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey, poolAddr, env string, config string, network ctypes.ChainNetwork, logFile string, sweep, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey, poolAddr, poolKey, env string, config string, network ctypes.ChainNetwork, logFile string, sweep, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -94,6 +95,14 @@ func (s *Smoke) Setup() {
 		s.Tests.ActorKeys[actor] = types.Keys{Key: key, Client: client}
 	}
 
+	// Pool
+	key, err = keys.NewPrivateKeyManager(s.PoolKey)
+	if err != nil {
+		log.Fatalf("Failed to create key manager for pool: %s", err)
+	}
+	client = s.GetClient(key)
+	s.Tests.ActorKeys["pool"] = types.Keys{Key: key, Client: client}
+
 	s.Summary()
 }
 
@@ -122,6 +131,7 @@ func (s *Smoke) Summary() {
 // Run : Where there's smoke, there's fire!
 func (s *Smoke) Run() {
 	s.Setup()
+	var err error
 
 	for tx, rule := range s.Tests.Rules {
 		var payload []msg.Transfer
@@ -133,8 +143,16 @@ func (s *Smoke) Run() {
 				coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: coin.Amount})
 			}
 
-			fmt.Printf("Actor keys: %+v\n", s.Tests.ActorKeys)
-			toAddr := s.Tests.ActorKeys[to.Actor].Key.GetAddr()
+			// since we don't have a key for pool, inject it
+			var toAddr ctypes.AccAddress
+			if to.Actor == "pool" && s.PoolKey == "" {
+				toAddr, err = ctypes.AccAddressFromBech32(s.PoolAddress)
+				if err != nil {
+					log.Fatalf("Failed to convert pool address: %s", s.PoolAddress)
+				}
+			} else {
+				toAddr = s.Tests.ActorKeys[to.Actor].Key.GetAddr()
+			}
 			payload = append(payload, msg.Transfer{toAddr, coins})
 		}
 
@@ -226,10 +244,8 @@ func (s *Smoke) GetBalances(address ctypes.AccAddress) (ctypes.Coins, error) {
 		Path:     "abci_query",
 		RawQuery: args,
 	}
-	fmt.Printf("URL: %s\n", uri.String())
 	resp, err := http.Get(uri.String())
 	if err != nil {
-		fmt.Println("FOO1")
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -248,28 +264,22 @@ func (s *Smoke) GetBalances(address ctypes.AccAddress) (ctypes.Coins, error) {
 
 	var result queryResult
 	body, err := ioutil.ReadAll(resp.Body)
-	fmt.Printf("Body: %s\n", body)
 	if err != nil {
-		fmt.Println("FOO2")
 		return nil, err
 	}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		fmt.Println("FOO3")
 		return nil, err
 	}
 
 	data, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
 	if err != nil {
-		fmt.Println("FOO4")
 		return nil, err
 	}
 
 	cdc := ttypes.NewCodec()
 	var acc ctypes.AppAccount
 	err = cdc.UnmarshalBinaryBare(data, &acc)
-	fmt.Println("FOO5")
-	fmt.Printf("Data: %s\n", data)
 
 	return acc.BaseAccount.Coins, err
 }
