@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	ctypes "github.com/binance-chain/go-sdk/common/types"
 	. "gopkg.in/check.v1"
 	resty "gopkg.in/resty.v1"
 
@@ -24,7 +25,7 @@ type BinancechainSuite struct{}
 
 var _ = Suite(&BinancechainSuite{})
 
-func (*BinancechainSuite) SetUpSuite(c *C) {
+func (s *BinancechainSuite) SetUpSuite(c *C) {
 	types2.SetupConfigForTest()
 	trSkipVerify := &http.Transport{
 		MaxIdleConnsPerHost: 10,
@@ -34,10 +35,11 @@ func (*BinancechainSuite) SetUpSuite(c *C) {
 		},
 	}
 	resty.DefaultClient.SetTransport(trSkipVerify)
+	ctypes.Network = ctypes.TestNetwork
 	c.Assert(os.Setenv("NET", "testnet"), IsNil)
 }
 
-func (*BinancechainSuite) TearDownSuite(c *C) {
+func (s *BinancechainSuite) TearDownSuite(c *C) {
 	c.Assert(os.Unsetenv("NET"), IsNil)
 }
 
@@ -45,7 +47,7 @@ const binanceNodeInfo = `{"node_info":{"protocol_version":{"p2p":7,"block":10,"a
 
 var status = fmt.Sprintf(`{ "jsonrpc": "2.0", "id": "", "result": %s}`, binanceNodeInfo)
 
-func (BinancechainSuite) TestNewBinance(c *C) {
+func (s *BinancechainSuite) TestNewBinance(c *C) {
 	tssCfg := config.TSSConfiguration{
 		Scheme: "http",
 		Host:   "localhost",
@@ -107,8 +109,7 @@ const accountInfo string = `{
 }
 }`
 
-func (BinancechainSuite) TestSignTx(c *C) {
-	c.Skip("skipping")
+func (s *BinancechainSuite) TestSignTx(c *C) {
 	server := httptest.NewTLSServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
 		switch req.RequestURI {
@@ -152,11 +153,12 @@ func (BinancechainSuite) TestSignTx(c *C) {
 	c.Assert(r, IsNil)
 	c.Assert(p, IsNil)
 	c.Assert(err, IsNil)
+
 	txOut1 := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "pool_address":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coin":  { "denom": "BNB", "amount": "194765912" }  } ]}`, c)
 	r1, p1, err1 := b2.SignTx(txOut1.TxArray[0], 1718)
-	c.Assert(r1, NotNil)
-	c.Assert(p1, NotNil)
 	c.Assert(err1, IsNil)
+	c.Assert(p1, NotNil)
+	c.Assert(r1, NotNil)
 	result, err := b2.BroadcastTx(r1, p1)
 	c.Assert(result, NotNil)
 	c.Assert(err, IsNil)
@@ -170,8 +172,7 @@ func getTxOutFromJsonInput(input string, c *C) types.TxOut {
 	return txOut
 }
 
-func (BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
-	c.Skip("skipping")
+func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 	env := os.Getenv("NET")
 	if len(env) > 0 {
 		c.Assert(os.Setenv("NET", "PROD"), IsNil)
