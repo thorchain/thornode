@@ -14,19 +14,24 @@ func main() {
 	faucetKey := flag.String("f", "", "The faucet private key.")
 	poolKey := flag.String("k", "", "The pool key.")
 	environment := flag.String("e", "stage", "The environment to use [local|staging|develop|production].")
-	config := flag.String("c", "", "Path to the config file.")
+	bal := flag.String("b", "", "Balances json file")
+	txns := flag.String("t", "", "Transactions json file")
 	network := flag.Int("n", 0, "The network to use.")
 	sweep := flag.Bool("s", false, "Sweep funds back on exit [Default: false]")
 	logFile := flag.String("l", "/tmp/smoke.json", "The path to the log file [/tmp/smoke.json].")
 	debug := flag.Bool("d", false, "Enable debugging of the Binance transactions.")
 	flag.Parse()
 
-	if *faucetKey == "" {
-		log.Fatal("No faucet key set!")
+	if *txns == "" {
+		log.Fatal("No transactions json file")
 	}
 
-	if *config == "" {
-		log.Fatal("No config file provided!")
+	if *bal == "" {
+		log.Fatal("No balances json file")
+	}
+
+	if *faucetKey == "" {
+		log.Fatal("No faucet key set!")
 	}
 
 	net := btypes.TestNetwork
@@ -34,6 +39,6 @@ func main() {
 		net = btypes.ProdNetwork
 	}
 
-	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *config, net, *logFile, *sweep, *debug)
+	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *bal, *txns, net, *logFile, *sweep, *debug)
 	s.Run()
 }
