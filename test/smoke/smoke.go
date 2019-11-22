@@ -35,7 +35,7 @@ type Smoke struct {
 	ApiAddr     string
 	Network     ctypes.ChainNetwork
 	FaucetKey   string
-	PoolAddress string
+	PoolAddress ctypes.AccAddress
 	PoolKey     string
 	Binance     Binance
 	Statechain  Statechain
@@ -45,7 +45,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey, poolAddr, poolKey, env string, config string, network ctypes.ChainNetwork, logFile string, sweep, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey string, poolKey, env string, config string, network ctypes.ChainNetwork, logFile string, sweep, debug bool) Smoke {
 	cfg, err := ioutil.ReadFile(config)
 	if err != nil {
 		log.Fatal(err)
@@ -57,7 +57,7 @@ func NewSmoke(apiAddr, faucetKey, poolAddr, poolKey, env string, config string, 
 	}
 
 	var results []types.Output
-	return Smoke{
+	smoke := Smoke{
 		Config: Config{
 			delay:   5 * time.Second,
 			debug:   debug,
@@ -67,41 +67,45 @@ func NewSmoke(apiAddr, faucetKey, poolAddr, poolKey, env string, config string, 
 		ApiAddr:     apiAddr,
 		Network:     network,
 		FaucetKey:   faucetKey,
-		PoolAddress: poolAddr,
 		Binance:     NewBinance(apiAddr, network, debug),
 		Statechain:  NewStatechain(env),
 		Tests:       tests,
 		Results:     results,
 		SweepOnExit: sweep,
 	}
+
+	// detect pool address
+	smoke.PoolAddress = smoke.StatechainPoolAddress()
+
+	return smoke
 }
 
 // Setup : Generate/setup our accounts.
 func (s *Smoke) Setup() {
 	rand.Seed(time.Now().UnixNano())
 
-	s.Tests.ActorKeys = make(map[string]types.Keys)
+	s.Tests.ActorKeys = make(map[string]keys.KeyManager)
 
 	// Faucet
 	key, err := keys.NewPrivateKeyManager(s.FaucetKey)
 	if err != nil {
 		log.Fatalf("Failed to create key manager: %s", err)
 	}
-	client := s.GetClient(key)
-	s.Tests.ActorKeys["faucet"] = types.Keys{Key: key, Client: client}
+	s.Tests.ActorKeys["faucet"] = key
 
 	for _, actor := range s.Tests.ActorList {
-		client, key = s.ClientKey()
-		s.Tests.ActorKeys[actor] = types.Keys{Key: key, Client: client}
+		_, key := s.ClientKey()
+		s.Tests.ActorKeys[actor] = key
 	}
 
 	// Pool
-	key, err = keys.NewPrivateKeyManager(s.PoolKey)
-	if err != nil {
-		log.Fatalf("Failed to create key manager for pool: %s", err)
+	if len(s.PoolKey) > 0 {
+		key, err = keys.NewPrivateKeyManager(s.PoolKey)
+		if err != nil {
+			log.Fatalf("Failed to create key manager for pool: %s", err)
+		}
+		s.Tests.ActorKeys["pool"] = key
 	}
-	client = s.GetClient(key)
-	s.Tests.ActorKeys["pool"] = types.Keys{Key: key, Client: client}
 
 	s.Summary()
 }
@@ -123,15 +127,14 @@ func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
 // Summary : Private Keys
 func (s *Smoke) Summary() {
 	for name, actor := range s.Tests.ActorKeys {
-		privKey, _ := actor.Key.ExportAsPrivateKey()
-		log.Printf("%v: %v - %v\n", name, actor.Key.GetAddr(), privKey)
+		privKey, _ := actor.ExportAsPrivateKey()
+		log.Printf("%v: %v - %v\n", name, actor.GetAddr(), privKey)
 	}
 }
 
 // Run : Where there's smoke, there's fire!
 func (s *Smoke) Run() {
 	s.Setup()
-	var err error
 
 	for tx, rule := range s.Tests.Rules {
 		var payload []msg.Transfer
@@ -145,20 +148,17 @@ func (s *Smoke) Run() {
 
 			// since we don't have a key for pool, inject it
 			var toAddr ctypes.AccAddress
-			if to.Actor == "pool" && s.PoolKey == "" {
-				toAddr, err = ctypes.AccAddressFromBech32(s.PoolAddress)
-				if err != nil {
-					log.Fatalf("Failed to convert pool address: %s", s.PoolAddress)
-				}
+			if to.Actor == "pool" && len(s.PoolAddress) > 0 {
+				toAddr = s.PoolAddress
 			} else {
-				toAddr = s.Tests.ActorKeys[to.Actor].Key.GetAddr()
+				toAddr = s.Tests.ActorKeys[to.Actor].GetAddr()
 			}
 			payload = append(payload, msg.Transfer{toAddr, coins})
 		}
 
 		memo := rule.Memo
 		if rule.SendTo != "" {
-			sendTo := s.Tests.ActorKeys[rule.SendTo].Key.GetAddr()
+			sendTo := s.Tests.ActorKeys[rule.SendTo].GetAddr()
 			memo = memo + ":" + sendTo.String()
 		}
 
@@ -167,7 +167,7 @@ func (s *Smoke) Run() {
 		}
 
 		from := s.Tests.ActorKeys[rule.From]
-		err := s.SendTxn(from.Key, payload, memo)
+		err := s.SendTxn(from, payload, memo)
 		if err != nil {
 			log.Fatalf("Send Tx failure: %s", err)
 		}
@@ -215,7 +215,7 @@ func (s *Smoke) BinanceState(tx int) error {
 	s.Results = append(s.Results, output)
 
 	for _, actor := range s.Tests.ActorList {
-		balances, err := s.GetBalances(s.Tests.ActorKeys[actor].Key.GetAddr())
+		balances, err := s.GetBalances(s.Tests.ActorKeys[actor].GetAddr())
 		if err != nil {
 			return errors.Wrap(err, "failed to get balances")
 		}
@@ -300,6 +300,41 @@ func (s *Smoke) ActorAmount(amount int64, output *types.Balance, actor string) {
 	}
 }
 
+// StatechainPoolAddresses : Get Current pool address
+func (s *Smoke) StatechainPoolAddress() ctypes.AccAddress {
+	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
+	time.Sleep(1 * time.Second)
+
+	var addrs types.StatechainPoolAddress
+
+	resp, err := http.Get(s.Statechain.PoolAddressesURL())
+	if err != nil {
+		log.Fatalf("Failed getting statechain: %v\n", err)
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Failed reading body: %v\n", err)
+	}
+
+	if err := json.Unmarshal(data, &addrs); nil != err {
+		log.Fatalf("Failed to unmarshal pool addresses: %s", err)
+	}
+
+	if len(addrs.Current) == 0 {
+		log.Fatal("No pool addresses are currently available")
+	}
+	poolAddr := addrs.Current[0]
+
+	addr, err := ctypes.AccAddressFromBech32(poolAddr.Address.String())
+	if err != nil {
+		log.Fatalf("Failed to parse address: %s", err)
+	}
+
+	return addr
+}
+
 // StatechainState : Current Statechain state.
 func (s *Smoke) StatechainState(tx int) {
 	statechain := s.GetStatechain()
@@ -350,11 +385,11 @@ func (s *Smoke) Sweep() {
 	// TODO: send statechain txs to cause ragnarok
 	/*
 		keys := make([]string, len(s.Tests.ActorList)+1)
-		key, _ := s.Tests.ActorKeys["pool"].Key.ExportAsPrivateKey()
+		key, _ := s.Tests.ActorKeys["pool"].ExportAsPrivateKey()
 		keys = append(keys, key)
 
 		for _, actor := range s.Tests.ActorList {
-			key, _ = s.Tests.ActorKeys[actor].Key.ExportAsPrivateKey()
+			key, _ = s.Tests.ActorKeys[actor].ExportAsPrivateKey()
 			if key != s.FaucetKey {
 				keys = append(keys, key)
 			}

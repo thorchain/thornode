@@ -3,20 +3,14 @@ package types
 import (
 	"time"
 
-	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/keys"
 )
 
 type Tests struct {
 	ActorList   []string `json:"actor_list"`
-	ActorKeys   map[string]Keys
+	ActorKeys   map[string]keys.KeyManager
 	SweepOnExit bool   `json:"sweep_on_exit"`
 	Rules       []Rule `json:"rules"`
-}
-
-type Keys struct {
-	Key    keys.KeyManager
-	Client sdk.DexClient
 }
 
 type Rule struct {
