@@ -56,7 +56,7 @@ aws-ecs-deploy: config docker-aws-push
 
 # Step 5
 seed: tools
-	@bsinner -f ${FAUCET_KEY} -p ${BINANCE_PRIVATE_KEY} -e ${ENV} -c seed/seed.json -d true
+	@bsinner -f ${FAUCET_KEY} -k ${BINANCE_PRIVATE_KEY} -e ${ENV} -c seed/seed.json -d true
 
 # ------------------------------- GitLab ------------------------------- #
 
