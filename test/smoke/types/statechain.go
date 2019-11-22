@@ -1,5 +1,22 @@
 package types
 
+import "gitlab.com/thorchain/bepswap/thornode/common"
+
+type PoolPubKey struct {
+	Chain common.Chain `json:"chain"`
+	//SeqNo   uint64         `json:"seq_no"`
+	//PubKey  common.PubKey  `json:"pub_key"`
+	Address common.Address `json:"address"`
+}
+
+type StatechainPoolAddress struct {
+	// Previous           []PoolPubKey `json:"previous"`
+	Current []PoolPubKey `json:"current"`
+	// Next               []PoolPubKey `json:"next"`
+	// RotateAt           int64        `json:"rotate_at"`
+	// RotateWindowOpenAt int64        `json:"rotate_window_open_at"`
+}
+
 type StatechainPools []struct {
 	BalanceRune  int64 `json:"balance_rune,string"`
 	BalanceAsset int64 `json:"balance_asset,string"`

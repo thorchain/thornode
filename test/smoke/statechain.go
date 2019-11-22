@@ -40,3 +40,7 @@ func (s Statechain) PoolURL() string {
 func (s Statechain) StakerURL(staker string) string {
 	return fmt.Sprintf("%v://%v/thorchain/staker/%v", s.scheme(), endpoints[s.Env], staker)
 }
+
+func (s Statechain) PoolAddressesURL() string {
+	return fmt.Sprintf("%v://%v/thorchain/pooladdresses", s.scheme(), endpoints[s.Env])
+}
