@@ -11,9 +11,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/binance-chain/go-sdk/client/basic"
-	"github.com/binance-chain/go-sdk/client/query"
-	"github.com/binance-chain/go-sdk/client/rpc"
 	btypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	ttypes "github.com/binance-chain/go-sdk/types"
@@ -23,32 +20,70 @@ import (
 )
 
 type Binance struct {
-	debug     bool
-	delay     time.Duration
-	apiHost   string
-	chainId   btypes.ChainNetwork
-	bClient   basic.BasicClient
-	qClient   query.QueryClient
-	rpcClient *rpc.HTTP
+	debug   bool
+	delay   time.Duration
+	apiHost string
+	chainId btypes.ChainNetwork
 }
 
 // NewBinance : new instnance of Binance.
 func NewBinance(apiHost string, chainId btypes.ChainNetwork, debug bool) Binance {
-	rpcClient := rpc.NewRPCClient(apiHost, chainId)
-	bClient := basic.NewClient(apiHost)
+	btypes.Network = chainId
 	return Binance{
-		debug:     debug,
-		delay:     2 * time.Second,
-		apiHost:   apiHost,
-		chainId:   chainId,
-		bClient:   bClient,
-		qClient:   query.NewClient(bClient),
-		rpcClient: rpcClient,
+		debug:   debug,
+		delay:   2 * time.Second,
+		apiHost: apiHost,
+		chainId: chainId,
 	}
 }
 
-func (b Binance) GetBalances(addr btypes.AccAddress) ([]btypes.TokenBalance, error) {
-	return b.rpcClient.GetBalances(addr)
+func (b Binance) GetBalances(address btypes.AccAddress) (btypes.Coins, error) {
+	key := append([]byte("account:"), address.Bytes()...)
+	args := fmt.Sprintf("path=\"/store/acc/key\"&data=0x%x", key)
+	uri := url.URL{
+		Scheme:   "http", // TODO: don't hard code this
+		Host:     b.apiHost,
+		Path:     "abci_query",
+		RawQuery: args,
+	}
+	resp, err := http.Get(uri.String())
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	type queryResult struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			Response struct {
+				Key         string `json:"key"`
+				Value       string `json:"value"`
+				BlockHeight string `json:"height"`
+			} `json:"response"`
+		} `json:"result"`
+	}
+
+	var result queryResult
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	cdc := ttypes.NewCodec()
+	var acc btypes.AppAccount
+	err = cdc.UnmarshalBinaryBare(data, &acc)
+
+	return acc.BaseAccount.Coins, err
 }
 
 func (b Binance) GetAccount(addr btypes.AccAddress) (btypes.BaseAccount, error) {

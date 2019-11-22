@@ -84,7 +84,7 @@ smoke-test: tools install
 
 smoke-local:
 	echo "Ensure mock-binance is running..."
-	bsinner -f ce8a31351f78f065a8660d0c8f597e1b37ece00fb2c2f40f26ca8ddec26fc9dd -a localhost:26660 -c ./test/smoke/scenarios/flow-test-audit-1p.json -e local
+	bsinner -f ce8a31351f78f065a8660d0c8f597e1b37ece00fb2c2f40f26ca8ddec26fc9dd -a localhost:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e local
 
 export:
 	thord export
