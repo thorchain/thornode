@@ -2,7 +2,10 @@ package rest
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -18,6 +21,18 @@ const (
 	restURLParam2 = "param2"
 )
 
+func getRateLimit(fallback int) int {
+	value := os.Getenv("RATE_LIMIT")
+	if len(value) == 0 {
+		return fallback
+	}
+	i, err := strconv.Atoi(value)
+	if err != nil {
+		log.Fatalf("Unable to parse RATE_LIMIT: %s", value)
+	}
+	return i
+}
+
 // TODO add stake record endpoint
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
@@ -30,7 +45,10 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 
 	// limit api calls
 	// limit it to 60 per minute
-	lmt := tollbooth.NewLimiter(60, &limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour})
+	lmt := tollbooth.NewLimiter(
+		float64(getRateLimit(60)),
+		&limiter.ExpirableOptions{DefaultExpirationTTL: time.Hour},
+	)
 	lmt.SetMessage("You have reached maximum request limit.")
 
 	// Dynamically create endpoints of all funcs in querier.go
