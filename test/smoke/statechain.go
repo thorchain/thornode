@@ -75,13 +75,13 @@ func (s Statechain) GetPools() types.StatechainPools {
 	if err != nil {
 		log.Fatalf("Failed getting statechain: %v\n", err)
 	}
-
 	defer resp.Body.Close()
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalf("Failed reading body: %v\n", err)
 	}
+	fmt.Printf("POOLS: %+v\n", data)
 
 	if err := json.Unmarshal(data, &pools); nil != err {
 		log.Fatalf("Failed to unmarshal pools: %s", err)

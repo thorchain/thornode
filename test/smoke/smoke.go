@@ -17,7 +17,7 @@ import (
 
 // Smoke : test instructions.
 type Smoke struct {
-	Balances     []types.BalancesConfig
+	Balances     types.BalancesConfigs
 	Transactions []types.TransactionConfig
 	ApiAddr      string
 	Network      ctypes.ChainNetwork
@@ -27,17 +27,19 @@ type Smoke struct {
 	Statechain   Statechain
 	Keys         map[string]keys.KeyManager
 	SweepOnExit  bool
+	FastFail     bool
+	Debug        bool
 	Results      types.Results
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, network ctypes.ChainNetwork, logFile string, sweep, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, network ctypes.ChainNetwork, logFile string, sweep, fastFail, debug bool) Smoke {
 	balRaw, err := ioutil.ReadFile(bal)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var balConfig []types.BalancesConfig
+	var balConfig types.BalancesConfigs
 	if err := json.Unmarshal(balRaw, &balConfig); nil != err {
 		log.Fatal(err)
 	}
@@ -81,7 +83,9 @@ func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, 
 		Binance:      NewBinance(apiAddr, network, debug),
 		Statechain:   NewStatechain(env),
 		Keys:         keyMgr,
+		FastFail:     fastFail,
 		SweepOnExit:  sweep,
+		Debug:        debug,
 	}
 
 	// detect pool address
@@ -127,9 +131,26 @@ func (s *Smoke) Summary() {
 }
 
 // Run : Where there's smoke, there's fire!
-func (s *Smoke) Run() {
+func (s *Smoke) Run() bool {
 
-	for i, txn := range s.Transactions {
+	////////// Run the faucet ////////
+	from := s.GetKey("faucet")
+	to := s.GetKey("MASTER")
+	var coins []ctypes.Coin
+	for denom, amount := range s.Balances[0].Master {
+		coins = append(coins, ctypes.Coin{Denom: denom, Amount: amount})
+	}
+	payload := []msg.Transfer{
+		msg.Transfer{to.GetAddr(), coins},
+	}
+
+	err := s.SendTxn(from, payload, "SEED")
+	if err != nil {
+		log.Fatalf("Send Tx failure: %s", err)
+	}
+	/////////////////////////////////
+
+	for _, txn := range s.Transactions {
 
 		from := s.GetKey(txn.From)
 
@@ -160,24 +181,22 @@ func (s *Smoke) Run() {
 
 		if txn.Memo == "SEED" {
 			// this is a seed transaction, no validation needed
-			continue
+			// continue
 		}
 
-		// TODO: Validate.
+		targetBal := s.Balances.GetByTx(txn.Tx)
 		var bal types.BalancesConfig
+		bal.Tx = targetBal.Tx
 		for name, key := range s.Keys {
 			acc, err := s.Binance.GetAccount(key.GetAddr())
 			if err != nil {
 				log.Fatalf("Error checking balance: %s", err)
 			}
-			var balances map[string]int64
+			balances := make(map[string]int64, 0)
 			for _, coin := range acc.Coins {
 				balances[coin.Denom] = coin.Amount
 			}
 
-			fmt.Printf("Name: %s\n", name)
-			fmt.Printf("Balances: %+v\n", balances)
-			fmt.Printf("Coins: %+v\n", acc.Coins)
 			switch strings.ToLower(name) {
 			case "master":
 				bal.Master = balances
@@ -194,10 +213,10 @@ func (s *Smoke) Run() {
 
 		pools := s.Statechain.GetPools()
 		for _, pool := range pools {
+			fmt.Printf("POOL: %+v\n", pool)
 			var balances map[string]int64
 			balances["RUNE-A1F"] = pool.BalanceRune
 			balances[pool.Asset.Symbol] = pool.BalanceRune
-			fmt.Printf("Pool Name: %s\n", pool.Asset.Ticker)
 			switch strings.ToLower(pool.Asset.Ticker) {
 			case "bnb":
 				bal.PoolBNB = balances
@@ -206,15 +225,20 @@ func (s *Smoke) Run() {
 			}
 		}
 
-		result := types.NewResult(bal.Equals(s.Balances[i]), txn, bal)
+		result := types.NewResult(bal.Equals(targetBal), txn, bal)
 		s.Results = append(s.Results, result)
 
 		if !result.Success {
 			fmt.Printf("Test failed (%d): %+v\n", result.Transaction.Tx, result.Transaction)
 			fmt.Printf("Obtained: %+v\n", result.Obtained)
-			fmt.Printf("Expected: %+v\n", s.Balances[i])
+			fmt.Printf("Expected: %+v\n", targetBal)
+			if s.FastFail {
+				return false
+			}
 		} else {
-			fmt.Printf("Test Success! (%d)", result.Transaction.Tx)
+			if s.Debug {
+				fmt.Printf("Test Success! (%d)\n", result.Transaction.Tx)
+			}
 		}
 	}
 
@@ -223,6 +247,8 @@ func (s *Smoke) Run() {
 	}
 
 	s.Summary()
+
+	return s.Results.Success()
 }
 
 // Sweep : Transfer all assets back to the faucet.

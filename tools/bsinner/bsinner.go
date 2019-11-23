@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	btypes "github.com/binance-chain/go-sdk/common/types"
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke"
@@ -19,6 +20,7 @@ func main() {
 	network := flag.Int("n", 0, "The network to use.")
 	sweep := flag.Bool("s", false, "Sweep funds back on exit [Default: false]")
 	logFile := flag.String("l", "/tmp/smoke.json", "The path to the log file [/tmp/smoke.json].")
+	fastFail := flag.Bool("x", false, "Enable fast fail")
 	debug := flag.Bool("d", false, "Enable debugging of the Binance transactions.")
 	flag.Parse()
 
@@ -39,6 +41,10 @@ func main() {
 		net = btypes.ProdNetwork
 	}
 
-	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *bal, *txns, net, *logFile, *sweep, *debug)
-	s.Run()
+	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *bal, *txns, net, *logFile, *sweep, *fastFail, *debug)
+	successful := s.Run()
+	if successful {
+		os.Exit(0)
+	}
+	os.Exit(1)
 }
