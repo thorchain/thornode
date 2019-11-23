@@ -88,8 +88,9 @@ func (b Binance) GetBalances(address btypes.AccAddress) (btypes.Coins, error) {
 
 func (b Binance) GetAccount(addr btypes.AccAddress) (btypes.BaseAccount, error) {
 	path := fmt.Sprintf("/abci_query?path=\"/account/%s\"", addr.String())
+	uri := fmt.Sprintf("http://%s%s", b.apiHost, path)
 	// TODO: don't hard code to http protocol
-	resp, err := http.Get(fmt.Sprintf("http://%s%s", b.apiHost, path))
+	resp, err := http.Get(uri)
 	if err != nil {
 		return btypes.BaseAccount{}, err
 	}

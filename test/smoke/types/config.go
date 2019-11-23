@@ -15,29 +15,55 @@ type BalancesConfig struct {
 	PoolLoki map[string]int64 `json:"POOL-LOKI"`
 }
 
+type BalancesConfigs []BalancesConfig
+
 func (b1 BalancesConfig) Equals(b2 BalancesConfig) bool {
-	if !reflect.DeepEqual(b1.Master, b2.Master) {
+	comp := func(b1, b2 map[string]int64) bool {
+		if len(b1) == 0 {
+			b1 = make(map[string]int64, 0)
+		}
+		if len(b2) == 0 {
+			b2 = make(map[string]int64, 0)
+		}
+		for k := range b2 {
+			if _, ok := b1[k]; !ok {
+				b1[k] = 0
+			}
+		}
+		return reflect.DeepEqual(b1, b2)
+	}
+
+	if !comp(b1.Master, b2.Master) {
 		return false
 	}
-	if !reflect.DeepEqual(b1.User1, b2.User1) {
+	if !comp(b1.User1, b2.User1) {
 		return false
 	}
-	if !reflect.DeepEqual(b1.Staker1, b2.Staker1) {
+	if !comp(b1.Staker1, b2.Staker1) {
 		return false
 	}
-	if !reflect.DeepEqual(b1.Staker2, b2.Staker2) {
+	if !comp(b1.Staker2, b2.Staker2) {
 		return false
 	}
-	if !reflect.DeepEqual(b1.Vault, b2.Vault) {
+	if !comp(b1.Vault, b2.Vault) {
 		return false
 	}
-	if !reflect.DeepEqual(b1.PoolBNB, b2.PoolBNB) {
+	if !comp(b1.PoolBNB, b2.PoolBNB) {
 		return false
 	}
-	if !reflect.DeepEqual(b1.PoolLoki, b2.PoolLoki) {
+	if !comp(b1.PoolLoki, b2.PoolLoki) {
 		return false
 	}
 	return true
+}
+
+func (b BalancesConfigs) GetByTx(i int64) BalancesConfig {
+	for _, bal := range b {
+		if bal.Tx == i {
+			return bal
+		}
+	}
+	return BalancesConfig{}
 }
 
 type Result struct {
