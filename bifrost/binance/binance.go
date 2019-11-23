@@ -1,18 +1,20 @@
 package binance
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
-	"github.com/binance-chain/go-sdk/client/basic"
-	"github.com/binance-chain/go-sdk/client/query"
 	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
+	ttypes "github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
 	"github.com/pkg/errors"
@@ -27,13 +29,12 @@ import (
 )
 
 type Binance struct {
-	logger      zerolog.Logger
-	cfg         config.BinanceConfiguration
-	basicClient basic.BasicClient
-	queryClient query.QueryClient
-	keyManager  keys.KeyManager
-	chainId     string
-	useTSS      bool
+	logger     zerolog.Logger
+	cfg        config.BinanceConfiguration
+	keyManager keys.KeyManager
+	RPCHost    string
+	chainId    string
+	useTSS     bool
 }
 
 // NewBinance create new instance of binance client
@@ -58,25 +59,13 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 		}
 	}
 
-	host := cfg.RPCHost
-	// drop http/https prefix
-	if strings.HasPrefix(cfg.RPCHost, "http://") {
-		host = cfg.RPCHost[7:]
-	}
-	if strings.HasPrefix(cfg.RPCHost, "https://") {
-		host = cfg.RPCHost[8:]
-	}
-
-	basicClient := basic.NewClient(host)
-	queryClient := query.NewClient(basicClient)
 	return &Binance{
-		logger:      log.With().Str("module", "binance").Logger(),
-		cfg:         cfg,
-		basicClient: basicClient,
-		queryClient: queryClient,
-		keyManager:  km,
-		chainId:     "Binance-Chain-Nile", // TODO: this should be configurable
-		useTSS:      useTSS,
+		logger:     log.With().Str("module", "binance").Logger(),
+		cfg:        cfg,
+		keyManager: km,
+		RPCHost:    cfg.RPCHost,
+		chainId:    "Binance-Chain-Nile", // TODO: this should be configurable
+		useTSS:     useTSS,
 	}, nil
 }
 
@@ -232,7 +221,14 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	if err := sendMsg.ValidateBasic(); nil != err {
 		return nil, nil, errors.Wrap(err, "invalid send msg")
 	}
-	acc, err := b.queryClient.GetAccount(fromAddr)
+
+	address, err := types.AccAddressFromBech32(fromAddr)
+	if err != nil {
+		b.logger.Error().Err(err).Msgf("fail to get parse address: %s", fromAddr)
+		return nil, nil, err
+	}
+
+	acc, err := b.GetAccount(address)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "fail to get account info")
 	}
@@ -243,7 +239,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,
 		Sequence:      seqNo, // acc.Sequence,
-		AccountNumber: acc.Number,
+		AccountNumber: acc.AccountNumber,
 	}
 	param := map[string]string{
 		"sync": "true",
@@ -270,7 +266,13 @@ func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string) ([]byte, err
 		b.logger.Error().Err(err).Msgf("fail to sign msg with memo: %s", signMsg.Memo)
 		// should we give up? let's check the seq no on binance chain
 		// keep in mind, when we don't run our own binance full node, we might get rate limited by binance
-		acc, err := b.queryClient.GetAccount(from)
+		address, err := types.AccAddressFromBech32(from)
+		if err != nil {
+			b.logger.Error().Err(err).Msgf("fail to get parse address: %s", from)
+			return nil, err
+		}
+
+		acc, err := b.GetAccount(address)
 		if nil != err {
 			b.logger.Error().Err(err).Msg("fail to get account info from binance chain")
 			continue
@@ -282,21 +284,77 @@ func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string) ([]byte, err
 	}
 }
 
-func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
-	commits, err := b.basicClient.PostTx(hexTx, param)
+func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
+	host := b.cfg.RPCHost
+	if !strings.HasPrefix(host, "http") {
+		host = fmt.Sprintf("http://%s", host)
+	}
+
+	u, err := url.Parse(host)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to broadcast tx to ")
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.cfg.RPCHost, err)
+		return types.BaseAccount{}, err
 	}
-	for _, commitResult := range commits {
-		b.logger.Debug().
-			Bool("ok", commitResult.Ok).
-			Str("log", commitResult.Log).
-			Str("hash", commitResult.Hash).
-			Int32("code", commitResult.Code).
-			Str("data", commitResult.Data).
-			Msg("get commit response from binance")
+	u.Path = "/abci_query"
+	u.RawQuery = fmt.Sprintf("path=\"/account/%s\"", addr.String())
+
+	// TODO: don't hard code to http protocol
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return types.BaseAccount{}, err
 	}
-	return &commits[0], nil
+	defer resp.Body.Close()
+
+	type queryResult struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			Response struct {
+				Key         string `json:"key"`
+				Value       string `json:"value"`
+				BlockHeight string `json:"height"`
+			} `json:"response"`
+		} `json:"result"`
+	}
+
+	var result queryResult
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return types.BaseAccount{}, err
+	}
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return types.BaseAccount{}, err
+	}
+
+	data, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
+	if err != nil {
+		return types.BaseAccount{}, err
+	}
+
+	cdc := ttypes.NewCodec()
+	var acc types.AppAccount
+	err = cdc.UnmarshalBinaryBare(data, &acc)
+
+	return acc.BaseAccount, err
+}
+
+func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) error {
+	u, err := url.Parse(b.cfg.RPCHost)
+	if err != nil {
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.cfg.RPCHost, err)
+	}
+	if u == nil {
+		u.Scheme = "http"
+		u.Host = b.cfg.RPCHost
+	}
+	u.Path = "broadcast_tx_commit"
+	_, err = http.Post(u.String(), "", bytes.NewReader(hexTx))
+	if err != nil {
+		return errors.Wrap(err, "fail to broadcast tx to ")
+	}
+	return nil
 }
 
 // GetPubKey return the pub key

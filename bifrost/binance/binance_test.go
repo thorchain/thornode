@@ -78,7 +78,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 	}))
 
 	b2, err2 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    server.URL,
+		RPCHost:    fmt.Sprintf("https://%s", server.URL),
 		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
@@ -99,25 +99,25 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 }
 
 const accountInfo string = `{
-"type": "cosmos-sdk/Account",
-"value": {
-"address": "",
-"coins": [],
-"public_key": null,
-"account_number": "5",
-"sequence": "6"
-}
+  "jsonrpc": "2.0",
+  "id": "",
+  "result": {
+    "response": {
+      "value": "S9xMJwr/CAoUgT5JOfFWeyGXBP/CrU31i94BCHkSDAoHMDAwLTBFMRCiUhIOCgdBQUEtRUI4EJCFogQSEQoIQUdSSS1CRDIQouubj/8CEg4KCEFMSVMtOTVCEIXFPRIRCgdBTk4tNDU3EICQprf5pQISEgoIQVRPTS0yMEMQgIDpg7HeFhIOCgdBVlQtQjc0EIqg/h4SDQoHQkMxLTNBMRCQv28SDQoDQk5CELLzuMXDvhASEQoHQk5OLTQxMRCAkKa3+aUCEhAKCUJUQy5CLTkxOBDwqf41EhIKCUJUTUdMLUM3MhDxx52H+gUSEQoHQ05OLTIxMBCAkKa3+aUCEhUKCkNPU01PUy01ODcQ8Ybm677a6FgSDwoIQ09USS1EMTMQyK7iBBINCgdEQzEtNEI4EJC/bxIRCghEVUlULTMxQxDU+fGWwwMSDgoHRURVLUREMBCM+9lCEg8KB0ZSSS1ENUYQyaiJ9SkSDgoHSUFBLUM4MRDk18AEEg4KB0lCQi04REUQ5NfABBIOCgdJQ0MtNkVGEOTXwAQSDgoHSURELTUxNhDk18AEEg4KB0lFRS1EQ0EQ5NfABBIOCgdJRkYtODA0EOTXwAQSDgoHSUdHLTAxMxDk18AEEg4KB0lISC1ENEUQ5NfABBIOCgdJSUktMjVDEOTXwAQSDgoHSUpKLTY1RRDk18AEEhIKCktPR0U0OC0zNUQQgMivoCUSDQoHTEMxLTdGQxCQv28SDwoHTENRLUFDNRDO5ZyDIhIQCgdNRkgtOUI1ENb6yYbSJBIKCghOQVNDLTEzNxINCgdOQzEtMjc5EJC/bxINCgdOQzItMjQ5EO6TVhIPCgdPQ0ItQjk1EIDIr6AlEhAKB1BJQy1GNDAQouubj/8CEg4KB1BQQy0wMEEQtLDpYRIRCgdRQlgtQUY1EICi/KevmgESDQoHUkJULUNCNxCFxT0SDQoHUkMxLTk0MxCQv28SDQoHUkMxLUExRRCQv28SDQoHUkMxLUY0ORCQv28SDgoHU1ZDLUExNBCi99oIEg0KB1RDMS1GNDMQkL9vEg8KB1RFRC1ERjIQwP3LzgUSEwoIVEVTVC0wNzUQgICE/qbe4RESEAoIVEVTVC01OTkQgJzNymQSEwoIVEVTVC03OEYQgICE/qbe4RESEwoIVEVTVC1EM0YQgICE/qbe4RESDgoHVEZBLTNCNBD8590CEg8KB1RHVC05RkMQ7KCu73sSDgoHVFNULUQ1NxCAhK9fEg4KB1RTVy02RkQQgMLXLxIPCgdVQ1gtQ0M4EIHPg5sFEg8KB1VETy02MzgQwYbx4xISEwoKVVNEVC5CLUI3QxDsxNuFhQQSEAoJV1dXNzYtQThGEJC+mQISDgoHWFNYLTA3MhC1o/AEEg4KB1lMQy1EOEIQ5aq0ZBIPCgdaQ0ItQjM2EIDkl9ASEg4KCVpFQlJBLTE2RBDoBxIOCgdaWlotMjFFEPTl1QYaJuta6YchAhOb3ZXecsIqwqKw+HhTscyi6K35xYpKaJx10yYwE0QaINLlGCh3"
+    }
+  }
 }`
 
 func (s *BinancechainSuite) TestSignTx(c *C) {
-	server := httptest.NewTLSServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
+		fmt.Printf("RequestURI: %s\n", req.RequestURI)
 		switch req.RequestURI {
 		case "/api/v1/node-info":
 			if _, err := rw.Write([]byte(binanceNodeInfo)); nil != err {
 				c.Error(err)
 			}
-		case "/api/v1/account/tbnb1fds7yhw7qt9rkxw9pn65jyj004x858ny4xf2dk":
+		case "/abci_query?path=\"/account/tbnb1fds7yhw7qt9rkxw9pn65jyj004x858ny4xf2dk\"":
 			if _, err := rw.Write([]byte(accountInfo)); nil != err {
 				c.Error(err)
 			}
@@ -143,7 +143,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		Port:   0,
 	}
 	b2, err2 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    server.Listener.Addr().String(),
+		RPCHost:    server.URL,
 		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
@@ -159,10 +159,9 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	c.Assert(err1, IsNil)
 	c.Assert(p1, NotNil)
 	c.Assert(r1, NotNil)
-	result, err := b2.BroadcastTx(r1, p1)
-	c.Assert(result, NotNil)
-	c.Assert(err, IsNil)
 
+	err = b2.BroadcastTx(r1, p1)
+	c.Assert(err, IsNil)
 }
 
 func getTxOutFromJsonInput(input string, c *C) types.TxOut {
