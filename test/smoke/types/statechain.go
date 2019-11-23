@@ -2,6 +2,10 @@ package types
 
 import "gitlab.com/thorchain/bepswap/thornode/common"
 
+type LastBlock struct {
+	Height string `json:"statechain"`
+}
+
 type PoolPubKey struct {
 	Chain common.Chain `json:"chain"`
 	//SeqNo   uint64         `json:"seq_no"`

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
@@ -81,13 +82,37 @@ func (s Statechain) GetPools() types.StatechainPools {
 	if err != nil {
 		log.Fatalf("Failed reading body: %v\n", err)
 	}
-	fmt.Printf("POOLS: %+v\n", data)
 
 	if err := json.Unmarshal(data, &pools); nil != err {
 		log.Fatalf("Failed to unmarshal pools: %s", err)
 	}
 
 	return pools
+}
+
+func (s Statechain) GetHeight() int {
+	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
+	time.Sleep(1 * time.Second)
+
+	var block types.LastBlock
+
+	resp, err := http.Get(s.BlockURL())
+	if err != nil {
+		log.Fatalf("Failed getting statechain: %v\n", err)
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Failed reading body: %v\n", err)
+	}
+
+	if err := json.Unmarshal(data, &block); nil != err {
+		log.Fatalf("Failed to unmarshal pools: %s", err)
+	}
+
+	height, _ := strconv.Atoi(block.Height)
+	return height
 }
 
 // Scheme : SSL or not.
@@ -99,6 +124,10 @@ func (s Statechain) scheme() string {
 	}
 
 	return scheme
+}
+
+func (s Statechain) BlockURL() string {
+	return fmt.Sprintf("%v://%v/thorchain/lastblock", s.scheme(), endpoints[s.Env])
 }
 
 // PoolURL : Return the Pool URL based on the selected environment.
