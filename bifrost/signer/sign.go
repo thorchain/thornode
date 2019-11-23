@@ -298,14 +298,13 @@ func (s *Signer) signAndSendToBinanceChain(tai types.TxArrayItem, height int64) 
 	}
 	s.m.GetCounter(metrics.TxToBinanceSigned).Inc()
 	log.Info().Msgf("Generated a signature for Binance: %s", string(hexTx))
-	commitResult, err := s.Binance.BroadcastTx(hexTx, param)
+	err = s.Binance.BroadcastTx(hexTx, param)
 	if nil != err {
 		s.errCounter.WithLabelValues("fail_broadcast_txout", strHeight).Inc()
 		s.logger.Error().Err(err).Msg("fail to broadcast a tx to binance chain")
 		return errors.Wrap(err, "fail to broadcast a tx to binance chain")
 	}
 	s.logger.Debug().
-		Str("hash", commitResult.Hash).
 		Msg("signed and send to binance chain successfully")
 	s.m.GetCounter(metrics.TxToBinanceSignedBroadcast).Inc()
 	return nil

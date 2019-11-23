@@ -124,10 +124,10 @@ func (b Binance) GetAccount(addr btypes.AccAddress) (btypes.BaseAccount, error) 
 	}
 
 	cdc := ttypes.NewCodec()
-	var acc btypes.BaseAccount
+	var acc btypes.AppAccount
 	err = cdc.UnmarshalBinaryBare(data, &acc)
 
-	return acc, err
+	return acc.BaseAccount, err
 }
 
 // Input : Prep our input message.
