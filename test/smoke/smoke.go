@@ -68,7 +68,7 @@ func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, 
 	// Pool
 	if len(poolKey) > 0 {
 		var err error
-		keyMgr["faucet"], err = keys.NewPrivateKeyManager(poolKey)
+		keyMgr["vault"], err = keys.NewPrivateKeyManager(poolKey)
 		if err != nil {
 			log.Fatalf("Failed to create pool key manager: %s", err)
 		}
@@ -156,7 +156,7 @@ func (s *Smoke) Run() bool {
 
 		var to ctypes.AccAddress
 		// check if we are given a pool address
-		if txn.To == "pool" && len(s.PoolAddress) > 0 {
+		if txn.To == "vault" && len(s.PoolAddress) > 0 {
 			to = s.PoolAddress
 		} else {
 			to = s.GetKey(txn.To).GetAddr()
@@ -178,11 +178,7 @@ func (s *Smoke) Run() bool {
 		if err != nil {
 			log.Fatalf("Send Tx failure: %s", err)
 		}
-
-		if txn.Memo == "SEED" {
-			// this is a seed transaction, no validation needed
-			// continue
-		}
+		statechainHeight := s.Statechain.GetHeight()
 
 		targetBal := s.Balances.GetByTx(txn.Tx)
 		var bal types.BalancesConfig
@@ -206,21 +202,42 @@ func (s *Smoke) Run() bool {
 				bal.Staker1 = balances
 			case "staker-2":
 				bal.Staker2 = balances
-			case "vault":
-				bal.Vault = balances
+			}
+		}
+
+		// get vault balance
+		acc, err := s.Binance.GetAccount(s.PoolAddress)
+		if err != nil {
+			log.Fatalf("Error checking balance: %s", err)
+		}
+
+		balances := make(map[string]int64, 0)
+		for _, coin := range acc.Coins {
+			balances[coin.Denom] = coin.Amount
+		}
+		bal.Vault = balances
+
+		if txn.Memo != "SEED" {
+			// Wait for the statechain to process a block
+			fmt.Printf("Wait for statechain: %d\n", statechainHeight)
+			for {
+				newHeight := s.Statechain.GetHeight()
+				if statechainHeight < newHeight {
+					fmt.Printf("Done. %d\n", newHeight)
+					break
+				}
 			}
 		}
 
 		pools := s.Statechain.GetPools()
 		for _, pool := range pools {
-			fmt.Printf("POOL: %+v\n", pool)
-			var balances map[string]int64
+			balances := make(map[string]int64, 0)
 			balances["RUNE-A1F"] = pool.BalanceRune
-			balances[pool.Asset.Symbol] = pool.BalanceRune
-			switch strings.ToLower(pool.Asset.Ticker) {
-			case "bnb":
+			balances[pool.Asset.Symbol] = pool.BalanceAsset
+			switch pool.Asset.Symbol {
+			case "BNB":
 				bal.PoolBNB = balances
-			case "loki":
+			case "LOK-3C0":
 				bal.PoolLoki = balances
 			}
 		}

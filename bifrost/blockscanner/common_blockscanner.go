@@ -140,8 +140,6 @@ func (b *CommonBlockScanner) scanBlocks() {
 				b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 			}
 			b.logger.Debug().Int64("current block height", currentBlock).Int64("we are at", b.previousBlock).Msg("get block height")
-			// make sure we are one block behind , so when we process the block all the necessary data will be available
-			currentBlock = currentBlock - 1
 			if b.previousBlock >= currentBlock {
 				// back off
 				time.Sleep(b.cfg.BlockHeightDiscoverBackoff)
