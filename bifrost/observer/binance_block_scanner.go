@@ -91,18 +91,23 @@ func (b *BinanceBlockScanner) Start() {
 
 // need to process multiple pages
 func (b *BinanceBlockScanner) getTxSearchUrl(block int64, currentPage, numberPerPage int64) string {
-	uri := url.URL{
-		Scheme: "https",
-		Host:   b.cfg.RPCHost,
-		Path:   "tx_search",
+	u, err := url.Parse(b.cfg.RPCHost)
+	if err != nil {
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.cfg.RPCHost, err)
 	}
-	q := uri.Query()
+	if u == nil {
+		u.Scheme = "http"
+		u.Host = b.cfg.RPCHost
+	}
+	u.Path = "tx_search"
+
+	q := u.Query()
 	q.Set("query", fmt.Sprintf("\"tx.height=%d\"", block))
 	q.Set("prove", "true")
 	q.Set("page", strconv.FormatInt(currentPage, 10))
 	q.Set("per_page", strconv.FormatInt(numberPerPage, 10))
-	uri.RawQuery = q.Encode()
-	return uri.String()
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUrl string) error {
