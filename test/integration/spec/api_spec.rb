@@ -44,7 +44,6 @@ describe "API Tests" do
       expect(resp.code).to eq("200"), resp.body.inspect
 
       resp = get("/pools")
-      # should have one pool added via genesis
       expect(resp.body.length).to eq(1), resp.body.inspect
     end
 
@@ -54,7 +53,6 @@ describe "API Tests" do
       expect(resp.code).to eq("200"), resp.body.inspect
 
       resp = get("/pools")
-      # should have one pool added via genesis
       expect(resp.body.length).to eq(2), resp.body.inspect
     end
 
