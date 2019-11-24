@@ -13,7 +13,7 @@ type PoolPubKey struct {
 	Address common.Address `json:"address"`
 }
 
-type StatechainPoolAddress struct {
+type ThorchainPoolAddress struct {
 	// Previous           []PoolPubKey `json:"previous"`
 	Current []PoolPubKey `json:"current"`
 	// Next               []PoolPubKey `json:"next"`
@@ -21,7 +21,7 @@ type StatechainPoolAddress struct {
 	// RotateWindowOpenAt int64        `json:"rotate_window_open_at"`
 }
 
-type StatechainPools []struct {
+type ThorchainPools []struct {
 	BalanceRune  int64 `json:"balance_rune,string"`
 	BalanceAsset int64 `json:"balance_asset,string"`
 	Asset        struct {
