@@ -22,7 +22,7 @@ const (
 	prefixPool               dbPrefix = "pool_"
 	prefixTxOut              dbPrefix = "txout_"
 	prefixTotalLiquidityFee  dbPrefix = "total_liquidityfee_"
-	prefixPoolLiquidityFee   dbPrefix = "pool_liquidityfee_"
+	prefixPoolLiquidityFee   dbPrefix = "poolliquidityfee_"
 	prefixPoolStaker         dbPrefix = "poolstaker_"
 	prefixStakerPool         dbPrefix = "stakerpool_"
 	prefixAdmin              dbPrefix = "admin_"
