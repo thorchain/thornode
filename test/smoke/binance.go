@@ -234,14 +234,14 @@ func (b Binance) SignTx(key keys.KeyManager, sendMsg msg.SendMsg, memo string) (
 
 func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) error {
 
-	q := url.Values{}
-	u := url.URL{
-		Scheme: "http", // TODO: don't hard code this
-		Host:   b.host,
-		Path:   "broadcast_tx_commit",
+	u, err := url.Parse(b.host)
+	if err != nil {
+		log.Fatal(err)
 	}
+	u.Path = "broadcast_tx_commit"
 
 	if param != nil {
+		q := url.Values{}
 		for key, value := range param {
 			q.Set(key, value)
 		}

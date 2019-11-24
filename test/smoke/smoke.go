@@ -275,10 +275,10 @@ func (s *Smoke) Run() bool {
 		s.Results = append(s.Results, result)
 
 		if !result.Success {
-			fmt.Printf("Fail (Tx %d)\n", result.Transaction.Tx)
 			fmt.Printf("Transaction: %+v\n", result.Transaction)
 			fmt.Printf("Obtained: %s %+v\n", offender, ob)
 			fmt.Printf("Expected: %s %+v\n", offender, ex)
+			fmt.Printf("Fail (Tx %d)\n", result.Transaction.Tx)
 			if s.FastFail {
 				return false
 			}

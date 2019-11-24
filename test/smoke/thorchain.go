@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path"
 	"strconv"
 	"time"
 
@@ -117,7 +118,7 @@ func (s Thorchain) GetHeight() int {
 	return height
 }
 
-func (s Thorchain) getUrl(path string) string {
+func (s Thorchain) getUrl(p string) string {
 	scheme := "https"
 	if s.Env == "local" {
 		scheme = "http"
@@ -125,7 +126,7 @@ func (s Thorchain) getUrl(path string) string {
 	u := url.URL{
 		Scheme: scheme,
 		Host:   endpoints[s.Env],
-		Path:   path,
+		Path:   path.Join("thorchain", p),
 	}
 	return u.String()
 }
