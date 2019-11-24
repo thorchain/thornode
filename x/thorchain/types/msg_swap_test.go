@@ -24,6 +24,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 		common.Coins{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(1)),
 		},
+		common.BNBGasFeeSingleton,
 		"SWAP:BNB.BNB",
 	)
 
@@ -130,6 +131,7 @@ func (MsgSwapSuite) TestMsgSwap(c *C) {
 			common.Coins{
 				common.NewCoin(item.source, item.amount),
 			},
+			common.BNBGasFeeSingleton,
 			"SWAP:BNB.BNB",
 		)
 

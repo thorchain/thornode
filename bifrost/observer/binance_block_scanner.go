@@ -309,6 +309,22 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 				return nil, errors.Wrap(err, "fail to convert coins")
 			}
 
+			// TODO: We should not assume what the gas fees are going to be in
+			// the future (although they are largely static for binance). We
+			// should modulus the binance block height and get the latest fee
+			// prices every 1,000 or so blocks. This would ensure that all
+			// observers will always report the same gas prices as they update
+			// their price fees at the same time.
+
+			// Calculate gas for this tx
+			if len(txInItem.Coins) > 1 {
+				// Multisend gas fees
+				txInItem.Gas = common.GetBNBGasFeeMulti(uint64(len(txInItem.Coins)))
+			} else {
+				// Single transaction gas fees
+				txInItem.Gas = common.BNBGasFeeSingleton
+			}
+
 			// check if the from address is a valid pool
 			if ok, cpi := b.addrVal.IsValidPoolAddress(txInItem.Sender, common.BNBChain); ok {
 				txInItem.ObservedPoolAddress = cpi.PubKey.String()

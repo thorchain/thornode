@@ -34,6 +34,7 @@ func (PoolTestSuite) TestPool(c *C) {
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
 		},
+		common.BNBGasFeeSingleton,
 		"",
 	)
 	m := NewMsgSwap(tx, common.BNBAsset, bnbAddress, sdk.NewUint(2), signer)

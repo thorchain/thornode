@@ -23,6 +23,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 		bnb,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		common.BNBGasFeeSingleton,
 		"",
 	)
 	m := NewMsgOutboundTx(tx, inTxID, acc1)
@@ -67,6 +68,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 			item.sender,
 			GetRandomBNBAddress(),
 			common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+			common.BNBGasFeeSingleton,
 			"",
 		)
 		m := NewMsgOutboundTx(tx, item.inTxID, item.signer)

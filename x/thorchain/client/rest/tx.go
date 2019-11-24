@@ -17,9 +17,10 @@ import (
 type txItem struct {
 	TxHash             string       `json:"tx"`
 	Coins              common.Coins `json:"coins"`
-	Memo               string       `json:"MEMO"`
+	Memo               string       `json:"memo"`
 	Sender             string       `json:"sender"`
 	To                 string       `json:"to"`
+	Gas                common.Gas   `json:"gas"`
 	ObservePoolAddress string       `json:"observe_pool_address"`
 }
 
@@ -83,7 +84,7 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			}
 
-			tx := types.NewTxIn(tx.Coins, tx.Memo, sender, to, height, observeAddr)
+			tx := types.NewTxIn(tx.Coins, tx.Memo, sender, to, tx.Gas, height, observeAddr)
 
 			voters = append(voters, types.NewTxInVoter(txID, []types.TxIn{tx}))
 		}

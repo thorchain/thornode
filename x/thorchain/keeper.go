@@ -21,6 +21,8 @@ const (
 	prefixTxIn               dbPrefix = "tx_"
 	prefixPool               dbPrefix = "pool_"
 	prefixTxOut              dbPrefix = "txout_"
+	prefixTotalLiquidityFee  dbPrefix = "total_liquidityfee_"
+	prefixPoolLiquidityFee   dbPrefix = "poolliquidityfee_"
 	prefixPoolStaker         dbPrefix = "poolstaker_"
 	prefixStakerPool         dbPrefix = "stakerpool_"
 	prefixAdmin              dbPrefix = "admin_"
@@ -131,6 +133,7 @@ func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
 			ctx.Logger().Error("fail to add asset to pool index", "asset", pool.Asset, "error", err)
 		}
 	}
+
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
 }
 
@@ -697,6 +700,54 @@ func (k Keeper) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
 	return &txOut, nil
 }
 
+// AddToLiquidityFees - measure of fees collected in each block
+func (k Keeper) AddToLiquidityFees(ctx sdk.Context, pool Pool, fee sdk.Uint) error {
+	store := ctx.KVStore(k.storeKey)
+	currentHeight := uint64(ctx.BlockHeight())
+
+	totalFees, err := k.GetTotalLiquidityFees(ctx, currentHeight)
+	if err != nil {
+		return err
+	}
+	poolFees, err := k.GetPoolLiquidityFees(ctx, currentHeight, pool)
+	if err != nil {
+		return err
+	}
+
+	totalFees = totalFees.Add(fee)
+	poolFees = poolFees.Add(fee)
+	key := getKey(prefixTotalLiquidityFee, strconv.FormatUint(currentHeight, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTotalLiquidityFee))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(totalFees))
+	strHeightPool := fmt.Sprintf("%s%s", strconv.FormatUint(currentHeight, 10), pool.Asset.String())
+	key2 := getKey(prefixPoolLiquidityFee, strHeightPool, getVersion(k.GetLowestActiveVersion(ctx), prefixPoolLiquidityFee))
+	store.Set([]byte(key2), k.cdc.MustMarshalBinaryBare(poolFees))
+	return nil
+}
+
+func (k Keeper) getLiquidityFees(ctx sdk.Context, height uint64, prefix dbPrefix) (sdk.Uint, error) {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefix, strconv.FormatUint(height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefix))
+	if !store.Has([]byte(key)) {
+		return sdk.ZeroUint(), nil
+	}
+	buf := store.Get([]byte(key))
+	var liquidityFees sdk.Uint
+	if err := k.cdc.UnmarshalBinaryBare(buf, &liquidityFees); nil != err {
+		return sdk.ZeroUint(), errors.Wrap(err, "fail to unmarshal liquidityFees")
+	}
+	return liquidityFees, nil
+}
+
+// GetTotalLiquidityFees - total of all fees collected in each block
+func (k Keeper) GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint, error) {
+	return k.getLiquidityFees(ctx, height, prefixTotalLiquidityFee)
+}
+
+// GetPoolLiquidityFees - total of fees collected in each block per pool
+func (k Keeper) GetPoolLiquidityFees(ctx sdk.Context, height uint64, pool Pool) (sdk.Uint, error) {
+	return k.getLiquidityFees(ctx, height, prefixPoolLiquidityFee)
+}
+
 // GetIncompleteEvents retrieve incomplete events
 func (k Keeper) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
 	key := getKey(prefixInCompleteEvents, "", getVersion(k.GetLowestActiveVersion(ctx), prefixInCompleteEvents))
@@ -978,13 +1029,21 @@ func (k Keeper) SetVaultData(ctx sdk.Context, data VaultData) {
 // Update the vault data to reflect changing in this block
 func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 	vault := k.GetVaultData(ctx)
+	currentHeight := uint64(ctx.BlockHeight())
+	totalFees, _ := k.GetTotalLiquidityFees(ctx, currentHeight)
+	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees)
 
-	bondReward, totalPoolRewards := calcBlockRewards(vault.TotalReserve)
-	vault.TotalReserve = vault.TotalReserve.Sub(bondReward).Sub(totalPoolRewards)
-	vault.BondRewardRune = vault.BondRewardRune.Add(bondReward)
+	if !vault.TotalReserve.IsZero() {
+		// Move Rune from the Reserve to the Bond and Pool Rewards
+		if vault.TotalReserve.LT(totalPoolRewards) {
+			vault.TotalReserve = sdk.ZeroUint()
+		} else {
+			vault.TotalReserve = vault.TotalReserve.Sub(bondReward).Sub(totalPoolRewards) // Subtract Bond and Pool rewards
+		}
+		vault.BondRewardRune = vault.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
+	}
 
-	// Pass out block rewards to stakers via placing rune into pools relative
-	// to the pool's depth (amount of rune).
+	// Get all the pools that are active
 	totalRune := sdk.ZeroUint()
 	assets, _ := k.GetPoolIndex(ctx)
 	var pools []Pool
@@ -995,15 +1054,39 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 			pools = append(pools, pool)
 		}
 	}
-	poolRewards := calcPoolRewards(totalPoolRewards, totalRune, pools)
-	for i, reward := range poolRewards {
-		pool := pools[i]
-		pool.BalanceRune = pool.BalanceRune.Add(reward)
-		k.SetPool(ctx, pool)
+
+	if !totalPoolRewards.IsZero() { // If Pool Rewards to hand out
+		// First subsidise the gas that was consumed
+		for _, coin := range vault.Gas {
+			pool := k.GetPool(ctx, coin.Asset)
+			runeGas := pool.AssetValueInRune(coin.Amount)
+			pool.BalanceRune = pool.BalanceRune.Add(runeGas)
+			k.SetPool(ctx, pool)
+			totalPoolRewards = totalPoolRewards.Sub(runeGas)
+		}
+
+		// Then add pool rewards
+		poolRewards := calcPoolRewards(totalPoolRewards, totalRune, pools)
+		for i, reward := range poolRewards {
+			pools[i].BalanceRune = pools[i].BalanceRune.Add(reward)
+			k.SetPool(ctx, pools[i])
+		}
+	} else { // Else deduct pool deficit
+		// Get total fees, then find individual pool deficits, then deduct
+		totalFees, _ = k.GetTotalLiquidityFees(ctx, currentHeight)
+		for _, pool := range pools {
+			poolFees, _ := k.GetPoolLiquidityFees(ctx, currentHeight, pool)
+			if !pool.BalanceRune.IsZero() || !poolFees.IsZero() { // Safety checks
+				continue
+			}
+			poolDeficit := calcPoolDeficit(stakerDeficit, totalFees, poolFees)
+			pool.BalanceRune = pool.BalanceRune.Sub(poolDeficit)
+			k.SetPool(ctx, pool)
+		}
 	}
 
 	i, _ := k.TotalActiveNodeAccount(ctx)
-	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i)))
+	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i))) // Add 1 unit for each active Node
 
 	k.SetVaultData(ctx, vault)
 }
