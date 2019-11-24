@@ -7,13 +7,6 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
-// The block reward emission curve targets a ~2% emission after 10 years (similar to Bitcoin).
-// Since RUNE is a strictly-scarce asset, emissions need to be carefully considered for greatest network prosperity.
-// Day 0 Emission is ~25%, Year 1 Emission is ~20%.
-
-const emissionCurve = 6         // An arbitrary factor to target desired curve
-const secondsPerYear = 31556952 // 365.2425 * 86400
-
 // calculate node account bond units
 func calculateNodeAccountBondUints(height, activeBlock, slashPts int64) sdk.Uint {
 	if height < 0 || activeBlock < 0 || slashPts < 0 {
