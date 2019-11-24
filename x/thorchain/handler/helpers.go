@@ -8,19 +8,6 @@ import (
 
 var notAuthorized = fmt.Errorf("Not Authorized")
 
-// isSignedByActiveObserver check whether the signers are all active observer
-func isSignedByActiveObserver(ctx sdk.Context, keeper Keeper, signers []sdk.AccAddress) error {
-	if len(signers) == 0 {
-		return notAuthorized
-	}
-	for _, signer := range signers {
-		if !keeper.IsActiveObserver(ctx, signer) {
-			return notAuthorized
-		}
-	}
-	return nil
-}
-
 func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.AccAddress) error {
 	if len(signers) == 0 {
 		return notAuthorized
