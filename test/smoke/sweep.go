@@ -11,14 +11,13 @@ import (
 // Sweep : our main sweep type.
 type Sweep struct {
 	ApiAddr    string
-	Network    btypes.ChainNetwork
 	Binance    Binance
 	KeyManager keys.KeyManager
 	KeyList    []string
 }
 
 // NewHoover : Create a new instance of Sweep.
-func NewSweep(apiAddr, masterPrivKey string, keyList []string, network btypes.ChainNetwork, debug bool) Sweep {
+func NewSweep(apiAddr, masterPrivKey string, keyList []string, debug bool) Sweep {
 	keyManager, err := keys.NewPrivateKeyManager(masterPrivKey)
 	if err != nil {
 		log.Fatalf("Error creating key manager: %s", err)
@@ -26,8 +25,7 @@ func NewSweep(apiAddr, masterPrivKey string, keyList []string, network btypes.Ch
 
 	return Sweep{
 		ApiAddr:    apiAddr,
-		Network:    network,
-		Binance:    NewBinance(apiAddr, network, debug),
+		Binance:    NewBinance(apiAddr, debug),
 		KeyManager: keyManager,
 		KeyList:    keyList,
 	}
