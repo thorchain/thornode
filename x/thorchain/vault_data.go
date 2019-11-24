@@ -28,12 +28,6 @@ func calcNodeRewards(nodeUnits, totalUnits, totalRuneReward sdk.Uint) sdk.Uint {
 		float64(totalRuneReward.Uint64()) / (float64(totalUnits.Uint64()) / float64(nodeUnits.Uint64())),
 	))
 
-	// (nodeUnits / totalUnits) * totalRuneReward
-	// nUDec := sdk.NewDec(int64(nodeUnits.Uint64()))
-	// tUDec := sdk.NewDec(int64(totalUnits.Uint64()))
-	// tRRDec := sdk.NewDec(int64(totalRuneReward.Uint64()))
-	// reward := sdk.NewUint(uint64((nUDec.Quo(tUDec).Mul(tRRDec)).TruncateInt64()))
-
 	return reward
 }
 
@@ -44,12 +38,6 @@ func calcPoolRewards(totalPoolRewards, totalStakedRune sdk.Uint, pools []Pool) [
 		amt := sdk.NewUint(uint64(math.Round(
 			float64(totalPoolRewards.Uint64()) / (float64(totalStakedRune.Uint64()) / float64(pool.BalanceRune.Uint64())),
 		)))
-
-		// (poolBal / totalStaked) * totalPoolRewards
-		// pRDec := sdk.NewDec(int64(pool.BalanceRune.Uint64()))
-		// tRDec := sdk.NewDec(int64(totalStakedRune.Uint64()))
-		// tPRDec := sdk.NewDec(int64(totalPoolRewards.Uint64()))
-		// amt := sdk.NewUint(uint64((pRDec.Quo(tRDec).Mul(tPRDec)).TruncateInt64()))
 
 		amts = append(amts, amt)
 	}
@@ -63,11 +51,6 @@ func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.U
 		float64(stakerDeficit.Uint64()) / (float64(totalFees.Uint64()) / float64(poolFees.Uint64())),
 	)))
 
-	// (poolFees / totalFees) * stakerDeficit
-	// pFDec := sdk.NewDec(int64(poolFees.Uint64()))
-	// tFDec := sdk.NewDec(int64(totalFees.Uint64()))
-	// tSDDec := sdk.NewDec(int64(stakerDeficit.Uint64()))
-	// amt := sdk.NewUint(uint64((pFDec.Quo(tFDec).Mul(tSDDec)).TruncateInt64()))
 	return amt
 }
 
@@ -77,12 +60,6 @@ func calcBlockRewards(totalReserve sdk.Uint, totalLiquidityFees sdk.Uint) (sdk.U
 	blockReward := sdk.NewUint(uint64(
 		(float64(totalReserve.Uint64()) / float64(constants.EmissionCurve)) / float64(constants.BlocksPerYear),
 	))
-
-	// (totalReserve / 6 ) / BlocksPerYear
-	// tRDec := sdk.NewDec(int64(totalReserve.Uint64()))
-	// eCDec := sdk.NewDec(int64(constants.EmissionCurve))
-	// bPYDec := sdk.NewDec(int64(constants.BlocksPerYear))
-	// blockReward := sdk.NewUint(uint64(((tRDec.Quo(eCDec)).Quo(bPYDec)).TruncateInt64()))
 
 	systemIncome := blockReward.Add(totalLiquidityFees) // Get total system income for block
 	stakerSplit := systemIncome.QuoUint64(3)            // 1/3rd to Stakers

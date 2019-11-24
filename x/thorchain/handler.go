@@ -379,7 +379,6 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ToAddress:   stakerUnit.RuneAddress,
 		Coin:        common.NewCoin(common.RuneAsset(), runeAmt),
 	}
-	// for unstake , we should deduct fees
 	txOutStore.AddTxOutItem(ctx, keeper, toi, false)
 
 	toi = &TxOutItem{

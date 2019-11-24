@@ -195,7 +195,10 @@ func swapOne(ctx sdk.Context,
 	if source.IsRune() {
 		liquidityFee = pool.AssetValueInRune(liquidityFee)
 	}
-	keeper.AddToLiquidityFees(ctx, pool, liquidityFee)
+	err = keeper.AddToLiquidityFees(ctx, pool, liquidityFee)
+	if err != nil {
+		return sdk.ZeroUint(), pool, errors.Wrap(err, "failed to add liquidity")
+	}
 
 	// do we have enough balance to swap?
 

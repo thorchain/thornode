@@ -58,7 +58,9 @@ func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (t
 
 func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps types.PoolStaker) {}
 
-func (mps MockPoolStorage) AddToLiquidityFees(ctx sdk.Context, ps types.Pool, fs sdk.Uint) {}
+func (mps MockPoolStorage) AddToLiquidityFees(ctx sdk.Context, ps types.Pool, fs sdk.Uint) error {
+	return nil
+}
 
 func (mps MockPoolStorage) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) types.PoolStatus {
 	return types.Bootstrap
