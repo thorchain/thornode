@@ -21,7 +21,8 @@ type Smoke struct {
 	Transactions []types.TransactionConfig
 	ApiAddr      string
 	PoolAddress  ctypes.AccAddress
-	PoolKey      string
+	VaultKey     string
+	FaucetKey    string
 	Binance      Binance
 	Thorchain    Thorchain
 	Keys         map[string]keys.KeyManager
@@ -32,7 +33,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, fastFail, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string, fastFail, debug bool) Smoke {
 	balRaw, err := ioutil.ReadFile(bal)
 	if err != nil {
 		log.Fatal(err)
@@ -55,49 +56,56 @@ func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, 
 
 	keyMgr := make(map[string]keys.KeyManager, 0)
 
-	sweep := true
-	// Faucet
+	thor := NewThorchain(env)
+
+	// Detect if we should sweep for funds at the end
+	sweep := false
 	if len(faucetKey) > 0 {
-		var err error
-		keyMgr["faucet"], err = keys.NewPrivateKeyManager(faucetKey)
-		if err != nil {
-			log.Fatalf("Failed to create faucet key manager: %s", err)
-		}
-		sweep = false
+		sweep = true
 	}
 
-	// Pool
-	if len(poolKey) > 0 {
-		var err error
-		keyMgr["vault"], err = keys.NewPrivateKeyManager(poolKey)
-		if err != nil {
-			log.Fatalf("Failed to create pool key manager: %s", err)
-		}
-	}
-
-	// TODO: pull network from binance node
-	smoke := Smoke{
+	return Smoke{
 		Balances:     balConfig,
 		Transactions: txnConfig,
 		ApiAddr:      apiAddr,
 		Binance:      NewBinance(apiAddr, debug),
-		Thorchain:    NewThorchain(env),
+		Thorchain:    thor,
+		PoolAddress:  thor.PoolAddress(),
+		FaucetKey:    faucetKey,
+		VaultKey:     vaultKey,
 		Keys:         keyMgr,
 		FastFail:     fastFail,
 		SweepOnExit:  sweep,
 		Debug:        debug,
 	}
-
-	// detect pool address
-	smoke.PoolAddress = smoke.Thorchain.PoolAddress()
-
-	return smoke
 }
 
+// Gets the key manager for a given name. If one does not exist already, create
+// it.
 func (s *Smoke) GetKey(name string) keys.KeyManager {
 	k := s.Keys[name]
 	if k != nil {
 		return k
+	}
+
+	// Faucet
+	if name == "faucet" && len(s.FaucetKey) > 0 {
+		var err error
+		s.Keys["faucet"], err = keys.NewPrivateKeyManager(s.FaucetKey)
+		if err != nil {
+			log.Fatalf("Failed to create faucet key manager: %s", err)
+		}
+		return s.Keys["faucet"]
+	}
+
+	// Pool
+	if name == "vault" && len(s.VaultKey) > 0 {
+		var err error
+		s.Keys["vault"], err = keys.NewPrivateKeyManager(s.VaultKey)
+		if err != nil {
+			log.Fatalf("Failed to create pool key manager: %s", err)
+		}
+		return s.Keys["vault"]
 	}
 
 	// build key, and save
@@ -107,7 +115,6 @@ func (s *Smoke) GetKey(name string) keys.KeyManager {
 		log.Fatalf("Error creating key manager: %s", err)
 	}
 	s.Keys[name] = k
-	fmt.Printf("Name: %s %s\n", name, k.GetAddr())
 
 	return k
 }
@@ -122,13 +129,13 @@ func (s *Smoke) Summary() {
 			failed += 1
 		}
 	}
-	log.Printf("%d/%d correct", success, success+failed)
-	/*
-		for name, actor := range s.Tests.ActorKeys {
-			privKey, _ := actor.ExportAsPrivateKey()
-			log.Printf("%v: %v - %v\n", name, actor.GetAddr(), privKey)
-		}
-	*/
+
+	prefix := "Success"
+	if failed > 0 {
+		prefix = "Failed"
+	}
+
+	log.Printf("%s %d/%d correct", prefix, success, success+failed)
 }
 
 // Run : Where there's smoke, there's fire!
@@ -150,7 +157,6 @@ func (s *Smoke) Run() bool {
 	payload := []msg.Transfer{
 		msg.Transfer{to.GetAddr(), coins},
 	}
-
 	err := s.SendTxn(from, payload, "SEED")
 	if err != nil {
 		log.Fatalf("Send Tx failure: %s", err)
