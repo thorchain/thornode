@@ -200,6 +200,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			common.Coins{
 				common.NewCoin(item.source, item.amount),
 			},
+			common.BNBGasFeeSingleton,
 			"",
 		)
 		tx.Chain = common.BNBChain
@@ -231,6 +232,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3429850000)),
 			},
+			common.BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -244,6 +246,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3429850000)),
 			},
+			common.BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -257,6 +260,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.Asset{}, sdk.NewUint(3429850000)),
 			},
+			common.BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -270,6 +274,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3429850000)),
 			},
+			common.BNBGasFeeSingleton,
 			"",
 		),
 		common.Asset{},
@@ -283,6 +288,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.ZeroUint()),
 			},
+			common.BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -296,6 +302,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3429850000)),
 			},
+			common.BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -309,6 +316,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3429850000)),
 			},
+			common.BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -324,7 +332,7 @@ func (s SwapSuite) TestCalculators(c *C) {
 	// These calculations are verified by using the spreadsheet
 	// https://docs.google.com/spreadsheets/d/1wJHYBRKBdw_WP7nUyVnkySPkOmPUNoiRGsEqgBVVXKU/edit#gid=0
 	c.Check(calcAssetEmission(X, x, Y).Uint64(), Equals, uint64(826446280))
-	c.Check(calcLiquitityFee(X, x, Y).Uint64(), Equals, uint64(82644628))
+	c.Check(calcLiquidityFee(X, x, Y).Uint64(), Equals, uint64(82644628))
 	c.Check(calcPoolSlip(X, x), Equals, 0.1990990990990991)
 	c.Check(calcTradeSlip(X, x), Equals, 0.21)
 	// c.Check(calcPriceSlip(X, x, Y), Equals, 1.210000001452)
@@ -346,6 +354,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 		common.Coins{
 			common.NewCoin(common.RuneAsset(), sdk.OneUint()),
 		},
+		common.BNBGasFeeSingleton,
 		"",
 	)
 	msg := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.ZeroUint(), observerAddr)
@@ -367,6 +376,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 		common.Coins{
 			common.NewCoin(common.RuneAsset(), sdk.OneUint()),
 		},
+		common.BNBGasFeeSingleton,
 		"",
 	)
 	msgSwapPriceProtection := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.NewUint(2*common.One), observerAddr)
@@ -393,6 +403,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 		"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
 		signerBNBAddr,
 		GetRandomBNBAddress(),
+		common.BNBGasFeeSingleton,
 		sdk.NewUint(1),
 		currentChainPoolAddr.PubKey,
 	)

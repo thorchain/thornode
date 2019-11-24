@@ -105,7 +105,7 @@ func swapOne(ctx sdk.Context,
 	amount := tx.Coins[0].Amount
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", tx.FromAddress, source, tx.Coins[0].Amount, target, destination))
 
-	var X, x, Y, liquitityFee, emitAssets sdk.Uint
+	var X, x, Y, liquidityFee, emitAssets sdk.Uint
 	var tradeSlip, poolSlip float64
 
 	// Set asset to our non-rune asset asset
@@ -123,7 +123,7 @@ func swapOne(ctx sdk.Context,
 			swapEvt = NewEventSwap(
 				source,
 				tradeTarget,
-				liquitityFee,
+				liquidityFee,
 				common.FloatToDec(tradeSlip),
 			)
 
@@ -187,10 +187,18 @@ func swapOne(ctx sdk.Context,
 		return sdk.ZeroUint(), pool, errors.New("invalid balance")
 	}
 
-	liquitityFee = calcLiquitityFee(X, x, Y)
+	liquidityFee = calcLiquidityFee(X, x, Y)
 	tradeSlip = calcTradeSlip(X, x)
 	emitAssets = calcAssetEmission(X, x, Y)
 	poolSlip = calcPoolSlip(X, x)
+
+	if source.IsRune() {
+		liquidityFee = pool.AssetValueInRune(liquidityFee)
+	}
+	err = keeper.AddToLiquidityFees(ctx, pool, liquidityFee)
+	if err != nil {
+		return sdk.ZeroUint(), pool, errors.Wrap(err, "failed to add liquidity")
+	}
 
 	// do we have enough balance to swap?
 
@@ -259,7 +267,7 @@ func calcPoolSlip(X, x sdk.Uint) float64 {
 }
 
 // calculateFee the fee of the swap
-func calcLiquitityFee(X, x, Y sdk.Uint) sdk.Uint {
+func calcLiquidityFee(X, x, Y sdk.Uint) sdk.Uint {
 	// ( x^2 *  Y ) / ( x + X )^2
 	numerator := x.Mul(x).Mul(Y)
 	denominator := x.Add(X).Mul(x.Add(X))

@@ -8,19 +8,19 @@ import (
 
 // MsgAck is used to confirm the next pool address
 type MsgAck struct {
-	RequestTxHash common.TxID
-	Sender        common.Address
-	Signer        sdk.AccAddress
-	Chain         common.Chain // which chain this ack is from
+	Tx     common.Tx
+	Sender common.Address
+	Signer sdk.AccAddress
+	Chain  common.Chain // which chain this ack is from
 }
 
 // NewMsgAck create a new instance of NewMsgAck
-func NewMsgAck(requestTxHash common.TxID, sender common.Address, chain common.Chain, signer sdk.AccAddress) MsgAck {
+func NewMsgAck(tx common.Tx, sender common.Address, chain common.Chain, signer sdk.AccAddress) MsgAck {
 	return MsgAck{
-		RequestTxHash: requestTxHash,
-		Sender:        sender,
-		Signer:        signer,
-		Chain:         chain,
+		Tx:     tx,
+		Sender: sender,
+		Signer: signer,
+		Chain:  chain,
 	}
 }
 
@@ -35,8 +35,8 @@ func (msg MsgAck) ValidateBasic() sdk.Error {
 	if msg.Sender.IsEmpty() {
 		return sdk.ErrUnknownRequest("sender address cannot be empty")
 	}
-	if msg.RequestTxHash.IsEmpty() {
-		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
+	if err := msg.Tx.IsValid(); err != nil {
+		return sdk.ErrUnknownRequest(err.Error())
 	}
 	if msg.Chain.IsEmpty() {
 		return sdk.ErrUnknownRequest("chain cannot be empty")

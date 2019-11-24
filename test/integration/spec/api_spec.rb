@@ -42,12 +42,18 @@ describe "API Tests" do
       tx = makeTx(memo: "create:BNB")
       resp = processTx([tx])
       expect(resp.code).to eq("200"), resp.body.inspect
+
+      resp = get("/pools")
+      expect(resp.body.length).to eq(1), resp.body.inspect
     end
 
     it "create a pool for TCAN-014" do
       tx = makeTx(memo: "create:TCAN-014")
       resp = processTx([tx])
       expect(resp.code).to eq("200"), resp.body.inspect
+
+      resp = get("/pools")
+      expect(resp.body.length).to eq(2), resp.body.inspect
     end
 
     it "pool should be enabled" do
@@ -59,7 +65,6 @@ describe "API Tests" do
       expect(resp.code).to eq("200")
       expect(resp.body['status']).to eq("Enabled"), resp.body.inspect
     end
-
 
     it "should not create a duplicate pool" do
       tx = makeTx(memo: "create:TCAN-014")

@@ -47,6 +47,7 @@ type Tx struct {
 	FromAddress Address `json:"from_address"`
 	ToAddress   Address `json:"to_address"`
 	Coins       Coins   `json:"coins"`
+	Gas         Gas     `json:"gas"`
 	Memo        string  `json:"memo"`
 }
 
@@ -65,7 +66,8 @@ func GetRagnarokTx(chain Chain) Tx {
 		Memo: "Ragnarok",
 	}
 }
-func NewTx(txID TxID, from Address, to Address, coins Coins, memo string) Tx {
+
+func NewTx(txID TxID, from Address, to Address, coins Coins, gas Gas, memo string) Tx {
 	var chain Chain
 	for _, coin := range coins {
 		chain = coin.Asset.Chain
@@ -77,6 +79,7 @@ func NewTx(txID TxID, from Address, to Address, coins Coins, memo string) Tx {
 		FromAddress: from,
 		ToAddress:   to,
 		Coins:       coins,
+		Gas:         gas,
 		Memo:        memo,
 	}
 }
@@ -104,6 +107,11 @@ func (tx Tx) IsValid() error {
 	if err := tx.Coins.IsValid(); err != nil {
 		return err
 	}
-
+	if len(tx.Gas) == 0 {
+		return fmt.Errorf("Must have at least 1 gas coin")
+	}
+	if err := tx.Gas.IsValid(); err != nil {
+		return err
+	}
 	return nil
 }
