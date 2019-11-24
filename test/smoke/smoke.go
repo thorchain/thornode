@@ -308,7 +308,7 @@ func (s *Smoke) SendTxn(key keys.KeyManager, payload []msg.Transfer, memo string
 		return errors.Wrap(err, "Failed to sign tx:")
 	}
 
-	_, err = s.Binance.BroadcastTx(hex, params)
+	err = s.Binance.BroadcastTx(hex, params)
 	if err != nil {
 		return errors.Wrap(err, "failed to broadcast tx:")
 	}
