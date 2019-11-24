@@ -107,6 +107,7 @@ func (s *Smoke) GetKey(name string) keys.KeyManager {
 		log.Fatalf("Error creating key manager: %s", err)
 	}
 	s.Keys[name] = k
+	fmt.Printf("Name: %s %s\n", name, k.GetAddr())
 
 	return k
 }
@@ -133,6 +134,12 @@ func (s *Smoke) Summary() {
 // Run : Where there's smoke, there's fire!
 func (s *Smoke) Run() bool {
 
+	// Check that we are starting with a blank set of statechain data
+	pools := s.Statechain.GetPools()
+	if len(pools) > 0 {
+		log.Fatal("Statechain isn't blank. Smoke tests assume we are starting from a clean state")
+	}
+
 	////////// Run the faucet ////////
 	from := s.GetKey("faucet")
 	to := s.GetKey("MASTER")
@@ -156,7 +163,7 @@ func (s *Smoke) Run() bool {
 
 		var to ctypes.AccAddress
 		// check if we are given a pool address
-		if txn.To == "vault" && len(s.PoolAddress) > 0 {
+		if strings.EqualFold(txn.To, "vault") && len(s.PoolAddress) > 0 {
 			to = s.PoolAddress
 		} else {
 			to = s.GetKey(txn.To).GetAddr()
@@ -178,7 +185,17 @@ func (s *Smoke) Run() bool {
 		if err != nil {
 			log.Fatalf("Send Tx failure: %s", err)
 		}
-		statechainHeight := s.Statechain.GetHeight()
+
+		if txn.Memo != "SEED" {
+			// Wait for the statechain to process a block
+			statechainHeight := s.Statechain.GetHeight()
+			for {
+				newHeight := s.Statechain.GetHeight()
+				if statechainHeight < newHeight {
+					break
+				}
+			}
+		}
 
 		targetBal := s.Balances.GetByTx(txn.Tx)
 		var bal types.BalancesConfig
@@ -217,18 +234,6 @@ func (s *Smoke) Run() bool {
 		}
 		bal.Vault = balances
 
-		if txn.Memo != "SEED" {
-			// Wait for the statechain to process a block
-			fmt.Printf("Wait for statechain: %d\n", statechainHeight)
-			for {
-				newHeight := s.Statechain.GetHeight()
-				if statechainHeight < newHeight {
-					fmt.Printf("Done. %d\n", newHeight)
-					break
-				}
-			}
-		}
-
 		pools := s.Statechain.GetPools()
 		for _, pool := range pools {
 			balances := make(map[string]int64, 0)
@@ -242,13 +247,15 @@ func (s *Smoke) Run() bool {
 			}
 		}
 
-		result := types.NewResult(bal.Equals(targetBal), txn, bal)
+		ok, label, ob, ex := bal.Equals(targetBal)
+		result := types.NewResult(ok, txn, bal)
 		s.Results = append(s.Results, result)
 
 		if !result.Success {
-			fmt.Printf("Test failed (%d): %+v\n", result.Transaction.Tx, result.Transaction)
-			fmt.Printf("Obtained: %+v\n", result.Obtained)
-			fmt.Printf("Expected: %+v\n", targetBal)
+			fmt.Printf("Fail (Tx %d)\n", result.Transaction.Tx)
+			fmt.Printf("Transaction: %+v\n", result.Transaction)
+			fmt.Printf("Obtained: %s %+v\n", label, ob)
+			fmt.Printf("Expected: %s %+v\n", label, ex)
 			if s.FastFail {
 				return false
 			}

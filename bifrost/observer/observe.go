@@ -131,7 +131,8 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		return nil, errors.Wrap(err, "fail to create pool address manager")
 	}
 
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.BinanceHost), addrMgr, m)
+	_, isTestNet := binance.IsTestNet(cfg.BinanceHost)
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, isTestNet, addrMgr, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}

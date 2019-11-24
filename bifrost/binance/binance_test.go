@@ -78,7 +78,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 	}))
 
 	b2, err2 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    fmt.Sprintf("https://%s", server.URL),
+		RPCHost:    server.URL,
 		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
@@ -111,7 +111,6 @@ const accountInfo string = `{
 func (s *BinancechainSuite) TestSignTx(c *C) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
-		fmt.Printf("RequestURI: %s\n", req.RequestURI)
 		switch req.RequestURI {
 		case "/api/v1/node-info":
 			if _, err := rw.Write([]byte(binanceNodeInfo)); nil != err {
@@ -131,7 +130,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 ]`)); nil != err {
 				c.Error(err)
 			}
-		case "status":
+		case "/status":
 			if _, err := rw.Write([]byte(status)); nil != err {
 				c.Error(err)
 			}
@@ -202,7 +201,7 @@ func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 		},
 	}
 
-	server := httptest.NewTLSServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
 		if req.RequestURI == "/api/v1/node-info" {
 			if _, err := rw.Write([]byte(binanceNodeInfo)); nil != err {
@@ -215,11 +214,12 @@ func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 		}
 	}))
 	tssCfg := config.TSSConfiguration{
-		Scheme: "https",
+		Scheme: "http",
 		Host:   "127.0.0.1",
 		Port:   0,
 	}
 
+	fmt.Printf("SERVER URL: %s\n", server.URL)
 	b, err := NewBinance(config.BinanceConfiguration{
 		RPCHost:    server.URL,
 		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",

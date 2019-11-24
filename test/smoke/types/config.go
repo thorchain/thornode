@@ -1,6 +1,8 @@
 package types
 
-import "reflect"
+import (
+	"reflect"
+)
 
 // TODO: we are hard coding the attributes to the user names due to bad json
 // formats. Fix this later
@@ -12,12 +14,12 @@ type BalancesConfig struct {
 	Staker2  map[string]int64 `json:"STAKER-2"`
 	Vault    map[string]int64 `json:"VAULT"`
 	PoolBNB  map[string]int64 `json:"POOL-BNB"`
-	PoolLoki map[string]int64 `json:"POOL-LOKI"`
+	PoolLoki map[string]int64 `json:"POOL-LOK"`
 }
 
 type BalancesConfigs []BalancesConfig
 
-func (b1 BalancesConfig) Equals(b2 BalancesConfig) bool {
+func (b1 BalancesConfig) Equals(b2 BalancesConfig) (bool, string, map[string]int64, map[string]int64) {
 	comp := func(b1, b2 map[string]int64) bool {
 		if len(b1) == 0 {
 			b1 = make(map[string]int64, 0)
@@ -34,27 +36,27 @@ func (b1 BalancesConfig) Equals(b2 BalancesConfig) bool {
 	}
 
 	if !comp(b1.Master, b2.Master) {
-		return false
+		return false, "Master", b1.Master, b2.Master
 	}
 	if !comp(b1.User1, b2.User1) {
-		return false
+		return false, "User1", b1.User1, b2.User1
 	}
 	if !comp(b1.Staker1, b2.Staker1) {
-		return false
+		return false, "Staker1", b1.Staker1, b2.Staker1
 	}
 	if !comp(b1.Staker2, b2.Staker2) {
-		return false
+		return false, "Staker2", b1.Staker2, b2.Staker2
 	}
 	if !comp(b1.Vault, b2.Vault) {
-		return false
+		return false, "Vault", b1.Vault, b2.Vault
 	}
 	if !comp(b1.PoolBNB, b2.PoolBNB) {
-		return false
+		return false, "BNB Pool", b1.PoolBNB, b2.PoolBNB
 	}
 	if !comp(b1.PoolLoki, b2.PoolLoki) {
-		return false
+		return false, "Loki Pool", b1.PoolLoki, b2.PoolLoki
 	}
-	return true
+	return true, "", nil, nil
 }
 
 func (b BalancesConfigs) GetByTx(i int64) BalancesConfig {

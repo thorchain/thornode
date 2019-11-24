@@ -2,10 +2,12 @@ package blockscanner
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,6 +26,7 @@ import (
 // since both binance and thorchain use cosmos, so this part logic should be the same
 type CommonBlockScanner struct {
 	cfg            config.BlockScannerConfiguration
+	rpcHost        string
 	logger         zerolog.Logger
 	wg             *sync.WaitGroup
 	scanChan       chan int64
@@ -40,6 +43,11 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("host is empty")
 	}
+	rpcHost := cfg.RPCHost
+	if !strings.HasPrefix(rpcHost, "http") {
+		rpcHost = fmt.Sprintf("http://%s", rpcHost)
+	}
+
 	if nil == scannerStorage {
 		return nil, errors.New("scannerStorage is nil")
 	}
@@ -49,6 +57,7 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 	return &CommonBlockScanner{
 		cfg:      cfg,
 		logger:   log.Logger.With().Str("module", "commonblockscanner").Logger(),
+		rpcHost:  rpcHost,
 		wg:       &sync.WaitGroup{},
 		stopChan: make(chan struct{}),
 		scanChan: make(chan int64, cfg.BlockScanProcessors),
@@ -227,17 +236,9 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 }
 
 func (b *CommonBlockScanner) getBlockUrl() string {
-	u, err := url.Parse(b.cfg.RPCHost)
+	u, err := url.Parse(b.rpcHost)
 	if err != nil {
-		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.cfg.RPCHost, err)
-	}
-	if u == nil {
-		requestUrl := url.URL{
-			Scheme: "http",
-			Host:   b.cfg.RPCHost,
-			Path:   "block",
-		}
-		return requestUrl.String()
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.rpcHost, err)
 	}
 	requestUrl := url.URL{
 		Scheme: u.Scheme,
