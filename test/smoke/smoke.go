@@ -119,7 +119,7 @@ func (s *Smoke) GetKey(name string) keys.KeyManager {
 	return k
 }
 
-func (s *Smoke) Summary() {
+func (s *Smoke) Summarize() {
 	failed := 0
 	success := 0
 	for _, result := range s.Results {
@@ -138,16 +138,7 @@ func (s *Smoke) Summary() {
 	log.Printf("%s %d/%d correct", prefix, success, success+failed)
 }
 
-// Run : Where there's smoke, there's fire!
-func (s *Smoke) Run() bool {
-
-	// Check that we are starting with a blank set of thorchain data
-	pools := s.Thorchain.GetPools()
-	if len(pools) > 0 {
-		log.Fatal("Thorchain isn't blank. Smoke tests assume we are starting from a clean state")
-	}
-
-	////////// Run the faucet ////////
+func (s *Smoke) Seed() error {
 	from := s.GetKey("faucet")
 	to := s.GetKey("MASTER")
 	var coins []ctypes.Coin
@@ -157,111 +148,137 @@ func (s *Smoke) Run() bool {
 	payload := []msg.Transfer{
 		msg.Transfer{to.GetAddr(), coins},
 	}
-	err := s.SendTxn(from, payload, "SEED")
+	return s.SendTxn(from, payload, "SEED")
+}
+
+func (s *Smoke) Transfer(txn types.TransactionConfig) error {
+	from := s.GetKey(txn.From)
+
+	var to ctypes.AccAddress
+	// check if we are given a pool address
+	if strings.EqualFold(txn.To, "vault") && len(s.PoolAddress) > 0 {
+		to = s.PoolAddress
+	} else {
+		to = s.GetKey(txn.To).GetAddr()
+	}
+
+	var coins []ctypes.Coin
+
+	for denom, amount := range txn.Coins {
+		if amount > 0 {
+			coins = append(coins, ctypes.Coin{Denom: denom, Amount: amount})
+		}
+	}
+
+	payload := []msg.Transfer{
+		msg.Transfer{to, coins},
+	}
+
+	return s.SendTxn(from, payload, txn.Memo)
+}
+
+func (s *Smoke) GetCurrentBalances() types.BalancesConfig {
+	var bal types.BalancesConfig
+	for name, key := range s.Keys {
+		acc, err := s.Binance.GetAccount(key.GetAddr())
+		if err != nil {
+			log.Fatalf("Error checking balance: %s", err)
+		}
+		balances := make(map[string]int64, 0)
+		for _, coin := range acc.Coins {
+			balances[coin.Denom] = coin.Amount
+		}
+
+		switch strings.ToLower(name) {
+		case "master":
+			bal.Master = balances
+		case "user-1":
+			bal.User1 = balances
+		case "staker-1":
+			bal.Staker1 = balances
+		case "staker-2":
+			bal.Staker2 = balances
+		}
+	}
+
+	// get vault balance
+	acc, err := s.Binance.GetAccount(s.PoolAddress)
 	if err != nil {
+		log.Fatalf("Error checking balance: %s", err)
+	}
+
+	balances := make(map[string]int64, 0)
+	for _, coin := range acc.Coins {
+		balances[coin.Denom] = coin.Amount
+	}
+	bal.Vault = balances
+
+	pools := s.Thorchain.GetPools()
+	for _, pool := range pools {
+		balances := make(map[string]int64, 0)
+		balances["RUNE-A1F"] = pool.BalanceRune
+		balances[pool.Asset.Symbol] = pool.BalanceAsset
+		switch pool.Asset.Symbol {
+		case "BNB":
+			bal.PoolBNB = balances
+		case "LOK-3C0":
+			bal.PoolLoki = balances
+		}
+	}
+
+	return bal
+}
+
+// Wait for a block on thorchain
+func (s *Smoke) WaitABlock() {
+	// Wait for the thorchain to process a block
+	thorchainHeight := s.Thorchain.GetHeight()
+	for {
+		newHeight := s.Thorchain.GetHeight()
+		if thorchainHeight < newHeight {
+			return
+		}
+	}
+}
+
+// Run : Where there's smoke, there's fire!
+func (s *Smoke) Run() bool {
+
+	// Check that we are starting with a blank set of thorchain data
+	pools := s.Thorchain.GetPools()
+	if len(pools) > 0 {
+		log.Fatal("Thorchain isn't blank. Smoke tests assume we are starting from a clean state")
+	}
+
+	if err := s.Seed(); err != nil {
 		log.Fatalf("Send Tx failure: %s", err)
 	}
-	/////////////////////////////////
 
 	for _, txn := range s.Transactions {
 
-		from := s.GetKey(txn.From)
-
-		var to ctypes.AccAddress
-		// check if we are given a pool address
-		if strings.EqualFold(txn.To, "vault") && len(s.PoolAddress) > 0 {
-			to = s.PoolAddress
-		} else {
-			to = s.GetKey(txn.To).GetAddr()
-		}
-
-		var coins []ctypes.Coin
-
-		for denom, amount := range txn.Coins {
-			if amount > 0 {
-				coins = append(coins, ctypes.Coin{Denom: denom, Amount: amount})
-			}
-		}
-
-		payload := []msg.Transfer{
-			msg.Transfer{to, coins},
-		}
-
-		err := s.SendTxn(from, payload, txn.Memo)
-		if err != nil {
+		if err := s.Transfer(txn); err != nil {
 			log.Fatalf("Send Tx failure: %s", err)
 		}
 
 		if txn.Memo != "SEED" {
 			// Wait for the thorchain to process a block
-			thorchainHeight := s.Thorchain.GetHeight()
-			for {
-				newHeight := s.Thorchain.GetHeight()
-				if thorchainHeight < newHeight {
-					break
-				}
-			}
+			s.WaitABlock()
 		}
 
-		targetBal := s.Balances.GetByTx(txn.Tx)
-		var bal types.BalancesConfig
-		bal.Tx = targetBal.Tx
-		for name, key := range s.Keys {
-			acc, err := s.Binance.GetAccount(key.GetAddr())
-			if err != nil {
-				log.Fatalf("Error checking balance: %s", err)
-			}
-			balances := make(map[string]int64, 0)
-			for _, coin := range acc.Coins {
-				balances[coin.Denom] = coin.Amount
-			}
+		expectedBal := s.Balances.GetByTx(txn.Tx)
+		obtainedBal := s.GetCurrentBalances()
+		obtainedBal.Tx = txn.Tx
 
-			switch strings.ToLower(name) {
-			case "master":
-				bal.Master = balances
-			case "user-1":
-				bal.User1 = balances
-			case "staker-1":
-				bal.Staker1 = balances
-			case "staker-2":
-				bal.Staker2 = balances
-			}
-		}
-
-		// get vault balance
-		acc, err := s.Binance.GetAccount(s.PoolAddress)
-		if err != nil {
-			log.Fatalf("Error checking balance: %s", err)
-		}
-
-		balances := make(map[string]int64, 0)
-		for _, coin := range acc.Coins {
-			balances[coin.Denom] = coin.Amount
-		}
-		bal.Vault = balances
-
-		pools := s.Thorchain.GetPools()
-		for _, pool := range pools {
-			balances := make(map[string]int64, 0)
-			balances["RUNE-A1F"] = pool.BalanceRune
-			balances[pool.Asset.Symbol] = pool.BalanceAsset
-			switch pool.Asset.Symbol {
-			case "BNB":
-				bal.PoolBNB = balances
-			case "LOK-3C0":
-				bal.PoolLoki = balances
-			}
-		}
-
-		ok, label, ob, ex := bal.Equals(targetBal)
-		result := types.NewResult(ok, txn, bal)
+		// Compare expected vs obtained balances
+		ok, offender, ob, ex := obtainedBal.Equals(expectedBal)
+		result := types.NewResult(ok, txn, obtainedBal)
 		s.Results = append(s.Results, result)
 
 		if !result.Success {
 			fmt.Printf("Fail (Tx %d)\n", result.Transaction.Tx)
 			fmt.Printf("Transaction: %+v\n", result.Transaction)
-			fmt.Printf("Obtained: %s %+v\n", label, ob)
-			fmt.Printf("Expected: %s %+v\n", label, ex)
+			fmt.Printf("Obtained: %s %+v\n", offender, ob)
+			fmt.Printf("Expected: %s %+v\n", offender, ex)
 			if s.FastFail {
 				return false
 			}
@@ -276,7 +293,7 @@ func (s *Smoke) Run() bool {
 		s.Sweep()
 	}
 
-	s.Summary()
+	s.Summarize()
 
 	return s.Results.Success()
 }
