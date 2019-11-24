@@ -65,6 +65,8 @@ smoke-test:thornode:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
     NODES: 1
+  only:
+    - master
   before_script:
     - apt-get update
     - apt-get install -y jq
