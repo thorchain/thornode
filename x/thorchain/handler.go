@@ -141,11 +141,12 @@ func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sd
 		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset.String())
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
-	ctx.Logger().Info("handleMsgSetPoolData request", "Asset:"+msg.Asset.String())
+	ctx.Logger().Info("handleMsgSetPoolData request", "Asset:", msg.Asset.String())
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
+
 	keeper.SetPoolData(
 		ctx,
 		msg.Asset,
@@ -412,6 +413,7 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 				Coin:        coin,
 			}
 			store.AddTxOutItem(ctx, keeper, toi, false)
+			continue
 		}
 
 		// Since we have assets, we don't have a pool for, we don't know how to
