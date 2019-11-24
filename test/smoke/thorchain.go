@@ -6,10 +6,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
+
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
 )
 
@@ -115,31 +117,33 @@ func (s Thorchain) GetHeight() int {
 	return height
 }
 
-// Scheme : SSL or not.
-func (s Thorchain) scheme() string {
+func (s Thorchain) getUrl(path string) string {
 	scheme := "https"
-
 	if s.Env == "local" {
 		scheme = "http"
 	}
-
-	return scheme
+	u := url.URL{
+		Scheme: scheme,
+		Host:   endpoints[s.Env],
+		Path:   path,
+	}
+	return u.String()
 }
 
 func (s Thorchain) BlockURL() string {
-	return fmt.Sprintf("%v://%v/thorchain/lastblock", s.scheme(), endpoints[s.Env])
+	return s.getUrl("lastblock")
 }
 
 // PoolURL : Return the Pool URL based on the selected environment.
 func (s Thorchain) PoolURL() string {
-	return fmt.Sprintf("%v://%v/thorchain/pools", s.scheme(), endpoints[s.Env])
+	return s.getUrl("pools")
 }
 
 // StakerURL  : Return the Staker URL based on the selected environment.
 func (s Thorchain) StakerURL(staker string) string {
-	return fmt.Sprintf("%v://%v/thorchain/staker/%v", s.scheme(), endpoints[s.Env], staker)
+	return s.getUrl(fmt.Sprintf("/staker/%s", staker))
 }
 
 func (s Thorchain) PoolAddressesURL() string {
-	return fmt.Sprintf("%v://%v/thorchain/pooladdresses", s.scheme(), endpoints[s.Env])
+	return s.getUrl("pooladdresses")
 }

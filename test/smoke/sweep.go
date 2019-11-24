@@ -64,11 +64,11 @@ func (s Sweep) EmptyWallets() {
 
 // Balances : Get the account balances of a given wallet.
 func (s Sweep) Balances(address btypes.AccAddress) btypes.Coins {
-	acct, err := s.Binance.GetBalances(address)
+	acct, err := s.Binance.GetAccount(address)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return acct
+	return acct.Coins
 }
 
 // SendTxn : Send the transaction to Binance.
@@ -83,6 +83,6 @@ func (s *Sweep) SendTxn(key keys.KeyManager, payload []msg.Transfer, memo string
 		return err
 	}
 
-	_, err = s.Binance.BroadcastTx(hex, params)
+	err = s.Binance.BroadcastTx(hex, params)
 	return err
 }
