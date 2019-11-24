@@ -13,13 +13,46 @@ import (
 
 // EmptyAccAddress empty address
 var EmptyAccAddress = sdk.AccAddress{}
+var notAuthorized = fmt.Errorf("Not Authorized")
+
+type Handler interface {
+	Validate(ctx sdk.Context, msg sdk.Msg, version int64) error
+	Log(ctx sdk.Context, msg sdk.Msg)
+	Handle(ctx sdk.Context, msg sdk.Msg, version int64) error
+}
 
 // NewHandler returns a handler for "thorchain" type messages.
 func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *TxOutStore, validatorManager *ValidatorManager) sdk.Handler {
+
+	classic := NewClassicHandler(keeper, poolAddressMgr, txOutStore, validatorManager)
+	poolDataHandler := NewPoolDataHandler(keeper)
+
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+		version := keeper.GetLowestActiveVersion(ctx)
 		switch m := msg.(type) {
 		case MsgSetPoolData:
-			return handleMsgSetPoolData(ctx, keeper, m)
+			if err := poolDataHandler.Validate(ctx, m, version); err != nil {
+				return sdk.ErrUnauthorized(err.Error()).Result()
+			}
+			poolDataHandler.Log(ctx, m)
+			if err := poolDataHandler.Handle(ctx, m, version); err != nil {
+				return sdk.ErrUnauthorized(err.Error()).Result()
+			}
+		default:
+			return classic(ctx, msg)
+		}
+
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
+		}
+	}
+}
+
+// NewClassicHandler returns a handler for "thorchain" type messages.
+func NewClassicHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *TxOutStore, validatorManager *ValidatorManager) sdk.Handler {
+	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+		switch m := msg.(type) {
 		case MsgSetStakeData:
 			return handleMsgSetStakeData(ctx, keeper, m)
 		case MsgSwap:
@@ -59,41 +92,6 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 	}
-}
-
-// isSignedByActiveObserver check whether the signers are all active observer
-func isSignedByActiveObserver(ctx sdk.Context, keeper Keeper, signers []sdk.AccAddress) bool {
-	if len(signers) == 0 {
-		return false
-	}
-	for _, signer := range signers {
-		if !keeper.IsActiveObserver(ctx, signer) {
-			return false
-		}
-	}
-	return true
-}
-
-func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.AccAddress) bool {
-	if len(signers) == 0 {
-		return false
-	}
-	for _, signer := range signers {
-		nodeAccount, err := keeper.GetNodeAccount(ctx, signer)
-		if err != nil {
-			ctx.Logger().Error("unauthorized account", "address", signer.String())
-			return false
-		}
-		if nodeAccount.IsEmpty() {
-			ctx.Logger().Error("unauthorized account", "address", signer.String())
-			return false
-		}
-		if nodeAccount.Status != NodeActive {
-			ctx.Logger().Error("unauthorized account, node account not active", "address", signer.String(), "status", nodeAccount.Status)
-			return false
-		}
-	}
-	return true
 }
 
 // handleOperatorMsgEndPool operators decide it is time to end the pool
@@ -395,39 +393,6 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		Code:      sdk.CodeOK,
 		Data:      res,
 		Codespace: DefaultCodespace,
-	}
-}
-
-func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) {
-	// If we recognize one of the coins, and therefore able to refund
-	// withholding fees, refund all coins.
-	for _, coin := range tx.Coins {
-		pool := keeper.GetPool(ctx, coin.Asset)
-		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
-			toi := &TxOutItem{
-				Chain:       chain,
-				InHash:      txID,
-				ToAddress:   tx.Sender,
-				PoolAddress: poolAddr,
-				Coin:        coin,
-			}
-			store.AddTxOutItem(ctx, keeper, toi, false)
-			continue
-		}
-
-		// Since we have assets, we don't have a pool for, we don't know how to
-		// refund and withhold for fees. Instead, we'll create a pool with the
-		// amount of assets, and associate them with no stakers (meaning up for
-		// grabs). This could be like an airdrop scenario, for example.
-		// Don't assume this is the first time we've seen this coin (ie second
-		// airdrop).
-		pool.BalanceAsset = pool.BalanceAsset.Add(coin.Amount)
-		pool.Asset = coin.Asset
-		if pool.BalanceRune.IsZero() && pool.Status != PoolBootstrap {
-			pool.Status = PoolBootstrap
-			eventPoolStatusWrapper(ctx, keeper, pool)
-		}
-		keeper.SetPool(ctx, pool)
 	}
 }
 
@@ -1385,25 +1350,6 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolA
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
 	}
-}
-
-func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut *TxOutStore) {
-	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
-		// refund bond
-		txOutItem := &TxOutItem{
-			Chain:     common.BNBChain,
-			ToAddress: nodeAcc.BondAddress,
-			InHash:    txID,
-			Coin:      common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
-		}
-
-		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
-	}
-
-	nodeAcc.Bond = sdk.ZeroUint()
-	// disable the node account
-	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
-	keeper.SetNodeAccount(ctx, nodeAcc)
 }
 
 func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, validatorManager *ValidatorManager, msg MsgLeave) sdk.Result {
