@@ -20,7 +20,6 @@ type Smoke struct {
 	Balances     types.BalancesConfigs
 	Transactions []types.TransactionConfig
 	ApiAddr      string
-	Network      ctypes.ChainNetwork
 	PoolAddress  ctypes.AccAddress
 	PoolKey      string
 	Binance      Binance
@@ -33,7 +32,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, network ctypes.ChainNetwork, logFile string, sweep, fastFail, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, sweep, fastFail, debug bool) Smoke {
 	balRaw, err := ioutil.ReadFile(bal)
 	if err != nil {
 		log.Fatal(err)
@@ -79,8 +78,7 @@ func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, 
 		Balances:     balConfig,
 		Transactions: txnConfig,
 		ApiAddr:      apiAddr,
-		Network:      network,
-		Binance:      NewBinance(apiAddr, network, debug),
+		Binance:      NewBinance(apiAddr, debug),
 		Thorchain:    NewThorchain(env),
 		Keys:         keyMgr,
 		FastFail:     fastFail,

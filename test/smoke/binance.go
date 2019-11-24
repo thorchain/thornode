@@ -2,11 +2,13 @@ package smoke
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -26,18 +28,70 @@ type Binance struct {
 }
 
 // NewBinance : new instnance of Binance.
-func NewBinance(host string, chainId ctypes.ChainNetwork, debug bool) Binance {
-	ctypes.Network = chainId
+func NewBinance(host string, debug bool) Binance {
 
 	if !strings.HasPrefix(host, "http") {
 		host = fmt.Sprintf("http://%s", host)
 	}
 
-	return Binance{
-		debug:   debug,
-		host:    host,
-		chainId: chainId,
+	b := Binance{
+		debug: debug,
+		host:  host,
 	}
+
+	b.detectNetwork()
+
+	return b
+}
+
+func (b Binance) detectNetwork() {
+	// TODO: remove insecure skip verify
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
+
+	u, err := url.Parse(b.host)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	u.Path = "/status"
+
+	resp, err := client.Get(u.String())
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	type Status struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			NodeInfo struct {
+				Network string `json:"network"`
+			} `json:"node_info"`
+		} `json:"result"`
+	}
+
+	var status Status
+	if err := json.Unmarshal(data, &status); nil != err {
+		log.Fatal(err)
+	}
+
+	isTestNet := status.Result.NodeInfo.Network == "Binance-Chain-Nile"
+
+	if isTestNet {
+		b.chainId = ctypes.TestNetwork
+	} else {
+		b.chainId = ctypes.ProdNetwork
+	}
+	ctypes.Network = b.chainId
 }
 
 func (b Binance) GetAccount(addr ctypes.AccAddress) (ctypes.BaseAccount, error) {
