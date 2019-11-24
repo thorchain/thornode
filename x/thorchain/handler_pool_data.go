@@ -1,4 +1,4 @@
-package handler
+package thorchain
 
 import (
 	"fmt"
@@ -27,10 +27,9 @@ func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version i
 }
 
 func (h PoolDataHandler) ValidateV0(ctx sdk.Context, msg MsgSetPoolData) error {
-	err := isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners())
-	if err != nil {
-		ctx.Logger().Error(err.Error(), "asset", msg.Asset.String())
-		return err
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
+		ctx.Logger().Error(notAuthorized.Error(), "asset", msg.Asset.String())
+		return notAuthorized
 	}
 
 	if err := msg.ValidateBasic(); nil != err {
