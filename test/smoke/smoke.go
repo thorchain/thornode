@@ -24,7 +24,7 @@ type Smoke struct {
 	PoolAddress  ctypes.AccAddress
 	PoolKey      string
 	Binance      Binance
-	Statechain   Statechain
+	Thorchain    Thorchain
 	Keys         map[string]keys.KeyManager
 	SweepOnExit  bool
 	FastFail     bool
@@ -81,7 +81,7 @@ func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, 
 		ApiAddr:      apiAddr,
 		Network:      network,
 		Binance:      NewBinance(apiAddr, network, debug),
-		Statechain:   NewStatechain(env),
+		Thorchain:    NewThorchain(env),
 		Keys:         keyMgr,
 		FastFail:     fastFail,
 		SweepOnExit:  sweep,
@@ -89,7 +89,7 @@ func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, 
 	}
 
 	// detect pool address
-	smoke.PoolAddress = smoke.Statechain.PoolAddress()
+	smoke.PoolAddress = smoke.Thorchain.PoolAddress()
 
 	return smoke
 }
@@ -134,10 +134,10 @@ func (s *Smoke) Summary() {
 // Run : Where there's smoke, there's fire!
 func (s *Smoke) Run() bool {
 
-	// Check that we are starting with a blank set of statechain data
-	pools := s.Statechain.GetPools()
+	// Check that we are starting with a blank set of thorchain data
+	pools := s.Thorchain.GetPools()
 	if len(pools) > 0 {
-		log.Fatal("Statechain isn't blank. Smoke tests assume we are starting from a clean state")
+		log.Fatal("Thorchain isn't blank. Smoke tests assume we are starting from a clean state")
 	}
 
 	////////// Run the faucet ////////
@@ -187,11 +187,11 @@ func (s *Smoke) Run() bool {
 		}
 
 		if txn.Memo != "SEED" {
-			// Wait for the statechain to process a block
-			statechainHeight := s.Statechain.GetHeight()
+			// Wait for the thorchain to process a block
+			thorchainHeight := s.Thorchain.GetHeight()
 			for {
-				newHeight := s.Statechain.GetHeight()
-				if statechainHeight < newHeight {
+				newHeight := s.Thorchain.GetHeight()
+				if thorchainHeight < newHeight {
 					break
 				}
 			}
@@ -234,7 +234,7 @@ func (s *Smoke) Run() bool {
 		}
 		bal.Vault = balances
 
-		pools := s.Statechain.GetPools()
+		pools := s.Thorchain.GetPools()
 		for _, pool := range pools {
 			balances := make(map[string]int64, 0)
 			balances["RUNE-A1F"] = pool.BalanceRune
@@ -277,7 +277,7 @@ func (s *Smoke) Run() bool {
 
 // Sweep : Transfer all assets back to the faucet.
 func (s *Smoke) Sweep() {
-	// TODO: send statechain txs to cause ragnarok
+	// TODO: send thorchain txs to cause ragnarok
 	/*
 		keys := make([]string, len(s.Tests.ActorList)+1)
 		key, _ := s.Tests.ActorKeys["pool"].ExportAsPrivateKey()

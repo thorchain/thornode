@@ -20,26 +20,26 @@ var endpoints = map[string]string{
 	"production": "testnet-chain.bepswap.com",
 }
 
-type Statechain struct {
+type Thorchain struct {
 	Env string
 }
 
-// NewStatechain : Create a new Statechain instance.
-func NewStatechain(env string) Statechain {
-	return Statechain{
+// NewThorchain : Create a new Thorchain instance.
+func NewThorchain(env string) Thorchain {
+	return Thorchain{
 		Env: env,
 	}
 }
 
-func (s Statechain) PoolAddress() ctypes.AccAddress {
+func (s Thorchain) PoolAddress() ctypes.AccAddress {
 	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
 	time.Sleep(1 * time.Second)
 
-	var addrs types.StatechainPoolAddress
+	var addrs types.ThorchainPoolAddress
 
 	resp, err := http.Get(s.PoolAddressesURL())
 	if err != nil {
-		log.Fatalf("Failed getting statechain: %v\n", err)
+		log.Fatalf("Failed getting thorchain: %v\n", err)
 	}
 	defer resp.Body.Close()
 
@@ -65,16 +65,16 @@ func (s Statechain) PoolAddress() ctypes.AccAddress {
 	return addr
 }
 
-// GetStatechain : Get the Statehcain pools.
-func (s Statechain) GetPools() types.StatechainPools {
+// GetThorchain : Get the Statehcain pools.
+func (s Thorchain) GetPools() types.ThorchainPools {
 	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
 	time.Sleep(1 * time.Second)
 
-	var pools types.StatechainPools
+	var pools types.ThorchainPools
 
 	resp, err := http.Get(s.PoolURL())
 	if err != nil {
-		log.Fatalf("Failed getting statechain: %v\n", err)
+		log.Fatalf("Failed getting thorchain: %v\n", err)
 	}
 	defer resp.Body.Close()
 
@@ -90,7 +90,7 @@ func (s Statechain) GetPools() types.StatechainPools {
 	return pools
 }
 
-func (s Statechain) GetHeight() int {
+func (s Thorchain) GetHeight() int {
 	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
 	time.Sleep(1 * time.Second)
 
@@ -98,7 +98,7 @@ func (s Statechain) GetHeight() int {
 
 	resp, err := http.Get(s.BlockURL())
 	if err != nil {
-		log.Fatalf("Failed getting statechain: %v\n", err)
+		log.Fatalf("Failed getting thorchain: %v\n", err)
 	}
 	defer resp.Body.Close()
 
@@ -116,7 +116,7 @@ func (s Statechain) GetHeight() int {
 }
 
 // Scheme : SSL or not.
-func (s Statechain) scheme() string {
+func (s Thorchain) scheme() string {
 	scheme := "https"
 
 	if s.Env == "local" {
@@ -126,20 +126,20 @@ func (s Statechain) scheme() string {
 	return scheme
 }
 
-func (s Statechain) BlockURL() string {
+func (s Thorchain) BlockURL() string {
 	return fmt.Sprintf("%v://%v/thorchain/lastblock", s.scheme(), endpoints[s.Env])
 }
 
 // PoolURL : Return the Pool URL based on the selected environment.
-func (s Statechain) PoolURL() string {
+func (s Thorchain) PoolURL() string {
 	return fmt.Sprintf("%v://%v/thorchain/pools", s.scheme(), endpoints[s.Env])
 }
 
 // StakerURL  : Return the Staker URL based on the selected environment.
-func (s Statechain) StakerURL(staker string) string {
+func (s Thorchain) StakerURL(staker string) string {
 	return fmt.Sprintf("%v://%v/thorchain/staker/%v", s.scheme(), endpoints[s.Env], staker)
 }
 
-func (s Statechain) PoolAddressesURL() string {
+func (s Thorchain) PoolAddressesURL() string {
 	return fmt.Sprintf("%v://%v/thorchain/pooladdresses", s.scheme(), endpoints[s.Env])
 }
