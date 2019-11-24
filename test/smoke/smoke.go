@@ -32,7 +32,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, sweep, fastFail, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, fastFail, debug bool) Smoke {
 	balRaw, err := ioutil.ReadFile(bal)
 	if err != nil {
 		log.Fatal(err)
@@ -55,6 +55,7 @@ func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, 
 
 	keyMgr := make(map[string]keys.KeyManager, 0)
 
+	sweep := true
 	// Faucet
 	if len(faucetKey) > 0 {
 		var err error
@@ -62,6 +63,7 @@ func NewSmoke(apiAddr, faucetKey string, poolKey, env string, bal, txns string, 
 		if err != nil {
 			log.Fatalf("Failed to create faucet key manager: %s", err)
 		}
+		sweep = false
 	}
 
 	// Pool
