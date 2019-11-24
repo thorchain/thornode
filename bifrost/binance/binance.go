@@ -2,6 +2,7 @@ package binance
 
 import (
 	"bytes"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -35,6 +36,7 @@ type Binance struct {
 	RPCHost    string
 	chainId    string
 	useTSS     bool
+	isTestNet  bool
 }
 
 // NewBinance create new instance of binance client
@@ -43,7 +45,7 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 		return nil, errors.New("no private key")
 	}
 	if len(cfg.RPCHost) == 0 {
-		return nil, errors.New("dex host is empty, set env DEX_HOST")
+		return nil, errors.New("rpc host is empty")
 	}
 	var km keys.KeyManager
 	var err error
@@ -59,31 +61,44 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 		}
 	}
 
+	rpcHost := cfg.RPCHost
+	if !strings.HasPrefix(rpcHost, "http") {
+		rpcHost = fmt.Sprintf("http://%s", rpcHost)
+	}
+
+	chainId, isTestNet := IsTestNet(rpcHost)
+	if isTestNet {
+		types.Network = types.TestNetwork
+	} else {
+		types.Network = types.ProdNetwork
+	}
+
 	return &Binance{
 		logger:     log.With().Str("module", "binance").Logger(),
 		cfg:        cfg,
 		keyManager: km,
-		RPCHost:    cfg.RPCHost,
-		chainId:    "Binance-Chain-Nile", // TODO: this should be configurable
+		RPCHost:    rpcHost,
+		chainId:    chainId,
+		isTestNet:  isTestNet,
 		useTSS:     useTSS,
 	}, nil
 }
 
-func IsTestNet(dexHost string) bool {
-	client := &http.Client{}
+func IsTestNet(rpcHost string) (string, bool) {
+	// TODO: remove insecure skip verify
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{Transport: tr}
 
-	u, err := url.Parse(dexHost)
+	u, err := url.Parse(rpcHost)
 	if err != nil {
-		log.Fatal().Msgf("Unable to parse dex host: %s\n", dexHost)
+		log.Fatal().Msgf("Unable to parse rpc host: %s\n", rpcHost)
 	}
 
-	uri := url.URL{
-		Scheme: u.Scheme,
-		Host:   u.Host,
-		Path:   "/status",
-	}
+	u.Path = "/status"
 
-	resp, err := client.Get(uri.String())
+	resp, err := client.Get(u.String())
 	if err != nil {
 		log.Fatal().Msgf("%v\n", err)
 	}
@@ -114,7 +129,8 @@ func IsTestNet(dexHost string) bool {
 		log.Error().Err(err)
 	}
 
-	return status.Result.NodeInfo.Network == "Binance-Chain-Nile"
+	isTestNet := status.Result.NodeInfo.Network == "Binance-Chain-Nile"
+	return status.Result.NodeInfo.Network, isTestNet
 }
 
 func (b *Binance) input(addr types.AccAddress, coins types.Coins) msg.Input {
@@ -341,13 +357,9 @@ func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 }
 
 func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) error {
-	u, err := url.Parse(b.cfg.RPCHost)
+	u, err := url.Parse(b.RPCHost)
 	if err != nil {
-		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.cfg.RPCHost, err)
-	}
-	if u == nil {
-		u.Scheme = "http"
-		u.Host = b.cfg.RPCHost
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
 	}
 	u.Path = "broadcast_tx_commit"
 	_, err = http.Post(u.String(), "", bytes.NewReader(hexTx))

@@ -61,6 +61,8 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 	}
 	if isTestNet {
 		types.Network = types.TestNetwork
+	} else {
+		types.Network = types.ProdNetwork
 	}
 	return &BinanceBlockScanner{
 		cfg:                cfg,

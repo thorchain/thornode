@@ -32,7 +32,8 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api:1317
+      CHAIN_RPC: thor-daemon:26657
+      CHAIN_API: thor-api:1317
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
       NET: ${NET}
     entrypoint:
@@ -46,7 +47,7 @@ services:
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/standalone/keys:/root/.signer
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
-    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    command: ["signd", "-l", "debug", "-c", "/etc/observe/signd/config.json"]
 
   thor-daemon:
     hostname: thor-daemon
