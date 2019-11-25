@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
+	"strconv"
 	"strings"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
@@ -57,6 +59,8 @@ func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string,
 	keyMgr := make(map[string]keys.KeyManager, 0)
 
 	thor := NewThorchain(env)
+	// wait for thorchain to become available
+	thor.WaitForAvailability()
 
 	// Detect if we should sweep for funds at the end
 	sweep := false
@@ -254,7 +258,23 @@ func (s *Smoke) Run() bool {
 		log.Fatalf("Send Tx failure: %s", err)
 	}
 
+	stopID := int64(0)
+	if id := os.Getenv("STOP_ID"); id != "" {
+		var err error
+		stopID, err = strconv.ParseInt(os.Getenv("STOP_ID"), 10, 64)
+		if err != nil {
+			stopID = 0
+		}
+	}
+
 	for _, txn := range s.Transactions {
+
+		// check if we are stopping at this tx
+		if stopID > 0 && txn.Tx >= stopID {
+			s.Summarize()
+			// exit it succesfully
+			return true
+		}
 
 		if err := s.Transfer(txn); err != nil {
 			log.Fatalf("Send Tx failure: %s", err)
