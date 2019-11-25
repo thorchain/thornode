@@ -76,6 +76,7 @@ smoke-test:thornode:
     - make -C build/docker run-standaloneWithMockBinance
     - docker ps
     - docker logs $(docker ps | grep daemon | awk '{ print $1 }')
+    - sleep 30
     - docker logs $(docker ps | grep api | awk '{ print $1 }')
     - make tools smoke-local
 
