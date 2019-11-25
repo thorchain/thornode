@@ -74,7 +74,7 @@ smoke-test:thornode:
     name: integration
   script: 
     - make -C build/docker run-standaloneWithMockBinance
-    - STOP_ID=6 make tools smoke-ci
+    - make tools smoke-ci
 
 deploy:develop:
   stage: deploy

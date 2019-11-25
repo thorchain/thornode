@@ -86,7 +86,7 @@ smoke-local:
 	bsinner -a localhost:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e local -x
 
 smoke-ci:
-	bsinner -a docker:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e ci -x
+	STOP_ID=6 bsinner -a docker:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e ci -x
 
 export:
 	thord export
