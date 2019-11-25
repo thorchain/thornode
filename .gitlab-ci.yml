@@ -77,6 +77,8 @@ smoke-test:thornode:
     - pip install docker-compose
     - make -C build/docker run-standaloneWithMockBinance
     - make tools smoke-local
+    - docker ps
+    - docker logs $(docker ps | grep daemon | awk '{ print $1 }')
 
 deploy:develop:
   stage: deploy
