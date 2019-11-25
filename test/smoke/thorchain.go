@@ -41,11 +41,12 @@ func (s Thorchain) WaitForAvailability() {
 	uri := s.getUrl("ping")
 	var count int
 	for {
+		fmt.Println("Waiting for thorchain availability")
 		resp, err := http.Get(uri)
 		if resp != nil && resp.StatusCode == 200 {
 			break
 		}
-		fmt.Println("Waiting for thorchain availability")
+		fmt.Printf("Ping error: %s\n", err)
 		count += 1
 		if count > 300 {
 			fmt.Println("Timeout: thorchain is unavailable")
