@@ -18,6 +18,7 @@ import (
 )
 
 var endpoints = map[string]string{
+	"ci":         "docker:1317",
 	"local":      "localhost:1317",
 	"staging":    "testnet-chain.bepswap.io",
 	"develop":    "testnet-chain.bepswap.net",
