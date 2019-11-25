@@ -81,6 +81,5 @@ func (s *Sweep) SendTxn(key keys.KeyManager, payload []msg.Transfer, memo string
 		return err
 	}
 
-	err = s.Binance.BroadcastTx(hex, params)
-	return err
+	return s.Binance.BroadcastTx(hex, params)
 }

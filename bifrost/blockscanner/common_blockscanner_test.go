@@ -35,12 +35,12 @@ func (CommonBlockScannerTestSuite) TestNewCommonBlockScanner(c *C) {
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
-		RPCHost: "http://localhost",
+		RPCHost: "localhost",
 	}, mss, nil)
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
-		RPCHost: "http://localhost",
+		RPCHost: "localhost",
 	}, mss, m)
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)

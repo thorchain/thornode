@@ -301,20 +301,14 @@ func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string) ([]byte, err
 }
 
 func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
-	host := b.cfg.RPCHost
-	if !strings.HasPrefix(host, "http") {
-		host = fmt.Sprintf("http://%s", host)
-	}
-
-	u, err := url.Parse(host)
+	u, err := url.Parse(b.RPCHost)
 	if err != nil {
-		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.cfg.RPCHost, err)
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
 		return types.BaseAccount{}, err
 	}
 	u.Path = "/abci_query"
 	u.RawQuery = fmt.Sprintf("path=\"/account/%s\"", addr.String())
 
-	// TODO: don't hard code to http protocol
 	resp, err := http.Get(u.String())
 	if err != nil {
 		return types.BaseAccount{}, err
