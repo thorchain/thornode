@@ -75,6 +75,7 @@ smoke-test:thornode:
   script: 
     - apk add --no-cache py-pip python-dev libffi-dev openssl-dev gcc libc-dev make
     - pip install docker-compose
+    - apk add docker
     - make -C build/docker run-standaloneWithMockBinance
     - docker ps
     - docker logs -f $(docker ps | grep daemon | awk '{ print $1 }')
