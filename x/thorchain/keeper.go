@@ -15,38 +15,43 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/common"
 )
 
+// NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there
+// are no prefixes that contain another prefix. In the scenario where this is
+// true, an iterator for a specific type, will get more than intended, and may
+// include a different type. The slash is used to protect us from this
+// scenario.
+// Also, use underscores between words and use lowercase characters only
 type dbPrefix string
 
 const (
-	prefixTxIn               dbPrefix = "tx_"
-	prefixPool               dbPrefix = "pool_"
-	prefixTxOut              dbPrefix = "txout_"
-	prefixTotalLiquidityFee  dbPrefix = "total_liquidityfee_"
-	prefixPoolLiquidityFee   dbPrefix = "poolliquidityfee_"
-	prefixPoolStaker         dbPrefix = "poolstaker_"
-	prefixStakerPool         dbPrefix = "stakerpool_"
-	prefixAdmin              dbPrefix = "admin_"
-	prefixTxInIndex          dbPrefix = "txinIndex_"
-	prefixInCompleteEvents   dbPrefix = "incomplete_events_"
-	prefixCompleteEvent      dbPrefix = "complete_event_"
-	prefixLastEventID        dbPrefix = "last_event_id_"
-	prefixLastChainHeight    dbPrefix = "last_chain_height_"
-	prefixLastSignedHeight   dbPrefix = "last_signed_height_"
-	prefixNodeAccount        dbPrefix = "node_account_"
-	prefixActiveObserver     dbPrefix = "active_observer_"
-	prefixPoolAddresses      dbPrefix = "pooladdresses_"
-	prefixValidatorMeta      dbPrefix = "validator_meta_"
-	prefixSupportedChains    dbPrefix = "supported_chains_"
-	prefixYggdrasilPool      dbPrefix = "yggdrasil_"
-	prefixVaultData          dbPrefix = "vault_data_"
-	prefixObservingAddresses dbPrefix = "observing_addresses_"
-	prefixReserves           dbPrefix = "reserves_"
+	prefixTxIn               dbPrefix = "tx/"
+	prefixPool               dbPrefix = "pool/"
+	prefixPoolIndex          dbPrefix = "pool_index/"
+	prefixTxOut              dbPrefix = "txout/"
+	prefixTotalLiquidityFee  dbPrefix = "total_liquidity_fee/"
+	prefixPoolLiquidityFee   dbPrefix = "pool_liquidityfee/"
+	prefixPoolStaker         dbPrefix = "pool_staker/"
+	prefixStakerPool         dbPrefix = "staker_pool/"
+	prefixAdmin              dbPrefix = "admin/"
+	prefixTxInIndex          dbPrefix = "txin_index/"
+	prefixInCompleteEvents   dbPrefix = "incomplete_events/"
+	prefixCompleteEvent      dbPrefix = "complete_event/"
+	prefixLastEventID        dbPrefix = "last_event_id/"
+	prefixLastChainHeight    dbPrefix = "last_chain_height/"
+	prefixLastSignedHeight   dbPrefix = "last_signed_height/"
+	prefixNodeAccount        dbPrefix = "node_account/"
+	prefixActiveObserver     dbPrefix = "active_observer/"
+	prefixPoolAddresses      dbPrefix = "pool_addresses/"
+	prefixValidatorMeta      dbPrefix = "validator_meta/"
+	prefixSupportedChains    dbPrefix = "supported_chains/"
+	prefixYggdrasilPool      dbPrefix = "yggdrasil/"
+	prefixVaultData          dbPrefix = "vault_data/"
+	prefixObservingAddresses dbPrefix = "observing_addresses/"
+	prefixReserves           dbPrefix = "reserves/"
 )
 
-const poolIndexKey = "poolindexkey"
-
 func getKey(prefix dbPrefix, key string, version int64) string {
-	return fmt.Sprintf("%s_%d_%s", prefix, version, strings.ToUpper(key))
+	return fmt.Sprintf("%s%d/%s", prefix, version, strings.ToUpper(key))
 }
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
@@ -201,10 +206,11 @@ func (k Keeper) PoolExist(ctx sdk.Context, asset common.Asset) bool {
 // GetPoolIndex retrieve pool index from the data store
 func (k Keeper) GetPoolIndex(ctx sdk.Context) (PoolIndex, error) {
 	store := ctx.KVStore(k.storeKey)
-	if !store.Has([]byte(poolIndexKey)) {
+	key := getKey(prefixPoolIndex, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolIndex))
+	if !store.Has([]byte(key)) {
 		return PoolIndex{}, nil
 	}
-	buf := store.Get([]byte(poolIndexKey))
+	buf := store.Get([]byte(key))
 	var pi PoolIndex
 	if err := k.cdc.UnmarshalBinaryBare(buf, &pi); nil != err {
 		ctx.Logger().Error(fmt.Sprintf("fail to unmarshal poolindex,err: %s", err))
@@ -216,7 +222,8 @@ func (k Keeper) GetPoolIndex(ctx sdk.Context) (PoolIndex, error) {
 // SetPoolIndex write a pool index into datastore
 func (k Keeper) SetPoolIndex(ctx sdk.Context, pi PoolIndex) {
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(poolIndexKey), k.cdc.MustMarshalBinaryBare(&pi))
+	key := getKey(prefixPoolIndex, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolIndex))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&pi))
 }
 
 // AddToPoolIndex will add the given asset into the poolindex
