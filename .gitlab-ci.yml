@@ -76,7 +76,7 @@ smoke-test:thornode:
     - apk add --no-cache py-pip python-dev libffi-dev openssl-dev gcc libc-dev make
     - pip install docker-compose
     - make -C build/docker run-standaloneWithMockBinance
-    - make smoke-local
+    - make tools smoke-local
 
 deploy:develop:
   stage: deploy
