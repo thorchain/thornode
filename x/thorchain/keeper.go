@@ -1030,6 +1030,24 @@ func (k Keeper) SetVaultData(ctx sdk.Context, data VaultData) {
 func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 	vault := k.GetVaultData(ctx)
 	currentHeight := uint64(ctx.BlockHeight())
+
+	// First get active pools and total staked Rune
+	totalRune := sdk.ZeroUint()
+	assets, _ := k.GetPoolIndex(ctx)
+	var pools []Pool
+	for _, asset := range assets {
+		pool := k.GetPool(ctx, asset)
+		if pool.IsEnabled() && !pool.BalanceRune.IsZero() {
+			totalRune = totalRune.Add(pool.BalanceRune)
+			pools = append(pools, pool)
+		}
+	}
+
+	if totalRune.IsZero() {
+		return // If no Rune is staked, then don't give out block rewards.
+	}
+
+	// Then get fees and rewards
 	totalFees, _ := k.GetTotalLiquidityFees(ctx, currentHeight)
 	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees)
 
@@ -1041,18 +1059,6 @@ func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 			vault.TotalReserve = vault.TotalReserve.Sub(bondReward).Sub(totalPoolRewards) // Subtract Bond and Pool rewards
 		}
 		vault.BondRewardRune = vault.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
-	}
-
-	// Get all the pools that are active
-	totalRune := sdk.ZeroUint()
-	assets, _ := k.GetPoolIndex(ctx)
-	var pools []Pool
-	for _, asset := range assets {
-		pool := k.GetPool(ctx, asset)
-		if pool.IsEnabled() && !pool.BalanceRune.IsZero() {
-			totalRune = totalRune.Add(pool.BalanceRune)
-			pools = append(pools, pool)
-		}
 	}
 
 	if !totalPoolRewards.IsZero() { // If Pool Rewards to hand out
