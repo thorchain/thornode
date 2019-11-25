@@ -144,7 +144,7 @@ func (s Thorchain) GetHeight() int {
 
 func (s Thorchain) getUrl(p string) string {
 	scheme := "https"
-	if s.Env == "local" {
+	if s.Env == "local" || s.Env == "ci" {
 		scheme = "http"
 	}
 	u := url.URL{
