@@ -29,4 +29,6 @@ type poolStorage interface {
 
 	AddIncompleteEvents(ctx sdk.Context, event Event)
 	SetCompletedEvent(ctx sdk.Context, event Event)
+
+	AddFeeToReserve(ctx sdk.Context, fee sdk.Uint)
 }

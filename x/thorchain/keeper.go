@@ -1027,6 +1027,13 @@ func (k Keeper) SetVaultData(ctx sdk.Context, data VaultData) {
 }
 
 // Update the vault data to reflect changing in this block
+func (k Keeper) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) {
+	vault := k.GetVaultData(ctx)
+	vault.TotalReserve = vault.TotalReserve.Add(fee)
+	k.SetVaultData(ctx, vault)
+}
+
+// Update the vault data to reflect changing in this block
 func (k Keeper) UpdateVaultData(ctx sdk.Context) {
 	vault := k.GetVaultData(ctx)
 	currentHeight := uint64(ctx.BlockHeight())

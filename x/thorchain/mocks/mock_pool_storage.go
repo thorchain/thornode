@@ -79,3 +79,5 @@ func (mps MockPoolStorage) SetCompletedEvent(ctx sdk.Context, event types.Event)
 func (mps MockPoolStorage) GetLowestActiveVersion(ctx sdk.Context) int64 {
 	return 0
 }
+
+func (mps MockPoolStorage) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) {}

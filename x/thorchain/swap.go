@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 // validate if pools exist
@@ -76,9 +77,16 @@ func swap(ctx sdk.Context,
 	asset := source
 	if source.IsRune() {
 		asset = target
+		// Deduct the fee before Swap (also called during DoubleSwap)
+		deductFee(ctx, keeper, tx.Coins[0].Amount)
 	}
 	pool := keeper.GetPool(ctx, asset)
 	assetAmount, pool, err := swapOne(ctx, keeper, tx, pool, target, destination, tradeTarget, globalSlipLimit)
+	if !source.IsRune() {
+		// Deduct the fee after Swap (not called during DoubleSwap)
+		deductFee(ctx, keeper, assetAmount)
+	}
+
 	if err != nil {
 		return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, target)
 	}
@@ -87,7 +95,7 @@ func swap(ctx sdk.Context,
 		return sdk.ZeroUint(), errors.Errorf("emit asset %s less than price limit %s", assetAmount, tradeTarget)
 	}
 
-	// update pools
+	// Update pools
 	for _, pool := range pools {
 		keeper.SetPool(ctx, pool)
 	}
@@ -169,7 +177,7 @@ func swapOne(ctx sdk.Context,
 	// Get our slip limits
 	gsl := globalSlipLimit.Float64() // global slip limit
 
-	// get our X, x, Y values
+	// Get our X, x, Y values
 	if source.IsRune() {
 		X = pool.BalanceRune
 		Y = pool.BalanceAsset
@@ -201,12 +209,10 @@ func swapOne(ctx sdk.Context,
 	}
 
 	// do we have enough balance to swap?
-
 	if emitAssets.GT(Y) {
 		return sdk.ZeroUint(), pool, errors.New("asset :%s balance is 0, can't do swap")
 	}
 	// Need to convert to float before the calculation , otherwise 0.1 becomes 0, which is bad
-
 	if poolSlip > gsl {
 		ctx.Logger().Info("poolslip over global pool slip limit", "poolslip", fmt.Sprintf("%.2f", poolSlip), "gsl", fmt.Sprintf("%.2f", gsl))
 		return sdk.ZeroUint(), pool, errors.Errorf("pool slip:%f is over global pool slip limit :%f", poolSlip, gsl)
@@ -223,6 +229,16 @@ func swapOne(ctx sdk.Context,
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sAsset , user get:%s ", pool.BalanceRune, pool.BalanceAsset, emitAssets))
 
 	return emitAssets, pool, nil
+}
+
+func deductFee(ctx sdk.Context, keeper poolStorage, assetAmount sdk.Uint) {
+	if assetAmount.LTE(sdk.NewUint(constants.TransactionFee)) {
+		keeper.AddFeeToReserve(ctx, assetAmount) // Add the Swap Fee to Reserve
+		assetAmount = sdk.ZeroUint()             // None left
+	} else {
+		keeper.AddFeeToReserve(ctx, sdk.NewUint(constants.TransactionFee))   //Add the Swap Fee to Reserve
+		assetAmount = assetAmount.Sub(sdk.NewUint(constants.TransactionFee)) // Deduct from transaction
+	}
 }
 
 /*
