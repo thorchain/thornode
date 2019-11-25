@@ -38,10 +38,10 @@ func NewThorchain(env string) Thorchain {
 // WaitForAvailability - pings thorchain until its available
 func (s Thorchain) WaitForAvailability() {
 	uri := s.getUrl("ping")
-	fmt.Printf("Ping URL: %s\n", uri.String())
+	fmt.Printf("Ping URL: %s\n", uri)
 	var count int
 	for {
-		resp, err := http.Get(uri.String())
+		resp, err := http.Get(uri)
 		fmt.Printf("Resp: %+v\n", resp)
 		fmt.Printf("Err: %+v\n", err)
 		if resp != nil && resp.StatusCode == 200 {
