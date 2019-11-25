@@ -39,6 +39,7 @@ type BinanceBlockScanner struct {
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
 	addrVal            AddressValidator
+	rpcHost            string
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
@@ -46,6 +47,12 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
+
+	rpcHost := cfg.RPCHost
+	if !strings.HasPrefix(rpcHost, "http") {
+		rpcHost = fmt.Sprintf("http://%s", rpcHost)
+	}
+
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
 	}
@@ -74,6 +81,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 		db:                 scanStorage,
 		commonBlockScanner: commonBlockScanner,
 		errCounter:         m.GetCounterVec(metrics.BinanceBlockScanError),
+		rpcHost:            rpcHost,
 	}, nil
 }
 
@@ -93,13 +101,9 @@ func (b *BinanceBlockScanner) Start() {
 
 // need to process multiple pages
 func (b *BinanceBlockScanner) getTxSearchUrl(block int64, currentPage, numberPerPage int64) string {
-	u, err := url.Parse(b.cfg.RPCHost)
+	u, err := url.Parse(b.rpcHost)
 	if err != nil {
-		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.cfg.RPCHost, err)
-	}
-	if u == nil {
-		u.Scheme = "http"
-		u.Host = b.cfg.RPCHost
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.rpcHost, err)
 	}
 	u.Path = "tx_search"
 

@@ -39,12 +39,9 @@ func NewThorchain(env string) Thorchain {
 // WaitForAvailability - pings thorchain until its available
 func (s Thorchain) WaitForAvailability() {
 	uri := s.getUrl("ping")
-	fmt.Printf("Ping URL: %s\n", uri)
 	var count int
 	for {
 		resp, err := http.Get(uri)
-		fmt.Printf("Resp: %+v\n", resp)
-		fmt.Printf("Err: %+v\n", err)
 		if resp != nil && resp.StatusCode == 200 {
 			break
 		}
@@ -156,12 +153,12 @@ func (s Thorchain) getUrl(p string) string {
 }
 
 func (s Thorchain) BlockURL() string {
-	return s.getUrl("lastblock")
+	return s.getUrl("/lastblock")
 }
 
 // PoolURL : Return the Pool URL based on the selected environment.
 func (s Thorchain) PoolURL() string {
-	return s.getUrl("pools")
+	return s.getUrl("/pools")
 }
 
 // StakerURL  : Return the Staker URL based on the selected environment.
@@ -170,5 +167,5 @@ func (s Thorchain) StakerURL(staker string) string {
 }
 
 func (s Thorchain) PoolAddressesURL() string {
-	return s.getUrl("pooladdresses")
+	return s.getUrl("/pooladdresses")
 }

@@ -43,19 +43,14 @@ type Observer struct {
 // TODO: this func is a duplicate of `getBlockUrl` and `getRPCBlock`. We don't
 // need two funcs that return the current block height. Consolidate and remove
 // one from `mock-binance`
-func binanceHeight(dexHost string, client http.Client) (int64, error) {
-	u, err := url.Parse(dexHost)
+func binanceHeight(rpcHost string, client http.Client) (int64, error) {
+	u, err := url.Parse(rpcHost)
 	if err != nil {
 		return 0, errors.Wrap(err, "Unable to parse dex host")
 	}
+	u.Path = "abci_info"
 
-	uri := url.URL{
-		Scheme: u.Scheme,
-		Host:   u.Host,
-		Path:   "/abci_info",
-	}
-
-	resp, err := client.Get(uri.String())
+	resp, err := client.Get(u.String())
 	if err != nil {
 		return 0, errors.Wrap(err, "Get request failed")
 	}

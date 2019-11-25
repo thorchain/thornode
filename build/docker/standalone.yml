@@ -47,7 +47,7 @@ services:
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/standalone/keys:/root/.signer
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
-    command: ["signd", "-l", "debug", "-c", "/etc/observe/signd/config.json"]
+    command: ["signd", "-c", "/etc/observe/signd/config.json"]
 
   thor-daemon:
     hostname: thor-daemon

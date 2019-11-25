@@ -60,7 +60,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 	c.Assert(b, IsNil)
 	c.Assert(err, NotNil)
 	b1, err1 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    "http://localhost",
+		RPCHost:    "localhost",
 		PrivateKey: "",
 	}, false, tssCfg)
 	c.Assert(b1, IsNil)
@@ -85,13 +85,13 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 	c.Assert(b2, NotNil)
 	return
 	b3, err3 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    "http://localhost",
+		RPCHost:    "localhost",
 		PrivateKey: "asdfsdfdsf",
 	}, false, tssCfg)
 	c.Assert(b3, IsNil)
 	c.Assert(err3, NotNil)
 	b4, err4 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    "http://localhost",
+		RPCHost:    "localhost",
 		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
 	}, false, tssCfg)
 	c.Assert(b4, IsNil)
@@ -215,7 +215,7 @@ func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 	}))
 	tssCfg := config.TSSConfiguration{
 		Scheme: "http",
-		Host:   "127.0.0.1",
+		Host:   "localhost",
 		Port:   0,
 	}
 
