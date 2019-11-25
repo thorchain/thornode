@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"path"
 	"strconv"
 	"time"
@@ -31,6 +32,25 @@ type Thorchain struct {
 func NewThorchain(env string) Thorchain {
 	return Thorchain{
 		Env: env,
+	}
+}
+
+// WaitForAvailability - pings thorchain until its available
+func (s Thorchain) WaitForAvailability() {
+	uri := s.getUrl("ping")
+	var count int
+	for {
+		resp, _ := http.Get(uri)
+		if resp != nil && resp.StatusCode == 200 {
+			break
+		}
+		fmt.Println("Waiting for thorchain availability")
+		count += 1
+		if count > 300 {
+			fmt.Println("Timeout: thorchain is unavailable")
+			os.Exit(1)
+		}
+		time.Sleep(1 * time.Second)
 	}
 }
 

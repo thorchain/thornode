@@ -65,17 +65,15 @@ smoke-test:thornode:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
     NODES: 1
-  only:
-    - master
   before_script:
-    - apt-get update
-    - apt-get install -y jq
     - export GOBIN=$GOPATH/bin
   except:
     - schedules
   environment:
-    name: develop
-  script: make smoke-test
+    name: integration
+  script: 
+    - make -c build/docker run-standaloneWithMockBinance
+    - make smoke-local
 
 deploy:develop:
   stage: deploy

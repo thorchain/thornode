@@ -83,7 +83,6 @@ smoke-test: tools install
 	./build/scripts/smoke.sh
 
 smoke-local:
-	echo "Ensure mock-binance is running..."
 	bsinner -a localhost:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e local -x
 
 export:
