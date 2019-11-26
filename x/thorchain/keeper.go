@@ -94,6 +94,7 @@ type Keeper interface {
 	SupportedChain(ctx sdk.Context, chain common.Chain) bool
 	AddChain(ctx sdk.Context, chain common.Chain)
 	GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator
+	YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool
 	FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error)
 	SetYggdrasil(ctx sdk.Context, ygg Yggdrasil)
 	GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil
