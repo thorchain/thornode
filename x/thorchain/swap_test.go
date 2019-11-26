@@ -9,7 +9,6 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 
-	"gitlab.com/thorchain/thornode/x/thorchain/mocks"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -24,7 +23,7 @@ func (s *SwapSuite) SetUpSuite(c *C) {
 }
 
 func (s SwapSuite) TestSwap(c *C) {
-	poolStorage := mocks.MockPoolStorage{}
+	poolStorage := MockPoolStorage{}
 	ctx, _ := setupKeeperForTest(c)
 	globalSlipLimit := common.Amount("0.200000")
 	inputs := []struct {
@@ -217,7 +216,7 @@ func (s SwapSuite) TestSwap(c *C) {
 }
 
 func (s SwapSuite) TestValidatePools(c *C) {
-	keeper := mocks.MockPoolStorage{}
+	keeper := MockPoolStorage{}
 	ctx, _ := setupKeeperForTest(c)
 	c.Check(validatePools(ctx, keeper, common.RuneAsset()), IsNil)
 	c.Check(validatePools(ctx, keeper, common.Asset{Chain: common.BNBChain, Ticker: "NOTEXIST", Symbol: "NOTEXIST"}), NotNil)

@@ -10,7 +10,7 @@ import (
 )
 
 // validate if pools exist
-func validatePools(ctx sdk.Context, keeper poolStorage, assets ...common.Asset) error {
+func validatePools(ctx sdk.Context, keeper Keeper, assets ...common.Asset) error {
 	for _, asset := range assets {
 		if !asset.IsRune() {
 			if !keeper.PoolExist(ctx, asset) {
@@ -42,7 +42,7 @@ func validateMessage(tx common.Tx, target common.Asset, destination common.Addre
 }
 
 func swap(ctx sdk.Context,
-	keeper poolStorage, tx common.Tx,
+	keeper Keeper, tx common.Tx,
 	target common.Asset,
 	destination common.Address,
 	tradeTarget sdk.Uint,
@@ -95,7 +95,7 @@ func swap(ctx sdk.Context,
 }
 
 func swapOne(ctx sdk.Context,
-	keeper poolStorage, tx common.Tx, pool Pool,
+	keeper Keeper, tx common.Tx, pool Pool,
 	target common.Asset,
 	destination common.Address,
 	tradeTarget sdk.Uint,
