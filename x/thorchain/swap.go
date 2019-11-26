@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/bepswap/thornode/common"
-	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 // validate if pools exist
@@ -220,16 +219,6 @@ func swapOne(ctx sdk.Context,
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sAsset , user get:%s ", pool.BalanceRune, pool.BalanceAsset, emitAssets))
 
 	return emitAssets, pool, nil
-}
-
-func deductFee(ctx sdk.Context, keeper poolStorage, assetAmount sdk.Uint) {
-	if assetAmount.LTE(sdk.NewUint(constants.TransactionFee)) {
-		keeper.AddFeeToReserve(ctx, assetAmount) // Add the Swap Fee to Reserve
-		assetAmount = sdk.ZeroUint()             // None left
-	} else {
-		keeper.AddFeeToReserve(ctx, sdk.NewUint(constants.TransactionFee))   //Add the Swap Fee to Reserve
-		assetAmount = assetAmount.Sub(sdk.NewUint(constants.TransactionFee)) // Deduct from transaction
-	}
 }
 
 /*
