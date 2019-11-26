@@ -500,7 +500,7 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	c.Assert(result2.Code, Equals, sdk.CodeOK)
 	p1 := w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(p1.BalanceRune.Uint64(), Equals, uint64(200*common.One))
-	c.Assert(p1.BalanceRune.Uint64(), Equals, uint64(200*common.One))
+	c.Assert(p1.BalanceAsset.Uint64(), Equals, uint64(200*common.One))
 	// pool staker
 	ps, err := w.keeper.GetPoolStaker(w.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)

@@ -112,7 +112,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			keeper.AddFeeToReserve(ctx, runeFee) // Add to reserve
 		} else {
 			pool := keeper.GetPool(ctx, toi.Coin.Asset)                              // Get pool
-			assetFee := pool.RuneValueInAsset(sdk.NewUint(constants.TransactionFee)) // Get fee in Asset value
+			assetFee := pool.AssetValueInRune(sdk.NewUint(constants.TransactionFee)) // Get fee in Asset value
 			if toi.Coin.Amount.LTE(assetFee) {
 				assetFee = toi.Coin.Amount // Fee is the full amount
 				runeFee = pool.RuneValueInAsset(assetFee)
