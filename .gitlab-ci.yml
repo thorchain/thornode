@@ -60,22 +60,21 @@ build-thornode:
 
 smoke-test:thornode:
   stage: smoke-test
-  image: golang:1.13
+  image: cbarraford/docker-golang
+  services:
+    - docker:dind
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
-    NODES: 1
-  only:
-    - master
   before_script:
-    - apt-get update
-    - apt-get install -y jq
     - export GOBIN=$GOPATH/bin
   except:
     - schedules
   environment:
-    name: develop
-  script: make smoke-test
+    name: integration
+  script: 
+    - make -C build/docker run-standaloneWithMockBinance
+    - make tools smoke-ci
 
 deploy:develop:
   stage: deploy

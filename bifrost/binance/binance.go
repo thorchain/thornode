@@ -1,15 +1,20 @@
 package binance
 
 import (
+	"bytes"
+	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
-	sdk "github.com/binance-chain/go-sdk/client"
-	"github.com/binance-chain/go-sdk/client/basic"
-	"github.com/binance-chain/go-sdk/client/query"
 	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
+	ttypes "github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
 	"github.com/pkg/errors"
@@ -24,15 +29,13 @@ import (
 )
 
 type Binance struct {
-	logger      zerolog.Logger
-	cfg         config.BinanceConfiguration
-	Client      sdk.DexClient
-	basicClient basic.BasicClient
-	queryClient query.QueryClient
-	keyManager  keys.KeyManager
-	chainId     string
-	isTestNet   bool
-	useTSS      bool
+	logger     zerolog.Logger
+	cfg        config.BinanceConfiguration
+	keyManager keys.KeyManager
+	RPCHost    string
+	chainId    string
+	useTSS     bool
+	isTestNet  bool
 }
 
 // NewBinance create new instance of binance client
@@ -40,8 +43,8 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 	if !useTSS && len(cfg.PrivateKey) == 0 {
 		return nil, errors.New("no private key")
 	}
-	if len(cfg.DEXHost) == 0 {
-		return nil, errors.New("dex host is empty, set env DEX_HOST")
+	if len(cfg.RPCHost) == 0 {
+		return nil, errors.New("rpc host is empty")
 	}
 	var km keys.KeyManager
 	var err error
@@ -56,38 +59,76 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 			return nil, errors.Wrap(err, "fail to create private key manager")
 		}
 	}
-	chainNetwork := types.TestNetwork
-	isTestNet := IsTestNet(cfg.DEXHost)
-	if !isTestNet {
-		chainNetwork = types.ProdNetwork
-	}
-	bClient, err := sdk.NewDexClient(cfg.DEXHost, chainNetwork, km)
-	if err != nil {
-		return nil, errors.Wrap(err, "fail to create binance client")
+
+	rpcHost := cfg.RPCHost
+	if !strings.HasPrefix(rpcHost, "http") {
+		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
 
-	basicClient := basic.NewClient(cfg.DEXHost)
-	queryClient := query.NewClient(basicClient)
+	chainId, isTestNet := IsTestNet(rpcHost)
+	if isTestNet {
+		types.Network = types.TestNetwork
+	} else {
+		types.Network = types.ProdNetwork
+	}
+
 	return &Binance{
-		logger:      log.With().Str("module", "binance").Logger(),
-		cfg:         cfg,
-		Client:      bClient,
-		basicClient: basicClient,
-		queryClient: queryClient,
-		keyManager:  km,
-		isTestNet:   isTestNet,
-		chainId:     "Binance-Chain-Nile",
-		useTSS:      useTSS,
+		logger:     log.With().Str("module", "binance").Logger(),
+		cfg:        cfg,
+		keyManager: km,
+		RPCHost:    rpcHost,
+		chainId:    chainId,
+		isTestNet:  isTestNet,
+		useTSS:     useTSS,
 	}, nil
 }
 
-const (
-	testNetUrl = "testnet-dex.binance.org"
-)
+func IsTestNet(rpcHost string) (string, bool) {
+	client := &http.Client{}
 
-func IsTestNet(dexHost string) bool {
-	return strings.Contains(dexHost, testNetUrl) || strings.Contains(dexHost, "127.0.0.1")
+	u, err := url.Parse(rpcHost)
+	if err != nil {
+		log.Fatal().Msgf("Unable to parse rpc host: %s\n", rpcHost)
+	}
+
+	u.Path = "/status"
+
+	resp, err := client.Get(u.String())
+	if err != nil {
+		log.Fatal().Msgf("%v\n", err)
+	}
+
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			log.Error().Err(err).Msg("fail to close resp body")
+		}
+	}()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal().Err(err).Msg("fail to read body")
+	}
+
+	type Status struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			NodeInfo struct {
+				Network string `json:"network"`
+			} `json:"node_info"`
+		} `json:"result"`
+	}
+
+	var status Status
+	fmt.Printf("BUF: %s\n", data)
+	if err := json.Unmarshal(data, &status); nil != err {
+		log.Fatal().Err(err).Msg("fail to unmarshal body")
+	}
+
+	isTestNet := status.Result.NodeInfo.Network == "Binance-Chain-Nile"
+	return status.Result.NodeInfo.Network, isTestNet
 }
+
 func (b *Binance) input(addr types.AccAddress, coins types.Coins) msg.Input {
 	return msg.Input{
 		Address: addr,
@@ -192,7 +233,14 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	if err := sendMsg.ValidateBasic(); nil != err {
 		return nil, nil, errors.Wrap(err, "invalid send msg")
 	}
-	acc, err := b.queryClient.GetAccount(fromAddr)
+
+	address, err := types.AccAddressFromBech32(fromAddr)
+	if err != nil {
+		b.logger.Error().Err(err).Msgf("fail to get parse address: %s", fromAddr)
+		return nil, nil, err
+	}
+
+	acc, err := b.GetAccount(address)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "fail to get account info")
 	}
@@ -203,7 +251,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,
 		Sequence:      seqNo, // acc.Sequence,
-		AccountNumber: acc.Number,
+		AccountNumber: acc.AccountNumber,
 	}
 	param := map[string]string{
 		"sync": "true",
@@ -230,7 +278,13 @@ func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string) ([]byte, err
 		b.logger.Error().Err(err).Msgf("fail to sign msg with memo: %s", signMsg.Memo)
 		// should we give up? let's check the seq no on binance chain
 		// keep in mind, when we don't run our own binance full node, we might get rate limited by binance
-		acc, err := b.queryClient.GetAccount(from)
+		address, err := types.AccAddressFromBech32(from)
+		if err != nil {
+			b.logger.Error().Err(err).Msgf("fail to get parse address: %s", from)
+			return nil, err
+		}
+
+		acc, err := b.GetAccount(address)
 		if nil != err {
 			b.logger.Error().Err(err).Msg("fail to get account info from binance chain")
 			continue
@@ -242,21 +296,70 @@ func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string) ([]byte, err
 	}
 }
 
-func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) (*tx.TxCommitResult, error) {
-	commits, err := b.Client.PostTx(hexTx, param)
+func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
+	u, err := url.Parse(b.RPCHost)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to broadcast tx to ")
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
+		return types.BaseAccount{}, err
 	}
-	for _, commitResult := range commits {
-		b.logger.Debug().
-			Bool("ok", commitResult.Ok).
-			Str("log", commitResult.Log).
-			Str("hash", commitResult.Hash).
-			Int32("code", commitResult.Code).
-			Str("data", commitResult.Data).
-			Msg("get commit response from binance")
+	u.Path = "/abci_query"
+	v := u.Query()
+	v.Set("path", fmt.Sprintf("\"/account/%s\"", addr.String()))
+	u.RawQuery = v.Encode()
+
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return types.BaseAccount{}, err
 	}
-	return &commits[0], nil
+	defer resp.Body.Close()
+
+	type queryResult struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			Response struct {
+				Key         string `json:"key"`
+				Value       string `json:"value"`
+				BlockHeight string `json:"height"`
+			} `json:"response"`
+		} `json:"result"`
+	}
+
+	var result queryResult
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return types.BaseAccount{}, err
+	}
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return types.BaseAccount{}, err
+	}
+
+	data, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
+	if err != nil {
+		return types.BaseAccount{}, err
+	}
+
+	cdc := ttypes.NewCodec()
+	var acc types.AppAccount
+	err = cdc.UnmarshalBinaryBare(data, &acc)
+
+	return acc.BaseAccount, err
+}
+
+func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) error {
+	u, err := url.Parse(b.RPCHost)
+	if err != nil {
+		log.Error().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
+		return err
+	}
+	u.Path = "broadcast_tx_commit"
+	_, err = http.Post(u.String(), "", bytes.NewReader(hexTx))
+	if err != nil {
+		return errors.Wrap(err, "fail to broadcast tx to ")
+	}
+	return nil
 }
 
 // GetPubKey return the pub key

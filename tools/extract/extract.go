@@ -8,7 +8,7 @@ import (
 	sdk "github.com/binance-chain/go-sdk/client"
 	"github.com/binance-chain/go-sdk/keys"
 
-	"gitlab.com/thorchain/bepswap/thornode/test/smoke"
+	ctypes "github.com/binance-chain/go-sdk/common/types"
 )
 
 // main : Extract information from a Binance keystore file.
@@ -20,13 +20,17 @@ func main() {
 	password := flag.String("p", "", "Password for the keystore file.")
 	flag.Parse()
 
+	n := ctypes.TestNetwork
+	if *network > 0 {
+		n = ctypes.ProdNetwork
+	}
+
 	keyManager, err := keys.NewKeyStoreKeyManager(*file, *password)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	n := smoke.NewNetwork(*network)
-	if _, err := sdk.NewDexClient(*apiAddr, n.Type, keyManager); nil != err {
+	if _, err := sdk.NewDexClient(*apiAddr, n, keyManager); nil != err {
 		log.Panic(err)
 	}
 

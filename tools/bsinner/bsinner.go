@@ -3,34 +3,34 @@ package main
 import (
 	"flag"
 	"log"
+	"os"
 
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke"
 )
 
-// smoke test run a json config file that is a series of transaction and expected results.
 func main() {
-	apiAddr := flag.String("a", "testnet-dex.binance.org", "Binance API Address.")
+	apiAddr := flag.String("a", "https://data-seed-pre-0-s3.binance.org/", "Binance RPC address.")
 	faucetKey := flag.String("f", "", "The faucet private key.")
-	poolKey := flag.String("p", "", "The pool private key.")
-	environment := flag.String("e", "stage", "The environment to use [local|staging|develop|production].")
-	config := flag.String("c", "", "Path to the config file.")
-	network := flag.Int("n", 0, "The network to use.")
-	logFile := flag.String("l", "/tmp/smoke.json", "The path to the log file [/tmp/smoke.json].")
+	poolKey := flag.String("k", "", "The pool key.")
+	environment := flag.String("e", "local", "The environment to use [local|staging|develop|production]. Defaults to local")
+	bal := flag.String("b", "", "Balances json file")
+	txns := flag.String("t", "", "Transactions json file")
+	fastFail := flag.Bool("x", false, "Enable fast fail")
 	debug := flag.Bool("d", false, "Enable debugging of the Binance transactions.")
 	flag.Parse()
 
-	if *faucetKey == "" {
-		log.Fatal("No faucet key set!")
+	if *txns == "" {
+		log.Fatal("No transactions json file")
 	}
 
-	if *poolKey == "" {
-		log.Fatal("No pool key set!")
+	if *bal == "" {
+		log.Fatal("No balances json file")
 	}
 
-	if *config == "" {
-		log.Fatal("No config file provided!")
+	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *bal, *txns, *fastFail, *debug)
+	successful := s.Run()
+	if successful {
+		os.Exit(0)
 	}
-
-	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *config, *network, *logFile, *debug)
-	s.Run()
+	os.Exit(1)
 }

@@ -98,13 +98,13 @@ describe "API Tests" do
     end
   end
 
+  sender = "bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38"
   context "Stake/Unstake" do
 
     coins = [
       {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "2349500000"},
       {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "334850000"},
     ]
-    sender = "bnb1xlvns0n2mxh77mzaspn2hgav4rr4m8eerfju38"
 
     it "should be able to stake" do
 
@@ -128,6 +128,22 @@ describe "API Tests" do
       expect(resp.body['stakers']).to eq(nil), resp.body.inspect
     end
 
+    it "should accept zombie coins" do 
+      coins = [
+        {'asset': {'chain': 'BNB', 'symbol': 'ZOMBIE-ZZZ', 'ticker': 'ZOMBIE'}, "amount": "349700000"},
+      ]
+      tx = makeTx(memo: "", coins: coins)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200"), resp.body.inspect
+
+      resp = get("/pool/ZOMBIE-ZZZ")
+      expect(resp.code).to eq("200"), resp.body.inspect
+      expect(resp.body['balance_asset']).to eq("349700000"), resp.body.inspect
+    end
+
+  end
+
+  context "Swap" do
     txid = txid() # outside it state so its value is available in multiple "it" statements
     it "swap" do
       coins = [

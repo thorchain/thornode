@@ -19,7 +19,6 @@ import (
 	stypes "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/binance"
-	btypes "gitlab.com/thorchain/bepswap/thornode/bifrost/binance/types"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient"
@@ -41,16 +40,19 @@ type Observer struct {
 }
 
 // CurrHeight : Get the Binance current block height.
-func binanceHeight(dexHost string, client http.Client) int64 {
-	uri := url.URL{
-		Scheme: "https",
-		Host:   dexHost,
-		Path:   "/api/v1/validators",
-	}
-
-	resp, err := client.Get(uri.String())
+// TODO: this func is a duplicate of `getBlockUrl` and `getRPCBlock`. We don't
+// need two funcs that return the current block height. Consolidate and remove
+// one from `mock-binance`
+func binanceHeight(rpcHost string, client http.Client) (int64, error) {
+	u, err := url.Parse(rpcHost)
 	if err != nil {
-		log.Fatal().Msgf("%v\n", err)
+		return 0, errors.Wrap(err, "Unable to parse dex host")
+	}
+	u.Path = "abci_info"
+
+	resp, err := client.Get(u.String())
+	if err != nil {
+		return 0, errors.Wrap(err, "Get request failed")
 	}
 
 	defer func() {
@@ -61,15 +63,26 @@ func binanceHeight(dexHost string, client http.Client) int64 {
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error().Err(err)
+		return 0, errors.Wrap(err, "fail to read resp body")
 	}
 
-	var validators btypes.Validators
-	if err := json.Unmarshal(data, &validators); nil != err {
-		log.Error().Err(err)
+	type ABCIinfo struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			Response struct {
+				BlockHeight string `json:"last_block_height"`
+			} `json:"response"`
+		} `json:"result"`
 	}
 
-	return validators.BlockHeight
+	var abci ABCIinfo
+	if err := json.Unmarshal(data, &abci); nil != err {
+		return 0, errors.Wrap(err, "failed to unmarshal")
+	}
+
+	n, _ := strconv.ParseInt(abci.Result.Response.BlockHeight, 10, 64)
+	return n, nil
 }
 
 // NewObserver create a new instance of Observer
@@ -100,7 +113,10 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by statechain")
 		} else {
 			client := &http.Client{}
-			cfg.BlockScanner.StartBlockHeight = binanceHeight(cfg.DEXHost, *client)
+			cfg.BlockScanner.StartBlockHeight, err = binanceHeight(cfg.BinanceHost, *client)
+			if nil != err {
+				return nil, errors.Wrap(err, "fail to get binance height")
+			}
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
 		}
 	}
@@ -110,7 +126,8 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		return nil, errors.Wrap(err, "fail to create pool address manager")
 	}
 
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, binance.IsTestNet(cfg.DEXHost), addrMgr, m)
+	_, isTestNet := binance.IsTestNet(cfg.BinanceHost)
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, isTestNet, addrMgr, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}

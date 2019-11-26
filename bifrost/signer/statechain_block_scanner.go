@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -35,8 +36,8 @@ type StateChainBlockScan struct {
 
 // NewStateChainBlockScan create a new instance of statechain block scanner
 func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chainHost string, m *metrics.Metrics, pkm *PubKeyManager) (*StateChainBlockScan, error) {
-	if len(cfg.RPCHost) == 0 {
-		return nil, errors.New("rpc host is empty")
+	if !strings.HasPrefix(chainHost, "http") {
+		chainHost = fmt.Sprintf("http://%s", chainHost)
 	}
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
@@ -77,11 +78,12 @@ func (b *StateChainBlockScan) Start() error {
 
 func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 	for _, pk := range b.pkm.pks {
-		uri := url.URL{
-			Scheme: "http",
-			Host:   b.chainHost,
-			Path:   fmt.Sprintf("/thorchain/txoutarray/%d/%s", blockHeight, pk.String()),
+		uri, err := url.Parse(b.chainHost)
+		if err != nil {
+			return errors.Wrap(err, "fail to parse chain host")
 		}
+		uri.Path = fmt.Sprintf("/thorchain/txoutarray/%d/%s", blockHeight, pk.String())
+
 		strBlockHeight := strconv.FormatInt(blockHeight, 10)
 		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())
 		if nil != err {

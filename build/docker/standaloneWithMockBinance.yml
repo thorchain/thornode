@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  binance:
+    hostname: mock-binance
+    image: registry.gitlab.com/thorchain/bepswap/mock-binance
+    ports:
+      - "26660:26660"
+
+  observer:
+    links:
+      - binance
+    environment:
+      BINANCE_HOST: http://binance:26660
+      NET: testnet
+
+  signer:
+    links:
+      - binance
+    environment:
+      BINANCE_HOST: http://binance:26660
+      NET: testnet
+
+  thor-daemon:
+    environment:
+      NET: testnet
+
+  thor-api:
+    environment:
+      NET: testnet

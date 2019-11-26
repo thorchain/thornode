@@ -72,8 +72,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 	c.Check(m, NotNil)
 	c.Check(err, IsNil)
 	cbs, err := NewCommonBlockScanner(config.BlockScannerConfiguration{
-		RPCHost:                    s.Listener.Addr().String(),
-		Scheme:                     "https",
+		RPCHost:                    s.URL,
 		StartBlockHeight:           0,
 		BlockScanProcessors:        1,
 		HttpRequestTimeout:         time.Second,
@@ -104,6 +103,6 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 	time.Sleep(time.Second * 10)
 	err = cbs.Stop()
 	c.Check(err, IsNil)
-	c.Check(counter, Equals, 10)
+	c.Check(counter, Equals, 11)
 
 }

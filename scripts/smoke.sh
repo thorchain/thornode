@@ -11,7 +11,7 @@
 # Usage
 #
 usage() {
-  echo "Usage: $0 -r <rpc host> -g <target_group> -c <cluster> -s <service> -n <task count> -f <faucet key> -p <pool key> -e <environment>" 1>&2;
+  echo "Usage: $0 -r <rpc host> -g <target_group> -c <cluster> -s <service> -n <task count> -f <faucet key> -k <pool key> -e <environment>" 1>&2;
   exit 1;
 }
 

@@ -39,6 +39,7 @@ type BinanceBlockScanner struct {
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
 	addrVal            AddressValidator
+	rpcHost            string
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
@@ -46,6 +47,12 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
+
+	rpcHost := cfg.RPCHost
+	if !strings.HasPrefix(rpcHost, "http") {
+		rpcHost = fmt.Sprintf("http://%s", rpcHost)
+	}
+
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
 	}
@@ -61,6 +68,8 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 	}
 	if isTestNet {
 		types.Network = types.TestNetwork
+	} else {
+		types.Network = types.ProdNetwork
 	}
 	return &BinanceBlockScanner{
 		cfg:                cfg,
@@ -72,6 +81,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 		db:                 scanStorage,
 		commonBlockScanner: commonBlockScanner,
 		errCounter:         m.GetCounterVec(metrics.BinanceBlockScanError),
+		rpcHost:            rpcHost,
 	}, nil
 }
 
@@ -91,18 +101,19 @@ func (b *BinanceBlockScanner) Start() {
 
 // need to process multiple pages
 func (b *BinanceBlockScanner) getTxSearchUrl(block int64, currentPage, numberPerPage int64) string {
-	uri := url.URL{
-		Scheme: "https",
-		Host:   b.cfg.RPCHost,
-		Path:   "tx_search",
+	u, err := url.Parse(b.rpcHost)
+	if err != nil {
+		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.rpcHost, err)
 	}
-	q := uri.Query()
+	u.Path = "tx_search"
+
+	q := u.Query()
 	q.Set("query", fmt.Sprintf("\"tx.height=%d\"", block))
 	q.Set("prove", "true")
 	q.Set("page", strconv.FormatInt(currentPage, 10))
 	q.Set("per_page", strconv.FormatInt(numberPerPage, 10))
-	uri.RawQuery = q.Encode()
-	return uri.String()
+	u.RawQuery = q.Encode()
+	return u.String()
 }
 
 func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUrl string) error {
