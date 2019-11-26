@@ -13,8 +13,8 @@ import (
 	"github.com/spf13/cobra"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 
-	appCmd "gitlab.com/thorchain/thornode/cmd"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -47,7 +47,7 @@ func GetCmdSetVersion(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgSetVersion(appCmd.Version, cliCtx.GetFromAddress())
+			msg := types.NewMsgSetVersion(constants.Version, cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

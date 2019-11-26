@@ -1,5 +1,8 @@
 package constants
 
+// The version of this software
+const Version = 1
+
 // The emission curve targets a ~2% emission after 10 years (similar to Bitcoin).
 // The BlocksPerYear directly affects emission rate, and may be updated if markedly different in production
 // Day 0 Emission is ~25%, Year 1 Emission is ~20%, Year 10 Emission is ~2%
