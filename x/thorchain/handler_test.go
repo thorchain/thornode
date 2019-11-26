@@ -83,7 +83,7 @@ func setupKeeperForTest(c *C) (sdk.Context, Keeper) {
 	supplyKeeper := supply.NewKeeper(cdc, keySupply, ak, bk, maccPerms)
 	totalSupply := sdk.NewCoins(sdk.NewCoin("bep", sdk.NewInt(1000*common.One)))
 	supplyKeeper.SetSupply(ctx, supply.NewSupply(totalSupply))
-	k := NewKeeper(bk, supplyKeeper, keyThorchain, cdc)
+	k := NewKVStore(bk, supplyKeeper, keyThorchain, cdc)
 	return ctx, k
 }
 
@@ -172,7 +172,7 @@ func (HandlerSuite) TestHandleMsgApply(c *C) {
 	result = handleMsgBond(w.ctx, w.keeper, msgApply1)
 	c.Assert(result.IsOK(), Equals, true)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
-	coins := w.keeper.coinKeeper.GetCoins(w.ctx, newAcc.NodeAddress)
+	coins := w.keeper.CoinKeeper().GetCoins(w.ctx, newAcc.NodeAddress)
 	c.Assert(coins.AmountOf("bep").Int64(), Equals, int64(1000))
 
 	// apply again shohuld fail
@@ -750,7 +750,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var evt Event
-		w.keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &evt)
+		w.keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &evt)
 		if evt.InTx.ID.Equals(inTxID) {
 			found = true
 			break

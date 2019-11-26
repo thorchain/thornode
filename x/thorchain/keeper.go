@@ -15,6 +15,109 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
+type Keeper interface {
+	Cdc() *codec.Codec
+	Supply() supply.Keeper
+	CoinKeeper() bank.Keeper
+	Logger(ctx sdk.Context) log.Logger
+	SetLastSignedHeight(ctx sdk.Context, height sdk.Uint)
+	GetLastSignedHeight(ctx sdk.Context) (height sdk.Uint)
+	SetLastChainHeight(ctx sdk.Context, chain common.Chain, height sdk.Uint) error
+	GetLastChainHeight(ctx sdk.Context, chain common.Chain) (height sdk.Uint)
+	GetPool(ctx sdk.Context, asset common.Asset) Pool
+	SetPool(ctx sdk.Context, pool Pool)
+	GetPoolBalances(ctx sdk.Context, asset, asset2 common.Asset) (sdk.Uint, sdk.Uint)
+	SetPoolData(ctx sdk.Context, asset common.Asset, ps PoolStatus)
+	GetPoolDataIterator(ctx sdk.Context) sdk.Iterator
+	EnableAPool(ctx sdk.Context)
+	PoolExist(ctx sdk.Context, asset common.Asset) bool
+	GetPoolIndex(ctx sdk.Context) (PoolIndex, error)
+	SetPoolIndex(ctx sdk.Context, pi PoolIndex)
+	AddToPoolIndex(ctx sdk.Context, asset common.Asset) error
+	RemoveFromPoolIndex(ctx sdk.Context, asset common.Asset) error
+	GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator
+	GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error)
+	SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker)
+	GetStakerPoolIterator(ctx sdk.Context) sdk.Iterator
+	GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error)
+	SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool)
+	TotalNodeAccounts(ctx sdk.Context) (count int)
+	TotalActiveNodeAccount(ctx sdk.Context) (int, error)
+	ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error)
+	ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error)
+	ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error)
+	GetLowestActiveVersion(ctx sdk.Context) int64
+	IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool
+	GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error)
+	GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error)
+	GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error)
+	SetNodeAccount(ctx sdk.Context, na NodeAccount)
+	SlashNodeAccountBond(ctx sdk.Context, na *NodeAccount, slash sdk.Uint)
+	SlashNodeAccountRewards(ctx sdk.Context, na *NodeAccount, pts int64)
+	EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error
+	GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator
+	SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress)
+	RemoveActiveObserver(ctx sdk.Context, addr sdk.AccAddress)
+	IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool
+	GetObservingAddresses(ctx sdk.Context) []sdk.AccAddress
+	AddObservingAddresses(ctx sdk.Context, inAddresses []sdk.AccAddress)
+	ClearObservingAddresses(ctx sdk.Context)
+	SetTxInVoter(ctx sdk.Context, tx TxInVoter)
+	GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator
+	GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter
+	CheckTxHash(ctx sdk.Context, hash common.TxID) bool
+	GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator
+	GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error)
+	SetTxInIndex(ctx sdk.Context, height uint64, index TxInIndex)
+	AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) error
+	SetTxOut(ctx sdk.Context, blockOut *TxOut)
+	GetTxOutIterator(ctx sdk.Context) sdk.Iterator
+	GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error)
+	AddToLiquidityFees(ctx sdk.Context, pool Pool, fee sdk.Uint) error
+	getLiquidityFees(ctx sdk.Context, height uint64, prefix dbPrefix) (sdk.Uint, error)
+	GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint, error)
+	GetPoolLiquidityFees(ctx sdk.Context, height uint64, pool Pool) (sdk.Uint, error)
+	GetIncompleteEvents(ctx sdk.Context) (Events, error)
+	SetIncompleteEvents(ctx sdk.Context, events Events)
+	AddIncompleteEvents(ctx sdk.Context, event Event)
+	GetCompleteEventIterator(ctx sdk.Context) sdk.Iterator
+	GetCompletedEvent(ctx sdk.Context, id int64) (Event, error)
+	SetCompletedEvent(ctx sdk.Context, event Event)
+	CompleteEvents(ctx sdk.Context, in []common.TxID, out common.Tx)
+	GetLastEventID(ctx sdk.Context) int64
+	SetLastEventID(ctx sdk.Context, id int64)
+	SetPoolAddresses(ctx sdk.Context, addresses *PoolAddresses)
+	GetPoolAddresses(ctx sdk.Context) PoolAddresses
+	SetValidatorMeta(ctx sdk.Context, meta ValidatorMeta)
+	GetValidatorMeta(ctx sdk.Context) ValidatorMeta
+	GetChains(ctx sdk.Context) common.Chains
+	SupportedChain(ctx sdk.Context, chain common.Chain) bool
+	AddChain(ctx sdk.Context, chain common.Chain)
+	GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator
+	FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error)
+	SetYggdrasil(ctx sdk.Context, ygg Yggdrasil)
+	GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil
+	HasValidYggdrasilPools(ctx sdk.Context) (bool, error)
+	GetReservesContributors(ctx sdk.Context) ReserveContributors
+	SetReserveContributors(ctx sdk.Context, contribs ReserveContributors)
+	GetVaultData(ctx sdk.Context) VaultData
+	SetVaultData(ctx sdk.Context, data VaultData)
+	UpdateVaultData(ctx sdk.Context)
+	SetAdminConfig(ctx sdk.Context, config AdminConfig)
+	GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus
+	GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount
+	GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount
+	GetAdminConfigMinValidatorBond(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint
+	GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
+	GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address
+	GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint
+	GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Amount
+	GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Coins
+	GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) int64
+	GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error)
+	GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator
+}
+
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there
 // are no prefixes that contain another prefix. In the scenario where this is
 // true, an iterator for a specific type, will get more than intended, and may
@@ -55,16 +158,16 @@ func getKey(prefix dbPrefix, key string, version int64) string {
 }
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
-type Keeper struct {
+type KVStore struct {
 	coinKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
 	storeKey     sdk.StoreKey // Unexposed key to access store from sdk.Context
 	cdc          *codec.Codec // The wire codec for binary encoding/decoding.
 }
 
-// NewKeeper creates new instances of the thorchain Keeper
-func NewKeeper(coinKeeper bank.Keeper, supplyKeeper supply.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
-	return Keeper{
+// NewKVStore creates new instances of the thorchain Keeper
+func NewKVStore(coinKeeper bank.Keeper, supplyKeeper supply.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
+	return KVStore{
 		coinKeeper:   coinKeeper,
 		supplyKeeper: supplyKeeper,
 		storeKey:     storeKey,
@@ -72,17 +175,29 @@ func NewKeeper(coinKeeper bank.Keeper, supplyKeeper supply.Keeper, storeKey sdk.
 	}
 }
 
-func (k Keeper) Logger(ctx sdk.Context) log.Logger {
+func (k KVStore) Cdc() *codec.Codec {
+	return k.cdc
+}
+
+func (k KVStore) Supply() supply.Keeper {
+	return k.supplyKeeper
+}
+
+func (k KVStore) CoinKeeper() bank.Keeper {
+	return k.coinKeeper
+}
+
+func (k KVStore) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", ModuleName))
 }
 
-func (k Keeper) SetLastSignedHeight(ctx sdk.Context, height sdk.Uint) {
+func (k KVStore) SetLastSignedHeight(ctx sdk.Context, height sdk.Uint) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixLastSignedHeight, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastSignedHeight))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
 }
 
-func (k Keeper) GetLastSignedHeight(ctx sdk.Context) (height sdk.Uint) {
+func (k KVStore) GetLastSignedHeight(ctx sdk.Context) (height sdk.Uint) {
 	key := getKey(prefixLastSignedHeight, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastSignedHeight))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -93,7 +208,7 @@ func (k Keeper) GetLastSignedHeight(ctx sdk.Context) (height sdk.Uint) {
 	return
 }
 
-func (k Keeper) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height sdk.Uint) error {
+func (k KVStore) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height sdk.Uint) error {
 	currentHeight := k.GetLastChainHeight(ctx, chain)
 	if currentHeight.GT(height) {
 		return errors.Errorf("current block height :%s is larger than %s , block height can't go backward ", currentHeight, height)
@@ -104,7 +219,7 @@ func (k Keeper) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height s
 	return nil
 }
 
-func (k Keeper) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (height sdk.Uint) {
+func (k KVStore) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (height sdk.Uint) {
 	key := getKey(prefixLastChainHeight, chain.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixLastChainHeight))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -116,7 +231,7 @@ func (k Keeper) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (height 
 }
 
 // GetPool get the entire Pool metadata struct for a pool ID
-func (k Keeper) GetPool(ctx sdk.Context, asset common.Asset) Pool {
+func (k KVStore) GetPool(ctx sdk.Context, asset common.Asset) Pool {
 	key := getKey(prefixPool, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -130,7 +245,7 @@ func (k Keeper) GetPool(ctx sdk.Context, asset common.Asset) Pool {
 }
 
 // Sets the entire Pool metadata struct for a pool ID
-func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
+func (k KVStore) SetPool(ctx sdk.Context, pool Pool) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPool, pool.Asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
 	if !store.Has([]byte(key)) {
@@ -142,7 +257,7 @@ func (k Keeper) SetPool(ctx sdk.Context, pool Pool) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
 }
 
-func (k Keeper) GetPoolBalances(ctx sdk.Context, asset, asset2 common.Asset) (sdk.Uint, sdk.Uint) {
+func (k KVStore) GetPoolBalances(ctx sdk.Context, asset, asset2 common.Asset) (sdk.Uint, sdk.Uint) {
 	pool := k.GetPool(ctx, asset)
 	if asset2.IsRune() {
 		return pool.BalanceRune, pool.BalanceAsset
@@ -151,7 +266,7 @@ func (k Keeper) GetPoolBalances(ctx sdk.Context, asset, asset2 common.Asset) (sd
 }
 
 // SetPoolData - sets the value string that a pool ID resolves to
-func (k Keeper) SetPoolData(ctx sdk.Context, asset common.Asset, ps PoolStatus) {
+func (k KVStore) SetPoolData(ctx sdk.Context, asset common.Asset, ps PoolStatus) {
 	pool := k.GetPool(ctx, asset)
 	pool.Status = ps
 	pool.Asset = asset
@@ -159,14 +274,14 @@ func (k Keeper) SetPoolData(ctx sdk.Context, asset common.Asset, ps PoolStatus) 
 }
 
 // GetPoolDataIterator only iterate pool data
-func (k Keeper) GetPoolDataIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStore) GetPoolDataIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixPool))
 }
 
 // Picks the most "deserving" pool (by most staked rune) to be enabled and
 // enables it
-func (k Keeper) EnableAPool(ctx sdk.Context) {
+func (k KVStore) EnableAPool(ctx sdk.Context) {
 	var pools []Pool
 	iterator := k.GetPoolDataIterator(ctx)
 	defer iterator.Close()
@@ -197,14 +312,14 @@ func (k Keeper) EnableAPool(ctx sdk.Context) {
 }
 
 // PoolExist check whether the given pool exist in the datastore
-func (k Keeper) PoolExist(ctx sdk.Context, asset common.Asset) bool {
+func (k KVStore) PoolExist(ctx sdk.Context, asset common.Asset) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPool, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
 	return store.Has([]byte(key))
 }
 
 // GetPoolIndex retrieve pool index from the data store
-func (k Keeper) GetPoolIndex(ctx sdk.Context) (PoolIndex, error) {
+func (k KVStore) GetPoolIndex(ctx sdk.Context) (PoolIndex, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPoolIndex, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolIndex))
 	if !store.Has([]byte(key)) {
@@ -220,14 +335,14 @@ func (k Keeper) GetPoolIndex(ctx sdk.Context) (PoolIndex, error) {
 }
 
 // SetPoolIndex write a pool index into datastore
-func (k Keeper) SetPoolIndex(ctx sdk.Context, pi PoolIndex) {
+func (k KVStore) SetPoolIndex(ctx sdk.Context, pi PoolIndex) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPoolIndex, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolIndex))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&pi))
 }
 
 // AddToPoolIndex will add the given asset into the poolindex
-func (k Keeper) AddToPoolIndex(ctx sdk.Context, asset common.Asset) error {
+func (k KVStore) AddToPoolIndex(ctx sdk.Context, asset common.Asset) error {
 	pi, err := k.GetPoolIndex(ctx)
 	if nil != err {
 		return err
@@ -244,7 +359,7 @@ func (k Keeper) AddToPoolIndex(ctx sdk.Context, asset common.Asset) error {
 }
 
 // RemoveFromPoolIndex remove the given asset from the poolIndex
-func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, asset common.Asset) error {
+func (k KVStore) RemoveFromPoolIndex(ctx sdk.Context, asset common.Asset) error {
 	pi, err := k.GetPoolIndex(ctx)
 	if nil != err {
 		return err
@@ -260,13 +375,13 @@ func (k Keeper) RemoveFromPoolIndex(ctx sdk.Context, asset common.Asset) error {
 }
 
 // GetPoolStakerIterator iterate pool stakers
-func (k Keeper) GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStore) GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixPoolStaker))
 }
 
 // GetPoolStaker retrieve poolStaker from the data store
-func (k Keeper) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {
+func (k KVStore) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPoolStaker, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	if !store.Has([]byte(key)) {
@@ -283,7 +398,7 @@ func (k Keeper) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, 
 }
 
 // SetPoolStaker store the poolstaker to datastore
-func (k Keeper) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker) {
+func (k KVStore) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixPoolStaker, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", key, ps))
@@ -292,13 +407,13 @@ func (k Keeper) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker
 }
 
 // GetStakerPoolIterator iterate stakers pools
-func (k Keeper) GetStakerPoolIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStore) GetStakerPoolIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixStakerPool))
 }
 
 // GetStakerPool get the stakerpool from key value store
-func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error) {
+func (k KVStore) GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixStakerPool, stakerID.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	ctx.Logger().Info("get staker pool", "stakerpoolkey", key)
@@ -315,7 +430,7 @@ func (k Keeper) GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerP
 }
 
 // SetStakerPool save the given stakerpool object to key value store
-func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool) {
+func (k KVStore) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixStakerPool, stakerID.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", key, sp))
@@ -323,19 +438,19 @@ func (k Keeper) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp Stake
 }
 
 // TotalNodeAccounts counts the number of trust accounts
-func (k Keeper) TotalNodeAccounts(ctx sdk.Context) (count int) {
+func (k KVStore) TotalNodeAccounts(ctx sdk.Context) (count int) {
 	nodes, _ := k.ListActiveNodeAccounts(ctx)
 	return len(nodes)
 }
 
 // TotalActiveNodeAccount count the number of active node account
-func (k Keeper) TotalActiveNodeAccount(ctx sdk.Context) (int, error) {
+func (k KVStore) TotalActiveNodeAccount(ctx sdk.Context) (int, error) {
 	activeNodes, err := k.ListActiveNodeAccounts(ctx)
 	return len(activeNodes), err
 }
 
 // ListNodeAccounts - gets a list of all trust accounts
-func (k Keeper) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+func (k KVStore) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	nodeAccounts := make(NodeAccounts, 0)
 	naIterator := k.GetNodeAccountIterator(ctx)
 	defer naIterator.Close()
@@ -351,7 +466,7 @@ func (k Keeper) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 
 // ListNodeAccountsByStatus - get a list of node accounts with the given status
 // if status = NodeUnknown, then it return everything
-func (k Keeper) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error) {
+func (k KVStore) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error) {
 	nodeAccounts := make(NodeAccounts, 0)
 	allNodeAccounts, err := k.ListNodeAccounts(ctx)
 	if nil != err {
@@ -366,12 +481,12 @@ func (k Keeper) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (No
 }
 
 // ListActiveNodeAccounts - get a list of active trust accounts
-func (k Keeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+func (k KVStore) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	return k.ListNodeAccountsByStatus(ctx, NodeActive)
 }
 
 // GetLowestActiveVersion - get version number of lowest active node
-func (k Keeper) GetLowestActiveVersion(ctx sdk.Context) int64 {
+func (k KVStore) GetLowestActiveVersion(ctx sdk.Context) int64 {
 	nodes, _ := k.ListActiveNodeAccounts(ctx)
 	if len(nodes) > 0 {
 		version := nodes[0].Version
@@ -386,7 +501,7 @@ func (k Keeper) GetLowestActiveVersion(ctx sdk.Context) int64 {
 }
 
 // IsWhitelistedAccount check whether the given account is white listed
-func (k Keeper) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool {
+func (k KVStore) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool {
 	ctx.Logger().Debug("IsWhitelistedAccount", "account address", addr.String())
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixNodeAccount, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
@@ -394,7 +509,7 @@ func (k Keeper) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool {
 }
 
 // GetNodeAccount try to get node account with the given address from db
-func (k Keeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+func (k KVStore) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
 	ctx.Logger().Debug("GetNodeAccount", "node account", addr.String())
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixNodeAccount, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
@@ -407,7 +522,7 @@ func (k Keeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccoun
 }
 
 // GetNodeAccountByPubKey try to get node account with the given pubkey from db
-func (k Keeper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
+func (k KVStore) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
 	addr, err := pk.GetThorAddress()
 	if err != nil {
 		return NodeAccount{}, err
@@ -416,7 +531,7 @@ func (k Keeper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeA
 }
 
 // GetNodeAccountByBondAddress go through data store to get node account by it's signer bnb address
-func (k Keeper) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error) {
+func (k KVStore) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error) {
 	ctx.Logger().Debug("GetNodeAccountByBondAddress", "signer bnb address", addr.String())
 	var na NodeAccount
 	nodeAccounts, err := k.ListNodeAccounts(ctx)
@@ -432,7 +547,7 @@ func (k Keeper) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address
 }
 
 // SetNodeAccount save the given node account into datastore
-func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
+func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	ctx.Logger().Debug("SetNodeAccount", "node account", na.String())
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixNodeAccount, na.NodeAddress.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
@@ -488,7 +603,7 @@ func (k Keeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 // NOTE: Should be careful not to slash too much, and have their Yggdrasil
 // vault have more in funds than their bond. This could trigger them to have a
 // untimely exit, stealing an amount of funds from stakers.
-func (k Keeper) SlashNodeAccountBond(ctx sdk.Context, na *NodeAccount, slash sdk.Uint) {
+func (k KVStore) SlashNodeAccountBond(ctx sdk.Context, na *NodeAccount, slash sdk.Uint) {
 	if slash.GT(na.Bond) {
 		na.Bond = sdk.ZeroUint()
 	} else {
@@ -500,12 +615,12 @@ func (k Keeper) SlashNodeAccountBond(ctx sdk.Context, na *NodeAccount, slash sdk
 // Slash the rewards of a node account
 // NOTE: if we slash their rewards so much, they may do an orderly exit and
 // rotate out of the active vault, wait in line to rejoin later.
-func (k Keeper) SlashNodeAccountRewards(ctx sdk.Context, na *NodeAccount, pts int64) {
+func (k KVStore) SlashNodeAccountRewards(ctx sdk.Context, na *NodeAccount, pts int64) {
 	na.SlashPoints += pts
 	k.SetNodeAccount(ctx, *na)
 }
 
-func (k Keeper) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
+func (k KVStore) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
 	iter := k.GetNodeAccountIterator(ctx)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -525,13 +640,13 @@ func (k Keeper) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string
 }
 
 // GetTrustAccountIterator iterate trust accounts
-func (k Keeper) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStore) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixNodeAccount))
 }
 
 // SetActiveObserver set the given addr as an active observer address
-func (k Keeper) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
+func (k KVStore) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixActiveObserver, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixActiveObserver))
 	ctx.Logger().Info("set_active_observer", "key", key)
@@ -539,14 +654,14 @@ func (k Keeper) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 }
 
 // RemoveActiveObserver remove the given address from active observer
-func (k Keeper) RemoveActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
+func (k KVStore) RemoveActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixActiveObserver, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixActiveObserver))
 	store.Delete([]byte(key))
 }
 
 // IsActiveObserver check the given account address, whether they are active
-func (k Keeper) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool {
+func (k KVStore) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixActiveObserver, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixActiveObserver))
 	ctx.Logger().Info("is_active_observer", "key", key)
@@ -556,7 +671,7 @@ func (k Keeper) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool {
 // GetObservingAddresses - get list of observed addresses. This is a list of
 // addresses that have recently contributed via observing a tx that got 2/3rds
 // majority
-func (k Keeper) GetObservingAddresses(ctx sdk.Context) []sdk.AccAddress {
+func (k KVStore) GetObservingAddresses(ctx sdk.Context) []sdk.AccAddress {
 	key := getKey(prefixObservingAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixObservingAddresses))
 
 	store := ctx.KVStore(k.storeKey)
@@ -572,7 +687,7 @@ func (k Keeper) GetObservingAddresses(ctx sdk.Context) []sdk.AccAddress {
 
 // AddObservingAddresses - add a list of addresses that have been helpful in
 // getting enough observations to process an inbound tx.
-func (k Keeper) AddObservingAddresses(ctx sdk.Context, inAddresses []sdk.AccAddress) {
+func (k KVStore) AddObservingAddresses(ctx sdk.Context, inAddresses []sdk.AccAddress) {
 	// combine addresses
 	all := append(k.GetObservingAddresses(ctx), inAddresses...)
 
@@ -592,27 +707,27 @@ func (k Keeper) AddObservingAddresses(ctx sdk.Context, inAddresses []sdk.AccAddr
 }
 
 // ClearObservingAddresses - clear all observing addresses
-func (k Keeper) ClearObservingAddresses(ctx sdk.Context) {
+func (k KVStore) ClearObservingAddresses(ctx sdk.Context) {
 	key := getKey(prefixObservingAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixObservingAddresses))
 	store := ctx.KVStore(k.storeKey)
 	store.Delete([]byte(key))
 }
 
 // SetTxInVoter - save a txin voter object
-func (k Keeper) SetTxInVoter(ctx sdk.Context, tx TxInVoter) {
+func (k KVStore) SetTxInVoter(ctx sdk.Context, tx TxInVoter) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxIn, tx.Key().String(), getVersion(k.GetLowestActiveVersion(ctx), prefixTxIn))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
 // GetTxInVoterIterator iterate tx in voters
-func (k Keeper) GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStore) GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixTxIn))
 }
 
 // GetTxIn - gets information of a tx hash
-func (k Keeper) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
+func (k KVStore) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
 	key := getKey(prefixTxIn, hash.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixTxIn))
 
 	store := ctx.KVStore(k.storeKey)
@@ -627,20 +742,20 @@ func (k Keeper) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
 }
 
 // CheckTxHash - check to see if we have already processed a specific tx
-func (k Keeper) CheckTxHash(ctx sdk.Context, hash common.TxID) bool {
+func (k KVStore) CheckTxHash(ctx sdk.Context, hash common.TxID) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxIn, hash.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixTxIn))
 	return store.Has([]byte(key))
 }
 
 // GetTxInIndexIterator iterate tx in indexes
-func (k Keeper) GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStore) GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixTxInIndex))
 }
 
 // GetTxInIndex retrieve txIn by height
-func (k Keeper) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error) {
+func (k KVStore) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error) {
 	key := getKey(prefixTxInIndex, strconv.FormatUint(height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTxInIndex))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -656,14 +771,14 @@ func (k Keeper) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error) 
 }
 
 // SetTxInIndex write a TxIn index into datastore
-func (k Keeper) SetTxInIndex(ctx sdk.Context, height uint64, index TxInIndex) {
+func (k KVStore) SetTxInIndex(ctx sdk.Context, height uint64, index TxInIndex) {
 	key := getKey(prefixTxInIndex, strconv.FormatUint(height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTxInIndex))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&index))
 }
 
 // AddToTxInIndex will add the given txIn into the index
-func (k Keeper) AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) error {
+func (k KVStore) AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) error {
 	index, err := k.GetTxInIndex(ctx, height)
 	if nil != err {
 		return err
@@ -680,20 +795,20 @@ func (k Keeper) AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) e
 }
 
 // SetTxOut - write the given txout information to key values tore
-func (k Keeper) SetTxOut(ctx sdk.Context, blockOut *TxOut) {
+func (k KVStore) SetTxOut(ctx sdk.Context, blockOut *TxOut) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxOut, strconv.FormatUint(blockOut.Height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTxOut))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(blockOut))
 }
 
 // GetTxOutIterator iterate tx out
-func (k Keeper) GetTxOutIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStore) GetTxOutIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixTxOut))
 }
 
 // GetTxOut - write the given txout information to key values tore
-func (k Keeper) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
+func (k KVStore) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixTxOut, strconv.FormatUint(height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTxOut))
 	if !store.Has([]byte(key)) {
@@ -708,7 +823,7 @@ func (k Keeper) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
 }
 
 // AddToLiquidityFees - measure of fees collected in each block
-func (k Keeper) AddToLiquidityFees(ctx sdk.Context, pool Pool, fee sdk.Uint) error {
+func (k KVStore) AddToLiquidityFees(ctx sdk.Context, pool Pool, fee sdk.Uint) error {
 	store := ctx.KVStore(k.storeKey)
 	currentHeight := uint64(ctx.BlockHeight())
 
@@ -731,7 +846,7 @@ func (k Keeper) AddToLiquidityFees(ctx sdk.Context, pool Pool, fee sdk.Uint) err
 	return nil
 }
 
-func (k Keeper) getLiquidityFees(ctx sdk.Context, height uint64, prefix dbPrefix) (sdk.Uint, error) {
+func (k KVStore) getLiquidityFees(ctx sdk.Context, height uint64, prefix dbPrefix) (sdk.Uint, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefix, strconv.FormatUint(height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefix))
 	if !store.Has([]byte(key)) {
@@ -746,17 +861,17 @@ func (k Keeper) getLiquidityFees(ctx sdk.Context, height uint64, prefix dbPrefix
 }
 
 // GetTotalLiquidityFees - total of all fees collected in each block
-func (k Keeper) GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint, error) {
+func (k KVStore) GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint, error) {
 	return k.getLiquidityFees(ctx, height, prefixTotalLiquidityFee)
 }
 
 // GetPoolLiquidityFees - total of fees collected in each block per pool
-func (k Keeper) GetPoolLiquidityFees(ctx sdk.Context, height uint64, pool Pool) (sdk.Uint, error) {
+func (k KVStore) GetPoolLiquidityFees(ctx sdk.Context, height uint64, pool Pool) (sdk.Uint, error) {
 	return k.getLiquidityFees(ctx, height, prefixPoolLiquidityFee)
 }
 
 // GetIncompleteEvents retrieve incomplete events
-func (k Keeper) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
+func (k KVStore) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
 	key := getKey(prefixInCompleteEvents, "", getVersion(k.GetLowestActiveVersion(ctx), prefixInCompleteEvents))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -772,7 +887,7 @@ func (k Keeper) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
 }
 
 // SetIncompleteEvents write incomplete events
-func (k Keeper) SetIncompleteEvents(ctx sdk.Context, events Events) {
+func (k KVStore) SetIncompleteEvents(ctx sdk.Context, events Events) {
 	key := getKey(prefixInCompleteEvents, "", getVersion(k.GetLowestActiveVersion(ctx), prefixInCompleteEvents))
 	store := ctx.KVStore(k.storeKey)
 	if len(events) == 0 {
@@ -783,20 +898,20 @@ func (k Keeper) SetIncompleteEvents(ctx sdk.Context, events Events) {
 }
 
 // AddIncompleteEvents append to incomplete events
-func (k Keeper) AddIncompleteEvents(ctx sdk.Context, event Event) {
+func (k KVStore) AddIncompleteEvents(ctx sdk.Context, event Event) {
 	events, _ := k.GetIncompleteEvents(ctx)
 	events = append(events, event)
 	k.SetIncompleteEvents(ctx, events)
 }
 
 // GetCompleteEventIterator iterate complete events
-func (k Keeper) GetCompleteEventIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStore) GetCompleteEventIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixCompleteEvent))
 }
 
 // GetCompletedEvent retrieve completed event
-func (k Keeper) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
+func (k KVStore) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
 	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", id), getVersion(k.GetLowestActiveVersion(ctx), prefixCompleteEvent))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -812,14 +927,14 @@ func (k Keeper) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
 }
 
 // SetCompletedEvent write a completed event
-func (k Keeper) SetCompletedEvent(ctx sdk.Context, event Event) {
+func (k KVStore) SetCompletedEvent(ctx sdk.Context, event Event) {
 	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", event.ID), getVersion(k.GetLowestActiveVersion(ctx), prefixCompleteEvent))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event))
 }
 
 // CompleteEvent
-func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.Tx) {
+func (k KVStore) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.Tx) {
 	lastEventID := k.GetLastEventID(ctx)
 
 	incomplete, _ := k.GetIncompleteEvents(ctx)
@@ -871,7 +986,7 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.Tx)
 }
 
 // GetLastEventID get last event id
-func (k Keeper) GetLastEventID(ctx sdk.Context) int64 {
+func (k KVStore) GetLastEventID(ctx sdk.Context) int64 {
 	var lastEventID int64
 	key := getKey(prefixLastEventID, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastEventID))
 	store := ctx.KVStore(k.storeKey)
@@ -883,21 +998,21 @@ func (k Keeper) GetLastEventID(ctx sdk.Context) int64 {
 }
 
 // SetLastEventID write a last event id
-func (k Keeper) SetLastEventID(ctx sdk.Context, id int64) {
+func (k KVStore) SetLastEventID(ctx sdk.Context, id int64) {
 	key := getKey(prefixLastEventID, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastEventID))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&id))
 }
 
 // SetPoolAddresses save the pool address to key value store
-func (k Keeper) SetPoolAddresses(ctx sdk.Context, addresses *PoolAddresses) {
+func (k KVStore) SetPoolAddresses(ctx sdk.Context, addresses *PoolAddresses) {
 	key := getKey(prefixPoolAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolAddresses))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(*addresses))
 }
 
 // GetPoolAddresses get current pool addresses
-func (k Keeper) GetPoolAddresses(ctx sdk.Context) PoolAddresses {
+func (k KVStore) GetPoolAddresses(ctx sdk.Context) PoolAddresses {
 	var addr PoolAddresses
 	key := getKey(prefixPoolAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolAddresses))
 	store := ctx.KVStore(k.storeKey)
@@ -908,13 +1023,13 @@ func (k Keeper) GetPoolAddresses(ctx sdk.Context) PoolAddresses {
 	return addr
 }
 
-func (k Keeper) SetValidatorMeta(ctx sdk.Context, meta ValidatorMeta) {
+func (k KVStore) SetValidatorMeta(ctx sdk.Context, meta ValidatorMeta) {
 	key := getKey(prefixValidatorMeta, "", getVersion(k.GetLowestActiveVersion(ctx), prefixValidatorMeta))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(meta))
 }
 
-func (k Keeper) GetValidatorMeta(ctx sdk.Context) ValidatorMeta {
+func (k KVStore) GetValidatorMeta(ctx sdk.Context) ValidatorMeta {
 	var meta ValidatorMeta
 	key := getKey(prefixValidatorMeta, "", getVersion(k.GetLowestActiveVersion(ctx), prefixValidatorMeta))
 	store := ctx.KVStore(k.storeKey)
@@ -925,7 +1040,7 @@ func (k Keeper) GetValidatorMeta(ctx sdk.Context) ValidatorMeta {
 	return meta
 }
 
-func (k Keeper) GetChains(ctx sdk.Context) common.Chains {
+func (k KVStore) GetChains(ctx sdk.Context) common.Chains {
 	chains := make(common.Chains, 0)
 	key := getKey(prefixSupportedChains, "", getVersion(k.GetLowestActiveVersion(ctx), prefixSupportedChains))
 	store := ctx.KVStore(k.storeKey)
@@ -936,7 +1051,7 @@ func (k Keeper) GetChains(ctx sdk.Context) common.Chains {
 	return chains
 }
 
-func (k Keeper) SupportedChain(ctx sdk.Context, chain common.Chain) bool {
+func (k KVStore) SupportedChain(ctx sdk.Context, chain common.Chain) bool {
 	for _, ch := range k.GetChains(ctx) {
 		if ch.Equals(chain) {
 			return true
@@ -945,7 +1060,7 @@ func (k Keeper) SupportedChain(ctx sdk.Context, chain common.Chain) bool {
 	return false
 }
 
-func (k Keeper) AddChain(ctx sdk.Context, chain common.Chain) {
+func (k KVStore) AddChain(ctx sdk.Context, chain common.Chain) {
 	key := getKey(prefixSupportedChains, "", getVersion(k.GetLowestActiveVersion(ctx), prefixSupportedChains))
 	if k.SupportedChain(ctx, chain) {
 		// already added
@@ -958,12 +1073,12 @@ func (k Keeper) AddChain(ctx sdk.Context, chain common.Chain) {
 }
 
 // GetYggdrasilIterator only iterate yggdrasil pools
-func (k Keeper) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStore) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixYggdrasilPool))
 }
 
-func (k Keeper) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error) {
+func (k KVStore) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error) {
 	iterator := k.GetYggdrasilIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
@@ -980,7 +1095,7 @@ func (k Keeper) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain 
 	return common.EmptyPubKey, nil
 }
 
-func (k Keeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
+func (k KVStore) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
 	key := getKey(prefixYggdrasilPool, ygg.PubKey.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ygg))
@@ -988,13 +1103,13 @@ func (k Keeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
 
 // YggdrasilExists check whether the given pubkey is associated with a
 // yggdrasil vault
-func (k Keeper) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool {
+func (k KVStore) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
 	return store.Has([]byte(key))
 }
 
-func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
+func (k KVStore) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
 	var ygg Yggdrasil
 	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
 	store := ctx.KVStore(k.storeKey)
@@ -1007,7 +1122,7 @@ func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
 	}
 	return ygg
 }
-func (k Keeper) HasValidYggdrasilPools(ctx sdk.Context) (bool, error) {
+func (k KVStore) HasValidYggdrasilPools(ctx sdk.Context) (bool, error) {
 	iterator := k.GetYggdrasilIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
@@ -1022,7 +1137,7 @@ func (k Keeper) HasValidYggdrasilPools(ctx sdk.Context) (bool, error) {
 	return false, nil
 }
 
-func (k Keeper) GetReservesContributors(ctx sdk.Context) ReserveContributors {
+func (k KVStore) GetReservesContributors(ctx sdk.Context) ReserveContributors {
 	contribs := make(ReserveContributors, 0)
 	key := getKey(prefixReserves, "", getVersion(k.GetLowestActiveVersion(ctx), prefixReserves))
 	store := ctx.KVStore(k.storeKey)
@@ -1033,14 +1148,14 @@ func (k Keeper) GetReservesContributors(ctx sdk.Context) ReserveContributors {
 	return contribs
 }
 
-func (k Keeper) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) {
+func (k KVStore) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) {
 	key := getKey(prefixReserves, "", getVersion(k.GetLowestActiveVersion(ctx), prefixReserves))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(contribs))
 }
 
-///////////////////////// Vault Data //////////////////////////
-func (k Keeper) GetVaultData(ctx sdk.Context) VaultData {
+// ////////////////////// Vault Data //////////////////////////
+func (k KVStore) GetVaultData(ctx sdk.Context) VaultData {
 	data := NewVaultData()
 	key := getKey(prefixVaultData, "", getVersion(k.GetLowestActiveVersion(ctx), prefixVaultData))
 	store := ctx.KVStore(k.storeKey)
@@ -1051,14 +1166,14 @@ func (k Keeper) GetVaultData(ctx sdk.Context) VaultData {
 	return data
 }
 
-func (k Keeper) SetVaultData(ctx sdk.Context, data VaultData) {
+func (k KVStore) SetVaultData(ctx sdk.Context, data VaultData) {
 	key := getKey(prefixVaultData, "", getVersion(k.GetLowestActiveVersion(ctx), prefixVaultData))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(data))
 }
 
 // Update the vault data to reflect changing in this block
-func (k Keeper) UpdateVaultData(ctx sdk.Context) {
+func (k KVStore) UpdateVaultData(ctx sdk.Context) {
 	vault := k.GetVaultData(ctx)
 	currentHeight := uint64(ctx.BlockHeight())
 
