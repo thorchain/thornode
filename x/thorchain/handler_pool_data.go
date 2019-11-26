@@ -7,7 +7,6 @@ import (
 )
 
 type PoolDataHandler struct {
-	Handler
 	keeper Keeper
 }
 
