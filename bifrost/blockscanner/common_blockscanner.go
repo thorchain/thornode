@@ -48,6 +48,12 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
 
+	// check that we can parse our host url
+	_, err := url.Parse(rpcHost)
+	if err != nil {
+		return nil, err
+	}
+
 	if nil == scannerStorage {
 		return nil, errors.New("scannerStorage is nil")
 	}
@@ -236,16 +242,10 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 }
 
 func (b *CommonBlockScanner) getBlockUrl() string {
-	u, err := url.Parse(b.rpcHost)
-	if err != nil {
-		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.rpcHost, err)
-	}
-	requestUrl := url.URL{
-		Scheme: u.Scheme,
-		Host:   u.Host,
-		Path:   "block",
-	}
-	return requestUrl.String()
+	// ignore err because we already checked we can parse the rpcHost at NewCommonBlockScanner
+	u, _ := url.Parse(b.rpcHost)
+	u.Path = "block"
+	return u.String()
 }
 
 func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {

@@ -2,7 +2,6 @@ package binance
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -85,11 +84,7 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 }
 
 func IsTestNet(rpcHost string) (string, bool) {
-	// TODO: remove insecure skip verify
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
+	client := &http.Client{}
 
 	u, err := url.Parse(rpcHost)
 	if err != nil {
@@ -111,7 +106,7 @@ func IsTestNet(rpcHost string) (string, bool) {
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error().Err(err)
+		log.Fatal().Err(err).Msg("fail to read body")
 	}
 
 	type Status struct {
@@ -125,8 +120,9 @@ func IsTestNet(rpcHost string) (string, bool) {
 	}
 
 	var status Status
+	fmt.Printf("BUF: %s\n", data)
 	if err := json.Unmarshal(data, &status); nil != err {
-		log.Error().Err(err)
+		log.Fatal().Err(err).Msg("fail to unmarshal body")
 	}
 
 	isTestNet := status.Result.NodeInfo.Network == "Binance-Chain-Nile"
@@ -307,7 +303,9 @@ func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 		return types.BaseAccount{}, err
 	}
 	u.Path = "/abci_query"
-	u.RawQuery = fmt.Sprintf("path=\"/account/%s\"", addr.String())
+	v := u.Query()
+	v.Set("path", fmt.Sprintf("\"/account/%s\"", addr.String()))
+	u.RawQuery = v.Encode()
 
 	resp, err := http.Get(u.String())
 	if err != nil {
@@ -353,7 +351,8 @@ func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) error {
 	u, err := url.Parse(b.RPCHost)
 	if err != nil {
-		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
+		log.Error().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
+		return err
 	}
 	u.Path = "broadcast_tx_commit"
 	_, err = http.Post(u.String(), "", bytes.NewReader(hexTx))
