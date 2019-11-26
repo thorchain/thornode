@@ -56,9 +56,9 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	poolAddrMgr := NewPoolAddressManager(k)
 	poolAddrMgr.BeginBlock(ctx)
 	poolPubKey := GetRandomPubKey()
-	poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{
-		common.NewPoolPubKey(common.BNBChain, 0, poolPubKey),
-	}
+	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, poolPubKey)
+	c.Assert(err, IsNil)
+	poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
 	txOutStore := NewTxOutStore(k, poolAddrMgr)
 	txOutStore.NewBlock(uint64(201))
 
@@ -80,6 +80,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
 			common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
 		},
+		nil,
 		"SWAP:BNB.BNB",
 	)
 

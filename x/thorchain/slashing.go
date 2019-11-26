@@ -77,7 +77,7 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) 
 					// Set the pool address to empty, it will overwrite it with the
 					// current Asgard vault
 					tx.PoolAddress = common.EmptyPubKey
-					txOutStore.AddTxOutItem(ctx, keeper, tx, true, true)
+					txOutStore.AddTxOutItem(ctx, keeper, tx, true)
 				}
 			}
 
