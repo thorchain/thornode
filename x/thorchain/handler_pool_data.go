@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -31,14 +29,15 @@ func (h PoolDataHandler) Run(ctx sdk.Context, msg MsgSetPoolData, version int64)
 
 func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version int64) error {
 	switch version {
-	case 0:
-		return h.ValidateV0(ctx, msg)
+	case 1:
+		return h.ValidateV1(ctx, msg)
 	default:
-		panic(fmt.Sprintf("Unable to validate version %d", version))
+		ctx.Logger().Error(badVersion.Error())
+		return badVersion
 	}
 }
 
-func (h PoolDataHandler) ValidateV0(ctx sdk.Context, msg MsgSetPoolData) error {
+func (h PoolDataHandler) ValidateV1(ctx sdk.Context, msg MsgSetPoolData) error {
 	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		ctx.Logger().Error(notAuthorized.Error(), "asset", msg.Asset.String())
 		return notAuthorized
@@ -55,15 +54,16 @@ func (h PoolDataHandler) ValidateV0(ctx sdk.Context, msg MsgSetPoolData) error {
 func (h PoolDataHandler) Handle(ctx sdk.Context, msg MsgSetPoolData, version int64) error {
 	ctx.Logger().Info("handleMsgSetPoolData request", "Asset:", msg.Asset.String())
 	switch version {
-	case 0:
-		return h.HandleV0(ctx, msg)
+	case 1:
+		return h.HandleV1(ctx, msg)
 	default:
-		panic(fmt.Sprintf("Unable to validate version %d", version))
+		ctx.Logger().Error(badVersion.Error())
+		return badVersion
 	}
 }
 
 // Handle a message to set pooldata
-func (h PoolDataHandler) HandleV0(ctx sdk.Context, msg MsgSetPoolData) error {
+func (h PoolDataHandler) HandleV1(ctx sdk.Context, msg MsgSetPoolData) error {
 	h.keeper.SetPoolData(
 		ctx,
 		msg.Asset,
