@@ -2,7 +2,6 @@ package rest
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -28,12 +27,12 @@ func getRateLimit(fallback int) int {
 	}
 	i, err := strconv.Atoi(value)
 	if err != nil {
-		log.Fatalf("Unable to parse RATE_LIMIT: %s", value)
+		fmt.Printf("Unable to parse %s as an int: falling back to %d\n", value, fallback)
+		i = fallback
 	}
 	return i
 }
 
-// TODO add stake record endpoint
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
 
