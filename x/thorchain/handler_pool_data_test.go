@@ -12,7 +12,7 @@ type HandlerPoolDataSuite struct {
 
 var _ = Suite(&HandlerPoolDataSuite{})
 
-func (s *HandlerPoolDataSuite) SetupSuite(c *C) {
+func (s *HandlerPoolDataSuite) SetUpSuite(c *C) {
 	s.w = getHandlerTestWrapper(c, 1, true, false)
 	s.handler = NewPoolDataHandler(s.w.keeper)
 }
