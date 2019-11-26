@@ -3,10 +3,9 @@ package thorchain
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/thornode/x/thorchain/mocks"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type UnstakeSuite struct{}
@@ -215,7 +214,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 
 	for _, item := range inputs {
 		ctx, _ := setupKeeperForTest(c)
-		ps := mocks.MockPoolStorage{}
+		ps := MockPoolStorage{}
 		c.Logf("name:%s", item.name)
 		err := validateUnstake(ctx, ps, item.msg)
 		if item.expectedError != nil {
@@ -228,7 +227,7 @@ func (s UnstakeSuite) TestValidateUnstake(c *C) {
 }
 
 func (UnstakeSuite) TestUnstake(c *C) {
-	ps := mocks.MockPoolStorage{}
+	ps := MockPoolStorage{}
 	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
 	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if nil != err {
@@ -237,7 +236,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 	testCases := []struct {
 		name          string
 		msg           MsgSetUnStake
-		ps            poolStorage
+		ps            Keeper
 		runeAmount    sdk.Uint
 		assetAmount   sdk.Uint
 		expectedError error
@@ -415,7 +414,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 	}
 }
 
-func getInMemoryPoolStorageForUnstake(c *C) poolStorage {
+func getInMemoryPoolStorageForUnstake(c *C) Keeper {
 	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
 	if nil != err {
 		c.Error("fail to create new BNB Address")

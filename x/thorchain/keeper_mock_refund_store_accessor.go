@@ -1,4 +1,4 @@
-package mocks
+package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -14,6 +14,7 @@ const (
 
 // MockRefundStoreAccessor implements PoolStorage interface, thus we can mock the error cases
 type MockRefundStoreAccessor struct {
+	KVStoreDummy
 }
 
 func NewMockRefundStoreAccessor() *MockRefundStoreAccessor {
