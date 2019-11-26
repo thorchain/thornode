@@ -23,7 +23,7 @@ func (s TxOutStoreSuite) TestAddGasFees(c *C) {
 }
 
 func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
+	w := getHandlerTestWrapper(c, 1, true, true)
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
@@ -80,6 +80,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	msgs := w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 1)
 	c.Assert(msgs[0].PoolAddress.String(), Equals, acc2.NodePubKey.Secp256k1.String())
+	c.Assert(msgs[0].Coin.Amount.Equal(sdk.NewUint(19*common.One)), Equals, true)
 
 	// Should get acc1. Acc3 hasn't signed and acc1 now has the highest amount
 	// of coin.
@@ -106,4 +107,24 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	c.Assert(msgs, HasLen, 3)
 	c.Assert(msgs[2].PoolAddress.String(), Equals, w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain).PubKey.String())
 
+}
+
+func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
+	w := getHandlerTestWrapper(c, 1, true, true)
+	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	c.Assert(err, IsNil)
+	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
+
+	inTxID := GetRandomTxHash()
+	item := &TxOutItem{
+		Chain:     common.BNBChain,
+		ToAddress: GetRandomBNBAddress(),
+		InHash:    inTxID,
+		Coin:      common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One)),
+	}
+
+	w.txOutStore.AddTxOutItem(w.ctx, w.keeper, item, false)
+	msgs := w.txOutStore.GetOutboundItems()
+	c.Assert(msgs, HasLen, 1)
+	c.Assert(msgs[0].Coin.Amount.Equal(sdk.NewUint(20*common.One)), Equals, true)
 }
