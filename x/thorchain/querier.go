@@ -88,7 +88,7 @@ func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorMana
 			resp.Queued = validatorMgr.Meta.Queued
 		}
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, resp)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal validator response to json", err)
 		return nil, sdk.ErrInternal("fail to marshal validator response to json")
@@ -98,7 +98,7 @@ func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorMana
 
 func queryChains(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	chains := keeper.GetChains(ctx)
-	res, err := codec.MarshalJSONIndent(keeper.cdc, chains)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), chains)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal current chains to json", err)
 		return nil, sdk.ErrInternal("fail to marshal chains to json")
@@ -108,7 +108,7 @@ func queryChains(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte,
 }
 
 func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, manager *PoolAddressManager) ([]byte, sdk.Error) {
-	res, err := codec.MarshalJSONIndent(keeper.cdc, manager.GetCurrentPoolAddresses())
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), manager.GetCurrentPoolAddresses())
 	if nil != err {
 		ctx.Logger().Error("fail to marshal current pool address to json", err)
 		return nil, sdk.ErrInternal("fail to marshal current pool address to json")
@@ -128,7 +128,7 @@ func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 	if nil != err {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, nodeAcc)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAcc)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal node account to json", err)
 		return nil, sdk.ErrInternal("fail to marshal node account to json")
@@ -141,7 +141,7 @@ func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 	if nil != err {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, nodeAccounts)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAccounts)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal observers to json", err)
 		return nil, sdk.ErrInternal("fail to marshal observers to json")
@@ -160,7 +160,7 @@ func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	for _, item := range activeAccounts {
 		result = append(result, item.NodeAddress.String())
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, result)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), result)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal observers to json", err)
 		return nil, sdk.ErrInternal("fail to marshal observers to json")
@@ -180,7 +180,7 @@ func queryObserver(ctx sdk.Context, path []string, req abci.RequestQuery, keeper
 	if nil != err {
 		return nil, sdk.ErrInternal("fail to get node account")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, nodeAcc)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAcc)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal node account to json", err)
 		return nil, sdk.ErrInternal("fail to marshal node account to json")
@@ -196,7 +196,7 @@ func queryPoolIndex(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 		ctx.Logger().Error("fail to get pool index", err)
 		return nil, sdk.ErrInternal("fail to get pool index")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, ps)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ps)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal pool index to json", err)
 		return nil, sdk.ErrInternal("fail to marshal pool index to json")
@@ -216,7 +216,7 @@ func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 		ctx.Logger().Error("fail to get pool staker", err)
 		return nil, sdk.ErrInternal("fail to get pool staker")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, ps)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ps)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal pool staker to json", err)
 		return nil, sdk.ErrInternal("fail to marshal pool staker to json")
@@ -237,7 +237,7 @@ func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		ctx.Logger().Error("fail to get staker pool", err)
 		return nil, sdk.ErrInternal("fail to get staker pool")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, ps)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ps)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal staker pool to json", err)
 		return nil, sdk.ErrInternal("fail to marshal staker pool to json")
@@ -267,7 +267,7 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	}
 	pool.PoolAddress = addr
 	pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
-	res, err := codec.MarshalJSONIndent(keeper.cdc, pool)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), pool)
 	if err != nil {
 		return nil, sdk.ErrInternal("could not marshal result to JSON")
 	}
@@ -288,12 +288,12 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrM
 	}
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
-		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
 		pool.PoolAddress = addr
 		pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 		pools = append(pools, pool)
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, pools)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), pools)
 	if err != nil {
 		return nil, sdk.ErrInternal("could not marshal pools result to json")
 	}
@@ -311,7 +311,7 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	if nil != err {
 		return nil, sdk.ErrInternal("fail to get trust account")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, voter.GetTx(trustAccounts))
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), voter.GetTx(trustAccounts))
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")
@@ -371,7 +371,7 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		out[item.Chain] = res
 	}
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, QueryResTxOut{
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), QueryResTxOut{
 		Chains: out,
 	})
 	if nil != err {
@@ -398,7 +398,7 @@ func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 		ctx.Logger().Error("fail to get admin config", err)
 		return nil, sdk.ErrInternal("fail to get admin config")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, config)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), config)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal config to json", err)
 		return nil, sdk.ErrInternal("fail to marshal config to json")
@@ -412,7 +412,7 @@ func queryInCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery
 		ctx.Logger().Error("fail to get incomplete events", err)
 		return nil, sdk.ErrInternal("fail to get incomplete events")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.cdc, events)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), events)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal events to json", err)
 		return nil, sdk.ErrInternal("fail to marshal events to json")
@@ -438,7 +438,7 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 		}
 	}
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, events)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), events)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal events to json", err)
 		return nil, sdk.ErrInternal("fail to marshal events to json")
@@ -461,7 +461,7 @@ func queryHeights(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	chainHeight := keeper.GetLastChainHeight(ctx, chain)
 	signed := keeper.GetLastSignedHeight(ctx)
 
-	res, err := codec.MarshalJSONIndent(keeper.cdc, QueryResHeights{
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), QueryResHeights{
 		Chain:            chain,
 		LastChainHeight:  chainHeight,
 		LastSignedHeight: signed,

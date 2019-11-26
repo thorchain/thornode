@@ -526,7 +526,7 @@ func (vm *ValidatorManager) setupValidatorNodes(ctx sdk.Context, height int64) e
 	activeCandidateNodes := NodeAccounts{}
 	for ; iter.Valid(); iter.Next() {
 		var na NodeAccount
-		if err := vm.k.cdc.UnmarshalBinaryBare(iter.Value(), &na); nil != err {
+		if err := vm.k.Cdc().UnmarshalBinaryBare(iter.Value(), &na); nil != err {
 			ctx.Logger().Error("fail to unmarshal node account", "error", err)
 			return fmt.Errorf("fail to unmarshal node account, %w", err)
 		}
