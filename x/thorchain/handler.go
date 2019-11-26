@@ -14,11 +14,15 @@ import (
 // EmptyAccAddress empty address
 var EmptyAccAddress = sdk.AccAddress{}
 var notAuthorized = fmt.Errorf("Not Authorized")
+var badVersion = fmt.Errorf("Bad version")
 
 // NewHandler returns a handler for "thorchain" type messages.
 func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *TxOutStore, validatorManager *ValidatorManager) sdk.Handler {
 
+	// Classic Handler
 	classic := NewClassicHandler(keeper, poolAddressMgr, txOutStore, validatorManager)
+
+	// New arch handlers
 	poolDataHandler := NewPoolDataHandler(keeper)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
@@ -28,11 +32,6 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 			return poolDataHandler.Run(ctx, m, version)
 		default:
 			return classic(ctx, msg)
-		}
-
-		return sdk.Result{
-			Code:      sdk.CodeOK,
-			Codespace: DefaultCodespace,
 		}
 	}
 }
@@ -115,28 +114,6 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 		ctx,
 		msg.Asset,
 		PoolSuspended)
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
-// Handle a message to set pooldata
-func handleMsgSetPoolData(ctx sdk.Context, keeper Keeper, msg MsgSetPoolData) sdk.Result {
-	if !isSignedByActiveNodeAccounts(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset.String())
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	ctx.Logger().Info("handleMsgSetPoolData request", "Asset:", msg.Asset.String())
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error(err.Error())
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	keeper.SetPoolData(
-		ctx,
-		msg.Asset,
-		msg.Status)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
@@ -579,6 +556,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 		ctx.Logger().Error("fail to get list of active node accounts", err)
 		return sdk.ErrInternal("fail to get list of active node accounts").Result()
 	}
+
 	handler := NewHandler(keeper, poolAddressMgr, txOutStore, validatorManager)
 	for _, tx := range msg.TxIns {
 		voter := keeper.GetTxInVoter(ctx, tx.TxID)
