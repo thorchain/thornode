@@ -314,22 +314,6 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	c.Assert(totalRune.Equal(msgSetStake.RuneAmount), Equals, true)
 }
 
-func (HandlerSuite) TestHandleMsgSetPoolData(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-
-	msgSetPoolData := NewMsgSetPoolData(common.BNBAsset, PoolEnabled, w.notActiveNodeAccount.NodeAddress)
-	result := handleMsgSetPoolData(w.ctx, w.keeper, msgSetPoolData)
-	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
-
-	msgSetPoolData = NewMsgSetPoolData(common.BNBAsset, PoolEnabled, w.activeNodeAccount.NodeAddress)
-	result1 := handleMsgSetPoolData(w.ctx, w.keeper, msgSetPoolData)
-	c.Assert(result1.Code, Equals, sdk.CodeOK)
-
-	msgSetPoolData1 := NewMsgSetPoolData(common.Asset{}, PoolEnabled, w.activeNodeAccount.NodeAddress)
-	result2 := handleMsgSetPoolData(w.ctx, w.keeper, msgSetPoolData1)
-	c.Assert(result2.Code, Equals, sdk.CodeUnknownRequest)
-}
-
 func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	bnbAddr := GetRandomBNBAddress()
