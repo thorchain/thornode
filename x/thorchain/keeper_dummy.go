@@ -133,6 +133,7 @@ func (k KVStoreDummy) GetChains(ctx sdk.Context) common.Chains                  
 func (k KVStoreDummy) SupportedChain(ctx sdk.Context, chain common.Chain) bool         { return false }
 func (k KVStoreDummy) AddChain(ctx sdk.Context, chain common.Chain)                    {}
 func (k KVStoreDummy) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator               { return nil }
+func (k KVStoreDummy) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool          { return false }
 func (k KVStoreDummy) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error) {
 	return common.EmptyPubKey, kaboom
 }
