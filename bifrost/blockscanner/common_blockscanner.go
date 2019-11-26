@@ -2,10 +2,12 @@ package blockscanner
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -24,6 +26,7 @@ import (
 // since both binance and thorchain use cosmos, so this part logic should be the same
 type CommonBlockScanner struct {
 	cfg            config.BlockScannerConfiguration
+	rpcHost        string
 	logger         zerolog.Logger
 	wg             *sync.WaitGroup
 	scanChan       chan int64
@@ -40,10 +43,17 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("host is empty")
 	}
-	// Let's default to use https
-	if len(cfg.Scheme) == 0 {
-		cfg.Scheme = "https"
+	rpcHost := cfg.RPCHost
+	if !strings.HasPrefix(rpcHost, "http") {
+		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
+
+	// check that we can parse our host url
+	_, err := url.Parse(rpcHost)
+	if err != nil {
+		return nil, err
+	}
+
 	if nil == scannerStorage {
 		return nil, errors.New("scannerStorage is nil")
 	}
@@ -53,6 +63,7 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 	return &CommonBlockScanner{
 		cfg:      cfg,
 		logger:   log.Logger.With().Str("module", "commonblockscanner").Logger(),
+		rpcHost:  rpcHost,
 		wg:       &sync.WaitGroup{},
 		stopChan: make(chan struct{}),
 		scanChan: make(chan int64, cfg.BlockScanProcessors),
@@ -144,8 +155,6 @@ func (b *CommonBlockScanner) scanBlocks() {
 				b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 			}
 			b.logger.Debug().Int64("current block height", currentBlock).Int64("we are at", b.previousBlock).Msg("get block height")
-			// make sure we are one block behind , so when we process the block all the necessary data will be available
-			currentBlock = currentBlock - 1
 			if b.previousBlock >= currentBlock {
 				// back off
 				time.Sleep(b.cfg.BlockHeightDiscoverBackoff)
@@ -233,13 +242,12 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 }
 
 func (b *CommonBlockScanner) getBlockUrl() string {
-	requestUrl := url.URL{
-		Scheme: b.cfg.Scheme,
-		Host:   b.cfg.RPCHost,
-		Path:   "block",
-	}
-	return requestUrl.String()
+	// ignore err because we already checked we can parse the rpcHost at NewCommonBlockScanner
+	u, _ := url.Parse(b.rpcHost)
+	u.Path = "block"
+	return u.String()
 }
+
 func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {
 	start := time.Now()
 	defer func() {

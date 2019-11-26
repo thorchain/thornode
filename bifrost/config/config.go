@@ -12,7 +12,7 @@ import (
 
 // Configuration values
 type Configuration struct {
-	DEXHost               string                    `json:"dex_host" mapstructure:"dex_host"`
+	BinanceHost           string                    `json:"binance_host" mapstructure:"binance_host"`
 	ObserverDbPath        string                    `json:"observer_db_path" mapstructure:"observer_db_path"`
 	BlockScanner          BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
 	StateChain            StateChainConfiguration   `json:"state_chain" mapstructure:"state_chain"`
@@ -23,7 +23,6 @@ type Configuration struct {
 // BlockScannerConfiguration settings for BlockScanner
 type BlockScannerConfiguration struct {
 	RPCHost                    string `json:"rpc_host" mapstructure:"rpc_host"`
-	Scheme                     string `json:"scheme"  mapstructure:"scheme"`
 	StartBlockHeight           int64
 	BlockScanProcessors        int           `json:"block_scan_processors" mapstructure:"block_scan_processors"`
 	HttpRequestTimeout         time.Duration `json:"http_request_timeout" mapstructure:"http_request_timeout"`
@@ -97,7 +96,7 @@ type SignerConfiguration struct {
 
 // BinanceConfiguration all the configurations for binance client
 type BinanceConfiguration struct {
-	DEXHost    string `json:"dex_host" mapstructure:"dex_host"`
+	RPCHost    string `json:"rpc_host" mapstructure:"rpc_host"`
 	PrivateKey string `json:"private_key" mapstructure:"private_key"`
 }
 
@@ -111,7 +110,6 @@ type TSSConfiguration struct {
 
 func applyBlockScannerDefault() {
 	viper.SetDefault("block_scanner.start_block_height", "0")
-	viper.SetDefault("block_scanner.scheme", "https")
 	viper.SetDefault("block_scanner.block_scan_processors", "2")
 	viper.SetDefault("block_scanner.http_request_timeout", "30s")
 	viper.SetDefault("block_scanner.http_request_read_timeout", "30s")

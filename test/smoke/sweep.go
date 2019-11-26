@@ -3,7 +3,6 @@ package smoke
 import (
 	"log"
 
-	sdk "github.com/binance-chain/go-sdk/client"
 	btypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
@@ -12,29 +11,22 @@ import (
 // Sweep : our main sweep type.
 type Sweep struct {
 	ApiAddr    string
-	Network    btypes.ChainNetwork
 	Binance    Binance
 	KeyManager keys.KeyManager
-	Client     sdk.DexClient
 	KeyList    []string
 }
 
 // NewHoover : Create a new instance of Sweep.
-func NewSweep(apiAddr, masterPrivKey string, keyList []string, network int, debug bool) Sweep {
-	n := NewNetwork(network)
-
+func NewSweep(apiAddr, masterPrivKey string, keyList []string, debug bool) Sweep {
 	keyManager, err := keys.NewPrivateKeyManager(masterPrivKey)
 	if err != nil {
 		log.Fatalf("Error creating key manager: %s", err)
 	}
-	client := GetClient(apiAddr, n.Type, keyManager)
 
 	return Sweep{
 		ApiAddr:    apiAddr,
-		Network:    n.Type,
-		Binance:    NewBinance(apiAddr, n.ChainID, debug),
+		Binance:    NewBinance(apiAddr, debug),
 		KeyManager: keyManager,
-		Client:     client,
 		KeyList:    keyList,
 	}
 }
@@ -43,43 +35,51 @@ func NewSweep(apiAddr, masterPrivKey string, keyList []string, network int, debu
 func (s Sweep) EmptyWallets() {
 	for _, key := range s.KeyList {
 		keyManager, _ := keys.NewPrivateKeyManager(key)
-		client, _ := sdk.NewDexClient(s.ApiAddr, s.Network, keyManager)
 
 		var coins []btypes.Coin
 		balances := s.Balances(keyManager.GetAddr())
 		for _, asset := range balances {
-			amount := asset.Free.ToInt64()
+			amount := asset.Amount
 
 			// Binance fees.
-			if len(balances) > 1 && asset.Symbol == "BNB" {
+			if len(balances) > 1 && asset.Denom == "BNB" {
 				amount = amount - (int64(len(balances)) * 30000)
-			} else if asset.Symbol == "BNB" {
+			} else if asset.Denom == "BNB" {
 				amount = amount - 37500
 			}
 
 			if amount > 0 {
-				coins = append(coins, btypes.Coin{Denom: asset.Symbol, Amount: amount})
+				coins = append(coins, btypes.Coin{Denom: asset.Denom, Amount: amount})
 			}
 		}
 
 		if len(coins) > 0 {
 			payload := []msg.Transfer{msg.Transfer{s.KeyManager.GetAddr(), coins}}
-			s.SendTxn(client, keyManager, payload, "SWEEP:RETURN")
+			_ = s.SendTxn(keyManager, payload, "SWEEP:RETURN")
 		}
 	}
 }
 
 // Balances : Get the account balances of a given wallet.
-func (s Sweep) Balances(address btypes.AccAddress) []btypes.TokenBalance {
-	acct, err := s.Client.GetAccount(address.String())
+func (s Sweep) Balances(address btypes.AccAddress) btypes.Coins {
+	acct, err := s.Binance.GetAccount(address)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	return acct.Balances
+	return acct.Coins
 }
 
-// SendTxn : Send our transaction to Binance
-func (s Sweep) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {
-	s.Binance.SendTxn(key, payload, memo)
+// SendTxn : Send the transaction to Binance.
+func (s *Sweep) SendTxn(key keys.KeyManager, payload []msg.Transfer, memo string) error {
+	sendMsg, err := s.Binance.ParseTx(key, payload)
+	if err != nil {
+		return err
+	}
+
+	hex, params, err := s.Binance.SignTx(key, sendMsg, memo)
+	if err != nil {
+		return err
+	}
+
+	return s.Binance.BroadcastTx(hex, params)
 }

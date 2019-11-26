@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
-	"net/http"
-	"time"
+	"os"
+	"strconv"
+	"strings"
 
-	sdk "github.com/binance-chain/go-sdk/client"
+	"github.com/pkg/errors"
+
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
@@ -17,310 +18,344 @@ import (
 	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
 )
 
-// Config : test config
-type Config struct {
-	delay   time.Duration
-	debug   bool
-	network int
-	logFile string
-}
-
 // Smoke : test instructions.
 type Smoke struct {
-	Config     Config
-	ApiAddr    string
-	Network    ctypes.ChainNetwork
-	FaucetKey  string
-	PoolKey    string
-	Binance    Binance
-	Statechain Statechain
-	Tests      types.Tests
-	Results    []types.Output
+	Balances     types.BalancesConfigs
+	Transactions []types.TransactionConfig
+	ApiAddr      string
+	PoolAddress  ctypes.AccAddress
+	VaultKey     string
+	FaucetKey    string
+	Binance      Binance
+	Thorchain    Thorchain
+	Keys         map[string]keys.KeyManager
+	SweepOnExit  bool
+	FastFail     bool
+	Debug        bool
+	Results      types.Results
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey, poolKey, env string, config string, network int, logFile string, debug bool) Smoke {
-	cfg, err := ioutil.ReadFile(config)
+func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string, fastFail, debug bool) Smoke {
+	balRaw, err := ioutil.ReadFile(bal)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var tests types.Tests
-	if err := json.Unmarshal(cfg, &tests); nil != err {
+	var balConfig types.BalancesConfigs
+	if err := json.Unmarshal(balRaw, &balConfig); nil != err {
 		log.Fatal(err)
 	}
 
-	var results []types.Output
-	n := NewNetwork(network)
+	txnRaw, err := ioutil.ReadFile(txns)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var txnConfig []types.TransactionConfig
+	if err := json.Unmarshal(txnRaw, &txnConfig); nil != err {
+		log.Fatal(err)
+	}
+
+	keyMgr := make(map[string]keys.KeyManager, 0)
+
+	thor := NewThorchain(env)
+	// wait for thorchain to become available
+	thor.WaitForAvailability()
+
+	// Detect if we should sweep for funds at the end
+	sweep := false
+	if len(faucetKey) > 0 {
+		sweep = true
+	}
+
 	return Smoke{
-		Config: Config{
-			delay:   5 * time.Second,
-			debug:   debug,
-			network: network,
-			logFile: logFile,
-		},
-		ApiAddr:    apiAddr,
-		Network:    n.Type,
-		FaucetKey:  faucetKey,
-		PoolKey:    poolKey,
-		Binance:    NewBinance(apiAddr, n.ChainID, debug),
-		Statechain: NewStatechain(env),
-		Tests:      tests,
-		Results:    results,
+		Balances:     balConfig,
+		Transactions: txnConfig,
+		ApiAddr:      apiAddr,
+		Binance:      NewBinance(apiAddr, debug),
+		Thorchain:    thor,
+		PoolAddress:  thor.PoolAddress(),
+		FaucetKey:    faucetKey,
+		VaultKey:     vaultKey,
+		Keys:         keyMgr,
+		FastFail:     fastFail,
+		SweepOnExit:  sweep,
+		Debug:        debug,
 	}
 }
 
-// Setup : Generate/setup our accounts.
-func (s *Smoke) Setup() {
-	rand.Seed(time.Now().UnixNano())
-
-	s.Tests.ActorKeys = make(map[string]types.Keys)
+// Gets the key manager for a given name. If one does not exist already, create
+// it.
+func (s *Smoke) GetKey(name string) keys.KeyManager {
+	k := s.Keys[name]
+	if k != nil {
+		return k
+	}
 
 	// Faucet
-	key, err := keys.NewPrivateKeyManager(s.FaucetKey)
-	if err != nil {
-		log.Fatalf("Failed to create key manager: %s", err)
-	}
-	client := s.GetClient(key)
-	s.Tests.ActorKeys["faucet"] = types.Keys{Key: key, Client: client}
-
-	for _, actor := range s.Tests.ActorList {
-		client, key = s.ClientKey()
-		s.Tests.ActorKeys[actor] = types.Keys{Key: key, Client: client}
+	if name == "faucet" && len(s.FaucetKey) > 0 {
+		var err error
+		s.Keys["faucet"], err = keys.NewPrivateKeyManager(s.FaucetKey)
+		if err != nil {
+			log.Fatalf("Failed to create faucet key manager: %s", err)
+		}
+		return s.Keys["faucet"]
 	}
 
 	// Pool
-	key, err = keys.NewPrivateKeyManager(s.PoolKey)
-	if err != nil {
-		log.Fatalf("Failed to create key manager for pool: %s", err)
+	if name == "vault" && len(s.VaultKey) > 0 {
+		var err error
+		s.Keys["vault"], err = keys.NewPrivateKeyManager(s.VaultKey)
+		if err != nil {
+			log.Fatalf("Failed to create pool key manager: %s", err)
+		}
+		return s.Keys["vault"]
 	}
-	client = s.GetClient(key)
-	s.Tests.ActorKeys["pool"] = types.Keys{Key: key, Client: client}
 
-	s.Summary()
-}
-
-// Get Client, retry if we fail to get it (ie API Rate limited)
-func (s *Smoke) GetClient(k keys.KeyManager) sdk.DexClient {
-	return GetClient(s.ApiAddr, s.Network, k)
-}
-
-// ClientKey : instantiate Client and Keys Binance SDK objects.
-func (s *Smoke) ClientKey() (sdk.DexClient, keys.KeyManager) {
-	keyManager, err := keys.NewKeyManager()
+	// build key, and save
+	var err error
+	k, err = keys.NewKeyManager()
 	if err != nil {
 		log.Fatalf("Error creating key manager: %s", err)
 	}
-	return s.GetClient(keyManager), keyManager
+	s.Keys[name] = k
+
+	return k
 }
 
-// Summary : Private Keys
-func (s *Smoke) Summary() {
-	for name, actor := range s.Tests.ActorKeys {
-		privKey, _ := actor.Key.ExportAsPrivateKey()
-		log.Printf("%v: %v - %v\n", name, actor.Key.GetAddr(), privKey)
+func (s *Smoke) Summarize() {
+	failed := 0
+	success := 0
+	for _, result := range s.Results {
+		if result.Success {
+			success += 1
+		} else {
+			failed += 1
+		}
+	}
+
+	prefix := "Success"
+	if failed > 0 {
+		prefix = "Failed"
+	}
+
+	log.Printf("%s %d/%d correct", prefix, success, success+failed)
+}
+
+func (s *Smoke) Seed() error {
+	from := s.GetKey("faucet")
+	to := s.GetKey("MASTER")
+	var coins []ctypes.Coin
+	for denom, amount := range s.Balances[0].Master {
+		coins = append(coins, ctypes.Coin{Denom: denom, Amount: amount})
+	}
+	payload := []msg.Transfer{
+		msg.Transfer{to.GetAddr(), coins},
+	}
+	return s.SendTxn(from, payload, "SEED")
+}
+
+func (s *Smoke) Transfer(txn types.TransactionConfig) error {
+	from := s.GetKey(txn.From)
+
+	var to ctypes.AccAddress
+	// check if we are given a pool address
+	if strings.EqualFold(txn.To, "vault") && len(s.PoolAddress) > 0 {
+		to = s.PoolAddress
+	} else {
+		to = s.GetKey(txn.To).GetAddr()
+	}
+
+	var coins []ctypes.Coin
+
+	for denom, amount := range txn.Coins {
+		if amount > 0 {
+			coins = append(coins, ctypes.Coin{Denom: denom, Amount: amount})
+		}
+	}
+
+	payload := []msg.Transfer{
+		msg.Transfer{to, coins},
+	}
+
+	return s.SendTxn(from, payload, txn.Memo)
+}
+
+func (s *Smoke) GetCurrentBalances() types.BalancesConfig {
+	var bal types.BalancesConfig
+	for name, key := range s.Keys {
+		acc, err := s.Binance.GetAccount(key.GetAddr())
+		if err != nil {
+			log.Fatalf("Error checking balance: %s", err)
+		}
+		balances := make(map[string]int64, 0)
+		for _, coin := range acc.Coins {
+			balances[coin.Denom] = coin.Amount
+		}
+
+		switch strings.ToLower(name) {
+		case "master":
+			bal.Master = balances
+		case "user-1":
+			bal.User1 = balances
+		case "staker-1":
+			bal.Staker1 = balances
+		case "staker-2":
+			bal.Staker2 = balances
+		}
+	}
+
+	// get vault balance
+	acc, err := s.Binance.GetAccount(s.PoolAddress)
+	if err != nil {
+		log.Fatalf("Error checking balance: %s", err)
+	}
+
+	balances := make(map[string]int64, 0)
+	for _, coin := range acc.Coins {
+		balances[coin.Denom] = coin.Amount
+	}
+	bal.Vault = balances
+
+	pools := s.Thorchain.GetPools()
+	for _, pool := range pools {
+		balances := make(map[string]int64, 0)
+		balances["RUNE-A1F"] = pool.BalanceRune
+		balances[pool.Asset.Symbol] = pool.BalanceAsset
+		switch pool.Asset.Symbol {
+		case "BNB":
+			bal.PoolBNB = balances
+		case "LOK-3C0":
+			bal.PoolLoki = balances
+		}
+	}
+
+	return bal
+}
+
+// Wait for a block on thorchain
+func (s *Smoke) WaitABlock() {
+	// Wait for the thorchain to process a block
+	thorchainHeight := s.Thorchain.GetHeight()
+	for {
+		newHeight := s.Thorchain.GetHeight()
+		if thorchainHeight < newHeight {
+			return
+		}
 	}
 }
 
 // Run : Where there's smoke, there's fire!
-func (s *Smoke) Run() {
-	s.Setup()
+func (s *Smoke) Run() bool {
 
-	for tx, rule := range s.Tests.Rules {
-		var payload []msg.Transfer
-
-		for _, to := range rule.To {
-			var coins []ctypes.Coin
-
-			for _, coin := range to.Coins {
-				coins = append(coins, ctypes.Coin{Denom: coin.Symbol, Amount: coin.Amount})
-			}
-
-			toAddr := s.Tests.ActorKeys[to.Actor].Key.GetAddr()
-			payload = append(payload, msg.Transfer{toAddr, coins})
-		}
-
-		memo := rule.Memo
-		if rule.SendTo != "" {
-			sendTo := s.Tests.ActorKeys[rule.SendTo].Key.GetAddr()
-			memo = memo + ":" + sendTo.String()
-		}
-
-		if rule.SlipLimit != 0 {
-			memo = fmt.Sprintf("%s:%v", memo, rule.SlipLimit)
-		}
-
-		from := s.Tests.ActorKeys[rule.From]
-		s.SendTxn(from.Client, from.Key, payload, memo)
-
-		// Validate.
-		delay := time.Second * rule.CheckDelay
-		s.LogResults(tx, delay)
+	// Check that we are starting with a blank set of thorchain data
+	pools := s.Thorchain.GetPools()
+	if len(pools) > 0 {
+		log.Fatal("Thorchain isn't blank. Smoke tests assume we are starting from a clean state")
 	}
 
-	if s.Tests.SweepOnExit {
+	if err := s.Seed(); err != nil {
+		log.Fatalf("Send Tx failure: %s", err)
+	}
+
+	stopID := int64(0)
+	if id := os.Getenv("STOP_ID"); id != "" {
+		var err error
+		stopID, err = strconv.ParseInt(os.Getenv("STOP_ID"), 10, 64)
+		if err != nil {
+			stopID = 0
+		}
+	}
+
+	for _, txn := range s.Transactions {
+
+		// check if we are stopping at this tx
+		if stopID > 0 && txn.Tx >= stopID {
+			s.Summarize()
+			// exit it successfully
+			return true
+		}
+
+		if err := s.Transfer(txn); err != nil {
+			log.Fatalf("Send Tx failure: %s", err)
+		}
+
+		if txn.Memo != "SEED" {
+			// Wait for the thorchain to process a block
+			s.WaitABlock()
+		}
+
+		expectedBal := s.Balances.GetByTx(txn.Tx)
+		obtainedBal := s.GetCurrentBalances()
+		obtainedBal.Tx = txn.Tx
+
+		// Compare expected vs obtained balances
+		ok, offender, ob, ex := obtainedBal.Equals(expectedBal)
+		result := types.NewResult(ok, txn, obtainedBal)
+		s.Results = append(s.Results, result)
+
+		if !result.Success {
+			fmt.Printf("Transaction: %+v\n", result.Transaction)
+			fmt.Printf("Obtained: %s %+v\n", offender, ob)
+			fmt.Printf("Expected: %s %+v\n", offender, ex)
+			fmt.Printf("Fail (Tx %d)\n", result.Transaction.Tx)
+			if s.FastFail {
+				return false
+			}
+		} else {
+			if s.Debug {
+				fmt.Printf("Test Success! (%d)\n", result.Transaction.Tx)
+			}
+		}
+	}
+
+	if s.SweepOnExit {
 		s.Sweep()
 	}
 
-	// Save the log.
-	s.SaveLog()
-}
+	s.Summarize()
 
-// SaveLog : Save the log file.
-func (s *Smoke) SaveLog() {
-	output, _ := json.Marshal(s.Results)
-	_ = ioutil.WriteFile(s.Config.logFile, output, 0644)
-}
-
-// LogResults : Log our results.
-func (s *Smoke) LogResults(tx int, delay time.Duration) {
-	time.Sleep(delay)
-
-	s.BinanceState(tx)
-	s.StatechainState(tx)
-}
-
-// BinanceState : Compare expected vs actual Binance wallet values.
-func (s *Smoke) BinanceState(tx int) {
-	client := s.Tests.ActorKeys["faucet"].Client
-	var output types.Output
-	output.Tx = tx + 1
-
-	s.Results = append(s.Results, output)
-
-	for _, actor := range s.Tests.ActorList {
-		balances := s.GetBinance(client, s.Tests.ActorKeys[actor].Key.GetAddr())
-		for _, balance := range balances {
-			amount := balance.Free.ToInt64()
-
-			switch balance.Symbol {
-			case "RUNE-A1F":
-				s.ActorAmount(amount, &s.Results[tx].Rune, actor)
-			case "BNB":
-				s.ActorAmount(amount, &s.Results[tx].Bnb, actor)
-			case "LOK-3C0":
-				s.ActorAmount(amount, &s.Results[tx].Lok, actor)
-			}
-		}
-	}
-}
-
-// GetBinance : Get Binance account balance.
-func (s *Smoke) GetBinance(client sdk.DexClient, address ctypes.AccAddress) []ctypes.TokenBalance {
-	acct, err := client.GetAccount(address.String())
-
-	// The account does not exist on Binance yet.
-	if err != nil {
-		return make([]ctypes.TokenBalance, 0)
-	}
-
-	return acct.Balances
-}
-
-// ActorAmount : Amount for a given actor
-func (s *Smoke) ActorAmount(amount int64, output *types.Balance, actor string) {
-	switch actor {
-	case "master":
-		output.Master = amount
-	case "admin":
-		output.Admin = amount
-	case "user":
-		output.User = amount
-	case "staker_1":
-		output.Staker1 = amount
-	case "staker_2":
-		output.Staker2 = amount
-	}
-}
-
-// StatechainState : Current Statechain state.
-func (s *Smoke) StatechainState(tx int) {
-	statechain := s.GetStatechain()
-
-	var amount int64
-	for _, pools := range statechain {
-		amount += pools.BalanceRune
-
-		switch pools.Asset.Symbol {
-		case "LOK-3C0":
-			s.Results[tx].Lok.Pool = pools.BalanceAsset
-		case "BNB":
-			s.Results[tx].Bnb.Pool = pools.BalanceAsset
-		}
-	}
-
-	s.Results[tx].Rune.Pool = amount
-}
-
-// GetStatechain : Get the Statehcain pools.
-func (s *Smoke) GetStatechain() types.StatechainPools {
-	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
-	time.Sleep(1 * time.Second)
-
-	var pools types.StatechainPools
-
-	resp, err := http.Get(s.Statechain.PoolURL())
-	if err != nil {
-		log.Fatalf("Failed getting statechain: %v\n", err)
-	}
-
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Failed reading body: %v\n", err)
-	}
-
-	if err := json.Unmarshal(data, &pools); nil != err {
-		log.Fatalf("Failed to unmarshal pools: %s", err)
-	}
-
-	return pools
+	return s.Results.Success()
 }
 
 // Sweep : Transfer all assets back to the faucet.
 func (s *Smoke) Sweep() {
-	keys := make([]string, len(s.Tests.ActorList)+1)
-	key, _ := s.Tests.ActorKeys["pool"].Key.ExportAsPrivateKey()
-	keys = append(keys, key)
+	// TODO: send thorchain txs to cause ragnarok
+	/*
+		keys := make([]string, len(s.Tests.ActorList)+1)
+		key, _ := s.Tests.ActorKeys["pool"].ExportAsPrivateKey()
+		keys = append(keys, key)
 
-	for _, actor := range s.Tests.ActorList {
-		key, _ = s.Tests.ActorKeys[actor].Key.ExportAsPrivateKey()
-		if key != s.FaucetKey {
-			keys = append(keys, key)
+		for _, actor := range s.Tests.ActorList {
+			key, _ = s.Tests.ActorKeys[actor].ExportAsPrivateKey()
+			if key != s.FaucetKey {
+				keys = append(keys, key)
+			}
 		}
-	}
 
-	// Empty the wallets.
-	sweep := NewSweep(s.ApiAddr, s.FaucetKey, keys, s.Config.network, s.Config.debug)
-	sweep.EmptyWallets()
+		// Empty the wallets.
+		sweep := NewSweep(s.ApiAddr, s.FaucetKey, keys, s.Config.network, s.Config.debug)
+		sweep.EmptyWallets()
+	*/
 }
 
 // SendTxn : Send the transaction to Binance.
-func (s *Smoke) SendTxn(client sdk.DexClient, key keys.KeyManager, payload []msg.Transfer, memo string) {
-	s.Binance.SendTxn(key, payload, memo)
-}
-
-// Get Client, retry if we fail to get it (ie API Rate limited)
-func GetClient(addr string, network ctypes.ChainNetwork, k keys.KeyManager) sdk.DexClient {
-	// we can get rate limited, so have a retry system.
-	attempts := 25 // number of attempts
-	sleep := 5 * time.Second
-	var err error
-	var client sdk.DexClient
-	if attempts--; attempts > 0 {
-		client, err = sdk.NewDexClient(addr, network, k)
-		if err != nil {
-			// Add some randomness to prevent creating a Thundering Herd
-			jitter := time.Duration(rand.Int63n(int64(sleep)))
-			sleep = sleep + jitter/2
-
-			time.Sleep(sleep)
-		}
-		return client
-	}
+func (s *Smoke) SendTxn(key keys.KeyManager, payload []msg.Transfer, memo string) error {
+	sendMsg, err := s.Binance.ParseTx(key, payload)
 	if err != nil {
-		log.Fatalf("Failed to create client: %s", err)
+		return errors.Wrap(err, "failed to parse tx:")
 	}
-	return client
+
+	hex, params, err := s.Binance.SignTx(key, sendMsg, memo)
+	if err != nil {
+		return errors.Wrap(err, "Failed to sign tx:")
+	}
+
+	err = s.Binance.BroadcastTx(hex, params)
+	if err != nil {
+		return errors.Wrap(err, "failed to broadcast tx:")
+	}
+
+	return nil
 }

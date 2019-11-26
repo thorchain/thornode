@@ -10,6 +10,7 @@ services:
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api:1317
+      BINANCE_HOST: ${BINANCE_HOST:-https://testnet-dex.binance.org}
       NET: ${NET}
     entrypoint:
       /docker/scripts/observer.sh
@@ -18,7 +19,7 @@ services:
     links:
       - thor-api
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -31,8 +32,9 @@ services:
     image: registry.gitlab.com/thorchain/bepswap/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api:1317
-      RPC_HOST: thor-daemon:26657
+      CHAIN_RPC: thor-daemon:26657
+      CHAIN_API: thor-api:1317
+      BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
       NET: ${NET}
     entrypoint:
       /docker/scripts/signer.sh
@@ -41,7 +43,7 @@ services:
     links:
       - thor-api
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/standalone/keys:/root/.signer
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
@@ -64,7 +66,7 @@ services:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/standalone/keys:/root/.signer
@@ -88,7 +90,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]

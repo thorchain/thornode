@@ -5,28 +5,24 @@ import (
 	"fmt"
 	"log"
 
-	sdk "github.com/binance-chain/go-sdk/client"
+	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 
 	bech32 "github.com/btcsuite/btcutil/bech32"
-
-	"gitlab.com/thorchain/bepswap/thornode/test/smoke"
 )
 
 // main : Generate our pool address.
 func main() {
-	apiAddr := flag.String("a", "testnet-dex.binance.org", "Binance API Address.")
 	network := flag.Int("n", 0, "The network to use.")
 	addrType := flag.String("t", "MASTER", "The type [POOL|MASTER].")
 	flag.Parse()
 
-	n := smoke.NewNetwork(*network)
+	types.Network = types.TestNetwork
+	if *network > 0 {
+		types.Network = types.ProdNetwork
+	}
 	keyManager, err := keys.NewKeyManager()
 	if err != nil {
-		log.Fatalf("%v", err)
-	}
-
-	if _, err := sdk.NewDexClient(*apiAddr, n.Type, keyManager); nil != err {
 		log.Fatalf("%v", err)
 	}
 
