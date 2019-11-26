@@ -15,12 +15,6 @@ import (
 var EmptyAccAddress = sdk.AccAddress{}
 var notAuthorized = fmt.Errorf("Not Authorized")
 
-type Handler interface {
-	Validate(ctx sdk.Context, msg sdk.Msg, version int64) error
-	Log(ctx sdk.Context, msg sdk.Msg)
-	Handle(ctx sdk.Context, msg sdk.Msg, version int64) error
-}
-
 // NewHandler returns a handler for "thorchain" type messages.
 func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *TxOutStore, validatorManager *ValidatorManager) sdk.Handler {
 
@@ -31,13 +25,7 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 		version := keeper.GetLowestActiveVersion(ctx)
 		switch m := msg.(type) {
 		case MsgSetPoolData:
-			if err := poolDataHandler.Validate(ctx, m, version); err != nil {
-				return sdk.ErrUnauthorized(err.Error()).Result()
-			}
-			poolDataHandler.Log(ctx, m)
-			if err := poolDataHandler.Handle(ctx, m, version); err != nil {
-				return sdk.ErrUnauthorized(err.Error()).Result()
-			}
+			return poolDataHandler.Run(ctx, m, version)
 		default:
 			return classic(ctx, msg)
 		}
