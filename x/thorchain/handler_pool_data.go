@@ -17,6 +17,19 @@ func NewPoolDataHandler(keeper Keeper) PoolDataHandler {
 	}
 }
 
+func (h PoolDataHandler) Run(ctx sdk.Context, msg MsgSetPoolData, version int64) sdk.Result {
+	if err := h.Validate(ctx, msg, version); err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+	if err := h.Handle(ctx, msg, version); err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+}
+
 func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version int64) error {
 	switch version {
 	case 0:
