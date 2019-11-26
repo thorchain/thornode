@@ -38,15 +38,16 @@ func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version i
 }
 
 func (h PoolDataHandler) ValidateV1(ctx sdk.Context, msg MsgSetPoolData) error {
+	if err := msg.ValidateBasic(); nil != err {
+		ctx.Logger().Error(err.Error())
+		return err
+	}
+
 	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		ctx.Logger().Error(notAuthorized.Error(), "asset", msg.Asset.String())
 		return notAuthorized
 	}
 
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error(err.Error())
-		return err
-	}
 	return nil
 
 }

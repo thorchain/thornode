@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/spf13/cobra"
 
-	appCmd "gitlab.com/thorchain/thornode/cmd"
+	"gitlab.com/thorchain/thornode/constants"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -52,7 +52,7 @@ func GetCmdGetVersion(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			out := ver{appCmd.Version}
+			out := ver{constants.Version}
 			return cliCtx.PrintOutput(out)
 		},
 	}

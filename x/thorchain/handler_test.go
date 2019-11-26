@@ -527,7 +527,8 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 		[]TxInVoter{
 			types.NewTxInVoter(GetRandomTxHash(), []TxIn{txIn}),
 		},
-		w.activeNodeAccount.NodeAddress)
+		w.activeNodeAccount.NodeAddress,
+	)
 
 	result := handleMsgSetTxIn(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
