@@ -145,6 +145,7 @@ func (ps Pool) EnsureValidPoolStatus(msg sdk.Msg) error {
 // convert a specific amount of asset amt into its rune value
 func (ps Pool) AssetValueInRune(amt sdk.Uint) sdk.Uint {
 	if ps.BalanceRune.IsZero() || ps.BalanceAsset.IsZero() {
+		fmt.Println("its zero")
 		return sdk.ZeroUint()
 	}
 	return sdk.NewUint(uint64(
