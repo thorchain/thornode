@@ -166,7 +166,7 @@ type KVStore struct {
 }
 
 // NewKVStore creates new instances of the thorchain Keeper
-func NewKVStore(coinKeeper bank.Keeper, supplyKeeper supply.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) Keeper {
+func NewKVStore(coinKeeper bank.Keeper, supplyKeeper supply.Keeper, storeKey sdk.StoreKey, cdc *codec.Codec) KVStore {
 	return KVStore{
 		coinKeeper:   coinKeeper,
 		supplyKeeper: supplyKeeper,
