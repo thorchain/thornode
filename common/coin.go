@@ -86,3 +86,14 @@ func (cs Coins) Contains(c Coin) bool {
 	}
 	return false
 }
+
+// Gets a specific coin by asset. Assumes there is only one of this coin in the
+// list.
+func (cs Coins) GetCoin(asset Asset) Coin {
+	for _, item := range cs {
+		if asset.Equals(item.Asset) {
+			return item
+		}
+	}
+	return NoCoin
+}

@@ -124,6 +124,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 
 	// slash node accounts for not observing any accepted inbound tx
 	slashForObservingAddresses(ctx, am.keeper)
+	slashForNotSigning(ctx, am.keeper, am.txOutStore)
 
 	// Enable a pool every newPoolCycle
 	if ctx.BlockHeight()%constants.NewPoolCycle == 0 {
