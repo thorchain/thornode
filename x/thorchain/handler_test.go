@@ -97,14 +97,14 @@ type handlerTestWrapper struct {
 	notActiveNodeAccount NodeAccount
 }
 
-func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool bool) handlerTestWrapper {
+func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActiveBNBPool bool) handlerTestWrapper {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(height)
 	acc1 := GetRandomNodeAccount(NodeActive)
 	if withActiveNode {
 		k.SetNodeAccount(ctx, acc1)
 	}
-	if withActieBNBPool {
+	if withActiveBNBPool {
 		p := k.GetPool(ctx, common.BNBAsset)
 		p.Asset = common.BNBAsset
 		p.Status = PoolEnabled
@@ -436,6 +436,7 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 
 func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+
 	w.keeper.SetPool(w.ctx, Pool{
 		Asset:        common.BNBAsset,
 		BalanceRune:  sdk.NewUint(100 * common.One),
@@ -462,6 +463,12 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
 	w = getHandlerTestWrapper(c, 1, true, true)
+	acc2 := GetRandomNodeAccount(NodeActive)
+	w.keeper.SetNodeAccount(w.ctx, acc2)
+	acc3 := GetRandomNodeAccount(NodeActive)
+	w.keeper.SetNodeAccount(w.ctx, acc3)
+	acc4 := GetRandomNodeAccount(NodeActive)
+	w.keeper.SetNodeAccount(w.ctx, acc4)
 
 	msgSetTxIn = types.NewMsgSetTxIn(
 		[]TxInVoter{
@@ -473,10 +480,10 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
 	c.Assert(w.txOutStore.blockOut, NotNil)
 	c.Assert(w.txOutStore.blockOut.Valid(), IsNil)
-	c.Assert(w.txOutStore.blockOut.IsEmpty(), Equals, false)
-	c.Assert(len(w.txOutStore.blockOut.TxArray), Equals, 2)
+	c.Assert(w.txOutStore.blockOut.IsEmpty(), Equals, true)
+	c.Assert(len(w.txOutStore.blockOut.TxArray), Equals, 0)
 	// expect to refund two coins
-	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 2, Commentf("Len %d", len(w.txOutStore.GetOutboundItems())))
+	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 0, Commentf("Len %d", len(w.txOutStore.GetOutboundItems())))
 
 	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPool, NotNil)
@@ -499,8 +506,9 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 	result2 := handleMsgSetTxIn(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn1)
 	c.Assert(result2.Code, Equals, sdk.CodeOK)
 	p1 := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	fmt.Println(p1.BalanceRune.Uint64())
 	c.Assert(p1.BalanceRune.Uint64(), Equals, uint64(200*common.One))
-	c.Assert(p1.BalanceRune.Uint64(), Equals, uint64(200*common.One))
+	c.Assert(p1.BalanceAsset.Uint64(), Equals, uint64(200*common.One))
 	// pool staker
 	ps, err := w.keeper.GetPoolStaker(w.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)

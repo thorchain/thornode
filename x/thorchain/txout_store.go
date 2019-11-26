@@ -3,7 +3,8 @@ package thorchain
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 // TxOutSetter define a method that is required to be used in TxOutStore
@@ -94,6 +95,36 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 	fromAddr, err := toi.PoolAddress.GetAddress(toi.Chain)
 	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
 		return
+	}
+
+	// Deduct TransactionFee from TOI and add to Reserve
+	nodes, err := keeper.TotalActiveNodeAccount(ctx)
+
+	if nodes >= (constants.MinmumNodesForBFT) && err == nil {
+		var runeFee sdk.Uint
+		if toi.Coin.Asset.IsRune() {
+			if toi.Coin.Amount.LTE(sdk.NewUint(constants.TransactionFee)) {
+				runeFee = toi.Coin.Amount // Fee is the full amount
+			} else {
+				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
+			}
+			toi.Coin.Amount = toi.Coin.Amount.Sub(runeFee)
+			keeper.AddFeeToReserve(ctx, runeFee) // Add to reserve
+		} else {
+			pool := keeper.GetPool(ctx, toi.Coin.Asset)                              // Get pool
+			assetFee := pool.RuneValueInAsset(sdk.NewUint(constants.TransactionFee)) // Get fee in Asset value
+			if toi.Coin.Amount.LTE(assetFee) {
+				assetFee = toi.Coin.Amount // Fee is the full amount
+				runeFee = pool.RuneValueInAsset(assetFee)
+			} else {
+				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
+			}
+			toi.Coin.Amount = toi.Coin.Amount.Sub(assetFee)     // Deduct Asset fee
+			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee) // Add Asset fee to Pool
+			pool.BalanceRune = pool.BalanceRune.Add(runeFee)    // Deduct Rune from Pool
+			keeper.SetPool(ctx, pool)                           // Set Pool
+			keeper.AddFeeToReserve(ctx, runeFee)                // Add to reserve
+		}
 	}
 
 	if toi.Coin.IsEmpty() {

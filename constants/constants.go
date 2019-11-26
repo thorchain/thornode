@@ -13,6 +13,7 @@ const TransactionFee = 100000000 // A 1.0 Rune fee on all swaps and withdrawals
 // A new pool is enabled on a cycle
 const NewPoolCycle = 50000        // Enable a pool every 50,000 blocks (~3 days)
 const MinmumNodesForYggdrasil = 6 // No yggdrasil pools if we have less than 6 active nodes
+const MinmumNodesForBFT = 4       // Minimum node count to keep network running. Below this, Ragnarök is performed.
 
 // validator rotation
 const (

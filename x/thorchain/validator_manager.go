@@ -21,7 +21,6 @@ const (
 	EventTypeValidatorStandby   = `validator_standby`
 
 	genesisBlockHeight = 1
-	minValidatorSet    = 4
 )
 
 // ValidatorManager is to manage a list of validators , and rotate them
@@ -400,7 +399,7 @@ func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutS
 		}
 	}
 
-	if afterLeave > minValidatorSet { // we still have enough validators for BFT
+	if afterLeave > constants.MinmumNodesForBFT { // we still have enough validators for BFT
 		// trigger pool rotate next
 		vm.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt = height + 1
 		vm.poolAddrMgr.currentPoolAddresses.RotateAt = vm.Meta.LeaveProcessAt
@@ -488,7 +487,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 				sdk.NewAttribute("consensus_public_key", item.ValidatorConsPubKey)))
 	}
 	// we need to set a minimum validator set , if we have less than the minimum , then we don't rotate out
-	if totalActiveNodes <= minValidatorSet {
+	if totalActiveNodes <= constants.MinmumNodesForBFT {
 		rotateOut = 0
 	}
 
