@@ -2,7 +2,6 @@ package smoke
 
 import (
 	"bytes"
-	"crypto/tls"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -34,64 +33,12 @@ func NewBinance(host string, debug bool) Binance {
 		host = fmt.Sprintf("http://%s", host)
 	}
 
-	b := Binance{
-		debug: debug,
-		host:  host,
+	ctypes.Network = ctypes.TestNetwork
+	return Binance{
+		debug:   debug,
+		host:    host,
+		chainId: ctypes.TestNetwork,
 	}
-
-	b.detectNetwork()
-
-	return b
-}
-
-func (b Binance) detectNetwork() {
-	// TODO: remove insecure skip verify
-	tr := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	client := &http.Client{Transport: tr}
-
-	u, err := url.Parse(b.host)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	u.Path = "/status"
-
-	resp, err := client.Get(u.String())
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	type Status struct {
-		Jsonrpc string `json:"jsonrpc"`
-		ID      string `json:"id"`
-		Result  struct {
-			NodeInfo struct {
-				Network string `json:"network"`
-			} `json:"node_info"`
-		} `json:"result"`
-	}
-
-	var status Status
-	if err := json.Unmarshal(data, &status); nil != err {
-		log.Fatal(err)
-	}
-
-	isTestNet := status.Result.NodeInfo.Network == "Binance-Chain-Nile"
-
-	if isTestNet {
-		b.chainId = ctypes.TestNetwork
-	} else {
-		b.chainId = ctypes.ProdNetwork
-	}
-	ctypes.Network = b.chainId
 }
 
 func (b Binance) GetAccount(addr ctypes.AccAddress) (ctypes.BaseAccount, error) {
@@ -195,14 +142,6 @@ func (b Binance) ParseTx(key keys.KeyManager, transfers []msg.Transfer) (msg.Sen
 	return sendMsg, err
 }
 
-func (b Binance) GetChainName() string {
-	chainId := "Binance-Chain-Tigris"
-	if b.chainId == ctypes.TestNetwork {
-		chainId = "Binance-Chain-Nile"
-	}
-	return chainId
-}
-
 func (b Binance) SignTx(key keys.KeyManager, sendMsg msg.SendMsg, memo string) ([]byte, map[string]string, error) {
 	acc, err := b.GetAccount(key.GetAddr())
 	if err != nil {
@@ -210,7 +149,7 @@ func (b Binance) SignTx(key keys.KeyManager, sendMsg msg.SendMsg, memo string) (
 	}
 
 	signMsg := tx.StdSignMsg{
-		ChainID:       b.GetChainName(),
+		ChainID:       "Binance-Chain-Nile", // smoke tests always run on testnet
 		Memo:          memo,
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,

@@ -1,7 +1,6 @@
 package binance
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,7 +10,6 @@ import (
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	. "gopkg.in/check.v1"
-	resty "gopkg.in/resty.v1"
 
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
 	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
@@ -27,14 +25,6 @@ var _ = Suite(&BinancechainSuite{})
 
 func (s *BinancechainSuite) SetUpSuite(c *C) {
 	types2.SetupConfigForTest()
-	trSkipVerify := &http.Transport{
-		MaxIdleConnsPerHost: 10,
-		TLSClientConfig: &tls.Config{
-			MaxVersion:         tls.VersionTLS11,
-			InsecureSkipVerify: true,
-		},
-	}
-	resty.DefaultClient.SetTransport(trSkipVerify)
 	ctypes.Network = ctypes.TestNetwork
 	c.Assert(os.Setenv("NET", "testnet"), IsNil)
 }
@@ -66,12 +56,9 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 	c.Assert(b1, IsNil)
 	c.Assert(err1, NotNil)
 
-	server := httptest.NewTLSServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
-		if req.RequestURI == "/api/v1/node-info" {
-			_, err := rw.Write([]byte(binanceNodeInfo))
-			c.Assert(err, IsNil)
-		} else if req.RequestURI == "/status" {
+		if req.RequestURI == "/status" {
 			_, err := rw.Write([]byte(status))
 			c.Assert(err, IsNil)
 		}
@@ -112,22 +99,8 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
 		switch req.RequestURI {
-		case "/api/v1/node-info":
-			if _, err := rw.Write([]byte(binanceNodeInfo)); nil != err {
-				c.Error(err)
-			}
-		case "/abci_query?path=\"/account/tbnb1fds7yhw7qt9rkxw9pn65jyj004x858ny4xf2dk\"":
+		case "/abci_query?path=%22%2Faccount%2Ftbnb1fds7yhw7qt9rkxw9pn65jyj004x858ny4xf2dk%22":
 			if _, err := rw.Write([]byte(accountInfo)); nil != err {
-				c.Error(err)
-			}
-		case "/api/v1/broadcast?sync=true":
-			if _, err := rw.Write([]byte(`[
-    {
-        "ok":true,
-        "hash":"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D",
-        "code":0
-    }
-]`)); nil != err {
 				c.Error(err)
 			}
 		case "/status":
@@ -203,13 +176,9 @@ func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
-		if req.RequestURI == "/api/v1/node-info" {
-			if _, err := rw.Write([]byte(binanceNodeInfo)); nil != err {
+		if req.RequestURI == "/status" {
+			if _, err := rw.Write([]byte(status)); nil != err {
 				c.Error(err)
-			} else if req.RequestURI == "/status" {
-				if _, err := rw.Write([]byte(status)); nil != err {
-					c.Error(err)
-				}
 			}
 		}
 	}))
@@ -219,7 +188,6 @@ func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 		Port:   0,
 	}
 
-	fmt.Printf("SERVER URL: %s\n", server.URL)
 	b, err := NewBinance(config.BinanceConfiguration{
 		RPCHost:    server.URL,
 		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
