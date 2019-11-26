@@ -28,10 +28,9 @@ func (h PoolDataHandler) Run(ctx sdk.Context, msg MsgSetPoolData, version int64)
 }
 
 func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version int64) error {
-	switch version {
-	case 1:
+	if version >= 1 {
 		return h.ValidateV1(ctx, msg)
-	default:
+	} else {
 		ctx.Logger().Error(badVersion.Error())
 		return badVersion
 	}
@@ -54,10 +53,9 @@ func (h PoolDataHandler) ValidateV1(ctx sdk.Context, msg MsgSetPoolData) error {
 
 func (h PoolDataHandler) Handle(ctx sdk.Context, msg MsgSetPoolData, version int64) error {
 	ctx.Logger().Info("handleMsgSetPoolData request", "Asset:", msg.Asset.String())
-	switch version {
-	case 1:
+	if version >= 1 {
 		return h.HandleV1(ctx, msg)
-	default:
+	} else {
 		ctx.Logger().Error(badVersion.Error())
 		return badVersion
 	}
