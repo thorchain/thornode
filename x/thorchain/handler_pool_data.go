@@ -52,11 +52,8 @@ func (h PoolDataHandler) ValidateV0(ctx sdk.Context, msg MsgSetPoolData) error {
 
 }
 
-func (h PoolDataHandler) Log(ctx sdk.Context, msg MsgSetPoolData) {
-	ctx.Logger().Info("handleMsgSetPoolData request", "Asset:", msg.Asset.String())
-}
-
 func (h PoolDataHandler) Handle(ctx sdk.Context, msg MsgSetPoolData, version int64) error {
+	ctx.Logger().Info("handleMsgSetPoolData request", "Asset:", msg.Asset.String())
 	switch version {
 	case 0:
 		return h.HandleV0(ctx, msg)
