@@ -835,7 +835,23 @@ func (k Keeper) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.Tx)
 				// have seen by the voter.
 				// Sometimes we can have voter.NumOuts be zero, for example,
 				// when someone is staking there are no out txs.
-				if int64(len(evt.OutTx)) >= voter.NumOuts {
+				// Due to Asgard being the backup, in case a Yggdrasil pool isn't
+				// signing tx, don't count them as two out tx, merge them into one.
+				var dups int
+				for i, tx1 := range voter.OutTxs {
+					for j, tx2 := range voter.OutTxs {
+						if i == j {
+							continue
+						}
+						if tx1.Coin.Equals(tx2.Coin) || tx1.Memo == tx2.Memo {
+							dups += 1
+						}
+					}
+				}
+				// if there are any dups, they will be counted twice, so divide by two
+				dups = dups / 2
+
+				if len(evt.OutTx) >= (len(voter.OutTxs) - dups) {
 					lastEventID += 1
 					evt.ID = lastEventID
 					k.SetCompletedEvent(ctx, evt)
@@ -970,6 +986,14 @@ func (k Keeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ygg))
 }
 
+// YggdrasilExists check whether the given pubkey is associated with a
+// yggdrasil vault
+func (k Keeper) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool {
+	store := ctx.KVStore(k.storeKey)
+	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
+	return store.Has([]byte(key))
+}
+
 func (k Keeper) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
 	var ygg Yggdrasil
 	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
@@ -1015,7 +1039,7 @@ func (k Keeper) SetReserveContributors(ctx sdk.Context, contribs ReserveContribu
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(contribs))
 }
 
-// ////////////////////// Vault Data //////////////////////////
+///////////////////////// Vault Data //////////////////////////
 func (k Keeper) GetVaultData(ctx sdk.Context) VaultData {
 	data := NewVaultData()
 	key := getKey(prefixVaultData, "", getVersion(k.GetLowestActiveVersion(ctx), prefixVaultData))

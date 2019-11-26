@@ -102,6 +102,7 @@ func (tx TxType) String() string {
 
 type Memo interface {
 	IsType(tx TxType) bool
+	GetType() TxType
 
 	String() string
 	GetAsset() common.Asset

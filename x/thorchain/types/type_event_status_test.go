@@ -21,7 +21,7 @@ func (EventStatusSuite) TestEventStatus(c *C) {
 		c.Assert(err, IsNil)
 		c.Check(strings.EqualFold(es.String(), item), Equals, true)
 	}
-	invalidEventStatus := EventStatus(3)
+	invalidEventStatus := EventStatus(len(input) + 100)
 	c.Assert(invalidEventStatus.Valid(), NotNil)
 
 	es := GetEventStatus("success")

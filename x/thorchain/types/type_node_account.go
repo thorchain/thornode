@@ -161,6 +161,18 @@ func (n NodeAccount) String() string {
 	return sb.String()
 }
 
+func (n *NodeAccount) AddBond(amt sdk.Uint) {
+	n.Bond = n.Bond.Add(amt)
+}
+
+func (n *NodeAccount) SubBond(amt sdk.Uint) {
+	if n.Bond.LT(amt) {
+		n.Bond = sdk.ZeroUint()
+	} else {
+		n.Bond = n.Bond.Sub(amt)
+	}
+}
+
 // AddSignerPubKey add a key to node account
 func (n *NodeAccount) TryAddSignerPubKey(key common.PubKey) {
 	if key.IsEmpty() {

@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"sort"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/bepswap/thornode/common"
@@ -71,38 +69,8 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 				tx := voter.GetTx(activeNodeAccounts)
 
 				// collect yggdrasil pools
-				var yggs Yggdrasils
-				iterator := keeper.GetYggdrasilIterator(ctx)
-				defer iterator.Close()
-				for ; iterator.Valid(); iterator.Next() {
-					var ygg Yggdrasil
-					keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &ygg)
-					// if we are already sending assets from this ygg pool, deduct
-					// them.
-					addr, _ := ygg.PubKey.GetThorAddress()
-					if !tx.HasSigned(addr) {
-						continue
-					}
-					for _, tx := range tos.blockOut.TxArray {
-						if !tx.PoolAddress.Equals(ygg.PubKey) {
-							continue
-						}
-						for i, yggcoin := range ygg.Coins {
-							if !yggcoin.Asset.Equals(tx.Coin.Asset) {
-								continue
-							}
-							ygg.Coins[i].Amount = ygg.Coins[i].Amount.Sub(tx.Coin.Amount)
-						}
-					}
-					yggs = append(yggs, ygg)
-				}
-
-				// use the ygg pool with the highest quantity of our coin
-				sort.Slice(yggs[:], func(i, j int) bool {
-					return yggs[i].GetCoin(toi.Coin.Asset).Amount.GT(
-						yggs[j].GetCoin(toi.Coin.Asset).Amount,
-					)
-				})
+				yggs := tos.CollectYggdrasilPools(ctx, keeper, tx)
+				yggs = yggs.SortBy(toi.Coin.Asset)
 
 				// if none of our Yggdrasil pools have enough funds to fulfil
 				// the order, fallback to our Asguard pool
@@ -134,7 +102,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 
 	// increment out number of out tx for this in tx
 	voter := keeper.GetTxInVoter(ctx, toi.InHash)
-	voter.NumOuts += 1
+	voter.OutTxs = append(voter.OutTxs, *toi)
 	keeper.SetTxInVoter(ctx, voter)
 
 	// add tx to block out
@@ -171,4 +139,35 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, gas common.Gas) {
 	vault := keeper.GetVaultData(ctx)
 	vault.Gas = vault.Gas.Add(gas)
 	keeper.SetVaultData(ctx, vault)
+}
+
+func (tos *TxOutStore) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx TxIn) Yggdrasils {
+	// collect yggdrasil pools
+	var yggs Yggdrasils
+	iterator := keeper.GetYggdrasilIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var ygg Yggdrasil
+		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &ygg)
+		// if we are already sending assets from this ygg pool, deduct
+		// them.
+		addr, _ := ygg.PubKey.GetThorAddress()
+		if !tx.HasSigned(addr) {
+			continue
+		}
+		for _, tx := range tos.blockOut.TxArray {
+			if !tx.PoolAddress.Equals(ygg.PubKey) {
+				continue
+			}
+			for i, yggcoin := range ygg.Coins {
+				if !yggcoin.Asset.Equals(tx.Coin.Asset) {
+					continue
+				}
+				ygg.Coins[i].Amount = ygg.Coins[i].Amount.Sub(tx.Coin.Amount)
+			}
+		}
+		yggs = append(yggs, ygg)
+	}
+
+	return yggs
 }
