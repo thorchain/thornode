@@ -180,7 +180,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var config AdminConfig
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &config)
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &config)
 		adminConfigs = append(adminConfigs, config)
 	}
 
@@ -191,7 +191,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var ps PoolStaker
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &ps)
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &ps)
 		poolStakers = append(poolStakers, ps)
 	}
 
@@ -200,7 +200,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var sp StakerPool
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &sp)
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &sp)
 		stakerPools = append(stakerPools, sp)
 	}
 
@@ -209,7 +209,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var na NodeAccount
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &na)
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &na)
 		nodeAccounts = append(nodeAccounts, na)
 	}
 
@@ -218,7 +218,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
 		poolRecords = append(poolRecords, pool)
 	}
 
@@ -227,7 +227,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var vote TxInVoter
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &vote)
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &vote)
 		votes = append(votes, vote)
 	}
 
@@ -241,7 +241,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 			10,
 			64,
 		)
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &index.Index)
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &index.Index)
 		indexes = append(indexes, index)
 	}
 
@@ -250,7 +250,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var out TxOut
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &out)
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &out)
 		outs = append(outs, out)
 	}
 
@@ -259,7 +259,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var e Event
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &e)
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &e)
 		completed = append(completed, e)
 	}
 

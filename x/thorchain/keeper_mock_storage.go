@@ -1,4 +1,4 @@
-package mocks
+package thorchain
 
 import (
 	"errors"
@@ -13,6 +13,7 @@ import (
 
 // MockPoolStorage implements PoolStorage interface, thus we can mock the error cases
 type MockPoolStorage struct {
+	KVStoreDummy
 }
 
 func (mps MockPoolStorage) PoolExist(ctx sdk.Context, asset common.Asset) bool {

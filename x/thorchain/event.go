@@ -8,7 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-func eventPoolStatusWrapper(ctx sdk.Context, keeper poolStorage, pool Pool) {
+func eventPoolStatusWrapper(ctx sdk.Context, keeper Keeper, pool Pool) {
 	poolEvt := NewEventPool(pool.Asset, pool.Status)
 	bytes, err := json.Marshal(poolEvt)
 	if err != nil {

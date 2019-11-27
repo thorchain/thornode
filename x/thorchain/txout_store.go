@@ -148,7 +148,7 @@ func (tos *TxOutStore) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx 
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var ygg Yggdrasil
-		keeper.cdc.MustUnmarshalBinaryBare(iterator.Value(), &ygg)
+		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &ygg)
 		// if we are already sending assets from this ygg pool, deduct
 		// them.
 		addr, _ := ygg.PubKey.GetThorAddress()

@@ -11,14 +11,14 @@ import (
 )
 
 // SetAdminConfig - saving a given admin config to the KVStore
-func (k Keeper) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
+func (k KVStore) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
 	store := ctx.KVStore(k.storeKey)
 	key := getKey(prefixAdmin, config.DbKey(), getVersion(k.GetLowestActiveVersion(ctx), prefixAdmin))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(config))
 }
 
 // GetAdminConfigDefaultPoolStatus - get the config for Default Pool Status
-func (k Keeper) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
+func (k KVStore) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
 	name, _ := k.GetAdminConfigValue(ctx, DefaultPoolStatus, addr)
 	if name == "" {
 		name = DefaultPoolStatus.Default()
@@ -27,27 +27,27 @@ func (k Keeper) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAdd
 }
 
 // GetAdminConfigGSL - get the config for GSL
-func (k Keeper) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
+func (k KVStore) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, GSLKey, GSLKey.Default(), addr)
 }
 
 // GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
-func (k Keeper) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
+func (k KVStore) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, StakerAmtIntervalKey.Default(), addr)
 }
 
 // GetAdminConfigMinValidatorBond get the minimum bond to become a validator
-func (k Keeper) GetAdminConfigMinValidatorBond(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint {
+func (k KVStore) GetAdminConfigMinValidatorBond(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint {
 	return k.GetAdminConfigUintType(ctx, MinValidatorBondKey, MinValidatorBondKey.Default(), addr)
 }
 
 // GetAdminConfigWhiteListGasAsset
-func (k Keeper) GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+func (k KVStore) GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
 	return k.GetAdminConfigCoinsType(ctx, WhiteListGasAssetKey, WhiteListGasAssetKey.Default(), addr)
 }
 
 // GetAdminConfigBnbAddressType - get the config with return type is BNBAddress
-func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address {
+func (k KVStore) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address {
 	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
 		value = dValue
@@ -55,7 +55,7 @@ func (k Keeper) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey
 	return common.Address(value)
 }
 
-func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint {
+func (k KVStore) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint {
 	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
 		value = dValue
@@ -68,7 +68,7 @@ func (k Keeper) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dVal
 }
 
 // GetAdminConfigAmountType - get the config for TSL
-func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Amount {
+func (k KVStore) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Amount {
 	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
 		value = dValue
@@ -77,7 +77,7 @@ func (k Keeper) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dV
 }
 
 // GetAdminConfigCoinsType - get the config for TSL
-func (k Keeper) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Coins {
+func (k KVStore) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Coins {
 	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
 		value = dValue
@@ -87,7 +87,7 @@ func (k Keeper) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dVa
 }
 
 // GetAdminConfigInt64 - get the int64 config
-func (k Keeper) GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) int64 {
+func (k KVStore) GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) int64 {
 	value, _ := k.GetAdminConfigValue(ctx, key, addr)
 	if value == "" {
 		value = dValue
@@ -97,7 +97,7 @@ func (k Keeper) GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue 
 }
 
 // GetAdminConfigValue - gets the value of a given admin key
-func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error) {
+func (k KVStore) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error) {
 	getConfigValue := func(nodeAddr sdk.AccAddress) (string, error) {
 		config := NewAdminConfig(kkey, "", nodeAddr)
 		key := getKey(prefixAdmin, config.DbKey(), getVersion(k.GetLowestActiveVersion(ctx), prefixAdmin))
@@ -148,7 +148,7 @@ func (k Keeper) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr s
 }
 
 // GetAdminConfigIterator iterate admin configs
-func (k Keeper) GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStore) GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixAdmin))
 }
