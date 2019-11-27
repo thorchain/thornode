@@ -7,8 +7,8 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	tmtypes "github.com/tendermint/tendermint/types"
 
-	"gitlab.com/thorchain/bepswap/thornode/cmd"
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/cmd"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // GetRandomNodeAccount create a random generated node account , used for test purpose

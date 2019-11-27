@@ -2,7 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	common "gitlab.com/thorchain/bepswap/thornode/common"
+	common "gitlab.com/thorchain/thornode/common"
 )
 
 // MsgAdd defines a add message

@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"gitlab.com/thorchain/bepswap/thornode/test/smoke"
+	"gitlab.com/thorchain/thornode/test/smoke"
 )
 
 func main() {

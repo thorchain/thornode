@@ -4,9 +4,9 @@ import (
 	"errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 var (

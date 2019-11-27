@@ -3,8 +3,8 @@ package signer
 import (
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
+	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type PukKeyManagerSuite struct{}

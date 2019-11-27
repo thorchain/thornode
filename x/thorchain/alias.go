@@ -1,7 +1,7 @@
 package thorchain
 
 import (
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 const (

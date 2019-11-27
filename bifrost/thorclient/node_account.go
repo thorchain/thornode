@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 var EmptyNodeAccount types.NodeAccount
