@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 var kaboom = errors.New("Kaboom!!!")
