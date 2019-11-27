@@ -40,7 +40,8 @@ services:
       USE_TSS: "true"
       TSS_SCHEME: http
       TSS_HOST: 172.32.10.12
-      TSS_PORT: 8321
+      TSS_KEYSIGN_PORT: 8321
+      TSS_KEYGEN_PORT: 8322
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
@@ -207,7 +208,8 @@ services:
       USE_TSS: "true"
       TSS_SCHEME: http
       TSS_HOST: 172.32.10.13
-      TSS_PORT: 8321
+      TSS_KEYSIGN_PORT: 8321
+      TSS_KEYGEN_PORT: 8322
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
@@ -361,7 +363,8 @@ services:
       USE_TSS: "true"
       TSS_SCHEME: http
       TSS_HOST: 172.32.10.14
-      TSS_PORT: 8321
+      TSS_KEYSIGN_PORT: 8321
+      TSS_KEYGEN_PORT: 8322
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
@@ -514,7 +517,8 @@ services:
       USE_TSS: "true"
       TSS_SCHEME: http
       TSS_HOST: 172.32.10.15
-      TSS_PORT: 8321
+      TSS_KEYSIGN_PORT: 8321
+      TSS_KEYGEN_PORT: 8322
     depends_on:
       - tssKeygen4
       - tssSign4

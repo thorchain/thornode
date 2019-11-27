@@ -83,8 +83,8 @@ smoke-test: tools install
 	./build/scripts/smoke.sh
 
 smoke-local:
-	make -C build/docker run-genesisWithMockBinance
-	bsinner -a localhost:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e local -x
+	make -C build/docker stop-genesisWithMockBinance run-genesisWithMockBinance
+	NET=testnet bsinner -a localhost:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e local -x
 
 export:
 	thord export
