@@ -275,7 +275,7 @@ func (s *Smoke) Run() bool {
 	for _, txn := range s.Transactions {
 
 		// check if we are stopping at this tx
-		if stopID > 0 && txn.Tx >= stopID {
+		if stopID > 0 && txn.Tx > stopID {
 			s.Summarize()
 			// exit it successfully
 			return true
