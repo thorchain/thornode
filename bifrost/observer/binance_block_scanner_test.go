@@ -14,13 +14,13 @@ import (
 	"github.com/binance-chain/go-sdk/types/tx"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 
-	btypes "gitlab.com/thorchain/bepswap/thornode/bifrost/binance/types"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/blockscanner"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
-	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
+	btypes "gitlab.com/thorchain/thornode/bifrost/binance/types"
+	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
+	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
 func Test(t *testing.T) { TestingT(t) }

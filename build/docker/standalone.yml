@@ -6,7 +6,7 @@ services:
     build:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode
+    image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
     environment:
       CHAIN_HOST: thor-api:1317
@@ -29,7 +29,7 @@ services:
     build:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode
+    image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
     environment:
       CHAIN_RPC: thor-daemon:26657
@@ -54,7 +54,7 @@ services:
     build:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode
+    image: registry.gitlab.com/thorchain/thornode
     environment:
       NODES: 1
       SEED: thor-daemon
@@ -81,7 +81,7 @@ services:
       - thor-daemon
     links:
       - thor-daemon
-    image: registry.gitlab.com/thorchain/bepswap/thornode
+    image: registry.gitlab.com/thorchain/thornode
     environment:
       CHAIN_DAEMON: thor-daemon:26657
       NET: ${NET}

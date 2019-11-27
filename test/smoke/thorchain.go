@@ -14,7 +14,7 @@ import (
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 
-	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
+	"gitlab.com/thorchain/thornode/test/smoke/types"
 )
 
 var endpoints = map[string]string{

@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // TxOutItem represent an tx need to be sent to chain

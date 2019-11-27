@@ -1,1 +1,1 @@
-FROM registry.gitlab.com/thorchain/bepswap/thornode:develop
+FROM registry.gitlab.com/thorchain/thornode:develop

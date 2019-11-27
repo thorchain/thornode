@@ -13,7 +13,7 @@ manually.
 
 Before we do anything, lets get the source code and build our binaries.
 ```bash
-git clone git@gitlab.com:thorchain/bepswap/thornode.git
+git clone git@gitlab.com:thorchain/thornode.git
 make install
 ```
 
@@ -53,13 +53,13 @@ Next, we need to get the genesis file of Thorchain.
 For testnet, run...
 ```bash
 curl
-https://gitlab.com/thorchain/bepswap/thornode/raw/master/genesis/testnet.json -o ~/.thord/config/genesis.json
+https://gitlab.com/thorchain/thornode/raw/master/genesis/testnet.json -o ~/.thord/config/genesis.json
 ```
 
 For mainnet, run...
 ```bash
 curl
-https://gitlab.com/thorchain/bepswap/thornode/raw/master/genesis/mainnet.json -o ~/.thord/config/genesis.json
+https://gitlab.com/thorchain/thornode/raw/master/genesis/mainnet.json -o ~/.thord/config/genesis.json
 ```
 
 Validate your genesis file is valid.

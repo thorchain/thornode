@@ -1,6 +1,6 @@
 package types
 
-import "gitlab.com/thorchain/bepswap/thornode/common"
+import "gitlab.com/thorchain/thornode/common"
 
 // TODO decomission TxArrayItem, in favor of TxOutItem in thornode
 type TxArrayItem struct {

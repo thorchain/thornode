@@ -1,1 +1,1 @@
-FROM registry.gitlab.com/thorchain/bepswap/thornode:nightly
+FROM registry.gitlab.com/thorchain/thornode:nightly

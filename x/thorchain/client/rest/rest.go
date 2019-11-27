@@ -10,7 +10,7 @@ import (
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gorilla/mux"
 
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/query"
+	"gitlab.com/thorchain/thornode/x/thorchain/query"
 )
 
 const (

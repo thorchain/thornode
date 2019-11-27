@@ -13,13 +13,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/binance"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/tss"
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/bifrost/binance"
+	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/tss"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // Signer will pull the tx out from statechain and then forward it to binance chain
