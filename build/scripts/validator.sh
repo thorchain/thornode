@@ -16,7 +16,7 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
     gen_bnb_address
 
     NODE_ADDRESS=$(thorcli keys show $SIGNER_NAME -a)
-    init_chain $NODE_ADDRESS $SIGNER_NAME $SIGNER_PASSWD
+    init_chain $NODE_ADDRESS
 
     fetch_genesis $PEER
 
