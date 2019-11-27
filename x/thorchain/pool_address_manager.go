@@ -151,7 +151,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 	coins := common.Coins{}
 	for ; iter.Valid(); iter.Next() {
 		var p Pool
-		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
+		err := k.Cdc().UnmarshalBinaryBare(iter.Value(), &p)
 		if err != nil {
 			return runeTotal, errors.Wrap(err, "fail to unmarshal pool")
 		}
@@ -200,7 +200,7 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, ru
 	coins := common.Coins{}
 	for ; iter.Valid(); iter.Next() {
 		var p Pool
-		err := k.cdc.UnmarshalBinaryBare(iter.Value(), &p)
+		err := k.Cdc().UnmarshalBinaryBare(iter.Value(), &p)
 		if err != nil {
 			return errors.Wrap(err, "fail to unmarshal pool")
 		}

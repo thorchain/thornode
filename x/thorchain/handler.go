@@ -275,7 +275,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, poolA
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
+	res, err := keeper.Cdc().MarshalBinaryLengthPrefixed(struct {
 		Asset sdk.Uint `json:"asset"`
 	}{
 		Asset: amount,
@@ -341,7 +341,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error("fail to UnStake", "error", err)
 		return sdk.ErrInternal("fail to process UnStake request").Result()
 	}
-	res, err := keeper.cdc.MarshalBinaryLengthPrefixed(struct {
+	res, err := keeper.Cdc().MarshalBinaryLengthPrefixed(struct {
 		Rune  sdk.Uint `json:"rune"`
 		Asset sdk.Uint `json:"asset"`
 	}{
@@ -1322,11 +1322,11 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 	ctx.EventManager().EmitEvent(sdk.NewEvent("new_node", sdk.NewAttribute("address", msg.NodeAddress.String())))
 	coinsToMint := keeper.GetAdminConfigWhiteListGasAsset(ctx, sdk.AccAddress{})
 	// mint some gas asset
-	err = keeper.supplyKeeper.MintCoins(ctx, ModuleName, coinsToMint)
+	err = keeper.Supply().MintCoins(ctx, ModuleName, coinsToMint)
 	if nil != err {
 		ctx.Logger().Error("fail to mint gas assets", "err", err)
 	}
-	if err := keeper.supplyKeeper.SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
+	if err := keeper.Supply().SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
 		ctx.Logger().Error("fail to send newly minted gas asset to node address")
 	}
 	return sdk.Result{

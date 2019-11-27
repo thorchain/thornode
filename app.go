@@ -126,7 +126,7 @@ func NewThorchainApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 
 	// The thorchainKeeper is the Keeper from the module for this tutorial
 	// It handles interactions with the pooldatastore
-	app.ssKeeper = thorchain.NewKeeper(
+	app.ssKeeper = thorchain.NewKVStore(
 		app.bankKeeper,
 		app.supplyKeeper,
 		keys[thorchain.StoreKey],

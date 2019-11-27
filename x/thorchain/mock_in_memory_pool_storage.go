@@ -15,6 +15,7 @@ var (
 )
 
 type MockInMemoryPoolStorage struct {
+	KVStoreDummy
 	store map[string]interface{}
 }
 
