@@ -10,14 +10,14 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_HOST: 172.32.40.32:1317
-      BINANCE_HOST: ${BINANCE_HOST:-https://testnet-dex.binance.org}
+      CHAIN_API: 172.32.40.32:1317
+      BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
       - thor-api
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -34,9 +34,9 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_HOST: 172.32.40.32:1317
-      RPC_HOST: 172.32.10.22:26657
-      BINANCE_HOST: ${BINANCE_HOST:-https://testnet-dex.binance.org}
+      CHAIN_API: 172.32.40.32:1317
+      CHAIN_RPC: 172.32.10.22:26657
+      BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
       USE_TSS: "true"
       TSS_SCHEME: http
       TSS_HOST: 172.32.10.12
@@ -50,7 +50,7 @@ services:
     depends_on:
       - thor-api
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
@@ -83,7 +83,7 @@ services:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
@@ -111,7 +111,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -140,7 +140,7 @@ services:
     entrypoint:
       /docker/scripts/tss_keygen.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
     command: "/app/tss_keygen ~/.tss/config_1.json ~/.tss/private.key /ip4/172.32.10.2/tcp/5455"
     networks:
@@ -162,7 +162,7 @@ services:
     entrypoint:
       /docker/scripts/tss_sign.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
     command: "/app/tss_sign ~/.tss/private.key ~/.tss/config_1.json /ip4/172.32.10.12/tcp/5455"
     networks:
@@ -179,13 +179,13 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_HOST: 172.32.40.33:1317
+      CHAIN_API: 172.32.40.33:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
       - thor-api2
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -202,8 +202,8 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_HOST: 172.32.40.33:1317
-      RPC_HOST: 172.32.10.23:26657
+      CHAIN_API: 172.32.40.33:1317
+      CHAIN_RPC: 172.32.10.23:26657
       USE_TSS: "true"
       TSS_SCHEME: http
       TSS_HOST: 172.32.10.13
@@ -215,7 +215,7 @@ services:
       - tssSign2
       - thor-api2
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
@@ -242,7 +242,7 @@ services:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
@@ -266,7 +266,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -295,7 +295,7 @@ services:
     entrypoint:
       /docker/scripts/tss_keygen.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
     command: "/app/tss_keygen ~/.tss/config_2.json ~/.tss/private.key /ip4/172.32.10.3/tcp/5455"
     networks:
@@ -316,7 +316,7 @@ services:
     entrypoint:
       /docker/scripts/tss_sign.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
     command: "/app/tss_sign ~/.tss/private.key ~/.tss/config_2.json /ip4/172.32.10.13/tcp/5455"
     networks:
@@ -333,13 +333,13 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_HOST: 172.32.40.34:1317
+      CHAIN_API: 172.32.40.34:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
       - thor-api3
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -356,8 +356,8 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_HOST: 172.32.40.34:1317
-      RPC_HOST: 172.32.10.24:26657
+      CHAIN_API: 172.32.40.34:1317
+      CHAIN_RPC: 172.32.10.24:26657
       USE_TSS: "true"
       TSS_SCHEME: http
       TSS_HOST: 172.32.10.14
@@ -369,7 +369,7 @@ services:
       - tssSign3
       - thor-api3
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
@@ -396,7 +396,7 @@ services:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
@@ -420,7 +420,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -449,7 +449,7 @@ services:
     entrypoint:
       /docker/scripts/tss_keygen.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
     command: "/app/tss_keygen ~/.tss/config_3.json ~/.tss/private.key /ip4/172.32.10.4/tcp/5455"
     networks:
@@ -470,7 +470,7 @@ services:
     entrypoint:
       /docker/scripts/tss_sign.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
     command: "/app/tss_sign ~/.tss/private.key ~/.tss/config_3.json /ip4/172.32.10.14/tcp/5455"
     networks:
@@ -486,13 +486,13 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_HOST: 172.32.40.35:1317
+      CHAIN_API: 172.32.40.35:1317
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
       - thor-api4
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -509,8 +509,8 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_HOST: 172.32.40.35:1317
-      RPC_HOST: 172.32.10.25:26657
+      CHAIN_API: 172.32.40.35:1317
+      CHAIN_RPC: 172.32.10.25:26657
       USE_TSS: "true"
       TSS_SCHEME: http
       TSS_HOST: 172.32.10.15
@@ -523,7 +523,7 @@ services:
     depends_on:
       - thor-api4
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
@@ -550,7 +550,7 @@ services:
       - tssKeygen4
     volumes:
       - /tmp/genesis:/tmp/shared
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
@@ -574,7 +574,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -603,7 +603,7 @@ services:
     entrypoint:
       /docker/scripts/tss_keygen.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
     command: "/app/tss_keygen ~/.tss/config_4.json ~/.tss/private.key /ip4/172.32.10.5/tcp/5455"
     networks:
@@ -624,7 +624,7 @@ services:
     entrypoint:
       /docker/scripts/tss_sign.sh
     volumes:
-      - ${PWD}/../scripts:/docker/scripts
+      - "../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
     command: "/app/tss_sign ~/.tss/private.key ~/.tss/config_4.json /ip4/172.32.10.15/tcp/5455"
     networks:
