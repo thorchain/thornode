@@ -36,8 +36,20 @@ init_chain () {
     thord init local --chain-id thorchain
     thorcli keys list
 
-    for addr in $1; do # iterate over our list of comma separated users "alice,jack"
-        thord add-genesis-account $addr 1000thor
+    # Only create if it doesn't exist!
+    EXISTS=""
+    for name in $(thorcli keys list --output json | jq -r '.[].name'); do
+        if [ "$name" = "$2" ]; then
+            EXISTS="true"
+        fi
+    done
+
+    if [ -z "$EXISTS" ]; then
+        echo "$3" | thorcli keys add $2
+    fi
+
+    for user in $1; do # iterate over our list of comma separated users "alice,jack"
+        thord add-genesis-account $user 1000thor
     done
 
     thorcli config chain-id thorchain

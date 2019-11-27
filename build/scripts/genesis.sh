@@ -63,7 +63,7 @@ if [ "$SEED" = "$(hostname)" ]; then
         for f in /tmp/shared/node_*.json; do
             ADDRS="$ADDRS,$(cat $f | awk '{print $1}')"
         done
-        init_chain $(echo "$ADDRS" | sed -e 's/^,*//') $SIGNER_PASSWD
+        init_chain $(echo "$ADDRS" | sed -e 's/^,*//') $SIGNER_NAME $SIGNER_PASSWD
 
         # add node accounts to genesis file
         for f in /tmp/shared/node_*.json; do 
