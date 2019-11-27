@@ -1,7 +1,7 @@
 package types
 
 import (
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
 )
 

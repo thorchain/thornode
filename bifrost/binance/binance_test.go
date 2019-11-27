@@ -11,10 +11,10 @@ import (
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 
-	types2 "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
+	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }

@@ -12,7 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there

@@ -22,10 +22,10 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/tendermint/tendermint/crypto"
 
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
-	stypes "gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/tss"
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/bifrost/config"
+	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/tss"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type Binance struct {

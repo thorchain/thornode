@@ -7,7 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/query"
+	"gitlab.com/thorchain/thornode/x/thorchain/query"
 )
 
 // Ping - endpoint to check that the API is up and available

@@ -7,7 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // StakeTxDetail represent all the stake activity

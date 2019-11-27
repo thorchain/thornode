@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 func validateUnstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) error {
@@ -57,7 +57,7 @@ func unstake(ctx sdk.Context, keeper poolStorage, msg MsgSetUnStake) (sdk.Uint, 
 	}
 
 	// check if we need to rate limit unstaking
-	// https://gitlab.com/thorchain/bepswap/thornode/issues/166
+	// https://gitlab.com/thorchain/thornode/issues/166
 	if !msg.Asset.Chain.Equals(common.BNBChain) {
 		height := ctx.BlockHeight()
 		if height < (stakerUnit.Height + 17280) {

@@ -2,7 +2,7 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
 )
 
@@ -39,7 +39,7 @@ func (s YggdrasilSuite) TestCalcTargetAmounts(c *C) {
 
 func (s YggdrasilSuite) TestCalcTargetAmounts2(c *C) {
 	// Adding specific test per PR request
-	// https://gitlab.com/thorchain/bepswap/thornode/merge_requests/246#note_241913460
+	// https://gitlab.com/thorchain/thornode/merge_requests/246#note_241913460
 	var pools []Pool
 	p := NewPool()
 	p.Asset = common.BNBAsset

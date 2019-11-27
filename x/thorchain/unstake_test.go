@@ -3,10 +3,10 @@ package thorchain
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/mocks"
+	"gitlab.com/thorchain/thornode/x/thorchain/mocks"
 )
 
 type UnstakeSuite struct{}

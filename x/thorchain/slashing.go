@@ -2,8 +2,8 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/bepswap/thornode/common"
-	"gitlab.com/thorchain/bepswap/thornode/constants"
+	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // Slash node accounts that didn't observe a single inbound txn

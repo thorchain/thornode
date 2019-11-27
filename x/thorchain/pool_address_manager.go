@@ -6,8 +6,8 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
-	"gitlab.com/thorchain/bepswap/thornode/constants"
+	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // const values used to emit events

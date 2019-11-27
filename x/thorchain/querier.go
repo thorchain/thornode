@@ -9,10 +9,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 
-	q "gitlab.com/thorchain/bepswap/thornode/x/thorchain/query"
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
+	q "gitlab.com/thorchain/thornode/x/thorchain/query"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // NewQuerier is the module level router for state queries

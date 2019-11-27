@@ -1,6 +1,6 @@
 package types
 
-import "gitlab.com/thorchain/bepswap/thornode/common"
+import "gitlab.com/thorchain/thornode/common"
 
 type LastBlock struct {
 	Height string `json:"statechain"`

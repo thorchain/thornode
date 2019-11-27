@@ -15,14 +15,14 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
-	stypes "gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
+	"gitlab.com/thorchain/thornode/common"
+	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/binance"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/binance"
+	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
 // Observer observer service
