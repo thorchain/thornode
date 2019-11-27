@@ -12,10 +12,10 @@ import (
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 
-	appCmd "gitlab.com/thorchain/bepswap/thornode/cmd"
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/types"
+	appCmd "gitlab.com/thorchain/thornode/cmd"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {

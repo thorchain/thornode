@@ -5,7 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"gitlab.com/thorchain/bepswap/thornode/constants"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // ValidatorRotationPolicy store all the relevant parameters we need to perform validator rotation

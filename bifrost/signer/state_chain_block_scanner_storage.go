@@ -8,8 +8,8 @@ import (
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/blockscanner"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
 const DefaultSignerLevelDBFolder = `signer_data`

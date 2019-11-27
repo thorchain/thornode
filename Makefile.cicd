@@ -64,8 +64,8 @@ docker-gitlab-login:
 	docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
 
 docker-gitlab-push:
-	docker push registry.gitlab.com/thorchain/bepswap/thornode:latest
+	docker push registry.gitlab.com/thorchain/thornode:latest
 
 docker-gitlab-build:
-	docker build -t registry.gitlab.com/thorchain/bepswap/thornode -f build/docker/Dockerfile .
-	docker tag registry.gitlab.com/thorchain/bepswap/thornode $$(git rev-parse --short HEAD)
+	docker build -t registry.gitlab.com/thorchain/thornode -f build/docker/Dockerfile .
+	docker tag registry.gitlab.com/thorchain/thornode $$(git rev-parse --short HEAD)

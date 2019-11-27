@@ -15,7 +15,7 @@ import (
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
 
-	"gitlab.com/thorchain/bepswap/thornode/test/smoke/types"
+	"gitlab.com/thorchain/thornode/test/smoke/types"
 )
 
 // Smoke : test instructions.

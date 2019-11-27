@@ -9,7 +9,7 @@ import (
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 func TestKeys(t *testing.T) { TestingT(t) }

@@ -11,9 +11,9 @@ import (
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/config"
-	"gitlab.com/thorchain/bepswap/thornode/bifrost/thorclient"
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain"
+	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 func TestTSSKeyGen(t *testing.T) { TestingT(t) }

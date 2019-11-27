@@ -13,10 +13,10 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"gitlab.com/thorchain/bepswap/thornode/constants"
+	"gitlab.com/thorchain/thornode/constants"
 
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/client/cli"
-	"gitlab.com/thorchain/bepswap/thornode/x/thorchain/client/rest"
+	"gitlab.com/thorchain/thornode/x/thorchain/client/cli"
+	"gitlab.com/thorchain/thornode/x/thorchain/client/rest"
 )
 
 // type check to ensure the interface is properly implemented

@@ -3,7 +3,7 @@ package thorchain
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // TxOutSetter define a method that is required to be used in TxOutStore

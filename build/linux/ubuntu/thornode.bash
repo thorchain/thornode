@@ -14,9 +14,9 @@ export GOPATH=~/go
 export GOBIN=$GOPATH/bin
 export PATH=$GOBIN:$GOROOT/bin:$PATH
 
-git clone https://gitlab.com/thorchain/bepswap/thornode.git ~/go/src/gitlab.com/thorchain/bepswap/thornode
+git clone https://gitlab.com/thorchain/thornode.git ~/go/src/gitlab.com/thorchain/thornode
 
-cd ~/go/src/gitlab.com/thorchain/bepswap/thornode
+cd ~/go/src/gitlab.com/thorchain/thornode
 go get -v
 make install tools
 

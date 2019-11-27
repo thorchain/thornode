@@ -6,7 +6,7 @@ services:
     build:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode
+    image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
     environment:
       NET: ${NET}
@@ -30,7 +30,7 @@ services:
     build:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode
+    image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
     environment:
       NET: ${NET}
@@ -63,7 +63,7 @@ services:
     build:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/bepswap/thornode
+    image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
     depends_on:
       - tssKeygen
@@ -96,7 +96,7 @@ services:
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon
-    image: registry.gitlab.com/thorchain/bepswap/thornode
+    image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
     environment:
       NET: ${NET}

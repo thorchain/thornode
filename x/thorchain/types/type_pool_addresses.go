@@ -1,6 +1,6 @@
 package types
 
-import "gitlab.com/thorchain/bepswap/thornode/common"
+import "gitlab.com/thorchain/thornode/common"
 
 // PoolAddresses is a struct to represent the address of pool also facilitate pool rotation
 type PoolAddresses struct {

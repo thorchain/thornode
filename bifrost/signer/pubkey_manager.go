@@ -3,7 +3,7 @@ package signer
 import (
 	"sync"
 
-	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type PubKeyManager struct {

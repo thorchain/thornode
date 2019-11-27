@@ -1,1 +1,1 @@
-FROM registry.gitlab.com/thorchain/bepswap/thornode:latest
+FROM registry.gitlab.com/thorchain/thornode:latest
