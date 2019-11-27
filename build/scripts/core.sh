@@ -34,6 +34,7 @@ init_chain () {
     export IFS=","
 
     thord init local --chain-id thorchain
+    thorcli keys list
 
     for user in $1; do # iterate over our list of comma separated users "alice,jack"
         # Only create if it doesn't exist!
