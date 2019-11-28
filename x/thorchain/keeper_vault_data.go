@@ -1,8 +1,8 @@
 package thorchain
 
 import (
-sdk "github.com/cosmos/cosmos-sdk/types"
-"gitlab.com/thorchain/thornode/common"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type KeeperVaultData interface {
