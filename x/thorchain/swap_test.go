@@ -2,7 +2,6 @@ package thorchain
 
 import (
 	"os"
-	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
