@@ -93,7 +93,7 @@ func (k KVStore) GetLowestActiveVersion(ctx sdk.Context) int64 {
 func (k KVStore) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool {
 	ctx.Logger().Debug("IsWhitelistedAccount", "account address", addr.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixNodeAccount, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
+	key := k.GetKey(ctx, prefixNodeAccount, addr.String())
 	return store.Has([]byte(key))
 }
 
@@ -101,7 +101,7 @@ func (k KVStore) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool {
 func (k KVStore) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
 	ctx.Logger().Debug("GetNodeAccount", "node account", addr.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixNodeAccount, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
+	key := k.GetKey(ctx, prefixNodeAccount, addr.String())
 	payload := store.Get([]byte(key))
 	var na NodeAccount
 	if err := k.cdc.UnmarshalBinaryBare(payload, &na); nil != err {
@@ -139,7 +139,7 @@ func (k KVStore) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Addres
 func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	ctx.Logger().Debug("SetNodeAccount", "node account", na.String())
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixNodeAccount, na.NodeAddress.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixNodeAccount))
+	key := k.GetKey(ctx, prefixNodeAccount, na.NodeAddress.String())
 	if na.Status == NodeActive {
 		if na.ActiveBlockHeight == 0 {
 			// the na is active, and does not have a block height when they

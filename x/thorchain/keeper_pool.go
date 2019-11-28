@@ -24,7 +24,7 @@ type KeeperPool interface {
 
 // GetPool get the entire Pool metadata struct for a pool ID
 func (k KVStore) GetPool(ctx sdk.Context, asset common.Asset) Pool {
-	key := getKey(prefixPool, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
+	key := k.GetKey(ctx, prefixPool, asset.String())
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return NewPool()
@@ -39,7 +39,7 @@ func (k KVStore) GetPool(ctx sdk.Context, asset common.Asset) Pool {
 // Sets the entire Pool metadata struct for a pool ID
 func (k KVStore) SetPool(ctx sdk.Context, pool Pool) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPool, pool.Asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
+	key := k.GetKey(ctx, prefixPool, pool.Asset.String())
 	if !store.Has([]byte(key)) {
 		if err := k.AddToPoolIndex(ctx, pool.Asset); nil != err {
 			ctx.Logger().Error("fail to add asset to pool index", "asset", pool.Asset, "error", err)
@@ -106,14 +106,14 @@ func (k KVStore) EnableAPool(ctx sdk.Context) {
 // PoolExist check whether the given pool exist in the datastore
 func (k KVStore) PoolExist(ctx sdk.Context, asset common.Asset) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPool, asset.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPool))
+	key := k.GetKey(ctx, prefixPool, asset.String())
 	return store.Has([]byte(key))
 }
 
 // GetPoolIndex retrieve pool index from the data store
 func (k KVStore) GetPoolIndex(ctx sdk.Context) (PoolIndex, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPoolIndex, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolIndex))
+	key := k.GetKey(ctx, prefixPoolIndex, "")
 	if !store.Has([]byte(key)) {
 		return PoolIndex{}, nil
 	}
@@ -129,7 +129,7 @@ func (k KVStore) GetPoolIndex(ctx sdk.Context) (PoolIndex, error) {
 // SetPoolIndex write a pool index into datastore
 func (k KVStore) SetPoolIndex(ctx sdk.Context, pi PoolIndex) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixPoolIndex, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolIndex))
+	key := k.GetKey(ctx, prefixPoolIndex, "")
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&pi))
 }
 

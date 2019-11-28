@@ -16,7 +16,7 @@ type KeeperTxOut interface {
 // SetTxOut - write the given txout information to key values tore
 func (k KVStore) SetTxOut(ctx sdk.Context, blockOut *TxOut) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxOut, strconv.FormatUint(blockOut.Height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTxOut))
+	key := k.GetKey(ctx, prefixTxOut, strconv.FormatUint(blockOut.Height, 10))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(blockOut))
 }
 
@@ -29,7 +29,7 @@ func (k KVStore) GetTxOutIterator(ctx sdk.Context) sdk.Iterator {
 // GetTxOut - write the given txout information to key values tore
 func (k KVStore) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxOut, strconv.FormatUint(height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTxOut))
+	key := k.GetKey(ctx, prefixTxOut, strconv.FormatUint(height, 10))
 	if !store.Has([]byte(key)) {
 		return NewTxOut(height), nil
 	}
