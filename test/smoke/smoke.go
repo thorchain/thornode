@@ -14,6 +14,7 @@ import (
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
+	. "github.com/logrusorgru/aurora"
 
 	"gitlab.com/thorchain/thornode/test/smoke/types"
 )
@@ -139,9 +140,9 @@ func (s *Smoke) Summarize() {
 		}
 	}
 
-	prefix := "Pass"
+	prefix := Green("Pass")
 	if failed > 0 {
-		prefix = "Failed"
+		prefix = Red("Fail")
 	}
 
 	log.Printf("%s %d/%d correct", prefix, success, success+failed)
@@ -306,7 +307,7 @@ func (s *Smoke) Run() bool {
 		s.Results = append(s.Results, result)
 
 		if !result.Success {
-			fmt.Printf("Fail ... (Tx %d)\n", result.Transaction.Tx)
+			fmt.Printf("%s ... (Tx %d)\n", Red("Fail"), result.Transaction.Tx)
 			fmt.Printf("\tTransaction: %+v\n", result.Transaction)
 			fmt.Printf("\tObtained: %s %+v\n", offender, ob)
 			fmt.Printf("\tExpected: %s %+v\n", offender, ex)
@@ -314,7 +315,7 @@ func (s *Smoke) Run() bool {
 				return false
 			}
 		} else {
-			fmt.Printf("Pass ... (Tx %d)\n", result.Transaction.Tx)
+			fmt.Printf("%s ... (Tx %d)\n", Green("Pass"), result.Transaction.Tx)
 		}
 	}
 

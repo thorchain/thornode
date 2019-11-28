@@ -12,6 +12,8 @@ require (
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/go-retryablehttp v0.6.1
+	github.com/logrusorgru/aurora v0.0.0-20191116043053-66b7ad493a23
+	github.com/mitranim/gow v0.0.0-20181105081807-8128c81042bd // indirect
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.2.1
