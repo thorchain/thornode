@@ -23,7 +23,7 @@ func (k KVStore) GetStakerPoolIterator(ctx sdk.Context) sdk.Iterator {
 // GetStakerPool get the stakerpool from key value store
 func (k KVStore) GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixStakerPool, stakerID.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
+	key := k.GetKey(ctx, prefixStakerPool, stakerID.String())
 	ctx.Logger().Info("get staker pool", "stakerpoolkey", key)
 	if !store.Has([]byte(key)) {
 		return NewStakerPool(stakerID), nil
@@ -40,7 +40,7 @@ func (k KVStore) GetStakerPool(ctx sdk.Context, stakerID common.Address) (Staker
 // SetStakerPool save the given stakerpool object to key value store
 func (k KVStore) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixStakerPool, stakerID.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixPoolStaker))
+	key := k.GetKey(ctx, prefixStakerPool, stakerID.String())
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", key, sp))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(sp))
 }

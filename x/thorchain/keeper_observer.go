@@ -14,7 +14,7 @@ type KeeperObserver interface {
 // SetActiveObserver set the given addr as an active observer address
 func (k KVStore) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixActiveObserver, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixActiveObserver))
+	key := k.GetKey(ctx, prefixActiveObserver, addr.String())
 	ctx.Logger().Info("set_active_observer", "key", key)
 	store.Set([]byte(key), addr.Bytes())
 }
@@ -22,14 +22,14 @@ func (k KVStore) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 // RemoveActiveObserver remove the given address from active observer
 func (k KVStore) RemoveActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixActiveObserver, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixActiveObserver))
+	key := k.GetKey(ctx, prefixActiveObserver, addr.String())
 	store.Delete([]byte(key))
 }
 
 // IsActiveObserver check the given account address, whether they are active
 func (k KVStore) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixActiveObserver, addr.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixActiveObserver))
+	key := k.GetKey(ctx, prefixActiveObserver, addr.String())
 	ctx.Logger().Info("is_active_observer", "key", key)
 	return store.Has([]byte(key))
 }
@@ -38,7 +38,7 @@ func (k KVStore) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool {
 // addresses that have recently contributed via observing a tx that got 2/3rds
 // majority
 func (k KVStore) GetObservingAddresses(ctx sdk.Context) []sdk.AccAddress {
-	key := getKey(prefixObservingAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixObservingAddresses))
+	key := k.GetKey(ctx, prefixObservingAddresses, "")
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -68,13 +68,13 @@ func (k KVStore) AddObservingAddresses(ctx sdk.Context, inAddresses []sdk.AccAdd
 	}
 
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixObservingAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixObservingAddresses))
+	key := k.GetKey(ctx, prefixObservingAddresses, "")
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(uniq))
 }
 
 // ClearObservingAddresses - clear all observing addresses
 func (k KVStore) ClearObservingAddresses(ctx sdk.Context) {
-	key := getKey(prefixObservingAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixObservingAddresses))
+	key := k.GetKey(ctx, prefixObservingAddresses, "")
 	store := ctx.KVStore(k.storeKey)
 	store.Delete([]byte(key))
 }

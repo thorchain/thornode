@@ -10,7 +10,7 @@ type KeeperVaultData interface {
 
 func (k KVStore) GetVaultData(ctx sdk.Context) VaultData {
 	data := NewVaultData()
-	key := getKey(prefixVaultData, "", getVersion(k.GetLowestActiveVersion(ctx), prefixVaultData))
+	key := k.GetKey(ctx, prefixVaultData, "")
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))
@@ -20,7 +20,7 @@ func (k KVStore) GetVaultData(ctx sdk.Context) VaultData {
 }
 
 func (k KVStore) SetVaultData(ctx sdk.Context, data VaultData) {
-	key := getKey(prefixVaultData, "", getVersion(k.GetLowestActiveVersion(ctx), prefixVaultData))
+	key := k.GetKey(ctx, prefixVaultData, "")
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(data))
 }
