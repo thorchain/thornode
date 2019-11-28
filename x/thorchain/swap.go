@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/bepswap/thornode/common"
+	"gitlab.com/thorchain/bepswap/thornode/constants"
 )
 
 // validate if pools exist
@@ -67,6 +68,13 @@ func swap(ctx sdk.Context,
 		tx.Coins[0].Amount, sourcePool, err = swapOne(ctx, keeper, tx, sourcePool, common.RuneAsset(), destination, tradeTarget, globalSlipLimit)
 		if err != nil {
 			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneAsset())
+		}
+		if tx.Coins[0].Amount.LTE(sdk.NewUint(constants.TransactionFee)) {
+			keeper.AddFeeToReserve(ctx, tx.Coins[0].Amount) // Add the Swap Fee to Reserve
+			tx.Coins[0].Amount = sdk.ZeroUint()             // None left
+		} else {
+			keeper.AddFeeToReserve(ctx, sdk.NewUint(constants.TransactionFee))   //Add the Swap Fee to Reserve
+			tx.Coins[0].Amount = tx.Coins[0].Amount.Sub(sdk.NewUint(constants.TransactionFee)) // Deduct from transaction
 		}
 		pools = append(pools, sourcePool)
 		tx.Coins[0].Asset = common.RuneAsset()
