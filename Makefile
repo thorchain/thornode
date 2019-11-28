@@ -34,7 +34,7 @@ test:
 	@go test -mod=readonly ./...
 
 test-watch: clear
-	@./scripts/watch.bash
+	@gow -c test -mod=readonly ./...
 
 lint-pre:
 	@test -z $(gofmt -l .) # checks code is in proper format
