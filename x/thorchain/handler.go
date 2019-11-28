@@ -791,6 +791,9 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 			return nil, errors.Wrap(err, "fail to find Yggdrasil pubkey")
 		}
 		newMsg = NewMsgYggdrasil(pk, false, tx.Coins, txID, signer)
+	case ReserveMemo:
+		res := NewReserveContributor(tx.Sender, tx.Coins[0].Amount)
+		newMsg = NewMsgReserveContributor(res, signer)
 	default:
 		return nil, errors.Wrap(err, "Unable to find memo type")
 	}
