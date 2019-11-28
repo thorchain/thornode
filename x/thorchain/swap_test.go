@@ -186,7 +186,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     "tester",
 			destination:   "don'tknow",
 			returnAmount:  sdk.NewUint(415017809),
-			tradeTarget:   sdk.NewUint(415017800),
+			tradeTarget:   sdk.NewUint(415017809),
 			expectedErr:   nil,
 		},
 	}
@@ -210,7 +210,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			c.Assert(err, NotNil, Commentf("Expected: %s, got nil", item.expectedErr.Error()))
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
-		c.Logf("expected amount:%s,actual amount:%s", item.returnAmount, amount)
+		c.Logf("expected amount:%s, actual amount:%s", item.returnAmount, amount)
 		c.Check(item.returnAmount.Uint64(), Equals, amount.Uint64())
 	}
 }
