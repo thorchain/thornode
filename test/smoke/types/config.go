@@ -8,6 +8,7 @@ import (
 // formats. Fix this later
 type BalancesConfig struct {
 	Tx       int64            `json:"TX"`
+	Out      int64            `json:"OUT"`
 	Master   map[string]int64 `json:"MASTER"`
 	User1    map[string]int64 `json:"USER-1"`
 	Staker1  map[string]int64 `json:"STAKER-1"`
