@@ -248,7 +248,6 @@ func (s *Smoke) WaitBlocks(count int) {
 	for {
 		newHeight := s.Thorchain.GetHeight()
 		if thorchainHeight+count <= newHeight {
-			fmt.Printf("Wait for Blocks: %d==>%d\n", thorchainHeight, newHeight)
 			return
 		}
 	}
