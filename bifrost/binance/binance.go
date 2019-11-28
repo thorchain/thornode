@@ -120,7 +120,6 @@ func IsTestNet(rpcHost string) (string, bool) {
 	}
 
 	var status Status
-	fmt.Printf("BUF: %s\n", data)
 	if err := json.Unmarshal(data, &status); nil != err {
 		log.Fatal().Err(err).Msg("fail to unmarshal body")
 	}

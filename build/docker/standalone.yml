@@ -9,9 +9,9 @@ services:
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
     environment:
-      CHAIN_HOST: thor-api:1317
-      BINANCE_HOST: ${BINANCE_HOST:-https://testnet-dex.binance.org}
       NET: ${NET}
+      CHAIN_API: thor-api:1317
+      BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
     entrypoint:
       /docker/scripts/observer.sh
     depends_on:
@@ -55,6 +55,7 @@ services:
       context: ../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
+    restart: unless-stopped
     environment:
       NODES: 1
       SEED: thor-daemon

@@ -58,6 +58,13 @@ aws-ecs-deploy: config docker-aws-push
 seed: tools
 	@bsinner -f ${FAUCET_KEY} -k ${BINANCE_PRIVATE_KEY} -e ${ENV} -c seed/seed.json -d true
 
+# -------------------------------- Smoke Test ---------------------------- #
+smoke-ci:
+	make -C build/docker run-genesisWithMockBinance
+	STOP_ID=6 bsinner -a docker:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e ci -x
+# ------------------------------------------------------------------------ #
+
+
 # ------------------------------- GitLab ------------------------------- #
 
 docker-gitlab-login:

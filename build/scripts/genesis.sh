@@ -58,7 +58,12 @@ fi
 
 if [ "$SEED" = "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
-        init_chain $SIGNER_NAME $SIGNER_PASSWD
+        # get a list of addresses (thor bech32)
+        ADDRS=""
+        for f in /tmp/shared/node_*.json; do
+            ADDRS="$ADDRS,$(cat $f | awk '{print $1}')"
+        done
+        init_chain $(echo "$ADDRS" | sed -e 's/^,*//')
 
         # add node accounts to genesis file
         for f in /tmp/shared/node_*.json; do 
@@ -81,7 +86,7 @@ if [ "$SEED" != "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
         echo "I AM NOT THE SEED"
         
-        init_chain
+        init_chain $NODE_ADDRESS
         fetch_genesis $SEED
         NODE_ID=$(fetch_node_id $SEED)
         echo "NODE ID: $NODE_ID"

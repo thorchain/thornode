@@ -73,7 +73,6 @@ smoke-test:thornode:
   environment:
     name: integration
   script: 
-    - make -C build/docker run-standaloneWithMockBinance
     - make tools smoke-ci
 
 deploy:develop:
