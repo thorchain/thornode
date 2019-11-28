@@ -16,6 +16,7 @@ type Keeper interface {
 	Supply() supply.Keeper
 	CoinKeeper() bank.Keeper
 	Logger(ctx sdk.Context) log.Logger
+	GetKey(ctx sdk.Context, prefix dbPrefix, key string) string
 
 	// Keeper Interfaces
 	KeeperPool
@@ -72,10 +73,6 @@ const (
 	prefixReserves           dbPrefix = "reserves/"
 )
 
-func getKey(prefix dbPrefix, key string, version int64) string {
-	return fmt.Sprintf("%s%d/%s", prefix, version, strings.ToUpper(key))
-}
-
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type KVStore struct {
 	coinKeeper   bank.Keeper
@@ -108,4 +105,9 @@ func (k KVStore) CoinKeeper() bank.Keeper {
 
 func (k KVStore) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", ModuleName))
+}
+
+func (k KVStore) GetKey(ctx sdk.Context, prefix dbPrefix, key string) string {
+	version := getVersion(k.GetLowestActiveVersion(ctx), prefix)
+	return fmt.Sprintf("%s%d/%s", prefix, version, strings.ToUpper(key))
 }

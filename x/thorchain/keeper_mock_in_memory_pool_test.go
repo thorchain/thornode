@@ -54,28 +54,28 @@ func (p *MockInMemoryPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common
 	if stakerID.Equals(notExistStakerPoolAddr) {
 		return NewStakerPool(stakerID), errors.New("simulate error for test")
 	}
-	key := getKey(prefixStakerPool, stakerID.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixStakerPool))
+	key := p.GetKey(ctx, prefixStakerPool, stakerID.String())
 	if res, ok := p.store[key]; ok {
 		return res.(StakerPool), nil
 	}
 	return NewStakerPool(stakerID), nil
 }
 func (p *MockInMemoryPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool) {
-	key := getKey(prefixStakerPool, stakerID.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixStakerPool))
+	key := p.GetKey(ctx, prefixStakerPool, stakerID.String())
 	p.store[key] = sp
 }
 func (p *MockInMemoryPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {
 	if notExistPoolStakerAsset.Equals(asset) {
 		return NewPoolStaker(asset, sdk.ZeroUint()), errors.New("simulate error for test")
 	}
-	key := getKey(prefixPoolStaker, asset.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixPoolStaker))
+	key := p.GetKey(ctx, prefixPoolStaker, asset.String())
 	if res, ok := p.store[key]; ok {
 		return res.(PoolStaker), nil
 	}
 	return NewPoolStaker(asset, sdk.ZeroUint()), nil
 }
 func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker) {
-	key := getKey(prefixPoolStaker, asset.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixPoolStaker))
+	key := p.GetKey(ctx, prefixPoolStaker, asset.String())
 	p.store[key] = ps
 }
 
@@ -88,7 +88,7 @@ func (p *MockInMemoryPoolStorage) GetAdminConfigDefaultPoolStatus(ctx sdk.Contex
 }
 
 func (p *MockInMemoryPoolStorage) GetAdminConfigValue(ctx sdk.Context, key AdminConfigKey, addr sdk.AccAddress) (string, error) {
-	storekey := getKey(prefixAdmin, key.String(), getVersion(p.GetLowestActiveVersion(ctx), prefixAdmin))
+	storekey := p.GetKey(ctx, prefixAdmin, key.String())
 	ac, ok := p.store[storekey]
 	if ok {
 		return ac.(AdminConfig).Value, nil

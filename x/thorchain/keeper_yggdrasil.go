@@ -40,7 +40,7 @@ func (k KVStore) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain
 }
 
 func (k KVStore) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
-	key := getKey(prefixYggdrasilPool, ygg.PubKey.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
+	key := k.GetKey(ctx, prefixYggdrasilPool, ygg.PubKey.String())
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(ygg))
 }
@@ -49,13 +49,13 @@ func (k KVStore) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) {
 // yggdrasil vault
 func (k KVStore) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
+	key := k.GetKey(ctx, prefixYggdrasilPool, pk.String())
 	return store.Has([]byte(key))
 }
 
 func (k KVStore) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil {
 	var ygg Yggdrasil
-	key := getKey(prefixYggdrasilPool, pk.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixYggdrasilPool))
+	key := k.GetKey(ctx, prefixYggdrasilPool, pk.String())
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))

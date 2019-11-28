@@ -23,7 +23,7 @@ type KeeperTxIn interface {
 // SetTxInVoter - save a txin voter object
 func (k KVStore) SetTxInVoter(ctx sdk.Context, tx TxInVoter) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxIn, tx.Key().String(), getVersion(k.GetLowestActiveVersion(ctx), prefixTxIn))
+	key := k.GetKey(ctx, prefixTxIn, tx.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
@@ -35,7 +35,7 @@ func (k KVStore) GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator {
 
 // GetTxIn - gets information of a tx hash
 func (k KVStore) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
-	key := getKey(prefixTxIn, hash.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixTxIn))
+	key := k.GetKey(ctx, prefixTxIn, hash.String())
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
@@ -51,7 +51,7 @@ func (k KVStore) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
 // CheckTxHash - check to see if we have already processed a specific tx
 func (k KVStore) CheckTxHash(ctx sdk.Context, hash common.TxID) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixTxIn, hash.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixTxIn))
+	key := k.GetKey(ctx, prefixTxIn, hash.String())
 	return store.Has([]byte(key))
 }
 
@@ -63,7 +63,7 @@ func (k KVStore) GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator {
 
 // GetTxInIndex retrieve txIn by height
 func (k KVStore) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error) {
-	key := getKey(prefixTxInIndex, strconv.FormatUint(height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTxInIndex))
+	key := k.GetKey(ctx, prefixTxInIndex, strconv.FormatUint(height, 10))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return TxInIndex{}, nil
@@ -79,7 +79,7 @@ func (k KVStore) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error)
 
 // SetTxInIndex write a TxIn index into datastore
 func (k KVStore) SetTxInIndex(ctx sdk.Context, height uint64, index TxInIndex) {
-	key := getKey(prefixTxInIndex, strconv.FormatUint(height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTxInIndex))
+	key := k.GetKey(ctx, prefixTxInIndex, strconv.FormatUint(height, 10))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&index))
 }

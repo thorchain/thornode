@@ -8,14 +8,14 @@ type KeeperValidatorMeta interface {
 }
 
 func (k KVStore) SetValidatorMeta(ctx sdk.Context, meta ValidatorMeta) {
-	key := getKey(prefixValidatorMeta, "", getVersion(k.GetLowestActiveVersion(ctx), prefixValidatorMeta))
+	key := k.GetKey(ctx, prefixValidatorMeta, "")
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(meta))
 }
 
 func (k KVStore) GetValidatorMeta(ctx sdk.Context) ValidatorMeta {
 	var meta ValidatorMeta
-	key := getKey(prefixValidatorMeta, "", getVersion(k.GetLowestActiveVersion(ctx), prefixValidatorMeta))
+	key := k.GetKey(ctx, prefixValidatorMeta, "")
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))

@@ -22,7 +22,7 @@ type KeeperEvents interface {
 
 // GetIncompleteEvents retrieve incomplete events
 func (k KVStore) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
-	key := getKey(prefixInCompleteEvents, "", getVersion(k.GetLowestActiveVersion(ctx), prefixInCompleteEvents))
+	key := k.GetKey(ctx, prefixInCompleteEvents, "")
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return Events{}, nil
@@ -38,7 +38,7 @@ func (k KVStore) GetIncompleteEvents(ctx sdk.Context) (Events, error) {
 
 // SetIncompleteEvents write incomplete events
 func (k KVStore) SetIncompleteEvents(ctx sdk.Context, events Events) {
-	key := getKey(prefixInCompleteEvents, "", getVersion(k.GetLowestActiveVersion(ctx), prefixInCompleteEvents))
+	key := k.GetKey(ctx, prefixInCompleteEvents, "")
 	store := ctx.KVStore(k.storeKey)
 	if len(events) == 0 {
 		store.Delete([]byte(key))
@@ -62,7 +62,7 @@ func (k KVStore) GetCompleteEventIterator(ctx sdk.Context) sdk.Iterator {
 
 // GetCompletedEvent retrieve completed event
 func (k KVStore) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
-	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", id), getVersion(k.GetLowestActiveVersion(ctx), prefixCompleteEvent))
+	key := k.GetKey(ctx, prefixCompleteEvent, fmt.Sprintf("%d", id))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return Event{}, nil
@@ -78,7 +78,7 @@ func (k KVStore) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
 
 // SetCompletedEvent write a completed event
 func (k KVStore) SetCompletedEvent(ctx sdk.Context, event Event) {
-	key := getKey(prefixCompleteEvent, fmt.Sprintf("%d", event.ID), getVersion(k.GetLowestActiveVersion(ctx), prefixCompleteEvent))
+	key := k.GetKey(ctx, prefixCompleteEvent, fmt.Sprintf("%d", event.ID))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event))
 }
@@ -138,7 +138,7 @@ func (k KVStore) CompleteEvents(ctx sdk.Context, in []common.TxID, out common.Tx
 // GetLastEventID get last event id
 func (k KVStore) GetLastEventID(ctx sdk.Context) int64 {
 	var lastEventID int64
-	key := getKey(prefixLastEventID, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastEventID))
+	key := k.GetKey(ctx, prefixLastEventID, "")
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))
@@ -149,7 +149,7 @@ func (k KVStore) GetLastEventID(ctx sdk.Context) int64 {
 
 // SetLastEventID write a last event id
 func (k KVStore) SetLastEventID(ctx sdk.Context, id int64) {
-	key := getKey(prefixLastEventID, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastEventID))
+	key := k.GetKey(ctx, prefixLastEventID, "")
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&id))
 }

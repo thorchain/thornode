@@ -15,12 +15,12 @@ type KeeperLastHeight interface {
 
 func (k KVStore) SetLastSignedHeight(ctx sdk.Context, height sdk.Uint) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixLastSignedHeight, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastSignedHeight))
+	key := k.GetKey(ctx, prefixLastSignedHeight, "")
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
 }
 
 func (k KVStore) GetLastSignedHeight(ctx sdk.Context) (height sdk.Uint) {
-	key := getKey(prefixLastSignedHeight, "", getVersion(k.GetLowestActiveVersion(ctx), prefixLastSignedHeight))
+	key := k.GetKey(ctx, prefixLastSignedHeight, "")
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return sdk.ZeroUint()
@@ -36,13 +36,13 @@ func (k KVStore) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height 
 		return errors.Errorf("current block height :%s is larger than %s , block height can't go backward ", currentHeight, height)
 	}
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixLastChainHeight, chain.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixLastChainHeight))
+	key := k.GetKey(ctx, prefixLastChainHeight, "")
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
 	return nil
 }
 
 func (k KVStore) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (height sdk.Uint) {
-	key := getKey(prefixLastChainHeight, chain.String(), getVersion(k.GetLowestActiveVersion(ctx), prefixLastChainHeight))
+	key := k.GetKey(ctx, prefixLastChainHeight, "")
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return sdk.ZeroUint()
