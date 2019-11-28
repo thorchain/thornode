@@ -5,6 +5,13 @@ import sdk "github.com/cosmos/cosmos-sdk/types"
 type KeeperReserveContributors interface {
 	GetReservesContributors(ctx sdk.Context) ReserveContributors
 	SetReserveContributors(ctx sdk.Context, contribs ReserveContributors)
+	AddFeeToReserve(ctx sdk.Context, fee sdk.Uint)
+}
+
+func (k KVStore) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) {
+	vault := k.GetVaultData(ctx)
+	vault.TotalReserve = vault.TotalReserve.Add(fee)
+	k.SetVaultData(ctx, vault)
 }
 
 func (k KVStore) GetReservesContributors(ctx sdk.Context) ReserveContributors {
