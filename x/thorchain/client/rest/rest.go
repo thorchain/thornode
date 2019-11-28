@@ -10,6 +10,7 @@ import (
 	"github.com/didip/tollbooth/limiter"
 	"github.com/gorilla/mux"
 
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain/query"
 )
 
@@ -36,16 +37,21 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	// Dynamically create endpoints of all funcs in querier.go
 	for _, q := range query.Queries {
 		endpoint := q.Endpoint(storeName, restURLParam, restURLParam2)
-		if endpoint != "" { // don't setup REST endpoint if we have no endpoint
-			r.Handle(
-				endpoint,
-				tollbooth.LimitFuncHandler(
-					lmt,
-					getHandlerWrapper(q, storeName, cliCtx),
-				),
-			).Methods(http.MethodGet, http.MethodOptions)
+		if !common.IsTestNet() && !q.Mainnet {
+			continue
 		}
+		if endpoint == "" { // don't setup REST endpoint if we have no endpoint
+			continue
+		}
+		r.Handle(
+			endpoint,
+			tollbooth.LimitFuncHandler(
+				lmt,
+				getHandlerWrapper(q, storeName, cliCtx),
+			),
+		).Methods(http.MethodGet, http.MethodOptions)
 	}
+
 	// Get unsigned json for emitting a transaction. Validators only.
 	r.HandleFunc(
 		fmt.Sprintf("/%s/tx", storeName),

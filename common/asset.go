@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"os"
 	"strings"
 )
 
@@ -71,7 +70,7 @@ func (a Asset) IsBNB() bool {
 }
 
 func RuneAsset() Asset {
-	if strings.EqualFold(os.Getenv("NET"), "testnet") {
+	if IsTestNet() {
 		return RuneA1FAsset
 	}
 	return RuneB1AAsset
