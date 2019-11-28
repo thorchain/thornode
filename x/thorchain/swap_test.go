@@ -185,8 +185,8 @@ func (s SwapSuite) TestSwap(c *C) {
 			amount:        sdk.NewUint(5 * common.One),
 			requester:     "tester",
 			destination:   "don'tknow",
-			returnAmount:  sdk.NewUint(329785770),
-			tradeTarget:   sdk.NewUint(315017809),
+			returnAmount:  sdk.NewUint(415017809),
+			tradeTarget:   sdk.NewUint(415017809),
 			expectedErr:   nil,
 		},
 	}
