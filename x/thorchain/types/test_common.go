@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/cmd"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // GetRandomNodeAccount create a random generated node account , used for test purpose
@@ -22,6 +23,7 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	}
 	addr, _ := pubKeys.Secp256k1.GetThorAddress()
 	na := NewNodeAccount(addr, status, pubKeys, k, sdk.NewUint(100*common.One), bondAddr, 1)
+	na.Version = constants.Version
 	if na.Status == Active {
 		na.ActiveBlockHeight = 10
 	}
