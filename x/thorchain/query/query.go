@@ -53,6 +53,7 @@ var (
 	QueryNodeAccount      = Query{Key: "nodeaccount", EndpointTemplate: "/%s/nodeaccount/{%s}"}
 	QueryPoolAddresses    = Query{Key: "pooladdresses", EndpointTemplate: "/%s/pooladdresses"}
 	QueryValidators       = Query{Key: "validators", EndpointTemplate: "/%s/validators"}
+	QueryVaultData        = Query{Key: "vaultdata", EndpointTemplate: "/%s/vault"}
 )
 
 var Queries = []Query{
@@ -79,4 +80,5 @@ var Queries = []Query{
 	QueryNodeAccounts,
 	QueryPoolAddresses,
 	QueryValidators,
+	QueryVaultData,
 }
