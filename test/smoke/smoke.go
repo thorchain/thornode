@@ -239,12 +239,16 @@ func (s *Smoke) GetCurrentBalances() types.BalancesConfig {
 }
 
 // Wait for a block on thorchain
-func (s *Smoke) WaitBlocks(i int) {
+func (s *Smoke) WaitBlocks(count int) {
+	if count == 0 {
+		return
+	}
 	// Wait for the thorchain to process a block
 	thorchainHeight := s.Thorchain.GetHeight()
 	for {
 		newHeight := s.Thorchain.GetHeight()
-		if thorchainHeight+i <= newHeight {
+		if thorchainHeight+count <= newHeight {
+			fmt.Printf("Wait for Blocks: %d==>%d\n", thorchainHeight, newHeight)
 			return
 		}
 	}
@@ -285,12 +289,15 @@ func (s *Smoke) Run() bool {
 			log.Fatalf("Send Tx failure: %s", err)
 		}
 
-		if txn.Memo != "SEED" {
-			// Wait for the thorchain to process a block
-			s.WaitBlocks(2)
-		}
-
 		expectedBal := s.Balances.GetByTx(txn.Tx)
+
+		// Wait for the thorchain to process a block
+		blocks := 0 // default to none
+		if expectedBal.Out >= 1 {
+			blocks = 2
+		}
+		s.WaitBlocks(blocks)
+
 		obtainedBal := s.GetCurrentBalances()
 		obtainedBal.Tx = txn.Tx
 
