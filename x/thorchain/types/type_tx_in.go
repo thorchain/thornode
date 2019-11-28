@@ -55,6 +55,9 @@ func (tx TxIn) Valid() error {
 	if len(tx.Coins) == 0 {
 		return errors.New("coins cannot be empty")
 	}
+	if len(tx.Signers) > 0 {
+		return errors.New("signers must be empty")
+	}
 	if err := tx.Coins.IsValid(); err != nil {
 		return err
 	}
