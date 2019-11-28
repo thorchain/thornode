@@ -5,8 +5,6 @@ set -exuf -o pipefail
 
 source $(dirname "$0")/core.sh
 
-init_chain statechain password
-
 if [ -z "${BOND_ADDRESS:-}" ]; then
     BOND_ADDRESS=tbnb1czyqwfxptfnk7aey99cu820ftr28hw2fcvrh74
     echo "empty bond address"
@@ -27,10 +25,15 @@ if [ -z "${SEQNO:-}" ]; then
     echo $SEQNO
 fi
 
-VERSION="$(thorcli query thorchain version | jq -r .version)"
+echo "password" | thorcli keys add statechain
+
 VALIDATOR="$(thord tendermint show-validator)"
 NODE_ADDRESS="$(thorcli keys show statechain -a)"
 NODE_PUB_KEY="$(thorcli keys show statechain -p)"
+
+init_chain $NODE_ADDRESS
+
+VERSION="$(thorcli query thorchain version | jq -r .version)"
 
 add_node_account $NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $BOND_ADDRESS $POOL_PUB_KEY
 add_pool_address $POOL_ADDRESS $POOL_PUB_KEY $SEQNO

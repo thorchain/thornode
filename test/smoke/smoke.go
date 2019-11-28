@@ -68,6 +68,10 @@ func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string,
 	if len(faucetKey) > 0 {
 		sweep = true
 	}
+	addr, err := thor.PoolAddress()
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return Smoke{
 		Balances:     balConfig,
@@ -75,7 +79,7 @@ func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string,
 		ApiAddr:      apiAddr,
 		Binance:      NewBinance(apiAddr, debug),
 		Thorchain:    thor,
-		PoolAddress:  thor.PoolAddress(),
+		PoolAddress:  addr,
 		FaucetKey:    faucetKey,
 		VaultKey:     vaultKey,
 		Keys:         keyMgr,
@@ -271,7 +275,7 @@ func (s *Smoke) Run() bool {
 	for _, txn := range s.Transactions {
 
 		// check if we are stopping at this tx
-		if stopID > 0 && txn.Tx >= stopID {
+		if stopID > 0 && txn.Tx > stopID {
 			s.Summarize()
 			// exit it successfully
 			return true
@@ -296,17 +300,15 @@ func (s *Smoke) Run() bool {
 		s.Results = append(s.Results, result)
 
 		if !result.Success {
-			fmt.Printf("Transaction: %+v\n", result.Transaction)
-			fmt.Printf("Obtained: %s %+v\n", offender, ob)
-			fmt.Printf("Expected: %s %+v\n", offender, ex)
-			fmt.Printf("Fail (Tx %d)\n", result.Transaction.Tx)
+			fmt.Printf("Fail ... (Tx %d)\n", result.Transaction.Tx)
+			fmt.Printf("\tTransaction: %+v\n", result.Transaction)
+			fmt.Printf("\tObtained: %s %+v\n", offender, ob)
+			fmt.Printf("\tExpected: %s %+v\n", offender, ex)
 			if s.FastFail {
 				return false
 			}
 		} else {
-			if s.Debug {
-				fmt.Printf("Test Success! (%d)\n", result.Transaction.Tx)
-			}
+			fmt.Printf("Success ... (Tx %d)\n", result.Transaction.Tx)
 		}
 	}
 

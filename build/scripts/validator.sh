@@ -15,14 +15,14 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
 
     gen_bnb_address
 
-    init_chain $SIGNER_NAME $SIGNER_PASSWD
+    NODE_ADDRESS=$(thorcli keys show $SIGNER_NAME -a)
+    init_chain $NODE_ADDRESS
 
     fetch_genesis $PEER
 
     NODE_ID=$(fetch_node_id $PEER)
     peer_list $NODE_ID $PEER
 
-    NODE_ADDRESS=$(thorcli keys show $SIGNER_NAME -a)
     echo "YOUR NODE ADDRESS: $NODE_ADDRESS. Send your bond with this as your address."
 fi
 

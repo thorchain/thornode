@@ -14,7 +14,8 @@ START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
 USE_TSS="${USE_TSS:=false}"
 TSS_SCHEME="${TSS_SCHEME:=http}"
 TSS_HOST="${TSS_HOST:=127.0.0.1}"
-TSS_PORT="${TSS_PORT:=8321}"
+TSS_KEYSIGN_PORT="${TSS_KEYSIGN_PORT:=8321}"
+TSS_KEYGEN_PORT="${TSS_KEYGEN_PORT:=8322}"
 NODE_ID="${NODE_ID:=null}"
 
 $(dirname "$0")/wait-for-statechain-api.sh $CHAIN_API
@@ -58,13 +59,13 @@ echo "{
   \"key_gen\": {
     \"scheme\": \"$TSS_SCHEME\",
     \"host\": \"$TSS_HOST\",
-    \"port\": $TSS_PORT,
+    \"port\": $TSS_KEYGEN_PORT,
     \"node_id\": $NODE_ID
   },
   \"key_sign\": {
     \"scheme\": \"$TSS_SCHEME\",
     \"host\": \"$TSS_HOST\",
-    \"port\": $TSS_PORT,
+    \"port\": $TSS_KEYSIGN_PORT,
     \"node_id\": $NODE_ID
   }
 }" > /etc/observe/signd/config.json

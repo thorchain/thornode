@@ -13,6 +13,7 @@ import (
 	"time"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
+	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/test/smoke/types"
 )
@@ -38,56 +39,57 @@ func NewThorchain(env string) Thorchain {
 
 // WaitForAvailability - pings thorchain until its available
 func (s Thorchain) WaitForAvailability() {
-	uri := s.getUrl("ping")
 	var count int
 	for {
 		fmt.Println("Waiting for thorchain availability")
-		resp, err := http.Get(uri)
-		if resp != nil && resp.StatusCode == 200 {
+		addr, err := s.PoolAddress()
+		if err == nil {
+			fmt.Printf("Pool Address found: %s\n", addr)
 			break
 		}
-		fmt.Printf("Ping error: %s\n", err)
+		fmt.Printf("Pool Address error: %s\n", err)
 		count += 1
 		if count > 300 {
 			fmt.Println("Timeout: thorchain is unavailable")
 			os.Exit(1)
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 }
 
-func (s Thorchain) PoolAddress() ctypes.AccAddress {
+func (s Thorchain) PoolAddress() (ctypes.AccAddress, error) {
 	// TODO : Fix this - this is a hack to get around the 1 query per second REST API limit.
 	time.Sleep(1 * time.Second)
+	ctypes.Network = ctypes.TestNetwork
 
 	var addrs types.ThorchainPoolAddress
 
 	resp, err := http.Get(s.PoolAddressesURL())
 	if err != nil {
-		log.Fatalf("Failed getting thorchain: %v\n", err)
+		return nil, errors.Wrap(err, "Failed getting thorchain")
 	}
 	defer resp.Body.Close()
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalf("Failed reading body: %v\n", err)
+		return nil, errors.Wrap(err, "Failed reading body")
 	}
 
 	if err := json.Unmarshal(data, &addrs); nil != err {
-		log.Fatalf("Failed to unmarshal pool addresses: %s", err)
+		return nil, errors.Wrap(err, "Failed to unmarshal pool addresses")
 	}
 
 	if len(addrs.Current) == 0 {
-		log.Fatal("No pool addresses are currently available")
+		return nil, errors.New("No pool addresses are currently available")
 	}
 	poolAddr := addrs.Current[0]
 
 	addr, err := ctypes.AccAddressFromBech32(poolAddr.Address.String())
 	if err != nil {
-		log.Fatalf("Failed to parse address: %s", err)
+		return nil, errors.Wrap(err, "Failed to parse address")
 	}
 
-	return addr
+	return addr, nil
 }
 
 // GetThorchain : Get the Statehcain pools.
