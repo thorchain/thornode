@@ -9,7 +9,7 @@ type KeeperPoolAddresses interface {
 
 // SetPoolAddresses save the pool address to key value store
 func (k KVStore) SetPoolAddresses(ctx sdk.Context, addresses *PoolAddresses) {
-	key := getKey(prefixPoolAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolAddresses))
+	key := k.GetKey(ctx, prefixPoolAddresses, "")
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(*addresses))
 }
@@ -17,7 +17,7 @@ func (k KVStore) SetPoolAddresses(ctx sdk.Context, addresses *PoolAddresses) {
 // GetPoolAddresses get current pool addresses
 func (k KVStore) GetPoolAddresses(ctx sdk.Context) PoolAddresses {
 	var addr PoolAddresses
-	key := getKey(prefixPoolAddresses, "", getVersion(k.GetLowestActiveVersion(ctx), prefixPoolAddresses))
+	key := k.GetKey(ctx, prefixPoolAddresses, "")
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))

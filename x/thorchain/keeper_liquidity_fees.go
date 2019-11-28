@@ -31,17 +31,21 @@ func (k KVStore) AddToLiquidityFees(ctx sdk.Context, pool Pool, fee sdk.Uint) er
 
 	totalFees = totalFees.Add(fee)
 	poolFees = poolFees.Add(fee)
-	key := getKey(prefixTotalLiquidityFee, strconv.FormatUint(currentHeight, 10), getVersion(k.GetLowestActiveVersion(ctx), prefixTotalLiquidityFee))
+
+	// update total liquidity
+	key := k.GetKey(ctx, prefixTotalLiquidityFee, strconv.FormatUint(currentHeight, 10))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(totalFees))
+
+	// update pool liquidity
 	strHeightPool := fmt.Sprintf("%s%s", strconv.FormatUint(currentHeight, 10), pool.Asset.String())
-	key2 := getKey(prefixPoolLiquidityFee, strHeightPool, getVersion(k.GetLowestActiveVersion(ctx), prefixPoolLiquidityFee))
-	store.Set([]byte(key2), k.cdc.MustMarshalBinaryBare(poolFees))
+	key = k.GetKey(ctx, prefixPoolLiquidityFee, strHeightPool)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(poolFees))
 	return nil
 }
 
 func (k KVStore) getLiquidityFees(ctx sdk.Context, height uint64, prefix dbPrefix) (sdk.Uint, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefix, strconv.FormatUint(height, 10), getVersion(k.GetLowestActiveVersion(ctx), prefix))
+	key := k.GetKey(ctx, prefix, strconv.FormatUint(height, 10))
 	if !store.Has([]byte(key)) {
 		return sdk.ZeroUint(), nil
 	}

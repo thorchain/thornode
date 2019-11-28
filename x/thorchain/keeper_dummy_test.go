@@ -23,6 +23,9 @@ func (k KVStoreDummy) CoinKeeper() bank.Keeper { return bank.BaseKeeper{} }
 func (k KVStoreDummy) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", ModuleName))
 }
+func (k KVStoreDummy) GetKey(ctx sdk.Context, prefix dbPrefix, key string) string {
+	return fmt.Sprintf("%s/1/%s", prefix, key)
+}
 func (k KVStoreDummy) SetLastSignedHeight(ctx sdk.Context, height sdk.Uint) { return }
 func (k KVStoreDummy) GetLastSignedHeight(ctx sdk.Context) sdk.Uint         { return sdk.ZeroUint() }
 func (k KVStoreDummy) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height sdk.Uint) error {

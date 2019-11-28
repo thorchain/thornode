@@ -13,7 +13,7 @@ type KeeperChains interface {
 
 func (k KVStore) GetChains(ctx sdk.Context) common.Chains {
 	chains := make(common.Chains, 0)
-	key := getKey(prefixSupportedChains, "", getVersion(k.GetLowestActiveVersion(ctx), prefixSupportedChains))
+	key := k.GetKey(ctx, prefixSupportedChains, "")
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))
@@ -32,7 +32,7 @@ func (k KVStore) SupportedChain(ctx sdk.Context, chain common.Chain) bool {
 }
 
 func (k KVStore) AddChain(ctx sdk.Context, chain common.Chain) {
-	key := getKey(prefixSupportedChains, "", getVersion(k.GetLowestActiveVersion(ctx), prefixSupportedChains))
+	key := k.GetKey(ctx, prefixSupportedChains, "")
 	if k.SupportedChain(ctx, chain) {
 		// already added
 		return

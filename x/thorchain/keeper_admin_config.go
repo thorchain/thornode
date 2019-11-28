@@ -29,7 +29,7 @@ type KeeperAdminConfig interface {
 // SetAdminConfig - saving a given admin config to the KVStore
 func (k KVStore) SetAdminConfig(ctx sdk.Context, config AdminConfig) {
 	store := ctx.KVStore(k.storeKey)
-	key := getKey(prefixAdmin, config.DbKey(), getVersion(k.GetLowestActiveVersion(ctx), prefixAdmin))
+	key := k.GetKey(ctx, prefixAdmin, config.DbKey())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(config))
 }
 
@@ -116,7 +116,7 @@ func (k KVStore) GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue
 func (k KVStore) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error) {
 	getConfigValue := func(nodeAddr sdk.AccAddress) (string, error) {
 		config := NewAdminConfig(kkey, "", nodeAddr)
-		key := getKey(prefixAdmin, config.DbKey(), getVersion(k.GetLowestActiveVersion(ctx), prefixAdmin))
+		key := k.GetKey(ctx, prefixAdmin, config.DbKey())
 		store := ctx.KVStore(k.storeKey)
 		if !store.Has([]byte(key)) {
 			return kkey.Default(), nil

@@ -9,7 +9,7 @@ type KeeperReserveContributors interface {
 
 func (k KVStore) GetReservesContributors(ctx sdk.Context) ReserveContributors {
 	contribs := make(ReserveContributors, 0)
-	key := getKey(prefixReserves, "", getVersion(k.GetLowestActiveVersion(ctx), prefixReserves))
+	key := k.GetKey(ctx, prefixReserves, "")
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))
@@ -19,7 +19,7 @@ func (k KVStore) GetReservesContributors(ctx sdk.Context) ReserveContributors {
 }
 
 func (k KVStore) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) {
-	key := getKey(prefixReserves, "", getVersion(k.GetLowestActiveVersion(ctx), prefixReserves))
+	key := k.GetKey(ctx, prefixReserves, "")
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(contribs))
 }
