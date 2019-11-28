@@ -139,7 +139,7 @@ func (s *Smoke) Summarize() {
 		}
 	}
 
-	prefix := "Success"
+	prefix := "Pass"
 	if failed > 0 {
 		prefix = "Failed"
 	}
@@ -260,7 +260,7 @@ func (s *Smoke) Run() bool {
 	}
 
 	if err := s.Seed(); err != nil {
-		log.Fatalf("Send Tx failure: %s", err)
+		log.Fatalf("Send seed Tx failure: %s", err)
 	}
 
 	stopID := int64(0)
@@ -308,7 +308,7 @@ func (s *Smoke) Run() bool {
 				return false
 			}
 		} else {
-			fmt.Printf("Success ... (Tx %d)\n", result.Transaction.Tx)
+			fmt.Printf("Pass ... (Tx %d)\n", result.Transaction.Tx)
 		}
 	}
 
