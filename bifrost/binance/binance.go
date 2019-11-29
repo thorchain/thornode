@@ -255,7 +255,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	param := map[string]string{
 		"sync": "true",
 	}
-	rawBz, err := b.signWithRetry(signMsg, fromAddr)
+	rawBz, err := b.signWithRetry(signMsg, fromAddr, tai.PoolAddress)
 	if nil != err {
 		return nil, nil, errors.Wrap(err, "fail to sign message")
 	}
@@ -267,10 +267,18 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	return hexTx, param, nil
 }
 
+func (b *Binance) sign(signMsg tx.StdSignMsg, poolPubKey common.PubKey) ([]byte, error) {
+	if b.useTSS {
+		k := b.keyManager.(tss.ThorchainKeyManager)
+		return k.SignWithPool(signMsg, poolPubKey)
+	}
+	return b.keyManager.Sign(signMsg)
+}
+
 // signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
-func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string) ([]byte, error) {
+func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string, poolPubKey common.PubKey) ([]byte, error) {
 	for {
-		rawBytes, err := b.keyManager.Sign(signMsg)
+		rawBytes, err := b.sign(signMsg, poolPubKey)
 		if nil == err {
 			return rawBytes, nil
 		}
@@ -354,9 +362,22 @@ func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) error {
 		return err
 	}
 	u.Path = "broadcast_tx_commit"
-	_, err = http.Post(u.String(), "", bytes.NewReader(hexTx))
+	resp, err := http.Post(u.String(), "", bytes.NewReader(hexTx))
 	if err != nil {
 		return errors.Wrap(err, "fail to broadcast tx to ")
+	}
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			log.Error().Err(err).Msg("we fail to close response body")
+		}
+	}()
+	if resp.StatusCode != http.StatusOK {
+		result, err := ioutil.ReadAll(resp.Body)
+		if nil != err {
+			return fmt.Errorf("fail to read response body: %w", err)
+		}
+		log.Error().Msg(string(result))
+		return fmt.Errorf("fail to broadcast tx to binance:(%s)", b.RPCHost)
 	}
 	return nil
 }
