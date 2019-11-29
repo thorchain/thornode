@@ -63,7 +63,7 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 				sendCoins,
 				common.NewCoin(
 					targetCoin.Asset,
-					targetCoin.Amount.Sub(yggCoin.Amount),
+					targetCoin.Amountcommon.SafeSub(yggCoin.Amount),
 				),
 			)
 		}
