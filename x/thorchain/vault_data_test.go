@@ -12,12 +12,12 @@ var _ = Suite(&VaultSuite{})
 
 func (s VaultSuite) TestCalcBlockRewards(c *C) {
 	bondR, poolR, stakerD := calcBlockRewards(sdk.NewUint(1000*common.One), sdk.ZeroUint())
-	c.Check(bondR.Uint64(), Equals, uint64(1760), Commentf("%d", bondR.Uint64()))
+	c.Check(bondR.Uint64(), Equals, uint64(1761), Commentf("%d", bondR.Uint64()))
 	c.Check(poolR.Uint64(), Equals, uint64(880), Commentf("%d", poolR.Uint64()))
 	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 
 	bondR, poolR, stakerD = calcBlockRewards(sdk.NewUint(1000*common.One), sdk.NewUint(3000))
-	c.Check(bondR.Uint64(), Equals, uint64(3760), Commentf("%d", bondR.Uint64()))
+	c.Check(bondR.Uint64(), Equals, uint64(3761), Commentf("%d", bondR.Uint64()))
 	c.Check(poolR.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 	c.Check(stakerD.Uint64(), Equals, uint64(1120), Commentf("%d", poolR.Uint64()))
 
