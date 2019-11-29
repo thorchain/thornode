@@ -39,7 +39,7 @@ const normalResp = `{
       "signer_membership": [
         "thorpub1addwnpepqw9gv9ffmua8xpgyqj5nn4slw62wpwvcfgj6xxwx9tuyg0x80xlf24a8s6c"
       ],
-      "version": "1"
+      "version": "0.1.0"
     }
   ],
   "nominated": null,

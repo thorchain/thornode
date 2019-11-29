@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -14,7 +15,7 @@ func NewPoolDataHandler(keeper Keeper) PoolDataHandler {
 	}
 }
 
-func (h PoolDataHandler) Run(ctx sdk.Context, msg MsgSetPoolData, version int64) sdk.Result {
+func (h PoolDataHandler) Run(ctx sdk.Context, msg MsgSetPoolData, version semver.Version) sdk.Result {
 	if err := h.Validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
@@ -27,8 +28,8 @@ func (h PoolDataHandler) Run(ctx sdk.Context, msg MsgSetPoolData, version int64)
 	}
 }
 
-func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version int64) error {
-	if version >= 1 {
+func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version semver.Version) error {
+	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.ValidateV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
@@ -51,9 +52,9 @@ func (h PoolDataHandler) ValidateV1(ctx sdk.Context, msg MsgSetPoolData) error {
 
 }
 
-func (h PoolDataHandler) Handle(ctx sdk.Context, msg MsgSetPoolData, version int64) error {
+func (h PoolDataHandler) Handle(ctx sdk.Context, msg MsgSetPoolData, version semver.Version) error {
 	ctx.Logger().Info("handleMsgSetPoolData request", "Asset:", msg.Asset.String())
-	if version >= 1 {
+	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.HandleV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())

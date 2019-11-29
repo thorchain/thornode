@@ -1,19 +1,18 @@
 package types
 
 import (
-	"fmt"
-
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 // MsgSetVersion defines a MsgSetVersion message
 type MsgSetVersion struct {
-	Version int64          `json:"version"`
+	Version semver.Version `json:"version"`
 	Signer  sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetVersion is a constructor function for NewMsgSetVersion
-func NewMsgSetVersion(version int64, signer sdk.AccAddress) MsgSetVersion {
+func NewMsgSetVersion(version semver.Version, signer sdk.AccAddress) MsgSetVersion {
 	return MsgSetVersion{
 		Version: version,
 		Signer:  signer,
@@ -31,8 +30,7 @@ func (msg MsgSetVersion) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
-	if msg.Version < 0 {
-		err := fmt.Errorf("Version cannot be negative")
+	if err := msg.Version.Validate(); err != nil {
 		return sdk.ErrUnknownRequest(err.Error())
 	}
 	return nil

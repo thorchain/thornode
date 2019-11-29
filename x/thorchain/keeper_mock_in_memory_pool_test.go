@@ -3,6 +3,7 @@ package thorchain
 import (
 	"errors"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
 
@@ -79,8 +80,8 @@ func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, asset common.As
 	p.store[key] = ps
 }
 
-func (p *MockInMemoryPoolStorage) GetLowestActiveVersion(ctx sdk.Context) int64 {
-	return 0
+func (p *MockInMemoryPoolStorage) GetLowestActiveVersion(ctx sdk.Context) semver.Version {
+	return semver.MustParse("0.1.0")
 }
 
 func (p *MockInMemoryPoolStorage) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
