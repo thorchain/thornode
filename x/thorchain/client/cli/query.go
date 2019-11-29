@@ -13,11 +13,11 @@ import (
 )
 
 type ver struct {
-	Version int `json:"version"`
+	Version string `json:"version"`
 }
 
 func (v ver) String() string {
-	return fmt.Sprintf("%d", v.Version)
+	return v.Version
 }
 
 func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
@@ -52,7 +52,7 @@ func GetCmdGetVersion(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			out := ver{constants.Version}
+			out := ver{constants.SWVersion.String()}
 			return cliCtx.PrintOutput(out)
 		},
 	}

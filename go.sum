@@ -25,6 +25,8 @@ github.com/binance-chain/go-sdk v1.1.3 h1:lnodVJ6y4g1mv7Cv2b1dqvWvB2NSBsR3oHkJG8
 github.com/binance-chain/go-sdk v1.1.3/go.mod h1:ahR+bb8rCbVRuK9ukmNTr/ghj7n4awioQQgLS5xb7wQ=
 github.com/binance-chain/ledger-cosmos-go v0.9.9-binance.1 h1:8mAtw1Tp/BhhTrsXmXM60H1fihcvcKLfo2ZSxShaXKw=
 github.com/binance-chain/ledger-cosmos-go v0.9.9-binance.1/go.mod h1:FI6WAujuiBpoSavYreux2zTKyrUkngXDlRJczxsDK5M=
+github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
+github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/btcsuite/btcd v0.0.0-20181013004428-67e573d211ac/go.mod h1:Dmm/EzmjnCiweXmzRIAiUWCInVmPgjkzgv5k4tVyXiQ=
 github.com/btcsuite/btcd v0.0.0-20190115013929-ed77733ec07d h1:xG8Pj6Y6J760xwETNmMzmlt38QSwz0BLp1cZ09g27uw=
 github.com/btcsuite/btcd v0.0.0-20190115013929-ed77733ec07d/go.mod h1:d3C0AkH6BRcvO8T0UEPu53cnw4IbV63x1bEjildYhO0=
