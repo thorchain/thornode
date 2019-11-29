@@ -79,7 +79,7 @@ func (ygg *Yggdrasil) SubFunds(coins common.Coins) {
 				if coin.Amount.GTE(ycoin.Amount) {
 					coin.Amount = ycoin.Amount
 				}
-				ygg.Coins[i].Amount = ycoin.Amount.Sub(coin.Amount)
+				ygg.Coins[i].Amount = common.SafeSub(ycoin.Amount, coin.Amount)
 			}
 		}
 	}

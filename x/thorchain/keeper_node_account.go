@@ -161,14 +161,14 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 			if reward.GT(sdk.ZeroUint()) {
 				na.Bond = na.Bond.Add(reward)
 				if vault.TotalBondUnits.GTE(sdk.NewUint(uint64(blockCount))) {
-					vault.TotalBondUnits = vault.TotalBondUnits.Sub(sdk.NewUint(uint64(blockCount)))
+					vault.TotalBondUnits = common.SafeSub(vault.TotalBondUnits, sdk.NewUint(uint64(blockCount)))
 				} else {
 					vault.TotalBondUnits = sdk.ZeroUint()
 				}
 				// Minus the number of units na has (do not include slash points)
 				// Minus the number of rune we have awarded them
 				if vault.BondRewardRune.GTE(reward) {
-					vault.BondRewardRune = vault.BondRewardRune.Sub(reward)
+					vault.BondRewardRune = common.SafeSub(vault.BondRewardRune, reward)
 				} else {
 					vault.BondRewardRune = sdk.ZeroUint()
 				}
@@ -196,7 +196,7 @@ func (k KVStore) SlashNodeAccountBond(ctx sdk.Context, na *NodeAccount, slash sd
 	if slash.GT(na.Bond) {
 		na.Bond = sdk.ZeroUint()
 	} else {
-		na.Bond = na.Bond.Sub(slash)
+		na.Bond = common.SafeSub(na.Bond, slash)
 	}
 	k.SetNodeAccount(ctx, *na)
 }

@@ -161,7 +161,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 		assetAmount := p.BalanceAsset
 		// we only take BNB for now
 		if p.Asset.IsBNB() {
-			assetAmount = assetAmount.Sub(sdk.NewUint(uint64(poolRefundGas)))
+			assetAmount = common.SafeSub(assetAmount, sdk.NewUint(uint64(poolRefundGas)))
 		}
 		runeTotal = runeTotal.Add(p.BalanceRune)
 		if p.BalanceAsset.GT(sdk.ZeroUint()) {
@@ -210,7 +210,7 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, ru
 		assetAmount := p.BalanceAsset
 		// we only take BNB for now
 		if p.Asset.IsBNB() {
-			assetAmount = assetAmount.Sub(sdk.NewUint(uint64(poolRefundGas)))
+			assetAmount = common.SafeSub(assetAmount, sdk.NewUint(uint64(poolRefundGas)))
 		}
 		runeTotal = runeTotal.Add(p.BalanceRune)
 		if p.BalanceAsset.GT(sdk.ZeroUint()) {

@@ -169,7 +169,7 @@ func (n *NodeAccount) SubBond(amt sdk.Uint) {
 	if n.Bond.LT(amt) {
 		n.Bond = sdk.ZeroUint()
 	} else {
-		n.Bond = n.Bond.Sub(amt)
+		n.Bond = common.SafeSub(n.Bond, amt)
 	}
 }
 
