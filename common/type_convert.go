@@ -21,7 +21,7 @@ func SafeSub(input1, input2 sdk.Uint) sdk.Uint {
 	if input2.GT(input1) {
 		return sdk.ZeroUint()
 	}
-	return input1common.SafeSub(input2)
+	return input1.Sub(input2)
 }
 
 // UintToFloat64

@@ -22,6 +22,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/secp256k1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
+)
 
 // KeySign is a proxy between signer and TSS
 type KeySign struct {

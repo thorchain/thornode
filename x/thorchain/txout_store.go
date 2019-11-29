@@ -108,7 +108,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			} else {
 				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
 			}
-			toi.Coin.Amount = toi.Coin.Amount.Sub(runeFee)
+			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
 			keeper.AddFeeToReserve(ctx, runeFee) // Add to reserve
 		} else {
 			pool := keeper.GetPool(ctx, toi.Coin.Asset)                              // Get pool
@@ -119,7 +119,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			} else {
 				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
 			}
-			toi.Coin.Amount = toi.Coin.Amount.Sub(assetFee)     // Deduct Asset fee
+			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)     // Deduct Asset fee
 			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee) // Add Asset fee to Pool
 			pool.BalanceRune = pool.BalanceRune.Add(runeFee)    // Deduct Rune from Pool
 			keeper.SetPool(ctx, pool)                           // Set Pool
@@ -194,7 +194,7 @@ func (tos *TxOutStore) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx 
 				if !yggcoin.Asset.Equals(tx.Coin.Asset) {
 					continue
 				}
-				ygg.Coins[i].Amount = ygg.Coins[i].Amount.Sub(tx.Coin.Amount)
+				ygg.Coins[i].Amount = common.SafeSub(ygg.Coins[i].Amount, tx.Coin.Amount)
 			}
 		}
 		yggs = append(yggs, ygg)

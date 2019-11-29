@@ -1,6 +1,9 @@
 package thorchain
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+sdk "github.com/cosmos/cosmos-sdk/types"
+"gitlab.com/thorchain/thornode/common"
+)
 
 type KeeperVaultData interface {
 	GetVaultData(ctx sdk.Context) VaultData
@@ -55,7 +58,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) {
 		if vault.TotalReserve.LT(totalPoolRewards) {
 			vault.TotalReserve = sdk.ZeroUint()
 		} else {
-			vault.TotalReserve = vault.TotalReserve.Sub(bondReward).Sub(totalPoolRewards) // Subtract Bond and Pool rewards
+			vault.TotalReserve = common.SafeSub(common.SafeSub(vault.TotalReserve, bondReward), totalPoolRewards) // Subtract Bond and Pool rewards
 		}
 		vault.BondRewardRune = vault.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
 	}
@@ -67,7 +70,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) {
 			runeGas := pool.AssetValueInRune(coin.Amount)
 			pool.BalanceRune = pool.BalanceRune.Add(runeGas)
 			k.SetPool(ctx, pool)
-			totalPoolRewards = totalPoolRewards.Sub(runeGas)
+			totalPoolRewards = common.SafeSub(totalPoolRewards, runeGas)
 		}
 
 		// Then add pool rewards
@@ -85,7 +88,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) {
 				continue
 			}
 			poolDeficit := calcPoolDeficit(stakerDeficit, totalFees, poolFees)
-			pool.BalanceRune = pool.BalanceRune.Sub(poolDeficit)
+			pool.BalanceRune = common.SafeSub(pool.BalanceRune, poolDeficit)
 			k.SetPool(ctx, pool)
 		}
 	}
