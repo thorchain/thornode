@@ -7,10 +7,10 @@ func getVersion(sversion semver.Version, prefix dbPrefix) semver.Version {
 	case prefixNodeAccount:
 		return getNodeAccountVersion(sversion)
 	default:
-		return semver.MustParse("0.1.0-alpha") // default
+		return semver.MustParse("0.1.0") // default
 	}
 }
 
 func getNodeAccountVersion(sversion semver.Version) semver.Version {
-	return semver.MustParse("0.1.0-alpha") // default
+	return semver.MustParse("0.1.0") // default
 }
