@@ -18,7 +18,6 @@ const (
 	restURLParam2 = "param2"
 )
 
-// TODO add stake record endpoint
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
 
