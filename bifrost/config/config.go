@@ -89,9 +89,8 @@ type SignerConfiguration struct {
 	StateChain       StateChainConfiguration   `json:"state_chain" mapstructure:"state_chain"`
 	RetryInterval    time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
 	Metric           MetricConfiguration       `json:"metric" mapstructure:"metric"`
-	KeySign          TSSConfiguration          `json:"key_sign" mapstructure:"key_sign"`
 	UseTSS           bool                      `json:"use_tss" mapstructure:"use_tss"`
-	KeyGen           TSSConfiguration          `json:"key_gen" mapstructure:"key_gen"`
+	TSS              TSSConfiguration          `json:"tss" mapstructure:"tss"`
 }
 
 // BinanceConfiguration all the configurations for binance client
@@ -105,7 +104,6 @@ type TSSConfiguration struct {
 	Scheme string `json:"scheme" mapstructure:"scheme"`
 	Host   string `json:"host" mapstructure:"host"`
 	Port   int    `json:"port" mapstructure:"port"`
-	NodeId string `json:"node_id" mapstructure:"node_id"`
 }
 
 func applyBlockScannerDefault() {
