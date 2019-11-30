@@ -14,7 +14,12 @@ gen_bnb_address
 ADDRESS=$(cat ~/.signer/address.txt)
 
 # create statechain user
-echo $SIGNER_PASSWD | thorcli keys add $SIGNER_NAME
+thorcli keys show $SIGNER_NAME || echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME 2>&1
+
+# write private key to tss volume
+if [ ! -z ${TSSPRIVKEY+x} ]; then
+    echo $SIGNER_PASSWD | thorcli keys tss $SIGNER_NAME 2> $TSSPRIVKEY
+fi
 
 VALIDATOR=$(thord tendermint show-validator)
 NODE_ADDRESS=$(thorcli keys show statechain -a)
@@ -39,12 +44,14 @@ while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODE
     sleep 1
 done
 
-echo $TSSKEYSIGN
-if [ ! -z ${TSSKEYSIGN+x} ]; then
-    # wait for TSS keysign agent to become available
-    $(dirname "$0")/wait-for-tss-keygen.sh $TSSKEYSIGN
+if [ ! -z ${TSSKEYGEN+x} ]; then
+    export IFS=","
+    for addr in $TSSKEYGEN; do
+        # wait for TSS keysign agent to become available
+        $(dirname "$0")/wait-for-tss-keygen.sh $addr
+    done
 
-    KEYCLIENT="/usr/bin/keygenclient --name $SIGNER_NAME --password $SIGNER_PASSWD -u http://$TSSKEYSIGN:8322/keygen"
+    KEYCLIENT="/usr/bin/keygenclient -url http://$TSSKEYGEN:4040/keygen"
     for f in /tmp/shared/node_*.json; do
         KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $3}')"
     done
