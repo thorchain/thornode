@@ -26,7 +26,7 @@ RUN go build -a -installsuffix cgo -o $GOBIN/signd ./cmd/signd
 RUN go build -a -installsuffix cgo -o $GOBIN/generate ./tools/generate
 
 # install keygenClient
-RUN git clone https://gitlab.com/thorchain/tss/tss-tools.git /tmp/tss-tools
+RUN git clone --single-branch --branch retry-and-timeout https://gitlab.com/thorchain/tss/tss-tools.git /tmp/tss-tools
 WORKDIR /tmp/tss-tools/cmd/keygenclient
 RUN go mod verify
 RUN go get -d -v ./...

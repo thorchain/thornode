@@ -46,7 +46,7 @@ done
 
 if [ ! -z ${TSSKEYGEN+x} ]; then
     export IFS=","
-    for addr in $TSSKEYGEN; do
+    for addr in $TSSKEYGENLIST; do
         # wait for TSS keysign agent to become available
         $(dirname "$0")/wait-for-tss-keygen.sh $addr
     done
@@ -57,8 +57,8 @@ if [ ! -z ${TSSKEYGEN+x} ]; then
     done
     sh -c "$KEYCLIENT > /tmp/keygenclient.output"
 
-    PUBKEY=$(cat /tmp/keygenclient.output | tail -2 | head -1)
-    POOL_ADDRESS=$(cat /tmp/keygenclient.output | tail -1)
+    PUBKEY=$(cat /tmp/keygenclient.output | tail -1 | jq -r .pub_key)
+    POOL_ADDRESS=$(cat /tmp/keygenclient.output | tail -1 | jq -r .bnb_address)
 else
     POOL_ADDRESS=$(cat ~/.signer/address.txt)
 fi
