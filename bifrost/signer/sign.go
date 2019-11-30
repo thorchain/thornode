@@ -69,7 +69,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create state chain block scan")
 	}
-	b, err := binance.NewBinance(cfg.Binance, cfg.UseTSS, cfg.KeySign)
+	b, err := binance.NewBinance(cfg.Binance, cfg.UseTSS, cfg.TSS)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create binance client")
 	}
@@ -88,7 +88,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	}
 
 	if cfg.UseTSS {
-		kg, err := tss.NewTssKeyGen(cfg.KeyGen, thorKeys)
+		kg, err := tss.NewTssKeyGen(cfg.TSS, thorKeys)
 		if nil != err {
 			return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
 		}
