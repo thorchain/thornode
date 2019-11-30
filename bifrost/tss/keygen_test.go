@@ -53,7 +53,6 @@ func (kts *KeyGenTestSuite) TestNewTssKenGen(c *C) {
 		Scheme: "http",
 		Host:   "localhost",
 		Port:   0,
-		NodeId: "whaterver",
 	}
 	scCfg := config.StateChainConfiguration{
 		ChainID:         "thorchain",
