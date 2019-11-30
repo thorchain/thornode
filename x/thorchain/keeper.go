@@ -109,5 +109,5 @@ func (k KVStore) Logger(ctx sdk.Context) log.Logger {
 
 func (k KVStore) GetKey(ctx sdk.Context, prefix dbPrefix, key string) string {
 	version := getVersion(k.GetLowestActiveVersion(ctx), prefix)
-	return fmt.Sprintf("%s%s/%s", prefix, version.String(), strings.ToUpper(key))
+	return fmt.Sprintf("%s%d/%s", prefix, version.Minor, strings.ToUpper(key))
 }
