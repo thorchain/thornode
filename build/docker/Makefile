@@ -1,7 +1,7 @@
 .PHONY: build smoke-test tools
 
 build: 
-	docker build -t registry.gitlab.com/thorchain/thornode --no-cache -f Dockerfile ../..
+	docker build -t registry.gitlab.com/thorchain/thornode -f Dockerfile ../..
 
 clean:
 	@rm -rf /tmp/genesis
