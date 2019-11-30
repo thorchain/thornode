@@ -123,6 +123,7 @@ services:
     environment:
       NET: ${NET}
       TSSKEYGEN: 172.32.10.2
+      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
       PRIVKEY: /root/.tss/private.key
     expose:
       - "4040"
@@ -247,6 +248,8 @@ services:
       NET: ${NET}
       SEED: "172.32.10.2"
       PRIVKEY: /root/.tss/private.key
+      TSSKEYGEN: 172.32.10.3
+      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -367,6 +370,8 @@ services:
       NET: ${NET}
       SEED: "172.32.10.2"
       PRIVKEY: /root/.tss/private.key
+      TSSKEYGEN: 172.32.10.4
+      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -487,6 +492,8 @@ services:
       NET: ${NET}
       SEED: "172.32.10.2"
       PRIVKEY: /root/.tss/private.key
+      TSSKEYGEN: 172.32.10.5
+      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
