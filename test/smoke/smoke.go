@@ -276,9 +276,6 @@ func (s *Smoke) Run() bool {
 		}
 	}
 
-	generatedBalances := make([]types.BalanceExport, 0)
-	generatedBalances = append(generatedBalances, s.Balances.GetByTx(0).Export())
-
 	obtainedBalances := make(types.BalancesConfigs, 0)
 	obtainedBalances = append(obtainedBalances, s.Balances.GetByTx(0))
 
@@ -307,7 +304,6 @@ func (s *Smoke) Run() bool {
 		obtainedBal := s.GetCurrentBalances()
 		obtainedBal.Tx = txn.Tx
 		obtainedBal.Out = expectedBal.Out
-		generatedBalances = append(generatedBalances, obtainedBal.Export())
 		obtainedBalances = append(obtainedBalances, obtainedBal)
 
 		// Compare expected vs obtained balances
@@ -329,10 +325,17 @@ func (s *Smoke) Run() bool {
 	}
 
 	if s.GenBalance {
-		file, _ := json.MarshalIndent(generatedBalances, "", "  ")
-		_ = ioutil.WriteFile("exported_balances.json", file, 0644)
-		file, _ = json.MarshalIndent(obtainedBalances, "", "  ")
+		// Save obtained balances
+		file, _ := json.MarshalIndent(obtainedBalances, "", "  ")
 		_ = ioutil.WriteFile("obtained_balances.json", file, 0644)
+
+		// Save exported obtained balances (this is for google spreadsheet importing)
+		generatedBalances := make([]types.BalanceExport, len(obtainedBalances))
+		for i, bal := range obtainedBalances {
+			generatedBalances[i] = bal.Export()
+		}
+		file, _ = json.MarshalIndent(generatedBalances, "", "  ")
+		_ = ioutil.WriteFile("exported_balances.json", file, 0644)
 	}
 
 	if s.SweepOnExit {
