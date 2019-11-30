@@ -5,6 +5,7 @@ import (
 	"path"
 
 	"github.com/cosmos/cosmos-sdk/client"
+	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	"github.com/cosmos/cosmos-sdk/client/lcd"
 	"github.com/cosmos/cosmos-sdk/client/rpc"
@@ -13,11 +14,11 @@ import (
 	bankcmd "github.com/cosmos/cosmos-sdk/x/bank/client/cli"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 
 	app "gitlab.com/thorchain/thornode"
-	cmd "gitlab.com/thorchain/thornode/cmd"
+	"gitlab.com/thorchain/thornode/cmd"
 )
 
 func main() {
@@ -42,7 +43,9 @@ func main() {
 	rootCmd.PersistentPreRunE = func(_ *cobra.Command, _ []string) error {
 		return initConfig(rootCmd)
 	}
-
+	kc := keys.Commands()
+	kc.AddCommand(flags.LineBreak,
+		exportPrivateKeyForTSS())
 	// Construct Root Command
 	rootCmd.AddCommand(
 		rpc.StatusCommand(),
@@ -52,7 +55,7 @@ func main() {
 		client.LineBreak,
 		lcd.ServeCommand(cdc, registerRoutes),
 		client.LineBreak,
-		keys.Commands(),
+		kc,
 		client.LineBreak,
 	)
 
