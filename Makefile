@@ -53,6 +53,7 @@ start-observe:
 	observe
 
 start-daemon:
+	# thord start --log_level "*:debug"
 	thord start
 
 start-rest:
