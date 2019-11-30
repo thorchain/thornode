@@ -276,6 +276,12 @@ func (s *Smoke) Run() bool {
 		}
 	}
 
+	generatedBalances := make([]types.BalanceExport, 0)
+	generatedBalances = append(generatedBalances, s.Balances.GetByTx(0).Export())
+
+	obtainedBalances := make(types.BalancesConfigs, 0)
+	obtainedBalances = append(obtainedBalances, s.Balances.GetByTx(0))
+
 	for _, txn := range s.Transactions {
 
 		// check if THORNode are stopping at this tx
@@ -300,6 +306,9 @@ func (s *Smoke) Run() bool {
 
 		obtainedBal := s.GetCurrentBalances()
 		obtainedBal.Tx = txn.Tx
+		obtainedBal.Out = expectedBal.Out
+		generatedBalances = append(generatedBalances, obtainedBal.Export())
+		obtainedBalances = append(obtainedBalances, obtainedBal)
 
 		// Compare expected vs obtained balances
 		ok, offender, ob, ex := obtainedBal.Equals(expectedBal)
@@ -317,6 +326,13 @@ func (s *Smoke) Run() bool {
 		} else {
 			fmt.Printf("%s ... (Tx %d)\n", Green("Pass"), result.Transaction.Tx)
 		}
+	}
+
+	if s.GenBalance {
+		file, _ := json.MarshalIndent(generatedBalances, "", "  ")
+		_ = ioutil.WriteFile("exported_balances.json", file, 0644)
+		file, _ = json.MarshalIndent(obtainedBalances, "", "  ")
+		_ = ioutil.WriteFile("obtained_balances.json", file, 0644)
 	}
 
 	if s.SweepOnExit {
