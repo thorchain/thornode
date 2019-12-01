@@ -58,13 +58,8 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) {
 	for i, gas := range vault.Gas {
 		if !gas.Amount.IsZero() {
 			pool := k.GetPool(ctx, gas.Asset)
-			if pool.BalanceAsset.LT(gas.Amount) {
-				vault.Gas[i].Amount = vault.Gas[i].Amount.Sub(pool.BalanceAsset)
-				pool.BalanceAsset = sdk.ZeroUint()
-			} else {
-				vault.Gas[i].Amount = sdk.ZeroUint()
-				pool.BalanceAsset = pool.BalanceAsset.Sub(gas.Amount)
-			}
+			vault.Gas[i].Amount = common.SafeSub(vault.Gas[i].Amount, pool.BalanceAsset)
+			pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
 			k.SetPool(ctx, pool)
 		}
 	}
@@ -127,13 +122,8 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gases common.Gas)
 		if !gas.Amount.IsZero() {
 			pool := keeper.GetPool(ctx, gas.Asset)
 			runeGas := pool.AssetValueInRune(gas.Amount)
-			if val.LT(runeGas) {
-				gases[i].Amount = gases[i].Amount.Sub(gas.Amount)
-				val = sdk.ZeroUint()
-			} else {
-				gases[i].Amount = sdk.ZeroUint()
-				val = val.Sub(runeGas)
-			}
+			gases[i].Amount = common.SafeSub(gases[i].Amount, gas.Amount)
+			val = common.SafeSub(val, runeGas)
 		}
 	}
 	return val, gases
