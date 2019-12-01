@@ -80,7 +80,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) {
 		// Get total fees, then find individual pool deficits, then deduct
 		totalFees, _ = k.GetTotalLiquidityFees(ctx, currentHeight)
 		for _, pool := range pools {
-			poolFees, _ := k.GetPoolLiquidityFees(ctx, currentHeight, pool)
+			poolFees, _ := k.GetPoolLiquidityFees(ctx, currentHeight, pool.Asset)
 			if !pool.BalanceRune.IsZero() || !poolFees.IsZero() { // Safety checks
 				continue
 			}
