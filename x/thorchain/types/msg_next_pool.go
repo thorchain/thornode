@@ -46,7 +46,7 @@ func (msg MsgNextPoolAddress) ValidateBasic() sdk.Error {
 	if msg.Chain.IsEmpty() {
 		return sdk.ErrUnknownRequest("chain cannot be empty")
 	}
-	if !common.IsBNBChain(msg.Chain) {
+	if !msg.Chain.IsBNB() {
 		return sdk.ErrUnknownRequest("nextpool memo will only happen on BNB chain")
 	}
 

@@ -49,7 +49,7 @@ func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
 	if msg.RuneAddress.IsEmpty() {
 		return sdk.ErrUnknownRequest("rune address cannot be empty")
 	}
-	if !common.IsBNBChain(msg.Asset.Chain) {
+	if !msg.Asset.Chain.IsBNB() {
 		if msg.AssetAddress.IsEmpty() {
 			return sdk.ErrUnknownRequest("asset address cannot be empty")
 		}
