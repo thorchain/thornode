@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -56,7 +54,6 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) 
 	for _, evt := range incomplete {
 		// NOTE: not checking the event type because all non-swap/unstake/etc
 		// are completed immediately.
-		fmt.Printf("%d %d %d\n", evt.Height, constants.SigningTransactionPeriod, ctx.BlockHeight())
 		if evt.Height+constants.SigningTransactionPeriod < ctx.BlockHeight() {
 			txs, err := keeper.GetTxOut(ctx, uint64(evt.Height))
 			if err != nil {
