@@ -45,12 +45,34 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) {
 		}
 	}
 
+	// First subsidise the gas that was consumed from reserves, any
+	// reserves we take, minus from the gas we owe.
+	vault.TotalReserve, vault.Gas = subtractGas(ctx, k, vault.TotalReserve, vault.Gas)
+
+	// Then get fees and rewards
+	totalFees, _ := k.GetTotalLiquidityFees(ctx, currentHeight)
+	// If we have any remaining gas to pay, take from total liquidity fees
+	totalFees, vault.Gas = subtractGas(ctx, k, totalFees, vault.Gas)
+
+	// if we continue to have remaining gas to pay off, take from the pools 😖
+	for i, gas := range vault.Gas {
+		if !gas.Amount.IsZero() {
+			pool := k.GetPool(ctx, gas.Asset)
+			if pool.BalanceAsset.LT(gas.Amount) {
+				vault.Gas[i].Amount = vault.Gas[i].Amount.Sub(pool.BalanceAsset)
+				pool.BalanceAsset = sdk.ZeroUint()
+			} else {
+				vault.Gas[i].Amount = sdk.ZeroUint()
+				pool.BalanceAsset = pool.BalanceAsset.Sub(gas.Amount)
+			}
+			k.SetPool(ctx, pool)
+		}
+	}
+
 	if totalRune.IsZero() {
 		return // If no Rune is staked, then don't give out block rewards.
 	}
 
-	// Then get fees and rewards
-	totalFees, _ := k.GetTotalLiquidityFees(ctx, currentHeight)
 	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees)
 
 	if !vault.TotalReserve.IsZero() {
@@ -97,4 +119,22 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) {
 	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i))) // Add 1 unit for each active Node
 
 	k.SetVaultData(ctx, vault)
+}
+
+// remove gas
+func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gases common.Gas) (sdk.Uint, common.Gas) {
+	for i, gas := range gases {
+		if !gas.Amount.IsZero() {
+			pool := keeper.GetPool(ctx, gas.Asset)
+			runeGas := pool.AssetValueInRune(gas.Amount)
+			if val.LT(runeGas) {
+				gases[i].Amount = gases[i].Amount.Sub(gas.Amount)
+				val = sdk.ZeroUint()
+			} else {
+				gases[i].Amount = sdk.ZeroUint()
+				val = val.Sub(runeGas)
+			}
+		}
+	}
+	return val, gases
 }
