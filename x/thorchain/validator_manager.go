@@ -303,7 +303,10 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, store *TxOutSt
 
 func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr *PoolAddressManager, txOut *TxOutStore) error {
 	ygg := vm.k.GetYggdrasil(ctx, node.NodePubKey.Secp256k1)
-	chains := vm.k.GetChains(ctx)
+	chains, err := vm.k.GetChains(ctx)
+	if err != nil {
+		return err
+	}
 	if !ygg.HasFunds() {
 		return nil
 	}

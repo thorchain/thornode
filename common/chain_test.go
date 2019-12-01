@@ -12,11 +12,16 @@ func (s ChainSuite) TestChain(c *C) {
 	bnbChain, err := NewChain("bnb")
 	c.Assert(err, IsNil)
 	c.Check(bnbChain.Equals(BNBChain), Equals, true)
-	c.Check(IsBNBChain(bnbChain), Equals, true)
+	c.Check(bnbChain.IsBNB(), Equals, true)
 	c.Check(bnbChain.IsEmpty(), Equals, false)
 	c.Check(bnbChain.String(), Equals, "BNB")
 
 	_, err = NewChain("B") // too short
 	c.Assert(err, NotNil)
 
+	chains := Chains{"BNB", "BNB", "BTC"}
+	c.Check(chains.Has("BTC"), Equals, true)
+	c.Check(chains.Has("ETH"), Equals, false)
+	uniq := chains.Uniquify()
+	c.Assert(uniq, HasLen, 2)
 }

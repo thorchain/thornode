@@ -121,7 +121,10 @@ func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, store *TxOutSto
 
 // move all assets based on pool balance to new pool
 func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses *PoolAddresses) error {
-	chains := k.GetChains(ctx)
+	chains, err := k.GetChains(ctx)
+	if err != nil {
+		return err
+	}
 	runeTotal := sdk.ZeroUint()
 	for _, c := range chains {
 		if c.Equals(common.BNBChain) {
