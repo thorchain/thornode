@@ -3,6 +3,7 @@ package thorchain
 import (
 	"fmt"
 
+	"github.com/blang/semver"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
@@ -66,7 +67,7 @@ func (k KVStoreDummy) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatu
 func (k KVStoreDummy) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	return nil, kaboom
 }
-func (k KVStoreDummy) GetLowestActiveVersion(ctx sdk.Context) int64                { return 0 }
+func (k KVStoreDummy) GetLowestActiveVersion(ctx sdk.Context) semver.Version       { return semver.Version{} }
 func (k KVStoreDummy) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool { return false }
 func (k KVStoreDummy) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
 	return NodeAccount{}, kaboom

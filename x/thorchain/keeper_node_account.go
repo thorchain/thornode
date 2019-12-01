@@ -3,6 +3,7 @@ package thorchain
 import (
 	"fmt"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
@@ -14,7 +15,7 @@ type KeeperNodeAccount interface {
 	ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error)
 	ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error)
 	ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error)
-	GetLowestActiveVersion(ctx sdk.Context) int64
+	GetLowestActiveVersion(ctx sdk.Context) semver.Version
 	IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool
 	GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error)
 	GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error)
@@ -75,18 +76,18 @@ func (k KVStore) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 }
 
 // GetLowestActiveVersion - get version number of lowest active node
-func (k KVStore) GetLowestActiveVersion(ctx sdk.Context) int64 {
+func (k KVStore) GetLowestActiveVersion(ctx sdk.Context) semver.Version {
 	nodes, _ := k.ListActiveNodeAccounts(ctx)
 	if len(nodes) > 0 {
 		version := nodes[0].Version
 		for _, na := range nodes {
-			if na.Version < version {
+			if na.Version.LT(version) {
 				version = na.Version
 			}
 		}
 		return version
 	}
-	return 0
+	return semver.Version{}
 }
 
 // IsWhitelistedAccount check whether the given account is white listed

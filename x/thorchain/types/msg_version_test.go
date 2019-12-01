@@ -1,6 +1,7 @@
 package types
 
 import (
+	"github.com/blang/semver"
 	. "gopkg.in/check.v1"
 )
 
@@ -11,7 +12,7 @@ var _ = Suite(&MsgSetVersionSuite{})
 func (MsgSetVersionSuite) TestMsgSetVersionSuite(c *C) {
 	acc1 := GetRandomBech32Addr()
 	c.Assert(acc1.Empty(), Equals, false)
-	msg := NewMsgSetVersion(2, acc1)
+	msg := NewMsgSetVersion(semver.MustParse("2.0.0"), acc1)
 	c.Assert(msg.Route(), Equals, RouterKey)
 	c.Assert(msg.Type(), Equals, "set_version")
 	c.Assert(msg.ValidateBasic(), IsNil)
