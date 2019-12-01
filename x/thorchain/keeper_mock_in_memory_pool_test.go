@@ -100,7 +100,7 @@ func (p *MockInMemoryPoolStorage) GetAdminConfigStakerAmtInterval(ctx sdk.Contex
 	return common.NewAmountFromFloat(100)
 }
 
-func (p *MockInMemoryPoolStorage) AddIncompleteEvents(ctx sdk.Context, event Event) {}
-func (p *MockInMemoryPoolStorage) SetCompletedEvent(ctx sdk.Context, event Event)   {}
+func (p *MockInMemoryPoolStorage) AddIncompleteEvents(ctx sdk.Context, event Event) error { return nil }
+func (p *MockInMemoryPoolStorage) SetCompletedEvent(ctx sdk.Context, event Event)         {}
 
 func (p *MockInMemoryPoolStorage) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) {}
