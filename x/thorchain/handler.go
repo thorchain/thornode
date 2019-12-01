@@ -1051,7 +1051,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		err := completeEvents(ctx, keeper, msg.InTxID, voter.OutTxs)
 		if err != nil {
 			ctx.Logger().Error("unable to complete events", "error", err)
-			return sdk.ErrUnauthorized(err.Error()).Result()
+			return sdk.ErrInternal(err.Error()).Result()
 		}
 	}
 
