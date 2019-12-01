@@ -26,8 +26,8 @@ RUN go build -a -installsuffix cgo -o $GOBIN/signd ./cmd/signd
 RUN go build -a -installsuffix cgo -o $GOBIN/generate ./tools/generate
 
 # install keygenClient
-RUN git clone https://gitlab.com/thorchain/tss/multi-party-ecdsa-docker.git /tmp/multi-party-ecdsa-docker
-WORKDIR /tmp/multi-party-ecdsa-docker/cmd/keygenclient
+RUN git clone https://gitlab.com/thorchain/tss/tss-tools.git /tmp/tss-tools
+WORKDIR /tmp/tss-tools/cmd/keygenclient
 RUN go mod verify
 RUN go get -d -v ./...
 RUN go build -a -installsuffix cgo -o $GOBIN/keygenclient .
