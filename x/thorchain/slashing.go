@@ -54,7 +54,7 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) 
 	for _, evt := range incomplete {
 		// NOTE: not checking the event type because all non-swap/unstake/etc
 		// are completed immediately.
-		if evt.Height+constants.SigningTransactionPeriod > ctx.BlockHeight() {
+		if evt.Height+constants.SigningTransactionPeriod < ctx.BlockHeight() {
 			txs, err := keeper.GetTxOut(ctx, uint64(evt.Height))
 			if err != nil {
 				ctx.Logger().Error("Unable to get tx out list", err)
