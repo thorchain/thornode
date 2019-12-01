@@ -133,7 +133,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 
 	// increment out number of out tx for this in tx
 	voter := keeper.GetTxInVoter(ctx, toi.InHash)
-	voter.OutTxs = append(voter.OutTxs, *toi)
+	voter.Actions = append(voter.Actions, *toi)
 	keeper.SetTxInVoter(ctx, voter)
 
 	// add tx to block out

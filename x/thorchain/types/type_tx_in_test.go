@@ -13,7 +13,6 @@ var _ = Suite(&TypeTxInSuite{})
 
 func (s TypeTxInSuite) TestVoter(c *C) {
 	txID := GetRandomTxHash()
-	txID2 := GetRandomTxHash()
 
 	bnb := GetRandomBNBAddress()
 	acc1 := GetRandomBech32Addr()
@@ -112,14 +111,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	c.Check(voter.HasConensus(trusts4), Equals, false)
 	c.Check(voter.Key().Equals(txID), Equals, true)
 	c.Check(voter.String() == txID.String(), Equals, true)
-	voter.SetDone(txID2)
-	for _, transaction := range voter.Txs {
-		c.Check(transaction.OutHashes[0].Equals(txID2), Equals, true)
-	}
 
-	txIn.SetReverted(txID2, 1)
-	c.Check(txIn.OutHashes[0].Equals(txID2), Equals, true)
-	c.Check(len(txIn.String()) > 0, Equals, true)
 	statechainCoins := common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(100)),
 		common.NewCoin(common.BNBAsset, sdk.NewUint(100)),
