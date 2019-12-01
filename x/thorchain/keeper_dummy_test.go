@@ -28,12 +28,14 @@ func (k KVStoreDummy) GetKey(ctx sdk.Context, prefix dbPrefix, key string) strin
 	return fmt.Sprintf("%s/1/%s", prefix, key)
 }
 func (k KVStoreDummy) SetLastSignedHeight(ctx sdk.Context, height sdk.Uint) { return }
-func (k KVStoreDummy) GetLastSignedHeight(ctx sdk.Context) sdk.Uint         { return sdk.ZeroUint() }
+func (k KVStoreDummy) GetLastSignedHeight(ctx sdk.Context) (sdk.Uint, error) {
+	return sdk.ZeroUint(), kaboom
+}
 func (k KVStoreDummy) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height sdk.Uint) error {
 	return kaboom
 }
-func (k KVStoreDummy) GetLastChainHeight(ctx sdk.Context, chain common.Chain) sdk.Uint {
-	return sdk.ZeroUint()
+func (k KVStoreDummy) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (sdk.Uint, error) {
+	return sdk.ZeroUint(), kaboom
 }
 func (k KVStoreDummy) GetPool(ctx sdk.Context, asset common.Asset) Pool { return Pool{} }
 func (k KVStoreDummy) SetPool(ctx sdk.Context, pool Pool)               {}

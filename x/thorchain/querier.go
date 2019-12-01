@@ -462,8 +462,15 @@ func queryHeights(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 			return nil, sdk.ErrInternal("fail to retrieve chain")
 		}
 	}
-	chainHeight := keeper.GetLastChainHeight(ctx, chain)
-	signed := keeper.GetLastSignedHeight(ctx)
+	chainHeight, err := keeper.GetLastChainHeight(ctx, chain)
+	if err != nil {
+		return nil, sdk.ErrInternal(err.Error())
+	}
+
+	signed, err := keeper.GetLastSignedHeight(ctx)
+	if err != nil {
+		return nil, sdk.ErrInternal(err.Error())
+	}
 
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), QueryResHeights{
 		Chain:            chain,
