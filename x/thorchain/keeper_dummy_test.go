@@ -108,16 +108,13 @@ func (k KVStoreDummy) AddToTxInIndex(ctx sdk.Context, height uint64, id common.T
 func (k KVStoreDummy) SetTxOut(ctx sdk.Context, blockOut *TxOut)               {}
 func (k KVStoreDummy) GetTxOutIterator(ctx sdk.Context) sdk.Iterator           { return nil }
 func (k KVStoreDummy) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) { return nil, kaboom }
-func (k KVStoreDummy) AddToLiquidityFees(ctx sdk.Context, pool Pool, fee sdk.Uint) error {
+func (k KVStoreDummy) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fee sdk.Uint) error {
 	return kaboom
-}
-func (k KVStoreDummy) getLiquidityFees(ctx sdk.Context, height uint64, prefix dbPrefix) (sdk.Uint, error) {
-	return sdk.ZeroUint(), kaboom
 }
 func (k KVStoreDummy) GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
-func (k KVStoreDummy) GetPoolLiquidityFees(ctx sdk.Context, height uint64, pool Pool) (sdk.Uint, error) {
+func (k KVStoreDummy) GetPoolLiquidityFees(ctx sdk.Context, height uint64, asset common.Asset) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
 func (k KVStoreDummy) GetIncompleteEvents(ctx sdk.Context) (Events, error)    { return nil, kaboom }
