@@ -28,6 +28,10 @@ services:
     environment:
       NET: testnet
 
+  tss:
+    environment:
+      NET: testnet
+
   observer2:
     environment:
       BINANCE_HOST: http://172.32.90.1:26660
@@ -43,6 +47,10 @@ services:
       NET: testnet
 
   thor-api2:
+    environment:
+      NET: testnet
+
+  tss2:
     environment:
       NET: testnet
 
@@ -64,6 +72,10 @@ services:
     environment:
       NET: testnet
 
+  tss3:
+    environment:
+      NET: testnet
+
   observer4:
     environment:
       BINANCE_HOST: http://172.32.90.1:26660
@@ -79,6 +91,10 @@ services:
       NET: testnet
 
   thor-api4:
+    environment:
+      NET: testnet
+
+  tss4:
     environment:
       NET: testnet
 
