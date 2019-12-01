@@ -30,8 +30,8 @@ type Smoke struct {
 	Binance      Binance
 	Thorchain    Thorchain
 	Keys         map[string]keys.KeyManager
-	GenBalance   bool
 	SweepOnExit  bool
+	GenBalance   bool
 	FastFail     bool
 	Debug        bool
 	Results      types.Results
@@ -318,7 +318,7 @@ func (s *Smoke) Run() bool {
 			fmt.Printf("\tTransaction: %+v\n", result.Transaction)
 			fmt.Printf("\tObtained: %s %+v\n", offender, ob)
 			fmt.Printf("\tExpected: %s %+v\n", offender, ex)
-			if s.FastFail {
+			if s.FastFail && !s.GenBalance {
 				return false
 			}
 		} else {
