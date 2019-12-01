@@ -173,7 +173,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 // ExportGenesis export the data in Genesis
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
-	lastEventID := k.GetLastEventID(ctx)
+	lastEventID, _ := k.GetLastEventID(ctx)
 
 	var adminConfigs []AdminConfig
 	iterator := k.GetAdminConfigIterator(ctx)

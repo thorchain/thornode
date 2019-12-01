@@ -93,7 +93,8 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 		EventSuccess,
 	)
 
-	k.AddIncompleteEvents(ctx, evt)
+	err = k.AddIncompleteEvents(ctx, evt)
+	c.Assert(err, IsNil)
 
 	txOutItem := &TxOutItem{
 		Chain:       common.BNBChain,

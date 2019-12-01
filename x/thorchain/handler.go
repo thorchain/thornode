@@ -144,11 +144,19 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 		stakeBytes,
 		eventStatus,
 	)
-	keeper.AddIncompleteEvents(ctx, evt)
+
+	if err := keeper.AddIncompleteEvents(ctx, evt); err != nil {
+		return err
+	}
+
 	if eventStatus != EventRefund {
 		// since there is no outbound tx for staking, we'll complete the event now
 		tx := common.Tx{ID: common.BlankTxID}
-		keeper.CompleteEvents(ctx, []common.TxID{msg.Tx.ID}, tx)
+		err := completeEvents(ctx, keeper, msg.Tx.ID, common.Txs{tx})
+		if err != nil {
+			ctx.Logger().Error("unable to complete events", "error", err)
+			return err
+		}
 	}
 	return nil
 }
@@ -334,7 +342,11 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		unstakeBytes,
 		EventSuccess,
 	)
-	keeper.AddIncompleteEvents(ctx, evt)
+
+	if err := keeper.AddIncompleteEvents(ctx, evt); err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
 	toi := &TxOutItem{
 		Chain:       common.BNBChain,
 		InHash:      msg.Tx.ID,
@@ -663,7 +675,10 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 						buf,
 						EventRefund,
 					)
-					keeper.AddIncompleteEvents(ctx, event)
+
+					if err := keeper.AddIncompleteEvents(ctx, event); err != nil {
+						return sdk.ErrInternal(err.Error()).Result()
+					}
 				}
 				continue
 			}
@@ -1028,11 +1043,17 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	}
 
 	voter := keeper.GetTxInVoter(ctx, msg.InTxID)
-	voter.SetDone(msg.Tx.ID)
+	voter.AddOutTx(msg.Tx)
 	keeper.SetTxInVoter(ctx, voter)
 
 	// complete events
-	keeper.CompleteEvents(ctx, []common.TxID{msg.InTxID}, msg.Tx)
+	if voter.IsDone() {
+		err := completeEvents(ctx, keeper, msg.InTxID, voter.OutTxs)
+		if err != nil {
+			ctx.Logger().Error("unable to complete events", "error", err)
+			return sdk.ErrUnauthorized(err.Error()).Result()
+		}
+	}
 
 	// Apply Gas fees
 	activeNodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
