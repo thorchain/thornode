@@ -638,9 +638,9 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 								// take an additional 25% to ensure a penalty
 								// is made by multiplying by 5, then divide by
 								// 4
-								diff := coin.Amount.Sub(expectedCoin.Amount).MulUint64(5).QuoUint64(4)
+								diff := common.SafeSub(coin.Amount, expectedCoin.Amount).MulUint64(5).QuoUint64(4)
 								if coin.Asset.IsRune() {
-									minusRune = coin.Amount.Sub(diff)
+									minusRune = common.SafeSub(coin.Amount, diff)
 									minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
 								} else {
 									pool := keeper.GetPool(ctx, coin.Asset)
@@ -649,7 +649,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 										minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
 										// Update pool balances
 										pool.BalanceRune = pool.BalanceRune.Add(minusRune)
-										pool.BalanceAsset = pool.BalanceAsset.Sub(diff)
+										pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, diff)
 										keeper.SetPool(ctx, pool)
 									}
 								}

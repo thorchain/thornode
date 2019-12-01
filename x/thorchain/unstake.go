@@ -78,9 +78,9 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 
 	ctx.Logger().Info("client withdraw", "RUNE", withdrawRune, "asset", withDrawAsset, "units left", unitAfter)
 	// update pool
-	pool.PoolUnits = poolUnits.Sub(fStakerUnit).Add(unitAfter)
-	pool.BalanceRune = poolRune.Sub(withdrawRune)
-	pool.BalanceAsset = poolAsset.Sub(withDrawAsset)
+	pool.PoolUnits = common.SafeSub(poolUnits, fStakerUnit).Add(unitAfter)
+	pool.BalanceRune = common.SafeSub(poolRune, withdrawRune)
+	pool.BalanceAsset = common.SafeSub(poolAsset, withDrawAsset)
 	ctx.Logger().Info("pool after unstake", "pool unit", pool.PoolUnits, "balance RUNE", pool.BalanceRune, "balance asset", pool.BalanceAsset)
 	// update pool staker
 	poolStaker.TotalUnits = pool.PoolUnits
@@ -109,7 +109,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	keeper.SetPool(ctx, pool)
 	keeper.SetPoolStaker(ctx, msg.Asset, poolStaker)
 	keeper.SetStakerPool(ctx, msg.RuneAddress, stakerPool)
-	return withdrawRune, withDrawAsset, fStakerUnit.Sub(unitAfter), nil
+	return withdrawRune, withDrawAsset, common.SafeSub(fStakerUnit, unitAfter), nil
 }
 
 func calculateUnstake(poolUnit, poolRune, poolAsset, stakerUnit, withdrawBasisPoints sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint, error) {
@@ -133,7 +133,7 @@ func calculateUnstake(poolUnit, poolRune, poolAsset, stakerUnit, withdrawBasisPo
 
 	//withdrawRune := stakerOwnership.Mul(withdrawBasisPoints).Quo(sdk.NewUint(10000)).Mul(poolRune)
 	//withdrawAsset := stakerOwnership.Mul(withdrawBasisPoints).Quo(sdk.NewUint(10000)).Mul(poolAsset)
-	//unitAfter := stakerUnit.Mul(sdk.NewUint(MaxWithdrawBasisPoints).Sub(withdrawBasisPoints).Quo(sdk.NewUint(10000)))
+	//unitAfter := common.SafeSub(stakerUnit.Mul(sdk.NewUint(MaxWithdrawBasisPoints), withdrawBasisPoints).Quo(sdk.NewUint(10000)))
 	withdrawRune := stakerOwnership * percentage / 100 * common.UintToFloat64(poolRune)
 	withdrawAsset := stakerOwnership * percentage / 100 * common.UintToFloat64(poolAsset)
 	unitAfter := common.UintToFloat64(stakerUnit) * (100 - percentage) / 100

@@ -217,10 +217,10 @@ func swapOne(ctx sdk.Context,
 
 	if source.IsRune() {
 		pool.BalanceRune = X.Add(x)
-		pool.BalanceAsset = Y.Sub(emitAssets)
+		pool.BalanceAsset = common.SafeSub(Y, emitAssets)
 	} else {
 		pool.BalanceAsset = X.Add(x)
-		pool.BalanceRune = Y.Sub(emitAssets)
+		pool.BalanceRune = common.SafeSub(Y, emitAssets)
 	}
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sAsset , user get:%s ", pool.BalanceRune, pool.BalanceAsset, emitAssets))
 
