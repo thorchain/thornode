@@ -59,7 +59,7 @@ func (mps MockPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (t
 
 func (mps MockPoolStorage) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps types.PoolStaker) {}
 
-func (mps MockPoolStorage) AddToLiquidityFees(ctx sdk.Context, ps types.Pool, fs sdk.Uint) error {
+func (mps MockPoolStorage) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fs sdk.Uint) error {
 	return nil
 }
 
