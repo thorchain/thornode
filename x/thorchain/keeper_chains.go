@@ -20,7 +20,7 @@ func (k KVStore) GetChains(ctx sdk.Context) (common.Chains, error) {
 	buf := store.Get([]byte(key))
 	err := k.cdc.UnmarshalBinaryBare(buf, &chains)
 	if err != nil {
-		return chains, dbError(ctx, "fail to unmarshal chains", err)
+		return chains, dbError(ctx, "Unmarshal: chains", err)
 	}
 	return chains, nil
 }

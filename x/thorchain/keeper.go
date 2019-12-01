@@ -75,7 +75,7 @@ const (
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {
-	err = errors.Wrap(err, wrapper)
+	err = errors.Wrap(err, fmt.Sprintf("KVStore Error: %s", wrapper))
 	ctx.Logger().Error(err.Error())
 	return err
 }
