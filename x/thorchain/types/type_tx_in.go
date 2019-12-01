@@ -215,6 +215,9 @@ func (tx *TxInVoter) AddOutTx(in common.Tx) {
 		}
 	}
 	tx.OutTxs = append(tx.OutTxs, in)
+	for i := range tx.Txs {
+		tx.Txs[i].SetDone(in.ID, len(tx.Actions))
+	}
 }
 
 func (tx *TxInVoter) IsDone() bool {
