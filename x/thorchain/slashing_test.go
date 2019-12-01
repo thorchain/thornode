@@ -52,7 +52,7 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	var err error
 	ctx, k := setupKeeperForTest(c)
-	ctx.WithBlockHeight(201) // set blockheight
+	ctx = ctx.WithBlockHeight(201) // set blockheight
 	poolAddrMgr := NewPoolAddressManager(k)
 	poolAddrMgr.BeginBlock(ctx)
 	poolPubKey := GetRandomPubKey()
@@ -112,6 +112,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	outItems := txOutStore.GetOutboundItems()
 	c.Assert(outItems, HasLen, 0)
 
+	ctx = ctx.WithBlockHeight(evt.Height + constants.SigningTransactionPeriod + 5)
 	slashForNotSigning(ctx, k, txOutStore)
 
 	na, err = k.GetNodeAccount(ctx, na.NodeAddress)
