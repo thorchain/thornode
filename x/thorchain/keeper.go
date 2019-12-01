@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/supply"
+	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -72,6 +73,12 @@ const (
 	prefixObservingAddresses dbPrefix = "observing_addresses/"
 	prefixReserves           dbPrefix = "reserves/"
 )
+
+func dbError(ctx sdk.Context, wrapper string, err error) error {
+	err = errors.Wrap(err, wrapper)
+	ctx.Logger().Error(err.Error())
+	return err
+}
 
 // Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type KVStore struct {
