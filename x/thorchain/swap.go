@@ -150,7 +150,12 @@ func swapOne(ctx sdk.Context,
 			swapBytes,
 			status,
 		)
-		_ = keeper.AddIncompleteEvents(ctx, evt)
+		// using errr instead of err because we don't want to return the error,
+		// just log it because we are in a defer func
+		errr = keeper.AddIncompleteEvents(ctx, evt)
+		if errr != nil {
+			ctx.Logger().Error(errors.Wrap(errr, "Fail to add incomplete swap event").Error())
+		}
 	}()
 
 	// Check if pool exists
