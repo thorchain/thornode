@@ -141,24 +141,23 @@ func (tx *TxIn) Sign(signer sdk.AccAddress) {
 	}
 }
 
-func (tx *TxIn) SetOutHash(s status, hash common.TxID, numOuts int) {
+func (tx *TxIn) SetDone(hash common.TxID, numOuts int) {
 	for _, done := range tx.OutHashes {
 		if done.Equals(hash) {
 			return
 		}
 	}
 	tx.OutHashes = append(tx.OutHashes, hash)
-	if len(tx.OutHashes) >= numOuts {
-		tx.Status = s
+	if tx.IsDone(numOuts) {
+		tx.Status = Done
 	}
 }
 
-func (tx *TxIn) SetDone(hash common.TxID, numOuts int) {
-	tx.SetOutHash(Done, hash, numOuts)
-}
-
-func (tx *TxIn) SetReverted(hash common.TxID, numOuts int) {
-	tx.SetOutHash(Reverted, hash, numOuts)
+func (tx *TxIn) IsDone(numOuts int) bool {
+	if len(tx.OutHashes) >= numOuts {
+		return true
+	}
+	return false
 }
 
 func (tx *TxIn) GetCommonTx(txid common.TxID) common.Tx {
@@ -173,10 +172,11 @@ func (tx *TxIn) GetCommonTx(txid common.TxID) common.Tx {
 }
 
 type TxInVoter struct {
-	TxID   common.TxID `json:"tx_id"`
-	Txs    []TxIn      `json:"txs"`
-	OutTxs []TxOutItem `json:"out_txs"`
-	Height int64       `json:"height"`
+	TxID    common.TxID `json:"tx_id"`
+	Height  int64       `json:"height"`
+	Txs     []TxIn      `json:"in_tx"`   // copies of tx in by various observers.
+	Actions []TxOutItem `json:"actions"` // outbound txs set to be sent
+	OutTxs  common.Txs  `json:"out_txs"` // observed outbound transactions
 }
 
 func NewTxInVoter(txID common.TxID, txs []TxIn) TxInVoter {
@@ -208,10 +208,20 @@ func (tx TxInVoter) String() string {
 	return tx.TxID.String()
 }
 
-func (tx *TxInVoter) SetDone(hash common.TxID) {
-	for i := range tx.Txs {
-		tx.Txs[i].SetDone(hash, len(tx.OutTxs))
+func (tx *TxInVoter) AddOutTx(in common.Tx) {
+	for _, t := range tx.OutTxs {
+		if in.ID.Equals(t.ID) {
+			return
+		}
 	}
+	tx.OutTxs = append(tx.OutTxs, in)
+	for i := range tx.Txs {
+		tx.Txs[i].SetDone(in.ID, len(tx.Actions))
+	}
+}
+
+func (tx *TxInVoter) IsDone() bool {
+	return len(tx.Actions) <= len(tx.OutTxs)
 }
 
 func (tx *TxInVoter) Add(txIn TxIn, signer sdk.AccAddress) {

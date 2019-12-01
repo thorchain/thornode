@@ -91,3 +91,24 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 	}
 	return true
 }
+
+func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs) error {
+	lastEventID, err := keeper.GetLastEventID(ctx)
+	if err != nil {
+		return err
+	}
+	incomplete, err := keeper.GetIncompleteEvents(ctx)
+	if err != nil {
+		return err
+	}
+	todo, incomplete := incomplete.PopByInHash(txID)
+	for _, evt := range todo {
+		lastEventID += 1
+		evt.ID = lastEventID
+		evt.OutTxs = txs
+		keeper.SetCompletedEvent(ctx, evt)
+	}
+	keeper.SetIncompleteEvents(ctx, incomplete)
+	keeper.SetLastEventID(ctx, lastEventID)
+	return nil
+}
