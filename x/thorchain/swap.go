@@ -150,7 +150,7 @@ func swapOne(ctx sdk.Context,
 			swapBytes,
 			status,
 		)
-		keeper.AddIncompleteEvents(ctx, evt)
+		_ = keeper.AddIncompleteEvents(ctx, evt)
 	}()
 
 	// Check if pool exists
