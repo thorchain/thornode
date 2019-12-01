@@ -1154,7 +1154,7 @@ func handleMsgSetVersion(ctx sdk.Context, keeper Keeper, msg MsgSetVersion) sdk.
 		return sdk.ErrUnknownRequest("MsgSetVersion is invalid").Result()
 	}
 
-	if nodeAccount.Version < msg.Version {
+	if nodeAccount.Version.LT(msg.Version) {
 		nodeAccount.Version = msg.Version
 	}
 
@@ -1163,7 +1163,7 @@ func handleMsgSetVersion(ctx sdk.Context, keeper Keeper, msg MsgSetVersion) sdk.
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent("set_version",
 			sdk.NewAttribute("bep_address", msg.Signer.String()),
-			sdk.NewAttribute("version", fmt.Sprintf("%d", msg.Version))))
+			sdk.NewAttribute("version", msg.Version.String())))
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

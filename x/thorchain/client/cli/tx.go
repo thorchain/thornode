@@ -47,7 +47,7 @@ func GetCmdSetVersion(cdc *codec.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
-			msg := types.NewMsgSetVersion(constants.Version, cliCtx.GetFromAddress())
+			msg := types.NewMsgSetVersion(constants.SWVersion, cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

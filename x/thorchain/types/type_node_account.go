@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -96,7 +96,7 @@ type NodeAccount struct {
 	ObserverActive   bool            `json:"observer_active"`
 	SignerActive     bool            `json:"signer_active"`
 	SignerMembership []common.PubKey `json:"signer_membership"`
-	Version          int64           `json:"version"`
+	Version          semver.Version  `json:"version"`
 }
 
 // NewNodeAccount create new instance of NodeAccount
@@ -142,7 +142,7 @@ func (n NodeAccount) Equals(n1 NodeAccount) bool {
 		n.ValidatorConsPubKey == n1.ValidatorConsPubKey &&
 		n.BondAddress.Equals(n1.BondAddress) &&
 		n.Bond.Equal(n1.Bond) &&
-		n.Version == n1.Version {
+		n.Version.Equals(n1.Version) {
 		return true
 	}
 	return false
@@ -156,7 +156,7 @@ func (n NodeAccount) String() string {
 	sb.WriteString("node pubkeys:" + n.NodePubKey.String() + "\n")
 	sb.WriteString("validator consensus pub key:" + n.ValidatorConsPubKey + "\n")
 	sb.WriteString("bond:" + n.Bond.String() + "\n")
-	sb.WriteString("version:" + strconv.FormatInt(n.Version, 10) + "\n")
+	sb.WriteString("version:" + n.Version.String() + "\n")
 	sb.WriteString("bond address:" + n.BondAddress.String() + "\n")
 	return sb.String()
 }

@@ -1,7 +1,11 @@
 package constants
 
+import (
+	"github.com/blang/semver"
+)
+
 // The version of this software
-const Version = 1
+var SWVersion, _ = semver.Make("0.1.0")
 
 // The emission curve targets a ~2% emission after 10 years (similar to Bitcoin).
 // The BlocksPerYear directly affects emission rate, and may be updated if markedly different in production
