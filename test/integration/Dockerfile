@@ -36,9 +36,9 @@ RUN set -eux; \
 		go \
 	; \
 	export \
-# set GOROOT_BOOTSTRAP such that we can actually build Go
+# set GOROOT_BOOTSTRAP such that THORNode can actually build Go
 		GOROOT_BOOTSTRAP="$(go env GOROOT)" \
-# ... and set "cross-building" related vars to the installed system's values so that we create a build targeting the proper arch
+# ... and set "cross-building" related vars to the installed system's values so that THORNode create a build targeting the proper arch
 # (for example, if our build host is GOARCH=amd64, but our build env/image is GOARCH=386, our build needs GOARCH=386)
 		GOOS="$(go env GOOS)" \
 		GOARCH="$(go env GOARCH)" \

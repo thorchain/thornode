@@ -9,7 +9,7 @@ import (
 type MsgSwap struct {
 	Tx          common.Tx      `json:"tx"`           // request tx
 	TargetAsset common.Asset   `json:"target_asset"` // target asset
-	Destination common.Address `json:"destination"`  // destination , used for swap and send , the destination address we send it to
+	Destination common.Address `json:"destination"`  // destination , used for swap and send , the destination address THORNode send it to
 	TradeTarget sdk.Uint       `json:"trade_target"`
 	Signer      sdk.AccAddress `json:"signer"`
 }

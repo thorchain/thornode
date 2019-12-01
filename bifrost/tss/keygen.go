@@ -119,7 +119,7 @@ func (kg *KeyGen) GenerateNewKey() (common.PubKeys, error) {
 		return common.EmptyPubKeys, fmt.Errorf("fail to create common.PubKey,%w", err)
 	}
 
-	// TODO later on we need to have both secp256k1 key and ed25519
+	// TODO later on THORNode need to have both secp256k1 key and ed25519
 	return common.NewPubKeys(cpk, cpk), nil
 }
 func (kg *KeyGen) getTSSLocalUrl() string {

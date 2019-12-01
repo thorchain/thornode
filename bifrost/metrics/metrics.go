@@ -88,7 +88,7 @@ var (
 			Namespace: "block_scanner",
 			Subsystem: "binance_block_scanner",
 			Name:      "block_with_tx_in",
-			Help:      "block that has tx we need to process",
+			Help:      "block that has tx THORNode need to process",
 		}),
 		BlockNoTxIn: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: "block_scanner",

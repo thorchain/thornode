@@ -11,7 +11,7 @@ func slashForObservingAddresses(ctx sdk.Context, keeper Keeper) {
 	accs := keeper.GetObservingAddresses(ctx)
 
 	if len(accs) == 0 {
-		// nobody observed anything, we must of had no input txs within this
+		// nobody observed anything, THORNode must of had no input txs within this
 		// block
 		return
 	}

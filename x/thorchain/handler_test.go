@@ -844,7 +844,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	}
 	w.keeper.SetPool(w.ctx, pool)
 
-	// test we create a refund transaction
+	// test THORNode create a refund transaction
 	txin := TxIn{
 		Sender: GetRandomBNBAddress(),
 		Coins: common.Coins{
@@ -856,7 +856,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 
-	// check we DONT create a refund transaction when we don't have a pool for
+	// check THORNode DONT create a refund transaction when THORNode don't have a pool for
 	// the asset sent.
 	lokiAsset, _ := common.NewAsset(fmt.Sprintf("BNB.LOKI"))
 	txin = TxIn{
@@ -919,7 +919,7 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 
 func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	// Stake BNB, however we send T-CAN as coin , which is incorrect, should result in an error
+	// Stake BNB, however THORNode send T-CAN as coin , which is incorrect, should result in an error
 	m, err := ParseMemo("stake:BNB")
 	c.Assert(err, IsNil)
 	stakeMemo, ok := m.(StakeMemo)

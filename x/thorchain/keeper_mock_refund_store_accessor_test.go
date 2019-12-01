@@ -12,7 +12,7 @@ const (
 	RefundPoolKey            = `RefundPoolKey`
 )
 
-// MockRefundStoreAccessor implements PoolStorage interface, thus we can mock the error cases
+// MockRefundStoreAccessor implements PoolStorage interface, thus THORNode can mock the error cases
 type MockRefundStoreAccessor struct {
 	KVStoreDummy
 }

@@ -48,7 +48,7 @@ func (k KVStore) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
 	return record
 }
 
-// CheckTxHash - check to see if we have already processed a specific tx
+// CheckTxHash - check to see if THORNode have already processed a specific tx
 func (k KVStore) CheckTxHash(ctx sdk.Context, hash common.TxID) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixTxIn, hash.String())

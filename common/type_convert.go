@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// One is useful type so we don't need to type 8 zeros all the time
+// One is useful type so THORNode don't need to type 8 zero all the time
 const One = 100000000
 
 func GetShare(part, total, allocation sdk.Uint) sdk.Uint {

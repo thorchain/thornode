@@ -15,7 +15,7 @@ type txIndex struct {
 	Index  TxInIndex `json:"index"`
 }
 
-// GenesisState strcture that used to store the data we put in genesis
+// GenesisState strcture that used to store the data THORNode put in genesis
 type GenesisState struct {
 	Pools            []Pool        `json:"pools"`
 	PoolIndex        PoolIndex     `json:"pool_index"`
@@ -91,7 +91,7 @@ func ValidateGenesis(data GenesisState) error {
 	return nil
 }
 
-// DefaultGenesisState the default values we put in the Genesis
+// DefaultGenesisState the default values THORNode put in the Genesis
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		AdminConfigs: []AdminConfig{},

@@ -84,13 +84,13 @@ func (poolPubKeys PoolPubKeys) IsEmpty() bool {
 	return len(poolPubKeys) == 0
 }
 
-// TryAddKey trying to add the given pool pubkey into the list,if it already exist ,then we just return the list
+// TryAddKey trying to add the given pool pubkey into the list,if it already exist ,then THORNode just return the list
 func (poolPubKeys PoolPubKeys) TryAddKey(k *PoolPubKey) PoolPubKeys {
 	if nil == k {
 		return poolPubKeys
 	}
 	for _, item := range poolPubKeys {
-		// we should only have one pub address per chain
+		// THORNode should only have one pub address per chain
 		if item.Equals(k) || item.Chain.Equals(k.Chain) {
 			// already exist
 			return poolPubKeys

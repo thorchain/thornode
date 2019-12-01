@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Duration embedded time.Duration so we could use string to represent duration in json file
+// Duration embedded time.Duration so THORNode could use string to represent duration in json file
 // for example ,1s ,1h , 5m etc
 type Duration struct {
 	time.Duration

@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-// TODO: we are hard coding the attributes to the user names due to bad json
+// TODO: THORNode are hard coding the attributes to the user names due to bad json
 // formats. Fix this later
 type BalancesConfig struct {
 	Tx       int64            `json:"TX"`

@@ -24,7 +24,7 @@ func NewPoolAddresses(previous, current, next common.PoolPubKeys, rotateAt, rota
 
 // IsEmpty check whether PoolAddress is empty
 func (pa PoolAddresses) IsEmpty() bool {
-	// when current pool address is empty then we think it is empty , even the others are not, that will not matter
+	// when current pool address is empty then THORNode think it is empty , even the others are not, that will not matter
 	return len(pa.Current) == 0
 }
 
