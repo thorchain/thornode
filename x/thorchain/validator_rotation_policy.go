@@ -8,7 +8,7 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-// ValidatorRotationPolicy store all the relevant parameters we need to perform validator rotation
+// ValidatorRotationPolicy store all the relevant parameters THORNode need to perform validator rotation
 type ValidatorRotationPolicy struct {
 	RotateInNumBeforeFull      int64
 	RotateOutNumBeforeFull     int64
@@ -36,7 +36,7 @@ func (vp ValidatorRotationPolicy) IsValid() error {
 		return fmt.Errorf("validator change window :%d is larger than rotate per block height: %d", vp.ValidatorChangeWindow, vp.RotatePerBlockHeight)
 	}
 	if vp.RotateOutNumBeforeFull > vp.RotateInNumBeforeFull {
-		return fmt.Errorf("rotate out %d is larger than rotate in %d we will never reach the desire validator set", vp.RotateOutNumBeforeFull, vp.RotateInNumBeforeFull)
+		return fmt.Errorf("rotate out %d is larger than rotate in %d THORNode will never reach the desire validator set", vp.RotateOutNumBeforeFull, vp.RotateInNumBeforeFull)
 	}
 	return nil
 }

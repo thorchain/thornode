@@ -291,7 +291,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 		}
 		return nil
 	}
-	// NewOrder Transaction on binance chain, we don't care about it
+	// NewOrder Transaction on binance chain, THORNode don't care about it
 	testFunc(binanceTxNewOrder, IsNil, IsNil)
 
 	// Normal tx send to our pool , withdraw

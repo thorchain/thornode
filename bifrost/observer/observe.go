@@ -273,7 +273,7 @@ func (o *Observer) signAndSendToStatechain(txIn types.TxIn) error {
 }
 
 // getStateChainTxIns convert to the type statechain expected
-// maybe in later we can just refactor this to use the type in statechain
+// maybe in later THORNode can just refactor this to use the type in statechain
 func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, error) {
 	txs := make([]stypes.TxInVoter, len(txIn.TxArray))
 	for i, item := range txIn.TxArray {

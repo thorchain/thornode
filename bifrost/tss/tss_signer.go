@@ -51,7 +51,7 @@ func NewKeySign(cfg config.TSSConfiguration) (*KeySign, error) {
 	}, nil
 }
 
-// GetPrivKey we don't actually have any private key , but just return something
+// GetPrivKey THORNode don't actually have any private key , but just return something
 func (s *KeySign) GetPrivKey() crypto.PrivKey {
 	return nil
 }
@@ -60,17 +60,17 @@ func (s *KeySign) GetAddr() ctypes.AccAddress {
 	return nil
 }
 
-// ExportAsMnemonic we don't need this function for TSS, just keep it to fulfill KeyManager interface
+// ExportAsMnemonic THORNode don't need this function for TSS, just keep it to fulfill KeyManager interface
 func (s *KeySign) ExportAsMnemonic() (string, error) {
 	return "", nil
 }
 
-// ExportAsPrivateKey we don't need this function for TSS, just keep it to fulfill KeyManager interface
+// ExportAsPrivateKey THORNode don't need this function for TSS, just keep it to fulfill KeyManager interface
 func (s *KeySign) ExportAsPrivateKey() (string, error) {
 	return "", nil
 }
 
-// ExportAsKeyStore we don't need this function for TSS, just keep it to fulfill KeyManager interface
+// ExportAsKeyStore THORNode don't need this function for TSS, just keep it to fulfill KeyManager interface
 func (s *KeySign) ExportAsKeyStore(password string) (*keys.EncryptedKeyJSON, error) {
 	return nil, nil
 }

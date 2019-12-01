@@ -283,8 +283,8 @@ func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string, poolPubKey c
 			return rawBytes, nil
 		}
 		b.logger.Error().Err(err).Msgf("fail to sign msg with memo: %s", signMsg.Memo)
-		// should we give up? let's check the seq no on binance chain
-		// keep in mind, when we don't run our own binance full node, we might get rate limited by binance
+		// should THORNode give up? let's check the seq no on binance chain
+		// keep in mind, when THORNode don't run our own binance full node, THORNode might get rate limited by binance
 		address, err := types.AccAddressFromBech32(from)
 		if err != nil {
 			b.logger.Error().Err(err).Msgf("fail to get parse address: %s", from)

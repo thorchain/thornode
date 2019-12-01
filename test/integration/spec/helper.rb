@@ -10,7 +10,7 @@ HTTP = Net::HTTP.new(HOST, PORT)
 $lastget = Time.now()
 
 def get(path)
-  # since we rate limit our API, check its been more than than a second since
+  # since THORNode rate limit our API, check its been more than than a second since
   # the last query
   if Time.now() - $lastget < 1
     sleep(1)
@@ -84,7 +84,7 @@ end
 def processTx(txs, user="statechain", mode='block')
   request = Net::HTTP::Post.new("/thorchain/tx")
   address = `thorcli keys show #{user} -a`.strip!
-  txs = [txs].flatten(1) # ensures we are an array, and not just a single hash
+  txs = [txs].flatten(1) # ensures THORNode are an array, and not just a single hash
   request.body = {
     'blockHeight': '376',
     'chain': 'bnb',

@@ -22,7 +22,7 @@ describe "API Tests" do
     end
   end
 
-  context "Check we have no completed events" do
+  context "Check THORNode have no completed events" do
     it "should be a nil" do
       resp = get("/events/1")
       expect(resp.body).to eq([]), resp.body.inspect
@@ -34,7 +34,7 @@ describe "API Tests" do
 
     it "should show up in listing of pools" do
       resp = get("/pools")
-      # Previously we add BNB pool in genesis , but now we removed it
+      # Previously THORNode add BNB pool in genesis , but now THORNode removed it
       expect(resp.body).to eq([]), "Are you working from a clean blockchain? Did you wait until 1 block was create? \n(#{resp.code}: #{resp.body})"
     end
 
@@ -205,7 +205,7 @@ describe "API Tests" do
         arr = resp.body['chains']['BNB']
         unless arr['tx_array'].empty?
           if arr['tx_array'][0]['to'] == "bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"
-            # we have found the block height of our last swap
+            # THORNode have found the block height of our last swap
             found = true
             newTxId = txid()
             tx = makeTx(memo: arr['tx_array'][0]['memo'], hash:newTxId, sender:TRUST_BNB_ADDRESS)
@@ -252,7 +252,7 @@ describe "API Tests" do
   end
 
   context "Block heights" do
-    it "ensure we have non-zero block height" do
+    it "ensure THORNode have non-zero block height" do
       resp = get("/lastblock")
       expect(resp.code).to eq("200")
       expect(resp.body['chain']).to eq("BNB"), resp.body.inspect

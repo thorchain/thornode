@@ -53,7 +53,7 @@ func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context) {
 	}
 }
 
-// EndBlock contains some actions we need to take when block commit
+// EndBlock contains some actions THORNode need to take when block commit
 func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, store *TxOutStore) {
 	if nil == pm.currentPoolAddresses {
 		return
@@ -77,7 +77,7 @@ func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, store *TxOutStore) {
 func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, store *TxOutStore) {
 	poolAddresses := pm.currentPoolAddresses
 	if ctx.BlockHeight() == 1 {
-		// we don't need to do anything on
+		// THORNode don't need to do anything on
 		return
 	}
 	if poolAddresses.IsEmpty() {
@@ -136,7 +136,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 		}
 		runeTotal = runeTotal.Add(runeAmount)
 	}
-	// we must have BNB chain
+	// THORNode must have BNB chain
 	return moveBNBChainAssetToNewPool(ctx, k, store, runeTotal, addresses)
 }
 
@@ -162,7 +162,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 			continue
 		}
 		assetAmount := p.BalanceAsset
-		// we only take BNB for now
+		// THORNode only take BNB for now
 		if p.Asset.IsBNB() {
 			assetAmount = common.SafeSub(assetAmount, sdk.NewUint(uint64(poolRefundGas)))
 		}
@@ -211,7 +211,7 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, ru
 			continue
 		}
 		assetAmount := p.BalanceAsset
-		// we only take BNB for now
+		// THORNode only take BNB for now
 		if p.Asset.IsBNB() {
 			assetAmount = common.SafeSub(assetAmount, sdk.NewUint(uint64(poolRefundGas)))
 		}

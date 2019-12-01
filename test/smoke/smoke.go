@@ -63,7 +63,7 @@ func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string,
 	// wait for thorchain to become available
 	thor.WaitForAvailability()
 
-	// Detect if we should sweep for funds at the end
+	// Detect if THORNode should sweep for funds at the end
 	sweep := false
 	if len(faucetKey) > 0 {
 		sweep = true
@@ -164,7 +164,7 @@ func (s *Smoke) Transfer(txn types.TransactionConfig) error {
 	from := s.GetKey(txn.From)
 
 	var to ctypes.AccAddress
-	// check if we are given a pool address
+	// check if THORNode are given a pool address
 	if strings.EqualFold(txn.To, "vault") && len(s.PoolAddress) > 0 {
 		to = s.PoolAddress
 	} else {
@@ -253,10 +253,10 @@ func (s *Smoke) WaitBlocks(i int) {
 // Run : Where there's smoke, there's fire!
 func (s *Smoke) Run() bool {
 
-	// Check that we are starting with a blank set of thorchain data
+	// Check that THORNode are starting with a blank set of thorchain data
 	pools := s.Thorchain.GetPools()
 	if len(pools) > 0 {
-		log.Fatal("Thorchain isn't blank. Smoke tests assume we are starting from a clean state")
+		log.Fatal("Thorchain isn't blank. Smoke tests assume THORNode are starting from a clean state")
 	}
 
 	if err := s.Seed(); err != nil {
@@ -274,7 +274,7 @@ func (s *Smoke) Run() bool {
 
 	for _, txn := range s.Transactions {
 
-		// check if we are stopping at this tx
+		// check if THORNode are stopping at this tx
 		if stopID > 0 && txn.Tx > stopID {
 			s.Summarize()
 			// exit it successfully

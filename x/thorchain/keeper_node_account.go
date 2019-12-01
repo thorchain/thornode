@@ -145,7 +145,7 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 		if na.ActiveBlockHeight == 0 {
 			// the na is active, and does not have a block height when they
 			// became active. This must be the first block they are active, so
-			// we will set it now.
+			// THORNode will set it now.
 			na.ActiveBlockHeight = ctx.BlockHeight()
 			na.SlashPoints = 0 // reset slash points
 		}
@@ -167,7 +167,7 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 					vault.TotalBondUnits = sdk.ZeroUint()
 				}
 				// Minus the number of units na has (do not include slash points)
-				// Minus the number of rune we have awarded them
+				// Minus the number of rune THORNode have awarded them
 				if vault.BondRewardRune.GTE(reward) {
 					vault.BondRewardRune = common.SafeSub(vault.BondRewardRune, reward)
 				} else {
@@ -180,8 +180,8 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(na))
 
-	// When a node is in active status, we need to add the observer address to active
-	// if it is not , then we could remove them
+	// When a node is in active status, THORNode need to add the observer address to active
+	// if it is not , then THORNode could remove them
 	if na.Status == NodeActive {
 		k.SetActiveObserver(ctx, na.NodeAddress)
 	} else {
@@ -203,7 +203,7 @@ func (k KVStore) SlashNodeAccountBond(ctx sdk.Context, na *NodeAccount, slash sd
 }
 
 // Slash the rewards of a node account
-// NOTE: if we slash their rewards so much, they may do an orderly exit and
+// NOTE: if THORNode slash their rewards so much, they may do an orderly exit and
 // rotate out of the active vault, wait in line to rejoin later.
 func (k KVStore) SlashNodeAccountRewards(ctx sdk.Context, na *NodeAccount, pts int64) {
 	na.SlashPoints += pts

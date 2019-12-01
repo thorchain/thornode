@@ -39,7 +39,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	voter.Adds([]TxIn{txIn}, acc1)
 	c.Assert(voter.Txs, HasLen, 1)
 
-	voter.Adds([]TxIn{txIn}, acc1) // check we don't duplicate the same signer
+	voter.Adds([]TxIn{txIn}, acc1) // check THORNode don't duplicate the same signer
 	c.Assert(voter.Txs, HasLen, 1)
 	c.Assert(voter.Txs[0].Signers, HasLen, 1)
 

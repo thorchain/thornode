@@ -37,13 +37,13 @@ A full smoke test lifecycle is as follows:
 * then WITHDRAW;
 * then SWEEP all assets back to the faucet from the various actors.
 
-Unit tests (where we've broken the SWAPs and STAKEs into their own test definitions) still follow a variant of the above (as we still need to SEED the actors; GAS and WITHDRAW the pool).
+Unit tests (where we've broken the SWAPs and STAKEs into their own test definitions) still follow a variant of the above (as THORNode still need to SEED the actors; GAS and WITHDRAW the pool).
 
 ### Scenarios
 
 The test scenarios are all written in JSON and follow a fairly simple format, that should be easy to read.
 
-At the top level we define how many stakers we wish to create, other runtime options as well as our main rules array. 
+At the top level THORNode define how many stakers THORNode wish to create, other runtime options as well as our main rules array. 
 
 ```json
 {
@@ -88,7 +88,7 @@ Where:
 
 * `description` is a simple description to describe the definition,
 * `from` is the actor performing the transaction (e.g: `master`, `admin`, `user`, `staker_N` or `pool`),
-* `to` is an array of actors and the coins to send (an array means that we can support multi-send),
+* `to` is an array of actors and the coins to send (an array means that THORNode can support multi-send),
 * `send_to` is the actor to send to, when performing a swap and send (appended to the memo sent),
 * `slip_limit` is to set the slip limit (appended to the memo sent)
 * `memo` is the memo to use for the transaction
@@ -96,7 +96,7 @@ Where:
 
 #### Validation
 
-After a transaction has been executed, we check Binance and the Statechain. The output is saved as JSON into `/tmp/smoke.json` by default.
+After a transaction has been executed, THORNode check Binance and the Statechain. The output is saved as JSON into `/tmp/smoke.json` by default.
 
 ### Running the Tests
 
@@ -150,5 +150,5 @@ make MASTER_KEY=<master key> KEY_LIST=<key list> sweep
 
 Where:
 
-* `MASTER_KEY` is the private key of the wallet we wish to transfer assets to
-* and `KEY_LIST` is a comma-separated list of private keys we wish to sweep up the assets from.
+* `MASTER_KEY` is the private key of the wallet THORNode wish to transfer assets to
+* and `KEY_LIST` is a comma-separated list of private keys THORNode wish to sweep up the assets from.

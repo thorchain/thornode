@@ -82,7 +82,7 @@ var txToStringMap = map[TxType]string{
 
 // converts a string into a txType
 func stringToTxType(s string) (TxType, error) {
-	// we can support Abbreviated MEMOs , usually it is only one character
+	// THORNode can support Abbreviated MEMOs , usually it is only one character
 	sl := strings.ToLower(s)
 	if t, ok := stringToTxTypeMap[sl]; ok {
 		return t, nil
@@ -264,7 +264,7 @@ func ParseMemo(memo string) (Memo, error) {
 		var addr common.Address
 		if !asset.Chain.IsBNB() {
 			if len(parts) < 3 {
-				// cannot stake into a non BNB-based pool when we don't have an
+				// cannot stake into a non BNB-based pool when THORNode don't have an
 				// associated address
 				return noMemo, fmt.Errorf("invalid stake. Cannot stake to a non BNB-based pool without providing an associated address")
 			}

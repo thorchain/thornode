@@ -8,7 +8,7 @@ import (
 )
 
 // TxOutSetter define a method that is required to be used in TxOutStore
-// We need this interface thus we could test the refund logic accordingly
+// We need this interface thus THORNode could test the refund logic accordingly
 type TxOutSetter interface {
 	SetTxOut(sdk.Context, *TxOut)
 }
@@ -33,9 +33,9 @@ func (tos *TxOutStore) NewBlock(height uint64) {
 	tos.blockOut = NewTxOut(height)
 }
 
-// CommitBlock we write the block into key value store , thus we could send to signer later.
+// CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
 func (tos *TxOutStore) CommitBlock(ctx sdk.Context) {
-	// if we don't have anything in the array, we don't need to save
+	// if THORNode don't have anything in the array, THORNode don't need to save
 	if len(tos.blockOut.TxArray) == 0 {
 		return
 	}
@@ -55,12 +55,12 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		toi.Memo = NewOutboundMemo(toi.InHash).String()
 	}
 
-	// If we don't have a pool already selected to send from, discover one.
+	// If THORNode don't have a pool already selected to send from, discover one.
 	if toi.PoolAddress.IsEmpty() {
 		if !asgard {
 			// When deciding which Yggdrasil pool will send out our tx out, we
 			// should consider which ones observed the inbound request tx, as
-			// yggdrasil pools can go offline. Here we get the voter record and
+			// yggdrasil pools can go offline. Here THORNode get the voter record and
 			// only consider Yggdrasils where their observed saw the "correct"
 			// tx.
 
@@ -90,8 +90,8 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 		toi.PoolAddress = tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(toi.Chain).PubKey
 	}
 
-	// Ensure we are not sending from and to the same address
-	// we check for a
+	// Ensure THORNode are not sending from and to the same address
+	// THORNode check for a
 	fromAddr, err := toi.PoolAddress.GetAddress(toi.Chain)
 	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
 		return
@@ -180,7 +180,7 @@ func (tos *TxOutStore) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx 
 	for ; iterator.Valid(); iterator.Next() {
 		var ygg Yggdrasil
 		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &ygg)
-		// if we are already sending assets from this ygg pool, deduct
+		// if THORNode are already sending assets from this ygg pool, deduct
 		// them.
 		addr, _ := ygg.PubKey.GetThorAddress()
 		if !tx.HasSigned(addr) {
