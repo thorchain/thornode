@@ -675,7 +675,12 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			}
 
 			// add this chain to our list of supported chains
-			keeper.AddChain(ctx, chain)
+			chains, err := keeper.GetChains(ctx)
+			if err != nil {
+				return sdk.ErrInternal("fail to get chains:" + err.Error()).Result()
+			}
+			chains = append(chains, chain)
+			keeper.SetChains(ctx, chains)
 
 			// add addresses to observing addresses. This is used to detect
 			// active/inactive observing node accounts

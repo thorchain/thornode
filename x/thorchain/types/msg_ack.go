@@ -42,7 +42,7 @@ func (msg MsgAck) ValidateBasic() sdk.Error {
 		return sdk.ErrUnknownRequest("chain cannot be empty")
 	}
 
-	if !common.IsBNBChain(msg.Chain) {
+	if !msg.Chain.IsBNB() {
 		return sdk.ErrUnknownRequest("ack memo only happen on BNB chan")
 	}
 

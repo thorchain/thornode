@@ -6,39 +6,25 @@ import (
 )
 
 type KeeperChains interface {
-	GetChains(ctx sdk.Context) common.Chains
-	SupportedChain(ctx sdk.Context, chain common.Chain) bool
-	AddChain(ctx sdk.Context, chain common.Chain)
+	GetChains(ctx sdk.Context) (common.Chains, error)
+	SetChains(ctx sdk.Context, chains common.Chains)
 }
 
-func (k KVStore) GetChains(ctx sdk.Context) common.Chains {
+func (k KVStore) GetChains(ctx sdk.Context) (common.Chains, error) {
 	chains := make(common.Chains, 0)
 	key := k.GetKey(ctx, prefixSupportedChains, "")
 	store := ctx.KVStore(k.storeKey)
-	if store.Has([]byte(key)) {
-		buf := store.Get([]byte(key))
-		_ = k.cdc.UnmarshalBinaryBare(buf, &chains)
+	if !store.Has([]byte(key)) {
+		return chains, nil
 	}
-	return chains
+	buf := store.Get([]byte(key))
+	err := k.cdc.UnmarshalBinaryBare(buf, &chains)
+	return chains, err
 }
 
-func (k KVStore) SupportedChain(ctx sdk.Context, chain common.Chain) bool {
-	for _, ch := range k.GetChains(ctx) {
-		if ch.Equals(chain) {
-			return true
-		}
-	}
-	return false
-}
-
-func (k KVStore) AddChain(ctx sdk.Context, chain common.Chain) {
-	key := k.GetKey(ctx, prefixSupportedChains, "")
-	if k.SupportedChain(ctx, chain) {
-		// already added
-		return
-	}
-	chains := k.GetChains(ctx)
-	chains = append(chains, chain)
+func (k KVStore) SetChains(ctx sdk.Context, chains common.Chains) {
 	store := ctx.KVStore(k.storeKey)
+	key := k.GetKey(ctx, prefixSupportedChains, "")
+	chains = chains.Uniquify()
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(chains))
 }
