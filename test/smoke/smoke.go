@@ -30,6 +30,7 @@ type Smoke struct {
 	Binance      Binance
 	Thorchain    Thorchain
 	Keys         map[string]keys.KeyManager
+	GenBalance   bool
 	SweepOnExit  bool
 	FastFail     bool
 	Debug        bool
@@ -37,7 +38,7 @@ type Smoke struct {
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string, fastFail, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string, genBal, fastFail, debug bool) Smoke {
 	balRaw, err := ioutil.ReadFile(bal)
 	if err != nil {
 		log.Fatal(err)
@@ -84,6 +85,7 @@ func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string,
 		FaucetKey:    faucetKey,
 		VaultKey:     vaultKey,
 		Keys:         keyMgr,
+		GenBalance:   genBal,
 		FastFail:     fastFail,
 		SweepOnExit:  sweep,
 		Debug:        debug,
