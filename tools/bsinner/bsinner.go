@@ -14,6 +14,7 @@ func main() {
 	poolKey := flag.String("k", "", "The pool key.")
 	environment := flag.String("e", "local", "The environment to use [local|staging|develop|production]. Defaults to local")
 	bal := flag.String("b", "", "Balances json file")
+	genBal := flag.Bool("g", false, "Generate balances")
 	txns := flag.String("t", "", "Transactions json file")
 	fastFail := flag.Bool("x", false, "Enable fast fail")
 	debug := flag.Bool("d", false, "Enable debugging of the Binance transactions.")
@@ -27,7 +28,7 @@ func main() {
 		log.Fatal("No balances json file")
 	}
 
-	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *bal, *txns, *fastFail, *debug)
+	s := smoke.NewSmoke(*apiAddr, *faucetKey, *poolKey, *environment, *bal, *txns, *genBal, *fastFail, *debug)
 	successful := s.Run()
 	if successful {
 		os.Exit(0)
