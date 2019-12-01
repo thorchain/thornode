@@ -35,7 +35,7 @@ func validateStakeMessage(ctx sdk.Context, keeper Keeper, asset common.Asset, re
 	if requestTxHash.IsEmpty() {
 		return errors.New("request tx hash is empty")
 	}
-	if common.IsBNBChain(asset.Chain) {
+	if asset.Chain.IsBNB() {
 		if runeAddr.IsEmpty() {
 			return errors.New("rune address is empty")
 		}
@@ -89,7 +89,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 		}
 	}
 
-	if !common.IsBNBChain(asset.Chain) {
+	if !asset.Chain.IsBNB() {
 		if stakeAssetAmount.IsZero() {
 			su.PendingRune = su.PendingRune.Add(stakeRuneAmount)
 			ps.UpsertStakerUnit(su)

@@ -47,16 +47,16 @@ func (c Chain) String() string {
 	return strings.ToUpper(string(c))
 }
 
+func (c Chain) IsBNB() bool {
+	return c.Equals(BNBChain)
+}
+
 func (c Chain) GetSigningAlgo() keys.SigningAlgo {
 	switch c {
 	case BNBChain, ETHChain, BTCChain, THORChain:
 		return keys.Secp256k1
 	}
 	return keys.Secp256k1
-}
-
-func IsBNBChain(c Chain) bool {
-	return c.Equals(BNBChain)
 }
 
 // AddressPrefix return the address prefix used by the given network (testnet/mainnet)
@@ -79,4 +79,23 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 		}
 	}
 	return ""
+}
+
+func (chains Chains) Has(c Chain) bool {
+	for _, ch := range chains {
+		if ch.Equals(c) {
+			return true
+		}
+	}
+	return false
+}
+
+func (chains Chains) Uniquify() Chains {
+	var newChains Chains
+	for _, chain := range chains {
+		if !newChains.Has(chain) {
+			newChains = append(newChains, chain)
+		}
+	}
+	return newChains
 }

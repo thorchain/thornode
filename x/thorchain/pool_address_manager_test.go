@@ -99,6 +99,6 @@ func createTempNewPoolForTest(ctx sdk.Context, k Keeper, input string, c *C) *Po
 	p.BalanceRune = sdk.NewUint(1535169738538008)
 	p.BalanceAsset = sdk.NewUint(1535169738538008)
 	k.SetPool(ctx, p)
-	k.AddChain(ctx, asset.Chain)
+	k.SetChains(ctx, common.Chains{asset.Chain})
 	return &p
 }
