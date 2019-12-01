@@ -28,18 +28,18 @@ func (k KVStore) GetLastSignedHeight(ctx sdk.Context) (sdk.Uint, error) {
 	}
 	buf := store.Get([]byte(key))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &height); nil != err {
-		return height, dbError(ctx, "Unmarshal: last heights", err)
+		return sdk.ZeroUint(), dbError(ctx, "Unmarshal: last heights", err)
 	}
 	return height, nil
 }
 
 func (k KVStore) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height sdk.Uint) error {
-	currentHeight, err := k.GetLastChainHeight(ctx, chain)
+	lastHeight, err := k.GetLastChainHeight(ctx, chain)
 	if err != nil {
 		return err
 	}
-	if currentHeight.GT(height) {
-		err := errors.Errorf("current block height :%s is larger than %s , block height can't go backward ", currentHeight, height)
+	if lastHeight.GT(height) {
+		err := errors.Errorf("current block height :%s is larger than %s , block height can't go backward ", lastHeight, height)
 		return dbError(ctx, "", err)
 	}
 	store := ctx.KVStore(k.storeKey)
