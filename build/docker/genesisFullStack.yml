@@ -1,0 +1,82 @@
+version: '3'
+
+services:
+  midgard:
+    image: registry.gitlab.com/thorchain/midgard
+    ports:
+      - 8080:8080
+    depends_on:
+      - pg
+      - thor-daemon
+  pg:
+    image: timescale/timescaledb:latest-pg11
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=password
+    command: postgres -c 'max_connections=250'
+
+  observer:
+    environment:
+      NET: testnet
+
+  signer:
+    environment:
+      NET: testnet
+
+  thor-daemon:
+    environment:
+      NET: testnet
+
+  thor-api:
+    environment:
+      NET: testnet
+
+  observer2:
+    environment:
+      NET: testnet
+
+  signer2:
+    environment:
+      NET: testnet
+
+  thor-daemon2:
+    environment:
+      NET: testnet
+
+  thor-api2:
+    environment:
+      NET: testnet
+
+  observer3:
+    environment:
+      NET: testnet
+
+  signer3:
+    environment:
+      NET: testnet
+
+  thor-daemon3:
+    environment:
+      NET: testnet
+
+  thor-api3:
+    environment:
+      NET: testnet
+
+  observer4:
+    environment:
+      NET: testnet
+
+  signer4:
+    environment:
+      NET: testnet
+
+  thor-daemon4:
+    environment:
+      NET: testnet
+
+  thor-api4:
+    environment:
+      NET: testnet
+
