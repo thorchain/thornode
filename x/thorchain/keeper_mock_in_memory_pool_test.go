@@ -39,7 +39,7 @@ func (p *MockInMemoryPoolStorage) SetPool(ctx sdk.Context, ps Pool) {
 	p.store[ps.Asset.String()] = ps
 }
 
-func (p *MockInMemoryPoolStorage) AddToLiquidityFees(ctx sdk.Context, ps Pool, fs sdk.Uint) error {
+func (p *MockInMemoryPoolStorage) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fs sdk.Uint) error {
 	return nil
 }
 
@@ -47,7 +47,7 @@ func (p *MockInMemoryPoolStorage) GetTotalLiquidityFees(ctx sdk.Context, height 
 	return sdk.ZeroUint(), nil
 }
 
-func (p *MockInMemoryPoolStorage) GetPoolLiquidityFees(ctx sdk.Context, height uint64, pool Pool) (sdk.Uint, error) {
+func (p *MockInMemoryPoolStorage) GetPoolLiquidityFees(ctx sdk.Context, height uint64, asset common.Asset) (sdk.Uint, error) {
 	return sdk.ZeroUint(), nil
 }
 
