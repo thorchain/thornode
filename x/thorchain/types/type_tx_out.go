@@ -48,7 +48,7 @@ func (toi TxOutItem) String() string {
 	return sb.String()
 }
 
-// TxOut is a structure represent all the tx we need to return to client
+// TxOut is a structure represent all the tx THORNode need to return to client
 type TxOut struct {
 	Height  uint64       `json:"height"`
 	TxArray []*TxOutItem `json:"tx_array"`

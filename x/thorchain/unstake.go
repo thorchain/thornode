@@ -35,7 +35,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
 	}
 
-	// here fBalance should be valid , because we did the validation above
+	// here fBalance should be valid , because THORNode did the validation above
 	pool := keeper.GetPool(ctx, msg.Asset)
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
@@ -56,7 +56,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("nothing to withdraw")
 	}
 
-	// check if we need to rate limit unstaking
+	// check if THORNode need to rate limit unstaking
 	// https://gitlab.com/thorchain/thornode/issues/166
 	if !msg.Asset.Chain.Equals(common.BNBChain) {
 		height := ctx.BlockHeight()
@@ -99,7 +99,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 		stakerPool.UpsertStakerPoolItem(spi)
 	}
 
-	// Create a pool event if we have no rune or assets
+	// Create a pool event if THORNode have no rune or assets
 	if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
 		pool.Status = PoolBootstrap
 		eventPoolStatusWrapper(ctx, keeper, pool)

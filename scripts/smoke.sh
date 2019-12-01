@@ -125,7 +125,7 @@ if [ -z "$AWS_ACCESS_KEY_ID" ] ||
   exit 1
 fi
 
-# Ensures we don't run forever!
+# Ensures THORNode don't run forever!
 COUNT=0
 MAX_ATTEMPTS=30
 
@@ -144,7 +144,7 @@ while [ $? -ne 0 ]; do
 done
 
 # This would happen if the task count supplied did not match
-# (e.g: there are always two running tasks but we supplied a
+# (e.g: there are always two running tasks but THORNode supplied a
 # task count of 1 to the script.
 if [ $COUNT -eq $MAX_ATTEMPTS ]; then
   echo "Exiting. Either the supplied task count is wrong, or the new task(s) are not booting correctly."

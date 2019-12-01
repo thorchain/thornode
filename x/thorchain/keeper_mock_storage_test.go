@@ -12,7 +12,7 @@ import (
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
-// MockPoolStorage implements PoolStorage interface, thus we can mock the error cases
+// MockPoolStorage implements PoolStorage interface, thus THORNode can mock the error cases
 type MockPoolStorage struct {
 	KVStoreDummy
 }

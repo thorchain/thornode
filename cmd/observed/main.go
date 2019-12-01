@@ -17,7 +17,7 @@ import (
 	"gitlab.com/thorchain/thornode/cmd"
 )
 
-// we define version / revision here , so we could inject the version from CI pipeline if we want to
+// THORNode define version / revision here , so THORNode could inject the version from CI pipeline if THORNode want to
 var (
 	version  string
 	revision string

@@ -39,7 +39,7 @@ if [ "$ROTATE_BLOCK_HEIGHT" != "0" ]; then
     echo "$KEY $VALUE $NODE_ADDRESS" > /tmp/shared/config_$NODE_ADDRESS.json
 fi
 
-# wait until we have the correct number of nodes in our directory before continuing
+# wait until THORNode have the correct number of nodes in our directory before continuing
 while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODES" ]; do
     sleep 1
 done

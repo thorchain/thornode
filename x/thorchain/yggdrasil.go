@@ -35,13 +35,13 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 		totalBond = totalBond.Add(na.Bond)
 	}
 
-	// We don't want to check all Yggdrasil pools every time we run this
-	// function. So we use modulus to determine which Ygg we process. This
+	// We don't want to check all Yggdrasil pools every time THORNode run this
+	// function. So THORNode use modulus to determine which Ygg THORNode process. This
 	// should behave as a "round robin" approach checking one Ygg per block.
-	// With 100 Ygg pools, we should check each pool every 8.33 minutes.
+	// With 100 Ygg pools, THORNode should check each pool every 8.33 minutes.
 	na := nodeAccs[ctx.BlockHeight()%int64(len(nodeAccs))]
 
-	// figure out if we need to send them assets.
+	// figure out if THORNode need to send them assets.
 	// get a list of coin/amounts this yggdrasil pool should have, ideally.
 	// TODO: We are assuming here that the pub key is Secp256K1
 	ygg := keeper.GetYggdrasil(ctx, na.NodePubKey.Secp256k1)
@@ -51,7 +51,7 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 	}
 
 	var sendCoins common.Coins
-	// iterate over each target coin amount and figure if we need to reimburse
+	// iterate over each target coin amount and figure if THORNode need to reimburse
 	// a Ygg pool of this particular asset.
 	for _, targetCoin := range targetCoins {
 		yggCoin := ygg.GetCoin(targetCoin.Asset)
@@ -126,7 +126,7 @@ func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins
 	ratio = float64(targetRune.Uint64()) / float64(totalRune.Uint64())
 
 	// track how much value (in rune) we've associated with this ygg pool. This
-	// is here just to be absolutely sure we never send too many assets to the
+	// is here just to be absolutely sure THORNode never send too many assets to the
 	// ygg by accident.
 	counter := sdk.ZeroUint()
 	for _, pool := range pools {
@@ -152,7 +152,7 @@ func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins
 		coins = append(coins, runeCoin)
 	}
 
-	// ensure we don't send too much value in coins to the ygg pool
+	// ensure THORNode don't send too much value in coins to the ygg pool
 	if counter.GT(yggBond.QuoUint64(2)) {
 		return nil, fmt.Errorf("Exceeded safe amounts of assets for given Yggdrasil pool")
 	}

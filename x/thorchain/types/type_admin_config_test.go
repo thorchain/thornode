@@ -123,7 +123,7 @@ func (AdminConfigSuite) TestDefault(c *C) {
 	}
 	for k, v := range input {
 		if k.Default() != v {
-			c.Errorf("expected: %s , however we got: %s", v, k.Default())
+			c.Errorf("expected: %s , however THORNode got: %s", v, k.Default())
 		}
 	}
 }

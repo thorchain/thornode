@@ -8,7 +8,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-// TrustAccount represent those accounts we can trust, and can be used to sign tx
+// TrustAccount represent those accounts THORNode can trust, and can be used to sign tx
 type TrustAccount struct {
 	SignerBNBAddress       common.Address `json:"bnb_signer_acc"`     // Is used by the signer to sign outbound tx.
 	ObserverBEPAddress     sdk.AccAddress `json:"bep_observer_acc"`   // Thor address used to relay chain observations

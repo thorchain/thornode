@@ -40,7 +40,7 @@ func (NodeAccountSuite) TestGetNodeStatus(c *C) {
 	for k, v := range input {
 		r := GetNodeStatus(k)
 		if r != v {
-			c.Errorf("expect %s,however we got %s", v, r)
+			c.Errorf("expect %s,however THORNode got %s", v, r)
 		}
 		c.Check(r.String(), Equals, strings.ToLower(k))
 		c.Check(v.Valid(), IsNil)

@@ -17,9 +17,9 @@ const (
 	GSLKey               AdminConfigKey = "GSL"
 	StakerAmtIntervalKey AdminConfigKey = "StakerAmtInterval"
 	MinValidatorBondKey  AdminConfigKey = "MinValidatorBond"
-	WhiteListGasAssetKey AdminConfigKey = "WhiteListGasAsset" // How much gas asset we mint and send it to the newly whitelisted bep address
-	PoolRefundGasKey     AdminConfigKey = "PoolRefundGas"     // When we move assets from one pool to another , we leave this amount of BNB behind, thus we could refund customer if they send fund to the previous pool
-	DefaultPoolStatus    AdminConfigKey = "DefaultPoolStatus" // When a pool get created automatically , what status do we set it in
+	WhiteListGasAssetKey AdminConfigKey = "WhiteListGasAsset" // How much gas asset THORNode mint and send it to the newly whitelisted bep address
+	PoolRefundGasKey     AdminConfigKey = "PoolRefundGas"     // When THORNode move assets from one pool to another , THORNode leave this amount of BNB behind, thus THORNode could refund customer if they send fund to the previous pool
+	DefaultPoolStatus    AdminConfigKey = "DefaultPoolStatus" // When a pool get created automatically , what status do THORNode set it in
 )
 
 func (k AdminConfigKey) String() string {

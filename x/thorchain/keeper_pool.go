@@ -92,7 +92,7 @@ func (k KVStore) EnableAPool(ctx sdk.Context) {
 				pool = p
 			}
 		}
-		// ensure we don't enable a pool that doesn't have any rune or assets
+		// ensure THORNode don't enable a pool that doesn't have any rune or assets
 		if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
 			return
 		}

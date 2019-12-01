@@ -16,7 +16,7 @@ type ObserverSuite struct{}
 
 var _ = Suite(&ObserverSuite{})
 
-// TestBinanceHeight : Test to ensure we get back the height we expect.
+// TestBinanceHeight : Test to ensure THORNode get back the height THORNode expect.
 func (s *ObserverSuite) TestBinanceHeight(c *C) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.RequestURI {

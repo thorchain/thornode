@@ -281,13 +281,13 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 
 	bnbPoolAddr := poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
 	if nil == bnbPoolAddr {
-		msg := fmt.Sprintf("we don't have pool for chain : %s ", common.BNBChain)
+		msg := fmt.Sprintf("THORNode don't have pool for chain : %s ", common.BNBChain)
 		ctx.Logger().Error(msg)
 		return sdk.ErrUnknownRequest(msg).Result()
 	}
 	currentAddr := poolAddrMgr.currentPoolAddresses.Current.GetByChain(msg.Asset.Chain)
 	if nil == currentAddr {
-		msg := fmt.Sprintf("we don't have pool for chain : %s ", msg.Asset.Chain)
+		msg := fmt.Sprintf("THORNode don't have pool for chain : %s ", msg.Asset.Chain)
 		ctx.Logger().Error(msg)
 		return sdk.ErrUnknownRequest(msg).Result()
 	}
@@ -321,7 +321,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 	})
 	if nil != err {
 		ctx.Logger().Error("fail to marshal result to json", "error", err)
-		// if this happen what should we tell the client?
+		// if this happen what should THORNode tell the client?
 	}
 
 	unstakeEvt := NewEventUnstake(
@@ -363,7 +363,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ToAddress:   stakerUnit.AssetAddress,
 		Coin:        common.NewCoin(msg.Asset, assetAmount),
 	}
-	// for unstake , we should deduct fees
+	// for unstake , THORNode should deduct fees
 	txOutStore.AddTxOutItem(ctx, keeper, toi, false)
 
 	return sdk.Result{
@@ -391,7 +391,7 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 	}
 	currentAddr := currentPoolAddresses.Current.GetByChain(msg.Chain)
 	if nil == currentAddr || currentAddr.IsEmpty() {
-		msg := fmt.Sprintf("we donnot have pool for chain %s", msg.Chain)
+		msg := fmt.Sprintf("THORNode donnot have pool for chain %s", msg.Chain)
 		ctx.Logger().Error(msg)
 		return sdk.ErrUnknownRequest(msg).Result()
 	}
@@ -414,7 +414,7 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 
 	poolAddrManager.ObservedNextPoolAddrPubKey = poolAddrManager.ObservedNextPoolAddrPubKey.TryAddKey(pkey)
 
-	// if we observed a valid nextpool transaction, that means the nominated validator had join the signing committee to generate a new pub key
+	// if THORNode observed a valid nextpool transaction, that means the nominated validator had join the signing committee to generate a new pub key
 	// with TSS, if they don't join , then the key won't be generated
 	nominatedAccount := validatorMgr.Meta.Nominated
 	if !nominatedAccount.IsEmpty() {
@@ -481,7 +481,7 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 	}
 	chainPubKey := poolAddrMgr.ObservedNextPoolAddrPubKey.GetByChain(msg.Chain)
 	if nil == chainPubKey {
-		msg := fmt.Sprintf("we donnot have pool for chain %s", msg.Chain)
+		msg := fmt.Sprintf("THORNode donnot have pool for chain %s", msg.Chain)
 		ctx.Logger().Error(msg)
 		return sdk.ErrUnknownRequest(msg).Result()
 	}
@@ -526,7 +526,7 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 			sdk.NewAttribute("pubkey", poolAddrMgr.currentPoolAddresses.Next.String()),
 			sdk.NewAttribute("address", msg.Sender.String()),
 			sdk.NewAttribute("chain", msg.Chain.String())))
-	// we have a pool address confirmed by a chain
+	// THORNode have a pool address confirmed by a chain
 	keeper.SetPoolAddresses(ctx, poolAddrMgr.currentPoolAddresses)
 
 	return sdk.Result{
@@ -628,7 +628,7 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 							return sdk.ErrInternal("fail to get node account").Result()
 						}
 
-						// Slash the node account, since we are unable to
+						// Slash the node account, since THORNode are unable to
 						// process the tx (ie unscheduled tx)
 						var minusCoins common.Coins       // track funds to subtract from ygg pool
 						minusRune := sdk.ZeroUint()       // track amt of rune to slash from bond
@@ -722,7 +722,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to parse memo")
 	}
-	// we should not have one tx across chain, if it is cross chain it should be separate tx
+	// THORNode should not have one tx across chain, if it is cross chain it should be separate tx
 	chain := tx.Coins[0].Asset.Chain
 	var newMsg sdk.Msg
 	// interpret the memo and initialize a corresponding msg event
@@ -823,7 +823,7 @@ func getMsgSwapFromMemo(memo SwapMemo, txID common.TxID, tx TxIn, signer sdk.Acc
 		return nil, errors.Errorf("swap from %s to %s is noop, refund", memo.Asset.String(), coin.Asset.String())
 	}
 
-	// Looks like at the moment we can only process ont ty
+	// Looks like at the moment THORNode can only process ont ty
 	return NewMsgSwap(tx.GetCommonTx(txID), memo.GetAsset(), memo.Destination, memo.SlipLimit, signer), nil
 }
 
@@ -863,7 +863,7 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, txIn
 		return nil, errors.New("did not find any valid coins for stake")
 	}
 
-	// when we receive two coins, but we didn't find the coin specify by asset, then user might send in the wrong coin
+	// when THORNode receive two coins, but THORNode didn't find the coin specify by asset, then user might send in the wrong coin
 	if assetAmount.IsZero() && len(txIn.Coins) == 2 {
 		return nil, errors.Errorf("did not find %s ", asset)
 	}
@@ -1017,7 +1017,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	}
 	currentChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(msg.Tx.Chain)
 	if nil == currentChainPoolAddr {
-		msg := fmt.Sprintf("we don't have pool for chain %s", msg.Tx.Chain)
+		msg := fmt.Sprintf("THORNode don't have pool for chain %s", msg.Tx.Chain)
 		ctx.Logger().Error(msg)
 		return sdk.ErrUnknownRequest(msg).Result()
 	}
@@ -1078,9 +1078,9 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	if !txOut.IsEmpty() {
 		for i, tx := range txOut.TxArray {
 
-			// withdraw , refund etc, one inbound tx might result two outbound txes, we have to correlate outbound tx back to the
-			// inbound, and also txitem , thus we could record both outbound tx hash correctly
-			// given every tx item will only have one coin in it , given that , we could use that to identify which txit
+			// withdraw , refund etc, one inbound tx might result two outbound txes, THORNode have to correlate outbound tx back to the
+			// inbound, and also txitem , thus THORNode could record both outbound tx hash correctly
+			// given every tx item will only have one coin in it , given that , THORNode could use that to identify which txit
 			if tx.InHash.Equals(msg.InTxID) &&
 				tx.OutHash.IsEmpty() &&
 				msg.Tx.Coins.Contains(tx.Coin) {
@@ -1091,7 +1091,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	}
 	keeper.SetLastSignedHeight(ctx, sdk.NewUint(uint64(voter.Height)))
 
-	// If we are sending from a yggdrasil pool, decrement coins on record
+	// If THORNode are sending from a yggdrasil pool, decrement coins on record
 	pk, err := keeper.FindPubKeyOfAddress(ctx, msg.Tx.FromAddress, msg.Tx.Chain)
 	if err != nil {
 		ctx.Logger().Error("unable to find Yggdrasil pubkey", "error", err)
@@ -1226,7 +1226,7 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 	if err := keeper.EnsureTrustAccountUnique(ctx, msg.ValidatorConsPubKey, msg.NodePubKeys); nil != err {
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	// Here make sure we don't change the node account's bond
+	// Here make sure THORNode don't change the node account's bond
 
 	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
 	keeper.SetNodeAccount(ctx, nodeAccount)
@@ -1268,7 +1268,7 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 		ctx.Logger().Error("not enough rune to be whitelisted", "rune", msg.Bond, "min validator bond", minValidatorBond.String())
 		return sdk.ErrUnknownRequest("not enough rune to be whitelisted").Result()
 	}
-	// we will not have pub keys at the moment, so have to leave it empty
+	// THORNode will not have pub keys at the moment, so have to leave it empty
 	emptyPubKeys := common.PubKeys{
 		Secp256k1: common.EmptyPubKey,
 		Ed25519:   common.EmptyPubKey,
@@ -1322,13 +1322,13 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolA
 			return sdk.ErrUnknownRequest(err.Error()).Result()
 		}
 		// TODO: slash their bond for any Yggdrasil funds that are unaccounted
-		// for before sending their bond back. Keep in mind that we won't get
+		// for before sending their bond back. Keep in mind that THORNode won't get
 		// back 100% of the funds (due to gas).
 		RefundBond(ctx, msg.RequestTxHash, na, keeper, txOut)
 	}
 	keeper.SetYggdrasil(ctx, ygg)
 
-	// Ragnarok protocol get triggered, if all the Yggdrasil pool returned funds already, we will continue Ragnarok
+	// Ragnarok protocol get triggered, if all the Yggdrasil pool returned funds already, THORNode will continue Ragnarok
 	if validatorMgr.Meta.Ragnarok {
 		hasYggdrasilPool, err := keeper.HasValidYggdrasilPools(ctx)
 		if nil != err {
@@ -1364,7 +1364,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, validator
 	}
 
 	if nodeAcc.Status == NodeActive {
-		// we add the node to leave queue
+		// THORNode add the node to leave queue
 		validatorManager.Meta.LeaveQueue = append(validatorManager.Meta.LeaveQueue, nodeAcc)
 	} else {
 		// node is not active , they are free to leave , refund them
@@ -1386,9 +1386,9 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, validator
 
 func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, validatorManager *ValidatorManager) sdk.Result {
 	// Ragnarok Protocol
-	// If we can no longer be BFT, do a graceful shutdown of the entire network.
-	// 1) we will request all yggdrasil pool to return fund , if we don't have yggdrasil pool we will go to step 3 directly
-	// 2) upon receiving the yggdrasil fund,  we will refund the validator's bond
+	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
+	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
+	// 2) upon receiving the yggdrasil fund,  THORNode will refund the validator's bond
 	// 3) once all yggdrasil fund get returned, return all fund to stakes
 	if !validatorManager.Meta.Ragnarok {
 		// Ragnarok protocol didn't triggered , don't call this one

@@ -114,7 +114,7 @@ func (s *Signer) retryAll() error {
 		s.errCounter.WithLabelValues("fail_get_txout_for_retry", "").Inc()
 		return errors.Wrap(err, "fail to get txout for retry")
 	}
-	s.logger.Info().Msgf("we find (%d) txOut need to be retry, retrying now", len(txOuts))
+	s.logger.Info().Msgf("THORNode find (%d) txOut need to be retry, retrying now", len(txOuts))
 	if err := s.retryTxOut(txOuts); nil != err {
 		s.errCounter.WithLabelValues("fail_retry_txout", "").Inc()
 		return errors.Wrap(err, "fail to retry txouts")
@@ -132,7 +132,7 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 		default:
 			if !item.Chain.Equals(common.BNBChain) {
 				s.logger.Debug().Str("chain", item.Chain.String()).
-					Msg("not binance chain , we don't sign it")
+					Msg("not binance chain , THORNode don't sign it")
 				continue
 			}
 
@@ -240,10 +240,10 @@ func (s *Signer) processTssKeyGenCeremony(tai types.TxArrayItem) (types.TxArrayI
 	return tai, nil
 }
 
-// signAndSendToBinanceChainWithRetry retry a few times before we move on to he next block
+// signAndSendToBinanceChainWithRetry retry a few times before THORNode move on to he next block
 func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 	// most case , there should be only one item in txOut.TxArray, but sometimes there might be more than one
-	// especially when we get populate , more and more transactions
+	// especially when THORNode get populate , more and more transactions
 	for _, item := range txOut.TxArray {
 		if !s.shouldSign(item) {
 			s.logger.Info().
@@ -263,14 +263,14 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 			item = tai
 		}
 		if len(item.To) == 0 {
-			s.logger.Info().Msg("To address is empty, we don't know where to send the fund , ignore")
+			s.logger.Info().Msg("To address is empty, THORNode don't know where to send the fund , ignore")
 			continue
 		}
 		err = s.signAndSendToBinanceChain(item, height)
 		if nil != err {
 			s.logger.Error().Err(err).Int("try", 1).Msg("fail to send to binance chain")
-			// This might happen when we signed it successfully however somehow fail to broadcast to binance chain
-			// given we run a node locally , this should be rare let's log it and move on for now.
+			// This might happen when THORNode signed it successfully however somehow fail to broadcast to binance chain
+			// given THORNode run a node locally , this should be rare let's log it and move on for now.
 		}
 	}
 	return nil
