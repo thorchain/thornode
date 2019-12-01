@@ -42,7 +42,7 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 	c.Assert(na1.SlashPoints, Equals, int64(0))
 	c.Assert(na2.SlashPoints, Equals, int64(constants.LackOfObservationPenalty))
 
-	// since we have cleared all node addresses in slashForObservingAddresses,
+	// since THORNode have cleared all node addresses in slashForObservingAddresses,
 	// running it a second time should result in slashing nobody.
 	slashForObservingAddresses(ctx, k)
 	c.Assert(na1.SlashPoints, Equals, int64(0))

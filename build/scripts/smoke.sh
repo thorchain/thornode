@@ -14,7 +14,7 @@ setup() {
 }
 
 #
-# Clear those ENV vars that we don't want to use
+# Clear those ENV vars that THORNode don't want to use
 #
 clear_vars() {
   unset CHAIN_HOST

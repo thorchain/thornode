@@ -1,6 +1,6 @@
 package types
 
-// ValidatorsResp response data we send back to client when they ask for validator information
+// ValidatorsResp response data THORNode send back to client when they ask for validator information
 type ValidatorsResp struct {
 	ActiveNodes        NodeAccounts `json:"active_nodes"`
 	Nominated          NodeAccounts `json:"nominated"`

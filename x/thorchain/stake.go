@@ -63,7 +63,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	}
 
 	pool := keeper.GetPool(ctx, asset)
-	// if we have no balance, set the default pool status
+	// if THORNode have no balance, set the default pool status
 	if pool.BalanceAsset.IsZero() && pool.BalanceRune.IsZero() {
 		status := keeper.GetAdminConfigDefaultPoolStatus(ctx, nil)
 		pool.Status = status

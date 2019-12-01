@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// ChainNetwork is to indicate which chain environment we are working with
+// ChainNetwork is to indicate which chain environment THORNode are working with
 type ChainNetwork uint8
 
 const (

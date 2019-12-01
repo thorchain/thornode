@@ -160,7 +160,7 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 		node := GetRandomNodeAccount(NodeStandby)
 		w.keeper.SetNodeAccount(w.ctx, node)
 	}
-	// we should rotate two in , and don't rotate out
+	// THORNode should rotate two in , and don't rotate out
 	windowOpenAt := w.validatorMgr.Meta.RotateWindowOpenAtBlockHeight
 	ctx := w.ctx.WithBlockHeight(windowOpenAt)
 	w.validatorMgr.BeginBlock(ctx)
@@ -178,7 +178,7 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 	w.validatorMgr.BeginBlock(ctx)
 	w.txOutStore.NewBlock(uint64(windowOpenAt))
 	validatorUpdates = w.validatorMgr.EndBlock(ctx, w.txOutStore)
-	// we should have three active validators now
+	// THORNode should have three active validators now
 	c.Assert(validatorUpdates, HasLen, 3)
 	c.Assert(w.validatorMgr.Meta.Queued, IsNil)
 	c.Assert(w.validatorMgr.Meta.Nominated, IsNil)
@@ -264,9 +264,9 @@ func (ValidatorManagerTestSuite) TestValidatorsLeave(c *C) {
 	w.validatorMgr.BeginBlock(ctx)
 	w.validatorMgr.EndBlock(ctx, w.txOutStore)
 	c.Assert(w.validatorMgr.Meta.Queued, HasLen, 1)
-	// we don't have enough standby node to be rotate in
+	// THORNode don't have enough standby node to be rotate in
 	c.Assert(w.validatorMgr.Meta.Nominated, HasLen, 0)
-	// make sure we trigger a pool rotation as well
+	// make sure THORNode trigger a pool rotation as well
 	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt, Equals, ctx.BlockHeight()+1)
 	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateAt, Equals, w.validatorMgr.Meta.LeaveProcessAt)
 
@@ -278,7 +278,7 @@ func (ValidatorManagerTestSuite) TestValidatorsLeave(c *C) {
 	w.validatorMgr.BeginBlock(ctx)
 	w.txOutStore.NewBlock(uint64(w.validatorMgr.Meta.LeaveProcessAt))
 	updates := w.validatorMgr.EndBlock(ctx, w.txOutStore)
-	// we don't have yggdrasil fund
+	// THORNode don't have yggdrasil fund
 	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 0)
 	c.Assert(updates, HasLen, 7)
 	// make sure scheduled rotation window get extended

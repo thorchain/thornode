@@ -26,7 +26,7 @@ func validatePools(ctx sdk.Context, keeper Keeper, assets ...common.Asset) error
 	return nil
 }
 
-// validateMessage is trying to validate the legitimacy of the incoming message and decide whether we can handle it
+// validateMessage is trying to validate the legitimacy of the incoming message and decide whether THORNode can handle it
 func validateMessage(tx common.Tx, target common.Asset, destination common.Address) error {
 	if err := tx.IsValid(); err != nil {
 		return err
@@ -204,7 +204,7 @@ func swapOne(ctx sdk.Context,
 		return sdk.ZeroUint(), pool, errors.Wrap(err, "failed to add liquidity")
 	}
 
-	// do we have enough balance to swap?
+	// do THORNode have enough balance to swap?
 	if emitAssets.GT(Y) {
 		return sdk.ZeroUint(), pool, errors.New("asset :%s balance is 0, can't do swap")
 	}

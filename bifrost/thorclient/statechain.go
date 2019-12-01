@@ -72,7 +72,7 @@ func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics)
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
 	sdk.RegisterCodec(cdc)
-	// TODO make we should share this with statechain in common
+	// TODO make THORNode should share this with statechain in common
 	cdc.RegisterConcrete(stypes.MsgSetTxIn{}, "thorchain/MsgSetTxIn", nil)
 	codec.RegisterCrypto(cdc)
 	return cdc

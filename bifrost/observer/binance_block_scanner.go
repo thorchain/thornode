@@ -147,14 +147,14 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 		if nil != err {
 			b.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
 			b.logger.Error().Err(err).Str("hash", txn.Hash).Msg("fail to get one tx from server")
-			// if we fail to get one tx hash from server, then we should bail, because we might miss tx
-			// if we bail here, then we should retry later
+			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
+			// if THORNode bail here, then THORNode should retry later
 			return errors.Wrap(err, "fail to get one tx from server")
 		}
 		if nil != txItemIn {
 			txIn.TxArray = append(txIn.TxArray, *txItemIn)
 			b.m.GetCounter(metrics.BlockWithTxIn).Inc()
-			b.logger.Info().Str("hash", txn.Hash).Msg("we got one tx")
+			b.logger.Info().Str("hash", txn.Hash).Msg("THORNode got one tx")
 		}
 	}
 	if len(txIn.TxArray) == 0 {
@@ -191,7 +191,7 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 				}
 				b.errCounter.WithLabelValues("fail_search_block", "").Inc()
 				b.logger.Error().Err(err).Int64("height", block).Msg("fail to search tx in block")
-				// we will have a retry go routine to check it.
+				// THORNode will have a retry go routine to check it.
 				continue
 			}
 			// set a block as success
@@ -213,7 +213,7 @@ func (b *BinanceBlockScanner) isDeregisterYggdrasil(addr, memo string) bool {
 	return b.isAddrWithMemo(addr, memo, "yggdrasil-")
 }
 
-// Check if we have an outbound yggdrasil transaction
+// Check if THORNode have an outbound yggdrasil transaction
 func (b *BinanceBlockScanner) isYggdrasil(addr string) bool {
 	ok, _ := b.addrVal.IsValidPoolAddress(addr, common.BNBChain)
 	return ok
@@ -302,15 +302,15 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 		Tx: hash,
 	}
 	// TODO: it is possible to have multiple `SendMsg` in a single stdTx, which
-	// we are currently not accounting for. It is also possible to have
-	// multiple inputs/outputs within a single stdTx, which we are not yet
+	// THORNode are currently not accounting for. It is also possible to have
+	// multiple inputs/outputs within a single stdTx, which THORNode are not yet
 	// accounting for.
 	for _, msg := range stdTx.Msgs {
 		switch sendMsg := msg.(type) {
 		case bmsg.SendMsg:
 			txInItem.Memo = stdTx.Memo
-			// we take the first Input as sender, first Output as receiver
-			// so if we send to multiple different receiver within one tx, this won't be able to process it.
+			// THORNode take the first Input as sender, first Output as receiver
+			// so if THORNode send to multiple different receiver within one tx, this won't be able to process it.
 			sender := sendMsg.Inputs[0]
 			receiver := sendMsg.Outputs[0]
 			txInItem.Sender = sender.Address.String()
@@ -350,7 +350,7 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 			if ok := b.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
 
-				// **IMPORTANT** If this fails, we won't monitor the address and could lose funds!
+				// **IMPORTANT** If this fails, THORNode won't monitor the address and could lose funds!
 				// var pk common.PubKey
 				// chainNetwork := common.GetCurrentChainNetwork()
 				// pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
@@ -363,7 +363,7 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 			if ok := b.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
 
-				// **IMPORTANT** If this fails, we may slash a yggdrasil pool inappropriately
+				// **IMPORTANT** If this fails, THORNode may slash a yggdrasil pool inappropriately
 				// var pk common.PubKey
 				// chainNetwork := common.GetCurrentChainNetwork()
 				// pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
@@ -372,19 +372,19 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 				return &txInItem, nil
 			}
 
-			// Check if we are sending from a yggdrasil address
+			// Check if THORNode are sending from a yggdrasil address
 			if ok := b.isYggdrasil(txInItem.Sender); ok {
 				b.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
 				return &txInItem, nil
 			}
 
-			// Check if we are sending to a yggdrasil address
+			// Check if THORNode are sending to a yggdrasil address
 			if ok := b.isYggdrasil(txInItem.To); ok {
 				b.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
 				return &txInItem, nil
 			}
 
-			// outbound message from pool, when it is outbound, it does not matter how much coins we send to customer for now
+			// outbound message from pool, when it is outbound, it does not matter how much coins THORNode send to customer for now
 			if ok := b.isOutboundMsg(txInItem.Sender, txInItem.Memo); ok {
 				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
 				return &txInItem, nil

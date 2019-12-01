@@ -87,7 +87,7 @@ func (vm *ValidatorManager) EndBlock(ctx sdk.Context, store *TxOutStore) []abci.
 		return nil
 	}
 	if height == vm.Meta.RotateAtBlockHeight || height == vm.Meta.LeaveProcessAt {
-		//  queueNode put in here on purpose, so we know who had been queued before we actually rotate them
+		//  queueNode put in here on purpose, so THORNode know who had been queued before THORNode actually rotate them
 		queueNode := vm.Meta.Queued
 		rotated := false
 		var err error
@@ -199,7 +199,7 @@ func (vm *ValidatorManager) processValidatorLeave(ctx sdk.Context, store *TxOutS
 		}
 
 		if nominatedNodeAccount.Status != NodeReady {
-			// set them to standby, do we need to slash the validator? we nominated them but they are not ready
+			// set them to standby, do THORNode need to slash the validator? THORNode nominated them but they are not ready
 			nominatedNodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
 			vm.k.SetNodeAccount(ctx, nominatedNodeAccount)
 			ctx.EventManager().EmitEvent(
@@ -258,7 +258,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, store *TxOutSt
 		}
 
 		if nominatedNodeAccount.Status != NodeReady {
-			// set them to standby, do we need to slash the validator? we nominated them but they are not ready
+			// set them to standby, do THORNode need to slash the validator? THORNode nominated them but they are not ready
 			nominatedNodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
 			vm.k.SetNodeAccount(ctx, nominatedNodeAccount)
 			ctx.EventManager().EmitEvent(
@@ -362,7 +362,7 @@ func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutS
 		vm.Meta.Queued = append(vm.Meta.Queued, node)
 	}
 	rotateIn := len(vm.Meta.Queued)
-	// do we have standby nodes?
+	// do THORNode have standby nodes?
 	// who should be added , and who need to removed
 	standbyNodes, err := vm.k.ListNodeAccountsByStatus(ctx, NodeStandby)
 	if nil != err {
@@ -402,15 +402,15 @@ func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutS
 		}
 	}
 
-	if afterLeave > constants.MinmumNodesForBFT { // we still have enough validators for BFT
+	if afterLeave > constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
 		// trigger pool rotate next
 		vm.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt = height + 1
 		vm.poolAddrMgr.currentPoolAddresses.RotateAt = vm.Meta.LeaveProcessAt
 		return nil
 	}
 	// execute Ragnarok protocol, no going back
-	// we have to request the fund back now, because once it get to the rotate block height ,
-	// we won't have validators anymore
+	// THORNode have to request the fund back now, because once it get to the rotate block height ,
+	// THORNode won't have validators anymore
 	if err := vm.ragnarokProtocolStep1(ctx, activeNodes, txOut); nil != err {
 		return fmt.Errorf("fail to execute ragnarok protocol step 1")
 	}
@@ -419,10 +419,10 @@ func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutS
 }
 
 // ragnarokProtocolStep1 - request all yggdrasil pool to return the fund
-// when we observe the node return fund successfully, the node's bound will be refund.
+// when THORNode observe the node return fund successfully, the node's bound will be refund.
 func (vm *ValidatorManager) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut *TxOutStore) error {
 	vm.Meta.Ragnarok = true
-	// do we have yggdrasil pool?
+	// do THORNode have yggdrasil pool?
 	hasYggdrasil, err := vm.k.HasValidYggdrasilPools(ctx)
 	if nil != err {
 		return fmt.Errorf("fail at ragnarok protocol step 1: %w", err)
@@ -475,7 +475,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 	rotateIn := vm.rotationPolicy.RotateInNumBeforeFull
 	rotateOut := vm.rotationPolicy.RotateOutNumBeforeFull
 	if int64(totalActiveNodes) >= vm.rotationPolicy.DesireValidatorSet {
-		// we are full
+		// THORNode are full
 		rotateIn = vm.rotationPolicy.RotateNumAfterFull
 		rotateOut = vm.rotationPolicy.RotateNumAfterFull
 	}
@@ -489,7 +489,7 @@ func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error 
 				sdk.NewAttribute("bep_address", item.NodeAddress.String()),
 				sdk.NewAttribute("consensus_public_key", item.ValidatorConsPubKey)))
 	}
-	// we need to set a minimum validator set , if we have less than the minimum , then we don't rotate out
+	// THORNode need to set a minimum validator set , if we have less than the minimum , then THORNode don't rotate out
 	if totalActiveNodes <= constants.MinmumNodesForBFT {
 		rotateOut = 0
 	}
@@ -532,7 +532,7 @@ func (vm *ValidatorManager) setupValidatorNodes(ctx sdk.Context, height int64) e
 			ctx.Logger().Error("fail to unmarshal node account", "error", err)
 			return fmt.Errorf("fail to unmarshal node account, %w", err)
 		}
-		// when we first start , we only care about these two status
+		// when THORNode first start , THORNode only care about these two status
 		switch na.Status {
 		case NodeReady:
 			readyNodes = append(readyNodes, na)

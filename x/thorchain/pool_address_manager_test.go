@@ -33,7 +33,7 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	c.Assert(err, IsNil)
 	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{pk1}
 	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
-	// no asset get moved , because we just opened window, however we should instruct signer to kick off key sign process
+	// no asset get moved , because THORNode just opened window, however THORNode should instruct signer to kick off key sign process
 	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 1)
 	poolBNB := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.BNB", c)
 	poolTCan := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.TCAN-014", c)
@@ -69,7 +69,7 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 		newPoolAddr, err := newChainPoolAddr.GetAddress()
 		c.Assert(err, IsNil)
 		c.Assert(item.ToAddress.String(), Equals, newPoolAddr.String())
-		// given we on
+		// given THORNode on
 		if item.Coin.Asset.Equals(poolBNB.Asset) {
 			// there are four coins , BNB,TCAN-014,LOK-3C0 and RUNE
 			c.Assert(item.Coin.Amount.Uint64(), Equals, poolBNB.BalanceAsset.Uint64()-uint64(poolGas))

@@ -18,7 +18,7 @@ const (
 	Reverted   status = "reverted"
 )
 
-// Meant to track if we have processed a specific tx
+// Meant to track if THORNode have processed a specific tx
 type TxIn struct {
 	Status             status           `json:"status"`
 	OutHashes          common.TxIDs     `json:"out_hashes"` // completed chain tx hash. This is a slice to track if we've "double spent" an input
@@ -67,9 +67,9 @@ func (tx TxIn) Valid() error {
 	if err := tx.Gas.IsValid(); err != nil {
 		return err
 	}
-	// ideally memo should not be empty, we check it here, but if we check it
+	// ideally memo should not be empty, THORNode check it here, but if THORNode check it
 	// empty here, then the tx will be rejected by thorchain given that , we
-	// are not going to refund the transaction, thus we will allow TxIn has
+	// are not going to refund the transaction, thus THORNode will allow TxIn has
 	// empty to get into thorchain. and let thorchain to refund customer
 	if tx.BlockHeight.IsZero() {
 		return errors.New("block height can't be zero")

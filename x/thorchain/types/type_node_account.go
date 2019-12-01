@@ -17,8 +17,8 @@ type NodeStatus uint8
 
 // As soon as user donate a certain amount of asset(defined later)
 // their node adddress will be whitelisted
-// once we discover their observer had send tx in to thorchain , then their status will be standby
-// once we rotate them in , then they will be active
+// once THORNode discover their observer had send tx in to thorchain , then their status will be standby
+// once THORNode rotate them in , then they will be active
 const (
 	Unknown NodeStatus = iota
 	WhiteListed

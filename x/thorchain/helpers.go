@@ -6,7 +6,7 @@ import (
 )
 
 func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) {
-	// If we recognize one of the coins, and therefore able to refund
+	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Coins {
 		pool := keeper.GetPool(ctx, coin.Asset)
@@ -22,7 +22,7 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 			continue
 		}
 
-		// Since we have assets, we don't have a pool for, we don't know how to
+		// Since THORNode have assets, THORNode don't have a pool for, THORNode don't know how to
 		// refund and withhold for fees. Instead, we'll create a pool with the
 		// amount of assets, and associate them with no stakers (meaning up for
 		// grabs). This could be like an airdrop scenario, for example.

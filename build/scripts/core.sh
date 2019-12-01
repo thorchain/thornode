@@ -59,7 +59,7 @@ peer_list () {
 gen_bnb_address () {
     if [ ! -f ~/.signer/private_key.txt ]; then
         echo "GENERATING BNB ADDRESSES"
-        # because the generate command can get API rate limited, we may need to retry
+        # because the generate command can get API rate limited, THORNode may need to retry
         n=0
         until [ $n -ge 60 ]; do
             generate > /tmp/bnb && break

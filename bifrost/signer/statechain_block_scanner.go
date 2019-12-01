@@ -107,7 +107,7 @@ func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
 				b.m.GetCounter(metrics.BlockNoTxOut).Inc()
 				return nil
 			}
-			// TODO here we will need to dispatch to different chain processor
+			// TODO here THORNode will need to dispatch to different chain processor
 			b.txOutChan <- out
 		}
 	}
@@ -135,7 +135,7 @@ func (b *StateChainBlockScan) processBlocks(idx int) {
 				}
 				b.errCounter.WithLabelValues("fail_search_tx", strconv.FormatInt(block, 10))
 				b.logger.Error().Err(err).Int64("height", block).Msg("fail to search tx in block")
-				// we will have a retry go routine to check it.
+				// THORNode will have a retry go routine to check it.
 				continue
 			}
 			// set a block as success

@@ -11,13 +11,13 @@ TODO: Docker documentation
 This documentation explains how to setup a Linux server as a THORNode
 manually.
 
-Before we do anything, lets get the source code and build our binaries.
+Before THORNode do anything, lets get the source code and build our binaries.
 ```bash
 git clone git@gitlab.com:thorchain/thornode.git
 make install
 ```
 
-Next, we will need to setup the Binance full node....
+Next, THORNode will need to setup the Binance full node....
 #### Binance
 Binance themselves provide documentation. Please follow their
 [documentation](https://docs.binance.org/fullnode.html).
@@ -49,7 +49,7 @@ thorcli config indent true
 thorcli config trust-node true
 ```
 
-Next, we need to get the genesis file of Thorchain.
+Next, THORNode need to get the genesis file of Thorchain.
 For testnet, run...
 ```bash
 curl

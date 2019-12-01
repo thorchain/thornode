@@ -36,7 +36,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	// Dynamically create endpoints of all funcs in querier.go
 	for _, q := range query.Queries {
 		endpoint := q.Endpoint(storeName, restURLParam, restURLParam2)
-		if endpoint != "" { // don't setup REST endpoint if we have no endpoint
+		if endpoint != "" { // don't setup REST endpoint if THORNode have no endpoint
 			r.Handle(
 				endpoint,
 				tollbooth.LimitFuncHandler(

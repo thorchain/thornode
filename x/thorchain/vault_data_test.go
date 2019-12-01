@@ -56,7 +56,7 @@ func (s VaultSuite) TestCalcPoolRewards(c *C) {
 	c.Check(amts[1].Equal(sdk.NewUint(215175728)), Equals, true, Commentf("%d", amts[1].Uint64()))
 	c.Check(amts[0].Add(amts[1]).Equal(totalRewards), Equals, true, Commentf("%d", amts[0].Add(amts[1]).Uint64()))
 
-	// Check that we don't error when there are no rewards
+	// Check that THORNode don't error when there are no rewards
 	p1 = NewPool()
 	p1.BalanceRune = sdk.NewUint(114.265 * common.One)
 	p2 = NewPool()

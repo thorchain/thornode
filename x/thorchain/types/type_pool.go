@@ -75,7 +75,7 @@ func GetPoolStatus(ps string) PoolStatus {
 }
 
 // Pool is a struct that contains all the metadata of a pooldata
-// This is the structure we will saved to the key value store
+// This is the structure THORNode will saved to the key value store
 type Pool struct {
 	BalanceRune         sdk.Uint       `json:"balance_rune"`           // how many RUNE in the pool
 	BalanceAsset        sdk.Uint       `json:"balance_asset"`          // how many asset in the pool
