@@ -1,7 +1,7 @@
 package thorchain
 
 import (
-	"fmt"
+	"strings"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -10,27 +10,17 @@ import (
 )
 
 type KeeperNodeAccount interface {
-	TotalNodeAccounts(ctx sdk.Context) (count int)
 	TotalActiveNodeAccount(ctx sdk.Context) (int, error)
 	ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error)
 	ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error)
 	ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error)
 	GetLowestActiveVersion(ctx sdk.Context) semver.Version
-	IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool
 	GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error)
 	GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error)
 	GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error)
 	SetNodeAccount(ctx sdk.Context, na NodeAccount)
-	SlashNodeAccountBond(ctx sdk.Context, na *NodeAccount, slash sdk.Uint)
-	SlashNodeAccountRewards(ctx sdk.Context, na *NodeAccount, pts int64)
 	EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error
 	GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator
-}
-
-// TotalNodeAccounts counts the number of trust accounts
-func (k KVStore) TotalNodeAccounts(ctx sdk.Context) (count int) {
-	nodes, _ := k.ListActiveNodeAccounts(ctx)
-	return len(nodes)
 }
 
 // TotalActiveNodeAccount count the number of active node account
@@ -47,7 +37,7 @@ func (k KVStore) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	for ; naIterator.Valid(); naIterator.Next() {
 		var na NodeAccount
 		if err := k.cdc.UnmarshalBinaryBare(naIterator.Value(), &na); nil != err {
-			return nil, errors.Wrap(err, "fail to unmarshal node account")
+			return nodeAccounts, dbError(ctx, "Unmarshal: node account", err)
 		}
 		nodeAccounts = append(nodeAccounts, na)
 	}
@@ -60,7 +50,7 @@ func (k KVStore) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (N
 	nodeAccounts := make(NodeAccounts, 0)
 	allNodeAccounts, err := k.ListNodeAccounts(ctx)
 	if nil != err {
-		return nodeAccounts, fmt.Errorf("fail to get all node accounts, %w", err)
+		return nodeAccounts, err
 	}
 	for _, item := range allNodeAccounts {
 		if item.Status == status {
@@ -90,14 +80,6 @@ func (k KVStore) GetLowestActiveVersion(ctx sdk.Context) semver.Version {
 	return semver.Version{}
 }
 
-// IsWhitelistedAccount check whether the given account is white listed
-func (k KVStore) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool {
-	ctx.Logger().Debug("IsWhitelistedAccount", "account address", addr.String())
-	store := ctx.KVStore(k.storeKey)
-	key := k.GetKey(ctx, prefixNodeAccount, addr.String())
-	return store.Has([]byte(key))
-}
-
 // GetNodeAccount try to get node account with the given address from db
 func (k KVStore) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
 	ctx.Logger().Debug("GetNodeAccount", "node account", addr.String())
@@ -106,7 +88,7 @@ func (k KVStore) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccou
 	payload := store.Get([]byte(key))
 	var na NodeAccount
 	if err := k.cdc.UnmarshalBinaryBare(payload, &na); nil != err {
-		return na, errors.Wrap(err, "fail to unmarshal node account")
+		return na, dbError(ctx, "Unmarshal: node account", err)
 	}
 	return na, nil
 }
@@ -126,7 +108,7 @@ func (k KVStore) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Addres
 	var na NodeAccount
 	nodeAccounts, err := k.ListNodeAccounts(ctx)
 	if nil != err {
-		return na, fmt.Errorf("fail to get all node accounts, %w", err)
+		return na, err
 	}
 	for _, item := range nodeAccounts {
 		if item.BondAddress.Equals(addr) {
@@ -189,40 +171,25 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	}
 }
 
-// Slash the bond of a node account
-// NOTE: Should be careful not to slash too much, and have their Yggdrasil
-// vault have more in funds than their bond. This could trigger them to have a
-// untimely exit, stealing an amount of funds from stakers.
-func (k KVStore) SlashNodeAccountBond(ctx sdk.Context, na *NodeAccount, slash sdk.Uint) {
-	if slash.GT(na.Bond) {
-		na.Bond = sdk.ZeroUint()
-	} else {
-		na.Bond = common.SafeSub(na.Bond, slash)
-	}
-	k.SetNodeAccount(ctx, *na)
-}
-
-// Slash the rewards of a node account
-// NOTE: if THORNode slash their rewards so much, they may do an orderly exit and
-// rotate out of the active vault, wait in line to rejoin later.
-func (k KVStore) SlashNodeAccountRewards(ctx sdk.Context, na *NodeAccount, pts int64) {
-	na.SlashPoints += pts
-	k.SetNodeAccount(ctx, *na)
-}
-
 func (k KVStore) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
 	iter := k.GetNodeAccountIterator(ctx)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var na NodeAccount
 		if err := k.cdc.UnmarshalBinaryBare(iter.Value(), &na); nil != err {
-			return errors.Wrap(err, "fail to unmarshal node account")
+			return dbError(ctx, "Unmarshal: node account", err)
+		}
+		if strings.EqualFold("", consensusPubKey) {
+			return dbError(ctx, "", errors.New("Validator Consensus Key cannot be empty"))
 		}
 		if na.ValidatorConsPubKey == consensusPubKey {
-			return errors.Errorf("%s already exist", na.ValidatorConsPubKey)
+			return dbError(ctx, "", errors.Errorf("%s already exist", na.ValidatorConsPubKey))
+		}
+		if pubKeys.Equals(common.EmptyPubKeys) {
+			return dbError(ctx, "", errors.New("PubKeys cannot be empty"))
 		}
 		if na.NodePubKey.Equals(pubKeys) {
-			return errors.Errorf("%s already exist", pubKeys)
+			return dbError(ctx, "", errors.Errorf("%s already exist", pubKeys))
 		}
 	}
 
