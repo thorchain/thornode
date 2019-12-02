@@ -83,24 +83,3 @@ func (s VaultSuite) TestCalcPoolDeficit(c *C) {
 	c.Check(amt1.Equal(sdk.NewUint(280)), Equals, true, Commentf("%d", amt1.Uint64()))
 	c.Check(amt2.Equal(sdk.NewUint(840)), Equals, true, Commentf("%d", amt2.Uint64()))
 }
-
-func (s VaultSuite) TestCalcNodeRewards(c *C) {
-	blocks := sdk.NewUint(5)
-	totalUnits := sdk.NewUint(100)
-	totalReward := sdk.NewUint(3000)
-	reward := calcNodeRewards(blocks, totalUnits, totalReward)
-	c.Check(reward.Uint64(), Equals, uint64(150))
-
-	blocks = sdk.NewUint(78)
-	totalUnits = sdk.NewUint(7357)
-	totalReward = sdk.NewUint(275.357 * common.One)
-	reward = calcNodeRewards(blocks, totalUnits, totalReward)
-	c.Check(reward.Uint64(), Equals, uint64(291937556))
-
-	// check for no rewards
-	blocks = sdk.NewUint(78)
-	totalUnits = sdk.NewUint(7357)
-	totalReward = sdk.ZeroUint()
-	reward = calcNodeRewards(blocks, totalUnits, totalReward)
-	c.Check(reward.Uint64(), Equals, uint64(0))
-}

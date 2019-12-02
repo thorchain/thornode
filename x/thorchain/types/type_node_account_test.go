@@ -195,5 +195,5 @@ func (s *NodeAccountSuite) TestCalcNodeRewards(c *C) {
 		SlashPoints:       0,
 	}
 	blocks = na.CalcBondUnits(50)
-	c.Check(blocks.Uint64(), Equals, uint64(0))
+	c.Check(blocks.Uint64(), Equals, uint64(0), Commentf("%d", blocks.Uint64()))
 }

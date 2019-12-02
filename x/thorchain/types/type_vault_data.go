@@ -19,3 +19,8 @@ func NewVaultData() VaultData {
 		TotalReserve:   sdk.ZeroUint(),
 	}
 }
+
+// calculate node rewards
+func (v VaultData) CalcNodeRewards(nodeUnits sdk.Uint) sdk.Uint {
+	return common.GetShare(nodeUnits, v.TotalBondUnits, v.BondRewardRune)
+}
