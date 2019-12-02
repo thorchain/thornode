@@ -36,8 +36,10 @@ echo "$NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $ADDRESS" > /tmp/shared/no
 
 # write rotate block height as config file
 if [ "$ROTATE_BLOCK_HEIGHT" != "0" ]; then
-    echo "$KEY $VALUE $NODE_ADDRESS" > /tmp/shared/config_$NODE_ADDRESS.json
+    echo "$KEY $VALUE $NODE_ADDRESS" > /tmp/shared/config_rotate_block_height.json
 fi
+# enable pools by default
+echo "DefaultPoolStatus Enabled $NODE_ADDRESS" > /tmp/shared/config_pool_status.json
 
 # wait until THORNode have the correct number of nodes in our directory before continuing
 while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODES" ]; do

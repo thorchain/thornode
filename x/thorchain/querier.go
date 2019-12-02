@@ -60,12 +60,24 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 			return queryPoolAddresses(ctx, path[1:], req, keeper, poolAddressMgr)
 		case q.QueryValidators.Key:
 			return queryValidators(ctx, keeper, validatorMgr)
+		case q.QueryVaultData.Key:
+			return queryVaultData(ctx, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown thorchain query endpoint: %s", path[0]),
 			)
 		}
 	}
+}
+
+func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
+	data := keeper.GetVaultData(ctx)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), data)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal vault data to json", err)
+		return nil, sdk.ErrInternal("fail to marshal response to json")
+	}
+	return res, nil
 }
 
 func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorManager) ([]byte, sdk.Error) {

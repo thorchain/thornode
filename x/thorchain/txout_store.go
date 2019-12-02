@@ -119,11 +119,11 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			} else {
 				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
 			}
-			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)     // Deduct Asset fee
-			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee) // Add Asset fee to Pool
-			pool.BalanceRune = pool.BalanceRune.Add(runeFee)    // Deduct Rune from Pool
-			keeper.SetPool(ctx, pool)                           // Set Pool
-			keeper.AddFeeToReserve(ctx, runeFee)                // Add to reserve
+			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)  // Deduct Asset fee
+			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool
+			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
+			keeper.SetPool(ctx, pool)                                    // Set Pool
+			keeper.AddFeeToReserve(ctx, runeFee)                         // Add to reserve
 		}
 	}
 

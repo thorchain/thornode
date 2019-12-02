@@ -5,13 +5,13 @@ go 1.13
 require (
 	github.com/binance-chain/go-sdk v1.1.3
 	github.com/blang/semver v3.5.1+incompatible
-	github.com/btcsuite/btcd v0.0.0-20190115013929-ed77733ec07d
 	github.com/btcsuite/btcutil v0.0.0-20190425235716-9e5f4b9a998d
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/cosmos-sdk v0.37.3
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/go-retryablehttp v0.6.1
+	github.com/logrusorgru/aurora v0.0.0-20191116043053-66b7ad493a23
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/client_golang v1.2.1

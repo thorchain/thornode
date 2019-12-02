@@ -128,19 +128,6 @@ describe "API Tests" do
       expect(resp.body['stakers']).to eq(nil), resp.body.inspect
     end
 
-    it "should accept zombie coins" do 
-      coins = [
-        {'asset': {'chain': 'BNB', 'symbol': 'ZOMBIE-ZZZ', 'ticker': 'ZOMBIE'}, "amount": "349700000"},
-      ]
-      tx = makeTx(memo: "", coins: coins)
-      resp = processTx(tx)
-      expect(resp.code).to eq("200"), resp.body.inspect
-
-      resp = get("/pool/ZOMBIE-ZZZ")
-      expect(resp.code).to eq("200"), resp.body.inspect
-      expect(resp.body['balance_asset']).to eq("349700000"), resp.body.inspect
-    end
-
   end
 
   context "Swap" do
