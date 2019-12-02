@@ -37,20 +37,16 @@ func (k KVStoreDummy) SetLastChainHeight(ctx sdk.Context, chain common.Chain, he
 func (k KVStoreDummy) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
-func (k KVStoreDummy) GetPool(ctx sdk.Context, asset common.Asset) Pool { return Pool{} }
-func (k KVStoreDummy) SetPool(ctx sdk.Context, pool Pool)               {}
-func (k KVStoreDummy) GetPoolBalances(ctx sdk.Context, asset, asset2 common.Asset) (sdk.Uint, sdk.Uint) {
-	return sdk.ZeroUint(), sdk.ZeroUint()
+func (k KVStoreDummy) GetPoolIterator(ctx sdk.Context) sdk.Iterator {
+	return nil
 }
-func (k KVStoreDummy) SetPoolData(ctx sdk.Context, asset common.Asset, ps PoolStatus) {}
-func (k KVStoreDummy) GetPoolDataIterator(ctx sdk.Context) sdk.Iterator               { return nil }
-func (k KVStoreDummy) EnableAPool(ctx sdk.Context)                                    {}
-func (k KVStoreDummy) PoolExist(ctx sdk.Context, asset common.Asset) bool             { return false }
-func (k KVStoreDummy) GetPoolIndex(ctx sdk.Context) (PoolIndex, error)                { return nil, kaboom }
-func (k KVStoreDummy) SetPoolIndex(ctx sdk.Context, pi PoolIndex)                     {}
-func (k KVStoreDummy) AddToPoolIndex(ctx sdk.Context, asset common.Asset) error       { return kaboom }
-func (k KVStoreDummy) RemoveFromPoolIndex(ctx sdk.Context, asset common.Asset) error  { return kaboom }
-func (k KVStoreDummy) GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator             { return nil }
+func (k KVStoreDummy) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
+	return Pool{}, kaboom
+}
+func (k KVStoreDummy) SetPool(ctx sdk.Context, pool Pool) error           { return kaboom }
+func (k KVStoreDummy) EnableAPool(ctx sdk.Context)                        {}
+func (k KVStoreDummy) PoolExist(ctx sdk.Context, asset common.Asset) bool { return false }
+func (k KVStoreDummy) GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator { return nil }
 func (k KVStoreDummy) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {
 	return PoolStaker{}, kaboom
 }

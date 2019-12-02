@@ -151,7 +151,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 		// nothing to move
 		return sdk.ZeroUint(), nil
 	}
-	iter := k.GetPoolDataIterator(ctx)
+	iter := k.GetPoolIterator(ctx)
 	defer iter.Close()
 	runeTotal := sdk.ZeroUint()
 	poolRefundGas := k.GetAdminConfigInt64(ctx, PoolRefundGasKey, PoolRefundGasKey.Default(), sdk.AccAddress{})
@@ -200,7 +200,7 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, ru
 		// nothing to move
 		return nil
 	}
-	iter := k.GetPoolDataIterator(ctx)
+	iter := k.GetPoolIterator(ctx)
 	defer iter.Close()
 
 	poolRefundGas := k.GetAdminConfigInt64(ctx, PoolRefundGasKey, PoolRefundGasKey.Default(), sdk.AccAddress{})

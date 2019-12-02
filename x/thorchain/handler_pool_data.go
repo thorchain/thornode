@@ -64,10 +64,13 @@ func (h PoolDataHandler) Handle(ctx sdk.Context, msg MsgSetPoolData, version sem
 
 // Handle a message to set pooldata
 func (h PoolDataHandler) HandleV1(ctx sdk.Context, msg MsgSetPoolData) error {
-	h.keeper.SetPoolData(
-		ctx,
-		msg.Asset,
-		msg.Status,
-	)
+	pool, err := h.keeper.GetPool(ctx, msg.Asset)
+	if err != nil {
+		return err
+	}
+
+	pool.Status = msg.Status
+	pool.Asset = msg.Asset
+	h.keeper.SetPool(ctx, pool)
 	return nil
 }

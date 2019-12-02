@@ -53,13 +53,12 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 
 	// First get active pools and total staked Rune
 	totalRune := sdk.ZeroUint()
-	assets, err := k.GetPoolIndex(ctx)
-	if nil != err {
-		return fmt.Errorf("fail to get pool index: %w", err)
-	}
-	var pools []Pool
-	for _, asset := range assets {
-		pool := k.GetPool(ctx, asset)
+	var pools Pools
+	iterator := k.GetPoolIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var pool Pool
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
 		if pool.IsEnabled() && !pool.BalanceRune.IsZero() {
 			totalRune = totalRune.Add(pool.BalanceRune)
 			pools = append(pools, pool)
@@ -68,7 +67,10 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 
 	// First subsidise the gas that was consumed from reserves, any
 	// reserves we take, minus from the gas we owe.
-	vault.TotalReserve, vault.Gas = subtractGas(ctx, k, vault.TotalReserve, vault.Gas)
+	vault.TotalReserve, vault.Gas, err = subtractGas(ctx, k, vault.TotalReserve, vault.Gas)
+	if err != nil {
+		return err
+	}
 
 	// Then get fees and rewards
 	totalLiquidityFees, err := k.GetTotalLiquidityFees(ctx, currentHeight)
@@ -77,12 +79,22 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 	}
 	var totalFees sdk.Uint
 	// If we have any remaining gas to pay, take from total liquidity fees
-	totalFees, vault.Gas = subtractGas(ctx, k, totalLiquidityFees, vault.Gas)
+	totalFees, vault.Gas, err = subtractGas(ctx, k, totalFees, vault.Gas)
+	if err != nil {
+		return err
+	}
 
 	// if we continue to have remaining gas to pay off, take from the pools 😖
 	for i, gas := range vault.Gas {
-		if gas.Amount.IsZero() {
-			continue
+		if !gas.Amount.IsZero() {
+			pool, err := k.GetPool(ctx, gas.Asset)
+			if err != nil {
+				return err
+			}
+
+			vault.Gas[i].Amount = common.SafeSub(vault.Gas[i].Amount, pool.BalanceAsset)
+			pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
+			k.SetPool(ctx, pool)
 		}
 		pool := k.GetPool(ctx, gas.Asset)
 		vault.Gas[i].Amount = common.SafeSub(vault.Gas[i].Amount, pool.BalanceAsset)
@@ -92,7 +104,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 
 	// If no Rune is staked, then don't give out block rewards.
 	if totalRune.IsZero() {
-		return nil
+		return nil // If no Rune is staked, then don't give out block rewards.
 	}
 
 	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees)
@@ -112,7 +124,10 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 	if !totalPoolRewards.IsZero() { // If Pool Rewards to hand out
 		// First subsidise the gas that was consumed
 		for _, coin := range vault.Gas {
-			pool := k.GetPool(ctx, coin.Asset)
+			pool, err := k.GetPool(ctx, coin.Asset)
+			if err != nil {
+				return err
+			}
 			runeGas := pool.AssetValueInRune(coin.Amount)
 			pool.BalanceRune = pool.BalanceRune.Add(runeGas)
 			k.SetPool(ctx, pool)
@@ -147,14 +162,22 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 	}
 	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i))) // Add 1 unit for each active Node
 
-	return k.SetVaultData(ctx, vault)
+	k.SetVaultData(ctx, vault)
+
+	return nil
 }
 
-// subtractGas subtract gas worth rune from vault
-func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (sdk.Uint, common.Gas) {
-	for i, coin := range gas {
-		if coin.Amount.IsZero() {
-			continue
+// remove gas
+func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gases common.Gas) (sdk.Uint, common.Gas, error) {
+	for i, gas := range gases {
+		if !gas.Amount.IsZero() {
+			pool, err := keeper.GetPool(ctx, gas.Asset)
+			if err != nil {
+				return sdk.ZeroUint(), nil, err
+			}
+			runeGas := pool.AssetValueInRune(gas.Amount)
+			gases[i].Amount = common.SafeSub(gases[i].Amount, gas.Amount)
+			val = common.SafeSub(val, runeGas)
 		}
 		pool := keeper.GetPool(ctx, coin.Asset)
 		runeGas := pool.AssetValueInRune(coin.Amount)
@@ -162,5 +185,5 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (
 		val = common.SafeSub(val, runeGas)
 
 	}
-	return val, gas
+	return val, gases, nil
 }

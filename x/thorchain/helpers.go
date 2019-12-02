@@ -8,11 +8,14 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) {
+func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Coins {
-		pool := keeper.GetPool(ctx, coin.Asset)
+		pool, err := keeper.GetPool(ctx, coin.Asset)
+		if err != nil {
+			return err
+		}
 		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
 			toi := &TxOutItem{
 				Chain:       chain,
@@ -27,6 +30,7 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 
 		// Zombie coins are just dropped.
 	}
+	return nil
 }
 
 func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut *TxOutStore) {

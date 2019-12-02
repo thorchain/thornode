@@ -30,14 +30,17 @@ func (p *MockInMemoryPoolStorage) PoolExist(ctx sdk.Context, asset common.Asset)
 	_, ok := p.store[asset.String()]
 	return ok
 }
-func (p *MockInMemoryPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) Pool {
+
+func (p *MockInMemoryPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
 	if p, ok := p.store[asset.String()]; ok {
-		return p.(Pool)
+		return p.(Pool), nil
 	}
-	return types.NewPool()
+	return types.NewPool(), nil
 }
-func (p *MockInMemoryPoolStorage) SetPool(ctx sdk.Context, ps Pool) {
+
+func (p *MockInMemoryPoolStorage) SetPool(ctx sdk.Context, ps Pool) error {
 	p.store[ps.Asset.String()] = ps
+	return nil
 }
 
 func (p *MockInMemoryPoolStorage) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fs sdk.Uint) error {
