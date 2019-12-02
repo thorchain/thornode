@@ -19,7 +19,6 @@ PG_DB="${PG_DB:=midgard}"
 
 mkdir -p /etc/midgard
 
-# Generate observer config file
 echo "{
   "listen_port": $PORT,
   "is_testnet" : $ISTESTNET,
