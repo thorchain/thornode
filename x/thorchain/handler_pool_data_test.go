@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -26,7 +24,6 @@ func (k *TestPoolKeeper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, err
 }
 
 func (k *TestPoolKeeper) SetPool(ctx sdk.Context, pool Pool) error {
-	fmt.Printf("Setting Pool: %+v\n", pool)
 	k.pool = pool
 	return nil
 }
