@@ -36,6 +36,12 @@ run-standalone: clean
 stop-standalone: clean
 	docker-compose -f standalone.yml down
 
+run-genesisFullStack: clean
+	docker-compose -f genesis.yml -f genesisFullStack.yml up --force-recreate --remove-orphans -d
+
+stop-genesisFullStack: clean
+	docker-compose -f genesis.yml -f genesisFullStack.yml down
+
 run-genesisWithMockBinance: clean
 	docker-compose -f genesis.yml -f genesisWithMockBinance.yml up --force-recreate --remove-orphans -d
 
