@@ -109,3 +109,32 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 	keeper.SetLastEventID(ctx, lastEventID)
 	return nil
 }
+
+func enableNextPool(ctx sdk.Context, keeper Keeper) {
+	var pools []Pool
+	iterator := keeper.GetPoolIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var pool Pool
+		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		if pool.Status == PoolBootstrap {
+			pools = append(pools, pool)
+		}
+	}
+
+	if len(pools) > 0 {
+		pool := pools[0]
+		for _, p := range pools {
+			if pool.BalanceRune.LT(p.BalanceRune) {
+				pool = p
+			}
+		}
+		// ensure THORNode don't enable a pool that doesn't have any rune or assets
+		if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
+			return
+		}
+		fmt.Printf("Enabling %s\n", pool.Asset.String())
+		pool.Status = PoolEnabled
+		keeper.SetPool(ctx, pool)
+	}
+}

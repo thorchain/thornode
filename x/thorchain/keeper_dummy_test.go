@@ -44,7 +44,6 @@ func (k KVStoreDummy) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error)
 	return Pool{}, kaboom
 }
 func (k KVStoreDummy) SetPool(ctx sdk.Context, pool Pool) error           { return kaboom }
-func (k KVStoreDummy) EnableAPool(ctx sdk.Context)                        {}
 func (k KVStoreDummy) PoolExist(ctx sdk.Context, asset common.Asset) bool { return false }
 func (k KVStoreDummy) GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator { return nil }
 func (k KVStoreDummy) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {

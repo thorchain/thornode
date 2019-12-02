@@ -132,7 +132,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 
 	// Enable a pool every newPoolCycle
 	if ctx.BlockHeight()%constants.NewPoolCycle == 0 {
-		am.keeper.EnableAPool(ctx)
+		enableNextPool(ctx, am.keeper)
 	}
 
 	// Fill up Yggdrasil vaults

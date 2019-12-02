@@ -10,7 +10,6 @@ type KeeperPool interface {
 	GetPoolIterator(ctx sdk.Context) sdk.Iterator
 	GetPool(ctx sdk.Context, asset common.Asset) (Pool, error)
 	SetPool(ctx sdk.Context, pool Pool) error
-	EnableAPool(ctx sdk.Context)
 	PoolExist(ctx sdk.Context, asset common.Asset) bool
 }
 
@@ -50,37 +49,6 @@ func (k KVStore) SetPool(ctx sdk.Context, pool Pool) error {
 	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
 	return nil
-}
-
-// Picks the most "deserving" pool (by most staked rune) to be enabled and
-// enables it
-func (k KVStore) EnableAPool(ctx sdk.Context) {
-	var pools []Pool
-	iterator := k.GetPoolIterator(ctx)
-	defer iterator.Close()
-	for ; iterator.Valid(); iterator.Next() {
-		var pool Pool
-		k.cdc.MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		if pool.Status == PoolBootstrap {
-			pools = append(pools, pool)
-		}
-	}
-
-	if len(pools) > 0 {
-		pool := pools[0]
-		for _, p := range pools {
-			if pool.BalanceRune.LT(p.BalanceRune) {
-				pool = p
-			}
-		}
-		// ensure THORNode don't enable a pool that doesn't have any rune or assets
-		if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
-			return
-		}
-		pool.Status = PoolEnabled
-		k.SetPool(ctx, pool)
-
-	}
 }
 
 // PoolExist check whether the given pool exist in the datastore
