@@ -24,9 +24,9 @@ func (mps MockPoolStorage) PoolExist(ctx sdk.Context, asset common.Asset) bool {
 	return true
 }
 
-func (mps MockPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) types.Pool {
+func (mps MockPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) (types.Pool, error) {
 	if asset.Equals(common.Asset{Chain: common.BNBChain, Symbol: "NOTEXIST", Ticker: "NOTEXIST"}) {
-		return types.Pool{}
+		return types.Pool{}, nil
 	} else {
 		return types.Pool{
 			BalanceRune:  sdk.NewUint(100).MulUint64(common.One),
@@ -34,11 +34,11 @@ func (mps MockPoolStorage) GetPool(ctx sdk.Context, asset common.Asset) types.Po
 			PoolUnits:    sdk.NewUint(100).MulUint64(common.One),
 			Status:       types.Enabled,
 			Asset:        asset,
-		}
+		}, nil
 	}
 }
 
-func (mps MockPoolStorage) SetPool(ctx sdk.Context, ps types.Pool) {}
+func (mps MockPoolStorage) SetPool(ctx sdk.Context, ps types.Pool) error { return nil }
 
 func (mps MockPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common.Address) (types.StakerPool, error) {
 	if strings.EqualFold(stakerID.String(), "NOTEXISTSTAKER") {

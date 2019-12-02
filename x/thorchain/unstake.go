@@ -36,7 +36,11 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	}
 
 	// here fBalance should be valid , because THORNode did the validation above
-	pool := keeper.GetPool(ctx, msg.Asset)
+	pool, err := keeper.GetPool(ctx, msg.Asset)
+	if err != nil {
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
+	}
+
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.Wrap(err, "can't find pool staker")

@@ -18,7 +18,6 @@ type txIndex struct {
 // GenesisState strcture that used to store the data THORNode put in genesis
 type GenesisState struct {
 	Pools            []Pool        `json:"pools"`
-	PoolIndex        PoolIndex     `json:"pool_index"`
 	PoolStakers      []PoolStaker  `json:"pool_stakers"`
 	StakerPools      []StakerPool  `json:"staker_pools"`
 	TxInVoters       []TxInVoter   `json:"txin_voters"`
@@ -106,10 +105,6 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		keeper.SetPool(ctx, record)
 	}
 
-	if data.PoolIndex != nil {
-		keeper.SetPoolIndex(ctx, data.PoolIndex)
-	}
-
 	for _, stake := range data.PoolStakers {
 		keeper.SetPoolStaker(ctx, stake.Asset, stake)
 	}
@@ -190,8 +185,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		adminConfigs = append(adminConfigs, config)
 	}
 
-	poolIndex, _ := k.GetPoolIndex(ctx)
-
 	var poolStakers []PoolStaker
 	iterator = k.GetPoolStakerIterator(ctx)
 	defer iterator.Close()
@@ -219,13 +212,13 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		nodeAccounts = append(nodeAccounts, na)
 	}
 
-	var poolRecords []Pool
-	iterator = k.GetPoolDataIterator(ctx)
+	var pools Pools
+	iterator = k.GetPoolIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
 		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		poolRecords = append(poolRecords, pool)
+		pools = append(pools, pool)
 	}
 
 	var votes []TxInVoter
@@ -272,8 +265,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	incomplete, _ := k.GetIncompleteEvents(ctx)
 
 	return GenesisState{
-		Pools:            poolRecords,
-		PoolIndex:        poolIndex,
+		Pools:            pools,
 		NodeAccounts:     nodeAccounts,
 		AdminConfigs:     adminConfigs,
 		LastEventID:      lastEventID,

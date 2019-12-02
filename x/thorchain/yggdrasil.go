@@ -23,13 +23,14 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 	}
 
 	// Gather list of all pools
-	assets, err := keeper.GetPoolIndex(ctx)
-	if err != nil {
-		return err
-	}
-	pools := make([]Pool, len(assets))
-	for i, asset := range assets {
-		pools[i] = keeper.GetPool(ctx, asset)
+
+	var pools Pools
+	iterator := keeper.GetPoolIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var pool Pool
+		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		pools = append(pools, pool)
 	}
 
 	for _, na := range nodeAccs {

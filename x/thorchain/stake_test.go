@@ -215,7 +215,8 @@ func (StakeSuite) TestStake(c *C) {
 	})
 	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txId)
 	c.Assert(err, IsNil)
-	p := ps.GetPool(ctx, common.BNBAsset)
+	p, err := ps.GetPool(ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
 
 	c.Check(p.PoolUnits.Equal(sdk.NewUint(200*common.One)), Equals, true)
 
@@ -238,7 +239,8 @@ func (StakeSuite) TestStake(c *C) {
 	stakerUnit, err = stake(ctx, ps, common.BTCAsset, sdk.ZeroUint(), sdk.NewUint(100*common.One), bnbAddress, btcAddress, txId)
 	c.Assert(err, IsNil)
 	c.Check(stakerUnit.IsZero(), Equals, false)
-	p = ps.GetPool(ctx, common.BTCAsset)
+	p, err = ps.GetPool(ctx, common.BTCAsset)
+	c.Assert(err, IsNil)
 	c.Check(p.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true, Commentf("%d", p.BalanceAsset.Uint64()))
 	c.Check(p.BalanceRune.Equal(sdk.NewUint(100*common.One)), Equals, true, Commentf("%d", p.BalanceRune.Uint64()))
 	c.Check(p.PoolUnits.Equal(sdk.NewUint(100*common.One)), Equals, true, Commentf("%d", p.PoolUnits.Uint64()))

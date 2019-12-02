@@ -118,7 +118,12 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 				ctx.Logger().Error("fail to add fee to reserve", err)
 			}
 		} else {
-			pool := keeper.GetPool(ctx, toi.Coin.Asset)                              // Get pool
+			pool, err := keeper.GetPool(ctx, toi.Coin.Asset) // Get pool
+			if err != nil {
+				// the error is already logged within kvstore
+				return
+			}
+
 			assetFee := pool.AssetValueInRune(sdk.NewUint(constants.TransactionFee)) // Get fee in Asset value
 			if toi.Coin.Amount.LTE(assetFee) {
 				assetFee = toi.Coin.Amount // Fee is the full amount
