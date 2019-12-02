@@ -61,7 +61,7 @@ seed: tools
 # -------------------------------- Smoke Test ---------------------------- #
 smoke-ci:
 	make -C build/docker run-standaloneWithMockBinance
-	STOP_ID=6 bsinner -a docker:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e ci -x
+	bsinner -a docker:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e ci -x
 # ------------------------------------------------------------------------ #
 
 

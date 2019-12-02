@@ -869,13 +869,14 @@ func (HandlerSuite) TestRefund(c *C) {
 	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, lokiAsset)
-	c.Assert(pool.BalanceAsset.Equal(sdk.NewUint(100*common.One)), Equals, true)
+	// pool should be zero since we drop coins we don't recognize on the floor
+	c.Assert(pool.BalanceAsset.Equal(sdk.ZeroUint()), Equals, true, Commentf("%d", pool.BalanceAsset.Uint64()))
 
-	// doing it a second time should add the assets again.
+	// doing it a second time should keep it at zero
 	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool = w.keeper.GetPool(w.ctx, lokiAsset)
-	c.Assert(pool.BalanceAsset.Equal(sdk.NewUint(200*common.One)), Equals, true)
+	c.Assert(pool.BalanceAsset.Equal(sdk.ZeroUint()), Equals, true)
 }
 
 func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {

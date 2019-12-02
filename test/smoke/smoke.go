@@ -14,6 +14,7 @@ import (
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/msg"
+	. "github.com/logrusorgru/aurora"
 
 	"gitlab.com/thorchain/thornode/test/smoke/types"
 )
@@ -30,13 +31,14 @@ type Smoke struct {
 	Thorchain    Thorchain
 	Keys         map[string]keys.KeyManager
 	SweepOnExit  bool
+	GenBalance   bool
 	FastFail     bool
 	Debug        bool
 	Results      types.Results
 }
 
 // NewSmoke : create a new Smoke instance.
-func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string, fastFail, debug bool) Smoke {
+func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string, genBal, fastFail, debug bool) Smoke {
 	balRaw, err := ioutil.ReadFile(bal)
 	if err != nil {
 		log.Fatal(err)
@@ -83,6 +85,7 @@ func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string,
 		FaucetKey:    faucetKey,
 		VaultKey:     vaultKey,
 		Keys:         keyMgr,
+		GenBalance:   genBal,
 		FastFail:     fastFail,
 		SweepOnExit:  sweep,
 		Debug:        debug,
@@ -139,9 +142,9 @@ func (s *Smoke) Summarize() {
 		}
 	}
 
-	prefix := "Success"
+	prefix := Green("Pass")
 	if failed > 0 {
-		prefix = "Failed"
+		prefix = Red("Fail")
 	}
 
 	log.Printf("%s %d/%d correct", prefix, success, success+failed)
@@ -239,12 +242,15 @@ func (s *Smoke) GetCurrentBalances() types.BalancesConfig {
 }
 
 // Wait for a block on thorchain
-func (s *Smoke) WaitBlocks(i int) {
+func (s *Smoke) WaitBlocks(count int) {
+	if count == 0 {
+		return
+	}
 	// Wait for the thorchain to process a block
 	thorchainHeight := s.Thorchain.GetHeight()
 	for {
 		newHeight := s.Thorchain.GetHeight()
-		if thorchainHeight+i <= newHeight {
+		if thorchainHeight+count <= newHeight {
 			return
 		}
 	}
@@ -260,7 +266,7 @@ func (s *Smoke) Run() bool {
 	}
 
 	if err := s.Seed(); err != nil {
-		log.Fatalf("Send Tx failure: %s", err)
+		log.Fatalf("Send seed Tx failure: %s", err)
 	}
 
 	stopID := int64(0)
@@ -271,6 +277,9 @@ func (s *Smoke) Run() bool {
 			stopID = 0
 		}
 	}
+
+	obtainedBalances := make(types.BalancesConfigs, 0)
+	obtainedBalances = append(obtainedBalances, s.Balances.GetByTx(0))
 
 	for _, txn := range s.Transactions {
 
@@ -285,14 +294,19 @@ func (s *Smoke) Run() bool {
 			log.Fatalf("Send Tx failure: %s", err)
 		}
 
-		if txn.Memo != "SEED" {
-			// Wait for the thorchain to process a block
-			s.WaitBlocks(2)
-		}
-
 		expectedBal := s.Balances.GetByTx(txn.Tx)
+
+		// Wait for the thorchain to process a block
+		blocks := 0 // default to none
+		if expectedBal.Out >= 1 {
+			blocks = 2
+		}
+		s.WaitBlocks(blocks)
+
 		obtainedBal := s.GetCurrentBalances()
 		obtainedBal.Tx = txn.Tx
+		obtainedBal.Out = expectedBal.Out
+		obtainedBalances = append(obtainedBalances, obtainedBal)
 
 		// Compare expected vs obtained balances
 		ok, offender, ob, ex := obtainedBal.Equals(expectedBal)
@@ -300,16 +314,30 @@ func (s *Smoke) Run() bool {
 		s.Results = append(s.Results, result)
 
 		if !result.Success {
-			fmt.Printf("Fail ... (Tx %d)\n", result.Transaction.Tx)
+			fmt.Printf("%s ... (Tx %d)\n", Red("Fail"), result.Transaction.Tx)
 			fmt.Printf("\tTransaction: %+v\n", result.Transaction)
 			fmt.Printf("\tObtained: %s %+v\n", offender, ob)
 			fmt.Printf("\tExpected: %s %+v\n", offender, ex)
-			if s.FastFail {
+			if s.FastFail && !s.GenBalance {
 				return false
 			}
 		} else {
-			fmt.Printf("Success ... (Tx %d)\n", result.Transaction.Tx)
+			fmt.Printf("%s ... (Tx %d)\n", Green("Pass"), result.Transaction.Tx)
 		}
+	}
+
+	if s.GenBalance {
+		// Save obtained balances
+		file, _ := json.MarshalIndent(obtainedBalances, "", "  ")
+		_ = ioutil.WriteFile("obtained_balances.json", file, 0644)
+
+		// Save exported obtained balances (this is for google spreadsheet importing)
+		generatedBalances := make([]types.BalanceExport, len(obtainedBalances))
+		for i, bal := range obtainedBalances {
+			generatedBalances[i] = bal.Export()
+		}
+		file, _ = json.MarshalIndent(generatedBalances, "", "  ")
+		_ = ioutil.WriteFile("exported_balances.json", file, 0644)
 	}
 
 	if s.SweepOnExit {
