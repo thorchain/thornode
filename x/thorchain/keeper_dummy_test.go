@@ -60,7 +60,6 @@ func (k KVStoreDummy) GetStakerPool(ctx sdk.Context, stakerID common.Address) (S
 	return StakerPool{}, kaboom
 }
 func (k KVStoreDummy) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool) {}
-func (k KVStoreDummy) TotalNodeAccounts(ctx sdk.Context) int                                 { return 0 }
 func (k KVStoreDummy) TotalActiveNodeAccount(ctx sdk.Context) (int, error)                   { return 0, kaboom }
 func (k KVStoreDummy) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error)                { return nil, kaboom }
 func (k KVStoreDummy) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error) {
@@ -69,8 +68,7 @@ func (k KVStoreDummy) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatu
 func (k KVStoreDummy) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	return nil, kaboom
 }
-func (k KVStoreDummy) GetLowestActiveVersion(ctx sdk.Context) semver.Version       { return semver.Version{} }
-func (k KVStoreDummy) IsWhitelistedNode(ctx sdk.Context, addr sdk.AccAddress) bool { return false }
+func (k KVStoreDummy) GetLowestActiveVersion(ctx sdk.Context) semver.Version { return semver.Version{} }
 func (k KVStoreDummy) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
@@ -80,9 +78,7 @@ func (k KVStoreDummy) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) 
 func (k KVStoreDummy) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
-func (k KVStoreDummy) SetNodeAccount(ctx sdk.Context, na NodeAccount)                        {}
-func (k KVStoreDummy) SlashNodeAccountBond(ctx sdk.Context, na *NodeAccount, slash sdk.Uint) {}
-func (k KVStoreDummy) SlashNodeAccountRewards(ctx sdk.Context, na *NodeAccount, pts int64)   {}
+func (k KVStoreDummy) SetNodeAccount(ctx sdk.Context, na NodeAccount) {}
 func (k KVStoreDummy) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
 	return kaboom
 }
