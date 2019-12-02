@@ -8,11 +8,6 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-// calculate node rewards
-func calcNodeRewards(nodeUnits, totalUnits, totalRuneReward sdk.Uint) sdk.Uint {
-	return common.GetShare(nodeUnits, totalUnits, totalRuneReward)
-}
-
 // Calculate pool rewards
 func calcPoolRewards(totalPoolRewards, totalStakedRune sdk.Uint, pools []Pool) []sdk.Uint {
 	var amts []sdk.Uint
