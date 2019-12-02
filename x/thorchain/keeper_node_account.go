@@ -134,14 +134,14 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	} else {
 		if na.ActiveBlockHeight > 0 {
 
-			// The na seems to have become a non active na. Therefore, lets
-			// give them their bond rewards.
+			// The node account seems to have become a non active node account.
+			// Therefore, lets give them their bond rewards.
 			vault := k.GetVaultData(ctx)
 
-			// Find number of blocks they have been active for
+			// Find number of blocks they have been an active node
 			totalActiveBlocks := ctx.BlockHeight() - na.ActiveBlockHeight
 
-			// find number of blocks they were active (total active blocks - slash points)
+			// find number of blocks they were well behaved (ie active - slash points)
 			earnedBlocks := na.CalcBondUnits(ctx.BlockHeight())
 
 			// calc number of rune they are awarded
