@@ -161,6 +161,20 @@ func (n NodeAccount) String() string {
 	return sb.String()
 }
 
+func (n *NodeAccount) CalcBondUnits(height int64) sdk.Uint {
+	if height < 0 || n.ActiveBlockHeight < 0 || n.SlashPoints < 0 {
+		return sdk.ZeroUint()
+	}
+	blockCount := height - n.ActiveBlockHeight
+	// Minus slash pointss
+	bCount := blockCount
+	if bCount < n.SlashPoints {
+		bCount = n.SlashPoints
+	}
+
+	return sdk.NewUint(uint64(bCount - n.SlashPoints))
+}
+
 func (n *NodeAccount) AddBond(amt sdk.Uint) {
 	n.Bond = n.Bond.Add(amt)
 }

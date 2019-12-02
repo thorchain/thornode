@@ -133,28 +133,22 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 		}
 	} else {
 		if na.ActiveBlockHeight > 0 {
+
 			// The na seems to have become a non active na. Therefore, lets
 			// give them their bond rewards.
 			vault := k.GetVaultData(ctx)
 			// Find number of blocks they have been active for
 			blockCount := ctx.BlockHeight() - na.ActiveBlockHeight
-			blocks := calculateNodeAccountBondUints(ctx.BlockHeight(), na.ActiveBlockHeight, na.SlashPoints)
+			blocks := na.CalcBondUnits(ctx.BlockHeight())
 			// calc number of rune they are awarded
 			reward := calcNodeRewards(blocks, vault.TotalBondUnits, vault.BondRewardRune)
 			if reward.GT(sdk.ZeroUint()) {
 				na.Bond = na.Bond.Add(reward)
-				if vault.TotalBondUnits.GTE(sdk.NewUint(uint64(blockCount))) {
-					vault.TotalBondUnits = common.SafeSub(vault.TotalBondUnits, sdk.NewUint(uint64(blockCount)))
-				} else {
-					vault.TotalBondUnits = sdk.ZeroUint()
-				}
+
 				// Minus the number of units na has (do not include slash points)
+				vault.TotalBondUnits = common.SafeSub(vault.TotalBondUnits, sdk.NewUint(uint64(blockCount)))
 				// Minus the number of rune THORNode have awarded them
-				if vault.BondRewardRune.GTE(reward) {
-					vault.BondRewardRune = common.SafeSub(vault.BondRewardRune, reward)
-				} else {
-					vault.BondRewardRune = sdk.ZeroUint()
-				}
+				vault.BondRewardRune = common.SafeSub(vault.BondRewardRune, reward)
 				k.SetVaultData(ctx, vault)
 			}
 		}

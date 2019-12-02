@@ -4,24 +4,9 @@ import (
 	"math"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/constants"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
-
-// calculate node account bond units
-func calculateNodeAccountBondUints(height, activeBlock, slashPts int64) sdk.Uint {
-	if height < 0 || activeBlock < 0 || slashPts < 0 {
-		return sdk.ZeroUint()
-	}
-	blockCount := height - activeBlock
-	// Minus slash pointss
-	bCount := blockCount
-	if bCount < slashPts {
-		bCount = slashPts
-	}
-
-	return sdk.NewUint(uint64(bCount - slashPts))
-}
 
 // calculate node rewards
 func calcNodeRewards(nodeUnits, totalUnits, totalRuneReward sdk.Uint) sdk.Uint {
@@ -50,9 +35,9 @@ func calcBlockRewards(totalReserve sdk.Uint, totalLiquidityFees sdk.Uint) (sdk.U
 		(float64(totalReserve.Uint64()) / float64(constants.EmissionCurve)) / float64(constants.BlocksPerYear),
 	)))
 
-	systemIncome := blockReward.Add(totalLiquidityFees) // Get total system income for block
-	stakerSplit := systemIncome.QuoUint64(3)            // 1/3rd to Stakers
-	bonderSplit := common.SafeSub(systemIncome, stakerSplit)        // 2/3rd to Bonders
+	systemIncome := blockReward.Add(totalLiquidityFees)      // Get total system income for block
+	stakerSplit := systemIncome.QuoUint64(3)                 // 1/3rd to Stakers
+	bonderSplit := common.SafeSub(systemIncome, stakerSplit) // 2/3rd to Bonders
 
 	stakerDeficit := sdk.ZeroUint()
 	poolReward := sdk.ZeroUint()
