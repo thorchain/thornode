@@ -160,3 +160,40 @@ func (NodeAccountSuite) TestTryAddSignerPubKey(c *C) {
 	c.Assert(na.SignerMembership, HasLen, 0)
 
 }
+
+func (s *NodeAccountSuite) TestCalcNodeRewards(c *C) {
+	na := NodeAccount{
+		ActiveBlockHeight: 30,
+		SlashPoints:       2,
+	}
+	blocks := na.CalcBondUnits(50)
+	c.Check(blocks.Uint64(), Equals, uint64(18))
+
+	na = NodeAccount{
+		ActiveBlockHeight: 30,
+		SlashPoints:       100000,
+	}
+	blocks = na.CalcBondUnits(50)
+	c.Check(blocks.Uint64(), Equals, uint64(0))
+
+	na = NodeAccount{
+		ActiveBlockHeight: 100,
+		SlashPoints:       0,
+	}
+	blocks = na.CalcBondUnits(50)
+	c.Check(blocks.Uint64(), Equals, uint64(0))
+
+	na = NodeAccount{
+		ActiveBlockHeight: 30,
+		SlashPoints:       0,
+	}
+	blocks = na.CalcBondUnits(-50)
+	c.Check(blocks.Uint64(), Equals, uint64(0))
+
+	na = NodeAccount{
+		ActiveBlockHeight: -100,
+		SlashPoints:       0,
+	}
+	blocks = na.CalcBondUnits(50)
+	c.Check(blocks.Uint64(), Equals, uint64(0), Commentf("%d", blocks.Uint64()))
+}
