@@ -274,6 +274,9 @@ func (s *Smoke) WaitBlocks(count int) {
 	for {
 		newHeight := s.Thorchain.GetHeight()
 		if thorchainHeight+count <= newHeight {
+			// waiting an extra second to give the signer more time to send its
+			// txs
+			time.Sleep(1 * time.Second)
 			return
 		}
 	}
