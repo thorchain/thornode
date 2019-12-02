@@ -4,7 +4,7 @@ services:
   frontend:
     image: registry.gitlab.com/thorchain/bepswap/bepswap-react-app
     ports:
-      8000:80
+      - 8000:80
     networks:
       localnet:
         ipv4_address: 172.32.61.2
