@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
@@ -44,7 +45,10 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 	// figure out if THORNode need to send them assets.
 	// get a list of coin/amounts this yggdrasil pool should have, ideally.
 	// TODO: We are assuming here that the pub key is Secp256K1
-	ygg := keeper.GetYggdrasil(ctx, na.NodePubKey.Secp256k1)
+	ygg, err := keeper.GetYggdrasil(ctx, na.NodePubKey.Secp256k1)
+	if nil != err {
+		return fmt.Errorf("fail to get yggdrasil: %w", err)
+	}
 	targetCoins, err := calcTargetYggCoins(pools, na.Bond, totalBond)
 	if err != nil {
 		return err
