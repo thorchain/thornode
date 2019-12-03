@@ -1018,12 +1018,13 @@ func (s *TestReserveContributorKeeper) IsActiveObserver(ctx sdk.Context, signer 
 	return s.isSigned
 }
 
-func (s *TestReserveContributorKeeper) GetVaultData(ctx sdk.Context) VaultData {
-	return s.vault
+func (s *TestReserveContributorKeeper) GetVaultData(ctx sdk.Context) (VaultData, error) {
+	return s.vault, nil
 }
 
-func (s *TestReserveContributorKeeper) SetVaultData(ctx sdk.Context, data VaultData) {
+func (s *TestReserveContributorKeeper) SetVaultData(ctx sdk.Context, data VaultData) error {
 	s.vault = data
+	return nil
 }
 
 func (s *TestReserveContributorKeeper) GetReservesContributors(ctx sdk.Context) ReserveContributors {

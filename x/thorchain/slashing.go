@@ -1,7 +1,10 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
@@ -34,7 +37,9 @@ func slashForObservingAddresses(ctx sdk.Context, keeper Keeper) {
 		// this na is not found, therefore it should be slashed
 		if !found {
 			na.SlashPoints += constants.LackOfObservationPenalty
-			keeper.SetNodeAccount(ctx, na)
+			if err := keeper.SetNodeAccount(ctx, na); nil != err {
+				ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
+			}
 		}
 	}
 
@@ -71,7 +76,9 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) 
 						continue
 					}
 					na.SlashPoints += constants.SigningTransactionPeriod * 2
-					keeper.SetNodeAccount(ctx, na)
+					if err := keeper.SetNodeAccount(ctx, na); nil != err {
+						ctx.Logger().Error("fail to save node account")
+					}
 
 					// Save the tx to as a new tx, select Asgard to send it this time.
 					// Set the pool address to empty, it will overwrite it with the

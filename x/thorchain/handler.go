@@ -421,7 +421,10 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 	if !nominatedAccount.IsEmpty() {
 		for _, item := range nominatedAccount {
 			item.SignerActive = true
-			keeper.SetNodeAccount(ctx, item)
+			if err := keeper.SetNodeAccount(ctx, item); nil != err {
+				ctx.Logger().Error("fail to save node account", err)
+				return sdk.ErrInternal("fail to save node account").Result()
+			}
 		}
 	}
 	ctx.EventManager().EmitEvent(
@@ -455,9 +458,16 @@ func handleMsgReserveContributor(ctx sdk.Context, keeper Keeper, msg MsgReserveC
 	reses = reses.Add(msg.Contributor)
 	keeper.SetReserveContributors(ctx, reses)
 
-	vault := keeper.GetVaultData(ctx)
+	vault, err := keeper.GetVaultData(ctx)
+	if nil != err {
+		ctx.Logger().Error("fail to get vault data", err)
+		return sdk.ErrInternal("fail to get vault data").Result()
+	}
 	vault.TotalReserve = vault.TotalReserve.Add(msg.Contributor.Amount)
-	keeper.SetVaultData(ctx, vault)
+	if err := keeper.SetVaultData(ctx, vault); nil != err {
+		ctx.Logger().Error("fail to save vault data", err)
+		return sdk.ErrInternal("fail to save vault data").Result()
+	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -503,7 +513,10 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 	queuedNode := validatorMgr.Meta.Queued
 	for _, item := range nominatedNode {
 		item.TryAddSignerPubKey(chainPubKey.PubKey)
-		keeper.SetNodeAccount(ctx, item)
+		if err := keeper.SetNodeAccount(ctx, item); nil != err {
+			ctx.Logger().Error("fail to save node account", err)
+			return sdk.ErrInternal("fail to save node account").Result()
+		}
 	}
 	activeNodes, err := keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
@@ -517,10 +530,16 @@ func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManage
 			continue
 		}
 		item.TryAddSignerPubKey(chainPubKey.PubKey)
-		keeper.SetNodeAccount(ctx, item)
+		if err := keeper.SetNodeAccount(ctx, item); nil != err {
+			ctx.Logger().Error("fail to save node account", err)
+			return sdk.ErrInternal("fail to save node account").Result()
+		}
 	}
 
-	AddGasFees(ctx, keeper, msg.Tx.Gas)
+	if err := AddGasFees(ctx, keeper, msg.Tx.Gas); nil != err {
+		ctx.Logger().Error("fail to add gas fee", err)
+		return sdk.ErrInternal("fail to add gas fee").Result()
+	}
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
@@ -555,7 +574,10 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			!na.ObserverActive {
 			// tx observed by a standby node, let's mark their observer as active
 			na.ObserverActive = true
-			keeper.SetNodeAccount(ctx, na)
+			if err := keeper.SetNodeAccount(ctx, na); nil != err {
+				ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
+				return sdk.ErrInternal("fail to save node account").Result()
+			}
 			return sdk.Result{
 				Code:      sdk.CodeOK,
 				Codespace: DefaultCodespace,
@@ -660,7 +682,10 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 							}
 						}
 						na.SubBond(minusRune)
-						keeper.SetNodeAccount(ctx, na)
+						if err := keeper.SetNodeAccount(ctx, na); nil != err {
+							ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
+							return sdk.ErrInternal("fail to save node account").Result()
+						}
 						ygg.SubFunds(minusCoins)
 						if err := keeper.SetYggdrasil(ctx, ygg); nil != err {
 							ctx.Logger().Error("fail to save yggdrasil", err)
@@ -1074,7 +1099,10 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 	inTx := voter.GetTx(activeNodeAccounts)
 	tx := inTx.GetCommonTx(msg.InTxID)
 	tx.Gas = msg.Tx.Gas // get gas from outbound tx, and replace the inbound gas for applying gas
-	AddGasFees(ctx, keeper, tx.Gas)
+	if err := AddGasFees(ctx, keeper, tx.Gas); nil != err {
+		ctx.Logger().Error("fail to add gas fee", err)
+		return sdk.ErrInternal("fail to add gas fee").Result()
+	}
 
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := keeper.GetTxOut(ctx, uint64(voter.Height))
@@ -1201,7 +1229,10 @@ func handleMsgSetVersion(ctx sdk.Context, keeper Keeper, msg MsgSetVersion) sdk.
 		nodeAccount.Version = msg.Version
 	}
 
-	keeper.SetNodeAccount(ctx, nodeAccount)
+	if err := keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
+		ctx.Logger().Error("fail to save node account", err)
+		return sdk.ErrInternal("fail to save node account").Result()
+	}
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent("set_version",
@@ -1246,7 +1277,10 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 	// Here make sure THORNode don't change the node account's bond
 
 	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
-	keeper.SetNodeAccount(ctx, nodeAccount)
+	if err := keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
+		ctx.Logger().Error(fmt.Sprintf("fail to save node account: %s", nodeAccount), err)
+		return sdk.ErrInternal("fail to save node account").Result()
+	}
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent("set_trust_account",
@@ -1292,7 +1326,10 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 	}
 	// white list the given bep address
 	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, emptyPubKeys, "", msg.Bond, msg.BondAddress, ctx.BlockHeight())
-	keeper.SetNodeAccount(ctx, nodeAccount)
+	if err := keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
+		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", nodeAccount), err)
+		return sdk.ErrInternal("fail to save node account").Result()
+	}
 	ctx.EventManager().EmitEvent(sdk.NewEvent("new_node", sdk.NewAttribute("address", msg.NodeAddress.String())))
 	coinsToMint := keeper.GetAdminConfigWhiteListGasAsset(ctx, sdk.AccAddress{})
 	// mint some gas asset

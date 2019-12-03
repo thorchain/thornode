@@ -15,8 +15,10 @@ func (s TxOutStoreSuite) TestAddGasFees(c *C) {
 	ctx, k := setupKeeperForTest(c)
 
 	gas := common.BNBGasFeeSingleton
-	AddGasFees(ctx, k, gas)
-	vault := k.GetVaultData(ctx)
+	err := AddGasFees(ctx, k, gas)
+	c.Assert(err, IsNil)
+	vault, err := k.GetVaultData(ctx)
+	c.Assert(err, IsNil)
 	c.Assert(vault.Gas, HasLen, 1)
 	c.Check(vault.Gas[0].Asset.Equals(common.BNBAsset), Equals, true)
 	c.Check(vault.Gas[0].Amount.Equal(sdk.NewUint(37500)), Equals, true)
@@ -31,9 +33,9 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	acc1 := GetRandomNodeAccount(NodeActive)
 	acc2 := GetRandomNodeAccount(NodeActive)
 	acc3 := GetRandomNodeAccount(NodeActive)
-	w.keeper.SetNodeAccount(w.ctx, acc1)
-	w.keeper.SetNodeAccount(w.ctx, acc2)
-	w.keeper.SetNodeAccount(w.ctx, acc3)
+	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc1), IsNil)
+	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc2), IsNil)
+	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc3), IsNil)
 
 	ygg := NewYggdrasil(acc1.NodePubKey.Secp256k1)
 	ygg.AddFunds(
@@ -122,7 +124,6 @@ func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 		InHash:    inTxID,
 		Coin:      common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One)),
 	}
-
 	w.txOutStore.AddTxOutItem(w.ctx, w.keeper, item, false)
 	msgs := w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 1)
