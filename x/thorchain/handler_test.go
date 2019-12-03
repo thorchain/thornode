@@ -700,7 +700,8 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	msgOutboundTxNormal := NewMsgOutboundTx(tx, txID, w.activeNodeAccount.NodeAddress)
 	result3 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal)
 	c.Assert(result3.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result3))
-	ygg = w.keeper.GetYggdrasil(w.ctx, currentChainPool.PubKey)
+	ygg, err = w.keeper.GetYggdrasil(w.ctx, currentChainPool.PubKey)
+	c.Assert(err, IsNil)
 	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(300*common.One)), Equals, true)
 	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)
 
