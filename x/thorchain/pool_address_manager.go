@@ -37,20 +37,24 @@ func (pm *PoolAddressManager) GetCurrentPoolAddresses() *PoolAddresses {
 }
 
 // BeginBlock should be called when BeginBlock
-func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context) {
+func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context) error {
 	height := ctx.BlockHeight()
 	// decide pool addresses
 	if pm.currentPoolAddresses == nil || pm.currentPoolAddresses.IsEmpty() {
-		poolAddresses := pm.k.GetPoolAddresses(ctx)
+		poolAddresses, err := pm.k.GetPoolAddresses(ctx)
+		if err != nil {
+			return err
+		}
 		pm.currentPoolAddresses = &poolAddresses
 	}
 
 	if height >= pm.currentPoolAddresses.RotateWindowOpenAt && height < pm.currentPoolAddresses.RotateAt {
 		if pm.IsRotateWindowOpen {
-			return
+			return nil
 		}
 		pm.IsRotateWindowOpen = true
 	}
+	return nil
 }
 
 // EndBlock contains some actions THORNode need to take when block commit
