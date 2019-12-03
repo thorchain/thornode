@@ -1,11 +1,13 @@
 package thorchain
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -18,7 +20,7 @@ type KeeperNodeAccount interface {
 	GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error)
 	GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error)
 	GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error)
-	SetNodeAccount(ctx sdk.Context, na NodeAccount)
+	SetNodeAccount(ctx sdk.Context, na NodeAccount) error
 	EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error
 	GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator
 }
@@ -119,7 +121,7 @@ func (k KVStore) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Addres
 }
 
 // SetNodeAccount save the given node account into datastore
-func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
+func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 	ctx.Logger().Debug("SetNodeAccount", "node account", na.String())
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixNodeAccount, na.NodeAddress.String())
@@ -136,7 +138,10 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 
 			// The node account seems to have become a non active node account.
 			// Therefore, lets give them their bond rewards.
-			vault := k.GetVaultData(ctx)
+			vault, err := k.GetVaultData(ctx)
+			if nil != err {
+				return fmt.Errorf("fail to get vault: %w", err)
+			}
 
 			// Find number of blocks they have been an active node
 			totalActiveBlocks := ctx.BlockHeight() - na.ActiveBlockHeight
@@ -159,7 +164,9 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 				sdk.NewUint(uint64(totalActiveBlocks)),
 			)
 
-			k.SetVaultData(ctx, vault)
+			if err := k.SetVaultData(ctx, vault); nil != err {
+				return fmt.Errorf("fail to save vault data: %w", err)
+			}
 		}
 		na.ActiveBlockHeight = 0
 	}
@@ -172,6 +179,7 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) {
 	} else {
 		k.RemoveActiveObserver(ctx, na.NodeAddress)
 	}
+	return nil
 }
 
 func (k KVStore) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {

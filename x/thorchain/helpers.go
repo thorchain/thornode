@@ -1,7 +1,10 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -42,7 +45,9 @@ func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 	nodeAcc.Bond = sdk.ZeroUint()
 	// disable the node account
 	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
-	keeper.SetNodeAccount(ctx, nodeAcc)
+	if err := keeper.SetNodeAccount(ctx, nodeAcc); nil != err {
+		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", nodeAcc), err)
+	}
 }
 
 // isSignedByActiveObserver check whether the signers are all active observer

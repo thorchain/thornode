@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
+
 	"gitlab.com/thorchain/thornode/constants"
 
 	"gitlab.com/thorchain/thornode/x/thorchain/client/cli"
@@ -138,7 +139,9 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	}
 
 	// update vault data to account for block rewards and reward units
-	am.keeper.UpdateVaultData(ctx)
+	if err := am.keeper.UpdateVaultData(ctx); nil != err {
+		ctx.Logger().Error("fail to save vault", err)
+	}
 	am.poolMgr.EndBlock(ctx, am.txOutStore)
 	am.txOutStore.CommitBlock(ctx)
 	return am.validatorMgr.EndBlock(ctx, am.txOutStore)

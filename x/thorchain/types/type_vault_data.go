@@ -2,9 +2,11 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
+// VaultData
 type VaultData struct {
 	BondRewardRune sdk.Uint   `json:"bond_reward_rune"` // The total amount of awarded rune for bonders
 	TotalBondUnits sdk.Uint   `json:"total_bond_units"` // Total amount of bond units
@@ -12,6 +14,7 @@ type VaultData struct {
 	Gas            common.Gas `json:"gas"`              // Total gas used (intended to be tracked per block and be repaid via block rewards)
 }
 
+// NewVaultData create a new instance VaultData it is empty though
 func NewVaultData() VaultData {
 	return VaultData{
 		BondRewardRune: sdk.ZeroUint(),

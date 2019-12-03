@@ -82,4 +82,4 @@ func (mps MockPoolStorage) GetLowestActiveVersion(ctx sdk.Context) semver.Versio
 	return semver.MustParse("0.1.0")
 }
 
-func (mps MockPoolStorage) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) {}
+func (mps MockPoolStorage) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error { return nil }
