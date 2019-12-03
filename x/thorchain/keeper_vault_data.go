@@ -101,10 +101,15 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 				return err
 			}
 		}
-		pool := k.GetPool(ctx, gas.Asset)
+		pool, err := k.GetPool(ctx, gas.Asset)
+		if err != nil {
+			return err
+		}
 		vault.Gas[i].Amount = common.SafeSub(vault.Gas[i].Amount, pool.BalanceAsset)
 		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
-		k.SetPool(ctx, pool)
+		if err := k.SetPool(ctx, pool); err != nil {
+			return nil
+		}
 	}
 
 	// If no Rune is staked, then don't give out block rewards.
@@ -179,28 +184,29 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 	}
 	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i))) // Add 1 unit for each active Node
 
-	k.SetVaultData(ctx, vault)
-
-	return nil
+	return k.SetVaultData(ctx, vault)
 }
 
 // remove gas
-func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gases common.Gas) (sdk.Uint, common.Gas, error) {
-	for i, gas := range gases {
-		if !gas.Amount.IsZero() {
-			pool, err := keeper.GetPool(ctx, gas.Asset)
+func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (sdk.Uint, common.Gas, error) {
+	for i, coin := range gas {
+		if !coin.Amount.IsZero() {
+			pool, err := keeper.GetPool(ctx, coin.Asset)
 			if err != nil {
 				return sdk.ZeroUint(), nil, err
 			}
-			runeGas := pool.AssetValueInRune(gas.Amount)
-			gases[i].Amount = common.SafeSub(gases[i].Amount, gas.Amount)
+			runeGas := pool.AssetValueInRune(coin.Amount)
+			gas[i].Amount = common.SafeSub(gas[i].Amount, coin.Amount)
 			val = common.SafeSub(val, runeGas)
 		}
-		pool := keeper.GetPool(ctx, coin.Asset)
+		pool, err := keeper.GetPool(ctx, coin.Asset)
+		if err != nil {
+			return sdk.ZeroUint(), nil, err
+		}
 		runeGas := pool.AssetValueInRune(coin.Amount)
 		gas[i].Amount = common.SafeSub(gas[i].Amount, coin.Amount)
 		val = common.SafeSub(val, runeGas)
 
 	}
-	return val, gases, nil
+	return val, gas, nil
 }
