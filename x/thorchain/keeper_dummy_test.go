@@ -134,8 +134,10 @@ func (k KVStoreDummy) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool   
 func (k KVStoreDummy) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error) {
 	return common.EmptyPubKey, kaboom
 }
-func (k KVStoreDummy) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil)                          {}
-func (k KVStoreDummy) GetYggdrasil(ctx sdk.Context, pk common.PubKey) Yggdrasil             { return Yggdrasil{} }
+func (k KVStoreDummy) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) error { return nil }
+func (k KVStoreDummy) GetYggdrasil(ctx sdk.Context, pk common.PubKey) (Yggdrasil, error) {
+	return Yggdrasil{}, nil
+}
 func (k KVStoreDummy) HasValidYggdrasilPools(ctx sdk.Context) (bool, error)                 { return false, kaboom }
 func (k KVStoreDummy) GetReservesContributors(ctx sdk.Context) ReserveContributors          { return nil }
 func (k KVStoreDummy) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) {}
