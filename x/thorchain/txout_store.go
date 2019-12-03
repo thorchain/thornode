@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -109,7 +111,10 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
-			keeper.AddFeeToReserve(ctx, runeFee) // Add to reserve
+			if err := keeper.AddFeeToReserve(ctx, runeFee); nil != err {
+				// Add to reserve
+				ctx.Logger().Error("fail to add fee to reserve", err)
+			}
 		} else {
 			pool := keeper.GetPool(ctx, toi.Coin.Asset)                              // Get pool
 			assetFee := pool.AssetValueInRune(sdk.NewUint(constants.TransactionFee)) // Get fee in Asset value
@@ -123,7 +128,10 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
 			keeper.SetPool(ctx, pool)                                    // Set Pool
-			keeper.AddFeeToReserve(ctx, runeFee)                         // Add to reserve
+			if err := keeper.AddFeeToReserve(ctx, runeFee); nil != err {
+				ctx.Logger().Error("fail to add fee to reserve", err)
+				// Add to reserve
+			}
 		}
 	}
 
@@ -166,10 +174,13 @@ func (tos *TxOutStore) getSeqNo(chain common.Chain) uint64 {
 	return uint64(0)
 }
 
-func AddGasFees(ctx sdk.Context, keeper Keeper, gas common.Gas) {
-	vault := keeper.GetVaultData(ctx)
+func AddGasFees(ctx sdk.Context, keeper Keeper, gas common.Gas) error {
+	vault, err := keeper.GetVaultData(ctx)
+	if nil != err {
+		return fmt.Errorf("fail to get vault: %w", err)
+	}
 	vault.Gas = vault.Gas.Add(gas)
-	keeper.SetVaultData(ctx, vault)
+	return keeper.SetVaultData(ctx, vault)
 }
 
 func (tos *TxOutStore) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx TxIn) Yggdrasils {

@@ -71,7 +71,11 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 }
 
 func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
-	data := keeper.GetVaultData(ctx)
+	data, err := keeper.GetVaultData(ctx)
+	if nil != err {
+		ctx.Logger().Error("fail to get vault", err)
+		return nil, sdk.ErrInternal("fail to get vault")
+	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), data)
 	if nil != err {
 		ctx.Logger().Error("fail to marshal vault data to json", err)

@@ -138,7 +138,11 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 			})
 		}
 
-		keeper.SetNodeAccount(ctx, ta)
+		if err := keeper.SetNodeAccount(ctx, ta); nil != err {
+			// we should panic
+			panic(err)
+
+		}
 	}
 
 	for _, stake := range data.StakerPools {

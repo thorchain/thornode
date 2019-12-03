@@ -182,7 +182,9 @@ func (vm *ValidatorManager) processValidatorLeave(ctx sdk.Context, store *TxOutS
 
 	for _, item := range vm.Meta.Queued {
 		item.UpdateStatus(NodeStandby, ctx.BlockHeight())
-		vm.k.SetNodeAccount(ctx, item)
+		if err := vm.k.SetNodeAccount(ctx, item); nil != err {
+			return false, fmt.Errorf("fail to save node account: %w", err)
+		}
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(EventTypeValidatorStandby,
 				sdk.NewAttribute("bep_address", item.NodeAddress.String()),
@@ -201,7 +203,9 @@ func (vm *ValidatorManager) processValidatorLeave(ctx sdk.Context, store *TxOutS
 		if nominatedNodeAccount.Status != NodeReady {
 			// set them to standby, do THORNode need to slash the validator? THORNode nominated them but they are not ready
 			nominatedNodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
-			vm.k.SetNodeAccount(ctx, nominatedNodeAccount)
+			if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
+				return false, fmt.Errorf("fail to save node account: %w", err)
+			}
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent(EventTypeValidatorManager,
 					sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
@@ -214,7 +218,9 @@ func (vm *ValidatorManager) processValidatorLeave(ctx sdk.Context, store *TxOutS
 		}
 		// set to active
 		nominatedNodeAccount.UpdateStatus(NodeActive, ctx.BlockHeight())
-		vm.k.SetNodeAccount(ctx, nominatedNodeAccount)
+		if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
+			return false, fmt.Errorf("fail to save node account: %w", err)
+		}
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(EventTypeValidatorActive,
 				sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
@@ -260,7 +266,9 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, store *TxOutSt
 		if nominatedNodeAccount.Status != NodeReady {
 			// set them to standby, do THORNode need to slash the validator? THORNode nominated them but they are not ready
 			nominatedNodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
-			vm.k.SetNodeAccount(ctx, nominatedNodeAccount)
+			if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
+				return false, fmt.Errorf("fail to save node account: %w", err)
+			}
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent(EventTypeValidatorManager,
 					sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
@@ -273,7 +281,9 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, store *TxOutSt
 		}
 		// set to active
 		nominatedNodeAccount.UpdateStatus(NodeActive, ctx.BlockHeight())
-		vm.k.SetNodeAccount(ctx, nominatedNodeAccount)
+		if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
+			return false, fmt.Errorf("fail to save node account: %w", err)
+		}
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(EventTypeValidatorActive,
 				sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
@@ -287,7 +297,9 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, store *TxOutSt
 	if !vm.Meta.Queued.IsEmpty() {
 		for _, item := range vm.Meta.Queued {
 			item.UpdateStatus(NodeStandby, ctx.BlockHeight())
-			vm.k.SetNodeAccount(ctx, item)
+			if err := vm.k.SetNodeAccount(ctx, item); nil != err {
+				return false, fmt.Errorf("fail to save node account: %w", err)
+			}
 			ctx.EventManager().EmitEvent(
 				sdk.NewEvent(EventTypeValidatorStandby,
 					sdk.NewAttribute("bep_address", item.NodeAddress.String()),
@@ -532,7 +544,6 @@ func (vm *ValidatorManager) setupValidatorNodes(ctx sdk.Context, height int64) e
 	for ; iter.Valid(); iter.Next() {
 		var na NodeAccount
 		if err := vm.k.Cdc().UnmarshalBinaryBare(iter.Value(), &na); nil != err {
-			ctx.Logger().Error("fail to unmarshal node account", "error", err)
 			return fmt.Errorf("fail to unmarshal node account, %w", err)
 		}
 		// when THORNode first start , THORNode only care about these two status
@@ -559,7 +570,9 @@ func (vm *ValidatorManager) setupValidatorNodes(ctx sdk.Context, height int64) e
 		} else {
 			item.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
-		vm.k.SetNodeAccount(ctx, item)
+		if err := vm.k.SetNodeAccount(ctx, item); nil != err {
+			return fmt.Errorf("fail to save node account: %w", err)
+		}
 	}
 	vm.Meta.RotateAtBlockHeight = vm.rotationPolicy.RotatePerBlockHeight + 1
 	vm.Meta.RotateWindowOpenAtBlockHeight = vm.rotationPolicy.RotatePerBlockHeight + 1 - vm.rotationPolicy.ValidatorChangeWindow
