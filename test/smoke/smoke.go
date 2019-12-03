@@ -326,7 +326,7 @@ func (s *Smoke) Run() bool {
 			// Wait for the thorchain to process blocks and send txs
 			err := s.WaitForTransactions(expectedBal.Out)
 			if err != nil {
-				log.Fatalf("Failed to wait for txs: %w", err)
+				log.Fatalf("Failed to wait for txs: %s", err)
 			}
 		}
 
