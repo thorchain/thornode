@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"encoding/json"
+	stdErrors "errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -606,14 +607,17 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 				}
 
 				if addr.Equals(txIn.Sender) {
-					// From thorchain network
-					ygg := keeper.GetYggdrasil(ctx, txIn.ObservePoolAddress)
+
 					if keeper.YggdrasilExists(ctx, txIn.ObservePoolAddress) {
+						ygg, err := keeper.GetYggdrasil(ctx, txIn.ObservePoolAddress)
+						if nil != err {
+							ctx.Logger().Error("fail to get yggdrasil", err)
+							return sdk.ErrInternal("fail to get yggdrasil").Result()
+						}
 						var expectedCoins common.Coins
 						memo, _ := ParseMemo(txIn.Memo)
 						switch memo.GetType() {
 						case txYggdrasilReturn:
-							ygg := keeper.GetYggdrasil(ctx, txIn.ObservePoolAddress)
 							expectedCoins = ygg.Coins
 						case txOutbound:
 							txID := memo.GetTxID()
@@ -658,7 +662,10 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 						na.SubBond(minusRune)
 						keeper.SetNodeAccount(ctx, na)
 						ygg.SubFunds(minusCoins)
-						keeper.SetYggdrasil(ctx, ygg)
+						if err := keeper.SetYggdrasil(ctx, ygg); nil != err {
+							ctx.Logger().Error("fail to save yggdrasil", err)
+							return sdk.ErrInternal("fail to save yggdrasil").Result()
+						}
 					}
 				} else {
 					// To thorchain network
@@ -1101,9 +1108,16 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	if !pk.IsEmpty() {
-		ygg := keeper.GetYggdrasil(ctx, pk)
+		ygg, err := keeper.GetYggdrasil(ctx, pk)
+		if nil != err {
+			ctx.Logger().Error("fail to get yggdrasil", err)
+			return sdk.ErrInternal("fail to get yggdrasil").Result()
+		}
 		ygg.SubFunds(msg.Tx.Coins)
-		keeper.SetYggdrasil(ctx, ygg)
+		if err := keeper.SetYggdrasil(ctx, ygg); nil != err {
+			ctx.Logger().Error("fail to save yggdrasil", err)
+			return sdk.ErrInternal("fail to save yggdrasil").Result()
+		}
 	}
 
 	return sdk.Result{
@@ -1308,7 +1322,11 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolA
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
-	ygg := keeper.GetYggdrasil(ctx, msg.PubKey)
+	ygg, err := keeper.GetYggdrasil(ctx, msg.PubKey)
+	if nil != err && !stdErrors.Is(err, ErrYggdrasilNotFound) {
+		ctx.Logger().Error("fail to get yggdrasil", err)
+		return sdk.ErrInternal("fail to get yggdrasil").Result()
+	}
 	if msg.AddFunds {
 		ygg.AddFunds(msg.Coins)
 	} else {
@@ -1329,7 +1347,10 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolA
 		// back 100% of the funds (due to gas).
 		RefundBond(ctx, msg.RequestTxHash, na, keeper, txOut)
 	}
-	keeper.SetYggdrasil(ctx, ygg)
+	if err := keeper.SetYggdrasil(ctx, ygg); nil != err {
+		ctx.Logger().Error("fail to save yggdrasil", err)
+		return sdk.ErrInternal("fail to save yggdrasil").Result()
+	}
 
 	// Ragnarok protocol get triggered, if all the Yggdrasil pool returned funds already, THORNode will continue Ragnarok
 	if validatorMgr.Meta.Ragnarok {
