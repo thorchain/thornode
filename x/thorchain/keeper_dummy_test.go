@@ -78,7 +78,7 @@ func (k KVStoreDummy) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) 
 func (k KVStoreDummy) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
-func (k KVStoreDummy) SetNodeAccount(ctx sdk.Context, na NodeAccount) {}
+func (k KVStoreDummy) SetNodeAccount(ctx sdk.Context, na NodeAccount) error { return nil }
 func (k KVStoreDummy) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
 	return kaboom
 }
@@ -141,10 +141,10 @@ func (k KVStoreDummy) GetYggdrasil(ctx sdk.Context, pk common.PubKey) (Yggdrasil
 func (k KVStoreDummy) HasValidYggdrasilPools(ctx sdk.Context) (bool, error)                 { return false, kaboom }
 func (k KVStoreDummy) GetReservesContributors(ctx sdk.Context) ReserveContributors          { return nil }
 func (k KVStoreDummy) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) {}
-func (k KVStoreDummy) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint)                        {}
-func (k KVStoreDummy) GetVaultData(ctx sdk.Context) VaultData                               { return VaultData{} }
-func (k KVStoreDummy) SetVaultData(ctx sdk.Context, data VaultData)                         {}
-func (k KVStoreDummy) UpdateVaultData(ctx sdk.Context)                                      {}
+func (k KVStoreDummy) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error                  { return nil }
+func (k KVStoreDummy) GetVaultData(ctx sdk.Context) (VaultData, error)                      { return VaultData{}, nil }
+func (k KVStoreDummy) SetVaultData(ctx sdk.Context, data VaultData) error                   { return nil }
+func (k KVStoreDummy) UpdateVaultData(ctx sdk.Context) error                                { return nil }
 func (k KVStoreDummy) SetAdminConfig(ctx sdk.Context, config AdminConfig)                   {}
 func (k KVStoreDummy) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
 	return PoolSuspended
