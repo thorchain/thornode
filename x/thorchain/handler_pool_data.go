@@ -71,6 +71,5 @@ func (h PoolDataHandler) HandleV1(ctx sdk.Context, msg MsgSetPoolData) error {
 
 	pool.Status = msg.Status
 	pool.Asset = msg.Asset
-	h.keeper.SetPool(ctx, pool)
-	return nil
+	return h.keeper.SetPool(ctx, pool)
 }

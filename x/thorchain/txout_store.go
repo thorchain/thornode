@@ -134,7 +134,9 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)  // Deduct Asset fee
 			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
-			keeper.SetPool(ctx, pool)                                    // Set Pool
+			if err := keeper.SetPool(ctx, pool); err != nil {            // Set Pool
+				ctx.Logger().Error("fail to save pool", err)
+			}
 			if err := keeper.AddFeeToReserve(ctx, runeFee); nil != err {
 				ctx.Logger().Error("fail to add fee to reserve", err)
 				// Add to reserve

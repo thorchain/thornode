@@ -126,7 +126,9 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	pool.BalanceRune = poolRune
 	pool.BalanceAsset = poolAsset
 	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sAsset", pool.BalanceRune, pool.BalanceAsset))
-	keeper.SetPool(ctx, pool)
+	if err := keeper.SetPool(ctx, pool); err != nil {
+		return sdk.ZeroUint(), errors.Wrapf(err, "fail to stake")
+	}
 	// maintain pool staker structure
 
 	ps.TotalUnits = pool.PoolUnits
