@@ -638,7 +638,13 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			yggExists := keeper.YggdrasilExists(ctx, txIn.ObservePoolAddress)
 			if !currentPoolAddress.PubKey.Equals(txIn.ObservePoolAddress) && !yggExists {
 				ctx.Logger().Error("wrong pool address,refund without deduct fee", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", txIn.ObservePoolAddress)
-				refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
+				err := refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
+				if err != nil {
+					err = errors.Wrap(err, "Fail to refund")
+					ctx.Logger().Error(err.Error())
+					return sdk.ErrInternal(err.Error()).Result()
+				}
+
 				continue
 			}
 
@@ -705,7 +711,6 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 										// Update pool balances
 										pool.BalanceRune = pool.BalanceRune.Add(minusRune)
 										pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, diff)
-										keeper.SetPool(ctx, pool)
 										if err := keeper.SetPool(ctx, pool); err != nil {
 											err = errors.Wrap(err, "fail to set pool")
 											ctx.Logger().Error(err.Error())
@@ -728,7 +733,12 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 					}
 				} else {
 					// To thorchain network
-					refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+					err := refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+					if err != nil {
+						err = errors.Wrap(err, "Fail to refund")
+						ctx.Logger().Error(err.Error())
+						return sdk.ErrInternal(err.Error()).Result()
+					}
 					ee := NewEmptyRefundEvent()
 					buf, err := json.Marshal(ee)
 					if nil != err {
@@ -769,7 +779,12 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+				err := refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+				if err != nil {
+					err = errors.Wrap(err, "Fail to refund")
+					ctx.Logger().Error(err.Error())
+					return sdk.ErrInternal(err.Error()).Result()
+				}
 			}
 		}
 	}

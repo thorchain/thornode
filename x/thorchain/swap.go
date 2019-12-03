@@ -101,7 +101,9 @@ func swap(ctx sdk.Context,
 
 	// Update pools
 	for _, pool := range pools {
-		keeper.SetPool(ctx, pool)
+		if err := keeper.SetPool(ctx, pool); err != nil {
+			return sdk.ZeroUint(), err
+		}
 	}
 	return assetAmount, nil
 }

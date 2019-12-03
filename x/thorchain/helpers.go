@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -110,7 +108,7 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 	return nil
 }
 
-func enableNextPool(ctx sdk.Context, keeper Keeper) {
+func enableNextPool(ctx sdk.Context, keeper Keeper) error {
 	var pools []Pool
 	iterator := keeper.GetPoolIterator(ctx)
 	defer iterator.Close()
@@ -131,10 +129,10 @@ func enableNextPool(ctx sdk.Context, keeper Keeper) {
 		}
 		// ensure THORNode don't enable a pool that doesn't have any rune or assets
 		if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
-			return
+			return nil
 		}
-		fmt.Printf("Enabling %s\n", pool.Asset.String())
 		pool.Status = PoolEnabled
-		keeper.SetPool(ctx, pool)
+		return keeper.SetPool(ctx, pool)
 	}
+	return nil
 }
