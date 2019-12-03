@@ -454,9 +454,16 @@ func handleMsgReserveContributor(ctx sdk.Context, keeper Keeper, msg MsgReserveC
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
-	reses := keeper.GetReservesContributors(ctx)
+	reses, err := keeper.GetReservesContributors(ctx)
+	if nil != err {
+		ctx.Logger().Error("fail to get reserve contributors", err)
+		return sdk.ErrInternal("fail to get reserve contributors").Result()
+	}
 	reses = reses.Add(msg.Contributor)
-	keeper.SetReserveContributors(ctx, reses)
+	if err := keeper.SetReserveContributors(ctx, reses); nil != err {
+		ctx.Logger().Error("fail to save reserve contributors", err)
+		return sdk.ErrInternal("fail to save reserve contributors").Result()
+	}
 
 	vault, err := keeper.GetVaultData(ctx)
 	if nil != err {
