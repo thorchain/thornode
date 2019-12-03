@@ -7,11 +7,12 @@ import (
 )
 
 type KeeperReserveContributors interface {
-	GetReservesContributors(ctx sdk.Context) ReserveContributors
-	SetReserveContributors(ctx sdk.Context, contribs ReserveContributors)
+	GetReservesContributors(ctx sdk.Context) (ReserveContributors, error)
+	SetReserveContributors(ctx sdk.Context, contributors ReserveContributors) error
 	AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error
 }
 
+// AddFeeToReserve add fee to reserve
 func (k KVStore) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error {
 	vault, err := k.GetVaultData(ctx)
 	if nil != err {
@@ -21,19 +22,26 @@ func (k KVStore) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error {
 	return k.SetVaultData(ctx, vault)
 }
 
-func (k KVStore) GetReservesContributors(ctx sdk.Context) ReserveContributors {
-	contribs := make(ReserveContributors, 0)
+func (k KVStore) GetReservesContributors(ctx sdk.Context) (ReserveContributors, error) {
+	contributors := make(ReserveContributors, 0)
 	key := k.GetKey(ctx, prefixReserves, "")
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))
-		_ = k.cdc.UnmarshalBinaryBare(buf, &contribs)
+		if err := k.cdc.UnmarshalBinaryBare(buf, &contributors); nil != err {
+			return nil, dbError(ctx, "fail to unmarshal reserve contributors", err)
+		}
 	}
-	return contribs
+	return contributors, nil
 }
 
-func (k KVStore) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) {
+func (k KVStore) SetReserveContributors(ctx sdk.Context, contributors ReserveContributors) error {
 	key := k.GetKey(ctx, prefixReserves, "")
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(contribs))
+	buf, err := k.cdc.MarshalBinaryBare(contributors)
+	if nil != err {
+		return dbError(ctx, "fail to marshal reserve contributors to binary", err)
+	}
+	store.Set([]byte(key), buf)
+	return nil
 }
