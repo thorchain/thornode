@@ -101,7 +101,7 @@ func (k KVStoreDummy) SetTxInIndex(ctx sdk.Context, height uint64, index TxInInd
 func (k KVStoreDummy) AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) error {
 	return kaboom
 }
-func (k KVStoreDummy) SetTxOut(ctx sdk.Context, blockOut *TxOut)               {}
+func (k KVStoreDummy) SetTxOut(ctx sdk.Context, blockOut *TxOut) error         { return nil }
 func (k KVStoreDummy) GetTxOutIterator(ctx sdk.Context) sdk.Iterator           { return nil }
 func (k KVStoreDummy) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) { return nil, kaboom }
 func (k KVStoreDummy) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fee sdk.Uint) error {
