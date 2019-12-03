@@ -140,14 +140,18 @@ func (k KVStoreDummy) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) error { retur
 func (k KVStoreDummy) GetYggdrasil(ctx sdk.Context, pk common.PubKey) (Yggdrasil, error) {
 	return Yggdrasil{}, nil
 }
-func (k KVStoreDummy) HasValidYggdrasilPools(ctx sdk.Context) (bool, error)                 { return false, kaboom }
-func (k KVStoreDummy) GetReservesContributors(ctx sdk.Context) ReserveContributors          { return nil }
-func (k KVStoreDummy) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) {}
-func (k KVStoreDummy) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error                  { return nil }
-func (k KVStoreDummy) GetVaultData(ctx sdk.Context) (VaultData, error)                      { return VaultData{}, nil }
-func (k KVStoreDummy) SetVaultData(ctx sdk.Context, data VaultData) error                   { return nil }
-func (k KVStoreDummy) UpdateVaultData(ctx sdk.Context) error                                { return nil }
-func (k KVStoreDummy) SetAdminConfig(ctx sdk.Context, config AdminConfig)                   {}
+func (k KVStoreDummy) HasValidYggdrasilPools(ctx sdk.Context) (bool, error) { return false, kaboom }
+func (k KVStoreDummy) GetReservesContributors(ctx sdk.Context) (ReserveContributors, error) {
+	return nil, nil
+}
+func (k KVStoreDummy) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) error {
+	return nil
+}
+func (k KVStoreDummy) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error { return nil }
+func (k KVStoreDummy) GetVaultData(ctx sdk.Context) (VaultData, error)     { return VaultData{}, nil }
+func (k KVStoreDummy) SetVaultData(ctx sdk.Context, data VaultData) error  { return nil }
+func (k KVStoreDummy) UpdateVaultData(ctx sdk.Context) error               { return nil }
+func (k KVStoreDummy) SetAdminConfig(ctx sdk.Context, config AdminConfig)  {}
 func (k KVStoreDummy) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
 	return PoolSuspended
 }
