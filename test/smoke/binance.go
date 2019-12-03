@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
@@ -18,6 +19,7 @@ import (
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
 	"github.com/pkg/errors"
+	btypes "gitlab.com/thorchain/thornode/bifrost/binance/types"
 )
 
 type Binance struct {
@@ -39,6 +41,37 @@ func NewBinance(host string, debug bool) Binance {
 		host:    host,
 		chainId: ctypes.TestNetwork,
 	}
+}
+
+func (b Binance) GetBlockHeight() (int64, error) {
+	u, err := url.Parse(b.host)
+	if err != nil {
+		return 0, errors.Wrap(err, "failed to parse url")
+	}
+	u.Path = "block"
+
+	resp, err := http.Get(u.String())
+	if err != nil {
+		return 0, err
+	}
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
+
+	var tx btypes.RPCBlock
+	if err := json.Unmarshal(body, &tx); nil != err {
+		return 0, errors.Wrap(err, "fail to unmarshal body")
+	}
+	block := tx.Result.Block.Header.Height
+
+	parsedBlock, err := strconv.ParseInt(block, 10, 64)
+	if nil != err {
+		return 0, errors.Wrap(err, "fail to convert block height to int")
+	}
+	return parsedBlock, nil
 }
 
 func (b Binance) GetAccount(addr ctypes.AccAddress) (ctypes.BaseAccount, error) {
