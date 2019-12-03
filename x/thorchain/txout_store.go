@@ -12,7 +12,7 @@ import (
 // TxOutSetter define a method that is required to be used in TxOutStore
 // We need this interface thus THORNode could test the refund logic accordingly
 type TxOutSetter interface {
-	SetTxOut(sdk.Context, *TxOut)
+	SetTxOut(sdk.Context, *TxOut) error
 }
 
 // TxOutStore is going to manage all the outgoing tx
@@ -43,7 +43,9 @@ func (tos *TxOutStore) CommitBlock(ctx sdk.Context) {
 	}
 
 	// write the tos to keeper
-	tos.txOutSetter.SetTxOut(ctx, tos.blockOut)
+	if err := tos.txOutSetter.SetTxOut(ctx, tos.blockOut); nil != err {
+		ctx.Logger().Error("fail to save tx out", err)
+	}
 }
 
 func (tos *TxOutStore) GetOutboundItems() []*TxOutItem {
