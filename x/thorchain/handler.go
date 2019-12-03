@@ -28,12 +28,17 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
+		var result sdk.Result
 		switch m := msg.(type) {
 		case MsgSetPoolData:
-			return poolDataHandler.Run(ctx, m, version)
+			result = poolDataHandler.Run(ctx, m, version)
 		default:
-			return classic(ctx, msg)
+			result = classic(ctx, msg)
 		}
+		if !result.IsOK() {
+			ctx.Logger().Error(result.Log)
+		}
+		return result
 	}
 }
 
