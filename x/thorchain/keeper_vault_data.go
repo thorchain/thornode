@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -94,7 +95,11 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 
 			vault.Gas[i].Amount = common.SafeSub(vault.Gas[i].Amount, pool.BalanceAsset)
 			pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
-			k.SetPool(ctx, pool)
+			if err := k.SetPool(ctx, pool); err != nil {
+				err = errors.Wrap(err, "fail to set pool")
+				ctx.Logger().Error(err.Error())
+				return err
+			}
 		}
 		pool := k.GetPool(ctx, gas.Asset)
 		vault.Gas[i].Amount = common.SafeSub(vault.Gas[i].Amount, pool.BalanceAsset)
@@ -130,7 +135,11 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 			}
 			runeGas := pool.AssetValueInRune(coin.Amount)
 			pool.BalanceRune = pool.BalanceRune.Add(runeGas)
-			k.SetPool(ctx, pool)
+			if err := k.SetPool(ctx, pool); err != nil {
+				err = errors.Wrap(err, "fail to set pool")
+				ctx.Logger().Error(err.Error())
+				return err
+			}
 			totalPoolRewards = common.SafeSub(totalPoolRewards, runeGas)
 		}
 
@@ -138,7 +147,11 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 		poolRewards := calcPoolRewards(totalPoolRewards, totalRune, pools)
 		for i, reward := range poolRewards {
 			pools[i].BalanceRune = pools[i].BalanceRune.Add(reward)
-			k.SetPool(ctx, pools[i])
+			if err := k.SetPool(ctx, pools[i]); err != nil {
+				err = errors.Wrap(err, "fail to set pool")
+				ctx.Logger().Error(err.Error())
+				return err
+			}
 		}
 	} else { // Else deduct pool deficit
 
@@ -152,7 +165,11 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 			}
 			poolDeficit := calcPoolDeficit(stakerDeficit, totalLiquidityFees, poolFees)
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, poolDeficit)
-			k.SetPool(ctx, pool)
+			if err := k.SetPool(ctx, pool); err != nil {
+				err = errors.Wrap(err, "fail to set pool")
+				ctx.Logger().Error(err.Error())
+				return err
+			}
 		}
 	}
 
