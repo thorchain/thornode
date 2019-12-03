@@ -81,6 +81,7 @@ var (
 	GetRandomBech32ConsensusPubKey = types.GetRandomBech32ConsensusPubKey
 	GetRandomPubKey                = types.GetRandomPubKey
 	GetRandomPubkeys               = types.GetRandomPubKeys
+	GetRandomPoolPubKeys           = types.GetRandomPoolPubKeys
 	SetupConfigForTest             = types.SetupConfigForTest
 	EmptyPoolAddresses             = types.EmptyPoolAddresses
 )

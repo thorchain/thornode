@@ -77,6 +77,18 @@ func GetRandomPubKeys() common.PubKeys {
 	return common.NewPubKeys(GetRandomPubKey(), GetRandomPubKey())
 }
 
+func GetRandomPoolPubKey(chain common.Chain) *common.PoolPubKey {
+	pk, _ := common.NewPoolPubKey(chain, 1, GetRandomPubKey())
+	return pk
+}
+
+func GetRandomPoolPubKeys() common.PoolPubKeys {
+	return common.PoolPubKeys{
+		GetRandomPoolPubKey(common.BNBChain),
+		GetRandomPoolPubKey(common.BTCChain),
+	}
+}
+
 func GetRandomPubKey() common.PubKey {
 	_, pubKey, _ := atypes.KeyTestPubAddr()
 	bech32PubKey, _ := sdk.Bech32ifyAccPub(pubKey)

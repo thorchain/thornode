@@ -124,13 +124,15 @@ func (k KVStoreDummy) SetCompletedEvent(ctx sdk.Context, event Event)           
 func (k KVStoreDummy) GetLastEventID(ctx sdk.Context) (int64, error)              { return 0, kaboom }
 func (k KVStoreDummy) SetLastEventID(ctx sdk.Context, id int64)                   {}
 func (k KVStoreDummy) SetPoolAddresses(ctx sdk.Context, addresses *PoolAddresses) {}
-func (k KVStoreDummy) GetPoolAddresses(ctx sdk.Context) PoolAddresses             { return PoolAddresses{} }
-func (k KVStoreDummy) SetValidatorMeta(ctx sdk.Context, meta ValidatorMeta)       {}
-func (k KVStoreDummy) GetValidatorMeta(ctx sdk.Context) ValidatorMeta             { return ValidatorMeta{} }
-func (k KVStoreDummy) GetChains(ctx sdk.Context) (common.Chains, error)           { return nil, kaboom }
-func (k KVStoreDummy) SetChains(ctx sdk.Context, chain common.Chains)             {}
-func (k KVStoreDummy) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator          { return nil }
-func (k KVStoreDummy) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool     { return false }
+func (k KVStoreDummy) GetPoolAddresses(ctx sdk.Context) (PoolAddresses, error) {
+	return PoolAddresses{}, kaboom
+}
+func (k KVStoreDummy) SetValidatorMeta(ctx sdk.Context, meta ValidatorMeta)   {}
+func (k KVStoreDummy) GetValidatorMeta(ctx sdk.Context) ValidatorMeta         { return ValidatorMeta{} }
+func (k KVStoreDummy) GetChains(ctx sdk.Context) (common.Chains, error)       { return nil, kaboom }
+func (k KVStoreDummy) SetChains(ctx sdk.Context, chain common.Chains)         {}
+func (k KVStoreDummy) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator      { return nil }
+func (k KVStoreDummy) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool { return false }
 func (k KVStoreDummy) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error) {
 	return common.EmptyPubKey, kaboom
 }
