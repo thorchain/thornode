@@ -113,7 +113,11 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 	}
 	pool, err := keeper.GetPool(ctx, msg.Asset)
 	pool.Status = PoolSuspended
-	keeper.SetPool(ctx, pool)
+	if err := keeper.SetPool(ctx, pool); err != nil {
+		err = errors.Wrap(err, "fail to set pool")
+		ctx.Logger().Error(err.Error())
+		return sdk.ErrInternal(err.Error()).Result()
+	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
@@ -195,7 +199,11 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 	if pool.Empty() {
 		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Asset.String(), "creator", msg.RuneAddress)
 		pool.Asset = msg.Asset
-		keeper.SetPool(ctx, pool)
+		if err := keeper.SetPool(ctx, pool); err != nil {
+			err = errors.Wrap(err, "fail to set pool")
+			ctx.Logger().Error(err.Error())
+			return sdk.ErrInternal(err.Error()).Result()
+		}
 	}
 	if err := pool.EnsureValidPoolStatus(msg); nil != err {
 		ctx.Logger().Error("check pool status", "error", err)
@@ -698,6 +706,11 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 										pool.BalanceRune = pool.BalanceRune.Add(minusRune)
 										pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, diff)
 										keeper.SetPool(ctx, pool)
+										if err := keeper.SetPool(ctx, pool); err != nil {
+											err = errors.Wrap(err, "fail to set pool")
+											ctx.Logger().Error(err.Error())
+											return sdk.ErrInternal(err.Error()).Result()
+										}
 									}
 								}
 							}
@@ -1026,7 +1039,11 @@ func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 		pool.BalanceRune = pool.BalanceRune.Add(msg.RuneAmount)
 	}
 
-	keeper.SetPool(ctx, pool)
+	if err := keeper.SetPool(ctx, pool); err != nil {
+		err = errors.Wrap(err, "fail to set pool")
+		ctx.Logger().Error(err.Error())
+		return sdk.ErrInternal(err.Error()).Result()
+	}
 
 	// emit event
 	addEvt := NewEventAdd(
@@ -1529,7 +1546,11 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut *TxOutSto
 			}
 		}
 		pool.Status = PoolSuspended
-		keeper.SetPool(ctx, pool)
+		if err := keeper.SetPool(ctx, pool); err != nil {
+			err = errors.Wrap(err, "fail to set pool")
+			ctx.Logger().Error(err.Error())
+			return sdk.ErrInternal(err.Error()).Result()
+		}
 	}
 
 	return sdk.Result{

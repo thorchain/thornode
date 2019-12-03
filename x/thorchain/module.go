@@ -145,6 +145,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if err := am.keeper.UpdateVaultData(ctx); nil != err {
 		ctx.Logger().Error("fail to save vault", err)
 	}
+
 	am.poolMgr.EndBlock(ctx, am.txOutStore)
 	am.txOutStore.CommitBlock(ctx)
 	return am.validatorMgr.EndBlock(ctx, am.txOutStore)
