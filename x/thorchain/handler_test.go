@@ -1027,12 +1027,13 @@ func (s *TestReserveContributorKeeper) SetVaultData(ctx sdk.Context, data VaultD
 	return nil
 }
 
-func (s *TestReserveContributorKeeper) GetReservesContributors(ctx sdk.Context) ReserveContributors {
-	return s.contribs
+func (s *TestReserveContributorKeeper) GetReservesContributors(ctx sdk.Context) (ReserveContributors, error) {
+	return s.contribs, nil
 }
 
-func (s *TestReserveContributorKeeper) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) {
+func (s *TestReserveContributorKeeper) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) error {
 	s.contribs = contribs
+	return nil
 }
 
 func (s *HandlerSuite) TestHandleMsgReserveContributor(c *C) {
