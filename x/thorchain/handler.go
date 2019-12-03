@@ -1125,7 +1125,10 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 				txOut.TxArray[i].OutHash = msg.Tx.ID
 			}
 		}
-		keeper.SetTxOut(ctx, txOut)
+		if err := keeper.SetTxOut(ctx, txOut); nil != err {
+			ctx.Logger().Error("fail to save tx out", err)
+			return sdk.ErrInternal("fail to save tx out").Result()
+		}
 	}
 	keeper.SetLastSignedHeight(ctx, sdk.NewUint(uint64(voter.Height)))
 

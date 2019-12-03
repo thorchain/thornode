@@ -154,7 +154,9 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	}
 
 	for _, out := range data.TxOuts {
-		keeper.SetTxOut(ctx, &out)
+		if err := keeper.SetTxOut(ctx, &out); nil != err {
+			ctx.Logger().Error("fail to save tx out during genesis", err)
+		}
 	}
 
 	for _, index := range data.TxInIndexes {

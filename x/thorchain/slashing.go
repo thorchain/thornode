@@ -91,7 +91,10 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) 
 				}
 			}
 
-			keeper.SetTxOut(ctx, txs)
+			if err := keeper.SetTxOut(ctx, txs); nil != err {
+				ctx.Logger().Error("fail to save tx out", err)
+				return
+			}
 		}
 	}
 }
