@@ -212,13 +212,9 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		nodeAccounts = append(nodeAccounts, na)
 	}
 
-	var pools Pools
-	iterator = k.GetPoolIterator(ctx)
-	defer iterator.Close()
-	for ; iterator.Valid(); iterator.Next() {
-		var pool Pool
-		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		pools = append(pools, pool)
+	pools, err := k.GetPools(ctx)
+	if err != nil {
+		panic(err)
 	}
 
 	var votes []TxInVoter
