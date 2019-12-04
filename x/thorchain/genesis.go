@@ -102,7 +102,9 @@ func DefaultGenesisState() GenesisState {
 // InitGenesis read the data in GenesisState and apply it to data store
 func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.ValidatorUpdate {
 	for _, record := range data.Pools {
-		_ = keeper.SetPool(ctx, record)
+		if err := keeper.SetPool(ctx, record); err != nil {
+			panic(err)
+		}
 	}
 
 	for _, stake := range data.PoolStakers {
@@ -112,6 +114,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, config := range data.AdminConfigs {
 		keeper.SetAdminConfig(ctx, config)
 	}
+
 	validators := make([]abci.ValidatorUpdate, 0, len(data.NodeAccounts))
 	for _, ta := range data.NodeAccounts {
 		if ta.Status == NodeActive {
@@ -126,6 +129,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 			pk, err := sdk.GetConsPubKeyBech32(ta.ValidatorConsPubKey)
 			if nil != err {
 				ctx.Logger().Error("fail to parse consensus public key", "key", ta.ValidatorConsPubKey)
+				panic(err)
 			}
 			validators = append(validators, abci.ValidatorUpdate{
 				PubKey: tmtypes.TM2PB.PubKey(pk),
@@ -151,6 +155,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, out := range data.TxOuts {
 		if err := keeper.SetTxOut(ctx, &out); nil != err {
 			ctx.Logger().Error("fail to save tx out during genesis", err)
+			panic(err)
 		}
 	}
 
@@ -258,7 +263,10 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		completed = append(completed, e)
 	}
 
-	incomplete, _ := k.GetIncompleteEvents(ctx)
+	incomplete, err := k.GetIncompleteEvents(ctx)
+	if err != nil {
+		panic(err)
+	}
 
 	return GenesisState{
 		Pools:            pools,
