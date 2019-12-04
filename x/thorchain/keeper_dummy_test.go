@@ -100,9 +100,11 @@ func (k KVStoreDummy) AddObservingAddresses(_ sdk.Context, _ []sdk.AccAddress) e
 func (k KVStoreDummy) ClearObservingAddresses(_ sdk.Context)                         {}
 func (k KVStoreDummy) SetTxInVoter(_ sdk.Context, _ TxInVoter)                       {}
 func (k KVStoreDummy) GetTxInVoterIterator(_ sdk.Context) sdk.Iterator               { return nil }
-func (k KVStoreDummy) GetTxInVoter(_ sdk.Context, _ common.TxID) TxInVoter           { return TxInVoter{} }
-func (k KVStoreDummy) CheckTxHash(_ sdk.Context, _ common.TxID) bool                 { return false }
-func (k KVStoreDummy) GetTxInIndexIterator(_ sdk.Context) sdk.Iterator               { return nil }
+func (k KVStoreDummy) GetTxInVoter(_ sdk.Context, _ common.TxID) (TxInVoter, error) {
+	return TxInVoter{}, kaboom
+}
+func (k KVStoreDummy) CheckTxHash(_ sdk.Context, _ common.TxID) bool   { return false }
+func (k KVStoreDummy) GetTxInIndexIterator(_ sdk.Context) sdk.Iterator { return nil }
 func (k KVStoreDummy) GetTxInIndex(_ sdk.Context, _ uint64) (TxInIndex, error) {
 	return TxInIndex{}, kaboom
 }
