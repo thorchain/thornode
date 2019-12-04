@@ -10,10 +10,10 @@ install: go.sum
 	go install -tags "${TAGS}" ./cmd/thord
 	go install ./cmd/bifrost
 
-install-testnet: 
+install-testnet:
 	TAGS=testnet make install
 
-install-sandbox: 
+install-sandbox:
 	TAGS=sandbox make install
 
 tools:
@@ -59,6 +59,12 @@ start-daemon:
 
 start-rest:
 	thorcli rest-server
+
+start-bifrost:
+	bifrost -c cmd/bifrost/config.json
+
+start-thorMock:
+	go run tools/thorMock/thorMock.go
 
 setup: install
 	./build/scripts/localdev.sh
