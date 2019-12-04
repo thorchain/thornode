@@ -50,7 +50,6 @@ type dbPrefix string
 const (
 	prefixTxIn               dbPrefix = "tx/"
 	prefixPool               dbPrefix = "pool/"
-	prefixPoolIndex          dbPrefix = "pool_index/"
 	prefixTxOut              dbPrefix = "txout/"
 	prefixTotalLiquidityFee  dbPrefix = "total_liquidity_fee/"
 	prefixPoolLiquidityFee   dbPrefix = "pool_liquidity_fee/"

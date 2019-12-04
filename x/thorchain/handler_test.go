@@ -105,7 +105,8 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		k.SetNodeAccount(ctx, acc1)
 	}
 	if withActieBNBPool {
-		p := k.GetPool(ctx, common.BNBAsset)
+		p, err := k.GetPool(ctx, common.BNBAsset)
+		c.Assert(err, IsNil)
 		p.Asset = common.BNBAsset
 		p.Status = PoolEnabled
 		p.BalanceRune = sdk.NewUint(100 * common.One)
@@ -281,7 +282,8 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 		w.activeNodeAccount.NodeAddress)
 	stakeResult := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
 	c.Assert(stakeResult.Code, Equals, sdk.CodeOK)
-	p := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	p, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
 	c.Assert(p.Empty(), Equals, false)
 	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
 	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
@@ -291,7 +293,8 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	msgEndPool1 := NewMsgEndPool(common.BNBAsset, tx, w.activeNodeAccount.NodeAddress)
 	result1 := handleOperatorMsgEndPool(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgEndPool1)
 	c.Assert(result1.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result1))
-	p1 := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	p1, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
 	c.Check(p1.Status, Equals, PoolSuspended)
 	c.Check(p1.BalanceAsset.Uint64(), Equals, uint64(0))
 	c.Check(p1.BalanceRune.Uint64(), Equals, uint64(0))
@@ -337,7 +340,8 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 	stakeResult := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
 	c.Assert(stakeResult.Code, Equals, sdk.CodeUnauthorized)
 
-	p := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	p, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
 	c.Assert(p.Empty(), Equals, true)
 	msgSetStake = NewMsgSetStakeData(
 		tx,
@@ -350,7 +354,8 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 	stakeResult1 := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
 	c.Assert(stakeResult1.Code, Equals, sdk.CodeOK)
 
-	p = w.keeper.GetPool(w.ctx, common.BNBAsset)
+	p, err = w.keeper.GetPool(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
 	c.Assert(p.Empty(), Equals, false)
 	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
 	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
@@ -360,7 +365,8 @@ func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
 	c.Assert(e.InTx.ID.Equals(stakeTxHash), Equals, true)
 
 	// Suspended pool should not allow stake
-	w.keeper.SetPoolData(w.ctx, common.BNBAsset, PoolSuspended)
+	p.Status = PoolSuspended
+	w.keeper.SetPool(w.ctx, p)
 
 	msgSetStake1 := NewMsgSetStakeData(
 		tx,
@@ -498,7 +504,8 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 		w.activeNodeAccount.NodeAddress)
 	result2 := handleMsgSetTxIn(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn1)
 	c.Assert(result2.Code, Equals, sdk.CodeOK)
-	p1 := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	p1, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
 	c.Assert(p1.BalanceRune.Uint64(), Equals, uint64(200*common.One))
 	c.Assert(p1.BalanceAsset.Uint64(), Equals, uint64(200*common.One))
 	// pool staker
@@ -535,7 +542,8 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	result := handleMsgSetTxIn(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 
-	pool := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	pool, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
 	c.Assert(pool.Empty(), Equals, false)
 	c.Assert(pool.Status, Equals, PoolEnabled)
 	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
@@ -589,7 +597,8 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	w.txOutStore.NewBlock(2)
 	result1 := handleMsgSetTxIn(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn)
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
-	pool := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	pool, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
 	c.Assert(pool.Empty(), Equals, false)
 	c.Assert(pool.Status, Equals, PoolBootstrap)
 	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
@@ -779,7 +788,8 @@ func (HandlerSuite) TestHandleMsgAdd(c *C) {
 	result2 := handleMsgAdd(w.ctx, w.keeper, msgAdd)
 	c.Assert(result2.Code, Equals, sdk.CodeUnknownRequest)
 
-	pool := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	pool, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
 	pool.Asset = common.BNBAsset
 	pool.BalanceRune = sdk.NewUint(10 * common.One)
 	pool.BalanceAsset = sdk.NewUint(20 * common.One)
@@ -787,7 +797,8 @@ func (HandlerSuite) TestHandleMsgAdd(c *C) {
 	w.keeper.SetPool(w.ctx, pool)
 	result3 := handleMsgAdd(w.ctx, w.keeper, msgAdd)
 	c.Assert(result3.Code, Equals, sdk.CodeOK)
-	pool = w.keeper.GetPool(w.ctx, common.BNBAsset)
+	pool, err = w.keeper.GetPool(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
 	c.Assert(pool.Status, Equals, PoolEnabled)
 	c.Assert(pool.BalanceAsset.Uint64(), Equals, sdk.NewUint(120*common.One).Uint64())
 	c.Assert(pool.BalanceRune.Uint64(), Equals, sdk.NewUint(110*common.One).Uint64())
@@ -869,14 +880,17 @@ func (HandlerSuite) TestRefund(c *C) {
 
 	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
-	pool = w.keeper.GetPool(w.ctx, lokiAsset)
+	var err error
+	pool, err = w.keeper.GetPool(w.ctx, lokiAsset)
+	c.Assert(err, IsNil)
 	// pool should be zero since we drop coins we don't recognize on the floor
 	c.Assert(pool.BalanceAsset.Equal(sdk.ZeroUint()), Equals, true, Commentf("%d", pool.BalanceAsset.Uint64()))
 
 	// doing it a second time should keep it at zero
 	refundTx(w.ctx, GetRandomTxHash(), txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
-	pool = w.keeper.GetPool(w.ctx, lokiAsset)
+	pool, err = w.keeper.GetPool(w.ctx, lokiAsset)
+	c.Assert(err, IsNil)
 	c.Assert(pool.BalanceAsset.Equal(sdk.ZeroUint()), Equals, true)
 }
 

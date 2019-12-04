@@ -86,6 +86,8 @@ type Pool struct {
 	ExpiryInBlockHeight int64          `json:"expiry_in_block_height"` // means the pool address will be changed after these amount of blocks
 }
 
+type Pools []Pool
+
 // NewPool Returns a new Pool
 func NewPool() Pool {
 	return Pool{

@@ -32,7 +32,6 @@ func (q Query) Path(args ...string) string {
 var (
 	QueryAdminConfigBnb   = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}/{%s}"}
 	QueryAdminConfig      = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}"}
-	QueryPoolIndex        = Query{Key: "poolindex", EndpointTemplate: "/%s/pooltickers"}
 	QueryChains           = Query{Key: "chains", EndpointTemplate: "/%s/chains"}
 	QueryPool             = Query{Key: "pool", EndpointTemplate: "/%s/pool/{%s}"}
 	QueryPools            = Query{Key: "pools", EndpointTemplate: "/%s/pools"}
@@ -64,7 +63,6 @@ var Queries = []Query{
 	QueryChains,
 	QueryPoolStakers,
 	QueryStakerPools,
-	QueryPoolIndex,
 	QuerySwapRecord,
 	QueryUnStakeRecord,
 	QueryTxIn,

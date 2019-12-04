@@ -111,10 +111,12 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 			return result
 		}
 	}
-	keeper.SetPoolData(
-		ctx,
-		msg.Asset,
-		PoolSuspended)
+	pool, err := keeper.GetPool(ctx, msg.Asset)
+	pool.Status = PoolSuspended
+	if err := keeper.SetPool(ctx, pool); err != nil {
+		err = errors.Wrap(err, "fail to set pool")
+		return sdk.ErrInternal(err.Error()).Result()
+	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
@@ -187,17 +189,26 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 		ctx.Logger().Error(err.Error())
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	pool := keeper.GetPool(ctx, msg.Asset)
+
+	pool, err := keeper.GetPool(ctx, msg.Asset)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
 	if pool.Empty() {
 		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Asset.String(), "creator", msg.RuneAddress)
 		pool.Asset = msg.Asset
-		keeper.SetPool(ctx, pool)
+		if err := keeper.SetPool(ctx, pool); err != nil {
+			err = errors.Wrap(err, "fail to set pool")
+			ctx.Logger().Error(err.Error())
+			return sdk.ErrInternal(err.Error()).Result()
+		}
 	}
 	if err := pool.EnsureValidPoolStatus(msg); nil != err {
 		ctx.Logger().Error("check pool status", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	stakeUnits, err := stake(
+	stakeUnits, err = stake(
 		ctx,
 		keeper,
 		msg.Asset,
@@ -292,7 +303,13 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore,
 		ctx.Logger().Error(msg)
 		return sdk.ErrUnknownRequest(msg).Result()
 	}
-	if err := keeper.GetPool(ctx, msg.Asset).EnsureValidPoolStatus(msg); nil != err {
+
+	pool, err := keeper.GetPool(ctx, msg.Asset)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
+	if err := pool.EnsureValidPoolStatus(msg); nil != err {
 		ctx.Logger().Error("check pool status", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
@@ -620,7 +637,13 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 			yggExists := keeper.YggdrasilExists(ctx, txIn.ObservePoolAddress)
 			if !currentPoolAddress.PubKey.Equals(txIn.ObservePoolAddress) && !yggExists {
 				ctx.Logger().Error("wrong pool address,refund without deduct fee", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", txIn.ObservePoolAddress)
-				refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
+				err := refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, txIn.ObservePoolAddress, chain, false)
+				if err != nil {
+					err = errors.Wrap(err, "Fail to refund")
+					ctx.Logger().Error(err.Error())
+					return sdk.ErrInternal(err.Error()).Result()
+				}
+
 				continue
 			}
 
@@ -676,14 +699,22 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 									minusRune = common.SafeSub(coin.Amount, diff)
 									minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
 								} else {
-									pool := keeper.GetPool(ctx, coin.Asset)
+									pool, err := keeper.GetPool(ctx, coin.Asset)
+									if err != nil {
+										return sdk.ErrInternal(err.Error()).Result()
+									}
+
 									if !pool.Empty() {
 										minusRune = pool.AssetValueInRune(diff)
 										minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
 										// Update pool balances
 										pool.BalanceRune = pool.BalanceRune.Add(minusRune)
 										pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, diff)
-										keeper.SetPool(ctx, pool)
+										if err := keeper.SetPool(ctx, pool); err != nil {
+											err = errors.Wrap(err, "fail to set pool")
+											ctx.Logger().Error(err.Error())
+											return sdk.ErrInternal(err.Error()).Result()
+										}
 									}
 								}
 							}
@@ -701,7 +732,12 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 					}
 				} else {
 					// To thorchain network
-					refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+					err := refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+					if err != nil {
+						err = errors.Wrap(err, "Fail to refund")
+						ctx.Logger().Error(err.Error())
+						return sdk.ErrInternal(err.Error()).Result()
+					}
 					ee := NewEmptyRefundEvent()
 					buf, err := json.Marshal(ee)
 					if nil != err {
@@ -742,7 +778,12 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+				err := refundTx(ctx, voter.TxID, txIn, txOutStore, keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
+				if err != nil {
+					err = errors.Wrap(err, "Fail to refund")
+					ctx.Logger().Error(err.Error())
+					return sdk.ErrInternal(err.Error()).Result()
+				}
 			}
 		}
 	}
@@ -998,7 +1039,10 @@ func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
-	pool := keeper.GetPool(ctx, msg.Asset)
+	pool, err := keeper.GetPool(ctx, msg.Asset)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
 	if pool.Asset.IsEmpty() {
 		return sdk.ErrUnknownRequest(fmt.Sprintf("pool %s not exist", msg.Asset.String())).Result()
 	}
@@ -1009,7 +1053,11 @@ func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
 		pool.BalanceRune = pool.BalanceRune.Add(msg.RuneAmount)
 	}
 
-	keeper.SetPool(ctx, pool)
+	if err := keeper.SetPool(ctx, pool); err != nil {
+		err = errors.Wrap(err, "fail to set pool")
+		ctx.Logger().Error(err.Error())
+		return sdk.ErrInternal(err.Error()).Result()
+	}
 
 	// emit event
 	addEvt := NewEventAdd(
@@ -1477,14 +1525,15 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut *TxOutSto
 	if len(nas) == 0 {
 		return sdk.ErrInternal("can't find any active nodes").Result()
 	}
-	poolIndexes, err := keeper.GetPoolIndex(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get pool index", "err", err)
-		return sdk.ErrInternal("fail to get pool index").Result()
+
+	pools, err := keeper.GetPools(ctx)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
 	}
+
 	// go through all the pooles
-	for _, pi := range poolIndexes {
-		poolStaker, err := keeper.GetPoolStaker(ctx, pi)
+	for _, pool := range pools {
+		poolStaker, err := keeper.GetPoolStaker(ctx, pool.Asset)
 		if nil != err {
 			ctx.Logger().Error("fail to get pool staker", err)
 			return sdk.ErrInternal(err.Error()).Result()
@@ -1493,10 +1542,10 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut *TxOutSto
 		// everyone withdraw
 		for _, item := range poolStaker.Stakers {
 			unstakeMsg := NewMsgSetUnStake(
-				common.GetRagnarokTx(pi.Chain),
+				common.GetRagnarokTx(pool.Asset.Chain),
 				item.RuneAddress,
 				sdk.NewUint(10000),
-				pi,
+				pool.Asset,
 				nas[0].NodeAddress,
 			)
 
@@ -1506,10 +1555,12 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut *TxOutSto
 				return result
 			}
 		}
-		keeper.SetPoolData(
-			ctx,
-			pi,
-			PoolSuspended)
+		pool.Status = PoolSuspended
+		if err := keeper.SetPool(ctx, pool); err != nil {
+			err = errors.Wrap(err, "fail to set pool")
+			ctx.Logger().Error(err.Error())
+			return sdk.ErrInternal(err.Error()).Result()
+		}
 	}
 
 	return sdk.Result{

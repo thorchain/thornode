@@ -62,7 +62,11 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 		return sdk.ZeroUint(), errors.New("Rune address cannot be empty")
 	}
 
-	pool := keeper.GetPool(ctx, asset)
+	pool, err := keeper.GetPool(ctx, asset)
+	if err != nil {
+		return sdk.ZeroUint(), errors.Wrap(err, "fail to get pool")
+	}
+
 	// if THORNode have no balance, set the default pool status
 	if pool.BalanceAsset.IsZero() && pool.BalanceRune.IsZero() {
 		status := keeper.GetAdminConfigDefaultPoolStatus(ctx, nil)
@@ -122,7 +126,9 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	pool.BalanceRune = poolRune
 	pool.BalanceAsset = poolAsset
 	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sAsset", pool.BalanceRune, pool.BalanceAsset))
-	keeper.SetPool(ctx, pool)
+	if err := keeper.SetPool(ctx, pool); err != nil {
+		return sdk.ZeroUint(), errors.Wrapf(err, "fail to stake")
+	}
 	// maintain pool staker structure
 
 	ps.TotalUnits = pool.PoolUnits
