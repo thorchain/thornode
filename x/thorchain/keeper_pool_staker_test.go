@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -13,15 +14,12 @@ var _ = Suite(&KeeperPoolStakerSuite{})
 func (s *KeeperPoolStakerSuite) TestPoolStaker(c *C) {
 	ctx, k := setupKeeperForTest(c)
 
-	chains, err := k.GetChains(ctx)
-	c.Assert(err, IsNil)
-	c.Assert(chains, HasLen, 0)
+	asset := common.BNBAsset
+	poolStaker := NewPoolStaker(asset, sdk.NewUint(12))
 
-	chains = append(chains, common.BNBChain)
-	k.SetChains(ctx, chains)
-
-	chains, err = k.GetChains(ctx)
+	k.SetPoolStaker(ctx, poolStaker)
+	poolStaker, err := k.GetPoolStaker(ctx, asset)
 	c.Assert(err, IsNil)
-	c.Assert(chains, HasLen, 1)
-	c.Check(chains[0].IsBNB(), Equals, true)
+	c.Check(poolStaker.Asset.Equals(asset), Equals, true)
+	c.Check(poolStaker.TotalUnits.Equal(sdk.NewUint(12)), Equals, true)
 }
