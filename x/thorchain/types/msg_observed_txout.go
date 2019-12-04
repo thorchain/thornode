@@ -2,17 +2,16 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
 )
 
 // MsgObservedTxOut defines a MsgObservedTxOut message
 type MsgObservedTxOut struct {
-	Txs    []common.Tx    `json:"tx_in"`
+	Txs    ObservedTxs    `json:"txs"`
 	Signer sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgObservedTxOut is a constructor function for MsgObservedTxOut
-func NewMsgObservedTxOut(txs []common.Tx, signer sdk.AccAddress) MsgObservedTxOut {
+func NewMsgObservedTxOut(txs ObservedTxs, signer sdk.AccAddress) MsgObservedTxOut {
 	return MsgObservedTxOut{
 		Txs:    txs,
 		Signer: signer,
@@ -34,8 +33,15 @@ func (msg MsgObservedTxOut) ValidateBasic() sdk.Error {
 		return sdk.ErrUnknownRequest("Txs cannot be empty")
 	}
 	for _, tx := range msg.Txs {
-		if err := tx.IsValid(); err != nil {
+		if err := tx.Valid(); err != nil {
 			return sdk.ErrUnknownRequest(err.Error())
+		}
+		obAddr, err := tx.ObservedPubKey.GetAddress(tx.Tx.Coins[0].Asset.Chain)
+		if err != nil {
+			return sdk.ErrUnknownRequest(err.Error())
+		}
+		if !tx.Tx.FromAddress.Equals(obAddr) {
+			return sdk.ErrUnknownRequest("Request is not an inbound observed transaction")
 		}
 	}
 	return nil

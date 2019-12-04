@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -137,4 +138,10 @@ func enableNextPool(ctx sdk.Context, keeper Keeper) error {
 		return keeper.SetPool(ctx, pool)
 	}
 	return nil
+}
+
+func wrapError(ctx sdk.Context, err error, wrap string) error {
+	err = errors.Wrap(err, wrap)
+	ctx.Logger().Error(err.Error())
+	return err
 }
