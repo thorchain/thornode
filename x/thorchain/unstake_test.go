@@ -443,7 +443,7 @@ func getInMemoryPoolStorageForUnstake(c *C) Keeper {
 			},
 		},
 	}
-	store.SetPoolStaker(ctx, common.BNBAsset, poolStaker)
+	store.SetPoolStaker(ctx, poolStaker)
 	stakerPool := StakerPool{
 		RuneAddress: runeAddress,
 		PoolUnits: []*StakerPoolItem{
