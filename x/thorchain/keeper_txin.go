@@ -1,19 +1,17 @@
 package thorchain
 
 import (
-	"fmt"
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
 )
 
 type KeeperTxIn interface {
-	SetTxInVoter(ctx sdk.Context, tx TxInVoter)
 	GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator
-	GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter
-	CheckTxHash(ctx sdk.Context, hash common.TxID) bool
+	SetTxInVoter(ctx sdk.Context, tx TxInVoter)
+	GetTxInVoter(ctx sdk.Context, hash common.TxID) (TxInVoter, error)
+
 	GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator
 	GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error)
 	SetTxInIndex(ctx sdk.Context, height uint64, index TxInIndex)
@@ -34,25 +32,20 @@ func (k KVStore) GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // GetTxIn - gets information of a tx hash
-func (k KVStore) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter {
+func (k KVStore) GetTxInVoter(ctx sdk.Context, hash common.TxID) (TxInVoter, error) {
 	key := k.GetKey(ctx, prefixTxIn, hash.String())
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		return TxInVoter{TxID: hash}
+		return TxInVoter{TxID: hash}, nil
 	}
 
 	bz := store.Get([]byte(key))
-	var record TxInVoter
-	k.cdc.MustUnmarshalBinaryBare(bz, &record)
-	return record
-}
-
-// CheckTxHash - check to see if THORNode have already processed a specific tx
-func (k KVStore) CheckTxHash(ctx sdk.Context, hash common.TxID) bool {
-	store := ctx.KVStore(k.storeKey)
-	key := k.GetKey(ctx, prefixTxIn, hash.String())
-	return store.Has([]byte(key))
+	var voter TxInVoter
+	if err := k.cdc.UnmarshalBinaryBare(bz, &voter); err != nil {
+		return TxInVoter{}, dbError(ctx, "Unmarshal: TxInVoter", err)
+	}
+	return voter, nil
 }
 
 // GetTxInIndexIterator iterate tx in indexes
@@ -71,8 +64,7 @@ func (k KVStore) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error)
 	buf := store.Get([]byte(key))
 	var index TxInIndex
 	if err := k.cdc.UnmarshalBinaryBare(buf, &index); nil != err {
-		ctx.Logger().Error(fmt.Sprintf("fail to unmarshal poolindex,err: %s", err))
-		return TxInIndex{}, errors.Wrap(err, "fail to unmarshal poolindex")
+		return TxInIndex{}, dbError(ctx, "Unmarshal: txin index", err)
 	}
 	return index, nil
 }

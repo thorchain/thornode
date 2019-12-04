@@ -619,7 +619,12 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 	handler := NewHandler(keeper, poolAddressMgr, txOutStore, validatorManager)
 	for _, tx := range msg.TxIns {
-		voter := keeper.GetTxInVoter(ctx, tx.TxID)
+		voter, err := keeper.GetTxInVoter(ctx, tx.TxID)
+		if err != nil {
+			ctx.Logger().Error(err.Error())
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+
 		preConsensus := voter.HasConensus(activeNodeAccounts)
 		voter.Adds(tx.Txs, msg.Signer)
 		postConsensus := voter.HasConensus(activeNodeAccounts)
@@ -674,7 +679,11 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 							expectedCoins = ygg.Coins
 						case txOutbound:
 							txID := memo.GetTxID()
-							inVoter := keeper.GetTxInVoter(ctx, txID)
+							inVoter, err := keeper.GetTxInVoter(ctx, txID)
+							if err != nil {
+								ctx.Logger().Error("fail to get tx in voter", err)
+								return sdk.ErrInternal("fail to get tx in voter").Result()
+							}
 							origTx := inVoter.GetTx(activeNodeAccounts)
 							expectedCoins = origTx.Coins
 						}
@@ -1137,7 +1146,11 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
-	voter := keeper.GetTxInVoter(ctx, msg.InTxID)
+	voter, err := keeper.GetTxInVoter(ctx, msg.InTxID)
+	if err != nil {
+		ctx.Logger().Error("fail to get tx in voter", err)
+		return sdk.ErrInternal("fail to get tx in voter").Result()
+	}
 	voter.AddOutTx(msg.Tx)
 	keeper.SetTxInVoter(ctx, voter)
 
