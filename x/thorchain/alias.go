@@ -19,7 +19,6 @@ const (
 	GSLKey                 = types.GSLKey
 	StakerAmtIntervalKey   = types.StakerAmtIntervalKey
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
-	MinValidatorBondKey    = types.MinValidatorBondKey
 	WhiteListGasAssetKey   = types.WhiteListGasAssetKey
 	PoolRefundGasKey       = types.PoolRefundGasKey
 	DefaultPoolStatus      = types.DefaultPoolStatus
@@ -62,7 +61,6 @@ var (
 	GetAdminConfigKey              = types.GetAdminConfigKey
 	ModuleCdc                      = types.ModuleCdc
 	RegisterCodec                  = types.RegisterCodec
-	NewTrustAccount                = types.NewTrustAccount
 	NewNodeAccount                 = types.NewNodeAccount
 	NewYggdrasil                   = types.NewYggdrasil
 	NewReserveContributor          = types.NewReserveContributor
@@ -83,7 +81,6 @@ var (
 	GetRandomPubkeys               = types.GetRandomPubKeys
 	GetRandomPoolPubKeys           = types.GetRandomPoolPubKeys
 	SetupConfigForTest             = types.SetupConfigForTest
-	EmptyPoolAddresses             = types.EmptyPoolAddresses
 )
 
 type (
