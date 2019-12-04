@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"errors"
 	"net/http"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -10,29 +9,15 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth/client/utils"
 
 	"gitlab.com/thorchain/thornode/common"
-
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
-type txItem struct {
-	TxHash             string       `json:"tx"`
-	Coins              common.Coins `json:"coins"`
-	Memo               string       `json:"memo"`
-	Sender             string       `json:"sender"`
-	To                 string       `json:"to"`
-	Gas                common.Gas   `json:"gas"`
-	ObservePoolAddress string       `json:"observe_pool_address"`
-}
-
 type txHashReq struct {
-	BaseReq     rest.BaseReq `json:"base_req"`
-	Blockheight string       `json:"blockHeight"`
-	Count       string       `json:"count"`
-	Chain       string       `json:"chain"`
-	TxArray     []txItem     `json:"txArray"`
+	BaseReq rest.BaseReq      `json:"base_req"`
+	Txs     types.ObservedTxs `json:"txs"`
 }
 
-func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
+func postTxsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req txHashReq
 
@@ -45,57 +30,61 @@ func postTxHashHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		if !baseReq.ValidateBasic(w) {
 			return
 		}
-		baseReq.Gas = "400000"
+
+		baseReq.Gas = "400000" // i think we can delete this "auto" gas should work
+
 		addr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
 
-		voters := make([]types.TxInVoter, 0)
-		height := sdk.NewUintFromString(req.Blockheight)
-		if height.IsZero() {
-			err := errors.New("chain block height cannot be zero")
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
+		var inbound types.ObservedTxs
+		var outbound types.ObservedTxs
 
-		for _, tx := range req.TxArray {
-			txID, err := common.NewTxID(tx.TxHash)
+		for _, tx := range req.Txs {
+			chain := common.BNBChain
+			if len(tx.Tx.Coins) > 0 {
+				chain = tx.Tx.Coins[0].Asset.Chain
+			}
+
+			obAddr, err := tx.ObservedPubKey.GetAddress(chain)
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
+			if tx.Tx.ToAddress.Equals(obAddr) {
+				inbound = append(inbound, tx)
+			} else if tx.Tx.FromAddress.Equals(obAddr) {
+				outbound = append(outbound, tx)
+			} else {
+				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				return
+			}
+		}
 
-			sender, err := common.NewAddress(tx.Sender)
+		msgs := make([]sdk.Msg, 0)
+
+		if len(inbound) > 0 {
+			msg := types.NewMsgObservedTxIn(inbound, addr)
+			err = msg.ValidateBasic()
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
+			msgs = append(msgs, msg)
+		}
 
-			to, err := common.NewAddress(tx.To)
+		if len(outbound) > 0 {
+			msg := types.NewMsgObservedTxOut(outbound, addr)
+			err = msg.ValidateBasic()
 			if err != nil {
 				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 				return
 			}
-
-			observeAddr, err := common.NewPubKey(tx.ObservePoolAddress)
-			if err != nil {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			}
-
-			tx := types.NewTxIn(tx.Coins, tx.Memo, sender, to, tx.Gas, height, observeAddr)
-
-			voters = append(voters, types.NewTxInVoter(txID, []types.TxIn{tx}))
+			msgs = append(msgs, msg)
 		}
 
-		// create the message
-		msg := types.NewMsgSetTxIn(voters, addr)
-		err = msg.ValidateBasic()
-		if err != nil {
-			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
-			return
-		}
-		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, []sdk.Msg{msg})
+		utils.WriteGenerateStdTxResponse(w, cliCtx, baseReq, msgs)
 	}
 }

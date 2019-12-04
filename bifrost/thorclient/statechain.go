@@ -72,8 +72,7 @@ func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics)
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
 	sdk.RegisterCodec(cdc)
-	// TODO make THORNode should share this with statechain in common
-	cdc.RegisterConcrete(stypes.MsgSetTxIn{}, "thorchain/MsgSetTxIn", nil)
+	stypes.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 	return cdc
 }
@@ -134,7 +133,7 @@ func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string
 }
 
 // Sign the incoming transaction
-func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, error) {
+func (scb *StateChainBridge) Sign(txIns stypes.ObservedTxs) (*authtypes.StdTx, error) {
 	if len(txIns) == 0 {
 		scb.errCounter.WithLabelValues("nothing_to_sign", "").Inc()
 		return nil, errors.New("nothing to be signed")

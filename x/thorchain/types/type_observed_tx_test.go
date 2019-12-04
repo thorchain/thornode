@@ -31,7 +31,7 @@ func (s TypeTxInSuite) TestVoter(c *C) {
 	accPubKeys4 := GetRandomPubKeys()
 
 	observePoolAddr := GetRandomPubKey()
-	voter := NewTxInVoter(txID, nil)
+	voter := NewObservedTxVoter(txID, nil)
 
 	txIn := NewTxIn(nil, "hello", bnb, GetRandomBNBAddress(), common.BNBGasFeeSingleton, sdk.ZeroUint(), observePoolAddr)
 	txIn2 := NewTxIn(nil, "goodbye", bnb, GetRandomBNBAddress(), common.BNBGasFeeSingleton, sdk.ZeroUint(), observePoolAddr)

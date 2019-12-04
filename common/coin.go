@@ -2,6 +2,7 @@ package common
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -67,6 +68,29 @@ func (cs Coins) IsValid() error {
 	}
 
 	return nil
+}
+
+// Check if two lists of coins are equal to each other. Order does not matter
+func (cs1 Coins) Equals(cs2 Coins) bool {
+	if len(cs1) != len(cs2) {
+		return false
+	}
+
+	// sort both lists
+	sort.Slice(cs1[:], func(i, j int) bool {
+		return cs1[i].Asset.String() < cs1[j].Asset.String()
+	})
+	sort.Slice(cs2[:], func(i, j int) bool {
+		return cs2[i].Asset.String() < cs2[j].Asset.String()
+	})
+
+	for i := range cs1 {
+		if !cs1[i].Equals(cs2[i]) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func (cs Coins) String() string {

@@ -1,6 +1,8 @@
 package common
 
 import (
+	"sort"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -53,4 +55,27 @@ func (g Gas) Add(g2 Gas) Gas {
 	}
 
 	return append(g, newGasCoins...)
+}
+
+// Check if two lists of coins are equal to each other. Order does not matter
+func (gas1 Gas) Equals(gas2 Gas) bool {
+	if len(gas1) != len(gas2) {
+		return false
+	}
+
+	// sort both lists
+	sort.Slice(gas1[:], func(i, j int) bool {
+		return gas1[i].Asset.String() < gas1[j].Asset.String()
+	})
+	sort.Slice(gas2[:], func(i, j int) bool {
+		return gas2[i].Asset.String() < gas2[j].Asset.String()
+	})
+
+	for i := range gas1 {
+		if !gas1[i].Equals(gas2[i]) {
+			return false
+		}
+	}
+
+	return true
 }
