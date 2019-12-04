@@ -20,29 +20,29 @@ PG_DB="${PG_DB:=midgard}"
 mkdir -p /etc/midgard
 
 echo "{
-  "listen_port": $PORT,
-  "is_testnet" : $ISTESTNET,
-  "log_level": "debug",
-  "thorchain": {
-    "scheme": "$CHAIN_SCHEME",
-    "host": "$CHAIN_API",
-    "rpc_host": "$CHAIN_RPC",
-    "enable_scan": true,
-    "scan_start_pos": 1
+  \"listen_port\": $PORT,
+  \"is_testnet\" : $ISTESTNET,
+  \"log_level\": \"debug\",
+  \"thorchain\": {
+    \"scheme\": \"$CHAIN_SCHEME\",
+    \"host\": \"$CHAIN_API\",
+    \"rpc_host\": \"$CHAIN_RPC\",
+    \"enable_scan\": true,
+    \"scan_start_pos\": 1
   },
-  "timescale": {
-    "host": "$PG_HOST",
-    "port": $PG_PORT,
-    "user_name": "$PG_USERNAME",
-    "password": "$PG_PASSWORD",
-    "database": "$PG_DB",
-    "sslmode": "disable",
-    "migrationsDir": "./db/migrations/"
+  \"timescale\": {
+    \"host\": \"$PG_HOST\",
+    \"port\": $PG_PORT,
+    \"user_name\": \"$PG_USERNAME\",
+    \"password\": \"$PG_PASSWORD\",
+    \"database\": \"$PG_DB\",
+    \"sslmode\": \"disable\",
+    \"migrationsDir\": \"./db/migrations/\"
   },
-  "binance": {
-    "scheme": "$BINANCE_SCHEME",
-    "dex_host": "$BINANCE_DEX",
-    "is_testnet": $ISTESTNET
+  \"binance\": {
+    \"scheme\": \"$BINANCE_SCHEME\",
+    \"dex_host\": \"$BINANCE_DEX\",
+    \"is_testnet\": $ISTESTNET
   }
 }" > /etc/midgard/config.json
 
