@@ -112,7 +112,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	if err := keeper.SetPool(ctx, pool); err != nil {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
 	}
-	keeper.SetPoolStaker(ctx, msg.Asset, poolStaker)
+	keeper.SetPoolStaker(ctx, poolStaker)
 	keeper.SetStakerPool(ctx, msg.RuneAddress, stakerPool)
 	return withdrawRune, withDrawAsset, common.SafeSub(fStakerUnit, unitAfter), nil
 }

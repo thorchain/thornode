@@ -106,7 +106,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	}
 
 	for _, stake := range data.PoolStakers {
-		keeper.SetPoolStaker(ctx, stake.Asset, stake)
+		keeper.SetPoolStaker(ctx, stake)
 	}
 
 	for _, config := range data.AdminConfigs {

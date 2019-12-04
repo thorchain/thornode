@@ -50,8 +50,8 @@ func (k KVStoreDummy) GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator { retu
 func (k KVStoreDummy) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {
 	return PoolStaker{}, kaboom
 }
-func (k KVStoreDummy) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker) {}
-func (k KVStoreDummy) GetStakerPoolIterator(ctx sdk.Context) sdk.Iterator               { return nil }
+func (k KVStoreDummy) SetPoolStaker(ctx sdk.Context, ps PoolStaker)       {}
+func (k KVStoreDummy) GetStakerPoolIterator(ctx sdk.Context) sdk.Iterator { return nil }
 func (k KVStoreDummy) GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error) {
 	return StakerPool{}, kaboom
 }
