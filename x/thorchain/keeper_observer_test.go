@@ -26,7 +26,7 @@ func (s *KeeperObserverSuite) TestObserver(c *C) {
 	c.Check(addrs[0].Equals(addr), Equals, true)
 
 	k.ClearObservingAddresses(ctx)
-	addrs, err := k.GetObservingAddresses(ctx)
+	addrs, err = k.GetObservingAddresses(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(addrs, HasLen, 0)
 }
