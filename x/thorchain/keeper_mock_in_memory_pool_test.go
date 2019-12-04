@@ -79,8 +79,8 @@ func (p *MockInMemoryPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.As
 	}
 	return NewPoolStaker(asset, sdk.ZeroUint()), nil
 }
-func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker) {
-	key := p.GetKey(ctx, prefixPoolStaker, asset.String())
+func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, ps PoolStaker) {
+	key := p.GetKey(ctx, prefixPoolStaker, ps.Asset.String())
 	p.store[key] = ps
 }
 

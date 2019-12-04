@@ -97,7 +97,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 		if stakeAssetAmount.IsZero() {
 			su.PendingRune = su.PendingRune.Add(stakeRuneAmount)
 			ps.UpsertStakerUnit(su)
-			keeper.SetPoolStaker(ctx, asset, ps)
+			keeper.SetPoolStaker(ctx, ps)
 			return sdk.ZeroUint(), nil
 		}
 		stakeRuneAmount = su.PendingRune.Add(stakeRuneAmount)
@@ -142,7 +142,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	}
 	su.Units = totalStakerUnits
 	ps.UpsertStakerUnit(su)
-	keeper.SetPoolStaker(ctx, asset, ps)
+	keeper.SetPoolStaker(ctx, ps)
 	// maintain stake pool structure
 	sp, err := keeper.GetStakerPool(ctx, runeAddr)
 	if nil != err {
