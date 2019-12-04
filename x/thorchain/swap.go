@@ -16,7 +16,11 @@ func validatePools(ctx sdk.Context, keeper Keeper, assets ...common.Asset) error
 			if !keeper.PoolExist(ctx, asset) {
 				return errors.New(fmt.Sprintf("%s doesn't exist", asset))
 			}
-			pool := keeper.GetPool(ctx, asset)
+			pool, err := keeper.GetPool(ctx, asset)
+			if err != nil {
+				return err
+			}
+
 			if pool.Status != PoolEnabled {
 				return errors.Errorf("pool %s is in %s status, can't swap", asset, pool.Status)
 			}
@@ -63,7 +67,11 @@ func swap(ctx sdk.Context,
 
 	if isDoubleSwap {
 		var err error
-		sourcePool := keeper.GetPool(ctx, source)
+		sourcePool, err := keeper.GetPool(ctx, source)
+		if err != nil {
+			return sdk.ZeroUint(), err
+		}
+
 		tx.Coins[0].Amount, sourcePool, err = swapOne(ctx, keeper, tx, sourcePool, common.RuneAsset(), destination, tradeTarget, globalSlipLimit)
 		if err != nil {
 			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneAsset())
@@ -77,7 +85,10 @@ func swap(ctx sdk.Context,
 	if source.IsRune() {
 		asset = target
 	}
-	pool := keeper.GetPool(ctx, asset)
+	pool, err := keeper.GetPool(ctx, asset)
+	if err != nil {
+		return sdk.ZeroUint(), err
+	}
 	assetAmount, pool, err := swapOne(ctx, keeper, tx, pool, target, destination, tradeTarget, globalSlipLimit)
 
 	if err != nil {
@@ -90,7 +101,9 @@ func swap(ctx sdk.Context,
 
 	// Update pools
 	for _, pool := range pools {
-		keeper.SetPool(ctx, pool)
+		if err := keeper.SetPool(ctx, pool); err != nil {
+			return sdk.ZeroUint(), err
+		}
 	}
 	return assetAmount, nil
 }
@@ -165,7 +178,10 @@ func swapOne(ctx sdk.Context,
 	}
 
 	// Get our pool from the KVStore
-	pool = keeper.GetPool(ctx, asset)
+	pool, err = keeper.GetPool(ctx, asset)
+	if err != nil {
+		return sdk.ZeroUint(), Pool{}, err
+	}
 	if pool.Status != PoolEnabled {
 		return sdk.ZeroUint(), pool, errors.Errorf("pool %s is in %s status, can't swap", asset.String(), pool.Status)
 	}

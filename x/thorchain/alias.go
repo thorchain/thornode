@@ -117,6 +117,7 @@ type (
 	TxIn                        = types.TxIn
 	TxInVoter                   = types.TxInVoter
 	Pool                        = types.Pool
+	Pools                       = types.Pools
 	PoolStaker                  = types.PoolStaker
 	StakerPool                  = types.StakerPool
 	StakerUnit                  = types.StakerUnit

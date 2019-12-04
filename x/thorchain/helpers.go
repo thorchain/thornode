@@ -8,11 +8,14 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) {
+func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Coins {
-		pool := keeper.GetPool(ctx, coin.Asset)
+		pool, err := keeper.GetPool(ctx, coin.Asset)
+		if err != nil {
+			return fmt.Errorf("fail to get pool: %s", err)
+		}
 		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
 			toi := &TxOutItem{
 				Chain:       chain,
@@ -27,6 +30,7 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 
 		// Zombie coins are just dropped.
 	}
+	return nil
 }
 
 func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut *TxOutStore) {
@@ -103,5 +107,34 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 	}
 	keeper.SetIncompleteEvents(ctx, incomplete)
 	keeper.SetLastEventID(ctx, lastEventID)
+	return nil
+}
+
+func enableNextPool(ctx sdk.Context, keeper Keeper) error {
+	var pools []Pool
+	iterator := keeper.GetPoolIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var pool Pool
+		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		if pool.Status == PoolBootstrap {
+			pools = append(pools, pool)
+		}
+	}
+
+	if len(pools) > 0 {
+		pool := pools[0]
+		for _, p := range pools {
+			if pool.BalanceRune.LT(p.BalanceRune) {
+				pool = p
+			}
+		}
+		// ensure THORNode don't enable a pool that doesn't have any rune or assets
+		if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
+			return nil
+		}
+		pool.Status = PoolEnabled
+		return keeper.SetPool(ctx, pool)
+	}
 	return nil
 }

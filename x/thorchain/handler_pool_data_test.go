@@ -11,18 +11,21 @@ type HandlerPoolDataSuite struct{}
 
 type TestPoolKeeper struct {
 	KVStoreDummy
-	na     NodeAccount
-	asset  common.Asset
-	status PoolStatus
+	na   NodeAccount
+	pool Pool
 }
 
 func (k *TestPoolKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
 	return k.na, nil
 }
 
-func (k *TestPoolKeeper) SetPoolData(ctx sdk.Context, asset common.Asset, status PoolStatus) {
-	k.asset = asset
-	k.status = status
+func (k *TestPoolKeeper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
+	return k.pool, nil
+}
+
+func (k *TestPoolKeeper) SetPool(ctx sdk.Context, pool Pool) error {
+	k.pool = pool
+	return nil
 }
 
 var _ = Suite(&HandlerPoolDataSuite{})
@@ -68,6 +71,6 @@ func (s *HandlerPoolDataSuite) TestHandle(c *C) {
 	msg := NewMsgSetPoolData(common.BNBAsset, PoolEnabled, GetRandomBech32Addr())
 	err := handler.Handle(ctx, msg, ver)
 	c.Assert(err, IsNil)
-	c.Check(keeper.asset.Equals(common.BNBAsset), Equals, true)
-	c.Check(keeper.status, Equals, PoolEnabled)
+	c.Check(keeper.pool.Asset.Equals(common.BNBAsset), Equals, true, Commentf("%+v\n", keeper.pool))
+	c.Check(keeper.pool.Status, Equals, PoolEnabled)
 }

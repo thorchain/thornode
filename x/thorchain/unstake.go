@@ -36,7 +36,11 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	}
 
 	// here fBalance should be valid , because THORNode did the validation above
-	pool := keeper.GetPool(ctx, msg.Asset)
+	pool, err := keeper.GetPool(ctx, msg.Asset)
+	if err != nil {
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
+	}
+
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.Wrap(err, "can't find pool staker")
@@ -102,11 +106,12 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	// Create a pool event if THORNode have no rune or assets
 	if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
 		pool.Status = PoolBootstrap
-		eventPoolStatusWrapper(ctx, keeper, pool)
 	}
 
 	// update staker pool
-	keeper.SetPool(ctx, pool)
+	if err := keeper.SetPool(ctx, pool); err != nil {
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
+	}
 	keeper.SetPoolStaker(ctx, msg.Asset, poolStaker)
 	keeper.SetStakerPool(ctx, msg.RuneAddress, stakerPool)
 	return withdrawRune, withDrawAsset, common.SafeSub(fStakerUnit, unitAfter), nil

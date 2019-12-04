@@ -23,13 +23,10 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 	}
 
 	// Gather list of all pools
-	assets, err := keeper.GetPoolIndex(ctx)
+
+	pools, err := keeper.GetPools(ctx)
 	if err != nil {
 		return err
-	}
-	pools := make([]Pool, len(assets))
-	for i, asset := range assets {
-		pools[i] = keeper.GetPool(ctx, asset)
 	}
 
 	for _, na := range nodeAccs {

@@ -30,8 +30,6 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 			return queryPoolStakers(ctx, path[1:], req, keeper)
 		case q.QueryStakerPools.Key:
 			return queryStakerPool(ctx, path[1:], req, keeper)
-		case q.QueryPoolIndex.Key:
-			return queryPoolIndex(ctx, path[1:], req, keeper)
 		case q.QueryTxIn.Key:
 			return queryTxIn(ctx, path[1:], req, keeper)
 		case q.QueryAdminConfig.Key, q.QueryAdminConfigBnb.Key:
@@ -209,21 +207,6 @@ func queryObserver(ctx sdk.Context, path []string, req abci.RequestQuery, keeper
 	return res, nil
 }
 
-// queryPoolIndex
-func queryPoolIndex(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	ps, err := keeper.GetPoolIndex(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get pool index", err)
-		return nil, sdk.ErrInternal("fail to get pool index")
-	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ps)
-	if nil != err {
-		ctx.Logger().Error("fail to marshal pool index to json", err)
-		return nil, sdk.ErrInternal("fail to marshal pool index to json")
-	}
-	return res, nil
-}
-
 // queryPoolStakers
 func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	asset, err := common.NewAsset(path[0])
@@ -273,7 +256,13 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		return nil, sdk.ErrInternal("Could not parse asset")
 	}
 	currentPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
-	pool := keeper.GetPool(ctx, asset)
+
+	pool, err := keeper.GetPool(ctx, asset)
+	if err != nil {
+		ctx.Logger().Error("fail to get pool", err)
+		return nil, sdk.ErrInternal("Could not get pool")
+	}
+
 	if pool.Empty() {
 		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("pool: %s doesn't exist", path[0]))
 	}
@@ -296,7 +285,7 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 
 func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrMgr *PoolAddressManager) ([]byte, sdk.Error) {
 	pools := QueryResPools{}
-	iterator := keeper.GetPoolDataIterator(ctx)
+	iterator := keeper.GetPoolIterator(ctx)
 	currentPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
 	bnbPoolPubKey := currentPoolAddr.Current.GetByChain(common.BNBChain)
 	if bnbPoolPubKey == nil || bnbPoolPubKey.IsEmpty() {
