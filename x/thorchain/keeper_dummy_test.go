@@ -78,18 +78,22 @@ func (k KVStoreDummy) SetNodeAccount(ctx sdk.Context, na NodeAccount) error { re
 func (k KVStoreDummy) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
 	return kaboom
 }
-func (k KVStoreDummy) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator                 { return nil }
-func (k KVStoreDummy) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress)              {}
-func (k KVStoreDummy) RemoveActiveObserver(ctx sdk.Context, addr sdk.AccAddress)           {}
-func (k KVStoreDummy) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool          { return false }
-func (k KVStoreDummy) GetObservingAddresses(ctx sdk.Context) []sdk.AccAddress              { return nil }
-func (k KVStoreDummy) AddObservingAddresses(ctx sdk.Context, inAddresses []sdk.AccAddress) {}
-func (k KVStoreDummy) ClearObservingAddresses(ctx sdk.Context)                             {}
-func (k KVStoreDummy) SetTxInVoter(ctx sdk.Context, tx TxInVoter)                          {}
-func (k KVStoreDummy) GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator                   { return nil }
-func (k KVStoreDummy) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter            { return TxInVoter{} }
-func (k KVStoreDummy) CheckTxHash(ctx sdk.Context, hash common.TxID) bool                  { return false }
-func (k KVStoreDummy) GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator                   { return nil }
+func (k KVStoreDummy) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator        { return nil }
+func (k KVStoreDummy) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress)     {}
+func (k KVStoreDummy) RemoveActiveObserver(ctx sdk.Context, addr sdk.AccAddress)  {}
+func (k KVStoreDummy) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool { return false }
+func (k KVStoreDummy) GetObservingAddresses(ctx sdk.Context) ([]sdk.AccAddress, error) {
+	return nil, kaboom
+}
+func (k KVStoreDummy) AddObservingAddresses(ctx sdk.Context, inAddresses []sdk.AccAddress) error {
+	return kaboom
+}
+func (k KVStoreDummy) ClearObservingAddresses(ctx sdk.Context)                  {}
+func (k KVStoreDummy) SetTxInVoter(ctx sdk.Context, tx TxInVoter)               {}
+func (k KVStoreDummy) GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator        { return nil }
+func (k KVStoreDummy) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter { return TxInVoter{} }
+func (k KVStoreDummy) CheckTxHash(ctx sdk.Context, hash common.TxID) bool       { return false }
+func (k KVStoreDummy) GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator        { return nil }
 func (k KVStoreDummy) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error) {
 	return TxInIndex{}, kaboom
 }

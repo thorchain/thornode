@@ -774,7 +774,11 @@ func handleMsgSetTxIn(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore, po
 
 			// add addresses to observing addresses. This is used to detect
 			// active/inactive observing node accounts
-			keeper.AddObservingAddresses(ctx, txIn.Signers)
+			if err := keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
+				err = errors.Wrap(err, "fail to add observer address")
+				ctx.Logger().Error(err.Error())
+				return sdk.ErrInternal(err.Error()).Result()
+			}
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
