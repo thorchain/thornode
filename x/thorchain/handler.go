@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -1376,7 +1377,7 @@ func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
 		ctx.Logger().Error("node account already exist", "address", msg.NodeAddress, "status", nodeAccount.Status)
 		return sdk.ErrUnknownRequest("node account already exist").Result()
 	}
-	minValidatorBond := keeper.GetAdminConfigMinValidatorBond(ctx, sdk.AccAddress{})
+	minValidatorBond := sdk.NewUint(constants.MinimumBondInRune)
 	if msg.Bond.LT(minValidatorBond) {
 		ctx.Logger().Error("not enough rune to be whitelisted", "rune", msg.Bond, "min validator bond", minValidatorBond.String())
 		return sdk.ErrUnknownRequest("not enough rune to be whitelisted").Result()

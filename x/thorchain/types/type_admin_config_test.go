@@ -19,7 +19,6 @@ func (s AdminConfigSuite) TestGetKey(c *C) {
 		"GSL",
 		"StakerAmtInterval",
 		"Unknown",
-		"MinValidatorBond",
 		"WhiteListGasAsset",
 		"PoolRefundGas",
 		"DefaultPoolStatus",
@@ -39,8 +38,7 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 		config = NewAdminConfig(GetAdminConfigKey(amt), "abc", addr) // invalid value
 		c.Check(config.Valid(), NotNil, Commentf("%s", amt))
 	}
-	uintAmnt := []string{
-		"MinValidatorBond", "PoolRefundGas"}
+	uintAmnt := []string{"PoolRefundGas"}
 	for _, item := range uintAmnt {
 		cfg := NewAdminConfig(GetAdminConfigKey(item), "1000", addr)
 		c.Check(cfg.Valid(), IsNil, Commentf("%s", item))
@@ -92,11 +90,6 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 		},
 		{
 			address: addr,
-			key:     MinValidatorBondKey,
-			value:   "blab",
-		},
-		{
-			address: addr,
 			key:     PoolRefundGasKey,
 			value:   "whatever",
 		},
@@ -116,7 +109,6 @@ func (AdminConfigSuite) TestDefault(c *C) {
 	input := map[AdminConfigKey]string{
 		GSLKey:               "0.3",
 		StakerAmtIntervalKey: "100",
-		MinValidatorBondKey:  sdk.NewUint(common.One * 10).String(),
 		WhiteListGasAssetKey: "1000bep",
 		PoolRefundGasKey:     strconv.Itoa(common.One / 10),
 		DefaultPoolStatus:    "Enabled",
