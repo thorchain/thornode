@@ -10,6 +10,8 @@ install: go.sum
 	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/thord
 	GO111MODULE=on go install -v ./cmd/observed
 	GO111MODULE=on go install -v ./cmd/signd
+	GO111MODULE=on go install -v ./cmd/bifrost
+
 
 tools:
 	GO111MODULE=on go install -tags "$(build_tags)" ./tools/bsinner
@@ -58,6 +60,12 @@ start-daemon:
 
 start-rest:
 	thorcli rest-server
+
+start-bifrost:
+	bifrost -c cmd/bifrost/config.json
+
+start-thorMock:
+	go run tools/thorMock/thorMock.go
 
 setup: install
 	./build/scripts/localdev.sh
