@@ -24,165 +24,177 @@ func (k KVStoreDummy) CoinKeeper() bank.Keeper { return bank.BaseKeeper{} }
 func (k KVStoreDummy) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", ModuleName))
 }
-func (k KVStoreDummy) GetKey(ctx sdk.Context, prefix dbPrefix, key string) string {
+func (k KVStoreDummy) GetKey(_ sdk.Context, prefix dbPrefix, key string) string {
 	return fmt.Sprintf("%s/1/%s", prefix, key)
 }
-func (k KVStoreDummy) SetLastSignedHeight(ctx sdk.Context, height sdk.Uint) { return }
-func (k KVStoreDummy) GetLastSignedHeight(ctx sdk.Context) (sdk.Uint, error) {
+func (k KVStoreDummy) SetLastSignedHeight(_ sdk.Context, _ sdk.Uint) { return }
+func (k KVStoreDummy) GetLastSignedHeight(_ sdk.Context) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
-func (k KVStoreDummy) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height sdk.Uint) error {
+func (k KVStoreDummy) SetLastChainHeight(_ sdk.Context, _ common.Chain, _ sdk.Uint) error {
 	return kaboom
 }
-func (k KVStoreDummy) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (sdk.Uint, error) {
+func (k KVStoreDummy) GetLastChainHeight(_ sdk.Context, _ common.Chain) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
-func (k KVStoreDummy) GetPoolIterator(ctx sdk.Context) sdk.Iterator {
+func (k KVStoreDummy) GetPoolBalances(_ sdk.Context, _, _ common.Asset) (sdk.Uint, sdk.Uint) {
+	return sdk.ZeroUint(), sdk.ZeroUint()
+}
+func (k KVStoreDummy) GetPoolIterator(_ sdk.Context) sdk.Iterator {
 	return nil
 }
-func (k KVStoreDummy) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
+func (k KVStoreDummy) SetPoolData(_ sdk.Context, _ common.Asset, _ PoolStatus) {}
+func (k KVStoreDummy) GetPoolDataIterator(_ sdk.Context) sdk.Iterator          { return nil }
+func (k KVStoreDummy) EnableAPool(_ sdk.Context)                               {}
+func (k KVStoreDummy) GetPoolIndex(_ sdk.Context) (PoolIndex, error)           { return nil, kaboom }
+func (k KVStoreDummy) SetPoolIndex(_ sdk.Context, _ PoolIndex)                 {}
+func (k KVStoreDummy) AddToPoolIndex(_ sdk.Context, _ common.Asset) error      { return kaboom }
+func (k KVStoreDummy) RemoveFromPoolIndex(_ sdk.Context, _ common.Asset) error { return kaboom }
+
+func (k KVStoreDummy) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return Pool{}, kaboom
 }
-func (k KVStoreDummy) GetPools(ctx sdk.Context) (Pools, error)            { return nil, kaboom }
-func (k KVStoreDummy) SetPool(ctx sdk.Context, pool Pool) error           { return kaboom }
-func (k KVStoreDummy) PoolExist(ctx sdk.Context, asset common.Asset) bool { return false }
-func (k KVStoreDummy) GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator { return nil }
-func (k KVStoreDummy) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {
+func (k KVStoreDummy) GetPools(_ sdk.Context) (Pools, error)            { return nil, kaboom }
+func (k KVStoreDummy) SetPool(_ sdk.Context, _ Pool) error              { return kaboom }
+func (k KVStoreDummy) PoolExist(_ sdk.Context, _ common.Asset) bool     { return false }
+func (k KVStoreDummy) GetPoolStakerIterator(_ sdk.Context) sdk.Iterator { return nil }
+func (k KVStoreDummy) GetPoolStaker(_ sdk.Context, _ common.Asset) (PoolStaker, error) {
 	return PoolStaker{}, kaboom
 }
-func (k KVStoreDummy) SetPoolStaker(ctx sdk.Context, ps PoolStaker)       {}
-func (k KVStoreDummy) GetStakerPoolIterator(ctx sdk.Context) sdk.Iterator { return nil }
-func (k KVStoreDummy) GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error) {
+func (k KVStoreDummy) SetPoolStaker(_ sdk.Context, _ PoolStaker)        {}
+func (k KVStoreDummy) GetStakerPoolIterator(_ sdk.Context) sdk.Iterator { return nil }
+func (k KVStoreDummy) GetStakerPool(_ sdk.Context, _ common.Address) (StakerPool, error) {
 	return StakerPool{}, kaboom
 }
-func (k KVStoreDummy) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool) {}
-func (k KVStoreDummy) TotalActiveNodeAccount(ctx sdk.Context) (int, error)                   { return 0, kaboom }
-func (k KVStoreDummy) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error)                { return nil, kaboom }
-func (k KVStoreDummy) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error) {
+func (k KVStoreDummy) SetStakerPool(_ sdk.Context, _ common.Address, _ StakerPool) {}
+func (k KVStoreDummy) TotalActiveNodeAccount(_ sdk.Context) (int, error)           { return 0, kaboom }
+func (k KVStoreDummy) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error)        { return nil, kaboom }
+func (k KVStoreDummy) ListNodeAccountsByStatus(_ sdk.Context, _ NodeStatus) (NodeAccounts, error) {
 	return nil, kaboom
 }
-func (k KVStoreDummy) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+func (k KVStoreDummy) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
 	return nil, kaboom
 }
-func (k KVStoreDummy) GetLowestActiveVersion(ctx sdk.Context) semver.Version { return semver.Version{} }
-func (k KVStoreDummy) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+func (k KVStoreDummy) GetLowestActiveVersion(_ sdk.Context) semver.Version { return semver.Version{} }
+func (k KVStoreDummy) GetNodeAccount(_ sdk.Context, _ sdk.AccAddress) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
-func (k KVStoreDummy) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
+func (k KVStoreDummy) GetNodeAccountByPubKey(_ sdk.Context, _ common.PubKey) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
-func (k KVStoreDummy) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error) {
+func (k KVStoreDummy) GetNodeAccountByBondAddress(_ sdk.Context, _ common.Address) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
-func (k KVStoreDummy) SetNodeAccount(ctx sdk.Context, na NodeAccount) error { return nil }
-func (k KVStoreDummy) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
+func (k KVStoreDummy) SetNodeAccount(_ sdk.Context, _ NodeAccount) error { return nil }
+func (k KVStoreDummy) EnsureTrustAccountUnique(_ sdk.Context, _ string, _ common.PubKeys) error {
 	return kaboom
 }
-func (k KVStoreDummy) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator        { return nil }
-func (k KVStoreDummy) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress)     {}
-func (k KVStoreDummy) RemoveActiveObserver(ctx sdk.Context, addr sdk.AccAddress)  {}
-func (k KVStoreDummy) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool { return false }
-func (k KVStoreDummy) GetObservingAddresses(ctx sdk.Context) ([]sdk.AccAddress, error) {
+func (k KVStoreDummy) GetNodeAccountIterator(_ sdk.Context) sdk.Iterator     { return nil }
+func (k KVStoreDummy) SetActiveObserver(_ sdk.Context, _ sdk.AccAddress)     {}
+func (k KVStoreDummy) RemoveActiveObserver(_ sdk.Context, _ sdk.AccAddress)  {}
+func (k KVStoreDummy) IsActiveObserver(_ sdk.Context, _ sdk.AccAddress) bool { return false }
+func (k KVStoreDummy) GetObservingAddresses(_ sdk.Context) ([]sdk.AccAddress, error) {
 	return nil, kaboom
 }
-func (k KVStoreDummy) AddObservingAddresses(ctx sdk.Context, inAddresses []sdk.AccAddress) error {
-	return kaboom
-}
-func (k KVStoreDummy) ClearObservingAddresses(ctx sdk.Context)                  {}
-func (k KVStoreDummy) SetTxInVoter(ctx sdk.Context, tx TxInVoter)               {}
-func (k KVStoreDummy) GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator        { return nil }
-func (k KVStoreDummy) GetTxInVoter(ctx sdk.Context, hash common.TxID) TxInVoter { return TxInVoter{} }
-func (k KVStoreDummy) CheckTxHash(ctx sdk.Context, hash common.TxID) bool       { return false }
-func (k KVStoreDummy) GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator        { return nil }
-func (k KVStoreDummy) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error) {
+func (k KVStoreDummy) AddObservingAddresses(_ sdk.Context, _ []sdk.AccAddress) error { return nil }
+func (k KVStoreDummy) ClearObservingAddresses(_ sdk.Context)                         {}
+func (k KVStoreDummy) SetTxInVoter(_ sdk.Context, _ TxInVoter)                       {}
+func (k KVStoreDummy) GetTxInVoterIterator(_ sdk.Context) sdk.Iterator               { return nil }
+func (k KVStoreDummy) GetTxInVoter(_ sdk.Context, _ common.TxID) TxInVoter           { return TxInVoter{} }
+func (k KVStoreDummy) CheckTxHash(_ sdk.Context, _ common.TxID) bool                 { return false }
+func (k KVStoreDummy) GetTxInIndexIterator(_ sdk.Context) sdk.Iterator               { return nil }
+func (k KVStoreDummy) GetTxInIndex(_ sdk.Context, _ uint64) (TxInIndex, error) {
 	return TxInIndex{}, kaboom
 }
-func (k KVStoreDummy) SetTxInIndex(ctx sdk.Context, height uint64, index TxInIndex) {}
-func (k KVStoreDummy) AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) error {
+func (k KVStoreDummy) SetTxInIndex(_ sdk.Context, _ uint64, _ TxInIndex) {}
+func (k KVStoreDummy) AddToTxInIndex(_ sdk.Context, _ uint64, _ common.TxID) error {
 	return kaboom
 }
-func (k KVStoreDummy) SetTxOut(ctx sdk.Context, blockOut *TxOut) error         { return nil }
-func (k KVStoreDummy) GetTxOutIterator(ctx sdk.Context) sdk.Iterator           { return nil }
-func (k KVStoreDummy) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) { return nil, kaboom }
-func (k KVStoreDummy) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fee sdk.Uint) error {
+func (k KVStoreDummy) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error) { return nil, kaboom }
+func (k KVStoreDummy) SetTxOut(_ sdk.Context, _ *TxOut) error           { return nil }
+func (k KVStoreDummy) GetTxOutIterator(_ sdk.Context) sdk.Iterator      { return nil }
+func (k KVStoreDummy) AddToLiquidityFees(_ sdk.Context, _ common.Asset, _ sdk.Uint) error {
 	return kaboom
 }
-func (k KVStoreDummy) GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint, error) {
+func (k KVStoreDummy) GetTotalLiquidityFees(_ sdk.Context, _ uint64) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
-func (k KVStoreDummy) GetPoolLiquidityFees(ctx sdk.Context, height uint64, asset common.Asset) (sdk.Uint, error) {
+func (k KVStoreDummy) GetPoolLiquidityFees(_ sdk.Context, _ uint64, _ common.Asset) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
-func (k KVStoreDummy) GetIncompleteEvents(ctx sdk.Context) (Events, error)    { return nil, kaboom }
-func (k KVStoreDummy) SetIncompleteEvents(ctx sdk.Context, events Events)     {}
-func (k KVStoreDummy) AddIncompleteEvents(ctx sdk.Context, event Event) error { return kaboom }
-func (k KVStoreDummy) GetCompleteEventIterator(ctx sdk.Context) sdk.Iterator  { return nil }
-func (k KVStoreDummy) GetCompletedEvent(ctx sdk.Context, id int64) (Event, error) {
+func (k KVStoreDummy) GetIncompleteEvents(_ sdk.Context) (Events, error)   { return nil, kaboom }
+func (k KVStoreDummy) SetIncompleteEvents(_ sdk.Context, _ Events)         {}
+func (k KVStoreDummy) AddIncompleteEvents(_ sdk.Context, _ Event) error    { return kaboom }
+func (k KVStoreDummy) GetCompleteEventIterator(_ sdk.Context) sdk.Iterator { return nil }
+func (k KVStoreDummy) GetCompletedEvent(_ sdk.Context, _ int64) (Event, error) {
 	return Event{}, kaboom
 }
-func (k KVStoreDummy) SetCompletedEvent(ctx sdk.Context, event Event)             {}
-func (k KVStoreDummy) GetLastEventID(ctx sdk.Context) (int64, error)              { return 0, kaboom }
-func (k KVStoreDummy) SetLastEventID(ctx sdk.Context, id int64)                   {}
-func (k KVStoreDummy) SetPoolAddresses(ctx sdk.Context, addresses *PoolAddresses) {}
-func (k KVStoreDummy) GetPoolAddresses(ctx sdk.Context) (PoolAddresses, error) {
+func (k KVStoreDummy) SetCompletedEvent(_ sdk.Context, _ Event)         {}
+func (k KVStoreDummy) GetLastEventID(_ sdk.Context) (int64, error)      { return 0, kaboom }
+func (k KVStoreDummy) SetLastEventID(_ sdk.Context, _ int64)            {}
+func (k KVStoreDummy) SetPoolAddresses(_ sdk.Context, _ *PoolAddresses) {}
+func (k KVStoreDummy) GetPoolAddresses(_ sdk.Context) (PoolAddresses, error) {
 	return PoolAddresses{}, kaboom
 }
-func (k KVStoreDummy) SetValidatorMeta(ctx sdk.Context, meta ValidatorMeta)   {}
-func (k KVStoreDummy) GetValidatorMeta(ctx sdk.Context) ValidatorMeta         { return ValidatorMeta{} }
-func (k KVStoreDummy) GetChains(ctx sdk.Context) (common.Chains, error)       { return nil, kaboom }
-func (k KVStoreDummy) SetChains(ctx sdk.Context, chain common.Chains)         {}
-func (k KVStoreDummy) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator      { return nil }
-func (k KVStoreDummy) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool { return false }
-func (k KVStoreDummy) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error) {
+func (k KVStoreDummy) SetValidatorMeta(_ sdk.Context, _ ValidatorMeta) error { return nil }
+func (k KVStoreDummy) GetValidatorMeta(_ sdk.Context) (ValidatorMeta, error) {
+	return ValidatorMeta{}, nil
+}
+func (k KVStoreDummy) GetChains(_ sdk.Context) (common.Chains, error)      { return nil, kaboom }
+func (k KVStoreDummy) SetChains(_ sdk.Context, _ common.Chains)            {}
+func (k KVStoreDummy) GetYggdrasilIterator(_ sdk.Context) sdk.Iterator     { return nil }
+func (k KVStoreDummy) YggdrasilExists(_ sdk.Context, _ common.PubKey) bool { return false }
+func (k KVStoreDummy) FindPubKeyOfAddress(_ sdk.Context, _ common.Address, _ common.Chain) (common.PubKey, error) {
 	return common.EmptyPubKey, kaboom
 }
-func (k KVStoreDummy) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) error { return nil }
-func (k KVStoreDummy) GetYggdrasil(ctx sdk.Context, pk common.PubKey) (Yggdrasil, error) {
+func (k KVStoreDummy) SetYggdrasil(_ sdk.Context, _ Yggdrasil) error { return nil }
+func (k KVStoreDummy) GetYggdrasil(_ sdk.Context, _ common.PubKey) (Yggdrasil, error) {
 	return Yggdrasil{}, nil
 }
-func (k KVStoreDummy) HasValidYggdrasilPools(ctx sdk.Context) (bool, error) { return false, kaboom }
-func (k KVStoreDummy) GetReservesContributors(ctx sdk.Context) (ReserveContributors, error) {
+func (k KVStoreDummy) GetReservesContributors(_ sdk.Context) (ReserveContributors, error) {
 	return nil, nil
 }
-func (k KVStoreDummy) SetReserveContributors(ctx sdk.Context, contribs ReserveContributors) error {
+func (k KVStoreDummy) SetReserveContributors(_ sdk.Context, _ ReserveContributors) error {
 	return nil
 }
-func (k KVStoreDummy) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error { return nil }
-func (k KVStoreDummy) GetVaultData(ctx sdk.Context) (VaultData, error)     { return VaultData{}, nil }
-func (k KVStoreDummy) SetVaultData(ctx sdk.Context, data VaultData) error  { return nil }
-func (k KVStoreDummy) UpdateVaultData(ctx sdk.Context) error               { return nil }
-func (k KVStoreDummy) SetAdminConfig(ctx sdk.Context, config AdminConfig)  {}
-func (k KVStoreDummy) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
+
+func (k KVStoreDummy) HasValidYggdrasilPools(_ sdk.Context) (bool, error) { return false, kaboom }
+func (k KVStoreDummy) AddFeeToReserve(_ sdk.Context, _ sdk.Uint) error    { return nil }
+func (k KVStoreDummy) GetVaultData(_ sdk.Context) (VaultData, error)      { return VaultData{}, nil }
+func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error      { return nil }
+func (k KVStoreDummy) UpdateVaultData(_ sdk.Context) error                { return nil }
+func (k KVStoreDummy) SetAdminConfig(_ sdk.Context, _ AdminConfig)        {}
+func (k KVStoreDummy) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
 	return PoolSuspended
 }
-func (k KVStoreDummy) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
+func (k KVStoreDummy) GetAdminConfigGSL(_ sdk.Context, _ sdk.AccAddress) common.Amount {
 	return common.ZeroAmount
 }
-func (k KVStoreDummy) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
+func (k KVStoreDummy) GetAdminConfigStakerAmtInterval(_ sdk.Context, _ sdk.AccAddress) common.Amount {
 	return common.ZeroAmount
 }
-func (k KVStoreDummy) GetAdminConfigMinValidatorBond(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint {
+func (k KVStoreDummy) GetAdminConfigMinValidatorBond(_ sdk.Context, _ sdk.AccAddress) sdk.Uint {
 	return sdk.ZeroUint()
 }
-func (k KVStoreDummy) GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
+func (k KVStoreDummy) GetAdminConfigWhiteListGasAsset(_ sdk.Context, _ sdk.AccAddress) sdk.Coins {
 	return nil
 }
-func (k KVStoreDummy) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address {
+func (k KVStoreDummy) GetAdminConfigBnbAddressType(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) common.Address {
 	return common.NoAddress
 }
-func (k KVStoreDummy) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint {
+func (k KVStoreDummy) GetAdminConfigUintType(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) sdk.Uint {
 	return sdk.ZeroUint()
 }
-func (k KVStoreDummy) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Amount {
+func (k KVStoreDummy) GetAdminConfigAmountType(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) common.Amount {
 	return common.ZeroAmount
 }
-func (k KVStoreDummy) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Coins {
+func (k KVStoreDummy) GetAdminConfigCoinsType(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) sdk.Coins {
 	return nil
 }
-func (k KVStoreDummy) GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) int64 {
+func (k KVStoreDummy) GetAdminConfigInt64(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) int64 {
 	return 0
 }
-func (k KVStoreDummy) GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error) {
+func (k KVStoreDummy) GetAdminConfigValue(_ sdk.Context, _ AdminConfigKey, _ sdk.AccAddress) (val string, err error) {
 	return "", kaboom
 }
-func (k KVStoreDummy) GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator { return nil }
+func (k KVStoreDummy) GetAdminConfigIterator(_ sdk.Context) sdk.Iterator { return nil }
