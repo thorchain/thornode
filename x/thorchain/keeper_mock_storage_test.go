@@ -47,7 +47,7 @@ func (mps MockPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common.Addres
 	return types.NewStakerPool(stakerID), nil
 }
 
-func (mps MockPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp types.StakerPool) {
+func (mps MockPoolStorage) SetStakerPool(ctx sdk.Context, sp types.StakerPool) {
 
 }
 

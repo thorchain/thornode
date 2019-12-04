@@ -65,8 +65,8 @@ func (p *MockInMemoryPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common
 	}
 	return NewStakerPool(stakerID), nil
 }
-func (p *MockInMemoryPoolStorage) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool) {
-	key := p.GetKey(ctx, prefixStakerPool, stakerID.String())
+func (p *MockInMemoryPoolStorage) SetStakerPool(ctx sdk.Context, sp StakerPool) {
+	key := p.GetKey(ctx, prefixStakerPool, sp.RuneAddress.String())
 	p.store[key] = sp
 }
 func (p *MockInMemoryPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {
