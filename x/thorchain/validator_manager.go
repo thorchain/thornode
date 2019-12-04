@@ -51,12 +51,17 @@ func (vm *ValidatorManager) BeginBlock(ctx sdk.Context) {
 		if err := vm.setupValidatorNodes(ctx, height); nil != err {
 			ctx.Logger().Error("fail to setup validator nodes", err)
 		}
-		vm.k.SetValidatorMeta(ctx, *vm.Meta)
+		if err := vm.k.SetValidatorMeta(ctx, *vm.Meta); nil != err {
+			ctx.Logger().Error("fail to save validator meta to kv store", err)
+		}
 	}
 
 	// restore vm.meta from data store
 	if vm.Meta == nil {
-		meta := vm.k.GetValidatorMeta(ctx)
+		meta, err := vm.k.GetValidatorMeta(ctx)
+		if nil != err {
+			ctx.Logger().Error("fail to get validator meta", err)
+		}
 		vm.Meta = &meta
 	}
 }
@@ -71,7 +76,9 @@ func (vm *ValidatorManager) EndBlock(ctx sdk.Context, store *TxOutStore) []abci.
 		return nil
 	}
 	defer func() {
-		vm.k.SetValidatorMeta(ctx, *vm.Meta)
+		if err := vm.k.SetValidatorMeta(ctx, *vm.Meta); nil != err {
+			ctx.Logger().Error("fail to save validator meta to kv store", err)
+		}
 	}()
 	if height == vm.Meta.RotateWindowOpenAtBlockHeight {
 		if err := vm.prepareAddNode(ctx, height); nil != err {
