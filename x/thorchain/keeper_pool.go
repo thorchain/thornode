@@ -9,6 +9,7 @@ import (
 type KeeperPool interface {
 	GetPoolIterator(ctx sdk.Context) sdk.Iterator
 	GetPool(ctx sdk.Context, asset common.Asset) (Pool, error)
+	GetPools(ctx sdk.Context) (Pools, error)
 	SetPool(ctx sdk.Context, pool Pool) error
 	PoolExist(ctx sdk.Context, asset common.Asset) bool
 }
@@ -17,6 +18,21 @@ type KeeperPool interface {
 func (k KVStore) GetPoolIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixPool))
+}
+
+func (k KVStore) GetPools(ctx sdk.Context) (Pools, error) {
+	var pools Pools
+	iterator := k.GetPoolIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var pool Pool
+		err := k.Cdc().UnmarshalBinaryBare(iterator.Value(), &pool)
+		if err != nil {
+			return nil, dbError(ctx, "Unmarsahl: pool", err)
+		}
+		pools = append(pools, pool)
+	}
+	return pools, nil
 }
 
 // GetPool get the entire Pool metadata struct for a pool ID

@@ -22,4 +22,8 @@ func (s *KeeperPoolSuite) TestPool(c *C) {
 	c.Check(pool.Asset.Equals(common.BNBAsset), Equals, true)
 	c.Check(k.PoolExist(ctx, common.BNBAsset), Equals, true)
 	c.Check(k.PoolExist(ctx, common.BTCAsset), Equals, false)
+
+	pools, err := k.GetPools(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(pools, HasLen, 1)
 }

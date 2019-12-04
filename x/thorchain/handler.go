@@ -115,7 +115,6 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore *TxOutS
 	pool.Status = PoolSuspended
 	if err := keeper.SetPool(ctx, pool); err != nil {
 		err = errors.Wrap(err, "fail to set pool")
-		ctx.Logger().Error(err.Error())
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	return sdk.Result{
@@ -1527,13 +1526,9 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut *TxOutSto
 		return sdk.ErrInternal("can't find any active nodes").Result()
 	}
 
-	var pools Pools
-	iterator := keeper.GetPoolIterator(ctx)
-	defer iterator.Close()
-	for ; iterator.Valid(); iterator.Next() {
-		var pool Pool
-		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
-		pools = append(pools, pool)
+	pools, err := keeper.GetPools(ctx)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
 	}
 
 	// go through all the pooles
