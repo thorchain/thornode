@@ -10,7 +10,7 @@ import (
 type KeeperPoolStaker interface {
 	GetPoolStakerIterator(ctx sdk.Context) sdk.Iterator
 	GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error)
-	SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker)
+	SetPoolStaker(ctx sdk.Context, ps PoolStaker)
 }
 
 // GetPoolStakerIterator iterate pool stakers
@@ -37,9 +37,9 @@ func (k KVStore) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker,
 }
 
 // SetPoolStaker store the poolstaker to datastore
-func (k KVStore) SetPoolStaker(ctx sdk.Context, asset common.Asset, ps PoolStaker) {
+func (k KVStore) SetPoolStaker(ctx sdk.Context, ps PoolStaker) {
 	store := ctx.KVStore(k.storeKey)
-	key := k.GetKey(ctx, prefixPoolStaker, asset.String())
+	key := k.GetKey(ctx, prefixPoolStaker, ps.Asset.String())
 	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", key, ps))
 	result := k.cdc.MustMarshalBinaryBare(ps)
 	store.Set([]byte(key), result)
