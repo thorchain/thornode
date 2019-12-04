@@ -153,7 +153,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	stakerPoolItem.Units = totalStakerUnits.Add(existUnit)
 	stakerPoolItem.AddStakerTxDetail(requestTxHash, stakeRuneAmount, stakeAssetAmount)
 	sp.UpsertStakerPoolItem(stakerPoolItem)
-	keeper.SetStakerPool(ctx, runeAddr, sp)
+	keeper.SetStakerPool(ctx, sp)
 	return stakerUnits, nil
 }
 

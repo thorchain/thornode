@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
@@ -11,7 +9,7 @@ import (
 type KeeperStakerPool interface {
 	GetStakerPoolIterator(ctx sdk.Context) sdk.Iterator
 	GetStakerPool(ctx sdk.Context, stakerID common.Address) (StakerPool, error)
-	SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool)
+	SetStakerPool(ctx sdk.Context, sp StakerPool)
 }
 
 // GetStakerPoolIterator iterate stakers pools
@@ -38,9 +36,8 @@ func (k KVStore) GetStakerPool(ctx sdk.Context, stakerID common.Address) (Staker
 }
 
 // SetStakerPool save the given stakerpool object to key value store
-func (k KVStore) SetStakerPool(ctx sdk.Context, stakerID common.Address, sp StakerPool) {
+func (k KVStore) SetStakerPool(ctx sdk.Context, sp StakerPool) {
 	store := ctx.KVStore(k.storeKey)
-	key := k.GetKey(ctx, prefixStakerPool, stakerID.String())
-	ctx.Logger().Info(fmt.Sprintf("key:%s ,stakerpool:%s", key, sp))
+	key := k.GetKey(ctx, prefixStakerPool, sp.RuneAddress.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(sp))
 }
