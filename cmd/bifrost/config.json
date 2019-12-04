@@ -1,0 +1,31 @@
+{
+  "thorchain": {
+    "chain_id": "thorchain",
+    "chain_host": "localhost:1317",
+    "signer_name": "statechain",
+    "signer_passwd": "password"
+  },
+  "chains": {
+    "BTC": {
+      "enabled": true,
+      "chain_host": "localhost:8332",
+      "username": "bitcoin",
+      "password": "password",
+      "http_post_mode": true,
+      "disable_tls": true
+    },
+    "ETH": {
+      "enabled": true,
+      "chain_host": "http://localhost:8545"
+    },
+    "BNB": {
+      "enabled": false,
+      "chain_host": "",
+      "chain_network": "mainnet"
+    }
+  },
+  "metric": {
+    "enabled": true
+  },
+  "rune_address": "thor1ply65cysml949kdajmpugamzat964xttx4hgtv"
+}

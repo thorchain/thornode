@@ -1,11 +1,33 @@
 version: '3'
 services:
-  THORNode:
-    build:
-      context: ./build/images
-      dockerfile: ./${BUILD_FLAG}/Dockerfile
-    image: "thornode"
-  #    volumes:
-  #      - ./thornode:/xxx/
-  #    environment:
-  #      - GEN_URL: ${URL}
+  btc:
+    image: fflo/bitcoin-core
+    command: bitcoind -rpcbind=0.0.0.0 # -testnet
+    healthcheck:
+      test: ["CMD", "/entrypoint.sh", "bitcoin-cli", "getinfo"]
+    ports:
+      - 8332:8332 # rpc
+      - 8333:8333 # p2p protocol
+      - 18332:18332 # testNet rpc
+      - 18333:18333 # testNet p2p
+    volumes:
+      - ~/.bitcoind:/data
+  eth:
+    image: ethereum/client-go:latest
+    command: --rpc --rpcaddr "0.0.0.0" --ws --wsaddr "0.0.0.0"
+    volumes:
+      - ~/:/root
+    ports:
+      - 8545:8545 # http
+      - 8546:8546 # wss
+      - 30303:30303 # p2p
+  bnb:
+    image: varnav/binance-node
+    volumes:
+      - ~/.bnbchaind:/opt/bnbchaind
+    environment:
+      - BNET=prod
+    ports:
+      - 26657:26657
+      - 27146:27146
+      - 27147:27147

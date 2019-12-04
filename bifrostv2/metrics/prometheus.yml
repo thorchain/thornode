@@ -1,0 +1,7 @@
+scrape_configs:
+  - job_name: 'metrics'
+    # scrape the service every second
+    scrape_interval: '1s'
+    # setup the static configs
+    static_configs:
+      - targets: ['docker.for.mac.localhost:9000']
