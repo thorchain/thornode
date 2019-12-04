@@ -66,10 +66,10 @@ func (k KVStoreDummy) GetStakerPoolIterator(_ sdk.Context) sdk.Iterator { return
 func (k KVStoreDummy) GetStakerPool(_ sdk.Context, _ common.Address) (StakerPool, error) {
 	return StakerPool{}, kaboom
 }
-func (k KVStoreDummy) SetStakerPool(_ sdk.Context, _ common.Address, _ StakerPool) {}
-func (k KVStoreDummy) TotalActiveNodeAccount(_ sdk.Context) (int, error)           { return 0, kaboom }
-func (k KVStoreDummy) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error)        { return nil, kaboom }
-func (k KVStoreDummy) ListNodeAccountsByStatus(_ sdk.Context, _ NodeStatus) (NodeAccounts, error) {
+func (k KVStoreDummy) SetStakerPool(ctx sdk.Context, sp StakerPool)           {}
+func (k KVStoreDummy) TotalActiveNodeAccount(ctx sdk.Context) (int, error)    { return 0, kaboom }
+func (k KVStoreDummy) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) { return nil, kaboom }
+func (k KVStoreDummy) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error) {
 	return nil, kaboom
 }
 func (k KVStoreDummy) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {

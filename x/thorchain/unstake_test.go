@@ -460,6 +460,6 @@ func getInMemoryPoolStorageForUnstake(c *C) Keeper {
 			},
 		},
 	}
-	store.SetStakerPool(ctx, runeAddress, stakerPool)
+	store.SetStakerPool(ctx, stakerPool)
 	return store
 }
