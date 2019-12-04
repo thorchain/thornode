@@ -198,7 +198,7 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &ps)
 		poolStakers = append(poolStakers, ps)
 	}
-	_
+
 	var stakerPools []StakerPool
 	iterator = k.GetStakerPoolIterator(ctx)
 	defer iterator.Close()
