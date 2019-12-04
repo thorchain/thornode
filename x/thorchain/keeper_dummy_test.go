@@ -173,9 +173,6 @@ func (k KVStoreDummy) GetAdminConfigGSL(_ sdk.Context, _ sdk.AccAddress) common.
 func (k KVStoreDummy) GetAdminConfigStakerAmtInterval(_ sdk.Context, _ sdk.AccAddress) common.Amount {
 	return common.ZeroAmount
 }
-func (k KVStoreDummy) GetAdminConfigMinValidatorBond(_ sdk.Context, _ sdk.AccAddress) sdk.Uint {
-	return sdk.ZeroUint()
-}
 func (k KVStoreDummy) GetAdminConfigWhiteListGasAsset(_ sdk.Context, _ sdk.AccAddress) sdk.Coins {
 	return nil
 }

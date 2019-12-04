@@ -15,7 +15,6 @@ type KeeperAdminConfig interface {
 	GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus
 	GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount
 	GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount
-	GetAdminConfigMinValidatorBond(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint
 	GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 	GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address
 	GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint
@@ -50,11 +49,6 @@ func (k KVStore) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.
 // GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
 func (k KVStore) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, StakerAmtIntervalKey.Default(), addr)
-}
-
-// GetAdminConfigMinValidatorBond get the minimum bond to become a validator
-func (k KVStore) GetAdminConfigMinValidatorBond(ctx sdk.Context, addr sdk.AccAddress) sdk.Uint {
-	return k.GetAdminConfigUintType(ctx, MinValidatorBondKey, MinValidatorBondKey.Default(), addr)
 }
 
 // GetAdminConfigWhiteListGasAsset
