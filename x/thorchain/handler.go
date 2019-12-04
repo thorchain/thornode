@@ -27,6 +27,8 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 	// New arch handlers
 	reserveContribHandler := NewReserveContributorHandler(keeper)
 	poolDataHandler := NewPoolDataHandler(keeper)
+	observedTxInHandler := NewObservedTxInHandler(keeper)
+	observedTxOutHandler := NewObservedTxOutHandler(keeper)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
@@ -35,6 +37,10 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 			return reserveContribHandler.Run(ctx, m, version)
 		case MsgSetPoolData:
 			return poolDataHandler.Run(ctx, m, version)
+		case MsgObservedTxIn:
+			return observedTxInHandler.Run(ctx, m, version)
+		case MsgObservedTxOut:
+			return observedTxOutHandler.Run(ctx, m, version)
 		default:
 			return classic(ctx, msg)
 		}

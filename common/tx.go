@@ -83,6 +83,9 @@ func NewTx(txID TxID, from Address, to Address, coins Coins, gas Gas, memo strin
 		Memo:        memo,
 	}
 }
+func (tx Tx) String() string {
+	return fmt.Sprintf("%s: %s ==> %s (Memo: %s) %s", tx.ID, tx.FromAddress, tx.ToAddress, tx.Memo, tx.Coins)
+}
 
 func (tx Tx) IsEmpty() bool {
 	return tx.ID.IsEmpty()

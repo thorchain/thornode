@@ -34,6 +34,8 @@ var (
 	NewPool                        = types.NewPool
 	NewVaultData                   = types.NewVaultData
 	NewAdminConfig                 = types.NewAdminConfig
+	NewMsgObservedTxIn             = types.NewMsgObservedTxIn
+	NewMsgObservedTxOut            = types.NewMsgObservedTxOut
 	NewMsgNoOp                     = types.NewMsgNoOp
 	NewMsgAdd                      = types.NewMsgAdd
 	NewMsgSetPoolData              = types.NewMsgSetPoolData
@@ -101,6 +103,8 @@ type (
 	MsgAck                      = types.MsgAck
 	MsgReserveContributor       = types.MsgReserveContributor
 	MsgYggdrasil                = types.MsgYggdrasil
+	MsgObservedTxIn             = types.MsgObservedTxIn
+	MsgObservedTxOut            = types.MsgObservedTxOut
 	QueryResPools               = types.QueryResPools
 	QueryResHeights             = types.QueryResHeights
 	QueryResTxOut               = types.QueryResTxOut
