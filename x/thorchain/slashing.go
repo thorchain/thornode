@@ -11,7 +11,11 @@ import (
 
 // Slash node accounts that didn't observe a single inbound txn
 func slashForObservingAddresses(ctx sdk.Context, keeper Keeper) {
-	accs := keeper.GetObservingAddresses(ctx)
+	accs, err := keeper.GetObservingAddresses(ctx)
+	if err != nil {
+		ctx.Logger().Error("fail to get observing addresses", err)
+		return
+	}
 
 	if len(accs) == 0 {
 		// nobody observed anything, THORNode must of had no input txs within this
