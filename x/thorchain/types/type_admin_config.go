@@ -15,7 +15,6 @@ type AdminConfigKey string
 const (
 	UnknownKey           AdminConfigKey = "Unknown"
 	GSLKey               AdminConfigKey = "GSL"
-	StakerAmtIntervalKey AdminConfigKey = "StakerAmtInterval"
 	WhiteListGasAssetKey AdminConfigKey = "WhiteListGasAsset" // How much gas asset THORNode mint and send it to the newly whitelisted bep address
 	PoolRefundGasKey     AdminConfigKey = "PoolRefundGas"     // When THORNode move assets from one pool to another , THORNode leave this amount of BNB behind, thus THORNode could refund customer if they send fund to the previous pool
 	DefaultPoolStatus    AdminConfigKey = "DefaultPoolStatus" // When a pool get created automatically , what status do THORNode set it in
@@ -33,8 +32,6 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 	switch key {
 	case string(GSLKey):
 		return GSLKey
-	case string(StakerAmtIntervalKey):
-		return StakerAmtIntervalKey
 	case string(WhiteListGasAssetKey):
 		return WhiteListGasAssetKey
 	case string(PoolRefundGasKey):
@@ -50,8 +47,6 @@ func (k AdminConfigKey) Default() string {
 	switch k {
 	case GSLKey:
 		return "0.3"
-	case StakerAmtIntervalKey:
-		return "100"
 	case WhiteListGasAssetKey:
 		return "1000bep"
 	case PoolRefundGasKey:
@@ -67,7 +62,7 @@ func (k AdminConfigKey) Default() string {
 func (k AdminConfigKey) ValidValue(value string) error {
 	var err error
 	switch k {
-	case GSLKey, StakerAmtIntervalKey:
+	case GSLKey:
 		_, err = common.NewAmount(value)
 	case WhiteListGasAssetKey:
 		_, err = sdk.ParseCoins(value)
