@@ -58,7 +58,7 @@ func postTxsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			} else if tx.Tx.FromAddress.Equals(obAddr) {
 				outbound = append(outbound, tx)
 			} else {
-				rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
+				rest.WriteErrorResponse(w, http.StatusBadRequest, "Unable to determine the direction of observation")
 				return
 			}
 		}
