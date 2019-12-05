@@ -5,17 +5,17 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type PoolDataHandler struct {
+type PoolHandler struct {
 	keeper Keeper
 }
 
-func NewPoolDataHandler(keeper Keeper) PoolDataHandler {
-	return PoolDataHandler{
+func NewPoolHandler(keeper Keeper) PoolHandler {
+	return PoolHandler{
 		keeper: keeper,
 	}
 }
 
-func (h PoolDataHandler) Run(ctx sdk.Context, msg MsgSetPoolData, version semver.Version) sdk.Result {
+func (h PoolHandler) Run(ctx sdk.Context, msg MsgPool, version semver.Version) sdk.Result {
 	if err := h.Validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
@@ -28,7 +28,7 @@ func (h PoolDataHandler) Run(ctx sdk.Context, msg MsgSetPoolData, version semver
 	}
 }
 
-func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version semver.Version) error {
+func (h PoolHandler) Validate(ctx sdk.Context, msg MsgPool, version semver.Version) error {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.ValidateV1(ctx, msg)
 	} else {
@@ -37,7 +37,7 @@ func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version s
 	}
 }
 
-func (h PoolDataHandler) ValidateV1(ctx sdk.Context, msg MsgSetPoolData) error {
+func (h PoolHandler) ValidateV1(ctx sdk.Context, msg MsgPool) error {
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
 		return err
@@ -52,8 +52,8 @@ func (h PoolDataHandler) ValidateV1(ctx sdk.Context, msg MsgSetPoolData) error {
 
 }
 
-func (h PoolDataHandler) Handle(ctx sdk.Context, msg MsgSetPoolData, version semver.Version) error {
-	ctx.Logger().Info("handleMsgSetPoolData request", "Asset:", msg.Asset.String())
+func (h PoolHandler) Handle(ctx sdk.Context, msg MsgPool, version semver.Version) error {
+	ctx.Logger().Info("handleMsgPool request", "Asset:", msg.Asset.String())
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.HandleV1(ctx, msg)
 	} else {
@@ -63,7 +63,7 @@ func (h PoolDataHandler) Handle(ctx sdk.Context, msg MsgSetPoolData, version sem
 }
 
 // Handle a message to set pooldata
-func (h PoolDataHandler) HandleV1(ctx sdk.Context, msg MsgSetPoolData) error {
+func (h PoolHandler) HandleV1(ctx sdk.Context, msg MsgPool) error {
 	pool, err := h.keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
 		return err

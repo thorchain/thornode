@@ -6,16 +6,16 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type MsgSetPoolDataSuite struct{}
+type MsgPoolSuite struct{}
 
-var _ = Suite(&MsgSetPoolDataSuite{})
+var _ = Suite(&MsgPoolSuite{})
 
-func (MsgSetPoolDataSuite) TestMsgSetPoolData(c *C) {
+func (s *MsgPoolSuite) TestMsgPool(c *C) {
 	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
-	m := NewMsgSetPoolData(common.BNBAsset, Enabled, addr)
+	m := NewMsgPool(common.BNBAsset, Enabled, addr)
 	EnsureMsgBasicCorrect(m, c)
-	c.Check(m.Type(), Equals, "set_pooldata")
+	c.Check(m.Type(), Equals, "set_pool")
 
 	inputs := []struct {
 		asset  common.Asset
@@ -39,7 +39,7 @@ func (MsgSetPoolDataSuite) TestMsgSetPoolData(c *C) {
 	}
 
 	for _, item := range inputs {
-		m := NewMsgSetPoolData(item.asset, item.status, addr)
+		m := NewMsgPool(item.asset, item.status, addr)
 		m.BalanceRune = item.rAmt
 		m.BalanceAsset = item.aAmt
 		c.Assert(m.ValidateBasic(), NotNil)

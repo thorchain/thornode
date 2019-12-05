@@ -5,10 +5,10 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-// MsgSetPoolData defines a SetPoolData message
+// MsgPool defines a Pool message
 // We keep this for now , as a mechanism to set up a new pool when it is not in the genesis file
 // the pool changes when stake / swap happens
-type MsgSetPoolData struct {
+type MsgPool struct {
 	BalanceRune  sdk.Uint       `json:"balance_rune"`  // balance rune
 	BalanceAsset sdk.Uint       `json:"balance_asset"` // balance of asset
 	Asset        common.Asset   `json:"asset"`         // Asset means the asset asset
@@ -16,9 +16,9 @@ type MsgSetPoolData struct {
 	Signer       sdk.AccAddress `json:"signer"`
 }
 
-// NewMsgSetPoolData is a constructor function for MsgSetPoolData
-func NewMsgSetPoolData(asset common.Asset, status PoolStatus, signer sdk.AccAddress) MsgSetPoolData {
-	return MsgSetPoolData{
+// NewMsgPool is a constructor function for MsgPool
+func NewMsgPool(asset common.Asset, status PoolStatus, signer sdk.AccAddress) MsgPool {
+	return MsgPool{
 		Asset:        asset,
 		BalanceRune:  sdk.ZeroUint(),
 		BalanceAsset: sdk.ZeroUint(),
@@ -28,13 +28,13 @@ func NewMsgSetPoolData(asset common.Asset, status PoolStatus, signer sdk.AccAddr
 }
 
 // Route should return the pooldata of the module
-func (msg MsgSetPoolData) Route() string { return RouterKey }
+func (msg MsgPool) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgSetPoolData) Type() string { return "set_pooldata" }
+func (msg MsgPool) Type() string { return "set_pool" }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
+func (msg MsgPool) ValidateBasic() sdk.Error {
 	if msg.Asset.IsEmpty() {
 		return sdk.ErrUnknownRequest("pool Asset cannot be empty")
 	}
@@ -49,11 +49,11 @@ func (msg MsgSetPoolData) ValidateBasic() sdk.Error {
 }
 
 // GetSignBytes encodes the message for signing
-func (msg MsgSetPoolData) GetSignBytes() []byte {
+func (msg MsgPool) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgSetPoolData) GetSigners() []sdk.AccAddress {
+func (msg MsgPool) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Signer}
 }

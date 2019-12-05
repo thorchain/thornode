@@ -7,7 +7,7 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type HandlerPoolDataSuite struct{}
+type HandlerPoolSuite struct{}
 
 type TestPoolKeeper struct {
 	KVStoreDummy
@@ -28,19 +28,19 @@ func (k *TestPoolKeeper) SetPool(ctx sdk.Context, pool Pool) error {
 	return nil
 }
 
-var _ = Suite(&HandlerPoolDataSuite{})
+var _ = Suite(&HandlerPoolSuite{})
 
-func (s *HandlerPoolDataSuite) TestValidate(c *C) {
+func (s *HandlerPoolSuite) TestValidate(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 
 	keeper := &TestPoolKeeper{
 		na: GetRandomNodeAccount(NodeActive),
 	}
 
-	handler := NewPoolDataHandler(keeper)
+	handler := NewPoolHandler(keeper)
 	// happy path
 	ver := semver.MustParse("0.1.0")
-	msg := NewMsgSetPoolData(common.BNBAsset, PoolEnabled, keeper.na.NodeAddress)
+	msg := NewMsgPool(common.BNBAsset, PoolEnabled, keeper.na.NodeAddress)
 	err := handler.Validate(ctx, msg, ver)
 	c.Assert(err, IsNil)
 
@@ -50,25 +50,25 @@ func (s *HandlerPoolDataSuite) TestValidate(c *C) {
 
 	// inactive node account
 	keeper.na = GetRandomNodeAccount(NodeStandby)
-	msg = NewMsgSetPoolData(common.BNBAsset, PoolEnabled, keeper.na.NodeAddress)
+	msg = NewMsgPool(common.BNBAsset, PoolEnabled, keeper.na.NodeAddress)
 	err = handler.Validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
 
 	// invalid msg
-	msg = MsgSetPoolData{}
+	msg = MsgPool{}
 	err = handler.Validate(ctx, msg, ver)
 	c.Assert(err, NotNil)
 }
 
-func (s *HandlerPoolDataSuite) TestHandle(c *C) {
+func (s *HandlerPoolSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	ver := semver.MustParse("0.1.0")
 
 	keeper := &TestPoolKeeper{}
 
-	handler := NewPoolDataHandler(keeper)
+	handler := NewPoolHandler(keeper)
 
-	msg := NewMsgSetPoolData(common.BNBAsset, PoolEnabled, GetRandomBech32Addr())
+	msg := NewMsgPool(common.BNBAsset, PoolEnabled, GetRandomBech32Addr())
 	err := handler.Handle(ctx, msg, ver)
 	c.Assert(err, IsNil)
 	c.Check(keeper.pool.Asset.Equals(common.BNBAsset), Equals, true, Commentf("%+v\n", keeper.pool))

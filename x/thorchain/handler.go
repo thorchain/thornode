@@ -25,13 +25,13 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 	classic := NewClassicHandler(keeper, poolAddressMgr, txOutStore, validatorManager)
 
 	// New arch handlers
-	poolDataHandler := NewPoolDataHandler(keeper)
+	poolHandler := NewPoolHandler(keeper)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
 		switch m := msg.(type) {
-		case MsgSetPoolData:
-			return poolDataHandler.Run(ctx, m, version)
+		case MsgPool:
+			return poolHandler.Run(ctx, m, version)
 		default:
 			return classic(ctx, msg)
 		}
@@ -822,9 +822,9 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, txID common.TxID, tx TxIn, s
 	// interpret the memo and initialize a corresponding msg event
 	switch m := memo.(type) {
 	case CreateMemo:
-		newMsg, err = getMsgSetPoolDataFromMemo(ctx, keeper, m, signer)
+		newMsg, err = getMsgPoolFromMemo(ctx, keeper, m, signer)
 		if nil != err {
-			return nil, errors.Wrap(err, "fail to get MsgSetPoolData from memo")
+			return nil, errors.Wrap(err, "fail to get MsgPool from memo")
 		}
 
 	case StakeMemo:
@@ -990,11 +990,11 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, txID common.TxID, txIn
 	), nil
 }
 
-func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgPoolFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, signer sdk.AccAddress) (sdk.Msg, error) {
 	if keeper.PoolExist(ctx, memo.GetAsset()) {
 		return nil, errors.New("pool already exists")
 	}
-	return NewMsgSetPoolData(
+	return NewMsgPool(
 		memo.GetAsset(),
 		PoolEnabled, // new pools start in a Bootstrap state
 		signer,

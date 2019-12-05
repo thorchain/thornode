@@ -17,7 +17,7 @@ type MsgSetUnStake struct {
 	Signer              sdk.AccAddress `json:"signer"`
 }
 
-// NewMsgSetUnStake is a constructor function for MsgSetPoolData
+// NewMsgSetUnStake is a constructor function for MsgSetUnStake
 func NewMsgSetUnStake(tx common.Tx, runeAddress common.Address, withdrawBasisPoints sdk.Uint, asset common.Asset, signer sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
 		Tx:                  tx,

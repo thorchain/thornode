@@ -37,7 +37,7 @@ var (
 	NewAdminConfig                 = types.NewAdminConfig
 	NewMsgNoOp                     = types.NewMsgNoOp
 	NewMsgAdd                      = types.NewMsgAdd
-	NewMsgSetPoolData              = types.NewMsgSetPoolData
+	NewMsgPool                     = types.NewMsgPool
 	NewMsgSetStakeData             = types.NewMsgSetStakeData
 	NewMsgSetUnStake               = types.NewMsgSetUnStake
 	NewMsgSwap                     = types.NewMsgSwap
@@ -88,7 +88,7 @@ type (
 	MsgNoOp                     = types.MsgNoOp
 	MsgAdd                      = types.MsgAdd
 	MsgSetUnStake               = types.MsgSetUnStake
-	MsgSetPoolData              = types.MsgSetPoolData
+	MsgPool                     = types.MsgPool
 	MsgSetStakeData             = types.MsgSetStakeData
 	MsgSetTxIn                  = types.MsgSetTxIn
 	MsgOutboundTx               = types.MsgOutboundTx

@@ -40,11 +40,8 @@ func (k KVStoreDummy) GetLastChainHeight(_ sdk.Context, _ common.Chain) (sdk.Uin
 func (k KVStoreDummy) GetPoolBalances(_ sdk.Context, _, _ common.Asset) (sdk.Uint, sdk.Uint) {
 	return sdk.ZeroUint(), sdk.ZeroUint()
 }
-func (k KVStoreDummy) GetPoolIterator(_ sdk.Context) sdk.Iterator {
-	return nil
-}
-func (k KVStoreDummy) SetPoolData(_ sdk.Context, _ common.Asset, _ PoolStatus) {}
-func (k KVStoreDummy) GetPoolDataIterator(_ sdk.Context) sdk.Iterator          { return nil }
+func (k KVStoreDummy) GetPoolIterator(_ sdk.Context) sdk.Iterator              { return nil }
+func (k KVStoreDummy) SetPool(_ sdk.Context, _ common.Asset, _ PoolStatus)     {}
 func (k KVStoreDummy) EnableAPool(_ sdk.Context)                               {}
 func (k KVStoreDummy) GetPoolIndex(_ sdk.Context) (PoolIndex, error)           { return nil, kaboom }
 func (k KVStoreDummy) SetPoolIndex(_ sdk.Context, _ PoolIndex)                 {}
