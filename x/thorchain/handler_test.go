@@ -518,31 +518,33 @@ func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
 }
 */
 
-/*
 func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPool, NotNil)
 	txIn := types.NewObservedTx(
 		common.Tx{
+			ID:          GetRandomTxHash(),
+			Chain:       common.BNBChain,
 			Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
 			Memo:        "create:BNB",
 			FromAddress: GetRandomBNBAddress(),
-			ToAddress:   GetRandomBNBAddress(),
+			ToAddress:   currentChainPool.Address,
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1024),
 		currentChainPool.PubKey)
 
-	msgSetTxIn := types.NewMsgObservedTxIn(
-		ObservedTxVoters{
-			types.NewObservedTxVoter(GetRandomTxHash(), ObservedTxs{txIn}),
+	msg := types.NewMsgObservedTxIn(
+		ObservedTxs{
+			txIn,
 		},
 		w.activeNodeAccount.NodeAddress,
 	)
 
-	result := handleMsgSetTxIn(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn)
-	c.Assert(result.Code, Equals, sdk.CodeOK)
+	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr)
+	result := handler(w.ctx, msg)
+	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
 	pool, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
@@ -552,7 +554,6 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	c.Assert(pool.BalanceRune.Uint64(), Equals, uint64(0))
 	c.Assert(pool.BalanceAsset.Uint64(), Equals, uint64(0))
 }
-*/
 
 /*
 func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
