@@ -85,6 +85,7 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 	for _, tx := range msg.Txs {
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
 		if err != nil {
+			fmt.Printf("FOO1")
 			return err
 		}
 		preConsensus := voter.HasConensus(activeNodeAccounts)
@@ -109,6 +110,7 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 				if err != nil {
 					err = errors.Wrap(err, "Fail to refund")
 					ctx.Logger().Error(err.Error())
+					fmt.Printf("FOO2")
 					return err
 				}
 
@@ -132,6 +134,7 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 						ygg, err := h.keeper.GetYggdrasil(ctx, txIn.ObservedPubKey)
 						if nil != err {
 							ctx.Logger().Error("fail to get yggdrasil", err)
+							fmt.Printf("FOO3")
 							return err
 						}
 						var expectedCoins common.Coins
@@ -143,6 +146,7 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 							txID := memo.GetTxID()
 							inVoter, err := h.keeper.GetObservedTxVoter(ctx, txID)
 							if err != nil {
+								fmt.Printf("FOO4")
 								return err
 							}
 							origTx := inVoter.GetTx(activeNodeAccounts)
@@ -152,6 +156,7 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 						na, err := h.keeper.GetNodeAccountByPubKey(ctx, ygg.PubKey)
 						if err != nil {
 							ctx.Logger().Error("fail to get node account", "error", err, "txhash", tx.Tx.ID.String())
+							fmt.Printf("FOO5")
 							return err
 						}
 
@@ -172,6 +177,7 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 								} else {
 									pool, err := h.keeper.GetPool(ctx, coin.Asset)
 									if err != nil {
+										fmt.Printf("FOO6")
 										return err
 									}
 
@@ -184,6 +190,7 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 										if err := h.keeper.SetPool(ctx, pool); err != nil {
 											err = errors.Wrap(err, "fail to set pool")
 											ctx.Logger().Error(err.Error())
+											fmt.Printf("FOO7")
 											return err
 										}
 									}
@@ -193,11 +200,13 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 						na.SubBond(minusRune)
 						if err := h.keeper.SetNodeAccount(ctx, na); nil != err {
 							ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
+							fmt.Printf("FOO8")
 							return err
 						}
 						ygg.SubFunds(minusCoins)
 						if err := h.keeper.SetYggdrasil(ctx, ygg); nil != err {
 							ctx.Logger().Error("fail to save yggdrasil", err)
+							fmt.Printf("FOO9")
 							return err
 						}
 					}
@@ -207,11 +216,13 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 					if err != nil {
 						err = errors.Wrap(err, "Fail to refund")
 						ctx.Logger().Error(err.Error())
+						fmt.Printf("FOO9")
 						return err
 					}
 					ee := NewEmptyRefundEvent()
 					buf, err := json.Marshal(ee)
 					if nil != err {
+						fmt.Printf("FOO10")
 						return err
 					}
 					event := NewEvent(
@@ -223,6 +234,7 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 					)
 
 					if err := h.keeper.AddIncompleteEvents(ctx, event); err != nil {
+						fmt.Printf("FOO11")
 						return err
 					}
 				}
@@ -232,12 +244,14 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 			// ignoring the error
 			_ = h.keeper.AddToObservedTxIndex(ctx, uint64(ctx.BlockHeight()), tx.Tx.ID)
 			if err := h.keeper.SetLastChainHeight(ctx, chain, txIn.BlockHeight); nil != err {
+				fmt.Printf("FOO11")
 				return err
 			}
 
 			// add this chain to our list of supported chains
 			chains, err := h.keeper.GetChains(ctx)
 			if err != nil {
+				fmt.Printf("FOO12")
 				return err
 			}
 			chains = append(chains, chain)
@@ -248,6 +262,7 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 			if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
 				err = errors.Wrap(err, "fail to add observer address")
 				ctx.Logger().Error(err.Error())
+				fmt.Printf("FOO13")
 				return err
 			}
 
@@ -257,6 +272,7 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 				if err != nil {
 					err = errors.Wrap(err, "Fail to refund")
 					ctx.Logger().Error(err.Error())
+					fmt.Printf("FOO14")
 					return err
 				}
 			}
