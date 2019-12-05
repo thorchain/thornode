@@ -70,7 +70,10 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 
 			activeNodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
 			if len(activeNodeAccounts) > 0 && err == nil {
-				voter := keeper.GetObservedTxVoter(ctx, toi.InHash)
+				voter, err := keeper.GetObservedTxVoter(ctx, toi.InHash)
+				if err != nil {
+					ctx.Logger().Error("fail to get observed tx voter", err)
+				}
 				tx := voter.GetTx(activeNodeAccounts)
 
 				// collect yggdrasil pools
@@ -149,7 +152,10 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 	}
 
 	// increment out number of out tx for this in tx
-	voter := keeper.GetObservedTxVoter(ctx, toi.InHash)
+	voter, err := keeper.GetObservedTxVoter(ctx, toi.InHash)
+	if err != nil {
+		ctx.Logger().Error("fail to get observed tx voter", err)
+	}
 	voter.Actions = append(voter.Actions, *toi)
 	keeper.SetObservedTxVoter(ctx, voter)
 

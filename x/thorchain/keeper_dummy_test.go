@@ -98,16 +98,10 @@ func (k KVStoreDummy) GetObservingAddresses(_ sdk.Context) ([]sdk.AccAddress, er
 }
 func (k KVStoreDummy) AddObservingAddresses(_ sdk.Context, _ []sdk.AccAddress) error { return nil }
 func (k KVStoreDummy) ClearObservingAddresses(_ sdk.Context)                         {}
-func (k KVStoreDummy) SetTxInVoter(_ sdk.Context, _ TxInVoter)                       {}
-func (k KVStoreDummy) GetTxInVoterIterator(_ sdk.Context) sdk.Iterator               { return nil }
-func (k KVStoreDummy) GetTxInVoter(_ sdk.Context, _ common.TxID) (TxInVoter, error) {
-	return TxInVoter{}, kaboom
-}
-func (k KVStoreDummy) ClearObservingAddresses(ctx sdk.Context)                 {}
-func (k KVStoreDummy) SetObservedTxVoter(ctx sdk.Context, tx ObservedTxVoter)  {}
-func (k KVStoreDummy) GetObservedTxVoterIterator(ctx sdk.Context) sdk.Iterator { return nil }
-func (k KVStoreDummy) GetObservedTxVoter(ctx sdk.Context, hash common.TxID) ObservedTxVoter {
-	return ObservedTxVoter{}
+func (k KVStoreDummy) SetObservedTxVoter(_ sdk.Context, _ ObservedTxVoter)           {}
+func (k KVStoreDummy) GetObservedTxVoterIterator(_ sdk.Context) sdk.Iterator         { return nil }
+func (k KVStoreDummy) GetObservedTxVoter(_ sdk.Context, _ common.TxID) (ObservedTxVoter, error) {
+	return ObservedTxVoter{}, kaboom
 }
 func (k KVStoreDummy) GetObservedTxIndexIterator(ctx sdk.Context) sdk.Iterator { return nil }
 func (k KVStoreDummy) GetObservedTxIndex(ctx sdk.Context, height uint64) (ObservedTxIndex, error) {
