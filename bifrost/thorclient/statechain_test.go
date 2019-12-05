@@ -59,6 +59,7 @@ func setupStateChainForTest(c *C) (config.StateChainConfiguration, cKeys.Info, f
 		}
 	}
 }
+
 func (s StatechainSuite) TestSign(c *C) {
 	cfg, info, cleanup := setupStateChainForTest(c)
 	defer cleanup()
@@ -93,7 +94,8 @@ func (s StatechainSuite) TestSign(c *C) {
 	u, err := url.Parse(server.URL)
 	c.Assert(err, IsNil)
 	cfg.ChainHost = u.Host
-	observedAddress := stypes.GetRandomPubKey()
+	pk := stypes.GetRandomPubKey()
+	vaultAddr, err := pk.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
 	tx := stypes.NewObservedTx(
 		common.Tx{
@@ -101,12 +103,12 @@ func (s StatechainSuite) TestSign(c *C) {
 				common.NewCoin(common.BNBAsset, sdk.NewUint(123400000)),
 			},
 			Memo:        "This is my memo!",
-			FromAddress: common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
+			FromAddress: vaultAddr,
 			ToAddress:   common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1),
-		observedAddress,
+		pk,
 	)
 
 	bridge, err := NewStateChainBridge(cfg, getMetricForTest(c))
