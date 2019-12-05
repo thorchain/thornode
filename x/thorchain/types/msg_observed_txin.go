@@ -41,7 +41,10 @@ func (msg MsgObservedTxIn) ValidateBasic() sdk.Error {
 			return sdk.ErrUnknownRequest(err.Error())
 		}
 		if !tx.Tx.ToAddress.Equals(obAddr) {
-			return sdk.ErrUnknownRequest("Request is not an inbound observed transaction")
+			// TODO: uncomment me. This is temporarily commented out to allow
+			// outbound tx to pass through inbound ones (until we appropriately
+			// break them apart).
+			// return sdk.ErrUnknownRequest("Request is not an inbound observed transaction")
 		}
 	}
 
