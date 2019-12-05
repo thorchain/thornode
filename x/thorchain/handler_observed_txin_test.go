@@ -3,6 +3,7 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
 )
 
@@ -59,10 +60,15 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 type TestObservedTxInHandleKeeper struct {
 	KVStoreDummy
 	activeNodeAccounts NodeAccounts
+	voter              ObservedTxVoter
 }
 
 func (k TestObservedTxInHandleKeeper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	return k.activeNodeAccounts, nil
+}
+
+func (k TestObservedTxInHandleKeeper) GetObservedTxVoter(ctx sdk.Context, _ common.TxID) (ObservedTxVoter, error) {
+	return k.voter, nil
 }
 
 func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
