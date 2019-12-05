@@ -125,6 +125,8 @@ type ObservedTxVoter struct {
 	OutTxs  common.Txs   `json:"out_txs"` // observed outbound transactions
 }
 
+type ObservedTxVoters []ObservedTxVoter
+
 func NewObservedTxVoter(txID common.TxID, txs []ObservedTx) ObservedTxVoter {
 	return ObservedTxVoter{
 		TxID: txID,

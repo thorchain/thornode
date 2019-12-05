@@ -274,8 +274,8 @@ func (o *Observer) signAndSendToStatechain(txIn types.TxIn) error {
 
 // getStateChainTxIns convert to the type statechain expected
 // maybe in later THORNode can just refactor this to use the type in statechain
-func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, error) {
-	txs := make([]stypes.TxInVoter, len(txIn.TxArray))
+func (o *Observer) getStateChainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error) {
+	txs := make(stypes.ObservedTxs, len(txIn.TxArray))
 	for i, item := range txIn.TxArray {
 		o.logger.Debug().Str("tx-hash", item.Tx).Msg("txInItem")
 		txID, err := common.NewTxID(item.Tx)
@@ -305,16 +305,11 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) ([]stypes.TxInVoter, erro
 			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolAddress).Inc()
 			return nil, errors.Wrapf(err, "fail to parse observed pool address: %s", item.ObservedPoolAddress)
 		}
-		txs[i] = stypes.NewTxInVoter(txID, []stypes.TxIn{
-			stypes.NewTxIn(
-				item.Coins,
-				item.Memo,
-				sender,
-				to,
-				common.BNBGasFeeSingleton,
-				sdk.NewUint(h),
-				observedPoolPubKey),
-		})
+		txs[i] = stypes.NewObservedTx(
+			common.NewTx(txID, sender, to, item.Coins, common.GetBNBGasFee(uint64(len(item.Coins))), item.Memo),
+			sdk.NewUint(h),
+			observedPoolPubKey,
+		)
 	}
 	return txs, nil
 }

@@ -26,7 +26,7 @@ type Keeper interface {
 	KeeperStakerPool
 	KeeperNodeAccount
 	KeeperObserver
-	KeeperTxIn
+	KeeperObservedTx
 	KeeperTxOut
 	KeeperLiquidityFees
 	KeeperEvents
@@ -48,7 +48,7 @@ type Keeper interface {
 type dbPrefix string
 
 const (
-	prefixTxIn               dbPrefix = "tx/"
+	prefixObservedTx         dbPrefix = "observed_tx/"
 	prefixPool               dbPrefix = "pool/"
 	prefixTxOut              dbPrefix = "txout/"
 	prefixTotalLiquidityFee  dbPrefix = "total_liquidity_fee/"
@@ -56,7 +56,7 @@ const (
 	prefixPoolStaker         dbPrefix = "pool_staker/"
 	prefixStakerPool         dbPrefix = "staker_pool/"
 	prefixAdmin              dbPrefix = "admin/"
-	prefixTxInIndex          dbPrefix = "txin_index/"
+	prefixObservedTxIndex    dbPrefix = "observed_tx_index/"
 	prefixInCompleteEvents   dbPrefix = "incomplete_events/"
 	prefixCompleteEvent      dbPrefix = "complete_event/"
 	prefixLastEventID        dbPrefix = "last_event_id/"

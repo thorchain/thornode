@@ -20,6 +20,16 @@ var BNBGasFeeMulti = Gas{
 	{Asset: BNBAsset, Amount: bnbMultiTxFee},
 }
 
+func GetBNBGasFee(count uint64) Gas {
+	if count == 0 {
+		return nil
+	}
+	if count == 1 {
+		return BNBGasFeeSingleton
+	}
+	return GetBNBGasFeeMulti(count)
+}
+
 // Calculates the amount of gas for x number of coins in a single tx.
 func GetBNBGasFeeMulti(count uint64) Gas {
 	return Gas{
