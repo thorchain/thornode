@@ -90,3 +90,83 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	err = handler.Handle(ctx, msg, ver)
 	c.Assert(err, IsNil)
 }
+
+/*
+func (HandlerSuite) TestHandleMsgSetTxIn(c *C) {
+	w := getHandlerTestWrapper(c, 1, true, false)
+	err := w.keeper.SetPool(w.ctx, Pool{
+		Asset:        common.BNBAsset,
+		BalanceRune:  sdk.NewUint(100 * common.One),
+		BalanceAsset: sdk.NewUint(100 * common.One),
+	})
+	c.Assert(err, IsNil)
+	txIn := types.NewTxIn(
+		common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
+		},
+		"stake:BNB",
+		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
+		common.BNBGasFeeSingleton,
+		sdk.NewUint(1024),
+		GetRandomPubKey())
+
+	msgSetTxIn := types.NewMsgSetTxIn(
+		[]TxInVoter{
+			types.NewTxInVoter(GetRandomTxHash(), []TxIn{txIn}),
+		},
+		w.notActiveNodeAccount.NodeAddress)
+	result := handleMsgSetTxIn(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn)
+	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
+
+	w = getHandlerTestWrapper(c, 1, true, true)
+
+	msgSetTxIn = types.NewMsgSetTxIn(
+		[]TxInVoter{
+			types.NewTxInVoter(GetRandomTxHash(), []TxIn{txIn}),
+		},
+		w.activeNodeAccount.NodeAddress)
+	// send to wrong pool address, refund
+	result1 := handleMsgSetTxIn(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn)
+	c.Assert(result1.Code, Equals, sdk.CodeOK)
+	c.Assert(w.txOutStore.blockOut, NotNil)
+	c.Assert(w.txOutStore.blockOut.Valid(), IsNil)
+	c.Assert(w.txOutStore.blockOut.IsEmpty(), Equals, false)
+	c.Assert(len(w.txOutStore.blockOut.TxArray), Equals, 2)
+	// expect to refund two coins
+	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 2, Commentf("Len %d", len(w.txOutStore.GetOutboundItems())))
+
+	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	c.Assert(currentChainPool, NotNil)
+	txIn1 := types.NewTxIn(
+		common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
+		},
+		"stake:BNB",
+		GetRandomBNBAddress(),
+		GetRandomBNBAddress(),
+		common.BNBGasFeeSingleton,
+		sdk.NewUint(1024),
+		currentChainPool.PubKey)
+	msgSetTxIn1 := types.NewMsgSetTxIn(
+		[]TxInVoter{
+			types.NewTxInVoter(GetRandomTxHash(), []TxIn{txIn1}),
+		},
+		w.activeNodeAccount.NodeAddress)
+	result2 := handleMsgSetTxIn(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, msgSetTxIn1)
+	c.Assert(result2.Code, Equals, sdk.CodeOK)
+	p1, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
+	c.Assert(p1.BalanceRune.Uint64(), Equals, uint64(200*common.One))
+	c.Assert(p1.BalanceAsset.Uint64(), Equals, uint64(200*common.One))
+	// pool staker
+	ps, err := w.keeper.GetPoolStaker(w.ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
+	c.Assert(ps.TotalUnits.GT(sdk.ZeroUint()), Equals, true)
+	chains, err := w.keeper.GetChains(w.ctx)
+	c.Assert(err, IsNil)
+	c.Check(chains.Has(common.BNBChain), Equals, true)
+}
+*/
