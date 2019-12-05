@@ -14,51 +14,38 @@ import (
 type Configuration struct {
 	ThorChain ThorChainConfiguration  `json:"thorchain" mapstructure:"thorchain"`
 	Metric    MetricConfiguration     `json:"metric" mapstructure:"metric"`
-	Chains    ChainsConfigurations    `json:"chains" mapstructure:"chains"`
+	Chains    []ChainConfigurations   `json:"chains" mapstructure:"chains"`
 	TxScanner TxScannerConfigurations `json:"tx_scanner" mapstructure:"tx_scanner"`
 	TxSigner  TxSignerConfigurations  `json:"tx_signer" mapstructure:"tx_signer"`
+	BackOff   BackOff                 `json:"back_off" mapstructure:"back_off"`
 }
 
 type TxScannerConfigurations struct {
-	BlockChains *ChainsConfigurations
+	BlockChains []ChainConfigurations
 }
 
 type TxSignerConfigurations struct {
-	BlockChains *ChainsConfigurations
+	BlockChains []ChainConfigurations
 }
 
-type ChainsConfigurations struct {
-	BTC BTCConfiguration `json:"btc" mapstructure:"btc"`
-	ETH ETHConfiguration `json:"eth" mapstructure:"eth"`
-	BNB BNBConfiguration `json:"bnb" mapstructure:"bnb"`
-	XMR XMRConfiguration `json:"xmr" mapstructure:"xmr"`
+type BackOff struct {
+	InitialInterval     time.Duration `json:"initial_interval" mapstructure:"initial_interval"`
+	RandomizationFactor float64       `json:"randomization_factor" mapstructure:"randomization_factor"`
+	Multiplier          float64       `json:"multiplier" mapstructure:"multiplier"`
+	MaxInterval         time.Duration `json:"max_interval" mapstructure:"max_interval"`
+	MaxElapsedTime      time.Duration `json:"max_elapsed_time" mapstructure:"max_elapsed_time"`
 }
 
-type CommonBlockChainConfigurations struct {
+type ChainConfigurations struct {
+	Name         string `json:"name" mapstructure:"name"`
 	Enabled      bool   `json:"enabled" mapstructure:"enabled"`
 	ChainHost    string `json:"chain_host" mapstructure:"chain_host"`
 	ChainNetwork string `json:"chain_network" mapstructure:"chain_network"`
 	UserName     string `json:"username" mapstructure:"username"`
 	Password     string `json:"password" mapstructure:"password"`
-}
-
-type BTCConfiguration struct {
-	CommonBlockChainConfigurations `mapstructure:",squash"`
-	HTTPostMode                    bool `json:"http_post_mode" mapstructure:"http_post_mode"` // Bitcoin core only supports HTTP POST mode
-	DisableTLS                     bool `json:"disable_tls" mapstructure:"disable_tls"`       // Bitcoin core does not provide TLS by default
-}
-
-type ETHConfiguration struct {
-	CommonBlockChainConfigurations `mapstructure:",squash"`
-}
-
-// BNBConfiguration all the configurations for binance client
-type BNBConfiguration struct {
-	CommonBlockChainConfigurations `mapstructure:",squash"`
-}
-
-type XMRConfiguration struct {
-	CommonBlockChainConfigurations `mapstructure:",squash"`
+	HTTPostMode  bool   `json:"http_post_mode" mapstructure:"http_post_mode"` // Bitcoin core only supports HTTP POST mode
+	DisableTLS   bool   `json:"disable_tls" mapstructure:"disable_tls"`       // Bitcoin core does not provide TLS by default
+	BackOff      BackOff
 }
 
 // ThorChainConfiguration
@@ -81,6 +68,11 @@ func applyDefaultConfig() {
 	viper.SetDefault("metric.listen_port", "9000")
 	viper.SetDefault("metric.read_timeout", "30s")
 	viper.SetDefault("metric.write_timeout", "30s")
+	viper.SetDefault("back_off.initial_interval", 500*time.Millisecond)
+	viper.SetDefault("back_off.randomization_factor", 0.5)
+	viper.SetDefault("back_off.multiplier", 1.5)
+	viper.SetDefault("back_off.max_interval", 3*time.Minute)
+	viper.SetDefault("back_off.max_elapsed_time", 168*time.Hour) // 7 days. Due to node sync time's being so random
 }
 
 func LoadBiFrostConfig(file string) (*Configuration, error) {
@@ -98,18 +90,23 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 		return nil, errors.Wrap(err, "fail to unmarshal")
 	}
 
-	// Set TxScanner and Signer to use the global blockchain settings so no dups is needed.
-	cfg.TxScanner.BlockChains = &cfg.Chains
-	cfg.TxSigner.BlockChains = &cfg.Chains
+	// set global backoff settings to all chains config.
+	for _, chain := range cfg.Chains {
+		chain.BackOff = cfg.BackOff
+		cfg.TxScanner.BlockChains = append(cfg.TxScanner.BlockChains, chain)
+		cfg.TxSigner.BlockChains = append(cfg.TxSigner.BlockChains, chain)
+	}
+
 	return &cfg, nil
 }
 
+// TODO Review
 // SignerConfiguration all the configures need by signer
 type SignerConfiguration struct {
 	SignerDbPath     string `json:"signer_db_path" mapstructure:"signer_db_path"`
 	MessageProcessor int    `json:"message_processor" mapstructure:"message_processor"`
 	// BlockScanner     BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
-	Binance       BNBConfiguration       `json:"binance" mapstructure:"binance"`
+	// Binance       BNBConfiguration       `json:"binance" mapstructure:"binance"`
 	StateChain    ThorChainConfiguration `json:"state_chain" mapstructure:"state_chain"`
 	RetryInterval time.Duration          `json:"retry_interval" mapstructure:"retry_interval"`
 	Metric        MetricConfiguration    `json:"metric" mapstructure:"metric"`

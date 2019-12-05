@@ -5,8 +5,9 @@
     "signer_name": "statechain",
     "signer_passwd": "password"
   },
-  "chains": {
-    "BTC": {
+  "chains": [
+    {
+      "name": "btc",
       "enabled": true,
       "chain_host": "localhost:8332",
       "username": "bitcoin",
@@ -14,18 +15,19 @@
       "http_post_mode": true,
       "disable_tls": true
     },
-    "ETH": {
+    {
+      "name": "eth",
       "enabled": true,
       "chain_host": "http://localhost:8545"
     },
-    "BNB": {
+    {
+      "name": "bnb",
       "enabled": true,
       "chain_host": "http://localhost:27147",
       "chain_network": "mainnet"
     }
-  },
+  ],
   "metric": {
-    "enabled": true
-  },
-  "rune_address": "thor1ply65cysml949kdajmpugamzat964xttx4hgtv"
+    "enabled": false
+  }
 }

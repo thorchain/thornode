@@ -11,28 +11,33 @@ import (
 
 func loadChains(cfg config.TxScannerConfigurations) []BlockChainClients {
 	var chains []BlockChainClients
-	if cfg.BlockChains.BNB.Enabled {
-		bnb := loadBnbClient(cfg.BlockChains.BNB)
-		if bnb != nil {
-			chains = append(chains, bnb)
+
+	for _, chain := range cfg.BlockChains {
+		if chain.Name == "bnb" && chain.Enabled {
+			bnb := loadBnbClient(chain)
+			if bnb != nil {
+				chains = append(chains, bnb)
+			}
 		}
-	}
-	if cfg.BlockChains.ETH.Enabled {
-		eth := loadEthClient(cfg.BlockChains.ETH)
-		if eth != nil {
-			chains = append(chains, eth)
+
+		if chain.Name == "eth" && chain.Enabled {
+			eth := loadEthClient(chain)
+			if eth != nil {
+				chains = append(chains, eth)
+			}
 		}
-	}
-	if cfg.BlockChains.BTC.Enabled {
-		btc := loadBitcoinClient(cfg.BlockChains.BTC)
-		if btc != nil {
-			chains = append(chains, btc)
+
+		if chain.Name == "btc" && chain.Enabled {
+			btc := loadBtcClient(chain)
+			if btc != nil {
+				chains = append(chains, btc)
+			}
 		}
 	}
 	return chains
 }
 
-func loadBitcoinClient(cfg config.BTCConfiguration) BlockChainClients {
+func loadBtcClient(cfg config.ChainConfigurations) BlockChainClients {
 	btcClient, err := btc.NewClient(cfg)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to load btcClient")
@@ -42,7 +47,7 @@ func loadBitcoinClient(cfg config.BTCConfiguration) BlockChainClients {
 	return btcClient
 }
 
-func loadBnbClient(cfg config.BNBConfiguration) BlockChainClients {
+func loadBnbClient(cfg config.ChainConfigurations) BlockChainClients {
 	bnbClient, err := bnb.NewClient(cfg)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to load bnbClient")
@@ -52,7 +57,7 @@ func loadBnbClient(cfg config.BNBConfiguration) BlockChainClients {
 	return bnbClient
 }
 
-func loadEthClient(cfg config.ETHConfiguration) BlockChainClients {
+func loadEthClient(cfg config.ChainConfigurations) BlockChainClients {
 	ethClient, err := eth.NewClient(cfg)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to load ethClient")
