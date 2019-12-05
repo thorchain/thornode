@@ -71,9 +71,6 @@ func (mps MockPoolStorage) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr
 func (mps MockPoolStorage) GetAdminConfigValue(ctx sdk.Context, key types.AdminConfigKey, addr sdk.AccAddress) (string, error) {
 	return "FOOBAR", nil
 }
-func (mps MockPoolStorage) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
-	return common.NewAmountFromFloat(100)
-}
 
 func (mps MockPoolStorage) AddIncompleteEvents(ctx sdk.Context, event types.Event) error { return nil }
 func (mps MockPoolStorage) SetCompletedEvent(ctx sdk.Context, event types.Event)         {}

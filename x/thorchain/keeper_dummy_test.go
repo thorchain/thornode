@@ -172,9 +172,6 @@ func (k KVStoreDummy) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAd
 func (k KVStoreDummy) GetAdminConfigGSL(_ sdk.Context, _ sdk.AccAddress) common.Amount {
 	return common.ZeroAmount
 }
-func (k KVStoreDummy) GetAdminConfigStakerAmtInterval(_ sdk.Context, _ sdk.AccAddress) common.Amount {
-	return common.ZeroAmount
-}
 func (k KVStoreDummy) GetAdminConfigWhiteListGasAsset(_ sdk.Context, _ sdk.AccAddress) sdk.Coins {
 	return nil
 }

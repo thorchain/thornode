@@ -84,34 +84,6 @@ func (s StakeSuite) TestCalculatePoolUnits(c *C) {
 	}
 }
 
-func (s StakeSuite) TestValidateAmount(c *C) {
-	makePoolStaker := func(total uint64, avg sdk.Uint) PoolStaker {
-		stakers := make([]StakerUnit, total)
-		for i := range stakers {
-			stakers[i] = StakerUnit{Units: avg}
-		}
-
-		return PoolStaker{
-			TotalUnits: avg.MulUint64(total),
-			Stakers:    stakers,
-		}
-	}
-
-	skrs := makePoolStaker(50, sdk.NewUint(common.One/1000))
-	c.Assert(validateStakeAmount(skrs, sdk.NewUint(common.One/1000), common.NewAmountFromFloat(100)), IsNil)
-
-	skrs = makePoolStaker(150, sdk.NewUint(common.One/5000))
-	c.Assert(validateStakeAmount(skrs, sdk.NewUint(common.One/10000), common.NewAmountFromFloat(100)), NotNil)
-	c.Assert(validateStakeAmount(skrs, sdk.NewUint(common.One/5000), common.NewAmountFromFloat(100)), NotNil)
-	c.Assert(validateStakeAmount(skrs, sdk.NewUint(common.One/1000), common.NewAmountFromFloat(100)), IsNil)
-
-	skrs = makePoolStaker(300, sdk.NewUint(common.One/1000))
-
-	c.Assert(validateStakeAmount(skrs, sdk.NewUint(common.One/10000), common.NewAmountFromFloat(100)), NotNil)
-	c.Assert(validateStakeAmount(skrs, sdk.NewUint(common.One/500), common.NewAmountFromFloat(100)), NotNil)
-	c.Assert(validateStakeAmount(skrs, sdk.NewUint(common.One/250), common.NewAmountFromFloat(100)), IsNil)
-}
-
 // TestValidateStakeMessage
 func (StakeSuite) TestValidateStakeMessage(c *C) {
 	ps := NewMockInMemoryPoolStorage()
@@ -202,7 +174,7 @@ func (StakeSuite) TestStake(c *C) {
 	skrs := makePoolStaker(150, sdk.NewUint(common.One/5000))
 	ps.SetPoolStaker(ctx, skrs)
 	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(common.One), sdk.NewUint(common.One), bnbAddress, assetAddress, txId)
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 
 	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), notExistStakerPoolAddr, notExistStakerPoolAddr, txId)
 	c.Assert(err, NotNil)
