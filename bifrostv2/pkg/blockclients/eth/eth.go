@@ -49,13 +49,14 @@ func (c *Client) getCurrentBlock() (*etypes.Block, error) {
 }
 
 func (c *Client) Start(txInChan chan<- types.TxIn, fnStartHeight types.FnLastScannedBlockHeight) error {
-	c.logger.Info().Msg("starting ethClient")
+	c.logger.Info().Msg("starting")
 	c.fnLastScannedBlockHeight = fnStartHeight
 
 	var err error
 	c.lastScannedBlockHeight, err = c.fnLastScannedBlockHeight(common.ETHChain)
 	if err != nil {
-		return errors.Wrap(err, "ethereumClient failed")
+		return errors.Wrap(err, "fnLastScannedBlockHeight")
+
 	}
 
 	go c.scanBlocks(txInChan)
@@ -83,6 +84,6 @@ func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
 }
 
 func (c *Client) Stop() error {
-	c.logger.Info().Msg("stop the ethClient")
+	c.logger.Info().Msg("stopped")
 	return nil
 }
