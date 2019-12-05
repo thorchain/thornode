@@ -109,7 +109,6 @@ func (k KVStoreDummy) GetObservedTxVoterIterator(ctx sdk.Context) sdk.Iterator {
 func (k KVStoreDummy) GetObservedTxVoter(ctx sdk.Context, hash common.TxID) ObservedTxVoter {
 	return ObservedTxVoter{}
 }
-func (k KVStoreDummy) CheckTxHash(ctx sdk.Context, hash common.TxID) bool      { return false }
 func (k KVStoreDummy) GetObservedTxIndexIterator(ctx sdk.Context) sdk.Iterator { return nil }
 func (k KVStoreDummy) GetObservedTxIndex(ctx sdk.Context, height uint64) (ObservedTxIndex, error) {
 	return ObservedTxIndex{}, kaboom
