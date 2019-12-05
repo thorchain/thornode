@@ -13,7 +13,6 @@ type KeeperObservedTx interface {
 	SetObservedTxVoter(ctx sdk.Context, tx ObservedTxVoter)
 	GetObservedTxVoterIterator(ctx sdk.Context) sdk.Iterator
 	GetObservedTxVoter(ctx sdk.Context, hash common.TxID) ObservedTxVoter
-	CheckTxHash(ctx sdk.Context, hash common.TxID) bool
 	GetObservedTxIndexIterator(ctx sdk.Context) sdk.Iterator
 	GetObservedTxIndex(ctx sdk.Context, height uint64) (ObservedTxIndex, error)
 	SetObservedTxIndex(ctx sdk.Context, height uint64, index ObservedTxIndex)
