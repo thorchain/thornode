@@ -12,7 +12,7 @@ import (
 type KeeperObservedTx interface {
 	SetObservedTxVoter(ctx sdk.Context, tx ObservedTxVoter)
 	GetObservedTxVoterIterator(ctx sdk.Context) sdk.Iterator
-	GetObservedTxVoter(ctx sdk.Context, hash common.TxID) ObservedTxVoter
+	GetObservedTxVoter(ctx sdk.Context, hash common.TxID) (ObservedTxVoter, error)
 	GetObservedTxIndexIterator(ctx sdk.Context) sdk.Iterator
 	GetObservedTxIndex(ctx sdk.Context, height uint64) (ObservedTxIndex, error)
 	SetObservedTxIndex(ctx sdk.Context, height uint64, index ObservedTxIndex)
@@ -33,18 +33,20 @@ func (k KVStore) GetObservedTxVoterIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // GetObservedTx - gets information of a tx hash
-func (k KVStore) GetObservedTxVoter(ctx sdk.Context, hash common.TxID) ObservedTxVoter {
+func (k KVStore) GetObservedTxVoter(ctx sdk.Context, hash common.TxID) (ObservedTxVoter, error) {
 	key := k.GetKey(ctx, prefixObservedTx, hash.String())
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		return ObservedTxVoter{TxID: hash}
+		return ObservedTxVoter{TxID: hash}, nil
 	}
 
 	bz := store.Get([]byte(key))
 	var record ObservedTxVoter
-	k.cdc.MustUnmarshalBinaryBare(bz, &record)
-	return record
+	if err := k.cdc.UnmarshalBinaryBare(bz, &record); err != nil {
+		return ObservedTxVoter{}, dbError(ctx, "Unmarshal: observed tx voter", err)
+	}
+	return record, nil
 }
 
 // GetObservedTxIndexIterator iterate tx in indexes

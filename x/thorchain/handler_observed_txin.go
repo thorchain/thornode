@@ -83,7 +83,10 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 	handler := NewHandler(h.keeper, h.poolAddrMgr, h.txOutStore, h.validatorMgr)
 
 	for _, tx := range msg.Txs {
-		voter := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
+		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
+		if err != nil {
+			return err
+		}
 		preConsensus := voter.HasConensus(activeNodeAccounts)
 		voter.Add(tx, msg.Signer)
 		postConsensus := voter.HasConensus(activeNodeAccounts)
@@ -138,7 +141,10 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 							expectedCoins = ygg.Coins
 						case txOutbound:
 							txID := memo.GetTxID()
-							inVoter := h.keeper.GetObservedTxVoter(ctx, txID)
+							inVoter, err := h.keeper.GetObservedTxVoter(ctx, txID)
+							if err != nil {
+								return err
+							}
 							origTx := inVoter.GetTx(activeNodeAccounts)
 							expectedCoins = origTx.Tx.Coins
 						}

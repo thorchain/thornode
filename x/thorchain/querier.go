@@ -315,7 +315,12 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		ctx.Logger().Error("fail to parse tx id", err)
 		return nil, sdk.ErrInternal("fail to parse tx id")
 	}
-	voter := keeper.GetObservedTxVoter(ctx, hash)
+	voter, err := keeper.GetObservedTxVoter(ctx, hash)
+	if err != nil {
+		ctx.Logger().Error("fail to get observed tx voter", err)
+		return nil, sdk.ErrInternal("fail to get observed tx voter")
+	}
+
 	trustAccounts, err := keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		return nil, sdk.ErrInternal("fail to get trust account")

@@ -880,7 +880,11 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr *PoolAdd
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
-	voter := keeper.GetObservedTxVoter(ctx, msg.InTxID)
+	voter, err := keeper.GetObservedTxVoter(ctx, msg.InTxID)
+	if err != nil {
+		ctx.Logger().Error(err.Error())
+		return sdk.ErrInternal("fail to get observed tx voter").Result()
+	}
 	voter.AddOutTx(msg.Tx)
 	keeper.SetObservedTxVoter(ctx, voter)
 
