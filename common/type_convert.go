@@ -6,15 +6,18 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-// One is useful type so THORNode don't need to type 8 zero all the time
+// One is useful type so THORNode doesn't need to manage 8 zeroes all the time
 const One = 100000000
 
-func GetShare(part, total, allocation sdk.Uint) sdk.Uint {
+func GetShare(part sdk.Uint, total sdk.Uint, allocation sdk.Uint) sdk.Uint {
 	if part.IsZero() || total.IsZero() {
 		return sdk.ZeroUint()
 	}
-	// A / (Total / part) == A * (part/Total) but safer when part < Total
-	return sdk.NewUint(uint64(math.Round((float64(allocation.Uint64()) / (float64(total.Uint64()) / float64(part.Uint64()))))))
+	// A / (Total / part) == A * (part/Total) but safer when part < Totals
+	pD := sdk.NewDec(int64(part.Uint64()))
+	tD := sdk.NewDec(int64(total.Uint64()))
+	aD := sdk.NewDec(int64(allocation.Uint64()))
+	return sdk.NewUint(uint64((aD.Quo(tD.Quo(pD))).RoundInt64()))
 }
 
 func SafeSub(input1, input2 sdk.Uint) sdk.Uint {
