@@ -25,11 +25,14 @@ func NewHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutStore *T
 	classic := NewClassicHandler(keeper, poolAddressMgr, txOutStore, validatorManager)
 
 	// New arch handlers
+	reserveContribHandler := NewReserveContributorHandler(keeper)
 	poolDataHandler := NewPoolDataHandler(keeper)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
 		switch m := msg.(type) {
+		case MsgReserveContributor:
+			return reserveContribHandler.Run(ctx, m, version)
 		case MsgSetPoolData:
 			return poolDataHandler.Run(ctx, m, version)
 		default:
@@ -74,8 +77,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutS
 			return handleMsgLeave(ctx, keeper, txOutStore, validatorManager, m)
 		case MsgAck:
 			return handleMsgAck(ctx, keeper, poolAddressMgr, validatorManager, m)
-		case MsgReserveContributor:
-			return handleMsgReserveContributor(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -457,42 +458,6 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
 		Memo:        "ack",
 	}, true)
-
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
-// handleMsgReserveContributor
-func handleMsgReserveContributor(ctx sdk.Context, keeper Keeper, msg MsgReserveContributor) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgReserveContributor from : %s reserve %s (%s)", msg, msg.Contributor.Address.String(), msg.Contributor.Amount.String()))
-	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account")
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-
-	reses, err := keeper.GetReservesContributors(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get reserve contributors", err)
-		return sdk.ErrInternal("fail to get reserve contributors").Result()
-	}
-	reses = reses.Add(msg.Contributor)
-	if err := keeper.SetReserveContributors(ctx, reses); nil != err {
-		ctx.Logger().Error("fail to save reserve contributors", err)
-		return sdk.ErrInternal("fail to save reserve contributors").Result()
-	}
-
-	vault, err := keeper.GetVaultData(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get vault data", err)
-		return sdk.ErrInternal("fail to get vault data").Result()
-	}
-	vault.TotalReserve = vault.TotalReserve.Add(msg.Contributor.Amount)
-	if err := keeper.SetVaultData(ctx, vault); nil != err {
-		ctx.Logger().Error("fail to save vault data", err)
-		return sdk.ErrInternal("fail to save vault data").Result()
-	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
