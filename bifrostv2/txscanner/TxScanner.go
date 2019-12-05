@@ -71,8 +71,8 @@ func (s *TxScanner) Stop() error {
 }
 
 func (s *TxScanner) processTxIns(ch <-chan types.TxIn) {
-	s.logger.Info().Msg("started to process TxIns")
-	defer s.logger.Info().Msg("stopped processing TxIns")
+	s.logger.Info().Msg("started processTxIns")
+	defer s.logger.Info().Msg("stopped processTxIns")
 	defer s.wg.Done()
 	for {
 		select {
