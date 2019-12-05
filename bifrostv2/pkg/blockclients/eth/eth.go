@@ -3,7 +3,9 @@ package eth
 import (
 	"context"
 	"math/big"
+	"time"
 
+	"github.com/cenkalti/backoff"
 	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/pkg/errors"
@@ -64,11 +66,15 @@ func (c *Client) Start(txInChan chan<- types.TxIn, fnStartHeight types.FnLastSca
 }
 
 func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
+	backoffCtrl := backoff.NewExponentialBackOff()
+
 	c.logger.Info().Msg("scanBlocks")
 	for {
 		block, err := c.getBlock(c.lastScannedBlockHeight)
 		if err != nil {
-			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Msg("getBlock failed")
+			d := backoffCtrl.NextBackOff()
+			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backoffCtrl", d.String()).Msg("getBlock failed")
+			time.Sleep(d)
 			continue
 		}
 
@@ -80,6 +86,8 @@ func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
 
 		txInChan <- txIn
 		c.lastScannedBlockHeight++
+
+		backoffCtrl.Reset()
 	}
 }
 

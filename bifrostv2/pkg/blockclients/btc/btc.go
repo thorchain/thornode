@@ -1,9 +1,12 @@
 package btc
 
 import (
+	"time"
+
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/rpcclient"
 	"github.com/btcsuite/btcd/wire"
+	"github.com/cenkalti/backoff"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -55,11 +58,16 @@ func (c *Client) Start(txInChan chan<- types.TxIn, fnStartHeight types.FnLastSca
 }
 
 func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
+	backOffCtrl := backoff.NewExponentialBackOff()
+
 	c.logger.Info().Msg("scanBlocks")
 	for {
 		block, err := c.getBlock(c.lastScannedBlockHeight)
 		if err != nil {
-			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight)
+			d := backOffCtrl.NextBackOff()
+			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backoffCtrl", d.String()).Msg("getBlock failed")
+			time.Sleep(d)
+			continue
 		}
 
 		// extract TxIn from block
@@ -70,6 +78,8 @@ func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
 
 		txInChan <- txIn
 		c.lastScannedBlockHeight++
+
+		backOffCtrl.Reset()
 	}
 }
 
