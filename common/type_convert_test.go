@@ -24,6 +24,28 @@ func (TypeConvertTestSuite) TestSafeSub(c *C) {
 	c.Check(result3.Equal(input2.Sub(input1)), Equals, true, Commentf("%d", result3.Uint64()))
 }
 
+func (TypeConvertTestSuite) TestSafeDivision(c *C) {
+	input1 := sdk.NewUint(1)
+	input2 := sdk.NewUint(2)
+	total := input1.Add(input2)
+	allocation := sdk.NewUint(100000000)
+
+	result1 := GetShare(input1, total, allocation)
+	c.Check(result1.Equal(sdk.NewUint(33333333)), Equals, true, Commentf("%d", result1.Uint64()))
+
+	result2 := GetShare(input2, total, allocation)
+	c.Check(result2.Equal(sdk.NewUint(66666667)), Equals, true, Commentf("%d", result2.Uint64()))
+
+	result3 := GetShare(sdk.ZeroUint(), total, allocation)
+	c.Check(result3.Equal(sdk.ZeroUint()), Equals, true, Commentf("%d", result3.Uint64()))
+
+	result4 := GetShare(input1, sdk.ZeroUint(), allocation)
+	c.Check(result4.Equal(sdk.ZeroUint()), Equals, true, Commentf("%d", result4.Uint64()))
+
+	result5 := GetShare(input1, total, sdk.ZeroUint())
+	c.Check(result5.Equal(sdk.ZeroUint()), Equals, true, Commentf("%d", result5.Uint64()))
+}
+
 func (TypeConvertTestSuite) TestUintToFloat64(c *C) {
 	input := sdk.NewUint(1)
 	c.Check(UintToFloat64(input), Equals, 1.0)
