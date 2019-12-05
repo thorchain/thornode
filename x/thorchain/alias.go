@@ -17,7 +17,6 @@ const (
 
 	// Admin config keys
 	GSLKey                 = types.GSLKey
-	StakerAmtIntervalKey   = types.StakerAmtIntervalKey
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
 	WhiteListGasAssetKey   = types.WhiteListGasAssetKey
 	PoolRefundGasKey       = types.PoolRefundGasKey
