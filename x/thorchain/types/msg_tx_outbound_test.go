@@ -1,8 +1,6 @@
 package types
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -61,8 +59,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 			signer: sdk.AccAddress{},
 		},
 	}
-	for i, item := range inputs {
-		fmt.Println(i)
+	for _, item := range inputs {
 		tx := common.NewTx(
 			item.txID,
 			item.sender,

@@ -10,8 +10,12 @@ type MsgObservedTxInSuite struct{}
 var _ = Suite(&MsgObservedTxInSuite{})
 
 func (s *MsgObservedTxInSuite) TestMsgObservedTxIn(c *C) {
-	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(55), GetRandomPubKey())
+	var err error
+	pk := GetRandomPubKey()
+	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(55), pk)
 	acc := GetRandomBech32Addr()
+	tx.Tx.ToAddress, err = pk.GetAddress(tx.Tx.Coins[0].Asset.Chain)
+	c.Assert(err, IsNil)
 
 	m := NewMsgObservedTxIn(ObservedTxs{tx}, acc)
 	EnsureMsgBasicCorrect(m, c)

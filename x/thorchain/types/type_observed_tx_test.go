@@ -31,6 +31,7 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 	accPubKeys4 := GetRandomPubKeys()
 
 	tx1 := GetRandomTx()
+	tx1.Memo = "hello"
 	tx2 := GetRandomTx()
 	observePoolAddr := GetRandomPubKey()
 	voter := NewObservedTxVoter(txID, nil)

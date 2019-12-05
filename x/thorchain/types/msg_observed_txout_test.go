@@ -10,7 +10,11 @@ type MsgObservedTxOutSuite struct{}
 var _ = Suite(&MsgObservedTxOutSuite{})
 
 func (s *MsgObservedTxOutSuite) TestMsgObservedTxOut(c *C) {
-	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(55), GetRandomPubKey())
+	var err error
+	pk := GetRandomPubKey()
+	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(55), pk)
+	tx.Tx.FromAddress, err = pk.GetAddress(tx.Tx.Coins[0].Asset.Chain)
+	c.Assert(err, IsNil)
 	acc := GetRandomBech32Addr()
 
 	m := NewMsgObservedTxOut(ObservedTxs{tx}, acc)
