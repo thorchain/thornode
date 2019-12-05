@@ -2,9 +2,11 @@ package bnb
 
 import (
 	"strings"
+	"time"
 
 	"github.com/binance-chain/go-sdk/client/rpc"
 	btypes "github.com/binance-chain/go-sdk/common/types"
+	"github.com/cenkalti/backoff"
 	"github.com/openlyinc/pointy"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -74,11 +76,15 @@ func (c *Client) Stop() error {
 }
 
 func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
+	backoffCtrl := backoff.NewExponentialBackOff()
+
 	c.logger.Info().Msg("scanBlocks")
 	for {
 		block, err := c.getBlock(c.lastScannedBlockHeight)
 		if err != nil {
-			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Msg("getBlock failed")
+			d := backoffCtrl.NextBackOff()
+			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backoffCtrl", d.String()).Msg("getBlock failed")
+			time.Sleep(d)
 			continue
 		}
 
@@ -90,5 +96,7 @@ func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
 
 		txInChan <- txIn
 		c.lastScannedBlockHeight++
+
+		backoffCtrl.Reset()
 	}
 }
