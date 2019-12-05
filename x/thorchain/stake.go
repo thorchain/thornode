@@ -8,26 +8,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-// validateStakeAmount
-func validateStakeAmount(stakers PoolStaker, stakerUnits sdk.Uint, stakeAmtInterval common.Amount) error {
-	var minStakerAmt sdk.Uint
-	stakerCount := float64(len(stakers.Stakers))
-	if stakerCount <= stakeAmtInterval.Float64() {
-		minStakerAmt = sdk.ZeroUint() // first 100 stakers there are no lower limits
-	} else {
-		totalUnits := stakers.TotalUnits
-		avgStake := common.UintToFloat64(totalUnits) / stakerCount
-		minStakerAmt = common.FloatToUint(avgStake * ((stakerCount / stakeAmtInterval.Float64()) + 0.1)) // Increases minStakeAmt by 10% every interval stakers
-	}
-
-	if stakerUnits.LT(minStakerAmt) {
-		return fmt.Errorf("not enough to stake (%s/%s)", stakerUnits, minStakerAmt)
-	}
-
-	return nil
-}
-
-// validateStakeMessage is to do some validation , and make sure it is legit
+// validateStakeMessage is to do some validation, and make sure it is legit
 func validateStakeMessage(ctx sdk.Context, keeper Keeper, asset common.Asset, requestTxHash common.TxID, runeAddr, assetAddr common.Address) error {
 	if asset.IsEmpty() {
 		return errors.New("asset is empty")
@@ -135,11 +116,6 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	fex := su.Units
 	totalStakerUnits := fex.Add(stakerUnits)
 
-	stakeAmtInterval := keeper.GetAdminConfigStakerAmtInterval(ctx, EmptyAccAddress)
-	err = validateStakeAmount(ps, totalStakerUnits, stakeAmtInterval)
-	if err != nil {
-		return sdk.ZeroUint(), errors.Wrapf(err, "invalid stake amount")
-	}
 	su.Units = totalStakerUnits
 	ps.UpsertStakerUnit(su)
 	keeper.SetPoolStaker(ctx, ps)

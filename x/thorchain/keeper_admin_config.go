@@ -14,7 +14,6 @@ type KeeperAdminConfig interface {
 	SetAdminConfig(ctx sdk.Context, config AdminConfig)
 	GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus
 	GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount
-	GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount
 	GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 	GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address
 	GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint
@@ -44,11 +43,6 @@ func (k KVStore) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAd
 // GetAdminConfigGSL - get the config for GSL
 func (k KVStore) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
 	return k.GetAdminConfigAmountType(ctx, GSLKey, GSLKey.Default(), addr)
-}
-
-// GetAdminConfigStakerAmtInterval - get the config for StakerAmtInterval
-func (k KVStore) GetAdminConfigStakerAmtInterval(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, StakerAmtIntervalKey, StakerAmtIntervalKey.Default(), addr)
 }
 
 // GetAdminConfigWhiteListGasAsset

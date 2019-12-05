@@ -17,7 +17,6 @@ var _ = Suite(&AdminConfigSuite{})
 func (s AdminConfigSuite) TestGetKey(c *C) {
 	keys := []string{
 		"GSL",
-		"StakerAmtInterval",
 		"Unknown",
 		"WhiteListGasAsset",
 		"PoolRefundGas",
@@ -30,7 +29,7 @@ func (s AdminConfigSuite) TestGetKey(c *C) {
 }
 
 func (s AdminConfigSuite) TestAdminConfig(c *C) {
-	amts := []string{"GSL", "StakerAmtInterval"}
+	amts := []string{"GSL"}
 	addr := GetRandomBech32Addr()
 	for _, amt := range amts {
 		config := NewAdminConfig(GetAdminConfigKey(amt), "12", addr) // happy path
@@ -108,7 +107,6 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 func (AdminConfigSuite) TestDefault(c *C) {
 	input := map[AdminConfigKey]string{
 		GSLKey:               "0.3",
-		StakerAmtIntervalKey: "100",
 		WhiteListGasAssetKey: "1000bep",
 		PoolRefundGasKey:     strconv.Itoa(common.One / 10),
 		DefaultPoolStatus:    "Enabled",
