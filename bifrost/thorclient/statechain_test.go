@@ -95,26 +95,26 @@ func (s StatechainSuite) TestSign(c *C) {
 	cfg.ChainHost = u.Host
 	observedAddress := stypes.GetRandomPubKey()
 	c.Assert(err, IsNil)
-	tx := stypes.NewTxInVoter(common.TxID("20D150DF19DAB33405D375982E479F48F607D0C9E4EE95B146F6C35FA2A09269"), []stypes.TxIn{
-		stypes.NewTxIn(
-			common.Coins{
+	tx := stypes.NewObservedTx(
+		common.Tx{
+			Coins: common.Coins{
 				common.NewCoin(common.BNBAsset, sdk.NewUint(123400000)),
 			},
-			"This is my memo!",
-			common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
-			common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
-			common.BNBGasFeeSingleton,
-			sdk.NewUint(1),
-			observedAddress,
-		),
-	})
+			Memo:        "This is my memo!",
+			FromAddress: common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
+			ToAddress:   common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
+			Gas:         common.BNBGasFeeSingleton,
+		},
+		sdk.NewUint(1),
+		observedAddress,
+	)
 
 	bridge, err := NewStateChainBridge(cfg, getMetricForTest(c))
 	c.Assert(err, IsNil)
 	c.Assert(bridge, NotNil)
 	err = bridge.Start()
 	c.Assert(err, IsNil)
-	signedMsg, err := bridge.Sign([]stypes.TxInVoter{tx})
+	signedMsg, err := bridge.Sign(stypes.ObservedTxs{tx})
 	c.Log(err)
 	c.Assert(signedMsg, NotNil)
 	c.Assert(err, IsNil)
@@ -340,7 +340,7 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 }
 
 func (StatechainSuite) TestSignEx(c *C) {
-	testFunc := func(in []stypes.TxInVoter, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
+	testFunc := func(in stypes.ObservedTxs, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
 		cfg, _, cleanup := setupStateChainForTest(c)
 		defer cleanup()
 		if nil != handleFunc {
@@ -361,17 +361,11 @@ func (StatechainSuite) TestSignEx(c *C) {
 	if nil != err {
 		c.Error(err)
 	}
-	testFunc([]stypes.TxInVoter{
-		{
-			TxID: "EBB78FA6FDFBB19EBD188316B5FF9E60799C3149214A263274D31F4F605B8FDE",
-			Txs: []stypes.TxIn{
-				{
-					Status:    stypes.Incomplete,
-					OutHashes: nil,
-					Memo:      "",
-					Coins:     nil,
-					Sender:    testBNBAddress,
-				},
+
+	testFunc(stypes.ObservedTxs{
+		stypes.ObservedTx{
+			Tx: common.Tx{
+				FromAddress: testBNBAddress,
 			},
 		},
 	}, func(writer http.ResponseWriter, request *http.Request) {
@@ -415,7 +409,7 @@ func (StatechainSuite) TestSignEx(c *C) {
 }
 
 func (StatechainSuite) TestSendEx(c *C) {
-	testFunc := func(in []stypes.TxInVoter, mode types.TxMode, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
+	testFunc := func(in stypes.ObservedTxs, mode types.TxMode, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
 		cfg, _, cleanup := setupStateChainForTest(c)
 		defer cleanup()
 		if nil != handleFunc {
@@ -448,19 +442,12 @@ func (StatechainSuite) TestSendEx(c *C) {
 	if nil != err {
 		c.Error(err)
 	}
-	txIns := []stypes.TxIn{
-		{
-			Status:    stypes.Incomplete,
-			OutHashes: nil,
-			Memo:      "",
-			Coins:     nil,
-			Sender:    testBNBAddress,
+	txIns := stypes.ObservedTxs{
+		stypes.ObservedTx{
+			Tx: common.Tx{FromAddress: testBNBAddress},
 		},
 	}
-	txInVoters := []stypes.TxInVoter{
-		stypes.NewTxInVoter("EBB78FA6FDFBB19EBD188316B5FF9E60799C3149214A263274D31F4F605B8FDE", txIns),
-	}
-	testFunc(txInVoters, types.TxUnknown, func(writer http.ResponseWriter, request *http.Request) {
+	testFunc(txIns, types.TxUnknown, func(writer http.ResponseWriter, request *http.Request) {
 		if _, err := writer.Write([]byte(`{
 "height":"78",
 "result":{
@@ -476,7 +463,7 @@ func (StatechainSuite) TestSendEx(c *C) {
 			c.Error(err)
 		}
 	}, IsNil, NotNil)
-	testFunc(txInVoters, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
+	testFunc(txIns, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
 		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
 			if _, err := writer.Write([]byte(`{
 "height":"78",
@@ -496,7 +483,7 @@ func (StatechainSuite) TestSendEx(c *C) {
 		}
 		writer.WriteHeader(http.StatusInternalServerError)
 	}, IsNil, NotNil)
-	testFunc(txInVoters, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
+	testFunc(txIns, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
 		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
 			if _, err := writer.Write([]byte(`{
 "height":"78",

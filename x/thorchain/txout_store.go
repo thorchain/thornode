@@ -70,12 +70,7 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 
 			activeNodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
 			if len(activeNodeAccounts) > 0 && err == nil {
-				voter, err := keeper.GetTxInVoter(ctx, toi.InHash)
-				if err != nil {
-					ctx.Logger().Error(err.Error())
-					return
-				}
-
+				voter := keeper.GetObservedTxVoter(ctx, toi.InHash)
 				tx := voter.GetTx(activeNodeAccounts)
 
 				// collect yggdrasil pools
@@ -154,13 +149,9 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 	}
 
 	// increment out number of out tx for this in tx
-	voter, err := keeper.GetTxInVoter(ctx, toi.InHash)
-	if err != nil {
-		ctx.Logger().Error(err.Error())
-		return
-	}
+	voter := keeper.GetObservedTxVoter(ctx, toi.InHash)
 	voter.Actions = append(voter.Actions, *toi)
-	keeper.SetTxInVoter(ctx, voter)
+	keeper.SetObservedTxVoter(ctx, voter)
 
 	// add tx to block out
 	tos.addToBlockOut(toi)
@@ -201,7 +192,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, gas common.Gas) error {
 	return keeper.SetVaultData(ctx, vault)
 }
 
-func (tos *TxOutStore) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx TxIn) Yggdrasils {
+func (tos *TxOutStore) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx ObservedTx) Yggdrasils {
 	// collect yggdrasil pools
 	var yggs Yggdrasils
 	iterator := keeper.GetYggdrasilIterator(ctx)

@@ -1,84 +1,85 @@
 package thorchain
 
 import (
+	"fmt"
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
 )
 
-type KeeperTxIn interface {
-	GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator
-	SetTxInVoter(ctx sdk.Context, tx TxInVoter)
-	GetTxInVoter(ctx sdk.Context, hash common.TxID) (TxInVoter, error)
-
-	GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator
-	GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error)
-	SetTxInIndex(ctx sdk.Context, height uint64, index TxInIndex)
-	AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) error
+type KeeperObservedTx interface {
+	SetObservedTxVoter(ctx sdk.Context, tx ObservedTxVoter)
+	GetObservedTxVoterIterator(ctx sdk.Context) sdk.Iterator
+	GetObservedTxVoter(ctx sdk.Context, hash common.TxID) ObservedTxVoter
+	CheckTxHash(ctx sdk.Context, hash common.TxID) bool
+	GetObservedTxIndexIterator(ctx sdk.Context) sdk.Iterator
+	GetObservedTxIndex(ctx sdk.Context, height uint64) (ObservedTxIndex, error)
+	SetObservedTxIndex(ctx sdk.Context, height uint64, index ObservedTxIndex)
+	AddToObservedTxIndex(ctx sdk.Context, height uint64, id common.TxID) error
 }
 
-// SetTxInVoter - save a txin voter object
-func (k KVStore) SetTxInVoter(ctx sdk.Context, tx TxInVoter) {
+// SetObservedTxVoter - save a txin voter object
+func (k KVStore) SetObservedTxVoter(ctx sdk.Context, tx ObservedTxVoter) {
 	store := ctx.KVStore(k.storeKey)
-	key := k.GetKey(ctx, prefixTxIn, tx.String())
+	key := k.GetKey(ctx, prefixObservedTx, tx.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(tx))
 }
 
-// GetTxInVoterIterator iterate tx in voters
-func (k KVStore) GetTxInVoterIterator(ctx sdk.Context) sdk.Iterator {
+// GetObservedTxVoterIterator iterate tx in voters
+func (k KVStore) GetObservedTxVoterIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, []byte(prefixTxIn))
+	return sdk.KVStorePrefixIterator(store, []byte(prefixObservedTx))
 }
 
-// GetTxIn - gets information of a tx hash
-func (k KVStore) GetTxInVoter(ctx sdk.Context, hash common.TxID) (TxInVoter, error) {
-	key := k.GetKey(ctx, prefixTxIn, hash.String())
+// GetObservedTx - gets information of a tx hash
+func (k KVStore) GetObservedTxVoter(ctx sdk.Context, hash common.TxID) ObservedTxVoter {
+	key := k.GetKey(ctx, prefixObservedTx, hash.String())
 
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		return TxInVoter{TxID: hash}, nil
+		return ObservedTxVoter{TxID: hash}
 	}
 
 	bz := store.Get([]byte(key))
-	var voter TxInVoter
-	if err := k.cdc.UnmarshalBinaryBare(bz, &voter); err != nil {
-		return TxInVoter{}, dbError(ctx, "Unmarshal: TxInVoter", err)
-	}
-	return voter, nil
+	var record ObservedTxVoter
+	k.cdc.MustUnmarshalBinaryBare(bz, &record)
+	return record
 }
 
-// GetTxInIndexIterator iterate tx in indexes
-func (k KVStore) GetTxInIndexIterator(ctx sdk.Context) sdk.Iterator {
+// GetObservedTxIndexIterator iterate tx in indexes
+func (k KVStore) GetObservedTxIndexIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, []byte(prefixTxInIndex))
+	return sdk.KVStorePrefixIterator(store, []byte(prefixObservedTxIndex))
 }
 
-// GetTxInIndex retrieve txIn by height
-func (k KVStore) GetTxInIndex(ctx sdk.Context, height uint64) (TxInIndex, error) {
-	key := k.GetKey(ctx, prefixTxInIndex, strconv.FormatUint(height, 10))
+// GetObservedTxIndex retrieve txIn by height
+func (k KVStore) GetObservedTxIndex(ctx sdk.Context, height uint64) (ObservedTxIndex, error) {
+	key := k.GetKey(ctx, prefixObservedTxIndex, strconv.FormatUint(height, 10))
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		return TxInIndex{}, nil
+		return ObservedTxIndex{}, nil
 	}
 	buf := store.Get([]byte(key))
-	var index TxInIndex
+	var index ObservedTxIndex
 	if err := k.cdc.UnmarshalBinaryBare(buf, &index); nil != err {
-		return TxInIndex{}, dbError(ctx, "Unmarshal: txin index", err)
+		ctx.Logger().Error(fmt.Sprintf("fail to unmarshal observed tx index,err: %s", err))
+		return ObservedTxIndex{}, errors.Wrap(err, "fail to unmarshal observed tx index")
 	}
 	return index, nil
 }
 
-// SetTxInIndex write a TxIn index into datastore
-func (k KVStore) SetTxInIndex(ctx sdk.Context, height uint64, index TxInIndex) {
-	key := k.GetKey(ctx, prefixTxInIndex, strconv.FormatUint(height, 10))
+// SetObservedTxIndex write a ObservedTx index into datastore
+func (k KVStore) SetObservedTxIndex(ctx sdk.Context, height uint64, index ObservedTxIndex) {
+	key := k.GetKey(ctx, prefixObservedTxIndex, strconv.FormatUint(height, 10))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&index))
 }
 
-// AddToTxInIndex will add the given txIn into the index
-func (k KVStore) AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) error {
-	index, err := k.GetTxInIndex(ctx, height)
+// AddToObservedTxIndex will add the given txIn into the index
+func (k KVStore) AddToObservedTxIndex(ctx sdk.Context, height uint64, id common.TxID) error {
+	index, err := k.GetObservedTxIndex(ctx, height)
 	if nil != err {
 		return err
 	}
@@ -89,6 +90,6 @@ func (k KVStore) AddToTxInIndex(ctx sdk.Context, height uint64, id common.TxID) 
 		}
 	}
 	index = append(index, id)
-	k.SetTxInIndex(ctx, height, index)
+	k.SetObservedTxIndex(ctx, height, index)
 	return nil
 }

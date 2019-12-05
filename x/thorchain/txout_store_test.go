@@ -63,12 +63,12 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 
 	// Create voter
 	inTxID := GetRandomTxHash()
-	voter := NewTxInVoter(inTxID, []TxIn{
-		TxIn{
+	voter := NewObservedTxVoter(inTxID, ObservedTxs{
+		ObservedTx{
 			Signers: []sdk.AccAddress{w.activeNodeAccount.NodeAddress, acc1.NodeAddress, acc2.NodeAddress},
 		},
 	})
-	w.keeper.SetTxInVoter(w.ctx, voter)
+	w.keeper.SetObservedTxVoter(w.ctx, voter)
 
 	// Should get acc2. Acc3 hasn't signed and acc2 is the highest value
 	item := &TxOutItem{
