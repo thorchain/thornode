@@ -4,6 +4,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
+	"gitlab.com/thorchain/thornode/bifrostv2/pkg/blockclients/bnb"
 	"gitlab.com/thorchain/thornode/bifrostv2/pkg/blockclients/btc"
 	"gitlab.com/thorchain/thornode/bifrostv2/pkg/blockclients/eth"
 )
@@ -11,10 +12,10 @@ import (
 func loadChains(cfg config.TxScannerConfigurations) []BlockChainClients {
 	var chains []BlockChainClients
 	if cfg.BlockChains.BNB.Enabled {
-		// bnb := loadBnbClient(cfg.BlockChains.BNB)
-		// if bnb != nil {
-		// 	chains = append(chains, bnb)
-		// }
+		bnb := loadBnbClient(cfg.BlockChains.BNB)
+		if bnb != nil {
+			chains = append(chains, bnb)
+		}
 	}
 	if cfg.BlockChains.ETH.Enabled {
 		eth := loadEthClient(cfg.BlockChains.ETH)
@@ -32,31 +33,32 @@ func loadChains(cfg config.TxScannerConfigurations) []BlockChainClients {
 }
 
 func loadBitcoinClient(cfg config.BTCConfiguration) BlockChainClients {
-	bitcoinClient, err := btc.NewClient(cfg)
+	btcClient, err := btc.NewClient(cfg)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to load bitcoinClient")
+		log.Error().Err(err).Msg("failed to load btcClient")
 		return nil
 	}
-	log.Debug().Msg("loadBitcoinClient")
-	return bitcoinClient
+	log.Debug().Msg("loadBTCClient")
+	return btcClient
 }
 
-// func loadBnbClient(cfg config.BNBConfiguration) BlockChainClients {
-// 	binanceClient, err := binanceChain.NewClient(cfg)
-// 	if err != nil {
-// 		log.Error().Err(err).Msg("failed to load binacneClient")
-// 		return nil
-// 	}
-// 	return binanceClient
-// }
+func loadBnbClient(cfg config.BNBConfiguration) BlockChainClients {
+	bnbClient, err := bnb.NewClient(cfg)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to load bnbClient")
+		return nil
+	}
+	log.Debug().Msg("loadBNBClient")
+	return bnbClient
+}
 
 func loadEthClient(cfg config.ETHConfiguration) BlockChainClients {
-	etherumClient, err := eth.NewClient(cfg)
+	ethClient, err := eth.NewClient(cfg)
 	if err != nil {
-		log.Error().Err(err).Msg("failed to load etherumClient")
+		log.Error().Err(err).Msg("failed to load ethClient")
 		return nil
 	}
 
-	log.Debug().Msg("loadEthClient")
-	return etherumClient
+	log.Debug().Msg("loadETHClient")
+	return ethClient
 }

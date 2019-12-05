@@ -8,7 +8,7 @@ import (
 // PoolPubKey is the pub key only related to a specific chain
 type PoolPubKey struct {
 	Chain      Chain    `json:"chain"`
-	SeqNo      uint64   `json:"seq_no"`
+	SeqNo      uint64   `json:"seq_no,string"`
 	Membership []PubKey `json:"membership"`
 	PubKey     PubKey   `json:"pub_key"`
 	Address    Address  `json:"address"`

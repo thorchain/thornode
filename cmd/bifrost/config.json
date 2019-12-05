@@ -19,8 +19,8 @@
       "chain_host": "http://localhost:8545"
     },
     "BNB": {
-      "enabled": false,
-      "chain_host": "",
+      "enabled": true,
+      "chain_host": "http://localhost:27147",
       "chain_network": "mainnet"
     }
   },

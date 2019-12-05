@@ -41,7 +41,7 @@ func NewClient(cfg config.BTCConfiguration) (*Client, error) {
 }
 
 func (c *Client) Start(txInChan chan<- types.TxIn, fnStartHeight types.FnLastScannedBlockHeight) error {
-	c.logger.Info().Msg("starting btcClient")
+	c.logger.Info().Msg("starting")
 	c.fnLastScannedBlockHeight = fnStartHeight
 
 	var err error
@@ -74,7 +74,7 @@ func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
 }
 
 func (c *Client) Stop() error {
-	c.logger.Info().Msg("stop the btcClient")
+	c.logger.Info().Msg("stopped")
 	return nil
 }
 
