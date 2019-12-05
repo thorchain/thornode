@@ -20,13 +20,14 @@ import (
 
 type Client struct {
 	client                   *rpc.HTTP
-	cfg                      config.BNBConfiguration
+	cfg                      config.ChainConfigurations
 	lastScannedBlockHeight   uint64
 	fnLastScannedBlockHeight types.FnLastScannedBlockHeight
 	logger                   zerolog.Logger
+	backOffCtrl              backoff.ExponentialBackOff
 }
 
-func NewClient(cfg config.BNBConfiguration) (*Client, error) {
+func NewClient(cfg config.ChainConfigurations) (*Client, error) {
 	network := setNetwork(cfg)
 	if cfg.ChainHost == "" {
 		return nil, errors.New("chain_host not set")
@@ -36,10 +37,18 @@ func NewClient(cfg config.BNBConfiguration) (*Client, error) {
 		cfg:    cfg,
 		client: rpc.NewRPCClient(cfg.ChainHost, network),
 		logger: log.Logger.With().Str("module", "bnbClient").Logger(),
+		backOffCtrl: backoff.ExponentialBackOff{
+			InitialInterval:     cfg.BackOff.InitialInterval,
+			RandomizationFactor: cfg.BackOff.RandomizationFactor,
+			Multiplier:          cfg.BackOff.Multiplier,
+			MaxInterval:         cfg.BackOff.MaxInterval,
+			MaxElapsedTime:      cfg.BackOff.MaxElapsedTime,
+			Clock:               backoff.SystemClock,
+		},
 	}, nil
 }
 
-func setNetwork(cfg config.BNBConfiguration) btypes.ChainNetwork {
+func setNetwork(cfg config.ChainConfigurations) btypes.ChainNetwork {
 	var network btypes.ChainNetwork
 	if cfg.ChainNetwork == strings.ToLower("mainnet") {
 		network = btypes.ProdNetwork
@@ -58,6 +67,7 @@ func (c *Client) getBlock(blockHeight uint64) (*ctypes.ResultBlock, error) {
 func (c *Client) Start(txInChan chan<- types.TxIn, fnStartHeight types.FnLastScannedBlockHeight) error {
 	c.logger.Info().Msg("starting")
 	c.fnLastScannedBlockHeight = fnStartHeight
+	c.backOffCtrl.Reset() // Reset/set the backOffCtrl
 
 	var err error
 	c.lastScannedBlockHeight, err = c.fnLastScannedBlockHeight(common.BNBChain)
@@ -76,14 +86,12 @@ func (c *Client) Stop() error {
 }
 
 func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
-	backoffCtrl := backoff.NewExponentialBackOff()
-
 	c.logger.Info().Msg("scanBlocks")
 	for {
 		block, err := c.getBlock(c.lastScannedBlockHeight)
 		if err != nil {
-			d := backoffCtrl.NextBackOff()
-			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backoffCtrl", d.String()).Msg("getBlock failed")
+			d := c.backOffCtrl.NextBackOff()
+			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backOffCtrl", d.String()).Msg("getBlock failed")
 			time.Sleep(d)
 			continue
 		}
@@ -97,6 +105,6 @@ func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
 		txInChan <- txIn
 		c.lastScannedBlockHeight++
 
-		backoffCtrl.Reset()
+		c.backOffCtrl.Reset()
 	}
 }
