@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -153,17 +154,20 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 			// add addresses to observing addresses. This is used to detect
 			// active/inactive observing node accounts
 			if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
+				fmt.Printf("ERR5: %s\n", err)
 				return err
 			}
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
 				if err := refundTx(ctx, txIn, h.txOutStore, h.keeper, true); err != nil {
+					fmt.Printf("ERR6: %s\n", err)
 					return err
 				}
 			}
 		}
 	}
 
+	fmt.Println("DONE.")
 	return nil
 }
