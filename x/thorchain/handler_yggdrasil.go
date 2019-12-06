@@ -4,6 +4,8 @@ import (
 	stdErrors "errors"
 
 	"github.com/blang/semver"
+	"github.com/pkg/errors"
+	"gitlab.com/thorchain/thornode/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -61,6 +63,72 @@ func (h YggdrasilHandler) ValidateV1(ctx sdk.Context, msg MsgYggdrasil) error {
 
 }
 
+func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, validatorManager *ValidatorManager) sdk.Result {
+	// Ragnarok Protocol
+	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
+	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
+	// 2) upon receiving the yggdrasil fund,  THORNode will refund the validator's bond
+	// 3) once all yggdrasil fund get returned, return all fund to stakes
+	if !validatorManager.Meta.Ragnarok {
+		// Ragnarok protocol didn't triggered , don't call this one
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
+		}
+	}
+	// get the first observer
+	nas, err := keeper.ListActiveNodeAccounts(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get active nodes", err)
+		return sdk.ErrInternal("can't get active nodes").Result()
+	}
+	if len(nas) == 0 {
+		return sdk.ErrInternal("can't find any active nodes").Result()
+	}
+
+	pools, err := keeper.GetPools(ctx)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
+	// go through all the pooles
+	for _, pool := range pools {
+		poolStaker, err := keeper.GetPoolStaker(ctx, pool.Asset)
+		if nil != err {
+			ctx.Logger().Error("fail to get pool staker", err)
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+
+		// everyone withdraw
+		for _, item := range poolStaker.Stakers {
+			unstakeMsg := NewMsgSetUnStake(
+				common.GetRagnarokTx(pool.Asset.Chain),
+				item.RuneAddress,
+				sdk.NewUint(10000),
+				pool.Asset,
+				nas[0].NodeAddress,
+			)
+
+			result := handleMsgSetUnstake(ctx, keeper, txOut, poolAddrMgr, unstakeMsg)
+			if !result.IsOK() {
+				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
+				return result
+			}
+		}
+		pool.Status = PoolSuspended
+		if err := keeper.SetPool(ctx, pool); err != nil {
+			err = errors.Wrap(err, "fail to set pool")
+			ctx.Logger().Error(err.Error())
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+	}
+
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
+
+}
 func (h YggdrasilHandler) Handle(ctx sdk.Context, msg MsgYggdrasil, version semver.Version) error {
 	ctx.Logger().Info("receive MsgYggdrasil", "pubkey", msg.PubKey.String(), "add_funds", msg.AddFunds, "coins", msg.Coins)
 	if version.GTE(semver.MustParse("0.1.0")) {
