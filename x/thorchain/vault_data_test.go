@@ -11,18 +11,33 @@ type VaultSuite struct{}
 var _ = Suite(&VaultSuite{})
 
 func (s VaultSuite) TestCalcBlockRewards(c *C) {
-	bondR, poolR, stakerD := calcBlockRewards(sdk.NewUint(1000*common.One), sdk.ZeroUint())
+	bondR, poolR, stakerD := calcBlockRewards(sdk.NewUint(1000*common.One), sdk.NewUint(2000*common.One), sdk.NewUint(1000*common.One), sdk.ZeroUint())
 	c.Check(bondR.Uint64(), Equals, uint64(1761), Commentf("%d", bondR.Uint64()))
 	c.Check(poolR.Uint64(), Equals, uint64(880), Commentf("%d", poolR.Uint64()))
 	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 
-	bondR, poolR, stakerD = calcBlockRewards(sdk.NewUint(1000*common.One), sdk.NewUint(3000))
+	bondR, poolR, stakerD = calcBlockRewards(sdk.NewUint(1000*common.One), sdk.NewUint(2000*common.One), sdk.NewUint(1000*common.One), sdk.NewUint(3000))
 	c.Check(bondR.Uint64(), Equals, uint64(3761), Commentf("%d", bondR.Uint64()))
 	c.Check(poolR.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 	c.Check(stakerD.Uint64(), Equals, uint64(1120), Commentf("%d", poolR.Uint64()))
 
-	bondR, poolR, stakerD = calcBlockRewards(sdk.ZeroUint(), sdk.ZeroUint())
+	bondR, poolR, stakerD = calcBlockRewards(sdk.NewUint(1000*common.One), sdk.NewUint(2000*common.One), sdk.ZeroUint(), sdk.ZeroUint())
 	c.Check(bondR.Uint64(), Equals, uint64(0), Commentf("%d", bondR.Uint64()))
+	c.Check(poolR.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
+	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
+
+	bondR, poolR, stakerD = calcBlockRewards(sdk.NewUint(1000*common.One), sdk.NewUint(1000*common.One), sdk.NewUint(1000*common.One), sdk.ZeroUint())
+	c.Check(bondR.Uint64(), Equals, uint64(2641), Commentf("%d", bondR.Uint64()))
+	c.Check(poolR.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
+	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
+
+	bondR, poolR, stakerD = calcBlockRewards(sdk.ZeroUint(), sdk.NewUint(1000*common.One), sdk.NewUint(1000*common.One), sdk.ZeroUint())
+	c.Check(bondR.Uint64(), Equals, uint64(0), Commentf("%d", bondR.Uint64()))
+	c.Check(poolR.Uint64(), Equals, uint64(2641), Commentf("%d", poolR.Uint64()))
+	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
+
+	bondR, poolR, stakerD = calcBlockRewards(sdk.NewUint(2001*common.One), sdk.NewUint(1000*common.One), sdk.NewUint(1000*common.One), sdk.ZeroUint())
+	c.Check(bondR.Uint64(), Equals, uint64(2641), Commentf("%d", bondR.Uint64()))
 	c.Check(poolR.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 	c.Check(stakerD.Uint64(), Equals, uint64(0), Commentf("%d", poolR.Uint64()))
 }

@@ -62,7 +62,7 @@ func (k KVStore) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (N
 	return nodeAccounts, nil
 }
 
-// ListActiveNodeAccounts - get a list of active trust accounts
+// ListActiveNodeAccounts - get a list of active node accounts
 func (k KVStore) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	return k.ListNodeAccountsByStatus(ctx, NodeActive)
 }
