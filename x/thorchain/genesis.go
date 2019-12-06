@@ -11,24 +11,24 @@ import (
 )
 
 type txIndex struct {
-	Height uint64    `json:"height"`
-	Index  TxInIndex `json:"index"`
+	Height uint64          `json:"height"`
+	Index  ObservedTxIndex `json:"index"`
 }
 
 // GenesisState strcture that used to store the data THORNode put in genesis
 type GenesisState struct {
-	Pools            []Pool        `json:"pools"`
-	PoolStakers      []PoolStaker  `json:"pool_stakers"`
-	StakerPools      []StakerPool  `json:"staker_pools"`
-	TxInVoters       []TxInVoter   `json:"txin_voters"`
-	TxInIndexes      []txIndex     `json:"txin_indexes"`
-	TxOuts           []TxOut       `json:"txouts"`
-	CompleteEvents   Events        `json:"complete_events"`
-	IncompleteEvents Events        `json:"incomplete_events"`
-	NodeAccounts     NodeAccounts  `json:"node_accounts"`
-	AdminConfigs     []AdminConfig `json:"admin_configs"`
-	LastEventID      int64         `json:"last_event_id"`
-	PoolAddresses    PoolAddresses `json:"pool_addresses"`
+	Pools            []Pool           `json:"pools"`
+	PoolStakers      []PoolStaker     `json:"pool_stakers"`
+	StakerPools      []StakerPool     `json:"staker_pools"`
+	ObservedTxVoters ObservedTxVoters `json:"observed_tx_voters"`
+	ObservedTxdexes  []txIndex        `json:"txin_indexes"`
+	TxOuts           []TxOut          `json:"txouts"`
+	CompleteEvents   Events           `json:"complete_events"`
+	IncompleteEvents Events           `json:"incomplete_events"`
+	NodeAccounts     NodeAccounts     `json:"node_accounts"`
+	AdminConfigs     []AdminConfig    `json:"admin_configs"`
+	LastEventID      int64            `json:"last_event_id"`
+	PoolAddresses    PoolAddresses    `json:"pool_addresses"`
 }
 
 // NewGenesisState create a new instance of GenesisState
@@ -54,13 +54,13 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
-	for _, voter := range data.TxInVoters {
+	for _, voter := range data.ObservedTxVoters {
 		if err := voter.Valid(); err != nil {
 			return err
 		}
 	}
 
-	for _, index := range data.TxInIndexes {
+	for _, index := range data.ObservedTxdexes {
 		if index.Height == 0 {
 			return errors.New("Tx In Index cannot have a height of zero")
 		}
@@ -148,8 +148,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		keeper.SetStakerPool(ctx, stake)
 	}
 
-	for _, voter := range data.TxInVoters {
-		keeper.SetTxInVoter(ctx, voter)
+	for _, voter := range data.ObservedTxVoters {
+		keeper.SetObservedTxVoter(ctx, voter)
 	}
 
 	for _, out := range data.TxOuts {
@@ -159,8 +159,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		}
 	}
 
-	for _, index := range data.TxInIndexes {
-		keeper.SetTxInIndex(ctx, index.Height, index.Index)
+	for _, index := range data.ObservedTxdexes {
+		keeper.SetObservedTxIndex(ctx, index.Height, index.Index)
 	}
 
 	keeper.SetIncompleteEvents(ctx, data.IncompleteEvents)
@@ -222,22 +222,22 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		panic(err)
 	}
 
-	var votes []TxInVoter
-	iterator = k.GetTxInVoterIterator(ctx)
+	var votes ObservedTxVoters
+	iterator = k.GetObservedTxVoterIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
-		var vote TxInVoter
+		var vote ObservedTxVoter
 		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &vote)
 		votes = append(votes, vote)
 	}
 
 	var indexes []txIndex
-	iterator = k.GetTxInIndexIterator(ctx)
+	iterator = k.GetObservedTxIndexIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var index txIndex
 		index.Height, _ = strconv.ParseUint(
-			strings.TrimLeft(string(iterator.Key()), string(prefixTxInIndex)),
+			strings.TrimLeft(string(iterator.Key()), string(prefixObservedTxIndex)),
 			10,
 			64,
 		)
@@ -275,8 +275,8 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		LastEventID:      lastEventID,
 		PoolStakers:      poolStakers,
 		StakerPools:      stakerPools,
-		TxInVoters:       votes,
-		TxInIndexes:      indexes,
+		ObservedTxVoters: votes,
+		ObservedTxdexes:  indexes,
 		TxOuts:           outs,
 		CompleteEvents:   completed,
 		IncompleteEvents: incomplete,

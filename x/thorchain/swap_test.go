@@ -8,8 +8,6 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
-
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type SwapSuite struct{}
@@ -368,10 +366,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	res = handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg)
 	c.Assert(res.IsOK(), Equals, true)
 
-	tx = common.NewTx(
-		txID,
-		signerBNBAddr,
-		signerBNBAddr,
+	tx = common.NewTx(txID, signerBNBAddr, signerBNBAddr,
 		common.Coins{
 			common.NewCoin(common.RuneAsset(), sdk.OneUint()),
 		},
@@ -391,22 +386,21 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	poolTCAN.BalanceRune = sdk.NewUint(2349500000)
 	w.keeper.SetPool(w.ctx, poolTCAN)
 
-	txID1, err := common.NewTxID("A1C7D97D5DB51FFDBC3FE29FFF6ADAA2DAF112D2CEAADA0902822333A59BD211")
 	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
 	currentChainPoolAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPoolAddr, NotNil)
-	txIn := types.NewTxIn(
-		common.Coins{
-			common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
-		},
-		"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
-		signerBNBAddr,
-		GetRandomBNBAddress(),
-		common.BNBGasFeeSingleton,
+	txIn := NewObservedTx(
+		common.NewTx(GetRandomTxHash(), signerBNBAddr, GetRandomBNBAddress(),
+			common.Coins{
+				common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
+			},
+			common.BNBGasFeeSingleton,
+			"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
+		),
 		sdk.NewUint(1),
 		currentChainPoolAddr.PubKey,
 	)
-	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txID1, txIn, observerAddr)
+	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txIn, observerAddr)
 	c.Assert(err, IsNil)
 
 	res2 := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msgSwapFromTxIn.(MsgSwap))

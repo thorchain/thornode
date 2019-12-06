@@ -34,6 +34,10 @@ var (
 	NewPool                        = types.NewPool
 	NewVaultData                   = types.NewVaultData
 	NewAdminConfig                 = types.NewAdminConfig
+	NewObservedTx                  = types.NewObservedTx
+	NewObservedTxVoter             = types.NewObservedTxVoter
+	NewMsgObservedTxIn             = types.NewMsgObservedTxIn
+	NewMsgObservedTxOut            = types.NewMsgObservedTxOut
 	NewMsgNoOp                     = types.NewMsgNoOp
 	NewMsgAdd                      = types.NewMsgAdd
 	NewMsgSetPoolData              = types.NewMsgSetPoolData
@@ -41,7 +45,6 @@ var (
 	NewMsgSetUnStake               = types.NewMsgSetUnStake
 	NewMsgSwap                     = types.NewMsgSwap
 	NewMsgSetAdminConfig           = types.NewMsgSetAdminConfig
-	NewTxInVoter                   = types.NewTxInVoter
 	NewTxOut                       = types.NewTxOut
 	NewEvent                       = types.NewEvent
 	NewEventPool                   = types.NewEventPool
@@ -89,7 +92,6 @@ type (
 	MsgSetUnStake               = types.MsgSetUnStake
 	MsgSetPoolData              = types.MsgSetPoolData
 	MsgSetStakeData             = types.MsgSetStakeData
-	MsgSetTxIn                  = types.MsgSetTxIn
 	MsgOutboundTx               = types.MsgOutboundTx
 	MsgSwap                     = types.MsgSwap
 	MsgSetAdminConfig           = types.MsgSetAdminConfig
@@ -101,6 +103,8 @@ type (
 	MsgAck                      = types.MsgAck
 	MsgReserveContributor       = types.MsgReserveContributor
 	MsgYggdrasil                = types.MsgYggdrasil
+	MsgObservedTxIn             = types.MsgObservedTxIn
+	MsgObservedTxOut            = types.MsgObservedTxOut
 	QueryResPools               = types.QueryResPools
 	QueryResHeights             = types.QueryResHeights
 	QueryResTxOut               = types.QueryResTxOut
@@ -109,14 +113,16 @@ type (
 	TrustAccounts               = types.TrustAccounts
 	PoolStatus                  = types.PoolStatus
 	PoolIndex                   = types.PoolIndex
-	TxInIndex                   = types.TxInIndex
-	TxIn                        = types.TxIn
-	TxInVoter                   = types.TxInVoter
 	Pool                        = types.Pool
 	Pools                       = types.Pools
 	PoolStaker                  = types.PoolStaker
 	StakerPool                  = types.StakerPool
 	StakerUnit                  = types.StakerUnit
+	ObservedTxs                 = types.ObservedTxs
+	ObservedTx                  = types.ObservedTx
+	ObservedTxVoter             = types.ObservedTxVoter
+	ObservedTxVoters            = types.ObservedTxVoters
+	ObservedTxIndex             = types.ObservedTxIndex
 	TxOutItem                   = types.TxOutItem
 	TxOut                       = types.TxOut
 	AdminConfigKey              = types.AdminConfigKey

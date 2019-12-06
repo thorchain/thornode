@@ -4,14 +4,15 @@ import (
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 )
 
-func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) error {
+func refundTx(ctx sdk.Context, tx ObservedTx, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
-	for _, coin := range tx.Coins {
+	for _, coin := range tx.Tx.Coins {
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
 			return fmt.Errorf("fail to get pool: %s", err)
@@ -19,8 +20,8 @@ func refundTx(ctx sdk.Context, txID common.TxID, tx TxIn, store *TxOutStore, kee
 		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
 			toi := &TxOutItem{
 				Chain:       chain,
-				InHash:      txID,
-				ToAddress:   tx.Sender,
+				InHash:      tx.Tx.ID,
+				ToAddress:   tx.Tx.FromAddress,
 				PoolAddress: poolAddr,
 				Coin:        coin,
 			}
@@ -137,4 +138,10 @@ func enableNextPool(ctx sdk.Context, keeper Keeper) error {
 		return keeper.SetPool(ctx, pool)
 	}
 	return nil
+}
+
+func wrapError(ctx sdk.Context, err error, wrap string) error {
+	err = errors.Wrap(err, wrap)
+	ctx.Logger().Error(err.Error())
+	return err
 }
