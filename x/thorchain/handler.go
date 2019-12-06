@@ -2,7 +2,6 @@ package thorchain
 
 import (
 	"encoding/json"
-	stdErrors "errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -33,6 +32,7 @@ func NewHandler(keeper Keeper, poolAddrMgr *PoolAddressManager, txOutStore *TxOu
 	// New arch handlers
 	reserveContribHandler := NewReserveContributorHandler(keeper)
 	poolDataHandler := NewPoolDataHandler(keeper)
+	yggdrasilHandler := NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	bondHandler := NewBondHandler(keeper)
 	observedTxInHandler := NewObservedTxInHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	observedTxOutHandler := NewObservedTxOutHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
@@ -50,6 +50,8 @@ func NewHandler(keeper Keeper, poolAddrMgr *PoolAddressManager, txOutStore *TxOu
 			return observedTxInHandler.Run(ctx, m, version)
 		case MsgObservedTxOut:
 			return observedTxOutHandler.Run(ctx, m, version)
+		case MsgYggdrasil:
+			return yggdrasilHandler.Run(ctx, m, version)
 		default:
 			return classic(ctx, msg)
 		}
@@ -80,8 +82,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutS
 			return handleMsgSetTrustAccount(ctx, keeper, m)
 		case MsgSetVersion:
 			return handleMsgSetVersion(ctx, keeper, m)
-		case MsgYggdrasil:
-			return handleMsgYggdrasil(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
 		case MsgNextPoolAddress:
 			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, validatorManager, txOutStore, m)
 		case MsgLeave:
@@ -1097,65 +1097,6 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 			sdk.NewAttribute("node_secp256k1_pubkey", msg.NodePubKeys.Secp256k1.String()),
 			sdk.NewAttribute("node_ed25519_pubkey", msg.NodePubKeys.Ed25519.String()),
 			sdk.NewAttribute("validator_consensus_pub_key", msg.ValidatorConsPubKey)))
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
-// handleMsgYggdrasil
-func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut *TxOutStore, poolAddrMgr *PoolAddressManager, validatorMgr *ValidatorManager, msg MsgYggdrasil) sdk.Result {
-	ctx.Logger().Info("receive MsgYggdrasil", "pubkey", msg.PubKey.String(), "add_funds", msg.AddFunds, "coins", msg.Coins)
-
-	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgYggdrasil", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	ygg, err := keeper.GetYggdrasil(ctx, msg.PubKey)
-	if nil != err && !stdErrors.Is(err, ErrYggdrasilNotFound) {
-		ctx.Logger().Error("fail to get yggdrasil", err)
-		return sdk.ErrInternal("fail to get yggdrasil").Result()
-	}
-	if msg.AddFunds {
-		ygg.AddFunds(msg.Coins)
-	} else {
-		ygg.SubFunds(msg.Coins)
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent("yggdrasil_return",
-				sdk.NewAttribute("pubkey", ygg.PubKey.String()),
-				sdk.NewAttribute("coins", msg.Coins.String()),
-				sdk.NewAttribute("tx", msg.RequestTxHash.String())))
-
-		na, err := keeper.GetNodeAccountByPubKey(ctx, msg.PubKey)
-		if err != nil {
-			ctx.Logger().Error("unable to get node account", "error", err)
-			return sdk.ErrUnknownRequest(err.Error()).Result()
-		}
-		// TODO: slash their bond for any Yggdrasil funds that are unaccounted
-		// for before sending their bond back. Keep in mind that THORNode won't get
-		// back 100% of the funds (due to gas).
-		RefundBond(ctx, msg.RequestTxHash, na, keeper, txOut)
-	}
-	if err := keeper.SetYggdrasil(ctx, ygg); nil != err {
-		ctx.Logger().Error("fail to save yggdrasil", err)
-		return sdk.ErrInternal("fail to save yggdrasil").Result()
-	}
-
-	// Ragnarok protocol get triggered, if all the Yggdrasil pool returned funds already, THORNode will continue Ragnarok
-	if validatorMgr.Meta.Ragnarok {
-		hasYggdrasilPool, err := keeper.HasValidYggdrasilPools(ctx)
-		if nil != err {
-			return sdk.ErrInternal(fmt.Errorf("fail to check yggdrasil pools: %w", err).Error()).Result()
-		}
-		if !hasYggdrasilPool {
-			return handleRagnarokProtocolStep2(ctx, keeper, txOut, poolAddrMgr, validatorMgr)
-		}
-	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
