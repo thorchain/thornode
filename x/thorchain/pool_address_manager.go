@@ -58,7 +58,7 @@ func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context) error {
 }
 
 // EndBlock contains some actions THORNode need to take when block commit
-func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, store *TxOutStore) {
+func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, store TxOutStore) {
 	if nil == pm.currentPoolAddresses {
 		return
 	}
@@ -78,7 +78,7 @@ func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, store *TxOutStore) {
 	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
 }
 
-func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, store *TxOutStore) {
+func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, store TxOutStore) {
 	poolAddresses := pm.currentPoolAddresses
 	if ctx.BlockHeight() == 1 {
 		// THORNode don't need to do anything on
@@ -124,7 +124,7 @@ func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, store *TxOutSto
 }
 
 // move all assets based on pool balance to new pool
-func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses *PoolAddresses) error {
+func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, addresses *PoolAddresses) error {
 	chains, err := k.GetChains(ctx)
 	if err != nil {
 		return err
@@ -144,7 +144,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	return moveBNBChainAssetToNewPool(ctx, k, store, runeTotal, addresses)
 }
 
-func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain common.Chain, addresses *PoolAddresses) (sdk.Uint, error) {
+func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, chain common.Chain, addresses *PoolAddresses) (sdk.Uint, error) {
 	currentAddr := addresses.Current.GetByChain(chain)
 	previousAddr := addresses.Previous.GetByChain(chain)
 	if currentAddr.Equals(previousAddr) {
@@ -193,7 +193,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 	return runeTotal, nil
 }
 
-func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, runeTotal sdk.Uint, addresses *PoolAddresses) error {
+func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, runeTotal sdk.Uint, addresses *PoolAddresses) error {
 	currentAddr := addresses.Current.GetByChain(common.BNBChain)
 	previousAddr := addresses.Previous.GetByChain(common.BNBChain)
 	if currentAddr.Equals(previousAddr) {

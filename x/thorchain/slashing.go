@@ -53,7 +53,7 @@ func slashForObservingAddresses(ctx sdk.Context, keeper Keeper) {
 	return
 }
 
-func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) {
+func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) {
 	incomplete, err := keeper.GetIncompleteEvents(ctx)
 	if err != nil {
 		ctx.Logger().Error("Unable to get list of active accounts", err)

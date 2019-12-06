@@ -59,7 +59,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, poolPubKey)
 	c.Assert(err, IsNil)
 	poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
-	txOutStore := NewTxOutStore(k, poolAddrMgr)
+	txOutStore := NewTxOutStorage(k, poolAddrMgr)
 	txOutStore.NewBlock(uint64(201))
 
 	na := GetRandomNodeAccount(NodeActive)

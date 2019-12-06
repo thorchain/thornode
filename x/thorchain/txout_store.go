@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -15,28 +13,39 @@ type TxOutSetter interface {
 	SetTxOut(sdk.Context, *TxOut) error
 }
 
-// TxOutStore is going to manage all the outgoing tx
-type TxOutStore struct {
+type TxOutStore interface {
+	NewBlock(height uint64)
+	CommitBlock(ctx sdk.Context)
+	GetOutboundItems() []*TxOutItem
+	AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, asgard bool)
+	addToBlockOut(toi *TxOutItem)
+	getBlockOut() *TxOut
+	getSeqNo(chain common.Chain) uint64
+	CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx ObservedTx) Yggdrasils
+}
+
+// TxOutStorage is going to manage all the outgoing tx
+type TxOutStorage struct {
 	txOutSetter TxOutSetter
 	blockOut    *TxOut
 	poolAddrMgr *PoolAddressManager
 }
 
-// NewTxOutStore will create a new instance of TxOutStore.
-func NewTxOutStore(txOutSetter TxOutSetter, poolAddrMgr *PoolAddressManager) *TxOutStore {
-	return &TxOutStore{
+// NewTxOutStorage will create a new instance of TxOutStore.
+func NewTxOutStorage(txOutSetter TxOutSetter, poolAddrMgr *PoolAddressManager) *TxOutStorage {
+	return &TxOutStorage{
 		txOutSetter: txOutSetter,
 		poolAddrMgr: poolAddrMgr,
 	}
 }
 
 // NewBlock create a new block
-func (tos *TxOutStore) NewBlock(height uint64) {
+func (tos *TxOutStorage) NewBlock(height uint64) {
 	tos.blockOut = NewTxOut(height)
 }
 
 // CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
-func (tos *TxOutStore) CommitBlock(ctx sdk.Context) {
+func (tos *TxOutStorage) CommitBlock(ctx sdk.Context) {
 	// if THORNode don't have anything in the array, THORNode don't need to save
 	if len(tos.blockOut.TxArray) == 0 {
 		return
@@ -48,12 +57,16 @@ func (tos *TxOutStore) CommitBlock(ctx sdk.Context) {
 	}
 }
 
-func (tos *TxOutStore) GetOutboundItems() []*TxOutItem {
+func (tos *TxOutStorage) getBlockOut() *TxOut {
+	return tos.blockOut
+}
+
+func (tos *TxOutStorage) GetOutboundItems() []*TxOutItem {
 	return tos.blockOut.TxArray
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, asgard bool) {
+func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, asgard bool) {
 	// Default the memo to the standard outbound memo
 	if toi.Memo == "" {
 		toi.Memo = NewOutboundMemo(toi.InHash).String()
@@ -163,12 +176,12 @@ func (tos *TxOutStore) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutIt
 	tos.addToBlockOut(toi)
 }
 
-func (tos *TxOutStore) addToBlockOut(toi *TxOutItem) {
+func (tos *TxOutStorage) addToBlockOut(toi *TxOutItem) {
 	toi.SeqNo = tos.getSeqNo(toi.Chain)
 	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 }
 
-func (tos *TxOutStore) getSeqNo(chain common.Chain) uint64 {
+func (tos *TxOutStorage) getSeqNo(chain common.Chain) uint64 {
 	// need to get the sequence no
 	currentChainPoolAddr := tos.poolAddrMgr.currentPoolAddresses.Current.GetByChain(chain)
 	if nil != currentChainPoolAddr {
@@ -189,16 +202,7 @@ func (tos *TxOutStore) getSeqNo(chain common.Chain) uint64 {
 	return uint64(0)
 }
 
-func AddGasFees(ctx sdk.Context, keeper Keeper, gas common.Gas) error {
-	vault, err := keeper.GetVaultData(ctx)
-	if nil != err {
-		return fmt.Errorf("fail to get vault: %w", err)
-	}
-	vault.Gas = vault.Gas.Add(gas)
-	return keeper.SetVaultData(ctx, vault)
-}
-
-func (tos *TxOutStore) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx ObservedTx) Yggdrasils {
+func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx ObservedTx) Yggdrasils {
 	// collect yggdrasil pools
 	var yggs Yggdrasils
 	iterator := keeper.GetYggdrasilIterator(ctx)
