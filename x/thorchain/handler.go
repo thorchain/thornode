@@ -33,6 +33,7 @@ func NewHandler(keeper Keeper, poolAddrMgr *PoolAddressManager, txOutStore *TxOu
 	// New arch handlers
 	reserveContribHandler := NewReserveContributorHandler(keeper)
 	poolDataHandler := NewPoolDataHandler(keeper)
+	ackHandler := NewAckHandler(keeper, poolAddrMgr, validatorMgr)
 	bondHandler := NewBondHandler(keeper)
 	observedTxInHandler := NewObservedTxInHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	observedTxOutHandler := NewObservedTxOutHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
@@ -44,6 +45,8 @@ func NewHandler(keeper Keeper, poolAddrMgr *PoolAddressManager, txOutStore *TxOu
 			return reserveContribHandler.Run(ctx, m, version)
 		case MsgSetPoolData:
 			return poolDataHandler.Run(ctx, m, version)
+		case MsgAck:
+			return ackHandler.Run(ctx, m, version)
 		case MsgBond:
 			return bondHandler.Run(ctx, m, version)
 		case MsgObservedTxIn:
@@ -86,8 +89,8 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutS
 			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, validatorManager, txOutStore, m)
 		case MsgLeave:
 			return handleMsgLeave(ctx, keeper, txOutStore, validatorManager, m)
-		case MsgAck:
-			return handleMsgAck(ctx, keeper, poolAddressMgr, validatorManager, m)
+		case MsgReserveContributor:
+			return handleMsgReserveContributor(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -476,79 +479,35 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 	}
 }
 
-// handleMsgAck
-func handleMsgAck(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManager, validatorMgr *ValidatorManager, msg MsgAck) sdk.Result {
-	ctx.Logger().Info("receive ack to next pool pub key", "sender address", msg.Sender.String())
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid ack msg", "err", err)
-		return err.Result()
+// handleMsgReserveContributor
+func handleMsgReserveContributor(ctx sdk.Context, keeper Keeper, msg MsgReserveContributor) sdk.Result {
+	ctx.Logger().Info(fmt.Sprintf("receive MsgReserveContributor from : %s reserve %s (%s)", msg, msg.Contributor.Address.String(), msg.Contributor.Amount.String()))
+	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
+		ctx.Logger().Error("message signed by unauthorized account")
+		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
-	if !poolAddrMgr.IsRotateWindowOpen {
-		return sdk.ErrUnknownRequest("pool rotation window not open").Result()
-	}
-
-	if poolAddrMgr.ObservedNextPoolAddrPubKey.IsEmpty() {
-		return sdk.ErrUnknownRequest("didn't observe next pool address pub key").Result()
-	}
-	chainPubKey := poolAddrMgr.ObservedNextPoolAddrPubKey.GetByChain(msg.Chain)
-	if nil == chainPubKey {
-		msg := fmt.Sprintf("THORNode donnot have pool for chain %s", msg.Chain)
-		ctx.Logger().Error(msg)
-		return sdk.ErrUnknownRequest(msg).Result()
-	}
-	addr, err := chainPubKey.PubKey.GetAddress(msg.Chain)
+	reses, err := keeper.GetReservesContributors(ctx)
 	if nil != err {
-		ctx.Logger().Error("fail to get address from pub key", "chain", msg.Chain, err)
-		return sdk.ErrInternal("fail to get address from pub key").Result()
+		ctx.Logger().Error("fail to get reserve contributors", err)
+		return sdk.ErrInternal("fail to get reserve contributors").Result()
 	}
-	if !addr.Equals(msg.Sender) {
-		ctx.Logger().Error("observed next pool address and ack address is different", "chain", msg.Chain)
-		return sdk.ErrUnknownRequest("observed next pool address and ack address is different").Result()
+	reses = reses.Add(msg.Contributor)
+	if err := keeper.SetReserveContributors(ctx, reses); nil != err {
+		ctx.Logger().Error("fail to save reserve contributors", err)
+		return sdk.ErrInternal("fail to save reserve contributors").Result()
 	}
 
-	poolAddrMgr.currentPoolAddresses.Next = poolAddrMgr.currentPoolAddresses.Next.TryAddKey(chainPubKey)
-	poolAddrMgr.ObservedNextPoolAddrPubKey = poolAddrMgr.ObservedNextPoolAddrPubKey.TryRemoveKey(chainPubKey)
-
-	nominatedNode := validatorMgr.Meta.Nominated
-	queuedNode := validatorMgr.Meta.Queued
-	for _, item := range nominatedNode {
-		item.TryAddSignerPubKey(chainPubKey.PubKey)
-		if err := keeper.SetNodeAccount(ctx, item); nil != err {
-			ctx.Logger().Error("fail to save node account", err)
-			return sdk.ErrInternal("fail to save node account").Result()
-		}
-	}
-	activeNodes, err := keeper.ListActiveNodeAccounts(ctx)
+	vault, err := keeper.GetVaultData(ctx)
 	if nil != err {
-		ctx.Logger().Error("fail to get all active node accounts", "error", err)
-		return sdk.ErrInternal("fail to get all active node accounts").Result()
+		ctx.Logger().Error("fail to get vault data", err)
+		return sdk.ErrInternal("fail to get vault data").Result()
 	}
-
-	for _, item := range activeNodes {
-		if queuedNode.Contains(item) {
-			// queued node doesn't join the signing committee
-			continue
-		}
-		item.TryAddSignerPubKey(chainPubKey.PubKey)
-		if err := keeper.SetNodeAccount(ctx, item); nil != err {
-			ctx.Logger().Error("fail to save node account", err)
-			return sdk.ErrInternal("fail to save node account").Result()
-		}
+	vault.TotalReserve = vault.TotalReserve.Add(msg.Contributor.Amount)
+	if err := keeper.SetVaultData(ctx, vault); nil != err {
+		ctx.Logger().Error("fail to save vault data", err)
+		return sdk.ErrInternal("fail to save vault data").Result()
 	}
-
-	if err := AddGasFees(ctx, keeper, msg.Tx.Gas); nil != err {
-		ctx.Logger().Error("fail to add gas fee", err)
-		return sdk.ErrInternal("fail to add gas fee").Result()
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
-			sdk.NewAttribute("pubkey", poolAddrMgr.currentPoolAddresses.Next.String()),
-			sdk.NewAttribute("address", msg.Sender.String()),
-			sdk.NewAttribute("chain", msg.Chain.String())))
-	// THORNode have a pool address confirmed by a chain
-	keeper.SetPoolAddresses(ctx, poolAddrMgr.currentPoolAddresses)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
