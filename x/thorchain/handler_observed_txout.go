@@ -8,11 +8,11 @@ import (
 type ObservedTxOutHandler struct {
 	keeper       Keeper
 	txOutStore   TxOutStore
-	poolAddrMgr  *PoolAddressManager
+	poolAddrMgr  PoolAddressManager
 	validatorMgr *ValidatorManager
 }
 
-func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr *PoolAddressManager, validatorMgr *ValidatorManager) ObservedTxOutHandler {
+func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr *ValidatorManager) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,

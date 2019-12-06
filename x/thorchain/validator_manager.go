@@ -28,11 +28,11 @@ type ValidatorManager struct {
 	k              Keeper
 	Meta           *ValidatorMeta
 	rotationPolicy ValidatorRotationPolicy
-	poolAddrMgr    *PoolAddressManager
+	poolAddrMgr    PoolAddressManager
 }
 
 // NewValidatorManager create a new instance of ValidatorManager
-func NewValidatorManager(k Keeper, poolAddrMgr *PoolAddressManager) *ValidatorManager {
+func NewValidatorManager(k Keeper, poolAddrMgr PoolAddressManager) *ValidatorManager {
 	return &ValidatorManager{
 		k:           k,
 		poolAddrMgr: poolAddrMgr,
@@ -320,7 +320,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, store TxOutSto
 	return true, nil
 }
 
-func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr *PoolAddressManager, txOut TxOutStore) error {
+func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error {
 	ygg, err := vm.k.GetYggdrasil(ctx, node.NodePubKey.Secp256k1)
 	if nil != err && !errors.Is(err, ErrYggdrasilNotFound) {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
@@ -333,7 +333,7 @@ func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, 
 		return nil
 	}
 	for _, c := range chains {
-		currentChainPoolAddr := poolAddrMgr.currentPoolAddresses.Current.GetByChain(c)
+		currentChainPoolAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(c)
 		for _, coin := range ygg.Coins {
 			toAddr, err := currentChainPoolAddr.PubKey.GetAddress(coin.Asset.Chain)
 			if !toAddr.IsEmpty() {
@@ -426,8 +426,8 @@ func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut TxOutSt
 
 	if afterLeave > constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
 		// trigger pool rotate next
-		vm.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt = height + 1
-		vm.poolAddrMgr.currentPoolAddresses.RotateAt = vm.Meta.LeaveProcessAt
+		vm.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt = height + 1
+		vm.poolAddrMgr.GetCurrentPoolAddresses().RotateAt = vm.Meta.LeaveProcessAt
 		return nil
 	}
 	// execute Ragnarok protocol, no going back

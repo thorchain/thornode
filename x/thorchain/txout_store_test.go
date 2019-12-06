@@ -28,7 +28,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
 	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
+	w.poolAddrMgr.GetCurrentPoolAddresses().Current = common.PoolPubKeys{pk1}
 
 	acc1 := GetRandomNodeAccount(NodeActive)
 	acc2 := GetRandomNodeAccount(NodeActive)
@@ -115,7 +115,7 @@ func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
 	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
+	w.poolAddrMgr.GetCurrentPoolAddresses().Current = common.PoolPubKeys{pk1}
 
 	inTxID := GetRandomTxHash()
 	item := &TxOutItem{
