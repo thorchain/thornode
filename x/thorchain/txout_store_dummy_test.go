@@ -24,17 +24,7 @@ func (tos *TxOutStoreDummy) NewBlock(height uint64) {
 }
 
 // CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
-func (tos *TxOutStoreDummy) CommitBlock(ctx sdk.Context) {
-	// if THORNode don't have anything in the array, THORNode don't need to save
-	if len(tos.blockOut.TxArray) == 0 {
-		return
-	}
-
-	// write the tos to keeper
-	if err := tos.txOutSetter.SetTxOut(ctx, tos.blockOut); nil != err {
-		ctx.Logger().Error("fail to save tx out", err)
-	}
-}
+func (tos *TxOutStoreDummy) CommitBlock(ctx sdk.Context) {}
 
 func (tos *TxOutStoreDummy) getBlockOut() *TxOut {
 	return tos.blockOut
