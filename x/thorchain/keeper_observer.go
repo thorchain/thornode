@@ -1,6 +1,8 @@
 package thorchain
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 type KeeperObserver interface {
 	SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress)

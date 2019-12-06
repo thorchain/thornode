@@ -72,8 +72,7 @@ func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics)
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
 	sdk.RegisterCodec(cdc)
-	// TODO make THORNode should share this with statechain in common
-	cdc.RegisterConcrete(stypes.MsgSetTxIn{}, "thorchain/MsgSetTxIn", nil)
+	stypes.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 	return cdc
 }
@@ -134,7 +133,7 @@ func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string
 }
 
 // Sign the incoming transaction
-func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, error) {
+func (scb *StateChainBridge) Sign(txIns stypes.ObservedTxs) (*authtypes.StdTx, error) {
 	if len(txIns) == 0 {
 		scb.errCounter.WithLabelValues("nothing_to_sign", "").Inc()
 		return nil, errors.New("nothing to be signed")
@@ -143,10 +142,40 @@ func (scb *StateChainBridge) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, e
 	defer func() {
 		scb.m.GetHistograms(metrics.SignToStateChainDuration).Observe(time.Since(start).Seconds())
 	}()
+
+	var inbound stypes.ObservedTxs
+	var outbound stypes.ObservedTxs
+
+	// spilt our txs into inbound vs outbound txs
+	for _, tx := range txIns {
+		chain := common.BNBChain
+		if len(tx.Tx.Coins) > 0 {
+			chain = tx.Tx.Coins[0].Asset.Chain
+		}
+
+		obAddr, err := tx.ObservedPubKey.GetAddress(chain)
+		if err != nil {
+			return nil, err
+		}
+		if tx.Tx.ToAddress.Equals(obAddr) {
+			inbound = append(inbound, tx)
+		} else if tx.Tx.FromAddress.Equals(obAddr) {
+			outbound = append(outbound, tx)
+		} else {
+			return nil, fmt.Errorf("Could not determine if this tx as inbound or outbound")
+		}
+	}
+
+	var msgs []sdk.Msg
+	if len(inbound) > 0 {
+		msgs = append(msgs, stypes.NewMsgObservedTxIn(inbound, scb.keys.GetSignerInfo().GetAddress()))
+	}
+	if len(outbound) > 0 {
+		msgs = append(msgs, stypes.NewMsgObservedTxOut(outbound, scb.keys.GetSignerInfo().GetAddress()))
+	}
+
 	stdTx := authtypes.NewStdTx(
-		[]sdk.Msg{
-			stypes.NewMsgSetTxIn(txIns, scb.keys.GetSignerInfo().GetAddress()),
-		}, // messages
+		msgs,
 		authtypes.NewStdFee(100000000, nil), // fee
 		nil,                                 // signatures
 		"",                                  // memo

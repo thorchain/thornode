@@ -45,10 +45,11 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 			).Methods(http.MethodGet, http.MethodOptions)
 		}
 	}
+
 	// Get unsigned json for emitting a transaction. Validators only.
 	r.HandleFunc(
-		fmt.Sprintf("/%s/tx", storeName),
-		postTxHashHandler(cliCtx),
+		fmt.Sprintf("/%s/txs", storeName),
+		postTxsHandler(cliCtx),
 	).Methods(http.MethodPost)
 	r.Use(mux.CORSMethodMiddleware(r))
 	r.Use(customCORSHeader())

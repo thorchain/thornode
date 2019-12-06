@@ -50,7 +50,7 @@ def bnbAddress()
 
 end
 
-def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
+def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
   hash ||= txid()
   sender ||= bnbAddress
   gas ||= [{
@@ -69,27 +69,30 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil, poolAddr:nil)
     },
     'amount': '1',
   }]
-  poolAddr ||= POOL_PUB_KEY
   return {
-    'tx': hash,
-    'sender': sender,
-    'to': bnbAddress,
-    'observe_pool_address': poolAddr,
-    'memo': memo,
-    'coins': coins,
-    'gas': gas,
+    'tx': {
+      'id': hash,
+      'from_address': sender,
+      'chain': 'BNB',
+      'to_address': VAULT_ADDRESS,
+      'coins': coins,
+      'memo': memo,
+      'gas': gas,
+    },
+    'block_height': '376',
+    'observed_pub_key': VAULT_PUBKEY,
   }
 end
 
 def processTx(txs, user="statechain", mode='block')
-  request = Net::HTTP::Post.new("/thorchain/tx")
+  request = Net::HTTP::Post.new("/thorchain/txs")
   address = `thorcli keys show #{user} -a`.strip!
   txs = [txs].flatten(1) # ensures THORNode are an array, and not just a single hash
   request.body = {
     'blockHeight': '376',
     'chain': 'bnb',
     'count': '1',
-    'txArray': txs,
+    'txs': txs,
     'base_req': {
       'chain_id': "statechain",
       'from': address,
