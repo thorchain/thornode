@@ -9,7 +9,7 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
+func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) error {
 
 	// find total bonded
 	totalBond := sdk.ZeroUint()
@@ -80,7 +80,7 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 
 // sendCoinsToYggdrasil - adds outbound txs to send the given coins to a
 // yggdrasil pool
-func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Yggdrasil, txOutStore *TxOutStore) error {
+func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Yggdrasil, txOutStore TxOutStore) error {
 	for _, coin := range coins {
 		to, err := ygg.PubKey.GetAddress(coin.Asset.Chain)
 		if err != nil {

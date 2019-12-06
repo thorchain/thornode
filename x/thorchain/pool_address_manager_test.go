@@ -34,7 +34,7 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{pk1}
 	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
 	// no asset get moved , because THORNode just opened window, however THORNode should instruct signer to kick off key sign process
-	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 1)
+	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	poolBNB := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.BNB", c)
 	poolTCan := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.TCAN-014", c)
 	poolLoki := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.LOK-3C0", c)
@@ -47,8 +47,8 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	rotatePerBlockHeight := int64(constants.RotatePerBlockHeight)
 	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateAt, Equals, 100+rotatePerBlockHeight)
 	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt, Equals, 100+rotatePerBlockHeight-windowOpen)
-	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 4)
-	c.Assert(w.txOutStore.blockOut.Valid(), IsNil)
+	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 4)
+	c.Assert(w.txOutStore.getBlockOut().Valid(), IsNil)
 	totalBond := sdk.ZeroUint()
 	nodeAccounts, err := w.keeper.ListNodeAccounts(w.ctx)
 	c.Assert(err, IsNil)
@@ -59,7 +59,7 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	poolGas, err := strconv.Atoi(defaultPoolGas)
 
 	c.Assert(err, IsNil)
-	for _, item := range w.txOutStore.blockOut.TxArray {
+	for _, item := range w.txOutStore.GetOutboundItems() {
 		c.Assert(item.Valid(), IsNil)
 		// make sure the fund is sending from previous pool address to current
 		c.Assert(item.Coin.IsValid(), IsNil)

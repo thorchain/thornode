@@ -338,7 +338,7 @@ func (s SwapSuite) TestCalculators(c *C) {
 
 func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	txOutStore := NewTxOutStore(w.keeper, w.poolAddrMgr)
+	txOutStore := NewTxOutStorage(w.keeper, w.poolAddrMgr)
 	txID := GetRandomTxHash()
 	signerBNBAddr := GetRandomBNBAddress()
 	observerAddr := w.activeNodeAccount.NodeAddress

@@ -12,12 +12,12 @@ import (
 
 type ObservedTxInHandler struct {
 	keeper       Keeper
-	txOutStore   *TxOutStore
+	txOutStore   TxOutStore
 	poolAddrMgr  *PoolAddressManager
 	validatorMgr *ValidatorManager
 }
 
-func NewObservedTxInHandler(keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, validatorMgr *ValidatorManager) ObservedTxInHandler {
+func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr *PoolAddressManager, validatorMgr *ValidatorManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
