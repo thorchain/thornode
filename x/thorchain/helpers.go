@@ -9,7 +9,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-func refundTx(ctx sdk.Context, tx ObservedTx, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) error {
+func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Tx.Coins {
@@ -34,8 +34,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store *TxOutStore, keeper Keeper, 
 	return nil
 }
 
-// RefundBond use to return validator's bond
-func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut *TxOutStore) {
+func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) {
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
 		// refund bond
 		txOutItem := &TxOutItem{
@@ -145,4 +144,13 @@ func wrapError(ctx sdk.Context, err error, wrap string) error {
 	err = errors.Wrap(err, wrap)
 	ctx.Logger().Error(err.Error())
 	return err
+}
+
+func AddGasFees(ctx sdk.Context, keeper Keeper, gas common.Gas) error {
+	vault, err := keeper.GetVaultData(ctx)
+	if nil != err {
+		return fmt.Errorf("fail to get vault: %w", err)
+	}
+	vault.Gas = vault.Gas.Add(gas)
+	return keeper.SetVaultData(ctx, vault)
 }

@@ -67,7 +67,7 @@ func (vm *ValidatorManager) BeginBlock(ctx sdk.Context) {
 }
 
 // EndBlock when block end
-func (vm *ValidatorManager) EndBlock(ctx sdk.Context, store *TxOutStore) []abci.ValidatorUpdate {
+func (vm *ValidatorManager) EndBlock(ctx sdk.Context, store TxOutStore) []abci.ValidatorUpdate {
 	height := ctx.BlockHeight()
 	if height != vm.Meta.RotateWindowOpenAtBlockHeight &&
 		height != vm.Meta.RotateAtBlockHeight &&
@@ -157,7 +157,7 @@ func (vm *ValidatorManager) EndBlock(ctx sdk.Context, store *TxOutStore) []abci.
 
 	return nil
 }
-func (vm *ValidatorManager) processValidatorLeave(ctx sdk.Context, store *TxOutStore) (bool, error) {
+func (vm *ValidatorManager) processValidatorLeave(ctx sdk.Context, store TxOutStore) (bool, error) {
 	if vm.Meta.LeaveProcessAt != ctx.BlockHeight() {
 		return false, nil
 	}
@@ -235,7 +235,7 @@ func (vm *ValidatorManager) processValidatorLeave(ctx sdk.Context, store *TxOutS
 	}
 	return true, nil
 }
-func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, store *TxOutStore) (bool, error) {
+func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, store TxOutStore) (bool, error) {
 	if vm.Meta.RotateAtBlockHeight != ctx.BlockHeight() {
 		// it is not an error , just not a good time
 		return false, nil
@@ -320,7 +320,7 @@ func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, store *TxOutSt
 	return true, nil
 }
 
-func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr *PoolAddressManager, txOut *TxOutStore) error {
+func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr *PoolAddressManager, txOut TxOutStore) error {
 	ygg, err := vm.k.GetYggdrasil(ctx, node.NodePubKey.Secp256k1)
 	if nil != err && !errors.Is(err, ErrYggdrasilNotFound) {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
@@ -360,7 +360,7 @@ func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, 
 }
 
 // leave process window open
-func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutStore) error {
+func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut TxOutStore) error {
 	height := ctx.BlockHeight()
 	if height != vm.Meta.LeaveOpenWindow {
 		return nil
@@ -442,7 +442,7 @@ func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutS
 
 // ragnarokProtocolStep1 - request all yggdrasil pool to return the fund
 // when THORNode observe the node return fund successfully, the node's bound will be refund.
-func (vm *ValidatorManager) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut *TxOutStore) error {
+func (vm *ValidatorManager) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore) error {
 	vm.Meta.Ragnarok = true
 	// do THORNode have yggdrasil pool?
 	hasYggdrasil, err := vm.k.HasValidYggdrasilPools(ctx)
@@ -459,7 +459,7 @@ func (vm *ValidatorManager) ragnarokProtocolStep1(ctx sdk.Context, activeNodes N
 	return vm.recallYggFunds(ctx, activeNodes, txOut)
 }
 
-func (vm *ValidatorManager) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts, txOut *TxOutStore) error {
+func (vm *ValidatorManager) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore) error {
 	// request every node to return fund
 	for _, na := range activeNodes {
 		if err := vm.requestYggReturn(ctx, na, vm.poolAddrMgr, txOut); nil != err {
