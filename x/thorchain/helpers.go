@@ -34,6 +34,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store *TxOutStore, keeper Keeper, 
 	return nil
 }
 
+// RefundBond use to return validator's bond
 func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut *TxOutStore) {
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
 		// refund bond
@@ -75,7 +76,7 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 	for _, signer := range signers {
 		nodeAccount, err := keeper.GetNodeAccount(ctx, signer)
 		if err != nil {
-			ctx.Logger().Error("unauthorized account", "address", signer.String())
+			ctx.Logger().Error("unauthorized account", "address", signer.String(), err)
 			return false
 		}
 		if nodeAccount.IsEmpty() {
@@ -101,7 +102,7 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 	}
 	todo, incomplete := incomplete.PopByInHash(txID)
 	for _, evt := range todo {
-		lastEventID += 1
+		lastEventID++
 		evt.ID = lastEventID
 		evt.OutTxs = txs
 		keeper.SetCompletedEvent(ctx, evt)
