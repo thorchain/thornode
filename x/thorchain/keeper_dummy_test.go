@@ -85,7 +85,7 @@ func (k KVStoreDummy) GetNodeAccountByPubKey(_ sdk.Context, _ common.PubKey) (No
 func (k KVStoreDummy) GetNodeAccountByBondAddress(_ sdk.Context, _ common.Address) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
-func (k KVStoreDummy) SetNodeAccount(_ sdk.Context, _ NodeAccount) error { return nil }
+func (k KVStoreDummy) SetNodeAccount(_ sdk.Context, _ NodeAccount) error { return kaboom }
 func (k KVStoreDummy) EnsureTrustAccountUnique(_ sdk.Context, _ string, _ common.PubKeys) error {
 	return kaboom
 }
@@ -96,7 +96,7 @@ func (k KVStoreDummy) IsActiveObserver(_ sdk.Context, _ sdk.AccAddress) bool { r
 func (k KVStoreDummy) GetObservingAddresses(_ sdk.Context) ([]sdk.AccAddress, error) {
 	return nil, kaboom
 }
-func (k KVStoreDummy) AddObservingAddresses(_ sdk.Context, _ []sdk.AccAddress) error { return nil }
+func (k KVStoreDummy) AddObservingAddresses(_ sdk.Context, _ []sdk.AccAddress) error { return kaboom }
 func (k KVStoreDummy) ClearObservingAddresses(_ sdk.Context)                         {}
 func (k KVStoreDummy) SetObservedTxVoter(_ sdk.Context, _ ObservedTxVoter)           {}
 func (k KVStoreDummy) GetObservedTxVoterIterator(_ sdk.Context) sdk.Iterator         { return nil }
@@ -104,7 +104,7 @@ func (k KVStoreDummy) GetObservedTxVoter(_ sdk.Context, _ common.TxID) (Observed
 	return ObservedTxVoter{}, kaboom
 }
 func (k KVStoreDummy) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error) { return nil, kaboom }
-func (k KVStoreDummy) SetTxOut(_ sdk.Context, _ *TxOut) error           { return nil }
+func (k KVStoreDummy) SetTxOut(_ sdk.Context, _ *TxOut) error           { return kaboom }
 func (k KVStoreDummy) GetTxOutIterator(_ sdk.Context) sdk.Iterator      { return nil }
 func (k KVStoreDummy) AddToLiquidityFees(_ sdk.Context, _ common.Asset, _ sdk.Uint) error {
 	return kaboom
@@ -129,9 +129,9 @@ func (k KVStoreDummy) SetPoolAddresses(_ sdk.Context, _ *PoolAddresses) {}
 func (k KVStoreDummy) GetPoolAddresses(_ sdk.Context) (PoolAddresses, error) {
 	return PoolAddresses{}, kaboom
 }
-func (k KVStoreDummy) SetValidatorMeta(_ sdk.Context, _ ValidatorMeta) error { return nil }
+func (k KVStoreDummy) SetValidatorMeta(_ sdk.Context, _ ValidatorMeta) error { return kaboom }
 func (k KVStoreDummy) GetValidatorMeta(_ sdk.Context) (ValidatorMeta, error) {
-	return ValidatorMeta{}, nil
+	return ValidatorMeta{}, kaboom
 }
 func (k KVStoreDummy) GetChains(_ sdk.Context) (common.Chains, error)      { return nil, kaboom }
 func (k KVStoreDummy) SetChains(_ sdk.Context, _ common.Chains)            {}
@@ -140,22 +140,22 @@ func (k KVStoreDummy) YggdrasilExists(_ sdk.Context, _ common.PubKey) bool { ret
 func (k KVStoreDummy) FindPubKeyOfAddress(_ sdk.Context, _ common.Address, _ common.Chain) (common.PubKey, error) {
 	return common.EmptyPubKey, kaboom
 }
-func (k KVStoreDummy) SetYggdrasil(_ sdk.Context, _ Yggdrasil) error { return nil }
+func (k KVStoreDummy) SetYggdrasil(_ sdk.Context, _ Yggdrasil) error { return kaboom }
 func (k KVStoreDummy) GetYggdrasil(_ sdk.Context, _ common.PubKey) (Yggdrasil, error) {
-	return Yggdrasil{}, nil
+	return Yggdrasil{}, kaboom
 }
 func (k KVStoreDummy) GetReservesContributors(_ sdk.Context) (ReserveContributors, error) {
-	return nil, nil
+	return nil, kaboom
 }
 func (k KVStoreDummy) SetReserveContributors(_ sdk.Context, _ ReserveContributors) error {
-	return nil
+	return kaboom
 }
 
 func (k KVStoreDummy) HasValidYggdrasilPools(_ sdk.Context) (bool, error) { return false, kaboom }
-func (k KVStoreDummy) AddFeeToReserve(_ sdk.Context, _ sdk.Uint) error    { return nil }
-func (k KVStoreDummy) GetVaultData(_ sdk.Context) (VaultData, error)      { return VaultData{}, nil }
-func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error      { return nil }
-func (k KVStoreDummy) UpdateVaultData(_ sdk.Context) error                { return nil }
+func (k KVStoreDummy) AddFeeToReserve(_ sdk.Context, _ sdk.Uint) error    { return kaboom }
+func (k KVStoreDummy) GetVaultData(_ sdk.Context) (VaultData, error)      { return VaultData{}, kaboom }
+func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error      { return kaboom }
+func (k KVStoreDummy) UpdateVaultData(_ sdk.Context) error                { return kaboom }
 func (k KVStoreDummy) SetAdminConfig(_ sdk.Context, _ AdminConfig)        {}
 func (k KVStoreDummy) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
 	return PoolSuspended

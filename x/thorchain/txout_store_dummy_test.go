@@ -46,7 +46,6 @@ func (tos *TxOutStoreDummy) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 }
 
 func (tos *TxOutStoreDummy) addToBlockOut(toi *TxOutItem) {
-	toi.SeqNo = tos.getSeqNo(toi.Chain)
 	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 }
 
