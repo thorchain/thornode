@@ -117,7 +117,16 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 		return nil // If no Rune is staked, then don't give out block rewards.
 	}
 
-	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees)
+	totalBonded := sdk.ZeroUint()
+	nodes, err := k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return err
+	}
+	for _, node := range nodes {
+		totalBonded.Add(node.Bond)
+	}
+
+	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees, totalRune, totalBonded)
 
 	if !vault.TotalReserve.IsZero() {
 		// Move Rune from the Reserve to the Bond and Pool Rewards
