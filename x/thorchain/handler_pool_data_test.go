@@ -3,8 +3,9 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type HandlerPoolDataSuite struct{}
@@ -15,15 +16,15 @@ type TestPoolKeeper struct {
 	pool Pool
 }
 
-func (k *TestPoolKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
+func (k *TestPoolKeeper) GetNodeAccount(_ sdk.Context, _ sdk.AccAddress) (NodeAccount, error) {
 	return k.na, nil
 }
 
-func (k *TestPoolKeeper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
+func (k *TestPoolKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return k.pool, nil
 }
 
-func (k *TestPoolKeeper) SetPool(ctx sdk.Context, pool Pool) error {
+func (k *TestPoolKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	k.pool = pool
 	return nil
 }
