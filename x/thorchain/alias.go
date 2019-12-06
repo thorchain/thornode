@@ -47,6 +47,7 @@ var (
 	NewMsgSetAdminConfig           = types.NewMsgSetAdminConfig
 	NewTxOut                       = types.NewTxOut
 	NewEvent                       = types.NewEvent
+	NewEventRewards                = types.NewEventRewards
 	NewEventPool                   = types.NewEventPool
 	NewEventAdd                    = types.NewEventAdd
 	NewEventAdminConfig            = types.NewEventAdminConfig
@@ -134,6 +135,8 @@ type (
 	EventSwap                   = types.EventSwap
 	EventStake                  = types.EventStake
 	EventStatus                 = types.EventStatus
+	EventRewards                = types.EventRewards
+	PoolAmt                     = types.PoolAmt
 	ReserveContributor          = types.ReserveContributor
 	ReserveContributors         = types.ReserveContributors
 	Yggdrasil                   = types.Yggdrasil
