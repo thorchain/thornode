@@ -2,6 +2,7 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -46,7 +47,7 @@ func (msg MsgBond) ValidateBasic() sdk.Error {
 		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
 	}
 	if msg.Signer.Empty() {
-		return sdk.ErrUnknownRequest("signer cannot be empty ")
+		return sdk.ErrInvalidAddress("empty signer address")
 	}
 	return nil
 }
