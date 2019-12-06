@@ -1,12 +1,15 @@
 package bnb
 
 import (
+	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/binance-chain/go-sdk/client/rpc"
 	btypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/cenkalti/backoff"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/openlyinc/pointy"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -14,8 +17,11 @@ import (
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
+	types2 "gitlab.com/thorchain/thornode/bifrostv2/pkg/blockclients/types"
 	"gitlab.com/thorchain/thornode/bifrostv2/txscanner/types"
 	"gitlab.com/thorchain/thornode/common"
+
+	"github.com/binance-chain/go-sdk/types/tx"
 )
 
 type Client struct {
@@ -89,22 +95,49 @@ func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
 	c.logger.Info().Msg("scanBlocks")
 	for {
 		block, err := c.getBlock(c.lastScannedBlockHeight)
-		if err != nil {
+		if err != nil || block.Block == nil {
 			d := c.backOffCtrl.NextBackOff()
 			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backOffCtrl", d.String()).Msg("getBlock failed")
 			time.Sleep(d)
 			continue
 		}
 
-		// extract TxIns from block
-		var txIn types.TxIn
-		txIn.BlockHeight = uint64(block.Block.Header.Height)
-		txIn.BlockHash = block.Block.Hash().String()
-		txIn.Chain = common.BNBChain
+		x := c.processBlock(block)
 
-		txInChan <- txIn
+		spew.Dump(x)
+		os.Exit(111)
+
+		// txInChan <- txIn
 		c.lastScannedBlockHeight++
 
 		c.backOffCtrl.Reset()
 	}
+}
+
+func (c *Client) processBlock(block *ctypes.ResultBlock) types2.ObservedBlockAndTxs {
+	var ob types2.ObservedBlockAndTxs
+
+	spew.Dump(block)
+
+	ob.Chain = common.BNBChain
+	ob.BlockHash = block.Block.Hash().String()
+	ob.BlockHeight = uint64(block.Block.Header.Height)
+
+	// var txs = make([]types2.Tx, len(block.Block.Data.Txs))
+
+	fmt.Println("---------------------------------------------")
+
+	for _, txx := range block.Block.Data.Txs {
+		var t1 tx.StdTx
+		if err := tx.Cdc.UnmarshalBinaryLengthPrefixed(txx, &t1); err != nil {
+			c.logger.Err(err).Msg("UnmarshalBinaryLengthPrefixed")
+		}
+
+		spew.Dump(t1)
+
+		t2 := types2.Tx{}
+		// txs = append(txs, )
+	}
+
+	return ob
 }

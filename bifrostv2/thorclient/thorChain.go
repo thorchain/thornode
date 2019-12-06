@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"sync/atomic"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -70,11 +69,19 @@ func NewClient(cfg config.ThorChainConfiguration, m *metrics.Metrics) (*Client, 
 	}, nil
 }
 
+// func MakeCodec() *codec.Codec {
+// 	var cdc = codec.New()
+// 	sdk.RegisterCodec(cdc)
+// 	// TODO make we should share this with thorchain in common
+// 	cdc.RegisterConcrete(stypes.MsgSetTxIn{}, "thorchain/MsgSetTxIn", nil)
+// 	codec.RegisterCrypto(cdc)
+// 	return cdc
+// }
+
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
 	sdk.RegisterCodec(cdc)
-	// TODO make we should share this with thorchain in common
-	cdc.RegisterConcrete(stypes.MsgSetTxIn{}, "thorchain/MsgSetTxIn", nil)
+	stypes.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 	return cdc
 }
@@ -140,50 +147,50 @@ func (c *Client) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, u
 }
 
 // Sign the incoming transaction
-func (c *Client) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, error) {
-	if len(txIns) == 0 {
-		c.errCounter.WithLabelValues("nothing_to_sign", "").Inc()
-		return nil, errors.New("nothing to be signed")
-	}
-	start := time.Now()
-	defer func() {
-		c.m.GetHistograms(metrics.SignToThorChainDuration).Observe(time.Since(start).Seconds())
-	}()
-	stdTx := authtypes.NewStdTx(
-		[]sdk.Msg{
-			stypes.NewMsgSetTxIn(txIns, c.keys.GetSignerInfo().GetAddress()),
-		}, // messages
-		authtypes.NewStdFee(100000000, nil), // fee
-		nil,                                 // signatures
-		"",                                  // memo
-	)
-
-	c.logger.Info().Str("chainid", c.cfg.ChainID).Uint64("accountnumber", c.accountNumber).Uint64("sequenceNo", c.seqNumber).Msg("info")
-	stdMsg := authtypes.StdSignMsg{
-		ChainID:       c.cfg.ChainID,
-		AccountNumber: c.accountNumber,
-		Sequence:      c.seqNumber,
-		Fee:           stdTx.Fee,
-		Msgs:          stdTx.GetMsgs(),
-		Memo:          stdTx.GetMemo(),
-	}
-	sig, err := authtypes.MakeSignature(c.keys.GetKeybase(), c.cfg.SignerName, c.cfg.SignerPasswd, stdMsg)
-	if err != nil {
-		c.errCounter.WithLabelValues("fail_sign", "").Inc()
-		return nil, errors.Wrap(err, "fail to sign the message")
-	}
-
-	signedStdTx := authtypes.NewStdTx(
-		stdTx.GetMsgs(),
-		stdTx.Fee,
-		[]authtypes.StdSignature{sig},
-		stdTx.GetMemo(),
-	)
-	nextSeq := atomic.AddUint64(&c.seqNumber, 1)
-	c.logger.Info().Uint64("sequence no", nextSeq).Msg("next sequence no")
-	c.m.GetCounter(metrics.TxToThorChainSigned).Inc()
-	return &signedStdTx, nil
-}
+// func (c *Client) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, error) {
+// 	if len(txIns) == 0 {
+// 		c.errCounter.WithLabelValues("nothing_to_sign", "").Inc()
+// 		return nil, errors.New("nothing to be signed")
+// 	}
+// 	start := time.Now()
+// 	defer func() {
+// 		c.m.GetHistograms(metrics.SignToThorChainDuration).Observe(time.Since(start).Seconds())
+// 	}()
+// 	stdTx := authtypes.NewStdTx(
+// 		[]sdk.Msg{
+// 			stypes.NewMsgSetTxIn(txIns, c.keys.GetSignerInfo().GetAddress()),
+// 		}, // messages
+// 		authtypes.NewStdFee(100000000, nil), // fee
+// 		nil,                                 // signatures
+// 		"",                                  // memo
+// 	)
+//
+// 	c.logger.Info().Str("chainid", c.cfg.ChainID).Uint64("accountnumber", c.accountNumber).Uint64("sequenceNo", c.seqNumber).Msg("info")
+// 	stdMsg := authtypes.StdSignMsg{
+// 		ChainID:       c.cfg.ChainID,
+// 		AccountNumber: c.accountNumber,
+// 		Sequence:      c.seqNumber,
+// 		Fee:           stdTx.Fee,
+// 		Msgs:          stdTx.GetMsgs(),
+// 		Memo:          stdTx.GetMemo(),
+// 	}
+// 	sig, err := authtypes.MakeSignature(c.keys.GetKeybase(), c.cfg.SignerName, c.cfg.SignerPasswd, stdMsg)
+// 	if err != nil {
+// 		c.errCounter.WithLabelValues("fail_sign", "").Inc()
+// 		return nil, errors.Wrap(err, "fail to sign the message")
+// 	}
+//
+// 	signedStdTx := authtypes.NewStdTx(
+// 		stdTx.GetMsgs(),
+// 		stdTx.Fee,
+// 		[]authtypes.StdSignature{sig},
+// 		stdTx.GetMemo(),
+// 	)
+// 	nextSeq := atomic.AddUint64(&c.seqNumber, 1)
+// 	c.logger.Info().Uint64("sequence no", nextSeq).Msg("next sequence no")
+// 	c.m.GetCounter(metrics.TxToThorChainSigned).Inc()
+// 	return &signedStdTx, nil
+// }
 
 // Send the signed transaction to thorchain
 func (c *Client) Send(signed authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
