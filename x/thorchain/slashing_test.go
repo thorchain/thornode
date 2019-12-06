@@ -53,7 +53,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	var err error
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(201) // set blockheight
-	poolAddrMgr := NewPoolAddressManager(k)
+	poolAddrMgr := NewPoolAddressMgr(k)
 	poolAddrMgr.BeginBlock(ctx)
 	poolPubKey := GetRandomPubKey()
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, poolPubKey)
