@@ -75,7 +75,7 @@ type AppModule struct {
 	supplyKeeper supply.Keeper
 	txOutStore   TxOutStore
 	poolMgr      PoolAddressManager
-	validatorMgr *ValidatorManager
+	validatorMgr ValidatorManager
 }
 
 // NewAppModule creates a new AppModule Object
@@ -89,7 +89,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		supplyKeeper:   supplyKeeper,
 		txOutStore:     txStore,
 		poolMgr:        poolAddrMgr,
-		validatorMgr:   NewValidatorManager(k, poolAddrMgr),
+		validatorMgr:   NewValidatorMgr(k, poolAddrMgr),
 	}
 }
 

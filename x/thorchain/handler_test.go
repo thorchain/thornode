@@ -91,7 +91,7 @@ type handlerTestWrapper struct {
 	ctx                  sdk.Context
 	keeper               Keeper
 	poolAddrMgr          PoolAddressManager
-	validatorMgr         *ValidatorManager
+	validatorMgr         ValidatorManager
 	txOutStore           TxOutStore
 	activeNodeAccount    NodeAccount
 	notActiveNodeAccount NodeAccount
@@ -120,7 +120,7 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	}, common.EmptyPoolPubKeys, 100, 90)
 	k.SetPoolAddresses(ctx, genesisPoolAddress)
 	poolAddrMgr := NewPoolAddressMgr(k)
-	validatorMgr := NewValidatorManager(k, poolAddrMgr)
+	validatorMgr := NewValidatorMgr(k, poolAddrMgr)
 	c.Assert(poolAddrMgr.BeginBlock(ctx), IsNil)
 	validatorMgr.BeginBlock(ctx)
 	txOutStore := NewTxOutStorage(k, poolAddrMgr)
