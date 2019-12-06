@@ -5,6 +5,6 @@ import (
 )
 
 type Msg struct {
-	Type  string            `json:"type"`
-	Value stypes.MsgSetTxIn `json:"value"`
+	Type  string                 `json:"type"`
+	Value stypes.MsgObservedTxIn `json:"value"`
 }
