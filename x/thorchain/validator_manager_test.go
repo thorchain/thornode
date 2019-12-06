@@ -79,7 +79,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(len(activeNodes1) == 4, Equals, true)
 	// No standby nodes
 	ctx = ctx.WithBlockHeight(rotatePerBlockHeight + 1 - validatorChangeWindow)
-	txOutStore := NewTxOutStore(k, poolAddrMgr)
+	txOutStore := NewTxOutStorage(k, poolAddrMgr)
 	txOutStore.NewBlock(uint64(rotatePerBlockHeight + 1 - validatorChangeWindow))
 	validatorUpdates := vMgr2.EndBlock(ctx, txOutStore)
 	c.Assert(validatorUpdates, IsNil)
@@ -279,7 +279,7 @@ func (ValidatorManagerTestSuite) TestValidatorsLeave(c *C) {
 	w.txOutStore.NewBlock(uint64(w.validatorMgr.Meta.LeaveProcessAt))
 	updates := w.validatorMgr.EndBlock(ctx, w.txOutStore)
 	// THORNode don't have yggdrasil fund
-	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 0)
+	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 0)
 	c.Assert(updates, HasLen, 7)
 	// make sure scheduled rotation window get extended
 	c.Assert(w.validatorMgr.Meta.RotateAtBlockHeight, Equals, rotateAt+w.validatorMgr.rotationPolicy.LeaveProcessPerBlockHeight)

@@ -92,7 +92,7 @@ type handlerTestWrapper struct {
 	keeper               Keeper
 	poolAddrMgr          *PoolAddressManager
 	validatorMgr         *ValidatorManager
-	txOutStore           *TxOutStore
+	txOutStore           TxOutStore
 	activeNodeAccount    NodeAccount
 	notActiveNodeAccount NodeAccount
 }
@@ -123,7 +123,7 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	validatorMgr := NewValidatorManager(k, poolAddrMgr)
 	c.Assert(poolAddrMgr.BeginBlock(ctx), IsNil)
 	validatorMgr.BeginBlock(ctx)
-	txOutStore := NewTxOutStore(k, poolAddrMgr)
+	txOutStore := NewTxOutStorage(k, poolAddrMgr)
 	txOutStore.NewBlock(uint64(height))
 
 	return handlerTestWrapper{
@@ -252,7 +252,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	c.Check(p1.Status, Equals, PoolSuspended)
 	c.Check(p1.BalanceAsset.Uint64(), Equals, uint64(0))
 	c.Check(p1.BalanceRune.Uint64(), Equals, uint64(0))
-	txOut := w.txOutStore.blockOut
+	txOut := w.txOutStore.getBlockOut()
 	c.Check(txOut, NotNil)
 	c.Check(len(txOut.TxArray) > 0, Equals, true)
 	c.Check(txOut.Height, Equals, uint64(1))
@@ -386,9 +386,9 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	w.txOutStore.NewBlock(1)
 	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
-	c.Assert(w.txOutStore.blockOut, NotNil)
-	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 1)
-	tai := w.txOutStore.blockOut.TxArray[0]
+	c.Assert(w.txOutStore.getBlockOut(), NotNil)
+	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
+	tai := w.txOutStore.GetOutboundItems()[0]
 	c.Assert(tai, NotNil)
 	c.Assert(tai.Memo, Equals, "ack")
 	c.Assert(tai.Coin.Amount.Uint64(), Equals, uint64(1))
