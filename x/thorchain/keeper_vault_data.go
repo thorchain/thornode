@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"encoding/json"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -131,6 +132,8 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 		vault.BondRewardRune = vault.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
 	}
 
+	var evtPools []PoolAmt
+
 	if !totalPoolRewards.IsZero() { // If Pool Rewards to hand out
 		// First subsidise the gas that was consumed
 		for _, coin := range vault.Gas {
@@ -157,6 +160,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 				ctx.Logger().Error(err.Error())
 				return err
 			}
+			evtPools = append(evtPools, PoolAmt{pools[i].Asset, int64(reward.Uint64())})
 		}
 	} else { // Else deduct pool deficit
 
@@ -175,8 +179,23 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 				ctx.Logger().Error(err.Error())
 				return err
 			}
+			evtPools = append(evtPools, PoolAmt{pool.Asset, (0 - int64(poolDeficit.Uint64()))})
 		}
 	}
+
+	rewardEvt := NewEventRewards(bondReward, evtPools)
+	evtBytes, err := json.Marshal(rewardEvt)
+	if err != nil {
+		return err
+	}
+	evt := NewEvent(
+		rewardEvt.Type(),
+		ctx.BlockHeight(),
+		common.Tx{},
+		evtBytes,
+		EventSuccess,
+	)
+	k.SetCompletedEvent(ctx, evt)
 
 	i, err := k.TotalActiveNodeAccount(ctx)
 	if nil != err {
