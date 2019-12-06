@@ -9,14 +9,20 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/constants"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
+)
+
+// Thorchain error code start at 101
+const (
+	// CodeBadVersion error code for bad version
+	CodeBadVersion sdk.CodeType = 101
 )
 
 // EmptyAccAddress empty address
 var EmptyAccAddress = sdk.AccAddress{}
-var notAuthorized = fmt.Errorf("Not Authorized")
-var badVersion = fmt.Errorf("Bad version")
+var notAuthorized = fmt.Errorf("not authorized")
+var badVersion = fmt.Errorf("bad version")
+var errBadVersion = sdk.NewError(DefaultCodespace, CodeBadVersion, "bad version")
 
 // NewHandler returns a handler for "thorchain" type messages.
 func NewHandler(keeper Keeper, poolAddrMgr *PoolAddressManager, txOutStore *TxOutStore, validatorMgr *ValidatorManager) sdk.Handler {
@@ -27,6 +33,7 @@ func NewHandler(keeper Keeper, poolAddrMgr *PoolAddressManager, txOutStore *TxOu
 	// New arch handlers
 	reserveContribHandler := NewReserveContributorHandler(keeper)
 	poolDataHandler := NewPoolDataHandler(keeper)
+	bondHandler := NewBondHandler(keeper)
 	observedTxInHandler := NewObservedTxInHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	observedTxOutHandler := NewObservedTxOutHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 
@@ -37,6 +44,8 @@ func NewHandler(keeper Keeper, poolAddrMgr *PoolAddressManager, txOutStore *TxOu
 			return reserveContribHandler.Run(ctx, m, version)
 		case MsgSetPoolData:
 			return poolDataHandler.Run(ctx, m, version)
+		case MsgBond:
+			return bondHandler.Run(ctx, m, version)
 		case MsgObservedTxIn:
 			return observedTxInHandler.Run(ctx, m, version)
 		case MsgObservedTxOut:
@@ -71,8 +80,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr *PoolAddressManager, txOutS
 			return handleMsgSetTrustAccount(ctx, keeper, m)
 		case MsgSetVersion:
 			return handleMsgSetVersion(ctx, keeper, m)
-		case MsgBond:
-			return handleMsgBond(ctx, keeper, m)
 		case MsgYggdrasil:
 			return handleMsgYggdrasil(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
 		case MsgNextPoolAddress:
@@ -1090,58 +1097,6 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 			sdk.NewAttribute("node_secp256k1_pubkey", msg.NodePubKeys.Secp256k1.String()),
 			sdk.NewAttribute("node_ed25519_pubkey", msg.NodePubKeys.Ed25519.String()),
 			sdk.NewAttribute("validator_consensus_pub_key", msg.ValidatorConsPubKey)))
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
-// handleMsgBond
-func handleMsgBond(ctx sdk.Context, keeper Keeper, msg MsgBond) sdk.Result {
-	ctx.Logger().Info("receive MsgBond", "node address", msg.NodeAddress, "txhash", msg.RequestTxHash, "bond", msg.Bond.String())
-	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgBond", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	nodeAccount, err := keeper.GetNodeAccount(ctx, msg.NodeAddress)
-	if nil != err {
-		ctx.Logger().Error("fail to get node account", "err", err, "address", msg.NodeAddress)
-		return sdk.ErrInternal("fail to get node account").Result()
-	}
-	if !nodeAccount.IsEmpty() {
-		ctx.Logger().Error("node account already exist", "address", msg.NodeAddress, "status", nodeAccount.Status)
-		return sdk.ErrUnknownRequest("node account already exist").Result()
-	}
-	minValidatorBond := sdk.NewUint(constants.MinimumBondInRune)
-	if msg.Bond.LT(minValidatorBond) {
-		ctx.Logger().Error("not enough rune to be whitelisted", "rune", msg.Bond, "min validator bond", minValidatorBond.String())
-		return sdk.ErrUnknownRequest("not enough rune to be whitelisted").Result()
-	}
-	// THORNode will not have pub keys at the moment, so have to leave it empty
-	emptyPubKeys := common.PubKeys{
-		Secp256k1: common.EmptyPubKey,
-		Ed25519:   common.EmptyPubKey,
-	}
-	// white list the given bep address
-	nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, emptyPubKeys, "", msg.Bond, msg.BondAddress, ctx.BlockHeight())
-	if err := keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
-		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", nodeAccount), err)
-		return sdk.ErrInternal("fail to save node account").Result()
-	}
-	ctx.EventManager().EmitEvent(sdk.NewEvent("new_node", sdk.NewAttribute("address", msg.NodeAddress.String())))
-	coinsToMint := keeper.GetAdminConfigWhiteListGasAsset(ctx, sdk.AccAddress{})
-	// mint some gas asset
-	err = keeper.Supply().MintCoins(ctx, ModuleName, coinsToMint)
-	if nil != err {
-		ctx.Logger().Error("fail to mint gas assets", "err", err)
-	}
-	if err := keeper.Supply().SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
-		ctx.Logger().Error("fail to send newly minted gas asset to node address")
-	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
