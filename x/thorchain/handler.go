@@ -957,10 +957,10 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAd
 		}
 		// if the node account requested to leave already ,then let's refund them
 		if na.RequestedToLeave {
-			// TODO: slash their bond for any Yggdrasil funds that are unaccounted
-			// for before sending their bond back. Keep in mind that THORNode won't get
-			// back 100% of the funds (due to gas).
-			refundBond(ctx, msg.RequestTxHash, na, keeper, txOut)
+			if err := refundBond(ctx, msg.RequestTxHash, na, keeper, txOut); err != nil {
+				ctx.Logger().Error("fail to refund bond", err)
+				return sdk.ErrInternal("fail to refund bond").Result()
+			}
 		}
 	}
 	if err := keeper.SetYggdrasil(ctx, ygg); nil != err {
