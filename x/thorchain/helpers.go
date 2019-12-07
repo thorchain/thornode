@@ -34,7 +34,32 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, p
 	return nil
 }
 
-func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) {
+func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
+	ygg, err := keeper.GetYggdrasil(ctx, nodeAcc.NodePubKey.Secp256k1)
+	if err != nil {
+		return err
+	}
+
+	// Calculate total value (in rune) the Yggdrasil pool has
+	yggRune := sdk.ZeroUint()
+	for _, coin := range ygg.Coins {
+		if coin.Asset.IsRune() {
+			yggRune = yggRune.Add(coin.Amount)
+		} else {
+			pool, err := keeper.GetPool(ctx, coin.Asset)
+			if err != nil {
+				return err
+			}
+			yggRune = yggRune.Add(pool.AssetValueInRune(coin.Amount))
+		}
+	}
+
+	if nodeAcc.Bond.LT(yggRune) {
+		ctx.Logger().Error("Node Account (%s) left with more funds in their Yggdrasil vault than their bond's value (%d/%d)", yggRune, nodeAcc.Bond)
+	}
+
+	nodeAcc.Bond = common.SafeSub(nodeAcc.Bond, yggRune)
+
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
 		// refund bond
 		txOutItem := &TxOutItem{
@@ -52,7 +77,10 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
 	if err := keeper.SetNodeAccount(ctx, nodeAcc); nil != err {
 		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", nodeAcc), err)
+		return err
 	}
+
+	return nil
 }
 
 // isSignedByActiveObserver check whether the signers are all active observer
