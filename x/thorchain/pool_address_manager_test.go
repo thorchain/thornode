@@ -25,7 +25,7 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 
 	rotateWindowOpenHeight := w.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt
 	w.ctx = w.ctx.WithBlockHeight(rotateWindowOpenHeight)
-	w.poolAddrMgr.BeginBlock(w.ctx)
+	c.Assert(w.poolAddrMgr.BeginBlock(w.ctx), IsNil)
 	w.txOutStore.NewBlock(uint64(rotateWindowOpenHeight))
 	c.Assert(w.poolAddrMgr.IsRotateWindowOpen(), Equals, true)
 
@@ -41,7 +41,7 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	rotatePoolHeight := w.poolAddrMgr.GetCurrentPoolAddresses().RotateAt
 	w.ctx = w.ctx.WithBlockHeight(rotatePoolHeight)
 	w.txOutStore.NewBlock(uint64(rotatePoolHeight))
-	w.poolAddrMgr.BeginBlock(w.ctx)
+	c.Assert(w.poolAddrMgr.BeginBlock(w.ctx), IsNil)
 	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
 	windowOpen := int64(constants.ValidatorsChangeWindow)
 	rotatePerBlockHeight := int64(constants.RotatePerBlockHeight)
@@ -98,7 +98,7 @@ func createTempNewPoolForTest(ctx sdk.Context, k Keeper, input string, c *C) *Po
 	// https://github.com/golang/go/issues/29463
 	p.BalanceRune = sdk.NewUint(1535169738538008)
 	p.BalanceAsset = sdk.NewUint(1535169738538008)
-	k.SetPool(ctx, p)
+	c.Assert(k.SetPool(ctx, p), IsNil)
 	k.SetChains(ctx, common.Chains{asset.Chain})
 	return &p
 }

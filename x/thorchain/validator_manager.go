@@ -28,6 +28,7 @@ type ValidatorManager interface {
 	RotationPolicy() ValidatorRotationPolicy
 	BeginBlock(ctx sdk.Context)
 	EndBlock(ctx sdk.Context, store TxOutStore) []abci.ValidatorUpdate
+	RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error
 }
 
 // ValidatorMgr is to manage a list of validators , and rotate them
@@ -211,7 +212,7 @@ func (vm *ValidatorMgr) processValidatorLeave(ctx sdk.Context, store TxOutStore)
 			sdk.NewEvent(EventTypeValidatorStandby,
 				sdk.NewAttribute("bep_address", item.NodeAddress.String()),
 				sdk.NewAttribute("consensus_public_key", item.ValidatorConsPubKey)))
-		if err := vm.requestYggReturn(ctx, item, vm.poolAddrMgr, store); nil != err {
+		if err := vm.RequestYggReturn(ctx, item, vm.poolAddrMgr, store); nil != err {
 			return false, err
 		}
 	}
@@ -327,7 +328,7 @@ func (vm *ValidatorMgr) rotateValidatorNodes(ctx sdk.Context, store TxOutStore) 
 					sdk.NewAttribute("bep_address", item.NodeAddress.String()),
 					sdk.NewAttribute("consensus_public_key", item.ValidatorConsPubKey)))
 			// request money back
-			if err := vm.requestYggReturn(ctx, item, vm.poolAddrMgr, store); nil != err {
+			if err := vm.RequestYggReturn(ctx, item, vm.poolAddrMgr, store); nil != err {
 				return false, err
 			}
 		}
@@ -335,7 +336,7 @@ func (vm *ValidatorMgr) rotateValidatorNodes(ctx sdk.Context, store TxOutStore) 
 	return true, nil
 }
 
-func (vm *ValidatorMgr) requestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error {
+func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error {
 	ygg, err := vm.k.GetYggdrasil(ctx, node.NodePubKey.Secp256k1)
 	if nil != err && !errors.Is(err, ErrYggdrasilNotFound) {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
@@ -477,7 +478,7 @@ func (vm *ValidatorMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeA
 func (vm *ValidatorMgr) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore) error {
 	// request every node to return fund
 	for _, na := range activeNodes {
-		if err := vm.requestYggReturn(ctx, na, vm.poolAddrMgr, txOut); nil != err {
+		if err := vm.RequestYggReturn(ctx, na, vm.poolAddrMgr, txOut); nil != err {
 			return fmt.Errorf("fail to request yggdrasil fund back: %w", err)
 		}
 	}

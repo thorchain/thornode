@@ -7,6 +7,7 @@ import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -26,7 +27,11 @@ func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr Po
 	}
 }
 
-func (h ObservedTxInHandler) Run(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) sdk.Result {
+func (h ObservedTxInHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+	msg, ok := m.(MsgObservedTxIn)
+	if !ok {
+		return errInvalidMessage.Result()
+	}
 	if err := h.Validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}

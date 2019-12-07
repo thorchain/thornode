@@ -12,10 +12,11 @@ import (
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
-// Thorchain error code start at 101
+// THORChain error code start at 101
 const (
 	// CodeBadVersion error code for bad version
-	CodeBadVersion sdk.CodeType = 101
+	CodeBadVersion     sdk.CodeType = 101
+	CodeInvalidMessage sdk.CodeType = 102
 )
 
 // EmptyAccAddress empty address
@@ -23,39 +24,35 @@ var EmptyAccAddress = sdk.AccAddress{}
 var notAuthorized = fmt.Errorf("not authorized")
 var badVersion = fmt.Errorf("bad version")
 var errBadVersion = sdk.NewError(DefaultCodespace, CodeBadVersion, "bad version")
+var errInvalidMessage = sdk.NewError(DefaultCodespace, CodeInvalidMessage, "invalid message")
 
 // NewHandler returns a handler for "thorchain" type messages.
 func NewHandler(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutStore, validatorMgr ValidatorManager) sdk.Handler {
 	// Classic Handler
 	classic := NewClassicHandler(keeper, poolAddrMgr, txOutStore, validatorMgr)
-
-	// New arch handlers
-	reserveContribHandler := NewReserveContributorHandler(keeper)
-	poolDataHandler := NewPoolDataHandler(keeper)
-	ackHandler := NewAckHandler(keeper, poolAddrMgr, validatorMgr)
-	bondHandler := NewBondHandler(keeper)
-	observedTxInHandler := NewObservedTxInHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
-	observedTxOutHandler := NewObservedTxOutHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
+	handlerMap := getHandlerMapping(keeper, poolAddrMgr, txOutStore, validatorMgr)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
-		switch m := msg.(type) {
-		case MsgReserveContributor:
-			return reserveContribHandler.Run(ctx, m, version)
-		case MsgSetPoolData:
-			return poolDataHandler.Run(ctx, m, version)
-		case MsgAck:
-			return ackHandler.Run(ctx, m, version)
-		case MsgBond:
-			return bondHandler.Run(ctx, m, version)
-		case MsgObservedTxIn:
-			return observedTxInHandler.Run(ctx, m, version)
-		case MsgObservedTxOut:
-			return observedTxOutHandler.Run(ctx, m, version)
-		default:
+		h, ok := handlerMap[msg.Type()]
+		if !ok {
 			return classic(ctx, msg)
 		}
+		return h.Run(ctx, msg, version)
 	}
+}
+
+func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutStore, validatorMgr ValidatorManager) map[string]MsgHandler {
+	// New arch handlers
+	m := make(map[string]MsgHandler)
+	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
+	m[MsgSetPoolData{}.Type()] = NewPoolDataHandler(keeper)
+	m[MsgBond{}.Type()] = NewBondHandler(keeper)
+	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
+	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
+	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, poolAddrMgr, txOutStore)
+	m[MsgAck{}.Type()] = NewAckHandler(keeper, poolAddrMgr, validatorMgr)
+	return m
 }
 
 // NewClassicHandler returns a handler for "thorchain" type messages.
@@ -86,10 +83,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 			return handleMsgYggdrasil(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
 		case MsgNextPoolAddress:
 			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, validatorManager, txOutStore, m)
-		case MsgLeave:
-			return handleMsgLeave(ctx, keeper, txOutStore, validatorManager, m)
-		case MsgReserveContributor:
-			return handleMsgReserveContributor(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -471,42 +464,6 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
 		Memo:        "ack",
 	}, true)
-
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
-// handleMsgReserveContributor
-func handleMsgReserveContributor(ctx sdk.Context, keeper Keeper, msg MsgReserveContributor) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgReserveContributor from : %s reserve %s (%s)", msg, msg.Contributor.Address.String(), msg.Contributor.Amount.String()))
-	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account")
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-
-	reses, err := keeper.GetReservesContributors(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get reserve contributors", err)
-		return sdk.ErrInternal("fail to get reserve contributors").Result()
-	}
-	reses = reses.Add(msg.Contributor)
-	if err := keeper.SetReserveContributors(ctx, reses); nil != err {
-		ctx.Logger().Error("fail to save reserve contributors", err)
-		return sdk.ErrInternal("fail to save reserve contributors").Result()
-	}
-
-	vault, err := keeper.GetVaultData(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get vault data", err)
-		return sdk.ErrInternal("fail to get vault data").Result()
-	}
-	vault.TotalReserve = vault.TotalReserve.Add(msg.Contributor.Amount)
-	if err := keeper.SetVaultData(ctx, vault); nil != err {
-		ctx.Logger().Error("fail to save vault data", err)
-		return sdk.ErrInternal("fail to save vault data").Result()
-	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -1094,10 +1051,13 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAd
 			ctx.Logger().Error("unable to get node account", "error", err)
 			return sdk.ErrUnknownRequest(err.Error()).Result()
 		}
-		// TODO: slash their bond for any Yggdrasil funds that are unaccounted
-		// for before sending their bond back. Keep in mind that THORNode won't get
-		// back 100% of the funds (due to gas).
-		refundBond(ctx, msg.RequestTxHash, na, keeper, txOut)
+		// if the node account requested to leave already ,then let's refund them
+		if na.RequestedToLeave {
+			// TODO: slash their bond for any Yggdrasil funds that are unaccounted
+			// for before sending their bond back. Keep in mind that THORNode won't get
+			// back 100% of the funds (due to gas).
+			refundBond(ctx, msg.RequestTxHash, na, keeper, txOut)
+		}
 	}
 	if err := keeper.SetYggdrasil(ctx, ygg); nil != err {
 		ctx.Logger().Error("fail to save yggdrasil", err)
@@ -1114,46 +1074,6 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAd
 			return handleRagnarokProtocolStep2(ctx, keeper, txOut, poolAddrMgr, validatorMgr)
 		}
 	}
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
-func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut TxOutStore, validatorManager ValidatorManager, msg MsgLeave) sdk.Result {
-	ctx.Logger().Info("receive MsgLeave", "sender", msg.Tx.FromAddress.String(), "request tx hash", msg.Tx.ID)
-	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgLeave", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	nodeAcc, err := keeper.GetNodeAccountByBondAddress(ctx, msg.Tx.FromAddress)
-	if nil != err {
-		ctx.Logger().Error("fail to get node account", "error", err)
-		return sdk.ErrInternal("fail to get node account by bond address").Result()
-	}
-	if nodeAcc.IsEmpty() {
-		return sdk.ErrUnknownRequest("node account doesn't exist").Result()
-	}
-
-	if nodeAcc.Status == NodeActive {
-		// THORNode add the node to leave queue
-		validatorManager.Meta().LeaveQueue = append(validatorManager.Meta().LeaveQueue, nodeAcc)
-	} else {
-		// node is not active , they are free to leave , refund them
-		// given the node is not active, they should not have Yggdrasil pool either
-		refundBond(ctx, msg.Tx.ID, nodeAcc, keeper, txOut)
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent("validator_request_leave",
-			sdk.NewAttribute("signer bnb address", msg.Tx.FromAddress.String()),
-			sdk.NewAttribute("destination", nodeAcc.BondAddress.String()),
-			sdk.NewAttribute("tx", msg.Tx.ID.String())))
-
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

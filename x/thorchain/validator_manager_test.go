@@ -33,7 +33,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(err, NotNil)
 
 	activeNode := GetRandomNodeAccount(NodeActive)
-	k.SetNodeAccount(ctx, activeNode)
+	c.Assert(k.SetNodeAccount(ctx, activeNode), IsNil)
 	vMgr.rotationPolicy = GetValidatorRotationPolicy()
 
 	err = vMgr.setupValidatorNodes(ctx, 1)
@@ -42,7 +42,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(vMgr.meta.RotateWindowOpenAtBlockHeight, Equals, int64(rotatePerBlockHeight+1-validatorChangeWindow))
 
 	readyNode := GetRandomNodeAccount(NodeReady)
-	k.SetNodeAccount(ctx, readyNode)
+	c.Assert(k.SetNodeAccount(ctx, readyNode), IsNil)
 
 	// one active node and one ready node on start up
 	// it should take both of the node as active
@@ -61,8 +61,8 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 
 	activeNode1 := GetRandomNodeAccount(NodeActive)
 	activeNode2 := GetRandomNodeAccount(NodeActive)
-	k.SetNodeAccount(ctx, activeNode1)
-	k.SetNodeAccount(ctx, activeNode2)
+	c.Assert(k.SetNodeAccount(ctx, activeNode1), IsNil)
+	c.Assert(k.SetNodeAccount(ctx, activeNode2), IsNil)
 
 	// three active nodes and 1 ready nodes, it should take them all
 	vMgr2 := NewValidatorMgr(k, poolAddrMgr)
@@ -97,7 +97,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(vMgr2.meta.Queued.IsEmpty(), Equals, true)
 
 	standbyNode := GetRandomNodeAccount(NodeStandby)
-	k.SetNodeAccount(ctx, standbyNode)
+	c.Assert(k.SetNodeAccount(ctx, standbyNode), IsNil)
 
 	// vts.setDesireValidatorSet(c, ctx, k)
 	vMgr2.rotationPolicy = GetValidatorRotationPolicy()
@@ -133,7 +133,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	validatorUpdates = vMgr2.EndBlock(ctx, txOutStore)
 	c.Assert(validatorUpdates, IsNil)
 	nNode.UpdateStatus(NodeReady, openWindow)
-	k.SetNodeAccount(ctx, nNode)
+	c.Assert(k.SetNodeAccount(ctx, nNode), IsNil)
 
 	rotateAtHeight = vMgr2.meta.RotateAtBlockHeight
 	ctx = ctx.WithBlockHeight(rotateAtHeight)
@@ -148,17 +148,17 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(nNode.Status, Equals, NodeActive)
 
 }
-func setNodeAccountsStatus(ctx sdk.Context, k Keeper, nas NodeAccounts, status NodeStatus) {
+func setNodeAccountsStatus(ctx sdk.Context, k Keeper, nas NodeAccounts, status NodeStatus, c *C) {
 	for _, item := range nas {
 		item.UpdateStatus(status, ctx.BlockHeight())
-		k.SetNodeAccount(ctx, item)
+		c.Assert(k.SetNodeAccount(ctx, item), IsNil)
 	}
 }
 func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	for i := 0; i < 10; i++ {
 		node := GetRandomNodeAccount(NodeStandby)
-		w.keeper.SetNodeAccount(w.ctx, node)
+		c.Assert(w.keeper.SetNodeAccount(w.ctx, node), IsNil)
 	}
 	// THORNode should rotate two in , and don't rotate out
 	windowOpenAt := w.validatorMgr.Meta().RotateWindowOpenAtBlockHeight
@@ -172,7 +172,7 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 	c.Assert(w.validatorMgr.Meta().Queued, HasLen, 0)
 
 	// set the nominated node as ready
-	setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady)
+	setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady, c)
 	rotateAt := w.validatorMgr.Meta().RotateAtBlockHeight
 	ctx = w.ctx.WithBlockHeight(rotateAt)
 	w.validatorMgr.BeginBlock(ctx)
@@ -191,7 +191,7 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 	validatorUpdates = w.validatorMgr.EndBlock(ctx, w.txOutStore)
 	c.Assert(validatorUpdates, IsNil)
 
-	setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady)
+	setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady, c)
 	rotateAt = w.validatorMgr.Meta().RotateAtBlockHeight
 	ctx = w.ctx.WithBlockHeight(rotateAt)
 	w.validatorMgr.BeginBlock(ctx)
@@ -201,9 +201,9 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 
 	for i := 0; i <= 27; i++ {
 		node1 := GetRandomNodeAccount(NodeStandby)
-		w.keeper.SetNodeAccount(w.ctx, node1)
+		c.Assert(w.keeper.SetNodeAccount(w.ctx, node1), IsNil)
 		node2 := GetRandomNodeAccount(NodeStandby)
-		w.keeper.SetNodeAccount(w.ctx, node2)
+		c.Assert(w.keeper.SetNodeAccount(w.ctx, node2), IsNil)
 
 		windowOpenAt = w.validatorMgr.Meta().RotateWindowOpenAtBlockHeight
 		ctx = w.ctx.WithBlockHeight(windowOpenAt)
@@ -214,7 +214,7 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 		c.Assert(w.validatorMgr.Meta().Nominated, HasLen, 2)
 		c.Assert(w.validatorMgr.Meta().Queued, HasLen, 1)
 
-		setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady)
+		setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady, c)
 		rotateAt = w.validatorMgr.Meta().RotateAtBlockHeight
 		ctx = w.ctx.WithBlockHeight(rotateAt)
 		w.validatorMgr.BeginBlock(ctx)
@@ -224,7 +224,7 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 	}
 
 	nodeA := GetRandomNodeAccount(NodeStandby)
-	w.keeper.SetNodeAccount(w.ctx, nodeA)
+	c.Assert(w.keeper.SetNodeAccount(w.ctx, nodeA), IsNil)
 	windowOpenAt = w.validatorMgr.Meta().RotateWindowOpenAtBlockHeight
 	ctx = w.ctx.WithBlockHeight(windowOpenAt)
 	w.validatorMgr.BeginBlock(ctx)
@@ -233,7 +233,7 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 	c.Assert(validatorUpdates, IsNil)
 	c.Assert(w.validatorMgr.Meta().Nominated, HasLen, 1)
 	c.Assert(w.validatorMgr.Meta().Queued, HasLen, 1)
-	setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady)
+	setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady, c)
 	rotateAt = w.validatorMgr.Meta().RotateAtBlockHeight
 	ctx = w.ctx.WithBlockHeight(rotateAt)
 	w.validatorMgr.BeginBlock(ctx)
@@ -248,7 +248,7 @@ func (ValidatorManagerTestSuite) TestValidatorsLeave(c *C) {
 	// add 6 ndoes
 	for i := 1; i <= 6; i++ {
 		node := GetRandomNodeAccount(NodeReady)
-		w.keeper.SetNodeAccount(w.ctx, node)
+		c.Assert(w.keeper.SetNodeAccount(w.ctx, node), IsNil)
 		allNodes = append(allNodes, node)
 	}
 	// this should trick validator manager to take four nodes as active.
@@ -295,7 +295,7 @@ func (ValidatorManagerTestSuite) TestRagnarokProtocol(c *C) {
 	// add 6 ndoes
 	for i := 1; i <= 6; i++ {
 		node := GetRandomNodeAccount(NodeReady)
-		w.keeper.SetNodeAccount(w.ctx, node)
+		c.Assert(w.keeper.SetNodeAccount(w.ctx, node), IsNil)
 		allNodes = append(allNodes, node)
 	}
 	// this should trick validator manager to take four nodes as active.
