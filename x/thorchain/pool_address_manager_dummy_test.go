@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -38,12 +39,12 @@ func (pm *PoolAddressDummyMgr) SetObservedNextPoolAddrPubKey(ppks common.PoolPub
 }
 
 // BeginBlock should be called when BeginBlock
-func (pm *PoolAddressDummyMgr) BeginBlock(ctx sdk.Context) error {
+func (pm *PoolAddressDummyMgr) BeginBlock(_ sdk.Context) error {
 	return kaboom
 }
 
 // EndBlock contains some actions THORNode need to take when block commit
-func (pm *PoolAddressDummyMgr) EndBlock(ctx sdk.Context, store *TxOutStore) {}
+func (pm *PoolAddressDummyMgr) EndBlock(_ct sdk.Context, _ *TxOutStore) {}
 
-func (pm *PoolAddressDummyMgr) rotatePoolAddress(ctx sdk.Context, store *TxOutStore) {
+func (pm *PoolAddressDummyMgr) rotatePoolAddress(_ sdk.Context, _ *TxOutStore) {
 }

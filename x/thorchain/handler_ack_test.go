@@ -18,7 +18,7 @@ type testActHelper struct {
 	KVStoreDummy
 }
 
-func (t *testActHelper) SetNodeAccount(ctx sdk.Context, account NodeAccount) error {
+func (t *testActHelper) SetNodeAccount(_ sdk.Context, _ NodeAccount) error {
 	return errors.New("you ask for it")
 }
 
