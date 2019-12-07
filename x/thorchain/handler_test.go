@@ -631,39 +631,6 @@ func (HandlerSuite) TestHandleMsgSetAdminConfig(c *C) {
 	c.Assert(result2.Code, Equals, sdk.CodeUnknownRequest)
 }
 
-func (HandlerSuite) TestHandleMsgAdd(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-	tx := GetRandomTx()
-	msgAdd := NewMsgAdd(tx, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), w.notActiveNodeAccount.NodeAddress)
-	result := handleMsgAdd(w.ctx, w.keeper, msgAdd)
-	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
-
-	msgInvalidAdd := NewMsgAdd(tx, common.Asset{}, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), w.activeNodeAccount.NodeAddress)
-	result1 := handleMsgAdd(w.ctx, w.keeper, msgInvalidAdd)
-	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest)
-
-	msgAdd = NewMsgAdd(tx, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), w.activeNodeAccount.NodeAddress)
-	result2 := handleMsgAdd(w.ctx, w.keeper, msgAdd)
-	c.Assert(result2.Code, Equals, sdk.CodeUnknownRequest)
-
-	pool, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	pool.Asset = common.BNBAsset
-	pool.BalanceRune = sdk.NewUint(10 * common.One)
-	pool.BalanceAsset = sdk.NewUint(20 * common.One)
-	pool.Status = PoolEnabled
-	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
-	result3 := handleMsgAdd(w.ctx, w.keeper, msgAdd)
-	c.Assert(result3.Code, Equals, sdk.CodeOK)
-	pool, err = w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	c.Assert(pool.Status, Equals, PoolEnabled)
-	c.Assert(pool.BalanceAsset.Uint64(), Equals, sdk.NewUint(120*common.One).Uint64())
-	c.Assert(pool.BalanceRune.Uint64(), Equals, sdk.NewUint(110*common.One).Uint64())
-	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
-
-}
-
 func (HandlerSuite) TestRefund(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 
