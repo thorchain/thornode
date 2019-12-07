@@ -25,7 +25,7 @@ var badVersion = fmt.Errorf("bad version")
 var errBadVersion = sdk.NewError(DefaultCodespace, CodeBadVersion, "bad version")
 
 // NewHandler returns a handler for "thorchain" type messages.
-func NewHandler(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutStore, validatorMgr *ValidatorManager) sdk.Handler {
+func NewHandler(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutStore, validatorMgr ValidatorManager) sdk.Handler {
 	// Classic Handler
 	classic := NewClassicHandler(keeper, poolAddrMgr, txOutStore, validatorMgr)
 
@@ -59,7 +59,7 @@ func NewHandler(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutS
 }
 
 // NewClassicHandler returns a handler for "thorchain" type messages.
-func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutStore TxOutStore, validatorManager *ValidatorManager) sdk.Handler {
+func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutStore TxOutStore, validatorManager ValidatorManager) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch m := msg.(type) {
 		case MsgSetStakeData:
@@ -408,7 +408,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, 
 
 // handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
 // MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on chain
-func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrManager PoolAddressManager, validatorMgr *ValidatorManager, txOut TxOutStore, msg MsgNextPoolAddress) sdk.Result {
+func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrManager PoolAddressManager, validatorMgr ValidatorManager, txOut TxOutStore, msg MsgNextPoolAddress) sdk.Result {
 	ctx.Logger().Info("receive request to set next pool pub key", "pool pub key", msg.NextPoolPubKey.String())
 	if err := msg.ValidateBasic(); nil != err {
 		return err.Result()
@@ -449,7 +449,7 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 
 	// if THORNode observed a valid nextpool transaction, that means the nominated validator had join the signing committee to generate a new pub key
 	// with TSS, if they don't join , then the key won't be generated
-	nominatedAccount := validatorMgr.Meta.Nominated
+	nominatedAccount := validatorMgr.Meta().Nominated
 	if !nominatedAccount.IsEmpty() {
 		for _, item := range nominatedAccount {
 			item.SignerActive = true
@@ -1062,7 +1062,7 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 }
 
 // handleMsgYggdrasil
-func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr *ValidatorManager, msg MsgYggdrasil) sdk.Result {
+func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager, msg MsgYggdrasil) sdk.Result {
 	ctx.Logger().Info("receive MsgYggdrasil", "pubkey", msg.PubKey.String(), "add_funds", msg.AddFunds, "coins", msg.Coins)
 
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
@@ -1105,7 +1105,7 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAd
 	}
 
 	// Ragnarok protocol get triggered, if all the Yggdrasil pool returned funds already, THORNode will continue Ragnarok
-	if validatorMgr.Meta.Ragnarok {
+	if validatorMgr.Meta().Ragnarok {
 		hasYggdrasilPool, err := keeper.HasValidYggdrasilPools(ctx)
 		if nil != err {
 			return sdk.ErrInternal(fmt.Errorf("fail to check yggdrasil pools: %w", err).Error()).Result()
@@ -1120,7 +1120,7 @@ func handleMsgYggdrasil(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAd
 	}
 }
 
-func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut TxOutStore, validatorManager *ValidatorManager, msg MsgLeave) sdk.Result {
+func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut TxOutStore, validatorManager ValidatorManager, msg MsgLeave) sdk.Result {
 	ctx.Logger().Info("receive MsgLeave", "sender", msg.Tx.FromAddress.String(), "request tx hash", msg.Tx.ID)
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
@@ -1141,7 +1141,7 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut TxOutStore, validatorM
 
 	if nodeAcc.Status == NodeActive {
 		// THORNode add the node to leave queue
-		validatorManager.Meta.LeaveQueue = append(validatorManager.Meta.LeaveQueue, nodeAcc)
+		validatorManager.Meta().LeaveQueue = append(validatorManager.Meta().LeaveQueue, nodeAcc)
 	} else {
 		// node is not active , they are free to leave , refund them
 		// given the node is not active, they should not have Yggdrasil pool either
@@ -1160,13 +1160,13 @@ func handleMsgLeave(ctx sdk.Context, keeper Keeper, txOut TxOutStore, validatorM
 	}
 }
 
-func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAddrMgr PoolAddressManager, validatorManager *ValidatorManager) sdk.Result {
+func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAddrMgr PoolAddressManager, validatorManager ValidatorManager) sdk.Result {
 	// Ragnarok Protocol
 	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
 	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
 	// 2) upon receiving the yggdrasil fund,  THORNode will refund the validator's bond
 	// 3) once all yggdrasil fund get returned, return all fund to stakes
-	if !validatorManager.Meta.Ragnarok {
+	if !validatorManager.Meta().Ragnarok {
 		// Ragnarok protocol didn't triggered , don't call this one
 		return sdk.Result{
 			Code:      sdk.CodeOK,
