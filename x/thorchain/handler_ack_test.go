@@ -43,7 +43,7 @@ func (HandlerAckTestSuite) TestAckHandler(c *C) {
 	version, err := semver.New("0.1.0")
 	c.Assert(err, IsNil)
 	result := ackHandler.Run(w.ctx, msg, *version)
-	c.Assert(result.Code, Equals, sdk.CodeOK)
+	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%+v", result))
 
 	// invalid version
 	version1 := semver.Version{}
