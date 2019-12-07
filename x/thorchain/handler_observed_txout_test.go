@@ -177,6 +177,14 @@ func (k *TestObservedTxOutHandleKeeper) AddObservingAddresses(_ sdk.Context, add
 	return nil
 }
 
+func (k *TestObservedTxOutHandleKeeper) GetLastEventID(_ sdk.Context) (int64, error) {
+	return 0, nil
+}
+
+func (k *TestObservedTxOutHandleKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
+	return nil, nil
+}
+
 func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)
@@ -220,6 +228,5 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	err = handler.handle(ctx, msg, ver)
 	c.Assert(err, IsNil)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 0)
-	fmt.Printf("%+v\n", txOutStore.GetOutboundItems()[0])
 	c.Check(keeper.observing, HasLen, 1)
 }
