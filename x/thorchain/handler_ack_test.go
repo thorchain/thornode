@@ -38,7 +38,7 @@ func (HandlerAckTestSuite) TestAckHandler(c *C) {
 	w.poolAddrMgr.SetObservedNextPoolAddrPubKey(nextPoolAddrPubKey)
 	sender, err := nextPoolAddrPubKey.GetByChain(common.BNBChain).GetAddress()
 	c.Assert(err, IsNil)
-	msg := NewMsgAck(GetRandomTx(), sender, common.BNBChain, w.activeNodeAccount.NodeAddress)
+	msg := NewMsgAck(GetRandomObservedTx(), sender, common.BNBChain, w.activeNodeAccount.NodeAddress)
 	ackHandler := NewAckHandler(w.keeper, w.poolAddrMgr, w.validatorMgr)
 	version, err := semver.New("0.1.0")
 	c.Assert(err, IsNil)
@@ -64,31 +64,31 @@ func (HandlerAckTestSuite) TestAckValidateError(c *C) {
 	}{
 		{
 			name:           "empty sender",
-			msgAck:         NewMsgAck(GetRandomTx(), common.NoAddress, common.BNBChain, GetRandomNodeAccount(NodeActive).NodeAddress),
+			msgAck:         NewMsgAck(GetRandomObservedTx(), common.NoAddress, common.BNBChain, GetRandomNodeAccount(NodeActive).NodeAddress),
 			preTest:        nil,
 			expectedResult: sdk.CodeUnknownRequest,
 		},
 		{
 			name:           "invalid tx",
-			msgAck:         NewMsgAck(common.Tx{}, GetRandomBNBAddress(), common.BNBChain, GetRandomNodeAccount(NodeActive).NodeAddress),
+			msgAck:         NewMsgAck(ObservedTx{}, GetRandomBNBAddress(), common.BNBChain, GetRandomNodeAccount(NodeActive).NodeAddress),
 			preTest:        nil,
 			expectedResult: sdk.CodeUnknownRequest,
 		},
 		{
 			name:           "empty chain",
-			msgAck:         NewMsgAck(GetRandomTx(), GetRandomBNBAddress(), common.EmptyChain, GetRandomNodeAccount(NodeActive).NodeAddress),
+			msgAck:         NewMsgAck(GetRandomObservedTx(), GetRandomBNBAddress(), common.EmptyChain, GetRandomNodeAccount(NodeActive).NodeAddress),
 			preTest:        nil,
 			expectedResult: sdk.CodeUnknownRequest,
 		},
 		{
 			name:           "none BNB chain",
-			msgAck:         NewMsgAck(GetRandomTx(), GetRandomBNBAddress(), common.BTCChain, GetRandomNodeAccount(NodeActive).NodeAddress),
+			msgAck:         NewMsgAck(GetRandomObservedTx(), GetRandomBNBAddress(), common.BTCChain, GetRandomNodeAccount(NodeActive).NodeAddress),
 			preTest:        nil,
 			expectedResult: sdk.CodeUnknownRequest,
 		},
 		{
 			name:   "pool rotation window not open",
-			msgAck: NewMsgAck(GetRandomTx(), GetRandomBNBAddress(), common.BNBChain, GetRandomNodeAccount(NodeActive).NodeAddress),
+			msgAck: NewMsgAck(GetRandomObservedTx(), GetRandomBNBAddress(), common.BNBChain, GetRandomNodeAccount(NodeActive).NodeAddress),
 			preTest: func(w handlerTestWrapper) {
 
 			},
@@ -96,7 +96,7 @@ func (HandlerAckTestSuite) TestAckValidateError(c *C) {
 		},
 		{
 			name:   "did not observe next pool address pub key yet",
-			msgAck: NewMsgAck(GetRandomTx(), sender, common.BNBChain, GetRandomNodeAccount(NodeActive).NodeAddress),
+			msgAck: NewMsgAck(GetRandomObservedTx(), sender, common.BNBChain, GetRandomNodeAccount(NodeActive).NodeAddress),
 			preTest: func(w handlerTestWrapper) {
 				w.poolAddrMgr.SetRotateWindowOpen(true)
 			},
@@ -120,13 +120,13 @@ func (HandlerAckTestSuite) TestHandlerDirectly(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	ackHandler := NewAckHandler(w.keeper, w.poolAddrMgr, w.validatorMgr)
 	// if THORChain don't have pool for the given chain , it should fail
-	msg := NewMsgAck(GetRandomTx(), GetRandomBNBAddress(), common.BTCChain, w.activeNodeAccount.NodeAddress)
+	msg := NewMsgAck(GetRandomObservedTx(), GetRandomBNBAddress(), common.BTCChain, w.activeNodeAccount.NodeAddress)
 	c.Assert(ackHandler.handle(w.ctx, msg).Code(), Equals, sdk.CodeUnknownRequest)
 
 	// sender doesn't match the observed pub key
 	w.poolAddrMgr.SetRotateWindowOpen(true)
 	w.poolAddrMgr.SetObservedNextPoolAddrPubKey(GetRandomPoolPubKeys())
-	msg = NewMsgAck(GetRandomTx(), GetRandomBNBAddress(), common.BTCChain, w.activeNodeAccount.NodeAddress)
+	msg = NewMsgAck(GetRandomObservedTx(), GetRandomBNBAddress(), common.BTCChain, w.activeNodeAccount.NodeAddress)
 	c.Assert(ackHandler.handle(w.ctx, msg).Code(), Equals, sdk.CodeUnknownRequest)
 
 	// if THORChain fail to set node account , then it should fail
@@ -136,7 +136,7 @@ func (HandlerAckTestSuite) TestHandlerDirectly(c *C) {
 	sender, err := poolPubKey.GetByChain(common.BNBChain).GetAddress()
 	c.Assert(err, IsNil)
 
-	msg = NewMsgAck(GetRandomTx(), sender, common.BNBChain, w.activeNodeAccount.NodeAddress)
+	msg = NewMsgAck(GetRandomObservedTx(), sender, common.BNBChain, w.activeNodeAccount.NodeAddress)
 	ackHandler = NewAckHandler(&testActHelper{}, w.poolAddrMgr, w.validatorMgr)
 	c.Assert(ackHandler.handle(w.ctx, msg).Code(), Equals, sdk.CodeInternal)
 }
