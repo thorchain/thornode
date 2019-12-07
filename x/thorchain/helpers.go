@@ -146,8 +146,8 @@ func wrapError(ctx sdk.Context, err error, wrap string) error {
 	return err
 }
 
-func AddGasFees(ctx sdk.Context, keeper Keeper, tx common.Tx) error {
-	if len(tx.Gas) == 0 {
+func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
+	if len(tx.Tx.Gas) == 0 {
 		return nil
 	}
 
@@ -155,24 +155,18 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx common.Tx) error {
 	if nil != err {
 		return fmt.Errorf("fail to get vault: %w", err)
 	}
-	vault.Gas = vault.Gas.Add(tx.Gas)
+	vault.Gas = vault.Gas.Add(tx.Tx.Gas)
 	if err := keeper.SetVaultData(ctx, vault); err != nil {
 		return err
 	}
 
-	// deduct gas from Yggdrasil vault (if applicable)
-	pk, err := keeper.FindPubKeyOfAddress(ctx, tx.FromAddress, tx.Gas[0].Asset.Chain)
-	if err != nil {
-		return err
-	}
-
-	if keeper.YggdrasilExists(ctx, pk) {
-		ygg, err := keeper.GetYggdrasil(ctx, pk)
+	if keeper.YggdrasilExists(ctx, tx.ObservedPubKey) {
+		ygg, err := keeper.GetYggdrasil(ctx, tx.ObservedPubKey)
 		if err != nil {
 			return err
 		}
 
-		ygg.SubFunds(tx.Gas.ToCoins())
+		ygg.SubFunds(tx.Tx.Gas.ToCoins())
 
 		return keeper.SetYggdrasil(ctx, ygg)
 	}

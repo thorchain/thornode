@@ -74,6 +74,7 @@ var (
 	NewMsgLeave                    = types.NewMsgLeave
 	GetPoolStatus                  = types.GetPoolStatus
 	GetRandomTx                    = types.GetRandomTx
+	GetRandomObservedTx            = types.GetRandomObservedTx
 	GetRandomNodeAccount           = types.GetRandomNodeAccount
 	GetRandomBNBAddress            = types.GetRandomBNBAddress
 	GetRandomTxHash                = types.GetRandomTxHash
