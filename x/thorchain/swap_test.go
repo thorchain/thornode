@@ -387,7 +387,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	w.keeper.SetPool(w.ctx, poolTCAN)
 
 	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
-	currentChainPoolAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	currentChainPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPoolAddr, NotNil)
 	txIn := NewObservedTx(
 		common.NewTx(GetRandomTxHash(), signerBNBAddr, GetRandomBNBAddress(),

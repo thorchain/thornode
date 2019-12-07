@@ -27,15 +27,15 @@ func (HandlerAckTestSuite) TestAckHandler(c *C) {
 
 	// happy path
 	// first of all , pool rotation window need to open
-	blockHeight := w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt
-	ctx := w.ctx.WithBlockHeight(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt)
+	blockHeight := w.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt
+	ctx := w.ctx.WithBlockHeight(w.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt)
 	c.Assert(w.poolAddrMgr.BeginBlock(ctx), IsNil)
 	w.txOutStore.NewBlock(uint64(blockHeight))
 	w.poolAddrMgr.EndBlock(ctx, w.txOutStore)
 
 	// we need to observe next pool address
 	nextPoolAddrPubKey := GetRandomPoolPubKeys()
-	w.poolAddrMgr.ObservedNextPoolAddrPubKey = nextPoolAddrPubKey
+	w.poolAddrMgr.SetObservedNextPoolAddrPubKey(nextPoolAddrPubKey)
 	sender, err := nextPoolAddrPubKey.GetByChain(common.BNBChain).GetAddress()
 	c.Assert(err, IsNil)
 	msg := NewMsgAck(GetRandomTx(), sender, common.BNBChain, w.activeNodeAccount.NodeAddress)
@@ -98,7 +98,7 @@ func (HandlerAckTestSuite) TestAckValidateError(c *C) {
 			name:   "did not observe next pool address pub key yet",
 			msgAck: NewMsgAck(GetRandomTx(), sender, common.BNBChain, GetRandomNodeAccount(NodeActive).NodeAddress),
 			preTest: func(w handlerTestWrapper) {
-				w.poolAddrMgr.IsRotateWindowOpen = true
+				w.poolAddrMgr.SetRotateWindowOpen(true)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -124,15 +124,15 @@ func (HandlerAckTestSuite) TestHandlerDirectly(c *C) {
 	c.Assert(ackHandler.handle(w.ctx, msg).Code(), Equals, sdk.CodeUnknownRequest)
 
 	// sender doesn't match the observed pub key
-	w.poolAddrMgr.IsRotateWindowOpen = true
-	w.poolAddrMgr.ObservedNextPoolAddrPubKey = GetRandomPoolPubKeys()
+	w.poolAddrMgr.SetRotateWindowOpen(true)
+	w.poolAddrMgr.SetObservedNextPoolAddrPubKey(GetRandomPoolPubKeys())
 	msg = NewMsgAck(GetRandomTx(), GetRandomBNBAddress(), common.BTCChain, w.activeNodeAccount.NodeAddress)
 	c.Assert(ackHandler.handle(w.ctx, msg).Code(), Equals, sdk.CodeUnknownRequest)
 
 	// if THORChain fail to set node account , then it should fail
-	w.poolAddrMgr.IsRotateWindowOpen = true
+	w.poolAddrMgr.SetRotateWindowOpen(true)
 	poolPubKey := GetRandomPoolPubKeys()
-	w.poolAddrMgr.ObservedNextPoolAddrPubKey = poolPubKey
+	w.poolAddrMgr.SetObservedNextPoolAddrPubKey(poolPubKey)
 	sender, err := poolPubKey.GetByChain(common.BNBChain).GetAddress()
 	c.Assert(err, IsNil)
 
