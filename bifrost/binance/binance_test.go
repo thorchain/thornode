@@ -70,19 +70,19 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
-	return
+
 	b3, err3 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    "localhost",
+		RPCHost:    server.URL,
 		PrivateKey: "asdfsdfdsf",
 	}, false, tssCfg)
 	c.Assert(b3, IsNil)
 	c.Assert(err3, NotNil)
 	b4, err4 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    "localhost",
+		RPCHost:    server.URL,
 		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
 	}, false, tssCfg)
-	c.Assert(b4, IsNil)
-	c.Assert(err4, NotNil)
+	c.Assert(b4, NotNil)
+	c.Assert(err4, IsNil)
 }
 
 const accountInfo string = `{
@@ -132,7 +132,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	c.Assert(p1, NotNil)
 	c.Assert(r1, NotNil)
 
-	err = b2.BroadcastTx(r1, p1)
+	err = b2.BroadcastTx(r1)
 	c.Assert(err, IsNil)
 }
 
