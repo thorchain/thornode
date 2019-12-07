@@ -503,61 +503,6 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 
 }
 
-func (HandlerSuite) TestHandleMsgLeave(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-
-	ygg := NewYggdrasil(w.activeNodeAccount.NodePubKey.Secp256k1)
-	ygg.AddFunds(
-		common.Coins{
-			common.NewCoin(common.BNBAsset, sdk.NewUint(500*common.One)),
-			common.NewCoin(common.BTCAsset, sdk.NewUint(400*common.One)),
-		},
-	)
-	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
-
-	txID := GetRandomTxHash()
-	senderBNB := GetRandomBNBAddress()
-	tx := common.NewTx(
-		txID,
-		senderBNB,
-		GetRandomBNBAddress(),
-		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
-		"",
-	)
-	msgLeave := NewMsgLeave(tx, w.notActiveNodeAccount.NodeAddress)
-	c.Assert(msgLeave.ValidateBasic(), IsNil)
-	result := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.validatorMgr, msgLeave)
-	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
-
-	msgLeaveInvalidSender := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
-	// try to leave, invalid sender
-	result1 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.validatorMgr, msgLeaveInvalidSender)
-	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest)
-
-	// active node can leave , and will be queued
-	tx.ID = GetRandomTxHash()
-	tx.FromAddress = w.activeNodeAccount.BondAddress
-	msgLeaveActiveNode := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
-	resultActiveNode := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.validatorMgr, msgLeaveActiveNode)
-	c.Assert(resultActiveNode.Code, Equals, sdk.CodeOK)
-
-	acc2 := GetRandomNodeAccount(NodeStandby)
-	acc2.Bond = sdk.NewUint(100 * common.One)
-	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc2), IsNil)
-
-	tx.ID = ""
-	tx.FromAddress = acc2.BondAddress
-	invalidMsg := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
-	result3 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.validatorMgr, invalidMsg)
-	c.Assert(result3.Code, Equals, sdk.CodeUnknownRequest)
-
-	tx.ID = GetRandomTxHash()
-	msgLeave1 := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
-	result2 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.validatorMgr, msgLeave1)
-	c.Assert(result2.Code, Equals, sdk.CodeOK)
-}
-
 func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	currentChainPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)

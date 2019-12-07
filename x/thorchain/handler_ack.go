@@ -24,7 +24,11 @@ func NewAckHandler(keeper Keeper, poolAddrMgr PoolAddressManager, validatorMgr V
 }
 
 // Run it the main entry point to execute Ack logic
-func (ah AckHandler) Run(ctx sdk.Context, msg MsgAck, version semver.Version) sdk.Result {
+func (ah AckHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+	msg, ok := m.(MsgAck)
+	if !ok {
+		return errInvalidMessage.Result()
+	}
 	ctx.Logger().Info("receive ack to next pool pub key",
 		"sender address", msg.Sender.String())
 	if err := ah.validate(ctx, msg, version); err != nil {

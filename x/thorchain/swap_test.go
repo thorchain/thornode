@@ -361,7 +361,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	pool.Asset = common.BNBAsset
 	pool.BalanceAsset = sdk.NewUint(100 * common.One)
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
-	w.keeper.SetPool(w.ctx, pool)
+	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
 
 	res = handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg)
 	c.Assert(res.IsOK(), Equals, true)
@@ -384,7 +384,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	poolTCAN.Asset = tCanAsset
 	poolTCAN.BalanceAsset = sdk.NewUint(334850000)
 	poolTCAN.BalanceRune = sdk.NewUint(2349500000)
-	w.keeper.SetPool(w.ctx, poolTCAN)
+	c.Assert(w.keeper.SetPool(w.ctx, poolTCAN), IsNil)
 
 	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
 	currentChainPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)

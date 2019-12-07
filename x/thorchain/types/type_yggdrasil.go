@@ -5,6 +5,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -35,12 +36,15 @@ func (ygg Yggdrasil) IsValid() error {
 	return nil
 }
 
+// HasFunds check whether the yggdrasil pool has fund
 func (ygg Yggdrasil) HasFunds() bool {
-	amt := sdk.ZeroUint()
 	for _, coin := range ygg.Coins {
-		amt = amt.Add(coin.Amount)
+		if coin.Amount.GT(sdk.ZeroUint()) {
+			return true
+		}
+
 	}
-	return !amt.IsZero()
+	return false
 }
 
 // Check if this yggdrasil has a particular asset

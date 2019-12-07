@@ -21,7 +21,11 @@ func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr P
 	}
 }
 
-func (h ObservedTxOutHandler) Run(ctx sdk.Context, msg MsgObservedTxOut, version semver.Version) sdk.Result {
+func (h ObservedTxOutHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+	msg, ok := m.(MsgObservedTxOut)
+	if !ok {
+		return errInvalidMessage.Result()
+	}
 	if err := h.Validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
