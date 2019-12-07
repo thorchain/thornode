@@ -8,15 +8,14 @@ import (
 
 // TxOutStoreDummy is going to manage all the outgoing tx
 type TxOutStoreDummy struct {
-	txOutSetter TxOutSetter
-	blockOut    *TxOut
+	blockOut *TxOut
 }
 
 // NewTxOutStoreDummy will create a new instance of TxOutStore.
-func NewTxStoreDummy(txOutSetter TxOutSetter) *TxOutStoreDummy {
-	return &TxOutStoreDummy{
-		txOutSetter: txOutSetter,
-	}
+func NewTxStoreDummy() *TxOutStoreDummy {
+	out := &TxOutStoreDummy{}
+	out.NewBlock(12)
+	return out
 }
 
 // NewBlock create a new block

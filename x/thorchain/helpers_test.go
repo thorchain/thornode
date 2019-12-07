@@ -11,6 +11,56 @@ type HelperSuite struct{}
 
 var _ = Suite(&HelperSuite{})
 
+type TestRefundBondKeeper struct {
+	KVStoreDummy
+	ygg  Yggdrasil
+	pool Pool
+	na   NodeAccount
+}
+
+func (k *TestRefundBondKeeper) GetYggdrasil(_ sdk.Context, _ common.PubKey) (Yggdrasil, error) {
+	return k.ygg, nil
+}
+
+func (k *TestRefundBondKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
+	return k.pool, nil
+}
+
+func (k *TestRefundBondKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) error {
+	k.na = na
+	return nil
+}
+
+func (s *HelperSuite) TestRefundBond(c *C) {
+	ctx, _ := setupKeeperForTest(c)
+	txID := GetRandomTxHash()
+	na := GetRandomNodeAccount(NodeActive)
+	na.Bond = sdk.NewUint(12098 * common.One)
+	txOut := NewTxStoreDummy()
+
+	pk := GetRandomPubKey()
+	keeper := &TestRefundBondKeeper{
+		pool: Pool{
+			Asset:        common.BNBAsset,
+			BalanceRune:  sdk.NewUint(23789 * common.One),
+			BalanceAsset: sdk.NewUint(167 * common.One),
+		},
+		ygg: Yggdrasil{
+			PubKey: pk,
+			Coins: common.Coins{
+				common.NewCoin(common.RuneAsset(), sdk.NewUint(3946*common.One)),
+				common.NewCoin(common.BNBAsset, sdk.NewUint(27*common.One)),
+			},
+		},
+	}
+
+	err := refundBond(ctx, txID, na, keeper, txOut)
+	c.Assert(err, IsNil)
+	c.Assert(txOut.GetOutboundItems(), HasLen, 1)
+	outCoin := txOut.GetOutboundItems()[0].Coin
+	c.Check(outCoin.Amount.Equal(sdk.NewUint(430587425150)), Equals, true)
+}
+
 func (s *HelperSuite) TestEnableNextPool(c *C) {
 	var err error
 	ctx, k := setupKeeperForTest(c)
