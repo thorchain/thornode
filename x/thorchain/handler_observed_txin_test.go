@@ -38,22 +38,22 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	txs[0].Tx.ToAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, GetRandomBech32Addr())
-	err = handler.Validate(ctx, msg, ver)
+	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, IsNil)
 
 	// invalid version
-	err = handler.Validate(ctx, msg, semver.Version{})
+	err = handler.validate(ctx, msg, semver.Version{})
 	c.Assert(err, Equals, badVersion)
 
 	// inactive node account
 	keeper.isActive = false
 	msg = NewMsgObservedTxIn(txs, GetRandomBech32Addr())
-	err = handler.Validate(ctx, msg, ver)
+	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
 
 	// invalid msg
 	msg = MsgObservedTxIn{}
-	err = handler.Validate(ctx, msg, ver)
+	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, NotNil)
 }
 
@@ -88,7 +88,7 @@ func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	handler := NewObservedTxInHandler(keeper, txOutStore, w.poolAddrMgr, w.validatorMgr)
 	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(12), GetRandomPubKey())
 
-	err := handler.InboundFailure(ctx, tx)
+	err := handler.inboundFailure(ctx, tx)
 	c.Assert(err, IsNil)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
 	c.Check(keeper.evt.Empty(), Equals, false, Commentf("%+v", keeper.evt))
@@ -111,6 +111,10 @@ func (k *TestObservedTxInHandleKeeper) ListActiveNodeAccounts(_ sdk.Context) (No
 
 func (k *TestObservedTxInHandleKeeper) GetObservedTxVoter(_ sdk.Context, _ common.TxID) (ObservedTxVoter, error) {
 	return k.voter, nil
+}
+
+func (k *TestObservedTxInHandleKeeper) SetObservedTxVoter(_ sdk.Context, voter ObservedTxVoter) {
+	k.voter = voter
 }
 
 func (k *TestObservedTxInHandleKeeper) YggdrasilExists(_ sdk.Context, _ common.PubKey) bool {
@@ -172,7 +176,7 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
-	err = handler.Handle(ctx, msg, ver)
+	err = handler.handle(ctx, msg, ver)
 	c.Assert(err, IsNil)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
 	c.Check(keeper.observing, HasLen, 1)
