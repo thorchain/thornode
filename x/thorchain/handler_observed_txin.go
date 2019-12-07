@@ -2,7 +2,6 @@ package thorchain
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -32,7 +31,7 @@ func (h ObservedTxInHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Vers
 	if err := h.Validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	if err := h.Handle(ctx, msg, version); err != nil {
+	if err := h.handle(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	return sdk.Result{
@@ -41,16 +40,16 @@ func (h ObservedTxInHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Vers
 	}
 }
 
-func (h ObservedTxInHandler) Validate(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) error {
+func (h ObservedTxInHandler) validate(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) error {
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.ValidateV1(ctx, msg)
+		return h.validateV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
 		return badVersion
 	}
 }
 
-func (h ObservedTxInHandler) ValidateV1(ctx sdk.Context, msg MsgObservedTxIn) error {
+func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) error {
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
 		return err
@@ -65,17 +64,17 @@ func (h ObservedTxInHandler) ValidateV1(ctx sdk.Context, msg MsgObservedTxIn) er
 
 }
 
-func (h ObservedTxInHandler) Handle(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) error {
+func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) error {
 	ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", msg.Txs[0].String())
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.HandleV1(ctx, msg)
+		return h.handleV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
 		return badVersion
 	}
 }
 
-func (h ObservedTxInHandler) InboundFailure(ctx sdk.Context, tx ObservedTx) error {
+func (h ObservedTxInHandler) inboundFailure(ctx sdk.Context, tx ObservedTx) error {
 	err := refundTx(ctx, tx, h.txOutStore, h.keeper, true)
 	if err != nil {
 		return err
@@ -96,8 +95,22 @@ func (h ObservedTxInHandler) InboundFailure(ctx sdk.Context, tx ObservedTx) erro
 	return h.keeper.AddIncompleteEvents(ctx, event)
 }
 
+func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
+	voter.Add(tx, signer)
+
+	ok := false
+	if voter.HasConensus(nas) && voter.Height == 0 {
+		ok = true
+		voter.Height = ctx.BlockHeight()
+	}
+	h.keeper.SetObservedTxVoter(ctx, voter)
+
+	// Check to see if we have enough identical observations to process the transaction
+	return voter, ok
+}
+
 // Handle a message to observe inbound tx
-func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) error {
+func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) error {
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		return wrapError(ctx, err, "fail to get list of active node accounts")
@@ -106,23 +119,17 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 	handler := NewHandler(h.keeper, h.poolAddrMgr, h.txOutStore, h.validatorMgr)
 
 	for _, tx := range msg.Txs {
+
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
 		if err != nil {
 			return err
 		}
-		preConsensus := voter.HasConensus(activeNodeAccounts)
-		voter.Add(tx, msg.Signer)
-		postConsensus := voter.HasConensus(activeNodeAccounts)
-		h.keeper.SetObservedTxVoter(ctx, voter)
 
-		// Check to see if we have enough identical observations to process the transaction
-		if preConsensus == false && postConsensus == true && voter.Height == 0 {
-			voter.Height = ctx.BlockHeight()
-			h.keeper.SetObservedTxVoter(ctx, voter)
-			txIn := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
+		if voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer); ok {
+			txIn := voter.GetTx(activeNodeAccounts)
 
-			if ok := isCurrentVaultPubKey(ctx, h.keeper, h.poolAddrMgr, txIn); !ok {
-				if err := refundTx(ctx, txIn, h.txOutStore, h.keeper, false); err != nil {
+			if ok := isCurrentVaultPubKey(ctx, h.keeper, h.poolAddrMgr, tx); !ok {
+				if err := refundTx(ctx, tx, h.txOutStore, h.keeper, false); err != nil {
 					return err
 				}
 				continue
@@ -130,16 +137,16 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 
 			m, err := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
 			if nil != err || tx.Tx.Chain.IsEmpty() {
-				ctx.Logger().Error("fail to process txIn", "error", err, "txhash", tx.Tx.ID.String())
-				// Detect if the txIn is to the thorchain network or from the
+				ctx.Logger().Error("fail to process inbound tx", "error", err, "txhash", tx.Tx.ID.String())
+				// Detect if the tx is to the thorchain network or from the
 				// thorchain network
-				if err := h.InboundFailure(ctx, txIn); err != nil {
+				if err := h.inboundFailure(ctx, tx); err != nil {
 					return err
 				}
 				continue
 			}
 
-			if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, txIn.BlockHeight); nil != err {
+			if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, tx.BlockHeight); nil != err {
 				return err
 			}
 
@@ -154,20 +161,17 @@ func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 			// add addresses to observing addresses. This is used to detect
 			// active/inactive observing node accounts
 			if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
-				fmt.Printf("ERR5: %s\n", err)
 				return err
 			}
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
-				if err := refundTx(ctx, txIn, h.txOutStore, h.keeper, true); err != nil {
-					fmt.Printf("ERR6: %s\n", err)
+				if err := refundTx(ctx, tx, h.txOutStore, h.keeper, true); err != nil {
 					return err
 				}
 			}
 		}
 	}
 
-	fmt.Println("DONE.")
 	return nil
 }

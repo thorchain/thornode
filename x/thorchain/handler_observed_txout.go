@@ -33,7 +33,7 @@ func (h ObservedTxOutHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Ver
 	if err := h.Validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	if err := h.Handle(ctx, msg, version); err != nil {
+	if err := h.handle(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	return sdk.Result{
@@ -42,16 +42,16 @@ func (h ObservedTxOutHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Ver
 	}
 }
 
-func (h ObservedTxOutHandler) Validate(ctx sdk.Context, msg MsgObservedTxOut, version semver.Version) error {
+func (h ObservedTxOutHandler) validate(ctx sdk.Context, msg MsgObservedTxOut, version semver.Version) error {
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.ValidateV1(ctx, msg)
+		return h.validateV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
 		return badVersion
 	}
 }
 
-func (h ObservedTxOutHandler) ValidateV1(ctx sdk.Context, msg MsgObservedTxOut) error {
+func (h ObservedTxOutHandler) validateV1(ctx sdk.Context, msg MsgObservedTxOut) error {
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
 		return err
@@ -66,17 +66,17 @@ func (h ObservedTxOutHandler) ValidateV1(ctx sdk.Context, msg MsgObservedTxOut) 
 
 }
 
-func (h ObservedTxOutHandler) Handle(ctx sdk.Context, msg MsgObservedTxOut, version semver.Version) error {
+func (h ObservedTxOutHandler) handle(ctx sdk.Context, msg MsgObservedTxOut, version semver.Version) error {
 	ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", msg.Txs[0].String())
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.HandleV1(ctx, msg)
+		return h.handleV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
 		return badVersion
 	}
 }
 
-func (h ObservedTxOutHandler) OutboundFailure(ctx sdk.Context, tx ObservedTx, activeNodeAccounts NodeAccounts) error {
+func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, activeNodeAccounts NodeAccounts) error {
 	if h.keeper.YggdrasilExists(ctx, tx.ObservedPubKey) {
 		ygg, err := h.keeper.GetYggdrasil(ctx, tx.ObservedPubKey)
 		if nil != err {
@@ -151,11 +151,26 @@ func (h ObservedTxOutHandler) OutboundFailure(ctx sdk.Context, tx ObservedTx, ac
 		}
 	}
 
+	fmt.Println("DONE.")
 	return nil
 }
 
+func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
+	voter.Add(tx, signer)
+
+	ok := false
+	if voter.HasConensus(nas) && voter.Height == 0 {
+		ok = true
+		voter.Height = ctx.BlockHeight()
+	}
+	h.keeper.SetObservedTxVoter(ctx, voter)
+
+	// Check to see if we have enough identical observations to process the transaction
+	return voter, ok
+}
+
 // Handle a message to observe inbound tx
-func (h ObservedTxOutHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxOut) error {
+func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) error {
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		return wrapError(ctx, err, "fail to get list of active node accounts")
@@ -166,21 +181,15 @@ func (h ObservedTxOutHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxOut) er
 	for _, tx := range msg.Txs {
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
 		if err != nil {
+			fmt.Printf("Err1 %s\n", err)
 			return err
 		}
-		preConsensus := voter.HasConensus(activeNodeAccounts)
-		voter.Add(tx, msg.Signer)
-		postConsensus := voter.HasConensus(activeNodeAccounts)
-		h.keeper.SetObservedTxVoter(ctx, voter)
 
-		// Check to see if we have enough identical observations to process the transaction
-		if preConsensus == false && postConsensus == true && voter.Height == 0 {
-			voter.Height = ctx.BlockHeight()
-			h.keeper.SetObservedTxVoter(ctx, voter)
+		if voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer); ok {
 			txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
-
 			if ok := isCurrentVaultPubKey(ctx, h.keeper, h.poolAddrMgr, txOut); !ok {
 				if err := refundTx(ctx, txOut, h.txOutStore, h.keeper, false); err != nil {
+					fmt.Printf("Err2 %s\n", err)
 					return err
 				}
 				continue
@@ -191,7 +200,8 @@ func (h ObservedTxOutHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxOut) er
 				ctx.Logger().Error("fail to process txOut", "error", err, "txhash", tx.Tx.ID.String())
 				// Detect if the txOut is to the thorchain network or from the
 				// thorchain network
-				if err := h.OutboundFailure(ctx, txOut, activeNodeAccounts); err != nil {
+				if err := h.outboundFailure(ctx, txOut, activeNodeAccounts); err != nil {
+					fmt.Printf("Err3 %s\n", err)
 					return err
 				}
 				continue
@@ -200,17 +210,20 @@ func (h ObservedTxOutHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxOut) er
 			// add addresses to observing addresses. This is used to detect
 			// active/inactive observing node accounts
 			if err := h.keeper.AddObservingAddresses(ctx, txOut.Signers); err != nil {
+				fmt.Printf("Err4 %s\n", err)
 				return err
 			}
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
 				if err := refundTx(ctx, txOut, h.txOutStore, h.keeper, true); err != nil {
+					fmt.Printf("Err5 %s\n", err)
 					return err
 				}
 			}
 		}
 	}
 
+	fmt.Printf("DONEEE>")
 	return nil
 }
