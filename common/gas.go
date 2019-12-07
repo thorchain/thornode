@@ -89,3 +89,11 @@ func (gas1 Gas) Equals(gas2 Gas) bool {
 
 	return true
 }
+
+func (gas Gas) ToCoins() Coins {
+	coins := make(Coins, len(gas))
+	for i := range gas {
+		coins[i] = NewCoin(gas[i].Asset, gas[i].Amount)
+	}
+	return coins
+}

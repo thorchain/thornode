@@ -107,7 +107,7 @@ func (ah AckHandler) handle(ctx sdk.Context, msg MsgAck) sdk.Error {
 		}
 	}
 
-	if err := AddGasFees(ctx, ah.keeper, msg.Tx.Gas); nil != err {
+	if err := AddGasFees(ctx, ah.keeper, msg.Tx); nil != err {
 		return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error())
 	}
 

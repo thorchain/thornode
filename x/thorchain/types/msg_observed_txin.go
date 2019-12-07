@@ -46,6 +46,9 @@ func (msg MsgObservedTxIn) ValidateBasic() sdk.Error {
 			// break them apart).
 			// return sdk.ErrUnknownRequest("Request is not an inbound observed transaction")
 		}
+		if len(tx.Signers) > 0 {
+			return sdk.ErrUnknownRequest("signers must be empty")
+		}
 	}
 
 	return nil

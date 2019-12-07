@@ -31,6 +31,10 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	return na
 }
 
+func GetRandomObservedTx() ObservedTx {
+	return NewObservedTx(GetRandomTx(), sdk.NewUint(33), GetRandomPubKey())
+}
+
 // GetRandomTx
 func GetRandomTx() common.Tx {
 	return common.NewTx(
