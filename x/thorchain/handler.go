@@ -52,6 +52,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, poolAddrMgr, txOutStore)
 	m[MsgAck{}.Type()] = NewAckHandler(keeper, poolAddrMgr, validatorMgr)
+	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
 	return m
 }
 
@@ -63,8 +64,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 			return handleMsgSetStakeData(ctx, keeper, m)
 		case MsgSwap:
 			return handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m)
-		case MsgAdd:
-			return handleMsgAdd(ctx, keeper, m)
 		case MsgSetUnStake:
 			return handleMsgSetUnstake(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetAdminConfig:
@@ -695,64 +694,6 @@ func getMsgBondFromMemo(memo BondMemo, tx ObservedTx, signer sdk.AccAddress) (sd
 		return nil, errors.New("RUNE amount is 0")
 	}
 	return NewMsgBond(memo.GetNodeAddress(), runeAmount, tx.Tx.ID, tx.Tx.FromAddress, signer), nil
-}
-
-// handleMsgAdd
-func handleMsgAdd(ctx sdk.Context, keeper Keeper, msg MsgAdd) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgAdd %s", msg.Tx.ID))
-	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account")
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgAdd", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	pool, err := keeper.GetPool(ctx, msg.Asset)
-	if err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-	if pool.Asset.IsEmpty() {
-		return sdk.ErrUnknownRequest(fmt.Sprintf("pool %s not exist", msg.Asset.String())).Result()
-	}
-	if msg.AssetAmount.GT(sdk.ZeroUint()) {
-		pool.BalanceAsset = pool.BalanceAsset.Add(msg.AssetAmount)
-	}
-	if msg.RuneAmount.GT(sdk.ZeroUint()) {
-		pool.BalanceRune = pool.BalanceRune.Add(msg.RuneAmount)
-	}
-
-	if err := keeper.SetPool(ctx, pool); err != nil {
-		err = errors.Wrap(err, "fail to set pool")
-		ctx.Logger().Error(err.Error())
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-
-	// emit event
-	addEvt := NewEventAdd(
-		pool.Asset,
-	)
-	stakeBytes, err := json.Marshal(addEvt)
-	if err != nil {
-		ctx.Logger().Error("fail to marshal add event", err)
-		err = errors.Wrap(err, "fail to marshal add event to json")
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	evt := NewEvent(
-		addEvt.Type(),
-		ctx.BlockHeight(),
-		msg.Tx,
-		stakeBytes,
-		EventSuccess,
-	)
-	keeper.SetCompletedEvent(ctx, evt)
-
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
 }
 
 // handleMsgNoOp doesn't do anything, its a no op
