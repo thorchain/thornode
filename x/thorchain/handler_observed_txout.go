@@ -192,6 +192,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) er
 					fmt.Printf("Err2 %s\n", err)
 					return err
 				}
+				fmt.Println("continue 1")
 				continue
 			}
 
@@ -204,6 +205,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) er
 					fmt.Printf("Err3 %s\n", err)
 					return err
 				}
+				fmt.Println("continue 2")
 				continue
 			}
 
@@ -220,6 +222,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) er
 					fmt.Printf("Err5 %s\n", err)
 					return err
 				}
+				fmt.Printf("Non-zero result: %+v\n", result)
 			}
 		}
 	}

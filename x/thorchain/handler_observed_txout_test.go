@@ -80,19 +80,25 @@ func (s *HandlerObservedTxOutSuite) TestFailure(c *C) {
 
 type TestObservedTxOutHandleKeeper struct {
 	KVStoreDummy
-	nas       NodeAccounts
-	na        NodeAccount
-	voter     ObservedTxVoter
-	yggExists bool
-	ygg       Yggdrasil
-	height    sdk.Uint
-	chains    common.Chains
-	pool      Pool
-	observing []sdk.AccAddress
+	nas        NodeAccounts
+	na         NodeAccount
+	voter      ObservedTxVoter
+	yggExists  bool
+	ygg        Yggdrasil
+	height     sdk.Uint
+	chains     common.Chains
+	pool       Pool
+	txOutStore TxOutStore
+	observing  []sdk.AccAddress
 }
 
 func (k *TestObservedTxOutHandleKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
 	return k.nas, nil
+}
+
+func (k *TestObservedTxOutHandleKeeper) IsActiveObserver(_ sdk.Context, _ sdk.AccAddress) bool {
+	fmt.Println("GOT HERE sdkfjl")
+	return true
 }
 
 func (k *TestObservedTxOutHandleKeeper) GetNodeAccountByPubKey(_ sdk.Context, _ common.PubKey) (NodeAccount, error) {
@@ -120,6 +126,19 @@ func (k *TestObservedTxOutHandleKeeper) GetYggdrasil(_ sdk.Context, _ common.Pub
 	return k.ygg, nil
 }
 
+func (k *TestObservedTxOutHandleKeeper) SetYggdrasil(_ sdk.Context, ygg Yggdrasil) error {
+	k.ygg = ygg
+	return nil
+}
+
+func (k *TestObservedTxOutHandleKeeper) GetVaultData(_ sdk.Context) (VaultData, error) {
+	return NewVaultData(), nil
+}
+
+func (k *TestObservedTxOutHandleKeeper) SetVaultData(_ sdk.Context, _ VaultData) error {
+	return nil
+}
+
 func (k *TestObservedTxOutHandleKeeper) GetChains(_ sdk.Context) (common.Chains, error) {
 	return k.chains, nil
 }
@@ -141,6 +160,18 @@ func (k *TestObservedTxOutHandleKeeper) AddIncompleteEvents(_ sdk.Context, evt E
 	return nil
 }
 
+func (k *TestObservedTxOutHandleKeeper) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error) {
+	return k.txOutStore.getBlockOut(), nil
+}
+
+func (k *TestObservedTxOutHandleKeeper) FindPubKeyOfAddress(_ sdk.Context, _ common.Address, _ common.Chain) (common.PubKey, error) {
+	return k.ygg.PubKey, nil
+}
+
+func (k *TestObservedTxOutHandleKeeper) SetTxOut(_ sdk.Context, _ *TxOut) error {
+	return nil
+}
+
 func (k *TestObservedTxOutHandleKeeper) AddObservingAddresses(_ sdk.Context, addrs []sdk.AccAddress) error {
 	k.observing = addrs
 	return nil
@@ -157,8 +188,11 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	obTx := NewObservedTx(tx, sdk.NewUint(12), GetRandomPubKey())
 	txs := ObservedTxs{obTx}
 	pk := GetRandomPubKey()
-	txs[0].Tx.ToAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
+	currentPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(tx.Chain)
+	txs[0].Tx.FromAddress, err = currentPool.GetAddress()
+	c.Assert(err, IsNil)
 
+	txOutStore := NewTxStoreDummy()
 	keeper := &TestObservedTxOutHandleKeeper{
 		nas:   NodeAccounts{GetRandomNodeAccount(NodeActive)},
 		voter: NewObservedTxVoter(tx.ID, make(ObservedTxs, 0)),
@@ -175,9 +209,8 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 				common.NewCoin(common.BNBAsset, sdk.NewUint(200)),
 			},
 		},
+		txOutStore: txOutStore,
 	}
-	txOutStore := NewTxStoreDummy()
-	c.Check(txOutStore.GetOutboundItems(), HasLen, 0)
 
 	handler := NewObservedTxOutHandler(keeper, txOutStore, w.poolAddrMgr, w.validatorMgr)
 
