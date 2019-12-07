@@ -10,12 +10,12 @@ import (
 // AckHandler is to handle Ack message
 type AckHandler struct {
 	keeper       Keeper
-	poolAddrMgr  *PoolAddressManager
-	validatorMgr *ValidatorManager
+	poolAddrMgr  PoolAddressManager
+	validatorMgr ValidatorManager
 }
 
 // NewAckHandler create new instance of AckHandler
-func NewAckHandler(keeper Keeper, poolAddrMgr *PoolAddressManager, validatorMgr *ValidatorManager) AckHandler {
+func NewAckHandler(keeper Keeper, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager) AckHandler {
 	return AckHandler{
 		keeper:       keeper,
 		poolAddrMgr:  poolAddrMgr,
@@ -24,7 +24,11 @@ func NewAckHandler(keeper Keeper, poolAddrMgr *PoolAddressManager, validatorMgr 
 }
 
 // Run it the main entry point to execute Ack logic
-func (ah AckHandler) Run(ctx sdk.Context, msg MsgAck, version semver.Version) sdk.Result {
+func (ah AckHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+	msg, ok := m.(MsgAck)
+	if !ok {
+		return errInvalidMessage.Result()
+	}
 	ctx.Logger().Info("receive ack to next pool pub key",
 		"sender address", msg.Sender.String())
 	if err := ah.validate(ctx, msg, version); err != nil {
@@ -54,10 +58,10 @@ func (ah AckHandler) validateV1(ctx sdk.Context, msg MsgAck) sdk.Error {
 	if err := msg.ValidateBasic(); nil != err {
 		return err
 	}
-	if !ah.poolAddrMgr.IsRotateWindowOpen {
+	if !ah.poolAddrMgr.IsRotateWindowOpen() {
 		return sdk.ErrUnknownRequest("pool rotation window not open")
 	}
-	if ah.poolAddrMgr.ObservedNextPoolAddrPubKey.IsEmpty() {
+	if ah.poolAddrMgr.ObservedNextPoolAddrPubKey().IsEmpty() {
 		return sdk.ErrUnknownRequest("did not observe next pool address pub key")
 	}
 
@@ -65,7 +69,7 @@ func (ah AckHandler) validateV1(ctx sdk.Context, msg MsgAck) sdk.Error {
 
 }
 func (ah AckHandler) handle(ctx sdk.Context, msg MsgAck) sdk.Error {
-	chainPubKey := ah.poolAddrMgr.ObservedNextPoolAddrPubKey.GetByChain(msg.Chain)
+	chainPubKey := ah.poolAddrMgr.ObservedNextPoolAddrPubKey().GetByChain(msg.Chain)
 	if nil == chainPubKey {
 		return sdk.ErrUnknownRequest(fmt.Sprintf("THORNode donnot have pool for chain %s", msg.Chain))
 	}
@@ -76,11 +80,11 @@ func (ah AckHandler) handle(ctx sdk.Context, msg MsgAck) sdk.Error {
 	if !addr.Equals(msg.Sender) {
 		return sdk.ErrUnknownRequest(fmt.Sprintf("observed next pool address and ack address is different,chain(%s)", msg.Chain))
 	}
-	ah.poolAddrMgr.currentPoolAddresses.Next = ah.poolAddrMgr.currentPoolAddresses.Next.TryAddKey(chainPubKey)
-	ah.poolAddrMgr.ObservedNextPoolAddrPubKey = ah.poolAddrMgr.ObservedNextPoolAddrPubKey.TryRemoveKey(chainPubKey)
+	ah.poolAddrMgr.GetCurrentPoolAddresses().Next = ah.poolAddrMgr.GetCurrentPoolAddresses().Next.TryAddKey(chainPubKey)
+	ah.poolAddrMgr.SetObservedNextPoolAddrPubKey(ah.poolAddrMgr.ObservedNextPoolAddrPubKey().TryRemoveKey(chainPubKey))
 
-	nominatedNode := ah.validatorMgr.Meta.Nominated
-	queuedNode := ah.validatorMgr.Meta.Queued
+	nominatedNode := ah.validatorMgr.Meta().Nominated
+	queuedNode := ah.validatorMgr.Meta().Queued
 	for _, item := range nominatedNode {
 		item.TryAddSignerPubKey(chainPubKey.PubKey)
 		if err := ah.keeper.SetNodeAccount(ctx, item); nil != err {
@@ -109,10 +113,10 @@ func (ah AckHandler) handle(ctx sdk.Context, msg MsgAck) sdk.Error {
 
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNexePoolPubKeyConfirmed,
-			sdk.NewAttribute("pubkey", ah.poolAddrMgr.currentPoolAddresses.Next.String()),
+			sdk.NewAttribute("pubkey", ah.poolAddrMgr.GetCurrentPoolAddresses().Next.String()),
 			sdk.NewAttribute("address", msg.Sender.String()),
 			sdk.NewAttribute("chain", msg.Chain.String())))
 	// THORNode have a pool address confirmed by a chain
-	ah.keeper.SetPoolAddresses(ctx, ah.poolAddrMgr.currentPoolAddresses)
+	ah.keeper.SetPoolAddresses(ctx, ah.poolAddrMgr.GetCurrentPoolAddresses())
 	return nil
 }

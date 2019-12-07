@@ -20,33 +20,33 @@ func (ps *PoolAddressManagerSuite) SetUpSuite(c *C) {
 
 func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	c.Assert(w.poolAddrMgr.currentPoolAddresses.IsEmpty(), Equals, false)
+	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().IsEmpty(), Equals, false)
 	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().IsEmpty(), Equals, false)
 
-	rotateWindowOpenHeight := w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt
+	rotateWindowOpenHeight := w.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt
 	w.ctx = w.ctx.WithBlockHeight(rotateWindowOpenHeight)
-	w.poolAddrMgr.BeginBlock(w.ctx)
+	c.Assert(w.poolAddrMgr.BeginBlock(w.ctx), IsNil)
 	w.txOutStore.NewBlock(uint64(rotateWindowOpenHeight))
-	c.Assert(w.poolAddrMgr.IsRotateWindowOpen, Equals, true)
+	c.Assert(w.poolAddrMgr.IsRotateWindowOpen(), Equals, true)
 
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
 	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{pk1}
+	w.poolAddrMgr.GetCurrentPoolAddresses().Next = common.PoolPubKeys{pk1}
 	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
 	// no asset get moved , because THORNode just opened window, however THORNode should instruct signer to kick off key sign process
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	poolBNB := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.BNB", c)
 	poolTCan := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.TCAN-014", c)
 	poolLoki := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.LOK-3C0", c)
-	rotatePoolHeight := w.poolAddrMgr.currentPoolAddresses.RotateAt
+	rotatePoolHeight := w.poolAddrMgr.GetCurrentPoolAddresses().RotateAt
 	w.ctx = w.ctx.WithBlockHeight(rotatePoolHeight)
 	w.txOutStore.NewBlock(uint64(rotatePoolHeight))
-	w.poolAddrMgr.BeginBlock(w.ctx)
+	c.Assert(w.poolAddrMgr.BeginBlock(w.ctx), IsNil)
 	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
 	windowOpen := int64(constants.ValidatorsChangeWindow)
 	rotatePerBlockHeight := int64(constants.RotatePerBlockHeight)
-	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateAt, Equals, 100+rotatePerBlockHeight)
-	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt, Equals, 100+rotatePerBlockHeight-windowOpen)
+	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().RotateAt, Equals, 100+rotatePerBlockHeight)
+	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt, Equals, 100+rotatePerBlockHeight-windowOpen)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 4)
 	c.Assert(w.txOutStore.getBlockOut().Valid(), IsNil)
 	totalBond := sdk.ZeroUint()
@@ -64,7 +64,7 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 		// make sure the fund is sending from previous pool address to current
 		c.Assert(item.Coin.IsValid(), IsNil)
 		chain := item.Coin.Asset.Chain
-		newChainPoolAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(chain)
+		newChainPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
 		c.Assert(newChainPoolAddr, NotNil)
 		newPoolAddr, err := newChainPoolAddr.GetAddress()
 		c.Assert(err, IsNil)
@@ -98,7 +98,7 @@ func createTempNewPoolForTest(ctx sdk.Context, k Keeper, input string, c *C) *Po
 	// https://github.com/golang/go/issues/29463
 	p.BalanceRune = sdk.NewUint(1535169738538008)
 	p.BalanceAsset = sdk.NewUint(1535169738538008)
-	k.SetPool(ctx, p)
+	c.Assert(k.SetPool(ctx, p), IsNil)
 	k.SetChains(ctx, common.Chains{asset.Chain})
 	return &p
 }

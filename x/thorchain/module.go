@@ -74,13 +74,13 @@ type AppModule struct {
 	coinKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
 	txOutStore   TxOutStore
-	poolMgr      *PoolAddressManager
-	validatorMgr *ValidatorManager
+	poolMgr      PoolAddressManager
+	validatorMgr ValidatorManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
-	poolAddrMgr := NewPoolAddressManager(k)
+	poolAddrMgr := NewPoolAddressMgr(k)
 	txStore := NewTxOutStorage(k, poolAddrMgr)
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -89,7 +89,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		supplyKeeper:   supplyKeeper,
 		txOutStore:     txStore,
 		poolMgr:        poolAddrMgr,
-		validatorMgr:   NewValidatorManager(k, poolAddrMgr),
+		validatorMgr:   NewValidatorMgr(k, poolAddrMgr),
 	}
 }
 

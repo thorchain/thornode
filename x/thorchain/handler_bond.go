@@ -54,7 +54,11 @@ func (bh BondHandler) validateV1(ctx sdk.Context, msg MsgBond) sdk.Error {
 }
 
 // Run execute the handler
-func (bh BondHandler) Run(ctx sdk.Context, msg MsgBond, version semver.Version) sdk.Result {
+func (bh BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+	msg, ok := m.(MsgBond)
+	if !ok {
+		return errInvalidMessage.Result()
+	}
 	ctx.Logger().Info("receive MsgBond",
 		"node address", msg.NodeAddress,
 		"request hash", msg.RequestTxHash,
