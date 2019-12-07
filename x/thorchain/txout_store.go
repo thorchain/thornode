@@ -28,11 +28,11 @@ type TxOutStore interface {
 type TxOutStorage struct {
 	txOutSetter TxOutSetter
 	blockOut    *TxOut
-	poolAddrMgr *PoolAddressManager
+	poolAddrMgr PoolAddressManager
 }
 
 // NewTxOutStorage will create a new instance of TxOutStore.
-func NewTxOutStorage(txOutSetter TxOutSetter, poolAddrMgr *PoolAddressManager) *TxOutStorage {
+func NewTxOutStorage(txOutSetter TxOutSetter, poolAddrMgr PoolAddressManager) *TxOutStorage {
 	return &TxOutStorage{
 		txOutSetter: txOutSetter,
 		poolAddrMgr: poolAddrMgr,
@@ -183,18 +183,18 @@ func (tos *TxOutStorage) addToBlockOut(toi *TxOutItem) {
 
 func (tos *TxOutStorage) getSeqNo(chain common.Chain) uint64 {
 	// need to get the sequence no
-	currentChainPoolAddr := tos.poolAddrMgr.currentPoolAddresses.Current.GetByChain(chain)
+	currentChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
 	if nil != currentChainPoolAddr {
 		return currentChainPoolAddr.GetSeqNo()
 	}
-	if nil != tos.poolAddrMgr.currentPoolAddresses.Previous {
-		previousChainPoolAddr := tos.poolAddrMgr.currentPoolAddresses.Previous.GetByChain(chain)
+	if nil != tos.poolAddrMgr.GetCurrentPoolAddresses().Previous {
+		previousChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Previous.GetByChain(chain)
 		if nil != previousChainPoolAddr {
 			return previousChainPoolAddr.GetSeqNo()
 		}
 	}
-	if nil != tos.poolAddrMgr.currentPoolAddresses.Next {
-		nextChainPoolAddr := tos.poolAddrMgr.currentPoolAddresses.Next.GetByChain(chain)
+	if nil != tos.poolAddrMgr.GetCurrentPoolAddresses().Next {
+		nextChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Next.GetByChain(chain)
 		if nil != nextChainPoolAddr {
 			return nextChainPoolAddr.GetSeqNo()
 		}
