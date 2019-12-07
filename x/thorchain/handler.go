@@ -761,7 +761,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 	}
 
 	// Apply Gas fees
-	if err := AddGasFees(ctx, keeper, msg.Tx.Gas); nil != err {
+	if err := AddGasFees(ctx, keeper, msg.Tx); nil != err {
 		ctx.Logger().Error("fail to add gas fee", err)
 		return sdk.ErrInternal("fail to add gas fee").Result()
 	}

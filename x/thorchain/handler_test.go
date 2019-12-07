@@ -555,7 +555,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	c.Assert(result3.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result3))
 	ygg, err = w.keeper.GetYggdrasil(w.ctx, currentChainPool.PubKey)
 	c.Assert(err, IsNil)
-	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(300*common.One)), Equals, true)
+	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(29999962500)), Equals, true) // 300 - Gas
 	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)
 
 	w.txOutStore.NewBlock(2)
