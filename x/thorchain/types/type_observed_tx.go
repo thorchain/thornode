@@ -43,9 +43,6 @@ func (tx ObservedTx) Valid() error {
 	if err := tx.Tx.IsValid(); err != nil {
 		return err
 	}
-	if len(tx.Signers) > 0 {
-		return errors.New("signers must be empty")
-	}
 	// ideally memo should not be empty, THORNode check it here, but if
 	// THORNode check it empty here, then the tx will be rejected by thorchain
 	// given that , we are not going to refund the transaction, thus THORNode
