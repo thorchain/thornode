@@ -56,7 +56,6 @@ const (
 	prefixPoolStaker         dbPrefix = "pool_staker/"
 	prefixStakerPool         dbPrefix = "staker_pool/"
 	prefixAdmin              dbPrefix = "admin/"
-	prefixObservedTxIndex    dbPrefix = "observed_tx_index/"
 	prefixInCompleteEvents   dbPrefix = "incomplete_events/"
 	prefixCompleteEvent      dbPrefix = "complete_event/"
 	prefixLastEventID        dbPrefix = "last_event_id/"
