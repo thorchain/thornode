@@ -47,6 +47,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m := make(map[string]MsgHandler)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetPoolData{}.Type()] = NewPoolDataHandler(keeper)
+	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)
 	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
@@ -76,8 +77,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 			return handleOperatorMsgEndPool(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetTrustAccount:
 			return handleMsgSetTrustAccount(ctx, keeper, m)
-		case MsgSetVersion:
-			return handleMsgSetVersion(ctx, keeper, m)
 		case MsgYggdrasil:
 			return handleMsgYggdrasil(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
 		case MsgNextPoolAddress:
@@ -867,42 +866,6 @@ func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConf
 		keeper.SetCompletedEvent(ctx, evt)
 	}
 
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
-// handleMsgSetVersion Update the node account registered version
-func handleMsgSetVersion(ctx sdk.Context, keeper Keeper, msg MsgSetVersion) sdk.Result {
-	ctx.Logger().Info("receive MsgSetVersion", "trust account info", msg.Version, msg.Signer.String())
-	nodeAccount, err := keeper.GetNodeAccount(ctx, msg.Signer)
-	if err != nil {
-		ctx.Logger().Error("fail to get node account", "error", err, "address", msg.Signer.String())
-		return sdk.ErrUnauthorized(fmt.Sprintf("%s is not authorizaed", msg.Signer)).Result()
-	}
-	if nodeAccount.IsEmpty() {
-		ctx.Logger().Error("unauthorized account", "address", msg.Signer.String())
-		return sdk.ErrUnauthorized(fmt.Sprintf("%s is not authorizaed", msg.Signer)).Result()
-	}
-	if err := msg.ValidateBasic(); err != nil {
-		ctx.Logger().Error("MsgSetVersion is invalid", "error", err)
-		return sdk.ErrUnknownRequest("MsgSetVersion is invalid").Result()
-	}
-
-	if nodeAccount.Version.LT(msg.Version) {
-		nodeAccount.Version = msg.Version
-	}
-
-	if err := keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
-		ctx.Logger().Error("fail to save node account", err)
-		return sdk.ErrInternal("fail to save node account").Result()
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent("set_version",
-			sdk.NewAttribute("bep_address", msg.Signer.String()),
-			sdk.NewAttribute("version", msg.Version.String())))
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

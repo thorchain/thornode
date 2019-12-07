@@ -72,6 +72,7 @@ var (
 	NewPoolAddresses               = types.NewPoolAddresses
 	NewMsgNextPoolAddress          = types.NewMsgNextPoolAddress
 	NewMsgLeave                    = types.NewMsgLeave
+	NewMsgSetVersion               = types.NewMsgSetVersion
 	GetPoolStatus                  = types.GetPoolStatus
 	GetRandomTx                    = types.GetRandomTx
 	GetRandomNodeAccount           = types.GetRandomNodeAccount
