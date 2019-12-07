@@ -151,7 +151,6 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 		}
 	}
 
-	fmt.Println("DONE.")
 	return nil
 }
 
@@ -181,7 +180,6 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) er
 	for _, tx := range msg.Txs {
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
 		if err != nil {
-			fmt.Printf("Err1 %s\n", err)
 			return err
 		}
 
@@ -189,10 +187,8 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) er
 			txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
 			if ok := isCurrentVaultPubKey(ctx, h.keeper, h.poolAddrMgr, txOut); !ok {
 				if err := refundTx(ctx, txOut, h.txOutStore, h.keeper, false); err != nil {
-					fmt.Printf("Err2 %s\n", err)
 					return err
 				}
-				fmt.Println("continue 1")
 				continue
 			}
 
@@ -202,31 +198,25 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) er
 				// Detect if the txOut is to the thorchain network or from the
 				// thorchain network
 				if err := h.outboundFailure(ctx, txOut, activeNodeAccounts); err != nil {
-					fmt.Printf("Err3 %s\n", err)
 					return err
 				}
-				fmt.Println("continue 2")
 				continue
 			}
 
 			// add addresses to observing addresses. This is used to detect
 			// active/inactive observing node accounts
 			if err := h.keeper.AddObservingAddresses(ctx, txOut.Signers); err != nil {
-				fmt.Printf("Err4 %s\n", err)
 				return err
 			}
 
 			result := handler(ctx, m)
 			if !result.IsOK() {
 				if err := refundTx(ctx, txOut, h.txOutStore, h.keeper, true); err != nil {
-					fmt.Printf("Err5 %s\n", err)
 					return err
 				}
-				fmt.Printf("Non-zero result: %+v\n", result)
 			}
 		}
 	}
 
-	fmt.Printf("DONEEE>")
 	return nil
 }

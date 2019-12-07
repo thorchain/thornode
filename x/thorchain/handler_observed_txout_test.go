@@ -97,7 +97,6 @@ func (k *TestObservedTxOutHandleKeeper) ListActiveNodeAccounts(_ sdk.Context) (N
 }
 
 func (k *TestObservedTxOutHandleKeeper) IsActiveObserver(_ sdk.Context, _ sdk.AccAddress) bool {
-	fmt.Println("GOT HERE sdkfjl")
 	return true
 }
 
@@ -224,7 +223,6 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
-	fmt.Println("Start")
 	err = handler.handle(ctx, msg, ver)
 	c.Assert(err, IsNil)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 0)
