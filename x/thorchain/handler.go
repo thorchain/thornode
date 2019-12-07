@@ -515,7 +515,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 			return nil, errors.Wrap(err, "fail to get MsgNoOp from memo")
 		}
 	case OutboundMemo:
-		newMsg, err = getMsgOutboundFromMemo(m, tx.Tx, signer)
+		newMsg, err = getMsgOutboundFromMemo(m, tx, signer)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
 		}
@@ -527,21 +527,13 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 	case NextPoolMemo:
 		newMsg = NewMsgNextPoolAddress(tx.Tx, m.NextPoolAddr, tx.Tx.FromAddress, chain, signer)
 	case AckMemo:
-		newMsg = types.NewMsgAck(tx.Tx, tx.Tx.FromAddress, chain, signer)
+		newMsg = types.NewMsgAck(tx, tx.Tx.FromAddress, chain, signer)
 	case LeaveMemo:
 		newMsg = NewMsgLeave(tx.Tx, signer)
 	case YggdrasilFundMemo:
-		pk, err := keeper.FindPubKeyOfAddress(ctx, tx.Tx.ToAddress, tx.Tx.Coins[0].Asset.Chain)
-		if err != nil {
-			return nil, errors.Wrap(err, "fail to find Yggdrasil pubkey")
-		}
-		newMsg = NewMsgYggdrasil(pk, true, tx.Tx.Coins, tx.Tx.ID, signer)
+		newMsg = NewMsgYggdrasil(tx.ObservedPubKey, true, tx.Tx.Coins, tx.Tx.ID, signer)
 	case YggdrasilReturnMemo:
-		pk, err := keeper.FindPubKeyOfAddress(ctx, tx.Tx.FromAddress, tx.Tx.Coins[0].Asset.Chain)
-		if err != nil {
-			return nil, errors.Wrap(err, "fail to find Yggdrasil pubkey")
-		}
-		newMsg = NewMsgYggdrasil(pk, false, tx.Tx.Coins, tx.Tx.ID, signer)
+		newMsg = NewMsgYggdrasil(tx.ObservedPubKey, false, tx.Tx.Coins, tx.Tx.ID, signer)
 	case ReserveMemo:
 		res := NewReserveContributor(tx.Tx.FromAddress, tx.Tx.Coins[0].Amount)
 		newMsg = NewMsgReserveContributor(res, signer)
@@ -674,7 +666,7 @@ func getMsgAddFromMemo(memo AddMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.
 	), nil
 }
 
-func getMsgOutboundFromMemo(memo OutboundMemo, tx common.Tx, signer sdk.AccAddress) (sdk.Msg, error) {
+func getMsgOutboundFromMemo(memo OutboundMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
 	return NewMsgOutboundTx(
 		tx,
 		memo.GetTxID(),
@@ -706,7 +698,7 @@ func handleMsgNoOp(ctx sdk.Context) sdk.Result {
 
 // handleMsgOutboundTx processes outbound tx from our pool
 func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddressManager, msg MsgOutboundTx) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgOutboundTx %s", msg.Tx.ID))
+	ctx.Logger().Info(fmt.Sprintf("receive MsgOutboundTx %s", msg.Tx.Tx.ID))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -715,9 +707,9 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 		ctx.Logger().Error("invalid MsgOutboundTx", "error", err)
 		return err.Result()
 	}
-	currentChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(msg.Tx.Chain)
+	currentChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Current.GetByChain(msg.Tx.Tx.Chain)
 	if nil == currentChainPoolAddr {
-		msg := fmt.Sprintf("THORNode don't have pool for chain %s", msg.Tx.Chain)
+		msg := fmt.Sprintf("THORNode don't have pool for chain %s", msg.Tx.Tx.Chain)
 		ctx.Logger().Error(msg)
 		return sdk.ErrUnknownRequest(msg).Result()
 	}
@@ -727,7 +719,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 		ctx.Logger().Error("fail to get current pool address", "error", err)
 		return sdk.ErrUnknownRequest("fail to get current pool address").Result()
 	}
-	previousChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Previous.GetByChain(msg.Tx.Chain)
+	previousChainPoolAddr := poolAddressMgr.GetCurrentPoolAddresses().Previous.GetByChain(msg.Tx.Tx.Chain)
 	previousPoolAddr := common.NoAddress
 	if nil != previousChainPoolAddr {
 		previousPoolAddr, err = previousChainPoolAddr.GetAddress()
@@ -737,8 +729,8 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 		}
 	}
 
-	if !currentPoolAddr.Equals(msg.Tx.FromAddress) && !previousPoolAddr.Equals(msg.Tx.FromAddress) {
-		ctx.Logger().Error("message sent by unauthorized account", "sender", msg.Tx.FromAddress.String(), "current pool addr", currentPoolAddr.String())
+	if !currentPoolAddr.Equals(msg.Tx.Tx.FromAddress) && !previousPoolAddr.Equals(msg.Tx.Tx.FromAddress) {
+		ctx.Logger().Error("message sent by unauthorized account", "sender", msg.Tx.Tx.FromAddress.String(), "current pool addr", currentPoolAddr.String())
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
 
@@ -747,7 +739,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 		ctx.Logger().Error(err.Error())
 		return sdk.ErrInternal("fail to get observed tx voter").Result()
 	}
-	voter.AddOutTx(msg.Tx)
+	voter.AddOutTx(msg.Tx.Tx)
 	keeper.SetObservedTxVoter(ctx, voter)
 
 	// complete events
@@ -760,7 +752,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 	}
 
 	// Apply Gas fees
-	if err := AddGasFees(ctx, keeper, msg.Tx.Gas); nil != err {
+	if err := AddGasFees(ctx, keeper, msg.Tx); nil != err {
 		ctx.Logger().Error("fail to add gas fee", err)
 		return sdk.ErrInternal("fail to add gas fee").Result()
 	}
@@ -782,8 +774,8 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 			// given every tx item will only have one coin in it , given that , THORNode could use that to identify which txit
 			if tx.InHash.Equals(msg.InTxID) &&
 				tx.OutHash.IsEmpty() &&
-				msg.Tx.Coins.Contains(tx.Coin) {
-				txOut.TxArray[i].OutHash = msg.Tx.ID
+				msg.Tx.Tx.Coins.Contains(tx.Coin) {
+				txOut.TxArray[i].OutHash = msg.Tx.Tx.ID
 			}
 		}
 		if err := keeper.SetTxOut(ctx, txOut); nil != err {
@@ -794,18 +786,13 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 	keeper.SetLastSignedHeight(ctx, sdk.NewUint(uint64(voter.Height)))
 
 	// If THORNode are sending from a yggdrasil pool, decrement coins on record
-	pk, err := keeper.FindPubKeyOfAddress(ctx, msg.Tx.FromAddress, msg.Tx.Chain)
-	if err != nil {
-		ctx.Logger().Error("unable to find Yggdrasil pubkey", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	if !pk.IsEmpty() {
-		ygg, err := keeper.GetYggdrasil(ctx, pk)
+	if keeper.YggdrasilExists(ctx, msg.Tx.ObservedPubKey) {
+		ygg, err := keeper.GetYggdrasil(ctx, msg.Tx.ObservedPubKey)
 		if nil != err {
 			ctx.Logger().Error("fail to get yggdrasil", err)
 			return sdk.ErrInternal("fail to get yggdrasil").Result()
 		}
-		ygg.SubFunds(msg.Tx.Coins)
+		ygg.SubFunds(msg.Tx.Tx.Coins)
 		if err := keeper.SetYggdrasil(ctx, ygg); nil != err {
 			ctx.Logger().Error("fail to save yggdrasil", err)
 			return sdk.ErrInternal("fail to save yggdrasil").Result()

@@ -174,11 +174,30 @@ func wrapError(ctx sdk.Context, err error, wrap string) error {
 	return err
 }
 
-func AddGasFees(ctx sdk.Context, keeper Keeper, gas common.Gas) error {
+func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
+	if len(tx.Tx.Gas) == 0 {
+		return nil
+	}
+
 	vault, err := keeper.GetVaultData(ctx)
 	if nil != err {
 		return fmt.Errorf("fail to get vault: %w", err)
 	}
-	vault.Gas = vault.Gas.Add(gas)
-	return keeper.SetVaultData(ctx, vault)
+	vault.Gas = vault.Gas.Add(tx.Tx.Gas)
+	if err := keeper.SetVaultData(ctx, vault); err != nil {
+		return err
+	}
+
+	if keeper.YggdrasilExists(ctx, tx.ObservedPubKey) {
+		ygg, err := keeper.GetYggdrasil(ctx, tx.ObservedPubKey)
+		if err != nil {
+			return err
+		}
+
+		ygg.SubFunds(tx.Tx.Gas.ToCoins())
+
+		return keeper.SetYggdrasil(ctx, ygg)
+	}
+
+	return nil
 }

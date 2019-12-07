@@ -8,14 +8,14 @@ import (
 
 // MsgAck is used to confirm the next pool address
 type MsgAck struct {
-	Tx     common.Tx
+	Tx     ObservedTx
 	Sender common.Address
 	Signer sdk.AccAddress
 	Chain  common.Chain // which chain this ack is from
 }
 
 // NewMsgAck create a new instance of NewMsgAck
-func NewMsgAck(tx common.Tx, sender common.Address, chain common.Chain, signer sdk.AccAddress) MsgAck {
+func NewMsgAck(tx ObservedTx, sender common.Address, chain common.Chain, signer sdk.AccAddress) MsgAck {
 	return MsgAck{
 		Tx:     tx,
 		Sender: sender,
@@ -35,7 +35,7 @@ func (msg MsgAck) ValidateBasic() sdk.Error {
 	if msg.Sender.IsEmpty() {
 		return sdk.ErrUnknownRequest("sender address cannot be empty")
 	}
-	if err := msg.Tx.IsValid(); err != nil {
+	if err := msg.Tx.Valid(); err != nil {
 		return sdk.ErrUnknownRequest(err.Error())
 	}
 	if msg.Chain.IsEmpty() {

@@ -1,6 +1,7 @@
 package types
 
 import (
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -15,7 +16,7 @@ func (mas *MsgAckSuite) SetUpSuite(c *C) {
 }
 
 func (mas *MsgAckSuite) TestMsgAck(c *C) {
-	tx := GetRandomTx()
+	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(12), GetRandomPubKey())
 	sender := GetRandomBNBAddress()
 	signer := GetRandomBech32Addr()
 
@@ -27,7 +28,7 @@ func (mas *MsgAckSuite) TestMsgAck(c *C) {
 	c.Assert(emptySender.ValidateBasic(), NotNil)
 	emptyChain := NewMsgAck(tx, sender, common.EmptyChain, signer)
 	c.Assert(emptyChain.ValidateBasic(), NotNil)
-	tx.ID = ""
+	tx.Tx.ID = ""
 	emptyHash := NewMsgAck(tx, sender, common.BNBChain, signer)
 	c.Assert(emptyHash.ValidateBasic(), NotNil)
 }
