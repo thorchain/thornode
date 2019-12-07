@@ -85,7 +85,7 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 }
 
 // Checks if the observed vault pubkey is a valid asgard or ygg vault
-func isCurrentVaultPubKey(ctx sdk.Context, keeper Keeper, poolAddrMgr *PoolAddressManager, tx ObservedTx) bool {
+func isCurrentVaultPubKey(ctx sdk.Context, keeper Keeper, poolAddrMgr PoolAddressManager, tx ObservedTx) bool {
 	currentPoolAddress := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(tx.Tx.Chain)
 	yggExists := keeper.YggdrasilExists(ctx, tx.ObservedPubKey)
 	if !currentPoolAddress.PubKey.Equals(tx.ObservedPubKey) && !yggExists {

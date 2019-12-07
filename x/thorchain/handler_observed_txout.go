@@ -30,7 +30,7 @@ func (h ObservedTxOutHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Ver
 	if !ok {
 		return errInvalidMessage.Result()
 	}
-	if err := h.Validate(ctx, msg, version); err != nil {
+	if err := h.validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	if err := h.handle(ctx, msg, version); err != nil {
