@@ -22,8 +22,7 @@ func NewAddHandler(keeper Keeper) AddHandler {
 func (ah AddHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
 	msg, ok := m.(MsgAdd)
 	if !ok {
-		// TODO change this to invalidMessage Error
-		return errBadVersion.Result()
+		return errInvalidMessage.Result()
 	}
 	ctx.Logger().Info(fmt.Sprintf("receive msg add %s", msg.Tx.ID))
 	if err := ah.validate(ctx, msg, version); err != nil {
