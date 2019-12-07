@@ -11,11 +11,11 @@ import (
 type AckHandler struct {
 	keeper       Keeper
 	poolAddrMgr  PoolAddressManager
-	validatorMgr *ValidatorManager
+	validatorMgr ValidatorManager
 }
 
 // NewAckHandler create new instance of AckHandler
-func NewAckHandler(keeper Keeper, poolAddrMgr PoolAddressManager, validatorMgr *ValidatorManager) AckHandler {
+func NewAckHandler(keeper Keeper, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager) AckHandler {
 	return AckHandler{
 		keeper:       keeper,
 		poolAddrMgr:  poolAddrMgr,
@@ -79,8 +79,8 @@ func (ah AckHandler) handle(ctx sdk.Context, msg MsgAck) sdk.Error {
 	ah.poolAddrMgr.GetCurrentPoolAddresses().Next = ah.poolAddrMgr.GetCurrentPoolAddresses().Next.TryAddKey(chainPubKey)
 	ah.poolAddrMgr.SetObservedNextPoolAddrPubKey(ah.poolAddrMgr.ObservedNextPoolAddrPubKey().TryRemoveKey(chainPubKey))
 
-	nominatedNode := ah.validatorMgr.Meta.Nominated
-	queuedNode := ah.validatorMgr.Meta.Queued
+	nominatedNode := ah.validatorMgr.Meta().Nominated
+	queuedNode := ah.validatorMgr.Meta().Queued
 	for _, item := range nominatedNode {
 		item.TryAddSignerPubKey(chainPubKey.PubKey)
 		if err := ah.keeper.SetNodeAccount(ctx, item); nil != err {
