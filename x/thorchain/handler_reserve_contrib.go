@@ -15,7 +15,11 @@ func NewReserveContributorHandler(keeper Keeper) ReserveContributorHandler {
 	}
 }
 
-func (h ReserveContributorHandler) Run(ctx sdk.Context, msg MsgReserveContributor, version semver.Version) sdk.Result {
+func (h ReserveContributorHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+	msg, ok := m.(MsgReserveContributor)
+	if !ok {
+		return errInvalidMessage.Result()
+	}
 	if err := h.Validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}

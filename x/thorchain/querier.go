@@ -16,7 +16,7 @@ import (
 )
 
 // NewQuerier is the module level router for state queries
-func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr *ValidatorManager) sdk.Querier {
+func NewQuerier(keeper Keeper, poolAddressMgr PoolAddressManager, validatorMgr ValidatorManager) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		ctx.Logger().Info("query", "path", path[0])
 		switch path[0] {
@@ -82,7 +82,7 @@ func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	return res, nil
 }
 
-func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorManager) ([]byte, sdk.Error) {
+func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr ValidatorManager) ([]byte, sdk.Error) {
 	activeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		ctx.Logger().Error("fail to get all active node accounts", err)
@@ -92,14 +92,14 @@ func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorMana
 	resp := types.ValidatorsResp{
 		ActiveNodes: activeAccounts,
 	}
-	if validatorMgr.Meta != nil {
-		resp.RotateAt = uint64(validatorMgr.Meta.RotateAtBlockHeight)
-		resp.RotateWindowOpenAt = uint64(validatorMgr.Meta.RotateWindowOpenAtBlockHeight)
-		if !validatorMgr.Meta.Nominated.IsEmpty() {
-			resp.Nominated = validatorMgr.Meta.Nominated
+	if validatorMgr.Meta() != nil {
+		resp.RotateAt = uint64(validatorMgr.Meta().RotateAtBlockHeight)
+		resp.RotateWindowOpenAt = uint64(validatorMgr.Meta().RotateWindowOpenAtBlockHeight)
+		if !validatorMgr.Meta().Nominated.IsEmpty() {
+			resp.Nominated = validatorMgr.Meta().Nominated
 		}
-		if !validatorMgr.Meta.Queued.IsEmpty() {
-			resp.Queued = validatorMgr.Meta.Queued
+		if !validatorMgr.Meta().Queued.IsEmpty() {
+			resp.Queued = validatorMgr.Meta().Queued
 		}
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
@@ -125,7 +125,7 @@ func queryChains(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte,
 	return res, nil
 }
 
-func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, manager *PoolAddressManager) ([]byte, sdk.Error) {
+func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, manager PoolAddressManager) ([]byte, sdk.Error) {
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), manager.GetCurrentPoolAddresses())
 	if nil != err {
 		ctx.Logger().Error("fail to marshal current pool address to json", err)
@@ -249,7 +249,7 @@ func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 }
 
 // nolint: unparam
-func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, poolAddrMgr *PoolAddressManager) ([]byte, sdk.Error) {
+func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, poolAddrMgr PoolAddressManager) ([]byte, sdk.Error) {
 	asset, err := common.NewAsset(path[0])
 	if err != nil {
 		ctx.Logger().Error("fail to parse asset", err)
@@ -283,7 +283,7 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	return res, nil
 }
 
-func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrMgr *PoolAddressManager) ([]byte, sdk.Error) {
+func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrMgr PoolAddressManager) ([]byte, sdk.Error) {
 	pools := QueryResPools{}
 	iterator := keeper.GetPoolIterator(ctx)
 	currentPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()

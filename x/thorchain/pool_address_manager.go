@@ -16,28 +16,55 @@ const (
 	EventTypeAbortPoolRotation = "AbortPoolRotation"
 )
 
-// PoolAddressManager is going to manage the pool addresses , rotate etc
-type PoolAddressManager struct {
-	k                          Keeper
-	currentPoolAddresses       *PoolAddresses
-	ObservedNextPoolAddrPubKey common.PoolPubKeys
-	IsRotateWindowOpen         bool
+type PoolAddressManager interface {
+	GetCurrentPoolAddresses() *PoolAddresses
+	BeginBlock(ctx sdk.Context) error
+	EndBlock(ctx sdk.Context, store TxOutStore)
+	SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys)
+	ObservedNextPoolAddrPubKey() common.PoolPubKeys
+	IsRotateWindowOpen() bool
+	SetRotateWindowOpen(_ bool)
+	rotatePoolAddress(ctx sdk.Context, store TxOutStore)
 }
 
-// NewPoolAddressManager create a new PoolAddressManager
-func NewPoolAddressManager(k Keeper) *PoolAddressManager {
-	return &PoolAddressManager{
+// PoolAddressMgr is going to manage the pool addresses , rotate etc
+type PoolAddressMgr struct {
+	k                          Keeper
+	currentPoolAddresses       *PoolAddresses
+	observedNextPoolAddrPubKey common.PoolPubKeys
+	isRotateWindowOpen         bool
+}
+
+// NewPoolAddressMgr create a new PoolAddressMgr
+func NewPoolAddressMgr(k Keeper) *PoolAddressMgr {
+	return &PoolAddressMgr{
 		k: k,
 	}
 }
 
 // GetCurrentPoolAddresses return current pool addresses
-func (pm *PoolAddressManager) GetCurrentPoolAddresses() *PoolAddresses {
+func (pm *PoolAddressMgr) GetCurrentPoolAddresses() *PoolAddresses {
 	return pm.currentPoolAddresses
 }
 
+func (pm *PoolAddressMgr) IsRotateWindowOpen() bool {
+	return pm.isRotateWindowOpen
+}
+
+func (pm *PoolAddressMgr) SetRotateWindowOpen(b bool) {
+	pm.isRotateWindowOpen = b
+}
+
+func (pm *PoolAddressMgr) ObservedNextPoolAddrPubKey() common.PoolPubKeys {
+	return pm.observedNextPoolAddrPubKey
+}
+
+func (pm *PoolAddressMgr) SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys) {
+	pm.observedNextPoolAddrPubKey = ppks
+}
+
 // BeginBlock should be called when BeginBlock
-func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context) error {
+func (pm *PoolAddressMgr) BeginBlock(ctx sdk.Context) error {
 	height := ctx.BlockHeight()
 	// decide pool addresses
 	if pm.currentPoolAddresses == nil || pm.currentPoolAddresses.IsEmpty() {
@@ -49,21 +76,21 @@ func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context) error {
 	}
 
 	if height >= pm.currentPoolAddresses.RotateWindowOpenAt && height < pm.currentPoolAddresses.RotateAt {
-		if pm.IsRotateWindowOpen {
+		if pm.IsRotateWindowOpen() {
 			return nil
 		}
-		pm.IsRotateWindowOpen = true
+		pm.isRotateWindowOpen = true
 	}
 	return nil
 }
 
 // EndBlock contains some actions THORNode need to take when block commit
-func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, store TxOutStore) {
+func (pm *PoolAddressMgr) EndBlock(ctx sdk.Context, store TxOutStore) {
 	if nil == pm.currentPoolAddresses {
 		return
 	}
 	// pool rotation window open
-	if pm.IsRotateWindowOpen && ctx.BlockHeight() == pm.currentPoolAddresses.RotateWindowOpenAt {
+	if pm.isRotateWindowOpen && ctx.BlockHeight() == pm.currentPoolAddresses.RotateWindowOpenAt {
 		// instruct signer to kick off tss keygen ceremony
 		store.AddTxOutItem(ctx, pm.k, &TxOutItem{
 			Chain: common.BNBChain,
@@ -78,7 +105,7 @@ func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, store TxOutStore) {
 	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
 }
 
-func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, store TxOutStore) {
+func (pm *PoolAddressMgr) rotatePoolAddress(ctx sdk.Context, store TxOutStore) {
 	poolAddresses := pm.currentPoolAddresses
 	if ctx.BlockHeight() == 1 {
 		// THORNode don't need to do anything on

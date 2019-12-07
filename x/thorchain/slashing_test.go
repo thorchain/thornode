@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	. "gopkg.in/check.v1"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
-	. "gopkg.in/check.v1"
 )
 
 type SlashingSuite struct{}
@@ -23,13 +24,13 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 
 	// add one
 	na1 := GetRandomNodeAccount(NodeActive)
-	k.SetNodeAccount(ctx, na1)
+	c.Assert(k.SetNodeAccount(ctx, na1), IsNil)
 
 	// add two
 	na2 := GetRandomNodeAccount(NodeActive)
-	k.SetNodeAccount(ctx, na2)
+	c.Assert(k.SetNodeAccount(ctx, na2), IsNil)
 
-	k.AddObservingAddresses(ctx, []sdk.AccAddress{na1.NodeAddress})
+	c.Assert(k.AddObservingAddresses(ctx, []sdk.AccAddress{na1.NodeAddress}), IsNil)
 
 	// should slash na2 only
 	slashForObservingAddresses(ctx, k)
@@ -53,8 +54,8 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	var err error
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(201) // set blockheight
-	poolAddrMgr := NewPoolAddressManager(k)
-	poolAddrMgr.BeginBlock(ctx)
+	poolAddrMgr := NewPoolAddressMgr(k)
+	c.Assert(poolAddrMgr.BeginBlock(ctx), IsNil)
 	poolPubKey := GetRandomPubKey()
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, poolPubKey)
 	c.Assert(err, IsNil)
@@ -63,7 +64,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	txOutStore.NewBlock(uint64(201))
 
 	na := GetRandomNodeAccount(NodeActive)
-	k.SetNodeAccount(ctx, na)
+	c.Assert(k.SetNodeAccount(ctx, na), IsNil)
 
 	swapEvt := NewEventSwap(
 		common.BNBAsset,
@@ -107,7 +108,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	}
 	txs := NewTxOut(uint64(evt.Height))
 	txs.TxArray = append(txs.TxArray, txOutItem)
-	k.SetTxOut(ctx, txs)
+	c.Assert(k.SetTxOut(ctx, txs), IsNil)
 
 	outItems := txOutStore.GetOutboundItems()
 	c.Assert(outItems, HasLen, 0)

@@ -28,7 +28,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
 	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
+	w.poolAddrMgr.GetCurrentPoolAddresses().Current = common.PoolPubKeys{pk1}
 
 	acc1 := GetRandomNodeAccount(NodeActive)
 	acc2 := GetRandomNodeAccount(NodeActive)
@@ -43,7 +43,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(40*common.One)),
 		},
 	)
-	w.keeper.SetYggdrasil(w.ctx, ygg)
+	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
 
 	ygg = NewYggdrasil(acc2.NodePubKey.Secp256k1)
 	ygg.AddFunds(
@@ -51,7 +51,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(50*common.One)),
 		},
 	)
-	w.keeper.SetYggdrasil(w.ctx, ygg)
+	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
 
 	ygg = NewYggdrasil(acc3.NodePubKey.Secp256k1)
 	ygg.AddFunds(
@@ -59,7 +59,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},
 	)
-	w.keeper.SetYggdrasil(w.ctx, ygg)
+	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
 
 	// Create voter
 	inTxID := GetRandomTxHash()
@@ -115,7 +115,7 @@ func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
 	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
+	w.poolAddrMgr.GetCurrentPoolAddresses().Current = common.PoolPubKeys{pk1}
 
 	inTxID := GetRandomTxHash()
 	item := &TxOutItem{
