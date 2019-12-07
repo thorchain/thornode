@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/blang/semver"
@@ -47,6 +48,7 @@ func (ps NodeStatus) String() string {
 	return ""
 }
 
+// Valid check whether the node status is valid or not
 func (ps NodeStatus) Valid() error {
 	if ps.String() == "" {
 		return fmt.Errorf("invalid node status")
@@ -96,6 +98,7 @@ type NodeAccount struct {
 	ObserverActive   bool            `json:"observer_active"`
 	SignerActive     bool            `json:"signer_active"`
 	SignerMembership []common.PubKey `json:"signer_membership"`
+	RequestedToLeave bool            `json:"requested_to_leave"`
 	Version          semver.Version  `json:"version"`
 }
 
@@ -158,9 +161,11 @@ func (n NodeAccount) String() string {
 	sb.WriteString("bond:" + n.Bond.String() + "\n")
 	sb.WriteString("version:" + n.Version.String() + "\n")
 	sb.WriteString("bond address:" + n.BondAddress.String() + "\n")
+	sb.WriteString("requested to leave:" + strconv.FormatBool(n.RequestedToLeave) + "\n")
 	return sb.String()
 }
 
+// CalcBondUnits calculate bond
 func (n *NodeAccount) CalcBondUnits(height int64) sdk.Uint {
 	if height < 0 || n.ActiveBlockHeight < 0 || n.SlashPoints < 0 {
 		return sdk.ZeroUint()
