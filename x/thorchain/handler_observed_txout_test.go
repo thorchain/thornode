@@ -223,8 +223,8 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
-	err = handler.handle(ctx, msg, ver)
-	c.Assert(err, IsNil)
+	result := handler.handle(ctx, msg, ver)
+	c.Assert(result.IsOK(), Equals, true)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 0)
 	c.Check(keeper.observing, HasLen, 1)
 }

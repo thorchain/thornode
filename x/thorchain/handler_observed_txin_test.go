@@ -176,8 +176,8 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
-	err = handler.handle(ctx, msg, ver)
-	c.Assert(err, IsNil)
+	result := handler.handle(ctx, msg, ver)
+	c.Assert(result.IsOK(), Equals, true)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
 	c.Check(keeper.observing, HasLen, 1)
 	c.Check(keeper.height.Equal(sdk.NewUint(12)), Equals, true)
