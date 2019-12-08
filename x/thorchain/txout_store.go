@@ -70,7 +70,7 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem, asgard bo
 	}
 
 	// If THORNode don't have a pool already selected to send from, discover one.
-	if toi.PoolAddress.IsEmpty() {
+	if toi.VaultPubKey.IsEmpty() {
 		if !asgard {
 			// When deciding which Yggdrasil pool will send out our tx out, we
 			// should consider which ones observed the inbound request tx, as
@@ -94,7 +94,7 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem, asgard bo
 				// the order, fallback to our Asguard pool
 				if len(yggs) > 0 {
 					if toi.Coin.Amount.LT(yggs[0].GetCoin(toi.Coin.Asset).Amount) {
-						toi.PoolAddress = yggs[0].PubKey
+						toi.VaultPubKey = yggs[0].PubKey
 					}
 				}
 
@@ -103,13 +103,13 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem, asgard bo
 
 	}
 
-	if toi.PoolAddress.IsEmpty() {
-		toi.PoolAddress = tos.poolAddrMgr.GetAsgardPoolPubKey(toi.Chain).PubKey
+	if toi.VaultPubKey.IsEmpty() {
+		toi.VaultPubKey = tos.poolAddrMgr.GetAsgardPoolPubKey(toi.Chain).PubKey
 	}
 
 	// Ensure THORNode are not sending from and to the same address
 	// THORNode check for a
-	fromAddr, err := toi.PoolAddress.GetAddress(toi.Chain)
+	fromAddr, err := toi.VaultPubKey.GetAddress(toi.Chain)
 	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
 		return
 	}
@@ -214,7 +214,7 @@ func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) Y
 			continue
 		}
 		for _, tx := range tos.blockOut.TxArray {
-			if !tx.PoolAddress.Equals(ygg.PubKey) {
+			if !tx.VaultPubKey.Equals(ygg.PubKey) {
 				continue
 			}
 			for i, yggcoin := range ygg.Coins {

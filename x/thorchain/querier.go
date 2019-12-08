@@ -361,7 +361,7 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 			Height: txs.Height,
 		}
 		for _, tx := range txs.TxArray {
-			if pk.Equals(tx.PoolAddress) {
+			if pk.Equals(tx.VaultPubKey) {
 				newTxs.TxArray = append(newTxs.TxArray, tx)
 			}
 		}
