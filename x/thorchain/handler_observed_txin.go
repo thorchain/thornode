@@ -31,13 +31,7 @@ func (h ObservedTxInHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Vers
 	if err := h.validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	if err := h.handle(ctx, msg, version); err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
+	return h.handle(ctx, msg, version)
 }
 
 func (h ObservedTxInHandler) validate(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) error {
@@ -64,13 +58,13 @@ func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) er
 
 }
 
-func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) error {
+func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) sdk.Result {
 	ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", msg.Txs[0].String())
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		return errBadVersion.Result()
 	}
 }
 
@@ -110,10 +104,11 @@ func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, n
 }
 
 // Handle a message to observe inbound tx
-func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) error {
+func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.Result {
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
-		return wrapError(ctx, err, "fail to get list of active node accounts")
+		err = wrapError(ctx, err, "fail to get list of active node accounts")
+		return sdk.ErrInternal(err.Error()).Result()
 	}
 
 	handler := NewHandler(h.keeper, h.poolAddrMgr, h.txOutStore, h.validatorMgr)
@@ -122,56 +117,59 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) erro
 
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
 		if err != nil {
-			return err
+			return sdk.ErrInternal(err.Error()).Result()
 		}
 
-		if voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer); ok {
-			txIn := voter.GetTx(activeNodeAccounts)
+		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
+		if !ok {
+			continue
+		}
 
-			if ok := isCurrentVaultPubKey(ctx, h.keeper, h.poolAddrMgr, tx); !ok {
-				if err := refundTx(ctx, tx, h.txOutStore, h.keeper, false); err != nil {
-					return err
-				}
-				continue
+		txIn := voter.GetTx(activeNodeAccounts)
+
+		if ok := isCurrentVaultPubKey(ctx, h.keeper, h.poolAddrMgr, tx); !ok {
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, false); err != nil {
+				return sdk.ErrInternal(err.Error()).Result()
 			}
+			continue
+		}
 
-			m, err := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
-			if nil != err || tx.Tx.Chain.IsEmpty() {
-				ctx.Logger().Error("fail to process inbound tx", "error", err, "txhash", tx.Tx.ID.String())
-				// Detect if the tx is to the thorchain network or from the
-				// thorchain network
-				if err := h.inboundFailure(ctx, tx); err != nil {
-					return err
-				}
-				continue
+		m, err := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
+		if nil != err || tx.Tx.Chain.IsEmpty() {
+			ctx.Logger().Error("fail to process inbound tx", "error", err, "txhash", tx.Tx.ID.String())
+			if err := h.inboundFailure(ctx, tx); err != nil {
+				return sdk.ErrInternal(err.Error()).Result()
 			}
+			continue
+		}
 
-			if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, tx.BlockHeight); nil != err {
-				return err
-			}
+		if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, tx.BlockHeight); nil != err {
+			return sdk.ErrInternal(err.Error()).Result()
+		}
 
-			// add this chain to our list of supported chains
-			chains, err := h.keeper.GetChains(ctx)
-			if err != nil {
-				return err
-			}
-			chains = append(chains, tx.Tx.Chain)
-			h.keeper.SetChains(ctx, chains)
+		// add this chain to our list of supported chains
+		chains, err := h.keeper.GetChains(ctx)
+		if err != nil {
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+		chains = append(chains, tx.Tx.Chain)
+		h.keeper.SetChains(ctx, chains)
 
-			// add addresses to observing addresses. This is used to detect
-			// active/inactive observing node accounts
-			if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
-				return err
-			}
+		// add addresses to observing addresses. This is used to detect
+		// active/inactive observing node accounts
+		if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
+			return sdk.ErrInternal(err.Error()).Result()
+		}
 
-			result := handler(ctx, m)
-			if !result.IsOK() {
-				if err := refundTx(ctx, tx, h.txOutStore, h.keeper, true); err != nil {
-					return err
-				}
+		result := handler(ctx, m)
+		if !result.IsOK() {
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, true); err != nil {
+				return sdk.ErrInternal(err.Error()).Result()
 			}
 		}
 	}
-
-	return nil
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
 }
