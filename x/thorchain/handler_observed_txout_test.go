@@ -160,7 +160,7 @@ func (k *TestObservedTxOutHandleKeeper) AddIncompleteEvents(_ sdk.Context, evt E
 }
 
 func (k *TestObservedTxOutHandleKeeper) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error) {
-	return k.txOutStore.getBlockOut(), nil
+	return k.txOutStore.GetBlockOut(), nil
 }
 
 func (k *TestObservedTxOutHandleKeeper) FindPubKeyOfAddress(_ sdk.Context, _ common.Address, _ common.Chain) (common.PubKey, error) {
