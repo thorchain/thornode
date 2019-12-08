@@ -89,7 +89,7 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) {
 					// TODO: this creates a second tx out for this inTx, which
 					// means the event will never be completed because only one
 					// of the two out tx will occur.
-					txOutStore.AddTxOutItem(ctx, tx, true)
+					txOutStore.AddTxOutItem(ctx, tx)
 				}
 			}
 
