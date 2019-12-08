@@ -100,7 +100,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	txOutItem := &TxOutItem{
 		Chain:       common.BNBChain,
 		InHash:      inTx.ID,
-		PoolAddress: na.NodePubKey.Secp256k1,
+		VaultPubKey: na.NodePubKey.Secp256k1,
 		ToAddress:   GetRandomBNBAddress(),
 		Coin: common.NewCoin(
 			common.BNBAsset, sdk.NewUint(3980500*common.One),
@@ -122,5 +122,5 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 
 	outItems = txOutStore.GetOutboundItems()
 	c.Assert(outItems, HasLen, 1)
-	c.Assert(outItems[0].PoolAddress.Equals(poolPubKey), Equals, true)
+	c.Assert(outItems[0].VaultPubKey.Equals(poolPubKey), Equals, true)
 }

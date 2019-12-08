@@ -81,7 +81,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w.txOutStore.AddTxOutItem(w.ctx, item, false)
 	msgs := w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 1)
-	c.Assert(msgs[0].PoolAddress.String(), Equals, acc2.NodePubKey.Secp256k1.String())
+	c.Assert(msgs[0].VaultPubKey.String(), Equals, acc2.NodePubKey.Secp256k1.String())
 	c.Assert(msgs[0].Coin.Amount.Equal(sdk.NewUint(19*common.One)), Equals, true)
 
 	// Should get acc1. Acc3 hasn't signed and acc1 now has the highest amount
@@ -96,7 +96,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w.txOutStore.AddTxOutItem(w.ctx, item, false)
 	msgs = w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 2)
-	c.Assert(msgs[1].PoolAddress.String(), Equals, acc1.NodePubKey.Secp256k1.String())
+	c.Assert(msgs[1].VaultPubKey.String(), Equals, acc1.NodePubKey.Secp256k1.String())
 
 	item = &TxOutItem{
 		Chain:     common.BNBChain,
@@ -107,7 +107,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w.txOutStore.AddTxOutItem(w.ctx, item, false)
 	msgs = w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 3)
-	c.Assert(msgs[2].PoolAddress.String(), Equals, w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain).PubKey.String())
+	c.Assert(msgs[2].VaultPubKey.String(), Equals, w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain).PubKey.String())
 
 }
 

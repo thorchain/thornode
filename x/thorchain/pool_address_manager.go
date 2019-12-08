@@ -101,7 +101,7 @@ func (pm *PoolAddressMgr) EndBlock(ctx sdk.Context, store TxOutStore) {
 			Chain: common.BNBChain,
 			// Leave ToAddress empty on purpose, signer will observe this txout, and then kick of tss keygen ceremony
 			ToAddress:   "",
-			PoolAddress: pm.currentPoolAddresses.Current.GetByChain(common.BNBChain).PubKey,
+			VaultPubKey: pm.currentPoolAddresses.Current.GetByChain(common.BNBChain).PubKey,
 			Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(37501)),
 			Memo:        "nextpool",
 		}, true)
@@ -216,7 +216,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, chain 
 	for _, coin := range coins {
 		store.AddTxOutItem(ctx, &TxOutItem{
 			Chain:       currentAddr.Chain,
-			PoolAddress: previousAddr.PubKey,
+			VaultPubKey: previousAddr.PubKey,
 			InHash:      common.BlankTxID,
 			ToAddress:   toAddr,
 			Coin:        coin,
@@ -277,7 +277,7 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, run
 	for _, coin := range coins {
 		store.AddTxOutItem(ctx, &TxOutItem{
 			Chain:       currentAddr.Chain,
-			PoolAddress: previousAddr.PubKey,
+			VaultPubKey: previousAddr.PubKey,
 			InHash:      common.BlankTxID,
 			ToAddress:   toAddr,
 			Coin:        coin,

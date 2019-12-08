@@ -170,7 +170,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAd
 	toi := &TxOutItem{
 		Chain:       currentAddr.Chain,
 		InHash:      msg.Tx.ID,
-		PoolAddress: currentAddr.PubKey,
+		VaultPubKey: currentAddr.PubKey,
 		ToAddress:   msg.Destination,
 		Coin:        common.NewCoin(msg.TargetAsset, amount),
 	}
@@ -267,7 +267,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, 
 	toi := &TxOutItem{
 		Chain:       common.BNBChain,
 		InHash:      msg.Tx.ID,
-		PoolAddress: bnbPoolAddr.PubKey,
+		VaultPubKey: bnbPoolAddr.PubKey,
 		ToAddress:   stakerUnit.RuneAddress,
 		Coin:        common.NewCoin(common.RuneAsset(), runeAmt),
 	}
@@ -276,7 +276,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, 
 	toi = &TxOutItem{
 		Chain:       msg.Asset.Chain,
 		InHash:      msg.Tx.ID,
-		PoolAddress: currentAddr.PubKey,
+		VaultPubKey: currentAddr.PubKey,
 		ToAddress:   stakerUnit.AssetAddress,
 		Coin:        common.NewCoin(msg.Asset, assetAmount),
 	}
@@ -351,7 +351,7 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 	txOut.AddTxOutItem(ctx, &TxOutItem{
 		Chain:       common.BNBChain,
 		ToAddress:   addr,
-		PoolAddress: msg.NextPoolPubKey,
+		VaultPubKey: msg.NextPoolPubKey,
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
 		Memo:        "ack",
 	}, true)

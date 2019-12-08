@@ -74,7 +74,7 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) {
 				if tx.InHash.Equals(evt.InTx.ID) && tx.OutHash.IsEmpty() {
 					// Slash our node account for not sending funds
 					txs.TxArray[i].OutHash = common.BlankTxID
-					na, err := keeper.GetNodeAccountByPubKey(ctx, tx.PoolAddress)
+					na, err := keeper.GetNodeAccountByPubKey(ctx, tx.VaultPubKey)
 					if err != nil {
 						ctx.Logger().Error("Unable to get node account", err)
 						continue
@@ -85,9 +85,7 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) {
 					}
 
 					// Save the tx to as a new tx, select Asgard to send it this time.
-					// Set the pool address to empty, it will overwrite it with the
-					// current Asgard vault
-					tx.PoolAddress = common.EmptyPubKey
+					tx.VaultPubKey = txOutStore.GetAsgardPoolPubKey(tx.Chain).PubKey
 					// TODO: this creates a second tx out for this inTx, which
 					// means the event will never be completed because only one
 					// of the two out tx will occur.
