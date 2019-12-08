@@ -3,6 +3,7 @@ package thorchain
 import (
 	"fmt"
 
+	"github.com/blang/semver"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -234,8 +235,11 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 		bnbAddr,
 		bnbAddr,
 		w.activeNodeAccount.NodeAddress)
-	stakeResult := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
+
+	stakeHandler := NewStakeHandler(w.keeper)
+	stakeResult := stakeHandler.Run(w.ctx, msgSetStake, semver.MustParse("0.1.0"))
 	c.Assert(stakeResult.Code, Equals, sdk.CodeOK)
+
 	p, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	c.Assert(p.Empty(), Equals, false)
@@ -269,80 +273,6 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	}
 	c.Assert(totalAsset.Equal(msgSetStake.AssetAmount), Equals, true, Commentf("%d %d", totalAsset.Uint64(), msgSetStake.AssetAmount.Uint64()))
 	c.Assert(totalRune.Equal(msgSetStake.RuneAmount), Equals, true)
-}
-
-func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-	bnbAddr := GetRandomBNBAddress()
-	stakeTxHash := GetRandomTxHash()
-	tx := common.NewTx(
-		stakeTxHash,
-		bnbAddr,
-		GetRandomBNBAddress(),
-		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
-		"",
-	)
-	msgSetStake := NewMsgSetStakeData(
-		tx,
-		common.BNBAsset,
-		sdk.NewUint(100*common.One),
-		sdk.NewUint(100*common.One),
-		bnbAddr,
-		bnbAddr,
-		w.notActiveNodeAccount.NodeAddress)
-	stakeResult := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
-	c.Assert(stakeResult.Code, Equals, sdk.CodeUnauthorized)
-
-	p, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	c.Assert(p.Empty(), Equals, true)
-	msgSetStake = NewMsgSetStakeData(
-		tx,
-		common.BNBAsset,
-		sdk.NewUint(100*common.One),
-		sdk.NewUint(100*common.One),
-		bnbAddr,
-		bnbAddr,
-		w.activeNodeAccount.NodeAddress)
-	stakeResult1 := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
-	c.Assert(stakeResult1.Code, Equals, sdk.CodeOK)
-
-	p, err = w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	c.Assert(p.Empty(), Equals, false)
-	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
-	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
-	e, err := w.keeper.GetCompletedEvent(w.ctx, 1)
-	c.Assert(err, IsNil)
-	c.Assert(e.Status.Valid(), IsNil)
-	c.Assert(e.InTx.ID.Equals(stakeTxHash), Equals, true)
-
-	// Suspended pool should not allow stake
-	p.Status = PoolSuspended
-	c.Assert(w.keeper.SetPool(w.ctx, p), IsNil)
-
-	msgSetStake1 := NewMsgSetStakeData(
-		tx,
-		common.BNBAsset,
-		sdk.NewUint(100*common.One),
-		sdk.NewUint(100*common.One),
-		GetRandomBNBAddress(),
-		GetRandomBNBAddress(),
-		w.activeNodeAccount.NodeAddress)
-	stakeResult2 := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake1)
-	c.Assert(stakeResult2.Code, Equals, sdk.CodeUnknownRequest)
-
-	msgSetStake2 := NewMsgSetStakeData(
-		tx,
-		common.BNBAsset,
-		sdk.NewUint(100*common.One),
-		sdk.NewUint(100*common.One),
-		"",
-		"",
-		w.activeNodeAccount.NodeAddress)
-	stakeResult3 := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake2)
-	c.Assert(stakeResult3.Code, Equals, sdk.CodeUnknownRequest)
 }
 
 func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
