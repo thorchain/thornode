@@ -25,7 +25,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, p
 				PoolAddress: poolAddr,
 				Coin:        coin,
 			}
-			store.AddTxOutItem(ctx, keeper, toi, false)
+			store.AddTxOutItem(ctx, toi, false)
 			continue
 		}
 
@@ -69,7 +69,7 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 			Coin:      common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
 
-		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
+		txOut.AddTxOutItem(ctx, txOutItem, true)
 	}
 
 	nodeAcc.Bond = sdk.ZeroUint()
