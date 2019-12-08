@@ -5,6 +5,7 @@ import (
 	stdErrors "errors"
 	"fmt"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
@@ -54,6 +55,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, poolAddrMgr, txOutStore)
 	m[MsgAck{}.Type()] = NewAckHandler(keeper, poolAddrMgr, validatorMgr)
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
+	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, txOutStore, poolAddrMgr)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
 	return m
 }
@@ -64,8 +66,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 		switch m := msg.(type) {
 		case MsgSwap:
 			return handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m)
-		case MsgSetUnStake:
-			return handleMsgSetUnstake(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetAdminConfig:
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		case MsgOutboundTx:
@@ -109,8 +109,9 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore TxOutSt
 			msg.Asset,
 			msg.Signer,
 		)
-
-		result := handleMsgSetUnstake(ctx, keeper, txOutStore, poolAddrMgr, unstakeMsg)
+		unstakeHandler := NewUnstakeHandler(keeper, txOutStore, poolAddrMgr)
+		ver := semver.MustParse("0.1.0")
+		result := unstakeHandler.Run(ctx, unstakeMsg, ver)
 		if !result.IsOK() {
 			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
 			return result
@@ -175,114 +176,6 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAd
 		Coin:        common.NewCoin(msg.TargetAsset, amount),
 	}
 	txOutStore.AddTxOutItem(ctx, toi)
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Data:      res,
-		Codespace: DefaultCodespace,
-	}
-}
-
-// handleMsgSetUnstake process unstake
-func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, msg MsgSetUnStake) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.RuneAddress, msg.WithdrawBasisPoints))
-	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.Tx.ID, "rune address", msg.RuneAddress, "asset", msg.Asset, "withdraw basis points", msg.WithdrawBasisPoints)
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-
-	bnbPoolAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
-	if nil == bnbPoolAddr {
-		msg := fmt.Sprintf("THORNode don't have pool for chain : %s ", common.BNBChain)
-		ctx.Logger().Error(msg)
-		return sdk.ErrUnknownRequest(msg).Result()
-	}
-	currentAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(msg.Asset.Chain)
-	if nil == currentAddr {
-		msg := fmt.Sprintf("THORNode don't have pool for chain : %s ", msg.Asset.Chain)
-		ctx.Logger().Error(msg)
-		return sdk.ErrUnknownRequest(msg).Result()
-	}
-
-	pool, err := keeper.GetPool(ctx, msg.Asset)
-	if err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-
-	if err := pool.EnsureValidPoolStatus(msg); nil != err {
-		ctx.Logger().Error("check pool status", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgSetUnstake", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
-	if nil != err {
-		ctx.Logger().Error("fail to get pool staker", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
-
-	runeAmt, assetAmount, units, err := unstake(ctx, keeper, msg)
-	if nil != err {
-		ctx.Logger().Error("fail to UnStake", "error", err)
-		return sdk.ErrInternal("fail to process UnStake request").Result()
-	}
-	res, err := keeper.Cdc().MarshalBinaryLengthPrefixed(struct {
-		Rune  sdk.Uint `json:"rune"`
-		Asset sdk.Uint `json:"asset"`
-	}{
-		Rune:  runeAmt,
-		Asset: assetAmount,
-	})
-	if nil != err {
-		ctx.Logger().Error("fail to marshal result to json", "error", err)
-		// if this happen what should THORNode tell the client?
-	}
-
-	unstakeEvt := NewEventUnstake(
-		msg.Asset,
-		units,
-		0,             // TODO: make this real data
-		sdk.ZeroDec(), // TODO: make this real data
-	)
-	unstakeBytes, err := json.Marshal(unstakeEvt)
-	if err != nil {
-		ctx.Logger().Error("fail to save event", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	evt := NewEvent(
-		unstakeEvt.Type(),
-		ctx.BlockHeight(),
-		msg.Tx,
-		unstakeBytes,
-		EventSuccess,
-	)
-
-	if err := keeper.AddIncompleteEvents(ctx, evt); err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-
-	toi := &TxOutItem{
-		Chain:       common.BNBChain,
-		InHash:      msg.Tx.ID,
-		VaultPubKey: bnbPoolAddr.PubKey,
-		ToAddress:   stakerUnit.RuneAddress,
-		Coin:        common.NewCoin(common.RuneAsset(), runeAmt),
-	}
-	txOutStore.AddTxOutItem(ctx, toi)
-
-	toi = &TxOutItem{
-		Chain:       msg.Asset.Chain,
-		InHash:      msg.Tx.ID,
-		VaultPubKey: currentAddr.PubKey,
-		ToAddress:   stakerUnit.AssetAddress,
-		Coin:        common.NewCoin(msg.Asset, assetAmount),
-	}
-	// for unstake , THORNode should deduct fees
-	txOutStore.AddTxOutItem(ctx, toi)
-
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -909,8 +802,9 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStor
 				pool.Asset,
 				nas[0].NodeAddress,
 			)
-
-			result := handleMsgSetUnstake(ctx, keeper, txOut, poolAddrMgr, unstakeMsg)
+			unstakeHandler := NewUnstakeHandler(keeper, txOut, poolAddrMgr)
+			ver := semver.MustParse("0.1.0")
+			result := unstakeHandler.Run(ctx, unstakeMsg, ver)
 			if !result.IsOK() {
 				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
 				return result
