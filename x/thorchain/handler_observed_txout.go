@@ -185,13 +185,6 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 
 		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
 
-		if ok := isCurrentVaultPubKey(ctx, h.keeper, h.poolAddrMgr, tx); !ok {
-			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, false); err != nil {
-				return sdk.ErrInternal(err.Error()).Result()
-			}
-			continue
-		}
-
 		m, err := processOneTxIn(ctx, h.keeper, txOut, msg.Signer)
 		if nil != err || tx.Tx.Chain.IsEmpty() {
 			ctx.Logger().Error("fail to process txOut", "error", err, "txhash", tx.Tx.ID.String())
