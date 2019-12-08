@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -316,7 +317,7 @@ func (ValidatorManagerTestSuite) TestRagnarokProtocol(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(common.One*100)),
 			common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One*100)),
 		},
-		nil,
+		common.BNBGasFeeSingleton,
 		"stake:BNB",
 	)
 	msg := NewMsgSetStakeData(tx,
@@ -326,8 +327,9 @@ func (ValidatorManagerTestSuite) TestRagnarokProtocol(c *C) {
 		tx.FromAddress,
 		tx.FromAddress,
 		allNodes[0].NodeAddress)
-	// add a staker
-	handleMsgSetStakeData(w.ctx, w.keeper, msg)
+	stakeHandler := NewStakeHandler(w.keeper)
+	stakeResult := stakeHandler.Run(w.ctx, msg, semver.MustParse("0.1.0"))
+	c.Assert(stakeResult.Code, Equals, sdk.CodeOK)
 
 	w.txOutStore.NewBlock(uint64(height))
 	ctx = w.ctx.WithBlockHeight(height)

@@ -54,6 +54,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, poolAddrMgr, txOutStore)
 	m[MsgAck{}.Type()] = NewAckHandler(keeper, poolAddrMgr, validatorMgr)
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
+	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
 	return m
 }
 
@@ -61,8 +62,6 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutStore TxOutStore, validatorManager ValidatorManager) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		switch m := msg.(type) {
-		case MsgSetStakeData:
-			return handleMsgSetStakeData(ctx, keeper, m)
 		case MsgSwap:
 			return handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetUnStake:
@@ -123,112 +122,6 @@ func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore TxOutSt
 		err = errors.Wrap(err, "fail to set pool")
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
-func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus) error {
-	var stakeEvt EventStake
-	if eventStatus == EventRefund {
-		// do not log event if the stake failed
-		return nil
-	}
-
-	stakeEvt = NewEventStake(
-		msg.Asset,
-		stakeUnits,
-	)
-	stakeBytes, err := json.Marshal(stakeEvt)
-	if err != nil {
-		ctx.Logger().Error("fail to save event", err)
-		return errors.Wrap(err, "fail to marshal stake event to json")
-	}
-
-	evt := NewEvent(
-		stakeEvt.Type(),
-		ctx.BlockHeight(),
-		msg.Tx,
-		stakeBytes,
-		eventStatus,
-	)
-
-	if err := keeper.AddIncompleteEvents(ctx, evt); err != nil {
-		return err
-	}
-
-	if eventStatus != EventRefund {
-		// since there is no outbound tx for staking, we'll complete the event now
-		tx := common.Tx{ID: common.BlankTxID}
-		err := completeEvents(ctx, keeper, msg.Tx.ID, common.Txs{tx})
-		if err != nil {
-			ctx.Logger().Error("unable to complete events", "error", err)
-			return err
-		}
-	}
-	return nil
-}
-
-// Handle a message to set stake data
-func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) (result sdk.Result) {
-	stakeUnits := sdk.ZeroUint()
-	defer func() {
-		var status EventStatus
-		if result.IsOK() {
-			status = EventSuccess
-		} else {
-			status = EventRefund
-		}
-		if err := processStakeEvent(ctx, keeper, msg, stakeUnits, status); nil != err {
-			ctx.Logger().Error("fail to save stake event", "error", err)
-			result = sdk.ErrInternal("fail to save stake event").Result()
-		}
-	}()
-
-	ctx.Logger().Info("handleMsgSetStakeData request", "stakerid", msg.Asset.String())
-	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset.String(), "request tx hash", msg.Tx.ID, "rune address", msg.RuneAddress)
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error(err.Error())
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	pool, err := keeper.GetPool(ctx, msg.Asset)
-	if err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-
-	if pool.Empty() {
-		ctx.Logger().Info("pool doesn't exist yet, create a new one", "symbol", msg.Asset.String(), "creator", msg.RuneAddress)
-		pool.Asset = msg.Asset
-		if err := keeper.SetPool(ctx, pool); err != nil {
-			err = errors.Wrap(err, "fail to set pool")
-			ctx.Logger().Error(err.Error())
-			return sdk.ErrInternal(err.Error()).Result()
-		}
-	}
-	if err := pool.EnsureValidPoolStatus(msg); nil != err {
-		ctx.Logger().Error("check pool status", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	stakeUnits, err = stake(
-		ctx,
-		keeper,
-		msg.Asset,
-		msg.RuneAmount,
-		msg.AssetAmount,
-		msg.RuneAddress,
-		msg.AssetAddress,
-		msg.Tx.ID,
-	)
-	if err != nil {
-		ctx.Logger().Error("fail to process stake message", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
