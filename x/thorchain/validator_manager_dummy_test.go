@@ -34,7 +34,7 @@ func (vm *ValidatorDummyMgr) processValidatorLeave(ctx sdk.Context, store *TxOut
 func (vm *ValidatorDummyMgr) rotateValidatorNodes(ctx sdk.Context, store *TxOutStore) (bool, error) {
 	return false, kaboom
 }
-func (vm *ValidatorDummyMgr) requestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr *PoolAddressManager, txOut *TxOutStore) error {
+func (vm *ValidatorDummyMgr) requestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut *TxOutStore) error {
 	return kaboom
 }
 func (vm *ValidatorDummyMgr) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutStore) error {
