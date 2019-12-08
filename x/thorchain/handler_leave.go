@@ -6,6 +6,7 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // LeaveHandler a handler to process leave request
@@ -47,7 +48,7 @@ func (lh LeaveHandler) validateV1(ctx sdk.Context, msg MsgLeave) sdk.Error {
 }
 
 // Run execute the handler
-func (lh LeaveHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (lh LeaveHandler) Run(ctx sdk.Context, m sdk.Msg, consts constants.Constants, version semver.Version) sdk.Result {
 	msg, ok := m.(MsgLeave)
 	if !ok {
 		return errInvalidMessage.Result()

@@ -127,12 +127,15 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
 
+	version := am.keeper.GetLowestActiveVersion(ctx)
+	consts := constants.GetConstants(version)
+
 	// slash node accounts for not observing any accepted inbound tx
-	slashForObservingAddresses(ctx, am.keeper)
-	slashForNotSigning(ctx, am.keeper, am.txOutStore)
+	slashForObservingAddresses(ctx, consts, am.keeper)
+	slashForNotSigning(ctx, consts, am.keeper, am.txOutStore)
 
 	// Enable a pool every newPoolCycle
-	if ctx.BlockHeight()%constants.NewPoolCycle == 0 {
+	if ctx.BlockHeight()%consts.NewPoolCycle == 0 {
 		if err := enableNextPool(ctx, am.keeper); err != nil {
 			ctx.Logger().Error("Unable to enable a pool", err)
 		}
@@ -149,7 +152,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to save vault", err)
 	}
 
-	am.poolMgr.EndBlock(ctx, am.txOutStore)
+	am.poolMgr.EndBlock(ctx, consts, am.txOutStore)
 	am.txOutStore.CommitBlock(ctx)
 	return am.validatorMgr.EndBlock(ctx, am.txOutStore)
 }

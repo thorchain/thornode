@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // PoolAddressDummyMgr is going to manage the pool addresses , rotate etc
@@ -44,7 +45,7 @@ func (pm *PoolAddressDummyMgr) BeginBlock(_ sdk.Context) error {
 }
 
 // EndBlock contains some actions THORNode need to take when block commit
-func (pm *PoolAddressDummyMgr) EndBlock(_ct sdk.Context, _ *TxOutStore) {}
+func (pm *PoolAddressDummyMgr) EndBlock(_ct sdk.Context, _ constants.Constants, _ *TxOutStore) {}
 
 func (pm *PoolAddressDummyMgr) rotatePoolAddress(_ sdk.Context, _ *TxOutStore) {
 }

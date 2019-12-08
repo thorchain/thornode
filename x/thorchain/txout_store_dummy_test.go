@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // TxOutStoreDummy is going to manage all the outgoing tx
@@ -35,7 +36,7 @@ func (tos *TxOutStoreDummy) GetOutboundItems() []*TxOutItem {
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStoreDummy) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, asgard bool) {
+func (tos *TxOutStoreDummy) AddTxOutItem(ctx sdk.Context, _ constants.Constants, keeper Keeper, toi *TxOutItem, asgard bool) {
 	tos.addToBlockOut(toi)
 }
 

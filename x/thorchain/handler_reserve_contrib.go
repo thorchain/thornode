@@ -3,6 +3,7 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type ReserveContributorHandler struct {
@@ -15,7 +16,7 @@ func NewReserveContributorHandler(keeper Keeper) ReserveContributorHandler {
 	}
 }
 
-func (h ReserveContributorHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h ReserveContributorHandler) Run(ctx sdk.Context, m sdk.Msg, consts constants.Constants, version semver.Version) sdk.Result {
 	msg, ok := m.(MsgReserveContributor)
 	if !ok {
 		return errInvalidMessage.Result()

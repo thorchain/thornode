@@ -3,6 +3,7 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type ObservedTxOutHandler struct {
@@ -21,7 +22,7 @@ func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr P
 	}
 }
 
-func (h ObservedTxOutHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h ObservedTxOutHandler) Run(ctx sdk.Context, m sdk.Msg, consts constants.Constants, version semver.Version) sdk.Result {
 	msg, ok := m.(MsgObservedTxOut)
 	if !ok {
 		return errInvalidMessage.Result()

@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type ObservedTxInHandler struct {
@@ -27,7 +28,7 @@ func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr Po
 	}
 }
 
-func (h ObservedTxInHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h ObservedTxInHandler) Run(ctx sdk.Context, m sdk.Msg, consts constants.Constants, version semver.Version) sdk.Result {
 	msg, ok := m.(MsgObservedTxIn)
 	if !ok {
 		return errInvalidMessage.Result()

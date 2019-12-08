@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -34,11 +35,12 @@ func NewHandler(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutS
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
+		consts := constants.GetConstants(version)
 		h, ok := handlerMap[msg.Type()]
 		if !ok {
-			return classic(ctx, msg)
+			return classic(ctx, consts, msg)
 		}
-		return h.Run(ctx, msg, version)
+		return h.Run(ctx, msg, consts, version)
 	}
 }
 
@@ -59,7 +61,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 
 // NewClassicHandler returns a handler for "thorchain" type messages.
 func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutStore TxOutStore, validatorManager ValidatorManager) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+	return func(ctx sdk.Context, consts constants.Constants, msg sdk.Msg) sdk.Result {
 		switch m := msg.(type) {
 		case MsgSetStakeData:
 			return handleMsgSetStakeData(ctx, keeper, m)
@@ -236,7 +238,7 @@ func handleMsgSetStakeData(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData) 
 }
 
 // Handle a message to set stake data
-func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, msg MsgSwap) sdk.Result {
+func handleMsgSwap(ctx sdk.Context, consts constants.Constants, keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, msg MsgSwap) sdk.Result {
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.Tx.ID, "source asset", msg.Tx.Coins[0].Asset, "target asset", msg.TargetAsset)
 		return sdk.ErrUnauthorized("Not authorized").Result()
@@ -281,7 +283,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAd
 		ToAddress:   msg.Destination,
 		Coin:        common.NewCoin(msg.TargetAsset, amount),
 	}
-	txOutStore.AddTxOutItem(ctx, keeper, toi, false)
+	txOutStore.AddTxOutItem(ctx, consts, keeper, toi, false)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -290,7 +292,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAd
 }
 
 // handleMsgSetUnstake process unstake
-func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, msg MsgSetUnStake) sdk.Result {
+func handleMsgSetUnstake(ctx sdk.Context, consts constants.Constants, keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, msg MsgSetUnStake) sdk.Result {
 	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.RuneAddress, msg.WithdrawBasisPoints))
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.Tx.ID, "rune address", msg.RuneAddress, "asset", msg.Asset, "withdraw basis points", msg.WithdrawBasisPoints)
@@ -378,7 +380,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, 
 		ToAddress:   stakerUnit.RuneAddress,
 		Coin:        common.NewCoin(common.RuneAsset(), runeAmt),
 	}
-	txOutStore.AddTxOutItem(ctx, keeper, toi, false)
+	txOutStore.AddTxOutItem(ctx, consts, keeper, toi, false)
 
 	toi = &TxOutItem{
 		Chain:       msg.Asset.Chain,
@@ -388,7 +390,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, 
 		Coin:        common.NewCoin(msg.Asset, assetAmount),
 	}
 	// for unstake , THORNode should deduct fees
-	txOutStore.AddTxOutItem(ctx, keeper, toi, false)
+	txOutStore.AddTxOutItem(ctx, consts, keeper, toi, false)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,

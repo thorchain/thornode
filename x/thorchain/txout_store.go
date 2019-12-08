@@ -17,7 +17,7 @@ type TxOutStore interface {
 	NewBlock(height uint64)
 	CommitBlock(ctx sdk.Context)
 	GetOutboundItems() []*TxOutItem
-	AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, asgard bool)
+	AddTxOutItem(ctx sdk.Context, _ constants.Constants, keeper Keeper, toi *TxOutItem, asgard bool)
 	addToBlockOut(toi *TxOutItem)
 	getBlockOut() *TxOut
 	getSeqNo(chain common.Chain) uint64
@@ -66,7 +66,7 @@ func (tos *TxOutStorage) GetOutboundItems() []*TxOutItem {
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, asgard bool) {
+func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, consts constants.Constants, keeper Keeper, toi *TxOutItem, asgard bool) {
 	// Default the memo to the standard outbound memo
 	if toi.Memo == "" {
 		toi.Memo = NewOutboundMemo(toi.InHash).String()
@@ -120,13 +120,13 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOut
 	// Deduct TransactionFee from TOI and add to Reserve
 	nodes, err := keeper.TotalActiveNodeAccount(ctx)
 
-	if nodes >= (constants.MinmumNodesForBFT) && err == nil {
+	if nodes >= (consts.MinmumNodesForBFT) && err == nil {
 		var runeFee sdk.Uint
 		if toi.Coin.Asset.IsRune() {
-			if toi.Coin.Amount.LTE(sdk.NewUint(constants.TransactionFee)) {
+			if toi.Coin.Amount.LTE(sdk.NewUint(consts.TransactionFee)) {
 				runeFee = toi.Coin.Amount // Fee is the full amount
 			} else {
-				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
+				runeFee = sdk.NewUint(consts.TransactionFee) // Fee is the prescribed fee
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
 			if err := keeper.AddFeeToReserve(ctx, runeFee); nil != err {
@@ -140,12 +140,12 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOut
 				return
 			}
 
-			assetFee := pool.AssetValueInRune(sdk.NewUint(constants.TransactionFee)) // Get fee in Asset value
+			assetFee := pool.AssetValueInRune(sdk.NewUint(consts.TransactionFee)) // Get fee in Asset value
 			if toi.Coin.Amount.LTE(assetFee) {
 				assetFee = toi.Coin.Amount // Fee is the full amount
 				runeFee = pool.RuneValueInAsset(assetFee)
 			} else {
-				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
+				runeFee = sdk.NewUint(consts.TransactionFee) // Fee is the prescribed fee
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)  // Deduct Asset fee
 			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool

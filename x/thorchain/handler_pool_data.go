@@ -3,6 +3,7 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type PoolDataHandler struct {
@@ -15,7 +16,7 @@ func NewPoolDataHandler(keeper Keeper) PoolDataHandler {
 	}
 }
 
-func (h PoolDataHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h PoolDataHandler) Run(ctx sdk.Context, m sdk.Msg, consts constants.Constants, version semver.Version) sdk.Result {
 	msg, ok := m.(MsgSetPoolData)
 	if !ok {
 		return errInvalidMessage.Result()

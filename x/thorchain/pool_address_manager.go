@@ -19,12 +19,11 @@ const (
 type PoolAddressManager interface {
 	GetCurrentPoolAddresses() *PoolAddresses
 	BeginBlock(ctx sdk.Context) error
-	EndBlock(ctx sdk.Context, store TxOutStore)
+	EndBlock(ctx sdk.Context, _ constants.Constants, _ TxOutStore)
 	SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys)
 	ObservedNextPoolAddrPubKey() common.PoolPubKeys
 	IsRotateWindowOpen() bool
 	SetRotateWindowOpen(_ bool)
-	rotatePoolAddress(ctx sdk.Context, store TxOutStore)
 }
 
 // PoolAddressMgr is going to manage the pool addresses , rotate etc
@@ -85,7 +84,7 @@ func (pm *PoolAddressMgr) BeginBlock(ctx sdk.Context) error {
 }
 
 // EndBlock contains some actions THORNode need to take when block commit
-func (pm *PoolAddressMgr) EndBlock(ctx sdk.Context, store TxOutStore) {
+func (pm *PoolAddressMgr) EndBlock(ctx sdk.Context, consts constants.Constants, store TxOutStore) {
 	if nil == pm.currentPoolAddresses {
 		return
 	}
@@ -101,11 +100,11 @@ func (pm *PoolAddressMgr) EndBlock(ctx sdk.Context, store TxOutStore) {
 			Memo:        "nextpool",
 		}, true)
 	}
-	pm.rotatePoolAddress(ctx, store)
+	pm.rotatePoolAddress(ctx, consts, store)
 	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
 }
 
-func (pm *PoolAddressMgr) rotatePoolAddress(ctx sdk.Context, store TxOutStore) {
+func (pm *PoolAddressMgr) rotatePoolAddress(ctx sdk.Context, consts constants.Constants, store TxOutStore) {
 	poolAddresses := pm.currentPoolAddresses
 	if ctx.BlockHeight() == 1 {
 		// THORNode don't need to do anything on
@@ -134,8 +133,8 @@ func (pm *PoolAddressMgr) rotatePoolAddress(ctx sdk.Context, store TxOutStore) {
 		return
 	}
 
-	rotatePerBlockHeight := constants.RotatePerBlockHeight
-	windowOpen := constants.ValidatorsChangeWindow
+	rotatePerBlockHeight := consts.RotatePerBlockHeight
+	windowOpen := consts.ValidatorsChangeWindow
 	rotateAt := height + int64(rotatePerBlockHeight)
 	windowOpenAt := rotateAt - int64(windowOpen)
 	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, common.EmptyPoolPubKeys, rotateAt, windowOpenAt)

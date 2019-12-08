@@ -10,7 +10,7 @@ import (
 )
 
 // Slash node accounts that didn't observe a single inbound txn
-func slashForObservingAddresses(ctx sdk.Context, keeper Keeper) {
+func slashForObservingAddresses(ctx sdk.Context, consts constants.Constants, keeper Keeper) {
 	accs, err := keeper.GetObservingAddresses(ctx)
 	if err != nil {
 		ctx.Logger().Error("fail to get observing addresses", err)
@@ -40,7 +40,7 @@ func slashForObservingAddresses(ctx sdk.Context, keeper Keeper) {
 
 		// this na is not found, therefore it should be slashed
 		if !found {
-			na.SlashPoints += constants.LackOfObservationPenalty
+			na.SlashPoints += consts.LackOfObservationPenalty
 			if err := keeper.SetNodeAccount(ctx, na); nil != err {
 				ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
 			}
@@ -53,7 +53,7 @@ func slashForObservingAddresses(ctx sdk.Context, keeper Keeper) {
 	return
 }
 
-func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) {
+func slashForNotSigning(ctx sdk.Context, consts constants.Constants, keeper Keeper, txOutStore TxOutStore) {
 	incomplete, err := keeper.GetIncompleteEvents(ctx)
 	if err != nil {
 		ctx.Logger().Error("Unable to get list of active accounts", err)
@@ -63,7 +63,7 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) {
 	for _, evt := range incomplete {
 		// NOTE: not checking the event type because all non-swap/unstake/etc
 		// are completed immediately.
-		if evt.Height+constants.SigningTransactionPeriod < ctx.BlockHeight() {
+		if evt.Height+consts.SigningTransactionPeriod < ctx.BlockHeight() {
 			txs, err := keeper.GetTxOut(ctx, uint64(evt.Height))
 			if err != nil {
 				ctx.Logger().Error("Unable to get tx out list", err)
@@ -79,7 +79,7 @@ func slashForNotSigning(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) {
 						ctx.Logger().Error("Unable to get node account", err)
 						continue
 					}
-					na.SlashPoints += constants.SigningTransactionPeriod * 2
+					na.SlashPoints += consts.SigningTransactionPeriod * 2
 					if err := keeper.SetNodeAccount(ctx, na); nil != err {
 						ctx.Logger().Error("fail to save node account")
 					}

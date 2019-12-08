@@ -5,6 +5,7 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // AckHandler is to handle Ack message
@@ -24,7 +25,7 @@ func NewAckHandler(keeper Keeper, poolAddrMgr PoolAddressManager, validatorMgr V
 }
 
 // Run it the main entry point to execute Ack logic
-func (ah AckHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (ah AckHandler) Run(ctx sdk.Context, m sdk.Msg, consts constants.Constants, version semver.Version) sdk.Result {
 	msg, ok := m.(MsgAck)
 	if !ok {
 		return errInvalidMessage.Result()
