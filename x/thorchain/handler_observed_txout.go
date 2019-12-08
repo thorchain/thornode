@@ -178,26 +178,38 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 
-		if voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer); ok {
-			txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
-			m, err := processOneTxIn(ctx, h.keeper, txOut, msg.Signer)
-			if nil != err || tx.Tx.Chain.IsEmpty() {
-				ctx.Logger().Error("fail to process txOut", "error", err, "txhash", tx.Tx.ID.String())
-				// Detect if the txOut is to the thorchain network or from the
-				// thorchain network
-				if err := h.outboundFailure(ctx, txOut, activeNodeAccounts); err != nil {
-					return sdk.ErrInternal(err.Error()).Result()
-				}
-				continue
-			}
+		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
+		if !ok {
+			continue
+		}
 
-			// add addresses to observing addresses. This is used to detect
-			// active/inactive observing node accounts
-			if err := h.keeper.AddObservingAddresses(ctx, txOut.Signers); err != nil {
+		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
+
+		if ok := isCurrentVaultPubKey(ctx, h.keeper, h.poolAddrMgr, tx); !ok {
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, false); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
+			continue
+		}
 
-			return handler(ctx, m)
+		m, err := processOneTxIn(ctx, h.keeper, txOut, msg.Signer)
+		if nil != err || tx.Tx.Chain.IsEmpty() {
+			ctx.Logger().Error("fail to process txOut", "error", err, "txhash", tx.Tx.ID.String())
+			if err := h.outboundFailure(ctx, txOut, activeNodeAccounts); err != nil {
+				return sdk.ErrInternal(err.Error()).Result()
+			}
+			continue
+		}
+
+		// add addresses to observing addresses. This is used to detect
+		// active/inactive observing node accounts
+		if err := h.keeper.AddObservingAddresses(ctx, txOut.Signers); err != nil {
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+
+		result := handler(ctx, m)
+		if !result.IsOK() {
+			ctx.Logger().Error("Handler failed:", result.Log)
 		}
 	}
 
