@@ -256,7 +256,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	c.Check(p1.Status, Equals, PoolSuspended)
 	c.Check(p1.BalanceAsset.Uint64(), Equals, uint64(0))
 	c.Check(p1.BalanceRune.Uint64(), Equals, uint64(0))
-	txOut := w.txOutStore.getBlockOut()
+	txOut := w.txOutStore.GetBlockOut()
 	c.Check(txOut, NotNil)
 	c.Check(len(txOut.TxArray) > 0, Equals, true)
 	c.Check(txOut.Height, Equals, uint64(1))
@@ -316,7 +316,7 @@ func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
 	w.txOutStore.NewBlock(1)
 	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddr)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
-	c.Assert(w.txOutStore.getBlockOut(), NotNil)
+	c.Assert(w.txOutStore.GetBlockOut(), NotNil)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	tai := w.txOutStore.GetOutboundItems()[0]
 	c.Assert(tai, NotNil)

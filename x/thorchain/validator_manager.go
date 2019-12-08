@@ -357,11 +357,11 @@ func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, pool
 					Chain:       coin.Asset.Chain,
 					ToAddress:   toAddr,
 					InHash:      common.BlankTxID,
-					PoolAddress: ygg.PubKey,
+					VaultPubKey: ygg.PubKey,
 					Memo:        "yggdrasil-",
 					Coin:        coin,
 				}
-				txOut.AddTxOutItem(ctx, vm.k, txOutItem, false)
+				txOut.AddTxOutItem(ctx, txOutItem)
 				continue
 			}
 			wrapErr := fmt.Errorf(

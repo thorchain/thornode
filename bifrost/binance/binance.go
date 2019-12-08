@@ -199,11 +199,11 @@ func (b *Binance) isSignerAddressMatch(poolAddr, signerAddr string) bool {
 
 // SignTx sign the the given TxArrayItem
 func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[string]string, error) {
-	signerAddr := b.GetAddress(tai.PoolAddress)
+	signerAddr := b.GetAddress(tai.VaultPubKey)
 	var payload []msg.Transfer
 
-	if !b.isSignerAddressMatch(tai.PoolAddress.String(), signerAddr) {
-		b.logger.Info().Str("signer addr", signerAddr).Str("pool addr", tai.PoolAddress.String()).Msg("address doesn't match ignore")
+	if !b.isSignerAddressMatch(tai.VaultPubKey.String(), signerAddr) {
+		b.logger.Info().Str("signer addr", signerAddr).Str("pool addr", tai.VaultPubKey.String()).Msg("address doesn't match ignore")
 		return nil, nil, nil
 	}
 	toAddr, err := types.AccAddressFromBech32(tai.To)
@@ -229,7 +229,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 		b.logger.Error().Msg("payload is empty , this should not happen")
 		return nil, nil, nil
 	}
-	fromAddr := b.GetAddress(tai.PoolAddress)
+	fromAddr := b.GetAddress(tai.VaultPubKey)
 	sendMsg := b.parseTx(fromAddr, payload)
 	if err := sendMsg.ValidateBasic(); nil != err {
 		return nil, nil, errors.Wrap(err, "invalid send msg")
@@ -257,7 +257,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	param := map[string]string{
 		"sync": "true",
 	}
-	rawBz, err := b.signWithRetry(signMsg, fromAddr, tai.PoolAddress)
+	rawBz, err := b.signWithRetry(signMsg, fromAddr, tai.VaultPubKey)
 	if nil != err {
 		return nil, nil, errors.Wrap(err, "fail to sign message")
 	}
