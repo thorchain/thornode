@@ -252,7 +252,7 @@ func (s *Smoke) WaitForTransactions(count int64) error {
 	if err != nil {
 		return err
 	}
-	for i := 0; i < 300; i++ { // wait for 30 seconds before timing out
+	for i := 0; i < 600; i++ { // wait for 30 seconds before timing out
 		height, err := s.Binance.GetBlockHeight()
 		if err != nil {
 			return err
