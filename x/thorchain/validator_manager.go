@@ -361,7 +361,7 @@ func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, pool
 					Memo:        "yggdrasil-",
 					Coin:        coin,
 				}
-				txOut.AddTxOutItem(ctx, vm.k, txOutItem, false)
+				txOut.AddTxOutItem(ctx, txOutItem, false)
 				continue
 			}
 			wrapErr := fmt.Errorf(

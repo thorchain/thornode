@@ -23,10 +23,14 @@ func (tos *TxOutStoreDummy) NewBlock(height uint64) {
 	tos.blockOut = NewTxOut(height)
 }
 
+func (tos *TxOutStoreDummy) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {
+	return nil
+}
+
 // CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
 func (tos *TxOutStoreDummy) CommitBlock(ctx sdk.Context) {}
 
-func (tos *TxOutStoreDummy) getBlockOut() *TxOut {
+func (tos *TxOutStoreDummy) GetBlockOut() *TxOut {
 	return tos.blockOut
 }
 
@@ -35,7 +39,7 @@ func (tos *TxOutStoreDummy) GetOutboundItems() []*TxOutItem {
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStoreDummy) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, asgard bool) {
+func (tos *TxOutStoreDummy) AddTxOutItem(ctx sdk.Context, toi *TxOutItem, asgard bool) {
 	tos.addToBlockOut(toi)
 }
 
@@ -48,6 +52,6 @@ func (tos *TxOutStoreDummy) getSeqNo(chain common.Chain) uint64 {
 	return uint64(0)
 }
 
-func (tos *TxOutStoreDummy) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx ObservedTx) Yggdrasils {
+func (tos *TxOutStoreDummy) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) Yggdrasils {
 	return nil
 }
