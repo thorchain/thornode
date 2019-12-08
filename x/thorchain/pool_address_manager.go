@@ -104,7 +104,7 @@ func (pm *PoolAddressMgr) EndBlock(ctx sdk.Context, store TxOutStore) {
 			VaultPubKey: pm.currentPoolAddresses.Current.GetByChain(common.BNBChain).PubKey,
 			Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(37501)),
 			Memo:        "nextpool",
-		}, true)
+		})
 	}
 	pm.rotatePoolAddress(ctx, store)
 	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
@@ -220,7 +220,7 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, chain 
 			InHash:      common.BlankTxID,
 			ToAddress:   toAddr,
 			Coin:        coin,
-		}, true)
+		})
 	}
 	return runeTotal, nil
 }
@@ -281,7 +281,7 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, run
 			InHash:      common.BlankTxID,
 			ToAddress:   toAddr,
 			Coin:        coin,
-		}, true)
+		})
 	}
 	return nil
 }

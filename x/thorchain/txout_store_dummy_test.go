@@ -41,7 +41,7 @@ func (tos *TxOutStoreDummy) GetOutboundItems() []*TxOutItem {
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStoreDummy) AddTxOutItem(ctx sdk.Context, toi *TxOutItem, asgard bool) {
+func (tos *TxOutStoreDummy) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 	tos.addToBlockOut(toi)
 }
 

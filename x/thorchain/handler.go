@@ -174,7 +174,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAd
 		ToAddress:   msg.Destination,
 		Coin:        common.NewCoin(msg.TargetAsset, amount),
 	}
-	txOutStore.AddTxOutItem(ctx, toi, false)
+	txOutStore.AddTxOutItem(ctx, toi)
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
@@ -271,7 +271,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, 
 		ToAddress:   stakerUnit.RuneAddress,
 		Coin:        common.NewCoin(common.RuneAsset(), runeAmt),
 	}
-	txOutStore.AddTxOutItem(ctx, toi, false)
+	txOutStore.AddTxOutItem(ctx, toi)
 
 	toi = &TxOutItem{
 		Chain:       msg.Asset.Chain,
@@ -281,7 +281,7 @@ func handleMsgSetUnstake(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, 
 		Coin:        common.NewCoin(msg.Asset, assetAmount),
 	}
 	// for unstake , THORNode should deduct fees
-	txOutStore.AddTxOutItem(ctx, toi, false)
+	txOutStore.AddTxOutItem(ctx, toi)
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
@@ -354,7 +354,7 @@ func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrMan
 		VaultPubKey: msg.NextPoolPubKey,
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
 		Memo:        "ack",
-	}, true)
+	})
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,

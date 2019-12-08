@@ -13,7 +13,7 @@ type TxOutStore interface {
 	GetBlockOut() *TxOut
 	GetOutboundItems() []*TxOutItem
 	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
-	AddTxOutItem(ctx sdk.Context, toi *TxOutItem, asgard bool)
+	AddTxOutItem(ctx sdk.Context, toi *TxOutItem)
 	CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) Yggdrasils
 }
 
@@ -63,7 +63,7 @@ func (tos *TxOutStorage) GetOutboundItems() []*TxOutItem {
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem, asgard bool) {
+func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 	// Default the memo to the standard outbound memo
 	if toi.Memo == "" {
 		toi.Memo = NewOutboundMemo(toi.InHash).String()
@@ -71,40 +71,39 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem, asgard bo
 
 	// If THORNode don't have a pool already selected to send from, discover one.
 	if toi.VaultPubKey.IsEmpty() {
-		if !asgard {
-			// When deciding which Yggdrasil pool will send out our tx out, we
-			// should consider which ones observed the inbound request tx, as
-			// yggdrasil pools can go offline. Here THORNode get the voter record and
-			// only consider Yggdrasils where their observed saw the "correct"
-			// tx.
+		// When deciding which Yggdrasil pool will send out our tx out, we
+		// should consider which ones observed the inbound request tx, as
+		// yggdrasil pools can go offline. Here THORNode get the voter record and
+		// only consider Yggdrasils where their observed saw the "correct"
+		// tx.
 
-			activeNodeAccounts, err := tos.keeper.ListActiveNodeAccounts(ctx)
-			if len(activeNodeAccounts) > 0 && err == nil {
-				voter, err := tos.keeper.GetObservedTxVoter(ctx, toi.InHash)
-				if err != nil {
-					ctx.Logger().Error("fail to get observed tx voter", err)
-				}
-				tx := voter.GetTx(activeNodeAccounts)
-
-				// collect yggdrasil pools
-				yggs := tos.CollectYggdrasilPools(ctx, tx)
-				yggs = yggs.SortBy(toi.Coin.Asset)
-
-				// if none of our Yggdrasil pools have enough funds to fulfil
-				// the order, fallback to our Asguard pool
-				if len(yggs) > 0 {
-					if toi.Coin.Amount.LT(yggs[0].GetCoin(toi.Coin.Asset).Amount) {
-						toi.VaultPubKey = yggs[0].PubKey
-					}
-				}
-
+		activeNodeAccounts, err := tos.keeper.ListActiveNodeAccounts(ctx)
+		if len(activeNodeAccounts) > 0 && err == nil {
+			voter, err := tos.keeper.GetObservedTxVoter(ctx, toi.InHash)
+			if err != nil {
+				ctx.Logger().Error("fail to get observed tx voter", err)
 			}
+			tx := voter.GetTx(activeNodeAccounts)
+
+			// collect yggdrasil pools
+			yggs := tos.CollectYggdrasilPools(ctx, tx)
+			yggs = yggs.SortBy(toi.Coin.Asset)
+
+			// if none of our Yggdrasil pools have enough funds to fulfil
+			// the order, fallback to our Asguard pool
+			if len(yggs) > 0 {
+				if toi.Coin.Amount.LT(yggs[0].GetCoin(toi.Coin.Asset).Amount) {
+					toi.VaultPubKey = yggs[0].PubKey
+				}
+			}
+
 		}
 
 	}
 
+	// Apparently we couldn't find a yggdrasil vault to send from, so use asgard
 	if toi.VaultPubKey.IsEmpty() {
-		toi.VaultPubKey = tos.poolAddrMgr.GetAsgardPoolPubKey(toi.Chain).PubKey
+		toi.VaultPubKey = tos.GetAsgardPoolPubKey(toi.Chain).PubKey
 	}
 
 	// Ensure THORNode are not sending from and to the same address
