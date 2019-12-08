@@ -6,7 +6,7 @@ import "gitlab.com/thorchain/thornode/common"
 type TxArrayItem struct {
 	Chain       common.Chain  `json:"chain"`
 	To          string        `json:"to"`
-	PoolAddress common.PubKey `json:"pool_address"`
+	VaultPubKey common.PubKey `json:"vault_pubkey"`
 	SeqNo       string        `json:"seq_no"`
 	Coin        common.Coin   `json:"coin"`
 	Memo        string        `json:"memo"`

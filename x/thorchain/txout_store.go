@@ -7,41 +7,38 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-// TxOutSetter define a method that is required to be used in TxOutStore
-// We need this interface thus THORNode could test the refund logic accordingly
-type TxOutSetter interface {
-	SetTxOut(sdk.Context, *TxOut) error
-}
-
 type TxOutStore interface {
 	NewBlock(height uint64)
 	CommitBlock(ctx sdk.Context)
+	GetBlockOut() *TxOut
 	GetOutboundItems() []*TxOutItem
-	AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, asgard bool)
-	addToBlockOut(toi *TxOutItem)
-	getBlockOut() *TxOut
-	getSeqNo(chain common.Chain) uint64
-	CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx ObservedTx) Yggdrasils
+	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
+	AddTxOutItem(ctx sdk.Context, toi *TxOutItem)
+	CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) Yggdrasils
 }
 
 // TxOutStorage is going to manage all the outgoing tx
 type TxOutStorage struct {
-	txOutSetter TxOutSetter
 	blockOut    *TxOut
 	poolAddrMgr PoolAddressManager
+	keeper      Keeper
 }
 
 // NewTxOutStorage will create a new instance of TxOutStore.
-func NewTxOutStorage(txOutSetter TxOutSetter, poolAddrMgr PoolAddressManager) *TxOutStorage {
+func NewTxOutStorage(keeper Keeper, poolAddrMgr PoolAddressManager) *TxOutStorage {
 	return &TxOutStorage{
-		txOutSetter: txOutSetter,
 		poolAddrMgr: poolAddrMgr,
+		keeper:      keeper,
 	}
 }
 
 // NewBlock create a new block
 func (tos *TxOutStorage) NewBlock(height uint64) {
 	tos.blockOut = NewTxOut(height)
+}
+
+func (tos *TxOutStorage) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {
+	return tos.poolAddrMgr.GetAsgardPoolPubKey(chain)
 }
 
 // CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
@@ -52,12 +49,12 @@ func (tos *TxOutStorage) CommitBlock(ctx sdk.Context) {
 	}
 
 	// write the tos to keeper
-	if err := tos.txOutSetter.SetTxOut(ctx, tos.blockOut); nil != err {
+	if err := tos.keeper.SetTxOut(ctx, tos.blockOut); nil != err {
 		ctx.Logger().Error("fail to save tx out", err)
 	}
 }
 
-func (tos *TxOutStorage) getBlockOut() *TxOut {
+func (tos *TxOutStorage) GetBlockOut() *TxOut {
 	return tos.blockOut
 }
 
@@ -66,59 +63,58 @@ func (tos *TxOutStorage) GetOutboundItems() []*TxOutItem {
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOutItem, asgard bool) {
+func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 	// Default the memo to the standard outbound memo
 	if toi.Memo == "" {
 		toi.Memo = NewOutboundMemo(toi.InHash).String()
 	}
 
 	// If THORNode don't have a pool already selected to send from, discover one.
-	if toi.PoolAddress.IsEmpty() {
-		if !asgard {
-			// When deciding which Yggdrasil pool will send out our tx out, we
-			// should consider which ones observed the inbound request tx, as
-			// yggdrasil pools can go offline. Here THORNode get the voter record and
-			// only consider Yggdrasils where their observed saw the "correct"
-			// tx.
+	if toi.VaultPubKey.IsEmpty() {
+		// When deciding which Yggdrasil pool will send out our tx out, we
+		// should consider which ones observed the inbound request tx, as
+		// yggdrasil pools can go offline. Here THORNode get the voter record and
+		// only consider Yggdrasils where their observed saw the "correct"
+		// tx.
 
-			activeNodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
-			if len(activeNodeAccounts) > 0 && err == nil {
-				voter, err := keeper.GetObservedTxVoter(ctx, toi.InHash)
-				if err != nil {
-					ctx.Logger().Error("fail to get observed tx voter", err)
-				}
-				tx := voter.GetTx(activeNodeAccounts)
-
-				// collect yggdrasil pools
-				yggs := tos.CollectYggdrasilPools(ctx, keeper, tx)
-				yggs = yggs.SortBy(toi.Coin.Asset)
-
-				// if none of our Yggdrasil pools have enough funds to fulfil
-				// the order, fallback to our Asguard pool
-				if len(yggs) > 0 {
-					if toi.Coin.Amount.LT(yggs[0].GetCoin(toi.Coin.Asset).Amount) {
-						toi.PoolAddress = yggs[0].PubKey
-					}
-				}
-
+		activeNodeAccounts, err := tos.keeper.ListActiveNodeAccounts(ctx)
+		if len(activeNodeAccounts) > 0 && err == nil {
+			voter, err := tos.keeper.GetObservedTxVoter(ctx, toi.InHash)
+			if err != nil {
+				ctx.Logger().Error("fail to get observed tx voter", err)
 			}
+			tx := voter.GetTx(activeNodeAccounts)
+
+			// collect yggdrasil pools
+			yggs := tos.CollectYggdrasilPools(ctx, tx)
+			yggs = yggs.SortBy(toi.Coin.Asset)
+
+			// if none of our Yggdrasil pools have enough funds to fulfil
+			// the order, fallback to our Asguard pool
+			if len(yggs) > 0 {
+				if toi.Coin.Amount.LT(yggs[0].GetCoin(toi.Coin.Asset).Amount) {
+					toi.VaultPubKey = yggs[0].PubKey
+				}
+			}
+
 		}
 
 	}
 
-	if toi.PoolAddress.IsEmpty() {
-		toi.PoolAddress = tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(toi.Chain).PubKey
+	// Apparently we couldn't find a yggdrasil vault to send from, so use asgard
+	if toi.VaultPubKey.IsEmpty() {
+		toi.VaultPubKey = tos.GetAsgardPoolPubKey(toi.Chain).PubKey
 	}
 
 	// Ensure THORNode are not sending from and to the same address
 	// THORNode check for a
-	fromAddr, err := toi.PoolAddress.GetAddress(toi.Chain)
+	fromAddr, err := toi.VaultPubKey.GetAddress(toi.Chain)
 	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
 		return
 	}
 
 	// Deduct TransactionFee from TOI and add to Reserve
-	nodes, err := keeper.TotalActiveNodeAccount(ctx)
+	nodes, err := tos.keeper.TotalActiveNodeAccount(ctx)
 
 	if nodes >= (constants.MinmumNodesForBFT) && err == nil {
 		var runeFee sdk.Uint
@@ -129,12 +125,12 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOut
 				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
-			if err := keeper.AddFeeToReserve(ctx, runeFee); nil != err {
+			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); nil != err {
 				// Add to reserve
 				ctx.Logger().Error("fail to add fee to reserve", err)
 			}
 		} else {
-			pool, err := keeper.GetPool(ctx, toi.Coin.Asset) // Get pool
+			pool, err := tos.keeper.GetPool(ctx, toi.Coin.Asset) // Get pool
 			if err != nil {
 				// the error is already logged within kvstore
 				return
@@ -150,10 +146,10 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOut
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)  // Deduct Asset fee
 			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
-			if err := keeper.SetPool(ctx, pool); err != nil {            // Set Pool
+			if err := tos.keeper.SetPool(ctx, pool); err != nil {        // Set Pool
 				ctx.Logger().Error("fail to save pool", err)
 			}
-			if err := keeper.AddFeeToReserve(ctx, runeFee); nil != err {
+			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); nil != err {
 				ctx.Logger().Error("fail to add fee to reserve", err)
 				// Add to reserve
 			}
@@ -165,12 +161,12 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, keeper Keeper, toi *TxOut
 	}
 
 	// increment out number of out tx for this in tx
-	voter, err := keeper.GetObservedTxVoter(ctx, toi.InHash)
+	voter, err := tos.keeper.GetObservedTxVoter(ctx, toi.InHash)
 	if err != nil {
 		ctx.Logger().Error("fail to get observed tx voter", err)
 	}
 	voter.Actions = append(voter.Actions, *toi)
-	keeper.SetObservedTxVoter(ctx, voter)
+	tos.keeper.SetObservedTxVoter(ctx, voter)
 
 	// add tx to block out
 	tos.addToBlockOut(toi)
@@ -202,14 +198,14 @@ func (tos *TxOutStorage) getSeqNo(chain common.Chain) uint64 {
 	return uint64(0)
 }
 
-func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, tx ObservedTx) Yggdrasils {
+func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) Yggdrasils {
 	// collect yggdrasil pools
 	var yggs Yggdrasils
-	iterator := keeper.GetYggdrasilIterator(ctx)
+	iterator := tos.keeper.GetYggdrasilIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var ygg Yggdrasil
-		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &ygg)
+		tos.keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &ygg)
 		// if THORNode are already sending assets from this ygg pool, deduct
 		// them.
 		addr, _ := ygg.PubKey.GetThorAddress()
@@ -217,7 +213,7 @@ func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, keeper Keeper, t
 			continue
 		}
 		for _, tx := range tos.blockOut.TxArray {
-			if !tx.PoolAddress.Equals(ygg.PubKey) {
+			if !tx.VaultPubKey.Equals(ygg.PubKey) {
 				continue
 			}
 			for i, yggcoin := range ygg.Coins {

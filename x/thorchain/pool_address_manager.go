@@ -20,6 +20,7 @@ type PoolAddressManager interface {
 	GetCurrentPoolAddresses() *PoolAddresses
 	BeginBlock(ctx sdk.Context) error
 	EndBlock(ctx sdk.Context, store TxOutStore)
+	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
 	SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys)
 	ObservedNextPoolAddrPubKey() common.PoolPubKeys
 	IsRotateWindowOpen() bool
@@ -63,6 +64,10 @@ func (pm *PoolAddressMgr) SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys)
 	pm.observedNextPoolAddrPubKey = ppks
 }
 
+func (pm *PoolAddressMgr) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {
+	return pm.GetCurrentPoolAddresses().Current.GetByChain(chain)
+}
+
 // BeginBlock should be called when BeginBlock
 func (pm *PoolAddressMgr) BeginBlock(ctx sdk.Context) error {
 	height := ctx.BlockHeight()
@@ -92,14 +97,14 @@ func (pm *PoolAddressMgr) EndBlock(ctx sdk.Context, store TxOutStore) {
 	// pool rotation window open
 	if pm.isRotateWindowOpen && ctx.BlockHeight() == pm.currentPoolAddresses.RotateWindowOpenAt {
 		// instruct signer to kick off tss keygen ceremony
-		store.AddTxOutItem(ctx, pm.k, &TxOutItem{
+		store.AddTxOutItem(ctx, &TxOutItem{
 			Chain: common.BNBChain,
 			// Leave ToAddress empty on purpose, signer will observe this txout, and then kick of tss keygen ceremony
 			ToAddress:   "",
-			PoolAddress: pm.currentPoolAddresses.Current.GetByChain(common.BNBChain).PubKey,
+			VaultPubKey: pm.currentPoolAddresses.Current.GetByChain(common.BNBChain).PubKey,
 			Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(37501)),
 			Memo:        "nextpool",
-		}, true)
+		})
 	}
 	pm.rotatePoolAddress(ctx, store)
 	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
@@ -209,13 +214,13 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, chain 
 		return sdk.ZeroUint(), fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", chain, addresses.Current, err)
 	}
 	for _, coin := range coins {
-		store.AddTxOutItem(ctx, k, &TxOutItem{
+		store.AddTxOutItem(ctx, &TxOutItem{
 			Chain:       currentAddr.Chain,
-			PoolAddress: previousAddr.PubKey,
+			VaultPubKey: previousAddr.PubKey,
 			InHash:      common.BlankTxID,
 			ToAddress:   toAddr,
 			Coin:        coin,
-		}, true)
+		})
 	}
 	return runeTotal, nil
 }
@@ -270,13 +275,13 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, run
 		return fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", common.BNBChain, addresses.Current, err)
 	}
 	for _, coin := range coins {
-		store.AddTxOutItem(ctx, k, &TxOutItem{
+		store.AddTxOutItem(ctx, &TxOutItem{
 			Chain:       currentAddr.Chain,
-			PoolAddress: previousAddr.PubKey,
+			VaultPubKey: previousAddr.PubKey,
 			InHash:      common.BlankTxID,
 			ToAddress:   toAddr,
 			Coin:        coin,
-		}, true)
+		})
 	}
 	return nil
 }

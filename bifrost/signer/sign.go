@@ -152,7 +152,7 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 }
 
 func (s *Signer) shouldSign(tai types.TxArrayItem) bool {
-	return s.pkm.HasKey(tai.PoolAddress)
+	return s.pkm.HasKey(tai.VaultPubKey)
 }
 func (s *Signer) retryFailedTxOutProcessor() {
 	s.logger.Info().Msg("start retry process")
@@ -247,7 +247,7 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 	for _, item := range txOut.TxArray {
 		if !s.shouldSign(item) {
 			s.logger.Info().
-				Str("signer_address", s.Binance.GetAddress(item.PoolAddress)).
+				Str("signer_address", s.Binance.GetAddress(item.VaultPubKey)).
 				Msg("different pool address, ignore")
 			continue
 		}

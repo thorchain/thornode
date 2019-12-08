@@ -48,7 +48,7 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().RotateAt, Equals, 100+rotatePerBlockHeight)
 	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt, Equals, 100+rotatePerBlockHeight-windowOpen)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 4)
-	c.Assert(w.txOutStore.getBlockOut().Valid(), IsNil)
+	c.Assert(w.txOutStore.GetBlockOut().Valid(), IsNil)
 	totalBond := sdk.ZeroUint()
 	nodeAccounts, err := w.keeper.ListNodeAccounts(w.ctx)
 	c.Assert(err, IsNil)

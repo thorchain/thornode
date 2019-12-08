@@ -21,6 +21,10 @@ func NewPoolAddressDummyMgr() *PoolAddressDummyMgr {
 	}
 }
 
+func (pm *PoolAddressDummyMgr) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {
+	return pm.GetCurrentPoolAddresses().Current.GetByChain(chain)
+}
+
 // GetCurrentPoolAddresses return current pool addresses
 func (pm *PoolAddressDummyMgr) GetCurrentPoolAddresses() *PoolAddresses {
 	return pm.currentPoolAddresses
