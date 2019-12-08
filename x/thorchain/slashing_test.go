@@ -111,6 +111,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	ctx = ctx.WithBlockHeight(201) // set blockheight
 	poolAddrMgr := NewPoolAddressDummyMgr()
 	txOutStore := NewTxStoreDummy()
+	txOutStore.asgard = poolAddrMgr.GetCurrentPoolAddresses().Current
 
 	na := GetRandomNodeAccount(NodeActive)
 
@@ -166,6 +167,6 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 
 	outItems := txOutStore.GetOutboundItems()
 	c.Assert(outItems, HasLen, 1)
-	poolPubKey := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(evt.InTx.Chain).PubKey
+	poolPubKey := poolAddrMgr.GetAsgardPoolPubKey(evt.InTx.Chain).PubKey
 	c.Assert(outItems[0].VaultPubKey.Equals(poolPubKey), Equals, true)
 }
