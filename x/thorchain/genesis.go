@@ -1,19 +1,11 @@
 package thorchain
 
 import (
-	"strconv"
-	"strings"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
-
-type txIndex struct {
-	Height uint64          `json:"height"`
-	Index  ObservedTxIndex `json:"index"`
-}
 
 // GenesisState strcture that used to store the data THORNode put in genesis
 type GenesisState struct {
@@ -21,7 +13,6 @@ type GenesisState struct {
 	PoolStakers      []PoolStaker     `json:"pool_stakers"`
 	StakerPools      []StakerPool     `json:"staker_pools"`
 	ObservedTxVoters ObservedTxVoters `json:"observed_tx_voters"`
-	ObservedTxdexes  []txIndex        `json:"txin_indexes"`
 	TxOuts           []TxOut          `json:"txouts"`
 	CompleteEvents   Events           `json:"complete_events"`
 	IncompleteEvents Events           `json:"incomplete_events"`
@@ -57,12 +48,6 @@ func ValidateGenesis(data GenesisState) error {
 	for _, voter := range data.ObservedTxVoters {
 		if err := voter.Valid(); err != nil {
 			return err
-		}
-	}
-
-	for _, index := range data.ObservedTxdexes {
-		if index.Height == 0 {
-			return errors.New("Tx In Index cannot have a height of zero")
 		}
 	}
 
@@ -159,10 +144,6 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		}
 	}
 
-	for _, index := range data.ObservedTxdexes {
-		keeper.SetObservedTxIndex(ctx, index.Height, index.Index)
-	}
-
 	keeper.SetIncompleteEvents(ctx, data.IncompleteEvents)
 
 	for _, event := range data.CompleteEvents {
@@ -231,20 +212,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		votes = append(votes, vote)
 	}
 
-	var indexes []txIndex
-	iterator = k.GetObservedTxIndexIterator(ctx)
-	defer iterator.Close()
-	for ; iterator.Valid(); iterator.Next() {
-		var index txIndex
-		index.Height, _ = strconv.ParseUint(
-			strings.TrimLeft(string(iterator.Key()), string(prefixObservedTxIndex)),
-			10,
-			64,
-		)
-		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &index.Index)
-		indexes = append(indexes, index)
-	}
-
 	var outs []TxOut
 	iterator = k.GetTxOutIterator(ctx)
 	defer iterator.Close()
@@ -276,7 +243,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		PoolStakers:      poolStakers,
 		StakerPools:      stakerPools,
 		ObservedTxVoters: votes,
-		ObservedTxdexes:  indexes,
 		TxOuts:           outs,
 		CompleteEvents:   completed,
 		IncompleteEvents: incomplete,

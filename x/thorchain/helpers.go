@@ -9,7 +9,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) error {
+func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, deductFee bool) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Tx.Coins {
@@ -19,10 +19,10 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, p
 		}
 		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
 			toi := &TxOutItem{
-				Chain:       chain,
+				Chain:       tx.Tx.Chain,
 				InHash:      tx.Tx.ID,
 				ToAddress:   tx.Tx.FromAddress,
-				VaultPubKey: poolAddr,
+				VaultPubKey: tx.ObservedPubKey,
 				Coin:        coin,
 			}
 			store.AddTxOutItem(ctx, toi)
@@ -82,6 +82,17 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 	}
 
 	return nil
+}
+
+// Checks if the observed vault pubkey is a valid asgard or ygg vault
+func isCurrentVaultPubKey(ctx sdk.Context, keeper Keeper, poolAddrMgr PoolAddressManager, tx ObservedTx) bool {
+	currentPoolAddress := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(tx.Tx.Chain)
+	yggExists := keeper.YggdrasilExists(ctx, tx.ObservedPubKey)
+	if !currentPoolAddress.PubKey.Equals(tx.ObservedPubKey) && !yggExists {
+		ctx.Logger().Error("wrong pool address, refund", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", tx.ObservedPubKey)
+		return false
+	}
+	return true
 }
 
 // isSignedByActiveObserver check whether the signers are all active observer
