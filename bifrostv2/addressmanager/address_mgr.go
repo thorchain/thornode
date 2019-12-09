@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,7 +16,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
-	"gitlab.com/thorchain/thornode/cmd"
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
@@ -44,10 +42,6 @@ type AddressManager struct {
 
 // NewAddressManager create a new instance of AddressManager
 func NewAddressManager(chainHost string, m *metrics.Metrics) (*AddressManager, error) {
-	// Set default address config
-	cosmosSDKConfg := sdk.GetConfig()
-	cosmosSDKConfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-	cosmosSDKConfg.Seal()
 
 	return &AddressManager{
 		logger:     log.With().Str("module", "AddressManager").Logger(),

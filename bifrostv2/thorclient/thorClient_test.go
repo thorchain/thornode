@@ -14,7 +14,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 
 	retryablehttp "github.com/hashicorp/go-retryablehttp"
@@ -22,7 +21,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
 	"gitlab.com/thorchain/thornode/bifrostv2/thorclient/types"
-	"gitlab.com/thorchain/thornode/cmd"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -34,11 +33,8 @@ type ThorClientSuite struct {
 var _ = Suite(&ThorClientSuite{})
 
 func (s *ThorClientSuite) SetUpSuite(c *C) {
-	cfg2 := sdk.GetConfig()
-	cfg2.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-
+	thorchain.SetupConfigForTest()
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {}))
-
 }
 
 func SetupStateChainForTest(c *C) (config.ThorChainConfiguration, cKeys.Info, func()) {

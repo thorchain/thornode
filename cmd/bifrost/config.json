@@ -1,7 +1,7 @@
 {
   "thorchain": {
     "chain_id": "thorchain",
-    "chain_host": "localhost:1317",
+    "chain_host": "http://localhost:1317",
     "signer_name": "statechain",
     "signer_passwd": "password"
   },
@@ -22,7 +22,7 @@
     },
     {
       "name": "bnb",
-      "enabled": true,
+      "enabled": false,
       "chain_host": "http://localhost:27147",
       "chain_network": "mainnet"
     }
