@@ -36,7 +36,7 @@ func NewBifrost(cfg config.Configuration) (*Bifrost, error) {
 		return nil, errors.Wrap(err, "fail to create thorChain bridge")
 	}
 
-	vaultMgr, err := vaultmanager.NewVaultManager(cfg.ThorChain.ChainHost, metric)
+	vaultMgr, err := vaultmanager.NewVaultManager(cfg.ThorChain, metric)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create vault manager")
 	}

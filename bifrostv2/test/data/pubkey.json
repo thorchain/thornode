@@ -1,0 +1,36 @@
+{
+  "name": "luke",
+  "type": "local",
+  "address": "thor1xjzz4dtd75ljcr2vlgjy65q9nevpdtl8zgdnz9",
+  "pubkey": "thorpub1addwnpepq27s79a9xk8hjcpjuthmwnl2z4su43uynekcjuqcnmhpemfgfrh6sf9vffl",
+  "mnemonic": "exchange neck excite hood about pear business random ribbon cube region cake mercy cricket fault thing law use habit educate display animal must text"
+},
+{
+"name": "john",
+"type": "local",
+"address": "thor1ak82yyd3cqvlsguw2enz5llmv63gtydupxlsg9",
+"pubkey": "thorpub1addwnpepqtsgdw5dj7pj497vr2397pnfctf0d3lf7f2ssu39hts45567syh5xwjukdk",
+"mnemonic": "melody gap truly mask treat filter ethics sound fantasy humor uncover duck picnic inherit whisper shock dignity table identify job claim culture inject dragon"
+}
+{
+"name": "btc",
+"type": "local",
+"address": "thor1l7af43v2vq32jwq85vdagukf0z0qqdzrsu4y63",
+"pubkey": "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk",
+"mnemonic": "expand fresh term offer donor around nuclear calm occur grace gate cheese airport cart explain slide remember mind phone team grocery nose uphold syrup"
+}
+{
+"name": "eth",
+"type": "local",
+"address": "thor1x9e5l0ml47sxrhl699fedj4kqfm30kfrrw0ale",
+"pubkey": "thorpub1addwnpepq2flfr96skc5lkwdv0n5xjsnhmuju20x3zndgu42zd8dtkrud9m2v0zl2qu",
+"mnemonic": "snack era expect rubber spray summer delay where elite joke dad fresh shadow faculty surround length box simple marble physical base motor loop magic"
+}
+{
+"name": "bnb",
+"type": "local",
+"address": "thor1l8tt4f2xycdz4e5u6veqmj5qwhp4vsktf4ezp0",
+"pubkey": "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck",
+"mnemonic": "deposit lumber reward screen become family stock borrow pool angry coach mixed clock useful patrol holiday report write discover scheme dynamic bulb step wall"
+}
+

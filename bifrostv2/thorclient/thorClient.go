@@ -18,12 +18,18 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"gitlab.com/thorchain/thornode/cmd"
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
 	"gitlab.com/thorchain/thornode/bifrostv2/thorclient/types"
+)
+
+const (
+	BaseEndpoint   = "/thorchain"
+	VaultsEndpoint = "/vaults/pubkeys"
 )
 
 // Client will be used to send tx to thorchain
@@ -58,6 +64,8 @@ func NewClient(cfg config.ThorChainConfiguration, m *metrics.Metrics) (*Client, 
 		return nil, fmt.Errorf("fail to get keybase: %w", err)
 	}
 
+	// CosmosSDKConfig()
+
 	return &Client{
 		logger:     log.With().Str("module", "thorClient").Logger(),
 		cdc:        MakeCodec(),
@@ -75,6 +83,13 @@ func MakeCodec() *codec.Codec {
 	stypes.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
 	return cdc
+}
+
+// CosmosSDKConfig set's the default address prefixes from thorChain
+func CosmosSDKConfig() {
+	cosmosSDKConfig := sdk.GetConfig()
+	cosmosSDKConfig.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+	cosmosSDKConfig.Seal()
 }
 
 func (c *Client) WithRetryableHttpClient(client *retryablehttp.Client) {
