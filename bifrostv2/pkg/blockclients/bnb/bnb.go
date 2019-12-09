@@ -135,7 +135,7 @@ func (c *Client) processBlock(block *ctypes.ResultBlock) types2.ObservedBlockAnd
 
 		spew.Dump(t1)
 
-		t2 := types2.Tx{}
+		// t2 := types2.Tx{}
 		// txs = append(txs, )
 	}
 
