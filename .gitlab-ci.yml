@@ -72,6 +72,11 @@ smoke-test:thornode:
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
+  artifacts:
+    when: on_failure
+    name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
+    paths:
+      - /var/log/syslog
   before_script:
     - export GOBIN=$GOPATH/bin
   except:
@@ -79,4 +84,4 @@ smoke-test:thornode:
   environment:
     name: integration
   script: 
-    - docker run --rm alpine false
+    - docker run --log-driver syslog --rm alpine false
