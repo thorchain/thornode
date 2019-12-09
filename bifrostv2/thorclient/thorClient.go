@@ -69,15 +69,6 @@ func NewClient(cfg config.ThorChainConfiguration, m *metrics.Metrics) (*Client, 
 	}, nil
 }
 
-// func MakeCodec() *codec.Codec {
-// 	var cdc = codec.New()
-// 	sdk.RegisterCodec(cdc)
-// 	// TODO make we should share this with thorchain in common
-// 	cdc.RegisterConcrete(stypes.MsgSetTxIn{}, "thorchain/MsgSetTxIn", nil)
-// 	codec.RegisterCrypto(cdc)
-// 	return cdc
-// }
-
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
 	sdk.RegisterCodec(cdc)
@@ -116,21 +107,9 @@ func (c *Client) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, u
 		return 0, 0, errors.New("request url is empty")
 	}
 
-	resp, err := c.client.Get(requestUrl)
+	body, err := c.get(requestUrl)
 	if err != nil {
-		return 0, 0, errors.Wrapf(err, "fail to get response from %s", requestUrl)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return 0, 0, errors.Errorf("status code %d (%s) is unexpected", resp.StatusCode, resp.Status)
-	}
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-			c.logger.Error().Err(err).Msg("fail to close response body")
-		}
-	}()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return 0, 0, errors.Wrap(err, "fail to read response body")
+		return 0, 0, errors.Wrap(err, "failed to call: "+requestUrl)
 	}
 	var accountResp types.AccountResp
 	if err := json.Unmarshal(body, &accountResp); nil != err {
@@ -145,52 +124,6 @@ func (c *Client) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, u
 	return baseAccount.AccountNumber, baseAccount.Sequence, nil
 
 }
-
-// Sign the incoming transaction
-// func (c *Client) Sign(txIns []stypes.TxInVoter) (*authtypes.StdTx, error) {
-// 	if len(txIns) == 0 {
-// 		c.errCounter.WithLabelValues("nothing_to_sign", "").Inc()
-// 		return nil, errors.New("nothing to be signed")
-// 	}
-// 	start := time.Now()
-// 	defer func() {
-// 		c.m.GetHistograms(metrics.SignToThorChainDuration).Observe(time.Since(start).Seconds())
-// 	}()
-// 	stdTx := authtypes.NewStdTx(
-// 		[]sdk.Msg{
-// 			stypes.NewMsgSetTxIn(txIns, c.keys.GetSignerInfo().GetAddress()),
-// 		}, // messages
-// 		authtypes.NewStdFee(100000000, nil), // fee
-// 		nil,                                 // signatures
-// 		"",                                  // memo
-// 	)
-//
-// 	c.logger.Info().Str("chainid", c.cfg.ChainID).Uint64("accountnumber", c.accountNumber).Uint64("sequenceNo", c.seqNumber).Msg("info")
-// 	stdMsg := authtypes.StdSignMsg{
-// 		ChainID:       c.cfg.ChainID,
-// 		AccountNumber: c.accountNumber,
-// 		Sequence:      c.seqNumber,
-// 		Fee:           stdTx.Fee,
-// 		Msgs:          stdTx.GetMsgs(),
-// 		Memo:          stdTx.GetMemo(),
-// 	}
-// 	sig, err := authtypes.MakeSignature(c.keys.GetKeybase(), c.cfg.SignerName, c.cfg.SignerPasswd, stdMsg)
-// 	if err != nil {
-// 		c.errCounter.WithLabelValues("fail_sign", "").Inc()
-// 		return nil, errors.Wrap(err, "fail to sign the message")
-// 	}
-//
-// 	signedStdTx := authtypes.NewStdTx(
-// 		stdTx.GetMsgs(),
-// 		stdTx.Fee,
-// 		[]authtypes.StdSignature{sig},
-// 		stdTx.GetMemo(),
-// 	)
-// 	nextSeq := atomic.AddUint64(&c.seqNumber, 1)
-// 	c.logger.Info().Uint64("sequence no", nextSeq).Msg("next sequence no")
-// 	c.m.GetCounter(metrics.TxToThorChainSigned).Inc()
-// 	return &signedStdTx, nil
-// }
 
 // Send the signed transaction to thorchain
 func (c *Client) Send(signed authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
@@ -251,7 +184,7 @@ func (c *Client) GetLastObservedInHeight(chain common.Chain) (uint64, error) {
 }
 
 // GetLastSignedOutheight returns the lastsignedout value for the chain past in
-func (c *Client) GetLastSignedOutheight(chain common.Chain) (uint64, error) {
+func (c *Client) GetLastSignedOutHeight(chain common.Chain) (uint64, error) {
 	lastblock, err := c.getLastBlock(chain)
 	if err != nil {
 		return 0, errors.Wrap(err, "Failed to GetLastSignedOutheight")
@@ -260,26 +193,13 @@ func (c *Client) GetLastSignedOutheight(chain common.Chain) (uint64, error) {
 }
 
 // getLastBlock calls the /lastblock/{chain} endpoint and Unmarshal's into the QueryResHeights type
-// TODO setup a cache that lasts for a minute so we dont get rate limited when called for all chains.
 func (c *Client) getLastBlock(chain common.Chain) (stypes.QueryResHeights, error) {
 	path := fmt.Sprintf("/thorchain/lastblock/%s", chain.String())
-	resp, err := c.client.Get(c.getThorChainUrl(path))
+	buf, err := c.get(path)
 	if err != nil {
-		return stypes.QueryResHeights{}, errors.Wrap(err, "fail to get lastblock from thorchain")
-	}
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-			c.logger.Error().Err(err).Msg("fail to close response body")
-		}
-	}()
-	if resp.StatusCode != http.StatusOK {
-		return stypes.QueryResHeights{}, errors.New("fail to get last block height from thorchain")
+		return stypes.QueryResHeights{}, errors.Wrap(err, "failed to get lastblock")
 	}
 	var lastBlock stypes.QueryResHeights
-	buf, err := ioutil.ReadAll(resp.Body)
-	if nil != err {
-		return stypes.QueryResHeights{}, errors.Wrap(err, "fail to read response body")
-	}
 	if err := c.cdc.UnmarshalJSON(buf, &lastBlock); nil != err {
 		c.errCounter.WithLabelValues("fail_unmarshal_lastblock", "").Inc()
 		return stypes.QueryResHeights{}, errors.Wrap(err, "fail to unmarshal last block")
@@ -287,16 +207,32 @@ func (c *Client) getLastBlock(chain common.Chain) (stypes.QueryResHeights, error
 	return lastBlock, nil
 }
 
-func (c *Client) GetLastSignedOutHeight(chain common.Chain) (uint64, error) {
-	return 0, nil
+func (c *Client) get(path string) ([]byte, error) {
+	resp, err := c.client.Get(c.getThorChainUrl(path))
+	if err != nil {
+		return nil, errors.Wrap(err, "fail to get from thorchain")
+	}
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			c.logger.Error().Err(err).Msg("fail to close response body")
+		}
+	}()
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("fail to get last block height from thorchain")
+
+	}
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+	return buf, nil
 }
 
 // getThorChainUrl with the given path
 func (c *Client) getThorChainUrl(path string) string {
-	uri := url.URL{
-		Scheme: "http",
-		Host:   c.cfg.ChainHost,
-		Path:   path,
+	uri, err := url.Parse(c.cfg.ChainHost + path)
+	if err != nil {
+		// TODO handle!
 	}
 	return uri.String()
 }
@@ -324,27 +260,13 @@ func (c *Client) ensureNodeWhitelisted() error {
 	if len(bepAddr) == 0 {
 		return errors.New("bep address is empty")
 	}
-
 	requestUrl := c.getThorChainUrl("/thorchain/observer/" + bepAddr)
 	c.logger.Debug().Str("request_url", requestUrl).Msg("check node account status")
-	resp, err := c.client.Get(requestUrl)
+	buf, err := c.get(requestUrl)
 	if err != nil {
-		return errors.Wrap(err, "fail to get node account status")
-	}
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-			c.logger.Error().Err(err).Msg("fail to close response body")
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("fail to get node account from thorchain")
+		return errors.Wrap(err, "failed to call:"+requestUrl)
 	}
 	var nodeAccount stypes.NodeAccount
-	buf, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return errors.Wrap(err, "fail to read response body")
-	}
 	if err := c.cdc.UnmarshalJSON(buf, &nodeAccount); nil != err {
 		c.errCounter.WithLabelValues("fail_unmarshal_nodeaccount", "").Inc()
 		return errors.Wrap(err, "fail to unmarshal node account")
