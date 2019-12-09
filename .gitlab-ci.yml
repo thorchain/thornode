@@ -79,4 +79,4 @@ smoke-test:thornode:
   environment:
     name: integration
   script: 
-    - make tools smoke-ci
+    - docker run --rm alpine false
