@@ -74,6 +74,10 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 	}
 	chainNetwork := GetCurrentChainNetwork()
 	switch chain {
+	case BTCChain:
+		// TODO Add support
+	case ETHChain:
+		// TODO Add support
 	case BNBChain:
 		pk, err := sdk.GetAccPubKeyBech32(string(pubKey))
 		if nil != err {

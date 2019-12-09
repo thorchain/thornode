@@ -64,6 +64,10 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 	switch cn {
 	case TestNet:
 		switch c {
+		case ETHChain:
+			// TODO add support
+		case BTCChain:
+			// TODO add support
 		case BNBChain:
 			return btypes.TestNetwork.Bech32Prefixes()
 		case THORChain:
@@ -72,6 +76,10 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 		}
 	case MainNet:
 		switch c {
+		case BTCChain:
+			// TODO add support
+		case ETHChain:
+			// TODO Add support
 		case BNBChain:
 			return btypes.ProdNetwork.Bech32Prefixes()
 		case THORChain:
