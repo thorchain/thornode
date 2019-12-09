@@ -55,8 +55,3 @@ func (pm *PoolAddressDummyMgr) BeginBlock(_ sdk.Context) error {
 func (pm *PoolAddressDummyMgr) EndBlock(_ct sdk.Context, _ TxOutStore) {}
 
 func (pm *PoolAddressDummyMgr) rotatePoolAddress(_ sdk.Context, _ TxOutStore) {}
-
-// SetRotateWindowOpen update rotation window
-func (pm *PoolAddressDummyMgr) SetRotateWindowOpen(value bool) {
-	pm.isRotateWindowOpen = value
-}
