@@ -7,21 +7,21 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/thornode/bifrostv2/addressmanager"
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/thorclient"
 	"gitlab.com/thorchain/thornode/bifrostv2/txscanner/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/vaultmanager"
 )
 
 type TxScanner struct {
-	cfg            config.TxScannerConfigurations
-	logger         zerolog.Logger
-	stopChan       chan struct{}
-	addressManager *addressmanager.AddressManager
-	thorClient     *thorclient.Client
-	chains         []BlockChainClients
-	wg             sync.WaitGroup
-	closeOnce      sync.Once
+	cfg        config.TxScannerConfigurations
+	logger     zerolog.Logger
+	stopChan   chan struct{}
+	thorClient *thorclient.Client
+	chains     []BlockChainClients
+	wg         sync.WaitGroup
+	closeOnce  sync.Once
+	vaultMgr   *vaultmanager.VaultManager
 }
 
 type BlockChainClients interface {
@@ -29,15 +29,15 @@ type BlockChainClients interface {
 	Stop() error
 }
 
-func NewTxScanner(cfg config.TxScannerConfigurations, addressManager *addressmanager.AddressManager, thorClient *thorclient.Client) *TxScanner {
+func NewTxScanner(cfg config.TxScannerConfigurations, vaultMgr *vaultmanager.VaultManager, thorClient *thorclient.Client) *TxScanner {
 	return &TxScanner{
-		logger:         log.Logger.With().Str("module", "txScanner").Logger(),
-		cfg:            cfg,
-		stopChan:       make(chan struct{}),
-		addressManager: addressManager,
-		thorClient:     thorClient,
-		wg:             sync.WaitGroup{},
-		chains:         loadChains(cfg),
+		logger:     log.Logger.With().Str("module", "txScanner").Logger(),
+		cfg:        cfg,
+		stopChan:   make(chan struct{}),
+		thorClient: thorClient,
+		wg:         sync.WaitGroup{},
+		chains:     loadChains(cfg),
+		vaultMgr:   vaultMgr,
 	}
 }
 
