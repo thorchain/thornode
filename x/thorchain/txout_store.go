@@ -136,7 +136,7 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 				return
 			}
 
-			assetFee := pool.AssetValueInRune(sdk.NewUint(constants.TransactionFee)) // Get fee in Asset value
+			assetFee := pool.RuneValueInAsset(sdk.NewUint(constants.TransactionFee)) // Get fee in Asset value
 			if toi.Coin.Amount.LTE(assetFee) {
 				assetFee = toi.Coin.Amount // Fee is the full amount
 				runeFee = pool.RuneValueInAsset(assetFee)
