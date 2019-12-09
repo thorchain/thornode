@@ -24,31 +24,10 @@ func (vm *ValidatorDummyMgr) RotationPolicy() ValidatorRotationPolicy {
 	return vm.rotationPolicy
 }
 
-func (vm *ValidatorDummyMgr) BeginBlock(ctx sdk.Context) {}
-func (vm *ValidatorDummyMgr) EndBlock(ctx sdk.Context, store *TxOutStore) []abci.ValidatorUpdate {
+func (vm *ValidatorDummyMgr) BeginBlock(_ sdk.Context) {}
+func (vm *ValidatorDummyMgr) EndBlock(_ sdk.Context, _ TxOutStore) []abci.ValidatorUpdate {
 	return nil
 }
-func (vm *ValidatorDummyMgr) processValidatorLeave(ctx sdk.Context, store *TxOutStore) (bool, error) {
-	return false, kaboom
-}
-func (vm *ValidatorDummyMgr) rotateValidatorNodes(ctx sdk.Context, store *TxOutStore) (bool, error) {
-	return false, kaboom
-}
-func (vm *ValidatorDummyMgr) requestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut *TxOutStore) error {
-	return kaboom
-}
-func (vm *ValidatorDummyMgr) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutStore) error {
-	return kaboom
-}
-func (vm *ValidatorDummyMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut *TxOutStore) error {
-	return kaboom
-}
-func (vm *ValidatorDummyMgr) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts, txOut *TxOutStore) error {
-	return kaboom
-}
-func (vm *ValidatorDummyMgr) prepareAddNode(ctx sdk.Context, height int64) error {
-	return kaboom
-}
-func (vm *ValidatorDummyMgr) setupValidatorNodes(ctx sdk.Context, height int64) error {
+func (vm *ValidatorDummyMgr) RequestYggReturn(_ sdk.Context, _ NodeAccount, _ PoolAddressManager, _ TxOutStore) error {
 	return kaboom
 }
