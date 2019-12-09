@@ -84,6 +84,6 @@ smoke-test:thornode:
   environment:
     name: integration
   script: 
-    - docker run --rm alpine "ls"
+    - docker run --rm alpine "false"
   after_script:
     - ./scripts/docker_logs.sh
