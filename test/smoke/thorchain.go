@@ -49,7 +49,7 @@ func (s Thorchain) WaitForAvailability() {
 		}
 		fmt.Printf("Pool Address error: %s\n", err)
 		count += 1
-		if count > 300 {
+		if count > 35 {
 			fmt.Println("Timeout: thorchain is unavailable")
 			os.Exit(1)
 		}
