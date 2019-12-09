@@ -71,17 +71,6 @@ func (s *ThorClientSuite) TestGetThorChainUrl(c *C) {
 
 	uri := client.getThorChainUrl("")
 	c.Assert(uri, Equals, s.server.URL)
-
-	uri = client.getThorChainUrl(BaseEndpoint + VaultsEndpoint)
-	c.Assert(uri, Equals, s.server.URL+BaseEndpoint+VaultsEndpoint)
-
-	cfg.ChainHost = "localhost:1317"
-	client, err = NewClient(cfg, getMetricForTest(c))
-	c.Assert(err, IsNil)
-	c.Assert(client, NotNil)
-
-	uri = client.getThorChainUrl("")
-	c.Assert(uri, Equals, "localhost:1317") //TODO does this need http?
 }
 
 func (s *ThorClientSuite) TestGet(c *C) {
