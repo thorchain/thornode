@@ -127,9 +127,14 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
 
+	slasher := NewSlasher(am.keeper, am.txOutStore, am.poolMgr)
 	// slash node accounts for not observing any accepted inbound tx
-	slashForObservingAddresses(ctx, am.keeper)
-	slashForNotSigning(ctx, am.keeper, am.txOutStore)
+	if err := slasher.LackObserving(ctx); err != nil {
+		ctx.Logger().Error("Unable to slash for lack of observing:", err)
+	}
+	if err := slasher.LackSigning(ctx); err != nil {
+		ctx.Logger().Error("Unable to slash for lack of signing:", err)
+	}
 
 	// Enable a pool every newPoolCycle
 	if ctx.BlockHeight()%constants.NewPoolCycle == 0 {
