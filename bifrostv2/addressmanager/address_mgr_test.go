@@ -3,7 +3,6 @@ package addressmanager
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -37,12 +36,11 @@ func (s *AddressMangerSuite) SetUpSuite(c *C) {
 func poolsAddresses(c *C, rw http.ResponseWriter) {
 	content, err := ioutil.ReadFile("../../test/fixtures/endpoints/poolAddresses/pooladdresses.json")
 	if err != nil {
-		c.Error(err)
-		log.Fatal(err)
+		c.Fatal(err)
 	}
-	rw.Header().Set("Contet-Type", "application/json")
+	rw.Header().Set("Content-Type", "application/json")
 	if _, err := rw.Write(content); err != nil {
-		c.Error(err)
+		c.Fatal(err)
 	}
 }
 
