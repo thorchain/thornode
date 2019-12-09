@@ -36,11 +36,26 @@ func lastblockMocked(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, string(content))
 }
 
+func vaultsPubKeys(w http.ResponseWriter, r *http.Request) {
+	log.Println("lastblockMocked HIT!")
+
+	path := fmt.Sprintf("./test/fixtures/endpoints/vaults/pubKeys.json")
+
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintln(w, string(content))
+}
+
 func main() {
 	addr := ":1317"
 	router := mux.NewRouter()
 	router.HandleFunc("/thorchain/pooladdresses", poolAddressesMocked).Methods("GET")
 	router.HandleFunc("/thorchain/lastblock/{chain}", lastblockMocked).Methods("GET")
+	router.HandleFunc("/thorchain/vaults/pubkeys", vaultsPubKeys).Methods("GET")
 
 	srv := &http.Server{
 		Addr:    addr,
