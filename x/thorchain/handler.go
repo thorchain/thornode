@@ -57,6 +57,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, txOutStore, poolAddrMgr)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
+	m[MsgNextPoolAddress{}.Type()] = NewHandlerNextPoolAddress(keeper, poolAddrMgr, validatorMgr, txOutStore)
 	return m
 }
 
@@ -78,8 +79,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 			return handleMsgSetTrustAccount(ctx, keeper, m)
 		case MsgYggdrasil:
 			return handleMsgYggdrasil(ctx, keeper, txOutStore, poolAddressMgr, validatorManager, m)
-		case MsgNextPoolAddress:
-			return handleMsgConfirmNextPoolAddress(ctx, keeper, poolAddressMgr, validatorManager, txOutStore, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -179,78 +178,6 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAd
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Data:      res,
-		Codespace: DefaultCodespace,
-	}
-}
-
-// handleMsgConfirmNextPoolAddress , this is the method to handle MsgNextPoolAddress
-// MsgNextPoolAddress is a way to prove that the operator has access to the address, and can sign transaction with the given address on chain
-func handleMsgConfirmNextPoolAddress(ctx sdk.Context, keeper Keeper, poolAddrManager PoolAddressManager, validatorMgr ValidatorManager, txOut TxOutStore, msg MsgNextPoolAddress) sdk.Result {
-	ctx.Logger().Info("receive request to set next pool pub key", "pool pub key", msg.NextPoolPubKey.String())
-	if err := msg.ValidateBasic(); nil != err {
-		return err.Result()
-	}
-	if !poolAddrManager.IsRotateWindowOpen() {
-		return sdk.ErrUnknownRequest("pool address rotate window not open yet").Result()
-	}
-	currentPoolAddresses := poolAddrManager.GetCurrentPoolAddresses()
-	currentChainPoolAddr := currentPoolAddresses.Next.GetByChain(msg.Chain)
-	if nil != currentChainPoolAddr {
-		ctx.Logger().Error(fmt.Sprintf("next pool for chain %s had been confirmed already", msg.Chain))
-		return sdk.ErrUnknownRequest(fmt.Sprintf("next pool for chain %s had been confirmed already", msg.Chain)).Result()
-	}
-	currentAddr := currentPoolAddresses.Current.GetByChain(msg.Chain)
-	if nil == currentAddr || currentAddr.IsEmpty() {
-		msg := fmt.Sprintf("THORNode donnot have pool for chain %s", msg.Chain)
-		ctx.Logger().Error(msg)
-		return sdk.ErrUnknownRequest(msg).Result()
-	}
-	addr, err := currentAddr.PubKey.GetAddress(msg.Chain)
-	if nil != err {
-		ctx.Logger().Error("fail to get address from pub key", "chain", msg.Chain, err)
-		return sdk.ErrInternal("fail to get address from pub key").Result()
-	}
-
-	// nextpool memo need to be initiated by current pool
-	if !addr.Equals(msg.Sender) {
-		return sdk.ErrUnknownRequest("next pool should be send with current pool address").Result()
-	}
-	// thorchain observed the next pool address memo, but it has not been confirmed yet
-	pkey, err := common.NewPoolPubKey(msg.Chain, 0, msg.NextPoolPubKey)
-	if nil != err {
-		ctx.Logger().Error("fail to get pool pubkey", "chain", msg.Chain, err)
-		return sdk.ErrInternal("fail to get pool pubkey").Result()
-	}
-
-	poolAddrManager.SetObservedNextPoolAddrPubKey(poolAddrManager.ObservedNextPoolAddrPubKey().TryAddKey(pkey))
-
-	// if THORNode observed a valid nextpool transaction, that means the nominated validator had join the signing committee to generate a new pub key
-	// with TSS, if they don't join , then the key won't be generated
-	nominatedAccount := validatorMgr.Meta().Nominated
-	if !nominatedAccount.IsEmpty() {
-		for _, item := range nominatedAccount {
-			item.SignerActive = true
-			if err := keeper.SetNodeAccount(ctx, item); nil != err {
-				ctx.Logger().Error("fail to save node account", err)
-				return sdk.ErrInternal("fail to save node account").Result()
-			}
-		}
-	}
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeNextPoolPubKeyObserved,
-			sdk.NewAttribute("next pool pub key", msg.NextPoolPubKey.String()),
-			sdk.NewAttribute("chain", msg.Chain.String())))
-
-	txOut.AddTxOutItem(ctx, &TxOutItem{
-		Chain:       common.BNBChain,
-		ToAddress:   addr,
-		VaultPubKey: msg.NextPoolPubKey,
-		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
-		Memo:        "ack",
-	})
-
-	return sdk.Result{
-		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
 	}
 }
