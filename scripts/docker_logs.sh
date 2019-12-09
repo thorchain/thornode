@@ -2,7 +2,7 @@ set -ex
 
 docker ps -a
 
-mkdir /tmp/logs/
+mkdir logs
 for id in $(docker ps -q); do
-  docker logs $id > /tmp/logs/$id.log
+  docker logs $id > ./logs/$id.log
 done

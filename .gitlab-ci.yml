@@ -68,10 +68,10 @@ smoke-test:thornode:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
   artifacts:
-    when: always
+    when: on_failure
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
     paths:
-      - /tmp/logs/
+      - ./logs/
   before_script:
     - export GOBIN=$GOPATH/bin
   except:
@@ -79,6 +79,6 @@ smoke-test:thornode:
   environment:
     name: integration
   script: 
-    - make tools smoke-ci
+    - make tools smoke-ci-standalone
   after_script:
     - ./scripts/docker_logs.sh
