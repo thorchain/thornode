@@ -46,6 +46,7 @@ func NewHandler(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutS
 func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutStore, validatorMgr ValidatorManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
+	m[MsgNoOp{}.Type()] = NewNoOpHandler(keeper)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetPoolData{}.Type()] = NewPoolDataHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
@@ -71,8 +72,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		case MsgOutboundTx:
 			return handleMsgOutboundTx(ctx, keeper, poolAddressMgr, m)
-		case MsgNoOp:
-			return handleMsgNoOp(ctx)
 		case MsgEndPool:
 			return handleOperatorMsgEndPool(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetTrustAccount:
@@ -398,15 +397,6 @@ func getMsgBondFromMemo(memo BondMemo, tx ObservedTx, signer sdk.AccAddress) (sd
 		return nil, errors.New("RUNE amount is 0")
 	}
 	return NewMsgBond(memo.GetNodeAddress(), runeAmount, tx.Tx.ID, tx.Tx.FromAddress, signer), nil
-}
-
-// handleMsgNoOp doesn't do anything, its a no op
-func handleMsgNoOp(ctx sdk.Context) sdk.Result {
-	ctx.Logger().Info("receive no op msg")
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
 }
 
 // handleMsgOutboundTx processes outbound tx from our pool
