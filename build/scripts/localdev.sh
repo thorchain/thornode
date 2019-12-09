@@ -25,11 +25,11 @@ if [ -z "${SEQNO:-}" ]; then
     echo $SEQNO
 fi
 
-echo "password" | thorcli keys add statechain
+echo "password" | thorcli keys add thorchain
 
 VALIDATOR="$(thord tendermint show-validator)"
-NODE_ADDRESS="$(thorcli keys show statechain -a)"
-NODE_PUB_KEY="$(thorcli keys show statechain -p)"
+NODE_ADDRESS="$(thorcli keys show thorchain -a)"
+NODE_PUB_KEY="$(thorcli keys show thorchain -p)"
 
 init_chain $NODE_ADDRESS
 

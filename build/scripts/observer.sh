@@ -6,10 +6,10 @@ DB_PATH="${DB_PATH:=/var/data}"
 CHAIN_API="${CHAIN_API:=127.0.0.1:1317}"
 RPC_SCHEME="${RPC_RPC_SCHEME:=https}"
 BINANCE_HOST="${BINANCE_HOST:=https://data-seed-pre-0-s3.binance.org}"
-SIGNER_NAME="${SIGNER_NAME:=statechain}"
+SIGNER_NAME="${SIGNER_NAME:=thorchain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 
-$(dirname "$0")/wait-for-statechain-api.sh $CHAIN_API
+$(dirname "$0")/wait-for-thorchain-api.sh $CHAIN_API
 
 OBSERVER_PATH=$DB_PATH/observer/
 mkdir -p $OBSERVER_PATH

@@ -8,7 +8,7 @@ BINANCE_HOST="${BINANCE_HOST:=https://data-seed-pre-0-s3.binance.org}"
 DB_PATH="${DB_PATH:=/var/data}"
 CHAIN_API="${CHAIN_API:=127.0.0.1:1317}"
 CHAIN_RPC="${CHAIN_RPC:=127.0.0.1:26657}"
-SIGNER_NAME="${SIGNER_NAME:=statechain}"
+SIGNER_NAME="${SIGNER_NAME:=thorchain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
 USE_TSS="${USE_TSS:=false}"
@@ -16,7 +16,7 @@ TSS_SCHEME="${TSS_SCHEME:=http}"
 TSS_HOST="${TSS_HOST:=127.0.0.1}"
 TSS_PORT="${TSS_KEYSIGN_PORT:=4040}"
 
-$(dirname "$0")/wait-for-statechain-api.sh $CHAIN_API
+$(dirname "$0")/wait-for-thorchain-api.sh $CHAIN_API
 
 gen_bnb_address
 BINANCE_PRIVATE_KEY=$(cat ~/.signer/private_key.txt)

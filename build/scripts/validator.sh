@@ -4,7 +4,7 @@ set -ex
 source $(dirname "$0")/core.sh
 
 PEER="${PEER:=none}" # the hostname of a seed node
-SIGNER_NAME="${SIGNER_NAME:=statechain}"
+SIGNER_NAME="${SIGNER_NAME:=thorchain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 
 if [ ! -f ~/.thord/config/genesis.json ]; then
