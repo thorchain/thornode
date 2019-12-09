@@ -61,8 +61,6 @@ seed: tools
 # -------------------------------- Smoke Test ---------------------------- #
 smoke-ci:
 	make -C build/docker run-genesisWithMockBinance
-	ls ./test/smoke/scenarios
-	ls ./test/smoke/scenarios/genesis
 	bsinner -a docker:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e ci -x
 # ------------------------------------------------------------------------ #
 
