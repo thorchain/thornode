@@ -170,5 +170,5 @@ func (s Thorchain) StakerURL(staker string) string {
 }
 
 func (s Thorchain) PoolAddressesURL() string {
-	return s.getUrl("/pooladdresses")
+	return s.getUrl("/pool_addresses")
 }
