@@ -1,5 +1,5 @@
 #
-# Observer, Signer, Statechain
+# Observer, Signer, Thorchain
 #
 
 #
