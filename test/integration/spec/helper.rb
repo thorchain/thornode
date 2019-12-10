@@ -84,7 +84,7 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
   }
 end
 
-def processTx(txs, user="statechain", mode='block')
+def processTx(txs, user="thorchain", mode='block')
   request = Net::HTTP::Post.new("/thorchain/txs")
   address = `thorcli keys show #{user} -a`.strip!
   txs = [txs].flatten(1) # ensures THORNode are an array, and not just a single hash
@@ -94,7 +94,7 @@ def processTx(txs, user="statechain", mode='block')
     'count': '1',
     'txs': txs,
     'base_req': {
-      'chain_id': "statechain",
+      'chain_id': "thorchain",
       'from': address,
       'gas': 'auto',
     },
