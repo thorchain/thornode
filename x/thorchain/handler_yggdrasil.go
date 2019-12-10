@@ -94,6 +94,7 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStor
 
 	pools, err := keeper.GetPools(ctx)
 	if err != nil {
+		ctx.Logger().Error("can't get pools", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
@@ -176,6 +177,7 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil) sdk.Result
 	if h.validatorMgr.Meta().Ragnarok {
 		hasYggdrasilPool, err := h.keeper.HasValidYggdrasilPools(ctx)
 		if nil != err {
+			ctx.Logger().Error("fail to find valid yggdrasil pools", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 		if !hasYggdrasilPool {
