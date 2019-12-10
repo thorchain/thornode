@@ -197,7 +197,7 @@ func (pam *AddressManager) getPoolAddresses() (types.PoolAddresses, error) {
 	uri := url.URL{
 		Scheme: "http",
 		Host:   pam.chainHost,
-		Path:   "/thorchain/pooladdresses",
+		Path:   "/thorchain/pool_addresses",
 	}
 	resp, err := retryablehttp.Get(uri.String())
 	if nil != err {
