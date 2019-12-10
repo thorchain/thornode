@@ -586,6 +586,7 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 	}
 	// Here make sure THORNode don't change the node account's bond
 
+	nodeAccount.Status = NodeReady // TODO: should check version is set, and observer is ready monitoring chains
 	nodeAccount.ValidatorConsPubKey = msg.ValidatorConsPubKey
 	nodeAccount.NodePubKey = msg.NodePubKeys
 	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
