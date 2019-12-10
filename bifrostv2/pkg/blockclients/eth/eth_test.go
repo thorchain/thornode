@@ -13,11 +13,8 @@ type EthSuite struct {
 	Client *Client
 }
 
-var cfg = config.ETHConfiguration{
-	CommonBlockChainConfigurations: config.CommonBlockChainConfigurations{
-		ChainHost: "https://mainnet.infura.io", // TODO change this to our mock server.. Once it exists
-		// ChainHost: "http://127.0.0.1:8545", // TODO change this to our mock server.. Once it exists
-	},
+var cfg = config.ChainConfigurations{
+	ChainHost: "https://mainnet.infura.io", // TODO change this to our mock server.. Once it exists
 }
 
 var client, _ = NewClient(cfg)

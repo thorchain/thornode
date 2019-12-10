@@ -14,11 +14,10 @@ type BNBSuite struct {
 	Client *Client
 }
 
-var cfg = config.BNBConfiguration{
-	CommonBlockChainConfigurations: config.CommonBlockChainConfigurations{
-		ChainHost:    "http://45.76.119.188:27147", // TODO change to mock server...
-		ChainNetwork: "mainnet",
-	},
+var cfg = config.ChainConfigurations{
+	Name:         "BNB",
+	ChainHost:    "http://45.76.119.188:27147", // TODO change to mock server...
+	ChainNetwork: "mainnet",
 }
 
 var _ = Suite(&BNBSuite{})
@@ -34,20 +33,16 @@ func (s *BNBSuite) SetUpSuite(c *C) {
 }
 
 func (s *BNBSuite) TestSetNetwork(c *C) {
-	network := setNetwork(config.BNBConfiguration{})
+	network := setNetwork(config.ChainConfigurations{})
 	c.Assert(network, Equals, types.TestNetwork)
 
-	network = setNetwork(config.BNBConfiguration{
-		CommonBlockChainConfigurations: config.CommonBlockChainConfigurations{
-			ChainNetwork: "mainnet",
-		},
+	network = setNetwork(config.ChainConfigurations{
+		ChainNetwork: "mainnet",
 	})
 	c.Assert(network, Equals, types.ProdNetwork)
 
-	network = setNetwork(config.BNBConfiguration{
-		CommonBlockChainConfigurations: config.CommonBlockChainConfigurations{
-			ChainNetwork: "testnet",
-		},
+	network = setNetwork(config.ChainConfigurations{
+		ChainNetwork: "testnet",
 	})
 	c.Assert(network, Equals, types.TestNetwork)
 }
