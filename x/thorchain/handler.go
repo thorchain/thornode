@@ -588,7 +588,7 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 
 	nodeAccount.ValidatorConsPubKey = msg.ValidatorConsPubKey
 	nodeAccount.NodePubKey = msg.NodePubKeys
-	nodeAccount.UpdateStatus(NodeReady, ctx.BlockHeight())
+	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
 	if err := keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
 		ctx.Logger().Error(fmt.Sprintf("fail to save node account: %s", nodeAccount), err)
 		return sdk.ErrInternal("fail to save node account").Result()
