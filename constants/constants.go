@@ -29,7 +29,7 @@ const (
 	ValidatorRotateNumAfterFull     = 1    // How many validators should THORNode nominate after THORNode reach the desire validator set
 	DesireValidatorSet              = 33   // desire validator set
 	RotatePerBlockHeight            = 60   // How many blocks THORNode try to rotate validators
-	ValidatorsChangeWindow          = 1200 // When should THORNode open the rotate window, nominate validators, and identify who should be out
+	ValidatorsChangeWindow          = 40   // When should THORNode open the rotate window, nominate validators, and identify who should be out
 	LeaveProcessPerBlockHeight      = 4320 // after how many blocks THORNode will process leave queue
 )
 
