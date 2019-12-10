@@ -12,12 +12,11 @@ type BTCSuite struct {
 	Client *Client
 }
 
-var cfg = config.BTCConfiguration{
-	CommonBlockChainConfigurations: config.CommonBlockChainConfigurations{
-		ChainHost: "localhost:8332", // TODO change this to our mock server... Once it exists
-		UserName:  "bitcoin",
-		Password:  "password",
-	},
+var cfg = config.ChainConfigurations{
+	Name:        "BTC",
+	ChainHost:   "localhost:8332", // TODO change this to our mock server... Once it exists
+	UserName:    "bitcoin",
+	Password:    "password",
 	HTTPostMode: true,
 	DisableTLS:  true,
 }
@@ -30,6 +29,7 @@ func Test(t *testing.T) {
 }
 
 func (s *BTCSuite) TestGetBlock(c *C) {
+	c.Skip("BTC Mock Required")
 	block, err := s.Client.getBlock(0)
 	if err != nil {
 		c.Error(err)
@@ -40,6 +40,7 @@ func (s *BTCSuite) TestGetBlock(c *C) {
 }
 
 func (s *BTCSuite) TestGetBlockHash(c *C) {
+	c.Skip("BTC Mock Required")
 	hash, err := s.Client.getBlockHash(0)
 	if err != nil {
 		c.Error(err)

@@ -11,6 +11,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 func Test(t *testing.T) {
@@ -24,6 +25,7 @@ type AddressMangerSuite struct {
 var _ = Suite(&AddressMangerSuite{})
 
 func (s *AddressMangerSuite) SetUpSuite(c *C) {
+	thorchain.SetupConfigForTest()
 	fmt.Println("SetUpSuite!!")
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		switch req.RequestURI {
