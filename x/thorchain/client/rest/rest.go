@@ -53,6 +53,7 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	).Methods(http.MethodPost)
 	r.Use(mux.CORSMethodMiddleware(r))
 	r.Use(customCORSHeader())
+	r.StrictSlash(true)
 }
 
 func customCORSHeader() mux.MiddlewareFunc {
