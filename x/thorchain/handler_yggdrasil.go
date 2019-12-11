@@ -149,6 +149,14 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil) sdk.Result
 		ygg.AddFunds(msg.Coins)
 	} else {
 		ygg.SubFunds(msg.Coins)
+	}
+
+	if err := h.keeper.SetYggdrasil(ctx, ygg); nil != err {
+		ctx.Logger().Error("fail to save yggdrasil", err)
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
+	if !msg.AddFunds {
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent("yggdrasil_return",
 				sdk.NewAttribute("pubkey", ygg.PubKey.String()),
@@ -167,10 +175,6 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil) sdk.Result
 			ctx.Logger().Error("fail to refund bond", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
-	}
-	if err := h.keeper.SetYggdrasil(ctx, ygg); nil != err {
-		ctx.Logger().Error("fail to save yggdrasil", err)
-		return sdk.ErrInternal(err.Error()).Result()
 	}
 
 	// Ragnarok protocol get triggered, if all the Yggdrasil pool returned funds already, THORNode will continue Ragnarok
