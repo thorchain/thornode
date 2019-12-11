@@ -163,35 +163,24 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 			// Pool Rewards are based on Fee Share
 			for _, pool := range pools {
 				fees, err := k.GetPoolLiquidityFees(ctx, currentHeight, pool.Asset)
+				if err != nil {
+					err = errors.Wrap(err, "fail to get fees")
+					ctx.Logger().Error(err.Error())
+					return err
+				}
 				amt := common.GetShare(fees, totalLiquidityFees, totalPoolRewards)
 				rewardAmts = append(rewardAmts, amt)
-				if err != nil {
-					err = errors.Wrap(err, "fail to set pool")
-					ctx.Logger().Error(err.Error())
-					return err
-				}
 			}
 
-			for i, reward := range rewardAmts {
-				pools[i].BalanceRune = pools[i].BalanceRune.Add(reward)
-				if err := k.SetPool(ctx, pools[i]); err != nil {
-					err = errors.Wrap(err, "fail to set pool")
-					ctx.Logger().Error(err.Error())
-					return err
-				}
-			}
 		} else {
 			// Pool Rewards are based on Depth Share
-			poolRewards := calcPoolRewards(totalPoolRewards, totalStaked, pools)
-			for i, reward := range poolRewards {
-				pools[i].BalanceRune = pools[i].BalanceRune.Add(reward)
-				if err := k.SetPool(ctx, pools[i]); err != nil {
-					err = errors.Wrap(err, "fail to set pool")
-					ctx.Logger().Error(err.Error())
-					return err
-				}
-			}
+			rewardAmts = calcPoolRewards(totalPoolRewards, totalStaked, pools)
 		}
+		// Pay out
+		if err := payPoolRewards(ctx, k, rewardAmts, pools); err != nil {
+			return err
+		}
+
 	} else { // Else deduct pool deficit
 
 		for _, pool := range pools {
@@ -243,4 +232,17 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (
 
 	}
 	return val, gas, nil
+}
+
+// Pays out Rewards
+func payPoolRewards(ctx sdk.Context, k Keeper, poolRewards []sdk.Uint, pools Pools) error {
+	for i, reward := range poolRewards {
+		pools[i].BalanceRune = pools[i].BalanceRune.Add(reward)
+		if err := k.SetPool(ctx, pools[i]); err != nil {
+			err = errors.Wrap(err, "fail to set pool")
+			ctx.Logger().Error(err.Error())
+			return err
+		}
+	}
+	return nil
 }
