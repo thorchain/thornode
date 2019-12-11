@@ -87,6 +87,9 @@ func (ah AckHandler) handle(ctx sdk.Context, msg MsgAck) sdk.Error {
 	queuedNode := ah.validatorMgr.Meta().Queued
 	for _, item := range nominatedNode {
 		item.TryAddSignerPubKey(chainPubKey.PubKey)
+		if item.ObserverActive && item.SignerActive {
+			item.UpdateStatus(NodeReady, ctx.BlockHeight())
+		}
 		if err := ah.keeper.SetNodeAccount(ctx, item); nil != err {
 			return sdk.ErrInternal(fmt.Errorf("fail to save node account: %w", err).Error())
 		}
