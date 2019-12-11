@@ -144,24 +144,15 @@ func calculatePoolUnits(oldPoolUnits, poolRune, poolAsset, stakeRune, stakeAsset
 	if stakeAsset.Add(poolAsset).IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), errors.New("total asset in the pool is zero")
 	}
-	// fStakeRune := common.UintToFloat64(stakeRune)
-	// fStakeAsset := common.UintToFloat64(stakeAsset)
-
-	// fPoolRune := common.UintToFloat64(poolRune)
-	// fPoolAsset := common.UintToFloat64(poolAsset)
-	// stakerPercentage := ((fStakeRune / (fStakeRune + fPoolRune)) + (fStakeAsset / (fStakeAsset + fPoolAsset))) / 2
-
-	// stakerUnit := (stakerPercentage*(fStakeRune+fPoolRune) + stakerPercentage*(fStakeAsset+fPoolAsset)) / 2
 
 	poolRuneAfter := poolRune.Add(stakeRune)
 	poolAssetAfter := poolAsset.Add(stakeAsset)
 
-	// ((R + A) * (r A + R a))/(4 R A)
+	// ((R + A) * (r * A + R * a))/(4 * R * A)
 	nominator1 := poolRuneAfter.Add(poolAssetAfter)
 	nominator2 := stakeRune.Mul(poolAssetAfter).Add(poolRuneAfter.Mul(stakeAsset))
 	denominator := sdk.NewUint(4).Mul(poolRuneAfter).Mul(poolAssetAfter)
 	stakeUnits := nominator1.Mul(nominator2).Quo(denominator)
-
 	newPoolUnit := oldPoolUnits.Add(stakeUnits)
 	return newPoolUnit, stakeUnits, nil
 }
