@@ -200,6 +200,19 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 		return err
 	}
 
+	// Subtract gas from pools (will be reimbursed later with rune at the end
+	// of the block)
+	for _, gas := range tx.Tx.Gas {
+		pool, err := keeper.GetPool(ctx, gas.Asset)
+		if err != nil {
+			return err
+		}
+		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
+		if err := keeper.SetPool(ctx, pool); err != nil {
+			return err
+		}
+	}
+
 	if keeper.YggdrasilExists(ctx, tx.ObservedPubKey) {
 		ygg, err := keeper.GetYggdrasil(ctx, tx.ObservedPubKey)
 		if err != nil {
