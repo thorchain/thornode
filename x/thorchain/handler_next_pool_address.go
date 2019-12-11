@@ -101,6 +101,9 @@ func (h HandlerNextPoolAddress) handle(ctx sdk.Context, msg MsgNextPoolAddress, 
 	if !nominatedAccount.IsEmpty() {
 		for _, item := range nominatedAccount {
 			item.SignerActive = true
+			if item.SignerActive && item.ObserverActive {
+				item.UpdateStatus(NodeReady, ctx.BlockHeight())
+			}
 			if err := h.keeper.SetNodeAccount(ctx, item); nil != err {
 				return sdk.ErrInternal(fmt.Errorf("fail to save node account: %w", err).Error())
 			}
