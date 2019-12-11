@@ -100,8 +100,8 @@ Once you have done that, you can then use the `thorcli` to
 register your other addresses.
 
 ```bash
-thorcli tx thorchain set-trust-account $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --from thorchain
-thorcli tx thorchain set-version --from thorchain
+echo password | thorcli tx thorchain set-trust-account $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --from thorchain --yes
+echo password | thorcli tx thorchain set-version --from thorchain --yes
 ```
 
 Once you have done this, your node is ready to be rotated into the active
