@@ -47,6 +47,7 @@ var (
 	NewMsgSwap                     = types.NewMsgSwap
 	NewMsgSetAdminConfig           = types.NewMsgSetAdminConfig
 	NewKeygens                     = types.NewKeygens
+	NewMsgSetTrustAccount          = types.NewMsgSetTrustAccount
 	NewTxOut                       = types.NewTxOut
 	NewEvent                       = types.NewEvent
 	NewEventRewards                = types.NewEventRewards

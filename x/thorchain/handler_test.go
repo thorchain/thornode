@@ -137,50 +137,6 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	}
 }
 
-func (HandlerSuite) TestHandleMsgSetTrustAccount(c *C) {
-	ctx, k := setupKeeperForTest(c)
-	ctx = ctx.WithBlockHeight(1)
-	signer := GetRandomBech32Addr()
-	// add observer
-	bepConsPubKey := GetRandomBech32ConsensusPubKey()
-	bondAddr := GetRandomBNBAddress()
-	pubKeys := GetRandomPubkeys()
-	emptyPubKeys := common.PubKeys{}
-
-	msgTrustAccount := types.NewMsgSetTrustAccount(pubKeys, bepConsPubKey, signer)
-	unAuthorizedResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
-	c.Check(unAuthorizedResult.Code, Equals, sdk.CodeUnauthorized)
-	c.Check(unAuthorizedResult.IsOK(), Equals, false)
-	bond := sdk.NewUint(common.One * 100)
-	nodeAccount := NewNodeAccount(signer, NodeActive, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
-	c.Assert(k.SetNodeAccount(ctx, nodeAccount), IsNil)
-
-	activeFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
-	c.Check(activeFailResult.Code, Equals, sdk.CodeUnknownRequest)
-	c.Check(activeFailResult.IsOK(), Equals, false)
-
-	nodeAccount = NewNodeAccount(signer, NodeDisabled, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
-	c.Assert(k.SetNodeAccount(ctx, nodeAccount), IsNil)
-
-	disabledFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
-	c.Check(disabledFailResult.Code, Equals, sdk.CodeUnknownRequest)
-	c.Check(disabledFailResult.IsOK(), Equals, false)
-
-	c.Assert(k.SetNodeAccount(ctx, NewNodeAccount(signer, NodeWhiteListed, pubKeys, bepConsPubKey, bond, bondAddr, ctx.BlockHeight())), IsNil)
-
-	notUniqueFailResult := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
-	c.Check(notUniqueFailResult.Code, Equals, sdk.CodeUnknownRequest)
-	c.Check(notUniqueFailResult.IsOK(), Equals, false)
-
-	nodeAccount = NewNodeAccount(signer, NodeWhiteListed, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
-	c.Assert(k.SetNodeAccount(ctx, nodeAccount), IsNil)
-
-	success := handleMsgSetTrustAccount(ctx, k, msgTrustAccount)
-	c.Check(success.Code, Equals, sdk.CodeOK)
-	c.Check(success.IsOK(), Equals, true)
-
-}
-
 func (HandlerSuite) TestIsSignedByActiveObserver(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	nodeAddr := GetRandomBech32Addr()
