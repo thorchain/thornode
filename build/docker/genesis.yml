@@ -66,6 +66,7 @@ services:
       NODES: 4
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.2
+      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
       TSSPRIVKEY: /root/.tss/private.key
     ports:
       - "26657:26657"
@@ -123,7 +124,6 @@ services:
     environment:
       NET: ${NET}
       TSSKEYGEN: 172.32.10.2
-      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
       PRIVKEY: /root/.tss/private.key
     expose:
       - "4040"
@@ -200,6 +200,7 @@ services:
       NODES: 4
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.3
+      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
       TSSPRIVKEY: /root/.tss/private.key
     depends_on:
       - tss2
@@ -249,7 +250,6 @@ services:
       SEED: "172.32.10.2"
       PRIVKEY: /root/.tss/private.key
       TSSKEYGEN: 172.32.10.3
-      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -322,6 +322,7 @@ services:
       NODES: 4
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.4
+      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
       TSSPRIVKEY: /root/.tss/private.key
     depends_on:
       - tss3
@@ -371,7 +372,6 @@ services:
       SEED: "172.32.10.2"
       PRIVKEY: /root/.tss/private.key
       TSSKEYGEN: 172.32.10.4
-      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -444,6 +444,7 @@ services:
       NODES: 4
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.5
+      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
       TSSPRIVKEY: /root/.tss/private.key
     entrypoint:
       /docker/scripts/genesis.sh
@@ -493,7 +494,6 @@ services:
       SEED: "172.32.10.2"
       PRIVKEY: /root/.tss/private.key
       TSSKEYGEN: 172.32.10.5
-      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
     entrypoint:
       /docker/scripts/tss.sh
     volumes:

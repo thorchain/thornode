@@ -46,7 +46,7 @@ run_services() {
 }
 
 #
-# Statechain
+# Thorchain
 #
 run_thord() {
   thord start --rpc.laddr tcp://0.0.0.0:26657 &
@@ -67,7 +67,7 @@ run_signd() {
 }
 
 #
-# Statechain REST API
+# Thorchain REST API
 #
 run_rest() {
   thorcli rest-server --chain-id thorchain --laddr tcp://0.0.0.0:1317 --node tcp://localhost:26657 &
