@@ -67,6 +67,7 @@ func main() {
 }
 
 func registerRoutes(rs *lcd.RestServer) {
+	rs.Mux.StrictSlash(true)
 	client.RegisterRoutes(rs.CliCtx, rs.Mux)
 	app.ModuleBasics.RegisterRESTRoutes(rs.CliCtx, rs.Mux)
 }
