@@ -244,10 +244,10 @@ func (s *Smoke) GetCurrentBalances() types.BalancesConfig {
 
 // Wait for transactions to occur
 func (s *Smoke) WaitForTransactions(count int64) error {
-	time.Sleep(100 * time.Millisecond)
 	if count == 0 {
 		return nil
 	}
+	time.Sleep(100 * time.Millisecond)
 	startHeight, err := s.Binance.GetBlockHeight()
 	if err != nil {
 		return err
@@ -321,14 +321,13 @@ func (s *Smoke) Run() bool {
 		expectedBal := s.Balances.GetByTx(txn.Tx)
 
 		// if we have no outbound tx, wait a block
-		if expectedBal.Out == 0 && txn.Memo != "SEED" {
-			s.WaitBlocks(1)
-		} else {
+		if txn.Memo != "SEED" {
 			// Wait for the thorchain to process blocks and send txs
 			err := s.WaitForTransactions(expectedBal.Out)
 			if err != nil {
 				log.Fatalf("Failed to wait for txs: %s", err)
 			}
+			s.WaitBlocks(1)
 		}
 
 		obtainedBal := s.GetCurrentBalances()
