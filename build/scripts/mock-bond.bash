@@ -14,7 +14,7 @@ if [ -z $2 ]; then
     exit 1
 fi
 
-POOL_ADDRESS=$(curl -s $1:1317/thorchain/pooladdresses | jq -r ".current[0].address")
+POOL_ADDRESS=$(curl -s $1:1317/thorchain/pool_addresses/ | jq -r ".current[0].address")
 
 # NOTE: the from address doesn't matter at all (mock binance doesn't care)
 
