@@ -187,6 +187,14 @@ func (s *Smoke) Transfer(txn types.TransactionConfig) error {
 		msg.Transfer{to, coins},
 	}
 
+	// swap Names with addresses
+	txn.Memo = strings.ToLower(txn.Memo)
+	for name, key := range s.Keys {
+		txn.Memo = strings.ReplaceAll(txn.Memo, strings.ToLower(name), key.GetAddr().String())
+	}
+	txn.Memo = strings.ToUpper(txn.Memo)
+	fmt.Println(txn.Memo)
+
 	return s.SendTxn(from, payload, txn.Memo)
 }
 
