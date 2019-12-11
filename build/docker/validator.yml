@@ -120,6 +120,7 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
+      SEED: ${PEER}
       TSSKEYGEN: 172.52.70.2
       PRIVKEY: /root/.tss/private.key
     expose:
@@ -129,30 +130,10 @@ services:
       /docker/scripts/tss.sh
     volumes:
       - "../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
+      - ${HOME}/.thornode/validator/.tss:/root/.tss
     networks:
       validatornet:
         ipv4_address: 172.52.70.2
-
-  binance:
-    hostname: binance-fullnode
-    image: varnav/binance-node
-    restart: unless-stopped
-    environment:
-      BNET: "prod"
-    ports:
-      - "27146:27146"
-      - "27147:27147"
-      - "26660:26660"
-    ulimits:
-      nofile:
-        soft: "16000"
-        hard: "16000"
-    volumes:
-      - ${HOME}/.thornode/binance:/opt/bnbchaind
-    networks:
-      validatornet:
-        ipv4_address: 172.52.50.2
 
 networks:
   validatornet:
