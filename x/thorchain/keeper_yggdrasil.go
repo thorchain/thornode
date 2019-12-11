@@ -50,6 +50,7 @@ func (k KVStore) GetYggdrasil(ctx sdk.Context, pk common.PubKey) (Yggdrasil, err
 	key := k.GetKey(ctx, prefixYggdrasilPool, pk.String())
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
+		ygg.PubKey = pk
 		return ygg, fmt.Errorf("yggdrasil with pubkey(%s) doesn't exist: %w", pk, ErrYggdrasilNotFound)
 	}
 	buf := store.Get([]byte(key))
