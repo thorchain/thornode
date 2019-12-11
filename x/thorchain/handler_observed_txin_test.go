@@ -3,15 +3,31 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type HandlerObservedTxInSuite struct{}
 
 type TestObservedTxInValidateKeeper struct {
 	KVStoreDummy
-	isActive bool
+	isActive       bool
+	standbyAccount NodeAccount
+}
+
+func (k *TestObservedTxInValidateKeeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+	if addr.Equals(k.standbyAccount.NodeAddress) {
+		return k.standbyAccount, nil
+	}
+	return NodeAccount{}, kaboom
+}
+func (k *TestObservedTxInValidateKeeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
+	if na.NodeAddress.Equals(k.standbyAccount.NodeAddress) {
+		k.standbyAccount = na
+		return nil
+	}
+	return kaboom
 }
 
 func (k *TestObservedTxInValidateKeeper) IsActiveObserver(ctx sdk.Context, signer sdk.AccAddress) bool {
@@ -24,9 +40,10 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
-
+	standbyAccount := GetRandomNodeAccount(NodeStandby)
 	keeper := &TestObservedTxInValidateKeeper{
-		isActive: true,
+		isActive:       true,
+		standbyAccount: standbyAccount,
 	}
 
 	handler := NewObservedTxInHandler(keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr)
@@ -38,23 +55,34 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	txs[0].Tx.ToAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, GetRandomBech32Addr())
-	err = handler.validate(ctx, msg, ver)
+	isNewSigner, err := handler.validate(ctx, msg, ver)
 	c.Assert(err, IsNil)
+	c.Assert(isNewSigner, Equals, false)
 
 	// invalid version
-	err = handler.validate(ctx, msg, semver.Version{})
+	isNewSigner, err = handler.validate(ctx, msg, semver.Version{})
 	c.Assert(err, Equals, badVersion)
+	c.Assert(isNewSigner, Equals, false)
 
 	// inactive node account
 	keeper.isActive = false
 	msg = NewMsgObservedTxIn(txs, GetRandomBech32Addr())
-	err = handler.validate(ctx, msg, ver)
+	isNewSigner, err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
+	c.Assert(isNewSigner, Equals, false)
 
 	// invalid msg
 	msg = MsgObservedTxIn{}
-	err = handler.validate(ctx, msg, ver)
+	isNewSigner, err = handler.validate(ctx, msg, ver)
 	c.Assert(err, NotNil)
+	c.Assert(isNewSigner, Equals, false)
+
+	// test it is signed by a new observer
+	msg = NewMsgObservedTxIn(txs, standbyAccount.NodeAddress)
+	isNewSigner, err = handler.validate(ctx, msg, ver)
+	c.Assert(err, IsNil)
+	c.Assert(isNewSigner, Equals, true)
+	c.Assert(keeper.standbyAccount.ObserverActive, Equals, true)
 }
 
 type TestObservedTxInFailureKeeper struct {
