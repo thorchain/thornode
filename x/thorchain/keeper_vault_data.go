@@ -85,32 +85,10 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 		return err
 	}
 
-	// if we continue to have remaining gas to pay off, take from the pools 😖
-	for i, gas := range vault.Gas {
-		if !gas.Amount.IsZero() {
-			pool, err := k.GetPool(ctx, gas.Asset)
-			if err != nil {
-				return err
-			}
-
-			vault.Gas[i].Amount = common.SafeSub(vault.Gas[i].Amount, pool.BalanceAsset)
-			pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
-			if err := k.SetPool(ctx, pool); err != nil {
-				err = errors.Wrap(err, "fail to set pool")
-				ctx.Logger().Error(err.Error())
-				return err
-			}
-		}
-		pool, err := k.GetPool(ctx, gas.Asset)
-		if err != nil {
-			return err
-		}
-		vault.Gas[i].Amount = common.SafeSub(vault.Gas[i].Amount, pool.BalanceAsset)
-		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
-		if err := k.SetPool(ctx, pool); err != nil {
-			return nil
-		}
-	}
+	// NOTE: if we continue to have remaining gas to pay off (which is
+	// extremely unlikely), ignore it for now (attempt to recover in the next
+	// block). This should be OK as the asset amount in the pool has already
+	// been deducted so the balances are correct. Just operating at a deficit.
 
 	// If no Rune is staked, then don't give out block rewards.
 	if totalRune.IsZero() {
