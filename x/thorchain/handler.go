@@ -70,8 +70,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		case MsgOutboundTx:
 			return handleMsgOutboundTx(ctx, keeper, poolAddressMgr, m)
-		case MsgSetTrustAccount:
-			return handleMsgSetTrustAccount(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
@@ -503,59 +501,6 @@ func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConf
 		keeper.SetCompletedEvent(ctx, evt)
 	}
 
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
-// handleMsgSetTrustAccount Update node account
-func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAccount) sdk.Result {
-	ctx.Logger().Info("receive MsgSetTrustAccount", "validator consensus pub key", msg.ValidatorConsPubKey, "pubkey", msg.NodePubKeys.String())
-	nodeAccount, err := keeper.GetNodeAccount(ctx, msg.Signer)
-	if err != nil {
-		ctx.Logger().Error("fail to get node account", "error", err, "address", msg.Signer.String())
-		return sdk.ErrUnauthorized(fmt.Sprintf("%s is not authorizaed", msg.Signer)).Result()
-	}
-	if nodeAccount.IsEmpty() {
-		ctx.Logger().Error("unauthorized account", "address", msg.Signer.String())
-		return sdk.ErrUnauthorized(fmt.Sprintf("%s is not authorizaed", msg.Signer)).Result()
-	}
-	if err := msg.ValidateBasic(); err != nil {
-		ctx.Logger().Error("MsgUpdateNodeAccount is invalid", "error", err)
-		return sdk.ErrUnknownRequest("MsgUpdateNodeAccount is invalid").Result()
-	}
-
-	// You should not able to update node address when the node is in active mode
-	// for example if they update observer address
-	if nodeAccount.Status == NodeActive {
-		ctx.Logger().Error(fmt.Sprintf("node %s is active, so it can't update itself", nodeAccount.NodeAddress))
-		return sdk.ErrUnknownRequest("node is active can't update").Result()
-	}
-	if nodeAccount.Status == NodeDisabled {
-		ctx.Logger().Error(fmt.Sprintf("node %s is disabled, so it can't update itself", nodeAccount.NodeAddress))
-		return sdk.ErrUnknownRequest("node is disabled can't update").Result()
-	}
-	if err := keeper.EnsureTrustAccountUnique(ctx, msg.ValidatorConsPubKey, msg.NodePubKeys); nil != err {
-		ctx.Logger().Error("Unable to ensure trust account uniqueness", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-	// Here make sure THORNode don't change the node account's bond
-
-	nodeAccount.ValidatorConsPubKey = msg.ValidatorConsPubKey
-	nodeAccount.NodePubKey = msg.NodePubKeys
-	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
-	if err := keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
-		ctx.Logger().Error(fmt.Sprintf("fail to save node account: %s", nodeAccount), err)
-		return sdk.ErrInternal("fail to save node account").Result()
-	}
-
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent("set_trust_account",
-			sdk.NewAttribute("node_address", msg.Signer.String()),
-			sdk.NewAttribute("node_secp256k1_pubkey", msg.NodePubKeys.Secp256k1.String()),
-			sdk.NewAttribute("node_ed25519_pubkey", msg.NodePubKeys.Ed25519.String()),
-			sdk.NewAttribute("validator_consensus_pub_key", msg.ValidatorConsPubKey)))
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
