@@ -130,8 +130,8 @@ services:
       - "4040"
       - "5040"
     ports:
-      - "4040"
-      - "5040"
+      - "4040:4040"
+      - "5040:5040"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -261,8 +261,8 @@ services:
       - "4041"
       - "5041"
     ports:
-      - "4041"
-      - "5041"
+      - "4041:4041"
+      - "5041:5041"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -392,8 +392,8 @@ services:
       - "4042"
       - "5042"
     ports:
-      - "4042"
-      - "5042"
+      - "4042:4042"
+      - "5042:5042"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -523,8 +523,8 @@ services:
       - "4043"
       - "5043"
     ports:
-      - "4043"
-      - "5043"
+      - "4043:4043"
+      - "5043:5043"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
