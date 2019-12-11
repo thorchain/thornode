@@ -65,8 +65,8 @@ services:
       NET: ${NET}
       NODES: 4
       SEED: thor-daemon
-      TSSKEYGEN: 172.32.10.2
-      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
+      TSSKEYGEN: 172.32.10.2:4040
+      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
       TSSPRIVKEY: /root/.tss/private.key
     ports:
       - "26657:26657"
@@ -123,7 +123,8 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      TSSKEYGEN: 172.32.10.2
+      TSSHTTPPORT: 4040
+      TSSP2PPORT: 5040
       PRIVKEY: /root/.tss/private.key
     expose:
       - "4040"
@@ -202,8 +203,8 @@ services:
       NET: ${NET}
       NODES: 4
       SEED: thor-daemon
-      TSSKEYGEN: 172.32.10.3
-      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
+      TSSKEYGEN: 172.32.10.3:4041
+      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
       TSSPRIVKEY: /root/.tss/private.key
     depends_on:
       - tss2
@@ -250,9 +251,18 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      SEED: "172.32.10.2"
+      SEED: 172.32.10.2
+      SEEDHTTPPORT: 4040
+      SEEDP2PPORT: 5040
+      TSSHTTPPORT: 4041
+      TSSP2PPORT: 5041
       PRIVKEY: /root/.tss/private.key
-      TSSKEYGEN: 172.32.10.3
+    expose:
+      - "4041"
+      - "5041"
+    ports:
+      - "4041"
+      - "5041"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -324,8 +334,8 @@ services:
       NET: ${NET}
       NODES: 4
       SEED: thor-daemon
-      TSSKEYGEN: 172.32.10.4
-      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
+      TSSKEYGEN: 172.32.10.4:4042
+      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
       TSSPRIVKEY: /root/.tss/private.key
     depends_on:
       - tss3
@@ -372,9 +382,18 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      SEED: "172.32.10.2"
+      SEED: 172.32.10.2
+      SEEDHTTPPORT: 4040
+      SEEDP2PPORT: 5040
+      TSSHTTPPORT: 4042
+      TSSP2PPORT: 5042
       PRIVKEY: /root/.tss/private.key
-      TSSKEYGEN: 172.32.10.4
+    expose:
+      - "4042"
+      - "5042"
+    ports:
+      - "4042"
+      - "5042"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -446,8 +465,8 @@ services:
       NET: ${NET}
       NODES: 4
       SEED: thor-daemon
-      TSSKEYGEN: 172.32.10.5
-      TSSKEYGENLIST: 172.32.10.2,172.32.10.3,172.32.10.4,172.32.10.5
+      TSSKEYGEN: 172.32.10.5:4043
+      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
       TSSPRIVKEY: /root/.tss/private.key
     entrypoint:
       /docker/scripts/genesis.sh
@@ -494,9 +513,18 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      SEED: "172.32.10.2"
+      SEED: 172.32.10.2
+      SEEDHTTPPORT: 4040
+      SEEDP2PPORT: 5040
+      TSSHTTPPORT: 4043
+      TSSP2PPORT: 5043
       PRIVKEY: /root/.tss/private.key
-      TSSKEYGEN: 172.32.10.5
+    expose:
+      - "4043"
+      - "5043"
+    ports:
+      - "4043"
+      - "5043"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
