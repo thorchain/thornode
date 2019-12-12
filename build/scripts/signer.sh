@@ -14,7 +14,7 @@ START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
 USE_TSS="${USE_TSS:=false}"
 TSS_SCHEME="${TSS_SCHEME:=http}"
 TSS_HOST="${TSS_HOST:=127.0.0.1}"
-TSS_PORT="${TSS_KEYSIGN_PORT:=4040}"
+TSS_PORT="${TSS_PORT:=4040}"
 
 $(dirname "$0")/wait-for-thorchain-api.sh $CHAIN_API
 
