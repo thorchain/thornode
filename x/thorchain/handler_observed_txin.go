@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -28,33 +29,71 @@ func (h ObservedTxInHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Vers
 	if !ok {
 		return errInvalidMessage.Result()
 	}
-	if err := h.validate(ctx, msg, version); err != nil {
+	isNewSigner, err := h.validate(ctx, msg, version)
+	if err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
+	}
+	if isNewSigner {
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
+		}
 	}
 	return h.handle(ctx, msg, version)
 }
 
-func (h ObservedTxInHandler) validate(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) error {
+func (h ObservedTxInHandler) validate(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) (bool, error) {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		return false, badVersion
 	}
 }
 
-func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) error {
+func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (bool, error) {
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
-		return err
+		return false, err
 	}
 
 	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
+		signers := msg.GetSigners()
+		for _, signer := range signers {
+			newSigner, err := h.signedByNewObserver(ctx, signer)
+			if nil != err {
+				ctx.Logger().Error("fail to determinate whether the tx is signed by a new observer", err)
+				return false, notAuthorized
+			}
+
+			// if this tx is signed by a new observer , we have to return a success code
+			if newSigner {
+				return true, nil
+			}
+		}
 		ctx.Logger().Error(notAuthorized.Error())
-		return notAuthorized
+		return false, notAuthorized
 	}
 
-	return nil
+	return false, nil
+}
+
+// when THORChain observe a tx is signed by new observer, who's node account still in standby status, THORChain need to mark their observer is alive.
+// by doing that, it also need to return a success code, otherwise the change will not be saved to key value store.
+func (h ObservedTxInHandler) signedByNewObserver(ctx sdk.Context, addr sdk.AccAddress) (bool, error) {
+	nodeAcct, err := h.keeper.GetNodeAccount(ctx, addr)
+	if nil != err {
+		return false, fmt.Errorf("fail to get node account(%s): %w", addr.String(), err)
+	}
+	if nodeAcct.Status != NodeStandby {
+		return false, fmt.Errorf("node account (%s) is in status(%s) not standby yet", addr, nodeAcct.Status)
+	}
+	nodeAcct.ObserverActive = true
+	err = h.keeper.SetNodeAccount(ctx, nodeAcct)
+	if nil == err {
+		return true, nil
+	}
+	return false, fmt.Errorf("fail to save node account(%s): %w", addr, err)
 
 }
 
