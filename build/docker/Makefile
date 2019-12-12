@@ -22,7 +22,7 @@ clean:
 
 clean-validator:
 	@rm -rf ~/.thornode/validator
-	@mkdir ~/.thornode/validator
+	@mkdir -p ~/.thornode/validator
 
 run-standaloneWithMockBinance: clean
 	docker-compose -f standalone.yml -f standaloneWithMockBinance.yml up --force-recreate --remove-orphans -d

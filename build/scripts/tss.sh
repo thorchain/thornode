@@ -12,7 +12,7 @@ if [ ! -z ${SEED+x} ]; then
         sleep 1
     done
 
-    cat $PRIVKEY | /go/bin/tss -http $TSSHTTPPORT -peer /ip4/$SEED/tcp/$SEEDP2PPORT/ipfs/$(curl http://$SEED:$SEEDHTTPPORT/p2pid) -port $TSSP2PPORT
+    cat $PRIVKEY | /go/bin/tss -http $TSSHTTPPORT -port $TSSP2PPORT -peer /ip4/$SEED/tcp/$SEEDP2PPORT/ipfs/$(curl http://$SEED:$SEEDHTTPPORT/p2pid)
 
 else
     cat $PRIVKEY | /go/bin/tss -http $TSSHTTPPORT -port $TSSP2PPORT
