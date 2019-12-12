@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"fmt"
 	"math/rand"
 	"os"
 	"path/filepath"
@@ -13,9 +12,12 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
+	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 func SetupStateChainForTest(c *C) (config.ThorChainConfiguration, cKeys.Info, func()) {
+	thorchain.SetupConfigForTest()
 	thorcliDir := SetupThorCliDirForTest()
 	cfg := config.ThorChainConfiguration{
 		ChainID:         "statechain",
@@ -40,6 +42,17 @@ func SetupThorCliDirForTest() string {
 	rand.Seed(time.Now().UnixNano())
 	r := rand.Int63()
 	dir := filepath.Join(os.TempDir(), strconv.Itoa(int(r)), ".thorcli")
-	fmt.Println("DIR: ", dir)
 	return dir
+}
+
+func GetMetricForTest(c *C) *metrics.Metrics {
+	m, err := metrics.NewMetrics(config.MetricConfiguration{
+		Enabled:      false,
+		ListenPort:   9000,
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+	})
+	c.Assert(m, NotNil)
+	c.Assert(err, IsNil)
+	return m
 }

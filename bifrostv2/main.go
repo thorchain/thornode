@@ -67,10 +67,10 @@ func (b *Bifrost) Start() error {
 	// 	return errors.Wrap(err, "fail to start metric collector")
 	// }
 
-	// if err := b.thorClient.Start(); err != nil {
-	// 	b.logger.Error().Err(err).Msg("fail to start thorchain bridge")
-	// 	return errors.Wrap(err, "fail to start thorchain bridge")
-	// }
+	if err := b.thorClient.Start(); err != nil {
+		b.logger.Error().Err(err).Msg("fail to start thorchain bridge")
+		return errors.Wrap(err, "fail to start thorchain bridge")
+	}
 
 	if err := b.txScanner.Start(); err != nil {
 		b.logger.Error().Err(err).Msg("fail to start txScanner")

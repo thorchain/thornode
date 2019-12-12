@@ -1,8 +1,8 @@
 {
   "thorchain": {
     "chain_id": "thorchain",
-    "chain_host": "http://localhost:1317",
-    "signer_name": "statechain",
+    "chain_host": "localhost:1317",
+    "signer_name": "thorchain",
     "signer_passwd": "password"
   },
   "chains": [

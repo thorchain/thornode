@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -92,12 +93,14 @@ func CosmosSDKConfig() {
 
 // Start ensure that the bifrost has been whitelisted and is ready to run.
 func (c *Client) Start() error {
+	CosmosSDKConfig()
+
 	if err := c.ensureNodeWhitelistedWithTimeout(); err != nil {
 		c.logger.Error().Err(err).Msg("node account is not whitelisted, can't start")
 		return errors.Wrap(err, "node account is not whitelisted, can't start")
 	}
 
-	accountNumber, sequenceNumber, err := c.getAccountNumberAndSequenceNumber(c.getAccountInfoUrl())
+	accountNumber, sequenceNumber, err := c.getAccountNumberAndSequenceNumber()
 	if nil != err {
 		return errors.Wrap(err, "fail to get account number and sequence number from thorchain")
 	}
@@ -108,16 +111,9 @@ func (c *Client) Start() error {
 	return nil
 }
 
-//
-func (c *Client) getAccountInfoUrl() string {
-	return c.getThorChainUrl(fmt.Sprintf("/auth/accounts/%s", c.keys.GetSignerInfo().GetAddress()))
-}
-
 // getAccountNumberAndSequenceNumber returns account and Sequence number required to post into thorchain
-func (c *Client) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, uint64, error) {
-	if len(requestUrl) == 0 {
-		return 0, 0, errors.New("request url is empty")
-	}
+func (c *Client) getAccountNumberAndSequenceNumber() (uint64, uint64, error) {
+	requestUrl := fmt.Sprintf("/auth/accounts/%s", c.keys.GetSignerInfo().GetAddress())
 
 	body, err := c.get(requestUrl)
 	if err != nil {
@@ -180,8 +176,7 @@ func (c *Client) get(path string) ([]byte, error) {
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("fail to get last block height from thorchain")
-
+		return nil, errors.New("Status code: " + strconv.Itoa(resp.StatusCode) + " returned")
 	}
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -224,11 +219,11 @@ func (c *Client) ensureNodeWhitelisted() error {
 	if len(bepAddr) == 0 {
 		return errors.New("bep address is empty")
 	}
-	requestUrl := c.getThorChainUrl("/thorchain/observer/" + bepAddr)
-	c.logger.Debug().Str("request_url", requestUrl).Msg("check node account status")
-	buf, err := c.get(requestUrl)
+	requestUri := fmt.Sprintf("/thorchain/observer/%s", bepAddr)
+	c.logger.Debug().Str("request_uri", requestUri).Msg("check node account status")
+	buf, err := c.get(requestUri)
 	if err != nil {
-		return errors.Wrap(err, "failed to call:"+requestUrl)
+		return errors.Wrap(err, "failed to call: "+requestUri)
 	}
 	var nodeAccount stypes.NodeAccount
 	if err := c.cdc.UnmarshalJSON(buf, &nodeAccount); nil != err {

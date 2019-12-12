@@ -15,6 +15,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/hashicorp/go-retryablehttp v0.6.1
 	github.com/logrusorgru/aurora v0.0.0-20191116043053-66b7ad493a23
+	github.com/mitranim/gow v0.0.0-20181105081807-8128c81042bd // indirect
 	github.com/openlyinc/pointy v1.1.2
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.8.1
@@ -28,7 +29,7 @@ require (
 	github.com/tendermint/go-amino v0.15.1
 	github.com/tendermint/tendermint v0.32.7
 	github.com/tendermint/tm-db v0.2.0
-	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9 // indirect
+	golang.org/x/sys v0.0.0-20191210023423-ac6580df4449 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127
 )
 

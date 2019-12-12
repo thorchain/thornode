@@ -5,12 +5,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	. "gopkg.in/check.v1"
-
-	"gitlab.com/thorchain/thornode/bifrostv2/config"
-	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
 )
 
 func Test(t *testing.T) {
@@ -42,18 +38,6 @@ func vaultsHandle(c *C, rw http.ResponseWriter) {
 	if _, err := rw.Write(content); err != nil {
 		c.Fatal(err)
 	}
-}
-
-func getMetricForTest(c *C) *metrics.Metrics {
-	m, err := metrics.NewMetrics(config.MetricConfiguration{
-		Enabled:      false,
-		ListenPort:   9000,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-	})
-	c.Assert(m, NotNil)
-	c.Assert(err, IsNil)
-	return m
 }
 
 func (s *VaultsMgrSuite) TestGetVaults(c *C) {
