@@ -9,7 +9,6 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/helpers"
-	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 type VaultsSuite struct {
@@ -22,7 +21,6 @@ type VaultsSuite struct {
 var _ = Suite(&VaultsSuite{})
 
 func (s *VaultsSuite) SetUpSuite(c *C) {
-	thorchain.SetupConfigForTest()
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		switch req.RequestURI {
 		case "/thorchain/vaults/pubkeys":
@@ -33,7 +31,7 @@ func (s *VaultsSuite) SetUpSuite(c *C) {
 	s.cfg, _, s.cleanup = helpers.SetupStateChainForTest(c)
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
 	var err error
-	s.client, err = NewClient(s.cfg, getMetricForTest(c))
+	s.client, err = NewClient(s.cfg, helpers.GetMetricForTest(c))
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 }

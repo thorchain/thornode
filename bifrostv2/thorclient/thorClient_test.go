@@ -1,18 +1,14 @@
 package thorclient
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/helpers"
-	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
-	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -27,14 +23,12 @@ type ThorClientSuite struct {
 var _ = Suite(&ThorClientSuite{})
 
 func (s *ThorClientSuite) SetUpSuite(c *C) {
-	fmt.Println("TEST START")
-	thorchain.SetupConfigForTest()
 	s.cfg, _, s.cleanup = helpers.SetupStateChainForTest(c)
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {}))
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
 
 	var err error
-	s.client, err = NewClient(s.cfg, getMetricForTest(c))
+	s.client, err = NewClient(s.cfg, helpers.GetMetricForTest(c))
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 }
@@ -42,18 +36,6 @@ func (s *ThorClientSuite) SetUpSuite(c *C) {
 func (s *ThorClientSuite) TearDownSuite(c *C) {
 	s.server.Close()
 	s.cleanup()
-}
-
-func getMetricForTest(c *C) *metrics.Metrics {
-	m, err := metrics.NewMetrics(config.MetricConfiguration{
-		Enabled:      false,
-		ListenPort:   9000,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-	})
-	c.Assert(m, NotNil)
-	c.Assert(err, IsNil)
-	return m
 }
 
 func (s *ThorClientSuite) TestGetThorChainUrl(c *C) {
@@ -69,7 +51,7 @@ func (s *ThorClientSuite) TestGet(c *C) {
 
 func (s *ThorClientSuite) TestNewStateChainBridge(c *C) {
 	var testFunc = func(cfg config.ThorChainConfiguration, errChecker Checker, sbChecker Checker) {
-		sb, err := NewClient(cfg, getMetricForTest(c))
+		sb, err := NewClient(cfg, helpers.GetMetricForTest(c))
 		c.Assert(err, errChecker)
 		c.Assert(sb, sbChecker)
 	}
