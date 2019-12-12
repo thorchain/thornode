@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"math"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -27,9 +25,11 @@ func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.U
 // Calculate the block rewards that bonders and stakers should receive
 func calcBlockRewards(totalStaked, totalBonded, totalReserve, totalLiquidityFees sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint) {
 	// Block Rewards will take the latest reserve, divide it by the emission curve factor, then divide by blocks per year
-	blockReward := sdk.NewUint(uint64(math.Round(
-		(float64(totalReserve.Uint64()) / float64(constants.EmissionCurve)) / float64(constants.BlocksPerYear),
-	)))
+	trD := sdk.NewDec(int64(totalReserve.Uint64()))
+	ecD := sdk.NewDec(int64(constants.EmissionCurve))
+	bpyD := sdk.NewDec(int64(constants.BlocksPerYear))
+	blockRewardD := trD.Quo(ecD).Quo(bpyD)
+	blockReward := sdk.NewUint(uint64((blockRewardD).RoundInt64()))
 
 	systemIncome := blockReward.Add(totalLiquidityFees)                 // Get total system income for block
 	stakerSplit := getPoolShare(totalStaked, totalBonded, systemIncome) // Get staker share
