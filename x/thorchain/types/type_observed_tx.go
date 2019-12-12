@@ -43,11 +43,10 @@ func (tx ObservedTx) Valid() error {
 	if err := tx.Tx.IsValid(); err != nil {
 		return err
 	}
-	// ideally memo should not be empty, THORNode check it here, but if
+	// Ideally memo should not be empty, THORNode check it here, but if
 	// THORNode check it empty here, then the tx will be rejected by thorchain
-	// given that , we are not going to refund the transaction, thus THORNode
-	// will allow ObservedTx has empty to get into thorchain. and let thorchain
-	// to refund customer
+	// given that THORNode is not going to refund the transaction, thus THORNode
+	// will allow ObservedTx has empty to get into thorchain. Thorchain will refund user
 	if tx.BlockHeight.IsZero() {
 		return errors.New("block height can't be zero")
 	}
