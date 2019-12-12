@@ -64,7 +64,7 @@ func (kts *KeyGenTestSuite) TestNewTssKenGen(c *C) {
 	k, err := thorclient.NewKeys(folder, scCfg.SignerName, scCfg.SignerPasswd)
 	c.Assert(err, IsNil)
 	c.Assert(k, NotNil)
-	kg, err := NewTssKeyGen(keyGenCfg, k)
+	kg, err := NewTssKeyGen(keyGenCfg, scCfg, k)
 	c.Assert(err, IsNil)
 	c.Assert(kg, NotNil)
 }
