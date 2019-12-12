@@ -53,7 +53,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 	currentHeight := uint64(ctx.BlockHeight())
 
 	// First get active pools and total staked Rune
-	totalRune := sdk.ZeroUint()
+	totalStaked := sdk.ZeroUint()
 	var pools Pools
 	iterator := k.GetPoolIterator(ctx)
 	defer iterator.Close()
@@ -61,7 +61,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 		var pool Pool
 		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
 		if pool.IsEnabled() && !pool.BalanceRune.IsZero() {
-			totalRune = totalRune.Add(pool.BalanceRune)
+			totalStaked = totalStaked.Add(pool.BalanceRune)
 			pools = append(pools, pool)
 		}
 	}
@@ -91,7 +91,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 	// been deducted so the balances are correct. Just operating at a deficit.
 
 	// If no Rune is staked, then don't give out block rewards.
-	if totalRune.IsZero() {
+	if totalStaked.IsZero() {
 		return nil // If no Rune is staked, then don't give out block rewards.
 	}
 
@@ -104,7 +104,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 		totalBonded.Add(node.Bond)
 	}
 
-	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees, totalRune, totalBonded)
+	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees, totalStaked, totalBonded)
 
 	if !vault.TotalReserve.IsZero() {
 		// Move Rune from the Reserve to the Bond and Pool Rewards
@@ -135,16 +135,30 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 			totalPoolRewards = common.SafeSub(totalPoolRewards, runeGas)
 		}
 
-		// Then add pool rewards
-		poolRewards := calcPoolRewards(totalPoolRewards, totalRune, pools)
-		for i, reward := range poolRewards {
-			pools[i].BalanceRune = pools[i].BalanceRune.Add(reward)
-			if err := k.SetPool(ctx, pools[i]); err != nil {
-				err = errors.Wrap(err, "fail to set pool")
-				ctx.Logger().Error(err.Error())
-				return err
+		var rewardAmts []sdk.Uint
+
+		if !totalLiquidityFees.IsZero() {
+			// Pool Rewards are based on Fee Share
+			for _, pool := range pools {
+				fees, err := k.GetPoolLiquidityFees(ctx, currentHeight, pool.Asset)
+				if err != nil {
+					err = errors.Wrap(err, "fail to get fees")
+					ctx.Logger().Error(err.Error())
+					return err
+				}
+				amt := common.GetShare(fees, totalLiquidityFees, totalPoolRewards)
+				rewardAmts = append(rewardAmts, amt)
 			}
+
+		} else {
+			// Pool Rewards are based on Depth Share
+			rewardAmts = calcPoolRewards(totalPoolRewards, totalStaked, pools)
 		}
+		// Pay out
+		if err := payPoolRewards(ctx, k, rewardAmts, pools); err != nil {
+			return err
+		}
+
 	} else { // Else deduct pool deficit
 
 		for _, pool := range pools {
@@ -196,4 +210,17 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (
 
 	}
 	return val, gas, nil
+}
+
+// Pays out Rewards
+func payPoolRewards(ctx sdk.Context, k Keeper, poolRewards []sdk.Uint, pools Pools) error {
+	for i, reward := range poolRewards {
+		pools[i].BalanceRune = pools[i].BalanceRune.Add(reward)
+		if err := k.SetPool(ctx, pools[i]); err != nil {
+			err = errors.Wrap(err, "fail to set pool")
+			ctx.Logger().Error(err.Error())
+			return err
+		}
+	}
+	return nil
 }
