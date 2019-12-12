@@ -46,7 +46,7 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 func (k AdminConfigKey) Default() string {
 	switch k {
 	case GSLKey:
-		return "0.3"
+		return "3000"
 	case WhiteListGasAssetKey:
 		return "1000bep"
 	case PoolRefundGasKey:
