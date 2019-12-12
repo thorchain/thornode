@@ -1,7 +1,6 @@
 package addressmanager
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -26,7 +25,6 @@ var _ = Suite(&AddressMangerSuite{})
 
 func (s *AddressMangerSuite) SetUpSuite(c *C) {
 	thorchain.SetupConfigForTest()
-	fmt.Println("SetUpSuite!!")
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		switch req.RequestURI {
 		case "/thorchain/pooladdresses":

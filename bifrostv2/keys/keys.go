@@ -1,4 +1,4 @@
-package thorclient
+package keys
 
 import (
 	"fmt"

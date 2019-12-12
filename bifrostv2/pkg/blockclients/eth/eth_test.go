@@ -3,7 +3,6 @@ package eth
 import (
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
@@ -40,7 +39,6 @@ func (s *EthSuite) TestGetCurrentBlock(c *C) {
 	if err != nil {
 		c.Error(err)
 	}
-	spew.Dump(block)
 	c.Log(block.NumberU64())
 	c.Check(block.NumberU64() > 9048204, Equals, true)
 }
