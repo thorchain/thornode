@@ -89,7 +89,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	}
 
 	if cfg.UseTSS {
-		kg, err := tss.NewTssKeyGen(cfg.TSS, thorKeys)
+		kg, err := tss.NewTssKeyGen(cfg.TSS, cfg.StateChain, thorKeys)
 		if nil != err {
 			return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
 		}
