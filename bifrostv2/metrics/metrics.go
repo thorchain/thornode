@@ -289,15 +289,16 @@ func (m *Metrics) Stop() error {
 	return m.s.Shutdown(ctx)
 }
 
+// TODO this cant happen twice in the code base.
+// Once old bifrost is removed this can be re-enabled.
 func init() {
-	for _, item := range counterVecs {
-		prometheus.MustRegister(item)
-	}
-	for _, item := range counters {
-		prometheus.MustRegister(item)
-	}
-	for _, item := range histograms {
-		prometheus.MustRegister(item)
-	}
-
+	// for _, item := range counterVecs {
+	// 	prometheus.MustRegister(item)
+	// }
+	// for _, item := range counters {
+	// 	prometheus.MustRegister(item)
+	// }
+	// for _, item := range histograms {
+	// 	prometheus.MustRegister(item)
+	// }
 }

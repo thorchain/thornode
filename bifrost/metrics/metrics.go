@@ -299,5 +299,4 @@ func init() {
 	for _, item := range histograms {
 		prometheus.MustRegister(item)
 	}
-
 }
