@@ -17,7 +17,7 @@ func (s EventSuite) TestSwapEvent(c *C) {
 		common.BNBAsset,
 		sdk.NewUint(5),
 		sdk.NewUint(5),
-		sdk.NewDec(5),
+		sdk.NewUint(5),
 	)
 	c.Check(evt.Type(), Equals, "swap")
 }
@@ -61,7 +61,7 @@ func (s EventSuite) TestEvent(c *C) {
 		common.BNBAsset,
 		sdk.NewUint(5),
 		sdk.NewUint(5),
-		sdk.NewDec(5),
+		sdk.NewUint(5),
 	)
 
 	swapBytes, _ := json.Marshal(swap)
