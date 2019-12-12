@@ -53,7 +53,7 @@ func (s YggdrasilSuite) TestCalcTargetAmounts2(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(coins, HasLen, 2)
 	c.Check(coins[0].Asset.String(), Equals, common.BNBAsset.String())
-	c.Check(coins[0].Amount.Uint64(), Equals, sdk.NewUint(0.16666666*common.One).Uint64(), Commentf("%d vs %d", coins[0].Amount.Uint64(), sdk.NewUint(0.16666666*common.One).Uint64()))
+	c.Check(coins[0].Amount.Uint64(), Equals, sdk.NewUint(0.16666667*common.One).Uint64(), Commentf("%d vs %d", coins[0].Amount.Uint64(), sdk.NewUint(0.16666667*common.One).Uint64()))
 	c.Check(coins[1].Asset.String(), Equals, common.RuneAsset().String())
-	c.Check(coins[1].Amount.Uint64(), Equals, sdk.NewUint(166666.66666666*common.One).Uint64(), Commentf("%d vs %d", coins[1].Amount.Uint64(), sdk.NewUint(166666.66666666*common.One).Uint64()))
+	c.Check(coins[1].Amount.Uint64(), Equals, sdk.NewUint(166666.66666667*common.One).Uint64(), Commentf("%d vs %d", coins[1].Amount.Uint64(), sdk.NewUint(166666.66666667*common.One).Uint64()))
 }
