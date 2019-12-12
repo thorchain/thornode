@@ -1,7 +1,6 @@
 package thorclient
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -18,6 +17,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
+	"gitlab.com/thorchain/thornode/bifrostv2/keys"
 	"gitlab.com/thorchain/thornode/cmd"
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
@@ -32,12 +32,12 @@ const (
 	VaultsEndpoint = "/vaults/pubkeys"
 )
 
-// Client will be used to send tx to thorchain
+// Client is for all communication to a thorNode
 type Client struct {
 	logger        zerolog.Logger
 	cdc           *codec.Codec
 	cfg           config.ThorChainConfiguration
-	keys          *Keys
+	keys          *keys.Keys
 	errCounter    *prometheus.CounterVec
 	m             *metrics.Metrics
 	accountNumber uint64
@@ -59,12 +59,10 @@ func NewClient(cfg config.ThorChainConfiguration, m *metrics.Metrics) (*Client, 
 	if len(cfg.SignerPasswd) == 0 {
 		return nil, errors.New("signer password is empty")
 	}
-	k, err := NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
+	k, err := keys.NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
 	if nil != err {
 		return nil, fmt.Errorf("fail to get keybase: %w", err)
 	}
-
-	// CosmosSDKConfig()
 
 	return &Client{
 		logger:     log.With().Str("module", "thorClient").Logger(),
@@ -92,10 +90,7 @@ func CosmosSDKConfig() {
 	cosmosSDKConfig.Seal()
 }
 
-func (c *Client) WithRetryableHttpClient(client *retryablehttp.Client) {
-	c.client = client
-}
-
+// Start ensure that the bifrost has been whitelisted and is ready to run.
 func (c *Client) Start() error {
 	if err := c.ensureNodeWhitelistedWithTimeout(); err != nil {
 		c.logger.Error().Err(err).Msg("node account is not whitelisted, can't start")
@@ -113,10 +108,12 @@ func (c *Client) Start() error {
 	return nil
 }
 
+//
 func (c *Client) getAccountInfoUrl() string {
 	return c.getThorChainUrl(fmt.Sprintf("/auth/accounts/%s", c.keys.GetSignerInfo().GetAddress()))
 }
 
+// getAccountNumberAndSequenceNumber returns account and Sequence number required to post into thorchain
 func (c *Client) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, uint64, error) {
 	if len(requestUrl) == 0 {
 		return 0, 0, errors.New("request url is empty")
@@ -135,58 +132,7 @@ func (c *Client) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, u
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "fail to unmarshal base account")
 	}
-
 	return baseAccount.AccountNumber, baseAccount.Sequence, nil
-
-}
-
-// Send the signed transaction to thorchain
-func (c *Client) Send(signed authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
-	var noTxID = common.TxID("")
-	if !mode.IsValid() {
-		return noTxID, fmt.Errorf("transaction Mode (%s) is invalid", mode)
-	}
-	start := time.Now()
-	defer func() {
-		c.m.GetHistograms(metrics.SendToThorChainDuration).Observe(time.Since(start).Seconds())
-	}()
-	var setTx types.SetTx
-	setTx.Mode = mode.String()
-	setTx.Tx.Msg = signed.Msgs
-	setTx.Tx.Fee = signed.Fee
-	setTx.Tx.Signatures = signed.Signatures
-	setTx.Tx.Memo = signed.Memo
-	result, err := c.cdc.MarshalJSON(setTx)
-	if nil != err {
-		c.errCounter.WithLabelValues("fail_marshal_settx", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to marshal settx to json")
-	}
-	c.logger.Info().Str("payload", string(result)).Msg("post to thorchain")
-
-	resp, err := c.client.Post(c.getThorChainUrl("/txs"), "application/json", bytes.NewBuffer(result))
-	if err != nil {
-		c.errCounter.WithLabelValues("fail_post_to_thorchain", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to post tx to thorchain")
-	}
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-			c.logger.Error().Err(err).Msg("fail to close response body")
-		}
-	}()
-	body, err := ioutil.ReadAll(resp.Body)
-	if nil != err {
-		c.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to read response body")
-	}
-	var commit types.Commit
-	err = json.Unmarshal(body, &commit)
-	if err != nil {
-		c.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to unmarshal commit")
-	}
-	c.m.GetCounter(metrics.TxToThorChain).Inc()
-	c.logger.Info().Msgf("Received a BlockHash of %v from the thorchain", commit.TxHash)
-	return common.NewTxID(commit.TxHash)
 }
 
 // GetLastObservedInHeight returns the lastobservedin value for the chain past in
@@ -222,6 +168,7 @@ func (c *Client) getLastBlock(chain common.Chain) (stypes.QueryResHeights, error
 	return lastBlock, nil
 }
 
+// get handle all the low level http calls
 func (c *Client) get(path string) ([]byte, error) {
 	resp, err := c.client.Get(c.getThorChainUrl(path))
 	if err != nil {
@@ -245,13 +192,15 @@ func (c *Client) get(path string) ([]byte, error) {
 
 // getThorChainUrl with the given path
 func (c *Client) getThorChainUrl(path string) string {
-	uri, err := url.Parse(c.cfg.ChainHost + path)
-	if err != nil {
-		// TODO handle!
+	uri := url.URL{
+		Scheme: "http",
+		Host:   c.cfg.ChainHost,
+		Path:   path,
 	}
 	return uri.String()
 }
 
+// ensureNodeWhitelistedWithTimeout run's ensureNodeWhitelisted with retry logic for a period of an hour.
 func (c *Client) ensureNodeWhitelistedWithTimeout() error {
 	for {
 		select {

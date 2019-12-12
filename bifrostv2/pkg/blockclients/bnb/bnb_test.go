@@ -48,6 +48,7 @@ func (s *BNBSuite) TestSetNetwork(c *C) {
 }
 
 func (s *BNBSuite) TestGetBlock(c *C) {
+	c.Skip("Need a mock server!!!")
 	ResultBlock, err := s.Client.getBlock(1)
 	c.Assert(err, IsNil)
 	c.Assert(ResultBlock, NotNil)

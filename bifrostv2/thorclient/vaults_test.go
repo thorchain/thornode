@@ -1,30 +1,27 @@
 package thorclient
 
 import (
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 
 	. "gopkg.in/check.v1"
 
+	"gitlab.com/thorchain/thornode/bifrostv2/config"
+	"gitlab.com/thorchain/thornode/bifrostv2/helpers"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
-func TestVaults(t *testing.T) {
-	TestingT(t)
-}
-
 type VaultsSuite struct {
-	server *httptest.Server
-	client *Client
+	server  *httptest.Server
+	client  *Client
+	cfg     config.ThorChainConfiguration
+	cleanup func()
 }
 
 var _ = Suite(&VaultsSuite{})
 
 func (s *VaultsSuite) SetUpSuite(c *C) {
-	fmt.Println("SetUpSuite!!")
 	thorchain.SetupConfigForTest()
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		switch req.RequestURI {
@@ -33,13 +30,17 @@ func (s *VaultsSuite) SetUpSuite(c *C) {
 		}
 	}))
 
-	cfg, _, cleanup := SetupStateChainForTest(c)
-	defer cleanup()
-	cfg.ChainHost = s.server.URL
+	s.cfg, _, s.cleanup = helpers.SetupStateChainForTest(c)
+	s.cfg.ChainHost = s.server.Listener.Addr().String()
 	var err error
-	s.client, err = NewClient(cfg, getMetricForTest(c))
+	s.client, err = NewClient(s.cfg, getMetricForTest(c))
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
+}
+
+func (s *VaultsSuite) TearDownSuite(c *C) {
+	s.cleanup()
+	s.server.Close()
 }
 
 func vaultsHandle(c *C, rw http.ResponseWriter) {

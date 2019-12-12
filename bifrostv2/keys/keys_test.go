@@ -1,14 +1,14 @@
-package thorclient
+package keys
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	. "gopkg.in/check.v1"
 
+	"gitlab.com/thorchain/thornode/bifrostv2/helpers"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
@@ -28,7 +28,7 @@ const (
 )
 
 func (*KeysSuite) setupKeysForTest(c *C) string {
-	thorcliDir := filepath.Join(os.TempDir(), ".thorcli")
+	thorcliDir := helpers.SetupThorCliDirForTest()
 	kb, err := keys.NewKeyBaseFromDir(thorcliDir)
 	c.Assert(err, IsNil)
 	_, _, err = kb.CreateMnemonic(signerNameForTest, cKeys.English, signerPasswordForTest, cKeys.Secp256k1)
