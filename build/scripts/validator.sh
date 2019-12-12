@@ -34,7 +34,7 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
     echo "YOUR NODE ADDRESS: $NODE_ADDRESS. Send your bond with this as your address."
 
     # TODO: remove this code
-    source $(dirname "$0")/mock-binace.bash 167.71.183.159 $NODE_ADDRESS
+    source $(dirname "$0")/mock-bond.bash 167.71.183.159 $NODE_ADDRESS
 
     echo $SIGNER_PASSWD | thorcli tx thorchain set-trust-account $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --from thorchain
     echo $SIGNER_PASSWD | thorcli tx thorchain set-version --from thorchain
