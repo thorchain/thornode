@@ -3,6 +3,7 @@ package thorchain
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -35,9 +36,9 @@ func NewQuerier(keeper Keeper, poolAddressMgr PoolAddressManager, validatorMgr V
 		case q.QueryAdminConfig.Key, q.QueryAdminConfigBnb.Key:
 			return queryAdminConfig(ctx, path[1:], req, keeper)
 		case q.QueryTxOutArray.Key:
-			return queryTxOutArray(ctx, path[1:], req, keeper)
+			return queryTxOutArray(ctx, path[1:], req, keeper, validatorMgr)
 		case q.QueryTxOutArrayPubkey.Key:
-			return queryTxOutArray(ctx, path[1:], req, keeper)
+			return queryTxOutArray(ctx, path[1:], req, keeper, validatorMgr)
 		case q.QueryIncompleteEvents.Key:
 			return queryInCompleteEvents(ctx, path[1:], req, keeper)
 		case q.QueryCompleteEvents.Key:
@@ -333,7 +334,7 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	return res, nil
 }
 
-func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, validatorMgr ValidatorManager) ([]byte, sdk.Error) {
 	var err error
 	height, err := strconv.ParseUint(path[0], 0, 64)
 	if nil != err {
@@ -349,7 +350,6 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 			return nil, sdk.ErrInternal("fail to parse pubkey")
 		}
 	}
-
 	txs, err := keeper.GetTxOut(ctx, height)
 	if nil != err {
 		ctx.Logger().Error("fail to get tx out array from key value store", err)
@@ -357,11 +357,19 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	}
 
 	if !pk.IsEmpty() {
+		newSigner := false
+		for _, item := range validatorMgr.Meta().Queued {
+			if item.NodePubKey.Secp256k1.Equals(pk) {
+				newSigner = true
+				break
+			}
+		}
 		newTxs := &TxOut{
 			Height: txs.Height,
 		}
 		for _, tx := range txs.TxArray {
-			if pk.Equals(tx.VaultPubKey) {
+			if pk.Equals(tx.VaultPubKey) ||
+				(strings.EqualFold(tx.Memo, "nextpool") && newSigner) {
 				newTxs.TxArray = append(newTxs.TxArray, tx)
 			}
 		}
