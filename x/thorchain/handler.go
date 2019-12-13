@@ -47,6 +47,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgNoOp{}.Type()] = NewNoOpHandler(keeper)
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, txOutStore, poolAddrMgr)
+	m[MsgSetTrustAccount{}.Type()] = NewSetTrustAccountHandler(keeper)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetPoolData{}.Type()] = NewPoolDataHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
