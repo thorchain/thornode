@@ -106,7 +106,7 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 
 func (AdminConfigSuite) TestDefault(c *C) {
 	input := map[AdminConfigKey]string{
-		GSLKey:               "0.3",
+		GSLKey:               "3000",
 		WhiteListGasAssetKey: "1000bep",
 		PoolRefundGasKey:     strconv.Itoa(common.One / 10),
 		DefaultPoolStatus:    "Enabled",

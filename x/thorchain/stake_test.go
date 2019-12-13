@@ -64,8 +64,8 @@ func (s StakeSuite) TestCalculatePoolUnits(c *C) {
 			poolAsset:    sdk.NewUint(500 * common.One),
 			stakeRune:    sdk.NewUint(345 * common.One),
 			stakeAsset:   sdk.NewUint(234 * common.One),
-			poolUnits:    sdk.NewUint(78701684859),
-			stakerUnits:  sdk.NewUint(28701684859),
+			poolUnits:    sdk.NewUint(78701684858),
+			stakerUnits:  sdk.NewUint(28701684858),
 			expectedErr:  nil,
 		},
 	}
