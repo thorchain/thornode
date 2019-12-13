@@ -21,19 +21,20 @@ const MinmumNodesForBFT = 4       // Minimum node count to keep network running.
 
 // validator rotation
 const (
-	ValidatorRotateInNumBeforeFull  = 2     // How many validators should THORNode nominate before THORNode reach the desire validator set
-	ValidatorRotateOutNumBeforeFull = 1     // How many validators should THORNode queued to be rotate out before THORNode reach the desire validator set)
-	ValidatorRotateNumAfterFull     = 1     // How many validators should THORNode nominate after THORNode reach the desire validator set
-	DesireValidatorSet              = 33    // desire validator set
-	RotatePerBlockHeight            = 17280 // How many blocks THORNode try to rotate validators
-	ValidatorsChangeWindow          = 1200  // When should THORNode open the rotate window, nominate validators, and identify who should be out
-	LeaveProcessPerBlockHeight      = 4320  // after how many blocks THORNode will process leave queue
+	ValidatorRotateInNumBeforeFull  = 2      // How many validators should THORNode nominate before THORNode reach the desire validator set
+	ValidatorRotateOutNumBeforeFull = 1      // How many validators should THORNode queued to be rotate out before THORNode reach the desire validator set)
+	ValidatorRotateNumAfterFull     = 1      // How many validators should THORNode nominate after THORNode reach the desire validator set
+	DesireValidatorSet              = 12     // desire validator set
+	RotatePerBlockHeight            = 17280  // How many blocks THORNode try to rotate validators
+	ValidatorsChangeWindow          = 1200   // When should THORNode open the rotate window, nominate validators, and identify who should be out
+	LeaveProcessPerBlockHeight      = 4320   // after how many blocks THORNode will process leave queue
+	ArtificialRagnarokBlockHeight   = 500000 // block height to trigger an artificial ragnarok
 )
 
 // Slashing
 const LackOfObservationPenalty int64 = 2         // add two slash point for each block where a node does not observe
 const SigningTransactionPeriod int64 = 100       // how many blocks before a request to sign a tx by yggdrasil pool, is counted as delinquent.
-const MinimumBondInRune uint64 = 100000000000000 // 1 million rune
+const MinimumBondInRune uint64 = 100000_00000000 // 100K rune
 
 // Chaosnet
 const MaximumStakeRune = 600_000 // cap total stake rune to 600K

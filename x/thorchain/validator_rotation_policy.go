@@ -11,6 +11,7 @@ type ValidatorRotationPolicy struct {
 	RotateInNumBeforeFull      int64
 	RotateOutNumBeforeFull     int64
 	RotateNumAfterFull         int64
+	RotateOutNumberAfterFull   int64
 	RotatePerBlockHeight       int64
 	ValidatorChangeWindow      int64
 	DesireValidatorSet         int64
@@ -23,6 +24,7 @@ func GetValidatorRotationPolicy() ValidatorRotationPolicy {
 		RotateInNumBeforeFull:      constants.ValidatorRotateInNumBeforeFull,
 		RotateOutNumBeforeFull:     constants.ValidatorRotateOutNumBeforeFull,
 		RotateNumAfterFull:         constants.ValidatorRotateNumAfterFull,
+		RotateOutNumberAfterFull:   constants.ValidatorRotateInNumBeforeFull, // this is temporary for artificial ragnarok
 		RotatePerBlockHeight:       constants.RotatePerBlockHeight,
 		ValidatorChangeWindow:      constants.ValidatorsChangeWindow,
 		DesireValidatorSet:         constants.DesireValidatorSet,
@@ -30,6 +32,7 @@ func GetValidatorRotationPolicy() ValidatorRotationPolicy {
 	}
 }
 
+// IsValid check whether the validator rotation policy is legit
 func (vp ValidatorRotationPolicy) IsValid() error {
 	if vp.ValidatorChangeWindow > vp.RotatePerBlockHeight {
 		return fmt.Errorf("validator change window :%d is larger than rotate per block height: %d", vp.ValidatorChangeWindow, vp.RotatePerBlockHeight)

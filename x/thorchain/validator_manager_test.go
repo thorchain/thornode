@@ -78,7 +78,8 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	activeNodes1, err := k.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(len(activeNodes1) == 4, Equals, true)
-	// No standby nodes
+	// No standby nodes ,  THORChain can not rotate validators in, thus no validators will be rotate out either
+	// rotation will abort
 	ctx = ctx.WithBlockHeight(rotatePerBlockHeight + 1 - validatorChangeWindow)
 	txOutStore := NewTxOutStorage(k, poolAddrMgr)
 	txOutStore.NewBlock(uint64(rotatePerBlockHeight + 1 - validatorChangeWindow))
@@ -100,7 +101,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	standbyNode := GetRandomNodeAccount(NodeStandby)
 	c.Assert(k.SetNodeAccount(ctx, standbyNode), IsNil)
 
-	// vts.setDesireValidatorSet(c, ctx, k)
+	// two nominated in , one queued
 	vMgr2.rotationPolicy = GetValidatorRotationPolicy()
 	openWindow := vMgr2.meta.RotateWindowOpenAtBlockHeight
 	ctx = ctx.WithBlockHeight(openWindow)
@@ -149,28 +150,41 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(nNode.Status, Equals, NodeActive)
 
 }
+
 func setNodeAccountsStatus(ctx sdk.Context, k Keeper, nas NodeAccounts, status NodeStatus, c *C) {
 	for _, item := range nas {
 		item.UpdateStatus(status, ctx.BlockHeight())
 		c.Assert(k.SetNodeAccount(ctx, item), IsNil)
 	}
 }
+
 func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	for i := 0; i < 10; i++ {
+		node := GetRandomNodeAccount(NodeReady)
+		c.Assert(w.keeper.SetNodeAccount(w.ctx, node), IsNil)
+	}
+
+	// start from 1 ,which is genesis THORChain will take as much as possible
+	ctx := w.ctx.WithBlockHeight(1)
+	w.validatorMgr.BeginBlock(ctx)
+	w.validatorMgr.EndBlock(ctx, w.txOutStore)
+
+	// THORNode rotation should fail because no standby nodes
+	windowOpenAt := w.validatorMgr.Meta().RotateWindowOpenAtBlockHeight
+	ctx = w.ctx.WithBlockHeight(windowOpenAt)
+
+	for i := 0; i < 2; i++ {
 		node := GetRandomNodeAccount(NodeStandby)
 		c.Assert(w.keeper.SetNodeAccount(w.ctx, node), IsNil)
 	}
-	// THORNode should rotate two in , and don't rotate out
-	windowOpenAt := w.validatorMgr.Meta().RotateWindowOpenAtBlockHeight
-	ctx := w.ctx.WithBlockHeight(windowOpenAt)
+
 	w.validatorMgr.BeginBlock(ctx)
 	w.txOutStore.NewBlock(uint64(windowOpenAt))
 	validatorUpdates := w.validatorMgr.EndBlock(ctx, w.txOutStore)
-	// nominated two nodes
 	c.Assert(validatorUpdates, IsNil)
 	c.Assert(w.validatorMgr.Meta().Nominated, HasLen, 2)
-	c.Assert(w.validatorMgr.Meta().Queued, HasLen, 0)
+	c.Assert(w.validatorMgr.Meta().Queued, HasLen, 1)
 
 	// set the nominated node as ready
 	setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady, c)
@@ -180,11 +194,12 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 	w.txOutStore.NewBlock(uint64(windowOpenAt))
 	validatorUpdates = w.validatorMgr.EndBlock(ctx, w.txOutStore)
 	// THORNode should have three active validators now
-	c.Assert(validatorUpdates, HasLen, 3)
+	c.Assert(validatorUpdates, HasLen, 13)
 	c.Assert(w.validatorMgr.Meta().Queued, IsNil)
 	c.Assert(w.validatorMgr.Meta().Nominated, IsNil)
 
-	// do another two
+	// we reach desire validator set 12 for chaosnet
+	// rotate two out , one in
 	windowOpenAt = w.validatorMgr.Meta().RotateWindowOpenAtBlockHeight
 	ctx = w.ctx.WithBlockHeight(windowOpenAt)
 	w.validatorMgr.BeginBlock(ctx)
@@ -198,22 +213,20 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 	w.validatorMgr.BeginBlock(ctx)
 	w.txOutStore.NewBlock(uint64(rotateAt))
 	validatorUpdates = w.validatorMgr.EndBlock(ctx, w.txOutStore)
-	c.Assert(validatorUpdates, HasLen, 5)
+	c.Assert(validatorUpdates, HasLen, 13)
 
-	for i := 0; i <= 27; i++ {
-		node1 := GetRandomNodeAccount(NodeStandby)
-		c.Assert(w.keeper.SetNodeAccount(w.ctx, node1), IsNil)
-		node2 := GetRandomNodeAccount(NodeStandby)
-		c.Assert(w.keeper.SetNodeAccount(w.ctx, node2), IsNil)
+	// start from block height 501120, we are going to rotate two out everytime
+	w.validatorMgr.Meta().RotateWindowOpenAtBlockHeight = 517200
+	w.validatorMgr.Meta().RotateAtBlockHeight = 51840
 
+	// make sure we are rotating two out and one in
+	for i := 0; i < 8; i++ {
 		windowOpenAt = w.validatorMgr.Meta().RotateWindowOpenAtBlockHeight
 		ctx = w.ctx.WithBlockHeight(windowOpenAt)
 		w.validatorMgr.BeginBlock(ctx)
 		w.txOutStore.NewBlock(uint64(windowOpenAt))
 		validatorUpdates = w.validatorMgr.EndBlock(ctx, w.txOutStore)
 		c.Assert(validatorUpdates, IsNil)
-		c.Assert(w.validatorMgr.Meta().Nominated, HasLen, 2)
-		c.Assert(w.validatorMgr.Meta().Queued, HasLen, 1)
 
 		setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady, c)
 		rotateAt = w.validatorMgr.Meta().RotateAtBlockHeight
@@ -221,26 +234,9 @@ func (vts *ValidatorManagerTestSuite) TestRotation(c *C) {
 		w.validatorMgr.BeginBlock(ctx)
 		w.txOutStore.NewBlock(uint64(rotateAt))
 		validatorUpdates = w.validatorMgr.EndBlock(ctx, w.txOutStore)
-		c.Assert(validatorUpdates, HasLen, 7+i)
+		c.Assert(validatorUpdates, HasLen, 12-i)
 	}
 
-	nodeA := GetRandomNodeAccount(NodeStandby)
-	c.Assert(w.keeper.SetNodeAccount(w.ctx, nodeA), IsNil)
-	windowOpenAt = w.validatorMgr.Meta().RotateWindowOpenAtBlockHeight
-	ctx = w.ctx.WithBlockHeight(windowOpenAt)
-	w.validatorMgr.BeginBlock(ctx)
-	w.txOutStore.NewBlock(uint64(windowOpenAt))
-	validatorUpdates = w.validatorMgr.EndBlock(ctx, w.txOutStore)
-	c.Assert(validatorUpdates, IsNil)
-	c.Assert(w.validatorMgr.Meta().Nominated, HasLen, 1)
-	c.Assert(w.validatorMgr.Meta().Queued, HasLen, 1)
-	setNodeAccountsStatus(ctx, w.keeper, w.validatorMgr.Meta().Nominated, NodeReady, c)
-	rotateAt = w.validatorMgr.Meta().RotateAtBlockHeight
-	ctx = w.ctx.WithBlockHeight(rotateAt)
-	w.validatorMgr.BeginBlock(ctx)
-	w.txOutStore.NewBlock(uint64(rotateAt))
-	validatorUpdates = w.validatorMgr.EndBlock(ctx, w.txOutStore)
-	c.Assert(validatorUpdates, HasLen, 34)
 }
 
 func (ValidatorManagerTestSuite) TestValidatorsLeave(c *C) {
