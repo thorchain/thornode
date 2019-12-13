@@ -62,14 +62,19 @@ func NewBifrost(cfg config.Configuration) (*Bifrost, error) {
 
 // Start, started the bifrost server and all its components
 func (b *Bifrost) Start() error {
-	// if err := b.metrics.Start(); err != nil {
-	// 	b.logger.Error().Err(err).Msg("fail to start metric collector")
-	// 	return errors.Wrap(err, "fail to start metric collector")
-	// }
+	if err := b.metrics.Start(); err != nil {
+		b.logger.Error().Err(err).Msg("fail to start metric collector")
+		return errors.Wrap(err, "fail to start metric collector")
+	}
 
 	if err := b.thorClient.Start(); err != nil {
 		b.logger.Error().Err(err).Msg("fail to start thorchain bridge")
 		return errors.Wrap(err, "fail to start thorchain bridge")
+	}
+
+	if err := b.vaultManager.Start(); err != nil {
+		b.logger.Error().Err(err).Msg("fail to start vault Manager")
+		return errors.Wrap(err, "fail to start vault Manager")
 	}
 
 	if err := b.txScanner.Start(); err != nil {

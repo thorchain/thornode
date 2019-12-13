@@ -28,6 +28,11 @@ func NewAddress(address string) (Address, error) {
 
 func (addr Address) IsChain(chain Chain) bool {
 	switch chain {
+	case BTCChain:
+		prefix, _, _ := bech32.Decode(addr.String())
+		return prefix == "bc" || prefix == "tbc"
+	case ETHChain:
+		// TODO build support
 	case BNBChain:
 		prefix, _, _ := bech32.Decode(addr.String())
 		return prefix == "bnb" || prefix == "tbnb"
@@ -37,6 +42,7 @@ func (addr Address) IsChain(chain Chain) bool {
 	default:
 		return true // if THORNode don't specifically check a chain yet, assume its ok.
 	}
+	return false
 }
 
 func (addr Address) Equals(addr2 Address) bool {

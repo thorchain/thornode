@@ -30,6 +30,10 @@ func (PubKeyTestSuite) TestPubKey(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(addr.Equals(NoAddress), Equals, false)
 
+	addr, err = pk.GetAddress(BTCChain)
+	c.Assert(err, IsNil)
+	c.Assert(addr.Equals(NoAddress), Equals, false)
+
 	result, err := json.Marshal(pk)
 	c.Assert(err, IsNil)
 	c.Log(result, Equals, fmt.Sprintf(`"%s"`, hexStr))
