@@ -24,7 +24,7 @@ func (s *SwapSuite) SetUpSuite(c *C) {
 func (s SwapSuite) TestSwap(c *C) {
 	poolStorage := MockPoolStorage{}
 	ctx, _ := setupKeeperForTest(c)
-	globalSlipLimit := common.Amount("2000")
+	globalSlipLimit := sdk.NewUint(3000)
 	inputs := []struct {
 		name            string
 		requestTxHash   common.TxID
@@ -35,7 +35,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		destination     common.Address
 		returnAmount    sdk.Uint
 		tradeTarget     sdk.Uint
-		globalSlipLimit common.Amount
+		globalSlipLimit sdk.Uint
 		expectedErr     error
 	}{
 		{

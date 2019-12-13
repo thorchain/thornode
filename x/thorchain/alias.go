@@ -16,7 +16,6 @@ const (
 	EventRefund      = types.Refund
 
 	// Admin config keys
-	GSLKey                 = types.GSLKey
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
 	WhiteListGasAssetKey   = types.WhiteListGasAssetKey
 	PoolRefundGasKey       = types.PoolRefundGasKey
