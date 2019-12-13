@@ -39,6 +39,7 @@ services:
       BINANCE_HOST: ${BINANCE_HOST:-http://172.32.90.1:26660}
       USE_TSS: "true"
       TSS_HOST: 172.32.10.6
+      TSS_PORT: 4044
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
