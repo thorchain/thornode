@@ -63,6 +63,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	for _, item := range na.SignerMembership {
 		pkm.Add(item)
 	}
+	pkm.Add(na.NodePubKey.Secp256k1)
 
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
 	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScanner, stateChainScanStorage, cfg.StateChain.ChainHost, m, pkm)
@@ -245,12 +246,6 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 	// most case , there should be only one item in txOut.TxArray, but sometimes there might be more than one
 	// especially when THORNode get populate , more and more transactions
 	for _, item := range txOut.TxArray {
-		if !s.shouldSign(item) {
-			s.logger.Info().
-				Str("signer_address", s.Binance.GetAddress(item.VaultPubKey)).
-				Msg("different pool address, ignore")
-			continue
-		}
 		height, err := strconv.ParseInt(txOut.Height, 10, 64)
 		if nil != err {
 			return errors.Wrapf(err, "fail to parse block height: %s ", txOut.Height)
@@ -261,6 +256,13 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 				return fmt.Errorf("fail to get get next pool address,err:%w", err)
 			}
 			item = tai
+		}
+
+		if !s.shouldSign(item) {
+			s.logger.Info().
+				Str("signer_address", s.Binance.GetAddress(item.VaultPubKey)).
+				Msg("different pool address, ignore")
+			continue
 		}
 		if len(item.To) == 0 {
 			s.logger.Info().Msg("To address is empty, THORNode don't know where to send the fund , ignore")
