@@ -92,10 +92,6 @@ func createTempNewPoolForTest(ctx sdk.Context, k Keeper, input string, c *C) *Po
 	asset, err := common.NewAsset(input)
 	c.Assert(err, IsNil)
 	p.Asset = asset
-	// limiting balance to 59 bits, because the math done with floats looses
-	// precision if the number is greater than 59 bits.
-	// https://stackoverflow.com/questions/30897208/how-to-change-a-float64-number-to-uint64-in-a-right-way
-	// https://github.com/golang/go/issues/29463
 	p.BalanceRune = sdk.NewUint(1535169738538008)
 	p.BalanceAsset = sdk.NewUint(1535169738538008)
 	c.Assert(k.SetPool(ctx, p), IsNil)

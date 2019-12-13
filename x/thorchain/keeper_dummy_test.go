@@ -160,9 +160,6 @@ func (k KVStoreDummy) SetAdminConfig(_ sdk.Context, _ AdminConfig)        {}
 func (k KVStoreDummy) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
 	return PoolSuspended
 }
-func (k KVStoreDummy) GetAdminConfigGSL(_ sdk.Context, _ sdk.AccAddress) common.Amount {
-	return common.ZeroAmount
-}
 func (k KVStoreDummy) GetAdminConfigWhiteListGasAsset(_ sdk.Context, _ sdk.AccAddress) sdk.Coins {
 	return nil
 }
@@ -171,9 +168,6 @@ func (k KVStoreDummy) GetAdminConfigBnbAddressType(_ sdk.Context, _ AdminConfigK
 }
 func (k KVStoreDummy) GetAdminConfigUintType(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) sdk.Uint {
 	return sdk.ZeroUint()
-}
-func (k KVStoreDummy) GetAdminConfigAmountType(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) common.Amount {
-	return common.ZeroAmount
 }
 func (k KVStoreDummy) GetAdminConfigCoinsType(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) sdk.Coins {
 	return nil

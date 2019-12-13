@@ -1,7 +1,6 @@
 package types
 
 import (
-	"fmt"
 	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,7 +15,6 @@ var _ = Suite(&AdminConfigSuite{})
 
 func (s AdminConfigSuite) TestGetKey(c *C) {
 	keys := []string{
-		"GSL",
 		"Unknown",
 		"WhiteListGasAsset",
 		"PoolRefundGas",
@@ -29,15 +27,8 @@ func (s AdminConfigSuite) TestGetKey(c *C) {
 }
 
 func (s AdminConfigSuite) TestAdminConfig(c *C) {
-	amts := []string{"GSL"}
-	addr := GetRandomBech32Addr()
-	for _, amt := range amts {
-		config := NewAdminConfig(GetAdminConfigKey(amt), "12", addr) // happy path
-		c.Check(config.Valid(), IsNil, Commentf("%s", amt))
-		config = NewAdminConfig(GetAdminConfigKey(amt), "abc", addr) // invalid value
-		c.Check(config.Valid(), NotNil, Commentf("%s", amt))
-	}
 	uintAmnt := []string{"PoolRefundGas"}
+addr := GetRandomBech32Addr()
 	for _, item := range uintAmnt {
 		cfg := NewAdminConfig(GetAdminConfigKey(item), "1000", addr)
 		c.Check(cfg.Valid(), IsNil, Commentf("%s", item))
@@ -52,21 +43,11 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 		cfg1 := NewAdminConfig(GetAdminConfigKey(item), "1233", addr)
 		c.Check(cfg1.Valid(), NotNil, Commentf("%s is not valid coin", item))
 	}
-	adminCfg := NewAdminConfig(GSLKey, "100", addr)
-	c.Check(adminCfg.Empty(), Equals, false)
-	c.Check(adminCfg.DbKey(), Equals, "GSL_"+addr.String())
-	c.Check(adminCfg.String(), Equals, fmt.Sprintf("Config: %s --> %s", adminCfg.Key, adminCfg.Value))
-
 	inputs := []struct {
 		address sdk.AccAddress
 		key     AdminConfigKey
 		value   string
 	}{
-		{
-			address: sdk.AccAddress{},
-			key:     GSLKey,
-			value:   "1.0",
-		},
 		{
 			address: addr,
 			key:     "",
@@ -76,16 +57,6 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 			address: addr,
 			key:     UnknownKey,
 			value:   "1.0",
-		},
-		{
-			address: addr,
-			key:     GSLKey,
-			value:   "",
-		},
-		{
-			address: addr,
-			key:     GSLKey,
-			value:   "nothing",
 		},
 		{
 			address: addr,
@@ -106,7 +77,6 @@ func (s AdminConfigSuite) TestAdminConfig(c *C) {
 
 func (AdminConfigSuite) TestDefault(c *C) {
 	input := map[AdminConfigKey]string{
-		GSLKey:               "3000",
 		WhiteListGasAssetKey: "1000bep",
 		PoolRefundGasKey:     strconv.Itoa(common.One / 10),
 		DefaultPoolStatus:    "Enabled",
