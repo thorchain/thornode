@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -131,7 +132,7 @@ func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAd
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.Tx.ID, "source asset", msg.Tx.Coins[0].Asset, "target asset", msg.TargetAsset)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
-	gsl := keeper.GetAdminConfigGSL(ctx, EmptyAccAddress)
+	gsl := sdk.NewUint(constants.GlobalSlipLimit)
 	chain := msg.TargetAsset.Chain
 	currentAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
 	if nil == currentAddr {

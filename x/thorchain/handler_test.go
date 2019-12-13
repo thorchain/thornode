@@ -500,11 +500,11 @@ func (HandlerSuite) TestHandleMsgSetAdminConfig(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 
 	tx := GetRandomTx()
-	msgSetAdminCfg := NewMsgSetAdminConfig(tx, GSLKey, "0.5", w.notActiveNodeAccount.NodeAddress)
+	msgSetAdminCfg := NewMsgSetAdminConfig(tx, PoolRefundGasKey, "1000", w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgSetAdminConfig(w.ctx, w.keeper, msgSetAdminCfg)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
-	msgSetAdminCfg = NewMsgSetAdminConfig(tx, GSLKey, "0.5", w.activeNodeAccount.NodeAddress)
+	msgSetAdminCfg = NewMsgSetAdminConfig(tx, PoolRefundGasKey, "1000", w.activeNodeAccount.NodeAddress)
 	result1 := handleMsgSetAdminConfig(w.ctx, w.keeper, msgSetAdminCfg)
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
 
