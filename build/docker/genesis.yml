@@ -38,7 +38,7 @@ services:
       CHAIN_RPC: 172.32.10.22:26657
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
       USE_TSS: "true"
-      TSS_HOST: ${PEER}
+      TSS_HOST: 172.32.10.2
       TSS_PORT: 4040
     entrypoint:
       /docker/scripts/signer.sh
@@ -177,7 +177,7 @@ services:
       CHAIN_API: 172.32.40.33:1317
       CHAIN_RPC: 172.32.10.23:26657
       USE_TSS: "true"
-      TSS_HOST: ${PEER}
+      TSS_HOST: 172.32.10.3
       TSS_PORT: 4041
     entrypoint:
       /docker/scripts/signer.sh
@@ -253,18 +253,12 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      SEED: ${PEER}
+      SEED: 172.32.10.2
       SEEDHTTPPORT: 4040
       SEEDP2PPORT: 5040
       TSSHTTPPORT: 4041
       TSSP2PPORT: 5041
       PRIVKEY: /root/.tss/private.key
-    expose:
-      - "4041"
-      - "5041"
-    ports:
-      - "4041:4041"
-      - "5041:5041"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -309,7 +303,7 @@ services:
       CHAIN_API: 172.32.40.34:1317
       CHAIN_RPC: 172.32.10.24:26657
       USE_TSS: "true"
-      TSS_HOST: ${PEER}
+      TSS_HOST: 172.32.10.4
       TSS_PORT: 4042
     entrypoint:
       /docker/scripts/signer.sh
@@ -385,18 +379,12 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      SEED: ${PEER}
+      SEED: 172.32.10.2
       SEEDHTTPPORT: 4040
       SEEDP2PPORT: 5040
       TSSHTTPPORT: 4042
       TSSP2PPORT: 5042
       PRIVKEY: /root/.tss/private.key
-    expose:
-      - "4042"
-      - "5042"
-    ports:
-      - "4042:4042"
-      - "5042:5042"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -441,7 +429,7 @@ services:
       CHAIN_API: 172.32.40.35:1317
       CHAIN_RPC: 172.32.10.25:26657
       USE_TSS: "true"
-      TSS_HOST: ${PEER}
+      TSS_HOST: 172.32.10.5
       TSS_PORT: 4043
     depends_on:
       - tss4
@@ -517,18 +505,12 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      SEED: ${PEER}
+      SEED: 172.32.10.2
       SEEDHTTPPORT: 4040
       SEEDP2PPORT: 5040
       TSSHTTPPORT: 4043
       TSSP2PPORT: 5043
       PRIVKEY: /root/.tss/private.key
-    expose:
-      - "4043"
-      - "5043"
-    ports:
-      - "4043:4043"
-      - "5043:5043"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:

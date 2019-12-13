@@ -42,6 +42,12 @@ run-genesisWithMockBinance: clean
 stop-genesisWithMockBinance: clean
 	docker-compose -f genesis.yml -f genesisWithMockBinance.yml down
 
+run-genesisWithChurn: clean
+	docker-compose -f genesis.yml -f genesisWithMockBinance.yml -f genesisWithChurnNode.yml up --force-recreate --remove-orphans -d
+
+stop-genesisWithChurn: clean
+	docker-compose -f genesis.yml -f genesisWithMockBinance.yml -f genesisWithChurnNode.yml down
+
 run-genesis: clean
 	docker-compose -f genesis.yml up --force-recreate --remove-orphans -d
 
