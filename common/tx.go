@@ -63,6 +63,9 @@ func GetRagnarokTx(chain Chain) Tx {
 			// used for ragnarok, so doesn't really matter
 			NewCoin(RuneAsset(), sdk.OneUint()),
 		},
+		Gas: Gas{
+			NewCoin(RuneAsset(), sdk.OneUint()),
+		},
 		Memo: "Ragnarok",
 	}
 }

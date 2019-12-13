@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	// EventTypeValidatorManager event type for validator manager that will write on the block
 	EventTypeValidatorManager   = `validator_manager`
 	EventTypeNominatedValidator = `validator_nominated`
 	EventTypeQueuedValidator    = `validator_queued`
@@ -279,42 +280,45 @@ func (vm *ValidatorMgr) rotateValidatorNodes(ctx sdk.Context, store TxOutStore) 
 				sdk.NewAttribute("reason", "no nominated nodes")))
 		return false, nil
 	}
-	hasRotateIn := false
-	for _, item := range vm.meta.Nominated {
-		nominatedNodeAccount, err := vm.k.GetNodeAccount(ctx, item.NodeAddress)
-		if nil != err {
-			return false, fmt.Errorf("fail to get nominated account from data store: %w", err)
-		}
 
-		if nominatedNodeAccount.Status != NodeReady {
-			// set them to standby, do THORNode need to slash the validator? THORNode nominated them but they are not ready
-			nominatedNodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
+	if len(vm.meta.Nominated) > 0 {
+		hasRotateIn := false
+		for _, item := range vm.meta.Nominated {
+			nominatedNodeAccount, err := vm.k.GetNodeAccount(ctx, item.NodeAddress)
+			if nil != err {
+				return false, fmt.Errorf("fail to get nominated account from data store: %w", err)
+			}
+
+			if nominatedNodeAccount.Status != NodeReady {
+				// set them to standby, do THORNode need to slash the validator? THORNode nominated them but they are not ready
+				nominatedNodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
+				if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
+					return false, fmt.Errorf("fail to save node account: %w", err)
+				}
+				ctx.EventManager().EmitEvent(
+					sdk.NewEvent(EventTypeValidatorManager,
+						sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
+						sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.ValidatorConsPubKey),
+						sdk.NewAttribute("action", "abort"),
+						sdk.NewAttribute("reason", "node not ready")))
+				ctx.Logger().Info(fmt.Sprintf("nominated account %s is not ready , abort rotation, try it nex time", item.NodeAddress))
+				// go to the next
+				continue
+			}
+			// set to active
+			nominatedNodeAccount.UpdateStatus(NodeActive, ctx.BlockHeight())
 			if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
 				return false, fmt.Errorf("fail to save node account: %w", err)
 			}
 			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(EventTypeValidatorManager,
+				sdk.NewEvent(EventTypeValidatorActive,
 					sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
-					sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.ValidatorConsPubKey),
-					sdk.NewAttribute("action", "abort"),
-					sdk.NewAttribute("reason", "node not ready")))
-			ctx.Logger().Info(fmt.Sprintf("nominated account %s is not ready , abort rotation, try it nex time", item.NodeAddress))
-			// go to the next
-			continue
+					sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.ValidatorConsPubKey)))
+			hasRotateIn = true
 		}
-		// set to active
-		nominatedNodeAccount.UpdateStatus(NodeActive, ctx.BlockHeight())
-		if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
-			return false, fmt.Errorf("fail to save node account: %w", err)
+		if !hasRotateIn {
+			return false, errors.New("none of the nominated node is ready, give up")
 		}
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeValidatorActive,
-				sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
-				sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.ValidatorConsPubKey)))
-		hasRotateIn = true
-	}
-	if !hasRotateIn {
-		return false, errors.New("none of the nominated node is ready, give up")
 	}
 
 	if !vm.meta.Queued.IsEmpty() {
@@ -502,6 +506,7 @@ func (vm *ValidatorMgr) prepareAddNode(ctx sdk.Context, height int64) error {
 			sdk.NewEvent(EventTypeValidatorManager,
 				sdk.NewAttribute("action", "abort"),
 				sdk.NewAttribute("reason", "no standby nodes")))
+		// when we can't rotate node in , we are not going to rotate node out either , otherwise we can easily trigger ragnarok
 		return nil
 	}
 	sort.Sort(standbyNodes)
@@ -512,10 +517,12 @@ func (vm *ValidatorMgr) prepareAddNode(ctx sdk.Context, height int64) error {
 	totalActiveNodes := len(activeNodes)
 	rotateIn := vm.rotationPolicy.RotateInNumBeforeFull
 	rotateOut := vm.rotationPolicy.RotateOutNumBeforeFull
-	if int64(totalActiveNodes) >= vm.rotationPolicy.DesireValidatorSet {
-		// THORNode are full
+
+	if int64(totalActiveNodes) >= vm.rotationPolicy.DesireValidatorSet ||
+		ctx.BlockHeight() >= constants.ArtificialRagnarokBlockHeight {
+		// THORNode are full  or we are trying to simulate artificial ragnarok
 		rotateIn = vm.rotationPolicy.RotateNumAfterFull
-		rotateOut = vm.rotationPolicy.RotateNumAfterFull
+		rotateOut = vm.rotationPolicy.RotateOutNumberAfterFull
 	}
 	if int64(len(standbyNodes)) > rotateIn {
 		standbyNodes = standbyNodes[:rotateIn]
@@ -550,6 +557,7 @@ func (vm *ValidatorMgr) prepareAddNode(ctx sdk.Context, height int64) error {
 					sdk.NewAttribute("consensus_public_key", item.ValidatorConsPubKey)))
 		}
 	}
+
 	return nil
 }
 

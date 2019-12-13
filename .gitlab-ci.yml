@@ -78,7 +78,7 @@ smoke-test:thornode:
     - schedules
   environment:
     name: integration
-  script: 
+  script:
     - make tools smoke-ci-standalone
   after_script:
     - ./scripts/docker_logs.sh

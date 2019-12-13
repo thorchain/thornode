@@ -5,6 +5,7 @@ import (
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"

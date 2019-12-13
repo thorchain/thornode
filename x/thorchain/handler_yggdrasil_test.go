@@ -3,8 +3,9 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type HandlerYggdrasilSuite struct{}
@@ -55,8 +56,8 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 
 type TestYggdrasilHandleKeeper struct {
 	KVStoreDummy
-	ygg Yggdrasil
-	na NodeAccount
+	ygg  Yggdrasil
+	na   NodeAccount
 	pool Pool
 }
 
