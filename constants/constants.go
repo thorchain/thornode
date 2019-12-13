@@ -34,3 +34,6 @@ const (
 const LackOfObservationPenalty int64 = 2         // add two slash point for each block where a node does not observe
 const SigningTransactionPeriod int64 = 100       // how many blocks before a request to sign a tx by yggdrasil pool, is counted as delinquent.
 const MinimumBondInRune uint64 = 100000000000000 // 1 million rune
+
+// Chaosnet
+const MaximumStakeRune = 600_000 // cap total stake rune to 600K
