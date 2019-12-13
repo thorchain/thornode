@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // validate if pools exist
@@ -49,8 +50,8 @@ func swap(ctx sdk.Context,
 	keeper Keeper, tx common.Tx,
 	target common.Asset,
 	destination common.Address,
-	tradeTarget sdk.Uint,
-	globalSlipLimit common.Amount) (sdk.Uint, error) {
+	tradeTarget,
+	globalSlipLimit sdk.Uint) (sdk.Uint, error) {
 	if err := validateMessage(tx, target, destination); nil != err {
 		ctx.Logger().Error(err.Error())
 		return sdk.ZeroUint(), err
@@ -112,8 +113,8 @@ func swapOne(ctx sdk.Context,
 	keeper Keeper, tx common.Tx, pool Pool,
 	target common.Asset,
 	destination common.Address,
-	tradeTarget sdk.Uint,
-	globalSlipLimit common.Amount) (amt sdk.Uint, poolResult Pool, err error) {
+	tradeTarget,
+	globalSlipLimit sdk.Uint) (amt sdk.Uint, poolResult Pool, err error) {
 
 	source := tx.Coins[0].Asset
 	amount := tx.Coins[0].Amount
@@ -187,7 +188,7 @@ func swapOne(ctx sdk.Context,
 	}
 
 	// Get our slip limits
-	gsl := common.AmountToUint(globalSlipLimit) // global slip limit
+	gsl := sdk.NewUint(constants.GlobalSlipLimit) // global slip limit
 
 	// Get our X, x, Y values
 	if source.IsRune() {

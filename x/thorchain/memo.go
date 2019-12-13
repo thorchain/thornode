@@ -2,7 +2,6 @@ package thorchain
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -285,8 +284,8 @@ func ParseMemo(memo string) (Memo, error) {
 		var withdrawAmount string
 		if len(parts) > 2 {
 			withdrawAmount = parts[2]
-			wa, err := strconv.ParseFloat(withdrawAmount, 10)
-			if nil != err || wa < 0 || wa > MaxWithdrawBasisPoints {
+			wa := sdk.NewUintFromString(withdrawAmount)
+			if !wa.GT(sdk.ZeroUint()) || wa.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
 				return noMemo, fmt.Errorf("withdraw amount :%s is invalid", withdrawAmount)
 			}
 		}

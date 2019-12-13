@@ -13,11 +13,9 @@ import (
 type KeeperAdminConfig interface {
 	SetAdminConfig(ctx sdk.Context, config AdminConfig)
 	GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus
-	GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount
 	GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
 	GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address
 	GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint
-	GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Amount
 	GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Coins
 	GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) int64
 	GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error)
@@ -40,11 +38,6 @@ func (k KVStore) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAd
 	return GetPoolStatus(name)
 }
 
-// GetAdminConfigGSL - get the config for GSL
-func (k KVStore) GetAdminConfigGSL(ctx sdk.Context, addr sdk.AccAddress) common.Amount {
-	return k.GetAdminConfigAmountType(ctx, GSLKey, GSLKey.Default(), addr)
-}
-
 // GetAdminConfigWhiteListGasAsset
 func (k KVStore) GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
 	return k.GetAdminConfigCoinsType(ctx, WhiteListGasAssetKey, WhiteListGasAssetKey.Default(), addr)
@@ -64,20 +57,7 @@ func (k KVStore) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dVa
 	if value == "" {
 		value = dValue
 	}
-	amt, err := common.NewAmount(value)
-	if nil != err {
-		ctx.Logger().Error("fail to parse value to float", "value", value)
-	}
-	return common.AmountToUint(amt)
-}
-
-// GetAdminConfigAmountType - get the config for TSL
-func (k KVStore) GetAdminConfigAmountType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Amount {
-	value, _ := k.GetAdminConfigValue(ctx, key, addr)
-	if value == "" {
-		value = dValue
-	}
-	return common.Amount(value)
+	return sdk.NewUintFromString(value)
 }
 
 // GetAdminConfigCoinsType - get the config for TSL
