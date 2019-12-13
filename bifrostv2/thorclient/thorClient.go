@@ -71,7 +71,7 @@ func NewClient(cfg config.ThorChainConfiguration, m *metrics.Metrics) (*Client, 
 		cfg:        cfg,
 		keys:       k,
 		errCounter: m.GetCounterVec(metrics.ThorChainClientError),
-		client:     retryablehttp.NewClient(),
+		client:     retryablehttp.NewClient(), // TODO Setup a logger function that is in our format
 		m:          m,
 	}, nil
 }
@@ -164,7 +164,7 @@ func (c *Client) getLastBlock(chain common.Chain) (stypes.QueryResHeights, error
 	return lastBlock, nil
 }
 
-// get handle all the low level http calls
+// get handle all the low level http calls using retryablehttp.Client
 func (c *Client) get(path string) ([]byte, error) {
 	resp, err := c.client.Get(c.getThorChainUrl(path))
 	if err != nil {

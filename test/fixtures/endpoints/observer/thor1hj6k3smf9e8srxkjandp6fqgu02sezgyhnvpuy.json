@@ -1,0 +1,21 @@
+{
+  "node_address": "thor1hj6k3smf9e8srxkjandp6fqgu02sezgyhnvpuy",
+  "status": "active",
+  "node_pub_keys": {
+    "secp256k1": "thorpub1addwnpepqf98ry0fw7wsyuz5uash48vmmylec3ervfsh70xplx70p95m3ac56lzfgfm",
+    "ed25519": "thorpub1addwnpepqf98ry0fw7wsyuz5uash48vmmylec3ervfsh70xplx70p95m3ac56lzfgfm"
+  },
+  "validator_cons_pub_key": "thorcpub1zcjduepqmfu6urfdeewa35250fjhwq2h0daljs7w20wvqc3p5c0tpzx60jcq2kuapt",
+  "bond": "0",
+  "active_block_height": "1",
+  "bond_address": "tbnb1czyqwfxptfnk7aey99cu820ftr28hw2fcvrh74",
+  "slash_points": "0",
+  "status_since": "1",
+  "observer_active": false,
+  "signer_active": false,
+  "signer_membership": [
+    "thorpub1addwnpepq2kdyjkm6y9aa3kxl8wfaverka6pvkek2ygrmhx6sj3ec6h0fegwsgeslue"
+  ],
+  "requested_to_leave": false,
+  "version": "0.1.0"
+}
