@@ -15,8 +15,10 @@ import (
 // THORChain error code start at 101
 const (
 	// CodeBadVersion error code for bad version
-	CodeBadVersion     sdk.CodeType = 101
-	CodeInvalidMessage sdk.CodeType = 102
+	CodeBadVersion            sdk.CodeType = 101
+	CodeInvalidMessage        sdk.CodeType = 102
+	CodeStakeRUNEOverLimit    sdk.CodeType = 103
+	CodeStakeRUNEMoreThanBond sdk.CodeType = 104
 )
 
 // EmptyAccAddress empty address
@@ -25,6 +27,7 @@ var notAuthorized = fmt.Errorf("not authorized")
 var badVersion = fmt.Errorf("bad version")
 var errBadVersion = sdk.NewError(DefaultCodespace, CodeBadVersion, "bad version")
 var errInvalidMessage = sdk.NewError(DefaultCodespace, CodeInvalidMessage, "invalid message")
+var errStakeRuneOverLimit = sdk.NewError(DefaultCodespace, CodeStakeRUNEOverLimit, "total stake RUNE over 600k")
 
 // NewHandler returns a handler for "thorchain" type messages.
 func NewHandler(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutStore, validatorMgr ValidatorManager) sdk.Handler {

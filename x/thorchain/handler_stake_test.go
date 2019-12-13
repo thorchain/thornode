@@ -32,6 +32,11 @@ func (m *MockStackKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	}
 	return m.currentPool, nil
 }
+func (m *MockStackKeeper) GetPools(_ sdk.Context) (Pools, error) {
+	return Pools{
+		m.currentPool,
+	}, nil
+}
 func (m *MockStackKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	m.currentPool = pool
 	return nil
@@ -41,6 +46,11 @@ func (m *MockStackKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (No
 		return m.activeNodeAccount, nil
 	}
 	return NodeAccount{}, errors.New("not exist")
+}
+func (m *MockStackKeeper) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+	return NodeAccounts{
+		m.activeNodeAccount,
+	}, nil
 }
 func (m *MockStackKeeper) GetPoolStaker(_ sdk.Context, asset common.Asset) (PoolStaker, error) {
 	return PoolStaker{
@@ -301,4 +311,44 @@ func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 		result := stakeHandler.Run(ctx, msgSetStake, ver)
 		c.Assert(result.Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
+}
+
+func (HandlerStakeSuite) TestStakeRUNEOverLimit(c *C) {
+	ctx, _ := setupKeeperForTest(c)
+	activeNodeAccount := GetRandomNodeAccount(NodeActive)
+	k := &MockStackKeeper{
+		activeNodeAccount: activeNodeAccount,
+		currentPool: Pool{
+			BalanceRune:         sdk.ZeroUint(),
+			BalanceAsset:        sdk.ZeroUint(),
+			Asset:               common.BNBAsset,
+			PoolUnits:           sdk.ZeroUint(),
+			PoolAddress:         "",
+			Status:              PoolEnabled,
+			ExpiryInBlockHeight: 0,
+		},
+	}
+	// happy path
+	stakeHandler := NewStakeHandler(k)
+	bnbAddr := GetRandomBNBAddress()
+	stakeTxHash := GetRandomTxHash()
+	tx := common.NewTx(
+		stakeTxHash,
+		bnbAddr,
+		GetRandomBNBAddress(),
+		common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(common.One*5))},
+		common.BNBGasFeeSingleton,
+		"stake:BNB",
+	)
+	ver := semver.MustParse("0.1.0")
+	msgSetStake := NewMsgSetStakeData(
+		tx,
+		common.BNBAsset,
+		sdk.NewUint(1000_000*common.One),
+		sdk.NewUint(100_000*common.One),
+		bnbAddr,
+		bnbAddr,
+		activeNodeAccount.NodeAddress)
+	result := stakeHandler.Run(ctx, msgSetStake, ver)
+	c.Assert(result.Code, Equals, CodeStakeRUNEOverLimit)
 }
