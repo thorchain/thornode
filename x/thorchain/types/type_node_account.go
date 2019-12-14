@@ -99,6 +99,7 @@ type NodeAccount struct {
 	SignerActive     bool            `json:"signer_active"`
 	SignerMembership []common.PubKey `json:"signer_membership"`
 	RequestedToLeave bool            `json:"requested_to_leave"`
+	LeaveHeight      int64           `json:"leave_height"`
 	Version          semver.Version  `json:"version"`
 }
 
