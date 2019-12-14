@@ -24,13 +24,13 @@ const GlobalSlipLimit = 3000 // 30% is maximum slip allowed on a transaction (Ba
 
 // Validator rotation
 const (
-	ValidatorRotateInNumBeforeFull  = 2    // How many validators should THORNode nominate before THORNode reach the desire validator set
-	ValidatorRotateOutNumBeforeFull = 1    // How many validators should THORNode queued to be rotate out before THORNode reach the desire validator set)
-	ValidatorRotateNumAfterFull     = 1    // How many validators should THORNode nominate after THORNode reach the desire validator set
-	DesireValidatorSet              = 33   // desire validator set
-	RotatePerBlockHeight            = 20   // How many blocks THORNode try to rotate validators
-	ValidatorsChangeWindow          = 10   // When should THORNode open the rotate window, nominate validators, and identify who should be out
-	LeaveProcessPerBlockHeight      = 4320 // after how many blocks THORNode will process leave queue
+	ValidatorRotateInNumBeforeFull  = 2     // How many validators should THORNode nominate before THORNode reach the desire validator set
+	ValidatorRotateOutNumBeforeFull = 1     // How many validators should THORNode queued to be rotate out before THORNode reach the desire validator set)
+	ValidatorRotateNumAfterFull     = 1     // How many validators should THORNode nominate after THORNode reach the desire validator set
+	DesireValidatorSet              = 33    // desire validator set
+	RotatePerBlockHeight            = 17280 // How many blocks THORNode try to rotate validators
+	ValidatorsChangeWindow          = 1200  // When should THORNode open the rotate window, nominate validators, and identify who should be out
+	LeaveProcessPerBlockHeight      = 4320  // after how many blocks THORNode will process leave queue
 )
 
 const BadValidatorRate = 51840
