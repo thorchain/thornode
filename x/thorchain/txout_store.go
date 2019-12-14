@@ -173,28 +173,31 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 }
 
 func (tos *TxOutStorage) addToBlockOut(toi *TxOutItem) {
-	toi.SeqNo = tos.getSeqNo(toi.Chain)
+	toi.SeqNo = tos.getSeqNo(toi.VaultPubKey, toi.Chain)
 	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 }
 
-func (tos *TxOutStorage) getSeqNo(chain common.Chain) uint64 {
+func (tos *TxOutStorage) getSeqNo(pk common.PubKey, chain common.Chain) uint64 {
 	// need to get the sequence no
 	currentChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
-	if nil != currentChainPoolAddr {
+	if nil != currentChainPoolAddr && pk.Equals(currentChainPoolAddr.PubKey) {
 		return currentChainPoolAddr.GetSeqNo()
 	}
+
 	if nil != tos.poolAddrMgr.GetCurrentPoolAddresses().Previous {
 		previousChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Previous.GetByChain(chain)
-		if nil != previousChainPoolAddr {
+		if nil != previousChainPoolAddr && pk.Equals(currentChainPoolAddr.PubKey) {
 			return previousChainPoolAddr.GetSeqNo()
 		}
 	}
+
 	if nil != tos.poolAddrMgr.GetCurrentPoolAddresses().Next {
 		nextChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Next.GetByChain(chain)
-		if nil != nextChainPoolAddr {
+		if nil != nextChainPoolAddr && pk.Equals(currentChainPoolAddr.PubKey) {
 			return nextChainPoolAddr.GetSeqNo()
 		}
 	}
+
 	return uint64(0)
 }
 
