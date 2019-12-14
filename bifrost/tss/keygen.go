@@ -52,7 +52,10 @@ func (kg *KeyGen) getValidatorKeys() ([]common.PubKey, error) {
 	noQueued := resp.Queued == nil || resp.Queued.IsEmpty()
 	if noNominated && noQueued {
 		kg.logger.Info().Msg("no node get nominated , and no node get queued to be rotate out, so don't need to rotate pool")
-		return nil, nil
+		// TODO: commented out because ignoring the tx request would cause the
+		// seqNum to differ between binance and thorchain. We should find a
+		// better solution.
+		// return nil, nil
 	}
 	pKeys := make([]common.PubKey, 0, len(resp.ActiveNodes)+1)
 	if !resp.Nominated.IsEmpty() {
