@@ -131,6 +131,15 @@ func (pm *PoolAddressMgr) rotatePoolAddress(ctx sdk.Context, store TxOutStore) {
 	if poolAddresses.RotateAt > height {
 		return
 	}
+	rotatePerBlockHeight := constants.RotatePerBlockHeight
+	windowOpen := constants.ValidatorsChangeWindow
+	rotateAt := height + int64(rotatePerBlockHeight)
+	windowOpenAt := rotateAt - int64(windowOpen)
+
+	defer func() {
+		pm.currentPoolAddresses.RotateWindowOpenAt = windowOpenAt
+		pm.currentPoolAddresses.RotateAt = rotateAt
+	}()
 
 	if poolAddresses.Next.IsEmpty() {
 		ctx.Logger().Error("next pool address has not been confirmed , abort pool rotation")
@@ -139,12 +148,7 @@ func (pm *PoolAddressMgr) rotatePoolAddress(ctx sdk.Context, store TxOutStore) {
 		return
 	}
 
-	rotatePerBlockHeight := constants.RotatePerBlockHeight
-	windowOpen := constants.ValidatorsChangeWindow
-	rotateAt := height + int64(rotatePerBlockHeight)
-	windowOpenAt := rotateAt - int64(windowOpen)
 	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, common.EmptyPoolPubKeys, rotateAt, windowOpenAt)
-
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNewPoolAddress,
 			sdk.NewAttribute("current pool pub key", pm.currentPoolAddresses.Current.String()),
