@@ -61,6 +61,8 @@ func NewQuerier(keeper Keeper, poolAddressMgr PoolAddressManager, validatorMgr V
 			return queryValidators(ctx, keeper, validatorMgr)
 		case q.QueryVaultData.Key:
 			return queryVaultData(ctx, keeper)
+		case q.QueryVaultPubkeys.Key:
+			return queryVaultsPubkeys(ctx, keeper, poolAddressMgr)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown thorchain query endpoint: %s", path[0]),
@@ -68,7 +70,34 @@ func NewQuerier(keeper Keeper, poolAddressMgr PoolAddressManager, validatorMgr V
 		}
 	}
 }
-
+func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper, poolMgr PoolAddressManager) ([]byte, sdk.Error) {
+	asgard := poolMgr.GetCurrentPoolAddresses().Current
+	var resp struct {
+		Asgard    []common.PubKey `json:"asgard"`
+		Yggdrasil []common.PubKey `json:"yggdrasil"`
+	}
+	iter := keeper.GetYggdrasilIterator(ctx)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		var ygg Yggdrasil
+		if err := keeper.Cdc().UnmarshalBinaryBare(iter.Value(), &ygg); nil != err {
+			ctx.Logger().Error("fail to unmarshal yggdrasil", err)
+			return nil, sdk.ErrInternal("fail to unmarshal yggdrasil")
+		}
+		if ygg.HasFunds() {
+			resp.Yggdrasil = append(resp.Yggdrasil, ygg.PubKey)
+		}
+	}
+	for _, item := range asgard {
+		resp.Asgard = append(resp.Asgard, item.PubKey)
+	}
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal pubkeys response to json", err)
+		return nil, sdk.ErrInternal("fail to marshal response to json")
+	}
+	return res, nil
+}
 func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	data, err := keeper.GetVaultData(ctx)
 	if nil != err {
