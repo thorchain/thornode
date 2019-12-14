@@ -46,7 +46,7 @@ func NewKeySign(cfg config.TSSConfiguration) (*KeySign, error) {
 		cfg:    cfg,
 		logger: log.With().Str("module", "tss_signer").Logger(),
 		client: &http.Client{
-			Timeout: time.Second * 30,
+			Timeout: time.Second * 120,
 		},
 	}, nil
 }
