@@ -53,7 +53,7 @@ var (
 	QueryObserver         = Query{Key: "observer", EndpointTemplate: "/%s/observer/{%s}"}
 	QueryNodeAccounts     = Query{Key: "nodeaccounts", EndpointTemplate: "/%s/nodeaccounts"}
 	QueryNodeAccount      = Query{Key: "nodeaccount", EndpointTemplate: "/%s/nodeaccount/{%s}"}
-	QueryPoolAddresses    = Query{Key: "pooladdresses", EndpointTemplate: "/%s/pool_addresses/"}
+	QueryPoolAddresses    = Query{Key: "pooladdresses", EndpointTemplate: "/%s/pool_addresses"}
 	QueryValidators       = Query{Key: "validators", EndpointTemplate: "/%s/validators"}
 	QueryVaultData        = Query{Key: "vaultdata", EndpointTemplate: "/%s/vault"}
 	QueryVaultPubkeys     = Query{Key: "pubkeys", EndpointTemplate: "/%s/vaults/pubkeys"}
