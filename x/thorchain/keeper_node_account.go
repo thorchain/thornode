@@ -17,6 +17,7 @@ type KeeperNodeAccount interface {
 	ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error)
 	ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error)
 	GetLowestActiveVersion(ctx sdk.Context) semver.Version
+	GetMinJoinVersion(ctx sdk.Context) semver.Version
 	GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error)
 	GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error)
 	GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error)
@@ -65,6 +66,24 @@ func (k KVStore) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (N
 // ListActiveNodeAccounts - get a list of active node accounts
 func (k KVStore) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	return k.ListNodeAccountsByStatus(ctx, NodeActive)
+}
+
+// GetMinJoinVersion - get min version to join. Min version is the most popular version
+func (k KVStore) GetMinJoinVersion(ctx sdk.Context) semver.Version {
+	vCount := make(map[string]int, 0)
+	nodes, _ := k.ListActiveNodeAccounts(ctx)
+	for _, na := range nodes {
+		vCount[na.Version.String()]++
+	}
+
+	version := semver.Version{}
+	count := 0
+	for ver, total := range vCount {
+		if total >= count {
+			version = semver.MustParse(ver)
+		}
+	}
+	return version
 }
 
 // GetLowestActiveVersion - get version number of lowest active node

@@ -76,6 +76,7 @@ func (k KVStoreDummy) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error
 	return nil, kaboom
 }
 func (k KVStoreDummy) GetLowestActiveVersion(_ sdk.Context) semver.Version { return semver.Version{} }
+func (k KVStoreDummy) GetMinJoinVersion(_ sdk.Context) semver.Version      { return semver.Version{} }
 func (k KVStoreDummy) GetNodeAccount(_ sdk.Context, _ sdk.AccAddress) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
