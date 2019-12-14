@@ -600,7 +600,6 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 			sdk.NewAttribute("node_secp256k1_pubkey", msg.NodePubKeys.Secp256k1.String()),
 			sdk.NewAttribute("node_ed25519_pubkey", msg.NodePubKeys.Ed25519.String()),
 			sdk.NewAttribute("validator_consensus_pub_key", msg.ValidatorConsPubKey)))
-	ctx.Logger().Info("completed MsgSetTrustAccount")
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

@@ -52,21 +52,16 @@ func (h ObservedTxInHandler) validate(ctx sdk.Context, msg MsgObservedTxIn, vers
 }
 
 func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (bool, error) {
-	fmt.Println("Is Validate called")
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
 		return false, err
 	}
 
 	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
-		fmt.Println("Is signed by acc ob")
 		signers := msg.GetSigners()
-		fmt.Printf("Signer: %+v\n", signers)
 		for _, signer := range signers {
-			fmt.Println(signer.String())
 			newSigner, err := h.signedByNewObserver(ctx, signer)
 			if nil != err {
-				fmt.Printf("Err: %s\n", err)
 				ctx.Logger().Error("fail to determinate whether the tx is signed by a new observer", err)
 				return false, notAuthorized
 			}
@@ -86,17 +81,13 @@ func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (b
 // when THORChain observe a tx is signed by new observer, who's node account still in standby status, THORChain need to mark their observer is alive.
 // by doing that, it also need to return a success code, otherwise the change will not be saved to key value store.
 func (h ObservedTxInHandler) signedByNewObserver(ctx sdk.Context, addr sdk.AccAddress) (bool, error) {
-	fmt.Printf("Signed By New OBserver: %s\n", addr.String())
 	nodeAcct, err := h.keeper.GetNodeAccount(ctx, addr)
 	if nil != err {
-		fmt.Printf("ERROR: %s\n", err)
 		return false, fmt.Errorf("fail to get node account(%s): %w", addr.String(), err)
 	}
 	if nodeAcct.Status != NodeStandby {
-		fmt.Printf("ERROR2: %s\n", err)
 		return false, fmt.Errorf("node account (%s) is in status(%s) not standby yet", addr, nodeAcct.Status)
 	}
-	fmt.Println("Set Observer = true")
 	nodeAcct.ObserverActive = true
 	err = h.keeper.SetNodeAccount(ctx, nodeAcct)
 	if nil == err {
