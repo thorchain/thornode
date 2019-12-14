@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -173,31 +175,38 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 }
 
 func (tos *TxOutStorage) addToBlockOut(toi *TxOutItem) {
+	fmt.Printf("Add TxOut Item: %+v\n", toi)
 	toi.SeqNo = tos.getSeqNo(toi.VaultPubKey, toi.Chain)
 	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 }
 
 func (tos *TxOutStorage) getSeqNo(pk common.PubKey, chain common.Chain) uint64 {
+	fmt.Printf("SeqNum: Pubkey: %s\n", pk.String())
+
 	// need to get the sequence no
 	currentChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
 	if nil != currentChainPoolAddr && pk.Equals(currentChainPoolAddr.PubKey) {
+		fmt.Printf("Seq Num: Current\n")
 		return currentChainPoolAddr.GetSeqNo()
 	}
 
 	if nil != tos.poolAddrMgr.GetCurrentPoolAddresses().Previous {
 		previousChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Previous.GetByChain(chain)
-		if nil != previousChainPoolAddr && pk.Equals(currentChainPoolAddr.PubKey) {
+		if nil != previousChainPoolAddr && pk.Equals(previousChainPoolAddr.PubKey) {
+			fmt.Printf("Seq Num: Prev\n")
 			return previousChainPoolAddr.GetSeqNo()
 		}
 	}
 
 	if nil != tos.poolAddrMgr.GetCurrentPoolAddresses().Next {
 		nextChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Next.GetByChain(chain)
-		if nil != nextChainPoolAddr && pk.Equals(currentChainPoolAddr.PubKey) {
+		if nil != nextChainPoolAddr && pk.Equals(nextChainPoolAddr.PubKey) {
+			fmt.Printf("Seq Num: Next\n")
 			return nextChainPoolAddr.GetSeqNo()
 		}
 	}
 
+	fmt.Printf("Seq Num: None: %d\n", 0)
 	return uint64(0)
 }
 

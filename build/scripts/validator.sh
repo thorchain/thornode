@@ -31,7 +31,7 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
     peer_list $NODE_ID $PEER
 
     # thorcli tx thorchain set-trust-account $(thorcli keys show $SIGNER_NAME --pubkey) $(thorcli keys show $SIGNER_NAME --pubkey) $(thord tendermint show-validator) --from $SIGNER_NAME
-    echo "YOUR NODE ADDRESS: $NODE_ADDRESS. Send your bond with this as your address."
+    echo "YOUR NODE ADDRESS: $NODE_ADDRESS . Send your bond with this as your address."
 fi
 
 exec "$@"
