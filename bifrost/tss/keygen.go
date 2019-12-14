@@ -50,7 +50,7 @@ func (kg *KeyGen) getValidatorKeys() ([]common.PubKey, error) {
 	noNominated := resp.Nominated == nil || resp.Nominated.IsEmpty()
 	noQueued := resp.Queued == nil || resp.Queued.IsEmpty()
 	if noNominated && noQueued {
-		kg.logger.Info().Msg("no node get nominated , and no node get queued to be rotate out, so don't need to rotate poo")
+		kg.logger.Info().Msg("no node get nominated , and no node get queued to be rotate out, so don't need to rotate pool")
 		return nil, nil
 	}
 	pKeys := make([]common.PubKey, 0, len(resp.ActiveNodes)+1)
