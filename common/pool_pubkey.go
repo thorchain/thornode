@@ -1,7 +1,6 @@
 package common
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 )
@@ -57,7 +56,6 @@ func (ppk PoolPubKey) GetAddress() (Address, error) {
 
 // GetSeqNo
 func (ppk *PoolPubKey) GetSeqNo() uint64 {
-	fmt.Printf("New Sequence Number: %d\n", ppk.SeqNo)
 	ppk.SeqNo++
 	return ppk.SeqNo - 1
 }

@@ -272,7 +272,6 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 func (b *Binance) sign(signMsg tx.StdSignMsg, poolPubKey common.PubKey) ([]byte, error) {
 	if b.useTSS {
 		k := b.keyManager.(tss.ThorchainKeyManager)
-		fmt.Printf("PoolPubKey (%s): %s\n", signMsg.Memo, poolPubKey)
 		return k.SignWithPool(signMsg, poolPubKey)
 	}
 	return b.keyManager.Sign(signMsg)

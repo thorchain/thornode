@@ -38,7 +38,7 @@ services:
       CHAIN_RPC: 172.52.10.2:26657
       BINANCE_HOST: ${BINANCE_HOST:-http://172.52.50.2:26660}
       USE_TSS: "true"
-      TSS_HOST: ${TSS_HOST}
+      TSS_HOST: 172.52.70.2
     entrypoint:
       /docker/scripts/signer.sh
     depends_on:
