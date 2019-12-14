@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -56,9 +57,9 @@ func (ppk PoolPubKey) GetAddress() (Address, error) {
 
 // GetSeqNo
 func (ppk *PoolPubKey) GetSeqNo() uint64 {
-	current := ppk.SeqNo
+	fmt.Printf("New Sequence Number: %d\n", ppk.SeqNo)
 	ppk.SeqNo++
-	return current
+	return ppk.SeqNo - 1
 }
 
 // Stringer implementation
