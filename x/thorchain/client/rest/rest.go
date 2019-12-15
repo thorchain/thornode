@@ -50,6 +50,10 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 		fmt.Sprintf("/%s/txs", storeName),
 		postTxsHandler(cliCtx),
 	).Methods(http.MethodPost)
+	r.HandleFunc(
+		fmt.Sprintf("/%s/tss", storeName),
+		newTssPoolHandler(cliCtx),
+	).Methods(http.MethodPost)
 	r.Use(mux.CORSMethodMiddleware(r))
 	r.Use(customCORSHeader())
 }
