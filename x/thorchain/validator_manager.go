@@ -24,7 +24,7 @@ const (
 )
 
 type ValidatorManager interface {
-	BeginBlock(ctx sdk.Context)
+	BeginBlock(ctx sdk.Context) error
 	EndBlock(ctx sdk.Context, store TxOutStore) []abci.ValidatorUpdate
 	RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error
 }
@@ -44,13 +44,33 @@ func NewValidatorMgr(k Keeper, poolAddrMgr PoolAddressManager) *ValidatorMgr {
 }
 
 // BeginBlock when block begin
-func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context) {
+func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context) error {
 	height := ctx.BlockHeight()
 	if height == genesisBlockHeight {
 		if err := vm.setupValidatorNodes(ctx, height); nil != err {
 			ctx.Logger().Error("fail to setup validator nodes", err)
 		}
 	}
+
+	if err := vm.markBadActor(ctx, constants.BadValidatorRate); err != nil {
+		return err
+	}
+
+	if err := vm.markOldActor(ctx, constants.OldValidatorRate); err != nil {
+		return err
+	}
+
+	if ctx.BlockHeight()%constants.RotatePerBlockHeight == 0 {
+		next, ok, err := vm.nextPoolNodeAccounts(ctx, constants.DesireValidatorSet)
+		if err != nil {
+			return err
+		}
+		if ok {
+			_ = next // TODO: trigger pool rotation...
+		}
+	}
+
+	return nil
 }
 
 // EndBlock when block end
@@ -241,4 +261,173 @@ func (vm *ValidatorMgr) setupValidatorNodes(ctx sdk.Context, height int64) error
 		}
 	}
 	return nil
+}
+
+// Iterate over active node accounts, finding the one with the most slash points
+func (vm *ValidatorMgr) findBadActor(ctx sdk.Context) (NodeAccount, error) {
+	na := NodeAccount{}
+	nas, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return na, err
+	}
+
+	// TODO: return if we're at risk of loosing BTF
+
+	// Find bad actor relative to slashpoints / age.
+	// NOTE: avoiding the usage of float64, we use an alt method...
+	na.SlashPoints = 1
+	na.StatusSince = 9223372036854775807 // highest int64 value
+	for _, n := range nas {
+		if n.SlashPoints == 0 {
+			continue
+		}
+
+		naVal := n.StatusSince / na.SlashPoints
+		nVal := n.StatusSince / n.SlashPoints
+		if nVal > (naVal) {
+			na = n
+		} else if nVal == naVal {
+			if n.SlashPoints > na.SlashPoints {
+				na = n
+			}
+		}
+	}
+
+	return na, nil
+}
+
+// Iterate over active node accounts, finding the one that has been active longest
+func (vm *ValidatorMgr) findOldActor(ctx sdk.Context) (NodeAccount, error) {
+	na := NodeAccount{}
+	nas, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return na, err
+	}
+
+	// TODO: return if we're at risk of loosing BTF
+
+	na.StatusSince = ctx.BlockHeight() // set the start status age to "now"
+	for _, n := range nas {
+		if n.StatusSince < na.StatusSince {
+			na = n
+		}
+	}
+
+	return na, nil
+}
+
+// Mark an old to be churned out
+func (vm *ValidatorMgr) markActor(ctx sdk.Context, na NodeAccount) error {
+	na.LeaveHeight = ctx.BlockHeight()
+	return vm.k.SetNodeAccount(ctx, na)
+}
+
+// Mark an old actor to be churned out
+func (vm *ValidatorMgr) markOldActor(ctx sdk.Context, rate int64) error {
+	if rate%ctx.BlockHeight() == 0 {
+		na, err := vm.findOldActor(ctx)
+		if err != nil {
+			return err
+		}
+		if err := vm.markActor(ctx, na); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Mark a bad actor to be churned out
+func (vm *ValidatorMgr) markBadActor(ctx sdk.Context, rate int64) error {
+	if rate%ctx.BlockHeight() == 0 {
+		na, err := vm.findBadActor(ctx)
+		if err != nil {
+			return err
+		}
+		if err := vm.markActor(ctx, na); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// find any actor that are ready to become "ready" status
+func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context) error {
+	standby, err := vm.k.ListNodeAccountsByStatus(ctx, NodeStandby)
+	if err != nil {
+		return err
+	}
+	ready, err := vm.k.ListNodeAccountsByStatus(ctx, NodeReady)
+	if err != nil {
+		return err
+	}
+
+	// find min version node has to be, to be "ready" status
+	minVersion := vm.k.GetMinJoinVersion(ctx)
+
+	// check all ready and standby nodes are in "ready" state (upgrade/downgrade as needed)
+	for _, na := range append(standby, ready...) {
+		na.Status = NodeReady // everyone starts with the benefit of the doubt
+
+		// TODO: check node is up to date on thorchain, binance, etc
+		// must have made an observation that matched 2/3rds within the last 5 blocks
+
+		// Check version number is still supported
+		if na.Version.LT(minVersion) {
+			na.Status = NodeStandby
+		}
+
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Returns a list of nodes to include in the next pool
+func (vm *ValidatorMgr) nextPoolNodeAccounts(ctx sdk.Context, targetCount int) (NodeAccounts, bool, error) {
+	rotation := false // track if are making any changes to the current active node accounts
+
+	// update list of ready actors
+	if err := vm.markReadyActors(ctx); err != nil {
+		return nil, false, err
+	}
+
+	ready, err := vm.k.ListNodeAccountsByStatus(ctx, NodeReady)
+	if err != nil {
+		return nil, false, err
+	}
+	// sort by bond size
+	sort.Slice(ready, func(i, j int) bool {
+		return ready[i].Bond.GT(ready[j].Bond)
+	})
+
+	active, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	// sort by LeaveHeight
+	sort.Slice(active, func(i, j int) bool {
+		return active[i].LeaveHeight < active[j].LeaveHeight
+	})
+
+	// remove a node node account, if one is marked to leave
+	if len(active) > 0 && active[0].LeaveHeight > 0 {
+		rotation = true
+		active = active[1:]
+	}
+
+	// add ready nodes to become active
+	limit := 2 // Max limit of ready nodes to add. TODO: this should be a constant
+	for i := 1; i <= targetCount-len(active); i++ {
+		if len(ready) >= i {
+			rotation = true
+			active = append(active, ready[i-1])
+		}
+		if i == limit { // limit adding ready accounts
+			break
+		}
+	}
+
+	return active, rotation, nil
 }
