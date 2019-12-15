@@ -64,7 +64,6 @@ const (
 	prefixNodeAccount        dbPrefix = "node_account/"
 	prefixActiveObserver     dbPrefix = "active_observer/"
 	prefixPoolAddresses      dbPrefix = "pool_addresses/"
-	prefixValidatorMeta      dbPrefix = "validator_meta/"
 	prefixSupportedChains    dbPrefix = "supported_chains/"
 	prefixYggdrasilPool      dbPrefix = "yggdrasil/"
 	prefixVaultData          dbPrefix = "vault_data/"
