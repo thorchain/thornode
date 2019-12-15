@@ -36,7 +36,7 @@ func NewTssKeyGen(keyGenCfg config.TSSConfiguration, keys *thorclient.Keys) (*Ke
 		keyGenCfg: keyGenCfg,
 		logger:    log.With().Str("module", "tss_keygen").Logger(),
 		client: &http.Client{
-			Timeout: time.Second * 30,
+			Timeout: time.Second * 130,
 		},
 	}, nil
 }
