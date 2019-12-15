@@ -87,7 +87,7 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStor
 		return sdk.ErrInternal("can't find any active nodes").Result()
 	}
 
-	if len(nas) < constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
+	if len(nas) > constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
 		// Ragnarok protocol didn't triggered , don't call this one
 		return sdk.Result{
 			Code:      sdk.CodeOK,
