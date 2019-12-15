@@ -1,7 +1,7 @@
 package types
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	common "gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
 )
 
@@ -10,19 +10,17 @@ type MsgTssPoolSuite struct{}
 var _ = Suite(&MsgTssPoolSuite{})
 
 func (s *MsgTssPoolSuite) TestMsgTssPool(c *C) {
-	var err error
 	pk := GetRandomPubKey()
-	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(55), pk)
-	acc := GetRandomBech32Addr()
-	tx.Tx.ToAddress, err = pk.GetAddress(tx.Tx.Coins[0].Asset.Chain)
-	c.Assert(err, IsNil)
+	pks := []common.PubKey{
+		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
+	}
+	addr := GetRandomBech32Addr()
+	msg := NewMsgTssPool(pks, pk, addr)
+	c.Check(msg.Type(), Equals, "set_tss_pool")
+	c.Assert(msg.ValidateBasic(), IsNil)
 
-	m := NewMsgObservedTxIn(ObservedTxs{tx}, acc)
-	EnsureMsgBasicCorrect(m, c)
-	c.Check(m.Type(), Equals, "set_observed_txin")
-
-	m1 := NewMsgObservedTxIn(nil, acc)
-	c.Assert(m1.ValidateBasic(), NotNil)
-	m2 := NewMsgObservedTxIn(ObservedTxs{tx}, sdk.AccAddress{})
-	c.Assert(m2.ValidateBasic(), NotNil)
+	c.Check(NewMsgTssPool(pks, pk, nil).ValidateBasic(), NotNil)
+	c.Check(NewMsgTssPool(nil, pk, addr).ValidateBasic(), NotNil)
+	c.Check(NewMsgTssPool(pks, "", addr).ValidateBasic(), NotNil)
+	c.Check(NewMsgTssPool(pks, "bogusPubkey", addr).ValidateBasic(), NotNil)
 }
