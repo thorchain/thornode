@@ -33,8 +33,8 @@ const (
 	LeaveProcessPerBlockHeight      = 4320  // after how many blocks THORNode will process leave queue
 )
 
-const BadValidatorRate = 100
-const OldValidatorRate = 100
+const BadValidatorRate = 51840
+const OldValidatorRate = 51840
 
 // Slashing
 const LackOfObservationPenalty int64 = 2         // add two slash point for each block where a node does not observe
