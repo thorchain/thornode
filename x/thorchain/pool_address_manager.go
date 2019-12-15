@@ -20,8 +20,6 @@ type PoolAddressManager interface {
 	RotatePoolAddress(_ sdk.Context, _ common.PoolPubKeys, _ TxOutStore)
 	GetCurrentPoolAddresses() *PoolAddresses
 	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
-	SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys)
-	ObservedNextPoolAddrPubKey() common.PoolPubKeys
 }
 
 // PoolAddressMgr is going to manage the pool addresses , rotate etc
@@ -50,14 +48,6 @@ func (pm *PoolAddressMgr) IsRotateWindowOpen() bool {
 
 func (pm *PoolAddressMgr) SetRotateWindowOpen(b bool) {
 	pm.isRotateWindowOpen = b
-}
-
-func (pm *PoolAddressMgr) ObservedNextPoolAddrPubKey() common.PoolPubKeys {
-	return pm.observedNextPoolAddrPubKey
-}
-
-func (pm *PoolAddressMgr) SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys) {
-	pm.observedNextPoolAddrPubKey = ppks
 }
 
 func (pm *PoolAddressMgr) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {

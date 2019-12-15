@@ -38,14 +38,6 @@ func (pm *PoolAddressDummyMgr) IsRotateWindowOpen() bool {
 	return pm.isRotateWindowOpen
 }
 
-func (pm *PoolAddressDummyMgr) ObservedNextPoolAddrPubKey() common.PoolPubKeys {
-	return pm.observedNextPoolAddrPubKey
-}
-
-func (pm *PoolAddressDummyMgr) SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys) {
-	pm.observedNextPoolAddrPubKey = ppks
-}
-
 func (pm *PoolAddressDummyMgr) BeginBlock(_ct sdk.Context) error { return kaboom }
 func (pm *PoolAddressDummyMgr) RotatePoolAddress(_ sdk.Context, _ common.PoolPubKeys, _ TxOutStore) {
 }
