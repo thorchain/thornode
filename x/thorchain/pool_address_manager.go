@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/constants"
 )
 
 // const values used to emit events
@@ -19,14 +18,9 @@ const (
 type PoolAddressManager interface {
 	RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore)
 	GetCurrentPoolAddresses() *PoolAddresses
-	BeginBlock(ctx sdk.Context) error
-	EndBlock(ctx sdk.Context, store TxOutStore)
 	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
 	SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys)
 	ObservedNextPoolAddrPubKey() common.PoolPubKeys
-	IsRotateWindowOpen() bool
-	SetRotateWindowOpen(_ bool)
-	rotatePoolAddress(ctx sdk.Context, store TxOutStore)
 }
 
 // PoolAddressMgr is going to manage the pool addresses , rotate etc
@@ -69,100 +63,9 @@ func (pm *PoolAddressMgr) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPu
 	return pm.GetCurrentPoolAddresses().Current.GetByChain(chain)
 }
 
-// BeginBlock should be called when BeginBlock
-func (pm *PoolAddressMgr) BeginBlock(ctx sdk.Context) error {
-	height := ctx.BlockHeight()
-	// decide pool addresses
-	if pm.currentPoolAddresses == nil || pm.currentPoolAddresses.IsEmpty() {
-		poolAddresses, err := pm.k.GetPoolAddresses(ctx)
-		if err != nil {
-			return err
-		}
-		pm.currentPoolAddresses = &poolAddresses
-	}
-
-	if height >= pm.currentPoolAddresses.RotateWindowOpenAt && height < pm.currentPoolAddresses.RotateAt {
-		if pm.IsRotateWindowOpen() {
-			return nil
-		}
-		pm.isRotateWindowOpen = true
-	}
-	return nil
-}
-
-// EndBlock contains some actions THORNode need to take when block commit
-func (pm *PoolAddressMgr) EndBlock(ctx sdk.Context, store TxOutStore) {
-	if nil == pm.currentPoolAddresses {
-		return
-	}
-	// pool rotation window open
-	if pm.isRotateWindowOpen && ctx.BlockHeight() == pm.currentPoolAddresses.RotateWindowOpenAt {
-		// instruct signer to kick off tss keygen ceremony
-		store.AddTxOutItem(ctx, &TxOutItem{
-			Chain: common.BNBChain,
-			// Leave ToAddress empty on purpose, signer will observe this txout, and then kick of tss keygen ceremony
-			ToAddress:   "",
-			VaultPubKey: pm.currentPoolAddresses.Current.GetByChain(common.BNBChain).PubKey,
-			Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(37501)),
-			Memo:        "nextpool",
-		})
-	}
-	pm.rotatePoolAddress(ctx, store)
-	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
-}
-
 func (pm *PoolAddressMgr) RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore) {
 	poolAddresses := pm.currentPoolAddresses
 	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolpubkeys, common.EmptyPoolPubKeys, 0, 0)
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeNewPoolAddress,
-			sdk.NewAttribute("current pool pub key", pm.currentPoolAddresses.Current.String()),
-			sdk.NewAttribute("next pool pub key", pm.currentPoolAddresses.Next.String()),
-			sdk.NewAttribute("previous pool pub key", pm.currentPoolAddresses.Previous.String())))
-	if err := moveAssetsToNewPool(ctx, pm.k, store, pm.currentPoolAddresses); err != nil {
-		ctx.Logger().Error("fail to move assets to new pool", err)
-	}
-}
-
-func (pm *PoolAddressMgr) rotatePoolAddress(ctx sdk.Context, store TxOutStore) {
-	poolAddresses := pm.currentPoolAddresses
-	if ctx.BlockHeight() == 1 {
-		// THORNode don't need to do anything on
-		return
-	}
-	if poolAddresses.IsEmpty() {
-		ctx.Logger().Error("current pool addresses is nil , something is wrong")
-		return
-	}
-	// likely there is a configuration error
-	if poolAddresses.RotateAt == 0 {
-		ctx.Logger().Error("rotate at block height had been set at 0, likely there is configuration error")
-		return
-	}
-
-	height := ctx.BlockHeight()
-	// it is not time to rotate yet
-	if poolAddresses.RotateAt > height {
-		return
-	}
-	rotatePerBlockHeight := constants.RotatePerBlockHeight
-	windowOpen := constants.ValidatorsChangeWindow
-	rotateAt := height + int64(rotatePerBlockHeight)
-	windowOpenAt := rotateAt - int64(windowOpen)
-
-	defer func() {
-		pm.currentPoolAddresses.RotateWindowOpenAt = windowOpenAt
-		pm.currentPoolAddresses.RotateAt = rotateAt
-	}()
-
-	if poolAddresses.Next.IsEmpty() {
-		ctx.Logger().Error("next pool address has not been confirmed , abort pool rotation")
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeAbortPoolRotation, sdk.NewAttribute("reason", "no next pool address")))
-		return
-	}
-
-	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, common.EmptyPoolPubKeys, rotateAt, windowOpenAt)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNewPoolAddress,
 			sdk.NewAttribute("current pool pub key", pm.currentPoolAddresses.Current.String()),
