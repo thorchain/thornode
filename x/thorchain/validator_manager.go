@@ -327,9 +327,9 @@ func (vm *ValidatorMgr) findOldActor(ctx sdk.Context) (NodeAccount, error) {
 func (vm *ValidatorMgr) markActor(ctx sdk.Context, na NodeAccount) error {
 	if na.LeaveHeight == 0 {
 		na.LeaveHeight = ctx.BlockHeight()
+		return vm.k.SetNodeAccount(ctx, na)
 	}
-	return vm.k.SetNodeAccount(ctx, na)
-
+	return nil
 }
 
 // Mark an old actor to be churned out
