@@ -15,7 +15,7 @@ type PoolAddressDummyMgr struct {
 
 // NewPoolAddressDummyMgr create a new PoolAddressDummyMgr
 func NewPoolAddressDummyMgr() *PoolAddressDummyMgr {
-	addrs := NewPoolAddresses(GetRandomPoolPubKeys(), GetRandomPoolPubKeys(), GetRandomPoolPubKeys(), 500, 100)
+	addrs := NewPoolAddresses(GetRandomPoolPubKeys(), GetRandomPoolPubKeys(), GetRandomPoolPubKeys())
 	return &PoolAddressDummyMgr{
 		currentPoolAddresses: addrs,
 	}

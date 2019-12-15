@@ -7,7 +7,6 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/constants"
 )
 
 type PoolAddressManagerSuite struct{}
@@ -23,10 +22,6 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().IsEmpty(), Equals, false)
 	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().IsEmpty(), Equals, false)
 
-	rotateWindowOpenHeight := w.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt
-	w.ctx = w.ctx.WithBlockHeight(rotateWindowOpenHeight)
-	w.txOutStore.NewBlock(uint64(rotateWindowOpenHeight))
-
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	w.poolAddrMgr.GetCurrentPoolAddresses().Next = common.PoolPubKeys{pk1}
@@ -35,13 +30,6 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	poolBNB := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.BNB", c)
 	poolTCan := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.TCAN-014", c)
 	poolLoki := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.LOK-3C0", c)
-	rotatePoolHeight := w.poolAddrMgr.GetCurrentPoolAddresses().RotateAt
-	w.ctx = w.ctx.WithBlockHeight(rotatePoolHeight)
-	w.txOutStore.NewBlock(uint64(rotatePoolHeight))
-	windowOpen := int64(constants.ValidatorsChangeWindow)
-	rotatePerBlockHeight := int64(constants.RotatePerBlockHeight)
-	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().RotateAt, Equals, 100+rotatePerBlockHeight)
-	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt, Equals, 100+rotatePerBlockHeight-windowOpen)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 4)
 	c.Assert(w.txOutStore.GetBlockOut().Valid(), IsNil)
 	totalBond := sdk.ZeroUint()

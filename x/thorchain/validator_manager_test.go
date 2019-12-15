@@ -268,8 +268,6 @@ func (ValidatorManagerTestSuite) TestValidatorsLeave(c *C) {
 	// THORNode don't have enough standby node to be rotate in
 	c.Assert(w.validatorMgr.Meta().Nominated, HasLen, 0)
 	// make sure THORNode trigger a pool rotation as well
-	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt, Equals, ctx.BlockHeight()+1)
-	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().RotateAt, Equals, w.validatorMgr.Meta().LeaveProcessAt)
 
 	ctx = w.ctx.WithBlockHeight(w.validatorMgr.Meta().LeaveProcessAt)
 	rotateWindowOpen := w.validatorMgr.Meta().RotateWindowOpenAtBlockHeight

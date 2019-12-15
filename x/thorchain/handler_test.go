@@ -118,7 +118,7 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	c.Assert(err, IsNil)
 	genesisPoolAddress := NewPoolAddresses(common.EmptyPoolPubKeys, common.PoolPubKeys{
 		genesisPoolPubKey,
-	}, common.EmptyPoolPubKeys, 100, 90)
+	}, common.EmptyPoolPubKeys)
 	k.SetPoolAddresses(ctx, genesisPoolAddress)
 	poolAddrMgr := NewPoolAddressMgr(k)
 	validatorMgr := NewValidatorMgr(k, poolAddrMgr)

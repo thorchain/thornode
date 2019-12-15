@@ -65,7 +65,7 @@ func (pm *PoolAddressMgr) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPu
 
 func (pm *PoolAddressMgr) RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore) {
 	poolAddresses := pm.currentPoolAddresses
-	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolpubkeys, common.EmptyPoolPubKeys, 0, 0)
+	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolpubkeys, common.EmptyPoolPubKeys)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNewPoolAddress,
 			sdk.NewAttribute("current pool pub key", pm.currentPoolAddresses.Current.String()),
