@@ -34,6 +34,7 @@ var (
 	NewVaultData                   = types.NewVaultData
 	NewAdminConfig                 = types.NewAdminConfig
 	NewObservedTx                  = types.NewObservedTx
+	NewTssVoter                    = types.NewTssVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
 	NewMsgObservedTxIn             = types.NewMsgObservedTxIn
 	NewMsgObservedTxOut            = types.NewMsgObservedTxOut
@@ -106,6 +107,7 @@ type (
 	MsgYggdrasil                = types.MsgYggdrasil
 	MsgObservedTxIn             = types.MsgObservedTxIn
 	MsgObservedTxOut            = types.MsgObservedTxOut
+	MsgTssPool                  = types.MsgTssPool
 	QueryResPools               = types.QueryResPools
 	QueryResHeights             = types.QueryResHeights
 	QueryResTxOut               = types.QueryResTxOut
@@ -124,6 +126,7 @@ type (
 	ObservedTxVoter             = types.ObservedTxVoter
 	ObservedTxVoters            = types.ObservedTxVoters
 	ObservedTxIndex             = types.ObservedTxIndex
+	TssVoter                    = types.TssVoter
 	TxOutItem                   = types.TxOutItem
 	TxOut                       = types.TxOut
 	AdminConfigKey              = types.AdminConfigKey
