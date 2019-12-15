@@ -17,6 +17,7 @@ const (
 )
 
 type PoolAddressManager interface {
+	RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore)
 	GetCurrentPoolAddresses() *PoolAddresses
 	BeginBlock(ctx sdk.Context) error
 	EndBlock(ctx sdk.Context, store TxOutStore)
@@ -108,6 +109,19 @@ func (pm *PoolAddressMgr) EndBlock(ctx sdk.Context, store TxOutStore) {
 	}
 	pm.rotatePoolAddress(ctx, store)
 	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
+}
+
+func (pm *PoolAddressMgr) RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore) {
+	poolAddresses := pm.currentPoolAddresses
+	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolpubkeys, common.EmptyPoolPubKeys, 0, 0)
+	ctx.EventManager().EmitEvent(
+		sdk.NewEvent(EventTypeNewPoolAddress,
+			sdk.NewAttribute("current pool pub key", pm.currentPoolAddresses.Current.String()),
+			sdk.NewAttribute("next pool pub key", pm.currentPoolAddresses.Next.String()),
+			sdk.NewAttribute("previous pool pub key", pm.currentPoolAddresses.Previous.String())))
+	if err := moveAssetsToNewPool(ctx, pm.k, store, pm.currentPoolAddresses); err != nil {
+		ctx.Logger().Error("fail to move assets to new pool", err)
+	}
 }
 
 func (pm *PoolAddressMgr) rotatePoolAddress(ctx sdk.Context, store TxOutStore) {

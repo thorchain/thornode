@@ -104,6 +104,12 @@ func (k KVStoreDummy) GetObservedTxVoterIterator(_ sdk.Context) sdk.Iterator    
 func (k KVStoreDummy) GetObservedTxVoter(_ sdk.Context, _ common.TxID) (ObservedTxVoter, error) {
 	return ObservedTxVoter{}, kaboom
 }
+func (k KVStoreDummy) SetTssVoter(_ sdk.Context, _ TssVoter)          {}
+func (k KVStoreDummy) GetTssVoterIterator(_ sdk.Context) sdk.Iterator { return nil }
+func (k KVStoreDummy) GetTssVoter(_ sdk.Context, _ string) (TssVoter, error) {
+	return TssVoter{}, kaboom
+}
+
 func (k KVStoreDummy) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error) { return nil, kaboom }
 func (k KVStoreDummy) SetTxOut(_ sdk.Context, _ *TxOut) error           { return kaboom }
 func (k KVStoreDummy) GetTxOutIterator(_ sdk.Context) sdk.Iterator      { return nil }
