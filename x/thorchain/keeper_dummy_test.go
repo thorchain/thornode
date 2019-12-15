@@ -136,10 +136,6 @@ func (k KVStoreDummy) SetPoolAddresses(_ sdk.Context, _ *PoolAddresses) {}
 func (k KVStoreDummy) GetPoolAddresses(_ sdk.Context) (PoolAddresses, error) {
 	return PoolAddresses{}, kaboom
 }
-func (k KVStoreDummy) SetValidatorMeta(_ sdk.Context, _ ValidatorMeta) error { return kaboom }
-func (k KVStoreDummy) GetValidatorMeta(_ sdk.Context) (ValidatorMeta, error) {
-	return ValidatorMeta{}, kaboom
-}
 func (k KVStoreDummy) GetChains(_ sdk.Context) (common.Chains, error)      { return nil, kaboom }
 func (k KVStoreDummy) SetChains(_ sdk.Context, _ common.Chains)            {}
 func (k KVStoreDummy) GetYggdrasilIterator(_ sdk.Context) sdk.Iterator     { return nil }

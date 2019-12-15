@@ -31,7 +31,6 @@ type Keeper interface {
 	KeeperLiquidityFees
 	KeeperEvents
 	KeeperPoolAddresses
-	KeeperValidatorMeta
 	KeeperChains
 	KeeperYggdrasil
 	KeeperReserveContributors
