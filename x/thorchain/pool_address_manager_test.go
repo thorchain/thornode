@@ -22,7 +22,7 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().IsEmpty(), Equals, false)
 	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().IsEmpty(), Equals, false)
 
-	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	pk1, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	w.poolAddrMgr.GetCurrentPoolAddresses().Next = common.PoolPubKeys{pk1}
 	// no asset get moved , because THORNode just opened window, however THORNode should instruct signer to kick off key sign process
