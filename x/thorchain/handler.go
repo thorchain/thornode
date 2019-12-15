@@ -55,11 +55,9 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, poolAddrMgr, txOutStore)
-	m[MsgAck{}.Type()] = NewAckHandler(keeper, poolAddrMgr, validatorMgr)
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, txOutStore, poolAddrMgr)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
-	m[MsgNextPoolAddress{}.Type()] = NewHandlerNextPoolAddress(keeper, poolAddrMgr, validatorMgr, txOutStore)
 	return m
 }
 

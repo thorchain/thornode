@@ -25,14 +25,11 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 
 	rotateWindowOpenHeight := w.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt
 	w.ctx = w.ctx.WithBlockHeight(rotateWindowOpenHeight)
-	c.Assert(w.poolAddrMgr.BeginBlock(w.ctx), IsNil)
 	w.txOutStore.NewBlock(uint64(rotateWindowOpenHeight))
-	c.Assert(w.poolAddrMgr.IsRotateWindowOpen(), Equals, true)
 
 	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	w.poolAddrMgr.GetCurrentPoolAddresses().Next = common.PoolPubKeys{pk1}
-	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
 	// no asset get moved , because THORNode just opened window, however THORNode should instruct signer to kick off key sign process
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	poolBNB := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.BNB", c)
@@ -41,8 +38,6 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	rotatePoolHeight := w.poolAddrMgr.GetCurrentPoolAddresses().RotateAt
 	w.ctx = w.ctx.WithBlockHeight(rotatePoolHeight)
 	w.txOutStore.NewBlock(uint64(rotatePoolHeight))
-	c.Assert(w.poolAddrMgr.BeginBlock(w.ctx), IsNil)
-	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
 	windowOpen := int64(constants.ValidatorsChangeWindow)
 	rotatePerBlockHeight := int64(constants.RotatePerBlockHeight)
 	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().RotateAt, Equals, 100+rotatePerBlockHeight)
