@@ -46,12 +46,12 @@ var vaultMgr = VaultManager{
 func (s *VaultsMgrSuite) TestProcessRawAsgardVaults(c *C) {
 	asgard := vaultMgr.processRawAsgardVaults()
 	c.Assert(len(asgard[common.BNBChain]), Equals, 3)
-	c.Assert(asgard[common.BNBChain]["bnb1l8tt4f2xycdz4e5u6veqmj5qwhp4vsktdkl447"].String(), Equals, "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck")
-	c.Assert(asgard[common.BNBChain]["bnb1x9e5l0ml47sxrhl699fedj4kqfm30kfr8df2tg"].String(), Equals, "thorpub1addwnpepq2flfr96skc5lkwdv0n5xjsnhmuju20x3zndgu42zd8dtkrud9m2v0zl2qu")
-	c.Assert(asgard[common.BNBChain]["bnb1l7af43v2vq32jwq85vdagukf0z0qqdzr5lnnwq"].String(), Equals, "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk")
-	c.Assert(asgard[common.BTCChain]["bc1l8tt4f2xycdz4e5u6veqmj5qwhp4vskt83lp92"].String(), Equals, "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck")
-	c.Assert(asgard[common.BTCChain]["bc1x9e5l0ml47sxrhl699fedj4kqfm30kfrd2f7mu"].String(), Equals, "thorpub1addwnpepq2flfr96skc5lkwdv0n5xjsnhmuju20x3zndgu42zd8dtkrud9m2v0zl2qu")
-	c.Assert(asgard[common.BTCChain]["bc1l7af43v2vq32jwq85vdagukf0z0qqdzr7cn875"].String(), Equals, "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk")
+	c.Assert(asgard[common.BNBChain]["tbnb1l8tt4f2xycdz4e5u6veqmj5qwhp4vsktrrk340"].String(), Equals, "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck")
+	c.Assert(asgard[common.BNBChain]["tbnb1x9e5l0ml47sxrhl699fedj4kqfm30kfrfcqwte"].String(), Equals, "thorpub1addwnpepq2flfr96skc5lkwdv0n5xjsnhmuju20x3zndgu42zd8dtkrud9m2v0zl2qu")
+	c.Assert(asgard[common.BNBChain]["tbnb1l7af43v2vq32jwq85vdagukf0z0qqdzr626hw3"].String(), Equals, "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk")
+	c.Assert(asgard[common.BTCChain]["tbc1l8tt4f2xycdz4e5u6veqmj5qwhp4vsktcp4ggu"].String(), Equals, "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck")
+	c.Assert(asgard[common.BTCChain]["tbc1x9e5l0ml47sxrhl699fedj4kqfm30kfrj6rhk2"].String(), Equals, "thorpub1addwnpepq2flfr96skc5lkwdv0n5xjsnhmuju20x3zndgu42zd8dtkrud9m2v0zl2qu")
+	c.Assert(asgard[common.BTCChain]["tbc1l7af43v2vq32jwq85vdagukf0z0qqdzrpgewnz"].String(), Equals, "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk")
 }
 
 func (s *VaultsMgrSuite) TestProcessRawYggdrasilVaults(c *C) {
@@ -66,9 +66,9 @@ func (s *VaultsMgrSuite) TestGet(c *C) {
 	pk = vaultMgr.get(common.BNBChain, "", vaultMgr.asgard)
 	c.Assert(pk.String(), Equals, "")
 
-	pk = vaultMgr.get(common.BNBChain, "bnb1l8tt4f2xycdz4e5u6veqmj5qwhp4vsktdkl447", s.mapping)
+	pk = vaultMgr.get(common.BNBChain, "tbnb1l8tt4f2xycdz4e5u6veqmj5qwhp4vsktrrk340", s.mapping)
 	c.Assert(pk.String(), Equals, "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck")
 
-	pk = vaultMgr.get(common.BTCChain, "bc1l7af43v2vq32jwq85vdagukf0z0qqdzr7cn875", s.mapping)
+	pk = vaultMgr.get(common.BTCChain, "tbc1l7af43v2vq32jwq85vdagukf0z0qqdzrpgewnz", s.mapping)
 	c.Assert(pk.String(), Equals, "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk")
 }
