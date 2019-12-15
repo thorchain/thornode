@@ -117,8 +117,12 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
 
+	if err := am.poolMgr.BeginBlock(ctx); err != nil {
+		ctx.Logger().Error("Fail to begin block on pool address manager: %s", err)
+	}
+
 	if err := am.validatorMgr.BeginBlock(ctx); err != nil {
-		ctx.Logger().Error("Fail to begin block on validator:", err)
+		ctx.Logger().Error("Fail to begin block on validator: %s", err)
 	}
 
 	am.txOutStore.NewBlock(uint64(req.Header.Height))

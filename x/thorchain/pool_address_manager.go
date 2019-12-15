@@ -16,6 +16,7 @@ const (
 )
 
 type PoolAddressManager interface {
+	BeginBlock(_ sdk.Context) error
 	RotatePoolAddress(_ sdk.Context, _ common.PoolPubKeys, _ TxOutStore)
 	GetCurrentPoolAddresses() *PoolAddresses
 	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
@@ -61,6 +62,19 @@ func (pm *PoolAddressMgr) SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys)
 
 func (pm *PoolAddressMgr) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {
 	return pm.GetCurrentPoolAddresses().Current.GetByChain(chain)
+}
+
+// BeginBlock should be called when BeginBlock
+func (pm *PoolAddressMgr) BeginBlock(ctx sdk.Context) error {
+	if pm.currentPoolAddresses == nil || pm.currentPoolAddresses.IsEmpty() {
+		poolAddresses, err := pm.k.GetPoolAddresses(ctx)
+		if err != nil {
+			return err
+		}
+		pm.currentPoolAddresses = &poolAddresses
+	}
+
+	return nil
 }
 
 func (pm *PoolAddressMgr) RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore) {
