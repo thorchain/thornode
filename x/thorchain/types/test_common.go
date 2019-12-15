@@ -82,7 +82,7 @@ func GetRandomPubKeys() common.PubKeys {
 }
 
 func GetRandomPoolPubKey(chain common.Chain) *common.PoolPubKey {
-	pk, _ := common.NewPoolPubKey(chain, 1, GetRandomPubKey())
+	pk, _ := common.NewPoolPubKey(chain, nil, GetRandomPubKey())
 	return pk
 }
 

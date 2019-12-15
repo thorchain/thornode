@@ -80,7 +80,7 @@ func (h TssHandler) rotatePoolAddress(ctx sdk.Context, voter TssVoter) error {
 	poolpks := make(common.PoolPubKeys, len(chains))
 	for i, chain := range chains {
 		var err error
-		poolpks[i], err = common.NewPoolPubKey(chain, 0, voter.PoolPubKey)
+		poolpks[i], err = common.NewPoolPubKey(chain, voter.PubKeys, voter.PoolPubKey)
 		if err != nil {
 			return nil
 		}

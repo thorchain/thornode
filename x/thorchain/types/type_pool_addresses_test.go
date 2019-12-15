@@ -13,15 +13,15 @@ type PoolAddressesSuite struct{}
 var _ = Suite(&PoolAddressesSuite{})
 
 func (PoolAddressesSuite) TestNewPoolAddresses(c *C) {
-	pk1, err := common.NewPoolPubKey(common.BNBChain, 1024, GetRandomPubKey())
+	pk1, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	previous := common.PoolPubKeys{pk1}
 
-	pk2, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	pk2, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
-	pk3, err := common.NewPoolPubKey(common.BTCChain, 0, GetRandomPubKey())
+	pk3, err := common.NewPoolPubKey(common.BTCChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
-	pk4, err := common.NewPoolPubKey(common.ETHChain, 0, GetRandomPubKey())
+	pk4, err := common.NewPoolPubKey(common.ETHChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	current := common.PoolPubKeys{pk2, pk3, pk4}
 	c.Assert(err, IsNil)

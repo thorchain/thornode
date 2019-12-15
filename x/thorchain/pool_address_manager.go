@@ -16,7 +16,7 @@ const (
 )
 
 type PoolAddressManager interface {
-	RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore)
+	RotatePoolAddress(_ sdk.Context, _ common.PoolPubKeys, _ TxOutStore)
 	GetCurrentPoolAddresses() *PoolAddresses
 	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
 	SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys)

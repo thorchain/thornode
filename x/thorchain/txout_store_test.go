@@ -26,7 +26,7 @@ func (s TxOutStoreSuite) TestAddGasFees(c *C) {
 
 func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
-	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	pk1, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	w.poolAddrMgr.GetCurrentPoolAddresses().Current = common.PoolPubKeys{pk1}
 
@@ -113,7 +113,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 
 func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
-	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	pk1, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	w.poolAddrMgr.GetCurrentPoolAddresses().Current = common.PoolPubKeys{pk1}
 
