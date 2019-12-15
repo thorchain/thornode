@@ -58,7 +58,6 @@ var (
 	NewPoolStaker                  = types.NewPoolStaker
 	NewStakerPool                  = types.NewStakerPool
 	NewMsgEndPool                  = types.NewMsgEndPool
-	NewMsgAck                      = types.NewMsgAck
 	HasMajority                    = types.HasMajority
 	GetAdminConfigKey              = types.GetAdminConfigKey
 	ModuleCdc                      = types.ModuleCdc
@@ -70,7 +69,6 @@ var (
 	NewMsgReserveContributor       = types.NewMsgReserveContributor
 	NewMsgBond                     = types.NewMsgBond
 	NewPoolAddresses               = types.NewPoolAddresses
-	NewMsgNextPoolAddress          = types.NewMsgNextPoolAddress
 	NewMsgLeave                    = types.NewMsgLeave
 	NewMsgSetVersion               = types.NewMsgSetVersion
 	GetPoolStatus                  = types.GetPoolStatus
@@ -99,10 +97,8 @@ type (
 	MsgSetAdminConfig           = types.MsgSetAdminConfig
 	MsgSetVersion               = types.MsgSetVersion
 	MsgSetTrustAccount          = types.MsgSetTrustAccount
-	MsgNextPoolAddress          = types.MsgNextPoolAddress
 	MsgEndPool                  = types.MsgEndPool
 	MsgLeave                    = types.MsgLeave
-	MsgAck                      = types.MsgAck
 	MsgReserveContributor       = types.MsgReserveContributor
 	MsgYggdrasil                = types.MsgYggdrasil
 	MsgObservedTxIn             = types.MsgObservedTxIn
