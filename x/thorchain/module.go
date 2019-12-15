@@ -118,7 +118,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
 
 	if err := am.poolMgr.BeginBlock(ctx); err != nil {
-		ctx.Logger().Error("Fail to begin block on pool address manager: %s", err)
+		ctx.Logger().Error("Fail to begin block on pool address manager", err)
 	}
 
 	if err := am.validatorMgr.BeginBlock(ctx); err != nil {
