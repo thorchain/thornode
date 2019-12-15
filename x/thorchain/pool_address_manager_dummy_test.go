@@ -52,8 +52,7 @@ func (pm *PoolAddressDummyMgr) BeginBlock(_ sdk.Context) error {
 }
 
 // EndBlock contains some actions THORNode need to take when block commit
-func (pm *PoolAddressDummyMgr) EndBlock(_ct sdk.Context, _ TxOutStore) {}
-
+func (pm *PoolAddressDummyMgr) BeginBlock(_ct sdk.Context) error { return kaboom }
 func (pm *PoolAddressDummyMgr) RotatePoolAddress(_ sdk.Context, _ common.PoolPubKeys, _ TxOutStore) {
 }
 

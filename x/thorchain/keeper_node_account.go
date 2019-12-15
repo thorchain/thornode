@@ -142,6 +142,9 @@ func (k KVStore) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Addres
 // SetNodeAccount save the given node account into datastore
 func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 	ctx.Logger().Debug("SetNodeAccount", "node account", na.String())
+	if na.IsEmpty() {
+		return nil
+	}
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixNodeAccount, na.NodeAddress.String())
 	if na.Status == NodeActive {

@@ -95,16 +95,22 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore) []abci.Valid
 	var newActive NodeAccounts // store the list of new active users
 
 	// find active node accounts that are no longer active
+	removedNodes := false
 	for _, na := range activeNodes {
 		found := false
 		for _, member := range membership {
 			if na.NodePubKey.Contains(member) {
 				newActive = append(newActive, na)
+				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
+				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+					ctx.Logger().Error("fail to save node account")
+				}
 				break
 			}
 		}
-		if !found {
+		if !found && len(membership) > 0 {
 			na.UpdateStatus(NodeStandby, height)
+			removedNodes = true
 			if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 				ctx.Logger().Error("fail to save node account")
 			}
@@ -117,6 +123,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore) []abci.Valid
 			if na.NodePubKey.Contains(member) {
 				newActive = append(newActive, na)
 				na.UpdateStatus(NodeActive, height)
+				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
 				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 					ctx.Logger().Error("fail to save node account")
 				}
@@ -138,12 +145,12 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore) []abci.Valid
 		})
 	}
 
-	if len(newActive) <= constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
+	if height > 1 && removedNodes && len(newActive) <= constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
 		// execute Ragnarok protocol, no going back
 		// THORNode have to request the fund back now, because once it get to the rotate block height ,
 		// THORNode won't have validators anymore
 		if err := vm.ragnarokProtocolStep1(ctx, activeNodes, store); nil != err {
-			ctx.Logger().Error("fail to execute ragnarok protocol step 1", err)
+			ctx.Logger().Error("fail to execute ragnarok protocol step 1: %s", err)
 		}
 	}
 
@@ -320,6 +327,7 @@ func (vm *ValidatorMgr) findOldActor(ctx sdk.Context) (NodeAccount, error) {
 func (vm *ValidatorMgr) markActor(ctx sdk.Context, na NodeAccount) error {
 	na.LeaveHeight = ctx.BlockHeight()
 	return vm.k.SetNodeAccount(ctx, na)
+
 }
 
 // Mark an old actor to be churned out
@@ -373,7 +381,7 @@ func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context) error {
 
 		// Check version number is still supported
 		if na.Version.LT(minVersion) {
-			na.Status = NodeStandby
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
