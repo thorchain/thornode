@@ -442,8 +442,7 @@ func (vm *ValidatorMgr) prepareToNodesToLeave(ctx sdk.Context, txOut TxOutStore)
 
 	if afterLeave > constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
 		// trigger pool rotate next
-		vm.poolAddrMgr.GetCurrentPoolAddresses().RotateWindowOpenAt = height + 1
-		vm.poolAddrMgr.GetCurrentPoolAddresses().RotateAt = vm.Meta().LeaveProcessAt
+		// TODO
 		return nil
 	}
 	// execute Ragnarok protocol, no going back

@@ -26,7 +26,7 @@ func (PoolAddressesSuite) TestNewPoolAddresses(c *C) {
 	current := common.PoolPubKeys{pk2, pk3, pk4}
 	c.Assert(err, IsNil)
 	next := common.PoolPubKeys{}
-	poolAddr := NewPoolAddresses(previous, current, next, 28800, 27800)
+	poolAddr := NewPoolAddresses(previous, current, next)
 	result, err := json.MarshalIndent(poolAddr, "", "	")
 	c.Assert(err, IsNil)
 	c.Log(string(result))

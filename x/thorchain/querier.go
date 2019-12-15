@@ -305,7 +305,6 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		return nil, sdk.ErrInternal("fail to get bnb chain pool address")
 	}
 	pool.PoolAddress = addr
-	pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), pool)
 	if err != nil {
 		return nil, sdk.ErrInternal("could not marshal result to JSON")
@@ -329,7 +328,6 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrM
 		var pool Pool
 		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
 		pool.PoolAddress = addr
-		pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 		pools = append(pools, pool)
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), pools)
