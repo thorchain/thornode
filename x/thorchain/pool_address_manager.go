@@ -11,7 +11,7 @@ import (
 
 // const values used to emit events
 const (
-	EventTypeNewPoolAddress    = `NewPoolAddress`
+	EventTypeNewPoolAddress    = "NewPoolAddress"
 	EventTypeAbortPoolRotation = "AbortPoolRotation"
 )
 

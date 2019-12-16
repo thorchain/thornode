@@ -7,18 +7,16 @@ import (
 )
 
 type TssHandler struct {
-	keeper       Keeper
-	txOutStore   TxOutStore
-	poolAddrMgr  PoolAddressManager
-	validatorMgr ValidatorManager
+	keeper      Keeper
+	txOutStore  TxOutStore
+	poolAddrMgr PoolAddressManager
 }
 
-func NewTssHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager) TssHandler {
+func NewTssHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager) TssHandler {
 	return TssHandler{
-		keeper:       keeper,
-		txOutStore:   txOutStore,
-		poolAddrMgr:  poolAddrMgr,
-		validatorMgr: validatorMgr,
+		keeper:      keeper,
+		txOutStore:  txOutStore,
+		poolAddrMgr: poolAddrMgr,
 	}
 }
 
@@ -27,38 +25,34 @@ func (h TssHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.
 	if !ok {
 		return errInvalidMessage.Result()
 	}
-	isNewSigner, err := h.validate(ctx, msg, version)
+	err := h.validate(ctx, msg, version)
 	if err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
-	}
-	if isNewSigner {
-		return sdk.Result{
-			Code:      sdk.CodeOK,
-			Codespace: DefaultCodespace,
-		}
 	}
 	return h.handle(ctx, msg, version)
 }
 
-func (h TssHandler) validate(ctx sdk.Context, msg MsgTssPool, version semver.Version) (bool, error) {
+func (h TssHandler) validate(ctx sdk.Context, msg MsgTssPool, version semver.Version) error {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
-		return false, badVersion
+		return badVersion
 	}
 }
 
-func (h TssHandler) validateV1(ctx sdk.Context, msg MsgTssPool) (bool, error) {
+func (h TssHandler) validateV1(ctx sdk.Context, msg MsgTssPool) error {
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
-		return false, err
+		return err
 	}
 
-	// No auth check, as not all validators are "active" who are apart of a
-	// keygen process
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
+		ctx.Logger().Error(notAuthorized.Error())
+		return notAuthorized
+	}
 
-	return false, nil
+	return nil
 }
 
 func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Version) sdk.Result {

@@ -109,6 +109,11 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore) []abci.Valid
 			}
 		}
 		if !found && len(membership) > 0 {
+			ctx.EventManager().EmitEvent(
+				sdk.NewEvent("UpdateNodeAccountStatus",
+					sdk.NewAttribute("Address", na.NodeAddress.String()),
+					sdk.NewAttribute("Former:", na.Status.String()),
+					sdk.NewAttribute("Current:", NodeStandby.String())))
 			na.UpdateStatus(NodeStandby, height)
 			removedNodes = true
 			if err := vm.k.SetNodeAccount(ctx, na); err != nil {
@@ -122,6 +127,11 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore) []abci.Valid
 		for _, member := range membership {
 			if na.NodePubKey.Contains(member) {
 				newActive = append(newActive, na)
+				ctx.EventManager().EmitEvent(
+					sdk.NewEvent("UpdateNodeAccountStatus",
+						sdk.NewAttribute("Address", na.NodeAddress.String()),
+						sdk.NewAttribute("Former:", na.Status.String()),
+						sdk.NewAttribute("Current:", NodeActive.String())))
 				na.UpdateStatus(NodeActive, height)
 				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
 				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
@@ -416,8 +426,12 @@ func (vm *ValidatorMgr) nextPoolNodeAccounts(ctx sdk.Context, targetCount int) (
 	if err != nil {
 		return nil, false, err
 	}
-	// sort by LeaveHeight
+	// sort by LeaveHeight, giving preferential treatment to people who
+	// requested to leave
 	sort.Slice(active, func(i, j int) bool {
+		if active[i].RequestedToLeave != active[j].RequestedToLeave {
+			return active[i].RequestedToLeave
+		}
 		return active[i].LeaveHeight < active[j].LeaveHeight
 	})
 
