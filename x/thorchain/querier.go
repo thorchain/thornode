@@ -3,7 +3,6 @@ package thorchain
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 
@@ -13,7 +12,6 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 
 	q "gitlab.com/thorchain/thornode/x/thorchain/query"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // NewQuerier is the module level router for state queries
@@ -57,8 +55,6 @@ func NewQuerier(keeper Keeper, poolAddressMgr PoolAddressManager, validatorMgr V
 			return queryNodeAccounts(ctx, path[1:], req, keeper)
 		case q.QueryPoolAddresses.Key:
 			return queryPoolAddresses(ctx, path[1:], req, keeper, poolAddressMgr)
-		case q.QueryValidators.Key:
-			return queryValidators(ctx, keeper, validatorMgr)
 		case q.QueryVaultData.Key:
 			return queryVaultData(ctx, keeper)
 		case q.QueryVaultPubkeys.Key:
@@ -108,34 +104,6 @@ func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	if nil != err {
 		ctx.Logger().Error("fail to marshal vault data to json", err)
 		return nil, sdk.ErrInternal("fail to marshal response to json")
-	}
-	return res, nil
-}
-
-func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr ValidatorManager) ([]byte, sdk.Error) {
-	activeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get all active node accounts", err)
-		return nil, sdk.ErrInternal("fail to get all active accounts")
-	}
-
-	resp := types.ValidatorsResp{
-		ActiveNodes: activeAccounts,
-	}
-	if validatorMgr.Meta() != nil {
-		resp.RotateAt = uint64(validatorMgr.Meta().RotateAtBlockHeight)
-		resp.RotateWindowOpenAt = uint64(validatorMgr.Meta().RotateWindowOpenAtBlockHeight)
-		if !validatorMgr.Meta().Nominated.IsEmpty() {
-			resp.Nominated = validatorMgr.Meta().Nominated
-		}
-		if !validatorMgr.Meta().Queued.IsEmpty() {
-			resp.Queued = validatorMgr.Meta().Queued
-		}
-	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
-	if nil != err {
-		ctx.Logger().Error("fail to marshal validator response to json", err)
-		return nil, sdk.ErrInternal("fail to marshal validator response to json")
 	}
 	return res, nil
 }
@@ -305,7 +273,6 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		return nil, sdk.ErrInternal("fail to get bnb chain pool address")
 	}
 	pool.PoolAddress = addr
-	pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), pool)
 	if err != nil {
 		return nil, sdk.ErrInternal("could not marshal result to JSON")
@@ -329,7 +296,6 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrM
 		var pool Pool
 		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
 		pool.PoolAddress = addr
-		pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 		pools = append(pools, pool)
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), pools)
@@ -386,19 +352,11 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 	}
 
 	if !pk.IsEmpty() {
-		newSigner := false
-		for _, item := range validatorMgr.Meta().Queued {
-			if item.NodePubKey.Secp256k1.Equals(pk) {
-				newSigner = true
-				break
-			}
-		}
 		newTxs := &TxOut{
 			Height: txs.Height,
 		}
 		for _, tx := range txs.TxArray {
-			if pk.Equals(tx.VaultPubKey) ||
-				(strings.EqualFold(tx.Memo, "nextpool") && newSigner) {
+			if pk.Equals(tx.VaultPubKey) {
 				newTxs.TxArray = append(newTxs.TxArray, tx)
 			}
 		}

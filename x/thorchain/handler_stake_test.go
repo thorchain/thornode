@@ -77,13 +77,12 @@ func (HandlerStakeSuite) TestStakeHandler(c *C) {
 	k := &MockStackKeeper{
 		activeNodeAccount: activeNodeAccount,
 		currentPool: Pool{
-			BalanceRune:         sdk.ZeroUint(),
-			BalanceAsset:        sdk.ZeroUint(),
-			Asset:               common.BNBAsset,
-			PoolUnits:           sdk.ZeroUint(),
-			PoolAddress:         "",
-			Status:              PoolEnabled,
-			ExpiryInBlockHeight: 0,
+			BalanceRune:  sdk.ZeroUint(),
+			BalanceAsset: sdk.ZeroUint(),
+			Asset:        common.BNBAsset,
+			PoolUnits:    sdk.ZeroUint(),
+			PoolAddress:  "",
+			Status:       PoolEnabled,
 		},
 	}
 	// happy path
@@ -169,13 +168,12 @@ func (HandlerStakeSuite) TestStakeHandlerValidation(c *C) {
 	k := &MockStackKeeper{
 		activeNodeAccount: activeNodeAccount,
 		currentPool: Pool{
-			BalanceRune:         sdk.ZeroUint(),
-			BalanceAsset:        sdk.ZeroUint(),
-			Asset:               common.BNBAsset,
-			PoolUnits:           sdk.ZeroUint(),
-			PoolAddress:         "",
-			Status:              PoolEnabled,
-			ExpiryInBlockHeight: 0,
+			BalanceRune:  sdk.ZeroUint(),
+			BalanceAsset: sdk.ZeroUint(),
+			Asset:        common.BNBAsset,
+			PoolUnits:    sdk.ZeroUint(),
+			PoolAddress:  "",
+			Status:       PoolEnabled,
 		},
 	}
 	testCases := []struct {
@@ -221,13 +219,12 @@ func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)
 	emptyPool := Pool{
-		BalanceRune:         sdk.ZeroUint(),
-		BalanceAsset:        sdk.ZeroUint(),
-		Asset:               common.BNBAsset,
-		PoolUnits:           sdk.ZeroUint(),
-		PoolAddress:         "",
-		Status:              PoolEnabled,
-		ExpiryInBlockHeight: 0,
+		BalanceRune:  sdk.ZeroUint(),
+		BalanceAsset: sdk.ZeroUint(),
+		Asset:        common.BNBAsset,
+		PoolUnits:    sdk.ZeroUint(),
+		PoolAddress:  "",
+		Status:       PoolEnabled,
 	}
 
 	testCases := []struct {

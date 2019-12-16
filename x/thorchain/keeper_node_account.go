@@ -17,6 +17,7 @@ type KeeperNodeAccount interface {
 	ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error)
 	ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error)
 	GetLowestActiveVersion(ctx sdk.Context) semver.Version
+	GetMinJoinVersion(ctx sdk.Context) semver.Version
 	GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error)
 	GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error)
 	GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error)
@@ -67,9 +68,35 @@ func (k KVStore) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	return k.ListNodeAccountsByStatus(ctx, NodeActive)
 }
 
+// GetMinJoinVersion - get min version to join. Min version is the most popular version
+func (k KVStore) GetMinJoinVersion(ctx sdk.Context) semver.Version {
+	vCount := make(map[string]int, 0)
+	nodes, err := k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		_ = dbError(ctx, "Unable to list active node accounts", err)
+		return semver.Version{}
+	}
+	for _, na := range nodes {
+		vCount[na.Version.String()]++
+	}
+
+	version := semver.Version{}
+	count := 0
+	for ver, total := range vCount {
+		if total >= count {
+			version = semver.MustParse(ver)
+		}
+	}
+	return version
+}
+
 // GetLowestActiveVersion - get version number of lowest active node
 func (k KVStore) GetLowestActiveVersion(ctx sdk.Context) semver.Version {
-	nodes, _ := k.ListActiveNodeAccounts(ctx)
+	nodes, err := k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		_ = dbError(ctx, "Unable to list active node accounts", err)
+		return semver.Version{}
+	}
 	if len(nodes) > 0 {
 		version := nodes[0].Version
 		for _, na := range nodes {
@@ -123,6 +150,9 @@ func (k KVStore) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Addres
 // SetNodeAccount save the given node account into datastore
 func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 	ctx.Logger().Debug("SetNodeAccount", "node account", na.String())
+	if na.IsEmpty() {
+		return nil
+	}
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixNodeAccount, na.NodeAddress.String())
 	if na.Status == NodeActive {

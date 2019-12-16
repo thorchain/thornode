@@ -125,7 +125,6 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		if err := keeper.SetNodeAccount(ctx, ta); nil != err {
 			// we should panic
 			panic(err)
-
 		}
 	}
 

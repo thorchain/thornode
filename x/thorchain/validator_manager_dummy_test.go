@@ -7,7 +7,6 @@ import (
 
 // ValidatorDummyMgr is to manage a list of validators , and rotate them
 type ValidatorDummyMgr struct {
-	meta           *ValidatorMeta
 	rotationPolicy ValidatorRotationPolicy
 }
 
@@ -16,15 +15,7 @@ func NewValidatorDummyMgr() *ValidatorDummyMgr {
 	return &ValidatorDummyMgr{}
 }
 
-func (vm *ValidatorDummyMgr) Meta() *ValidatorMeta {
-	return vm.meta
-}
-
-func (vm *ValidatorDummyMgr) RotationPolicy() ValidatorRotationPolicy {
-	return vm.rotationPolicy
-}
-
-func (vm *ValidatorDummyMgr) BeginBlock(_ sdk.Context) {}
+func (vm *ValidatorDummyMgr) BeginBlock(_ sdk.Context) error { return kaboom }
 func (vm *ValidatorDummyMgr) EndBlock(_ sdk.Context, _ TxOutStore) []abci.ValidatorUpdate {
 	return nil
 }

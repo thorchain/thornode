@@ -10,7 +10,6 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // THORChain error code start at 101
@@ -55,11 +54,9 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, poolAddrMgr, txOutStore)
-	m[MsgAck{}.Type()] = NewAckHandler(keeper, poolAddrMgr, validatorMgr)
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, txOutStore, poolAddrMgr)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
-	m[MsgNextPoolAddress{}.Type()] = NewHandlerNextPoolAddress(keeper, poolAddrMgr, validatorMgr, txOutStore)
 	return m
 }
 
@@ -189,7 +186,6 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		return nil, errors.Wrap(err, "fail to parse memo")
 	}
 	// THORNode should not have one tx across chain, if it is cross chain it should be separate tx
-	chain := tx.Tx.Coins[0].Asset.Chain
 	var newMsg sdk.Msg
 	// interpret the memo and initialize a corresponding msg event
 	switch m := memo.(type) {
@@ -235,10 +231,6 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get MsgBond from memo")
 		}
-	case NextPoolMemo:
-		newMsg = NewMsgNextPoolAddress(tx.Tx, m.NextPoolAddr, tx.Tx.FromAddress, chain, signer)
-	case AckMemo:
-		newMsg = types.NewMsgAck(tx, tx.Tx.FromAddress, chain, signer)
 	case LeaveMemo:
 		newMsg = NewMsgLeave(tx.Tx, signer)
 	case YggdrasilFundMemo:

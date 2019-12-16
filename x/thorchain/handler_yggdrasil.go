@@ -6,6 +6,7 @@ import (
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
@@ -75,13 +76,7 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStor
 	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
 	// 2) upon receiving the yggdrasil fund,  THORNode will refund the validator's bond
 	// 3) once all yggdrasil fund get returned, return all fund to stakes
-	if !validatorManager.Meta().Ragnarok {
-		// Ragnarok protocol didn't triggered , don't call this one
-		return sdk.Result{
-			Code:      sdk.CodeOK,
-			Codespace: DefaultCodespace,
-		}
-	}
+
 	// get the first observer
 	nas, err := keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
@@ -90,6 +85,14 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStor
 	}
 	if len(nas) == 0 {
 		return sdk.ErrInternal("can't find any active nodes").Result()
+	}
+
+	if len(nas) > constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
+		// Ragnarok protocol didn't triggered , don't call this one
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
+		}
 	}
 
 	pools, err := keeper.GetPools(ctx)
@@ -177,8 +180,14 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil) sdk.Result
 		}
 	}
 
+	total, err := h.keeper.TotalActiveNodeAccount(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get active nodes", err)
+		return sdk.ErrInternal("can't get active nodes").Result()
+	}
+
 	// Ragnarok protocol get triggered, if all the Yggdrasil pool returned funds already, THORNode will continue Ragnarok
-	if h.validatorMgr.Meta().Ragnarok {
+	if total < constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
 		hasYggdrasilPool, err := h.keeper.HasValidYggdrasilPools(ctx)
 		if nil != err {
 			ctx.Logger().Error("fail to find valid yggdrasil pools", err)

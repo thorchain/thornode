@@ -31,12 +31,12 @@ type Keeper interface {
 	KeeperLiquidityFees
 	KeeperEvents
 	KeeperPoolAddresses
-	KeeperValidatorMeta
 	KeeperChains
 	KeeperYggdrasil
 	KeeperReserveContributors
 	KeeperVaultData
 	KeeperAdminConfig
+	KeeperTss
 }
 
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there
@@ -64,12 +64,12 @@ const (
 	prefixNodeAccount        dbPrefix = "node_account/"
 	prefixActiveObserver     dbPrefix = "active_observer/"
 	prefixPoolAddresses      dbPrefix = "pool_addresses/"
-	prefixValidatorMeta      dbPrefix = "validator_meta/"
 	prefixSupportedChains    dbPrefix = "supported_chains/"
 	prefixYggdrasilPool      dbPrefix = "yggdrasil/"
 	prefixVaultData          dbPrefix = "vault_data/"
 	prefixObservingAddresses dbPrefix = "observing_addresses/"
 	prefixReserves           dbPrefix = "reserves/"
+	prefixTss                dbPrefix = "tss/"
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {
