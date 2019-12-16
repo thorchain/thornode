@@ -56,9 +56,8 @@ func (ppk PoolPubKey) GetAddress() (Address, error) {
 
 // GetSeqNo
 func (ppk *PoolPubKey) GetSeqNo() uint64 {
-	current := ppk.SeqNo
 	ppk.SeqNo++
-	return current
+	return ppk.SeqNo - 1
 }
 
 // Stringer implementation

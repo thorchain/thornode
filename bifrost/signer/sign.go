@@ -89,7 +89,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	}
 
 	if cfg.UseTSS {
-		kg, err := tss.NewTssKeyGen(cfg.TSS, thorKeys)
+		kg, err := tss.NewTssKeyGen(cfg.TSS, cfg.StateChain, thorKeys)
 		if nil != err {
 			return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
 		}
@@ -155,6 +155,7 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 func (s *Signer) shouldSign(tai types.TxArrayItem) bool {
 	return s.pkm.HasKey(tai.VaultPubKey)
 }
+
 func (s *Signer) retryFailedTxOutProcessor() {
 	s.logger.Info().Msg("start retry process")
 	defer s.logger.Info().Msg("stop retry process")
@@ -232,6 +233,7 @@ func (s *Signer) processTssKeyGenCeremony(tai types.TxArrayItem) (types.TxArrayI
 	if pubKey.IsEmpty() {
 		return tai, fmt.Errorf("fail to generate new pool pub key")
 	}
+	s.pkm.Add(pubKey.Secp256k1)
 	tai.Memo = fmt.Sprintf("%s:%s", nextPoolPrefix, pubKey.Secp256k1.String())
 	addr, err := pubKey.GetAddress(common.BNBChain)
 	if nil != err {

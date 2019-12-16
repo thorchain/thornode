@@ -8,12 +8,12 @@ while [ ! -f $PRIVKEY ]; do
 done
 
 if [ ! -z ${SEED+x} ]; then
-    while ! nc -z $SEED 4040; do
+    while ! nc -z $SEED $SEEDHTTPPORT; do
         sleep 1
     done
 
-    cat $PRIVKEY | /go/bin/tss -http 4040 -peer /ip4/$SEED/tcp/5040/ipfs/$(curl http://$SEED:4040/p2pid) -port 5040
+    cat $PRIVKEY | /go/bin/tss -loglevel debug -http $TSSHTTPPORT -port $TSSP2PPORT -peer /ip4/$SEED/tcp/$SEEDP2PPORT/ipfs/$(curl http://$SEED:$SEEDHTTPPORT/p2pid)
 
 else
-    cat $PRIVKEY | /go/bin/tss -http 4040 -port 5040
+    cat $PRIVKEY | /go/bin/tss -loglevel debug -http $TSSHTTPPORT -port $TSSP2PPORT
 fi

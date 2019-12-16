@@ -581,10 +581,13 @@ func handleMsgSetTrustAccount(ctx sdk.Context, keeper Keeper, msg MsgSetTrustAcc
 		return sdk.ErrUnknownRequest("node is disabled can't update").Result()
 	}
 	if err := keeper.EnsureTrustAccountUnique(ctx, msg.ValidatorConsPubKey, msg.NodePubKeys); nil != err {
+		ctx.Logger().Error("Unable to ensure trust account uniqueness", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 	// Here make sure THORNode don't change the node account's bond
 
+	nodeAccount.ValidatorConsPubKey = msg.ValidatorConsPubKey
+	nodeAccount.NodePubKey = msg.NodePubKeys
 	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
 	if err := keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
 		ctx.Logger().Error(fmt.Sprintf("fail to save node account: %s", nodeAccount), err)

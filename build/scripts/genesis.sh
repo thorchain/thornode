@@ -53,7 +53,7 @@ if [ ! -z ${TSSKEYGEN+x} ]; then
         $(dirname "$0")/wait-for-tss-keygen.sh $addr
     done
 
-    KEYCLIENT="/usr/bin/keygenclient -url http://$TSSKEYGEN:4040/keygen"
+    KEYCLIENT="/usr/bin/keygenclient -url http://$TSSKEYGEN/keygen"
     for f in /tmp/shared/node_*.json; do
         KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $3}')"
     done

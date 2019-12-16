@@ -1,8 +1,6 @@
 package types
 
 import (
-	"strings"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
@@ -71,11 +69,7 @@ func (tx ObservedTx) Equals(tx2 ObservedTx) bool {
 }
 
 func (tx ObservedTx) String() string {
-	hashes := make([]string, len(tx.OutHashes))
-	for i, h := range tx.OutHashes {
-		hashes[i] = h.String()
-	}
-	return strings.Join(hashes, ", ")
+	return tx.Tx.String()
 }
 
 // HasSigned - check if given address has signed
