@@ -36,6 +36,7 @@ var (
 	NewObservedTx                  = types.NewObservedTx
 	NewTssVoter                    = types.NewTssVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
+	NewMsgTssPool                  = types.NewMsgTssPool
 	NewMsgObservedTxIn             = types.NewMsgObservedTxIn
 	NewMsgObservedTxOut            = types.NewMsgObservedTxOut
 	NewMsgNoOp                     = types.NewMsgNoOp
