@@ -73,7 +73,7 @@ func (k KVStore) GetMinJoinVersion(ctx sdk.Context) semver.Version {
 	vCount := make(map[string]int, 0)
 	nodes, err := k.ListActiveNodeAccounts(ctx)
 	if err != nil {
-		dbError(ctx, "Unable to list active node accounts", err)
+		_ = dbError(ctx, "Unable to list active node accounts", err)
 		return semver.Version{}
 	}
 	for _, na := range nodes {
@@ -94,7 +94,7 @@ func (k KVStore) GetMinJoinVersion(ctx sdk.Context) semver.Version {
 func (k KVStore) GetLowestActiveVersion(ctx sdk.Context) semver.Version {
 	nodes, err := k.ListActiveNodeAccounts(ctx)
 	if err != nil {
-		dbError(ctx, "Unable to list active node accounts", err)
+		_ = dbError(ctx, "Unable to list active node accounts", err)
 		return semver.Version{}
 	}
 	if len(nodes) > 0 {
