@@ -84,6 +84,7 @@ func (k KVStore) GetMinJoinVersion(ctx sdk.Context) semver.Version {
 	count := 0
 	for ver, total := range vCount {
 		if total >= count {
+			count = total
 			version = semver.MustParse(ver)
 		}
 	}

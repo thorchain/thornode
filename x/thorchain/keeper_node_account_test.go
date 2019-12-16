@@ -72,5 +72,5 @@ func (s *KeeperNodeAccountSuite) TestGetMinJoinVersion(c *C) {
 	na5.Version = semver.MustParse("0.2.0")
 	c.Assert(k.SetNodeAccount(ctx, na5), IsNil)
 
-	c.Check(k.GetMinJoinVersion(ctx).Equals(semver.MustParse("0.3.0")), Equals, true)
+	c.Check(k.GetMinJoinVersion(ctx).Equals(semver.MustParse("0.3.0")), Equals, true, Commentf("%+v", k.GetMinJoinVersion(ctx)))
 }
