@@ -112,7 +112,8 @@ func (s *HandlerSetTrustAccountSuite) TestHandle(c *C) {
 	success := handler.handle(ctx, msgTrustAccount, ver)
 	c.Check(success.Code, Equals, sdk.CodeOK)
 	c.Check(success.IsOK(), Equals, true)
-
+	c.Assert(keeper.na.NodePubKey, Equals, emptyPubKeys)
+	c.Assert(keeper.na.ValidatorConsPubKey, Equals, bepConsPubKey)
 }
 
 type TestSetTrustAccountHandleFailUniqueKeeper struct {
