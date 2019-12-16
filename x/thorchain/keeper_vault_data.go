@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -151,8 +152,8 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 				}
 				amt := common.GetShare(fees, totalLiquidityFees, totalPoolRewards)
 				rewardAmts = append(rewardAmts, amt)
+				evtPools = append(evtPools, PoolAmt{Asset: pool.Asset, Amount: int64(amt.Uint64())})
 			}
-			evtPools = append(evtPools, PoolAmt{pools[i].Asset, int64(reward.Uint64())})
 
 		} else {
 			// Pool Rewards are based on Depth Share
@@ -180,7 +181,10 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 				ctx.Logger().Error(err.Error())
 				return err
 			}
-			evtPools = append(evtPools, PoolAmt{pool.Asset, (0 - int64(poolDeficit.Uint64()))})
+			evtPools = append(evtPools, PoolAmt{
+				Asset:  pool.Asset,
+				Amount: 0 - int64(poolDeficit.Uint64()),
+			})
 		}
 	}
 
@@ -210,14 +214,8 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 // remove gas
 func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (sdk.Uint, common.Gas, error) {
 	for i, coin := range gas {
-		if !coin.Amount.IsZero() {
-			pool, err := keeper.GetPool(ctx, coin.Asset)
-			if err != nil {
-				return sdk.ZeroUint(), nil, err
-			}
-			runeGas := pool.AssetValueInRune(coin.Amount)
-			gas[i].Amount = common.SafeSub(gas[i].Amount, coin.Amount)
-			val = common.SafeSub(val, runeGas)
+		if coin.Amount.IsZero() {
+			continue
 		}
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
