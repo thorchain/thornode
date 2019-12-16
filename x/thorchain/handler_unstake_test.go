@@ -37,12 +37,11 @@ func (mfp *MockUnstakeKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, erro
 	}
 	if mfp.suspendedPool {
 		return Pool{
-			BalanceRune:         sdk.ZeroUint(),
-			BalanceAsset:        sdk.ZeroUint(),
-			Asset:               common.BNBAsset,
-			PoolUnits:           sdk.ZeroUint(),
-			Status:              PoolSuspended,
-			ExpiryInBlockHeight: 1024,
+			BalanceRune:  sdk.ZeroUint(),
+			BalanceAsset: sdk.ZeroUint(),
+			Asset:        common.BNBAsset,
+			PoolUnits:    sdk.ZeroUint(),
+			Status:       PoolSuspended,
 		}, nil
 	}
 	return mfp.currentPool, nil
@@ -91,12 +90,11 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	k := &MockUnstakeKeeper{
 		activeNodeAccount: activeNodeAccount,
 		currentPool: Pool{
-			BalanceRune:         sdk.ZeroUint(),
-			BalanceAsset:        sdk.ZeroUint(),
-			Asset:               common.BNBAsset,
-			PoolUnits:           sdk.ZeroUint(),
-			Status:              PoolEnabled,
-			ExpiryInBlockHeight: 1024,
+			BalanceRune:  sdk.ZeroUint(),
+			BalanceAsset: sdk.ZeroUint(),
+			Asset:        common.BNBAsset,
+			PoolUnits:    sdk.ZeroUint(),
+			Status:       PoolEnabled,
 		},
 	}
 	// Happy path , this is a round trip , first we stake, then we unstake
@@ -170,12 +168,11 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_Validation(c *C) {
 func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)
 	currentPool := Pool{
-		BalanceRune:         sdk.ZeroUint(),
-		BalanceAsset:        sdk.ZeroUint(),
-		Asset:               common.BNBAsset,
-		PoolUnits:           sdk.ZeroUint(),
-		Status:              PoolEnabled,
-		ExpiryInBlockHeight: 1024,
+		BalanceRune:  sdk.ZeroUint(),
+		BalanceAsset: sdk.ZeroUint(),
+		Asset:        common.BNBAsset,
+		PoolUnits:    sdk.ZeroUint(),
+		Status:       PoolEnabled,
 	}
 	testCases := []struct {
 		name           string

@@ -34,7 +34,9 @@ var (
 	NewVaultData                   = types.NewVaultData
 	NewAdminConfig                 = types.NewAdminConfig
 	NewObservedTx                  = types.NewObservedTx
+	NewTssVoter                    = types.NewTssVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
+	NewMsgTssPool                  = types.NewMsgTssPool
 	NewMsgObservedTxIn             = types.NewMsgObservedTxIn
 	NewMsgObservedTxOut            = types.NewMsgObservedTxOut
 	NewMsgNoOp                     = types.NewMsgNoOp
@@ -57,7 +59,6 @@ var (
 	NewPoolStaker                  = types.NewPoolStaker
 	NewStakerPool                  = types.NewStakerPool
 	NewMsgEndPool                  = types.NewMsgEndPool
-	NewMsgAck                      = types.NewMsgAck
 	HasMajority                    = types.HasMajority
 	GetAdminConfigKey              = types.GetAdminConfigKey
 	ModuleCdc                      = types.ModuleCdc
@@ -69,7 +70,6 @@ var (
 	NewMsgReserveContributor       = types.NewMsgReserveContributor
 	NewMsgBond                     = types.NewMsgBond
 	NewPoolAddresses               = types.NewPoolAddresses
-	NewMsgNextPoolAddress          = types.NewMsgNextPoolAddress
 	NewMsgLeave                    = types.NewMsgLeave
 	NewMsgSetVersion               = types.NewMsgSetVersion
 	GetPoolStatus                  = types.GetPoolStatus
@@ -98,14 +98,13 @@ type (
 	MsgSetAdminConfig           = types.MsgSetAdminConfig
 	MsgSetVersion               = types.MsgSetVersion
 	MsgSetTrustAccount          = types.MsgSetTrustAccount
-	MsgNextPoolAddress          = types.MsgNextPoolAddress
 	MsgEndPool                  = types.MsgEndPool
 	MsgLeave                    = types.MsgLeave
-	MsgAck                      = types.MsgAck
 	MsgReserveContributor       = types.MsgReserveContributor
 	MsgYggdrasil                = types.MsgYggdrasil
 	MsgObservedTxIn             = types.MsgObservedTxIn
 	MsgObservedTxOut            = types.MsgObservedTxOut
+	MsgTssPool                  = types.MsgTssPool
 	QueryResPools               = types.QueryResPools
 	QueryResHeights             = types.QueryResHeights
 	QueryResTxOut               = types.QueryResTxOut
@@ -124,6 +123,7 @@ type (
 	ObservedTxVoter             = types.ObservedTxVoter
 	ObservedTxVoters            = types.ObservedTxVoters
 	ObservedTxIndex             = types.ObservedTxIndex
+	TssVoter                    = types.TssVoter
 	TxOutItem                   = types.TxOutItem
 	TxOut                       = types.TxOut
 	AdminConfigKey              = types.AdminConfigKey
@@ -144,6 +144,5 @@ type (
 	NodeAccountsBySlashingPoint = types.NodeAccountsBySlashingPoint
 	PoolAddresses               = types.PoolAddresses
 	NodeStatus                  = types.NodeStatus
-	ValidatorMeta               = types.ValidatorMeta
 	VaultData                   = types.VaultData
 )

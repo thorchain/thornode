@@ -15,7 +15,7 @@ type PoolAddressDummyMgr struct {
 
 // NewPoolAddressDummyMgr create a new PoolAddressDummyMgr
 func NewPoolAddressDummyMgr() *PoolAddressDummyMgr {
-	addrs := NewPoolAddresses(GetRandomPoolPubKeys(), GetRandomPoolPubKeys(), GetRandomPoolPubKeys(), 500, 100)
+	addrs := NewPoolAddresses(GetRandomPoolPubKeys(), GetRandomPoolPubKeys(), GetRandomPoolPubKeys())
 	return &PoolAddressDummyMgr{
 		currentPoolAddresses: addrs,
 	}
@@ -38,20 +38,8 @@ func (pm *PoolAddressDummyMgr) IsRotateWindowOpen() bool {
 	return pm.isRotateWindowOpen
 }
 
-func (pm *PoolAddressDummyMgr) ObservedNextPoolAddrPubKey() common.PoolPubKeys {
-	return pm.observedNextPoolAddrPubKey
+func (pm *PoolAddressDummyMgr) BeginBlock(_ct sdk.Context) error { return kaboom }
+func (pm *PoolAddressDummyMgr) RotatePoolAddress(_ sdk.Context, _ common.PoolPubKeys, _ TxOutStore) {
 }
-
-func (pm *PoolAddressDummyMgr) SetObservedNextPoolAddrPubKey(ppks common.PoolPubKeys) {
-	pm.observedNextPoolAddrPubKey = ppks
-}
-
-// BeginBlock should be called when BeginBlock
-func (pm *PoolAddressDummyMgr) BeginBlock(_ sdk.Context) error {
-	return kaboom
-}
-
-// EndBlock contains some actions THORNode need to take when block commit
-func (pm *PoolAddressDummyMgr) EndBlock(_ct sdk.Context, _ TxOutStore) {}
 
 func (pm *PoolAddressDummyMgr) rotatePoolAddress(_ sdk.Context, _ TxOutStore) {}

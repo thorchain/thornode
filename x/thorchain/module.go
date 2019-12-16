@@ -116,11 +116,15 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
+
 	if err := am.poolMgr.BeginBlock(ctx); err != nil {
-		ctx.Logger().Error("fail to begin block for pool manager", err)
+		ctx.Logger().Error("Fail to begin block on pool address manager", err)
 	}
 
-	am.validatorMgr.BeginBlock(ctx)
+	if err := am.validatorMgr.BeginBlock(ctx); err != nil {
+		ctx.Logger().Error("Fail to begin block on validator", err)
+	}
+
 	am.txOutStore.NewBlock(uint64(req.Header.Height))
 }
 
@@ -154,7 +158,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to save vault", err)
 	}
 
-	am.poolMgr.EndBlock(ctx, am.txOutStore)
 	am.txOutStore.CommitBlock(ctx)
 	return am.validatorMgr.EndBlock(ctx, am.txOutStore)
 }

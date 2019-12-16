@@ -25,9 +25,7 @@ const (
 	txAdd
 	txGas
 	txBond
-	txNextPool
 	txLeave
-	txAck
 	txYggdrasilFund
 	txYggdrasilReturn
 	txReserve
@@ -54,9 +52,7 @@ var stringToTxTypeMap = map[string]TxType{
 	"g":          txGas,
 	"$":          txGas,
 	"bond":       txBond,
-	"nextpool":   txNextPool,
 	"leave":      txLeave,
-	"ack":        txAck,
 	"yggdrasil+": txYggdrasilFund,
 	"yggdrasil-": txYggdrasilReturn,
 	"reserve":    txReserve,
@@ -71,9 +67,7 @@ var txToStringMap = map[TxType]string{
 	txAdd:             "add",
 	txGas:             "gas",
 	txBond:            "bond",
-	txNextPool:        "nextpool",
 	txLeave:           "leave",
-	txAck:             "ack",
 	txYggdrasilFund:   "yggdrasil+",
 	txYggdrasilReturn: "yggdrasil-",
 	txReserve:         "reserve",
@@ -112,7 +106,6 @@ type Memo interface {
 	GetValue() string
 	GetTxID() common.TxID
 	GetNodeAddress() sdk.AccAddress
-	GetNextPoolAddress() common.PubKey
 }
 
 type MemoBase struct {
@@ -167,16 +160,7 @@ type BondMemo struct {
 	NodeAddress sdk.AccAddress
 }
 
-type NextPoolMemo struct {
-	MemoBase
-	NextPoolAddr common.PubKey
-}
-
 type LeaveMemo struct {
-	MemoBase
-}
-
-type AckMemo struct {
 	MemoBase
 }
 
@@ -212,7 +196,7 @@ func ParseMemo(memo string) (Memo, error) {
 
 	// list of memo types that do not contain an asset in their memo
 	noAssetMemos := []TxType{
-		txGas, txOutbound, txBond, txLeave, txAck, txNextPool,
+		txGas, txOutbound, txBond, txLeave,
 		txYggdrasilFund, txYggdrasilReturn, txReserve,
 	}
 	hasAsset := true
@@ -247,12 +231,6 @@ func ParseMemo(memo string) (Memo, error) {
 	case txLeave:
 		return LeaveMemo{
 			MemoBase: MemoBase{TxType: txLeave},
-		}, nil
-	case txAck:
-		return AckMemo{
-			MemoBase: MemoBase{
-				TxType: txAck,
-			},
 		}, nil
 	case txAdd:
 		return AddMemo{
@@ -343,19 +321,6 @@ func ParseMemo(memo string) (Memo, error) {
 			MemoBase:    MemoBase{TxType: txBond},
 			NodeAddress: addr,
 		}, nil
-
-	case txNextPool:
-		nextPoolAddr, err := common.NewPubKey(parts[1])
-		if nil != err {
-			return noMemo, fmt.Errorf("%s is an invalid hex encoded pub key,err: %w", parts[1], err)
-		}
-		return NextPoolMemo{
-			MemoBase: MemoBase{
-				TxType: txNextPool,
-				Asset:  common.Asset{},
-			},
-			NextPoolAddr: nextPoolAddr,
-		}, nil
 	case txYggdrasilFund:
 		return YggdrasilFundMemo{
 			MemoBase: MemoBase{TxType: txYggdrasilFund},
@@ -374,29 +339,27 @@ func ParseMemo(memo string) (Memo, error) {
 }
 
 // Base Functions
-func (m MemoBase) String() string                    { return "" }
-func (m MemoBase) GetType() TxType                   { return m.TxType }
-func (m MemoBase) IsType(tx TxType) bool             { return m.TxType.Equals(tx) }
-func (m MemoBase) GetAsset() common.Asset            { return m.Asset }
-func (m MemoBase) GetAmount() string                 { return "" }
-func (m MemoBase) GetDestination() common.Address    { return "" }
-func (m MemoBase) GetSlipLimit() sdk.Uint            { return sdk.ZeroUint() }
-func (m MemoBase) GetKey() string                    { return "" }
-func (m MemoBase) GetValue() string                  { return "" }
-func (m MemoBase) GetTxID() common.TxID              { return "" }
-func (m MemoBase) GetNodeAddress() sdk.AccAddress    { return sdk.AccAddress{} }
-func (m MemoBase) GetNextPoolAddress() common.PubKey { return common.EmptyPubKey }
+func (m MemoBase) String() string                 { return "" }
+func (m MemoBase) GetType() TxType                { return m.TxType }
+func (m MemoBase) IsType(tx TxType) bool          { return m.TxType.Equals(tx) }
+func (m MemoBase) GetAsset() common.Asset         { return m.Asset }
+func (m MemoBase) GetAmount() string              { return "" }
+func (m MemoBase) GetDestination() common.Address { return "" }
+func (m MemoBase) GetSlipLimit() sdk.Uint         { return sdk.ZeroUint() }
+func (m MemoBase) GetKey() string                 { return "" }
+func (m MemoBase) GetValue() string               { return "" }
+func (m MemoBase) GetTxID() common.TxID           { return "" }
+func (m MemoBase) GetNodeAddress() sdk.AccAddress { return sdk.AccAddress{} }
 
 // Transaction Specific Functions
-func (m WithdrawMemo) GetAmount() string                 { return m.Amount }
-func (m SwapMemo) GetDestination() common.Address        { return m.Destination }
-func (m SwapMemo) GetSlipLimit() sdk.Uint                { return m.SlipLimit }
-func (m AdminMemo) GetKey() string                       { return m.Key }
-func (m AdminMemo) GetValue() string                     { return m.Value }
-func (m BondMemo) GetNodeAddress() sdk.AccAddress        { return m.NodeAddress }
-func (m NextPoolMemo) GetNextPoolAddress() common.PubKey { return m.NextPoolAddr }
-func (m StakeMemo) GetDestination() common.Address       { return m.Address }
-func (m OutboundMemo) GetTxID() common.TxID              { return m.TxID }
+func (m WithdrawMemo) GetAmount() string           { return m.Amount }
+func (m SwapMemo) GetDestination() common.Address  { return m.Destination }
+func (m SwapMemo) GetSlipLimit() sdk.Uint          { return m.SlipLimit }
+func (m AdminMemo) GetKey() string                 { return m.Key }
+func (m AdminMemo) GetValue() string               { return m.Value }
+func (m BondMemo) GetNodeAddress() sdk.AccAddress  { return m.NodeAddress }
+func (m StakeMemo) GetDestination() common.Address { return m.Address }
+func (m OutboundMemo) GetTxID() common.TxID        { return m.TxID }
 func (m OutboundMemo) String() string {
 	return fmt.Sprintf("OUTBOUND:%s", m.TxID.String())
 }

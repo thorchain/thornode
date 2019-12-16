@@ -81,7 +81,9 @@ func (lh LeaveHandler) handle(ctx sdk.Context, msg MsgLeave) sdk.Error {
 	// THORNode add the node to leave queue
 
 	if nodeAcc.Status == NodeActive {
-		lh.validatorManager.Meta().LeaveQueue = append(lh.validatorManager.Meta().LeaveQueue, nodeAcc)
+		if nodeAcc.LeaveHeight == 0 {
+			nodeAcc.LeaveHeight = ctx.BlockHeight()
+		}
 	} else {
 		// given the node is not active, they should not have Yggdrasil pool either
 		// but let's check it anyway just in case

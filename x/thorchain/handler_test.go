@@ -114,15 +114,14 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		p.BalanceAsset = sdk.NewUint(100 * common.One)
 		c.Assert(k.SetPool(ctx, p), IsNil)
 	}
-	genesisPoolPubKey, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	genesisPoolPubKey, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	genesisPoolAddress := NewPoolAddresses(common.EmptyPoolPubKeys, common.PoolPubKeys{
 		genesisPoolPubKey,
-	}, common.EmptyPoolPubKeys, 100, 90)
+	}, common.EmptyPoolPubKeys)
 	k.SetPoolAddresses(ctx, genesisPoolAddress)
 	poolAddrMgr := NewPoolAddressMgr(k)
 	validatorMgr := NewValidatorMgr(k, poolAddrMgr)
-	c.Assert(poolAddrMgr.BeginBlock(ctx), IsNil)
 	validatorMgr.BeginBlock(ctx)
 	txOutStore := NewTxOutStorage(k, poolAddrMgr)
 	txOutStore.NewBlock(uint64(height))
@@ -217,7 +216,6 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	c.Assert(result.IsOK(), Equals, false)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 	msgEndPool = NewMsgEndPool(common.BNBAsset, tx, w.activeNodeAccount.NodeAddress)
-	c.Assert(w.poolAddrMgr.BeginBlock(w.ctx), IsNil)
 	stakeTxHash := GetRandomTxHash()
 	tx = common.NewTx(
 		stakeTxHash,

@@ -4,21 +4,17 @@ import "gitlab.com/thorchain/thornode/common"
 
 // PoolAddresses is a struct to represent the address of pool also facilitate pool rotation
 type PoolAddresses struct {
-	Previous           common.PoolPubKeys `json:"previous"`
-	Current            common.PoolPubKeys `json:"current"`
-	Next               common.PoolPubKeys `json:"next"`
-	RotateAt           int64              `json:"rotate_at"`
-	RotateWindowOpenAt int64              `json:"rotate_window_open_at"`
+	Previous common.PoolPubKeys `json:"previous"`
+	Current  common.PoolPubKeys `json:"current"`
+	Next     common.PoolPubKeys `json:"next"`
 }
 
 // NewPoolAddresses create a new instance of PoolAddress
-func NewPoolAddresses(previous, current, next common.PoolPubKeys, rotateAt, rotateWindowOpenAt int64) *PoolAddresses {
+func NewPoolAddresses(previous, current, next common.PoolPubKeys) *PoolAddresses {
 	return &PoolAddresses{
-		Previous:           previous,
-		Current:            current,
-		Next:               next,
-		RotateAt:           rotateAt,
-		RotateWindowOpenAt: rotateWindowOpenAt,
+		Previous: previous,
+		Current:  current,
+		Next:     next,
 	}
 }
 
