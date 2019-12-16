@@ -262,7 +262,10 @@ func ParseMemo(memo string) (Memo, error) {
 		var withdrawAmount string
 		if len(parts) > 2 {
 			withdrawAmount = parts[2]
-			wa := sdk.NewUintFromString(withdrawAmount)
+			wa, err := sdk.ParseUint(withdrawAmount)
+			if err != nil {
+				return noMemo, err
+			}
 			if !wa.GT(sdk.ZeroUint()) || wa.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
 				return noMemo, fmt.Errorf("withdraw amount :%s is invalid", withdrawAmount)
 			}

@@ -55,8 +55,8 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 
 type TestYggdrasilHandleKeeper struct {
 	KVStoreDummy
-	ygg Yggdrasil
-	na NodeAccount
+	ygg  Yggdrasil
+	na   NodeAccount
 	pool Pool
 }
 
@@ -73,8 +73,16 @@ func (k *TestYggdrasilHandleKeeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil)
 	return nil
 }
 
+func (k *TestYggdrasilHandleKeeper) HasValidYggdrasilPools(_ sdk.Context) (bool, error) {
+	return true, nil
+}
+
 func (k *TestYggdrasilHandleKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return k.pool, nil
+}
+
+func (k *TestYggdrasilHandleKeeper) TotalActiveNodeAccount(_ sdk.Context) (int, error) {
+	return 1, nil
 }
 
 func (k *TestYggdrasilHandleKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) error {
@@ -84,6 +92,7 @@ func (k *TestYggdrasilHandleKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount
 
 func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
+	ctx = ctx.WithBlockHeight(12)
 
 	pubKey := GetRandomPubKey()
 	keeper := &TestYggdrasilHandleKeeper{
@@ -102,7 +111,7 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 		},
 	}
 
-	poolAddrMgr := NewPoolAddressMgr(keeper)
+	poolAddrMgr := NewPoolAddressDummyMgr()
 	validatorMgr := NewValidatorMgr(keeper, poolAddrMgr)
 	validatorMgr.BeginBlock(ctx)
 	txOutStore := NewTxStoreDummy()
@@ -116,7 +125,7 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	signer := GetRandomBech32Addr()
 	msg := NewMsgYggdrasil(pubKey, true, coins, txID, signer)
 	result := handler.handle(ctx, msg, ver)
-	c.Assert(result.Code, Equals, sdk.CodeOK)
+	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result))
 
 	ygg, err := keeper.GetYggdrasil(ctx, pubKey)
 	c.Assert(err, IsNil)

@@ -121,6 +121,7 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	}, common.EmptyPoolPubKeys)
 	k.SetPoolAddresses(ctx, genesisPoolAddress)
 	poolAddrMgr := NewPoolAddressMgr(k)
+	poolAddrMgr.currentPoolAddresses = NewPoolAddresses(GetRandomPoolPubKeys(), GetRandomPoolPubKeys(), GetRandomPoolPubKeys())
 	validatorMgr := NewValidatorMgr(k, poolAddrMgr)
 	validatorMgr.BeginBlock(ctx)
 	txOutStore := NewTxOutStorage(k, poolAddrMgr)

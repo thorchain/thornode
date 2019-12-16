@@ -26,11 +26,9 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	c.Assert(err, IsNil)
 	w.poolAddrMgr.GetCurrentPoolAddresses().Next = common.PoolPubKeys{pk1}
 	// no asset get moved , because THORNode just opened window, however THORNode should instruct signer to kick off key sign process
-	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	poolBNB := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.BNB", c)
 	poolTCan := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.TCAN-014", c)
 	poolLoki := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.LOK-3C0", c)
-	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 4)
 	c.Assert(w.txOutStore.GetBlockOut().Valid(), IsNil)
 	totalBond := sdk.ZeroUint()
 	nodeAccounts, err := w.keeper.ListNodeAccounts(w.ctx)
