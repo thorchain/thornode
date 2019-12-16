@@ -27,14 +27,15 @@ type KeyGen struct {
 }
 
 // NewTssKeyGen create a new instance of TssKeyGen which will look after TSS key stuff
-func NewTssKeyGen(keyGenCfg config.TSSConfiguration, keys *thorclient.Keys) (*KeyGen, error) {
+func NewTssKeyGen(keyGenCfg config.TSSConfiguration, statechain config.StateChainConfiguration, keys *thorclient.Keys) (*KeyGen, error) {
 	if nil == keys {
 		return nil, fmt.Errorf("keys is nil")
 	}
 	return &KeyGen{
-		keys:      keys,
-		keyGenCfg: keyGenCfg,
-		logger:    log.With().Str("module", "tss_keygen").Logger(),
+		keys:          keys,
+		keyGenCfg:     keyGenCfg,
+		stateChainCfg: statechain,
+		logger:        log.With().Str("module", "tss_keygen").Logger(),
 		client: &http.Client{
 			Timeout: time.Second * 30,
 		},
@@ -51,7 +52,10 @@ func (kg *KeyGen) getValidatorKeys() ([]common.PubKey, error) {
 	noQueued := resp.Queued == nil || resp.Queued.IsEmpty()
 	if noNominated && noQueued {
 		kg.logger.Info().Msg("no node get nominated , and no node get queued to be rotate out, so don't need to rotate pool")
-		return nil, nil
+		// TODO: commented out because ignoring the tx request would cause the
+		// seqNum to differ between binance and thorchain. We should find a
+		// better solution.
+		// return nil, nil
 	}
 	pKeys := make([]common.PubKey, 0, len(resp.ActiveNodes)+1)
 	if !resp.Nominated.IsEmpty() {

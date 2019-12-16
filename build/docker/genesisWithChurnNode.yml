@@ -1,0 +1,125 @@
+version: '3'
+
+services:
+  observer5:
+    hostname: observer5
+    build:
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/thornode
+    restart: unless-stopped
+    environment:
+      NET: testnet
+      CHAIN_API: 172.32.40.36:1317
+      BINANCE_HOST: ${BINANCE_HOST:-http://172.32.90.1:26660}
+    entrypoint:
+      /docker/scripts/observer.sh
+    depends_on:
+      - thor-api5
+    volumes:
+      - "../scripts:/docker/scripts"
+      - ${HOME}/.thornode/genesis_5/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
+    command: ["observed", "-c", "/etc/observe/observed/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 172.32.30.36
+
+  signer5:
+    hostname: signer5
+    build:
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/thornode
+    restart: unless-stopped
+    environment:
+      NET: testnet
+      CHAIN_API: 172.32.40.36:1317
+      CHAIN_RPC: 172.32.10.26:26657
+      BINANCE_HOST: ${BINANCE_HOST:-http://172.32.90.1:26660}
+      USE_TSS: "true"
+      TSS_HOST: 172.32.10.6
+      TSS_PORT: 4044
+    entrypoint:
+      /docker/scripts/signer.sh
+    depends_on:
+      - tss5
+      - thor-api5
+    volumes:
+      - "../scripts:/docker/scripts"
+      - ${HOME}/.thornode/genesis_5/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
+    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    networks:
+      localnet:
+        ipv4_address: 172.32.10.36
+
+  thor-daemon5:
+    hostname: thor-daemon5
+    build:
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    image: registry.gitlab.com/thorchain/thornode
+    restart: unless-stopped
+    environment:
+      NET: testnet
+      PEER: 172.32.10.22
+      TSSPRIVKEY: /root/.tss/private.key
+    depends_on:
+      - tss5
+    entrypoint:
+      /docker/scripts/validator.sh
+    volumes:
+      - "../scripts:/docker/scripts"
+      - ${HOME}/.thornode/genesis_5/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
+      - ${HOME}/.thornode/genesis_5/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_5/.tss:/root/.tss
+    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    networks:
+      localnet:
+        ipv4_address: 172.32.10.26
+
+  thor-api5:
+    hostname: thor-api5
+    build:
+      context: ../..
+      dockerfile: ./build/docker/Dockerfile
+    depends_on:
+      - thor-daemon
+    image: registry.gitlab.com/thorchain/thornode
+    restart: unless-stopped
+    environment:
+      NET: testnet
+      CHAIN_DAEMON: 172.32.10.26:26657
+    entrypoint:
+      /docker/scripts/rest.sh
+    volumes:
+      - "../scripts:/docker/scripts"
+      - ${HOME}/.thornode/genesis_5/.thord:/root/.thord
+      - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
+    command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://172.32.10.26:26657"]
+    networks:
+      localnet:
+        ipv4_address: 172.32.40.36
+
+  tss5:
+    hostname: tss5
+    image: registry.gitlab.com/thorchain/tss/go-tss
+    restart: unless-stopped
+    environment:
+      NET: testnet
+      SEED: 172.32.10.2
+      SEEDHTTPPORT: 4040
+      SEEDP2PPORT: 5040
+      TSSHTTPPORT: 4044
+      TSSP2PPORT: 5044
+      PRIVKEY: /root/.tss/private.key
+    entrypoint:
+      /docker/scripts/tss.sh
+    volumes:
+      - "../scripts:/docker/scripts"
+      - ${HOME}/.thornode/genesis_5/.tss:/root/.tss
+    networks:
+      localnet:
+        ipv4_address: 172.32.10.6
