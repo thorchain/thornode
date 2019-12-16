@@ -2,6 +2,7 @@ package observer
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -49,10 +50,9 @@ func binanceHeight(rpcHost string, client http.Client) (int64, error) {
 		return 0, errors.Wrap(err, "Unable to parse dex host")
 	}
 	u.Path = "abci_info"
-
 	resp, err := client.Get(u.String())
 	if err != nil {
-		return 0, errors.Wrap(err, "Get request failed")
+		return 0, fmt.Errorf("fail to get request(%s): %w", u.String(), err) // errors.Wrap(err, "Get request failed")
 	}
 
 	defer func() {

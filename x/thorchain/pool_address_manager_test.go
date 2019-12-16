@@ -7,7 +7,6 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/constants"
 )
 
 type PoolAddressManagerSuite struct{}
@@ -20,35 +19,17 @@ func (ps *PoolAddressManagerSuite) SetUpSuite(c *C) {
 
 func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	c.Assert(w.poolAddrMgr.currentPoolAddresses.IsEmpty(), Equals, false)
+	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().IsEmpty(), Equals, false)
 	c.Assert(w.poolAddrMgr.GetCurrentPoolAddresses().IsEmpty(), Equals, false)
 
-	rotateWindowOpenHeight := w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt
-	w.ctx = w.ctx.WithBlockHeight(rotateWindowOpenHeight)
-	w.poolAddrMgr.BeginBlock(w.ctx)
-	w.txOutStore.NewBlock(uint64(rotateWindowOpenHeight))
-	c.Assert(w.poolAddrMgr.IsRotateWindowOpen, Equals, true)
-
-	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	pk1, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{pk1}
-	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
+	w.poolAddrMgr.GetCurrentPoolAddresses().Next = common.PoolPubKeys{pk1}
 	// no asset get moved , because THORNode just opened window, however THORNode should instruct signer to kick off key sign process
-	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 1)
 	poolBNB := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.BNB", c)
 	poolTCan := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.TCAN-014", c)
 	poolLoki := createTempNewPoolForTest(w.ctx, w.keeper, "BNB.LOK-3C0", c)
-	rotatePoolHeight := w.poolAddrMgr.currentPoolAddresses.RotateAt
-	w.ctx = w.ctx.WithBlockHeight(rotatePoolHeight)
-	w.txOutStore.NewBlock(uint64(rotatePoolHeight))
-	w.poolAddrMgr.BeginBlock(w.ctx)
-	w.poolAddrMgr.EndBlock(w.ctx, w.txOutStore)
-	windowOpen := int64(constants.ValidatorsChangeWindow)
-	rotatePerBlockHeight := int64(constants.RotatePerBlockHeight)
-	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateAt, Equals, 100+rotatePerBlockHeight)
-	c.Assert(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt, Equals, 100+rotatePerBlockHeight-windowOpen)
-	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 4)
-	c.Assert(w.txOutStore.blockOut.Valid(), IsNil)
+	c.Assert(w.txOutStore.GetBlockOut().Valid(), IsNil)
 	totalBond := sdk.ZeroUint()
 	nodeAccounts, err := w.keeper.ListNodeAccounts(w.ctx)
 	c.Assert(err, IsNil)
@@ -59,12 +40,12 @@ func (PoolAddressManagerSuite) TestPoolAddressManager(c *C) {
 	poolGas, err := strconv.Atoi(defaultPoolGas)
 
 	c.Assert(err, IsNil)
-	for _, item := range w.txOutStore.blockOut.TxArray {
+	for _, item := range w.txOutStore.GetOutboundItems() {
 		c.Assert(item.Valid(), IsNil)
 		// make sure the fund is sending from previous pool address to current
 		c.Assert(item.Coin.IsValid(), IsNil)
 		chain := item.Coin.Asset.Chain
-		newChainPoolAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(chain)
+		newChainPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
 		c.Assert(newChainPoolAddr, NotNil)
 		newPoolAddr, err := newChainPoolAddr.GetAddress()
 		c.Assert(err, IsNil)
@@ -92,13 +73,9 @@ func createTempNewPoolForTest(ctx sdk.Context, k Keeper, input string, c *C) *Po
 	asset, err := common.NewAsset(input)
 	c.Assert(err, IsNil)
 	p.Asset = asset
-	// limiting balance to 59 bits, because the math done with floats looses
-	// precision if the number is greater than 59 bits.
-	// https://stackoverflow.com/questions/30897208/how-to-change-a-float64-number-to-uint64-in-a-right-way
-	// https://github.com/golang/go/issues/29463
 	p.BalanceRune = sdk.NewUint(1535169738538008)
 	p.BalanceAsset = sdk.NewUint(1535169738538008)
-	k.SetPool(ctx, p)
+	c.Assert(k.SetPool(ctx, p), IsNil)
 	k.SetChains(ctx, common.Chains{asset.Chain})
 	return &p
 }

@@ -5,11 +5,13 @@ import (
 	"strings"
 )
 
+// Query define all the queries
 type Query struct {
 	Key              string
 	EndpointTemplate string
 }
 
+// Endpoint return the end point string
 func (q Query) Endpoint(args ...string) string {
 	count := strings.Count(q.EndpointTemplate, "%s")
 	a := args[:count]
@@ -22,6 +24,7 @@ func (q Query) Endpoint(args ...string) string {
 	return fmt.Sprintf(q.EndpointTemplate, in...)
 }
 
+// Path return the path
 func (q Query) Path(args ...string) string {
 	temp := []string{args[0], q.Key}
 	args = append(temp, args[1:]...)
@@ -50,11 +53,12 @@ var (
 	QueryObserver         = Query{Key: "observer", EndpointTemplate: "/%s/observer/{%s}"}
 	QueryNodeAccounts     = Query{Key: "nodeaccounts", EndpointTemplate: "/%s/nodeaccounts"}
 	QueryNodeAccount      = Query{Key: "nodeaccount", EndpointTemplate: "/%s/nodeaccount/{%s}"}
-	QueryPoolAddresses    = Query{Key: "pooladdresses", EndpointTemplate: "/%s/pooladdresses"}
-	QueryValidators       = Query{Key: "validators", EndpointTemplate: "/%s/validators"}
+	QueryPoolAddresses    = Query{Key: "pooladdresses", EndpointTemplate: "/%s/pool_addresses"}
 	QueryVaultData        = Query{Key: "vaultdata", EndpointTemplate: "/%s/vault"}
+	QueryVaultPubkeys     = Query{Key: "pubkeys", EndpointTemplate: "/%s/vaults/pubkeys"}
 )
 
+// Queries all queries
 var Queries = []Query{
 	QueryAdminConfig,
 	QueryAdminConfigBnb,
@@ -77,6 +81,6 @@ var Queries = []Query{
 	QueryNodeAccount,
 	QueryNodeAccounts,
 	QueryPoolAddresses,
-	QueryValidators,
 	QueryVaultData,
+	QueryVaultPubkeys,
 }

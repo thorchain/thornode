@@ -3,7 +3,7 @@
 
 set -e
 
-echo "Waiting for Statechain API..."
+echo "Waiting for Thorchain API..."
 
 until curl -s "$1/thorchain/ping"; do
   # echo "Rest server is unavailable - sleeping"

@@ -3,6 +3,7 @@ package thorchain
 import (
 	"fmt"
 
+	"github.com/blang/semver"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -90,9 +91,9 @@ func setupKeeperForTest(c *C) (sdk.Context, Keeper) {
 type handlerTestWrapper struct {
 	ctx                  sdk.Context
 	keeper               Keeper
-	poolAddrMgr          *PoolAddressManager
-	validatorMgr         *ValidatorManager
-	txOutStore           *TxOutStore
+	poolAddrMgr          PoolAddressManager
+	validatorMgr         ValidatorManager
+	txOutStore           TxOutStore
 	activeNodeAccount    NodeAccount
 	notActiveNodeAccount NodeAccount
 }
@@ -113,17 +114,17 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		p.BalanceAsset = sdk.NewUint(100 * common.One)
 		c.Assert(k.SetPool(ctx, p), IsNil)
 	}
-	genesisPoolPubKey, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	genesisPoolPubKey, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	genesisPoolAddress := NewPoolAddresses(common.EmptyPoolPubKeys, common.PoolPubKeys{
 		genesisPoolPubKey,
-	}, common.EmptyPoolPubKeys, 100, 90)
+	}, common.EmptyPoolPubKeys)
 	k.SetPoolAddresses(ctx, genesisPoolAddress)
-	poolAddrMgr := NewPoolAddressManager(k)
-	validatorMgr := NewValidatorManager(k, poolAddrMgr)
-	c.Assert(poolAddrMgr.BeginBlock(ctx), IsNil)
+	poolAddrMgr := NewPoolAddressMgr(k)
+	poolAddrMgr.currentPoolAddresses = NewPoolAddresses(GetRandomPoolPubKeys(), GetRandomPoolPubKeys(), GetRandomPoolPubKeys())
+	validatorMgr := NewValidatorMgr(k, poolAddrMgr)
 	validatorMgr.BeginBlock(ctx)
-	txOutStore := NewTxOutStore(k, poolAddrMgr)
+	txOutStore := NewTxOutStorage(k, poolAddrMgr)
 	txOutStore.NewBlock(uint64(height))
 
 	return handlerTestWrapper{
@@ -216,7 +217,6 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	c.Assert(result.IsOK(), Equals, false)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 	msgEndPool = NewMsgEndPool(common.BNBAsset, tx, w.activeNodeAccount.NodeAddress)
-	c.Assert(w.poolAddrMgr.BeginBlock(w.ctx), IsNil)
 	stakeTxHash := GetRandomTxHash()
 	tx = common.NewTx(
 		stakeTxHash,
@@ -234,8 +234,11 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 		bnbAddr,
 		bnbAddr,
 		w.activeNodeAccount.NodeAddress)
-	stakeResult := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
+
+	stakeHandler := NewStakeHandler(w.keeper)
+	stakeResult := stakeHandler.Run(w.ctx, msgSetStake, semver.MustParse("0.1.0"))
 	c.Assert(stakeResult.Code, Equals, sdk.CodeOK)
+
 	p, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	c.Assert(p.Empty(), Equals, false)
@@ -252,7 +255,7 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	c.Check(p1.Status, Equals, PoolSuspended)
 	c.Check(p1.BalanceAsset.Uint64(), Equals, uint64(0))
 	c.Check(p1.BalanceRune.Uint64(), Equals, uint64(0))
-	txOut := w.txOutStore.blockOut
+	txOut := w.txOutStore.GetBlockOut()
 	c.Check(txOut, NotNil)
 	c.Check(len(txOut.TxArray) > 0, Equals, true)
 	c.Check(txOut.Height, Equals, uint64(1))
@@ -271,132 +274,9 @@ func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
 	c.Assert(totalRune.Equal(msgSetStake.RuneAmount), Equals, true)
 }
 
-func (HandlerSuite) TestHandleMsgSetStakeData(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-	bnbAddr := GetRandomBNBAddress()
-	stakeTxHash := GetRandomTxHash()
-	tx := common.NewTx(
-		stakeTxHash,
-		bnbAddr,
-		GetRandomBNBAddress(),
-		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
-		"",
-	)
-	msgSetStake := NewMsgSetStakeData(
-		tx,
-		common.BNBAsset,
-		sdk.NewUint(100*common.One),
-		sdk.NewUint(100*common.One),
-		bnbAddr,
-		bnbAddr,
-		w.notActiveNodeAccount.NodeAddress)
-	stakeResult := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
-	c.Assert(stakeResult.Code, Equals, sdk.CodeUnauthorized)
-
-	p, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	c.Assert(p.Empty(), Equals, true)
-	msgSetStake = NewMsgSetStakeData(
-		tx,
-		common.BNBAsset,
-		sdk.NewUint(100*common.One),
-		sdk.NewUint(100*common.One),
-		bnbAddr,
-		bnbAddr,
-		w.activeNodeAccount.NodeAddress)
-	stakeResult1 := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake)
-	c.Assert(stakeResult1.Code, Equals, sdk.CodeOK)
-
-	p, err = w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	c.Assert(p.Empty(), Equals, false)
-	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
-	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
-	e, err := w.keeper.GetCompletedEvent(w.ctx, 1)
-	c.Assert(err, IsNil)
-	c.Assert(e.Status.Valid(), IsNil)
-	c.Assert(e.InTx.ID.Equals(stakeTxHash), Equals, true)
-
-	// Suspended pool should not allow stake
-	p.Status = PoolSuspended
-	c.Assert(w.keeper.SetPool(w.ctx, p), IsNil)
-
-	msgSetStake1 := NewMsgSetStakeData(
-		tx,
-		common.BNBAsset,
-		sdk.NewUint(100*common.One),
-		sdk.NewUint(100*common.One),
-		GetRandomBNBAddress(),
-		GetRandomBNBAddress(),
-		w.activeNodeAccount.NodeAddress)
-	stakeResult2 := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake1)
-	c.Assert(stakeResult2.Code, Equals, sdk.CodeUnknownRequest)
-
-	msgSetStake2 := NewMsgSetStakeData(
-		tx,
-		common.BNBAsset,
-		sdk.NewUint(100*common.One),
-		sdk.NewUint(100*common.One),
-		"",
-		"",
-		w.activeNodeAccount.NodeAddress)
-	stakeResult3 := handleMsgSetStakeData(w.ctx, w.keeper, msgSetStake2)
-	c.Assert(stakeResult3.Code, Equals, sdk.CodeUnknownRequest)
-}
-
-func (HandlerSuite) TestHandleMsgConfirmNextPoolAddress(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-	// invalid msg
-	msgNextPoolAddrInvalid := NewMsgNextPoolAddress(
-		GetRandomTx(),
-		common.EmptyPubKey,
-		GetRandomBNBAddress(), common.BNBChain,
-		w.activeNodeAccount.NodeAddress)
-
-	c.Assert(handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddrInvalid).Code, Equals, sdk.CodeUnknownRequest)
-	// rotation window not open
-	msgNextPoolAddr := NewMsgNextPoolAddress(
-		GetRandomTx(),
-		GetRandomPubKey(),
-		GetRandomBNBAddress(),
-		common.BNBChain,
-		w.activeNodeAccount.NodeAddress)
-	result := handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddr)
-	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
-	// next pool had been confirmed already
-	w.ctx = w.ctx.WithBlockHeight(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt)
-	c.Assert(w.poolAddrMgr.BeginBlock(w.ctx), IsNil)
-
-	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
-	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Next = common.PoolPubKeys{pk1}
-	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddr)
-	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
-	chainSenderAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
-	senderAddr, err := chainSenderAddr.GetAddress()
-	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Next = common.EmptyPoolPubKeys
-	msgNextPoolAddr = NewMsgNextPoolAddress(
-		GetRandomTx(),
-		GetRandomPubKey(),
-		senderAddr,
-		common.BNBChain,
-		w.activeNodeAccount.NodeAddress)
-	w.txOutStore.NewBlock(1)
-	result = handleMsgConfirmNextPoolAddress(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, w.txOutStore, msgNextPoolAddr)
-	c.Assert(result.Code, Equals, sdk.CodeOK)
-	c.Assert(w.txOutStore.blockOut, NotNil)
-	c.Assert(w.txOutStore.blockOut.TxArray, HasLen, 1)
-	tai := w.txOutStore.blockOut.TxArray[0]
-	c.Assert(tai, NotNil)
-	c.Assert(tai.Memo, Equals, "ack")
-	c.Assert(tai.Coin.Amount.Uint64(), Equals, uint64(1))
-}
-
 func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	currentChainPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPool, NotNil)
 	txIn := types.NewObservedTx(
 		common.Tx{
@@ -434,7 +314,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 
 func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	currentChainPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPool, NotNil)
 	staker := GetRandomBNBAddress()
 	// lets do a stake first, otherwise nothing to withdraw
@@ -503,67 +383,12 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 
 }
 
-func (HandlerSuite) TestHandleMsgLeave(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-
-	ygg := NewYggdrasil(w.activeNodeAccount.NodePubKey.Secp256k1)
-	ygg.AddFunds(
-		common.Coins{
-			common.NewCoin(common.BNBAsset, sdk.NewUint(500*common.One)),
-			common.NewCoin(common.BTCAsset, sdk.NewUint(400*common.One)),
-		},
-	)
-	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
-
-	txID := GetRandomTxHash()
-	senderBNB := GetRandomBNBAddress()
-	tx := common.NewTx(
-		txID,
-		senderBNB,
-		GetRandomBNBAddress(),
-		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
-		"",
-	)
-	msgLeave := NewMsgLeave(tx, w.notActiveNodeAccount.NodeAddress)
-	c.Assert(msgLeave.ValidateBasic(), IsNil)
-	result := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.validatorMgr, msgLeave)
-	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
-
-	msgLeaveInvalidSender := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
-	// try to leave, invalid sender
-	result1 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.validatorMgr, msgLeaveInvalidSender)
-	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest)
-
-	// active node can leave , and will be queued
-	tx.ID = GetRandomTxHash()
-	tx.FromAddress = w.activeNodeAccount.BondAddress
-	msgLeaveActiveNode := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
-	resultActiveNode := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.validatorMgr, msgLeaveActiveNode)
-	c.Assert(resultActiveNode.Code, Equals, sdk.CodeOK)
-
-	acc2 := GetRandomNodeAccount(NodeStandby)
-	acc2.Bond = sdk.NewUint(100 * common.One)
-	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc2), IsNil)
-
-	tx.ID = ""
-	tx.FromAddress = acc2.BondAddress
-	invalidMsg := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
-	result3 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.validatorMgr, invalidMsg)
-	c.Assert(result3.Code, Equals, sdk.CodeUnknownRequest)
-
-	tx.ID = GetRandomTxHash()
-	msgLeave1 := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
-	result2 := handleMsgLeave(w.ctx, w.keeper, w.txOutStore, w.validatorMgr, msgLeave1)
-	c.Assert(result2.Code, Equals, sdk.CodeOK)
-}
-
 func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	currentChainPool := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	currentChainPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
 	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr)
 
-	tx := common.Tx{
+	tx := NewObservedTx(common.Tx{
 		ID:          GetRandomTxHash(),
 		Chain:       common.BNBChain,
 		Coins:       common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(1*common.One))},
@@ -571,24 +396,24 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   currentChainPool.Address,
 		Gas:         common.BNBGasFeeSingleton,
-	}
+	}, sdk.NewUint(12), GetRandomPubKey())
 
-	msgOutboundTx := NewMsgOutboundTx(tx, tx.ID, w.notActiveNodeAccount.NodeAddress)
+	msgOutboundTx := NewMsgOutboundTx(tx, tx.Tx.ID, w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTx)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
-	tx.ID = ""
-	msgInvalidOutboundTx := NewMsgOutboundTx(tx, tx.ID, w.activeNodeAccount.NodeAddress)
+	tx.Tx.ID = ""
+	msgInvalidOutboundTx := NewMsgOutboundTx(tx, tx.Tx.ID, w.activeNodeAccount.NodeAddress)
 	result1 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidOutboundTx)
 	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest, Commentf("%+v\n", result1))
 
-	tx.ID = GetRandomTxHash()
-	msgInvalidPool := NewMsgOutboundTx(tx, tx.ID, w.activeNodeAccount.NodeAddress)
+	tx.Tx.ID = GetRandomTxHash()
+	msgInvalidPool := NewMsgOutboundTx(tx, tx.Tx.ID, w.activeNodeAccount.NodeAddress)
 	result2 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidPool)
 	c.Assert(result2.Code, Equals, sdk.CodeUnauthorized, Commentf("%+v\n", result2))
 
 	w = getHandlerTestWrapper(c, 1, true, true)
-	currentChainPool = w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	currentChainPool = w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPool, NotNil)
 
 	ygg := NewYggdrasil(currentChainPool.PubKey)
@@ -600,17 +425,18 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 
 	currentPoolAddr, err := currentChainPool.GetAddress()
 	c.Assert(err, IsNil)
-	tx.FromAddress = currentPoolAddr
-	tx.Coins = common.Coins{
+	tx.ObservedPubKey = currentChainPool.PubKey
+	tx.Tx.FromAddress = currentPoolAddr
+	tx.Tx.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(200*common.One)),
 	}
-	msgOutboundTxNormal := NewMsgOutboundTx(tx, tx.ID, w.activeNodeAccount.NodeAddress)
+	msgOutboundTxNormal := NewMsgOutboundTx(tx, tx.Tx.ID, w.activeNodeAccount.NodeAddress)
 	result3 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal)
 	c.Assert(result3.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result3))
 	ygg, err = w.keeper.GetYggdrasil(w.ctx, currentChainPool.PubKey)
 	c.Assert(err, IsNil)
-	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(300*common.One)), Equals, true)
+	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(29999962500)), Equals, true) // 300 - Gas
 	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)
 
 	w.txOutStore.NewBlock(2)
@@ -634,7 +460,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	result = handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
-	tx = common.Tx{
+	tx = NewObservedTx(common.Tx{
 		ID:          GetRandomTxHash(),
 		Chain:       common.BNBChain,
 		Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
@@ -642,7 +468,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		FromAddress: currentChainPool.Address,
 		ToAddress:   GetRandomBNBAddress(),
 		Gas:         common.BNBGasFeeSingleton,
-	}
+	}, sdk.NewUint(12), GetRandomPubKey())
 
 	outMsg := NewMsgOutboundTx(tx, inTxID, w.activeNodeAccount.NodeAddress)
 	ctx := w.ctx.WithBlockHeight(2)
@@ -650,8 +476,8 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	c.Assert(result4.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result4))
 
 	w.txOutStore.CommitBlock(ctx)
-	tx.FromAddress = currentPoolAddr
-	tx.ID = inTxID
+	tx.Tx.FromAddress = currentPoolAddr
+	tx.Tx.ID = inTxID
 	result = handler(ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 
@@ -673,90 +499,17 @@ func (HandlerSuite) TestHandleMsgSetAdminConfig(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 
 	tx := GetRandomTx()
-	msgSetAdminCfg := NewMsgSetAdminConfig(tx, GSLKey, "0.5", w.notActiveNodeAccount.NodeAddress)
+	msgSetAdminCfg := NewMsgSetAdminConfig(tx, PoolRefundGasKey, "1000", w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgSetAdminConfig(w.ctx, w.keeper, msgSetAdminCfg)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
-	msgSetAdminCfg = NewMsgSetAdminConfig(tx, GSLKey, "0.5", w.activeNodeAccount.NodeAddress)
+	msgSetAdminCfg = NewMsgSetAdminConfig(tx, PoolRefundGasKey, "1000", w.activeNodeAccount.NodeAddress)
 	result1 := handleMsgSetAdminConfig(w.ctx, w.keeper, msgSetAdminCfg)
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
 
 	msgInvalidSetAdminCfg := NewMsgSetAdminConfig(tx, "Whatever", "blablab", w.activeNodeAccount.NodeAddress)
 	result2 := handleMsgSetAdminConfig(w.ctx, w.keeper, msgInvalidSetAdminCfg)
 	c.Assert(result2.Code, Equals, sdk.CodeUnknownRequest)
-}
-
-func (HandlerSuite) TestHandleMsgAdd(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-	tx := GetRandomTx()
-	msgAdd := NewMsgAdd(tx, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), w.notActiveNodeAccount.NodeAddress)
-	result := handleMsgAdd(w.ctx, w.keeper, msgAdd)
-	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
-
-	msgInvalidAdd := NewMsgAdd(tx, common.Asset{}, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), w.activeNodeAccount.NodeAddress)
-	result1 := handleMsgAdd(w.ctx, w.keeper, msgInvalidAdd)
-	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest)
-
-	msgAdd = NewMsgAdd(tx, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), w.activeNodeAccount.NodeAddress)
-	result2 := handleMsgAdd(w.ctx, w.keeper, msgAdd)
-	c.Assert(result2.Code, Equals, sdk.CodeUnknownRequest)
-
-	pool, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	pool.Asset = common.BNBAsset
-	pool.BalanceRune = sdk.NewUint(10 * common.One)
-	pool.BalanceAsset = sdk.NewUint(20 * common.One)
-	pool.Status = PoolEnabled
-	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
-	result3 := handleMsgAdd(w.ctx, w.keeper, msgAdd)
-	c.Assert(result3.Code, Equals, sdk.CodeOK)
-	pool, err = w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	c.Assert(pool.Status, Equals, PoolEnabled)
-	c.Assert(pool.BalanceAsset.Uint64(), Equals, sdk.NewUint(120*common.One).Uint64())
-	c.Assert(pool.BalanceRune.Uint64(), Equals, sdk.NewUint(110*common.One).Uint64())
-	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
-
-}
-func (HandlerSuite) TestHandleMsgAck(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-	sender := GetRandomBNBAddress()
-	signer := GetRandomBech32Addr()
-	nextPoolPubKey := GetRandomPubKey()
-	// invalid msg
-	msgAckInvalid := NewMsgAck(common.Tx{}, sender, common.BNBChain, signer)
-	result := handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgAckInvalid)
-	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
-
-	// Pool rotation window didn't open
-	msgAck := NewMsgAck(GetRandomTx(), sender, common.BNBChain, signer)
-	result = handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgAck)
-	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
-
-	w.ctx = w.ctx.WithBlockHeight(w.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt)
-	// open the window
-	c.Assert(w.poolAddrMgr.BeginBlock(w.ctx), IsNil)
-	// didn't observe next pool address
-	result = handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgAck)
-	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
-	nextChainPoolPubKey, err := common.NewPoolPubKey(common.BNBChain, 0, nextPoolPubKey)
-	c.Assert(err, IsNil)
-	w.poolAddrMgr.ObservedNextPoolAddrPubKey = common.PoolPubKeys{
-		nextChainPoolPubKey,
-	}
-	// sender is not the same as the observed next pool public key
-	result = handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgAck)
-	c.Assert(result.Code, Equals, sdk.CodeUnknownRequest)
-	senderAddr, err := nextPoolPubKey.GetAddress(common.BNBChain)
-	c.Assert(err, IsNil)
-	msgAck1 := NewMsgAck(GetRandomTx(), senderAddr, common.BNBChain, signer)
-	result = handleMsgAck(w.ctx, w.keeper, w.poolAddrMgr, w.validatorMgr, msgAck1)
-	c.Assert(result.Code, Equals, sdk.CodeOK)
-	c.Assert(w.poolAddrMgr.ObservedNextPoolAddrPubKey.IsEmpty(), Equals, true)
-	c.Assert(w.poolAddrMgr.currentPoolAddresses.Next.IsEmpty(), Equals, false)
-	nodeAccount, err := w.keeper.GetNodeAccount(w.ctx, w.activeNodeAccount.NodeAddress)
-	c.Assert(err, IsNil)
-	c.Assert(nodeAccount.SignerMembership, HasLen, 1)
 }
 
 func (HandlerSuite) TestRefund(c *C) {
@@ -788,7 +541,7 @@ func (HandlerSuite) TestRefund(c *C) {
 		currentPoolAddr.PubKey,
 	)
 
-	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true), IsNil)
+	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, true), IsNil)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 
 	// check THORNode DONT create a refund transaction when THORNode don't have a pool for
@@ -798,7 +551,7 @@ func (HandlerSuite) TestRefund(c *C) {
 		common.NewCoin(lokiAsset, sdk.NewUint(100*common.One)),
 	}
 
-	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true), IsNil)
+	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, true), IsNil)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	var err error
 	pool, err = w.keeper.GetPool(w.ctx, lokiAsset)
@@ -807,7 +560,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	c.Assert(pool.BalanceAsset.Equal(sdk.ZeroUint()), Equals, true, Commentf("%d", pool.BalanceAsset.Uint64()))
 
 	// doing it a second time should keep it at zero
-	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, currentPoolAddr.PubKey, currentPoolAddr.Chain, true), IsNil)
+	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, true), IsNil)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool, err = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(err, IsNil)

@@ -12,11 +12,10 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 
 	q "gitlab.com/thorchain/thornode/x/thorchain/query"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // NewQuerier is the module level router for state queries
-func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr *ValidatorManager) sdk.Querier {
+func NewQuerier(keeper Keeper, poolAddressMgr PoolAddressManager, validatorMgr ValidatorManager) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		ctx.Logger().Info("query", "path", path[0])
 		switch path[0] {
@@ -35,9 +34,9 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 		case q.QueryAdminConfig.Key, q.QueryAdminConfigBnb.Key:
 			return queryAdminConfig(ctx, path[1:], req, keeper)
 		case q.QueryTxOutArray.Key:
-			return queryTxOutArray(ctx, path[1:], req, keeper)
+			return queryTxOutArray(ctx, path[1:], req, keeper, validatorMgr)
 		case q.QueryTxOutArrayPubkey.Key:
-			return queryTxOutArray(ctx, path[1:], req, keeper)
+			return queryTxOutArray(ctx, path[1:], req, keeper, validatorMgr)
 		case q.QueryIncompleteEvents.Key:
 			return queryInCompleteEvents(ctx, path[1:], req, keeper)
 		case q.QueryCompleteEvents.Key:
@@ -56,10 +55,10 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 			return queryNodeAccounts(ctx, path[1:], req, keeper)
 		case q.QueryPoolAddresses.Key:
 			return queryPoolAddresses(ctx, path[1:], req, keeper, poolAddressMgr)
-		case q.QueryValidators.Key:
-			return queryValidators(ctx, keeper, validatorMgr)
 		case q.QueryVaultData.Key:
 			return queryVaultData(ctx, keeper)
+		case q.QueryVaultPubkeys.Key:
+			return queryVaultsPubkeys(ctx, keeper, poolAddressMgr)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown thorchain query endpoint: %s", path[0]),
@@ -67,7 +66,34 @@ func NewQuerier(keeper Keeper, poolAddressMgr *PoolAddressManager, validatorMgr 
 		}
 	}
 }
-
+func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper, poolMgr PoolAddressManager) ([]byte, sdk.Error) {
+	asgard := poolMgr.GetCurrentPoolAddresses().Current
+	var resp struct {
+		Asgard    []common.PubKey `json:"asgard"`
+		Yggdrasil []common.PubKey `json:"yggdrasil"`
+	}
+	iter := keeper.GetYggdrasilIterator(ctx)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		var ygg Yggdrasil
+		if err := keeper.Cdc().UnmarshalBinaryBare(iter.Value(), &ygg); nil != err {
+			ctx.Logger().Error("fail to unmarshal yggdrasil", err)
+			return nil, sdk.ErrInternal("fail to unmarshal yggdrasil")
+		}
+		if ygg.HasFunds() {
+			resp.Yggdrasil = append(resp.Yggdrasil, ygg.PubKey)
+		}
+	}
+	for _, item := range asgard {
+		resp.Asgard = append(resp.Asgard, item.PubKey)
+	}
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal pubkeys response to json", err)
+		return nil, sdk.ErrInternal("fail to marshal response to json")
+	}
+	return res, nil
+}
 func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	data, err := keeper.GetVaultData(ctx)
 	if nil != err {
@@ -78,34 +104,6 @@ func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	if nil != err {
 		ctx.Logger().Error("fail to marshal vault data to json", err)
 		return nil, sdk.ErrInternal("fail to marshal response to json")
-	}
-	return res, nil
-}
-
-func queryValidators(ctx sdk.Context, keeper Keeper, validatorMgr *ValidatorManager) ([]byte, sdk.Error) {
-	activeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get all active node accounts", err)
-		return nil, sdk.ErrInternal("fail to get all active accounts")
-	}
-
-	resp := types.ValidatorsResp{
-		ActiveNodes: activeAccounts,
-	}
-	if validatorMgr.Meta != nil {
-		resp.RotateAt = uint64(validatorMgr.Meta.RotateAtBlockHeight)
-		resp.RotateWindowOpenAt = uint64(validatorMgr.Meta.RotateWindowOpenAtBlockHeight)
-		if !validatorMgr.Meta.Nominated.IsEmpty() {
-			resp.Nominated = validatorMgr.Meta.Nominated
-		}
-		if !validatorMgr.Meta.Queued.IsEmpty() {
-			resp.Queued = validatorMgr.Meta.Queued
-		}
-	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
-	if nil != err {
-		ctx.Logger().Error("fail to marshal validator response to json", err)
-		return nil, sdk.ErrInternal("fail to marshal validator response to json")
 	}
 	return res, nil
 }
@@ -125,7 +123,7 @@ func queryChains(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte,
 	return res, nil
 }
 
-func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, manager *PoolAddressManager) ([]byte, sdk.Error) {
+func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, manager PoolAddressManager) ([]byte, sdk.Error) {
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), manager.GetCurrentPoolAddresses())
 	if nil != err {
 		ctx.Logger().Error("fail to marshal current pool address to json", err)
@@ -249,7 +247,7 @@ func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 }
 
 // nolint: unparam
-func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, poolAddrMgr *PoolAddressManager) ([]byte, sdk.Error) {
+func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, poolAddrMgr PoolAddressManager) ([]byte, sdk.Error) {
 	asset, err := common.NewAsset(path[0])
 	if err != nil {
 		ctx.Logger().Error("fail to parse asset", err)
@@ -275,7 +273,6 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		return nil, sdk.ErrInternal("fail to get bnb chain pool address")
 	}
 	pool.PoolAddress = addr
-	pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), pool)
 	if err != nil {
 		return nil, sdk.ErrInternal("could not marshal result to JSON")
@@ -283,7 +280,7 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	return res, nil
 }
 
-func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrMgr *PoolAddressManager) ([]byte, sdk.Error) {
+func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrMgr PoolAddressManager) ([]byte, sdk.Error) {
 	pools := QueryResPools{}
 	iterator := keeper.GetPoolIterator(ctx)
 	currentPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
@@ -299,7 +296,6 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrM
 		var pool Pool
 		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
 		pool.PoolAddress = addr
-		pool.ExpiryInBlockHeight = currentPoolAddr.RotateAt - req.Height
 		pools = append(pools, pool)
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), pools)
@@ -333,7 +329,7 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	return res, nil
 }
 
-func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, validatorMgr ValidatorManager) ([]byte, sdk.Error) {
 	var err error
 	height, err := strconv.ParseUint(path[0], 0, 64)
 	if nil != err {
@@ -349,7 +345,6 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 			return nil, sdk.ErrInternal("fail to parse pubkey")
 		}
 	}
-
 	txs, err := keeper.GetTxOut(ctx, height)
 	if nil != err {
 		ctx.Logger().Error("fail to get tx out array from key value store", err)
@@ -361,7 +356,7 @@ func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 			Height: txs.Height,
 		}
 		for _, tx := range txs.TxArray {
-			if pk.Equals(tx.PoolAddress) {
+			if pk.Equals(tx.VaultPubKey) {
 				newTxs.TxArray = append(newTxs.TxArray, tx)
 			}
 		}

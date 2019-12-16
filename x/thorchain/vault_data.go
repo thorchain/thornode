@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"math"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -25,15 +23,17 @@ func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.U
 }
 
 // Calculate the block rewards that bonders and stakers should receive
-func calcBlockRewards(totalReserve sdk.Uint, totalLiquidityFees sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint) {
+func calcBlockRewards(totalStaked, totalBonded, totalReserve, totalLiquidityFees sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint) {
 	// Block Rewards will take the latest reserve, divide it by the emission curve factor, then divide by blocks per year
-	blockReward := sdk.NewUint(uint64(math.Round(
-		(float64(totalReserve.Uint64()) / float64(constants.EmissionCurve)) / float64(constants.BlocksPerYear),
-	)))
+	trD := sdk.NewDec(int64(totalReserve.Uint64()))
+	ecD := sdk.NewDec(int64(constants.EmissionCurve))
+	bpyD := sdk.NewDec(int64(constants.BlocksPerYear))
+	blockRewardD := trD.Quo(ecD).Quo(bpyD)
+	blockReward := sdk.NewUint(uint64((blockRewardD).RoundInt64()))
 
-	systemIncome := blockReward.Add(totalLiquidityFees)      // Get total system income for block
-	stakerSplit := systemIncome.QuoUint64(3)                 // 1/3rd to Stakers
-	bonderSplit := common.SafeSub(systemIncome, stakerSplit) // 2/3rd to Bonders
+	systemIncome := blockReward.Add(totalLiquidityFees)                 // Get total system income for block
+	stakerSplit := getPoolShare(totalStaked, totalBonded, systemIncome) // Get staker share
+	bonderSplit := common.SafeSub(systemIncome, stakerSplit)            // Remainder to Bonders
 
 	stakerDeficit := sdk.ZeroUint()
 	poolReward := sdk.ZeroUint()
@@ -49,4 +49,17 @@ func calcBlockRewards(totalReserve sdk.Uint, totalLiquidityFees sdk.Uint) (sdk.U
 	bondReward := bonderSplit // Give bonders their split
 
 	return bondReward, poolReward, stakerDeficit
+}
+
+func getPoolShare(totalStaked, totalBonded, totalRewards sdk.Uint) sdk.Uint {
+	// Targets a linear change in rewards from 0% staked, 33% staked, 100% staked.
+	// 0% staked: All rewards to stakers
+	// 33% staked: 33% to stakers
+	// 100% staked: All rewards to Bonders
+
+	if totalStaked.GTE(totalBonded) { // Zero payments to stakers when staked == bonded
+		return sdk.ZeroUint()
+	}
+	factor := totalBonded.Add(totalStaked).Quo(common.SafeSub(totalBonded, totalStaked)) // (y + x) / (y - x)
+	return totalRewards.Quo(factor)
 }

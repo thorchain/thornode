@@ -1,0 +1,141 @@
+[
+{	
+"TX":1,	
+"FROM":"MASTER",	
+"TO":"USER-1",	
+"MEMO":"SEED",	
+"COINS":
+{"RUNE-A1F":50000000000,	
+"BNB":50000000,
+"LOK-3C0":50000000000}	
+}	,
+{	
+"TX":2,	
+"FROM":"MASTER",	
+"TO":"STAKER-1",	
+"MEMO":"SEED",	
+"COINS":
+{"RUNE-A1F":100000000000,	
+"BNB":200000000,
+"LOK-3C0":40000000000}	
+}	,
+{	
+"TX":3,	
+"FROM":"MASTER",	
+"TO":"STAKER-2",	
+"MEMO":"SEED",	
+"COINS":
+{"RUNE-A1F":50000000000,	
+"BNB":200000000,
+"LOK-3C0":10000000000}	
+}	,
+{	
+"TX":4,	
+"FROM":"STAKER-1",	
+"TO":"VAULT",	
+"MEMO":"STAKE:BNB.BNB",	
+"COINS":
+{"RUNE-A1F":50000000000,	
+"BNB":150000000,
+"LOK-3C0":0}	
+}	,
+{	
+"TX":5,	
+"FROM":"STAKER-1",	
+"TO":"VAULT",	
+"MEMO":"STAKE:BNB.LOK-3C0",	
+"COINS":
+{"RUNE-A1F":50000000000,	
+"BNB":0,
+"LOK-3C0":10000000000}	
+}	,
+{	
+"TX":6,	
+"FROM":"USER-1",	
+"TO":"VAULT",	
+"MEMO":"SWAP:BNB.BNB",	
+"COINS":
+{"RUNE-A1F":100000000,	
+"BNB":0,
+"LOK-3C0":0}	
+}	,
+{	
+"TX":7,	
+"FROM":"USER-1",	
+"TO":"VAULT",	
+"MEMO":"SWAP:BNB.RUNE-A1F",	
+"COINS":
+{"RUNE-A1F":0,	
+"BNB":10000000,
+"LOK-3C0":0}	
+}	,
+{	
+"TX":8,	
+"FROM":"USER-1",	
+"TO":"VAULT",	
+"MEMO":"SWAP:BNB.BNB:STAKER-1:347168",	
+"COINS":
+{"RUNE-A1F":100000000,	
+"BNB":0,
+"LOK-3C0":0}	
+}	,
+{	
+"TX":9,	
+"FROM":"USER-1",	
+"TO":"VAULT",	
+"MEMO":"SWAP:BNB.BNB:STAKER-1:326868",	
+"COINS":
+{"RUNE-A1F":100000000,	
+"BNB":0,
+"LOK-3C0":0}	
+}	,
+{	
+"TX":10,	
+"FROM":"USER-1",	
+"TO":"VAULT",	
+"MEMO":"SWAP:BNB.RUNE-A1F:STAKER-1",	
+"COINS":
+{"RUNE-A1F":0,	
+"BNB":10000000,
+"LOK-3C0":0}	
+}	,
+{	
+"TX":11,	
+"FROM":"USER-1",	
+"TO":"VAULT",	
+"MEMO":"SWAP:BNB.RUNE-A1F",	
+"COINS":
+{"RUNE-A1F":0,	
+"BNB":0,
+"LOK-3C0":500000000}	
+}	,
+{	
+"TX":12,	
+"FROM":"USER-1",	
+"TO":"VAULT",	
+"MEMO":"SWAP:BNB.LOK-3C0",	
+"COINS":
+{"RUNE-A1F":5000000000,	
+"BNB":0,
+"LOK-3C0":0}	
+}	,
+{	
+"TX":13,	
+"FROM":"USER-1",	
+"TO":"VAULT",	
+"MEMO":"SWAP:BNB.BNB",	
+"COINS":
+{"RUNE-A1F":0,	
+"BNB":0,
+"LOK-3C0":500000000}	
+}	,
+{	
+"TX":14,	
+"FROM":"USER-1",	
+"TO":"VAULT",	
+"MEMO":"SWAP:BNB.LOK-3C0",	
+"COINS":
+{"RUNE-A1F":0,	
+"BNB":5000000,
+"LOK-3C0":0}	
+}	]

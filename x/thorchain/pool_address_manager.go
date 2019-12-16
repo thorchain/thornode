@@ -7,39 +7,55 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/constants"
 )
 
 // const values used to emit events
 const (
-	EventTypeNewPoolAddress    = `NewPoolAddress`
+	EventTypeNewPoolAddress    = "NewPoolAddress"
 	EventTypeAbortPoolRotation = "AbortPoolRotation"
 )
 
-// PoolAddressManager is going to manage the pool addresses , rotate etc
-type PoolAddressManager struct {
-	k                          Keeper
-	currentPoolAddresses       *PoolAddresses
-	ObservedNextPoolAddrPubKey common.PoolPubKeys
-	IsRotateWindowOpen         bool
+type PoolAddressManager interface {
+	BeginBlock(_ sdk.Context) error
+	RotatePoolAddress(_ sdk.Context, _ common.PoolPubKeys, _ TxOutStore)
+	GetCurrentPoolAddresses() *PoolAddresses
+	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
 }
 
-// NewPoolAddressManager create a new PoolAddressManager
-func NewPoolAddressManager(k Keeper) *PoolAddressManager {
-	return &PoolAddressManager{
+// PoolAddressMgr is going to manage the pool addresses , rotate etc
+type PoolAddressMgr struct {
+	k                          Keeper
+	currentPoolAddresses       *PoolAddresses
+	observedNextPoolAddrPubKey common.PoolPubKeys
+	isRotateWindowOpen         bool
+}
+
+// NewPoolAddressMgr create a new PoolAddressMgr
+func NewPoolAddressMgr(k Keeper) *PoolAddressMgr {
+	return &PoolAddressMgr{
 		k: k,
 	}
 }
 
 // GetCurrentPoolAddresses return current pool addresses
-func (pm *PoolAddressManager) GetCurrentPoolAddresses() *PoolAddresses {
+func (pm *PoolAddressMgr) GetCurrentPoolAddresses() *PoolAddresses {
 	return pm.currentPoolAddresses
 }
 
+func (pm *PoolAddressMgr) IsRotateWindowOpen() bool {
+	return pm.isRotateWindowOpen
+}
+
+func (pm *PoolAddressMgr) SetRotateWindowOpen(b bool) {
+	pm.isRotateWindowOpen = b
+}
+
+func (pm *PoolAddressMgr) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {
+	return pm.GetCurrentPoolAddresses().Current.GetByChain(chain)
+}
+
 // BeginBlock should be called when BeginBlock
-func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context) error {
-	height := ctx.BlockHeight()
-	// decide pool addresses
+func (pm *PoolAddressMgr) BeginBlock(ctx sdk.Context) error {
 	if pm.currentPoolAddresses == nil || pm.currentPoolAddresses.IsEmpty() {
 		poolAddresses, err := pm.k.GetPoolAddresses(ctx)
 		if err != nil {
@@ -48,71 +64,12 @@ func (pm *PoolAddressManager) BeginBlock(ctx sdk.Context) error {
 		pm.currentPoolAddresses = &poolAddresses
 	}
 
-	if height >= pm.currentPoolAddresses.RotateWindowOpenAt && height < pm.currentPoolAddresses.RotateAt {
-		if pm.IsRotateWindowOpen {
-			return nil
-		}
-		pm.IsRotateWindowOpen = true
-	}
 	return nil
 }
 
-// EndBlock contains some actions THORNode need to take when block commit
-func (pm *PoolAddressManager) EndBlock(ctx sdk.Context, store *TxOutStore) {
-	if nil == pm.currentPoolAddresses {
-		return
-	}
-	// pool rotation window open
-	if pm.IsRotateWindowOpen && ctx.BlockHeight() == pm.currentPoolAddresses.RotateWindowOpenAt {
-		// instruct signer to kick off tss keygen ceremony
-		store.AddTxOutItem(ctx, pm.k, &TxOutItem{
-			Chain: common.BNBChain,
-			// Leave ToAddress empty on purpose, signer will observe this txout, and then kick of tss keygen ceremony
-			ToAddress:   "",
-			PoolAddress: pm.currentPoolAddresses.Current.GetByChain(common.BNBChain).PubKey,
-			Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(37501)),
-			Memo:        "nextpool",
-		}, true)
-	}
-	pm.rotatePoolAddress(ctx, store)
-	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
-}
-
-func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, store *TxOutStore) {
+func (pm *PoolAddressMgr) RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore) {
 	poolAddresses := pm.currentPoolAddresses
-	if ctx.BlockHeight() == 1 {
-		// THORNode don't need to do anything on
-		return
-	}
-	if poolAddresses.IsEmpty() {
-		ctx.Logger().Error("current pool addresses is nil , something is wrong")
-		return
-	}
-	// likely there is a configuration error
-	if poolAddresses.RotateAt == 0 {
-		ctx.Logger().Error("rotate at block height had been set at 0, likely there is configuration error")
-		return
-	}
-
-	height := ctx.BlockHeight()
-	// it is not time to rotate yet
-	if poolAddresses.RotateAt > height {
-		return
-	}
-
-	if poolAddresses.Next.IsEmpty() {
-		ctx.Logger().Error("next pool address has not been confirmed , abort pool rotation")
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeAbortPoolRotation, sdk.NewAttribute("reason", "no next pool address")))
-		return
-	}
-
-	rotatePerBlockHeight := constants.RotatePerBlockHeight
-	windowOpen := constants.ValidatorsChangeWindow
-	rotateAt := height + int64(rotatePerBlockHeight)
-	windowOpenAt := rotateAt - int64(windowOpen)
-	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolAddresses.Next, common.EmptyPoolPubKeys, rotateAt, windowOpenAt)
-
+	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolpubkeys, common.EmptyPoolPubKeys)
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNewPoolAddress,
 			sdk.NewAttribute("current pool pub key", pm.currentPoolAddresses.Current.String()),
@@ -124,7 +81,7 @@ func (pm *PoolAddressManager) rotatePoolAddress(ctx sdk.Context, store *TxOutSto
 }
 
 // move all assets based on pool balance to new pool
-func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses *PoolAddresses) error {
+func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, addresses *PoolAddresses) error {
 	chains, err := k.GetChains(ctx)
 	if err != nil {
 		return err
@@ -144,7 +101,7 @@ func moveAssetsToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, addresses
 	return moveBNBChainAssetToNewPool(ctx, k, store, runeTotal, addresses)
 }
 
-func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain common.Chain, addresses *PoolAddresses) (sdk.Uint, error) {
+func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, chain common.Chain, addresses *PoolAddresses) (sdk.Uint, error) {
 	currentAddr := addresses.Current.GetByChain(chain)
 	previousAddr := addresses.Previous.GetByChain(chain)
 	if currentAddr.Equals(previousAddr) {
@@ -182,18 +139,18 @@ func moveChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, chain
 		return sdk.ZeroUint(), fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", chain, addresses.Current, err)
 	}
 	for _, coin := range coins {
-		store.AddTxOutItem(ctx, k, &TxOutItem{
+		store.AddTxOutItem(ctx, &TxOutItem{
 			Chain:       currentAddr.Chain,
-			PoolAddress: previousAddr.PubKey,
+			VaultPubKey: previousAddr.PubKey,
 			InHash:      common.BlankTxID,
 			ToAddress:   toAddr,
 			Coin:        coin,
-		}, true)
+		})
 	}
 	return runeTotal, nil
 }
 
-func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, runeTotal sdk.Uint, addresses *PoolAddresses) error {
+func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store TxOutStore, runeTotal sdk.Uint, addresses *PoolAddresses) error {
 	currentAddr := addresses.Current.GetByChain(common.BNBChain)
 	previousAddr := addresses.Previous.GetByChain(common.BNBChain)
 	if currentAddr.Equals(previousAddr) {
@@ -243,13 +200,13 @@ func moveBNBChainAssetToNewPool(ctx sdk.Context, k Keeper, store *TxOutStore, ru
 		return fmt.Errorf("fail to get address for chain %s from pub key %s ,err:%w", common.BNBChain, addresses.Current, err)
 	}
 	for _, coin := range coins {
-		store.AddTxOutItem(ctx, k, &TxOutItem{
+		store.AddTxOutItem(ctx, &TxOutItem{
 			Chain:       currentAddr.Chain,
-			PoolAddress: previousAddr.PubKey,
+			VaultPubKey: previousAddr.PubKey,
 			InHash:      common.BlankTxID,
 			ToAddress:   toAddr,
 			Coin:        coin,
-		}, true)
+		})
 	}
 	return nil
 }

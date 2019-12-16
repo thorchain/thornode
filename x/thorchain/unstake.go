@@ -117,8 +117,8 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	return withdrawRune, withDrawAsset, common.SafeSub(fStakerUnit, unitAfter), nil
 }
 
-func calculateUnstake(poolUnit, poolRune, poolAsset, stakerUnit, withdrawBasisPoints sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint, error) {
-	if poolUnit.IsZero() {
+func calculateUnstake(poolUnits, poolRune, poolAsset, stakerUnits, withdrawBasisPoints sdk.Uint) (sdk.Uint, sdk.Uint, sdk.Uint, error) {
+	if poolUnits.IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("poolUnits can't be zero")
 	}
 	if poolRune.IsZero() {
@@ -127,20 +127,16 @@ func calculateUnstake(poolUnit, poolRune, poolAsset, stakerUnit, withdrawBasisPo
 	if poolAsset.IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("pool asset balance can't be zero")
 	}
-	if stakerUnit.IsZero() {
+	if stakerUnits.IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("staker unit can't be zero")
 	}
 	if withdrawBasisPoints.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.Errorf("withdraw basis point %s is not valid", withdrawBasisPoints.String())
 	}
-	percentage := common.UintToFloat64(withdrawBasisPoints) / 100
-	stakerOwnership := common.UintToFloat64(stakerUnit) / common.UintToFloat64(poolUnit)
 
-	//withdrawRune := stakerOwnership.Mul(withdrawBasisPoints).Quo(sdk.NewUint(10000)).Mul(poolRune)
-	//withdrawAsset := stakerOwnership.Mul(withdrawBasisPoints).Quo(sdk.NewUint(10000)).Mul(poolAsset)
-	//unitAfter := common.SafeSub(stakerUnit.Mul(sdk.NewUint(MaxWithdrawBasisPoints), withdrawBasisPoints).Quo(sdk.NewUint(10000)))
-	withdrawRune := stakerOwnership * percentage / 100 * common.UintToFloat64(poolRune)
-	withdrawAsset := stakerOwnership * percentage / 100 * common.UintToFloat64(poolAsset)
-	unitAfter := common.UintToFloat64(stakerUnit) * (100 - percentage) / 100
-	return common.FloatToUint(withdrawRune), common.FloatToUint(withdrawAsset), common.FloatToUint(unitAfter), nil
+	unitsToClaim := common.GetShare(withdrawBasisPoints, sdk.NewUint(10000), stakerUnits)
+	withdrawRune := common.GetShare(unitsToClaim, poolUnits, poolRune)
+	withdrawAsset := common.GetShare(unitsToClaim, poolUnits, poolAsset)
+	unitAfter := common.SafeSub(stakerUnits, unitsToClaim)
+	return withdrawRune, withdrawAsset, unitAfter, nil
 }

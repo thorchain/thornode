@@ -12,7 +12,7 @@ import (
 type TxOutItem struct {
 	Chain       common.Chain   `json:"chain"`
 	ToAddress   common.Address `json:"to"`
-	PoolAddress common.PubKey  `json:"pool_address"`
+	VaultPubKey common.PubKey  `json:"vault_pubkey"`
 	SeqNo       uint64         `json:"seq_no"`
 	Coin        common.Coin    `json:"coin"`
 	Memo        string         `json:"memo"`
@@ -30,8 +30,8 @@ func (toi TxOutItem) Valid() error {
 	if toi.ToAddress.IsEmpty() {
 		return errors.New("To address cannot be empty")
 	}
-	if toi.PoolAddress.IsEmpty() {
-		return errors.New("pool address cannot be empty")
+	if toi.VaultPubKey.IsEmpty() {
+		return errors.New("vault pubkey cannot be empty")
 	}
 	if err := toi.Coin.IsValid(); err != nil {
 		return err

@@ -59,9 +59,13 @@ seed: tools
 	@bsinner -f ${FAUCET_KEY} -k ${BINANCE_PRIVATE_KEY} -e ${ENV} -c seed/seed.json -d true
 
 # -------------------------------- Smoke Test ---------------------------- #
-smoke-ci:
+smoke-ci-genesis:
+	make -C build/docker run-genesisWithMockBinance
+	bsinner -a docker:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e ci -x
+
+smoke-ci-standalone:
 	make -C build/docker run-standaloneWithMockBinance
-	bsinner -a docker:26660 -b ./test/smoke/scenarios/balances.json -t ./test/smoke/scenarios/transactions.json -e ci -x
+	bsinner -a docker:26660 -b ./test/smoke/scenarios/standalone/balances.json -t ./test/smoke/scenarios/standalone/transactions.json -e ci -x
 # ------------------------------------------------------------------------ #
 
 

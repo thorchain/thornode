@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"fmt"
 	"os"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -23,7 +24,7 @@ func (s *SwapSuite) SetUpSuite(c *C) {
 func (s SwapSuite) TestSwap(c *C) {
 	poolStorage := MockPoolStorage{}
 	ctx, _ := setupKeeperForTest(c)
-	globalSlipLimit := common.Amount("0.200000")
+	globalSlipLimit := sdk.NewUint(3000)
 	inputs := []struct {
 		name            string
 		requestTxHash   common.TxID
@@ -34,7 +35,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		destination     common.Address
 		returnAmount    sdk.Uint
 		tradeTarget     sdk.Uint
-		globalSlipLimit common.Amount
+		globalSlipLimit sdk.Uint
 		expectedErr     error
 	}{
 		{
@@ -137,7 +138,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don't know",
 			returnAmount:  sdk.ZeroUint(),
 			tradeTarget:   sdk.ZeroUint(),
-			expectedErr:   errors.Errorf("fail to swap from %s to BNB.BNB: pool slip:0.928571 is over global pool slip limit :%s", common.RuneAsset(), globalSlipLimit),
+			expectedErr:   errors.Errorf("fail to swap from %s to BNB.BNB: tradeSlip:12500 is over global slip limit :%s", common.RuneAsset(), globalSlipLimit),
 		},
 		{
 			name:          "swap-over-trade-sliplimit",
@@ -330,15 +331,13 @@ func (s SwapSuite) TestCalculators(c *C) {
 	// https://docs.google.com/spreadsheets/d/1wJHYBRKBdw_WP7nUyVnkySPkOmPUNoiRGsEqgBVVXKU/edit#gid=0
 	c.Check(calcAssetEmission(X, x, Y).Uint64(), Equals, uint64(826446280))
 	c.Check(calcLiquidityFee(X, x, Y).Uint64(), Equals, uint64(82644628))
-	c.Check(calcPoolSlip(X, x), Equals, 0.1990990990990991)
-	c.Check(calcTradeSlip(X, x), Equals, 0.21)
-	// c.Check(calcPriceSlip(X, x, Y), Equals, 1.210000001452)
-	// c.Check(calcOutputSlip(X, x), Equals, 0.09090909090909091)
+	fmt.Println(calcTradeSlip(X, x))
+	c.Check(calcTradeSlip(X, x).Uint64(), Equals, uint64(2100))
 }
 
 func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	txOutStore := NewTxOutStore(w.keeper, w.poolAddrMgr)
+	txOutStore := NewTxOutStorage(w.keeper, w.poolAddrMgr)
 	txID := GetRandomTxHash()
 	signerBNBAddr := GetRandomBNBAddress()
 	observerAddr := w.activeNodeAccount.NodeAddress
@@ -361,7 +360,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	pool.Asset = common.BNBAsset
 	pool.BalanceAsset = sdk.NewUint(100 * common.One)
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
-	w.keeper.SetPool(w.ctx, pool)
+	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
 
 	res = handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg)
 	c.Assert(res.IsOK(), Equals, true)
@@ -384,10 +383,10 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	poolTCAN.Asset = tCanAsset
 	poolTCAN.BalanceAsset = sdk.NewUint(334850000)
 	poolTCAN.BalanceRune = sdk.NewUint(2349500000)
-	w.keeper.SetPool(w.ctx, poolTCAN)
+	c.Assert(w.keeper.SetPool(w.ctx, poolTCAN), IsNil)
 
 	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
-	currentChainPoolAddr := w.poolAddrMgr.currentPoolAddresses.Current.GetByChain(common.BNBChain)
+	currentChainPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPoolAddr, NotNil)
 	txIn := NewObservedTx(
 		common.NewTx(GetRandomTxHash(), signerBNBAddr, GetRandomBNBAddress(),

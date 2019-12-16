@@ -22,7 +22,7 @@ func (s *KeeperEventsSuite) TestEvents(c *C) {
 		common.BNBAsset,
 		sdk.NewUint(5),
 		sdk.NewUint(5),
-		sdk.NewDec(5),
+		sdk.NewUint(5),
 	)
 
 	swapBytes, _ := json.Marshal(swap)

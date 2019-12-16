@@ -73,22 +73,23 @@ type AppModule struct {
 	keeper       Keeper
 	coinKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
-	txOutStore   *TxOutStore
-	poolMgr      *PoolAddressManager
-	validatorMgr *ValidatorManager
+	txOutStore   TxOutStore
+	poolMgr      PoolAddressManager
+	validatorMgr ValidatorManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
-	poolAddrMgr := NewPoolAddressManager(k)
+	poolAddrMgr := NewPoolAddressMgr(k)
+	txStore := NewTxOutStorage(k, poolAddrMgr)
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		coinKeeper:     bankKeeper,
 		supplyKeeper:   supplyKeeper,
-		txOutStore:     NewTxOutStore(k, poolAddrMgr),
+		txOutStore:     txStore,
 		poolMgr:        poolAddrMgr,
-		validatorMgr:   NewValidatorManager(k, poolAddrMgr),
+		validatorMgr:   NewValidatorMgr(k, poolAddrMgr),
 	}
 }
 
@@ -115,20 +116,29 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
+
 	if err := am.poolMgr.BeginBlock(ctx); err != nil {
-		ctx.Logger().Error("fail to begin block for pool manager", err)
+		ctx.Logger().Error("Fail to begin block on pool address manager", err)
 	}
 
-	am.validatorMgr.BeginBlock(ctx)
+	if err := am.validatorMgr.BeginBlock(ctx); err != nil {
+		ctx.Logger().Error("Fail to begin block on validator", err)
+	}
+
 	am.txOutStore.NewBlock(uint64(req.Header.Height))
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
 
+	slasher := NewSlasher(am.keeper, am.txOutStore, am.poolMgr)
 	// slash node accounts for not observing any accepted inbound tx
-	slashForObservingAddresses(ctx, am.keeper)
-	slashForNotSigning(ctx, am.keeper, am.txOutStore)
+	if err := slasher.LackObserving(ctx); err != nil {
+		ctx.Logger().Error("Unable to slash for lack of observing:", err)
+	}
+	if err := slasher.LackSigning(ctx); err != nil {
+		ctx.Logger().Error("Unable to slash for lack of signing:", err)
+	}
 
 	// Enable a pool every newPoolCycle
 	if ctx.BlockHeight()%constants.NewPoolCycle == 0 {
@@ -148,7 +158,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to save vault", err)
 	}
 
-	am.poolMgr.EndBlock(ctx, am.txOutStore)
 	am.txOutStore.CommitBlock(ctx)
 	return am.validatorMgr.EndBlock(ctx, am.txOutStore)
 }

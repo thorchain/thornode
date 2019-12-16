@@ -7,10 +7,11 @@ import (
 
 // PoolPubKey is the pub key only related to a specific chain
 type PoolPubKey struct {
-	Chain   Chain   `json:"chain"`
-	SeqNo   uint64  `json:"seq_no"`
-	PubKey  PubKey  `json:"pub_key"`
-	Address Address `json:"address"`
+	Chain      Chain    `json:"chain"`
+	SeqNo      uint64   `json:"seq_no"`
+	Membership []PubKey `json:"membership"`
+	PubKey     PubKey   `json:"pub_key"`
+	Address    Address  `json:"address"`
 }
 
 // PoolPubKeys
@@ -20,12 +21,12 @@ type PoolPubKeys []*PoolPubKey
 var EmptyPoolPubKeys PoolPubKeys
 
 // NewPoolPubKey create a new instance of PoolPubKey
-func NewPoolPubKey(chain Chain, seqNo uint64, pubkey PubKey) (*PoolPubKey, error) {
+func NewPoolPubKey(chain Chain, members []PubKey, pubkey PubKey) (*PoolPubKey, error) {
 	var err error
 	pk := &PoolPubKey{
-		Chain:  chain,
-		SeqNo:  seqNo,
-		PubKey: pubkey,
+		Chain:      chain,
+		Membership: members,
+		PubKey:     pubkey,
 	}
 	pk.Address, err = pk.GetAddress()
 	return pk, err

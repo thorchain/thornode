@@ -12,7 +12,7 @@ type TxOutTestSuite struct{}
 var _ = Suite(&TxOutTestSuite{})
 
 func (TxOutTestSuite) TestTxOut(c *C) {
-	bnbAddress := GetRandomPubKey()
+	pk := GetRandomPubKey()
 	toAddr := GetRandomBNBAddress()
 	txOut := NewTxOut(1)
 	c.Assert(txOut, NotNil)
@@ -21,7 +21,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	c.Assert(txOut.Valid(), IsNil)
 	txOutItem := &TxOutItem{
 		Chain:       common.BNBChain,
-		PoolAddress: bnbAddress,
+		VaultPubKey: pk,
 		ToAddress:   toAddr,
 		InHash:      GetRandomTxHash(),
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
@@ -40,7 +40,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		Chain:       common.BNBChain,
 		InHash:      GetRandomTxHash(),
 		ToAddress:   toAddr,
-		PoolAddress: bnbAddress,
+		VaultPubKey: pk,
 		Coin:        common.NoCoin,
 	})
 	c.Assert(txOut1.Valid(), NotNil)
@@ -50,7 +50,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		Chain:       common.BNBChain,
 		InHash:      GetRandomTxHash(),
 		ToAddress:   "",
-		PoolAddress: bnbAddress,
+		VaultPubKey: pk,
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 	})
 	c.Assert(txOut2.Valid(), NotNil)
@@ -59,7 +59,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 		Chain:       common.BNBChain,
 		InHash:      GetRandomTxHash(),
 		ToAddress:   toAddr,
-		PoolAddress: common.EmptyPubKey,
+		VaultPubKey: common.EmptyPubKey,
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 	})
 	c.Assert(txOut3.Valid(), NotNil)

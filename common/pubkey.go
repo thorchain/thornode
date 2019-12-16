@@ -168,6 +168,10 @@ func (pks PubKeys) Equals(pks1 PubKeys) bool {
 	return pks.Ed25519.Equals(pks1.Ed25519) && pks.Secp256k1.Equals(pks1.Secp256k1)
 }
 
+func (pks PubKeys) Contains(pk PubKey) bool {
+	return pks.Ed25519.Equals(pk) || pks.Secp256k1.Equals(pk)
+}
+
 // String implement fmt.Stinger
 func (pks PubKeys) String() string {
 	return fmt.Sprintf(`

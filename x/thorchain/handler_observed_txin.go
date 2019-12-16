@@ -6,18 +6,16 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
-	"gitlab.com/thorchain/thornode/common"
 )
 
 type ObservedTxInHandler struct {
 	keeper       Keeper
-	txOutStore   *TxOutStore
-	poolAddrMgr  *PoolAddressManager
-	validatorMgr *ValidatorManager
+	txOutStore   TxOutStore
+	poolAddrMgr  PoolAddressManager
+	validatorMgr ValidatorManager
 }
 
-func NewObservedTxInHandler(keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *PoolAddressManager, validatorMgr *ValidatorManager) ObservedTxInHandler {
+func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
@@ -26,242 +24,191 @@ func NewObservedTxInHandler(keeper Keeper, txOutStore *TxOutStore, poolAddrMgr *
 	}
 }
 
-func (h ObservedTxInHandler) Run(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) sdk.Result {
-	if err := h.Validate(ctx, msg, version); err != nil {
+func (h ObservedTxInHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+	msg, ok := m.(MsgObservedTxIn)
+	if !ok {
+		return errInvalidMessage.Result()
+	}
+	isNewSigner, err := h.validate(ctx, msg, version)
+	if err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	if err := h.Handle(ctx, msg, version); err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
+	if isNewSigner {
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
+		}
 	}
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
+	return h.handle(ctx, msg, version)
 }
 
-func (h ObservedTxInHandler) Validate(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) error {
+func (h ObservedTxInHandler) validate(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) (bool, error) {
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.ValidateV1(ctx, msg)
+		return h.validateV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		return false, badVersion
 	}
 }
 
-func (h ObservedTxInHandler) ValidateV1(ctx sdk.Context, msg MsgObservedTxIn) error {
+func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (bool, error) {
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
-		return err
+		return false, err
 	}
 
 	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
+		signers := msg.GetSigners()
+		for _, signer := range signers {
+			newSigner, err := h.signedByNewObserver(ctx, signer)
+			if nil != err {
+				ctx.Logger().Error("fail to determinate whether the tx is signed by a new observer", err)
+				return false, notAuthorized
+			}
+
+			// if this tx is signed by a new observer , we have to return a success code
+			if newSigner {
+				return true, nil
+			}
+		}
 		ctx.Logger().Error(notAuthorized.Error())
-		return notAuthorized
+		return false, notAuthorized
 	}
 
-	return nil
+	return false, nil
+}
+
+// when THORChain observe a tx is signed by new observer, who's node account still in standby status, THORChain need to mark their observer is alive.
+// by doing that, it also need to return a success code, otherwise the change will not be saved to key value store.
+func (h ObservedTxInHandler) signedByNewObserver(ctx sdk.Context, addr sdk.AccAddress) (bool, error) {
+	nodeAcct, err := h.keeper.GetNodeAccount(ctx, addr)
+	if nil != err {
+		return false, fmt.Errorf("fail to get node account(%s): %w", addr.String(), err)
+	}
+	if nodeAcct.Status != NodeStandby {
+		return false, fmt.Errorf("node account (%s) is in status(%s) not standby yet", addr, nodeAcct.Status)
+	}
+	nodeAcct.ObserverActive = true
+	err = h.keeper.SetNodeAccount(ctx, nodeAcct)
+	if nil == err {
+		return true, nil
+	}
+	return false, fmt.Errorf("fail to save node account(%s): %w", addr, err)
 
 }
 
-func (h ObservedTxInHandler) Handle(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) error {
+func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) sdk.Result {
 	ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", msg.Txs[0].String())
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.HandleV1(ctx, msg)
+		return h.handleV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		return errBadVersion.Result()
 	}
+}
+
+func (h ObservedTxInHandler) inboundFailure(ctx sdk.Context, tx ObservedTx) error {
+	err := refundTx(ctx, tx, h.txOutStore, h.keeper, true)
+	if err != nil {
+		return err
+	}
+	ee := NewEmptyRefundEvent()
+	buf, err := json.Marshal(ee)
+	if nil != err {
+		return err
+	}
+	event := NewEvent(
+		ee.Type(),
+		ctx.BlockHeight(),
+		tx.Tx,
+		buf,
+		EventRefund,
+	)
+
+	return h.keeper.AddIncompleteEvents(ctx, event)
+}
+
+func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
+	voter.Add(tx, signer)
+
+	ok := false
+	if voter.HasConensus(nas) && voter.Height == 0 {
+		ok = true
+		voter.Height = ctx.BlockHeight()
+	}
+	h.keeper.SetObservedTxVoter(ctx, voter)
+
+	// Check to see if we have enough identical observations to process the transaction
+	return voter, ok
 }
 
 // Handle a message to observe inbound tx
-func (h ObservedTxInHandler) HandleV1(ctx sdk.Context, msg MsgObservedTxIn) error {
+func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.Result {
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
-		return wrapError(ctx, err, "fail to get list of active node accounts")
+		err = wrapError(ctx, err, "fail to get list of active node accounts")
+		return sdk.ErrInternal(err.Error()).Result()
 	}
 
 	handler := NewHandler(h.keeper, h.poolAddrMgr, h.txOutStore, h.validatorMgr)
 
 	for _, tx := range msg.Txs {
+
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
 		if err != nil {
-			return err
+			return sdk.ErrInternal(err.Error()).Result()
 		}
-		preConsensus := voter.HasConensus(activeNodeAccounts)
-		voter.Add(tx, msg.Signer)
-		postConsensus := voter.HasConensus(activeNodeAccounts)
-		h.keeper.SetObservedTxVoter(ctx, voter)
 
-		if preConsensus == false && postConsensus == true && voter.Height == 0 {
-			voter.Height = ctx.BlockHeight()
-			h.keeper.SetObservedTxVoter(ctx, voter)
-			txIn := voter.GetTx(activeNodeAccounts)
-			var chain common.Chain
-			if len(txIn.Tx.Coins) > 0 {
-				chain = txIn.Tx.Coins[0].Asset.Chain
+		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
+		if !ok {
+			continue
+		}
+
+		txIn := voter.GetTx(activeNodeAccounts)
+
+		if ok := isCurrentVaultPubKey(ctx, h.keeper, h.poolAddrMgr, tx); !ok {
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, false); err != nil {
+				return sdk.ErrInternal(err.Error()).Result()
 			}
+			continue
+		}
 
-			currentPoolAddress := h.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
-			yggExists := h.keeper.YggdrasilExists(ctx, txIn.ObservedPubKey)
-			if !currentPoolAddress.PubKey.Equals(txIn.ObservedPubKey) && !yggExists {
-				ctx.Logger().Error("wrong pool address,refund without deduct fee", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", txIn.ObservedPubKey)
-				err := refundTx(ctx, txIn, h.txOutStore, h.keeper, txIn.ObservedPubKey, chain, false)
-				if err != nil {
-					err = errors.Wrap(err, "Fail to refund")
-					ctx.Logger().Error(err.Error())
-					return err
-				}
-
-				continue
+		m, err := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
+		if nil != err || tx.Tx.Chain.IsEmpty() {
+			ctx.Logger().Error("fail to process inbound tx", "error", err, "txhash", tx.Tx.ID.String())
+			if err := h.inboundFailure(ctx, tx); err != nil {
+				return sdk.ErrInternal(err.Error()).Result()
 			}
+			continue
+		}
 
-			m, err := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
-			if nil != err || chain.IsEmpty() {
-				ctx.Logger().Error("fail to process txIn", "error", err, "txhash", tx.Tx.ID.String())
-				// Detect if the txIn is to the thorchain network or from the
-				// thorchain network
-				addr, err := txIn.ObservedPubKey.GetAddress(chain)
-				if err != nil {
-					ctx.Logger().Error("fail to get address", "error", err, "txhash", tx.Tx.ID.String())
-					continue
-				}
+		if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, tx.BlockHeight); nil != err {
+			return sdk.ErrInternal(err.Error()).Result()
+		}
 
-				if addr.Equals(txIn.Tx.FromAddress) {
+		// add this chain to our list of supported chains
+		chains, err := h.keeper.GetChains(ctx)
+		if err != nil {
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+		chains = append(chains, tx.Tx.Chain)
+		h.keeper.SetChains(ctx, chains)
 
-					if h.keeper.YggdrasilExists(ctx, txIn.ObservedPubKey) {
-						ygg, err := h.keeper.GetYggdrasil(ctx, txIn.ObservedPubKey)
-						if nil != err {
-							ctx.Logger().Error("fail to get yggdrasil", err)
-							return err
-						}
-						var expectedCoins common.Coins
-						memo, _ := ParseMemo(txIn.Tx.Memo)
-						switch memo.GetType() {
-						case txYggdrasilReturn:
-							expectedCoins = ygg.Coins
-						case txOutbound:
-							txID := memo.GetTxID()
-							inVoter, err := h.keeper.GetObservedTxVoter(ctx, txID)
-							if err != nil {
-								return err
-							}
-							origTx := inVoter.GetTx(activeNodeAccounts)
-							expectedCoins = origTx.Tx.Coins
-						}
+		// add addresses to observing addresses. This is used to detect
+		// active/inactive observing node accounts
+		if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
+			return sdk.ErrInternal(err.Error()).Result()
+		}
 
-						na, err := h.keeper.GetNodeAccountByPubKey(ctx, ygg.PubKey)
-						if err != nil {
-							ctx.Logger().Error("fail to get node account", "error", err, "txhash", tx.Tx.ID.String())
-							return err
-						}
-
-						// Slash the node account, since THORNode are unable to
-						// process the tx (ie unscheduled tx)
-						var minusCoins common.Coins          // track funds to subtract from ygg pool
-						minusRune := sdk.ZeroUint()          // track amt of rune to slash from bond
-						for _, coin := range txIn.Tx.Coins { // assumes coins are asset uniq
-							expectedCoin := expectedCoins.GetCoin(coin.Asset)
-							if expectedCoin.Amount.LT(coin.Amount) {
-								// take an additional 25% to ensure a penalty
-								// is made by multiplying by 5, then divide by
-								// 4
-								diff := common.SafeSub(coin.Amount, expectedCoin.Amount).MulUint64(5).QuoUint64(4)
-								if coin.Asset.IsRune() {
-									minusRune = common.SafeSub(coin.Amount, diff)
-									minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
-								} else {
-									pool, err := h.keeper.GetPool(ctx, coin.Asset)
-									if err != nil {
-										return err
-									}
-
-									if !pool.Empty() {
-										minusRune = pool.AssetValueInRune(diff)
-										minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
-										// Update pool balances
-										pool.BalanceRune = pool.BalanceRune.Add(minusRune)
-										pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, diff)
-										if err := h.keeper.SetPool(ctx, pool); err != nil {
-											err = errors.Wrap(err, "fail to set pool")
-											ctx.Logger().Error(err.Error())
-											return err
-										}
-									}
-								}
-							}
-						}
-						na.SubBond(minusRune)
-						if err := h.keeper.SetNodeAccount(ctx, na); nil != err {
-							ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
-							return err
-						}
-						ygg.SubFunds(minusCoins)
-						if err := h.keeper.SetYggdrasil(ctx, ygg); nil != err {
-							ctx.Logger().Error("fail to save yggdrasil", err)
-							return err
-						}
-					}
-				} else {
-					// To thorchain network
-					err := refundTx(ctx, txIn, h.txOutStore, h.keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
-					if err != nil {
-						err = errors.Wrap(err, "Fail to refund")
-						ctx.Logger().Error(err.Error())
-						return err
-					}
-					ee := NewEmptyRefundEvent()
-					buf, err := json.Marshal(ee)
-					if nil != err {
-						return err
-					}
-					event := NewEvent(
-						ee.Type(),
-						ctx.BlockHeight(),
-						tx.Tx,
-						buf,
-						EventRefund,
-					)
-
-					if err := h.keeper.AddIncompleteEvents(ctx, event); err != nil {
-						return err
-					}
-				}
-				continue
-			}
-
-			// ignoring the error
-			_ = h.keeper.AddToObservedTxIndex(ctx, uint64(ctx.BlockHeight()), tx.Tx.ID)
-			if err := h.keeper.SetLastChainHeight(ctx, chain, txIn.BlockHeight); nil != err {
-				return err
-			}
-
-			// add this chain to our list of supported chains
-			chains, err := h.keeper.GetChains(ctx)
-			if err != nil {
-				return err
-			}
-			chains = append(chains, chain)
-			h.keeper.SetChains(ctx, chains)
-
-			// add addresses to observing addresses. This is used to detect
-			// active/inactive observing node accounts
-			if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
-				err = errors.Wrap(err, "fail to add observer address")
-				ctx.Logger().Error(err.Error())
-				return err
-			}
-
-			result := handler(ctx, m)
-			if !result.IsOK() {
-				err := refundTx(ctx, txIn, h.txOutStore, h.keeper, currentPoolAddress.PubKey, currentPoolAddress.Chain, true)
-				if err != nil {
-					err = errors.Wrap(err, "Fail to refund")
-					ctx.Logger().Error(err.Error())
-					return err
-				}
+		result := handler(ctx, m)
+		if !result.IsOK() {
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, true); err != nil {
+				return sdk.ErrInternal(err.Error()).Result()
 			}
 		}
 	}
-
-	return nil
+	return sdk.Result{
+		Code:      sdk.CodeOK,
+		Codespace: DefaultCodespace,
+	}
 }

@@ -77,13 +77,12 @@ func GetPoolStatus(ps string) PoolStatus {
 // Pool is a struct that contains all the metadata of a pooldata
 // This is the structure THORNode will saved to the key value store
 type Pool struct {
-	BalanceRune         sdk.Uint       `json:"balance_rune"`           // how many RUNE in the pool
-	BalanceAsset        sdk.Uint       `json:"balance_asset"`          // how many asset in the pool
-	Asset               common.Asset   `json:"asset"`                  // what's the asset's asset
-	PoolUnits           sdk.Uint       `json:"pool_units"`             // total units of the pool
-	PoolAddress         common.Address `json:"pool_address"`           // bnb liquidity pool address
-	Status              PoolStatus     `json:"status"`                 // status
-	ExpiryInBlockHeight int64          `json:"expiry_in_block_height"` // means the pool address will be changed after these amount of blocks
+	BalanceRune  sdk.Uint       `json:"balance_rune"`  // how many RUNE in the pool
+	BalanceAsset sdk.Uint       `json:"balance_asset"` // how many asset in the pool
+	Asset        common.Asset   `json:"asset"`         // what's the asset's asset
+	PoolUnits    sdk.Uint       `json:"pool_units"`    // total units of the pool
+	PoolAddress  common.Address `json:"pool_address"`  // bnb liquidity pool address
+	Status       PoolStatus     `json:"status"`        // status
 }
 
 type Pools []Pool
@@ -149,9 +148,12 @@ func (ps Pool) AssetValueInRune(amt sdk.Uint) sdk.Uint {
 	if ps.BalanceRune.IsZero() || ps.BalanceAsset.IsZero() {
 		return sdk.ZeroUint()
 	}
-	return sdk.NewUint(uint64(
-		(float64(ps.BalanceRune.Uint64()) / float64(ps.BalanceAsset.Uint64())) * float64(amt.Uint64()),
-	))
+	rD := sdk.NewDec(int64(ps.BalanceRune.Uint64()))
+	aD := sdk.NewDec(int64(ps.BalanceAsset.Uint64()))
+	amtD := sdk.NewDec(int64(amt.Uint64()))
+	// priceInRune = (Rune/Asset)*amt
+	priceD := rD.Quo(aD).Mul(amtD)
+	return sdk.NewUint(uint64((priceD).RoundInt64()))
 }
 
 // convert a specific amount of rune amt into its asset value
@@ -159,7 +161,10 @@ func (ps Pool) RuneValueInAsset(amt sdk.Uint) sdk.Uint {
 	if ps.BalanceRune.IsZero() || ps.BalanceAsset.IsZero() {
 		return sdk.ZeroUint()
 	}
-	return sdk.NewUint(uint64(
-		(float64(ps.BalanceAsset.Uint64()) / float64(ps.BalanceRune.Uint64())) * float64(amt.Uint64()),
-	))
+	rD := sdk.NewDec(int64(ps.BalanceRune.Uint64()))
+	aD := sdk.NewDec(int64(ps.BalanceAsset.Uint64()))
+	amtD := sdk.NewDec(int64(amt.Uint64()))
+	// priceInAsset = (Asset/Rune)*amt
+	priceD := aD.Quo(rD).Mul(amtD)
+	return sdk.NewUint(uint64((priceD).RoundInt64()))
 }
