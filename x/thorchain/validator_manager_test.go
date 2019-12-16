@@ -19,7 +19,8 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	ctx = ctx.WithBlockHeight(1)
 	rotatePerBlockHeight := int64(constants.RotatePerBlockHeight)
 	validatorChangeWindow := int64(constants.ValidatorsChangeWindow)
-	poolAddrMgr := NewPoolAddressMgr(k)
+	poolAddrMgr := NewPoolAddressDummyMgr()
+	k.SetPoolAddresses(ctx, poolAddrMgr.GetCurrentPoolAddresses())
 	vMgr := NewValidatorMgr(k, poolAddrMgr)
 	c.Assert(vMgr, NotNil)
 	err := vMgr.setupValidatorNodes(ctx, 0)
@@ -65,19 +66,18 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	txOutStore := NewTxOutStorage(k, poolAddrMgr)
 	txOutStore.NewBlock(uint64(rotatePerBlockHeight + 1 - validatorChangeWindow))
 	validatorUpdates := vMgr2.EndBlock(ctx, txOutStore)
-	c.Assert(validatorUpdates, IsNil)
+	c.Assert(validatorUpdates, HasLen, 0)
 
 	rotateHeight := rotatePerBlockHeight + 1
 	ctx = ctx.WithBlockHeight(rotateHeight)
 	txOutStore.NewBlock(uint64(rotateHeight))
 	validatorUpdates = vMgr2.EndBlock(ctx, txOutStore)
-	c.Assert(validatorUpdates, IsNil)
+	c.Assert(validatorUpdates, HasLen, 0)
 
 	standbyNode := GetRandomNodeAccount(NodeStandby)
 	c.Assert(k.SetNodeAccount(ctx, standbyNode), IsNil)
 
 	// vts.setDesireValidatorSet(c, ctx, k)
 	validatorUpdates = vMgr2.EndBlock(ctx, txOutStore)
-	c.Assert(validatorUpdates, IsNil)
-
+	c.Assert(validatorUpdates, HasLen, 0)
 }

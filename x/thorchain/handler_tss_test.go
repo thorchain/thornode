@@ -108,15 +108,15 @@ func (s *HandlerTssSuite) TestHandle(c *C) {
 		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
 	}
 	msg := NewMsgTssPool(pks, pk, keeper.active[0].NodeAddress)
-	err := handler.handle(ctx, msg, ver)
-	c.Assert(err, IsNil)
+	result := handler.handle(ctx, msg, ver)
+	c.Assert(result.IsOK(), Equals, true)
 	c.Check(keeper.tss.Signers, HasLen, 1)
 	c.Check(keeper.tss.BlockHeight, Equals, int64(12))
 	c.Check(poolAddrMgr.pks.IsEmpty(), Equals, false)
 
 	// running again doesn't rotate the pool again
 	ctx = ctx.WithBlockHeight(14)
-	err = handler.handle(ctx, msg, ver)
-	c.Assert(err, IsNil)
+	result = handler.handle(ctx, msg, ver)
+	c.Assert(result.IsOK(), Equals, true)
 	c.Check(keeper.tss.BlockHeight, Equals, int64(12))
 }
