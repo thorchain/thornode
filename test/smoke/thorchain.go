@@ -49,7 +49,7 @@ func (s Thorchain) WaitForAvailability() {
 		}
 		fmt.Printf("Pool Address error: %s\n", err)
 		count += 1
-		if count > 300 {
+		if count > 35 {
 			fmt.Println("Timeout: thorchain is unavailable")
 			os.Exit(1)
 		}
@@ -170,5 +170,5 @@ func (s Thorchain) StakerURL(staker string) string {
 }
 
 func (s Thorchain) PoolAddressesURL() string {
-	return s.getUrl("/pooladdresses")
+	return s.getUrl("/pool_addresses")
 }

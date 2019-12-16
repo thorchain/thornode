@@ -9,7 +9,7 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
+func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) error {
 
 	// find total bonded
 	totalBond := sdk.ZeroUint()
@@ -80,7 +80,7 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore *TxOutStore) error {
 
 // sendCoinsToYggdrasil - adds outbound txs to send the given coins to a
 // yggdrasil pool
-func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Yggdrasil, txOutStore *TxOutStore) error {
+func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Yggdrasil, txOutStore TxOutStore) error {
 	for _, coin := range coins {
 		to, err := ygg.PubKey.GetAddress(coin.Asset.Chain)
 		if err != nil {
@@ -93,7 +93,7 @@ func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, yg
 			Memo:      "yggdrasil+",
 			Coin:      coin,
 		}
-		txOutStore.AddTxOutItem(ctx, keeper, toi, false)
+		txOutStore.AddTxOutItem(ctx, toi)
 	}
 
 	return nil
@@ -118,27 +118,20 @@ func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins
 
 	// figure out what percentage of the bond this yggdrasil pool has. They
 	// should get half of that value.
-	ratio := float64(yggBond.Uint64()) / (2 * float64(totalBond.Uint64()))
-	targetRune := sdk.NewUint(uint64(ratio * float64(totalRune.Uint64())))
+	targetRune := common.GetShare(yggBond, totalBond.Mul(sdk.NewUint(2)), totalRune)
 	// check if more rune would be allocated to this pool than their bond allows
 	if targetRune.GT(yggBond.QuoUint64(2)) {
 		targetRune = yggBond.QuoUint64(2)
 	}
-	ratio = float64(targetRune.Uint64()) / float64(totalRune.Uint64())
 
 	// track how much value (in rune) we've associated with this ygg pool. This
 	// is here just to be absolutely sure THORNode never send too many assets to the
 	// ygg by accident.
 	counter := sdk.ZeroUint()
 	for _, pool := range pools {
-		runeAmt := sdk.NewUint(uint64(
-			float64(pool.BalanceRune.Uint64()) * ratio,
-		))
+		runeAmt := common.GetShare(targetRune, totalRune, pool.BalanceRune)
 		runeCoin.Amount = runeCoin.Amount.Add(runeAmt)
-
-		assetAmt := sdk.NewUint(uint64(
-			float64(pool.BalanceAsset.Uint64()) * ratio,
-		))
+		assetAmt := common.GetShare(targetRune, totalRune, pool.BalanceAsset)
 		if !assetAmt.IsZero() {
 			// add rune amt (not asset since the two are considered to be equal)
 			counter = counter.Add(runeAmt)

@@ -8,16 +8,16 @@ import (
 
 // MsgOutboundTx defines a MsgOutboundTx message
 type MsgOutboundTx struct {
-	Tx     common.Tx      `json:"tx"`
+	Tx     ObservedTx     `json:"tx"`
 	InTxID common.TxID    `json:"tx_id"`
 	Signer sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgOutboundTx is a constructor function for MsgOutboundTx
-func NewMsgOutboundTx(tx common.Tx, txid common.TxID, signer sdk.AccAddress) MsgOutboundTx {
+func NewMsgOutboundTx(tx ObservedTx, txID common.TxID, signer sdk.AccAddress) MsgOutboundTx {
 	return MsgOutboundTx{
 		Tx:     tx,
-		InTxID: txid,
+		InTxID: txID,
 		Signer: signer,
 	}
 }
@@ -36,7 +36,7 @@ func (msg MsgOutboundTx) ValidateBasic() sdk.Error {
 	if msg.InTxID.IsEmpty() {
 		return sdk.ErrUnknownRequest("In Tx ID cannot be empty")
 	}
-	if err := msg.Tx.IsValid(); err != nil {
+	if err := msg.Tx.Valid(); err != nil {
 		return sdk.ErrUnknownRequest(err.Error())
 	}
 	return nil

@@ -3,8 +3,6 @@ package thorchain
 import (
 	"fmt"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -20,7 +18,7 @@ type ValidatorRotationPolicy struct {
 }
 
 // GetValidatorRotationPolicy from data store
-func GetValidatorRotationPolicy(ctx sdk.Context, k Keeper) ValidatorRotationPolicy {
+func GetValidatorRotationPolicy() ValidatorRotationPolicy {
 	return ValidatorRotationPolicy{
 		RotateInNumBeforeFull:      constants.ValidatorRotateInNumBeforeFull,
 		RotateOutNumBeforeFull:     constants.ValidatorRotateOutNumBeforeFull,
@@ -31,6 +29,7 @@ func GetValidatorRotationPolicy(ctx sdk.Context, k Keeper) ValidatorRotationPoli
 		LeaveProcessPerBlockHeight: constants.LeaveProcessPerBlockHeight,
 	}
 }
+
 func (vp ValidatorRotationPolicy) IsValid() error {
 	if vp.ValidatorChangeWindow > vp.RotatePerBlockHeight {
 		return fmt.Errorf("validator change window :%d is larger than rotate per block height: %d", vp.ValidatorChangeWindow, vp.RotatePerBlockHeight)

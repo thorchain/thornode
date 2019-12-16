@@ -20,7 +20,6 @@ const (
 
 // RegisterRoutes - Central function to define routes that get registered by the main application
 func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) {
-
 	// Health Check Endpoint
 	r.HandleFunc(
 		fmt.Sprintf("/%s/ping", storeName),
@@ -50,6 +49,10 @@ func RegisterRoutes(cliCtx context.CLIContext, r *mux.Router, storeName string) 
 	r.HandleFunc(
 		fmt.Sprintf("/%s/txs", storeName),
 		postTxsHandler(cliCtx),
+	).Methods(http.MethodPost)
+	r.HandleFunc(
+		fmt.Sprintf("/%s/tss", storeName),
+		newTssPoolHandler(cliCtx),
 	).Methods(http.MethodPost)
 	r.Use(mux.CORSMethodMiddleware(r))
 	r.Use(customCORSHeader())

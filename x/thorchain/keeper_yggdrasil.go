@@ -12,7 +12,6 @@ import (
 type KeeperYggdrasil interface {
 	GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator
 	YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool
-	FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error)
 	SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) error
 	GetYggdrasil(ctx sdk.Context, pk common.PubKey) (Yggdrasil, error)
 	HasValidYggdrasilPools(ctx sdk.Context) (bool, error)
@@ -22,26 +21,6 @@ type KeeperYggdrasil interface {
 func (k KVStore) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixYggdrasilPool))
-}
-
-// FindPubKeyOfAddress given an address to find out it's relevant pubkey
-func (k KVStore) FindPubKeyOfAddress(ctx sdk.Context, addr common.Address, chain common.Chain) (common.PubKey, error) {
-	iterator := k.GetYggdrasilIterator(ctx)
-	defer iterator.Close()
-	for ; iterator.Valid(); iterator.Next() {
-		var ygg Yggdrasil
-		if err := k.cdc.UnmarshalBinaryBare(iterator.Value(), &ygg); nil != err {
-			return common.EmptyPubKey, dbError(ctx, "fail to unmarshal yggdrasil", err)
-		}
-		address, err := ygg.PubKey.GetAddress(chain)
-		if err != nil {
-			return common.EmptyPubKey, err
-		}
-		if !address.IsEmpty() && address.Equals(addr) {
-			return ygg.PubKey, nil
-		}
-	}
-	return common.EmptyPubKey, nil
 }
 
 // SetYggdrasil save the Yggdrasil object to store
@@ -71,6 +50,7 @@ func (k KVStore) GetYggdrasil(ctx sdk.Context, pk common.PubKey) (Yggdrasil, err
 	key := k.GetKey(ctx, prefixYggdrasilPool, pk.String())
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
+		ygg.PubKey = pk
 		return ygg, fmt.Errorf("yggdrasil with pubkey(%s) doesn't exist: %w", pk, ErrYggdrasilNotFound)
 	}
 	buf := store.Get([]byte(key))

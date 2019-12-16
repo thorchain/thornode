@@ -30,11 +30,4 @@ func (KeeperYggdrasilSuite) TestYggdrasil(c *C) {
 	hasYgg, err := k.HasValidYggdrasilPools(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(hasYgg, Equals, true)
-
-	addr, err := pubKey1.GetAddress(common.BNBChain)
-	c.Assert(err, IsNil)
-	pk, err := k.FindPubKeyOfAddress(ctx, addr, common.BNBChain)
-	c.Assert(err, IsNil)
-	c.Assert(pk.IsEmpty(), Equals, false)
-
 }

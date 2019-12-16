@@ -187,6 +187,14 @@ func (s *Smoke) Transfer(txn types.TransactionConfig) error {
 		msg.Transfer{to, coins},
 	}
 
+	// swap Names with addresses
+	txn.Memo = strings.ToLower(txn.Memo)
+	for name, key := range s.Keys {
+		txn.Memo = strings.ReplaceAll(txn.Memo, strings.ToLower(name), key.GetAddr().String())
+	}
+	txn.Memo = strings.ToUpper(txn.Memo)
+	fmt.Println(txn.Memo)
+
 	return s.SendTxn(from, payload, txn.Memo)
 }
 
@@ -244,15 +252,15 @@ func (s *Smoke) GetCurrentBalances() types.BalancesConfig {
 
 // Wait for transactions to occur
 func (s *Smoke) WaitForTransactions(count int64) error {
-	time.Sleep(100 * time.Millisecond)
 	if count == 0 {
 		return nil
 	}
+	time.Sleep(100 * time.Millisecond)
 	startHeight, err := s.Binance.GetBlockHeight()
 	if err != nil {
 		return err
 	}
-	for {
+	for i := 0; i < 600; i++ { // wait for 30 seconds before timing out
 		height, err := s.Binance.GetBlockHeight()
 		if err != nil {
 			return err
@@ -262,6 +270,7 @@ func (s *Smoke) WaitForTransactions(count int64) error {
 			return nil
 		}
 	}
+	return fmt.Errorf("Timeout waiting for txs (%d)", count)
 }
 
 // Wait for a block on thorchain
@@ -320,14 +329,13 @@ func (s *Smoke) Run() bool {
 		expectedBal := s.Balances.GetByTx(txn.Tx)
 
 		// if we have no outbound tx, wait a block
-		if expectedBal.Out == 0 && txn.Memo != "SEED" {
-			s.WaitBlocks(1)
-		} else {
+		if txn.Memo != "SEED" {
 			// Wait for the thorchain to process blocks and send txs
 			err := s.WaitForTransactions(expectedBal.Out)
 			if err != nil {
 				log.Fatalf("Failed to wait for txs: %s", err)
 			}
+			s.WaitBlocks(1)
 		}
 
 		obtainedBal := s.GetCurrentBalances()

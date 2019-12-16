@@ -70,19 +70,19 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
-	return
+
 	b3, err3 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    "localhost",
+		RPCHost:    server.URL,
 		PrivateKey: "asdfsdfdsf",
 	}, false, tssCfg)
 	c.Assert(b3, IsNil)
 	c.Assert(err3, NotNil)
 	b4, err4 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    "localhost",
+		RPCHost:    server.URL,
 		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
 	}, false, tssCfg)
-	c.Assert(b4, IsNil)
-	c.Assert(err4, NotNil)
+	c.Assert(b4, NotNil)
+	c.Assert(err4, IsNil)
 }
 
 const accountInfo string = `{
@@ -126,13 +126,13 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	c.Assert(p, IsNil)
 	c.Assert(err, IsNil)
 
-	txOut1 := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "pool_address":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coin":  { "denom": "BNB", "amount": "194765912" }  } ]}`, c)
+	txOut1 := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "vault_pubkey":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coin":  { "denom": "BNB", "amount": "194765912" }  } ]}`, c)
 	r1, p1, err1 := b2.SignTx(txOut1.TxArray[0], 1718)
 	c.Assert(err1, IsNil)
 	c.Assert(p1, NotNil)
 	c.Assert(r1, NotNil)
 
-	err = b2.BroadcastTx(r1, p1)
+	err = b2.BroadcastTx(r1)
 	c.Assert(err, IsNil)
 }
 

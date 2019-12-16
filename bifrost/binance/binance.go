@@ -1,7 +1,6 @@
 package binance
 
 import (
-	"bytes"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -28,12 +27,13 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
+// Binance is a structure to sign and broadcast tx to binance chain used by signer mostly
 type Binance struct {
 	logger     zerolog.Logger
 	cfg        config.BinanceConfiguration
 	keyManager keys.KeyManager
 	RPCHost    string
-	chainId    string
+	chainID    string
 	useTSS     bool
 	isTestNet  bool
 }
@@ -65,7 +65,7 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
 
-	chainId, isTestNet := IsTestNet(rpcHost)
+	chainID, isTestNet := IsTestNet(rpcHost)
 	if isTestNet {
 		types.Network = types.TestNetwork
 	} else {
@@ -77,12 +77,13 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 		cfg:        cfg,
 		keyManager: km,
 		RPCHost:    rpcHost,
-		chainId:    chainId,
+		chainID:    chainID,
 		isTestNet:  isTestNet,
 		useTSS:     useTSS,
 	}, nil
 }
 
+// IsTestNet determinate whether we are running on test net by checking the status
 func IsTestNet(rpcHost string) (string, bool) {
 	client := &http.Client{}
 
@@ -196,12 +197,13 @@ func (b *Binance) isSignerAddressMatch(poolAddr, signerAddr string) bool {
 	return strings.EqualFold(bnbAddress.String(), signerAddr)
 }
 
+// SignTx sign the the given TxArrayItem
 func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[string]string, error) {
-	signerAddr := b.GetAddress(tai.PoolAddress)
+	signerAddr := b.GetAddress(tai.VaultPubKey)
 	var payload []msg.Transfer
 
-	if !b.isSignerAddressMatch(tai.PoolAddress.String(), signerAddr) {
-		b.logger.Info().Str("signer addr", signerAddr).Str("pool addr", tai.PoolAddress.String()).Msg("address doesn't match ignore")
+	if !b.isSignerAddressMatch(tai.VaultPubKey.String(), signerAddr) {
+		b.logger.Info().Str("signer addr", signerAddr).Str("pool addr", tai.VaultPubKey.String()).Msg("address doesn't match ignore")
 		return nil, nil, nil
 	}
 	toAddr, err := types.AccAddressFromBech32(tai.To)
@@ -227,7 +229,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 		b.logger.Error().Msg("payload is empty , this should not happen")
 		return nil, nil, nil
 	}
-	fromAddr := b.GetAddress(tai.PoolAddress)
+	fromAddr := b.GetAddress(tai.VaultPubKey)
 	sendMsg := b.parseTx(fromAddr, payload)
 	if err := sendMsg.ValidateBasic(); nil != err {
 		return nil, nil, errors.Wrap(err, "invalid send msg")
@@ -245,7 +247,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	}
 
 	signMsg := tx.StdSignMsg{
-		ChainID:       b.chainId,
+		ChainID:       b.chainID,
 		Memo:          tai.Memo,
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,
@@ -255,7 +257,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	param := map[string]string{
 		"sync": "true",
 	}
-	rawBz, err := b.signWithRetry(signMsg, fromAddr, tai.PoolAddress)
+	rawBz, err := b.signWithRetry(signMsg, fromAddr, tai.VaultPubKey)
 	if nil != err {
 		return nil, nil, errors.Wrap(err, "fail to sign message")
 	}
@@ -318,7 +320,11 @@ func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 	if err != nil {
 		return types.BaseAccount{}, err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			b.logger.Error().Err(err).Msg("fail to close response body")
+		}
+	}()
 
 	type queryResult struct {
 		Jsonrpc string `json:"jsonrpc"`
@@ -355,14 +361,18 @@ func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 	return acc.BaseAccount, err
 }
 
-func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) error {
+// BroadcastTx is to broadcast the tx to binance chain
+func (b *Binance) BroadcastTx(hexTx []byte) error {
 	u, err := url.Parse(b.RPCHost)
 	if err != nil {
 		log.Error().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
 		return err
 	}
 	u.Path = "broadcast_tx_commit"
-	resp, err := http.Post(u.String(), "", bytes.NewReader(hexTx))
+	values := u.Query()
+	values.Set("tx", "0x"+string(hexTx))
+	u.RawQuery = values.Encode()
+	resp, err := http.Post(u.String(), "", nil)
 	if err != nil {
 		return errors.Wrap(err, "fail to broadcast tx to ")
 	}
@@ -376,7 +386,7 @@ func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) error {
 		if nil != err {
 			return fmt.Errorf("fail to read response body: %w", err)
 		}
-		log.Error().Msg(string(result))
+		log.Info().Msg(string(result))
 		return fmt.Errorf("fail to broadcast tx to binance:(%s)", b.RPCHost)
 	}
 	return nil

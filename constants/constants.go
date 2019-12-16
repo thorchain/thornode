@@ -19,7 +19,10 @@ const NewPoolCycle = 50000        // Enable a pool every 50,000 blocks (~3 days)
 const MinmumNodesForYggdrasil = 6 // No yggdrasil pools if THORNode have less than 6 active nodes
 const MinmumNodesForBFT = 4       // Minimum node count to keep network running. Below this, Ragnarök is performed.
 
-// validator rotation
+// Swapping
+const GlobalSlipLimit = 3000 // 30% is maximum slip allowed on a transaction (BasisPoints)
+
+// Validator rotation
 const (
 	ValidatorRotateInNumBeforeFull  = 2     // How many validators should THORNode nominate before THORNode reach the desire validator set
 	ValidatorRotateOutNumBeforeFull = 1     // How many validators should THORNode queued to be rotate out before THORNode reach the desire validator set)
@@ -29,6 +32,9 @@ const (
 	ValidatorsChangeWindow          = 1200  // When should THORNode open the rotate window, nominate validators, and identify who should be out
 	LeaveProcessPerBlockHeight      = 4320  // after how many blocks THORNode will process leave queue
 )
+
+const BadValidatorRate = 51840
+const OldValidatorRate = 51840
 
 // Slashing
 const LackOfObservationPenalty int64 = 2         // add two slash point for each block where a node does not observe

@@ -3,17 +3,17 @@ set -ex
 
 . $(dirname "$0")/core.sh
 
-SIGNER_NAME="${SIGNER_NAME:=statechain}"
+SIGNER_NAME="${SIGNER_NAME:=thorchain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 NODES="${NODES:=1}"
 SEED="${SEED:=thor-daemon}" # the hostname of the master node
-ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in statechain should rotate
+ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in thorchain should rotate
 
 # find or generate our BNB address
 gen_bnb_address
 ADDRESS=$(cat ~/.signer/address.txt)
 
-# create statechain user
+# create thorchain user
 thorcli keys show $SIGNER_NAME || echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME 2>&1
 
 # write private key to tss volume
@@ -22,8 +22,8 @@ if [ ! -z ${TSSPRIVKEY+x} ]; then
 fi
 
 VALIDATOR=$(thord tendermint show-validator)
-NODE_ADDRESS=$(thorcli keys show statechain -a)
-NODE_PUB_KEY=$(thorcli keys show statechain -p)
+NODE_ADDRESS=$(thorcli keys show thorchain -a)
+NODE_PUB_KEY=$(thorcli keys show thorchain -p)
 VERSION=$(fetch_version)
 
 if [ "$SEED" = "$(hostname)" ]; then

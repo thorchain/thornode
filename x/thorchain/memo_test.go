@@ -14,7 +14,7 @@ func (s *MemoSuite) SetUpSuite(c *C) {
 }
 
 func (s *MemoSuite) TestTxType(c *C) {
-	for _, trans := range []TxType{txCreate, txStake, txWithdraw, txSwap, txOutbound, txAdd, txGas, txBond, txLeave, txNextPool, txAck} {
+	for _, trans := range []TxType{txCreate, txStake, txWithdraw, txSwap, txOutbound, txAdd, txGas, txBond, txLeave} {
 		tx, err := stringToTxType(trans.String())
 		c.Assert(err, IsNil)
 		c.Check(tx, Equals, trans)
@@ -69,9 +69,6 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	memo, err = ParseMemo("leave:whatever")
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txLeave), Equals, true)
-	memo, err = ParseMemo("ack:whatever")
-	c.Assert(err, IsNil)
-	c.Check(memo.IsType(txAck), Equals, true)
 
 	memo, err = ParseMemo("gas")
 	c.Assert(err, IsNil)
@@ -167,19 +164,9 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(memo.IsType(txBond), Equals, true)
 	c.Assert(memo.GetNodeAddress().String(), Equals, whiteListAddr.String())
 
-	pubKey := GetRandomPubKey()
-	memo, err = ParseMemo("nextpool:" + pubKey.String())
-	c.Assert(err, IsNil)
-	c.Assert(memo.IsType(txNextPool), Equals, true)
-	c.Assert(memo.GetNextPoolAddress().String(), Equals, pubKey.String())
-	c.Assert(memo.GetNextPoolAddress().Equals(pubKey), Equals, true)
-
 	memo, err = ParseMemo("leave")
 	c.Assert(err, IsNil)
 	c.Assert(memo.IsType(txLeave), Equals, true)
-	memo, err = ParseMemo("ack")
-	c.Assert(err, IsNil)
-	c.Assert(memo.IsType(txAck), Equals, true)
 
 	memo, err = ParseMemo("gas")
 	c.Assert(err, IsNil)

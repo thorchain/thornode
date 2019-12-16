@@ -9,7 +9,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-func refundTx(ctx sdk.Context, tx ObservedTx, store *TxOutStore, keeper Keeper, poolAddr common.PubKey, chain common.Chain, deductFee bool) error {
+func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, deductFee bool) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	for _, coin := range tx.Tx.Coins {
@@ -19,13 +19,13 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store *TxOutStore, keeper Keeper, 
 		}
 		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
 			toi := &TxOutItem{
-				Chain:       chain,
+				Chain:       tx.Tx.Chain,
 				InHash:      tx.Tx.ID,
 				ToAddress:   tx.Tx.FromAddress,
-				PoolAddress: poolAddr,
+				VaultPubKey: tx.ObservedPubKey,
 				Coin:        coin,
 			}
-			store.AddTxOutItem(ctx, keeper, toi, false)
+			store.AddTxOutItem(ctx, toi)
 			continue
 		}
 
@@ -34,18 +34,43 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store *TxOutStore, keeper Keeper, 
 	return nil
 }
 
-// RefundBond use to return validator's bond
-func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut *TxOutStore) {
+func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
+	ygg, err := keeper.GetYggdrasil(ctx, nodeAcc.NodePubKey.Secp256k1)
+	if err != nil {
+		return err
+	}
+
+	// Calculate total value (in rune) the Yggdrasil pool has
+	yggRune := sdk.ZeroUint()
+	for _, coin := range ygg.Coins {
+		if coin.Asset.IsRune() {
+			yggRune = yggRune.Add(coin.Amount)
+		} else {
+			pool, err := keeper.GetPool(ctx, coin.Asset)
+			if err != nil {
+				return err
+			}
+			yggRune = yggRune.Add(pool.AssetValueInRune(coin.Amount))
+		}
+	}
+
+	if nodeAcc.Bond.LT(yggRune) {
+		ctx.Logger().Error("Node Account (%s) left with more funds in their Yggdrasil vault than their bond's value (%d/%d)", yggRune, nodeAcc.Bond)
+	}
+
+	nodeAcc.Bond = common.SafeSub(nodeAcc.Bond, yggRune)
+
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
 		// refund bond
 		txOutItem := &TxOutItem{
-			Chain:     common.BNBChain,
-			ToAddress: nodeAcc.BondAddress,
-			InHash:    txID,
-			Coin:      common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
+			Chain:       common.BNBChain,
+			ToAddress:   nodeAcc.BondAddress,
+			VaultPubKey: txOut.GetAsgardPoolPubKey(common.BNBChain).PubKey,
+			InHash:      txID,
+			Coin:        common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
 
-		txOut.AddTxOutItem(ctx, keeper, txOutItem, true)
+		txOut.AddTxOutItem(ctx, txOutItem)
 	}
 
 	nodeAcc.Bond = sdk.ZeroUint()
@@ -53,7 +78,21 @@ func RefundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
 	if err := keeper.SetNodeAccount(ctx, nodeAcc); nil != err {
 		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", nodeAcc), err)
+		return err
 	}
+
+	return nil
+}
+
+// Checks if the observed vault pubkey is a valid asgard or ygg vault
+func isCurrentVaultPubKey(ctx sdk.Context, keeper Keeper, poolAddrMgr PoolAddressManager, tx ObservedTx) bool {
+	currentPoolAddress := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(tx.Tx.Chain)
+	yggExists := keeper.YggdrasilExists(ctx, tx.ObservedPubKey)
+	if !currentPoolAddress.PubKey.Equals(tx.ObservedPubKey) && !yggExists {
+		ctx.Logger().Error("wrong pool address, refund", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", tx.ObservedPubKey)
+		return false
+	}
+	return true
 }
 
 // isSignedByActiveObserver check whether the signers are all active observer
@@ -145,4 +184,45 @@ func wrapError(ctx sdk.Context, err error, wrap string) error {
 	err = errors.Wrap(err, wrap)
 	ctx.Logger().Error(err.Error())
 	return err
+}
+
+func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
+	if len(tx.Tx.Gas) == 0 {
+		return nil
+	}
+
+	vault, err := keeper.GetVaultData(ctx)
+	if nil != err {
+		return fmt.Errorf("fail to get vault: %w", err)
+	}
+	vault.Gas = vault.Gas.Add(tx.Tx.Gas)
+	if err := keeper.SetVaultData(ctx, vault); err != nil {
+		return err
+	}
+
+	// Subtract gas from pools (will be reimbursed later with rune at the end
+	// of the block)
+	for _, gas := range tx.Tx.Gas {
+		pool, err := keeper.GetPool(ctx, gas.Asset)
+		if err != nil {
+			return err
+		}
+		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
+		if err := keeper.SetPool(ctx, pool); err != nil {
+			return err
+		}
+	}
+
+	if keeper.YggdrasilExists(ctx, tx.ObservedPubKey) {
+		ygg, err := keeper.GetYggdrasil(ctx, tx.ObservedPubKey)
+		if err != nil {
+			return err
+		}
+
+		ygg.SubFunds(tx.Tx.Gas.ToCoins())
+
+		return keeper.SetYggdrasil(ctx, ygg)
+	}
+
+	return nil
 }

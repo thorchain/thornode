@@ -14,8 +14,8 @@ var _ = Suite(&TxOutStoreSuite{})
 func (s TxOutStoreSuite) TestAddGasFees(c *C) {
 	ctx, k := setupKeeperForTest(c)
 
-	gas := common.BNBGasFeeSingleton
-	err := AddGasFees(ctx, k, gas)
+	tx := GetRandomObservedTx()
+	err := AddGasFees(ctx, k, tx)
 	c.Assert(err, IsNil)
 	vault, err := k.GetVaultData(ctx)
 	c.Assert(err, IsNil)
@@ -26,9 +26,9 @@ func (s TxOutStoreSuite) TestAddGasFees(c *C) {
 
 func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
-	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	pk1, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
+	w.poolAddrMgr.GetCurrentPoolAddresses().Current = common.PoolPubKeys{pk1}
 
 	acc1 := GetRandomNodeAccount(NodeActive)
 	acc2 := GetRandomNodeAccount(NodeActive)
@@ -43,7 +43,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(40*common.One)),
 		},
 	)
-	w.keeper.SetYggdrasil(w.ctx, ygg)
+	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
 
 	ygg = NewYggdrasil(acc2.NodePubKey.Secp256k1)
 	ygg.AddFunds(
@@ -51,7 +51,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(50*common.One)),
 		},
 	)
-	w.keeper.SetYggdrasil(w.ctx, ygg)
+	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
 
 	ygg = NewYggdrasil(acc3.NodePubKey.Secp256k1)
 	ygg.AddFunds(
@@ -59,7 +59,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},
 	)
-	w.keeper.SetYggdrasil(w.ctx, ygg)
+	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
 
 	// Create voter
 	inTxID := GetRandomTxHash()
@@ -78,10 +78,10 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(20*common.One)),
 	}
 
-	w.txOutStore.AddTxOutItem(w.ctx, w.keeper, item, false)
+	w.txOutStore.AddTxOutItem(w.ctx, item)
 	msgs := w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 1)
-	c.Assert(msgs[0].PoolAddress.String(), Equals, acc2.NodePubKey.Secp256k1.String())
+	c.Assert(msgs[0].VaultPubKey.String(), Equals, acc2.NodePubKey.Secp256k1.String())
 	c.Assert(msgs[0].Coin.Amount.Equal(sdk.NewUint(19*common.One)), Equals, true)
 
 	// Should get acc1. Acc3 hasn't signed and acc1 now has the highest amount
@@ -93,10 +93,10 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(20*common.One)),
 	}
 
-	w.txOutStore.AddTxOutItem(w.ctx, w.keeper, item, false)
+	w.txOutStore.AddTxOutItem(w.ctx, item)
 	msgs = w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 2)
-	c.Assert(msgs[1].PoolAddress.String(), Equals, acc1.NodePubKey.Secp256k1.String())
+	c.Assert(msgs[1].VaultPubKey.String(), Equals, acc1.NodePubKey.Secp256k1.String())
 
 	item = &TxOutItem{
 		Chain:     common.BNBChain,
@@ -104,18 +104,18 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		InHash:    inTxID,
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(1000*common.One)),
 	}
-	w.txOutStore.AddTxOutItem(w.ctx, w.keeper, item, false)
+	w.txOutStore.AddTxOutItem(w.ctx, item)
 	msgs = w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 3)
-	c.Assert(msgs[2].PoolAddress.String(), Equals, w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain).PubKey.String())
+	c.Assert(msgs[2].VaultPubKey.String(), Equals, w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain).PubKey.String())
 
 }
 
 func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
-	pk1, err := common.NewPoolPubKey(common.BNBChain, 0, GetRandomPubKey())
+	pk1, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
 	c.Assert(err, IsNil)
-	w.poolAddrMgr.currentPoolAddresses.Current = common.PoolPubKeys{pk1}
+	w.poolAddrMgr.GetCurrentPoolAddresses().Current = common.PoolPubKeys{pk1}
 
 	inTxID := GetRandomTxHash()
 	item := &TxOutItem{
@@ -124,7 +124,7 @@ func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 		InHash:    inTxID,
 		Coin:      common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One)),
 	}
-	w.txOutStore.AddTxOutItem(w.ctx, w.keeper, item, false)
+	w.txOutStore.AddTxOutItem(w.ctx, item)
 	msgs := w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 1)
 	c.Assert(msgs[0].Coin.Amount.Equal(sdk.NewUint(20*common.One)), Equals, true)

@@ -23,304 +23,151 @@ const (
 	genesisBlockHeight = 1
 )
 
-// ValidatorManager is to manage a list of validators , and rotate them
-type ValidatorManager struct {
-	k              Keeper
-	Meta           *ValidatorMeta
-	rotationPolicy ValidatorRotationPolicy
-	poolAddrMgr    *PoolAddressManager
+type ValidatorManager interface {
+	BeginBlock(ctx sdk.Context) error
+	EndBlock(ctx sdk.Context, store TxOutStore) []abci.ValidatorUpdate
+	RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error
+}
+
+// ValidatorMgr is to manage a list of validators , and rotate them
+type ValidatorMgr struct {
+	k           Keeper
+	poolAddrMgr PoolAddressManager
 }
 
 // NewValidatorManager create a new instance of ValidatorManager
-func NewValidatorManager(k Keeper, poolAddrMgr *PoolAddressManager) *ValidatorManager {
-	return &ValidatorManager{
+func NewValidatorMgr(k Keeper, poolAddrMgr PoolAddressManager) *ValidatorMgr {
+	return &ValidatorMgr{
 		k:           k,
 		poolAddrMgr: poolAddrMgr,
 	}
 }
 
 // BeginBlock when block begin
-func (vm *ValidatorManager) BeginBlock(ctx sdk.Context) {
+func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context) error {
 	height := ctx.BlockHeight()
-	vm.rotationPolicy = GetValidatorRotationPolicy(ctx, vm.k)
-	if err := vm.rotationPolicy.IsValid(); nil != err {
-		ctx.Logger().Error("invalid rotation policy", err)
-	}
 	if height == genesisBlockHeight {
-		vm.Meta = &ValidatorMeta{}
 		if err := vm.setupValidatorNodes(ctx, height); nil != err {
 			ctx.Logger().Error("fail to setup validator nodes", err)
 		}
-		if err := vm.k.SetValidatorMeta(ctx, *vm.Meta); nil != err {
-			ctx.Logger().Error("fail to save validator meta to kv store", err)
-		}
 	}
 
-	// restore vm.meta from data store
-	if vm.Meta == nil {
-		meta, err := vm.k.GetValidatorMeta(ctx)
-		if nil != err {
-			ctx.Logger().Error("fail to get validator meta", err)
-		}
-		vm.Meta = &meta
-	}
-}
-
-// EndBlock when block end
-func (vm *ValidatorManager) EndBlock(ctx sdk.Context, store *TxOutStore) []abci.ValidatorUpdate {
-	height := ctx.BlockHeight()
-	if height != vm.Meta.RotateWindowOpenAtBlockHeight &&
-		height != vm.Meta.RotateAtBlockHeight &&
-		height != vm.Meta.LeaveOpenWindow &&
-		height != vm.Meta.LeaveProcessAt {
-		return nil
-	}
-	defer func() {
-		if err := vm.k.SetValidatorMeta(ctx, *vm.Meta); nil != err {
-			ctx.Logger().Error("fail to save validator meta to kv store", err)
-		}
-	}()
-	if height == vm.Meta.RotateWindowOpenAtBlockHeight {
-		if err := vm.prepareAddNode(ctx, height); nil != err {
-			ctx.Logger().Error("fail to prepare add nodes", err)
-		}
-		return nil
+	if err := vm.markBadActor(ctx, constants.BadValidatorRate); err != nil {
+		return err
 	}
 
-	if height == vm.Meta.LeaveOpenWindow {
-		if err := vm.prepareToNodesToLeave(ctx, store); nil != err {
-			ctx.Logger().Error("fail to prepare node to leave")
-		}
-		return nil
+	if err := vm.markOldActor(ctx, constants.OldValidatorRate); err != nil {
+		return err
 	}
-	if height == vm.Meta.RotateAtBlockHeight || height == vm.Meta.LeaveProcessAt {
-		//  queueNode put in here on purpose, so THORNode know who had been queued before THORNode actually rotate them
-		queueNode := vm.Meta.Queued
-		rotated := false
-		var err error
-		if height == vm.Meta.RotateAtBlockHeight {
-			rotated, err = vm.rotateValidatorNodes(ctx, store)
-			if nil != err {
-				ctx.Logger().Error("fail to rotate validator nodes", err)
-				return nil
-			}
-		}
-		if height == vm.Meta.LeaveProcessAt {
-			rotated, err = vm.processValidatorLeave(ctx, store)
-			if nil != err {
-				ctx.Logger().Error("fail to process validator leave", err)
-				return nil
-			}
-		}
-		if !rotated {
-			return nil
-		}
 
-		activeNodes, err := vm.k.ListActiveNodeAccounts(ctx)
-		if nil != err {
-			ctx.Logger().Error("fail to list all active node accounts")
-			return nil
+	if ctx.BlockHeight()%constants.RotatePerBlockHeight == 0 {
+		next, ok, err := vm.nextPoolNodeAccounts(ctx, constants.DesireValidatorSet)
+		if err != nil {
+			return err
 		}
-		validators := make([]abci.ValidatorUpdate, 0, len(activeNodes))
-		for _, item := range activeNodes {
-			pk, err := sdk.GetConsPubKeyBech32(item.ValidatorConsPubKey)
-			if nil != err {
-				ctx.Logger().Error("fail to parse consensus public key", "key", item.ValidatorConsPubKey)
-				continue
-			}
-			validators = append(validators, abci.ValidatorUpdate{
-				PubKey: tmtypes.TM2PB.PubKey(pk),
-				Power:  100,
-			})
+		if ok {
+			_ = next // TODO: trigger pool rotation...
 		}
-		for _, item := range queueNode {
-			na, err := vm.k.GetNodeAccount(ctx, item.NodeAddress)
-			if nil != err {
-				ctx.Logger().Error("fail to get node account", err, "node address", item.NodeAddress.String())
-				continue
-			}
-			if na.Status == NodeStandby {
-				// node to be removed as validator
-				pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
-				if nil != err {
-					ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey)
-					continue
-				}
-				validators = append(validators, abci.ValidatorUpdate{
-					PubKey: tmtypes.TM2PB.PubKey(pk),
-					Power:  0,
-				})
-			}
-		}
-		return validators
 	}
 
 	return nil
 }
-func (vm *ValidatorManager) processValidatorLeave(ctx sdk.Context, store *TxOutStore) (bool, error) {
-	if vm.Meta.LeaveProcessAt != ctx.BlockHeight() {
-		return false, nil
-	}
-	defer func() {
-		vm.Meta.Nominated = nil
-		vm.Meta.Queued = nil
-		vm.Meta.LeaveQueue = nil
-		vm.Meta.LeaveOpenWindow += vm.rotationPolicy.LeaveProcessPerBlockHeight
-		vm.Meta.LeaveProcessAt += vm.rotationPolicy.LeaveProcessPerBlockHeight
-		// delay scheduled validator rotation
-		vm.Meta.RotateAtBlockHeight += vm.rotationPolicy.LeaveProcessPerBlockHeight
-		vm.Meta.RotateWindowOpenAtBlockHeight += vm.rotationPolicy.LeaveProcessPerBlockHeight
-	}()
 
-	// Ragnarok protocol
-	if vm.Meta.Ragnarok {
-		ctx.Logger().Info("Ragnarok protocol triggered")
-		return false, nil
+// EndBlock when block end
+func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore) []abci.ValidatorUpdate {
+	height := ctx.BlockHeight()
+	activeNodes, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		ctx.Logger().Error("fail to list active node accounts")
 	}
 
-	if vm.Meta.Queued.IsEmpty() {
-		ctx.Logger().Info("no nodes need to leave so no rotate")
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeValidatorManager,
-				sdk.NewAttribute("action", "abort"),
-				sdk.NewAttribute("reason", "no queued nodes")))
-		return false, nil
+	readyNodes, err := vm.k.ListNodeAccountsByStatus(ctx, NodeReady)
+	if err != nil {
+		ctx.Logger().Error("fail to list ready node accounts")
 	}
 
-	for _, item := range vm.Meta.Queued {
-		item.UpdateStatus(NodeStandby, ctx.BlockHeight())
-		if err := vm.k.SetNodeAccount(ctx, item); nil != err {
-			return false, fmt.Errorf("fail to save node account: %w", err)
-		}
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeValidatorStandby,
-				sdk.NewAttribute("bep_address", item.NodeAddress.String()),
-				sdk.NewAttribute("consensus_public_key", item.ValidatorConsPubKey)))
-		if err := vm.requestYggReturn(ctx, item, vm.poolAddrMgr, store); nil != err {
-			return false, err
-		}
+	poolAddresses, err := vm.k.GetPoolAddresses(ctx)
+	if err != nil {
+		ctx.Logger().Error("fail to get pool addresses")
 	}
+	membership := poolAddresses.Current[0].Membership
 
-	for _, item := range vm.Meta.Nominated {
-		nominatedNodeAccount, err := vm.k.GetNodeAccount(ctx, item.NodeAddress)
-		if nil != err {
-			return false, fmt.Errorf("fail to get nominated account from data store: %w", err)
-		}
+	var newActive NodeAccounts // store the list of new active users
 
-		if nominatedNodeAccount.Status != NodeReady {
-			// set them to standby, do THORNode need to slash the validator? THORNode nominated them but they are not ready
-			nominatedNodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
-			if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
-				return false, fmt.Errorf("fail to save node account: %w", err)
+	// find active node accounts that are no longer active
+	removedNodes := false
+	for _, na := range activeNodes {
+		found := false
+		for _, member := range membership {
+			if na.NodePubKey.Contains(member) {
+				newActive = append(newActive, na)
+				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
+				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+					ctx.Logger().Error("fail to save node account")
+				}
+				break
 			}
+		}
+		if !found && len(membership) > 0 {
 			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(EventTypeValidatorManager,
-					sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
-					sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.ValidatorConsPubKey),
-					sdk.NewAttribute("action", "abort"),
-					sdk.NewAttribute("reason", "node not ready")))
-			ctx.Logger().Info(fmt.Sprintf("nominated account %s is not ready , abort rotation, try it nex time", item.NodeAddress))
-			// go to the next
+				sdk.NewEvent("UpdateNodeAccountStatus",
+					sdk.NewAttribute("Address", na.NodeAddress.String()),
+					sdk.NewAttribute("Former:", na.Status.String()),
+					sdk.NewAttribute("Current:", NodeStandby.String())))
+			na.UpdateStatus(NodeStandby, height)
+			removedNodes = true
+			if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+				ctx.Logger().Error("fail to save node account")
+			}
+		}
+	}
+
+	// find ready nodes that change to
+	for _, na := range readyNodes {
+		for _, member := range membership {
+			if na.NodePubKey.Contains(member) {
+				newActive = append(newActive, na)
+				ctx.EventManager().EmitEvent(
+					sdk.NewEvent("UpdateNodeAccountStatus",
+						sdk.NewAttribute("Address", na.NodeAddress.String()),
+						sdk.NewAttribute("Former:", na.Status.String()),
+						sdk.NewAttribute("Current:", NodeActive.String())))
+				na.UpdateStatus(NodeActive, height)
+				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
+				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+					ctx.Logger().Error("fail to save node account")
+				}
+				break
+			}
+		}
+	}
+
+	validators := make([]abci.ValidatorUpdate, 0, len(newActive))
+	for _, item := range newActive {
+		pk, err := sdk.GetConsPubKeyBech32(item.ValidatorConsPubKey)
+		if nil != err {
+			ctx.Logger().Error("fail to parse consensus public key", "key", item.ValidatorConsPubKey)
 			continue
 		}
-		// set to active
-		nominatedNodeAccount.UpdateStatus(NodeActive, ctx.BlockHeight())
-		if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
-			return false, fmt.Errorf("fail to save node account: %w", err)
-		}
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeValidatorActive,
-				sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
-				sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.ValidatorConsPubKey)))
-	}
-	return true, nil
-}
-func (vm *ValidatorManager) rotateValidatorNodes(ctx sdk.Context, store *TxOutStore) (bool, error) {
-	if vm.Meta.RotateAtBlockHeight != ctx.BlockHeight() {
-		// it is not an error , just not a good time
-		return false, nil
-	}
-	defer func() {
-		vm.Meta.Nominated = nil
-		vm.Meta.Queued = nil
-		vm.Meta.LeaveQueue = nil
-		vm.Meta.LeaveOpenWindow += vm.rotationPolicy.LeaveProcessPerBlockHeight
-		vm.Meta.LeaveProcessAt += vm.rotationPolicy.LeaveProcessPerBlockHeight
-		vm.Meta.RotateAtBlockHeight += vm.rotationPolicy.RotatePerBlockHeight
-		vm.Meta.RotateWindowOpenAtBlockHeight += vm.rotationPolicy.RotatePerBlockHeight
-	}()
-	// Ragnarok protocol
-	if vm.Meta.Ragnarok {
-		ctx.Logger().Info("Ragnarok protocol triggered , no more rotation")
-		return false, nil
+		validators = append(validators, abci.ValidatorUpdate{
+			PubKey: tmtypes.TM2PB.PubKey(pk),
+			Power:  100,
+		})
 	}
 
-	if vm.Meta.Nominated.IsEmpty() {
-		ctx.Logger().Info("no nodes get nominated ,and no nodes need to leave so no rotate")
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeValidatorManager,
-				sdk.NewAttribute("action", "abort"),
-				sdk.NewAttribute("reason", "no nominated nodes")))
-		return false, nil
-	}
-	hasRotateIn := false
-	for _, item := range vm.Meta.Nominated {
-		nominatedNodeAccount, err := vm.k.GetNodeAccount(ctx, item.NodeAddress)
-		if nil != err {
-			return false, fmt.Errorf("fail to get nominated account from data store: %w", err)
+	if height > 1 && removedNodes && len(newActive) <= constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
+		// execute Ragnarok protocol, no going back
+		// THORNode have to request the fund back now, because once it get to the rotate block height ,
+		// THORNode won't have validators anymore
+		if err := vm.ragnarokProtocolStep1(ctx, activeNodes, store); nil != err {
+			ctx.Logger().Error("fail to execute ragnarok protocol step 1: %s", err)
 		}
-
-		if nominatedNodeAccount.Status != NodeReady {
-			// set them to standby, do THORNode need to slash the validator? THORNode nominated them but they are not ready
-			nominatedNodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
-			if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
-				return false, fmt.Errorf("fail to save node account: %w", err)
-			}
-			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(EventTypeValidatorManager,
-					sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
-					sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.ValidatorConsPubKey),
-					sdk.NewAttribute("action", "abort"),
-					sdk.NewAttribute("reason", "node not ready")))
-			ctx.Logger().Info(fmt.Sprintf("nominated account %s is not ready , abort rotation, try it nex time", item.NodeAddress))
-			// go to the next
-			continue
-		}
-		// set to active
-		nominatedNodeAccount.UpdateStatus(NodeActive, ctx.BlockHeight())
-		if err := vm.k.SetNodeAccount(ctx, nominatedNodeAccount); nil != err {
-			return false, fmt.Errorf("fail to save node account: %w", err)
-		}
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeValidatorActive,
-				sdk.NewAttribute("bep_address", nominatedNodeAccount.NodeAddress.String()),
-				sdk.NewAttribute("consensus_public_key", nominatedNodeAccount.ValidatorConsPubKey)))
-		hasRotateIn = true
-	}
-	if !hasRotateIn {
-		return false, errors.New("none of the nominated node is ready, give up")
 	}
 
-	if !vm.Meta.Queued.IsEmpty() {
-		for _, item := range vm.Meta.Queued {
-			item.UpdateStatus(NodeStandby, ctx.BlockHeight())
-			if err := vm.k.SetNodeAccount(ctx, item); nil != err {
-				return false, fmt.Errorf("fail to save node account: %w", err)
-			}
-			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(EventTypeValidatorStandby,
-					sdk.NewAttribute("bep_address", item.NodeAddress.String()),
-					sdk.NewAttribute("consensus_public_key", item.ValidatorConsPubKey)))
-			// request money back
-			if err := vm.requestYggReturn(ctx, item, vm.poolAddrMgr, store); nil != err {
-				return false, err
-			}
-		}
-	}
-	return true, nil
+	return validators
 }
 
-func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr *PoolAddressManager, txOut *TxOutStore) error {
+func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error {
 	ygg, err := vm.k.GetYggdrasil(ctx, node.NodePubKey.Secp256k1)
 	if nil != err && !errors.Is(err, ErrYggdrasilNotFound) {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
@@ -333,7 +180,7 @@ func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, 
 		return nil
 	}
 	for _, c := range chains {
-		currentChainPoolAddr := poolAddrMgr.currentPoolAddresses.Current.GetByChain(c)
+		currentChainPoolAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(c)
 		for _, coin := range ygg.Coins {
 			toAddr, err := currentChainPoolAddr.PubKey.GetAddress(coin.Asset.Chain)
 			if !toAddr.IsEmpty() {
@@ -341,11 +188,11 @@ func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, 
 					Chain:       coin.Asset.Chain,
 					ToAddress:   toAddr,
 					InHash:      common.BlankTxID,
-					PoolAddress: ygg.PubKey,
+					VaultPubKey: ygg.PubKey,
 					Memo:        "yggdrasil-",
 					Coin:        coin,
 				}
-				txOut.AddTxOutItem(ctx, vm.k, txOutItem, false)
+				txOut.AddTxOutItem(ctx, txOutItem)
 				continue
 			}
 			wrapErr := fmt.Errorf(
@@ -359,91 +206,9 @@ func (vm *ValidatorManager) requestYggReturn(ctx sdk.Context, node NodeAccount, 
 	return nil
 }
 
-// leave process window open
-func (vm *ValidatorManager) prepareToNodesToLeave(ctx sdk.Context, txOut *TxOutStore) error {
-	height := ctx.BlockHeight()
-	if height != vm.Meta.LeaveOpenWindow {
-		return nil
-	}
-	if len(vm.Meta.LeaveQueue) == 0 {
-		ctx.Logger().Info("no one request to leave")
-		return nil
-	}
-
-	// honour leave request
-	for _, item := range vm.Meta.LeaveQueue {
-		node, err := vm.k.GetNodeAccount(ctx, item.NodeAddress)
-		if nil != err {
-			return fmt.Errorf("fail to get node account: %w", err)
-		}
-
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeQueuedValidator,
-				sdk.NewAttribute("bep_address", node.NodeAddress.String()),
-				sdk.NewAttribute("consensus_public_key", node.ValidatorConsPubKey)))
-		vm.Meta.Queued = append(vm.Meta.Queued, node)
-	}
-	rotateIn := len(vm.Meta.Queued)
-	// do THORNode have standby nodes?
-	// who should be added , and who need to removed
-	standbyNodes, err := vm.k.ListNodeAccountsByStatus(ctx, NodeStandby)
-	if nil != err {
-		return fmt.Errorf("fail to get all standby nodes,%w", err)
-	}
-	if len(standbyNodes) == 0 {
-		ctx.Logger().Info("no standby nodes")
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeValidatorManager,
-				sdk.NewAttribute("action", "ignore"),
-				sdk.NewAttribute("reason", "no standby nodes")))
-	}
-
-	if len(standbyNodes) > rotateIn {
-		sort.Sort(standbyNodes)
-		standbyNodes = standbyNodes[:rotateIn]
-	}
-
-	vm.Meta.Nominated = standbyNodes
-	for _, item := range vm.Meta.Nominated {
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeNominatedValidator,
-				sdk.NewAttribute("bep_address", item.NodeAddress.String()),
-				sdk.NewAttribute("consensus_public_key", item.ValidatorConsPubKey)))
-	}
-
-	activeNodes, err := vm.k.ListActiveNodeAccounts(ctx)
-	if nil != err {
-		return fmt.Errorf("fail to get active node accounts: %w", err)
-	}
-	totalActive := len(activeNodes)
-	afterLeave := totalActive + len(vm.Meta.Nominated) - len(vm.Meta.Queued)
-
-	if afterLeave <= constants.MinmumNodesForYggdrasil {
-		if err := vm.recallYggFunds(ctx, activeNodes, txOut); nil != err {
-			return fmt.Errorf("fail to recall yggdrasil funds")
-		}
-	}
-
-	if afterLeave > constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
-		// trigger pool rotate next
-		vm.poolAddrMgr.currentPoolAddresses.RotateWindowOpenAt = height + 1
-		vm.poolAddrMgr.currentPoolAddresses.RotateAt = vm.Meta.LeaveProcessAt
-		return nil
-	}
-	// execute Ragnarok protocol, no going back
-	// THORNode have to request the fund back now, because once it get to the rotate block height ,
-	// THORNode won't have validators anymore
-	if err := vm.ragnarokProtocolStep1(ctx, activeNodes, txOut); nil != err {
-		return fmt.Errorf("fail to execute ragnarok protocol step 1")
-	}
-
-	return nil
-}
-
 // ragnarokProtocolStep1 - request all yggdrasil pool to return the fund
 // when THORNode observe the node return fund successfully, the node's bound will be refund.
-func (vm *ValidatorManager) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut *TxOutStore) error {
-	vm.Meta.Ragnarok = true
+func (vm *ValidatorMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore) error {
 	// do THORNode have yggdrasil pool?
 	hasYggdrasil, err := vm.k.HasValidYggdrasilPools(ctx)
 	if nil != err {
@@ -459,86 +224,18 @@ func (vm *ValidatorManager) ragnarokProtocolStep1(ctx sdk.Context, activeNodes N
 	return vm.recallYggFunds(ctx, activeNodes, txOut)
 }
 
-func (vm *ValidatorManager) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts, txOut *TxOutStore) error {
+func (vm *ValidatorMgr) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore) error {
 	// request every node to return fund
 	for _, na := range activeNodes {
-		if err := vm.requestYggReturn(ctx, na, vm.poolAddrMgr, txOut); nil != err {
+		if err := vm.RequestYggReturn(ctx, na, vm.poolAddrMgr, txOut); nil != err {
 			return fmt.Errorf("fail to request yggdrasil fund back: %w", err)
 		}
 	}
 	return nil
 }
 
-// scheduled node rotation open
-func (vm *ValidatorManager) prepareAddNode(ctx sdk.Context, height int64) error {
-	if height != vm.Meta.RotateWindowOpenAtBlockHeight {
-		// it is not an error , just not a good time to do this yet
-		return nil
-	}
-	// who should be added , and who need to removed
-	standbyNodes, err := vm.k.ListNodeAccountsByStatus(ctx, NodeStandby)
-	if nil != err {
-		return fmt.Errorf("fail to get all standby nodes,%w", err)
-	}
-	if len(standbyNodes) == 0 {
-		ctx.Logger().Info("no standby nodes")
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeValidatorManager,
-				sdk.NewAttribute("action", "abort"),
-				sdk.NewAttribute("reason", "no standby nodes")))
-		return nil
-	}
-	sort.Sort(standbyNodes)
-	activeNodes, err := vm.k.ListActiveNodeAccounts(ctx)
-	if nil != err {
-		return fmt.Errorf("fail to get active node accounts: %w", err)
-	}
-	totalActiveNodes := len(activeNodes)
-	rotateIn := vm.rotationPolicy.RotateInNumBeforeFull
-	rotateOut := vm.rotationPolicy.RotateOutNumBeforeFull
-	if int64(totalActiveNodes) >= vm.rotationPolicy.DesireValidatorSet {
-		// THORNode are full
-		rotateIn = vm.rotationPolicy.RotateNumAfterFull
-		rotateOut = vm.rotationPolicy.RotateNumAfterFull
-	}
-	if int64(len(standbyNodes)) > rotateIn {
-		standbyNodes = standbyNodes[:rotateIn]
-	}
-	vm.Meta.Nominated = standbyNodes
-	for _, item := range vm.Meta.Nominated {
-		ctx.EventManager().EmitEvent(
-			sdk.NewEvent(EventTypeNominatedValidator,
-				sdk.NewAttribute("bep_address", item.NodeAddress.String()),
-				sdk.NewAttribute("consensus_public_key", item.ValidatorConsPubKey)))
-	}
-	// THORNode need to set a minimum validator set , if we have less than the minimum , then THORNode don't rotate out
-	if totalActiveNodes <= constants.MinmumNodesForBFT {
-		rotateOut = 0
-	}
-
-	if rotateOut > 0 {
-		mod := (ctx.BlockHeight() / vm.rotationPolicy.RotatePerBlockHeight) % 2
-		if mod == 0 {
-			activeNodesBySlash := NodeAccountsBySlashingPoint(activeNodes)
-			sort.Sort(activeNodesBySlash)
-			// Queue the first few nodes to be rotated out
-			vm.Meta.Queued = NodeAccounts(activeNodesBySlash[:rotateOut])
-		} else {
-			sort.Sort(activeNodes)
-			vm.Meta.Queued = activeNodes[:rotateOut]
-		}
-		for _, item := range vm.Meta.Queued {
-			ctx.EventManager().EmitEvent(
-				sdk.NewEvent(EventTypeQueuedValidator,
-					sdk.NewAttribute("bep_address", item.NodeAddress.String()),
-					sdk.NewAttribute("consensus_public_key", item.ValidatorConsPubKey)))
-		}
-	}
-	return nil
-}
-
 // setupValidatorNodes it is one off it only get called when genesis
-func (vm *ValidatorManager) setupValidatorNodes(ctx sdk.Context, height int64) error {
+func (vm *ValidatorMgr) setupValidatorNodes(ctx sdk.Context, height int64) error {
 	if height != genesisBlockHeight {
 		ctx.Logger().Info("only need to setup validator node when start up", "height", height)
 		return nil
@@ -570,9 +267,8 @@ func (vm *ValidatorManager) setupValidatorNodes(ctx sdk.Context, height int64) e
 	sort.Sort(activeCandidateNodes)
 	sort.Sort(readyNodes)
 	activeCandidateNodes = append(activeCandidateNodes, readyNodes...)
-	desireValidatorSet := vm.rotationPolicy.DesireValidatorSet
 	for idx, item := range activeCandidateNodes {
-		if int64(idx) < desireValidatorSet {
+		if int64(idx) < constants.DesireValidatorSet {
 			item.UpdateStatus(NodeActive, ctx.BlockHeight())
 		} else {
 			item.UpdateStatus(NodeStandby, ctx.BlockHeight())
@@ -581,9 +277,181 @@ func (vm *ValidatorManager) setupValidatorNodes(ctx sdk.Context, height int64) e
 			return fmt.Errorf("fail to save node account: %w", err)
 		}
 	}
-	vm.Meta.RotateAtBlockHeight = vm.rotationPolicy.RotatePerBlockHeight + 1
-	vm.Meta.RotateWindowOpenAtBlockHeight = vm.rotationPolicy.RotatePerBlockHeight + 1 - vm.rotationPolicy.ValidatorChangeWindow
-	vm.Meta.LeaveOpenWindow = vm.rotationPolicy.LeaveProcessPerBlockHeight + 1 - vm.rotationPolicy.ValidatorChangeWindow
-	vm.Meta.LeaveProcessAt = vm.rotationPolicy.LeaveProcessPerBlockHeight + 1
 	return nil
+}
+
+// Iterate over active node accounts, finding the one with the most slash points
+func (vm *ValidatorMgr) findBadActor(ctx sdk.Context) (NodeAccount, error) {
+	na := NodeAccount{}
+	nas, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return na, err
+	}
+
+	// TODO: return if we're at risk of loosing BTF
+
+	// Find bad actor relative to slashpoints / age.
+	// NOTE: avoiding the usage of float64, we use an alt method...
+	na.SlashPoints = 1
+	na.StatusSince = 9223372036854775807 // highest int64 value
+	for _, n := range nas {
+		if n.SlashPoints == 0 {
+			continue
+		}
+
+		naVal := n.StatusSince / na.SlashPoints
+		nVal := n.StatusSince / n.SlashPoints
+		if nVal > (naVal) {
+			na = n
+		} else if nVal == naVal {
+			if n.SlashPoints > na.SlashPoints {
+				na = n
+			}
+		}
+	}
+
+	return na, nil
+}
+
+// Iterate over active node accounts, finding the one that has been active longest
+func (vm *ValidatorMgr) findOldActor(ctx sdk.Context) (NodeAccount, error) {
+	na := NodeAccount{}
+	nas, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return na, err
+	}
+
+	// TODO: return if we're at risk of loosing BTF
+
+	na.StatusSince = ctx.BlockHeight() // set the start status age to "now"
+	for _, n := range nas {
+		if n.StatusSince < na.StatusSince {
+			na = n
+		}
+	}
+
+	return na, nil
+}
+
+// Mark an old to be churned out
+func (vm *ValidatorMgr) markActor(ctx sdk.Context, na NodeAccount) error {
+	if na.LeaveHeight == 0 {
+		na.LeaveHeight = ctx.BlockHeight()
+		return vm.k.SetNodeAccount(ctx, na)
+	}
+	return nil
+}
+
+// Mark an old actor to be churned out
+func (vm *ValidatorMgr) markOldActor(ctx sdk.Context, rate int64) error {
+	if rate%ctx.BlockHeight() == 0 {
+		na, err := vm.findOldActor(ctx)
+		if err != nil {
+			return err
+		}
+		if err := vm.markActor(ctx, na); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Mark a bad actor to be churned out
+func (vm *ValidatorMgr) markBadActor(ctx sdk.Context, rate int64) error {
+	if rate%ctx.BlockHeight() == 0 {
+		na, err := vm.findBadActor(ctx)
+		if err != nil {
+			return err
+		}
+		if err := vm.markActor(ctx, na); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// find any actor that are ready to become "ready" status
+func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context) error {
+	standby, err := vm.k.ListNodeAccountsByStatus(ctx, NodeStandby)
+	if err != nil {
+		return err
+	}
+	ready, err := vm.k.ListNodeAccountsByStatus(ctx, NodeReady)
+	if err != nil {
+		return err
+	}
+
+	// find min version node has to be, to be "ready" status
+	minVersion := vm.k.GetMinJoinVersion(ctx)
+
+	// check all ready and standby nodes are in "ready" state (upgrade/downgrade as needed)
+	for _, na := range append(standby, ready...) {
+		na.Status = NodeReady // everyone starts with the benefit of the doubt
+
+		// TODO: check node is up to date on thorchain, binance, etc
+		// must have made an observation that matched 2/3rds within the last 5 blocks
+
+		// Check version number is still supported
+		if na.Version.LT(minVersion) {
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
+		}
+
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Returns a list of nodes to include in the next pool
+func (vm *ValidatorMgr) nextPoolNodeAccounts(ctx sdk.Context, targetCount int) (NodeAccounts, bool, error) {
+	rotation := false // track if are making any changes to the current active node accounts
+
+	// update list of ready actors
+	if err := vm.markReadyActors(ctx); err != nil {
+		return nil, false, err
+	}
+
+	ready, err := vm.k.ListNodeAccountsByStatus(ctx, NodeReady)
+	if err != nil {
+		return nil, false, err
+	}
+	// sort by bond size
+	sort.Slice(ready, func(i, j int) bool {
+		return ready[i].Bond.GT(ready[j].Bond)
+	})
+
+	active, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	// sort by LeaveHeight, giving preferential treatment to people who
+	// requested to leave
+	sort.Slice(active, func(i, j int) bool {
+		if active[i].RequestedToLeave != active[j].RequestedToLeave {
+			return active[i].RequestedToLeave
+		}
+		return active[i].LeaveHeight < active[j].LeaveHeight
+	})
+
+	// remove a node node account, if one is marked to leave
+	if len(active) > 0 && active[0].LeaveHeight > 0 {
+		rotation = true
+		active = active[1:]
+	}
+
+	// add ready nodes to become active
+	limit := 2 // Max limit of ready nodes to add. TODO: this should be a constant
+	for i := 1; i <= targetCount-len(active); i++ {
+		if len(ready) >= i {
+			rotation = true
+			active = append(active, ready[i-1])
+		}
+		if i == limit { // limit adding ready accounts
+			break
+		}
+	}
+
+	return active, rotation, nil
 }
