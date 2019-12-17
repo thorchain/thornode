@@ -3,7 +3,6 @@ package thorchain
 import (
 	"fmt"
 
-	"github.com/blang/semver"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -197,81 +196,6 @@ func (HandlerSuite) TestIsSignedByActiveNodeAccounts(c *C) {
 	nodeAccount1 := GetRandomNodeAccount(NodeWhiteListed)
 	c.Assert(k.SetNodeAccount(ctx, nodeAccount1), IsNil)
 	c.Check(isSignedByActiveNodeAccounts(ctx, k, []sdk.AccAddress{nodeAccount1.NodeAddress}), Equals, false)
-}
-
-func (HandlerSuite) TestHandleOperatorMsgEndPool(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-	acc1 := GetRandomNodeAccount(NodeWhiteListed)
-	bnbAddr := GetRandomBNBAddress()
-	txHash := GetRandomTxHash()
-	tx := common.NewTx(
-		txHash,
-		bnbAddr,
-		GetRandomBNBAddress(),
-		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
-		"",
-	)
-	msgEndPool := NewMsgEndPool(common.BNBAsset, tx, acc1.NodeAddress)
-	result := handleOperatorMsgEndPool(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgEndPool)
-	c.Assert(result.IsOK(), Equals, false)
-	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
-	msgEndPool = NewMsgEndPool(common.BNBAsset, tx, w.activeNodeAccount.NodeAddress)
-	stakeTxHash := GetRandomTxHash()
-	tx = common.NewTx(
-		stakeTxHash,
-		bnbAddr,
-		GetRandomBNBAddress(),
-		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
-		"",
-	)
-	msgSetStake := NewMsgSetStakeData(
-		tx,
-		common.BNBAsset,
-		sdk.NewUint(100*common.One),
-		sdk.NewUint(100*common.One),
-		bnbAddr,
-		bnbAddr,
-		w.activeNodeAccount.NodeAddress)
-
-	stakeHandler := NewStakeHandler(w.keeper)
-	stakeResult := stakeHandler.Run(w.ctx, msgSetStake, semver.MustParse("0.1.0"))
-	c.Assert(stakeResult.Code, Equals, sdk.CodeOK)
-
-	p, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	c.Assert(p.Empty(), Equals, false)
-	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
-	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
-	c.Assert(p.Status, Equals, PoolEnabled)
-	w.txOutStore.NewBlock(1)
-	// EndPool again
-	msgEndPool1 := NewMsgEndPool(common.BNBAsset, tx, w.activeNodeAccount.NodeAddress)
-	result1 := handleOperatorMsgEndPool(w.ctx, w.keeper, w.txOutStore, w.poolAddrMgr, msgEndPool1)
-	c.Assert(result1.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result1))
-	p1, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	c.Check(p1.Status, Equals, PoolSuspended)
-	c.Check(p1.BalanceAsset.Uint64(), Equals, uint64(0))
-	c.Check(p1.BalanceRune.Uint64(), Equals, uint64(0))
-	txOut := w.txOutStore.GetBlockOut()
-	c.Check(txOut, NotNil)
-	c.Check(len(txOut.TxArray) > 0, Equals, true)
-	c.Check(txOut.Height, Equals, uint64(1))
-	totalAsset := sdk.ZeroUint()
-	totalRune := sdk.ZeroUint()
-	for _, item := range txOut.TxArray {
-		c.Assert(item.Valid(), IsNil)
-		c.Assert(item.ToAddress.Equals(bnbAddr), Equals, true)
-		if item.Coin.Asset.IsRune() {
-			totalRune = totalRune.Add(item.Coin.Amount)
-		} else {
-			totalAsset = totalAsset.Add(item.Coin.Amount)
-		}
-	}
-	c.Assert(totalAsset.Equal(msgSetStake.AssetAmount), Equals, true, Commentf("%d %d", totalAsset.Uint64(), msgSetStake.AssetAmount.Uint64()))
-	c.Assert(totalRune.Equal(msgSetStake.RuneAmount), Equals, true)
 }
 
 func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
