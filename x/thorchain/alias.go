@@ -46,6 +46,7 @@ var (
 	NewMsgSetUnStake               = types.NewMsgSetUnStake
 	NewMsgSwap                     = types.NewMsgSwap
 	NewMsgSetAdminConfig           = types.NewMsgSetAdminConfig
+	NewKeygens                     = types.NewKeygens
 	NewTxOut                       = types.NewTxOut
 	NewEvent                       = types.NewEvent
 	NewEventPool                   = types.NewEventPool
@@ -126,6 +127,8 @@ type (
 	TssVoter                    = types.TssVoter
 	TxOutItem                   = types.TxOutItem
 	TxOut                       = types.TxOut
+	Keygens                     = types.Keygens
+	Keygen                      = types.Keygen
 	AdminConfigKey              = types.AdminConfigKey
 	AdminConfig                 = types.AdminConfig
 	StakerPoolItem              = types.StakerPoolItem

@@ -37,6 +37,10 @@ func NewQuerier(keeper Keeper, poolAddressMgr PoolAddressManager, validatorMgr V
 			return queryTxOutArray(ctx, path[1:], req, keeper, validatorMgr)
 		case q.QueryTxOutArrayPubkey.Key:
 			return queryTxOutArray(ctx, path[1:], req, keeper, validatorMgr)
+		case q.QueryKeygens.Key:
+			return queryKeygen(ctx, path[1:], req, keeper)
+		case q.QueryKeygensPubkey.Key:
+			return queryKeygen(ctx, path[1:], req, keeper)
 		case q.QueryIncompleteEvents.Key:
 			return queryInCompleteEvents(ctx, path[1:], req, keeper)
 		case q.QueryCompleteEvents.Key:
@@ -325,6 +329,46 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")
+	}
+	return res, nil
+}
+
+func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	var err error
+	height, err := strconv.ParseUint(path[0], 0, 64)
+	if nil != err {
+		ctx.Logger().Error("fail to parse block height", err)
+		return nil, sdk.ErrInternal("fail to parse block height")
+	}
+
+	keygens, err := keeper.GetKeygens(ctx, height)
+	if nil != err {
+		ctx.Logger().Error("fail to get keygens", err)
+		return nil, sdk.ErrInternal("fail to get keygens")
+	}
+
+	if len(path) > 1 {
+		pk, err := common.NewPubKey(path[1])
+		if nil != err {
+			ctx.Logger().Error("fail to parse pubkey", err)
+			return nil, sdk.ErrInternal("fail to parse pubkey")
+		}
+
+		newKeygens := Keygens{
+			Height: keygens.Height,
+		}
+		for _, k := range keygens.Keygens {
+			if k.Contains(pk) {
+				newKeygens.Keygens = append(newKeygens.Keygens, k)
+			}
+		}
+		keygens = newKeygens
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), keygens)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal keygens to json", err)
+		return nil, sdk.ErrInternal("fail to marshal keygens to json")
 	}
 	return res, nil
 }
