@@ -347,9 +347,8 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 		return nil, sdk.ErrInternal("fail to get keygens")
 	}
 
-	pk := common.EmptyPubKey
 	if len(path) > 1 {
-		pk, err = common.NewPubKey(path[1])
+		pk, err := common.NewPubKey(path[1])
 		if nil != err {
 			ctx.Logger().Error("fail to parse pubkey", err)
 			return nil, sdk.ErrInternal("fail to parse pubkey")
