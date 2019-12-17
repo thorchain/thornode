@@ -57,14 +57,14 @@ func (h EndPoolHandler) validateV1(ctx sdk.Context, msg MsgEndPool) error {
 func (h EndPoolHandler) handle(ctx sdk.Context, msg MsgEndPool, version semver.Version) sdk.Result {
 	ctx.Logger().Info("receive MsgEndPool", "asset", msg.Asset, "requester", msg.Tx.FromAddress, "signer", msg.Signer.String())
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg)
+		return h.handleV1(ctx, msg,  version)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
 		return errBadVersion.Result()
 	}
 }
 
-func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool) sdk.Result {
+func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver.Version) sdk.Result {
 	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
 		ctx.Logger().Error("fail to get pool staker", err)
@@ -81,8 +81,7 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool) sdk.Result {
 			msg.Signer,
 		)
 		unstakeHandler := NewUnstakeHandler(h.keeper, h.txOutStore, h.poolAddrMgr)
-		ver := semver.MustParse("0.1.0")
-		result := unstakeHandler.Run(ctx, unstakeMsg, ver)
+		result := unstakeHandler.Run(ctx, unstakeMsg, version)
 		if !result.IsOK() {
 			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
 			return result
