@@ -341,6 +341,12 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
 
+	keygens, err := keeper.GetKeygens(ctx, height)
+	if nil != err {
+		ctx.Logger().Error("fail to get keygens", err)
+		return nil, sdk.ErrInternal("fail to get keygens")
+	}
+
 	pk := common.EmptyPubKey
 	if len(path) > 1 {
 		pk, err = common.NewPubKey(path[1])
@@ -348,15 +354,7 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 			ctx.Logger().Error("fail to parse pubkey", err)
 			return nil, sdk.ErrInternal("fail to parse pubkey")
 		}
-	}
 
-	keygens, err := keeper.GetKeygens(ctx, height)
-	if nil != err {
-		ctx.Logger().Error("fail to get keygens", err)
-		return nil, sdk.ErrInternal("fail to get keygens")
-	}
-
-	if !pk.IsEmpty() {
 		newKeygens := Keygens{
 			Height: keygens.Height,
 		}
