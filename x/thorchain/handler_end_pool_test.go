@@ -213,7 +213,7 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	c.Assert(result1.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result1))
 	p1, err := keeper.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
-	c.Check(p1.Status, Equals, PoolSuspended)
+	c.Check(p1.Status, Equals, PoolBootstrap)
 	c.Check(p1.BalanceAsset.Uint64(), Equals, uint64(0))
 	c.Check(p1.BalanceRune.Uint64(), Equals, uint64(0))
 	txOut := txOutStore.GetBlockOut()
