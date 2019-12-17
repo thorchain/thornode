@@ -88,7 +88,7 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver
 		}
 	}
 	pool, err := h.keeper.GetPool(ctx, msg.Asset)
-	pool.Status = PoolSuspended
+	pool.Status = PoolBootstrap
 	if err := h.keeper.SetPool(ctx, pool); err != nil {
 		err = errors.Wrap(err, "fail to set pool")
 		return sdk.ErrInternal(err.Error()).Result()
