@@ -66,7 +66,15 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context) error {
 			return err
 		}
 		if ok {
-			_ = next // TODO: trigger pool rotation...
+			keygen := make(Keygen, len(next))
+			for i := range next {
+				keygen[i] = next[i].NodePubKey.Secp256k1
+			}
+			keygens := NewKeygens(uint64(ctx.BlockHeight()))
+			keygens.Keygens = []Keygen{keygen}
+			if err := vm.k.SetKeygens(ctx, keygens); err != nil {
+				return err
+			}
 		}
 	}
 

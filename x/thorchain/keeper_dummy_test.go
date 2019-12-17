@@ -110,9 +110,12 @@ func (k KVStoreDummy) GetTssVoter(_ sdk.Context, _ string) (TssVoter, error) {
 	return TssVoter{}, kaboom
 }
 
-func (k KVStoreDummy) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error) { return nil, kaboom }
-func (k KVStoreDummy) SetTxOut(_ sdk.Context, _ *TxOut) error           { return kaboom }
-func (k KVStoreDummy) GetTxOutIterator(_ sdk.Context) sdk.Iterator      { return nil }
+func (k KVStoreDummy) GetKeygens(_ sdk.Context, _ uint64) (Keygens, error) { return Keygens{}, kaboom }
+func (k KVStoreDummy) SetKeygens(_ sdk.Context, _ Keygens) error           { return kaboom }
+func (k KVStoreDummy) GetKeygensIterator(_ sdk.Context) sdk.Iterator       { return nil }
+func (k KVStoreDummy) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error)    { return nil, kaboom }
+func (k KVStoreDummy) SetTxOut(_ sdk.Context, _ *TxOut) error              { return kaboom }
+func (k KVStoreDummy) GetTxOutIterator(_ sdk.Context) sdk.Iterator         { return nil }
 func (k KVStoreDummy) AddToLiquidityFees(_ sdk.Context, _ common.Asset, _ sdk.Uint) error {
 	return kaboom
 }

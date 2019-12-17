@@ -60,9 +60,6 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	if nil != err {
 		return nil, fmt.Errorf("fail to get node account from thorchain,err:%w", err)
 	}
-	if na.IsEmpty() || na.NodePubKey.Secp256k1.IsEmpty() {
-		return nil, fmt.Errorf("node account: %s not ready yet", thorKeys.GetSignerInfo().GetAddress().String())
-	}
 
 	for _, item := range na.SignerMembership {
 		pkm.Add(item)
