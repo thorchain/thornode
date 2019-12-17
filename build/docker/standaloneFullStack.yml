@@ -33,6 +33,7 @@ services:
     ports:
       - 5432:5432
     environment:
+      - POSTGRES_USER=midgard
       - POSTGRES_PASSWORD=password
     command: postgres -c 'max_connections=250'
 
