@@ -139,16 +139,6 @@ func (n *NodeAccount) UpdateStatus(status NodeStatus, height int64) {
 	n.StatusSince = height
 }
 
-// UpdateNodePubKey change the pub keys of node account
-func (n *NodeAccount) UpdateNodePubKey(keys common.PubKeys) {
-	n.NodePubKey = keys
-}
-
-// UpdateNodePubKey change the validator cons pub key of node account
-func (n *NodeAccount) UpdateValidatorConsPubKey(key string) {
-	n.ValidatorConsPubKey = key
-}
-
 // Equals compare two node account, to see whether they are equal
 func (n NodeAccount) Equals(n1 NodeAccount) bool {
 	if n.NodeAddress.Equals(n1.NodeAddress) &&
