@@ -115,6 +115,8 @@ func (s *HandlerSetTrustAccountSuite) TestHandle(c *C) {
 	c.Check(success.IsOK(), Equals, true)
 	c.Assert(keeper.na.NodePubKey, Equals, pubKeys)
 	c.Assert(keeper.na.ValidatorConsPubKey, Equals, bepConsPubKey)
+	c.Assert(keeper.na.Status, Equals, NodeStandby)
+	c.Assert(keeper.na.StatusSince, Equals, int64(1))
 }
 
 type TestSetTrustAccountHandleFailUniqueKeeper struct {
