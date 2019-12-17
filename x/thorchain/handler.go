@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
@@ -47,6 +46,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m := make(map[string]MsgHandler)
 	m[MsgNoOp{}.Type()] = NewNoOpHandler(keeper)
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
+	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, txOutStore, poolAddrMgr)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetPoolData{}.Type()] = NewPoolDataHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
@@ -70,56 +70,12 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		case MsgOutboundTx:
 			return handleMsgOutboundTx(ctx, keeper, poolAddressMgr, m)
-		case MsgEndPool:
-			return handleOperatorMsgEndPool(ctx, keeper, txOutStore, poolAddressMgr, m)
 		case MsgSetTrustAccount:
 			return handleMsgSetTrustAccount(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
-	}
-}
-
-// handleOperatorMsgEndPool operators decide it is time to end the pool
-func handleOperatorMsgEndPool(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, msg MsgEndPool) sdk.Result {
-	if !isSignedByActiveNodeAccounts(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "asset", msg.Asset)
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	ctx.Logger().Info("handle MsgEndPool", "asset", msg.Asset, "requester", msg.Tx.FromAddress, "signer", msg.Signer.String())
-	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
-	if nil != err {
-		ctx.Logger().Error("fail to get pool staker", err)
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-
-	// everyone withdraw
-	for _, item := range poolStaker.Stakers {
-		unstakeMsg := NewMsgSetUnStake(
-			msg.Tx,
-			item.RuneAddress,
-			sdk.NewUint(10000),
-			msg.Asset,
-			msg.Signer,
-		)
-		unstakeHandler := NewUnstakeHandler(keeper, txOutStore, poolAddrMgr)
-		ver := semver.MustParse("0.1.0")
-		result := unstakeHandler.Run(ctx, unstakeMsg, ver)
-		if !result.IsOK() {
-			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
-			return result
-		}
-	}
-	pool, err := keeper.GetPool(ctx, msg.Asset)
-	pool.Status = PoolSuspended
-	if err := keeper.SetPool(ctx, pool); err != nil {
-		err = errors.Wrap(err, "fail to set pool")
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
 	}
 }
 
