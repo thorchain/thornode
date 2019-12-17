@@ -87,8 +87,8 @@ func (h SetTrustAccountHandler) handleV1(ctx sdk.Context, msg MsgSetTrustAccount
 	// Here make sure THORNode don't change the node account's bond
 
 	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
-	nodeAccount.UpdateNodePubKey(msg.NodePubKeys)
-	nodeAccount.UpdateValidatorConsPubKey(msg.ValidatorConsPubKey)
+	nodeAccount.NodePubKey = msg.NodePubKeys
+	nodeAccount.ValidatorConsPubKey = msg.ValidatorConsPubKey
 	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
 		ctx.Logger().Error(fmt.Sprintf("fail to save node account: %s", nodeAccount), err)
 		return sdk.ErrInternal("fail to save node account").Result()

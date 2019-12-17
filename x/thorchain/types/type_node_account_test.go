@@ -128,20 +128,6 @@ func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 	}
 }
 
-func (NodeAccountSuite) TestNodeAccountUpdateNodePubKeys(c *C) {
-	na := NewNodeAccount(GetRandomBech32Addr(), Active, GetRandomPubKeys(), GetRandomBech32ConsensusPubKey(), sdk.NewUint(100*common.One), GetRandomBNBAddress(), 1)
-	new_pub_keys := GetRandomPubKeys()
-	na.UpdateNodePubKey(new_pub_keys)
-	c.Assert(na.NodePubKey, Equals, new_pub_keys)
-}
-
-func (NodeAccountSuite) TestNodeAccountUpdateValidatorConsPubKey(c *C) {
-	na := NewNodeAccount(GetRandomBech32Addr(), Active, GetRandomPubKeys(), GetRandomBech32ConsensusPubKey(), sdk.NewUint(100*common.One), GetRandomBNBAddress(), 1)
-	new_validator_cons_pub_key := GetRandomBech32ConsensusPubKey()
-	na.UpdateValidatorConsPubKey(new_validator_cons_pub_key)
-	c.Assert(na.ValidatorConsPubKey, Equals, new_validator_cons_pub_key)
-}
-
 func (NodeAccountSuite) TestNodeAccountUpdateStatusAndSort(c *C) {
 	var accounts NodeAccounts
 	for i := 0; i < 10; i++ {
