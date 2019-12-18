@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -10,6 +12,10 @@ type Block struct {
 	Chain       common.Chain
 	BlockHeight uint64
 	BlockHash   string
+}
+
+func (b *Block) String() string {
+	return fmt.Sprintf("%v: %v: %v ", b.Chain, b.BlockHeight, b.BlockHash)
 }
 
 type Txs []TxItem

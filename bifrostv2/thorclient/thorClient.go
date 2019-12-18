@@ -226,11 +226,10 @@ func (c *Client) ensureNodeWhitelisted() error {
 		return errors.Wrap(err, "failed to call: "+requestUri)
 	}
 	var nodeAccount stypes.NodeAccount
-	if err := c.cdc.UnmarshalJSON(buf, &nodeAccount); nil != err {
+	if err := json.Unmarshal(buf, &nodeAccount); nil != err {
 		c.errCounter.WithLabelValues("fail_unmarshal_nodeaccount", "").Inc()
 		return errors.Wrap(err, "fail to unmarshal node account")
 	}
-
 	if nodeAccount.Status == stypes.Disabled || nodeAccount.Status == stypes.Unknown {
 		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", nodeAccount.Status)
 	}
