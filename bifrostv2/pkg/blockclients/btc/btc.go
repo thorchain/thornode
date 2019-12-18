@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
-	"gitlab.com/thorchain/thornode/bifrostv2/txscanner/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/txblockscanner/types"
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -52,7 +52,7 @@ func NewClient(cfg config.ChainConfigurations) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) Start(txInChan chan<- types.TxIn, fnStartHeight types.FnLastScannedBlockHeight) error {
+func (c *Client) Start(blockInChan chan<- types.Block, fnStartHeight types.FnLastScannedBlockHeight) error {
 	c.logger.Info().Msg("starting")
 	c.fnLastScannedBlockHeight = fnStartHeight
 	c.backOffCtrl.Reset() // Reset/set the backOffCtrl
@@ -63,11 +63,11 @@ func (c *Client) Start(txInChan chan<- types.TxIn, fnStartHeight types.FnLastSca
 		return errors.Wrap(err, "bitcoinClient failed")
 	}
 
-	go c.scanBlocks(txInChan)
+	go c.scanBlocks(blockInChan)
 	return nil
 }
 
-func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
+func (c *Client) scanBlocks(blockInChan chan<- types.Block) {
 	c.logger.Info().Msg("scanBlocks")
 	for {
 		block, err := c.getBlock(c.lastScannedBlockHeight)
@@ -78,13 +78,7 @@ func (c *Client) scanBlocks(txInChan chan<- types.TxIn) {
 			continue
 		}
 
-		// extract TxIn from block
-		var txIn types.TxIn
-		txIn.BlockHeight = c.lastScannedBlockHeight
-		txIn.BlockHash = block.BlockHash().String()
-		txIn.Chain = common.BTCChain
-
-		txInChan <- txIn
+		blockInChan <- c.processBlock(block)
 		c.lastScannedBlockHeight++
 
 		c.backOffCtrl.Reset()
@@ -110,4 +104,14 @@ func (c *Client) getBlockHash(blockHeight int64) (*chainhash.Hash, error) {
 		return &chainhash.Hash{}, err
 	}
 	return hash, nil
+}
+
+func (c *Client) processBlock(block *wire.MsgBlock) types.Block {
+	var b types.Block
+	b.BlockHeight = c.lastScannedBlockHeight
+	b.BlockHash = block.BlockHash().String()
+	b.Chain = common.BTCChain
+
+	// TODO extract Tx data
+	return b
 }

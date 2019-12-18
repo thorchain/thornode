@@ -9,7 +9,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
 	"gitlab.com/thorchain/thornode/bifrostv2/thorclient"
-	"gitlab.com/thorchain/thornode/bifrostv2/txscanner"
+	"gitlab.com/thorchain/thornode/bifrostv2/txblockscanner"
 	"gitlab.com/thorchain/thornode/bifrostv2/txsigner"
 	"gitlab.com/thorchain/thornode/bifrostv2/vaultmanager"
 )
@@ -20,7 +20,7 @@ type Bifrost struct {
 	thorClient   *thorclient.Client
 	metrics      *metrics.Metrics
 	errCounter   *prometheus.CounterVec
-	txScanner    *txscanner.TxScanner
+	txScanner    *txblockscanner.TxBlockScanner
 	txSigner     *txsigner.TxSigner
 	vaultManager *vaultmanager.VaultManager
 }
@@ -41,7 +41,7 @@ func NewBifrost(cfg config.Configuration) (*Bifrost, error) {
 		return nil, errors.Wrap(err, "failed to create vault manager")
 	}
 
-	txScanner := txscanner.NewTxScanner(cfg.TxScanner, vaultMgr, thorClient)
+	txScanner := txblockscanner.NewTxBlockScanner(cfg.TxScanner, vaultMgr, thorClient)
 
 	txSigner, err := txsigner.NewTxSigner()
 	if err != nil {
