@@ -33,9 +33,9 @@ func NewQuerier(keeper Keeper, poolAddressMgr PoolAddressManager, validatorMgr V
 			return queryTxIn(ctx, path[1:], req, keeper)
 		case q.QueryAdminConfig.Key, q.QueryAdminConfigBnb.Key:
 			return queryAdminConfig(ctx, path[1:], req, keeper)
-		case q.QueryKeysign.Key:
+		case q.QueryKeysignArray.Key:
 			return queryKeysign(ctx, path[1:], req, keeper, validatorMgr)
-		case q.QueryKeysignPubkey.Key:
+		case q.QueryKeysignArrayPubkey.Key:
 			return queryKeysign(ctx, path[1:], req, keeper, validatorMgr)
 		case q.QueryKeygens.Key:
 			return queryKeygen(ctx, path[1:], req, keeper)
