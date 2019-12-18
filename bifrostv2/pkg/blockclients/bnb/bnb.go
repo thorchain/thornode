@@ -126,7 +126,7 @@ func (c *Client) processBlock(block *ctypes.ResultBlock) types.Block {
 			continue
 		}
 
-		// if valid blocks returned
+		// if valid txItems returned
 		if len(txItems) > 0 {
 			b.Txs = append(b.Txs, txItems...)
 		}
@@ -148,11 +148,6 @@ func (c *Client) processStdTx(stdTx tx.StdTx) ([]types.TxItem, error) {
 		case bmsg.SendMsg:
 			txItem := types.TxItem{}
 			txItem.Memo = stdTx.Memo
-
-			// if no memo its not worth processing at all.
-			if len(txItem.Memo) == 0 {
-				continue
-			}
 
 			// THORNode take the first Input as sender, first Output as receiver
 			// so if THORNode send to multiple different receiver within one tx, this won't be able to process it.
