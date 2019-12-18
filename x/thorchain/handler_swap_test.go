@@ -184,8 +184,9 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txIn, observerAddr)
 	c.Assert(err, IsNil)
 
+	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
 	res2 := handler.handle(ctx, msgSwapFromTxIn.(MsgSwap), ver, constAccessor)
-
 	c.Assert(res2.IsOK(), Equals, true)
 	c.Assert(res2.Code, Equals, sdk.CodeOK)
+	c.Check(txOutStore.GetOutboundItems(), HasLen, 2)
 }
