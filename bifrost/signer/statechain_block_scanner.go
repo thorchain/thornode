@@ -28,8 +28,7 @@ type StateChainBlockScan struct {
 	keygensChan        chan stypes.Keygens
 	cfg                config.BlockScannerConfiguration
 	scannerStorage     blockscanner.ScannerStorage
-	txOutBlockScanner  *blockscanner.CommonBlockScanner
-	keygenBlockScanner *blockscanner.CommonBlockScanner
+	commonBlockScanner *blockscanner.CommonBlockScanner
 	chainHost          string
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
@@ -47,13 +46,9 @@ func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage bl
 	if nil == m {
 		return nil, errors.New("metric is nil")
 	}
-	txOutBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
+	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create txOut block scanner")
-	}
-	keygenBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create keygen block scanner")
 	}
 	return &StateChainBlockScan{
 		logger:             log.With().Str("module", "statechainblockscanner").Logger(),
@@ -63,8 +58,7 @@ func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage bl
 		keygensChan:        make(chan stypes.Keygens),
 		cfg:                cfg,
 		scannerStorage:     scanStorage,
-		txOutBlockScanner:  txOutBlockScanner,
-		keygenBlockScanner: keygenBlockScanner,
+		commonBlockScanner: commonBlockScanner,
 		chainHost:          chainHost,
 		errCounter:         m.GetCounterVec(metrics.StateChainBlockScanError),
 		pkm:                pkm,
@@ -84,8 +78,7 @@ func (b *StateChainBlockScan) GetKeygenMessages() <-chan stypes.Keygens {
 func (b *StateChainBlockScan) Start() error {
 	b.wg.Add(1)
 	go b.processBlocks(1)
-	b.txOutBlockScanner.Start()
-	b.keygenBlockScanner.Start()
+	b.commonBlockScanner.Start()
 	return nil
 }
 
@@ -98,7 +91,7 @@ func (b *StateChainBlockScan) processKeygenBlock(blockHeight int64) error {
 		uri.Path = fmt.Sprintf("/thorchain/keygen/%d/%s", blockHeight, pk.String())
 
 		strBlockHeight := strconv.FormatInt(blockHeight, 10)
-		buf, err := b.keygenBlockScanner.GetFromHttpWithRetry(uri.String())
+		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())
 		if nil != err {
 			b.errCounter.WithLabelValues("fail_get_keygen", strBlockHeight)
 			return errors.Wrap(err, "fail to get keygen from a block")
@@ -123,7 +116,7 @@ func (b *StateChainBlockScan) processTxOutBlock(blockHeight int64) error {
 		uri.Path = fmt.Sprintf("/thorchain/keysign/%d/%s", blockHeight, pk.String())
 
 		strBlockHeight := strconv.FormatInt(blockHeight, 10)
-		buf, err := b.txOutBlockScanner.GetFromHttpWithRetry(uri.String())
+		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())
 		if nil != err {
 			b.errCounter.WithLabelValues("fail_get_tx_out", strBlockHeight)
 			return errors.Wrap(err, "fail to get tx out from a block")
@@ -161,17 +154,7 @@ func (b *StateChainBlockScan) processBlocks(idx int) {
 		select {
 		case <-b.stopChan: // time to get out
 			return
-		case block, more := <-b.keygenBlockScanner.GetMessages():
-			if !more {
-				return
-			}
-			_ = block
-			b.logger.Debug().Int64("block", block).Msg("processing keygen block")
-			if err := b.processKeygenBlock(block); nil != err {
-				b.errCounter.WithLabelValues("fail_process_keygen", strconv.FormatInt(block, 10))
-				b.logger.Error().Err(err).Int64("height", block).Msg("fail to process keygen")
-			}
-		case block, more := <-b.txOutBlockScanner.GetMessages():
+		case block, more := <-b.commonBlockScanner.GetMessages():
 			if !more {
 				return
 			}
@@ -186,10 +169,20 @@ func (b *StateChainBlockScan) processBlocks(idx int) {
 				// THORNode will have a retry go routine to check it.
 				continue
 			}
+
 			// set a block as success
 			if err := b.scannerStorage.RemoveBlockStatus(block); nil != err {
 				b.errCounter.WithLabelValues("fail_remove_block_Status", strconv.FormatInt(block, 10))
 				b.logger.Error().Err(err).Int64("block", block).Msg("fail to remove block status from data store, thus block will be re processed")
+			}
+
+			// Intentionally not covering this before the block is marked as
+			// success. This is because we don't care if keygen is successful
+			// or not.
+			b.logger.Debug().Int64("block", block).Msg("processing keygen block")
+			if err := b.processKeygenBlock(block); nil != err {
+				b.errCounter.WithLabelValues("fail_process_keygen", strconv.FormatInt(block, 10))
+				b.logger.Error().Err(err).Int64("height", block).Msg("fail to process keygen")
 			}
 		}
 	}
