@@ -54,6 +54,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, txOutStore, poolAddrMgr)
 	m[MsgSetTrustAccount{}.Type()] = NewSetTrustAccountHandler(keeper)
 	m[MsgSetAdminConfig{}.Type()] = NewSetAdminConfigHandler(keeper)
+	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, txOutStore, poolAddrMgr)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetPoolData{}.Type()] = NewPoolDataHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
@@ -76,70 +77,12 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 			return errConstNotAvailable.Result()
 		}
 		switch m := msg.(type) {
-		case MsgSwap:
-			return handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m, constAccessor)
 		case MsgOutboundTx:
 			return handleMsgOutboundTx(ctx, keeper, poolAddressMgr, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
-	}
-}
-
-// Handle a message to set stake data
-func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, msg MsgSwap, constAccessor constants.ConstantValues) sdk.Result {
-	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.Tx.ID, "source asset", msg.Tx.Coins[0].Asset, "target asset", msg.TargetAsset)
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-
-	globalSlipLimit := constAccessor.GetInt64Value(constants.GlobalSlipLimit)
-	gsl := sdk.NewUint(uint64(globalSlipLimit))
-	chain := msg.TargetAsset.Chain
-	currentAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
-	if nil == currentAddr {
-		msg := fmt.Sprintf("don't have pool address for chain : %s", chain)
-		ctx.Logger().Error(msg)
-		return sdk.ErrInternal(msg).Result()
-	}
-	amount, err := swap(
-		ctx,
-		keeper,
-		msg.Tx,
-		msg.TargetAsset,
-		msg.Destination,
-		msg.TradeTarget,
-		gsl,
-	) // If so, set the stake data to the value specified in the msg.
-	if err != nil {
-		ctx.Logger().Error("fail to process swap message", "error", err)
-
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-
-	res, err := keeper.Cdc().MarshalBinaryLengthPrefixed(struct {
-		Asset sdk.Uint `json:"asset"`
-	}{
-		Asset: amount,
-	})
-	if nil != err {
-		ctx.Logger().Error("fail to encode result to json", "error", err)
-		return sdk.ErrInternal("fail to encode result to json").Result()
-	}
-
-	toi := &TxOutItem{
-		Chain:       currentAddr.Chain,
-		InHash:      msg.Tx.ID,
-		VaultPubKey: currentAddr.PubKey,
-		ToAddress:   msg.Destination,
-		Coin:        common.NewCoin(msg.TargetAsset, amount),
-	}
-	txOutStore.AddTxOutItem(ctx, toi)
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Data:      res,
-		Codespace: DefaultCodespace,
 	}
 }
 
