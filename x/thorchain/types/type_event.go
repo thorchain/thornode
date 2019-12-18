@@ -148,6 +148,27 @@ func (e EventPool) Type() string {
 	return "pool"
 }
 
+type PoolAmt struct {
+	Asset  common.Asset `json:"asset"`
+	Amount int64        `json:"amount"`
+}
+
+type EventRewards struct {
+	BondReward  sdk.Uint  `json:"bond_reward"`
+	PoolRewards []PoolAmt `json:"pool_rewards"`
+}
+
+func NewEventRewards(bondReward sdk.Uint, poolRewards []PoolAmt) EventRewards {
+	return EventRewards{
+		BondReward:  bondReward,
+		PoolRewards: poolRewards,
+	}
+}
+
+func (e EventRewards) Type() string {
+	return "rewards"
+}
+
 type EmptyRefundEvent struct {
 }
 
