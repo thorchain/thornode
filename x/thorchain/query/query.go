@@ -43,10 +43,10 @@ var (
 	QuerySwapRecord       = Query{Key: "swaprecord", EndpointTemplate: "/%s/swaprecord/{%s}"}
 	QueryUnStakeRecord    = Query{Key: "unstakerecord", EndpointTemplate: "/%s/unstakerecord/{%s}"}
 	QueryTxIn             = Query{Key: "txin", EndpointTemplate: "/%s/tx/{%s}"}
-	QueryTxOutArray       = Query{Key: "txoutarray", EndpointTemplate: "/%s/txoutarray/{%s}"}
-	QueryTxOutArrayPubkey = Query{Key: "txoutarraypubkey", EndpointTemplate: "/%s/txoutarray/{%s}/{%s}"}
-	QueryKeygens          = Query{Key: "keygens", EndpointTemplate: "/%s/keygens/{%s}"}
-	QueryKeygensPubkey    = Query{Key: "keygenspubkey", EndpointTemplate: "/%s/keygens/{%s}/{%s}"}
+	QueryTxOutArray       = Query{Key: "keysign", EndpointTemplate: "/%s/keysign/{%s}"}
+	QueryTxOutArrayPubkey = Query{Key: "keysignpubkey", EndpointTemplate: "/%s/keysign/{%s}/{%s}"}
+	QueryKeygens          = Query{Key: "keygens", EndpointTemplate: "/%s/keygen/{%s}"}
+	QueryKeygensPubkey    = Query{Key: "keygenspubkey", EndpointTemplate: "/%s/keygen/{%s}/{%s}"}
 	QueryIncompleteEvents = Query{Key: "incomplete_events", EndpointTemplate: ""}
 	QueryCompleteEvents   = Query{Key: "complete_events", EndpointTemplate: "/%s/events/{%s}"}
 	QueryHeights          = Query{Key: "heights", EndpointTemplate: "/%s/lastblock"}

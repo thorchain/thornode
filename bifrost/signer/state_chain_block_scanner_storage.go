@@ -3,6 +3,7 @@ package signer
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -38,25 +39,52 @@ func NewStateChanBlockScannerStorage(levelDbFolder string) (*StateChanBlockScann
 	}, nil
 }
 
-type TxOutLocalStatus byte
+type LocalStatus byte
 
 const (
-	Processing TxOutLocalStatus = iota
+	Processing LocalStatus = iota
 	Failed
 )
 
+// KeygenLocalItem for local storage
+type KeygenLocalItem struct {
+	Keygens types.Keygens `json:"keygens"`
+	Status  LocalStatus   `json:"status"`
+}
+
 // TxOutLocalItem for local storage
 type TxOutLocalItem struct {
-	TxOut  types.TxOut      `json:"tx_out"`
-	Status TxOutLocalStatus `json:"status"`
+	TxOut  types.TxOut `json:"tx_out"`
+	Status LocalStatus `json:"status"`
+}
+
+func (s *StateChanBlockScannerStorage) getKeygenKey(height string) string {
+	return fmt.Sprintf("keygen-%s", height)
 }
 
 func (s *StateChanBlockScannerStorage) getTxOutKey(height string) string {
 	return fmt.Sprintf("txout-%s", height)
 }
 
+// SetKeygenStatus store the keygen locally
+func (s *StateChanBlockScannerStorage) SetKeygenStatus(keygens types.Keygens, status LocalStatus) error {
+	localItem := KeygenLocalItem{
+		Keygens: keygens,
+		Status:  status,
+	}
+	buf, err := json.Marshal(localItem)
+	if nil != err {
+		return errors.Wrap(err, "fail to marshal KeygenLocalItem to json")
+	}
+	height := strconv.FormatUint(keygens.Height, 10)
+	if err := s.db.Put([]byte(s.getKeygenKey(height)), buf, nil); nil != err {
+		return errors.Wrap(err, "fail to set keygens local item status")
+	}
+	return nil
+}
+
 // SetTxOutStatus store the txout locally
-func (s *StateChanBlockScannerStorage) SetTxOutStatus(txOut types.TxOut, status TxOutLocalStatus) error {
+func (s *StateChanBlockScannerStorage) SetTxOutStatus(txOut types.TxOut, status LocalStatus) error {
 	txOutLocalItem := TxOutLocalItem{
 		TxOut:  txOut,
 		Status: status,
@@ -69,6 +97,13 @@ func (s *StateChanBlockScannerStorage) SetTxOutStatus(txOut types.TxOut, status 
 		return errors.Wrap(err, "fail to set txout local item status")
 	}
 	return nil
+}
+
+// RemoveKeygen delete the given keygen from data store
+func (s *StateChanBlockScannerStorage) RemoveKeygen(keygens types.Keygens) error {
+	height := strconv.FormatUint(keygens.Height, 10)
+	key := s.getKeygenKey(height)
+	return s.db.Delete([]byte(key), nil)
 }
 
 // RemoveTxOut delete the given txout from data store
