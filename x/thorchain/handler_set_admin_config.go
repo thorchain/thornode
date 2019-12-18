@@ -1,8 +1,8 @@
 package thorchain
 
 import (
-	"fmt"
 	"encoding/json"
+	"fmt"
 
 	"github.com/blang/semver"
 	"github.com/pkg/errors"
@@ -12,12 +12,12 @@ import (
 )
 
 type SetAdminConfigHandler struct {
-	keeper       Keeper
+	keeper Keeper
 }
 
 func NewSetAdminConfigHandler(keeper Keeper) SetAdminConfigHandler {
 	return SetAdminConfigHandler{
-		keeper:       keeper,
+		keeper: keeper,
 	}
 }
 
