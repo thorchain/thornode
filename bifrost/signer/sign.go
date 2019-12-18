@@ -26,6 +26,7 @@ type Signer struct {
 	logger                 zerolog.Logger
 	cfg                    config.SignerConfiguration
 	wg                     *sync.WaitGroup
+	stateChainBridge       *thorclient.StateChainBridge
 	stopChan               chan struct{}
 	stateChainBlockScanner *StateChainBlockScan
 	Binance                *binance.Binance
@@ -46,6 +47,10 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	m, err := metrics.NewMetrics(cfg.Metric)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create metric instance")
+	}
+	stateChainBridge, err := thorclient.NewStateChainBridge(cfg.StateChain, m)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create new state chain bridge")
 	}
 	pkm := NewPubKeyManager()
 	thorKeys, err := thorclient.NewKeys(cfg.StateChain.ChainHomeFolder, cfg.StateChain.SignerName, cfg.StateChain.SignerPasswd)
@@ -86,6 +91,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 		storage:                stateChainScanStorage,
 		errCounter:             m.GetCounterVec(metrics.SignerError),
 		pkm:                    pkm,
+		stateChainBridge:       stateChainBridge,
 	}
 
 	if cfg.UseTSS {
@@ -266,6 +272,21 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 		}
 
 	}
+}
+
+func (s *Signer) sendKeygenToThorchain(height string, poolPk common.PubKey, input []common.PubKey) error {
+	stdTx, err := s.stateChainBridge.GetKeygenStdTx(poolPk, input)
+	if nil != err {
+		s.errCounter.WithLabelValues("fail_to_sign", height).Inc()
+		return errors.Wrap(err, "fail to sign the tx")
+	}
+	txID, err := s.stateChainBridge.Send(*stdTx, types.TxSync)
+	if nil != err {
+		s.errCounter.WithLabelValues("fail_to_send_to_statechain", height).Inc()
+		return errors.Wrap(err, "fail to send the tx to statechain")
+	}
+	s.logger.Info().Str("block", height).Str("statechain hash", txID.String()).Msg("sign and send to statechain successfully")
+	return nil
 }
 
 // signAndSendToBinanceChainWithRetry retry a few times before THORNode move on to he next block

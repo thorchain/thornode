@@ -132,8 +132,27 @@ func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string
 
 }
 
+// Sign new keygen
+func (scb *StateChainBridge) GetKeygenStdTx(poolPubKey common.PubKey, inputPks []common.PubKey) (*authtypes.StdTx, error) {
+	start := time.Now()
+	defer func() {
+		scb.m.GetHistograms(metrics.SignToStateChainDuration).Observe(time.Since(start).Seconds())
+	}()
+
+	msg := stypes.NewMsgTssPool(inputPks, poolPubKey, scb.keys.GetSignerInfo().GetAddress())
+
+	stdTx := authtypes.NewStdTx(
+		[]sdk.Msg{msg},
+		authtypes.NewStdFee(100000000, nil), // fee
+		nil,                                 // signatures
+		"",                                  // memo
+	)
+
+	return &stdTx, nil
+}
+
 // Sign the incoming transaction
-func (scb *StateChainBridge) Sign(txIns stypes.ObservedTxs) (*authtypes.StdTx, error) {
+func (scb *StateChainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*authtypes.StdTx, error) {
 	if len(txIns) == 0 {
 		scb.errCounter.WithLabelValues("nothing_to_sign", "").Inc()
 		return nil, errors.New("nothing to be signed")
@@ -181,6 +200,20 @@ func (scb *StateChainBridge) Sign(txIns stypes.ObservedTxs) (*authtypes.StdTx, e
 		"",                                  // memo
 	)
 
+	return &stdTx, nil
+}
+
+// Send the signed transaction to statechain
+func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
+	var noTxID = common.TxID("")
+	if !mode.IsValid() {
+		return noTxID, fmt.Errorf("transaction Mode (%s) is invalid", mode)
+	}
+	start := time.Now()
+	defer func() {
+		scb.m.GetHistograms(metrics.SendToStatechainDuration).Observe(time.Since(start).Seconds())
+	}()
+
 	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", scb.accountNumber).Uint64("sequenceNo", scb.seqNumber).Msg("info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
@@ -193,10 +226,10 @@ func (scb *StateChainBridge) Sign(txIns stypes.ObservedTxs) (*authtypes.StdTx, e
 	sig, err := authtypes.MakeSignature(scb.keys.GetKeybase(), scb.cfg.SignerName, scb.cfg.SignerPasswd, stdMsg)
 	if err != nil {
 		scb.errCounter.WithLabelValues("fail_sign", "").Inc()
-		return nil, errors.Wrap(err, "fail to sign the message")
+		return noTxID, errors.Wrap(err, "fail to sign the message")
 	}
 
-	signedStdTx := authtypes.NewStdTx(
+	signed := authtypes.NewStdTx(
 		stdTx.GetMsgs(),
 		stdTx.Fee,
 		[]authtypes.StdSignature{sig},
@@ -205,19 +238,7 @@ func (scb *StateChainBridge) Sign(txIns stypes.ObservedTxs) (*authtypes.StdTx, e
 	nextSeq := atomic.AddUint64(&scb.seqNumber, 1)
 	scb.logger.Info().Uint64("sequence no", nextSeq).Msg("next sequence no")
 	scb.m.GetCounter(metrics.TxToStateChainSigned).Inc()
-	return &signedStdTx, nil
-}
 
-// Send the signed transaction to statechain
-func (scb *StateChainBridge) Send(signed authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
-	var noTxID = common.TxID("")
-	if !mode.IsValid() {
-		return noTxID, fmt.Errorf("transaction Mode (%s) is invalid", mode)
-	}
-	start := time.Now()
-	defer func() {
-		scb.m.GetHistograms(metrics.SendToStatechainDuration).Observe(time.Since(start).Seconds())
-	}()
 	var setTx types.SetTx
 	setTx.Mode = mode.String()
 	setTx.Tx.Msg = signed.Msgs
