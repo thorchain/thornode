@@ -4,6 +4,8 @@ import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -14,7 +16,7 @@ type TestYggdrasilValidateKeeper struct {
 	na NodeAccount
 }
 
-func (k *TestYggdrasilValidateKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
+func (k *TestYggdrasilValidateKeeper) GetNodeAccount(_ sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
 	return k.na, nil
 }
 
@@ -110,21 +112,21 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 			BalanceAsset: sdk.NewUint(765 * common.One),
 		},
 	}
-
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	poolAddrMgr := NewPoolAddressDummyMgr()
 	validatorMgr := NewValidatorMgr(keeper, poolAddrMgr)
-	validatorMgr.BeginBlock(ctx)
+	validatorMgr.BeginBlock(ctx, constAccessor)
 	txOutStore := NewTxStoreDummy()
 
 	handler := NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 
 	// check yggdrasil balance on add funds
-	ver := semver.MustParse("0.1.0")
 	coins := common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One))}
 	txID := GetRandomTxHash()
 	signer := GetRandomBech32Addr()
 	msg := NewMsgYggdrasil(pubKey, true, coins, txID, signer)
-	result := handler.handle(ctx, msg, ver)
+	result := handler.handle(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result))
 
 	ygg, err := keeper.GetYggdrasil(ctx, pubKey)
@@ -134,7 +136,7 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 
 	// check yggdrasil balance on sub funds
 	msg = NewMsgYggdrasil(pubKey, false, coins, txID, signer)
-	result = handler.handle(ctx, msg, ver)
+	result = handler.handle(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 
 	ygg, err = keeper.GetYggdrasil(ctx, pubKey)

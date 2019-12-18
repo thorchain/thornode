@@ -8,6 +8,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type HandlerUnstakeSuite struct{}
@@ -112,12 +113,14 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	// let's just unstake
 	unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy(), NewPoolAddressDummyMgr())
 	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
+
 	msgUnstake := NewMsgSetUnStake(GetRandomTx(), runeAddr, sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
-	result := unstakeHandler.Run(ctx, msgUnstake, ver)
+	result := unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 
 	// Bad version should fail
-	result = unstakeHandler.Run(ctx, msgUnstake, semver.Version{})
+	result = unstakeHandler.Run(ctx, msgUnstake, semver.Version{}, constAccessor)
 	c.Assert(result.Code, Equals, CodeBadVersion)
 }
 
@@ -159,9 +162,11 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_Validation(c *C) {
 			expectedResult: sdk.CodeUnknownRequest,
 		},
 	}
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	for _, tc := range testCases {
 		unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy(), NewPoolAddressDummyMgr())
-		c.Assert(unstakeHandler.Run(ctx, tc.msg, semver.MustParse("0.1.0")).Code, Equals, tc.expectedResult, Commentf(tc.name))
+		c.Assert(unstakeHandler.Run(ctx, tc.msg, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
 }
 
@@ -213,10 +218,13 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 			expectedResult: sdk.CodeInternal,
 		},
 	}
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
+
 	for _, tc := range testCases {
 		ctx, _ := setupKeeperForTest(c)
 		unstakeHandler := NewUnstakeHandler(tc.k, NewTxStoreDummy(), NewPoolAddressDummyMgr())
 		msgUnstake := NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
-		c.Assert(unstakeHandler.Run(ctx, msgUnstake, semver.MustParse("0.1.0")).Code, Equals, tc.expectedResult, Commentf(tc.name))
+		c.Assert(unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
 }

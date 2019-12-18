@@ -20,14 +20,14 @@ func NewBondHandler(keeper Keeper) BondHandler {
 	return BondHandler{keeper: keeper}
 }
 
-func (bh BondHandler) validate(ctx sdk.Context, msg MsgBond, version semver.Version) sdk.Error {
+func (bh BondHandler) validate(ctx sdk.Context, msg MsgBond, version semver.Version, constAccessor constants.ConstantValues) sdk.Error {
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return bh.validateV1(ctx, msg)
+		return bh.validateV1(ctx, version, msg, constAccessor)
 	}
 	return errBadVersion
 }
 
-func (bh BondHandler) validateV1(ctx sdk.Context, msg MsgBond) sdk.Error {
+func (bh BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg MsgBond, constAccessor constants.ConstantValues) sdk.Error {
 	if err := msg.ValidateBasic(); nil != err {
 		return err
 	}
@@ -35,8 +35,8 @@ func (bh BondHandler) validateV1(ctx sdk.Context, msg MsgBond) sdk.Error {
 	if !isSignedByActiveNodeAccounts(ctx, bh.keeper, msg.GetSigners()) {
 		return sdk.ErrUnauthorized("msg is not signed by an active node account")
 	}
-
-	minValidatorBond := sdk.NewUint(constants.MinimumBondInRune)
+	minimumBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+	minValidatorBond := sdk.NewUint(uint64(minimumBond))
 	if msg.Bond.LT(minValidatorBond) {
 		return sdk.ErrUnknownRequest(fmt.Sprintf("not enough rune to be whitelisted , minimum validator bond (%s) , bond(%s)", minValidatorBond.String(), msg.Bond))
 	}
@@ -54,7 +54,7 @@ func (bh BondHandler) validateV1(ctx sdk.Context, msg MsgBond) sdk.Error {
 }
 
 // Run execute the handler
-func (bh BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (bh BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgBond)
 	if !ok {
 		return errInvalidMessage.Result()
@@ -63,7 +63,7 @@ func (bh BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sd
 		"node address", msg.NodeAddress,
 		"request hash", msg.RequestTxHash,
 		"bond", msg.Bond)
-	if err := bh.validate(ctx, msg, version); nil != err {
+	if err := bh.validate(ctx, msg, version, constAccessor); nil != err {
 		ctx.Logger().Error("msg bond fail validation", err)
 		return err.Result()
 	}

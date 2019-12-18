@@ -8,7 +8,7 @@ import (
 )
 
 type TxOutStore interface {
-	NewBlock(height uint64)
+	NewBlock(height uint64, constAccessor constants.ConstantValues)
 	CommitBlock(ctx sdk.Context)
 	GetBlockOut() *TxOut
 	GetOutboundItems() []*TxOutItem
@@ -19,9 +19,10 @@ type TxOutStore interface {
 
 // TxOutStorage is going to manage all the outgoing tx
 type TxOutStorage struct {
-	blockOut    *TxOut
-	poolAddrMgr PoolAddressManager
-	keeper      Keeper
+	blockOut      *TxOut
+	poolAddrMgr   PoolAddressManager
+	keeper        Keeper
+	constAccessor constants.ConstantValues
 }
 
 // NewTxOutStorage will create a new instance of TxOutStore.
@@ -33,8 +34,10 @@ func NewTxOutStorage(keeper Keeper, poolAddrMgr PoolAddressManager) *TxOutStorag
 }
 
 // NewBlock create a new block
-func (tos *TxOutStorage) NewBlock(height uint64) {
+func (tos *TxOutStorage) NewBlock(height uint64, constAccessor constants.ConstantValues) {
+	tos.constAccessor = constAccessor
 	tos.blockOut = NewTxOut(height)
+
 }
 
 func (tos *TxOutStorage) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {
@@ -115,14 +118,15 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 
 	// Deduct TransactionFee from TOI and add to Reserve
 	nodes, err := tos.keeper.TotalActiveNodeAccount(ctx)
-
-	if nodes >= (constants.MinmumNodesForBFT) && err == nil {
+	minumNodesForBFT := tos.constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
+	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
+	if int64(nodes) >= minumNodesForBFT && err == nil {
 		var runeFee sdk.Uint
 		if toi.Coin.Asset.IsRune() {
-			if toi.Coin.Amount.LTE(sdk.NewUint(constants.TransactionFee)) {
+			if toi.Coin.Amount.LTE(sdk.NewUint(uint64(transactionFee))) {
 				runeFee = toi.Coin.Amount // Fee is the full amount
 			} else {
-				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
+				runeFee = sdk.NewUint(uint64(transactionFee)) // Fee is the prescribed fee
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
 			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); nil != err {
@@ -136,12 +140,12 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 				return
 			}
 
-			assetFee := pool.RuneValueInAsset(sdk.NewUint(constants.TransactionFee)) // Get fee in Asset value
+			assetFee := pool.RuneValueInAsset(sdk.NewUint(uint64(transactionFee))) // Get fee in Asset value
 			if toi.Coin.Amount.LTE(assetFee) {
 				assetFee = toi.Coin.Amount // Fee is the full amount
 				runeFee = pool.RuneValueInAsset(assetFee)
 			} else {
-				runeFee = sdk.NewUint(constants.TransactionFee) // Fee is the prescribed fee
+				runeFee = sdk.NewUint(uint64(transactionFee)) // Fee is the prescribed fee
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)  // Deduct Asset fee
 			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool

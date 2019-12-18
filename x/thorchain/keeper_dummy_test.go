@@ -12,6 +12,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 var kaboom = errors.New("Kaboom!!!")
@@ -161,8 +162,10 @@ func (k KVStoreDummy) HasValidYggdrasilPools(_ sdk.Context) (bool, error) { retu
 func (k KVStoreDummy) AddFeeToReserve(_ sdk.Context, _ sdk.Uint) error    { return kaboom }
 func (k KVStoreDummy) GetVaultData(_ sdk.Context) (VaultData, error)      { return VaultData{}, kaboom }
 func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error      { return kaboom }
-func (k KVStoreDummy) UpdateVaultData(_ sdk.Context) error                { return kaboom }
-func (k KVStoreDummy) SetAdminConfig(_ sdk.Context, _ AdminConfig)        {}
+func (k KVStoreDummy) UpdateVaultData(_ sdk.Context, constAccessor constants.ConstantValues) error {
+	return kaboom
+}
+func (k KVStoreDummy) SetAdminConfig(_ sdk.Context, _ AdminConfig) {}
 func (k KVStoreDummy) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
 	return PoolSuspended
 }

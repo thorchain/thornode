@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -61,20 +62,23 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 	}
 	txOutStore := NewTxStoreDummy()
 	poolAddrMgr := NewPoolAddressDummyMgr()
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 
 	slasher := NewSlasher(keeper, txOutStore, poolAddrMgr)
 	// should slash na2 only
-	err = slasher.LackObserving(ctx)
+	lackOfObservationPenalty := constAccessor.GetInt64Value(constants.LackOfObservationPenalty)
+	err = slasher.LackObserving(ctx, constAccessor)
 	c.Assert(err, IsNil)
 	c.Assert(keeper.nas[0].SlashPoints, Equals, int64(0))
-	c.Assert(keeper.nas[1].SlashPoints, Equals, int64(constants.LackOfObservationPenalty))
+	c.Assert(keeper.nas[1].SlashPoints, Equals, lackOfObservationPenalty)
 
 	// since THORNode have cleared all node addresses in slashForObservingAddresses,
 	// running it a second time should result in slashing nobody.
-	err = slasher.LackObserving(ctx)
+	err = slasher.LackObserving(ctx, constAccessor)
 	c.Assert(err, IsNil)
 	c.Assert(keeper.nas[0].SlashPoints, Equals, int64(0))
-	c.Assert(keeper.nas[1].SlashPoints, Equals, int64(constants.LackOfObservationPenalty))
+	c.Assert(keeper.nas[1].SlashPoints, Equals, lackOfObservationPenalty)
 }
 
 type TestSlashingLackKeeper struct {
@@ -112,7 +116,8 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	poolAddrMgr := NewPoolAddressDummyMgr()
 	txOutStore := NewTxStoreDummy()
 	txOutStore.asgard = poolAddrMgr.GetCurrentPoolAddresses().Current
-
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	na := GetRandomNodeAccount(NodeActive)
 
 	swapEvt := NewEventSwap(
@@ -157,11 +162,11 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 		evts:  Events{evt},
 		na:    na,
 	}
-
-	ctx = ctx.WithBlockHeight(evt.Height + constants.SigningTransactionPeriod + 5)
+	signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
+	ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod + 5)
 
 	slasher := NewSlasher(keeper, txOutStore, poolAddrMgr)
-	c.Assert(slasher.LackSigning(ctx), IsNil)
+	c.Assert(slasher.LackSigning(ctx, constAccessor), IsNil)
 
 	c.Check(keeper.na.SlashPoints, Equals, int64(200), Commentf("%+v\n", na))
 
