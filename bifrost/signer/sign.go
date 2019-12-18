@@ -115,9 +115,6 @@ func (s *Signer) Start() error {
 
 	s.wg.Add(1)
 	go s.processKeygen(s.stateChainBlockScanner.GetKeygenMessages(), 1)
-	if err := s.retryAll(); nil != err {
-		return errors.Wrap(err, "fail to retry keygen")
-	}
 
 	return s.stateChainBlockScanner.Start()
 }
@@ -236,8 +233,8 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 }
 
 func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
-	s.logger.Info().Int("idx", idx).Msg("start to process tx out")
-	defer s.logger.Info().Int("idx", idx).Msg("stop to process tx out")
+	s.logger.Info().Int("idx", idx).Msg("start to process keygen")
+	defer s.logger.Info().Int("idx", idx).Msg("stop to process keygen")
 	defer s.wg.Done()
 	for {
 		select {
@@ -248,12 +245,6 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 				return
 			}
 			s.logger.Info().Msgf("Received a keygen of %+v from the StateChain", keygens)
-			if err := s.storage.SetKeygenStatus(keygens, Processing); nil != err {
-				s.errCounter.WithLabelValues("fail_update_keygen_local").Inc()
-				s.logger.Error().Err(err).Msg("fail to update keygen local storage")
-				// raise alert
-				return
-			}
 
 			for _, keygen := range keygens.Keygens {
 				pubKey, err := s.tssKeygen.GenerateNewKey(keygen)
@@ -262,12 +253,12 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 					s.logger.Error().Err(err).Msg("fail to generate new pubkey")
 				}
 				s.pkm.Add(pubKey.Secp256k1)
-				// TODO: broadcast to thorchain
-			}
 
-			if err := s.storage.RemoveKeygen(keygens); nil != err {
-				s.errCounter.WithLabelValues("fail_remove_keygen_local").Inc()
-				s.logger.Error().Err(err).Msg("fail to remove keygen from local store")
+				height := strconv.FormatUint(keygens.Height, 10)
+				if err := s.sendKeygenToThorchain(height, pubKey.Secp256k1, keygen); err != nil {
+					s.errCounter.WithLabelValues("fail_to_broadcast_keygen").Inc()
+					s.logger.Error().Err(err).Msg("fail to broadcast keygen")
+				}
 			}
 		}
 
