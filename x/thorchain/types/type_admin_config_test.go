@@ -28,7 +28,7 @@ func (s AdminConfigSuite) TestGetKey(c *C) {
 
 func (s AdminConfigSuite) TestAdminConfig(c *C) {
 	uintAmnt := []string{"PoolRefundGas"}
-addr := GetRandomBech32Addr()
+	addr := GetRandomBech32Addr()
 	for _, item := range uintAmnt {
 		cfg := NewAdminConfig(GetAdminConfigKey(item), "1000", addr)
 		c.Check(cfg.Valid(), IsNil, Commentf("%s", item))

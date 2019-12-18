@@ -1,11 +1,13 @@
 package thorchain
 
 import (
+	"encoding/json"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -44,14 +46,7 @@ func (k KVStore) SetVaultData(ctx sdk.Context, data VaultData) error {
 	return nil
 }
 
-// UpdateVaultData Update the vault data to reflect changing in this block
-func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
-	vault, err := k.GetVaultData(ctx)
-	if nil != err {
-		return fmt.Errorf("fail to get existing vault data: %w", err)
-	}
-	currentHeight := uint64(ctx.BlockHeight())
-
+func (k KVStore) getEnabledPoolsAndTotalStakedRune(ctx sdk.Context) (Pools, sdk.Uint, error) {
 	// First get active pools and total staked Rune
 	totalStaked := sdk.ZeroUint()
 	var pools Pools
@@ -59,18 +54,55 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
-		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		if err := k.Cdc().UnmarshalBinaryBare(iterator.Value(), &pool); nil != err {
+			return nil, sdk.ZeroUint(), fmt.Errorf("fail to unmarhsl pool: %w", err)
+		}
 		if pool.IsEnabled() && !pool.BalanceRune.IsZero() {
 			totalStaked = totalStaked.Add(pool.BalanceRune)
 			pools = append(pools, pool)
 		}
+	}
+	return pools, totalStaked, nil
+}
+
+func (k KVStore) getTotalActiveBond(ctx sdk.Context) (sdk.Uint, error) {
+	totalBonded := sdk.ZeroUint()
+	nodes, err := k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return sdk.ZeroUint(), fmt.Errorf("fail to get all active accounts: %w", err)
+	}
+	for _, node := range nodes {
+		totalBonded.Add(node.Bond)
+	}
+	return totalBonded, nil
+}
+
+// UpdateVaultData Update the vault data to reflect changing in this block
+func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
+	vault, err := k.GetVaultData(ctx)
+	if nil != err {
+		return fmt.Errorf("fail to get existing vault data: %w", err)
+	}
+	// when total reserve is zero , can't pay reward
+	if vault.TotalReserve.IsZero() {
+		return nil
+	}
+	currentHeight := uint64(ctx.BlockHeight())
+	pools, totalStaked, err := k.getEnabledPoolsAndTotalStakedRune(ctx)
+	if nil != err {
+		return fmt.Errorf("fail to get enabled pools and total staked rune: %w", err)
+	}
+
+	// If no Rune is staked, then don't give out block rewards.
+	if totalStaked.IsZero() {
+		return nil // If no Rune is staked, then don't give out block rewards.
 	}
 
 	// First subsidise the gas that was consumed from reserves, any
 	// reserves we take, minus from the gas we owe.
 	vault.TotalReserve, vault.Gas, err = subtractGas(ctx, k, vault.TotalReserve, vault.Gas)
 	if err != nil {
-		return err
+		return fmt.Errorf("fail to subtract gas from reserve: %w", err)
 	}
 
 	// Then get fees and rewards
@@ -78,49 +110,43 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 	if nil != err {
 		return fmt.Errorf("fail to get total liquidity fee: %w", err)
 	}
-	totalFees := sdk.ZeroUint()
+	var totalFees sdk.Uint
+
 	// If we have any remaining gas to pay, take from total liquidity fees
-	totalFees, vault.Gas, err = subtractGas(ctx, k, totalFees, vault.Gas)
+	totalFees, vault.Gas, err = subtractGas(ctx, k, totalLiquidityFees, vault.Gas)
 	if err != nil {
-		return err
+		return fmt.Errorf("fail to subtract gas from liquidity fees: %w", err)
 	}
 
 	// NOTE: if we continue to have remaining gas to pay off (which is
 	// extremely unlikely), ignore it for now (attempt to recover in the next
 	// block). This should be OK as the asset amount in the pool has already
 	// been deducted so the balances are correct. Just operating at a deficit.
-
-	// If no Rune is staked, then don't give out block rewards.
-	if totalStaked.IsZero() {
-		return nil // If no Rune is staked, then don't give out block rewards.
+	totalBonded, err := k.getTotalActiveBond(ctx)
+	if nil != err {
+		return fmt.Errorf("fail to get total active bond: %w", err)
 	}
 
-	totalBonded := sdk.ZeroUint()
-	nodes, err := k.ListActiveNodeAccounts(ctx)
-	if err != nil {
-		return err
-	}
-	for _, node := range nodes {
-		totalBonded.Add(node.Bond)
-	}
+	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, vault.TotalReserve, totalFees)
 
-	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(vault.TotalReserve, totalFees, totalStaked, totalBonded)
-
-	if !vault.TotalReserve.IsZero() {
-		// Move Rune from the Reserve to the Bond and Pool Rewards
-		if vault.TotalReserve.LT(totalPoolRewards) {
-			vault.TotalReserve = sdk.ZeroUint()
-		} else {
-			vault.TotalReserve = common.SafeSub(
-				common.SafeSub(vault.TotalReserve, bondReward),
-				totalPoolRewards) // Subtract Bond and Pool rewards
-		}
-		vault.BondRewardRune = vault.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
+	// Move Rune from the Reserve to the Bond and Pool Rewards
+	if vault.TotalReserve.LT(totalPoolRewards) {
+		vault.TotalReserve = sdk.ZeroUint()
+	} else {
+		vault.TotalReserve = common.SafeSub(
+			common.SafeSub(vault.TotalReserve, bondReward),
+			totalPoolRewards) // Subtract Bond and Pool rewards
 	}
+	vault.BondRewardRune = vault.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
+
+	var evtPools []PoolAmt
 
 	if !totalPoolRewards.IsZero() { // If Pool Rewards to hand out
 		// First subsidise the gas that was consumed
 		for _, coin := range vault.Gas {
+			if coin.Amount.IsZero() {
+				continue
+			}
 			pool, err := k.GetPool(ctx, coin.Asset)
 			if err != nil {
 				return err
@@ -148,6 +174,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 				}
 				amt := common.GetShare(fees, totalLiquidityFees, totalPoolRewards)
 				rewardAmts = append(rewardAmts, amt)
+				evtPools = append(evtPools, PoolAmt{Asset: pool.Asset, Amount: int64(amt.Uint64())})
 			}
 
 		} else {
@@ -176,8 +203,26 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 				ctx.Logger().Error(err.Error())
 				return err
 			}
+			evtPools = append(evtPools, PoolAmt{
+				Asset:  pool.Asset,
+				Amount: 0 - int64(poolDeficit.Uint64()),
+			})
 		}
 	}
+
+	rewardEvt := NewEventRewards(bondReward, evtPools)
+	evtBytes, err := json.Marshal(rewardEvt)
+	if err != nil {
+		return fmt.Errorf("fail to marshal reward event to json: %w", err)
+	}
+	evt := NewEvent(
+		rewardEvt.Type(),
+		ctx.BlockHeight(),
+		common.Tx{},
+		evtBytes,
+		EventSuccess,
+	)
+	k.SetCompletedEvent(ctx, evt)
 
 	i, err := k.TotalActiveNodeAccount(ctx)
 	if nil != err {
@@ -191,18 +236,13 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 // remove gas
 func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (sdk.Uint, common.Gas, error) {
 	for i, coin := range gas {
-		if !coin.Amount.IsZero() {
-			pool, err := keeper.GetPool(ctx, coin.Asset)
-			if err != nil {
-				return sdk.ZeroUint(), nil, err
-			}
-			runeGas := pool.AssetValueInRune(coin.Amount)
-			gas[i].Amount = common.SafeSub(gas[i].Amount, coin.Amount)
-			val = common.SafeSub(val, runeGas)
+		// if the coin is zero amount, don't need to do anything
+		if coin.Amount.IsZero() {
+			continue
 		}
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
-			return sdk.ZeroUint(), nil, err
+			return sdk.ZeroUint(), nil, fmt.Errorf("fail to get pool(%s): %w", coin.Asset, err)
 		}
 		runeGas := pool.AssetValueInRune(coin.Amount)
 		gas[i].Amount = common.SafeSub(gas[i].Amount, coin.Amount)
