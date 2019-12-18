@@ -298,7 +298,9 @@ func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper, poolAddrM
 	}
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
-		keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &pool)
+		if err := keeper.Cdc().UnmarshalBinaryBare(iterator.Value(), &pool); err != nil {
+			return nil, sdk.ErrInternal("Unmarshl: Pool")
+		}
 		pool.PoolAddress = addr
 		pools = append(pools, pool)
 	}
