@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -14,7 +16,7 @@ type TxOutStore interface {
 	GetOutboundItems() []*TxOutItem
 	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
 	AddTxOutItem(ctx sdk.Context, toi *TxOutItem)
-	CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) Yggdrasils
+	CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Yggdrasils, error)
 }
 
 // TxOutStorage is going to manage all the outgoing tx
@@ -85,11 +87,16 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 			voter, err := tos.keeper.GetObservedTxVoter(ctx, toi.InHash)
 			if err != nil {
 				ctx.Logger().Error("fail to get observed tx voter", err)
+				return
 			}
 			tx := voter.GetTx(activeNodeAccounts)
 
 			// collect yggdrasil pools
-			yggs := tos.CollectYggdrasilPools(ctx, tx)
+			yggs, err := tos.CollectYggdrasilPools(ctx, tx)
+			if nil != err {
+				ctx.Logger().Error("fail to collect yggdrasil pool", err)
+				return
+			}
 			yggs = yggs.SortBy(toi.Coin.Asset)
 
 			// if none of our Yggdrasil pools have enough funds to fulfil
@@ -205,14 +212,16 @@ func (tos *TxOutStorage) getSeqNo(pk common.PubKey, chain common.Chain) uint64 {
 	return uint64(0)
 }
 
-func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) Yggdrasils {
+func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Yggdrasils, error) {
 	// collect yggdrasil pools
 	var yggs Yggdrasils
 	iterator := tos.keeper.GetYggdrasilIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var ygg Yggdrasil
-		tos.keeper.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &ygg)
+		if err := tos.keeper.Cdc().UnmarshalBinaryBare(iterator.Value(), &ygg); nil != err {
+			return nil, fmt.Errorf("fail to unmarshal Yggdrasils: %w", err)
+		}
 		// if THORNode are already sending assets from this ygg pool, deduct
 		// them.
 		addr, _ := ygg.PubKey.GetThorAddress()
@@ -233,5 +242,5 @@ func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) Y
 		yggs = append(yggs, ygg)
 	}
 
-	return yggs
+	return yggs, nil
 }

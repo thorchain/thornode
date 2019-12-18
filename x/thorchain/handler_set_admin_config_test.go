@@ -81,8 +81,8 @@ func (s *HandlerSetAdminConfigSuite) TestHandle(c *C) {
 	keeper := &TestSetAdminConfigHandleKeeper{
 		na: na,
 		ac: AdminConfig{
-			Key: PoolRefundGasKey,
-			Value: "500",
+			Key:     PoolRefundGasKey,
+			Value:   "500",
 			Address: na.NodeAddress,
 		},
 	}

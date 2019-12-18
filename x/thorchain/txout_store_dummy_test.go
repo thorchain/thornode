@@ -54,6 +54,6 @@ func (tos *TxOutStoreDummy) getSeqNo(chain common.Chain) uint64 {
 	return uint64(0)
 }
 
-func (tos *TxOutStoreDummy) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) Yggdrasils {
-	return nil
+func (tos *TxOutStoreDummy) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Yggdrasils, error) {
+	return nil, nil
 }
