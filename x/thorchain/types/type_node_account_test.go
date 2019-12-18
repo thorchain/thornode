@@ -127,6 +127,7 @@ func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 
 	}
 }
+
 func (NodeAccountSuite) TestNodeAccountUpdateStatusAndSort(c *C) {
 	var accounts NodeAccounts
 	for i := 0; i < 10; i++ {
