@@ -89,12 +89,12 @@ type NodeAccount struct {
 	NodePubKey          common.PubKeys `json:"node_pub_keys"`
 	ValidatorConsPubKey string         `json:"validator_cons_pub_key"`
 	Bond                sdk.Uint       `json:"bond"`
-	ActiveBlockHeight   int64          `json:"active_block_height"` // The block height when this node account became active status
-	BondAddress         common.Address `json:"bond_address"`        // BNB Address to send bond from. It also indicates the operator address to whilelist and associate.
-	SlashPoints         int64          `json:"slash_points"`        // Amount of penalty points the users has incurred.
+	ActiveBlockHeight   int64          `json:"active_block_height,string"` // The block height when this node account became active status
+	BondAddress         common.Address `json:"bond_address"`               // BNB Address to send bond from. It also indicates the operator address to whilelist and associate.
+	SlashPoints         int64          `json:"slash_points,string"`        // Amount of penalty points the users has incurred.
 	// start from which block height this node account is in current status
 	// StatusSince field is important , it has been used to sort node account , used for validator rotation
-	StatusSince      int64           `json:"status_since"`
+	StatusSince      int64           `json:"status_since,string"`
 	ObserverActive   bool            `json:"observer_active"`
 	SignerActive     bool            `json:"signer_active"`
 	SignerMembership []common.PubKey `json:"signer_membership"`
