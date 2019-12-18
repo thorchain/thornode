@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type SetAdminConfigHandler struct {
@@ -20,7 +21,7 @@ func NewSetAdminConfigHandler(keeper Keeper) SetAdminConfigHandler {
 	}
 }
 
-func (h SetAdminConfigHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h SetAdminConfigHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgSetAdminConfig)
 	if !ok {
 		return errInvalidMessage.Result()

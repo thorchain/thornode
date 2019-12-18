@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type SetTrustAccountHandler struct {
@@ -16,7 +17,7 @@ func NewSetTrustAccountHandler(keeper Keeper) SetTrustAccountHandler {
 	}
 }
 
-func (h SetTrustAccountHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h SetTrustAccountHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgSetTrustAccount)
 	if !ok {
 		return errInvalidMessage.Result()
