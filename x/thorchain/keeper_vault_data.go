@@ -110,7 +110,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 	if nil != err {
 		return fmt.Errorf("fail to get total liquidity fee: %w", err)
 	}
-	totalFees := sdk.ZeroUint()
+	var totalFees sdk.Uint
 
 	// If we have any remaining gas to pay, take from total liquidity fees
 	totalFees, vault.Gas, err = subtractGas(ctx, k, totalLiquidityFees, vault.Gas)
