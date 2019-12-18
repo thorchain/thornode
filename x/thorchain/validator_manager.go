@@ -24,8 +24,8 @@ const (
 )
 
 type ValidatorManager interface {
-	BeginBlock(ctx sdk.Context) error
-	EndBlock(ctx sdk.Context, store TxOutStore) []abci.ValidatorUpdate
+	BeginBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error
+	EndBlock(ctx sdk.Context, store TxOutStore, constAccessor constants.ConstantValues) []abci.ValidatorUpdate
 	RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error
 }
 
@@ -44,24 +44,26 @@ func NewValidatorMgr(k Keeper, poolAddrMgr PoolAddressManager) *ValidatorMgr {
 }
 
 // BeginBlock when block begin
-func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context) error {
+func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	height := ctx.BlockHeight()
 	if height == genesisBlockHeight {
-		if err := vm.setupValidatorNodes(ctx, height); nil != err {
+		if err := vm.setupValidatorNodes(ctx, height, constAccessor); nil != err {
 			ctx.Logger().Error("fail to setup validator nodes", err)
 		}
 	}
-
-	if err := vm.markBadActor(ctx, constants.BadValidatorRate); err != nil {
+	badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
+	if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
+		return err
+	}
+	oldValidatorRate := constAccessor.GetInt64Value(constants.OldValidatorRate)
+	if err := vm.markOldActor(ctx, oldValidatorRate); err != nil {
 		return err
 	}
 
-	if err := vm.markOldActor(ctx, constants.OldValidatorRate); err != nil {
-		return err
-	}
-
-	if ctx.BlockHeight()%constants.RotatePerBlockHeight == 0 {
-		next, ok, err := vm.nextPoolNodeAccounts(ctx, constants.DesireValidatorSet)
+	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
+	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
+	if ctx.BlockHeight()%rotatePerBlockHeight == 0 {
+		next, ok, err := vm.nextPoolNodeAccounts(ctx, int(desireValidatorSet))
 		if err != nil {
 			return err
 		}
@@ -82,7 +84,7 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context) error {
 }
 
 // EndBlock when block end
-func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore) []abci.ValidatorUpdate {
+func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccessor constants.ConstantValues) []abci.ValidatorUpdate {
 	height := ctx.BlockHeight()
 	activeNodes, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
@@ -162,12 +164,12 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore) []abci.Valid
 			Power:  100,
 		})
 	}
-
-	if height > 1 && removedNodes && len(newActive) <= constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
+	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
+	if height > 1 && removedNodes && len(newActive) <= int(minimumNodesForBFT) { // THORNode still have enough validators for BFT
 		// execute Ragnarok protocol, no going back
 		// THORNode have to request the fund back now, because once it get to the rotate block height ,
 		// THORNode won't have validators anymore
-		if err := vm.ragnarokProtocolStep1(ctx, activeNodes, store); nil != err {
+		if err := vm.ragnarokProtocolStep1(ctx, activeNodes, store, constAccessor); nil != err {
 			ctx.Logger().Error("fail to execute ragnarok protocol step 1: %s", err)
 		}
 	}
@@ -216,14 +218,14 @@ func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, pool
 
 // ragnarokProtocolStep1 - request all yggdrasil pool to return the fund
 // when THORNode observe the node return fund successfully, the node's bound will be refund.
-func (vm *ValidatorMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore) error {
+func (vm *ValidatorMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore, constAccessor constants.ConstantValues) error {
 	// do THORNode have yggdrasil pool?
 	hasYggdrasil, err := vm.k.HasValidYggdrasilPools(ctx)
 	if nil != err {
 		return fmt.Errorf("fail at ragnarok protocol step 1: %w", err)
 	}
 	if !hasYggdrasil {
-		result := handleRagnarokProtocolStep2(ctx, vm.k, txOut, vm.poolAddrMgr, vm)
+		result := handleRagnarokProtocolStep2(ctx, vm.k, txOut, vm.poolAddrMgr, constAccessor)
 		if !result.IsOK() {
 			return errors.New("fail to process ragnarok protocol step 2")
 		}
@@ -243,7 +245,7 @@ func (vm *ValidatorMgr) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts
 }
 
 // setupValidatorNodes it is one off it only get called when genesis
-func (vm *ValidatorMgr) setupValidatorNodes(ctx sdk.Context, height int64) error {
+func (vm *ValidatorMgr) setupValidatorNodes(ctx sdk.Context, height int64, constAccessor constants.ConstantValues) error {
 	if height != genesisBlockHeight {
 		ctx.Logger().Info("only need to setup validator node when start up", "height", height)
 		return nil
@@ -275,8 +277,9 @@ func (vm *ValidatorMgr) setupValidatorNodes(ctx sdk.Context, height int64) error
 	sort.Sort(activeCandidateNodes)
 	sort.Sort(readyNodes)
 	activeCandidateNodes = append(activeCandidateNodes, readyNodes...)
+	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
 	for idx, item := range activeCandidateNodes {
-		if int64(idx) < constants.DesireValidatorSet {
+		if int64(idx) < desireValidatorSet {
 			item.UpdateStatus(NodeActive, ctx.BlockHeight())
 		} else {
 			item.UpdateStatus(NodeStandby, ctx.BlockHeight())

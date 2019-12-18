@@ -2,9 +2,12 @@ package thorchain
 
 import (
 	"errors"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -143,7 +146,6 @@ func (k *TestEndPoolHandleKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context,
 	return PoolEnabled
 }
 
-
 func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 
@@ -195,8 +197,9 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 		bnbAddr,
 		activeNodeAccount.NodeAddress)
 
+	constAccessor := constants.GetConstantValues(ver)
 	stakeHandler := NewStakeHandler(keeper)
-	stakeResult := stakeHandler.Run(ctx, msgSetStake, ver)
+	stakeResult := stakeHandler.Run(ctx, msgSetStake, ver, constAccessor)
 	c.Assert(stakeResult.Code, Equals, sdk.CodeOK)
 
 	p, err := keeper.GetPool(ctx, common.BNBAsset)
@@ -205,11 +208,11 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
 	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
 	c.Assert(p.Status, Equals, PoolEnabled)
-	txOutStore.NewBlock(1)
+	txOutStore.NewBlock(1, constAccessor)
 
 	// EndPool again
 	msgEndPool1 := NewMsgEndPool(common.BNBAsset, tx, activeNodeAccount.NodeAddress)
-	result1 := handler.handle(ctx, msgEndPool1, ver)
+	result1 := handler.handle(ctx, msgEndPool1, ver, constAccessor)
 	c.Assert(result1.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result1))
 	p1, err := keeper.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)

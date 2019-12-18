@@ -6,6 +6,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type HandlerAddSuite struct{}
@@ -20,7 +21,8 @@ func (HandlerAddSuite) TestAdd(c *C) {
 	addHandler := NewAddHandler(w.keeper)
 	msg := NewMsgAdd(GetRandomTx(), common.BNBAsset, sdk.NewUint(common.One*5), sdk.NewUint(common.One*5), w.activeNodeAccount.NodeAddress)
 	ver := semver.MustParse("0.1.0")
-	result := addHandler.Run(w.ctx, msg, ver)
+	constAccessor := constants.GetConstantValues(ver)
+	result := addHandler.Run(w.ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 	afterPool, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
@@ -29,7 +31,7 @@ func (HandlerAddSuite) TestAdd(c *C) {
 
 	// invalid version
 	ver = semver.Version{}
-	result = addHandler.Run(w.ctx, msg, ver)
+	result = addHandler.Run(w.ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, CodeBadVersion)
 }
 
@@ -59,7 +61,8 @@ func (HandlerAddSuite) TestHandleMsgAddValidation(c *C) {
 
 	addHandler := NewAddHandler(w.keeper)
 	ver := semver.MustParse("0.1.0")
+	cosntAccessor := constants.GetConstantValues(ver)
 	for _, item := range testCases {
-		c.Assert(addHandler.Run(w.ctx, item.msg, ver).Code, Equals, item.expectedCode)
+		c.Assert(addHandler.Run(w.ctx, item.msg, ver, cosntAccessor).Code, Equals, item.expectedCode)
 	}
 }

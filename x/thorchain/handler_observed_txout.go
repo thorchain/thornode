@@ -6,7 +6,9 @@ import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type ObservedTxOutHandler struct {
@@ -25,7 +27,7 @@ func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr P
 	}
 }
 
-func (h ObservedTxOutHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h ObservedTxOutHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgObservedTxOut)
 	if !ok {
 		return errInvalidMessage.Result()

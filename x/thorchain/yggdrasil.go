@@ -9,7 +9,7 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) error {
+func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor constants.ConstantValues) error {
 
 	// find total bonded
 	totalBond := sdk.ZeroUint()
@@ -17,8 +17,8 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore) error {
 	if err != nil {
 		return err
 	}
-
-	if len(nodeAccs) <= constants.MinmumNodesForYggdrasil {
+	minimumNodesForYggdrasil := constAccessor.GetInt64Value(constants.MinimumNodesForYggdrasil)
+	if int64(len(nodeAccs)) <= minimumNodesForYggdrasil {
 		return nil
 	}
 
