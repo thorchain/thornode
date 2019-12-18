@@ -42,44 +42,7 @@ func NewTssKeyGen(keyGenCfg config.TSSConfiguration, statechain config.StateChai
 	}, nil
 }
 
-// getValidatorKeys from thorchain
-func (kg *KeyGen) getValidatorKeys() ([]common.PubKey, error) {
-	resp, err := thorclient.GetValidators(kg.client, kg.stateChainCfg.ChainHost)
-	if nil != err {
-		return nil, fmt.Errorf("fail to get validators , err:%w", err)
-	}
-	noNominated := resp.Nominated == nil || resp.Nominated.IsEmpty()
-	noQueued := resp.Queued == nil || resp.Queued.IsEmpty()
-	if noNominated && noQueued {
-		kg.logger.Info().Msg("no node get nominated , and no node get queued to be rotate out, so don't need to rotate pool")
-		// TODO: commented out because ignoring the tx request would cause the
-		// seqNum to differ between binance and thorchain. We should find a
-		// better solution.
-		// return nil, nil
-	}
-	pKeys := make([]common.PubKey, 0, len(resp.ActiveNodes)+1)
-	if !resp.Nominated.IsEmpty() {
-		for _, item := range resp.Nominated {
-			pKeys = append(pKeys, item.NodePubKey.Secp256k1)
-		}
-
-	}
-	queued := resp.Queued
-	for _, item := range resp.ActiveNodes {
-		if queued.Contains(item) {
-			continue
-		}
-		pKeys = append(pKeys, item.NodePubKey.Secp256k1)
-	}
-	return pKeys, nil
-}
-
-func (kg *KeyGen) GenerateNewKey() (common.PubKeys, error) {
-	pKeys, err := kg.getValidatorKeys()
-	if nil != err {
-		return common.EmptyPubKeys, fmt.Errorf("fail to get validator keys from thorchain,err:%w", err)
-	}
-
+func (kg *KeyGen) GenerateNewKey(pKeys []common.PubKey) (common.PubKeys, error) {
 	// No need to do key gen
 	if len(pKeys) == 0 {
 		return common.EmptyPubKeys, nil
@@ -126,6 +89,7 @@ func (kg *KeyGen) GenerateNewKey() (common.PubKeys, error) {
 	// TODO later on THORNode need to have both secp256k1 key and ed25519
 	return common.NewPubKeys(cpk, cpk), nil
 }
+
 func (kg *KeyGen) getTSSLocalUrl() string {
 	u := url.URL{
 		Scheme: kg.keyGenCfg.Scheme,

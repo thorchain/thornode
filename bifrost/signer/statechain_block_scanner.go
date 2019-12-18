@@ -25,9 +25,11 @@ type StateChainBlockScan struct {
 	wg                 *sync.WaitGroup
 	stopChan           chan struct{}
 	txOutChan          chan stypes.TxOut
+	keygensChan        chan stypes.Keygens
 	cfg                config.BlockScannerConfiguration
 	scannerStorage     blockscanner.ScannerStorage
-	commonBlockScanner *blockscanner.CommonBlockScanner
+	txOutBlockScanner  *blockscanner.CommonBlockScanner
+	keygenBlockScanner *blockscanner.CommonBlockScanner
 	chainHost          string
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
@@ -45,18 +47,24 @@ func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage bl
 	if nil == m {
 		return nil, errors.New("metric is nil")
 	}
-	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
+	txOutBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
 	if nil != err {
-		return nil, errors.Wrap(err, "fail to create common block scanner")
+		return nil, errors.Wrap(err, "fail to create txOut block scanner")
+	}
+	keygenBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create keygen block scanner")
 	}
 	return &StateChainBlockScan{
 		logger:             log.With().Str("module", "statechainblockscanner").Logger(),
 		wg:                 &sync.WaitGroup{},
 		stopChan:           make(chan struct{}),
 		txOutChan:          make(chan stypes.TxOut),
+		keygensChan:        make(chan stypes.Keygens),
 		cfg:                cfg,
 		scannerStorage:     scanStorage,
-		commonBlockScanner: commonBlockScanner,
+		txOutBlockScanner:  txOutBlockScanner,
+		keygenBlockScanner: keygenBlockScanner,
 		chainHost:          chainHost,
 		errCounter:         m.GetCounterVec(metrics.StateChainBlockScanError),
 		pkm:                pkm,
@@ -64,28 +72,58 @@ func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage bl
 }
 
 // GetMessages return the channel
-func (b *StateChainBlockScan) GetMessages() <-chan stypes.TxOut {
+func (b *StateChainBlockScan) GetTxOutMessages() <-chan stypes.TxOut {
 	return b.txOutChan
+}
+
+func (b *StateChainBlockScan) GetKeygenMessages() <-chan stypes.Keygens {
+	return b.keygensChan
 }
 
 // Start to scan blocks
 func (b *StateChainBlockScan) Start() error {
 	b.wg.Add(1)
 	go b.processBlocks(1)
-	b.commonBlockScanner.Start()
+	b.txOutBlockScanner.Start()
+	b.keygenBlockScanner.Start()
 	return nil
 }
 
-func (b *StateChainBlockScan) processABlock(blockHeight int64) error {
+func (b *StateChainBlockScan) processKeygenBlock(blockHeight int64) error {
 	for _, pk := range b.pkm.pks {
 		uri, err := url.Parse(b.chainHost)
 		if err != nil {
 			return errors.Wrap(err, "fail to parse chain host")
 		}
-		uri.Path = fmt.Sprintf("/thorchain/txoutarray/%d/%s", blockHeight, pk.String())
+		uri.Path = fmt.Sprintf("/thorchain/keygens/%d/%s", blockHeight, pk.String())
 
 		strBlockHeight := strconv.FormatInt(blockHeight, 10)
-		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())
+		buf, err := b.keygenBlockScanner.GetFromHttpWithRetry(uri.String())
+		if nil != err {
+			b.errCounter.WithLabelValues("fail_get_keygen", strBlockHeight)
+			return errors.Wrap(err, "fail to get keygen from a block")
+		}
+
+		var keygens stypes.Keygens
+		if err := json.Unmarshal(buf, &keygens); err != nil {
+			b.errCounter.WithLabelValues("fail_unmarshal_keygens", strBlockHeight)
+			return errors.Wrap(err, "fail to unmarshal keygens")
+		}
+		b.keygensChan <- keygens
+	}
+	return nil
+}
+
+func (b *StateChainBlockScan) processTxOutBlock(blockHeight int64) error {
+	for _, pk := range b.pkm.pks {
+		uri, err := url.Parse(b.chainHost)
+		if err != nil {
+			return errors.Wrap(err, "fail to parse chain host")
+		}
+		uri.Path = fmt.Sprintf("/thorchain/keysign/%d/%s", blockHeight, pk.String())
+
+		strBlockHeight := strconv.FormatInt(blockHeight, 10)
+		buf, err := b.txOutBlockScanner.GetFromHttpWithRetry(uri.String())
 		if nil != err {
 			b.errCounter.WithLabelValues("fail_get_tx_out", strBlockHeight)
 			return errors.Wrap(err, "fail to get tx out from a block")
@@ -123,12 +161,18 @@ func (b *StateChainBlockScan) processBlocks(idx int) {
 		select {
 		case <-b.stopChan: // time to get out
 			return
-		case block, more := <-b.commonBlockScanner.GetMessages():
+		case block, more := <-b.keygenBlockScanner.GetMessages():
+			if !more {
+				return
+			}
+			_ = block
+			// TODO: process keygen block
+		case block, more := <-b.txOutBlockScanner.GetMessages():
 			if !more {
 				return
 			}
 			b.logger.Debug().Int64("block", block).Msg("processing block")
-			if err := b.processABlock(block); nil != err {
+			if err := b.processTxOutBlock(block); nil != err {
 				if errStatus := b.scannerStorage.SetBlockScanStatus(block, blockscanner.Failed); nil != errStatus {
 					b.errCounter.WithLabelValues("fail_set_block_Status", strconv.FormatInt(block, 10))
 					b.logger.Error().Err(err).Int64("height", block).Msg("fail to set block to fail status")
