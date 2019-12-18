@@ -1,4 +1,4 @@
-package txscanner
+package txblockscanner
 
 import (
 	"github.com/rs/zerolog/log"
