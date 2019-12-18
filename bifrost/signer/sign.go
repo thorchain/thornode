@@ -19,6 +19,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
+	ttypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // Signer will pull the tx out from statechain and then forward it to binance chain
@@ -60,13 +61,26 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	httpClient := &http.Client{
 		Timeout: time.Second * 30,
 	}
-	na, err := thorclient.GetNodeAccount(httpClient, cfg.StateChain.ChainHost, thorKeys.GetSignerInfo().GetAddress().String())
-	if nil != err {
-		return nil, fmt.Errorf("fail to get node account from thorchain,err:%w", err)
-	}
 
+	var na ttypes.NodeAccount
+	for i := 0; i < 300; i++ { // wait for 5 min before timing out
+		var err error
+		na, err = thorclient.GetNodeAccount(httpClient, cfg.StateChain.ChainHost, thorKeys.GetSignerInfo().GetAddress().String())
+		if nil != err {
+			return nil, fmt.Errorf("fail to get node account from thorchain,err:%w", err)
+		}
+
+		if !na.NodePubKey.Secp256k1.IsEmpty() {
+			break
+		}
+		time.Sleep(5 * time.Second)
+		fmt.Println("Waiting for node account to be registered...")
+	}
 	for _, item := range na.SignerMembership {
 		pkm.Add(item)
+	}
+	if na.NodePubKey.Secp256k1.IsEmpty() {
+		return nil, fmt.Errorf("Unable to find pubkey for this node account.Exiting...")
 	}
 	pkm.Add(na.NodePubKey.Secp256k1)
 
@@ -105,6 +119,14 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 }
 
 func (s *Signer) Start() error {
+	if err := s.stateChainBridge.Start(); nil != err {
+		s.logger.Error().Err(err).Msg("fail to start statechain bridge")
+		return errors.Wrap(err, "fail to start statechain bridge")
+	}
+	if err := s.m.Start(); nil != err {
+		s.logger.Error().Err(err).Msg("fail to start metric collector")
+		return errors.Wrap(err, "fail to start metric collector")
+	}
 	s.wg.Add(1)
 	go s.processTxnOut(s.stateChainBlockScanner.GetTxOutMessages(), 1)
 	if err := s.retryAll(); nil != err {
@@ -244,20 +266,19 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 			if !more {
 				return
 			}
-			s.logger.Info().Msgf("Received a keygen of %+v from the StateChain", keygens)
-
 			for _, keygen := range keygens.Keygens {
+				s.logger.Info().Msgf("Received a keygen of %+v from the StateChain", keygens)
 				pubKey, err := s.tssKeygen.GenerateNewKey(keygen)
 				if err != nil {
-					s.errCounter.WithLabelValues("fail_to_keygen_pubkey").Inc()
+					fmt.Printf("ERROR: %s\n", err)
+					s.errCounter.WithLabelValues("fail_to_keygen_pubkey", "").Inc()
 					s.logger.Error().Err(err).Msg("fail to generate new pubkey")
 					continue
 				}
 				s.pkm.Add(pubKey.Secp256k1)
 
-				height := strconv.FormatUint(keygens.Height, 10)
-				if err := s.sendKeygenToThorchain(height, pubKey.Secp256k1, keygen); err != nil {
-					s.errCounter.WithLabelValues("fail_to_broadcast_keygen").Inc()
+				if err := s.sendKeygenToThorchain(keygens.Height, pubKey.Secp256k1, keygen); err != nil {
+					s.errCounter.WithLabelValues("fail_to_broadcast_keygen", "").Inc()
 					s.logger.Error().Err(err).Msg("fail to broadcast keygen")
 				}
 			}

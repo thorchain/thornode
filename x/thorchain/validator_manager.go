@@ -60,14 +60,15 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 		return err
 	}
 
-	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
 	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
-	if ctx.BlockHeight()%rotatePerBlockHeight == 0 {
+	if ctx.BlockHeight()%desireValidatorSet == 0 {
+		ctx.Logger().Info("Checking for node account rotation...")
 		next, ok, err := vm.nextPoolNodeAccounts(ctx, int(desireValidatorSet))
 		if err != nil {
 			return err
 		}
 		if ok {
+			ctx.Logger().Info("Trigger new keygen process...")
 			keygen := make(Keygen, len(next))
 			for i := range next {
 				keygen[i] = next[i].NodePubKey.Secp256k1
@@ -110,6 +111,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 		found := false
 		for _, member := range membership {
 			if na.NodePubKey.Contains(member) {
+				found = true
 				newActive = append(newActive, na)
 				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
 				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
@@ -165,7 +167,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 		})
 	}
 	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
-	if height > 1 && removedNodes && len(newActive) <= int(minimumNodesForBFT) { // THORNode still have enough validators for BFT
+	if height > 1 && removedNodes && len(newActive) < int(minimumNodesForBFT) { // THORNode still have enough validators for BFT
 		// execute Ragnarok protocol, no going back
 		// THORNode have to request the fund back now, because once it get to the rotate block height ,
 		// THORNode won't have validators anymore
@@ -349,7 +351,8 @@ func (vm *ValidatorMgr) findOldActor(ctx sdk.Context) (NodeAccount, error) {
 
 // Mark an old to be churned out
 func (vm *ValidatorMgr) markActor(ctx sdk.Context, na NodeAccount) error {
-	if na.LeaveHeight == 0 {
+	if !na.IsEmpty() && na.LeaveHeight == 0 {
+		ctx.Logger().Info(fmt.Sprintf("Marked Validator to be churned out %s", na.NodeAddress))
 		na.LeaveHeight = ctx.BlockHeight()
 		return vm.k.SetNodeAccount(ctx, na)
 	}

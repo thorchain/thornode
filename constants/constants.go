@@ -17,20 +17,18 @@ func NewConstantValue010() *ConstantValue010 {
 	return &ConstantValue010{int64values: map[ConstantName]int64{
 		EmissionCurve:                   6,
 		BlocksPerYear:                   6311390,
-		TransactionFee:                  100_000_000, // A 1.0 Rune fee on all swaps and withdrawals
-		NewPoolCycle:                    50000,       // Enable a pool every 50,000 blocks (~3 days)
-		MinimumNodesForYggdrasil:        6,           // No yggdrasil pools if THORNode have less than 6 active nodes
-		MinimumNodesForBFT:              4,           // Minimum node count to keep network running. Below this, Ragnarök is performed.
-		GlobalSlipLimit:                 3000,        // 30% is maximum slip allowed on a transaction (BasisPoints)
-		ValidatorRotateInNumBeforeFull:  2,           // How many validators should THORNode nominate before THORNode reach the desire validator set
-		ValidatorRotateOutNumBeforeFull: 1,           // How many validators should THORNode queued to be rotate out before THORNode reach the desire validator set)
-		ValidatorRotateNumAfterFull:     1,           // How many validators should THORNode nominate after THORNode reach the desire validator set
-		DesireValidatorSet:              33,          // desire validator set
-		RotatePerBlockHeight:            17280,       // How many blocks THORNode try to rotate validators
-		ValidatorsChangeWindow:          1200,        // When should THORNode open the rotate window, nominate validators, and identify who should be out
-		LeaveProcessPerBlockHeight:      4320,        // after how many blocks THORNode will process leave queue
-		BadValidatorRate:                51840,
-		OldValidatorRate:                51840,
+		TransactionFee:                  100_000_000,         // A 1.0 Rune fee on all swaps and withdrawals
+		NewPoolCycle:                    50000,               // Enable a pool every 50,000 blocks (~3 days)
+		MinimumNodesForYggdrasil:        6,                   // No yggdrasil pools if THORNode have less than 6 active nodes
+		MinimumNodesForBFT:              4,                   // Minimum node count to keep network running. Below this, Ragnarök is performed.
+		GlobalSlipLimit:                 3000,                // 30% is maximum slip allowed on a transaction (BasisPoints)
+		ValidatorRotateInNumBeforeFull:  2,                   // How many validators should THORNode nominate before THORNode reach the desire validator set
+		ValidatorRotateOutNumBeforeFull: 1,                   // How many validators should THORNode queued to be rotate out before THORNode reach the desire validator set)
+		ValidatorRotateNumAfterFull:     1,                   // How many validators should THORNode nominate after THORNode reach the desire validator set
+		DesireValidatorSet:              33,                  // desire validator set
+		RotatePerBlockHeight:            30,                  // How many blocks THORNode try to rotate validators
+		BadValidatorRate:                40,                  // rate to mark a validator to be rotated out for bad behavior
+		OldValidatorRate:                40,                  // rate to mark a validator to be rotated out for age
 		LackOfObservationPenalty:        2,                   // add two slash point for each block where a node does not observe
 		SigningTransactionPeriod:        100,                 // how many blocks before a request to sign a tx by yggdrasil pool, is counted as delinquent.
 		MinimumBondInRune:               100_000_000_000_000, // 1 million rune

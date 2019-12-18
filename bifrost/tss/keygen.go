@@ -62,6 +62,7 @@ func (kg *KeyGen) GenerateNewKey(pKeys []common.PubKey) (common.PubKeys, error) 
 	kg.logger.Debug().Str("url", tssUrl).Msg("sending request to tss key gen")
 	resp, err := kg.client.Post(tssUrl, "application/json", bytes.NewBuffer(buf))
 	if nil != err {
+		fmt.Printf("ERR1: %s\n", err)
 		return common.EmptyPubKeys, fmt.Errorf("fail to send key gen request,err:%w", err)
 	}
 	defer func() {
@@ -70,6 +71,9 @@ func (kg *KeyGen) GenerateNewKey(pKeys []common.PubKey) (common.PubKeys, error) 
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
+		bodyBuf, err := ioutil.ReadAll(resp.Body)
+		fmt.Printf("Body: %s\n", string(bodyBuf))
+		fmt.Printf("Err: %s\n", err)
 		return common.EmptyPubKeys, fmt.Errorf("status code from tss keygen (%d)", resp.StatusCode)
 	}
 	bodyBuf, err := ioutil.ReadAll(resp.Body)
