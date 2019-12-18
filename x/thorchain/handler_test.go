@@ -381,23 +381,6 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	c.Assert(found, Equals, true)
 }
 
-func (HandlerSuite) TestHandleMsgSetAdminConfig(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-
-	tx := GetRandomTx()
-	msgSetAdminCfg := NewMsgSetAdminConfig(tx, PoolRefundGasKey, "1000", w.notActiveNodeAccount.NodeAddress)
-	result := handleMsgSetAdminConfig(w.ctx, w.keeper, msgSetAdminCfg)
-	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
-
-	msgSetAdminCfg = NewMsgSetAdminConfig(tx, PoolRefundGasKey, "1000", w.activeNodeAccount.NodeAddress)
-	result1 := handleMsgSetAdminConfig(w.ctx, w.keeper, msgSetAdminCfg)
-	c.Assert(result1.Code, Equals, sdk.CodeOK)
-
-	msgInvalidSetAdminCfg := NewMsgSetAdminConfig(tx, "Whatever", "blablab", w.activeNodeAccount.NodeAddress)
-	result2 := handleMsgSetAdminConfig(w.ctx, w.keeper, msgInvalidSetAdminCfg)
-	c.Assert(result2.Code, Equals, sdk.CodeUnknownRequest)
-}
-
 func (HandlerSuite) TestRefund(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 
