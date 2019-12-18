@@ -45,8 +45,6 @@ echo "{
   \"binance\": {
     \"scheme\": \"$BINANCE_SCHEME\",
     \"dex_host\": \"$BINANCE_DEX\",
-    \"full_node_host\": \"data-seed-pre-0-s3.binance.org\",
-    \"full_node_scheme\": \"https\",
     \"is_testnet\": $ISTESTNET
   }
 }" > /etc/midgard/config.json
