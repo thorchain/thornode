@@ -53,12 +53,12 @@ func (s EventSuite) TestReward(c *C) {
 		{common.BTCAsset, 40},
 	})
 	c.Check(evt.Type(), Equals, "rewards")
-	c.Check(evt.Bond.String(), Equals, "300")
-	c.Assert(evt.Pools, HasLen, 2)
-	c.Check(evt.Pools[0].Asset.Equals(common.BNBAsset), Equals, true)
-	c.Check(evt.Pools[0].Amount, Equals, int64(30))
-	c.Check(evt.Pools[1].Asset.Equals(common.BTCAsset), Equals, true)
-	c.Check(evt.Pools[1].Amount, Equals, int64(40))
+	c.Check(evt.BondReward.String(), Equals, "300")
+	c.Assert(evt.PoolRewards, HasLen, 2)
+	c.Check(evt.PoolRewards[0].Asset.Equals(common.BNBAsset), Equals, true)
+	c.Check(evt.PoolRewards[0].Amount, Equals, int64(30))
+	c.Check(evt.PoolRewards[1].Asset.Equals(common.BTCAsset), Equals, true)
+	c.Check(evt.PoolRewards[1].Amount, Equals, int64(40))
 }
 
 func (s EventSuite) TestAdminConfig(c *C) {
