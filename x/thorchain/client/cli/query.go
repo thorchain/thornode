@@ -37,7 +37,7 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdPoolIndex(storeKey, cdc),
 		GetCmdSwapRecord(storeKey, cdc),
 		GetCmdUnStakeRecord(storeKey, cdc),
-		GetCmdTxOutArray(storeKey, cdc),
+		GetCmdKeysignArray(storeKey, cdc),
 		GetCmdGetAdminConfig(storeKey, cdc),
 	)...)
 	return thorchainQueryCmd
@@ -217,8 +217,8 @@ func GetCmdUnStakeRecord(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdTxOutArray query txoutarray
-func GetCmdTxOutArray(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdKeysignArray query keysign
+func GetCmdKeysignArray(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "txout [height]",
 		Short: "txout array",
@@ -226,9 +226,9 @@ func GetCmdTxOutArray(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			height := args[0]
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/txoutarray/%s", queryRoute, height), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/keysign/%s", queryRoute, height), nil)
 			if err != nil {
-				cmd.Println("could not get query txoutarray")
+				cmd.Println("could not get query keysign")
 				return nil
 			}
 			cmd.Println(string(res))
