@@ -22,13 +22,16 @@ mkdir -p /etc/midgard
 echo "{
   \"listen_port\": $PORT,
   \"is_testnet\" : $ISTESTNET,
-  \"log_level\": \"debug\",
+  \"log_level\": \"info\",
   \"thorchain\": {
     \"scheme\": \"$CHAIN_SCHEME\",
     \"host\": \"$CHAIN_API\",
     \"rpc_host\": \"$CHAIN_RPC\",
     \"enable_scan\": true,
-    \"scan_start_pos\": 1
+    \"scan_start_pos\": 1,
+    \"proxied_whitelisted_endpoints\": [
+      \"pool_addresses\"
+    ]
   },
   \"timescale\": {
     \"host\": \"$PG_HOST\",
@@ -42,6 +45,8 @@ echo "{
   \"binance\": {
     \"scheme\": \"$BINANCE_SCHEME\",
     \"dex_host\": \"$BINANCE_DEX\",
+    \"full_node_host\": \"data-seed-pre-0-s3.binance.org\",
+    \"full_node_scheme\": \"https\",
     \"is_testnet\": $ISTESTNET
   }
 }" > /etc/midgard/config.json
