@@ -9,13 +9,14 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // KeeperVaultData func to access Vault in key value store
 type KeeperVaultData interface {
 	GetVaultData(ctx sdk.Context) (VaultData, error)
 	SetVaultData(ctx sdk.Context, data VaultData) error
-	UpdateVaultData(ctx sdk.Context) error
+	UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues) error
 }
 
 // GetVaultData retrieve vault data from key value store
@@ -78,7 +79,7 @@ func (k KVStore) getTotalActiveBond(ctx sdk.Context) (sdk.Uint, error) {
 }
 
 // UpdateVaultData Update the vault data to reflect changing in this block
-func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
+func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	vault, err := k.GetVaultData(ctx)
 	if nil != err {
 		return fmt.Errorf("fail to get existing vault data: %w", err)
@@ -126,8 +127,9 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context) error {
 	if nil != err {
 		return fmt.Errorf("fail to get total active bond: %w", err)
 	}
-
-	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, vault.TotalReserve, totalFees)
+	emissionCurve := constAccessor.GetInt64Value(constants.EmissionCurve)
+	blocksOerYear := constAccessor.GetInt64Value(constants.BlocksPerYear)
+	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, vault.TotalReserve, totalFees, emissionCurve, blocksOerYear)
 
 	// Move Rune from the Reserve to the Bond and Pool Rewards
 	if vault.TotalReserve.LT(totalPoolRewards) {

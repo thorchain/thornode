@@ -14,8 +14,9 @@ import (
 // THORChain error code start at 101
 const (
 	// CodeBadVersion error code for bad version
-	CodeBadVersion     sdk.CodeType = 101
-	CodeInvalidMessage sdk.CodeType = 102
+	CodeBadVersion            sdk.CodeType = 101
+	CodeInvalidMessage        sdk.CodeType = 102
+	CodeConstantsNotAvailable sdk.CodeType = 103
 )
 
 // EmptyAccAddress empty address
@@ -24,6 +25,7 @@ var notAuthorized = fmt.Errorf("not authorized")
 var badVersion = fmt.Errorf("bad version")
 var errBadVersion = sdk.NewError(DefaultCodespace, CodeBadVersion, "bad version")
 var errInvalidMessage = sdk.NewError(DefaultCodespace, CodeInvalidMessage, "invalid message")
+var errConstNotAvailable = sdk.NewError(DefaultCodespace, CodeConstantsNotAvailable, "constant values not available")
 
 // NewHandler returns a handler for "thorchain" type messages.
 func NewHandler(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutStore, validatorMgr ValidatorManager) sdk.Handler {
@@ -33,11 +35,15 @@ func NewHandler(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore TxOutS
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
+		constantValues := constants.GetConstantValues(version)
+		if nil == constantValues {
+			return errConstNotAvailable.Result()
+		}
 		h, ok := handlerMap[msg.Type()]
 		if !ok {
 			return classic(ctx, msg)
 		}
-		return h.Run(ctx, msg, version)
+		return h.Run(ctx, msg, version, constantValues)
 	}
 }
 
@@ -64,9 +70,14 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 // NewClassicHandler returns a handler for "thorchain" type messages.
 func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutStore TxOutStore, validatorManager ValidatorManager) sdk.Handler {
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
+		version := keeper.GetLowestActiveVersion(ctx)
+		constAccessor := constants.GetConstantValues(version)
+		if nil == constAccessor {
+			return errConstNotAvailable.Result()
+		}
 		switch m := msg.(type) {
 		case MsgSwap:
-			return handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m)
+			return handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m, constAccessor)
 		case MsgSetAdminConfig:
 			return handleMsgSetAdminConfig(ctx, keeper, m)
 		case MsgOutboundTx:
@@ -79,12 +90,14 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 }
 
 // Handle a message to set stake data
-func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, msg MsgSwap) sdk.Result {
+func handleMsgSwap(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, msg MsgSwap, constAccessor constants.ConstantValues) sdk.Result {
 	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account", "request tx hash", msg.Tx.ID, "source asset", msg.Tx.Coins[0].Asset, "target asset", msg.TargetAsset)
 		return sdk.ErrUnauthorized("Not authorized").Result()
 	}
-	gsl := sdk.NewUint(constants.GlobalSlipLimit)
+
+	globalSlipLimit := constAccessor.GetInt64Value(constants.GlobalSlipLimit)
+	gsl := sdk.NewUint(uint64(globalSlipLimit))
 	chain := msg.TargetAsset.Chain
 	currentAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
 	if nil == currentAddr {

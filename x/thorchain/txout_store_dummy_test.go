@@ -4,6 +4,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // TxOutStoreDummy is going to manage all the outgoing tx
@@ -21,7 +22,7 @@ func NewTxStoreDummy() *TxOutStoreDummy {
 }
 
 // NewBlock create a new block
-func (tos *TxOutStoreDummy) NewBlock(height uint64) {
+func (tos *TxOutStoreDummy) NewBlock(height uint64, constAccessor constants.ConstantValues) {
 	tos.blockOut = NewTxOut(height)
 }
 

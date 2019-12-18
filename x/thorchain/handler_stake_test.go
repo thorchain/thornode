@@ -8,6 +8,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type HandlerStakeSuite struct{}
@@ -100,6 +101,7 @@ func (HandlerStakeSuite) TestStakeHandler(c *C) {
 		"stake:BNB",
 	)
 	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	msgSetStake := NewMsgSetStakeData(
 		tx,
 		common.BNBAsset,
@@ -108,7 +110,7 @@ func (HandlerStakeSuite) TestStakeHandler(c *C) {
 		bnbAddr,
 		bnbAddr,
 		activeNodeAccount.NodeAddress)
-	result := stakeHandler.Run(ctx, msgSetStake, ver)
+	result := stakeHandler.Run(ctx, msgSetStake, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 	postStakePool, err := k.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
@@ -143,6 +145,7 @@ func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 		"stake:BNB",
 	)
 	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	msgSetStake := NewMsgSetStakeData(
 		tx,
 		common.BNBAsset,
@@ -151,7 +154,7 @@ func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 		bnbAddr,
 		bnbAddr,
 		activeNodeAccount.NodeAddress)
-	result := stakeHandler.Run(ctx, msgSetStake, ver)
+	result := stakeHandler.Run(ctx, msgSetStake, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 	postStakePool, err := k.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
@@ -159,7 +162,7 @@ func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 	c.Assert(postStakePool.BalanceRune.String(), Equals, preStakePool.BalanceRune.Add(msgSetStake.RuneAmount).String())
 
 	// bad version
-	result = stakeHandler.Run(ctx, msgSetStake, semver.Version{})
+	result = stakeHandler.Run(ctx, msgSetStake, semver.Version{}, constAccessor)
 	c.Assert(result.Code, Equals, CodeBadVersion)
 }
 func (HandlerStakeSuite) TestStakeHandlerValidation(c *C) {
@@ -207,11 +210,11 @@ func (HandlerStakeSuite) TestStakeHandlerValidation(c *C) {
 			expectedResult: sdk.CodeUnknownRequest,
 		},
 	}
-
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	for _, item := range testCases {
-		ver := semver.MustParse("0.1.0")
 		stakeHandler := NewStakeHandler(k)
-		result := stakeHandler.Run(ctx, item.msg, ver)
+		result := stakeHandler.Run(ctx, item.msg, ver, constAccessor)
 		c.Assert(result.Code, Equals, item.expectedResult, Commentf(item.name))
 	}
 }
@@ -286,6 +289,7 @@ func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 			"stake:BNB",
 		)
 		ver := semver.MustParse("0.1.0")
+		constAccessor := constants.GetConstantValues(ver)
 		msgSetStake := NewMsgSetStakeData(
 			tx,
 			common.BNBAsset,
@@ -295,7 +299,7 @@ func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 			bnbAddr,
 			activeNodeAccount.NodeAddress)
 		stakeHandler := NewStakeHandler(tc.k)
-		result := stakeHandler.Run(ctx, msgSetStake, ver)
+		result := stakeHandler.Run(ctx, msgSetStake, ver, constAccessor)
 		c.Assert(result.Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
 }

@@ -6,6 +6,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type HandlerLeaveSuite struct{}
@@ -33,10 +34,10 @@ func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 	tx.FromAddress = acc2.BondAddress
 	msgLeave := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
 	ver := semver.MustParse("0.1.0")
-
-	result := leaveHandler.Run(w.ctx, msgLeave, ver)
+	constAccessor := constants.GetConstantValues(ver)
+	result := leaveHandler.Run(w.ctx, msgLeave, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%+v", result))
-	result1 := leaveHandler.Run(w.ctx, msgLeave, semver.Version{})
+	result1 := leaveHandler.Run(w.ctx, msgLeave, semver.Version{}, constAccessor)
 	c.Assert(result1.Code, Equals, CodeBadVersion)
 }
 
@@ -59,15 +60,15 @@ func (HandlerLeaveSuite) TestLeaveHandler_ActiveNodeLeave(c *C) {
 	tx.FromAddress = acc2.BondAddress
 	msgLeave := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
 	ver := semver.MustParse("0.1.0")
-
-	result := leaveHandler.Run(w.ctx, msgLeave, ver)
+	constAccessor := constants.GetConstantValues(ver)
+	result := leaveHandler.Run(w.ctx, msgLeave, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 }
 
 func (HandlerLeaveSuite) TestLeaveValidation(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	ver := semver.MustParse("0.1.0")
-
+	constAccessor := constants.GetConstantValues(ver)
 	testCases := []struct {
 		name         string
 		msgLeave     MsgLeave
@@ -145,6 +146,6 @@ func (HandlerLeaveSuite) TestLeaveValidation(c *C) {
 	for _, item := range testCases {
 		c.Log(item.name)
 		leaveHandler := NewLeaveHandler(w.keeper, w.validatorMgr, w.poolAddrMgr, w.txOutStore)
-		c.Assert(leaveHandler.Run(w.ctx, item.msgLeave, ver).Code, Equals, item.expectedCode)
+		c.Assert(leaveHandler.Run(w.ctx, item.msgLeave, ver, constAccessor).Code, Equals, item.expectedCode)
 	}
 }

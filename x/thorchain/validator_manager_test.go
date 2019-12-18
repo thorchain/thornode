@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"github.com/blang/semver"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/constants"
@@ -23,17 +24,19 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	k.SetPoolAddresses(ctx, poolAddrMgr.GetCurrentPoolAddresses())
 	vMgr := NewValidatorMgr(k, poolAddrMgr)
 	c.Assert(vMgr, NotNil)
-	err := vMgr.setupValidatorNodes(ctx, 0)
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
+	err := vMgr.setupValidatorNodes(ctx, 0, constAccessor)
 	c.Assert(err, IsNil)
 
 	// no node accounts at all
-	err = vMgr.setupValidatorNodes(ctx, 1)
+	err = vMgr.setupValidatorNodes(ctx, 1, constAccessor)
 	c.Assert(err, NotNil)
 
 	activeNode := GetRandomNodeAccount(NodeActive)
 	c.Assert(k.SetNodeAccount(ctx, activeNode), IsNil)
 
-	err = vMgr.setupValidatorNodes(ctx, 1)
+	err = vMgr.setupValidatorNodes(ctx, 1, constAccessor)
 	c.Assert(err, IsNil)
 
 	readyNode := GetRandomNodeAccount(NodeReady)
@@ -43,7 +46,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	// it should take both of the node as active
 	vMgr1 := NewValidatorMgr(k, poolAddrMgr)
 
-	vMgr1.BeginBlock(ctx)
+	vMgr1.BeginBlock(ctx, constAccessor)
 	activeNodes, err := k.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
 	c.Logf("active nodes:%s", activeNodes)
@@ -56,7 +59,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 
 	// three active nodes and 1 ready nodes, it should take them all
 	vMgr2 := NewValidatorMgr(k, poolAddrMgr)
-	vMgr2.BeginBlock(ctx)
+	vMgr2.BeginBlock(ctx, constAccessor)
 
 	activeNodes1, err := k.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
@@ -64,20 +67,20 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	// No standby nodes
 	ctx = ctx.WithBlockHeight(rotatePerBlockHeight + 1 - validatorChangeWindow)
 	txOutStore := NewTxOutStorage(k, poolAddrMgr)
-	txOutStore.NewBlock(uint64(rotatePerBlockHeight + 1 - validatorChangeWindow))
-	validatorUpdates := vMgr2.EndBlock(ctx, txOutStore)
+	txOutStore.NewBlock(uint64(rotatePerBlockHeight+1-validatorChangeWindow), constAccessor)
+	validatorUpdates := vMgr2.EndBlock(ctx, txOutStore, constAccessor)
 	c.Assert(validatorUpdates, HasLen, 0)
 
 	rotateHeight := rotatePerBlockHeight + 1
 	ctx = ctx.WithBlockHeight(rotateHeight)
-	txOutStore.NewBlock(uint64(rotateHeight))
-	validatorUpdates = vMgr2.EndBlock(ctx, txOutStore)
+	txOutStore.NewBlock(uint64(rotateHeight), constAccessor)
+	validatorUpdates = vMgr2.EndBlock(ctx, txOutStore, constAccessor)
 	c.Assert(validatorUpdates, HasLen, 0)
 
 	standbyNode := GetRandomNodeAccount(NodeStandby)
 	c.Assert(k.SetNodeAccount(ctx, standbyNode), IsNil)
 
 	// vts.setDesireValidatorSet(c, ctx, k)
-	validatorUpdates = vMgr2.EndBlock(ctx, txOutStore)
+	validatorUpdates = vMgr2.EndBlock(ctx, txOutStore, constAccessor)
 	c.Assert(validatorUpdates, HasLen, 0)
 }

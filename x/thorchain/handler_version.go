@@ -5,6 +5,8 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // VersionHandler is to handle Version message
@@ -20,7 +22,7 @@ func NewVersionHandler(keeper Keeper) VersionHandler {
 }
 
 // Run it the main entry point to execute Version logic
-func (h VersionHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h VersionHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgSetVersion)
 	if !ok {
 		return errInvalidMessage.Result()
