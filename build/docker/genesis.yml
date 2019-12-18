@@ -86,7 +86,7 @@ services:
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
       - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
-    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "--log_level", "*:debug", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
         ipv4_address: 172.32.10.22

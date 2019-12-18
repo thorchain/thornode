@@ -90,6 +90,7 @@ func (scb *StateChainBridge) Start() error {
 	scb.logger.Info().Uint64("account number", accountNumber).Uint64("sequence no", sequenceNumber).Msg("account information")
 	scb.accountNumber = accountNumber
 	scb.seqNumber = sequenceNumber
+	fmt.Printf("Account Info: %d %d\n", accountNumber, sequenceNumber)
 	return nil
 }
 
@@ -214,11 +215,16 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 		scb.m.GetHistograms(metrics.SendToStatechainDuration).Observe(time.Since(start).Seconds())
 	}()
 
+	accountNumber, sequenceNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
+	if nil != err {
+		return noTxID, errors.Wrap(err, "fail to get account number and sequence number from statechain ")
+	}
+
 	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", scb.accountNumber).Uint64("sequenceNo", scb.seqNumber).Msg("info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
-		AccountNumber: scb.accountNumber,
-		Sequence:      scb.seqNumber,
+		AccountNumber: accountNumber,
+		Sequence:      sequenceNumber,
 		Fee:           stdTx.Fee,
 		Msgs:          stdTx.GetMsgs(),
 		Memo:          stdTx.GetMemo(),
@@ -273,6 +279,7 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 		scb.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to unmarshal commit")
 	}
+	fmt.Printf("Commit: %+v\n", commit)
 	scb.m.GetCounter(metrics.TxToStateChain).Inc()
 	scb.logger.Info().Msgf("Received a TxHash of %v from the statechain", commit.TxHash)
 	return common.NewTxID(commit.TxHash)
