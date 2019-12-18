@@ -154,14 +154,14 @@ type PoolAmt struct {
 }
 
 type EventRewards struct {
-	Bond  sdk.Uint  `json:"bond"`
-	Pools []PoolAmt `json:"pools"`
+	BondReward  sdk.Uint  `json:"bond_reward"`
+	PoolRewards []PoolAmt `json:"pool_rewards"`
 }
 
-func NewEventRewards(bond sdk.Uint, pools []PoolAmt) EventRewards {
+func NewEventRewards(bondReward sdk.Uint, poolRewards []PoolAmt) EventRewards {
 	return EventRewards{
-		Bond:  bond,
-		Pools: pools,
+		BondReward:  bondReward,
+		PoolRewards: poolRewards,
 	}
 }
 
