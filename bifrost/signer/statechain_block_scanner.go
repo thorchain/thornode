@@ -95,7 +95,7 @@ func (b *StateChainBlockScan) processKeygenBlock(blockHeight int64) error {
 		if err != nil {
 			return errors.Wrap(err, "fail to parse chain host")
 		}
-		uri.Path = fmt.Sprintf("/thorchain/keygens/%d/%s", blockHeight, pk.String())
+		uri.Path = fmt.Sprintf("/thorchain/keygen/%d/%s", blockHeight, pk.String())
 
 		strBlockHeight := strconv.FormatInt(blockHeight, 10)
 		buf, err := b.keygenBlockScanner.GetFromHttpWithRetry(uri.String())
@@ -166,7 +166,11 @@ func (b *StateChainBlockScan) processBlocks(idx int) {
 				return
 			}
 			_ = block
-			// TODO: process keygen block
+			b.logger.Debug().Int64("block", block).Msg("processing keygen block")
+			if err := b.processKeygenBlock(block); nil != err {
+				b.errCounter.WithLabelValues("fail_process_keygen", strconv.FormatInt(block, 10))
+				b.logger.Error().Err(err).Int64("height", block).Msg("fail to process keygen")
+			}
 		case block, more := <-b.txOutBlockScanner.GetMessages():
 			if !more {
 				return
