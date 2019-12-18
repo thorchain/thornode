@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -54,6 +53,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, txOutStore, poolAddrMgr)
 	m[MsgSetTrustAccount{}.Type()] = NewSetTrustAccountHandler(keeper)
+	m[MsgSetAdminConfig{}.Type()] = NewSetAdminConfigHandler(keeper)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetPoolData{}.Type()] = NewPoolDataHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
@@ -78,8 +78,6 @@ func NewClassicHandler(keeper Keeper, poolAddressMgr PoolAddressManager, txOutSt
 		switch m := msg.(type) {
 		case MsgSwap:
 			return handleMsgSwap(ctx, keeper, txOutStore, poolAddressMgr, m, constAccessor)
-		case MsgSetAdminConfig:
-			return handleMsgSetAdminConfig(ctx, keeper, m)
 		case MsgOutboundTx:
 			return handleMsgOutboundTx(ctx, keeper, poolAddressMgr, m)
 		default:
@@ -459,60 +457,6 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 			ctx.Logger().Error("fail to save yggdrasil", err)
 			return sdk.ErrInternal("fail to save yggdrasil").Result()
 		}
-	}
-
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
-// handleMsgSetAdminConfig process admin config
-func handleMsgSetAdminConfig(ctx sdk.Context, keeper Keeper, msg MsgSetAdminConfig) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgSetAdminConfig %s --> %s", msg.AdminConfig.Key, msg.AdminConfig.Value))
-	if !isSignedByActiveNodeAccounts(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account")
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgSetAdminConfig", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	prevVal, err := keeper.GetAdminConfigValue(ctx, msg.AdminConfig.Key, nil)
-	if err != nil {
-		ctx.Logger().Error("unable to get admin config", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	keeper.SetAdminConfig(ctx, msg.AdminConfig)
-
-	newVal, err := keeper.GetAdminConfigValue(ctx, msg.AdminConfig.Key, nil)
-	if err != nil {
-		ctx.Logger().Error("unable to get admin config", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	if newVal != "" && prevVal != newVal {
-		adminEvt := NewEventAdminConfig(
-			msg.AdminConfig.Key.String(),
-			msg.AdminConfig.Value,
-		)
-		stakeBytes, err := json.Marshal(adminEvt)
-		if err != nil {
-			ctx.Logger().Error("fail to unmarshal admin config event", err)
-			err = errors.Wrap(err, "fail to marshal admin config event to json")
-			return sdk.ErrUnknownRequest(err.Error()).Result()
-		}
-
-		evt := NewEvent(
-			adminEvt.Type(),
-			ctx.BlockHeight(),
-			msg.Tx,
-			stakeBytes,
-			EventSuccess,
-		)
-		keeper.SetCompletedEvent(ctx, evt)
 	}
 
 	return sdk.Result{
