@@ -33,10 +33,10 @@ func NewQuerier(keeper Keeper, poolAddressMgr PoolAddressManager, validatorMgr V
 			return queryTxIn(ctx, path[1:], req, keeper)
 		case q.QueryAdminConfig.Key, q.QueryAdminConfigBnb.Key:
 			return queryAdminConfig(ctx, path[1:], req, keeper)
-		case q.QueryTxOutArray.Key:
-			return queryTxOutArray(ctx, path[1:], req, keeper, validatorMgr)
-		case q.QueryTxOutArrayPubkey.Key:
-			return queryTxOutArray(ctx, path[1:], req, keeper, validatorMgr)
+		case q.QueryKeysign.Key:
+			return queryKeysign(ctx, path[1:], req, keeper, validatorMgr)
+		case q.QueryKeysignPubkey.Key:
+			return queryKeysign(ctx, path[1:], req, keeper, validatorMgr)
 		case q.QueryKeygens.Key:
 			return queryKeygen(ctx, path[1:], req, keeper)
 		case q.QueryKeygensPubkey.Key:
@@ -375,7 +375,7 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 	return res, nil
 }
 
-func queryTxOutArray(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, validatorMgr ValidatorManager) ([]byte, sdk.Error) {
+func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, validatorMgr ValidatorManager) ([]byte, sdk.Error) {
 	var err error
 	height, err := strconv.ParseUint(path[0], 0, 64)
 	if nil != err {
