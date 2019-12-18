@@ -1,16 +1,13 @@
 package thorchain
 
 import (
-	"fmt"
 	"os"
 
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/constants"
 )
 
 type SwapSuite struct{}
@@ -333,82 +330,5 @@ func (s SwapSuite) TestCalculators(c *C) {
 	// https://docs.google.com/spreadsheets/d/1wJHYBRKBdw_WP7nUyVnkySPkOmPUNoiRGsEqgBVVXKU/edit#gid=0
 	c.Check(calcAssetEmission(X, x, Y).Uint64(), Equals, uint64(826446280))
 	c.Check(calcLiquidityFee(X, x, Y).Uint64(), Equals, uint64(82644628))
-	fmt.Println(calcTradeSlip(X, x))
 	c.Check(calcTradeSlip(X, x).Uint64(), Equals, uint64(2100))
-}
-
-func (s SwapSuite) TestHandleMsgSwap(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-	ver := semver.MustParse("0.1.0")
-	constAccessor := constants.GetConstantValues(ver)
-	txOutStore := NewTxOutStorage(w.keeper, w.poolAddrMgr)
-	txID := GetRandomTxHash()
-	signerBNBAddr := GetRandomBNBAddress()
-	observerAddr := w.activeNodeAccount.NodeAddress
-	txOutStore.NewBlock(1, constAccessor)
-	// no pool
-	tx := common.NewTx(
-		txID,
-		signerBNBAddr,
-		signerBNBAddr,
-		common.Coins{
-			common.NewCoin(common.RuneAsset(), sdk.OneUint()),
-		},
-		common.BNBGasFeeSingleton,
-		"",
-	)
-	msg := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.ZeroUint(), observerAddr)
-	res := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg, constAccessor)
-	c.Assert(res.Code, Equals, sdk.CodeInternal)
-	pool := NewPool()
-	pool.Asset = common.BNBAsset
-	pool.BalanceAsset = sdk.NewUint(100 * common.One)
-	pool.BalanceRune = sdk.NewUint(100 * common.One)
-	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
-
-	res = handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg, constAccessor)
-	c.Assert(res.IsOK(), Equals, true)
-
-	tx = common.NewTx(txID, signerBNBAddr, signerBNBAddr,
-		common.Coins{
-			common.NewCoin(common.RuneAsset(), sdk.OneUint()),
-		},
-		common.BNBGasFeeSingleton,
-		"",
-	)
-	msgSwapPriceProtection := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.NewUint(2*common.One), observerAddr)
-	res1 := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msgSwapPriceProtection, constAccessor)
-	c.Assert(res1.IsOK(), Equals, false)
-	c.Assert(res1.Code, Equals, sdk.CodeInternal)
-
-	poolTCAN := NewPool()
-	tCanAsset, err := common.NewAsset("BNB.TCAN-014")
-	c.Assert(err, IsNil)
-	poolTCAN.Asset = tCanAsset
-	poolTCAN.BalanceAsset = sdk.NewUint(334850000)
-	poolTCAN.BalanceRune = sdk.NewUint(2349500000)
-	c.Assert(w.keeper.SetPool(w.ctx, poolTCAN), IsNil)
-
-	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
-	currentChainPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
-	c.Assert(currentChainPoolAddr, NotNil)
-	txIn := NewObservedTx(
-		common.NewTx(GetRandomTxHash(), signerBNBAddr, GetRandomBNBAddress(),
-			common.Coins{
-				common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
-			},
-			common.BNBGasFeeSingleton,
-			"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
-		),
-		sdk.NewUint(1),
-		currentChainPoolAddr.PubKey,
-	)
-	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txIn, observerAddr)
-	c.Assert(err, IsNil)
-
-	res2 := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msgSwapFromTxIn.(MsgSwap), constAccessor)
-
-	c.Assert(res2.IsOK(), Equals, true)
-	c.Assert(res2.Code, Equals, sdk.CodeOK)
-
 }
