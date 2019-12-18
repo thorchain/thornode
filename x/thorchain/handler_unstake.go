@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // UnstakeHandler
@@ -25,7 +26,7 @@ func NewUnstakeHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAdd
 		poolAddrMgr: poolAddrMgr,
 	}
 }
-func (uh UnstakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (uh UnstakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgSetUnStake)
 	if !ok {
 		return errInvalidMessage.Result()

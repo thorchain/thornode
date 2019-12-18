@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/constants"
 )
 
 // validate if pools exist
@@ -188,7 +187,7 @@ func swapOne(ctx sdk.Context,
 	}
 
 	// Get our slip limits
-	gsl := sdk.NewUint(constants.GlobalSlipLimit) // global slip limit
+	gsl := globalSlipLimit
 
 	// Get our X, x, Y values
 	if source.IsRune() {

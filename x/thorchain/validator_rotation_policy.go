@@ -18,15 +18,16 @@ type ValidatorRotationPolicy struct {
 }
 
 // GetValidatorRotationPolicy from data store
-func GetValidatorRotationPolicy() ValidatorRotationPolicy {
+func GetValidatorRotationPolicy(constAccessor constants.ConstantValues) ValidatorRotationPolicy {
+
 	return ValidatorRotationPolicy{
-		RotateInNumBeforeFull:      constants.ValidatorRotateInNumBeforeFull,
-		RotateOutNumBeforeFull:     constants.ValidatorRotateOutNumBeforeFull,
-		RotateNumAfterFull:         constants.ValidatorRotateNumAfterFull,
-		RotatePerBlockHeight:       constants.RotatePerBlockHeight,
-		ValidatorChangeWindow:      constants.ValidatorsChangeWindow,
-		DesireValidatorSet:         constants.DesireValidatorSet,
-		LeaveProcessPerBlockHeight: constants.LeaveProcessPerBlockHeight,
+		RotateInNumBeforeFull:      constAccessor.GetInt64Value(constants.ValidatorRotateInNumBeforeFull),
+		RotateOutNumBeforeFull:     constAccessor.GetInt64Value(constants.ValidatorRotateOutNumBeforeFull),
+		RotateNumAfterFull:         constAccessor.GetInt64Value(constants.ValidatorRotateNumAfterFull),
+		RotatePerBlockHeight:       constAccessor.GetInt64Value(constants.RotatePerBlockHeight),
+		ValidatorChangeWindow:      constAccessor.GetInt64Value(constants.ValidatorsChangeWindow),
+		DesireValidatorSet:         constAccessor.GetInt64Value(constants.DesireValidatorSet),
+		LeaveProcessPerBlockHeight: constAccessor.GetInt64Value(constants.LeaveProcessPerBlockHeight),
 	}
 }
 

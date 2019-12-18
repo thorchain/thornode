@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type SwapSuite struct{}
@@ -337,11 +339,13 @@ func (s SwapSuite) TestCalculators(c *C) {
 
 func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	txOutStore := NewTxOutStorage(w.keeper, w.poolAddrMgr)
 	txID := GetRandomTxHash()
 	signerBNBAddr := GetRandomBNBAddress()
 	observerAddr := w.activeNodeAccount.NodeAddress
-	txOutStore.NewBlock(1)
+	txOutStore.NewBlock(1, constAccessor)
 	// no pool
 	tx := common.NewTx(
 		txID,
@@ -354,7 +358,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 		"",
 	)
 	msg := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.ZeroUint(), observerAddr)
-	res := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg)
+	res := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg, constAccessor)
 	c.Assert(res.Code, Equals, sdk.CodeInternal)
 	pool := NewPool()
 	pool.Asset = common.BNBAsset
@@ -362,7 +366,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
 	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
 
-	res = handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg)
+	res = handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msg, constAccessor)
 	c.Assert(res.IsOK(), Equals, true)
 
 	tx = common.NewTx(txID, signerBNBAddr, signerBNBAddr,
@@ -373,7 +377,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 		"",
 	)
 	msgSwapPriceProtection := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.NewUint(2*common.One), observerAddr)
-	res1 := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msgSwapPriceProtection)
+	res1 := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msgSwapPriceProtection, constAccessor)
 	c.Assert(res1.IsOK(), Equals, false)
 	c.Assert(res1.Code, Equals, sdk.CodeInternal)
 
@@ -402,7 +406,7 @@ func (s SwapSuite) TestHandleMsgSwap(c *C) {
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txIn, observerAddr)
 	c.Assert(err, IsNil)
 
-	res2 := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msgSwapFromTxIn.(MsgSwap))
+	res2 := handleMsgSwap(w.ctx, w.keeper, txOutStore, w.poolAddrMgr, msgSwapFromTxIn.(MsgSwap), constAccessor)
 
 	c.Assert(res2.IsOK(), Equals, true)
 	c.Assert(res2.Code, Equals, sdk.CodeOK)

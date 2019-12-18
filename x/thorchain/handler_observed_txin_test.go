@@ -181,6 +181,7 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 
 	ver := semver.MustParse("0.1.0")
+
 	tx := GetRandomTx()
 	tx.Memo = "SWAP:BTC.BTC"
 	obTx := NewObservedTx(tx, sdk.NewUint(12), GetRandomPubKey())

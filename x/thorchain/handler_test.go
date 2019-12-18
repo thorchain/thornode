@@ -3,6 +3,7 @@ package thorchain
 import (
 	"fmt"
 
+	"github.com/blang/semver"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -16,6 +17,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
@@ -119,12 +121,14 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		genesisPoolPubKey,
 	}, common.EmptyPoolPubKeys)
 	k.SetPoolAddresses(ctx, genesisPoolAddress)
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	poolAddrMgr := NewPoolAddressMgr(k)
 	poolAddrMgr.currentPoolAddresses = NewPoolAddresses(GetRandomPoolPubKeys(), GetRandomPoolPubKeys(), GetRandomPoolPubKeys())
 	validatorMgr := NewValidatorMgr(k, poolAddrMgr)
-	validatorMgr.BeginBlock(ctx)
+	validatorMgr.BeginBlock(ctx, constAccessor)
 	txOutStore := NewTxOutStorage(k, poolAddrMgr)
-	txOutStore.NewBlock(uint64(height))
+	txOutStore.NewBlock(uint64(height), constAccessor)
 
 	return handlerTestWrapper{
 		ctx:                  ctx,
@@ -248,8 +252,9 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 		},
 		w.activeNodeAccount.NodeAddress,
 	)
-
-	w.txOutStore.NewBlock(2)
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
+	w.txOutStore.NewBlock(2, constAccessor)
 	result = handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -318,8 +323,9 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(29999962500)), Equals, true) // 300 - Gas
 	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)
-
-	w.txOutStore.NewBlock(2)
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
+	w.txOutStore.NewBlock(2, constAccessor)
 	inTxID := GetRandomTxHash()
 
 	txIn := types.NewObservedTx(

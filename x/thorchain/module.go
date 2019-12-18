@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -120,46 +121,58 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	if err := am.poolMgr.BeginBlock(ctx); err != nil {
 		ctx.Logger().Error("Fail to begin block on pool address manager", err)
 	}
+	version := am.keeper.GetLowestActiveVersion(ctx)
+	constantValues := constants.GetConstantValues(version)
+	if nil == constantValues {
+		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
+	} else {
+		if err := am.validatorMgr.BeginBlock(ctx, constantValues); err != nil {
+			ctx.Logger().Error("Fail to begin block on validator", err)
+		}
 
-	if err := am.validatorMgr.BeginBlock(ctx); err != nil {
-		ctx.Logger().Error("Fail to begin block on validator", err)
+		am.txOutStore.NewBlock(uint64(req.Header.Height), constantValues)
 	}
-
-	am.txOutStore.NewBlock(uint64(req.Header.Height))
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
 
-	slasher := NewSlasher(am.keeper, am.txOutStore, am.poolMgr)
-	// slash node accounts for not observing any accepted inbound tx
-	if err := slasher.LackObserving(ctx); err != nil {
-		ctx.Logger().Error("Unable to slash for lack of observing:", err)
-	}
-	if err := slasher.LackSigning(ctx); err != nil {
-		ctx.Logger().Error("Unable to slash for lack of signing:", err)
-	}
-
-	// Enable a pool every newPoolCycle
-	if ctx.BlockHeight()%constants.NewPoolCycle == 0 {
-		if err := enableNextPool(ctx, am.keeper); err != nil {
-			ctx.Logger().Error("Unable to enable a pool", err)
+	version := am.keeper.GetLowestActiveVersion(ctx)
+	constantValues := constants.GetConstantValues(version)
+	if nil == constantValues {
+		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
+	} else {
+		slasher := NewSlasher(am.keeper, am.txOutStore, am.poolMgr)
+		// slash node accounts for not observing any accepted inbound tx
+		if err := slasher.LackObserving(ctx, constantValues); err != nil {
+			ctx.Logger().Error("Unable to slash for lack of observing:", err)
 		}
-	}
+		if err := slasher.LackSigning(ctx, constantValues); err != nil {
+			ctx.Logger().Error("Unable to slash for lack of signing:", err)
+		}
+		newPoolCycle := constantValues.GetInt64Value(constants.NewPoolCycle)
+		// Enable a pool every newPoolCycle
+		if ctx.BlockHeight()%newPoolCycle == 0 {
+			if err := enableNextPool(ctx, am.keeper); err != nil {
+				ctx.Logger().Error("Unable to enable a pool", err)
+			}
+		}
 
-	// Fill up Yggdrasil vaults
-	err := Fund(ctx, am.keeper, am.txOutStore)
-	if err != nil {
-		ctx.Logger().Error("Unable to fund Yggdrasil", err)
-	}
+		// Fill up Yggdrasil vaults
+		err := Fund(ctx, am.keeper, am.txOutStore, constantValues)
+		if err != nil {
+			ctx.Logger().Error("Unable to fund Yggdrasil", err)
+		}
 
-	// update vault data to account for block rewards and reward units
-	if err := am.keeper.UpdateVaultData(ctx); nil != err {
-		ctx.Logger().Error("fail to save vault", err)
-	}
+		// update vault data to account for block rewards and reward units
+		if err := am.keeper.UpdateVaultData(ctx, constantValues); nil != err {
+			ctx.Logger().Error("fail to save vault", err)
+		}
 
-	am.txOutStore.CommitBlock(ctx)
-	return am.validatorMgr.EndBlock(ctx, am.txOutStore)
+		am.txOutStore.CommitBlock(ctx)
+		return am.validatorMgr.EndBlock(ctx, am.txOutStore, constantValues)
+	}
+	return nil
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {

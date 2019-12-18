@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // StakeHandler is to handle stake
@@ -39,7 +40,7 @@ func (sh StakeHandler) validateV1(ctx sdk.Context, msg MsgSetStakeData) sdk.Erro
 }
 
 // Run execute the handler
-func (sh StakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (sh StakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgSetStakeData)
 	if !ok {
 		return errInvalidMessage.Result()
