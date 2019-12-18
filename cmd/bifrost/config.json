@@ -22,7 +22,7 @@
     },
     {
       "name": "bnb",
-      "enabled": false,
+      "enabled": true,
       "chain_host": "http://localhost:27147",
       "chain_network": "mainnet"
     }
