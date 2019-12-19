@@ -143,10 +143,13 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStor
 
 // Handle a message to set pooldata
 func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAccessor constants.ConstantValues) sdk.Result {
-	ygg, err := h.keeper.GetYggdrasil(ctx, msg.PubKey)
-	if nil != err && !stdErrors.Is(err, ErrYggdrasilNotFound) {
+	ygg, err := h.keeper.GetVault(ctx, msg.PubKey)
+	if nil != err && !stdErrors.Is(err, ErrVaultNotFound) {
 		ctx.Logger().Error("fail to get yggdrasil", err)
 		return sdk.ErrInternal(err.Error()).Result()
+	}
+	if !ygg.IsYggdrasil() {
+		return sdk.ErrInternal("this is not a Yggdrasil vault").Result()
 	}
 	if msg.AddFunds {
 		ygg.AddFunds(msg.Coins)
@@ -154,7 +157,7 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 		ygg.SubFunds(msg.Coins)
 	}
 
-	if err := h.keeper.SetYggdrasil(ctx, ygg); nil != err {
+	if err := h.keeper.SetVault(ctx, ygg); nil != err {
 		ctx.Logger().Error("fail to save yggdrasil", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
@@ -171,9 +174,6 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 			ctx.Logger().Error("unable to get node account", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
-		// TODO: slash their bond for any Yggdrasil funds that are unaccounted
-		// for before sending their bond back. Keep in mind that THORNode won't get
-		// back 100% of the funds (due to gas).
 		if err := refundBond(ctx, msg.RequestTxHash, na, h.keeper, h.txOutStore); err != nil {
 			ctx.Logger().Error("fail to refund bond", err)
 			return sdk.ErrInternal(err.Error()).Result()
@@ -190,7 +190,7 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 	// THORNode still have enough validators for BFT
 	if int64(total) < minimumNodesForBFT {
 
-		hasYggdrasilPool, err := h.keeper.HasValidYggdrasilPools(ctx)
+		hasYggdrasilPool, err := h.keeper.HasValidVaultPools(ctx)
 		if nil != err {
 			ctx.Logger().Error("fail to find valid yggdrasil pools", err)
 			return sdk.ErrInternal(err.Error()).Result()

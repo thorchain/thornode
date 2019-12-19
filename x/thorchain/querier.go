@@ -76,16 +76,20 @@ func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper, poolMgr PoolAddressManag
 		Asgard    []common.PubKey `json:"asgard"`
 		Yggdrasil []common.PubKey `json:"yggdrasil"`
 	}
-	iter := keeper.GetYggdrasilIterator(ctx)
+	iter := keeper.GetVaultIterator(ctx)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
-		var ygg Yggdrasil
-		if err := keeper.Cdc().UnmarshalBinaryBare(iter.Value(), &ygg); nil != err {
+		var vault Vault
+		if err := keeper.Cdc().UnmarshalBinaryBare(iter.Value(), &vault); nil != err {
 			ctx.Logger().Error("fail to unmarshal yggdrasil", err)
 			return nil, sdk.ErrInternal("fail to unmarshal yggdrasil")
 		}
-		if ygg.HasFunds() {
-			resp.Yggdrasil = append(resp.Yggdrasil, ygg.PubKey)
+		if vault.HasFunds() {
+			if vault.IsYggdrasil() {
+				resp.Yggdrasil = append(resp.Yggdrasil, vault.PubKey)
+			} else if vault.IsAsgard() {
+				resp.Asgard = append(resp.Asgard, vault.PubKey)
+			}
 		}
 	}
 	for _, item := range asgard {

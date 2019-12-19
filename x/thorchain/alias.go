@@ -21,6 +21,10 @@ const (
 	PoolRefundGasKey       = types.PoolRefundGasKey
 	DefaultPoolStatus      = types.DefaultPoolStatus
 
+	// Vaults
+	AsgardVault    = types.AsgardVault
+	YggdrasilVault = types.YggdrasilVault
+
 	NodeActive      = types.Active
 	NodeWhiteListed = types.WhiteListed
 	NodeDisabled    = types.Disabled
@@ -67,7 +71,7 @@ var (
 	ModuleCdc                      = types.ModuleCdc
 	RegisterCodec                  = types.RegisterCodec
 	NewNodeAccount                 = types.NewNodeAccount
-	NewYggdrasil                   = types.NewYggdrasil
+	NewVault                       = types.NewVault
 	NewReserveContributor          = types.NewReserveContributor
 	NewMsgYggdrasil                = types.NewMsgYggdrasil
 	NewMsgReserveContributor       = types.NewMsgReserveContributor
@@ -144,8 +148,8 @@ type (
 	PoolAmt                     = types.PoolAmt
 	ReserveContributor          = types.ReserveContributor
 	ReserveContributors         = types.ReserveContributors
-	Yggdrasil                   = types.Yggdrasil
-	Yggdrasils                  = types.Yggdrasils
+	Vault                       = types.Vault
+	Vaults                      = types.Vaults
 	NodeAccount                 = types.NodeAccount
 	NodeAccounts                = types.NodeAccounts
 	NodeAccountsBySlashingPoint = types.NodeAccountsBySlashingPoint

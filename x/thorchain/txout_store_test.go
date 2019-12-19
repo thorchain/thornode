@@ -37,29 +37,29 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc2), IsNil)
 	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc3), IsNil)
 
-	ygg := NewYggdrasil(acc1.NodePubKey.Secp256k1)
+	ygg := NewVault(YggdrasilVault, acc1.NodePubKey.Secp256k1)
 	ygg.AddFunds(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(40*common.One)),
 		},
 	)
-	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
+	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 
-	ygg = NewYggdrasil(acc2.NodePubKey.Secp256k1)
+	ygg = NewVault(YggdrasilVault, acc2.NodePubKey.Secp256k1)
 	ygg.AddFunds(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(50*common.One)),
 		},
 	)
-	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
+	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 
-	ygg = NewYggdrasil(acc3.NodePubKey.Secp256k1)
+	ygg = NewVault(YggdrasilVault, acc3.NodePubKey.Secp256k1)
 	ygg.AddFunds(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		},
 	)
-	c.Assert(w.keeper.SetYggdrasil(w.ctx, ygg), IsNil)
+	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 
 	// Create voter
 	inTxID := GetRandomTxHash()

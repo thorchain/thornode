@@ -389,14 +389,14 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 	keeper.SetLastSignedHeight(ctx, sdk.NewUint(uint64(voter.Height)))
 
 	// If THORNode are sending from a yggdrasil pool, decrement coins on record
-	if keeper.YggdrasilExists(ctx, msg.Tx.ObservedPubKey) {
-		ygg, err := keeper.GetYggdrasil(ctx, msg.Tx.ObservedPubKey)
+	if keeper.VaultExists(ctx, msg.Tx.ObservedPubKey) {
+		ygg, err := keeper.GetVault(ctx, msg.Tx.ObservedPubKey)
 		if nil != err {
 			ctx.Logger().Error("fail to get yggdrasil", err)
 			return sdk.ErrInternal("fail to get yggdrasil").Result()
 		}
 		ygg.SubFunds(msg.Tx.Tx.Coins)
-		if err := keeper.SetYggdrasil(ctx, ygg); nil != err {
+		if err := keeper.SetVault(ctx, ygg); nil != err {
 			ctx.Logger().Error("fail to save yggdrasil", err)
 			return sdk.ErrInternal("fail to save yggdrasil").Result()
 		}
