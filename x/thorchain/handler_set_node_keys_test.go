@@ -101,26 +101,14 @@ func (s *HandlerSetNodeKeysSuite) TestHandle(c *C) {
 	nodeAccount := NewNodeAccount(signer, NodeActive, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
-<<<<<<< HEAD:x/thorchain/handler_set_trust_account_test.go
-	activeFailResult := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
-||||||| merged common ancestors
-	activeFailResult := handler.handle(ctx, msgTrustAccount, ver)
-=======
-	activeFailResult := handler.handle(ctx, msgNodeKeys, ver)
->>>>>>> Rename TrustAccount -> NodeKeys:x/thorchain/handler_set_node_keys_test.go
+	activeFailResult := handler.handle(ctx, msgNodeKeys, ver, constAccessor)
 	c.Check(activeFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(activeFailResult.IsOK(), Equals, false)
 
 	nodeAccount = NewNodeAccount(signer, NodeDisabled, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
-<<<<<<< HEAD:x/thorchain/handler_set_trust_account_test.go
-	disabledFailResult := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
-||||||| merged common ancestors
-	disabledFailResult := handler.handle(ctx, msgTrustAccount, ver)
-=======
-	disabledFailResult := handler.handle(ctx, msgNodeKeys, ver)
->>>>>>> Rename TrustAccount -> NodeKeys:x/thorchain/handler_set_node_keys_test.go
+	disabledFailResult := handler.handle(ctx, msgNodeKeys, ver, constAccessor)
 	c.Check(disabledFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(disabledFailResult.IsOK(), Equals, false)
 
@@ -128,13 +116,7 @@ func (s *HandlerSetNodeKeysSuite) TestHandle(c *C) {
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
 	// happy path
-<<<<<<< HEAD:x/thorchain/handler_set_trust_account_test.go
-	success := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
-||||||| merged common ancestors
-	success := handler.handle(ctx, msgTrustAccount, ver)
-=======
-	success := handler.handle(ctx, msgNodeKeys, ver)
->>>>>>> Rename TrustAccount -> NodeKeys:x/thorchain/handler_set_node_keys_test.go
+	success := handler.handle(ctx, msgNodeKeys, ver, constAccessor)
 	c.Check(success.Code, Equals, sdk.CodeOK)
 	c.Check(success.IsOK(), Equals, true)
 	c.Assert(keeper.na.NodePubKey, Equals, pubKeys)
@@ -143,7 +125,7 @@ func (s *HandlerSetNodeKeysSuite) TestHandle(c *C) {
 	c.Assert(keeper.na.StatusSince, Equals, int64(1))
 
 	// update version
-	success2 := handler.handle(ctx, msgTrustAccount, semver.MustParse("2.0.0"), constAccessor)
+	success2 := handler.handle(ctx, msgNodeKeys, semver.MustParse("2.0.0"), constAccessor)
 	c.Check(success2.Code, Equals, sdk.CodeOK)
 	c.Check(success2.IsOK(), Equals, true)
 	c.Check(keeper.na.Version.String(), Equals, "2.0.0")
@@ -186,16 +168,8 @@ func (s *HandlerSetNodeKeysSuite) TestHandleFailUnique(c *C) {
 	bepConsPubKey := GetRandomBech32ConsensusPubKey()
 	pubKeys := GetRandomPubkeys()
 
-<<<<<<< HEAD:x/thorchain/handler_set_trust_account_test.go
-	msgTrustAccount := NewMsgSetTrustAccount(pubKeys, bepConsPubKey, signer)
-	notUniqueFailResult := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
-||||||| merged common ancestors
-	msgTrustAccount := NewMsgSetTrustAccount(pubKeys, bepConsPubKey, signer)
-	notUniqueFailResult := handler.handle(ctx, msgTrustAccount, ver)
-=======
 	msgNodeKeys := NewMsgSetNodeKeys(pubKeys, bepConsPubKey, signer)
-	notUniqueFailResult := handler.handle(ctx, msgNodeKeys, ver)
->>>>>>> Rename TrustAccount -> NodeKeys:x/thorchain/handler_set_node_keys_test.go
+	notUniqueFailResult := handler.handle(ctx, msgNodeKeys, ver, constAccessor)
 	c.Check(notUniqueFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(notUniqueFailResult.IsOK(), Equals, false)
 }

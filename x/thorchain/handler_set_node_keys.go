@@ -17,7 +17,7 @@ func NewSetNodeKeysHandler(keeper Keeper) SetNodeKeysHandler {
 	}
 }
 
-func (h SetNodeKeysHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
+func (h SetNodeKeysHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgSetNodeKeys)
 	if !ok {
 		return errInvalidMessage.Result()
@@ -55,7 +55,7 @@ func (h SetNodeKeysHandler) validateV1(ctx sdk.Context, msg MsgSetNodeKeys) erro
 	return nil
 }
 
-func (h SetNodeKeysHandler) handle(ctx sdk.Context, msg MsgSetTrustAccount, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
+func (h SetNodeKeysHandler) handle(ctx sdk.Context, msg MsgSetNodeKeys, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	ctx.Logger().Info("handleMsgSetNodeKeys request")
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, msg, version, constAccessor)
@@ -66,7 +66,7 @@ func (h SetNodeKeysHandler) handle(ctx sdk.Context, msg MsgSetTrustAccount, vers
 }
 
 // Handle a message to set node keys
-func (h SetNodeKeysHandler) handleV1(ctx sdk.Context, msg MsgSetNodeKeys) sdk.Result {
+func (h SetNodeKeysHandler) handleV1(ctx sdk.Context, msg MsgSetNodeKeys, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	nodeAccount, err := h.keeper.GetNodeAccount(ctx, msg.Signer)
 	if err != nil {
 		ctx.Logger().Error("fail to get node account", "error", err, "address", msg.Signer.String())
