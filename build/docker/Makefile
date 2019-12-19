@@ -30,11 +30,23 @@ run-standaloneWithMockBinance: clean
 stop-standaloneWithMockBinance: clean
 	docker-compose -f standalone.yml -f standaloneWithMockBinance.yml down
 
+run-standaloneFullStack: clean
+	docker-compose -f standalone.yml -f standaloneFullStack.yml up --force-recreate --remove-orphans -d
+
+stop-standaloneFullStack: clean
+	docker-compose -f standalone.yml -f standaloneFullStack.yml down
+
 run-standalone: clean
 	docker-compose -f standalone.yml up --force-recreate --remove-orphans -d
 
 stop-standalone: clean
 	docker-compose -f standalone.yml down
+
+run-genesisFullStack: clean
+	docker-compose -f genesis.yml -f genesisFullStack.yml up --force-recreate --remove-orphans -d
+
+stop-genesisFullStack: clean
+	docker-compose -f genesis.yml -f genesisFullStack.yml down
 
 run-genesisWithMockBinance: clean
 	docker-compose -f genesis.yml -f genesisWithMockBinance.yml up --force-recreate --remove-orphans -d

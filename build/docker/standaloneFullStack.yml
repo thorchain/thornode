@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  frontend:
+    image: registry.gitlab.com/thorchain/bepswap/bepswap-react-app
+    ports:
+      - 8000:80
+
+  midgard:
+    image: registry.gitlab.com/thorchain/midgard
+    ports:
+      - 8080:8080
+    environment:
+      CHAIN_API: thor-api:1317
+      CHAIN_RPC: thor-daemon:26657
+      PG_HOST: pg
+    links:
+      - pg
+      - thor-daemon
+      - thor-api
+    depends_on:
+      - pg
+      - thor-daemon
+      - thor-api
+    entrypoint:
+      /docker/scripts/midgard.sh
+    volumes:
+      - "../scripts:/docker/scripts"
+    command: "midgard -c /etc/midgard/config.json"
+
+  pg:
+    image: timescale/timescaledb:latest-pg11
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_USER=midgard
+      - POSTGRES_PASSWORD=password
+    command: postgres -c 'max_connections=250'
+
+  observer:
+    environment:
+      NET: testnet
+
+  signer:
+    environment:
+      NET: testnet
+
+  thor-daemon:
+    environment:
+      NET: testnet
+
+  thor-api:
+    environment:
+      NET: testnet

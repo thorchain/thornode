@@ -1,0 +1,105 @@
+version: '3'
+
+services:
+  frontend:
+    image: registry.gitlab.com/thorchain/bepswap/bepswap-react-app
+    ports:
+      - 8000:80
+    networks:
+      localnet:
+        ipv4_address: 172.32.61.2
+
+  midgard:
+    image: registry.gitlab.com/thorchain/midgard
+    ports:
+      - 8080:8080
+    environment:
+      CHAIN_API: 172.32.10.32:1317
+      CHAIN_RPC: 172.32.10.22:26657
+      PG_HOST: 172.32.60.3
+    depends_on:
+      - pg
+      - thor-daemon
+    entrypoint:
+      /docker/scripts/midgard.sh
+    volumes:
+      - "../scripts:/docker/scripts"
+    networks:
+      localnet:
+        ipv4_address: 172.32.60.2
+
+  pg:
+    image: timescale/timescaledb:latest-pg11
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=password
+    command: postgres -c 'max_connections=250'
+    networks:
+      localnet:
+        ipv4_address: 172.32.60.3
+
+  observer:
+    environment:
+      NET: testnet
+
+  signer:
+    environment:
+      NET: testnet
+
+  thor-daemon:
+    environment:
+      NET: testnet
+
+  thor-api:
+    environment:
+      NET: testnet
+
+  observer2:
+    environment:
+      NET: testnet
+
+  signer2:
+    environment:
+      NET: testnet
+
+  thor-daemon2:
+    environment:
+      NET: testnet
+
+  thor-api2:
+    environment:
+      NET: testnet
+
+  observer3:
+    environment:
+      NET: testnet
+
+  signer3:
+    environment:
+      NET: testnet
+
+  thor-daemon3:
+    environment:
+      NET: testnet
+
+  thor-api3:
+    environment:
+      NET: testnet
+
+  observer4:
+    environment:
+      NET: testnet
+
+  signer4:
+    environment:
+      NET: testnet
+
+  thor-daemon4:
+    environment:
+      NET: testnet
+
+  thor-api4:
+    environment:
+      NET: testnet
+
