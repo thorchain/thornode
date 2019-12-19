@@ -9,27 +9,27 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-type HandlerSetTrustAccountSuite struct{}
+type HandlerSetNodeKeysSuite struct{}
 
-type TestSetTrustAccountKeeper struct {
+type TestSetNodeKeysKeeper struct {
 	KVStoreDummy
 	na NodeAccount
 }
 
-func (k *TestSetTrustAccountKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
+func (k *TestSetNodeKeysKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
 	return k.na, nil
 }
 
-var _ = Suite(&HandlerSetTrustAccountSuite{})
+var _ = Suite(&HandlerSetNodeKeysSuite{})
 
-func (s *HandlerSetTrustAccountSuite) TestValidate(c *C) {
+func (s *HandlerSetNodeKeysSuite) TestValidate(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 
-	keeper := &TestSetTrustAccountKeeper{
+	keeper := &TestSetNodeKeysKeeper{
 		na: GetRandomNodeAccount(NodeActive),
 	}
 
-	handler := NewSetTrustAccountHandler(keeper)
+	handler := NewSetNodeKeysHandler(keeper)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -38,7 +38,7 @@ func (s *HandlerSetTrustAccountSuite) TestValidate(c *C) {
 	consensPubKey := GetRandomBech32ConsensusPubKey()
 	pubKeys := GetRandomPubkeys()
 
-	msg := NewMsgSetTrustAccount(pubKeys, consensPubKey, signer)
+	msg := NewMsgSetNodeKeys(pubKeys, consensPubKey, signer)
 	err := handler.validate(ctx, msg, ver)
 	c.Assert(err, IsNil)
 
@@ -51,37 +51,37 @@ func (s *HandlerSetTrustAccountSuite) TestValidate(c *C) {
 	c.Assert(err, Equals, badVersion)
 
 	// invalid msg
-	msg = MsgSetTrustAccount{}
+	msg = MsgSetNodeKeys{}
 	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, NotNil)
 }
 
-type TestSetTrustAccountHandleKeeper struct {
+type TestSetNodeKeysHandleKeeper struct {
 	KVStoreDummy
 	na NodeAccount
 }
 
-func (k *TestSetTrustAccountHandleKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
+func (k *TestSetNodeKeysHandleKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
 	return k.na, nil
 }
 
-func (k *TestSetTrustAccountHandleKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) error {
+func (k *TestSetNodeKeysHandleKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) error {
 	k.na = na
 	return nil
 }
 
-func (k *TestSetTrustAccountHandleKeeper) EnsureTrustAccountUnique(_ sdk.Context, consensPubKey string, pubKeys common.PubKeys) error {
+func (k *TestSetNodeKeysHandleKeeper) EnsureNodeKeysUnique(_ sdk.Context, consensPubKey string, pubKeys common.PubKeys) error {
 	return nil
 }
 
-func (s *HandlerSetTrustAccountSuite) TestHandle(c *C) {
+func (s *HandlerSetNodeKeysSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 
-	keeper := &TestSetTrustAccountHandleKeeper{
+	keeper := &TestSetNodeKeysHandleKeeper{
 		na: GetRandomNodeAccount(NodeActive),
 	}
 
-	handler := NewSetTrustAccountHandler(keeper)
+	handler := NewSetNodeKeysHandler(keeper)
 
 	ver := semver.MustParse("0.1.0")
 
@@ -95,20 +95,32 @@ func (s *HandlerSetTrustAccountSuite) TestHandle(c *C) {
 	pubKeys := GetRandomPubkeys()
 	emptyPubKeys := common.PubKeys{}
 
-	msgTrustAccount := NewMsgSetTrustAccount(pubKeys, bepConsPubKey, signer)
+	msgNodeKeys := NewMsgSetNodeKeys(pubKeys, bepConsPubKey, signer)
 
 	bond := sdk.NewUint(common.One * 100)
 	nodeAccount := NewNodeAccount(signer, NodeActive, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
+<<<<<<< HEAD:x/thorchain/handler_set_trust_account_test.go
 	activeFailResult := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
+||||||| merged common ancestors
+	activeFailResult := handler.handle(ctx, msgTrustAccount, ver)
+=======
+	activeFailResult := handler.handle(ctx, msgNodeKeys, ver)
+>>>>>>> Rename TrustAccount -> NodeKeys:x/thorchain/handler_set_node_keys_test.go
 	c.Check(activeFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(activeFailResult.IsOK(), Equals, false)
 
 	nodeAccount = NewNodeAccount(signer, NodeDisabled, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
+<<<<<<< HEAD:x/thorchain/handler_set_trust_account_test.go
 	disabledFailResult := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
+||||||| merged common ancestors
+	disabledFailResult := handler.handle(ctx, msgTrustAccount, ver)
+=======
+	disabledFailResult := handler.handle(ctx, msgNodeKeys, ver)
+>>>>>>> Rename TrustAccount -> NodeKeys:x/thorchain/handler_set_node_keys_test.go
 	c.Check(disabledFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(disabledFailResult.IsOK(), Equals, false)
 
@@ -116,7 +128,13 @@ func (s *HandlerSetTrustAccountSuite) TestHandle(c *C) {
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
 	// happy path
+<<<<<<< HEAD:x/thorchain/handler_set_trust_account_test.go
 	success := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
+||||||| merged common ancestors
+	success := handler.handle(ctx, msgTrustAccount, ver)
+=======
+	success := handler.handle(ctx, msgNodeKeys, ver)
+>>>>>>> Rename TrustAccount -> NodeKeys:x/thorchain/handler_set_node_keys_test.go
 	c.Check(success.Code, Equals, sdk.CodeOK)
 	c.Check(success.IsOK(), Equals, true)
 	c.Assert(keeper.na.NodePubKey, Equals, pubKeys)
@@ -131,32 +149,32 @@ func (s *HandlerSetTrustAccountSuite) TestHandle(c *C) {
 	c.Check(keeper.na.Version.String(), Equals, "2.0.0")
 }
 
-type TestSetTrustAccountHandleFailUniqueKeeper struct {
+type TestSetNodeKeysHandleFailUniqueKeeper struct {
 	KVStoreDummy
 	na NodeAccount
 }
 
-func (k *TestSetTrustAccountHandleFailUniqueKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
+func (k *TestSetNodeKeysHandleFailUniqueKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
 	return k.na, nil
 }
 
-func (k *TestSetTrustAccountHandleFailUniqueKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) error {
+func (k *TestSetNodeKeysHandleFailUniqueKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) error {
 	k.na = na
 	return nil
 }
 
-func (k *TestSetTrustAccountHandleFailUniqueKeeper) EnsureTrustAccountUnique(_ sdk.Context, consensPubKey string, pubKeys common.PubKeys) error {
+func (k *TestSetNodeKeysHandleFailUniqueKeeper) EnsureNodeKeysUnique(_ sdk.Context, consensPubKey string, pubKeys common.PubKeys) error {
 	return errors.New("not unique")
 }
 
-func (s *HandlerSetTrustAccountSuite) TestHandleFailUnique(c *C) {
+func (s *HandlerSetNodeKeysSuite) TestHandleFailUnique(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 
-	keeper := &TestSetTrustAccountHandleFailUniqueKeeper{
+	keeper := &TestSetNodeKeysHandleFailUniqueKeeper{
 		na: GetRandomNodeAccount(NodeActive),
 	}
 
-	handler := NewSetTrustAccountHandler(keeper)
+	handler := NewSetNodeKeysHandler(keeper)
 
 	ver := semver.MustParse("0.1.0")
 
@@ -168,8 +186,16 @@ func (s *HandlerSetTrustAccountSuite) TestHandleFailUnique(c *C) {
 	bepConsPubKey := GetRandomBech32ConsensusPubKey()
 	pubKeys := GetRandomPubkeys()
 
+<<<<<<< HEAD:x/thorchain/handler_set_trust_account_test.go
 	msgTrustAccount := NewMsgSetTrustAccount(pubKeys, bepConsPubKey, signer)
 	notUniqueFailResult := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
+||||||| merged common ancestors
+	msgTrustAccount := NewMsgSetTrustAccount(pubKeys, bepConsPubKey, signer)
+	notUniqueFailResult := handler.handle(ctx, msgTrustAccount, ver)
+=======
+	msgNodeKeys := NewMsgSetNodeKeys(pubKeys, bepConsPubKey, signer)
+	notUniqueFailResult := handler.handle(ctx, msgNodeKeys, ver)
+>>>>>>> Rename TrustAccount -> NodeKeys:x/thorchain/handler_set_node_keys_test.go
 	c.Check(notUniqueFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(notUniqueFailResult.IsOK(), Equals, false)
 }

@@ -88,7 +88,7 @@ func (k KVStoreDummy) GetNodeAccountByBondAddress(_ sdk.Context, _ common.Addres
 	return NodeAccount{}, kaboom
 }
 func (k KVStoreDummy) SetNodeAccount(_ sdk.Context, _ NodeAccount) error { return kaboom }
-func (k KVStoreDummy) EnsureTrustAccountUnique(_ sdk.Context, _ string, _ common.PubKeys) error {
+func (k KVStoreDummy) EnsureNodeKeysUnique(_ sdk.Context, _ string, _ common.PubKeys) error {
 	return kaboom
 }
 func (k KVStoreDummy) GetNodeAccountIterator(_ sdk.Context) sdk.Iterator     { return nil }

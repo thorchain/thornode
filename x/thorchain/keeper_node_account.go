@@ -22,7 +22,7 @@ type KeeperNodeAccount interface {
 	GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error)
 	GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error)
 	SetNodeAccount(ctx sdk.Context, na NodeAccount) error
-	EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error
+	EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error
 	GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator
 }
 
@@ -32,7 +32,7 @@ func (k KVStore) TotalActiveNodeAccount(ctx sdk.Context) (int, error) {
 	return len(activeNodes), err
 }
 
-// ListNodeAccounts - gets a list of all trust accounts
+// ListNodeAccounts - gets a list of all node accounts
 func (k KVStore) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	nodeAccounts := make(NodeAccounts, 0)
 	naIterator := k.GetNodeAccountIterator(ctx)
@@ -213,7 +213,7 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 	return nil
 }
 
-func (k KVStore) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
+func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
 	iter := k.GetNodeAccountIterator(ctx)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -238,7 +238,7 @@ func (k KVStore) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey strin
 	return nil
 }
 
-// GetTrustAccountIterator iterate trust accounts
+// GetNodeKeysIterator iterate node keyss
 func (k KVStore) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixNodeAccount))
