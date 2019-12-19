@@ -90,7 +90,6 @@ func (scb *StateChainBridge) Start() error {
 	scb.logger.Info().Uint64("account number", accountNumber).Uint64("sequence no", sequenceNumber).Msg("account information")
 	scb.accountNumber = accountNumber
 	scb.seqNumber = sequenceNumber
-	fmt.Printf("Account Info: %d %d\n", accountNumber, sequenceNumber)
 	return nil
 }
 
@@ -279,7 +278,6 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 		scb.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to unmarshal commit")
 	}
-	fmt.Printf("Commit: %+v\n", commit)
 	scb.m.GetCounter(metrics.TxToStateChain).Inc()
 	scb.logger.Info().Msgf("Received a TxHash of %v from the statechain", commit.TxHash)
 	return common.NewTxID(commit.TxHash)
