@@ -15,8 +15,8 @@ type NodeKeys struct {
 	ValidatorBEPConsPubKey string         `json:"bepv_validator_acc"` // Used to sign tendermint blocks. Can be fetched via `thord tendermint show-validator`
 }
 
-// NodeKeyss just a list of node keys
-type NodeKeyss []NodeKeys
+// NodesKeys just a list of node keys
+type NodesKeys []NodeKeys
 
 // NewNodeKeys create a new instance of node keys
 func NewNodeKeys(signerBNBAddress common.Address, observerBepAddress sdk.AccAddress, validatorConsPubKey string) NodeKeys {

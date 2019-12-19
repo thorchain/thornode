@@ -119,7 +119,7 @@ type (
 	QueryResTxOut               = types.QueryResTxOut
 	ResTxOut                    = types.ResTxOut
 	NodeKeys                    = types.NodeKeys
-	NodeKeyss                   = types.NodeKeyss
+	NodesKeys                   = types.NodesKeys
 	PoolStatus                  = types.PoolStatus
 	PoolIndex                   = types.PoolIndex
 	Pool                        = types.Pool
