@@ -12,7 +12,7 @@ const (
 )
 
 type VaultManager interface {
-	RotatePoolAddress(_ sdk.Context, _ common.PoolPubKeys, _ TxOutStore)
+	TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error
 }
 
 // VaultMgr is going to manage the vaults
@@ -21,8 +21,18 @@ type VaultMgr struct {
 }
 
 // NewVaultMgr create a new vault manager
-func NewVaultMgr(k Keeper, valdatorMgr ValidatorManager) *VaultMgr {
+func NewVaultMgr(k Keeper) *VaultMgr {
 	return &VaultMgr{k: k}
+}
+
+func (vm *VaultMgr) TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error {
+	keygen := make(Keygen, len(nas))
+	for i := range nas {
+		keygen[i] = nas[i].NodePubKey.Secp256k1
+	}
+	keygens := NewKeygens(uint64(ctx.BlockHeight()))
+	keygens.Keygens = []Keygen{keygen}
+	return vm.k.SetKeygens(ctx, keygens)
 }
 
 func (vm *VaultMgr) RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore) {
