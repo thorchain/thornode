@@ -120,11 +120,9 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 
 func (s *Signer) Start() error {
 	if err := s.stateChainBridge.Start(); nil != err {
-		s.logger.Error().Err(err).Msg("fail to start statechain bridge")
 		return errors.Wrap(err, "fail to start statechain bridge")
 	}
 	if err := s.m.Start(); nil != err {
-		s.logger.Error().Err(err).Msg("fail to start metric collector")
 		return errors.Wrap(err, "fail to start metric collector")
 	}
 	s.wg.Add(1)
