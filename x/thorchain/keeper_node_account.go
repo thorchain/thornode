@@ -238,7 +238,7 @@ func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, p
 	return nil
 }
 
-// GetNodeKeysIterator iterate node keyss
+// GetNodeAccountIterator iterate node account
 func (k KVStore) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixNodeAccount))
