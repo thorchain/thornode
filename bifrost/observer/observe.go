@@ -253,17 +253,18 @@ func (o *Observer) processOneTxIn(txIn types.TxIn) {
 		return
 	}
 }
+
 func (o *Observer) signAndSendToStatechain(txIn types.TxIn) error {
 	txs, err := o.getStateChainTxIns(txIn)
 	if nil != err {
 		return errors.Wrap(err, "fail to convert txin to statechain txin")
 	}
-	signed, err := o.stateChainBridge.Sign(txs)
+	stdTx, err := o.stateChainBridge.GetObservationsStdTx(txs)
 	if nil != err {
 		o.errCounter.WithLabelValues("fail_to_sign", txIn.BlockHeight).Inc()
 		return errors.Wrap(err, "fail to sign the tx")
 	}
-	txID, err := o.stateChainBridge.Send(*signed, types.TxSync)
+	txID, err := o.stateChainBridge.Send(*stdTx, types.TxSync)
 	if nil != err {
 		o.errCounter.WithLabelValues("fail_to_send_to_statechain", txIn.BlockHeight).Inc()
 		return errors.Wrap(err, "fail to send the tx to statechain")

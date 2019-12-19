@@ -38,17 +38,17 @@ func NewStateChanBlockScannerStorage(levelDbFolder string) (*StateChanBlockScann
 	}, nil
 }
 
-type TxOutLocalStatus byte
+type LocalStatus byte
 
 const (
-	Processing TxOutLocalStatus = iota
+	Processing LocalStatus = iota
 	Failed
 )
 
 // TxOutLocalItem for local storage
 type TxOutLocalItem struct {
-	TxOut  types.TxOut      `json:"tx_out"`
-	Status TxOutLocalStatus `json:"status"`
+	TxOut  types.TxOut `json:"tx_out"`
+	Status LocalStatus `json:"status"`
 }
 
 func (s *StateChanBlockScannerStorage) getTxOutKey(height string) string {
@@ -56,7 +56,7 @@ func (s *StateChanBlockScannerStorage) getTxOutKey(height string) string {
 }
 
 // SetTxOutStatus store the txout locally
-func (s *StateChanBlockScannerStorage) SetTxOutStatus(txOut types.TxOut, status TxOutLocalStatus) error {
+func (s *StateChanBlockScannerStorage) SetTxOutStatus(txOut types.TxOut, status LocalStatus) error {
 	txOutLocalItem := TxOutLocalItem{
 		TxOut:  txOut,
 		Status: status,

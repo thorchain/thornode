@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -27,6 +26,7 @@ type Signer struct {
 	logger                 zerolog.Logger
 	cfg                    config.SignerConfiguration
 	wg                     *sync.WaitGroup
+	stateChainBridge       *thorclient.StateChainBridge
 	stopChan               chan struct{}
 	stateChainBlockScanner *StateChainBlockScan
 	Binance                *binance.Binance
@@ -47,6 +47,10 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	m, err := metrics.NewMetrics(cfg.Metric)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create metric instance")
+	}
+	stateChainBridge, err := thorclient.NewStateChainBridge(cfg.StateChain, m)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create new state chain bridge")
 	}
 	pkm := NewPubKeyManager()
 	thorKeys, err := thorclient.NewKeys(cfg.StateChain.ChainHomeFolder, cfg.StateChain.SignerName, cfg.StateChain.SignerPasswd)
@@ -87,6 +91,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 		storage:                stateChainScanStorage,
 		errCounter:             m.GetCounterVec(metrics.SignerError),
 		pkm:                    pkm,
+		stateChainBridge:       stateChainBridge,
 	}
 
 	if cfg.UseTSS {
@@ -101,12 +106,16 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 
 func (s *Signer) Start() error {
 	s.wg.Add(1)
-	go s.processTxnOut(s.stateChainBlockScanner.GetMessages(), 1)
+	go s.processTxnOut(s.stateChainBlockScanner.GetTxOutMessages(), 1)
 	if err := s.retryAll(); nil != err {
 		return errors.Wrap(err, "fail to retry txouts")
 	}
 	s.wg.Add(1)
 	go s.retryFailedTxOutProcessor()
+
+	s.wg.Add(1)
+	go s.processKeygen(s.stateChainBlockScanner.GetKeygenMessages(), 1)
+
 	return s.stateChainBlockScanner.Start()
 }
 
@@ -123,6 +132,7 @@ func (s *Signer) retryAll() error {
 	}
 	return nil
 }
+
 func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 	if len(txOuts) == 0 {
 		return nil
@@ -182,6 +192,7 @@ func (s *Signer) retryFailedTxOutProcessor() {
 		}
 	}
 }
+
 func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 	s.logger.Info().Int("idx", idx).Msg("start to process tx out")
 	defer s.logger.Info().Int("idx", idx).Msg("stop to process tx out")
@@ -221,27 +232,53 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 	}
 }
 
-const nextPoolPrefix = `nextpool`
+func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
+	s.logger.Info().Int("idx", idx).Msg("start to process keygen")
+	defer s.logger.Info().Int("idx", idx).Msg("stop to process keygen")
+	defer s.wg.Done()
+	for {
+		select {
+		case <-s.stopChan:
+			return
+		case keygens, more := <-ch:
+			if !more {
+				return
+			}
+			s.logger.Info().Msgf("Received a keygen of %+v from the StateChain", keygens)
 
-func (s *Signer) processTssKeyGenCeremony(tai types.TxArrayItem) (types.TxArrayItem, error) {
-	if !strings.HasPrefix(tai.Memo, nextPoolPrefix) {
-		return tai, nil
+			for _, keygen := range keygens.Keygens {
+				pubKey, err := s.tssKeygen.GenerateNewKey(keygen)
+				if err != nil {
+					s.errCounter.WithLabelValues("fail_to_keygen_pubkey").Inc()
+					s.logger.Error().Err(err).Msg("fail to generate new pubkey")
+					continue
+				}
+				s.pkm.Add(pubKey.Secp256k1)
+
+				height := strconv.FormatUint(keygens.Height, 10)
+				if err := s.sendKeygenToThorchain(height, pubKey.Secp256k1, keygen); err != nil {
+					s.errCounter.WithLabelValues("fail_to_broadcast_keygen").Inc()
+					s.logger.Error().Err(err).Msg("fail to broadcast keygen")
+				}
+			}
+		}
+
 	}
-	pubKey, err := s.tssKeygen.GenerateNewKey()
+}
+
+func (s *Signer) sendKeygenToThorchain(height string, poolPk common.PubKey, input []common.PubKey) error {
+	stdTx, err := s.stateChainBridge.GetKeygenStdTx(poolPk, input)
 	if nil != err {
-		return tai, fmt.Errorf("fail to generate new pool pub key,err:%w", err)
+		s.errCounter.WithLabelValues("fail_to_sign", height).Inc()
+		return errors.Wrap(err, "fail to sign the tx")
 	}
-	if pubKey.IsEmpty() {
-		return tai, fmt.Errorf("fail to generate new pool pub key")
-	}
-	s.pkm.Add(pubKey.Secp256k1)
-	tai.Memo = fmt.Sprintf("%s:%s", nextPoolPrefix, pubKey.Secp256k1.String())
-	addr, err := pubKey.GetAddress(common.BNBChain)
+	txID, err := s.stateChainBridge.Send(*stdTx, types.TxSync)
 	if nil != err {
-		return tai, fmt.Errorf("fail to get address,err:%w", err)
+		s.errCounter.WithLabelValues("fail_to_send_to_statechain", height).Inc()
+		return errors.Wrap(err, "fail to send the tx to statechain")
 	}
-	tai.To = addr.String()
-	return tai, nil
+	s.logger.Info().Str("block", height).Str("statechain hash", txID.String()).Msg("sign and send to statechain successfully")
+	return nil
 }
 
 // signAndSendToBinanceChainWithRetry retry a few times before THORNode move on to he next block
@@ -252,13 +289,6 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 		height, err := strconv.ParseInt(txOut.Height, 10, 64)
 		if nil != err {
 			return errors.Wrapf(err, "fail to parse block height: %s ", txOut.Height)
-		}
-		if s.tssKeygen != nil && strings.HasPrefix(item.Memo, nextPoolPrefix) {
-			tai, err := s.processTssKeyGenCeremony(item)
-			if nil != err {
-				return fmt.Errorf("fail to get get next pool address,err:%w", err)
-			}
-			item = tai
 		}
 
 		if !s.shouldSign(item) {
