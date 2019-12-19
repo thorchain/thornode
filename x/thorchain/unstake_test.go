@@ -447,11 +447,11 @@ func getInMemoryPoolStorageForUnstake(c *C) Keeper {
 	stakerPool := StakerPool{
 		RuneAddress: runeAddress,
 		PoolUnits: []*StakerPoolItem{
-			&StakerPoolItem{
+			{
 				Asset: common.BNBAsset,
 				Units: sdk.NewUint(100 * common.One),
 				StakeDetails: []StakeTxDetail{
-					StakeTxDetail{
+					{
 						RequestTxHash: common.TxID("28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE"),
 						RuneAmount:    sdk.NewUint(100 * common.One),
 						AssetAmount:   sdk.NewUint(100 * common.One),

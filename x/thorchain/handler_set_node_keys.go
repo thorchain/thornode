@@ -7,18 +7,18 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-type SetTrustAccountHandler struct {
+type SetNodeKeysHandler struct {
 	keeper Keeper
 }
 
-func NewSetTrustAccountHandler(keeper Keeper) SetTrustAccountHandler {
-	return SetTrustAccountHandler{
+func NewSetNodeKeysHandler(keeper Keeper) SetNodeKeysHandler {
+	return SetNodeKeysHandler{
 		keeper: keeper,
 	}
 }
 
-func (h SetTrustAccountHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
-	msg, ok := m.(MsgSetTrustAccount)
+func (h SetNodeKeysHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
+	msg, ok := m.(MsgSetNodeKeys)
 	if !ok {
 		return errInvalidMessage.Result()
 	}
@@ -28,7 +28,7 @@ func (h SetTrustAccountHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.V
 	return h.handle(ctx, msg, version, constAccessor)
 }
 
-func (h SetTrustAccountHandler) validate(ctx sdk.Context, msg MsgSetTrustAccount, version semver.Version) error {
+func (h SetNodeKeysHandler) validate(ctx sdk.Context, msg MsgSetNodeKeys, version semver.Version) error {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	} else {
@@ -37,7 +37,7 @@ func (h SetTrustAccountHandler) validate(ctx sdk.Context, msg MsgSetTrustAccount
 	}
 }
 
-func (h SetTrustAccountHandler) validateV1(ctx sdk.Context, msg MsgSetTrustAccount) error {
+func (h SetNodeKeysHandler) validateV1(ctx sdk.Context, msg MsgSetNodeKeys) error {
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
 		return err
@@ -55,8 +55,8 @@ func (h SetTrustAccountHandler) validateV1(ctx sdk.Context, msg MsgSetTrustAccou
 	return nil
 }
 
-func (h SetTrustAccountHandler) handle(ctx sdk.Context, msg MsgSetTrustAccount, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
-	ctx.Logger().Info("handleMsgSetTrustAccount request")
+func (h SetNodeKeysHandler) handle(ctx sdk.Context, msg MsgSetNodeKeys, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
+	ctx.Logger().Info("handleMsgSetNodeKeys request")
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, msg, version, constAccessor)
 	} else {
@@ -65,8 +65,8 @@ func (h SetTrustAccountHandler) handle(ctx sdk.Context, msg MsgSetTrustAccount, 
 	}
 }
 
-// Handle a message to set trust account
-func (h SetTrustAccountHandler) handleV1(ctx sdk.Context, msg MsgSetTrustAccount, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
+// Handle a message to set node keys
+func (h SetNodeKeysHandler) handleV1(ctx sdk.Context, msg MsgSetNodeKeys, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	nodeAccount, err := h.keeper.GetNodeAccount(ctx, msg.Signer)
 	if err != nil {
 		ctx.Logger().Error("fail to get node account", "error", err, "address", msg.Signer.String())
@@ -82,7 +82,7 @@ func (h SetTrustAccountHandler) handleV1(ctx sdk.Context, msg MsgSetTrustAccount
 		ctx.Logger().Error(fmt.Sprintf("node %s is disabled, so it can't update itself", nodeAccount.NodeAddress))
 		return sdk.ErrUnknownRequest("node is disabled can't update").Result()
 	}
-	if err := h.keeper.EnsureTrustAccountUnique(ctx, msg.ValidatorConsPubKey, msg.NodePubKeys); nil != err {
+	if err := h.keeper.EnsureNodeKeysUnique(ctx, msg.ValidatorConsPubKey, msg.NodePubKeys); nil != err {
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
@@ -105,7 +105,7 @@ func (h SetTrustAccountHandler) handleV1(ctx sdk.Context, msg MsgSetTrustAccount
 	}
 
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent("set_trust_account",
+		sdk.NewEvent("set_node_keys",
 			sdk.NewAttribute("node_address", msg.Signer.String()),
 			sdk.NewAttribute("node_secp256k1_pubkey", msg.NodePubKeys.Secp256k1.String()),
 			sdk.NewAttribute("node_ed25519_pubkey", msg.NodePubKeys.Ed25519.String()),

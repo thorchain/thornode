@@ -22,7 +22,7 @@ type ObservedTx struct {
 	Status         status           `json:"status"`
 	OutHashes      common.TxIDs     `json:"out_hashes"` // completed chain tx hash. This is a slice to track if we've "double spent" an input
 	BlockHeight    sdk.Uint         `json:"block_height"`
-	Signers        []sdk.AccAddress `json:"signers"` // trust accounts saw this tx
+	Signers        []sdk.AccAddress `json:"signers"` // node keys of node account saw this tx
 	ObservedPubKey common.PubKey    `json:"observed_pub_key"`
 }
 
@@ -187,7 +187,7 @@ func (tx ObservedTxVoter) HasConensus(nodeAccounts NodeAccounts) bool {
 	for _, txIn := range tx.Txs {
 		var count int
 		for _, signer := range txIn.Signers {
-			if nodeAccounts.IsTrustAccount(signer) {
+			if nodeAccounts.IsNodeKeys(signer) {
 				count += 1
 			}
 		}
@@ -203,7 +203,7 @@ func (tx ObservedTxVoter) GetTx(nodeAccounts NodeAccounts) ObservedTx {
 	for _, txIn := range tx.Txs {
 		var count int
 		for _, signer := range txIn.Signers {
-			if nodeAccounts.IsTrustAccount(signer) {
+			if nodeAccounts.IsNodeKeys(signer) {
 				count += 1
 			}
 		}
