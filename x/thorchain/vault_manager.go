@@ -2,8 +2,6 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"gitlab.com/thorchain/thornode/common"
 )
 
 // const values used to emit events
@@ -13,6 +11,7 @@ const (
 
 type VaultManager interface {
 	TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error
+	RotateVault(ctx sdk.Context, vault Vault) error
 }
 
 // VaultMgr is going to manage the vaults
@@ -35,7 +34,7 @@ func (vm *VaultMgr) TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error {
 	return vm.k.SetKeygens(ctx, keygens)
 }
 
-func (vm *VaultMgr) RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore) {
+func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {
 	/*
 		poolAddresses := pm.currentPoolAddresses
 		pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolpubkeys, common.EmptyPoolPubKeys)
@@ -48,4 +47,5 @@ func (vm *VaultMgr) RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPu
 			ctx.Logger().Error("fail to move assets to new pool", err)
 		}
 	*/
+	return nil
 }
