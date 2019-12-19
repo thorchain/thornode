@@ -89,11 +89,14 @@ func (lh LeaveHandler) handle(ctx sdk.Context, msg MsgLeave) sdk.Error {
 	} else {
 		// given the node is not active, they should not have Yggdrasil pool either
 		// but let's check it anyway just in case
-		ygg, err := lh.keeper.GetYggdrasil(ctx, nodeAcc.NodePubKey.Secp256k1)
-		if nil != err && !errors.Is(err, ErrYggdrasilNotFound) {
-			return sdk.ErrInternal(fmt.Errorf("fail to get yggdrasil pool: %w", err).Error())
+		vault, err := lh.keeper.GetVault(ctx, nodeAcc.NodePubKey.Secp256k1)
+		if nil != err && !errors.Is(err, ErrVaultNotFound) {
+			return sdk.ErrInternal(fmt.Errorf("fail to get vault pool: %w", err).Error())
 		}
-		if !ygg.HasFunds() {
+		if !vault.IsYggdrasil() {
+			return sdk.ErrInternal("the requested vault is NOT a yggdrasil vault")
+		}
+		if !vault.HasFunds() {
 			// node is not active , they are free to leave , refund them
 			if err := refundBond(ctx, msg.Tx.ID, nodeAcc, lh.keeper, lh.txOut); err != nil {
 				return sdk.ErrInternal(fmt.Errorf("fail to refund bond: %w", err).Error())

@@ -140,16 +140,16 @@ func (k KVStoreDummy) SetPoolAddresses(_ sdk.Context, _ *PoolAddresses) {}
 func (k KVStoreDummy) GetPoolAddresses(_ sdk.Context) (PoolAddresses, error) {
 	return PoolAddresses{}, kaboom
 }
-func (k KVStoreDummy) GetChains(_ sdk.Context) (common.Chains, error)      { return nil, kaboom }
-func (k KVStoreDummy) SetChains(_ sdk.Context, _ common.Chains)            {}
-func (k KVStoreDummy) GetYggdrasilIterator(_ sdk.Context) sdk.Iterator     { return nil }
-func (k KVStoreDummy) YggdrasilExists(_ sdk.Context, _ common.PubKey) bool { return false }
+func (k KVStoreDummy) GetChains(_ sdk.Context) (common.Chains, error)  { return nil, kaboom }
+func (k KVStoreDummy) SetChains(_ sdk.Context, _ common.Chains)        {}
+func (k KVStoreDummy) GetVaultIterator(_ sdk.Context) sdk.Iterator     { return nil }
+func (k KVStoreDummy) VaultExists(_ sdk.Context, _ common.PubKey) bool { return false }
 func (k KVStoreDummy) FindPubKeyOfAddress(_ sdk.Context, _ common.Address, _ common.Chain) (common.PubKey, error) {
 	return common.EmptyPubKey, kaboom
 }
-func (k KVStoreDummy) SetYggdrasil(_ sdk.Context, _ Yggdrasil) error { return kaboom }
-func (k KVStoreDummy) GetYggdrasil(_ sdk.Context, _ common.PubKey) (Yggdrasil, error) {
-	return Yggdrasil{}, kaboom
+func (k KVStoreDummy) SetVault(_ sdk.Context, _ Vault) error { return kaboom }
+func (k KVStoreDummy) GetVault(_ sdk.Context, _ common.PubKey) (Vault, error) {
+	return Vault{}, kaboom
 }
 func (k KVStoreDummy) GetReservesContributors(_ sdk.Context) (ReserveContributors, error) {
 	return nil, kaboom
@@ -158,10 +158,10 @@ func (k KVStoreDummy) SetReserveContributors(_ sdk.Context, _ ReserveContributor
 	return kaboom
 }
 
-func (k KVStoreDummy) HasValidYggdrasilPools(_ sdk.Context) (bool, error) { return false, kaboom }
-func (k KVStoreDummy) AddFeeToReserve(_ sdk.Context, _ sdk.Uint) error    { return kaboom }
-func (k KVStoreDummy) GetVaultData(_ sdk.Context) (VaultData, error)      { return VaultData{}, kaboom }
-func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error      { return kaboom }
+func (k KVStoreDummy) HasValidVaultPools(_ sdk.Context) (bool, error)  { return false, kaboom }
+func (k KVStoreDummy) AddFeeToReserve(_ sdk.Context, _ sdk.Uint) error { return kaboom }
+func (k KVStoreDummy) GetVaultData(_ sdk.Context) (VaultData, error)   { return VaultData{}, kaboom }
+func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error   { return kaboom }
 func (k KVStoreDummy) UpdateVaultData(_ sdk.Context, constAccessor constants.ConstantValues) error {
 	return kaboom
 }

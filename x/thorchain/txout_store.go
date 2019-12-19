@@ -16,7 +16,7 @@ type TxOutStore interface {
 	GetOutboundItems() []*TxOutItem
 	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
 	AddTxOutItem(ctx sdk.Context, toi *TxOutItem)
-	CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Yggdrasils, error)
+	CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Vaults, error)
 }
 
 // TxOutStorage is going to manage all the outgoing tx
@@ -212,35 +212,38 @@ func (tos *TxOutStorage) getSeqNo(pk common.PubKey, chain common.Chain) uint64 {
 	return uint64(0)
 }
 
-func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Yggdrasils, error) {
+func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Vaults, error) {
 	// collect yggdrasil pools
-	var yggs Yggdrasils
-	iterator := tos.keeper.GetYggdrasilIterator(ctx)
+	var vaults Vaults
+	iterator := tos.keeper.GetVaultIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
-		var ygg Yggdrasil
-		if err := tos.keeper.Cdc().UnmarshalBinaryBare(iterator.Value(), &ygg); nil != err {
-			return nil, fmt.Errorf("fail to unmarshal Yggdrasils: %w", err)
+		var vault Vault
+		if err := tos.keeper.Cdc().UnmarshalBinaryBare(iterator.Value(), &vault); nil != err {
+			return nil, fmt.Errorf("fail to unmarshal vault: %w", err)
+		}
+		if !vault.IsYggdrasil() {
+			continue
 		}
 		// if THORNode are already sending assets from this ygg pool, deduct
 		// them.
-		addr, _ := ygg.PubKey.GetThorAddress()
+		addr, _ := vault.PubKey.GetThorAddress()
 		if !tx.HasSigned(addr) {
 			continue
 		}
 		for _, tx := range tos.blockOut.TxArray {
-			if !tx.VaultPubKey.Equals(ygg.PubKey) {
+			if !tx.VaultPubKey.Equals(vault.PubKey) {
 				continue
 			}
-			for i, yggcoin := range ygg.Coins {
+			for i, yggcoin := range vault.Coins {
 				if !yggcoin.Asset.Equals(tx.Coin.Asset) {
 					continue
 				}
-				ygg.Coins[i].Amount = common.SafeSub(ygg.Coins[i].Amount, tx.Coin.Amount)
+				vault.Coins[i].Amount = common.SafeSub(vault.Coins[i].Amount, tx.Coin.Amount)
 			}
 		}
-		yggs = append(yggs, ygg)
+		vaults = append(vaults, vault)
 	}
 
-	return yggs, nil
+	return vaults, nil
 }

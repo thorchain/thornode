@@ -42,9 +42,12 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	// figure out if THORNode need to send them assets.
 	// get a list of coin/amounts this yggdrasil pool should have, ideally.
 	// TODO: We are assuming here that the pub key is Secp256K1
-	ygg, err := keeper.GetYggdrasil(ctx, na.NodePubKey.Secp256k1)
+	ygg, err := keeper.GetVault(ctx, na.NodePubKey.Secp256k1)
 	if nil != err {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
+	}
+	if !ygg.IsYggdrasil() {
+		return fmt.Errorf("this is not a Yggdrasil vault")
 	}
 	targetCoins, err := calcTargetYggCoins(pools, na.Bond, totalBond)
 	if err != nil {
@@ -80,7 +83,7 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 
 // sendCoinsToYggdrasil - adds outbound txs to send the given coins to a
 // yggdrasil pool
-func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Yggdrasil, txOutStore TxOutStore) error {
+func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Vault, txOutStore TxOutStore) error {
 	for _, coin := range coins {
 		to, err := ygg.PubKey.GetAddress(coin.Asset.Chain)
 		if err != nil {
