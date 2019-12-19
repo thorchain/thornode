@@ -17,7 +17,7 @@ func NewSetTrustAccountHandler(keeper Keeper) SetTrustAccountHandler {
 	}
 }
 
-func (h SetTrustAccountHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
+func (h SetTrustAccountHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgSetTrustAccount)
 	if !ok {
 		return errInvalidMessage.Result()
@@ -25,7 +25,7 @@ func (h SetTrustAccountHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.V
 	if err := h.validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	return h.handle(ctx, msg, version)
+	return h.handle(ctx, msg, version, constAccessor)
 }
 
 func (h SetTrustAccountHandler) validate(ctx sdk.Context, msg MsgSetTrustAccount, version semver.Version) error {
@@ -55,10 +55,10 @@ func (h SetTrustAccountHandler) validateV1(ctx sdk.Context, msg MsgSetTrustAccou
 	return nil
 }
 
-func (h SetTrustAccountHandler) handle(ctx sdk.Context, msg MsgSetTrustAccount, version semver.Version) sdk.Result {
+func (h SetTrustAccountHandler) handle(ctx sdk.Context, msg MsgSetTrustAccount, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	ctx.Logger().Info("handleMsgSetTrustAccount request")
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg)
+		return h.handleV1(ctx, msg, version, constAccessor)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
 		return errBadVersion.Result()
@@ -66,7 +66,7 @@ func (h SetTrustAccountHandler) handle(ctx sdk.Context, msg MsgSetTrustAccount, 
 }
 
 // Handle a message to set trust account
-func (h SetTrustAccountHandler) handleV1(ctx sdk.Context, msg MsgSetTrustAccount) sdk.Result {
+func (h SetTrustAccountHandler) handleV1(ctx sdk.Context, msg MsgSetTrustAccount, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	nodeAccount, err := h.keeper.GetNodeAccount(ctx, msg.Signer)
 	if err != nil {
 		ctx.Logger().Error("fail to get node account", "error", err, "address", msg.Signer.String())
@@ -85,8 +85,8 @@ func (h SetTrustAccountHandler) handleV1(ctx sdk.Context, msg MsgSetTrustAccount
 	if err := h.keeper.EnsureTrustAccountUnique(ctx, msg.ValidatorConsPubKey, msg.NodePubKeys); nil != err {
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	// Here make sure THORNode don't change the node account's bond
 
+	// Here make sure THORNode don't change the node account's bond
 	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
 	nodeAccount.NodePubKey = msg.NodePubKeys
 	nodeAccount.ValidatorConsPubKey = msg.ValidatorConsPubKey
@@ -95,12 +95,22 @@ func (h SetTrustAccountHandler) handleV1(ctx sdk.Context, msg MsgSetTrustAccount
 		return sdk.ErrInternal("fail to save node account").Result()
 	}
 
+	// Set version number
+	setVersionMsg := NewMsgSetVersion(version, msg.Signer)
+	setVersionHandler := NewVersionHandler(h.keeper)
+	result := setVersionHandler.Run(ctx, setVersionMsg, version, constAccessor)
+	if !result.IsOK() {
+		ctx.Logger().Error("fail to set version", "version", version)
+		return result
+	}
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent("set_trust_account",
 			sdk.NewAttribute("node_address", msg.Signer.String()),
 			sdk.NewAttribute("node_secp256k1_pubkey", msg.NodePubKeys.Secp256k1.String()),
 			sdk.NewAttribute("node_ed25519_pubkey", msg.NodePubKeys.Ed25519.String()),
 			sdk.NewAttribute("validator_consensus_pub_key", msg.ValidatorConsPubKey)))
+
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

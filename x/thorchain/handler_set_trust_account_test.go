@@ -5,6 +5,7 @@ import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 	. "gopkg.in/check.v1"
 )
 
@@ -39,6 +40,10 @@ func (s *HandlerSetTrustAccountSuite) TestValidate(c *C) {
 
 	msg := NewMsgSetTrustAccount(pubKeys, consensPubKey, signer)
 	err := handler.validate(ctx, msg, ver)
+	c.Assert(err, IsNil)
+
+	// new version GT
+	err = handler.validate(ctx, msg, semver.MustParse("2.0.0"))
 	c.Assert(err, IsNil)
 
 	// invalid version
@@ -80,6 +85,7 @@ func (s *HandlerSetTrustAccountSuite) TestHandle(c *C) {
 
 	ver := semver.MustParse("0.1.0")
 
+	constAccessor := constants.GetConstantValues(ver)
 	ctx = ctx.WithBlockHeight(1)
 	signer := GetRandomBech32Addr()
 
@@ -95,14 +101,14 @@ func (s *HandlerSetTrustAccountSuite) TestHandle(c *C) {
 	nodeAccount := NewNodeAccount(signer, NodeActive, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
-	activeFailResult := handler.handle(ctx, msgTrustAccount, ver)
+	activeFailResult := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
 	c.Check(activeFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(activeFailResult.IsOK(), Equals, false)
 
 	nodeAccount = NewNodeAccount(signer, NodeDisabled, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
-	disabledFailResult := handler.handle(ctx, msgTrustAccount, ver)
+	disabledFailResult := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
 	c.Check(disabledFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(disabledFailResult.IsOK(), Equals, false)
 
@@ -110,13 +116,19 @@ func (s *HandlerSetTrustAccountSuite) TestHandle(c *C) {
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
 	// happy path
-	success := handler.handle(ctx, msgTrustAccount, ver)
+	success := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
 	c.Check(success.Code, Equals, sdk.CodeOK)
 	c.Check(success.IsOK(), Equals, true)
 	c.Assert(keeper.na.NodePubKey, Equals, pubKeys)
 	c.Assert(keeper.na.ValidatorConsPubKey, Equals, bepConsPubKey)
 	c.Assert(keeper.na.Status, Equals, NodeStandby)
 	c.Assert(keeper.na.StatusSince, Equals, int64(1))
+
+	// update version
+	success2 := handler.handle(ctx, msgTrustAccount, semver.MustParse("2.0.0"), constAccessor)
+	c.Check(success2.Code, Equals, sdk.CodeOK)
+	c.Check(success2.IsOK(), Equals, true)
+	c.Check(keeper.na.Version.String(), Equals, "2.0.0")
 }
 
 type TestSetTrustAccountHandleFailUniqueKeeper struct {
@@ -148,6 +160,7 @@ func (s *HandlerSetTrustAccountSuite) TestHandleFailUnique(c *C) {
 
 	ver := semver.MustParse("0.1.0")
 
+	constAccessor := constants.GetConstantValues(ver)
 	ctx = ctx.WithBlockHeight(1)
 	signer := GetRandomBech32Addr()
 
@@ -156,7 +169,7 @@ func (s *HandlerSetTrustAccountSuite) TestHandleFailUnique(c *C) {
 	pubKeys := GetRandomPubkeys()
 
 	msgTrustAccount := NewMsgSetTrustAccount(pubKeys, bepConsPubKey, signer)
-	notUniqueFailResult := handler.handle(ctx, msgTrustAccount, ver)
+	notUniqueFailResult := handler.handle(ctx, msgTrustAccount, ver, constAccessor)
 	c.Check(notUniqueFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(notUniqueFailResult.IsOK(), Equals, false)
 }
