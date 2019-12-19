@@ -24,6 +24,8 @@ const (
 	// Vaults
 	AsgardVault    = types.AsgardVault
 	YggdrasilVault = types.YggdrasilVault
+	ActiveVault    = types.ActiveVault
+	InactiveVault  = types.InactiveVault
 
 	NodeActive      = types.Active
 	NodeWhiteListed = types.WhiteListed

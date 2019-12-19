@@ -17,7 +17,7 @@ func (s *VaultSuite) TestVault(c *C) {
 	c.Check(vault.IsEmpty(), Equals, true)
 	c.Check(vault.IsValid(), NotNil)
 
-	vault = NewVault(YggdrasilVault, pk)
+	vault = NewVault(12, ActiveVault, YggdrasilVault, pk)
 	c.Check(vault.PubKey.Equals(pk), Equals, true)
 	c.Check(vault.HasFunds(), Equals, false)
 	c.Check(vault.IsEmpty(), Equals, false)
