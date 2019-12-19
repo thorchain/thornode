@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // StakeHandler is to handle stake
@@ -111,7 +112,7 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 
 func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus) error {
 	var stakeEvt EventStake
-	if eventStatus == EventRefund {
+	if eventStatus == EventFa {
 		// do not log event if the stake failed
 		return nil
 	}
@@ -124,20 +125,21 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 	if err != nil {
 		return fmt.Errorf("fail to marshal stake event to json: %w", err)
 	}
-
+	eventID, err := keeper.GetNextEventID(ctx)
+	if nil != err {
+		return fmt.Errorf("fail to get next event id: %w", err)
+	}
 	evt := NewEvent(
+		eventID,
 		stakeEvt.Type(),
 		ctx.BlockHeight(),
 		msg.Tx,
 		stakeBytes,
 		eventStatus,
 	)
+	keeper.AddEvent(ctx, evt)
 
-	if err := keeper.AddIncompleteEvents(ctx, evt); err != nil {
-		return err
-	}
-
-	if eventStatus != EventRefund {
+	if evt.Type != "empty-refund" {
 		// since there is no outbound tx for staking, we'll complete the event now
 		tx := common.Tx{ID: common.BlankTxID}
 		err := completeEvents(ctx, keeper, msg.Tx.ID, common.Txs{tx})

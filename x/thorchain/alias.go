@@ -13,7 +13,7 @@ const (
 	PoolBootstrap    = types.Bootstrap
 	PoolSuspended    = types.Suspended
 	EventSuccess     = types.Success
-	EventRefund      = types.Refund
+	EventPending     = types.Pending
 
 	// Admin config keys
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints

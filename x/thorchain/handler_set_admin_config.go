@@ -90,15 +90,20 @@ func (h SetAdminConfigHandler) handleV1(ctx sdk.Context, msg MsgSetAdminConfig) 
 			err = errors.Wrap(err, "fail to marshal admin config event to json")
 			return sdk.ErrUnknownRequest(err.Error()).Result()
 		}
-
+		eventID, err := h.keeper.GetNextEventID(ctx)
+		if nil != err {
+			ctx.Logger().Error("fail to get next event id", err)
+			return sdk.ErrInternal("fail to get next event id").Result()
+		}
 		evt := NewEvent(
+			eventID,
 			adminEvt.Type(),
 			ctx.BlockHeight(),
 			msg.Tx,
 			stakeBytes,
 			EventSuccess,
 		)
-		h.keeper.SetCompletedEvent(ctx, evt)
+		h.keeper.AddEvent(ctx, evt)
 	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,

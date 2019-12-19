@@ -133,7 +133,12 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 	return true
 }
 
+func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64) error {
+
+}
+
 func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs) error {
+
 	lastEventID, err := keeper.GetLastEventID(ctx)
 	if err != nil {
 		return err
