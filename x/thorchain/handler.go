@@ -52,7 +52,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgNoOp{}.Type()] = NewNoOpHandler(keeper)
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
 	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, txOutStore, poolAddrMgr)
-	m[MsgSetTrustAccount{}.Type()] = NewSetTrustAccountHandler(keeper)
+	m[MsgSetNodeKeys{}.Type()] = NewSetNodeKeysHandler(keeper)
 	m[MsgSetAdminConfig{}.Type()] = NewSetAdminConfigHandler(keeper)
 	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, txOutStore, poolAddrMgr)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)

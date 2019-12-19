@@ -17,7 +17,7 @@ func (q Query) Endpoint(args ...string) string {
 	a := args[:count]
 
 	in := make([]interface{}, len(a))
-	for i, _ := range in {
+	for i := range in {
 		in[i] = a[i]
 	}
 

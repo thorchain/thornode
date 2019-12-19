@@ -327,11 +327,11 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 		return nil, sdk.ErrInternal("fail to get observed tx voter")
 	}
 
-	trustAccounts, err := keeper.ListActiveNodeAccounts(ctx)
+	nodesKeys, err := keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
-		return nil, sdk.ErrInternal("fail to get trust account")
+		return nil, sdk.ErrInternal("fail to get node keys")
 	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), voter.GetTx(trustAccounts))
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), voter.GetTx(nodesKeys))
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")

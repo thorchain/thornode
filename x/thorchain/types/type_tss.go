@@ -42,7 +42,7 @@ func (tss *TssVoter) Sign(signer sdk.AccAddress) {
 func (tss *TssVoter) HasConensus(nas NodeAccounts) bool {
 	var count int
 	for _, signer := range tss.Signers {
-		if nas.IsTrustAccount(signer) {
+		if nas.IsNodeKeys(signer) {
 			count += 1
 		}
 	}
