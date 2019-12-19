@@ -2,22 +2,22 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
+// EventStatus use in event
 type EventStatus uint8
 
 const (
 	Success EventStatus = iota
-	Refund
+	Failed
 	Pending
 )
 
 var eventStatusStr = map[string]EventStatus{
 	"Success": Success,
-	"Refund":  Refund,
+	"Failed":  Failed,
 	"Pending": Pending,
 }
 
