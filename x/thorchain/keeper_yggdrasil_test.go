@@ -7,27 +7,27 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-type KeeperYggdrasilSuite struct{}
+type KeeperVaultSuite struct{}
 
-var _ = Suite(&KeeperYggdrasilSuite{})
+var _ = Suite(&KeeperVaultSuite{})
 
-func (KeeperYggdrasilSuite) TestYggdrasil(c *C) {
+func (s *KeeperVaultSuite) TestVault(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	pubKey := GetRandomPubKey()
-	yggdrasil := NewYggdrasil(pubKey)
-	err := k.SetYggdrasil(ctx, yggdrasil)
+	yggdrasil := NewVault(YggdrasilVault, pubKey)
+	err := k.SetVault(ctx, yggdrasil)
 	c.Assert(err, IsNil)
-	c.Assert(k.YggdrasilExists(ctx, pubKey), Equals, true)
+	c.Assert(k.VaultExists(ctx, pubKey), Equals, true)
 	pubKey1 := GetRandomPubKey()
-	yggdrasil1 := NewYggdrasil(pubKey1)
+	yggdrasil1 := NewVault(YggdrasilVault, pubKey1)
 	yggdrasil1.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, types.NewUint(100)),
 	}
-	c.Assert(k.SetYggdrasil(ctx, yggdrasil1), IsNil)
-	ygg, err := k.GetYggdrasil(ctx, pubKey1)
+	c.Assert(k.SetVault(ctx, yggdrasil1), IsNil)
+	ygg, err := k.GetVault(ctx, pubKey1)
 	c.Assert(err, IsNil)
 	c.Assert(ygg.IsEmpty(), Equals, false)
-	hasYgg, err := k.HasValidYggdrasilPools(ctx)
+	hasYgg, err := k.HasValidVaultPools(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(hasYgg, Equals, true)
 }

@@ -35,9 +35,12 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, d
 }
 
 func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
-	ygg, err := keeper.GetYggdrasil(ctx, nodeAcc.NodePubKey.Secp256k1)
+	ygg, err := keeper.GetVault(ctx, nodeAcc.NodePubKey.Secp256k1)
 	if err != nil {
 		return err
+	}
+	if !ygg.IsYggdrasil() {
+		return fmt.Errorf("this is not a Yggdrasil vault")
 	}
 
 	// Calculate total value (in rune) the Yggdrasil pool has
@@ -87,7 +90,7 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 // Checks if the observed vault pubkey is a valid asgard or ygg vault
 func isCurrentVaultPubKey(ctx sdk.Context, keeper Keeper, poolAddrMgr PoolAddressManager, tx ObservedTx) bool {
 	currentPoolAddress := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(tx.Tx.Chain)
-	yggExists := keeper.YggdrasilExists(ctx, tx.ObservedPubKey)
+	yggExists := keeper.VaultExists(ctx, tx.ObservedPubKey)
 	if !currentPoolAddress.PubKey.Equals(tx.ObservedPubKey) && !yggExists {
 		ctx.Logger().Error("wrong pool address, refund", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", tx.ObservedPubKey)
 		return false
@@ -215,15 +218,15 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 		}
 	}
 
-	if keeper.YggdrasilExists(ctx, tx.ObservedPubKey) {
-		ygg, err := keeper.GetYggdrasil(ctx, tx.ObservedPubKey)
+	if keeper.VaultExists(ctx, tx.ObservedPubKey) {
+		ygg, err := keeper.GetVault(ctx, tx.ObservedPubKey)
 		if err != nil {
 			return err
 		}
 
 		ygg.SubFunds(tx.Tx.Gas.ToCoins())
 
-		return keeper.SetYggdrasil(ctx, ygg)
+		return keeper.SetVault(ctx, ygg)
 	}
 
 	return nil

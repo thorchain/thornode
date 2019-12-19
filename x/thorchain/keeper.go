@@ -32,7 +32,7 @@ type Keeper interface {
 	KeeperEvents
 	KeeperPoolAddresses
 	KeeperChains
-	KeeperYggdrasil
+	KeeperVault
 	KeeperReserveContributors
 	KeeperVaultData
 	KeeperAdminConfig
@@ -66,7 +66,7 @@ const (
 	prefixActiveObserver     dbPrefix = "active_observer/"
 	prefixPoolAddresses      dbPrefix = "pool_addresses/"
 	prefixSupportedChains    dbPrefix = "supported_chains/"
-	prefixYggdrasilPool      dbPrefix = "yggdrasil/"
+	prefixVaultPool          dbPrefix = "vault/"
 	prefixVaultData          dbPrefix = "vault_data/"
 	prefixObservingAddresses dbPrefix = "observing_addresses/"
 	prefixReserves           dbPrefix = "reserves/"

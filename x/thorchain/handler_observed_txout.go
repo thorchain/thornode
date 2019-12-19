@@ -73,10 +73,15 @@ func (h ObservedTxOutHandler) handle(ctx sdk.Context, msg MsgObservedTxOut, vers
 }
 
 func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, activeNodeAccounts NodeAccounts) error {
-	if h.keeper.YggdrasilExists(ctx, tx.ObservedPubKey) {
-		ygg, err := h.keeper.GetYggdrasil(ctx, tx.ObservedPubKey)
+	if h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
+		ygg, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
 		if nil != err {
 			ctx.Logger().Error("fail to get yggdrasil", err)
+			return err
+		}
+		if !ygg.IsYggdrasil() {
+			err := fmt.Errorf("this vault is NOT a yggdrasil vault")
+			ctx.Logger().Error(err.Error())
 			return err
 		}
 		var expectedCoins common.Coins
@@ -141,7 +146,7 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 			return err
 		}
 		ygg.SubFunds(minusCoins)
-		if err := h.keeper.SetYggdrasil(ctx, ygg); nil != err {
+		if err := h.keeper.SetVault(ctx, ygg); nil != err {
 			ctx.Logger().Error("fail to save yggdrasil", err)
 			return err
 		}

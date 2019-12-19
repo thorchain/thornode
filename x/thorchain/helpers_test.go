@@ -13,12 +13,12 @@ var _ = Suite(&HelperSuite{})
 
 type TestRefundBondKeeper struct {
 	KVStoreDummy
-	ygg  Yggdrasil
+	ygg  Vault
 	pool Pool
 	na   NodeAccount
 }
 
-func (k *TestRefundBondKeeper) GetYggdrasil(_ sdk.Context, _ common.PubKey) (Yggdrasil, error) {
+func (k *TestRefundBondKeeper) GetVault(_ sdk.Context, _ common.PubKey) (Vault, error) {
 	return k.ygg, nil
 }
 
@@ -45,12 +45,13 @@ func (s *HelperSuite) TestRefundBond(c *C) {
 			BalanceRune:  sdk.NewUint(23789 * common.One),
 			BalanceAsset: sdk.NewUint(167 * common.One),
 		},
-		ygg: Yggdrasil{
+		ygg: Vault{
 			PubKey: pk,
 			Coins: common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3946*common.One)),
 				common.NewCoin(common.BNBAsset, sdk.NewUint(27*common.One)),
 			},
+			Type: YggdrasilVault,
 		},
 	}
 

@@ -145,7 +145,7 @@ func (k *TestObservedTxInHandleKeeper) SetObservedTxVoter(_ sdk.Context, voter O
 	k.voter = voter
 }
 
-func (k *TestObservedTxInHandleKeeper) YggdrasilExists(_ sdk.Context, _ common.PubKey) bool {
+func (k *TestObservedTxInHandleKeeper) VaultExists(_ sdk.Context, _ common.PubKey) bool {
 	return k.yggExists
 }
 

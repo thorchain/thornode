@@ -9,70 +9,70 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-type KeeperYggdrasil interface {
-	GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator
-	YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool
-	SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) error
-	GetYggdrasil(ctx sdk.Context, pk common.PubKey) (Yggdrasil, error)
-	HasValidYggdrasilPools(ctx sdk.Context) (bool, error)
+type KeeperVault interface {
+	GetVaultIterator(ctx sdk.Context) sdk.Iterator
+	VaultExists(ctx sdk.Context, pk common.PubKey) bool
+	SetVault(ctx sdk.Context, vault Vault) error
+	GetVault(ctx sdk.Context, pk common.PubKey) (Vault, error)
+	HasValidVaultPools(ctx sdk.Context) (bool, error)
 }
 
-// GetYggdrasilIterator only iterate yggdrasil pools
-func (k KVStore) GetYggdrasilIterator(ctx sdk.Context) sdk.Iterator {
+// GetVaultIterator only iterate vault pools
+func (k KVStore) GetVaultIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
-	return sdk.KVStorePrefixIterator(store, []byte(prefixYggdrasilPool))
+	return sdk.KVStorePrefixIterator(store, []byte(prefixVaultPool))
 }
 
-// SetYggdrasil save the Yggdrasil object to store
-func (k KVStore) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) error {
-	key := k.GetKey(ctx, prefixYggdrasilPool, ygg.PubKey.String())
+// SetVault save the Vault object to store
+func (k KVStore) SetVault(ctx sdk.Context, vault Vault) error {
+	key := k.GetKey(ctx, prefixVaultPool, vault.PubKey.String())
 	store := ctx.KVStore(k.storeKey)
-	buf, err := k.cdc.MarshalBinaryBare(ygg)
+	buf, err := k.cdc.MarshalBinaryBare(vault)
 	if nil != err {
-		return dbError(ctx, "fail to marshal yggdrasil to binary", err)
+		return dbError(ctx, "fail to marshal vault to binary", err)
 	}
 	store.Set([]byte(key), buf)
 	return nil
 }
 
-// YggdrasilExists check whether the given pubkey is associated with a yggdrasil vault
-func (k KVStore) YggdrasilExists(ctx sdk.Context, pk common.PubKey) bool {
+// VaultExists check whether the given pubkey is associated with a vault vault
+func (k KVStore) VaultExists(ctx sdk.Context, pk common.PubKey) bool {
 	store := ctx.KVStore(k.storeKey)
-	key := k.GetKey(ctx, prefixYggdrasilPool, pk.String())
+	key := k.GetKey(ctx, prefixVaultPool, pk.String())
 	return store.Has([]byte(key))
 }
 
-var ErrYggdrasilNotFound = errors.New("yggdrasil not found")
+var ErrVaultNotFound = errors.New("vault not found")
 
-// GetYggdrasil get Yggdrasil with the given pubkey from data store
-func (k KVStore) GetYggdrasil(ctx sdk.Context, pk common.PubKey) (Yggdrasil, error) {
-	var ygg Yggdrasil
-	key := k.GetKey(ctx, prefixYggdrasilPool, pk.String())
+// GetVault get Vault with the given pubkey from data store
+func (k KVStore) GetVault(ctx sdk.Context, pk common.PubKey) (Vault, error) {
+	var vault Vault
+	key := k.GetKey(ctx, prefixVaultPool, pk.String())
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		ygg.PubKey = pk
-		return ygg, fmt.Errorf("yggdrasil with pubkey(%s) doesn't exist: %w", pk, ErrYggdrasilNotFound)
+		vault.PubKey = pk
+		return vault, fmt.Errorf("vault with pubkey(%s) doesn't exist: %w", pk, ErrVaultNotFound)
 	}
 	buf := store.Get([]byte(key))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &ygg); nil != err {
-		return ygg, dbError(ctx, "fail to unmarshal yggdrasil", err)
+	if err := k.cdc.UnmarshalBinaryBare(buf, &vault); nil != err {
+		return vault, dbError(ctx, "fail to unmarshal vault", err)
 	}
-	if ygg.PubKey.IsEmpty() {
-		ygg.PubKey = pk
+	if vault.PubKey.IsEmpty() {
+		vault.PubKey = pk
 	}
-	return ygg, nil
+	return vault, nil
 }
 
-// HasValidYggdrasilPools check the datastore to see whether we have a valid yggdrasil pool
-func (k KVStore) HasValidYggdrasilPools(ctx sdk.Context) (bool, error) {
-	iterator := k.GetYggdrasilIterator(ctx)
+// HasValidVaultPools check the datastore to see whether we have a valid vault pool
+func (k KVStore) HasValidVaultPools(ctx sdk.Context) (bool, error) {
+	iterator := k.GetVaultIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
-		var ygg Yggdrasil
-		if err := k.cdc.UnmarshalBinaryBare(iterator.Value(), &ygg); nil != err {
-			return false, dbError(ctx, "fail to unmarshal yggdrasil", err)
+		var vault Vault
+		if err := k.cdc.UnmarshalBinaryBare(iterator.Value(), &vault); nil != err {
+			return false, dbError(ctx, "fail to unmarshal vault", err)
 		}
-		if ygg.HasFunds() {
+		if vault.HasFunds() {
 			return true, nil
 		}
 	}
