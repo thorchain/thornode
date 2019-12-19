@@ -179,7 +179,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 
 func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error {
 	ygg, err := vm.k.GetVault(ctx, node.NodePubKey.Secp256k1)
-	if nil != err && !errors.Is(err, ErrVaultNotFound) {
+	if nil != err {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
 	}
 	if !ygg.IsYggdrasil() {

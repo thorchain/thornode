@@ -97,16 +97,14 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	ctx = ctx.WithBlockHeight(12)
 
 	pubKey := GetRandomPubKey()
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pubKey)
+	ygg.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(1022*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(33*common.One)),
+	}
 	keeper := &TestYggdrasilHandleKeeper{
-		ygg: Vault{
-			PubKey: pubKey,
-			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(1022*common.One)),
-				common.NewCoin(common.BNBAsset, sdk.NewUint(33*common.One)),
-			},
-			Type: YggdrasilVault,
-		},
-		na: GetRandomNodeAccount(NodeActive),
+		ygg: ygg,
+		na:  GetRandomNodeAccount(NodeActive),
 		pool: Pool{
 			Asset:        common.BNBAsset,
 			BalanceRune:  sdk.NewUint(234 * common.One),
