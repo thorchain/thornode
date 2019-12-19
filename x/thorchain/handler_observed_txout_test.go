@@ -200,6 +200,11 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	c.Assert(err, IsNil)
 
 	txOutStore := NewTxStoreDummy()
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(200)),
+	}
 	keeper := &TestObservedTxOutHandleKeeper{
 		nas:   NodeAccounts{GetRandomNodeAccount(NodeActive)},
 		voter: NewObservedTxVoter(tx.ID, make(ObservedTxs, 0)),
@@ -208,15 +213,8 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 			BalanceRune:  sdk.NewUint(200),
 			BalanceAsset: sdk.NewUint(300),
 		},
-		yggExists: true,
-		ygg: Vault{
-			PubKey: pk,
-			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
-				common.NewCoin(common.BNBAsset, sdk.NewUint(200)),
-			},
-			Type: YggdrasilVault,
-		},
+		yggExists:  true,
+		ygg:        ygg,
 		txOutStore: txOutStore,
 	}
 

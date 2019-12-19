@@ -301,7 +301,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	currentChainPool = w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
 	c.Assert(currentChainPool, NotNil)
 
-	ygg := NewVault(YggdrasilVault, currentChainPool.PubKey)
+	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, currentChainPool.PubKey)
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(500*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(400*common.One)),

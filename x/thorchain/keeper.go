@@ -67,6 +67,7 @@ const (
 	prefixPoolAddresses      dbPrefix = "pool_addresses/"
 	prefixSupportedChains    dbPrefix = "supported_chains/"
 	prefixVaultPool          dbPrefix = "vault/"
+	prefixVaultAsgardIndex   dbPrefix = "vault_asgard_index/"
 	prefixVaultData          dbPrefix = "vault_data/"
 	prefixObservingAddresses dbPrefix = "observing_addresses/"
 	prefixReserves           dbPrefix = "reserves/"

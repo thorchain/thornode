@@ -37,7 +37,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc2), IsNil)
 	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc3), IsNil)
 
-	ygg := NewVault(YggdrasilVault, acc1.NodePubKey.Secp256k1)
+	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc1.NodePubKey.Secp256k1)
 	ygg.AddFunds(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(40*common.One)),
@@ -45,7 +45,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	)
 	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 
-	ygg = NewVault(YggdrasilVault, acc2.NodePubKey.Secp256k1)
+	ygg = NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc2.NodePubKey.Secp256k1)
 	ygg.AddFunds(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(50*common.One)),
@@ -53,7 +53,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	)
 	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 
-	ygg = NewVault(YggdrasilVault, acc3.NodePubKey.Secp256k1)
+	ygg = NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc3.NodePubKey.Secp256k1)
 	ygg.AddFunds(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),

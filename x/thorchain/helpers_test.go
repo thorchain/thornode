@@ -39,20 +39,18 @@ func (s *HelperSuite) TestRefundBond(c *C) {
 	txOut := NewTxStoreDummy()
 
 	pk := GetRandomPubKey()
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(3946*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(27*common.One)),
+	}
 	keeper := &TestRefundBondKeeper{
 		pool: Pool{
 			Asset:        common.BNBAsset,
 			BalanceRune:  sdk.NewUint(23789 * common.One),
 			BalanceAsset: sdk.NewUint(167 * common.One),
 		},
-		ygg: Vault{
-			PubKey: pk,
-			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(3946*common.One)),
-				common.NewCoin(common.BNBAsset, sdk.NewUint(27*common.One)),
-			},
-			Type: YggdrasilVault,
-		},
+		ygg: ygg,
 	}
 
 	err := refundBond(ctx, txID, na, keeper, txOut)
