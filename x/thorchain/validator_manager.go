@@ -61,7 +61,8 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 	}
 
 	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
-	if ctx.BlockHeight()%desireValidatorSet == 0 {
+	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
+	if ctx.BlockHeight()%rotatePerBlockHeight == 0 {
 		ctx.Logger().Info("Checking for node account rotation...")
 		next, ok, err := vm.nextPoolNodeAccounts(ctx, int(desireValidatorSet))
 		if err != nil {
