@@ -2,7 +2,6 @@ package thorchain
 
 import (
 	"errors"
-	stdErrors "errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -142,7 +141,7 @@ func (k KVStore) GetActiveAsgardVaults(ctx sdk.Context) (Vaults, error) {
 func (k KVStore) DeleteVault(ctx sdk.Context, pubkey common.PubKey) error {
 	vault, err := k.GetVault(ctx, pubkey)
 	if err != nil {
-		if !stdErrors.Is(err, ErrVaultNotFound) {
+		if !errors.Is(err, ErrVaultNotFound) {
 			return nil
 		}
 		return err
