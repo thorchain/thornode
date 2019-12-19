@@ -178,9 +178,12 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 }
 
 func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error {
-	ygg, err := vm.k.GetYggdrasil(ctx, node.NodePubKey.Secp256k1)
-	if nil != err && !errors.Is(err, ErrYggdrasilNotFound) {
+	ygg, err := vm.k.GetVault(ctx, node.NodePubKey.Secp256k1)
+	if nil != err && !errors.Is(err, ErrVaultNotFound) {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
+	}
+	if !ygg.IsYggdrasil() {
+		return fmt.Errorf("this is not a Yggdrasil vault")
 	}
 	chains, err := vm.k.GetChains(ctx)
 	if err != nil {
@@ -220,7 +223,7 @@ func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, pool
 // when THORNode observe the node return fund successfully, the node's bound will be refund.
 func (vm *ValidatorMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore, constAccessor constants.ConstantValues) error {
 	// do THORNode have yggdrasil pool?
-	hasYggdrasil, err := vm.k.HasValidYggdrasilPools(ctx)
+	hasYggdrasil, err := vm.k.HasValidVaultPools(ctx)
 	if nil != err {
 		return fmt.Errorf("fail at ragnarok protocol step 1: %w", err)
 	}

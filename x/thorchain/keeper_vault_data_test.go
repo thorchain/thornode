@@ -9,11 +9,11 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-type KeeperVaultSuite struct{}
+type KeeperVaultDataSuite struct{}
 
-var _ = Suite(&KeeperVaultSuite{})
+var _ = Suite(&KeeperVaultDataSuite{})
 
-func (KeeperVaultSuite) TestVaultData(c *C) {
+func (KeeperVaultDataSuite) TestVaultData(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)

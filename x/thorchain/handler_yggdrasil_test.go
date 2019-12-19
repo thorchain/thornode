@@ -57,12 +57,12 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 
 type TestYggdrasilHandleKeeper struct {
 	KVStoreDummy
-	ygg  Yggdrasil
+	ygg  Vault
 	na   NodeAccount
 	pool Pool
 }
 
-func (k *TestYggdrasilHandleKeeper) GetYggdrasil(ctx sdk.Context, pubKey common.PubKey) (Yggdrasil, error) {
+func (k *TestYggdrasilHandleKeeper) GetVault(ctx sdk.Context, pubKey common.PubKey) (Vault, error) {
 	return k.ygg, nil
 }
 
@@ -70,12 +70,12 @@ func (k *TestYggdrasilHandleKeeper) GetNodeAccountByPubKey(ctx sdk.Context, pubK
 	return k.na, nil
 }
 
-func (k *TestYggdrasilHandleKeeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) error {
+func (k *TestYggdrasilHandleKeeper) SetVault(ctx sdk.Context, ygg Vault) error {
 	k.ygg = ygg
 	return nil
 }
 
-func (k *TestYggdrasilHandleKeeper) HasValidYggdrasilPools(_ sdk.Context) (bool, error) {
+func (k *TestYggdrasilHandleKeeper) HasValidVaultPools(_ sdk.Context) (bool, error) {
 	return true, nil
 }
 
@@ -98,12 +98,13 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 
 	pubKey := GetRandomPubKey()
 	keeper := &TestYggdrasilHandleKeeper{
-		ygg: Yggdrasil{
+		ygg: Vault{
 			PubKey: pubKey,
 			Coins: common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(1022*common.One)),
 				common.NewCoin(common.BNBAsset, sdk.NewUint(33*common.One)),
 			},
+			Type: YggdrasilVault,
 		},
 		na: GetRandomNodeAccount(NodeActive),
 		pool: Pool{
@@ -129,7 +130,7 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	result := handler.handle(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result))
 
-	ygg, err := keeper.GetYggdrasil(ctx, pubKey)
+	ygg, err := keeper.GetVault(ctx, pubKey)
 	c.Assert(err, IsNil)
 	coin := ygg.GetCoin(common.BNBAsset)
 	c.Check(coin.Amount.Uint64(), Equals, sdk.NewUint(133*common.One).Uint64(), Commentf("%d vs %d", coin.Amount.Uint64(), sdk.NewUint(133*common.One).Uint64()))
@@ -139,7 +140,7 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	result = handler.handle(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 
-	ygg, err = keeper.GetYggdrasil(ctx, pubKey)
+	ygg, err = keeper.GetVault(ctx, pubKey)
 	c.Assert(err, IsNil)
 	coin = ygg.GetCoin(common.BNBAsset)
 	c.Check(coin.Amount.Uint64(), Equals, sdk.NewUint(33*common.One).Uint64(), Commentf("%d vs %d", coin.Amount.Uint64(), sdk.NewUint(33*common.One).Uint64()))

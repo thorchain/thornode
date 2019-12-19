@@ -84,7 +84,7 @@ type TestObservedTxOutHandleKeeper struct {
 	na         NodeAccount
 	voter      ObservedTxVoter
 	yggExists  bool
-	ygg        Yggdrasil
+	ygg        Vault
 	height     sdk.Uint
 	chains     common.Chains
 	pool       Pool
@@ -117,15 +117,15 @@ func (k *TestObservedTxOutHandleKeeper) SetObservedTxVoter(_ sdk.Context, voter 
 	k.voter = voter
 }
 
-func (k *TestObservedTxOutHandleKeeper) YggdrasilExists(_ sdk.Context, _ common.PubKey) bool {
+func (k *TestObservedTxOutHandleKeeper) VaultExists(_ sdk.Context, _ common.PubKey) bool {
 	return k.yggExists
 }
 
-func (k *TestObservedTxOutHandleKeeper) GetYggdrasil(_ sdk.Context, _ common.PubKey) (Yggdrasil, error) {
+func (k *TestObservedTxOutHandleKeeper) GetVault(_ sdk.Context, _ common.PubKey) (Vault, error) {
 	return k.ygg, nil
 }
 
-func (k *TestObservedTxOutHandleKeeper) SetYggdrasil(_ sdk.Context, ygg Yggdrasil) error {
+func (k *TestObservedTxOutHandleKeeper) SetVault(_ sdk.Context, ygg Vault) error {
 	k.ygg = ygg
 	return nil
 }
@@ -209,12 +209,13 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 			BalanceAsset: sdk.NewUint(300),
 		},
 		yggExists: true,
-		ygg: Yggdrasil{
+		ygg: Vault{
 			PubKey: pk,
 			Coins: common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
 				common.NewCoin(common.BNBAsset, sdk.NewUint(200)),
 			},
+			Type: YggdrasilVault,
 		},
 		txOutStore: txOutStore,
 	}
