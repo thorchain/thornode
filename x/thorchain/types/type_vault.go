@@ -17,20 +17,32 @@ const (
 	YggdrasilVault VaultType = "yggdrasil"
 )
 
+type VaultStatus string
+
+const (
+	ActiveVault   VaultStatus = "active"
+	InactiveVault VaultStatus = "inactive"
+)
+
 // Vault
 type Vault struct {
-	PubKey common.PubKey `json:"pub_key"`
-	Coins  common.Coins  `json:"coins"`
-	Type   VaultType     `json:"type"`
+	BlockHeight int64           `json:"block_height"`
+	PubKey      common.PubKey   `json:"pub_key"`
+	Coins       common.Coins    `json:"coins"`
+	Type        VaultType       `json:"type"`
+	Status      VaultStatus     `json:"status"`
+	Membership  []common.PubKey `json:"membership"`
 }
 
 type Vaults []Vault
 
-func NewVault(vtype VaultType, pk common.PubKey) Vault {
+func NewVault(height int64, status VaultStatus, vtype VaultType, pk common.PubKey) Vault {
 	return Vault{
-		PubKey: pk,
-		Coins:  make(common.Coins, 0),
-		Type:   vtype,
+		BlockHeight: height,
+		PubKey:      pk,
+		Coins:       make(common.Coins, 0),
+		Type:        vtype,
+		Status:      status,
 	}
 }
 

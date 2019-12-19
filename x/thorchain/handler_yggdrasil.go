@@ -148,6 +148,10 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 		ctx.Logger().Error("fail to get yggdrasil", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
+	if len(ygg.Type) == 0 {
+		ygg.Status = ActiveVault
+		ygg.Type = YggdrasilVault
+	}
 	if !ygg.IsYggdrasil() {
 		return sdk.ErrInternal("this is not a Yggdrasil vault").Result()
 	}
