@@ -6,16 +6,16 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-// MsgSetTrustAccount defines a MsgSetTrustAccount message
-type MsgSetTrustAccount struct {
+// MsgSetNodeKeys defines a MsgSetNodeKeys message
+type MsgSetNodeKeys struct {
 	NodePubKeys         common.PubKeys `json:"node_pub_keys"`
 	ValidatorConsPubKey string         `json:"validator_cons_pub_key"`
 	Signer              sdk.AccAddress `json:"signer"`
 }
 
-// NewMsgSetTrustAccount is a constructor function for NewMsgAddTrustAccount
-func NewMsgSetTrustAccount(nodePubKeys common.PubKeys, validatorConsPubKey string, signer sdk.AccAddress) MsgSetTrustAccount {
-	return MsgSetTrustAccount{
+// NewMsgSetNodeKeys is a constructor function for NewMsgAddNodeKeys
+func NewMsgSetNodeKeys(nodePubKeys common.PubKeys, validatorConsPubKey string, signer sdk.AccAddress) MsgSetNodeKeys {
+	return MsgSetNodeKeys{
 		NodePubKeys:         nodePubKeys,
 		ValidatorConsPubKey: validatorConsPubKey,
 		Signer:              signer,
@@ -23,13 +23,13 @@ func NewMsgSetTrustAccount(nodePubKeys common.PubKeys, validatorConsPubKey strin
 }
 
 // Route should return the cmname of the module
-func (msg MsgSetTrustAccount) Route() string { return RouterKey }
+func (msg MsgSetNodeKeys) Route() string { return RouterKey }
 
 // Type should return the action
-func (msg MsgSetTrustAccount) Type() string { return "set_trust_account" }
+func (msg MsgSetNodeKeys) Type() string { return "set_node_keys" }
 
 // ValidateBasic runs stateless checks on the message
-func (msg MsgSetTrustAccount) ValidateBasic() sdk.Error {
+func (msg MsgSetNodeKeys) ValidateBasic() sdk.Error {
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}
@@ -43,11 +43,11 @@ func (msg MsgSetTrustAccount) ValidateBasic() sdk.Error {
 }
 
 // GetSignBytes encodes the message for signing
-func (msg MsgSetTrustAccount) GetSignBytes() []byte {
+func (msg MsgSetNodeKeys) GetSignBytes() []byte {
 	return sdk.MustSortJSON(ModuleCdc.MustMarshalJSON(msg))
 }
 
 // GetSigners defines whose signature is required
-func (msg MsgSetTrustAccount) GetSigners() []sdk.AccAddress {
+func (msg MsgSetNodeKeys) GetSigners() []sdk.AccAddress {
 	return []sdk.AccAddress{msg.Signer}
 }

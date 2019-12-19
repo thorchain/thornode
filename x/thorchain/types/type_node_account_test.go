@@ -73,8 +73,8 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 	nas := NodeAccounts{
 		na,
 	}
-	c.Assert(nas.IsTrustAccount(addr), Equals, false)
-	c.Assert(nas.IsTrustAccount(nodeAddress), Equals, true)
+	c.Assert(nas.IsNodeKeys(addr), Equals, false)
+	c.Assert(nas.IsNodeKeys(nodeAddress), Equals, true)
 	c.Logf("node account:%s", na)
 	naEmpty := NewNodeAccount(sdk.AccAddress{}, Active, pubKeys, bepConsPubKey, sdk.NewUint(common.One), bondAddr, 1)
 	c.Assert(naEmpty.IsValid(), NotNil)

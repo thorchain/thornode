@@ -53,7 +53,7 @@ var (
 	NewMsgSwap                     = types.NewMsgSwap
 	NewMsgSetAdminConfig           = types.NewMsgSetAdminConfig
 	NewKeygens                     = types.NewKeygens
-	NewMsgSetTrustAccount          = types.NewMsgSetTrustAccount
+	NewMsgSetNodeKeys              = types.NewMsgSetNodeKeys
 	NewTxOut                       = types.NewTxOut
 	NewEvent                       = types.NewEvent
 	NewEventRewards                = types.NewEventRewards
@@ -106,7 +106,7 @@ type (
 	MsgSwap                     = types.MsgSwap
 	MsgSetAdminConfig           = types.MsgSetAdminConfig
 	MsgSetVersion               = types.MsgSetVersion
-	MsgSetTrustAccount          = types.MsgSetTrustAccount
+	MsgSetNodeKeys              = types.MsgSetNodeKeys
 	MsgEndPool                  = types.MsgEndPool
 	MsgLeave                    = types.MsgLeave
 	MsgReserveContributor       = types.MsgReserveContributor
@@ -118,8 +118,8 @@ type (
 	QueryResHeights             = types.QueryResHeights
 	QueryResTxOut               = types.QueryResTxOut
 	ResTxOut                    = types.ResTxOut
-	TrustAccount                = types.TrustAccount
-	TrustAccounts               = types.TrustAccounts
+	NodeKeys                    = types.NodeKeys
+	NodesKeys                   = types.NodesKeys
 	PoolStatus                  = types.PoolStatus
 	PoolIndex                   = types.PoolIndex
 	Pool                        = types.Pool
