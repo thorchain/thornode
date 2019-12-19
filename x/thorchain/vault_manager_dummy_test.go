@@ -5,11 +5,20 @@ import (
 )
 
 type VaultMgrDummy struct {
-	VaultManager
+	nas   NodeAccounts
+	vault Vault
 }
 
 func NewVaultMgrDummy() *VaultMgrDummy {
 	return &VaultMgrDummy{}
 }
 
-func (vm *VaultMgrDummy) TriggerKeygen(_ sdk.Context, _ NodeAccounts) error { return kaboom }
+func (vm *VaultMgrDummy) TriggerKeygen(_ sdk.Context, nas NodeAccounts) error {
+	vm.nas = nas
+	return nil
+}
+
+func (vm *VaultMgrDummy) RotateVault(ctx sdk.Context, vault Vault) error {
+	vm.vault = vault
+	return nil
+}
