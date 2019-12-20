@@ -13,17 +13,15 @@ import (
 
 // UnstakeHandler
 type UnstakeHandler struct {
-	keeper      Keeper
-	txOutStore  TxOutStore
-	poolAddrMgr PoolAddressManager
+	keeper     Keeper
+	txOutStore TxOutStore
 }
 
 // NewUnstakeHandler create a new instance of UnstakeHandler to process unstake request
-func NewUnstakeHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager) UnstakeHandler {
+func NewUnstakeHandler(keeper Keeper, txOutStore TxOutStore) UnstakeHandler {
 	return UnstakeHandler{
-		keeper:      keeper,
-		txOutStore:  txOutStore,
-		poolAddrMgr: poolAddrMgr,
+		keeper:     keeper,
+		txOutStore: txOutStore,
 	}
 }
 func (uh UnstakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
@@ -84,14 +82,6 @@ func (uh UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Erro
 }
 
 func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk.Error) {
-	bnbPoolAddr := uh.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
-	if nil == bnbPoolAddr {
-		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("THORNode don't have pool for chain : %s ", common.BNBChain))
-	}
-	currentAddr := uh.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(msg.Asset.Chain)
-	if nil == currentAddr {
-		return nil, sdk.ErrUnknownRequest(fmt.Sprintf("THORNode don't have pool for chain : %s ", msg.Asset.Chain))
-	}
 	poolStaker, err := uh.keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to get pool staker: %w", err).Error())
@@ -136,20 +126,18 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 	}
 
 	toi := &TxOutItem{
-		Chain:       common.BNBChain,
-		InHash:      msg.Tx.ID,
-		VaultPubKey: bnbPoolAddr.PubKey,
-		ToAddress:   stakerUnit.RuneAddress,
-		Coin:        common.NewCoin(common.RuneAsset(), runeAmt),
+		Chain:     common.BNBChain,
+		InHash:    msg.Tx.ID,
+		ToAddress: stakerUnit.RuneAddress,
+		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
 	}
 	uh.txOutStore.AddTxOutItem(ctx, toi)
 
 	toi = &TxOutItem{
-		Chain:       msg.Asset.Chain,
-		InHash:      msg.Tx.ID,
-		VaultPubKey: currentAddr.PubKey,
-		ToAddress:   stakerUnit.AssetAddress,
-		Coin:        common.NewCoin(msg.Asset, assetAmount),
+		Chain:     msg.Asset.Chain,
+		InHash:    msg.Tx.ID,
+		ToAddress: stakerUnit.AssetAddress,
+		Coin:      common.NewCoin(msg.Asset, assetAmount),
 	}
 	// for unstake , THORNode should deduct fees
 	uh.txOutStore.AddTxOutItem(ctx, toi)

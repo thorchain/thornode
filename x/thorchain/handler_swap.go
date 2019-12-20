@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	"github.com/blang/semver"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -11,16 +9,14 @@ import (
 )
 
 type SwapHandler struct {
-	keeper      Keeper
-	txOutStore  TxOutStore
-	poolAddrMgr PoolAddressManager
+	keeper     Keeper
+	txOutStore TxOutStore
 }
 
-func NewSwapHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager) SwapHandler {
+func NewSwapHandler(keeper Keeper, txOutStore TxOutStore) SwapHandler {
 	return SwapHandler{
-		keeper:      keeper,
-		txOutStore:  txOutStore,
-		poolAddrMgr: poolAddrMgr,
+		keeper:     keeper,
+		txOutStore: txOutStore,
 	}
 }
 
@@ -71,12 +67,7 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor consta
 	globalSlipLimit := constAccessor.GetInt64Value(constants.GlobalSlipLimit)
 	gsl := sdk.NewUint(uint64(globalSlipLimit))
 	chain := msg.TargetAsset.Chain
-	currentAddr := h.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
-	if nil == currentAddr {
-		msg := fmt.Sprintf("don't have pool address for chain : %s", chain)
-		ctx.Logger().Error(msg)
-		return sdk.ErrInternal(msg).Result()
-	}
+
 	amount, err := swap(
 		ctx,
 		h.keeper,
@@ -104,11 +95,10 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor consta
 	}
 
 	toi := &TxOutItem{
-		Chain:       currentAddr.Chain,
-		InHash:      msg.Tx.ID,
-		VaultPubKey: currentAddr.PubKey,
-		ToAddress:   msg.Destination,
-		Coin:        common.NewCoin(msg.TargetAsset, amount),
+		Chain:     msg.TargetAsset.Chain,
+		InHash:    msg.Tx.ID,
+		ToAddress: msg.Destination,
+		Coin:      common.NewCoin(msg.TargetAsset, amount),
 	}
 	h.txOutStore.AddTxOutItem(ctx, toi)
 

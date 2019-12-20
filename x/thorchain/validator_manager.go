@@ -26,22 +26,20 @@ const (
 type ValidatorManager interface {
 	BeginBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error
 	EndBlock(ctx sdk.Context, store TxOutStore, constAccessor constants.ConstantValues) []abci.ValidatorUpdate
-	RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error
+	RequestYggReturn(ctx sdk.Context, node NodeAccount, txOut TxOutStore) error
 }
 
 // ValidatorMgr is to manage a list of validators , and rotate them
 type ValidatorMgr struct {
-	k           Keeper
-	poolAddrMgr PoolAddressManager
-	vaultMgr    VaultManager
+	k        Keeper
+	vaultMgr VaultManager
 }
 
 // NewValidatorManager create a new instance of ValidatorManager
-func NewValidatorMgr(k Keeper, poolAddrMgr PoolAddressManager, vaultMgr VaultManager) *ValidatorMgr {
+func NewValidatorMgr(k Keeper, vaultMgr VaultManager) *ValidatorMgr {
 	return &ValidatorMgr{
-		k:           k,
-		poolAddrMgr: poolAddrMgr,
-		vaultMgr:    vaultMgr,
+		k:        k,
+		vaultMgr: vaultMgr,
 	}
 }
 

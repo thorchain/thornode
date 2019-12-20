@@ -14,15 +14,13 @@ import (
 type YggdrasilHandler struct {
 	keeper       Keeper
 	txOutStore   TxOutStore
-	poolAddrMgr  PoolAddressManager
 	validatorMgr ValidatorManager
 }
 
-func NewYggdrasilHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager) YggdrasilHandler {
+func NewYggdrasilHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager) YggdrasilHandler {
 	return YggdrasilHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
-		poolAddrMgr:  poolAddrMgr,
 		validatorMgr: validatorMgr,
 	}
 }
@@ -70,7 +68,7 @@ func (h YggdrasilHandler) handle(ctx sdk.Context, msg MsgYggdrasil, version semv
 	}
 }
 
-func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAddrMgr PoolAddressManager, constAccessor constants.ConstantValues) sdk.Result {
+func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStore, constAccessor constants.ConstantValues) sdk.Result {
 	// Ragnarok Protocol
 	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
 	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
@@ -120,7 +118,7 @@ func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStor
 			)
 
 			version := keeper.GetLowestActiveVersion(ctx)
-			unstakeHandler := NewUnstakeHandler(keeper, txOut, poolAddrMgr)
+			unstakeHandler := NewUnstakeHandler(keeper, txOut)
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
 				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
@@ -200,7 +198,7 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 		if !hasYggdrasilPool {
-			return handleRagnarokProtocolStep2(ctx, h.keeper, h.txOutStore, h.poolAddrMgr, constAccessor)
+			return handleRagnarokProtocolStep2(ctx, h.keeper, h.txOutStore, constAccessor)
 		}
 	}
 

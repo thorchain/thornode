@@ -115,10 +115,12 @@ type (
 	MsgObservedTxIn             = types.MsgObservedTxIn
 	MsgObservedTxOut            = types.MsgObservedTxOut
 	MsgTssPool                  = types.MsgTssPool
+	QueryResVaults              = types.QueryResVaults
 	QueryResPools               = types.QueryResPools
 	QueryResHeights             = types.QueryResHeights
 	QueryResTxOut               = types.QueryResTxOut
 	ResTxOut                    = types.ResTxOut
+	ResVault                    = types.ResVault
 	NodeKeys                    = types.NodeKeys
 	NodesKeys                   = types.NodesKeys
 	PoolStatus                  = types.PoolStatus
