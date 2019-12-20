@@ -139,7 +139,10 @@ func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {
 		for _, member := range asgard.Membership {
 			if vault.Contains(member) {
 				asgard.UpdateStatus(RetiringVault, ctx.BlockHeight())
-				vm.k.SetVault(ctx, asgard)
+				if err := vm.k.SetVault(ctx, asgard); err != nil {
+					return err
+				}
+
 				ctx.EventManager().EmitEvent(
 					sdk.NewEvent(EventTypeInactiveVault,
 						sdk.NewAttribute("set asgard vault to inactive", asgard.PubKey.String())))
@@ -148,9 +151,11 @@ func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {
 		}
 	}
 
-	vm.k.SetVault(ctx, vault)
+	if err := vm.k.SetVault(ctx, vault); err != nil {
+		return err
+	}
 	ctx.EventManager().EmitEvent(
-		sdk.NewEvent(EventTypeInactiveVault,
+		sdk.NewEvent(EventTypeActiveVault,
 			sdk.NewAttribute("add new asgard vault", vault.PubKey.String())))
 	return nil
 }

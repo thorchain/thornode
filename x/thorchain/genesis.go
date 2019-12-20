@@ -127,7 +127,9 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		}
 		if len(active) == 1 {
 			vault := NewVault(0, ActiveVault, AsgardVault, active[0].NodePubKey.Secp256k1)
-			keeper.SetVault(ctx, vault)
+			if err := keeper.SetVault(ctx, vault); err != nil {
+				panic(err)
+			}
 		} else {
 			// Trigger a keygen ceremony
 			vaultMgr := NewVaultMgr(keeper, &TxOutStorage{})
@@ -137,7 +139,9 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		}
 	} else {
 		for _, vault := range data.Vaults {
-			keeper.SetVault(ctx, vault)
+			if err := keeper.SetVault(ctx, vault); err != nil {
+				panic(err)
+			}
 		}
 	}
 
