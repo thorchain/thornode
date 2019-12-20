@@ -128,10 +128,33 @@ func (s StatechainSuite) TestSend(c *C) {
 	// Start a local HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		// Test request parameters
-		c.Check(req.URL.String(), Equals, "/txs")
-		// Send response to be tested
-		_, err := rw.Write([]byte(`{"txhash":"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D", "height": "test_height"}`))
-		c.Assert(err, IsNil)
+		if req.URL.String() == "/txs" {
+			// Send response to be tested
+			_, err := rw.Write([]byte(`{"txhash":"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D", "height": "test_height"}`))
+			c.Assert(err, IsNil)
+		} else if strings.HasPrefix(req.URL.String(), "/auth/account") {
+			_, err := rw.Write([]byte(`{
+"height":"78",
+"result":{
+			  "type": "cosmos-sdk/Account",
+			  "value": {
+				"address": "thor1vx80hen38j5w0jn6gqh3crqvktj9stnhw56kn0",
+				"coins": [
+				  {
+					"denom": "thor",
+					"amount": "1000"
+				  }
+				],
+				"public_key": {
+        "type": "tendermint/PubKeySecp256k1",
+        "value": "ArYQdiiY4s1MgIEKm+7LXYQsH+ptH09neh9OWqY5VHYr"
+      },
+				"account_number": "0",
+				"sequence": "14"
+			  }
+			}}`))
+			c.Assert(err, IsNil)
+		}
 	}))
 	// Close the server when test finishes
 	defer server.Close()

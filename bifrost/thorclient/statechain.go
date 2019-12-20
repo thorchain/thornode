@@ -214,11 +214,16 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 		scb.m.GetHistograms(metrics.SendToStatechainDuration).Observe(time.Since(start).Seconds())
 	}()
 
+	accountNumber, sequenceNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
+	if nil != err {
+		return noTxID, errors.Wrap(err, "fail to get account number and sequence number from statechain ")
+	}
+
 	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", scb.accountNumber).Uint64("sequenceNo", scb.seqNumber).Msg("info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
-		AccountNumber: scb.accountNumber,
-		Sequence:      scb.seqNumber,
+		AccountNumber: accountNumber,
+		Sequence:      sequenceNumber,
 		Fee:           stdTx.Fee,
 		Msgs:          stdTx.GetMsgs(),
 		Memo:          stdTx.GetMemo(),
