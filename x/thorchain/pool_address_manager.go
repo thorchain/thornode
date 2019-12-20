@@ -68,13 +68,17 @@ func (pm *PoolAddressMgr) BeginBlock(ctx sdk.Context) error {
 }
 
 func (pm *PoolAddressMgr) RotatePoolAddress(ctx sdk.Context, poolpubkeys common.PoolPubKeys, store TxOutStore) {
+	ctx.Logger().Info("rotatePoolAddress")
 	poolAddresses := pm.currentPoolAddresses
 	pm.currentPoolAddresses = NewPoolAddresses(poolAddresses.Current, poolpubkeys, common.EmptyPoolPubKeys)
+	pm.k.SetPoolAddresses(ctx, pm.currentPoolAddresses)
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent(EventTypeNewPoolAddress,
 			sdk.NewAttribute("current pool pub key", pm.currentPoolAddresses.Current.String()),
 			sdk.NewAttribute("next pool pub key", pm.currentPoolAddresses.Next.String()),
 			sdk.NewAttribute("previous pool pub key", pm.currentPoolAddresses.Previous.String())))
+	ctx.Logger().Info("moveAssetsToNewPool")
 	if err := moveAssetsToNewPool(ctx, pm.k, store, pm.currentPoolAddresses); err != nil {
 		ctx.Logger().Error("fail to move assets to new pool", err)
 	}

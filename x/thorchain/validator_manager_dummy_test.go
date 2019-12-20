@@ -7,7 +7,6 @@ import (
 
 // ValidatorDummyMgr is to manage a list of validators , and rotate them
 type ValidatorDummyMgr struct {
-	rotationPolicy ValidatorRotationPolicy
 }
 
 // NewValidatorDummyMgr create a new instance of ValidatorDummyMgr

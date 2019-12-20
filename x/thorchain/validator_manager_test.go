@@ -2,9 +2,8 @@ package thorchain
 
 import (
 	"github.com/blang/semver"
-	. "gopkg.in/check.v1"
-
 	"gitlab.com/thorchain/thornode/constants"
+	. "gopkg.in/check.v1"
 )
 
 type ValidatorManagerTestSuite struct{}
@@ -18,8 +17,6 @@ func (vts *ValidatorManagerTestSuite) SetUpSuite(c *C) {
 func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1)
-	rotatePerBlockHeight := int64(constants.RotatePerBlockHeight)
-	validatorChangeWindow := int64(constants.ValidatorsChangeWindow)
 	poolAddrMgr := NewPoolAddressDummyMgr()
 	k.SetPoolAddresses(ctx, poolAddrMgr.GetCurrentPoolAddresses())
 	vMgr := NewValidatorMgr(k, poolAddrMgr)
@@ -64,23 +61,4 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	activeNodes1, err := k.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(len(activeNodes1) == 4, Equals, true)
-	// No standby nodes
-	ctx = ctx.WithBlockHeight(rotatePerBlockHeight + 1 - validatorChangeWindow)
-	txOutStore := NewTxOutStorage(k, poolAddrMgr)
-	txOutStore.NewBlock(uint64(rotatePerBlockHeight+1-validatorChangeWindow), constAccessor)
-	validatorUpdates := vMgr2.EndBlock(ctx, txOutStore, constAccessor)
-	c.Assert(validatorUpdates, HasLen, 0)
-
-	rotateHeight := rotatePerBlockHeight + 1
-	ctx = ctx.WithBlockHeight(rotateHeight)
-	txOutStore.NewBlock(uint64(rotateHeight), constAccessor)
-	validatorUpdates = vMgr2.EndBlock(ctx, txOutStore, constAccessor)
-	c.Assert(validatorUpdates, HasLen, 0)
-
-	standbyNode := GetRandomNodeAccount(NodeStandby)
-	c.Assert(k.SetNodeAccount(ctx, standbyNode), IsNil)
-
-	// vts.setDesireValidatorSet(c, ctx, k)
-	validatorUpdates = vMgr2.EndBlock(ctx, txOutStore, constAccessor)
-	c.Assert(validatorUpdates, HasLen, 0)
 }
