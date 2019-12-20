@@ -4,21 +4,25 @@ package thorchain
 
 import (
 	"encoding/json"
+	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
-func eventPoolStatusWrapper(ctx sdk.Context, keeper Keeper, pool Pool) {
+func eventPoolStatusWrapper(ctx sdk.Context, keeper Keeper, pool Pool) error {
 	poolEvt := NewEventPool(pool.Asset, pool.Status)
 	bytes, err := json.Marshal(poolEvt)
 	if err != nil {
-		ctx.Logger().Error("failed to marshal pool event", err)
+		return fmt.Errorf("fail to marshal pool event: %w", err)
 	}
-	evt := Event{
-		Height: ctx.BlockHeight(),
-		Event:  bytes,
-		Status: EventSuccess,
+	eventID, err := keeper.GetNextEventID(ctx)
+	if nil != err {
+		return fmt.Errorf("fail to get next event id: %w", err)
 	}
-
-	keeper.SetCompletedEvent(ctx, evt)
+	tx := common.Tx{ID: common.BlankTxID}
+	evt := NewEvent(eventID, poolEvt.Type(), ctx.BlockHeight(), tx, bytes, EventSuccess)
+	keeper.UpsertEvent(ctx, evt)
+	return nil
 }

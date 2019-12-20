@@ -59,7 +59,7 @@ const (
 	prefixAdmin              dbPrefix = "admin/"
 	prefixEvents             dbPrefix = "events/"
 	prefixPendingEvents      dbPrefix = "pending_events/"
-	prefixLastEventID        dbPrefix = "last_event_id/"
+	prefixCurrentEventID     dbPrefix = "current_event_id/"
 	prefixLastChainHeight    dbPrefix = "last_chain_height/"
 	prefixLastSignedHeight   dbPrefix = "last_signed_height/"
 	prefixNodeAccount        dbPrefix = "node_account/"

@@ -103,7 +103,7 @@ func (h SetAdminConfigHandler) handleV1(ctx sdk.Context, msg MsgSetAdminConfig) 
 			stakeBytes,
 			EventSuccess,
 		)
-		h.keeper.AddEvent(ctx, evt)
+		h.keeper.UpsertEvent(ctx, evt)
 	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,

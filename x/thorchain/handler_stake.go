@@ -9,7 +9,6 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // StakeHandler is to handle stake
@@ -72,7 +71,7 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 		if errResult == nil {
 			status = EventSuccess
 		} else {
-			status = EventRefund
+			status = EventFail
 		}
 		if err := processStakeEvent(ctx, sh.keeper, msg, stakeUnits, status); nil != err {
 			errResult = sdk.ErrInternal(fmt.Errorf("fail to save stake event: %w", err).Error())
@@ -112,7 +111,7 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 
 func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus) error {
 	var stakeEvt EventStake
-	if eventStatus == EventFa {
+	if eventStatus == EventFail {
 		// do not log event if the stake failed
 		return nil
 	}
@@ -137,15 +136,8 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 		stakeBytes,
 		eventStatus,
 	)
-	keeper.AddEvent(ctx, evt)
-
-	if evt.Type != "empty-refund" {
-		// since there is no outbound tx for staking, we'll complete the event now
-		tx := common.Tx{ID: common.BlankTxID}
-		err := completeEvents(ctx, keeper, msg.Tx.ID, common.Txs{tx})
-		if err != nil {
-			return fmt.Errorf("unable to complete events: %w", err)
-		}
-	}
+	tx := common.Tx{ID: common.BlankTxID}
+	evt.OutTxs = common.Txs{tx}
+	keeper.UpsertEvent(ctx, evt)
 	return nil
 }

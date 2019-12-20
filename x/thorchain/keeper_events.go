@@ -11,11 +11,15 @@ import (
 )
 
 type KeeperEvents interface {
+	GetEvent(ctx sdk.Context, eventID int64) (Event, error)
 	GetEvents(ctx sdk.Context) (Events, error)
 	SetEvents(ctx sdk.Context, events Events)
 	GetEventsIterator(ctx sdk.Context) sdk.Iterator
 	GetNextEventID(ctx sdk.Context) (int64, error)
-	AddEvent(ctx sdk.Context, event Event)
+	UpsertEvent(ctx sdk.Context, event Event)
+	GetPendingEventID(ctx sdk.Context, txID common.TxID) (int64, error)
+	GetCurrentEventID(ctx sdk.Context) (int64, error)
+	SetCurrentEventID(ctx sdk.Context, eventID int64)
 }
 
 var ErrEventNotFound = errors.New("event not found")
@@ -49,7 +53,7 @@ func (k KVStore) SetEvents(ctx sdk.Context, events Events) {
 // AddEvents will add the given events to data store
 func (k KVStore) AddEvents(ctx sdk.Context, events Events) {
 	for _, item := range events {
-		k.AddEvent(ctx, item)
+		k.UpsertEvent(ctx, item)
 	}
 }
 
@@ -66,17 +70,25 @@ func (k KVStore) GetEvent(ctx sdk.Context, eventID int64) (Event, error) {
 }
 
 // AddEvent add one event to data store
-func (k KVStore) AddEvent(ctx sdk.Context, event Event) {
+func (k KVStore) UpsertEvent(ctx sdk.Context, event Event) {
 	key := k.GetKey(ctx, prefixEvents, strconv.FormatInt(event.ID, 10))
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event))
 	if event.Status == EventPending {
-		k.SetEventPending(ctx, event)
+		k.setEventPending(ctx, event)
+		return
 	}
+	k.removeEventPending(ctx, event)
 }
 
-// SetEventPending store the pending event use InTx hash as the key
-func (k KVStore) SetEventPending(ctx sdk.Context, event Event) {
+func (k KVStore) removeEventPending(ctx sdk.Context, event Event) {
+	key := k.GetKey(ctx, prefixPendingEvents, event.InTx.ID.String())
+	store := ctx.KVStore(k.storeKey)
+	store.Delete([]byte(key))
+}
+
+// setEventPending store the pending event use InTx hash as the key
+func (k KVStore) setEventPending(ctx sdk.Context, event Event) {
 	if event.Status != EventPending {
 		return
 	}
@@ -109,19 +121,34 @@ func (k KVStore) GetEventsIterator(ctx sdk.Context) sdk.Iterator {
 // GetNextEventID will increase the event id in key value store
 func (k KVStore) GetNextEventID(ctx sdk.Context) (int64, error) {
 	var currentEventID, nextEventID int64
-	key := k.GetKey(ctx, prefixLastEventID, "")
+	currentEventID, err := k.GetCurrentEventID(ctx)
+	if nil != err {
+		return currentEventID, err
+	}
+	nextEventID = currentEventID + 1
+	k.SetCurrentEventID(ctx, nextEventID)
+	return currentEventID, nil
+}
+
+// GetCurrentEventID get the current event id in data store without increasing it
+func (k KVStore) GetCurrentEventID(ctx sdk.Context) (int64, error) {
+	var currentEventID int64
+	key := k.GetKey(ctx, prefixCurrentEventID, "")
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		currentEventID = 0
-		nextEventID = currentEventID + 1
-		store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&nextEventID))
-		return currentEventID, nil
+		return 0, nil
 	}
 	buf := store.Get([]byte(key))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &currentEventID); err != nil {
-		return 0, dbError(ctx, "Unmarshal: last event id", err)
+		return 0, dbError(ctx, "Unmarshal: current event id", err)
 	}
-	nextEventID = currentEventID + 1
-	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&nextEventID))
 	return currentEventID, nil
+
+}
+
+// SetCurrentEventID set the current event id in kv store
+func (k KVStore) SetCurrentEventID(ctx sdk.Context, eventID int64) {
+	key := k.GetKey(ctx, prefixCurrentEventID, "")
+	store := ctx.KVStore(k.storeKey)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&eventID))
 }
