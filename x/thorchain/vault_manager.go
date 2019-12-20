@@ -54,6 +54,14 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, constAccessor constants.ConstantVa
 	}
 
 	for _, vault := range retiring {
+		if !vault.HasFunds() {
+			// no more funds to move, delete the vault
+			if err := vm.k.DeleteVault(ctx, vault.PubKey); err != nil {
+				return err
+			}
+			continue
+		}
+
 		// move partial funds every 30 minutes
 		if (ctx.BlockHeight()-vault.StatusSince)%migrateInterval == 0 {
 			for _, coin := range vault.Coins {
