@@ -97,6 +97,12 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 	if err != nil {
 		ctx.Logger().Error("fail to get pool addresses")
 	}
+
+	// if we have no pool addresses, nothing to do...
+	if len(poolAddresses.Current) == 0 {
+		return nil
+	}
+
 	membership := poolAddresses.Current[0].Membership
 
 	var newActive NodeAccounts // store the list of new active users
