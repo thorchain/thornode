@@ -101,6 +101,6 @@ func (ah AddHandler) handle(ctx sdk.Context, msg MsgAdd) sdk.Error {
 		stakeBytes,
 		EventSuccess,
 	)
-	ah.keeper.AddEvent(ctx, evt)
+	ah.keeper.UpsertEvent(ctx, evt)
 	return nil
 }

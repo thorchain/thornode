@@ -123,17 +123,19 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 	if err != nil {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
 	}
+	eventID, err := uh.keeper.GetNextEventID(ctx)
+	if nil != err {
+		return nil, sdk.ErrInternal(fmt.Errorf("fail to get next event id: %w").Error())
+	}
 	evt := NewEvent(
+		eventID,
 		unstakeEvt.Type(),
 		ctx.BlockHeight(),
 		msg.Tx,
 		unstakeBytes,
 		EventSuccess,
 	)
-
-	if err := uh.keeper.AddIncompleteEvents(ctx, evt); err != nil {
-		return nil, sdk.ErrInternal(err.Error())
-	}
+	uh.keeper.UpsertEvent(ctx, evt)
 
 	toi := &TxOutItem{
 		Chain:       common.BNBChain,
