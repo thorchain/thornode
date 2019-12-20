@@ -15,7 +15,8 @@ type KeeperVault interface {
 	SetVault(ctx sdk.Context, vault Vault) error
 	GetVault(ctx sdk.Context, pk common.PubKey) (Vault, error)
 	HasValidVaultPools(ctx sdk.Context) (bool, error)
-	GetActiveAsgardVaults(ctx sdk.Context) (Vaults, error)
+	GetAsgardVaults(ctx sdk.Context) (Vaults, error)
+	GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vaults, error)
 	DeleteVault(ctx sdk.Context, pk common.PubKey) error
 }
 
@@ -118,7 +119,7 @@ func (k KVStore) addAsgardIndex(ctx sdk.Context, pubkey common.PubKey) error {
 	return nil
 }
 
-func (k KVStore) GetActiveAsgardVaults(ctx sdk.Context) (Vaults, error) {
+func (k KVStore) GetAsgardVaults(ctx sdk.Context) (Vaults, error) {
 	pks, err := k.getAsgardIndex(ctx)
 	if err != nil {
 		return nil, err
@@ -130,7 +131,23 @@ func (k KVStore) GetActiveAsgardVaults(ctx sdk.Context) (Vaults, error) {
 		if err != nil {
 			return nil, err
 		}
-		if vault.IsAsgard() && vault.Status == ActiveVault {
+		if vault.IsAsgard() {
+			asgards = append(asgards, vault)
+		}
+	}
+
+	return asgards, nil
+}
+
+func (k KVStore) GetAsgardVaultsByStatus(ctx sdk.Context, status VaultStatus) (Vaults, error) {
+	all, err := k.GetAsgardVaults(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var asgards Vaults
+	for _, vault := range all {
+		if vault.Status == status {
 			asgards = append(asgards, vault)
 		}
 	}

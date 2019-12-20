@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type VaultMgrDummy struct {
@@ -11,6 +12,10 @@ type VaultMgrDummy struct {
 
 func NewVaultMgrDummy() *VaultMgrDummy {
 	return &VaultMgrDummy{}
+}
+
+func (vm *VaultMgrDummy) EndBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error {
+	return nil
 }
 
 func (vm *VaultMgrDummy) TriggerKeygen(_ sdk.Context, nas NodeAccounts) error {
