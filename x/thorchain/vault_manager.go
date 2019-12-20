@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -50,7 +48,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, constAccessor constants.ConstantVa
 
 	// if we have no active asgards to move funds to, don't move funds
 	if len(active) == 0 {
-		return fmt.Errorf("Unable to migrate asgard funds, no active asgards to migrate to")
+		return nil
 	}
 
 	for _, vault := range retiring {
