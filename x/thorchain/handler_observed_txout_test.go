@@ -32,7 +32,7 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 	}
 
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxOutHandler(keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, vaultMgr)
+	handler := NewObservedTxOutHandler(keeper, w.txOutStore, w.validatorMgr, vaultMgr)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -72,7 +72,7 @@ func (s *HandlerObservedTxOutSuite) TestFailure(c *C) {
 	txOutStore := NewTxStoreDummy()
 
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxOutHandler(keeper, txOutStore, w.poolAddrMgr, w.validatorMgr, vaultMgr)
+	handler := NewObservedTxOutHandler(keeper, txOutStore, w.validatorMgr, vaultMgr)
 	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(12), GetRandomPubKey())
 	nas := NodeAccounts{GetRandomNodeAccount(NodeActive)}
 
@@ -197,8 +197,7 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	obTx := NewObservedTx(tx, sdk.NewUint(12), GetRandomPubKey())
 	txs := ObservedTxs{obTx}
 	pk := GetRandomPubKey()
-	currentPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(tx.Chain)
-	txs[0].Tx.FromAddress, err = currentPool.GetAddress()
+	// txs[0].Tx.FromAddress, err = currentPool.GetAddress()
 	c.Assert(err, IsNil)
 
 	txOutStore := NewTxStoreDummy()
@@ -221,7 +220,7 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	}
 
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxOutHandler(keeper, txOutStore, w.poolAddrMgr, w.validatorMgr, vaultMgr)
+	handler := NewObservedTxOutHandler(keeper, txOutStore, w.validatorMgr, vaultMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)

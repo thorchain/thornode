@@ -92,7 +92,6 @@ func setupKeeperForTest(c *C) (sdk.Context, Keeper) {
 type handlerTestWrapper struct {
 	ctx                  sdk.Context
 	keeper               Keeper
-	poolAddrMgr          PoolAddressManager
 	validatorMgr         ValidatorManager
 	txOutStore           TxOutStore
 	activeNodeAccount    NodeAccount
@@ -123,18 +122,15 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	k.SetPoolAddresses(ctx, genesisPoolAddress)
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
-	poolAddrMgr := NewPoolAddressMgr(k)
-	poolAddrMgr.currentPoolAddresses = NewPoolAddresses(GetRandomPoolPubKeys(), GetRandomPoolPubKeys(), GetRandomPoolPubKeys())
 	vaultMgr := NewVaultMgrDummy()
-	validatorMgr := NewValidatorMgr(k, poolAddrMgr, vaultMgr)
+	validatorMgr := NewValidatorMgr(k, vaultMgr)
 	validatorMgr.BeginBlock(ctx, constAccessor)
-	txOutStore := NewTxOutStorage(k, poolAddrMgr)
+	txOutStore := NewTxOutStorage(k)
 	txOutStore.NewBlock(uint64(height), constAccessor)
 
 	return handlerTestWrapper{
 		ctx:                  ctx,
 		keeper:               k,
-		poolAddrMgr:          poolAddrMgr,
 		validatorMgr:         validatorMgr,
 		txOutStore:           txOutStore,
 		activeNodeAccount:    acc1,
@@ -161,8 +157,6 @@ func (HandlerSuite) TestIsSignedByActiveNodeAccounts(c *C) {
 
 func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	currentChainPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
-	c.Assert(currentChainPool, NotNil)
 	txIn := types.NewObservedTx(
 		common.Tx{
 			ID:          GetRandomTxHash(),
@@ -170,11 +164,11 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 			Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
 			Memo:        "create:BNB",
 			FromAddress: GetRandomBNBAddress(),
-			ToAddress:   currentChainPool.Address,
+			ToAddress:   GetRandomBNBAddress(),
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1024),
-		currentChainPool.PubKey,
+		GetRandomPubKey(),
 	)
 
 	msg := types.NewMsgObservedTxIn(
@@ -185,7 +179,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	)
 
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr, vaultMgr)
+	handler := NewHandler(w.keeper, w.txOutStore, w.validatorMgr, vaultMgr)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -200,8 +194,6 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 
 func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	currentChainPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
-	c.Assert(currentChainPool, NotNil)
 	staker := GetRandomBNBAddress()
 	// lets do a stake first, otherwise nothing to withdraw
 	txStake := types.NewObservedTx(
@@ -214,11 +206,11 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 			},
 			Memo:        "stake:BNB",
 			FromAddress: staker,
-			ToAddress:   currentChainPool.Address,
+			ToAddress:   GetRandomBNBAddress(),
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1024),
-		currentChainPool.PubKey,
+		GetRandomPubKey(),
 	)
 
 	msg := types.NewMsgObservedTxIn(
@@ -229,7 +221,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	)
 
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr, vaultMgr)
+	handler := NewHandler(w.keeper, w.txOutStore, w.validatorMgr, vaultMgr)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -242,11 +234,11 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 			},
 			Memo:        "withdraw:BNB",
 			FromAddress: staker,
-			ToAddress:   currentChainPool.Address,
+			ToAddress:   GetRandomBNBAddress(),
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1024),
-		currentChainPool.PubKey,
+		GetRandomPubKey(),
 	)
 
 	msg = types.NewMsgObservedTxIn(
@@ -273,9 +265,8 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 
 func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	currentChainPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr, vaultMgr)
+	handler := NewHandler(w.keeper, w.txOutStore, w.validatorMgr, vaultMgr)
 
 	tx := NewObservedTx(common.Tx{
 		ID:          GetRandomTxHash(),
@@ -283,47 +274,42 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		Coins:       common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(1*common.One))},
 		Memo:        "",
 		FromAddress: GetRandomBNBAddress(),
-		ToAddress:   currentChainPool.Address,
+		ToAddress:   GetRandomBNBAddress(),
 		Gas:         common.BNBGasFeeSingleton,
 	}, sdk.NewUint(12), GetRandomPubKey())
 
 	msgOutboundTx := NewMsgOutboundTx(tx, tx.Tx.ID, w.notActiveNodeAccount.NodeAddress)
-	result := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTx)
+	result := handleMsgOutboundTx(w.ctx, w.keeper, msgOutboundTx)
 	c.Assert(result.Code, Equals, sdk.CodeUnauthorized)
 
 	tx.Tx.ID = ""
 	msgInvalidOutboundTx := NewMsgOutboundTx(tx, tx.Tx.ID, w.activeNodeAccount.NodeAddress)
-	result1 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidOutboundTx)
+	result1 := handleMsgOutboundTx(w.ctx, w.keeper, msgInvalidOutboundTx)
 	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest, Commentf("%+v\n", result1))
 
 	tx.Tx.ID = GetRandomTxHash()
 	msgInvalidPool := NewMsgOutboundTx(tx, tx.Tx.ID, w.activeNodeAccount.NodeAddress)
-	result2 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgInvalidPool)
+	result2 := handleMsgOutboundTx(w.ctx, w.keeper, msgInvalidPool)
 	c.Assert(result2.Code, Equals, sdk.CodeUnauthorized, Commentf("%+v\n", result2))
 
 	w = getHandlerTestWrapper(c, 1, true, true)
-	currentChainPool = w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
-	c.Assert(currentChainPool, NotNil)
-
-	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, currentChainPool.PubKey)
+	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, GetRandomPubKey())
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(500*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(400*common.One)),
 	}
 	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 
-	currentPoolAddr, err := currentChainPool.GetAddress()
-	c.Assert(err, IsNil)
-	tx.ObservedPubKey = currentChainPool.PubKey
-	tx.Tx.FromAddress = currentPoolAddr
+	tx.ObservedPubKey = GetRandomPubKey()
+	tx.Tx.FromAddress = GetRandomBNBAddress()
 	tx.Tx.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(200*common.One)),
 	}
 	msgOutboundTxNormal := NewMsgOutboundTx(tx, tx.Tx.ID, w.activeNodeAccount.NodeAddress)
-	result3 := handleMsgOutboundTx(w.ctx, w.keeper, w.poolAddrMgr, msgOutboundTxNormal)
+	result3 := handleMsgOutboundTx(w.ctx, w.keeper, msgOutboundTxNormal)
 	c.Assert(result3.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result3))
-	ygg, err = w.keeper.GetVault(w.ctx, currentChainPool.PubKey)
+	ygg, err := w.keeper.GetVault(w.ctx, GetRandomPubKey())
 	c.Assert(err, IsNil)
 	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(29999962500)), Equals, true) // 300 - Gas
 	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)
@@ -339,11 +325,11 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 			Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
 			Memo:        "swap:BNB",
 			FromAddress: GetRandomBNBAddress(),
-			ToAddress:   currentChainPool.Address,
+			ToAddress:   GetRandomBNBAddress(),
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1024),
-		currentChainPool.PubKey,
+		GetRandomPubKey(),
 	)
 
 	msg := types.NewMsgObservedTxIn(ObservedTxs{txIn}, w.activeNodeAccount.NodeAddress)
@@ -355,18 +341,18 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		Chain:       common.BNBChain,
 		Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
 		Memo:        "swap:BNB",
-		FromAddress: currentChainPool.Address,
+		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   GetRandomBNBAddress(),
 		Gas:         common.BNBGasFeeSingleton,
 	}, sdk.NewUint(12), GetRandomPubKey())
 
 	outMsg := NewMsgOutboundTx(tx, inTxID, w.activeNodeAccount.NodeAddress)
 	ctx := w.ctx.WithBlockHeight(2)
-	result4 := handleMsgOutboundTx(ctx, w.keeper, w.poolAddrMgr, outMsg)
+	result4 := handleMsgOutboundTx(ctx, w.keeper, outMsg)
 	c.Assert(result4.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result4))
 
 	w.txOutStore.CommitBlock(ctx)
-	tx.Tx.FromAddress = currentPoolAddr
+	tx.Tx.FromAddress = GetRandomBNBAddress()
 	tx.Tx.ID = inTxID
 	result = handler(ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
@@ -395,9 +381,6 @@ func (HandlerSuite) TestRefund(c *C) {
 	}
 	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
 
-	currentPoolAddr := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
-	c.Assert(currentPoolAddr, NotNil)
-
 	txin := NewObservedTx(
 		common.Tx{
 			ID:    GetRandomTxHash(),
@@ -407,11 +390,11 @@ func (HandlerSuite) TestRefund(c *C) {
 			},
 			Memo:        "withdraw:BNB",
 			FromAddress: GetRandomBNBAddress(),
-			ToAddress:   currentPoolAddr.Address,
+			ToAddress:   GetRandomBNBAddress(),
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1024),
-		currentPoolAddr.PubKey,
+		GetRandomPubKey(),
 	)
 
 	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, true), IsNil)

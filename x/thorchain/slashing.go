@@ -103,8 +103,19 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 						ctx.Logger().Error("fail to save node account")
 					}
 
+					active, err := s.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
+					if err != nil {
+						ctx.Logger().Error("fail to get active vaults", err)
+						return err
+					}
+
+					vault := active.SelectByMinCoin(tx.Coin.Asset)
+					if vault.IsEmpty() {
+						return fmt.Errorf("unable to determine asgard vault to send funds")
+					}
+
 					// Save the tx to as a new tx, select Asgard to send it this time.
-					tx.VaultPubKey = s.txOutStore.GetAsgardPoolPubKey(tx.Chain).PubKey
+					tx.VaultPubKey = vault.PubKey
 					// TODO: this creates a second tx out for this inTx, which
 					// means the event will never be completed because only one
 					// of the two out tx will occur.

@@ -79,7 +79,6 @@ func (s *TestTssHandlerKeeper) GetChains(_ sdk.Context) (common.Chains, error) {
 }
 
 type TestTssPoolMgr struct {
-	PoolAddressDummyMgr
 	pks common.PoolPubKeys
 }
 

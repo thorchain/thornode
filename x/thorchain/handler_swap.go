@@ -66,7 +66,6 @@ func (h SwapHandler) handle(ctx sdk.Context, msg MsgSwap, version semver.Version
 func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor constants.ConstantValues) sdk.Result {
 	globalSlipLimit := constAccessor.GetInt64Value(constants.GlobalSlipLimit)
 	gsl := sdk.NewUint(uint64(globalSlipLimit))
-	chain := msg.TargetAsset.Chain
 
 	amount, err := swap(
 		ctx,

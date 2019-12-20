@@ -14,7 +14,6 @@ type TxOutStore interface {
 	CommitBlock(ctx sdk.Context)
 	GetBlockOut() *TxOut
 	GetOutboundItems() []*TxOutItem
-	GetAsgardPoolPubKey(_ common.Chain) *common.PoolPubKey
 	AddTxOutItem(ctx sdk.Context, toi *TxOutItem)
 	CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Vaults, error)
 }
@@ -23,6 +22,7 @@ type TxOutStore interface {
 type TxOutStorage struct {
 	blockOut      *TxOut
 	keeper        Keeper
+	seqNum        map[string]uint64
 	constAccessor constants.ConstantValues
 }
 
@@ -37,11 +37,7 @@ func NewTxOutStorage(keeper Keeper) *TxOutStorage {
 func (tos *TxOutStorage) NewBlock(height uint64, constAccessor constants.ConstantValues) {
 	tos.constAccessor = constAccessor
 	tos.blockOut = NewTxOut(height)
-
-}
-
-func (tos *TxOutStorage) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {
-	return tos.poolAddrMgr.GetAsgardPoolPubKey(chain)
+	tos.seqNum = make(map[string]uint64, 0)
 }
 
 // CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
@@ -111,7 +107,18 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 
 	// Apparently we couldn't find a yggdrasil vault to send from, so use asgard
 	if toi.VaultPubKey.IsEmpty() {
-		toi.VaultPubKey = tos.GetAsgardPoolPubKey(toi.Chain).PubKey
+
+		active, err := tos.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
+		if err != nil {
+			ctx.Logger().Error("fail to get active vaults", err)
+		}
+
+		vault := active.SelectByMinCoin(toi.Coin.Asset)
+		if vault.IsEmpty() {
+			return
+		}
+
+		toi.VaultPubKey = vault.PubKey
 	}
 
 	// Ensure THORNode are not sending from and to the same address
@@ -187,27 +194,9 @@ func (tos *TxOutStorage) addToBlockOut(toi *TxOutItem) {
 }
 
 func (tos *TxOutStorage) getSeqNo(pk common.PubKey, chain common.Chain) uint64 {
-	// need to get the sequence no
-	currentChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(chain)
-	if nil != currentChainPoolAddr && pk.Equals(currentChainPoolAddr.PubKey) {
-		return currentChainPoolAddr.GetSeqNo()
-	}
-
-	if nil != tos.poolAddrMgr.GetCurrentPoolAddresses().Previous {
-		previousChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Previous.GetByChain(chain)
-		if nil != previousChainPoolAddr && pk.Equals(previousChainPoolAddr.PubKey) {
-			return previousChainPoolAddr.GetSeqNo()
-		}
-	}
-
-	if nil != tos.poolAddrMgr.GetCurrentPoolAddresses().Next {
-		nextChainPoolAddr := tos.poolAddrMgr.GetCurrentPoolAddresses().Next.GetByChain(chain)
-		if nil != nextChainPoolAddr && pk.Equals(nextChainPoolAddr.PubKey) {
-			return nextChainPoolAddr.GetSeqNo()
-		}
-	}
-
-	return uint64(0)
+	key := fmt.Sprintf("%s_%s", pk.String(), chain.String())
+	tos.seqNum[key]++
+	return tos.seqNum[key] - 1
 }
 
 func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Vaults, error) {
