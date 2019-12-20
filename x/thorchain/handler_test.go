@@ -157,6 +157,11 @@ func (HandlerSuite) TestIsSignedByActiveNodeAccounts(c *C) {
 
 func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+	vault := GetRandomVault()
+	w.keeper.SetVault(w.ctx, vault)
+	addr, err := vault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+
 	txIn := types.NewObservedTx(
 		common.Tx{
 			ID:          GetRandomTxHash(),
@@ -164,11 +169,11 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 			Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
 			Memo:        "create:BNB",
 			FromAddress: GetRandomBNBAddress(),
-			ToAddress:   GetRandomBNBAddress(),
+			ToAddress:   addr,
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1024),
-		GetRandomPubKey(),
+		vault.PubKey,
 	)
 
 	msg := types.NewMsgObservedTxIn(
@@ -194,6 +199,11 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 
 func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+	vault := GetRandomVault()
+	w.keeper.SetVault(w.ctx, vault)
+	addr, err := vault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+
 	staker := GetRandomBNBAddress()
 	// lets do a stake first, otherwise nothing to withdraw
 	txStake := types.NewObservedTx(
@@ -206,11 +216,11 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 			},
 			Memo:        "stake:BNB",
 			FromAddress: staker,
-			ToAddress:   GetRandomBNBAddress(),
+			ToAddress:   addr,
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1024),
-		GetRandomPubKey(),
+		vault.PubKey,
 	)
 
 	msg := types.NewMsgObservedTxIn(
@@ -234,11 +244,11 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 			},
 			Memo:        "withdraw:BNB",
 			FromAddress: staker,
-			ToAddress:   GetRandomBNBAddress(),
+			ToAddress:   addr,
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1024),
-		GetRandomPubKey(),
+		vault.PubKey,
 	)
 
 	msg = types.NewMsgObservedTxIn(
@@ -267,6 +277,10 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	vaultMgr := NewVaultMgrDummy()
 	handler := NewHandler(w.keeper, w.txOutStore, w.validatorMgr, vaultMgr)
+	vault := GetRandomVault()
+	w.keeper.SetVault(w.ctx, vault)
+	addr, err := vault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
 
 	tx := NewObservedTx(common.Tx{
 		ID:          GetRandomTxHash(),
@@ -274,9 +288,9 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		Coins:       common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(1*common.One))},
 		Memo:        "",
 		FromAddress: GetRandomBNBAddress(),
-		ToAddress:   GetRandomBNBAddress(),
+		ToAddress:   addr,
 		Gas:         common.BNBGasFeeSingleton,
-	}, sdk.NewUint(12), GetRandomPubKey())
+	}, sdk.NewUint(12), vault.PubKey)
 
 	msgOutboundTx := NewMsgOutboundTx(tx, tx.Tx.ID, w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgOutboundTx(w.ctx, w.keeper, msgOutboundTx)
@@ -287,13 +301,8 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	result1 := handleMsgOutboundTx(w.ctx, w.keeper, msgInvalidOutboundTx)
 	c.Assert(result1.Code, Equals, sdk.CodeUnknownRequest, Commentf("%+v\n", result1))
 
-	tx.Tx.ID = GetRandomTxHash()
-	msgInvalidPool := NewMsgOutboundTx(tx, tx.Tx.ID, w.activeNodeAccount.NodeAddress)
-	result2 := handleMsgOutboundTx(w.ctx, w.keeper, msgInvalidPool)
-	c.Assert(result2.Code, Equals, sdk.CodeUnauthorized, Commentf("%+v\n", result2))
-
 	w = getHandlerTestWrapper(c, 1, true, true)
-	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, GetRandomPubKey())
+	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, vault.PubKey)
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(500*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(400*common.One)),
@@ -306,10 +315,11 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(200*common.One)),
 	}
+	tx.Tx.ID = GetRandomTxHash()
 	msgOutboundTxNormal := NewMsgOutboundTx(tx, tx.Tx.ID, w.activeNodeAccount.NodeAddress)
 	result3 := handleMsgOutboundTx(w.ctx, w.keeper, msgOutboundTxNormal)
 	c.Assert(result3.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result3))
-	ygg, err := w.keeper.GetVault(w.ctx, GetRandomPubKey())
+	ygg, err = w.keeper.GetVault(w.ctx, vault.PubKey)
 	c.Assert(err, IsNil)
 	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(29999962500)), Equals, true) // 300 - Gas
 	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)

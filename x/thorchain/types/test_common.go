@@ -93,6 +93,10 @@ func GetRandomPoolPubKeys() common.PoolPubKeys {
 	}
 }
 
+func GetRandomVault() Vault {
+	return NewVault(32, ActiveVault, AsgardVault, GetRandomPubKey())
+}
+
 func GetRandomPubKey() common.PubKey {
 	_, pubKey, _ := atypes.KeyTestPubAddr()
 	bech32PubKey, _ := sdk.Bech32ifyAccPub(pubKey)
