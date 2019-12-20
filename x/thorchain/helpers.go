@@ -138,6 +138,7 @@ func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs commo
 	if nil != err {
 		return fmt.Errorf("fail to get event: %w", err)
 	}
+	ctx.Logger().Info(fmt.Sprintf("complete event,eventID (%d) , txs:%s", eventID, txs))
 	event.Status = EventSuccess
 	event.OutTxs = txs
 	keeper.UpsertEvent(ctx, event)
@@ -145,9 +146,11 @@ func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs commo
 }
 
 func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs) error {
+	ctx.Logger().Info("txid(%s)", txID)
 	eventID, err := keeper.GetPendingEventID(ctx, txID)
 	if nil != err {
 		if err == ErrEventNotFound {
+			ctx.Logger().Error("we didn't find the event")
 			return nil
 		}
 		return fmt.Errorf("fail to get pending event id: %w", err)
