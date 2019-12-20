@@ -83,6 +83,7 @@ var (
 	NewMsgLeave                    = types.NewMsgLeave
 	NewMsgSetVersion               = types.NewMsgSetVersion
 	GetPoolStatus                  = types.GetPoolStatus
+	GetRandomVault                 = types.GetRandomVault
 	GetRandomTx                    = types.GetRandomTx
 	GetRandomObservedTx            = types.GetRandomObservedTx
 	GetRandomNodeAccount           = types.GetRandomNodeAccount

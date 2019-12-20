@@ -82,9 +82,14 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 
 type TestSlashingLackKeeper struct {
 	KVStoreDummy
-	evts  Events
-	txOut *TxOut
-	na    NodeAccount
+	evts   Events
+	txOut  *TxOut
+	na     NodeAccount
+	vaults Vaults
+}
+
+func (k *TestSlashingLackKeeper) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vaults, error) {
+	return k.vaults, nil
 }
 
 func (k *TestSlashingLackKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
@@ -155,9 +160,10 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	txOut.TxArray = append(txOut.TxArray, txOutItem)
 
 	keeper := &TestSlashingLackKeeper{
-		txOut: txOut,
-		evts:  Events{evt},
-		na:    na,
+		txOut:  txOut,
+		evts:   Events{evt},
+		na:     na,
+		vaults: Vaults{GetRandomVault()},
 	}
 	signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
 	ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod + 5)
@@ -169,6 +175,5 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 
 	outItems := txOutStore.GetOutboundItems()
 	c.Assert(outItems, HasLen, 1)
-	poolPubKey := GetRandomPubKey()
-	c.Assert(outItems[0].VaultPubKey.Equals(poolPubKey), Equals, true)
+	c.Assert(outItems[0].VaultPubKey.Equals(keeper.vaults[0].PubKey), Equals, true)
 }

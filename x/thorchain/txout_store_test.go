@@ -26,8 +26,8 @@ func (s TxOutStoreSuite) TestAddGasFees(c *C) {
 
 func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
-	// pk1, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
-	// c.Assert(err, IsNil)
+	vault := GetRandomVault()
+	w.keeper.SetVault(w.ctx, vault)
 
 	acc1 := GetRandomNodeAccount(NodeActive)
 	acc2 := GetRandomNodeAccount(NodeActive)
@@ -106,14 +106,12 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w.txOutStore.AddTxOutItem(w.ctx, item)
 	msgs = w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 3)
-	c.Assert(msgs[2].VaultPubKey.String(), Equals, GetRandomPubKey().String())
-
+	c.Assert(msgs[2].VaultPubKey.String(), Equals, vault.PubKey.String())
 }
 
 func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
-	// pk1, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
-	// c.Assert(err, IsNil)
+	w.keeper.SetVault(w.ctx, GetRandomVault())
 
 	inTxID := GetRandomTxHash()
 	item := &TxOutItem{
