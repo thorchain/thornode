@@ -147,6 +147,9 @@ func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs commo
 func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs) error {
 	eventID, err := keeper.GetPendingEventID(ctx, txID)
 	if nil != err {
+		if err == ErrEventNotFound {
+			return nil
+		}
 		return fmt.Errorf("fail to get pending event id: %w", err)
 	}
 	return completeEventsByID(ctx, keeper, eventID, txs)

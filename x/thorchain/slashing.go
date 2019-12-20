@@ -75,13 +75,13 @@ func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.Constan
 }
 
 func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantValues) error {
-	incomplete, err := s.keeper.GetIncompleteEvents(ctx)
+	pendingEvnets, err := s.keeper.GetAllPendingEvnets(ctx)
 	if err != nil {
 		ctx.Logger().Error("Unable to get list of active accounts", err)
 		return err
 	}
 	signingTransPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
-	for _, evt := range incomplete {
+	for _, evt := range pendingEvnets {
 		// NOTE: not checking the event type because all non-swap/unstake/etc
 		// are completed immediately.
 		if evt.Height+signingTransPeriod < ctx.BlockHeight() {

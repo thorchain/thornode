@@ -125,7 +125,7 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 	}
 	eventID, err := uh.keeper.GetNextEventID(ctx)
 	if nil != err {
-		return nil, sdk.ErrInternal(fmt.Errorf("fail to get next event id: %w").Error())
+		return nil, sdk.ErrInternal(fmt.Errorf("fail to get next event id: %w", err).Error())
 	}
 	evt := NewEvent(
 		eventID,

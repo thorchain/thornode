@@ -105,6 +105,7 @@ func (k *TestSwapHandleKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress
 func (k *TestSwapHandleKeeper) AddToLiquidityFees(_ sdk.Context, _ common.Asset, _ sdk.Uint) error {
 	return nil
 }
+func (k *TestSwapHandleKeeper) GetNextEventID(ctx sdk.Context) (int64, error) { return 0, nil }
 
 func (s *HandlerSwapSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)

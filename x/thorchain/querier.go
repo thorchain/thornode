@@ -41,8 +41,6 @@ func NewQuerier(keeper Keeper, poolAddressMgr PoolAddressManager, validatorMgr V
 			return queryKeygen(ctx, path[1:], req, keeper)
 		case q.QueryKeygensPubkey.Key:
 			return queryKeygen(ctx, path[1:], req, keeper)
-		case q.QueryIncompleteEvents.Key:
-			return queryInCompleteEvents(ctx, path[1:], req, keeper)
 		case q.QueryCompleteEvents.Key:
 			return queryCompleteEvents(ctx, path[1:], req, keeper)
 		case q.QueryHeights.Key:
@@ -465,20 +463,6 @@ func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 	return res, nil
 }
 
-func queryInCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	events, err := keeper.GetIncompleteEvents(ctx)
-	if nil != err {
-		ctx.Logger().Error("fail to get incomplete events", err)
-		return nil, sdk.ErrInternal("fail to get incomplete events")
-	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), events)
-	if nil != err {
-		ctx.Logger().Error("fail to marshal events to json", err)
-		return nil, sdk.ErrInternal("fail to marshal events to json")
-	}
-	return res, nil
-}
-
 func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	id, err := strconv.ParseInt(path[0], 10, 64)
 	if err != nil {
@@ -489,7 +473,7 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	limit := int64(100) // limit the number of events, aka pagination
 	events := make(Events, 0)
 	for i := id; i <= id+limit; i++ {
-		event, _ := keeper.GetCompletedEvent(ctx, i)
+		event, _ := keeper.GetEvent(ctx, i)
 		if !event.Empty() {
 			events = append(events, event)
 		} else {

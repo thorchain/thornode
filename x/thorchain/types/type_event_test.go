@@ -79,7 +79,7 @@ func (s EventSuite) TestEvent(c *C) {
 	)
 
 	swapBytes, _ := json.Marshal(swap)
-	evt := NewEvent(
+	evt := NewEvent(0,
 		swap.Type(),
 		12,
 		common.NewTx(
@@ -106,7 +106,7 @@ func (s EventSuite) TestEvent(c *C) {
 		sdk.NewUint(5),
 	)
 	stakeBytes, _ := json.Marshal(stake)
-	evt2 := NewEvent(
+	evt2 := NewEvent(0,
 		stake.Type(),
 		12,
 		common.NewTx(

@@ -123,22 +123,7 @@ func (k *TestEndPoolHandleKeeper) SetStakerPool(_ sdk.Context, sp StakerPool) {
 func (k *TestEndPoolHandleKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
 	k.poolStaker = ps
 }
-
-func (k *TestEndPoolHandleKeeper) AddIncompleteEvents(_ sdk.Context, _ Event) error {
-	if k.failAddEvent {
-		return errors.New("fail to add incomplete events")
-	}
-	return nil
-}
-
-func (k *TestEndPoolHandleKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
-	if k.failStakeEvent {
-		return nil, errors.New("fail to get incomplete events")
-	}
-	return nil, nil
-}
-
-func (k *TestEndPoolHandleKeeper) GetLastEventID(_ sdk.Context) (int64, error) {
+func (k *TestEndPoolHandleKeeper) GetNextEventID(_ sdk.Context) (int64, error) {
 	return 0, nil
 }
 
