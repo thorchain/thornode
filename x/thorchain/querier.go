@@ -474,6 +474,9 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	events := make(Events, 0)
 	for i := id; i <= id+limit; i++ {
 		event, _ := keeper.GetEvent(ctx, i)
+		if event.Status == EventPending {
+			break
+		}
 		if !event.Empty() {
 			events = append(events, event)
 		} else {
