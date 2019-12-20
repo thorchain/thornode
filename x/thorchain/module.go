@@ -108,7 +108,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.poolMgr, am.txOutStore, am.validatorMgr)
+	return NewHandler(am.keeper, am.poolMgr, am.txOutStore, am.validatorMgr, am.vaultMgr)
 }
 func (am AppModule) QuerierRoute() string {
 	return ModuleName

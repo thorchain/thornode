@@ -184,7 +184,8 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 		w.activeNodeAccount.NodeAddress,
 	)
 
-	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr)
+	vaultMgr := NewVaultMgrDummy()
+	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr, vaultMgr)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -227,7 +228,8 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 		w.activeNodeAccount.NodeAddress,
 	)
 
-	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr)
+	vaultMgr := NewVaultMgrDummy()
+	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr, vaultMgr)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -272,7 +274,8 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	currentChainPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
-	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr)
+	vaultMgr := NewVaultMgrDummy()
+	handler := NewHandler(w.keeper, w.poolAddrMgr, w.txOutStore, w.validatorMgr, vaultMgr)
 
 	tx := NewObservedTx(common.Tx{
 		ID:          GetRandomTxHash(),
