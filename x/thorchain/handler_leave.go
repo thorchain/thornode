@@ -15,16 +15,14 @@ import (
 type LeaveHandler struct {
 	keeper           Keeper
 	validatorManager ValidatorManager
-	poolAddrMgr      PoolAddressManager
 	txOut            TxOutStore
 }
 
 // NewLeaveHandler create a new LeaveHandler
-func NewLeaveHandler(keeper Keeper, validatorManager ValidatorManager, poolAddrMgr PoolAddressManager, store TxOutStore) LeaveHandler {
+func NewLeaveHandler(keeper Keeper, validatorManager ValidatorManager, store TxOutStore) LeaveHandler {
 	return LeaveHandler{
 		keeper:           keeper,
 		validatorManager: validatorManager,
-		poolAddrMgr:      poolAddrMgr,
 		txOut:            store,
 	}
 }
@@ -102,7 +100,7 @@ func (lh LeaveHandler) handle(ctx sdk.Context, msg MsgLeave) sdk.Error {
 			}
 		}
 
-		if err := lh.validatorManager.RequestYggReturn(ctx, nodeAcc, lh.poolAddrMgr, lh.txOut); nil != err {
+		if err := lh.validatorManager.RequestYggReturn(ctx, nodeAcc, lh.txOut); nil != err {
 			return sdk.ErrInternal(fmt.Errorf("fail to request yggdrasil return fund: %w", err).Error())
 		}
 

@@ -22,16 +22,14 @@ type TxOutStore interface {
 // TxOutStorage is going to manage all the outgoing tx
 type TxOutStorage struct {
 	blockOut      *TxOut
-	poolAddrMgr   PoolAddressManager
 	keeper        Keeper
 	constAccessor constants.ConstantValues
 }
 
 // NewTxOutStorage will create a new instance of TxOutStore.
-func NewTxOutStorage(keeper Keeper, poolAddrMgr PoolAddressManager) *TxOutStorage {
+func NewTxOutStorage(keeper Keeper) *TxOutStorage {
 	return &TxOutStorage{
-		poolAddrMgr: poolAddrMgr,
-		keeper:      keeper,
+		keeper: keeper,
 	}
 }
 

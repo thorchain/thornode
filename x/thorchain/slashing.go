@@ -15,16 +15,14 @@ type SlashingModule interface {
 }
 
 type Slasher struct {
-	keeper      Keeper
-	txOutStore  TxOutStore
-	poolAddrMgr PoolAddressManager
+	keeper     Keeper
+	txOutStore TxOutStore
 }
 
-func NewSlasher(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager) Slasher {
+func NewSlasher(keeper Keeper, txOutStore TxOutStore) Slasher {
 	return Slasher{
-		keeper:      keeper,
-		txOutStore:  txOutStore,
-		poolAddrMgr: poolAddrMgr,
+		keeper:     keeper,
+		txOutStore: txOutStore,
 	}
 }
 

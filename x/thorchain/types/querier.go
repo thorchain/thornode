@@ -42,3 +42,12 @@ type ResTxOut struct {
 type QueryResTxOut struct {
 	Chains map[common.Chain]ResTxOut `json:"chains"`
 }
+
+type ResVault struct {
+	Address common.Address `json:"address"`
+	PubKey  common.PubKey  `json:"pub_key"`
+}
+
+type QueryResVaults struct {
+	Chains map[common.Chain][]ResVault `json:"chains"`
+}
