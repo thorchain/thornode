@@ -14,6 +14,7 @@ const (
 	PoolSuspended    = types.Suspended
 	EventSuccess     = types.Success
 	EventPending     = types.Pending
+	EventFail        = types.Failed
 
 	// Admin config keys
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints

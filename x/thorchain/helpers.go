@@ -133,30 +133,23 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 	return true
 }
 
-func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64) error {
-
+func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs common.Txs) error {
+	event, err := keeper.GetEvent(ctx, eventID)
+	if nil != err {
+		return fmt.Errorf("fail to get event: %w", err)
+	}
+	event.Status = EventSuccess
+	event.OutTxs = txs
+	keeper.UpsertEvent(ctx, event)
+	return nil
 }
 
 func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs) error {
-
-	lastEventID, err := keeper.GetLastEventID(ctx)
-	if err != nil {
-		return err
+	eventID, err := keeper.GetPendingEventID(ctx, txID)
+	if nil != err {
+		return fmt.Errorf("fail to get pending event id: %w", err)
 	}
-	incomplete, err := keeper.GetIncompleteEvents(ctx)
-	if err != nil {
-		return err
-	}
-	todo, incomplete := incomplete.PopByInHash(txID)
-	for _, evt := range todo {
-		lastEventID++
-		evt.ID = lastEventID
-		evt.OutTxs = txs
-		keeper.SetCompletedEvent(ctx, evt)
-	}
-	keeper.SetIncompleteEvents(ctx, incomplete)
-	keeper.SetLastEventID(ctx, lastEventID)
-	return nil
+	return completeEventsByID(ctx, keeper, eventID, txs)
 }
 
 func enableNextPool(ctx sdk.Context, keeper Keeper) error {
