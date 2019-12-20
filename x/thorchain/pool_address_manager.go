@@ -58,6 +58,7 @@ func (pm *PoolAddressMgr) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPu
 func (pm *PoolAddressMgr) BeginBlock(ctx sdk.Context) error {
 	if pm.currentPoolAddresses == nil || pm.currentPoolAddresses.IsEmpty() {
 		poolAddresses, err := pm.k.GetPoolAddresses(ctx)
+		fmt.Printf("PoolAddr: %+v\n", poolAddresses)
 		if err != nil {
 			return err
 		}

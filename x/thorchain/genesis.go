@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -18,6 +19,7 @@ type GenesisState struct {
 	NodeAccounts     NodeAccounts     `json:"node_accounts"`
 	AdminConfigs     []AdminConfig    `json:"admin_configs"`
 	LastEventID      int64            `json:"last_event_id"`
+	PoolAddresses    PoolAddresses    `json:"pool_addresses"`
 	Vaults           Vaults           `json:"vaults"`
 }
 
@@ -68,6 +70,10 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
+	if data.PoolAddresses.IsEmpty() {
+		return errors.New("missing pool addresses")
+	}
+
 	return nil
 }
 
@@ -99,6 +105,13 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	validators := make([]abci.ValidatorUpdate, 0, len(data.NodeAccounts))
 	for _, ta := range data.NodeAccounts {
 		if ta.Status == NodeActive {
+			if !data.PoolAddresses.IsEmpty() {
+				// add all the pool pub key to active validators
+				for _, item := range data.PoolAddresses.Current {
+					ta.TryAddSignerPubKey(item.PubKey)
+				}
+			}
+
 			// Only Active node will become validator
 			pk, err := sdk.GetConsPubKeyBech32(ta.ValidatorConsPubKey)
 			if nil != err {
@@ -165,6 +178,11 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, event := range data.CompleteEvents {
 		keeper.SetCompletedEvent(ctx, event)
 	}
+
+	if !data.PoolAddresses.IsEmpty() {
+		keeper.SetPoolAddresses(ctx, &data.PoolAddresses)
+	}
+
 	keeper.SetLastEventID(ctx, data.LastEventID)
 
 	return validators
