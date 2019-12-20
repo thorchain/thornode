@@ -130,7 +130,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 			keeper.SetVault(ctx, vault)
 		} else {
 			// Trigger a keygen ceremony
-			vaultMgr := NewVaultMgr(keeper)
+			vaultMgr := NewVaultMgr(keeper, &TxOutStorage{})
 			if err := vaultMgr.TriggerKeygen(ctx, active); err != nil {
 				panic(err)
 			}

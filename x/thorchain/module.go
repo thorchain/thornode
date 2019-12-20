@@ -84,7 +84,7 @@ type AppModule struct {
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
 	poolAddrMgr := NewPoolAddressMgr(k)
 	txStore := NewTxOutStorage(k, poolAddrMgr)
-	vaultMgr := NewVaultMgr(k)
+	vaultMgr := NewVaultMgr(k, txStore)
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -170,6 +170,10 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		// update vault data to account for block rewards and reward units
 		if err := am.keeper.UpdateVaultData(ctx, constantValues); nil != err {
 			ctx.Logger().Error("fail to save vault", err)
+		}
+
+		if err := am.vaultMgr.EndBlock(ctx, constantValues); err != nil {
+			ctx.Logger().Error("fail to end block for vault manager", err)
 		}
 
 		am.txOutStore.CommitBlock(ctx)
