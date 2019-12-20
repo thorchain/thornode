@@ -88,7 +88,7 @@ type TestSlashingLackKeeper struct {
 	na    NodeAccount
 }
 
-func (k *TestSlashingLackKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
+func (k *TestSlashingLackKeeper) GetAllPendingEvnets(_ sdk.Context) (Events, error) {
 	return k.evts, nil
 }
 
@@ -126,8 +126,9 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 	)
+
 	swapBytes, _ := json.Marshal(swapEvt)
-	evt := NewEvent(
+	evt := NewEvent(0,
 		swapEvt.Type(),
 		3,
 		common.NewTx(

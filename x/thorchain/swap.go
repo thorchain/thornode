@@ -142,7 +142,7 @@ func swapOne(ctx sdk.Context,
 			)
 
 		} else {
-			status = EventRefund
+			status = EventFail
 			swapEvt = NewEventSwap(
 				source,
 				tradeTarget,
@@ -155,8 +155,15 @@ func swapOne(ctx sdk.Context,
 		if errr != nil {
 			amt = sdk.ZeroUint()
 			err = errr
+			return
+		}
+		eventID, errr := keeper.GetNextEventID(ctx)
+		if nil != errr {
+			err = errr
+			return
 		}
 		evt := NewEvent(
+			eventID,
 			swapEvt.Type(),
 			ctx.BlockHeight(),
 			tx,
@@ -165,10 +172,8 @@ func swapOne(ctx sdk.Context,
 		)
 		// using errr instead of err because we don't want to return the error,
 		// just log it because we are in a defer func
-		errr = keeper.AddIncompleteEvents(ctx, evt)
-		if errr != nil {
-			ctx.Logger().Error(errors.Wrap(errr, "Fail to add incomplete swap event").Error())
-		}
+		keeper.UpsertEvent(ctx, evt)
+
 	}()
 
 	// Check if pool exists

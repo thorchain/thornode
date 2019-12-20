@@ -12,50 +12,16 @@ import (
 
 type KeeperEvents interface {
 	GetEvent(ctx sdk.Context, eventID int64) (Event, error)
-	GetEvents(ctx sdk.Context) (Events, error)
-	SetEvents(ctx sdk.Context, events Events)
 	GetEventsIterator(ctx sdk.Context) sdk.Iterator
 	GetNextEventID(ctx sdk.Context) (int64, error)
 	UpsertEvent(ctx sdk.Context, event Event)
 	GetPendingEventID(ctx sdk.Context, txID common.TxID) (int64, error)
 	GetCurrentEventID(ctx sdk.Context) (int64, error)
 	SetCurrentEventID(ctx sdk.Context, eventID int64)
+	GetAllPendingEvnets(ctx sdk.Context) (Events, error)
 }
 
 var ErrEventNotFound = errors.New("event not found")
-
-// GetEvents retrieve  events
-func (k KVStore) GetEvents(ctx sdk.Context) (Events, error) {
-	events := make(Events, 0)
-	key := k.GetKey(ctx, prefixEvents, "")
-	store := ctx.KVStore(k.storeKey)
-	if !store.Has([]byte(key)) {
-		return events, nil
-	}
-	buf := store.Get([]byte(key))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &events); nil != err {
-		return events, dbError(ctx, "Unmarshal: incomplete events", err)
-	}
-	return events, nil
-}
-
-// SetEvents write  events
-func (k KVStore) SetEvents(ctx sdk.Context, events Events) {
-	key := k.GetKey(ctx, prefixEvents, "")
-	store := ctx.KVStore(k.storeKey)
-	if len(events) == 0 {
-		return
-	} else {
-		store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&events))
-	}
-}
-
-// AddEvents will add the given events to data store
-func (k KVStore) AddEvents(ctx sdk.Context, events Events) {
-	for _, item := range events {
-		k.UpsertEvent(ctx, item)
-	}
-}
 
 // GetEventByID will retrieve event with the given id from data store
 func (k KVStore) GetEvent(ctx sdk.Context, eventID int64) (Event, error) {
@@ -151,4 +117,25 @@ func (k KVStore) SetCurrentEventID(ctx sdk.Context, eventID int64) {
 	key := k.GetKey(ctx, prefixCurrentEventID, "")
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&eventID))
+}
+
+// GetAllPendingEvents all events in pending status
+func (k KVStore) GetAllPendingEvnets(ctx sdk.Context) (Events, error) {
+	key := k.GetKey(ctx, prefixPendingEvents, "")
+	store := ctx.KVStore(k.storeKey)
+	var events Events
+	iter := sdk.KVStorePrefixIterator(store, []byte(key))
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		var eventID int64
+		if err := k.Cdc().UnmarshalBinaryBare(iter.Value(), &eventID); nil != err {
+			return nil, fmt.Errorf("fail to unmarshal event id: %w", err)
+		}
+		event, err := k.GetEvent(ctx, eventID)
+		if nil != err {
+			return nil, fmt.Errorf("fail to get event: %w", err)
+		}
+		events = append(events, event)
+	}
+	return events, nil
 }

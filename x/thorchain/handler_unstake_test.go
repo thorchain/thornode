@@ -74,15 +74,10 @@ func (mfp *MockUnstakeKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
 	mfp.poolStaker = ps
 }
 
-func (mfp *MockUnstakeKeeper) AddIncompleteEvents(_ sdk.Context, _ Event) error {
-	if mfp.failAddEvents {
-		return errors.New("fail to add event")
-	}
-	return nil
-}
 func (mfp *MockUnstakeKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
 	return PoolEnabled
 }
+func (mfp *MockUnstakeKeeper) GetNextEventID(ctx sdk.Context) (int64, error) { return 0, nil }
 
 func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	// w := getHandlerTestWrapper(c, 1, true, true)

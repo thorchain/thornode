@@ -73,6 +73,9 @@ func (k *TestSetAdminConfigHandleKeeper) GetAdminConfigValue(ctx sdk.Context, ke
 func (k *TestSetAdminConfigHandleKeeper) SetAdminConfig(ctx sdk.Context, ac AdminConfig) {
 	k.ac = ac
 }
+func (k *TestSetAdminConfigHandleKeeper) GetNextEventID(ctx sdk.Context) (int64, error) {
+	return 0, nil
+}
 
 func (s *HandlerSetAdminConfigSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
