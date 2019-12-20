@@ -58,6 +58,7 @@ func (k KVStore) setEventPending(ctx sdk.Context, event Event) {
 	if event.Status != EventPending {
 		return
 	}
+	ctx.Logger().Info("event id: %s", event.InTx.ID)
 	key := k.GetKey(ctx, prefixPendingEvents, event.InTx.ID.String())
 	store := ctx.KVStore(k.storeKey)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event.ID))

@@ -133,7 +133,7 @@ func swapOne(ctx sdk.Context,
 		var swapEvt EventSwap
 		var status EventStatus
 		if err == nil {
-			status = EventSuccess
+			status = EventPending
 			swapEvt = NewEventSwap(
 				source,
 				tradeTarget,
