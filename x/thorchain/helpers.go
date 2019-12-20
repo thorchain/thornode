@@ -64,11 +64,23 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 	nodeAcc.Bond = common.SafeSub(nodeAcc.Bond, yggRune)
 
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
+
+		active, err := keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
+		if err != nil {
+			ctx.Logger().Error("fail to get active vaults", err)
+			return err
+		}
+
+		vault := active.SelectByMinCoin(common.RuneAsset())
+		if vault.IsEmpty() {
+			return fmt.Errorf("unable to determine asgard vault to send funds")
+		}
+
 		// refund bond
 		txOutItem := &TxOutItem{
 			Chain:       common.BNBChain,
 			ToAddress:   nodeAcc.BondAddress,
-			VaultPubKey: txOut.GetAsgardPoolPubKey(common.BNBChain).PubKey,
+			VaultPubKey: vault.PubKey,
 			InHash:      txID,
 			Coin:        common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}

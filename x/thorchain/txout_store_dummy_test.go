@@ -26,10 +26,6 @@ func (tos *TxOutStoreDummy) NewBlock(height uint64, constAccessor constants.Cons
 	tos.blockOut = NewTxOut(height)
 }
 
-func (tos *TxOutStoreDummy) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {
-	return tos.asgard.GetByChain(chain)
-}
-
 // CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
 func (tos *TxOutStoreDummy) CommitBlock(ctx sdk.Context) {}
 

@@ -324,20 +324,28 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 func queryPools(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	pools := QueryResPools{}
 	iterator := keeper.GetPoolIterator(ctx)
-	currentPoolAddr := poolAddrMgr.GetCurrentPoolAddresses()
-	bnbPoolPubKey := currentPoolAddr.Current.GetByChain(common.BNBChain)
-	if bnbPoolPubKey == nil || bnbPoolPubKey.IsEmpty() {
-		return nil, sdk.ErrInternal("fail to get current address")
+
+	active, err := keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		ctx.Logger().Error("fail to get active vaults", err)
+		return nil, sdk.ErrInternal("fail to get active vaults")
 	}
-	addr, err := bnbPoolPubKey.GetAddress()
-	if nil != err {
-		return nil, sdk.ErrInternal("fail to get bnb chain pool address")
-	}
+
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
 		if err := keeper.Cdc().UnmarshalBinaryBare(iterator.Value(), &pool); err != nil {
 			return nil, sdk.ErrInternal("Unmarshl: Pool")
 		}
+
+		vault := active.SelectByMinCoin(pool.Asset)
+		if vault.IsEmpty() {
+			return nil, sdk.ErrInternal("Could not find active asgard vault")
+		}
+		addr, err := vault.PubKey.GetAddress(pool.Asset.Chain)
+		if err != nil {
+			return nil, sdk.ErrInternal("Could get address of chain")
+		}
+
 		pool.PoolAddress = addr
 		pools = append(pools, pool)
 	}
