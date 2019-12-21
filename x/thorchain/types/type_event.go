@@ -32,9 +32,8 @@ const (
 )
 
 // NewEvent create a new  event
-func NewEvent(id int64, typ string, ht int64, inTx common.Tx, evt json.RawMessage, status EventStatus) Event {
+func NewEvent(typ string, ht int64, inTx common.Tx, evt json.RawMessage, status EventStatus) Event {
 	return Event{
-		ID:     id,
 		Height: ht,
 		Type:   typ,
 		InTx:   inTx,

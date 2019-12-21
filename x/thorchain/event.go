@@ -17,12 +17,8 @@ func eventPoolStatusWrapper(ctx sdk.Context, keeper Keeper, pool Pool) error {
 	if err != nil {
 		return fmt.Errorf("fail to marshal pool event: %w", err)
 	}
-	eventID, err := keeper.GetNextEventID(ctx)
-	if nil != err {
-		return fmt.Errorf("fail to get next event id: %w", err)
-	}
+
 	tx := common.Tx{ID: common.BlankTxID}
-	evt := NewEvent(eventID, poolEvt.Type(), ctx.BlockHeight(), tx, bytes, EventSuccess)
-	keeper.UpsertEvent(ctx, evt)
-	return nil
+	evt := NewEvent(poolEvt.Type(), ctx.BlockHeight(), tx, bytes, EventSuccess)
+	return keeper.UpsertEvent(ctx, evt)
 }

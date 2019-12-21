@@ -119,20 +119,14 @@ func (h ObservedTxInHandler) inboundFailure(ctx sdk.Context, tx ObservedTx) erro
 	if nil != err {
 		return err
 	}
-	eventId, err := h.keeper.GetNextEventID(ctx)
-	if nil != err {
-		return fmt.Errorf("fail to get next event id: %w", err)
-	}
 	event := NewEvent(
-		eventId,
 		ee.Type(),
 		ctx.BlockHeight(),
 		tx.Tx,
 		buf,
 		EventPending,
 	)
-	h.keeper.UpsertEvent(ctx, event)
-	return nil
+	return h.keeper.UpsertEvent(ctx, event)
 }
 
 func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {

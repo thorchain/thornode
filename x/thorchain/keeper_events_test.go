@@ -23,12 +23,8 @@ func (s *KeeperEventsSuite) TestEvents(c *C) {
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 	)
-	eventID, err := k.GetNextEventID(ctx)
-	c.Assert(err, IsNil)
-	c.Assert(eventID, Equals, int64(0))
 	swapBytes, _ := json.Marshal(swap)
 	evt := NewEvent(
-		eventID,
 		swap.Type(),
 		12,
 		common.NewTx(
@@ -46,8 +42,8 @@ func (s *KeeperEventsSuite) TestEvents(c *C) {
 		EventSuccess,
 	)
 
-	k.UpsertEvent(ctx, evt)
-	e, err := k.GetEvent(ctx, eventID)
+	c.Assert(k.UpsertEvent(ctx, evt), IsNil)
+	e, err := k.GetEvent(ctx, 1)
 	c.Assert(err, IsNil)
 	c.Assert(e.Empty(), Equals, false)
 }

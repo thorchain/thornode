@@ -77,4 +77,6 @@ func (mps MockPoolStorage) GetLowestActiveVersion(ctx sdk.Context) semver.Versio
 }
 
 func (mps MockPoolStorage) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error { return nil }
-func (mps MockPoolStorage) GetNextEventID(ctx sdk.Context) (int64, error)       { return 0, nil }
+func (mps MockPoolStorage) UpsertEvent(ctx sdk.Context, event Event) error {
+	return nil
+}

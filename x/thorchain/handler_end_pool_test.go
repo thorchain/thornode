@@ -5,6 +5,7 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 
@@ -123,8 +124,9 @@ func (k *TestEndPoolHandleKeeper) SetStakerPool(_ sdk.Context, sp StakerPool) {
 func (k *TestEndPoolHandleKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
 	k.poolStaker = ps
 }
-func (k *TestEndPoolHandleKeeper) GetNextEventID(_ sdk.Context) (int64, error) {
-	return 0, nil
+
+func (k *TestEndPoolHandleKeeper) UpsertEvent(ctx sdk.Context, event Event) error {
+	return nil
 }
 
 func (k *TestEndPoolHandleKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {

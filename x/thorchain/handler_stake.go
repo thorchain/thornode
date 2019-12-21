@@ -122,12 +122,7 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 	if err != nil {
 		return fmt.Errorf("fail to marshal stake event to json: %w", err)
 	}
-	eventID, err := keeper.GetNextEventID(ctx)
-	if nil != err {
-		return fmt.Errorf("fail to get next event id: %w", err)
-	}
 	evt := NewEvent(
-		eventID,
 		stakeEvt.Type(),
 		ctx.BlockHeight(),
 		msg.Tx,
@@ -136,6 +131,5 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 	)
 	tx := common.Tx{ID: common.BlankTxID}
 	evt.OutTxs = common.Txs{tx}
-	keeper.UpsertEvent(ctx, evt)
-	return nil
+	return keeper.UpsertEvent(ctx, evt)
 }

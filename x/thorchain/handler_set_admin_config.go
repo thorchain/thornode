@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -90,20 +91,16 @@ func (h SetAdminConfigHandler) handleV1(ctx sdk.Context, msg MsgSetAdminConfig) 
 			err = errors.Wrap(err, "fail to marshal admin config event to json")
 			return sdk.ErrUnknownRequest(err.Error()).Result()
 		}
-		eventID, err := h.keeper.GetNextEventID(ctx)
-		if nil != err {
-			ctx.Logger().Error("fail to get next event id", err)
-			return sdk.ErrInternal("fail to get next event id").Result()
-		}
 		evt := NewEvent(
-			eventID,
 			adminEvt.Type(),
 			ctx.BlockHeight(),
 			msg.Tx,
 			stakeBytes,
 			EventSuccess,
 		)
-		h.keeper.UpsertEvent(ctx, evt)
+		if err := h.keeper.UpsertEvent(ctx, evt); nil != err {
+			return sdk.ErrInternal(fmt.Errorf("fail to add event: %w", err).Error()).Result()
+		}
 	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,
