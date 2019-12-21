@@ -1,7 +1,5 @@
 require_relative './helper.rb'
 
-VAULT_ADDRESS = "tbnb1tdfqy34uptx207scymqsy4k5uzfmry5s8lujqt"
-VAULT_PUBKEY = "thorpub1addwnpepq2kdyjkm6y9aa3kxl8wfaverka6pvkek2ygrmhx6sj3ec6h0fegwsgeslue"
 TRUST_BNB_ADDRESS = "tbnb1tdfqy34uptx207scymqsy4k5uzfmry5s8lujqt"
 
 describe "API Tests" do
