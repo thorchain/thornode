@@ -127,14 +127,16 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 	if nil != err {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to get next event id: %w", err).Error())
 	}
+	// unstake event is pending , once signer send the fund to customer successfully, then this should be marked as success
 	evt := NewEvent(
 		eventID,
 		unstakeEvt.Type(),
 		ctx.BlockHeight(),
 		msg.Tx,
 		unstakeBytes,
-		EventSuccess,
+		EventPending,
 	)
+
 	uh.keeper.UpsertEvent(ctx, evt)
 
 	toi := &TxOutItem{
