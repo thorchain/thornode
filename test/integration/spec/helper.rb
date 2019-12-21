@@ -15,6 +15,7 @@ def get(path)
   if Time.now() - $lastget < 1
     sleep(1)
   end
+  # puts(path)
   resp = Net::HTTP.get_response(HOST, "/thorchain#{path}", PORT)
   resp.body = JSON.parse(resp.body)
   $lastget = Time.now()
