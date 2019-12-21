@@ -15,6 +15,8 @@ var _ = Suite(&HandlerLeaveSuite{})
 
 func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
+	vault := GetRandomVault()
+	w.keeper.SetVault(w.ctx, vault)
 	leaveHandler := NewLeaveHandler(w.keeper, w.validatorMgr, w.txOutStore)
 	acc2 := GetRandomNodeAccount(NodeStandby)
 	acc2.Bond = sdk.NewUint(100 * common.One)

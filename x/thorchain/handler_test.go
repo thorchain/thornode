@@ -290,7 +290,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
 		Gas:         common.BNBGasFeeSingleton,
-	}, sdk.NewUint(12), vault.PubKey)
+	}, sdk.NewUint(12), GetRandomPubKey())
 
 	msgOutboundTx := NewMsgOutboundTx(tx, tx.Tx.ID, w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgOutboundTx(w.ctx, w.keeper, msgOutboundTx)
@@ -309,8 +309,8 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	}
 	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 
-	tx.ObservedPubKey = GetRandomPubKey()
-	tx.Tx.FromAddress = GetRandomBNBAddress()
+	tx.ObservedPubKey = vault.PubKey
+	tx.Tx.FromAddress = addr
 	tx.Tx.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
 		common.NewCoin(common.BTCAsset, sdk.NewUint(200*common.One)),
@@ -335,11 +335,11 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 			Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
 			Memo:        "swap:BNB",
 			FromAddress: GetRandomBNBAddress(),
-			ToAddress:   GetRandomBNBAddress(),
+			ToAddress:   addr,
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		sdk.NewUint(1024),
-		GetRandomPubKey(),
+		vault.PubKey,
 	)
 
 	msg := types.NewMsgObservedTxIn(ObservedTxs{txIn}, w.activeNodeAccount.NodeAddress)
