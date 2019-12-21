@@ -26,7 +26,6 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, d
 				Coin:        coin,
 			}
 			store.AddTxOutItem(ctx, toi)
-			continue
 		}
 
 		// Zombie coins are just dropped.

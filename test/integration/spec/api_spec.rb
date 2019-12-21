@@ -84,7 +84,7 @@ describe "API Tests" do
 
     it "adds gas" do
       coins = [
-        {'asset': {'chain': 'BNB', 'symbol': 'BNB', 'ticker': 'RUNE'}, "amount": "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'BNB', 'ticker': 'BNB'}, "amount": "20000000"},
       ]
       tx = makeTx(memo: "GAS", coins: coins)
       resp = processTx(tx)
@@ -184,7 +184,7 @@ describe "API Tests" do
       # find the block height of the previous swap transaction
       i = 1
       found = false
-      until i > 100
+      until i > 40
         resp = get("/keysign/#{i}")
         if not resp.body['chains'].include?("BNB")
           i = i + 1
@@ -192,14 +192,15 @@ describe "API Tests" do
         end
         arr = resp.body['chains']['BNB']
         unless arr['tx_array'].empty?
-          if arr['tx_array'][0]['to'] == "bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"
+          for idx in 0 ...arr['tx_array'].size
             # THORNode have found the block height of our last swap
-            found = true
             newTxId = txid()
-            tx = makeTx(memo: arr['tx_array'][0]['memo'], hash:newTxId, sender:TRUST_BNB_ADDRESS)
+            tx = makeTx(memo: arr['tx_array'][idx]['memo'], hash:newTxId, sender:TRUST_BNB_ADDRESS)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
-
+          end
+          if arr['tx_array'][idx]['to'] == "bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"
+            found = true
             resp = get("/tx/#{txid}")
             expect(resp.code).to eq("200")
             expect(resp.body['out_hashes']).to eq([newTxId]), resp.body.inspect
@@ -214,7 +215,7 @@ describe "API Tests" do
     end
 
     it "check events are completed" do
-      resp = get("/events/1")
+      resp = get("/events/0")
       expect(resp.body.count).to eq(6), resp.body.inspect
       expect(resp.body[5]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[5].inspect
       expect(resp.body[5]['type']).to eq("swap"), resp.body[5].inspect
