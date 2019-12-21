@@ -72,18 +72,15 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool) sdk.Result {
 	}
 
 	voter, err := h.keeper.GetTssVoter(ctx, msg.ID)
+	if err != nil {
+		return sdk.ErrInternal(err.Error()).Result()
+	}
+
 	if voter.PoolPubKey.IsEmpty() {
 		voter.PoolPubKey = msg.PoolPubKey
 		voter.PubKeys = msg.PubKeys
 	}
 
-	if err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-	if voter.PoolPubKey.IsEmpty() {
-		voter.PoolPubKey = msg.PoolPubKey
-		voter.PubKeys = msg.PubKeys
-	}
 	voter.Sign(msg.Signer)
 	h.keeper.SetTssVoter(ctx, voter)
 
