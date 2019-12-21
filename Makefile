@@ -53,8 +53,7 @@ start-observe:
 	observe
 
 start-daemon:
-	#thord start --log_level "main:debug"
-	thord start
+	thord start --log_level "main:info,state:debug,*:error"
 
 start-rest:
 	thorcli rest-server

@@ -158,8 +158,8 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 
 		// check we are sending to a valid vault
 		if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
-			err = wrapError(ctx, err, "Observed Tx Pubkey is not associated with a valid vault")
-			return sdk.ErrInternal(err.Error()).Result()
+			fmt.Printf("Observed Pubkey: %s\n", tx.ObservedPubKey)
+			return sdk.ErrInternal("Observed Tx Pubkey is not associated with a valid vault").Result()
 		}
 
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
