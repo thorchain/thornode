@@ -56,11 +56,11 @@ func (m *MockStackKeeper) GetStakerPool(_ sdk.Context, addr common.Address) (Sta
 		PoolUnits:    nil,
 	}, nil
 }
-func (m *MockStackKeeper) GetNextEventID(ctx sdk.Context) (int64, error) {
+func (m *MockStackKeeper) UpsertEvent(_ sdk.Context, _ Event) error {
 	if m.failGetNextEventID {
-		return 0, kaboom
+		return kaboom
 	}
-	return 0, nil
+	return nil
 }
 func (HandlerStakeSuite) TestStakeHandler(c *C) {
 	ctx, _ := setupKeeperForTest(c)

@@ -77,7 +77,7 @@ func (mfp *MockUnstakeKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
 func (mfp *MockUnstakeKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
 	return PoolEnabled
 }
-func (mfp *MockUnstakeKeeper) GetNextEventID(ctx sdk.Context) (int64, error) { return 0, nil }
+func (mfp *MockUnstakeKeeper) UpsertEvent(ctx sdk.Context, event Event) error { return nil }
 
 func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	// w := getHandlerTestWrapper(c, 1, true, true)

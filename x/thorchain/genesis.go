@@ -143,7 +143,9 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	}
 
 	for _, e := range data.Events {
-		keeper.UpsertEvent(ctx, e)
+		if err := keeper.UpsertEvent(ctx, e); nil != err {
+			panic(err)
+		}
 	}
 
 	if !data.PoolAddresses.IsEmpty() {

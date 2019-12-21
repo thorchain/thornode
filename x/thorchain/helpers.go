@@ -140,8 +140,7 @@ func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs commo
 	ctx.Logger().Info(fmt.Sprintf("complete event,eventID (%d) , txs:%s", eventID, txs))
 	event.Status = EventSuccess
 	event.OutTxs = txs
-	keeper.UpsertEvent(ctx, event)
-	return nil
+	return keeper.UpsertEvent(ctx, event)
 }
 
 func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs) error {

@@ -89,18 +89,15 @@ func (ah AddHandler) handle(ctx sdk.Context, msg MsgAdd) sdk.Error {
 	if err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to marshal add event to json: %w", err).Error())
 	}
-	eventID, err := ah.keeper.GetNextEventID(ctx)
-	if nil != err {
-		return sdk.ErrInternal(fmt.Errorf("fail to get next event id: %w", err).Error())
-	}
 	evt := NewEvent(
-		eventID,
 		addEvt.Type(),
 		ctx.BlockHeight(),
 		msg.Tx,
 		stakeBytes,
 		EventSuccess,
 	)
-	ah.keeper.UpsertEvent(ctx, evt)
+	if err := ah.keeper.UpsertEvent(ctx, evt); nil != err {
+		return sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
+	}
 	return nil
 }

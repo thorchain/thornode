@@ -217,19 +217,16 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	if err != nil {
 		return fmt.Errorf("fail to marshal reward event to json: %w", err)
 	}
-	eventID, err := k.GetNextEventID(ctx)
-	if nil != err {
-		return fmt.Errorf("fail to get next event id: %w", err)
-	}
 	evt := NewEvent(
-		eventID,
 		rewardEvt.Type(),
 		ctx.BlockHeight(),
 		common.Tx{},
 		evtBytes,
 		EventSuccess,
 	)
-	k.UpsertEvent(ctx, evt)
+	if err := k.UpsertEvent(ctx, evt); nil != err {
+		return fmt.Errorf("fail to save event: %w", err)
+	}
 
 	i, err := k.TotalActiveNodeAccount(ctx)
 	if nil != err {

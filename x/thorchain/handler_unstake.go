@@ -121,15 +121,11 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 	)
 	unstakeBytes, err := json.Marshal(unstakeEvt)
 	if err != nil {
-		return nil, sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
+		return nil, sdk.ErrInternal(fmt.Errorf("fail to marshal event: %w", err).Error())
 	}
-	eventID, err := uh.keeper.GetNextEventID(ctx)
-	if nil != err {
-		return nil, sdk.ErrInternal(fmt.Errorf("fail to get next event id: %w", err).Error())
-	}
+
 	// unstake event is pending , once signer send the fund to customer successfully, then this should be marked as success
 	evt := NewEvent(
-		eventID,
 		unstakeEvt.Type(),
 		ctx.BlockHeight(),
 		msg.Tx,
@@ -137,7 +133,9 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 		EventPending,
 	)
 
-	uh.keeper.UpsertEvent(ctx, evt)
+	if err := uh.keeper.UpsertEvent(ctx, evt); nil != err {
+		return nil, sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
+	}
 
 	toi := &TxOutItem{
 		Chain:       common.BNBChain,

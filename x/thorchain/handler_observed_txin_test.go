@@ -94,10 +94,10 @@ type TestObservedTxInFailureKeeper struct {
 func (k *TestObservedTxInFailureKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return k.pool, nil
 }
-func (k *TestObservedTxInFailureKeeper) UpsertEvent(_ sdk.Context, evt Event) {
+func (k *TestObservedTxInFailureKeeper) UpsertEvent(_ sdk.Context, evt Event) error {
 	k.evt = evt
+	return nil
 }
-func (k *TestObservedTxInFailureKeeper) GetNextEventID(ctx sdk.Context) (int64, error) { return 0, nil }
 
 func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	ctx, _ := setupKeeperForTest(c)

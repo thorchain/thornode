@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -157,13 +158,9 @@ func swapOne(ctx sdk.Context,
 			err = errr
 			return
 		}
-		eventID, errr := keeper.GetNextEventID(ctx)
-		if nil != errr {
-			err = errr
-			return
-		}
+
 		evt := NewEvent(
-			eventID,
+
 			swapEvt.Type(),
 			ctx.BlockHeight(),
 			tx,
@@ -172,7 +169,10 @@ func swapOne(ctx sdk.Context,
 		)
 		// using errr instead of err because we don't want to return the error,
 		// just log it because we are in a defer func
-		keeper.UpsertEvent(ctx, evt)
+		if errr := keeper.UpsertEvent(ctx, evt); nil != errr {
+			amt = sdk.ZeroUint()
+			err = errr
+		}
 
 	}()
 
