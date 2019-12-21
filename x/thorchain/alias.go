@@ -26,6 +26,7 @@ const (
 	YggdrasilVault = types.YggdrasilVault
 	ActiveVault    = types.ActiveVault
 	InactiveVault  = types.InactiveVault
+	RetiringVault  = types.RetiringVault
 
 	NodeActive      = types.Active
 	NodeWhiteListed = types.WhiteListed
@@ -158,4 +159,5 @@ type (
 	PoolAddresses               = types.PoolAddresses
 	NodeStatus                  = types.NodeStatus
 	VaultData                   = types.VaultData
+	VaultStatus                 = types.VaultStatus
 )

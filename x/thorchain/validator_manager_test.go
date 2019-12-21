@@ -19,7 +19,8 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	ctx = ctx.WithBlockHeight(1)
 	poolAddrMgr := NewPoolAddressDummyMgr()
 	k.SetPoolAddresses(ctx, poolAddrMgr.GetCurrentPoolAddresses())
-	vMgr := NewValidatorMgr(k, poolAddrMgr)
+	vaultMgr := NewVaultMgrDummy()
+	vMgr := NewValidatorMgr(k, poolAddrMgr, vaultMgr)
 	c.Assert(vMgr, NotNil)
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
@@ -41,7 +42,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 
 	// one active node and one ready node on start up
 	// it should take both of the node as active
-	vMgr1 := NewValidatorMgr(k, poolAddrMgr)
+	vMgr1 := NewValidatorMgr(k, poolAddrMgr, vaultMgr)
 
 	vMgr1.BeginBlock(ctx, constAccessor)
 	activeNodes, err := k.ListActiveNodeAccounts(ctx)
@@ -55,7 +56,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(k.SetNodeAccount(ctx, activeNode2), IsNil)
 
 	// three active nodes and 1 ready nodes, it should take them all
-	vMgr2 := NewValidatorMgr(k, poolAddrMgr)
+	vMgr2 := NewValidatorMgr(k, poolAddrMgr, vaultMgr)
 	vMgr2.BeginBlock(ctx, constAccessor)
 
 	activeNodes1, err := k.ListActiveNodeAccounts(ctx)

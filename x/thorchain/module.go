@@ -77,12 +77,14 @@ type AppModule struct {
 	txOutStore   TxOutStore
 	poolMgr      PoolAddressManager
 	validatorMgr ValidatorManager
+	vaultMgr     VaultManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
 	poolAddrMgr := NewPoolAddressMgr(k)
 	txStore := NewTxOutStorage(k, poolAddrMgr)
+	vaultMgr := NewVaultMgr(k, txStore)
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
@@ -90,7 +92,8 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		supplyKeeper:   supplyKeeper,
 		txOutStore:     txStore,
 		poolMgr:        poolAddrMgr,
-		validatorMgr:   NewValidatorMgr(k, poolAddrMgr),
+		validatorMgr:   NewValidatorMgr(k, poolAddrMgr, vaultMgr),
+		vaultMgr:       vaultMgr,
 	}
 }
 
@@ -105,7 +108,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.poolMgr, am.txOutStore, am.validatorMgr)
+	return NewHandler(am.keeper, am.poolMgr, am.txOutStore, am.validatorMgr, am.vaultMgr)
 }
 func (am AppModule) QuerierRoute() string {
 	return ModuleName
@@ -167,6 +170,10 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		// update vault data to account for block rewards and reward units
 		if err := am.keeper.UpdateVaultData(ctx, constantValues); nil != err {
 			ctx.Logger().Error("fail to save vault", err)
+		}
+
+		if err := am.vaultMgr.EndBlock(ctx, constantValues); err != nil {
+			ctx.Logger().Error("fail to end block for vault manager", err)
 		}
 
 		am.txOutStore.CommitBlock(ctx)

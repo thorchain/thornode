@@ -26,6 +26,7 @@ func NewConstantValue010() *ConstantValue010 {
 		ValidatorRotateOutNumBeforeFull: 1,                   // How many validators should THORNode queued to be rotate out before THORNode reach the desire validator set)
 		ValidatorRotateNumAfterFull:     1,                   // How many validators should THORNode nominate after THORNode reach the desire validator set
 		DesireValidatorSet:              33,                  // desire validator set
+		FundMigrationInterval:           360,                 // number of blocks THORNode will attempt to move funds from a retiring vault to an active one
 		RotatePerBlockHeight:            30,                  // How many blocks THORNode try to rotate validators
 		BadValidatorRate:                40,                  // rate to mark a validator to be rotated out for bad behavior
 		OldValidatorRate:                40,                  // rate to mark a validator to be rotated out for age
