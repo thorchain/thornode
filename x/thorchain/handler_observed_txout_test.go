@@ -31,7 +31,8 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 		isActive: true,
 	}
 
-	handler := NewObservedTxOutHandler(keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr)
+	vaultMgr := NewVaultMgrDummy()
+	handler := NewObservedTxOutHandler(keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr, vaultMgr)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -70,7 +71,8 @@ func (s *HandlerObservedTxOutSuite) TestFailure(c *C) {
 	keeper := &TestObservedTxOutFailureKeeper{}
 	txOutStore := NewTxStoreDummy()
 
-	handler := NewObservedTxOutHandler(keeper, txOutStore, w.poolAddrMgr, w.validatorMgr)
+	vaultMgr := NewVaultMgrDummy()
+	handler := NewObservedTxOutHandler(keeper, txOutStore, w.poolAddrMgr, w.validatorMgr, vaultMgr)
 	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(12), GetRandomPubKey())
 	nas := NodeAccounts{GetRandomNodeAccount(NodeActive)}
 
@@ -218,7 +220,8 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 		txOutStore: txOutStore,
 	}
 
-	handler := NewObservedTxOutHandler(keeper, txOutStore, w.poolAddrMgr, w.validatorMgr)
+	vaultMgr := NewVaultMgrDummy()
+	handler := NewObservedTxOutHandler(keeper, txOutStore, w.poolAddrMgr, w.validatorMgr, vaultMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)

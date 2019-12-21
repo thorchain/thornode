@@ -100,7 +100,7 @@ Once you have done that, you can then use the `thorcli` to
 register your other addresses.
 
 ```bash
-echo password | thorcli tx thorchain set-trust-account $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --from thorchain --yes
+echo password | thorcli tx thorchain set-node-keys $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --from thorchain --yes
 echo password | thorcli tx thorchain set-version --from thorchain --yes
 ```
 

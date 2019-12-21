@@ -15,14 +15,16 @@ type ObservedTxInHandler struct {
 	txOutStore   TxOutStore
 	poolAddrMgr  PoolAddressManager
 	validatorMgr ValidatorManager
+	vaultMgr     VaultManager
 }
 
-func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager) ObservedTxInHandler {
+func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager, vaultMgr VaultManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
 		poolAddrMgr:  poolAddrMgr,
 		validatorMgr: validatorMgr,
+		vaultMgr:     vaultMgr,
 	}
 }
 
@@ -151,7 +153,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	handler := NewHandler(h.keeper, h.poolAddrMgr, h.txOutStore, h.validatorMgr)
+	handler := NewHandler(h.keeper, h.poolAddrMgr, h.txOutStore, h.validatorMgr, h.vaultMgr)
 
 	for _, tx := range msg.Txs {
 

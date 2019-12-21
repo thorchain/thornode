@@ -31,7 +31,7 @@ func (s *KeeperVaultSuite) TestVault(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(hasYgg, Equals, true)
 
-	asgards, err := k.GetActiveAsgardVaults(ctx)
+	asgards, err := k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	c.Assert(err, IsNil)
 	c.Assert(asgards, HasLen, 0)
 	pubKey = GetRandomPubKey()
@@ -39,14 +39,14 @@ func (s *KeeperVaultSuite) TestVault(c *C) {
 	c.Assert(k.SetVault(ctx, asgard), IsNil)
 	asgard2 := NewVault(ctx.BlockHeight(), InactiveVault, AsgardVault, GetRandomPubKey())
 	c.Assert(k.SetVault(ctx, asgard2), IsNil)
-	asgards, err = k.GetActiveAsgardVaults(ctx)
+	asgards, err = k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	c.Assert(err, IsNil)
 	c.Assert(asgards, HasLen, 1)
 	c.Check(asgards[0].PubKey.Equals(pubKey), Equals, true)
 
 	c.Assert(k.DeleteVault(ctx, pubKey), IsNil)
 	c.Assert(k.DeleteVault(ctx, pubKey), IsNil) // second time should also not error
-	asgards, err = k.GetActiveAsgardVaults(ctx)
+	asgards, err = k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	c.Assert(err, IsNil)
 	c.Assert(asgards, HasLen, 0)
 }
