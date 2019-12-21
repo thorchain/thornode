@@ -223,7 +223,6 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	totalAsset := sdk.ZeroUint()
 	totalRune := sdk.ZeroUint()
 	for _, item := range txOut.TxArray {
-		c.Assert(item.Valid(), IsNil)
 		c.Assert(item.ToAddress.Equals(bnbAddr), Equals, true)
 		if item.Coin.Asset.IsRune() {
 			totalRune = totalRune.Add(item.Coin.Amount)
