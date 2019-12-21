@@ -146,11 +146,11 @@ func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs commo
 }
 
 func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs) error {
-	ctx.Logger().Info("txid(%s)", txID)
+	ctx.Logger().Info(fmt.Sprintf("txid(%s)", txID))
 	eventID, err := keeper.GetPendingEventID(ctx, txID)
 	if nil != err {
 		if err == ErrEventNotFound {
-			ctx.Logger().Error("we didn't find the event")
+			ctx.Logger().Error(fmt.Sprintf("could not find the event(%s)", txID))
 			return nil
 		}
 		return fmt.Errorf("fail to get pending event id: %w", err)

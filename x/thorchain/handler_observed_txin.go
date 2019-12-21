@@ -129,7 +129,7 @@ func (h ObservedTxInHandler) inboundFailure(ctx sdk.Context, tx ObservedTx) erro
 		ctx.BlockHeight(),
 		tx.Tx,
 		buf,
-		EventSuccess,
+		EventPending,
 	)
 	h.keeper.UpsertEvent(ctx, event)
 	return nil
