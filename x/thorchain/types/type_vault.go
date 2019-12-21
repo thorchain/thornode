@@ -21,6 +21,7 @@ type VaultStatus string
 
 const (
 	ActiveVault   VaultStatus = "active"
+	RetiringVault VaultStatus = "retiring"
 	InactiveVault VaultStatus = "inactive"
 )
 
@@ -31,6 +32,7 @@ type Vault struct {
 	Coins       common.Coins    `json:"coins"`
 	Type        VaultType       `json:"type"`
 	Status      VaultStatus     `json:"status"`
+	StatusSince int64           `json:"status_since"`
 	Membership  []common.PubKey `json:"membership"`
 }
 
@@ -39,6 +41,7 @@ type Vaults []Vault
 func NewVault(height int64, status VaultStatus, vtype VaultType, pk common.PubKey) Vault {
 	return Vault{
 		BlockHeight: height,
+		StatusSince: height,
 		PubKey:      pk,
 		Coins:       make(common.Coins, 0),
 		Type:        vtype,
@@ -60,6 +63,20 @@ func (v Vault) IsYggdrasil() bool {
 
 func (v Vault) IsEmpty() bool {
 	return v.PubKey.IsEmpty()
+}
+
+func (v Vault) Contains(pubkey common.PubKey) bool {
+	for _, mem := range v.Membership {
+		if mem.Equals(pubkey) {
+			return true
+		}
+	}
+	return false
+}
+
+func (v *Vault) UpdateStatus(s VaultStatus, height int64) {
+	v.Status = s
+	v.StatusSince = height
 }
 
 // IsValid check whether Vault has all necessary values

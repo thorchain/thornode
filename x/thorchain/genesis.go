@@ -20,6 +20,7 @@ type GenesisState struct {
 	AdminConfigs     []AdminConfig    `json:"admin_configs"`
 	LastEventID      int64            `json:"last_event_id"`
 	PoolAddresses    PoolAddresses    `json:"pool_addresses"`
+	Vaults           Vaults           `json:"vaults"`
 }
 
 // NewGenesisState create a new instance of GenesisState
@@ -68,6 +69,7 @@ func ValidateGenesis(data GenesisState) error {
 			return err
 		}
 	}
+
 	if data.PoolAddresses.IsEmpty() {
 		return errors.New("missing pool addresses")
 	}
@@ -128,6 +130,34 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		}
 	}
 
+	if len(data.Vaults) == 0 { // no vaults, create one...
+		active, err := keeper.ListActiveNodeAccounts(ctx)
+		if err != nil {
+			panic(err)
+		}
+		if len(active) == 0 {
+			panic("no active node accounts. Cannot create vault")
+		}
+		if len(active) == 1 {
+			vault := NewVault(0, ActiveVault, AsgardVault, active[0].NodePubKey.Secp256k1)
+			if err := keeper.SetVault(ctx, vault); err != nil {
+				panic(err)
+			}
+		} else {
+			// Trigger a keygen ceremony
+			vaultMgr := NewVaultMgr(keeper, &TxOutStorage{})
+			if err := vaultMgr.TriggerKeygen(ctx, active); err != nil {
+				panic(err)
+			}
+		}
+	} else {
+		for _, vault := range data.Vaults {
+			if err := keeper.SetVault(ctx, vault); err != nil {
+				panic(err)
+			}
+		}
+	}
+
 	for _, stake := range data.StakerPools {
 		keeper.SetStakerPool(ctx, stake)
 	}
@@ -148,9 +178,11 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	for _, event := range data.CompleteEvents {
 		keeper.SetCompletedEvent(ctx, event)
 	}
+
 	if !data.PoolAddresses.IsEmpty() {
 		keeper.SetPoolAddresses(ctx, &data.PoolAddresses)
 	}
+
 	keeper.SetLastEventID(ctx, data.LastEventID)
 
 	return validators

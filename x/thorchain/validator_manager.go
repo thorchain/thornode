@@ -33,13 +33,15 @@ type ValidatorManager interface {
 type ValidatorMgr struct {
 	k           Keeper
 	poolAddrMgr PoolAddressManager
+	vaultMgr    VaultManager
 }
 
 // NewValidatorManager create a new instance of ValidatorManager
-func NewValidatorMgr(k Keeper, poolAddrMgr PoolAddressManager) *ValidatorMgr {
+func NewValidatorMgr(k Keeper, poolAddrMgr PoolAddressManager, vaultMgr VaultManager) *ValidatorMgr {
 	return &ValidatorMgr{
 		k:           k,
 		poolAddrMgr: poolAddrMgr,
+		vaultMgr:    vaultMgr,
 	}
 }
 
@@ -69,14 +71,7 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 			return err
 		}
 		if ok {
-			ctx.Logger().Info("Trigger new keygen process...")
-			keygen := make(Keygen, len(next))
-			for i := range next {
-				keygen[i] = next[i].NodePubKey.Secp256k1
-			}
-			keygens := NewKeygens(uint64(ctx.BlockHeight()))
-			keygens.Keygens = []Keygen{keygen}
-			if err := vm.k.SetKeygens(ctx, keygens); err != nil {
+			if err := vm.vaultMgr.TriggerKeygen(ctx, next); err != nil {
 				return err
 			}
 		}
@@ -102,6 +97,12 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 	if err != nil {
 		ctx.Logger().Error("fail to get pool addresses")
 	}
+
+	// if we have no pool addresses, nothing to do...
+	if len(poolAddresses.Current) == 0 {
+		return nil
+	}
+
 	membership := poolAddresses.Current[0].Membership
 
 	var newActive NodeAccounts // store the list of new active users
