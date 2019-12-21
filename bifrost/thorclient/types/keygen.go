@@ -7,6 +7,6 @@ type Keygen []common.PubKey
 
 // Keygens is a struct of key gen information
 type Keygens struct {
-	Height  uint64   `json:"height"`
+	Height  string   `json:"height"`
 	Keygens []Keygen `json:"keygens"`
 }

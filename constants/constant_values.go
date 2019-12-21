@@ -27,6 +27,7 @@ const (
 	LackOfObservationPenalty
 	SigningTransactionPeriod
 	MinimumBondInRune
+	FundMigrationInterval
 )
 
 var nameToString = map[ConstantName]string{
@@ -49,6 +50,7 @@ var nameToString = map[ConstantName]string{
 	LackOfObservationPenalty:        "LackOfObservationPenalty",
 	SigningTransactionPeriod:        "SigningTransactionPeriod",
 	MinimumBondInRune:               "MinimumBondInRune",
+	FundMigrationInterval:           "FundMigrationInterval",
 }
 
 // String implement fmt.stringer

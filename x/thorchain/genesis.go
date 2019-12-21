@@ -19,6 +19,7 @@ type GenesisState struct {
 	PoolAddresses    PoolAddresses    `json:"pool_addresses"`
 	CurrentEventID   int64            `json:"current_event_id"`
 	Events           Events           `json:"events"`
+	Vaults           Vaults           `json:"vaults"`
 }
 
 // NewGenesisState create a new instance of GenesisState
@@ -67,6 +68,7 @@ func ValidateGenesis(data GenesisState) error {
 			return err
 		}
 	}
+
 	if data.PoolAddresses.IsEmpty() {
 		return errors.New("missing pool addresses")
 	}
@@ -124,6 +126,34 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		if err := keeper.SetNodeAccount(ctx, ta); nil != err {
 			// we should panic
 			panic(err)
+		}
+	}
+
+	if len(data.Vaults) == 0 { // no vaults, create one...
+		active, err := keeper.ListActiveNodeAccounts(ctx)
+		if err != nil {
+			panic(err)
+		}
+		if len(active) == 0 {
+			panic("no active node accounts. Cannot create vault")
+		}
+		if len(active) == 1 {
+			vault := NewVault(0, ActiveVault, AsgardVault, active[0].NodePubKey.Secp256k1)
+			if err := keeper.SetVault(ctx, vault); err != nil {
+				panic(err)
+			}
+		} else {
+			// Trigger a keygen ceremony
+			vaultMgr := NewVaultMgr(keeper, &TxOutStorage{})
+			if err := vaultMgr.TriggerKeygen(ctx, active); err != nil {
+				panic(err)
+			}
+		}
+	} else {
+		for _, vault := range data.Vaults {
+			if err := keeper.SetVault(ctx, vault); err != nil {
+				panic(err)
+			}
 		}
 	}
 

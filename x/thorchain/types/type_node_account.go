@@ -229,8 +229,8 @@ func (nas NodeAccounts) IsEmpty() bool {
 	return len(nas) == 0
 }
 
-// IsTrustAccount validate whether the given account address belongs to an currently active validator
-func (nas NodeAccounts) IsTrustAccount(addr sdk.AccAddress) bool {
+// IsNodeKeys validate whether the given account address belongs to an currently active validator
+func (nas NodeAccounts) IsNodeKeys(addr sdk.AccAddress) bool {
 	for _, na := range nas {
 		if na.Status == Active && addr.Equals(na.NodeAddress) {
 			return true

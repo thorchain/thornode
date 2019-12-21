@@ -41,15 +41,15 @@ func (s *KeeperNodeAccountSuite) TestNodeAccount(c *C) {
 
 	valCon := "im unique!"
 	pubkeys := GetRandomPubkeys()
-	err = k.EnsureTrustAccountUnique(ctx, na1.ValidatorConsPubKey, common.EmptyPubKeys)
+	err = k.EnsureNodeKeysUnique(ctx, na1.ValidatorConsPubKey, common.EmptyPubKeys)
 	c.Assert(err, NotNil)
-	err = k.EnsureTrustAccountUnique(ctx, "", pubkeys)
+	err = k.EnsureNodeKeysUnique(ctx, "", pubkeys)
 	c.Assert(err, NotNil)
-	err = k.EnsureTrustAccountUnique(ctx, na1.ValidatorConsPubKey, pubkeys)
+	err = k.EnsureNodeKeysUnique(ctx, na1.ValidatorConsPubKey, pubkeys)
 	c.Assert(err, NotNil)
-	err = k.EnsureTrustAccountUnique(ctx, valCon, na1.NodePubKey)
+	err = k.EnsureNodeKeysUnique(ctx, valCon, na1.NodePubKey)
 	c.Assert(err, NotNil)
-	err = k.EnsureTrustAccountUnique(ctx, valCon, pubkeys)
+	err = k.EnsureNodeKeysUnique(ctx, valCon, pubkeys)
 	c.Assert(err, IsNil)
 }
 

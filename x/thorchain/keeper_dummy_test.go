@@ -88,7 +88,7 @@ func (k KVStoreDummy) GetNodeAccountByBondAddress(_ sdk.Context, _ common.Addres
 	return NodeAccount{}, kaboom
 }
 func (k KVStoreDummy) SetNodeAccount(_ sdk.Context, _ NodeAccount) error { return kaboom }
-func (k KVStoreDummy) EnsureTrustAccountUnique(_ sdk.Context, _ string, _ common.PubKeys) error {
+func (k KVStoreDummy) EnsureNodeKeysUnique(_ sdk.Context, _ string, _ common.PubKeys) error {
 	return kaboom
 }
 func (k KVStoreDummy) GetNodeAccountIterator(_ sdk.Context) sdk.Iterator     { return nil }
@@ -151,7 +151,10 @@ func (k KVStoreDummy) SetVault(_ sdk.Context, _ Vault) error { return kaboom }
 func (k KVStoreDummy) GetVault(_ sdk.Context, _ common.PubKey) (Vault, error) {
 	return Vault{}, kaboom
 }
-func (k KVStoreDummy) GetActiveAsgardVaults(ctx sdk.Context) (Vaults, error)   { return nil, kaboom }
+func (k KVStoreDummy) GetAsgardVaults(_ sdk.Context) (Vaults, error) { return nil, kaboom }
+func (k KVStoreDummy) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vaults, error) {
+	return nil, kaboom
+}
 func (k KVStoreDummy) DeleteVault(ctx sdk.Context, pubkey common.PubKey) error { return kaboom }
 func (k KVStoreDummy) GetReservesContributors(_ sdk.Context) (ReserveContributors, error) {
 	return nil, kaboom

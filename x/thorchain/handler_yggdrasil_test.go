@@ -30,7 +30,8 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 	}
 
 	poolAddrMgr := NewPoolAddressMgr(keeper)
-	validatorMgr := NewValidatorMgr(keeper, poolAddrMgr)
+	vaultMgr := NewVaultMgrDummy()
+	validatorMgr := NewValidatorMgr(keeper, poolAddrMgr, vaultMgr)
 	txOutStore := NewTxStoreDummy()
 
 	handler := NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
@@ -114,7 +115,8 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	poolAddrMgr := NewPoolAddressDummyMgr()
-	validatorMgr := NewValidatorMgr(keeper, poolAddrMgr)
+	vaultMgr := NewVaultMgrDummy()
+	validatorMgr := NewValidatorMgr(keeper, poolAddrMgr, vaultMgr)
 	validatorMgr.BeginBlock(ctx, constAccessor)
 	txOutStore := NewTxStoreDummy()
 
