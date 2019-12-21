@@ -63,6 +63,8 @@ func NewQuerier(keeper Keeper, validatorMgr ValidatorManager) sdk.Querier {
 			return queryVaultData(ctx, keeper)
 		case q.QueryVaultPubkeys.Key:
 			return queryVaultsPubkeys(ctx, keeper)
+		case q.QueryVaultAddresses.Key:
+			return queryVaultsAddresses(ctx, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown thorchain query endpoint: %s", path[0]),
@@ -70,11 +72,51 @@ func NewQuerier(keeper Keeper, validatorMgr ValidatorManager) sdk.Querier {
 		}
 	}
 }
+
+func queryVaultsAddresses(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
+	chains, err := keeper.GetChains(ctx)
+	if err != nil {
+		ctx.Logger().Error("fail to get chains", err)
+		return nil, sdk.ErrInternal("fail to get chains")
+	}
+
+	active, err := keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		ctx.Logger().Error("fail to get active asgards", err)
+		return nil, sdk.ErrInternal("fail to get active asgards")
+	}
+
+	var resp struct {
+		Chains map[common.Chain][]common.Address `json:"chains"`
+	}
+	resp.Chains = make(map[common.Chain][]common.Address, 0)
+
+	for _, chain := range chains {
+		for _, vault := range active {
+			addr, err := vault.PubKey.GetAddress(chain)
+			if err != nil {
+				ctx.Logger().Error("fail to get active asgards", err)
+				return nil, sdk.ErrInternal("fail to get active asgards")
+			}
+			resp.Chains[chain] = append(resp.Chains[chain], addr)
+		}
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal pubkeys response to json", err)
+		return nil, sdk.ErrInternal("fail to marshal response to json")
+	}
+	return res, nil
+}
+
 func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	var resp struct {
 		Asgard    []common.PubKey `json:"asgard"`
 		Yggdrasil []common.PubKey `json:"yggdrasil"`
 	}
+	resp.Asgard = make([]common.PubKey, 0)
+	resp.Yggdrasil = make([]common.PubKey, 0)
 	iter := keeper.GetVaultIterator(ctx)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -83,7 +125,7 @@ func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 			ctx.Logger().Error("fail to unmarshal yggdrasil", err)
 			return nil, sdk.ErrInternal("fail to unmarshal yggdrasil")
 		}
-		if vault.HasFunds() {
+		if vault.Status == ActiveVault {
 			if vault.IsYggdrasil() {
 				resp.Yggdrasil = append(resp.Yggdrasil, vault.PubKey)
 			} else if vault.IsAsgard() {
@@ -98,6 +140,7 @@ func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	}
 	return res, nil
 }
+
 func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	data, err := keeper.GetVaultData(ctx)
 	if nil != err {
@@ -134,28 +177,45 @@ func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, k
 		return nil, sdk.ErrInternal("fail to get active vaults")
 	}
 
-	chains, err := keeper.GetChains(ctx)
-	if err != nil {
-		ctx.Logger().Error("fail to get chains", err)
-		return nil, sdk.ErrInternal("fail to get chains")
+	type address struct {
+		Chain   common.Chain   `json:"chain"`
+		PubKey  common.PubKey  `json:"pub_key"`
+		Address common.Address `json:"address"`
 	}
 
-	var resp QueryResVaults
-	for _, chain := range chains {
-		vaults := make([]ResVault, len(active))
-		for i, vault := range active {
-			addr, err := vault.PubKey.GetAddress(chain)
+	var resp struct {
+		Current []address `json:"current"`
+	}
+
+	if len(active) > 0 {
+		// select vault with lowest amount of rune
+		vault := active.SelectByMinCoin(common.RuneAsset())
+
+		chains, err := keeper.GetChains(ctx)
+		if err != nil {
+			ctx.Logger().Error("fail to get chains", err)
+			return nil, sdk.ErrInternal("fail to get chains")
+		}
+
+		if len(chains) == 0 {
+			chains = common.Chains{common.BNBChain}
+		}
+
+		for _, chain := range chains {
+			vaultAddress, err := vault.PubKey.GetAddress(chain)
 			if err != nil {
 				ctx.Logger().Error("fail to get address for chain", err)
 				return nil, sdk.ErrInternal("fail to get address for chain")
 			}
 
-			vaults[i] = ResVault{
+			addr := address{
+				Chain:   chain,
 				PubKey:  vault.PubKey,
-				Address: addr,
+				Address: vaultAddress,
 			}
+
+			resp.Current = append(resp.Current, addr)
 		}
-		resp.Chains[chain] = vaults
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
