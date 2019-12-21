@@ -22,8 +22,8 @@ type Configuration struct {
 
 // BlockScannerConfiguration settings for BlockScanner
 type BlockScannerConfiguration struct {
-	RPCHost                    string `json:"rpc_host" mapstructure:"rpc_host"`
-	StartBlockHeight           int64
+	RPCHost                    string        `json:"rpc_host" mapstructure:"rpc_host"`
+	StartBlockHeight           int64         `json:"-"`
 	BlockScanProcessors        int           `json:"block_scan_processors" mapstructure:"block_scan_processors"`
 	HttpRequestTimeout         time.Duration `json:"http_request_timeout" mapstructure:"http_request_timeout"`
 	HttpRequestReadTimeout     time.Duration `json:"http_request_read_timeout" mapstructure:"http_request_read_timeout"`
