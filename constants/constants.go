@@ -27,9 +27,9 @@ func NewConstantValue010() *ConstantValue010 {
 		ValidatorRotateNumAfterFull:     1,                   // How many validators should THORNode nominate after THORNode reach the desire validator set
 		DesireValidatorSet:              33,                  // desire validator set
 		FundMigrationInterval:           360,                 // number of blocks THORNode will attempt to move funds from a retiring vault to an active one
-		RotatePerBlockHeight:            30,                  // How many blocks THORNode try to rotate validators
-		BadValidatorRate:                40,                  // rate to mark a validator to be rotated out for bad behavior
-		OldValidatorRate:                40,                  // rate to mark a validator to be rotated out for age
+		RotatePerBlockHeight:            51840,               // How many blocks THORNode try to rotate validators
+		BadValidatorRate:                51840,               // rate to mark a validator to be rotated out for bad behavior
+		OldValidatorRate:                51840,               // rate to mark a validator to be rotated out for age
 		LackOfObservationPenalty:        2,                   // add two slash point for each block where a node does not observe
 		SigningTransactionPeriod:        100,                 // how many blocks before a request to sign a tx by yggdrasil pool, is counted as delinquent.
 		MinimumBondInRune:               100_000_000_000_000, // 1 million rune
