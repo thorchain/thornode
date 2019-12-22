@@ -22,7 +22,6 @@ type TxOutStore interface {
 type TxOutStorage struct {
 	blockOut      *TxOut
 	keeper        Keeper
-	seqNum        map[string]uint64
 	constAccessor constants.ConstantValues
 }
 
@@ -37,7 +36,6 @@ func NewTxOutStorage(keeper Keeper) *TxOutStorage {
 func (tos *TxOutStorage) NewBlock(height uint64, constAccessor constants.ConstantValues) {
 	tos.constAccessor = constAccessor
 	tos.blockOut = NewTxOut(height)
-	tos.seqNum = make(map[string]uint64, 0)
 }
 
 // CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
@@ -189,14 +187,7 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 }
 
 func (tos *TxOutStorage) addToBlockOut(toi *TxOutItem) {
-	toi.SeqNo = tos.getSeqNo(toi.VaultPubKey, toi.Chain)
 	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
-}
-
-func (tos *TxOutStorage) getSeqNo(pk common.PubKey, chain common.Chain) uint64 {
-	key := fmt.Sprintf("%s_%s", pk.String(), chain.String())
-	tos.seqNum[key]++
-	return tos.seqNum[key] - 1
 }
 
 func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Vaults, error) {

@@ -8,10 +8,10 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 
 	"github.com/binance-chain/go-sdk/common/types"
+	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	ttypes "github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
@@ -22,6 +22,7 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
@@ -39,10 +40,7 @@ type Binance struct {
 }
 
 // NewBinance create new instance of binance client
-func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.TSSConfiguration) (*Binance, error) {
-	if !useTSS && len(cfg.PrivateKey) == 0 {
-		return nil, errors.New("no private key")
-	}
+func NewBinance(statecfg config.StateChainConfiguration, cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.TSSConfiguration) (*Binance, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
@@ -54,9 +52,18 @@ func NewBinance(cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.
 			return nil, errors.Wrap(err, "fail to create tss signer")
 		}
 	} else {
-		km, err = keys.NewPrivateKeyManager(cfg.PrivateKey)
+		k, err := thorclient.NewKeys(statecfg.ChainHomeFolder, statecfg.SignerName, statecfg.SignerPasswd)
+		if nil != err {
+			return nil, fmt.Errorf("fail to get keybase,err:%w", err)
+		}
+		priv, err := k.GetPrivateKey()
 		if err != nil {
-			return nil, errors.Wrap(err, "fail to create private key manager")
+			return nil, errors.Wrap(err, "fail to get private key")
+		}
+
+		km = &keyManager{
+			privKey: priv,
+			addr:    ctypes.AccAddress(priv.PubKey().Address()),
 		}
 	}
 
@@ -182,12 +189,8 @@ func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
 	}
 	return addr.String()
 }
-func (b *Binance) isSignerAddressMatch(poolAddr, signerAddr string) bool {
-	pubKey, err := common.NewPubKey(poolAddr)
-	if nil != err {
-		b.logger.Error().Err(err).Msg("fail to create pub key from the pool address")
-		return false
-	}
+
+func (b *Binance) isSignerAddressMatch(pubKey common.PubKey, signerAddr string) bool {
 	bnbAddress, err := pubKey.GetAddress(common.BNBChain)
 	if nil != err {
 		b.logger.Error().Err(err).Msg("fail to create bnb address from the pub key")
@@ -202,17 +205,14 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 	signerAddr := b.GetAddress(tai.VaultPubKey)
 	var payload []msg.Transfer
 
-	if !b.isSignerAddressMatch(tai.VaultPubKey.String(), signerAddr) {
+	if !b.isSignerAddressMatch(tai.VaultPubKey, signerAddr) {
 		b.logger.Info().Str("signer addr", signerAddr).Str("pool addr", tai.VaultPubKey.String()).Msg("address doesn't match ignore")
 		return nil, nil, nil
 	}
+
 	toAddr, err := types.AccAddressFromBech32(tai.To)
 	if nil != err {
 		return nil, nil, errors.Wrapf(err, "fail to parse account address(%s)", tai.To)
-	}
-	seqNo, err := strconv.ParseInt(tai.SeqNo, 10, 64)
-	if nil != err {
-		return nil, nil, errors.Wrapf(err, "fail to parse seq no %s", tai.SeqNo)
 	}
 
 	payload = append(payload, msg.Transfer{
@@ -251,7 +251,7 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 		Memo:          tai.Memo,
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,
-		Sequence:      seqNo, // acc.Sequence,
+		Sequence:      acc.Sequence,
 		AccountNumber: acc.AccountNumber,
 	}
 	param := map[string]string{
