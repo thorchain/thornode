@@ -33,6 +33,10 @@ func (tos *TxOutStoreDummy) GetBlockOut() *TxOut {
 	return tos.blockOut
 }
 
+func (tos *TxOutStoreDummy) ClearOutboundItems() {
+	tos.blockOut = NewTxOut(tos.blockOut.Height)
+}
+
 func (tos *TxOutStoreDummy) GetOutboundItems() []*TxOutItem {
 	return tos.blockOut.TxArray
 }
