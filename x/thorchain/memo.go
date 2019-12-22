@@ -211,7 +211,7 @@ func ParseMemo(memo string) (Memo, error) {
 
 	// list of memo types that do not contain an asset in their memo
 	noAssetMemos := []TxType{
-		txGas, txOutbound, txBond, txLeave,
+		txGas, txOutbound, txBond, txLeave, txRefund,
 		txYggdrasilFund, txYggdrasilReturn, txReserve,
 	}
 	hasAsset := true
