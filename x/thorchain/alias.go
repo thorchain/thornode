@@ -15,6 +15,7 @@ const (
 	EventSuccess     = types.Success
 	EventPending     = types.Pending
 	EventFail        = types.Failed
+	EventRefund      = types.Refund
 
 	// Admin config keys
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
@@ -104,6 +105,7 @@ type (
 	MsgSetPoolData              = types.MsgSetPoolData
 	MsgSetStakeData             = types.MsgSetStakeData
 	MsgOutboundTx               = types.MsgOutboundTx
+	MsgRefundTx                 = types.MsgRefundTx
 	MsgSwap                     = types.MsgSwap
 	MsgSetAdminConfig           = types.MsgSetAdminConfig
 	MsgSetVersion               = types.MsgSetVersion

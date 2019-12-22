@@ -133,18 +133,18 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 	return true
 }
 
-func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs common.Txs) error {
+func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs common.Txs, eventStatus EventStatus) error {
 	event, err := keeper.GetEvent(ctx, eventID)
 	if nil != err {
 		return fmt.Errorf("fail to get event: %w", err)
 	}
-	ctx.Logger().Info(fmt.Sprintf("complete event,eventID (%d) , txs:%s", eventID, txs))
-	event.Status = EventSuccess
+	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
+	event.Status = eventStatus
 	event.OutTxs = txs
 	return keeper.UpsertEvent(ctx, event)
 }
 
-func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs) error {
+func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs, eventStatus EventStatus) error {
 	ctx.Logger().Info(fmt.Sprintf("txid(%s)", txID))
 	eventIDs, err := keeper.GetPendingEventID(ctx, txID)
 	if nil != err {
@@ -155,8 +155,8 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 		return fmt.Errorf("fail to get pending event id: %w", err)
 	}
 	for _, item := range eventIDs {
-		if err := completeEventsByID(ctx, keeper, item, txs); nil != err {
-			return fmt.Errorf("fail to set event(%d) to complete: %w", item, err)
+		if err := completeEventsByID(ctx, keeper, item, txs, eventStatus); nil != err {
+			return fmt.Errorf("fail to set event(%d) to %s: %w", item, eventStatus, err)
 		}
 	}
 	return nil

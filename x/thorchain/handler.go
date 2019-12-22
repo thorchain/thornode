@@ -66,6 +66,7 @@ func getHandlerMapping(keeper Keeper, poolAddrMgr PoolAddressManager, txOutStore
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, txOutStore, poolAddrMgr)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
+	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
 	return m
 }
 
@@ -348,7 +349,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, poolAddressMgr PoolAddr
 
 	// complete events
 	if voter.IsDone() {
-		err := completeEvents(ctx, keeper, msg.InTxID, voter.OutTxs)
+		err := completeEvents(ctx, keeper, msg.InTxID, voter.OutTxs, EventSuccess)
 		if err != nil {
 			ctx.Logger().Error("unable to complete events", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
