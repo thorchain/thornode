@@ -30,7 +30,6 @@ type Keeper interface {
 	KeeperTxOut
 	KeeperLiquidityFees
 	KeeperEvents
-	KeeperPoolAddresses
 	KeeperChains
 	KeeperVault
 	KeeperReserveContributors

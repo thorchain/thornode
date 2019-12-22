@@ -114,12 +114,6 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		p.BalanceAsset = sdk.NewUint(100 * common.One)
 		c.Assert(k.SetPool(ctx, p), IsNil)
 	}
-	genesisPoolPubKey, err := common.NewPoolPubKey(common.BNBChain, nil, GetRandomPubKey())
-	c.Assert(err, IsNil)
-	genesisPoolAddress := NewPoolAddresses(common.EmptyPoolPubKeys, common.PoolPubKeys{
-		genesisPoolPubKey,
-	}, common.EmptyPoolPubKeys)
-	k.SetPoolAddresses(ctx, genesisPoolAddress)
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	vaultMgr := NewVaultMgrDummy()

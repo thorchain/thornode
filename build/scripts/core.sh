@@ -16,15 +16,6 @@ add_last_event_id () {
     mv /tmp/genesis.json ~/.thord/config/genesis.json
 }
 
-# Adds a pool address into the genesis file
-add_pool_address () {
-    POOL_ADDRESS=$1
-    POOL_PUB_KEY=$2
-    SEQNO=$3
-    jq --arg SEQNO "$SEQNO" --arg POOL_ADDRESS "$POOL_ADDRESS" --arg POOL_PUB_KEY "$POOL_PUB_KEY" '.app_state.thorchain.pool_addresses.current += [{"chain":"BNB","seq_no":$SEQNO, "address": $POOL_ADDRESS, "pub_key":$POOL_PUB_KEY}]' <~/.thord/config/genesis.json >/tmp/genesis.json
-    mv /tmp/genesis.json ~/.thord/config/genesis.json
-}
-
 add_admin_config () {
     jq --arg NODE_ADDRESS "$3" --arg KEY "$1" --arg VALUE "$2" '.app_state.thorchain.admin_configs += [{"address": $NODE_ADDRESS ,"key":$KEY, "value":$VALUE}]' ~/.thord/config/genesis.json > /tmp/genesis.json
 }
