@@ -39,20 +39,20 @@ func (PubKeyTestSuite) TestPubKey(c *C) {
 	c.Assert(pk2.Equals(pk), Equals, true)
 }
 
-func (s *PubKeyTestSuite) TestPubKeys(c *C) {
+func (s *PubKeyTestSuite) TestPubKeySet(c *C) {
 	_, pubKey, _ := atypes.KeyTestPubAddr()
 	spk, err := sdk.Bech32ifyAccPub(pubKey)
 	c.Assert(err, IsNil)
 	pk, err := NewPubKey(spk)
 	c.Assert(err, IsNil)
 
-	c.Check(PubKeys{}.Contains(pk), Equals, false)
+	c.Check(PubKeySet{}.Contains(pk), Equals, false)
 
-	pks := PubKeys{
+	pks := PubKeySet{
 		Secp256k1: pk,
 	}
 	c.Check(pks.Contains(pk), Equals, true)
-	pks = PubKeys{
+	pks = PubKeySet{
 		Ed25519: pk,
 	}
 	c.Check(pks.Contains(pk), Equals, true)

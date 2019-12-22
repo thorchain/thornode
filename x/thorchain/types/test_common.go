@@ -17,7 +17,7 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	v, _ := tmtypes.RandValidator(true, 100)
 	k, _ := sdk.Bech32ifyConsPub(v.PubKey)
 	bondAddr := GetRandomBNBAddress()
-	pubKeys := common.PubKeys{
+	pubKeys := common.PubKeySet{
 		Secp256k1: GetRandomPubKey(),
 		Ed25519:   GetRandomPubKey(),
 	}
@@ -76,9 +76,9 @@ func GetRandomTxHash() common.TxID {
 	return txHash
 }
 
-// GetRandomPubKeys return a random common.PubKeys for test purpose
-func GetRandomPubKeys() common.PubKeys {
-	return common.NewPubKeys(GetRandomPubKey(), GetRandomPubKey())
+// GetRandomPubKeySet return a random common.PubKeySet for test purpose
+func GetRandomPubKeySet() common.PubKeySet {
+	return common.NewPubKeySet(GetRandomPubKey(), GetRandomPubKey())
 }
 
 func GetRandomVault() Vault {

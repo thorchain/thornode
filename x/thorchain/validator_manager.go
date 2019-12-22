@@ -101,7 +101,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 		return nil
 	}
 
-	var membership []common.PubKey
+	var membership common.PubKeys
 	for _, vault := range active {
 		membership = append(membership, vault.Membership...)
 	}
@@ -113,7 +113,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 	for _, na := range activeNodes {
 		found := false
 		for _, vault := range active {
-			if vault.Contains(na.NodePubKey.Secp256k1) {
+			if vault.Contains(na.PubKeySet.Secp256k1) {
 				found = true
 				newActive = append(newActive, na)
 				break
@@ -136,7 +136,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 	// find ready nodes that change to
 	for _, na := range readyNodes {
 		for _, member := range membership {
-			if na.NodePubKey.Contains(member) {
+			if na.PubKeySet.Contains(member) {
 				newActive = append(newActive, na)
 				ctx.EventManager().EmitEvent(
 					sdk.NewEvent("UpdateNodeAccountStatus",
@@ -178,7 +178,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 }
 
 func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, txOut TxOutStore) error {
-	ygg, err := vm.k.GetVault(ctx, node.NodePubKey.Secp256k1)
+	ygg, err := vm.k.GetVault(ctx, node.PubKeySet.Secp256k1)
 	if nil != err {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
 	}

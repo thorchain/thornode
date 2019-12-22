@@ -12,7 +12,7 @@ var _ = Suite(&TypeTssSuite{})
 
 func (s *TypeTssSuite) TestVoter(c *C) {
 	pk := GetRandomPubKey()
-	pks := []common.PubKey{
+	pks := common.PubKeys{
 		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
 	}
 	tss := NewTssVoter(

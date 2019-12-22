@@ -110,11 +110,11 @@ func queryVaultsAddresses(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 
 func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	var resp struct {
-		Asgard    []common.PubKey `json:"asgard"`
-		Yggdrasil []common.PubKey `json:"yggdrasil"`
+		Asgard    common.PubKeys `json:"asgard"`
+		Yggdrasil common.PubKeys `json:"yggdrasil"`
 	}
-	resp.Asgard = make([]common.PubKey, 0)
-	resp.Yggdrasil = make([]common.PubKey, 0)
+	resp.Asgard = make(common.PubKeys, 0)
+	resp.Yggdrasil = make(common.PubKeys, 0)
 	iter := keeper.GetVaultIterator(ctx)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {

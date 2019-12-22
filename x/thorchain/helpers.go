@@ -35,7 +35,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, d
 }
 
 func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
-	ygg, err := keeper.GetVault(ctx, nodeAcc.NodePubKey.Secp256k1)
+	ygg, err := keeper.GetVault(ctx, nodeAcc.PubKeySet.Secp256k1)
 	if err != nil {
 		return err
 	}

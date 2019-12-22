@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"fmt"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/constants"
@@ -82,13 +83,13 @@ func (h SetNodeKeysHandler) handleV1(ctx sdk.Context, msg MsgSetNodeKeys, versio
 		ctx.Logger().Error(fmt.Sprintf("node %s is disabled, so it can't update itself", nodeAccount.NodeAddress))
 		return sdk.ErrUnknownRequest("node is disabled can't update").Result()
 	}
-	if err := h.keeper.EnsureNodeKeysUnique(ctx, msg.ValidatorConsPubKey, msg.NodePubKeys); nil != err {
+	if err := h.keeper.EnsureNodeKeysUnique(ctx, msg.ValidatorConsPubKey, msg.PubKeySetSet); nil != err {
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
 	// Here make sure THORNode don't change the node account's bond
 	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
-	nodeAccount.NodePubKey = msg.NodePubKeys
+	nodeAccount.PubKeySet = msg.PubKeySetSet
 	nodeAccount.ValidatorConsPubKey = msg.ValidatorConsPubKey
 	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
 		ctx.Logger().Error(fmt.Sprintf("fail to save node account: %s", nodeAccount), err)
@@ -107,8 +108,8 @@ func (h SetNodeKeysHandler) handleV1(ctx sdk.Context, msg MsgSetNodeKeys, versio
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent("set_node_keys",
 			sdk.NewAttribute("node_address", msg.Signer.String()),
-			sdk.NewAttribute("node_secp256k1_pubkey", msg.NodePubKeys.Secp256k1.String()),
-			sdk.NewAttribute("node_ed25519_pubkey", msg.NodePubKeys.Ed25519.String()),
+			sdk.NewAttribute("node_secp256k1_pubkey", msg.PubKeySetSet.Secp256k1.String()),
+			sdk.NewAttribute("node_ed25519_pubkey", msg.PubKeySetSet.Ed25519.String()),
 			sdk.NewAttribute("validator_consensus_pub_key", msg.ValidatorConsPubKey)))
 
 	return sdk.Result{
