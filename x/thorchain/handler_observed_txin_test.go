@@ -120,7 +120,7 @@ func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	err := handler.inboundFailure(ctx, tx)
 	c.Assert(err, IsNil)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
-	c.Check(keeper.evt.Empty(), Equals, false, Commentf("%+v", keeper.evt))
+
 }
 
 type TestObservedTxInHandleKeeper struct {
