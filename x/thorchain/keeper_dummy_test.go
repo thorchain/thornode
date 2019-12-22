@@ -130,8 +130,8 @@ func (k KVStoreDummy) GetPoolLiquidityFees(_ sdk.Context, _ uint64, _ common.Ass
 func (k KVStoreDummy) GetEvent(ctx sdk.Context, eventID int64) (Event, error) { return Event{}, kaboom }
 func (k KVStoreDummy) GetEventsIterator(ctx sdk.Context) sdk.Iterator         { return nil }
 func (k KVStoreDummy) UpsertEvent(ctx sdk.Context, event Event) error         { return kaboom }
-func (k KVStoreDummy) GetPendingEventID(ctx sdk.Context, txID common.TxID) (int64, error) {
-	return 0, kaboom
+func (k KVStoreDummy) GetPendingEventID(ctx sdk.Context, txID common.TxID) ([]int64, error) {
+	return nil, kaboom
 }
 func (k KVStoreDummy) GetCurrentEventID(ctx sdk.Context) (int64, error)    { return 0, kaboom }
 func (k KVStoreDummy) SetCurrentEventID(ctx sdk.Context, eventID int64)    {}
