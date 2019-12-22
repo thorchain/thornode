@@ -88,14 +88,14 @@ func (k KVStore) HasValidVaultPools(ctx sdk.Context) (bool, error) {
 	return false, nil
 }
 
-func (k KVStore) getAsgardIndex(ctx sdk.Context) ([]common.PubKey, error) {
+func (k KVStore) getAsgardIndex(ctx sdk.Context) (common.PubKeys, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixVaultAsgardIndex, "")
 	if !store.Has([]byte(key)) {
 		return nil, nil
 	}
 	buf := store.Get([]byte(key))
-	var pks []common.PubKey
+	var pks common.PubKeys
 	if err := k.cdc.UnmarshalBinaryBare(buf, &pks); nil != err {
 		return nil, dbError(ctx, "fail to unmarshal asgard index", err)
 	}
@@ -170,7 +170,7 @@ func (k KVStore) DeleteVault(ctx sdk.Context, pubkey common.PubKey) error {
 			return err
 		}
 
-		var newPks []common.PubKey
+		var newPks common.PubKeys
 		for _, pk := range pks {
 			if !pk.Equals(pubkey) {
 				newPks = append(newPks, pk)

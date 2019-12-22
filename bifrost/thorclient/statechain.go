@@ -133,7 +133,7 @@ func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string
 }
 
 // Sign new keygen
-func (scb *StateChainBridge) GetKeygenStdTx(poolPubKey common.PubKey, inputPks []common.PubKey) (*authtypes.StdTx, error) {
+func (scb *StateChainBridge) GetKeygenStdTx(poolPubKey common.PubKey, inputPks common.PubKeys) (*authtypes.StdTx, error) {
 	start := time.Now()
 	defer func() {
 		scb.m.GetHistograms(metrics.SignToStateChainDuration).Observe(time.Since(start).Seconds())

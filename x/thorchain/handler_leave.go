@@ -86,7 +86,7 @@ func (lh LeaveHandler) handle(ctx sdk.Context, msg MsgLeave) sdk.Error {
 	} else {
 		// given the node is not active, they should not have Yggdrasil pool either
 		// but let's check it anyway just in case
-		vault, err := lh.keeper.GetVault(ctx, nodeAcc.NodePubKey.Secp256k1)
+		vault, err := lh.keeper.GetVault(ctx, nodeAcc.PubKeySet.Secp256k1)
 		if nil != err {
 			return sdk.ErrInternal(fmt.Errorf("fail to get vault pool: %w", err).Error())
 		}

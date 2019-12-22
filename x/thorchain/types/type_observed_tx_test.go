@@ -25,10 +25,10 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 	accConsPub3 := GetRandomBech32ConsensusPubKey()
 	accConsPub4 := GetRandomBech32ConsensusPubKey()
 
-	accPubKeys1 := GetRandomPubKeys()
-	accPubKeys2 := GetRandomPubKeys()
-	accPubKeys3 := GetRandomPubKeys()
-	accPubKeys4 := GetRandomPubKeys()
+	accPubKeySet1 := GetRandomPubKeySet()
+	accPubKeySet2 := GetRandomPubKeySet()
+	accPubKeySet3 := GetRandomPubKeySet()
+	accPubKeySet4 := GetRandomPubKeySet()
 
 	tx1 := GetRandomTx()
 	tx1.Memo = "hello"
@@ -63,19 +63,19 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 		NodeAccount{
 			NodeAddress:         acc1,
 			Status:              Active,
-			NodePubKey:          accPubKeys1,
+			PubKeySet:           accPubKeySet1,
 			ValidatorConsPubKey: accConsPub1,
 		},
 		NodeAccount{
 			NodeAddress:         acc2,
 			Status:              Active,
-			NodePubKey:          accPubKeys2,
+			PubKeySet:           accPubKeySet2,
 			ValidatorConsPubKey: accConsPub2,
 		},
 		NodeAccount{
 			NodeAddress:         acc3,
 			Status:              Active,
-			NodePubKey:          accPubKeys3,
+			PubKeySet:           accPubKeySet3,
 			ValidatorConsPubKey: accConsPub3,
 		},
 	}
@@ -83,25 +83,25 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 		NodeAccount{
 			NodeAddress:         acc1,
 			Status:              Active,
-			NodePubKey:          accPubKeys1,
+			PubKeySet:           accPubKeySet1,
 			ValidatorConsPubKey: accConsPub1,
 		},
 		NodeAccount{
 			NodeAddress:         acc2,
 			Status:              Active,
-			NodePubKey:          accPubKeys2,
+			PubKeySet:           accPubKeySet2,
 			ValidatorConsPubKey: accConsPub2,
 		},
 		NodeAccount{
 			NodeAddress:         acc3,
 			Status:              Active,
-			NodePubKey:          accPubKeys3,
+			PubKeySet:           accPubKeySet3,
 			ValidatorConsPubKey: accConsPub3,
 		},
 		NodeAccount{
 			NodeAddress:         acc4,
 			Status:              Active,
-			NodePubKey:          accPubKeys4,
+			PubKeySet:           accPubKeySet4,
 			ValidatorConsPubKey: accConsPub4,
 		},
 	}

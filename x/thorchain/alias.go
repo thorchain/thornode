@@ -93,7 +93,7 @@ var (
 	GetRandomBech32Addr            = types.GetRandomBech32Addr
 	GetRandomBech32ConsensusPubKey = types.GetRandomBech32ConsensusPubKey
 	GetRandomPubKey                = types.GetRandomPubKey
-	GetRandomPubkeys               = types.GetRandomPubKeys
+	GetRandomPubKeySet             = types.GetRandomPubKeySet
 	SetupConfigForTest             = types.SetupConfigForTest
 )
 
@@ -139,7 +139,6 @@ type (
 	TxOutItem                   = types.TxOutItem
 	TxOut                       = types.TxOut
 	Keygens                     = types.Keygens
-	Keygen                      = types.Keygen
 	AdminConfigKey              = types.AdminConfigKey
 	AdminConfig                 = types.AdminConfig
 	StakerPoolItem              = types.StakerPoolItem

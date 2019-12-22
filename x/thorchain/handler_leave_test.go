@@ -21,7 +21,7 @@ func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 	acc2 := GetRandomNodeAccount(NodeStandby)
 	acc2.Bond = sdk.NewUint(100 * common.One)
 	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc2), IsNil)
-	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc2.NodePubKey.Secp256k1)
+	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc2.PubKeySet.Secp256k1)
 	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 	txID := GetRandomTxHash()
 	senderBNB := GetRandomBNBAddress()
