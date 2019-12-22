@@ -456,13 +456,14 @@ func (vm *ValidatorMgr) nextPoolNodeAccounts(ctx sdk.Context, targetCount int) (
 		if active[i].RequestedToLeave != active[j].RequestedToLeave {
 			return active[i].RequestedToLeave
 		}
-		return active[i].LeaveHeight < active[j].LeaveHeight
+		return active[i].LeaveHeight > active[j].LeaveHeight
 	})
 
 	// remove a node node account, if one is marked to leave
-	if len(active) > 0 && active[0].LeaveHeight > 0 {
+	if len(active) > 0 && (active[0].LeaveHeight > 0 || active[0].RequestedToLeave) {
 		rotation = true
 		active = active[1:]
+		fmt.Println("Chopped one")
 	}
 
 	// add ready nodes to become active
