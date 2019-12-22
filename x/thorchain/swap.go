@@ -160,7 +160,6 @@ func swapOne(ctx sdk.Context,
 		}
 
 		evt := NewEvent(
-
 			swapEvt.Type(),
 			ctx.BlockHeight(),
 			tx,

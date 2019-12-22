@@ -24,6 +24,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, d
 				ToAddress:   tx.Tx.FromAddress,
 				VaultPubKey: tx.ObservedPubKey,
 				Coin:        coin,
+				Memo:        NewRefundMemo(tx.Tx.ID).String(),
 			}
 			store.AddTxOutItem(ctx, toi)
 		}
