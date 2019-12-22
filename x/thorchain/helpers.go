@@ -146,7 +146,7 @@ func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs commo
 
 func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs) error {
 	ctx.Logger().Info(fmt.Sprintf("txid(%s)", txID))
-	eventID, err := keeper.GetPendingEventID(ctx, txID)
+	eventIDs, err := keeper.GetPendingEventID(ctx, txID)
 	if nil != err {
 		if err == ErrEventNotFound {
 			ctx.Logger().Error(fmt.Sprintf("could not find the event(%s)", txID))
@@ -154,7 +154,12 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 		}
 		return fmt.Errorf("fail to get pending event id: %w", err)
 	}
-	return completeEventsByID(ctx, keeper, eventID, txs)
+	for _, item := range eventIDs {
+		if err := completeEventsByID(ctx, keeper, item, txs); nil != err {
+			return fmt.Errorf("fail to set event(%d) to complete: %w", item, err)
+		}
+	}
+	return nil
 }
 
 func enableNextPool(ctx sdk.Context, keeper Keeper) error {

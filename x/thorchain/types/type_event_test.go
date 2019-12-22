@@ -131,6 +131,4 @@ func (s EventSuite) TestEvent(c *C) {
 	c.Check(events[0].Type, Equals, evt.Type)
 
 	c.Check(Event{}.Empty(), Equals, true)
-	emptyRefundEvent := NewEmptyRefundEvent()
-	c.Check(emptyRefundEvent.Type(), Equals, "empty-refund")
 }

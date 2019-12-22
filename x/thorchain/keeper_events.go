@@ -14,7 +14,7 @@ type KeeperEvents interface {
 	GetEvent(ctx sdk.Context, eventID int64) (Event, error)
 	GetEventsIterator(ctx sdk.Context) sdk.Iterator
 	UpsertEvent(ctx sdk.Context, event Event) error
-	GetPendingEventID(ctx sdk.Context, txID common.TxID) (int64, error)
+	GetPendingEventID(ctx sdk.Context, txID common.TxID) ([]int64, error)
 	GetCurrentEventID(ctx sdk.Context) (int64, error)
 	SetCurrentEventID(ctx sdk.Context, eventID int64)
 	GetAllPendingEvents(ctx sdk.Context) (Events, error)
@@ -52,8 +52,7 @@ func (k KVStore) UpsertEvent(ctx sdk.Context, event Event) error {
 	}
 	store.Set([]byte(key), buf)
 	if event.Status == EventPending {
-		k.setEventPending(ctx, event)
-		return nil
+		return k.setEventPending(ctx, event)
 	}
 	k.removeEventPending(ctx, event)
 	return nil
@@ -66,29 +65,39 @@ func (k KVStore) removeEventPending(ctx sdk.Context, event Event) {
 }
 
 // setEventPending store the pending event use InTx hash as the key
-func (k KVStore) setEventPending(ctx sdk.Context, event Event) {
+func (k KVStore) setEventPending(ctx sdk.Context, event Event) error {
 	if event.Status != EventPending {
-		return
+		return nil
 	}
 	ctx.Logger().Info(fmt.Sprintf("event id(%d): %s", event.ID, event.InTx.ID))
 	key := k.GetKey(ctx, prefixPendingEvents, event.InTx.ID.String())
 	store := ctx.KVStore(k.storeKey)
-	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(&event.ID))
+	var eventIDs []int64
+	var err error
+	if store.Has([]byte(key)) {
+		eventIDs, err = k.GetPendingEventID(ctx, event.InTx.ID)
+		if err != nil {
+			return fmt.Errorf("fail to get pending event ids: %w", err)
+		}
+	}
+	eventIDs = append(eventIDs, event.ID)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(eventIDs))
+	return nil
 }
 
 // GetPendingEventID we store the event in pending status using it's in tx hash
-func (k KVStore) GetPendingEventID(ctx sdk.Context, txID common.TxID) (int64, error) {
+func (k KVStore) GetPendingEventID(ctx sdk.Context, txID common.TxID) ([]int64, error) {
 	key := k.GetKey(ctx, prefixPendingEvents, txID.String())
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
-		return 0, ErrEventNotFound
+		return nil, ErrEventNotFound
 	}
 	buf := store.Get([]byte(key))
-	var eventID int64
-	if err := k.Cdc().UnmarshalBinaryBare(buf, &eventID); nil != err {
-		return 0, fmt.Errorf("fail to unmarshal event id: %w", err)
+	var eventIDs []int64
+	if err := k.Cdc().UnmarshalBinaryBare(buf, &eventIDs); nil != err {
+		return nil, fmt.Errorf("fail to unmarshal event id: %w", err)
 	}
-	return eventID, nil
+	return eventIDs, nil
 }
 
 // GetCompleteEventIterator iterate complete events
