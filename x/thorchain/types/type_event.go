@@ -28,7 +28,6 @@ const (
 	AddEventType         = `add`
 	PoolEventType        = `pool`
 	RewardEventType      = `rewards`
-	EmptyRefundEventType = `empty-refund`
 )
 
 // NewEvent create a new  event
@@ -205,18 +204,4 @@ func NewEventRewards(bondReward sdk.Uint, poolRewards []PoolAmt) EventRewards {
 // Type return reward event type
 func (e EventRewards) Type() string {
 	return RewardEventType
-}
-
-// EmptyRefundEvent represent refund
-type EmptyRefundEvent struct {
-}
-
-// NewEmptyRefundEvent create a new EmptyRefundEvent
-func NewEmptyRefundEvent() EmptyRefundEvent {
-	return EmptyRefundEvent{}
-}
-
-// Type return EmptyRefundEvent type
-func (e EmptyRefundEvent) Type() string {
-	return EmptyRefundEventType
 }
