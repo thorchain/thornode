@@ -81,18 +81,6 @@ func GetRandomPubKeys() common.PubKeys {
 	return common.NewPubKeys(GetRandomPubKey(), GetRandomPubKey())
 }
 
-func GetRandomPoolPubKey(chain common.Chain) *common.PoolPubKey {
-	pk, _ := common.NewPoolPubKey(chain, nil, GetRandomPubKey())
-	return pk
-}
-
-func GetRandomPoolPubKeys() common.PoolPubKeys {
-	return common.PoolPubKeys{
-		GetRandomPoolPubKey(common.BNBChain),
-		GetRandomPoolPubKey(common.BTCChain),
-	}
-}
-
 func GetRandomVault() Vault {
 	return NewVault(32, ActiveVault, AsgardVault, GetRandomPubKey())
 }

@@ -10,14 +10,14 @@ import (
 // TxOutStoreDummy is going to manage all the outgoing tx
 type TxOutStoreDummy struct {
 	blockOut *TxOut
-	asgard   common.PoolPubKeys
+	asgard   common.PubKey
 }
 
 // NewTxOutStoreDummy will create a new instance of TxOutStore.
 func NewTxStoreDummy() *TxOutStoreDummy {
 	return &TxOutStoreDummy{
 		blockOut: NewTxOut(100),
-		asgard:   GetRandomPoolPubKeys(),
+		asgard:   GetRandomPubKey(),
 	}
 }
 
