@@ -91,17 +91,20 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 		ctx.Logger().Error("fail to list ready node accounts")
 	}
 
-	poolAddresses, err := vm.k.GetPoolAddresses(ctx)
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	if err != nil {
-		ctx.Logger().Error("fail to get pool addresses")
+		ctx.Logger().Error("fail to get active asgards")
 	}
 
 	// if we have no pool addresses, nothing to do...
-	if len(poolAddresses.Current) == 0 {
+	if len(active) == 0 {
 		return nil
 	}
 
-	membership := poolAddresses.Current[0].Membership
+	var membership []common.PubKey
+	for _, vault := range active {
+		membership = append(membership, vault.Membership...)
+	}
 
 	var newActive NodeAccounts // store the list of new active users
 
@@ -109,14 +112,10 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 	removedNodes := false
 	for _, na := range activeNodes {
 		found := false
-		for _, member := range membership {
-			if na.NodePubKey.Contains(member) {
+		for _, vault := range active {
+			if vault.Contains(na.NodePubKey.Secp256k1) {
 				found = true
 				newActive = append(newActive, na)
-				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
-				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-					ctx.Logger().Error("fail to save node account")
-				}
 				break
 			}
 		}
@@ -145,7 +144,6 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 						sdk.NewAttribute("Former:", na.Status.String()),
 						sdk.NewAttribute("Current:", NodeActive.String())))
 				na.UpdateStatus(NodeActive, height)
-				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
 				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 					ctx.Logger().Error("fail to save node account")
 				}
