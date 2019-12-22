@@ -38,6 +38,7 @@ echo "$NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $ADDRESS" > /tmp/shared/no
 if [ "$ROTATE_BLOCK_HEIGHT" != "0" ]; then
     echo "$KEY $VALUE $NODE_ADDRESS" > /tmp/shared/config_rotate_block_height.json
 fi
+
 # enable pools by default
 echo "DefaultPoolStatus Enabled $NODE_ADDRESS" > /tmp/shared/config_pool_status.json
 
@@ -45,25 +46,6 @@ echo "DefaultPoolStatus Enabled $NODE_ADDRESS" > /tmp/shared/config_pool_status.
 while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODES" ]; do
     sleep 1
 done
-
-if [ ! -z ${TSSKEYGEN+x} ]; then
-    export IFS=","
-    for addr in $TSSKEYGENLIST; do
-        # wait for TSS keysign agent to become available
-        $(dirname "$0")/wait-for-tss-keygen.sh $addr
-    done
-
-    KEYCLIENT="/usr/bin/keygenclient -url http://$TSSKEYGEN/keygen"
-    for f in /tmp/shared/node_*.json; do
-        KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $3}')"
-    done
-    sh -c "$KEYCLIENT > /tmp/keygenclient.output"
-
-    PUBKEY=$(cat /tmp/keygenclient.output | tail -1 | jq -r .pub_key)
-    POOL_ADDRESS=$(cat /tmp/keygenclient.output | tail -1 | jq -r .bnb_address)
-else
-    POOL_ADDRESS=$(cat ~/.signer/address.txt)
-fi
 
 if [ "$SEED" = "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
@@ -78,8 +60,6 @@ if [ "$SEED" = "$(hostname)" ]; then
         for f in /tmp/shared/node_*.json; do 
             add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}')
         done
-
-        add_pool_address $POOL_ADDRESS $PUBKEY "0"
 
         for f in /tmp/shared/config_*.json; do
           add_admin_config $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}')
@@ -105,6 +85,14 @@ if [ "$SEED" != "$(hostname)" ]; then
     fi
 fi
 
-echo "POOL ADDRESS: $POOL_ADDRESS"
+# wait for tss to become available
+if [ ! -z ${TSSKEYGEN+x} ]; then
+    export IFS=","
+    for addr in $TSSKEYGENLIST; do
+        # wait for TSS keysign agent to become available
+        $(dirname "$0")/wait-for-tss-keygen.sh $addr
+    done
+fi
+
 
 exec "$@"

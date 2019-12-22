@@ -13,9 +13,14 @@ var _ = Suite(&HelperSuite{})
 
 type TestRefundBondKeeper struct {
 	KVStoreDummy
-	ygg  Vault
-	pool Pool
-	na   NodeAccount
+	ygg    Vault
+	pool   Pool
+	na     NodeAccount
+	vaults Vaults
+}
+
+func (k *TestRefundBondKeeper) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vaults, error) {
+	return k.vaults, nil
 }
 
 func (k *TestRefundBondKeeper) GetVault(_ sdk.Context, _ common.PubKey) (Vault, error) {
@@ -50,7 +55,8 @@ func (s *HelperSuite) TestRefundBond(c *C) {
 			BalanceRune:  sdk.NewUint(23789 * common.One),
 			BalanceAsset: sdk.NewUint(167 * common.One),
 		},
-		ygg: ygg,
+		ygg:    ygg,
+		vaults: Vaults{GetRandomVault()},
 	}
 
 	err := refundBond(ctx, txID, na, keeper, txOut)

@@ -79,15 +79,6 @@ func (s *TestTssHandlerKeeper) GetChains(_ sdk.Context) (common.Chains, error) {
 	return s.chains, nil
 }
 
-type TestTssPoolMgr struct {
-	PoolAddressDummyMgr
-	pks common.PoolPubKeys
-}
-
-func (p *TestTssPoolMgr) RotatePoolAddress(_ sdk.Context, pks common.PoolPubKeys, _ TxOutStore) {
-	p.pks = pks
-}
-
 func (s *HandlerTssSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(12)

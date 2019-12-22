@@ -18,6 +18,6 @@ func (vm *ValidatorDummyMgr) BeginBlock(_ sdk.Context) error { return kaboom }
 func (vm *ValidatorDummyMgr) EndBlock(_ sdk.Context, _ TxOutStore) []abci.ValidatorUpdate {
 	return nil
 }
-func (vm *ValidatorDummyMgr) RequestYggReturn(_ sdk.Context, _ NodeAccount, _ PoolAddressManager, _ TxOutStore) error {
+func (vm *ValidatorDummyMgr) RequestYggReturn(_ sdk.Context, _ NodeAccount, _ TxOutStore) error {
 	return kaboom
 }
