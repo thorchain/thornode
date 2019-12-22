@@ -116,11 +116,9 @@ func (pam *AddressManager) updatePubKeys() {
 			if nil != err {
 				pam.logger.Error().Err(err).Msg("fail to get pubkeys from thorchain")
 			}
-			pam.rwMutex.Lock()
 			for _, pk := range pubkeys {
 				pam.AddPubKey(pk)
 			}
-			pam.rwMutex.Unlock()
 		}
 	}
 }
