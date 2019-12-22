@@ -111,7 +111,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	c.Assert(err, IsNil)
 	c.Logf("stake unit: %d", unit)
 	// let's just unstake
-	unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy(), NewPoolAddressDummyMgr())
+	unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy())
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 
@@ -165,7 +165,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_Validation(c *C) {
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	for _, tc := range testCases {
-		unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy(), NewPoolAddressDummyMgr())
+		unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy())
 		c.Assert(unstakeHandler.Run(ctx, tc.msg, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
 }
@@ -223,7 +223,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 
 	for _, tc := range testCases {
 		ctx, _ := setupKeeperForTest(c)
-		unstakeHandler := NewUnstakeHandler(tc.k, NewTxStoreDummy(), NewPoolAddressDummyMgr())
+		unstakeHandler := NewUnstakeHandler(tc.k, NewTxStoreDummy())
 		msgUnstake := NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
 		c.Assert(unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}

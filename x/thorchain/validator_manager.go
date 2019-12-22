@@ -26,22 +26,20 @@ const (
 type ValidatorManager interface {
 	BeginBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error
 	EndBlock(ctx sdk.Context, store TxOutStore, constAccessor constants.ConstantValues) []abci.ValidatorUpdate
-	RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error
+	RequestYggReturn(ctx sdk.Context, node NodeAccount, txOut TxOutStore) error
 }
 
 // ValidatorMgr is to manage a list of validators , and rotate them
 type ValidatorMgr struct {
-	k           Keeper
-	poolAddrMgr PoolAddressManager
-	vaultMgr    VaultManager
+	k        Keeper
+	vaultMgr VaultManager
 }
 
 // NewValidatorManager create a new instance of ValidatorManager
-func NewValidatorMgr(k Keeper, poolAddrMgr PoolAddressManager, vaultMgr VaultManager) *ValidatorMgr {
+func NewValidatorMgr(k Keeper, vaultMgr VaultManager) *ValidatorMgr {
 	return &ValidatorMgr{
-		k:           k,
-		poolAddrMgr: poolAddrMgr,
-		vaultMgr:    vaultMgr,
+		k:        k,
+		vaultMgr: vaultMgr,
 	}
 }
 
@@ -93,17 +91,20 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 		ctx.Logger().Error("fail to list ready node accounts")
 	}
 
-	poolAddresses, err := vm.k.GetPoolAddresses(ctx)
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	if err != nil {
-		ctx.Logger().Error("fail to get pool addresses")
+		ctx.Logger().Error("fail to get active asgards")
 	}
 
 	// if we have no pool addresses, nothing to do...
-	if len(poolAddresses.Current) == 0 {
+	if len(active) == 0 {
 		return nil
 	}
 
-	membership := poolAddresses.Current[0].Membership
+	var membership []common.PubKey
+	for _, vault := range active {
+		membership = append(membership, vault.Membership...)
+	}
 
 	var newActive NodeAccounts // store the list of new active users
 
@@ -111,14 +112,10 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 	removedNodes := false
 	for _, na := range activeNodes {
 		found := false
-		for _, member := range membership {
-			if na.NodePubKey.Contains(member) {
+		for _, vault := range active {
+			if vault.Contains(na.NodePubKey.Secp256k1) {
 				found = true
 				newActive = append(newActive, na)
-				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
-				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-					ctx.Logger().Error("fail to save node account")
-				}
 				break
 			}
 		}
@@ -147,7 +144,6 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 						sdk.NewAttribute("Former:", na.Status.String()),
 						sdk.NewAttribute("Current:", NodeActive.String())))
 				na.UpdateStatus(NodeActive, height)
-				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
 				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 					ctx.Logger().Error("fail to save node account")
 				}
@@ -181,7 +177,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore, constAccesso
 	return validators
 }
 
-func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error {
+func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, txOut TxOutStore) error {
 	ygg, err := vm.k.GetVault(ctx, node.NodePubKey.Secp256k1)
 	if nil != err {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
@@ -189,36 +185,45 @@ func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, pool
 	if !ygg.IsYggdrasil() {
 		return fmt.Errorf("this is not a Yggdrasil vault")
 	}
-	chains, err := vm.k.GetChains(ctx)
-	if err != nil {
-		return err
-	}
 	if !ygg.HasFunds() {
 		return nil
 	}
-	for _, c := range chains {
-		currentChainPoolAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(c)
-		for _, coin := range ygg.Coins {
-			toAddr, err := currentChainPoolAddr.PubKey.GetAddress(coin.Asset.Chain)
-			if !toAddr.IsEmpty() {
-				txOutItem := &TxOutItem{
-					Chain:       coin.Asset.Chain,
-					ToAddress:   toAddr,
-					InHash:      common.BlankTxID,
-					VaultPubKey: ygg.PubKey,
-					Memo:        "yggdrasil-",
-					Coin:        coin,
-				}
-				txOut.AddTxOutItem(ctx, txOutItem)
-				continue
-			}
-			wrapErr := fmt.Errorf(
-				"fail to get pool address (%s) for chain (%s) : %w",
-				toAddr.String(),
-				coin.Asset.Chain.String(), err)
-			ctx.Logger().Error(wrapErr.Error(), "error", err)
-			return wrapErr
+
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		return err
+	}
+
+	for _, coin := range ygg.Coins {
+
+		vault := active.SelectByMinCoin(coin.Asset)
+		if vault.IsEmpty() {
+			return fmt.Errorf("unable to determine asgard vault")
 		}
+
+		toAddr, err := vault.PubKey.GetAddress(coin.Asset.Chain)
+		if err != nil {
+			return err
+		}
+
+		if !toAddr.IsEmpty() {
+			txOutItem := &TxOutItem{
+				Chain:       coin.Asset.Chain,
+				ToAddress:   toAddr,
+				InHash:      common.BlankTxID,
+				VaultPubKey: ygg.PubKey,
+				Memo:        "yggdrasil-",
+				Coin:        coin,
+			}
+			txOut.AddTxOutItem(ctx, txOutItem)
+			continue
+		}
+		wrapErr := fmt.Errorf(
+			"fail to get pool address (%s) for chain (%s) : %w",
+			toAddr.String(),
+			coin.Asset.Chain.String(), err)
+		ctx.Logger().Error(wrapErr.Error(), "error", err)
+		return wrapErr
 	}
 	return nil
 }
@@ -232,7 +237,7 @@ func (vm *ValidatorMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeA
 		return fmt.Errorf("fail at ragnarok protocol step 1: %w", err)
 	}
 	if !hasYggdrasil {
-		result := handleRagnarokProtocolStep2(ctx, vm.k, txOut, vm.poolAddrMgr, constAccessor)
+		result := handleRagnarokProtocolStep2(ctx, vm.k, txOut, constAccessor)
 		if !result.IsOK() {
 			return errors.New("fail to process ragnarok protocol step 2")
 		}
@@ -244,7 +249,7 @@ func (vm *ValidatorMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeA
 func (vm *ValidatorMgr) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore) error {
 	// request every node to return fund
 	for _, na := range activeNodes {
-		if err := vm.RequestYggReturn(ctx, na, vm.poolAddrMgr, txOut); nil != err {
+		if err := vm.RequestYggReturn(ctx, na, txOut); nil != err {
 			return fmt.Errorf("fail to request yggdrasil fund back: %w", err)
 		}
 	}

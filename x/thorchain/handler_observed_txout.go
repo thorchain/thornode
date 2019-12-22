@@ -14,16 +14,14 @@ import (
 type ObservedTxOutHandler struct {
 	keeper       Keeper
 	txOutStore   TxOutStore
-	poolAddrMgr  PoolAddressManager
 	validatorMgr ValidatorManager
 	vaultMgr     VaultManager
 }
 
-func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager, vaultMgr VaultManager) ObservedTxOutHandler {
+func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager, vaultMgr VaultManager) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
-		poolAddrMgr:  poolAddrMgr,
 		validatorMgr: validatorMgr,
 		vaultMgr:     vaultMgr,
 	}
@@ -179,9 +177,16 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	handler := NewHandler(h.keeper, h.poolAddrMgr, h.txOutStore, h.validatorMgr, h.vaultMgr)
+	handler := NewHandler(h.keeper, h.txOutStore, h.validatorMgr, h.vaultMgr)
 
 	for _, tx := range msg.Txs {
+
+		// check we are sending from a valid vault
+		if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
+			err = wrapError(ctx, err, "Observed Tx Pubkey is not associated with a valid vault")
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
 		if err != nil {
 			return sdk.ErrInternal(err.Error()).Result()

@@ -61,11 +61,10 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 		addrs: []sdk.AccAddress{nas[0].NodeAddress},
 	}
 	txOutStore := NewTxStoreDummy()
-	poolAddrMgr := NewPoolAddressDummyMgr()
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 
-	slasher := NewSlasher(keeper, txOutStore, poolAddrMgr)
+	slasher := NewSlasher(keeper, txOutStore)
 	// should slash na2 only
 	lackOfObservationPenalty := constAccessor.GetInt64Value(constants.LackOfObservationPenalty)
 	err = slasher.LackObserving(ctx, constAccessor)
@@ -83,9 +82,14 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 
 type TestSlashingLackKeeper struct {
 	KVStoreDummy
-	evts  Events
-	txOut *TxOut
-	na    NodeAccount
+	evts   Events
+	txOut  *TxOut
+	na     NodeAccount
+	vaults Vaults
+}
+
+func (k *TestSlashingLackKeeper) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vaults, error) {
+	return k.vaults, nil
 }
 
 func (k *TestSlashingLackKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
@@ -113,9 +117,7 @@ func (k *TestSlashingLackKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) e
 func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(201) // set blockheight
-	poolAddrMgr := NewPoolAddressDummyMgr()
 	txOutStore := NewTxStoreDummy()
-	txOutStore.asgard = poolAddrMgr.GetCurrentPoolAddresses().Current
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	na := GetRandomNodeAccount(NodeActive)
@@ -158,20 +160,20 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	txOut.TxArray = append(txOut.TxArray, txOutItem)
 
 	keeper := &TestSlashingLackKeeper{
-		txOut: txOut,
-		evts:  Events{evt},
-		na:    na,
+		txOut:  txOut,
+		evts:   Events{evt},
+		na:     na,
+		vaults: Vaults{GetRandomVault()},
 	}
 	signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
 	ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod + 5)
 
-	slasher := NewSlasher(keeper, txOutStore, poolAddrMgr)
+	slasher := NewSlasher(keeper, txOutStore)
 	c.Assert(slasher.LackSigning(ctx, constAccessor), IsNil)
 
 	c.Check(keeper.na.SlashPoints, Equals, int64(200), Commentf("%+v\n", na))
 
 	outItems := txOutStore.GetOutboundItems()
 	c.Assert(outItems, HasLen, 1)
-	poolPubKey := poolAddrMgr.GetAsgardPoolPubKey(evt.InTx.Chain).PubKey
-	c.Assert(outItems[0].VaultPubKey.Equals(poolPubKey), Equals, true)
+	c.Assert(outItems[0].VaultPubKey.Equals(keeper.vaults[0].PubKey), Equals, true)
 }

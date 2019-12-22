@@ -75,15 +75,13 @@ type AppModule struct {
 	coinKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
 	txOutStore   TxOutStore
-	poolMgr      PoolAddressManager
 	validatorMgr ValidatorManager
 	vaultMgr     VaultManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
-	poolAddrMgr := NewPoolAddressMgr(k)
-	txStore := NewTxOutStorage(k, poolAddrMgr)
+	txStore := NewTxOutStorage(k)
 	vaultMgr := NewVaultMgr(k, txStore)
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -91,8 +89,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		coinKeeper:     bankKeeper,
 		supplyKeeper:   supplyKeeper,
 		txOutStore:     txStore,
-		poolMgr:        poolAddrMgr,
-		validatorMgr:   NewValidatorMgr(k, poolAddrMgr, vaultMgr),
+		validatorMgr:   NewValidatorMgr(k, vaultMgr),
 		vaultMgr:       vaultMgr,
 	}
 }
@@ -108,22 +105,19 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.poolMgr, am.txOutStore, am.validatorMgr, am.vaultMgr)
+	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.vaultMgr)
 }
 func (am AppModule) QuerierRoute() string {
 	return ModuleName
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.keeper, am.poolMgr, am.validatorMgr)
+	return NewQuerier(am.keeper, am.validatorMgr)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
 
-	if err := am.poolMgr.BeginBlock(ctx); err != nil {
-		ctx.Logger().Error("Fail to begin block on pool address manager", err)
-	}
 	version := am.keeper.GetLowestActiveVersion(ctx)
 	constantValues := constants.GetConstantValues(version)
 	if nil == constantValues {
@@ -145,7 +139,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if nil == constantValues {
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
 	} else {
-		slasher := NewSlasher(am.keeper, am.txOutStore, am.poolMgr)
+		slasher := NewSlasher(am.keeper, am.txOutStore)
 		// slash node accounts for not observing any accepted inbound tx
 		if err := slasher.LackObserving(ctx, constantValues); err != nil {
 			ctx.Logger().Error("Unable to slash for lack of observing:", err)

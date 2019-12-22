@@ -29,12 +29,11 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 		na: GetRandomNodeAccount(NodeActive),
 	}
 
-	poolAddrMgr := NewPoolAddressMgr(keeper)
 	vaultMgr := NewVaultMgrDummy()
-	validatorMgr := NewValidatorMgr(keeper, poolAddrMgr, vaultMgr)
+	validatorMgr := NewValidatorMgr(keeper, vaultMgr)
 	txOutStore := NewTxStoreDummy()
 
-	handler := NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
+	handler := NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -114,13 +113,12 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	}
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
-	poolAddrMgr := NewPoolAddressDummyMgr()
 	vaultMgr := NewVaultMgrDummy()
-	validatorMgr := NewValidatorMgr(keeper, poolAddrMgr, vaultMgr)
+	validatorMgr := NewValidatorMgr(keeper, vaultMgr)
 	validatorMgr.BeginBlock(ctx, constAccessor)
 	txOutStore := NewTxStoreDummy()
 
-	handler := NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
+	handler := NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
 
 	// check yggdrasil balance on add funds
 	coins := common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One))}

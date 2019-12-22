@@ -79,10 +79,10 @@ var (
 	NewMsgYggdrasil                = types.NewMsgYggdrasil
 	NewMsgReserveContributor       = types.NewMsgReserveContributor
 	NewMsgBond                     = types.NewMsgBond
-	NewPoolAddresses               = types.NewPoolAddresses
 	NewMsgLeave                    = types.NewMsgLeave
 	NewMsgSetVersion               = types.NewMsgSetVersion
 	GetPoolStatus                  = types.GetPoolStatus
+	GetRandomVault                 = types.GetRandomVault
 	GetRandomTx                    = types.GetRandomTx
 	GetRandomObservedTx            = types.GetRandomObservedTx
 	GetRandomNodeAccount           = types.GetRandomNodeAccount
@@ -92,7 +92,6 @@ var (
 	GetRandomBech32ConsensusPubKey = types.GetRandomBech32ConsensusPubKey
 	GetRandomPubKey                = types.GetRandomPubKey
 	GetRandomPubkeys               = types.GetRandomPubKeys
-	GetRandomPoolPubKeys           = types.GetRandomPoolPubKeys
 	SetupConfigForTest             = types.SetupConfigForTest
 )
 
@@ -156,7 +155,6 @@ type (
 	NodeAccount                 = types.NodeAccount
 	NodeAccounts                = types.NodeAccounts
 	NodeAccountsBySlashingPoint = types.NodeAccountsBySlashingPoint
-	PoolAddresses               = types.PoolAddresses
 	NodeStatus                  = types.NodeStatus
 	VaultData                   = types.VaultData
 	VaultStatus                 = types.VaultStatus

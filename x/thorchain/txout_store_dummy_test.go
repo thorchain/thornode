@@ -10,24 +10,20 @@ import (
 // TxOutStoreDummy is going to manage all the outgoing tx
 type TxOutStoreDummy struct {
 	blockOut *TxOut
-	asgard   common.PoolPubKeys
+	asgard   common.PubKey
 }
 
 // NewTxOutStoreDummy will create a new instance of TxOutStore.
 func NewTxStoreDummy() *TxOutStoreDummy {
 	return &TxOutStoreDummy{
 		blockOut: NewTxOut(100),
-		asgard:   GetRandomPoolPubKeys(),
+		asgard:   GetRandomPubKey(),
 	}
 }
 
 // NewBlock create a new block
 func (tos *TxOutStoreDummy) NewBlock(height uint64, constAccessor constants.ConstantValues) {
 	tos.blockOut = NewTxOut(height)
-}
-
-func (tos *TxOutStoreDummy) GetAsgardPoolPubKey(chain common.Chain) *common.PoolPubKey {
-	return tos.asgard.GetByChain(chain)
 }
 
 // CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
