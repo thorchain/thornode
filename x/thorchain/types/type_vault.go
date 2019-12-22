@@ -150,3 +150,31 @@ func (vs Vaults) SortBy(sortBy common.Asset) Vaults {
 
 	return vs
 }
+
+func (vs Vaults) SelectByMinCoin(asset common.Asset) (vault Vault) {
+	if len(vs) == 0 {
+		return Vault{}
+	}
+
+	for _, v := range vs {
+		if vault.IsEmpty() || v.GetCoin(asset).Amount.LT(vault.GetCoin(asset).Amount) {
+			vault = v
+		}
+	}
+
+	return
+}
+
+func (vs Vaults) SelectByMaxCoin(asset common.Asset) (vault Vault) {
+	if len(vs) == 0 {
+		return Vault{}
+	}
+
+	for _, v := range vs {
+		if v.GetCoin(asset).Amount.GT(vault.GetCoin(asset).Amount) {
+			vault = v
+		}
+	}
+
+	return
+}

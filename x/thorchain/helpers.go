@@ -64,11 +64,23 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 	nodeAcc.Bond = common.SafeSub(nodeAcc.Bond, yggRune)
 
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
+
+		active, err := keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
+		if err != nil {
+			ctx.Logger().Error("fail to get active vaults", err)
+			return err
+		}
+
+		vault := active.SelectByMinCoin(common.RuneAsset())
+		if vault.IsEmpty() {
+			return fmt.Errorf("unable to determine asgard vault to send funds")
+		}
+
 		// refund bond
 		txOutItem := &TxOutItem{
 			Chain:       common.BNBChain,
 			ToAddress:   nodeAcc.BondAddress,
-			VaultPubKey: txOut.GetAsgardPoolPubKey(common.BNBChain).PubKey,
+			VaultPubKey: vault.PubKey,
 			InHash:      txID,
 			Coin:        common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
@@ -88,14 +100,8 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 }
 
 // Checks if the observed vault pubkey is a valid asgard or ygg vault
-func isCurrentVaultPubKey(ctx sdk.Context, keeper Keeper, poolAddrMgr PoolAddressManager, tx ObservedTx) bool {
-	currentPoolAddress := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(tx.Tx.Chain)
-	yggExists := keeper.VaultExists(ctx, tx.ObservedPubKey)
-	if !currentPoolAddress.PubKey.Equals(tx.ObservedPubKey) && !yggExists {
-		ctx.Logger().Error("wrong pool address, refund", "pubkey", currentPoolAddress.PubKey.String(), "observe pool addr", tx.ObservedPubKey)
-		return false
-	}
-	return true
+func isCurrentVaultPubKey(ctx sdk.Context, keeper Keeper, tx ObservedTx) bool {
+	return keeper.VaultExists(ctx, tx.ObservedPubKey)
 }
 
 // isSignedByActiveObserver check whether the signers are all active observer

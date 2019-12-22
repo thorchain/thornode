@@ -6,20 +6,28 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"strings"
 	"testing"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
+	"github.com/cosmos/cosmos-sdk/client/keys"
+	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/common"
 
 	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
 
-type BinancechainSuite struct{}
+type BinancechainSuite struct {
+	thordir  string
+	statecfg config.StateChainConfiguration
+}
 
 var _ = Suite(&BinancechainSuite{})
 
@@ -27,10 +35,27 @@ func (s *BinancechainSuite) SetUpSuite(c *C) {
 	types2.SetupConfigForTest()
 	ctypes.Network = ctypes.TestNetwork
 	c.Assert(os.Setenv("NET", "testnet"), IsNil)
+
+	s.thordir = filepath.Join(os.TempDir(), ".thorcli")
+	s.statecfg = config.StateChainConfiguration{
+		ChainID:         "statechain",
+		ChainHost:       "localhost",
+		SignerName:      "bob",
+		SignerPasswd:    "password",
+		ChainHomeFolder: s.thordir,
+	}
+	kb, err := keys.NewKeyBaseFromDir(s.thordir)
+	c.Assert(err, IsNil)
+	_, _, err = kb.CreateMnemonic(s.statecfg.SignerName, cKeys.English, s.statecfg.SignerPasswd, cKeys.Secp256k1)
+	c.Assert(err, IsNil)
 }
 
 func (s *BinancechainSuite) TearDownSuite(c *C) {
 	c.Assert(os.Unsetenv("NET"), IsNil)
+
+	if err := os.RemoveAll(s.thordir); nil != err {
+		c.Error(err)
+	}
 }
 
 const binanceNodeInfo = `{"node_info":{"protocol_version":{"p2p":7,"block":10,"app":0},"id":"7bbe02b44f45fb8f73981c13bb21b19b30e2658d","listen_addr":"10.201.42.4:27146","network":"Binance-Chain-Nile","version":"0.31.5","channels":"3640202122233038","moniker":"Kita","other":{"tx_index":"on","rpc_address":"tcp://0.0.0.0:27147"}},"sync_info":{"latest_block_hash":"BFADEA1DC558D23CB80564AA3C08C863929E4CC93E43C4925D96219114489DC0","latest_app_hash":"1115D879135E2492A947CF3EB9FE055B9813581084EFE3686A6466C2EC12DB7A","latest_block_height":35493230,"latest_block_time":"2019-08-25T00:54:02.906908056Z","catching_up":false},"validator_info":{"address":"E0DD72609CC106210D1AA13936CB67B93A0AEE21","pub_key":[4,34,67,57,104,143,1,46,100,157,228,142,36,24,128,9,46,170,143,106,160,244,241,75,252,249,224,199,105,23,192,182],"voting_power":100000000000}}`
@@ -43,18 +68,11 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		Host:   "localhost",
 		Port:   0,
 	}
-	b, err := NewBinance(config.BinanceConfiguration{
-		RPCHost:    "",
-		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
+	b, err := NewBinance(s.statecfg, config.BinanceConfiguration{
+		RPCHost: "",
 	}, false, tssCfg)
 	c.Assert(b, IsNil)
 	c.Assert(err, NotNil)
-	b1, err1 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    "localhost",
-		PrivateKey: "",
-	}, false, tssCfg)
-	c.Assert(b1, IsNil)
-	c.Assert(err1, NotNil)
 
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
@@ -64,25 +82,11 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		}
 	}))
 
-	b2, err2 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    server.URL,
-		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
+	b2, err2 := NewBinance(s.statecfg, config.BinanceConfiguration{
+		RPCHost: server.URL,
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
-
-	b3, err3 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    server.URL,
-		PrivateKey: "asdfsdfdsf",
-	}, false, tssCfg)
-	c.Assert(b3, IsNil)
-	c.Assert(err3, NotNil)
-	b4, err4 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    server.URL,
-		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
-	}, false, tssCfg)
-	c.Assert(b4, NotNil)
-	c.Assert(err4, IsNil)
 }
 
 const accountInfo string = `{
@@ -98,15 +102,16 @@ const accountInfo string = `{
 func (s *BinancechainSuite) TestSignTx(c *C) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
-		switch req.RequestURI {
-		case "/abci_query?path=%22%2Faccount%2Ftbnb1fds7yhw7qt9rkxw9pn65jyj004x858ny4xf2dk%22":
+		if strings.HasPrefix(req.RequestURI, "/abci_query?") {
 			if _, err := rw.Write([]byte(accountInfo)); nil != err {
 				c.Error(err)
 			}
-		case "/status":
+		} else if strings.HasPrefix(req.RequestURI, "/status") {
 			if _, err := rw.Write([]byte(status)); nil != err {
 				c.Error(err)
 			}
+		} else {
+			// c.Error(fmt.Errorf("no server path"))
 		}
 	}))
 	tssCfg := config.TSSConfiguration{
@@ -114,25 +119,21 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		Host:   "localhost",
 		Port:   0,
 	}
-	b2, err2 := NewBinance(config.BinanceConfiguration{
-		RPCHost:    server.URL,
-		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
+	b2, err2 := NewBinance(s.statecfg, config.BinanceConfiguration{
+		RPCHost: server.URL,
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
-	txOut := getTxOutFromJsonInput(`{ "height": "1440", "hash": "", "tx_array": [ { "pool_address":"thorpub1addwnpepqd5r97je7uw94e3t27r2jhxdxuglp5q5dr2muhckcpek96365dutx8frl9w","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": null } ]}`, c)
-	r, p, err := b2.SignTx(txOut.TxArray[0], 1440)
-	c.Assert(r, IsNil)
-	c.Assert(p, IsNil)
+	pk, err := common.NewPubKeyFromCrypto(b2.keyManager.GetPrivKey().PubKey())
 	c.Assert(err, IsNil)
+	txOut := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "vault_pubkey":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coin":  { "denom": "BNB", "amount": "194765912" }  } ]}`, c)
+	txOut.TxArray[0].VaultPubKey = pk
+	r, p, err := b2.SignTx(txOut.TxArray[0], 1440)
+	c.Assert(err, IsNil)
+	c.Assert(r, NotNil)
+	c.Assert(p, NotNil)
 
-	txOut1 := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "vault_pubkey":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coin":  { "denom": "BNB", "amount": "194765912" }  } ]}`, c)
-	r1, p1, err1 := b2.SignTx(txOut1.TxArray[0], 1718)
-	c.Assert(err1, IsNil)
-	c.Assert(p1, NotNil)
-	c.Assert(r1, NotNil)
-
-	err = b2.BroadcastTx(r1)
+	err = b2.BroadcastTx(r)
 	c.Assert(err, IsNil)
 }
 
@@ -153,22 +154,17 @@ func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 	}
 
 	inputs := []struct {
-		poolAddr   string
+		poolAddr   common.PubKey
 		signerAddr string
 		match      bool
 	}{
 		{
-			poolAddr:   "whatever",
+			poolAddr:   common.PubKey("thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy"),
 			signerAddr: "blabab",
 			match:      false,
 		},
 		{
-			poolAddr:   "thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy",
-			signerAddr: "blabab",
-			match:      false,
-		},
-		{
-			poolAddr:   "thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy",
+			poolAddr:   common.PubKey("thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy"),
 			signerAddr: "bnb1fds7yhw7qt9rkxw9pn65jyj004x858nymnqwd8",
 			match:      true,
 		},
@@ -188,9 +184,8 @@ func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 		Port:   0,
 	}
 
-	b, err := NewBinance(config.BinanceConfiguration{
-		RPCHost:    server.URL,
-		PrivateKey: "91a2f0e5b1495cf51b0792a009b49c54ce8ae52d0dada711e73d98b22e6698ea",
+	b, err := NewBinance(s.statecfg, config.BinanceConfiguration{
+		RPCHost: server.URL,
 	}, false, tssCfg)
 	c.Assert(err, IsNil)
 	c.Assert(b, NotNil)

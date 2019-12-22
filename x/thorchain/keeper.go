@@ -30,7 +30,6 @@ type Keeper interface {
 	KeeperTxOut
 	KeeperLiquidityFees
 	KeeperEvents
-	KeeperPoolAddresses
 	KeeperChains
 	KeeperVault
 	KeeperReserveContributors
@@ -64,7 +63,6 @@ const (
 	prefixLastSignedHeight   dbPrefix = "last_signed_height/"
 	prefixNodeAccount        dbPrefix = "node_account/"
 	prefixActiveObserver     dbPrefix = "active_observer/"
-	prefixPoolAddresses      dbPrefix = "pool_addresses/"
 	prefixSupportedChains    dbPrefix = "supported_chains/"
 	prefixVaultPool          dbPrefix = "vault/"
 	prefixVaultAsgardIndex   dbPrefix = "vault_asgard_index/"

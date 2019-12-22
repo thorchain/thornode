@@ -136,10 +136,7 @@ func (k KVStoreDummy) GetPendingEventID(ctx sdk.Context, txID common.TxID) ([]in
 func (k KVStoreDummy) GetCurrentEventID(ctx sdk.Context) (int64, error)    { return 0, kaboom }
 func (k KVStoreDummy) SetCurrentEventID(ctx sdk.Context, eventID int64)    {}
 func (k KVStoreDummy) GetAllPendingEvents(ctx sdk.Context) (Events, error) { return nil, kaboom }
-func (k KVStoreDummy) SetPoolAddresses(_ sdk.Context, _ *PoolAddresses)    {}
-func (k KVStoreDummy) GetPoolAddresses(_ sdk.Context) (PoolAddresses, error) {
-	return PoolAddresses{}, kaboom
-}
+
 func (k KVStoreDummy) GetChains(_ sdk.Context) (common.Chains, error)  { return nil, kaboom }
 func (k KVStoreDummy) SetChains(_ sdk.Context, _ common.Chains)        {}
 func (k KVStoreDummy) GetVaultIterator(_ sdk.Context) sdk.Iterator     { return nil }

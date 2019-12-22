@@ -52,6 +52,9 @@ def bnbAddress()
 end
 
 def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
+  # fetch vault address and pubkey
+  vault = get("/pool_addresses").body['current'][0]
+
   hash ||= txid()
   sender ||= bnbAddress
   gas ||= [{
@@ -75,13 +78,13 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
       'id': hash,
       'from_address': sender,
       'chain': 'BNB',
-      'to_address': VAULT_ADDRESS,
+      'to_address': vault['address'],
       'coins': coins,
       'memo': memo,
       'gas': gas,
     },
     'block_height': '376',
-    'observed_pub_key': VAULT_PUBKEY,
+    'observed_pub_key': vault['pub_key'],
   }
 end
 
