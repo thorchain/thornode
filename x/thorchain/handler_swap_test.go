@@ -33,9 +33,8 @@ func (s *HandlerSwapSuite) TestValidate(c *C) {
 	}
 
 	txOutStore := NewTxStoreDummy()
-	poolAddrMgr := NewPoolAddressDummyMgr()
 
-	handler := NewSwapHandler(keeper, txOutStore, poolAddrMgr)
+	handler := NewSwapHandler(keeper, txOutStore)
 
 	ver := semver.MustParse("0.1.0")
 	txID := GetRandomTxHash()
@@ -114,9 +113,8 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	}
 
 	txOutStore := NewTxStoreDummy()
-	poolAddrMgr := NewPoolAddressDummyMgr()
 
-	handler := NewSwapHandler(keeper, txOutStore, poolAddrMgr)
+	handler := NewSwapHandler(keeper, txOutStore)
 
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
@@ -168,8 +166,6 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	c.Assert(keeper.SetPool(ctx, poolTCAN), IsNil)
 
 	m, err := ParseMemo("swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592")
-	currentChainPoolAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(common.BNBChain)
-	c.Assert(currentChainPoolAddr, NotNil)
 	txIn := NewObservedTx(
 		common.NewTx(GetRandomTxHash(), signerBNBAddr, GetRandomBNBAddress(),
 			common.Coins{
@@ -179,7 +175,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 			"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
 		),
 		sdk.NewUint(1),
-		currentChainPoolAddr.PubKey,
+		GetRandomPubKey(),
 	)
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txIn, observerAddr)
 	c.Assert(err, IsNil)

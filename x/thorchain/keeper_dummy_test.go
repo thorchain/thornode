@@ -133,13 +133,9 @@ func (k KVStoreDummy) GetCompleteEventIterator(_ sdk.Context) sdk.Iterator { ret
 func (k KVStoreDummy) GetCompletedEvent(_ sdk.Context, _ int64) (Event, error) {
 	return Event{}, kaboom
 }
-func (k KVStoreDummy) SetCompletedEvent(_ sdk.Context, _ Event)         {}
-func (k KVStoreDummy) GetLastEventID(_ sdk.Context) (int64, error)      { return 0, kaboom }
-func (k KVStoreDummy) SetLastEventID(_ sdk.Context, _ int64)            {}
-func (k KVStoreDummy) SetPoolAddresses(_ sdk.Context, _ *PoolAddresses) {}
-func (k KVStoreDummy) GetPoolAddresses(_ sdk.Context) (PoolAddresses, error) {
-	return PoolAddresses{}, kaboom
-}
+func (k KVStoreDummy) SetCompletedEvent(_ sdk.Context, _ Event)        {}
+func (k KVStoreDummy) GetLastEventID(_ sdk.Context) (int64, error)     { return 0, kaboom }
+func (k KVStoreDummy) SetLastEventID(_ sdk.Context, _ int64)           {}
 func (k KVStoreDummy) GetChains(_ sdk.Context) (common.Chains, error)  { return nil, kaboom }
 func (k KVStoreDummy) SetChains(_ sdk.Context, _ common.Chains)        {}
 func (k KVStoreDummy) GetVaultIterator(_ sdk.Context) sdk.Iterator     { return nil }

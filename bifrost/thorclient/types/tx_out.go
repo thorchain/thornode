@@ -7,7 +7,6 @@ type TxArrayItem struct {
 	Chain       common.Chain  `json:"chain"`
 	To          string        `json:"to"`
 	VaultPubKey common.PubKey `json:"vault_pubkey"`
-	SeqNo       string        `json:"seq_no"`
 	Coin        common.Coin   `json:"coin"`
 	Memo        string        `json:"memo"`
 	InHash      common.TxID   `json:"in_hash"`

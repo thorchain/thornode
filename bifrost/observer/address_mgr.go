@@ -18,28 +18,26 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type AddressValidator interface {
 	IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo)
 	IsValidAddress(addr string, chain common.Chain) bool
-	AddPubKey(pk common.PubKeys)
-	RemovePubKey(pk common.PubKeys)
+	AddPubKey(pk common.PubKey)
+	RemovePubKey(pk common.PubKey)
 }
 
 // AddressManager it manage the pool address
 type AddressManager struct {
-	cdc           *codec.Codec
-	addresses     []common.PubKeys
-	poolAddresses types.PoolAddresses // current pool addresses
-	rwMutex       *sync.RWMutex
-	logger        zerolog.Logger
-	chainHost     string // statechain host
-	errCounter    *prometheus.CounterVec
-	m             *metrics.Metrics
-	wg            *sync.WaitGroup
-	stopChan      chan struct{}
+	cdc        *codec.Codec
+	pubkeys    []common.PubKey
+	rwMutex    *sync.RWMutex
+	logger     zerolog.Logger
+	chainHost  string // statechain host
+	errCounter *prometheus.CounterVec
+	m          *metrics.Metrics
+	wg         *sync.WaitGroup
+	stopChan   chan struct{}
 }
 
 // NewAddressManager create a new instance of AddressManager
@@ -59,19 +57,14 @@ func NewAddressManager(chainHost string, m *metrics.Metrics) (*AddressManager, e
 // Start to poll poll addresses from statechain
 func (pam *AddressManager) Start() error {
 	pam.wg.Add(1)
-	pa, err := pam.getPoolAddresses()
+	pubkeys, err := pam.getPubkeys()
 	if nil != err {
-		return errors.Wrap(err, "fail to get pool addresses from statechain")
+		return errors.Wrap(err, "fail to get pubkeys from thorchain")
 	}
 	pam.rwMutex.Lock()
 	defer pam.rwMutex.Unlock()
-	pam.poolAddresses = pa
-	currentAddr, err := pa.Current.GetByChain(common.BNBChain).GetAddress()
-	if nil != err {
-		return err
-	}
-	pam.logger.Info().Str("addr", currentAddr.String()).Msg("current pool address")
-	go pam.updatePoolAddresses()
+	pam.pubkeys = pubkeys
+	go pam.updatePubKeys()
 	return nil
 }
 
@@ -83,56 +76,56 @@ func (pam *AddressManager) Stop() error {
 	return nil
 }
 
-func (pam *AddressManager) AddPubKey(pk common.PubKeys) {
+func (pam *AddressManager) AddPubKey(pk common.PubKey) {
 	pam.rwMutex.Lock()
 	found := false
-	for _, pubkey := range pam.addresses {
+	for _, pubkey := range pam.pubkeys {
 		if pk.Equals(pubkey) {
 			break
 		}
 	}
 	if !found {
-		pam.addresses = append(pam.addresses, pk)
+		pam.pubkeys = append(pam.pubkeys, pk)
 	}
 	pam.rwMutex.Unlock()
 }
 
-func (pam *AddressManager) RemovePubKey(pk common.PubKeys) {
+func (pam *AddressManager) RemovePubKey(pk common.PubKey) {
 	pam.rwMutex.Lock()
-	for i, pubkey := range pam.addresses {
+	for i, pubkey := range pam.pubkeys {
 		if pk.Equals(pubkey) {
-			pam.addresses[i] = pam.addresses[len(pam.addresses)-1] // Copy last element to index i.
-			pam.addresses[len(pam.addresses)-1] = common.PubKeys{} // Erase last element (write zero value).
-			pam.addresses = pam.addresses[:len(pam.addresses)-1]   // Truncate slice.
+			pam.pubkeys[i] = pam.pubkeys[len(pam.pubkeys)-1]     // Copy last element to index i.
+			pam.pubkeys[len(pam.pubkeys)-1] = common.EmptyPubKey // Erase last element (write zero value).
+			pam.pubkeys = pam.pubkeys[:len(pam.pubkeys)-1]       // Truncate slice.
 			break
 		}
 	}
 	pam.rwMutex.Unlock()
 }
 
-func (pam *AddressManager) updatePoolAddresses() {
-	pam.logger.Info().Msg("start to update pool addresses")
-	defer pam.logger.Info().Msg("stop to update pool addresses")
+func (pam *AddressManager) updatePubKeys() {
+	pam.logger.Info().Msg("start to update pub keys")
+	defer pam.logger.Info().Msg("stop to update pub keys")
 	defer pam.wg.Done()
 	for {
 		select {
 		case <-pam.stopChan:
 			return
 		case <-time.After(time.Minute):
-			pa, err := pam.getPoolAddresses()
+			pubkeys, err := pam.getPubkeys()
 			if nil != err {
-				pam.logger.Error().Err(err).Msg("fail to get pool address from statechain")
+				pam.logger.Error().Err(err).Msg("fail to get pubkeys from thorchain")
 			}
-			pam.rwMutex.Lock()
-			pam.poolAddresses = pa
-			pam.rwMutex.Unlock()
+			for _, pk := range pubkeys {
+				pam.AddPubKey(pk)
+			}
 		}
 	}
 }
 
 func matchAddress(addr string, chain common.Chain, key common.PubKey) (bool, common.ChainPoolInfo) {
 	cpi, err := common.NewChainPoolInfo(chain, key)
-	if nil != err {
+	if err != nil {
 		return false, common.EmptyChainPoolInfo
 	}
 	if strings.EqualFold(cpi.PoolAddress.String(), addr) {
@@ -146,7 +139,7 @@ func (pam *AddressManager) IsValidAddress(addr string, chain common.Chain) bool 
 	pam.rwMutex.RLock()
 	defer pam.rwMutex.RUnlock()
 
-	for _, pk := range pam.addresses {
+	for _, pk := range pam.pubkeys {
 		pkAddr, _ := pk.GetAddress(chain)
 		address, _ := common.NewAddress(addr)
 		if address.Equals(pkAddr) && !pkAddr.IsEmpty() && !address.IsEmpty() {
@@ -161,47 +154,26 @@ func (pam *AddressManager) IsValidAddress(addr string, chain common.Chain) bool 
 func (pam *AddressManager) IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo) {
 	pam.rwMutex.RLock()
 	defer pam.rwMutex.RUnlock()
-	pa := pam.poolAddresses
-	bnbChainCurrent := pa.Current.GetByChain(common.BNBChain)
-	if nil == bnbChainCurrent {
-		return false, common.EmptyChainPoolInfo
-	}
 
-	matchCurrent, cpi := matchAddress(addr, chain, bnbChainCurrent.PubKey)
-	if matchCurrent {
-		return matchCurrent, cpi
-	}
-	bnbChainPrevious := pa.Previous.GetByChain(common.BNBChain)
-	if nil != bnbChainPrevious {
-		matchPrevious, cpi := matchAddress(addr, chain, bnbChainPrevious.PubKey)
-		if matchPrevious {
-			return matchPrevious, cpi
+	for _, pk := range pam.pubkeys {
+		ok, cpi := matchAddress(addr, chain, pk)
+		if ok {
+			return ok, cpi
 		}
 	}
-	bnbChainNext := pa.Previous.GetByChain(common.BNBChain)
-	if nil != bnbChainNext {
-		matchNext, cpi := matchAddress(addr, chain, bnbChainNext.PubKey)
-		if matchNext {
-			return matchNext, cpi
-		}
-	}
-	pam.logger.Debug().Str("previous", pa.Previous.String()).
-		Str("current", pa.Current.String()).
-		Str("next", pa.Next.String()).
-		Str("addr", addr).Msg("doesn't match")
 	return false, common.EmptyChainPoolInfo
 }
 
-// getPoolAddresses from statechain
-func (pam *AddressManager) getPoolAddresses() (types.PoolAddresses, error) {
+// getPubkeys from thorchain
+func (pam *AddressManager) getPubkeys() ([]common.PubKey, error) {
 	uri := url.URL{
 		Scheme: "http",
 		Host:   pam.chainHost,
-		Path:   "/thorchain/pool_addresses",
+		Path:   "/thorchain/vaults/pubkeys",
 	}
 	resp, err := retryablehttp.Get(uri.String())
 	if nil != err {
-		return types.EmptyPoolAddresses, errors.Wrap(err, "fail to get pool addresses from statechain")
+		return nil, errors.Wrap(err, "fail to get pubkeys from thorchain")
 	}
 	defer func() {
 		if err := resp.Body.Close(); nil != err {
@@ -209,16 +181,22 @@ func (pam *AddressManager) getPoolAddresses() (types.PoolAddresses, error) {
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		return types.EmptyPoolAddresses, errors.Wrap(err, "fail to get pool addresses from statechain")
+		return nil, errors.Wrap(err, "fail to get pubkeys from thorchain")
 	}
-	var pa types.PoolAddresses
+
+	var pubs struct {
+		Asgard    []common.PubKey `json:"asgard"`
+		Yggdrasil []common.PubKey `json:"yggdrasil"`
+	}
 	buf, err := ioutil.ReadAll(resp.Body)
 	if nil != err {
-		return types.EmptyPoolAddresses, errors.Wrap(err, "fail to read response body")
+		return nil, errors.Wrap(err, "fail to read response body")
 	}
-	if err := pam.cdc.UnmarshalJSON(buf, &pa); nil != err {
-		pam.errCounter.WithLabelValues("fail_unmarshal_pool_address", "").Inc()
-		return types.EmptyPoolAddresses, errors.Wrap(err, "fail to unmarshal pool address")
+	if err := pam.cdc.UnmarshalJSON(buf, &pubs); nil != err {
+		pam.errCounter.WithLabelValues("fail_unmarshal_pubkeys", "").Inc()
+		return nil, errors.Wrap(err, "fail to unmarshal pubkeys")
 	}
-	return pa, nil
+
+	pubkeys := append(pubs.Asgard, pubs.Yggdrasil...)
+	return pubkeys, nil
 }

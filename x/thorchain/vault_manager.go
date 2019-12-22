@@ -149,6 +149,18 @@ func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {
 		}
 	}
 
+	// Update Node account membership
+	for _, member := range vault.Membership {
+		na, err := vm.k.GetNodeAccountByPubKey(ctx, member)
+		if err != nil {
+			return err
+		}
+		na.TryAddSignerPubKey(vault.PubKey)
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			return err
+		}
+	}
+
 	if err := vm.k.SetVault(ctx, vault); err != nil {
 		return err
 	}

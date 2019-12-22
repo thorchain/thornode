@@ -5,7 +5,6 @@ add_node_account () {
     NODE_PUB_KEY=$3
     VERSION=$4
     BOND_ADDRESS=$5
-    POOL_PUB_KEY=$6
     jq --arg VERSION $VERSION --arg BOND_ADDRESS "$BOND_ADDRESS" --arg VALIDATOR "$VALIDATOR" --arg NODE_ADDRESS "$NODE_ADDRESS" --arg NODE_PUB_KEY "$NODE_PUB_KEY" '.app_state.thorchain.node_accounts += [{"node_address": $NODE_ADDRESS, "version": $VERSION, "status":"active", "active_block_height": "0", "bond_address":$BOND_ADDRESS,"validator_cons_pub_key":$VALIDATOR,"node_pub_keys":{"secp256k1":$NODE_PUB_KEY,"ed25519":$NODE_PUB_KEY}}]' <~/.thord/config/genesis.json >/tmp/genesis.json
     mv /tmp/genesis.json ~/.thord/config/genesis.json
 }
@@ -13,15 +12,6 @@ add_node_account () {
 add_last_event_id () {
     echo "Adding last event id $1"
     jq --arg ID $1 '.app_state.thorchain.last_event_id = $ID' ~/.thord/config/genesis.json > /tmp/genesis.json
-    mv /tmp/genesis.json ~/.thord/config/genesis.json
-}
-
-# Adds a pool address into the genesis file
-add_pool_address () {
-    POOL_ADDRESS=$1
-    POOL_PUB_KEY=$2
-    SEQNO=$3
-    jq --arg SEQNO "$SEQNO" --arg POOL_ADDRESS "$POOL_ADDRESS" --arg POOL_PUB_KEY "$POOL_PUB_KEY" '.app_state.thorchain.pool_addresses.current += [{"chain":"BNB","seq_no":$SEQNO, "address": $POOL_ADDRESS, "pub_key":$POOL_PUB_KEY}]' <~/.thord/config/genesis.json >/tmp/genesis.json
     mv /tmp/genesis.json ~/.thord/config/genesis.json
 }
 
