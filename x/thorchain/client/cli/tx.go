@@ -94,7 +94,7 @@ func GetCmdSetNodeKeys(cdc *codec.Codec) *cobra.Command {
 			if nil != err {
 				return fmt.Errorf("fail to parse ed25519 pub key ,err:%w", err)
 			}
-			pk := common.NewPubKeys(secp256k1Key, ed25519Key)
+			pk := common.NewPubKeySet(secp256k1Key, ed25519Key)
 			validatorConsPubKey, err := sdk.GetConsPubKeyBech32(args[2])
 			if err != nil {
 				return errors.Wrap(err, "fail to parse validator consensus public key")

@@ -8,15 +8,15 @@ import (
 
 // MsgSetNodeKeys defines a MsgSetNodeKeys message
 type MsgSetNodeKeys struct {
-	NodePubKeys         common.PubKeys `json:"node_pub_keys"`
-	ValidatorConsPubKey string         `json:"validator_cons_pub_key"`
-	Signer              sdk.AccAddress `json:"signer"`
+	PubKeySetSet        common.PubKeySet `json:"pub_key_set"`
+	ValidatorConsPubKey string           `json:"validator_cons_pub_key"`
+	Signer              sdk.AccAddress   `json:"signer"`
 }
 
 // NewMsgSetNodeKeys is a constructor function for NewMsgAddNodeKeys
-func NewMsgSetNodeKeys(nodePubKeys common.PubKeys, validatorConsPubKey string, signer sdk.AccAddress) MsgSetNodeKeys {
+func NewMsgSetNodeKeys(nodePubKeySet common.PubKeySet, validatorConsPubKey string, signer sdk.AccAddress) MsgSetNodeKeys {
 	return MsgSetNodeKeys{
-		NodePubKeys:         nodePubKeys,
+		PubKeySetSet:        nodePubKeySet,
 		ValidatorConsPubKey: validatorConsPubKey,
 		Signer:              signer,
 	}
@@ -36,7 +36,7 @@ func (msg MsgSetNodeKeys) ValidateBasic() sdk.Error {
 	if len(msg.ValidatorConsPubKey) == 0 {
 		return sdk.ErrUnknownRequest("validator consensus pubkey cannot be empty")
 	}
-	if msg.NodePubKeys.IsEmpty() {
+	if msg.PubKeySetSet.IsEmpty() {
 		return sdk.ErrUnknownRequest("node pub keys cannot be empty")
 	}
 	return nil

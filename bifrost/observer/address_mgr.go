@@ -30,7 +30,7 @@ type AddressValidator interface {
 // AddressManager it manage the pool address
 type AddressManager struct {
 	cdc        *codec.Codec
-	pubkeys    []common.PubKey
+	pubkeys    common.PubKeys
 	rwMutex    *sync.RWMutex
 	logger     zerolog.Logger
 	chainHost  string // statechain host
@@ -165,7 +165,7 @@ func (pam *AddressManager) IsValidPoolAddress(addr string, chain common.Chain) (
 }
 
 // getPubkeys from thorchain
-func (pam *AddressManager) getPubkeys() ([]common.PubKey, error) {
+func (pam *AddressManager) getPubkeys() (common.PubKeys, error) {
 	uri := url.URL{
 		Scheme: "http",
 		Host:   pam.chainHost,
@@ -185,8 +185,8 @@ func (pam *AddressManager) getPubkeys() ([]common.PubKey, error) {
 	}
 
 	var pubs struct {
-		Asgard    []common.PubKey `json:"asgard"`
-		Yggdrasil []common.PubKey `json:"yggdrasil"`
+		Asgard    common.PubKeys `json:"asgard"`
+		Yggdrasil common.PubKeys `json:"yggdrasil"`
 	}
 	buf, err := ioutil.ReadAll(resp.Body)
 	if nil != err {

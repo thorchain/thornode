@@ -125,7 +125,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 			panic("no active node accounts. Cannot create vault")
 		}
 		if len(active) == 1 {
-			vault := NewVault(0, ActiveVault, AsgardVault, active[0].NodePubKey.Secp256k1)
+			vault := NewVault(0, ActiveVault, AsgardVault, active[0].PubKeySet.Secp256k1)
 			if err := keeper.SetVault(ctx, vault); err != nil {
 				panic(err)
 			}

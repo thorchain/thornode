@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"errors"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -36,7 +37,7 @@ func (s *HandlerSetNodeKeysSuite) TestValidate(c *C) {
 	signer := GetRandomBech32Addr()
 	c.Assert(signer.Empty(), Equals, false)
 	consensPubKey := GetRandomBech32ConsensusPubKey()
-	pubKeys := GetRandomPubkeys()
+	pubKeys := GetRandomPubKeySet()
 
 	msg := NewMsgSetNodeKeys(pubKeys, consensPubKey, signer)
 	err := handler.validate(ctx, msg, ver)
@@ -70,7 +71,7 @@ func (k *TestSetNodeKeysHandleKeeper) SetNodeAccount(_ sdk.Context, na NodeAccou
 	return nil
 }
 
-func (k *TestSetNodeKeysHandleKeeper) EnsureNodeKeysUnique(_ sdk.Context, consensPubKey string, pubKeys common.PubKeys) error {
+func (k *TestSetNodeKeysHandleKeeper) EnsureNodeKeysUnique(_ sdk.Context, consensPubKey string, pubKeys common.PubKeySet) error {
 	return nil
 }
 
@@ -92,34 +93,34 @@ func (s *HandlerSetNodeKeysSuite) TestHandle(c *C) {
 	// add observer
 	bepConsPubKey := GetRandomBech32ConsensusPubKey()
 	bondAddr := GetRandomBNBAddress()
-	pubKeys := GetRandomPubkeys()
-	emptyPubKeys := common.PubKeys{}
+	pubKeys := GetRandomPubKeySet()
+	emptyPubKeySet := common.PubKeySet{}
 
 	msgNodeKeys := NewMsgSetNodeKeys(pubKeys, bepConsPubKey, signer)
 
 	bond := sdk.NewUint(common.One * 100)
-	nodeAccount := NewNodeAccount(signer, NodeActive, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
+	nodeAccount := NewNodeAccount(signer, NodeActive, emptyPubKeySet, "", bond, bondAddr, ctx.BlockHeight())
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
 	activeFailResult := handler.handle(ctx, msgNodeKeys, ver, constAccessor)
 	c.Check(activeFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(activeFailResult.IsOK(), Equals, false)
 
-	nodeAccount = NewNodeAccount(signer, NodeDisabled, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
+	nodeAccount = NewNodeAccount(signer, NodeDisabled, emptyPubKeySet, "", bond, bondAddr, ctx.BlockHeight())
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
 	disabledFailResult := handler.handle(ctx, msgNodeKeys, ver, constAccessor)
 	c.Check(disabledFailResult.Code, Equals, sdk.CodeUnknownRequest)
 	c.Check(disabledFailResult.IsOK(), Equals, false)
 
-	nodeAccount = NewNodeAccount(signer, NodeWhiteListed, emptyPubKeys, "", bond, bondAddr, ctx.BlockHeight())
+	nodeAccount = NewNodeAccount(signer, NodeWhiteListed, emptyPubKeySet, "", bond, bondAddr, ctx.BlockHeight())
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
 	// happy path
 	success := handler.handle(ctx, msgNodeKeys, ver, constAccessor)
 	c.Check(success.Code, Equals, sdk.CodeOK)
 	c.Check(success.IsOK(), Equals, true)
-	c.Assert(keeper.na.NodePubKey, Equals, pubKeys)
+	c.Assert(keeper.na.PubKeySet, Equals, pubKeys)
 	c.Assert(keeper.na.ValidatorConsPubKey, Equals, bepConsPubKey)
 	c.Assert(keeper.na.Status, Equals, NodeStandby)
 	c.Assert(keeper.na.StatusSince, Equals, int64(1))
@@ -145,7 +146,7 @@ func (k *TestSetNodeKeysHandleFailUniqueKeeper) SetNodeAccount(_ sdk.Context, na
 	return nil
 }
 
-func (k *TestSetNodeKeysHandleFailUniqueKeeper) EnsureNodeKeysUnique(_ sdk.Context, consensPubKey string, pubKeys common.PubKeys) error {
+func (k *TestSetNodeKeysHandleFailUniqueKeeper) EnsureNodeKeysUnique(_ sdk.Context, consensPubKey string, pubKeys common.PubKeySet) error {
 	return errors.New("not unique")
 }
 
@@ -166,7 +167,7 @@ func (s *HandlerSetNodeKeysSuite) TestHandleFailUnique(c *C) {
 
 	// add observer
 	bepConsPubKey := GetRandomBech32ConsensusPubKey()
-	pubKeys := GetRandomPubkeys()
+	pubKeys := GetRandomPubKeySet()
 
 	msgNodeKeys := NewMsgSetNodeKeys(pubKeys, bepConsPubKey, signer)
 	notUniqueFailResult := handler.handle(ctx, msgNodeKeys, ver, constAccessor)

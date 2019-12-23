@@ -27,13 +27,13 @@ const (
 
 // Vault
 type Vault struct {
-	BlockHeight int64           `json:"block_height"`
-	PubKey      common.PubKey   `json:"pub_key"`
-	Coins       common.Coins    `json:"coins"`
-	Type        VaultType       `json:"type"`
-	Status      VaultStatus     `json:"status"`
-	StatusSince int64           `json:"status_since"`
-	Membership  []common.PubKey `json:"membership"`
+	BlockHeight int64          `json:"block_height"`
+	PubKey      common.PubKey  `json:"pub_key"`
+	Coins       common.Coins   `json:"coins"`
+	Type        VaultType      `json:"type"`
+	Status      VaultStatus    `json:"status"`
+	StatusSince int64          `json:"status_since"`
+	Membership  common.PubKeys `json:"membership"`
 }
 
 type Vaults []Vault
@@ -66,12 +66,7 @@ func (v Vault) IsEmpty() bool {
 }
 
 func (v Vault) Contains(pubkey common.PubKey) bool {
-	for _, mem := range v.Membership {
-		if mem.Equals(pubkey) {
-			return true
-		}
-	}
-	return false
+	return v.Membership.Contains(pubkey)
 }
 
 func (v *Vault) UpdateStatus(s VaultStatus, height int64) {

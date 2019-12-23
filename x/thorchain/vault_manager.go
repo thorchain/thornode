@@ -117,12 +117,12 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, constAccessor constants.ConstantVa
 }
 
 func (vm *VaultMgr) TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error {
-	keygen := make(Keygen, len(nas))
+	keygen := make(common.PubKeys, len(nas))
 	for i := range nas {
-		keygen[i] = nas[i].NodePubKey.Secp256k1
+		keygen[i] = nas[i].PubKeySet.Secp256k1
 	}
 	keygens := NewKeygens(uint64(ctx.BlockHeight()))
-	keygens.Keygens = []Keygen{keygen}
+	keygens.Keygens = []common.PubKeys{keygen}
 	return vm.k.SetKeygens(ctx, keygens)
 }
 

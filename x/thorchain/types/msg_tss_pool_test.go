@@ -11,7 +11,7 @@ var _ = Suite(&MsgTssPoolSuite{})
 
 func (s *MsgTssPoolSuite) TestMsgTssPool(c *C) {
 	pk := GetRandomPubKey()
-	pks := []common.PubKey{
+	pks := common.PubKeys{
 		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
 	}
 	addr := GetRandomBech32Addr()

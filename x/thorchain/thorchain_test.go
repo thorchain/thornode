@@ -36,11 +36,11 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	for i := 0; i <= 3; i++ {
 		na := GetRandomNodeAccount(NodeActive)
 		addresses[i] = na.NodeAddress
-		na.SignerMembership = []common.PubKey{vault.PubKey}
+		na.SignerMembership = common.PubKeys{vault.PubKey}
 		if i == 0 { // give the first node account slash points
 			na.RequestedToLeave = true
 		}
-		vault.Membership = append(vault.Membership, na.NodePubKey.Secp256k1)
+		vault.Membership = append(vault.Membership, na.PubKeySet.Secp256k1)
 		c.Assert(keeper.SetNodeAccount(ctx, na), IsNil)
 	}
 	c.Assert(keeper.SetVault(ctx, vault), IsNil)
@@ -58,7 +58,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	keygens, err := keeper.GetKeygens(ctx, uint64(ctx.BlockHeight()))
 	c.Assert(err, IsNil)
 	c.Assert(keygens.Keygens, HasLen, 1)
-	expected := append(vault.Membership[1:], na.NodePubKey.Secp256k1)
+	expected := append(vault.Membership[1:], na.PubKeySet.Secp256k1)
 	// sort our slices so they are in the same order
 	sort.Slice(expected, func(i, j int) bool { return expected[i].String() < expected[j].String() })
 	sort.Slice(keygens.Keygens[0], func(i, j int) bool { return keygens.Keygens[0][i].String() < keygens.Keygens[0][j].String() })

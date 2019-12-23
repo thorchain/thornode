@@ -22,7 +22,7 @@ type KeeperNodeAccount interface {
 	GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error)
 	GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error)
 	SetNodeAccount(ctx sdk.Context, na NodeAccount) error
-	EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error
+	EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeySet) error
 	GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator
 }
 
@@ -213,7 +213,7 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 	return nil
 }
 
-func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
+func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeySet) error {
 	iter := k.GetNodeAccountIterator(ctx)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -227,10 +227,10 @@ func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, p
 		if na.ValidatorConsPubKey == consensusPubKey {
 			return dbError(ctx, "", errors.Errorf("%s already exist", na.ValidatorConsPubKey))
 		}
-		if pubKeys.Equals(common.EmptyPubKeys) {
-			return dbError(ctx, "", errors.New("PubKeys cannot be empty"))
+		if pubKeys.Equals(common.EmptyPubKeySet) {
+			return dbError(ctx, "", errors.New("PubKeySet cannot be empty"))
 		}
-		if na.NodePubKey.Equals(pubKeys) {
+		if na.PubKeySet.Equals(pubKeys) {
 			return dbError(ctx, "", errors.Errorf("%s already exist", pubKeys))
 		}
 	}

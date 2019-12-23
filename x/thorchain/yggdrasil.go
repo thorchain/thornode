@@ -42,7 +42,7 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	// figure out if THORNode need to send them assets.
 	// get a list of coin/amounts this yggdrasil pool should have, ideally.
 	// TODO: We are assuming here that the pub key is Secp256K1
-	ygg, err := keeper.GetVault(ctx, na.NodePubKey.Secp256k1)
+	ygg, err := keeper.GetVault(ctx, na.PubKeySet.Secp256k1)
 	if nil != err {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
 	}
