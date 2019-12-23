@@ -71,7 +71,7 @@ services:
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/standalone/keys:/root/.signer
-    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api:
     hostname: thor-api
