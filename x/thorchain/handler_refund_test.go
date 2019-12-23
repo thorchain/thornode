@@ -142,7 +142,6 @@ func (HandlerRefundSuite) TestRefundHandler_HappyPath(c *C) {
 					Chain:       common.BNBChain,
 					ToAddress:   txIn.FromAddress,
 					VaultPubKey: "",
-					SeqNo:       0,
 					Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1)),
 					Memo:        NewRefundMemo(txIn.ID).String(),
 					InHash:      txIn.ID,
