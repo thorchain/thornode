@@ -7,7 +7,7 @@ import (
 )
 
 // MaxWithdrawBasisPoints
-const MaxWithdrawBasisPoints = 10000
+const MaxWithdrawBasisPoints = 10_000
 
 // MsgSetUnStake is used to withdraw
 type MsgSetUnStake struct {
