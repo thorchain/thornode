@@ -38,11 +38,11 @@ func (k KVStoreDummy) SetLastChainHeight(_ sdk.Context, _ common.Chain, _ sdk.Ui
 func (k KVStoreDummy) GetLastChainHeight(_ sdk.Context, _ common.Chain) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
-func (k KVStoreDummy) GetRagnarokBlockHeight(_ sdk.Context) (sdk.Uint, error) {
-	return sdk.ZeroUint(), kaboom
+func (k KVStoreDummy) GetRagnarokBlockHeight(_ sdk.Context) (int64, error) {
+	return 0, kaboom
 }
-func (k KVStoreDummy) SetRagnarokBlockHeight(_ sdk.Context, _ sdk.Uint) {}
-func (k KVStoreDummy) RagnarokInProgress(_ sdk.Context) bool            { return false }
+func (k KVStoreDummy) SetRagnarokBlockHeight(_ sdk.Context, _ int64) {}
+func (k KVStoreDummy) RagnarokInProgress(_ sdk.Context) bool         { return false }
 func (k KVStoreDummy) GetPoolBalances(_ sdk.Context, _, _ common.Asset) (sdk.Uint, sdk.Uint) {
 	return sdk.ZeroUint(), sdk.ZeroUint()
 }
