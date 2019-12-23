@@ -15,10 +15,12 @@ func (s *KeeperRagnarokSuite) TestRagnarok(c *C) {
 	height, err := k.GetRagnarokBlockHeight(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(height.Uint64(), Equals, uint64(0))
+	c.Check(k.RagnarokInProgress(ctx), Equals, false)
 
 	k.SetRagnarokBlockHeight(ctx, sdk.NewUint(45))
 
 	height, err = k.GetRagnarokBlockHeight(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(height.Uint64(), Equals, uint64(45))
+	c.Check(k.RagnarokInProgress(ctx), Equals, true)
 }

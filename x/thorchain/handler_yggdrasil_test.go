@@ -144,5 +144,3 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	coin = ygg.GetCoin(common.BNBAsset)
 	c.Check(coin.Amount.Uint64(), Equals, sdk.NewUint(33*common.One).Uint64(), Commentf("%d vs %d", coin.Amount.Uint64(), sdk.NewUint(33*common.One).Uint64()))
 }
-
-// TODO test handleRagnarokProtocolStep2
