@@ -50,8 +50,7 @@ func swap(ctx sdk.Context,
 	keeper Keeper, tx common.Tx,
 	target common.Asset,
 	destination common.Address,
-	tradeTarget,
-	globalSlipLimit sdk.Uint) (sdk.Uint, error) {
+	tradeTarget sdk.Uint) (sdk.Uint, error) {
 	if err := validateMessage(tx, target, destination); nil != err {
 		ctx.Logger().Error(err.Error())
 		return sdk.ZeroUint(), err
@@ -73,7 +72,7 @@ func swap(ctx sdk.Context,
 			return sdk.ZeroUint(), err
 		}
 
-		tx.Coins[0].Amount, sourcePool, err = swapOne(ctx, keeper, tx, sourcePool, common.RuneAsset(), destination, tradeTarget, globalSlipLimit)
+		tx.Coins[0].Amount, sourcePool, err = swapOne(ctx, keeper, tx, sourcePool, common.RuneAsset(), destination, tradeTarget)
 		if err != nil {
 			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneAsset())
 		}
@@ -90,7 +89,7 @@ func swap(ctx sdk.Context,
 	if err != nil {
 		return sdk.ZeroUint(), err
 	}
-	assetAmount, pool, err := swapOne(ctx, keeper, tx, pool, target, destination, tradeTarget, globalSlipLimit)
+	assetAmount, pool, err := swapOne(ctx, keeper, tx, pool, target, destination, tradeTarget)
 
 	if err != nil {
 		return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, target)
@@ -113,8 +112,7 @@ func swapOne(ctx sdk.Context,
 	keeper Keeper, tx common.Tx, pool Pool,
 	target common.Asset,
 	destination common.Address,
-	tradeTarget,
-	globalSlipLimit sdk.Uint) (amt sdk.Uint, poolResult Pool, err error) {
+	tradeTarget sdk.Uint) (amt sdk.Uint, poolResult Pool, err error) {
 
 	source := tx.Coins[0].Asset
 	amount := tx.Coins[0].Amount
@@ -190,9 +188,6 @@ func swapOne(ctx sdk.Context,
 		return sdk.ZeroUint(), pool, errors.Errorf("pool %s is in %s status, can't swap", asset.String(), pool.Status)
 	}
 
-	// Get our slip limits
-	gsl := globalSlipLimit
-
 	// Get our X, x, Y values
 	if source.IsRune() {
 		X = pool.BalanceRune
@@ -227,11 +222,7 @@ func swapOne(ctx sdk.Context,
 	if emitAssets.GT(Y) {
 		return sdk.ZeroUint(), pool, errors.New("asset :%s balance is 0, can't do swap")
 	}
-	// Prevent exceeding the Global Slip Limit
-	if tradeSlip.GT(gsl) {
-		ctx.Logger().Info("poolslip over global slip limit", "tradeSlip", fmt.Sprintf("%s", tradeSlip), "gsl", fmt.Sprintf("%s", gsl))
-		return sdk.ZeroUint(), pool, errors.Errorf("tradeSlip:%s is over global slip limit :%s", tradeSlip, gsl)
-	}
+
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sAsset", pool.BalanceRune, pool.BalanceAsset))
 
 	if source.IsRune() {
@@ -274,10 +265,10 @@ func calcTradeSlip(Xi, xi sdk.Uint) sdk.Uint {
 	// x * (2*X + x) / (X * X)
 	numD := xD.Mul((dec2.Mul(XD)).Add(xD))
 	denD := XD.Mul(XD)
-	tradeSlipD := (numD.Quo(denD)) // Division with DECs
+	tradeSlipD := numD.Quo(denD) // Division with DECs
 
-	tradeSlip := tradeSlipD.Mul(dec10k)                            // Adds 5 0's
-	tradeSlipUint := sdk.NewUint(uint64((tradeSlip.RoundInt64()))) // Casts back to Uint as Basis Points
+	tradeSlip := tradeSlipD.Mul(dec10k)                          // Adds 5 0's
+	tradeSlipUint := sdk.NewUint(uint64(tradeSlip.RoundInt64())) // Casts back to Uint as Basis Points
 	return tradeSlipUint
 }
 

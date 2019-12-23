@@ -135,7 +135,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 		"",
 	)
 	msg := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.ZeroUint(), observerAddr)
-	res := handler.handle(ctx, msg, ver, constAccessor)
+	res := handler.handle(ctx, msg, ver)
 	c.Assert(res.Code, Equals, sdk.CodeInternal)
 	pool := NewPool()
 	pool.Asset = common.BNBAsset
@@ -143,7 +143,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
 	c.Assert(keeper.SetPool(ctx, pool), IsNil)
 
-	res = handler.handle(ctx, msg, ver, constAccessor)
+	res = handler.handle(ctx, msg, ver)
 	c.Assert(res.IsOK(), Equals, true)
 
 	tx = common.NewTx(txID, signerBNBAddr, signerBNBAddr,
@@ -154,7 +154,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 		"",
 	)
 	msgSwapPriceProtection := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.NewUint(2*common.One), observerAddr)
-	res1 := handler.handle(ctx, msgSwapPriceProtection, ver, constAccessor)
+	res1 := handler.handle(ctx, msgSwapPriceProtection, ver)
 	c.Assert(res1.IsOK(), Equals, false)
 	c.Assert(res1.Code, Equals, sdk.CodeInternal)
 
@@ -182,7 +182,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	c.Assert(err, IsNil)
 
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
-	res2 := handler.handle(ctx, msgSwapFromTxIn.(MsgSwap), ver, constAccessor)
+	res2 := handler.handle(ctx, msgSwapFromTxIn.(MsgSwap), ver)
 	c.Assert(res2.IsOK(), Equals, true)
 	c.Assert(res2.Code, Equals, sdk.CodeOK)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 2)

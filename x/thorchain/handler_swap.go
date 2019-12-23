@@ -21,7 +21,7 @@ func NewSwapHandler(keeper Keeper, txOutStore TxOutStore) SwapHandler {
 	}
 }
 
-func (h SwapHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
+func (h SwapHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgSwap)
 	if !ok {
 		return errInvalidMessage.Result()
@@ -29,7 +29,7 @@ func (h SwapHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, con
 	if err := h.validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	return h.handle(ctx, msg, version, constAccessor)
+	return h.handle(ctx, msg, version)
 }
 
 func (h SwapHandler) validate(ctx sdk.Context, msg MsgSwap, version semver.Version) error {
@@ -54,20 +54,17 @@ func (h SwapHandler) validateV1(ctx sdk.Context, msg MsgSwap) error {
 	return nil
 }
 
-func (h SwapHandler) handle(ctx sdk.Context, msg MsgSwap, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
+func (h SwapHandler) handle(ctx sdk.Context, msg MsgSwap, version semver.Version) sdk.Result {
 	ctx.Logger().Info("receive MsgSwap", "request tx hash", msg.Tx.ID, "source asset", msg.Tx.Coins[0].Asset, "target asset", msg.TargetAsset, "signer", msg.Signer.String())
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg, constAccessor)
+		return h.handleV1(ctx, msg)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
 		return errBadVersion.Result()
 	}
 }
 
-func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor constants.ConstantValues) sdk.Result {
-	globalSlipLimit := constAccessor.GetInt64Value(constants.GlobalSlipLimit)
-	gsl := sdk.NewUint(uint64(globalSlipLimit))
-
+func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap) sdk.Result {
 	amount, err := swap(
 		ctx,
 		h.keeper,
@@ -75,7 +72,6 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor consta
 		msg.TargetAsset,
 		msg.Destination,
 		msg.TradeTarget,
-		gsl,
 	)
 	if err != nil {
 		ctx.Logger().Error("fail to process swap message", "error", err)
