@@ -23,19 +23,17 @@ func (s *SwapSuite) SetUpSuite(c *C) {
 func (s SwapSuite) TestSwap(c *C) {
 	poolStorage := MockPoolStorage{}
 	ctx, _ := setupKeeperForTest(c)
-	globalSlipLimit := sdk.NewUint(3000)
 	inputs := []struct {
-		name            string
-		requestTxHash   common.TxID
-		source          common.Asset
-		target          common.Asset
-		amount          sdk.Uint
-		requester       common.Address
-		destination     common.Address
-		returnAmount    sdk.Uint
-		tradeTarget     sdk.Uint
-		globalSlipLimit sdk.Uint
-		expectedErr     error
+		name          string
+		requestTxHash common.TxID
+		source        common.Asset
+		target        common.Asset
+		amount        sdk.Uint
+		requester     common.Address
+		destination   common.Address
+		returnAmount  sdk.Uint
+		tradeTarget   sdk.Uint
+		expectedErr   error
 	}{
 		{
 			name:          "empty-source",
@@ -128,16 +126,16 @@ func (s SwapSuite) TestSwap(c *C) {
 			expectedErr:   errors.New("BNB.NOTEXIST doesn't exist"),
 		},
 		{
-			name:          "swap-over-global-sliplimit",
+			name:          "swap-no-global-sliplimit",
 			requestTxHash: "hash",
 			source:        common.RuneAsset(),
 			target:        common.BNBAsset,
 			amount:        sdk.NewUint(50 * common.One),
 			requester:     "tester",
 			destination:   "don't know",
-			returnAmount:  sdk.ZeroUint(),
+			returnAmount:  sdk.NewUint(2222222222),
 			tradeTarget:   sdk.ZeroUint(),
-			expectedErr:   errors.Errorf("fail to swap from %s to BNB.BNB: tradeSlip:12500 is over global slip limit :%s", common.RuneAsset(), globalSlipLimit),
+			expectedErr:   nil,
 		},
 		{
 			name:          "swap-over-trade-sliplimit",
@@ -201,7 +199,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			"",
 		)
 		tx.Chain = common.BNBChain
-		amount, err := swap(ctx, poolStorage, tx, item.target, item.destination, item.tradeTarget, globalSlipLimit)
+		amount, err := swap(ctx, poolStorage, tx, item.target, item.destination, item.tradeTarget)
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
 		} else {
