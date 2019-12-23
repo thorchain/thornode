@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -42,4 +44,9 @@ type TxOut struct {
 	Hash    string        `json:"hash"`
 	Chain   common.Chain  `json:"chain"`
 	TxArray []TxArrayItem `json:"tx_array"`
+}
+
+// GetKey will return a key we can used it to save the infor to level db
+func (tai TxArrayItem) GetKey(height int64) string {
+	return fmt.Sprintf("%d-%s-%s-%s-%s", height, tai.VaultPubKey, tai.Memo, tai.Coin, tai.ToAddress)
 }

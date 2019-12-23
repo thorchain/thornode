@@ -78,8 +78,8 @@ func (s *StateChanBlockScannerStorage) RemoveTxOut(txOut types.TxOut) error {
 }
 
 // GetFailedBlocksForRetry
-func (ldbss *StateChanBlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([]types.TxOut, error) {
-	iterator := ldbss.db.NewIterator(util.BytesPrefix([]byte("txout-")), nil)
+func (s *StateChanBlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([]types.TxOut, error) {
+	iterator := s.db.NewIterator(util.BytesPrefix([]byte("txout-")), nil)
 	defer iterator.Release()
 	var results []types.TxOut
 	for iterator.Next() {
@@ -100,6 +100,13 @@ func (ldbss *StateChanBlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([
 		}
 	}
 	return results, nil
+}
+
+func (s *StateChanBlockScannerStorage) SetTxOutItem(tai types.TxArrayItem, height int64) error {
+	return s.db.Put([]byte(tai.GetKey(height)), []byte{1}, nil)
+}
+func (s *StateChanBlockScannerStorage) HasTxOutItem(tai types.TxArrayItem, height int64) (bool, error) {
+	return s.db.Has([]byte(tai.GetKey(height)), nil)
 }
 
 // Close underlying db
