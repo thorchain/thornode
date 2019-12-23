@@ -128,7 +128,8 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	c.Assert(err, IsNil)
 	txOut := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "vault_pubkey":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coin":  { "denom": "BNB", "amount": "194765912" }  } ]}`, c)
 	txOut.TxArray[0].VaultPubKey = pk
-	r, p, err := b2.SignTx(txOut.TxArray[0], 1440)
+	out := txOut.TxArray[0].TxOutItem()
+	r, p, err := b2.SignTx(out, 1440)
 	c.Assert(err, IsNil)
 	c.Assert(r, NotNil)
 	c.Assert(p, NotNil)

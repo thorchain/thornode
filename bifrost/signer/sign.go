@@ -4,9 +4,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	stypes "github.com/binance-chain/go-sdk/common/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -19,6 +22,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain"
 	ttypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -316,21 +320,59 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 				Msg("different pool address, ignore")
 			continue
 		}
-		if len(item.To) == 0 {
+
+		if len(item.ToAddress) == 0 {
 			s.logger.Info().Msg("To address is empty, THORNode don't know where to send the fund , ignore")
 			continue
 		}
-		err = s.signAndSendToBinanceChain(item, height)
+
+		// Check if we're sending all funds back (memo "yggdrasil-")
+		// In this scenario, we should chose the coins to send ourselves
+		out := item.TxOutItem()
+		if strings.EqualFold(out.Memo, thorchain.YggdrasilReturnMemo{}.GetType().String()) && item.Coin.IsEmpty() {
+			out, err = s.handleYggReturn(out)
+			if err != nil {
+				continue
+			}
+		}
+
+		err = s.signAndSendToBinanceChain(out, height)
 		if nil != err {
 			s.logger.Error().Err(err).Int("try", 1).Msg("fail to send to binance chain")
 			// This might happen when THORNode signed it successfully however somehow fail to broadcast to binance chain
 			// given THORNode run a node locally , this should be rare let's log it and move on for now.
 		}
 	}
+
 	return nil
 }
 
-func (s *Signer) signAndSendToBinanceChain(tai types.TxArrayItem, height int64) error {
+func (s *Signer) handleYggReturn(out types.TxOutItem) (types.TxOutItem, error) {
+	addr, err := stypes.AccAddressFromHex(s.Binance.GetAddress(out.VaultPubKey))
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to convert to AccAddress")
+		return out, err
+	}
+
+	acct, err := s.Binance.GetAccount(addr)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("failed to get binance account info")
+		return out, err
+	}
+	out.Coins = make(common.Coins, 0)
+	for _, coin := range acct.Coins {
+		asset, err := common.NewAsset(coin.Denom)
+		if err != nil {
+			s.logger.Error().Err(err).Msg("failed to parse asset")
+			return out, err
+		}
+		out.Coins = append(out.Coins, common.NewCoin(asset, sdk.NewUint(uint64(coin.Amount))))
+	}
+
+	return out, nil
+}
+
+func (s *Signer) signAndSendToBinanceChain(tai types.TxOutItem, height int64) error {
 	start := time.Now()
 	defer func() {
 		s.m.GetHistograms(metrics.SignAndBroadcastToBinanceDuration).Observe(time.Since(start).Seconds())

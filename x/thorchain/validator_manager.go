@@ -182,11 +182,16 @@ func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, txOu
 	if nil != err {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
 	}
-	if !ygg.IsYggdrasil() {
-		return fmt.Errorf("this is not a Yggdrasil vault")
+	if ygg.IsAsgard() {
+		return nil
 	}
 	if !ygg.HasFunds() {
 		return nil
+	}
+
+	chains, err := vm.k.GetChains(ctx)
+	if err != nil {
+		return err
 	}
 
 	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
@@ -194,37 +199,29 @@ func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, txOu
 		return err
 	}
 
-	for _, coin := range ygg.Coins {
+	vault := active.SelectByMinCoin(common.RuneAsset())
+	if vault.IsEmpty() {
+		return fmt.Errorf("unable to determine asgard vault")
+	}
 
-		vault := active.SelectByMinCoin(coin.Asset)
-		if vault.IsEmpty() {
-			return fmt.Errorf("unable to determine asgard vault")
-		}
-
-		toAddr, err := vault.PubKey.GetAddress(coin.Asset.Chain)
+	for _, chain := range chains {
+		toAddr, err := vault.PubKey.GetAddress(chain)
 		if err != nil {
 			return err
 		}
 
 		if !toAddr.IsEmpty() {
 			txOutItem := &TxOutItem{
-				Chain:       coin.Asset.Chain,
+				Chain:       chain,
 				ToAddress:   toAddr,
 				InHash:      common.BlankTxID,
 				VaultPubKey: ygg.PubKey,
 				Memo:        "yggdrasil-",
-				Coin:        coin,
 			}
 			txOut.AddTxOutItem(ctx, txOutItem)
-			continue
 		}
-		wrapErr := fmt.Errorf(
-			"fail to get pool address (%s) for chain (%s) : %w",
-			toAddr.String(),
-			coin.Asset.Chain.String(), err)
-		ctx.Logger().Error(wrapErr.Error(), "error", err)
-		return wrapErr
 	}
+
 	return nil
 }
 
@@ -232,11 +229,11 @@ func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, txOu
 // when THORNode observe the node return fund successfully, the node's bound will be refund.
 func (vm *ValidatorMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore, constAccessor constants.ConstantValues) error {
 	// do THORNode have yggdrasil pool?
-	hasYggdrasil, err := vm.k.HasValidVaultPools(ctx)
+	hasFunds, err := vm.k.HasValidVaultPools(ctx)
 	if nil != err {
 		return fmt.Errorf("fail at ragnarok protocol step 1: %w", err)
 	}
-	if !hasYggdrasil {
+	if !hasFunds {
 		result := handleRagnarokProtocolStep2(ctx, vm.k, txOut, constAccessor)
 		if !result.IsOK() {
 			return errors.New("fail to process ragnarok protocol step 2")
