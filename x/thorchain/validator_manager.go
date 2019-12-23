@@ -247,14 +247,35 @@ func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		ctx.Logger().Error("can't get reserve contributors", err)
 		return err
 	}
+	vaultData, err := vm.k.GetVaultData(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get vault data", err)
+		return err
+	}
+	totalReserve := vaultData.TotalReserve
+	var totalContributions sdk.Uint
+	for _, contrib := range contribs {
+		totalContributions = totalContributions.Add(contrib.Amount)
+	}
+
+	// Since reserves are spent over time (via block rewards), reserve
+	// contributors do not get back the full amounts they put in. Instead they
+	// should get a percentage of the remaining amount, relative to the amount
+	// they contributed. We'll be reducing the total reserve supply as we
+	// refund reserves
 
 	// nth * 10 == the amount of the bond we want to send
-	for i, contrib := range contribs {
+	for _, contrib := range contribs {
+		share := common.GetShare(
+			totalContributions.Sub(contrib.Amount),
+			totalContributions,
+			totalReserve,
+		)
 		if nth > 10 { // cap at 10
 			nth = 10
 		}
-		amt := contrib.Amount.MulUint64(uint64(nth)).QuoUint64(10)
-		contribs[i].Amount = common.SafeSub(contrib.Amount, amt)
+		amt := share.MulUint64(uint64(nth)).QuoUint64(10)
+		totalReserve = common.SafeSub(totalReserve, amt)
 
 		// refund contribution
 		txOutItem := &TxOutItem{
@@ -266,7 +287,8 @@ func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		vm.txOutStore.AddTxOutItem(ctx, txOutItem)
 	}
 
-	if err := vm.k.SetReserveContributors(ctx, contribs); err != nil {
+	vaultData.TotalReserve = totalReserve
+	if err := vm.k.SetVaultData(ctx, vaultData); err != nil {
 		return err
 	}
 
