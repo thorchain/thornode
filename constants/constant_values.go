@@ -14,7 +14,6 @@ const (
 	NewPoolCycle
 	MinimumNodesForYggdrasil
 	MinimumNodesForBFT
-	GlobalSlipLimit
 	ValidatorRotateInNumBeforeFull
 	ValidatorRotateOutNumBeforeFull
 	ValidatorRotateNumAfterFull
@@ -37,7 +36,6 @@ var nameToString = map[ConstantName]string{
 	NewPoolCycle:                    "NewPoolCycle",
 	MinimumNodesForYggdrasil:        "MinimumNodesForYggdrasil",
 	MinimumNodesForBFT:              "MinimumNodesForBFT",
-	GlobalSlipLimit:                 "GlobalSlipLimit",
 	ValidatorRotateInNumBeforeFull:  "ValidatorRotateInNumBeforeFull",
 	ValidatorRotateOutNumBeforeFull: "ValidatorRotateOutNumBeforeFull",
 	ValidatorRotateNumAfterFull:     "ValidatorRotateNumAfterFull",
