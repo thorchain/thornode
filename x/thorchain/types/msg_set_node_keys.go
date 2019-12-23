@@ -8,7 +8,7 @@ import (
 
 // MsgSetNodeKeys defines a MsgSetNodeKeys message
 type MsgSetNodeKeys struct {
-	PubKeySetSet        common.PubKeySet `json:"node_pub_keys"`
+	PubKeySetSet        common.PubKeySet `json:"pub_key_set"`
 	ValidatorConsPubKey string           `json:"validator_cons_pub_key"`
 	Signer              sdk.AccAddress   `json:"signer"`
 }
