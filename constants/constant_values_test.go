@@ -17,7 +17,6 @@ func (ConstantsTestSuite) TestConstantName_String(c *C) {
 		NewPoolCycle,
 		MinimumNodesForYggdrasil,
 		MinimumNodesForBFT,
-		GlobalSlipLimit,
 		ValidatorRotateInNumBeforeFull,
 		ValidatorRotateOutNumBeforeFull,
 		ValidatorRotateNumAfterFull,
