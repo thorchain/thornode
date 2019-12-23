@@ -86,7 +86,7 @@ services:
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
       - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
-    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
         ipv4_address: 172.32.10.22
@@ -219,7 +219,7 @@ services:
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
       - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
-    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
         ipv4_address: 172.32.10.23
@@ -345,7 +345,7 @@ services:
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
       - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
-    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
         ipv4_address: 172.32.10.24
@@ -471,7 +471,7 @@ services:
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
       - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
-    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
         ipv4_address: 172.32.10.25
