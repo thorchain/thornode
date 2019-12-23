@@ -84,7 +84,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 		pkm.Add(item)
 	}
 	if na.NodePubKey.Secp256k1.IsEmpty() {
-		return nil, fmt.Errorf("Unable to find pubkey for this node account.Exiting...")
+		return nil, errors.New("unable to find pubkey for this node account.Exiting...")
 	}
 	pkm.Add(na.NodePubKey.Secp256k1)
 
@@ -272,11 +272,15 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 				s.logger.Info().Msgf("Received a keygen of %+v from the StateChain", keygens)
 				pubKey, err := s.tssKeygen.GenerateNewKey(keygen)
 				if err != nil {
-					fmt.Printf("ERROR: %s\n", err)
 					s.errCounter.WithLabelValues("fail_to_keygen_pubkey", "").Inc()
 					s.logger.Error().Err(err).Msg("fail to generate new pubkey")
 					continue
 				}
+
+				if pubKey.IsEmpty() {
+					continue
+				}
+
 				s.pkm.Add(pubKey.Secp256k1)
 
 				if err := s.sendKeygenToThorchain(keygens.Height, pubKey.Secp256k1, keygen); err != nil {
@@ -307,11 +311,18 @@ func (s *Signer) sendKeygenToThorchain(height string, poolPk common.PubKey, inpu
 // signAndSendToBinanceChainWithRetry retry a few times before THORNode move on to he next block
 func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 	// most case , there should be only one item in txOut.TxArray, but sometimes there might be more than one
-	// especially when THORNode get populate , more and more transactions
+	height, err := strconv.ParseInt(txOut.Height, 10, 64)
+	if nil != err {
+		return errors.Wrapf(err, "fail to parse block height: %s ", txOut.Height)
+	}
 	for _, item := range txOut.TxArray {
-		height, err := strconv.ParseInt(txOut.Height, 10, 64)
+		processed, err := s.storage.HasTxOutItem(item, height)
 		if nil != err {
-			return errors.Wrapf(err, "fail to parse block height: %s ", txOut.Height)
+			return fmt.Errorf("fail to check against local level db: %w", err)
+		}
+		if processed {
+			s.logger.Debug().Msgf("%+v processed already", item)
+			continue
 		}
 
 		if !s.shouldSign(item) {
@@ -338,9 +349,10 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 
 		err = s.signAndSendToBinanceChain(out, height)
 		if nil != err {
-			s.logger.Error().Err(err).Int("try", 1).Msg("fail to send to binance chain")
-			// This might happen when THORNode signed it successfully however somehow fail to broadcast to binance chain
-			// given THORNode run a node locally , this should be rare let's log it and move on for now.
+			return fmt.Errorf("fail to broadcast tx to binance chain: %w", err)
+		}
+		if err := s.storage.SetTxOutItem(item, height); nil != err {
+			return fmt.Errorf("fail to mark it off from local db: %w", err)
 		}
 	}
 

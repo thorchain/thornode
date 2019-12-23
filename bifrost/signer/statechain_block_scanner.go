@@ -112,12 +112,14 @@ func (b *StateChainBlockScan) processKeygenBlock(blockHeight int64) error {
 
 func (b *StateChainBlockScan) processTxOutBlock(blockHeight int64) error {
 	for _, pk := range b.pkm.pks {
+		if len(pk.String()) == 0 {
+			continue
+		}
 		uri, err := url.Parse(b.chainHost)
 		if err != nil {
 			return errors.Wrap(err, "fail to parse chain host")
 		}
 		uri.Path = fmt.Sprintf("/thorchain/keysign/%d/%s", blockHeight, pk.String())
-
 		strBlockHeight := strconv.FormatInt(blockHeight, 10)
 		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())
 		if nil != err {
