@@ -32,6 +32,7 @@ func NewConstantValue010() *ConstantValue010 {
 		LackOfObservationPenalty:        2,                   // add two slash point for each block where a node does not observe
 		SigningTransactionPeriod:        100,                 // how many blocks before a request to sign a tx by yggdrasil pool, is counted as delinquent.
 		MinimumBondInRune:               100_000_000_000_000, // 1 million rune
+		WhiteListGasAsset:               1000,                // thor coins we will be given to the validator
 	}}
 }
 

@@ -20,19 +20,19 @@ func NewBondHandler(keeper Keeper) BondHandler {
 	return BondHandler{keeper: keeper}
 }
 
-func (bh BondHandler) validate(ctx sdk.Context, msg MsgBond, version semver.Version, constAccessor constants.ConstantValues) sdk.Error {
+func (h BondHandler) validate(ctx sdk.Context, msg MsgBond, version semver.Version, constAccessor constants.ConstantValues) sdk.Error {
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return bh.validateV1(ctx, version, msg, constAccessor)
+		return h.validateV1(ctx, version, msg, constAccessor)
 	}
 	return errBadVersion
 }
 
-func (bh BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg MsgBond, constAccessor constants.ConstantValues) sdk.Error {
+func (h BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg MsgBond, constAccessor constants.ConstantValues) sdk.Error {
 	if err := msg.ValidateBasic(); nil != err {
 		return err
 	}
 
-	if !isSignedByActiveNodeAccounts(ctx, bh.keeper, msg.GetSigners()) {
+	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
 		return sdk.ErrUnauthorized("msg is not signed by an active node account")
 	}
 	minimumBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
@@ -41,7 +41,7 @@ func (bh BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg Ms
 		return sdk.ErrUnknownRequest(fmt.Sprintf("not enough rune to be whitelisted , minimum validator bond (%s) , bond(%s)", minValidatorBond.String(), msg.Bond))
 	}
 
-	nodeAccount, err := bh.keeper.GetNodeAccount(ctx, msg.NodeAddress)
+	nodeAccount, err := h.keeper.GetNodeAccount(ctx, msg.NodeAddress)
 	if nil != err {
 		return sdk.ErrInternal(fmt.Sprintf("fail to get node account(%s): %s", msg.NodeAddress, err))
 	}
@@ -54,7 +54,7 @@ func (bh BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg Ms
 }
 
 // Run execute the handler
-func (bh BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
+func (h BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgBond)
 	if !ok {
 		return errInvalidMessage.Result()
@@ -63,12 +63,12 @@ func (bh BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, co
 		"node address", msg.NodeAddress,
 		"request hash", msg.RequestTxHash,
 		"bond", msg.Bond)
-	if err := bh.validate(ctx, msg, version, constAccessor); nil != err {
+	if err := h.validate(ctx, msg, version, constAccessor); nil != err {
 		ctx.Logger().Error("msg bond fail validation", err)
 		return err.Result()
 	}
 
-	if err := bh.handle(ctx, msg, version); nil != err {
+	if err := h.handle(ctx, msg, version, constAccessor); nil != err {
 		ctx.Logger().Error("fail to process msg bond", err)
 		return err.Result()
 	}
@@ -79,7 +79,7 @@ func (bh BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, co
 	}
 }
 
-func (bh BondHandler) handle(ctx sdk.Context, msg MsgBond, version semver.Version) sdk.Error {
+func (h BondHandler) handle(ctx sdk.Context, msg MsgBond, version semver.Version, constAccessor constants.ConstantValues) sdk.Error {
 	// THORNode will not have pub keys at the moment, so have to leave it empty
 	emptyPubKeySet := common.PubKeySet{
 		Secp256k1: common.EmptyPubKey,
@@ -87,7 +87,7 @@ func (bh BondHandler) handle(ctx sdk.Context, msg MsgBond, version semver.Versio
 	}
 	// white list the given bep address
 	nodeAccount := NewNodeAccount(msg.NodeAddress, NodeWhiteListed, emptyPubKeySet, "", msg.Bond, msg.BondAddress, ctx.BlockHeight())
-	if err := bh.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
+	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
 		return sdk.ErrInternal(fmt.Errorf("fail to save node account(%s): %w", nodeAccount, err).Error())
 	}
 	ctx.EventManager().EmitEvent(
@@ -95,18 +95,22 @@ func (bh BondHandler) handle(ctx sdk.Context, msg MsgBond, version semver.Versio
 			sdk.NewAttribute("address", msg.NodeAddress.String()),
 		))
 
-	return bh.mintGasAsset(ctx, msg)
+	return h.mintGasAsset(ctx, msg, constAccessor)
 }
 
-func (bh BondHandler) mintGasAsset(ctx sdk.Context, msg MsgBond) sdk.Error {
-	coinsToMint := bh.keeper.GetAdminConfigWhiteListGasAsset(ctx, sdk.AccAddress{})
+func (h BondHandler) mintGasAsset(ctx sdk.Context, msg MsgBond, constAccessor constants.ConstantValues) sdk.Error {
+	whiteListGasAsset := constAccessor.GetInt64Value(constants.WhiteListGasAsset)
+	coinsToMint, err := sdk.ParseCoins(fmt.Sprintf("%dthor", whiteListGasAsset))
+	if err != nil {
+		return sdk.ErrInternal(fmt.Errorf("fail to parse coins: %w", err).Error())
+	}
 	// mint some gas asset
-	err := bh.keeper.Supply().MintCoins(ctx, ModuleName, coinsToMint)
+	err = h.keeper.Supply().MintCoins(ctx, ModuleName, coinsToMint)
 	if nil != err {
 		ctx.Logger().Error("fail to mint gas assets", "err", err)
 		return sdk.ErrInternal(fmt.Errorf("fail to mint gas assets: %w", err).Error())
 	}
-	if err := bh.keeper.Supply().SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
+	if err := h.keeper.Supply().SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
 		return sdk.ErrInternal(fmt.Errorf("fail to send newly minted gas asset to node address(%s): %w", msg.NodeAddress, err).Error())
 	}
 	return nil

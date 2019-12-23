@@ -19,8 +19,6 @@ const (
 
 	// Admin config keys
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
-	WhiteListGasAssetKey   = types.WhiteListGasAssetKey
-	PoolRefundGasKey       = types.PoolRefundGasKey
 	DefaultPoolStatus      = types.DefaultPoolStatus
 
 	// Vaults
