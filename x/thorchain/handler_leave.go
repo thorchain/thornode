@@ -100,7 +100,7 @@ func (lh LeaveHandler) handle(ctx sdk.Context, msg MsgLeave) sdk.Error {
 			}
 		}
 
-		if err := lh.validatorManager.RequestYggReturn(ctx, nodeAcc, lh.txOut); nil != err {
+		if err := lh.validatorManager.RequestYggReturn(ctx, nodeAcc); nil != err {
 			return sdk.ErrInternal(fmt.Errorf("fail to request yggdrasil return fund: %w", err).Error())
 		}
 
