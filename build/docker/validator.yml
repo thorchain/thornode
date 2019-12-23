@@ -81,7 +81,7 @@ services:
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/validator/keys:/root/.signer
       - ${HOME}/.thornode/validator/.tss:/root/.tss
-    command: ["thord", "start", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+    command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       validatornet:
         ipv4_address: 172.52.10.2
