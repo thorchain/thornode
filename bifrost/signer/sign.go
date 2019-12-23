@@ -366,7 +366,7 @@ func (s *Signer) handleYggReturn(out types.TxOutItem) (types.TxOutItem, error) {
 			s.logger.Error().Err(err).Msg("failed to parse asset")
 			return out, err
 		}
-		common.NewCoin(asset, sdk.NewUint(uint64(coin.Amount)))
+		out.Coins = append(out.Coins, common.NewCoin(asset, sdk.NewUint(uint64(coin.Amount))))
 	}
 
 	return out, nil
