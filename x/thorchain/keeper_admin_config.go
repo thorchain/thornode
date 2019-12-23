@@ -2,22 +2,14 @@ package thorchain
 
 import (
 	"fmt"
-	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-
-	"gitlab.com/thorchain/thornode/common"
 )
 
 type KeeperAdminConfig interface {
 	SetAdminConfig(ctx sdk.Context, config AdminConfig)
 	GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus
-	GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins
-	GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address
-	GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint
-	GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Coins
-	GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) int64
 	GetAdminConfigValue(ctx sdk.Context, kkey AdminConfigKey, addr sdk.AccAddress) (val string, err error)
 	GetAdminConfigIterator(ctx sdk.Context) sdk.Iterator
 }
@@ -36,48 +28,6 @@ func (k KVStore) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAd
 		name = DefaultPoolStatus.Default()
 	}
 	return GetPoolStatus(name)
-}
-
-// GetAdminConfigWhiteListGasAsset
-func (k KVStore) GetAdminConfigWhiteListGasAsset(ctx sdk.Context, addr sdk.AccAddress) sdk.Coins {
-	return k.GetAdminConfigCoinsType(ctx, WhiteListGasAssetKey, WhiteListGasAssetKey.Default(), addr)
-}
-
-// GetAdminConfigBnbAddressType - get the config with return type is BNBAddress
-func (k KVStore) GetAdminConfigBnbAddressType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) common.Address {
-	value, _ := k.GetAdminConfigValue(ctx, key, addr)
-	if value == "" {
-		value = dValue
-	}
-	return common.Address(value)
-}
-
-func (k KVStore) GetAdminConfigUintType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Uint {
-	value, _ := k.GetAdminConfigValue(ctx, key, addr)
-	if value == "" {
-		value = dValue
-	}
-	return sdk.NewUintFromString(value)
-}
-
-// GetAdminConfigCoinsType - get the config for TSL
-func (k KVStore) GetAdminConfigCoinsType(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) sdk.Coins {
-	value, _ := k.GetAdminConfigValue(ctx, key, addr)
-	if value == "" {
-		value = dValue
-	}
-	coins, _ := sdk.ParseCoins(value)
-	return coins
-}
-
-// GetAdminConfigInt64 - get the int64 config
-func (k KVStore) GetAdminConfigInt64(ctx sdk.Context, key AdminConfigKey, dValue string, addr sdk.AccAddress) int64 {
-	value, _ := k.GetAdminConfigValue(ctx, key, addr)
-	if value == "" {
-		value = dValue
-	}
-	result, _ := strconv.ParseInt(value, 10, 64)
-	return result
 }
 
 // GetAdminConfigValue - gets the value of a given admin key
