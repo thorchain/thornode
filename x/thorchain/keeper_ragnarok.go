@@ -5,8 +5,18 @@ import (
 )
 
 type KeeperRagnarok interface {
+	RagnarokInProgress(_ sdk.Context) bool
 	GetRagnarokBlockHeight(_ sdk.Context) (sdk.Uint, error)
 	SetRagnarokBlockHeight(_ sdk.Context, _ sdk.Uint)
+}
+
+func (k KVStore) RagnarokInProgress(ctx sdk.Context) bool {
+	height, err := k.GetRagnarokBlockHeight(ctx)
+	if err != nil {
+		ctx.Logger().Error(err.Error())
+		return true
+	}
+	return !height.IsZero()
 }
 
 func (k KVStore) GetRagnarokBlockHeight(ctx sdk.Context) (sdk.Uint, error) {

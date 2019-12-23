@@ -187,14 +187,14 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 	} else {
 		if ragnarokHeight.IsZero() {
 			vm.k.SetRagnarokBlockHeight(ctx, sdk.NewUint(uint64(ctx.BlockHeight())))
-			if err := vm.ragnarokProtocolStep1(ctx, activeNodes, constAccessor); nil != err {
+			if err := vm.ragnarokProtocolStage1(ctx, activeNodes, constAccessor); nil != err {
 				ctx.Logger().Error("fail to execute ragnarok protocol step 1: %s", err)
 			}
 		} else {
 			migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
 			if (ctx.BlockHeight()-int64(ragnarokHeight.Uint64()))%migrateInterval == 0 {
 				nth := (ctx.BlockHeight() - int64(ragnarokHeight.Uint64())) / migrateInterval
-				err := vm.ragnarokProtocolStep2(ctx, constAccessor, nth)
+				err := vm.ragnarokProtocolStage2(ctx, constAccessor, nth)
 				if err != nil {
 					ctx.Logger().Error("fail to execute ragnarok protocol step 2: %s", err)
 				}
@@ -205,13 +205,13 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 	return nil
 }
 
-// ragnarokProtocolStep1 - request all yggdrasil pool to return the fund
+// ragnarokProtocolStage1 - request all yggdrasil pool to return the fund
 // when THORNode observe the node return fund successfully, the node's bound will be refund.
-func (vm *ValidatorMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, constAccessor constants.ConstantValues) error {
+func (vm *ValidatorMgr) ragnarokProtocolStage1(ctx sdk.Context, activeNodes NodeAccounts, constAccessor constants.ConstantValues) error {
 	return vm.recallYggFunds(ctx, activeNodes)
 }
 
-func (vm *ValidatorMgr) ragnarokProtocolStep2(ctx sdk.Context, constAccessor constants.ConstantValues, nth int64) error {
+func (vm *ValidatorMgr) ragnarokProtocolStage2(ctx sdk.Context, constAccessor constants.ConstantValues, nth int64) error {
 	// Ragnarok Protocol
 	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
 	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
@@ -233,6 +233,14 @@ func (vm *ValidatorMgr) ragnarokProtocolStep2(ctx sdk.Context, constAccessor con
 		return nil
 	}
 
+	if err := vm.ragnarokPools(ctx, nth, nas[0], constAccessor); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (vm *ValidatorMgr) ragnarokPools(ctx sdk.Context, nth int64, na NodeAccount, constAccessor constants.ConstantValues) error {
 	// each round of refund, we increase the percentage by 10%. This ensures
 	// that we slowly refund each person, while not sending out too much too
 	// fast. Also, we won't be running into any gas related issues until the
@@ -270,7 +278,7 @@ func (vm *ValidatorMgr) ragnarokProtocolStep2(ctx sdk.Context, constAccessor con
 				item.RuneAddress,
 				sdk.NewUint(uint64(basisPoints)),
 				pool.Asset,
-				nas[0].NodeAddress,
+				na.NodeAddress,
 			)
 
 			version := vm.k.GetLowestActiveVersion(ctx)

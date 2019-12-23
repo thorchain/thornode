@@ -42,6 +42,7 @@ func (k KVStoreDummy) GetRagnarokBlockHeight(_ sdk.Context) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
 func (k KVStoreDummy) SetRagnarokBlockHeight(_ sdk.Context, _ sdk.Uint) {}
+func (k KVStoreDummy) RagnarokInProgress(_ sdk.Context) bool            { return false }
 func (k KVStoreDummy) GetPoolBalances(_ sdk.Context, _, _ common.Asset) (sdk.Uint, sdk.Uint) {
 	return sdk.ZeroUint(), sdk.ZeroUint()
 }
