@@ -66,7 +66,7 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
 	if ctx.BlockHeight()%rotatePerBlockHeight == 0 {
 		ctx.Logger().Info("Checking for node account rotation...")
-		next, ok, err := vm.nextPoolNodeAccounts(ctx, int(desireValidatorSet))
+		next, ok, err := vm.nextVaultNodeAccounts(ctx, int(desireValidatorSet))
 		if err != nil {
 			return err
 		}
@@ -489,7 +489,7 @@ func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context) error {
 }
 
 // Returns a list of nodes to include in the next pool
-func (vm *ValidatorMgr) nextPoolNodeAccounts(ctx sdk.Context, targetCount int) (NodeAccounts, bool, error) {
+func (vm *ValidatorMgr) nextVaultNodeAccounts(ctx sdk.Context, targetCount int) (NodeAccounts, bool, error) {
 	rotation := false // track if are making any changes to the current active node accounts
 
 	// update list of ready actors
@@ -523,7 +523,6 @@ func (vm *ValidatorMgr) nextPoolNodeAccounts(ctx sdk.Context, targetCount int) (
 	if len(active) > 0 && (active[0].LeaveHeight > 0 || active[0].RequestedToLeave) {
 		rotation = true
 		active = active[1:]
-		fmt.Println("Chopped one")
 	}
 
 	// add ready nodes to become active
