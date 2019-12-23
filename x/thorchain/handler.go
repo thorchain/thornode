@@ -132,6 +132,11 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		if err != nil {
 			return nil, errors.Wrap(err, "fail to get MsgNoOp from memo")
 		}
+	case RefundMemo:
+		newMsg, err = getMsgRefundFromMemo(m, tx, signer)
+		if nil != err {
+			return nil, errors.Wrap(err, "fail to get MsgRefund from memo")
+		}
 	case OutboundMemo:
 		newMsg, err = getMsgOutboundFromMemo(m, tx, signer)
 		if nil != err {
@@ -276,6 +281,14 @@ func getMsgAddFromMemo(memo AddMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.
 		memo.GetAsset(),
 		runeAmount,
 		assetAmount,
+		signer,
+	), nil
+}
+
+func getMsgRefundFromMemo(memo RefundMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
+	return NewMsgRefundTx(
+		tx,
+		memo.GetTxID(),
 		signer,
 	), nil
 }
