@@ -15,7 +15,7 @@ func (MsgSetNodeKeysSuite) TestMsgSetNodeKeys(c *C) {
 	acc1 := GetRandomBech32Addr()
 	c.Assert(acc1.Empty(), Equals, false)
 	consensPubKey := GetRandomBech32ConsensusPubKey()
-	pubKeys := common.PubKeys{
+	pubKeys := common.PubKeySet{
 		Secp256k1: GetRandomPubKey(),
 		Ed25519:   GetRandomPubKey(),
 	}
@@ -32,7 +32,7 @@ func (MsgSetNodeKeysSuite) TestMsgSetNodeKeys(c *C) {
 	msgUpdateNodeAccount2 := NewMsgSetNodeKeys(pubKeys, consensPubKey, sdk.AccAddress{})
 	c.Assert(msgUpdateNodeAccount2.ValidateBasic(), NotNil)
 
-	emptyPubKeys := NewMsgSetNodeKeys(common.PubKeys{}, consensPubKey, acc1)
-	c.Assert(emptyPubKeys.ValidateBasic(), NotNil)
+	emptyPubKeySet := NewMsgSetNodeKeys(common.PubKeySet{}, consensPubKey, acc1)
+	c.Assert(emptyPubKeySet.ValidateBasic(), NotNil)
 
 }

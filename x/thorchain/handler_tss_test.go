@@ -33,7 +33,7 @@ func (s *HandlerTssSuite) TestValidate(c *C) {
 	// happy path
 	ver := semver.MustParse("0.1.0")
 	pk := GetRandomPubKey()
-	pks := []common.PubKey{
+	pks := common.PubKeys{
 		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
 	}
 	msg := NewMsgTssPool(pks, pk, keeper.na.NodeAddress)
@@ -94,7 +94,7 @@ func (s *HandlerTssSuite) TestHandle(c *C) {
 	handler := NewTssHandler(keeper, vaultMgr)
 	// happy path
 	pk := GetRandomPubKey()
-	pks := []common.PubKey{
+	pks := common.PubKeys{
 		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
 	}
 	msg := NewMsgTssPool(pks, pk, keeper.active[0].NodeAddress)

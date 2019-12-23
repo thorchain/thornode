@@ -36,7 +36,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc2), IsNil)
 	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc3), IsNil)
 
-	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc1.NodePubKey.Secp256k1)
+	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc1.PubKeySet.Secp256k1)
 	ygg.AddFunds(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(40*common.One)),
@@ -44,7 +44,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	)
 	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 
-	ygg = NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc2.NodePubKey.Secp256k1)
+	ygg = NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc2.PubKeySet.Secp256k1)
 	ygg.AddFunds(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(50*common.One)),
@@ -52,7 +52,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	)
 	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 
-	ygg = NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc3.NodePubKey.Secp256k1)
+	ygg = NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc3.PubKeySet.Secp256k1)
 	ygg.AddFunds(
 		common.Coins{
 			common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
@@ -80,7 +80,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w.txOutStore.AddTxOutItem(w.ctx, item)
 	msgs := w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 1)
-	c.Assert(msgs[0].VaultPubKey.String(), Equals, acc2.NodePubKey.Secp256k1.String())
+	c.Assert(msgs[0].VaultPubKey.String(), Equals, acc2.PubKeySet.Secp256k1.String())
 	c.Assert(msgs[0].Coin.Amount.Equal(sdk.NewUint(19*common.One)), Equals, true)
 
 	// Should get acc1. Acc3 hasn't signed and acc1 now has the highest amount
@@ -95,7 +95,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w.txOutStore.AddTxOutItem(w.ctx, item)
 	msgs = w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 2)
-	c.Assert(msgs[1].VaultPubKey.String(), Equals, acc1.NodePubKey.Secp256k1.String())
+	c.Assert(msgs[1].VaultPubKey.String(), Equals, acc1.PubKeySet.Secp256k1.String())
 
 	item = &TxOutItem{
 		Chain:     common.BNBChain,

@@ -74,7 +74,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 			return nil, fmt.Errorf("fail to get node account from thorchain,err:%w", err)
 		}
 
-		if !na.NodePubKey.Secp256k1.IsEmpty() {
+		if !na.PubKeySet.Secp256k1.IsEmpty() {
 			break
 		}
 		time.Sleep(5 * time.Second)
@@ -83,10 +83,10 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	for _, item := range na.SignerMembership {
 		pkm.Add(item)
 	}
-	if na.NodePubKey.Secp256k1.IsEmpty() {
-		return nil, errors.New("unable to find pubkey for this node account.Exiting...")
+	if na.PubKeySet.Secp256k1.IsEmpty() {
+		return nil, fmt.Errorf("Unable to find pubkey for this node account.Exiting...")
 	}
-	pkm.Add(na.NodePubKey.Secp256k1)
+	pkm.Add(na.PubKeySet.Secp256k1)
 
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
 	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScanner, stateChainScanStorage, cfg.StateChain.ChainHost, m, pkm)
@@ -293,7 +293,7 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 	}
 }
 
-func (s *Signer) sendKeygenToThorchain(height string, poolPk common.PubKey, input []common.PubKey) error {
+func (s *Signer) sendKeygenToThorchain(height string, poolPk common.PubKey, input common.PubKeys) error {
 	stdTx, err := s.stateChainBridge.GetKeygenStdTx(poolPk, input)
 	if nil != err {
 		s.errCounter.WithLabelValues("fail_to_sign", height).Inc()

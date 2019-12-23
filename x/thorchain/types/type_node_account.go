@@ -84,30 +84,30 @@ func GetNodeStatus(ps string) NodeStatus {
 
 // NodeAccount represent node
 type NodeAccount struct {
-	NodeAddress         sdk.AccAddress `json:"node_address"` // Thor address which is an operator address
-	Status              NodeStatus     `json:"status"`
-	NodePubKey          common.PubKeys `json:"node_pub_keys"`
-	ValidatorConsPubKey string         `json:"validator_cons_pub_key"`
-	Bond                sdk.Uint       `json:"bond"`
-	ActiveBlockHeight   int64          `json:"active_block_height"` // The block height when this node account became active status
-	BondAddress         common.Address `json:"bond_address"`        // BNB Address to send bond from. It also indicates the operator address to whilelist and associate.
-	SlashPoints         int64          `json:"slash_points"`        // Amount of penalty points the users has incurred.
+	NodeAddress         sdk.AccAddress   `json:"node_address"` // Thor address which is an operator address
+	Status              NodeStatus       `json:"status"`
+	PubKeySet           common.PubKeySet `json:"pub_key_set"`
+	ValidatorConsPubKey string           `json:"validator_cons_pub_key"`
+	Bond                sdk.Uint         `json:"bond"`
+	ActiveBlockHeight   int64            `json:"active_block_height"` // The block height when this node account became active status
+	BondAddress         common.Address   `json:"bond_address"`        // BNB Address to send bond from. It also indicates the operator address to whilelist and associate.
+	SlashPoints         int64            `json:"slash_points"`        // Amount of penalty points the users has incurred.
 	// start from which block height this node account is in current status
 	// StatusSince field is important , it has been used to sort node account , used for validator rotation
-	StatusSince      int64           `json:"status_since"`
-	ObserverActive   bool            `json:"observer_active"`
-	SignerActive     bool            `json:"signer_active"`
-	SignerMembership []common.PubKey `json:"signer_membership"`
-	RequestedToLeave bool            `json:"requested_to_leave"`
-	LeaveHeight      int64           `json:"leave_height"`
-	Version          semver.Version  `json:"version"`
+	StatusSince      int64          `json:"status_since"`
+	ObserverActive   bool           `json:"observer_active"`
+	SignerActive     bool           `json:"signer_active"`
+	SignerMembership common.PubKeys `json:"signer_membership"`
+	RequestedToLeave bool           `json:"requested_to_leave"`
+	LeaveHeight      int64          `json:"leave_height"`
+	Version          semver.Version `json:"version"`
 }
 
 // NewNodeAccount create new instance of NodeAccount
-func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, nodePubKeys common.PubKeys, validatorConsPubKey string, bond sdk.Uint, bondAddress common.Address, height int64) NodeAccount {
+func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, nodePubKeySet common.PubKeySet, validatorConsPubKey string, bond sdk.Uint, bondAddress common.Address, height int64) NodeAccount {
 	na := NodeAccount{
 		NodeAddress:         nodeAddress,
-		NodePubKey:          nodePubKeys,
+		PubKeySet:           nodePubKeySet,
 		ValidatorConsPubKey: validatorConsPubKey,
 		Bond:                bond,
 		BondAddress:         bondAddress,
@@ -142,7 +142,7 @@ func (n *NodeAccount) UpdateStatus(status NodeStatus, height int64) {
 // Equals compare two node account, to see whether they are equal
 func (n NodeAccount) Equals(n1 NodeAccount) bool {
 	if n.NodeAddress.Equals(n1.NodeAddress) &&
-		n.NodePubKey.Equals(n1.NodePubKey) &&
+		n.PubKeySet.Equals(n1.PubKeySet) &&
 		n.ValidatorConsPubKey == n1.ValidatorConsPubKey &&
 		n.BondAddress.Equals(n1.BondAddress) &&
 		n.Bond.Equal(n1.Bond) &&
@@ -157,7 +157,7 @@ func (n NodeAccount) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("node:" + n.NodeAddress.String() + "\n")
 	sb.WriteString("status:" + n.Status.String() + "\n")
-	sb.WriteString("node pubkeys:" + n.NodePubKey.String() + "\n")
+	sb.WriteString("node pubkeys:" + n.PubKeySet.String() + "\n")
 	sb.WriteString("validator consensus pub key:" + n.ValidatorConsPubKey + "\n")
 	sb.WriteString("bond:" + n.Bond.String() + "\n")
 	sb.WriteString("version:" + n.Version.String() + "\n")

@@ -13,9 +13,9 @@ import (
 )
 
 type newTssPool struct {
-	BaseReq      rest.BaseReq    `json:"base_req"`
-	InputPubKeys []common.PubKey `json:"input_pubkeys"`
-	PoolPubKey   common.PubKey   `json:"pool_pub_key"`
+	BaseReq      rest.BaseReq   `json:"base_req"`
+	InputPubKeys common.PubKeys `json:"input_pubkeys"`
+	PoolPubKey   common.PubKey  `json:"pool_pub_key"`
 }
 
 func newTssPoolHandler(cliCtx context.CLIContext) http.HandlerFunc {

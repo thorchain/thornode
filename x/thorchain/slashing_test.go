@@ -150,7 +150,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	txOutItem := &TxOutItem{
 		Chain:       common.BNBChain,
 		InHash:      evt.InTx.ID,
-		VaultPubKey: na.NodePubKey.Secp256k1,
+		VaultPubKey: na.PubKeySet.Secp256k1,
 		ToAddress:   GetRandomBNBAddress(),
 		Coin: common.NewCoin(
 			common.BNBAsset, sdk.NewUint(3980500*common.One),

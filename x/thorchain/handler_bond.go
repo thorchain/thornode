@@ -81,12 +81,12 @@ func (bh BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, co
 
 func (bh BondHandler) handle(ctx sdk.Context, msg MsgBond, version semver.Version) sdk.Error {
 	// THORNode will not have pub keys at the moment, so have to leave it empty
-	emptyPubKeys := common.PubKeys{
+	emptyPubKeySet := common.PubKeySet{
 		Secp256k1: common.EmptyPubKey,
 		Ed25519:   common.EmptyPubKey,
 	}
 	// white list the given bep address
-	nodeAccount := NewNodeAccount(msg.NodeAddress, NodeWhiteListed, emptyPubKeys, "", msg.Bond, msg.BondAddress, ctx.BlockHeight())
+	nodeAccount := NewNodeAccount(msg.NodeAddress, NodeWhiteListed, emptyPubKeySet, "", msg.Bond, msg.BondAddress, ctx.BlockHeight())
 	if err := bh.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
 		return sdk.ErrInternal(fmt.Errorf("fail to save node account(%s): %w", nodeAccount, err).Error())
 	}
