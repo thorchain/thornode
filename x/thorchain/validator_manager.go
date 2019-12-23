@@ -239,9 +239,11 @@ func (vm *ValidatorMgr) ragnarokProtocolStep2(ctx sdk.Context, constAccessor con
 	// very last round, which, by my calculations, if someone staked 100 coins,
 	// the last tx will send them 0.036288. So if we don't have enough gas to
 	// send them, its only a very small portion that is not refunded.
-	basisPoints := nth * 1000
-	if basisPoints > 10_000 { // ensure we don't exceed 10,000 points
-		basisPoints = 10_000
+	var basisPoints int64
+	if nth > 10 {
+		basisPoints = MaxWithdrawBasisPoints
+	} else {
+		basisPoints = nth * (MaxWithdrawBasisPoints / 10)
 	}
 
 	// go through all the pooles
@@ -266,7 +268,7 @@ func (vm *ValidatorMgr) ragnarokProtocolStep2(ctx sdk.Context, constAccessor con
 			unstakeMsg := NewMsgSetUnStake(
 				common.GetRagnarokTx(pool.Asset.Chain),
 				item.RuneAddress,
-				sdk.NewUint(10000),
+				sdk.NewUint(uint64(basisPoints)),
 				pool.Asset,
 				nas[0].NodeAddress,
 			)
