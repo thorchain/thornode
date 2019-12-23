@@ -89,7 +89,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		coinKeeper:     bankKeeper,
 		supplyKeeper:   supplyKeeper,
 		txOutStore:     txStore,
-		validatorMgr:   NewValidatorMgr(k, vaultMgr),
+		validatorMgr:   NewValidatorMgr(k, txStore, vaultMgr),
 		vaultMgr:       vaultMgr,
 	}
 }
@@ -171,7 +171,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}
 
 		am.txOutStore.CommitBlock(ctx)
-		return am.validatorMgr.EndBlock(ctx, am.txOutStore, constantValues)
+		return am.validatorMgr.EndBlock(ctx, constantValues)
 	}
 	return nil
 }

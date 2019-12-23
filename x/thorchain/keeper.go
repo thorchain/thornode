@@ -37,6 +37,7 @@ type Keeper interface {
 	KeeperAdminConfig
 	KeeperTss
 	KeeperKeygen
+	KeeperRagnarok
 }
 
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there
@@ -71,6 +72,7 @@ const (
 	prefixReserves           dbPrefix = "reserves/"
 	prefixTss                dbPrefix = "tss/"
 	prefixKeygen             dbPrefix = "keygen/"
+	prefixRagnarok           dbPrefix = "ragnarok/"
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {

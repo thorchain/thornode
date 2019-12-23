@@ -24,7 +24,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 
 	txOutStore := NewTxStoreDummy()
 	vaultMgr := NewVaultMgr(keeper, txOutStore)
-	validatorMgr := NewValidatorMgr(keeper, vaultMgr)
+	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
 
 	// create starting point, vault and four node active node accounts
 	vault := GetRandomVault()
@@ -89,7 +89,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	c.Assert(vault2.Membership, HasLen, 4)
 
 	// check our validators get rotated appropriately
-	validators := validatorMgr.EndBlock(ctx, txOutStore, consts)
+	validators := validatorMgr.EndBlock(ctx, consts)
 	nas, err := keeper.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(nas, HasLen, 4)
