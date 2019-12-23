@@ -187,8 +187,8 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 		return err
 	}
 
-	if ragnarokHeight.IsZero() {
-		ragnarokHeight = sdk.NewUint(uint64(ctx.BlockHeight()))
+	if ragnarokHeight == 0 {
+		ragnarokHeight = ctx.BlockHeight()
 		vm.k.SetRagnarokBlockHeight(ctx, ragnarokHeight)
 		if err := vm.ragnarokProtocolStage1(ctx, activeNodes, constAccessor); nil != err {
 			ctx.Logger().Error("fail to execute ragnarok protocol step 1: %s", err)
@@ -197,8 +197,8 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 	}
 
 	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
-	if (ctx.BlockHeight()-int64(ragnarokHeight.Uint64()))%migrateInterval == 0 {
-		nth := (ctx.BlockHeight() - int64(ragnarokHeight.Uint64())) / migrateInterval
+	if (ctx.BlockHeight()-ragnarokHeight)%migrateInterval == 0 {
+		nth := (ctx.BlockHeight() - ragnarokHeight) / migrateInterval
 		err := vm.ragnarokProtocolStage2(ctx, constAccessor, nth)
 		if err != nil {
 			ctx.Logger().Error("fail to execute ragnarok protocol step 2: %s", err)
