@@ -237,8 +237,88 @@ func (vm *ValidatorMgr) ragnarokProtocolStage2(ctx sdk.Context, constAccessor co
 		return nil
 	}
 
+	if err := vm.ragnarokBond(ctx, nth); err != nil {
+		return err
+	}
+
 	if err := vm.ragnarokPools(ctx, nth, nas[0], constAccessor); err != nil {
 		return err
+	}
+
+	if err := vm.ragnarokReserve(ctx, nth); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
+	contribs, err := vm.k.GetReservesContributors(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get reserve contributors", err)
+		return err
+	}
+
+	// nth * 10 == the amount of the bond we want to send
+	for i, contrib := range contribs {
+		if nth > 10 { // cap at 10
+			nth = 10
+		}
+		amt := contrib.Amount.MulUint64(uint64(nth)).QuoUint64(10)
+		contribs[i].Amount = common.SafeSub(contrib.Amount, amt)
+
+		// refund contribution
+		txOutItem := &TxOutItem{
+			Chain:     common.BNBChain,
+			ToAddress: contrib.Address,
+			InHash:    common.BlankTxID,
+			Coin:      common.NewCoin(common.RuneAsset(), amt),
+		}
+		vm.txOutStore.AddTxOutItem(ctx, txOutItem)
+	}
+
+	if err := vm.k.SetReserveContributors(ctx, contribs); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (vm *ValidatorMgr) ragnarokBond(ctx sdk.Context, nth int64) error {
+	active, err := vm.k.ListActiveNodeAccounts(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get active nodes", err)
+		return err
+	}
+
+	// nth * 10 == the amount of the bond we want to send
+	for _, na := range active {
+		ygg, err := vm.k.GetVault(ctx, na.NodePubKey.Secp256k1)
+		if err != nil {
+			return err
+		}
+		if ygg.HasFunds() {
+			ctx.Logger().Info(fmt.Sprintf("skip bond refund due to remaining funds: %s", na.NodeAddress))
+			continue
+		}
+		if nth > 10 { // cap at 10
+			nth = 10
+		}
+		amt := na.Bond.MulUint64(uint64(nth)).QuoUint64(10)
+		na.Bond = common.SafeSub(na.Bond, amt)
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			return err
+		}
+
+		// refund bond
+		txOutItem := &TxOutItem{
+			Chain:     common.BNBChain,
+			ToAddress: na.BondAddress,
+			InHash:    common.BlankTxID,
+			Coin:      common.NewCoin(common.RuneAsset(), amt),
+		}
+		vm.txOutStore.AddTxOutItem(ctx, txOutItem)
+
 	}
 
 	return nil
