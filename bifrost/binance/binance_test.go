@@ -7,8 +7,10 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/cosmos/cosmos-sdk/client/keys"
@@ -32,11 +34,12 @@ type BinancechainSuite struct {
 var _ = Suite(&BinancechainSuite{})
 
 func (s *BinancechainSuite) SetUpSuite(c *C) {
+	ns := strconv.Itoa(time.Now().Nanosecond())
 	types2.SetupConfigForTest()
 	ctypes.Network = ctypes.TestNetwork
 	c.Assert(os.Setenv("NET", "testnet"), IsNil)
 
-	s.thordir = filepath.Join(os.TempDir(), ".thorcli")
+	s.thordir = filepath.Join(os.TempDir(), ns, ".thorcli")
 	s.statecfg = config.StateChainConfiguration{
 		ChainID:         "statechain",
 		ChainHost:       "localhost",
