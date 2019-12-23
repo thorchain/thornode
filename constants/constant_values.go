@@ -27,6 +27,7 @@ const (
 	SigningTransactionPeriod
 	MinimumBondInRune
 	FundMigrationInterval
+	WhiteListGasAsset
 )
 
 var nameToString = map[ConstantName]string{
@@ -49,6 +50,7 @@ var nameToString = map[ConstantName]string{
 	SigningTransactionPeriod:        "SigningTransactionPeriod",
 	MinimumBondInRune:               "MinimumBondInRune",
 	FundMigrationInterval:           "FundMigrationInterval",
+	WhiteListGasAsset:               "WhiteListGasAsset",
 }
 
 // String implement fmt.stringer
