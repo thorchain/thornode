@@ -5,6 +5,7 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 
@@ -123,22 +124,8 @@ func (k *TestEndPoolHandleKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
 	k.poolStaker = ps
 }
 
-func (k *TestEndPoolHandleKeeper) AddIncompleteEvents(_ sdk.Context, _ Event) error {
-	if k.failAddEvent {
-		return errors.New("fail to add incomplete events")
-	}
+func (k *TestEndPoolHandleKeeper) UpsertEvent(ctx sdk.Context, event Event) error {
 	return nil
-}
-
-func (k *TestEndPoolHandleKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
-	if k.failStakeEvent {
-		return nil, errors.New("fail to get incomplete events")
-	}
-	return nil, nil
-}
-
-func (k *TestEndPoolHandleKeeper) GetLastEventID(_ sdk.Context) (int64, error) {
-	return 0, nil
 }
 
 func (k *TestEndPoolHandleKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {

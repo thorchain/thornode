@@ -17,11 +17,10 @@ var _ = Suite(&HandlerStakeSuite{})
 
 type MockStackKeeper struct {
 	KVStoreDummy
-	currentPool       Pool
-	activeNodeAccount NodeAccount
-	failGetPool       bool
-	failAddEvent      bool
-	failStakeEvent    bool
+	currentPool        Pool
+	activeNodeAccount  NodeAccount
+	failGetPool        bool
+	failGetNextEventID bool
 }
 
 func (m *MockStackKeeper) PoolExist(_ sdk.Context, asset common.Asset) bool {
@@ -57,20 +56,11 @@ func (m *MockStackKeeper) GetStakerPool(_ sdk.Context, addr common.Address) (Sta
 		PoolUnits:    nil,
 	}, nil
 }
-func (m *MockStackKeeper) AddIncompleteEvents(_ sdk.Context, _ Event) error {
-	if m.failAddEvent {
-		return errors.New("fail to add incomplete events")
+func (m *MockStackKeeper) UpsertEvent(_ sdk.Context, _ Event) error {
+	if m.failGetNextEventID {
+		return kaboom
 	}
 	return nil
-}
-func (m *MockStackKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
-	if m.failStakeEvent {
-		return nil, errors.New("fail to get incomplete events")
-	}
-	return nil, nil
-}
-func (m *MockStackKeeper) GetLastEventID(_ sdk.Context) (int64, error) {
-	return 0, nil
 }
 func (HandlerStakeSuite) TestStakeHandler(c *C) {
 	ctx, _ := setupKeeperForTest(c)
@@ -259,20 +249,11 @@ func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 			expectedResult: sdk.CodeUnknownRequest,
 		},
 		{
-			name: "fail to get add incomplete event should fail stake",
+			name: "fail to get next event id should fail stake",
 			k: &MockStackKeeper{
-				activeNodeAccount: activeNodeAccount,
-				currentPool:       emptyPool,
-				failAddEvent:      true,
-			},
-			expectedResult: sdk.CodeInternal,
-		},
-		{
-			name: "fail to get  incomplete event should fail stake",
-			k: &MockStackKeeper{
-				activeNodeAccount: activeNodeAccount,
-				currentPool:       emptyPool,
-				failStakeEvent:    true,
+				activeNodeAccount:  activeNodeAccount,
+				currentPool:        emptyPool,
+				failGetNextEventID: true,
 			},
 			expectedResult: sdk.CodeInternal,
 		},

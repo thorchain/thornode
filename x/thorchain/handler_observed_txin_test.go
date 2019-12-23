@@ -95,8 +95,7 @@ type TestObservedTxInFailureKeeper struct {
 func (k *TestObservedTxInFailureKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return k.pool, nil
 }
-
-func (k *TestObservedTxInFailureKeeper) AddIncompleteEvents(_ sdk.Context, evt Event) error {
+func (k *TestObservedTxInFailureKeeper) UpsertEvent(_ sdk.Context, evt Event) error {
 	k.evt = evt
 	return nil
 }
@@ -121,7 +120,7 @@ func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	err := handler.inboundFailure(ctx, tx)
 	c.Assert(err, IsNil)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
-	c.Check(keeper.evt.Empty(), Equals, false, Commentf("%+v", keeper.evt))
+
 }
 
 type TestObservedTxInHandleKeeper struct {

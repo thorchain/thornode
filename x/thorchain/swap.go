@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -133,7 +134,7 @@ func swapOne(ctx sdk.Context,
 		var swapEvt EventSwap
 		var status EventStatus
 		if err == nil {
-			status = EventSuccess
+			status = EventPending
 			swapEvt = NewEventSwap(
 				source,
 				tradeTarget,
@@ -142,7 +143,7 @@ func swapOne(ctx sdk.Context,
 			)
 
 		} else {
-			status = EventRefund
+			status = EventFail
 			swapEvt = NewEventSwap(
 				source,
 				tradeTarget,
@@ -155,7 +156,9 @@ func swapOne(ctx sdk.Context,
 		if errr != nil {
 			amt = sdk.ZeroUint()
 			err = errr
+			return
 		}
+
 		evt := NewEvent(
 			swapEvt.Type(),
 			ctx.BlockHeight(),
@@ -165,10 +168,11 @@ func swapOne(ctx sdk.Context,
 		)
 		// using errr instead of err because we don't want to return the error,
 		// just log it because we are in a defer func
-		errr = keeper.AddIncompleteEvents(ctx, evt)
-		if errr != nil {
-			ctx.Logger().Error(errors.Wrap(errr, "Fail to add incomplete swap event").Error())
+		if errr := keeper.UpsertEvent(ctx, evt); nil != errr {
+			amt = sdk.ZeroUint()
+			err = errr
 		}
+
 	}()
 
 	// Check if pool exists

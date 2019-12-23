@@ -224,7 +224,9 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		evtBytes,
 		EventSuccess,
 	)
-	k.SetCompletedEvent(ctx, evt)
+	if err := k.UpsertEvent(ctx, evt); nil != err {
+		return fmt.Errorf("fail to save event: %w", err)
+	}
 
 	i, err := k.TotalActiveNodeAccount(ctx)
 	if nil != err {

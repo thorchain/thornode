@@ -13,11 +13,10 @@ type GenesisState struct {
 	StakerPools      []StakerPool     `json:"staker_pools"`
 	ObservedTxVoters ObservedTxVoters `json:"observed_tx_voters"`
 	TxOuts           []TxOut          `json:"txouts"`
-	CompleteEvents   Events           `json:"complete_events"`
-	IncompleteEvents Events           `json:"incomplete_events"`
 	NodeAccounts     NodeAccounts     `json:"node_accounts"`
 	AdminConfigs     []AdminConfig    `json:"admin_configs"`
-	LastEventID      int64            `json:"last_event_id"`
+	CurrentEventID   int64            `json:"current_event_id"`
+	Events           Events           `json:"events"`
 	Vaults           Vaults           `json:"vaults"`
 }
 
@@ -160,13 +159,13 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		}
 	}
 
-	keeper.SetIncompleteEvents(ctx, data.IncompleteEvents)
-
-	for _, event := range data.CompleteEvents {
-		keeper.SetCompletedEvent(ctx, event)
+	for _, e := range data.Events {
+		if err := keeper.UpsertEvent(ctx, e); nil != err {
+			panic(err)
+		}
 	}
 
-	keeper.SetLastEventID(ctx, data.LastEventID)
+	keeper.SetCurrentEventID(ctx, data.CurrentEventID)
 
 	return validators
 
@@ -174,7 +173,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 // ExportGenesis export the data in Genesis
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
-	lastEventID, _ := k.GetLastEventID(ctx)
+	currentEventID, _ := k.GetCurrentEventID(ctx)
 
 	var adminConfigs []AdminConfig
 	iterator := k.GetAdminConfigIterator(ctx)
@@ -235,30 +234,24 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		outs = append(outs, out)
 	}
 
-	var completed []Event
-	iterator = k.GetCompleteEventIterator(ctx)
+	var events []Event
+	iterator = k.GetEventsIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var e Event
 		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &e)
-		completed = append(completed, e)
-	}
-
-	incomplete, err := k.GetIncompleteEvents(ctx)
-	if err != nil {
-		panic(err)
+		events = append(events, e)
 	}
 
 	return GenesisState{
 		Pools:            pools,
 		NodeAccounts:     nodeAccounts,
 		AdminConfigs:     adminConfigs,
-		LastEventID:      lastEventID,
 		PoolStakers:      poolStakers,
 		StakerPools:      stakerPools,
 		ObservedTxVoters: votes,
 		TxOuts:           outs,
-		CompleteEvents:   completed,
-		IncompleteEvents: incomplete,
+		CurrentEventID:   currentEventID,
+		Events:           events,
 	}
 }

@@ -66,6 +66,7 @@ func getHandlerMapping(keeper Keeper, txOutStore TxOutStore, validatorMgr Valida
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, txOutStore)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
+	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
 	return m
 }
 
@@ -130,6 +131,11 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		newMsg, err = getMsgNoOpFromMemo(tx, signer)
 		if err != nil {
 			return nil, errors.Wrap(err, "fail to get MsgNoOp from memo")
+		}
+	case RefundMemo:
+		newMsg, err = getMsgRefundFromMemo(m, tx, signer)
+		if nil != err {
+			return nil, errors.Wrap(err, "fail to get MsgRefund from memo")
 		}
 	case OutboundMemo:
 		newMsg, err = getMsgOutboundFromMemo(m, tx, signer)
@@ -279,6 +285,14 @@ func getMsgAddFromMemo(memo AddMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.
 	), nil
 }
 
+func getMsgRefundFromMemo(memo RefundMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
+	return NewMsgRefundTx(
+		tx,
+		memo.GetTxID(),
+		signer,
+	), nil
+}
+
 func getMsgOutboundFromMemo(memo OutboundMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
 	return NewMsgOutboundTx(
 		tx,
@@ -322,7 +336,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 
 	// complete events
 	if voter.IsDone() {
-		err := completeEvents(ctx, keeper, msg.InTxID, voter.OutTxs)
+		err := completeEvents(ctx, keeper, msg.InTxID, voter.OutTxs, EventSuccess)
 		if err != nil {
 			ctx.Logger().Error("unable to complete events", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()

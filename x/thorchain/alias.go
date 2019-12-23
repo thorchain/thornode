@@ -13,6 +13,8 @@ const (
 	PoolBootstrap    = types.Bootstrap
 	PoolSuspended    = types.Suspended
 	EventSuccess     = types.Success
+	EventPending     = types.Pending
+	EventFail        = types.Failed
 	EventRefund      = types.Refund
 
 	// Admin config keys
@@ -63,8 +65,8 @@ var (
 	NewEventAdminConfig            = types.NewEventAdminConfig
 	NewEventSwap                   = types.NewEventSwap
 	NewEventStake                  = types.NewEventStake
-	NewEmptyRefundEvent            = types.NewEmptyRefundEvent
 	NewEventUnstake                = types.NewEventUnstake
+	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewPoolStaker                  = types.NewPoolStaker
 	NewStakerPool                  = types.NewStakerPool
@@ -103,6 +105,7 @@ type (
 	MsgSetPoolData              = types.MsgSetPoolData
 	MsgSetStakeData             = types.MsgSetStakeData
 	MsgOutboundTx               = types.MsgOutboundTx
+	MsgRefundTx                 = types.MsgRefundTx
 	MsgSwap                     = types.MsgSwap
 	MsgSetAdminConfig           = types.MsgSetAdminConfig
 	MsgSetVersion               = types.MsgSetVersion

@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -110,24 +109,7 @@ func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, versio
 }
 
 func (h ObservedTxInHandler) inboundFailure(ctx sdk.Context, tx ObservedTx) error {
-	err := refundTx(ctx, tx, h.txOutStore, h.keeper, true)
-	if err != nil {
-		return err
-	}
-	ee := NewEmptyRefundEvent()
-	buf, err := json.Marshal(ee)
-	if nil != err {
-		return err
-	}
-	event := NewEvent(
-		ee.Type(),
-		ctx.BlockHeight(),
-		tx.Tx,
-		buf,
-		EventRefund,
-	)
-
-	return h.keeper.AddIncompleteEvents(ctx, event)
+	return refundTx(ctx, tx, h.txOutStore, h.keeper, true)
 }
 
 func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
