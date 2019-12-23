@@ -30,8 +30,8 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 	}
 
 	vaultMgr := NewVaultMgrDummy()
-	validatorMgr := NewValidatorMgr(keeper, vaultMgr)
 	txOutStore := NewTxStoreDummy()
+	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
 
 	handler := NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
 
@@ -111,12 +111,13 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 			BalanceAsset: sdk.NewUint(765 * common.One),
 		},
 	}
+
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	vaultMgr := NewVaultMgrDummy()
-	validatorMgr := NewValidatorMgr(keeper, vaultMgr)
-	validatorMgr.BeginBlock(ctx, constAccessor)
 	txOutStore := NewTxStoreDummy()
+	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
+	validatorMgr.BeginBlock(ctx, constAccessor)
 
 	handler := NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
 

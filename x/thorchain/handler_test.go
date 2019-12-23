@@ -117,10 +117,10 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	vaultMgr := NewVaultMgrDummy()
-	validatorMgr := NewValidatorMgr(k, vaultMgr)
-	validatorMgr.BeginBlock(ctx, constAccessor)
 	txOutStore := NewTxOutStorage(k)
 	txOutStore.NewBlock(uint64(height), constAccessor)
+	validatorMgr := NewValidatorMgr(k, txOutStore, vaultMgr)
+	validatorMgr.BeginBlock(ctx, constAccessor)
 
 	return handlerTestWrapper{
 		ctx:                  ctx,
