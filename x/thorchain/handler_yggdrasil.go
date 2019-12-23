@@ -109,18 +109,6 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 		}
 	}
 
-	total, err := h.keeper.TotalActiveNodeAccount(ctx)
-	if nil != err {
-		ctx.Logger().Error("can't get active nodes", err)
-		return sdk.ErrInternal("can't get active nodes").Result()
-	}
-
-	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
-	// Ragnarok protocol get triggered, if all the Yggdrasil pool returned funds already, THORNode will continue Ragnarok
-	// THORNode still have enough validators for BFT
-	if int64(total) < minimumNodesForBFT {
-	}
-
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

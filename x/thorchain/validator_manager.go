@@ -166,6 +166,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 			Power:  100,
 		})
 	}
+
 	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
 	if height > 1 && removedNodes && len(newActive) < int(minimumNodesForBFT) { // THORNode still have enough validators for BFT
 		// execute Ragnarok protocol, no going back
