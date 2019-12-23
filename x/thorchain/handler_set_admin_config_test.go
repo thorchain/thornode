@@ -32,7 +32,7 @@ func (s *HandlerSetAdminConfigSuite) TestValidate(c *C) {
 	// happy path
 	ver := semver.MustParse("0.1.0")
 	tx := GetRandomTx()
-	msg := NewMsgSetAdminConfig(tx, PoolRefundGasKey, "1000", na.NodeAddress)
+	msg := NewMsgSetAdminConfig(tx, DefaultPoolStatus, "Enabled", na.NodeAddress)
 	err := handler.validate(ctx, msg, ver)
 	c.Assert(err, IsNil)
 
@@ -51,7 +51,7 @@ func (s *HandlerSetAdminConfigSuite) TestValidate(c *C) {
 		na: na,
 	}
 	handler = NewSetAdminConfigHandler(keeper)
-	msg = NewMsgSetAdminConfig(tx, PoolRefundGasKey, "1000", na.NodeAddress)
+	msg = NewMsgSetAdminConfig(tx, DefaultPoolStatus, "Enabled", na.NodeAddress)
 	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
 }
@@ -84,8 +84,8 @@ func (s *HandlerSetAdminConfigSuite) TestHandle(c *C) {
 	keeper := &TestSetAdminConfigHandleKeeper{
 		na: na,
 		ac: AdminConfig{
-			Key:     PoolRefundGasKey,
-			Value:   "500",
+			Key:     DefaultPoolStatus,
+			Value:   "Enabled",
 			Address: na.NodeAddress,
 		},
 	}
@@ -94,7 +94,7 @@ func (s *HandlerSetAdminConfigSuite) TestHandle(c *C) {
 
 	ver := semver.MustParse("0.1.0")
 	tx := GetRandomTx()
-	msg := NewMsgSetAdminConfig(tx, PoolRefundGasKey, "1000", na.NodeAddress)
+	msg := NewMsgSetAdminConfig(tx, DefaultPoolStatus, "Enabled", na.NodeAddress)
 	result1 := handler.handle(ctx, msg, ver)
 	c.Assert(result1.Code, Equals, sdk.CodeOK)
 }
