@@ -126,16 +126,17 @@ func (k KVStoreDummy) GetTotalLiquidityFees(_ sdk.Context, _ uint64) (sdk.Uint, 
 func (k KVStoreDummy) GetPoolLiquidityFees(_ sdk.Context, _ uint64, _ common.Asset) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
-func (k KVStoreDummy) GetIncompleteEvents(_ sdk.Context) (Events, error)   { return nil, kaboom }
-func (k KVStoreDummy) SetIncompleteEvents(_ sdk.Context, _ Events)         {}
-func (k KVStoreDummy) AddIncompleteEvents(_ sdk.Context, _ Event) error    { return kaboom }
-func (k KVStoreDummy) GetCompleteEventIterator(_ sdk.Context) sdk.Iterator { return nil }
-func (k KVStoreDummy) GetCompletedEvent(_ sdk.Context, _ int64) (Event, error) {
-	return Event{}, kaboom
+
+func (k KVStoreDummy) GetEvent(ctx sdk.Context, eventID int64) (Event, error) { return Event{}, kaboom }
+func (k KVStoreDummy) GetEventsIterator(ctx sdk.Context) sdk.Iterator         { return nil }
+func (k KVStoreDummy) UpsertEvent(ctx sdk.Context, event Event) error         { return kaboom }
+func (k KVStoreDummy) GetPendingEventID(ctx sdk.Context, txID common.TxID) ([]int64, error) {
+	return nil, kaboom
 }
-func (k KVStoreDummy) SetCompletedEvent(_ sdk.Context, _ Event)        {}
-func (k KVStoreDummy) GetLastEventID(_ sdk.Context) (int64, error)     { return 0, kaboom }
-func (k KVStoreDummy) SetLastEventID(_ sdk.Context, _ int64)           {}
+func (k KVStoreDummy) GetCurrentEventID(ctx sdk.Context) (int64, error)    { return 0, kaboom }
+func (k KVStoreDummy) SetCurrentEventID(ctx sdk.Context, eventID int64)    {}
+func (k KVStoreDummy) GetAllPendingEvents(ctx sdk.Context) (Events, error) { return nil, kaboom }
+
 func (k KVStoreDummy) GetChains(_ sdk.Context) (common.Chains, error)  { return nil, kaboom }
 func (k KVStoreDummy) SetChains(_ sdk.Context, _ common.Chains)        {}
 func (k KVStoreDummy) GetVaultIterator(_ sdk.Context) sdk.Iterator     { return nil }

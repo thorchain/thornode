@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -33,6 +34,7 @@ type StateChainBlockScan struct {
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
 	pkm                *PubKeyManager
+	cdc                *codec.Codec
 }
 
 // NewStateChainBlockScan create a new instance of statechain block scanner
@@ -62,6 +64,7 @@ func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage bl
 		chainHost:          chainHost,
 		errCounter:         m.GetCounterVec(metrics.StateChainBlockScanError),
 		pkm:                pkm,
+		cdc:                codec.New(),
 	}, nil
 }
 
@@ -98,7 +101,7 @@ func (b *StateChainBlockScan) processKeygenBlock(blockHeight int64) error {
 		}
 
 		var keygens stypes.Keygens
-		if err := json.Unmarshal(buf, &keygens); err != nil {
+		if err := b.cdc.UnmarshalJSON(buf, &keygens); err != nil {
 			b.errCounter.WithLabelValues("fail_unmarshal_keygens", strBlockHeight)
 			return errors.Wrap(err, "fail to unmarshal keygens")
 		}

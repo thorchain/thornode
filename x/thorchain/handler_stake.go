@@ -67,13 +67,11 @@ func (sh StakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _
 func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semver.Version) (errResult sdk.Error) {
 	stakeUnits := sdk.ZeroUint()
 	defer func() {
-		var status EventStatus
-		if errResult == nil {
-			status = EventSuccess
-		} else {
-			status = EventRefund
+		// if fail to stake ,then it just need to return, tx in observer will refund
+		if errResult != nil {
+			return
 		}
-		if err := processStakeEvent(ctx, sh.keeper, msg, stakeUnits, status); nil != err {
+		if err := processStakeEvent(ctx, sh.keeper, msg, stakeUnits, EventSuccess); nil != err {
 			errResult = sdk.ErrInternal(fmt.Errorf("fail to save stake event: %w", err).Error())
 		}
 	}()
@@ -111,7 +109,7 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 
 func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus) error {
 	var stakeEvt EventStake
-	if eventStatus == EventRefund {
+	if eventStatus == EventFail {
 		// do not log event if the stake failed
 		return nil
 	}
@@ -124,7 +122,6 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 	if err != nil {
 		return fmt.Errorf("fail to marshal stake event to json: %w", err)
 	}
-
 	evt := NewEvent(
 		stakeEvt.Type(),
 		ctx.BlockHeight(),
@@ -132,18 +129,7 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 		stakeBytes,
 		eventStatus,
 	)
-
-	if err := keeper.AddIncompleteEvents(ctx, evt); err != nil {
-		return err
-	}
-
-	if eventStatus != EventRefund {
-		// since there is no outbound tx for staking, we'll complete the event now
-		tx := common.Tx{ID: common.BlankTxID}
-		err := completeEvents(ctx, keeper, msg.Tx.ID, common.Txs{tx})
-		if err != nil {
-			return fmt.Errorf("unable to complete events: %w", err)
-		}
-	}
-	return nil
+	tx := common.Tx{ID: common.BlankTxID}
+	evt.OutTxs = common.Txs{tx}
+	return keeper.UpsertEvent(ctx, evt)
 }

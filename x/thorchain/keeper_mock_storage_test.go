@@ -72,11 +72,11 @@ func (mps MockPoolStorage) GetAdminConfigValue(ctx sdk.Context, key types.AdminC
 	return "FOOBAR", nil
 }
 
-func (mps MockPoolStorage) AddIncompleteEvents(ctx sdk.Context, event types.Event) error { return nil }
-func (mps MockPoolStorage) SetCompletedEvent(ctx sdk.Context, event types.Event)         {}
-
 func (mps MockPoolStorage) GetLowestActiveVersion(ctx sdk.Context) semver.Version {
 	return semver.MustParse("0.1.0")
 }
 
 func (mps MockPoolStorage) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error { return nil }
+func (mps MockPoolStorage) UpsertEvent(ctx sdk.Context, event Event) error {
+	return nil
+}

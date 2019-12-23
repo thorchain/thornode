@@ -13,7 +13,7 @@ type TestSetAdminConfigKeeper struct {
 	na NodeAccount
 }
 
-func (k *TestSetAdminConfigKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
+func (k *TestSetAdminConfigKeeper) GetNodeAccount(_ sdk.Context, _ sdk.AccAddress) (NodeAccount, error) {
 	return k.na, nil
 }
 
@@ -62,16 +62,19 @@ type TestSetAdminConfigHandleKeeper struct {
 	ac AdminConfig
 }
 
-func (k *TestSetAdminConfigHandleKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
+func (k *TestSetAdminConfigHandleKeeper) GetNodeAccount(_ sdk.Context, _ sdk.AccAddress) (NodeAccount, error) {
 	return k.na, nil
 }
 
-func (k *TestSetAdminConfigHandleKeeper) GetAdminConfigValue(ctx sdk.Context, key AdminConfigKey, signer sdk.AccAddress) (string, error) {
+func (k *TestSetAdminConfigHandleKeeper) GetAdminConfigValue(_ sdk.Context, _ AdminConfigKey, _ sdk.AccAddress) (string, error) {
 	return k.ac.Value, nil
 }
 
-func (k *TestSetAdminConfigHandleKeeper) SetAdminConfig(ctx sdk.Context, ac AdminConfig) {
+func (k *TestSetAdminConfigHandleKeeper) SetAdminConfig(_ sdk.Context, ac AdminConfig) {
 	k.ac = ac
+}
+func (k *TestSetAdminConfigHandleKeeper) UpsertEvent(_ sdk.Context, _ Event) error {
+	return nil
 }
 
 func (s *HandlerSetAdminConfigSuite) TestHandle(c *C) {

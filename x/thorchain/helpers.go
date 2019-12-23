@@ -24,9 +24,9 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, d
 				ToAddress:   tx.Tx.FromAddress,
 				VaultPubKey: tx.ObservedPubKey,
 				Coin:        coin,
+				Memo:        NewRefundMemo(tx.Tx.ID).String(),
 			}
 			store.AddTxOutItem(ctx, toi)
-			continue
 		}
 
 		// Zombie coins are just dropped.
@@ -139,24 +139,32 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 	return true
 }
 
-func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs) error {
-	lastEventID, err := keeper.GetLastEventID(ctx)
-	if err != nil {
-		return err
+func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs common.Txs, eventStatus EventStatus) error {
+	event, err := keeper.GetEvent(ctx, eventID)
+	if nil != err {
+		return fmt.Errorf("fail to get event: %w", err)
 	}
-	incomplete, err := keeper.GetIncompleteEvents(ctx)
-	if err != nil {
-		return err
+	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
+	event.Status = eventStatus
+	event.OutTxs = txs
+	return keeper.UpsertEvent(ctx, event)
+}
+
+func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs, eventStatus EventStatus) error {
+	ctx.Logger().Info(fmt.Sprintf("txid(%s)", txID))
+	eventIDs, err := keeper.GetPendingEventID(ctx, txID)
+	if nil != err {
+		if err == ErrEventNotFound {
+			ctx.Logger().Error(fmt.Sprintf("could not find the event(%s)", txID))
+			return nil
+		}
+		return fmt.Errorf("fail to get pending event id: %w", err)
 	}
-	todo, incomplete := incomplete.PopByInHash(txID)
-	for _, evt := range todo {
-		lastEventID++
-		evt.ID = lastEventID
-		evt.OutTxs = txs
-		keeper.SetCompletedEvent(ctx, evt)
+	for _, item := range eventIDs {
+		if err := completeEventsByID(ctx, keeper, item, txs, eventStatus); nil != err {
+			return fmt.Errorf("fail to set event(%d) to %s: %w", item, eventStatus, err)
+		}
 	}
-	keeper.SetIncompleteEvents(ctx, incomplete)
-	keeper.SetLastEventID(ctx, lastEventID)
 	return nil
 }
 

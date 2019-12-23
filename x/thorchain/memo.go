@@ -29,6 +29,7 @@ const (
 	txYggdrasilFund
 	txYggdrasilReturn
 	txReserve
+	txRefund
 )
 
 var stringToTxTypeMap = map[string]TxType{
@@ -56,6 +57,7 @@ var stringToTxTypeMap = map[string]TxType{
 	"yggdrasil+": txYggdrasilFund,
 	"yggdrasil-": txYggdrasilReturn,
 	"reserve":    txReserve,
+	"refund":     txRefund,
 }
 
 var txToStringMap = map[TxType]string{
@@ -64,6 +66,7 @@ var txToStringMap = map[TxType]string{
 	txWithdraw:        "withdraw",
 	txSwap:            "swap",
 	txOutbound:        "outbound",
+	txRefund:          "refund",
 	txAdd:             "add",
 	txGas:             "gas",
 	txBond:            "bond",
@@ -155,6 +158,11 @@ type OutboundMemo struct {
 	TxID common.TxID
 }
 
+type RefundMemo struct {
+	MemoBase
+	TxID common.TxID
+}
+
 type BondMemo struct {
 	MemoBase
 	NodeAddress sdk.AccAddress
@@ -182,6 +190,13 @@ func NewOutboundMemo(txID common.TxID) OutboundMemo {
 	}
 }
 
+// NewRefundMemo create a new RefundMemo
+func NewRefundMemo(txID common.TxID) RefundMemo {
+	return RefundMemo{
+		TxID: txID,
+	}
+}
+
 func ParseMemo(memo string) (Memo, error) {
 	var err error
 	noMemo := MemoBase{}
@@ -196,7 +211,7 @@ func ParseMemo(memo string) (Memo, error) {
 
 	// list of memo types that do not contain an asset in their memo
 	noAssetMemos := []TxType{
-		txGas, txOutbound, txBond, txLeave,
+		txGas, txOutbound, txBond, txLeave, txRefund,
 		txYggdrasilFund, txYggdrasilReturn, txReserve,
 	}
 	hasAsset := true
@@ -310,8 +325,14 @@ func ParseMemo(memo string) (Memo, error) {
 			return noMemo, fmt.Errorf("not enough parameters")
 		}
 		txID, err := common.NewTxID(parts[1])
-
 		return NewOutboundMemo(txID), err
+	case txRefund:
+		if len(parts) < 2 {
+			return noMemo, fmt.Errorf("not enough parameters")
+
+		}
+		txID, err := common.NewTxID(parts[1])
+		return NewRefundMemo(txID), err
 	case txBond:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("not enough parameters")
@@ -365,4 +386,12 @@ func (m StakeMemo) GetDestination() common.Address { return m.Address }
 func (m OutboundMemo) GetTxID() common.TxID        { return m.TxID }
 func (m OutboundMemo) String() string {
 	return fmt.Sprintf("OUTBOUND:%s", m.TxID.String())
+}
+
+// GetTxID return the relevant tx id in refund memo
+func (m RefundMemo) GetTxID() common.TxID { return m.TxID }
+
+// String implement fmt.Stringer
+func (m RefundMemo) String() string {
+	return fmt.Sprintf("REFUND:%s", m.TxID.String())
 }

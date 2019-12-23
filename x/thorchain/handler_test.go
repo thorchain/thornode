@@ -361,7 +361,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 	result = handler(ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 
-	iterator := w.keeper.GetCompleteEventIterator(w.ctx)
+	iterator := w.keeper.GetEventsIterator(w.ctx)
 	found := false
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {

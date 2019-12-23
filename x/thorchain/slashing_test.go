@@ -92,7 +92,7 @@ func (k *TestSlashingLackKeeper) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultS
 	return k.vaults, nil
 }
 
-func (k *TestSlashingLackKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
+func (k *TestSlashingLackKeeper) GetAllPendingEvents(_ sdk.Context) (Events, error) {
 	return k.evts, nil
 }
 
@@ -128,9 +128,9 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 	)
+
 	swapBytes, _ := json.Marshal(swapEvt)
-	evt := NewEvent(
-		swapEvt.Type(),
+	evt := NewEvent(swapEvt.Type(),
 		3,
 		common.NewTx(
 			GetRandomTxHash(),
