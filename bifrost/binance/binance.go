@@ -201,7 +201,7 @@ func (b *Binance) isSignerAddressMatch(pubKey common.PubKey, signerAddr string) 
 }
 
 // SignTx sign the the given TxArrayItem
-func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[string]string, error) {
+func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error) {
 	signerAddr := b.GetAddress(tai.VaultPubKey)
 	var payload []msg.Transfer
 
@@ -210,19 +210,22 @@ func (b *Binance) SignTx(tai stypes.TxArrayItem, height int64) ([]byte, map[stri
 		return nil, nil, nil
 	}
 
-	toAddr, err := types.AccAddressFromBech32(tai.To)
+	toAddr, err := types.AccAddressFromBech32(tai.ToAddress.String())
 	if nil != err {
-		return nil, nil, errors.Wrapf(err, "fail to parse account address(%s)", tai.To)
+		return nil, nil, errors.Wrapf(err, "fail to parse account address(%s)", tai.ToAddress.String())
+	}
+
+	var coins types.Coins
+	for _, coin := range tai.Coins {
+		coins = append(coins, types.Coin{
+			Denom:  coin.Asset.Symbol.String(),
+			Amount: int64(coin.Amount.Uint64()),
+		})
 	}
 
 	payload = append(payload, msg.Transfer{
 		ToAddr: toAddr,
-		Coins: types.Coins{
-			types.Coin{
-				Denom:  tai.Coin.Asset.Symbol.String(),
-				Amount: int64(tai.Coin.Amount.Uint64()),
-			},
-		},
+		Coins:  coins,
 	})
 
 	if len(payload) == 0 {
