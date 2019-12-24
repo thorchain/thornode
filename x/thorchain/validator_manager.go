@@ -177,6 +177,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 	return validators
 }
 
+// determines when/if to run each part of the ragnarok process
 func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccounts, constAccessor constants.ConstantValues) error {
 	// execute Ragnarok protocol, no going back
 	// THORNode have to request the fund back now, because once it get to the rotate block height ,
@@ -190,7 +191,7 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 	if ragnarokHeight == 0 {
 		ragnarokHeight = ctx.BlockHeight()
 		vm.k.SetRagnarokBlockHeight(ctx, ragnarokHeight)
-		if err := vm.ragnarokProtocolStage1(ctx, activeNodes, constAccessor); nil != err {
+		if err := vm.ragnarokProtocolStage1(ctx, activeNodes); nil != err {
 			ctx.Logger().Error("fail to execute ragnarok protocol step 1: %s", err)
 			return err
 		}
@@ -199,7 +200,7 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
 	if (ctx.BlockHeight()-ragnarokHeight)%migrateInterval == 0 {
 		nth := (ctx.BlockHeight() - ragnarokHeight) / migrateInterval
-		err := vm.ragnarokProtocolStage2(ctx, constAccessor, nth)
+		err := vm.ragnarokProtocolStage2(ctx, nth, constAccessor)
 		if err != nil {
 			ctx.Logger().Error("fail to execute ragnarok protocol step 2: %s", err)
 			return err
@@ -211,18 +212,130 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 
 // ragnarokProtocolStage1 - request all yggdrasil pool to return the fund
 // when THORNode observe the node return fund successfully, the node's bound will be refund.
-func (vm *ValidatorMgr) ragnarokProtocolStage1(ctx sdk.Context, activeNodes NodeAccounts, constAccessor constants.ConstantValues) error {
+func (vm *ValidatorMgr) ragnarokProtocolStage1(ctx sdk.Context, activeNodes NodeAccounts) error {
 	return vm.recallYggFunds(ctx, activeNodes)
 }
 
-func (vm *ValidatorMgr) ragnarokProtocolStage2(ctx sdk.Context, constAccessor constants.ConstantValues, nth int64) error {
+func (vm *ValidatorMgr) ragnarokProtocolStage2(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
 	// Ragnarok Protocol
 	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
 	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
 	// 2) upon receiving the yggdrasil fund,  THORNode will refund the validator's bond
 	// 3) once all yggdrasil fund get returned, return all fund to stakes
 
-	// get the first observer
+	// refund bonders
+	if err := vm.ragnarokBond(ctx, nth); err != nil {
+		return err
+	}
+
+	// refund stakers
+	if err := vm.ragnarokPools(ctx, nth, constAccessor); err != nil {
+		return err
+	}
+
+	// refund reserve contributors
+	if err := vm.ragnarokReserve(ctx, nth); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
+	contribs, err := vm.k.GetReservesContributors(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get reserve contributors", err)
+		return err
+	}
+	vaultData, err := vm.k.GetVaultData(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get vault data", err)
+		return err
+	}
+	totalReserve := vaultData.TotalReserve
+	var totalContributions sdk.Uint
+	for _, contrib := range contribs {
+		totalContributions = totalContributions.Add(contrib.Amount)
+	}
+
+	// Since reserves are spent over time (via block rewards), reserve
+	// contributors do not get back the full amounts they put in. Instead they
+	// should get a percentage of the remaining amount, relative to the amount
+	// they contributed. We'll be reducing the total reserve supply as we
+	// refund reserves
+
+	// nth * 10 == the amount of the bond we want to send
+	for _, contrib := range contribs {
+		share := common.GetShare(
+			totalContributions.Sub(contrib.Amount),
+			totalContributions,
+			totalReserve,
+		)
+		if nth > 10 { // cap at 10
+			nth = 10
+		}
+		amt := share.MulUint64(uint64(nth)).QuoUint64(10)
+		totalReserve = common.SafeSub(totalReserve, amt)
+
+		// refund contribution
+		txOutItem := &TxOutItem{
+			Chain:     common.BNBChain,
+			ToAddress: contrib.Address,
+			InHash:    common.BlankTxID,
+			Coin:      common.NewCoin(common.RuneAsset(), amt),
+		}
+		vm.txOutStore.AddTxOutItem(ctx, txOutItem)
+	}
+
+	vaultData.TotalReserve = totalReserve
+	if err := vm.k.SetVaultData(ctx, vaultData); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (vm *ValidatorMgr) ragnarokBond(ctx sdk.Context, nth int64) error {
+	active, err := vm.k.ListActiveNodeAccounts(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get active nodes", err)
+		return err
+	}
+
+	// nth * 10 == the amount of the bond we want to send
+	for _, na := range active {
+		ygg, err := vm.k.GetVault(ctx, na.PubKeySet.Secp256k1)
+		if err != nil {
+			return err
+		}
+		if ygg.HasFunds() {
+			ctx.Logger().Info(fmt.Sprintf("skip bond refund due to remaining funds: %s", na.NodeAddress))
+			continue
+		}
+		if nth > 10 { // cap at 10
+			nth = 10
+		}
+		amt := na.Bond.MulUint64(uint64(nth)).QuoUint64(10)
+		na.Bond = common.SafeSub(na.Bond, amt)
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			return err
+		}
+
+		// refund bond
+		txOutItem := &TxOutItem{
+			Chain:     common.BNBChain,
+			ToAddress: na.BondAddress,
+			InHash:    common.BlankTxID,
+			Coin:      common.NewCoin(common.RuneAsset(), amt),
+		}
+		vm.txOutStore.AddTxOutItem(ctx, txOutItem)
+
+	}
+
+	return nil
+}
+
+func (vm *ValidatorMgr) ragnarokPools(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		ctx.Logger().Error("can't get active nodes", err)
@@ -231,20 +344,8 @@ func (vm *ValidatorMgr) ragnarokProtocolStage2(ctx sdk.Context, constAccessor co
 	if len(nas) == 0 {
 		return fmt.Errorf("can't find any active nodes")
 	}
-	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
-	if int64(len(nas)) > minimumNodesForBFT { // THORNode still have enough validators for BFT
-		// Ragnarok protocol didn't triggered , don't call this one
-		return nil
-	}
+	na := nas[0]
 
-	if err := vm.ragnarokPools(ctx, nth, nas[0], constAccessor); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (vm *ValidatorMgr) ragnarokPools(ctx sdk.Context, nth int64, na NodeAccount, constAccessor constants.ConstantValues) error {
 	// each round of refund, we increase the percentage by 10%. This ensures
 	// that we slowly refund each person, while not sending out too much too
 	// fast. Also, we won't be running into any gas related issues until the
