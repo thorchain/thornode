@@ -49,6 +49,7 @@ func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorMana
 func getHandlerMapping(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager, vaultMgr VaultManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
+	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper)
 	m[MsgTssPool{}.Type()] = NewTssHandler(keeper, vaultMgr)
 	m[MsgNoOp{}.Type()] = NewNoOpHandler(keeper)
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
@@ -79,8 +80,6 @@ func NewClassicHandler(keeper Keeper, txOutStore TxOutStore, validatorManager Va
 			return errConstNotAvailable.Result()
 		}
 		switch m := msg.(type) {
-		case MsgOutboundTx:
-			return handleMsgOutboundTx(ctx, keeper, m)
 		default:
 			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
 			return sdk.ErrUnknownRequest(errMsg).Result()
