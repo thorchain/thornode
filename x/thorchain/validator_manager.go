@@ -195,6 +195,7 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 			ctx.Logger().Error("fail to execute ragnarok protocol step 1: %s", err)
 			return err
 		}
+		return nil
 	}
 
 	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
@@ -253,7 +254,7 @@ func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		return err
 	}
 	totalReserve := vaultData.TotalReserve
-	var totalContributions sdk.Uint
+	totalContributions := sdk.ZeroUint()
 	for _, contrib := range contribs {
 		totalContributions = totalContributions.Add(contrib.Amount)
 	}
@@ -265,17 +266,18 @@ func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
 	// refund reserves
 
 	// nth * 10 == the amount of the bond we want to send
-	for _, contrib := range contribs {
+	for i, contrib := range contribs {
 		share := common.GetShare(
-			totalContributions.Sub(contrib.Amount),
-			totalContributions,
+			contrib.Amount,
 			totalReserve,
+			totalContributions,
 		)
 		if nth > 10 { // cap at 10
 			nth = 10
 		}
 		amt := share.MulUint64(uint64(nth)).QuoUint64(10)
-		totalReserve = common.SafeSub(totalReserve, amt)
+		vaultData.TotalReserve = common.SafeSub(vaultData.TotalReserve, amt)
+		contribs[i].Amount = common.SafeSub(contrib.Amount, amt)
 
 		// refund contribution
 		txOutItem := &TxOutItem{
@@ -287,8 +289,11 @@ func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		vm.txOutStore.AddTxOutItem(ctx, txOutItem)
 	}
 
-	vaultData.TotalReserve = totalReserve
 	if err := vm.k.SetVaultData(ctx, vaultData); err != nil {
+		return err
+	}
+
+	if err := vm.k.SetReserveContributors(ctx, contribs); err != nil {
 		return err
 	}
 
@@ -391,10 +396,10 @@ func (vm *ValidatorMgr) ragnarokPools(ctx sdk.Context, nth int64, constAccessor 
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
 				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
-				return fmt.Errorf("fail to unstake address")
+				return fmt.Errorf("fail to unstake address: %s", result.Log)
 			}
 		}
-		pool.Status = PoolSuspended
+		pool.Status = PoolBootstrap
 		if err := vm.k.SetPool(ctx, pool); err != nil {
 			ctx.Logger().Error(err.Error())
 			return err
