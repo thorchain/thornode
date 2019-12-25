@@ -195,6 +195,7 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 			ctx.Logger().Error("fail to execute ragnarok protocol step 1: %s", err)
 			return err
 		}
+		return nil
 	}
 
 	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
@@ -253,7 +254,7 @@ func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		return err
 	}
 	totalReserve := vaultData.TotalReserve
-	var totalContributions sdk.Uint
+	totalContributions := sdk.ZeroUint()
 	for _, contrib := range contribs {
 		totalContributions = totalContributions.Add(contrib.Amount)
 	}
@@ -391,10 +392,10 @@ func (vm *ValidatorMgr) ragnarokPools(ctx sdk.Context, nth int64, constAccessor 
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
 				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
-				return fmt.Errorf("fail to unstake address")
+				return fmt.Errorf("fail to unstake address: %s", result.Log)
 			}
 		}
-		pool.Status = PoolSuspended
+		pool.Status = PoolBootstrap
 		if err := vm.k.SetPool(ctx, pool); err != nil {
 			ctx.Logger().Error(err.Error())
 			return err

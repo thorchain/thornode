@@ -41,6 +41,15 @@ func (tos *TxOutStoreDummy) GetOutboundItems() []*TxOutItem {
 	return tos.blockOut.TxArray
 }
 
+func (tos *TxOutStoreDummy) GetOutboundItemByToAddress(to common.Address) (*TxOutItem, bool) {
+	for _, item := range tos.blockOut.TxArray {
+		if item.ToAddress.Equals(to) {
+			return item, true
+		}
+	}
+	return nil, false
+}
+
 // AddTxOutItem add an item to internal structure
 func (tos *TxOutStoreDummy) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 	tos.addToBlockOut(toi)
