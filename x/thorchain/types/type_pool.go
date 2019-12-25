@@ -14,11 +14,11 @@ import (
 // PoolStatus is an indication of what the pool state is
 type PoolStatus int
 
-// | State | ADMIN-MEMO | Swapping | Staking | Withdrawing | Refunding |
-// | ------ | ------ | ------ | ------ | ------ | ------ |
-// | `bootstrap` |  `ADMIN:POOL:BOOTSTRAP` | no | yes | yes | Refund Invalid Stakes && all Swaps |
-// | `enabled` |  `ADMIN:POOL:ENABLE` | yes | yes | yes | Refund Invalid Tx |
-// | `suspended` | `ADMIN:POOL:SUSPEND` | no | no | no | Refund all |
+// |    State    | Swap | Stake | Withdraw | Refunding |
+// | ----------- | ---- | ----- | -------- | --------- |
+// | `bootstrap` | no   | yes   | yes      | Refund Invalid Stakes && all Swaps |
+// | `enabled`   | yes  | yes   | yes      | Refund Invalid Tx |
+// | `suspended` | no   | no    | no       | Refund all |
 const (
 	Enabled PoolStatus = iota
 	Bootstrap

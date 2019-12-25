@@ -104,6 +104,18 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 			expectedWithdrawRune:  sdk.NewUint(200 * common.One),
 			expectedErr:           nil,
 		},
+		{
+			name:                  "unstake-2",
+			poolUnit:              sdk.NewUint(100),
+			poolRune:              sdk.NewUint(15 * common.One),
+			poolAsset:             sdk.NewUint(155 * common.One),
+			stakerUnit:            sdk.NewUint(100),
+			percentage:            sdk.NewUint(1000),
+			expectedUnitLeft:      sdk.NewUint(90),
+			expectedWithdrawAsset: sdk.NewUint(1550000000),
+			expectedWithdrawRune:  sdk.NewUint(150000000),
+			expectedErr:           nil,
+		},
 	}
 
 	for _, item := range inputs {
@@ -115,8 +127,8 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
 		c.Logf("expected rune:%s,rune:%s", item.expectedWithdrawRune, withDrawRune)
-		c.Check(item.expectedWithdrawRune.Uint64(), Equals, withDrawRune.Uint64())
-		c.Check(item.expectedWithdrawAsset.Uint64(), Equals, withDrawAsset.Uint64())
+		c.Check(item.expectedWithdrawRune.Uint64(), Equals, withDrawRune.Uint64(), Commentf("Expected %d, got %d", item.expectedWithdrawRune.Uint64(), withDrawRune.Uint64()))
+		c.Check(item.expectedWithdrawAsset.Uint64(), Equals, withDrawAsset.Uint64(), Commentf("Expected %d, got %d", item.expectedWithdrawAsset.Uint64(), withDrawAsset.Uint64()))
 		c.Check(item.expectedUnitLeft.Uint64(), Equals, unitAfter.Uint64())
 	}
 }
