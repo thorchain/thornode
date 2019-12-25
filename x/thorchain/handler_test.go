@@ -166,7 +166,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 			ToAddress:   addr,
 			Gas:         common.BNBGasFeeSingleton,
 		},
-		sdk.NewUint(1024),
+		1024,
 		vault.PubKey,
 	)
 
@@ -213,7 +213,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 			ToAddress:   addr,
 			Gas:         common.BNBGasFeeSingleton,
 		},
-		sdk.NewUint(1024),
+		1024,
 		vault.PubKey,
 	)
 
@@ -241,7 +241,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 			ToAddress:   addr,
 			Gas:         common.BNBGasFeeSingleton,
 		},
-		sdk.NewUint(1024),
+		1024,
 		vault.PubKey,
 	)
 
@@ -284,7 +284,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
 		Gas:         common.BNBGasFeeSingleton,
-	}, sdk.NewUint(12), GetRandomPubKey())
+	}, 12, GetRandomPubKey())
 
 	msgOutboundTx := NewMsgOutboundTx(tx, tx.Tx.ID, w.notActiveNodeAccount.NodeAddress)
 	result := handleMsgOutboundTx(w.ctx, w.keeper, msgOutboundTx)
@@ -332,7 +332,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 			ToAddress:   addr,
 			Gas:         common.BNBGasFeeSingleton,
 		},
-		sdk.NewUint(1024),
+		1024,
 		vault.PubKey,
 	)
 
@@ -348,7 +348,7 @@ func (HandlerSuite) TestHandleMsgOutboundTx(c *C) {
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   GetRandomBNBAddress(),
 		Gas:         common.BNBGasFeeSingleton,
-	}, sdk.NewUint(12), GetRandomPubKey())
+	}, 12, GetRandomPubKey())
 
 	outMsg := NewMsgOutboundTx(tx, inTxID, w.activeNodeAccount.NodeAddress)
 	ctx := w.ctx.WithBlockHeight(2)
@@ -397,7 +397,7 @@ func (HandlerSuite) TestRefund(c *C) {
 			ToAddress:   GetRandomBNBAddress(),
 			Gas:         common.BNBGasFeeSingleton,
 		},
-		sdk.NewUint(1024),
+		1024,
 		GetRandomPubKey(),
 	)
 
@@ -452,7 +452,7 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 			ToAddress:   GetRandomBNBAddress(),
 			Gas:         common.BNBGasFeeSingleton,
 		},
-		sdk.NewUint(1024),
+		1024,
 		common.EmptyPubKey,
 	)
 
@@ -501,7 +501,7 @@ func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 			ToAddress:   GetRandomBNBAddress(),
 			Gas:         common.BNBGasFeeSingleton,
 		},
-		sdk.NewUint(1024),
+		1024,
 		common.EmptyPubKey,
 	)
 

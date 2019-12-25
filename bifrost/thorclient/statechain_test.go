@@ -107,7 +107,7 @@ func (s StatechainSuite) TestSign(c *C) {
 			ToAddress:   common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
 			Gas:         common.BNBGasFeeSingleton,
 		},
-		sdk.NewUint(1),
+		1,
 		pk,
 	)
 

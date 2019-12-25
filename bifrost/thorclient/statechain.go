@@ -284,7 +284,7 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 }
 
 // GetBinanceChainStartHeight
-func (scb *StateChainBridge) GetBinanceChainStartHeight() (uint64, error) {
+func (scb *StateChainBridge) GetBinanceChainStartHeight() (int64, error) {
 
 	resp, err := scb.client.Get(scb.getStateChainUrl("/thorchain/lastblock"))
 	if nil != err {
@@ -308,7 +308,7 @@ func (scb *StateChainBridge) GetBinanceChainStartHeight() (uint64, error) {
 		return 0, errors.Wrap(err, "fail to unmarshal last block")
 	}
 
-	return lastBlock.LastChainHeight.Uint64(), nil
+	return lastBlock.LastChainHeight, nil
 }
 
 // getStateChainUrl with the given path

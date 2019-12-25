@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
@@ -12,6 +13,7 @@ const (
 	EventTypeInactiveVault = "InactiveVault"
 )
 
+// VaultManager
 type VaultManager interface {
 	TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error
 	RotateVault(ctx sdk.Context, vault Vault) error
