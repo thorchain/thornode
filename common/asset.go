@@ -7,10 +7,12 @@ import (
 )
 
 var (
-	BNBAsset     = Asset{BNBChain, "BNB", "BNB"}
-	BTCAsset     = Asset{BTCChain, "BTC", "BTC"}
-	RuneA1FAsset = Asset{BNBChain, "RUNE-A1F", "RUNE"} // testnet
-	RuneB1AAsset = Asset{BNBChain, "RUNE-B1A", "RUNE"} // mainnet
+	BNBAsset     = Asset{Chain: BNBChain, Symbol: "BNB", Ticker: "BNB"}
+	BTCAsset     = Asset{Chain: BTCChain, Symbol: "BTC", Ticker: "BTC"}
+	ETHAsset     = Asset{Chain: ETHChain, Symbol: "ETH", Ticker: "ETH"}
+	RuneA1FAsset = Asset{Chain: BNBChain, Symbol: "RUNE-A1F", Ticker: "RUNE"} // testnet
+	RuneB1AAsset = Asset{Chain: BNBChain, Symbol: "RUNE-B1A", Ticker: "RUNE"} // mainnet
+	EmptyAsset   = Asset{Chain: EmptyChain, Symbol: "", Ticker: ""}
 )
 
 type Asset struct {
