@@ -167,6 +167,9 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	staker3 := GetRandomBNBAddress() // staker3
 	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker3, staker3, GetRandomTxHash())
 	c.Assert(err, IsNil)
+	stakers := []common.Address{
+		staker1, staker2, staker3,
+	}
 
 	// get new pool data
 	bnbPool, err := keeper.GetPool(ctx, common.BNBAsset)
@@ -209,12 +212,14 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 		NewReserveContributor(contrib1, sdk.NewUint(400_000_000*common.One)),
 		NewReserveContributor(contrib2, sdk.NewUint(100_000*common.One)),
 	}
-	c.Assert(keeper.SetReserveContributors(ctx, reserves), IsNil)
-	// add reserve to asgard vault
-	asgard.AddFunds(common.Coins{
-		common.NewCoin(common.RuneAsset(), reserves[0].Amount),
-		common.NewCoin(common.RuneAsset(), reserves[1].Amount),
-	})
+	resHandler := NewReserveContributorHandler(keeper)
+	for _, res := range reserves {
+		asgard.AddFunds(common.Coins{
+			common.NewCoin(common.RuneAsset(), res.Amount),
+		})
+		msg := NewMsgReserveContributor(res, bonders[0].NodeAddress)
+		c.Assert(resHandler.Handle(ctx, msg, ver), IsNil)
+	}
 	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
 
 	//////////////////////////////////////////////////////////
@@ -252,10 +257,29 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 
 		// validate bonders have correct coin amounts being sent to them on each round of ragnarok
 		for _, bonder := range bonders {
-			item, ok := txOutStore.GetOutboundItemByToAddress(bonder.BondAddress)
-			c.Assert(ok, Equals, true)
+			items := txOutStore.GetOutboundItemByToAddress(bonder.BondAddress)
+			c.Assert(items, HasLen, 1)
 			outCoin := common.NewCoin(common.RuneAsset(), calcExpectedValue(bonder.Bond, i))
-			c.Assert(item.Coin.Equals(outCoin), Equals, true, Commentf("%+v", item.Coin))
+			c.Assert(items[0].Coin.Equals(outCoin), Equals, true, Commentf("%+v", items[0].Coin))
+		}
+
+		// validate stakers get their returns
+		for j, staker := range stakers {
+			items := txOutStore.GetOutboundItemByToAddress(staker)
+			// TODO: check item amounts
+			if j == len(stakers)-1 {
+				c.Assert(items, HasLen, 2, Commentf("%d", len(items)))
+			} else {
+				c.Assert(items, HasLen, 4, Commentf("%d", len(items)))
+			}
+		}
+
+		// validate reserve contributors get their returns
+		for _, res := range reserves {
+			items := txOutStore.GetOutboundItemByToAddress(res.Address)
+			c.Assert(items, HasLen, 1)
+			outCoin := common.NewCoin(common.RuneAsset(), calcExpectedValue(res.Amount, i))
+			c.Assert(items[0].Coin.Equals(outCoin), Equals, true, Commentf("%+v", items[0].Coin))
 		}
 
 		txOutStore.ClearOutboundItems() // clear out txs
