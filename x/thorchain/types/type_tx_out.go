@@ -32,6 +32,9 @@ func (toi TxOutItem) Valid() error {
 	if toi.VaultPubKey.IsEmpty() {
 		return errors.New("vault pubkey cannot be empty")
 	}
+	if toi.Chain.GetGasAsset().IsEmpty() {
+		return errors.New("invalid base asset")
+	}
 	if err := toi.Coin.IsValid(); err != nil {
 		return err
 	}

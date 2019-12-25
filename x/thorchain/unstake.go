@@ -1,10 +1,11 @@
 package thorchain
 
 import (
+	"errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -20,11 +21,11 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 	}
 	withdrawBasisPoints := msg.WithdrawBasisPoints
 	if withdrawBasisPoints.GT(sdk.ZeroUint()) && withdrawBasisPoints.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
-		return errors.Errorf("withdraw basis points %s is invalid", msg.WithdrawBasisPoints)
+		return fmt.Errorf("withdraw basis points %s is invalid", msg.WithdrawBasisPoints)
 	}
 	if !keeper.PoolExist(ctx, msg.Asset) {
 		// pool doesn't exist
-		return errors.Errorf("pool-%s doesn't exist", msg.Asset)
+		return fmt.Errorf("pool-%s doesn't exist", msg.Asset)
 	}
 	return nil
 }
@@ -35,7 +36,6 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
 	}
 
-	// here fBalance should be valid , because THORNode did the validation above
 	pool, err := keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
@@ -43,12 +43,12 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.Wrap(err, "can't find pool staker")
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), fmt.Errorf("can't find pool staker: %w", err)
 
 	}
 	stakerPool, err := keeper.GetStakerPool(ctx, msg.RuneAddress)
 	if nil != err {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.Wrap(err, "can't find staker pool")
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), fmt.Errorf("can't find staker pool: %w", err)
 	}
 
 	poolUnits := pool.PoolUnits
@@ -65,7 +65,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	if !msg.Asset.Chain.Equals(common.BNBChain) {
 		height := ctx.BlockHeight()
 		if height < (stakerUnit.Height + 17280) {
-			err := fmt.Errorf("You cannot unstake for 24 hours after staking for this blockchain")
+			err := errors.New("you cannot unstake for 24 hours after staking for this blockchain")
 			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
 		}
 	}
@@ -131,7 +131,7 @@ func calculateUnstake(poolUnits, poolRune, poolAsset, stakerUnits, withdrawBasis
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("staker unit can't be zero")
 	}
 	if withdrawBasisPoints.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.Errorf("withdraw basis point %s is not valid", withdrawBasisPoints.String())
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), fmt.Errorf("withdraw basis point %s is not valid", withdrawBasisPoints.String())
 	}
 
 	unitsToClaim := common.GetShare(withdrawBasisPoints, sdk.NewUint(10000), stakerUnits)
