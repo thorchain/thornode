@@ -175,7 +175,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 			common.BNBGasFeeSingleton,
 			"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
 		),
-		sdk.NewUint(1),
+		1,
 		GetRandomPubKey(),
 	)
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txIn, observerAddr)

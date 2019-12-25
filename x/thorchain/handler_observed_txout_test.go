@@ -37,7 +37,7 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 	// happy path
 	ver := semver.MustParse("0.1.0")
 	pk := GetRandomPubKey()
-	txs := ObservedTxs{NewObservedTx(GetRandomTx(), sdk.NewUint(12), pk)}
+	txs := ObservedTxs{NewObservedTx(GetRandomTx(), 12, pk)}
 	txs[0].Tx.FromAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, GetRandomBech32Addr())
@@ -73,7 +73,7 @@ func (s *HandlerObservedTxOutSuite) TestFailure(c *C) {
 
 	vaultMgr := NewVaultMgrDummy()
 	handler := NewObservedTxOutHandler(keeper, txOutStore, w.validatorMgr, vaultMgr)
-	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(12), GetRandomPubKey())
+	tx := NewObservedTx(GetRandomTx(), 12, GetRandomPubKey())
 	nas := NodeAccounts{GetRandomNodeAccount(NodeActive)}
 
 	err := handler.outboundFailure(ctx, tx, nas)
@@ -87,7 +87,7 @@ type TestObservedTxOutHandleKeeper struct {
 	voter      ObservedTxVoter
 	yggExists  bool
 	ygg        Vault
-	height     sdk.Uint
+	height     int64
 	chains     common.Chains
 	pool       Pool
 	txOutStore TxOutStore
@@ -148,7 +148,7 @@ func (k *TestObservedTxOutHandleKeeper) SetChains(_ sdk.Context, chains common.C
 	k.chains = chains
 }
 
-func (k *TestObservedTxOutHandleKeeper) SetLastChainHeight(_ sdk.Context, _ common.Chain, height sdk.Uint) error {
+func (k *TestObservedTxOutHandleKeeper) SetLastChainHeight(_ sdk.Context, _ common.Chain, height int64) error {
 	k.height = height
 	return nil
 }
@@ -194,7 +194,7 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	ver := semver.MustParse("0.1.0")
 	tx := GetRandomTx()
 	tx.Memo = fmt.Sprintf("OUTBOUND:%s", tx.ID)
-	obTx := NewObservedTx(tx, sdk.NewUint(12), GetRandomPubKey())
+	obTx := NewObservedTx(tx, 12, GetRandomPubKey())
 	txs := ObservedTxs{obTx}
 	pk := GetRandomPubKey()
 	// txs[0].Tx.FromAddress, err = currentPool.GetAddress()

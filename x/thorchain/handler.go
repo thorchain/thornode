@@ -375,7 +375,7 @@ func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.
 			return sdk.ErrInternal("fail to save tx out").Result()
 		}
 	}
-	keeper.SetLastSignedHeight(ctx, sdk.NewUint(uint64(voter.Height)))
+	keeper.SetLastSignedHeight(ctx, voter.Height)
 
 	// If sending from one of our vaults, decrement coins
 	if keeper.VaultExists(ctx, msg.Tx.ObservedPubKey) {

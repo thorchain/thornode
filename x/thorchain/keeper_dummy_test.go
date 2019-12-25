@@ -28,15 +28,15 @@ func (k KVStoreDummy) Logger(ctx sdk.Context) log.Logger {
 func (k KVStoreDummy) GetKey(_ sdk.Context, prefix dbPrefix, key string) string {
 	return fmt.Sprintf("%s/1/%s", prefix, key)
 }
-func (k KVStoreDummy) SetLastSignedHeight(_ sdk.Context, _ sdk.Uint) { return }
-func (k KVStoreDummy) GetLastSignedHeight(_ sdk.Context) (sdk.Uint, error) {
-	return sdk.ZeroUint(), kaboom
+func (k KVStoreDummy) SetLastSignedHeight(_ sdk.Context, _ int64) { return }
+func (k KVStoreDummy) GetLastSignedHeight(_ sdk.Context) (int64, error) {
+	return 0, kaboom
 }
-func (k KVStoreDummy) SetLastChainHeight(_ sdk.Context, _ common.Chain, _ sdk.Uint) error {
+func (k KVStoreDummy) SetLastChainHeight(_ sdk.Context, _ common.Chain, _ int64) error {
 	return kaboom
 }
-func (k KVStoreDummy) GetLastChainHeight(_ sdk.Context, _ common.Chain) (sdk.Uint, error) {
-	return sdk.ZeroUint(), kaboom
+func (k KVStoreDummy) GetLastChainHeight(_ sdk.Context, _ common.Chain) (int64, error) {
+	return 0, kaboom
 }
 func (k KVStoreDummy) GetRagnarokBlockHeight(_ sdk.Context) (int64, error) {
 	return 0, kaboom
