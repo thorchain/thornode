@@ -41,13 +41,14 @@ func (tos *TxOutStoreDummy) GetOutboundItems() []*TxOutItem {
 	return tos.blockOut.TxArray
 }
 
-func (tos *TxOutStoreDummy) GetOutboundItemByToAddress(to common.Address) (*TxOutItem, bool) {
+func (tos *TxOutStoreDummy) GetOutboundItemByToAddress(to common.Address) []TxOutItem {
+	items := make([]TxOutItem, 0)
 	for _, item := range tos.blockOut.TxArray {
 		if item.ToAddress.Equals(to) {
-			return item, true
+			items = append(items, *item)
 		}
 	}
-	return nil, false
+	return items
 }
 
 // AddTxOutItem add an item to internal structure
