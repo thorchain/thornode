@@ -17,22 +17,26 @@ var (
 	EmptyChain = Chain("")
 )
 
+// NoSigningAlgo empty signing algorithm
 const NoSigningAlgo = keys.SigningAlgo("")
 
 // Chain is the
 type Chain string
+
+// Chains represent a slice of Chain
 type Chains []Chain
 
 // NewChain create a new Chain and default the siging_algo to Secp256k1
 func NewChain(chain string) (Chain, error) {
-	noChain := Chain("")
+
 	if len(chain) < 3 {
-		return noChain, fmt.Errorf("Chain Error: Not enough characters")
+		return EmptyChain, fmt.Errorf("chain error: not enough characters")
 	}
 
 	return Chain(strings.ToUpper(chain)), nil
 }
 
+// Equals compare two chain to see whether they represent the same chain
 func (c Chain) Equals(c2 Chain) bool {
 	return strings.EqualFold(c.String(), c2.String())
 }
@@ -42,21 +46,38 @@ func (c Chain) IsEmpty() bool {
 	return strings.TrimSpace(c.String()) == ""
 }
 
+// String implement fmt.Stringer
 func (c Chain) String() string {
-	// uppercasing again just incase someon created a ticker via Chain("rune")
+	// convert it to upper case again just in case someone created a ticker via Chain("rune")
 	return strings.ToUpper(string(c))
 }
 
+// IsBNB determinate whether it is BNBChain
 func (c Chain) IsBNB() bool {
 	return c.Equals(BNBChain)
 }
 
+// GetSigningAlgo get the signing algorithm for the given chain
 func (c Chain) GetSigningAlgo() keys.SigningAlgo {
 	switch c {
 	case BNBChain, ETHChain, BTCChain, THORChain:
 		return keys.Secp256k1
 	}
 	return keys.Secp256k1
+}
+
+// GetGasAsset chain's base asset
+func (c Chain) GetGasAsset() Asset {
+	switch c {
+	case BNBChain:
+		return BNBAsset
+	case BTCChain:
+		return BTCAsset
+	case ETHChain:
+		return ETHAsset
+	default:
+		return EmptyAsset
+	}
 }
 
 // AddressPrefix return the address prefix used by the given network (testnet/mainnet)
@@ -81,6 +102,7 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 	return ""
 }
 
+// Has check whether chain c is in the list
 func (chains Chains) Has(c Chain) bool {
 	for _, ch := range chains {
 		if ch.Equals(c) {
@@ -90,7 +112,8 @@ func (chains Chains) Has(c Chain) bool {
 	return false
 }
 
-func (chains Chains) Uniquify() Chains {
+// Distinct return a distinct set of chains , no duplicate
+func (chains Chains) Distinct() Chains {
 	var newChains Chains
 	for _, chain := range chains {
 		if !newChains.Has(chain) {

@@ -15,7 +15,6 @@ type TxOutStore interface {
 	GetBlockOut() *TxOut
 	GetOutboundItems() []*TxOutItem
 	AddTxOutItem(ctx sdk.Context, toi *TxOutItem)
-	CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Vaults, error)
 }
 
 // TxOutStorage is going to manage all the outgoing tx
@@ -84,11 +83,12 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 			tx := voter.GetTx(activeNodeAccounts)
 
 			// collect yggdrasil pools
-			yggs, err := tos.CollectYggdrasilPools(ctx, tx)
+			yggs, err := tos.collectYggdrasilPools(ctx, tx, toi.Chain.GetGasAsset())
 			if nil != err {
 				ctx.Logger().Error("fail to collect yggdrasil pool", err)
 				return
 			}
+
 			yggs = yggs.SortBy(toi.Coin.Asset)
 
 			// if none of our Yggdrasil pools have enough funds to fulfil
@@ -113,6 +113,7 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 
 		vault := active.SelectByMinCoin(toi.Coin.Asset)
 		if vault.IsEmpty() {
+			ctx.Logger().Error("empty vault , cannot send out fund")
 			return
 		}
 
@@ -120,7 +121,6 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 	}
 
 	// Ensure THORNode are not sending from and to the same address
-	// THORNode check for a
 	fromAddr, err := toi.VaultPubKey.GetAddress(toi.Chain)
 	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
 		return
@@ -153,24 +153,28 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 			assetFee := pool.RuneValueInAsset(sdk.NewUint(uint64(transactionFee))) // Get fee in Asset value
 			if toi.Coin.Amount.LTE(assetFee) {
 				assetFee = toi.Coin.Amount // Fee is the full amount
-				runeFee = pool.RuneValueInAsset(assetFee)
+				runeFee = pool.AssetValueInRune(assetFee)
 			} else {
-				runeFee = sdk.NewUint(uint64(transactionFee)) // Fee is the prescribed fee
+				runeFee = sdk.NewUint(uint64(transactionFee))
 			}
+
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)  // Deduct Asset fee
 			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
 			if err := tos.keeper.SetPool(ctx, pool); err != nil {        // Set Pool
 				ctx.Logger().Error("fail to save pool", err)
+				return
 			}
 			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); nil != err {
 				ctx.Logger().Error("fail to add fee to reserve", err)
+				return
 				// Add to reserve
 			}
 		}
 	}
 
 	if toi.Coin.IsEmpty() {
+		ctx.Logger().Info("tx out item has zero coin", toi.String())
 		return
 	}
 
@@ -178,6 +182,7 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 	voter, err := tos.keeper.GetObservedTxVoter(ctx, toi.InHash)
 	if err != nil {
 		ctx.Logger().Error("fail to get observed tx voter", err)
+		return
 	}
 	voter.Actions = append(voter.Actions, *toi)
 	tos.keeper.SetObservedTxVoter(ctx, voter)
@@ -190,7 +195,7 @@ func (tos *TxOutStorage) addToBlockOut(toi *TxOutItem) {
 	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 }
 
-func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Vaults, error) {
+func (tos *TxOutStorage) collectYggdrasilPools(ctx sdk.Context, tx ObservedTx, gasAsset common.Asset) (Vaults, error) {
 	// collect yggdrasil pools
 	var vaults Vaults
 	iterator := tos.keeper.GetVaultIterator(ctx)
@@ -203,23 +208,39 @@ func (tos *TxOutStorage) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (
 		if !vault.IsYggdrasil() {
 			continue
 		}
-		// if THORNode are already sending assets from this ygg pool, deduct
-		// them.
-		addr, _ := vault.PubKey.GetThorAddress()
+		// When trying to choose a ygg pool candidate to send out fund , let's make sure the ygg pool has gasAsset , for example, if it is
+		// on Binance chain , make sure ygg pool has BNB asset in it , otherwise it won't be able to pay the transaction fee
+		if !vault.HasAsset(gasAsset) {
+			continue
+		}
+
+		// if THORNode are already sending assets from this ygg pool, deduct them.
+		addr, err := vault.PubKey.GetThorAddress()
+		if err != nil {
+			return nil, fmt.Errorf("fail to get thor address from pub key(%s):%w", vault.PubKey, err)
+		}
+
+		// if the ygg pool didn't observe the TxIn, and didn't sign the TxIn, THORNode is not going to choose them to send out fund , because they might offline
 		if !tx.HasSigned(addr) {
 			continue
 		}
+
+		// comments for future reference, this part of logic confuse me quite a few times
+		// This method read the vault from key value store, and trying to find out all the ygg candidate that can be used to send out fund
+		// given the fact, there might have multiple TxOutItem get created with in one block, and the fund has not been deducted from vault and save back to key values store,
+		// thus every previously processed TxOut need to be deducted from the ygg vault to make sure THORNode has a correct view of the ygg funds
 		for _, tx := range tos.blockOut.TxArray {
 			if !tx.VaultPubKey.Equals(vault.PubKey) {
 				continue
 			}
-			for i, yggcoin := range vault.Coins {
-				if !yggcoin.Asset.Equals(tx.Coin.Asset) {
+			for i, yggCoin := range vault.Coins {
+				if !yggCoin.Asset.Equals(tx.Coin.Asset) {
 					continue
 				}
 				vault.Coins[i].Amount = common.SafeSub(vault.Coins[i].Amount, tx.Coin.Amount)
 			}
 		}
+
 		vaults = append(vaults, vault)
 	}
 

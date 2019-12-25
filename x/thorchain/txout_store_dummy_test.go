@@ -59,11 +59,3 @@ func (tos *TxOutStoreDummy) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 func (tos *TxOutStoreDummy) addToBlockOut(toi *TxOutItem) {
 	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 }
-
-func (tos *TxOutStoreDummy) getSeqNo(chain common.Chain) uint64 {
-	return uint64(0)
-}
-
-func (tos *TxOutStoreDummy) CollectYggdrasilPools(ctx sdk.Context, tx ObservedTx) (Vaults, error) {
-	return nil, nil
-}
