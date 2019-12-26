@@ -135,6 +135,9 @@ func (n NodeAccount) IsValid() error {
 
 // UpdateStatus change the status of node account, in the mean time update StatusSince field
 func (n *NodeAccount) UpdateStatus(status NodeStatus, height int64) {
+	if n.Status == status {
+		return
+	}
 	n.Status = status
 	n.StatusSince = height
 }

@@ -1,6 +1,6 @@
 package types
 
-import common "gitlab.com/thorchain/thornode/common"
+import "gitlab.com/thorchain/thornode/common"
 
 type Keygens struct {
 	Height  uint64           `json:"height"`

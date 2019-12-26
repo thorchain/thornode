@@ -14,12 +14,6 @@ import (
 )
 
 const (
-	EventTypeValidatorManager   = `validator_manager`
-	EventTypeNominatedValidator = `validator_nominated`
-	EventTypeQueuedValidator    = `validator_queued`
-	EventTypeValidatorActive    = `validator_active`
-	EventTypeValidatorStandby   = `validator_standby`
-
 	genesisBlockHeight = 1
 )
 
@@ -108,10 +102,10 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 		membership = append(membership, vault.Membership...)
 	}
 
-	var newActive NodeAccounts // store the list of new active users
-
+	var newActive NodeAccounts    // store the list of new active users
+	var removedNodes NodeAccounts // nodes that had been removed
 	// find active node accounts that are no longer active
-	removedNodes := false
+
 	for _, na := range activeNodes {
 		found := false
 		for _, vault := range active {
@@ -128,7 +122,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 					sdk.NewAttribute("Former:", na.Status.String()),
 					sdk.NewAttribute("Current:", NodeStandby.String())))
 			na.UpdateStatus(NodeStandby, height)
-			removedNodes = true
+			removedNodes = append(removedNodes, na)
 			if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 				ctx.Logger().Error("fail to save node account")
 			}
@@ -166,9 +160,21 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 			Power:  100,
 		})
 	}
+	// if we remove a validator , we need to make sure their voting power get reset to 0
+	for _, item := range removedNodes {
+		pk, err := sdk.GetConsPubKeyBech32(item.ValidatorConsPubKey)
+		if nil != err {
+			ctx.Logger().Error("fail to parse consensus public key", "key", item.ValidatorConsPubKey)
+			continue
+		}
+		validators = append(validators, abci.ValidatorUpdate{
+			PubKey: tmtypes.TM2PB.PubKey(pk),
+			Power:  -100,
+		})
+	}
 
 	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
-	if height > 1 && removedNodes && len(newActive) < int(minimumNodesForBFT) { // THORNode still have enough validators for BFT
+	if height > 1 && len(removedNodes) > 0 && len(newActive) < int(minimumNodesForBFT) { // THORNode still have enough validators for BFT
 		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
 			ctx.Logger().Error("fail to process ragnarok protocol: %s", err)
 		}
@@ -621,8 +627,7 @@ func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context) error {
 
 	// check all ready and standby nodes are in "ready" state (upgrade/downgrade as needed)
 	for _, na := range append(standby, ready...) {
-		na.Status = NodeReady // everyone starts with the benefit of the doubt
-
+		na.UpdateStatus(NodeReady, ctx.BlockHeight()) // everyone starts with the benefit of the doubt
 		// TODO: check node is up to date on thorchain, binance, etc
 		// must have made an observation that matched 2/3rds within the last 5 blocks
 
