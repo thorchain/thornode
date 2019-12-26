@@ -3,6 +3,7 @@ package thorchain
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+
 	"gitlab.com/thorchain/thornode/constants"
 )
 
