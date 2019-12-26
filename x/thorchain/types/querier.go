@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -23,8 +21,8 @@ func (n QueryResPools) String() string {
 
 type QueryResHeights struct {
 	Chain            common.Chain `json:"chain"`
-	LastChainHeight  sdk.Uint     `json:"lastobservedin"`
-	LastSignedHeight sdk.Uint     `json:"lastsignedout"`
+	LastChainHeight  int64        `json:"lastobservedin"`
+	LastSignedHeight int64        `json:"lastsignedout"`
 	Statechain       int64        `json:"statechain"`
 }
 
