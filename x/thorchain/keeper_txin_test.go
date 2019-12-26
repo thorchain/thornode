@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 )
 
@@ -15,7 +14,7 @@ func (s *KeeperTxInSuite) TestTxInVoter(c *C) {
 	tx := GetRandomTx()
 	voter := NewObservedTxVoter(
 		tx.ID,
-		ObservedTxs{NewObservedTx(tx, sdk.NewUint(12), GetRandomPubKey())},
+		ObservedTxs{NewObservedTx(tx, 12, GetRandomPubKey())},
 	)
 
 	k.SetObservedTxVoter(ctx, voter)

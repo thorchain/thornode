@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -109,7 +108,7 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		}
 
 		if startBlockHeight > 0 {
-			cfg.BlockScanner.StartBlockHeight = int64(startBlockHeight)
+			cfg.BlockScanner.StartBlockHeight = startBlockHeight
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by statechain")
 		} else {
 			client := &http.Client{}
@@ -296,7 +295,7 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) (stypes.ObservedTxs, erro
 			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
 		}
 
-		h, err := strconv.ParseUint(txIn.BlockHeight, 10, 64)
+		h, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
 		if nil != err {
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
 			return nil, errors.Wrapf(err, "fail to parse block height")
@@ -308,7 +307,7 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) (stypes.ObservedTxs, erro
 		}
 		txs[i] = stypes.NewObservedTx(
 			common.NewTx(txID, sender, to, item.Coins, common.GetBNBGasFee(uint64(len(item.Coins))), item.Memo),
-			sdk.NewUint(h),
+			h,
 			observedPoolPubKey,
 		)
 	}

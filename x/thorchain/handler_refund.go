@@ -107,7 +107,7 @@ func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.V
 			return sdk.ErrInternal(fmt.Errorf("fail to save tx out: %w", err).Error())
 		}
 	}
-	h.keeper.SetLastSignedHeight(ctx, sdk.NewUint(uint64(voter.Height)))
+	h.keeper.SetLastSignedHeight(ctx, voter.Height)
 
 	// If THORNode are sending from a yggdrasil pool, decrement coins on record
 	if h.keeper.VaultExists(ctx, msg.Tx.ObservedPubKey) {
