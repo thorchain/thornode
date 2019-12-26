@@ -6,9 +6,10 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	. "gopkg.in/check.v1"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
-	. "gopkg.in/check.v1"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -93,7 +94,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	nas, err := keeper.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(nas, HasLen, 4)
-	c.Assert(validators, HasLen, 4)
+	c.Assert(validators, HasLen, 5)
 	// ensure that the first one is rotated out and the new one is rotated in
 	standby, err := keeper.GetNodeAccount(ctx, addresses[0])
 	c.Assert(err, IsNil)
