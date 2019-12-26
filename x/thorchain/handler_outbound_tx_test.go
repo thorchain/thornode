@@ -50,7 +50,7 @@ func (s *HandlerOutboundTxSuite) TestValidate(c *C) {
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
 		Gas:         common.BNBGasFeeSingleton,
-	}, sdk.NewUint(12), GetRandomPubKey())
+	}, 12, GetRandomPubKey())
 
 	msgOutboundTx := NewMsgOutboundTx(tx, tx.Tx.ID, keeper.activeNodeAccount.NodeAddress)
 	err = handler.validate(ctx, msgOutboundTx, ver)
@@ -79,7 +79,7 @@ type TestOutboundTxHandleKeeper struct {
 	event             Event
 	pool              Pool
 	txOut             TxOut
-	height            sdk.Uint
+	height            int64
 	observing         []sdk.AccAddress
 	chains            common.Chains
 }
@@ -92,7 +92,7 @@ func (k *TestOutboundTxHandleKeeper) SetChains(_ sdk.Context, chains common.Chai
 	k.chains = chains
 }
 
-func (k *TestOutboundTxHandleKeeper) SetLastChainHeight(_ sdk.Context, _ common.Chain, height sdk.Uint) error {
+func (k *TestOutboundTxHandleKeeper) SetLastChainHeight(_ sdk.Context, _ common.Chain, height int64) error {
 	k.height = height
 	return nil
 }
@@ -218,7 +218,7 @@ func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
 		Gas:         common.BNBGasFeeSingleton,
-	}, sdk.NewUint(12), GetRandomPubKey())
+	}, 12, GetRandomPubKey())
 
 	voter := NewObservedTxVoter(tx.Tx.ID, make(ObservedTxs, 0))
 	keeper.SetObservedTxVoter(ctx, voter)
@@ -257,7 +257,7 @@ func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
 			ToAddress:   addr,
 			Gas:         common.BNBGasFeeSingleton,
 		},
-		sdk.NewUint(1024),
+		1024,
 		keeper.asgardVault.PubKey,
 	)
 
@@ -274,7 +274,7 @@ func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   GetRandomBNBAddress(),
 		Gas:         common.BNBGasFeeSingleton,
-	}, sdk.NewUint(12), GetRandomPubKey())
+	}, 12, GetRandomPubKey())
 
 	outMsg := NewMsgOutboundTx(tx, inTxID, keeper.activeNodeAccount.NodeAddress)
 	ctx = ctx.WithBlockHeight(2)
