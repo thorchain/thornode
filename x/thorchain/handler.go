@@ -28,8 +28,6 @@ var errConstNotAvailable = sdk.NewError(DefaultCodespace, CodeConstantsNotAvaila
 
 // NewHandler returns a handler for "thorchain" type messages.
 func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager, vaultMgr VaultManager) sdk.Handler {
-	// Classic Handler
-	classic := NewClassicHandler(keeper, txOutStore, validatorMgr)
 	handlerMap := getHandlerMapping(keeper, txOutStore, validatorMgr, vaultMgr)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
@@ -40,7 +38,8 @@ func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorMana
 		}
 		h, ok := handlerMap[msg.Type()]
 		if !ok {
-			return classic(ctx, msg)
+			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", msg.Type())
+			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 		return h.Run(ctx, msg, version, constantValues)
 	}
@@ -69,22 +68,6 @@ func getHandlerMapping(keeper Keeper, txOutStore TxOutStore, validatorMgr Valida
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
 	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
 	return m
-}
-
-// NewClassicHandler returns a handler for "thorchain" type messages.
-func NewClassicHandler(keeper Keeper, txOutStore TxOutStore, validatorManager ValidatorManager) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
-		version := keeper.GetLowestActiveVersion(ctx)
-		constAccessor := constants.GetConstantValues(version)
-		if nil == constAccessor {
-			return errConstNotAvailable.Result()
-		}
-		switch m := msg.(type) {
-		default:
-			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
-			return sdk.ErrUnknownRequest(errMsg).Result()
-		}
-	}
 }
 
 func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
