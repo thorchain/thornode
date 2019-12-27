@@ -228,13 +228,27 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		return fmt.Errorf("fail to save event: %w", err)
 	}
 
-	i, err := k.TotalActiveNodeAccount(ctx)
+	i, err := getTotalActiveNodeWithBound(ctx, k)
 	if nil != err {
 		return fmt.Errorf("fail to get total active node account: %w", err)
 	}
 	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i))) // Add 1 unit for each active Node
 
 	return k.SetVaultData(ctx, vault)
+}
+
+func getTotalActiveNodeWithBound(ctx sdk.Context, k Keeper) (int64, error) {
+	nas, err := k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("fail to get active node accounts: %w", err)
+	}
+	var total int64
+	for _, item := range nas {
+		if !item.Bond.IsZero() {
+			total++
+		}
+	}
+	return total, nil
 }
 
 // remove gas
