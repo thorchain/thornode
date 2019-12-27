@@ -165,7 +165,8 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 			na.SlashPoints = 0 // reset slash points
 		}
 	} else {
-		if na.ActiveBlockHeight > 0 {
+
+		if na.ActiveBlockHeight > 0 && !na.Bond.IsZero() {
 
 			// The node account seems to have become a non active node account.
 			// Therefore, lets give them their bond rewards.

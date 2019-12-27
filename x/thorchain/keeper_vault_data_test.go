@@ -29,3 +29,16 @@ func (KeeperVaultDataSuite) TestVaultData(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(k.UpdateVaultData(ctx, constAccessor), IsNil)
 }
+
+func (KeeperVaultDataSuite) TestGetTotalActiveNodeWithBound(c *C) {
+	ctx, k := setupKeeperForTest(c)
+
+	node1 := GetRandomNodeAccount(NodeActive)
+	c.Assert(k.SetNodeAccount(ctx, node1), IsNil)
+	node2 := GetRandomNodeAccount(NodeActive)
+	node2.Bond = sdk.ZeroUint()
+	c.Assert(k.SetNodeAccount(ctx, node2), IsNil)
+	n, err := getTotalActiveNodeWithBound(ctx, k)
+	c.Assert(err, IsNil)
+	c.Assert(n, Equals, int64(1))
+}
