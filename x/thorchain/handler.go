@@ -28,8 +28,6 @@ var errConstNotAvailable = sdk.NewError(DefaultCodespace, CodeConstantsNotAvaila
 
 // NewHandler returns a handler for "thorchain" type messages.
 func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager, vaultMgr VaultManager) sdk.Handler {
-	// Classic Handler
-	classic := NewClassicHandler(keeper, txOutStore, validatorMgr)
 	handlerMap := getHandlerMapping(keeper, txOutStore, validatorMgr, vaultMgr)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
@@ -40,7 +38,8 @@ func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorMana
 		}
 		h, ok := handlerMap[msg.Type()]
 		if !ok {
-			return classic(ctx, msg)
+			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", msg.Type())
+			return sdk.ErrUnknownRequest(errMsg).Result()
 		}
 		return h.Run(ctx, msg, version, constantValues)
 	}
@@ -49,6 +48,7 @@ func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorMana
 func getHandlerMapping(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager, vaultMgr VaultManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
+	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper)
 	m[MsgTssPool{}.Type()] = NewTssHandler(keeper, vaultMgr)
 	m[MsgNoOp{}.Type()] = NewNoOpHandler(keeper)
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
@@ -68,24 +68,6 @@ func getHandlerMapping(keeper Keeper, txOutStore TxOutStore, validatorMgr Valida
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
 	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
 	return m
-}
-
-// NewClassicHandler returns a handler for "thorchain" type messages.
-func NewClassicHandler(keeper Keeper, txOutStore TxOutStore, validatorManager ValidatorManager) sdk.Handler {
-	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
-		version := keeper.GetLowestActiveVersion(ctx)
-		constAccessor := constants.GetConstantValues(version)
-		if nil == constAccessor {
-			return errConstNotAvailable.Result()
-		}
-		switch m := msg.(type) {
-		case MsgOutboundTx:
-			return handleMsgOutboundTx(ctx, keeper, m)
-		default:
-			errMsg := fmt.Sprintf("Unrecognized thorchain Msg type: %v", m)
-			return sdk.ErrUnknownRequest(errMsg).Result()
-		}
-	}
 }
 
 func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
@@ -312,87 +294,4 @@ func getMsgBondFromMemo(memo BondMemo, tx ObservedTx, signer sdk.AccAddress) (sd
 		return nil, errors.New("RUNE amount is 0")
 	}
 	return NewMsgBond(memo.GetNodeAddress(), runeAmount, tx.Tx.ID, tx.Tx.FromAddress, signer), nil
-}
-
-// handleMsgOutboundTx processes outbound tx from our pool
-func handleMsgOutboundTx(ctx sdk.Context, keeper Keeper, msg MsgOutboundTx) sdk.Result {
-	ctx.Logger().Info(fmt.Sprintf("receive MsgOutboundTx %s", msg.Tx.Tx.ID))
-	if !isSignedByActiveObserver(ctx, keeper, msg.GetSigners()) {
-		ctx.Logger().Error("message signed by unauthorized account", "signer", msg.GetSigners())
-		return sdk.ErrUnauthorized("Not authorized").Result()
-	}
-	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error("invalid MsgOutboundTx", "error", err)
-		return err.Result()
-	}
-
-	voter, err := keeper.GetObservedTxVoter(ctx, msg.InTxID)
-	if err != nil {
-		ctx.Logger().Error(err.Error())
-		return sdk.ErrInternal("fail to get observed tx voter").Result()
-	}
-	voter.AddOutTx(msg.Tx.Tx)
-	keeper.SetObservedTxVoter(ctx, voter)
-
-	// complete events
-	if voter.IsDone() {
-		err := completeEvents(ctx, keeper, msg.InTxID, voter.OutTxs, EventSuccess)
-		if err != nil {
-			ctx.Logger().Error("unable to complete events", "error", err)
-			return sdk.ErrInternal(err.Error()).Result()
-		}
-	}
-
-	// Apply Gas fees
-	if err := AddGasFees(ctx, keeper, msg.Tx); nil != err {
-		ctx.Logger().Error("fail to add gas fee", err)
-		return sdk.ErrInternal("fail to add gas fee").Result()
-	}
-
-	// update txOut record with our TxID that sent funds out of the pool
-	txOut, err := keeper.GetTxOut(ctx, uint64(voter.Height))
-	if err != nil {
-		ctx.Logger().Error("unable to get txOut record", "error", err)
-		return sdk.ErrUnknownRequest(err.Error()).Result()
-	}
-
-	// Save TxOut back with the TxID only when the TxOut on the block height is
-	// not empty
-	if !txOut.IsEmpty() {
-		for i, tx := range txOut.TxArray {
-
-			// withdraw , refund etc, one inbound tx might result two outbound txes, THORNode have to correlate outbound tx back to the
-			// inbound, and also txitem , thus THORNode could record both outbound tx hash correctly
-			// given every tx item will only have one coin in it , given that , THORNode could use that to identify which txit
-			if tx.InHash.Equals(msg.InTxID) &&
-				tx.OutHash.IsEmpty() &&
-				msg.Tx.Tx.Coins.Contains(tx.Coin) {
-				txOut.TxArray[i].OutHash = msg.Tx.Tx.ID
-			}
-		}
-		if err := keeper.SetTxOut(ctx, txOut); nil != err {
-			ctx.Logger().Error("fail to save tx out", err)
-			return sdk.ErrInternal("fail to save tx out").Result()
-		}
-	}
-	keeper.SetLastSignedHeight(ctx, voter.Height)
-
-	// If sending from one of our vaults, decrement coins
-	if keeper.VaultExists(ctx, msg.Tx.ObservedPubKey) {
-		vault, err := keeper.GetVault(ctx, msg.Tx.ObservedPubKey)
-		if nil != err {
-			ctx.Logger().Error("fail to get vault", err)
-			return sdk.ErrInternal("fail to get vault").Result()
-		}
-		vault.SubFunds(msg.Tx.Tx.Coins)
-		if err := keeper.SetVault(ctx, vault); nil != err {
-			ctx.Logger().Error("fail to save vault", err)
-			return sdk.ErrInternal("fail to save vault").Result()
-		}
-	}
-
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
 }
