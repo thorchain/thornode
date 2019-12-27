@@ -24,47 +24,63 @@ clean-validator:
 	@rm -rf ~/.thornode/validator
 	@mkdir -p ~/.thornode/validator
 
-run-standaloneWithMockBinance: clean
+run-standaloneWithMockBinance: 
 	docker-compose -f standalone.yml -f standaloneWithMockBinance.yml up --force-recreate --remove-orphans -d
 
-stop-standaloneWithMockBinance: clean
+stop-standaloneWithMockBinance: 
 	docker-compose -f standalone.yml -f standaloneWithMockBinance.yml down
 
-run-standaloneFullStack: clean
+reset-standaloneWithMockBinance: stop-standaloneWithMockBinance clean run-standaloneWithMockBinance
+
+run-standaloneFullStack: 
 	docker-compose -f standalone.yml -f standaloneFullStack.yml up --force-recreate --remove-orphans -d
 
-stop-standaloneFullStack: clean
+stop-standaloneFullStack: 
 	docker-compose -f standalone.yml -f standaloneFullStack.yml down
 
-run-standalone: clean
+reset-standaloneFullStack: stop-standaloneFullStack clean run-standaloneFullStack
+
+run-standalone: 
 	docker-compose -f standalone.yml up --force-recreate --remove-orphans -d
 
-stop-standalone: clean
+stop-standalone: 
 	docker-compose -f standalone.yml down
 
-run-genesisFullStack: clean
+reset-standalone: stop-standalone clean run-standalone
+
+run-genesisFullStack: 
 	docker-compose -f genesis.yml -f genesisFullStack.yml up --force-recreate --remove-orphans -d
 
-stop-genesisFullStack: clean
+stop-genesisFullStack: 
 	docker-compose -f genesis.yml -f genesisFullStack.yml down
 
-run-genesisWithMockBinance: clean
+reset-genesisFullStack: stop-genesisFullStack clean run-genesisFullStack
+
+run-genesisWithMockBinance: 
 	docker-compose -f genesis.yml -f genesisWithMockBinance.yml up --force-recreate --remove-orphans -d
 
-stop-genesisWithMockBinance: clean
+stop-genesisWithMockBinance: 
 	docker-compose -f genesis.yml -f genesisWithMockBinance.yml down
 
-run-genesisWithChurn: clean
+reset-genesisWithMockBinance: stop-genesisWithMockBinance clean run-genesisWithMockBinance
+
+run-genesisWithChurn: 
 	docker-compose -f genesis.yml -f genesisWithMockBinance.yml -f genesisWithChurnNode.yml up --force-recreate --remove-orphans -d
 
-stop-genesisWithChurn: clean
+stop-genesisWithChurn: 
 	docker-compose -f genesis.yml -f genesisWithMockBinance.yml -f genesisWithChurnNode.yml down
 
-run-genesis: clean
+reset-genesisWithChurn: stop-genesisWithChurn clean run-genesisWithChurn
+
+run-genesis: 
 	docker-compose -f genesis.yml up --force-recreate --remove-orphans -d
 
-stop-genesis: clean
+stop-genesis: 
 	docker-compose -f genesis.yml down
 
-run-validator: clean-validator
+reset-genesis: stop-genesis clean run-genesis
+
+run-validator: 
 	docker-compose -f validator.yml --project-name validator up --force-recreate -d
+
+reset-validator: clean-validator run-validator
