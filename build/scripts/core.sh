@@ -17,6 +17,20 @@ add_last_event_id () {
 
 add_admin_config () {
     jq --arg NODE_ADDRESS "$3" --arg KEY "$1" --arg VALUE "$2" '.app_state.thorchain.admin_configs += [{"address": $NODE_ADDRESS ,"key":$KEY, "value":$VALUE}]' ~/.thord/config/genesis.json > /tmp/genesis.json
+    mv /tmp/genesis.json ~/.thord/config/genesis.json
+}
+
+add_vault () {
+    POOL_PUBKEY=$1; shift
+
+    jq --arg POOL_PUBKEY "$POOL_PUBKEY" '.app_state.thorchain.vaults += [{"block_height": "0", "pub_key": $POOL_PUBKEY, "coins":[], "type": "asgard", "status":"active", "status_since": "0", "membership":[]}]' <~/.thord/config/genesis.json >/tmp/genesis.json
+    mv /tmp/genesis.json ~/.thord/config/genesis.json
+
+    export IFS=","
+    for pubkey in $@; do # iterate over our list of comma separated pubkeys
+        jq --arg PUBKEY "$pubkey" '.app_state.thorchain.vaults[0].membership += [$PUBKEY]' ~/.thord/config/genesis.json > /tmp/genesis.json
+        mv /tmp/genesis.json ~/.thord/config/genesis.json
+    done
 }
 
 # inits a thorchain with a comman separate list of usernames

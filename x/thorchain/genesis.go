@@ -67,6 +67,12 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
+	for _, vault := range data.Vaults {
+		if err := vault.IsValid(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
