@@ -228,12 +228,12 @@ describe "API Tests" do
     end
 
     it "check events are completed" do
-      resp = get("/events/1")
-      expect(resp.body.count).to eq(4), resp.body.inspect
-      expect(resp.body[3]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[3].inspect
-      expect(resp.body[3]['type']).to eq("swap"), resp.body[3].inspect
-      expect(resp.body[3]['in_tx']['id']).to eq(txid), resp.body[3].inspect
-      expect(resp.body[3]['out_txs'][0]['id'].length).to eq(64), resp.body[3].inspect
+      resp = get("/events/5")
+      expect(resp.body.count).to eq(1), resp.body.inspect
+      expect(resp.body[0]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[0].inspect
+      expect(resp.body[0]['type']).to eq("swap"), resp.body[0].inspect
+      expect(resp.body[0]['in_tx']['id']).to eq(txid), resp.body[0].inspect
+      expect(resp.body[0]['out_txs'][0]['id'].length).to eq(64), resp.body[0].inspect
     end
 
     it "add assets to a pool" do
