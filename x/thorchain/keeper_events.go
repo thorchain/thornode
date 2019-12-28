@@ -129,7 +129,10 @@ func (k KVStore) GetCurrentEventID(ctx sdk.Context) (int64, error) {
 	}
 	buf := store.Get([]byte(key))
 	if err := k.cdc.UnmarshalBinaryBare(buf, &currentEventID); err != nil {
-		return 0, dbError(ctx, "Unmarshal: current event id", err)
+		return 1, dbError(ctx, "Unmarshal: current event id", err)
+	}
+	if currentEventID == 0 {
+		currentEventID = 1
 	}
 	return currentEventID, nil
 

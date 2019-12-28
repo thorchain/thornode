@@ -73,9 +73,16 @@ func ValidateGenesis(data GenesisState) error {
 // DefaultGenesisState the default values THORNode put in the Genesis
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		AdminConfigs: []AdminConfig{},
-		Pools:        []Pool{},
-		NodeAccounts: NodeAccounts{},
+		AdminConfigs:     []AdminConfig{},
+		Pools:            []Pool{},
+		NodeAccounts:     NodeAccounts{},
+		CurrentEventID:   1,
+		TxOuts:           make([]TxOut, 0),
+		PoolStakers:      make([]PoolStaker, 0),
+		StakerPools:      make([]StakerPool, 0),
+		Events:           make(Events, 0),
+		Vaults:           make(Vaults, 0),
+		ObservedTxVoters: make(ObservedTxVoters, 0),
 	}
 }
 

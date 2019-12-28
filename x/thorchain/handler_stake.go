@@ -68,7 +68,7 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 	stakeUnits := sdk.ZeroUint()
 	defer func() {
 		// if fail to stake ,then it just need to return, tx in observer will refund
-		if errResult != nil {
+		if errResult != nil && !errResult.Code().IsOK() {
 			return
 		}
 		if err := processStakeEvent(ctx, sh.keeper, msg, stakeUnits, EventSuccess); nil != err {
