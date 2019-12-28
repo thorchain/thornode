@@ -89,7 +89,7 @@ smoke-standalone:
 	bsinner -a localhost:26660 -b ./test/smoke/scenarios/standalone/balances.json -t ./test/smoke/scenarios/standalone/transactions.json -e local -x -g
 
 smoke-genesis:
-	make -C build/docker stop-genesisWithMockBinance run-genesisWithMockBinance
+	make -C build/docker reset-genesisWithMockBinance
 	bsinner -a localhost:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e local -x -g
 
 export:
