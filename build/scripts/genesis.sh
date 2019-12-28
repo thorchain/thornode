@@ -76,7 +76,11 @@ if [ "$SEED" = "$(hostname)" ]; then
 
         # add node accounts to genesis file
         for f in /tmp/shared/node_*.json; do 
-            add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}')
+            if [ ! -z ${VAULT_PUBKEY+x} ]; then
+                add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}') $VAULT_PUBKEY
+            else
+                add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}')
+            fi
         done
 
         for f in /tmp/shared/config_*.json; do
