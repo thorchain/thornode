@@ -21,27 +21,32 @@ type MockStackKeeper struct {
 	activeNodeAccount  NodeAccount
 	failGetPool        bool
 	failGetNextEventID bool
+	addedEvent         bool
 }
 
 func (m *MockStackKeeper) PoolExist(_ sdk.Context, asset common.Asset) bool {
 	return m.currentPool.Asset.Equals(asset)
 }
+
 func (m *MockStackKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	if m.failGetPool {
 		return Pool{}, errors.New("fail to get pool")
 	}
 	return m.currentPool, nil
 }
+
 func (m *MockStackKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	m.currentPool = pool
 	return nil
 }
+
 func (m *MockStackKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
 	if m.activeNodeAccount.NodeAddress.Equals(addr) {
 		return m.activeNodeAccount, nil
 	}
 	return NodeAccount{}, errors.New("not exist")
 }
+
 func (m *MockStackKeeper) GetPoolStaker(_ sdk.Context, asset common.Asset) (PoolStaker, error) {
 	return PoolStaker{
 		Asset:      asset,
@@ -49,6 +54,7 @@ func (m *MockStackKeeper) GetPoolStaker(_ sdk.Context, asset common.Asset) (Pool
 		Stakers:    nil,
 	}, nil
 }
+
 func (m *MockStackKeeper) GetStakerPool(_ sdk.Context, addr common.Address) (StakerPool, error) {
 	return StakerPool{
 		RuneAddress:  addr,
@@ -56,12 +62,15 @@ func (m *MockStackKeeper) GetStakerPool(_ sdk.Context, addr common.Address) (Sta
 		PoolUnits:    nil,
 	}, nil
 }
+
 func (m *MockStackKeeper) UpsertEvent(_ sdk.Context, _ Event) error {
 	if m.failGetNextEventID {
 		return kaboom
 	}
+	m.addedEvent = true
 	return nil
 }
+
 func (HandlerStakeSuite) TestStakeHandler(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)
@@ -106,6 +115,7 @@ func (HandlerStakeSuite) TestStakeHandler(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(postStakePool.BalanceAsset.String(), Equals, preStakePool.BalanceAsset.Add(msgSetStake.AssetAmount).String())
 	c.Assert(postStakePool.BalanceRune.String(), Equals, preStakePool.BalanceRune.Add(msgSetStake.RuneAmount).String())
+	c.Check(k.addedEvent, Equals, true)
 }
 
 func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
@@ -150,6 +160,7 @@ func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(postStakePool.BalanceAsset.String(), Equals, preStakePool.BalanceAsset.Add(msgSetStake.AssetAmount).String())
 	c.Assert(postStakePool.BalanceRune.String(), Equals, preStakePool.BalanceRune.Add(msgSetStake.RuneAmount).String())
+	c.Check(k.addedEvent, Equals, true)
 
 	// bad version
 	result = stakeHandler.Run(ctx, msgSetStake, semver.Version{}, constAccessor)

@@ -117,6 +117,13 @@ describe "API Tests" do
       expect(resp.body['stakers'][0]['units']).to eq("1342175000"), resp.body['stakers'][0].inspect
     end
 
+    it "check for stake event" do
+      resp = get("/events/1")
+      expect(resp.body.count).to eq(1), resp.body.inspect
+      expect(resp.body[0]['id']).to eq("1"), resp.body[0].inspect
+      expect(resp.body[0]['type']).to eq("stake"), resp.body[0].inspect
+    end
+
     it "should be able to unstake" do
       tx = makeTx(memo: "withdraw:TCAN-014", sender: sender)
       resp = processTx(tx)
@@ -125,6 +132,14 @@ describe "API Tests" do
       resp = get("/pool/BNB.TCAN-014/stakers")
       expect(resp.code).to eq("200"), resp.body.inspect
       expect(resp.body['stakers']).to eq(nil), resp.body.inspect
+    end
+
+    it "check for unstake event trigger pool event" do # check unstaking last staker creates pool event
+      resp = get("/events/2")
+      expect(resp.body.count).to eq(1), resp.body.inspect
+      expect(resp.body[0]['id']).to eq("2"), resp.body[0].inspect
+      expect(resp.body[0]['type']).to eq("pool"), resp.body[0].inspect
+      expect(resp.body[0]['event']['status']).to eq("Bootstrap"), resp.body[0].inspect
     end
 
   end
@@ -214,7 +229,6 @@ describe "API Tests" do
 
     it "check events are completed" do
       resp = get("/events/1")
-      puts(resp.body.inspect)
       expect(resp.body.count).to eq(4), resp.body.inspect
       expect(resp.body[3]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[3].inspect
       expect(resp.body[3]['type']).to eq("swap"), resp.body[3].inspect
