@@ -7,7 +7,6 @@ SIGNER_NAME="${SIGNER_NAME:=thorchain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 NODES="${NODES:=1}"
 SEED="${SEED:=thor-daemon}" # the hostname of the master node
-ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in thorchain should rotate
 
 # find or generate our BNB address
 gen_bnb_address
@@ -34,11 +33,6 @@ fi
 # write node account data to json file in shared directory
 echo "$NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $ADDRESS" > /tmp/shared/node_$NODE_ADDRESS.json
 
-# write rotate block height as config file
-if [ "$ROTATE_BLOCK_HEIGHT" != "0" ]; then
-    echo "$KEY $VALUE $NODE_ADDRESS" > /tmp/shared/config_rotate_block_height.json
-fi
-
 # enable pools by default
 echo "DefaultPoolStatus Enabled $NODE_ADDRESS" > /tmp/shared/config_pool_status.json
 
@@ -46,6 +40,22 @@ echo "DefaultPoolStatus Enabled $NODE_ADDRESS" > /tmp/shared/config_pool_status.
 while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODES" ]; do
     sleep 1
 done
+
+if [ ! -z ${TSSKEYGEN+x} ]; then
+    export IFS=","
+    for addr in $TSSKEYGENLIST; do
+        # wait for TSS keysign agent to become available
+        $(dirname "$0")/wait-for-tss-keygen.sh $addr
+    done
+
+    KEYCLIENT="/usr/bin/keygenclient -url http://$TSSKEYGEN/keygen"
+    for f in /tmp/shared/node_*.json; do
+        KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $3}')"
+    done
+    sh -c "$KEYCLIENT > /tmp/keygenclient.output"
+
+    VAULT_PUBKEY=$(cat /tmp/keygenclient.output | tail -1 | jq -r .pub_key)
+fi
 
 if [ "$SEED" = "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
@@ -55,6 +65,14 @@ if [ "$SEED" = "$(hostname)" ]; then
             ADDRS="$ADDRS,$(cat $f | awk '{print $1}')"
         done
         init_chain $(echo "$ADDRS" | sed -e 's/^,*//')
+
+        if [ ! -z ${VAULT_PUBKEY+x} ]; then
+            PUBKEYS=""
+            for f in /tmp/shared/node_*.json; do
+                PUBKEYS="$PUBKEYS,$(cat $f | awk '{print $3}')"
+            done
+            add_vault $VAULT_PUBKEY $(echo "$PUBKEYS" | sed -e 's/^,*//')
+        fi
 
         # add node accounts to genesis file
         for f in /tmp/shared/node_*.json; do 
@@ -83,15 +101,6 @@ if [ "$SEED" != "$(hostname)" ]; then
 
         cat ~/.thord/config/genesis.json
     fi
-fi
-
-# wait for tss to become available
-if [ ! -z ${TSSKEYGEN+x} ]; then
-    export IFS=","
-    for addr in $TSSKEYGENLIST; do
-        # wait for TSS keysign agent to become available
-        $(dirname "$0")/wait-for-tss-keygen.sh $addr
-    done
 fi
 
 
