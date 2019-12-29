@@ -37,8 +37,6 @@ func NewQuerier(keeper Keeper, validatorMgr ValidatorManager) sdk.Querier {
 			return queryKeysign(ctx, path[1:], req, keeper, validatorMgr)
 		case q.QueryKeysignArrayPubkey.Key:
 			return queryKeysign(ctx, path[1:], req, keeper, validatorMgr)
-		case q.QueryKeygens.Key:
-			return queryKeygen(ctx, path[1:], req, keeper)
 		case q.QueryKeygensPubkey.Key:
 			return queryKeygen(ctx, path[1:], req, keeper)
 		case q.QueryCompleteEvents.Key:
