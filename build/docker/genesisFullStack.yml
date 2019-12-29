@@ -14,16 +14,18 @@ services:
     ports:
       - 8080:8080
     environment:
-      CHAIN_API: 172.32.10.32:1317
+      CHAIN_API: 172.32.40.32:1317
       CHAIN_RPC: 172.32.10.22:26657
       PG_HOST: 172.32.60.3
     depends_on:
       - pg
       - thor-daemon
+      - thor-api
     entrypoint:
       /docker/scripts/midgard.sh
     volumes:
       - "../scripts:/docker/scripts"
+    command: "midgard -c /etc/midgard/config.json"
     networks:
       localnet:
         ipv4_address: 172.32.60.2
@@ -33,6 +35,7 @@ services:
     ports:
       - 5432:5432
     environment:
+      - POSTGRES_USER=midgard
       - POSTGRES_PASSWORD=password
     command: postgres -c 'max_connections=250'
     networks:
