@@ -2,7 +2,7 @@ mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 path := $(dir $(mkfile_path))
 
 run-testnet-standalone: 
-	docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml up --force-recreate --remove-orphans -d
+	NET=testnet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml up --force-recreate --remove-orphans -d
 
 reset-testnet-standalone: stop clean run-testnet-standalone
 
