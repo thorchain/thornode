@@ -1,6 +1,9 @@
 package thorchain
 
 import (
+	"errors"
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -34,8 +37,45 @@ func NewVaultMgr(k Keeper, txOutStore TxOutStore) *VaultMgr {
 	}
 }
 
-// EndBlock: move funds from retiring asgard vaults
+func (vm *VaultMgr) processGenesisSetup(ctx sdk.Context) error {
+	if ctx.BlockHeight() != genesisBlockHeight {
+		return nil
+	}
+	vaults, err := vm.k.GetAsgardVaults(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to get vaults: %w", err)
+	}
+	if len(vaults) > 0 {
+		ctx.Logger().Info("already have vault, no need to generate at genesis")
+		return nil
+	}
+	active, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to get all active node accounts")
+	}
+	if len(active) == 0 {
+		return errors.New("no active accounts,cannot proceed")
+	}
+	if len(active) == 1 {
+		vault := NewVault(0, ActiveVault, AsgardVault, active[0].PubKeySet.Secp256k1)
+		if err := vm.k.SetVault(ctx, vault); err != nil {
+			return fmt.Errorf("fail to save vault: %w", err)
+		}
+	} else {
+		// Trigger a keygen ceremony
+		if err := vm.TriggerKeygen(ctx, active); err != nil {
+			return fmt.Errorf("fail to trigger a keygen: %w", err)
+		}
+	}
+	return nil
+}
+
+// EndBlock move funds from retiring asgard vaults
 func (vm *VaultMgr) EndBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error {
+	if ctx.BlockHeight() == genesisBlockHeight {
+		return vm.processGenesisSetup(ctx)
+	}
+
 	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
 
 	retiring, err := vm.k.GetAsgardVaultsByStatus(ctx, RetiringVault)
