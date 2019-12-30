@@ -1,10 +1,6 @@
 version: '3'
 
 services:
-  frontend:
-    image: registry.gitlab.com/thorchain/bepswap/bepswap-react-app
-    ports:
-      - 8000:80
 
   midgard:
     image: registry.gitlab.com/thorchain/midgard
@@ -25,7 +21,7 @@ services:
     entrypoint:
       /docker/scripts/midgard.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
     command: "midgard -c /etc/midgard/config.json"
 
   pg:
@@ -36,19 +32,3 @@ services:
       - POSTGRES_USER=midgard
       - POSTGRES_PASSWORD=password
     command: postgres -c 'max_connections=250'
-
-  observer:
-    environment:
-      NET: testnet
-
-  signer:
-    environment:
-      NET: testnet
-
-  thor-daemon:
-    environment:
-      NET: testnet
-
-  thor-api:
-    environment:
-      NET: testnet
