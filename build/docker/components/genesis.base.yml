@@ -17,7 +17,7 @@ services:
     depends_on:
       - thor-api
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -46,7 +46,7 @@ services:
       - tss
       - thor-api
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
@@ -81,7 +81,7 @@ services:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
@@ -110,7 +110,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -136,7 +136,7 @@ services:
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
     networks:
       localnet:
@@ -157,7 +157,7 @@ services:
     depends_on:
       - thor-api2
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -185,7 +185,7 @@ services:
       - tss2
       - thor-api2
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
@@ -214,7 +214,7 @@ services:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
@@ -239,7 +239,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -262,7 +262,7 @@ services:
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
     networks:
       localnet:
@@ -283,7 +283,7 @@ services:
     depends_on:
       - thor-api3
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -311,7 +311,7 @@ services:
       - tss3
       - thor-api3
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
@@ -340,7 +340,7 @@ services:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
@@ -365,7 +365,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -388,7 +388,7 @@ services:
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
     networks:
       localnet:
@@ -409,7 +409,7 @@ services:
     depends_on:
       - thor-api4
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -437,7 +437,7 @@ services:
     entrypoint:
       /docker/scripts/signer.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
@@ -466,7 +466,7 @@ services:
       - tss4
     volumes:
       - /tmp/genesis:/tmp/shared
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
@@ -491,7 +491,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -514,7 +514,7 @@ services:
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
     networks:
       localnet:
