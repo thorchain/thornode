@@ -128,7 +128,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 			}
 		}
 	}
-
+	newNodesBecomeActive := false
 	// find ready nodes that change to
 	for _, na := range readyNodes {
 		for _, member := range membership {
@@ -139,6 +139,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 						sdk.NewAttribute("Address", na.NodeAddress.String()),
 						sdk.NewAttribute("Former:", na.Status.String()),
 						sdk.NewAttribute("Current:", NodeActive.String())))
+				newNodesBecomeActive = true
 				na.UpdateStatus(NodeActive, height)
 				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 					ctx.Logger().Error("fail to save node account")
@@ -147,7 +148,10 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 			}
 		}
 	}
-
+	// no new nodes become active, and no nodes get removed , so
+	if !newNodesBecomeActive && len(removedNodes) == 0 {
+		return nil
+	}
 	validators := make([]abci.ValidatorUpdate, 0, len(newActive))
 	for _, item := range newActive {
 		pk, err := sdk.GetConsPubKeyBech32(item.ValidatorConsPubKey)
@@ -169,7 +173,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 		}
 		validators = append(validators, abci.ValidatorUpdate{
 			PubKey: tmtypes.TM2PB.PubKey(pk),
-			Power:  -100,
+			Power:  0,
 		})
 	}
 
@@ -198,7 +202,7 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 		ragnarokHeight = ctx.BlockHeight()
 		vm.k.SetRagnarokBlockHeight(ctx, ragnarokHeight)
 		if err := vm.ragnarokProtocolStage1(ctx, activeNodes); nil != err {
-			ctx.Logger().Error("fail to execute ragnarok protocol step 1: %s", err)
+			ctx.Logger().Error(fmt.Errorf("fail to execute ragnarok protocol step 1: %w", err).Error())
 			return err
 		}
 		return nil
@@ -585,7 +589,7 @@ func (vm *ValidatorMgr) markActor(ctx sdk.Context, na NodeAccount) error {
 
 // Mark an old actor to be churned out
 func (vm *ValidatorMgr) markOldActor(ctx sdk.Context, rate int64) error {
-	if rate%ctx.BlockHeight() == 0 {
+	if ctx.BlockHeight()%rate == 0 {
 		na, err := vm.findOldActor(ctx)
 		if err != nil {
 			return err
@@ -599,7 +603,7 @@ func (vm *ValidatorMgr) markOldActor(ctx sdk.Context, rate int64) error {
 
 // Mark a bad actor to be churned out
 func (vm *ValidatorMgr) markBadActor(ctx sdk.Context, rate int64) error {
-	if rate%ctx.BlockHeight() == 0 {
+	if ctx.BlockHeight()%rate == 0 {
 		na, err := vm.findBadActor(ctx)
 		if err != nil {
 			return err
