@@ -52,11 +52,3 @@ services:
   signer4:
     environment:
       BINANCE_HOST: http://172.32.90.1:26660
-
-  observer5:
-    environment:
-      BINANCE_HOST: http://172.32.90.1:26660
-
-  signer5:
-    environment:
-      BINANCE_HOST: http://172.32.90.1:26660

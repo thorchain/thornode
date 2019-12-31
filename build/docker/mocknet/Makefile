@@ -12,6 +12,6 @@ run-mocknet-genesis:
 reset-mocknet-genesis: stop clean run-mocknet-genesis
 
 run-mocknet-genesis-churn: 
-	NET=testnet docker-compose -p thornode -f ${path}../components/genesis.base.yml -f ${path}../components/fifthnode.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/genesis.yml up --force-recreate --remove-orphans -d
+	NET=testnet docker-compose -p thornode -f ${path}../components/genesis.base.yml -f ${path}../components/fifthnode.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/genesis.yml -f ${path}../mocknet/churn.yml up --force-recreate --remove-orphans -d
 
 reset-mocknet-genesis-churn: stop clean run-mocknet-genesis-churn
