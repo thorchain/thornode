@@ -4,7 +4,7 @@ services:
   observer5:
     hostname: observer5
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -28,7 +28,7 @@ services:
   signer5:
     hostname: signer5
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -57,7 +57,7 @@ services:
   thor-daemon5:
     hostname: thor-daemon5
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -83,7 +83,7 @@ services:
   thor-api5:
     hostname: thor-api5
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon
