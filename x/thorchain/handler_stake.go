@@ -66,16 +66,6 @@ func (sh StakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _
 
 func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semver.Version) (errResult sdk.Error) {
 	stakeUnits := sdk.ZeroUint()
-	defer func() {
-		// if fail to stake ,then it just need to return, tx in observer will refund
-		if errResult != nil && !errResult.Code().IsOK() {
-			ctx.Logger().Error("No stake event due to ", errResult.Error())
-			return
-		}
-		if err := processStakeEvent(ctx, sh.keeper, msg, stakeUnits, EventSuccess); nil != err {
-			errResult = sdk.ErrInternal(fmt.Errorf("fail to save stake event: %w", err).Error())
-		}
-	}()
 
 	pool, err := sh.keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
@@ -105,6 +95,11 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 	if err != nil {
 		return sdk.ErrUnknownRequest(fmt.Errorf("fail to process stake request: %w", err).Error())
 	}
+
+	if err := processStakeEvent(ctx, sh.keeper, msg, stakeUnits, EventSuccess); nil != err {
+		return sdk.ErrInternal(fmt.Errorf("fail to save stake event: %w", err).Error())
+	}
+
 	return nil
 }
 
