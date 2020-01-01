@@ -226,12 +226,25 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	//////////////////////////////////////////////////////////
 	//////////////// Start Ragnarok Protocol /////////////////
 	//////////////////////////////////////////////////////////
+	vd := VaultData{
+		BondRewardRune: sdk.NewUint(1000_000 * common.One),
+		TotalBondUnits: sdk.NewUint(3 * 1014), // block height * node count
+		TotalReserve:   sdk.NewUint(400_100_000 * common.One),
+	}
+	c.Assert(keeper.SetVaultData(ctx, vd), IsNil)
+	ctx = ctx.WithBlockHeight(1024)
 
 	active, err := keeper.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
 	// this should trigger stage 1 of the ragnarok protocol. We should see a tx
 	// out per node account
 	c.Assert(validatorMgr.processRagnarok(ctx, active, consts), IsNil)
+	// after ragnarok get trigged , we pay bond reward immediately
+	for idx, bonder := range bonders {
+		na, err := keeper.GetNodeAccount(ctx, bonder.NodeAddress)
+		c.Assert(err, IsNil)
+		bonders[idx].Bond = na.Bond
+	}
 	c.Assert(txOutStore.GetOutboundItems(), HasLen, bonderCount)
 
 	// we'll assume the signer does it's job and sends the yggdrasil funds back
@@ -261,7 +274,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 			items := txOutStore.GetOutboundItemByToAddress(bonder.BondAddress)
 			c.Assert(items, HasLen, 1)
 			outCoin := common.NewCoin(common.RuneAsset(), calcExpectedValue(bonder.Bond, i))
-			c.Assert(items[0].Coin.Equals(outCoin), Equals, true, Commentf("%+v", items[0].Coin))
+			c.Assert(items[0].Coin.Equals(outCoin), Equals, true, Commentf("expect:%s, however:%s", outCoin.String(), items[0].Coin.String()))
 		}
 
 		// validate stakers get their returns
@@ -280,7 +293,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 			items := txOutStore.GetOutboundItemByToAddress(res.Address)
 			c.Assert(items, HasLen, 1)
 			outCoin := common.NewCoin(common.RuneAsset(), calcExpectedValue(res.Amount, i))
-			c.Assert(items[0].Coin.Equals(outCoin), Equals, true, Commentf("%+v", items[0].Coin))
+			c.Assert(items[0].Coin.Equals(outCoin), Equals, true, Commentf("expect:%s, however:%s", outCoin, items[0].Coin))
 		}
 
 		txOutStore.ClearOutboundItems() // clear out txs
