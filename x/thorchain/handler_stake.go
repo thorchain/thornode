@@ -69,6 +69,7 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 	defer func() {
 		// if fail to stake ,then it just need to return, tx in observer will refund
 		if errResult != nil && !errResult.Code().IsOK() {
+			ctx.Logger().Error("No stake event due to ", errResult.Error())
 			return
 		}
 		if err := processStakeEvent(ctx, sh.keeper, msg, stakeUnits, EventSuccess); nil != err {
