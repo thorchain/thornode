@@ -65,8 +65,6 @@ func (sh StakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _
 }
 
 func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semver.Version) (errResult sdk.Error) {
-	stakeUnits := sdk.ZeroUint()
-
 	pool, err := sh.keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to get pool: %w", err).Error())
@@ -82,7 +80,7 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 	if err := pool.EnsureValidPoolStatus(msg); nil != err {
 		return sdk.ErrUnknownRequest(fmt.Errorf("fail to check pool status: %w", err).Error())
 	}
-	stakeUnits, err = stake(
+	stakeUnits, err := stake(
 		ctx,
 		sh.keeper,
 		msg.Asset,
