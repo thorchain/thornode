@@ -47,6 +47,10 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 			ctx.Logger().Error("fail to setup validator nodes", err)
 		}
 	}
+	if vm.k.RagnarokInProgress(ctx) {
+		// ragnarok is in progress, no point to check node rotation
+		return nil
+	}
 	badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
 	if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
 		return err
@@ -79,84 +83,54 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 	height := ctx.BlockHeight()
 	activeNodes, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
-		ctx.Logger().Error("fail to list active node accounts")
-	}
-
-	readyNodes, err := vm.k.ListNodeAccountsByStatus(ctx, NodeReady)
-	if err != nil {
-		ctx.Logger().Error("fail to list ready node accounts")
-	}
-
-	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
-	if err != nil {
-		ctx.Logger().Error("fail to get active asgards")
-	}
-
-	// if we have no pool addresses, nothing to do...
-	if len(active) == 0 {
+		ctx.Logger().Error("fail to get all active nodes", err)
 		return nil
 	}
 
-	var membership common.PubKeys
-	for _, vault := range active {
-		membership = append(membership, vault.Membership...)
-	}
-
-	var newActive NodeAccounts    // store the list of new active users
-	var removedNodes NodeAccounts // nodes that had been removed
-	// find active node accounts that are no longer active
-
-	for _, na := range activeNodes {
-		found := false
-		for _, vault := range active {
-			if vault.Contains(na.PubKeySet.Secp256k1) {
-				found = true
-				newActive = append(newActive, na)
-				break
-			}
+	// when ragnarok is in progress, just process ragnarok
+	if vm.k.RagnarokInProgress(ctx) {
+		// process ragnarok
+		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
+			ctx.Logger().Error("fail to process ragnarok protocol: %s", err)
 		}
-		if !found && len(membership) > 0 {
-			ctx.EventManager().EmitEvent(
-				sdk.NewEvent("UpdateNodeAccountStatus",
-					sdk.NewAttribute("Address", na.NodeAddress.String()),
-					sdk.NewAttribute("Former:", na.Status.String()),
-					sdk.NewAttribute("Current:", NodeStandby.String())))
-			na.UpdateStatus(NodeStandby, height)
-			removedNodes = append(removedNodes, na)
-			if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-				ctx.Logger().Error("fail to save node account")
-			}
-		}
-	}
-	newNodesBecomeActive := false
-	// find ready nodes that change to
-	for _, na := range readyNodes {
-		for _, member := range membership {
-			if na.PubKeySet.Contains(member) {
-				newActive = append(newActive, na)
-				ctx.EventManager().EmitEvent(
-					sdk.NewEvent("UpdateNodeAccountStatus",
-						sdk.NewAttribute("Address", na.NodeAddress.String()),
-						sdk.NewAttribute("Former:", na.Status.String()),
-						sdk.NewAttribute("Current:", NodeActive.String())))
-				newNodesBecomeActive = true
-				na.UpdateStatus(NodeActive, height)
-				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-					ctx.Logger().Error("fail to save node account")
-				}
-				break
-			}
-		}
-	}
-	// no new nodes become active, and no nodes get removed , so
-	if !newNodesBecomeActive && len(removedNodes) == 0 {
 		return nil
 	}
-	validators := make([]abci.ValidatorUpdate, 0, len(newActive))
-	for _, item := range newActive {
-		pk, err := sdk.GetConsPubKeyBech32(item.ValidatorConsPubKey)
+
+	newNodes, removedNodes, err := vm.getChangedNodes(ctx, activeNodes)
+	if nil != err {
+		ctx.Logger().Error("fail to get node changes", err)
+		return nil
+	}
+
+	// no change
+	if len(newNodes) == 0 && len(removedNodes) == 0 {
+		return nil
+	}
+
+	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
+	nodesAfterChange := len(activeNodes) + len(newNodes) - len(removedNodes)
+	if height > 1 && nodesAfterChange < int(minimumNodesForBFT) {
+		// THORNode don't have enough validators for BFT
+		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
+			ctx.Logger().Error("fail to process ragnarok protocol: %s", err)
+		}
+		// by return
+		return nil
+	}
+	validators := make([]abci.ValidatorUpdate, 0, len(newNodes)+len(removedNodes))
+	for _, na := range newNodes {
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent("UpdateNodeAccountStatus",
+				sdk.NewAttribute("Address", na.NodeAddress.String()),
+				sdk.NewAttribute("Former:", na.Status.String()),
+				sdk.NewAttribute("Current:", NodeActive.String())))
+		na.UpdateStatus(NodeActive, height)
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			ctx.Logger().Error("fail to save node account")
+		}
+		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
 		if nil != err {
-			ctx.Logger().Error("fail to parse consensus public key", "key", item.ValidatorConsPubKey)
+			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey)
 			continue
 		}
 		validators = append(validators, abci.ValidatorUpdate{
@@ -164,11 +138,20 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 			Power:  100,
 		})
 	}
-	// if we remove a validator , we need to make sure their voting power get reset to 0
-	for _, item := range removedNodes {
-		pk, err := sdk.GetConsPubKeyBech32(item.ValidatorConsPubKey)
+	for _, na := range removedNodes {
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent("UpdateNodeAccountStatus",
+				sdk.NewAttribute("Address", na.NodeAddress.String()),
+				sdk.NewAttribute("Former:", na.Status.String()),
+				sdk.NewAttribute("Current:", NodeStandby.String())))
+		na.UpdateStatus(NodeStandby, height)
+		removedNodes = append(removedNodes, na)
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			ctx.Logger().Error("fail to save node account")
+		}
+		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
 		if nil != err {
-			ctx.Logger().Error("fail to parse consensus public key", "key", item.ValidatorConsPubKey)
+			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey)
 			continue
 		}
 		validators = append(validators, abci.ValidatorUpdate{
@@ -177,14 +160,58 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 		})
 	}
 
-	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
-	if height > 1 && len(removedNodes) > 0 && len(newActive) < int(minimumNodesForBFT) { // THORNode still have enough validators for BFT
-		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
-			ctx.Logger().Error("fail to process ragnarok protocol: %s", err)
+	return validators
+}
+
+// getChangedNodes to identify which node had been removed ,and which one had been added
+// newNodes , removed nodes,err
+func (vm *ValidatorMgr) getChangedNodes(ctx sdk.Context, activeNodes NodeAccounts) (NodeAccounts, NodeAccounts, error) {
+	var newActive NodeAccounts    // store the list of new active users
+	var removedNodes NodeAccounts // nodes that had been removed
+
+	readyNodes, err := vm.k.ListNodeAccountsByStatus(ctx, NodeReady)
+	if err != nil {
+		return newActive, removedNodes, fmt.Errorf("fail to list ready node accounts: %w", err)
+	}
+
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		ctx.Logger().Error("fail to get active asgards")
+		return newActive, removedNodes, fmt.Errorf("fail to get active asgards: %w", err)
+	}
+	if len(active) == 0 {
+		return newActive, removedNodes, errors.New("no active vault")
+	}
+	var membership common.PubKeys
+	for _, vault := range active {
+		membership = append(membership, vault.Membership...)
+	}
+
+	// find active node accounts that are no longer active
+	for _, na := range activeNodes {
+		found := false
+		for _, vault := range active {
+			if vault.Contains(na.PubKeySet.Secp256k1) {
+				found = true
+				break
+			}
+		}
+		if !found && len(membership) > 0 {
+			removedNodes = append(removedNodes, na)
 		}
 	}
 
-	return validators
+	// find ready nodes that change to
+	for _, na := range readyNodes {
+		for _, member := range membership {
+			if na.PubKeySet.Contains(member) {
+				newActive = append(newActive, na)
+				break
+			}
+		}
+	}
+
+	return newActive, removedNodes, nil
 }
 
 // determines when/if to run each part of the ragnarok process
@@ -194,16 +221,14 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 	// THORNode won't have validators anymore
 	ragnarokHeight, err := vm.k.GetRagnarokBlockHeight(ctx)
 	if err != nil {
-		ctx.Logger().Error("fail to get ragnarok height", err)
-		return err
+		return fmt.Errorf("fail to get ragnarok height: %w", err)
 	}
 
 	if ragnarokHeight == 0 {
 		ragnarokHeight = ctx.BlockHeight()
 		vm.k.SetRagnarokBlockHeight(ctx, ragnarokHeight)
 		if err := vm.ragnarokProtocolStage1(ctx, activeNodes); nil != err {
-			ctx.Logger().Error(fmt.Errorf("fail to execute ragnarok protocol step 1: %w", err).Error())
-			return err
+			return fmt.Errorf("fail to execute ragnarok protocol step 1: %w", err)
 		}
 		return nil
 	}
