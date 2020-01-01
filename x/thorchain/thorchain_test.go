@@ -94,7 +94,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	nas, err := keeper.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(nas, HasLen, 4)
-	c.Assert(validators, HasLen, 5)
+	c.Assert(validators, HasLen, 2)
 	// ensure that the first one is rotated out and the new one is rotated in
 	standby, err := keeper.GetNodeAccount(ctx, addresses[0])
 	c.Assert(err, IsNil)
@@ -297,4 +297,118 @@ func calcExpectedValue(total sdk.Uint, nth int) sdk.Uint {
 		total = total.Sub(amt)
 	}
 	return amt
+}
+
+func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
+	var err error
+	ctx, keeper := setupKeeperForTest(c)
+	ctx = ctx.WithBlockHeight(10)
+	ver := semver.MustParse("0.1.0")
+	consts := constants.GetConstantValues(ver)
+
+	txOutStore := NewTxStoreDummy()
+	vaultMgr := NewVaultMgr(keeper, txOutStore)
+	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
+
+	// create active asgard vault
+	asgard := GetRandomVault()
+	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
+
+	// create chains
+	keeper.SetChains(ctx, common.Chains{common.BNBChain})
+
+	// create pools
+	pool := NewPool()
+	pool.Asset = common.BNBAsset
+	c.Assert(keeper.SetPool(ctx, pool), IsNil)
+	boltAsset, err := common.NewAsset("BNB.BOLT-123")
+	c.Assert(err, IsNil)
+	pool.Asset = boltAsset
+	c.Assert(keeper.SetPool(ctx, pool), IsNil)
+
+	// add stakers
+	staker1 := GetRandomBNBAddress() // Staker1
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(10*common.One), staker1, staker1, GetRandomTxHash())
+	c.Assert(err, IsNil)
+	_, err = stake(ctx, keeper, boltAsset, sdk.NewUint(50*common.One), sdk.NewUint(11*common.One), staker1, staker1, GetRandomTxHash())
+	c.Assert(err, IsNil)
+	staker2 := GetRandomBNBAddress() // staker2
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker2, staker2, GetRandomTxHash())
+	c.Assert(err, IsNil)
+	_, err = stake(ctx, keeper, boltAsset, sdk.NewUint(20*common.One), sdk.NewUint(4*common.One), staker2, staker2, GetRandomTxHash())
+	c.Assert(err, IsNil)
+	staker3 := GetRandomBNBAddress() // staker3
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker3, staker3, GetRandomTxHash())
+	c.Assert(err, IsNil)
+	stakers := []common.Address{
+		staker1, staker2, staker3,
+	}
+	_ = stakers
+
+	// get new pool data
+	bnbPool, err := keeper.GetPool(ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
+	boltPool, err := keeper.GetPool(ctx, boltAsset)
+	c.Assert(err, IsNil)
+
+	// Add bonders/validators
+	bonderCount := 4
+	bonders := make(NodeAccounts, bonderCount)
+	for i := 1; i <= bonderCount; i++ {
+		na := GetRandomNodeAccount(NodeActive)
+		na.Bond = sdk.NewUint(1_000_000 * uint64(i) * common.One)
+		c.Assert(keeper.SetNodeAccount(ctx, na), IsNil)
+		bonders[i-1] = na
+
+		// Add bond to asgard
+		asgard.AddFunds(common.Coins{
+			common.NewCoin(common.RuneAsset(), na.Bond),
+		})
+		asgard.Membership = append(asgard.Membership, na.PubKeySet.Secp256k1)
+		c.Assert(keeper.SetVault(ctx, asgard), IsNil)
+
+		// create yggdrasil vault, with 1/3 of the staked funds
+		ygg := GetRandomVault()
+		ygg.PubKey = na.PubKeySet.Secp256k1
+		ygg.Type = YggdrasilVault
+		ygg.AddFunds(common.Coins{
+			common.NewCoin(common.RuneAsset(), bnbPool.BalanceRune.QuoUint64(uint64(bonderCount))),
+			common.NewCoin(common.BNBAsset, bnbPool.BalanceAsset.QuoUint64(uint64(bonderCount))),
+			common.NewCoin(common.RuneAsset(), boltPool.BalanceRune.QuoUint64(uint64(bonderCount))),
+			common.NewCoin(boltAsset, boltPool.BalanceAsset.QuoUint64(uint64(bonderCount))),
+		})
+		c.Assert(keeper.SetVault(ctx, ygg), IsNil)
+
+	}
+
+	// Add reserve contributors
+	contrib1 := GetRandomBNBAddress()
+	contrib2 := GetRandomBNBAddress()
+	reserves := ReserveContributors{
+		NewReserveContributor(contrib1, sdk.NewUint(400_000_000*common.One)),
+		NewReserveContributor(contrib2, sdk.NewUint(100_000*common.One)),
+	}
+	resHandler := NewReserveContributorHandler(keeper)
+	for _, res := range reserves {
+		asgard.AddFunds(common.Coins{
+			common.NewCoin(common.RuneAsset(), res.Amount),
+		})
+		msg := NewMsgReserveContributor(res, bonders[0].NodeAddress)
+		c.Assert(resHandler.Handle(ctx, msg, ver), IsNil)
+	}
+	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
+	asgard.Membership = asgard.Membership[:len(asgard.Membership)-1]
+	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
+	// no validator should leave, because it trigger ragnarok
+	updates := validatorMgr.EndBlock(ctx, consts)
+	c.Assert(updates, IsNil)
+	ragnarokHeight, err := keeper.GetRagnarokBlockHeight(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(ragnarokHeight, Equals, ctx.BlockHeight())
+	currentHeight := ctx.BlockHeight()
+	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
+	ctx = ctx.WithBlockHeight(currentHeight + migrateInterval)
+	c.Assert(validatorMgr.BeginBlock(ctx, consts), IsNil)
+	txOutStore.ClearOutboundItems()
+	c.Assert(validatorMgr.EndBlock(ctx, consts), IsNil)
 }
