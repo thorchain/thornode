@@ -38,7 +38,7 @@ func (KeeperVaultDataSuite) TestGetTotalActiveNodeWithBound(c *C) {
 	node2 := GetRandomNodeAccount(NodeActive)
 	node2.Bond = sdk.ZeroUint()
 	c.Assert(k.SetNodeAccount(ctx, node2), IsNil)
-	n, err := getTotalActiveNodeWithBound(ctx, k)
+	n, err := getTotalActiveNodeWithBond(ctx, k)
 	c.Assert(err, IsNil)
 	c.Assert(n, Equals, int64(1))
 }
