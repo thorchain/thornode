@@ -146,8 +146,8 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 				sdk.NewAttribute("Current:", NodeStandby.String())))
 		na.UpdateStatus(NodeStandby, height)
 		removedNodes = append(removedNodes, na)
-		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-			ctx.Logger().Error("fail to save node account")
+		if err := vm.payNodeAccountBondAward(ctx, na); nil != err {
+			ctx.Logger().Error("fail to pay node account bond award", err)
 		}
 		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
 		if nil != err {
@@ -214,6 +214,46 @@ func (vm *ValidatorMgr) getChangedNodes(ctx sdk.Context, activeNodes NodeAccount
 	return newActive, removedNodes, nil
 }
 
+// payNodeAccountBondAward pay
+func (vm *ValidatorMgr) payNodeAccountBondAward(ctx sdk.Context, na NodeAccount) error {
+	if na.ActiveBlockHeight == 0 || na.Bond.IsZero() {
+		return nil
+	}
+	// The node account seems to have become a non active node account.
+	// Therefore, lets give them their bond rewards.
+	vault, err := vm.k.GetVaultData(ctx)
+	if nil != err {
+		return fmt.Errorf("fail to get vault: %w", err)
+	}
+
+	// Find number of blocks they have been an active node
+	totalActiveBlocks := ctx.BlockHeight() - na.ActiveBlockHeight
+
+	// find number of blocks they were well behaved (ie active - slash points)
+	earnedBlocks := na.CalcBondUnits(ctx.BlockHeight())
+
+	// calc number of rune they are awarded
+	reward := vault.CalcNodeRewards(earnedBlocks)
+
+	// Add to their bond the amount rewarded
+	na.Bond = na.Bond.Add(reward)
+
+	// Minus the number of rune THORNode have awarded them
+	vault.BondRewardRune = common.SafeSub(vault.BondRewardRune, reward)
+
+	// Minus the number of units na has (do not include slash points)
+	vault.TotalBondUnits = common.SafeSub(
+		vault.TotalBondUnits,
+		sdk.NewUint(uint64(totalActiveBlocks)),
+	)
+
+	if err := vm.k.SetVaultData(ctx, vault); nil != err {
+		return fmt.Errorf("fail to save vault data: %w", err)
+	}
+	na.ActiveBlockHeight = 0
+	return vm.k.SetNodeAccount(ctx, na)
+}
+
 // determines when/if to run each part of the ragnarok process
 func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccounts, constAccessor constants.ConstantValues) error {
 	// execute Ragnarok protocol, no going back
@@ -229,6 +269,9 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 		vm.k.SetRagnarokBlockHeight(ctx, ragnarokHeight)
 		if err := vm.ragnarokProtocolStage1(ctx, activeNodes); nil != err {
 			return fmt.Errorf("fail to execute ragnarok protocol step 1: %w", err)
+		}
+		if err := vm.ragnarokBondReward(ctx); err != nil {
+			return fmt.Errorf("when ragnarok triggered ,fail to give all active node bond reward %w", err)
 		}
 		return nil
 	}
@@ -274,6 +317,19 @@ func (vm *ValidatorMgr) ragnarokProtocolStage2(ctx sdk.Context, nth int64, const
 		return err
 	}
 
+	return nil
+}
+
+func (vm *ValidatorMgr) ragnarokBondReward(ctx sdk.Context) error {
+	active, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to get all active node account: %w", err)
+	}
+	for _, item := range active {
+		if err := vm.payNodeAccountBondAward(ctx, item); err != nil {
+			return fmt.Errorf("fail to pay node account(%s) bond award: %w", item.NodeAddress.String(), err)
+		}
+	}
 	return nil
 }
 
