@@ -228,7 +228,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		return fmt.Errorf("fail to save event: %w", err)
 	}
 
-	i, err := getTotalActiveNodeWithBound(ctx, k)
+	i, err := getTotalActiveNodeWithBond(ctx, k)
 	if nil != err {
 		return fmt.Errorf("fail to get total active node account: %w", err)
 	}
@@ -237,7 +237,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	return k.SetVaultData(ctx, vault)
 }
 
-func getTotalActiveNodeWithBound(ctx sdk.Context, k Keeper) (int64, error) {
+func getTotalActiveNodeWithBond(ctx sdk.Context, k Keeper) (int64, error) {
 	nas, err := k.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		return 0, fmt.Errorf("fail to get active node accounts: %w", err)

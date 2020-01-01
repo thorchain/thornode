@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/blang/semver"
@@ -164,44 +163,8 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 			na.ActiveBlockHeight = ctx.BlockHeight()
 			na.SlashPoints = 0 // reset slash points
 		}
-	} else {
-
-		if na.ActiveBlockHeight > 0 && !na.Bond.IsZero() {
-
-			// The node account seems to have become a non active node account.
-			// Therefore, lets give them their bond rewards.
-			vault, err := k.GetVaultData(ctx)
-			if nil != err {
-				return fmt.Errorf("fail to get vault: %w", err)
-			}
-
-			// Find number of blocks they have been an active node
-			totalActiveBlocks := ctx.BlockHeight() - na.ActiveBlockHeight
-
-			// find number of blocks they were well behaved (ie active - slash points)
-			earnedBlocks := na.CalcBondUnits(ctx.BlockHeight())
-
-			// calc number of rune they are awarded
-			reward := vault.CalcNodeRewards(earnedBlocks)
-
-			// Add to their bond the amount rewarded
-			na.Bond = na.Bond.Add(reward)
-
-			// Minus the number of rune THORNode have awarded them
-			vault.BondRewardRune = common.SafeSub(vault.BondRewardRune, reward)
-
-			// Minus the number of units na has (do not include slash points)
-			vault.TotalBondUnits = common.SafeSub(
-				vault.TotalBondUnits,
-				sdk.NewUint(uint64(totalActiveBlocks)),
-			)
-
-			if err := k.SetVaultData(ctx, vault); nil != err {
-				return fmt.Errorf("fail to save vault data: %w", err)
-			}
-		}
-		na.ActiveBlockHeight = 0
 	}
+
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(na))
 
 	// When a node is in active status, THORNode need to add the observer address to active

@@ -44,4 +44,7 @@ func (TypeConvertTestSuite) TestSafeDivision(c *C) {
 
 	result5 := GetShare(input1, total, sdk.ZeroUint())
 	c.Check(result5.Equal(sdk.ZeroUint()), Equals, true, Commentf("%d", result5.Uint64()))
+
+	result6 := GetShare(sdk.NewUint(1014), sdk.NewUint(3), sdk.NewUint(1000_000*One))
+	c.Check(result6.Equal(sdk.NewUintFromString("33799999999999997")), Equals, true, Commentf("%s", result6.String()))
 }
