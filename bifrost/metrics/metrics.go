@@ -29,17 +29,17 @@ const (
 	BlockWithTxIn         MetricName = `block_tx_in`
 	BlockNoTxIn           MetricName = `block_no_tx_in`
 
-	StateChainBlockScanError MetricName = `statechain_block_scan_error`
-	BlockNoTxOut             MetricName = `block_no_txout`
+	ThorchainBlockScanError MetricName = `thorchain_block_scan_error`
+	BlockNoTxOut            MetricName = `block_no_txout`
 
 	BlockDiscoveryDuration MetricName = `block_discovery_duration`
 	SearchTxDuration       MetricName = `search_tx_duration`
 
-	StateChainBridgeError    MetricName = `statechain_bridge_error`
-	TxToStateChain           MetricName = `tx_to_statechain`
-	TxToStateChainSigned     MetricName = `tx_to_statechain_signed`
-	SignToStateChainDuration MetricName = `sign_to_statechain_duration`
-	SendToStatechainDuration MetricName = `send_to_statechain_duration`
+	ThorchainBridgeError    MetricName = `thorchain_bridge_error`
+	TxToThorchain           MetricName = `tx_to_thorchain`
+	TxToThorchainSigned     MetricName = `tx_to_thorchain_signed`
+	SignToThorchainDuration MetricName = `sign_to_thorchain_duration`
+	SendToThorchainDuration MetricName = `send_to_thorchain_duration`
 
 	ObserverError                     MetricName = `observer_error`
 	SignerError                       MetricName = `signer_error`
@@ -98,20 +98,20 @@ var (
 		}),
 		BlockNoTxOut: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: "block_scanner",
-			Subsystem: "statechain_block_scanner",
+			Subsystem: "thorchain_block_scanner",
 			Name:      "block_no_tx_out",
 			Help:      "block doesn't have any tx out",
 		}),
-		TxToStateChain: prometheus.NewCounter(prometheus.CounterOpts{
+		TxToThorchain: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: "observer",
-			Subsystem: "statechain_bridge",
-			Name:      "tx_to_statechain",
-			Help:      "number of tx observer post to statechain successfully",
+			Subsystem: "thorchain_bridge",
+			Name:      "tx_to_thorchain",
+			Help:      "number of tx observer post to thorchain successfully",
 		}),
-		TxToStateChainSigned: prometheus.NewCounter(prometheus.CounterOpts{
+		TxToThorchainSigned: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: "observer",
-			Subsystem: "statechain_bridge",
-			Name:      "tx_to_statechain_signed",
+			Subsystem: "thorchain_bridge",
+			Name:      "tx_to_thorchain_signed",
 			Help:      "number of tx observer signed successfully",
 		}),
 		TxToBinanceSigned: prometheus.NewCounter(prometheus.CounterOpts{
@@ -145,20 +145,20 @@ var (
 			"error_name", "additional",
 		}),
 
-		StateChainBlockScanError: prometheus.NewCounterVec(prometheus.CounterOpts{
+		ThorchainBlockScanError: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "block_scanner",
-			Subsystem: "statechain_block_scanner",
+			Subsystem: "thorchain_block_scanner",
 			Name:      "errors",
-			Help:      "errors in statechain block scanner",
+			Help:      "errors in thorchain block scanner",
 		}, []string{
 			"error_name", "additional",
 		}),
 
-		StateChainBridgeError: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "statechain",
-			Subsystem: "statechain_bridge",
+		ThorchainBridgeError: prometheus.NewCounterVec(prometheus.CounterOpts{
+			Namespace: "thorchain",
+			Subsystem: "thorchain_bridge",
 			Name:      "errors",
-			Help:      "errors in statechain bridge",
+			Help:      "errors in thorchain bridge",
 		}, []string{
 			"error_name", "additional",
 		}),
@@ -208,16 +208,16 @@ var (
 			Name:      "sign_and_broadcast_to_binance",
 			Help:      "how long it takes to sign and broadcast to binance",
 		}),
-		SignToStateChainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
+		SignToThorchainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "observer",
-			Subsystem: "statechain",
-			Name:      "sign_to_statechain_duration",
-			Help:      "how long it takes to sign a tx to statechain",
+			Subsystem: "thorchain",
+			Name:      "sign_to_thorchain_duration",
+			Help:      "how long it takes to sign a tx to thorchain",
 		}),
-		SendToStatechainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
+		SendToThorchainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "observer",
-			Subsystem: "statechain",
-			Name:      "send_to_statechain_duration",
+			Subsystem: "thorchain",
+			Name:      "send_to_thorchain_duration",
 			Help:      "how long it takes to sign and broadcast to binance",
 		}),
 	}

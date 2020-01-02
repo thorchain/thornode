@@ -27,11 +27,11 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
-// StateChainBridge will be used to send tx to statechain
-type StateChainBridge struct {
+// ThorchainBridge will be used to send tx to thorchain
+type ThorchainBridge struct {
 	logger        zerolog.Logger
 	cdc           *codec.Codec
-	cfg           config.StateChainConfiguration
+	cfg           config.ThorchainConfiguration
 	keys          *Keys
 	errCounter    *prometheus.CounterVec
 	m             *metrics.Metrics
@@ -40,8 +40,8 @@ type StateChainBridge struct {
 	client        *retryablehttp.Client
 }
 
-// NewStateChainBridge create a new instance of StateChainBridge
-func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics) (*StateChainBridge, error) {
+// NewThorchainBridge create a new instance of ThorchainBridge
+func NewThorchainBridge(cfg config.ThorchainConfiguration, m *metrics.Metrics) (*ThorchainBridge, error) {
 	if len(cfg.ChainID) == 0 {
 		return nil, errors.New("chain id is empty")
 	}
@@ -58,12 +58,12 @@ func NewStateChainBridge(cfg config.StateChainConfiguration, m *metrics.Metrics)
 	if nil != err {
 		return nil, fmt.Errorf("fail to get keybase,err:%w", err)
 	}
-	return &StateChainBridge{
-		logger:     log.With().Str("module", "statechain_bridge").Logger(),
+	return &ThorchainBridge{
+		logger:     log.With().Str("module", "thorchain_bridge").Logger(),
 		cdc:        MakeCodec(),
 		cfg:        cfg,
 		keys:       k,
-		errCounter: m.GetCounterVec(metrics.StateChainBridgeError),
+		errCounter: m.GetCounterVec(metrics.ThorchainBridgeError),
 		client:     retryablehttp.NewClient(),
 		m:          m,
 	}, nil
@@ -77,14 +77,14 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
-func (scb *StateChainBridge) WithRetryableHttpClient(c *retryablehttp.Client) {
+func (scb *ThorchainBridge) WithRetryableHttpClient(c *retryablehttp.Client) {
 	scb.client = c
 }
 
-func (scb *StateChainBridge) Start() error {
+func (scb *ThorchainBridge) Start() error {
 	accountNumber, sequenceNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
 	if nil != err {
-		return errors.Wrap(err, "fail to get account number and sequence number from statechain ")
+		return errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
 	}
 
 	scb.logger.Info().Uint64("account number", accountNumber).Uint64("sequence no", sequenceNumber).Msg("account information")
@@ -93,11 +93,11 @@ func (scb *StateChainBridge) Start() error {
 	return nil
 }
 
-func (scb *StateChainBridge) getAccountInfoUrl(chainHost string) string {
-	return scb.getStateChainUrl(fmt.Sprintf("/auth/accounts/%s", scb.keys.GetSignerInfo().GetAddress()))
+func (scb *ThorchainBridge) getAccountInfoUrl(chainHost string) string {
+	return scb.getThorchainUrl(fmt.Sprintf("/auth/accounts/%s", scb.keys.GetSignerInfo().GetAddress()))
 }
 
-func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, uint64, error) {
+func (scb *ThorchainBridge) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, uint64, error) {
 	if len(requestUrl) == 0 {
 		return 0, 0, errors.New("request url is empty")
 	}
@@ -133,10 +133,10 @@ func (scb *StateChainBridge) getAccountNumberAndSequenceNumber(requestUrl string
 }
 
 // Sign new keygen
-func (scb *StateChainBridge) GetKeygenStdTx(poolPubKey common.PubKey, inputPks common.PubKeys) (*authtypes.StdTx, error) {
+func (scb *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, inputPks common.PubKeys) (*authtypes.StdTx, error) {
 	start := time.Now()
 	defer func() {
-		scb.m.GetHistograms(metrics.SignToStateChainDuration).Observe(time.Since(start).Seconds())
+		scb.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
 	}()
 
 	msg := stypes.NewMsgTssPool(inputPks, poolPubKey, scb.keys.GetSignerInfo().GetAddress())
@@ -152,14 +152,14 @@ func (scb *StateChainBridge) GetKeygenStdTx(poolPubKey common.PubKey, inputPks c
 }
 
 // Sign the incoming transaction
-func (scb *StateChainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*authtypes.StdTx, error) {
+func (scb *ThorchainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*authtypes.StdTx, error) {
 	if len(txIns) == 0 {
 		scb.errCounter.WithLabelValues("nothing_to_sign", "").Inc()
 		return nil, errors.New("nothing to be signed")
 	}
 	start := time.Now()
 	defer func() {
-		scb.m.GetHistograms(metrics.SignToStateChainDuration).Observe(time.Since(start).Seconds())
+		scb.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
 	}()
 
 	var inbound stypes.ObservedTxs
@@ -203,20 +203,20 @@ func (scb *StateChainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*au
 	return &stdTx, nil
 }
 
-// Send the signed transaction to statechain
-func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
+// Send the signed transaction to thorchain
+func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
 	var noTxID = common.TxID("")
 	if !mode.IsValid() {
 		return noTxID, fmt.Errorf("transaction Mode (%s) is invalid", mode)
 	}
 	start := time.Now()
 	defer func() {
-		scb.m.GetHistograms(metrics.SendToStatechainDuration).Observe(time.Since(start).Seconds())
+		scb.m.GetHistograms(metrics.SendToThorchainDuration).Observe(time.Since(start).Seconds())
 	}()
 
 	accountNumber, sequenceNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
 	if nil != err {
-		return noTxID, errors.Wrap(err, "fail to get account number and sequence number from statechain ")
+		return noTxID, errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
 	}
 
 	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", scb.accountNumber).Uint64("sequenceNo", scb.seqNumber).Msg("info")
@@ -242,7 +242,7 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 	)
 	nextSeq := atomic.AddUint64(&scb.seqNumber, 1)
 	scb.logger.Info().Uint64("sequence no", nextSeq).Msg("next sequence no")
-	scb.m.GetCounter(metrics.TxToStateChainSigned).Inc()
+	scb.m.GetCounter(metrics.TxToThorchainSigned).Inc()
 
 	var setTx types.SetTx
 	setTx.Mode = mode.String()
@@ -255,12 +255,12 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 		scb.errCounter.WithLabelValues("fail_marshal_settx", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to marshal settx to json")
 	}
-	scb.logger.Info().Str("payload", string(result)).Msg("post to statechain")
+	scb.logger.Info().Str("payload", string(result)).Msg("post to thorchain")
 
-	resp, err := scb.client.Post(scb.getStateChainUrl("/txs"), "application/json", bytes.NewBuffer(result))
+	resp, err := scb.client.Post(scb.getThorchainUrl("/txs"), "application/json", bytes.NewBuffer(result))
 	if err != nil {
-		scb.errCounter.WithLabelValues("fail_post_to_statechain", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to post tx to statechain")
+		scb.errCounter.WithLabelValues("fail_post_to_thorchain", "").Inc()
+		return noTxID, errors.Wrap(err, "fail to post tx to thorchain")
 	}
 	defer func() {
 		if err := resp.Body.Close(); nil != err {
@@ -269,7 +269,7 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 	}()
 	body, err := ioutil.ReadAll(resp.Body)
 	if nil != err {
-		scb.errCounter.WithLabelValues("fail_read_statechain_resp", "").Inc()
+		scb.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to read response body")
 	}
 	var commit types.Commit
@@ -278,17 +278,17 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 		scb.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to unmarshal commit")
 	}
-	scb.m.GetCounter(metrics.TxToStateChain).Inc()
-	scb.logger.Info().Msgf("Received a TxHash of %v from the statechain", commit.TxHash)
+	scb.m.GetCounter(metrics.TxToThorchain).Inc()
+	scb.logger.Info().Msgf("Received a TxHash of %v from the thorchain", commit.TxHash)
 	return common.NewTxID(commit.TxHash)
 }
 
 // GetBinanceChainStartHeight
-func (scb *StateChainBridge) GetBinanceChainStartHeight() (int64, error) {
+func (scb *ThorchainBridge) GetBinanceChainStartHeight() (int64, error) {
 
-	resp, err := scb.client.Get(scb.getStateChainUrl("/thorchain/lastblock"))
+	resp, err := scb.client.Get(scb.getThorchainUrl("/thorchain/lastblock"))
 	if nil != err {
-		return 0, errors.Wrap(err, "fail to get last blocks from statechain")
+		return 0, errors.Wrap(err, "fail to get last blocks from thorchain")
 	}
 	defer func() {
 		if err := resp.Body.Close(); nil != err {
@@ -296,7 +296,7 @@ func (scb *StateChainBridge) GetBinanceChainStartHeight() (int64, error) {
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		return 0, errors.New("fail to get last block height from statechain")
+		return 0, errors.New("fail to get last block height from thorchain")
 	}
 	var lastBlock stypes.QueryResHeights
 	buf, err := ioutil.ReadAll(resp.Body)
@@ -311,8 +311,8 @@ func (scb *StateChainBridge) GetBinanceChainStartHeight() (int64, error) {
 	return lastBlock.LastChainHeight, nil
 }
 
-// getStateChainUrl with the given path
-func (scb *StateChainBridge) getStateChainUrl(path string) string {
+// getThorchainUrl with the given path
+func (scb *ThorchainBridge) getThorchainUrl(path string) string {
 	uri := url.URL{
 		Scheme: "http",
 		Host:   scb.cfg.ChainHost,
@@ -321,7 +321,7 @@ func (scb *StateChainBridge) getStateChainUrl(path string) string {
 	return uri.String()
 }
 
-func (scb *StateChainBridge) EnsureNodeWhitelistedWithTimeout() error {
+func (scb *ThorchainBridge) EnsureNodeWhitelistedWithTimeout() error {
 	for {
 		select {
 		case <-time.After(time.Hour):
@@ -338,14 +338,14 @@ func (scb *StateChainBridge) EnsureNodeWhitelistedWithTimeout() error {
 	}
 }
 
-// EnsureNodeWhitelisted will call to statechain to check whether the observer had been whitelist or not
-func (scb *StateChainBridge) EnsureNodeWhitelisted() error {
+// EnsureNodeWhitelisted will call to thorchain to check whether the observer had been whitelist or not
+func (scb *ThorchainBridge) EnsureNodeWhitelisted() error {
 	bepAddr := scb.keys.GetSignerInfo().GetAddress().String()
 	if len(bepAddr) == 0 {
 		return errors.New("bep address is empty")
 	}
 
-	requestUrl := scb.getStateChainUrl("/thorchain/observer/" + bepAddr)
+	requestUrl := scb.getThorchainUrl("/thorchain/observer/" + bepAddr)
 	scb.logger.Debug().Str("request_url", requestUrl).Msg("check node account status")
 	resp, err := scb.client.Get(requestUrl)
 	if nil != err {
@@ -358,7 +358,7 @@ func (scb *StateChainBridge) EnsureNodeWhitelisted() error {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.New("fail to get node account from statechain")
+		return errors.New("fail to get node account from thorchain")
 	}
 	var nodeAccount stypes.NodeAccount
 	buf, err := ioutil.ReadAll(resp.Body)
@@ -371,7 +371,7 @@ func (scb *StateChainBridge) EnsureNodeWhitelisted() error {
 	}
 
 	if nodeAccount.Status == stypes.Disabled || nodeAccount.Status == stypes.Unknown {
-		return errors.Errorf("node account status %s , will not be able to forward transaction to statechain", nodeAccount.Status)
+		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", nodeAccount.Status)
 	}
 	return nil
 }

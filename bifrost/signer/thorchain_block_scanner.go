@@ -21,7 +21,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-type StateChainBlockScan struct {
+type ThorchainBlockScan struct {
 	logger             zerolog.Logger
 	wg                 *sync.WaitGroup
 	stopChan           chan struct{}
@@ -37,8 +37,8 @@ type StateChainBlockScan struct {
 	cdc                *codec.Codec
 }
 
-// NewStateChainBlockScan create a new instance of statechain block scanner
-func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chainHost string, m *metrics.Metrics, pkm *PubKeyManager) (*StateChainBlockScan, error) {
+// NewThorchainBlockScan create a new instance of thorchain block scanner
+func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chainHost string, m *metrics.Metrics, pkm *PubKeyManager) (*ThorchainBlockScan, error) {
 	if !strings.HasPrefix(chainHost, "http") {
 		chainHost = fmt.Sprintf("http://%s", chainHost)
 	}
@@ -52,8 +52,8 @@ func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage bl
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create txOut block scanner")
 	}
-	return &StateChainBlockScan{
-		logger:             log.With().Str("module", "statechainblockscanner").Logger(),
+	return &ThorchainBlockScan{
+		logger:             log.With().Str("module", "thorchainblockscanner").Logger(),
 		wg:                 &sync.WaitGroup{},
 		stopChan:           make(chan struct{}),
 		txOutChan:          make(chan stypes.TxOut),
@@ -62,30 +62,30 @@ func NewStateChainBlockScan(cfg config.BlockScannerConfiguration, scanStorage bl
 		scannerStorage:     scanStorage,
 		commonBlockScanner: commonBlockScanner,
 		chainHost:          chainHost,
-		errCounter:         m.GetCounterVec(metrics.StateChainBlockScanError),
+		errCounter:         m.GetCounterVec(metrics.ThorchainBlockScanError),
 		pkm:                pkm,
 		cdc:                codec.New(),
 	}, nil
 }
 
 // GetMessages return the channel
-func (b *StateChainBlockScan) GetTxOutMessages() <-chan stypes.TxOut {
+func (b *ThorchainBlockScan) GetTxOutMessages() <-chan stypes.TxOut {
 	return b.txOutChan
 }
 
-func (b *StateChainBlockScan) GetKeygenMessages() <-chan stypes.Keygens {
+func (b *ThorchainBlockScan) GetKeygenMessages() <-chan stypes.Keygens {
 	return b.keygensChan
 }
 
 // Start to scan blocks
-func (b *StateChainBlockScan) Start() error {
+func (b *ThorchainBlockScan) Start() error {
 	b.wg.Add(1)
 	go b.processBlocks(1)
 	b.commonBlockScanner.Start()
 	return nil
 }
 
-func (b *StateChainBlockScan) processKeygenBlock(blockHeight int64) error {
+func (b *ThorchainBlockScan) processKeygenBlock(blockHeight int64) error {
 	for _, pk := range b.pkm.pks {
 		uri, err := url.Parse(b.chainHost)
 		if err != nil {
@@ -110,7 +110,7 @@ func (b *StateChainBlockScan) processKeygenBlock(blockHeight int64) error {
 	return nil
 }
 
-func (b *StateChainBlockScan) processTxOutBlock(blockHeight int64) error {
+func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 	for _, pk := range b.pkm.pks {
 		if len(pk.String()) == 0 {
 			continue
@@ -150,7 +150,7 @@ func (b *StateChainBlockScan) processTxOutBlock(blockHeight int64) error {
 	return nil
 }
 
-func (b *StateChainBlockScan) processBlocks(idx int) {
+func (b *ThorchainBlockScan) processBlocks(idx int) {
 	b.logger.Debug().Int("idx", idx).Msg("start searching tx out in a block")
 	defer b.logger.Debug().Int("idx", idx).Msg("stop searching tx out in a block")
 	defer b.wg.Done()
@@ -194,9 +194,9 @@ func (b *StateChainBlockScan) processBlocks(idx int) {
 }
 
 // Stop the scanner
-func (b *StateChainBlockScan) Stop() error {
+func (b *ThorchainBlockScan) Stop() error {
 	b.logger.Info().Msg("received request to stop state chain block scanner")
-	defer b.logger.Info().Msg("statechain block scanner stopped successfully")
+	defer b.logger.Info().Msg("thorchain block scanner stopped successfully")
 	close(b.stopChan)
 	b.wg.Wait()
 	return nil

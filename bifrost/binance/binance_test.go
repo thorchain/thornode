@@ -27,8 +27,8 @@ import (
 func TestPackage(t *testing.T) { TestingT(t) }
 
 type BinancechainSuite struct {
-	thordir  string
-	statecfg config.StateChainConfiguration
+	thordir string
+	cfg     config.ThorchainConfiguration
 }
 
 var _ = Suite(&BinancechainSuite{})
@@ -40,8 +40,8 @@ func (s *BinancechainSuite) SetUpSuite(c *C) {
 	c.Assert(os.Setenv("NET", "testnet"), IsNil)
 
 	s.thordir = filepath.Join(os.TempDir(), ns, ".thorcli")
-	s.statecfg = config.StateChainConfiguration{
-		ChainID:         "statechain",
+	s.cfg = config.ThorchainConfiguration{
+		ChainID:         "thorchain",
 		ChainHost:       "localhost",
 		SignerName:      "bob",
 		SignerPasswd:    "password",
@@ -49,7 +49,7 @@ func (s *BinancechainSuite) SetUpSuite(c *C) {
 	}
 	kb, err := keys.NewKeyBaseFromDir(s.thordir)
 	c.Assert(err, IsNil)
-	_, _, err = kb.CreateMnemonic(s.statecfg.SignerName, cKeys.English, s.statecfg.SignerPasswd, cKeys.Secp256k1)
+	_, _, err = kb.CreateMnemonic(s.cfg.SignerName, cKeys.English, s.cfg.SignerPasswd, cKeys.Secp256k1)
 	c.Assert(err, IsNil)
 }
 
@@ -71,7 +71,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		Host:   "localhost",
 		Port:   0,
 	}
-	b, err := NewBinance(s.statecfg, config.BinanceConfiguration{
+	b, err := NewBinance(s.cfg, config.BinanceConfiguration{
 		RPCHost: "",
 	}, false, tssCfg)
 	c.Assert(b, IsNil)
@@ -85,7 +85,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		}
 	}))
 
-	b2, err2 := NewBinance(s.statecfg, config.BinanceConfiguration{
+	b2, err2 := NewBinance(s.cfg, config.BinanceConfiguration{
 		RPCHost: server.URL,
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
@@ -122,7 +122,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		Host:   "localhost",
 		Port:   0,
 	}
-	b2, err2 := NewBinance(s.statecfg, config.BinanceConfiguration{
+	b2, err2 := NewBinance(s.cfg, config.BinanceConfiguration{
 		RPCHost: server.URL,
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
@@ -188,7 +188,7 @@ func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 		Port:   0,
 	}
 
-	b, err := NewBinance(s.statecfg, config.BinanceConfiguration{
+	b, err := NewBinance(s.cfg, config.BinanceConfiguration{
 		RPCHost: server.URL,
 	}, false, tssCfg)
 	c.Assert(err, IsNil)

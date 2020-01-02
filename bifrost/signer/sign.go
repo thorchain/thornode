@@ -26,26 +26,26 @@ import (
 	ttypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
-// Signer will pull the tx out from statechain and then forward it to binance chain
+// Signer will pull the tx out from thorchain and then forward it to binance chain
 type Signer struct {
-	logger                 zerolog.Logger
-	cfg                    config.SignerConfiguration
-	wg                     *sync.WaitGroup
-	stateChainBridge       *thorclient.StateChainBridge
-	stopChan               chan struct{}
-	stateChainBlockScanner *StateChainBlockScan
-	Binance                *binance.Binance
-	storage                *StateChanBlockScannerStorage
-	m                      *metrics.Metrics
-	errCounter             *prometheus.CounterVec
-	tssKeygen              *tss.KeyGen
-	thorKeys               *thorclient.Keys
-	pkm                    *PubKeyManager
+	logger                zerolog.Logger
+	cfg                   config.SignerConfiguration
+	wg                    *sync.WaitGroup
+	thorchainBridge       *thorclient.ThorchainBridge
+	stopChan              chan struct{}
+	thorchainBlockScanner *ThorchainBlockScan
+	Binance               *binance.Binance
+	storage               *ThorchainBlockScannerStorage
+	m                     *metrics.Metrics
+	errCounter            *prometheus.CounterVec
+	tssKeygen             *tss.KeyGen
+	thorKeys              *thorclient.Keys
+	pkm                   *PubKeyManager
 }
 
 // NewSigner create a new instance of signer
 func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
-	stateChainScanStorage, err := NewStateChanBlockScannerStorage(cfg.SignerDbPath)
+	thorchainScanStorage, err := NewThorchainBlockScannerStorage(cfg.SignerDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
 	}
@@ -53,12 +53,12 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create metric instance")
 	}
-	stateChainBridge, err := thorclient.NewStateChainBridge(cfg.StateChain, m)
+	thorchainBridge, err := thorclient.NewThorchainBridge(cfg.Thorchain, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create new state chain bridge")
 	}
 	pkm := NewPubKeyManager()
-	thorKeys, err := thorclient.NewKeys(cfg.StateChain.ChainHomeFolder, cfg.StateChain.SignerName, cfg.StateChain.SignerPasswd)
+	thorKeys, err := thorclient.NewKeys(cfg.Thorchain.ChainHomeFolder, cfg.Thorchain.SignerName, cfg.Thorchain.SignerPasswd)
 	if nil != err {
 		return nil, fmt.Errorf("fail to load keys,err:%w", err)
 	}
@@ -69,7 +69,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	var na ttypes.NodeAccount
 	for i := 0; i < 300; i++ { // wait for 5 min before timing out
 		var err error
-		na, err = thorclient.GetNodeAccount(httpClient, cfg.StateChain.ChainHost, thorKeys.GetSignerInfo().GetAddress().String())
+		na, err = thorclient.GetNodeAccount(httpClient, cfg.Thorchain.ChainHost, thorKeys.GetSignerInfo().GetAddress().String())
 		if nil != err {
 			return nil, fmt.Errorf("fail to get node account from thorchain,err:%w", err)
 		}
@@ -89,31 +89,31 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	pkm.Add(na.PubKeySet.Secp256k1)
 
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
-	stateChainBlockScanner, err := NewStateChainBlockScan(cfg.BlockScanner, stateChainScanStorage, cfg.StateChain.ChainHost, m, pkm)
+	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, thorchainScanStorage, cfg.Thorchain.ChainHost, m, pkm)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create state chain block scan")
 	}
-	b, err := binance.NewBinance(cfg.StateChain, cfg.Binance, cfg.UseTSS, cfg.TSS)
+	b, err := binance.NewBinance(cfg.Thorchain, cfg.Binance, cfg.UseTSS, cfg.TSS)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create binance client")
 	}
 
 	signer := &Signer{
-		logger:                 log.With().Str("module", "signer").Logger(),
-		cfg:                    cfg,
-		wg:                     &sync.WaitGroup{},
-		stopChan:               make(chan struct{}),
-		stateChainBlockScanner: stateChainBlockScanner,
-		Binance:                b,
-		m:                      m,
-		storage:                stateChainScanStorage,
-		errCounter:             m.GetCounterVec(metrics.SignerError),
-		pkm:                    pkm,
-		stateChainBridge:       stateChainBridge,
+		logger:                log.With().Str("module", "signer").Logger(),
+		cfg:                   cfg,
+		wg:                    &sync.WaitGroup{},
+		stopChan:              make(chan struct{}),
+		thorchainBlockScanner: thorchainBlockScanner,
+		Binance:               b,
+		m:                     m,
+		storage:               thorchainScanStorage,
+		errCounter:            m.GetCounterVec(metrics.SignerError),
+		pkm:                   pkm,
+		thorchainBridge:       thorchainBridge,
 	}
 
 	if cfg.UseTSS {
-		kg, err := tss.NewTssKeyGen(cfg.TSS, cfg.StateChain, thorKeys)
+		kg, err := tss.NewTssKeyGen(cfg.TSS, cfg.Thorchain, thorKeys)
 		if nil != err {
 			return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
 		}
@@ -123,14 +123,14 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 }
 
 func (s *Signer) Start() error {
-	if err := s.stateChainBridge.Start(); nil != err {
-		return errors.Wrap(err, "fail to start statechain bridge")
+	if err := s.thorchainBridge.Start(); nil != err {
+		return errors.Wrap(err, "fail to start thorchain bridge")
 	}
 	if err := s.m.Start(); nil != err {
 		return errors.Wrap(err, "fail to start metric collector")
 	}
 	s.wg.Add(1)
-	go s.processTxnOut(s.stateChainBlockScanner.GetTxOutMessages(), 1)
+	go s.processTxnOut(s.thorchainBlockScanner.GetTxOutMessages(), 1)
 	if err := s.retryAll(); nil != err {
 		return errors.Wrap(err, "fail to retry txouts")
 	}
@@ -138,9 +138,9 @@ func (s *Signer) Start() error {
 	go s.retryFailedTxOutProcessor()
 
 	s.wg.Add(1)
-	go s.processKeygen(s.stateChainBlockScanner.GetKeygenMessages(), 1)
+	go s.processKeygen(s.thorchainBlockScanner.GetKeygenMessages(), 1)
 
-	return s.stateChainBlockScanner.Start()
+	return s.thorchainBlockScanner.Start()
 }
 
 func (s *Signer) retryAll() error {
@@ -229,7 +229,7 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 			if !more {
 				return
 			}
-			s.logger.Info().Msgf("Received a TxOut Array of %v from the StateChain", txOut)
+			s.logger.Info().Msgf("Received a TxOut Array of %v from the Thorchain", txOut)
 			if err := s.storage.SetTxOutStatus(txOut, Processing); nil != err {
 				s.errCounter.WithLabelValues("fail_update_txout_local", txOut.Height).Inc()
 				s.logger.Error().Err(err).Msg("fail to update txout local storage")
@@ -269,7 +269,7 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 				return
 			}
 			for _, keygen := range keygens.Keygens {
-				s.logger.Info().Msgf("Received a keygen of %+v from the StateChain", keygens)
+				s.logger.Info().Msgf("Received a keygen of %+v from the Thorchain", keygens)
 				pubKey, err := s.tssKeygen.GenerateNewKey(keygen)
 				if err != nil {
 					s.errCounter.WithLabelValues("fail_to_keygen_pubkey", "").Inc()
@@ -294,17 +294,17 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 }
 
 func (s *Signer) sendKeygenToThorchain(height string, poolPk common.PubKey, input common.PubKeys) error {
-	stdTx, err := s.stateChainBridge.GetKeygenStdTx(poolPk, input)
+	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, input)
 	if nil != err {
 		s.errCounter.WithLabelValues("fail_to_sign", height).Inc()
 		return errors.Wrap(err, "fail to sign the tx")
 	}
-	txID, err := s.stateChainBridge.Send(*stdTx, types.TxSync)
+	txID, err := s.thorchainBridge.Send(*stdTx, types.TxSync)
 	if nil != err {
-		s.errCounter.WithLabelValues("fail_to_send_to_statechain", height).Inc()
-		return errors.Wrap(err, "fail to send the tx to statechain")
+		s.errCounter.WithLabelValues("fail_to_send_to_thorchain", height).Inc()
+		return errors.Wrap(err, "fail to send the tx to thorchain")
 	}
-	s.logger.Info().Str("block", height).Str("statechain hash", txID.String()).Msg("sign and send to statechain successfully")
+	s.logger.Info().Str("block", height).Str("thorchain hash", txID.String()).Msg("sign and send to thorchain successfully")
 	return nil
 }
 

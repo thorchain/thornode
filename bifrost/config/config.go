@@ -15,7 +15,7 @@ type Configuration struct {
 	BinanceHost           string                    `json:"binance_host" mapstructure:"binance_host"`
 	ObserverDbPath        string                    `json:"observer_db_path" mapstructure:"observer_db_path"`
 	BlockScanner          BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
-	StateChain            StateChainConfiguration   `json:"state_chain" mapstructure:"state_chain"`
+	Thorchain             ThorchainConfiguration    `json:"thorchain" mapstructure:"thorchain"`
 	ObserverRetryInterval time.Duration             `json:"observer_retry_interval" mapstructure:"observer_retry_interval"`
 	Metric                MetricConfiguration       `json:"metric" mapstructure:"metric"`
 }
@@ -34,14 +34,15 @@ type BlockScannerConfiguration struct {
 	EnforceBlockHeight         bool          `json:"enforce_block_height" mapstructure:"enforce_block_height"`
 }
 
-// StateChainConfiguration
-type StateChainConfiguration struct {
+// ThorchainConfiguration
+type ThorchainConfiguration struct {
 	ChainID         string `json:"chain_id" mapstructure:"chain_id" `
 	ChainHost       string `json:"chain_host" mapstructure:"chain_host"`
 	ChainHomeFolder string `json:"chain_home_folder" mapstructure:"chain_home_folder"`
 	SignerName      string `json:"signer_name" mapstructure:"signer_name"`
 	SignerPasswd    string `json:"signer_passwd" mapstructure:"signer_passwd"`
 }
+
 type MetricConfiguration struct {
 	Enabled      bool          `json:"enabled" mapstructure:"enabled"`
 	ListenPort   int           `json:"listen_port" mapstructure:"listen_port"`
@@ -55,8 +56,8 @@ func applyDefaultObserverConfig() {
 	viper.SetDefault("observer_db_path", "observer_data")
 	viper.SetDefault("observer_retry_interval", "2s")
 	applyBlockScannerDefault()
-	viper.SetDefault("state_chain.chain_id", "statechain")
-	viper.SetDefault("state_chain.chain_host", "localhost:1317")
+	viper.SetDefault("thorchain.chain_id", "thorchain")
+	viper.SetDefault("thorchain.chain_host", "localhost:1317")
 	viper.SetDefault("metric.listen_port", "9000")
 	viper.SetDefault("metric.read_timeout", "30s")
 	viper.SetDefault("metric.write_timeout", "30s")
@@ -86,7 +87,7 @@ type SignerConfiguration struct {
 	MessageProcessor int                       `json:"message_processor" mapstructure:"message_processor"`
 	BlockScanner     BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
 	Binance          BinanceConfiguration      `json:"binance" mapstructure:"binance"`
-	StateChain       StateChainConfiguration   `json:"state_chain" mapstructure:"state_chain"`
+	Thorchain        ThorchainConfiguration    `json:"thorchain" mapstructure:"thorchain"`
 	RetryInterval    time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
 	Metric           MetricConfiguration       `json:"metric" mapstructure:"metric"`
 	UseTSS           bool                      `json:"use_tss" mapstructure:"use_tss"`
@@ -95,8 +96,7 @@ type SignerConfiguration struct {
 
 // BinanceConfiguration all the configurations for binance client
 type BinanceConfiguration struct {
-	RPCHost    string `json:"rpc_host" mapstructure:"rpc_host"`
-	PrivateKey string `json:"private_key" mapstructure:"private_key"`
+	RPCHost string `json:"rpc_host" mapstructure:"rpc_host"`
 }
 
 // TSSConfiguration
@@ -119,7 +119,7 @@ func applyBlockScannerDefault() {
 func applyDefaultSignerConfig() {
 	viper.SetDefault("signer_db_path", "signer_db")
 	applyBlockScannerDefault()
-	viper.SetDefault("state_chain.chain_host", "localhost:1317")
+	viper.SetDefault("thorchain.chain_host", "localhost:1317")
 	viper.SetDefault("retry_interval", "2s")
 	viper.SetDefault("metric.listen_port", "9000")
 	viper.SetDefault("metric.read_timeout", "30s")
