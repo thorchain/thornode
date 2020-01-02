@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"sync/atomic"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -29,15 +29,13 @@ import (
 
 // StateChainBridge will be used to send tx to statechain
 type StateChainBridge struct {
-	logger        zerolog.Logger
-	cdc           *codec.Codec
-	cfg           config.StateChainConfiguration
-	keys          *Keys
-	errCounter    *prometheus.CounterVec
-	m             *metrics.Metrics
-	accountNumber uint64
-	seqNumber     uint64
-	client        *retryablehttp.Client
+	logger     zerolog.Logger
+	cdc        *codec.Codec
+	cfg        config.StateChainConfiguration
+	keys       *Keys
+	errCounter *prometheus.CounterVec
+	m          *metrics.Metrics
+	client     *retryablehttp.Client
 }
 
 // NewStateChainBridge create a new instance of StateChainBridge
@@ -82,14 +80,6 @@ func (scb *StateChainBridge) WithRetryableHttpClient(c *retryablehttp.Client) {
 }
 
 func (scb *StateChainBridge) Start() error {
-	accountNumber, sequenceNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
-	if nil != err {
-		return errors.Wrap(err, "fail to get account number and sequence number from statechain ")
-	}
-
-	scb.logger.Info().Uint64("account number", accountNumber).Uint64("sequence no", sequenceNumber).Msg("account information")
-	scb.accountNumber = accountNumber
-	scb.seqNumber = sequenceNumber
 	return nil
 }
 
@@ -202,6 +192,26 @@ func (scb *StateChainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*au
 
 	return &stdTx, nil
 }
+func (scb *StateChainBridge) ensureTxSendSuccessfullyWithBackoff(seqNo uint64) error {
+	cbf := backoff.NewConstantBackOff(time.Second)
+	try := 1
+	for {
+		_, thorChainSeqNo, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
+		if nil != err {
+			return fmt.Errorf("fail to get account info: %w", err)
+		}
+		scb.logger.Info().Uint64("sequenceNo", thorChainSeqNo).Uint64("expected", seqNo).Msg("numbers...")
+		if thorChainSeqNo > seqNo {
+			return nil
+		}
+		duration := cbf.NextBackOff()
+		if duration == backoff.Stop || try == 10 {
+			return fmt.Errorf("fail to see seqNo increase after try(%d)", try)
+		}
+		time.Sleep(duration)
+		try++
+	}
+}
 
 // Send the signed transaction to statechain
 func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
@@ -219,7 +229,7 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 		return noTxID, errors.Wrap(err, "fail to get account number and sequence number from statechain ")
 	}
 
-	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", scb.accountNumber).Uint64("sequenceNo", scb.seqNumber).Msg("info")
+	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", accountNumber).Uint64("sequenceNo", sequenceNumber).Msg("info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
 		AccountNumber: accountNumber,
@@ -240,8 +250,6 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 		[]authtypes.StdSignature{sig},
 		stdTx.GetMemo(),
 	)
-	nextSeq := atomic.AddUint64(&scb.seqNumber, 1)
-	scb.logger.Info().Uint64("sequence no", nextSeq).Msg("next sequence no")
 	scb.m.GetCounter(metrics.TxToStateChainSigned).Inc()
 
 	var setTx types.SetTx
@@ -280,6 +288,9 @@ func (scb *StateChainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (com
 	}
 	scb.m.GetCounter(metrics.TxToStateChain).Inc()
 	scb.logger.Info().Msgf("Received a TxHash of %v from the statechain", commit.TxHash)
+	if err := scb.ensureTxSendSuccessfullyWithBackoff(sequenceNumber); err != nil {
+		scb.logger.Error().Err(err).Msg("it seem the tx had been rejected by THORChain")
+	}
 	return common.NewTxID(commit.TxHash)
 }
 

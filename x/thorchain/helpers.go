@@ -27,10 +27,17 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, d
 				Memo:        NewRefundMemo(tx.Tx.ID).String(),
 			}
 			store.AddTxOutItem(ctx, toi)
+
 		}
 
 		// Zombie coins are just dropped.
 	}
+	// emit refund event
+	ev := NewEvent("refund", ctx.BlockHeight(), tx.Tx, nil, EventPending)
+	if err := keeper.UpsertEvent(ctx, ev); err != nil {
+		return fmt.Errorf("fail to write refund event")
+	}
+
 	return nil
 }
 
