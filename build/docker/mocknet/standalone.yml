@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  observer:
+    links:
+      - binance
+    environment:
+      BINANCE_HOST: http://binance:26660
+
+  signer:
+    links:
+      - binance
+    environment:
+      BINANCE_HOST: http://binance:26660

@@ -1,0 +1,54 @@
+version: '3'
+
+services:
+  frontend:
+    networks:
+      localnet:
+        ipv4_address: 172.32.61.2
+
+  midgard:
+    networks:
+      localnet:
+        ipv4_address: 172.32.60.2
+
+  pg:
+    networks:
+      localnet:
+        ipv4_address: 172.32.60.3
+
+  binance:
+    networks:
+      localnet:
+        ipv4_address: 172.32.90.1
+
+  observer:
+    environment:
+      BINANCE_HOST: http://172.32.90.1:26660
+
+  signer:
+    environment:
+      BINANCE_HOST: http://172.32.90.1:26660
+
+  observer2:
+    environment:
+      BINANCE_HOST: http://172.32.90.1:26660
+
+  signer2:
+    environment:
+      BINANCE_HOST: http://172.32.90.1:26660
+
+  observer3:
+    environment:
+      BINANCE_HOST: http://172.32.90.1:26660
+
+  signer3:
+    environment:
+      BINANCE_HOST: http://172.32.90.1:26660
+
+  observer4:
+    environment:
+      BINANCE_HOST: http://172.32.90.1:26660
+
+  signer4:
+    environment:
+      BINANCE_HOST: http://172.32.90.1:26660

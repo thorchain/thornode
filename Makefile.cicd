@@ -60,11 +60,11 @@ seed: tools
 
 # -------------------------------- Smoke Test ---------------------------- #
 smoke-ci-genesis:
-	make -C build/docker run-genesisWithMockBinance
+	make -C build/docker run-mocknet-genesis
 	bsinner -a docker:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e ci -x
 
 smoke-ci-standalone:
-	make -C build/docker run-standaloneWithMockBinance
+	make -C build/docker run-mocknet-standalone
 	bsinner -a docker:26660 -b ./test/smoke/scenarios/standalone/balances.json -t ./test/smoke/scenarios/standalone/transactions.json -e ci -x
 # ------------------------------------------------------------------------ #
 

@@ -4,7 +4,7 @@ services:
   observer:
     hostname: observer
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -17,7 +17,7 @@ services:
     depends_on:
       - thor-api
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -28,7 +28,7 @@ services:
   signer:
     hostname: signer
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -46,7 +46,7 @@ services:
       - tss
       - thor-api
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
@@ -58,7 +58,7 @@ services:
   thor-daemon:
     hostname: thor-daemon
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -81,7 +81,7 @@ services:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_1/keys:/root/.signer
@@ -94,7 +94,7 @@ services:
   thor-api:
     hostname: thor-api
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon
@@ -110,7 +110,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -136,7 +136,7 @@ services:
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
     networks:
       localnet:
@@ -145,7 +145,7 @@ services:
   observer2:
     hostname: observer2
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -157,7 +157,7 @@ services:
     depends_on:
       - thor-api2
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -168,7 +168,7 @@ services:
   signer2:
     hostname: signer2
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -185,7 +185,7 @@ services:
       - tss2
       - thor-api2
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
@@ -197,7 +197,7 @@ services:
   thor-daemon2:
     hostname: thor-daemon2
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -214,7 +214,7 @@ services:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_2/keys:/root/.signer
@@ -227,7 +227,7 @@ services:
   thor-api2:
     hostname: thor-api2
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon2
@@ -239,7 +239,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -262,7 +262,7 @@ services:
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
     networks:
       localnet:
@@ -271,7 +271,7 @@ services:
   observer3:
     hostname: observer3
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -283,7 +283,7 @@ services:
     depends_on:
       - thor-api3
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -294,7 +294,7 @@ services:
   signer3:
     hostname: signer3
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -311,7 +311,7 @@ services:
       - tss3
       - thor-api3
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
@@ -323,7 +323,7 @@ services:
   thor-daemon3:
     hostname: thor-daemon3
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -340,7 +340,7 @@ services:
       /docker/scripts/genesis.sh
     volumes:
       - /tmp/genesis:/tmp/shared
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_3/keys:/root/.signer
@@ -353,7 +353,7 @@ services:
   thor-api3:
     hostname: thor-api3
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon3
@@ -365,7 +365,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -388,7 +388,7 @@ services:
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
     networks:
       localnet:
@@ -397,7 +397,7 @@ services:
   observer4:
     hostname: observer4
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -409,7 +409,7 @@ services:
     depends_on:
       - thor-api4
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -420,7 +420,7 @@ services:
   signer4:
     hostname: signer4
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -437,7 +437,7 @@ services:
     entrypoint:
       /docker/scripts/signer.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - /tmp/genesis:/tmp/shared
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
@@ -449,7 +449,7 @@ services:
   thor-daemon4:
     hostname: thor-daemon4
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -466,7 +466,7 @@ services:
       - tss4
     volumes:
       - /tmp/genesis:/tmp/shared
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_4/keys:/root/.signer
@@ -479,7 +479,7 @@ services:
   thor-api4:
     hostname: thor-api4
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon4
@@ -491,7 +491,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
@@ -514,7 +514,7 @@ services:
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
     networks:
       localnet:
