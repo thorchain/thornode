@@ -27,7 +27,7 @@ echo "{
     \"block_height_discover_back_off\": \"1s\",
     \"block_retry_interval\": \"10s\"
   },
-  \"state_chain\": {
+  \"thorchain\": {
     \"chain_id\": \"$CHAIN_ID\",
     \"chain_host\": \"$CHAIN_API\",
     \"signer_name\": \"$SIGNER_NAME\",
