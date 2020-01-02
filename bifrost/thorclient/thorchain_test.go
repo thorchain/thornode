@@ -31,19 +31,19 @@ import (
 
 func TestPackage(t *testing.T) { TestingT(t) }
 
-type StatechainSuite struct{}
+type ThorchainSuite struct{}
 
-var _ = Suite(&StatechainSuite{})
+var _ = Suite(&ThorchainSuite{})
 
-func (*StatechainSuite) SetUpSuite(c *C) {
+func (*ThorchainSuite) SetUpSuite(c *C) {
 	cfg2 := sdk.GetConfig()
 	cfg2.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
 }
 
-func setupStateChainForTest(c *C) (config.StateChainConfiguration, cKeys.Info, func()) {
+func setupThorchainForTest(c *C) (config.ThorchainConfiguration, cKeys.Info, func()) {
 	thorcliDir := filepath.Join(os.TempDir(), ".thorcli")
-	cfg := config.StateChainConfiguration{
-		ChainID:         "statechain",
+	cfg := config.ThorchainConfiguration{
+		ChainID:         "thorchain",
 		ChainHost:       "localhost",
 		SignerName:      "bob",
 		SignerPasswd:    "password",
@@ -60,8 +60,8 @@ func setupStateChainForTest(c *C) (config.StateChainConfiguration, cKeys.Info, f
 	}
 }
 
-func (s StatechainSuite) TestSign(c *C) {
-	cfg, info, cleanup := setupStateChainForTest(c)
+func (s ThorchainSuite) TestSign(c *C) {
+	cfg, info, cleanup := setupThorchainForTest(c)
 	defer cleanup()
 	// Start a local HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -111,7 +111,7 @@ func (s StatechainSuite) TestSign(c *C) {
 		pk,
 	)
 
-	bridge, err := NewStateChainBridge(cfg, getMetricForTest(c))
+	bridge, err := NewThorchainBridge(cfg, getMetricForTest(c))
 	c.Assert(err, IsNil)
 	c.Assert(bridge, NotNil)
 	err = bridge.Start()
@@ -122,8 +122,8 @@ func (s StatechainSuite) TestSign(c *C) {
 	c.Assert(err, IsNil)
 }
 
-func (s StatechainSuite) TestSend(c *C) {
-	cfg, _, cleanup := setupStateChainForTest(c)
+func (s ThorchainSuite) TestSend(c *C) {
+	cfg, _, cleanup := setupThorchainForTest(c)
 	defer cleanup()
 	// Start a local HTTP server
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -163,7 +163,7 @@ func (s StatechainSuite) TestSend(c *C) {
 	c.Assert(err, IsNil)
 	cfg.ChainHost = u.Host
 
-	bridge, err := NewStateChainBridge(cfg, getMetricForTest(c))
+	bridge, err := NewThorchainBridge(cfg, getMetricForTest(c))
 	c.Assert(err, IsNil)
 	c.Assert(bridge, NotNil)
 	stdTx := authtypes.StdTx{}
@@ -187,50 +187,50 @@ func getMetricForTest(c *C) *metrics.Metrics {
 	c.Assert(err, IsNil)
 	return m
 }
-func (StatechainSuite) TestNewStateChainBridge(c *C) {
-	var testFunc = func(cfg config.StateChainConfiguration, errChecker Checker, sbChecker Checker) {
-		sb, err := NewStateChainBridge(cfg, getMetricForTest(c))
+func (ThorchainSuite) TestNewThorchainBridge(c *C) {
+	var testFunc = func(cfg config.ThorchainConfiguration, errChecker Checker, sbChecker Checker) {
+		sb, err := NewThorchainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, errChecker)
 		c.Assert(sb, sbChecker)
 	}
-	testFunc(config.StateChainConfiguration{
+	testFunc(config.ThorchainConfiguration{
 		ChainID:         "",
 		ChainHost:       "localhost",
 		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
-	testFunc(config.StateChainConfiguration{
+	testFunc(config.ThorchainConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "",
 		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
-	testFunc(config.StateChainConfiguration{
+	testFunc(config.ThorchainConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "localhost",
 		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
-	testFunc(config.StateChainConfiguration{
+	testFunc(config.ThorchainConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "localhost",
 		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "",
 	}, NotNil, IsNil)
-	cfg, _, cleanup := setupStateChainForTest(c)
+	cfg, _, cleanup := setupThorchainForTest(c)
 	testFunc(cfg, IsNil, NotNil)
 	defer cleanup()
 }
 
-func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
+func (ThorchainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 	testfunc := func(handleFunc http.HandlerFunc, expectedAccNum uint64, expectedSeq uint64, errChecker Checker) {
-		cfg, keyInfo, cleanup := setupStateChainForTest(c)
+		cfg, keyInfo, cleanup := setupThorchainForTest(c)
 		defer cleanup()
-		scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
+		scb, err := NewThorchainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
 		client := retryablehttp.NewClient()
@@ -364,16 +364,16 @@ func (StatechainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
 
 }
 
-func (StatechainSuite) TestSignEx(c *C) {
+func (ThorchainSuite) TestSignEx(c *C) {
 	testFunc := func(in stypes.ObservedTxs, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
-		cfg, _, cleanup := setupStateChainForTest(c)
+		cfg, _, cleanup := setupThorchainForTest(c)
 		defer cleanup()
 		if nil != handleFunc {
 			s := httptest.NewServer(handleFunc)
 			defer s.Close()
 			cfg.ChainHost = s.Listener.Addr().String()
 		}
-		scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
+		scb, err := NewThorchainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
 		err = scb.Start()
@@ -433,16 +433,16 @@ func (StatechainSuite) TestSignEx(c *C) {
 	}, NotNil, IsNil)
 }
 
-func (StatechainSuite) TestSendEx(c *C) {
+func (ThorchainSuite) TestSendEx(c *C) {
 	testFunc := func(in stypes.ObservedTxs, mode types.TxMode, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
-		cfg, _, cleanup := setupStateChainForTest(c)
+		cfg, _, cleanup := setupThorchainForTest(c)
 		defer cleanup()
 		if nil != handleFunc {
 			s := httptest.NewServer(handleFunc)
 			defer s.Close()
 			cfg.ChainHost = s.Listener.Addr().String()
 		}
-		scb, err := NewStateChainBridge(cfg, getMetricForTest(c))
+		scb, err := NewThorchainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
 		client := retryablehttp.NewClient()
