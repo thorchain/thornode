@@ -85,11 +85,11 @@ smoke-test: tools install
 smoke-local: smoke-standalone
 
 smoke-standalone:
-	make -C build/docker reset-standaloneWithMockBinance
+	make -C build/docker reset-mocknet-standalone
 	bsinner -a localhost:26660 -b ./test/smoke/scenarios/standalone/balances.json -t ./test/smoke/scenarios/standalone/transactions.json -e local -x -g
 
 smoke-genesis:
-	make -C build/docker reset-genesisWithMockBinance
+	make -C build/docker reset-mocknet-genesis
 	bsinner -a localhost:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e local -x -g
 
 export:

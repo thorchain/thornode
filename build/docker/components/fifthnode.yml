@@ -4,7 +4,7 @@ services:
   observer5:
     hostname: observer5
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -17,7 +17,7 @@ services:
     depends_on:
       - thor-api5
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_5/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
     command: ["observed", "-c", "/etc/observe/observed/config.json"]
@@ -28,7 +28,7 @@ services:
   signer5:
     hostname: signer5
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -46,7 +46,7 @@ services:
       - tss5
       - thor-api5
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_5/keys:/root/.signer
       - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
     command: ["signd", "-c", "/etc/observe/signd/config.json"]
@@ -57,7 +57,7 @@ services:
   thor-daemon5:
     hostname: thor-daemon5
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     image: registry.gitlab.com/thorchain/thornode
     restart: unless-stopped
@@ -70,7 +70,7 @@ services:
     entrypoint:
       /docker/scripts/validator.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_5/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_5/keys:/root/.signer
@@ -83,7 +83,7 @@ services:
   thor-api5:
     hostname: thor-api5
     build:
-      context: ../..
+      context: ../../..
       dockerfile: ./build/docker/Dockerfile
     depends_on:
       - thor-daemon
@@ -95,7 +95,7 @@ services:
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_5/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://172.32.10.26:26657"]
@@ -118,7 +118,7 @@ services:
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
-      - "../scripts:/docker/scripts"
+      - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_5/.tss:/root/.tss
     networks:
       localnet:
