@@ -195,7 +195,7 @@ func (b *ThorchainBlockScan) processBlocks(idx int) {
 
 // Stop the scanner
 func (b *ThorchainBlockScan) Stop() error {
-	b.logger.Info().Msg("received request to stop state chain block scanner")
+	b.logger.Info().Msg("received request to stop thorchain block scanner")
 	defer b.logger.Info().Msg("thorchain block scanner stopped successfully")
 	close(b.stopChan)
 	b.wg.Wait()
