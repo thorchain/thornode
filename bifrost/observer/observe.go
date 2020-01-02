@@ -97,7 +97,7 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 	}
 	thorchainBridge, err := thorclient.NewThorchainBridge(cfg.Thorchain, m)
 	if nil != err {
-		return nil, errors.Wrap(err, "fail to create new state chain bridge")
+		return nil, errors.Wrap(err, "fail to create new thorchain bridge")
 	}
 	logger := log.Logger.With().Str("module", "observer").Logger()
 

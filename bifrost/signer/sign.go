@@ -55,7 +55,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	}
 	thorchainBridge, err := thorclient.NewThorchainBridge(cfg.Thorchain, m)
 	if nil != err {
-		return nil, errors.Wrap(err, "fail to create new state chain bridge")
+		return nil, errors.Wrap(err, "fail to create new thorchain bridge")
 	}
 	pkm := NewPubKeyManager()
 	thorKeys, err := thorclient.NewKeys(cfg.Thorchain.ChainHomeFolder, cfg.Thorchain.SignerName, cfg.Thorchain.SignerPasswd)
@@ -91,7 +91,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
 	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, thorchainScanStorage, cfg.Thorchain.ChainHost, m, pkm)
 	if nil != err {
-		return nil, errors.Wrap(err, "fail to create state chain block scan")
+		return nil, errors.Wrap(err, "fail to create thorchain block scan")
 	}
 	b, err := binance.NewBinance(cfg.Thorchain, cfg.Binance, cfg.UseTSS, cfg.TSS)
 	if nil != err {
