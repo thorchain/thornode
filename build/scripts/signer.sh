@@ -39,7 +39,7 @@ echo "{
     \"block_retry_interval\": \"10s\",
     \"scheme\": \"http\"
   },
-  \"state_chain\": {
+  \"thorchain\": {
     \"chain_id\": \"$CHAIN_ID\",
     \"chain_host\": \"$CHAIN_API\",
     \"signer_name\": \"$SIGNER_NAME\",
