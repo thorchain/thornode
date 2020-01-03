@@ -10,7 +10,7 @@ SEED="${SEED:=thor-daemon}" # the hostname of the master node
 
 # find or generate our BNB address
 gen_bnb_address
-ADDRESS=$(cat ~/.signer/address.txt)
+ADDRESS=$(cat ~/.bond/address.txt)
 
 # create thorchain user
 thorcli keys show $SIGNER_NAME || echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME 2>&1
