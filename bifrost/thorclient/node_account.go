@@ -20,7 +20,6 @@ func GetNodeAccount(c *http.Client, chainHost, thorAddr string) (types.NodeAccou
 	}
 	resp, err := c.Get(uri.String())
 	if nil != err {
-		fmt.Printf("fail to get node account from thorchain,err:%w", err)
 		return EmptyNodeAccount, fmt.Errorf("fail to get node account from thorchain,err:%w", err)
 	}
 	defer func() {
@@ -28,7 +27,6 @@ func GetNodeAccount(c *http.Client, chainHost, thorAddr string) (types.NodeAccou
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("fail to get node account from thorchain,statusCode:%d", resp.StatusCode)
 		return EmptyNodeAccount, fmt.Errorf("fail to get node account from thorchain,statusCode:%d", resp.StatusCode)
 	}
 	var na types.NodeAccount
