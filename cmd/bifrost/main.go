@@ -96,7 +96,7 @@ func main() {
 	}
 
 	// start signer
-	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, cfg.Thorchain, cfg.UseTSS, cfg.TSS, bnb, m)
+	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, cfg.UseTSS, cfg.TSS, bnb, m)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create instance of signer")
 	}
