@@ -17,7 +17,7 @@ services:
       TSS_HOST: 172.32.10.2
       TSS_PORT: 4040
     entrypoint:
-      /docker/scripts/observer.sh
+      /docker/scripts/bifrost.sh
     depends_on:
       - thor-api
       - tss
@@ -131,7 +131,7 @@ services:
       TSS_HOST: 172.32.10.3
       TSS_PORT: 4041
     entrypoint:
-      /docker/scripts/observer.sh
+      /docker/scripts/bifrost.sh
     depends_on:
       - thor-api2
       - tss2
@@ -232,7 +232,7 @@ services:
       TSS_HOST: 172.32.10.4
       TSS_PORT: 4042
     entrypoint:
-      /docker/scripts/observer.sh
+      /docker/scripts/bifrost.sh
     depends_on:
       - thor-api3
       - tss3
@@ -334,7 +334,7 @@ services:
       TSS_PORT: 4043
     depends_on:
     entrypoint:
-      /docker/scripts/observer.sh
+      /docker/scripts/bifrost.sh
     depends_on:
       - thor-api4
       - tss4

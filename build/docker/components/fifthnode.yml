@@ -17,7 +17,7 @@ services:
       TSS_HOST: 172.32.10.6
       TSS_PORT: 4044
     entrypoint:
-      /docker/scripts/observer.sh
+      /docker/scripts/bifrost.sh
     depends_on:
       - thor-api5
       - tss5

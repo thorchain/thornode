@@ -16,7 +16,7 @@ services:
       USE_TSS: "true"
       TSS_HOST: 172.52.70.2
     entrypoint:
-      /docker/scripts/observer.sh
+      /docker/scripts/bifrost.sh
     depends_on:
       - thor-api
       - tss
