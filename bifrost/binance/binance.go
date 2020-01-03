@@ -42,7 +42,7 @@ type Binance struct {
 }
 
 // NewBinance create new instance of binance client
-func NewBinance(thorchainCfg config.ThorchainConfiguration, cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.TSSConfiguration) (*Binance, error) {
+func NewBinance(thorKeys *thorclient.Keys, cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.TSSConfiguration) (*Binance, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
@@ -54,11 +54,7 @@ func NewBinance(thorchainCfg config.ThorchainConfiguration, cfg config.BinanceCo
 			return nil, errors.Wrap(err, "fail to create tss signer")
 		}
 	} else {
-		k, err := thorclient.NewKeys(thorchainCfg.ChainHomeFolder, thorchainCfg.SignerName, thorchainCfg.SignerPasswd)
-		if nil != err {
-			return nil, fmt.Errorf("fail to get keybase,err:%w", err)
-		}
-		priv, err := k.GetPrivateKey()
+		priv, err := thorKeys.GetPrivateKey()
 		if err != nil {
 			return nil, errors.Wrap(err, "fail to get private key")
 		}
