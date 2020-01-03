@@ -2,7 +2,6 @@ package signer
 
 import (
 	"fmt"
-	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -52,14 +51,10 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 
 	pkm := NewPubKeyManager()
 
-	httpClient := &http.Client{
-		Timeout: time.Second * 30,
-	}
-
 	var na ttypes.NodeAccount
 	for i := 0; i < 300; i++ { // wait for 5 min before timing out
 		var err error
-		na, err = thorclient.GetNodeAccount(httpClient, thorchainCfg.ChainHost, thorKeys.GetSignerInfo().GetAddress().String())
+		na, err = thorchainBridge.GetNodeAccount(thorKeys.GetSignerInfo().GetAddress().String())
 		if nil != err {
 			return nil, fmt.Errorf("fail to get node account from thorchain,err:%w", err)
 		}
