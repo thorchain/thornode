@@ -13,6 +13,7 @@ import (
 	flag "github.com/spf13/pflag"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/observer"
 	"gitlab.com/thorchain/thornode/bifrost/signer"
 	"gitlab.com/thorchain/thornode/cmd"
 )
@@ -24,7 +25,7 @@ var (
 )
 
 const (
-	serverIdentity = "signer"
+	serverIdentity = "bifrost"
 )
 
 func printVersion() {
@@ -33,36 +34,64 @@ func printVersion() {
 
 func main() {
 	showVersion := flag.Bool("version", false, "Shows version")
-	logLevel := flag.StringP("loglevel", "l", "info", "Log Level")
+	logLevel := flag.StringP("log-level", "l", "info", "Log Level")
 	pretty := flag.BoolP("pretty-log", "p", false, "Enables unstructured prettified logging. This is useful for local debugging")
-	cfgFile := flag.StringP("cfg", "c", "config", "configuration file name without extension")
+	cfgFile := flag.StringP("cfg", "c", "config", "configuration file with extension")
 	flag.Parse()
+
 	if *showVersion {
 		printVersion()
 		return
 	}
-	cosmosSDKConfg := sdk.GetConfig()
-	cosmosSDKConfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-	cosmosSDKConfg.Seal()
+
+	initPrefix()
 	initLog(*logLevel, *pretty)
+
+	// load configuration file
 	cfg, err := config.LoadConfig(*cfgFile)
 	if nil != err {
-		log.Fatal().Err(err).Msg("fail to load signer configuration")
+		log.Fatal().Err(err).Msg("fail to load observer config ")
 	}
-	s, err := signer.NewSigner(cfg.Signer)
+
+	// start observer
+	obs, err := observer.NewObserver(cfg.Observer)
+	if nil != err {
+		log.Fatal().Err(err).Msg("fail to create observer")
+	}
+	if err := obs.Start(); nil != err {
+		log.Fatal().Err(err).Msg("fail to start observer")
+	}
+
+	// start signer
+	sign, err := signer.NewSigner(cfg.Signer)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create instance of signer")
 	}
-	if err := s.Start(); nil != err {
+	if err := sign.Start(); nil != err {
 		log.Fatal().Err(err).Msg("fail to start signer")
 	}
+
+	// wait....
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
 	log.Info().Msg("stop signal received")
-	if err := s.Stop(); nil != err {
+
+	// stop observer
+	if err := obs.Stop(); nil != err {
 		log.Fatal().Err(err).Msg("fail to stop observer")
 	}
+
+	// stop signer
+	if err := sign.Stop(); nil != err {
+		log.Fatal().Err(err).Msg("fail to stop signer")
+	}
+}
+
+func initPrefix() {
+	cosmosSDKConfg := sdk.GetConfig()
+	cosmosSDKConfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+	cosmosSDKConfg.Seal()
 }
 
 func initLog(level string, pretty bool) {

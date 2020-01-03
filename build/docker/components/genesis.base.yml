@@ -1,32 +1,8 @@
 version: '3'
 
 services:
-  observer:
-    hostname: observer
-    build:
-      context: ../../..
-      dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/thornode
-    restart: unless-stopped
-    environment:
-      NET: ${NET}
-      CHAIN_API: 172.32.40.32:1317
-      BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
-    entrypoint:
-      /docker/scripts/observer.sh
-    depends_on:
-      - thor-api
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
-      - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
-    command: ["observed", "-c", "/etc/observe/observed/config.json"]
-    networks:
-      localnet:
-        ipv4_address: 172.32.30.32
-
-  signer:
-    hostname: signer
+  bifrost:
+    hostname: bifrost
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -41,19 +17,18 @@ services:
       TSS_HOST: 172.32.10.2
       TSS_PORT: 4040
     entrypoint:
-      /docker/scripts/signer.sh
+      /docker/scripts/observer.sh
     depends_on:
-      - tss
       - thor-api
+      - tss
     volumes:
       - "../../scripts:/docker/scripts"
-      - /tmp/genesis:/tmp/shared
-      - ${HOME}/.thornode/genesis_1/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
-    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       localnet:
-        ipv4_address: 172.32.10.32
+        ipv4_address: 172.32.30.32
 
   thor-daemon:
     hostname: thor-daemon
@@ -84,7 +59,6 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
-      - ${HOME}/.thornode/genesis_1/keys:/root/.signer
       - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
@@ -142,31 +116,8 @@ services:
       localnet:
         ipv4_address: 172.32.10.2
 
-  observer2:
-    hostname: observer2
-    build:
-      context: ../../..
-      dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/thornode
-    restart: unless-stopped
-    environment:
-      NET: ${NET}
-      CHAIN_API: 172.32.40.33:1317
-    entrypoint:
-      /docker/scripts/observer.sh
-    depends_on:
-      - thor-api2
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
-      - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
-    command: ["observed", "-c", "/etc/observe/observed/config.json"]
-    networks:
-      localnet:
-        ipv4_address: 172.32.30.33
-
-  signer2:
-    hostname: signer2
+  bifrost2:
+    hostname: bifrost2
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -180,19 +131,18 @@ services:
       TSS_HOST: 172.32.10.3
       TSS_PORT: 4041
     entrypoint:
-      /docker/scripts/signer.sh
+      /docker/scripts/observer.sh
     depends_on:
-      - tss2
       - thor-api2
+      - tss2
     volumes:
       - "../../scripts:/docker/scripts"
-      - /tmp/genesis:/tmp/shared
-      - ${HOME}/.thornode/genesis_2/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
-    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       localnet:
-        ipv4_address: 172.32.10.33
+        ipv4_address: 172.32.30.33
 
   thor-daemon2:
     hostname: thor-daemon2
@@ -217,7 +167,6 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
-      - ${HOME}/.thornode/genesis_2/keys:/root/.signer
       - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
@@ -268,31 +217,8 @@ services:
       localnet:
         ipv4_address: 172.32.10.3
 
-  observer3:
-    hostname: observer3
-    build:
-      context: ../../..
-      dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/thornode
-    restart: unless-stopped
-    environment:
-      NET: ${NET}
-      CHAIN_API: 172.32.40.34:1317
-    entrypoint:
-      /docker/scripts/observer.sh
-    depends_on:
-      - thor-api3
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
-      - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
-    command: ["observed", "-c", "/etc/observe/observed/config.json"]
-    networks:
-      localnet:
-        ipv4_address: 172.32.30.34
-
-  signer3:
-    hostname: signer3
+  bifrost3:
+    hostname: bifrost3
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -306,19 +232,18 @@ services:
       TSS_HOST: 172.32.10.4
       TSS_PORT: 4042
     entrypoint:
-      /docker/scripts/signer.sh
+      /docker/scripts/observer.sh
     depends_on:
-      - tss3
       - thor-api3
+      - tss3
     volumes:
       - "../../scripts:/docker/scripts"
-      - /tmp/genesis:/tmp/shared
-      - ${HOME}/.thornode/genesis_3/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
-    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       localnet:
-        ipv4_address: 172.32.10.34
+        ipv4_address: 172.32.30.34
 
   thor-daemon3:
     hostname: thor-daemon3
@@ -343,7 +268,6 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
-      - ${HOME}/.thornode/genesis_3/keys:/root/.signer
       - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
@@ -394,31 +318,8 @@ services:
       localnet:
         ipv4_address: 172.32.10.4
 
-  observer4:
-    hostname: observer4
-    build:
-      context: ../../..
-      dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/thornode
-    restart: unless-stopped
-    environment:
-      NET: ${NET}
-      CHAIN_API: 172.32.40.35:1317
-    entrypoint:
-      /docker/scripts/observer.sh
-    depends_on:
-      - thor-api4
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
-      - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
-    command: ["observed", "-c", "/etc/observe/observed/config.json"]
-    networks:
-      localnet:
-        ipv4_address: 172.32.30.35
-
-  signer4:
-    hostname: signer4
+  bifrost4:
+    hostname: bifrost4
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -432,19 +333,19 @@ services:
       TSS_HOST: 172.32.10.5
       TSS_PORT: 4043
     depends_on:
-      - tss4
-      - thor-api4
     entrypoint:
-      /docker/scripts/signer.sh
+      /docker/scripts/observer.sh
+    depends_on:
+      - thor-api4
+      - tss4
     volumes:
       - "../../scripts:/docker/scripts"
-      - /tmp/genesis:/tmp/shared
-      - ${HOME}/.thornode/genesis_4/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
-    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       localnet:
-        ipv4_address: 172.32.10.35
+        ipv4_address: 172.32.30.35
 
   thor-daemon4:
     hostname: thor-daemon4
@@ -469,7 +370,6 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
-      - ${HOME}/.thornode/genesis_4/keys:/root/.signer
       - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:

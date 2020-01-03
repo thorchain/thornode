@@ -1,32 +1,8 @@
 version: '3'
 
 services:
-  observer:
-    hostname: observer
-    build:
-      context: ../../..
-      dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/thornode
-    restart: unless-stopped
-    environment:
-      NET: ${NET}
-      CHAIN_API: 172.52.20.2:1317
-      BINANCE_HOST: ${BINANCE_HOST:-http://172.52.50.2:26660}
-    entrypoint:
-      /docker/scripts/observer.sh
-    depends_on:
-      - thor-api
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/validator/.thord:/root/.thord
-      - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
-    command: ["observed", "-c", "/etc/observe/observed/config.json"]
-    networks:
-      validatornet:
-        ipv4_address: 172.52.30.2
-
-  signer:
-    hostname: signer
+  bifrost:
+    hostname: bifrost
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -40,19 +16,18 @@ services:
       USE_TSS: "true"
       TSS_HOST: 172.52.70.2
     entrypoint:
-      /docker/scripts/signer.sh
+      /docker/scripts/observer.sh
     depends_on:
-      - tss
       - thor-api
+      - tss
     volumes:
       - "../../scripts:/docker/scripts"
-      - /tmp/genesis:/tmp/shared
-      - ${HOME}/.thornode/validator/keys:/root/.signer
+      - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
-    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       validatornet:
-        ipv4_address: 172.52.40.2
+        ipv4_address: 172.52.30.2
 
   thor-daemon:
     hostname: thor-daemon
@@ -79,7 +54,6 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
-      - ${HOME}/.thornode/validator/keys:/root/.signer
       - ${HOME}/.thornode/validator/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:

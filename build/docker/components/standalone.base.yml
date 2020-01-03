@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-  observer:
-    hostname: observer
+  bifrost:
+    hostname: bifrost
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -11,9 +11,10 @@ services:
     environment:
       NET: ${NET}
       CHAIN_API: thor-api:1317
+      CHAIN_RPC: thor-daemon:26657
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
     entrypoint:
-      /docker/scripts/observer.sh
+      /docker/scripts/bifrost.sh
     depends_on:
       - thor-api
     links:
@@ -22,32 +23,7 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
-    command: ["observed", "-c", "/etc/observe/observed/config.json"]
-
-  signer:
-    hostname: signer
-    build:
-      context: ../../..
-      dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/thornode
-    restart: unless-stopped
-    environment:
-      CHAIN_RPC: thor-daemon:26657
-      CHAIN_API: thor-api:1317
-      BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
-      NET: ${NET}
-    entrypoint:
-      /docker/scripts/signer.sh
-    depends_on:
-      - thor-api
-    links:
-      - thor-api
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - /tmp/genesis:/tmp/shared
-      - ${HOME}/.thornode/standalone/keys:/root/.signer
-      - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
-    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    command: ["bifrost", "-c", "/etc/bifrost/config.json"]
 
   thor-daemon:
     hostname: thor-daemon
@@ -70,7 +46,6 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
-      - ${HOME}/.thornode/standalone/keys:/root/.signer
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api:

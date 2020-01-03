@@ -7,12 +7,10 @@ build:
 clean:
 	@rm -rf /tmp/genesis
 	@rm -rf ~/.thor*
-	@rm -rf ~/.signer
 	@rm -rf /tmp/shared
 	@mkdir /tmp/genesis
 	@mkdir /tmp/shared
 	@mkdir ~/.thord
-	@mkdir ~/.signer
 	@mkdir ~/.thornode
 	@mkdir ~/.thornode/standalone
 	@mkdir ~/.thornode/genesis_1

@@ -21,34 +21,19 @@ services:
       localnet:
         ipv4_address: 172.32.90.1
 
-  observer:
+  bifrost:
     environment:
       BINANCE_HOST: http://172.32.90.1:26660
 
-  signer:
+  bifrost2:
     environment:
       BINANCE_HOST: http://172.32.90.1:26660
 
-  observer2:
+  bifrost3:
     environment:
       BINANCE_HOST: http://172.32.90.1:26660
 
-  signer2:
+  bifrost4:
     environment:
       BINANCE_HOST: http://172.32.90.1:26660
 
-  observer3:
-    environment:
-      BINANCE_HOST: http://172.32.90.1:26660
-
-  signer3:
-    environment:
-      BINANCE_HOST: http://172.32.90.1:26660
-
-  observer4:
-    environment:
-      BINANCE_HOST: http://172.32.90.1:26660
-
-  signer4:
-    environment:
-      BINANCE_HOST: http://172.32.90.1:26660
