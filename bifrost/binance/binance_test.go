@@ -102,6 +102,33 @@ const accountInfo string = `{
   }
 }`
 
+func (s *BinancechainSuite) TestGetHeight(c *C) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		c.Logf("requestUri:%s", req.RequestURI)
+		if req.RequestURI == "/status" {
+			_, err := rw.Write([]byte(status))
+			c.Assert(err, IsNil)
+		} else if req.RequestURI == "/abci_info" {
+			_, err := rw.Write([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "response": { "data": "BNBChain", "last_block_height": "123456789", "last_block_app_hash": "pwx4TJjXu3yaF6dNfLQ9F4nwAhjIqmzE8fNa+RXwAzQ=" } } }`))
+			c.Assert(err, IsNil)
+		}
+	}))
+
+	tssCfg := config.TSSConfiguration{
+		Scheme: "http",
+		Host:   "localhost",
+		Port:   0,
+	}
+	b, err := NewBinance(s.cfg, config.BinanceConfiguration{
+		RPCHost: server.URL,
+	}, false, tssCfg)
+	c.Assert(err, IsNil)
+
+	height, err := b.GetHeight()
+	c.Assert(err, IsNil)
+	c.Check(height, Equals, int64(123456789))
+}
+
 func (s *BinancechainSuite) TestSignTx(c *C) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)

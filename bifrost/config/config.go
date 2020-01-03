@@ -12,18 +12,20 @@ import (
 )
 
 type Configuration struct {
-	Observer ObserverConfiguration `json:"observer" mapstructure:"observer"`
-	Signer   SignerConfiguration   `json:"signer" mapstructure:"signer"`
+	Observer  ObserverConfiguration  `json:"observer" mapstructure:"observer"`
+	Signer    SignerConfiguration    `json:"signer" mapstructure:"signer"`
+	Thorchain ThorchainConfiguration `json:"thorchain" mapstructure:"thorchain"`
+	Metric    MetricConfiguration    `json:"metric" mapstructure:"metric"`
+	Binance   BinanceConfiguration   `json:"binance" mapstructure:"binance"`
+	UseTSS    bool                   `json:"use_tss" mapstructure:"use_tss"`
+	TSS       TSSConfiguration       `json:"tss" mapstructure:"tss"`
 }
 
 // ObserverConfiguration values
 type ObserverConfiguration struct {
-	Binance               BinanceConfiguration      `json:"binance" mapstructure:"binance"`
 	ObserverDbPath        string                    `json:"observer_db_path" mapstructure:"observer_db_path"`
 	BlockScanner          BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
-	Thorchain             ThorchainConfiguration    `json:"thorchain" mapstructure:"thorchain"`
 	ObserverRetryInterval time.Duration             `json:"observer_retry_interval" mapstructure:"observer_retry_interval"`
-	Metric                MetricConfiguration       `json:"metric" mapstructure:"metric"`
 }
 
 // SignerConfiguration all the configures need by signer
@@ -31,12 +33,7 @@ type SignerConfiguration struct {
 	SignerDbPath     string                    `json:"signer_db_path" mapstructure:"signer_db_path"`
 	MessageProcessor int                       `json:"message_processor" mapstructure:"message_processor"`
 	BlockScanner     BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
-	Binance          BinanceConfiguration      `json:"binance" mapstructure:"binance"`
-	Thorchain        ThorchainConfiguration    `json:"thorchain" mapstructure:"thorchain"`
 	RetryInterval    time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
-	Metric           MetricConfiguration       `json:"metric" mapstructure:"metric"`
-	UseTSS           bool                      `json:"use_tss" mapstructure:"use_tss"`
-	TSS              TSSConfiguration          `json:"tss" mapstructure:"tss"`
 }
 
 // BinanceConfiguration all the configurations for binance client
