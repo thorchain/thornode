@@ -50,7 +50,7 @@ func main() {
 	// load configuration file
 	cfg, err := config.LoadConfig(*cfgFile)
 	if nil != err {
-		log.Fatal().Err(err).Msg("fail to load observer config ")
+		log.Fatal().Err(err).Msg("fail to load config ")
 	}
 
 	// start observer
