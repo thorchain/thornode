@@ -27,7 +27,7 @@ import (
 
 // Observer observer service
 type Observer struct {
-	cfg             config.Configuration
+	cfg             config.ObserverConfiguration
 	logger          zerolog.Logger
 	blockScanner    *BinanceBlockScanner
 	storage         TxInStorage
@@ -85,7 +85,7 @@ func binanceHeight(rpcHost string, client http.Client) (int64, error) {
 }
 
 // NewObserver create a new instance of Observer
-func NewObserver(cfg config.Configuration) (*Observer, error) {
+func NewObserver(cfg config.ObserverConfiguration) (*Observer, error) {
 	scanStorage, err := NewBinanceChanBlockScannerStorage(cfg.ObserverDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create scan storage")
@@ -112,7 +112,7 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by thorchain")
 		} else {
 			client := &http.Client{}
-			cfg.BlockScanner.StartBlockHeight, err = binanceHeight(cfg.BinanceHost, *client)
+			cfg.BlockScanner.StartBlockHeight, err = binanceHeight(cfg.Binance.RPCHost, *client)
 			if nil != err {
 				return nil, errors.Wrap(err, "fail to get binance height")
 			}
@@ -125,7 +125,7 @@ func NewObserver(cfg config.Configuration) (*Observer, error) {
 		return nil, errors.Wrap(err, "fail to create pool address manager")
 	}
 
-	_, isTestNet := binance.IsTestNet(cfg.BinanceHost)
+	_, isTestNet := binance.IsTestNet(cfg.Binance.RPCHost)
 	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, isTestNet, addrMgr, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
