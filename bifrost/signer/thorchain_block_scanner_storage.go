@@ -14,13 +14,13 @@ import (
 
 const DefaultSignerLevelDBFolder = `signer_data`
 
-type StateChanBlockScannerStorage struct {
+type ThorchainBlockScannerStorage struct {
 	*blockscanner.LevelDBScannerStorage
 	db *leveldb.DB
 }
 
-// NewStateChanBlockScannerStorage create a new instance of StateChanBlockScannerStorage
-func NewStateChanBlockScannerStorage(levelDbFolder string) (*StateChanBlockScannerStorage, error) {
+// NewThorchainBlockScannerStorage create a new instance of ThorchainBlockScannerStorage
+func NewThorchainBlockScannerStorage(levelDbFolder string) (*ThorchainBlockScannerStorage, error) {
 	if len(levelDbFolder) == 0 {
 		levelDbFolder = DefaultSignerLevelDBFolder
 	}
@@ -32,7 +32,7 @@ func NewStateChanBlockScannerStorage(levelDbFolder string) (*StateChanBlockScann
 	if nil != err {
 		return nil, errors.New("fail to create leven db")
 	}
-	return &StateChanBlockScannerStorage{
+	return &ThorchainBlockScannerStorage{
 		LevelDBScannerStorage: levelDbStorage,
 		db:                    db,
 	}, nil
@@ -51,12 +51,12 @@ type TxOutLocalItem struct {
 	Status LocalStatus `json:"status"`
 }
 
-func (s *StateChanBlockScannerStorage) getTxOutKey(height string) string {
+func (s *ThorchainBlockScannerStorage) getTxOutKey(height string) string {
 	return fmt.Sprintf("txout-%s", height)
 }
 
 // SetTxOutStatus store the txout locally
-func (s *StateChanBlockScannerStorage) SetTxOutStatus(txOut types.TxOut, status LocalStatus) error {
+func (s *ThorchainBlockScannerStorage) SetTxOutStatus(txOut types.TxOut, status LocalStatus) error {
 	txOutLocalItem := TxOutLocalItem{
 		TxOut:  txOut,
 		Status: status,
@@ -72,13 +72,13 @@ func (s *StateChanBlockScannerStorage) SetTxOutStatus(txOut types.TxOut, status 
 }
 
 // RemoveTxOut delete the given txout from data store
-func (s *StateChanBlockScannerStorage) RemoveTxOut(txOut types.TxOut) error {
+func (s *ThorchainBlockScannerStorage) RemoveTxOut(txOut types.TxOut) error {
 	key := s.getTxOutKey(txOut.Height)
 	return s.db.Delete([]byte(key), nil)
 }
 
 // GetFailedBlocksForRetry
-func (s *StateChanBlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([]types.TxOut, error) {
+func (s *ThorchainBlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([]types.TxOut, error) {
 	iterator := s.db.NewIterator(util.BytesPrefix([]byte("txout-")), nil)
 	defer iterator.Release()
 	var results []types.TxOut
@@ -102,14 +102,14 @@ func (s *StateChanBlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([]typ
 	return results, nil
 }
 
-func (s *StateChanBlockScannerStorage) SetTxOutItem(tai types.TxArrayItem, height int64) error {
+func (s *ThorchainBlockScannerStorage) SetTxOutItem(tai types.TxArrayItem, height int64) error {
 	return s.db.Put([]byte(tai.GetKey(height)), []byte{1}, nil)
 }
-func (s *StateChanBlockScannerStorage) HasTxOutItem(tai types.TxArrayItem, height int64) (bool, error) {
+func (s *ThorchainBlockScannerStorage) HasTxOutItem(tai types.TxArrayItem, height int64) (bool, error) {
 	return s.db.Has([]byte(tai.GetKey(height)), nil)
 }
 
 // Close underlying db
-func (s *StateChanBlockScannerStorage) Close() error {
+func (s *ThorchainBlockScannerStorage) Close() error {
 	return s.db.Close()
 }

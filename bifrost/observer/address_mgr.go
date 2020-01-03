@@ -33,7 +33,7 @@ type AddressManager struct {
 	pubkeys    common.PubKeys
 	rwMutex    *sync.RWMutex
 	logger     zerolog.Logger
-	chainHost  string // statechain host
+	chainHost  string // thorchain host
 	errCounter *prometheus.CounterVec
 	m          *metrics.Metrics
 	wg         *sync.WaitGroup
@@ -44,7 +44,7 @@ type AddressManager struct {
 func NewAddressManager(chainHost string, m *metrics.Metrics) (*AddressManager, error) {
 	return &AddressManager{
 		cdc:        thorclient.MakeCodec(),
-		logger:     log.With().Str("module", "statechain_bridge").Logger(),
+		logger:     log.With().Str("module", "thorchain_bridge").Logger(),
 		chainHost:  chainHost,
 		errCounter: m.GetCounterVec(metrics.PoolAddressManagerError),
 		m:          m,
@@ -54,7 +54,7 @@ func NewAddressManager(chainHost string, m *metrics.Metrics) (*AddressManager, e
 	}, nil
 }
 
-// Start to poll poll addresses from statechain
+// Start to poll poll addresses from thorchain
 func (pam *AddressManager) Start() error {
 	pam.wg.Add(1)
 	pubkeys, err := pam.getPubkeys()

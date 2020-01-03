@@ -19,23 +19,23 @@ import (
 
 // KeyGen is
 type KeyGen struct {
-	keys          *thorclient.Keys
-	keyGenCfg     config.TSSConfiguration
-	stateChainCfg config.StateChainConfiguration
-	logger        zerolog.Logger
-	client        *http.Client
+	keys         *thorclient.Keys
+	keyGenCfg    config.TSSConfiguration
+	thorchainCfg config.ThorchainConfiguration
+	logger       zerolog.Logger
+	client       *http.Client
 }
 
 // NewTssKeyGen create a new instance of TssKeyGen which will look after TSS key stuff
-func NewTssKeyGen(keyGenCfg config.TSSConfiguration, statechain config.StateChainConfiguration, keys *thorclient.Keys) (*KeyGen, error) {
+func NewTssKeyGen(keyGenCfg config.TSSConfiguration, thorchain config.ThorchainConfiguration, keys *thorclient.Keys) (*KeyGen, error) {
 	if nil == keys {
 		return nil, fmt.Errorf("keys is nil")
 	}
 	return &KeyGen{
-		keys:          keys,
-		keyGenCfg:     keyGenCfg,
-		stateChainCfg: statechain,
-		logger:        log.With().Str("module", "tss_keygen").Logger(),
+		keys:         keys,
+		keyGenCfg:    keyGenCfg,
+		thorchainCfg: thorchain,
+		logger:       log.With().Str("module", "tss_keygen").Logger(),
 		client: &http.Client{
 			Timeout: time.Second * 130,
 		},
