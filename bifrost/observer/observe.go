@@ -123,7 +123,7 @@ func (o *Observer) retryTxProcessor() {
 	defer o.logger.Info().Msg("stop retry process")
 	defer o.wg.Done()
 	// retry all
-	t := time.NewTicker(o.cfg.ObserverRetryInterval)
+	t := time.NewTicker(o.cfg.RetryInterval)
 	defer t.Stop()
 	for {
 		select {
