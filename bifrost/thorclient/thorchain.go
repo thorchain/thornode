@@ -27,6 +27,8 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
+var EmptyNodeAccount stypes.NodeAccount
+
 // ThorchainBridge will be used to send tx to thorchain
 type ThorchainBridge struct {
 	logger        zerolog.Logger
@@ -374,4 +376,34 @@ func (scb *ThorchainBridge) EnsureNodeWhitelisted() error {
 		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", nodeAccount.Status)
 	}
 	return nil
+}
+
+// GetNodeAccount from thorchain
+func (scb *ThorchainBridge) GetNodeAccount(thorAddr string) (stypes.NodeAccount, error) {
+	requestUrl := scb.getThorchainUrl("/thorchain/nodeaccount/" + thorAddr)
+
+	scb.logger.Debug().Str("request_url", requestUrl).Msg("get node account")
+	resp, err := scb.client.Get(requestUrl)
+	if nil != err {
+		return EmptyNodeAccount, errors.Wrap(err, "fail to get node account")
+	}
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			scb.logger.Error().Err(err).Msg("fail to close response body")
+		}
+	}()
+	if resp.StatusCode != http.StatusOK {
+		return EmptyNodeAccount, fmt.Errorf("fail to get node account from thorchain,statusCode:%d", resp.StatusCode)
+	}
+	var na stypes.NodeAccount
+
+	buf, err := ioutil.ReadAll(resp.Body)
+	if nil != err {
+		return EmptyNodeAccount, fmt.Errorf("fail to read response body,err:%w", err)
+	}
+	cdc := MakeCodec()
+	if err := cdc.UnmarshalJSON(buf, &na); nil != err {
+		return EmptyNodeAccount, fmt.Errorf("fail to unmarshal node account response,err:%w", err)
+	}
+	return na, nil
 }
