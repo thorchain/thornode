@@ -1,10 +1,6 @@
 version: '3'
 
 services:
-  observer5:
-    environment:
-      BINANCE_HOST: http://172.32.90.1:26660
-
-  signer5:
+  bifrost5:
     environment:
       BINANCE_HOST: http://172.32.90.1:26660

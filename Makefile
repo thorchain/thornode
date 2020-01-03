@@ -6,20 +6,19 @@ GOBIN?=${GOPATH}/bin
 all: lint install
 
 install: go.sum
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/thorcli
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/thord
-	GO111MODULE=on go install -v ./cmd/observed
-	GO111MODULE=on go install -v ./cmd/signd
+	go install ./cmd/thorcli
+	go install ./cmd/thord
+	go install ./cmd/bifrost
 
 tools:
-	GO111MODULE=on go install -tags "$(build_tags)" ./tools/bsinner
-	GO111MODULE=on go install -tags "$(build_tags)" ./tools/generate
-	GO111MODULE=on go install -tags "$(build_tags)" ./tools/extract
-	GO111MODULE=on go install -tags "$(build_tags)" ./tools/sweep
+	go install ./tools/bsinner
+	go install ./tools/generate
+	go install ./tools/extract
+	go install ./tools/sweep
 
 go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"
-	GO111MODULE=on go mod verify
+	go mod verify
 
 test-coverage:
 	@go test -v -coverprofile .testCoverage.txt ./...
@@ -49,9 +48,6 @@ lint-verbose: lint-pre
 build:
 	@go build ./...
 
-start-observe:
-	observe
-
 start-daemon:
 	thord start --log_level "main:info,state:debug,*:error"
 
@@ -67,7 +63,7 @@ reset: clean install
 clean:
 	rm -rf ~/.thord
 	rm -rf ~/.thorcli
-	rm -f ${GOBIN}/{bsinner,generate,sweep,thorcli,thord,observe,signd}
+	rm -f ${GOBIN}/{bsinner,generate,sweep,thorcli,thord,bifrost}
 
 .envrc: install
 	@generate -t MASTER > .envrc

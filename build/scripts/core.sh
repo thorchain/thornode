@@ -66,8 +66,9 @@ peer_list () {
 }
 
 gen_bnb_address () {
-    if [ ! -f ~/.signer/private_key.txt ]; then
+    if [ ! -f ~/.bond/private_key.txt ]; then
         echo "GENERATING BNB ADDRESSES"
+        mkdir -p ~/.bond
         # because the generate command can get API rate limited, THORNode may need to retry
         n=0
         until [ $n -ge 60 ]; do
@@ -76,11 +77,11 @@ gen_bnb_address () {
             sleep 1
         done
         ADDRESS=$(cat /tmp/bnb | grep MASTER= | awk -F= '{print $NF}')
-        echo $ADDRESS > ~/.signer/address.txt
+        echo $ADDRESS > ~/.bond/address.txt
         BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
-        echo $BINANCE_PRIVATE_KEY > ~/.signer/private_key.txt
+        echo $BINANCE_PRIVATE_KEY > ~/.bond/private_key.txt
         PUBKEY=$(cat /tmp/bnb | grep MASTER_PUBKEY= | awk -F= '{print $NF}')
-        echo $PUBKEY > ~/.signer/pubkey.txt
+        echo $PUBKEY > ~/.bond/pubkey.txt
     fi
 }
 

@@ -21,8 +21,7 @@ RUN go get -d -v ./...
 
 RUN go build -a -installsuffix cgo -o $GOBIN/thord ./cmd/thord
 RUN go build -a -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
-RUN go build -a -installsuffix cgo -o $GOBIN/observed ./cmd/observed
-RUN go build -a -installsuffix cgo -o $GOBIN/signd ./cmd/signd
+RUN go build -a -installsuffix cgo -o $GOBIN/bifrost ./cmd/bifrost
 RUN go build -a -installsuffix cgo -o $GOBIN/generate ./tools/generate
 
 # install keygenClient
@@ -44,8 +43,7 @@ RUN apk add --update jq curl nginx && \
 COPY --from=build /go/bin/generate /usr/bin/
 COPY --from=build /go/bin/thord /usr/bin/
 COPY --from=build /go/bin/thorcli /usr/bin/
-COPY --from=build /go/bin/observed /usr/bin/
-COPY --from=build /go/bin/signd /usr/bin/
+COPY --from=build /go/bin/bifrost /usr/bin/
 COPY --from=build /go/bin/keygenclient /usr/bin/
 
 # Add users.

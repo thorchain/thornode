@@ -1,32 +1,8 @@
 version: '3'
 
 services:
-  observer5:
-    hostname: observer5
-    build:
-      context: ../../..
-      dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/thornode
-    restart: unless-stopped
-    environment:
-      NET: testnet
-      CHAIN_API: 172.32.40.36:1317
-      BINANCE_HOST: ${BINANCE_HOST:-http://172.32.90.1:26660}
-    entrypoint:
-      /docker/scripts/observer.sh
-    depends_on:
-      - thor-api5
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_5/.thord:/root/.thord
-      - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
-    command: ["observed", "-c", "/etc/observe/observed/config.json"]
-    networks:
-      localnet:
-        ipv4_address: 172.32.30.36
-
-  signer5:
-    hostname: signer5
+  bifrost5:
+    hostname: bifrost5
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -41,18 +17,18 @@ services:
       TSS_HOST: 172.32.10.6
       TSS_PORT: 4044
     entrypoint:
-      /docker/scripts/signer.sh
+      /docker/scripts/bifrost.sh
     depends_on:
-      - tss5
       - thor-api5
+      - tss5
     volumes:
       - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_5/keys:/root/.signer
+      - ${HOME}/.thornode/genesis_5/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
-    command: ["signd", "-c", "/etc/observe/signd/config.json"]
+    command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       localnet:
-        ipv4_address: 172.32.10.36
+        ipv4_address: 172.32.30.36
 
   thor-daemon5:
     hostname: thor-daemon5
@@ -73,7 +49,6 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_5/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
-      - ${HOME}/.thornode/genesis_5/keys:/root/.signer
       - ${HOME}/.thornode/genesis_5/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
