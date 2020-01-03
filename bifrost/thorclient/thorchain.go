@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"sync"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -39,6 +40,7 @@ type ThorchainBridge struct {
 	accountNumber uint64
 	seqNumber     uint64
 	client        *retryablehttp.Client
+	broadcastLock *sync.RWMutex
 }
 
 // NewThorchainBridge create a new instance of ThorchainBridge
@@ -60,13 +62,14 @@ func NewThorchainBridge(cfg config.ThorchainConfiguration, m *metrics.Metrics) (
 		return nil, fmt.Errorf("fail to get keybase,err:%w", err)
 	}
 	return &ThorchainBridge{
-		logger:     log.With().Str("module", "thorchain_bridge").Logger(),
-		cdc:        MakeCodec(),
-		cfg:        cfg,
-		keys:       k,
-		errCounter: m.GetCounterVec(metrics.ThorchainBridgeError),
-		client:     retryablehttp.NewClient(),
-		m:          m,
+		logger:        log.With().Str("module", "thorchain_bridge").Logger(),
+		cdc:           MakeCodec(),
+		cfg:           cfg,
+		keys:          k,
+		errCounter:    m.GetCounterVec(metrics.ThorchainBridgeError),
+		client:        retryablehttp.NewClient(),
+		m:             m,
+		broadcastLock: &sync.RWMutex{},
 	}, nil
 }
 
@@ -198,6 +201,9 @@ func (scb *ThorchainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*aut
 
 // Send the signed transaction to thorchain
 func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
+	scb.broadcastLock.Lock()
+	defer scb.broadcastLock.Unlock()
+
 	var noTxID = common.TxID("")
 	if !mode.IsValid() {
 		return noTxID, fmt.Errorf("transaction Mode (%s) is invalid", mode)
