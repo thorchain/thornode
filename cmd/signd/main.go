@@ -63,8 +63,8 @@ func main() {
 	if err := s.Stop(); nil != err {
 		log.Fatal().Err(err).Msg("fail to stop observer")
 	}
-
 }
+
 func initLog(level string, pretty bool) {
 	l, err := zerolog.ParseLevel(level)
 	if err != nil {
