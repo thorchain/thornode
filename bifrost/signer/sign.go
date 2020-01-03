@@ -43,7 +43,7 @@ type Signer struct {
 }
 
 // NewSigner create a new instance of signer
-func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, thorchainCfg config.ThorchainConfiguration, useTSS bool, tssCfg config.TSSConfiguration, bnb *binance.Binance, m *metrics.Metrics) (*Signer, error) {
+func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, useTSS bool, tssCfg config.TSSConfiguration, bnb *binance.Binance, m *metrics.Metrics) (*Signer, error) {
 	thorchainScanStorage, err := NewThorchainBlockScannerStorage(cfg.SignerDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
@@ -74,7 +74,7 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 	pkm.Add(na.PubKeySet.Secp256k1)
 
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
-	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, thorchainScanStorage, thorchainCfg.ChainHost, m, pkm)
+	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, thorchainScanStorage, thorchainBridge, m, pkm)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create thorchain block scan")
 	}
