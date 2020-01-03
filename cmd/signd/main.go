@@ -30,6 +30,7 @@ const (
 func printVersion() {
 	fmt.Printf("%s v%s, rev %s\n", serverIdentity, version, revision)
 }
+
 func main() {
 	showVersion := flag.Bool("version", false, "Shows version")
 	logLevel := flag.StringP("loglevel", "l", "info", "Log Level")
@@ -44,11 +45,11 @@ func main() {
 	cosmosSDKConfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
 	cosmosSDKConfg.Seal()
 	initLog(*logLevel, *pretty)
-	cfg, err := config.LoadSignerConfig(*cfgFile)
+	cfg, err := config.LoadConfig(*cfgFile)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to load signer configuration")
 	}
-	s, err := signer.NewSigner(*cfg)
+	s, err := signer.NewSigner(cfg.Signer)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create instance of signer")
 	}
@@ -62,8 +63,8 @@ func main() {
 	if err := s.Stop(); nil != err {
 		log.Fatal().Err(err).Msg("fail to stop observer")
 	}
-
 }
+
 func initLog(level string, pretty bool) {
 	l, err := zerolog.ParseLevel(level)
 	if err != nil {
