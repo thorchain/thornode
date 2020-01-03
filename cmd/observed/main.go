@@ -46,11 +46,11 @@ func main() {
 	cosmosSDKConfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
 	cosmosSDKConfg.Seal()
 	initLog(*logLevel, *pretty)
-	cfg, err := config.LoadObserverConfig(*cfgFile)
+	cfg, err := config.LoadConfig(*cfgFile)
 	if nil != err {
-		log.Fatal().Err(err).Msg("fail to load observer config ")
+		log.Fatal().Err(err).Msg("fail to load config ")
 	}
-	obs, err := observer.NewObserver(*cfg)
+	obs, err := observer.NewObserver(cfg.Observer)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create observer")
 	}
