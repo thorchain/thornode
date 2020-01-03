@@ -54,17 +54,10 @@ func (kts *KeyGenTestSuite) TestNewTssKenGen(c *C) {
 		Host:   "localhost",
 		Port:   0,
 	}
-	scCfg := config.ThorchainConfiguration{
-		ChainID:         "thorchain",
-		ChainHost:       "localhost",
-		ChainHomeFolder: folder,
-		SignerName:      signerNameForTest,
-		SignerPasswd:    signerPasswordForTest,
-	}
-	k, err := thorclient.NewKeys(folder, scCfg.SignerName, scCfg.SignerPasswd)
+	k, err := thorclient.NewKeys(folder, signerNameForTest, signerPasswordForTest)
 	c.Assert(err, IsNil)
 	c.Assert(k, NotNil)
-	kg, err := NewTssKeyGen(keyGenCfg, scCfg, k)
+	kg, err := NewTssKeyGen(keyGenCfg, k)
 	c.Assert(err, IsNil)
 	c.Assert(kg, NotNil)
 }

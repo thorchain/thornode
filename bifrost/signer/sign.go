@@ -44,24 +44,14 @@ type Signer struct {
 }
 
 // NewSigner create a new instance of signer
-func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
+func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, thorchainCfg config.ThorchainConfiguration, useTSS bool, tssCfg config.TSSConfiguration, bnb *binance.Binance, m *metrics.Metrics) (*Signer, error) {
 	thorchainScanStorage, err := NewThorchainBlockScannerStorage(cfg.SignerDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
 	}
-	m, err := metrics.NewMetrics(cfg.Metric)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create metric instance")
-	}
-	thorchainBridge, err := thorclient.NewThorchainBridge(cfg.Thorchain, m)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create new thorchain bridge")
-	}
+
 	pkm := NewPubKeyManager()
-	thorKeys, err := thorclient.NewKeys(cfg.Thorchain.ChainHomeFolder, cfg.Thorchain.SignerName, cfg.Thorchain.SignerPasswd)
-	if nil != err {
-		return nil, fmt.Errorf("fail to load keys,err:%w", err)
-	}
+
 	httpClient := &http.Client{
 		Timeout: time.Second * 30,
 	}
@@ -69,7 +59,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	var na ttypes.NodeAccount
 	for i := 0; i < 300; i++ { // wait for 5 min before timing out
 		var err error
-		na, err = thorclient.GetNodeAccount(httpClient, cfg.Thorchain.ChainHost, thorKeys.GetSignerInfo().GetAddress().String())
+		na, err = thorclient.GetNodeAccount(httpClient, thorchainCfg.ChainHost, thorKeys.GetSignerInfo().GetAddress().String())
 		if nil != err {
 			return nil, fmt.Errorf("fail to get node account from thorchain,err:%w", err)
 		}
@@ -89,13 +79,9 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 	pkm.Add(na.PubKeySet.Secp256k1)
 
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
-	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, thorchainScanStorage, cfg.Thorchain.ChainHost, m, pkm)
+	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, thorchainScanStorage, thorchainCfg.ChainHost, m, pkm)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create thorchain block scan")
-	}
-	b, err := binance.NewBinance(cfg.Thorchain, cfg.Binance, cfg.UseTSS, cfg.TSS)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create binance client")
 	}
 
 	signer := &Signer{
@@ -104,7 +90,7 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 		wg:                    &sync.WaitGroup{},
 		stopChan:              make(chan struct{}),
 		thorchainBlockScanner: thorchainBlockScanner,
-		Binance:               b,
+		Binance:               bnb,
 		m:                     m,
 		storage:               thorchainScanStorage,
 		errCounter:            m.GetCounterVec(metrics.SignerError),
@@ -112,8 +98,8 @@ func NewSigner(cfg config.SignerConfiguration) (*Signer, error) {
 		thorchainBridge:       thorchainBridge,
 	}
 
-	if cfg.UseTSS {
-		kg, err := tss.NewTssKeyGen(cfg.TSS, cfg.Thorchain, thorKeys)
+	if useTSS {
+		kg, err := tss.NewTssKeyGen(tssCfg, thorKeys)
 		if nil != err {
 			return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
 		}
