@@ -157,14 +157,12 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 
 func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
 	voter.Add(tx, signer)
-
 	ok := false
 	if voter.HasConensus(nas) && voter.Height == 0 {
 		ok = true
 		voter.Height = ctx.BlockHeight()
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
-
 	// Check to see if we have enough identical observations to process the transaction
 	return voter, ok
 }

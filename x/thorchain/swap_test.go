@@ -199,15 +199,18 @@ func (s SwapSuite) TestSwap(c *C) {
 			"",
 		)
 		tx.Chain = common.BNBChain
-		amount, err := swap(ctx, poolStorage, tx, item.target, item.destination, item.tradeTarget)
+		amount, swapEvents, err := swap(ctx, poolStorage, tx, item.target, item.destination, item.tradeTarget, sdk.NewUint(1000_000))
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
+			c.Assert(len(swapEvents) > 0, Equals, true)
 		} else {
 			c.Assert(err, NotNil, Commentf("Expected: %s, got nil", item.expectedErr.Error()))
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
+
 		c.Logf("expected amount:%s, actual amount:%s", item.returnAmount, amount)
 		c.Check(item.returnAmount.Uint64(), Equals, amount.Uint64())
+
 	}
 }
 

@@ -9,6 +9,9 @@ import (
 // EventStatus use in event
 type EventStatus uint8
 
+// EventStatuses a list of event status
+type EventStatuses []EventStatus
+
 const (
 	Success EventStatus = iota
 	Failed
@@ -65,4 +68,26 @@ func GetEventStatus(es string) EventStatus {
 	}
 
 	return Pending
+}
+
+// GetEventStatuses convert a list of status in string type to EventStatus
+func GetEventStatuses(es []string) EventStatuses {
+	var result EventStatuses
+	for _, item := range es {
+		if len(item) == 0 {
+			continue
+		}
+		result = append(result, GetEventStatus(item))
+	}
+	return result
+}
+
+// Contains check whether the given event status is in the list
+func (es EventStatuses) Contains(eventStatus EventStatus) bool {
+	for _, item := range es {
+		if item == eventStatus {
+			return true
+		}
+	}
+	return false
 }
