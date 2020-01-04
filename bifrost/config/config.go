@@ -12,31 +12,27 @@ import (
 )
 
 type Configuration struct {
-	Observer ObserverConfiguration `json:"observer" mapstructure:"observer"`
-	Signer   SignerConfiguration   `json:"signer" mapstructure:"signer"`
+	Observer  ObserverConfiguration  `json:"observer" mapstructure:"observer"`
+	Signer    SignerConfiguration    `json:"signer" mapstructure:"signer"`
+	Thorchain ThorchainConfiguration `json:"thorchain" mapstructure:"thorchain"`
+	Metric    MetricConfiguration    `json:"metric" mapstructure:"metric"`
+	Binance   BinanceConfiguration   `json:"binance" mapstructure:"binance"`
+	UseTSS    bool                   `json:"use_tss" mapstructure:"use_tss"`
+	TSS       TSSConfiguration       `json:"tss" mapstructure:"tss"`
 }
 
 // ObserverConfiguration values
 type ObserverConfiguration struct {
-	Binance               BinanceConfiguration      `json:"binance" mapstructure:"binance"`
-	ObserverDbPath        string                    `json:"observer_db_path" mapstructure:"observer_db_path"`
-	BlockScanner          BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
-	Thorchain             ThorchainConfiguration    `json:"thorchain" mapstructure:"thorchain"`
-	ObserverRetryInterval time.Duration             `json:"observer_retry_interval" mapstructure:"observer_retry_interval"`
-	Metric                MetricConfiguration       `json:"metric" mapstructure:"metric"`
+	ObserverDbPath string                    `json:"observer_db_path" mapstructure:"observer_db_path"`
+	BlockScanner   BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
+	RetryInterval  time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
 }
 
 // SignerConfiguration all the configures need by signer
 type SignerConfiguration struct {
-	SignerDbPath     string                    `json:"signer_db_path" mapstructure:"signer_db_path"`
-	MessageProcessor int                       `json:"message_processor" mapstructure:"message_processor"`
-	BlockScanner     BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
-	Binance          BinanceConfiguration      `json:"binance" mapstructure:"binance"`
-	Thorchain        ThorchainConfiguration    `json:"thorchain" mapstructure:"thorchain"`
-	RetryInterval    time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
-	Metric           MetricConfiguration       `json:"metric" mapstructure:"metric"`
-	UseTSS           bool                      `json:"use_tss" mapstructure:"use_tss"`
-	TSS              TSSConfiguration          `json:"tss" mapstructure:"tss"`
+	SignerDbPath  string                    `json:"signer_db_path" mapstructure:"signer_db_path"`
+	BlockScanner  BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
+	RetryInterval time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
 }
 
 // BinanceConfiguration all the configurations for binance client
@@ -83,8 +79,7 @@ type MetricConfiguration struct {
 
 // LoadConfig
 func LoadConfig(file string) (*Configuration, error) {
-	applyDefaultObserverConfig()
-	applyDefaultSignerConfig()
+	applyDefaultConfig()
 	var cfg Configuration
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(filepath.Dir(file))
@@ -100,17 +95,14 @@ func LoadConfig(file string) (*Configuration, error) {
 	return &cfg, nil
 }
 
-func applyDefaultObserverConfig() {
-	viper.SetDefault("observer.dexhost", "testnet-dex.binance.org")
-	viper.SetDefault("observer.message_processor", "10")
-	viper.SetDefault("observer.observer_db_path", "observer_data")
-	viper.SetDefault("observer.observer_retry_interval", "2s")
-	applyBlockScannerDefault("observer")
-	viper.SetDefault("observer.thorchain.chain_id", "thorchain")
-	viper.SetDefault("observer.thorchain.chain_host", "localhost:1317")
-	viper.SetDefault("observer.metric.listen_port", "9000")
-	viper.SetDefault("observer.metric.read_timeout", "30s")
-	viper.SetDefault("observer.metric.write_timeout", "30s")
+func applyDefaultConfig() {
+	viper.SetDefault("metric.listen_port", "9000")
+	viper.SetDefault("metric.read_timeout", "30s")
+	viper.SetDefault("metric.write_timeout", "30s")
+	viper.SetDefault("thorchain.chain_id", "thorchain")
+	viper.SetDefault("thorchain.chain_host", "localhost:1317")
+	applyDefaultObserverConfig()
+	applyDefaultSignerConfig()
 }
 
 func applyBlockScannerDefault(path string) {
@@ -124,12 +116,14 @@ func applyBlockScannerDefault(path string) {
 	viper.SetDefault(fmt.Sprintf("%s.block_scanner.block_retry_interval", path), "1s")
 }
 
+func applyDefaultObserverConfig() {
+	viper.SetDefault("observer.observer_db_path", "observer_data")
+	viper.SetDefault("observer.retry_interval", "2s")
+	applyBlockScannerDefault("observer")
+}
+
 func applyDefaultSignerConfig() {
 	viper.SetDefault("signer.signer_db_path", "signer_db")
 	applyBlockScannerDefault("signer")
-	viper.SetDefault("signer.thorchain.chain_host", "localhost:1317")
 	viper.SetDefault("signer.retry_interval", "2s")
-	viper.SetDefault("signer.metric.listen_port", "9000")
-	viper.SetDefault("signer.metric.read_timeout", "30s")
-	viper.SetDefault("signer.metric.write_timeout", "30s")
 }

@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/binance-chain/go-sdk/common/types"
@@ -36,11 +37,12 @@ type Binance struct {
 	RPCHost    string
 	chainID    string
 	useTSS     bool
-	isTestNet  bool
+	IsTestNet  bool
+	client     *http.Client
 }
 
 // NewBinance create new instance of binance client
-func NewBinance(thorchainCfg config.ThorchainConfiguration, cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.TSSConfiguration) (*Binance, error) {
+func NewBinance(thorKeys *thorclient.Keys, cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.TSSConfiguration) (*Binance, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
@@ -52,11 +54,7 @@ func NewBinance(thorchainCfg config.ThorchainConfiguration, cfg config.BinanceCo
 			return nil, errors.Wrap(err, "fail to create tss signer")
 		}
 	} else {
-		k, err := thorclient.NewKeys(thorchainCfg.ChainHomeFolder, thorchainCfg.SignerName, thorchainCfg.SignerPasswd)
-		if nil != err {
-			return nil, fmt.Errorf("fail to get keybase,err:%w", err)
-		}
-		priv, err := k.GetPrivateKey()
+		priv, err := thorKeys.GetPrivateKey()
 		if err != nil {
 			return nil, errors.Wrap(err, "fail to get private key")
 		}
@@ -72,36 +70,37 @@ func NewBinance(thorchainCfg config.ThorchainConfiguration, cfg config.BinanceCo
 		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
 
-	chainID, isTestNet := IsTestNet(rpcHost)
+	bnb := &Binance{
+		logger:     log.With().Str("module", "binance").Logger(),
+		cfg:        cfg,
+		keyManager: km,
+		RPCHost:    rpcHost,
+		useTSS:     useTSS,
+		client:     &http.Client{},
+	}
+
+	chainID, isTestNet := bnb.CheckIsTestNet()
 	if isTestNet {
 		types.Network = types.TestNetwork
 	} else {
 		types.Network = types.ProdNetwork
 	}
 
-	return &Binance{
-		logger:     log.With().Str("module", "binance").Logger(),
-		cfg:        cfg,
-		keyManager: km,
-		RPCHost:    rpcHost,
-		chainID:    chainID,
-		isTestNet:  isTestNet,
-		useTSS:     useTSS,
-	}, nil
+	bnb.IsTestNet = isTestNet
+	bnb.chainID = chainID
+	return bnb, nil
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status
-func IsTestNet(rpcHost string) (string, bool) {
-	client := &http.Client{}
-
-	u, err := url.Parse(rpcHost)
+func (b *Binance) CheckIsTestNet() (string, bool) {
+	u, err := url.Parse(b.RPCHost)
 	if err != nil {
-		log.Fatal().Msgf("Unable to parse rpc host: %s\n", rpcHost)
+		log.Fatal().Msgf("Unable to parse rpc host: %s\n", b.RPCHost)
 	}
 
 	u.Path = "/status"
 
-	resp, err := client.Get(u.String())
+	resp, err := b.client.Get(u.String())
 	if err != nil {
 		log.Fatal().Msgf("%v\n", err)
 	}
@@ -134,6 +133,46 @@ func IsTestNet(rpcHost string) (string, bool) {
 
 	isTestNet := status.Result.NodeInfo.Network == "Binance-Chain-Nile"
 	return status.Result.NodeInfo.Network, isTestNet
+}
+
+func (b *Binance) GetHeight() (int64, error) {
+	u, err := url.Parse(b.RPCHost)
+	if err != nil {
+		return 0, errors.Wrap(err, "Unable to parse dex host")
+	}
+	u.Path = "abci_info"
+	resp, err := b.client.Get(u.String())
+	if err != nil {
+		return 0, fmt.Errorf("fail to get request(%s): %w", u.String(), err) // errors.Wrap(err, "Get request failed")
+	}
+
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			log.Error().Err(err).Msg("fail to close resp body")
+		}
+	}()
+
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 0, errors.Wrap(err, "fail to read resp body")
+	}
+
+	type ABCIinfo struct {
+		Jsonrpc string `json:"jsonrpc"`
+		ID      string `json:"id"`
+		Result  struct {
+			Response struct {
+				BlockHeight string `json:"last_block_height"`
+			} `json:"response"`
+		} `json:"result"`
+	}
+
+	var abci ABCIinfo
+	if err := json.Unmarshal(data, &abci); nil != err {
+		return 0, errors.Wrap(err, "failed to unmarshal")
+	}
+
+	return strconv.ParseInt(abci.Result.Response.BlockHeight, 10, 64)
 }
 
 func (b *Binance) input(addr types.AccAddress, coins types.Coins) msg.Input {

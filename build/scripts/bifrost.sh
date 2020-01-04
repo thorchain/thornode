@@ -23,6 +23,24 @@ mkdir -p $SIGNER_PATH $OBSERVER_PATH /etc/bifrost
 
 # Generate bifrost config file
 echo "{
+    \"thorchain\": {
+        \"chain_id\": \"$CHAIN_ID\",
+        \"chain_host\": \"$CHAIN_API\",
+        \"signer_name\": \"$SIGNER_NAME\",
+        \"signer_passwd\": \"$SIGNER_PASSWD\"
+    },
+    \"metric\": {
+        \"enabled\": true
+    },
+    \"binance\": {
+        \"rpc_host\": \"$BINANCE_HOST\"
+    },
+    \"use_tss\": $USE_TSS,
+    \"tss\": {
+        \"scheme\": \"$TSS_SCHEME\",
+        \"host\": \"$TSS_HOST\",
+        \"port\": $TSS_PORT
+    },
   \"observer\": {
       \"observer_db_path\": \"$OBSERVER_PATH\",
       \"block_scanner\": {
@@ -31,18 +49,6 @@ echo "{
         \"block_scan_processors\": 1,
         \"block_height_discover_back_off\": \"1s\",
         \"block_retry_interval\": \"10s\"
-      },
-      \"thorchain\": {
-        \"chain_id\": \"$CHAIN_ID\",
-        \"chain_host\": \"$CHAIN_API\",
-        \"signer_name\": \"$SIGNER_NAME\",
-        \"signer_passwd\": \"$SIGNER_PASSWD\"
-      },
-      \"metric\": {
-        \"enabled\": true
-      },
-      \"binance\": {
-        \"rpc_host\": \"$BINANCE_HOST\"
       }
   },
   \"signer\": {
@@ -55,24 +61,6 @@ echo "{
         \"block_height_discover_back_off\": \"1s\",
         \"block_retry_interval\": \"10s\",
         \"scheme\": \"http\"
-      },
-      \"thorchain\": {
-        \"chain_id\": \"$CHAIN_ID\",
-        \"chain_host\": \"$CHAIN_API\",
-        \"signer_name\": \"$SIGNER_NAME\",
-        \"signer_passwd\": \"$SIGNER_PASSWD\"
-      },
-      \"metric\": {
-        \"enabled\": true
-      },
-      \"binance\": {
-        \"rpc_host\": \"$BINANCE_HOST\"
-      },
-      \"use_tss\": $USE_TSS,
-      \"tss\": {
-        \"scheme\": \"$TSS_SCHEME\",
-        \"host\": \"$TSS_HOST\",
-        \"port\": $TSS_PORT
       }
   }
 }" > /etc/bifrost/config.json

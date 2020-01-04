@@ -18,6 +18,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 
@@ -27,29 +28,33 @@ import (
 func TestPackage(t *testing.T) { TestingT(t) }
 
 type BinancechainSuite struct {
-	thordir string
-	cfg     config.ThorchainConfiguration
+	thordir  string
+	thorKeys *thorclient.Keys
 }
 
 var _ = Suite(&BinancechainSuite{})
 
 func (s *BinancechainSuite) SetUpSuite(c *C) {
+	var err error
 	ns := strconv.Itoa(time.Now().Nanosecond())
 	types2.SetupConfigForTest()
 	ctypes.Network = ctypes.TestNetwork
 	c.Assert(os.Setenv("NET", "testnet"), IsNil)
 
 	s.thordir = filepath.Join(os.TempDir(), ns, ".thorcli")
-	s.cfg = config.ThorchainConfiguration{
+	cfg := config.ThorchainConfiguration{
 		ChainID:         "thorchain",
 		ChainHost:       "localhost",
 		SignerName:      "bob",
 		SignerPasswd:    "password",
 		ChainHomeFolder: s.thordir,
 	}
+
 	kb, err := keys.NewKeyBaseFromDir(s.thordir)
 	c.Assert(err, IsNil)
-	_, _, err = kb.CreateMnemonic(s.cfg.SignerName, cKeys.English, s.cfg.SignerPasswd, cKeys.Secp256k1)
+	_, _, err = kb.CreateMnemonic(cfg.SignerName, cKeys.English, cfg.SignerPasswd, cKeys.Secp256k1)
+	c.Assert(err, IsNil)
+	s.thorKeys, err = thorclient.NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
 	c.Assert(err, IsNil)
 }
 
@@ -71,7 +76,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		Host:   "localhost",
 		Port:   0,
 	}
-	b, err := NewBinance(s.cfg, config.BinanceConfiguration{
+	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: "",
 	}, false, tssCfg)
 	c.Assert(b, IsNil)
@@ -85,7 +90,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		}
 	}))
 
-	b2, err2 := NewBinance(s.cfg, config.BinanceConfiguration{
+	b2, err2 := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: server.URL,
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
@@ -101,6 +106,33 @@ const accountInfo string = `{
     }
   }
 }`
+
+func (s *BinancechainSuite) TestGetHeight(c *C) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		c.Logf("requestUri:%s", req.RequestURI)
+		if req.RequestURI == "/status" {
+			_, err := rw.Write([]byte(status))
+			c.Assert(err, IsNil)
+		} else if req.RequestURI == "/abci_info" {
+			_, err := rw.Write([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "response": { "data": "BNBChain", "last_block_height": "123456789", "last_block_app_hash": "pwx4TJjXu3yaF6dNfLQ9F4nwAhjIqmzE8fNa+RXwAzQ=" } } }`))
+			c.Assert(err, IsNil)
+		}
+	}))
+
+	tssCfg := config.TSSConfiguration{
+		Scheme: "http",
+		Host:   "localhost",
+		Port:   0,
+	}
+	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
+		RPCHost: server.URL,
+	}, false, tssCfg)
+	c.Assert(err, IsNil)
+
+	height, err := b.GetHeight()
+	c.Assert(err, IsNil)
+	c.Check(height, Equals, int64(123456789))
+}
 
 func (s *BinancechainSuite) TestSignTx(c *C) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
@@ -122,7 +154,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		Host:   "localhost",
 		Port:   0,
 	}
-	b2, err2 := NewBinance(s.cfg, config.BinanceConfiguration{
+	b2, err2 := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: server.URL,
 	}, false, tssCfg)
 	c.Assert(err2, IsNil)
@@ -188,7 +220,7 @@ func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 		Port:   0,
 	}
 
-	b, err := NewBinance(s.cfg, config.BinanceConfiguration{
+	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: server.URL,
 	}, false, tssCfg)
 	c.Assert(err, IsNil)

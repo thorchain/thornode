@@ -3,9 +3,7 @@ package signer
 import (
 	"encoding/json"
 	"fmt"
-	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -17,6 +15,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -30,7 +29,7 @@ type ThorchainBlockScan struct {
 	cfg                config.BlockScannerConfiguration
 	scannerStorage     blockscanner.ScannerStorage
 	commonBlockScanner *blockscanner.CommonBlockScanner
-	chainHost          string
+	thorchain          *thorclient.ThorchainBridge
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
 	pkm                *PubKeyManager
@@ -38,10 +37,7 @@ type ThorchainBlockScan struct {
 }
 
 // NewThorchainBlockScan create a new instance of thorchain block scanner
-func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chainHost string, m *metrics.Metrics, pkm *PubKeyManager) (*ThorchainBlockScan, error) {
-	if !strings.HasPrefix(chainHost, "http") {
-		chainHost = fmt.Sprintf("http://%s", chainHost)
-	}
+func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, thorchain *thorclient.ThorchainBridge, m *metrics.Metrics, pkm *PubKeyManager) (*ThorchainBlockScan, error) {
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
 	}
@@ -61,7 +57,7 @@ func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blo
 		cfg:                cfg,
 		scannerStorage:     scanStorage,
 		commonBlockScanner: commonBlockScanner,
-		chainHost:          chainHost,
+		thorchain:          thorchain,
 		errCounter:         m.GetCounterVec(metrics.ThorchainBlockScanError),
 		pkm:                pkm,
 		cdc:                codec.New(),
@@ -87,14 +83,10 @@ func (b *ThorchainBlockScan) Start() error {
 
 func (b *ThorchainBlockScan) processKeygenBlock(blockHeight int64) error {
 	for _, pk := range b.pkm.pks {
-		uri, err := url.Parse(b.chainHost)
-		if err != nil {
-			return errors.Wrap(err, "fail to parse chain host")
-		}
-		uri.Path = fmt.Sprintf("/thorchain/keygen/%d/%s", blockHeight, pk.String())
+		uri := b.thorchain.GetUrl(fmt.Sprintf("/thorchain/keygen/%d/%s", blockHeight, pk.String()))
 
 		strBlockHeight := strconv.FormatInt(blockHeight, 10)
-		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())
+		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri)
 		if nil != err {
 			b.errCounter.WithLabelValues("fail_get_keygen", strBlockHeight)
 			return errors.Wrap(err, "fail to get keygen from a block")
@@ -115,13 +107,9 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 		if len(pk.String()) == 0 {
 			continue
 		}
-		uri, err := url.Parse(b.chainHost)
-		if err != nil {
-			return errors.Wrap(err, "fail to parse chain host")
-		}
-		uri.Path = fmt.Sprintf("/thorchain/keysign/%d/%s", blockHeight, pk.String())
+		uri := b.thorchain.GetUrl(fmt.Sprintf("/thorchain/keysign/%d/%s", blockHeight, pk.String()))
 		strBlockHeight := strconv.FormatInt(blockHeight, 10)
-		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri.String())
+		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri)
 		if nil != err {
 			b.errCounter.WithLabelValues("fail_get_tx_out", strBlockHeight)
 			return errors.Wrap(err, "fail to get tx out from a block")
