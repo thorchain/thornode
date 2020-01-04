@@ -172,7 +172,7 @@ func (b *Binance) GetHeight() (int64, error) {
 		return 0, errors.Wrap(err, "failed to unmarshal")
 	}
 
-	n, _ := strconv.ParseInt(abci.Result.Response.BlockHeight, 10, 64)
+	return strconv.ParseInt(abci.Result.Response.BlockHeight, 10, 64)
 	return n, nil
 }
 
