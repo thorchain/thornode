@@ -78,7 +78,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(940000))
 }
 
-func (s *SignSuite) TestHandleYggReturn_Fail_NotEnough(c *C) {
+func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {
 	sign := &Signer{
 		Binance: &TestBinance{
 			baseAccount: types.BaseAccount{
@@ -95,5 +95,5 @@ func (s *SignSuite) TestHandleYggReturn_Fail_NotEnough(c *C) {
 
 	newItem, err := sign.handleYggReturn(item)
 	c.Assert(err, IsNil)
-	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(10000))
+	c.Check(newItem.Coins[0].Amount.Uint64(), Equals, uint64(0))
 }
