@@ -85,14 +85,6 @@ func (o *Observer) Start() error {
 		o.logger.Error().Err(err).Msg("node account is not whitelisted, can't start")
 		return errors.Wrap(err, "node account is not whitelisted, can't start")
 	}
-	if err := o.thorchainBridge.Start(); nil != err {
-		o.logger.Error().Err(err).Msg("fail to start thorchain bridge")
-		return errors.Wrap(err, "fail to start thorchain bridge")
-	}
-	if err := o.m.Start(); nil != err {
-		o.logger.Error().Err(err).Msg("fail to start metric collector")
-		return errors.Wrap(err, "fail to start metric collector")
-	}
 	if err := o.addrMgr.Start(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to start pool address manager")
 		return errors.Wrap(err, "fail to start pool address manager")

@@ -37,6 +37,7 @@ type ThorchainBridge struct {
 	keys          *Keys
 	errCounter    *prometheus.CounterVec
 	m             *metrics.Metrics
+	blockHeight   int64
 	accountNumber uint64
 	seqNumber     uint64
 	client        *retryablehttp.Client
@@ -83,10 +84,6 @@ func MakeCodec() *codec.Codec {
 
 func (scb *ThorchainBridge) WithRetryableHttpClient(c *retryablehttp.Client) {
 	scb.client = c
-}
-
-func (scb *ThorchainBridge) Start() error {
-	return nil
 }
 
 func (scb *ThorchainBridge) getAccountInfoUrl(chainHost string) string {
@@ -213,15 +210,22 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 		scb.m.GetHistograms(metrics.SendToThorchainDuration).Observe(time.Since(start).Seconds())
 	}()
 
-	accountNumber, sequenceNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
-	if nil != err {
-		return noTxID, errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
+	blockHeight, err := scb.GetBlockHeight()
+	if err != nil {
+		return noTxID, err
+	}
+	if blockHeight > scb.blockHeight {
+		scb.accountNumber, scb.seqNumber, err = scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
+		if nil != err {
+			return noTxID, errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
+		}
+		scb.blockHeight = blockHeight
 	}
 	scb.logger.Info().Uint64("account_number", accountNumber).Uint64("sequence_number", sequenceNumber).Msg("account info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
-		AccountNumber: accountNumber,
-		Sequence:      sequenceNumber,
+		AccountNumber: scb.accountNumber,
+		Sequence:      scb.seqNumber,
 		Fee:           stdTx.Fee,
 		Msgs:          stdTx.GetMsgs(),
 		Memo:          stdTx.GetMemo(),
@@ -278,15 +282,28 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 	}
 	scb.m.GetCounter(metrics.TxToThorchain).Inc()
 	scb.logger.Info().Msgf("Received a TxHash of %v from the thorchain", commit.TxHash)
+
+	// increment seqNum
+	scb.seqNumber += 1
+
 	return common.NewTxID(commit.TxHash)
+}
+
+func (scb *ThorchainBridge) GetBlockHeight() (int64, error) {
+	heights, err := scb.getHeights()
+	return heights.Statechain, err
 }
 
 // GetBinanceChainStartHeight
 func (scb *ThorchainBridge) GetBinanceChainStartHeight() (int64, error) {
+	heights, err := scb.getHeights()
+	return heights.LastChainHeight, err
+}
 
+func (scb *ThorchainBridge) getHeights() (stypes.QueryResHeights, error) {
 	resp, err := scb.client.Get(scb.GetUrl("/thorchain/lastblock"))
 	if nil != err {
-		return 0, errors.Wrap(err, "fail to get last blocks from thorchain")
+		return stypes.QueryResHeights{}, errors.Wrap(err, "fail to get last blocks from thorchain")
 	}
 	defer func() {
 		if err := resp.Body.Close(); nil != err {
@@ -294,19 +311,19 @@ func (scb *ThorchainBridge) GetBinanceChainStartHeight() (int64, error) {
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		return 0, errors.New("fail to get last block height from thorchain")
+		return stypes.QueryResHeights{}, errors.New("fail to get last block height from thorchain")
 	}
-	var lastBlock stypes.QueryResHeights
+	var blocks stypes.QueryResHeights
 	buf, err := ioutil.ReadAll(resp.Body)
 	if nil != err {
-		return 0, errors.Wrap(err, "fail to read response body")
+		return stypes.QueryResHeights{}, errors.Wrap(err, "fail to read response body")
 	}
-	if err := scb.cdc.UnmarshalJSON(buf, &lastBlock); nil != err {
+	if err := scb.cdc.UnmarshalJSON(buf, &blocks); nil != err {
 		scb.errCounter.WithLabelValues("fail_unmarshal_lastblock", "").Inc()
-		return 0, errors.Wrap(err, "fail to unmarshal last block")
+		return stypes.QueryResHeights{}, errors.Wrap(err, "fail to unmarshal last block")
 	}
 
-	return lastBlock.LastChainHeight, nil
+	return blocks, nil
 }
 
 // getThorchainUrl with the given path

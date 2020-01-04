@@ -61,6 +61,9 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create metric instance")
 	}
+	if err := m.Start(); nil != err {
+		log.Fatal().Err(err).Msg("fail to start metric collector")
+	}
 
 	// thorchain bridge
 	thorchainBridge, err := thorclient.NewThorchainBridge(cfg.Thorchain, m)
