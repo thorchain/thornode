@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/tendermint/tendermint/crypto"
 
 	"gitlab.com/thorchain/thornode/bifrost/binance"
 	"gitlab.com/thorchain/thornode/bifrost/config"
@@ -25,6 +26,15 @@ import (
 	ttypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
+// Binance interface
+type Binance interface {
+	BroadcastTx(hexTx []byte) error
+	GetAccount(addr stypes.AccAddress) (stypes.BaseAccount, error)
+	GetAddress(poolPubKey common.PubKey) string
+	GetPubKey() crypto.PubKey
+	SignTx(tai types.TxOutItem, height int64) ([]byte, map[string]string, error)
+}
+
 // Signer will pull the tx out from thorchain and then forward it to binance chain
 type Signer struct {
 	logger                zerolog.Logger
@@ -33,7 +43,7 @@ type Signer struct {
 	thorchainBridge       *thorclient.ThorchainBridge
 	stopChan              chan struct{}
 	thorchainBlockScanner *ThorchainBlockScan
-	Binance               *binance.Binance
+	Binance               Binance
 	storage               *ThorchainBlockScannerStorage
 	m                     *metrics.Metrics
 	errCounter            *prometheus.CounterVec
@@ -353,13 +363,22 @@ func (s *Signer) handleYggReturn(out types.TxOutItem) (types.TxOutItem, error) {
 		return out, err
 	}
 	out.Coins = make(common.Coins, 0)
+	gas := common.GetBNBGasFee(uint64(len(acct.Coins)))
 	for _, coin := range acct.Coins {
 		asset, err := common.NewAsset(coin.Denom)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("failed to parse asset")
 			return out, err
 		}
-		out.Coins = append(out.Coins, common.NewCoin(asset, sdk.NewUint(uint64(coin.Amount))))
+		amount := sdk.NewUint(uint64(coin.Amount))
+		if asset.IsBNB() {
+			if amount.GTE(gas[0].Amount) {
+				amount = amount.Sub(gas[0].Amount)
+			} else {
+				// delete coins?
+			}
+		}
+		out.Coins = append(out.Coins, common.NewCoin(asset, amount))
 	}
 
 	return out, nil
