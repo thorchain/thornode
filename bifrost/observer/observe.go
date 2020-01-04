@@ -81,14 +81,6 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 }
 
 func (o *Observer) Start() error {
-	if err := o.thorchainBridge.EnsureNodeWhitelistedWithTimeout(); nil != err {
-		o.logger.Error().Err(err).Msg("node account is not whitelisted, can't start")
-		return errors.Wrap(err, "node account is not whitelisted, can't start")
-	}
-	if err := o.addrMgr.Start(); nil != err {
-		o.logger.Error().Err(err).Msg("fail to start pool address manager")
-		return errors.Wrap(err, "fail to start pool address manager")
-	}
 	o.wg.Add(1)
 	go o.txinsProcessor(o.blockScanner.GetMessages(), 1)
 	o.retryAllTx()
