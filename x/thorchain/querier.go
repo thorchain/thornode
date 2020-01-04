@@ -1,7 +1,9 @@
 package thorchain
 
 import (
+	"errors"
 	"fmt"
+	"net/url"
 	"strconv"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -67,7 +69,17 @@ func NewQuerier(keeper Keeper, validatorMgr ValidatorManager) sdk.Querier {
 		}
 	}
 }
-
+func getURLFromData(data []byte) (*url.URL, error) {
+	if nil == data {
+		return nil, errors.New("empty data")
+	}
+	u := &url.URL{}
+	err := u.UnmarshalBinary(data)
+	if nil != err {
+		return nil, fmt.Errorf("fail to unmarshal url.URL: %w", err)
+	}
+	return u, nil
+}
 func queryVaultsAddresses(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	chains, err := keeper.GetChains(ctx)
 	if err != nil {
@@ -561,25 +573,49 @@ func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 	return res, nil
 }
 
+func getEventStatusFromQuery(u *url.URL) EventStatuses {
+	var result EventStatuses
+	if nil == u {
+		return result
+	}
+	values, ok := u.Query()["include"]
+	if !ok {
+		return result
+	}
+	return GetEventStatuses(values)
+}
+
 func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+
 	id, err := strconv.ParseInt(path[0], 10, 64)
 	if err != nil {
 		ctx.Logger().Error("fail to discover id number", err)
 		return nil, sdk.ErrInternal("fail to discover id number")
 	}
-
+	u, err := getURLFromData(req.Data)
+	if nil != err {
+		ctx.Logger().Error(err.Error())
+	}
+	es := getEventStatusFromQuery(u)
 	limit := int64(100) // limit the number of events, aka pagination
 	events := make(Events, 0)
 	for i := id; i <= id+limit; i++ {
 		event, _ := keeper.GetEvent(ctx, i)
-		if event.Status == EventPending {
+
+		if event.Empty() {
 			break
 		}
-		if !event.Empty() {
+		if len(es) == 0 {
+			if event.Status == EventPending {
+				break
+			}
 			events = append(events, event)
 		} else {
-			break
+			if es.Contains(event.Status) {
+				events = append(events, event)
+			}
 		}
+
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), events)

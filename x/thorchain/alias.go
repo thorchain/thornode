@@ -93,6 +93,7 @@ var (
 	GetRandomPubKey                = types.GetRandomPubKey
 	GetRandomPubKeySet             = types.GetRandomPubKeySet
 	SetupConfigForTest             = types.SetupConfigForTest
+	GetEventStatuses               = types.GetEventStatuses
 )
 
 type (
@@ -158,4 +159,5 @@ type (
 	NodeStatus                  = types.NodeStatus
 	VaultData                   = types.VaultData
 	VaultStatus                 = types.VaultStatus
+	EventStatuses               = types.EventStatuses
 )
