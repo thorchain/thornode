@@ -173,7 +173,6 @@ func (b *Binance) GetHeight() (int64, error) {
 	}
 
 	return strconv.ParseInt(abci.Result.Response.BlockHeight, 10, 64)
-	return n, nil
 }
 
 func (b *Binance) input(addr types.AccAddress, coins types.Coins) msg.Input {
