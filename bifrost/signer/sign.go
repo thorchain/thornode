@@ -114,9 +114,6 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 }
 
 func (s *Signer) Start() error {
-	if err := s.thorchainBridge.Start(); nil != err {
-		return errors.Wrap(err, "fail to start thorchain bridge")
-	}
 	if err := s.m.Start(); nil != err {
 		return errors.Wrap(err, "fail to start metric collector")
 	}
