@@ -27,6 +27,8 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
+var EmptyNodeAccount stypes.NodeAccount
+
 // ThorchainBridge will be used to send tx to thorchain
 type ThorchainBridge struct {
 	logger        zerolog.Logger
@@ -94,7 +96,7 @@ func (scb *ThorchainBridge) Start() error {
 }
 
 func (scb *ThorchainBridge) getAccountInfoUrl(chainHost string) string {
-	return scb.getThorchainUrl(fmt.Sprintf("/auth/accounts/%s", scb.keys.GetSignerInfo().GetAddress()))
+	return scb.GetUrl(fmt.Sprintf("/auth/accounts/%s", scb.keys.GetSignerInfo().GetAddress()))
 }
 
 func (scb *ThorchainBridge) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, uint64, error) {
@@ -257,7 +259,7 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 	}
 	scb.logger.Info().Str("payload", string(result)).Msg("post to thorchain")
 
-	resp, err := scb.client.Post(scb.getThorchainUrl("/txs"), "application/json", bytes.NewBuffer(result))
+	resp, err := scb.client.Post(scb.GetUrl("/txs"), "application/json", bytes.NewBuffer(result))
 	if err != nil {
 		scb.errCounter.WithLabelValues("fail_post_to_thorchain", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to post tx to thorchain")
@@ -286,7 +288,7 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 // GetBinanceChainStartHeight
 func (scb *ThorchainBridge) GetBinanceChainStartHeight() (int64, error) {
 
-	resp, err := scb.client.Get(scb.getThorchainUrl("/thorchain/lastblock"))
+	resp, err := scb.client.Get(scb.GetUrl("/thorchain/lastblock"))
 	if nil != err {
 		return 0, errors.Wrap(err, "fail to get last blocks from thorchain")
 	}
@@ -312,7 +314,7 @@ func (scb *ThorchainBridge) GetBinanceChainStartHeight() (int64, error) {
 }
 
 // getThorchainUrl with the given path
-func (scb *ThorchainBridge) getThorchainUrl(path string) string {
+func (scb *ThorchainBridge) GetUrl(path string) string {
 	uri := url.URL{
 		Scheme: "http",
 		Host:   scb.cfg.ChainHost,
@@ -345,7 +347,7 @@ func (scb *ThorchainBridge) EnsureNodeWhitelisted() error {
 		return errors.New("bep address is empty")
 	}
 
-	requestUrl := scb.getThorchainUrl("/thorchain/observer/" + bepAddr)
+	requestUrl := scb.GetUrl("/thorchain/observer/" + bepAddr)
 	scb.logger.Debug().Str("request_url", requestUrl).Msg("check node account status")
 	resp, err := scb.client.Get(requestUrl)
 	if nil != err {
@@ -374,4 +376,34 @@ func (scb *ThorchainBridge) EnsureNodeWhitelisted() error {
 		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", nodeAccount.Status)
 	}
 	return nil
+}
+
+// GetNodeAccount from thorchain
+func (scb *ThorchainBridge) GetNodeAccount(thorAddr string) (stypes.NodeAccount, error) {
+	requestUrl := scb.GetUrl("/thorchain/nodeaccount/" + thorAddr)
+
+	scb.logger.Debug().Str("request_url", requestUrl).Msg("get node account")
+	resp, err := scb.client.Get(requestUrl)
+	if nil != err {
+		return EmptyNodeAccount, errors.Wrap(err, "fail to get node account")
+	}
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			scb.logger.Error().Err(err).Msg("fail to close response body")
+		}
+	}()
+	if resp.StatusCode != http.StatusOK {
+		return EmptyNodeAccount, fmt.Errorf("fail to get node account from thorchain,statusCode:%d", resp.StatusCode)
+	}
+	var na stypes.NodeAccount
+
+	buf, err := ioutil.ReadAll(resp.Body)
+	if nil != err {
+		return EmptyNodeAccount, fmt.Errorf("fail to read response body,err:%w", err)
+	}
+	cdc := MakeCodec()
+	if err := cdc.UnmarshalJSON(buf, &na); nil != err {
+		return EmptyNodeAccount, fmt.Errorf("fail to unmarshal node account response,err:%w", err)
+	}
+	return na, nil
 }

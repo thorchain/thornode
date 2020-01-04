@@ -1,11 +1,6 @@
 package observer
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -39,66 +34,13 @@ type Observer struct {
 	addrMgr         *AddressManager
 }
 
-// CurrHeight : Get the Binance current block height.
-// TODO: this func is a duplicate of `getBlockUrl` and `getRPCBlock`. We don't
-// need two funcs that return the current block height. Consolidate and remove
-// one from `mock-binance`
-func binanceHeight(rpcHost string, client http.Client) (int64, error) {
-	u, err := url.Parse(rpcHost)
-	if err != nil {
-		return 0, errors.Wrap(err, "Unable to parse dex host")
-	}
-	u.Path = "abci_info"
-	resp, err := client.Get(u.String())
-	if err != nil {
-		return 0, fmt.Errorf("fail to get request(%s): %w", u.String(), err) // errors.Wrap(err, "Get request failed")
-	}
-
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-			log.Error().Err(err).Msg("fail to close resp body")
-		}
-	}()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return 0, errors.Wrap(err, "fail to read resp body")
-	}
-
-	type ABCIinfo struct {
-		Jsonrpc string `json:"jsonrpc"`
-		ID      string `json:"id"`
-		Result  struct {
-			Response struct {
-				BlockHeight string `json:"last_block_height"`
-			} `json:"response"`
-		} `json:"result"`
-	}
-
-	var abci ABCIinfo
-	if err := json.Unmarshal(data, &abci); nil != err {
-		return 0, errors.Wrap(err, "failed to unmarshal")
-	}
-
-	n, _ := strconv.ParseInt(abci.Result.Response.BlockHeight, 10, 64)
-	return n, nil
-}
-
 // NewObserver create a new instance of Observer
-func NewObserver(cfg config.ObserverConfiguration) (*Observer, error) {
+func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, addrMgr *AddressManager, bnb *binance.Binance, m *metrics.Metrics) (*Observer, error) {
 	scanStorage, err := NewBinanceChanBlockScannerStorage(cfg.ObserverDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create scan storage")
 	}
 
-	m, err := metrics.NewMetrics(cfg.Metric)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create metric instance")
-	}
-	thorchainBridge, err := thorclient.NewThorchainBridge(cfg.Thorchain, m)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create new thorchain bridge")
-	}
 	logger := log.Logger.With().Str("module", "observer").Logger()
 
 	if !cfg.BlockScanner.EnforceBlockHeight {
@@ -111,22 +53,16 @@ func NewObserver(cfg config.ObserverConfiguration) (*Observer, error) {
 			cfg.BlockScanner.StartBlockHeight = startBlockHeight
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by thorchain")
 		} else {
-			client := &http.Client{}
-			cfg.BlockScanner.StartBlockHeight, err = binanceHeight(cfg.Binance.RPCHost, *client)
-			if nil != err {
+			cfg.BlockScanner.StartBlockHeight, err = bnb.GetHeight()
+			if err != nil {
 				return nil, errors.Wrap(err, "fail to get binance height")
 			}
+
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
 		}
 	}
 
-	addrMgr, err := NewAddressManager(cfg.Thorchain.ChainHost, m)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create pool address manager")
-	}
-
-	_, isTestNet := binance.IsTestNet(cfg.Binance.RPCHost)
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, isTestNet, addrMgr, m)
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, bnb.IsTestNet, addrMgr, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
@@ -187,7 +123,7 @@ func (o *Observer) retryTxProcessor() {
 	defer o.logger.Info().Msg("stop retry process")
 	defer o.wg.Done()
 	// retry all
-	t := time.NewTicker(o.cfg.ObserverRetryInterval)
+	t := time.NewTicker(o.cfg.RetryInterval)
 	defer t.Stop()
 	for {
 		select {

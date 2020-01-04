@@ -12,9 +12,12 @@ import (
 	"github.com/rs/zerolog/log"
 	flag "github.com/spf13/pflag"
 
+	"gitlab.com/thorchain/thornode/bifrost/binance"
 	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/observer"
 	"gitlab.com/thorchain/thornode/bifrost/signer"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/cmd"
 )
 
@@ -53,8 +56,38 @@ func main() {
 		log.Fatal().Err(err).Msg("fail to load config ")
 	}
 
+	// metrics
+	m, err := metrics.NewMetrics(cfg.Metric)
+	if err != nil {
+		log.Fatal().Err(err).Msg("fail to create metric instance")
+	}
+
+	// thorchain bridge
+	thorchainBridge, err := thorclient.NewThorchainBridge(cfg.Thorchain, m)
+	if err != nil {
+		log.Fatal().Err(err).Msg("fail to create new thorchain bridge")
+	}
+
+	// Address Manager
+	addrMgr, err := observer.NewAddressManager(cfg.Thorchain.ChainHost, m)
+	if nil != err {
+		log.Fatal().Err(err).Msg("fail to create pool address manager")
+	}
+
+	// get thorchain key manager
+	thorKeys, err := thorclient.NewKeys(cfg.Thorchain.ChainHomeFolder, cfg.Thorchain.SignerName, cfg.Thorchain.SignerPasswd)
+	if err != nil {
+		log.Fatal().Err(err).Msg("fail to load keys")
+	}
+
+	// create binance client
+	bnb, err := binance.NewBinance(thorKeys, cfg.Binance, cfg.UseTSS, cfg.TSS)
+	if err != nil {
+		log.Fatal().Err(err).Msg("fail to create binance client")
+	}
+
 	// start observer
-	obs, err := observer.NewObserver(cfg.Observer)
+	obs, err := observer.NewObserver(cfg.Observer, thorchainBridge, addrMgr, bnb, m)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create observer")
 	}
@@ -63,7 +96,7 @@ func main() {
 	}
 
 	// start signer
-	sign, err := signer.NewSigner(cfg.Signer)
+	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, cfg.UseTSS, cfg.TSS, bnb, m)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create instance of signer")
 	}
