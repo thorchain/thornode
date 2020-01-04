@@ -372,11 +372,7 @@ func (s *Signer) handleYggReturn(out types.TxOutItem) (types.TxOutItem, error) {
 		}
 		amount := sdk.NewUint(uint64(coin.Amount))
 		if asset.IsBNB() {
-			if amount.GTE(gas[0].Amount) {
-				amount = amount.Sub(gas[0].Amount)
-			} else {
-				// delete coins?
-			}
+			amount = common.SafeSub(amount, gas[0].Amount)
 		}
 		out.Coins = append(out.Coins, common.NewCoin(asset, amount))
 	}
