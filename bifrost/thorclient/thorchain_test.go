@@ -11,22 +11,19 @@ import (
 	"testing"
 	"time"
 
-	. "gopkg.in/check.v1"
-
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-
-	retryablehttp "github.com/hashicorp/go-retryablehttp"
-
-	"gitlab.com/thorchain/thornode/cmd"
-	"gitlab.com/thorchain/thornode/common"
-	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
+	"github.com/hashicorp/go-retryablehttp"
+	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/cmd"
+	"gitlab.com/thorchain/thornode/common"
+	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -453,9 +450,8 @@ func (ThorchainSuite) TestSendEx(c *C) {
 		client.RetryWaitMax = 3 * time.Second
 		scb.WithRetryableHttpClient(client)
 		err = scb.Start()
+
 		c.Assert(err, IsNil)
-		c.Assert(scb.seqNumber, Equals, uint64(6))
-		c.Assert(scb.accountNumber, Equals, uint64(5))
 		stx, err := scb.GetObservationsStdTx(in)
 		c.Assert(stx, NotNil)
 		c.Assert(err, IsNil)

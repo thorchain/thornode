@@ -7,6 +7,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/gorilla/mux"
+
 	"gitlab.com/thorchain/thornode/x/thorchain/query"
 )
 
@@ -21,7 +22,13 @@ func pingHandler(cliCtx context.CLIContext, storeName string) http.HandlerFunc {
 func getHandlerWrapper(q query.Query, storeName string, cliCtx context.CLIContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := mux.Vars(r)[restURLParam]
-		res, _, err := cliCtx.QueryWithData(q.Path(storeName, param, mux.Vars(r)[restURLParam2]), nil)
+		text, err := r.URL.MarshalBinary()
+		if nil != err {
+			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		res, _, err := cliCtx.QueryWithData(q.Path(storeName, param, mux.Vars(r)[restURLParam2]), text)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusNotFound, err.Error())
 			return

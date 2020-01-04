@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"sync/atomic"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -84,14 +83,6 @@ func (scb *ThorchainBridge) WithRetryableHttpClient(c *retryablehttp.Client) {
 }
 
 func (scb *ThorchainBridge) Start() error {
-	accountNumber, sequenceNumber, err := scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
-	if nil != err {
-		return errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
-	}
-
-	scb.logger.Info().Uint64("account number", accountNumber).Uint64("sequence no", sequenceNumber).Msg("account information")
-	scb.accountNumber = accountNumber
-	scb.seqNumber = sequenceNumber
 	return nil
 }
 
@@ -183,7 +174,7 @@ func (scb *ThorchainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*aut
 		} else if tx.Tx.FromAddress.Equals(obAddr) {
 			outbound = append(outbound, tx)
 		} else {
-			return nil, fmt.Errorf("Could not determine if this tx as inbound or outbound")
+			return nil, errors.New("Could not determine if this tx as inbound or outbound")
 		}
 	}
 
@@ -220,8 +211,7 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 	if nil != err {
 		return noTxID, errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
 	}
-
-	scb.logger.Info().Str("chainid", scb.cfg.ChainID).Uint64("accountnumber", scb.accountNumber).Uint64("sequenceNo", scb.seqNumber).Msg("info")
+	scb.logger.Info().Uint64("account_number", accountNumber).Uint64("sequence_number", sequenceNumber).Msg("account info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
 		AccountNumber: accountNumber,
@@ -242,8 +232,7 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 		[]authtypes.StdSignature{sig},
 		stdTx.GetMemo(),
 	)
-	nextSeq := atomic.AddUint64(&scb.seqNumber, 1)
-	scb.logger.Info().Uint64("sequence no", nextSeq).Msg("next sequence no")
+
 	scb.m.GetCounter(metrics.TxToThorchainSigned).Inc()
 
 	var setTx types.SetTx
@@ -257,6 +246,7 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 		scb.errCounter.WithLabelValues("fail_marshal_settx", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to marshal settx to json")
 	}
+
 	scb.logger.Info().Str("payload", string(result)).Msg("post to thorchain")
 
 	resp, err := scb.client.Post(scb.GetUrl("/txs"), "application/json", bytes.NewBuffer(result))

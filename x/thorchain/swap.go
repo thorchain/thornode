@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -50,34 +49,36 @@ func swap(ctx sdk.Context,
 	keeper Keeper, tx common.Tx,
 	target common.Asset,
 	destination common.Address,
-	tradeTarget sdk.Uint) (sdk.Uint, error) {
+	tradeTarget sdk.Uint,
+	transactionFee sdk.Uint) (sdk.Uint, []EventSwap, error) {
+	var swapEvents []EventSwap
+
 	if err := validateMessage(tx, target, destination); nil != err {
 		ctx.Logger().Error(err.Error())
-		return sdk.ZeroUint(), err
+		return sdk.ZeroUint(), nil, err
 	}
 	source := tx.Coins[0].Asset
+
 	if err := validatePools(ctx, keeper, source, target); nil != err {
 		ctx.Logger().Error(err.Error())
-		return sdk.ZeroUint(), err
+		return sdk.ZeroUint(), nil, err
 	}
-
+	var swapEvt EventSwap
 	pools := make([]Pool, 0)
-
 	isDoubleSwap := !source.IsRune() && !target.IsRune()
-
 	if isDoubleSwap {
 		var err error
 		sourcePool, err := keeper.GetPool(ctx, source)
 		if err != nil {
-			return sdk.ZeroUint(), err
+			return sdk.ZeroUint(), nil, err
 		}
-
-		tx.Coins[0].Amount, sourcePool, err = swapOne(ctx, keeper, tx, sourcePool, common.RuneAsset(), destination, tradeTarget)
+		tx.Coins[0].Amount, sourcePool, swapEvt, err = swapOne(ctx, keeper, tx, sourcePool, common.RuneAsset(), destination, tradeTarget, transactionFee)
 		if err != nil {
-			return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, common.RuneAsset())
+			return sdk.ZeroUint(), nil, fmt.Errorf("fail to swap from %s to %s :%w", source, common.RuneAsset(), err)
 		}
 		pools = append(pools, sourcePool)
 		tx.Coins[0].Asset = common.RuneAsset()
+		swapEvents = append(swapEvents, swapEvt)
 	}
 
 	// Set asset to our non-rune asset asset
@@ -87,35 +88,50 @@ func swap(ctx sdk.Context,
 	}
 	pool, err := keeper.GetPool(ctx, asset)
 	if err != nil {
-		return sdk.ZeroUint(), err
+		return sdk.ZeroUint(), nil, err
 	}
-	assetAmount, pool, err := swapOne(ctx, keeper, tx, pool, target, destination, tradeTarget)
-
+	assetAmount, pool, swapEvt, err := swapOne(ctx, keeper, tx, pool, target, destination, tradeTarget, transactionFee)
 	if err != nil {
-		return sdk.ZeroUint(), errors.Wrapf(err, "fail to swap from %s to %s", source, target)
+		return sdk.ZeroUint(), nil, fmt.Errorf("fail to swap from %s to %s :%w", source, target, err)
 	}
 	pools = append(pools, pool)
 	if !tradeTarget.IsZero() && assetAmount.LT(tradeTarget) {
-		return sdk.ZeroUint(), errors.Errorf("emit asset %s less than price limit %s", assetAmount, tradeTarget)
+		return sdk.ZeroUint(), nil, fmt.Errorf("emit asset %s less than price limit %s", assetAmount, tradeTarget)
 	}
-
+	if target.IsRune() {
+		if assetAmount.LTE(transactionFee) {
+			return sdk.ZeroUint(), nil, fmt.Errorf("output RUNE (%s) is not enough to pay transaction fee", assetAmount)
+		}
+	}
+	// emit asset is zero
+	if assetAmount.IsZero() {
+		return sdk.ZeroUint(), nil, errors.New("emit asset is zero")
+	}
 	// Update pools
 	for _, pool := range pools {
 		if err := keeper.SetPool(ctx, pool); err != nil {
-			return sdk.ZeroUint(), err
+			return sdk.ZeroUint(), nil, err
 		}
 	}
-	return assetAmount, nil
+	swapEvents = append(swapEvents, swapEvt)
+	return assetAmount, swapEvents, nil
 }
 
 func swapOne(ctx sdk.Context,
 	keeper Keeper, tx common.Tx, pool Pool,
 	target common.Asset,
 	destination common.Address,
-	tradeTarget sdk.Uint) (amt sdk.Uint, poolResult Pool, err error) {
+	tradeTarget sdk.Uint,
+	transactionFee sdk.Uint) (amt sdk.Uint, poolResult Pool, swapEvt EventSwap, err error) {
 
 	source := tx.Coins[0].Asset
 	amount := tx.Coins[0].Amount
+	swapEvt = NewEventSwap(
+		source,
+		tradeTarget,
+		sdk.ZeroUint(),
+		sdk.ZeroUint(),
+	)
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", tx.FromAddress, source, tx.Coins[0].Amount, target, destination))
 
 	var X, x, Y, liquidityFee, emitAssets sdk.Uint
@@ -125,67 +141,25 @@ func swapOne(ctx sdk.Context,
 	asset := source
 	if source.IsRune() {
 		asset = target
+		if amount.LTE(transactionFee) {
+			// stop swap , because the output will not enough to pay for transaction fee
+			return sdk.ZeroUint(), Pool{}, swapEvt, fmt.Errorf("output RUNE (%s) is not enough to pay transaction fee", amount)
+		}
 	}
-
-	// emit swap event at the end of the swap
-	defer func() {
-		var swapEvt EventSwap
-		var status EventStatus
-		if err == nil {
-			status = EventPending
-			swapEvt = NewEventSwap(
-				source,
-				tradeTarget,
-				liquidityFee,
-				tradeSlip,
-			)
-
-		} else {
-			status = EventFail
-			swapEvt = NewEventSwap(
-				source,
-				tradeTarget,
-				sdk.ZeroUint(),
-				sdk.ZeroUint(),
-			)
-		}
-
-		swapBytes, errr := json.Marshal(swapEvt)
-		if errr != nil {
-			amt = sdk.ZeroUint()
-			err = errr
-			return
-		}
-
-		evt := NewEvent(
-			swapEvt.Type(),
-			ctx.BlockHeight(),
-			tx,
-			swapBytes,
-			status,
-		)
-		// using errr instead of err because we don't want to return the error,
-		// just log it because we are in a defer func
-		if errr := keeper.UpsertEvent(ctx, evt); nil != errr {
-			amt = sdk.ZeroUint()
-			err = errr
-		}
-
-	}()
 
 	// Check if pool exists
 	if !keeper.PoolExist(ctx, asset) {
 		ctx.Logger().Debug(fmt.Sprintf("pool %s doesn't exist", asset))
-		return sdk.ZeroUint(), Pool{}, errors.New(fmt.Sprintf("pool %s doesn't exist", asset))
+		return sdk.ZeroUint(), Pool{}, swapEvt, errors.New(fmt.Sprintf("pool %s doesn't exist", asset))
 	}
 
 	// Get our pool from the KVStore
 	pool, err = keeper.GetPool(ctx, asset)
 	if err != nil {
-		return sdk.ZeroUint(), Pool{}, err
+		return sdk.ZeroUint(), Pool{}, swapEvt, err
 	}
 	if pool.Status != PoolEnabled {
-		return sdk.ZeroUint(), pool, errors.Errorf("pool %s is in %s status, can't swap", asset.String(), pool.Status)
+		return sdk.ZeroUint(), pool, swapEvt, errors.Errorf("pool %s is in %s status, can't swap", asset.String(), pool.Status)
 	}
 
 	// Get our X, x, Y values
@@ -200,10 +174,10 @@ func swapOne(ctx sdk.Context,
 
 	// check our X,x,Y values are valid
 	if x.IsZero() {
-		return sdk.ZeroUint(), pool, errors.New("amount is invalid")
+		return sdk.ZeroUint(), pool, swapEvt, errors.New("amount is invalid")
 	}
 	if X.IsZero() || Y.IsZero() {
-		return sdk.ZeroUint(), pool, errors.New("invalid balance")
+		return sdk.ZeroUint(), pool, swapEvt, errors.New("invalid balance")
 	}
 
 	liquidityFee = calcLiquidityFee(X, x, Y)
@@ -213,14 +187,16 @@ func swapOne(ctx sdk.Context,
 	if source.IsRune() {
 		liquidityFee = pool.AssetValueInRune(liquidityFee)
 	}
+	swapEvt.LiquidityFee = liquidityFee
+	swapEvt.TradeSlip = tradeSlip
 	err = keeper.AddToLiquidityFees(ctx, pool.Asset, liquidityFee)
 	if err != nil {
-		return sdk.ZeroUint(), pool, errors.Wrap(err, "failed to add liquidity")
+		return sdk.ZeroUint(), pool, swapEvt, errors.Wrap(err, "failed to add liquidity")
 	}
 
 	// do THORNode have enough balance to swap?
 	if emitAssets.GT(Y) {
-		return sdk.ZeroUint(), pool, errors.New("asset :%s balance is 0, can't do swap")
+		return sdk.ZeroUint(), pool, swapEvt, errors.New("asset :%s balance is 0, can't do swap")
 	}
 
 	ctx.Logger().Info(fmt.Sprintf("Pre-Pool: %sRune %sAsset", pool.BalanceRune, pool.BalanceAsset))
@@ -234,7 +210,7 @@ func swapOne(ctx sdk.Context,
 	}
 	ctx.Logger().Info(fmt.Sprintf("Post-swap: %sRune %sAsset , user get:%s ", pool.BalanceRune, pool.BalanceAsset, emitAssets))
 
-	return emitAssets, pool, nil
+	return emitAssets, pool, swapEvt, nil
 }
 
 // calculate the number of assets sent to the address (includes liquidity fee)
@@ -271,6 +247,3 @@ func calcTradeSlip(Xi, xi sdk.Uint) sdk.Uint {
 	tradeSlipUint := sdk.NewUint(uint64(tradeSlip.RoundInt64())) // Casts back to Uint as Basis Points
 	return tradeSlipUint
 }
-
-// numD := sdk.NewDecFromBigInt(num.BigInt())
-// denD := sdk.NewDecFromBigInt(den.BigInt())
