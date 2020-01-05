@@ -221,7 +221,7 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 		}
 		scb.blockHeight = blockHeight
 	}
-	scb.logger.Info().Uint64("account_number", accountNumber).Uint64("sequence_number", sequenceNumber).Msg("account info")
+	scb.logger.Info().Uint64("account_number", scb.accountNumber).Uint64("sequence_number", scb.accountNumber).Msg("account info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
 		AccountNumber: scb.accountNumber,
