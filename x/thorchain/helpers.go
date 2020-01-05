@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"encoding/json"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -9,14 +10,21 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, deductFee bool) error {
+func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, refundCode sdk.CodeType, refundReason string) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
+	eventRefund := NewEventRefund(refundCode, refundReason)
+	buf, err := json.Marshal(eventRefund)
+	if err != nil {
+		return fmt.Errorf("fail to marshal refund event: %w", err)
+	}
+	var refundCoins common.Coins
 	for _, coin := range tx.Tx.Coins {
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
 			return fmt.Errorf("fail to get pool: %s", err)
 		}
+
 		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
 			toi := &TxOutItem{
 				Chain:       tx.Tx.Chain,
@@ -26,11 +34,35 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, d
 				Coin:        coin,
 				Memo:        NewRefundMemo(tx.Tx.ID).String(),
 			}
-			store.AddTxOutItem(ctx, toi)
-		}
 
+			success, err := store.TryAddTxOutItem(ctx, toi)
+			if nil != err {
+				return fmt.Errorf("fail to prepare outbund tx: %w", err)
+			}
+			if success {
+				refundCoins = append(refundCoins, coin)
+			}
+		}
 		// Zombie coins are just dropped.
 	}
+	if len(refundCoins) > 0 {
+		// create a new TX based on the coins thorchain refund , some of the coins thorchain doesn't refund
+		// coin thorchain doesn't have pool with , likely airdrop
+		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, refundCoins, tx.Tx.Gas, tx.Tx.Memo)
+		// save refund event
+		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), newTx, buf, EventPending)
+		if err := keeper.UpsertEvent(ctx, event); err != nil {
+			return fmt.Errorf("fail to save refund event: %w", err)
+		}
+		return nil
+	}
+	// event thorchain didn't actually refund anything , still create an event thus front-end ui can keep track of what happened
+	// this event is final doesn't need to be completed
+	event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), tx.Tx, buf, EventRefund)
+	if err := keeper.UpsertEvent(ctx, event); err != nil {
+		return fmt.Errorf("fail to save refund event: %w", err)
+	}
+
 	return nil
 }
 
@@ -84,8 +116,11 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 			InHash:      txID,
 			Coin:        common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
+		_, err = txOut.TryAddTxOutItem(ctx, txOutItem)
+		if nil != err {
+			return fmt.Errorf("fail to add outbound tx: %w", err)
+		}
 
-		txOut.AddTxOutItem(ctx, txOutItem)
 	}
 
 	nodeAcc.Bond = sdk.ZeroUint()
@@ -139,14 +174,21 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 	return true
 }
 
-func completeEventsByID(ctx sdk.Context, keeper Keeper, eventID int64, txs common.Txs, eventStatus EventStatus) error {
+func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common.Txs, eventStatus EventStatus) error {
 	event, err := keeper.GetEvent(ctx, eventID)
 	if nil != err {
 		return fmt.Errorf("fail to get event: %w", err)
 	}
 	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
-	event.Status = eventStatus
-	event.OutTxs = txs
+	event.OutTxs = append(event.OutTxs, txs...)
+	if eventStatus == EventRefund {
+		// if the inbound tx has more than one coin in it, when thorchain refund it , there will have outbound tx per coin
+		if len(event.InTx.Coins) == len(event.OutTxs) {
+			event.Status = eventStatus
+		}
+	} else {
+		event.Status = eventStatus
+	}
 	return keeper.UpsertEvent(ctx, event)
 }
 
@@ -161,7 +203,7 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 		return fmt.Errorf("fail to get pending event id: %w", err)
 	}
 	for _, item := range eventIDs {
-		if err := completeEventsByID(ctx, keeper, item, txs, eventStatus); nil != err {
+		if err := updateEventStatus(ctx, keeper, item, txs, eventStatus); nil != err {
 			return fmt.Errorf("fail to set event(%d) to %s: %w", item, eventStatus, err)
 		}
 	}

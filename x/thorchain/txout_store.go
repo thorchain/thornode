@@ -14,7 +14,7 @@ type TxOutStore interface {
 	CommitBlock(ctx sdk.Context)
 	GetBlockOut() *TxOut
 	GetOutboundItems() []*TxOutItem
-	AddTxOutItem(ctx sdk.Context, toi *TxOutItem)
+	TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error)
 }
 
 // TxOutStorage is going to manage all the outgoing tx
@@ -58,8 +58,28 @@ func (tos *TxOutStorage) GetOutboundItems() []*TxOutItem {
 	return tos.blockOut.TxArray
 }
 
-// AddTxOutItem add an item to internal structure
-func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
+// TryAddTxOutItem add an outbound tx to block
+// return bool indicate whether the transaction had been added successful or not
+// return error indicate error
+func (tos *TxOutStorage) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error) {
+	success, err := tos.prepareTxOutItem(ctx, toi)
+	if err != nil {
+		return success, fmt.Errorf("fail to prepare outbound tx: %w", err)
+	}
+	if !success {
+		return false, nil
+	}
+	// add tx to block out
+	tos.addToBlockOut(toi)
+	return true, nil
+}
+
+// PrepareTxOutItem will do some data validation which include the following
+// 1. Make sure it has a legitimate memo
+// 2. choose an appropriate pool,Yggdrasil or Asgard
+// 3. deduct transaction fee, keep in mind, only take transaction fee when active nodes are  more then minimumBFT
+// return bool indicated whether the given TxOutItem should be added into block or not
+func (tos *TxOutStorage) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error) {
 	// Default the memo to the standard outbound memo
 	if toi.Memo == "" {
 		toi.Memo = NewOutboundMemo(toi.InHash).String()
@@ -77,16 +97,14 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 		if len(activeNodeAccounts) > 0 && err == nil {
 			voter, err := tos.keeper.GetObservedTxVoter(ctx, toi.InHash)
 			if err != nil {
-				ctx.Logger().Error("fail to get observed tx voter", err)
-				return
+				return false, fmt.Errorf("fail to get observed tx voter: %w", err)
 			}
 			tx := voter.GetTx(activeNodeAccounts)
 
 			// collect yggdrasil pools
 			yggs, err := tos.collectYggdrasilPools(ctx, tx, toi.Chain.GetGasAsset())
 			if nil != err {
-				ctx.Logger().Error("fail to collect yggdrasil pool", err)
-				return
+				return false, fmt.Errorf("fail to collect yggdrasil pool: %w", err)
 			}
 
 			yggs = yggs.SortBy(toi.Coin.Asset)
@@ -113,8 +131,7 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 
 		vault := active.SelectByMinCoin(toi.Coin.Asset)
 		if vault.IsEmpty() {
-			ctx.Logger().Error("empty vault , cannot send out fund")
-			return
+			return false, fmt.Errorf("empty vault, cannot send out fund: %w", err)
 		}
 
 		toi.VaultPubKey = vault.PubKey
@@ -123,7 +140,7 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 	// Ensure THORNode are not sending from and to the same address
 	fromAddr, err := toi.VaultPubKey.GetAddress(toi.Chain)
 	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
-		return
+		return false, nil
 	}
 
 	// Deduct TransactionFee from TOI and add to Reserve
@@ -147,7 +164,7 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 			pool, err := tos.keeper.GetPool(ctx, toi.Coin.Asset) // Get pool
 			if err != nil {
 				// the error is already logged within kvstore
-				return
+				return false, fmt.Errorf("fail to get pool: %w", err)
 			}
 
 			assetFee := pool.RuneValueInAsset(sdk.NewUint(uint64(transactionFee))) // Get fee in Asset value
@@ -162,33 +179,27 @@ func (tos *TxOutStorage) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
 			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
 			if err := tos.keeper.SetPool(ctx, pool); err != nil {        // Set Pool
-				ctx.Logger().Error("fail to save pool", err)
-				return
+				return false, fmt.Errorf("fail to save pool: %w", err)
 			}
 			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); nil != err {
-				ctx.Logger().Error("fail to add fee to reserve", err)
-				return
-				// Add to reserve
+				return false, fmt.Errorf("fail to add fee to reserve: %w", err)
 			}
 		}
 	}
 
 	if toi.Coin.IsEmpty() {
 		ctx.Logger().Info("tx out item has zero coin", toi.String())
-		return
+		return false, nil
 	}
 
 	// increment out number of out tx for this in tx
 	voter, err := tos.keeper.GetObservedTxVoter(ctx, toi.InHash)
 	if err != nil {
-		ctx.Logger().Error("fail to get observed tx voter", err)
-		return
+		return false, fmt.Errorf("fail to get observed tx voter: %w", err)
 	}
 	voter.Actions = append(voter.Actions, *toi)
 	tos.keeper.SetObservedTxVoter(ctx, voter)
-
-	// add tx to block out
-	tos.addToBlockOut(toi)
+	return true, nil
 }
 
 func (tos *TxOutStorage) addToBlockOut(toi *TxOutItem) {

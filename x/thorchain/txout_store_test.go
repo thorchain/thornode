@@ -77,7 +77,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(20*common.One)),
 	}
 
-	w.txOutStore.AddTxOutItem(w.ctx, item)
+	w.txOutStore.TryAddTxOutItem(w.ctx, item)
 	msgs := w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 1)
 	c.Assert(msgs[0].VaultPubKey.String(), Equals, acc2.PubKeySet.Secp256k1.String())
@@ -91,8 +91,9 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		InHash:    inTxID,
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(20*common.One)),
 	}
-
-	w.txOutStore.AddTxOutItem(w.ctx, item)
+	success, err := w.txOutStore.TryAddTxOutItem(w.ctx, item)
+	c.Assert(success, Equals, true)
+	c.Assert(err, IsNil)
 	msgs = w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 2)
 	c.Assert(msgs[1].VaultPubKey.String(), Equals, acc1.PubKeySet.Secp256k1.String())
@@ -103,7 +104,9 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		InHash:    inTxID,
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(1000*common.One)),
 	}
-	w.txOutStore.AddTxOutItem(w.ctx, item)
+	success, err = w.txOutStore.TryAddTxOutItem(w.ctx, item)
+	c.Assert(success, Equals, true)
+	c.Assert(err, IsNil)
 	msgs = w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 3)
 	c.Assert(msgs[2].VaultPubKey.String(), Equals, vault.PubKey.String())
@@ -120,7 +123,9 @@ func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 		InHash:    inTxID,
 		Coin:      common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One)),
 	}
-	w.txOutStore.AddTxOutItem(w.ctx, item)
+	success, err := w.txOutStore.TryAddTxOutItem(w.ctx, item)
+	c.Assert(success, Equals, true)
+	c.Assert(err, IsNil)
 	msgs := w.txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 1)
 	c.Assert(msgs[0].Coin.Amount.Equal(sdk.NewUint(20*common.One)), Equals, true)

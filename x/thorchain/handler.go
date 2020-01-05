@@ -16,6 +16,8 @@ const (
 	CodeBadVersion            sdk.CodeType = 101
 	CodeInvalidMessage        sdk.CodeType = 102
 	CodeConstantsNotAvailable sdk.CodeType = 103
+	CodeInvalidVault          sdk.CodeType = 104
+	CodeInvalidMemo           sdk.CodeType = 105
 )
 
 // EmptyAccAddress empty address

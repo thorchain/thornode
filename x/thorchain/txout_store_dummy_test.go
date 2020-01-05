@@ -52,8 +52,9 @@ func (tos *TxOutStoreDummy) GetOutboundItemByToAddress(to common.Address) []TxOu
 }
 
 // AddTxOutItem add an item to internal structure
-func (tos *TxOutStoreDummy) AddTxOutItem(ctx sdk.Context, toi *TxOutItem) {
+func (tos *TxOutStoreDummy) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error) {
 	tos.addToBlockOut(toi)
+	return true, nil
 }
 
 func (tos *TxOutStoreDummy) addToBlockOut(toi *TxOutItem) {
