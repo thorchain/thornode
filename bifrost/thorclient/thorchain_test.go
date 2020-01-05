@@ -111,8 +111,6 @@ func (s ThorchainSuite) TestSign(c *C) {
 	bridge, err := NewThorchainBridge(cfg, getMetricForTest(c))
 	c.Assert(err, IsNil)
 	c.Assert(bridge, NotNil)
-	err = bridge.Start()
-	c.Assert(err, IsNil)
 	signedMsg, err := bridge.GetObservationsStdTx(stypes.ObservedTxs{tx})
 	c.Log(err)
 	c.Assert(signedMsg, NotNil)
@@ -128,6 +126,9 @@ func (s ThorchainSuite) TestSend(c *C) {
 		if req.URL.String() == "/txs" {
 			// Send response to be tested
 			_, err := rw.Write([]byte(`{"txhash":"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D", "height": "test_height"}`))
+			c.Assert(err, IsNil)
+		} else if req.URL.String() == "/thorchain/lastblock" {
+			_, err := rw.Write([]byte(`{"statechain":"23"}`))
 			c.Assert(err, IsNil)
 		} else if strings.HasPrefix(req.URL.String(), "/auth/account") {
 			_, err := rw.Write([]byte(`{
@@ -146,7 +147,7 @@ func (s ThorchainSuite) TestSend(c *C) {
         "type": "tendermint/PubKeySecp256k1",
         "value": "ArYQdiiY4s1MgIEKm+7LXYQsH+ptH09neh9OWqY5VHYr"
       },
-				"account_number": "0",
+				"account_number": "7",
 				"sequence": "14"
 			  }
 			}}`))
@@ -172,7 +173,10 @@ func (s ThorchainSuite) TestSend(c *C) {
 		Equals,
 		"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D",
 	)
+	c.Check(bridge.accountNumber, Equals, uint64(7))
+	c.Check(bridge.seqNumber, Equals, uint64(15))
 }
+
 func getMetricForTest(c *C) *metrics.Metrics {
 	m, err := metrics.NewMetrics(config.MetricConfiguration{
 		Enabled:      false,
@@ -184,6 +188,7 @@ func getMetricForTest(c *C) *metrics.Metrics {
 	c.Assert(err, IsNil)
 	return m
 }
+
 func (ThorchainSuite) TestNewThorchainBridge(c *C) {
 	var testFunc = func(cfg config.ThorchainConfiguration, errChecker Checker, sbChecker Checker) {
 		sb, err := NewThorchainBridge(cfg, getMetricForTest(c))
@@ -373,8 +378,6 @@ func (ThorchainSuite) TestSignEx(c *C) {
 		scb, err := NewThorchainBridge(cfg, getMetricForTest(c))
 		c.Assert(err, IsNil)
 		c.Assert(scb, NotNil)
-		err = scb.Start()
-		c.Assert(err, IsNil)
 		stx, err := scb.GetObservationsStdTx(in)
 		c.Assert(stx, resultChecker)
 		c.Assert(err, errChecker)
@@ -449,15 +452,11 @@ func (ThorchainSuite) TestSendEx(c *C) {
 		client.RetryMax = 3
 		client.RetryWaitMax = 3 * time.Second
 		scb.WithRetryableHttpClient(client)
-		err = scb.Start()
-
-		c.Assert(err, IsNil)
 		stx, err := scb.GetObservationsStdTx(in)
 		c.Assert(stx, NotNil)
 		c.Assert(err, IsNil)
 		_, err = scb.Send(*stx, mode)
 		c.Assert(err, errChecker)
-
 	}
 	testBNBAddress, err := common.NewAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
 	if nil != err {

@@ -114,12 +114,6 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 }
 
 func (s *Signer) Start() error {
-	if err := s.thorchainBridge.Start(); nil != err {
-		return errors.Wrap(err, "fail to start thorchain bridge")
-	}
-	if err := s.m.Start(); nil != err {
-		return errors.Wrap(err, "fail to start metric collector")
-	}
 	s.wg.Add(1)
 	go s.processTxnOut(s.thorchainBlockScanner.GetTxOutMessages(), 1)
 	if err := s.retryAll(); nil != err {
