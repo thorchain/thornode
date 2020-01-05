@@ -118,9 +118,9 @@ describe "API Tests" do
     end
 
     it "check for stake event" do
-      resp = get("/events/1")
+      resp = get("/events/2")
       expect(resp.body.count).to eq(1), resp.body.inspect
-      expect(resp.body[0]['id']).to eq("1"), resp.body[0].inspect
+      expect(resp.body[0]['id']).to eq("2"), resp.body[0].inspect
       expect(resp.body[0]['type']).to eq("stake"), resp.body[0].inspect
     end
 
@@ -135,9 +135,9 @@ describe "API Tests" do
     end
 
     it "check for unstake event trigger pool event" do # check unstaking last staker creates pool event
-      resp = get("/events/2")
+      resp = get("/events/3")
       expect(resp.body.count).to eq(1), resp.body.inspect
-      expect(resp.body[0]['id']).to eq("2"), resp.body[0].inspect
+      expect(resp.body[0]['id']).to eq("3"), resp.body[0].inspect
       expect(resp.body[0]['type']).to eq("pool"), resp.body[0].inspect
       expect(resp.body[0]['event']['status']).to eq("Bootstrap"), resp.body[0].inspect
     end
@@ -228,7 +228,7 @@ describe "API Tests" do
     end
 
     it "check events are completed" do
-      resp = get("/events/5")
+      resp = get("/events/6")
       expect(resp.body.count).to eq(1), resp.body.inspect
       expect(resp.body[0]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[0].inspect
       expect(resp.body[0]['type']).to eq("swap"), resp.body[0].inspect

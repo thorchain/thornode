@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/blang/semver"
 
@@ -116,7 +117,11 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor consta
 		ToAddress: msg.Destination,
 		Coin:      common.NewCoin(msg.TargetAsset, amount),
 	}
-	h.txOutStore.AddTxOutItem(ctx, toi)
+	_, err = h.txOutStore.TryAddTxOutItem(ctx, toi)
+	if err != nil {
+		ctx.Logger().Error("fail to add outbound tx", err)
+		return sdk.ErrInternal(fmt.Errorf("fail to add outbound tx: %w", err).Error()).Result()
+	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,

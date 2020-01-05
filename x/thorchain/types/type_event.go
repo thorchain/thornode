@@ -28,6 +28,7 @@ const (
 	AddEventType         = `add`
 	PoolEventType        = `pool`
 	RewardEventType      = `rewards`
+	RefundEventType      = `refund`
 )
 
 // NewEvent create a new  event
@@ -204,4 +205,23 @@ func NewEventRewards(bondReward sdk.Uint, poolRewards []PoolAmt) EventRewards {
 // Type return reward event type
 func (e EventRewards) Type() string {
 	return RewardEventType
+}
+
+// NewEventRefund create a new EventRefund
+func NewEventRefund(code sdk.CodeType, reason string) EventRefund {
+	return EventRefund{
+		Code:   code,
+		Reason: reason,
+	}
+}
+
+// EventRefund represent a refund activity , and contains the reason why it get refund
+type EventRefund struct {
+	Code   sdk.CodeType `json:"code"`
+	Reason string       `json:"reason"`
+}
+
+// Type return reward event type
+func (e EventRefund) Type() string {
+	return RefundEventType
 }

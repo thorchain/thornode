@@ -109,7 +109,7 @@ func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, versio
 }
 
 func (h ObservedTxInHandler) inboundFailure(ctx sdk.Context, tx ObservedTx) error {
-	return refundTx(ctx, tx, h.txOutStore, h.keeper, true)
+	return refundTx(ctx, tx, h.txOutStore, h.keeper, CodeInvalidMemo, "invalid memo")
 }
 
 func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
@@ -157,7 +157,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 		txIn := voter.GetTx(activeNodeAccounts)
 
 		if ok := isCurrentVaultPubKey(ctx, h.keeper, tx); !ok {
-			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, false); err != nil {
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, CodeInvalidVault, "invalid vault"); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 			continue
@@ -192,7 +192,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 
 		result := handler(ctx, m)
 		if !result.IsOK() {
-			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, true); err != nil {
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, result.Code, result.Log); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 		}

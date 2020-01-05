@@ -133,7 +133,10 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 		ToAddress: stakerUnit.RuneAddress,
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
 	}
-	uh.txOutStore.AddTxOutItem(ctx, toi)
+	_, err = uh.txOutStore.TryAddTxOutItem(ctx, toi)
+	if err != nil {
+		return nil, sdk.ErrInternal(fmt.Errorf("fail to prepare outbound tx: %w", err).Error())
+	}
 
 	toi = &TxOutItem{
 		Chain:     msg.Asset.Chain,
@@ -141,7 +144,10 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 		ToAddress: stakerUnit.AssetAddress,
 		Coin:      common.NewCoin(msg.Asset, assetAmount),
 	}
-	// for unstake , THORNode should deduct fees
-	uh.txOutStore.AddTxOutItem(ctx, toi)
+	_, err = uh.txOutStore.TryAddTxOutItem(ctx, toi)
+	if err != nil {
+		return nil, sdk.ErrInternal(fmt.Errorf("fail to prepare outbound tx: %w", err).Error())
+	}
+
 	return res, nil
 }

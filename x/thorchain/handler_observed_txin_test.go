@@ -22,7 +22,7 @@ func (k *TestObservedTxInValidateKeeper) GetNodeAccount(_ sdk.Context, addr sdk.
 	}
 	return NodeAccount{}, kaboom
 }
-func (k *TestObservedTxInValidateKeeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
+func (k *TestObservedTxInValidateKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) error {
 	if na.NodeAddress.Equals(k.standbyAccount.NodeAddress) {
 		k.standbyAccount = na
 		return nil
@@ -30,7 +30,7 @@ func (k *TestObservedTxInValidateKeeper) SetNodeAccount(ctx sdk.Context, na Node
 	return kaboom
 }
 
-func (k *TestObservedTxInValidateKeeper) IsActiveObserver(ctx sdk.Context, signer sdk.AccAddress) bool {
+func (k *TestObservedTxInValidateKeeper) IsActiveObserver(_ sdk.Context, _ sdk.AccAddress) bool {
 	return k.isActive
 }
 
@@ -173,6 +173,9 @@ func (k *TestObservedTxInHandleKeeper) AddIncompleteEvents(_ sdk.Context, evt Ev
 
 func (k *TestObservedTxInHandleKeeper) AddObservingAddresses(_ sdk.Context, addrs []sdk.AccAddress) error {
 	k.observing = addrs
+	return nil
+}
+func (k *TestObservedTxInHandleKeeper) UpsertEvent(_ sdk.Context, _ Event) error {
 	return nil
 }
 

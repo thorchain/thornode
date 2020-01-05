@@ -150,7 +150,10 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, constAccessor constants.ConstantVa
 					},
 					Memo: "migrate",
 				}
-				vm.txOutStore.AddTxOutItem(ctx, toi)
+				_, err = vm.txOutStore.TryAddTxOutItem(ctx, toi)
+				if nil != err {
+					return err
+				}
 			}
 		}
 	}

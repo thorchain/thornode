@@ -377,7 +377,10 @@ func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
-		vm.txOutStore.AddTxOutItem(ctx, txOutItem)
+		_, err = vm.txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		if nil != err {
+			return fmt.Errorf("fail to add outbound transaction")
+		}
 	}
 
 	if err := vm.k.SetVaultData(ctx, vaultData); err != nil {
@@ -424,7 +427,10 @@ func (vm *ValidatorMgr) ragnarokBond(ctx sdk.Context, nth int64) error {
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
-		vm.txOutStore.AddTxOutItem(ctx, txOutItem)
+		_, err = vm.txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		if nil != err {
+			return err
+		}
 
 	}
 
@@ -541,7 +547,10 @@ func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount) erro
 				VaultPubKey: ygg.PubKey,
 				Memo:        "yggdrasil-",
 			}
-			vm.txOutStore.AddTxOutItem(ctx, txOutItem)
+			_, err := vm.txOutStore.TryAddTxOutItem(ctx, txOutItem)
+			if nil != err {
+				return err
+			}
 		}
 	}
 
