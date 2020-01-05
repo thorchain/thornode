@@ -293,7 +293,7 @@ func (HandlerSuite) TestRefund(c *C) {
 		GetRandomPubKey(),
 	)
 
-	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, true), IsNil)
+	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 
 	// check THORNode DONT create a refund transaction when THORNode don't have a pool for
@@ -303,7 +303,7 @@ func (HandlerSuite) TestRefund(c *C) {
 		common.NewCoin(lokiAsset, sdk.NewUint(100*common.One)),
 	}
 
-	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, true), IsNil)
+	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	var err error
 	pool, err = w.keeper.GetPool(w.ctx, lokiAsset)
@@ -312,7 +312,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	c.Assert(pool.BalanceAsset.Equal(sdk.ZeroUint()), Equals, true, Commentf("%d", pool.BalanceAsset.Uint64()))
 
 	// doing it a second time should keep it at zero
-	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, true), IsNil)
+	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
 	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
 	pool, err = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(err, IsNil)
