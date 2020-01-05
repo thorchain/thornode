@@ -64,6 +64,7 @@ var (
 	NewEventSwap                   = types.NewEventSwap
 	NewEventStake                  = types.NewEventStake
 	NewEventUnstake                = types.NewEventUnstake
+	NewEventRefund                 = types.NewEventRefund
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewPoolStaker                  = types.NewPoolStaker

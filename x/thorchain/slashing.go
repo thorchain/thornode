@@ -119,7 +119,10 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 					// TODO: this creates a second tx out for this inTx, which
 					// means the event will never be completed because only one
 					// of the two out tx will occur.
-					s.txOutStore.AddTxOutItem(ctx, tx)
+					_, err = s.txOutStore.TryAddTxOutItem(ctx, tx)
+					if err != nil {
+						return fmt.Errorf("fail to add outbound tx: %w", err)
+					}
 				}
 			}
 
