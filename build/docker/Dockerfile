@@ -8,6 +8,8 @@
 FROM golang:1.13 AS build
 
 WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
 
 COPY . .
 
@@ -15,9 +17,6 @@ ENV GOBIN=/go/bin
 ENV GOPATH=/go
 ENV CGO_ENABLED=0
 ENV GOOS=linux
-
-RUN go mod verify
-RUN go get -d -v ./...
 
 RUN go build -a -installsuffix cgo -o $GOBIN/thord ./cmd/thord
 RUN go build -a -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
@@ -28,7 +27,7 @@ RUN go build -a -installsuffix cgo -o $GOBIN/generate ./tools/generate
 RUN git clone https://gitlab.com/thorchain/tss/tss-tools.git /tmp/tss-tools
 WORKDIR /tmp/tss-tools/cmd/keygenclient
 RUN go mod verify
-RUN go get -d -v ./...
+RUN go mod download
 RUN go build -a -installsuffix cgo -o $GOBIN/keygenclient .
 
 #
