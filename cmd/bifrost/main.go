@@ -61,17 +61,26 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create metric instance")
 	}
+	if err := m.Start(); nil != err {
+		log.Fatal().Err(err).Msg("fail to start metric collector")
+	}
 
 	// thorchain bridge
 	thorchainBridge, err := thorclient.NewThorchainBridge(cfg.Thorchain, m)
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create new thorchain bridge")
 	}
+	if err := thorchainBridge.EnsureNodeWhitelistedWithTimeout(); nil != err {
+		log.Fatal().Err(err).Msg("node account is not whitelisted, can't start")
+	}
 
 	// Address Manager
 	addrMgr, err := observer.NewAddressManager(cfg.Thorchain.ChainHost, m)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create pool address manager")
+	}
+	if err := addrMgr.Start(); nil != err {
+		log.Fatal().Err(err).Msg("fail to start pool address manager")
 	}
 
 	// get thorchain key manager
