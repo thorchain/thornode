@@ -4,6 +4,8 @@ import (
 	"github.com/blang/semver"
 )
 
+var int64Overrides = map[ConstantName]int64{}
+
 // The version of this software
 var SWVersion, _ = semver.Make("0.1.0")
 
@@ -38,7 +40,13 @@ func NewConstantValue010() *ConstantValue010 {
 
 // GetInt64Value get value in int64 type, if it doesn't exist then it will return the default value of int64, which is 0
 func (cv *ConstantValue010) GetInt64Value(name ConstantName) int64 {
-	v, ok := cv.int64values[name]
+	// check overrides first
+	v, ok := int64Overrides[name]
+	if ok {
+		return v
+	}
+
+	v, ok = cv.int64values[name]
 	if !ok {
 		return 0
 	}
