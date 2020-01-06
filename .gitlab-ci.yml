@@ -23,7 +23,7 @@ unit_tests:
     SignerName: "statechain"
     SignerPasswd: "password"
   script:
-    - go test -mod=readonly -v -coverprofile=coverage.out ./...
+    - go test -tags testnet -mod=readonly -v -coverprofile=coverage.out ./...
     - go tool cover -func=coverage.out
 
 lint_code:
