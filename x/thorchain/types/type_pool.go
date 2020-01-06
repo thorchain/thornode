@@ -2,11 +2,11 @@ package types
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -139,7 +139,7 @@ func (ps Pool) EnsureValidPoolStatus(msg sdk.Msg) error {
 	case Suspended:
 		return errors.New("pool suspended")
 	default:
-		return errors.Errorf("unknown pool status,%s", ps.Status)
+		return fmt.Errorf("unknown pool status,%s", ps.Status)
 	}
 }
 

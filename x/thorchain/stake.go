@@ -1,10 +1,10 @@
 package thorchain
 
 import (
+	"errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -27,26 +27,28 @@ func validateStakeMessage(ctx sdk.Context, keeper Keeper, asset common.Asset, re
 		}
 	}
 	if !keeper.PoolExist(ctx, asset) {
-		return errors.Errorf("%s doesn't exist", asset)
+		return fmt.Errorf("%s doesn't exist", asset)
 	}
 	return nil
 }
 
-func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, stakeAssetAmount sdk.Uint, runeAddr, assetAddr common.Address, requestTxHash common.TxID) (sdk.Uint, error) {
+func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, stakeAssetAmount sdk.Uint, runeAddr, assetAddr common.Address, requestTxHash common.TxID) (sdk.Uint, sdk.Error) {
 	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", asset, stakeRuneAmount, stakeAssetAmount))
 	if err := validateStakeMessage(ctx, keeper, asset, requestTxHash, runeAddr, assetAddr); nil != err {
-		return sdk.ZeroUint(), errors.Wrap(err, "invalid request")
+		ctx.Logger().Error("stake message fail validation", err)
+		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakeFailValidation, err.Error())
 	}
 	if stakeRuneAmount.IsZero() && stakeAssetAmount.IsZero() {
-		return sdk.ZeroUint(), errors.New("both rune and asset is zero")
+		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakeFailValidation, "both rune and asset is zero")
 	}
 	if runeAddr.IsEmpty() {
-		return sdk.ZeroUint(), errors.New("Rune address cannot be empty")
+		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakeFailValidation, "Rune address cannot be empty")
 	}
 
 	pool, err := keeper.GetPool(ctx, asset)
 	if err != nil {
-		return sdk.ZeroUint(), errors.Wrap(err, "fail to get pool")
+		ctx.Logger().Error("fail to get pool", err)
+		return sdk.ZeroUint(), sdk.ErrInternal(fmt.Sprintf("fail to get pool(%s)", asset))
 	}
 
 	// if THORNode have no balance, set the default pool status
@@ -57,7 +59,8 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 
 	ps, err := keeper.GetPoolStaker(ctx, asset)
 	if nil != err {
-		return sdk.ZeroUint(), errors.Wrap(err, "fail to get pool staker..")
+		ctx.Logger().Error("fail to get pool staker record", err)
+		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakeFailGetPoolStaker, "fail to get pool staker record")
 	}
 
 	su := ps.GetStakerUnit(runeAddr)
@@ -71,7 +74,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 		if !su.AssetAddress.Equals(assetAddr) {
 			// mismatch of asset addresses from what is known to the address
 			// given. Refund it.
-			return sdk.ZeroUint(), errors.Wrap(err, "Mismatch of asset addresses")
+			return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakeMismatchAssetAddr, "Mismatch of asset addresses")
 		}
 	}
 
@@ -98,6 +101,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	oldPoolUnits := pool.PoolUnits
 	newPoolUnits, stakerUnits, err := calculatePoolUnits(oldPoolUnits, balanceRune, balanceAsset, fRuneAmt, fAssetAmt)
 	if nil != err {
+		ctx.Logger().Error()
 		return sdk.ZeroUint(), errors.Wrapf(err, "fail to calculate pool units")
 	}
 

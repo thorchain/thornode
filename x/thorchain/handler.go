@@ -18,6 +18,11 @@ const (
 	CodeConstantsNotAvailable sdk.CodeType = 103
 	CodeInvalidVault          sdk.CodeType = 104
 	CodeInvalidMemo           sdk.CodeType = 105
+
+	CodeStakeFailValidation    sdk.CodeType = 120
+	CodeStakeInvalidPoolStatus sdk.CodeType = 121
+	CodeStakeFailGetPoolStaker sdk.CodeType = 122
+	CodeStakeMismatchAssetAddr sdk.CodeType = 123
 )
 
 // EmptyAccAddress empty address
