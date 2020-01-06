@@ -23,6 +23,7 @@ const (
 	CodeStakeInvalidPoolStatus sdk.CodeType = 121
 	CodeStakeFailGetPoolStaker sdk.CodeType = 122
 	CodeStakeMismatchAssetAddr sdk.CodeType = 123
+	CodeStakeInvalidPoolAsset  sdk.CodeType = 124
 )
 
 // EmptyAccAddress empty address
