@@ -49,7 +49,7 @@ lint-verbose: lint-pre
 	@golangci-lint run -v
 
 build:
-	@go build -tags "$(build_tags)" ./...
+	@go build -tags "${TAGS}" ./...
 
 start-daemon:
 	thord start --log_level "main:info,state:debug,*:error"
