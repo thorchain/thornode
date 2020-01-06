@@ -30,7 +30,8 @@ func (sh StakeHandler) validate(ctx sdk.Context, msg MsgSetStakeData, version se
 
 func (sh StakeHandler) validateV1(ctx sdk.Context, msg MsgSetStakeData) sdk.Error {
 	if err := msg.ValidateBasic(); nil != err {
-		return err
+		ctx.Logger().Error(err.ABCILog())
+		return sdk.NewError(DefaultCodespace, CodeStakeFailValidation, err.Error())
 	}
 	if !isSignedByActiveNodeAccounts(ctx, sh.keeper, msg.GetSigners()) {
 		return sdk.ErrUnauthorized("msg is not signed by an active node account")
@@ -78,7 +79,8 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 		}
 	}
 	if err := pool.EnsureValidPoolStatus(msg); nil != err {
-		return sdk.ErrUnknownRequest(fmt.Errorf("fail to check pool status: %w", err).Error())
+		ctx.Logger().Error("fail to check pool status", err)
+		return sdk.NewError(DefaultCodespace, CodeStakeInvalidPoolStatus, err.Error())
 	}
 	stakeUnits, err := stake(
 		ctx,

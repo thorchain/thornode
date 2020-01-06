@@ -7,18 +7,12 @@ type LastBlock struct {
 }
 
 type PoolPubKey struct {
-	Chain common.Chain `json:"chain"`
-	//SeqNo   uint64         `json:"seq_no"`
-	//PubKey  common.PubKey  `json:"pub_key"`
+	Chain   common.Chain   `json:"chain"`
 	Address common.Address `json:"address"`
 }
 
 type ThorchainPoolAddress struct {
-	// Previous           []PoolPubKey `json:"previous"`
 	Current []PoolPubKey `json:"current"`
-	// Next               []PoolPubKey `json:"next"`
-	// RotateAt           int64        `json:"rotate_at"`
-	// RotateWindowOpenAt int64        `json:"rotate_window_open_at"`
 }
 
 type ThorchainPools []struct {
