@@ -13,6 +13,9 @@ install: go.sum
 install-testnet: 
 	TAGS=testnet make install
 
+install-sandbox: 
+	TAGS=sandbox make install
+
 tools:
 	go install ./tools/bsinner
 	go install ./tools/generate
