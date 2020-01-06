@@ -1,5 +1,6 @@
 // +build testnet
 
+// For Public TestNet
 package constants
 
 func init() {
