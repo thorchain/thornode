@@ -36,7 +36,7 @@ func (ConstantsTestSuite) TestConstantName_String(c *C) {
 }
 
 func (ConstantsTestSuite) TestGetConstantValues(c *C) {
-	ver := semver.MustParse("0.1.1")
+	ver := semver.MustParse("0.0.9")
 	c.Assert(GetConstantValues(ver), IsNil)
 	c.Assert(GetConstantValues(SWVersion), NotNil)
 }

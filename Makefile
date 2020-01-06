@@ -6,9 +6,15 @@ GOBIN?=${GOPATH}/bin
 all: lint install
 
 install: go.sum
-	go install ./cmd/thorcli
-	go install ./cmd/thord
+	go install -tags "${TAGS}" ./cmd/thorcli
+	go install -tags "${TAGS}" ./cmd/thord
 	go install ./cmd/bifrost
+
+install-testnet: 
+	TAGS=testnet make install
+
+install-sandbox: 
+	TAGS=sandbox make install
 
 tools:
 	go install ./tools/bsinner
@@ -46,7 +52,7 @@ lint-verbose: lint-pre
 	@golangci-lint run -v
 
 build:
-	@go build ./...
+	@go build -tags "${TAGS}" ./...
 
 start-daemon:
 	thord start --log_level "main:info,state:debug,*:error"
