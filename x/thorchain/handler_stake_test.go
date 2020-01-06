@@ -193,22 +193,22 @@ func (HandlerStakeSuite) TestStakeHandlerValidation(c *C) {
 		{
 			name:           "empty signer should fail",
 			msg:            NewMsgSetStakeData(GetRandomTx(), common.BNBAsset, sdk.NewUint(common.One*5), sdk.NewUint(common.One*5), GetRandomBNBAddress(), GetRandomBNBAddress(), sdk.AccAddress{}),
-			expectedResult: sdk.CodeInvalidAddress,
+			expectedResult: CodeStakeFailValidation,
 		},
 		{
 			name:           "empty asset should fail",
 			msg:            NewMsgSetStakeData(GetRandomTx(), common.Asset{}, sdk.NewUint(common.One*5), sdk.NewUint(common.One*5), GetRandomBNBAddress(), GetRandomBNBAddress(), GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeStakeFailValidation,
 		},
 		{
 			name:           "empty RUNE address should fail",
 			msg:            NewMsgSetStakeData(GetRandomTx(), common.BNBAsset, sdk.NewUint(common.One*5), sdk.NewUint(common.One*5), common.NoAddress, GetRandomBNBAddress(), GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeStakeFailValidation,
 		},
 		{
 			name:           "empty ASSET address should fail",
 			msg:            NewMsgSetStakeData(GetRandomTx(), common.BTCAsset, sdk.NewUint(common.One*5), sdk.NewUint(common.One*5), GetRandomBNBAddress(), common.NoAddress, GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeStakeFailValidation,
 		},
 	}
 	ver := semver.MustParse("0.1.0")
@@ -257,7 +257,7 @@ func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 					Status:       PoolSuspended,
 				},
 			},
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeStakeInvalidPoolStatus,
 		},
 		{
 			name: "fail to get next event id should fail stake",
