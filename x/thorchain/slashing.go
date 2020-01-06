@@ -75,7 +75,7 @@ func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.Constan
 func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	pendingEvents, err := s.keeper.GetAllPendingEvents(ctx)
 	if err != nil {
-		ctx.Logger().Error("Unable to get list of active accounts", err)
+		ctx.Logger().Error("Unable to get all pending events", err)
 		return err
 	}
 	signingTransPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)

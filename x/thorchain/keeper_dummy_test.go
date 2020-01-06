@@ -138,6 +138,9 @@ func (k KVStoreDummy) UpsertEvent(_ sdk.Context, _ Event) error       { return k
 func (k KVStoreDummy) GetPendingEventID(_ sdk.Context, _ common.TxID) ([]int64, error) {
 	return nil, kaboom
 }
+func (k KVStoreDummy) GetEventsIDByTxHash(ctx sdk.Context, txID common.TxID) ([]int64, error) {
+	return nil, kaboom
+}
 func (k KVStoreDummy) GetCurrentEventID(_ sdk.Context) (int64, error)    { return 0, kaboom }
 func (k KVStoreDummy) SetCurrentEventID(_ sdk.Context, _ int64)          {}
 func (k KVStoreDummy) GetAllPendingEvents(_ sdk.Context) (Events, error) { return nil, kaboom }

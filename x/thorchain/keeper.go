@@ -58,6 +58,7 @@ const (
 	prefixStakerPool         dbPrefix = "staker_pool/"
 	prefixAdmin              dbPrefix = "admin/"
 	prefixEvents             dbPrefix = "events/"
+	prefixTxHashEvents       dbPrefix = "tx_events/"
 	prefixPendingEvents      dbPrefix = "pending_events/"
 	prefixCurrentEventID     dbPrefix = "current_event_id/"
 	prefixLastChainHeight    dbPrefix = "last_chain_height/"
