@@ -42,6 +42,8 @@ func NewQuerier(keeper Keeper, validatorMgr ValidatorManager) sdk.Querier {
 			return queryKeygen(ctx, path[1:], req, keeper)
 		case q.QueryCompleteEvents.Key:
 			return queryCompleteEvents(ctx, path[1:], req, keeper)
+		case q.QueryEventsByTxHash.Key:
+			return queryEventsByTxHash(ctx, path[1:], req, keeper)
 		case q.QueryHeights.Key:
 			return queryHeights(ctx, path[1:], req, keeper)
 		case q.QueryChainHeights.Key:
@@ -583,6 +585,44 @@ func getEventStatusFromQuery(u *url.URL) EventStatuses {
 		return result
 	}
 	return GetEventStatuses(values)
+}
+
+func queryEventsByTxHash(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	txID, err := common.NewTxID(path[0])
+	if err != nil {
+		ctx.Logger().Error("fail to discover tx hash", err)
+		return nil, sdk.ErrInternal("fail to discover tx hash")
+	}
+	eventIDs, err := keeper.GetEventsIDByTxHash(ctx, txID)
+	if err != nil {
+		errMsg := fmt.Sprintf("fail to get event ids by txhash(%s)", txID.String())
+		ctx.Logger().Error(errMsg)
+		return nil, sdk.ErrInternal(errMsg)
+	}
+	limit := 100 // limit the number of events, aka pagination
+	if len(eventIDs) > 100 {
+		eventIDs = eventIDs[len(eventIDs)-limit:]
+	}
+	events := make(Events, 0, len(eventIDs))
+	for _, id := range eventIDs {
+		event, err := keeper.GetEvent(ctx, id)
+		if err != nil {
+			errMsg := fmt.Sprintf("fail to get event(%d)", id)
+			return nil, sdk.ErrInternal(errMsg)
+		}
+
+		if event.Empty() {
+			break
+		}
+		events = append(events, event)
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), events)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal events to json", err)
+		return nil, sdk.ErrInternal("fail to marshal events to json")
+	}
+	return res, nil
 }
 
 func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
