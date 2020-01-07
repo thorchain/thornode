@@ -6,7 +6,7 @@ services:
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/thornode
+    image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
     restart: unless-stopped
     environment:
       NET: ${NET}
@@ -30,7 +30,7 @@ services:
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
-    image: registry.gitlab.com/thorchain/thornode
+    image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
     restart: unless-stopped
     environment:
       NODES: 1
@@ -57,7 +57,7 @@ services:
       - thor-daemon
     links:
       - thor-daemon
-    image: registry.gitlab.com/thorchain/thornode
+    image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
     environment:
       CHAIN_DAEMON: thor-daemon:26657
       NET: ${NET}
