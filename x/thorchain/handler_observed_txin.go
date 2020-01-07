@@ -192,7 +192,11 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 
 		result := handler(ctx, m)
 		if !result.IsOK() {
-			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, result.Code, result.Log); err != nil {
+			refundMsg, err := getErrMessage(result.Log)
+			if nil != err {
+				ctx.Logger().Error(err.Error())
+			}
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, result.Code, refundMsg); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 		}

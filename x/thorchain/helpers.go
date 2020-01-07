@@ -287,3 +287,14 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 
 	return nil
 }
+func getErrMessage(content string) (string, error) {
+	var humanReadableError struct {
+		Codespace sdk.CodespaceType `json:"codespace"`
+		Code      sdk.CodeType      `json:"code"`
+		Message   string            `json:"message"`
+	}
+	if err := json.Unmarshal([]byte(content), &humanReadableError); nil != err {
+		return "", err
+	}
+	return humanReadableError.Message, nil
+}
