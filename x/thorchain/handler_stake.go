@@ -80,7 +80,7 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 	}
 	if err := pool.EnsureValidPoolStatus(msg); nil != err {
 		ctx.Logger().Error("fail to check pool status", err)
-		return sdk.NewError(DefaultCodespace, CodeStakeInvalidPoolStatus, err.Error())
+		return sdk.NewError(DefaultCodespace, CodeInvalidPoolStatus, err.Error())
 	}
 	stakeUnits, err := stake(
 		ctx,

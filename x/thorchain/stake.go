@@ -60,7 +60,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	ps, err := keeper.GetPoolStaker(ctx, asset)
 	if nil != err {
 		ctx.Logger().Error("fail to get pool staker record", err)
-		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakeFailGetPoolStaker, "fail to get pool staker record")
+		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get pool staker record")
 	}
 
 	su := ps.GetStakerUnit(runeAddr)
