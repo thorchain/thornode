@@ -147,7 +147,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	keeper.clearEvent()
 	msg := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.ZeroUint(), observerAddr)
 	res := handler.handle(ctx, msg, ver, constAccessor)
-	c.Assert(res.Code, Equals, sdk.CodeInternal)
+	c.Assert(res.Code, Equals, CodeSwapFailPoolNotExist)
 	c.Assert(keeper.event, IsNil)
 	pool := NewPool()
 	pool.Asset = common.BNBAsset
@@ -171,7 +171,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	msgSwapPriceProtection := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.NewUint(2*common.One), observerAddr)
 	res1 := handler.handle(ctx, msgSwapPriceProtection, ver, constAccessor)
 	c.Assert(res1.IsOK(), Equals, false)
-	c.Assert(res1.Code, Equals, sdk.CodeInternal)
+	c.Assert(res1.Code, Equals, CodeSwapFailTradeTarget)
 	c.Assert(keeper.event, IsNil)
 
 	poolTCAN := NewPool()
@@ -277,7 +277,7 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 	txOutStore.ClearOutboundItems()
 	res1 := handler.handle(ctx, msgSwapFromTxIn1.(MsgSwap), ver, constAccessor)
 	c.Assert(res1.IsOK(), Equals, false)
-	c.Assert(res1.Code, Equals, sdk.CodeInternal)
+	c.Assert(res1.Code, Equals, CodeSwapFailNotEnoughFee)
 	c.Assert(keeper.event, IsNil)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 0)
 }

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -122,25 +123,25 @@ func (tx1 Tx) Equals(tx2 Tx) bool {
 
 func (tx Tx) IsValid() error {
 	if tx.ID.IsEmpty() {
-		return fmt.Errorf("Tx ID cannot be empty")
+		return errors.New("Tx ID cannot be empty")
 	}
 	if tx.FromAddress.IsEmpty() {
-		return fmt.Errorf("From address cannot be empty")
+		return errors.New("From address cannot be empty")
 	}
 	if tx.ToAddress.IsEmpty() {
-		return fmt.Errorf("To address cannot be empty")
+		return errors.New("To address cannot be empty")
 	}
 	if tx.Chain.IsEmpty() {
-		return fmt.Errorf("Chain cannot be empty")
+		return errors.New("Chain cannot be empty")
 	}
 	if len(tx.Coins) == 0 {
-		return fmt.Errorf("Must have at least 1 coin")
+		return errors.New("Must have at least 1 coin")
 	}
 	if err := tx.Coins.IsValid(); err != nil {
 		return err
 	}
 	if len(tx.Gas) == 0 {
-		return fmt.Errorf("Must have at least 1 gas coin")
+		return errors.New("Must have at least 1 gas coin")
 	}
 	if err := tx.Gas.IsValid(); err != nil {
 		return err
