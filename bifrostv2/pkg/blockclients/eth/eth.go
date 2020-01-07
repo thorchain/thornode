@@ -24,7 +24,7 @@ type Client struct {
 	ctx                      context.Context
 	logger                   zerolog.Logger
 	fnLastScannedBlockHeight types.FnLastScannedBlockHeight
-	lastScannedBlockHeight   uint64
+	lastScannedBlockHeight   int64
 	backOffCtrl              backoff.ExponentialBackOff
 }
 
@@ -51,8 +51,8 @@ func NewClient(cfg config.ChainConfigurations) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) getBlock(blockNumber uint64) (*etypes.Block, error) {
-	return c.client.BlockByNumber(c.ctx, big.NewInt(int64(blockNumber)))
+func (c *Client) getBlock(blockNumber int64) (*etypes.Block, error) {
+	return c.client.BlockByNumber(c.ctx, big.NewInt(blockNumber))
 }
 
 func (c *Client) getCurrentBlock() (*etypes.Block, error) {
@@ -81,7 +81,7 @@ func (c *Client) scanBlocks(blockInChan chan<- types.Block) {
 		block, err := c.getBlock(c.lastScannedBlockHeight)
 		if err != nil {
 			d := c.backOffCtrl.NextBackOff()
-			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backoffCtrl", d.String()).Msg("getBlock failed")
+			c.logger.Error().Err(err).Int64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backoffCtrl", d.String()).Msg("getBlock failed")
 			time.Sleep(d)
 			continue
 		}
@@ -98,7 +98,7 @@ func (c *Client) Stop() error {
 
 func (c *Client) processBlock(block *etypes.Block) types.Block {
 	var b types.Block
-	b.BlockHeight = block.Number().Uint64()
+	b.BlockHeight = block.Number().Int64()
 	b.BlockHash = block.Hash().String()
 	b.Chain = common.ETHChain
 	// TODO extract tx data
