@@ -35,7 +35,7 @@ func (q Query) Path(args ...string) string {
 // query endpoints supported by the thorchain Querier
 var (
 	QueryAdminConfigBnb     = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}/{%s}"}
-	QueryAdminConfig        = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}"}
+	QueryAdminConfig        = Query{Key: "adminconfigbnb", EndpointTemplate: "/%s/admin/{%s}"}
 	QueryChains             = Query{Key: "chains", EndpointTemplate: "/%s/chains"}
 	QueryPool               = Query{Key: "pool", EndpointTemplate: "/%s/pool/{%s}"}
 	QueryPools              = Query{Key: "pools", EndpointTemplate: "/%s/pools"}
