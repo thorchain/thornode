@@ -1,5 +1,5 @@
 #
-# Observer, Signer, Thorchain
+# Thorchain, Bifrost
 #
 
 #
@@ -18,10 +18,12 @@ ENV GOPATH=/go
 ENV CGO_ENABLED=0
 ENV GOOS=linux
 
-RUN go build -a -installsuffix cgo -o $GOBIN/thord ./cmd/thord
-RUN go build -a -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
-RUN go build -a -installsuffix cgo -o $GOBIN/bifrost ./cmd/bifrost
-RUN go build -a -installsuffix cgo -o $GOBIN/generate ./tools/generate
+ARG TAGS=mainnet
+
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/thord ./cmd/thord
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/bifrost ./cmd/bifrost
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/generate ./tools/generate
 
 # install keygenClient
 RUN git clone https://gitlab.com/thorchain/tss/tss-tools.git /tmp/tss-tools
