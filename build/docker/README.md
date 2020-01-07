@@ -33,6 +33,7 @@ To run a single node to join an already existing blockchain...
 ```bash
 PEER=<SEED IP ADDRESS> make run-validator
 ```
+
 Thornode Docker Cloud 
 =====================
 
@@ -68,7 +69,7 @@ export THORNODE_ENV=testnet
 export AWS_VPC_ID=vpc-***
 export AWS_INSTANCE_TYPE=c5.2xlarge
 export AWS_REGION=us-east-1
-bash DOCKER_SERVER.sh
+bash docker_server.sh
 ```
 
 ***THORNODE_ENV***: can either be testnet or mocknet but defaults to testnet
@@ -108,7 +109,7 @@ If you do not specify ***AWS_VPC_ID***, ***AWS_REGION*** and ***AWS_INSTANCE_TYP
 
 ```bash
 export THORNODE_ENV=testnet
-bash DOCKER_SERVER.sh
+bash docker_server.sh
 ```
 
 
