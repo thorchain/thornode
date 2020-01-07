@@ -18,6 +18,7 @@ type KeeperEvents interface {
 	GetCurrentEventID(ctx sdk.Context) (int64, error)
 	SetCurrentEventID(ctx sdk.Context, eventID int64)
 	GetAllPendingEvents(ctx sdk.Context) (Events, error)
+	GetEventsIDByTxHash(ctx sdk.Context, txID common.TxID) ([]int64, error)
 }
 
 var ErrEventNotFound = errors.New("event not found")
@@ -42,6 +43,10 @@ func (k KVStore) UpsertEvent(ctx sdk.Context, event Event) error {
 			return fmt.Errorf("fail to get next event id: %w", err)
 		}
 		event.ID = nextEventID
+		// keep a map between tx hash and event id
+		if err := k.upsertEventTxHash(ctx, event); err != nil {
+			return err
+		}
 	}
 
 	key := k.GetKey(ctx, prefixEvents, strconv.FormatInt(event.ID, 10))
@@ -164,4 +169,35 @@ func (k KVStore) GetAllPendingEvents(ctx sdk.Context) (Events, error) {
 		events = append(events, event)
 	}
 	return events, nil
+}
+
+// GetEventsIDByTxHash given a tx id, return a slice of events id that is related to the tx hash
+func (k KVStore) GetEventsIDByTxHash(ctx sdk.Context, txID common.TxID) ([]int64, error) {
+	key := k.GetKey(ctx, prefixTxHashEvents, txID.String())
+	store := ctx.KVStore(k.storeKey)
+	if !store.Has([]byte(key)) {
+		return nil, ErrEventNotFound
+	}
+	buf := store.Get([]byte(key))
+	var eventIDs []int64
+	if err := k.Cdc().UnmarshalBinaryBare(buf, &eventIDs); nil != err {
+		return nil, fmt.Errorf("fail to unmarshal event id: %w", err)
+	}
+	return eventIDs, nil
+}
+
+func (k KVStore) upsertEventTxHash(ctx sdk.Context, event Event) error {
+	key := k.GetKey(ctx, prefixTxHashEvents, event.InTx.ID.String())
+	store := ctx.KVStore(k.storeKey)
+	var eventIDs []int64
+	var err error
+	if store.Has([]byte(key)) {
+		eventIDs, err = k.GetEventsIDByTxHash(ctx, event.InTx.ID)
+		if nil != err {
+			return fmt.Errorf("fail to get events id by tx hash id: %w", err)
+		}
+	}
+	eventIDs = append(eventIDs, event.ID)
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(eventIDs))
+	return nil
 }
