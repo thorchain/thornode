@@ -257,7 +257,7 @@ func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 					Status:       PoolSuspended,
 				},
 			},
-			expectedResult: CodeStakeInvalidPoolStatus,
+			expectedResult: CodeInvalidPoolStatus,
 		},
 		{
 			name: "fail to get next event id should fail stake",
