@@ -81,7 +81,7 @@ func (h SwapHandler) addSwapEvent(ctx sdk.Context, swapEvt EventSwap, tx common.
 
 func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor constants.ConstantValues) sdk.Result {
 	transactionFee := constAccessor.GetInt64Value(constants.TransactionFee)
-	amount, swapEvents, err := swap(
+	amount, swapEvents, swapErr := swap(
 		ctx,
 		h.keeper,
 		msg.Tx,
@@ -89,9 +89,9 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor consta
 		msg.Destination,
 		msg.TradeTarget,
 		sdk.NewUint(uint64(transactionFee)))
-	if err != nil {
-		ctx.Logger().Error("fail to process swap message", "error", err)
-		return sdk.ErrInternal(err.Error()).Result()
+	if swapErr != nil {
+		ctx.Logger().Error("fail to process swap message", "error", swapErr)
+		return swapErr.Result()
 	}
 	for _, item := range swapEvents {
 		if eventErr := h.addSwapEvent(ctx, item, msg.Tx, EventPending); eventErr != nil {
