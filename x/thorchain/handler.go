@@ -18,9 +18,19 @@ const (
 	CodeConstantsNotAvailable sdk.CodeType = 103
 	CodeInvalidVault          sdk.CodeType = 104
 	CodeInvalidMemo           sdk.CodeType = 105
+	CodeValidationError       sdk.CodeType = 106
+	CodeInvalidPoolStatus     sdk.CodeType = 107
+
+	CodeSwapFail                 sdk.CodeType = 108
+	CodeSwapFailTradeTarget      sdk.CodeType = 109
+	CodeSwapFailNotEnoughFee     sdk.CodeType = 110
+	CodeSwapFailZeroEmitAsset    sdk.CodeType = 111
+	CodeSwapFailPoolNotExist     sdk.CodeType = 112
+	CodeSwapFailInvalidAmount    sdk.CodeType = 113
+	CodeSwapFailInvalidBalance   sdk.CodeType = 114
+	CodeSwapFailNotEnoughBalance sdk.CodeType = 115
 
 	CodeStakeFailValidation    sdk.CodeType = 120
-	CodeInvalidPoolStatus      sdk.CodeType = 121
 	CodeFailGetPoolStaker      sdk.CodeType = 122
 	CodeStakeMismatchAssetAddr sdk.CodeType = 123
 	CodeStakeInvalidPoolAsset  sdk.CodeType = 124

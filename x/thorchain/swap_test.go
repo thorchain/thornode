@@ -4,7 +4,6 @@ import (
 	"os"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -33,7 +32,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		destination   common.Address
 		returnAmount  sdk.Uint
 		tradeTarget   sdk.Uint
-		expectedErr   error
+		expectedErr   sdk.Error
 	}{
 		{
 			name:          "empty-source",
@@ -44,7 +43,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     "tester",
 			destination:   "whatever",
 			returnAmount:  sdk.ZeroUint(),
-			expectedErr:   errors.New("Denom cannot be empty"),
+			expectedErr:   sdk.NewError(DefaultCodespace, CodeValidationError, "Denom cannot be empty"),
 		},
 		{
 			name:          "empty-target",
@@ -55,7 +54,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     "tester",
 			destination:   "whatever",
 			returnAmount:  sdk.ZeroUint(),
-			expectedErr:   errors.New("target is empty"),
+			expectedErr:   sdk.NewError(DefaultCodespace, CodeValidationError, "target is empty"),
 		},
 		{
 			name:          "empty-requestTxHash",
@@ -66,7 +65,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     "tester",
 			destination:   "whatever",
 			returnAmount:  sdk.ZeroUint(),
-			expectedErr:   errors.New("Tx ID cannot be empty"),
+			expectedErr:   sdk.NewError(DefaultCodespace, CodeValidationError, "Tx ID cannot be empty"),
 		},
 		{
 			name:          "empty-amount",
@@ -77,7 +76,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     "tester",
 			destination:   "whatever",
 			returnAmount:  sdk.ZeroUint(),
-			expectedErr:   errors.New("Amount cannot be zero"),
+			expectedErr:   sdk.NewError(DefaultCodespace, CodeValidationError, "Amount cannot be zero"),
 		},
 		{
 			name:          "empty-requester",
@@ -88,7 +87,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     "",
 			destination:   "whatever",
 			returnAmount:  sdk.ZeroUint(),
-			expectedErr:   errors.New("From address cannot be empty"),
+			expectedErr:   sdk.NewError(DefaultCodespace, CodeValidationError, "From address cannot be empty"),
 		},
 		{
 			name:          "empty-destination",
@@ -99,7 +98,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			requester:     GetRandomBNBAddress(),
 			destination:   "",
 			returnAmount:  sdk.ZeroUint(),
-			expectedErr:   errors.New("To address cannot be empty"),
+			expectedErr:   sdk.NewError(DefaultCodespace, CodeValidationError, "To address cannot be empty"),
 		},
 		{
 			name:          "pool-not-exist",
@@ -111,7 +110,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   GetRandomBNBAddress(),
 			tradeTarget:   sdk.NewUint(110000000),
 			returnAmount:  sdk.ZeroUint(),
-			expectedErr:   errors.New("BNB.NOTEXIST doesn't exist"),
+			expectedErr:   sdk.NewError(DefaultCodespace, CodeSwapFailPoolNotExist, "BNB.NOTEXIST pool doesn't exist"),
 		},
 		{
 			name:          "pool-not-exist-1",
@@ -123,7 +122,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don'tknow",
 			tradeTarget:   sdk.NewUint(120000000),
 			returnAmount:  sdk.ZeroUint(),
-			expectedErr:   errors.New("BNB.NOTEXIST doesn't exist"),
+			expectedErr:   sdk.NewError(DefaultCodespace, CodeSwapFailPoolNotExist, "BNB.NOTEXIST pool doesn't exist"),
 		},
 		{
 			name:          "swap-no-global-sliplimit",
@@ -147,7 +146,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			destination:   "don'tknow",
 			returnAmount:  sdk.ZeroUint(),
 			tradeTarget:   sdk.NewUint(9 * common.One),
-			expectedErr:   errors.New("emit asset 757511993 less than price limit 900000000"),
+			expectedErr:   sdk.NewError(DefaultCodespace, CodeSwapFailTradeTarget, "emit asset 757511993 less than price limit 900000000"),
 		},
 		{
 			name:          "swap-no-target-price-no-protection",
