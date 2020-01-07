@@ -265,7 +265,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("empty rune address"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, "empty rune address"),
 		},
 		{
 			name: "empty-withdraw-basis-points",
@@ -279,7 +279,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("nothing to withdraw"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeNoStakeUnitLeft, "nothing to withdraw"),
 		},
 		{
 			name: "empty-request-txhash",
@@ -293,7 +293,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("request tx hash is empty"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, "request tx hash is empty"),
 		},
 		{
 			name: "empty-asset",
@@ -307,7 +307,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("empty asset"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, "empty asset"),
 		},
 
 		{
@@ -322,7 +322,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("withdraw basis points 10001 is invalid"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, "withdraw basis points 10001 is invalid"),
 		},
 		{
 			name: "invalid-pool-notexist",
@@ -336,7 +336,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("pool-BNB.NOTEXIST doesn't exist"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, "pool-BNB.NOTEXIST doesn't exist"),
 		},
 		{
 			name: "invalid-pool-staker-notexist",
@@ -350,7 +350,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("can't find pool staker: you asked for it"),
+			expectedError: sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "pool staker doesn't exist"),
 		},
 		{
 			name: "invalid-staker-pool-notexist",
@@ -364,7 +364,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("can't find staker pool: you asked for it"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeStakerPoolNotExist, "staker pool doesn't exist"),
 		},
 		{
 			name: "nothing-to-withdraw",
@@ -378,7 +378,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("nothing to withdraw"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeNoStakeUnitLeft, "nothing to withdraw"),
 		},
 		{
 			name: "all-good",
