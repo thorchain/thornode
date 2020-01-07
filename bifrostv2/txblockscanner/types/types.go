@@ -10,7 +10,7 @@ import (
 type Block struct {
 	Txs         Txs
 	Chain       common.Chain
-	BlockHeight uint64
+	BlockHeight int64
 	BlockHash   string
 }
 
