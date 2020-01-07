@@ -29,6 +29,20 @@ const (
 	CodeSwapFailInvalidAmount    sdk.CodeType = 113
 	CodeSwapFailInvalidBalance   sdk.CodeType = 114
 	CodeSwapFailNotEnoughBalance sdk.CodeType = 115
+
+	CodeStakeFailValidation    sdk.CodeType = 120
+	CodeFailGetPoolStaker      sdk.CodeType = 122
+	CodeStakeMismatchAssetAddr sdk.CodeType = 123
+	CodeStakeInvalidPoolAsset  sdk.CodeType = 124
+
+	CodeUnstakeFailValidation sdk.CodeType = 130
+	CodeFailAddOutboundTx     sdk.CodeType = 131
+	CodeFailSaveEvent         sdk.CodeType = 132
+	CodePoolStakerNotExist    sdk.CodeType = 133
+	CodeStakerPoolNotExist    sdk.CodeType = 134
+	CodeNoStakeUnitLeft       sdk.CodeType = 135
+	CodeWithdrawWithin24Hours sdk.CodeType = 136
+	CodeUnstakeFail           sdk.CodeType = 137
 )
 
 // EmptyAccAddress empty address

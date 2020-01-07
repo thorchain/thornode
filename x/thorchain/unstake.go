@@ -31,24 +31,28 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 }
 
 // unstake withdraw all the asset
-func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.Uint, sdk.Uint, error) {
+func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.Uint, sdk.Uint, sdk.Error) {
 	if err := validateUnstake(ctx, keeper, msg); nil != err {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
+		ctx.Logger().Error("msg unstake fail validation", err)
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
 	}
 
 	pool, err := keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
+		ctx.Logger().Error("fail to get pool", err)
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to get pool")
 	}
 
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), fmt.Errorf("can't find pool staker: %w", err)
+		ctx.Logger().Error("can't find pool staker", err)
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "pool staker doesn't exist")
 
 	}
 	stakerPool, err := keeper.GetStakerPool(ctx, msg.RuneAddress)
 	if nil != err {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), fmt.Errorf("can't find staker pool: %w", err)
+		ctx.Logger().Error("can't find staker pool", err)
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakerPoolNotExist, "staker pool doesn't exist")
 	}
 
 	poolUnits := pool.PoolUnits
@@ -57,16 +61,16 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 	fStakerUnit := stakerUnit.Units
 	if !stakerUnit.Units.GT(sdk.ZeroUint()) {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("nothing to withdraw")
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeNoStakeUnitLeft, "nothing to withdraw")
 	}
 
-	// check if THORNode need to rate limit unstaking
+	// check if thorchain need to rate limit unstaking
 	// https://gitlab.com/thorchain/thornode/issues/166
 	if !msg.Asset.Chain.Equals(common.BNBChain) {
 		height := ctx.BlockHeight()
 		if height < (stakerUnit.Height + 17280) {
-			err := errors.New("you cannot unstake for 24 hours after staking for this blockchain")
-			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
+
+			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeWithdrawWithin24Hours, "you cannot unstake for 24 hours after staking for this blockchain")
 		}
 	}
 
@@ -74,7 +78,8 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	ctx.Logger().Info("staker before withdraw", "staker unit", fStakerUnit)
 	withdrawRune, withDrawAsset, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolAsset, fStakerUnit, msg.WithdrawBasisPoints)
 	if err != nil {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
+		ctx.Logger().Error("fail to unstake", err)
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFail, err.Error())
 	}
 
 	withdrawRune = withdrawRune.Add(stakerUnit.PendingRune) // extract pending rune
@@ -110,7 +115,8 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 
 	// update staker pool
 	if err := keeper.SetPool(ctx, pool); err != nil {
-		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), err
+		ctx.Logger().Error("fail to save pool", err)
+		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")
 	}
 	keeper.SetPoolStaker(ctx, poolStaker)
 	keeper.SetStakerPool(ctx, stakerPool)

@@ -134,27 +134,27 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_Validation(c *C) {
 		{
 			name:           "empty signer should fail",
 			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, sdk.AccAddress{}),
-			expectedResult: sdk.CodeInvalidAddress,
+			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
 			name:           "empty asset should fail",
 			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.Asset{}, GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
 			name:           "empty RUNE address should fail",
 			msg:            NewMsgSetUnStake(GetRandomTx(), common.NoAddress, sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
 			name:           "withdraw basis point is 0 should fail",
 			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.ZeroUint(), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
 			name:           "withdraw basis point is larger than 10000 should fail",
 			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints+100)), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeUnstakeFailValidation,
 		},
 	}
 	ver := semver.MustParse("0.1.0")
@@ -193,7 +193,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 				activeNodeAccount: activeNodeAccount,
 				suspendedPool:     true,
 			},
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeInvalidPoolStatus,
 		},
 		{
 			name: "fail to get pool staker unstake should fail",
@@ -201,7 +201,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 				activeNodeAccount: activeNodeAccount,
 				failPoolStaker:    true,
 			},
-			expectedResult: sdk.CodeInternal,
+			expectedResult: CodeFailGetPoolStaker,
 		},
 		{
 			name: "fail to add incomplete event unstake should fail",

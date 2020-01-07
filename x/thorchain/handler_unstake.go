@@ -58,7 +58,8 @@ func (uh UnstakeHandler) validate(ctx sdk.Context, msg MsgSetUnStake, version se
 
 func (uh UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error {
 	if err := msg.ValidateBasic(); nil != err {
-		return err
+		ctx.Logger().Error("unstake msg fail validation", err.ABCILog())
+		return sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
 	}
 	if !isSignedByActiveObserver(ctx, uh.keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account",
@@ -71,11 +72,14 @@ func (uh UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Erro
 
 	pool, err := uh.keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
-		return sdk.ErrInternal(fmt.Errorf("fail to get pool(%s): %w", msg.Asset, err).Error())
+		errMsg := fmt.Sprintf("fail to get pool(%s)", msg.Asset)
+		ctx.Logger().Error(errMsg, err)
+		return sdk.ErrInternal(errMsg)
 	}
 
 	if err := pool.EnsureValidPoolStatus(msg); nil != err {
-		return sdk.ErrUnknownRequest(fmt.Errorf("fail to check pool status: %w", err).Error())
+		ctx.Logger().Error("fail to check pool status", err)
+		return sdk.NewError(DefaultCodespace, CodeInvalidPoolStatus, err.Error())
 	}
 
 	return nil
@@ -84,7 +88,8 @@ func (uh UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Erro
 func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk.Error) {
 	poolStaker, err := uh.keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
-		return nil, sdk.ErrInternal(fmt.Errorf("fail to get pool staker: %w", err).Error())
+		ctx.Logger().Error("fail to get pool staker: %w", err)
+		return nil, sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get pool staker")
 	}
 	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 
@@ -124,7 +129,8 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 	)
 
 	if err := uh.keeper.UpsertEvent(ctx, evt); nil != err {
-		return nil, sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
+		ctx.Logger().Error("fail to save event", err)
+		return nil, sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to save event")
 	}
 
 	toi := &TxOutItem{
@@ -135,7 +141,9 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 	}
 	_, err = uh.txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
-		return nil, sdk.ErrInternal(fmt.Errorf("fail to prepare outbound tx: %w", err).Error())
+		ctx.Logger().Error("fail to prepare outbound tx", err)
+		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
+
 	}
 
 	toi = &TxOutItem{
@@ -146,7 +154,8 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 	}
 	_, err = uh.txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
-		return nil, sdk.ErrInternal(fmt.Errorf("fail to prepare outbound tx: %w", err).Error())
+		ctx.Logger().Error("fail to prepare outbound tx", err)
+		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
 	}
 
 	return res, nil
