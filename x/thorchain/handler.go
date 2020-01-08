@@ -43,6 +43,7 @@ const (
 	CodeNoStakeUnitLeft       sdk.CodeType = 135
 	CodeWithdrawWithin24Hours sdk.CodeType = 136
 	CodeUnstakeFail           sdk.CodeType = 137
+	CodeEmptyChain            sdk.CodeType = 138
 )
 
 // EmptyAccAddress empty address
@@ -97,13 +98,14 @@ func getHandlerMapping(keeper Keeper, txOutStore TxOutStore, validatorMgr Valida
 	return m
 }
 
-func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
+func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, sdk.Error) {
 	if len(tx.Tx.Coins) == 0 {
-		return nil, fmt.Errorf("no coin found")
+		return nil, sdk.ErrUnknownRequest("no coin found")
 	}
 	memo, err := ParseMemo(tx.Tx.Memo)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to parse memo")
+		ctx.Logger().Error("fail to parse memo")
+		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, err.Error())
 	}
 	// THORNode should not have one tx across chain, if it is cross chain it should be separate tx
 	var newMsg sdk.Msg
@@ -112,49 +114,49 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 	case CreateMemo:
 		newMsg, err = getMsgSetPoolDataFromMemo(ctx, keeper, m, signer)
 		if nil != err {
-			return nil, errors.Wrap(err, "fail to get MsgSetPoolData from memo")
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid create memo: %s", err.Error())
 		}
 
 	case StakeMemo:
 		newMsg, err = getMsgStakeFromMemo(ctx, m, tx, signer)
 		if nil != err {
-			return nil, errors.Wrap(err, "fail to get MsgStake from memo")
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid stake memo:%s", err.Error())
 		}
 
 	case WithdrawMemo:
 		newMsg, err = getMsgUnstakeFromMemo(m, tx, signer)
 		if nil != err {
-			return nil, errors.Wrap(err, "fail to get MsgUnstake from memo")
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid withdraw memo:%s", err.Error())
 		}
 	case SwapMemo:
 		newMsg, err = getMsgSwapFromMemo(m, tx, signer)
 		if nil != err {
-			return nil, errors.Wrap(err, "fail to get MsgSwap from memo")
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid swap memo:%s", err.Error())
 		}
 	case AddMemo:
 		newMsg, err = getMsgAddFromMemo(m, tx, signer)
 		if err != nil {
-			return nil, errors.Wrap(err, "fail to get MsgAdd from memo")
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid add memo:%s", err.Error())
 		}
 	case GasMemo:
 		newMsg, err = getMsgNoOpFromMemo(tx, signer)
 		if err != nil {
-			return nil, errors.Wrap(err, "fail to get MsgNoOp from memo")
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid noop memo:%s", err.Error())
 		}
 	case RefundMemo:
 		newMsg, err = getMsgRefundFromMemo(m, tx, signer)
 		if nil != err {
-			return nil, errors.Wrap(err, "fail to get MsgRefund from memo")
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid refund memo:%s", err.Error())
 		}
 	case OutboundMemo:
 		newMsg, err = getMsgOutboundFromMemo(m, tx, signer)
 		if nil != err {
-			return nil, errors.Wrap(err, "fail to get MsgOutbound from memo")
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid outbound memo:%s", err.Error())
 		}
 	case BondMemo:
 		newMsg, err = getMsgBondFromMemo(m, tx, signer)
 		if nil != err {
-			return nil, errors.Wrap(err, "fail to get MsgBond from memo")
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid bond memo:%s", err.Error())
 		}
 	case LeaveMemo:
 		newMsg = NewMsgLeave(tx.Tx, signer)
@@ -166,11 +168,11 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		res := NewReserveContributor(tx.Tx.FromAddress, tx.Tx.Coins[0].Amount)
 		newMsg = NewMsgReserveContributor(res, signer)
 	default:
-		return nil, errors.Wrap(err, "Unable to find memo type")
+		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid memo")
 	}
 
 	if err := newMsg.ValidateBasic(); nil != err {
-		return nil, errors.Wrap(err, "invalid msg")
+		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid message:%s", err.Error())
 	}
 	return newMsg, nil
 }

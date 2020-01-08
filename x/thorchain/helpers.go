@@ -287,7 +287,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 
 	return nil
 }
-func getErrMessage(content string) (string, error) {
+func getErrMessageFromABCILog(content string) (string, error) {
 	var humanReadableError struct {
 		Codespace sdk.CodespaceType `json:"codespace"`
 		Code      sdk.CodeType      `json:"code"`

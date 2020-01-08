@@ -208,7 +208,7 @@ describe "API Tests" do
           for idx in 0 ...arr['tx_array'].size
             # THORNode have found the block height of our last swap
             newTxId = txid()
-            tx = makeTx(memo: arr['tx_array'][idx]['memo'], hash:newTxId, sender:TRUST_BNB_ADDRESS)
+            tx = makeTx(memo: arr['tx_array'][idx]['memo'], hash:newTxId, sender:TRUST_BNB_ADDRESS, outbound:true)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
           end

@@ -339,7 +339,7 @@ func ParseMemo(memo string) (Memo, error) {
 		}
 		addr, err := sdk.AccAddressFromBech32(parts[1])
 		if nil != err {
-			return noMemo, errors.Wrapf(err, "%s is an invalid bep address", parts[1])
+			return noMemo, errors.Wrapf(err, "%s is an invalid thorchain address", parts[1])
 		}
 		return BondMemo{
 			MemoBase:    MemoBase{TxType: txBond},
