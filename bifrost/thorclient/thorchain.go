@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -289,7 +290,7 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 	scb.logger.Info().Msgf("Received a TxHash of %v from the thorchain", commit.TxHash)
 
 	// increment seqNum
-	scb.seqNumber += 1
+	atomic.AddUint64(&scb.seqNumber, 1)
 
 	return common.NewTxID(commit.TxHash)
 }
