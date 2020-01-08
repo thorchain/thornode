@@ -102,7 +102,7 @@ func (k *TestObservedTxInFailureKeeper) UpsertEvent(_ sdk.Context, evt Event) er
 
 func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	ctx, _ := setupKeeperForTest(c)
-	w := getHandlerTestWrapper(c, 1, true, false)
+	//w := getHandlerTestWrapper(c, 1, true, false)
 
 	keeper := &TestObservedTxInFailureKeeper{
 		pool: Pool{
@@ -113,11 +113,8 @@ func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	}
 	txOutStore := NewTxStoreDummy()
 
-	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxInHandler(keeper, txOutStore, w.validatorMgr, vaultMgr)
 	tx := NewObservedTx(GetRandomTx(), 12, GetRandomPubKey())
-
-	err := handler.inboundFailure(ctx, tx)
+	err := refundTx(ctx, tx, txOutStore, keeper, CodeInvalidMemo, "Invalid memo")
 	c.Assert(err, IsNil)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
 
