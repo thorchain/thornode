@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/bin/sh
 # ./mock-bond.bash <mock binance IP address> <BNB Address> <thor/node address>
 # ./mock-bond.bash 127.0.0.1 bnbXYXYX thor1kljxxccrheghavaw97u78le6yy3sdj7h696nl4
 
-# set -ex
+set -ex
 
 if [ -z $1 ]; then
     echo "Missing mock binance address (address:port)"
