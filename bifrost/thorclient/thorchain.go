@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -215,12 +216,17 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 		return noTxID, err
 	}
 	if blockHeight > scb.blockHeight {
-		scb.accountNumber, scb.seqNumber, err = scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
+		var seqNum uint64
+		scb.accountNumber, seqNum, err = scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
 		if nil != err {
 			return noTxID, errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
 		}
 		scb.blockHeight = blockHeight
+		if seqNum > scb.seqNumber {
+			scb.seqNumber = seqNum
+		}
 	}
+
 	scb.logger.Info().Uint64("account_number", scb.accountNumber).Uint64("sequence_number", scb.accountNumber).Msg("account info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
@@ -274,17 +280,45 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 		scb.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to read response body")
 	}
+
+	// NOTE: we can actually see two different json responses for the same end.
+	// This complicates things pretty well.
+	// Sample 1: { "height": "0", "txhash": "D97E8A81417E293F5B28DDB53A4AD87B434CA30F51D683DA758ECC2168A7A005", "raw_log": "[{\"msg_index\":0,\"success\":true,\"log\":\"\",\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"set_observed_txout\"}]}]}]", "logs": [ { "msg_index": 0, "success": true, "log": "", "events": [ { "type": "message", "attributes": [ { "key": "action", "value": "set_observed_txout" } ] } ] } ] }
+	// Sample 2: { "height": "0", "txhash": "6A9AA734374D567D1FFA794134A66D3BF614C4EE5DDF334F21A52A47C188A6A2", "code": 4, "raw_log": "{\"codespace\":\"sdk\",\"code\":4,\"message\":\"signature verification failed; verify correct account sequence and chain-id\"}" }
 	var commit types.Commit
 	err = json.Unmarshal(body, &commit)
 	if err != nil {
 		scb.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to unmarshal commit")
+		scb.logger.Error().Err(err).Msg("fail unmarshal commit")
+
+		var badCommit types.BadCommit // since commit doesn't work, lets try bad commit
+		err = json.Unmarshal(body, &badCommit)
+		if err != nil {
+			scb.logger.Error().Err(err).Msg("fail unmarshal bad commit")
+			return noTxID, errors.Wrap(err, "fail to unmarshal bad commit")
+		}
+
+		// check for any failure logs
+		if badCommit.Code > 0 {
+			err := errors.New(badCommit.Log.Message)
+			scb.logger.Error().Err(err).Msg("fail to broadcast")
+			return noTxID, errors.Wrap(err, "fail to broadcast")
+		}
 	}
+
+	for _, log := range commit.Logs {
+		if !log.Success {
+			err := errors.New(log.Log)
+			scb.logger.Error().Err(err).Msg("fail to broadcast")
+			return noTxID, errors.Wrap(err, "fail to broadcast")
+		}
+	}
+
 	scb.m.GetCounter(metrics.TxToThorchain).Inc()
 	scb.logger.Info().Msgf("Received a TxHash of %v from the thorchain", commit.TxHash)
 
 	// increment seqNum
-	scb.seqNumber += 1
+	atomic.AddUint64(&scb.seqNumber, 1)
 
 	return common.NewTxID(commit.TxHash)
 }
