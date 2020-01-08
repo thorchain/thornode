@@ -7,12 +7,6 @@
 #
 FROM golang:1.13 AS build
 
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY . .
-
 ENV GOBIN=/go/bin
 ENV GOPATH=/go
 ENV CGO_ENABLED=0
@@ -20,17 +14,23 @@ ENV GOOS=linux
 
 ARG TAGS=mainnet
 
-RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/thord ./cmd/thord
-RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
-RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/bifrost ./cmd/bifrost
-RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/generate ./tools/generate
-
 # install keygenClient
 RUN git clone https://gitlab.com/thorchain/tss/tss-tools.git /tmp/tss-tools
 WORKDIR /tmp/tss-tools/cmd/keygenclient
 RUN go mod verify
 RUN go mod download
 RUN go build -a -installsuffix cgo -o $GOBIN/keygenclient .
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/generate ./tools/generate
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/thord ./cmd/thord
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/bifrost ./cmd/bifrost
 
 #
 # Main
