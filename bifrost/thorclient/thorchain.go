@@ -286,6 +286,16 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 		scb.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to unmarshal commit")
 	}
+
+	// check for any failure logs
+	for _, log := range commit.Logs {
+		if !log.Success {
+			err := errors.New(log.Log)
+			scb.logger.Error().Err(err).Msg("fail to broadcast")
+			return noTxID, errors.Wrap(err, "fail to broadcast")
+		}
+	}
+
 	scb.m.GetCounter(metrics.TxToThorchain).Inc()
 	scb.logger.Info().Msgf("Received a TxHash of %v from the thorchain", commit.TxHash)
 
