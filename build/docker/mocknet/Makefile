@@ -17,6 +17,6 @@ run-mocknet-genesis-churn:
 reset-mocknet-genesis-churn: stop clean run-mocknet-genesis-churn
 
 run-mocknet-validator: 
-	NET=mocknet docker-compose -p thornode -f ${path}../components/validator.yml up --force-recreate --remove-orphans -d
+	NET=mocknet docker-compose -p thornode -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/validator.yml up --force-recreate --remove-orphans -d
 
 reset-mocknet-validator: stop clean run-mocknet-validator
