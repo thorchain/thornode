@@ -97,7 +97,7 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 
 			// withdraw , refund etc, one inbound tx might result two outbound txes, THORNode have to correlate outbound tx back to the
 			// inbound, and also txitem , thus THORNode could record both outbound tx hash correctly
-			// given every tx item will only have one coin in it , given that , THORNode could use that to identify which txit
+			// given every tx item will only have one coin in it , THORNode could use that to identify which txit
 			if tx.InHash.Equals(msg.InTxID) &&
 				tx.OutHash.IsEmpty() &&
 				msg.Tx.Tx.Coins.Contains(tx.Coin) {
