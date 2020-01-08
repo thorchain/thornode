@@ -34,7 +34,7 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
         ADDRESS=$(cat ~/.bond/address.txt)
 
         # send bond transaction to mock binance
-        $(dirname "$0")/mock-bond.sh $BINANCE_HOST $ADDRESS $NODE_ADDRESS
+        $(dirname "$0")/mock-bond.sh $PEER $ADDRESS $NODE_ADDRESS
 
         # set node keys
         echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --from $SIGNER_NAME --yes

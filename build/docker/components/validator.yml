@@ -40,7 +40,6 @@ services:
       NET: ${NET}
       PEER: ${PEER}
       TSSPRIVKEY: /root/.tss/private.key
-      BINANCE_HOST: ${BINANCE_HOST:-http://172.52.50.2:26660}
     ports:
       - "26657:26657"
       - "26656:26656"
