@@ -215,12 +215,17 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 		return noTxID, err
 	}
 	if blockHeight > scb.blockHeight {
-		scb.accountNumber, scb.seqNumber, err = scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
+		var seqNum uint64
+		scb.accountNumber, seqNum, err = scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
 		if nil != err {
 			return noTxID, errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
 		}
 		scb.blockHeight = blockHeight
+		if seqNum > scb.seqNumber {
+			scb.seqNumber = seqNum
+		}
 	}
+
 	scb.logger.Info().Uint64("account_number", scb.accountNumber).Uint64("sequence_number", scb.accountNumber).Msg("account info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       scb.cfg.ChainID,
