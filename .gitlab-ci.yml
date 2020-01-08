@@ -84,6 +84,7 @@ smoke-test:thornode:
     - ./scripts/docker_logs.sh
 
 deploy:
+  stage: deploy
   image: docker:stable
   only:
     - master
