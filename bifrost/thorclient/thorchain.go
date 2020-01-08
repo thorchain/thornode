@@ -280,14 +280,33 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 		scb.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to read response body")
 	}
+
+	fmt.Printf("BODY: %s\n", string(body))
+	// NOTE: we can actually see two different json responses for the same end.
+	// This complicates things pretty well.
+	// Sample 1: { "height": "0", "txhash": "D97E8A81417E293F5B28DDB53A4AD87B434CA30F51D683DA758ECC2168A7A005", "raw_log": "[{\"msg_index\":0,\"success\":true,\"log\":\"\",\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"set_observed_txout\"}]}]}]", "logs": [ { "msg_index": 0, "success": true, "log": "", "events": [ { "type": "message", "attributes": [ { "key": "action", "value": "set_observed_txout" } ] } ] } ] }
+	// Sample 2: { "height": "0", "txhash": "6A9AA734374D567D1FFA794134A66D3BF614C4EE5DDF334F21A52A47C188A6A2", "code": 4, "raw_log": "{\"codespace\":\"sdk\",\"code\":4,\"message\":\"signature verification failed; verify correct account sequence and chain-id\"}" }
 	var commit types.Commit
 	err = json.Unmarshal(body, &commit)
 	if err != nil {
 		scb.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to unmarshal commit")
+		scb.logger.Error().Err(err).Msg("fail unmarshal commit")
+
+		var badCommit types.BadCommit // since commit doesn't work, lets try bad commit
+		err = json.Unmarshal(body, &badCommit)
+		if err != nil {
+			scb.logger.Error().Err(err).Msg("fail unmarshal bad commit")
+			return noTxID, errors.Wrap(err, "fail to unmarshal bad commit")
+		}
+
+		// check for any failure logs
+		if badCommit.Code > 0 {
+			err := errors.New(badCommit.Log.Message)
+			scb.logger.Error().Err(err).Msg("fail to broadcast")
+			return noTxID, errors.Wrap(err, "fail to broadcast")
+		}
 	}
 
-	// check for any failure logs
 	for _, log := range commit.Logs {
 		if !log.Success {
 			err := errors.New(log.Log)

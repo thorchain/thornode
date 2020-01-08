@@ -1,13 +1,23 @@
 package types
 
-type Log struct {
-	MsgIndex string `json:"msg_index"`
-	Success  bool   `json:"success"`
-	Log      string `json:"log"`
+type BadCommit struct {
+	Height string `json:"height"`
+	TxHash string `json:"txhash"`
+	Code   int    `json:"code"`
+	Log    struct {
+		CodeSpace string `json:"codespace"`
+		Code      int    `json:"code"`
+		Message   string `json:"message"`
+	} `json:"raw_log"`
+}
+
+type log struct {
+	Success bool   `json:"success"`
+	Log     string `json:"log"`
 }
 
 type Commit struct {
 	Height string `json:"height"`
 	TxHash string `json:"txhash"`
-	Logs   []Log  `json:"logs"`
+	Logs   []log  `json:"logs"`
 }
