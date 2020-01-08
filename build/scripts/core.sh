@@ -56,13 +56,13 @@ init_chain () {
 }
 
 peer_list () {
-    PEER="$1@$2:26656"
+    PEERUSER="$1@$2:26656"
     ADDR='addr_book_strict = true'
     ADDR_STRICT_FALSE='addr_book_strict = false'
     PEERSISTENT_PEER_TARGET='persistent_peers = ""'
 
     sed -i -e "s/$ADDR/$ADDR_STRICT_FALSE/g" ~/.thord/config/config.toml
-    sed -i -e "s/$PEERSISTENT_PEER_TARGET/persistent_peers = \"$PEER\"/g" ~/.thord/config/config.toml
+    sed -i -e "s/$PEERSISTENT_PEER_TARGET/persistent_peers = \"$PEERUSER\"/g" ~/.thord/config/config.toml
 }
 
 gen_bnb_address () {
