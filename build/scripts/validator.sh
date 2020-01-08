@@ -36,6 +36,8 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
         # send bond transaction to mock binance
         $(dirname "$0")/mock-bond.sh $PEER $ADDRESS $NODE_ADDRESS
 
+        sleep 5 # wait for thorchain to register the new node account
+
         # set node keys
         echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --node tcp://$PEER:26657 --from $SIGNER_NAME --yes
     else
