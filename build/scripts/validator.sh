@@ -37,7 +37,7 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
         $(dirname "$0")/mock-bond.sh $PEER $ADDRESS $NODE_ADDRESS
 
         # set node keys
-        echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --from $SIGNER_NAME --yes
+        echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --node tcp://$PEER:26657 --from $SIGNER_NAME --yes
     else
         echo "YOUR NODE ADDRESS: $NODE_ADDRESS . Send your bond with this as your address."
     fi
