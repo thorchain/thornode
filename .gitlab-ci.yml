@@ -82,3 +82,20 @@ smoke-test:thornode:
     - make tools smoke-ci-standalone
   after_script:
     - ./scripts/docker_logs.sh
+
+deploy:
+  image: docker:stable
+  only:
+    - master
+  services:
+    - docker:dind
+  variables:
+      DOCKER_HOST: tcp://docker:2375
+      DOCKER_DRIVER: overlay2
+  before_script:
+  - apk add python py-pip make bash curl python-dev libffi-dev openssl-dev gcc libc-dev
+  - pip install awscli docker-compose
+  - make aws-ci-login
+  script:
+  - cd $CI_PROJECT_DIR/build/docker
+  - bash docker_server.sh ci

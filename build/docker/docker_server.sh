@@ -2,20 +2,46 @@
 
 set -x
 
-USER=$(whoami)
+USER=$(hostname)
 DISK_SIZE=100
 cd ../../
 LOCAL_VOLUME=$(pwd)
+
+if [ $1 == "ci" ]; then
+    export CI="true"
+    export AWS_REGION=$AWS_CI_REGION
+fi
 
 ###########
 # CLEANUP #
 ###########
 cleanup () {
     echo "performing cleanup"
-    eval $(docker-machine env -u)
+    if [ ! -z "${CI}" ]; then
+        echo "no need to unset docker variables"
+    else
+        eval $(docker-machine env -u)
+    fi
     docker-machine rm -f $1 > /dev/null 2>&1
     sleep $2
 }
+
+##########################################################
+# ENSURE DOCKER-MACHINE AND DOCKER_COMPOSE ARE INSTALLED #
+##########################################################
+which docker-machine
+if [ $? != 0 ]; then
+    echo "installing docker-machine"
+    base=https://github.com/docker/machine/releases/download/v0.16.2
+    curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&  install /tmp/docker-machine /usr/local/bin/docker-machine
+fi
+
+which docker-compose
+if [ $? != 0 ]; then
+    echo "installing docker-compose"
+    curl -L "https://github.com/docker/compose/releases/download/1.25.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+    chmod +x /usr/local/bin/docker-compose
+fi
 
 ####################
 # START THE STACK  #
@@ -25,7 +51,7 @@ start_the_stack () {
     echo "waiting for server to be ready"
     PROVISIONING_TIME=$1
     sleep ${PROVISIONING_TIME}
-    eval $(docker-machine env ${DOCKER_SERVER})
+    eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
     export NET=${THORNODE_ENV}
     if [ "$THORNODE_ENV" = "mocknet" ]; then
         docker-compose -p thornode \
@@ -48,7 +74,11 @@ start_the_stack () {
 # VERIFY THE STACK  #
 #####################
 verify_the_stack () {
-    eval $(docker-machine env -u)
+    if [ ! -z "${CI}" ]; then
+        echo "no need to unset docker variables"
+    else
+        eval $(docker-machine env -u)
+    fi
     docker-machine ssh ${DOCKER_SERVER} sudo docker ps
     echo "allow a few mins for docker services to come up"
     sleep 180
@@ -66,9 +96,9 @@ verify_the_stack () {
 # CREATE DOCKER SERVER #
 ########################
 if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANCE_TYPE}" ]; then
-    DOCKER_SERVER="${USER}-aws-thornode-${THORNODE_ENV}-server"
+    DOCKER_SERVER="${USER}-aws-${THORNODE_ENV}"
     cleanup ${DOCKER_SERVER} 30
-	echo "creating docker node on AWS"
+	echo "creating server node on AWS"
 	docker-machine create --driver amazonec2 \
         --amazonec2-vpc-id=${AWS_VPC_ID} \
         --amazonec2-region ${AWS_REGION} \
@@ -89,8 +119,8 @@ if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANC
     verify_the_stack
 else
 	echo "you have not provided all the required environment variables"
-	echo "creating docker node using virtualbox"
-	DOCKER_SERVER="${USER}-local-thornode-${THORNODE_ENV}-server"
+	echo "creating docker server using virtualbox"
+	DOCKER_SERVER="${USER}-local-${THORNODE_ENV}"
     cleanup ${DOCKER_SERVER} 10
 	docker-machine create --driver virtualbox \
         ${DOCKER_SERVER}
@@ -107,7 +137,4 @@ else
     start_the_stack 60
     verify_the_stack
 fi
-
-
-
 
