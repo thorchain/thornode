@@ -73,6 +73,7 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 
 	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
 	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
+	fmt.Printf("Block %d/%d\n", ctx.BlockHeight(), rotatePerBlockHeight)
 	if ctx.BlockHeight()%rotatePerBlockHeight == 0 {
 		ctx.Logger().Info("Checking for node account rotation...")
 		next, ok, err := vm.nextVaultNodeAccounts(ctx, int(desireValidatorSet))
