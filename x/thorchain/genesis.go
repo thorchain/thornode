@@ -114,7 +114,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 			// Only Active node will become validator
 			pk, err := sdk.GetConsPubKeyBech32(nodeAccount.ValidatorConsPubKey)
 			if nil != err {
-				ctx.Logger().Error("fail to parse consensus public key", "key", nodeAccount.ValidatorConsPubKey)
+				logError(ctx, err, "fail to parse consensus public key: %s", nodeAccount.ValidatorConsPubKey)
 				panic(err)
 			}
 			validators = append(validators, abci.ValidatorUpdate{
@@ -145,7 +145,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 	for _, out := range data.TxOuts {
 		if err := keeper.SetTxOut(ctx, &out); nil != err {
-			ctx.Logger().Error("fail to save tx out during genesis", err)
+			logError(ctx, err, "fail to save tx out during genesis")
 			panic(err)
 		}
 	}

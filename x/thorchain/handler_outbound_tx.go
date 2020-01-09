@@ -72,21 +72,21 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 	if voter.IsDone() {
 		err := completeEvents(ctx, h.keeper, msg.InTxID, voter.OutTxs, EventSuccess)
 		if err != nil {
-			ctx.Logger().Error("unable to complete events", "error", err)
+			logError(ctx, err, "unable to complete events")
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 	}
 
 	// Apply Gas fees
 	if err := AddGasFees(ctx, h.keeper, msg.Tx); nil != err {
-		ctx.Logger().Error("fail to add gas fee", err)
+		logError(ctx, err, "fail to add gas fee")
 		return sdk.ErrInternal("fail to add gas fee").Result()
 	}
 
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := h.keeper.GetTxOut(ctx, uint64(voter.Height))
 	if err != nil {
-		ctx.Logger().Error("unable to get txOut record", "error", err)
+		logError(ctx, err, "unable to get txOut record")
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
@@ -105,7 +105,7 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 			}
 		}
 		if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
-			ctx.Logger().Error("fail to save tx out", err)
+			logError(ctx, err, "fail to save tx out")
 			return sdk.ErrInternal("fail to save tx out").Result()
 		}
 	}
@@ -115,12 +115,12 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 	if h.keeper.VaultExists(ctx, msg.Tx.ObservedPubKey) {
 		vault, err := h.keeper.GetVault(ctx, msg.Tx.ObservedPubKey)
 		if nil != err {
-			ctx.Logger().Error("fail to get vault", err)
+			logError(ctx, err, "fail to get vault")
 			return sdk.ErrInternal("fail to get vault").Result()
 		}
 		vault.SubFunds(msg.Tx.Tx.Coins)
 		if err := h.keeper.SetVault(ctx, vault); nil != err {
-			ctx.Logger().Error("fail to save vault", err)
+			logError(ctx, err, "fail to save vault")
 			return sdk.ErrInternal("fail to save vault").Result()
 		}
 	}

@@ -68,7 +68,7 @@ func (h SetAdminConfigHandler) handle(ctx sdk.Context, msg MsgSetAdminConfig, ve
 func (h SetAdminConfigHandler) handleV1(ctx sdk.Context, msg MsgSetAdminConfig) sdk.Result {
 	prevVal, err := h.keeper.GetAdminConfigValue(ctx, msg.AdminConfig.Key, nil)
 	if err != nil {
-		ctx.Logger().Error("unable to get admin config", "error", err)
+		logError(ctx, err, "unable to get admin config")
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
@@ -76,7 +76,7 @@ func (h SetAdminConfigHandler) handleV1(ctx sdk.Context, msg MsgSetAdminConfig) 
 
 	newVal, err := h.keeper.GetAdminConfigValue(ctx, msg.AdminConfig.Key, nil)
 	if err != nil {
-		ctx.Logger().Error("unable to get admin config", "error", err)
+		logError(ctx, err, "unable to get admin config")
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
@@ -87,7 +87,7 @@ func (h SetAdminConfigHandler) handleV1(ctx sdk.Context, msg MsgSetAdminConfig) 
 		)
 		stakeBytes, err := json.Marshal(adminEvt)
 		if err != nil {
-			ctx.Logger().Error("fail to unmarshal admin config event", err)
+			logError(ctx, err, "fail to unmarshal admin config event")
 			err = errors.Wrap(err, "fail to marshal admin config event to json")
 			return sdk.ErrUnknownRequest(err.Error()).Result()
 		}

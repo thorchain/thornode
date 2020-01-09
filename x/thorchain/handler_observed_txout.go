@@ -76,7 +76,7 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 	if h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
 		ygg, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
 		if nil != err {
-			ctx.Logger().Error("fail to get yggdrasil", err)
+			logError(ctx, err, "fail to get yggdrasil")
 			return err
 		}
 		if !ygg.IsYggdrasil() {
@@ -101,7 +101,7 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 
 		na, err := h.keeper.GetNodeAccountByPubKey(ctx, ygg.PubKey)
 		if err != nil {
-			ctx.Logger().Error("fail to get node account", "error", err, "txhash", tx.Tx.ID.String())
+			logError(ctx, err, "fail to get node account: %s", ygg.PubKey.String())
 			return err
 		}
 
@@ -142,12 +142,12 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 		}
 		na.SubBond(minusRune)
 		if err := h.keeper.SetNodeAccount(ctx, na); nil != err {
-			ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
+			logError(ctx, err, "fail to save node account: %s", na)
 			return err
 		}
 		ygg.SubFunds(minusCoins)
 		if err := h.keeper.SetVault(ctx, ygg); nil != err {
-			ctx.Logger().Error("fail to save yggdrasil", err)
+			logError(ctx, err, "fail to save yggdrasil")
 			return err
 		}
 	}
@@ -199,7 +199,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 
 		m, err := processOneTxIn(ctx, h.keeper, txOut, msg.Signer)
 		if nil != err || tx.Tx.Chain.IsEmpty() {
-			ctx.Logger().Error("fail to process txOut", "error", err, "txhash", tx.Tx.ID.String())
+			logError(ctx, err, "fail to process txOut: %s", txOut.Tx.ID.String())
 			if err := h.outboundFailure(ctx, txOut, activeNodeAccounts); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
@@ -214,7 +214,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 
 		result := handler(ctx, m)
 		if !result.IsOK() {
-			ctx.Logger().Error("Handler failed:", result.Log)
+			logError(ctx, errors.New(result.Log), "Handler failed")
 		}
 	}
 

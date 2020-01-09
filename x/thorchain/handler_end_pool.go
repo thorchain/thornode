@@ -36,19 +36,19 @@ func (h EndPoolHandler) validate(ctx sdk.Context, msg MsgEndPool, version semver
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		logError(ctx, badVersion, "")
 		return badVersion
 	}
 }
 
 func (h EndPoolHandler) validateV1(ctx sdk.Context, msg MsgEndPool) error {
 	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error(err.Error())
+		logError(ctx, err, "")
 		return err
 	}
 
 	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
-		ctx.Logger().Error(notAuthorized.Error())
+		logError(ctx, notAuthorized, "")
 		return notAuthorized
 	}
 	return nil
@@ -59,7 +59,7 @@ func (h EndPoolHandler) handle(ctx sdk.Context, msg MsgEndPool, version semver.V
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, msg, version, constAccessor)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		logError(ctx, badVersion, "")
 		return errBadVersion.Result()
 	}
 }
@@ -67,7 +67,7 @@ func (h EndPoolHandler) handle(ctx sdk.Context, msg MsgEndPool, version semver.V
 func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
-		ctx.Logger().Error("fail to get pool staker", err)
+		logError(ctx, err, "fail to get pool staker")
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
@@ -83,7 +83,7 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver
 		unstakeHandler := NewUnstakeHandler(h.keeper, h.txOutStore)
 		result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 		if !result.IsOK() {
-			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
+			logError(ctx, err, "fail to unstake: %s", item.RuneAddress)
 			return result
 		}
 	}

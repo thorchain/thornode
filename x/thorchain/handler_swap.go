@@ -90,7 +90,7 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor consta
 		msg.TradeTarget,
 		sdk.NewUint(uint64(transactionFee)))
 	if swapErr != nil {
-		ctx.Logger().Error("fail to process swap message", "error", swapErr)
+		logError(ctx, err, "fail to process swap message")
 		return swapErr.Result()
 	}
 	for _, item := range swapEvents {
@@ -107,7 +107,7 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor consta
 		})
 
 	if nil != err {
-		ctx.Logger().Error("fail to encode result to json", "error", err)
+		logError(ctx, err, "fail to encode result to json", "error")
 		return sdk.ErrInternal("fail to encode result to json").Result()
 	}
 
@@ -119,7 +119,7 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor consta
 	}
 	_, err = h.txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
-		ctx.Logger().Error("fail to add outbound tx", err)
+		logError(ctx, err, "fail to add outbound tx")
 		return sdk.ErrInternal(fmt.Errorf("fail to add outbound tx: %w", err).Error()).Result()
 	}
 

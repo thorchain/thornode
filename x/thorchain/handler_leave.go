@@ -55,12 +55,12 @@ func (lh LeaveHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _
 		"sender", msg.Tx.FromAddress.String(),
 		"request tx hash", msg.Tx.ID)
 	if err := lh.validate(ctx, msg, version); nil != err {
-		ctx.Logger().Error("msg leave fail validation", err)
+		logError(ctx, err, "msg leave fail validation")
 		return err.Result()
 	}
 
 	if err := lh.handle(ctx, msg); nil != err {
-		ctx.Logger().Error("fail to process msg leave", err)
+		logError(ctx, err, "fail to process msg leave")
 		return err.Result()
 	}
 

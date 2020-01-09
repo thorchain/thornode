@@ -63,7 +63,7 @@ func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (b
 		for _, signer := range signers {
 			newSigner, err := h.signedByNewObserver(ctx, signer)
 			if nil != err {
-				ctx.Logger().Error("fail to determinate whether the tx is signed by a new observer", err)
+				logError(ctx, err, "fail to determinate whether the tx is signed by a new observer")
 				return false, notAuthorized
 			}
 
@@ -165,7 +165,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 
 		m, err := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
 		if nil != err || tx.Tx.Chain.IsEmpty() {
-			ctx.Logger().Error("fail to process inbound tx", "error", err, "txhash", tx.Tx.ID.String())
+			logError(ctx, err, "fail to process inbound tx: %s", tx.Tx.ID.String())
 			if err := h.inboundFailure(ctx, tx); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}

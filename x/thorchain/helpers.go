@@ -241,12 +241,6 @@ func enableNextPool(ctx sdk.Context, keeper Keeper) error {
 	return nil
 }
 
-func wrapError(ctx sdk.Context, err error, wrap string) error {
-	err = errors.Wrap(err, wrap)
-	ctx.Logger().Error(err.Error())
-	return err
-}
-
 func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 	if len(tx.Tx.Gas) == 0 {
 		return nil
@@ -287,6 +281,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 
 	return nil
 }
+
 func getErrMessage(content string) (string, error) {
 	var humanReadableError struct {
 		Codespace sdk.CodespaceType `json:"codespace"`
@@ -297,4 +292,21 @@ func getErrMessage(content string) (string, error) {
 		return "", err
 	}
 	return humanReadableError.Message, nil
+}
+
+func logInfo(ctx sdk.Context, err error, format string, a ...interface{}) {
+	msg := fmt.Sprintf(format, a...)
+	ctx.Logger().Info(msg)
+}
+
+func logError(ctx sdk.Context, err error, format string, a ...interface{}) {
+	msg := fmt.Sprintf(format, a...)
+	err = errors.Wrap(err, msg)
+	ctx.Logger().Error(err.Error())
+}
+
+func wrapError(ctx sdk.Context, err error, wrap string) error {
+	err = errors.Wrap(err, wrap)
+	ctx.Logger().Error(err.Error())
+	return err
 }

@@ -38,14 +38,14 @@ func (h NoOpHandler) Validate(ctx sdk.Context, msg MsgNoOp, version semver.Versi
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.ValidateV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		logError(ctx, badVersion, "")
 		return badVersion
 	}
 }
 
 func (h NoOpHandler) ValidateV1(ctx sdk.Context, msg MsgNoOp) error {
 	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error(err.Error())
+		logError(ctx, err, "")
 		return err
 	}
 	return nil
@@ -56,7 +56,7 @@ func (h NoOpHandler) Handle(ctx sdk.Context, msg MsgNoOp, version semver.Version
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.HandleV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		logError(ctx, badVersion, "")
 		return badVersion
 	}
 }
