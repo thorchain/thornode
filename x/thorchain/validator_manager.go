@@ -51,13 +51,22 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 		// ragnarok is in progress, no point to check node rotation
 		return nil
 	}
-	badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
-	if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
+
+	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
+	totalActiveNodes, err := vm.k.TotalActiveNodeAccount(ctx)
+	if err != nil {
 		return err
 	}
-	oldValidatorRate := constAccessor.GetInt64Value(constants.OldValidatorRate)
-	if err := vm.markOldActor(ctx, oldValidatorRate); err != nil {
-		return err
+
+	if minimumNodesForBFT < int64(totalActiveNodes) {
+		badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
+		if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
+			return err
+		}
+		oldValidatorRate := constAccessor.GetInt64Value(constants.OldValidatorRate)
+		if err := vm.markOldActor(ctx, oldValidatorRate); err != nil {
+			return err
+		}
 	}
 
 	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
@@ -621,8 +630,6 @@ func (vm *ValidatorMgr) findBadActor(ctx sdk.Context) (NodeAccount, error) {
 	if err != nil {
 		return na, err
 	}
-
-	// TODO: return if we're at risk of loosing BTF
 
 	// Find bad actor relative to slashpoints / age.
 	// NOTE: avoiding the usage of float64, we use an alt method...
