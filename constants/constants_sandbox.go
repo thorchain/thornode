@@ -6,9 +6,9 @@ package constants
 func init() {
 	int64Overrides = map[ConstantName]int64{
 		DesireValidatorSet:   12,
-		RotatePerBlockHeight: 180,         // hourly
-		BadValidatorRate:     720,         // hourly
-		OldValidatorRate:     720,         // hourly
+		RotatePerBlockHeight: 60,          // hourly
+		BadValidatorRate:     60,          // hourly
+		OldValidatorRate:     60,          // hourly
 		MinimumBondInRune:    100_000_000, // 1 rune
 	}
 }
