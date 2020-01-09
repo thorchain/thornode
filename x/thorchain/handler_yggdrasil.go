@@ -70,7 +70,7 @@ func (h YggdrasilHandler) handle(ctx sdk.Context, msg MsgYggdrasil, version semv
 func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAccessor constants.ConstantValues) sdk.Result {
 	ygg, err := h.keeper.GetVault(ctx, msg.PubKey)
 	if nil != err && !stdErrors.Is(err, ErrVaultNotFound) {
-		ctx.Logger().Error("fail to get yggdrasil", err)
+		ctx.Logger().Error("fail to get yggdrasil", "error", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	if len(ygg.Type) == 0 {
@@ -87,7 +87,7 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 	}
 
 	if err := h.keeper.SetVault(ctx, ygg); nil != err {
-		ctx.Logger().Error("fail to save yggdrasil", err)
+		ctx.Logger().Error("fail to save yggdrasil", "error", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
@@ -104,7 +104,7 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 		if err := refundBond(ctx, msg.RequestTxHash, na, h.keeper, h.txOutStore); err != nil {
-			ctx.Logger().Error("fail to refund bond", err)
+			ctx.Logger().Error("fail to refund bond", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 	}

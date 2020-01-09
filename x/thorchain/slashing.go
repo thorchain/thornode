@@ -30,7 +30,7 @@ func NewSlasher(keeper Keeper, txOutStore TxOutStore) Slasher {
 func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	accs, err := s.keeper.GetObservingAddresses(ctx)
 	if err != nil {
-		ctx.Logger().Error("fail to get observing addresses", err)
+		ctx.Logger().Error("fail to get observing addresses", "error", err)
 		return err
 	}
 
@@ -42,7 +42,7 @@ func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.Constan
 
 	nodes, err := s.keeper.ListActiveNodeAccounts(ctx)
 	if err != nil {
-		ctx.Logger().Error("Unable to get list of active accounts", err)
+		ctx.Logger().Error("Unable to get list of active accounts", "error", err)
 		return err
 	}
 
@@ -60,7 +60,7 @@ func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.Constan
 			lackOfObservationPenalty := constAccessor.GetInt64Value(constants.LackOfObservationPenalty)
 			na.SlashPoints += lackOfObservationPenalty
 			if err := s.keeper.SetNodeAccount(ctx, na); nil != err {
-				ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
+				ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), "error", err)
 				return err
 			}
 		}
@@ -75,7 +75,7 @@ func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.Constan
 func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	pendingEvents, err := s.keeper.GetAllPendingEvents(ctx)
 	if err != nil {
-		ctx.Logger().Error("Unable to get all pending events", err)
+		ctx.Logger().Error("Unable to get all pending events", "error", err)
 		return err
 	}
 	signingTransPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
@@ -85,7 +85,7 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 		if evt.Height+signingTransPeriod < ctx.BlockHeight() {
 			txs, err := s.keeper.GetTxOut(ctx, uint64(evt.Height))
 			if err != nil {
-				ctx.Logger().Error("Unable to get tx out list", err)
+				ctx.Logger().Error("Unable to get tx out list", "error", err)
 				continue
 			}
 
@@ -95,17 +95,17 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 					txs.TxArray[i].OutHash = common.BlankTxID
 					na, err := s.keeper.GetNodeAccountByPubKey(ctx, tx.VaultPubKey)
 					if err != nil {
-						ctx.Logger().Error("Unable to get node account", err)
+						ctx.Logger().Error("Unable to get node account", "error", err)
 						continue
 					}
 					na.SlashPoints += signingTransPeriod * 2
 					if err := s.keeper.SetNodeAccount(ctx, na); nil != err {
-						ctx.Logger().Error("fail to save node account")
+						ctx.Logger().Error("fail to save node account", "error", err)
 					}
 
 					active, err := s.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
 					if err != nil {
-						ctx.Logger().Error("fail to get active vaults", err)
+						ctx.Logger().Error("fail to get active vaults", "error", err)
 						return err
 					}
 
@@ -127,7 +127,7 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 			}
 
 			if err := s.keeper.SetTxOut(ctx, txs); nil != err {
-				ctx.Logger().Error("fail to save tx out", err)
+				ctx.Logger().Error("fail to save tx out", "error", err)
 				return err
 			}
 		}

@@ -27,12 +27,12 @@ func (h RefundHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, c
 	ctx.Logger().Info("receive MsgRefund",
 		"tx ID", msg.InTxID.String())
 	if err := h.validate(ctx, msg, version, constAccessor); nil != err {
-		ctx.Logger().Error("msg refund fail validation", err)
+		ctx.Logger().Error("msg refund fail validation", "error", err)
 		return err.Result()
 	}
 
 	if err := h.handle(ctx, msg, version); nil != err {
-		ctx.Logger().Error("fail to process msg refund", err)
+		ctx.Logger().Error("fail to process msg refund", "error", err)
 		return err.Result()
 	}
 
@@ -103,7 +103,7 @@ func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.V
 			}
 		}
 		if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
-			ctx.Logger().Error("fail to save tx out", err)
+			ctx.Logger().Error("fail to save tx out", "error", err)
 			return sdk.ErrInternal(fmt.Errorf("fail to save tx out: %w", err).Error())
 		}
 	}

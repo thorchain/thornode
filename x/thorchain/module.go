@@ -125,7 +125,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		return
 	}
 	if err := am.validatorMgr.BeginBlock(ctx, constantValues); err != nil {
-		ctx.Logger().Error("Fail to begin block on validator", err)
+		ctx.Logger().Error("Fail to begin block on validator", "error", err)
 	}
 
 	am.txOutStore.NewBlock(uint64(req.Header.Height), constantValues)
@@ -144,32 +144,32 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	slasher := NewSlasher(am.keeper, am.txOutStore)
 	// slash node accounts for not observing any accepted inbound tx
 	if err := slasher.LackObserving(ctx, constantValues); err != nil {
-		ctx.Logger().Error("Unable to slash for lack of observing:", err)
+		ctx.Logger().Error("Unable to slash for lack of observing:", "error", err)
 	}
 	if err := slasher.LackSigning(ctx, constantValues); err != nil {
-		ctx.Logger().Error("Unable to slash for lack of signing:", err)
+		ctx.Logger().Error("Unable to slash for lack of signing:", "error", err)
 	}
 	newPoolCycle := constantValues.GetInt64Value(constants.NewPoolCycle)
 	// Enable a pool every newPoolCycle
 	if ctx.BlockHeight()%newPoolCycle == 0 {
 		if err := enableNextPool(ctx, am.keeper); err != nil {
-			ctx.Logger().Error("Unable to enable a pool", err)
+			ctx.Logger().Error("Unable to enable a pool", "error", err)
 		}
 	}
 
 	// Fill up Yggdrasil vaults
 	err := Fund(ctx, am.keeper, am.txOutStore, constantValues)
 	if err != nil {
-		ctx.Logger().Error("Unable to fund Yggdrasil", err)
+		ctx.Logger().Error("Unable to fund Yggdrasil", "error", err)
 	}
 
 	// update vault data to account for block rewards and reward units
 	if err := am.keeper.UpdateVaultData(ctx, constantValues); nil != err {
-		ctx.Logger().Error("fail to save vault", err)
+		ctx.Logger().Error("fail to save vault", "error", err)
 	}
 
 	if err := am.vaultMgr.EndBlock(ctx, constantValues); err != nil {
-		ctx.Logger().Error("fail to end block for vault manager", err)
+		ctx.Logger().Error("fail to end block for vault manager", "error", err)
 	}
 
 	am.txOutStore.CommitBlock(ctx)

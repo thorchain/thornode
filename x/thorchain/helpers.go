@@ -90,7 +90,7 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 	}
 
 	if nodeAcc.Bond.LT(yggRune) {
-		ctx.Logger().Error("Node Account (%s) left with more funds in their Yggdrasil vault than their bond's value (%d/%d)", yggRune, nodeAcc.Bond)
+		ctx.Logger().Error(fmt.Sprintf("Node Account (%s) left with more funds in their Yggdrasil vault than their bond's value (%s / %s)", nodeAcc.NodeAddress, yggRune, nodeAcc.Bond))
 	}
 
 	nodeAcc.Bond = common.SafeSub(nodeAcc.Bond, yggRune)
@@ -99,7 +99,7 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 
 		active, err := keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
 		if err != nil {
-			ctx.Logger().Error("fail to get active vaults", err)
+			ctx.Logger().Error("fail to get active vaults", "error", err)
 			return err
 		}
 
@@ -127,7 +127,7 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 	// disable the node account
 	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
 	if err := keeper.SetNodeAccount(ctx, nodeAcc); nil != err {
-		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", nodeAcc), err)
+		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", nodeAcc), "error", err)
 		return err
 	}
 
@@ -159,7 +159,7 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 	for _, signer := range signers {
 		nodeAccount, err := keeper.GetNodeAccount(ctx, signer)
 		if err != nil {
-			ctx.Logger().Error("unauthorized account", "address", signer.String(), err)
+			ctx.Logger().Error("unauthorized account", "address", signer.String(), "error", err)
 			return false
 		}
 		if nodeAccount.IsEmpty() {

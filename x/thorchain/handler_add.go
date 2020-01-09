@@ -28,11 +28,11 @@ func (ah AddHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ c
 	}
 	ctx.Logger().Info(fmt.Sprintf("receive msg add %s", msg.Tx.ID))
 	if err := ah.validate(ctx, msg, version); err != nil {
-		ctx.Logger().Error("msg add failed validation", err)
+		ctx.Logger().Error("msg add failed validation", "error", err)
 		return err.Result()
 	}
 	if err := ah.handle(ctx, msg); err != nil {
-		ctx.Logger().Error("fail to process msg add", err)
+		ctx.Logger().Error("fail to process msg add", "error", err)
 		return err.Result()
 	}
 

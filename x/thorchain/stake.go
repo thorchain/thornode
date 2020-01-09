@@ -35,7 +35,7 @@ func validateStakeMessage(ctx sdk.Context, keeper Keeper, asset common.Asset, re
 func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, stakeAssetAmount sdk.Uint, runeAddr, assetAddr common.Address, requestTxHash common.TxID) (sdk.Uint, sdk.Error) {
 	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", asset, stakeRuneAmount, stakeAssetAmount))
 	if err := validateStakeMessage(ctx, keeper, asset, requestTxHash, runeAddr, assetAddr); nil != err {
-		ctx.Logger().Error("stake message fail validation", err)
+		ctx.Logger().Error("stake message fail validation", "error", err)
 		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakeFailValidation, err.Error())
 	}
 	if stakeRuneAmount.IsZero() && stakeAssetAmount.IsZero() {
@@ -47,7 +47,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 
 	pool, err := keeper.GetPool(ctx, asset)
 	if err != nil {
-		ctx.Logger().Error("fail to get pool", err)
+		ctx.Logger().Error("fail to get pool", "error", err)
 		return sdk.ZeroUint(), sdk.ErrInternal(fmt.Sprintf("fail to get pool(%s)", asset))
 	}
 
@@ -59,7 +59,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 
 	ps, err := keeper.GetPoolStaker(ctx, asset)
 	if nil != err {
-		ctx.Logger().Error("fail to get pool staker record", err)
+		ctx.Logger().Error("fail to get pool staker record", "error", err)
 		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get pool staker record")
 	}
 
@@ -101,7 +101,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	oldPoolUnits := pool.PoolUnits
 	newPoolUnits, stakerUnits, err := calculatePoolUnits(oldPoolUnits, balanceRune, balanceAsset, fRuneAmt, fAssetAmt)
 	if nil != err {
-		ctx.Logger().Error("fail to calculate pool unit", err)
+		ctx.Logger().Error("fail to calculate pool unit", "error", err)
 		return sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakeInvalidPoolAsset, err.Error())
 	}
 
@@ -113,7 +113,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	pool.BalanceAsset = poolAsset
 	ctx.Logger().Info(fmt.Sprintf("Post-Pool: %sRUNE %sAsset", pool.BalanceRune, pool.BalanceAsset))
 	if err := keeper.SetPool(ctx, pool); err != nil {
-		ctx.Logger().Error("fail to save pool", err)
+		ctx.Logger().Error("fail to save pool", "error", err)
 		return sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")
 	}
 	// maintain pool staker structure
@@ -128,7 +128,7 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 	// maintain stake pool structure
 	sp, err := keeper.GetStakerPool(ctx, runeAddr)
 	if nil != err {
-		ctx.Logger().Error("fail to get staker pool object", err)
+		ctx.Logger().Error("fail to get staker pool object", "error", err)
 		return sdk.ZeroUint(), sdk.ErrInternal("fail to get staker pool object")
 	}
 	stakerPoolItem := sp.GetStakerPoolItem(asset)
