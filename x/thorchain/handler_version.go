@@ -30,11 +30,11 @@ func (h VersionHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, 
 	ctx.Logger().Info("receive version number",
 		"version", msg.Version.String())
 	if err := h.validate(ctx, msg, version); err != nil {
-		ctx.Logger().Error("msg set version failed validation", err)
+		ctx.Logger().Error("msg set version failed validation", "error", err)
 		return err.Result()
 	}
 	if err := h.handle(ctx, msg, version); err != nil {
-		ctx.Logger().Error("fail to process msg set version", err)
+		ctx.Logger().Error("fail to process msg set version", "error", err)
 		return err.Result()
 	}
 
@@ -93,7 +93,7 @@ func (h VersionHandler) handleV1(ctx sdk.Context, msg MsgSetVersion) sdk.Error {
 	}
 
 	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
-		ctx.Logger().Error("fail to save node account", err)
+		ctx.Logger().Error("fail to save node account", "error", err)
 		return sdk.ErrInternal("fail to save node account")
 	}
 

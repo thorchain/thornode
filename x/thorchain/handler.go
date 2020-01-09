@@ -104,7 +104,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 	}
 	memo, err := ParseMemo(tx.Tx.Memo)
 	if err != nil {
-		ctx.Logger().Error("fail to parse memo")
+		ctx.Logger().Error("fail to parse memo", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, err.Error())
 	}
 	// THORNode should not have one tx across chain, if it is cross chain it should be separate tx

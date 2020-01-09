@@ -63,7 +63,7 @@ func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (b
 		for _, signer := range signers {
 			newSigner, err := h.signedByNewObserver(ctx, signer)
 			if nil != err {
-				ctx.Logger().Error("fail to determinate whether the tx is signed by a new observer", err)
+				ctx.Logger().Error("fail to determinate whether the tx is signed by a new observer", "error", err)
 				return false, notAuthorized
 			}
 

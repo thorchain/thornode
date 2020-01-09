@@ -79,7 +79,7 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 
 	// Apply Gas fees
 	if err := AddGasFees(ctx, h.keeper, msg.Tx); nil != err {
-		ctx.Logger().Error("fail to add gas fee", err)
+		ctx.Logger().Error("fail to add gas fee", "error", err)
 		return sdk.ErrInternal("fail to add gas fee").Result()
 	}
 
@@ -105,7 +105,7 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 			}
 		}
 		if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
-			ctx.Logger().Error("fail to save tx out", err)
+			ctx.Logger().Error("fail to save tx out", "error", err)
 			return sdk.ErrInternal("fail to save tx out").Result()
 		}
 	}
@@ -115,12 +115,12 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 	if h.keeper.VaultExists(ctx, msg.Tx.ObservedPubKey) {
 		vault, err := h.keeper.GetVault(ctx, msg.Tx.ObservedPubKey)
 		if nil != err {
-			ctx.Logger().Error("fail to get vault", err)
+			ctx.Logger().Error("fail to get vault", "error", err)
 			return sdk.ErrInternal("fail to get vault").Result()
 		}
 		vault.SubFunds(msg.Tx.Tx.Coins)
 		if err := h.keeper.SetVault(ctx, vault); nil != err {
-			ctx.Logger().Error("fail to save vault", err)
+			ctx.Logger().Error("fail to save vault", "error", err)
 			return sdk.ErrInternal("fail to save vault").Result()
 		}
 	}

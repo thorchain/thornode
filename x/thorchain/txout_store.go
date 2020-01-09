@@ -46,7 +46,7 @@ func (tos *TxOutStorage) CommitBlock(ctx sdk.Context) {
 
 	// write the tos to keeper
 	if err := tos.keeper.SetTxOut(ctx, tos.blockOut); nil != err {
-		ctx.Logger().Error("fail to save tx out", err)
+		ctx.Logger().Error("fail to save tx out", "error", err)
 	}
 }
 
@@ -126,7 +126,7 @@ func (tos *TxOutStorage) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool
 
 		active, err := tos.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
 		if err != nil {
-			ctx.Logger().Error("fail to get active vaults", err)
+			ctx.Logger().Error("fail to get active vaults", "error", err)
 		}
 
 		vault := active.SelectByMinCoin(toi.Coin.Asset)
@@ -158,7 +158,7 @@ func (tos *TxOutStorage) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
 			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); nil != err {
 				// Add to reserve
-				ctx.Logger().Error("fail to add fee to reserve", err)
+				ctx.Logger().Error("fail to add fee to reserve", "error", err)
 			}
 		} else {
 			pool, err := tos.keeper.GetPool(ctx, toi.Coin.Asset) // Get pool
