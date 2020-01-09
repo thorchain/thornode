@@ -50,12 +50,12 @@ func (sh StakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _
 		"asset", msg.Asset.String(),
 		"tx", msg.Tx)
 	if err := sh.validate(ctx, msg, version); nil != err {
-		ctx.Logger().Error("msg stake fail validation", err)
+		ctx.Logger().Error("msg stake fail validation", "error", err)
 		return err.Result()
 	}
 
 	if err := sh.handle(ctx, msg, version); nil != err {
-		ctx.Logger().Error("fail to process msg stake", err)
+		ctx.Logger().Error("fail to process msg stake", "error", err)
 		return err.Result()
 	}
 
@@ -79,7 +79,7 @@ func (sh StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semv
 		}
 	}
 	if err := pool.EnsureValidPoolStatus(msg); nil != err {
-		ctx.Logger().Error("fail to check pool status", err)
+		ctx.Logger().Error("fail to check pool status", "error", err)
 		return sdk.NewError(DefaultCodespace, CodeInvalidPoolStatus, err.Error())
 	}
 	stakeUnits, err := stake(

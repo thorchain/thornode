@@ -44,7 +44,7 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 	height := ctx.BlockHeight()
 	if height == genesisBlockHeight {
 		if err := vm.setupValidatorNodes(ctx, height, constAccessor); nil != err {
-			ctx.Logger().Error("fail to setup validator nodes", err)
+			ctx.Logger().Error("fail to setup validator nodes", "error", err)
 		}
 	}
 	if vm.k.RagnarokInProgress(ctx) {
@@ -92,7 +92,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 	height := ctx.BlockHeight()
 	activeNodes, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
-		ctx.Logger().Error("fail to get all active nodes", err)
+		ctx.Logger().Error("fail to get all active nodes", "error", err)
 		return nil
 	}
 
@@ -100,14 +100,14 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 	if vm.k.RagnarokInProgress(ctx) {
 		// process ragnarok
 		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
-			ctx.Logger().Error("fail to process ragnarok protocol: %s", err)
+			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
 		}
 		return nil
 	}
 
 	newNodes, removedNodes, err := vm.getChangedNodes(ctx, activeNodes)
 	if nil != err {
-		ctx.Logger().Error("fail to get node changes", err)
+		ctx.Logger().Error("fail to get node changes", "error", err)
 		return nil
 	}
 
@@ -121,7 +121,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 	if height > 1 && nodesAfterChange < int(minimumNodesForBFT) {
 		// THORNode don't have enough validators for BFT
 		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
-			ctx.Logger().Error("fail to process ragnarok protocol: %s", err)
+			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
 		}
 		// by return
 		return nil
@@ -135,11 +135,11 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 				sdk.NewAttribute("Current:", NodeActive.String())))
 		na.UpdateStatus(NodeActive, height)
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-			ctx.Logger().Error("fail to save node account")
+			ctx.Logger().Error("fail to save node account", "error", err)
 		}
 		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
 		if nil != err {
-			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey)
+			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey, "error", err)
 			continue
 		}
 		validators = append(validators, abci.ValidatorUpdate{
@@ -156,11 +156,11 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 		na.UpdateStatus(NodeStandby, height)
 		removedNodes = append(removedNodes, na)
 		if err := vm.payNodeAccountBondAward(ctx, na); nil != err {
-			ctx.Logger().Error("fail to pay node account bond award", err)
+			ctx.Logger().Error("fail to pay node account bond award", "error", err)
 		}
 		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
 		if nil != err {
-			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey)
+			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey, "error", err)
 			continue
 		}
 		validators = append(validators, abci.ValidatorUpdate{
@@ -185,7 +185,7 @@ func (vm *ValidatorMgr) getChangedNodes(ctx sdk.Context, activeNodes NodeAccount
 
 	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	if err != nil {
-		ctx.Logger().Error("fail to get active asgards")
+		ctx.Logger().Error("fail to get active asgards", "error", err)
 		return newActive, removedNodes, fmt.Errorf("fail to get active asgards: %w", err)
 	}
 	if len(active) == 0 {
@@ -290,7 +290,7 @@ func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccount
 		nth := (ctx.BlockHeight() - ragnarokHeight) / migrateInterval
 		err := vm.ragnarokProtocolStage2(ctx, nth, constAccessor)
 		if err != nil {
-			ctx.Logger().Error("fail to execute ragnarok protocol step 2: %s", err)
+			ctx.Logger().Error("fail to execute ragnarok protocol step 2", "error", err)
 			return err
 		}
 	}
@@ -345,12 +345,12 @@ func (vm *ValidatorMgr) ragnarokBondReward(ctx sdk.Context) error {
 func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
 	contribs, err := vm.k.GetReservesContributors(ctx)
 	if nil != err {
-		ctx.Logger().Error("can't get reserve contributors", err)
+		ctx.Logger().Error("can't get reserve contributors", "error", err)
 		return err
 	}
 	vaultData, err := vm.k.GetVaultData(ctx)
 	if nil != err {
-		ctx.Logger().Error("can't get vault data", err)
+		ctx.Logger().Error("can't get vault data", "error", err)
 		return err
 	}
 	totalReserve := vaultData.TotalReserve
@@ -406,7 +406,7 @@ func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
 func (vm *ValidatorMgr) ragnarokBond(ctx sdk.Context, nth int64) error {
 	active, err := vm.k.ListActiveNodeAccounts(ctx)
 	if nil != err {
-		ctx.Logger().Error("can't get active nodes", err)
+		ctx.Logger().Error("can't get active nodes", "error", err)
 		return err
 	}
 
@@ -449,7 +449,7 @@ func (vm *ValidatorMgr) ragnarokBond(ctx sdk.Context, nth int64) error {
 func (vm *ValidatorMgr) ragnarokPools(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
 	if nil != err {
-		ctx.Logger().Error("can't get active nodes", err)
+		ctx.Logger().Error("can't get active nodes", "error", err)
 		return err
 	}
 	if len(nas) == 0 {
@@ -473,13 +473,13 @@ func (vm *ValidatorMgr) ragnarokPools(ctx sdk.Context, nth int64, constAccessor 
 	// go through all the pooles
 	pools, err := vm.k.GetPools(ctx)
 	if err != nil {
-		ctx.Logger().Error("can't get pools", err)
+		ctx.Logger().Error("can't get pools", "error", err)
 		return err
 	}
 	for _, pool := range pools {
 		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
 		if nil != err {
-			ctx.Logger().Error("fail to get pool staker", err)
+			ctx.Logger().Error("fail to get pool staker", "error", err)
 			return err
 		}
 
@@ -501,7 +501,7 @@ func (vm *ValidatorMgr) ragnarokPools(ctx sdk.Context, nth int64, constAccessor 
 			unstakeHandler := NewUnstakeHandler(vm.k, vm.txOutStore)
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
-				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
+				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
 				return fmt.Errorf("fail to unstake address: %s", result.Log)
 			}
 		}

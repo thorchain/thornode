@@ -64,12 +64,12 @@ func (h BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, con
 		"request hash", msg.RequestTxHash,
 		"bond", msg.Bond)
 	if err := h.validate(ctx, msg, version, constAccessor); nil != err {
-		ctx.Logger().Error("msg bond fail validation", err)
+		ctx.Logger().Error("msg bond fail validation", "error", err)
 		return err.Result()
 	}
 
 	if err := h.handle(ctx, msg, version, constAccessor); nil != err {
-		ctx.Logger().Error("fail to process msg bond", err)
+		ctx.Logger().Error("fail to process msg bond", "error", err)
 		return err.Result()
 	}
 
@@ -107,7 +107,7 @@ func (h BondHandler) mintGasAsset(ctx sdk.Context, msg MsgBond, constAccessor co
 	// mint some gas asset
 	err = h.keeper.Supply().MintCoins(ctx, ModuleName, coinsToMint)
 	if nil != err {
-		ctx.Logger().Error("fail to mint gas assets", "err", err)
+		ctx.Logger().Error("fail to mint gas assets", "error", err)
 		return sdk.ErrInternal(fmt.Errorf("fail to mint gas assets: %w", err).Error())
 	}
 	if err := h.keeper.Supply().SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {

@@ -78,7 +78,7 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 	}
 	ygg, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
 	if nil != err {
-		ctx.Logger().Error("fail to get yggdrasil", err)
+		ctx.Logger().Error("fail to get yggdrasil", "error", err)
 		return err
 	}
 	if !ygg.IsYggdrasil() {
@@ -144,12 +144,12 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 	}
 	na.SubBond(minusRune)
 	if err := h.keeper.SetNodeAccount(ctx, na); nil != err {
-		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
+		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), "error", err)
 		return err
 	}
 	ygg.SubFunds(minusCoins)
 	if err := h.keeper.SetVault(ctx, ygg); nil != err {
-		ctx.Logger().Error("fail to save yggdrasil", err)
+		ctx.Logger().Error("fail to save yggdrasil", "error", err)
 		return err
 	}
 
@@ -215,7 +215,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 
 		result := handler(ctx, m)
 		if !result.IsOK() {
-			ctx.Logger().Error("Handler failed:", result.Log)
+			ctx.Logger().Error("Handler failed:", "error", result.Log)
 		}
 	}
 
