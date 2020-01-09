@@ -10,6 +10,7 @@ LOCAL_VOLUME=$(pwd)
 if [ $1 == "ci" ]; then
     export CI="true"
     export AWS_REGION=$AWS_CI_REGION
+    export USER=$CI_JOB_ID
 fi
 
 ###########
