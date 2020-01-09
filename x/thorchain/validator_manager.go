@@ -59,14 +59,16 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 	}
 
 	if minimumNodesForBFT < int64(totalActiveNodes) {
-		badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
-		if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
-			return err
-		}
-		oldValidatorRate := constAccessor.GetInt64Value(constants.OldValidatorRate)
-		if err := vm.markOldActor(ctx, oldValidatorRate); err != nil {
-			return err
-		}
+		/*
+			badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
+			if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
+				return err
+			}
+			oldValidatorRate := constAccessor.GetInt64Value(constants.OldValidatorRate)
+			if err := vm.markOldActor(ctx, oldValidatorRate); err != nil {
+				return err
+			}
+		*/
 	}
 
 	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
@@ -74,10 +76,15 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 	if ctx.BlockHeight()%rotatePerBlockHeight == 0 {
 		ctx.Logger().Info("Checking for node account rotation...")
 		next, ok, err := vm.nextVaultNodeAccounts(ctx, int(desireValidatorSet))
+		fmt.Printf("Next (%+v): %+v\n", ok, next)
 		if err != nil {
 			return err
 		}
+		for _, na := range next {
+			fmt.Printf("Next: %+v\n", na)
+		}
 		if ok {
+			fmt.Println("Triggering Keygen")
 			if err := vm.vaultMgr.TriggerKeygen(ctx, next); err != nil {
 				return err
 			}
@@ -113,6 +120,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 
 	// no change
 	if len(newNodes) == 0 && len(removedNodes) == 0 {
+		fmt.Println("no validator change")
 		return nil
 	}
 
@@ -169,6 +177,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 		})
 	}
 
+	ctx.Logger().Info("Validators", "validators", validators)
 	return validators
 }
 
