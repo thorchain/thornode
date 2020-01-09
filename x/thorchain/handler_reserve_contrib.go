@@ -72,25 +72,25 @@ func (h ReserveContributorHandler) Handle(ctx sdk.Context, msg MsgReserveContrib
 func (h ReserveContributorHandler) HandleV1(ctx sdk.Context, msg MsgReserveContributor) error {
 	reses, err := h.keeper.GetReservesContributors(ctx)
 	if nil != err {
-		ctx.Logger().Error("fail to get reserve contributors", err)
+		ctx.Logger().Error("fail to get reserve contributors", "error", err)
 		return err
 	}
 
 	reses = reses.Add(msg.Contributor)
 	if err := h.keeper.SetReserveContributors(ctx, reses); nil != err {
-		ctx.Logger().Error("fail to save reserve contributors", err)
+		ctx.Logger().Error("fail to save reserve contributors", "error", err)
 		return err
 	}
 
 	vault, err := h.keeper.GetVaultData(ctx)
 	if nil != err {
-		ctx.Logger().Error("fail to get vault data", err)
+		ctx.Logger().Error("fail to get vault data", "error", err)
 		return err
 	}
 
 	vault.TotalReserve = vault.TotalReserve.Add(msg.Contributor.Amount)
 	if err := h.keeper.SetVaultData(ctx, vault); nil != err {
-		ctx.Logger().Error("fail to save vault data", err)
+		ctx.Logger().Error("fail to save vault data", "error", err)
 		return err
 	}
 

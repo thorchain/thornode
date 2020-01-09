@@ -67,7 +67,7 @@ func (h EndPoolHandler) handle(ctx sdk.Context, msg MsgEndPool, version semver.V
 func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
-		ctx.Logger().Error("fail to get pool staker", err)
+		ctx.Logger().Error("fail to get pool staker", "error", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
@@ -83,7 +83,7 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver
 		unstakeHandler := NewUnstakeHandler(h.keeper, h.txOutStore)
 		result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 		if !result.IsOK() {
-			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
+			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
 			return result
 		}
 	}

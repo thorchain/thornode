@@ -119,7 +119,7 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor consta
 	}
 	_, err = h.txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
-		ctx.Logger().Error("fail to add outbound tx", err)
+		ctx.Logger().Error("fail to add outbound tx", "error", err)
 		return sdk.ErrInternal(fmt.Errorf("fail to add outbound tx: %w", err).Error()).Result()
 	}
 

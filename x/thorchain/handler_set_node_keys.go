@@ -5,6 +5,7 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -92,7 +93,7 @@ func (h SetNodeKeysHandler) handleV1(ctx sdk.Context, msg MsgSetNodeKeys, versio
 	nodeAccount.PubKeySet = msg.PubKeySetSet
 	nodeAccount.ValidatorConsPubKey = msg.ValidatorConsPubKey
 	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
-		ctx.Logger().Error(fmt.Sprintf("fail to save node account: %s", nodeAccount), err)
+		ctx.Logger().Error(fmt.Sprintf("fail to save node account: %s", nodeAccount), "error", err)
 		return sdk.ErrInternal("fail to save node account").Result()
 	}
 
@@ -101,7 +102,7 @@ func (h SetNodeKeysHandler) handleV1(ctx sdk.Context, msg MsgSetNodeKeys, versio
 	setVersionHandler := NewVersionHandler(h.keeper)
 	result := setVersionHandler.Run(ctx, setVersionMsg, version, constAccessor)
 	if !result.IsOK() {
-		ctx.Logger().Error("fail to set version", "version", version)
+		ctx.Logger().Error("fail to set version", "version", version, "error", result.Log)
 		return result
 	}
 

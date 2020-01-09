@@ -33,25 +33,25 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 // unstake withdraw all the asset
 func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.Uint, sdk.Uint, sdk.Error) {
 	if err := validateUnstake(ctx, keeper, msg); nil != err {
-		ctx.Logger().Error("msg unstake fail validation", err)
+		ctx.Logger().Error("msg unstake fail validation", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
 	}
 
 	pool, err := keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
-		ctx.Logger().Error("fail to get pool", err)
+		ctx.Logger().Error("fail to get pool", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to get pool")
 	}
 
 	poolStaker, err := keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
-		ctx.Logger().Error("can't find pool staker", err)
+		ctx.Logger().Error("can't find pool staker", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "pool staker doesn't exist")
 
 	}
 	stakerPool, err := keeper.GetStakerPool(ctx, msg.RuneAddress)
 	if nil != err {
-		ctx.Logger().Error("can't find staker pool", err)
+		ctx.Logger().Error("can't find staker pool", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeStakerPoolNotExist, "staker pool doesn't exist")
 	}
 
@@ -78,7 +78,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	ctx.Logger().Info("staker before withdraw", "staker unit", fStakerUnit)
 	withdrawRune, withDrawAsset, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolAsset, fStakerUnit, msg.WithdrawBasisPoints)
 	if err != nil {
-		ctx.Logger().Error("fail to unstake", err)
+		ctx.Logger().Error("fail to unstake", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFail, err.Error())
 	}
 
@@ -115,7 +115,7 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 
 	// update staker pool
 	if err := keeper.SetPool(ctx, pool); err != nil {
-		ctx.Logger().Error("fail to save pool", err)
+		ctx.Logger().Error("fail to save pool", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.ErrInternal("fail to save pool")
 	}
 	keeper.SetPoolStaker(ctx, poolStaker)
