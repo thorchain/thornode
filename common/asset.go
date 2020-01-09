@@ -73,7 +73,7 @@ func (a Asset) IsBNB() bool {
 }
 
 func RuneAsset() Asset {
-	if strings.EqualFold(os.Getenv("NET"), "testnet") {
+	if strings.EqualFold(os.Getenv("NET"), "testnet") || strings.EqualFold(os.Getenv("NET"), "mocknet") {
 		return RuneA1FAsset
 	}
 	return RuneB1AAsset

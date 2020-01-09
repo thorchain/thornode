@@ -96,3 +96,10 @@ smoke-genesis:
 
 export:
 	thord export
+
+pull:
+	docker pull registry.gitlab.com/thorchain/thornode
+	docker pull registry.gitlab.com/thorchain/tss/go-tss
+	docker pull registry.gitlab.com/thorchain/midgard
+	docker pull registry.gitlab.com/thorchain/bepswap/bepswap-react-app
+	docker pull registry.gitlab.com/thorchain/bepswap/mock-binance
