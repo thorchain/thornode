@@ -6,6 +6,8 @@ services:
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
+      args:
+        TAGS: ${TAG:-mainnet}
     image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
     restart: unless-stopped
     environment:
@@ -30,6 +32,8 @@ services:
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
+      args:
+        TAGS: ${TAG:-mainnet}
     image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
     restart: unless-stopped
     environment:
@@ -53,6 +57,8 @@ services:
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
+      args:
+        TAGS: ${TAG:-mainnet}
     depends_on:
       - thor-daemon
     links:
