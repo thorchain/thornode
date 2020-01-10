@@ -220,6 +220,12 @@ services:
       TSSHTTPPORT: 4041
       TSSP2PPORT: 5041
       PRIVKEY: /root/.tss/private.key
+    expose:
+      - "4041"
+      - "5041"
+    ports:
+      - "4041:4041"
+      - "5041:5041"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -327,6 +333,12 @@ services:
       TSSHTTPPORT: 4042
       TSSP2PPORT: 5042
       PRIVKEY: /root/.tss/private.key
+    expose:
+      - "4042"
+      - "5042"
+    ports:
+      - "4042:4042"
+      - "5042:5042"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
@@ -435,6 +447,12 @@ services:
       TSSHTTPPORT: 4043
       TSSP2PPORT: 5043
       PRIVKEY: /root/.tss/private.key
+    expose:
+      - "4043"
+      - "5043"
+    ports:
+      - "4043:4043"
+      - "5043:5043"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
