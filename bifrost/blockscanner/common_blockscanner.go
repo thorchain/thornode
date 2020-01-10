@@ -154,6 +154,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 				b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
 				b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 			}
+			currentBlock -= 1 // subtracting one because the current block is the one that IS NOT committed yet
 			b.logger.Debug().Int64("current block height", currentBlock).Int64("THORNode are at", b.previousBlock).Msg("get block height")
 			if b.previousBlock >= currentBlock {
 				// back off

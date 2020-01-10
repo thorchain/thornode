@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -92,7 +91,6 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 			for i, tx := range txs.TxArray {
 				if tx.InHash.Equals(evt.InTx.ID) && tx.OutHash.IsEmpty() {
 					// Slash our node account for not sending funds
-					txs.TxArray[i].OutHash = common.BlankTxID
 					na, err := s.keeper.GetNodeAccountByPubKey(ctx, tx.VaultPubKey)
 					if err != nil {
 						ctx.Logger().Error("Unable to get node account", "error", err)
