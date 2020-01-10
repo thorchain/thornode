@@ -28,6 +28,9 @@ const (
 	MinimumBondInRune
 	FundMigrationInterval
 	WhiteListGasAsset
+	ArtificialRagnarokBlockHeight
+	MaximumStakeRune
+	StrictBondStakeRatio
 )
 
 var nameToString = map[ConstantName]string{
@@ -51,6 +54,9 @@ var nameToString = map[ConstantName]string{
 	MinimumBondInRune:               "MinimumBondInRune",
 	FundMigrationInterval:           "FundMigrationInterval",
 	WhiteListGasAsset:               "WhiteListGasAsset",
+	ArtificialRagnarokBlockHeight:   "ArtificialRagnarokBlockHeight",
+	MaximumStakeRune:                "MaximumStakeRune",
+	StrictBondStakeRatio:            "StrictBondStakeRatio",
 }
 
 // String implement fmt.stringer
@@ -65,6 +71,7 @@ func (cn ConstantName) String() string {
 // ConstantValues define methods used to get constant values
 type ConstantValues interface {
 	GetInt64Value(name ConstantName) int64
+	GetBoolValue(name ConstantName) bool
 }
 
 // GetConstantValues will return an  implementation of ConstantValues which provide ways to get constant values

@@ -27,7 +27,9 @@ type MockStackKeeper struct {
 func (m *MockStackKeeper) PoolExist(_ sdk.Context, asset common.Asset) bool {
 	return m.currentPool.Asset.Equals(asset)
 }
-
+func (m *MockStackKeeper) GetPools(_ sdk.Context) (Pools, error) {
+	return Pools{m.currentPool}, nil
+}
 func (m *MockStackKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	if m.failGetPool {
 		return Pool{}, errors.New("fail to get pool")
@@ -38,6 +40,9 @@ func (m *MockStackKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 func (m *MockStackKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	m.currentPool = pool
 	return nil
+}
+func (m *MockStackKeeper) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
+	return NodeAccounts{m.activeNodeAccount}, nil
 }
 
 func (m *MockStackKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
@@ -69,6 +74,10 @@ func (m *MockStackKeeper) UpsertEvent(_ sdk.Context, _ Event) error {
 	}
 	m.addedEvent = true
 	return nil
+}
+
+type MockConstant struct {
+	constants.DummyConstants
 }
 
 func (HandlerStakeSuite) TestStakeHandler(c *C) {
@@ -121,6 +130,7 @@ func (HandlerStakeSuite) TestStakeHandler(c *C) {
 func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)
+	activeNodeAccount.Bond = sdk.NewUint(1000000 * common.One)
 	k := &MockStackKeeper{
 		activeNodeAccount: activeNodeAccount,
 		currentPool: Pool{
@@ -145,7 +155,12 @@ func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 		"stake:BNB",
 	)
 	ver := semver.MustParse("0.1.0")
-	constAccessor := constants.GetConstantValues(ver)
+	constAccessor := constants.NewDummyConstants(map[constants.ConstantName]int64{
+		constants.MaximumStakeRune: 600_000_00000000,
+	}, map[constants.ConstantName]bool{
+		constants.StrictBondStakeRatio: true,
+	})
+
 	msgSetStake := NewMsgSetStakeData(
 		tx,
 		common.BNBAsset,
@@ -210,9 +225,19 @@ func (HandlerStakeSuite) TestStakeHandlerValidation(c *C) {
 			msg:            NewMsgSetStakeData(GetRandomTx(), common.BTCAsset, sdk.NewUint(common.One*5), sdk.NewUint(common.One*5), GetRandomBNBAddress(), common.NoAddress, GetRandomNodeAccount(NodeActive).NodeAddress),
 			expectedResult: CodeStakeFailValidation,
 		},
+		{
+			name:           "total staker is more than total bond should fail",
+			msg:            NewMsgSetStakeData(GetRandomTx(), common.BNBAsset, sdk.NewUint(common.One*5000), sdk.NewUint(common.One*5000), GetRandomBNBAddress(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress),
+			expectedResult: CodeStakeRUNEMoreThanBond,
+		},
 	}
 	ver := semver.MustParse("0.1.0")
-	constAccessor := constants.GetConstantValues(ver)
+	constAccessor := constants.NewDummyConstants(map[constants.ConstantName]int64{
+		constants.MaximumStakeRune: 600_000_00000000,
+	}, map[constants.ConstantName]bool{
+		constants.StrictBondStakeRatio: true,
+	})
+
 	for _, item := range testCases {
 		stakeHandler := NewStakeHandler(k)
 		result := stakeHandler.Run(ctx, item.msg, ver, constAccessor)
