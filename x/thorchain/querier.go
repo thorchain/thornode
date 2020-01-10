@@ -457,6 +457,10 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
 
+	if int64(height) >= ctx.BlockHeight() {
+		return nil, sdk.ErrInternal("block height not available yet")
+	}
+
 	keygens, err := keeper.GetKeygens(ctx, height)
 	if nil != err {
 		ctx.Logger().Error("fail to get keygens", "error", err)
@@ -495,6 +499,10 @@ func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	if nil != err {
 		ctx.Logger().Error("fail to parse block height", "error", err)
 		return nil, sdk.ErrInternal("fail to parse block height")
+	}
+
+	if int64(height) >= ctx.BlockHeight() {
+		return nil, sdk.ErrInternal("block height not available yet")
 	}
 
 	pk := common.EmptyPubKey
