@@ -100,10 +100,8 @@ services:
       TSSP2PPORT: 5040
       PRIVKEY: /root/.tss/private.key
     expose:
-      - "4040"
       - "5040"
     ports:
-      - "4040:4040"
       - "5040:5040"
     entrypoint:
       /docker/scripts/tss.sh
