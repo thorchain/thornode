@@ -34,6 +34,8 @@ const (
 	CodeFailGetPoolStaker      sdk.CodeType = 122
 	CodeStakeMismatchAssetAddr sdk.CodeType = 123
 	CodeStakeInvalidPoolAsset  sdk.CodeType = 124
+	CodeStakeRUNEOverLimit     sdk.CodeType = 125
+	CodeStakeRUNEMoreThanBond  sdk.CodeType = 126
 
 	CodeUnstakeFailValidation sdk.CodeType = 130
 	CodeFailAddOutboundTx     sdk.CodeType = 131
