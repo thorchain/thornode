@@ -90,10 +90,15 @@ func (k *TestEndPoolHandleKeeper) PoolExist(_ sdk.Context, asset common.Asset) b
 func (k *TestEndPoolHandleKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return k.currentPool, nil
 }
-
+func (k *TestEndPoolHandleKeeper) GetPools(_ sdk.Context) (Pools, error) {
+	return Pools{k.currentPool}, nil
+}
 func (k *TestEndPoolHandleKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	k.currentPool = pool
 	return nil
+}
+func (k *TestEndPoolHandleKeeper) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
+	return NodeAccounts{k.activeNodeAccount}, nil
 }
 
 // IsActiveObserver see whether it is an active observer
