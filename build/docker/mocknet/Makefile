@@ -1,6 +1,6 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 path := $(dir $(mkfile_path))
-TAGS ?= mainnet
+TAGS ?= sandbox
 
 run-mocknet-standalone: 
 	TAG=${TAGS} NET=mocknet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/standalone.yml up --force-recreate --remove-orphans -d
