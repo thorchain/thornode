@@ -3,4 +3,4 @@ version: '3'
 services:
   bifrost5:
     environment:
-      BINANCE_HOST: http://172.32.90.1:26660
+      BINANCE_HOST: http://192.168.90.1:26660

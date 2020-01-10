@@ -10,11 +10,11 @@ services:
     restart: unless-stopped
     environment:
       NET: testnet
-      CHAIN_API: 172.32.40.36:1317
-      CHAIN_RPC: 172.32.10.26:26657
-      BINANCE_HOST: ${BINANCE_HOST:-http://172.32.90.1:26660}
+      CHAIN_API: 192.168.40.36:1317
+      CHAIN_RPC: 192.168.10.26:26657
+      BINANCE_HOST: ${BINANCE_HOST:-http://192.168.90.1:26660}
       USE_TSS: "true"
-      TSS_HOST: 172.32.10.6
+      TSS_HOST: 192.168.10.6
       TSS_PORT: 4044
     entrypoint:
       /docker/scripts/bifrost.sh
@@ -28,7 +28,7 @@ services:
     command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       localnet:
-        ipv4_address: 172.32.30.36
+        ipv4_address: 192.168.30.36
 
   thor-daemon5:
     hostname: thor-daemon5
@@ -39,7 +39,7 @@ services:
     restart: unless-stopped
     environment:
       NET: testnet
-      PEER: 172.32.10.22
+      PEER: 192.168.10.22
       TSSPRIVKEY: /root/.tss/private.key
     depends_on:
       - tss5
@@ -53,7 +53,7 @@ services:
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
-        ipv4_address: 172.32.10.26
+        ipv4_address: 192.168.10.26
 
   thor-api5:
     hostname: thor-api5
@@ -66,17 +66,17 @@ services:
     restart: unless-stopped
     environment:
       NET: testnet
-      CHAIN_DAEMON: 172.32.10.26:26657
+      CHAIN_DAEMON: 192.168.10.26:26657
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_5/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_5/.thorcli:/root/.thorcli
-    command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://172.32.10.26:26657"]
+    command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://192.168.10.26:26657"]
     networks:
       localnet:
-        ipv4_address: 172.32.40.36
+        ipv4_address: 192.168.40.36
 
   tss5:
     hostname: tss5
@@ -84,7 +84,7 @@ services:
     restart: unless-stopped
     environment:
       NET: testnet
-      SEED: 172.32.10.2
+      SEED: 192.168.10.2
       SEEDHTTPPORT: 4040
       SEEDP2PPORT: 5040
       TSSHTTPPORT: 4044
@@ -97,4 +97,4 @@ services:
       - ${HOME}/.thornode/genesis_5/.tss:/root/.tss
     networks:
       localnet:
-        ipv4_address: 172.32.10.6
+        ipv4_address: 192.168.10.6

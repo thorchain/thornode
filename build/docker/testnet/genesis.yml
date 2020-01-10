@@ -4,14 +4,14 @@ services:
   frontend:
     networks:
       localnet:
-        ipv4_address: 172.32.61.2
+        ipv4_address: 192.168.61.2
 
   midgard:
     networks:
       localnet:
-        ipv4_address: 172.32.60.2
+        ipv4_address: 192.168.60.2
 
   pg:
     networks:
       localnet:
-        ipv4_address: 172.32.60.3
+        ipv4_address: 192.168.60.3

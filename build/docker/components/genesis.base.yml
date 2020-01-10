@@ -12,11 +12,11 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_API: 172.32.40.32:1317
-      CHAIN_RPC: 172.32.10.22:26657
+      CHAIN_API: 192.168.40.32:1317
+      CHAIN_RPC: 192.168.10.22:26657
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
       USE_TSS: "true"
-      TSS_HOST: 172.32.10.2
+      TSS_HOST: 192.168.10.2
       TSS_PORT: 4040
     entrypoint:
       /docker/scripts/bifrost.sh
@@ -30,7 +30,7 @@ services:
     command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       localnet:
-        ipv4_address: 172.32.30.32
+        ipv4_address: 192.168.30.32
 
   thor-daemon:
     hostname: thor-daemon
@@ -45,8 +45,8 @@ services:
       NET: ${NET}
       NODES: 4
       SEED: thor-daemon
-      TSSKEYGEN: 172.32.10.2:4040
-      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
+      TSSKEYGEN: 192.168.10.2:4040
+      TSSKEYGENLIST: 192.168.10.2:4040,192.168.10.3:4041,192.168.10.4:4042,192.168.10.5:4043
       TSSPRIVKEY: /root/.tss/private.key
     ports:
       - "26657:26657"
@@ -67,7 +67,7 @@ services:
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
-        ipv4_address: 172.32.10.22
+        ipv4_address: 192.168.10.22
 
   thor-api:
     hostname: thor-api
@@ -82,7 +82,7 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_DAEMON: 172.32.10.22:26657
+      CHAIN_DAEMON: 192.168.10.22:26657
     ports:
       - "1317:1317"
     expose:
@@ -96,7 +96,7 @@ services:
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
     networks:
       localnet:
-        ipv4_address: 172.32.40.32
+        ipv4_address: 192.168.40.32
 
   tss:
     hostname: tss
@@ -120,7 +120,7 @@ services:
       - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
     networks:
       localnet:
-        ipv4_address: 172.32.10.2
+        ipv4_address: 192.168.10.2
 
   bifrost2:
     hostname: bifrost2
@@ -133,10 +133,10 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_API: 172.32.40.33:1317
-      CHAIN_RPC: 172.32.10.23:26657
+      CHAIN_API: 192.168.40.33:1317
+      CHAIN_RPC: 192.168.10.23:26657
       USE_TSS: "true"
-      TSS_HOST: 172.32.10.3
+      TSS_HOST: 192.168.10.3
       TSS_PORT: 4041
     entrypoint:
       /docker/scripts/bifrost.sh
@@ -150,7 +150,7 @@ services:
     command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       localnet:
-        ipv4_address: 172.32.30.33
+        ipv4_address: 192.168.30.33
 
   thor-daemon2:
     hostname: thor-daemon2
@@ -165,8 +165,8 @@ services:
       NET: ${NET}
       NODES: 4
       SEED: thor-daemon
-      TSSKEYGEN: 172.32.10.3:4041
-      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
+      TSSKEYGEN: 192.168.10.3:4041
+      TSSKEYGENLIST: 192.168.10.2:4040,192.168.10.3:4041,192.168.10.4:4042,192.168.10.5:4043
       TSSPRIVKEY: /root/.tss/private.key
     depends_on:
       - tss2
@@ -181,7 +181,7 @@ services:
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
-        ipv4_address: 172.32.10.23
+        ipv4_address: 192.168.10.23
 
   thor-api2:
     hostname: thor-api2
@@ -196,7 +196,7 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_DAEMON: 172.32.10.23:26657
+      CHAIN_DAEMON: 192.168.10.23:26657
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
@@ -206,7 +206,7 @@ services:
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
     networks:
       localnet:
-        ipv4_address: 172.32.40.33
+        ipv4_address: 192.168.40.33
 
   tss2:
     hostname: tss2
@@ -214,7 +214,7 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      SEED: 172.32.10.2
+      SEED: 192.168.10.2
       SEEDHTTPPORT: 4040
       SEEDP2PPORT: 5040
       TSSHTTPPORT: 4041
@@ -233,7 +233,7 @@ services:
       - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
     networks:
       localnet:
-        ipv4_address: 172.32.10.3
+        ipv4_address: 192.168.10.3
 
   bifrost3:
     hostname: bifrost3
@@ -246,10 +246,10 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_API: 172.32.40.34:1317
-      CHAIN_RPC: 172.32.10.24:26657
+      CHAIN_API: 192.168.40.34:1317
+      CHAIN_RPC: 192.168.10.24:26657
       USE_TSS: "true"
-      TSS_HOST: 172.32.10.4
+      TSS_HOST: 192.168.10.4
       TSS_PORT: 4042
     entrypoint:
       /docker/scripts/bifrost.sh
@@ -263,7 +263,7 @@ services:
     command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       localnet:
-        ipv4_address: 172.32.30.34
+        ipv4_address: 192.168.30.34
 
   thor-daemon3:
     hostname: thor-daemon3
@@ -278,8 +278,8 @@ services:
       NET: ${NET}
       NODES: 4
       SEED: thor-daemon
-      TSSKEYGEN: 172.32.10.4:4042
-      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
+      TSSKEYGEN: 192.168.10.4:4042
+      TSSKEYGENLIST: 192.168.10.2:4040,192.168.10.3:4041,192.168.10.4:4042,192.168.10.5:4043
       TSSPRIVKEY: /root/.tss/private.key
     depends_on:
       - tss3
@@ -294,7 +294,7 @@ services:
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
-        ipv4_address: 172.32.10.24
+        ipv4_address: 192.168.10.24
 
   thor-api3:
     hostname: thor-api3
@@ -309,7 +309,7 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_DAEMON: 172.32.10.24:26657
+      CHAIN_DAEMON: 192.168.10.24:26657
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
@@ -319,7 +319,7 @@ services:
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
     networks:
       localnet:
-        ipv4_address: 172.32.40.34
+        ipv4_address: 192.168.40.34
 
   tss3:
     hostname: tss3
@@ -327,7 +327,7 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      SEED: 172.32.10.2
+      SEED: 192.168.10.2
       SEEDHTTPPORT: 4040
       SEEDP2PPORT: 5040
       TSSHTTPPORT: 4042
@@ -346,7 +346,7 @@ services:
       - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
     networks:
       localnet:
-        ipv4_address: 172.32.10.4
+        ipv4_address: 192.168.10.4
 
   bifrost4:
     hostname: bifrost4
@@ -359,10 +359,10 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_API: 172.32.40.35:1317
-      CHAIN_RPC: 172.32.10.25:26657
+      CHAIN_API: 192.168.40.35:1317
+      CHAIN_RPC: 192.168.10.25:26657
       USE_TSS: "true"
-      TSS_HOST: 172.32.10.5
+      TSS_HOST: 192.168.10.5
       TSS_PORT: 4043
     depends_on:
     entrypoint:
@@ -377,7 +377,7 @@ services:
     command: ["bifrost", "-c", "/etc/bifrost/config.json"]
     networks:
       localnet:
-        ipv4_address: 172.32.30.35
+        ipv4_address: 192.168.30.35
 
   thor-daemon4:
     hostname: thor-daemon4
@@ -392,8 +392,8 @@ services:
       NET: ${NET}
       NODES: 4
       SEED: thor-daemon
-      TSSKEYGEN: 172.32.10.5:4043
-      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
+      TSSKEYGEN: 192.168.10.5:4043
+      TSSKEYGENLIST: 192.168.10.2:4040,192.168.10.3:4041,192.168.10.4:4042,192.168.10.5:4043
       TSSPRIVKEY: /root/.tss/private.key
     entrypoint:
       /docker/scripts/genesis.sh
@@ -408,7 +408,7 @@ services:
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
-        ipv4_address: 172.32.10.25
+        ipv4_address: 192.168.10.25
 
   thor-api4:
     hostname: thor-api4
@@ -423,7 +423,7 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_DAEMON: 172.32.10.25:26657
+      CHAIN_DAEMON: 192.168.10.25:26657
     entrypoint:
       /docker/scripts/rest.sh
     volumes:
@@ -433,7 +433,7 @@ services:
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
     networks:
       localnet:
-        ipv4_address: 172.32.40.35
+        ipv4_address: 192.168.40.35
 
   tss4:
     hostname: tss4
@@ -441,7 +441,7 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      SEED: 172.32.10.2
+      SEED: 192.168.10.2
       SEEDHTTPPORT: 4040
       SEEDP2PPORT: 5040
       TSSHTTPPORT: 4043
@@ -460,7 +460,7 @@ services:
       - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
     networks:
       localnet:
-        ipv4_address: 172.32.10.5
+        ipv4_address: 192.168.10.5
 
 networks:
   localnet:
@@ -472,4 +472,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.32.10.0/16
+        - subnet: 192.168.10.0/16

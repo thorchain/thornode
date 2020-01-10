@@ -4,36 +4,36 @@ services:
   frontend:
     networks:
       localnet:
-        ipv4_address: 172.32.61.2
+        ipv4_address: 192.168.61.2
 
   midgard:
     networks:
       localnet:
-        ipv4_address: 172.32.60.2
+        ipv4_address: 192.168.60.2
 
   pg:
     networks:
       localnet:
-        ipv4_address: 172.32.60.3
+        ipv4_address: 192.168.60.3
 
   binance:
     networks:
       localnet:
-        ipv4_address: 172.32.90.1
+        ipv4_address: 192.168.90.1
 
   bifrost:
     environment:
-      BINANCE_HOST: http://172.32.90.1:26660
+      BINANCE_HOST: http://192.168.90.1:26660
 
   bifrost2:
     environment:
-      BINANCE_HOST: http://172.32.90.1:26660
+      BINANCE_HOST: http://192.168.90.1:26660
 
   bifrost3:
     environment:
-      BINANCE_HOST: http://172.32.90.1:26660
+      BINANCE_HOST: http://192.168.90.1:26660
 
   bifrost4:
     environment:
-      BINANCE_HOST: http://172.32.90.1:26660
+      BINANCE_HOST: http://192.168.90.1:26660
 
