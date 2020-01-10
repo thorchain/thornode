@@ -41,6 +41,29 @@ func (toi TxOutItem) Valid() error {
 	return nil
 }
 
+func (toi TxOutItem) Equals(toi2 TxOutItem) bool {
+	if !toi.Chain.Equals(toi2.Chain) {
+		return false
+	}
+	if !toi.ToAddress.Equals(toi2.ToAddress) {
+		return false
+	}
+	if !toi.VaultPubKey.Equals(toi2.VaultPubKey) {
+		return false
+	}
+	if !toi.Coin.Equals(toi2.Coin) {
+		return false
+	}
+	if !toi.InHash.Equals(toi2.InHash) {
+		return false
+	}
+	if toi.Memo != toi2.Memo {
+		return false
+	}
+
+	return true
+}
+
 // String implement stringer interface
 func (toi TxOutItem) String() string {
 	sb := strings.Builder{}
