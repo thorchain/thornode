@@ -88,7 +88,7 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 				continue
 			}
 
-			for i, tx := range txs.TxArray {
+			for _, tx := range txs.TxArray {
 				if tx.InHash.Equals(evt.InTx.ID) && tx.OutHash.IsEmpty() {
 					// Slash our node account for not sending funds
 					na, err := s.keeper.GetNodeAccountByPubKey(ctx, tx.VaultPubKey)
@@ -112,11 +112,23 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 						return fmt.Errorf("unable to determine asgard vault to send funds")
 					}
 
+					// remove original tx action in observed tx. Will be
+					// replaced with new one
+					voter, err := s.keeper.GetObservedTxVoter(ctx, tx.InHash)
+					if err != nil {
+						return fmt.Errorf("fail to get observed tx voter: %w", err)
+					}
+					var actions []TxOutItem
+					for _, action := range voter.Actions {
+						if !action.Equals(*tx) {
+							actions = append(actions, *tx)
+						}
+					}
+					voter.Actions = actions
+					s.keeper.SetObservedTxVoter(ctx, voter)
+
 					// Save the tx to as a new tx, select Asgard to send it this time.
 					tx.VaultPubKey = vault.PubKey
-					// TODO: this creates a second tx out for this inTx, which
-					// means the event will never be completed because only one
-					// of the two out tx will occur.
 					_, err = s.txOutStore.TryAddTxOutItem(ctx, tx)
 					if err != nil {
 						return fmt.Errorf("fail to add outbound tx: %w", err)

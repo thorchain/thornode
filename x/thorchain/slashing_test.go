@@ -86,6 +86,15 @@ type TestSlashingLackKeeper struct {
 	txOut  *TxOut
 	na     NodeAccount
 	vaults Vaults
+	voter  ObservedTxVoter
+}
+
+func (k *TestSlashingLackKeeper) GetObservedTxVoter(_ sdk.Context, _ common.TxID) (ObservedTxVoter, error) {
+	return k.voter, nil
+}
+
+func (k *TestSlashingLackKeeper) SetObservedTxVoter(_ sdk.Context, voter ObservedTxVoter) {
+	k.voter = voter
 }
 
 func (k *TestSlashingLackKeeper) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vaults, error) {
@@ -164,6 +173,9 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 		evts:   Events{evt},
 		na:     na,
 		vaults: Vaults{GetRandomVault()},
+		voter: ObservedTxVoter{
+			Actions: []TxOutItem{*txOutItem},
+		},
 	}
 	signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
 	ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod + 5)
@@ -176,4 +188,5 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	outItems := txOutStore.GetOutboundItems()
 	c.Assert(outItems, HasLen, 1)
 	c.Assert(outItems[0].VaultPubKey.Equals(keeper.vaults[0].PubKey), Equals, true)
+	c.Assert(keeper.voter.Actions, HasLen, 0) // ensure we've removed our previous txn
 }
