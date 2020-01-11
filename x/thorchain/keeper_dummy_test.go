@@ -175,11 +175,3 @@ func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error   { return 
 func (k KVStoreDummy) UpdateVaultData(_ sdk.Context, _ constants.ConstantValues) error {
 	return kaboom
 }
-func (k KVStoreDummy) SetAdminConfig(_ sdk.Context, _ AdminConfig) {}
-func (k KVStoreDummy) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
-	return PoolSuspended
-}
-func (k KVStoreDummy) GetAdminConfigValue(_ sdk.Context, _ AdminConfigKey, _ sdk.AccAddress) (val string, err error) {
-	return "", kaboom
-}
-func (k KVStoreDummy) GetAdminConfigIterator(_ sdk.Context) sdk.Iterator { return nil }

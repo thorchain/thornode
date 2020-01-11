@@ -156,17 +156,17 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 
 	// add stakers
 	staker1 := GetRandomBNBAddress() // Staker1
-	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(10*common.One), staker1, staker1, GetRandomTxHash())
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(10*common.One), staker1, staker1, GetRandomTxHash(), consts)
 	c.Assert(err, IsNil)
-	_, err = stake(ctx, keeper, boltAsset, sdk.NewUint(50*common.One), sdk.NewUint(11*common.One), staker1, staker1, GetRandomTxHash())
+	_, err = stake(ctx, keeper, boltAsset, sdk.NewUint(50*common.One), sdk.NewUint(11*common.One), staker1, staker1, GetRandomTxHash(), consts)
 	c.Assert(err, IsNil)
 	staker2 := GetRandomBNBAddress() // staker2
-	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker2, staker2, GetRandomTxHash())
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker2, staker2, GetRandomTxHash(), consts)
 	c.Assert(err, IsNil)
-	_, err = stake(ctx, keeper, boltAsset, sdk.NewUint(20*common.One), sdk.NewUint(4*common.One), staker2, staker2, GetRandomTxHash())
+	_, err = stake(ctx, keeper, boltAsset, sdk.NewUint(20*common.One), sdk.NewUint(4*common.One), staker2, staker2, GetRandomTxHash(), consts)
 	c.Assert(err, IsNil)
 	staker3 := GetRandomBNBAddress() // staker3
-	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker3, staker3, GetRandomTxHash())
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker3, staker3, GetRandomTxHash(), consts)
 	c.Assert(err, IsNil)
 	stakers := []common.Address{
 		staker1, staker2, staker3,
@@ -341,17 +341,17 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 
 	// add stakers
 	staker1 := GetRandomBNBAddress() // Staker1
-	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(10*common.One), staker1, staker1, GetRandomTxHash())
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(10*common.One), staker1, staker1, GetRandomTxHash(), consts)
 	c.Assert(err, IsNil)
-	_, err = stake(ctx, keeper, boltAsset, sdk.NewUint(50*common.One), sdk.NewUint(11*common.One), staker1, staker1, GetRandomTxHash())
+	_, err = stake(ctx, keeper, boltAsset, sdk.NewUint(50*common.One), sdk.NewUint(11*common.One), staker1, staker1, GetRandomTxHash(), consts)
 	c.Assert(err, IsNil)
 	staker2 := GetRandomBNBAddress() // staker2
-	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker2, staker2, GetRandomTxHash())
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker2, staker2, GetRandomTxHash(), consts)
 	c.Assert(err, IsNil)
-	_, err = stake(ctx, keeper, boltAsset, sdk.NewUint(20*common.One), sdk.NewUint(4*common.One), staker2, staker2, GetRandomTxHash())
+	_, err = stake(ctx, keeper, boltAsset, sdk.NewUint(20*common.One), sdk.NewUint(4*common.One), staker2, staker2, GetRandomTxHash(), consts)
 	c.Assert(err, IsNil)
 	staker3 := GetRandomBNBAddress() // staker3
-	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker3, staker3, GetRandomTxHash())
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(155*common.One), sdk.NewUint(15*common.One), staker3, staker3, GetRandomTxHash(), consts)
 	c.Assert(err, IsNil)
 	stakers := []common.Address{
 		staker1, staker2, staker3,

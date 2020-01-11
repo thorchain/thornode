@@ -88,19 +88,6 @@ func (p *MockInMemoryPoolStorage) GetLowestActiveVersion(ctx sdk.Context) semver
 	return semver.MustParse("0.1.0")
 }
 
-func (p *MockInMemoryPoolStorage) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) PoolStatus {
-	return PoolBootstrap
-}
-
-func (p *MockInMemoryPoolStorage) GetAdminConfigValue(ctx sdk.Context, key AdminConfigKey, addr sdk.AccAddress) (string, error) {
-	storekey := p.GetKey(ctx, prefixAdmin, key.String())
-	ac, ok := p.store[storekey]
-	if ok {
-		return ac.(AdminConfig).Value, nil
-	}
-	return "", nil
-}
-
 func (p *MockInMemoryPoolStorage) AddIncompleteEvents(ctx sdk.Context, event Event) error { return nil }
 func (p *MockInMemoryPoolStorage) SetCompletedEvent(ctx sdk.Context, event Event)         {}
 

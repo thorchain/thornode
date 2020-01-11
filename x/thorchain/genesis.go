@@ -14,18 +14,16 @@ type GenesisState struct {
 	ObservedTxVoters ObservedTxVoters `json:"observed_tx_voters"`
 	TxOuts           []TxOut          `json:"txouts"`
 	NodeAccounts     NodeAccounts     `json:"node_accounts"`
-	AdminConfigs     []AdminConfig    `json:"admin_configs"`
 	CurrentEventID   int64            `json:"current_event_id"`
 	Events           Events           `json:"events"`
 	Vaults           Vaults           `json:"vaults"`
 }
 
 // NewGenesisState create a new instance of GenesisState
-func NewGenesisState(pools []Pool, nodeAccounts NodeAccounts, configs []AdminConfig) GenesisState {
+func NewGenesisState(pools []Pool, nodeAccounts NodeAccounts) GenesisState {
 	return GenesisState{
 		Pools:        pools,
 		NodeAccounts: nodeAccounts,
-		AdminConfigs: configs,
 	}
 }
 
@@ -55,12 +53,6 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
-	for _, config := range data.AdminConfigs {
-		if err := config.Valid(); err != nil {
-			return err
-		}
-	}
-
 	for _, ta := range data.NodeAccounts {
 		if err := ta.IsValid(); err != nil {
 			return err
@@ -79,7 +71,6 @@ func ValidateGenesis(data GenesisState) error {
 // DefaultGenesisState the default values THORNode put in the Genesis
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		AdminConfigs:     []AdminConfig{},
 		Pools:            []Pool{},
 		NodeAccounts:     NodeAccounts{},
 		CurrentEventID:   1,
@@ -102,10 +93,6 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 	for _, stake := range data.PoolStakers {
 		keeper.SetPoolStaker(ctx, stake)
-	}
-
-	for _, config := range data.AdminConfigs {
-		keeper.SetAdminConfig(ctx, config)
 	}
 
 	validators := make([]abci.ValidatorUpdate, 0, len(data.NodeAccounts))
@@ -166,17 +153,8 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	currentEventID, _ := k.GetCurrentEventID(ctx)
 
-	var adminConfigs []AdminConfig
-	iterator := k.GetAdminConfigIterator(ctx)
-	defer iterator.Close()
-	for ; iterator.Valid(); iterator.Next() {
-		var config AdminConfig
-		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &config)
-		adminConfigs = append(adminConfigs, config)
-	}
-
 	var poolStakers []PoolStaker
-	iterator = k.GetPoolStakerIterator(ctx)
+	iterator := k.GetPoolStakerIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var ps PoolStaker
@@ -237,7 +215,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 	return GenesisState{
 		Pools:            pools,
 		NodeAccounts:     nodeAccounts,
-		AdminConfigs:     adminConfigs,
 		PoolStakers:      poolStakers,
 		StakerPools:      stakerPools,
 		ObservedTxVoters: votes,
