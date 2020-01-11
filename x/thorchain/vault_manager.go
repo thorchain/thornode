@@ -58,6 +58,7 @@ func (vm *VaultMgr) processGenesisSetup(ctx sdk.Context) error {
 	}
 	if len(active) == 1 {
 		vault := NewVault(0, ActiveVault, AsgardVault, active[0].PubKeySet.Secp256k1)
+		vault.Membership = common.PubKeys{active[0].PubKeySet.Secp256k1}
 		if err := vm.k.SetVault(ctx, vault); err != nil {
 			return fmt.Errorf("fail to save vault: %w", err)
 		}
