@@ -58,7 +58,7 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 		return err
 	}
 	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
-	if minimumNodesForBFT < int64(totalActiveNodes) ||
+	if minimumNodesForBFT+2 < int64(totalActiveNodes) ||
 		(artificialRagnarokBlockHeight > 0 && ctx.BlockHeight() >= artificialRagnarokBlockHeight) {
 		badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
 		if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
