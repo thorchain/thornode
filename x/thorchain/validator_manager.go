@@ -57,8 +57,9 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 	if err != nil {
 		return err
 	}
-
-	if minimumNodesForBFT < int64(totalActiveNodes) {
+	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
+	if minimumNodesForBFT < int64(totalActiveNodes) ||
+		(artificialRagnarokBlockHeight > 0 && ctx.BlockHeight() >= artificialRagnarokBlockHeight) {
 		badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
 		if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
 			return err
@@ -73,7 +74,7 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
 	if ctx.BlockHeight()%rotatePerBlockHeight == 0 {
 		ctx.Logger().Info("Checking for node account rotation...")
-		next, ok, err := vm.nextVaultNodeAccounts(ctx, int(desireValidatorSet))
+		next, ok, err := vm.nextVaultNodeAccounts(ctx, int(desireValidatorSet), constAccessor)
 		if err != nil {
 			return err
 		}
@@ -713,7 +714,7 @@ func (vm *ValidatorMgr) markBadActor(ctx sdk.Context, rate int64) error {
 }
 
 // find any actor that are ready to become "ready" status
-func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context) error {
+func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	standby, err := vm.k.ListNodeAccountsByStatus(ctx, NodeStandby)
 	if err != nil {
 		return err
@@ -721,6 +722,18 @@ func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context) error {
 	ready, err := vm.k.ListNodeAccountsByStatus(ctx, NodeReady)
 	if err != nil {
 		return err
+	}
+	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
+	if artificialRagnarokBlockHeight > 0 && ctx.BlockHeight() >= artificialRagnarokBlockHeight {
+		// ArtificialRagnarokBlockHeight should only have a positive value on chaosnet , we could even remove this after chaosnet
+		// mark every node to standby, thus no node will be rotated in.
+		for _, na := range append(standby, ready...) {
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
+			if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+				return err
+			}
+		}
+		return nil
 	}
 
 	// find min version node has to be, to be "ready" status
@@ -746,11 +759,11 @@ func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context) error {
 }
 
 // Returns a list of nodes to include in the next pool
-func (vm *ValidatorMgr) nextVaultNodeAccounts(ctx sdk.Context, targetCount int) (NodeAccounts, bool, error) {
+func (vm *ValidatorMgr) nextVaultNodeAccounts(ctx sdk.Context, targetCount int, constAccessor constants.ConstantValues) (NodeAccounts, bool, error) {
 	rotation := false // track if are making any changes to the current active node accounts
 
 	// update list of ready actors
-	if err := vm.markReadyActors(ctx); err != nil {
+	if err := vm.markReadyActors(ctx, constAccessor); err != nil {
 		return nil, false, err
 	}
 
@@ -759,7 +772,7 @@ func (vm *ValidatorMgr) nextVaultNodeAccounts(ctx sdk.Context, targetCount int) 
 		return nil, false, err
 	}
 	// sort by bond size
-	sort.Slice(ready, func(i, j int) bool {
+	sort.SliceStable(ready, func(i, j int) bool {
 		return ready[i].Bond.GT(ready[j].Bond)
 	})
 
@@ -769,7 +782,7 @@ func (vm *ValidatorMgr) nextVaultNodeAccounts(ctx sdk.Context, targetCount int) 
 	}
 	// sort by LeaveHeight, giving preferential treatment to people who
 	// requested to leave
-	sort.Slice(active, func(i, j int) bool {
+	sort.SliceStable(active, func(i, j int) bool {
 		if active[i].RequestedToLeave != active[j].RequestedToLeave {
 			return active[i].RequestedToLeave
 		}

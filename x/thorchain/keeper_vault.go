@@ -170,7 +170,7 @@ func (k KVStore) DeleteVault(ctx sdk.Context, pubkey common.PubKey) error {
 			return err
 		}
 
-		var newPks common.PubKeys
+		newPks := common.PubKeys{}
 		for _, pk := range pks {
 			if !pk.Equals(pubkey) {
 				newPks = append(newPks, pk)
@@ -179,7 +179,11 @@ func (k KVStore) DeleteVault(ctx sdk.Context, pubkey common.PubKey) error {
 
 		key := k.GetKey(ctx, prefixVaultAsgardIndex, "")
 		store := ctx.KVStore(k.storeKey)
-		store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(newPks))
+		if len(newPks) > 0 {
+			store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(newPks))
+		} else {
+			store.Delete([]byte(key))
+		}
 	}
 	return nil
 }
