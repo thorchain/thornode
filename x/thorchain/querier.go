@@ -32,8 +32,6 @@ func NewQuerier(keeper Keeper, validatorMgr ValidatorManager) sdk.Querier {
 			return queryStakerPool(ctx, path[1:], req, keeper)
 		case q.QueryTxIn.Key:
 			return queryTxIn(ctx, path[1:], req, keeper)
-		case q.QueryAdminConfig.Key, q.QueryAdminConfigBnb.Key:
-			return queryAdminConfig(ctx, path[1:], req, keeper)
 		case q.QueryKeysignArray.Key:
 			return queryKeysign(ctx, path[1:], req, keeper, validatorMgr)
 		case q.QueryKeysignArrayPubkey.Key:
@@ -554,31 +552,6 @@ func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	if nil != err {
 		ctx.Logger().Error("fail to marshal tx hash to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")
-	}
-	return res, nil
-}
-
-func queryAdminConfig(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-	var err error
-	key := GetAdminConfigKey(path[0])
-	addr := EmptyAccAddress
-	if len(path) > 1 {
-		addr, err = sdk.AccAddressFromBech32(path[1])
-		if err != nil {
-			ctx.Logger().Error("fail to parse bep address", "error", err)
-			return nil, sdk.ErrInternal("fail to parse bep address")
-		}
-	}
-	config := NewAdminConfig(key, "", addr)
-	config.Value, err = keeper.GetAdminConfigValue(ctx, key, addr)
-	if nil != err {
-		ctx.Logger().Error("fail to get admin config", "error", err)
-		return nil, sdk.ErrInternal("fail to get admin config")
-	}
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), config)
-	if nil != err {
-		ctx.Logger().Error("fail to marshal config to json", "error", err)
-		return nil, sdk.ErrInternal("fail to marshal config to json")
 	}
 	return res, nil
 }

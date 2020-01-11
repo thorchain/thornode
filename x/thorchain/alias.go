@@ -19,7 +19,6 @@ const (
 
 	// Admin config keys
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
-	DefaultPoolStatus      = types.DefaultPoolStatus
 
 	// Vaults
 	AsgardVault    = types.AsgardVault
@@ -39,7 +38,6 @@ const (
 var (
 	NewPool                        = types.NewPool
 	NewVaultData                   = types.NewVaultData
-	NewAdminConfig                 = types.NewAdminConfig
 	NewObservedTx                  = types.NewObservedTx
 	NewTssVoter                    = types.NewTssVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
@@ -52,7 +50,6 @@ var (
 	NewMsgSetStakeData             = types.NewMsgSetStakeData
 	NewMsgSetUnStake               = types.NewMsgSetUnStake
 	NewMsgSwap                     = types.NewMsgSwap
-	NewMsgSetAdminConfig           = types.NewMsgSetAdminConfig
 	NewKeygens                     = types.NewKeygens
 	NewMsgSetNodeKeys              = types.NewMsgSetNodeKeys
 	NewTxOut                       = types.NewTxOut
@@ -71,7 +68,6 @@ var (
 	NewStakerPool                  = types.NewStakerPool
 	NewMsgEndPool                  = types.NewMsgEndPool
 	HasMajority                    = types.HasMajority
-	GetAdminConfigKey              = types.GetAdminConfigKey
 	ModuleCdc                      = types.ModuleCdc
 	RegisterCodec                  = types.RegisterCodec
 	NewNodeAccount                 = types.NewNodeAccount
@@ -107,7 +103,6 @@ type (
 	MsgOutboundTx               = types.MsgOutboundTx
 	MsgRefundTx                 = types.MsgRefundTx
 	MsgSwap                     = types.MsgSwap
-	MsgSetAdminConfig           = types.MsgSetAdminConfig
 	MsgSetVersion               = types.MsgSetVersion
 	MsgSetNodeKeys              = types.MsgSetNodeKeys
 	MsgEndPool                  = types.MsgEndPool
@@ -139,8 +134,6 @@ type (
 	TxOutItem                   = types.TxOutItem
 	TxOut                       = types.TxOut
 	Keygens                     = types.Keygens
-	AdminConfigKey              = types.AdminConfigKey
-	AdminConfig                 = types.AdminConfig
 	StakerPoolItem              = types.StakerPoolItem
 	StakeTxDetail               = types.StakeTxDetail
 	Event                       = types.Event

@@ -31,6 +31,7 @@ const (
 	ArtificialRagnarokBlockHeight
 	MaximumStakeRune
 	StrictBondStakeRatio
+	DefaultPoolStatus
 )
 
 var nameToString = map[ConstantName]string{
@@ -57,6 +58,7 @@ var nameToString = map[ConstantName]string{
 	ArtificialRagnarokBlockHeight:   "ArtificialRagnarokBlockHeight",
 	MaximumStakeRune:                "MaximumStakeRune",
 	StrictBondStakeRatio:            "StrictBondStakeRatio",
+	DefaultPoolStatus:               "DefaultPoolStatus",
 }
 
 // String implement fmt.stringer
@@ -72,6 +74,7 @@ func (cn ConstantName) String() string {
 type ConstantValues interface {
 	GetInt64Value(name ConstantName) int64
 	GetBoolValue(name ConstantName) bool
+	GetStringValue(name ConstantName) string
 }
 
 // GetConstantValues will return an  implementation of ConstantValues which provide ways to get constant values

@@ -84,7 +84,7 @@ func (h StakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, co
 		return err.Result()
 	}
 
-	if err := h.handle(ctx, msg, version); nil != err {
+	if err := h.handle(ctx, msg, version, constAccessor); nil != err {
 		ctx.Logger().Error("fail to process msg stake", "error", err)
 		return err.Result()
 	}
@@ -95,7 +95,7 @@ func (h StakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, co
 	}
 }
 
-func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semver.Version) (errResult sdk.Error) {
+func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semver.Version, constAccessor constants.ConstantValues) (errResult sdk.Error) {
 	pool, err := h.keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to get pool: %w", err).Error())
@@ -121,6 +121,7 @@ func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semve
 		msg.RuneAddress,
 		msg.AssetAddress,
 		msg.Tx.ID,
+		constAccessor,
 	)
 	if err != nil {
 		return sdk.ErrUnknownRequest(fmt.Errorf("fail to process stake request: %w", err).Error())

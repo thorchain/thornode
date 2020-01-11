@@ -84,7 +84,6 @@ func getHandlerMapping(keeper Keeper, txOutStore TxOutStore, validatorMgr Valida
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
 	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, txOutStore)
 	m[MsgSetNodeKeys{}.Type()] = NewSetNodeKeysHandler(keeper)
-	m[MsgSetAdminConfig{}.Type()] = NewSetAdminConfigHandler(keeper)
 	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, txOutStore)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetPoolData{}.Type()] = NewPoolDataHandler(keeper)

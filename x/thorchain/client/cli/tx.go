@@ -28,7 +28,6 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 	}
 
 	thorchainTxCmd.AddCommand(client.PostCommands(
-		GetCmdSetAdminConfig(cdc),
 		GetCmdSetNodeKeys(cdc),
 		GetCmdEndPool(cdc),
 		GetCmdSetVersion(cdc),
@@ -48,27 +47,6 @@ func GetCmdSetVersion(cdc *codec.Codec) *cobra.Command {
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
 
 			msg := types.NewMsgSetVersion(constants.SWVersion, cliCtx.GetFromAddress())
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
-			return utils.GenerateOrBroadcastMsgs(cliCtx, txBldr, []sdk.Msg{msg})
-		},
-	}
-}
-
-// GetCmdSetAdminConfig command to set an admin config
-func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
-	return &cobra.Command{
-		Use:   "set-admin-config [key] [value]",
-		Short: "set admin config",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-
-			key := types.GetAdminConfigKey(args[0])
-
-			msg := types.NewMsgSetAdminConfig(common.Tx{}, key, args[1], cliCtx.GetFromAddress())
 			if err := msg.ValidateBasic(); err != nil {
 				return err
 			}

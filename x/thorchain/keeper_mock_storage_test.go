@@ -64,14 +64,6 @@ func (mps MockPoolStorage) AddToLiquidityFees(ctx sdk.Context, asset common.Asse
 	return nil
 }
 
-func (mps MockPoolStorage) GetAdminConfigDefaultPoolStatus(ctx sdk.Context, addr sdk.AccAddress) types.PoolStatus {
-	return types.Bootstrap
-}
-
-func (mps MockPoolStorage) GetAdminConfigValue(ctx sdk.Context, key types.AdminConfigKey, addr sdk.AccAddress) (string, error) {
-	return "FOOBAR", nil
-}
-
 func (mps MockPoolStorage) GetLowestActiveVersion(ctx sdk.Context) semver.Version {
 	return semver.MustParse("0.1.0")
 }
