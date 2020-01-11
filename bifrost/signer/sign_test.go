@@ -21,9 +21,6 @@ type TestBinance struct {
 	baseAccount types.BaseAccount
 }
 
-func (b *TestBinance) BroadcastTx(hexTx []byte) error {
-	return nil
-}
 func (b *TestBinance) GetAddress(poolPubKey common.PubKey) string {
 	return "0dd3d0a4a6eacc98cc4894791702e46c270bde76"
 }
@@ -33,8 +30,8 @@ func (b *TestBinance) GetAccount(addr types.AccAddress) (types.BaseAccount, erro
 func (b *TestBinance) GetPubKey() crypto.PubKey {
 	return nil
 }
-func (b *TestBinance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error) {
-	return nil, nil, nil
+func (b *TestBinance) SignAndBroadcastToBinanceChain(tai stypes.TxOutItem, height int64) error {
+	return nil
 }
 
 func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
