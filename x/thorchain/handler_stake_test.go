@@ -159,7 +159,7 @@ func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 		constants.MaximumStakeRune: 600_000_00000000,
 	}, map[constants.ConstantName]bool{
 		constants.StrictBondStakeRatio: true,
-	})
+	}, map[constants.ConstantName]string{})
 
 	msgSetStake := NewMsgSetStakeData(
 		tx,
@@ -236,7 +236,7 @@ func (HandlerStakeSuite) TestStakeHandlerValidation(c *C) {
 		constants.MaximumStakeRune: 600_000_00000000,
 	}, map[constants.ConstantName]bool{
 		constants.StrictBondStakeRatio: true,
-	})
+	}, map[constants.ConstantName]string{})
 
 	for _, item := range testCases {
 		stakeHandler := NewStakeHandler(k)

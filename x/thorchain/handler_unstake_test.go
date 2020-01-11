@@ -93,6 +93,8 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 			Status:       PoolEnabled,
 		},
 	}
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	// Happy path , this is a round trip , first we stake, then we unstake
 	runeAddr := GetRandomBNBAddress()
 	unit, err := stake(ctx,
@@ -102,13 +104,12 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 		sdk.NewUint(common.One*100),
 		runeAddr,
 		runeAddr,
-		GetRandomTxHash())
+		GetRandomTxHash(),
+		constAccessor)
 	c.Assert(err, IsNil)
 	c.Logf("stake unit: %d", unit)
 	// let's just unstake
 	unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy())
-	ver := semver.MustParse("0.1.0")
-	constAccessor := constants.GetConstantValues(ver)
 
 	msgUnstake := NewMsgSetUnStake(GetRandomTx(), runeAddr, sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
 	result := unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor)

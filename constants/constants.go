@@ -6,14 +6,16 @@ import (
 
 var int64Overrides = map[ConstantName]int64{}
 var boolOverrides = map[ConstantName]bool{}
+var stringOverrides = map[ConstantName]string{}
 
 // The version of this software
 var SWVersion, _ = semver.Make("0.1.0")
 
 // ConstantValue010 implement ConstantValues interface for version 0.1.0
 type ConstantValue010 struct {
-	int64values map[ConstantName]int64
-	boolValues  map[ConstantName]bool
+	int64values  map[ConstantName]int64
+	boolValues   map[ConstantName]bool
+	stringValues map[ConstantName]string
 }
 
 // NewConstantValue010 get new instance of ConstantValue010
@@ -41,7 +43,12 @@ func NewConstantValue010() *ConstantValue010 {
 		},
 		boolValues: map[ConstantName]bool{
 			StrictBondStakeRatio: false,
-		}}
+		},
+		stringValues: map[ConstantName]string{
+			DefaultPoolStatus: "Enabled",
+		},
+	}
+
 }
 
 // GetInt64Value get value in int64 type, if it doesn't exist then it will return the default value of int64, which is 0
@@ -70,4 +77,17 @@ func (cv *ConstantValue010) GetBoolValue(name ConstantName) bool {
 		return false
 	}
 	return v
+}
+
+// GetStringValue retrieve a string const value from the map
+func (cv *ConstantValue010) GetStringValue(name ConstantName) string {
+	v, ok := stringOverrides[name]
+	if ok {
+		return v
+	}
+	v, ok = cv.stringValues[name]
+	if ok {
+		return v
+	}
+	return ""
 }
