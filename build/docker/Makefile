@@ -13,6 +13,7 @@ clean:
 	@mkdir ~/.thord
 	@mkdir ~/.thornode
 	@mkdir ~/.thornode/standalone
+	@mkdir ~/.thornode/tss
 	@mkdir ~/.thornode/genesis_1
 	@mkdir ~/.thornode/genesis_2
 	@mkdir ~/.thornode/genesis_3
