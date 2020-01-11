@@ -9,7 +9,6 @@ CHAIN_RPC="${CHAIN_RPC:=127.0.0.1:26657}"
 SIGNER_NAME="${SIGNER_NAME:=thorchain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
-USE_TSS="${USE_TSS:=false}"
 TSS_SCHEME="${TSS_SCHEME:=http}"
 TSS_HOST="${TSS_HOST:=127.0.0.1}"
 TSS_PORT="${TSS_PORT:=4040}"
@@ -35,7 +34,6 @@ echo "{
     \"binance\": {
         \"rpc_host\": \"$BINANCE_HOST\"
     },
-    \"use_tss\": $USE_TSS,
     \"tss\": {
         \"scheme\": \"$TSS_SCHEME\",
         \"host\": \"$TSS_HOST\",

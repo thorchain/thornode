@@ -74,11 +74,11 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 	tssCfg := config.TSSConfiguration{
 		Scheme: "http",
 		Host:   "localhost",
-		Port:   0,
+		Port:   5555,
 	}
 	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: "",
-	}, false, tssCfg)
+	}, tssCfg)
 	c.Assert(b, IsNil)
 	c.Assert(err, NotNil)
 
@@ -92,7 +92,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 
 	b2, err2 := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: server.URL,
-	}, false, tssCfg)
+	}, tssCfg)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 }
@@ -122,11 +122,11 @@ func (s *BinancechainSuite) TestGetHeight(c *C) {
 	tssCfg := config.TSSConfiguration{
 		Scheme: "http",
 		Host:   "localhost",
-		Port:   0,
+		Port:   5555,
 	}
 	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: server.URL,
-	}, false, tssCfg)
+	}, tssCfg)
 	c.Assert(err, IsNil)
 
 	height, err := b.GetHeight()
@@ -155,14 +155,14 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	tssCfg := config.TSSConfiguration{
 		Scheme: "http",
 		Host:   "localhost",
-		Port:   0,
+		Port:   5555,
 	}
 	b2, err2 := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: server.URL,
-	}, false, tssCfg)
+	}, tssCfg)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
-	pk, err := common.NewPubKeyFromCrypto(b2.keyManager.GetPrivKey().PubKey())
+	pk, err := common.NewPubKeyFromCrypto(b2.localKeyManager.GetPrivKey().PubKey())
 	c.Assert(err, IsNil)
 	txOut := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "vault_pubkey":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coin":  { "denom": "BNB", "amount": "194765912" }  } ]}`, c)
 	txOut.TxArray[0].VaultPubKey = pk
@@ -220,12 +220,12 @@ func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
 	tssCfg := config.TSSConfiguration{
 		Scheme: "http",
 		Host:   "localhost",
-		Port:   0,
+		Port:   5555,
 	}
 
 	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: server.URL,
-	}, false, tssCfg)
+	}, tssCfg)
 	c.Assert(err, IsNil)
 	c.Assert(b, NotNil)
 	for _, item := range inputs {
