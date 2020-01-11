@@ -226,9 +226,6 @@ func (b *Binance) parseTx(fromAddr string, transfers []msg.Transfer) msg.SendMsg
 
 // GetAddress return current signer address, it will be bech32 encoded address
 func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
-	if !b.localKeyManager.Pubkey().Equals(poolPubKey) {
-		return b.tssKeyManager.GetAddr().String()
-	}
 	addr, err := poolPubKey.GetAddress(common.BNBChain)
 	if nil != err {
 		b.logger.Error().Err(err).Str("pool_pub_key", poolPubKey.String()).Msg("fail to get pool address")
@@ -237,27 +234,11 @@ func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
 	return addr.String()
 }
 
-func (b *Binance) isSignerAddressMatch(pubKey common.PubKey, signerAddr string) bool {
-	bnbAddress, err := pubKey.GetAddress(common.BNBChain)
-	if nil != err {
-		b.logger.Error().Err(err).Msg("fail to create bnb address from the pub key")
-		return false
-	}
-	b.logger.Info().Msg(bnbAddress.String())
-	return strings.EqualFold(bnbAddress.String(), signerAddr)
-}
-
 // SignTx sign the the given TxArrayItem
 func (b *Binance) signTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error) {
 	b.signLock.Lock()
 	defer b.signLock.Unlock()
-	signerAddr := b.GetAddress(tai.VaultPubKey)
 	var payload []msg.Transfer
-
-	if !b.isSignerAddressMatch(tai.VaultPubKey, signerAddr) {
-		b.logger.Info().Str("signer addr", signerAddr).Str("pool addr", tai.VaultPubKey.String()).Msg("address doesn't match ignore")
-		return nil, nil, nil
-	}
 
 	toAddr, err := types.AccAddressFromBech32(tai.ToAddress.String())
 	if nil != err {
