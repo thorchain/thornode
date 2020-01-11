@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"github.com/binance-chain/go-sdk/common/types"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
@@ -31,14 +33,18 @@ import (
 
 // Binance is a structure to sign and broadcast tx to binance chain used by signer mostly
 type Binance struct {
-	logger     zerolog.Logger
-	cfg        config.BinanceConfiguration
-	keyManager keys.KeyManager
-	RPCHost    string
-	chainID    string
-	useTSS     bool
-	IsTestNet  bool
-	client     *http.Client
+	logger             zerolog.Logger
+	cfg                config.BinanceConfiguration
+	keyManager         keys.KeyManager
+	RPCHost            string
+	chainID            string
+	useTSS             bool
+	IsTestNet          bool
+	client             *http.Client
+	accountNumber      int64
+	seqNumber          int64
+	currentBlockHeight int64
+	signLock           *sync.Mutex
 }
 
 // NewBinance create new instance of binance client
@@ -77,6 +83,7 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.BinanceConfiguration, useT
 		RPCHost:    rpcHost,
 		useTSS:     useTSS,
 		client:     &http.Client{},
+		signLock:   &sync.Mutex{},
 	}
 
 	chainID, isTestNet := bnb.CheckIsTestNet()
@@ -240,7 +247,9 @@ func (b *Binance) isSignerAddressMatch(pubKey common.PubKey, signerAddr string) 
 }
 
 // SignTx sign the the given TxArrayItem
-func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error) {
+func (b *Binance) signTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error) {
+	b.signLock.Lock()
+	defer b.signLock.Unlock()
 	signerAddr := b.GetAddress(tai.VaultPubKey)
 	var payload []msg.Transfer
 
@@ -282,19 +291,29 @@ func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string
 		b.logger.Error().Err(err).Msgf("fail to get parse address: %s", fromAddr)
 		return nil, nil, err
 	}
-
-	acc, err := b.GetAccount(address)
+	currentHeight, err := b.GetHeight()
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "fail to get account info")
+		b.logger.Error().Err(err).Msg("fail to get current binance block height")
+		return nil, nil, err
 	}
-
+	if currentHeight > b.currentBlockHeight {
+		acc, err := b.GetAccount(address)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "fail to get account info")
+		}
+		atomic.StoreInt64(&b.currentBlockHeight, currentHeight)
+		atomic.StoreInt64(&b.accountNumber, acc.AccountNumber)
+		atomic.StoreInt64(&b.seqNumber, acc.Sequence)
+	}
+	b.logger.Info().Int64("account_number", b.accountNumber).
+		Int64("sequence_number", b.seqNumber).Msg("account info")
 	signMsg := tx.StdSignMsg{
 		ChainID:       b.chainID,
 		Memo:          tai.Memo,
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        tx.Source,
-		Sequence:      acc.Sequence,
-		AccountNumber: acc.AccountNumber,
+		Sequence:      b.seqNumber,
+		AccountNumber: b.accountNumber,
 	}
 	param := map[string]string{
 		"sync": "true",
@@ -307,6 +326,7 @@ func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string
 	if len(rawBz) == 0 {
 		return nil, nil, nil
 	}
+
 	hexTx := []byte(hex.EncodeToString(rawBz))
 	return hexTx, param, nil
 }
@@ -403,8 +423,8 @@ func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 	return acc.BaseAccount, err
 }
 
-// BroadcastTx is to broadcast the tx to binance chain
-func (b *Binance) BroadcastTx(hexTx []byte) error {
+// broadcastTx is to broadcast the tx to binance chain
+func (b *Binance) broadcastTx(hexTx []byte) error {
 	u, err := url.Parse(b.RPCHost)
 	if err != nil {
 		log.Error().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
@@ -431,10 +451,27 @@ func (b *Binance) BroadcastTx(hexTx []byte) error {
 		log.Info().Msg(string(result))
 		return fmt.Errorf("fail to broadcast tx to binance:(%s)", b.RPCHost)
 	}
+
 	return nil
 }
 
 // GetPubKey return the pub key
 func (b *Binance) GetPubKey() crypto.PubKey {
 	return b.keyManager.GetPrivKey().PubKey()
+}
+
+func (b *Binance) SignAndBroadcastToBinanceChain(tai stypes.TxOutItem, height int64) error {
+	hexTx, _, err := b.signTx(tai, height)
+	if err != nil {
+		return fmt.Errorf("fail to sign txout:%w", err)
+	}
+	if nil == hexTx {
+		b.logger.Info().Msg("nothing need to be send")
+		return nil
+	}
+	if err := b.broadcastTx(hexTx); nil != err {
+		return fmt.Errorf("fail to broadcast to binance chain: %w", err)
+	}
+	atomic.AddInt64(&b.seqNumber, 1)
+	return nil
 }
