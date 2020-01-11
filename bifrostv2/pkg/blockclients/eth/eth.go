@@ -104,3 +104,11 @@ func (c *Client) processBlock(block *etypes.Block) types.Block {
 	// TODO extract tx data
 	return b
 }
+
+func (c *Client) BroadcastTx() error {
+	return nil
+}
+
+func (c *Client) SignTx() error {
+	return nil
+}

@@ -10,7 +10,6 @@ import (
 	bmsg "github.com/binance-chain/go-sdk/types/msg"
 	"github.com/cenkalti/backoff"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/openlyinc/pointy"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -66,7 +65,7 @@ func setNetwork(cfg config.ChainConfigurations) btypes.ChainNetwork {
 }
 
 func (c *Client) getBlock(blockHeight int64) (*ctypes.ResultBlock, error) {
-	return c.client.Block(pointy.Int64(int64(blockHeight)))
+	return c.client.Block(&blockHeight)
 }
 
 func (c *Client) Start(blockInChan chan<- types.Block, fnStartHeight types.FnLastScannedBlockHeight) error {
@@ -199,4 +198,12 @@ func (c *Client) getCoinsForTxIn(outputs []bmsg.Output) (common.Coins, error) {
 		}
 	}
 	return cc, nil
+}
+
+func (c *Client) BroadcastTx() error {
+	return nil
+}
+
+func (c *Client) SignTx() error {
+	return nil
 }

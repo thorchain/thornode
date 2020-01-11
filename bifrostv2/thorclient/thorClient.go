@@ -140,7 +140,7 @@ func (c *Client) GetLastObservedInHeight(chain common.Chain) (int64, error) {
 	return lastblock.LastChainHeight, nil
 }
 
-// GetLastSignedOutheight returns the lastsignedout value for the chain past in
+// GetLastSignedOutHeight returns the lastsignedout value for the chain past in
 func (c *Client) GetLastSignedOutHeight(chain common.Chain) (int64, error) {
 	lastblock, err := c.getLastBlock(chain)
 	if err != nil {

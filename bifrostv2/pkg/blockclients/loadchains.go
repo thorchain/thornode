@@ -1,4 +1,4 @@
-package txblockscanner
+package blockclients
 
 import (
 	"github.com/rs/zerolog/log"
@@ -9,10 +9,11 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/pkg/blockclients/eth"
 )
 
-func loadChains(cfg config.TxScannerConfigurations) []BlockChainClients {
-	var chains []BlockChainClients
+// LoadChains returns block chain clients from chain configurations
+func LoadChains(cfgChains []config.ChainConfigurations) []BlockChainClient {
+	var chains []BlockChainClient
 
-	for _, chain := range cfg.BlockChains {
+	for _, chain := range cfgChains {
 		if chain.Name == "bnb" && chain.Enabled {
 			bnb := loadBnbClient(chain)
 			if bnb != nil {
@@ -37,7 +38,7 @@ func loadChains(cfg config.TxScannerConfigurations) []BlockChainClients {
 	return chains
 }
 
-func loadBtcClient(cfg config.ChainConfigurations) BlockChainClients {
+func loadBtcClient(cfg config.ChainConfigurations) BlockChainClient {
 	btcClient, err := btc.NewClient(cfg)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to load btcClient")
@@ -47,7 +48,7 @@ func loadBtcClient(cfg config.ChainConfigurations) BlockChainClients {
 	return btcClient
 }
 
-func loadBnbClient(cfg config.ChainConfigurations) BlockChainClients {
+func loadBnbClient(cfg config.ChainConfigurations) BlockChainClient {
 	bnbClient, err := bnb.NewClient(cfg)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to load bnbClient")
@@ -57,7 +58,7 @@ func loadBnbClient(cfg config.ChainConfigurations) BlockChainClients {
 	return bnbClient
 }
 
-func loadEthClient(cfg config.ChainConfigurations) BlockChainClients {
+func loadEthClient(cfg config.ChainConfigurations) BlockChainClient {
 	ethClient, err := eth.NewClient(cfg)
 	if err != nil {
 		log.Error().Err(err).Msg("failed to load ethClient")
