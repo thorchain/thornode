@@ -17,7 +17,6 @@ type Configuration struct {
 	Thorchain ThorchainConfiguration `json:"thorchain" mapstructure:"thorchain"`
 	Metric    MetricConfiguration    `json:"metric" mapstructure:"metric"`
 	Binance   BinanceConfiguration   `json:"binance" mapstructure:"binance"`
-	UseTSS    bool                   `json:"use_tss" mapstructure:"use_tss"`
 	TSS       TSSConfiguration       `json:"tss" mapstructure:"tss"`
 }
 

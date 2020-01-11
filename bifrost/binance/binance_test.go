@@ -74,11 +74,11 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 	tssCfg := config.TSSConfiguration{
 		Scheme: "http",
 		Host:   "localhost",
-		Port:   0,
+		Port:   5555,
 	}
 	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: "",
-	}, false, tssCfg)
+	}, tssCfg)
 	c.Assert(b, IsNil)
 	c.Assert(err, NotNil)
 
@@ -92,7 +92,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 
 	b2, err2 := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: server.URL,
-	}, false, tssCfg)
+	}, tssCfg)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 }
@@ -122,11 +122,11 @@ func (s *BinancechainSuite) TestGetHeight(c *C) {
 	tssCfg := config.TSSConfiguration{
 		Scheme: "http",
 		Host:   "localhost",
-		Port:   0,
+		Port:   5555,
 	}
 	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: server.URL,
-	}, false, tssCfg)
+	}, tssCfg)
 	c.Assert(err, IsNil)
 
 	height, err := b.GetHeight()
@@ -155,14 +155,14 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	tssCfg := config.TSSConfiguration{
 		Scheme: "http",
 		Host:   "localhost",
-		Port:   0,
+		Port:   5555,
 	}
 	b2, err2 := NewBinance(s.thorKeys, config.BinanceConfiguration{
 		RPCHost: server.URL,
-	}, false, tssCfg)
+	}, tssCfg)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
-	pk, err := common.NewPubKeyFromCrypto(b2.keyManager.GetPrivKey().PubKey())
+	pk, err := common.NewPubKeyFromCrypto(b2.localKeyManager.GetPrivKey().PubKey())
 	c.Assert(err, IsNil)
 	txOut := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "vault_pubkey":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coin":  { "denom": "BNB", "amount": "194765912" }  } ]}`, c)
 	txOut.TxArray[0].VaultPubKey = pk
@@ -181,55 +181,4 @@ func getTxOutFromJsonInput(input string, c *C) types.TxOut {
 	err := json.Unmarshal([]byte(input), &txOut)
 	c.Check(err, IsNil)
 	return txOut
-}
-
-func (s *BinancechainSuite) TestBinance_isSignerAddressMatch(c *C) {
-	env := os.Getenv("NET")
-	if len(env) > 0 {
-		c.Assert(os.Setenv("NET", "PROD"), IsNil)
-		defer func() {
-			c.Assert(os.Setenv("NET", env), IsNil)
-		}()
-	}
-
-	inputs := []struct {
-		poolAddr   common.PubKey
-		signerAddr string
-		match      bool
-	}{
-		{
-			poolAddr:   common.PubKey("thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy"),
-			signerAddr: "blabab",
-			match:      false,
-		},
-		{
-			poolAddr:   common.PubKey("thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy"),
-			signerAddr: "bnb1fds7yhw7qt9rkxw9pn65jyj004x858nymnqwd8",
-			match:      true,
-		},
-	}
-
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		c.Logf("requestUri:%s", req.RequestURI)
-		if req.RequestURI == "/status" {
-			if _, err := rw.Write([]byte(status)); nil != err {
-				c.Error(err)
-			}
-		}
-	}))
-	tssCfg := config.TSSConfiguration{
-		Scheme: "http",
-		Host:   "localhost",
-		Port:   0,
-	}
-
-	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
-		RPCHost: server.URL,
-	}, false, tssCfg)
-	c.Assert(err, IsNil)
-	c.Assert(b, NotNil)
-	for _, item := range inputs {
-		result := b.isSignerAddressMatch(item.poolAddr, item.signerAddr)
-		c.Assert(result, Equals, item.match)
-	}
 }
