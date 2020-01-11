@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
+	"gitlab.com/thorchain/thornode/bifrostv2/pkg/blockclients"
 	"gitlab.com/thorchain/thornode/bifrostv2/thorclient"
 	"gitlab.com/thorchain/thornode/bifrostv2/txblockscanner/types"
 	"gitlab.com/thorchain/thornode/bifrostv2/vaultmanager"
@@ -17,16 +18,11 @@ type TxBlockScanner struct {
 	logger      zerolog.Logger
 	stopChan    chan struct{}
 	thorClient  *thorclient.Client
-	chains      []BlockChainClients
+	chains      []blockclients.BlockChainClient
 	wg          sync.WaitGroup
 	closeOnce   sync.Once
 	vaultMgr    *vaultmanager.VaultManager
 	blockInChan chan types.Block
-}
-
-type BlockChainClients interface {
-	Start(txInChan chan<- types.Block, startHeight types.FnLastScannedBlockHeight) error
-	Stop() error
 }
 
 func NewTxBlockScanner(cfg config.TxScannerConfigurations, vaultMgr *vaultmanager.VaultManager, thorClient *thorclient.Client) *TxBlockScanner {
@@ -36,7 +32,7 @@ func NewTxBlockScanner(cfg config.TxScannerConfigurations, vaultMgr *vaultmanage
 		stopChan:    make(chan struct{}),
 		thorClient:  thorClient,
 		wg:          sync.WaitGroup{},
-		chains:      loadChains(cfg),
+		chains:      blockclients.LoadChains(cfg.BlockChains),
 		vaultMgr:    vaultMgr,
 		blockInChan: make(chan types.Block),
 	}

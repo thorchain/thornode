@@ -91,7 +91,7 @@ func (c *Client) Stop() error {
 }
 
 func (c *Client) getBlock(blockHeight int64) (*wire.MsgBlock, error) {
-	hash, err := c.getBlockHash(int64(blockHeight))
+	hash, err := c.getBlockHash(blockHeight)
 	if err != nil {
 		return &wire.MsgBlock{}, err
 	}
@@ -114,4 +114,12 @@ func (c *Client) processBlock(block *wire.MsgBlock) types.Block {
 
 	// TODO extract Tx data
 	return b
+}
+
+func (c *Client) BroadcastTx() error {
+	return nil
+}
+
+func (c *Client) SignTx() error {
+	return nil
 }
