@@ -2,8 +2,9 @@ package thorchain
 
 import (
 	"github.com/blang/semver"
-	"gitlab.com/thorchain/thornode/constants"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type ValidatorManagerTestSuite struct{}
@@ -43,7 +44,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	// it should take both of the node as active
 	vMgr1 := NewValidatorMgr(k, txOutStore, vaultMgr)
 
-	vMgr1.BeginBlock(ctx, constAccessor)
+	c.Assert(vMgr1.BeginBlock(ctx, constAccessor), IsNil)
 	activeNodes, err := k.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
 	c.Logf("active nodes:%s", activeNodes)
@@ -61,4 +62,61 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	activeNodes1, err := k.ListActiveNodeAccounts(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(len(activeNodes1) == 4, Equals, true)
+}
+
+func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
+	ctx, k := setupKeeperForTest(c)
+	vaultMgr := NewVaultMgrDummy()
+	txOutStore := NewTxStoreDummy()
+	vMgr := NewValidatorMgr(k, txOutStore, vaultMgr)
+	c.Assert(vMgr, NotNil)
+
+	constAccessor := constants.NewDummyConstants(map[constants.ConstantName]int64{
+		constants.DesireValidatorSet:            12,
+		constants.ArtificialRagnarokBlockHeight: 1024,
+		constants.BadValidatorRate:              256,
+		constants.OldValidatorRate:              256,
+		constants.MinimumNodesForBFT:            4,
+		constants.RotatePerBlockHeight:          256,
+	}, map[constants.ConstantName]bool{
+		constants.StrictBondStakeRatio: false,
+	})
+	for i := 0; i < 12; i++ {
+		node := GetRandomNodeAccount(NodeReady)
+		c.Assert(k.SetNodeAccount(ctx, node), IsNil)
+	}
+	c.Assert(vMgr.setupValidatorNodes(ctx, 1, constAccessor), IsNil)
+	nodeAccounts, err := k.ListNodeAccountsByStatus(ctx, NodeActive)
+	c.Assert(err, IsNil)
+	c.Assert(len(nodeAccounts), Equals, 12)
+	startBlockHeight := int64(1024)
+	for i := 0; i < 8; i++ {
+		ctx = ctx.WithBlockHeight(startBlockHeight)
+		c.Assert(vMgr.BeginBlock(ctx, constAccessor), IsNil)
+		// assume keygen success
+		vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey())
+		for _, item := range vaultMgr.nas {
+			vault.Membership = append(vault.Membership, item.PubKeySet.Secp256k1)
+		}
+		c.Assert(k.SetVault(ctx, vault), IsNil)
+		updates := vMgr.EndBlock(ctx, constAccessor)
+		c.Assert(updates, NotNil)
+		c.Assert(updates, HasLen, 1)
+		startBlockHeight += 256
+		c.Assert(k.DeleteVault(ctx, vault.PubKey), IsNil)
+	}
+	// trigger ragnarok
+	ctx = ctx.WithBlockHeight(startBlockHeight)
+	c.Assert(vMgr.BeginBlock(ctx, constAccessor), IsNil)
+	vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey())
+	for _, item := range vaultMgr.nas {
+		vault.Membership = append(vault.Membership, item.PubKeySet.Secp256k1)
+	}
+	c.Assert(k.SetVault(ctx, vault), IsNil)
+	updates := vMgr.EndBlock(ctx, constAccessor)
+	// ragnarok , no one leaves
+	c.Assert(updates, IsNil)
+	ragnarokHeight, err := k.GetRagnarokBlockHeight(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(ragnarokHeight == startBlockHeight, Equals, true)
 }
