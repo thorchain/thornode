@@ -4,7 +4,7 @@ include mocknet/Makefile testnet/Makefile
 TAGS ?= mainnet
 
 build: 
-	docker build -t registry.gitlab.com/thorchain/thornode --build-arg TAGS=${TAGS} -f Dockerfile ../..
+	docker build -t registry.gitlab.com/thorchain/thornode:${TAGS} --build-arg TAGS=${TAGS} -f Dockerfile ../..
 
 clean:
 	@rm -rf /tmp/genesis
