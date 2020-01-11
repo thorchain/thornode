@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // validateStakeMessage is to do some validation, and make sure it is legit
@@ -32,7 +33,11 @@ func validateStakeMessage(ctx sdk.Context, keeper Keeper, asset common.Asset, re
 	return nil
 }
 
-func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, stakeAssetAmount sdk.Uint, runeAddr, assetAddr common.Address, requestTxHash common.TxID) (sdk.Uint, sdk.Error) {
+func stake(ctx sdk.Context, keeper Keeper,
+	asset common.Asset,
+	stakeRuneAmount, stakeAssetAmount sdk.Uint,
+	runeAddr, assetAddr common.Address,
+	requestTxHash common.TxID, constAccessor constants.ConstantValues) (sdk.Uint, sdk.Error) {
 	ctx.Logger().Info(fmt.Sprintf("%s staking %s %s", asset, stakeRuneAmount, stakeAssetAmount))
 	if err := validateStakeMessage(ctx, keeper, asset, requestTxHash, runeAddr, assetAddr); nil != err {
 		ctx.Logger().Error("stake message fail validation", "error", err)
@@ -53,8 +58,8 @@ func stake(ctx sdk.Context, keeper Keeper, asset common.Asset, stakeRuneAmount, 
 
 	// if THORNode have no balance, set the default pool status
 	if pool.BalanceAsset.IsZero() && pool.BalanceRune.IsZero() {
-		status := keeper.GetAdminConfigDefaultPoolStatus(ctx, nil)
-		pool.Status = status
+		defaultPoolStatus := constAccessor.GetStringValue(constants.DefaultPoolStatus)
+		pool.Status = GetPoolStatus(defaultPoolStatus)
 	}
 
 	ps, err := keeper.GetPoolStaker(ctx, asset)

@@ -34,7 +34,6 @@ type Keeper interface {
 	KeeperVault
 	KeeperReserveContributors
 	KeeperVaultData
-	KeeperAdminConfig
 	KeeperTss
 	KeeperKeygen
 	KeeperRagnarok
@@ -56,7 +55,6 @@ const (
 	prefixPoolLiquidityFee   dbPrefix = "pool_liquidity_fee/"
 	prefixPoolStaker         dbPrefix = "pool_staker/"
 	prefixStakerPool         dbPrefix = "staker_pool/"
-	prefixAdmin              dbPrefix = "admin/"
 	prefixEvents             dbPrefix = "events/"
 	prefixTxHashEvents       dbPrefix = "tx_events/"
 	prefixPendingEvents      dbPrefix = "pending_events/"

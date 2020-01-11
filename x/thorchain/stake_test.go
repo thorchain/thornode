@@ -1,11 +1,13 @@
 package thorchain
 
 import (
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type StakeSuite struct{}
@@ -121,8 +123,8 @@ func (StakeSuite) TestStake(c *C) {
 	assetAddress := GetRandomBNBAddress()
 	btcAddress, err := common.NewAddress("bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej")
 	c.Assert(err, IsNil)
-
-	_, err = stake(ctx, ps, common.Asset{}, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID)
+	constAccessor := constants.GetConstantValues(semver.MustParse("0.1.0"))
+	_, err = stake(ctx, ps, common.Asset{}, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, NotNil)
 	c.Assert(ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.ZeroUint(),
@@ -132,7 +134,7 @@ func (StakeSuite) TestStake(c *C) {
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	}), IsNil)
-	stakerUnit, err := stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID)
+	stakerUnit, err := stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(stakerUnit.Equal(sdk.NewUint(11250000000)), Equals, true)
 	c.Assert(err, IsNil)
 
@@ -145,12 +147,12 @@ func (StakeSuite) TestStake(c *C) {
 		Status:       PoolEnabled,
 	}), IsNil)
 	// stake asymmetically
-	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.ZeroUint(), bnbAddress, assetAddress, txID)
+	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.ZeroUint(), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, IsNil)
-	_, err = stake(ctx, ps, common.BNBAsset, sdk.ZeroUint(), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID)
+	_, err = stake(ctx, ps, common.BNBAsset, sdk.ZeroUint(), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, IsNil)
 
-	_, err = stake(ctx, ps, notExistPoolStakerAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID)
+	_, err = stake(ctx, ps, notExistPoolStakerAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, NotNil)
 	c.Assert(ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
@@ -174,10 +176,10 @@ func (StakeSuite) TestStake(c *C) {
 	}
 	skrs := makePoolStaker(150, sdk.NewUint(common.One/5000))
 	ps.SetPoolStaker(ctx, skrs)
-	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(common.One), sdk.NewUint(common.One), bnbAddress, assetAddress, txID)
+	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(common.One), sdk.NewUint(common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, IsNil)
 
-	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), notExistStakerPoolAddr, notExistStakerPoolAddr, txID)
+	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), notExistStakerPoolAddr, notExistStakerPoolAddr, txID, constAccessor)
 	c.Assert(err, NotNil)
 	c.Assert(ps.SetPool(ctx, Pool{
 		BalanceRune:  sdk.NewUint(100 * common.One),
@@ -187,7 +189,7 @@ func (StakeSuite) TestStake(c *C) {
 		PoolAddress:  bnbAddress,
 		Status:       PoolEnabled,
 	}), IsNil)
-	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID)
+	_, err = stake(ctx, ps, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, IsNil)
 	p, err := ps.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
@@ -206,11 +208,11 @@ func (StakeSuite) TestStake(c *C) {
 	}), IsNil)
 
 	// stake rune
-	stakerUnit, err = stake(ctx, ps, common.BTCAsset, sdk.NewUint(100*common.One), sdk.ZeroUint(), bnbAddress, btcAddress, txID)
+	stakerUnit, err = stake(ctx, ps, common.BTCAsset, sdk.NewUint(100*common.One), sdk.ZeroUint(), bnbAddress, btcAddress, txID, constAccessor)
 	c.Assert(err, IsNil)
 	c.Check(stakerUnit.IsZero(), Equals, true)
 	// stake btc
-	stakerUnit, err = stake(ctx, ps, common.BTCAsset, sdk.ZeroUint(), sdk.NewUint(100*common.One), bnbAddress, btcAddress, txID)
+	stakerUnit, err = stake(ctx, ps, common.BTCAsset, sdk.ZeroUint(), sdk.NewUint(100*common.One), bnbAddress, btcAddress, txID, constAccessor)
 	c.Assert(err, IsNil)
 	c.Check(stakerUnit.IsZero(), Equals, false)
 	p, err = ps.GetPool(ctx, common.BTCAsset)
