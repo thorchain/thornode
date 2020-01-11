@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/tendermint/tendermint/crypto/secp256k1"
+	"gitlab.com/thorchain/thornode/common"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
@@ -18,7 +19,12 @@ import (
 type keyManager struct {
 	privKey  crypto.PrivKey
 	addr     ctypes.AccAddress
+	pubkey   common.PubKey
 	mnemonic string
+}
+
+func (m *keyManager) Pubkey() common.PubKey {
+	return m.pubkey
 }
 
 func (m *keyManager) ExportAsMnemonic() (string, error) {

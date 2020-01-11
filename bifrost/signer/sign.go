@@ -13,7 +13,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/tendermint/tendermint/crypto"
 
 	"gitlab.com/thorchain/thornode/bifrost/binance"
 	"gitlab.com/thorchain/thornode/bifrost/config"
@@ -30,7 +29,6 @@ import (
 type Binance interface {
 	GetAccount(addr stypes.AccAddress) (stypes.BaseAccount, error)
 	GetAddress(poolPubKey common.PubKey) string
-	GetPubKey() crypto.PubKey
 	SignAndBroadcastToBinanceChain(tai types.TxOutItem, height int64) error
 }
 
@@ -52,7 +50,7 @@ type Signer struct {
 }
 
 // NewSigner create a new instance of signer
-func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, useTSS bool, tssCfg config.TSSConfiguration, bnb *binance.Binance, m *metrics.Metrics) (*Signer, error) {
+func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, tssCfg config.TSSConfiguration, bnb *binance.Binance, m *metrics.Metrics) (*Signer, error) {
 	thorchainScanStorage, err := NewThorchainBlockScannerStorage(cfg.SignerDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
@@ -102,13 +100,11 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 		thorchainBridge:       thorchainBridge,
 	}
 
-	if useTSS {
-		kg, err := tss.NewTssKeyGen(tssCfg, thorKeys)
-		if nil != err {
-			return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
-		}
-		signer.tssKeygen = kg
+	kg, err := tss.NewTssKeyGen(tssCfg, thorKeys)
+	if nil != err {
+		return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
 	}
+	signer.tssKeygen = kg
 	return signer, nil
 }
 

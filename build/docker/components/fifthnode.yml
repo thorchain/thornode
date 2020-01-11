@@ -13,7 +13,6 @@ services:
       CHAIN_API: 172.32.40.36:1317
       CHAIN_RPC: 172.32.10.26:26657
       BINANCE_HOST: ${BINANCE_HOST:-http://172.32.90.1:26660}
-      USE_TSS: "true"
       TSS_HOST: 172.32.10.6
       TSS_PORT: 4044
     entrypoint:
