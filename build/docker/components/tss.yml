@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  tss:
+    hostname: tss
+    image: registry.gitlab.com/thorchain/tss/go-tss
+    restart: unless-stopped
+    environment:
+      NET: testnet
+      SEEDHTTPPORT: 4040
+      SEEDP2PPORT: 5040
+      TSSHTTPPORT: 4040
+      TSSP2PPORT: 5040
+      PRIVKEY: /root/.tss/private.key
+    entrypoint:
+      /docker/scripts/tss.sh
+    volumes:
+      - "../../scripts:/docker/scripts"
+      - ${HOME}/.thornode/tss/.tss:/root/.tss
