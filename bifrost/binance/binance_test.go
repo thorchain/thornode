@@ -145,8 +145,11 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 			if _, err := rw.Write([]byte(status)); nil != err {
 				c.Error(err)
 			}
+		} else if req.RequestURI == "/abci_info" {
+			_, err := rw.Write([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "response": { "data": "BNBChain", "last_block_height": "123456789", "last_block_app_hash": "pwx4TJjXu3yaF6dNfLQ9F4nwAhjIqmzE8fNa+RXwAzQ=" } } }`))
+			c.Assert(err, IsNil)
 		} else {
-			// c.Error(fmt.Errorf("no server path"))
+
 		}
 	}))
 	tssCfg := config.TSSConfiguration{
@@ -164,12 +167,12 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	txOut := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "vault_pubkey":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coin":  { "denom": "BNB", "amount": "194765912" }  } ]}`, c)
 	txOut.TxArray[0].VaultPubKey = pk
 	out := txOut.TxArray[0].TxOutItem()
-	r, p, err := b2.SignTx(out, 1440)
+	r, p, err := b2.signTx(out, 1440)
 	c.Assert(err, IsNil)
 	c.Assert(r, NotNil)
 	c.Assert(p, NotNil)
 
-	err = b2.BroadcastTx(r)
+	err = b2.broadcastTx(r)
 	c.Assert(err, IsNil)
 }
 

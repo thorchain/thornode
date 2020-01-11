@@ -28,11 +28,10 @@ import (
 
 // Binance interface
 type Binance interface {
-	BroadcastTx(hexTx []byte) error
 	GetAccount(addr stypes.AccAddress) (stypes.BaseAccount, error)
 	GetAddress(poolPubKey common.PubKey) string
 	GetPubKey() crypto.PubKey
-	SignTx(tai types.TxOutItem, height int64) ([]byte, map[string]string, error)
+	SignAndBroadcastToBinanceChain(tai types.TxOutItem, height int64) error
 }
 
 // Signer will pull the tx out from thorchain and then forward it to binance chain
@@ -383,28 +382,15 @@ func (s *Signer) signAndSendToBinanceChain(tai types.TxOutItem, height int64) er
 		s.logger.Info().Str("OutHash", tai.OutHash.String()).Msg("tx had been sent out before")
 		return nil
 	}
-	strHeight := strconv.FormatInt(height, 10)
-	hexTx, _, err := s.Binance.SignTx(tai, height)
-	if nil != err {
-		s.errCounter.WithLabelValues("fail_sign_txout", strHeight).Inc()
-		s.logger.Error().Err(err).Msg("fail to sign txOut")
-	}
-	if nil == hexTx {
-		s.logger.Error().Msg("nothing need to be send")
-		// nothing need to be send
-		return nil
-	}
-	s.m.GetCounter(metrics.TxToBinanceSigned).Inc()
-	log.Info().Msgf("Generated a signature for Binance: %s", string(hexTx))
-	err = s.Binance.BroadcastTx(hexTx)
-	if nil != err {
-		s.errCounter.WithLabelValues("fail_broadcast_txout", strHeight).Inc()
+	if err := s.Binance.SignAndBroadcastToBinanceChain(tai, height); nil != err {
 		s.logger.Error().Err(err).Msg("fail to broadcast a tx to binance chain")
-		return errors.Wrap(err, "fail to broadcast a tx to binance chain")
+		return err
 	}
+
 	s.logger.Debug().
 		Msg("signed and send to binance chain successfully")
 	s.m.GetCounter(metrics.TxToBinanceSignedBroadcast).Inc()
+
 	return nil
 }
 
