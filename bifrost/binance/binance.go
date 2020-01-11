@@ -22,7 +22,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/tendermint/tendermint/crypto"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
@@ -35,40 +34,42 @@ import (
 type Binance struct {
 	logger             zerolog.Logger
 	cfg                config.BinanceConfiguration
-	keyManager         keys.KeyManager
 	RPCHost            string
 	chainID            string
-	useTSS             bool
 	IsTestNet          bool
 	client             *http.Client
 	accountNumber      int64
 	seqNumber          int64
 	currentBlockHeight int64
 	signLock           *sync.Mutex
+	tssKeyManager      keys.KeyManager
+	localKeyManager    *keyManager
 }
 
 // NewBinance create new instance of binance client
-func NewBinance(thorKeys *thorclient.Keys, cfg config.BinanceConfiguration, useTSS bool, keySignCfg config.TSSConfiguration) (*Binance, error) {
+func NewBinance(thorKeys *thorclient.Keys, cfg config.BinanceConfiguration, keySignCfg config.TSSConfiguration) (*Binance, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
-	var km keys.KeyManager
-	var err error
-	if useTSS {
-		km, err = tss.NewKeySign(keySignCfg)
-		if nil != err {
-			return nil, errors.Wrap(err, "fail to create tss signer")
-		}
-	} else {
-		priv, err := thorKeys.GetPrivateKey()
-		if err != nil {
-			return nil, errors.Wrap(err, "fail to get private key")
-		}
+	tssKm, err := tss.NewKeySign(keySignCfg)
+	if nil != err {
+		return nil, errors.Wrap(err, "fail to create tss signer")
+	}
 
-		km = &keyManager{
-			privKey: priv,
-			addr:    ctypes.AccAddress(priv.PubKey().Address()),
-		}
+	priv, err := thorKeys.GetPrivateKey()
+	if err != nil {
+		return nil, errors.Wrap(err, "fail to get private key")
+	}
+
+	pk, err := common.NewPubKeyFromCrypto(priv.PubKey())
+	if err != nil {
+		return nil, errors.Wrap(err, "fail to get pub key")
+	}
+
+	localKm := &keyManager{
+		privKey: priv,
+		addr:    ctypes.AccAddress(priv.PubKey().Address()),
+		pubkey:  pk,
 	}
 
 	rpcHost := cfg.RPCHost
@@ -77,13 +78,13 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.BinanceConfiguration, useT
 	}
 
 	bnb := &Binance{
-		logger:     log.With().Str("module", "binance").Logger(),
-		cfg:        cfg,
-		keyManager: km,
-		RPCHost:    rpcHost,
-		useTSS:     useTSS,
-		client:     &http.Client{},
-		signLock:   &sync.Mutex{},
+		logger:          log.With().Str("module", "binance").Logger(),
+		cfg:             cfg,
+		RPCHost:         rpcHost,
+		client:          &http.Client{},
+		signLock:        &sync.Mutex{},
+		tssKeyManager:   tssKm,
+		localKeyManager: localKm,
 	}
 
 	chainID, isTestNet := bnb.CheckIsTestNet()
@@ -225,8 +226,8 @@ func (b *Binance) parseTx(fromAddr string, transfers []msg.Transfer) msg.SendMsg
 
 // GetAddress return current signer address, it will be bech32 encoded address
 func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
-	if !b.useTSS {
-		return b.keyManager.GetAddr().String()
+	if !b.localKeyManager.Pubkey().Equals(poolPubKey) {
+		return b.tssKeyManager.GetAddr().String()
 	}
 	addr, err := poolPubKey.GetAddress(common.BNBChain)
 	if nil != err {
@@ -332,11 +333,11 @@ func (b *Binance) signTx(tai stypes.TxOutItem, height int64) ([]byte, map[string
 }
 
 func (b *Binance) sign(signMsg tx.StdSignMsg, poolPubKey common.PubKey) ([]byte, error) {
-	if b.useTSS {
-		k := b.keyManager.(tss.ThorchainKeyManager)
-		return k.SignWithPool(signMsg, poolPubKey)
+	if b.localKeyManager.Pubkey().Equals(poolPubKey) {
+		return b.localKeyManager.Sign(signMsg)
 	}
-	return b.keyManager.Sign(signMsg)
+	k := b.tssKeyManager.(tss.ThorchainKeyManager)
+	return k.SignWithPool(signMsg, poolPubKey)
 }
 
 // signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
@@ -453,11 +454,6 @@ func (b *Binance) broadcastTx(hexTx []byte) error {
 	}
 
 	return nil
-}
-
-// GetPubKey return the pub key
-func (b *Binance) GetPubKey() crypto.PubKey {
-	return b.keyManager.GetPrivKey().PubKey()
 }
 
 func (b *Binance) SignAndBroadcastToBinanceChain(tai stypes.TxOutItem, height int64) error {
