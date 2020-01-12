@@ -3,7 +3,6 @@ version: '3'
 services:
   tss:
     hostname: tss
-    network_mode: "host"
     image: registry.gitlab.com/thorchain/tss/go-tss
     restart: unless-stopped
     environment:

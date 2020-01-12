@@ -3,4 +3,4 @@ version: '3'
 services:
   bifrost:
     environment:
-      BINANCE_HOST: http://localhost:26660
+      BINANCE_HOST: http://binance:26660
