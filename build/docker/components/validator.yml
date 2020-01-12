@@ -3,6 +3,7 @@ version: '3'
 services:
   bifrost:
     hostname: bifrost
+    network_mode: "host"
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -12,10 +13,10 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_API: 172.52.20.2:1317
-      CHAIN_RPC: 172.52.10.2:26657
-      BINANCE_HOST: ${BINANCE_HOST:-http://172.52.50.2:26660}
-      TSS_HOST: 172.52.70.2
+      CHAIN_API: localhost:1317
+      CHAIN_RPC: localhost:26657
+      BINANCE_HOST: ${BINANCE_HOST:-http://localhost:26660}
+      TSS_HOST: localhost
     entrypoint:
       /docker/scripts/bifrost.sh
     depends_on:
@@ -26,12 +27,10 @@ services:
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
     command: ["bifrost", "-c", "/etc/bifrost/config.json"]
-    networks:
-      validatornet:
-        ipv4_address: 172.52.30.2
 
   thor-daemon:
     hostname: thor-daemon
+    network_mode: "host"
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -59,12 +58,10 @@ services:
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/validator/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
-    networks:
-      validatornet:
-        ipv4_address: 172.52.10.2
 
   thor-api:
     hostname: thor-api
+    network_mode: "host"
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -76,7 +73,7 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_DAEMON: 172.52.10.2:26657
+      CHAIN_DAEMON: localhost:26657
     ports:
       - "1317:1317"
     expose:
@@ -87,13 +84,11 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
-    command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://172.52.10.2:26657"]
-    networks:
-      validatornet:
-        ipv4_address: 172.52.20.2
+    command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://localhost:26657"]
 
   tss:
     hostname: tss
+    network_mode: "host"
     image: registry.gitlab.com/thorchain/tss/go-tss
     restart: unless-stopped
     environment:
@@ -113,18 +108,3 @@ services:
     volumes:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/validator/.tss:/root/.tss
-    networks:
-      validatornet:
-        ipv4_address: 172.52.70.2
-
-networks:
-  validatornet:
-    driver_opts:
-      com.docker.network.driver.mtu: 1500
-      com.docker.network.bridge.enable_icc: "true"
-      com.docker.network.bridge.enable_ip_masquerade: "true"
-      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.52.10.0/16
