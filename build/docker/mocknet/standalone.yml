@@ -2,7 +2,5 @@ version: '3'
 
 services:
   bifrost:
-    links:
-      - binance
     environment:
       BINANCE_HOST: http://binance:26660

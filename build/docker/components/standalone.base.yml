@@ -18,10 +18,6 @@ services:
       TSS_HOST: tss
     entrypoint:
       /docker/scripts/bifrost.sh
-    depends_on:
-      - thor-api
-    links:
-      - thor-api
     volumes:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
@@ -62,10 +58,6 @@ services:
       dockerfile: ./build/docker/Dockerfile
       args:
         TAGS: ${TAG:-mainnet}
-    depends_on:
-      - thor-daemon
-    links:
-      - thor-daemon
     image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
     environment:
       CHAIN_DAEMON: thor-daemon:26657
