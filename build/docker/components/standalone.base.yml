@@ -16,7 +16,7 @@ services:
       CHAIN_API: localhost:1317
       CHAIN_RPC: localhost:26657
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
-      TSS_HOST: tss
+      TSS_HOST: localhost
     entrypoint:
       /docker/scripts/bifrost.sh
     volumes:
