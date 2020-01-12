@@ -57,8 +57,9 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.Cons
 	if err != nil {
 		return err
 	}
+
 	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
-	if minimumNodesForBFT < int64(totalActiveNodes) ||
+	if minimumNodesForBFT+2 < int64(totalActiveNodes) ||
 		(artificialRagnarokBlockHeight > 0 && ctx.BlockHeight() >= artificialRagnarokBlockHeight) {
 		badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
 		if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
@@ -119,7 +120,7 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 
 	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
 	nodesAfterChange := len(activeNodes) + len(newNodes) - len(removedNodes)
-	if height > 1 && nodesAfterChange < int(minimumNodesForBFT) {
+	if len(activeNodes) >= int(minimumNodesForBFT) && nodesAfterChange < int(minimumNodesForBFT) {
 		// THORNode don't have enough validators for BFT
 		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
 			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)

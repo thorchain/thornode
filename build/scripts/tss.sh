@@ -8,7 +8,7 @@ while [ ! -f $PRIVKEY ]; do
 done
 
 if [ ! -z ${SEED+x} ]; then
-    while ! nc -z $SEED $SEEDHTTPPORT; do
+    while ! nc -z $SEED $SEEDP2PPORT; do
         sleep 1
     done
 
