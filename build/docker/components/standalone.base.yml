@@ -3,6 +3,7 @@ version: '3'
 services:
   bifrost:
     hostname: bifrost
+    network_mode: "host"
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -12,16 +13,12 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      CHAIN_API: thor-api:1317
-      CHAIN_RPC: thor-daemon:26657
+      CHAIN_API: localhost:1317
+      CHAIN_RPC: localhost:26657
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
       TSS_HOST: tss
     entrypoint:
       /docker/scripts/bifrost.sh
-    depends_on:
-      - thor-api
-    links:
-      - thor-api
     volumes:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
@@ -30,6 +27,7 @@ services:
 
   thor-daemon:
     hostname: thor-daemon
+    network_mode: "host"
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -57,18 +55,15 @@ services:
 
   thor-api:
     hostname: thor-api
+    network_mode: "host"
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
       args:
         TAGS: ${TAG:-mainnet}
-    depends_on:
-      - thor-daemon
-    links:
-      - thor-daemon
     image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
     environment:
-      CHAIN_DAEMON: thor-daemon:26657
+      CHAIN_DAEMON: localhost:26657
       NET: ${NET}
     ports:
       - "1317:1317"
