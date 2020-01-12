@@ -2,6 +2,7 @@ version: '3'
 
 services:
   binance:
+    network_mode: "host"
     hostname: mock-binance
     image: registry.gitlab.com/thorchain/bepswap/mock-binance
     ports:

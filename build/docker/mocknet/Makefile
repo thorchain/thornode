@@ -3,7 +3,7 @@ path := $(dir $(mkfile_path))
 TAG ?= sandbox
 
 run-mocknet-standalone: 
-	TAG=${TAG} NET=mocknet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/tss.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/standalone.yml up --force-recreate --remove-orphans -d
+	TAG=${TAG} NET=mocknet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/tss.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/standalone.yml up --force-recreate --remove-orphans -d
 
 reset-mocknet-standalone: stop clean run-mocknet-standalone
 
