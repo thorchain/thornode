@@ -53,7 +53,3 @@ RUN adduser -Ds /bin/sh www-data -G www-data
 # TODO Move away from needing nginx
 # Setup Nginx.
 ADD etc/nginx/nginx.conf /etc/nginx/
-
-EXPOSE 9000
-EXPOSE 1317
-EXPOSE 81
