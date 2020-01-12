@@ -1,8 +1,10 @@
 include mocknet/Makefile testnet/Makefile
 .PHONY: build 
 
+TAGS ?= mainnet
+
 build: 
-	docker build -t registry.gitlab.com/thorchain/thornode -f Dockerfile ../..
+	docker build -t registry.gitlab.com/thorchain/thornode:${TAGS} --build-arg TAGS=${TAGS} -f Dockerfile ../..
 
 clean:
 	@rm -rf /tmp/genesis
@@ -13,6 +15,7 @@ clean:
 	@mkdir ~/.thord
 	@mkdir ~/.thornode
 	@mkdir ~/.thornode/standalone
+	@mkdir ~/.thornode/tss
 	@mkdir ~/.thornode/genesis_1
 	@mkdir ~/.thornode/genesis_2
 	@mkdir ~/.thornode/genesis_3
