@@ -80,7 +80,7 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 		constants.RotatePerBlockHeight:          256,
 	}, map[constants.ConstantName]bool{
 		constants.StrictBondStakeRatio: false,
-	})
+	}, map[constants.ConstantName]string{})
 	for i := 0; i < 12; i++ {
 		node := GetRandomNodeAccount(NodeReady)
 		c.Assert(k.SetNodeAccount(ctx, node), IsNil)

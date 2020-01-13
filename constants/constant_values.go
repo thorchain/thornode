@@ -1,6 +1,8 @@
 package constants
 
 import (
+	"fmt"
+
 	"github.com/blang/semver"
 )
 
@@ -72,6 +74,7 @@ func (cn ConstantName) String() string {
 
 // ConstantValues define methods used to get constant values
 type ConstantValues interface {
+	fmt.Stringer
 	GetInt64Value(name ConstantName) int64
 	GetBoolValue(name ConstantName) bool
 	GetStringValue(name ConstantName) string

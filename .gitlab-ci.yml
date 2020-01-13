@@ -37,6 +37,7 @@ integration:test:
   stage: test
   variables:
     NET: "testnet"
+    TAGS: "testnet"
   script:
     - make -C ./test/integration install setup run wait-for-blockchain test-internal
 
@@ -67,6 +68,7 @@ smoke-test:thornode:
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
+    TAG: "testnet"
   artifacts:
     when: on_failure
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"
@@ -78,7 +80,7 @@ smoke-test:thornode:
     - schedules
   environment:
     name: integration
-  script: 
+  script:
     - make tools smoke-ci-standalone
   after_script:
     - ./scripts/docker_logs.sh
@@ -91,12 +93,12 @@ deploy:
   services:
     - docker:dind
   variables:
-      DOCKER_HOST: tcp://docker:2375
-      DOCKER_DRIVER: overlay2
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
   before_script:
-  - apk add python py-pip make bash curl python-dev libffi-dev openssl-dev gcc libc-dev
-  - pip install awscli docker-compose
-  - make aws-ci-login
+    - apk add python py-pip make bash curl python-dev libffi-dev openssl-dev gcc libc-dev
+    - pip install awscli docker-compose
+    - make aws-ci-login
   script:
-  - cd $CI_PROJECT_DIR/build/docker
-  - bash docker_server.sh ci
+    - cd $CI_PROJECT_DIR/build/docker
+    - bash docker_server.sh ci
