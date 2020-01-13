@@ -9,7 +9,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/pkg/blockclients"
 	"gitlab.com/thorchain/thornode/bifrostv2/thorclient"
-	"gitlab.com/thorchain/thornode/bifrostv2/txblockscanner/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/types"
 	"gitlab.com/thorchain/thornode/bifrostv2/vaultmanager"
 )
 

@@ -1,6 +1,6 @@
 package blockclients
 
-import "gitlab.com/thorchain/thornode/bifrostv2/txblockscanner/types"
+import "gitlab.com/thorchain/thornode/bifrostv2/types"
 
 // BlockChainClient is the interface that wraps basic chain client methods
 //
