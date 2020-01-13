@@ -58,6 +58,8 @@ func NewQuerier(keeper Keeper, validatorMgr ValidatorManager) sdk.Querier {
 			return queryPoolAddresses(ctx, path[1:], req, keeper)
 		case q.QueryVaultData.Key:
 			return queryVaultData(ctx, keeper)
+		case q.QueryVaultsAsgard.Key:
+			return queryVaults(ctx, keeper)
 		case q.QueryVaultPubkeys.Key:
 			return queryVaultsPubkeys(ctx, keeper)
 		case q.QueryVaultAddresses.Key:
@@ -69,6 +71,7 @@ func NewQuerier(keeper Keeper, validatorMgr ValidatorManager) sdk.Querier {
 		}
 	}
 }
+
 func getURLFromData(data []byte) (*url.URL, error) {
 	if nil == data {
 		return nil, errors.New("empty data")
@@ -80,6 +83,23 @@ func getURLFromData(data []byte) (*url.URL, error) {
 	}
 	return u, nil
 }
+
+func queryVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
+	vaults, err := keeper.GetAsgardVaults(ctx)
+	if err != nil {
+		ctx.Logger().Error("fail to get active asgards", "error", err)
+		return nil, sdk.ErrInternal("fail to get active asgards")
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), vaults)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal pubkeys response to json", "error", err)
+		return nil, sdk.ErrInternal("fail to marshal response to json")
+	}
+
+	return res, nil
+}
+
 func queryVaultsAddresses(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	chains, err := keeper.GetChains(ctx)
 	if err != nil {
