@@ -23,4 +23,13 @@ func (s *KeeperLastHeightSuite) TestLastHeight(c *C) {
 	last, err = k.GetLastChainHeight(ctx, common.BNBChain)
 	c.Assert(err, IsNil)
 	c.Check(last, Equals, int64(14))
+
+	err = k.SetLastChainHeight(ctx, common.BTCChain, 23)
+	c.Assert(err, IsNil)
+	last, err = k.GetLastChainHeight(ctx, common.BTCChain)
+	c.Assert(err, IsNil)
+	c.Check(last, Equals, int64(23))
+	last, err = k.GetLastChainHeight(ctx, common.BNBChain)
+	c.Assert(err, IsNil)
+	c.Check(last, Equals, int64(14))
 }

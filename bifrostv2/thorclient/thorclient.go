@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -25,7 +26,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
-	"gitlab.com/thorchain/thornode/bifrostv2/thorclient/types"
+	types "gitlab.com/thorchain/thornode/bifrostv2/thorclient/types"
 )
 
 const (
@@ -44,6 +45,10 @@ type Client struct {
 	accountNumber uint64
 	seqNumber     uint64
 	client        *retryablehttp.Client
+	wg            *sync.WaitGroup
+	stopChan      chan struct{}
+	txOutChan     chan stypes.TxOut
+	keygensChan   chan stypes.Keygens
 }
 
 // NewClient create a new instance of Client
@@ -66,16 +71,21 @@ func NewClient(cfg config.ThorChainConfiguration, m *metrics.Metrics) (*Client, 
 	}
 
 	return &Client{
-		logger:     log.With().Str("module", "thorClient").Logger(),
-		cdc:        MakeCodec(),
-		cfg:        cfg,
-		keys:       k,
-		errCounter: m.GetCounterVec(metrics.ThorChainClientError),
-		client:     retryablehttp.NewClient(), // TODO Setup a logger function that is in our format
-		m:          m,
+		logger:      log.With().Str("module", "thorClient").Logger(),
+		cdc:         MakeCodec(),
+		cfg:         cfg,
+		keys:        k,
+		errCounter:  m.GetCounterVec(metrics.ThorChainClientError),
+		client:      retryablehttp.NewClient(), // TODO Setup a logger function that is in our format
+		m:           m,
+		wg:          &sync.WaitGroup{},
+		stopChan:    make(chan struct{}),
+		txOutChan:   make(chan stypes.TxOut),
+		keygensChan: make(chan stypes.Keygens),
 	}, nil
 }
 
+// MakeCodec used to UnmarshalJSON
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
 	sdk.RegisterCodec(cdc)
@@ -111,6 +121,16 @@ func (c *Client) Start() error {
 	return nil
 }
 
+// GetTxOutMessages return the channel with TxOut messages from thorchain
+func (c *Client) GetTxOutMessages() <-chan stypes.TxOut {
+	return c.txOutChan
+}
+
+// GetKeygenMessages return the channel with keygen messages from thorchain
+func (c *Client) GetKeygenMessages() <-chan stypes.Keygens {
+	return c.keygensChan
+}
+
 // getAccountNumberAndSequenceNumber returns account and Sequence number required to post into thorchain
 func (c *Client) getAccountNumberAndSequenceNumber() (uint64, uint64, error) {
 	requestUrl := fmt.Sprintf("/auth/accounts/%s", c.keys.GetSignerInfo().GetAddress())
@@ -140,9 +160,9 @@ func (c *Client) GetLastObservedInHeight(chain common.Chain) (int64, error) {
 	return lastblock.LastChainHeight, nil
 }
 
-// GetLastSignedOutHeight returns the lastsignedout value for the chain past in
-func (c *Client) GetLastSignedOutHeight(chain common.Chain) (int64, error) {
-	lastblock, err := c.getLastBlock(chain)
+// GetLastSignedOutHeight returns the lastsignedout value for thorchain
+func (c *Client) GetLastSignedOutHeight() (int64, error) {
+	lastblock, err := c.getLastBlock("")
 	if err != nil {
 		return 0, errors.Wrap(err, "Failed to GetLastSignedOutheight")
 	}

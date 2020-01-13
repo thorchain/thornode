@@ -16,7 +16,7 @@ import (
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
-	"gitlab.com/thorchain/thornode/bifrostv2/txblockscanner/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/types"
 	"gitlab.com/thorchain/thornode/common"
 
 	"github.com/binance-chain/go-sdk/types/tx"

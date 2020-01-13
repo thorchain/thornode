@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/thornode/bifrostv2/txblockscanner/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/types"
 	"gitlab.com/thorchain/thornode/common"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
