@@ -57,7 +57,7 @@ var (
 	QueryNodeAccount        = Query{Key: "nodeaccount", EndpointTemplate: "/%s/nodeaccount/{%s}"}
 	QueryPoolAddresses      = Query{Key: "pooladdresses", EndpointTemplate: "/%s/pool_addresses"}
 	QueryVaultData          = Query{Key: "vaultdata", EndpointTemplate: "/%s/vault"}
-	QueryVaults             = Query{Key: "vaults", EndpointTemplate: "/%s/vaults"}
+	QueryVaultsAsgard       = Query{Key: "vaultsasgard", EndpointTemplate: "/%s/vaults/asgard"}
 	QueryVaultPubkeys       = Query{Key: "vaultpubkeys", EndpointTemplate: "/%s/vaults/pubkeys"}
 	QueryVaultAddresses     = Query{Key: "vaultaddresses", EndpointTemplate: "/%s/vaults/addresses"}
 )
@@ -86,7 +86,7 @@ var Queries = []Query{
 	QueryNodeAccounts,
 	QueryPoolAddresses,
 	QueryVaultData,
-	QueryVaults,
+	QueryVaultsAsgard,
 	QueryVaultPubkeys,
 	QueryKeygensPubkey,
 	QueryVaultAddresses,
