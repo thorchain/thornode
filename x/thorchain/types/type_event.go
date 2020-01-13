@@ -29,6 +29,7 @@ const (
 	PoolEventType        = `pool`
 	RewardEventType      = `rewards`
 	RefundEventType      = `refund`
+	BondEventType        = `bond`
 )
 
 // NewEvent create a new  event
@@ -224,4 +225,30 @@ type EventRefund struct {
 // Type return reward event type
 func (e EventRefund) Type() string {
 	return RefundEventType
+}
+
+type BondType string
+
+const (
+	BondPaid     BondType = `bond_paid`
+	BondReturned BondType = `bond_returned`
+)
+
+// EventBond bond paid or returned event
+type EventBond struct {
+	Amount   sdk.Uint `json:"amount"`
+	BondType BondType `json:"bond_type"`
+}
+
+// Type return bond event Type
+func (e EventBond) Type() string {
+	return BondEventType
+}
+
+// NewEventBond create a new Bond Event
+func NewEventBond(amount sdk.Uint, bondType BondType) EventBond {
+	return EventBond{
+		Amount:   amount,
+		BondType: bondType,
+	}
 }
