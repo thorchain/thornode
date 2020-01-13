@@ -162,9 +162,9 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 	case LeaveMemo:
 		newMsg = NewMsgLeave(tx.Tx, signer)
 	case YggdrasilFundMemo:
-		newMsg = NewMsgYggdrasil(tx.ObservedPubKey, true, tx.Tx.Coins, tx.Tx.ID, signer)
+		newMsg = NewMsgYggdrasil(tx.Tx, tx.ObservedPubKey, true, tx.Tx.Coins, signer)
 	case YggdrasilReturnMemo:
-		newMsg = NewMsgYggdrasil(tx.ObservedPubKey, false, tx.Tx.Coins, tx.Tx.ID, signer)
+		newMsg = NewMsgYggdrasil(tx.Tx, tx.ObservedPubKey, false, tx.Tx.Coins, signer)
 	case ReserveMemo:
 		res := NewReserveContributor(tx.Tx.FromAddress, tx.Tx.Coins[0].Amount)
 		newMsg = NewMsgReserveContributor(res, signer)
@@ -323,5 +323,5 @@ func getMsgBondFromMemo(memo BondMemo, tx ObservedTx, signer sdk.AccAddress) (sd
 	if runeAmount.IsZero() {
 		return nil, errors.New("RUNE amount is 0")
 	}
-	return NewMsgBond(memo.GetNodeAddress(), runeAmount, tx.Tx.ID, tx.Tx.FromAddress, signer), nil
+	return NewMsgBond(tx.Tx, memo.GetNodeAddress(), runeAmount, tx.Tx.FromAddress, signer), nil
 }

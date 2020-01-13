@@ -33,6 +33,9 @@ const (
 	NodeReady       = types.Ready
 	NodeStandby     = types.Standby
 	NodeUnknown     = types.Unknown
+
+	BondPaid     = types.BondPaid
+	BondReturned = types.BondReturned
 )
 
 var (
@@ -57,11 +60,11 @@ var (
 	NewEventRewards                = types.NewEventRewards
 	NewEventPool                   = types.NewEventPool
 	NewEventAdd                    = types.NewEventAdd
-	NewEventAdminConfig            = types.NewEventAdminConfig
 	NewEventSwap                   = types.NewEventSwap
 	NewEventStake                  = types.NewEventStake
 	NewEventUnstake                = types.NewEventUnstake
 	NewEventRefund                 = types.NewEventRefund
+	NewEventBond                   = types.NewEventBond
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewPoolStaker                  = types.NewPoolStaker

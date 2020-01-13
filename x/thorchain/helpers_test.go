@@ -35,10 +35,12 @@ func (k *TestRefundBondKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) err
 	k.na = na
 	return nil
 }
+func (k *TestRefundBondKeeper) UpsertEvent(_ sdk.Context, e Event) error {
+	return nil
+}
 
 func (s *HelperSuite) TestRefundBond(c *C) {
 	ctx, _ := setupKeeperForTest(c)
-	txID := GetRandomTxHash()
 	na := GetRandomNodeAccount(NodeActive)
 	na.Bond = sdk.NewUint(12098 * common.One)
 	txOut := NewTxStoreDummy()
@@ -58,8 +60,8 @@ func (s *HelperSuite) TestRefundBond(c *C) {
 		ygg:    ygg,
 		vaults: Vaults{GetRandomVault()},
 	}
-
-	err := refundBond(ctx, txID, na, keeper, txOut)
+	tx := GetRandomTx()
+	err := refundBond(ctx, tx, na, keeper, txOut)
 	c.Assert(err, IsNil)
 	c.Assert(txOut.GetOutboundItems(), HasLen, 1)
 	outCoin := txOut.GetOutboundItems()[0].Coin
