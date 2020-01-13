@@ -1,9 +1,12 @@
 package thorchain
 
 import (
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type YggdrasilSuite struct{}
@@ -56,4 +59,30 @@ func (s YggdrasilSuite) TestCalcTargetAmounts2(c *C) {
 	c.Check(coins[0].Amount.Uint64(), Equals, sdk.NewUint(0.16666667*common.One).Uint64(), Commentf("%d vs %d", coins[0].Amount.Uint64(), sdk.NewUint(0.16666667*common.One).Uint64()))
 	c.Check(coins[1].Asset.String(), Equals, common.RuneAsset().String())
 	c.Check(coins[1].Amount.Uint64(), Equals, sdk.NewUint(166666.66666667*common.One).Uint64(), Commentf("%d vs %d", coins[1].Amount.Uint64(), sdk.NewUint(166666.66666667*common.One).Uint64()))
+}
+
+func (s YggdrasilSuite) TestFund(c *C) {
+	ctx, k := setupKeeperForTest(c)
+	// setup 6 active nodes
+	for i := 0; i < 6; i++ {
+		na := GetRandomNodeAccount(NodeActive)
+		na.Bond = sdk.NewUint(common.One * 1000000)
+		c.Assert(k.SetNodeAccount(ctx, na), IsNil)
+	}
+	txOutStore := NewTxStoreDummy()
+	constAccessor := constants.GetConstantValues(semver.MustParse("0.1.0"))
+	txOutStore.NewBlock(uint64(ctx.BlockHeight()), constAccessor)
+	err := Fund(ctx, k, txOutStore, constAccessor)
+	c.Assert(err, IsNil)
+	na1 := GetRandomNodeAccount(NodeActive)
+	na1.Bond = sdk.NewUint(1000000 * common.One)
+	c.Assert(k.SetNodeAccount(ctx, na1), IsNil)
+	bnbPool := NewPool()
+	bnbPool.BalanceAsset = sdk.NewUint(100000 * common.One)
+	bnbPool.BalanceRune = sdk.NewUint(100000 * common.One)
+	c.Assert(k.SetPool(ctx, bnbPool), IsNil)
+	err1 := Fund(ctx, k, txOutStore, constAccessor)
+	c.Assert(err1, IsNil)
+	c.Assert(txOutStore.GetOutboundItems(), HasLen, 2)
+
 }
