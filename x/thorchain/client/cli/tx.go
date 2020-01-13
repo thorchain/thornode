@@ -64,6 +64,8 @@ func GetCmdSetNodeKeys(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			txBldr = txBldr.WithGas(400000) // set gas
+
 			secp256k1Key, err := common.NewPubKey(args[0])
 			if nil != err {
 				return fmt.Errorf("fail to parse secp256k1 pub key ,err:%w", err)
@@ -100,6 +102,8 @@ func GetCmdEndPool(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
+			txBldr = txBldr.WithGas(400000) // set gas
+
 			asset, err := common.NewAsset(args[0])
 			if nil != err {
 				return errors.Wrap(err, "invalid asset")
