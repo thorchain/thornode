@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/blang/semver"
@@ -22,7 +21,7 @@ type KeeperNodeAccount interface {
 	GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error)
 	GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Address) (NodeAccount, error)
 	SetNodeAccount(ctx sdk.Context, na NodeAccount) error
-	EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error
+	EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeySet) error
 	GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator
 }
 
@@ -32,7 +31,7 @@ func (k KVStore) TotalActiveNodeAccount(ctx sdk.Context) (int, error) {
 	return len(activeNodes), err
 }
 
-// ListNodeAccounts - gets a list of all trust accounts
+// ListNodeAccounts - gets a list of all node accounts
 func (k KVStore) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	nodeAccounts := make(NodeAccounts, 0)
 	naIterator := k.GetNodeAccountIterator(ctx)
@@ -164,43 +163,8 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 			na.ActiveBlockHeight = ctx.BlockHeight()
 			na.SlashPoints = 0 // reset slash points
 		}
-	} else {
-		if na.ActiveBlockHeight > 0 {
-
-			// The node account seems to have become a non active node account.
-			// Therefore, lets give them their bond rewards.
-			vault, err := k.GetVaultData(ctx)
-			if nil != err {
-				return fmt.Errorf("fail to get vault: %w", err)
-			}
-
-			// Find number of blocks they have been an active node
-			totalActiveBlocks := ctx.BlockHeight() - na.ActiveBlockHeight
-
-			// find number of blocks they were well behaved (ie active - slash points)
-			earnedBlocks := na.CalcBondUnits(ctx.BlockHeight())
-
-			// calc number of rune they are awarded
-			reward := vault.CalcNodeRewards(earnedBlocks)
-
-			// Add to their bond the amount rewarded
-			na.Bond = na.Bond.Add(reward)
-
-			// Minus the number of rune THORNode have awarded them
-			vault.BondRewardRune = common.SafeSub(vault.BondRewardRune, reward)
-
-			// Minus the number of units na has (do not include slash points)
-			vault.TotalBondUnits = common.SafeSub(
-				vault.TotalBondUnits,
-				sdk.NewUint(uint64(totalActiveBlocks)),
-			)
-
-			if err := k.SetVaultData(ctx, vault); nil != err {
-				return fmt.Errorf("fail to save vault data: %w", err)
-			}
-		}
-		na.ActiveBlockHeight = 0
 	}
+
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(na))
 
 	// When a node is in active status, THORNode need to add the observer address to active
@@ -213,7 +177,7 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 	return nil
 }
 
-func (k KVStore) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeys) error {
+func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeySet) error {
 	iter := k.GetNodeAccountIterator(ctx)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -227,10 +191,10 @@ func (k KVStore) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey strin
 		if na.ValidatorConsPubKey == consensusPubKey {
 			return dbError(ctx, "", errors.Errorf("%s already exist", na.ValidatorConsPubKey))
 		}
-		if pubKeys.Equals(common.EmptyPubKeys) {
-			return dbError(ctx, "", errors.New("PubKeys cannot be empty"))
+		if pubKeys.Equals(common.EmptyPubKeySet) {
+			return dbError(ctx, "", errors.New("PubKeySet cannot be empty"))
 		}
-		if na.NodePubKey.Equals(pubKeys) {
+		if na.PubKeySet.Equals(pubKeys) {
 			return dbError(ctx, "", errors.Errorf("%s already exist", pubKeys))
 		}
 	}
@@ -238,7 +202,7 @@ func (k KVStore) EnsureTrustAccountUnique(ctx sdk.Context, consensusPubKey strin
 	return nil
 }
 
-// GetTrustAccountIterator iterate trust accounts
+// GetNodeAccountIterator iterate node account
 func (k KVStore) GetNodeAccountIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixNodeAccount))

@@ -17,11 +17,12 @@ func (q Query) Endpoint(args ...string) string {
 	a := args[:count]
 
 	in := make([]interface{}, len(a))
-	for i, _ := range in {
+	for i := range in {
 		in[i] = a[i]
 	}
 
 	return fmt.Sprintf(q.EndpointTemplate, in...)
+
 }
 
 // Path return the path
@@ -33,31 +34,31 @@ func (q Query) Path(args ...string) string {
 
 // query endpoints supported by the thorchain Querier
 var (
-	QueryAdminConfigBnb   = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}/{%s}"}
-	QueryAdminConfig      = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}"}
-	QueryChains           = Query{Key: "chains", EndpointTemplate: "/%s/chains"}
-	QueryPool             = Query{Key: "pool", EndpointTemplate: "/%s/pool/{%s}"}
-	QueryPools            = Query{Key: "pools", EndpointTemplate: "/%s/pools"}
-	QueryPoolStakers      = Query{Key: "poolstakers", EndpointTemplate: "/%s/pool/{%s}/stakers"}
-	QueryStakerPools      = Query{Key: "stakerpools", EndpointTemplate: "/%s/staker/{%s}"}
-	QuerySwapRecord       = Query{Key: "swaprecord", EndpointTemplate: "/%s/swaprecord/{%s}"}
-	QueryUnStakeRecord    = Query{Key: "unstakerecord", EndpointTemplate: "/%s/unstakerecord/{%s}"}
-	QueryTxIn             = Query{Key: "txin", EndpointTemplate: "/%s/tx/{%s}"}
-	QueryTxOutArray       = Query{Key: "txoutarray", EndpointTemplate: "/%s/txoutarray/{%s}"}
-	QueryTxOutArrayPubkey = Query{Key: "txoutarraypubkey", EndpointTemplate: "/%s/txoutarray/{%s}/{%s}"}
-	QueryKeygens          = Query{Key: "keygens", EndpointTemplate: "/%s/keygens/{%s}"}
-	QueryKeygensPubkey    = Query{Key: "keygenspubkey", EndpointTemplate: "/%s/keygens/{%s}/{%s}"}
-	QueryIncompleteEvents = Query{Key: "incomplete_events", EndpointTemplate: ""}
-	QueryCompleteEvents   = Query{Key: "complete_events", EndpointTemplate: "/%s/events/{%s}"}
-	QueryHeights          = Query{Key: "heights", EndpointTemplate: "/%s/lastblock"}
-	QueryChainHeights     = Query{Key: "chainheights", EndpointTemplate: "/%s/lastblock/{%s}"}
-	QueryObservers        = Query{Key: "observers", EndpointTemplate: "/%s/observers"}
-	QueryObserver         = Query{Key: "observer", EndpointTemplate: "/%s/observer/{%s}"}
-	QueryNodeAccounts     = Query{Key: "nodeaccounts", EndpointTemplate: "/%s/nodeaccounts"}
-	QueryNodeAccount      = Query{Key: "nodeaccount", EndpointTemplate: "/%s/nodeaccount/{%s}"}
-	QueryPoolAddresses    = Query{Key: "pooladdresses", EndpointTemplate: "/%s/pool_addresses"}
-	QueryVaultData        = Query{Key: "vaultdata", EndpointTemplate: "/%s/vault"}
-	QueryVaultPubkeys     = Query{Key: "pubkeys", EndpointTemplate: "/%s/vaults/pubkeys"}
+	QueryAdminConfigBnb     = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}/{%s}"}
+	QueryAdminConfig        = Query{Key: "adminconfigbnb", EndpointTemplate: "/%s/admin/{%s}"}
+	QueryChains             = Query{Key: "chains", EndpointTemplate: "/%s/chains"}
+	QueryPool               = Query{Key: "pool", EndpointTemplate: "/%s/pool/{%s}"}
+	QueryPools              = Query{Key: "pools", EndpointTemplate: "/%s/pools"}
+	QueryPoolStakers        = Query{Key: "poolstakers", EndpointTemplate: "/%s/pool/{%s}/stakers"}
+	QueryStakerPools        = Query{Key: "stakerpools", EndpointTemplate: "/%s/staker/{%s}"}
+	QuerySwapRecord         = Query{Key: "swaprecord", EndpointTemplate: "/%s/swaprecord/{%s}"}
+	QueryUnStakeRecord      = Query{Key: "unstakerecord", EndpointTemplate: "/%s/unstakerecord/{%s}"}
+	QueryTxIn               = Query{Key: "txin", EndpointTemplate: "/%s/tx/{%s}"}
+	QueryKeysignArray       = Query{Key: "keysign", EndpointTemplate: "/%s/keysign/{%s}"}
+	QueryKeysignArrayPubkey = Query{Key: "keysignpubkey", EndpointTemplate: "/%s/keysign/{%s}/{%s}"}
+	QueryKeygensPubkey      = Query{Key: "keygenspubkey", EndpointTemplate: "/%s/keygen/{%s}/{%s}"}
+	QueryCompleteEvents     = Query{Key: "complete_events", EndpointTemplate: "/%s/events/{%s}"}
+	QueryEventsByTxHash     = Query{Key: "txhash_events", EndpointTemplate: "/%s/events/tx/{%s}"}
+	QueryHeights            = Query{Key: "heights", EndpointTemplate: "/%s/lastblock"}
+	QueryChainHeights       = Query{Key: "chainheights", EndpointTemplate: "/%s/lastblock/{%s}"}
+	QueryObservers          = Query{Key: "observers", EndpointTemplate: "/%s/observers"}
+	QueryObserver           = Query{Key: "observer", EndpointTemplate: "/%s/observer/{%s}"}
+	QueryNodeAccounts       = Query{Key: "nodeaccounts", EndpointTemplate: "/%s/nodeaccounts"}
+	QueryNodeAccount        = Query{Key: "nodeaccount", EndpointTemplate: "/%s/nodeaccount/{%s}"}
+	QueryPoolAddresses      = Query{Key: "pooladdresses", EndpointTemplate: "/%s/pool_addresses"}
+	QueryVaultData          = Query{Key: "vaultdata", EndpointTemplate: "/%s/vault"}
+	QueryVaultPubkeys       = Query{Key: "vaultpubkeys", EndpointTemplate: "/%s/vaults/pubkeys"}
+	QueryVaultAddresses     = Query{Key: "vaultaddresses", EndpointTemplate: "/%s/vaults/addresses"}
 )
 
 // Queries all queries
@@ -72,10 +73,10 @@ var Queries = []Query{
 	QuerySwapRecord,
 	QueryUnStakeRecord,
 	QueryTxIn,
-	QueryTxOutArray,
-	QueryTxOutArrayPubkey,
-	QueryIncompleteEvents,
+	QueryKeysignArray,
+	QueryKeysignArrayPubkey,
 	QueryCompleteEvents,
+	QueryEventsByTxHash,
 	QueryHeights,
 	QueryChainHeights,
 	QueryObservers,
@@ -85,6 +86,6 @@ var Queries = []Query{
 	QueryPoolAddresses,
 	QueryVaultData,
 	QueryVaultPubkeys,
-	QueryKeygens,
 	QueryKeygensPubkey,
+	QueryVaultAddresses,
 }

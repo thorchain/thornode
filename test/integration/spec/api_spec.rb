@@ -1,7 +1,5 @@
 require_relative './helper.rb'
 
-VAULT_ADDRESS = "tbnb1tdfqy34uptx207scymqsy4k5uzfmry5s8lujqt"
-VAULT_PUBKEY = "thorpub1addwnpepq2kdyjkm6y9aa3kxl8wfaverka6pvkek2ygrmhx6sj3ec6h0fegwsgeslue"
 TRUST_BNB_ADDRESS = "tbnb1tdfqy34uptx207scymqsy4k5uzfmry5s8lujqt"
 
 describe "API Tests" do
@@ -84,7 +82,7 @@ describe "API Tests" do
 
     it "adds gas" do
       coins = [
-        {'asset': {'chain': 'BNB', 'symbol': 'BNB', 'ticker': 'RUNE'}, "amount": "20000000"},
+        {'asset': {'chain': 'BNB', 'symbol': 'BNB', 'ticker': 'BNB'}, "amount": "20000000"},
       ]
       tx = makeTx(memo: "GAS", coins: coins)
       resp = processTx(tx)
@@ -119,6 +117,13 @@ describe "API Tests" do
       expect(resp.body['stakers'][0]['units']).to eq("1342175000"), resp.body['stakers'][0].inspect
     end
 
+    it "check for stake event" do
+      resp = get("/events/2")
+      expect(resp.body.count).to eq(1), resp.body.inspect
+      expect(resp.body[0]['id']).to eq("2"), resp.body[0].inspect
+      expect(resp.body[0]['type']).to eq("stake"), resp.body[0].inspect
+    end
+
     it "should be able to unstake" do
       tx = makeTx(memo: "withdraw:TCAN-014", sender: sender)
       resp = processTx(tx)
@@ -127,6 +132,14 @@ describe "API Tests" do
       resp = get("/pool/BNB.TCAN-014/stakers")
       expect(resp.code).to eq("200"), resp.body.inspect
       expect(resp.body['stakers']).to eq(nil), resp.body.inspect
+    end
+
+    it "check for unstake event trigger pool event" do # check unstaking last staker creates pool event
+      resp = get("/events/3")
+      expect(resp.body.count).to eq(1), resp.body.inspect
+      expect(resp.body[0]['id']).to eq("3"), resp.body[0].inspect
+      expect(resp.body[0]['type']).to eq("pool"), resp.body[0].inspect
+      expect(resp.body[0]['event']['status']).to eq("Bootstrap"), resp.body[0].inspect
     end
 
   end
@@ -184,22 +197,23 @@ describe "API Tests" do
       # find the block height of the previous swap transaction
       i = 1
       found = false
-      until i > 100
-        resp = get("/txoutarray/#{i}")
+      until i > 40
+        resp = get("/keysign/#{i}")
         if not resp.body['chains'].include?("BNB")
           i = i + 1
           next
         end
         arr = resp.body['chains']['BNB']
         unless arr['tx_array'].empty?
-          if arr['tx_array'][0]['to'] == "bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"
+          for idx in 0 ...arr['tx_array'].size
             # THORNode have found the block height of our last swap
-            found = true
             newTxId = txid()
-            tx = makeTx(memo: arr['tx_array'][0]['memo'], hash:newTxId, sender:TRUST_BNB_ADDRESS)
+            tx = makeTx(memo: arr['tx_array'][idx]['memo'], hash:newTxId, sender:TRUST_BNB_ADDRESS, outbound:true)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
-
+          end
+          if arr['tx_array'][idx]['to'] == "bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"
+            found = true
             resp = get("/tx/#{txid}")
             expect(resp.code).to eq("200")
             expect(resp.body['out_hashes']).to eq([newTxId]), resp.body.inspect
@@ -214,12 +228,12 @@ describe "API Tests" do
     end
 
     it "check events are completed" do
-      resp = get("/events/1")
-      expect(resp.body.count).to eq(3), resp.body.inspect
-      expect(resp.body[2]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[2].inspect
-      expect(resp.body[2]['type']).to eq("swap"), resp.body[2].inspect
-      expect(resp.body[2]['in_tx']['id']).to eq(txid), resp.body[2].inspect
-      expect(resp.body[2]['out_txs'][0]['id'].length).to eq(64), resp.body[2].inspect
+      resp = get("/events/6")
+      expect(resp.body.count).to eq(1), resp.body.inspect
+      expect(resp.body[0]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[0].inspect
+      expect(resp.body[0]['type']).to eq("swap"), resp.body[0].inspect
+      expect(resp.body[0]['in_tx']['id']).to eq(txid), resp.body[0].inspect
+      expect(resp.body[0]['out_txs'][0]['id'].length).to eq(64), resp.body[0].inspect
     end
 
     it "add assets to a pool" do

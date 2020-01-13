@@ -6,26 +6,28 @@ import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type ObservedTxOutHandler struct {
 	keeper       Keeper
 	txOutStore   TxOutStore
-	poolAddrMgr  PoolAddressManager
 	validatorMgr ValidatorManager
+	vaultMgr     VaultManager
 }
 
-func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager) ObservedTxOutHandler {
+func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager, vaultMgr VaultManager) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
-		poolAddrMgr:  poolAddrMgr,
 		validatorMgr: validatorMgr,
+		vaultMgr:     vaultMgr,
 	}
 }
 
-func (h ObservedTxOutHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h ObservedTxOutHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgObservedTxOut)
 	if !ok {
 		return errInvalidMessage.Result()
@@ -71,78 +73,84 @@ func (h ObservedTxOutHandler) handle(ctx sdk.Context, msg MsgObservedTxOut, vers
 }
 
 func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, activeNodeAccounts NodeAccounts) error {
-	if h.keeper.YggdrasilExists(ctx, tx.ObservedPubKey) {
-		ygg, err := h.keeper.GetYggdrasil(ctx, tx.ObservedPubKey)
-		if nil != err {
-			ctx.Logger().Error("fail to get yggdrasil", err)
-			return err
-		}
-		var expectedCoins common.Coins
-		memo, _ := ParseMemo(tx.Tx.Memo)
-		switch memo.GetType() {
-		case txYggdrasilReturn:
-			expectedCoins = ygg.Coins
-		case txOutbound:
-			txID := memo.GetTxID()
-			inVoter, err := h.keeper.GetObservedTxVoter(ctx, txID)
-			if err != nil {
-				return err
-			}
-			origTx := inVoter.GetTx(activeNodeAccounts)
-			expectedCoins = origTx.Tx.Coins
-		}
-
-		na, err := h.keeper.GetNodeAccountByPubKey(ctx, ygg.PubKey)
+	if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
+		return nil
+	}
+	ygg, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
+	if nil != err {
+		ctx.Logger().Error("fail to get yggdrasil", "error", err)
+		return err
+	}
+	if !ygg.IsYggdrasil() {
+		err := fmt.Errorf("this vault is NOT a yggdrasil vault")
+		ctx.Logger().Error(err.Error())
+		return err
+	}
+	var expectedCoins common.Coins
+	memo, _ := ParseMemo(tx.Tx.Memo)
+	switch memo.GetType() {
+	case txYggdrasilReturn:
+		expectedCoins = ygg.Coins
+	case txOutbound:
+		txID := memo.GetTxID()
+		inVoter, err := h.keeper.GetObservedTxVoter(ctx, txID)
 		if err != nil {
-			ctx.Logger().Error("fail to get node account", "error", err, "txhash", tx.Tx.ID.String())
 			return err
 		}
+		origTx := inVoter.GetTx(activeNodeAccounts)
+		expectedCoins = origTx.Tx.Coins
+	}
 
-		// Slash the node account, since THORNode are unable to
-		// process the tx (ie unscheduled tx)
-		var minusCoins common.Coins        // track funds to subtract from ygg pool
-		minusRune := sdk.ZeroUint()        // track amt of rune to slash from bond
-		for _, coin := range tx.Tx.Coins { // assumes coins are asset uniq
-			expectedCoin := expectedCoins.GetCoin(coin.Asset)
-			if expectedCoin.Amount.LT(coin.Amount) {
-				// take an additional 25% to ensure a penalty
-				// is made by multiplying by 5, then divide by
-				// 4
-				diff := common.SafeSub(coin.Amount, expectedCoin.Amount).MulUint64(5).QuoUint64(4)
-				if coin.Asset.IsRune() {
-					minusRune = common.SafeSub(coin.Amount, diff)
+	na, err := h.keeper.GetNodeAccountByPubKey(ctx, ygg.PubKey)
+	if err != nil {
+		ctx.Logger().Error("fail to get node account", "error", err, "txhash", tx.Tx.ID.String())
+		return err
+	}
+
+	// Slash the node account, since THORNode are unable to
+	// process the tx (ie unscheduled tx)
+	var minusCoins common.Coins        // track funds to subtract from ygg pool
+	minusRune := sdk.ZeroUint()        // track amt of rune to slash from bond
+	for _, coin := range tx.Tx.Coins { // assumes coins are asset uniq
+		expectedCoin := expectedCoins.GetCoin(coin.Asset)
+		if expectedCoin.Amount.LT(coin.Amount) {
+			// take an additional 25% to ensure a penalty
+			// is made by multiplying by 5, then divide by
+			// 4
+			diff := common.SafeSub(coin.Amount, expectedCoin.Amount).MulUint64(5).QuoUint64(4)
+			if coin.Asset.IsRune() {
+				minusRune = common.SafeSub(coin.Amount, diff)
+				minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
+			} else {
+				pool, err := h.keeper.GetPool(ctx, coin.Asset)
+				if err != nil {
+					return err
+				}
+
+				if !pool.Empty() {
+					minusRune = pool.AssetValueInRune(diff)
 					minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
-				} else {
-					pool, err := h.keeper.GetPool(ctx, coin.Asset)
-					if err != nil {
+					// Update pool balances
+					pool.BalanceRune = pool.BalanceRune.Add(minusRune)
+					pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, diff)
+					if err := h.keeper.SetPool(ctx, pool); err != nil {
+						err = errors.Wrap(err, "fail to set pool")
+						ctx.Logger().Error(err.Error())
 						return err
-					}
-
-					if !pool.Empty() {
-						minusRune = pool.AssetValueInRune(diff)
-						minusCoins = append(minusCoins, common.NewCoin(coin.Asset, diff))
-						// Update pool balances
-						pool.BalanceRune = pool.BalanceRune.Add(minusRune)
-						pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, diff)
-						if err := h.keeper.SetPool(ctx, pool); err != nil {
-							err = errors.Wrap(err, "fail to set pool")
-							ctx.Logger().Error(err.Error())
-							return err
-						}
 					}
 				}
 			}
 		}
-		na.SubBond(minusRune)
-		if err := h.keeper.SetNodeAccount(ctx, na); nil != err {
-			ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
-			return err
-		}
-		ygg.SubFunds(minusCoins)
-		if err := h.keeper.SetYggdrasil(ctx, ygg); nil != err {
-			ctx.Logger().Error("fail to save yggdrasil", err)
-			return err
-		}
+	}
+	na.SubBond(minusRune)
+	if err := h.keeper.SetNodeAccount(ctx, na); nil != err {
+		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), "error", err)
+		return err
+	}
+	ygg.SubFunds(minusCoins)
+	if err := h.keeper.SetVault(ctx, ygg); nil != err {
+		ctx.Logger().Error("fail to save yggdrasil", "error", err)
+		return err
 	}
 
 	return nil
@@ -150,14 +158,12 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 
 func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
 	voter.Add(tx, signer)
-
 	ok := false
 	if voter.HasConensus(nas) && voter.Height == 0 {
 		ok = true
 		voter.Height = ctx.BlockHeight()
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
-
 	// Check to see if we have enough identical observations to process the transaction
 	return voter, ok
 }
@@ -170,9 +176,16 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	handler := NewHandler(h.keeper, h.poolAddrMgr, h.txOutStore, h.validatorMgr)
+	handler := NewHandler(h.keeper, h.txOutStore, h.validatorMgr, h.vaultMgr)
 
 	for _, tx := range msg.Txs {
+
+		// check we are sending from a valid vault
+		if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
+			err = wrapError(ctx, err, "Observed Tx Pubkey is not associated with a valid vault")
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
 		if err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
@@ -187,7 +200,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 
 		m, err := processOneTxIn(ctx, h.keeper, txOut, msg.Signer)
 		if nil != err || tx.Tx.Chain.IsEmpty() {
-			ctx.Logger().Error("fail to process txOut", "error", err, "txhash", tx.Tx.ID.String())
+			ctx.Logger().Error("fail to process txOut", "error", err, "tx hash", tx.Tx.ID.String())
 			if err := h.outboundFailure(ctx, txOut, activeNodeAccounts); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
@@ -202,7 +215,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 
 		result := handler(ctx, m)
 		if !result.IsOK() {
-			ctx.Logger().Error("Handler failed:", result.Log)
+			ctx.Logger().Error("Handler failed:", "error", result.Log)
 		}
 	}
 

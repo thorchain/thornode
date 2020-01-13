@@ -132,21 +132,21 @@ func (c *Client) getAccountNumberAndSequenceNumber() (uint64, uint64, error) {
 }
 
 // GetLastObservedInHeight returns the lastobservedin value for the chain past in
-func (c *Client) GetLastObservedInHeight(chain common.Chain) (uint64, error) {
+func (c *Client) GetLastObservedInHeight(chain common.Chain) (int64, error) {
 	lastblock, err := c.getLastBlock(chain)
 	if err != nil {
 		return 0, errors.Wrap(err, "Failed to GetLastObservedInHeight")
 	}
-	return lastblock.LastChainHeight.Uint64(), nil
+	return lastblock.LastChainHeight, nil
 }
 
-// GetLastSignedOutheight returns the lastsignedout value for the chain past in
-func (c *Client) GetLastSignedOutHeight(chain common.Chain) (uint64, error) {
+// GetLastSignedOutHeight returns the lastsignedout value for the chain past in
+func (c *Client) GetLastSignedOutHeight(chain common.Chain) (int64, error) {
 	lastblock, err := c.getLastBlock(chain)
 	if err != nil {
 		return 0, errors.Wrap(err, "Failed to GetLastSignedOutheight")
 	}
-	return lastblock.LastSignedHeight.Uint64(), nil
+	return lastblock.LastSignedHeight, nil
 }
 
 // getLastBlock calls the /lastblock/{chain} endpoint and Unmarshal's into the QueryResHeights type

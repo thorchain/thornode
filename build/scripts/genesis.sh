@@ -7,11 +7,10 @@ SIGNER_NAME="${SIGNER_NAME:=thorchain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 NODES="${NODES:=1}"
 SEED="${SEED:=thor-daemon}" # the hostname of the master node
-ROTATE_BLOCK_HEIGHT="${ROTATE_BLOCK_HEIGHT:=5}" # how often the pools in thorchain should rotate
 
 # find or generate our BNB address
 gen_bnb_address
-ADDRESS=$(cat ~/.signer/address.txt)
+ADDRESS=$(cat ~/.bond/address.txt)
 
 # create thorchain user
 thorcli keys show $SIGNER_NAME || echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME 2>&1
@@ -34,10 +33,6 @@ fi
 # write node account data to json file in shared directory
 echo "$NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $ADDRESS" > /tmp/shared/node_$NODE_ADDRESS.json
 
-# write rotate block height as config file
-if [ "$ROTATE_BLOCK_HEIGHT" != "0" ]; then
-    echo "$KEY $VALUE $NODE_ADDRESS" > /tmp/shared/config_rotate_block_height.json
-fi
 # enable pools by default
 echo "DefaultPoolStatus Enabled $NODE_ADDRESS" > /tmp/shared/config_pool_status.json
 
@@ -59,10 +54,7 @@ if [ ! -z ${TSSKEYGEN+x} ]; then
     done
     sh -c "$KEYCLIENT > /tmp/keygenclient.output"
 
-    PUBKEY=$(cat /tmp/keygenclient.output | tail -1 | jq -r .pub_key)
-    POOL_ADDRESS=$(cat /tmp/keygenclient.output | tail -1 | jq -r .bnb_address)
-else
-    POOL_ADDRESS=$(cat ~/.signer/address.txt)
+    VAULT_PUBKEY=$(cat /tmp/keygenclient.output | tail -1 | jq -r .pub_key)
 fi
 
 if [ "$SEED" = "$(hostname)" ]; then
@@ -74,12 +66,22 @@ if [ "$SEED" = "$(hostname)" ]; then
         done
         init_chain $(echo "$ADDRS" | sed -e 's/^,*//')
 
+        if [ ! -z ${VAULT_PUBKEY+x} ]; then
+            PUBKEYS=""
+            for f in /tmp/shared/node_*.json; do
+                PUBKEYS="$PUBKEYS,$(cat $f | awk '{print $3}')"
+            done
+            add_vault $VAULT_PUBKEY $(echo "$PUBKEYS" | sed -e 's/^,*//')
+        fi
+
         # add node accounts to genesis file
         for f in /tmp/shared/node_*.json; do 
-            add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}')
+            if [ ! -z ${VAULT_PUBKEY+x} ]; then
+                add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}') $VAULT_PUBKEY
+            else
+                add_node_account $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}') $(cat $f | awk '{print $4}') $(cat $f | awk '{print $5}')
+            fi
         done
-
-        add_pool_address $POOL_ADDRESS $PUBKEY "0"
 
         for f in /tmp/shared/config_*.json; do
           add_admin_config $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}')
@@ -105,6 +107,5 @@ if [ "$SEED" != "$(hostname)" ]; then
     fi
 fi
 
-echo "POOL ADDRESS: $POOL_ADDRESS"
 
 exec "$@"

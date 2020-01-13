@@ -5,7 +5,6 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
-	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -15,24 +14,22 @@ type SlashingModule interface {
 }
 
 type Slasher struct {
-	keeper      Keeper
-	txOutStore  TxOutStore
-	poolAddrMgr PoolAddressManager
+	keeper     Keeper
+	txOutStore TxOutStore
 }
 
-func NewSlasher(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager) Slasher {
+func NewSlasher(keeper Keeper, txOutStore TxOutStore) Slasher {
 	return Slasher{
-		keeper:      keeper,
-		txOutStore:  txOutStore,
-		poolAddrMgr: poolAddrMgr,
+		keeper:     keeper,
+		txOutStore: txOutStore,
 	}
 }
 
 // Slash node accounts that didn't observe a single inbound txn
-func (s *Slasher) LackObserving(ctx sdk.Context) error {
+func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	accs, err := s.keeper.GetObservingAddresses(ctx)
 	if err != nil {
-		ctx.Logger().Error("fail to get observing addresses", err)
+		ctx.Logger().Error("fail to get observing addresses", "error", err)
 		return err
 	}
 
@@ -44,7 +41,7 @@ func (s *Slasher) LackObserving(ctx sdk.Context) error {
 
 	nodes, err := s.keeper.ListActiveNodeAccounts(ctx)
 	if err != nil {
-		ctx.Logger().Error("Unable to get list of active accounts", err)
+		ctx.Logger().Error("Unable to get list of active accounts", "error", err)
 		return err
 	}
 
@@ -59,9 +56,10 @@ func (s *Slasher) LackObserving(ctx sdk.Context) error {
 
 		// this na is not found, therefore it should be slashed
 		if !found {
-			na.SlashPoints += constants.LackOfObservationPenalty
+			lackOfObservationPenalty := constAccessor.GetInt64Value(constants.LackOfObservationPenalty)
+			na.SlashPoints += lackOfObservationPenalty
 			if err := s.keeper.SetNodeAccount(ctx, na); nil != err {
-				ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), err)
+				ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), "error", err)
 				return err
 			}
 		}
@@ -73,48 +71,73 @@ func (s *Slasher) LackObserving(ctx sdk.Context) error {
 	return nil
 }
 
-func (s *Slasher) LackSigning(ctx sdk.Context) error {
-	incomplete, err := s.keeper.GetIncompleteEvents(ctx)
+func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantValues) error {
+	pendingEvents, err := s.keeper.GetAllPendingEvents(ctx)
 	if err != nil {
-		ctx.Logger().Error("Unable to get list of active accounts", err)
+		ctx.Logger().Error("Unable to get all pending events", "error", err)
 		return err
 	}
-
-	for _, evt := range incomplete {
+	signingTransPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
+	for _, evt := range pendingEvents {
 		// NOTE: not checking the event type because all non-swap/unstake/etc
 		// are completed immediately.
-		if evt.Height+constants.SigningTransactionPeriod < ctx.BlockHeight() {
+		if evt.Height+signingTransPeriod < ctx.BlockHeight() {
 			txs, err := s.keeper.GetTxOut(ctx, uint64(evt.Height))
 			if err != nil {
-				ctx.Logger().Error("Unable to get tx out list", err)
+				ctx.Logger().Error("Unable to get tx out list", "error", err)
 				continue
 			}
 
-			for i, tx := range txs.TxArray {
+			for _, tx := range txs.TxArray {
 				if tx.InHash.Equals(evt.InTx.ID) && tx.OutHash.IsEmpty() {
 					// Slash our node account for not sending funds
-					txs.TxArray[i].OutHash = common.BlankTxID
 					na, err := s.keeper.GetNodeAccountByPubKey(ctx, tx.VaultPubKey)
 					if err != nil {
-						ctx.Logger().Error("Unable to get node account", err)
+						ctx.Logger().Error("Unable to get node account", "error", err)
 						continue
 					}
-					na.SlashPoints += constants.SigningTransactionPeriod * 2
+					na.SlashPoints += signingTransPeriod * 2
 					if err := s.keeper.SetNodeAccount(ctx, na); nil != err {
-						ctx.Logger().Error("fail to save node account")
+						ctx.Logger().Error("fail to save node account", "error", err)
 					}
 
+					active, err := s.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
+					if err != nil {
+						ctx.Logger().Error("fail to get active vaults", "error", err)
+						return err
+					}
+
+					vault := active.SelectByMinCoin(tx.Coin.Asset)
+					if vault.IsEmpty() {
+						return fmt.Errorf("unable to determine asgard vault to send funds")
+					}
+
+					// remove original tx action in observed tx. Will be
+					// replaced with new one
+					voter, err := s.keeper.GetObservedTxVoter(ctx, tx.InHash)
+					if err != nil {
+						return fmt.Errorf("fail to get observed tx voter: %w", err)
+					}
+					var actions []TxOutItem
+					for _, action := range voter.Actions {
+						if !action.Equals(*tx) {
+							actions = append(actions, *tx)
+						}
+					}
+					voter.Actions = actions
+					s.keeper.SetObservedTxVoter(ctx, voter)
+
 					// Save the tx to as a new tx, select Asgard to send it this time.
-					tx.VaultPubKey = s.txOutStore.GetAsgardPoolPubKey(tx.Chain).PubKey
-					// TODO: this creates a second tx out for this inTx, which
-					// means the event will never be completed because only one
-					// of the two out tx will occur.
-					s.txOutStore.AddTxOutItem(ctx, tx)
+					tx.VaultPubKey = vault.PubKey
+					_, err = s.txOutStore.TryAddTxOutItem(ctx, tx)
+					if err != nil {
+						return fmt.Errorf("fail to add outbound tx: %w", err)
+					}
 				}
 			}
 
 			if err := s.keeper.SetTxOut(ctx, txs); nil != err {
-				ctx.Logger().Error("fail to save tx out", err)
+				ctx.Logger().Error("fail to save tx out", "error", err)
 				return err
 			}
 		}

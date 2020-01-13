@@ -1,16 +1,10 @@
 package observer
 
 import (
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"strconv"
 	"sync"
 	"time"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -28,140 +22,65 @@ import (
 
 // Observer observer service
 type Observer struct {
-	cfg              config.Configuration
-	logger           zerolog.Logger
-	blockScanner     *BinanceBlockScanner
-	storage          TxInStorage
-	stopChan         chan struct{}
-	stateChainBridge *thorclient.StateChainBridge
-	m                *metrics.Metrics
-	wg               *sync.WaitGroup
-	errCounter       *prometheus.CounterVec
-	addrMgr          *AddressManager
-}
-
-// CurrHeight : Get the Binance current block height.
-// TODO: this func is a duplicate of `getBlockUrl` and `getRPCBlock`. We don't
-// need two funcs that return the current block height. Consolidate and remove
-// one from `mock-binance`
-func binanceHeight(rpcHost string, client http.Client) (int64, error) {
-	u, err := url.Parse(rpcHost)
-	if err != nil {
-		return 0, errors.Wrap(err, "Unable to parse dex host")
-	}
-	u.Path = "abci_info"
-	resp, err := client.Get(u.String())
-	if err != nil {
-		return 0, fmt.Errorf("fail to get request(%s): %w", u.String(), err) // errors.Wrap(err, "Get request failed")
-	}
-
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-			log.Error().Err(err).Msg("fail to close resp body")
-		}
-	}()
-
-	data, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return 0, errors.Wrap(err, "fail to read resp body")
-	}
-
-	type ABCIinfo struct {
-		Jsonrpc string `json:"jsonrpc"`
-		ID      string `json:"id"`
-		Result  struct {
-			Response struct {
-				BlockHeight string `json:"last_block_height"`
-			} `json:"response"`
-		} `json:"result"`
-	}
-
-	var abci ABCIinfo
-	if err := json.Unmarshal(data, &abci); nil != err {
-		return 0, errors.Wrap(err, "failed to unmarshal")
-	}
-
-	n, _ := strconv.ParseInt(abci.Result.Response.BlockHeight, 10, 64)
-	return n, nil
+	cfg             config.ObserverConfiguration
+	logger          zerolog.Logger
+	blockScanner    *BinanceBlockScanner
+	storage         TxInStorage
+	stopChan        chan struct{}
+	thorchainBridge *thorclient.ThorchainBridge
+	m               *metrics.Metrics
+	wg              *sync.WaitGroup
+	errCounter      *prometheus.CounterVec
+	addrMgr         *AddressManager
 }
 
 // NewObserver create a new instance of Observer
-func NewObserver(cfg config.Configuration) (*Observer, error) {
+func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, addrMgr *AddressManager, bnb *binance.Binance, m *metrics.Metrics) (*Observer, error) {
 	scanStorage, err := NewBinanceChanBlockScannerStorage(cfg.ObserverDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create scan storage")
 	}
 
-	m, err := metrics.NewMetrics(cfg.Metric)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create metric instance")
-	}
-	stateChainBridge, err := thorclient.NewStateChainBridge(cfg.StateChain, m)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create new state chain bridge")
-	}
 	logger := log.Logger.With().Str("module", "observer").Logger()
 
 	if !cfg.BlockScanner.EnforceBlockHeight {
-		startBlockHeight, err := stateChainBridge.GetBinanceChainStartHeight()
+		startBlockHeight, err := thorchainBridge.GetBinanceChainStartHeight()
 		if nil != err {
-			return nil, errors.Wrap(err, "fail to get start block height from statechain")
+			return nil, errors.Wrap(err, "fail to get start block height from thorchain")
 		}
 
 		if startBlockHeight > 0 {
-			cfg.BlockScanner.StartBlockHeight = int64(startBlockHeight)
-			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by statechain")
+			cfg.BlockScanner.StartBlockHeight = startBlockHeight
+			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by thorchain")
 		} else {
-			client := &http.Client{}
-			cfg.BlockScanner.StartBlockHeight, err = binanceHeight(cfg.BinanceHost, *client)
-			if nil != err {
+			cfg.BlockScanner.StartBlockHeight, err = bnb.GetHeight()
+			if err != nil {
 				return nil, errors.Wrap(err, "fail to get binance height")
 			}
+
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
 		}
 	}
 
-	addrMgr, err := NewAddressManager(cfg.StateChain.ChainHost, m)
-	if nil != err {
-		return nil, errors.Wrap(err, "fail to create pool address manager")
-	}
-
-	_, isTestNet := binance.IsTestNet(cfg.BinanceHost)
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, isTestNet, addrMgr, m)
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, bnb.IsTestNet, addrMgr, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
 	return &Observer{
-		cfg:              cfg,
-		logger:           logger,
-		blockScanner:     blockScanner,
-		wg:               &sync.WaitGroup{},
-		stopChan:         make(chan struct{}),
-		stateChainBridge: stateChainBridge,
-		storage:          scanStorage,
-		m:                m,
-		errCounter:       m.GetCounterVec(metrics.ObserverError),
-		addrMgr:          addrMgr,
+		cfg:             cfg,
+		logger:          logger,
+		blockScanner:    blockScanner,
+		wg:              &sync.WaitGroup{},
+		stopChan:        make(chan struct{}),
+		thorchainBridge: thorchainBridge,
+		storage:         scanStorage,
+		m:               m,
+		errCounter:      m.GetCounterVec(metrics.ObserverError),
+		addrMgr:         addrMgr,
 	}, nil
 }
 
 func (o *Observer) Start() error {
-	if err := o.stateChainBridge.EnsureNodeWhitelistedWithTimeout(); nil != err {
-		o.logger.Error().Err(err).Msg("node account is not whitelisted, can't start")
-		return errors.Wrap(err, "node account is not whitelisted, can't start")
-	}
-	if err := o.stateChainBridge.Start(); nil != err {
-		o.logger.Error().Err(err).Msg("fail to start statechain bridge")
-		return errors.Wrap(err, "fail to start statechain bridge")
-	}
-	if err := o.m.Start(); nil != err {
-		o.logger.Error().Err(err).Msg("fail to start metric collector")
-		return errors.Wrap(err, "fail to start metric collector")
-	}
-	if err := o.addrMgr.Start(); nil != err {
-		o.logger.Error().Err(err).Msg("fail to start pool address manager")
-		return errors.Wrap(err, "fail to start pool address manager")
-	}
 	o.wg.Add(1)
 	go o.txinsProcessor(o.blockScanner.GetMessages(), 1)
 	o.retryAllTx()
@@ -188,7 +107,7 @@ func (o *Observer) retryTxProcessor() {
 	defer o.logger.Info().Msg("stop retry process")
 	defer o.wg.Done()
 	// retry all
-	t := time.NewTicker(o.cfg.ObserverRetryInterval)
+	t := time.NewTicker(o.cfg.RetryInterval)
 	defer t.Stop()
 	for {
 		select {
@@ -226,7 +145,7 @@ func (o *Observer) txinsProcessor(ch <-chan types.TxIn, idx int) {
 				return
 			}
 			if len(txIn.TxArray) == 0 {
-				o.logger.Debug().Msg("nothing need to forward to statechain")
+				o.logger.Debug().Msg("nothing need to forward to thorchain")
 				continue
 			}
 			o.processOneTxIn(txIn)
@@ -239,9 +158,9 @@ func (o *Observer) processOneTxIn(txIn types.TxIn) {
 		o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
 		return
 	}
-	if err := o.signAndSendToStatechain(txIn); nil != err {
-		o.logger.Error().Err(err).Msg("fail to send to statechain")
-		o.errCounter.WithLabelValues("fail_send_to_statechain", txIn.BlockHeight).Inc()
+	if err := o.signAndSendToThorchain(txIn); nil != err {
+		o.logger.Error().Err(err).Msg("fail to send to thorchain")
+		o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
 		if err := o.storage.SetTxInStatus(txIn, types.Failed); nil != err {
 			o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
 			return
@@ -253,28 +172,29 @@ func (o *Observer) processOneTxIn(txIn types.TxIn) {
 		return
 	}
 }
-func (o *Observer) signAndSendToStatechain(txIn types.TxIn) error {
-	txs, err := o.getStateChainTxIns(txIn)
+
+func (o *Observer) signAndSendToThorchain(txIn types.TxIn) error {
+	txs, err := o.getThorchainTxIns(txIn)
 	if nil != err {
-		return errors.Wrap(err, "fail to convert txin to statechain txin")
+		return errors.Wrap(err, "fail to convert txin to thorchain txin")
 	}
-	signed, err := o.stateChainBridge.Sign(txs)
+	stdTx, err := o.thorchainBridge.GetObservationsStdTx(txs)
 	if nil != err {
 		o.errCounter.WithLabelValues("fail_to_sign", txIn.BlockHeight).Inc()
 		return errors.Wrap(err, "fail to sign the tx")
 	}
-	txID, err := o.stateChainBridge.Send(*signed, types.TxSync)
+	txID, err := o.thorchainBridge.Send(*stdTx, types.TxSync)
 	if nil != err {
-		o.errCounter.WithLabelValues("fail_to_send_to_statechain", txIn.BlockHeight).Inc()
-		return errors.Wrap(err, "fail to send the tx to statechain")
+		o.errCounter.WithLabelValues("fail_to_send_to_thorchain", txIn.BlockHeight).Inc()
+		return errors.Wrap(err, "fail to send the tx to thorchain")
 	}
-	o.logger.Info().Str("block", txIn.BlockHeight).Str("statechain hash", txID.String()).Msg("sign and send to statechain successfully")
+	o.logger.Info().Str("block", txIn.BlockHeight).Str("thorchain hash", txID.String()).Msg("sign and send to thorchain successfully")
 	return nil
 }
 
-// getStateChainTxIns convert to the type statechain expected
-// maybe in later THORNode can just refactor this to use the type in statechain
-func (o *Observer) getStateChainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error) {
+// getThorchainTxIns convert to the type thorchain expected
+// maybe in later THORNode can just refactor this to use the type in thorchain
+func (o *Observer) getThorchainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error) {
 	txs := make(stypes.ObservedTxs, len(txIn.TxArray))
 	for i, item := range txIn.TxArray {
 		o.logger.Debug().Str("tx-hash", item.Tx).Msg("txInItem")
@@ -295,7 +215,7 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) (stypes.ObservedTxs, erro
 			return nil, errors.Wrapf(err, "fail to parse sender,%s is invalid sender address", item.Sender)
 		}
 
-		h, err := strconv.ParseUint(txIn.BlockHeight, 10, 64)
+		h, err := strconv.ParseInt(txIn.BlockHeight, 10, 64)
 		if nil != err {
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
 			return nil, errors.Wrapf(err, "fail to parse block height")
@@ -307,7 +227,7 @@ func (o *Observer) getStateChainTxIns(txIn types.TxIn) (stypes.ObservedTxs, erro
 		}
 		txs[i] = stypes.NewObservedTx(
 			common.NewTx(txID, sender, to, item.Coins, common.GetBNBGasFee(uint64(len(item.Coins))), item.Memo),
-			sdk.NewUint(h),
+			h,
 			observedPoolPubKey,
 		)
 	}

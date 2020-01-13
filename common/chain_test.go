@@ -1,6 +1,8 @@
 package common
 
 import (
+	btypes "github.com/binance-chain/go-sdk/common/types"
+	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	. "gopkg.in/check.v1"
 )
 
@@ -22,6 +24,18 @@ func (s ChainSuite) TestChain(c *C) {
 	chains := Chains{"BNB", "BNB", "BTC"}
 	c.Check(chains.Has("BTC"), Equals, true)
 	c.Check(chains.Has("ETH"), Equals, false)
-	uniq := chains.Uniquify()
+	uniq := chains.Distinct()
 	c.Assert(uniq, HasLen, 2)
+
+	algo := bnbChain.GetSigningAlgo()
+	c.Assert(algo, Equals, keys.Secp256k1)
+
+	c.Assert(BNBChain.GetGasAsset(), Equals, BNBAsset)
+	c.Assert(BTCChain.GetGasAsset(), Equals, BTCAsset)
+	c.Assert(ETHChain.GetGasAsset(), Equals, ETHAsset)
+	c.Assert(EmptyChain.GetGasAsset(), Equals, EmptyAsset)
+
+	c.Assert(BNBChain.AddressPrefix(TestNet), Equals, btypes.TestNetwork.Bech32Prefixes())
+	c.Assert(BNBChain.AddressPrefix(MainNet), Equals, btypes.ProdNetwork.Bech32Prefixes())
+
 }

@@ -1,0 +1,79 @@
+version: '3'
+
+services:
+  bifrost:
+    hostname: bifrost
+    build:
+      context: ../../..
+      dockerfile: ./build/docker/Dockerfile
+      args:
+        TAGS: ${TAG:-mainnet}
+    image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NET: ${NET}
+      CHAIN_API: thor-api:1317
+      CHAIN_RPC: thor-daemon:26657
+      BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
+    entrypoint:
+      /docker/scripts/bifrost.sh
+    depends_on:
+      - thor-api
+    links:
+      - thor-api
+    volumes:
+      - "../../scripts:/docker/scripts"
+      - ${HOME}/.thornode/standalone/.thord:/root/.thord
+      - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
+    command: ["bifrost", "-c", "/etc/bifrost/config.json"]
+
+  thor-daemon:
+    hostname: thor-daemon
+    build:
+      context: ../../..
+      dockerfile: ./build/docker/Dockerfile
+      args:
+        TAGS: ${TAG:-mainnet}
+    image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      NODES: 1
+      SEED: thor-daemon
+      NET: ${NET}
+    ports:
+      - "26657:26657"
+      - "26656:26656"
+    entrypoint:
+      /docker/scripts/genesis.sh
+    volumes:
+      - /tmp/genesis:/tmp/shared
+      - "../../scripts:/docker/scripts"
+      - ${HOME}/.thornode/standalone/.thord:/root/.thord
+      - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
+    command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
+
+  thor-api:
+    hostname: thor-api
+    build:
+      context: ../../..
+      dockerfile: ./build/docker/Dockerfile
+      args:
+        TAGS: ${TAG:-mainnet}
+    depends_on:
+      - thor-daemon
+    links:
+      - thor-daemon
+    image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
+    environment:
+      CHAIN_DAEMON: thor-daemon:26657
+      NET: ${NET}
+    ports:
+      - "1317:1317"
+    entrypoint:
+      /docker/scripts/rest.sh
+    volumes:
+      - "../../scripts:/docker/scripts"
+      - ${HOME}/.thornode/standalone/.thord:/root/.thord
+      - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
+    command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
+

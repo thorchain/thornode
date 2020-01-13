@@ -15,6 +15,7 @@ def get(path)
   if Time.now() - $lastget < 1
     sleep(1)
   end
+  # puts(path)
   resp = Net::HTTP.get_response(HOST, "/thorchain#{path}", PORT)
   resp.body = JSON.parse(resp.body)
   $lastget = Time.now()
@@ -50,7 +51,52 @@ def bnbAddress()
 
 end
 
-def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
+def makeTx(memo:'', hash:nil, sender:nil, coins:nil, outbound:false)
+  # fetch vault address and pubkey
+  vault = get("/pool_addresses").body['current'][0]
+  hash ||= txid()
+  sender ||= bnbAddress
+  gas ||= [{
+    'asset': {
+      'chain': 'BNB',
+      'symbol': 'BNB',
+      'ticker': 'BNB',
+    },
+    'amount': '13750',
+  }]
+  coins ||= [{
+    'asset': {
+      'chain': 'BNB',
+      'symbol': 'RUNE-B1A',
+      'ticker': 'RUNE',
+    },
+    'amount': '1',
+  }]
+  from = sender
+  toAddr = vault['address']
+  if outbound == true then
+    from = vault['address']
+    toAddr = sender
+  end
+  return {
+    'tx': {
+      'id': hash,
+      'from_address': from,
+      'chain': 'BNB',
+      'to_address': toAddr,
+      'coins': coins,
+      'memo': memo,
+      'gas': gas,
+    },
+    'block_height': '376',
+    'observed_pub_key': vault['pub_key'],
+  }
+end
+
+def makeOutboundTx(memo:'', hash:nil, to:nil, coins:nil)
+  # fetch vault address and pubkey
+  vault = get("/pool_addresses").body['current'][0]
+
   hash ||= txid()
   sender ||= bnbAddress
   gas ||= [{
@@ -72,15 +118,15 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil)
   return {
     'tx': {
       'id': hash,
-      'from_address': sender,
+      'from_address': vault['address'],
       'chain': 'BNB',
-      'to_address': VAULT_ADDRESS,
+      'to_address': to,
       'coins': coins,
       'memo': memo,
       'gas': gas,
     },
     'block_height': '376',
-    'observed_pub_key': VAULT_PUBKEY,
+    'observed_pub_key': vault['pub_key'],
   }
 end
 

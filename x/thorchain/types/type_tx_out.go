@@ -13,7 +13,6 @@ type TxOutItem struct {
 	Chain       common.Chain   `json:"chain"`
 	ToAddress   common.Address `json:"to"`
 	VaultPubKey common.PubKey  `json:"vault_pubkey"`
-	SeqNo       uint64         `json:"seq_no"`
 	Coin        common.Coin    `json:"coin"`
 	Memo        string         `json:"memo"`
 	InHash      common.TxID    `json:"in_hash"`
@@ -33,10 +32,36 @@ func (toi TxOutItem) Valid() error {
 	if toi.VaultPubKey.IsEmpty() {
 		return errors.New("vault pubkey cannot be empty")
 	}
+	if toi.Chain.GetGasAsset().IsEmpty() {
+		return errors.New("invalid base asset")
+	}
 	if err := toi.Coin.IsValid(); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (toi TxOutItem) Equals(toi2 TxOutItem) bool {
+	if !toi.Chain.Equals(toi2.Chain) {
+		return false
+	}
+	if !toi.ToAddress.Equals(toi2.ToAddress) {
+		return false
+	}
+	if !toi.VaultPubKey.Equals(toi2.VaultPubKey) {
+		return false
+	}
+	if !toi.Coin.Equals(toi2.Coin) {
+		return false
+	}
+	if !toi.InHash.Equals(toi2.InHash) {
+		return false
+	}
+	if toi.Memo != toi2.Memo {
+		return false
+	}
+
+	return true
 }
 
 // String implement stringer interface

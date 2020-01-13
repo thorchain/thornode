@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -74,22 +75,22 @@ type AppModule struct {
 	coinKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
 	txOutStore   TxOutStore
-	poolMgr      PoolAddressManager
 	validatorMgr ValidatorManager
+	vaultMgr     VaultManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
-	poolAddrMgr := NewPoolAddressMgr(k)
-	txStore := NewTxOutStorage(k, poolAddrMgr)
+	txStore := NewTxOutStorage(k)
+	vaultMgr := NewVaultMgr(k, txStore)
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
 		keeper:         k,
 		coinKeeper:     bankKeeper,
 		supplyKeeper:   supplyKeeper,
 		txOutStore:     txStore,
-		poolMgr:        poolAddrMgr,
-		validatorMgr:   NewValidatorMgr(k, poolAddrMgr),
+		validatorMgr:   NewValidatorMgr(k, txStore, vaultMgr),
+		vaultMgr:       vaultMgr,
 	}
 }
 
@@ -104,62 +105,76 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.poolMgr, am.txOutStore, am.validatorMgr)
+	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.vaultMgr)
 }
 func (am AppModule) QuerierRoute() string {
 	return ModuleName
 }
 
 func (am AppModule) NewQuerierHandler() sdk.Querier {
-	return NewQuerier(am.keeper, am.poolMgr, am.validatorMgr)
+	return NewQuerier(am.keeper, am.validatorMgr)
 }
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
 
-	if err := am.poolMgr.BeginBlock(ctx); err != nil {
-		ctx.Logger().Error("Fail to begin block on pool address manager", err)
+	version := am.keeper.GetLowestActiveVersion(ctx)
+	constantValues := constants.GetConstantValues(version)
+	if nil == constantValues {
+		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
+		return
+	}
+	if err := am.validatorMgr.BeginBlock(ctx, constantValues); err != nil {
+		ctx.Logger().Error("Fail to begin block on validator", "error", err)
 	}
 
-	if err := am.validatorMgr.BeginBlock(ctx); err != nil {
-		ctx.Logger().Error("Fail to begin block on validator", err)
-	}
+	am.txOutStore.NewBlock(uint64(req.Header.Height), constantValues)
 
-	am.txOutStore.NewBlock(uint64(req.Header.Height))
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
 
-	slasher := NewSlasher(am.keeper, am.txOutStore, am.poolMgr)
+	version := am.keeper.GetLowestActiveVersion(ctx)
+	constantValues := constants.GetConstantValues(version)
+	if nil == constantValues {
+		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
+		return nil
+	}
+	slasher := NewSlasher(am.keeper, am.txOutStore)
 	// slash node accounts for not observing any accepted inbound tx
-	if err := slasher.LackObserving(ctx); err != nil {
-		ctx.Logger().Error("Unable to slash for lack of observing:", err)
+	if err := slasher.LackObserving(ctx, constantValues); err != nil {
+		ctx.Logger().Error("Unable to slash for lack of observing:", "error", err)
 	}
-	if err := slasher.LackSigning(ctx); err != nil {
-		ctx.Logger().Error("Unable to slash for lack of signing:", err)
+	if err := slasher.LackSigning(ctx, constantValues); err != nil {
+		ctx.Logger().Error("Unable to slash for lack of signing:", "error", err)
 	}
-
+	newPoolCycle := constantValues.GetInt64Value(constants.NewPoolCycle)
 	// Enable a pool every newPoolCycle
-	if ctx.BlockHeight()%constants.NewPoolCycle == 0 {
+	if ctx.BlockHeight()%newPoolCycle == 0 {
 		if err := enableNextPool(ctx, am.keeper); err != nil {
-			ctx.Logger().Error("Unable to enable a pool", err)
+			ctx.Logger().Error("Unable to enable a pool", "error", err)
 		}
 	}
 
 	// Fill up Yggdrasil vaults
-	err := Fund(ctx, am.keeper, am.txOutStore)
+	err := Fund(ctx, am.keeper, am.txOutStore, constantValues)
 	if err != nil {
-		ctx.Logger().Error("Unable to fund Yggdrasil", err)
+		ctx.Logger().Error("Unable to fund Yggdrasil", "error", err)
 	}
 
 	// update vault data to account for block rewards and reward units
-	if err := am.keeper.UpdateVaultData(ctx); nil != err {
-		ctx.Logger().Error("fail to save vault", err)
+	if err := am.keeper.UpdateVaultData(ctx, constantValues); nil != err {
+		ctx.Logger().Error("fail to save vault", "error", err)
+	}
+
+	if err := am.vaultMgr.EndBlock(ctx, constantValues); err != nil {
+		ctx.Logger().Error("fail to end block for vault manager", "error", err)
 	}
 
 	am.txOutStore.CommitBlock(ctx)
-	return am.validatorMgr.EndBlock(ctx, am.txOutStore)
+	return am.validatorMgr.EndBlock(ctx, constantValues)
+
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {

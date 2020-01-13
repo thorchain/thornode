@@ -2,7 +2,6 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/pkg/errors"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
@@ -14,12 +13,11 @@ type GenesisState struct {
 	StakerPools      []StakerPool     `json:"staker_pools"`
 	ObservedTxVoters ObservedTxVoters `json:"observed_tx_voters"`
 	TxOuts           []TxOut          `json:"txouts"`
-	CompleteEvents   Events           `json:"complete_events"`
-	IncompleteEvents Events           `json:"incomplete_events"`
 	NodeAccounts     NodeAccounts     `json:"node_accounts"`
 	AdminConfigs     []AdminConfig    `json:"admin_configs"`
-	LastEventID      int64            `json:"last_event_id"`
-	PoolAddresses    PoolAddresses    `json:"pool_addresses"`
+	CurrentEventID   int64            `json:"current_event_id"`
+	Events           Events           `json:"events"`
+	Vaults           Vaults           `json:"vaults"`
 }
 
 // NewGenesisState create a new instance of GenesisState
@@ -68,8 +66,11 @@ func ValidateGenesis(data GenesisState) error {
 			return err
 		}
 	}
-	if data.PoolAddresses.IsEmpty() {
-		return errors.New("missing pool addresses")
+
+	for _, vault := range data.Vaults {
+		if err := vault.IsValid(); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -78,9 +79,16 @@ func ValidateGenesis(data GenesisState) error {
 // DefaultGenesisState the default values THORNode put in the Genesis
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		AdminConfigs: []AdminConfig{},
-		Pools:        []Pool{},
-		NodeAccounts: NodeAccounts{},
+		AdminConfigs:     []AdminConfig{},
+		Pools:            []Pool{},
+		NodeAccounts:     NodeAccounts{},
+		CurrentEventID:   1,
+		TxOuts:           make([]TxOut, 0),
+		PoolStakers:      make([]PoolStaker, 0),
+		StakerPools:      make([]StakerPool, 0),
+		Events:           make(Events, 0),
+		Vaults:           make(Vaults, 0),
+		ObservedTxVoters: make(ObservedTxVoters, 0),
 	}
 }
 
@@ -101,19 +109,12 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	}
 
 	validators := make([]abci.ValidatorUpdate, 0, len(data.NodeAccounts))
-	for _, ta := range data.NodeAccounts {
-		if ta.Status == NodeActive {
-			if !data.PoolAddresses.IsEmpty() {
-				// add all the pool pub key to active validators
-				for _, item := range data.PoolAddresses.Current {
-					ta.TryAddSignerPubKey(item.PubKey)
-				}
-			}
-
+	for _, nodeAccount := range data.NodeAccounts {
+		if nodeAccount.Status == NodeActive {
 			// Only Active node will become validator
-			pk, err := sdk.GetConsPubKeyBech32(ta.ValidatorConsPubKey)
+			pk, err := sdk.GetConsPubKeyBech32(nodeAccount.ValidatorConsPubKey)
 			if nil != err {
-				ctx.Logger().Error("fail to parse consensus public key", "key", ta.ValidatorConsPubKey)
+				ctx.Logger().Error("fail to parse consensus public key", "key", nodeAccount.ValidatorConsPubKey, "error", err)
 				panic(err)
 			}
 			validators = append(validators, abci.ValidatorUpdate{
@@ -122,8 +123,14 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 			})
 		}
 
-		if err := keeper.SetNodeAccount(ctx, ta); nil != err {
+		if err := keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
 			// we should panic
+			panic(err)
+		}
+	}
+
+	for _, vault := range data.Vaults {
+		if err := keeper.SetVault(ctx, vault); err != nil {
 			panic(err)
 		}
 	}
@@ -138,20 +145,18 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 	for _, out := range data.TxOuts {
 		if err := keeper.SetTxOut(ctx, &out); nil != err {
-			ctx.Logger().Error("fail to save tx out during genesis", err)
+			ctx.Logger().Error("fail to save tx out during genesis", "error", err)
 			panic(err)
 		}
 	}
 
-	keeper.SetIncompleteEvents(ctx, data.IncompleteEvents)
+	for _, e := range data.Events {
+		if err := keeper.UpsertEvent(ctx, e); nil != err {
+			panic(err)
+		}
+	}
 
-	for _, event := range data.CompleteEvents {
-		keeper.SetCompletedEvent(ctx, event)
-	}
-	if !data.PoolAddresses.IsEmpty() {
-		keeper.SetPoolAddresses(ctx, &data.PoolAddresses)
-	}
-	keeper.SetLastEventID(ctx, data.LastEventID)
+	keeper.SetCurrentEventID(ctx, data.CurrentEventID)
 
 	return validators
 
@@ -159,7 +164,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 
 // ExportGenesis export the data in Genesis
 func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
-	lastEventID, _ := k.GetLastEventID(ctx)
+	currentEventID, _ := k.GetCurrentEventID(ctx)
 
 	var adminConfigs []AdminConfig
 	iterator := k.GetAdminConfigIterator(ctx)
@@ -220,30 +225,24 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		outs = append(outs, out)
 	}
 
-	var completed []Event
-	iterator = k.GetCompleteEventIterator(ctx)
+	var events []Event
+	iterator = k.GetEventsIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var e Event
 		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &e)
-		completed = append(completed, e)
-	}
-
-	incomplete, err := k.GetIncompleteEvents(ctx)
-	if err != nil {
-		panic(err)
+		events = append(events, e)
 	}
 
 	return GenesisState{
 		Pools:            pools,
 		NodeAccounts:     nodeAccounts,
 		AdminConfigs:     adminConfigs,
-		LastEventID:      lastEventID,
 		PoolStakers:      poolStakers,
 		StakerPools:      stakerPools,
 		ObservedTxVoters: votes,
 		TxOuts:           outs,
-		CompleteEvents:   completed,
-		IncompleteEvents: incomplete,
+		CurrentEventID:   currentEventID,
+		Events:           events,
 	}
 }

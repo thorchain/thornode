@@ -61,7 +61,7 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 	bepConsPubKey := GetRandomBech32ConsensusPubKey()
 	nodeAddress := GetRandomBech32Addr()
 	bondAddr := GetRandomBNBAddress()
-	pubKeys := common.PubKeys{
+	pubKeys := common.PubKeySet{
 		Secp256k1: GetRandomPubKey(),
 		Ed25519:   GetRandomPubKey(),
 	}
@@ -73,8 +73,8 @@ func (NodeAccountSuite) TestNodeAccount(c *C) {
 	nas := NodeAccounts{
 		na,
 	}
-	c.Assert(nas.IsTrustAccount(addr), Equals, false)
-	c.Assert(nas.IsTrustAccount(nodeAddress), Equals, true)
+	c.Assert(nas.IsNodeKeys(addr), Equals, false)
+	c.Assert(nas.IsNodeKeys(nodeAddress), Equals, true)
 	c.Logf("node account:%s", na)
 	naEmpty := NewNodeAccount(sdk.AccAddress{}, Active, pubKeys, bepConsPubKey, sdk.NewUint(common.One), bondAddr, 1)
 	c.Assert(naEmpty.IsValid(), NotNil)
@@ -127,6 +127,7 @@ func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 
 	}
 }
+
 func (NodeAccountSuite) TestNodeAccountUpdateStatusAndSort(c *C) {
 	var accounts NodeAccounts
 	for i := 0; i < 10; i++ {
@@ -140,7 +141,7 @@ func (NodeAccountSuite) TestNodeAccountUpdateStatusAndSort(c *C) {
 }
 
 func (NodeAccountSuite) TestTryAddSignerPubKey(c *C) {
-	na := NewNodeAccount(GetRandomBech32Addr(), Active, GetRandomPubKeys(), GetRandomBech32ConsensusPubKey(), sdk.NewUint(100*common.One), GetRandomBNBAddress(), 1)
+	na := NewNodeAccount(GetRandomBech32Addr(), Active, GetRandomPubKeySet(), GetRandomBech32ConsensusPubKey(), sdk.NewUint(100*common.One), GetRandomBNBAddress(), 1)
 	pk := GetRandomPubKey()
 	emptyPK := common.EmptyPubKey
 	// make sure it get added

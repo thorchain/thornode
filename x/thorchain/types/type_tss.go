@@ -8,12 +8,12 @@ import (
 type TssVoter struct {
 	ID          string           `json:"id"` // checksum of sorted input pubkeys
 	PoolPubKey  common.PubKey    `json:"pool_pub_key"`
-	PubKeys     []common.PubKey  `json:"pubkeys"`
+	PubKeys     common.PubKeys   `json:"pubkeys"`
 	BlockHeight int64            `json:"block_height"`
 	Signers     []sdk.AccAddress `json:"signers"`
 }
 
-func NewTssVoter(id string, pks []common.PubKey, pool common.PubKey) TssVoter {
+func NewTssVoter(id string, pks common.PubKeys, pool common.PubKey) TssVoter {
 	return TssVoter{
 		ID:         id,
 		PubKeys:    pks,
@@ -42,7 +42,7 @@ func (tss *TssVoter) Sign(signer sdk.AccAddress) {
 func (tss *TssVoter) HasConensus(nas NodeAccounts) bool {
 	var count int
 	for _, signer := range tss.Signers {
-		if nas.IsTrustAccount(signer) {
+		if nas.IsNodeKeys(signer) {
 			count += 1
 		}
 	}

@@ -1,6 +1,7 @@
 package common
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -47,10 +48,10 @@ func (c Coin) IsEmpty() bool {
 
 func (c Coin) IsValid() error {
 	if c.Asset.IsEmpty() {
-		return fmt.Errorf("Denom cannot be empty")
+		return errors.New("Denom cannot be empty")
 	}
 	if c.Amount.IsZero() {
-		return fmt.Errorf("Amount cannot be zero")
+		return errors.New("Amount cannot be zero")
 	}
 
 	return nil

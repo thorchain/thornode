@@ -47,32 +47,37 @@ func (HandlerBondSuite) TestBondHandler_Run(c *C) {
 	c.Assert(k1.SetNodeAccount(ctx, activeNodeAccount), IsNil)
 	handler := NewBondHandler(k1)
 	ver := semver.MustParse("0.1.0")
-	msg := NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(constants.MinimumBondInRune), GetRandomTxHash(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress)
-	result := handler.Run(ctx, msg, ver)
+	constAccessor := constants.GetConstantValues(ver)
+	minimumBondInRune := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+	msg := NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(uint64(minimumBondInRune)), GetRandomTxHash(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress)
+	result := handler.Run(ctx, msg, ver, constAccessor)
 	c.Assert(result.IsOK(), Equals, true)
 
 	// invalid version
 	handler = NewBondHandler(k)
 	ver = semver.Version{}
-	result = handler.Run(ctx, msg, ver)
+	result = handler.Run(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, CodeBadVersion)
 
 	// simulate fail to get node account
 	ver = semver.MustParse("0.1.0")
-	msg = NewMsgBond(k.failGetNodeAccount.NodeAddress, sdk.NewUint(constants.MinimumBondInRune), GetRandomTxHash(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress)
-	result = handler.Run(ctx, msg, ver)
+	msg = NewMsgBond(k.failGetNodeAccount.NodeAddress, sdk.NewUint(uint64(minimumBondInRune)), GetRandomTxHash(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress)
+	result = handler.Run(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeInternal)
 
-	msg = NewMsgBond(k.notEmptyNodeAccount.NodeAddress, sdk.NewUint(constants.MinimumBondInRune), GetRandomTxHash(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress)
-	result = handler.Run(ctx, msg, ver)
+	msg = NewMsgBond(k.notEmptyNodeAccount.NodeAddress, sdk.NewUint(uint64(minimumBondInRune)), GetRandomTxHash(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress)
+	result = handler.Run(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeInternal)
 }
 func (HandlerBondSuite) TestBondHandlerFailValidation(c *C) {
+
 	ctx, k := setupKeeperForTest(c)
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)
 	c.Assert(k.SetNodeAccount(ctx, activeNodeAccount), IsNil)
 	handler := NewBondHandler(k)
 	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
+	minimumBondInRune := constAccessor.GetInt64Value(constants.MinimumBondInRune)
 	testCases := []struct {
 		name         string
 		msg          MsgBond
@@ -80,7 +85,7 @@ func (HandlerBondSuite) TestBondHandlerFailValidation(c *C) {
 	}{
 		{
 			name:         "empty node address",
-			msg:          NewMsgBond(sdk.AccAddress{}, sdk.NewUint(constants.MinimumBondInRune), GetRandomTxHash(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress),
+			msg:          NewMsgBond(sdk.AccAddress{}, sdk.NewUint(uint64(minimumBondInRune)), GetRandomTxHash(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress),
 			expectedCode: sdk.CodeUnknownRequest,
 		},
 		{
@@ -90,33 +95,33 @@ func (HandlerBondSuite) TestBondHandlerFailValidation(c *C) {
 		},
 		{
 			name:         "empty bond address",
-			msg:          NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(constants.MinimumBondInRune), GetRandomTxHash(), common.Address(""), activeNodeAccount.NodeAddress),
+			msg:          NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(uint64(minimumBondInRune)), GetRandomTxHash(), common.Address(""), activeNodeAccount.NodeAddress),
 			expectedCode: sdk.CodeUnknownRequest,
 		},
 		{
 			name:         "empty request hash",
-			msg:          NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(constants.MinimumBondInRune), common.TxID(""), GetRandomBNBAddress(), activeNodeAccount.NodeAddress),
+			msg:          NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(uint64(minimumBondInRune)), common.TxID(""), GetRandomBNBAddress(), activeNodeAccount.NodeAddress),
 			expectedCode: sdk.CodeUnknownRequest,
 		},
 		{
 			name:         "empty signer",
-			msg:          NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(constants.MinimumBondInRune), GetRandomTxHash(), GetRandomBNBAddress(), sdk.AccAddress{}),
+			msg:          NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(uint64(minimumBondInRune)), GetRandomTxHash(), GetRandomBNBAddress(), sdk.AccAddress{}),
 			expectedCode: sdk.CodeInvalidAddress,
 		},
 		{
 			name:         "msg not signed by active account",
-			msg:          NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(constants.MinimumBondInRune), GetRandomTxHash(), GetRandomBNBAddress(), GetRandomNodeAccount(NodeStandby).NodeAddress),
+			msg:          NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(uint64(minimumBondInRune)), GetRandomTxHash(), GetRandomBNBAddress(), GetRandomNodeAccount(NodeStandby).NodeAddress),
 			expectedCode: sdk.CodeUnauthorized,
 		},
 		{
 			name:         "not enough rune",
-			msg:          NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(constants.MinimumBondInRune-100), GetRandomTxHash(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress),
+			msg:          NewMsgBond(GetRandomNodeAccount(NodeStandby).NodeAddress, sdk.NewUint(uint64(minimumBondInRune-100)), GetRandomTxHash(), GetRandomBNBAddress(), activeNodeAccount.NodeAddress),
 			expectedCode: sdk.CodeUnknownRequest,
 		},
 	}
 	for _, item := range testCases {
 		c.Log(item.name)
-		result := handler.Run(ctx, item.msg, ver)
+		result := handler.Run(ctx, item.msg, ver, constAccessor)
 		c.Assert(result.Code, Equals, item.expectedCode)
 	}
 }

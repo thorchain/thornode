@@ -15,7 +15,6 @@ var (
 )
 
 type MockPoolAddressValidator struct {
-	poolAddresses types.PoolAddresses
 }
 
 func NewMockPoolAddressValidator() *MockPoolAddressValidator {
@@ -32,8 +31,8 @@ func matchTestAddress(addr, testAddr string, chain common.Chain) (bool, common.C
 	return false, common.EmptyChainPoolInfo
 }
 
-func (mpa *MockPoolAddressValidator) AddPubKey(pk common.PubKeys)    {}
-func (mpa *MockPoolAddressValidator) RemovePubKey(pk common.PubKeys) {}
+func (mpa *MockPoolAddressValidator) AddPubKey(pk common.PubKey)    {}
+func (mpa *MockPoolAddressValidator) RemovePubKey(pk common.PubKey) {}
 
 func (mpa *MockPoolAddressValidator) IsValidAddress(addr string, chain common.Chain) bool {
 	ok, _ := mpa.IsValidPoolAddress(addr, chain)

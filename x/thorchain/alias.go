@@ -13,13 +13,20 @@ const (
 	PoolBootstrap    = types.Bootstrap
 	PoolSuspended    = types.Suspended
 	EventSuccess     = types.Success
+	EventPending     = types.Pending
+	EventFail        = types.Failed
 	EventRefund      = types.Refund
 
 	// Admin config keys
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
-	WhiteListGasAssetKey   = types.WhiteListGasAssetKey
-	PoolRefundGasKey       = types.PoolRefundGasKey
 	DefaultPoolStatus      = types.DefaultPoolStatus
+
+	// Vaults
+	AsgardVault    = types.AsgardVault
+	YggdrasilVault = types.YggdrasilVault
+	ActiveVault    = types.ActiveVault
+	InactiveVault  = types.InactiveVault
+	RetiringVault  = types.RetiringVault
 
 	NodeActive      = types.Active
 	NodeWhiteListed = types.WhiteListed
@@ -47,6 +54,7 @@ var (
 	NewMsgSwap                     = types.NewMsgSwap
 	NewMsgSetAdminConfig           = types.NewMsgSetAdminConfig
 	NewKeygens                     = types.NewKeygens
+	NewMsgSetNodeKeys              = types.NewMsgSetNodeKeys
 	NewTxOut                       = types.NewTxOut
 	NewEvent                       = types.NewEvent
 	NewEventRewards                = types.NewEventRewards
@@ -55,8 +63,9 @@ var (
 	NewEventAdminConfig            = types.NewEventAdminConfig
 	NewEventSwap                   = types.NewEventSwap
 	NewEventStake                  = types.NewEventStake
-	NewEmptyRefundEvent            = types.NewEmptyRefundEvent
 	NewEventUnstake                = types.NewEventUnstake
+	NewEventRefund                 = types.NewEventRefund
+	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewPoolStaker                  = types.NewPoolStaker
 	NewStakerPool                  = types.NewStakerPool
@@ -66,15 +75,15 @@ var (
 	ModuleCdc                      = types.ModuleCdc
 	RegisterCodec                  = types.RegisterCodec
 	NewNodeAccount                 = types.NewNodeAccount
-	NewYggdrasil                   = types.NewYggdrasil
+	NewVault                       = types.NewVault
 	NewReserveContributor          = types.NewReserveContributor
 	NewMsgYggdrasil                = types.NewMsgYggdrasil
 	NewMsgReserveContributor       = types.NewMsgReserveContributor
 	NewMsgBond                     = types.NewMsgBond
-	NewPoolAddresses               = types.NewPoolAddresses
 	NewMsgLeave                    = types.NewMsgLeave
 	NewMsgSetVersion               = types.NewMsgSetVersion
 	GetPoolStatus                  = types.GetPoolStatus
+	GetRandomVault                 = types.GetRandomVault
 	GetRandomTx                    = types.GetRandomTx
 	GetRandomObservedTx            = types.GetRandomObservedTx
 	GetRandomNodeAccount           = types.GetRandomNodeAccount
@@ -83,9 +92,9 @@ var (
 	GetRandomBech32Addr            = types.GetRandomBech32Addr
 	GetRandomBech32ConsensusPubKey = types.GetRandomBech32ConsensusPubKey
 	GetRandomPubKey                = types.GetRandomPubKey
-	GetRandomPubkeys               = types.GetRandomPubKeys
-	GetRandomPoolPubKeys           = types.GetRandomPoolPubKeys
+	GetRandomPubKeySet             = types.GetRandomPubKeySet
 	SetupConfigForTest             = types.SetupConfigForTest
+	GetEventStatuses               = types.GetEventStatuses
 )
 
 type (
@@ -96,10 +105,11 @@ type (
 	MsgSetPoolData              = types.MsgSetPoolData
 	MsgSetStakeData             = types.MsgSetStakeData
 	MsgOutboundTx               = types.MsgOutboundTx
+	MsgRefundTx                 = types.MsgRefundTx
 	MsgSwap                     = types.MsgSwap
 	MsgSetAdminConfig           = types.MsgSetAdminConfig
 	MsgSetVersion               = types.MsgSetVersion
-	MsgSetTrustAccount          = types.MsgSetTrustAccount
+	MsgSetNodeKeys              = types.MsgSetNodeKeys
 	MsgEndPool                  = types.MsgEndPool
 	MsgLeave                    = types.MsgLeave
 	MsgReserveContributor       = types.MsgReserveContributor
@@ -111,8 +121,8 @@ type (
 	QueryResHeights             = types.QueryResHeights
 	QueryResTxOut               = types.QueryResTxOut
 	ResTxOut                    = types.ResTxOut
-	TrustAccount                = types.TrustAccount
-	TrustAccounts               = types.TrustAccounts
+	NodeKeys                    = types.NodeKeys
+	NodesKeys                   = types.NodesKeys
 	PoolStatus                  = types.PoolStatus
 	PoolIndex                   = types.PoolIndex
 	Pool                        = types.Pool
@@ -129,7 +139,6 @@ type (
 	TxOutItem                   = types.TxOutItem
 	TxOut                       = types.TxOut
 	Keygens                     = types.Keygens
-	Keygen                      = types.Keygen
 	AdminConfigKey              = types.AdminConfigKey
 	AdminConfig                 = types.AdminConfig
 	StakerPoolItem              = types.StakerPoolItem
@@ -143,12 +152,13 @@ type (
 	PoolAmt                     = types.PoolAmt
 	ReserveContributor          = types.ReserveContributor
 	ReserveContributors         = types.ReserveContributors
-	Yggdrasil                   = types.Yggdrasil
-	Yggdrasils                  = types.Yggdrasils
+	Vault                       = types.Vault
+	Vaults                      = types.Vaults
 	NodeAccount                 = types.NodeAccount
 	NodeAccounts                = types.NodeAccounts
 	NodeAccountsBySlashingPoint = types.NodeAccountsBySlashingPoint
-	PoolAddresses               = types.PoolAddresses
 	NodeStatus                  = types.NodeStatus
 	VaultData                   = types.VaultData
+	VaultStatus                 = types.VaultStatus
+	EventStatuses               = types.EventStatuses
 )

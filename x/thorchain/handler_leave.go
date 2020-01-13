@@ -1,11 +1,12 @@
 package thorchain
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // LeaveHandler a handler to process leave request
@@ -14,16 +15,14 @@ import (
 type LeaveHandler struct {
 	keeper           Keeper
 	validatorManager ValidatorManager
-	poolAddrMgr      PoolAddressManager
 	txOut            TxOutStore
 }
 
 // NewLeaveHandler create a new LeaveHandler
-func NewLeaveHandler(keeper Keeper, validatorManager ValidatorManager, poolAddrMgr PoolAddressManager, store TxOutStore) LeaveHandler {
+func NewLeaveHandler(keeper Keeper, validatorManager ValidatorManager, store TxOutStore) LeaveHandler {
 	return LeaveHandler{
 		keeper:           keeper,
 		validatorManager: validatorManager,
-		poolAddrMgr:      poolAddrMgr,
 		txOut:            store,
 	}
 }
@@ -47,7 +46,7 @@ func (lh LeaveHandler) validateV1(ctx sdk.Context, msg MsgLeave) sdk.Error {
 }
 
 // Run execute the handler
-func (lh LeaveHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (lh LeaveHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgLeave)
 	if !ok {
 		return errInvalidMessage.Result()
@@ -56,12 +55,12 @@ func (lh LeaveHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) s
 		"sender", msg.Tx.FromAddress.String(),
 		"request tx hash", msg.Tx.ID)
 	if err := lh.validate(ctx, msg, version); nil != err {
-		ctx.Logger().Error("msg leave fail validation", err)
+		ctx.Logger().Error("msg leave fail validation", "error", err)
 		return err.Result()
 	}
 
 	if err := lh.handle(ctx, msg); nil != err {
-		ctx.Logger().Error("fail to process msg leave", err)
+		ctx.Logger().Error("fail to process msg leave", "error", err)
 		return err.Result()
 	}
 
@@ -87,18 +86,21 @@ func (lh LeaveHandler) handle(ctx sdk.Context, msg MsgLeave) sdk.Error {
 	} else {
 		// given the node is not active, they should not have Yggdrasil pool either
 		// but let's check it anyway just in case
-		ygg, err := lh.keeper.GetYggdrasil(ctx, nodeAcc.NodePubKey.Secp256k1)
-		if nil != err && !errors.Is(err, ErrYggdrasilNotFound) {
-			return sdk.ErrInternal(fmt.Errorf("fail to get yggdrasil pool: %w", err).Error())
+		vault, err := lh.keeper.GetVault(ctx, nodeAcc.PubKeySet.Secp256k1)
+		if nil != err {
+			return sdk.ErrInternal(fmt.Errorf("fail to get vault pool: %w", err).Error())
 		}
-		if !ygg.HasFunds() {
+		if !vault.IsYggdrasil() {
+			return sdk.ErrInternal("the requested vault is NOT a yggdrasil vault")
+		}
+		if !vault.HasFunds() {
 			// node is not active , they are free to leave , refund them
 			if err := refundBond(ctx, msg.Tx.ID, nodeAcc, lh.keeper, lh.txOut); err != nil {
 				return sdk.ErrInternal(fmt.Errorf("fail to refund bond: %w", err).Error())
 			}
 		}
 
-		if err := lh.validatorManager.RequestYggReturn(ctx, nodeAcc, lh.poolAddrMgr, lh.txOut); nil != err {
+		if err := lh.validatorManager.RequestYggReturn(ctx, nodeAcc); nil != err {
 			return sdk.ErrInternal(fmt.Errorf("fail to request yggdrasil return fund: %w", err).Error())
 		}
 

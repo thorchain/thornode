@@ -37,7 +37,7 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdPoolIndex(storeKey, cdc),
 		GetCmdSwapRecord(storeKey, cdc),
 		GetCmdUnStakeRecord(storeKey, cdc),
-		GetCmdTxOutArray(storeKey, cdc),
+		GetCmdKeysignArray(storeKey, cdc),
 		GetCmdGetAdminConfig(storeKey, cdc),
 	)...)
 	return thorchainQueryCmd
@@ -75,7 +75,9 @@ func GetCmdPool(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.Pool
-			cdc.MustUnmarshalJSON(res, &out)
+			if err := cdc.UnmarshalJSON(res, &out); nil != err {
+				return fmt.Errorf("fail to unmarshal pool: %w", err)
+			}
 			return cliCtx.PrintOutput(out)
 		},
 	}
@@ -98,7 +100,9 @@ func GetCmdStakerPool(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.StakerPool
-			cdc.MustUnmarshalJSON(res, &out)
+			if err := cdc.UnmarshalJSON(res, &out); nil != err {
+				return fmt.Errorf("fail to unmarshal staker pool: %w", err)
+			}
 			return cliCtx.PrintOutput(out)
 		},
 	}
@@ -118,7 +122,9 @@ func GetCmdPoolStaker(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.PoolStaker
-			cdc.MustUnmarshalJSON(res, &out)
+			if err := cdc.UnmarshalJSON(res, &out); nil != err {
+				return fmt.Errorf("fail to unmarshal pool staker: %w", err)
+			}
 			return cliCtx.PrintOutput(out)
 		},
 	}
@@ -139,7 +145,9 @@ func GetCmdPools(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.QueryResPools
-			cdc.MustUnmarshalJSON(res, &out)
+			if err := cdc.UnmarshalJSON(res, &out); nil != err {
+				return fmt.Errorf("fail to unmarhal pools: %w", err)
+			}
 			return cliCtx.PrintOutput(out)
 		},
 	}
@@ -160,7 +168,9 @@ func GetCmdPoolIndex(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.PoolIndex
-			cdc.MustUnmarshalJSON(res, &out)
+			if err := cdc.UnmarshalJSON(res, &out); nil != err {
+				return fmt.Errorf("fail to unmarshal pool index: %w", err)
+			}
 			cmd.Println(out)
 			return nil
 		},
@@ -207,8 +217,8 @@ func GetCmdUnStakeRecord(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdTxOutArray query txoutarray
-func GetCmdTxOutArray(queryRoute string, cdc *codec.Codec) *cobra.Command {
+// GetCmdKeysignArray query keysign
+func GetCmdKeysignArray(queryRoute string, cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
 		Use:   "txout [height]",
 		Short: "txout array",
@@ -216,9 +226,9 @@ func GetCmdTxOutArray(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			height := args[0]
-			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/txoutarray/%s", queryRoute, height), nil)
+			res, _, err := cliCtx.QueryWithData(fmt.Sprintf("custom/%s/keysign/%s", queryRoute, height), nil)
 			if err != nil {
-				cmd.Println("could not get query txoutarray")
+				cmd.Println("could not get query keysign")
 				return nil
 			}
 			cmd.Println(string(res))

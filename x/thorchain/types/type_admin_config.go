@@ -3,20 +3,15 @@ package types
 import (
 	"errors"
 	"fmt"
-	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
-	"gitlab.com/thorchain/thornode/common"
 )
 
 type AdminConfigKey string
 
 const (
-	UnknownKey           AdminConfigKey = "Unknown"
-	WhiteListGasAssetKey AdminConfigKey = "WhiteListGasAsset" // How much gas asset THORNode mint and send it to the newly whitelisted bep address
-	PoolRefundGasKey     AdminConfigKey = "PoolRefundGas"     // When THORNode move assets from one pool to another , THORNode leave this amount of BNB behind, thus THORNode could refund customer if they send fund to the previous pool
-	DefaultPoolStatus    AdminConfigKey = "DefaultPoolStatus" // When a pool get created automatically , what status do THORNode set it in
+	UnknownKey        AdminConfigKey = "Unknown"
+	DefaultPoolStatus AdminConfigKey = "DefaultPoolStatus" // When a pool get created automatically , what status do THORNode set it in
 )
 
 func (k AdminConfigKey) String() string {
@@ -29,10 +24,6 @@ func (k AdminConfigKey) IsValidKey() bool {
 }
 func GetAdminConfigKey(key string) AdminConfigKey {
 	switch key {
-	case string(WhiteListGasAssetKey):
-		return WhiteListGasAssetKey
-	case string(PoolRefundGasKey):
-		return PoolRefundGasKey
 	case string(DefaultPoolStatus):
 		return DefaultPoolStatus
 	default:
@@ -42,10 +33,6 @@ func GetAdminConfigKey(key string) AdminConfigKey {
 
 func (k AdminConfigKey) Default() string {
 	switch k {
-	case WhiteListGasAssetKey:
-		return "1000bep"
-	case PoolRefundGasKey:
-		return strconv.Itoa(common.One / 10)
 	case DefaultPoolStatus:
 		return "Enabled"
 	default:
@@ -57,14 +44,10 @@ func (k AdminConfigKey) Default() string {
 func (k AdminConfigKey) ValidValue(value string) error {
 	var err error
 	switch k {
-	case WhiteListGasAssetKey:
-		_, err = sdk.ParseCoins(value)
 	case DefaultPoolStatus:
 		if GetPoolStatus(value) == Suspended {
 			return errors.New("invalid pool status")
 		}
-	case PoolRefundGasKey:
-		_, err = strconv.ParseInt(value, 10, 64)
 	}
 	return err
 }

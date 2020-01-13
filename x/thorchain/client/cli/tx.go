@@ -29,7 +29,7 @@ func GetTxCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 
 	thorchainTxCmd.AddCommand(client.PostCommands(
 		GetCmdSetAdminConfig(cdc),
-		GetCmdSetTrustAccount(cdc),
+		GetCmdSetNodeKeys(cdc),
 		GetCmdEndPool(cdc),
 		GetCmdSetVersion(cdc),
 	)...)
@@ -77,11 +77,11 @@ func GetCmdSetAdminConfig(cdc *codec.Codec) *cobra.Command {
 	}
 }
 
-// GetCmdSetTrustAccount command to add a trust account
-func GetCmdSetTrustAccount(cdc *codec.Codec) *cobra.Command {
+// GetCmdSetNodeKeys command to add a node keys
+func GetCmdSetNodeKeys(cdc *codec.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "set-trust-account  [secp256k1] [ed25519] [validator_consensus_pub_key]",
-		Short: "set trust account, the account use to sign this tx has to be whitelist first",
+		Use:   "set-node-keys  [secp256k1] [ed25519] [validator_consensus_pub_key]",
+		Short: "set node keys, the account use to sign this tx has to be whitelist first",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
@@ -94,7 +94,7 @@ func GetCmdSetTrustAccount(cdc *codec.Codec) *cobra.Command {
 			if nil != err {
 				return fmt.Errorf("fail to parse ed25519 pub key ,err:%w", err)
 			}
-			pk := common.NewPubKeys(secp256k1Key, ed25519Key)
+			pk := common.NewPubKeySet(secp256k1Key, ed25519Key)
 			validatorConsPubKey, err := sdk.GetConsPubKeyBech32(args[2])
 			if err != nil {
 				return errors.Wrap(err, "fail to parse validator consensus public key")
@@ -103,7 +103,7 @@ func GetCmdSetTrustAccount(cdc *codec.Codec) *cobra.Command {
 			if err != nil {
 				return errors.Wrap(err, "fail to convert public key to string")
 			}
-			msg := types.NewMsgSetTrustAccount(pk, validatorConsPubKeyStr, cliCtx.GetFromAddress())
+			msg := types.NewMsgSetNodeKeys(pk, validatorConsPubKeyStr, cliCtx.GetFromAddress())
 			err = msg.ValidateBasic()
 			if err != nil {
 				return err

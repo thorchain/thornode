@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -28,6 +29,6 @@ func (k KVStore) GetChains(ctx sdk.Context) (common.Chains, error) {
 func (k KVStore) SetChains(ctx sdk.Context, chains common.Chains) {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixSupportedChains, "")
-	chains = chains.Uniquify()
+	chains = chains.Distinct()
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(chains))
 }

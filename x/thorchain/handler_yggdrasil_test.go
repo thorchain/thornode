@@ -4,6 +4,8 @@ import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -14,7 +16,7 @@ type TestYggdrasilValidateKeeper struct {
 	na NodeAccount
 }
 
-func (k *TestYggdrasilValidateKeeper) GetNodeAccount(ctx sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
+func (k *TestYggdrasilValidateKeeper) GetNodeAccount(_ sdk.Context, signer sdk.AccAddress) (NodeAccount, error) {
 	return k.na, nil
 }
 
@@ -27,11 +29,11 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 		na: GetRandomNodeAccount(NodeActive),
 	}
 
-	poolAddrMgr := NewPoolAddressMgr(keeper)
-	validatorMgr := NewValidatorMgr(keeper, poolAddrMgr)
+	vaultMgr := NewVaultMgrDummy()
 	txOutStore := NewTxStoreDummy()
+	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
 
-	handler := NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
+	handler := NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -55,12 +57,12 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 
 type TestYggdrasilHandleKeeper struct {
 	KVStoreDummy
-	ygg  Yggdrasil
+	ygg  Vault
 	na   NodeAccount
 	pool Pool
 }
 
-func (k *TestYggdrasilHandleKeeper) GetYggdrasil(ctx sdk.Context, pubKey common.PubKey) (Yggdrasil, error) {
+func (k *TestYggdrasilHandleKeeper) GetVault(ctx sdk.Context, pubKey common.PubKey) (Vault, error) {
 	return k.ygg, nil
 }
 
@@ -68,12 +70,12 @@ func (k *TestYggdrasilHandleKeeper) GetNodeAccountByPubKey(ctx sdk.Context, pubK
 	return k.na, nil
 }
 
-func (k *TestYggdrasilHandleKeeper) SetYggdrasil(ctx sdk.Context, ygg Yggdrasil) error {
+func (k *TestYggdrasilHandleKeeper) SetVault(ctx sdk.Context, ygg Vault) error {
 	k.ygg = ygg
 	return nil
 }
 
-func (k *TestYggdrasilHandleKeeper) HasValidYggdrasilPools(_ sdk.Context) (bool, error) {
+func (k *TestYggdrasilHandleKeeper) HasValidVaultPools(_ sdk.Context) (bool, error) {
 	return true, nil
 }
 
@@ -95,15 +97,14 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	ctx = ctx.WithBlockHeight(12)
 
 	pubKey := GetRandomPubKey()
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pubKey)
+	ygg.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(1022*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(33*common.One)),
+	}
 	keeper := &TestYggdrasilHandleKeeper{
-		ygg: Yggdrasil{
-			PubKey: pubKey,
-			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(1022*common.One)),
-				common.NewCoin(common.BNBAsset, sdk.NewUint(33*common.One)),
-			},
-		},
-		na: GetRandomNodeAccount(NodeActive),
+		ygg: ygg,
+		na:  GetRandomNodeAccount(NodeActive),
 		pool: Pool{
 			Asset:        common.BNBAsset,
 			BalanceRune:  sdk.NewUint(234 * common.One),
@@ -111,36 +112,35 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 		},
 	}
 
-	poolAddrMgr := NewPoolAddressDummyMgr()
-	validatorMgr := NewValidatorMgr(keeper, poolAddrMgr)
-	validatorMgr.BeginBlock(ctx)
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
+	vaultMgr := NewVaultMgrDummy()
 	txOutStore := NewTxStoreDummy()
+	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
+	validatorMgr.BeginBlock(ctx, constAccessor)
 
-	handler := NewYggdrasilHandler(keeper, txOutStore, poolAddrMgr, validatorMgr)
+	handler := NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
 
 	// check yggdrasil balance on add funds
-	ver := semver.MustParse("0.1.0")
 	coins := common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One))}
 	txID := GetRandomTxHash()
 	signer := GetRandomBech32Addr()
 	msg := NewMsgYggdrasil(pubKey, true, coins, txID, signer)
-	result := handler.handle(ctx, msg, ver)
+	result := handler.handle(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result))
 
-	ygg, err := keeper.GetYggdrasil(ctx, pubKey)
+	ygg, err := keeper.GetVault(ctx, pubKey)
 	c.Assert(err, IsNil)
 	coin := ygg.GetCoin(common.BNBAsset)
 	c.Check(coin.Amount.Uint64(), Equals, sdk.NewUint(133*common.One).Uint64(), Commentf("%d vs %d", coin.Amount.Uint64(), sdk.NewUint(133*common.One).Uint64()))
 
 	// check yggdrasil balance on sub funds
 	msg = NewMsgYggdrasil(pubKey, false, coins, txID, signer)
-	result = handler.handle(ctx, msg, ver)
+	result = handler.handle(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 
-	ygg, err = keeper.GetYggdrasil(ctx, pubKey)
+	ygg, err = keeper.GetVault(ctx, pubKey)
 	c.Assert(err, IsNil)
 	coin = ygg.GetCoin(common.BNBAsset)
 	c.Check(coin.Amount.Uint64(), Equals, sdk.NewUint(33*common.One).Uint64(), Commentf("%d vs %d", coin.Amount.Uint64(), sdk.NewUint(33*common.One).Uint64()))
 }
-
-// TODO test handleRagnarokProtocolStep2

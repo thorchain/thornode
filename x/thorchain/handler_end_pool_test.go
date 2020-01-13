@@ -2,9 +2,13 @@ package thorchain
 
 import (
 	"errors"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
+
 	. "gopkg.in/check.v1"
 )
 
@@ -29,9 +33,8 @@ func (s *HandlerEndPoolSuite) TestValidate(c *C) {
 	}
 
 	txOutStore := NewTxStoreDummy()
-	poolAddrMgr := NewPoolAddressDummyMgr()
 
-	handler := NewEndPoolHandler(keeper, txOutStore, poolAddrMgr)
+	handler := NewEndPoolHandler(keeper, txOutStore)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -63,7 +66,7 @@ func (s *HandlerEndPoolSuite) TestValidate(c *C) {
 	keeper = &TestEndPoolKeeper{
 		na: GetRandomNodeAccount(NodeWhiteListed),
 	}
-	handler = NewEndPoolHandler(keeper, txOutStore, poolAddrMgr)
+	handler = NewEndPoolHandler(keeper, txOutStore)
 	msg = NewMsgEndPool(common.BNBAsset, tx, signer)
 	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
@@ -87,10 +90,15 @@ func (k *TestEndPoolHandleKeeper) PoolExist(_ sdk.Context, asset common.Asset) b
 func (k *TestEndPoolHandleKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return k.currentPool, nil
 }
-
+func (k *TestEndPoolHandleKeeper) GetPools(_ sdk.Context) (Pools, error) {
+	return Pools{k.currentPool}, nil
+}
 func (k *TestEndPoolHandleKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	k.currentPool = pool
 	return nil
+}
+func (k *TestEndPoolHandleKeeper) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
+	return NodeAccounts{k.activeNodeAccount}, nil
 }
 
 // IsActiveObserver see whether it is an active observer
@@ -121,28 +129,13 @@ func (k *TestEndPoolHandleKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
 	k.poolStaker = ps
 }
 
-func (k *TestEndPoolHandleKeeper) AddIncompleteEvents(_ sdk.Context, _ Event) error {
-	if k.failAddEvent {
-		return errors.New("fail to add incomplete events")
-	}
+func (k *TestEndPoolHandleKeeper) UpsertEvent(ctx sdk.Context, event Event) error {
 	return nil
-}
-
-func (k *TestEndPoolHandleKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
-	if k.failStakeEvent {
-		return nil, errors.New("fail to get incomplete events")
-	}
-	return nil, nil
-}
-
-func (k *TestEndPoolHandleKeeper) GetLastEventID(_ sdk.Context) (int64, error) {
-	return 0, nil
 }
 
 func (k *TestEndPoolHandleKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
 	return PoolEnabled
 }
-
 
 func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
@@ -172,9 +165,7 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	}
 
 	txOutStore := NewTxStoreDummy()
-	poolAddrMgr := NewPoolAddressDummyMgr()
-
-	handler := NewEndPoolHandler(keeper, txOutStore, poolAddrMgr)
+	handler := NewEndPoolHandler(keeper, txOutStore)
 	ver := semver.MustParse("0.1.0")
 
 	stakeTxHash := GetRandomTxHash()
@@ -195,8 +186,9 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 		bnbAddr,
 		activeNodeAccount.NodeAddress)
 
+	constAccessor := constants.GetConstantValues(ver)
 	stakeHandler := NewStakeHandler(keeper)
-	stakeResult := stakeHandler.Run(ctx, msgSetStake, ver)
+	stakeResult := stakeHandler.Run(ctx, msgSetStake, ver, constAccessor)
 	c.Assert(stakeResult.Code, Equals, sdk.CodeOK)
 
 	p, err := keeper.GetPool(ctx, common.BNBAsset)
@@ -205,11 +197,11 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
 	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
 	c.Assert(p.Status, Equals, PoolEnabled)
-	txOutStore.NewBlock(1)
+	txOutStore.NewBlock(1, constAccessor)
 
 	// EndPool again
 	msgEndPool1 := NewMsgEndPool(common.BNBAsset, tx, activeNodeAccount.NodeAddress)
-	result1 := handler.handle(ctx, msgEndPool1, ver)
+	result1 := handler.handle(ctx, msgEndPool1, ver, constAccessor)
 	c.Assert(result1.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result1))
 	p1, err := keeper.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
@@ -223,7 +215,6 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	totalAsset := sdk.ZeroUint()
 	totalRune := sdk.ZeroUint()
 	for _, item := range txOut.TxArray {
-		c.Assert(item.Valid(), IsNil)
 		c.Assert(item.ToAddress.Equals(bnbAddr), Equals, true)
 		if item.Coin.Asset.IsRune() {
 			totalRune = totalRune.Add(item.Coin.Amount)

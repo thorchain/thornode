@@ -26,7 +26,7 @@ const normalResp = `{
     {
       "node_address": "thor146z3xkdlyzmda639ljsk3qvucpem0f60d2lz62",
       "status": "active",
-      "node_pub_keys": {
+      "pub_key_set": {
         "secp256k1": "thorpub1addwnpepq0t2qpwk0rx4da68zzvl6w7vdcdygyzau49ffc2kqnx0624ard576060nyk",
         "ed25519": "thorpub1addwnpepq0t2qpwk0rx4da68zzvl6w7vdcdygyzau49ffc2kqnx0624ard576060nyk"
       },

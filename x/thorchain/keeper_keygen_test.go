@@ -2,6 +2,8 @@ package thorchain
 
 import (
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type KeeperKeygensSuite struct{}
@@ -13,7 +15,7 @@ func (s *KeeperKeygensSuite) TestKeeperKeygens(c *C) {
 	ctx, k := setupKeeperForTest(c)
 
 	keygens := NewKeygens(1)
-	keygen := Keygen{GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey()}
+	keygen := common.PubKeys{GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey()}
 	keygens.Keygens = append(keygens.Keygens, keygen)
 	c.Assert(k.SetKeygens(ctx, keygens), IsNil)
 

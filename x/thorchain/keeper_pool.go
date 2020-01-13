@@ -61,7 +61,9 @@ func (k KVStore) SetPool(ctx sdk.Context, pool Pool) error {
 	}
 
 	if prePool.Status != pool.Status {
-		eventPoolStatusWrapper(ctx, k, pool)
+		if err := eventPoolStatusWrapper(ctx, k, pool); nil != err {
+			return err
+		}
 	}
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(pool))
 	return nil

@@ -1,5 +1,5 @@
 #
-# Observer, Signer, Thorchain
+# Thorchain, Bifrost
 #
 
 #
@@ -7,30 +7,30 @@
 #
 FROM golang:1.13 AS build
 
-WORKDIR /app
-
-COPY . .
-
 ENV GOBIN=/go/bin
 ENV GOPATH=/go
 ENV CGO_ENABLED=0
 ENV GOOS=linux
 
-RUN go mod verify
-RUN go get -d -v ./...
-
-RUN go build -a -installsuffix cgo -o $GOBIN/thord ./cmd/thord
-RUN go build -a -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
-RUN go build -a -installsuffix cgo -o $GOBIN/observed ./cmd/observed
-RUN go build -a -installsuffix cgo -o $GOBIN/signd ./cmd/signd
-RUN go build -a -installsuffix cgo -o $GOBIN/generate ./tools/generate
+ARG TAGS=mainnet
 
 # install keygenClient
 RUN git clone https://gitlab.com/thorchain/tss/tss-tools.git /tmp/tss-tools
 WORKDIR /tmp/tss-tools/cmd/keygenclient
 RUN go mod verify
-RUN go get -d -v ./...
+RUN go mod download
 RUN go build -a -installsuffix cgo -o $GOBIN/keygenclient .
+
+WORKDIR /app
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/generate ./tools/generate
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/thord ./cmd/thord
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
+RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/bifrost ./cmd/bifrost
 
 #
 # Main
@@ -44,8 +44,7 @@ RUN apk add --update jq curl nginx && \
 COPY --from=build /go/bin/generate /usr/bin/
 COPY --from=build /go/bin/thord /usr/bin/
 COPY --from=build /go/bin/thorcli /usr/bin/
-COPY --from=build /go/bin/observed /usr/bin/
-COPY --from=build /go/bin/signd /usr/bin/
+COPY --from=build /go/bin/bifrost /usr/bin/
 COPY --from=build /go/bin/keygenclient /usr/bin/
 
 # Add users.

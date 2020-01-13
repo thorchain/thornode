@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+
+  frontend:
+    image: registry.gitlab.com/thorchain/bepswap/bepswap-react-app
+    ports:
+      - 8000:80
+
+

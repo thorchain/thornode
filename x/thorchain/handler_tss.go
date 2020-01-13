@@ -3,24 +3,22 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type TssHandler struct {
-	keeper      Keeper
-	txOutStore  TxOutStore
-	poolAddrMgr PoolAddressManager
+	keeper   Keeper
+	vaultMgr VaultManager
 }
 
-func NewTssHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager) TssHandler {
+func NewTssHandler(keeper Keeper, vaultMgr VaultManager) TssHandler {
 	return TssHandler{
-		keeper:      keeper,
-		txOutStore:  txOutStore,
-		poolAddrMgr: poolAddrMgr,
+		keeper:   keeper,
+		vaultMgr: vaultMgr,
 	}
 }
 
-func (h TssHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h TssHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgTssPool)
 	if !ok {
 		return errInvalidMessage.Result()
@@ -65,25 +63,6 @@ func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Versi
 	}
 }
 
-func (h TssHandler) rotatePoolAddress(ctx sdk.Context, voter TssVoter) error {
-	chains, err := h.keeper.GetChains(ctx)
-	if err != nil {
-		return nil
-	}
-
-	poolpks := make(common.PoolPubKeys, len(chains))
-	for i, chain := range chains {
-		var err error
-		poolpks[i], err = common.NewPoolPubKey(chain, voter.PubKeys, voter.PoolPubKey)
-		if err != nil {
-			return nil
-		}
-	}
-
-	h.poolAddrMgr.RotatePoolAddress(ctx, poolpks, h.txOutStore)
-	return nil
-}
-
 // Handle a message to observe inbound tx
 func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool) sdk.Result {
 	active, err := h.keeper.ListActiveNodeAccounts(ctx)
@@ -96,13 +75,23 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool) sdk.Result {
 	if err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
+
+	if voter.PoolPubKey.IsEmpty() {
+		voter.PoolPubKey = msg.PoolPubKey
+		voter.PubKeys = msg.PubKeys
+	}
+
 	voter.Sign(msg.Signer)
+	h.keeper.SetTssVoter(ctx, voter)
 
 	if voter.HasConensus(active) && voter.BlockHeight == 0 {
 		voter.BlockHeight = ctx.BlockHeight()
 		h.keeper.SetTssVoter(ctx, voter)
 
-		if err := h.rotatePoolAddress(ctx, voter); err != nil {
+		vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, voter.PoolPubKey)
+		vault.Membership = voter.PubKeys
+
+		if err := h.vaultMgr.RotateVault(ctx, vault); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 

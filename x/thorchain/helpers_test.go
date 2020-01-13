@@ -13,12 +13,17 @@ var _ = Suite(&HelperSuite{})
 
 type TestRefundBondKeeper struct {
 	KVStoreDummy
-	ygg  Yggdrasil
-	pool Pool
-	na   NodeAccount
+	ygg    Vault
+	pool   Pool
+	na     NodeAccount
+	vaults Vaults
 }
 
-func (k *TestRefundBondKeeper) GetYggdrasil(_ sdk.Context, _ common.PubKey) (Yggdrasil, error) {
+func (k *TestRefundBondKeeper) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vaults, error) {
+	return k.vaults, nil
+}
+
+func (k *TestRefundBondKeeper) GetVault(_ sdk.Context, _ common.PubKey) (Vault, error) {
 	return k.ygg, nil
 }
 
@@ -39,19 +44,19 @@ func (s *HelperSuite) TestRefundBond(c *C) {
 	txOut := NewTxStoreDummy()
 
 	pk := GetRandomPubKey()
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(3946*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(27*common.One)),
+	}
 	keeper := &TestRefundBondKeeper{
 		pool: Pool{
 			Asset:        common.BNBAsset,
 			BalanceRune:  sdk.NewUint(23789 * common.One),
 			BalanceAsset: sdk.NewUint(167 * common.One),
 		},
-		ygg: Yggdrasil{
-			PubKey: pk,
-			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(3946*common.One)),
-				common.NewCoin(common.BNBAsset, sdk.NewUint(27*common.One)),
-			},
-		},
+		ygg:    ygg,
+		vaults: Vaults{GetRandomVault()},
 	}
 
 	err := refundBond(ctx, txID, na, keeper, txOut)

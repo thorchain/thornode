@@ -12,7 +12,7 @@ var _ = Suite(&MsgObservedTxOutSuite{})
 func (s *MsgObservedTxOutSuite) TestMsgObservedTxOut(c *C) {
 	var err error
 	pk := GetRandomPubKey()
-	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(55), pk)
+	tx := NewObservedTx(GetRandomTx(), 55, pk)
 	tx.Tx.FromAddress, err = pk.GetAddress(tx.Tx.Coins[0].Asset.Chain)
 	c.Assert(err, IsNil)
 	acc := GetRandomBech32Addr()

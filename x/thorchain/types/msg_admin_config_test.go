@@ -13,7 +13,7 @@ func (MsgSetAdminConfigSuite) TestMsgSetAdminConfig(c *C) {
 	addr := GetRandomBech32Addr()
 	c.Check(addr.Empty(), Equals, false)
 	tx := GetRandomTx()
-	msgSetAdminConfig := NewMsgSetAdminConfig(tx, PoolRefundGasKey, "1000", addr)
+	msgSetAdminConfig := NewMsgSetAdminConfig(tx, DefaultPoolStatus, "Enabled", addr)
 	c.Assert(msgSetAdminConfig.ValidateBasic(), IsNil)
 	buf := msgSetAdminConfig.GetSignBytes()
 	c.Assert(buf, NotNil)
@@ -39,7 +39,7 @@ func (MsgSetAdminConfigSuite) TestMsgSetAdminConfig(c *C) {
 	}
 
 	for _, item := range inputs {
-		m := NewMsgSetAdminConfig(tx, PoolRefundGasKey, item.value, item.signer)
+		m := NewMsgSetAdminConfig(tx, DefaultPoolStatus, item.value, item.signer)
 		err := m.ValidateBasic()
 		c.Assert(err, NotNil)
 	}

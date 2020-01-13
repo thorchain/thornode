@@ -4,30 +4,26 @@ import (
 	stdErrors "errors"
 
 	"github.com/blang/semver"
-	"github.com/pkg/errors"
-	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/constants"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type YggdrasilHandler struct {
 	keeper       Keeper
 	txOutStore   TxOutStore
-	poolAddrMgr  PoolAddressManager
 	validatorMgr ValidatorManager
 }
 
-func NewYggdrasilHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager) YggdrasilHandler {
+func NewYggdrasilHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager) YggdrasilHandler {
 	return YggdrasilHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
-		poolAddrMgr:  poolAddrMgr,
 		validatorMgr: validatorMgr,
 	}
 }
 
-func (h YggdrasilHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h YggdrasilHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgYggdrasil)
 	if !ok {
 		return errInvalidMessage.Result()
@@ -35,7 +31,7 @@ func (h YggdrasilHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version
 	if err := h.validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	return h.handle(ctx, msg, version)
+	return h.handle(ctx, msg, version, constAccessor)
 }
 
 func (h YggdrasilHandler) validate(ctx sdk.Context, msg MsgYggdrasil, version semver.Version) error {
@@ -60,93 +56,29 @@ func (h YggdrasilHandler) validateV1(ctx sdk.Context, msg MsgYggdrasil) error {
 	return nil
 }
 
-func (h YggdrasilHandler) handle(ctx sdk.Context, msg MsgYggdrasil, version semver.Version) sdk.Result {
+func (h YggdrasilHandler) handle(ctx sdk.Context, msg MsgYggdrasil, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	ctx.Logger().Info("receive MsgYggdrasil", "pubkey", msg.PubKey.String(), "add_funds", msg.AddFunds, "coins", msg.Coins)
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg)
+		return h.handleV1(ctx, msg, constAccessor)
 	} else {
 		ctx.Logger().Error(badVersion.Error())
 		return errBadVersion.Result()
 	}
 }
 
-func handleRagnarokProtocolStep2(ctx sdk.Context, keeper Keeper, txOut TxOutStore, poolAddrMgr PoolAddressManager, validatorManager ValidatorManager) sdk.Result {
-	// Ragnarok Protocol
-	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
-	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
-	// 2) upon receiving the yggdrasil fund,  THORNode will refund the validator's bond
-	// 3) once all yggdrasil fund get returned, return all fund to stakes
-
-	// get the first observer
-	nas, err := keeper.ListActiveNodeAccounts(ctx)
-	if nil != err {
-		ctx.Logger().Error("can't get active nodes", err)
-		return sdk.ErrInternal("can't get active nodes").Result()
-	}
-	if len(nas) == 0 {
-		return sdk.ErrInternal("can't find any active nodes").Result()
-	}
-
-	if len(nas) > constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
-		// Ragnarok protocol didn't triggered , don't call this one
-		return sdk.Result{
-			Code:      sdk.CodeOK,
-			Codespace: DefaultCodespace,
-		}
-	}
-
-	pools, err := keeper.GetPools(ctx)
-	if err != nil {
-		ctx.Logger().Error("can't get pools", err)
-		return sdk.ErrInternal(err.Error()).Result()
-	}
-
-	// go through all the pooles
-	for _, pool := range pools {
-		poolStaker, err := keeper.GetPoolStaker(ctx, pool.Asset)
-		if nil != err {
-			ctx.Logger().Error("fail to get pool staker", err)
-			return sdk.ErrInternal(err.Error()).Result()
-		}
-
-		// everyone withdraw
-		for _, item := range poolStaker.Stakers {
-			unstakeMsg := NewMsgSetUnStake(
-				common.GetRagnarokTx(pool.Asset.Chain),
-				item.RuneAddress,
-				sdk.NewUint(10000),
-				pool.Asset,
-				nas[0].NodeAddress,
-			)
-
-			version := keeper.GetLowestActiveVersion(ctx)
-			unstakeHandler := NewUnstakeHandler(keeper, txOut, poolAddrMgr)
-			result := unstakeHandler.Run(ctx, unstakeMsg, version)
-			if !result.IsOK() {
-				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress)
-				return result
-			}
-		}
-		pool.Status = PoolSuspended
-		if err := keeper.SetPool(ctx, pool); err != nil {
-			err = errors.Wrap(err, "fail to set pool")
-			ctx.Logger().Error(err.Error())
-			return sdk.ErrInternal(err.Error()).Result()
-		}
-	}
-
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
-}
-
 // Handle a message to set pooldata
-func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil) sdk.Result {
-	ygg, err := h.keeper.GetYggdrasil(ctx, msg.PubKey)
-	if nil != err && !stdErrors.Is(err, ErrYggdrasilNotFound) {
-		ctx.Logger().Error("fail to get yggdrasil", err)
+func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAccessor constants.ConstantValues) sdk.Result {
+	ygg, err := h.keeper.GetVault(ctx, msg.PubKey)
+	if nil != err && !stdErrors.Is(err, ErrVaultNotFound) {
+		ctx.Logger().Error("fail to get yggdrasil", "error", err)
 		return sdk.ErrInternal(err.Error()).Result()
+	}
+	if len(ygg.Type) == 0 {
+		ygg.Status = ActiveVault
+		ygg.Type = YggdrasilVault
+	}
+	if !ygg.IsYggdrasil() {
+		return sdk.ErrInternal("this is not a Yggdrasil vault").Result()
 	}
 	if msg.AddFunds {
 		ygg.AddFunds(msg.Coins)
@@ -154,8 +86,8 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil) sdk.Result
 		ygg.SubFunds(msg.Coins)
 	}
 
-	if err := h.keeper.SetYggdrasil(ctx, ygg); nil != err {
-		ctx.Logger().Error("fail to save yggdrasil", err)
+	if err := h.keeper.SetVault(ctx, ygg); nil != err {
+		ctx.Logger().Error("fail to save yggdrasil", "error", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
@@ -171,30 +103,9 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil) sdk.Result
 			ctx.Logger().Error("unable to get node account", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
-		// TODO: slash their bond for any Yggdrasil funds that are unaccounted
-		// for before sending their bond back. Keep in mind that THORNode won't get
-		// back 100% of the funds (due to gas).
 		if err := refundBond(ctx, msg.RequestTxHash, na, h.keeper, h.txOutStore); err != nil {
-			ctx.Logger().Error("fail to refund bond", err)
+			ctx.Logger().Error("fail to refund bond", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
-		}
-	}
-
-	total, err := h.keeper.TotalActiveNodeAccount(ctx)
-	if nil != err {
-		ctx.Logger().Error("can't get active nodes", err)
-		return sdk.ErrInternal("can't get active nodes").Result()
-	}
-
-	// Ragnarok protocol get triggered, if all the Yggdrasil pool returned funds already, THORNode will continue Ragnarok
-	if total < constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
-		hasYggdrasilPool, err := h.keeper.HasValidYggdrasilPools(ctx)
-		if nil != err {
-			ctx.Logger().Error("fail to find valid yggdrasil pools", err)
-			return sdk.ErrInternal(err.Error()).Result()
-		}
-		if !hasYggdrasilPool {
-			return handleRagnarokProtocolStep2(ctx, h.keeper, h.txOutStore, h.poolAddrMgr, h.validatorMgr)
 		}
 	}
 

@@ -8,14 +8,14 @@ import (
 
 type PubKeyManager struct {
 	rwMutex *sync.RWMutex
-	pks     []common.PubKey
+	pks     common.PubKeys
 }
 
 // NewPubKeyManager create a new instance of PubKeyManager
 func NewPubKeyManager() *PubKeyManager {
 	return &PubKeyManager{
 		rwMutex: &sync.RWMutex{},
-		pks:     make([]common.PubKey, 0),
+		pks:     make(common.PubKeys, 0),
 	}
 }
 

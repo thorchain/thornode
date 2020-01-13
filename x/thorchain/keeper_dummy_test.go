@@ -12,6 +12,7 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 var kaboom = errors.New("Kaboom!!!")
@@ -27,16 +28,21 @@ func (k KVStoreDummy) Logger(ctx sdk.Context) log.Logger {
 func (k KVStoreDummy) GetKey(_ sdk.Context, prefix dbPrefix, key string) string {
 	return fmt.Sprintf("%s/1/%s", prefix, key)
 }
-func (k KVStoreDummy) SetLastSignedHeight(_ sdk.Context, _ sdk.Uint) { return }
-func (k KVStoreDummy) GetLastSignedHeight(_ sdk.Context) (sdk.Uint, error) {
-	return sdk.ZeroUint(), kaboom
+func (k KVStoreDummy) SetLastSignedHeight(_ sdk.Context, _ int64) { return }
+func (k KVStoreDummy) GetLastSignedHeight(_ sdk.Context) (int64, error) {
+	return 0, kaboom
 }
-func (k KVStoreDummy) SetLastChainHeight(_ sdk.Context, _ common.Chain, _ sdk.Uint) error {
+func (k KVStoreDummy) SetLastChainHeight(_ sdk.Context, _ common.Chain, _ int64) error {
 	return kaboom
 }
-func (k KVStoreDummy) GetLastChainHeight(_ sdk.Context, _ common.Chain) (sdk.Uint, error) {
-	return sdk.ZeroUint(), kaboom
+func (k KVStoreDummy) GetLastChainHeight(_ sdk.Context, _ common.Chain) (int64, error) {
+	return 0, kaboom
 }
+func (k KVStoreDummy) GetRagnarokBlockHeight(_ sdk.Context) (int64, error) {
+	return 0, kaboom
+}
+func (k KVStoreDummy) SetRagnarokBlockHeight(_ sdk.Context, _ int64) {}
+func (k KVStoreDummy) RagnarokInProgress(_ sdk.Context) bool         { return false }
 func (k KVStoreDummy) GetPoolBalances(_ sdk.Context, _, _ common.Asset) (sdk.Uint, sdk.Uint) {
 	return sdk.ZeroUint(), sdk.ZeroUint()
 }
@@ -66,10 +72,10 @@ func (k KVStoreDummy) GetStakerPoolIterator(_ sdk.Context) sdk.Iterator { return
 func (k KVStoreDummy) GetStakerPool(_ sdk.Context, _ common.Address) (StakerPool, error) {
 	return StakerPool{}, kaboom
 }
-func (k KVStoreDummy) SetStakerPool(ctx sdk.Context, sp StakerPool)           {}
-func (k KVStoreDummy) TotalActiveNodeAccount(ctx sdk.Context) (int, error)    { return 0, kaboom }
-func (k KVStoreDummy) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) { return nil, kaboom }
-func (k KVStoreDummy) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error) {
+func (k KVStoreDummy) SetStakerPool(_ sdk.Context, _ StakerPool)            {}
+func (k KVStoreDummy) TotalActiveNodeAccount(_ sdk.Context) (int, error)    { return 0, kaboom }
+func (k KVStoreDummy) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) { return nil, kaboom }
+func (k KVStoreDummy) ListNodeAccountsByStatus(_ sdk.Context, _ NodeStatus) (NodeAccounts, error) {
 	return nil, kaboom
 }
 func (k KVStoreDummy) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
@@ -87,7 +93,7 @@ func (k KVStoreDummy) GetNodeAccountByBondAddress(_ sdk.Context, _ common.Addres
 	return NodeAccount{}, kaboom
 }
 func (k KVStoreDummy) SetNodeAccount(_ sdk.Context, _ NodeAccount) error { return kaboom }
-func (k KVStoreDummy) EnsureTrustAccountUnique(_ sdk.Context, _ string, _ common.PubKeys) error {
+func (k KVStoreDummy) EnsureNodeKeysUnique(_ sdk.Context, _ string, _ common.PubKeySet) error {
 	return kaboom
 }
 func (k KVStoreDummy) GetNodeAccountIterator(_ sdk.Context) sdk.Iterator     { return nil }
@@ -125,31 +131,36 @@ func (k KVStoreDummy) GetTotalLiquidityFees(_ sdk.Context, _ uint64) (sdk.Uint, 
 func (k KVStoreDummy) GetPoolLiquidityFees(_ sdk.Context, _ uint64, _ common.Asset) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
-func (k KVStoreDummy) GetIncompleteEvents(_ sdk.Context) (Events, error)   { return nil, kaboom }
-func (k KVStoreDummy) SetIncompleteEvents(_ sdk.Context, _ Events)         {}
-func (k KVStoreDummy) AddIncompleteEvents(_ sdk.Context, _ Event) error    { return kaboom }
-func (k KVStoreDummy) GetCompleteEventIterator(_ sdk.Context) sdk.Iterator { return nil }
-func (k KVStoreDummy) GetCompletedEvent(_ sdk.Context, _ int64) (Event, error) {
-	return Event{}, kaboom
+
+func (k KVStoreDummy) GetEvent(_ sdk.Context, _ int64) (Event, error) { return Event{}, kaboom }
+func (k KVStoreDummy) GetEventsIterator(_ sdk.Context) sdk.Iterator   { return nil }
+func (k KVStoreDummy) UpsertEvent(_ sdk.Context, _ Event) error       { return kaboom }
+func (k KVStoreDummy) GetPendingEventID(_ sdk.Context, _ common.TxID) ([]int64, error) {
+	return nil, kaboom
 }
-func (k KVStoreDummy) SetCompletedEvent(_ sdk.Context, _ Event)         {}
-func (k KVStoreDummy) GetLastEventID(_ sdk.Context) (int64, error)      { return 0, kaboom }
-func (k KVStoreDummy) SetLastEventID(_ sdk.Context, _ int64)            {}
-func (k KVStoreDummy) SetPoolAddresses(_ sdk.Context, _ *PoolAddresses) {}
-func (k KVStoreDummy) GetPoolAddresses(_ sdk.Context) (PoolAddresses, error) {
-	return PoolAddresses{}, kaboom
+func (k KVStoreDummy) GetEventsIDByTxHash(ctx sdk.Context, txID common.TxID) ([]int64, error) {
+	return nil, kaboom
 }
-func (k KVStoreDummy) GetChains(_ sdk.Context) (common.Chains, error)      { return nil, kaboom }
-func (k KVStoreDummy) SetChains(_ sdk.Context, _ common.Chains)            {}
-func (k KVStoreDummy) GetYggdrasilIterator(_ sdk.Context) sdk.Iterator     { return nil }
-func (k KVStoreDummy) YggdrasilExists(_ sdk.Context, _ common.PubKey) bool { return false }
+func (k KVStoreDummy) GetCurrentEventID(_ sdk.Context) (int64, error)    { return 0, kaboom }
+func (k KVStoreDummy) SetCurrentEventID(_ sdk.Context, _ int64)          {}
+func (k KVStoreDummy) GetAllPendingEvents(_ sdk.Context) (Events, error) { return nil, kaboom }
+
+func (k KVStoreDummy) GetChains(_ sdk.Context) (common.Chains, error)  { return nil, kaboom }
+func (k KVStoreDummy) SetChains(_ sdk.Context, _ common.Chains)        {}
+func (k KVStoreDummy) GetVaultIterator(_ sdk.Context) sdk.Iterator     { return nil }
+func (k KVStoreDummy) VaultExists(_ sdk.Context, _ common.PubKey) bool { return false }
 func (k KVStoreDummy) FindPubKeyOfAddress(_ sdk.Context, _ common.Address, _ common.Chain) (common.PubKey, error) {
 	return common.EmptyPubKey, kaboom
 }
-func (k KVStoreDummy) SetYggdrasil(_ sdk.Context, _ Yggdrasil) error { return kaboom }
-func (k KVStoreDummy) GetYggdrasil(_ sdk.Context, _ common.PubKey) (Yggdrasil, error) {
-	return Yggdrasil{}, kaboom
+func (k KVStoreDummy) SetVault(_ sdk.Context, _ Vault) error { return kaboom }
+func (k KVStoreDummy) GetVault(_ sdk.Context, _ common.PubKey) (Vault, error) {
+	return Vault{}, kaboom
 }
+func (k KVStoreDummy) GetAsgardVaults(_ sdk.Context) (Vaults, error) { return nil, kaboom }
+func (k KVStoreDummy) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vaults, error) {
+	return nil, kaboom
+}
+func (k KVStoreDummy) DeleteVault(_ sdk.Context, _ common.PubKey) error { return kaboom }
 func (k KVStoreDummy) GetReservesContributors(_ sdk.Context) (ReserveContributors, error) {
 	return nil, kaboom
 }
@@ -157,29 +168,16 @@ func (k KVStoreDummy) SetReserveContributors(_ sdk.Context, _ ReserveContributor
 	return kaboom
 }
 
-func (k KVStoreDummy) HasValidYggdrasilPools(_ sdk.Context) (bool, error) { return false, kaboom }
-func (k KVStoreDummy) AddFeeToReserve(_ sdk.Context, _ sdk.Uint) error    { return kaboom }
-func (k KVStoreDummy) GetVaultData(_ sdk.Context) (VaultData, error)      { return VaultData{}, kaboom }
-func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error      { return kaboom }
-func (k KVStoreDummy) UpdateVaultData(_ sdk.Context) error                { return kaboom }
-func (k KVStoreDummy) SetAdminConfig(_ sdk.Context, _ AdminConfig)        {}
+func (k KVStoreDummy) HasValidVaultPools(_ sdk.Context) (bool, error)  { return false, kaboom }
+func (k KVStoreDummy) AddFeeToReserve(_ sdk.Context, _ sdk.Uint) error { return kaboom }
+func (k KVStoreDummy) GetVaultData(_ sdk.Context) (VaultData, error)   { return VaultData{}, kaboom }
+func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error   { return kaboom }
+func (k KVStoreDummy) UpdateVaultData(_ sdk.Context, _ constants.ConstantValues) error {
+	return kaboom
+}
+func (k KVStoreDummy) SetAdminConfig(_ sdk.Context, _ AdminConfig) {}
 func (k KVStoreDummy) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
 	return PoolSuspended
-}
-func (k KVStoreDummy) GetAdminConfigWhiteListGasAsset(_ sdk.Context, _ sdk.AccAddress) sdk.Coins {
-	return nil
-}
-func (k KVStoreDummy) GetAdminConfigBnbAddressType(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) common.Address {
-	return common.NoAddress
-}
-func (k KVStoreDummy) GetAdminConfigUintType(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) sdk.Uint {
-	return sdk.ZeroUint()
-}
-func (k KVStoreDummy) GetAdminConfigCoinsType(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) sdk.Coins {
-	return nil
-}
-func (k KVStoreDummy) GetAdminConfigInt64(_ sdk.Context, _ AdminConfigKey, _ string, _ sdk.AccAddress) int64 {
-	return 0
 }
 func (k KVStoreDummy) GetAdminConfigValue(_ sdk.Context, _ AdminConfigKey, _ sdk.AccAddress) (val string, err error) {
 	return "", kaboom

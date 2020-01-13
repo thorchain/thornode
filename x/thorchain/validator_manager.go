@@ -14,65 +14,71 @@ import (
 )
 
 const (
-	EventTypeValidatorManager   = `validator_manager`
-	EventTypeNominatedValidator = `validator_nominated`
-	EventTypeQueuedValidator    = `validator_queued`
-	EventTypeValidatorActive    = `validator_active`
-	EventTypeValidatorStandby   = `validator_standby`
-
 	genesisBlockHeight = 1
 )
 
 type ValidatorManager interface {
-	BeginBlock(ctx sdk.Context) error
-	EndBlock(ctx sdk.Context, store TxOutStore) []abci.ValidatorUpdate
-	RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error
+	BeginBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error
+	EndBlock(ctx sdk.Context, constAccessor constants.ConstantValues) []abci.ValidatorUpdate
+	RequestYggReturn(ctx sdk.Context, node NodeAccount) error
 }
 
 // ValidatorMgr is to manage a list of validators , and rotate them
 type ValidatorMgr struct {
-	k           Keeper
-	poolAddrMgr PoolAddressManager
+	k          Keeper
+	vaultMgr   VaultManager
+	txOutStore TxOutStore
 }
 
 // NewValidatorManager create a new instance of ValidatorManager
-func NewValidatorMgr(k Keeper, poolAddrMgr PoolAddressManager) *ValidatorMgr {
+func NewValidatorMgr(k Keeper, txOut TxOutStore, vaultMgr VaultManager) *ValidatorMgr {
 	return &ValidatorMgr{
-		k:           k,
-		poolAddrMgr: poolAddrMgr,
+		k:          k,
+		vaultMgr:   vaultMgr,
+		txOutStore: txOut,
 	}
 }
 
 // BeginBlock when block begin
-func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context) error {
+func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	height := ctx.BlockHeight()
 	if height == genesisBlockHeight {
-		if err := vm.setupValidatorNodes(ctx, height); nil != err {
-			ctx.Logger().Error("fail to setup validator nodes", err)
+		if err := vm.setupValidatorNodes(ctx, height, constAccessor); nil != err {
+			ctx.Logger().Error("fail to setup validator nodes", "error", err)
+		}
+	}
+	if vm.k.RagnarokInProgress(ctx) {
+		// ragnarok is in progress, no point to check node rotation
+		return nil
+	}
+
+	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
+	totalActiveNodes, err := vm.k.TotalActiveNodeAccount(ctx)
+	if err != nil {
+		return err
+	}
+
+	if minimumNodesForBFT < int64(totalActiveNodes) {
+		badValidatorRate := constAccessor.GetInt64Value(constants.BadValidatorRate)
+		if err := vm.markBadActor(ctx, badValidatorRate); err != nil {
+			return err
+		}
+		oldValidatorRate := constAccessor.GetInt64Value(constants.OldValidatorRate)
+		if err := vm.markOldActor(ctx, oldValidatorRate); err != nil {
+			return err
 		}
 	}
 
-	if err := vm.markBadActor(ctx, constants.BadValidatorRate); err != nil {
-		return err
-	}
-
-	if err := vm.markOldActor(ctx, constants.OldValidatorRate); err != nil {
-		return err
-	}
-
-	if ctx.BlockHeight()%constants.RotatePerBlockHeight == 0 {
-		next, ok, err := vm.nextPoolNodeAccounts(ctx, constants.DesireValidatorSet)
+	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
+	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
+	if ctx.BlockHeight()%rotatePerBlockHeight == 0 {
+		ctx.Logger().Info("Checking for node account rotation...")
+		next, ok, err := vm.nextVaultNodeAccounts(ctx, int(desireValidatorSet))
 		if err != nil {
 			return err
 		}
 		if ok {
-			keygen := make(Keygen, len(next))
-			for i := range next {
-				keygen[i] = next[i].NodePubKey.Secp256k1
-			}
-			keygens := NewKeygens(uint64(ctx.BlockHeight()))
-			keygens.Keygens = []Keygen{keygen}
-			if err := vm.k.SetKeygens(ctx, keygens); err != nil {
+			if err := vm.vaultMgr.TriggerKeygen(ctx, next); err != nil {
 				return err
 			}
 		}
@@ -82,79 +88,58 @@ func (vm *ValidatorMgr) BeginBlock(ctx sdk.Context) error {
 }
 
 // EndBlock when block end
-func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore) []abci.ValidatorUpdate {
+func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.ConstantValues) []abci.ValidatorUpdate {
 	height := ctx.BlockHeight()
 	activeNodes, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
-		ctx.Logger().Error("fail to list active node accounts")
+		ctx.Logger().Error("fail to get all active nodes", "error", err)
+		return nil
 	}
 
-	readyNodes, err := vm.k.ListNodeAccountsByStatus(ctx, NodeReady)
-	if err != nil {
-		ctx.Logger().Error("fail to list ready node accounts")
-	}
-
-	poolAddresses, err := vm.k.GetPoolAddresses(ctx)
-	if err != nil {
-		ctx.Logger().Error("fail to get pool addresses")
-	}
-	membership := poolAddresses.Current[0].Membership
-
-	var newActive NodeAccounts // store the list of new active users
-
-	// find active node accounts that are no longer active
-	removedNodes := false
-	for _, na := range activeNodes {
-		found := false
-		for _, member := range membership {
-			if na.NodePubKey.Contains(member) {
-				newActive = append(newActive, na)
-				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
-				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-					ctx.Logger().Error("fail to save node account")
-				}
-				break
-			}
+	// when ragnarok is in progress, just process ragnarok
+	if vm.k.RagnarokInProgress(ctx) {
+		// process ragnarok
+		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
+			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
 		}
-		if !found && len(membership) > 0 {
-			ctx.EventManager().EmitEvent(
-				sdk.NewEvent("UpdateNodeAccountStatus",
-					sdk.NewAttribute("Address", na.NodeAddress.String()),
-					sdk.NewAttribute("Former:", na.Status.String()),
-					sdk.NewAttribute("Current:", NodeStandby.String())))
-			na.UpdateStatus(NodeStandby, height)
-			removedNodes = true
-			if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-				ctx.Logger().Error("fail to save node account")
-			}
-		}
+		return nil
 	}
 
-	// find ready nodes that change to
-	for _, na := range readyNodes {
-		for _, member := range membership {
-			if na.NodePubKey.Contains(member) {
-				newActive = append(newActive, na)
-				ctx.EventManager().EmitEvent(
-					sdk.NewEvent("UpdateNodeAccountStatus",
-						sdk.NewAttribute("Address", na.NodeAddress.String()),
-						sdk.NewAttribute("Former:", na.Status.String()),
-						sdk.NewAttribute("Current:", NodeActive.String())))
-				na.UpdateStatus(NodeActive, height)
-				na.TryAddSignerPubKey(poolAddresses.Current[0].PubKey)
-				if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-					ctx.Logger().Error("fail to save node account")
-				}
-				break
-			}
-		}
+	newNodes, removedNodes, err := vm.getChangedNodes(ctx, activeNodes)
+	if nil != err {
+		ctx.Logger().Error("fail to get node changes", "error", err)
+		return nil
 	}
 
-	validators := make([]abci.ValidatorUpdate, 0, len(newActive))
-	for _, item := range newActive {
-		pk, err := sdk.GetConsPubKeyBech32(item.ValidatorConsPubKey)
+	// no change
+	if len(newNodes) == 0 && len(removedNodes) == 0 {
+		return nil
+	}
+
+	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
+	nodesAfterChange := len(activeNodes) + len(newNodes) - len(removedNodes)
+	if height > 1 && nodesAfterChange < int(minimumNodesForBFT) {
+		// THORNode don't have enough validators for BFT
+		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
+			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
+		}
+		// by return
+		return nil
+	}
+	validators := make([]abci.ValidatorUpdate, 0, len(newNodes)+len(removedNodes))
+	for _, na := range newNodes {
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent("UpdateNodeAccountStatus",
+				sdk.NewAttribute("Address", na.NodeAddress.String()),
+				sdk.NewAttribute("Former:", na.Status.String()),
+				sdk.NewAttribute("Current:", NodeActive.String())))
+		na.UpdateStatus(NodeActive, height)
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			ctx.Logger().Error("fail to save node account", "error", err)
+		}
+		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
 		if nil != err {
-			ctx.Logger().Error("fail to parse consensus public key", "key", item.ValidatorConsPubKey)
+			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey, "error", err)
 			continue
 		}
 		validators = append(validators, abci.ValidatorUpdate{
@@ -162,80 +147,429 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, store TxOutStore) []abci.Valid
 			Power:  100,
 		})
 	}
-
-	if height > 1 && removedNodes && len(newActive) <= constants.MinmumNodesForBFT { // THORNode still have enough validators for BFT
-		// execute Ragnarok protocol, no going back
-		// THORNode have to request the fund back now, because once it get to the rotate block height ,
-		// THORNode won't have validators anymore
-		if err := vm.ragnarokProtocolStep1(ctx, activeNodes, store); nil != err {
-			ctx.Logger().Error("fail to execute ragnarok protocol step 1: %s", err)
+	for _, na := range removedNodes {
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent("UpdateNodeAccountStatus",
+				sdk.NewAttribute("Address", na.NodeAddress.String()),
+				sdk.NewAttribute("Former:", na.Status.String()),
+				sdk.NewAttribute("Current:", NodeStandby.String())))
+		na.UpdateStatus(NodeStandby, height)
+		removedNodes = append(removedNodes, na)
+		if err := vm.payNodeAccountBondAward(ctx, na); nil != err {
+			ctx.Logger().Error("fail to pay node account bond award", "error", err)
 		}
+		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
+		if nil != err {
+			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey, "error", err)
+			continue
+		}
+		validators = append(validators, abci.ValidatorUpdate{
+			PubKey: tmtypes.TM2PB.PubKey(pk),
+			Power:  0,
+		})
 	}
 
 	return validators
 }
 
-func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount, poolAddrMgr PoolAddressManager, txOut TxOutStore) error {
-	ygg, err := vm.k.GetYggdrasil(ctx, node.NodePubKey.Secp256k1)
-	if nil != err && !errors.Is(err, ErrYggdrasilNotFound) {
-		return fmt.Errorf("fail to get yggdrasil: %w", err)
-	}
-	chains, err := vm.k.GetChains(ctx)
+// getChangedNodes to identify which node had been removed ,and which one had been added
+// newNodes , removed nodes,err
+func (vm *ValidatorMgr) getChangedNodes(ctx sdk.Context, activeNodes NodeAccounts) (NodeAccounts, NodeAccounts, error) {
+	var newActive NodeAccounts    // store the list of new active users
+	var removedNodes NodeAccounts // nodes that had been removed
+
+	readyNodes, err := vm.k.ListNodeAccountsByStatus(ctx, NodeReady)
 	if err != nil {
-		return err
+		return newActive, removedNodes, fmt.Errorf("fail to list ready node accounts: %w", err)
 	}
-	if !ygg.HasFunds() {
+
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		ctx.Logger().Error("fail to get active asgards", "error", err)
+		return newActive, removedNodes, fmt.Errorf("fail to get active asgards: %w", err)
+	}
+	if len(active) == 0 {
+		return newActive, removedNodes, errors.New("no active vault")
+	}
+	var membership common.PubKeys
+	for _, vault := range active {
+		membership = append(membership, vault.Membership...)
+	}
+
+	// find active node accounts that are no longer active
+	for _, na := range activeNodes {
+		found := false
+		for _, vault := range active {
+			if vault.Contains(na.PubKeySet.Secp256k1) {
+				found = true
+				break
+			}
+		}
+		if !found && len(membership) > 0 {
+			removedNodes = append(removedNodes, na)
+		}
+	}
+
+	// find ready nodes that change to
+	for _, na := range readyNodes {
+		for _, member := range membership {
+			if na.PubKeySet.Contains(member) {
+				newActive = append(newActive, na)
+				break
+			}
+		}
+	}
+
+	return newActive, removedNodes, nil
+}
+
+// payNodeAccountBondAward pay
+func (vm *ValidatorMgr) payNodeAccountBondAward(ctx sdk.Context, na NodeAccount) error {
+	if na.ActiveBlockHeight == 0 || na.Bond.IsZero() {
 		return nil
 	}
-	for _, c := range chains {
-		currentChainPoolAddr := poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(c)
-		for _, coin := range ygg.Coins {
-			toAddr, err := currentChainPoolAddr.PubKey.GetAddress(coin.Asset.Chain)
-			if !toAddr.IsEmpty() {
-				txOutItem := &TxOutItem{
-					Chain:       coin.Asset.Chain,
-					ToAddress:   toAddr,
-					InHash:      common.BlankTxID,
-					VaultPubKey: ygg.PubKey,
-					Memo:        "yggdrasil-",
-					Coin:        coin,
-				}
-				txOut.AddTxOutItem(ctx, txOutItem)
-				continue
-			}
-			wrapErr := fmt.Errorf(
-				"fail to get pool address (%s) for chain (%s) : %w",
-				toAddr.String(),
-				coin.Asset.Chain.String(), err)
-			ctx.Logger().Error(wrapErr.Error(), "error", err)
-			return wrapErr
+	// The node account seems to have become a non active node account.
+	// Therefore, lets give them their bond rewards.
+	vault, err := vm.k.GetVaultData(ctx)
+	if nil != err {
+		return fmt.Errorf("fail to get vault: %w", err)
+	}
+
+	// Find number of blocks they have been an active node
+	totalActiveBlocks := ctx.BlockHeight() - na.ActiveBlockHeight
+
+	// find number of blocks they were well behaved (ie active - slash points)
+	earnedBlocks := na.CalcBondUnits(ctx.BlockHeight())
+
+	// calc number of rune they are awarded
+	reward := vault.CalcNodeRewards(earnedBlocks)
+
+	// Add to their bond the amount rewarded
+	na.Bond = na.Bond.Add(reward)
+
+	// Minus the number of rune THORNode have awarded them
+	vault.BondRewardRune = common.SafeSub(vault.BondRewardRune, reward)
+
+	// Minus the number of units na has (do not include slash points)
+	vault.TotalBondUnits = common.SafeSub(
+		vault.TotalBondUnits,
+		sdk.NewUint(uint64(totalActiveBlocks)),
+	)
+
+	if err := vm.k.SetVaultData(ctx, vault); nil != err {
+		return fmt.Errorf("fail to save vault data: %w", err)
+	}
+	na.ActiveBlockHeight = 0
+	return vm.k.SetNodeAccount(ctx, na)
+}
+
+// determines when/if to run each part of the ragnarok process
+func (vm *ValidatorMgr) processRagnarok(ctx sdk.Context, activeNodes NodeAccounts, constAccessor constants.ConstantValues) error {
+	// execute Ragnarok protocol, no going back
+	// THORNode have to request the fund back now, because once it get to the rotate block height ,
+	// THORNode won't have validators anymore
+	ragnarokHeight, err := vm.k.GetRagnarokBlockHeight(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to get ragnarok height: %w", err)
+	}
+
+	if ragnarokHeight == 0 {
+		ragnarokHeight = ctx.BlockHeight()
+		vm.k.SetRagnarokBlockHeight(ctx, ragnarokHeight)
+		if err := vm.ragnarokProtocolStage1(ctx, activeNodes); nil != err {
+			return fmt.Errorf("fail to execute ragnarok protocol step 1: %w", err)
+		}
+		if err := vm.ragnarokBondReward(ctx); err != nil {
+			return fmt.Errorf("when ragnarok triggered ,fail to give all active node bond reward %w", err)
+		}
+		return nil
+	}
+
+	migrateInterval := constAccessor.GetInt64Value(constants.FundMigrationInterval)
+	if (ctx.BlockHeight()-ragnarokHeight)%migrateInterval == 0 {
+		nth := (ctx.BlockHeight() - ragnarokHeight) / migrateInterval
+		err := vm.ragnarokProtocolStage2(ctx, nth, constAccessor)
+		if err != nil {
+			ctx.Logger().Error("fail to execute ragnarok protocol step 2", "error", err)
+			return err
+		}
+	}
+
+	return nil
+}
+
+// ragnarokProtocolStage1 - request all yggdrasil pool to return the fund
+// when THORNode observe the node return fund successfully, the node's bound will be refund.
+func (vm *ValidatorMgr) ragnarokProtocolStage1(ctx sdk.Context, activeNodes NodeAccounts) error {
+	return vm.recallYggFunds(ctx, activeNodes)
+}
+
+func (vm *ValidatorMgr) ragnarokProtocolStage2(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
+	// Ragnarok Protocol
+	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
+	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
+	// 2) upon receiving the yggdrasil fund,  THORNode will refund the validator's bond
+	// 3) once all yggdrasil fund get returned, return all fund to stakes
+
+	// refund bonders
+	if err := vm.ragnarokBond(ctx, nth); err != nil {
+		return err
+	}
+
+	// refund stakers
+	if err := vm.ragnarokPools(ctx, nth, constAccessor); err != nil {
+		return err
+	}
+
+	// refund reserve contributors
+	if err := vm.ragnarokReserve(ctx, nth); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (vm *ValidatorMgr) ragnarokBondReward(ctx sdk.Context) error {
+	active, err := vm.k.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to get all active node account: %w", err)
+	}
+	for _, item := range active {
+		if err := vm.payNodeAccountBondAward(ctx, item); err != nil {
+			return fmt.Errorf("fail to pay node account(%s) bond award: %w", item.NodeAddress.String(), err)
 		}
 	}
 	return nil
 }
 
-// ragnarokProtocolStep1 - request all yggdrasil pool to return the fund
-// when THORNode observe the node return fund successfully, the node's bound will be refund.
-func (vm *ValidatorMgr) ragnarokProtocolStep1(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore) error {
-	// do THORNode have yggdrasil pool?
-	hasYggdrasil, err := vm.k.HasValidYggdrasilPools(ctx)
+func (vm *ValidatorMgr) ragnarokReserve(ctx sdk.Context, nth int64) error {
+	contribs, err := vm.k.GetReservesContributors(ctx)
 	if nil != err {
-		return fmt.Errorf("fail at ragnarok protocol step 1: %w", err)
+		ctx.Logger().Error("can't get reserve contributors", "error", err)
+		return err
 	}
-	if !hasYggdrasil {
-		result := handleRagnarokProtocolStep2(ctx, vm.k, txOut, vm.poolAddrMgr, vm)
-		if !result.IsOK() {
-			return errors.New("fail to process ragnarok protocol step 2")
+	vaultData, err := vm.k.GetVaultData(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get vault data", "error", err)
+		return err
+	}
+	totalReserve := vaultData.TotalReserve
+	totalContributions := sdk.ZeroUint()
+	for _, contrib := range contribs {
+		totalContributions = totalContributions.Add(contrib.Amount)
+	}
+
+	// Since reserves are spent over time (via block rewards), reserve
+	// contributors do not get back the full amounts they put in. Instead they
+	// should get a percentage of the remaining amount, relative to the amount
+	// they contributed. We'll be reducing the total reserve supply as we
+	// refund reserves
+
+	// nth * 10 == the amount of the bond we want to send
+	for i, contrib := range contribs {
+		share := common.GetShare(
+			contrib.Amount,
+			totalReserve,
+			totalContributions,
+		)
+		if nth > 10 { // cap at 10
+			nth = 10
 		}
-		return nil
+		amt := share.MulUint64(uint64(nth)).QuoUint64(10)
+		vaultData.TotalReserve = common.SafeSub(vaultData.TotalReserve, amt)
+		contribs[i].Amount = common.SafeSub(contrib.Amount, amt)
+
+		// refund contribution
+		txOutItem := &TxOutItem{
+			Chain:     common.BNBChain,
+			ToAddress: contrib.Address,
+			InHash:    common.BlankTxID,
+			Coin:      common.NewCoin(common.RuneAsset(), amt),
+		}
+		_, err = vm.txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		if nil != err {
+			return fmt.Errorf("fail to add outbound transaction")
+		}
 	}
-	return vm.recallYggFunds(ctx, activeNodes, txOut)
+
+	if err := vm.k.SetVaultData(ctx, vaultData); err != nil {
+		return err
+	}
+
+	if err := vm.k.SetReserveContributors(ctx, contribs); err != nil {
+		return err
+	}
+
+	return nil
 }
 
-func (vm *ValidatorMgr) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts, txOut TxOutStore) error {
+func (vm *ValidatorMgr) ragnarokBond(ctx sdk.Context, nth int64) error {
+	active, err := vm.k.ListActiveNodeAccounts(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get active nodes", "error", err)
+		return err
+	}
+
+	// nth * 10 == the amount of the bond we want to send
+	for _, na := range active {
+		ygg, err := vm.k.GetVault(ctx, na.PubKeySet.Secp256k1)
+		if err != nil {
+			return err
+		}
+		if ygg.HasFunds() {
+			ctx.Logger().Info(fmt.Sprintf("skip bond refund due to remaining funds: %s", na.NodeAddress))
+			continue
+		}
+		if nth > 10 { // cap at 10
+			nth = 10
+		}
+		amt := na.Bond.MulUint64(uint64(nth)).QuoUint64(10)
+		na.Bond = common.SafeSub(na.Bond, amt)
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			return err
+		}
+
+		// refund bond
+		txOutItem := &TxOutItem{
+			Chain:     common.BNBChain,
+			ToAddress: na.BondAddress,
+			InHash:    common.BlankTxID,
+			Coin:      common.NewCoin(common.RuneAsset(), amt),
+		}
+		_, err = vm.txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		if nil != err {
+			return err
+		}
+
+	}
+
+	return nil
+}
+
+func (vm *ValidatorMgr) ragnarokPools(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
+	nas, err := vm.k.ListActiveNodeAccounts(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get active nodes", "error", err)
+		return err
+	}
+	if len(nas) == 0 {
+		return fmt.Errorf("can't find any active nodes")
+	}
+	na := nas[0]
+
+	// each round of refund, we increase the percentage by 10%. This ensures
+	// that we slowly refund each person, while not sending out too much too
+	// fast. Also, we won't be running into any gas related issues until the
+	// very last round, which, by my calculations, if someone staked 100 coins,
+	// the last tx will send them 0.036288. So if we don't have enough gas to
+	// send them, its only a very small portion that is not refunded.
+	var basisPoints int64
+	if nth > 10 {
+		basisPoints = MaxWithdrawBasisPoints
+	} else {
+		basisPoints = nth * (MaxWithdrawBasisPoints / 10)
+	}
+
+	// go through all the pooles
+	pools, err := vm.k.GetPools(ctx)
+	if err != nil {
+		ctx.Logger().Error("can't get pools", "error", err)
+		return err
+	}
+	for _, pool := range pools {
+		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
+		if nil != err {
+			ctx.Logger().Error("fail to get pool staker", "error", err)
+			return err
+		}
+
+		// everyone withdraw
+		for _, item := range poolStaker.Stakers {
+			if item.Units.IsZero() {
+				continue
+			}
+
+			unstakeMsg := NewMsgSetUnStake(
+				common.GetRagnarokTx(pool.Asset.Chain),
+				item.RuneAddress,
+				sdk.NewUint(uint64(basisPoints)),
+				pool.Asset,
+				na.NodeAddress,
+			)
+
+			version := vm.k.GetLowestActiveVersion(ctx)
+			unstakeHandler := NewUnstakeHandler(vm.k, vm.txOutStore)
+			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
+			if !result.IsOK() {
+				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
+				return fmt.Errorf("fail to unstake address: %s", result.Log)
+			}
+		}
+		pool.Status = PoolBootstrap
+		if err := vm.k.SetPool(ctx, pool); err != nil {
+			ctx.Logger().Error(err.Error())
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (vm *ValidatorMgr) RequestYggReturn(ctx sdk.Context, node NodeAccount) error {
+	ygg, err := vm.k.GetVault(ctx, node.PubKeySet.Secp256k1)
+	if nil != err {
+		return fmt.Errorf("fail to get yggdrasil: %w", err)
+	}
+	if ygg.IsAsgard() {
+		return nil
+	}
+	if !ygg.HasFunds() {
+		return nil
+	}
+
+	chains, err := vm.k.GetChains(ctx)
+	if err != nil {
+		return err
+	}
+
+	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		return err
+	}
+
+	vault := active.SelectByMinCoin(common.RuneAsset())
+	if vault.IsEmpty() {
+		return fmt.Errorf("unable to determine asgard vault")
+	}
+
+	for _, chain := range chains {
+		toAddr, err := vault.PubKey.GetAddress(chain)
+		if err != nil {
+			return err
+		}
+
+		if !toAddr.IsEmpty() {
+			txOutItem := &TxOutItem{
+				Chain:       chain,
+				ToAddress:   toAddr,
+				InHash:      common.BlankTxID,
+				VaultPubKey: ygg.PubKey,
+				Memo:        "yggdrasil-",
+			}
+			_, err := vm.txOutStore.TryAddTxOutItem(ctx, txOutItem)
+			if nil != err {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (vm *ValidatorMgr) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts) error {
 	// request every node to return fund
 	for _, na := range activeNodes {
-		if err := vm.RequestYggReturn(ctx, na, vm.poolAddrMgr, txOut); nil != err {
+		if err := vm.RequestYggReturn(ctx, na); nil != err {
 			return fmt.Errorf("fail to request yggdrasil fund back: %w", err)
 		}
 	}
@@ -243,7 +577,7 @@ func (vm *ValidatorMgr) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts
 }
 
 // setupValidatorNodes it is one off it only get called when genesis
-func (vm *ValidatorMgr) setupValidatorNodes(ctx sdk.Context, height int64) error {
+func (vm *ValidatorMgr) setupValidatorNodes(ctx sdk.Context, height int64, constAccessor constants.ConstantValues) error {
 	if height != genesisBlockHeight {
 		ctx.Logger().Info("only need to setup validator node when start up", "height", height)
 		return nil
@@ -275,8 +609,9 @@ func (vm *ValidatorMgr) setupValidatorNodes(ctx sdk.Context, height int64) error
 	sort.Sort(activeCandidateNodes)
 	sort.Sort(readyNodes)
 	activeCandidateNodes = append(activeCandidateNodes, readyNodes...)
+	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
 	for idx, item := range activeCandidateNodes {
-		if int64(idx) < constants.DesireValidatorSet {
+		if int64(idx) < desireValidatorSet {
 			item.UpdateStatus(NodeActive, ctx.BlockHeight())
 		} else {
 			item.UpdateStatus(NodeStandby, ctx.BlockHeight())
@@ -295,8 +630,6 @@ func (vm *ValidatorMgr) findBadActor(ctx sdk.Context) (NodeAccount, error) {
 	if err != nil {
 		return na, err
 	}
-
-	// TODO: return if we're at risk of loosing BTF
 
 	// Find bad actor relative to slashpoints / age.
 	// NOTE: avoiding the usage of float64, we use an alt method...
@@ -343,7 +676,8 @@ func (vm *ValidatorMgr) findOldActor(ctx sdk.Context) (NodeAccount, error) {
 
 // Mark an old to be churned out
 func (vm *ValidatorMgr) markActor(ctx sdk.Context, na NodeAccount) error {
-	if na.LeaveHeight == 0 {
+	if !na.IsEmpty() && na.LeaveHeight == 0 {
+		ctx.Logger().Info(fmt.Sprintf("Marked Validator to be churned out %s", na.NodeAddress))
 		na.LeaveHeight = ctx.BlockHeight()
 		return vm.k.SetNodeAccount(ctx, na)
 	}
@@ -352,7 +686,7 @@ func (vm *ValidatorMgr) markActor(ctx sdk.Context, na NodeAccount) error {
 
 // Mark an old actor to be churned out
 func (vm *ValidatorMgr) markOldActor(ctx sdk.Context, rate int64) error {
-	if rate%ctx.BlockHeight() == 0 {
+	if ctx.BlockHeight()%rate == 0 {
 		na, err := vm.findOldActor(ctx)
 		if err != nil {
 			return err
@@ -366,7 +700,7 @@ func (vm *ValidatorMgr) markOldActor(ctx sdk.Context, rate int64) error {
 
 // Mark a bad actor to be churned out
 func (vm *ValidatorMgr) markBadActor(ctx sdk.Context, rate int64) error {
-	if rate%ctx.BlockHeight() == 0 {
+	if ctx.BlockHeight()%rate == 0 {
 		na, err := vm.findBadActor(ctx)
 		if err != nil {
 			return err
@@ -394,8 +728,7 @@ func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context) error {
 
 	// check all ready and standby nodes are in "ready" state (upgrade/downgrade as needed)
 	for _, na := range append(standby, ready...) {
-		na.Status = NodeReady // everyone starts with the benefit of the doubt
-
+		na.UpdateStatus(NodeReady, ctx.BlockHeight()) // everyone starts with the benefit of the doubt
 		// TODO: check node is up to date on thorchain, binance, etc
 		// must have made an observation that matched 2/3rds within the last 5 blocks
 
@@ -413,7 +746,7 @@ func (vm *ValidatorMgr) markReadyActors(ctx sdk.Context) error {
 }
 
 // Returns a list of nodes to include in the next pool
-func (vm *ValidatorMgr) nextPoolNodeAccounts(ctx sdk.Context, targetCount int) (NodeAccounts, bool, error) {
+func (vm *ValidatorMgr) nextVaultNodeAccounts(ctx sdk.Context, targetCount int) (NodeAccounts, bool, error) {
 	rotation := false // track if are making any changes to the current active node accounts
 
 	// update list of ready actors
@@ -440,11 +773,11 @@ func (vm *ValidatorMgr) nextPoolNodeAccounts(ctx sdk.Context, targetCount int) (
 		if active[i].RequestedToLeave != active[j].RequestedToLeave {
 			return active[i].RequestedToLeave
 		}
-		return active[i].LeaveHeight < active[j].LeaveHeight
+		return active[i].LeaveHeight > active[j].LeaveHeight
 	})
 
 	// remove a node node account, if one is marked to leave
-	if len(active) > 0 && active[0].LeaveHeight > 0 {
+	if len(active) > 0 && (active[0].LeaveHeight > 0 || active[0].RequestedToLeave) {
 		rotation = true
 		active = active[1:]
 	}

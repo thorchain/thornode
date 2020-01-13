@@ -49,9 +49,9 @@ func (s *EthSuite) TestOutboundBlockHeight(c *C) {
 		c.Error(err)
 	}
 	c.Log("block1:", block.NumberU64())
-	c.Check(block.NumberU64() > 9048204, Equals, true)
+	c.Check(block.Number().Int64() > 9048204, Equals, true)
 
-	block2, err := s.Client.getBlock(block.NumberU64() * 2)
+	block2, err := s.Client.getBlock(block.Number().Int64() * 2)
 	c.Check(err, NotNil)
 	c.Check(block2, IsNil)
 }

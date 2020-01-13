@@ -1,4 +1,5 @@
-.PHONY: build smoke-test tools
+include mocknet/Makefile testnet/Makefile
+.PHONY: build 
 
 build: 
 	docker build -t registry.gitlab.com/thorchain/thornode -f Dockerfile ../..
@@ -6,12 +7,10 @@ build:
 clean:
 	@rm -rf /tmp/genesis
 	@rm -rf ~/.thor*
-	@rm -rf ~/.signer
 	@rm -rf /tmp/shared
 	@mkdir /tmp/genesis
 	@mkdir /tmp/shared
 	@mkdir ~/.thord
-	@mkdir ~/.signer
 	@mkdir ~/.thornode
 	@mkdir ~/.thornode/standalone
 	@mkdir ~/.thornode/genesis_1
@@ -24,35 +23,10 @@ clean-validator:
 	@rm -rf ~/.thornode/validator
 	@mkdir -p ~/.thornode/validator
 
-run-standaloneWithMockBinance: clean
-	docker-compose -f standalone.yml -f standaloneWithMockBinance.yml up --force-recreate --remove-orphans -d
+stop: 
+	BUILD_FLAG="" docker-compose -p thornode down --remove-orphans
 
-stop-standaloneWithMockBinance: clean
-	docker-compose -f standalone.yml -f standaloneWithMockBinance.yml down
-
-run-standalone: clean
-	docker-compose -f standalone.yml up --force-recreate --remove-orphans -d
-
-stop-standalone: clean
-	docker-compose -f standalone.yml down
-
-run-genesisWithMockBinance: clean
-	docker-compose -f genesis.yml -f genesisWithMockBinance.yml up --force-recreate --remove-orphans -d
-
-stop-genesisWithMockBinance: clean
-	docker-compose -f genesis.yml -f genesisWithMockBinance.yml down
-
-run-genesisWithChurn: clean
-	docker-compose -f genesis.yml -f genesisWithMockBinance.yml -f genesisWithChurnNode.yml up --force-recreate --remove-orphans -d
-
-stop-genesisWithChurn: clean
-	docker-compose -f genesis.yml -f genesisWithMockBinance.yml -f genesisWithChurnNode.yml down
-
-run-genesis: clean
-	docker-compose -f genesis.yml up --force-recreate --remove-orphans -d
-
-stop-genesis: clean
-	docker-compose -f genesis.yml down
-
-run-validator: clean-validator
+run-validator: 
 	docker-compose -f validator.yml --project-name validator up --force-recreate -d
+
+reset-validator: clean-validator run-validator

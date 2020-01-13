@@ -31,12 +31,13 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 		isActive: true,
 	}
 
-	handler := NewObservedTxOutHandler(keeper, w.txOutStore, w.poolAddrMgr, w.validatorMgr)
+	vaultMgr := NewVaultMgrDummy()
+	handler := NewObservedTxOutHandler(keeper, w.txOutStore, w.validatorMgr, vaultMgr)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
 	pk := GetRandomPubKey()
-	txs := ObservedTxs{NewObservedTx(GetRandomTx(), sdk.NewUint(12), pk)}
+	txs := ObservedTxs{NewObservedTx(GetRandomTx(), 12, pk)}
 	txs[0].Tx.FromAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, GetRandomBech32Addr())
@@ -70,8 +71,9 @@ func (s *HandlerObservedTxOutSuite) TestFailure(c *C) {
 	keeper := &TestObservedTxOutFailureKeeper{}
 	txOutStore := NewTxStoreDummy()
 
-	handler := NewObservedTxOutHandler(keeper, txOutStore, w.poolAddrMgr, w.validatorMgr)
-	tx := NewObservedTx(GetRandomTx(), sdk.NewUint(12), GetRandomPubKey())
+	vaultMgr := NewVaultMgrDummy()
+	handler := NewObservedTxOutHandler(keeper, txOutStore, w.validatorMgr, vaultMgr)
+	tx := NewObservedTx(GetRandomTx(), 12, GetRandomPubKey())
 	nas := NodeAccounts{GetRandomNodeAccount(NodeActive)}
 
 	err := handler.outboundFailure(ctx, tx, nas)
@@ -84,8 +86,8 @@ type TestObservedTxOutHandleKeeper struct {
 	na         NodeAccount
 	voter      ObservedTxVoter
 	yggExists  bool
-	ygg        Yggdrasil
-	height     sdk.Uint
+	ygg        Vault
+	height     int64
 	chains     common.Chains
 	pool       Pool
 	txOutStore TxOutStore
@@ -117,15 +119,15 @@ func (k *TestObservedTxOutHandleKeeper) SetObservedTxVoter(_ sdk.Context, voter 
 	k.voter = voter
 }
 
-func (k *TestObservedTxOutHandleKeeper) YggdrasilExists(_ sdk.Context, _ common.PubKey) bool {
+func (k *TestObservedTxOutHandleKeeper) VaultExists(_ sdk.Context, _ common.PubKey) bool {
 	return k.yggExists
 }
 
-func (k *TestObservedTxOutHandleKeeper) GetYggdrasil(_ sdk.Context, _ common.PubKey) (Yggdrasil, error) {
+func (k *TestObservedTxOutHandleKeeper) GetVault(_ sdk.Context, _ common.PubKey) (Vault, error) {
 	return k.ygg, nil
 }
 
-func (k *TestObservedTxOutHandleKeeper) SetYggdrasil(_ sdk.Context, ygg Yggdrasil) error {
+func (k *TestObservedTxOutHandleKeeper) SetVault(_ sdk.Context, ygg Vault) error {
 	k.ygg = ygg
 	return nil
 }
@@ -146,7 +148,7 @@ func (k *TestObservedTxOutHandleKeeper) SetChains(_ sdk.Context, chains common.C
 	k.chains = chains
 }
 
-func (k *TestObservedTxOutHandleKeeper) SetLastChainHeight(_ sdk.Context, _ common.Chain, height sdk.Uint) error {
+func (k *TestObservedTxOutHandleKeeper) SetLastChainHeight(_ sdk.Context, _ common.Chain, height int64) error {
 	k.height = height
 	return nil
 }
@@ -192,14 +194,18 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	ver := semver.MustParse("0.1.0")
 	tx := GetRandomTx()
 	tx.Memo = fmt.Sprintf("OUTBOUND:%s", tx.ID)
-	obTx := NewObservedTx(tx, sdk.NewUint(12), GetRandomPubKey())
+	obTx := NewObservedTx(tx, 12, GetRandomPubKey())
 	txs := ObservedTxs{obTx}
 	pk := GetRandomPubKey()
-	currentPool := w.poolAddrMgr.GetCurrentPoolAddresses().Current.GetByChain(tx.Chain)
-	txs[0].Tx.FromAddress, err = currentPool.GetAddress()
+	// txs[0].Tx.FromAddress, err = currentPool.GetAddress()
 	c.Assert(err, IsNil)
 
 	txOutStore := NewTxStoreDummy()
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(200)),
+	}
 	keeper := &TestObservedTxOutHandleKeeper{
 		nas:   NodeAccounts{GetRandomNodeAccount(NodeActive)},
 		voter: NewObservedTxVoter(tx.ID, make(ObservedTxs, 0)),
@@ -208,18 +214,13 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 			BalanceRune:  sdk.NewUint(200),
 			BalanceAsset: sdk.NewUint(300),
 		},
-		yggExists: true,
-		ygg: Yggdrasil{
-			PubKey: pk,
-			Coins: common.Coins{
-				common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
-				common.NewCoin(common.BNBAsset, sdk.NewUint(200)),
-			},
-		},
+		yggExists:  true,
+		ygg:        ygg,
 		txOutStore: txOutStore,
 	}
 
-	handler := NewObservedTxOutHandler(keeper, txOutStore, w.poolAddrMgr, w.validatorMgr)
+	vaultMgr := NewVaultMgrDummy()
+	handler := NewObservedTxOutHandler(keeper, txOutStore, w.validatorMgr, vaultMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)

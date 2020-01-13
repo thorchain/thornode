@@ -43,7 +43,7 @@ func NewBifrost(cfg config.Configuration) (*Bifrost, error) {
 
 	txScanner := txblockscanner.NewTxBlockScanner(cfg.TxScanner, vaultMgr, thorClient)
 
-	txSigner, err := txsigner.NewTxSigner()
+	txSigner, err := txsigner.NewTxSigner(cfg.TxSigner, thorClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create txSigner")
 	}
@@ -60,7 +60,7 @@ func NewBifrost(cfg config.Configuration) (*Bifrost, error) {
 	}, nil
 }
 
-// Start, started the bifrost server and all its components
+// Start starts the bifrost server and all its components
 func (b *Bifrost) Start() error {
 	if err := b.metrics.Start(); err != nil {
 		b.logger.Error().Err(err).Msg("fail to start metric collector")
@@ -89,7 +89,7 @@ func (b *Bifrost) Start() error {
 	return nil
 }
 
-// Stop, stops the bifrost server and all its componets
+// Stop stops the bifrost server and all its componets
 func (b *Bifrost) Stop() error {
 	b.logger.Info().Msg("requested to stop bifrost")
 	defer b.logger.Info().Msg("bifrost stopped")

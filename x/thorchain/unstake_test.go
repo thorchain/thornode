@@ -104,6 +104,18 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 			expectedWithdrawRune:  sdk.NewUint(200 * common.One),
 			expectedErr:           nil,
 		},
+		{
+			name:                  "unstake-2",
+			poolUnit:              sdk.NewUint(100),
+			poolRune:              sdk.NewUint(15 * common.One),
+			poolAsset:             sdk.NewUint(155 * common.One),
+			stakerUnit:            sdk.NewUint(100),
+			percentage:            sdk.NewUint(1000),
+			expectedUnitLeft:      sdk.NewUint(90),
+			expectedWithdrawAsset: sdk.NewUint(1550000000),
+			expectedWithdrawRune:  sdk.NewUint(150000000),
+			expectedErr:           nil,
+		},
 	}
 
 	for _, item := range inputs {
@@ -115,8 +127,8 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())
 		}
 		c.Logf("expected rune:%s,rune:%s", item.expectedWithdrawRune, withDrawRune)
-		c.Check(item.expectedWithdrawRune.Uint64(), Equals, withDrawRune.Uint64())
-		c.Check(item.expectedWithdrawAsset.Uint64(), Equals, withDrawAsset.Uint64())
+		c.Check(item.expectedWithdrawRune.Uint64(), Equals, withDrawRune.Uint64(), Commentf("Expected %d, got %d", item.expectedWithdrawRune.Uint64(), withDrawRune.Uint64()))
+		c.Check(item.expectedWithdrawAsset.Uint64(), Equals, withDrawAsset.Uint64(), Commentf("Expected %d, got %d", item.expectedWithdrawAsset.Uint64(), withDrawAsset.Uint64()))
 		c.Check(item.expectedUnitLeft.Uint64(), Equals, unitAfter.Uint64())
 	}
 }
@@ -253,7 +265,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("empty rune address"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, "empty rune address"),
 		},
 		{
 			name: "empty-withdraw-basis-points",
@@ -267,7 +279,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("nothing to withdraw"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeNoStakeUnitLeft, "nothing to withdraw"),
 		},
 		{
 			name: "empty-request-txhash",
@@ -281,7 +293,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("request tx hash is empty"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, "request tx hash is empty"),
 		},
 		{
 			name: "empty-asset",
@@ -295,7 +307,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("empty asset"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, "empty asset"),
 		},
 
 		{
@@ -310,7 +322,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("withdraw basis points 10001 is invalid"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, "withdraw basis points 10001 is invalid"),
 		},
 		{
 			name: "invalid-pool-notexist",
@@ -324,7 +336,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("pool-BNB.NOTEXIST doesn't exist"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, "pool-BNB.NOTEXIST doesn't exist"),
 		},
 		{
 			name: "invalid-pool-staker-notexist",
@@ -338,7 +350,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("can't find pool staker: you asked for it"),
+			expectedError: sdk.NewError(DefaultCodespace, CodePoolStakerNotExist, "pool staker doesn't exist"),
 		},
 		{
 			name: "invalid-staker-pool-notexist",
@@ -352,7 +364,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("can't find staker pool: you asked for it"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeStakerPoolNotExist, "staker pool doesn't exist"),
 		},
 		{
 			name: "nothing-to-withdraw",
@@ -366,7 +378,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			ps:            ps,
 			runeAmount:    sdk.ZeroUint(),
 			assetAmount:   sdk.ZeroUint(),
-			expectedError: errors.New("nothing to withdraw"),
+			expectedError: sdk.NewError(DefaultCodespace, CodeNoStakeUnitLeft, "nothing to withdraw"),
 		},
 		{
 			name: "all-good",
@@ -447,11 +459,11 @@ func getInMemoryPoolStorageForUnstake(c *C) Keeper {
 	stakerPool := StakerPool{
 		RuneAddress: runeAddress,
 		PoolUnits: []*StakerPoolItem{
-			&StakerPoolItem{
+			{
 				Asset: common.BNBAsset,
 				Units: sdk.NewUint(100 * common.One),
 				StakeDetails: []StakeTxDetail{
-					StakeTxDetail{
+					{
 						RequestTxHash: common.TxID("28B40BF105A112389A339A64BD1A042E6140DC9082C679586C6CF493A9FDE3FE"),
 						RuneAmount:    sdk.NewUint(100 * common.One),
 						AssetAmount:   sdk.NewUint(100 * common.One),

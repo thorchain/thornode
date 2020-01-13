@@ -21,7 +21,7 @@ type Client struct {
 	client                   *rpcclient.Client
 	logger                   zerolog.Logger
 	fnLastScannedBlockHeight types.FnLastScannedBlockHeight
-	lastScannedBlockHeight   uint64
+	lastScannedBlockHeight   int64
 	backOffCtrl              backoff.ExponentialBackOff
 }
 
@@ -73,7 +73,7 @@ func (c *Client) scanBlocks(blockInChan chan<- types.Block) {
 		block, err := c.getBlock(c.lastScannedBlockHeight)
 		if err != nil {
 			d := c.backOffCtrl.NextBackOff()
-			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backOffCtrl", d.String()).Msg("getBlock failed")
+			c.logger.Error().Err(err).Int64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backOffCtrl", d.String()).Msg("getBlock failed")
 			time.Sleep(d)
 			continue
 		}
@@ -90,8 +90,8 @@ func (c *Client) Stop() error {
 	return nil
 }
 
-func (c *Client) getBlock(blockHeight uint64) (*wire.MsgBlock, error) {
-	hash, err := c.getBlockHash(int64(blockHeight))
+func (c *Client) getBlock(blockHeight int64) (*wire.MsgBlock, error) {
+	hash, err := c.getBlockHash(blockHeight)
 	if err != nil {
 		return &wire.MsgBlock{}, err
 	}
@@ -114,4 +114,12 @@ func (c *Client) processBlock(block *wire.MsgBlock) types.Block {
 
 	// TODO extract Tx data
 	return b
+}
+
+func (c *Client) BroadcastTx() error {
+	return nil
+}
+
+func (c *Client) SignTx() error {
+	return nil
 }

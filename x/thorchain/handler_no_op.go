@@ -3,6 +3,8 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type NoOpHandler struct {
@@ -15,7 +17,7 @@ func NewNoOpHandler(keeper Keeper) NoOpHandler {
 	}
 }
 
-func (h NoOpHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h NoOpHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgNoOp)
 	if !ok {
 		return errInvalidMessage.Result()

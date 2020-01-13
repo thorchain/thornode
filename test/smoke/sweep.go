@@ -54,7 +54,7 @@ func (s Sweep) EmptyWallets() {
 		}
 
 		if len(coins) > 0 {
-			payload := []msg.Transfer{msg.Transfer{s.KeyManager.GetAddr(), coins}}
+			payload := []msg.Transfer{{s.KeyManager.GetAddr(), coins}}
 			_ = s.SendTxn(keyManager, payload, "SWEEP:RETURN")
 		}
 	}

@@ -17,7 +17,7 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 	v, _ := tmtypes.RandValidator(true, 100)
 	k, _ := sdk.Bech32ifyConsPub(v.PubKey)
 	bondAddr := GetRandomBNBAddress()
-	pubKeys := common.PubKeys{
+	pubKeys := common.PubKeySet{
 		Secp256k1: GetRandomPubKey(),
 		Ed25519:   GetRandomPubKey(),
 	}
@@ -32,7 +32,7 @@ func GetRandomNodeAccount(status NodeStatus) NodeAccount {
 }
 
 func GetRandomObservedTx() ObservedTx {
-	return NewObservedTx(GetRandomTx(), sdk.NewUint(33), GetRandomPubKey())
+	return NewObservedTx(GetRandomTx(), 33, GetRandomPubKey())
 }
 
 // GetRandomTx
@@ -76,21 +76,13 @@ func GetRandomTxHash() common.TxID {
 	return txHash
 }
 
-// GetRandomPubKeys return a random common.PubKeys for test purpose
-func GetRandomPubKeys() common.PubKeys {
-	return common.NewPubKeys(GetRandomPubKey(), GetRandomPubKey())
+// GetRandomPubKeySet return a random common.PubKeySet for test purpose
+func GetRandomPubKeySet() common.PubKeySet {
+	return common.NewPubKeySet(GetRandomPubKey(), GetRandomPubKey())
 }
 
-func GetRandomPoolPubKey(chain common.Chain) *common.PoolPubKey {
-	pk, _ := common.NewPoolPubKey(chain, nil, GetRandomPubKey())
-	return pk
-}
-
-func GetRandomPoolPubKeys() common.PoolPubKeys {
-	return common.PoolPubKeys{
-		GetRandomPoolPubKey(common.BNBChain),
-		GetRandomPoolPubKey(common.BTCChain),
-	}
+func GetRandomVault() Vault {
+	return NewVault(32, ActiveVault, AsgardVault, GetRandomPubKey())
 }
 
 func GetRandomPubKey() common.PubKey {

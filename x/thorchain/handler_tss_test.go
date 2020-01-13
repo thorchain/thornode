@@ -3,8 +3,9 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type HandlerTssSuite struct{}
@@ -26,14 +27,13 @@ func (s *HandlerTssSuite) TestValidate(c *C) {
 	keeper := &TestTssValidKeepr{
 		na: GetRandomNodeAccount(NodeActive),
 	}
-	txOutStore := NewTxStoreDummy()
-	poolAddrMgr := NewPoolAddressDummyMgr()
+	vaultMgr := NewVaultMgrDummy()
 
-	handler := NewTssHandler(keeper, txOutStore, poolAddrMgr)
+	handler := NewTssHandler(keeper, vaultMgr)
 	// happy path
 	ver := semver.MustParse("0.1.0")
 	pk := GetRandomPubKey()
-	pks := []common.PubKey{
+	pks := common.PubKeys{
 		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
 	}
 	msg := NewMsgTssPool(pks, pk, keeper.na.NodeAddress)
@@ -79,15 +79,6 @@ func (s *TestTssHandlerKeeper) GetChains(_ sdk.Context) (common.Chains, error) {
 	return s.chains, nil
 }
 
-type TestTssPoolMgr struct {
-	PoolAddressDummyMgr
-	pks common.PoolPubKeys
-}
-
-func (p *TestTssPoolMgr) RotatePoolAddress(_ sdk.Context, pks common.PoolPubKeys, _ TxOutStore) {
-	p.pks = pks
-}
-
 func (s *HandlerTssSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(12)
@@ -98,13 +89,12 @@ func (s *HandlerTssSuite) TestHandle(c *C) {
 		chains: common.Chains{common.BNBChain},
 		tss:    TssVoter{},
 	}
-	txOutStore := NewTxStoreDummy()
-	poolAddrMgr := &TestTssPoolMgr{}
+	vaultMgr := NewVaultMgrDummy()
 
-	handler := NewTssHandler(keeper, txOutStore, poolAddrMgr)
+	handler := NewTssHandler(keeper, vaultMgr)
 	// happy path
 	pk := GetRandomPubKey()
-	pks := []common.PubKey{
+	pks := common.PubKeys{
 		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
 	}
 	msg := NewMsgTssPool(pks, pk, keeper.active[0].NodeAddress)
@@ -112,7 +102,7 @@ func (s *HandlerTssSuite) TestHandle(c *C) {
 	c.Assert(result.IsOK(), Equals, true)
 	c.Check(keeper.tss.Signers, HasLen, 1)
 	c.Check(keeper.tss.BlockHeight, Equals, int64(12))
-	c.Check(poolAddrMgr.pks.IsEmpty(), Equals, false)
+	c.Check(vaultMgr.vault.PubKey.Equals(pk), Equals, true, Commentf("%+v\n", vaultMgr.vault))
 
 	// running again doesn't rotate the pool again
 	ctx = ctx.WithBlockHeight(14)

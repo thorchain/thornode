@@ -25,10 +25,10 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 	accConsPub3 := GetRandomBech32ConsensusPubKey()
 	accConsPub4 := GetRandomBech32ConsensusPubKey()
 
-	accPubKeys1 := GetRandomPubKeys()
-	accPubKeys2 := GetRandomPubKeys()
-	accPubKeys3 := GetRandomPubKeys()
-	accPubKeys4 := GetRandomPubKeys()
+	accPubKeySet1 := GetRandomPubKeySet()
+	accPubKeySet2 := GetRandomPubKeySet()
+	accPubKeySet3 := GetRandomPubKeySet()
+	accPubKeySet4 := GetRandomPubKeySet()
 
 	tx1 := GetRandomTx()
 	tx1.Memo = "hello"
@@ -36,8 +36,8 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 	observePoolAddr := GetRandomPubKey()
 	voter := NewObservedTxVoter(txID, nil)
 
-	obTx1 := NewObservedTx(tx1, sdk.ZeroUint(), observePoolAddr)
-	obTx2 := NewObservedTx(tx2, sdk.ZeroUint(), observePoolAddr)
+	obTx1 := NewObservedTx(tx1, 0, observePoolAddr)
+	obTx2 := NewObservedTx(tx2, 0, observePoolAddr)
 
 	voter.Add(obTx1, acc1)
 	c.Assert(voter.Txs, HasLen, 1)
@@ -63,19 +63,19 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 		NodeAccount{
 			NodeAddress:         acc1,
 			Status:              Active,
-			NodePubKey:          accPubKeys1,
+			PubKeySet:           accPubKeySet1,
 			ValidatorConsPubKey: accConsPub1,
 		},
 		NodeAccount{
 			NodeAddress:         acc2,
 			Status:              Active,
-			NodePubKey:          accPubKeys2,
+			PubKeySet:           accPubKeySet2,
 			ValidatorConsPubKey: accConsPub2,
 		},
 		NodeAccount{
 			NodeAddress:         acc3,
 			Status:              Active,
-			NodePubKey:          accPubKeys3,
+			PubKeySet:           accPubKeySet3,
 			ValidatorConsPubKey: accConsPub3,
 		},
 	}
@@ -83,25 +83,25 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 		NodeAccount{
 			NodeAddress:         acc1,
 			Status:              Active,
-			NodePubKey:          accPubKeys1,
+			PubKeySet:           accPubKeySet1,
 			ValidatorConsPubKey: accConsPub1,
 		},
 		NodeAccount{
 			NodeAddress:         acc2,
 			Status:              Active,
-			NodePubKey:          accPubKeys2,
+			PubKeySet:           accPubKeySet2,
 			ValidatorConsPubKey: accConsPub2,
 		},
 		NodeAccount{
 			NodeAddress:         acc3,
 			Status:              Active,
-			NodePubKey:          accPubKeys3,
+			PubKeySet:           accPubKeySet3,
 			ValidatorConsPubKey: accConsPub3,
 		},
 		NodeAccount{
 			NodeAddress:         acc4,
 			Status:              Active,
-			NodePubKey:          accPubKeys4,
+			PubKeySet:           accPubKeySet4,
 			ValidatorConsPubKey: accConsPub4,
 		},
 	}
@@ -165,7 +165,7 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 			Gas:         common.BNBGasFeeSingleton,
 			Memo:        item.memo,
 		}
-		txIn := NewObservedTx(tx, sdk.ZeroUint(), item.observePoolAddr)
+		txIn := NewObservedTx(tx, 0, item.observePoolAddr)
 		c.Assert(txIn.Valid(), NotNil)
 	}
 }
@@ -198,33 +198,33 @@ func (TypeObservedTxSuite) TestObservedTxEquals(c *C) {
 		equal bool
 	}{
 		{
-			tx:    NewObservedTx(common.Tx{FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Coins: coins1, Memo: "memo", Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewObservedTx(common.Tx{FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Coins: coins1, Memo: "memo1", Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
+			tx:    NewObservedTx(common.Tx{FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Coins: coins1, Memo: "memo", Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
+			tx1:   NewObservedTx(common.Tx{FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Coins: coins1, Memo: "memo1", Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewObservedTx(common.Tx{FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Coins: coins1, Memo: "memo", Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewObservedTx(common.Tx{FromAddress: bnb1, ToAddress: GetRandomBNBAddress(), Coins: coins1, Memo: "memo", Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
+			tx:    NewObservedTx(common.Tx{FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Coins: coins1, Memo: "memo", Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
+			tx1:   NewObservedTx(common.Tx{FromAddress: bnb1, ToAddress: GetRandomBNBAddress(), Coins: coins1, Memo: "memo", Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewObservedTx(common.Tx{Coins: coins2, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewObservedTx(common.Tx{Coins: coins1, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
+			tx:    NewObservedTx(common.Tx{Coins: coins2, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
+			tx1:   NewObservedTx(common.Tx{Coins: coins1, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewObservedTx(common.Tx{Coins: coins3, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewObservedTx(common.Tx{Coins: coins1, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
+			tx:    NewObservedTx(common.Tx{Coins: coins3, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
+			tx1:   NewObservedTx(common.Tx{Coins: coins1, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewObservedTx(common.Tx{Coins: coins4, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewObservedTx(common.Tx{Coins: coins1, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
+			tx:    NewObservedTx(common.Tx{Coins: coins4, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
+			tx1:   NewObservedTx(common.Tx{Coins: coins1, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
 			equal: false,
 		},
 		{
-			tx:    NewObservedTx(common.Tx{Coins: coins1, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr),
-			tx1:   NewObservedTx(common.Tx{Coins: coins1, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, sdk.ZeroUint(), observePoolAddr1),
+			tx:    NewObservedTx(common.Tx{Coins: coins1, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr),
+			tx1:   NewObservedTx(common.Tx{Coins: coins1, Memo: "memo", FromAddress: bnb, ToAddress: GetRandomBNBAddress(), Gas: common.BNBGasFeeSingleton}, 0, observePoolAddr1),
 			equal: false,
 		},
 	}

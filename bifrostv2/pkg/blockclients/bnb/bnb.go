@@ -10,7 +10,6 @@ import (
 	bmsg "github.com/binance-chain/go-sdk/types/msg"
 	"github.com/cenkalti/backoff"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/openlyinc/pointy"
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -26,7 +25,7 @@ import (
 type Client struct {
 	client                   *rpc.HTTP
 	cfg                      config.ChainConfigurations
-	lastScannedBlockHeight   uint64
+	lastScannedBlockHeight   int64
 	fnLastScannedBlockHeight types.FnLastScannedBlockHeight
 	logger                   zerolog.Logger
 	backOffCtrl              backoff.ExponentialBackOff
@@ -65,8 +64,8 @@ func setNetwork(cfg config.ChainConfigurations) btypes.ChainNetwork {
 	return network
 }
 
-func (c *Client) getBlock(blockHeight uint64) (*ctypes.ResultBlock, error) {
-	return c.client.Block(pointy.Int64(int64(blockHeight)))
+func (c *Client) getBlock(blockHeight int64) (*ctypes.ResultBlock, error) {
+	return c.client.Block(&blockHeight)
 }
 
 func (c *Client) Start(blockInChan chan<- types.Block, fnStartHeight types.FnLastScannedBlockHeight) error {
@@ -96,7 +95,7 @@ func (c *Client) scanBlocks(blockInChan chan<- types.Block) {
 		block, err := c.getBlock(c.lastScannedBlockHeight)
 		if err != nil || block.Block == nil {
 			d := c.backOffCtrl.NextBackOff()
-			c.logger.Error().Err(err).Uint64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backOffCtrl", d.String()).Msg("getBlock failed")
+			c.logger.Error().Err(err).Int64("lastScannedBlockHeight", c.lastScannedBlockHeight).Str("backOffCtrl", d.String()).Msg("getBlock failed")
 			time.Sleep(d)
 			continue
 		}
@@ -112,7 +111,7 @@ func (c *Client) processBlock(block *ctypes.ResultBlock) types.Block {
 
 	b.Chain = common.BNBChain
 	b.BlockHash = block.Block.Hash().String()
-	b.BlockHeight = uint64(block.Block.Header.Height)
+	b.BlockHeight = block.Block.Header.Height
 
 	for _, txx := range block.Block.Data.Txs {
 		var t tx.StdTx
@@ -199,4 +198,12 @@ func (c *Client) getCoinsForTxIn(outputs []bmsg.Output) (common.Coins, error) {
 		}
 	}
 	return cc, nil
+}
+
+func (c *Client) BroadcastTx() error {
+	return nil
+}
+
+func (c *Client) SignTx() error {
+	return nil
 }

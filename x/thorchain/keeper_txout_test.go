@@ -18,7 +18,6 @@ func (KeeperTxOutSuite) TestKeeperTxOut(c *C) {
 		Chain:       common.BNBChain,
 		ToAddress:   GetRandomBNBAddress(),
 		VaultPubKey: GetRandomPubKey(),
-		SeqNo:       0,
 		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
 		Memo:        "hello",
 	}

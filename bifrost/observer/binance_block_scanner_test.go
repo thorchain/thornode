@@ -53,7 +53,7 @@ func getStdTx(f, t string, coins []types.Coin, memo string) (tx.StdTx, error) {
 	if err != nil {
 		return tx.StdTx{}, err
 	}
-	transfers := []msg.Transfer{msg.Transfer{to, coins}}
+	transfers := []msg.Transfer{{to, coins}}
 	m := msg.CreateSendMsg(from, coins, transfers)
 	return tx.NewStdTx([]msg.Msg{m}, nil, memo, 0, nil), nil
 }

@@ -21,14 +21,14 @@ type ObservedTx struct {
 	Tx             common.Tx        `json:"tx"`
 	Status         status           `json:"status"`
 	OutHashes      common.TxIDs     `json:"out_hashes"` // completed chain tx hash. This is a slice to track if we've "double spent" an input
-	BlockHeight    sdk.Uint         `json:"block_height"`
-	Signers        []sdk.AccAddress `json:"signers"` // trust accounts saw this tx
+	BlockHeight    int64            `json:"block_height"`
+	Signers        []sdk.AccAddress `json:"signers"` // node keys of node account saw this tx
 	ObservedPubKey common.PubKey    `json:"observed_pub_key"`
 }
 
 type ObservedTxs []ObservedTx
 
-func NewObservedTx(tx common.Tx, height sdk.Uint, pk common.PubKey) ObservedTx {
+func NewObservedTx(tx common.Tx, height int64, pk common.PubKey) ObservedTx {
 	return ObservedTx{
 		Tx:             tx,
 		Status:         Incomplete,
@@ -45,7 +45,7 @@ func (tx ObservedTx) Valid() error {
 	// THORNode check it empty here, then the tx will be rejected by thorchain
 	// given that THORNode is not going to refund the transaction, thus THORNode
 	// will allow ObservedTx has empty to get into thorchain. Thorchain will refund user
-	if tx.BlockHeight.IsZero() {
+	if tx.BlockHeight == 0 {
 		return errors.New("block height can't be zero")
 	}
 	if tx.ObservedPubKey.IsEmpty() {
@@ -187,7 +187,7 @@ func (tx ObservedTxVoter) HasConensus(nodeAccounts NodeAccounts) bool {
 	for _, txIn := range tx.Txs {
 		var count int
 		for _, signer := range txIn.Signers {
-			if nodeAccounts.IsTrustAccount(signer) {
+			if nodeAccounts.IsNodeKeys(signer) {
 				count += 1
 			}
 		}
@@ -203,7 +203,7 @@ func (tx ObservedTxVoter) GetTx(nodeAccounts NodeAccounts) ObservedTx {
 	for _, txIn := range tx.Txs {
 		var count int
 		for _, signer := range txIn.Signers {
-			if nodeAccounts.IsTrustAccount(signer) {
+			if nodeAccounts.IsNodeKeys(signer) {
 				count += 1
 			}
 		}

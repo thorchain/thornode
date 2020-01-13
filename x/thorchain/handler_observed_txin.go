@@ -1,30 +1,31 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type ObservedTxInHandler struct {
 	keeper       Keeper
 	txOutStore   TxOutStore
-	poolAddrMgr  PoolAddressManager
 	validatorMgr ValidatorManager
+	vaultMgr     VaultManager
 }
 
-func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, poolAddrMgr PoolAddressManager, validatorMgr ValidatorManager) ObservedTxInHandler {
+func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager, vaultMgr VaultManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
-		poolAddrMgr:  poolAddrMgr,
 		validatorMgr: validatorMgr,
+		vaultMgr:     vaultMgr,
 	}
 }
 
-func (h ObservedTxInHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (h ObservedTxInHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgObservedTxIn)
 	if !ok {
 		return errInvalidMessage.Result()
@@ -62,7 +63,7 @@ func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (b
 		for _, signer := range signers {
 			newSigner, err := h.signedByNewObserver(ctx, signer)
 			if nil != err {
-				ctx.Logger().Error("fail to determinate whether the tx is signed by a new observer", err)
+				ctx.Logger().Error("fail to determinate whether the tx is signed by a new observer", "error", err)
 				return false, notAuthorized
 			}
 
@@ -107,27 +108,6 @@ func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, versio
 	}
 }
 
-func (h ObservedTxInHandler) inboundFailure(ctx sdk.Context, tx ObservedTx) error {
-	err := refundTx(ctx, tx, h.txOutStore, h.keeper, true)
-	if err != nil {
-		return err
-	}
-	ee := NewEmptyRefundEvent()
-	buf, err := json.Marshal(ee)
-	if nil != err {
-		return err
-	}
-	event := NewEvent(
-		ee.Type(),
-		ctx.BlockHeight(),
-		tx.Tx,
-		buf,
-		EventRefund,
-	)
-
-	return h.keeper.AddIncompleteEvents(ctx, event)
-}
-
 func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
 	voter.Add(tx, signer)
 
@@ -150,9 +130,15 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	handler := NewHandler(h.keeper, h.poolAddrMgr, h.txOutStore, h.validatorMgr)
+	handler := NewHandler(h.keeper, h.txOutStore, h.validatorMgr, h.vaultMgr)
 
 	for _, tx := range msg.Txs {
+
+		// check we are sending to a valid vault
+		if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
+			ctx.Logger().Info("Observed Pubkey", tx.ObservedPubKey)
+			return sdk.ErrInternal("Observed Tx Pubkey is not associated with a valid vault").Result()
+		}
 
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
 		if err != nil {
@@ -165,23 +151,37 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 		}
 
 		txIn := voter.GetTx(activeNodeAccounts)
-
-		if ok := isCurrentVaultPubKey(ctx, h.keeper, h.poolAddrMgr, tx); !ok {
-			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, false); err != nil {
+		// tx is not observed at current vault - refund
+		if ok := isCurrentVaultPubKey(ctx, h.keeper, tx); !ok {
+			reason := fmt.Sprintf("vault %s is not current vault", tx.ObservedPubKey)
+			ctx.Logger().Info("refund reason", reason)
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, CodeInvalidVault, reason); err != nil {
+				return sdk.ErrInternal(err.Error()).Result()
+			}
+			continue
+		}
+		// chain is empty
+		if tx.Tx.Chain.IsEmpty() {
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, CodeEmptyChain, "chain is empty"); nil != err {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 			continue
 		}
 
-		m, err := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
-		if nil != err || tx.Tx.Chain.IsEmpty() {
-			ctx.Logger().Error("fail to process inbound tx", "error", err, "txhash", tx.Tx.ID.String())
-			if err := h.inboundFailure(ctx, tx); err != nil {
-				return sdk.ErrInternal(err.Error()).Result()
+		// construct msg from memo
+		m, txErr := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
+		if nil != txErr {
+			ctx.Logger().Error("fail to process inbound tx", "error", txErr.Error(), "tx hash", tx.Tx.ID.String())
+			if newErr := refundTx(ctx, tx, h.txOutStore, h.keeper, txErr.Code(), fmt.Sprint(txErr.Data())); nil != newErr {
+				return sdk.ErrInternal(newErr.Error()).Result()
 			}
 			continue
 		}
-
+		switch m.(type) {
+		case MsgRefundTx, MsgOutboundTx, MsgYggdrasil:
+			// these two are thorchain's outbound message, should not get here
+			return sdk.ErrUnauthorized("invalid message memo").Result()
+		}
 		if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, tx.BlockHeight); nil != err {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
@@ -202,7 +202,11 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 
 		result := handler(ctx, m)
 		if !result.IsOK() {
-			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, true); err != nil {
+			refundMsg, err := getErrMessageFromABCILog(result.Log)
+			if nil != err {
+				ctx.Logger().Error(err.Error())
+			}
+			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, result.Code, refundMsg); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 		}

@@ -6,6 +6,8 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // AddHandler is to handle Add message
@@ -19,18 +21,18 @@ func NewAddHandler(keeper Keeper) AddHandler {
 }
 
 // Run it the main entry point to execute Ack logic
-func (ah AddHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version) sdk.Result {
+func (ah AddHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgAdd)
 	if !ok {
 		return errInvalidMessage.Result()
 	}
 	ctx.Logger().Info(fmt.Sprintf("receive msg add %s", msg.Tx.ID))
 	if err := ah.validate(ctx, msg, version); err != nil {
-		ctx.Logger().Error("msg ack failed validation", err)
+		ctx.Logger().Error("msg add failed validation", "error", err)
 		return err.Result()
 	}
 	if err := ah.handle(ctx, msg); err != nil {
-		ctx.Logger().Error("fail to process msg add", err)
+		ctx.Logger().Error("fail to process msg add", "error", err)
 		return err.Result()
 	}
 
@@ -87,7 +89,6 @@ func (ah AddHandler) handle(ctx sdk.Context, msg MsgAdd) sdk.Error {
 	if err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to marshal add event to json: %w", err).Error())
 	}
-
 	evt := NewEvent(
 		addEvt.Type(),
 		ctx.BlockHeight(),
@@ -95,6 +96,8 @@ func (ah AddHandler) handle(ctx sdk.Context, msg MsgAdd) sdk.Error {
 		stakeBytes,
 		EventSuccess,
 	)
-	ah.keeper.SetCompletedEvent(ctx, evt)
+	if err := ah.keeper.UpsertEvent(ctx, evt); nil != err {
+		return sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
+	}
 	return nil
 }

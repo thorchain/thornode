@@ -23,7 +23,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
 		common.BNBGasFeeSingleton,
 		"",
-	), sdk.NewUint(12), GetRandomPubKey())
+	), 12, GetRandomPubKey())
 	m := NewMsgOutboundTx(tx, inTxID, acc1)
 	EnsureMsgBasicCorrect(m, c)
 	c.Check(m.Type(), Equals, "set_tx_outbound")
@@ -68,7 +68,7 @@ func (MsgOutboundTxSuite) TestMsgOutboundTx(c *C) {
 			common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
 			common.BNBGasFeeSingleton,
 			"",
-		), sdk.NewUint(12), GetRandomPubKey())
+		), 12, GetRandomPubKey())
 		m := NewMsgOutboundTx(tx, item.inTxID, item.signer)
 		err := m.ValidateBasic()
 		c.Assert(err, NotNil, Commentf("%s", err.Error()))

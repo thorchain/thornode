@@ -11,14 +11,14 @@ import (
 
 // MsgTssPool defines a MsgTssPool message
 type MsgTssPool struct {
-	ID         string          `json:"id"`
-	PoolPubKey common.PubKey   `json:"pool_pub_key"`
-	PubKeys    []common.PubKey `json:"pubkeys"`
-	Signer     sdk.AccAddress  `json:"signer"`
+	ID         string         `json:"id"`
+	PoolPubKey common.PubKey  `json:"pool_pub_key"`
+	PubKeys    common.PubKeys `json:"pubkeys"`
+	Signer     sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgTssPool is a constructor function for MsgTssPool
-func NewMsgTssPool(pks []common.PubKey, poolpk common.PubKey, signer sdk.AccAddress) MsgTssPool {
+func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, signer sdk.AccAddress) MsgTssPool {
 
 	// ensure input pubkeys list is deterministically sorted
 	sort.Slice(pks, func(i, j int) bool {

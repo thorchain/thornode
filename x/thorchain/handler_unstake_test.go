@@ -8,6 +8,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type HandlerUnstakeSuite struct{}
@@ -73,15 +74,10 @@ func (mfp *MockUnstakeKeeper) SetPoolStaker(_ sdk.Context, ps PoolStaker) {
 	mfp.poolStaker = ps
 }
 
-func (mfp *MockUnstakeKeeper) AddIncompleteEvents(_ sdk.Context, _ Event) error {
-	if mfp.failAddEvents {
-		return errors.New("fail to add event")
-	}
-	return nil
-}
 func (mfp *MockUnstakeKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ sdk.AccAddress) PoolStatus {
 	return PoolEnabled
 }
+func (mfp *MockUnstakeKeeper) UpsertEvent(ctx sdk.Context, event Event) error { return nil }
 
 func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	// w := getHandlerTestWrapper(c, 1, true, true)
@@ -110,14 +106,16 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	c.Assert(err, IsNil)
 	c.Logf("stake unit: %d", unit)
 	// let's just unstake
-	unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy(), NewPoolAddressDummyMgr())
+	unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy())
 	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
+
 	msgUnstake := NewMsgSetUnStake(GetRandomTx(), runeAddr, sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
-	result := unstakeHandler.Run(ctx, msgUnstake, ver)
+	result := unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 
 	// Bad version should fail
-	result = unstakeHandler.Run(ctx, msgUnstake, semver.Version{})
+	result = unstakeHandler.Run(ctx, msgUnstake, semver.Version{}, constAccessor)
 	c.Assert(result.Code, Equals, CodeBadVersion)
 }
 
@@ -136,32 +134,34 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_Validation(c *C) {
 		{
 			name:           "empty signer should fail",
 			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, sdk.AccAddress{}),
-			expectedResult: sdk.CodeInvalidAddress,
+			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
 			name:           "empty asset should fail",
 			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.Asset{}, GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
 			name:           "empty RUNE address should fail",
 			msg:            NewMsgSetUnStake(GetRandomTx(), common.NoAddress, sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
 			name:           "withdraw basis point is 0 should fail",
 			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.ZeroUint(), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
 			name:           "withdraw basis point is larger than 10000 should fail",
 			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints+100)), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeUnstakeFailValidation,
 		},
 	}
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	for _, tc := range testCases {
-		unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy(), NewPoolAddressDummyMgr())
-		c.Assert(unstakeHandler.Run(ctx, tc.msg, semver.MustParse("0.1.0")).Code, Equals, tc.expectedResult, Commentf(tc.name))
+		unstakeHandler := NewUnstakeHandler(k, NewTxStoreDummy())
+		c.Assert(unstakeHandler.Run(ctx, tc.msg, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
 }
 
@@ -193,7 +193,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 				activeNodeAccount: activeNodeAccount,
 				suspendedPool:     true,
 			},
-			expectedResult: sdk.CodeUnknownRequest,
+			expectedResult: CodeInvalidPoolStatus,
 		},
 		{
 			name: "fail to get pool staker unstake should fail",
@@ -201,7 +201,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 				activeNodeAccount: activeNodeAccount,
 				failPoolStaker:    true,
 			},
-			expectedResult: sdk.CodeInternal,
+			expectedResult: CodeFailGetPoolStaker,
 		},
 		{
 			name: "fail to add incomplete event unstake should fail",
@@ -213,10 +213,13 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 			expectedResult: sdk.CodeInternal,
 		},
 	}
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
+
 	for _, tc := range testCases {
 		ctx, _ := setupKeeperForTest(c)
-		unstakeHandler := NewUnstakeHandler(tc.k, NewTxStoreDummy(), NewPoolAddressDummyMgr())
+		unstakeHandler := NewUnstakeHandler(tc.k, NewTxStoreDummy())
 		msgUnstake := NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
-		c.Assert(unstakeHandler.Run(ctx, msgUnstake, semver.MustParse("0.1.0")).Code, Equals, tc.expectedResult, Commentf(tc.name))
+		c.Assert(unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
 }

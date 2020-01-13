@@ -79,8 +79,7 @@ func (s EventSuite) TestEvent(c *C) {
 	)
 
 	swapBytes, _ := json.Marshal(swap)
-	evt := NewEvent(
-		swap.Type(),
+	evt := NewEvent(swap.Type(),
 		12,
 		common.NewTx(
 			txID,
@@ -106,8 +105,7 @@ func (s EventSuite) TestEvent(c *C) {
 		sdk.NewUint(5),
 	)
 	stakeBytes, _ := json.Marshal(stake)
-	evt2 := NewEvent(
-		stake.Type(),
+	evt2 := NewEvent(stake.Type(),
 		12,
 		common.NewTx(
 			txID,
@@ -133,6 +131,4 @@ func (s EventSuite) TestEvent(c *C) {
 	c.Check(events[0].Type, Equals, evt.Type)
 
 	c.Check(Event{}.Empty(), Equals, true)
-	emptyRefundEvent := NewEmptyRefundEvent()
-	c.Check(emptyRefundEvent.Type(), Equals, "empty-refund")
 }

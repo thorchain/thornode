@@ -6,22 +6,25 @@ GOBIN?=${GOPATH}/bin
 all: lint install
 
 install: go.sum
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/thorcli
-	GO111MODULE=on go install -tags "$(build_tags)" ./cmd/thord
-	GO111MODULE=on go install -v ./cmd/observed
-	GO111MODULE=on go install -v ./cmd/signd
-	GO111MODULE=on go install -v ./cmd/bifrost
+	go install -tags "${TAGS}" ./cmd/thorcli
+	go install -tags "${TAGS}" ./cmd/thord
+	go install ./cmd/bifrost
 
+install-testnet:
+	TAGS=testnet make install
+
+install-sandbox:
+	TAGS=sandbox make install
 
 tools:
-	GO111MODULE=on go install -tags "$(build_tags)" ./tools/bsinner
-	GO111MODULE=on go install -tags "$(build_tags)" ./tools/generate
-	GO111MODULE=on go install -tags "$(build_tags)" ./tools/extract
-	GO111MODULE=on go install -tags "$(build_tags)" ./tools/sweep
+	go install ./tools/bsinner
+	go install ./tools/generate
+	go install ./tools/extract
+	go install ./tools/sweep
 
 go.sum: go.mod
 	@echo "--> Ensure dependencies have not been modified"
-	GO111MODULE=on go mod verify
+	go mod verify
 
 test-coverage:
 	@go test -v -coverprofile .testCoverage.txt ./...
@@ -49,14 +52,10 @@ lint-verbose: lint-pre
 	@golangci-lint run -v
 
 build:
-	@go build ./...
-
-start-observe:
-	observe
+	@go build -tags "${TAGS}" ./...
 
 start-daemon:
-	# thord start --log_level "*:debug"
-	thord start
+	thord start --log_level "main:info,state:debug,*:error"
 
 start-rest:
 	thorcli rest-server
@@ -76,7 +75,7 @@ reset: clean install
 clean:
 	rm -rf ~/.thord
 	rm -rf ~/.thorcli
-	rm -f ${GOBIN}/{bsinner,generate,sweep,thorcli,thord,observe,signd}
+	rm -f ${GOBIN}/{bsinner,generate,sweep,thorcli,thord,bifrost}
 
 .envrc: install
 	@generate -t MASTER > .envrc
@@ -94,12 +93,19 @@ smoke-test: tools install
 smoke-local: smoke-standalone
 
 smoke-standalone:
-	make -C build/docker stop-standaloneWithMockBinance run-standaloneWithMockBinance
+	make -C build/docker reset-mocknet-standalone
 	bsinner -a localhost:26660 -b ./test/smoke/scenarios/standalone/balances.json -t ./test/smoke/scenarios/standalone/transactions.json -e local -x -g
 
 smoke-genesis:
-	make -C build/docker stop-genesisWithMockBinance run-genesisWithMockBinance
+	make -C build/docker reset-mocknet-genesis
 	bsinner -a localhost:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e local -x -g
 
 export:
 	thord export
+
+pull:
+	docker pull registry.gitlab.com/thorchain/thornode
+	docker pull registry.gitlab.com/thorchain/tss/go-tss
+	docker pull registry.gitlab.com/thorchain/midgard
+	docker pull registry.gitlab.com/thorchain/bepswap/bepswap-react-app
+	docker pull registry.gitlab.com/thorchain/bepswap/mock-binance

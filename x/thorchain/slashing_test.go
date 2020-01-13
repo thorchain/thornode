@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -60,31 +61,47 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 		addrs: []sdk.AccAddress{nas[0].NodeAddress},
 	}
 	txOutStore := NewTxStoreDummy()
-	poolAddrMgr := NewPoolAddressDummyMgr()
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 
-	slasher := NewSlasher(keeper, txOutStore, poolAddrMgr)
+	slasher := NewSlasher(keeper, txOutStore)
 	// should slash na2 only
-	err = slasher.LackObserving(ctx)
+	lackOfObservationPenalty := constAccessor.GetInt64Value(constants.LackOfObservationPenalty)
+	err = slasher.LackObserving(ctx, constAccessor)
 	c.Assert(err, IsNil)
 	c.Assert(keeper.nas[0].SlashPoints, Equals, int64(0))
-	c.Assert(keeper.nas[1].SlashPoints, Equals, int64(constants.LackOfObservationPenalty))
+	c.Assert(keeper.nas[1].SlashPoints, Equals, lackOfObservationPenalty)
 
 	// since THORNode have cleared all node addresses in slashForObservingAddresses,
 	// running it a second time should result in slashing nobody.
-	err = slasher.LackObserving(ctx)
+	err = slasher.LackObserving(ctx, constAccessor)
 	c.Assert(err, IsNil)
 	c.Assert(keeper.nas[0].SlashPoints, Equals, int64(0))
-	c.Assert(keeper.nas[1].SlashPoints, Equals, int64(constants.LackOfObservationPenalty))
+	c.Assert(keeper.nas[1].SlashPoints, Equals, lackOfObservationPenalty)
 }
 
 type TestSlashingLackKeeper struct {
 	KVStoreDummy
-	evts  Events
-	txOut *TxOut
-	na    NodeAccount
+	evts   Events
+	txOut  *TxOut
+	na     NodeAccount
+	vaults Vaults
+	voter  ObservedTxVoter
 }
 
-func (k *TestSlashingLackKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
+func (k *TestSlashingLackKeeper) GetObservedTxVoter(_ sdk.Context, _ common.TxID) (ObservedTxVoter, error) {
+	return k.voter, nil
+}
+
+func (k *TestSlashingLackKeeper) SetObservedTxVoter(_ sdk.Context, voter ObservedTxVoter) {
+	k.voter = voter
+}
+
+func (k *TestSlashingLackKeeper) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vaults, error) {
+	return k.vaults, nil
+}
+
+func (k *TestSlashingLackKeeper) GetAllPendingEvents(_ sdk.Context) (Events, error) {
 	return k.evts, nil
 }
 
@@ -109,10 +126,9 @@ func (k *TestSlashingLackKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) e
 func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(201) // set blockheight
-	poolAddrMgr := NewPoolAddressDummyMgr()
 	txOutStore := NewTxStoreDummy()
-	txOutStore.asgard = poolAddrMgr.GetCurrentPoolAddresses().Current
-
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
 	na := GetRandomNodeAccount(NodeActive)
 
 	swapEvt := NewEventSwap(
@@ -121,9 +137,9 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 	)
+
 	swapBytes, _ := json.Marshal(swapEvt)
-	evt := NewEvent(
-		swapEvt.Type(),
+	evt := NewEvent(swapEvt.Type(),
 		3,
 		common.NewTx(
 			GetRandomTxHash(),
@@ -143,7 +159,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	txOutItem := &TxOutItem{
 		Chain:       common.BNBChain,
 		InHash:      evt.InTx.ID,
-		VaultPubKey: na.NodePubKey.Secp256k1,
+		VaultPubKey: na.PubKeySet.Secp256k1,
 		ToAddress:   GetRandomBNBAddress(),
 		Coin: common.NewCoin(
 			common.BNBAsset, sdk.NewUint(3980500*common.One),
@@ -153,20 +169,24 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	txOut.TxArray = append(txOut.TxArray, txOutItem)
 
 	keeper := &TestSlashingLackKeeper{
-		txOut: txOut,
-		evts:  Events{evt},
-		na:    na,
+		txOut:  txOut,
+		evts:   Events{evt},
+		na:     na,
+		vaults: Vaults{GetRandomVault()},
+		voter: ObservedTxVoter{
+			Actions: []TxOutItem{*txOutItem},
+		},
 	}
+	signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
+	ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod + 5)
 
-	ctx = ctx.WithBlockHeight(evt.Height + constants.SigningTransactionPeriod + 5)
-
-	slasher := NewSlasher(keeper, txOutStore, poolAddrMgr)
-	c.Assert(slasher.LackSigning(ctx), IsNil)
+	slasher := NewSlasher(keeper, txOutStore)
+	c.Assert(slasher.LackSigning(ctx, constAccessor), IsNil)
 
 	c.Check(keeper.na.SlashPoints, Equals, int64(200), Commentf("%+v\n", na))
 
 	outItems := txOutStore.GetOutboundItems()
 	c.Assert(outItems, HasLen, 1)
-	poolPubKey := poolAddrMgr.GetAsgardPoolPubKey(evt.InTx.Chain).PubKey
-	c.Assert(outItems[0].VaultPubKey.Equals(poolPubKey), Equals, true)
+	c.Assert(outItems[0].VaultPubKey.Equals(keeper.vaults[0].PubKey), Equals, true)
+	c.Assert(keeper.voter.Actions, HasLen, 0) // ensure we've removed our previous txn
 }

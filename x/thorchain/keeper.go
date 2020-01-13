@@ -30,14 +30,14 @@ type Keeper interface {
 	KeeperTxOut
 	KeeperLiquidityFees
 	KeeperEvents
-	KeeperPoolAddresses
 	KeeperChains
-	KeeperYggdrasil
+	KeeperVault
 	KeeperReserveContributors
 	KeeperVaultData
 	KeeperAdminConfig
 	KeeperTss
 	KeeperKeygen
+	KeeperRagnarok
 }
 
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there
@@ -57,21 +57,23 @@ const (
 	prefixPoolStaker         dbPrefix = "pool_staker/"
 	prefixStakerPool         dbPrefix = "staker_pool/"
 	prefixAdmin              dbPrefix = "admin/"
-	prefixInCompleteEvents   dbPrefix = "incomplete_events/"
-	prefixCompleteEvent      dbPrefix = "complete_event/"
-	prefixLastEventID        dbPrefix = "last_event_id/"
+	prefixEvents             dbPrefix = "events/"
+	prefixTxHashEvents       dbPrefix = "tx_events/"
+	prefixPendingEvents      dbPrefix = "pending_events/"
+	prefixCurrentEventID     dbPrefix = "current_event_id/"
 	prefixLastChainHeight    dbPrefix = "last_chain_height/"
 	prefixLastSignedHeight   dbPrefix = "last_signed_height/"
 	prefixNodeAccount        dbPrefix = "node_account/"
 	prefixActiveObserver     dbPrefix = "active_observer/"
-	prefixPoolAddresses      dbPrefix = "pool_addresses/"
 	prefixSupportedChains    dbPrefix = "supported_chains/"
-	prefixYggdrasilPool      dbPrefix = "yggdrasil/"
+	prefixVaultPool          dbPrefix = "vault/"
+	prefixVaultAsgardIndex   dbPrefix = "vault_asgard_index/"
 	prefixVaultData          dbPrefix = "vault_data/"
 	prefixObservingAddresses dbPrefix = "observing_addresses/"
 	prefixReserves           dbPrefix = "reserves/"
 	prefixTss                dbPrefix = "tss/"
 	prefixKeygen             dbPrefix = "keygen/"
+	prefixRagnarok           dbPrefix = "ragnarok/"
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {

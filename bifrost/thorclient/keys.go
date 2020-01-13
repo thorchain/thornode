@@ -12,7 +12,7 @@ import (
 
 const (
 	// folder name for thorchain thorcli
-	StatechainCliFolderName = `.thorcli`
+	thorchainCliFolderName = `.thorcli`
 )
 
 // Keys manages all the keys used by thorchain
@@ -50,14 +50,14 @@ func NewKeys(chainHomeFolder, signerName, password string) (*Keys, error) {
 }
 
 // getKeybase will create an instance of Keybase
-func getKeybase(stateChainHome string) (ckeys.Keybase, error) {
-	cliDir := stateChainHome
-	if len(stateChainHome) == 0 {
+func getKeybase(thorchainHome string) (ckeys.Keybase, error) {
+	cliDir := thorchainHome
+	if len(thorchainHome) == 0 {
 		usr, err := user.Current()
 		if nil != err {
 			return nil, fmt.Errorf("fail to get current user,err:%w", err)
 		}
-		cliDir = filepath.Join(usr.HomeDir, StatechainCliFolderName)
+		cliDir = filepath.Join(usr.HomeDir, thorchainCliFolderName)
 	}
 	return keys.NewKeyBaseFromDir(cliDir)
 }

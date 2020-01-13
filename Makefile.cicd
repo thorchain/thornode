@@ -33,6 +33,12 @@ aws-login:
 	aws configure set region ${AWS_REGION}
 	$(shell aws ecr get-login --no-include-email --region ap-southeast-2)
 
+.PHONY: aws-ci-login
+aws-ci-login:
+	aws configure set aws_access_key_id ${AWS_CI_ACCESS_KEY_ID}
+	aws configure set aws_secret_access_key ${AWS_CI_SECRET_ACCESS_KEY}
+	aws configure set region ${AWS_CI_REGION}
+
 .PHONY: logger
 logger:
 	mkdir -p ./log
@@ -60,11 +66,11 @@ seed: tools
 
 # -------------------------------- Smoke Test ---------------------------- #
 smoke-ci-genesis:
-	make -C build/docker run-genesisWithMockBinance
+	make -C build/docker run-mocknet-genesis
 	bsinner -a docker:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e ci -x
 
 smoke-ci-standalone:
-	make -C build/docker run-standaloneWithMockBinance
+	make -C build/docker run-mocknet-standalone
 	bsinner -a docker:26660 -b ./test/smoke/scenarios/standalone/balances.json -t ./test/smoke/scenarios/standalone/transactions.json -e ci -x
 # ------------------------------------------------------------------------ #
 
@@ -75,8 +81,11 @@ docker-gitlab-login:
 	docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
 
 docker-gitlab-push:
-	docker push registry.gitlab.com/thorchain/thornode:latest
+	docker push registry.gitlab.com/thorchain/thornode:sandbox
+	docker push registry.gitlab.com/thorchain/thornode:testnet
+	docker push registry.gitlab.com/thorchain/thornode:mainnet
 
 docker-gitlab-build:
-	docker build -t registry.gitlab.com/thorchain/thornode -f build/docker/Dockerfile .
-	docker tag registry.gitlab.com/thorchain/thornode $$(git rev-parse --short HEAD)
+	docker build -t registry.gitlab.com/thorchain/thornode:sandbox -f build/docker/Dockerfile --build-arg TAGS=sandbox .
+	docker build -t registry.gitlab.com/thorchain/thornode:testnet -f build/docker/Dockerfile --build-arg TAGS=testnet .
+	docker build -t registry.gitlab.com/thorchain/thornode:mainnet -t registry.gitlab.com/thorchain/thornode:$$(git rev-parse --short HEAD) -t registry.gitlab.com/thorchain/thornode:latest -f build/docker/Dockerfile --build-arg TAGS=mainnet .

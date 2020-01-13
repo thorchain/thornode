@@ -159,7 +159,7 @@ func (s *Smoke) Seed() error {
 		coins = append(coins, ctypes.Coin{Denom: denom, Amount: amount})
 	}
 	payload := []msg.Transfer{
-		msg.Transfer{to.GetAddr(), coins},
+		{to.GetAddr(), coins},
 	}
 	return s.SendTxn(from, payload, "SEED")
 }
@@ -184,7 +184,7 @@ func (s *Smoke) Transfer(txn types.TransactionConfig) error {
 	}
 
 	payload := []msg.Transfer{
-		msg.Transfer{to, coins},
+		{to, coins},
 	}
 
 	// swap Names with addresses
