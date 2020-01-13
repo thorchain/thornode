@@ -1,6 +1,12 @@
+// constants package contains all the constants used by thorchain
+// by default all the settings in this is for mainnet
 package constants
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
+
 	"github.com/blang/semver"
 )
 
@@ -42,10 +48,10 @@ func NewConstantValue010() *ConstantValue010 {
 			WhiteListGasAsset:               1000,                // thor coins we will be given to the validator
 		},
 		boolValues: map[ConstantName]bool{
-			StrictBondStakeRatio: false,
+			StrictBondStakeRatio: true,
 		},
 		stringValues: map[ConstantName]string{
-			DefaultPoolStatus: "Enabled",
+			DefaultPoolStatus: "Bootstrap",
 		},
 	}
 
@@ -90,4 +96,54 @@ func (cv *ConstantValue010) GetStringValue(name ConstantName) string {
 		return v
 	}
 	return ""
+}
+
+func (cv *ConstantValue010) String() string {
+	sb := strings.Builder{}
+	for k, v := range cv.int64values {
+		if overrideValue, ok := int64Overrides[k]; ok {
+			sb.WriteString(fmt.Sprintf("%s:%d\n", k, overrideValue))
+			continue
+		}
+		sb.WriteString(fmt.Sprintf("%s:%d\n", k, v))
+	}
+	for k, v := range cv.boolValues {
+		if overrideValue, ok := boolOverrides[k]; ok {
+			sb.WriteString(fmt.Sprintf("%s:%v\n", k, overrideValue))
+			continue
+		}
+		sb.WriteString(fmt.Sprintf("%s:%v\n", k, v))
+	}
+	return sb.String()
+}
+
+// MarshalJSON marshal result to json format
+func (cv ConstantValue010) MarshalJSON() ([]byte, error) {
+	var result struct {
+		Int64Values  map[string]int64  `json:"int_64_values"`
+		BoolValues   map[string]bool   `json:"bool_values"`
+		StringValues map[string]string `json:"string_values"`
+	}
+	result.Int64Values = make(map[string]int64)
+	result.BoolValues = make(map[string]bool)
+	for k, v := range cv.int64values {
+		result.Int64Values[k.String()] = v
+	}
+	for k, v := range int64Overrides {
+		result.Int64Values[k.String()] = v
+	}
+	for k, v := range cv.boolValues {
+		result.BoolValues[k.String()] = v
+	}
+	for k, v := range boolOverrides {
+		result.BoolValues[k.String()] = v
+	}
+	for k, v := range cv.stringValues {
+		result.StringValues[k.String()] = v
+	}
+	for k, v := range stringOverrides {
+		result.StringValues[k.String()] = v
+	}
+
+	return json.MarshalIndent(result, "", "	")
 }

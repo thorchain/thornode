@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/blang/semver"
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -39,8 +40,26 @@ func GetQueryCmd(storeKey string, cdc *codec.Codec) *cobra.Command {
 		GetCmdUnStakeRecord(storeKey, cdc),
 		GetCmdKeysignArray(storeKey, cdc),
 		GetCmdGetAdminConfig(storeKey, cdc),
+		GetCmdGetConstans(storeKey, cdc),
 	)...)
 	return thorchainQueryCmd
+}
+
+func GetCmdGetConstans(queryRoute string, cdc *codec.Codec) *cobra.Command {
+	return &cobra.Command{
+		Use:   "constants",
+		Short: "Gets the thorchain constants",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			ver, err := semver.Parse(args[0])
+			if nil != err {
+				return err
+			}
+			constAccessor := constants.GetConstantValues(ver)
+			return cliCtx.PrintOutput(constAccessor)
+		},
+	}
 }
 
 // GetCmdGetVersion queries current version
