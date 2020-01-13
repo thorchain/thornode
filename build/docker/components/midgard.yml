@@ -10,14 +10,6 @@ services:
       CHAIN_API: thor-api:1317
       CHAIN_RPC: thor-daemon:26657
       PG_HOST: pg
-    links:
-      - pg
-      - thor-daemon
-      - thor-api
-    depends_on:
-      - pg
-      - thor-daemon
-      - thor-api
     entrypoint:
       /docker/scripts/midgard.sh
     volumes:
@@ -26,8 +18,8 @@ services:
 
   pg:
     image: timescale/timescaledb:latest-pg11
-    ports:
-      - 5432:5432
+    expose:
+      - 5432
     environment:
       - POSTGRES_USER=midgard
       - POSTGRES_PASSWORD=password
