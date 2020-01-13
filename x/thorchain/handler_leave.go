@@ -95,9 +95,10 @@ func (lh LeaveHandler) handle(ctx sdk.Context, msg MsgLeave) sdk.Error {
 		}
 		if !vault.HasFunds() {
 			// node is not active , they are free to leave , refund them
-			if err := refundBond(ctx, msg.Tx.ID, nodeAcc, lh.keeper, lh.txOut); err != nil {
+			if err := refundBond(ctx, msg.Tx, nodeAcc, lh.keeper, lh.txOut); err != nil {
 				return sdk.ErrInternal(fmt.Errorf("fail to refund bond: %w", err).Error())
 			}
+
 		}
 
 		if err := lh.validatorManager.RequestYggReturn(ctx, nodeAcc); nil != err {

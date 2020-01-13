@@ -66,7 +66,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 	return nil
 }
 
-func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
+func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
 	ygg, err := keeper.GetVault(ctx, nodeAcc.PubKeySet.Secp256k1)
 	if err != nil {
 		return err
@@ -113,14 +113,22 @@ func refundBond(ctx sdk.Context, txID common.TxID, nodeAcc NodeAccount, keeper K
 			Chain:       common.BNBChain,
 			ToAddress:   nodeAcc.BondAddress,
 			VaultPubKey: vault.PubKey,
-			InHash:      txID,
+			InHash:      tx.ID,
 			Coin:        common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
 		_, err = txOut.TryAddTxOutItem(ctx, txOutItem)
 		if nil != err {
 			return fmt.Errorf("fail to add outbound tx: %w", err)
 		}
-
+		bondEvent := NewEventBond(nodeAcc.Bond, BondReturned)
+		buf, err := json.Marshal(bondEvent)
+		if nil != err {
+			return fmt.Errorf("fail to marshal bond event: %w", err)
+		}
+		e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending)
+		if err := keeper.UpsertEvent(ctx, e); nil != err {
+			return fmt.Errorf("fail to save bond return event: %w", err)
+		}
 	}
 
 	nodeAcc.Bond = sdk.ZeroUint()

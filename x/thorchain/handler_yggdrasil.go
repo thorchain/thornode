@@ -96,14 +96,15 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 			sdk.NewEvent("yggdrasil_return",
 				sdk.NewAttribute("pubkey", ygg.PubKey.String()),
 				sdk.NewAttribute("coins", msg.Coins.String()),
-				sdk.NewAttribute("tx", msg.RequestTxHash.String())))
+				sdk.NewAttribute("tx", msg.Tx.ID.String())))
 
 		na, err := h.keeper.GetNodeAccountByPubKey(ctx, msg.PubKey)
 		if err != nil {
 			ctx.Logger().Error("unable to get node account", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
-		if err := refundBond(ctx, msg.RequestTxHash, na, h.keeper, h.txOutStore); err != nil {
+
+		if err := refundBond(ctx, msg.Tx, na, h.keeper, h.txOutStore); err != nil {
 			ctx.Logger().Error("fail to refund bond", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}

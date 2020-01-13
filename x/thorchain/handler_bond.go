@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -61,7 +62,7 @@ func (h BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, con
 	}
 	ctx.Logger().Info("receive MsgBond",
 		"node address", msg.NodeAddress,
-		"request hash", msg.RequestTxHash,
+		"request hash", msg.TxIn.ID,
 		"bond", msg.Bond)
 	if err := h.validate(ctx, msg, version, constAccessor); nil != err {
 		ctx.Logger().Error("msg bond fail validation", "error", err)
@@ -72,7 +73,18 @@ func (h BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, con
 		ctx.Logger().Error("fail to process msg bond", "error", err)
 		return err.Result()
 	}
+	bondEvent := NewEventBond(msg.Bond, BondPaid)
+	buf, err := json.Marshal(bondEvent)
+	if nil != err {
+		ctx.Logger().Error("fail to marshal bond event", "error", err)
+		return sdk.ErrInternal("fail to marshal bond event").Result()
+	}
 
+	e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), msg.TxIn, buf, EventSuccess)
+	if err := h.keeper.UpsertEvent(ctx, e); nil != err {
+		ctx.Logger().Error("fail to save bond event", "error", err)
+		return sdk.ErrInternal("fail to save bond event").Result()
+	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,

@@ -8,21 +8,21 @@ import (
 
 // MsgBond when a user would like to become a validator, and run a full set, they need send an `apply:bepaddress` with a bond to our pool address
 type MsgBond struct {
-	NodeAddress   sdk.AccAddress `json:"node_address"`
-	Bond          sdk.Uint       `json:"bond"`
-	BondAddress   common.Address `json:"bond_address"`
-	RequestTxHash common.TxID    `json:"request_tx_hash"` // request tx hash on chain
-	Signer        sdk.AccAddress `json:"signer"`
+	TxIn        common.Tx      `json:"tx_in"`
+	NodeAddress sdk.AccAddress `json:"node_address"`
+	Bond        sdk.Uint       `json:"bond"`
+	BondAddress common.Address `json:"bond_address"`
+	Signer      sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgBond create new MsgBond message
-func NewMsgBond(nodeAddr sdk.AccAddress, bond sdk.Uint, requestTxHash common.TxID, bondAddress common.Address, signer sdk.AccAddress) MsgBond {
+func NewMsgBond(txin common.Tx, nodeAddr sdk.AccAddress, bond sdk.Uint, bondAddress common.Address, signer sdk.AccAddress) MsgBond {
 	return MsgBond{
-		NodeAddress:   nodeAddr,
-		Bond:          bond,
-		BondAddress:   bondAddress,
-		RequestTxHash: requestTxHash,
-		Signer:        signer,
+		TxIn:        txin,
+		NodeAddress: nodeAddr,
+		Bond:        bond,
+		BondAddress: bondAddress,
+		Signer:      signer,
 	}
 }
 
@@ -43,8 +43,8 @@ func (msg MsgBond) ValidateBasic() sdk.Error {
 	if msg.BondAddress.IsEmpty() {
 		return sdk.ErrUnknownRequest("bond address cannot be empty")
 	}
-	if msg.RequestTxHash.IsEmpty() {
-		return sdk.ErrUnknownRequest("request tx hash cannot be empty")
+	if msg.TxIn.IsEmpty() {
+		return sdk.ErrUnknownRequest("request tx cannot be empty")
 	}
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress("empty signer address")
