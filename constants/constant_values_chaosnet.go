@@ -13,4 +13,10 @@ func init() {
 		ArtificialRagnarokBlockHeight: 500_000,         // after block height 500,000, start to rotate more nodes out until it reach the minimum BFT
 		MaximumStakeRune:              600000_00000000, // on chaosnet , make sure the total staked RUNE per pool is less than 600K
 	}
+	boolOverrides = map[ConstantName]bool{
+		StrictBondStakeRatio: false,
+	}
+	stringOverrides = map[ConstantName]string{
+		DefaultPoolStatus: "Enable",
+	}
 }

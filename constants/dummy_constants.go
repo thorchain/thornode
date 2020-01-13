@@ -37,3 +37,6 @@ func (dc *DummyConstants) GetStringValue(name ConstantName) string {
 	}
 	return v
 }
+func (dc *DummyConstants) String() string {
+	return ""
+}
