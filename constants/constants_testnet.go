@@ -11,4 +11,10 @@ func init() {
 		OldValidatorRate:     17280,
 		MinimumBondInRune:    100_000_000, // 1 rune
 	}
+	boolOverrides = map[ConstantName]bool{
+		StrictBondStakeRatio: false,
+	}
+	stringOverrides = map[ConstantName]string{
+		DefaultPoolStatus: "Enabled",
+	}
 }
