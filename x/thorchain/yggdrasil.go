@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"errors"
 	"fmt"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -44,7 +45,15 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	// TODO: We are assuming here that the pub key is Secp256K1
 	ygg, err := keeper.GetVault(ctx, na.PubKeySet.Secp256k1)
 	if nil != err {
-		return fmt.Errorf("fail to get yggdrasil: %w", err)
+		if !errors.Is(err, ErrVaultNotFound) {
+			return fmt.Errorf("fail to get yggdrasil: %w", err)
+		}
+		ygg = NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1)
+		ygg.Membership = append(ygg.Membership, na.PubKeySet.Secp256k1)
+
+		if err := keeper.SetVault(ctx, ygg); nil != err {
+			return fmt.Errorf("fail to create yggdrasil pool: %w", err)
+		}
 	}
 	if !ygg.IsYggdrasil() {
 		return fmt.Errorf("this is not a Yggdrasil vault")
