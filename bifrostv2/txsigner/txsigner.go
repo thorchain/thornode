@@ -35,10 +35,6 @@ func NewTxSigner(cfg config.TxSignerConfigurations, thorClient *thorclient.Clien
 
 // Start starts TxSigner, listening new block on ThorChain
 func (s *TxSigner) Start() error {
-	err := s.thorClient.Start()
-	if err != nil {
-		return err
-	}
 	s.wg.Add(1)
 	go s.processBlocks(s.blockInChan)
 	return nil

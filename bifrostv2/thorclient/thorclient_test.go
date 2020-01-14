@@ -39,7 +39,7 @@ func (s *ThorClientSuite) TearDownSuite(c *C) {
 }
 
 func (s *ThorClientSuite) TestGetThorChainUrl(c *C) {
-	uri := s.client.getThorChainUrl("")
+	uri := s.client.getThorChainURL("")
 	c.Assert(uri, Equals, "http://"+s.server.Listener.Addr().String())
 }
 
