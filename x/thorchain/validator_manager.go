@@ -149,13 +149,18 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 			Power:  100,
 		})
 	}
+
 	for _, na := range removedNodes {
+		status := NodeStandby
+		if na.RequestedToLeave {
+			status = NodeDisabled
+		}
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent("UpdateNodeAccountStatus",
 				sdk.NewAttribute("Address", na.NodeAddress.String()),
 				sdk.NewAttribute("Former:", na.Status.String()),
-				sdk.NewAttribute("Current:", NodeStandby.String())))
-		na.UpdateStatus(NodeStandby, height)
+				sdk.NewAttribute("Current:", status.String())))
+		na.UpdateStatus(status, height)
 		removedNodes = append(removedNodes, na)
 		if err := vm.payNodeAccountBondAward(ctx, na); nil != err {
 			ctx.Logger().Error("fail to pay node account bond award", "error", err)
