@@ -38,17 +38,15 @@ func (h BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg Msg
 	}
 	minimumBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
 	minValidatorBond := sdk.NewUint(uint64(minimumBond))
-	if msg.Bond.LT(minValidatorBond) {
-		return sdk.ErrUnknownRequest(fmt.Sprintf("not enough rune to be whitelisted , minimum validator bond (%s) , bond(%s)", minValidatorBond.String(), msg.Bond))
-	}
 
 	nodeAccount, err := h.keeper.GetNodeAccount(ctx, msg.NodeAddress)
 	if nil != err {
 		return sdk.ErrInternal(fmt.Sprintf("fail to get node account(%s): %s", msg.NodeAddress, err))
 	}
+	fmt.Printf("Node Account: %+v\n", nodeAccount)
 
-	if !nodeAccount.IsEmpty() {
-		return sdk.ErrInternal(fmt.Sprintf("node account(%s) already exist", msg.NodeAddress))
+	if (msg.Bond.Add(nodeAccount.Bond)).LT(minValidatorBond) {
+		return sdk.ErrUnknownRequest(fmt.Sprintf("not enough rune to be whitelisted , minimum validator bond (%s) , bond(%s)", minValidatorBond.String(), msg.Bond))
 	}
 
 	return nil
@@ -97,16 +95,26 @@ func (h BondHandler) handle(ctx sdk.Context, msg MsgBond, version semver.Version
 		Secp256k1: common.EmptyPubKey,
 		Ed25519:   common.EmptyPubKey,
 	}
-	// white list the given bep address
-	nodeAccount := NewNodeAccount(msg.NodeAddress, NodeWhiteListed, emptyPubKeySet, "", msg.Bond, msg.BondAddress, ctx.BlockHeight())
+
+	nodeAccount, err := h.keeper.GetNodeAccount(ctx, msg.NodeAddress)
+	if nil != err {
+		return sdk.ErrInternal(fmt.Sprintf("fail to get node account(%s): %s", msg.NodeAddress, err))
+	}
+
+	if nodeAccount.Status == NodeUnknown {
+		// white list the given bep address
+		nodeAccount = NewNodeAccount(msg.NodeAddress, NodeWhiteListed, emptyPubKeySet, "", sdk.ZeroUint(), msg.BondAddress, ctx.BlockHeight())
+		ctx.EventManager().EmitEvent(
+			sdk.NewEvent("new_node",
+				sdk.NewAttribute("address", msg.NodeAddress.String()),
+			))
+	}
+
+	nodeAccount.Bond = nodeAccount.Bond.Add(msg.Bond)
+
 	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
 		return sdk.ErrInternal(fmt.Errorf("fail to save node account(%s): %w", nodeAccount, err).Error())
 	}
-	ctx.EventManager().EmitEvent(
-		sdk.NewEvent("new_node",
-			sdk.NewAttribute("address", msg.NodeAddress.String()),
-		))
-
 	return h.mintGasAsset(ctx, msg, constAccessor)
 }
 
