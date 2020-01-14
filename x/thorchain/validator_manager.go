@@ -162,6 +162,9 @@ func (vm *ValidatorMgr) EndBlock(ctx sdk.Context, constAccessor constants.Consta
 				sdk.NewAttribute("Current:", status.String())))
 		na.UpdateStatus(status, height)
 		removedNodes = append(removedNodes, na)
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			ctx.Logger().Error("fail to save node account", "error", err)
+		}
 		if err := vm.payNodeAccountBondAward(ctx, na); nil != err {
 			ctx.Logger().Error("fail to pay node account bond award", "error", err)
 		}
