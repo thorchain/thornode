@@ -44,8 +44,9 @@ func (h BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg Msg
 		return sdk.ErrInternal(fmt.Sprintf("fail to get node account(%s): %s", msg.NodeAddress, err))
 	}
 
-	if (msg.Bond.Add(nodeAccount.Bond)).LT(minValidatorBond) {
-		return sdk.ErrUnknownRequest(fmt.Sprintf("not enough rune to be whitelisted , minimum validator bond (%s) , bond(%s)", minValidatorBond.String(), msg.Bond))
+	bond := msg.Bond.Add(nodeAccount.Bond)
+	if (bond).LT(minValidatorBond) {
+		return sdk.ErrUnknownRequest(fmt.Sprintf("not enough rune to be whitelisted , minimum validator bond (%s) , bond(%s)", minValidatorBond.String(), bond))
 	}
 
 	return nil
