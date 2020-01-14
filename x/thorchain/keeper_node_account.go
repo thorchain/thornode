@@ -114,6 +114,14 @@ func (k KVStore) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccou
 	ctx.Logger().Debug("GetNodeAccount", "node account", addr.String())
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixNodeAccount, addr.String())
+	if !store.Has([]byte(key)) {
+		emptyPubKeySet := common.PubKeySet{
+			Secp256k1: common.EmptyPubKey,
+			Ed25519:   common.EmptyPubKey,
+		}
+		return NewNodeAccount(addr, NodeUnknown, emptyPubKeySet, "", sdk.ZeroUint(), "", ctx.BlockHeight()), nil
+	}
+
 	payload := store.Get([]byte(key))
 	var na NodeAccount
 	if err := k.cdc.UnmarshalBinaryBare(payload, &na); nil != err {
