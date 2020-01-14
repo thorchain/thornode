@@ -98,7 +98,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	// ensure that the first one is rotated out and the new one is rotated in
 	standby, err := keeper.GetNodeAccount(ctx, addresses[0])
 	c.Assert(err, IsNil)
-	c.Check(standby.Status == NodeStandby, Equals, true)
+	c.Check(standby.Status == NodeDisabled, Equals, true)
 	na, err = keeper.GetNodeAccount(ctx, na.NodeAddress)
 	c.Assert(err, IsNil)
 	c.Check(na.Status == NodeActive, Equals, true)
