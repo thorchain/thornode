@@ -131,18 +131,4 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	result := handler.handle(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result))
 
-	ygg, err := keeper.GetVault(ctx, pubKey)
-	c.Assert(err, IsNil)
-	coin := ygg.GetCoin(common.BNBAsset)
-	c.Check(coin.Amount.Uint64(), Equals, sdk.NewUint(133*common.One).Uint64(), Commentf("%d vs %d", coin.Amount.Uint64(), sdk.NewUint(133*common.One).Uint64()))
-
-	// check yggdrasil balance on sub funds
-	msg = NewMsgYggdrasil(tx, pubKey, false, coins, signer)
-	result = handler.handle(ctx, msg, ver, constAccessor)
-	c.Assert(result.Code, Equals, sdk.CodeOK)
-
-	ygg, err = keeper.GetVault(ctx, pubKey)
-	c.Assert(err, IsNil)
-	coin = ygg.GetCoin(common.BNBAsset)
-	c.Check(coin.Amount.Uint64(), Equals, sdk.NewUint(33*common.One).Uint64(), Commentf("%d vs %d", coin.Amount.Uint64(), sdk.NewUint(33*common.One).Uint64()))
 }

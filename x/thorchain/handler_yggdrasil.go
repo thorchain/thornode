@@ -80,16 +80,6 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 	if !ygg.IsYggdrasil() {
 		return sdk.ErrInternal("this is not a Yggdrasil vault").Result()
 	}
-	if msg.AddFunds {
-		ygg.AddFunds(msg.Coins)
-	} else {
-		ygg.SubFunds(msg.Coins)
-	}
-
-	if err := h.keeper.SetVault(ctx, ygg); nil != err {
-		ctx.Logger().Error("fail to save yggdrasil", "error", err)
-		return sdk.ErrInternal(err.Error()).Result()
-	}
 
 	if !msg.AddFunds {
 		ctx.EventManager().EmitEvent(
