@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -35,6 +37,23 @@ func NewVersionedValidatorMgr(k Keeper, txOut TxOutStore, vaultMgr VaultManager)
 func (vm *VersionedValidatorMgr) BeginBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return vm.v1ValidatorMgr.BeginBlock(ctx, constAccessor)
+	}
+	return errBadVersion
+}
+
+// EndBlock when a block need to commit
+func (vm *VersionedValidatorMgr) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) []abci.ValidatorUpdate {
+	if version.GTE(semver.MustParse("0.1.0")) {
+		return vm.v1ValidatorMgr.EndBlock(ctx, constAccessor)
+	}
+	ctx.Logger().Error(fmt.Sprintf("unsupported version (%s) in validator manager", version))
+	return nil
+}
+
+// RequestYggReturn request yggdrasil pool to return fund
+func (vm *VersionedValidatorMgr) RequestYggReturn(ctx sdk.Context, version semver.Version, node NodeAccount) error {
+	if version.GTE(semver.MustParse("0.1.0")) {
+		return vm.v1ValidatorMgr.RequestYggReturn(ctx, node)
 	}
 	return errBadVersion
 }
