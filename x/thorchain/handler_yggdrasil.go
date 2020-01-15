@@ -12,10 +12,10 @@ import (
 type YggdrasilHandler struct {
 	keeper       Keeper
 	txOutStore   TxOutStore
-	validatorMgr ValidatorManager
+	validatorMgr VersionedValidatorManager
 }
 
-func NewYggdrasilHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager) YggdrasilHandler {
+func NewYggdrasilHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager) YggdrasilHandler {
 	return YggdrasilHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
