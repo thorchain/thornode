@@ -17,7 +17,7 @@ import (
 )
 
 // NewQuerier is the module level router for state queries
-func NewQuerier(keeper Keeper, validatorMgr ValidatorManager) sdk.Querier {
+func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Querier {
 	return func(ctx sdk.Context, path []string, req abci.RequestQuery) (res []byte, err sdk.Error) {
 		switch path[0] {
 		case q.QueryChains.Key:
@@ -33,9 +33,9 @@ func NewQuerier(keeper Keeper, validatorMgr ValidatorManager) sdk.Querier {
 		case q.QueryTxIn.Key:
 			return queryTxIn(ctx, path[1:], req, keeper)
 		case q.QueryKeysignArray.Key:
-			return queryKeysign(ctx, path[1:], req, keeper, validatorMgr)
+			return queryKeysign(ctx, path[1:], req, keeper)
 		case q.QueryKeysignArrayPubkey.Key:
-			return queryKeysign(ctx, path[1:], req, keeper, validatorMgr)
+			return queryKeysign(ctx, path[1:], req, keeper)
 		case q.QueryKeygensPubkey.Key:
 			return queryKeygen(ctx, path[1:], req, keeper)
 		case q.QueryCompleteEvents.Key:
@@ -511,7 +511,7 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 	return res, nil
 }
 
-func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper, validatorMgr ValidatorManager) ([]byte, sdk.Error) {
+func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var err error
 	height, err := strconv.ParseUint(path[0], 0, 64)
 	if nil != err {

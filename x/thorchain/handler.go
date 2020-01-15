@@ -48,8 +48,6 @@ const (
 	CodeEmptyChain            sdk.CodeType = 138
 )
 
-// EmptyAccAddress empty address
-var EmptyAccAddress = sdk.AccAddress{}
 var notAuthorized = fmt.Errorf("not authorized")
 var badVersion = fmt.Errorf("bad version")
 var errBadVersion = sdk.NewError(DefaultCodespace, CodeBadVersion, "bad version")
@@ -57,7 +55,7 @@ var errInvalidMessage = sdk.NewError(DefaultCodespace, CodeInvalidMessage, "inva
 var errConstNotAvailable = sdk.NewError(DefaultCodespace, CodeConstantsNotAvailable, "constant values not available")
 
 // NewHandler returns a handler for "thorchain" type messages.
-func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager, vaultMgr VaultManager) sdk.Handler {
+func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) sdk.Handler {
 	handlerMap := getHandlerMapping(keeper, txOutStore, validatorMgr, vaultMgr)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
@@ -75,7 +73,7 @@ func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorMana
 	}
 }
 
-func getHandlerMapping(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager, vaultMgr VaultManager) map[string]MsgHandler {
+func getHandlerMapping(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
 	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper)

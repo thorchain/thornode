@@ -14,12 +14,12 @@ import (
 // send a Leave request through Binance Chain
 type LeaveHandler struct {
 	keeper           Keeper
-	validatorManager ValidatorManager
+	validatorManager VersionedValidatorManager
 	txOut            TxOutStore
 }
 
 // NewLeaveHandler create a new LeaveHandler
-func NewLeaveHandler(keeper Keeper, validatorManager ValidatorManager, store TxOutStore) LeaveHandler {
+func NewLeaveHandler(keeper Keeper, validatorManager VersionedValidatorManager, store TxOutStore) LeaveHandler {
 	return LeaveHandler{
 		keeper:           keeper,
 		validatorManager: validatorManager,
@@ -59,7 +59,7 @@ func (lh LeaveHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _
 		return err.Result()
 	}
 
-	if err := lh.handle(ctx, msg); nil != err {
+	if err := lh.handle(ctx, msg, version); nil != err {
 		ctx.Logger().Error("fail to process msg leave", "error", err)
 		return err.Result()
 	}
@@ -69,7 +69,7 @@ func (lh LeaveHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _
 		Codespace: DefaultCodespace,
 	}
 }
-func (lh LeaveHandler) handle(ctx sdk.Context, msg MsgLeave) sdk.Error {
+func (lh LeaveHandler) handle(ctx sdk.Context, msg MsgLeave, version semver.Version) sdk.Error {
 	nodeAcc, err := lh.keeper.GetNodeAccountByBondAddress(ctx, msg.Tx.FromAddress)
 	if nil != err {
 		return sdk.ErrInternal(fmt.Errorf("fail to get node account by bond address: %w", err).Error())
@@ -101,7 +101,7 @@ func (lh LeaveHandler) handle(ctx sdk.Context, msg MsgLeave) sdk.Error {
 
 		}
 
-		if err := lh.validatorManager.RequestYggReturn(ctx, nodeAcc); nil != err {
+		if err := lh.validatorManager.RequestYggReturn(ctx, version, nodeAcc); nil != err {
 			return sdk.ErrInternal(fmt.Errorf("fail to request yggdrasil return fund: %w", err).Error())
 		}
 

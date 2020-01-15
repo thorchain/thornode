@@ -32,7 +32,7 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 
 	vaultMgr := NewVaultMgrDummy()
 	txOutStore := NewTxStoreDummy()
-	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
+	validatorMgr := NewVersionedValidatorMgr(keeper, txOutStore, vaultMgr)
 
 	handler := NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
 
@@ -117,8 +117,8 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	constAccessor := constants.GetConstantValues(ver)
 	vaultMgr := NewVaultMgrDummy()
 	txOutStore := NewTxStoreDummy()
-	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
-	validatorMgr.BeginBlock(ctx, constAccessor)
+	validatorMgr := NewVersionedValidatorMgr(keeper, txOutStore, vaultMgr)
+	c.Assert(validatorMgr.BeginBlock(ctx, ver, constAccessor), IsNil)
 
 	handler := NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
 
