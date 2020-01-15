@@ -12,11 +12,11 @@ import (
 type ObservedTxInHandler struct {
 	keeper       Keeper
 	txOutStore   TxOutStore
-	validatorMgr ValidatorManager
+	validatorMgr VersionedValidatorManager
 	vaultMgr     VaultManager
 }
 
-func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr ValidatorManager, vaultMgr VaultManager) ObservedTxInHandler {
+func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,

@@ -203,7 +203,7 @@ func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
 	constAccessor := constants.GetConstantValues(ver)
 	vaultMgr := NewVaultMgrDummy()
 	txOutStore := NewTxStoreDummy()
-	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
+	validatorMgr := NewVersionedValidatorMgr(keeper, txOutStore, vaultMgr)
 
 	handler := NewOutboundTxHandler(keeper)
 
