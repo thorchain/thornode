@@ -115,6 +115,10 @@ func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, n
 	if voter.HasConensus(nas) && voter.Height == 0 {
 		ok = true
 		voter.Height = ctx.BlockHeight()
+		fmt.Printf("Reached consensus!!!!")
+	} else {
+		fmt.Printf("Voter: %+v\n", voter)
+		fmt.Printf("Len: %d\n", len(nas))
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
 
@@ -147,6 +151,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 
 		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
 		if !ok {
+			ctx.Logger().Info("Inbound observation preflight requirements not yet met...")
 			continue
 		}
 
