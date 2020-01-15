@@ -115,10 +115,6 @@ func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, n
 	if voter.HasConensus(nas) && voter.Height == 0 {
 		ok = true
 		voter.Height = ctx.BlockHeight()
-		fmt.Printf("Reached consensus!!!!")
-	} else {
-		fmt.Printf("Voter: %+v\n", voter)
-		fmt.Printf("Len: %d\n", len(nas))
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
 
