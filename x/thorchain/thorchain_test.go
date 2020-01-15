@@ -25,7 +25,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 
 	txOutStore := NewTxStoreDummy()
 	vaultMgr := NewVaultMgr(keeper, txOutStore)
-	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
+	validatorMgr := newValidatorMgrV1(keeper, txOutStore, vaultMgr)
 
 	// create starting point, vault and four node active node accounts
 	vault := GetRandomVault()
@@ -136,7 +136,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 
 	txOutStore := NewTxStoreDummy()
 	vaultMgr := NewVaultMgr(keeper, txOutStore)
-	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
+	validatorMgr := newValidatorMgrV1(keeper, txOutStore, vaultMgr)
 
 	// create active asgard vault
 	asgard := GetRandomVault()
@@ -321,7 +321,7 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 
 	txOutStore := NewTxStoreDummy()
 	vaultMgr := NewVaultMgr(keeper, txOutStore)
-	validatorMgr := NewValidatorMgr(keeper, txOutStore, vaultMgr)
+	validatorMgr := newValidatorMgrV1(keeper, txOutStore, vaultMgr)
 
 	// create active asgard vault
 	asgard := GetRandomVault()

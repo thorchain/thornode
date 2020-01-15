@@ -75,7 +75,7 @@ type AppModule struct {
 	coinKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
 	txOutStore   TxOutStore
-	validatorMgr ValidatorManager
+	validatorMgr VersionedValidatorManager
 	vaultMgr     VaultManager
 }
 
@@ -89,7 +89,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		coinKeeper:     bankKeeper,
 		supplyKeeper:   supplyKeeper,
 		txOutStore:     txStore,
-		validatorMgr:   NewValidatorMgr(k, txStore, vaultMgr),
+		validatorMgr:   NewVersionedValidatorMgr(k, txStore, vaultMgr),
 		vaultMgr:       vaultMgr,
 	}
 }
@@ -124,7 +124,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
 		return
 	}
-	if err := am.validatorMgr.BeginBlock(ctx, constantValues); err != nil {
+	if err := am.validatorMgr.BeginBlock(ctx, version, constantValues); err != nil {
 		ctx.Logger().Error("Fail to begin block on validator", "error", err)
 	}
 
@@ -173,7 +173,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	}
 
 	am.txOutStore.CommitBlock(ctx)
-	return am.validatorMgr.EndBlock(ctx, constantValues)
+	return am.validatorMgr.EndBlock(ctx, version, constantValues)
 
 }
 

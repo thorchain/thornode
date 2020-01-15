@@ -92,7 +92,7 @@ func setupKeeperForTest(c *C) (sdk.Context, Keeper) {
 type handlerTestWrapper struct {
 	ctx                  sdk.Context
 	keeper               Keeper
-	validatorMgr         ValidatorManager
+	validatorMgr         VersionedValidatorManager
 	txOutStore           TxOutStore
 	activeNodeAccount    NodeAccount
 	notActiveNodeAccount NodeAccount
@@ -119,8 +119,8 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	vaultMgr := NewVaultMgrDummy()
 	txOutStore := NewTxOutStorage(k)
 	txOutStore.NewBlock(uint64(height), constAccessor)
-	validatorMgr := NewValidatorMgr(k, txOutStore, vaultMgr)
-	validatorMgr.BeginBlock(ctx, constAccessor)
+	validatorMgr := NewVersionedValidatorMgr(k, txOutStore, vaultMgr)
+	c.Assert(validatorMgr.BeginBlock(ctx, ver, constAccessor), IsNil)
 
 	return handlerTestWrapper{
 		ctx:                  ctx,
