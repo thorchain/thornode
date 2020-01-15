@@ -129,6 +129,7 @@ type TestObservedTxInHandleKeeper struct {
 	chains    common.Chains
 	pool      Pool
 	observing []sdk.AccAddress
+	vault     Vault
 }
 
 func (k *TestObservedTxInHandleKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
@@ -175,7 +176,19 @@ func (k *TestObservedTxInHandleKeeper) AddObservingAddresses(_ sdk.Context, addr
 func (k *TestObservedTxInHandleKeeper) UpsertEvent(_ sdk.Context, _ Event) error {
 	return nil
 }
-
+func (k *TestObservedTxInHandleKeeper) GetVault(_ sdk.Context, key common.PubKey) (Vault, error) {
+	if k.vault.PubKey.Equals(key) {
+		return k.vault, nil
+	}
+	return GetRandomVault(), kaboom
+}
+func (k *TestObservedTxInHandleKeeper) SetVault(_ sdk.Context, vault Vault) error {
+	if k.vault.PubKey.Equals(vault.PubKey) {
+		k.vault = vault
+		return nil
+	}
+	return kaboom
+}
 func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)
@@ -190,9 +203,12 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	pk := GetRandomPubKey()
 	txs[0].Tx.ToAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
 
+	vault := GetRandomVault()
+	vault.PubKey = obTx.ObservedPubKey
 	keeper := &TestObservedTxInHandleKeeper{
 		nas:   NodeAccounts{GetRandomNodeAccount(NodeActive)},
 		voter: NewObservedTxVoter(tx.ID, make(ObservedTxs, 0)),
+		vault: vault,
 		pool: Pool{
 			Asset:        common.BNBAsset,
 			BalanceRune:  sdk.NewUint(200),
@@ -214,4 +230,6 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	c.Check(keeper.height, Equals, int64(12))
 	c.Check(keeper.chains, HasLen, 1)
 	c.Check(keeper.chains[0].Equals(common.BNBChain), Equals, true)
+	bnbCoin := keeper.vault.Coins.GetCoin(common.BNBAsset)
+	c.Assert(bnbCoin.Amount.Equal(sdk.OneUint()), Equals, true)
 }

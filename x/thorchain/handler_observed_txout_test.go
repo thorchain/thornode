@@ -185,6 +185,10 @@ func (k *TestObservedTxOutHandleKeeper) GetLastEventID(_ sdk.Context) (int64, er
 func (k *TestObservedTxOutHandleKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
 	return nil, nil
 }
+func (k *TestObservedTxOutHandleKeeper) SetPool(ctx sdk.Context, pool Pool) error {
+	k.pool = pool
+	return nil
+}
 
 func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	var err error
@@ -204,7 +208,7 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
-		common.NewCoin(common.BNBAsset, sdk.NewUint(200)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
 	}
 	keeper := &TestObservedTxOutHandleKeeper{
 		nas:   NodeAccounts{GetRandomNodeAccount(NodeActive)},
@@ -228,4 +232,6 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	c.Assert(result.IsOK(), Equals, true)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 0)
 	c.Check(keeper.observing, HasLen, 1)
+	// make sure the coin has been substract from the vault
+	c.Check(ygg.Coins.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(19999962499)), Equals, true)
 }

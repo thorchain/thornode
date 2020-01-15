@@ -242,8 +242,10 @@ func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
 	c.Assert(result3.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result3))
 	ygg, err = keeper.GetVault(ctx, keeper.asgardVault.PubKey)
 	c.Assert(err, IsNil)
-	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(29999962500)), Equals, true) // 300 - Gas
-	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(200*common.One)), Equals, true)
+	// outbound handler doesn't substract fund anymore , it all moved to observe tx now
+	// also we don't take gas from outbound handler either
+	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(500*common.One)), Equals, true) // 300 - Gas
+	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(400*common.One)), Equals, true)
 	txOutStore.NewBlock(2, constAccessor)
 	inTxID := GetRandomTxHash()
 
