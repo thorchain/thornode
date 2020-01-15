@@ -191,7 +191,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 		switch m.(type) {
 		case MsgRefundTx, MsgOutboundTx, MsgYggdrasil:
 			// these two are thorchain's outbound message, should not get here
-			return sdk.ErrUnauthorized("invalid message memo").Result()
+			continue
 		}
 		if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, tx.BlockHeight); nil != err {
 			return sdk.ErrInternal(err.Error()).Result()
