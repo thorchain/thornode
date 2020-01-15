@@ -84,11 +84,18 @@ services:
     environment:
       NET: testnet
       SEED: 172.32.10.2
-      SEEDHTTPPORT: 4040
       SEEDP2PPORT: 5040
-      TSSHTTPPORT: 4044
-      TSSP2PPORT: 5044
+      SEEDINFOPORT: 6040
+      TSSPORT: 4044
+      P2PPORT: 5044
+      INFOPORT: 6044
       PRIVKEY: /root/.tss/private.key
+    expose:
+      - "5044"
+      - "6044"
+    ports:
+      - "5044:5044"
+      - "6044:6044"
     entrypoint:
       /docker/scripts/tss.sh
     volumes:
