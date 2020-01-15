@@ -77,11 +77,6 @@ func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.V
 		}
 	}
 
-	// Apply Gas fees
-	if err := AddGasFees(ctx, h.keeper, msg.Tx); nil != err {
-		return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error())
-	}
-
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := h.keeper.GetTxOut(ctx, uint64(voter.Height))
 	if err != nil {
@@ -109,16 +104,5 @@ func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.V
 	}
 	h.keeper.SetLastSignedHeight(ctx, voter.Height)
 
-	// If THORNode are sending from a yggdrasil pool, decrement coins on record
-	if h.keeper.VaultExists(ctx, msg.Tx.ObservedPubKey) {
-		ygg, err := h.keeper.GetVault(ctx, msg.Tx.ObservedPubKey)
-		if nil != err {
-			return sdk.ErrInternal(fmt.Errorf("fail to get yggdrasil: %w", err).Error())
-		}
-		ygg.SubFunds(msg.Tx.Tx.Coins)
-		if err := h.keeper.SetVault(ctx, ygg); nil != err {
-			return sdk.ErrInternal(fmt.Errorf("fail to save yggdrasil: %w", err).Error())
-		}
-	}
 	return nil
 }

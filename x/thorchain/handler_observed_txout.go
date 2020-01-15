@@ -195,7 +195,24 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		if !ok {
 			continue
 		}
+		// Apply Gas fees
+		if err := AddGasFees(ctx, h.keeper, tx); nil != err {
+			return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error()).Result()
+		}
 
+		// If sending from one of our vaults, decrement coins
+		if h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
+			vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
+			if nil != err {
+				ctx.Logger().Error("fail to get vault", "error", err)
+				return sdk.ErrInternal("fail to get vault").Result()
+			}
+			vault.SubFunds(tx.Tx.Coins)
+			if err := h.keeper.SetVault(ctx, vault); nil != err {
+				ctx.Logger().Error("fail to save vault", "error", err)
+				return sdk.ErrInternal("fail to save vault").Result()
+			}
+		}
 		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
 
 		m, err := processOneTxIn(ctx, h.keeper, txOut, msg.Signer)

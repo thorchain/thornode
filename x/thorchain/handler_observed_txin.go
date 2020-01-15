@@ -151,7 +151,18 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 		}
 
 		txIn := voter.GetTx(activeNodeAccounts)
+		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
+		if nil != err {
+			ctx.Logger().Error("fail to get vault", "error", err)
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+		vault.AddFunds(tx.Tx.Coins)
+		if err := h.keeper.SetVault(ctx, vault); nil != err {
+			ctx.Logger().Error("fail to save vault", "error", err)
+			return sdk.ErrInternal(err.Error()).Result()
+		}
 		// tx is not observed at current vault - refund
+		// yggdrasil pool is ok
 		if ok := isCurrentVaultPubKey(ctx, h.keeper, tx); !ok {
 			reason := fmt.Sprintf("vault %s is not current vault", tx.ObservedPubKey)
 			ctx.Logger().Info("refund reason", reason)

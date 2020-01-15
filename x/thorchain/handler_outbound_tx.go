@@ -77,12 +77,6 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 		}
 	}
 
-	// Apply Gas fees
-	if err := AddGasFees(ctx, h.keeper, msg.Tx); nil != err {
-		ctx.Logger().Error("fail to add gas fee", "error", err)
-		return sdk.ErrInternal("fail to add gas fee").Result()
-	}
-
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := h.keeper.GetTxOut(ctx, uint64(voter.Height))
 	if err != nil {
@@ -110,20 +104,6 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 		}
 	}
 	h.keeper.SetLastSignedHeight(ctx, voter.Height)
-
-	// If sending from one of our vaults, decrement coins
-	if h.keeper.VaultExists(ctx, msg.Tx.ObservedPubKey) {
-		vault, err := h.keeper.GetVault(ctx, msg.Tx.ObservedPubKey)
-		if nil != err {
-			ctx.Logger().Error("fail to get vault", "error", err)
-			return sdk.ErrInternal("fail to get vault").Result()
-		}
-		vault.SubFunds(msg.Tx.Tx.Coins)
-		if err := h.keeper.SetVault(ctx, vault); nil != err {
-			ctx.Logger().Error("fail to save vault", "error", err)
-			return sdk.ErrInternal("fail to save vault").Result()
-		}
-	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
