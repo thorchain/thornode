@@ -17,7 +17,7 @@ func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	vault := GetRandomVault()
 	w.keeper.SetVault(w.ctx, vault)
-	leaveHandler := NewLeaveHandler(w.keeper, w.validatorMgr, w.txOutStore)
+	leaveHandler := NewLeaveHandler(w.keeper, w.validatorMgr, w.versionedTxOutStore)
 	acc2 := GetRandomNodeAccount(NodeStandby)
 	acc2.Bond = sdk.NewUint(100 * common.One)
 	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc2), IsNil)
@@ -45,7 +45,7 @@ func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 
 func (HandlerLeaveSuite) TestLeaveHandler_ActiveNodeLeave(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	leaveHandler := NewLeaveHandler(w.keeper, w.validatorMgr, w.txOutStore)
+	leaveHandler := NewLeaveHandler(w.keeper, w.validatorMgr, w.versionedTxOutStore)
 	acc2 := GetRandomNodeAccount(NodeActive)
 	acc2.Bond = sdk.NewUint(100 * common.One)
 	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc2), IsNil)
@@ -147,7 +147,7 @@ func (HandlerLeaveSuite) TestLeaveValidation(c *C) {
 	}
 	for _, item := range testCases {
 		c.Log(item.name)
-		leaveHandler := NewLeaveHandler(w.keeper, w.validatorMgr, w.txOutStore)
+		leaveHandler := NewLeaveHandler(w.keeper, w.validatorMgr, w.versionedTxOutStore)
 		c.Assert(leaveHandler.Run(w.ctx, item.msgLeave, ver, constAccessor).Code, Equals, item.expectedCode)
 	}
 }

@@ -10,18 +10,18 @@ import (
 )
 
 type ObservedTxInHandler struct {
-	keeper       Keeper
-	txOutStore   TxOutStore
-	validatorMgr VersionedValidatorManager
-	vaultMgr     VaultManager
+	keeper              Keeper
+	versionedTxOutStore VersionedTxOutStore
+	validatorMgr        VersionedValidatorManager
+	vaultMgr            VaultManager
 }
 
-func NewObservedTxInHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) ObservedTxInHandler {
+func NewObservedTxInHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
-		keeper:       keeper,
-		txOutStore:   txOutStore,
-		validatorMgr: validatorMgr,
-		vaultMgr:     vaultMgr,
+		keeper:              keeper,
+		versionedTxOutStore: versionedTxOutStore,
+		validatorMgr:        validatorMgr,
+		vaultMgr:            vaultMgr,
 	}
 }
 
@@ -47,8 +47,8 @@ func (h ObservedTxInHandler) validate(ctx sdk.Context, msg MsgObservedTxIn, vers
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
-		return false, badVersion
+		ctx.Logger().Error(errInvalidVersion.Error())
+		return false, errInvalidVersion
 	}
 }
 
@@ -101,9 +101,9 @@ func (h ObservedTxInHandler) signedByNewObserver(ctx sdk.Context, addr sdk.AccAd
 func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) sdk.Result {
 	ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", msg.Txs[0].String())
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg)
+		return h.handleV1(ctx, version, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion.Result()
 	}
 }
@@ -123,14 +123,18 @@ func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, n
 }
 
 // Handle a message to observe inbound tx
-func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.Result {
+func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, msg MsgObservedTxIn) sdk.Result {
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		err = wrapError(ctx, err, "fail to get list of active node accounts")
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-
-	handler := NewHandler(h.keeper, h.txOutStore, h.validatorMgr, h.vaultMgr)
+	txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
+	if nil != err {
+		ctx.Logger().Error("fail to get txout store", "error", err)
+		return errBadVersion.Result()
+	}
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.vaultMgr)
 
 	for _, tx := range msg.Txs {
 
@@ -166,14 +170,14 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 		if ok := isCurrentVaultPubKey(ctx, h.keeper, tx); !ok {
 			reason := fmt.Sprintf("vault %s is not current vault", tx.ObservedPubKey)
 			ctx.Logger().Info("refund reason", reason)
-			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, CodeInvalidVault, reason); err != nil {
+			if err := refundTx(ctx, tx, txOutStore, h.keeper, CodeInvalidVault, reason); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 			continue
 		}
 		// chain is empty
 		if tx.Tx.Chain.IsEmpty() {
-			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, CodeEmptyChain, "chain is empty"); nil != err {
+			if err := refundTx(ctx, tx, txOutStore, h.keeper, CodeEmptyChain, "chain is empty"); nil != err {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 			continue
@@ -183,7 +187,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 		m, txErr := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
 		if nil != txErr {
 			ctx.Logger().Error("fail to process inbound tx", "error", txErr.Error(), "tx hash", tx.Tx.ID.String())
-			if newErr := refundTx(ctx, tx, h.txOutStore, h.keeper, txErr.Code(), fmt.Sprint(txErr.Data())); nil != newErr {
+			if newErr := refundTx(ctx, tx, txOutStore, h.keeper, txErr.Code(), fmt.Sprint(txErr.Data())); nil != newErr {
 				return sdk.ErrInternal(newErr.Error()).Result()
 			}
 			continue
@@ -217,7 +221,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, msg MsgObservedTxIn) sdk.
 			if nil != err {
 				ctx.Logger().Error(err.Error())
 			}
-			if err := refundTx(ctx, tx, h.txOutStore, h.keeper, result.Code, refundMsg); err != nil {
+			if err := refundTx(ctx, tx, txOutStore, h.keeper, result.Code, refundMsg); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 		}

@@ -93,7 +93,7 @@ type handlerTestWrapper struct {
 	ctx                  sdk.Context
 	keeper               Keeper
 	validatorMgr         VersionedValidatorManager
-	txOutStore           TxOutStore
+	versionedTxOutStore  VersionedTxOutStore
 	activeNodeAccount    NodeAccount
 	notActiveNodeAccount NodeAccount
 }
@@ -117,16 +117,19 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	vaultMgr := NewVaultMgrDummy()
-	txOutStore := NewTxOutStorage(k)
+	versionedTxOutStore := NewVersionedTxOutStore()
+	txOutStore, err := versionedTxOutStore.GetTxOutStore(k, ver)
+	c.Assert(err, IsNil)
+
 	txOutStore.NewBlock(uint64(height), constAccessor)
-	validatorMgr := NewVersionedValidatorMgr(k, txOutStore, vaultMgr)
+	validatorMgr := NewVersionedValidatorMgr(k, versionedTxOutStore, vaultMgr)
 	c.Assert(validatorMgr.BeginBlock(ctx, ver, constAccessor), IsNil)
 
 	return handlerTestWrapper{
 		ctx:                  ctx,
 		keeper:               k,
 		validatorMgr:         validatorMgr,
-		txOutStore:           txOutStore,
+		versionedTxOutStore:  versionedTxOutStore,
 		activeNodeAccount:    acc1,
 		notActiveNodeAccount: GetRandomNodeAccount(NodeDisabled),
 	}
@@ -178,7 +181,7 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 	)
 
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewHandler(w.keeper, w.txOutStore, w.validatorMgr, vaultMgr)
+	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, vaultMgr)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -225,7 +228,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	)
 
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewHandler(w.keeper, w.txOutStore, w.validatorMgr, vaultMgr)
+	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, vaultMgr)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -253,7 +256,9 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	)
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
-	w.txOutStore.NewBlock(2, constAccessor)
+	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
+	c.Assert(err, IsNil)
+	txOutStore.NewBlock(2, constAccessor)
 	result = handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -292,9 +297,11 @@ func (HandlerSuite) TestRefund(c *C) {
 		1024,
 		GetRandomPubKey(),
 	)
-
-	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
-	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
+	ver := semver.MustParse("0.1.0")
+	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
+	c.Assert(err, IsNil)
+	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
+	c.Assert(txOutStore.GetOutboundItems(), HasLen, 1)
 
 	// check THORNode DONT create a refund transaction when THORNode don't have a pool for
 	// the asset sent.
@@ -303,17 +310,17 @@ func (HandlerSuite) TestRefund(c *C) {
 		common.NewCoin(lokiAsset, sdk.NewUint(100*common.One)),
 	}
 
-	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
-	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
-	var err error
+	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
+	c.Assert(txOutStore.GetOutboundItems(), HasLen, 1)
+
 	pool, err = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(err, IsNil)
 	// pool should be zero since we drop coins we don't recognize on the floor
 	c.Assert(pool.BalanceAsset.Equal(sdk.ZeroUint()), Equals, true, Commentf("%d", pool.BalanceAsset.Uint64()))
 
 	// doing it a second time should keep it at zero
-	c.Assert(refundTx(w.ctx, txin, w.txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
-	c.Assert(w.txOutStore.GetOutboundItems(), HasLen, 1)
+	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
+	c.Assert(txOutStore.GetOutboundItems(), HasLen, 1)
 	pool, err = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(err, IsNil)
 	c.Assert(pool.BalanceAsset.Equal(sdk.ZeroUint()), Equals, true)

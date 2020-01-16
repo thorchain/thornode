@@ -5,8 +5,9 @@ import (
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type HandlerObservedTxOutSuite struct{}
@@ -32,7 +33,7 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 	}
 
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxOutHandler(keeper, w.txOutStore, w.validatorMgr, vaultMgr)
+	handler := NewObservedTxOutHandler(keeper, w.versionedTxOutStore, w.validatorMgr, vaultMgr)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -46,7 +47,7 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 
 	// invalid version
 	err = handler.validate(ctx, msg, semver.Version{})
-	c.Assert(err, Equals, badVersion)
+	c.Assert(err, Equals, errInvalidVersion)
 
 	// inactive node account
 	keeper.isActive = false
@@ -69,10 +70,10 @@ func (s *HandlerObservedTxOutSuite) TestFailure(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 
 	keeper := &TestObservedTxOutFailureKeeper{}
-	txOutStore := NewTxStoreDummy()
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxOutHandler(keeper, txOutStore, w.validatorMgr, vaultMgr)
+	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, vaultMgr)
 	tx := NewObservedTx(GetRandomTx(), 12, GetRandomPubKey())
 	nas := NodeAccounts{GetRandomNodeAccount(NodeActive)}
 
@@ -204,7 +205,8 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	// txs[0].Tx.FromAddress, err = currentPool.GetAddress()
 	c.Assert(err, IsNil)
 
-	txOutStore := NewTxStoreDummy()
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+
 	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
 	ygg.Coins = common.Coins{
 		common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
@@ -218,13 +220,13 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 			BalanceRune:  sdk.NewUint(200),
 			BalanceAsset: sdk.NewUint(300),
 		},
-		yggExists:  true,
-		ygg:        ygg,
-		txOutStore: txOutStore,
+		yggExists: true,
+		ygg:       ygg,
 	}
-
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
+	keeper.txOutStore = txOutStore
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxOutHandler(keeper, txOutStore, w.validatorMgr, vaultMgr)
+	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, vaultMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)

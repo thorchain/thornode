@@ -76,7 +76,7 @@ func (h VersionHandler) handle(ctx sdk.Context, msg MsgSetVersion, version semve
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion
 	}
 }

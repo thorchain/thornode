@@ -10,14 +10,14 @@ import (
 )
 
 type EndPoolHandler struct {
-	keeper     Keeper
-	txOutStore TxOutStore
+	keeper              Keeper
+	versionedTxOutStore VersionedTxOutStore
 }
 
-func NewEndPoolHandler(keeper Keeper, txOutStore TxOutStore) EndPoolHandler {
+func NewEndPoolHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore) EndPoolHandler {
 	return EndPoolHandler{
-		keeper:     keeper,
-		txOutStore: txOutStore,
+		keeper:              keeper,
+		versionedTxOutStore: versionedTxOutStore,
 	}
 }
 
@@ -36,8 +36,8 @@ func (h EndPoolHandler) validate(ctx sdk.Context, msg MsgEndPool, version semver
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		ctx.Logger().Error(errInvalidVersion.Error())
+		return errInvalidVersion
 	}
 }
 
@@ -59,7 +59,7 @@ func (h EndPoolHandler) handle(ctx sdk.Context, msg MsgEndPool, version semver.V
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, msg, version, constAccessor)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion.Result()
 	}
 }
@@ -80,7 +80,7 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver
 			msg.Asset,
 			msg.Signer,
 		)
-		unstakeHandler := NewUnstakeHandler(h.keeper, h.txOutStore)
+		unstakeHandler := NewUnstakeHandler(h.keeper, h.versionedTxOutStore)
 		result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 		if !result.IsOK() {
 			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)

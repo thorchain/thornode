@@ -1,11 +1,25 @@
 package thorchain
 
 import (
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
+
+type VersionedTxOutStoreDummy struct {
+	txoutStore *TxOutStoreDummy
+}
+
+func NewVersionedTxOutStoreDummy() *VersionedTxOutStoreDummy {
+	return &VersionedTxOutStoreDummy{
+		txoutStore: NewTxStoreDummy(),
+	}
+}
+func (v *VersionedTxOutStoreDummy) GetTxOutStore(keeper Keeper, version semver.Version) (TxOutStore, error) {
+	return v.txoutStore, nil
+}
 
 // TxOutStoreDummy is going to manage all the outgoing tx
 type TxOutStoreDummy struct {

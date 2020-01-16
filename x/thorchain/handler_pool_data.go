@@ -38,8 +38,8 @@ func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version s
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.ValidateV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		ctx.Logger().Error(errInvalidVersion.Error())
+		return errInvalidVersion
 	}
 }
 
@@ -64,8 +64,8 @@ func (h PoolDataHandler) Handle(ctx sdk.Context, msg MsgSetPoolData, version sem
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.HandleV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		ctx.Logger().Error(errInvalidVersion.Error())
+		return errInvalidVersion
 	}
 }
 

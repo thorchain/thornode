@@ -42,7 +42,7 @@ func (s *HandlerTssSuite) TestValidate(c *C) {
 
 	// invalid version
 	err = handler.validate(ctx, msg, semver.Version{})
-	c.Assert(err, Equals, badVersion)
+	c.Assert(err, Equals, errInvalidVersion)
 
 	// inactive node account
 	keeper.na = GetRandomNodeAccount(NodeStandby)

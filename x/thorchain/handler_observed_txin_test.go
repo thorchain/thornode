@@ -47,7 +47,7 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	}
 
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxInHandler(keeper, w.txOutStore, w.validatorMgr, vaultMgr)
+	handler := NewObservedTxInHandler(keeper, w.versionedTxOutStore, w.validatorMgr, vaultMgr)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -62,7 +62,7 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 
 	// invalid version
 	isNewSigner, err = handler.validate(ctx, msg, semver.Version{})
-	c.Assert(err, Equals, badVersion)
+	c.Assert(err, Equals, errInvalidVersion)
 	c.Assert(isNewSigner, Equals, false)
 
 	// inactive node account
@@ -216,10 +216,11 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 		},
 		yggExists: true,
 	}
-	txOutStore := NewTxStoreDummy()
-
+	versionedTxOutStore := NewVersionedTxOutStoreDummy()
+	txOutStore, err := versionedTxOutStore.GetTxOutStore(keeper, ver)
+	c.Assert(err, IsNil)
 	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxInHandler(keeper, txOutStore, w.validatorMgr, vaultMgr)
+	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, vaultMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)

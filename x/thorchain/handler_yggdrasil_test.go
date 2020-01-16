@@ -31,10 +31,10 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 	}
 
 	vaultMgr := NewVaultMgrDummy()
-	txOutStore := NewTxStoreDummy()
-	validatorMgr := NewVersionedValidatorMgr(keeper, txOutStore, vaultMgr)
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, vaultMgr)
 
-	handler := NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
+	handler := NewYggdrasilHandler(keeper, versionedTxOutStoreDummy, validatorMgr)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -48,7 +48,7 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 
 	// invalid version
 	err = handler.validate(ctx, msg, semver.Version{})
-	c.Assert(err, Equals, badVersion)
+	c.Assert(err, Equals, errInvalidVersion)
 
 	// invalid msg
 	msg = MsgYggdrasil{}
@@ -116,11 +116,11 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	vaultMgr := NewVaultMgrDummy()
-	txOutStore := NewTxStoreDummy()
-	validatorMgr := NewVersionedValidatorMgr(keeper, txOutStore, vaultMgr)
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, vaultMgr)
 	c.Assert(validatorMgr.BeginBlock(ctx, ver, constAccessor), IsNil)
 
-	handler := NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
+	handler := NewYggdrasilHandler(keeper, versionedTxOutStoreDummy, validatorMgr)
 
 	// check yggdrasil balance on add funds
 	coins := common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One))}

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/blang/semver"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -13,14 +12,14 @@ import (
 )
 
 type SwapHandler struct {
-	keeper     Keeper
-	txOutStore TxOutStore
+	keeper              Keeper
+	versionedTxOutStore VersionedTxOutStore
 }
 
-func NewSwapHandler(keeper Keeper, txOutStore TxOutStore) SwapHandler {
+func NewSwapHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore) SwapHandler {
 	return SwapHandler{
-		keeper:     keeper,
-		txOutStore: txOutStore,
+		keeper:              keeper,
+		versionedTxOutStore: versionedTxOutStore,
 	}
 }
 
@@ -39,8 +38,8 @@ func (h SwapHandler) validate(ctx sdk.Context, msg MsgSwap, version semver.Versi
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		ctx.Logger().Error(errInvalidVersion.Error())
+		return errInvalidVersion
 	}
 }
 
@@ -60,9 +59,9 @@ func (h SwapHandler) validateV1(ctx sdk.Context, msg MsgSwap) error {
 func (h SwapHandler) handle(ctx sdk.Context, msg MsgSwap, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	ctx.Logger().Info("receive MsgSwap", "request tx hash", msg.Tx.ID, "source asset", msg.Tx.Coins[0].Asset, "target asset", msg.TargetAsset, "signer", msg.Signer.String())
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg, constAccessor)
+		return h.handleV1(ctx, msg, version, constAccessor)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion.Result()
 	}
 }
@@ -79,7 +78,7 @@ func (h SwapHandler) addSwapEvent(ctx sdk.Context, swapEvt EventSwap, tx common.
 	return nil
 }
 
-func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor constants.ConstantValues) sdk.Result {
+func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	transactionFee := constAccessor.GetInt64Value(constants.TransactionFee)
 	amount, swapEvents, swapErr := swap(
 		ctx,
@@ -110,14 +109,18 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, constAccessor consta
 		ctx.Logger().Error("fail to encode result to json", "error", err)
 		return sdk.ErrInternal("fail to encode result to json").Result()
 	}
-
+	txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
+	if nil != err {
+		ctx.Logger().Error("fail to get txout store", "error", err)
+		return errBadVersion.Result()
+	}
 	toi := &TxOutItem{
 		Chain:     msg.TargetAsset.Chain,
 		InHash:    msg.Tx.ID,
 		ToAddress: msg.Destination,
 		Coin:      common.NewCoin(msg.TargetAsset, amount),
 	}
-	_, err = h.txOutStore.TryAddTxOutItem(ctx, toi)
+	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to add outbound tx", "error", err)
 		return sdk.ErrInternal(fmt.Errorf("fail to add outbound tx: %w", err).Error()).Result()
