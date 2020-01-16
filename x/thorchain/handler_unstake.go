@@ -14,28 +14,28 @@ import (
 // UnstakeHandler
 type UnstakeHandler struct {
 	keeper     Keeper
-	txOutStore TxOutStore
+	txOutStore VersionedTxOutStore
 }
 
 // NewUnstakeHandler create a new instance of UnstakeHandler to process unstake request
-func NewUnstakeHandler(keeper Keeper, txOutStore TxOutStore) UnstakeHandler {
+func NewUnstakeHandler(keeper Keeper, txOutStore VersionedTxOutStore) UnstakeHandler {
 	return UnstakeHandler{
 		keeper:     keeper,
 		txOutStore: txOutStore,
 	}
 }
-func (uh UnstakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
+func (h UnstakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgSetUnStake)
 	if !ok {
 		return errInvalidMessage.Result()
 	}
 	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.RuneAddress, msg.WithdrawBasisPoints))
 
-	if err := uh.validate(ctx, msg, version); err != nil {
+	if err := h.validate(ctx, msg, version); err != nil {
 		ctx.Logger().Error("msg ack failed validation", "error", err)
 		return err.Result()
 	}
-	data, err := uh.handle(ctx, msg)
+	data, err := h.handle(ctx, msg, version)
 	if err != nil {
 		ctx.Logger().Error("fail to process msg unstake", "error", err)
 		return err.Result()
@@ -48,20 +48,20 @@ func (uh UnstakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version,
 	}
 }
 
-func (uh UnstakeHandler) validate(ctx sdk.Context, msg MsgSetUnStake, version semver.Version) sdk.Error {
+func (h UnstakeHandler) validate(ctx sdk.Context, msg MsgSetUnStake, version semver.Version) sdk.Error {
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return uh.validateV1(ctx, msg)
+		return h.validateV1(ctx, msg)
 	} else {
 		return errBadVersion
 	}
 }
 
-func (uh UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error {
+func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error {
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error("unstake msg fail validation", "error", err.ABCILog())
 		return sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
 	}
-	if !isSignedByActiveObserver(ctx, uh.keeper, msg.GetSigners()) {
+	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
 		ctx.Logger().Error("message signed by unauthorized account",
 			"request tx hash", msg.Tx.ID,
 			"rune address", msg.RuneAddress,
@@ -70,7 +70,7 @@ func (uh UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Erro
 		return sdk.ErrUnauthorized("not authorized")
 	}
 
-	pool, err := uh.keeper.GetPool(ctx, msg.Asset)
+	pool, err := h.keeper.GetPool(ctx, msg.Asset)
 	if err != nil {
 		errMsg := fmt.Sprintf("fail to get pool(%s)", msg.Asset)
 		ctx.Logger().Error(errMsg, "error", err)
@@ -85,19 +85,19 @@ func (uh UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Erro
 	return nil
 }
 
-func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk.Error) {
-	poolStaker, err := uh.keeper.GetPoolStaker(ctx, msg.Asset)
+func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semver.Version) ([]byte, sdk.Error) {
+	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
 	if nil != err {
 		ctx.Logger().Error("fail to get pool staker", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get pool staker")
 	}
 	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 
-	runeAmt, assetAmount, units, err := unstake(ctx, uh.keeper, msg)
+	runeAmt, assetAmount, units, err := unstake(ctx, h.keeper, msg)
 	if nil != err {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to process UnStake request: %w", err).Error())
 	}
-	res, err := uh.keeper.Cdc().MarshalBinaryLengthPrefixed(struct {
+	res, err := h.keeper.Cdc().MarshalBinaryLengthPrefixed(struct {
 		Rune  sdk.Uint `json:"rune"`
 		Asset sdk.Uint `json:"asset"`
 	}{
@@ -128,18 +128,22 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 		EventPending,
 	)
 
-	if err := uh.keeper.UpsertEvent(ctx, evt); nil != err {
+	if err := h.keeper.UpsertEvent(ctx, evt); nil != err {
 		ctx.Logger().Error("fail to save event", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to save event")
 	}
-
+	txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
+	if nil != err {
+		ctx.Logger().Error("fail to get txout store", "error", err)
+		return nil, errBadVersion
+	}
 	toi := &TxOutItem{
 		Chain:     common.BNBChain,
 		InHash:    msg.Tx.ID,
 		ToAddress: stakerUnit.RuneAddress,
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
 	}
-	_, err = uh.txOutStore.TryAddTxOutItem(ctx, toi)
+	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
@@ -152,7 +156,7 @@ func (uh UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake) ([]byte, sdk
 		ToAddress: stakerUnit.AssetAddress,
 		Coin:      common.NewCoin(msg.Asset, assetAmount),
 	}
-	_, err = uh.txOutStore.TryAddTxOutItem(ctx, toi)
+	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")

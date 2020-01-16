@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -15,17 +16,19 @@ import (
 
 // validatorMgrV1 is to manage a list of validators , and rotate them
 type validatorMgrV1 struct {
-	k          Keeper
-	vaultMgr   VaultManager
-	txOutStore TxOutStore
+	version             semver.Version
+	k                   Keeper
+	vaultMgr            VaultManager
+	versionedTxOutStore VersionedTxOutStore
 }
 
 // newValidatorMgrV1 create a new instance of ValidatorManager
-func newValidatorMgrV1(k Keeper, txOut TxOutStore, vaultMgr VaultManager) *validatorMgrV1 {
+func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, vaultMgr VaultManager) *validatorMgrV1 {
 	return &validatorMgrV1{
-		k:          k,
-		vaultMgr:   vaultMgr,
-		txOutStore: txOut,
+		version:             semver.MustParse("0.1.0"),
+		k:                   k,
+		vaultMgr:            vaultMgr,
+		versionedTxOutStore: versionedTxOutStore,
 	}
 }
 
@@ -354,6 +357,11 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		ctx.Logger().Error("can't get vault data", "error", err)
 		return err
 	}
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	if nil != err {
+		ctx.Logger().Error("can't get tx out store", "error", err)
+		return err
+	}
 	totalReserve := vaultData.TotalReserve
 	totalContributions := sdk.ZeroUint()
 	for _, contrib := range contribs {
@@ -387,7 +395,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
-		_, err = vm.txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
 		if nil != err {
 			return fmt.Errorf("fail to add outbound transaction")
 		}
@@ -410,7 +418,11 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 		ctx.Logger().Error("can't get active nodes", "error", err)
 		return err
 	}
-
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	if nil != err {
+		ctx.Logger().Error("can't get tx out store", "error", err)
+		return err
+	}
 	// nth * 10 == the amount of the bond we want to send
 	for _, na := range active {
 		ygg, err := vm.k.GetVault(ctx, na.PubKeySet.Secp256k1)
@@ -437,7 +449,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
-		_, err = vm.txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
 		if nil != err {
 			return err
 		}
@@ -477,6 +489,7 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		ctx.Logger().Error("can't get pools", "error", err)
 		return err
 	}
+
 	for _, pool := range pools {
 		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
 		if nil != err {
@@ -499,7 +512,7 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 			)
 
 			version := vm.k.GetLowestActiveVersion(ctx)
-			unstakeHandler := NewUnstakeHandler(vm.k, vm.txOutStore)
+			unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
 				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
@@ -542,7 +555,11 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 	if vault.IsEmpty() {
 		return fmt.Errorf("unable to determine asgard vault")
 	}
-
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
+	if nil != err {
+		ctx.Logger().Error("can't get tx out store", "error", err)
+		return err
+	}
 	for _, chain := range chains {
 		toAddr, err := vault.PubKey.GetAddress(chain)
 		if err != nil {
@@ -557,7 +574,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 				VaultPubKey: ygg.PubKey,
 				Memo:        "yggdrasil-",
 			}
-			_, err := vm.txOutStore.TryAddTxOutItem(ctx, txOutItem)
+			_, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
 			if nil != err {
 				return err
 			}

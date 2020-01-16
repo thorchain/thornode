@@ -58,7 +58,7 @@ func (s *HandlerOutboundTxSuite) TestValidate(c *C) {
 
 	// invalid version
 	err = handler.validate(ctx, msgOutboundTx, semver.Version{})
-	c.Assert(err, Equals, badVersion)
+	c.Assert(err, Equals, errInvalidVersion)
 
 	// invalid msg
 	msgOutboundTx = MsgOutboundTx{}
@@ -202,8 +202,8 @@ func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
 
 	constAccessor := constants.GetConstantValues(ver)
 	vaultMgr := NewVaultMgrDummy()
-	txOutStore := NewTxStoreDummy()
-	validatorMgr := NewVersionedValidatorMgr(keeper, txOutStore, vaultMgr)
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, vaultMgr)
 
 	handler := NewOutboundTxHandler(keeper)
 
@@ -246,7 +246,8 @@ func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
 	// also we don't take gas from outbound handler either
 	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(500*common.One)), Equals, true) // 300 - Gas
 	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(400*common.One)), Equals, true)
-	txOutStore.NewBlock(2, constAccessor)
+
+	versionedTxOutStoreDummy.txoutStore.NewBlock(2, constAccessor)
 	inTxID := GetRandomTxHash()
 
 	txIn := types.NewObservedTx(
@@ -263,7 +264,7 @@ func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
 		keeper.asgardVault.PubKey,
 	)
 
-	observedTxInHandler := NewObservedTxInHandler(keeper, txOutStore, validatorMgr, vaultMgr)
+	observedTxInHandler := NewObservedTxInHandler(keeper, versionedTxOutStoreDummy, validatorMgr, vaultMgr)
 	msgObservedTxIn := NewMsgObservedTxIn(ObservedTxs{txIn}, keeper.activeNodeAccount.NodeAddress)
 	result := observedTxInHandler.Run(ctx, msgObservedTxIn, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))

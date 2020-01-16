@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -20,20 +21,20 @@ const (
 type VaultManager interface {
 	TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error
 	RotateVault(ctx sdk.Context, vault Vault) error
-	EndBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error
+	EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error
 }
 
 // VaultMgr is going to manage the vaults
 type VaultMgr struct {
-	k          Keeper
-	txOutStore TxOutStore
+	k                   Keeper
+	versionedTxOutStore VersionedTxOutStore
 }
 
 // NewVaultMgr create a new vault manager
-func NewVaultMgr(k Keeper, txOutStore TxOutStore) *VaultMgr {
+func NewVaultMgr(k Keeper, versionedTxOutStore VersionedTxOutStore) *VaultMgr {
 	return &VaultMgr{
-		k:          k,
-		txOutStore: txOutStore,
+		k:                   k,
+		versionedTxOutStore: versionedTxOutStore,
 	}
 }
 
@@ -72,7 +73,7 @@ func (vm *VaultMgr) processGenesisSetup(ctx sdk.Context) error {
 }
 
 // EndBlock move funds from retiring asgard vaults
-func (vm *VaultMgr) EndBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error {
+func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
 	if ctx.BlockHeight() == genesisBlockHeight {
 		return vm.processGenesisSetup(ctx)
 	}
@@ -93,7 +94,11 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, constAccessor constants.ConstantVa
 	if len(active) == 0 {
 		return nil
 	}
-
+	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
+	if nil != err {
+		ctx.Logger().Error("fail to get txout store", "error", err)
+		return errBadVersion
+	}
 	for _, vault := range retiring {
 		if !vault.HasFunds() {
 			// no more funds to move, delete the vault
@@ -151,7 +156,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, constAccessor constants.ConstantVa
 					},
 					Memo: "migrate",
 				}
-				_, err = vm.txOutStore.TryAddTxOutItem(ctx, toi)
+				_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 				if nil != err {
 					return err
 				}

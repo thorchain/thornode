@@ -34,8 +34,8 @@ func (h SetNodeKeysHandler) validate(ctx sdk.Context, msg MsgSetNodeKeys, versio
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		ctx.Logger().Error(errInvalidVersion.Error())
+		return errInvalidVersion
 	}
 }
 
@@ -62,7 +62,7 @@ func (h SetNodeKeysHandler) handle(ctx sdk.Context, msg MsgSetNodeKeys, version 
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, msg, version, constAccessor)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion.Result()
 	}
 }

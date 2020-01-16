@@ -74,14 +74,14 @@ type AppModule struct {
 	keeper       Keeper
 	coinKeeper   bank.Keeper
 	supplyKeeper supply.Keeper
-	txOutStore   TxOutStore
+	txOutStore   VersionedTxOutStore
 	validatorMgr VersionedValidatorManager
 	vaultMgr     VaultManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
-	txStore := NewTxOutStorage(k)
+	txStore := NewVersionedTxOutStore()
 	vaultMgr := NewVaultMgr(k, txStore)
 	return AppModule{
 		AppModuleBasic: AppModuleBasic{},
@@ -127,8 +127,12 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	if err := am.validatorMgr.BeginBlock(ctx, version, constantValues); err != nil {
 		ctx.Logger().Error("Fail to begin block on validator", "error", err)
 	}
-
-	am.txOutStore.NewBlock(uint64(req.Header.Height), constantValues)
+	txStore, err := am.txOutStore.GetTxOutStore(am.keeper, version)
+	if nil != err {
+		ctx.Logger().Error("fail to get tx out store", "error", err)
+		return
+	}
+	txStore.NewBlock(uint64(req.Header.Height), constantValues)
 
 }
 
@@ -141,7 +145,12 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
 		return nil
 	}
-	slasher := NewSlasher(am.keeper, am.txOutStore)
+	txStore, err := am.txOutStore.GetTxOutStore(am.keeper, version)
+	if nil != err {
+		ctx.Logger().Error("fail to get tx out store", "error", err)
+		return nil
+	}
+	slasher := NewSlasher(am.keeper, txStore)
 	// slash node accounts for not observing any accepted inbound tx
 	if err := slasher.LackObserving(ctx, constantValues); err != nil {
 		ctx.Logger().Error("Unable to slash for lack of observing:", "error", err)
@@ -158,7 +167,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	}
 
 	// Fill up Yggdrasil vaults
-	err := Fund(ctx, am.keeper, am.txOutStore, constantValues)
+	err = Fund(ctx, am.keeper, txStore, constantValues)
 	if err != nil {
 		ctx.Logger().Error("Unable to fund Yggdrasil", "error", err)
 	}
@@ -168,11 +177,11 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to save vault", "error", err)
 	}
 
-	if err := am.vaultMgr.EndBlock(ctx, constantValues); err != nil {
+	if err := am.vaultMgr.EndBlock(ctx, version, constantValues); err != nil {
 		ctx.Logger().Error("fail to end block for vault manager", "error", err)
 	}
 
-	am.txOutStore.CommitBlock(ctx)
+	txStore.CommitBlock(ctx)
 	return am.validatorMgr.EndBlock(ctx, version, constantValues)
 
 }

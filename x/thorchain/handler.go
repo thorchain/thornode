@@ -49,14 +49,14 @@ const (
 )
 
 var notAuthorized = fmt.Errorf("not authorized")
-var badVersion = fmt.Errorf("bad version")
-var errBadVersion = sdk.NewError(DefaultCodespace, CodeBadVersion, "bad version")
+var errInvalidVersion = fmt.Errorf("bad version")
+var errBadVersion = sdk.NewError(DefaultCodespace, CodeBadVersion, errInvalidVersion.Error())
 var errInvalidMessage = sdk.NewError(DefaultCodespace, CodeInvalidMessage, "invalid message")
 var errConstNotAvailable = sdk.NewError(DefaultCodespace, CodeConstantsNotAvailable, "constant values not available")
 
 // NewHandler returns a handler for "thorchain" type messages.
-func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) sdk.Handler {
-	handlerMap := getHandlerMapping(keeper, txOutStore, validatorMgr, vaultMgr)
+func NewHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) sdk.Handler {
+	handlerMap := getHandlerMapping(keeper, versionedTxOutStore, validatorMgr, vaultMgr)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
@@ -73,25 +73,25 @@ func NewHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedVali
 	}
 }
 
-func getHandlerMapping(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) map[string]MsgHandler {
+func getHandlerMapping(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
 	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper)
 	m[MsgTssPool{}.Type()] = NewTssHandler(keeper, vaultMgr)
 	m[MsgNoOp{}.Type()] = NewNoOpHandler(keeper)
-	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, txOutStore, validatorMgr)
-	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, txOutStore)
+	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, versionedTxOutStore, validatorMgr)
+	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, versionedTxOutStore)
 	m[MsgSetNodeKeys{}.Type()] = NewSetNodeKeysHandler(keeper)
-	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, txOutStore)
+	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, versionedTxOutStore)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetPoolData{}.Type()] = NewPoolDataHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)
-	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, txOutStore, validatorMgr, vaultMgr)
-	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, txOutStore, validatorMgr, vaultMgr)
-	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, txOutStore)
+	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedTxOutStore, validatorMgr, vaultMgr)
+	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedTxOutStore, validatorMgr, vaultMgr)
+	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, versionedTxOutStore)
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
-	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, txOutStore)
+	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
 	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
 	return m

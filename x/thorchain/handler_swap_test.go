@@ -33,9 +33,9 @@ func (s *HandlerSwapSuite) TestValidate(c *C) {
 		activeNodeAccount: GetRandomNodeAccount(NodeActive),
 	}
 
-	txOutStore := NewTxStoreDummy()
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	handler := NewSwapHandler(keeper, txOutStore)
+	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
 
 	ver := semver.MustParse("0.1.0")
 	txID := GetRandomTxHash()
@@ -57,7 +57,7 @@ func (s *HandlerSwapSuite) TestValidate(c *C) {
 
 	// invalid version
 	err = handler.validate(ctx, msg, semver.Version{})
-	c.Assert(err, Equals, badVersion)
+	c.Assert(err, Equals, errInvalidVersion)
 
 	// invalid msg
 	msg = MsgSwap{}
@@ -123,16 +123,16 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 		activeNodeAccount: GetRandomNodeAccount(NodeActive),
 	}
 
-	txOutStore := NewTxStoreDummy()
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	handler := NewSwapHandler(keeper, txOutStore)
+	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
 
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	txID := GetRandomTxHash()
 	signerBNBAddr := GetRandomBNBAddress()
 	observerAddr := keeper.activeNodeAccount.NodeAddress
-	txOutStore.NewBlock(1, constAccessor)
+	versionedTxOutStoreDummy.txoutStore.NewBlock(1, constAccessor)
 	// no pool
 	tx := common.NewTx(
 		txID,
@@ -197,12 +197,12 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txIn, observerAddr)
 	c.Assert(err, IsNil)
 	keeper.clearEvent()
-	c.Check(txOutStore.GetOutboundItems(), HasLen, 0)
+	c.Check(versionedTxOutStoreDummy.txoutStore.GetOutboundItems(), HasLen, 0)
 	res2 := handler.handle(ctx, msgSwapFromTxIn.(MsgSwap), ver, constAccessor)
 	c.Assert(res2.IsOK(), Equals, true)
 	c.Assert(res2.Code, Equals, sdk.CodeOK)
 	c.Assert(keeper.event, NotNil)
-	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
+	c.Check(versionedTxOutStoreDummy.txoutStore.GetOutboundItems(), HasLen, 1)
 }
 
 func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
@@ -211,8 +211,8 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 		pools:             make(map[common.Asset]Pool),
 		activeNodeAccount: GetRandomNodeAccount(NodeActive),
 	}
-	txOutStore := NewTxStoreDummy()
-	handler := NewSwapHandler(keeper, txOutStore)
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 
@@ -232,7 +232,7 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 
 	signerBNBAddr := GetRandomBNBAddress()
 	observerAddr := keeper.activeNodeAccount.NodeAddress
-	txOutStore.NewBlock(1, constAccessor)
+	versionedTxOutStoreDummy.txoutStore.NewBlock(1, constAccessor)
 
 	// double swap - happy path
 	m, err := ParseMemo("swap:BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u")
@@ -250,13 +250,13 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txIn, observerAddr)
 	c.Assert(err, IsNil)
 
-	c.Check(txOutStore.GetOutboundItems(), HasLen, 0)
+	c.Check(versionedTxOutStoreDummy.txoutStore.GetOutboundItems(), HasLen, 0)
 	res := handler.handle(ctx, msgSwapFromTxIn.(MsgSwap), ver, constAccessor)
 	c.Assert(res.IsOK(), Equals, true)
 	c.Assert(res.Code, Equals, sdk.CodeOK)
 	c.Assert(keeper.event, NotNil)
 	c.Assert(len(keeper.event), Equals, 2)
-	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
+	c.Check(versionedTxOutStoreDummy.txoutStore.GetOutboundItems(), HasLen, 1)
 	keeper.clearEvent()
 	// double swap , RUNE not enough to pay for transaction fee
 
@@ -274,10 +274,10 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 	)
 	msgSwapFromTxIn1, err := getMsgSwapFromMemo(m1.(SwapMemo), txIn1, observerAddr)
 	c.Assert(err, IsNil)
-	txOutStore.ClearOutboundItems()
+	versionedTxOutStoreDummy.txoutStore.ClearOutboundItems()
 	res1 := handler.handle(ctx, msgSwapFromTxIn1.(MsgSwap), ver, constAccessor)
 	c.Assert(res1.IsOK(), Equals, false)
 	c.Assert(res1.Code, Equals, CodeSwapFailNotEnoughFee)
 	c.Assert(keeper.event, IsNil)
-	c.Check(txOutStore.GetOutboundItems(), HasLen, 0)
+	c.Check(versionedTxOutStoreDummy.txoutStore.GetOutboundItems(), HasLen, 0)
 }
