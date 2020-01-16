@@ -60,12 +60,13 @@ func (s *HelperSuite) TestRefundBond(c *C) {
 		ygg:    ygg,
 		vaults: Vaults{GetRandomVault()},
 	}
+	na.Status = NodeStandby
 	tx := GetRandomTx()
 	err := refundBond(ctx, tx, na, keeper, txOut)
 	c.Assert(err, IsNil)
 	c.Assert(txOut.GetOutboundItems(), HasLen, 1)
 	outCoin := txOut.GetOutboundItems()[0].Coin
-	c.Check(outCoin.Amount.Equal(sdk.NewUint(430587425150)), Equals, true)
+	c.Check(outCoin.Amount.Equal(sdk.NewUint(40981137725)), Equals, true)
 }
 
 func (s *HelperSuite) TestEnableNextPool(c *C) {
