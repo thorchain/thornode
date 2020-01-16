@@ -23,19 +23,28 @@ type VersionedValidatorManager interface {
 
 // VersionedValidatorMgr
 type VersionedValidatorMgr struct {
-	v1ValidatorMgr *validatorMgrV1
+	keeper              Keeper
+	v1ValidatorMgr      *validatorMgrV1
+	versionedTxOutStore VersionedTxOutStore
+	vaultMgr            VaultManager
 }
 
 // NewVersionedValidatorMgr create a new versioned validator mgr , which require to pass in a version
-func NewVersionedValidatorMgr(k Keeper, txOut TxOutStore, vaultMgr VaultManager) *VersionedValidatorMgr {
+func NewVersionedValidatorMgr(k Keeper, versionedTxOutStore VersionedTxOutStore, vaultMgr VaultManager) *VersionedValidatorMgr {
 	return &VersionedValidatorMgr{
-		v1ValidatorMgr: newValidatorMgrV1(k, txOut, vaultMgr),
+		keeper:              k,
+		versionedTxOutStore: versionedTxOutStore,
+		vaultMgr:            vaultMgr,
 	}
 }
 
 // BeginBlock start to process a new block
 func (vm *VersionedValidatorMgr) BeginBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
 	if version.GTE(semver.MustParse("0.1.0")) {
+		if vm.v1ValidatorMgr == nil {
+
+			vm.v1ValidatorMgr = newValidatorMgrV1(vm.keeper, vm.versionedTxOutStore, vm.vaultMgr)
+		}
 		return vm.v1ValidatorMgr.BeginBlock(ctx, constAccessor)
 	}
 	return errBadVersion
@@ -44,6 +53,10 @@ func (vm *VersionedValidatorMgr) BeginBlock(ctx sdk.Context, version semver.Vers
 // EndBlock when a block need to commit
 func (vm *VersionedValidatorMgr) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) []abci.ValidatorUpdate {
 	if version.GTE(semver.MustParse("0.1.0")) {
+		if vm.v1ValidatorMgr == nil {
+
+			vm.v1ValidatorMgr = newValidatorMgrV1(vm.keeper, vm.versionedTxOutStore, vm.vaultMgr)
+		}
 		return vm.v1ValidatorMgr.EndBlock(ctx, constAccessor)
 	}
 	ctx.Logger().Error(fmt.Sprintf("unsupported version (%s) in validator manager", version))
@@ -53,6 +66,10 @@ func (vm *VersionedValidatorMgr) EndBlock(ctx sdk.Context, version semver.Versio
 // RequestYggReturn request yggdrasil pool to return fund
 func (vm *VersionedValidatorMgr) RequestYggReturn(ctx sdk.Context, version semver.Version, node NodeAccount) error {
 	if version.GTE(semver.MustParse("0.1.0")) {
+		if vm.v1ValidatorMgr == nil {
+
+			vm.v1ValidatorMgr = newValidatorMgrV1(vm.keeper, vm.versionedTxOutStore, vm.vaultMgr)
+		}
 		return vm.v1ValidatorMgr.RequestYggReturn(ctx, node)
 	}
 	return errBadVersion

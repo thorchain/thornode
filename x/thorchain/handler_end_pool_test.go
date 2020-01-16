@@ -31,10 +31,9 @@ func (s *HandlerEndPoolSuite) TestValidate(c *C) {
 	keeper := &TestEndPoolKeeper{
 		na: GetRandomNodeAccount(NodeActive),
 	}
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 
-	txOutStore := NewTxStoreDummy()
-
-	handler := NewEndPoolHandler(keeper, txOutStore)
+	handler := NewEndPoolHandler(keeper, versionedTxOutStoreDummy)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -55,7 +54,7 @@ func (s *HandlerEndPoolSuite) TestValidate(c *C) {
 
 	// invalid version
 	err = handler.validate(ctx, msg, semver.Version{})
-	c.Assert(err, Equals, badVersion)
+	c.Assert(err, Equals, errInvalidVersion)
 
 	// invalid msg
 	msg = MsgEndPool{}
@@ -66,7 +65,7 @@ func (s *HandlerEndPoolSuite) TestValidate(c *C) {
 	keeper = &TestEndPoolKeeper{
 		na: GetRandomNodeAccount(NodeWhiteListed),
 	}
-	handler = NewEndPoolHandler(keeper, txOutStore)
+	handler = NewEndPoolHandler(keeper, versionedTxOutStoreDummy)
 	msg = NewMsgEndPool(common.BNBAsset, tx, signer)
 	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
@@ -164,10 +163,11 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 		},
 	}
 
-	txOutStore := NewTxStoreDummy()
-	handler := NewEndPoolHandler(keeper, txOutStore)
+	versionedTxOutStore := NewVersionedTxOutStoreDummy()
+	handler := NewEndPoolHandler(keeper, versionedTxOutStore)
 	ver := semver.MustParse("0.1.0")
-
+	txOutStore, err := versionedTxOutStore.GetTxOutStore(keeper, ver)
+	c.Assert(err, IsNil)
 	stakeTxHash := GetRandomTxHash()
 	tx := common.NewTx(
 		stakeTxHash,

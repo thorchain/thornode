@@ -12,18 +12,18 @@ import (
 )
 
 type ObservedTxOutHandler struct {
-	keeper       Keeper
-	txOutStore   TxOutStore
-	validatorMgr VersionedValidatorManager
-	vaultMgr     VaultManager
+	keeper              Keeper
+	versionedTxOutStore VersionedTxOutStore
+	validatorMgr        VersionedValidatorManager
+	vaultMgr            VaultManager
 }
 
-func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) ObservedTxOutHandler {
+func NewObservedTxOutHandler(keeper Keeper, txOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
-		keeper:       keeper,
-		txOutStore:   txOutStore,
-		validatorMgr: validatorMgr,
-		vaultMgr:     vaultMgr,
+		keeper:              keeper,
+		versionedTxOutStore: txOutStore,
+		validatorMgr:        validatorMgr,
+		vaultMgr:            vaultMgr,
 	}
 }
 
@@ -42,8 +42,8 @@ func (h ObservedTxOutHandler) validate(ctx sdk.Context, msg MsgObservedTxOut, ve
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		ctx.Logger().Error(errInvalidVersion.Error())
+		return errInvalidVersion
 	}
 }
 
@@ -67,7 +67,7 @@ func (h ObservedTxOutHandler) handle(ctx sdk.Context, msg MsgObservedTxOut, vers
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion.Result()
 	}
 }
@@ -176,7 +176,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	handler := NewHandler(h.keeper, h.txOutStore, h.validatorMgr, h.vaultMgr)
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.vaultMgr)
 
 	for _, tx := range msg.Txs {
 
