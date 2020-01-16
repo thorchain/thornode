@@ -1,0 +1,18 @@
+{
+    "height": "1718",
+    "tx_array": [
+        {
+            "chain": "BNB",
+            "coin": {
+                "amount": "194765912",
+                "denom": "BNB"
+            },
+            "in_hash": "12345",
+            "memo": "memo",
+            "out_hash": "67890",
+            "seq_no": "0",
+            "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj",
+            "vault_pubkey": "thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy"
+        }
+    ]
+}

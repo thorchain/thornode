@@ -13,7 +13,7 @@ require (
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/ethereum/go-ethereum v1.9.8
 	github.com/gorilla/mux v1.7.3
-	github.com/hashicorp/go-retryablehttp v0.6.1
+	github.com/hashicorp/go-retryablehttp v0.6.4
 	github.com/logrusorgru/aurora v0.0.0-20191116043053-66b7ad493a23
 	github.com/mitranim/gow v0.0.0-20181105081807-8128c81042bd // indirect
 	github.com/openlyinc/pointy v1.1.2
