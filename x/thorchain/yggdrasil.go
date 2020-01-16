@@ -163,7 +163,7 @@ func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins
 
 	// ensure THORNode don't send too much value in coins to the ygg pool
 	if counter.GT(yggBond.QuoUint64(2)) {
-		return nil, fmt.Errorf("Exceeded safe amounts of assets for given Yggdrasil pool")
+		return nil, errors.New("exceeded safe amounts of assets for given Yggdrasil pool")
 	}
 
 	return coins, nil
