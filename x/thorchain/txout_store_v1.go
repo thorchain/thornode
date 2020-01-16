@@ -178,8 +178,11 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			}
 		}
 	}
+	// When we request Yggdrasil pool to return the fund, the coin field is actually empty
+	// Signer when it sees an tx out item with memo "yggdrasil-" it will query the account on relevant chain
+	// and coin field will be filled there, thus we have to let this one go
 
-	if toi.Coin.IsEmpty() {
+	if toi.Coin.IsEmpty() && toi.Memo != "yggdrasil-" {
 		ctx.Logger().Info("tx out item has zero coin", toi.String())
 		return false, nil
 	}
