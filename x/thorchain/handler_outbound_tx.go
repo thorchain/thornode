@@ -33,8 +33,8 @@ func (h OutboundTxHandler) validate(ctx sdk.Context, msg MsgOutboundTx, version 
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	}
-	ctx.Logger().Error(badVersion.Error())
-	return badVersion
+	ctx.Logger().Error(errInvalidVersion.Error())
+	return errInvalidVersion
 }
 
 func (h OutboundTxHandler) validateV1(ctx sdk.Context, msg MsgOutboundTx) error {
@@ -55,7 +55,7 @@ func (h OutboundTxHandler) handle(ctx sdk.Context, msg MsgOutboundTx, version se
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, msg)
 	}
-	ctx.Logger().Error(badVersion.Error())
+	ctx.Logger().Error(errInvalidVersion.Error())
 	return errBadVersion.Result()
 }
 

@@ -11,11 +11,11 @@ import (
 
 type YggdrasilHandler struct {
 	keeper       Keeper
-	txOutStore   TxOutStore
+	txOutStore   VersionedTxOutStore
 	validatorMgr VersionedValidatorManager
 }
 
-func NewYggdrasilHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager) YggdrasilHandler {
+func NewYggdrasilHandler(keeper Keeper, txOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager) YggdrasilHandler {
 	return YggdrasilHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
@@ -38,8 +38,8 @@ func (h YggdrasilHandler) validate(ctx sdk.Context, msg MsgYggdrasil, version se
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
-		return badVersion
+		ctx.Logger().Error(errInvalidVersion.Error())
+		return errInvalidVersion
 	}
 }
 
@@ -59,15 +59,15 @@ func (h YggdrasilHandler) validateV1(ctx sdk.Context, msg MsgYggdrasil) error {
 func (h YggdrasilHandler) handle(ctx sdk.Context, msg MsgYggdrasil, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	ctx.Logger().Info("receive MsgYggdrasil", "pubkey", msg.PubKey.String(), "add_funds", msg.AddFunds, "coins", msg.Coins)
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg, constAccessor)
+		return h.handleV1(ctx, msg, version)
 	} else {
-		ctx.Logger().Error(badVersion.Error())
+		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion.Result()
 	}
 }
 
 // Handle a message to set pooldata
-func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAccessor constants.ConstantValues) sdk.Result {
+func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, version semver.Version) sdk.Result {
 	ygg, err := h.keeper.GetVault(ctx, msg.PubKey)
 	if nil != err && !stdErrors.Is(err, ErrVaultNotFound) {
 		ctx.Logger().Error("fail to get yggdrasil", "error", err)
@@ -93,8 +93,12 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, constAcces
 			ctx.Logger().Error("unable to get node account", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
-
-		if err := refundBond(ctx, msg.Tx, na, h.keeper, h.txOutStore); err != nil {
+		txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
+		if nil != err {
+			ctx.Logger().Error("fail to get txout store", "error", err)
+			return errBadVersion.Result()
+		}
+		if err := refundBond(ctx, msg.Tx, na, h.keeper, txOutStore); err != nil {
 			ctx.Logger().Error("fail to refund bond", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}

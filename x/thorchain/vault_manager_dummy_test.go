@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/constants"
 )
@@ -14,7 +15,7 @@ func NewVaultMgrDummy() *VaultMgrDummy {
 	return &VaultMgrDummy{}
 }
 
-func (vm *VaultMgrDummy) EndBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error {
+func (vm *VaultMgrDummy) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
 	return nil
 }
 

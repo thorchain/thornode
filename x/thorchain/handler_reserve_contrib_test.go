@@ -37,7 +37,7 @@ func (s *HandlerReserveContributorSuite) TestValidate(c *C) {
 
 	// invalid version
 	err = handler.Validate(ctx, msg, semver.Version{})
-	c.Assert(err, Equals, badVersion)
+	c.Assert(err, Equals, errInvalidVersion)
 
 	// inactive node account
 	keeper.na = GetRandomNodeAccount(NodeStandby)

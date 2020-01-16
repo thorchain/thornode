@@ -27,7 +27,7 @@ func (s *HandlerNoOpSuite) TestValidate(c *C) {
 
 	// invalid version
 	err = handler.Validate(ctx, msg, semver.Version{})
-	c.Assert(err, Equals, badVersion)
+	c.Assert(err, Equals, errInvalidVersion)
 
 	// invalid msg
 	msg = MsgNoOp{}
