@@ -8,8 +8,9 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/thorclient/types"
 )
 
+// GetVaults retrieve vault pubkeys from thorchain
 func (c *Client) GetVaults() (types.Vaults, error) {
-	buf, err := c.get(BaseEndpoint + VaultsEndpoint)
+	buf, err := c.get(VaultsEndpoint)
 	if err != nil {
 		return types.Vaults{}, errors.Wrap(err, "fail to get from thorchain")
 	}

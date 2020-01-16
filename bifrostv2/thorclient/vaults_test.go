@@ -23,7 +23,7 @@ var _ = Suite(&VaultsSuite{})
 func (s *VaultsSuite) SetUpSuite(c *C) {
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		switch req.RequestURI {
-		case "/thorchain/vaults/pubkeys":
+		case VaultsEndpoint:
 			vaultsHandle(c, rw)
 		}
 	}))

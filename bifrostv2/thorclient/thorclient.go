@@ -32,8 +32,15 @@ import (
 )
 
 const (
-	BaseEndpoint   = "/thorchain"
-	VaultsEndpoint = "/vaults/pubkeys"
+	BaseEndpoint = "/thorchain"
+
+	VaultsEndpoint      = BaseEndpoint + "/vaults/pubkeys"
+	KeysignEndpoint     = BaseEndpoint + "/keysign"
+	KeygenEndpoint      = BaseEndpoint + "/keygen"
+	NodeAccountEndpoint = BaseEndpoint + "/nodeaccount"
+	LastBlockEndpoint   = BaseEndpoint + "/lastblock"
+
+	AuthAccountEndpoint = "/auth/accounts"
 )
 
 // Client is for all communication to a thorNode
@@ -75,13 +82,22 @@ func NewClient(cfg config.ThorChainConfiguration, m *metrics.Metrics) (*Client, 
 		return nil, fmt.Errorf("failed to get keybase: %w", err)
 	}
 
+	// main module logger
+	logger := log.With().Str("module", "thorClient").Logger()
+
+	// Create retryablehttp client using our own logger format with a sublogger
+	sublogger := logger.With().Str("component", "retryableHTTPClient").Logger()
+	httpClientLogger := common.NewRetryableHTTPLogger(sublogger)
+	httpClient := retryablehttp.NewClient()
+	httpClient.Logger = httpClientLogger
+
 	return &Client{
-		logger:      log.With().Str("module", "thorClient").Logger(),
+		logger:      logger,
 		cdc:         MakeCodec(),
 		cfg:         cfg,
 		keys:        k,
 		errCounter:  m.GetCounterVec(metrics.ThorChainClientError),
-		client:      retryablehttp.NewClient(), // TODO Setup a logger function that is in our format
+		client:      httpClient,
 		metrics:     m,
 		wg:          &sync.WaitGroup{},
 		stopChan:    make(chan struct{}),
@@ -134,6 +150,28 @@ func (c *Client) Start() error {
 	c.accountNumber = accountNumber
 	c.seqNumber = sequenceNumber
 
+	err = c.getPubKeys()
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve pub keys")
+	}
+
+	// Reset/set the backOffCtrl
+	c.backOffCtrl.Reset()
+
+	// Start block scanner
+	lastSignedOutHeight, err := c.GetLastSignedOutHeight()
+	if err != nil {
+		return errors.Wrap(err, "failed to retrieve last signed height to start block scanner")
+	}
+	c.logger.Info().Int64("height", lastSignedOutHeight).Msgf("last signed out height %d", lastSignedOutHeight)
+	c.lastSignedOutHeight = lastSignedOutHeight
+	c.wg.Add(1)
+	go c.scanBlocks()
+
+	return nil
+}
+
+func (c *Client) getPubKeys() error {
 	// creates pub key manager
 	pkm := ttypes.NewPubKeyManager()
 
@@ -156,22 +194,10 @@ func (c *Client) Start() error {
 	}
 
 	if na.PubKeySet.Secp256k1.IsEmpty() {
-		return errors.Wrap(err, "failed to find pubkey for this node account")
+		return errors.New("failed to find pubkey for this node account")
 	}
 	pkm.Add(na.PubKeySet.Secp256k1)
 	c.pkm = pkm
-
-	// Start block scanner
-	lastSignedOutHeight, err := c.GetLastSignedOutHeight()
-	c.backOffCtrl.Reset() // Reset/set the backOffCtrl
-	if err != nil {
-		return errors.Wrap(err, "failed to retrieve last signed height to start block scanner")
-	}
-	c.logger.Info().Int64("height", lastSignedOutHeight).Msgf("last signed out height %d", lastSignedOutHeight)
-	c.lastSignedOutHeight = lastSignedOutHeight
-	c.wg.Add(1)
-	go c.scanBlocks()
-
 	return nil
 }
 
@@ -202,6 +228,7 @@ func (c *Client) scanBlocks() {
 		select {
 		// close stop channel triggered we exit
 		case <-c.stopChan:
+			c.logger.Info().Msg("stopChan closed exiting loop")
 			return
 		default:
 			height := c.lastSignedOutHeight
@@ -211,6 +238,7 @@ func (c *Client) scanBlocks() {
 				time.Sleep(c.backOffCtrl.NextBackOff())
 				continue
 			}
+			c.logger.Info().Int64("chain height", chainHeight).Msg("next block scanning")
 
 			if height >= chainHeight {
 				c.logger.Error().Int64("chain height", chainHeight).Int64("last signed height", c.lastSignedOutHeight).Msg("last signed block height is bigger or equal to chain length")
@@ -255,23 +283,6 @@ func (c *Client) processTxOutBlock(blockHeight int64) error {
 	return nil
 }
 
-// GetKeysign retrieves txout from this block height from thorchain
-func (c *Client) GetKeysign(blockHeight int64, pk string) (*stypes.TxOut, error) {
-	requestURL := fmt.Sprintf("/thorchain/keysign/%d/%s", blockHeight, pk)
-
-	body, err := c.get(requestURL)
-	if err != nil {
-		c.errCounter.WithLabelValues("fail_get_tx_out", strconv.FormatInt(blockHeight, 10)).Inc()
-		return &stypes.TxOut{}, errors.Wrap(err, "failed to get tx from a block height")
-	}
-	var txOut stypes.TxOut
-	if err := c.cdc.UnmarshalJSON(body, &txOut); err != nil {
-		c.errCounter.WithLabelValues("fail_unmarshal_tx_out", strconv.FormatInt(blockHeight, 10)).Inc()
-		return &stypes.TxOut{}, errors.Wrap(err, "failed to unmarshal TxOut")
-	}
-	return &txOut, nil
-}
-
 // processKeygenBlock retrieve keygen from this block height and pass results to
 // keygensChan
 func (c *Client) processKeygenBlock(blockHeight int64) error {
@@ -288,47 +299,13 @@ func (c *Client) processKeygenBlock(blockHeight int64) error {
 	return nil
 }
 
-// GetKeygens retrieves keygens from this block height from thorchain
-func (c *Client) GetKeygens(blockHeight int64, pk string) (*stypes.Keygens, error) {
-	requestURL := fmt.Sprintf("/thorchain/keygen/%d/%s", blockHeight, pk)
-
-	body, err := c.get(requestURL)
-	if err != nil {
-		c.errCounter.WithLabelValues("fail_get_keygens", strconv.FormatInt(blockHeight, 10)).Inc()
-		return &stypes.Keygens{}, errors.Wrap(err, "failed to get keygens from a block height")
-	}
-	var keygens stypes.Keygens
-	if err := c.cdc.UnmarshalJSON(body, &keygens); err != nil {
-		c.errCounter.WithLabelValues("fail_unmarshal_keygens", strconv.FormatInt(blockHeight, 10)).Inc()
-		return &stypes.Keygens{}, errors.Wrap(err, "failed to unmarshal Keygens")
-	}
-	return &keygens, nil
-}
-
-// GetNodeAccount retrieves node account for this address from thorchain
-func (c *Client) GetNodeAccount(thorAddr string) (*stypes.NodeAccount, error) {
-	requestURL := fmt.Sprintf("/thorchain/nodeaccount/%s", thorAddr)
-
-	body, err := c.get(requestURL)
-	if err != nil {
-		c.errCounter.WithLabelValues("fail_get_node_account", thorAddr).Inc()
-		return &stypes.NodeAccount{}, errors.Wrap(err, "failed to get node account")
-	}
-	var na stypes.NodeAccount
-	if err := c.cdc.UnmarshalJSON(body, &na); err != nil {
-		c.errCounter.WithLabelValues("fail_unmarshal_node_account", thorAddr).Inc()
-		return &stypes.NodeAccount{}, errors.Wrap(err, "failed to unmarshal node account")
-	}
-	return &na, nil
-}
-
 // getAccountNumberAndSequenceNumber returns account and Sequence number required to post into thorchain
 func (c *Client) getAccountNumberAndSequenceNumber() (uint64, uint64, error) {
-	requestURL := fmt.Sprintf("/auth/accounts/%s", c.keys.GetSignerInfo().GetAddress())
+	url := fmt.Sprintf("%s/%s", AuthAccountEndpoint, c.keys.GetSignerInfo().GetAddress())
 
-	body, err := c.get(requestURL)
+	body, err := c.get(url)
 	if err != nil {
-		return 0, 0, errors.Wrap(err, "failed to call: "+requestURL)
+		return 0, 0, errors.Wrap(err, "failed to get auth accounts")
 	}
 	var accountResp types.AccountResp
 	if err := json.Unmarshal(body, &accountResp); nil != err {
@@ -346,7 +323,7 @@ func (c *Client) getAccountNumberAndSequenceNumber() (uint64, uint64, error) {
 func (c *Client) GetLastObservedInHeight(chain common.Chain) (int64, error) {
 	lastblock, err := c.getLastBlock(chain)
 	if err != nil {
-		return 0, errors.Wrap(err, "Failed to GetLastObservedInHeight")
+		return 0, errors.Wrap(err, "failed to GetLastObservedInHeight")
 	}
 	return lastblock.LastChainHeight, nil
 }
@@ -355,7 +332,7 @@ func (c *Client) GetLastObservedInHeight(chain common.Chain) (int64, error) {
 func (c *Client) GetLastSignedOutHeight() (int64, error) {
 	lastblock, err := c.getLastBlock("")
 	if err != nil {
-		return 0, errors.Wrap(err, "Failed to GetLastSignedOutheight")
+		return 0, errors.Wrap(err, "failed to GetLastSignedOutheight")
 	}
 	return lastblock.LastSignedHeight, nil
 }
@@ -364,15 +341,15 @@ func (c *Client) GetLastSignedOutHeight() (int64, error) {
 func (c *Client) GetChainHeight() (int64, error) {
 	lastblock, err := c.getLastBlock("")
 	if err != nil {
-		return 0, errors.Wrap(err, "Failed to GetChainHeight")
+		return 0, errors.Wrap(err, "failed to GetChainHeight")
 	}
 	return lastblock.Statechain, nil
 }
 
 // getLastBlock calls the /lastblock/{chain} endpoint and Unmarshal's into the QueryResHeights type
 func (c *Client) getLastBlock(chain common.Chain) (stypes.QueryResHeights, error) {
-	path := fmt.Sprintf("/thorchain/lastblock/%s", chain.String())
-	buf, err := c.get(path)
+	url := fmt.Sprintf("%s/%s", LastBlockEndpoint, chain.String())
+	buf, err := c.get(url)
 	if err != nil {
 		return stypes.QueryResHeights{}, errors.Wrap(err, "failed to get lastblock")
 	}
@@ -439,19 +416,12 @@ func (c *Client) ensureNodeWhitelisted() error {
 	if len(bepAddr) == 0 {
 		return errors.New("bep address is empty")
 	}
-	requestURI := fmt.Sprintf("/thorchain/observer/%s", bepAddr)
-	c.logger.Debug().Str("request_uri", requestURI).Msg("check node account status")
-	buf, err := c.get(requestURI)
+	na, err := c.GetNodeAccount(bepAddr)
 	if err != nil {
-		return errors.Wrap(err, "failed to call: "+requestURI)
+		return errors.Wrap(err, "failed to get node account")
 	}
-	var nodeAccount stypes.NodeAccount
-	if err := json.Unmarshal(buf, &nodeAccount); nil != err {
-		c.errCounter.WithLabelValues("fail_unmarshal_nodeaccount", "").Inc()
-		return errors.Wrap(err, "failed to unmarshal node account")
-	}
-	if nodeAccount.Status == stypes.Disabled || nodeAccount.Status == stypes.Unknown {
-		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", nodeAccount.Status)
+	if na.Status == stypes.Disabled || na.Status == stypes.Unknown {
+		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", na.Status)
 	}
 	return nil
 }
