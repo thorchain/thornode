@@ -67,6 +67,10 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 }
 
 func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
+	if nodeAcc.Status == NodeActive {
+		ctx.Logger().Info("node still active , cannot refund bond", "node address", nodeAcc.NodeAddress, "node pub key", nodeAcc.PubKeySet.Secp256k1)
+		return nil
+	}
 	ygg, err := keeper.GetVault(ctx, nodeAcc.PubKeySet.Secp256k1)
 	if err != nil {
 		return err
@@ -92,7 +96,8 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 	if nodeAcc.Bond.LT(yggRune) {
 		ctx.Logger().Error(fmt.Sprintf("Node Account (%s) left with more funds in their Yggdrasil vault than their bond's value (%s / %s)", nodeAcc.NodeAddress, yggRune, nodeAcc.Bond))
 	}
-
+	// slashing 1.5 * yggdrasil remains
+	yggRune = yggRune.MulUint64(15).QuoUint64(10)
 	nodeAcc.Bond = common.SafeSub(nodeAcc.Bond, yggRune)
 
 	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
