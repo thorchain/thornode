@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	. "gopkg.in/check.v1"
 
@@ -31,6 +32,12 @@ func (s *ThorClientSuite) SetUpSuite(c *C) {
 		switch {
 		case strings.HasPrefix(req.RequestURI, AuthAccountEndpoint):
 			httpTestHandler(c, rw, s.authAccountFixture)
+		case strings.HasPrefix(req.RequestURI, NodeAccountEndpoint):
+			httpTestHandler(c, rw, "../../test/fixtures/endpoints/nodeaccount/template.json")
+		case strings.HasPrefix(req.RequestURI, LastBlockEndpoint):
+			httpTestHandler(c, rw, "../../test/fixtures/endpoints/lastblock/bnb.json")
+		case strings.HasPrefix(req.RequestURI, KeysignEndpoint):
+			httpTestHandler(c, rw, "../../test/fixtures/endpoints/keysign/template.json")
 		}
 	}))
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
@@ -163,4 +170,13 @@ func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_SequenceStr
 	c.Assert(true, Equals, strings.HasPrefix(err.Error(), "failed to unmarshal base account"))
 	c.Assert(accNumber, Equals, uint64(0))
 	c.Assert(sequence, Equals, uint64(0))
+}
+
+func (s *ThorClientSuite) TestStart(c *C) {
+	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
+	err := s.client.Start()
+	c.Assert(err, NotNil)
+	time.Sleep(time.Minute)
+	err = s.client.Stop()
+	c.Assert(err, NotNil)
 }
