@@ -24,8 +24,10 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	consts := constants.GetConstantValues(ver)
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	vaultMgr := NewVaultMgr(keeper, versionedTxOutStoreDummy)
-	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, vaultMgr)
+	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStoreDummy)
+	vaultMgr, err := versionedVaultMgr.GetVaultManager(ctx, keeper, ver)
+	c.Assert(err, IsNil)
+	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgr)
 	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
 	c.Assert(err, IsNil)
 
@@ -73,7 +75,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	// generate a tss keygen handler event
 	newVaultPk := GetRandomPubKey()
 	msg := NewMsgTssPool(keygens.Keygens[0], newVaultPk, addresses[0])
-	tssHandler := NewTssHandler(keeper, vaultMgr)
+	tssHandler := NewTssHandler(keeper, versionedVaultMgr)
 
 	voter := NewTssVoter(msg.ID, msg.PubKeys, msg.PoolPubKey)
 	voter.Signers = addresses // ensure we have consensus, so handler is properly executed
@@ -137,8 +139,8 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	consts := constants.GetConstantValues(ver)
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	vaultMgr := NewVaultMgr(keeper, versionedTxOutStoreDummy)
-	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
 	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
 	c.Assert(err, IsNil)
 
@@ -324,8 +326,8 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 	consts := constants.GetConstantValues(ver)
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	vaultMgr := NewVaultMgr(keeper, versionedTxOutStoreDummy)
-	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
 
 	// create active asgard vault
 	asgard := GetRandomVault()

@@ -3,18 +3,19 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/constants"
 )
 
 type TssHandler struct {
-	keeper   Keeper
-	vaultMgr VaultManager
+	keeper                Keeper
+	versionedVaultManager VersionedVaultManager
 }
 
-func NewTssHandler(keeper Keeper, vaultMgr VaultManager) TssHandler {
+func NewTssHandler(keeper Keeper, versionedVaultManager VersionedVaultManager) TssHandler {
 	return TssHandler{
-		keeper:   keeper,
-		vaultMgr: vaultMgr,
+		keeper:                keeper,
+		versionedVaultManager: versionedVaultManager,
 	}
 }
 
@@ -56,7 +57,7 @@ func (h TssHandler) validateV1(ctx sdk.Context, msg MsgTssPool) error {
 func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Version) sdk.Result {
 	ctx.Logger().Info("handleMsgTssPool request", "ID:", msg.ID)
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg)
+		return h.handleV1(ctx, msg, version)
 	} else {
 		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion.Result()
@@ -64,7 +65,7 @@ func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Versi
 }
 
 // Handle a message to observe inbound tx
-func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool) sdk.Result {
+func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Version) sdk.Result {
 	active, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		err = wrapError(ctx, err, "fail to get list of active node accounts")
@@ -91,7 +92,12 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool) sdk.Result {
 		vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, voter.PoolPubKey)
 		vault.Membership = voter.PubKeys
 
-		if err := h.vaultMgr.RotateVault(ctx, vault); err != nil {
+		vaultMgr, err := h.versionedVaultManager.GetVaultManager(ctx, h.keeper, version)
+		if nil != err {
+			ctx.Logger().Error("fail to get a valid vault manager", "error", err)
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+		if err := vaultMgr.RotateVault(ctx, vault); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 

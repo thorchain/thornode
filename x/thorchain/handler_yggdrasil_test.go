@@ -30,9 +30,9 @@ func (s *HandlerYggdrasilSuite) TestValidate(c *C) {
 		na: GetRandomNodeAccount(NodeActive),
 	}
 
-	vaultMgr := NewVaultMgrDummy()
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
 
 	handler := NewYggdrasilHandler(keeper, versionedTxOutStoreDummy, validatorMgr)
 
@@ -115,9 +115,9 @@ func (s *HandlerYggdrasilSuite) TestHandle(c *C) {
 
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
-	vaultMgr := NewVaultMgrDummy()
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
 	c.Assert(validatorMgr.BeginBlock(ctx, ver, constAccessor), IsNil)
 
 	handler := NewYggdrasilHandler(keeper, versionedTxOutStoreDummy, validatorMgr)

@@ -17,13 +17,6 @@ const (
 	EventTypeInactiveVault = "InactiveVault"
 )
 
-// VaultManager
-type VaultManager interface {
-	TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error
-	RotateVault(ctx sdk.Context, vault Vault) error
-	EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error
-}
-
 // VaultMgr is going to manage the vaults
 type VaultMgr struct {
 	k                   Keeper

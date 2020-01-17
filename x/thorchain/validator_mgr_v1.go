@@ -16,19 +16,19 @@ import (
 
 // validatorMgrV1 is to manage a list of validators , and rotate them
 type validatorMgrV1 struct {
-	version             semver.Version
-	k                   Keeper
-	vaultMgr            VaultManager
-	versionedTxOutStore VersionedTxOutStore
+	version               semver.Version
+	k                     Keeper
+	versionedVaultManager VersionedVaultManager
+	versionedTxOutStore   VersionedTxOutStore
 }
 
 // newValidatorMgrV1 create a new instance of ValidatorManager
-func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, vaultMgr VaultManager) *validatorMgrV1 {
+func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedVaultManager VersionedVaultManager) *validatorMgrV1 {
 	return &validatorMgrV1{
-		version:             semver.MustParse("0.1.0"),
-		k:                   k,
-		vaultMgr:            vaultMgr,
-		versionedTxOutStore: versionedTxOutStore,
+		version:               semver.MustParse("0.1.0"),
+		k:                     k,
+		versionedVaultManager: versionedVaultManager,
+		versionedTxOutStore:   versionedTxOutStore,
 	}
 }
 
@@ -44,7 +44,10 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 		// ragnarok is in progress, no point to check node rotation
 		return nil
 	}
-
+	vaultMgr, err := vm.versionedVaultManager.GetVaultManager(ctx, vm.k, vm.version)
+	if nil != err {
+		return fmt.Errorf("fail to get a valid vault: %w", err)
+	}
 	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
 	totalActiveNodes, err := vm.k.TotalActiveNodeAccount(ctx)
 	if err != nil {
@@ -73,7 +76,7 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 			return err
 		}
 		if ok {
-			if err := vm.vaultMgr.TriggerKeygen(ctx, next); err != nil {
+			if err := vaultMgr.TriggerKeygen(ctx, next); err != nil {
 				return err
 			}
 		}
