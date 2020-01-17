@@ -1,4 +1,4 @@
-package thorclient
+package thorchain
 
 import (
 	"net/http"
@@ -14,7 +14,7 @@ import (
 type NodeAccountSuite struct {
 	server  *httptest.Server
 	client  *Client
-	cfg     config.ThorChainConfiguration
+	cfg     config.ClientConfiguration
 	cleanup func()
 	fixture string
 }
@@ -33,6 +33,7 @@ func (s *NodeAccountSuite) SetUpSuite(c *C) {
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
 	var err error
 	s.client, err = NewClient(s.cfg, helpers.GetMetricForTest(c))
+	s.client.httpClient.RetryMax = 1
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 }

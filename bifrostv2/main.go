@@ -8,21 +8,21 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
-	"gitlab.com/thorchain/thornode/bifrostv2/thorclient"
+	"gitlab.com/thorchain/thornode/bifrostv2/thorchain"
 	"gitlab.com/thorchain/thornode/bifrostv2/txblockscanner"
 	"gitlab.com/thorchain/thornode/bifrostv2/txsigner"
 	"gitlab.com/thorchain/thornode/bifrostv2/vaultmanager"
 )
 
 type Bifrost struct {
-	cfg          config.Configuration
-	logger       zerolog.Logger
-	thorClient   *thorclient.Client
-	metrics      *metrics.Metrics
-	errCounter   *prometheus.CounterVec
-	txScanner    *txblockscanner.TxBlockScanner
-	txSigner     *txsigner.TxSigner
-	vaultManager *vaultmanager.VaultManager
+	cfg             config.Configuration
+	logger          zerolog.Logger
+	thorchainClient *thorchain.Client
+	metrics         *metrics.Metrics
+	errCounter      *prometheus.CounterVec
+	txScanner       *txblockscanner.TxBlockScanner
+	txSigner        *txsigner.TxSigner
+	vaultManager    *vaultmanager.VaultManager
 }
 
 func NewBifrost(cfg config.Configuration) (*Bifrost, error) {
@@ -31,32 +31,32 @@ func NewBifrost(cfg config.Configuration) (*Bifrost, error) {
 		return nil, errors.Wrap(err, "fail to create metric instance")
 	}
 
-	thorClient, err := thorclient.NewClient(cfg.ThorChain, metric)
+	thorchainClient, err := thorchain.NewClient(cfg.Thorchain, metric)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create thorChain bridge")
 	}
 
-	vaultMgr, err := vaultmanager.NewVaultManager(thorClient, metric)
+	vaultMgr, err := vaultmanager.NewVaultManager(thorchainClient, metric)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create vault manager")
 	}
 
-	txScanner := txblockscanner.NewTxBlockScanner(cfg.TxScanner, vaultMgr, thorClient)
+	txScanner := txblockscanner.NewTxBlockScanner(cfg.TxScanner, vaultMgr, thorchainClient)
 
-	txSigner, err := txsigner.NewTxSigner(cfg.TxSigner, thorClient)
+	txSigner, err := txsigner.NewTxSigner(cfg.TxSigner, thorchainClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create txSigner")
 	}
 
 	return &Bifrost{
-		cfg:          cfg,
-		logger:       log.Logger.With().Str("module", "biFrost").Logger(),
-		thorClient:   thorClient,
-		metrics:      metric,
-		txScanner:    txScanner,
-		txSigner:     txSigner,
-		errCounter:   metric.GetCounterVec(metrics.ObserverError),
-		vaultManager: vaultMgr,
+		cfg:             cfg,
+		logger:          log.Logger.With().Str("module", "biFrost").Logger(),
+		thorchainClient: thorchainClient,
+		metrics:         metric,
+		txScanner:       txScanner,
+		txSigner:        txSigner,
+		errCounter:      metric.GetCounterVec(metrics.ObserverError),
+		vaultManager:    vaultMgr,
 	}, nil
 }
 
@@ -67,24 +67,24 @@ func (b *Bifrost) Start() error {
 		return errors.Wrap(err, "fail to start metric collector")
 	}
 
-	if err := b.thorClient.Start(); err != nil {
-		b.logger.Error().Err(err).Msg("fail to start thorchain bridge")
-		return errors.Wrap(err, "fail to start thorchain bridge")
+	if err := b.thorchainClient.Start(); err != nil {
+		b.logger.Error().Err(err).Msg("fail to start thorchain client")
+		return errors.Wrap(err, "fail to start thorchain client")
 	}
 
 	if err := b.vaultManager.Start(); err != nil {
-		b.logger.Error().Err(err).Msg("fail to start vault Manager")
-		return errors.Wrap(err, "fail to start vault Manager")
+		b.logger.Error().Err(err).Msg("fail to start vault manager")
+		return errors.Wrap(err, "fail to start vault manager")
 	}
 
 	if err := b.txScanner.Start(); err != nil {
-		b.logger.Error().Err(err).Msg("fail to start txScanner")
-		return errors.Wrap(err, "fail to start txScanner")
+		b.logger.Error().Err(err).Msg("fail to start txscanner")
+		return errors.Wrap(err, "fail to start txscanner")
 	}
 
 	if err := b.txSigner.Start(); err != nil {
-		b.logger.Error().Err(err).Msg("fail to start txSigner")
-		return errors.Wrap(err, "fail to start txSigner")
+		b.logger.Error().Err(err).Msg("fail to start txsigner")
+		return errors.Wrap(err, "fail to start txsigner")
 	}
 	return nil
 }
@@ -95,11 +95,11 @@ func (b *Bifrost) Stop() error {
 	defer b.logger.Info().Msg("bifrost stopped")
 
 	if err := b.txScanner.Stop(); err != nil {
-		b.logger.Error().Err(err).Msg("fail to stop txScanner")
+		b.logger.Error().Err(err).Msg("fail to stop txscanner")
 	}
 
 	if err := b.txSigner.Stop(); err != nil {
-		b.logger.Error().Err(err).Msg("fail to stop txSigner")
+		b.logger.Error().Err(err).Msg("fail to stop txsigner")
 	}
 
 	if err := b.vaultManager.Stop(); err != nil {

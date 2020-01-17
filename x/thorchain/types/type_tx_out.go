@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -71,6 +72,11 @@ func (toi TxOutItem) String() string {
 	sb.WriteString("Asset:" + toi.Coin.Asset.String())
 	sb.WriteString("Amount:" + toi.Coin.Amount.String())
 	return sb.String()
+}
+
+// GetKey will return a key we can used it to save the infor to level db
+func (toi TxOutItem) GetKey(height int64) string {
+	return fmt.Sprintf("%d-%s-%s-%s-%s", height, toi.VaultPubKey, toi.Memo, toi.Coin, toi.ToAddress)
 }
 
 // TxOut is a structure represent all the tx THORNode need to return to client

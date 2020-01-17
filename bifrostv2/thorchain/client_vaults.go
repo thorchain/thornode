@@ -1,11 +1,11 @@
-package thorclient
+package thorchain
 
 import (
 	"encoding/json"
 
 	"github.com/pkg/errors"
 
-	"gitlab.com/thorchain/thornode/bifrostv2/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/thorchain/types"
 )
 
 // GetVaults retrieve vault pubkeys from thorchain
