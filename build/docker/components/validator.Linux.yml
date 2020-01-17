@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  bifrost:
+    network_mode: "host"
+    environment:
+      CHAIN_API: localhost:1317
+      CHAIN_RPC: localhost:26657
+      BINANCE_HOST: ${BINANCE_HOST:-http://localhost:26660}
+      TSS_HOST: localhost
+  thor-daemon:
+    network_mode: "host"
+  thor-api:
+    network_mode: "host"
+    environment:
+      CHAIN_DAEMON: localhost:26657
+    command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://localhost:26657"]
+  tss:
+    network_mode: "host"

@@ -151,6 +151,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 
 		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
 		if !ok {
+			ctx.Logger().Info("Inbound observation preflight requirements not yet met...")
 			continue
 		}
 
