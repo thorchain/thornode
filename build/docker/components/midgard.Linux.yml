@@ -1,0 +1,8 @@
+version: '3'
+
+services:
+  midgard:
+    network_mode: "host"
+    environment:
+      CHAIN_API: localhost:1317
+      CHAIN_RPC: localhost:26657
