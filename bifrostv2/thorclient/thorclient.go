@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/cosmos/cosmos-sdk/codec"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -65,6 +65,9 @@ type Client struct {
 
 // NewClient create a new instance of Client
 func NewClient(cfg config.ThorChainConfiguration, m *metrics.Metrics) (*Client, error) {
+	// main module logger
+	logger := log.With().Str("module", "thorClient").Logger()
+
 	if len(cfg.ChainID) == 0 {
 		return nil, errors.New("chain id is empty")
 	}
@@ -79,13 +82,11 @@ func NewClient(cfg config.ThorChainConfiguration, m *metrics.Metrics) (*Client, 
 	}
 	k, err := keys.NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
 	if nil != err {
+		logger.Error().Err(err).Msg("failed to get keybase")
 		return nil, fmt.Errorf("failed to get keybase: %w", err)
 	}
 
-	// main module logger
-	logger := log.With().Str("module", "thorClient").Logger()
-
-	// Create retryablehttp client using our own logger format with a sublogger
+	// create retryablehttp client using our own logger format with a sublogger
 	sublogger := logger.With().Str("component", "retryableHTTPClient").Logger()
 	httpClientLogger := common.NewRetryableHTTPLogger(sublogger)
 	httpClient := retryablehttp.NewClient()
@@ -136,6 +137,9 @@ func (c *Client) Start() error {
 	c.logger.Info().Msg("starting thorclient")
 	CosmosSDKConfig()
 
+	// Reset/set the backOffCtrl
+	c.backOffCtrl.Reset()
+
 	if err := c.ensureNodeWhitelistedWithTimeout(); err != nil {
 		c.logger.Error().Err(err).Msg("node account is not whitelisted, can't start")
 		return errors.Wrap(err, "node account is not whitelisted, can't start")
@@ -143,6 +147,7 @@ func (c *Client) Start() error {
 
 	accountNumber, sequenceNumber, err := c.getAccountNumberAndSequenceNumber()
 	if nil != err {
+		c.logger.Error().Err(err).Msg("failed to get account number and sequence number from thorchain")
 		return errors.Wrap(err, "failed to get account number and sequence number from thorchain")
 	}
 
@@ -152,15 +157,14 @@ func (c *Client) Start() error {
 
 	err = c.getPubKeys()
 	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to retrieve pub keys")
 		return errors.Wrap(err, "failed to retrieve pub keys")
 	}
-
-	// Reset/set the backOffCtrl
-	c.backOffCtrl.Reset()
 
 	// Start block scanner
 	lastSignedOutHeight, err := c.GetLastSignedOutHeight()
 	if err != nil {
+		c.logger.Error().Err(err).Msg("failed to retrieve last signed height on statechain")
 		return errors.Wrap(err, "failed to retrieve last signed height to start block scanner")
 	}
 	c.logger.Info().Int64("height", lastSignedOutHeight).Msgf("last signed out height %d", lastSignedOutHeight)
@@ -187,7 +191,8 @@ func (c *Client) getPubKeys() error {
 			break
 		}
 		time.Sleep(5 * time.Second)
-		fmt.Println("Waiting for node account to be registered...")
+
+		c.logger.Info().Msg("Waiting for node account to be registered...")
 	}
 	for _, item := range na.SignerMembership {
 		pkm.Add(item)
@@ -228,13 +233,13 @@ func (c *Client) scanBlocks() {
 		select {
 		// close stop channel triggered we exit
 		case <-c.stopChan:
-			c.logger.Info().Msg("stopChan closed exiting loop")
+			c.logger.Debug().Msg("stopChan closed exiting scan blocks loop")
 			return
 		default:
 			height := c.lastSignedOutHeight
-			chainHeight, err := c.GetChainHeight()
+			chainHeight, err := c.GetStatechainHeight()
 			if err != nil {
-				c.logger.Error().Err(err).Msg("failed to get chain height")
+				c.logger.Error().Err(err).Msg("failed to get statechain height")
 				time.Sleep(c.backOffCtrl.NextBackOff())
 				continue
 			}
@@ -337,11 +342,11 @@ func (c *Client) GetLastSignedOutHeight() (int64, error) {
 	return lastblock.LastSignedHeight, nil
 }
 
-// GetChainHeight returns the current height for thorchain blocks
-func (c *Client) GetChainHeight() (int64, error) {
+// GetStatechainHeight returns the current height for thorchain blocks
+func (c *Client) GetStatechainHeight() (int64, error) {
 	lastblock, err := c.getLastBlock("")
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to GetChainHeight")
+		return 0, errors.Wrap(err, "failed to GetStatechainHeight")
 	}
 	return lastblock.Statechain, nil
 }
@@ -365,7 +370,7 @@ func (c *Client) getLastBlock(chain common.Chain) (stypes.QueryResHeights, error
 func (c *Client) get(path string) ([]byte, error) {
 	resp, err := c.client.Get(c.getThorChainURL(path))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get from thorchain")
+		return nil, errors.Wrap(err, "failed to GET from thorchain")
 	}
 	defer func() {
 		if err := resp.Body.Close(); nil != err {
