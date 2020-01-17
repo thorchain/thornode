@@ -3,8 +3,28 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/constants"
 )
+
+// VersionedVaultMgrDummy used for test purpose
+type VersionedVaultMgrDummy struct {
+	versionedTxOutStore VersionedTxOutStore
+	vaultMgrDummy       *VaultMgrDummy
+}
+
+func NewVersionedVaultMgrDummy(versionedTxOutStore VersionedTxOutStore) *VersionedVaultMgrDummy {
+	return &VersionedVaultMgrDummy{
+		versionedTxOutStore: versionedTxOutStore,
+	}
+}
+
+func (v *VersionedVaultMgrDummy) GetVaultManager(ctx sdk.Context, keeper Keeper, version semver.Version) (VaultManager, error) {
+	if nil == v.vaultMgrDummy {
+		v.vaultMgrDummy = NewVaultMgrDummy()
+	}
+	return v.vaultMgrDummy, nil
+}
 
 type VaultMgrDummy struct {
 	nas   NodeAccounts
