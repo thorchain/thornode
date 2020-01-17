@@ -1,4 +1,4 @@
-package thorclient
+package thorchain
 
 import (
 	"net/http"
@@ -10,12 +10,13 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/helpers"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type KeysignSuite struct {
 	server  *httptest.Server
 	client  *Client
-	cfg     config.ThorChainConfiguration
+	cfg     config.ClientConfiguration
 	cleanup func()
 	fixture string
 }
@@ -41,7 +42,7 @@ func (s *KeysignSuite) SetUpSuite(c *C) {
 	var err error
 	s.client, err = NewClient(s.cfg, helpers.GetMetricForTest(c))
 	// fail fast
-	s.client.client.RetryMax = 1
+	s.client.httpClient.RetryMax = 1
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 	c.Assert(err, IsNil)
@@ -54,9 +55,7 @@ func (s *KeysignSuite) TearDownSuite(c *C) {
 
 func (s *KeysignSuite) TestGetKeysign(c *C) {
 	s.fixture = "../../test/fixtures/endpoints/keysign/template.json"
-	err := s.client.getPubKeys()
-	c.Assert(err, IsNil)
-	pk := s.client.pkm.GetPks()[0]
+	pk := types.GetRandomPubKey()
 	keysign, err := s.client.GetKeysign(1718, pk.String())
 	c.Assert(err, IsNil)
 	c.Assert(keysign, NotNil)

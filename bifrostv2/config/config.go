@@ -12,7 +12,7 @@ import (
 
 // Configuration values
 type Configuration struct {
-	ThorChain ThorChainConfiguration  `json:"thorchain" mapstructure:"thorchain"`
+	Thorchain ClientConfiguration     `json:"thorchain" mapstructure:"thorchain"`
 	Metric    MetricConfiguration     `json:"metric" mapstructure:"metric"`
 	Chains    []ChainConfigurations   `json:"chains" mapstructure:"chains"`
 	TxScanner TxScannerConfigurations `json:"tx_scanner" mapstructure:"tx_scanner"`
@@ -25,7 +25,8 @@ type TxScannerConfigurations struct {
 }
 
 type TxSignerConfigurations struct {
-	BlockChains []ChainConfigurations
+	BlockChains  []ChainConfigurations
+	BlockScanner BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
 }
 
 type BackOff struct {
@@ -48,14 +49,28 @@ type ChainConfigurations struct {
 	BackOff      BackOff
 }
 
-// ThorChainConfiguration
-type ThorChainConfiguration struct {
+// ClientConfiguration for http thorchain client
+type ClientConfiguration struct {
 	ChainID         string `json:"chain_id" mapstructure:"chain_id" `
 	ChainHost       string `json:"chain_host" mapstructure:"chain_host"`
 	ChainHomeFolder string `json:"chain_home_folder" mapstructure:"chain_home_folder"`
 	SignerName      string `json:"signer_name" mapstructure:"signer_name"`
 	SignerPasswd    string `json:"signer_passwd" mapstructure:"signer_passwd"`
 	BackOff         BackOff
+}
+
+// BlockScannerConfiguration settings for BlockScanner
+type BlockScannerConfiguration struct {
+	RPCHost                    string        `json:"rpc_host" mapstructure:"rpc_host"`
+	StartBlockHeight           int64         `json:"-"`
+	BlockScanProcessors        int           `json:"block_scan_processors" mapstructure:"block_scan_processors"`
+	HttpRequestTimeout         time.Duration `json:"http_request_timeout" mapstructure:"http_request_timeout"`
+	HttpRequestReadTimeout     time.Duration `json:"http_request_read_timeout" mapstructure:"http_request_read_timeout"`
+	HttpRequestWriteTimeout    time.Duration `json:"http_request_write_timeout" mapstructure:"http_request_write_timeout"`
+	MaxHttpRequestRetry        int           `json:"max_http_request_retry" mapstructure:"max_http_request_retry"`
+	BlockHeightDiscoverBackoff time.Duration `json:"block_height_discover_back_off" mapstructure:"block_height_discover_back_off"`
+	BlockRetryInterval         time.Duration `json:"block_retry_interval" mapstructure:"block_retry_interval"`
+	EnforceBlockHeight         bool          `json:"enforce_block_height" mapstructure:"enforce_block_height"`
 }
 
 type MetricConfiguration struct {
@@ -74,6 +89,14 @@ func applyDefaultConfig() {
 	viper.SetDefault("back_off.multiplier", 1.5)
 	viper.SetDefault("back_off.max_interval", 3*time.Minute)
 	viper.SetDefault("back_off.max_elapsed_time", 168*time.Hour) // 7 days. Due to node sync time's being so random
+	viper.SetDefault("tx_signer.block_scanner.start_block_height", "0")
+	viper.SetDefault("tx_signer.block_scanner.block_scan_processors", "2")
+	viper.SetDefault("tx_signer.block_scanner.http_request_timeout", "30s")
+	viper.SetDefault("tx_signer.block_scanner.http_request_read_timeout", "30s")
+	viper.SetDefault("tx_signer.block_scanner.http_request_write_timeout", "30s")
+	viper.SetDefault("tx_signer.block_scanner.max_http_request_retry", "10")
+	viper.SetDefault("tx_signer.block_scanner.block_height_discover_back_off", "1s")
+	viper.SetDefault("tx_signer.block_scanner.block_retry_interval", "1s")
 }
 
 func LoadBiFrostConfig(file string) (*Configuration, error) {
@@ -99,21 +122,6 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 	}
 
 	return &cfg, nil
-}
-
-// TODO Review
-// SignerConfiguration all the configures need by signer
-type SignerConfiguration struct {
-	SignerDbPath     string `json:"signer_db_path" mapstructure:"signer_db_path"`
-	MessageProcessor int    `json:"message_processor" mapstructure:"message_processor"`
-	// BlockScanner     BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
-	// Binance       BNBConfiguration       `json:"binance" mapstructure:"binance"`
-	StateChain    ThorChainConfiguration `json:"state_chain" mapstructure:"state_chain"`
-	RetryInterval time.Duration          `json:"retry_interval" mapstructure:"retry_interval"`
-	Metric        MetricConfiguration    `json:"metric" mapstructure:"metric"`
-	KeySign       TSSConfiguration       `json:"key_sign" mapstructure:"key_sign"`
-	UseTSS        bool                   `json:"use_tss" mapstructure:"use_tss"`
-	KeyGen        TSSConfiguration       `json:"key_gen" mapstructure:"key_gen"`
 }
 
 // TSSConfiguration

@@ -1,4 +1,4 @@
-package thorclient
+package thorchain
 
 import (
 	"fmt"

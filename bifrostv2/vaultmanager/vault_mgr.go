@@ -8,7 +8,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
-	"gitlab.com/thorchain/thornode/bifrostv2/thorclient"
 	"gitlab.com/thorchain/thornode/bifrostv2/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -21,31 +20,31 @@ type VaultManager struct {
 	yggdrasilMutex *sync.RWMutex
 	yggdrasil      chainAddressPubKeyVaultMap
 
-	logger         zerolog.Logger
-	m              *metrics.Metrics
-	thorClient     *thorclient.Client
-	rawVaultsMutex *sync.RWMutex
-	rawVaults      types.Vaults
-	wg             *sync.WaitGroup
-	stopChan       chan struct{}
+	logger          zerolog.Logger
+	m               *metrics.Metrics
+	thorchainClient *thorchain.Client
+	rawVaultsMutex  *sync.RWMutex
+	rawVaults       types.Vaults
+	wg              *sync.WaitGroup
+	stopChan        chan struct{}
 }
 
 // chainAddressPubKeyVaultMap is the data structure for holding all processed pubkey to chain and address mapping
 // chainAddressPubKeyVaultMap["BNB"]["tbnb1k5gnkdv0p3384ylylm39nke5tzc5l553xwxrf3"]["thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck"]
 type chainAddressPubKeyVaultMap map[common.Chain]map[common.Address]common.PubKey
 
-func NewVaultManager(thorClient *thorclient.Client, m *metrics.Metrics) (*VaultManager, error) {
+func NewVaultManager(thorchainClient *thorchain.Client, m *metrics.Metrics) (*VaultManager, error) {
 	return &VaultManager{
-		logger:         log.With().Str("module", "VaultManager").Logger(),
-		m:              m,
-		thorClient:     thorClient,
-		rawVaultsMutex: &sync.RWMutex{},
-		asgardMutex:    &sync.RWMutex{},
-		yggdrasilMutex: &sync.RWMutex{},
-		wg:             &sync.WaitGroup{},
-		stopChan:       make(chan struct{}),
-		asgard:         make(chainAddressPubKeyVaultMap),
-		yggdrasil:      make(chainAddressPubKeyVaultMap),
+		logger:          log.With().Str("module", "VaultManager").Logger(),
+		m:               m,
+		thorchainClient: thorchainClient,
+		rawVaultsMutex:  &sync.RWMutex{},
+		asgardMutex:     &sync.RWMutex{},
+		yggdrasilMutex:  &sync.RWMutex{},
+		wg:              &sync.WaitGroup{},
+		stopChan:        make(chan struct{}),
+		asgard:          make(chainAddressPubKeyVaultMap),
+		yggdrasil:       make(chainAddressPubKeyVaultMap),
 	}, nil
 }
 
@@ -87,7 +86,7 @@ func (vaultMgr *VaultManager) updateVaults() {
 }
 
 func (vaultMgr *VaultManager) fetchRawVaultsData() error {
-	rawVaults, err := vaultMgr.thorClient.GetVaults()
+	rawVaults, err := vaultMgr.thorchainClient.GetVaults()
 	if err != nil {
 		return err
 	}

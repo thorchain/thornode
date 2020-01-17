@@ -1,4 +1,4 @@
-package thorclient
+package thorchain
 
 import (
 	"io/ioutil"
@@ -14,7 +14,7 @@ import (
 type VaultsSuite struct {
 	server  *httptest.Server
 	client  *Client
-	cfg     config.ThorChainConfiguration
+	cfg     config.ClientConfiguration
 	cleanup func()
 }
 

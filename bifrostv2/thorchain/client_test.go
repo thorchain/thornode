@@ -1,4 +1,4 @@
-package thorclient
+package thorchain
 
 import (
 	"io/ioutil"
@@ -16,17 +16,17 @@ import (
 
 func TestPackage(t *testing.T) { TestingT(t) }
 
-type ThorClientSuite struct {
+type ThorchainClientSuite struct {
 	server             *httptest.Server
-	cfg                config.ThorChainConfiguration
+	cfg                config.ClientConfiguration
 	cleanup            func()
 	client             *Client
 	authAccountFixture string
 }
 
-var _ = Suite(&ThorClientSuite{})
+var _ = Suite(&ThorchainClientSuite{})
 
-func (s *ThorClientSuite) SetUpSuite(c *C) {
+func (s *ThorchainClientSuite) SetUpSuite(c *C) {
 	s.cfg, _, s.cleanup = helpers.SetupStateChainForTest(c)
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		switch {
@@ -44,17 +44,17 @@ func (s *ThorClientSuite) SetUpSuite(c *C) {
 
 	var err error
 	s.client, err = NewClient(s.cfg, helpers.GetMetricForTest(c))
-	s.client.client.RetryMax = 1
+	s.client.httpClient.RetryMax = 1
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 }
 
-func (s *ThorClientSuite) TearDownSuite(c *C) {
+func (s *ThorchainClientSuite) TearDownSuite(c *C) {
 	s.server.Close()
 	s.cleanup()
 }
 
-func (s *ThorClientSuite) TestGetThorChainURL(c *C) {
+func (s *ThorchainClientSuite) TestGetThorChainURL(c *C) {
 	uri := s.client.getThorChainURL("")
 	c.Assert(uri, Equals, "http://"+s.server.Listener.Addr().String())
 }
@@ -79,40 +79,40 @@ func httpTestHandler(c *C, rw http.ResponseWriter, fixture string) {
 	}
 }
 
-func (s *ThorClientSuite) TestGet(c *C) {
+func (s *ThorchainClientSuite) TestGet(c *C) {
 	buf, err := s.client.get("")
 	c.Assert(err, IsNil)
 	c.Assert(buf, NotNil)
 }
 
-func (s *ThorClientSuite) TestNewClient(c *C) {
-	var testFunc = func(cfg config.ThorChainConfiguration, errChecker Checker, sbChecker Checker) {
+func (s *ThorchainClientSuite) TestNewClient(c *C) {
+	var testFunc = func(cfg config.ClientConfiguration, errChecker Checker, sbChecker Checker) {
 		sb, err := NewClient(cfg, helpers.GetMetricForTest(c))
 		c.Assert(err, errChecker)
 		c.Assert(sb, sbChecker)
 	}
-	testFunc(config.ThorChainConfiguration{
+	testFunc(config.ClientConfiguration{
 		ChainID:         "",
 		ChainHost:       "localhost",
 		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
-	testFunc(config.ThorChainConfiguration{
+	testFunc(config.ClientConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "",
 		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
-	testFunc(config.ThorChainConfiguration{
+	testFunc(config.ClientConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "localhost",
 		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
-	testFunc(config.ThorChainConfiguration{
+	testFunc(config.ClientConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "localhost",
 		ChainHomeFolder: "~/.thorcli",
@@ -121,7 +121,7 @@ func (s *ThorClientSuite) TestNewClient(c *C) {
 	}, NotNil, IsNil)
 }
 
-func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Success(c *C) {
+func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Success(c *C) {
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, IsNil)
@@ -129,7 +129,7 @@ func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Success(c *C) {
 	c.Assert(sequence, Equals, uint64(5))
 }
 
-func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail(c *C) {
+func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail(c *C) {
 	s.authAccountFixture = ""
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
@@ -137,7 +137,7 @@ func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail(c *C) {
 	c.Assert(sequence, Equals, uint64(0))
 }
 
-func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_500(c *C) {
+func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_500(c *C) {
 	s.authAccountFixture = "500"
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
@@ -145,7 +145,7 @@ func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_500(c *C) {
 	c.Assert(sequence, Equals, uint64(0))
 }
 
-func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_Unmarshal(c *C) {
+func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_Unmarshal(c *C) {
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/malformed.json"
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
@@ -154,7 +154,7 @@ func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_Unmarshal(c
 	c.Assert(sequence, Equals, uint64(0))
 }
 
-func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_AccNumberString(c *C) {
+func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_AccNumberString(c *C) {
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/accnumber_string.json"
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
@@ -163,7 +163,7 @@ func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_AccNumberSt
 	c.Assert(sequence, Equals, uint64(0))
 }
 
-func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_SequenceString(c *C) {
+func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_SequenceString(c *C) {
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/seqnumber_string.json"
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
@@ -172,11 +172,11 @@ func (s *ThorClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_SequenceStr
 	c.Assert(sequence, Equals, uint64(0))
 }
 
-func (s *ThorClientSuite) TestStart(c *C) {
+func (s *ThorchainClientSuite) TestStart(c *C) {
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
 	err := s.client.Start()
-	c.Assert(err, NotNil)
-	time.Sleep(time.Minute)
+	c.Assert(err, IsNil)
+	time.Sleep(time.Second)
 	err = s.client.Stop()
-	c.Assert(err, NotNil)
+	c.Assert(err, IsNil)
 }

@@ -1,4 +1,4 @@
-package thorclient
+package thorchain
 
 import (
 	"io/ioutil"
@@ -11,12 +11,13 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/helpers"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type KeygenSuite struct {
 	server  *httptest.Server
 	client  *Client
-	cfg     config.ThorChainConfiguration
+	cfg     config.ClientConfiguration
 	cleanup func()
 	fixture string
 }
@@ -42,7 +43,7 @@ func (s *KeygenSuite) SetUpSuite(c *C) {
 	var err error
 	s.client, err = NewClient(s.cfg, helpers.GetMetricForTest(c))
 	// fail fast
-	s.client.client.RetryMax = 1
+	s.client.httpClient.RetryMax = 1
 	c.Assert(err, IsNil)
 	c.Assert(s.client, NotNil)
 }
@@ -66,9 +67,7 @@ func keygenHandle(c *C, rw http.ResponseWriter) {
 
 func (s *KeygenSuite) TestGetKeygen(c *C) {
 	s.fixture = "../../test/fixtures/endpoints/keygen/template.json"
-	err := s.client.getPubKeys()
-	c.Assert(err, IsNil)
-	pk := s.client.pkm.GetPks()[0]
+	pk := types.GetRandomPubKey()
 	expectedKey, err := common.NewPubKey("thorpub1addwnpepq2kdyjkm6y9aa3kxl8wfaverka6pvkek2ygrmhx6sj3ec6h0fegwsgeslue")
 	c.Assert(err, IsNil)
 	keygens, err := s.client.GetKeygens(1718, pk.String())

@@ -22,24 +22,24 @@ const (
 	TotalBlockScanned       MetricName = `total_block_scanned`
 	CurrentPosition         MetricName = `current_position`
 	TotalRetryBlocks        MetricName = `total_retry_blocks`
-	CommonBLockScannerError MetricName = `block_scanner_error`
+	CommonBlockScannerError MetricName = `block_scanner_error`
 
 	BinanceBlockScanError MetricName = `biance_block_scan_error`
 	BlockWithoutTx        MetricName = `block_no_tx`
 	BlockWithTxIn         MetricName = `block_tx_in`
 	BlockNoTxIn           MetricName = `block_no_tx_in`
 
-	ThorChainBlockScanError MetricName = `thorchain_block_scan_error`
-	BlockNoTxOut            MetricName = `block_no_txout`
+	ThorchainBlockScannerError MetricName = `thorchain_block_scan_error`
+	BlockNoTxOut               MetricName = `block_no_txout`
 
 	BlockDiscoveryDuration MetricName = `block_discovery_duration`
 	SearchTxDuration       MetricName = `search_tx_duration`
 
-	ThorChainClientError    MetricName = `thorchain_bridge_error`
-	TxToThorChain           MetricName = `tx_to_thorchain`
-	TxToThorChainSigned     MetricName = `tx_to_thorchain_signed`
-	SignToThorChainDuration MetricName = `sign_to_thorchain_duration`
-	SendToThorChainDuration MetricName = `send_to_thorchain_duration`
+	ThorchainClientError    MetricName = `thorchain_client_error`
+	TxToThorchain           MetricName = `tx_to_thorchain`
+	TxToThorchainSigned     MetricName = `tx_to_thorchain_signed`
+	SignToThorchainDuration MetricName = `sign_to_thorchain_duration`
+	SendToThorchainDuration MetricName = `send_to_thorchain_duration`
 
 	ObserverError                     MetricName = `observer_error`
 	SignerError                       MetricName = `signer_error`
@@ -102,15 +102,15 @@ var (
 			Name:      "block_no_tx_out",
 			Help:      "block doesn't have any tx out",
 		}),
-		TxToThorChain: prometheus.NewCounter(prometheus.CounterOpts{
+		TxToThorchain: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: "observer",
-			Subsystem: "thorchain_bridge",
+			Subsystem: "thorchain_client",
 			Name:      "tx_to_thorchain",
 			Help:      "number of tx observer post to thorchain successfully",
 		}),
-		TxToThorChainSigned: prometheus.NewCounter(prometheus.CounterOpts{
+		TxToThorchainSigned: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: "observer",
-			Subsystem: "thorchain_bridge",
+			Subsystem: "thorchain_client",
 			Name:      "tx_to_thorchain_signed",
 			Help:      "number of tx observer signed successfully",
 		}),
@@ -128,7 +128,7 @@ var (
 		}),
 	}
 	counterVecs = map[MetricName]*prometheus.CounterVec{
-		CommonBLockScannerError: prometheus.NewCounterVec(prometheus.CounterOpts{
+		CommonBlockScannerError: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "block_scanner",
 			Subsystem: "common_block_scanner",
 			Name:      "errors",
@@ -145,7 +145,7 @@ var (
 			"error_name", "additional",
 		}),
 
-		ThorChainBlockScanError: prometheus.NewCounterVec(prometheus.CounterOpts{
+		ThorchainBlockScannerError: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "block_scanner",
 			Subsystem: "thorchain_block_scanner",
 			Name:      "errors",
@@ -154,11 +154,11 @@ var (
 			"error_name", "additional",
 		}),
 
-		ThorChainClientError: prometheus.NewCounterVec(prometheus.CounterOpts{
+		ThorchainClientError: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "thorchain",
-			Subsystem: "thorchain_bridge",
+			Subsystem: "thorchain_client",
 			Name:      "errors",
-			Help:      "errors in thorchain bridge",
+			Help:      "errors in thorchain client",
 		}, []string{
 			"error_name", "additional",
 		}),
@@ -208,13 +208,13 @@ var (
 			Name:      "sign_and_broadcast_to_binance",
 			Help:      "how long it takes to sign and broadcast to binance",
 		}),
-		SignToThorChainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
+		SignToThorchainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "observer",
 			Subsystem: "thorchain",
 			Name:      "sign_to_thorchain_duration",
 			Help:      "how long it takes to sign a tx to thorchain",
 		}),
-		SendToThorChainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
+		SendToThorchainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "observer",
 			Subsystem: "thorchain",
 			Name:      "send_to_thorchain_duration",
