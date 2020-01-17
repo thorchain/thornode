@@ -6,7 +6,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"time"
 
 	. "gopkg.in/check.v1"
 
@@ -170,13 +169,4 @@ func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_Sequen
 	c.Assert(true, Equals, strings.HasPrefix(err.Error(), "failed to unmarshal base account"))
 	c.Assert(accNumber, Equals, uint64(0))
 	c.Assert(sequence, Equals, uint64(0))
-}
-
-func (s *ThorchainClientSuite) TestStart(c *C) {
-	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
-	err := s.client.Start()
-	c.Assert(err, IsNil)
-	time.Sleep(time.Second)
-	err = s.client.Stop()
-	c.Assert(err, IsNil)
 }
