@@ -17,3 +17,5 @@ services:
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://localhost:26657"]
   tss:
     network_mode: "host"
+    environment:
+      TSSPORT: 127.0.0.1:4040
