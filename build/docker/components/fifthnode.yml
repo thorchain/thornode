@@ -86,9 +86,9 @@ services:
       SEED: 172.32.10.2
       SEEDP2PPORT: 5040
       SEEDINFOPORT: 6040
-      TSSPORT: 4044
+      TSSPORT: :4044
       P2PPORT: 5044
-      INFOPORT: 6044
+      INFOPORT: :6044
       PRIVKEY: /root/.tss/private.key
     expose:
       - "5044"
