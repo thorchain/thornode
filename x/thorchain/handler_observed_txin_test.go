@@ -46,8 +46,8 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 		standbyAccount: standbyAccount,
 	}
 
-	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxInHandler(keeper, w.versionedTxOutStore, w.validatorMgr, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
+	handler := NewObservedTxInHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -219,8 +219,8 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	versionedTxOutStore := NewVersionedTxOutStoreDummy()
 	txOutStore, err := versionedTxOutStore.GetTxOutStore(keeper, ver)
 	c.Assert(err, IsNil)
-	vaultMgr := NewVaultMgrDummy()
-	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
+	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)

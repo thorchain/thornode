@@ -18,9 +18,9 @@ func (vts *ValidatorManagerTestSuite) SetUpSuite(c *C) {
 func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1)
-	vaultMgr := NewVaultMgrDummy()
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
 	c.Assert(vMgr, NotNil)
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
@@ -42,7 +42,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 
 	// one active node and one ready node on start up
 	// it should take both of the node as active
-	vMgr1 := newValidatorMgrV1(k, versionedTxOutStoreDummy, vaultMgr)
+	vMgr1 := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
 
 	c.Assert(vMgr1.BeginBlock(ctx, constAccessor), IsNil)
 	activeNodes, err := k.ListActiveNodeAccounts(ctx)
@@ -56,7 +56,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	c.Assert(k.SetNodeAccount(ctx, activeNode2), IsNil)
 
 	// three active nodes and 1 ready nodes, it should take them all
-	vMgr2 := newValidatorMgrV1(k, versionedTxOutStoreDummy, vaultMgr)
+	vMgr2 := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
 	vMgr2.BeginBlock(ctx, constAccessor)
 
 	activeNodes1, err := k.ListActiveNodeAccounts(ctx)
@@ -66,9 +66,9 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 
 func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 	ctx, k := setupKeeperForTest(c)
-	vaultMgr := NewVaultMgrDummy()
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
 	c.Assert(vMgr, NotNil)
 
 	constAccessor := constants.NewDummyConstants(map[constants.ConstantName]int64{
@@ -95,7 +95,7 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 		c.Assert(vMgr.BeginBlock(ctx, constAccessor), IsNil)
 		// assume keygen success
 		vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey())
-		for _, item := range vaultMgr.nas {
+		for _, item := range versionedVaultMgrDummy.vaultMgrDummy.nas {
 			vault.Membership = append(vault.Membership, item.PubKeySet.Secp256k1)
 		}
 		c.Assert(k.SetVault(ctx, vault), IsNil)
@@ -109,7 +109,7 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 	ctx = ctx.WithBlockHeight(startBlockHeight)
 	c.Assert(vMgr.BeginBlock(ctx, constAccessor), IsNil)
 	vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, GetRandomPubKey())
-	for _, item := range vaultMgr.nas {
+	for _, item := range versionedVaultMgrDummy.vaultMgrDummy.nas {
 		vault.Membership = append(vault.Membership, item.PubKeySet.Secp256k1)
 	}
 	c.Assert(k.SetVault(ctx, vault), IsNil)

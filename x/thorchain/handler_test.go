@@ -116,13 +116,13 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	}
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
-	vaultMgr := NewVaultMgrDummy()
 	versionedTxOutStore := NewVersionedTxOutStore()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 	txOutStore, err := versionedTxOutStore.GetTxOutStore(k, ver)
 	c.Assert(err, IsNil)
 
 	txOutStore.NewBlock(uint64(height), constAccessor)
-	validatorMgr := NewVersionedValidatorMgr(k, versionedTxOutStore, vaultMgr)
+	validatorMgr := NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgrDummy)
 	c.Assert(validatorMgr.BeginBlock(ctx, ver, constAccessor), IsNil)
 
 	return handlerTestWrapper{
@@ -180,8 +180,8 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 		w.activeNodeAccount.NodeAddress,
 	)
 
-	vaultMgr := NewVaultMgrDummy()
-	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
+	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -227,8 +227,8 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 		w.activeNodeAccount.NodeAddress,
 	)
 
-	vaultMgr := NewVaultMgrDummy()
-	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
+	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 

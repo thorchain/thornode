@@ -10,18 +10,18 @@ import (
 )
 
 type ObservedTxInHandler struct {
-	keeper              Keeper
-	versionedTxOutStore VersionedTxOutStore
-	validatorMgr        VersionedValidatorManager
-	vaultMgr            VaultManager
+	keeper                Keeper
+	versionedTxOutStore   VersionedTxOutStore
+	validatorMgr          VersionedValidatorManager
+	versionedVaultManager VersionedVaultManager
 }
 
-func NewObservedTxInHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, vaultMgr VaultManager) ObservedTxInHandler {
+func NewObservedTxInHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, versionedVaultManager VersionedVaultManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
-		keeper:              keeper,
-		versionedTxOutStore: versionedTxOutStore,
-		validatorMgr:        validatorMgr,
-		vaultMgr:            vaultMgr,
+		keeper:                keeper,
+		versionedTxOutStore:   versionedTxOutStore,
+		validatorMgr:          validatorMgr,
+		versionedVaultManager: versionedVaultManager,
 	}
 }
 
@@ -134,7 +134,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return errBadVersion.Result()
 	}
-	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.vaultMgr)
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager)
 
 	for _, tx := range msg.Txs {
 
