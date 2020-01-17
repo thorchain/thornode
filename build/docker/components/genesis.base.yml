@@ -45,7 +45,7 @@ services:
       NODES: 4
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.2:4040
-      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
+      TSSKEYGENLIST: 172.32.10.2:6040,172.32.10.3:6041,172.32.10.4:6042,172.32.10.5:6043
       TSSPRIVKEY: /root/.tss/private.key
     ports:
       - "26657:26657"
@@ -103,9 +103,9 @@ services:
     restart: unless-stopped
     environment:
       NET: ${NET}
-      TSSPORT: 4040
+      TSSPORT: :4040
       P2PPORT: 5040
-      INFOPORT: 6040
+      INFOPORT: :6040
       PRIVKEY: /root/.tss/private.key
     expose:
       - "5040"
@@ -165,7 +165,7 @@ services:
       NODES: 4
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.3:4041
-      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
+      TSSKEYGENLIST: 172.32.10.2:6040,172.32.10.3:6041,172.32.10.4:6042,172.32.10.5:6043
       TSSPRIVKEY: /root/.tss/private.key
     depends_on:
       - tss2
@@ -216,9 +216,9 @@ services:
       SEED: 172.32.10.2
       SEEDP2PPORT: 5040
       SEEDINFOPORT: 6040
-      TSSPORT: 4041
+      TSSPORT: :4041
       P2PPORT: 5041
-      INFOPORT: 6041
+      INFOPORT: :6041
       PRIVKEY: /root/.tss/private.key
     expose:
       - "5041"
@@ -278,7 +278,7 @@ services:
       NODES: 4
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.4:4042
-      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
+      TSSKEYGENLIST: 172.32.10.2:6040,172.32.10.3:6041,172.32.10.4:6042,172.32.10.5:6043
       TSSPRIVKEY: /root/.tss/private.key
     depends_on:
       - tss3
@@ -329,9 +329,9 @@ services:
       SEED: 172.32.10.2
       SEEDP2PPORT: 5040
       SEEDINFOPORT: 6040
-      TSSPORT: 4042
+      TSSPORT: :4042
       P2PPORT: 5042
-      INFOPORT: 6042
+      INFOPORT: :6042
       PRIVKEY: /root/.tss/private.key
     expose:
       - "5042"
@@ -392,7 +392,7 @@ services:
       NODES: 4
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.5:4043
-      TSSKEYGENLIST: 172.32.10.2:4040,172.32.10.3:4041,172.32.10.4:4042,172.32.10.5:4043
+      TSSKEYGENLIST: 172.32.10.2:6040,172.32.10.3:6041,172.32.10.4:6042,172.32.10.5:6043
       TSSPRIVKEY: /root/.tss/private.key
     entrypoint:
       /docker/scripts/genesis.sh
@@ -443,9 +443,9 @@ services:
       SEED: 172.32.10.2
       SEEDP2PPORT: 5040
       SEEDINFOPORT: 6040
-      TSSPORT: 4043
+      TSSPORT: :4043
       P2PPORT: 5043
-      INFOPORT: 6043
+      INFOPORT: :6043
       PRIVKEY: /root/.tss/private.key
     expose:
       - "5043"
