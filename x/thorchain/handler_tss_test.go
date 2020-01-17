@@ -27,9 +27,9 @@ func (s *HandlerTssSuite) TestValidate(c *C) {
 	keeper := &TestTssValidKeepr{
 		na: GetRandomNodeAccount(NodeActive),
 	}
-	vaultMgr := NewVaultMgrDummy()
-
-	handler := NewTssHandler(keeper, vaultMgr)
+	versionedTxOutStore := NewVersionedTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
+	handler := NewTssHandler(keeper, versionedVaultMgrDummy)
 	// happy path
 	ver := semver.MustParse("0.1.0")
 	pk := GetRandomPubKey()
@@ -89,9 +89,9 @@ func (s *HandlerTssSuite) TestHandle(c *C) {
 		chains: common.Chains{common.BNBChain},
 		tss:    TssVoter{},
 	}
-	vaultMgr := NewVaultMgrDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(NewVersionedTxOutStoreDummy())
 
-	handler := NewTssHandler(keeper, vaultMgr)
+	handler := NewTssHandler(keeper, versionedVaultMgrDummy)
 	// happy path
 	pk := GetRandomPubKey()
 	pks := common.PubKeys{
@@ -102,7 +102,7 @@ func (s *HandlerTssSuite) TestHandle(c *C) {
 	c.Assert(result.IsOK(), Equals, true)
 	c.Check(keeper.tss.Signers, HasLen, 1)
 	c.Check(keeper.tss.BlockHeight, Equals, int64(12))
-	c.Check(vaultMgr.vault.PubKey.Equals(pk), Equals, true, Commentf("%+v\n", vaultMgr.vault))
+	c.Check(versionedVaultMgrDummy.vaultMgrDummy.vault.PubKey.Equals(pk), Equals, true, Commentf("%+v\n", versionedVaultMgrDummy.vaultMgrDummy.vault))
 
 	// running again doesn't rotate the pool again
 	ctx = ctx.WithBlockHeight(14)

@@ -201,9 +201,9 @@ func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
 	c.Assert(keeper.SetPool(ctx, pool), IsNil)
 
 	constAccessor := constants.GetConstantValues(ver)
-	vaultMgr := NewVaultMgrDummy()
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, vaultMgr)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
 
 	handler := NewOutboundTxHandler(keeper)
 
@@ -264,7 +264,7 @@ func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
 		keeper.asgardVault.PubKey,
 	)
 
-	observedTxInHandler := NewObservedTxInHandler(keeper, versionedTxOutStoreDummy, validatorMgr, vaultMgr)
+	observedTxInHandler := NewObservedTxInHandler(keeper, versionedTxOutStoreDummy, validatorMgr, versionedVaultMgrDummy)
 	msgObservedTxIn := NewMsgObservedTxIn(ObservedTxs{txIn}, keeper.activeNodeAccount.NodeAddress)
 	result := observedTxInHandler.Run(ctx, msgObservedTxIn, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))

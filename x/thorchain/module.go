@@ -71,26 +71,26 @@ func (AppModuleBasic) GetTxCmd(cdc *codec.Codec) *cobra.Command {
 
 type AppModule struct {
 	AppModuleBasic
-	keeper       Keeper
-	coinKeeper   bank.Keeper
-	supplyKeeper supply.Keeper
-	txOutStore   VersionedTxOutStore
-	validatorMgr VersionedValidatorManager
-	vaultMgr     VaultManager
+	keeper                Keeper
+	coinKeeper            bank.Keeper
+	supplyKeeper          supply.Keeper
+	txOutStore            VersionedTxOutStore
+	validatorMgr          VersionedValidatorManager
+	versionedVaultManager VersionedVaultManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
-	txStore := NewVersionedTxOutStore()
-	vaultMgr := NewVaultMgr(k, txStore)
+	versionedTxOutStore := NewVersionedTxOutStore()
+	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
-		coinKeeper:     bankKeeper,
-		supplyKeeper:   supplyKeeper,
-		txOutStore:     txStore,
-		validatorMgr:   NewVersionedValidatorMgr(k, txStore, vaultMgr),
-		vaultMgr:       vaultMgr,
+		AppModuleBasic:        AppModuleBasic{},
+		keeper:                k,
+		coinKeeper:            bankKeeper,
+		supplyKeeper:          supplyKeeper,
+		txOutStore:            versionedTxOutStore,
+		validatorMgr:          NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr),
+		versionedVaultManager: versionedVaultMgr,
 	}
 }
 
@@ -105,7 +105,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.vaultMgr)
+	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager)
 }
 func (am AppModule) QuerierRoute() string {
 	return ModuleName
@@ -176,8 +176,13 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if err := am.keeper.UpdateVaultData(ctx, constantValues); nil != err {
 		ctx.Logger().Error("fail to save vault", "error", err)
 	}
+	vaultMgr, err := am.versionedVaultManager.GetVaultManager(ctx, am.keeper, version)
+	if nil != err {
+		ctx.Logger().Error("fail to get a valid vault manager", "error", err)
+		return nil
+	}
 
-	if err := am.vaultMgr.EndBlock(ctx, version, constantValues); err != nil {
+	if err := vaultMgr.EndBlock(ctx, version, constantValues); err != nil {
 		ctx.Logger().Error("fail to end block for vault manager", "error", err)
 	}
 
