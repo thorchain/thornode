@@ -64,6 +64,7 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
+      - ${HOME}/.thornode/genesis_1/.bond:/root/.bond
       - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
@@ -182,6 +183,7 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
+      - ${HOME}/.thornode/genesis_2/.bond:/root/.bond
       - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
@@ -299,6 +301,7 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
+      - ${HOME}/.thornode/genesis_3/.bond:/root/.bond
       - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
@@ -417,6 +420,7 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
+      - ${HOME}/.thornode/genesis_4/.bond:/root/.bond
       - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
