@@ -778,6 +778,11 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
+		// Check if they've requested to leave
+		if na.RequestedToLeave {
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
+		}
+
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 			return err
 		}
