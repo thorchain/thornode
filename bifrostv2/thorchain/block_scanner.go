@@ -13,7 +13,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
-	ttypes "gitlab.com/thorchain/thornode/bifrostv2/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/vaultmanager"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
@@ -30,12 +30,12 @@ type BlockScanner struct {
 	thorchain             *Client
 	metrics               *metrics.Metrics
 	errCounter            *prometheus.CounterVec
-	pkm                   *ttypes.PubKeyManager
+	vaultMgr              *vaultmanager.VaultManager
 	cdc                   *codec.Codec
 }
 
 // NewBlockScanner create a new instance of thorchain block scanner
-func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, thorchain *Client, m *metrics.Metrics, pkm *ttypes.PubKeyManager) (*BlockScanner, error) {
+func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, thorchain *Client, m *metrics.Metrics, vaultMgr *vaultmanager.VaultManager) (*BlockScanner, error) {
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
 	}
@@ -57,7 +57,8 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscan
 		commonBlockScannerner: commonBlockScannerner,
 		thorchain:             thorchain,
 		errCounter:            m.GetCounterVec(metrics.ThorchainBlockScannerError),
-		pkm:                   pkm,
+		metrics:               m,
+		vaultMgr:              vaultMgr,
 		cdc:                   codec.New(),
 	}, nil
 }
@@ -84,7 +85,7 @@ func (b *BlockScanner) Start() error {
 // processTxOutBlock retrieve txout from this block height and pass results to
 // txOutChan
 func (b *BlockScanner) processTxOutBlock(blockHeight int64) error {
-	for _, pk := range b.pkm.GetPks() {
+	for _, pk := range b.vaultMgr.GetPubKeys() {
 		if len(pk.String()) == 0 {
 			continue
 		}
@@ -100,7 +101,7 @@ func (b *BlockScanner) processTxOutBlock(blockHeight int64) error {
 // processKeygenBlock retrieve keygen from this block height and pass results to
 // keygensChan
 func (b *BlockScanner) processKeygenBlock(blockHeight int64) error {
-	for _, pk := range b.pkm.GetPks() {
+	for _, pk := range b.vaultMgr.GetPubKeys() {
 		if len(pk.String()) == 0 {
 			continue
 		}

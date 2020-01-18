@@ -5,7 +5,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	"gitlab.com/thorchain/thornode/bifrostv2/thorchain/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/types"
 )
 
 // GetVaults retrieve vault pubkeys from thorchain

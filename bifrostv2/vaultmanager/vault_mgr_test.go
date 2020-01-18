@@ -5,7 +5,7 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/thornode/bifrostv2/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/types"
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 )
@@ -71,4 +71,29 @@ func (s *VaultsMgrSuite) TestGet(c *C) {
 
 	pk = vaultMgr.get(common.BTCChain, "bc1l7af43v2vq32jwq85vdagukf0z0qqdzr7cn875", s.mapping)
 	c.Assert(pk.String(), Equals, "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk")
+}
+
+func (s *VaultsMgrSuite) TestGetAsgardPubKeys(c *C) {
+	pubkeys := vaultMgr.GetAsgardPubKeys()
+	c.Assert(len(pubkeys), Equals, 3)
+	c.Assert(pubkeys[0].String(), Equals, "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck")
+	c.Assert(pubkeys[1].String(), Equals, "thorpub1addwnpepq2flfr96skc5lkwdv0n5xjsnhmuju20x3zndgu42zd8dtkrud9m2v0zl2qu")
+	c.Assert(pubkeys[2].String(), Equals, "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk")
+}
+
+func (s *VaultsMgrSuite) TestGetYggdrasilPubKeys(c *C) {
+	pubkeys := vaultMgr.GetYggdrasilPubKeys()
+	c.Assert(len(pubkeys), Equals, 2)
+	c.Assert(pubkeys[0].String(), Equals, "thorpub1addwnpepq27s79a9xk8hjcpjuthmwnl2z4su43uynekcjuqcnmhpemfgfrh6sf9vffl")
+	c.Assert(pubkeys[1].String(), Equals, "thorpub1addwnpepqtsgdw5dj7pj497vr2397pnfctf0d3lf7f2ssu39hts45567syh5xwjukdk")
+}
+
+func (s *VaultsMgrSuite) TestGetPubKeys(c *C) {
+	pubkeys := vaultMgr.GetPubKeys()
+	c.Assert(len(pubkeys), Equals, 5)
+	c.Assert(pubkeys[0].String(), Equals, "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck")
+	c.Assert(pubkeys[1].String(), Equals, "thorpub1addwnpepq2flfr96skc5lkwdv0n5xjsnhmuju20x3zndgu42zd8dtkrud9m2v0zl2qu")
+	c.Assert(pubkeys[2].String(), Equals, "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk")
+	c.Assert(pubkeys[3].String(), Equals, "thorpub1addwnpepq27s79a9xk8hjcpjuthmwnl2z4su43uynekcjuqcnmhpemfgfrh6sf9vffl")
+	c.Assert(pubkeys[4].String(), Equals, "thorpub1addwnpepqtsgdw5dj7pj497vr2397pnfctf0d3lf7f2ssu39hts45567syh5xwjukdk")
 }
