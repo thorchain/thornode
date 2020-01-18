@@ -37,8 +37,8 @@ func (s *VaultsSuite) SetUpSuite(c *C) {
 }
 
 func (s *VaultsSuite) TearDownSuite(c *C) {
-	s.cleanup()
 	s.server.Close()
+	s.cleanup()
 }
 
 func vaultsHandle(c *C, rw http.ResponseWriter) {

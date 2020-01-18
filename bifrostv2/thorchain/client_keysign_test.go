@@ -41,11 +41,9 @@ func (s *KeysignSuite) SetUpSuite(c *C) {
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
 	var err error
 	s.client, err = NewClient(s.cfg, helpers.GetMetricForTest(c))
+	c.Assert(err, IsNil)
 	// fail fast
 	s.client.httpClient.RetryMax = 1
-	c.Assert(err, IsNil)
-	c.Assert(s.client, NotNil)
-	c.Assert(err, IsNil)
 }
 
 func (s *KeysignSuite) TearDownSuite(c *C) {

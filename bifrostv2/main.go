@@ -12,6 +12,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/txblockscanner"
 	"gitlab.com/thorchain/thornode/bifrostv2/txsigner"
 	"gitlab.com/thorchain/thornode/bifrostv2/vaultmanager"
+	"gitlab.com/thorchain/thornode/cmd"
 )
 
 type Bifrost struct {
@@ -62,6 +63,9 @@ func NewBifrost(cfg config.Configuration) (*Bifrost, error) {
 
 // Start starts the bifrost server and all its components
 func (b *Bifrost) Start() error {
+
+	initPrefix()
+
 	if err := b.metrics.Start(); err != nil {
 		b.logger.Error().Err(err).Msg("fail to start metric collector")
 		return errors.Wrap(err, "fail to start metric collector")
@@ -111,4 +115,10 @@ func (b *Bifrost) Stop() error {
 	}
 
 	return nil
+}
+
+func initPrefix() {
+	cosmosSDKConfg := sdk.GetConfig()
+	cosmosSDKConfg.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+	cosmosSDKConfg.Seal()
 }
