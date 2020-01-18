@@ -2,6 +2,7 @@ version: '3'
 
 services:
   tss:
+    container_name: tss
     hostname: tss
     image: registry.gitlab.com/thorchain/tss/go-tss
     restart: unless-stopped
