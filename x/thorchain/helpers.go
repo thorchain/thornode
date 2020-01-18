@@ -232,26 +232,26 @@ func enableNextPool(ctx sdk.Context, keeper Keeper) error {
 		if err := keeper.Cdc().UnmarshalBinaryBare(iterator.Value(), &pool); err != nil {
 			return err
 		}
-		if pool.Status == PoolBootstrap {
+
+		if pool.Status == PoolBootstrap && !pool.BalanceAsset.IsZero() && !pool.BalanceRune.IsZero() {
 			pools = append(pools, pool)
 		}
 	}
 
-	if len(pools) > 0 {
-		pool := pools[0]
-		for _, p := range pools {
-			if pool.BalanceRune.LT(p.BalanceRune) {
-				pool = p
-			}
-		}
-		// ensure THORNode don't enable a pool that doesn't have any rune or assets
-		if pool.BalanceAsset.IsZero() || pool.BalanceRune.IsZero() {
-			return nil
-		}
-		pool.Status = PoolEnabled
-		return keeper.SetPool(ctx, pool)
+	if len(pools) == 0 {
+		return nil
 	}
-	return nil
+
+	pool := pools[0]
+	for _, p := range pools {
+		// find the pool that has most RUNE, also exclude those pool that doesn't have asset
+		if pool.BalanceRune.LT(p.BalanceRune) {
+			pool = p
+		}
+	}
+
+	pool.Status = PoolEnabled
+	return keeper.SetPool(ctx, pool)
 }
 
 func wrapError(ctx sdk.Context, err error, wrap string) error {
