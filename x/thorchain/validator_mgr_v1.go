@@ -764,11 +764,17 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 	// check all ready and standby nodes are in "ready" state (upgrade/downgrade as needed)
 	for _, na := range append(standby, ready...) {
 		na.UpdateStatus(NodeReady, ctx.BlockHeight()) // everyone starts with the benefit of the doubt
-		// TODO: check node is up to date on thorchain, binance, etc
+		// TODO: check node is up to date on binance, etc
 		// must have made an observation that matched 2/3rds within the last 5 blocks
+		// We do not need to check thorchain is up to date because keygen will
+		// fail if they are not.
 
 		// Check version number is still supported
 		if na.Version.LT(minVersion) {
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
+		}
+
+		if na.RequestedToLeave {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
