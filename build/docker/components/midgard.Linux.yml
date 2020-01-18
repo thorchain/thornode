@@ -2,7 +2,7 @@ version: '3'
 
 services:
   midgard:
-    network_mode: "host"
+    #network_mode: "host"
     environment:
-      CHAIN_API: localhost:1317
-      CHAIN_RPC: localhost:26657
+      CHAIN_API: thor-api:1317
+      CHAIN_RPC: thor-daemon:2665

@@ -2,6 +2,7 @@ version: '3'
 
 services:
   bifrost5:
+    container_name: bifrost5
     hostname: bifrost5
     build:
       context: ../../..
@@ -30,6 +31,7 @@ services:
         ipv4_address: 172.32.30.36
 
   thor-daemon5:
+    container_name: thor-daemon5
     hostname: thor-daemon5
     build:
       context: ../../..
@@ -55,6 +57,7 @@ services:
         ipv4_address: 172.32.10.26
 
   thor-api5:
+    container_name: thor-api5
     hostname: thor-api5
     build:
       context: ../../..
@@ -78,6 +81,7 @@ services:
         ipv4_address: 172.32.40.36
 
   tss5:
+    container_name: tss5
     hostname: tss5
     image: registry.gitlab.com/thorchain/tss/go-tss
     restart: unless-stopped
