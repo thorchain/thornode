@@ -78,14 +78,14 @@ func (s *HelperSuite) TestEnableNextPool(c *C) {
 	pool.Status = PoolEnabled
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
 	pool.BalanceAsset = sdk.NewUint(100 * common.One)
-	k.SetPool(ctx, pool)
+	c.Assert(k.SetPool(ctx, pool), IsNil)
 
 	pool = NewPool()
 	pool.Asset = common.BTCAsset
 	pool.Status = PoolBootstrap
 	pool.BalanceRune = sdk.NewUint(50 * common.One)
 	pool.BalanceAsset = sdk.NewUint(50 * common.One)
-	k.SetPool(ctx, pool)
+	c.Assert(k.SetPool(ctx, pool), IsNil)
 
 	ethAsset, err := common.NewAsset("ETH.ETH")
 	c.Assert(err, IsNil)
@@ -94,7 +94,7 @@ func (s *HelperSuite) TestEnableNextPool(c *C) {
 	pool.Status = PoolBootstrap
 	pool.BalanceRune = sdk.NewUint(40 * common.One)
 	pool.BalanceAsset = sdk.NewUint(40 * common.One)
-	k.SetPool(ctx, pool)
+	c.Assert(k.SetPool(ctx, pool), IsNil)
 
 	xmrAsset, err := common.NewAsset("XMR.XMR")
 	c.Assert(err, IsNil)
@@ -103,20 +103,30 @@ func (s *HelperSuite) TestEnableNextPool(c *C) {
 	pool.Status = PoolBootstrap
 	pool.BalanceRune = sdk.NewUint(40 * common.One)
 	pool.BalanceAsset = sdk.NewUint(0 * common.One)
-	k.SetPool(ctx, pool)
+	c.Assert(k.SetPool(ctx, pool), IsNil)
 
+	//usdAsset
+	usdAsset, err := common.NewAsset("BNB.TUSDB")
+	c.Assert(err, IsNil)
+	pool = NewPool()
+	pool.Asset = usdAsset
+	pool.Status = PoolBootstrap
+	pool.BalanceRune = sdk.NewUint(140 * common.One)
+	pool.BalanceAsset = sdk.NewUint(0 * common.One)
+	c.Assert(k.SetPool(ctx, pool), IsNil)
 	// should enable BTC
-	enableNextPool(ctx, k)
+	c.Assert(enableNextPool(ctx, k), IsNil)
 	pool, err = k.GetPool(ctx, common.BTCAsset)
 	c.Check(pool.Status, Equals, PoolEnabled)
 
 	// should enable ETH
-	enableNextPool(ctx, k)
+	c.Assert(enableNextPool(ctx, k), IsNil)
 	pool, err = k.GetPool(ctx, ethAsset)
 	c.Check(pool.Status, Equals, PoolEnabled)
 
 	// should NOT enable XMR, since it has no assets
-	enableNextPool(ctx, k)
+	c.Assert(enableNextPool(ctx, k), IsNil)
 	pool, err = k.GetPool(ctx, xmrAsset)
+	c.Assert(pool.Empty(), Equals, false)
 	c.Check(pool.Status, Equals, PoolBootstrap)
 }
