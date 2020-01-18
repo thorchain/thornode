@@ -18,6 +18,77 @@ type ThorchainSuite struct{}
 
 var _ = Suite(&ThorchainSuite{})
 
+func (s *ThorchainSuite) TestStaking(c *C) {
+	var err error
+	ctx, keeper := setupKeeperForTest(c)
+	user1 := GetRandomBNBAddress()
+	user2 := GetRandomBNBAddress()
+	txID := GetRandomTxHash()
+	constAccessor := constants.GetConstantValues(semver.MustParse("0.1.0"))
+
+	// create bnb pool
+	pool := NewPool()
+	pool.Asset = common.BNBAsset
+	c.Assert(keeper.SetPool(ctx, pool), IsNil)
+
+	// stake for user1
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), user1, user1, txID, constAccessor)
+	c.Assert(err, IsNil)
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), user1, user1, txID, constAccessor)
+	c.Assert(err, IsNil)
+	staker1, err := keeper.GetStakerPool(ctx, user1)
+	c.Assert(err, IsNil)
+	c.Check(staker1.PoolUnits, HasLen, 1)
+
+	// stake for user2
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(75*common.One), sdk.NewUint(75*common.One), user2, user2, txID, constAccessor)
+	c.Assert(err, IsNil)
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(75*common.One), sdk.NewUint(75*common.One), user2, user2, txID, constAccessor)
+	c.Assert(err, IsNil)
+	staker2, err := keeper.GetStakerPool(ctx, user2)
+	c.Assert(err, IsNil)
+	c.Check(staker2.PoolUnits, HasLen, 1)
+
+	// unstake for user1
+	msg := NewMsgSetUnStake(GetRandomTx(), user1, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
+	_, _, _, err = unstake(ctx, keeper, msg)
+	c.Assert(err, IsNil)
+	staker1, err = keeper.GetStakerPool(ctx, user1)
+	c.Assert(err, IsNil)
+	c.Check(staker1.PoolUnits, HasLen, 0)
+
+	// unstake for user2
+	msg = NewMsgSetUnStake(GetRandomTx(), user2, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
+	_, _, _, err = unstake(ctx, keeper, msg)
+	c.Assert(err, IsNil)
+	staker2, err = keeper.GetStakerPool(ctx, user2)
+	c.Assert(err, IsNil)
+	c.Check(staker2.PoolUnits, HasLen, 0)
+
+	// check pool is now empty
+	pool, err = keeper.GetPool(ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
+	c.Check(pool.BalanceRune.IsZero(), Equals, true)
+	c.Check(pool.BalanceAsset.IsZero(), Equals, true)
+	c.Check(pool.PoolUnits.IsZero(), Equals, true)
+
+	// stake for user1, again
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), user1, user1, txID, constAccessor)
+	c.Assert(err, IsNil)
+	_, err = stake(ctx, keeper, common.BNBAsset, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), user1, user1, txID, constAccessor)
+	c.Assert(err, IsNil)
+	staker1, err = keeper.GetStakerPool(ctx, user1)
+	c.Assert(err, IsNil)
+	c.Check(staker1.PoolUnits, HasLen, 1)
+
+	// check pool is NOT empty
+	pool, err = keeper.GetPool(ctx, common.BNBAsset)
+	c.Assert(err, IsNil)
+	c.Check(pool.BalanceRune.Equal(sdk.NewUint(200*common.One)), Equals, true)
+	c.Check(pool.BalanceAsset.Equal(sdk.NewUint(200*common.One)), Equals, true)
+	c.Check(pool.PoolUnits.IsZero(), Equals, false)
+}
+
 func (s *ThorchainSuite) TestChurn(c *C) {
 	ctx, keeper := setupKeeperForTest(c)
 	ver := semver.MustParse("0.1.0")
