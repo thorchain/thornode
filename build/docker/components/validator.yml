@@ -57,6 +57,7 @@ services:
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/validator/.tss:/root/.tss
+      - ${HOME}/.thornode/validator/.bond:/root/.bond
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api:
