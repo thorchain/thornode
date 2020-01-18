@@ -8,8 +8,8 @@ services:
     restart: unless-stopped
     environment:
       NET: testnet
-      SEEDTSSPORT: 4040
       SEEDP2PPORT: 5040
+      SEEDINFOPORT: 6040
       TSSPORT: :4040
       P2PPORT: 5040
       INFOPORT: :6040
