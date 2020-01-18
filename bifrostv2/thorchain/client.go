@@ -31,14 +31,11 @@ import (
 
 // Endpoint urls
 const (
-	BaseEndpoint = "/thorchain"
-
-	VaultsEndpoint      = BaseEndpoint + "/vaults/pubkeys"
-	KeysignEndpoint     = BaseEndpoint + "/keysign"
-	KeygenEndpoint      = BaseEndpoint + "/keygen"
-	NodeAccountEndpoint = BaseEndpoint + "/nodeaccount"
-	LastBlockEndpoint   = BaseEndpoint + "/lastblock"
-
+	VaultsEndpoint      = "/thorchain/vaults/pubkeys"
+	KeysignEndpoint     = "/thorchain/keysign"
+	KeygenEndpoint      = "/thorchain/keygen"
+	NodeAccountEndpoint = "/thorchain/nodeaccount"
+	LastBlockEndpoint   = "/thorchain/lastblock"
 	AuthAccountEndpoint = "/auth/accounts"
 )
 
@@ -79,7 +76,7 @@ func NewClient(cfg config.ClientConfiguration, m *metrics.Metrics) (*Client, err
 	}
 
 	// create retryablehttp client using our own logger format with a sublogger
-	sublogger := logger.With().Str("component", "retryableHTTPClient").Logger()
+	sublogger := logger.With().Str("component", "retryable_http_client").Logger()
 	httpClientLogger := common.NewRetryableHTTPLogger(sublogger)
 	httpClient := retryablehttp.NewClient()
 	httpClient.Logger = httpClientLogger
@@ -134,6 +131,12 @@ func (c *Client) Start() error {
 	return nil
 }
 
+// Stop stops client, nothing to do here
+func (c *Client) Stop() error {
+	c.logger.Info().Msg("stopped thorchain client")
+	return nil
+}
+
 // GetPubKeys retrieves pub keys for this node (yggdrasil + asgard)
 func (c *Client) GetPubKeys() (*ttypes.PubKeyManager, error) {
 	// creates pub key manager
@@ -163,12 +166,6 @@ func (c *Client) GetPubKeys() (*ttypes.PubKeyManager, error) {
 	}
 	pkm.Add(na.PubKeySet.Secp256k1)
 	return pkm, nil
-}
-
-// Stop stops block scanner, close channels
-func (c *Client) Stop() error {
-	c.logger.Info().Msg("stopped thorchain client")
-	return nil
 }
 
 // getAccountNumberAndSequenceNumber returns account and Sequence number required to post into thorchain

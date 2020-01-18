@@ -43,7 +43,7 @@ func NewBifrost(cfg config.Configuration) (*Bifrost, error) {
 
 	txScanner := txblockscanner.NewTxBlockScanner(cfg.TxScanner, vaultMgr, thorchainClient)
 
-	txSigner, err := txsigner.NewTxSigner(cfg.TxSigner, thorchainClient)
+	txSigner, err := txsigner.NewTxSigner(cfg.TxSigner, vaultMgr, thorchainClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create txSigner")
 	}

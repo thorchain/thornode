@@ -8,9 +8,14 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
-	"gitlab.com/thorchain/thornode/bifrostv2/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/types"
 	"gitlab.com/thorchain/thornode/common"
 )
+
+// ThorchainClient interfae to thorchain client
+type ThorchainClient interface {
+	GetVaults() (types.Vaults, error)
+}
 
 // VaultManager is responsible for keeping up to date the mapping of pubKeys to chain addresses from thorchain
 type VaultManager struct {
@@ -22,7 +27,7 @@ type VaultManager struct {
 
 	logger          zerolog.Logger
 	m               *metrics.Metrics
-	thorchainClient *thorchain.Client
+	thorchainClient ThorchainClient
 	rawVaultsMutex  *sync.RWMutex
 	rawVaults       types.Vaults
 	wg              *sync.WaitGroup
@@ -33,7 +38,8 @@ type VaultManager struct {
 // chainAddressPubKeyVaultMap["BNB"]["tbnb1k5gnkdv0p3384ylylm39nke5tzc5l553xwxrf3"]["thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck"]
 type chainAddressPubKeyVaultMap map[common.Chain]map[common.Address]common.PubKey
 
-func NewVaultManager(thorchainClient *thorchain.Client, m *metrics.Metrics) (*VaultManager, error) {
+// NewVaultManager create a new vault manager with thorchain client
+func NewVaultManager(thorchainClient ThorchainClient, m *metrics.Metrics) (*VaultManager, error) {
 	return &VaultManager{
 		logger:          log.With().Str("module", "VaultManager").Logger(),
 		m:               m,
@@ -65,6 +71,24 @@ func (vaultMgr *VaultManager) Stop() error {
 	close(vaultMgr.stopChan)
 	vaultMgr.wg.Wait()
 	return nil
+}
+
+// GetPubKeys return all current pub keys in the vaults
+func (vaultMgr *VaultManager) GetPubKeys() []common.PubKey {
+	var pubkeys []common.PubKey
+	pubkeys = append(pubkeys, vaultMgr.rawVaults.Asgard...)
+	pubkeys = append(pubkeys, vaultMgr.rawVaults.Yggdrasil...)
+	return pubkeys
+}
+
+// GetYggdrasilPubKeys return yggdrail current pub keys in the vaults
+func (vaultMgr *VaultManager) GetYggdrasilPubKeys() []common.PubKey {
+	return vaultMgr.rawVaults.Yggdrasil
+}
+
+// GetAsgardPubKeys return asgard current pub keys in the vaults
+func (vaultMgr *VaultManager) GetAsgardPubKeys() []common.PubKey {
+	return vaultMgr.rawVaults.Asgard
 }
 
 // updateVaults will run as a worker and will update every minute the rawVaults and mappings
