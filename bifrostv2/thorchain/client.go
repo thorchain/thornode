@@ -19,7 +19,6 @@ import (
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/keys"
-	"gitlab.com/thorchain/thornode/cmd"
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 
@@ -101,17 +100,9 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
-// CosmosSDKConfig set's the default address prefixes from thorChain
-func CosmosSDKConfig() {
-	cosmosSDKConfig := sdk.GetConfig()
-	cosmosSDKConfig.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-	cosmosSDKConfig.Seal()
-}
-
 // Start ensure that the bifrost has been whitelisted and is ready to run
 func (c *Client) Start() error {
 	c.logger.Info().Msg("starting thorchain client")
-	CosmosSDKConfig()
 
 	if err := c.ensureNodeWhitelistedWithTimeout(); err != nil {
 		c.logger.Error().Err(err).Msg("node account is not whitelisted, can't start")

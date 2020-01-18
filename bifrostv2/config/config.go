@@ -73,11 +73,20 @@ type BlockScannerConfiguration struct {
 	EnforceBlockHeight         bool          `json:"enforce_block_height" mapstructure:"enforce_block_height"`
 }
 
+// MetricConfiguration hold config for prometheus metrics
 type MetricConfiguration struct {
 	Enabled      bool          `json:"enabled" mapstructure:"enabled"`
 	ListenPort   int           `json:"listen_port" mapstructure:"listen_port"`
 	ReadTimeout  time.Duration `json:"read_timeout" mapstructure:"read_timeout"`
 	WriteTimeout time.Duration `json:"write_timeout" mapstructure:"write_timeout"`
+}
+
+// TSSConfiguration hold TSS config
+type TSSConfiguration struct {
+	Scheme string `json:"scheme" mapstructure:"scheme"`
+	Host   string `json:"host" mapstructure:"host"`
+	Port   int    `json:"port" mapstructure:"port"`
+	NodeId string `json:"node_id" mapstructure:"node_id"`
 }
 
 func applyDefaultConfig() {
@@ -122,12 +131,4 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 	}
 
 	return &cfg, nil
-}
-
-// TSSConfiguration
-type TSSConfiguration struct {
-	Scheme string `json:"scheme" mapstructure:"scheme"`
-	Host   string `json:"host" mapstructure:"host"`
-	Port   int    `json:"port" mapstructure:"port"`
-	NodeId string `json:"node_id" mapstructure:"node_id"`
 }

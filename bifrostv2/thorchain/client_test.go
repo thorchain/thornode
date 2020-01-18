@@ -21,6 +21,7 @@ type ThorchainClientSuite struct {
 	cleanup            func()
 	client             *Client
 	authAccountFixture string
+	nodeAccountFixture string
 }
 
 var _ = Suite(&ThorchainClientSuite{})
@@ -32,7 +33,7 @@ func (s *ThorchainClientSuite) SetUpSuite(c *C) {
 		case strings.HasPrefix(req.RequestURI, AuthAccountEndpoint):
 			httpTestHandler(c, rw, s.authAccountFixture)
 		case strings.HasPrefix(req.RequestURI, NodeAccountEndpoint):
-			httpTestHandler(c, rw, "../../test/fixtures/endpoints/nodeaccount/template.json")
+			httpTestHandler(c, rw, s.nodeAccountFixture)
 		case strings.HasPrefix(req.RequestURI, LastBlockEndpoint):
 			httpTestHandler(c, rw, "../../test/fixtures/endpoints/lastblock/bnb.json")
 		case strings.HasPrefix(req.RequestURI, KeysignEndpoint):
@@ -121,6 +122,7 @@ func (s *ThorchainClientSuite) TestNewClient(c *C) {
 }
 
 func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Success(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, IsNil)
@@ -129,6 +131,7 @@ func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Success(c *
 }
 
 func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
 	s.authAccountFixture = ""
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
@@ -137,6 +140,7 @@ func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail(c *C) 
 }
 
 func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_500(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
 	s.authAccountFixture = "500"
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
@@ -145,6 +149,7 @@ func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_500(c 
 }
 
 func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_Unmarshal(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/malformed.json"
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
@@ -154,6 +159,7 @@ func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_Unmars
 }
 
 func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_AccNumberString(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/accnumber_string.json"
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
@@ -163,10 +169,29 @@ func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_AccNum
 }
 
 func (s *ThorchainClientSuite) TestGetAccountNumberAndSequenceNumber_Fail_SequenceString(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/seqnumber_string.json"
 	accNumber, sequence, err := s.client.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
 	c.Assert(true, Equals, strings.HasPrefix(err.Error(), "failed to unmarshal base account"))
 	c.Assert(accNumber, Equals, uint64(0))
 	c.Assert(sequence, Equals, uint64(0))
+}
+
+func (s *ThorchainClientSuite) TestStart(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
+	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
+	err := s.client.Start()
+	c.Assert(err, IsNil)
+	err = s.client.Stop()
+	c.Assert(err, IsNil)
+}
+
+func (s *ThorchainClientSuite) TestStartNodeDisabled(c *C) {
+	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/disabled.json"
+	err := s.client.Start()
+	c.Assert(err, IsNil)
+	err = s.client.Stop()
+	c.Assert(err, IsNil)
 }
