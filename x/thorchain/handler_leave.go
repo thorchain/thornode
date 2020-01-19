@@ -90,24 +90,23 @@ func (h LeaveHandler) handle(ctx sdk.Context, msg MsgLeave, version semver.Versi
 		if nil != err {
 			return sdk.ErrInternal(fmt.Errorf("fail to get vault pool: %w", err).Error())
 		}
-		if !vault.IsYggdrasil() {
-			return sdk.ErrInternal("the requested vault is NOT a yggdrasil vault")
-		}
-		if !vault.HasFunds() {
-			txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
-			if nil != err {
-				ctx.Logger().Error("fail to get txout store", "error", err)
-				return errBadVersion
-			}
-			// node is not active , they are free to leave , refund them
-			if err := refundBond(ctx, msg.Tx, nodeAcc, h.keeper, txOutStore); err != nil {
-				return sdk.ErrInternal(fmt.Errorf("fail to refund bond: %w", err).Error())
+		if vault.IsYggdrasil() {
+			if !vault.HasFunds() {
+				txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
+				if nil != err {
+					ctx.Logger().Error("fail to get txout store", "error", err)
+					return errBadVersion
+				}
+				// node is not active , they are free to leave , refund them
+				if err := refundBond(ctx, msg.Tx, nodeAcc, h.keeper, txOutStore); err != nil {
+					return sdk.ErrInternal(fmt.Errorf("fail to refund bond: %w", err).Error())
+				}
+
 			}
 
-		}
-
-		if err := h.validatorManager.RequestYggReturn(ctx, version, nodeAcc); nil != err {
-			return sdk.ErrInternal(fmt.Errorf("fail to request yggdrasil return fund: %w", err).Error())
+			if err := h.validatorManager.RequestYggReturn(ctx, version, nodeAcc); nil != err {
+				return sdk.ErrInternal(fmt.Errorf("fail to request yggdrasil return fund: %w", err).Error())
+			}
 		}
 
 	}
