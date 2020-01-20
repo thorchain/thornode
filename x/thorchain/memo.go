@@ -30,6 +30,7 @@ const (
 	txYggdrasilReturn
 	txReserve
 	txRefund
+	txMigrate
 )
 
 var stringToTxTypeMap = map[string]TxType{
@@ -58,6 +59,7 @@ var stringToTxTypeMap = map[string]TxType{
 	"yggdrasil-": txYggdrasilReturn,
 	"reserve":    txReserve,
 	"refund":     txRefund,
+	"migrate":    txMigrate,
 }
 
 var txToStringMap = map[TxType]string{
@@ -74,6 +76,7 @@ var txToStringMap = map[TxType]string{
 	txYggdrasilFund:   "yggdrasil+",
 	txYggdrasilReturn: "yggdrasil-",
 	txReserve:         "reserve",
+	txMigrate:         "migrate",
 }
 
 // converts a string into a txType
@@ -181,6 +184,10 @@ type YggdrasilReturnMemo struct {
 }
 
 type ReserveMemo struct {
+	MemoBase
+}
+
+type MigrateMemo struct {
 	MemoBase
 }
 
@@ -356,6 +363,10 @@ func ParseMemo(memo string) (Memo, error) {
 	case txReserve:
 		return ReserveMemo{
 			MemoBase: MemoBase{TxType: txYggdrasilReturn},
+		}, nil
+	case txMigrate:
+		return MigrateMemo{
+			MemoBase: MemoBase{TxType: txMigrate},
 		}, nil
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())
