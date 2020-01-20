@@ -823,7 +823,7 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 	})
 
 	for _, na := range active {
-		fmt.Printf("Active NA: %+v\n", na)
+		fmt.Printf("Active NA: %s\n", na.NodeAddress)
 	}
 
 	// remove a node node account, if one is marked to leave

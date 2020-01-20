@@ -220,6 +220,7 @@ func ParseMemo(memo string) (Memo, error) {
 	noAssetMemos := []TxType{
 		txGas, txOutbound, txBond, txLeave, txRefund,
 		txYggdrasilFund, txYggdrasilReturn, txReserve,
+		txMigrate,
 	}
 	hasAsset := true
 	for _, memoType := range noAssetMemos {
