@@ -36,7 +36,7 @@ func NewTxStoreDummy() *TxOutStoreDummy {
 }
 
 // NewBlock create a new block
-func (tos *TxOutStoreDummy) NewBlock(height uint64, constAccessor constants.ConstantValues) {
+func (tos *TxOutStoreDummy) NewBlock(height int64, constAccessor constants.ConstantValues) {
 	tos.blockOut = NewTxOut(height)
 }
 

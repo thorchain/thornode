@@ -16,6 +16,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
+	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type Client struct {
@@ -26,6 +27,7 @@ type Client struct {
 	fnLastScannedBlockHeight types.FnLastScannedBlockHeight
 	lastScannedBlockHeight   int64
 	backOffCtrl              backoff.ExponentialBackOff
+	chain                    common.Chain
 }
 
 func NewClient(cfg config.ChainConfigurations) (*Client, error) {
@@ -35,7 +37,13 @@ func NewClient(cfg config.ChainConfigurations) (*Client, error) {
 		return nil, err
 	}
 
+	chain, err := common.NewChain(cfg.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Client{
+		chain:  chain,
 		logger: log.Logger.With().Str("module", "ethClient").Logger(),
 		cfg:    cfg,
 		client: ethClient,
@@ -49,6 +57,11 @@ func NewClient(cfg config.ChainConfigurations) (*Client, error) {
 			Clock:               backoff.SystemClock,
 		},
 	}, nil
+}
+
+// EqualsChain compare cllient chain to arg chain
+func (c *Client) EqualsChain(chain common.Chain) bool {
+	return c.chain.Equals(chain)
 }
 
 func (c *Client) getBlock(blockNumber int64) (*etypes.Block, error) {
@@ -105,10 +118,12 @@ func (c *Client) processBlock(block *etypes.Block) types.Block {
 	return b
 }
 
-func (c *Client) BroadcastTx() error {
+// BroadcastTx broadcast tx on ethereum chain
+func (c *Client) BroadcastTx(tx *stypes.TxOutItem) error {
 	return nil
 }
 
-func (c *Client) SignTx() error {
-	return nil
+// SignTx signs tx
+func (c *Client) SignTx(tx *stypes.TxOutItem, blockHeight int64) (*stypes.TxOutItem, error) {
+	return tx, nil
 }

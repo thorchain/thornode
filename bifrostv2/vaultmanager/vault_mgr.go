@@ -177,6 +177,21 @@ func (vaultMgr *VaultManager) processVaults(vault []common.PubKey) chainAddressP
 	return mapper
 }
 
-func (vaultMgr *VaultManager) get(chain common.Chain, address common.Address, vault chainAddressPubKeyVaultMap) common.PubKey {
+func (vaultMgr *VaultManager) Get(chain common.Chain, address common.Address, vault chainAddressPubKeyVaultMap) common.PubKey {
 	return vault[chain][address]
+}
+
+// HasKey determinate whether the given key is in the vault manager
+func (vaultMgr *VaultManager) HasKey(pk common.PubKey) bool {
+	for _, item := range vaultMgr.rawVaults.Yggdrasil {
+		if item.Equals(pk) {
+			return true
+		}
+	}
+	for _, item := range vaultMgr.rawVaults.Asgard {
+		if item.Equals(pk) {
+			return true
+		}
+	}
+	return false
 }

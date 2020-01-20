@@ -24,7 +24,7 @@ func NewTxOutStorageV1(keeper Keeper) *TxOutStorageV1 {
 }
 
 // NewBlock create a new block
-func (tos *TxOutStorageV1) NewBlock(height uint64, constAccessor constants.ConstantValues) {
+func (tos *TxOutStorageV1) NewBlock(height int64, constAccessor constants.ConstantValues) {
 	tos.constAccessor = constAccessor
 	tos.blockOut = NewTxOut(height)
 }

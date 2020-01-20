@@ -60,16 +60,16 @@ func (s *VaultsMgrSuite) TestProcessRawYggdrasilVaults(c *C) {
 }
 
 func (s *VaultsMgrSuite) TestGet(c *C) {
-	pk := vaultMgr.get(common.BNBChain, "BAD", vaultMgr.asgard)
+	pk := vaultMgr.Get(common.BNBChain, "BAD", vaultMgr.asgard)
 	c.Assert(pk.String(), Equals, "")
 
-	pk = vaultMgr.get(common.BNBChain, "", vaultMgr.asgard)
+	pk = vaultMgr.Get(common.BNBChain, "", vaultMgr.asgard)
 	c.Assert(pk.String(), Equals, "")
 
-	pk = vaultMgr.get(common.BNBChain, "bnb1l8tt4f2xycdz4e5u6veqmj5qwhp4vsktdkl447", s.mapping)
+	pk = vaultMgr.Get(common.BNBChain, "bnb1l8tt4f2xycdz4e5u6veqmj5qwhp4vsktdkl447", s.mapping)
 	c.Assert(pk.String(), Equals, "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck")
 
-	pk = vaultMgr.get(common.BTCChain, "bc1l7af43v2vq32jwq85vdagukf0z0qqdzr7cn875", s.mapping)
+	pk = vaultMgr.Get(common.BTCChain, "bc1l7af43v2vq32jwq85vdagukf0z0qqdzr7cn875", s.mapping)
 	c.Assert(pk.String(), Equals, "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk")
 }
 
@@ -96,4 +96,11 @@ func (s *VaultsMgrSuite) TestGetPubKeys(c *C) {
 	c.Assert(pubkeys[2].String(), Equals, "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk")
 	c.Assert(pubkeys[3].String(), Equals, "thorpub1addwnpepq27s79a9xk8hjcpjuthmwnl2z4su43uynekcjuqcnmhpemfgfrh6sf9vffl")
 	c.Assert(pubkeys[4].String(), Equals, "thorpub1addwnpepqtsgdw5dj7pj497vr2397pnfctf0d3lf7f2ssu39hts45567syh5xwjukdk")
+}
+
+func (s *VaultsMgrSuite) TestHasKey(c *C) {
+	hasKey := vaultMgr.HasKey("thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck")
+	c.Assert(hasKey, Equals, true)
+	hasKey = vaultMgr.HasKey("hello")
+	c.Assert(hasKey, Equals, false)
 }

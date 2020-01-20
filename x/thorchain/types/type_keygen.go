@@ -3,11 +3,11 @@ package types
 import "gitlab.com/thorchain/thornode/common"
 
 type Keygens struct {
-	Height  uint64           `json:"height"`
+	Height  int64            `json:"height"`
 	Keygens []common.PubKeys `json:"keygens"`
 }
 
-func NewKeygens(height uint64) Keygens {
+func NewKeygens(height int64) Keygens {
 	return Keygens{
 		Height:  height,
 		Keygens: make([]common.PubKeys, 0),

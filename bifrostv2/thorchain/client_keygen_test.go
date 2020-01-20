@@ -73,6 +73,6 @@ func (s *KeygenSuite) TestGetKeygen(c *C) {
 	keygens, err := s.client.GetKeygens(1718, pk.String())
 	c.Assert(err, IsNil)
 	c.Assert(keygens, NotNil)
-	c.Assert(keygens.Height, Equals, uint64(1718))
+	c.Assert(keygens.Height, Equals, int64(1718))
 	c.Assert(keygens.Keygens[0][0], Equals, expectedKey)
 }

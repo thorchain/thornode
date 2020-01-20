@@ -57,6 +57,6 @@ func (s *KeysignSuite) TestGetKeysign(c *C) {
 	keysign, err := s.client.GetKeysign(1718, pk.String())
 	c.Assert(err, IsNil)
 	c.Assert(keysign, NotNil)
-	c.Assert(keysign.Height, Equals, uint64(1718))
+	c.Assert(keysign.Height, Equals, int64(1718))
 	c.Assert(keysign.TxArray[0].Chain, Equals, common.BNBChain)
 }

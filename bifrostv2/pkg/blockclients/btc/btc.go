@@ -14,6 +14,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/types"
 	"gitlab.com/thorchain/thornode/common"
+	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type Client struct {
@@ -23,6 +24,7 @@ type Client struct {
 	fnLastScannedBlockHeight types.FnLastScannedBlockHeight
 	lastScannedBlockHeight   int64
 	backOffCtrl              backoff.ExponentialBackOff
+	chain                    common.Chain
 }
 
 func NewClient(cfg config.ChainConfigurations) (*Client, error) {
@@ -37,8 +39,14 @@ func NewClient(cfg config.ChainConfigurations) (*Client, error) {
 		return &Client{}, err
 	}
 
+	chain, err := common.NewChain(cfg.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Client{
 		cfg:    cfg,
+		chain:  chain,
 		client: client,
 		logger: log.Logger.With().Str("module", "btcClient").Logger(),
 		backOffCtrl: backoff.ExponentialBackOff{
@@ -52,6 +60,12 @@ func NewClient(cfg config.ChainConfigurations) (*Client, error) {
 	}, nil
 }
 
+// EqualsChain compare cllient chain to arg chain
+func (c *Client) EqualsChain(chain common.Chain) bool {
+	return c.chain.Equals(chain)
+}
+
+// Start starts to scan blocks
 func (c *Client) Start(blockInChan chan<- types.Block, fnStartHeight types.FnLastScannedBlockHeight) error {
 	c.logger.Info().Msg("starting")
 	c.fnLastScannedBlockHeight = fnStartHeight
@@ -116,10 +130,12 @@ func (c *Client) processBlock(block *wire.MsgBlock) types.Block {
 	return b
 }
 
-func (c *Client) BroadcastTx() error {
+// BroadcastTx broadcast tx on bitcoin chain
+func (c *Client) BroadcastTx(tx *stypes.TxOutItem) error {
 	return nil
 }
 
-func (c *Client) SignTx() error {
-	return nil
+// SignTx signs tx
+func (c *Client) SignTx(tx *stypes.TxOutItem, blockHeight int64) (*stypes.TxOutItem, error) {
+	return tx, nil
 }

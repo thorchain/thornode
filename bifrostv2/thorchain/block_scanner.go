@@ -35,7 +35,7 @@ type BlockScanner struct {
 }
 
 // NewBlockScanner create a new instance of thorchain block scanner
-func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, thorchain *Client, m *metrics.Metrics, vaultMgr *vaultmanager.VaultManager) (*BlockScanner, error) {
+func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, thorchain *Client, vaultMgr *vaultmanager.VaultManager, m *metrics.Metrics) (*BlockScanner, error) {
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
 	}
