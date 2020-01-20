@@ -9,8 +9,8 @@ import (
 
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/thornode/bifrost/config"
-	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrostv2/config"
+	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
 )
 
 func Test(t *testing.T) { TestingT(t) }

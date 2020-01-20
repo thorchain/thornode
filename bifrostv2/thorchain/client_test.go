@@ -187,11 +187,16 @@ func (s *ThorchainClientSuite) TestStart(c *C) {
 	c.Assert(err, IsNil)
 }
 
-func (s *ThorchainClientSuite) TestStartNodeDisabled(c *C) {
+func (s *ThorchainClientSuite) TestEnsureNodeWhitelisted_Success(c *C) {
+	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
+	err := s.client.ensureNodeWhitelisted()
+	c.Assert(err, IsNil)
+}
+
+func (s *ThorchainClientSuite) TestEnsureNodeWhitelisted_Fail(c *C) {
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
 	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/disabled.json"
-	err := s.client.Start()
-	c.Assert(err, IsNil)
-	err = s.client.Stop()
-	c.Assert(err, IsNil)
+	err := s.client.ensureNodeWhitelisted()
+	c.Assert(err, NotNil)
 }

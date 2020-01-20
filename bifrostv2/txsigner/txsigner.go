@@ -7,29 +7,32 @@ import (
 	"github.com/rs/zerolog/log"
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/pkg/blockclients"
-	"gitlab.com/thorchain/thornode/bifrostv2/thorclient"
+	"gitlab.com/thorchain/thornode/bifrostv2/thorchain"
 	"gitlab.com/thorchain/thornode/bifrostv2/types"
+	"gitlab.com/thorchain/thornode/bifrostv2/vaultmanager"
 )
 
 // TxSigner represents a transaction signer
 type TxSigner struct {
-	cfg         config.TxSignerConfigurations
-	logger      zerolog.Logger
-	thorClient  *thorclient.Client
-	chains      []blockclients.BlockChainClient
-	blockInChan chan types.Block
-	wg          sync.WaitGroup
+	cfg             config.TxSignerConfigurations
+	logger          zerolog.Logger
+	thorchainClient *thorchain.Client
+	chains          []blockclients.BlockChainClient
+	blockInChan     chan types.Block
+	wg              sync.WaitGroup
+	vaultMgr        *vaultmanager.VaultManager
 }
 
 // NewTxSigner instantiates TxSigner
-func NewTxSigner(cfg config.TxSignerConfigurations, thorClient *thorclient.Client) (*TxSigner, error) {
+func NewTxSigner(cfg config.TxSignerConfigurations, vaultMgr *vaultmanager.VaultManager, thorchainClient *thorchain.Client) (*TxSigner, error) {
 	return &TxSigner{
-		logger:      log.Logger.With().Str("module", "txSigner").Logger(),
-		cfg:         cfg,
-		thorClient:  thorClient,
-		chains:      blockclients.LoadChains(cfg.BlockChains),
-		blockInChan: make(chan types.Block),
-		wg:          sync.WaitGroup{},
+		logger:          log.Logger.With().Str("module", "txSigner").Logger(),
+		cfg:             cfg,
+		thorchainClient: thorchainClient,
+		chains:          blockclients.LoadChains(cfg.BlockChains),
+		blockInChan:     make(chan types.Block),
+		wg:              sync.WaitGroup{},
+		vaultMgr:        vaultMgr,
 	}, nil
 }
 
