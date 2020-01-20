@@ -18,17 +18,23 @@ type Configuration struct {
 	TxScanner TxScannerConfigurations `json:"tx_scanner" mapstructure:"tx_scanner"`
 	TxSigner  TxSignerConfigurations  `json:"tx_signer" mapstructure:"tx_signer"`
 	BackOff   BackOff                 `json:"back_off" mapstructure:"back_off"`
+	TSS       TSSConfiguration        `json:"tss" mapstructure:"tss"`
 }
 
+// TxScannerConfigurations configuration
 type TxScannerConfigurations struct {
 	BlockChains []ChainConfigurations
 }
 
+// TxSignerConfigurations configuration
 type TxSignerConfigurations struct {
-	BlockChains  []ChainConfigurations
-	BlockScanner BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
+	SignerDbPath  string `json:"signer_db_path" mapstructure:"signer_db_path"`
+	BlockChains   []ChainConfigurations
+	BlockScanner  BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
+	RetryInterval time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
 }
 
+// BackOff configuration
 type BackOff struct {
 	InitialInterval     time.Duration `json:"initial_interval" mapstructure:"initial_interval"`
 	RandomizationFactor float64       `json:"randomization_factor" mapstructure:"randomization_factor"`
@@ -37,6 +43,7 @@ type BackOff struct {
 	MaxElapsedTime      time.Duration `json:"max_elapsed_time" mapstructure:"max_elapsed_time"`
 }
 
+// ChainConfigurations configuration
 type ChainConfigurations struct {
 	Name         string `json:"name" mapstructure:"name"`
 	Enabled      bool   `json:"enabled" mapstructure:"enabled"`
@@ -106,6 +113,8 @@ func applyDefaultConfig() {
 	viper.SetDefault("tx_signer.block_scanner.max_http_request_retry", "10")
 	viper.SetDefault("tx_signer.block_scanner.block_height_discover_back_off", "1s")
 	viper.SetDefault("tx_signer.block_scanner.block_retry_interval", "1s")
+	viper.SetDefault("tx_signer.signer_db_path", "signer_db")
+	viper.SetDefault("tx_signer.retry_interval", "2s")
 }
 
 func LoadBiFrostConfig(file string) (*Configuration, error) {

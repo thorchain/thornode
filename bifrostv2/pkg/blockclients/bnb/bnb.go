@@ -20,6 +20,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 
 	"github.com/binance-chain/go-sdk/types/tx"
+	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type Client struct {
@@ -29,6 +30,7 @@ type Client struct {
 	fnLastScannedBlockHeight types.FnLastScannedBlockHeight
 	logger                   zerolog.Logger
 	backOffCtrl              backoff.ExponentialBackOff
+	chain                    common.Chain
 }
 
 func NewClient(cfg config.ChainConfigurations) (*Client, error) {
@@ -37,7 +39,13 @@ func NewClient(cfg config.ChainConfigurations) (*Client, error) {
 		return nil, errors.New("chain_host not set")
 	}
 
+	chain, err := common.NewChain(cfg.Name)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Client{
+		chain:  chain,
 		cfg:    cfg,
 		client: rpc.NewRPCClient(cfg.ChainHost, network),
 		logger: log.Logger.With().Str("module", "bnbClient").Logger(),
@@ -62,6 +70,11 @@ func setNetwork(cfg config.ChainConfigurations) btypes.ChainNetwork {
 		network = btypes.TestNetwork
 	}
 	return network
+}
+
+// EqualsChain compare cllient chain to arg chain
+func (c *Client) EqualsChain(chain common.Chain) bool {
+	return c.chain.Equals(chain)
 }
 
 func (c *Client) getBlock(blockHeight int64) (*ctypes.ResultBlock, error) {
@@ -200,10 +213,44 @@ func (c *Client) getCoinsForTxIn(outputs []bmsg.Output) (common.Coins, error) {
 	return cc, nil
 }
 
-func (c *Client) BroadcastTx() error {
+// BroadcastTx broadcast tx on binance chain
+func (c *Client) BroadcastTx(tx *stypes.TxOutItem) error {
 	return nil
 }
 
-func (c *Client) SignTx() error {
-	return nil
+func (c *Client) handleYggReturn(tx *stypes.TxOutItem) (*stypes.TxOutItem, error) {
+	// addr, err := stypes.AccAddressFromHex(s.Binance.GetAddress(out.VaultPubKey))
+	// if err != nil {
+	// 	s.logger.Error().Err(err).Msg("failed to convert to AccAddress")
+	// 	return out, err
+	// }
+	//
+	// acct, err := s.Binance.GetAccount(addr)
+	// if err != nil {
+	// 	s.logger.Error().Err(err).Msg("failed to get binance account info")
+	// 	return out, err
+	// }
+	// out.Coins = make(common.Coins, 0)
+	// gas := common.GetBNBGasFee(uint64(len(acct.Coins)))
+	// for _, coin := range acct.Coins {
+	// 	asset, err := common.NewAsset(coin.Denom)
+	// 	if err != nil {
+	// 		s.logger.Error().Err(err).Msg("failed to parse asset")
+	// 		return out, err
+	// 	}
+	// 	amount := sdk.NewUint(uint64(coin.Amount))
+	// 	if asset.IsBNB() {
+	// 		amount = common.SafeSub(amount, gas[0].Amount)
+	// 	}
+	// 	out.Coins = append(out.Coins, common.NewCoin(asset, amount))
+	// }
+	//
+	// return out, nil
+	return tx, nil
+}
+
+// SignTx signs tx
+func (c *Client) SignTx(tx *stypes.TxOutItem, blockHeight int64) (*stypes.TxOutItem, error) {
+	// TODO handle yggdrasil return fee
+	return tx, nil
 }

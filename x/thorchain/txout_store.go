@@ -12,7 +12,7 @@ type VersionedTxOutStore interface {
 }
 
 type TxOutStore interface {
-	NewBlock(height uint64, constAccessor constants.ConstantValues)
+	NewBlock(height int64, constAccessor constants.ConstantValues)
 	CommitBlock(ctx sdk.Context)
 	GetBlockOut() *TxOut
 	GetOutboundItems() []*TxOutItem

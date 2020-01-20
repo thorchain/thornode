@@ -121,7 +121,7 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	txOutStore, err := versionedTxOutStore.GetTxOutStore(k, ver)
 	c.Assert(err, IsNil)
 
-	txOutStore.NewBlock(uint64(height), constAccessor)
+	txOutStore.NewBlock(height, constAccessor)
 	validatorMgr := NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgrDummy)
 	c.Assert(validatorMgr.BeginBlock(ctx, ver, constAccessor), IsNil)
 

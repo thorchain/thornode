@@ -165,7 +165,7 @@ func (vm *VaultMgr) TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error {
 	for i := range nas {
 		keygen[i] = nas[i].PubKeySet.Secp256k1
 	}
-	keygens := NewKeygens(uint64(ctx.BlockHeight()))
+	keygens := NewKeygens(ctx.BlockHeight())
 	keygens.Keygens = []common.PubKeys{keygen}
 	return vm.k.SetKeygens(ctx, keygens)
 }

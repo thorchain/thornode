@@ -51,7 +51,7 @@ type TxOutLocalItem struct {
 	Status LocalStatus `json:"status"`
 }
 
-func (s *BlockScannerStorage) getTxOutKey(height uint64) string {
+func (s *BlockScannerStorage) getTxOutKey(height int64) string {
 	return fmt.Sprintf("txout-%d", height)
 }
 
@@ -102,10 +102,10 @@ func (s *BlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([]types.TxOut,
 	return results, nil
 }
 
-func (s *BlockScannerStorage) SetTxOutItem(toi types.TxOutItem, height int64) error {
+func (s *BlockScannerStorage) SetTxOutItem(toi *types.TxOutItem, height int64) error {
 	return s.db.Put([]byte(toi.GetKey(height)), []byte{1}, nil)
 }
-func (s *BlockScannerStorage) HasTxOutItem(toi types.TxOutItem, height int64) (bool, error) {
+func (s *BlockScannerStorage) HasTxOutItem(toi *types.TxOutItem, height int64) (bool, error) {
 	return s.db.Has([]byte(toi.GetKey(height)), nil)
 }
 

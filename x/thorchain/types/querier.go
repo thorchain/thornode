@@ -31,7 +31,7 @@ func (h QueryResHeights) String() string {
 }
 
 type ResTxOut struct {
-	Height  uint64       `json:"height"`
+	Height  int64        `json:"height"`
 	Hash    common.TxID  `json:"hash"`
 	Chain   common.Chain `json:"chain"`
 	TxArray []TxOutItem  `json:"tx_array"`

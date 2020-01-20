@@ -9,13 +9,13 @@ import (
 type KeeperTxOut interface {
 	SetTxOut(ctx sdk.Context, blockOut *TxOut) error
 	GetTxOutIterator(ctx sdk.Context) sdk.Iterator
-	GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error)
+	GetTxOut(ctx sdk.Context, height int64) (*TxOut, error)
 }
 
 // SetTxOut - write the given txout information to key values tore
 func (k KVStore) SetTxOut(ctx sdk.Context, blockOut *TxOut) error {
 	store := ctx.KVStore(k.storeKey)
-	key := k.GetKey(ctx, prefixTxOut, strconv.FormatUint(blockOut.Height, 10))
+	key := k.GetKey(ctx, prefixTxOut, strconv.FormatInt(blockOut.Height, 10))
 	buf, err := k.cdc.MarshalBinaryBare(blockOut)
 	if nil != err {
 		return dbError(ctx, "fail to marshal tx out to binary", err)
@@ -31,9 +31,9 @@ func (k KVStore) GetTxOutIterator(ctx sdk.Context) sdk.Iterator {
 }
 
 // GetTxOut - write the given txout information to key values tore
-func (k KVStore) GetTxOut(ctx sdk.Context, height uint64) (*TxOut, error) {
+func (k KVStore) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
 	store := ctx.KVStore(k.storeKey)
-	key := k.GetKey(ctx, prefixTxOut, strconv.FormatUint(height, 10))
+	key := k.GetKey(ctx, prefixTxOut, strconv.FormatInt(height, 10))
 	if !store.Has([]byte(key)) {
 		return NewTxOut(height), nil
 	}

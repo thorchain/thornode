@@ -1,12 +1,15 @@
 package thorchain
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -25,12 +28,12 @@ import (
 	"gitlab.com/thorchain/thornode/bifrostv2/config"
 	"gitlab.com/thorchain/thornode/bifrostv2/metrics"
 	types "gitlab.com/thorchain/thornode/bifrostv2/thorchain/types"
-	ttypes "gitlab.com/thorchain/thornode/bifrostv2/types"
 )
 
 // Endpoint urls
 const (
 	AuthAccountEndpoint = "/auth/accounts"
+	TxsEndpoint         = "/txs"
 	KeygenEndpoint      = "/thorchain/keygen"
 	KeysignEndpoint     = "/thorchain/keysign"
 	LastBlockEndpoint   = "/thorchain/lastblock"
@@ -48,7 +51,9 @@ type Client struct {
 	metrics       *metrics.Metrics
 	accountNumber uint64
 	seqNumber     uint64
+	blockHeight   int64
 	httpClient    *retryablehttp.Client
+	broadcastLock *sync.RWMutex
 }
 
 // NewClient create a new instance of Client
@@ -81,13 +86,14 @@ func NewClient(cfg config.ClientConfiguration, m *metrics.Metrics) (*Client, err
 	httpClient.Logger = httpClientLogger
 
 	return &Client{
-		logger:     logger,
-		cdc:        MakeCodec(),
-		cfg:        cfg,
-		keys:       k,
-		errCounter: m.GetCounterVec(metrics.ThorchainClientError),
-		httpClient: httpClient,
-		metrics:    m,
+		logger:        logger,
+		cdc:           MakeCodec(),
+		cfg:           cfg,
+		keys:          k,
+		errCounter:    m.GetCounterVec(metrics.ThorchainClientError),
+		httpClient:    httpClient,
+		metrics:       m,
+		broadcastLock: &sync.RWMutex{},
 	}, nil
 }
 
@@ -119,6 +125,12 @@ func (c *Client) Start() error {
 	c.accountNumber = accountNumber
 	c.seqNumber = sequenceNumber
 
+	blockHeight, err := c.GetStatechainHeight()
+	if err != nil {
+		return errors.Wrap(err, "failed to get thorchain height")
+	}
+	c.blockHeight = blockHeight
+
 	return nil
 }
 
@@ -128,35 +140,9 @@ func (c *Client) Stop() error {
 	return nil
 }
 
-// GetPubKeys retrieves pub keys for this node (yggdrasil + asgard)
-func (c *Client) GetPubKeys() (*ttypes.PubKeyManager, error) {
-	// creates pub key manager
-	pkm := ttypes.NewPubKeyManager()
-
-	var na *stypes.NodeAccount
-	for i := 0; i < 300; i++ { // wait for 5 min before timing out
-		var err error
-		na, err = c.GetNodeAccount(c.keys.GetSignerInfo().GetAddress().String())
-		if nil != err {
-			return &ttypes.PubKeyManager{}, errors.Wrap(err, "failed to get node account from thorchain")
-		}
-
-		if !na.PubKeySet.Secp256k1.IsEmpty() {
-			break
-		}
-		time.Sleep(5 * time.Second)
-
-		c.logger.Info().Msg("Waiting for node account to be registered...")
-	}
-	for _, item := range na.SignerMembership {
-		pkm.Add(item)
-	}
-
-	if na.PubKeySet.Secp256k1.IsEmpty() {
-		return &ttypes.PubKeyManager{}, errors.New("failed to find pubkey for this node account")
-	}
-	pkm.Add(na.PubKeySet.Secp256k1)
-	return pkm, nil
+// Keys return thorchain keys
+func (c *Client) Keys() *keys.Keys {
+	return c.keys
 }
 
 // getAccountNumberAndSequenceNumber returns account and Sequence number required to post into thorchain
@@ -221,10 +207,11 @@ func (c *Client) getLastBlock(chain common.Chain) (stypes.QueryResHeights, error
 	return lastBlock, nil
 }
 
-// get handle all the low level http calls using retryablehttp.Client
+// get handle all the low level http GET calls using retryablehttp.Client
 func (c *Client) get(path string) ([]byte, error) {
 	resp, err := c.httpClient.Get(c.getThorChainURL(path))
 	if err != nil {
+		c.errCounter.WithLabelValues("fail_get_from_thorchain", "").Inc()
 		return nil, errors.Wrap(err, "failed to GET from thorchain")
 	}
 	defer func() {
@@ -237,6 +224,30 @@ func (c *Client) get(path string) ([]byte, error) {
 	}
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
+		c.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+	return buf, nil
+}
+
+// post handle all the low level http POST calls using retryablehttp.Client
+func (c *Client) post(path string, bodyType string, body interface{}) ([]byte, error) {
+	resp, err := c.httpClient.Post(c.getThorChainURL(path), bodyType, body)
+	if err != nil {
+		c.errCounter.WithLabelValues("fail_post_to_thorchain", "").Inc()
+		return nil, errors.Wrap(err, "failed to POST to thorchain")
+	}
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			c.logger.Error().Err(err).Msg("failed to close response body")
+		}
+	}()
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("Status code: " + strconv.Itoa(resp.StatusCode) + " returned")
+	}
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		c.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
 		return nil, errors.Wrap(err, "failed to read response body")
 	}
 	return buf, nil
@@ -284,4 +295,155 @@ func (c *Client) ensureNodeWhitelisted() error {
 		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", na.Status)
 	}
 	return nil
+}
+
+// getKeygenStdTx generate MsgTssPool
+func (c *Client) getKeygenStdTx(poolPk common.PubKey, input common.PubKeys) (*authtypes.StdTx, error) {
+	start := time.Now()
+	defer func() {
+		c.metrics.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
+	}()
+
+	msg := stypes.NewMsgTssPool(input, poolPk, c.keys.GetSignerInfo().GetAddress())
+
+	stdTx := authtypes.NewStdTx(
+		[]sdk.Msg{msg},
+		authtypes.NewStdFee(100000000, nil), // fee
+		nil,                                 // signatures
+		"",                                  // memo
+	)
+
+	return &stdTx, nil
+}
+
+// BroadcastKeygen generate MsgTssPool and broadcast to thorchain
+func (c *Client) BroadcastKeygen(height int64, poolPk common.PubKey, input common.PubKeys) error {
+	strHeight := strconv.FormatInt(height, 10)
+	stdTx, err := c.getKeygenStdTx(poolPk, input)
+	if nil != err {
+		c.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()
+		return errors.Wrap(err, "fail to sign the tx")
+	}
+	txID, err := c.Broadcast(*stdTx, types.TxSync)
+	if nil != err {
+		c.errCounter.WithLabelValues("fail_to_send_to_thorchain", strHeight).Inc()
+		return errors.Wrap(err, "fail to send the tx to thorchain")
+	}
+	c.logger.Info().Str("block", strHeight).Str("thorchain hash", txID.String()).Msg("sign and send to thorchain successfully")
+	return nil
+}
+
+// Broadcast Broadcasts tx to thorchain
+func (c *Client) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
+	c.broadcastLock.Lock()
+	defer c.broadcastLock.Unlock()
+
+	var noTxID = common.TxID("")
+	if !mode.IsValid() {
+		return noTxID, errors.New(fmt.Sprintf("transaction Mode (%s) is invalid", mode))
+	}
+	start := time.Now()
+	defer func() {
+		c.metrics.GetHistograms(metrics.SendToThorchainDuration).Observe(time.Since(start).Seconds())
+	}()
+
+	blockHeight, err := c.GetStatechainHeight()
+	if err != nil {
+		return noTxID, err
+	}
+	if blockHeight > c.blockHeight {
+		var seqNum uint64
+		c.accountNumber, seqNum, err = c.getAccountNumberAndSequenceNumber()
+		if nil != err {
+			return noTxID, errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
+		}
+		c.blockHeight = blockHeight
+		if seqNum > c.seqNumber {
+			c.seqNumber = seqNum
+		}
+	}
+
+	c.logger.Info().Uint64("account_number", c.accountNumber).Uint64("sequence_number", c.accountNumber).Msg("account info")
+	stdMsg := authtypes.StdSignMsg{
+		ChainID:       c.cfg.ChainID,
+		AccountNumber: c.accountNumber,
+		Sequence:      c.seqNumber,
+		Fee:           stdTx.Fee,
+		Msgs:          stdTx.GetMsgs(),
+		Memo:          stdTx.GetMemo(),
+	}
+	sig, err := authtypes.MakeSignature(c.keys.GetKeybase(), c.cfg.SignerName, c.cfg.SignerPasswd, stdMsg)
+	if err != nil {
+		c.errCounter.WithLabelValues("fail_sign", "").Inc()
+		return noTxID, errors.Wrap(err, "fail to sign the message")
+	}
+
+	signed := authtypes.NewStdTx(
+		stdTx.GetMsgs(),
+		stdTx.Fee,
+		[]authtypes.StdSignature{sig},
+		stdTx.GetMemo(),
+	)
+
+	c.metrics.GetCounter(metrics.TxToThorchainSigned).Inc()
+
+	var setTx types.SetTx
+	setTx.Mode = mode.String()
+	setTx.Tx.Msg = signed.Msgs
+	setTx.Tx.Fee = signed.Fee
+	setTx.Tx.Signatures = signed.Signatures
+	setTx.Tx.Memo = signed.Memo
+	result, err := c.cdc.MarshalJSON(setTx)
+	if nil != err {
+		c.errCounter.WithLabelValues("fail_marshal_settx", "").Inc()
+		return noTxID, errors.Wrap(err, "fail to marshal settx to json")
+	}
+
+	c.logger.Info().Str("payload", string(result)).Msg("post to thorchain")
+
+	body, err := c.post(TxsEndpoint, "application/json", bytes.NewBuffer(result))
+	if err != nil {
+		return noTxID, errors.Wrap(err, "fail to post tx to thorchain")
+	}
+
+	// NOTE: we can actually see two different json responses for the same end.
+	// This complicates things pretty well.
+	// Sample 1: { "height": "0", "txhash": "D97E8A81417E293F5B28DDB53A4AD87B434CA30F51D683DA758ECC2168A7A005", "raw_log": "[{\"msg_index\":0,\"success\":true,\"log\":\"\",\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"set_observed_txout\"}]}]}]", "logs": [ { "msg_index": 0, "success": true, "log": "", "events": [ { "type": "message", "attributes": [ { "key": "action", "value": "set_observed_txout" } ] } ] } ] }
+	// Sample 2: { "height": "0", "txhash": "6A9AA734374D567D1FFA794134A66D3BF614C4EE5DDF334F21A52A47C188A6A2", "code": 4, "raw_log": "{\"codespace\":\"sdk\",\"code\":4,\"message\":\"signature verification failed; verify correct account sequence and chain-id\"}" }
+	var commit types.Commit
+	err = json.Unmarshal(body, &commit)
+	if err != nil {
+		c.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
+		c.logger.Error().Err(err).Msg("fail unmarshal commit")
+
+		var badCommit types.BadCommit // since commit doesn't work, lets try bad commit
+		err = json.Unmarshal(body, &badCommit)
+		if err != nil {
+			c.logger.Error().Err(err).Msg("fail unmarshal bad commit")
+			return noTxID, errors.Wrap(err, "fail to unmarshal bad commit")
+		}
+
+		// check for any failure logs
+		if badCommit.Code > 0 {
+			err := errors.New(badCommit.Log.Message)
+			c.logger.Error().Err(err).Msg("fail to broadcast")
+			return noTxID, errors.Wrap(err, "fail to broadcast")
+		}
+	}
+
+	for _, log := range commit.Logs {
+		if !log.Success {
+			err := errors.New(log.Log)
+			c.logger.Error().Err(err).Msg("fail to broadcast")
+			return noTxID, errors.Wrap(err, "fail to broadcast")
+		}
+	}
+
+	c.metrics.GetCounter(metrics.TxToThorchain).Inc()
+	c.logger.Info().Msgf("Received a TxHash of %v from the thorchain", commit.TxHash)
+
+	// increment seqNum
+	atomic.AddUint64(&c.seqNumber, 1)
+
+	return common.NewTxID(commit.TxHash)
 }
