@@ -81,6 +81,7 @@ func (c *Client) getBlock(blockHeight int64) (*ctypes.ResultBlock, error) {
 	return c.client.Block(&blockHeight)
 }
 
+// Start start bnb client and listen to new block on binance chain
 func (c *Client) Start(blockInChan chan<- types.Block, fnStartHeight types.FnLastScannedBlockHeight) error {
 	c.logger.Info().Msg("starting")
 	c.fnLastScannedBlockHeight = fnStartHeight

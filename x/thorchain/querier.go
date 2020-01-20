@@ -475,7 +475,7 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
 
-	if int64(height) >= ctx.BlockHeight() {
+	if height >= ctx.BlockHeight() {
 		return nil, sdk.ErrInternal("block height not available yet")
 	}
 
@@ -519,7 +519,7 @@ func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
 
-	if int64(height) >= ctx.BlockHeight() {
+	if height >= ctx.BlockHeight() {
 		return nil, sdk.ErrInternal("block height not available yet")
 	}
 
