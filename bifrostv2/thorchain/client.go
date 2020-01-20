@@ -30,12 +30,12 @@ import (
 
 // Endpoint urls
 const (
-	VaultsEndpoint      = "/thorchain/vaults/pubkeys"
-	KeysignEndpoint     = "/thorchain/keysign"
-	KeygenEndpoint      = "/thorchain/keygen"
-	NodeAccountEndpoint = "/thorchain/nodeaccount"
-	LastBlockEndpoint   = "/thorchain/lastblock"
 	AuthAccountEndpoint = "/auth/accounts"
+	KeygenEndpoint      = "/thorchain/keygen"
+	KeysignEndpoint     = "/thorchain/keysign"
+	LastBlockEndpoint   = "/thorchain/lastblock"
+	NodeAccountEndpoint = "/thorchain/nodeaccount"
+	VaultsEndpoint      = "/thorchain/vaults/pubkeys"
 )
 
 // Client is for all communication to a thorNode

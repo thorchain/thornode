@@ -40,7 +40,7 @@ func (mss *MockScannerStorage) SetScanPos(block int64) error {
 	mss.store[ScanPosKey] = buf[:n]
 	return nil
 }
-func (mss *MockScannerStorage) SetBlockScanStatus(block int64, status BlockScannerStatus) error {
+func (mss *MockScannerStorage) SetBlockScannerStatus(block int64, status BlockScannerStatus) error {
 	blockStatusItem := BlockStatusItem{
 		Height: block,
 		Status: status,
