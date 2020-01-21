@@ -22,7 +22,7 @@ func (s *KeeperKeygensSuite) TestKeeperKeygens(c *C) {
 	keygens, err = k.GetKeygens(ctx, 1)
 	c.Assert(err, IsNil)
 	c.Assert(keygens, NotNil)
-	c.Assert(keygens.Height, Equals, uint64(1))
+	c.Assert(keygens.Height, Equals, int64(1))
 
 	keygens, err = k.GetKeygens(ctx, 100)
 	c.Assert(err, IsNil)

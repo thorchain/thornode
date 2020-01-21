@@ -211,7 +211,7 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	txOut := txOutStore.GetBlockOut()
 	c.Check(txOut, NotNil)
 	c.Check(len(txOut.TxArray) > 0, Equals, true)
-	c.Check(txOut.Height, Equals, uint64(1))
+	c.Check(txOut.Height, Equals, int64(1))
 	totalAsset := sdk.ZeroUint()
 	totalRune := sdk.ZeroUint()
 	for _, item := range txOut.TxArray {

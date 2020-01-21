@@ -131,7 +131,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	c.Assert(validatorMgr.BeginBlock(ctx, consts), IsNil)
 
 	// check we've created a keygen, with the correct members
-	keygens, err := keeper.GetKeygens(ctx, uint64(ctx.BlockHeight()))
+	keygens, err := keeper.GetKeygens(ctx, ctx.BlockHeight())
 	c.Assert(err, IsNil)
 	c.Assert(keygens.Keygens, HasLen, 1)
 	expected := append(vault.Membership[1:], na.PubKeySet.Secp256k1)

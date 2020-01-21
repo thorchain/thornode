@@ -78,7 +78,7 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 	}
 
 	// update txOut record with our TxID that sent funds out of the pool
-	txOut, err := h.keeper.GetTxOut(ctx, uint64(voter.Height))
+	txOut, err := h.keeper.GetTxOut(ctx, voter.Height)
 	if err != nil {
 		ctx.Logger().Error("unable to get txOut record", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
