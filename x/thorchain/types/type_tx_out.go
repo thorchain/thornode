@@ -75,12 +75,12 @@ func (toi TxOutItem) String() string {
 
 // TxOut is a structure represent all the tx THORNode need to return to client
 type TxOut struct {
-	Height  uint64       `json:"height"`
+	Height  int64        `json:"height"`
 	TxArray []*TxOutItem `json:"tx_array"`
 }
 
 // NewTxOut create a new item ot TxOut
-func NewTxOut(height uint64) *TxOut {
+func NewTxOut(height int64) *TxOut {
 	return &TxOut{
 		Height: height,
 	}

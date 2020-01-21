@@ -469,13 +469,13 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 
 func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var err error
-	height, err := strconv.ParseUint(path[0], 0, 64)
+	height, err := strconv.ParseInt(path[0], 0, 64)
 	if nil != err {
 		ctx.Logger().Error("fail to parse block height", "error", err)
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
 
-	if int64(height) >= ctx.BlockHeight() {
+	if height >= ctx.BlockHeight() {
 		return nil, sdk.ErrInternal("block height not available yet")
 	}
 
@@ -513,13 +513,13 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 
 func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var err error
-	height, err := strconv.ParseUint(path[0], 0, 64)
+	height, err := strconv.ParseInt(path[0], 0, 64)
 	if nil != err {
 		ctx.Logger().Error("fail to parse block height", "error", err)
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
 
-	if int64(height) >= ctx.BlockHeight() {
+	if height >= ctx.BlockHeight() {
 		return nil, sdk.ErrInternal("block height not available yet")
 	}
 

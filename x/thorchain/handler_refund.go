@@ -78,7 +78,7 @@ func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.V
 	}
 
 	// update txOut record with our TxID that sent funds out of the pool
-	txOut, err := h.keeper.GetTxOut(ctx, uint64(voter.Height))
+	txOut, err := h.keeper.GetTxOut(ctx, voter.Height)
 	if err != nil {
 		return sdk.ErrUnknownRequest(fmt.Errorf("unable to get txout record: %w", err).Error())
 	}

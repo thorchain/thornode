@@ -162,7 +162,7 @@ func (k *TestObservedTxOutHandleKeeper) AddIncompleteEvents(_ sdk.Context, evt E
 	return nil
 }
 
-func (k *TestObservedTxOutHandleKeeper) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error) {
+func (k *TestObservedTxOutHandleKeeper) GetTxOut(_ sdk.Context, _ int64) (*TxOut, error) {
 	return k.txOutStore.GetBlockOut(), nil
 }
 

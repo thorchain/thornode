@@ -85,7 +85,7 @@ func (k *TestRefundValidKeepr) SetPool(_ sdk.Context, pool Pool) error {
 	return nil
 }
 
-func (k *TestRefundValidKeepr) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error) {
+func (k *TestRefundValidKeepr) GetTxOut(_ sdk.Context, _ int64) (*TxOut, error) {
 	return &k.txOut, nil
 }
 func (k *TestRefundValidKeepr) SetTxOut(_ sdk.Context, _ *TxOut) error {
@@ -136,7 +136,7 @@ func (HandlerRefundSuite) TestRefundHandler_HappyPath(c *C) {
 		na:    na,
 		voter: NewObservedTxVoter(txIn.ID, make(ObservedTxs, 0)),
 		txOut: TxOut{
-			Height: uint64(ctx.BlockHeight()),
+			Height: ctx.BlockHeight(),
 			TxArray: []*TxOutItem{
 				&TxOutItem{
 					Chain:       common.BNBChain,
