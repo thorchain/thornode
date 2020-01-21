@@ -71,7 +71,7 @@ func (s YggdrasilSuite) TestFund(c *C) {
 	}
 	txOutStore := NewTxStoreDummy()
 	constAccessor := constants.GetConstantValues(semver.MustParse("0.1.0"))
-	txOutStore.NewBlock(uint64(ctx.BlockHeight()), constAccessor)
+	txOutStore.NewBlock(ctx.BlockHeight(), constAccessor)
 	err := Fund(ctx, k, txOutStore, constAccessor)
 	c.Assert(err, IsNil)
 	na1 := GetRandomNodeAccount(NodeActive)

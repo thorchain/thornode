@@ -26,7 +26,7 @@ func (KeeperTxOutSuite) TestKeeperTxOut(c *C) {
 	txOut1, err := k.GetTxOut(ctx, 1)
 	c.Assert(err, IsNil)
 	c.Assert(txOut1, NotNil)
-	c.Assert(txOut1.Height, Equals, uint64(1))
+	c.Assert(txOut1.Height, Equals, int64(1))
 
 	txOut2, err := k.GetTxOut(ctx, 100)
 	c.Assert(err, IsNil)
