@@ -167,7 +167,7 @@ func (k *TestOutboundTxHandleKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	return nil
 }
 
-func (k *TestOutboundTxHandleKeeper) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error) {
+func (k *TestOutboundTxHandleKeeper) GetTxOut(_ sdk.Context, _ int64) (*TxOut, error) {
 	return &k.txOut, nil
 }
 

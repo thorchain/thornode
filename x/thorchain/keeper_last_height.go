@@ -45,14 +45,14 @@ func (k KVStore) SetLastChainHeight(ctx sdk.Context, chain common.Chain, height 
 		return dbError(ctx, "", err)
 	}
 	store := ctx.KVStore(k.storeKey)
-	key := k.GetKey(ctx, prefixLastChainHeight, "")
+	key := k.GetKey(ctx, prefixLastChainHeight, chain.String())
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
 	return nil
 }
 
 func (k KVStore) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (int64, error) {
 	var height int64
-	key := k.GetKey(ctx, prefixLastChainHeight, "")
+	key := k.GetKey(ctx, prefixLastChainHeight, chain.String())
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return 0, nil

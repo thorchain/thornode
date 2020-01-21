@@ -105,7 +105,7 @@ func (k *TestSlashingLackKeeper) GetAllPendingEvents(_ sdk.Context) (Events, err
 	return k.evts, nil
 }
 
-func (k *TestSlashingLackKeeper) GetTxOut(_ sdk.Context, _ uint64) (*TxOut, error) {
+func (k *TestSlashingLackKeeper) GetTxOut(_ sdk.Context, _ int64) (*TxOut, error) {
 	return k.txOut, nil
 }
 
@@ -165,7 +165,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 			common.BNBAsset, sdk.NewUint(3980500*common.One),
 		),
 	}
-	txOut := NewTxOut(uint64(evt.Height))
+	txOut := NewTxOut(evt.Height)
 	txOut.TxArray = append(txOut.TxArray, txOutItem)
 
 	keeper := &TestSlashingLackKeeper{

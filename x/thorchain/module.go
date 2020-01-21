@@ -132,7 +132,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return
 	}
-	txStore.NewBlock(uint64(req.Header.Height), constantValues)
+	txStore.NewBlock(req.Header.Height, constantValues)
 
 }
 
