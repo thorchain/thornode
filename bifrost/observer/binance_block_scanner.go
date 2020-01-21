@@ -382,7 +382,7 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 			continue
 		}
 	}
-	return nil, nil
+	return txs, nil
 }
 
 func (b *BinanceBlockScanner) Stop() error {
