@@ -152,6 +152,7 @@ func (o *Observer) txinsProcessor(ch <-chan types.TxIn, idx int) {
 		}
 	}
 }
+
 func (o *Observer) processOneTxIn(txIn types.TxIn) {
 	if err := o.storage.SetTxInStatus(txIn, types.Processing); nil != err {
 		o.errCounter.WithLabelValues("fail_save_txin_local", txIn.BlockHeight).Inc()

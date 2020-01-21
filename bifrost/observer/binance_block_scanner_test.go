@@ -262,7 +262,7 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 
 func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	c.Skip("skip")
-	testFunc := func(input string, txInItemCheck, errCheck Checker) *stypes.TxInItem {
+	testFunc := func(input string, txInItemCheck, errCheck Checker) []stypes.TxInItem {
 		var query btypes.RPCTxSearch
 		err := json.Unmarshal([]byte(input), &query)
 		c.Check(err, IsNil)
@@ -298,13 +298,17 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	testFunc(binanceTxTransferWithdraw, NotNil, IsNil)
 	// normal tx outbound from our pool
 	testFunc(binanceTxOutboundFromPool, NotNil, IsNil)
-	txInItem := testFunc(binanceTxOutboundFromPool1, NotNil, IsNil)
+	txInItems := testFunc(binanceTxOutboundFromPool1, NotNil, IsNil)
+	c.Assert(txInItems, HasLen, 1)
+	txInItem := txInItems[0]
 	c.Check(txInItem, NotNil)
 	c.Check(txInItem.Memo, Equals, "OUTBOUND:825")
 	c.Check(txInItem.Sender, Equals, "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj")
 	c.Check(len(txInItem.Coins), Equals, 1)
 	c.Check(txInItem.Coins[0].Asset.String(), Equals, "BNB.RUNE-A1F")
-	txInItem1 := testFunc(binanceTxSwapLOKToBNB, NotNil, IsNil)
+	txInItems1 := testFunc(binanceTxSwapLOKToBNB, NotNil, IsNil)
+	c.Assert(txInItems1, HasLen, 1)
+	txInItem1 := txInItems1[0]
 	c.Check(txInItem1, NotNil)
 	c.Check(txInItem1.Memo, Equals, "SWAP:BNB")
 	c.Check(txInItem1.Sender, Equals, "tbnb190tgp5uchnlcpsk7n7nffypkwlzhcqge27xkfh")
@@ -343,8 +347,10 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 	)
 	c.Assert(err, IsNil)
 
-	item, err := bs.fromStdTx("abcd", stdTx)
+	items, err := bs.fromStdTx("abcd", stdTx)
 	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 1)
+	item := items[0]
 	c.Check(item.Tx, Equals, "abcd")
 	c.Check(item.Memo, Equals, "outbound:256")
 	c.Check(item.Sender, Equals, "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj")
@@ -358,8 +364,10 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 		"",
 	)
 	c.Assert(err, IsNil)
-	item, err = bs.fromStdTx("abcd", stdTx)
+	items, err = bs.fromStdTx("abcd", stdTx)
 	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 1)
+	item = items[0]
 	c.Assert(item, IsNil)
 
 	// register yggdrasil
@@ -370,8 +378,10 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 		"yggdrasil+",
 	)
 	c.Assert(err, IsNil)
-	item, err = bs.fromStdTx("abcd", stdTx)
+	items, err = bs.fromStdTx("abcd", stdTx)
 	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 1)
+	item = items[0]
 	c.Check(item.Memo, Equals, "yggdrasil+")
 
 	// un-register yggdrasil
@@ -382,7 +392,9 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 		"yggdrasil-",
 	)
 	c.Assert(err, IsNil)
-	item, err = bs.fromStdTx("abcd", stdTx)
+	items, err = bs.fromStdTx("abcd", stdTx)
 	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 1)
+	item = items[0]
 	c.Check(item.Memo, Equals, "yggdrasil-")
 }
