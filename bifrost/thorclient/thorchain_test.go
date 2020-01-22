@@ -1,26 +1,17 @@
 package thorclient
 
 import (
-	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"net/url"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/cosmos/cosmos-sdk/client/keys"
-	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
-	"github.com/hashicorp/go-retryablehttp"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
-	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/helpers"
 	"gitlab.com/thorchain/thornode/cmd"
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
@@ -28,69 +19,80 @@ import (
 
 func TestPackage(t *testing.T) { TestingT(t) }
 
-type ThorchainSuite struct{}
+type ThorchainSuite struct {
+	server             *httptest.Server
+	cfg                config.ThorchainConfiguration
+	cleanup            func()
+	bridge             *ThorchainBridge
+	authAccountFixture string
+	nodeAccountFixture string
+}
 
 var _ = Suite(&ThorchainSuite{})
 
-func (*ThorchainSuite) SetUpSuite(c *C) {
+func (s *ThorchainSuite) SetUpSuite(c *C) {
 	cfg2 := sdk.GetConfig()
 	cfg2.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
+	s.cfg, _, s.cleanup = helpers.SetupStateChainForTest(c)
+	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		switch {
+		case strings.HasPrefix(req.RequestURI, AuthAccountEndpoint):
+			httpTestHandler(c, rw, s.authAccountFixture)
+		case strings.HasPrefix(req.RequestURI, NodeAccountEndpoint):
+			httpTestHandler(c, rw, s.nodeAccountFixture)
+		case strings.HasPrefix(req.RequestURI, LastBlockEndpoint):
+			httpTestHandler(c, rw, "../../test/fixtures/endpoints/lastblock/bnb.json")
+		case strings.HasPrefix(req.RequestURI, KeysignEndpoint):
+			httpTestHandler(c, rw, "../../test/fixtures/endpoints/keysign/template.json")
+		}
+	}))
+	s.cfg.ChainHost = s.server.Listener.Addr().String()
+
+	var err error
+	s.bridge, err = NewThorchainBridge(s.cfg, helpers.GetMetricForTest(c))
+	s.bridge.httpClient.RetryMax = 1 // fail fast
+	c.Assert(err, IsNil)
+	c.Assert(s.bridge, NotNil)
+
 }
 
-func setupThorchainForTest(c *C) (config.ThorchainConfiguration, cKeys.Info, func()) {
-	thorcliDir := filepath.Join(os.TempDir(), ".thorcli")
-	cfg := config.ThorchainConfiguration{
-		ChainID:         "thorchain",
-		ChainHost:       "localhost",
-		SignerName:      "bob",
-		SignerPasswd:    "password",
-		ChainHomeFolder: thorcliDir,
-	}
-	kb, err := keys.NewKeyBaseFromDir(thorcliDir)
-	c.Assert(err, IsNil)
-	info, _, err := kb.CreateMnemonic(cfg.SignerName, cKeys.English, cfg.SignerPasswd, cKeys.Secp256k1)
-	c.Assert(err, IsNil)
-	return cfg, info, func() {
-		if err := os.RemoveAll(thorcliDir); nil != err {
-			c.Error(err)
+func (s *ThorchainSuite) TearDownSuite(c *C) {
+	s.server.Close()
+	s.cleanup()
+}
+
+func (s *ThorchainSuite) TestGetThorChainURL(c *C) {
+	uri := s.bridge.getThorChainURL("")
+	c.Assert(uri, Equals, "http://"+s.server.Listener.Addr().String())
+}
+
+func httpTestHandler(c *C, rw http.ResponseWriter, fixture string) {
+	var content []byte
+	var err error
+
+	switch fixture {
+	case "500":
+		rw.WriteHeader(http.StatusInternalServerError)
+	default:
+		content, err = ioutil.ReadFile(fixture)
+		if err != nil {
+			c.Fatal(err)
 		}
 	}
+
+	rw.Header().Set("Content-Type", "application/json")
+	if _, err := rw.Write(content); err != nil {
+		c.Fatal(err)
+	}
 }
 
-func (s ThorchainSuite) TestSign(c *C) {
-	cfg, info, cleanup := setupThorchainForTest(c)
-	defer cleanup()
-	// Start a local HTTP server
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		// Test request parameters
-		c.Check(req.URL.String(), Equals, fmt.Sprintf("/auth/accounts/%s", info.GetAddress()))
-		// Send response to be tested
-		_, err := rw.Write([]byte(`{
-"height":"78",
-"result":{
-			  "type": "cosmos-sdk/Account",
-			  "value": {
-				"address": "thor1vx80hen38j5w0jn6gqh3crqvktj9stnhw56kn0",
-				"coins": [
-				  {
-					"denom": "thor",
-					"amount": "1000"
-				  }
-				],
-				"public_key": {
-        "type": "tendermint/PubKeySecp256k1",
-        "value": "ArYQdiiY4s1MgIEKm+7LXYQsH+ptH09neh9OWqY5VHYr"
-      },
-				"account_number": "0",
-				"sequence": "14"
-			  }
-			}}`))
-		c.Assert(err, IsNil)
-	}))
-	defer server.Close()
-	u, err := url.Parse(server.URL)
+func (s *ThorchainSuite) TestGet(c *C) {
+	buf, err := s.bridge.get("")
 	c.Assert(err, IsNil)
-	cfg.ChainHost = u.Host
+	c.Assert(buf, NotNil)
+}
+
+func (s *ThorchainSuite) TestSign(c *C) {
 	pk := stypes.GetRandomPubKey()
 	vaultAddr, err := pk.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
@@ -108,90 +110,15 @@ func (s ThorchainSuite) TestSign(c *C) {
 		pk,
 	)
 
-	bridge, err := NewThorchainBridge(cfg, getMetricForTest(c))
-	c.Assert(err, IsNil)
-	c.Assert(bridge, NotNil)
-	signedMsg, err := bridge.GetObservationsStdTx(stypes.ObservedTxs{tx})
+	signedMsg, err := s.bridge.GetObservationsStdTx(stypes.ObservedTxs{tx})
 	c.Log(err)
 	c.Assert(signedMsg, NotNil)
 	c.Assert(err, IsNil)
 }
 
-func (s ThorchainSuite) TestSend(c *C) {
-	cfg, _, cleanup := setupThorchainForTest(c)
-	defer cleanup()
-	// Start a local HTTP server
-	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		// Test request parameters
-		if req.URL.String() == "/txs" {
-			// Send response to be tested
-			_, err := rw.Write([]byte(`{"txhash":"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D", "height": "test_height"}`))
-			c.Assert(err, IsNil)
-		} else if req.URL.String() == "/thorchain/lastblock" {
-			_, err := rw.Write([]byte(`{"statechain":"23"}`))
-			c.Assert(err, IsNil)
-		} else if strings.HasPrefix(req.URL.String(), "/auth/account") {
-			_, err := rw.Write([]byte(`{
-"height":"78",
-"result":{
-			  "type": "cosmos-sdk/Account",
-			  "value": {
-				"address": "thor1vx80hen38j5w0jn6gqh3crqvktj9stnhw56kn0",
-				"coins": [
-				  {
-					"denom": "thor",
-					"amount": "1000"
-				  }
-				],
-				"public_key": {
-        "type": "tendermint/PubKeySecp256k1",
-        "value": "ArYQdiiY4s1MgIEKm+7LXYQsH+ptH09neh9OWqY5VHYr"
-      },
-				"account_number": "7",
-				"sequence": "14"
-			  }
-			}}`))
-			c.Assert(err, IsNil)
-		}
-	}))
-	// Close the server when test finishes
-	defer server.Close()
-
-	u, err := url.Parse(server.URL)
-	c.Assert(err, IsNil)
-	cfg.ChainHost = u.Host
-
-	bridge, err := NewThorchainBridge(cfg, getMetricForTest(c))
-	c.Assert(err, IsNil)
-	c.Assert(bridge, NotNil)
-	stdTx := authtypes.StdTx{}
-	mode := types.TxSync
-	txID, err := bridge.Send(stdTx, mode)
-	c.Assert(err, IsNil)
-	c.Check(
-		txID.String(),
-		Equals,
-		"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D",
-	)
-	c.Check(bridge.accountNumber, Equals, uint64(7))
-	c.Check(bridge.seqNumber, Equals, uint64(15))
-}
-
-func getMetricForTest(c *C) *metrics.Metrics {
-	m, err := metrics.NewMetrics(config.MetricConfiguration{
-		Enabled:      false,
-		ListenPort:   9000,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-	})
-	c.Assert(m, NotNil)
-	c.Assert(err, IsNil)
-	return m
-}
-
 func (ThorchainSuite) TestNewThorchainBridge(c *C) {
 	var testFunc = func(cfg config.ThorchainConfiguration, errChecker Checker, sbChecker Checker) {
-		sb, err := NewThorchainBridge(cfg, getMetricForTest(c))
+		sb, err := NewThorchainBridge(cfg, helpers.GetMetricForTest(c))
 		c.Assert(err, errChecker)
 		c.Assert(sb, sbChecker)
 	}
@@ -223,310 +150,81 @@ func (ThorchainSuite) TestNewThorchainBridge(c *C) {
 		SignerName:      "signer",
 		SignerPasswd:    "",
 	}, NotNil, IsNil)
-	cfg, _, cleanup := setupThorchainForTest(c)
-	testFunc(cfg, IsNil, NotNil)
-	defer cleanup()
 }
 
-func (ThorchainSuite) TestGetAccountNumberAndSequenceNumber(c *C) {
-	testfunc := func(handleFunc http.HandlerFunc, expectedAccNum uint64, expectedSeq uint64, errChecker Checker) {
-		cfg, keyInfo, cleanup := setupThorchainForTest(c)
-		defer cleanup()
-		scb, err := NewThorchainBridge(cfg, getMetricForTest(c))
-		c.Assert(err, IsNil)
-		c.Assert(scb, NotNil)
-		client := retryablehttp.NewClient()
-		client.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
-			return time.Millisecond * 100
-		}
-		client.RetryMax = 3
-		client.RetryWaitMax = 3 * time.Second
-		scb.WithRetryableHttpClient(client)
-		_ = keyInfo
-		if nil != handleFunc {
-			s := httptest.NewServer(handleFunc)
-			defer s.Close()
-			scb.cfg.ChainHost = s.Listener.Addr().String()
-		}
-
-		requestUrl := scb.getAccountInfoUrl(cfg.ChainHost)
-		c.Logf("requestUrl:%s", requestUrl)
-		if scb.cfg.ChainHost == "localhost" {
-			requestUrl = ""
-		}
-		c.Logf("requestUrl:%s", requestUrl)
-		accountNumber, seqNo, err := scb.getAccountNumberAndSequenceNumber(requestUrl)
-		c.Log("account Number:", accountNumber)
-		c.Log("seqNo:", seqNo)
-		c.Assert(accountNumber, Equals, expectedAccNum)
-		c.Assert(seqNo, Equals, expectedSeq)
-		c.Assert(err, errChecker)
-	}
-	testfunc(nil, 0, 0, NotNil)
-	testfunc(func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusInternalServerError)
-	}, 0, 0, NotNil)
-	testfunc(func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusInternalServerError)
-	}, 0, 0, NotNil)
-	testfunc(func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusAccepted)
-	}, 0, 0, NotNil)
-	testfunc(func(writer http.ResponseWriter, request *http.Request) {
-		if _, err := writer.Write([]byte("whatever")); nil != err {
-			c.Error(err)
-		}
-	}, 0, 0, NotNil)
-	testfunc(func(writer http.ResponseWriter, request *http.Request) {
-		if _, err := writer.Write([]byte("")); nil != err {
-			c.Error(err)
-		}
-	}, 0, 0, NotNil)
-	testfunc(func(writer http.ResponseWriter, request *http.Request) {
-		if _, err := writer.Write([]byte(`{
-"height":"78",
-"result":{
-"type": "cosmos-sdk/Account",
-"value": {
-"address": "",
-"coins": [],
-"public_key": null,
-"account_number": "asdf",
-"sequence": "0"
-}
-}}`)); nil != err {
-			c.Error(err)
-		}
-	}, 0, 0, NotNil)
-	testfunc(func(writer http.ResponseWriter, request *http.Request) {
-		if _, err := writer.Write([]byte(`{
-"height":"78",
-"result":{
-"type": "cosmos-sdk/Account",
-"value": {
-"address": "",
-"coins": [],
-"public_key": null,
-"account_number": "0",
-"sequence": "whatever"
-}
-}}`)); nil != err {
-			c.Error(err)
-		}
-	}, 0, 0, NotNil)
-	testfunc(func(writer http.ResponseWriter, request *http.Request) {
-		if _, err := writer.Write([]byte(`{
-"height":"78",
-"result":{
-"type": "cosmos-sdk/Account",
-"value": {
-"address": "",
-"coins": [],
-"public_key": null,
-"account_number": "5",
-"sequence": "6"
-}
-}}`)); nil != err {
-			c.Error(err)
-		}
-	}, 5, 6, IsNil)
-	testfunc(func(writer http.ResponseWriter, request *http.Request) {
-		if _, err := writer.Write([]byte(`{
-	"height":"78",
-	"result":{
-  "type": "cosmos-sdk/Account",
-  "value": {
-    "address": "thor1vx80hen38j5w0jn6gqh3crqvktj9stnhw56kn0",
-    "coins": [
-      {
-        "denom": "bnb",
-        "amount": "1000"
-      },
-      {
-        "denom": "btc",
-        "amount": "1000"
-      },
-      {
-        "denom": "runed",
-        "amount": "1000"
-      }
-    ],
-    "public_key": {
-        "type": "tendermint/PubKeySecp256k1",
-        "value": "ArYQdiiY4s1MgIEKm+7LXYQsH+ptH09neh9OWqY5VHYr"
-      },
-    "account_number": "0",
-    "sequence": "2"
-  }
-}}
-`)); nil != err {
-			c.Error(err)
-		}
-	}, 0, 2, IsNil)
-
+func (s *ThorchainSuite) TestSignEx(c *C) {
 }
 
-func (ThorchainSuite) TestSignEx(c *C) {
-	testFunc := func(in stypes.ObservedTxs, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
-		cfg, _, cleanup := setupThorchainForTest(c)
-		defer cleanup()
-		if nil != handleFunc {
-			s := httptest.NewServer(handleFunc)
-			defer s.Close()
-			cfg.ChainHost = s.Listener.Addr().String()
-		}
-		scb, err := NewThorchainBridge(cfg, getMetricForTest(c))
-		c.Assert(err, IsNil)
-		c.Assert(scb, NotNil)
-		stx, err := scb.GetObservationsStdTx(in)
-		c.Assert(stx, resultChecker)
-		c.Assert(err, errChecker)
-	}
-	testBNBAddress, err := common.NewAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
-	if nil != err {
-		c.Error(err)
-	}
-
-	testFunc(stypes.ObservedTxs{
-		stypes.ObservedTx{
-			Tx: common.Tx{
-				FromAddress: testBNBAddress,
-			},
-		},
-	}, func(writer http.ResponseWriter, request *http.Request) {
-		fmt.Printf("RequestURL:%s", request.RequestURI)
-		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
-			n, err := writer.Write([]byte(`{
-				"height":"78",
-					"result":{
-					"type": "cosmos-sdk/Account",
-						"value": {
-						"address": "thor1vx80hen38j5w0jn6gqh3crqvktj9stnhw56kn0",
-							"coins": [
-						{
-							"denom": "bnb",
-							"amount": "1000"
-						},
-						{
-							"denom": "btc",
-							"amount": "1000"
-						},
-						{
-							"denom": "runed",
-							"amount": "1000"
-						}
-		],
-			"public_key": {
-        "type": "tendermint/PubKeySecp256k1",
-        "value": "ArYQdiiY4s1MgIEKm+7LXYQsH+ptH09neh9OWqY5VHYr"
-      },
-			"account_number": "0",
-			"sequence": "2"
-			}
-		}}
-			`))
-			c.Assert(n > 0, Equals, true)
-			c.Assert(err, IsNil)
-			return
-		}
-		writer.WriteHeader(http.StatusInternalServerError)
-	}, NotNil, IsNil)
+func (s *ThorchainSuite) TestSendEx(c *C) {
 }
 
-func (ThorchainSuite) TestSendEx(c *C) {
-	testFunc := func(in stypes.ObservedTxs, mode types.TxMode, handleFunc http.HandlerFunc, resultChecker Checker, errChecker Checker) {
-		cfg, _, cleanup := setupThorchainForTest(c)
-		defer cleanup()
-		if nil != handleFunc {
-			s := httptest.NewServer(handleFunc)
-			defer s.Close()
-			cfg.ChainHost = s.Listener.Addr().String()
-		}
-		scb, err := NewThorchainBridge(cfg, getMetricForTest(c))
-		c.Assert(err, IsNil)
-		c.Assert(scb, NotNil)
-		client := retryablehttp.NewClient()
-		client.Backoff = func(min, max time.Duration, attemptNum int, resp *http.Response) time.Duration {
-			return time.Millisecond * 100
-		}
-		client.RetryMax = 3
-		client.RetryWaitMax = 3 * time.Second
-		scb.WithRetryableHttpClient(client)
-		stx, err := scb.GetObservationsStdTx(in)
-		c.Assert(stx, NotNil)
-		c.Assert(err, IsNil)
-		_, err = scb.Send(*stx, mode)
-		c.Assert(err, errChecker)
-	}
-	testBNBAddress, err := common.NewAddress("tbnb1hv4rmzajm3rx5lvh54sxvg563mufklw0dzyaqa")
-	if nil != err {
-		c.Error(err)
-	}
-	txIns := stypes.ObservedTxs{
-		stypes.ObservedTx{
-			Tx: common.Tx{FromAddress: testBNBAddress},
-		},
-	}
-	testFunc(txIns, types.TxUnknown, func(writer http.ResponseWriter, request *http.Request) {
-		if _, err := writer.Write([]byte(`{
-"height":"78",
-"result":{
-"type": "cosmos-sdk/Account",
-"value": {
-"address": "",
-"coins": [],
-"public_key": null,
-"account_number": "5",
-"sequence": "6"
+func (s *ThorchainSuite) TestGetAccountNumberAndSequenceNumber_Success(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
+	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
+	accNumber, sequence, err := s.bridge.getAccountNumberAndSequenceNumber()
+	c.Assert(err, IsNil)
+	c.Assert(accNumber, Equals, uint64(3))
+	c.Assert(sequence, Equals, uint64(5))
 }
-}}`)); nil != err {
-			c.Error(err)
-		}
-	}, IsNil, NotNil)
-	testFunc(txIns, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
-		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
-			if _, err := writer.Write([]byte(`{
-"height":"78",
-"result":{
-"type": "cosmos-sdk/Account",
-"value": {
-"address": "",
-"coins": [],
-"public_key": null,
-"account_number": "5",
-"sequence": "6"
+
+func (s *ThorchainSuite) TestGetAccountNumberAndSequenceNumber_Fail(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
+	s.authAccountFixture = ""
+	accNumber, sequence, err := s.bridge.getAccountNumberAndSequenceNumber()
+	c.Assert(err, NotNil)
+	c.Assert(accNumber, Equals, uint64(0))
+	c.Assert(sequence, Equals, uint64(0))
 }
-}}`)); nil != err {
-				c.Error(err)
-			}
-			return
-		}
-		writer.WriteHeader(http.StatusInternalServerError)
-	}, IsNil, NotNil)
-	testFunc(txIns, types.TxSync, func(writer http.ResponseWriter, request *http.Request) {
-		if strings.HasPrefix(request.RequestURI, "/auth/accounts") {
-			if _, err := writer.Write([]byte(`{
-"height":"78",
-"result":{
-"type": "cosmos-sdk/Account",
-"value": {
-"address": "",
-"coins": [],
-"public_key": null,
-"account_number": "5",
-"sequence": "6"
+
+func (s *ThorchainSuite) TestGetAccountNumberAndSequenceNumber_Fail_500(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
+	s.authAccountFixture = "500"
+	accNumber, sequence, err := s.bridge.getAccountNumberAndSequenceNumber()
+	c.Assert(err, NotNil)
+	c.Assert(accNumber, Equals, uint64(0))
+	c.Assert(sequence, Equals, uint64(0))
 }
-}}`)); nil != err {
-				c.Error(err)
-			}
-			return
-		}
 
-		if _, err := writer.Write([]byte(`
-whatever`)); nil != err {
-			c.Error(err)
-		}
+func (s *ThorchainSuite) TestGetAccountNumberAndSequenceNumber_Fail_Unmarshal(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
+	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/malformed.json"
+	accNumber, sequence, err := s.bridge.getAccountNumberAndSequenceNumber()
+	c.Assert(err, NotNil)
+	c.Assert(true, Equals, strings.HasPrefix(err.Error(), "failed to unmarshal account resp"))
+	c.Assert(accNumber, Equals, uint64(0))
+	c.Assert(sequence, Equals, uint64(0))
+}
 
-	}, IsNil, NotNil)
+func (s *ThorchainSuite) TestGetAccountNumberAndSequenceNumber_Fail_AccNumberString(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
+	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/accnumber_string.json"
+	accNumber, sequence, err := s.bridge.getAccountNumberAndSequenceNumber()
+	c.Assert(err, NotNil)
+	c.Assert(true, Equals, strings.HasPrefix(err.Error(), "failed to unmarshal base account"))
+	c.Assert(accNumber, Equals, uint64(0))
+	c.Assert(sequence, Equals, uint64(0))
+}
 
+func (s *ThorchainSuite) TestGetAccountNumberAndSequenceNumber_Fail_SequenceString(c *C) {
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
+	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/seqnumber_string.json"
+	accNumber, sequence, err := s.bridge.getAccountNumberAndSequenceNumber()
+	c.Assert(err, NotNil)
+	c.Assert(true, Equals, strings.HasPrefix(err.Error(), "failed to unmarshal base account"))
+	c.Assert(accNumber, Equals, uint64(0))
+	c.Assert(sequence, Equals, uint64(0))
+}
+
+func (s *ThorchainSuite) TestEnsureNodeWhitelisted_Success(c *C) {
+	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
+	err := s.bridge.EnsureNodeWhitelisted()
+	c.Assert(err, IsNil)
+}
+
+func (s *ThorchainSuite) TestEnsureNodeWhitelisted_Fail(c *C) {
+	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
+	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/disabled.json"
+	err := s.bridge.EnsureNodeWhitelisted()
+	c.Assert(err, NotNil)
 }

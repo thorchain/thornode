@@ -51,8 +51,8 @@ type TxOutLocalItem struct {
 	Status LocalStatus `json:"status"`
 }
 
-func (s *ThorchainBlockScannerStorage) getTxOutKey(height string) string {
-	return fmt.Sprintf("txout-%s", height)
+func (s *ThorchainBlockScannerStorage) getTxOutKey(height int64) string {
+	return fmt.Sprintf("txout-%d", height)
 }
 
 // SetTxOutStatus store the txout locally
@@ -77,7 +77,7 @@ func (s *ThorchainBlockScannerStorage) RemoveTxOut(txOut types.TxOut) error {
 	return s.db.Delete([]byte(key), nil)
 }
 
-// GetFailedBlocksForRetry
+// GetTxOutsForRetry send back tx out to retry depending on arg failed only
 func (s *ThorchainBlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([]types.TxOut, error) {
 	iterator := s.db.NewIterator(util.BytesPrefix([]byte("txout-")), nil)
 	defer iterator.Release()

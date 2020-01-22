@@ -5,12 +5,13 @@ import (
 	"net/http/httptest"
 	"strings"
 
+	. "gopkg.in/check.v1"
+
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/helpers"
-	. "gopkg.in/check.v1"
 )
 
-type ValidatorsSuite struct {
+type BlockHeightSuite struct {
 	server  *httptest.Server
 	bridge  *ThorchainBridge
 	cfg     config.ThorchainConfiguration
@@ -18,12 +19,12 @@ type ValidatorsSuite struct {
 	fixture string
 }
 
-var _ = Suite(&ValidatorsSuite{})
+var _ = Suite(&BlockHeightSuite{})
 
-func (s *ValidatorsSuite) SetUpSuite(c *C) {
+func (s *BlockHeightSuite) SetUpSuite(c *C) {
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		switch {
-		case strings.HasPrefix(req.RequestURI, ValidatorsEndpoint):
+		case strings.HasPrefix(req.RequestURI, LastBlockEndpoint):
 			httpTestHandler(c, rw, s.fixture)
 		}
 	}))
@@ -37,19 +38,14 @@ func (s *ValidatorsSuite) SetUpSuite(c *C) {
 	c.Assert(s.bridge, NotNil)
 }
 
-func (s *ValidatorsSuite) TearDownSuite(c *C) {
+func (s *BlockHeightSuite) TearDownSuite(c *C) {
 	s.cleanup()
 	s.server.Close()
 }
 
-func (s *ValidatorsSuite) TestGetValidators(c *C) {
-	s.fixture = "../../test/fixtures/endpoints/validators/template.json"
-	resp, err := s.bridge.GetValidators()
+func (s *BlockHeightSuite) TestGetBlockHeight(c *C) {
+	s.fixture = "../../test/fixtures/endpoints/lastblock/bnb.json"
+	height, err := s.bridge.GetBlockHeight()
 	c.Assert(err, IsNil)
-	c.Assert(resp, NotNil)
-	c.Assert(resp.Nominated, IsNil)
-	c.Assert(resp.Queued, IsNil)
-	c.Assert(resp.RotateWindowOpenAt, Equals, uint64(16081))
-	c.Assert(resp.RotateAt, Equals, uint64(17281))
-	c.Assert(resp.ActiveNodes, HasLen, 1)
+	c.Assert(height, NotNil)
 }
