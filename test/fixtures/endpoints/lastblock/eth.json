@@ -1,6 +1,6 @@
 {
   "chain": "ETH",
-  "lastobservedin": "0",
-  "lastsignedout": "0",
-  "statechain": "4"
+  "lastobservedin": "12345",
+  "lastsignedout": "765",
+  "statechain": "4234"
 }
