@@ -140,10 +140,11 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 		b.logger.Debug().Int64("block", block).Msg("there are no txs in this block")
 		return nil
 	}
+
 	// TODO implement pagination appropriately
 	var txIn stypes.TxIn
 	for _, txn := range query.Result.Txs {
-		txItemIn, err := b.fromTxToTxIn(txn.Hash, txn.Height, txn.Tx) // b.getOneTxFromServer(txn.Hash, b.getSingleTxUrl(txn.Hash))
+		txItemIns, err := b.fromTxToTxIn(txn.Hash, txn.Height, txn.Tx) // b.getOneTxFromServer(txn.Hash, b.getSingleTxUrl(txn.Hash))
 		if nil != err {
 			b.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
 			b.logger.Error().Err(err).Str("hash", txn.Hash).Msg("fail to get one tx from server")
@@ -151,8 +152,8 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 			// if THORNode bail here, then THORNode should retry later
 			return errors.Wrap(err, "fail to get one tx from server")
 		}
-		if nil != txItemIn {
-			txIn.TxArray = append(txIn.TxArray, *txItemIn)
+		if len(txItemIns) > 0 {
+			txIn.TxArray = append(txIn.TxArray, txItemIns...)
 			b.m.GetCounter(metrics.BlockWithTxIn).Inc()
 			b.logger.Info().Str("hash", txn.Hash).Msg("THORNode got one tx")
 		}
@@ -203,6 +204,54 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 	}
 }
 
+func (b BinanceBlockScanner) MatchedAddress(txInItem stypes.TxInItem) bool {
+	// Check if our pool is registering a new yggdrasil pool. Ie
+	// sending the staked assets to the user
+	if ok := b.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
+		b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
+
+		// **IMPORTANT** If this fails, THORNode won't monitor the address and could lose funds!
+		// var pk common.PubKey
+		// chainNetwork := common.GetCurrentChainNetwork()
+		// pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
+		// b.addrVal.AddPubKey(pk)
+		return true
+	}
+
+	// Check if out pool is de registering a yggdrasil pool. Ie sending
+	// the bond back to the user
+	if ok := b.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
+		b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
+
+		// **IMPORTANT** If this fails, THORNode may slash a yggdrasil pool inappropriately
+		// var pk common.PubKey
+		// chainNetwork := common.GetCurrentChainNetwork()
+		// pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
+		// b.addrVal.RemovePubKey(pk)
+		return true
+	}
+
+	// Check if THORNode are sending from a yggdrasil address
+	if ok := b.isYggdrasil(txInItem.Sender); ok {
+		b.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
+		return true
+	}
+
+	// Check if THORNode are sending to a yggdrasil address
+	if ok := b.isYggdrasil(txInItem.To); ok {
+		b.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
+		return true
+	}
+
+	// outbound message from pool, when it is outbound, it does not matter how much coins THORNode send to customer for now
+	if ok := b.isOutboundMsg(txInItem.Sender, txInItem.Memo); ok {
+		b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
+		return true
+	}
+
+	return false
+}
+
 // Check if memo is for registering a Yggdrasil pool
 func (b *BinanceBlockScanner) isRegisterYggdrasil(addr, memo string) bool {
 	return b.isAddrWithMemo(addr, memo, "yggdrasil+")
@@ -221,32 +270,6 @@ func (b *BinanceBlockScanner) isYggdrasil(addr string) bool {
 
 func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) bool {
 	return b.isAddrWithMemo(addr, memo, "outbound")
-}
-
-func (b *BinanceBlockScanner) isPoolAck(addr, memo string) bool {
-	return b.isAddrWithMemo(addr, memo, "ack")
-}
-
-func (b *BinanceBlockScanner) isNextPoolMsg(addr, memo string, coins types.Coins) bool {
-	if ok := b.isAddrWithMemo(addr, memo, "nextpool"); !ok {
-		return false
-	}
-
-	nextPoolCoin := types.Coin{
-		Denom:  common.BNBTicker.String(),
-		Amount: 37501,
-	}
-	hasCorrectCoin := false
-	for _, c := range coins {
-		if c.SameDenomAs(nextPoolCoin) && c.Amount == nextPoolCoin.Amount {
-			hasCorrectCoin = true
-			break
-		}
-	}
-	if hasCorrectCoin {
-		return true
-	}
-	return false
 }
 
 func (b *BinanceBlockScanner) isAddrWithMemo(addr, memo, targetMemo string) bool {
@@ -277,7 +300,7 @@ func (b *BinanceBlockScanner) getCoinsForTxIn(outputs []bmsg.Output) (common.Coi
 	return cc, nil
 }
 
-func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*stypes.TxInItem, error) {
+func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) ([]stypes.TxInItem, error) {
 	if len(encodedTx) == 0 {
 		return nil, errors.New("tx is empty")
 	}
@@ -296,18 +319,18 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) (*sty
 }
 
 // fromStdTx - process a stdTx
-func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.TxInItem, error) {
+func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.TxInItem, error) {
 	var err error
-	txInItem := stypes.TxInItem{
-		Tx: hash,
-	}
-	// TODO: it is possible to have multiple `SendMsg` in a single stdTx, which
-	// THORNode are currently not accounting for. It is also possible to have
-	// multiple inputs/outputs within a single stdTx, which THORNode are not yet
-	// accounting for.
+	var txs []stypes.TxInItem
+
+	// TODO: It is also possible to have multiple inputs/outputs within a
+	// single stdTx, which THORNode are not yet accounting for.
 	for _, msg := range stdTx.Msgs {
 		switch sendMsg := msg.(type) {
 		case bmsg.SendMsg:
+			txInItem := stypes.TxInItem{
+				Tx: hash,
+			}
 			txInItem.Memo = stdTx.Memo
 			// THORNode take the first Input as sender, first Output as receiver
 			// so if THORNode send to multiple different receiver within one tx, this won't be able to process it.
@@ -336,76 +359,30 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) (*stypes.Tx
 				txInItem.Gas = common.BNBGasFeeSingleton
 			}
 
+			if ok := b.MatchedAddress(txInItem); !ok {
+				continue
+			}
+
+			// NOTE: the following could result in the same tx being added
+			// twice, which is expected. We want to make sure we generate both
+			// a inbound and outbound txn, if we both apply.
+
 			// check if the from address is a valid pool
 			if ok, cpi := b.addrVal.IsValidPoolAddress(txInItem.Sender, common.BNBChain); ok {
 				txInItem.ObservedPoolAddress = cpi.PubKey.String()
+				txs = append(txs, txInItem)
 			}
 			// check if the to address is a valid pool address
 			if ok, cpi := b.addrVal.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
 				txInItem.ObservedPoolAddress = cpi.PubKey.String()
+				txs = append(txs, txInItem)
 			}
 
-			// Check if our pool is registering a new yggdrasil pool. Ie
-			// sending the staked assets to the user
-			if ok := b.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
-				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
-
-				// **IMPORTANT** If this fails, THORNode won't monitor the address and could lose funds!
-				// var pk common.PubKey
-				// chainNetwork := common.GetCurrentChainNetwork()
-				// pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
-				// b.addrVal.AddPubKey(pk)
-				return &txInItem, nil
-			}
-
-			// Check if out pool is de registering a yggdrasil pool. Ie sending
-			// the bond back to the user
-			if ok := b.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
-				b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
-
-				// **IMPORTANT** If this fails, THORNode may slash a yggdrasil pool inappropriately
-				// var pk common.PubKey
-				// chainNetwork := common.GetCurrentChainNetwork()
-				// pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
-				// b.addrVal.RemovePubKey(pk)
-
-				return &txInItem, nil
-			}
-
-			// Check if THORNode are sending from a yggdrasil address
-			if ok := b.isYggdrasil(txInItem.Sender); ok {
-				b.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
-				return &txInItem, nil
-			}
-
-			// Check if THORNode are sending to a yggdrasil address
-			if ok := b.isYggdrasil(txInItem.To); ok {
-				b.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
-				return &txInItem, nil
-			}
-
-			// outbound message from pool, when it is outbound, it does not matter how much coins THORNode send to customer for now
-			if ok := b.isOutboundMsg(txInItem.Sender, txInItem.Memo); ok {
-				b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
-				return &txInItem, nil
-			}
-
-			// Check that if we've gotten an ack from the next pool
-			if ok := b.isPoolAck(txInItem.Sender, txInItem.Memo); ok {
-				b.logger.Debug().Str("memo", txInItem.Memo).Msg("ack")
-				// TODO: looks like we've added a new pool, add it to the list of pools to monitor.
-				return &txInItem, nil
-			}
-
-			if ok := b.isNextPoolMsg(txInItem.Sender, txInItem.Memo, sender.Coins); ok {
-				b.logger.Debug().Str("memo", txInItem.Memo).Msg("nextpool")
-				return &txInItem, nil
-			}
 		default:
 			continue
 		}
 	}
-	return nil, nil
+	return txs, nil
 }
 
 func (b *BinanceBlockScanner) Stop() error {
