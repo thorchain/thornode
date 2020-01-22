@@ -7,10 +7,12 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/helpers"
+	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 	. "gopkg.in/check.v1"
 )
 
-type ValidatorsSuite struct {
+type KeygenSuite struct {
 	server  *httptest.Server
 	bridge  *ThorchainBridge
 	cfg     config.ThorchainConfiguration
@@ -18,12 +20,12 @@ type ValidatorsSuite struct {
 	fixture string
 }
 
-var _ = Suite(&ValidatorsSuite{})
+var _ = Suite(&KeygenSuite{})
 
-func (s *ValidatorsSuite) SetUpSuite(c *C) {
+func (s *KeygenSuite) SetUpSuite(c *C) {
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		switch {
-		case strings.HasPrefix(req.RequestURI, ValidatorsEndpoint):
+		case strings.HasPrefix(req.RequestURI, KeygenEndpoint):
 			httpTestHandler(c, rw, s.fixture)
 		}
 	}))
@@ -37,19 +39,19 @@ func (s *ValidatorsSuite) SetUpSuite(c *C) {
 	c.Assert(s.bridge, NotNil)
 }
 
-func (s *ValidatorsSuite) TearDownSuite(c *C) {
+func (s *KeygenSuite) TearDownSuite(c *C) {
 	s.cleanup()
 	s.server.Close()
 }
 
-func (s *ValidatorsSuite) TestGetValidators(c *C) {
-	s.fixture = "../../test/fixtures/endpoints/validators/template.json"
-	resp, err := s.bridge.GetValidators()
+func (s *KeygenSuite) TestGetKeygen(c *C) {
+	s.fixture = "../../test/fixtures/endpoints/keygen/template.json"
+	pk := types.GetRandomPubKey()
+	expectedKey, err := common.NewPubKey("thorpub1addwnpepq2kdyjkm6y9aa3kxl8wfaverka6pvkek2ygrmhx6sj3ec6h0fegwsgeslue")
 	c.Assert(err, IsNil)
-	c.Assert(resp, NotNil)
-	c.Assert(resp.Nominated, IsNil)
-	c.Assert(resp.Queued, IsNil)
-	c.Assert(resp.RotateWindowOpenAt, Equals, uint64(16081))
-	c.Assert(resp.RotateAt, Equals, uint64(17281))
-	c.Assert(resp.ActiveNodes, HasLen, 1)
+	keygens, err := s.bridge.GetKeygens(1718, pk.String())
+	c.Assert(err, IsNil)
+	c.Assert(keygens, NotNil)
+	c.Assert(keygens.Height, Equals, int64(1718))
+	c.Assert(keygens.Keygens[0][0], Equals, expectedKey)
 }

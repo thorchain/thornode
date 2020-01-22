@@ -1,0 +1,26 @@
+{
+    "active_nodes": [
+        {
+            "bond": "0",
+            "bond_address": "tbnb1ggdcyhk8rc7fgzp8wa2su220aclcggcsd94ye5",
+            "node_address": "thor146z3xkdlyzmda639ljsk3qvucpem0f60d2lz62",
+            "observer_active": false,
+            "pub_key_set": {
+                "ed25519": "thorpub1addwnpepq0t2qpwk0rx4da68zzvl6w7vdcdygyzau49ffc2kqnx0624ard576060nyk",
+                "secp256k1": "thorpub1addwnpepq0t2qpwk0rx4da68zzvl6w7vdcdygyzau49ffc2kqnx0624ard576060nyk"
+            },
+            "signer_active": false,
+            "signer_membership": [
+                "thorpub1addwnpepqw9gv9ffmua8xpgyqj5nn4slw62wpwvcfgj6xxwx9tuyg0x80xlf24a8s6c"
+            ],
+            "status": "active",
+            "status_since": "1",
+            "validator_cons_pub_key": "thorcpub1zcjduepqx34rzj073kcqzwefz3j70rfcps2e3he7yx4qu45pv09nektnk67swkgalp",
+            "version": "0.1.0"
+        }
+    ],
+    "nominated": null,
+    "queued": null,
+    "rotate_at": "17281",
+    "rotate_window_open_at": "16081"
+}

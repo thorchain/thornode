@@ -1,14 +1,13 @@
 package thorclient
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -28,7 +27,17 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
-var EmptyNodeAccount stypes.NodeAccount
+// Endpoint urls
+const (
+	AuthAccountEndpoint  = "/auth/accounts"
+	BroadcastTxsEndpoint = "/txs"
+	KeygenEndpoint       = "/thorchain/keygen"
+	KeysignEndpoint      = "/thorchain/keysign"
+	LastBlockEndpoint    = "/thorchain/lastblock"
+	NodeAccountEndpoint  = "/thorchain/nodeaccount"
+	ValidatorsEndpoint   = "/thorchain/validators"
+	VaultsEndpoint       = "/thorchain/vaults/pubkeys"
+)
 
 // ThorchainBridge will be used to send tx to thorchain
 type ThorchainBridge struct {
@@ -41,12 +50,15 @@ type ThorchainBridge struct {
 	blockHeight   int64
 	accountNumber uint64
 	seqNumber     uint64
-	client        *retryablehttp.Client
+	httpClient    *retryablehttp.Client
 	broadcastLock *sync.RWMutex
 }
 
 // NewThorchainBridge create a new instance of ThorchainBridge
 func NewThorchainBridge(cfg config.ThorchainConfiguration, m *metrics.Metrics) (*ThorchainBridge, error) {
+	// main module logger
+	logger := log.With().Str("module", "thorchain_client").Logger()
+
 	if len(cfg.ChainID) == 0 {
 		return nil, errors.New("chain id is empty")
 	}
@@ -63,18 +75,26 @@ func NewThorchainBridge(cfg config.ThorchainConfiguration, m *metrics.Metrics) (
 	if nil != err {
 		return nil, fmt.Errorf("fail to get keybase,err:%w", err)
 	}
+
+	// create retryablehttp client using our own logger format with a sublogger
+	sublogger := logger.With().Str("component", "retryable_http_client").Logger()
+	httpClientLogger := common.NewRetryableHTTPLogger(sublogger)
+	httpClient := retryablehttp.NewClient()
+	httpClient.Logger = httpClientLogger
+
 	return &ThorchainBridge{
-		logger:        log.With().Str("module", "thorchain_bridge").Logger(),
+		logger:        logger,
 		cdc:           MakeCodec(),
 		cfg:           cfg,
 		keys:          k,
 		errCounter:    m.GetCounterVec(metrics.ThorchainBridgeError),
-		client:        retryablehttp.NewClient(),
+		httpClient:    httpClient,
 		m:             m,
 		broadcastLock: &sync.RWMutex{},
 	}, nil
 }
 
+// MakeCodec creates codec
 func MakeCodec() *codec.Codec {
 	var cdc = codec.New()
 	sdk.RegisterCodec(cdc)
@@ -83,57 +103,90 @@ func MakeCodec() *codec.Codec {
 	return cdc
 }
 
-func (scb *ThorchainBridge) WithRetryableHttpClient(c *retryablehttp.Client) {
-	scb.client = c
-}
-
-func (scb *ThorchainBridge) getAccountInfoUrl(chainHost string) string {
-	return scb.GetUrl(fmt.Sprintf("/auth/accounts/%s", scb.keys.GetSignerInfo().GetAddress()))
-}
-
-func (scb *ThorchainBridge) getAccountNumberAndSequenceNumber(requestUrl string) (uint64, uint64, error) {
-	if len(requestUrl) == 0 {
-		return 0, 0, errors.New("request url is empty")
-	}
-
-	resp, err := scb.client.Get(requestUrl)
+// get handle all the low level http GET calls using retryablehttp.ThorchainBridge
+func (b *ThorchainBridge) get(path string) ([]byte, error) {
+	resp, err := b.httpClient.Get(b.getThorChainURL(path))
 	if err != nil {
-		return 0, 0, errors.Wrapf(err, "fail to get response from %s", requestUrl)
-	}
-	if resp.StatusCode != http.StatusOK {
-		return 0, 0, errors.Errorf("status code %d (%s) is unexpected", resp.StatusCode, resp.Status)
+		b.errCounter.WithLabelValues("fail_get_from_thorchain", "").Inc()
+		return nil, errors.Wrap(err, "failed to GET from thorchain")
 	}
 	defer func() {
 		if err := resp.Body.Close(); nil != err {
-			scb.logger.Error().Err(err).Msg("fail to close response body")
+			b.logger.Error().Err(err).Msg("failed to close response body")
 		}
 	}()
-	body, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("Status code: " + strconv.Itoa(resp.StatusCode) + " returned")
+	}
+	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return 0, 0, errors.Wrap(err, "fail to read response body")
+		b.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+	return buf, nil
+}
+
+// post handle all the low level http POST calls using retryablehttp.ThorchainBridge
+func (b *ThorchainBridge) post(path string, bodyType string, body interface{}) ([]byte, error) {
+	resp, err := b.httpClient.Post(b.getThorChainURL(path), bodyType, body)
+	if err != nil {
+		b.errCounter.WithLabelValues("fail_post_to_thorchain", "").Inc()
+		return nil, errors.Wrap(err, "failed to POST to thorchain")
+	}
+	defer func() {
+		if err := resp.Body.Close(); nil != err {
+			b.logger.Error().Err(err).Msg("failed to close response body")
+		}
+	}()
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("Status code: " + strconv.Itoa(resp.StatusCode) + " returned")
+	}
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		b.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
+		return nil, errors.Wrap(err, "failed to read response body")
+	}
+	return buf, nil
+}
+
+// getThorChainURL with the given path
+func (b *ThorchainBridge) getThorChainURL(path string) string {
+	uri := url.URL{
+		Scheme: "http",
+		Host:   b.cfg.ChainHost,
+		Path:   path,
+	}
+	return uri.String()
+}
+
+// getAccountNumberAndSequenceNumber returns account and Sequence number required to post into thorchain
+func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, error) {
+	url := fmt.Sprintf("%s/%s", AuthAccountEndpoint, b.keys.GetSignerInfo().GetAddress())
+
+	body, err := b.get(url)
+	if err != nil {
+		return 0, 0, errors.Wrap(err, "failed to get auth accounts")
 	}
 	var accountResp types.AccountResp
 	if err := json.Unmarshal(body, &accountResp); nil != err {
-		return 0, 0, errors.Wrap(err, "fail to unmarshal account resp")
+		return 0, 0, errors.Wrap(err, "failed to unmarshal account resp")
 	}
 	var baseAccount authtypes.BaseAccount
 	err = authtypes.ModuleCdc.UnmarshalJSON(accountResp.Result, &baseAccount)
 	if err != nil {
-		return 0, 0, errors.Wrap(err, "fail to unmarshal base account")
+		return 0, 0, errors.Wrap(err, "failed to unmarshal base account")
 	}
-
 	return baseAccount.AccountNumber, baseAccount.Sequence, nil
-
 }
 
-// Sign new keygen
-func (scb *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, inputPks common.PubKeys) (*authtypes.StdTx, error) {
+// GetKeygenStdTx get keygen tx from params
+func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, inputPks common.PubKeys) (*authtypes.StdTx, error) {
 	start := time.Now()
 	defer func() {
-		scb.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
+		b.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
 	}()
 
-	msg := stypes.NewMsgTssPool(inputPks, poolPubKey, scb.keys.GetSignerInfo().GetAddress())
+	msg := stypes.NewMsgTssPool(inputPks, poolPubKey, b.keys.GetSignerInfo().GetAddress())
 
 	stdTx := authtypes.NewStdTx(
 		[]sdk.Msg{msg},
@@ -145,15 +198,15 @@ func (scb *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, inputPks co
 	return &stdTx, nil
 }
 
-// Sign the incoming transaction
-func (scb *ThorchainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*authtypes.StdTx, error) {
+// GetObservationsStdTx get observations tx from txIns
+func (b *ThorchainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*authtypes.StdTx, error) {
 	if len(txIns) == 0 {
-		scb.errCounter.WithLabelValues("nothing_to_sign", "").Inc()
+		b.errCounter.WithLabelValues("nothing_to_sign", "").Inc()
 		return nil, errors.New("nothing to be signed")
 	}
 	start := time.Now()
 	defer func() {
-		scb.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
+		b.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
 	}()
 
 	var inbound stypes.ObservedTxs
@@ -181,10 +234,10 @@ func (scb *ThorchainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*aut
 
 	var msgs []sdk.Msg
 	if len(inbound) > 0 {
-		msgs = append(msgs, stypes.NewMsgObservedTxIn(inbound, scb.keys.GetSignerInfo().GetAddress()))
+		msgs = append(msgs, stypes.NewMsgObservedTxIn(inbound, b.keys.GetSignerInfo().GetAddress()))
 	}
 	if len(outbound) > 0 {
-		msgs = append(msgs, stypes.NewMsgObservedTxOut(outbound, scb.keys.GetSignerInfo().GetAddress()))
+		msgs = append(msgs, stypes.NewMsgObservedTxOut(outbound, b.keys.GetSignerInfo().GetAddress()))
 	}
 
 	stdTx := authtypes.NewStdTx(
@@ -197,260 +250,36 @@ func (scb *ThorchainBridge) GetObservationsStdTx(txIns stypes.ObservedTxs) (*aut
 	return &stdTx, nil
 }
 
-// Send the signed transaction to thorchain
-func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (common.TxID, error) {
-	scb.broadcastLock.Lock()
-	defer scb.broadcastLock.Unlock()
-
-	var noTxID = common.TxID("")
-	if !mode.IsValid() {
-		return noTxID, fmt.Errorf("transaction Mode (%s) is invalid", mode)
-	}
-	start := time.Now()
-	defer func() {
-		scb.m.GetHistograms(metrics.SendToThorchainDuration).Observe(time.Since(start).Seconds())
-	}()
-
-	blockHeight, err := scb.GetBlockHeight()
-	if err != nil {
-		return noTxID, err
-	}
-	if blockHeight > scb.blockHeight {
-		var seqNum uint64
-		scb.accountNumber, seqNum, err = scb.getAccountNumberAndSequenceNumber(scb.getAccountInfoUrl(scb.cfg.ChainHost))
-		if nil != err {
-			return noTxID, errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
-		}
-		scb.blockHeight = blockHeight
-		if seqNum > scb.seqNumber {
-			scb.seqNumber = seqNum
-		}
-	}
-
-	scb.logger.Info().Uint64("account_number", scb.accountNumber).Uint64("sequence_number", scb.accountNumber).Msg("account info")
-	stdMsg := authtypes.StdSignMsg{
-		ChainID:       scb.cfg.ChainID,
-		AccountNumber: scb.accountNumber,
-		Sequence:      scb.seqNumber,
-		Fee:           stdTx.Fee,
-		Msgs:          stdTx.GetMsgs(),
-		Memo:          stdTx.GetMemo(),
-	}
-	sig, err := authtypes.MakeSignature(scb.keys.GetKeybase(), scb.cfg.SignerName, scb.cfg.SignerPasswd, stdMsg)
-	if err != nil {
-		scb.errCounter.WithLabelValues("fail_sign", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to sign the message")
-	}
-
-	signed := authtypes.NewStdTx(
-		stdTx.GetMsgs(),
-		stdTx.Fee,
-		[]authtypes.StdSignature{sig},
-		stdTx.GetMemo(),
-	)
-
-	scb.m.GetCounter(metrics.TxToThorchainSigned).Inc()
-
-	var setTx types.SetTx
-	setTx.Mode = mode.String()
-	setTx.Tx.Msg = signed.Msgs
-	setTx.Tx.Fee = signed.Fee
-	setTx.Tx.Signatures = signed.Signatures
-	setTx.Tx.Memo = signed.Memo
-	result, err := scb.cdc.MarshalJSON(setTx)
-	if nil != err {
-		scb.errCounter.WithLabelValues("fail_marshal_settx", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to marshal settx to json")
-	}
-
-	scb.logger.Info().Str("payload", string(result)).Msg("post to thorchain")
-
-	resp, err := scb.client.Post(scb.GetUrl("/txs"), "application/json", bytes.NewBuffer(result))
-	if err != nil {
-		scb.errCounter.WithLabelValues("fail_post_to_thorchain", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to post tx to thorchain")
-	}
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-			scb.logger.Error().Err(err).Msg("fail to close response body")
-		}
-	}()
-	body, err := ioutil.ReadAll(resp.Body)
-	if nil != err {
-		scb.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
-		return noTxID, errors.Wrap(err, "fail to read response body")
-	}
-
-	// NOTE: we can actually see two different json responses for the same end.
-	// This complicates things pretty well.
-	// Sample 1: { "height": "0", "txhash": "D97E8A81417E293F5B28DDB53A4AD87B434CA30F51D683DA758ECC2168A7A005", "raw_log": "[{\"msg_index\":0,\"success\":true,\"log\":\"\",\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"set_observed_txout\"}]}]}]", "logs": [ { "msg_index": 0, "success": true, "log": "", "events": [ { "type": "message", "attributes": [ { "key": "action", "value": "set_observed_txout" } ] } ] } ] }
-	// Sample 2: { "height": "0", "txhash": "6A9AA734374D567D1FFA794134A66D3BF614C4EE5DDF334F21A52A47C188A6A2", "code": 4, "raw_log": "{\"codespace\":\"sdk\",\"code\":4,\"message\":\"signature verification failed; verify correct account sequence and chain-id\"}" }
-	var commit types.Commit
-	err = json.Unmarshal(body, &commit)
-	if err != nil {
-		scb.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
-		scb.logger.Error().Err(err).Msg("fail unmarshal commit")
-
-		var badCommit types.BadCommit // since commit doesn't work, lets try bad commit
-		err = json.Unmarshal(body, &badCommit)
-		if err != nil {
-			scb.logger.Error().Err(err).Msg("fail unmarshal bad commit")
-			return noTxID, errors.Wrap(err, "fail to unmarshal bad commit")
-		}
-
-		// check for any failure logs
-		if badCommit.Code > 0 {
-			err := errors.New(badCommit.Log.Message)
-			scb.logger.Error().Err(err).Msg("fail to broadcast")
-			return noTxID, errors.Wrap(err, "fail to broadcast")
-		}
-	}
-
-	for _, log := range commit.Logs {
-		if !log.Success {
-			err := errors.New(log.Log)
-			scb.logger.Error().Err(err).Msg("fail to broadcast")
-			return noTxID, errors.Wrap(err, "fail to broadcast")
-		}
-	}
-
-	scb.m.GetCounter(metrics.TxToThorchain).Inc()
-	scb.logger.Info().Msgf("Received a TxHash of %v from the thorchain", commit.TxHash)
-
-	// increment seqNum
-	atomic.AddUint64(&scb.seqNumber, 1)
-
-	return common.NewTxID(commit.TxHash)
-}
-
-func (scb *ThorchainBridge) GetBlockHeight() (int64, error) {
-	heights, err := scb.getHeights()
-	return heights.Statechain, err
-}
-
-// GetBinanceChainStartHeight
-func (scb *ThorchainBridge) GetBinanceChainStartHeight() (int64, error) {
-	heights, err := scb.getHeights()
-	return heights.LastChainHeight, err
-}
-
-func (scb *ThorchainBridge) getHeights() (stypes.QueryResHeights, error) {
-	resp, err := scb.client.Get(scb.GetUrl("/thorchain/lastblock"))
-	if nil != err {
-		return stypes.QueryResHeights{}, errors.Wrap(err, "fail to get last blocks from thorchain")
-	}
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-			scb.logger.Error().Err(err).Msg("fail to close response body")
-		}
-	}()
-	if resp.StatusCode != http.StatusOK {
-		return stypes.QueryResHeights{}, errors.New("fail to get last block height from thorchain")
-	}
-	var blocks stypes.QueryResHeights
-	buf, err := ioutil.ReadAll(resp.Body)
-	if nil != err {
-		return stypes.QueryResHeights{}, errors.Wrap(err, "fail to read response body")
-	}
-	if err := scb.cdc.UnmarshalJSON(buf, &blocks); nil != err {
-		scb.errCounter.WithLabelValues("fail_unmarshal_lastblock", "").Inc()
-		return stypes.QueryResHeights{}, errors.Wrap(err, "fail to unmarshal last block")
-	}
-
-	return blocks, nil
-}
-
-// getThorchainUrl with the given path
-func (scb *ThorchainBridge) GetUrl(path string) string {
-	uri := url.URL{
-		Scheme: "http",
-		Host:   scb.cfg.ChainHost,
-		Path:   path,
-	}
-	return uri.String()
-}
-
-func (scb *ThorchainBridge) EnsureNodeWhitelistedWithTimeout() error {
+// EnsureNodeWhitelistedWithTimeout check node is whitelisted with timeout retry
+func (b *ThorchainBridge) EnsureNodeWhitelistedWithTimeout() error {
 	for {
 		select {
 		case <-time.After(time.Hour):
 			return errors.New("Observer is not whitelisted yet")
 		default:
-			err := scb.EnsureNodeWhitelisted()
+			err := b.EnsureNodeWhitelisted()
 			if nil == err {
 				// node had been whitelisted
 				return nil
 			}
-			scb.logger.Error().Err(err).Msg("observer is not whitelisted , will retry a bit later")
+			b.logger.Error().Err(err).Msg("observer is not whitelisted , will retry a bit later")
 			time.Sleep(time.Second * 30)
 		}
 	}
 }
 
 // EnsureNodeWhitelisted will call to thorchain to check whether the observer had been whitelist or not
-func (scb *ThorchainBridge) EnsureNodeWhitelisted() error {
-	bepAddr := scb.keys.GetSignerInfo().GetAddress().String()
+func (b *ThorchainBridge) EnsureNodeWhitelisted() error {
+	bepAddr := b.keys.GetSignerInfo().GetAddress().String()
 	if len(bepAddr) == 0 {
 		return errors.New("bep address is empty")
 	}
-
-	requestUrl := scb.GetUrl("/thorchain/observer/" + bepAddr)
-	scb.logger.Debug().Str("request_url", requestUrl).Msg("check node account status")
-	resp, err := scb.client.Get(requestUrl)
-	if nil != err {
-		return errors.Wrap(err, "fail to get node account status")
+	na, err := b.GetNodeAccount(bepAddr)
+	if err != nil {
+		return errors.Wrap(err, "failed to get node account")
 	}
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-			scb.logger.Error().Err(err).Msg("fail to close response body")
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		return errors.New("fail to get node account from thorchain")
-	}
-	var nodeAccount stypes.NodeAccount
-	buf, err := ioutil.ReadAll(resp.Body)
-	if nil != err {
-		return errors.Wrap(err, "fail to read response body")
-	}
-	if err := scb.cdc.UnmarshalJSON(buf, &nodeAccount); nil != err {
-		scb.errCounter.WithLabelValues("fail_unmarshal_nodeaccount", "").Inc()
-		return errors.Wrap(err, "fail to unmarshal node account")
-	}
-
-	if nodeAccount.Status == stypes.Disabled || nodeAccount.Status == stypes.Unknown {
-		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", nodeAccount.Status)
+	if na.Status == stypes.Disabled || na.Status == stypes.Unknown {
+		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", na.Status)
 	}
 	return nil
-}
-
-// GetNodeAccount from thorchain
-func (scb *ThorchainBridge) GetNodeAccount(thorAddr string) (stypes.NodeAccount, error) {
-	requestUrl := scb.GetUrl("/thorchain/nodeaccount/" + thorAddr)
-
-	scb.logger.Debug().Str("request_url", requestUrl).Msg("get node account")
-	resp, err := scb.client.Get(requestUrl)
-	if nil != err {
-		return EmptyNodeAccount, errors.Wrap(err, "fail to get node account")
-	}
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-			scb.logger.Error().Err(err).Msg("fail to close response body")
-		}
-	}()
-	if resp.StatusCode != http.StatusOK {
-		return EmptyNodeAccount, fmt.Errorf("fail to get node account from thorchain,statusCode:%d", resp.StatusCode)
-	}
-	var na stypes.NodeAccount
-
-	buf, err := ioutil.ReadAll(resp.Body)
-	if nil != err {
-		return EmptyNodeAccount, fmt.Errorf("fail to read response body,err:%w", err)
-	}
-	cdc := MakeCodec()
-	if err := cdc.UnmarshalJSON(buf, &na); nil != err {
-		return EmptyNodeAccount, fmt.Errorf("fail to unmarshal node account response,err:%w", err)
-	}
-	return na, nil
 }

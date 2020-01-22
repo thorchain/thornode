@@ -44,7 +44,7 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 	logger := log.Logger.With().Str("module", "observer").Logger()
 
 	if !cfg.BlockScanner.EnforceBlockHeight {
-		startBlockHeight, err := thorchainBridge.GetBinanceChainStartHeight()
+		startBlockHeight, err := thorchainBridge.GetLastObservedInHeight(common.BNBChain)
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get start block height from thorchain")
 		}
@@ -184,7 +184,7 @@ func (o *Observer) signAndSendToThorchain(txIn types.TxIn) error {
 		o.errCounter.WithLabelValues("fail_to_sign", txIn.BlockHeight).Inc()
 		return errors.Wrap(err, "fail to sign the tx")
 	}
-	txID, err := o.thorchainBridge.Send(*stdTx, types.TxSync)
+	txID, err := o.thorchainBridge.Broadcast(*stdTx, types.TxSync)
 	if nil != err {
 		o.errCounter.WithLabelValues("fail_to_send_to_thorchain", txIn.BlockHeight).Inc()
 		return errors.Wrap(err, "fail to send the tx to thorchain")

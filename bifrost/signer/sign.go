@@ -58,7 +58,7 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 
 	pkm := NewPubKeyManager()
 
-	var na ttypes.NodeAccount
+	var na *ttypes.NodeAccount
 	for i := 0; i < 300; i++ { // wait for 5 min before timing out
 		var err error
 		na, err = thorchainBridge.GetNodeAccount(thorKeys.GetSignerInfo().GetAddress().String())
@@ -153,12 +153,12 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 			}
 
 			if err := s.signTxOutAndSendToBinanceChain(item); nil != err {
-				s.errCounter.WithLabelValues("fail_sign_send_to_binance", item.Height).Inc()
-				s.logger.Error().Err(err).Str("height", item.Height).Msg("fail to sign and send it to binance chain")
+				s.errCounter.WithLabelValues("fail_sign_send_to_binance", strconv.FormatInt(item.Height, 10)).Inc()
+				s.logger.Error().Err(err).Str("height", strconv.FormatInt(item.Height, 10)).Msg("fail to sign and send it to binance chain")
 				continue
 			}
 			if err := s.storage.RemoveTxOut(item); err != nil {
-				s.errCounter.WithLabelValues("fail_remove_txout_from_local", item.Height).Inc()
+				s.errCounter.WithLabelValues("fail_remove_txout_from_local", strconv.FormatInt(item.Height, 10)).Inc()
 				s.logger.Error().Err(err).Msg("fail to remove txout from local storage")
 				return errors.Wrap(err, "fail to remove txout from local storage")
 			}
@@ -206,29 +206,30 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 		case <-s.stopChan:
 			return
 		case txOut, more := <-ch:
+			strHeight := strconv.FormatInt(txOut.Height, 10)
 			if !more {
 				return
 			}
 			s.logger.Info().Msgf("Received a TxOut Array of %v from the Thorchain", txOut)
 			if err := s.storage.SetTxOutStatus(txOut, Processing); nil != err {
-				s.errCounter.WithLabelValues("fail_update_txout_local", txOut.Height).Inc()
+				s.errCounter.WithLabelValues("fail_update_txout_local", strHeight).Inc()
 				s.logger.Error().Err(err).Msg("fail to update txout local storage")
 				// raise alert
 				return
 			}
 
 			if err := s.signTxOutAndSendToBinanceChain(txOut); nil != err {
-				s.errCounter.WithLabelValues("fail_sign_send_to_binance", txOut.Height).Inc()
+				s.errCounter.WithLabelValues("fail_sign_send_to_binance", strHeight).Inc()
 				s.logger.Error().Err(err).Msg("fail to send txout to binance chain, will retry later")
 				if err := s.storage.SetTxOutStatus(txOut, Failed); nil != err {
-					s.errCounter.WithLabelValues("fail_update_txout_local", txOut.Height).Inc()
+					s.errCounter.WithLabelValues("fail_update_txout_local", strHeight).Inc()
 					s.logger.Error().Err(err).Msg("fail to update txout local storage")
 					// raise alert
 					return
 				}
 			}
 			if err := s.storage.RemoveTxOut(txOut); nil != err {
-				s.errCounter.WithLabelValues("fail_remove_txout_local", txOut.Height).Inc()
+				s.errCounter.WithLabelValues("fail_remove_txout_local", strHeight).Inc()
 				s.logger.Error().Err(err).Msg("fail to remove txout from local store")
 			}
 		}
@@ -273,28 +274,26 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 	}
 }
 
-func (s *Signer) sendKeygenToThorchain(height string, poolPk common.PubKey, input common.PubKeys) error {
+func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, input common.PubKeys) error {
 	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, input)
+	strHeight := strconv.FormatInt(height, 10)
 	if nil != err {
-		s.errCounter.WithLabelValues("fail_to_sign", height).Inc()
+		s.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()
 		return errors.Wrap(err, "fail to sign the tx")
 	}
-	txID, err := s.thorchainBridge.Send(*stdTx, types.TxSync)
+	txID, err := s.thorchainBridge.Broadcast(*stdTx, types.TxSync)
 	if nil != err {
-		s.errCounter.WithLabelValues("fail_to_send_to_thorchain", height).Inc()
+		s.errCounter.WithLabelValues("fail_to_send_to_thorchain", strHeight).Inc()
 		return errors.Wrap(err, "fail to send the tx to thorchain")
 	}
-	s.logger.Info().Str("block", height).Str("thorchain hash", txID.String()).Msg("sign and send to thorchain successfully")
+	s.logger.Info().Int64("block", height).Str("thorchain hash", txID.String()).Msg("sign and send to thorchain successfully")
 	return nil
 }
 
 // signAndSendToBinanceChainWithRetry retry a few times before THORNode move on to he next block
 func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 	// most case , there should be only one item in txOut.TxArray, but sometimes there might be more than one
-	height, err := strconv.ParseInt(txOut.Height, 10, 64)
-	if nil != err {
-		return errors.Wrapf(err, "fail to parse block height: %s ", txOut.Height)
-	}
+	height := txOut.Height
 	for _, item := range txOut.TxArray {
 		processed, err := s.storage.HasTxOutItem(item, height)
 		if nil != err {
