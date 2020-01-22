@@ -49,3 +49,10 @@ func (s *BlockHeightSuite) TestGetBlockHeight(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(height, NotNil)
 }
+
+func (s *BlockHeightSuite) TestGetBlockHeight(c *C) {
+	s.fixture = "../../test/fixtures/endpoints/lastblock/bnb.json"
+	height, err := s.bridge.GetBlockHeight()
+	c.Assert(err, IsNil)
+	c.Assert(height, NotNil)
+}
