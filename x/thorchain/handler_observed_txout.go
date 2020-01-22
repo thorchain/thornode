@@ -203,16 +203,21 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 
 		// If sending from one of our vaults, decrement coins
 		if h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
+			fmt.Println("FOUND VAULT")
 			vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
 			if nil != err {
 				ctx.Logger().Error("fail to get vault", "error", err)
 				return sdk.ErrInternal("fail to get vault").Result()
 			}
+			fmt.Printf("Pre  Sub: %+v\n", vault.Coins)
 			vault.SubFunds(tx.Tx.Coins)
+			fmt.Printf("Post Sub: %+v\n", vault.Coins)
 			if err := h.keeper.SetVault(ctx, vault); nil != err {
 				ctx.Logger().Error("fail to save vault", "error", err)
 				return sdk.ErrInternal("fail to save vault").Result()
 			}
+		} else {
+			fmt.Println("NOT FOUND VAULT")
 		}
 		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
 
