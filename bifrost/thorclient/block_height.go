@@ -21,7 +21,7 @@ func (b *ThorchainBridge) GetLastObservedInHeight(chain common.Chain) (int64, er
 func (b *ThorchainBridge) GetLastSignedOutHeight() (int64, error) {
 	lastblock, err := b.getLastBlock("")
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to GetLastSignedOutheight")
+		return 0, errors.Wrap(err, "failed to GetLastSignedOutHeight")
 	}
 	return lastblock.LastSignedHeight, nil
 }

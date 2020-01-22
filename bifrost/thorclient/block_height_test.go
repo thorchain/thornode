@@ -9,6 +9,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/helpers"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type BlockHeightSuite struct {
@@ -48,11 +49,33 @@ func (s *BlockHeightSuite) TestGetBlockHeight(c *C) {
 	height, err := s.bridge.GetBlockHeight()
 	c.Assert(err, IsNil)
 	c.Assert(height, NotNil)
+	c.Assert(height, Equals, int64(4))
 }
 
-func (s *BlockHeightSuite) TestGetBlockHeight(c *C) {
+func (s *BlockHeightSuite) TestGetLastObservedInHeight(c *C) {
 	s.fixture = "../../test/fixtures/endpoints/lastblock/bnb.json"
-	height, err := s.bridge.GetBlockHeight()
+	height, err := s.bridge.GetLastObservedInHeight(common.BNBChain)
 	c.Assert(err, IsNil)
 	c.Assert(height, NotNil)
+	c.Assert(height, Equals, int64(52875358))
+
+	s.fixture = "../../test/fixtures/endpoints/lastblock/btc.json"
+	height, err = s.bridge.GetLastObservedInHeight(common.BTCChain)
+	c.Assert(err, IsNil)
+	c.Assert(height, NotNil)
+	c.Assert(height, Equals, int64(17))
+
+	s.fixture = "../../test/fixtures/endpoints/lastblock/eth.json"
+	height, err = s.bridge.GetLastObservedInHeight(common.BTCChain)
+	c.Assert(err, IsNil)
+	c.Assert(height, NotNil)
+	c.Assert(height, Equals, int64(12345))
+}
+
+func (s *BlockHeightSuite) TestGetLastSignedHeight(c *C) {
+	s.fixture = "../../test/fixtures/endpoints/lastblock/bnb.json"
+	height, err := s.bridge.GetLastSignedOutHeight()
+	c.Assert(err, IsNil)
+	c.Assert(height, NotNil)
+	c.Assert(height, Equals, int64(2))
 }
