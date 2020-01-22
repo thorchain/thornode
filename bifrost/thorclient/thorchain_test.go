@@ -152,12 +152,6 @@ func (ThorchainSuite) TestNewThorchainBridge(c *C) {
 	}, NotNil, IsNil)
 }
 
-func (s *ThorchainSuite) TestSignEx(c *C) {
-}
-
-func (s *ThorchainSuite) TestSendEx(c *C) {
-}
-
 func (s *ThorchainSuite) TestGetAccountNumberAndSequenceNumber_Success(c *C) {
 	s.nodeAccountFixture = "../../test/fixtures/endpoints/nodeaccount/template.json"
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/template.json"
