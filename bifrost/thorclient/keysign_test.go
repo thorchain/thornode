@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
-	"gitlab.com/thorchain/thornode/bifrost/helpers"
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 	. "gopkg.in/check.v1"
@@ -30,10 +29,10 @@ func (s *KeysignSuite) SetUpSuite(c *C) {
 		}
 	}))
 
-	s.cfg, _, s.cleanup = helpers.SetupStateChainForTest(c)
+	s.cfg, _, s.cleanup = SetupStateChainForTest(c)
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
 	var err error
-	s.bridge, err = NewThorchainBridge(s.cfg, helpers.GetMetricForTest(c))
+	s.bridge, err = NewThorchainBridge(s.cfg, GetMetricForTest(c))
 	s.bridge.httpClient.RetryMax = 1
 	c.Assert(err, IsNil)
 	c.Assert(s.bridge, NotNil)

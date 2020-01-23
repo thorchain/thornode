@@ -10,10 +10,10 @@ install: go.sum
 	go install -tags "${TAGS}" ./cmd/thord
 	go install ./cmd/bifrost
 
-install-testnet: 
+install-testnet:
 	TAGS=testnet make install
 
-install-sandbox: 
+install-sandbox:
 	TAGS=sandbox make install
 
 tools:
@@ -67,8 +67,7 @@ reset: clean install
 	./build/scripts/localdev.sh
 
 clean:
-	rm -rf ~/.thord
-	rm -rf ~/.thorcli
+	rm -rf ~/.thor*
 	rm -f ${GOBIN}/{bsinner,generate,sweep,thorcli,thord,bifrost}
 
 .envrc: install

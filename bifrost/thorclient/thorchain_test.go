@@ -11,7 +11,6 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
-	"gitlab.com/thorchain/thornode/bifrost/helpers"
 	"gitlab.com/thorchain/thornode/cmd"
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
@@ -33,7 +32,7 @@ var _ = Suite(&ThorchainSuite{})
 func (s *ThorchainSuite) SetUpSuite(c *C) {
 	cfg2 := sdk.GetConfig()
 	cfg2.SetBech32PrefixForAccount(cmd.Bech32PrefixAccAddr, cmd.Bech32PrefixAccPub)
-	s.cfg, _, s.cleanup = helpers.SetupStateChainForTest(c)
+	s.cfg, _, s.cleanup = SetupStateChainForTest(c)
 	s.server = httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		switch {
 		case strings.HasPrefix(req.RequestURI, AuthAccountEndpoint):
@@ -49,7 +48,7 @@ func (s *ThorchainSuite) SetUpSuite(c *C) {
 	s.cfg.ChainHost = s.server.Listener.Addr().String()
 
 	var err error
-	s.bridge, err = NewThorchainBridge(s.cfg, helpers.GetMetricForTest(c))
+	s.bridge, err = NewThorchainBridge(s.cfg, GetMetricForTest(c))
 	s.bridge.httpClient.RetryMax = 1 // fail fast
 	c.Assert(err, IsNil)
 	c.Assert(s.bridge, NotNil)
@@ -118,7 +117,7 @@ func (s *ThorchainSuite) TestSign(c *C) {
 
 func (ThorchainSuite) TestNewThorchainBridge(c *C) {
 	var testFunc = func(cfg config.ThorchainConfiguration, errChecker Checker, sbChecker Checker) {
-		sb, err := NewThorchainBridge(cfg, helpers.GetMetricForTest(c))
+		sb, err := NewThorchainBridge(cfg, GetMetricForTest(c))
 		c.Assert(err, errChecker)
 		c.Assert(sb, sbChecker)
 	}

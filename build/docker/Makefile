@@ -1,9 +1,9 @@
 include mocknet/Makefile testnet/Makefile
-.PHONY: build 
+.PHONY: build
 
 TAGS ?= mainnet
 
-build: 
+build:
 	docker build -t registry.gitlab.com/thorchain/thornode:${TAGS} --build-arg TAGS=${TAGS} -f Dockerfile ../..
 
 clean:
@@ -26,10 +26,10 @@ clean-validator:
 	@rm -rf ~/.thornode/validator
 	@mkdir -p ~/.thornode/validator
 
-stop: 
+stop:
 	BUILD_FLAG="" docker-compose -p thornode down --remove-orphans
 
-run-validator: 
+run-validator:
 	docker-compose -f validator.yml --project-name validator up --force-recreate -d
 
 reset-validator: clean-validator run-validator
