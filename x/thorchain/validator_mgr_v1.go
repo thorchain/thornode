@@ -822,10 +822,6 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 		return active[i].LeaveHeight > active[j].LeaveHeight
 	})
 
-	for _, na := range active {
-		fmt.Printf("Active NA: %s\n", na.NodeAddress)
-	}
-
 	// remove a node node account, if one is marked to leave
 	if len(active) > 0 && (active[0].LeaveHeight > 0 || active[0].RequestedToLeave) {
 		rotation = true
@@ -842,6 +838,11 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 		if i == limit { // limit adding ready accounts
 			break
 		}
+	}
+
+	fmt.Printf("Rotate: %+v\n", rotation)
+	for _, na := range active {
+		fmt.Printf("Active NA: %s\n", na.NodeAddress)
 	}
 
 	return active, rotation, nil
