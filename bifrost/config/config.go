@@ -58,6 +58,7 @@ type BlockScannerConfiguration struct {
 	BlockHeightDiscoverBackoff time.Duration `json:"block_height_discover_back_off" mapstructure:"block_height_discover_back_off"`
 	BlockRetryInterval         time.Duration `json:"block_retry_interval" mapstructure:"block_retry_interval"`
 	EnforceBlockHeight         bool          `json:"enforce_block_height" mapstructure:"enforce_block_height"`
+	ChainID                    string        `json:"chain_id" mapstructure:"chain_id"`
 }
 
 // ThorchainConfiguration
@@ -119,10 +120,12 @@ func applyDefaultObserverConfig() {
 	viper.SetDefault("observer.observer_db_path", "observer_data")
 	viper.SetDefault("observer.retry_interval", "2s")
 	applyBlockScannerDefault("observer")
+	viper.SetDefault("observer.block_scanner.chain_id", "BNB")
 }
 
 func applyDefaultSignerConfig() {
 	viper.SetDefault("signer.signer_db_path", "signer_db")
 	applyBlockScannerDefault("signer")
 	viper.SetDefault("signer.retry_interval", "2s")
+	viper.SetDefault("signer.block_scanner.chain_id", "ThorChain")
 }
