@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
@@ -191,6 +193,7 @@ func (tx ObservedTxVoter) HasConensus(nodeAccounts NodeAccounts) bool {
 				count += 1
 			}
 		}
+		fmt.Printf("Majority: %d/%d", count, len(nodeAccounts))
 		if HasMajority(count, len(nodeAccounts)) {
 			return true
 		}
