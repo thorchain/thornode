@@ -128,7 +128,7 @@ func (s ThorchainSuite) TestSend(c *C) {
 			_, err := rw.Write([]byte(`{"txhash":"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D", "height": "test_height"}`))
 			c.Assert(err, IsNil)
 		} else if req.URL.String() == "/thorchain/lastblock" {
-			_, err := rw.Write([]byte(`{"statechain":"23"}`))
+			_, err := rw.Write([]byte(`{"thorchain":"23"}`))
 			c.Assert(err, IsNil)
 		} else if strings.HasPrefix(req.URL.String(), "/auth/account") {
 			_, err := rw.Write([]byte(`{

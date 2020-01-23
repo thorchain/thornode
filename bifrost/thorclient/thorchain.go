@@ -325,7 +325,7 @@ func (scb *ThorchainBridge) Send(stdTx authtypes.StdTx, mode types.TxMode) (comm
 
 func (scb *ThorchainBridge) GetBlockHeight() (int64, error) {
 	heights, err := scb.getHeights()
-	return heights.Statechain, err
+	return heights.Thorchain, err
 }
 
 // GetBinanceChainStartHeight
