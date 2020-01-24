@@ -51,7 +51,7 @@ func main() {
 	initLog(*logLevel, *pretty)
 
 	// load configuration file
-	cfg, err := config.LoadConfig(*cfgFile)
+	cfg, err := config.LoadBiFrostConfig(*cfgFile)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to load config ")
 	}
