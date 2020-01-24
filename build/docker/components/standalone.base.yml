@@ -17,14 +17,13 @@ services:
       CHAIN_RPC: thor-daemon:26657
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
       TSS_HOST: tss
-      LOG_LEVEL: ${LOG_LEVEL:-info}
     entrypoint:
       /docker/scripts/bifrost.sh
     volumes:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
-    command: ["bifrost", "-c", "/etc/bifrost/config.json", "-l", "$LOG_LEVEL"]
+    command: ["bifrost", "-c", "/etc/bifrost/config.json", "-l", "info"]
 
   thor-daemon:
     container_name: thor-daemon
