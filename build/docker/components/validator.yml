@@ -3,6 +3,7 @@ version: '3'
 services:
   bifrost:
     hostname: bifrost
+    container_name: bifrost
     build:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
@@ -28,6 +29,7 @@ services:
     command: ["bifrost", "-c", "/etc/bifrost/config.json"]
 
   thor-daemon:
+    container_name: thor-daemon
     hostname: thor-daemon
     build:
       context: ../../..
@@ -58,6 +60,7 @@ services:
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api:
+    container_name: thor-api
     hostname: thor-api
     build:
       context: ../../..
@@ -82,6 +85,7 @@ services:
     command: ["thorcli", "rest-server", "--chain-id", "thorchain", "--laddr", "tcp://0.0.0.0:1317", "--node", "tcp://thor-daemon:26657"]
 
   tss:
+    container_name: tss
     hostname: tss
     image: registry.gitlab.com/thorchain/tss/go-tss
     restart: unless-stopped
