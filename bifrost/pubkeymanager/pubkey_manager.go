@@ -110,17 +110,27 @@ func (pkm *PubKeyManager) HasPubKey(pk common.PubKey) bool {
 
 func (pkm *PubKeyManager) AddPubKey(pk common.PubKey, signer bool) {
 	pkm.rwMutex.Lock()
-	if !pkm.HasPubKey(pk) {
+	defer pkm.rwMutex.Unlock()
+
+	if pkm.HasPubKey(pk) {
+		// pubkey already exists, update the signer...
+		for i, pubkey := range pkm.pubkeys {
+			if pk.Equals(pubkey.PubKey) {
+				pkm.pubkeys[i].Signer = signer
+			}
+		}
+	} else {
+		// pubkey doesn't exist yet, append it...
 		pkm.pubkeys = append(pkm.pubkeys, PK{
 			PubKey: pk,
 			Signer: signer,
 		})
 	}
-	pkm.rwMutex.Unlock()
 }
 
 func (pkm *PubKeyManager) RemovePubKey(pk common.PubKey) {
 	pkm.rwMutex.Lock()
+	defer pkm.rwMutex.Unlock()
 	for i, pubkey := range pkm.pubkeys {
 		if pk.Equals(pubkey.PubKey) {
 			pkm.pubkeys[i] = pkm.pubkeys[len(pkm.pubkeys)-1] // Copy last element to index i.
@@ -129,7 +139,6 @@ func (pkm *PubKeyManager) RemovePubKey(pk common.PubKey) {
 			break
 		}
 	}
-	pkm.rwMutex.Unlock()
 }
 
 func (pkm *PubKeyManager) updatePubKeys() {
