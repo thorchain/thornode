@@ -66,6 +66,82 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 	return nil
 }
 
+func subsidizePoolWithSlashBond(ctx sdk.Context, keeper Keeper, ygg Vault, yggTotalStolen, slashRuneAmt sdk.Uint) error {
+	// Thorchain did not slash the node account
+	if slashRuneAmt.IsZero() {
+		return nil
+	}
+	stolenRUNE := ygg.GetCoin(common.RuneAsset()).Amount
+	slashRuneAmt = common.SafeSub(slashRuneAmt, stolenRUNE)
+	yggTotalStolen = common.SafeSub(yggTotalStolen, stolenRUNE)
+	type fund struct {
+		stolenAsset   sdk.Uint
+		subsidiseRune sdk.Uint
+	}
+	// here need to use a map to hold on to the amount of RUNE need to be subsidized to each pool
+	// reason being , if ygg pool has both RUNE and BNB coin left, these two coin share the same pool
+	// which is BNB pool , if add the RUNE directly back to pool , it will affect BNB price , which will affect the result
+	subsidizeAmounts := make(map[common.Asset]fund)
+	for _, coin := range ygg.Coins {
+		asset := coin.Asset
+		if coin.Asset.IsRune() {
+			// when the asset is RUNE, thorchain don't need to update the RUNE balance on pool
+			continue
+		}
+		f, ok := subsidizeAmounts[asset]
+		if !ok {
+			f = fund{
+				stolenAsset:   sdk.ZeroUint(),
+				subsidiseRune: sdk.ZeroUint(),
+			}
+		}
+
+		pool, err := keeper.GetPool(ctx, asset)
+		if err != nil {
+			return err
+		}
+		f.stolenAsset = f.stolenAsset.Add(coin.Amount)
+		runeValue := pool.AssetValueInRune(coin.Amount)
+		// the amount of RUNE thorchain used to subsidize the pool is calculate by ratio
+		// slashRune * (stealAssetRuneValue /totalStealAssetRuneValue)
+		subsidizeAmt := slashRuneAmt.Mul(runeValue).Quo(yggTotalStolen)
+		f.subsidiseRune = f.subsidiseRune.Add(subsidizeAmt)
+		subsidizeAmounts[asset] = f
+	}
+
+	for asset, f := range subsidizeAmounts {
+		pool, err := keeper.GetPool(ctx, asset)
+		if err != nil {
+			return err
+		}
+		pool.BalanceRune = pool.BalanceRune.Add(f.subsidiseRune)
+		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, f.stolenAsset)
+
+		if err := keeper.SetPool(ctx, pool); nil != err {
+			return fmt.Errorf("fail to save pool: %w", err)
+		}
+	}
+	return nil
+}
+
+// getTotalYggValueInRune will go through all the coins in ygg , and calculate the total value in RUNE
+// return value will be totalValueInRune,error
+func getTotalYggValueInRune(ctx sdk.Context, keeper Keeper, ygg Vault) (sdk.Uint, error) {
+	yggRune := sdk.ZeroUint()
+	for _, coin := range ygg.Coins {
+		if coin.Asset.IsRune() {
+			yggRune = yggRune.Add(coin.Amount)
+		} else {
+			pool, err := keeper.GetPool(ctx, coin.Asset)
+			if err != nil {
+				return sdk.ZeroUint(), err
+			}
+			yggRune = yggRune.Add(pool.AssetValueInRune(coin.Amount))
+		}
+	}
+	return yggRune, nil
+}
+
 func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keeper, txOut TxOutStore) error {
 	if nodeAcc.Status == NodeActive {
 		ctx.Logger().Info("node still active , cannot refund bond", "node address", nodeAcc.NodeAddress, "node pub key", nodeAcc.PubKeySet.Secp256k1)
@@ -76,32 +152,24 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 		return err
 	}
 	if !ygg.IsYggdrasil() {
-		return fmt.Errorf("this is not a Yggdrasil vault")
+		return errors.New("this is not a Yggdrasil vault")
 	}
 
 	// Calculate total value (in rune) the Yggdrasil pool has
-	yggRune := sdk.ZeroUint()
-	for _, coin := range ygg.Coins {
-		if coin.Asset.IsRune() {
-			yggRune = yggRune.Add(coin.Amount)
-		} else {
-			pool, err := keeper.GetPool(ctx, coin.Asset)
-			if err != nil {
-				return err
-			}
-			yggRune = yggRune.Add(pool.AssetValueInRune(coin.Amount))
-		}
+	yggRune, err := getTotalYggValueInRune(ctx, keeper, ygg)
+	if nil != err {
+		return fmt.Errorf("fail to get total ygg value in RUNE: %w", err)
 	}
 
 	if nodeAcc.Bond.LT(yggRune) {
 		ctx.Logger().Error(fmt.Sprintf("Node Account (%s) left with more funds in their Yggdrasil vault than their bond's value (%s / %s)", nodeAcc.NodeAddress, yggRune, nodeAcc.Bond))
 	}
 	// slashing 1.5 * yggdrasil remains
-	yggRune = yggRune.MulUint64(15).QuoUint64(10)
-	nodeAcc.Bond = common.SafeSub(nodeAcc.Bond, yggRune)
+	slashRune := yggRune.MulUint64(3).QuoUint64(2)
+	bondBeforeSlash := nodeAcc.Bond
+	nodeAcc.Bond = common.SafeSub(nodeAcc.Bond, slashRune)
 
-	if nodeAcc.Bond.GT(sdk.ZeroUint()) {
-
+	if !nodeAcc.Bond.IsZero() {
 		active, err := keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
 		if err != nil {
 			ctx.Logger().Error("fail to get active vaults", "error", err)
@@ -134,6 +202,10 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 		if err := keeper.UpsertEvent(ctx, e); nil != err {
 			return fmt.Errorf("fail to save bond return event: %w", err)
 		}
+	} else {
+		// if it get into here that means the node account doesn't have any bond left after slash.
+		// which means the real slashed RUNE could be the bond they have before slash
+		slashRune = bondBeforeSlash
 	}
 
 	nodeAcc.Bond = sdk.ZeroUint()
@@ -143,8 +215,13 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", nodeAcc), "error", err)
 		return err
 	}
+	if err := subsidizePoolWithSlashBond(ctx, keeper, ygg, yggRune, slashRune); nil != err {
+		ctx.Logger().Error("fail to subsidize pool with slashed bond", "error", err)
+		return err
+	}
+	// delete the ygg vault, there is nothing left in the ygg vault
+	return keeper.DeleteVault(ctx, ygg.PubKey)
 
-	return nil
 }
 
 // Checks if the observed vault pubkey is a valid asgard or ygg vault
