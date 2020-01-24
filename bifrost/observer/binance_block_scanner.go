@@ -206,6 +206,12 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 }
 
 func (b BinanceBlockScanner) MatchedAddress(txInItem stypes.TxInItem) bool {
+	// Check if we are migrating our funds...
+	if ok := b.isMigration(txInItem.Sender, txInItem.Memo); ok {
+		b.logger.Debug().Str("memo", txInItem.Memo).Msg("migrate")
+		return true
+	}
+
 	// Check if our pool is registering a new yggdrasil pool. Ie
 	// sending the staked assets to the user
 	if ok := b.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
@@ -239,6 +245,11 @@ func (b BinanceBlockScanner) MatchedAddress(txInItem stypes.TxInItem) bool {
 	}
 
 	return false
+}
+
+// Check if memo is for registering a Yggdrasil pool
+func (b *BinanceBlockScanner) isMigration(addr, memo string) bool {
+	return b.isAddrWithMemo(addr, memo, "migrate")
 }
 
 // Check if memo is for registering a Yggdrasil pool
