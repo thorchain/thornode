@@ -22,7 +22,6 @@ import (
 
 type PubKeyValidator interface {
 	IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo)
-	IsValidAddress(addr string, chain common.Chain) bool
 	HasPubKey(pk common.PubKey) bool
 	AddPubKey(pk common.PubKey, _ bool)
 	RemovePubKey(pk common.PubKey)
@@ -171,22 +170,6 @@ func matchAddress(addr string, chain common.Chain, key common.PubKey) (bool, com
 		return true, cpi
 	}
 	return false, common.EmptyChainPoolInfo
-}
-
-// IsValidAddress check whether the given address is a monitored address
-func (pkm *PubKeyManager) IsValidAddress(addr string, chain common.Chain) bool {
-	pkm.rwMutex.RLock()
-	defer pkm.rwMutex.RUnlock()
-
-	for _, pk := range pkm.pubkeys {
-		pkAddr, _ := pk.PubKey.GetAddress(chain)
-		address, _ := common.NewAddress(addr)
-		if address.Equals(pkAddr) && !pkAddr.IsEmpty() && !address.IsEmpty() {
-			return true
-		}
-	}
-
-	return false
 }
 
 // IsValidPoolAddress check whether the given address is a pool addr

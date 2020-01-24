@@ -40,11 +40,6 @@ func (mpa *MockPoolAddressValidator) RemovePubKey(pk common.PubKey)      {}
 func (mpa *MockPoolAddressValidator) Start() error                       { return errors.New("Kaboom!") }
 func (mpa *MockPoolAddressValidator) Stop() error                        { return errors.New("Kaboom!") }
 
-func (mpa *MockPoolAddressValidator) IsValidAddress(addr string, chain common.Chain) bool {
-	ok, _ := mpa.IsValidPoolAddress(addr, chain)
-	return ok
-}
-
 func (mpa *MockPoolAddressValidator) IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo) {
 	matchCurrent, cpi := matchTestAddress(addr, current, chain)
 	if matchCurrent {
