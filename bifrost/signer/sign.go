@@ -17,6 +17,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/binance"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
@@ -46,17 +47,15 @@ type Signer struct {
 	errCounter            *prometheus.CounterVec
 	tssKeygen             *tss.KeyGen
 	thorKeys              *thorclient.Keys
-	pkm                   *PubKeyManager
+	pubkeyMgr             pubkeymanager.PubKeyValidator
 }
 
 // NewSigner create a new instance of signer
-func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, tssCfg config.TSSConfiguration, bnb *binance.Binance, m *metrics.Metrics) (*Signer, error) {
+func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, pubkeyMgr pubkeymanager.PubKeyValidator, tssCfg config.TSSConfiguration, bnb *binance.Binance, m *metrics.Metrics) (*Signer, error) {
 	thorchainScanStorage, err := NewThorchainBlockScannerStorage(cfg.SignerDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
 	}
-
-	pkm := NewPubKeyManager()
 
 	var na *ttypes.NodeAccount
 	for i := 0; i < 300; i++ { // wait for 5 min before timing out
@@ -73,15 +72,15 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 		fmt.Println("Waiting for node account to be registered...")
 	}
 	for _, item := range na.SignerMembership {
-		pkm.Add(item)
+		pubkeyMgr.AddPubKey(item, true)
 	}
 	if na.PubKeySet.Secp256k1.IsEmpty() {
 		return nil, fmt.Errorf("Unable to find pubkey for this node account.Exiting...")
 	}
-	pkm.Add(na.PubKeySet.Secp256k1)
+	pubkeyMgr.AddPubKey(na.PubKeySet.Secp256k1, true)
 
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
-	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, thorchainScanStorage, thorchainBridge, m, pkm)
+	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, thorchainScanStorage, thorchainBridge, m, pubkeyMgr)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create thorchain block scan")
 	}
@@ -96,7 +95,7 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 		m:                     m,
 		storage:               thorchainScanStorage,
 		errCounter:            m.GetCounterVec(metrics.SignerError),
-		pkm:                   pkm,
+		pubkeyMgr:             pubkeyMgr,
 		thorchainBridge:       thorchainBridge,
 	}
 
@@ -168,7 +167,7 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 }
 
 func (s *Signer) shouldSign(tai types.TxArrayItem) bool {
-	return s.pkm.HasKey(tai.VaultPubKey)
+	return s.pubkeyMgr.HasPubKey(tai.VaultPubKey)
 }
 
 func (s *Signer) retryFailedTxOutProcessor() {
@@ -262,7 +261,7 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 					continue
 				}
 
-				s.pkm.Add(pubKey.Secp256k1)
+				s.pubkeyMgr.AddPubKey(pubKey.Secp256k1, true)
 
 				if err := s.sendKeygenToThorchain(keygens.Height, pubKey.Secp256k1, keygen); err != nil {
 					s.errCounter.WithLabelValues("fail_to_broadcast_keygen", "").Inc()

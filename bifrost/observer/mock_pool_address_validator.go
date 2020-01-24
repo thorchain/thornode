@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
@@ -31,8 +32,13 @@ func matchTestAddress(addr, testAddr string, chain common.Chain) (bool, common.C
 	return false, common.EmptyChainPoolInfo
 }
 
-func (mpa *MockPoolAddressValidator) AddPubKey(pk common.PubKey)    {}
-func (mpa *MockPoolAddressValidator) RemovePubKey(pk common.PubKey) {}
+func (mpa *MockPoolAddressValidator) GetPubKeys() common.PubKeys         { return nil }
+func (mpa *MockPoolAddressValidator) GetSignPubKeys() common.PubKeys     { return nil }
+func (mpa *MockPoolAddressValidator) HasPubKey(pk common.PubKey) bool    { return false }
+func (mpa *MockPoolAddressValidator) AddPubKey(pk common.PubKey, _ bool) {}
+func (mpa *MockPoolAddressValidator) RemovePubKey(pk common.PubKey)      {}
+func (mpa *MockPoolAddressValidator) Start() error                       { return errors.New("Kaboom!") }
+func (mpa *MockPoolAddressValidator) Stop() error                        { return errors.New("Kaboom!") }
 
 func (mpa *MockPoolAddressValidator) IsValidAddress(addr string, chain common.Chain) bool {
 	ok, _ := mpa.IsValidPoolAddress(addr, chain)

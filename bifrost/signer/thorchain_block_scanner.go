@@ -13,6 +13,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
@@ -29,12 +30,12 @@ type ThorchainBlockScan struct {
 	thorchain          *thorclient.ThorchainBridge
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
-	pkm                *PubKeyManager
+	pubkeyMgr          pubkeymanager.PubKeyValidator
 	cdc                *codec.Codec
 }
 
 // NewThorchainBlockScan create a new instance of thorchain block scanner
-func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, thorchain *thorclient.ThorchainBridge, m *metrics.Metrics, pkm *PubKeyManager) (*ThorchainBlockScan, error) {
+func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, thorchain *thorclient.ThorchainBridge, m *metrics.Metrics, pubkeyMgr pubkeymanager.PubKeyValidator) (*ThorchainBlockScan, error) {
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
 	}
@@ -56,7 +57,7 @@ func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blo
 		commonBlockScanner: commonBlockScanner,
 		thorchain:          thorchain,
 		errCounter:         m.GetCounterVec(metrics.ThorchainBlockScannerError),
-		pkm:                pkm,
+		pubkeyMgr:          pubkeyMgr,
 		cdc:                codec.New(),
 	}, nil
 }
@@ -79,7 +80,7 @@ func (b *ThorchainBlockScan) Start() error {
 }
 
 func (b *ThorchainBlockScan) processKeygenBlock(blockHeight int64) error {
-	for _, pk := range b.pkm.pks {
+	for _, pk := range b.pubkeyMgr.GetSignPubKeys() {
 		keygens, err := b.thorchain.GetKeygens(blockHeight, pk.String())
 		if err != nil {
 			return errors.Wrap(err, "fail to get keygens from block scanner")
@@ -90,7 +91,7 @@ func (b *ThorchainBlockScan) processKeygenBlock(blockHeight int64) error {
 }
 
 func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
-	for _, pk := range b.pkm.pks {
+	for _, pk := range b.pubkeyMgr.GetSignPubKeys() {
 		if len(pk.String()) == 0 {
 			continue
 		}
