@@ -22,20 +22,20 @@ const (
 	TotalBlockScanned       MetricName = `total_block_scanned`
 	CurrentPosition         MetricName = `current_position`
 	TotalRetryBlocks        MetricName = `total_retry_blocks`
-	CommonBLockScannerError MetricName = `block_scanner_error`
+	CommonBlockScannerError MetricName = `block_scanner_error`
 
 	BinanceBlockScanError MetricName = `biance_block_scan_error`
 	BlockWithoutTx        MetricName = `block_no_tx`
 	BlockWithTxIn         MetricName = `block_tx_in`
 	BlockNoTxIn           MetricName = `block_no_tx_in`
 
-	ThorchainBlockScanError MetricName = `thorchain_block_scan_error`
-	BlockNoTxOut            MetricName = `block_no_txout`
+	ThorchainBlockScannerError MetricName = `thorchain_block_scan_error`
+	BlockNoTxOut               MetricName = `block_no_txout`
 
 	BlockDiscoveryDuration MetricName = `block_discovery_duration`
 	SearchTxDuration       MetricName = `search_tx_duration`
 
-	ThorchainBridgeError    MetricName = `thorchain_bridge_error`
+	ThorchainClientError    MetricName = `thorchain_client_error`
 	TxToThorchain           MetricName = `tx_to_thorchain`
 	TxToThorchainSigned     MetricName = `tx_to_thorchain_signed`
 	SignToThorchainDuration MetricName = `sign_to_thorchain_duration`
@@ -88,7 +88,7 @@ var (
 			Namespace: "block_scanner",
 			Subsystem: "binance_block_scanner",
 			Name:      "block_with_tx_in",
-			Help:      "block that has tx THORNode need to process",
+			Help:      "block that has tx we need to process",
 		}),
 		BlockNoTxIn: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: "block_scanner",
@@ -104,13 +104,13 @@ var (
 		}),
 		TxToThorchain: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: "observer",
-			Subsystem: "thorchain_bridge",
+			Subsystem: "thorchain_client",
 			Name:      "tx_to_thorchain",
 			Help:      "number of tx observer post to thorchain successfully",
 		}),
 		TxToThorchainSigned: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: "observer",
-			Subsystem: "thorchain_bridge",
+			Subsystem: "thorchain_client",
 			Name:      "tx_to_thorchain_signed",
 			Help:      "number of tx observer signed successfully",
 		}),
@@ -128,7 +128,7 @@ var (
 		}),
 	}
 	counterVecs = map[MetricName]*prometheus.CounterVec{
-		CommonBLockScannerError: prometheus.NewCounterVec(prometheus.CounterOpts{
+		CommonBlockScannerError: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "block_scanner",
 			Subsystem: "common_block_scanner",
 			Name:      "errors",
@@ -145,7 +145,7 @@ var (
 			"error_name", "additional",
 		}),
 
-		ThorchainBlockScanError: prometheus.NewCounterVec(prometheus.CounterOpts{
+		ThorchainBlockScannerError: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "block_scanner",
 			Subsystem: "thorchain_block_scanner",
 			Name:      "errors",
@@ -154,11 +154,11 @@ var (
 			"error_name", "additional",
 		}),
 
-		ThorchainBridgeError: prometheus.NewCounterVec(prometheus.CounterOpts{
+		ThorchainClientError: prometheus.NewCounterVec(prometheus.CounterOpts{
 			Namespace: "thorchain",
-			Subsystem: "thorchain_bridge",
+			Subsystem: "thorchain_client",
 			Name:      "errors",
-			Help:      "errors in thorchain bridge",
+			Help:      "errors in thorchain client",
 		}, []string{
 			"error_name", "additional",
 		}),
