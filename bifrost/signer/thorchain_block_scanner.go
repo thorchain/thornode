@@ -55,7 +55,7 @@ func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blo
 		scannerStorage:     scanStorage,
 		commonBlockScanner: commonBlockScanner,
 		thorchain:          thorchain,
-		errCounter:         m.GetCounterVec(metrics.ThorchainBlockScanError),
+		errCounter:         m.GetCounterVec(metrics.ThorchainBlockScannerError),
 		pkm:                pkm,
 		cdc:                codec.New(),
 	}, nil
