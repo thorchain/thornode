@@ -36,7 +36,7 @@ type PK struct {
 	Signer bool
 }
 
-// PubKeyManager it manage the pool address
+// PubKeyManager it manages a list of pubkeys
 type PubKeyManager struct {
 	cdc        *codec.Codec
 	pubkeys    []PK
@@ -45,7 +45,6 @@ type PubKeyManager struct {
 	chainHost  string // thorchain host
 	errCounter *prometheus.CounterVec
 	m          *metrics.Metrics
-	wg         *sync.WaitGroup
 	stopChan   chan struct{}
 }
 
@@ -57,21 +56,17 @@ func NewPubKeyManager(chainHost string, m *metrics.Metrics) (*PubKeyManager, err
 		chainHost:  chainHost,
 		errCounter: m.GetCounterVec(metrics.PubKeyManagerError),
 		m:          m,
-		wg:         &sync.WaitGroup{},
 		stopChan:   make(chan struct{}),
 		rwMutex:    &sync.RWMutex{},
 	}, nil
 }
 
-// Start to poll poll addresses from thorchain
+// Start to poll pubkeys from thorchain
 func (pkm *PubKeyManager) Start() error {
-	pkm.wg.Add(1)
 	pubkeys, err := pkm.getPubkeys()
-	if nil != err {
+	if err != nil {
 		return errors.Wrap(err, "fail to get pubkeys from thorchain")
 	}
-	pkm.rwMutex.Lock()
-	defer pkm.rwMutex.Unlock()
 	for _, pk := range pubkeys {
 		pkm.AddPubKey(pk, false)
 	}
@@ -79,11 +74,10 @@ func (pkm *PubKeyManager) Start() error {
 	return nil
 }
 
-// Stop pool address manager
+// Stop pubkey manager
 func (pkm *PubKeyManager) Stop() error {
-	defer pkm.logger.Info().Msg("pool address manager stopped")
+	defer pkm.logger.Info().Msg("pubkey manager stopped")
 	close(pkm.stopChan)
-	pkm.wg.Wait()
 	return nil
 }
 
@@ -116,10 +110,7 @@ func (pkm *PubKeyManager) HasPubKey(pk common.PubKey) bool {
 
 func (pkm *PubKeyManager) AddPubKey(pk common.PubKey, signer bool) {
 	pkm.rwMutex.Lock()
-	if pkm.HasPubKey(pk) {
-		if signer {
-		}
-	} else {
+	if !pkm.HasPubKey(pk) {
 		pkm.pubkeys = append(pkm.pubkeys, PK{
 			PubKey: pk,
 			Signer: signer,
@@ -144,7 +135,6 @@ func (pkm *PubKeyManager) RemovePubKey(pk common.PubKey) {
 func (pkm *PubKeyManager) updatePubKeys() {
 	pkm.logger.Info().Msg("start to update pub keys")
 	defer pkm.logger.Info().Msg("stop to update pub keys")
-	defer pkm.wg.Done()
 	for {
 		select {
 		case <-pkm.stopChan:
