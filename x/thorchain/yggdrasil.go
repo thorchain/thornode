@@ -24,7 +24,6 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	}
 
 	// Gather list of all pools
-
 	pools, err := keeper.GetPools(ctx)
 	if err != nil {
 		return err
