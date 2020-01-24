@@ -39,6 +39,10 @@ func (s *PubKeyMgrSuite) TestPubkeyMgr(c *C) {
 	c.Assert(pks, HasLen, 1)
 	c.Check(pks[0].Equals(pk1), Equals, true)
 
+	// remove a pubkey
+	pubkeyMgr.RemovePubKey(pk2)
+	c.Check(pubkeyMgr.HasPubKey(pk2), Equals, false)
+
 	addr, err := pk1.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
 	ok, _ := pubkeyMgr.IsValidPoolAddress(addr.String(), common.BNBChain)
