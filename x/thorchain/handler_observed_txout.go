@@ -203,15 +203,12 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		}
 
 		// If sending from one of our vaults, decrement coins
-		fmt.Println("Get Vault and subtract coins")
 		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
 		if nil != err {
 			ctx.Logger().Error("fail to get vault", "error", err)
 			return sdk.ErrInternal("fail to get vault").Result()
 		}
-		fmt.Printf("Pre  Sub: %+v\n", vault.Coins)
 		vault.SubFunds(tx.Tx.Coins)
-		fmt.Printf("Post Sub: %+v\n", vault.Coins)
 		if err := h.keeper.SetVault(ctx, vault); nil != err {
 			ctx.Logger().Error("fail to save vault", "error", err)
 			return sdk.ErrInternal("fail to save vault").Result()
