@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -149,7 +148,6 @@ func (k KVStore) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccou
 			Secp256k1: common.EmptyPubKey,
 			Ed25519:   common.EmptyPubKey,
 		}
-		fmt.Printf("New NodeAccount: %s\n", addr.String())
 		return NewNodeAccount(addr, NodeUnknown, emptyPubKeySet, "", sdk.ZeroUint(), "", ctx.BlockHeight()), nil
 	}
 

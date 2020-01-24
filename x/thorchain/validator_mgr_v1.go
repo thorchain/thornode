@@ -533,6 +533,9 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 }
 
 func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) error {
+	if !vm.k.VaultExists(ctx, node.PubKeySet.Secp256k1) {
+		return nil
+	}
 	ygg, err := vm.k.GetVault(ctx, node.PubKeySet.Secp256k1)
 	if nil != err {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
