@@ -87,7 +87,7 @@ func NewThorchainBridge(cfg config.ClientConfiguration, m *metrics.Metrics) (*Th
 		cdc:           MakeCodec(),
 		cfg:           cfg,
 		keys:          k,
-		errCounter:    m.GetCounterVec(metrics.ThorchainBridgeError),
+		errCounter:    m.GetCounterVec(metrics.ThorchainClientError),
 		httpClient:    httpClient,
 		m:             m,
 		broadcastLock: &sync.RWMutex{},

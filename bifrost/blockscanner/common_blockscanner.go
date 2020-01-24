@@ -73,7 +73,7 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 		scannerStorage: scannerStorage,
 		metrics:        m,
 		previousBlock:  cfg.StartBlockHeight,
-		errorCounter:   m.GetCounterVec(metrics.CommonBLockScannerError),
+		errorCounter:   m.GetCounterVec(metrics.CommonBlockScannerError),
 	}, nil
 }
 
