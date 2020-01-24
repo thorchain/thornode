@@ -43,7 +43,7 @@ const (
 type ThorchainBridge struct {
 	logger        zerolog.Logger
 	cdc           *codec.Codec
-	cfg           config.ThorchainConfiguration
+	cfg           config.ClientConfiguration
 	keys          *Keys
 	errCounter    *prometheus.CounterVec
 	m             *metrics.Metrics
@@ -55,7 +55,7 @@ type ThorchainBridge struct {
 }
 
 // NewThorchainBridge create a new instance of ThorchainBridge
-func NewThorchainBridge(cfg config.ThorchainConfiguration, m *metrics.Metrics) (*ThorchainBridge, error) {
+func NewThorchainBridge(cfg config.ClientConfiguration, m *metrics.Metrics) (*ThorchainBridge, error) {
 	// main module logger
 	logger := log.With().Str("module", "thorchain_client").Logger()
 
