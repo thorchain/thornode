@@ -247,17 +247,17 @@ func (b BinanceBlockScanner) MatchedAddress(txInItem stypes.TxInItem) bool {
 	return false
 }
 
-// Check if memo is for registering a Yggdrasil pool
+// Check if memo is for registering an Asgard vault
 func (b *BinanceBlockScanner) isMigration(addr, memo string) bool {
 	return b.isAddrWithMemo(addr, memo, "migrate")
 }
 
-// Check if memo is for registering a Yggdrasil pool
+// Check if memo is for registering a Yggdrasil vault
 func (b *BinanceBlockScanner) isRegisterYggdrasil(addr, memo string) bool {
 	return b.isAddrWithMemo(addr, memo, "yggdrasil+")
 }
 
-// Check if memo is for de registering a Yggdrasil pool
+// Check if memo is for de registering a Yggdrasil vault
 func (b *BinanceBlockScanner) isDeregisterYggdrasil(addr, memo string) bool {
 	return b.isAddrWithMemo(addr, memo, "yggdrasil-")
 }
