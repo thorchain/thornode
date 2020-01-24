@@ -1,8 +1,6 @@
 package signer
 
 import (
-	"encoding/json"
-	"fmt"
 	"strconv"
 	"sync"
 
@@ -16,16 +14,15 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
-	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
-	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
 type ThorchainBlockScan struct {
 	logger             zerolog.Logger
 	wg                 *sync.WaitGroup
 	stopChan           chan struct{}
-	txOutChan          chan stypes.TxOut
-	keygensChan        chan stypes.Keygens
+	txOutChan          chan types.TxOut
+	keygensChan        chan types.Keygens
 	cfg                config.BlockScannerConfiguration
 	scannerStorage     blockscanner.ScannerStorage
 	commonBlockScanner *blockscanner.CommonBlockScanner
@@ -52,8 +49,8 @@ func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blo
 		logger:             log.With().Str("module", "thorchainblockscanner").Logger(),
 		wg:                 &sync.WaitGroup{},
 		stopChan:           make(chan struct{}),
-		txOutChan:          make(chan stypes.TxOut),
-		keygensChan:        make(chan stypes.Keygens),
+		txOutChan:          make(chan types.TxOut),
+		keygensChan:        make(chan types.Keygens),
 		cfg:                cfg,
 		scannerStorage:     scanStorage,
 		commonBlockScanner: commonBlockScanner,
@@ -65,11 +62,11 @@ func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blo
 }
 
 // GetMessages return the channel
-func (b *ThorchainBlockScan) GetTxOutMessages() <-chan stypes.TxOut {
+func (b *ThorchainBlockScan) GetTxOutMessages() <-chan types.TxOut {
 	return b.txOutChan
 }
 
-func (b *ThorchainBlockScan) GetKeygenMessages() <-chan stypes.Keygens {
+func (b *ThorchainBlockScan) GetKeygenMessages() <-chan types.Keygens {
 	return b.keygensChan
 }
 
@@ -83,21 +80,11 @@ func (b *ThorchainBlockScan) Start() error {
 
 func (b *ThorchainBlockScan) processKeygenBlock(blockHeight int64) error {
 	for _, pk := range b.pkm.pks {
-		uri := b.thorchain.GetUrl(fmt.Sprintf("/thorchain/keygen/%d/%s", blockHeight, pk.String()))
-
-		strBlockHeight := strconv.FormatInt(blockHeight, 10)
-		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri)
-		if nil != err {
-			b.errCounter.WithLabelValues("fail_get_keygen", strBlockHeight)
-			return errors.Wrap(err, "fail to get keygen from a block")
+		keygens, err := b.thorchain.GetKeygens(blockHeight, pk.String())
+		if err != nil {
+			return errors.Wrap(err, "fail to get keygens from block scanner")
 		}
-
-		var keygens stypes.Keygens
-		if err := b.cdc.UnmarshalJSON(buf, &keygens); err != nil {
-			b.errCounter.WithLabelValues("fail_unmarshal_keygens", strBlockHeight)
-			return errors.Wrap(err, "fail to unmarshal keygens")
-		}
-		b.keygensChan <- keygens
+		b.keygensChan <- *keygens
 	}
 	return nil
 }
@@ -107,23 +94,11 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 		if len(pk.String()) == 0 {
 			continue
 		}
-		uri := b.thorchain.GetUrl(fmt.Sprintf("/thorchain/keysign/%d/%s", blockHeight, pk.String()))
-		strBlockHeight := strconv.FormatInt(blockHeight, 10)
-		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(uri)
-		if nil != err {
-			b.errCounter.WithLabelValues("fail_get_tx_out", strBlockHeight)
-			return errors.Wrap(err, "fail to get tx out from a block")
+		tx, err := b.thorchain.GetKeysign(blockHeight, pk.String())
+		if err != nil {
+			return errors.Wrap(err, "fail to get keysign from block scanner")
 		}
 
-		type txOut struct {
-			Chains map[common.Chain]stypes.TxOut `json:"chains"`
-		}
-
-		var tx txOut
-		if err := json.Unmarshal(buf, &tx); err != nil {
-			b.errCounter.WithLabelValues("fail_unmarshal_tx_out", strBlockHeight)
-			return errors.Wrap(err, "fail to unmarshal TxOut")
-		}
 		for c, out := range tx.Chains {
 			b.logger.Debug().Str("chain", c.String()).Msg("chain")
 			if len(out.TxArray) == 0 {
@@ -131,7 +106,6 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 				b.m.GetCounter(metrics.BlockNoTxOut).Inc()
 				return nil
 			}
-			// TODO here THORNode will need to dispatch to different chain processor
 			b.txOutChan <- out
 		}
 	}
