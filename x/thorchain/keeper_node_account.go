@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/blang/semver"
@@ -69,23 +70,51 @@ func (k KVStore) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 
 // GetMinJoinVersion - get min version to join. Min version is the most popular version
 func (k KVStore) GetMinJoinVersion(ctx sdk.Context) semver.Version {
-	vCount := make(map[string]int, 0)
+	type tmpVersionInfo struct {
+		version semver.Version
+		count   int
+	}
+	vCount := make(map[string]tmpVersionInfo, 0)
 	nodes, err := k.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		_ = dbError(ctx, "Unable to list active node accounts", err)
 		return semver.Version{}
 	}
+	sort.SliceStable(nodes, func(i, j int) bool {
+		return nodes[i].Version.LT(nodes[j].Version)
+	})
 	for _, na := range nodes {
-		vCount[na.Version.String()]++
-	}
+		v, ok := vCount[na.Version.String()]
+		if ok {
+			v.count = v.count + 1
+			vCount[na.Version.String()] = v
 
-	version := semver.Version{}
-	count := 0
-	for ver, total := range vCount {
-		if total >= count {
-			count = total
-			version = semver.MustParse(ver)
+		} else {
+			vCount[na.Version.String()] = tmpVersionInfo{
+				version: na.Version,
+				count:   1,
+			}
 		}
+		// assume all versions are  backward compatible
+		for k, v := range vCount {
+			if v.version.LT(na.Version) {
+				v.count = v.count + 1
+				vCount[k] = v
+			}
+		}
+	}
+	totalCount := len(nodes)
+	version := semver.Version{}
+
+	for _, info := range vCount {
+		// skip those version that doesn't have majority
+		if !HasMajority(info.count, totalCount) {
+			continue
+		}
+		if info.version.GT(version) {
+			version = info.version
+		}
+
 	}
 	return version
 }
