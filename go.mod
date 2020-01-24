@@ -10,7 +10,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.37.4
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/gorilla/mux v1.7.3
-	github.com/hashicorp/go-retryablehttp v0.6.1
+	github.com/hashicorp/go-retryablehttp v0.6.4
 	github.com/logrusorgru/aurora v0.0.0-20191116043053-66b7ad493a23
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pkg/errors v0.8.1

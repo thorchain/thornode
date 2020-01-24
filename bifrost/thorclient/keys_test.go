@@ -3,7 +3,6 @@ package thorclient
 import (
 	"os"
 	"path/filepath"
-	"testing"
 
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
@@ -11,8 +10,6 @@ import (
 
 	"gitlab.com/thorchain/thornode/x/thorchain"
 )
-
-func TestKeys(t *testing.T) { TestingT(t) }
 
 type KeysSuite struct{}
 

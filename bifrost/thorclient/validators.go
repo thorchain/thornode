@@ -1,40 +1,22 @@
 package thorclient
 
 import (
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-
+	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
-func GetValidators(c *http.Client, chainHost string) (*types.ValidatorsResp, error) {
-	uri := url.URL{
-		Scheme: "http",
-		Host:   chainHost,
-		Path:   "/thorchain/validators",
-	}
-	resp, err := c.Get(uri.String())
-	if nil != err {
-		return nil, fmt.Errorf("fail to get validators from thorchain,err:%w", err)
-	}
-	defer func() {
-		if err := resp.Body.Close(); nil != err {
-		}
-	}()
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("fail to get validators from thorchain,statusCode:%d", resp.StatusCode)
+// GetValidators returns validators from thorchain
+func (b *ThorchainBridge) GetValidators() (*types.ValidatorsResp, error) {
+	body, err := b.get(ValidatorsEndpoint)
+
+	if err != nil {
+		b.errCounter.WithLabelValues("fail_get_validators", "").Inc()
+		return &types.ValidatorsResp{}, errors.Wrap(err, "failed to get validators")
 	}
 	var vr types.ValidatorsResp
-
-	buf, err := ioutil.ReadAll(resp.Body)
-	if nil != err {
-		return nil, fmt.Errorf("fail to read response body,err:%w", err)
-	}
-	cdc := MakeCodec()
-	if err := cdc.UnmarshalJSON(buf, &vr); nil != err {
-		return nil, fmt.Errorf("fail to unmarshal validator response,err:%w", err)
+	if err := b.cdc.UnmarshalJSON(body, &vr); err != nil {
+		b.errCounter.WithLabelValues("fail_unmarshal_validators", "").Inc()
+		return &types.ValidatorsResp{}, errors.Wrap(err, "failed to unmarshal validators")
 	}
 	return &vr, nil
 }

@@ -1,0 +1,17 @@
+{
+  "height": "25",
+  "result": {
+    "type": "cosmos-sdk/Account",
+    "value": {
+      "address": "thor1hj6k3smf9e8srxkjandp6fqgu02sezgyhnvpuy"
+      "coins": [
+        {
+          "denom": "thor",
+          "amount": "1000"
+        }
+      ],
+      "public_key": null,
+      "account_number": "3",
+      "sequence": "5"
+    }
+}

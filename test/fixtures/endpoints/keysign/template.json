@@ -1,0 +1,27 @@
+{
+    "chains": {
+        "BNB": {
+            "chain": "BNB",
+            "hash": "",
+            "height": "1718",
+            "tx_array": [
+                {
+                    "chain": "BNB",
+                    "coin": {
+                        "amount": "10000000000",
+                        "asset": {
+                            "chain": "BNB",
+                            "symbol": "BNB",
+                            "ticker": "BNB"
+                        }
+                    },
+                    "in_hash": "ENULZOBGZHEKFOIBYRLLBELKFZVGXOBLTRQGTOWNDHMPZQMBLGJETOXJLHPVQIKY",
+                    "memo": "",
+                    "out_hash": "",
+                    "to": "tbnb145wcuncewfkuc4v6an0r9laswejygcul43c3wu",
+                    "vault_pubkey": "thorpub1addwnpepqfgpnhk4z80fglgp4cget35dsdzpfxdkudtzw09pm2t0wv6rvhds2m0424u"
+                }
+            ]
+        }
+    }
+}
