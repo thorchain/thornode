@@ -193,7 +193,7 @@ func (tx ObservedTxVoter) HasConensus(nodeAccounts NodeAccounts) bool {
 				count += 1
 			}
 		}
-		fmt.Printf("Majority: %d/%d", count, len(nodeAccounts))
+		fmt.Printf("Majority: %d/%d\n", count, len(nodeAccounts))
 		if HasMajority(count, len(nodeAccounts)) {
 			return true
 		}
