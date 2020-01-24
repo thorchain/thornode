@@ -73,7 +73,7 @@ func (k KVStore) getTotalActiveBond(ctx sdk.Context) (sdk.Uint, error) {
 		return sdk.ZeroUint(), fmt.Errorf("fail to get all active accounts: %w", err)
 	}
 	for _, node := range nodes {
-		totalBonded.Add(node.Bond)
+		totalBonded = totalBonded.Add(node.Bond)
 	}
 	return totalBonded, nil
 }

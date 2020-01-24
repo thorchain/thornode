@@ -2,8 +2,9 @@ package thorchain
 
 import (
 	"github.com/blang/semver"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type KeeperNodeAccountSuite struct{}
@@ -54,23 +55,100 @@ func (s *KeeperNodeAccountSuite) TestNodeAccount(c *C) {
 }
 
 func (s *KeeperNodeAccountSuite) TestGetMinJoinVersion(c *C) {
-	ctx, k := setupKeeperForTest(c)
 
-	na1 := GetRandomNodeAccount(NodeActive)
-	na1.Version = semver.MustParse("0.2.0")
-	c.Assert(k.SetNodeAccount(ctx, na1), IsNil)
-	na2 := GetRandomNodeAccount(NodeActive)
-	na2.Version = semver.MustParse("0.3.0")
-	c.Assert(k.SetNodeAccount(ctx, na2), IsNil)
-	na3 := GetRandomNodeAccount(NodeActive)
-	na3.Version = semver.MustParse("0.3.0")
-	c.Assert(k.SetNodeAccount(ctx, na3), IsNil)
-	na4 := GetRandomNodeAccount(NodeStandby)
-	na4.Version = semver.MustParse("0.2.0")
-	c.Assert(k.SetNodeAccount(ctx, na4), IsNil)
-	na5 := GetRandomNodeAccount(NodeStandby)
-	na5.Version = semver.MustParse("0.2.0")
-	c.Assert(k.SetNodeAccount(ctx, na5), IsNil)
+	type nodeInfo struct {
+		status  NodeStatus
+		version semver.Version
+	}
+	inputs := []struct {
+		nodeInfoes      []nodeInfo
+		expectedVersion semver.Version
+	}{
+		{
+			nodeInfoes: []nodeInfo{
+				{
+					status:  NodeActive,
+					version: semver.MustParse("0.2.0"),
+				},
+				{
+					status:  NodeActive,
+					version: semver.MustParse("0.3.0"),
+				},
+				{
+					status:  NodeActive,
+					version: semver.MustParse("0.3.0"),
+				},
+				{
+					status:  NodeStandby,
+					version: semver.MustParse("0.2.0"),
+				},
+				{
+					status:  NodeStandby,
+					version: semver.MustParse("0.2.0"),
+				},
+			},
+			expectedVersion: semver.MustParse("0.3.0"),
+		},
+		{
+			nodeInfoes: []nodeInfo{
+				{
+					status:  NodeActive,
+					version: semver.MustParse("0.2.0"),
+				},
+				{
+					status:  NodeActive,
+					version: semver.MustParse("1.3.0"),
+				},
+				{
+					status:  NodeActive,
+					version: semver.MustParse("0.3.0"),
+				},
+				{
+					status:  NodeStandby,
+					version: semver.MustParse("0.2.0"),
+				},
+				{
+					status:  NodeStandby,
+					version: semver.MustParse("0.2.0"),
+				},
+			},
+			expectedVersion: semver.MustParse("0.3.0"),
+		},
+		{
+			nodeInfoes: []nodeInfo{
+				{
+					status:  NodeActive,
+					version: semver.MustParse("0.2.0"),
+				},
+				{
+					status:  NodeActive,
+					version: semver.MustParse("1.3.0"),
+				},
+				{
+					status:  NodeActive,
+					version: semver.MustParse("0.3.0"),
+				},
+				{
+					status:  NodeActive,
+					version: semver.MustParse("0.2.0"),
+				},
+				{
+					status:  NodeActive,
+					version: semver.MustParse("0.2.0"),
+				},
+			},
+			expectedVersion: semver.MustParse("0.2.0"),
+		},
+	}
 
-	c.Check(k.GetMinJoinVersion(ctx).Equals(semver.MustParse("0.3.0")), Equals, true, Commentf("%+v", k.GetMinJoinVersion(ctx)))
+	for _, item := range inputs {
+		ctx, k := setupKeeperForTest(c)
+		for _, ni := range item.nodeInfoes {
+			na1 := GetRandomNodeAccount(ni.status)
+			na1.Version = ni.version
+			c.Assert(k.SetNodeAccount(ctx, na1), IsNil)
+		}
+		c.Check(k.GetMinJoinVersion(ctx).Equals(item.expectedVersion), Equals, true, Commentf("%+v", k.GetMinJoinVersion(ctx)))
+	}
+
 }
