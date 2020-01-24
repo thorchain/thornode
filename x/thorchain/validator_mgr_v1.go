@@ -843,10 +843,5 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 		}
 	}
 
-	fmt.Printf("Rotate: %+v\n", rotation)
-	for _, na := range active {
-		fmt.Printf("Active NA: %s\n", na.NodeAddress)
-	}
-
 	return active, rotation, nil
 }
