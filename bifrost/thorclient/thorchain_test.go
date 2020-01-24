@@ -20,7 +20,7 @@ func TestPackage(t *testing.T) { TestingT(t) }
 
 type ThorchainSuite struct {
 	server             *httptest.Server
-	cfg                config.ThorchainConfiguration
+	cfg                config.ClientConfiguration
 	cleanup            func()
 	bridge             *ThorchainBridge
 	authAccountFixture string
@@ -52,7 +52,6 @@ func (s *ThorchainSuite) SetUpSuite(c *C) {
 	s.bridge.httpClient.RetryMax = 1 // fail fast
 	c.Assert(err, IsNil)
 	c.Assert(s.bridge, NotNil)
-
 }
 
 func (s *ThorchainSuite) TearDownSuite(c *C) {
@@ -116,33 +115,33 @@ func (s *ThorchainSuite) TestSign(c *C) {
 }
 
 func (ThorchainSuite) TestNewThorchainBridge(c *C) {
-	var testFunc = func(cfg config.ThorchainConfiguration, errChecker Checker, sbChecker Checker) {
+	var testFunc = func(cfg config.ClientConfiguration, errChecker Checker, sbChecker Checker) {
 		sb, err := NewThorchainBridge(cfg, GetMetricForTest(c))
 		c.Assert(err, errChecker)
 		c.Assert(sb, sbChecker)
 	}
-	testFunc(config.ThorchainConfiguration{
+	testFunc(config.ClientConfiguration{
 		ChainID:         "",
 		ChainHost:       "localhost",
 		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
-	testFunc(config.ThorchainConfiguration{
+	testFunc(config.ClientConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "",
 		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "signer",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
-	testFunc(config.ThorchainConfiguration{
+	testFunc(config.ClientConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "localhost",
 		ChainHomeFolder: "~/.thorcli",
 		SignerName:      "",
 		SignerPasswd:    "signerpassword",
 	}, NotNil, IsNil)
-	testFunc(config.ThorchainConfiguration{
+	testFunc(config.ClientConfiguration{
 		ChainID:         "chainid",
 		ChainHost:       "localhost",
 		ChainHomeFolder: "~/.thorcli",

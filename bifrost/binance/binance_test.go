@@ -42,7 +42,7 @@ func (s *BinancechainSuite) SetUpSuite(c *C) {
 	c.Assert(os.Setenv("NET", "testnet"), IsNil)
 
 	s.thordir = filepath.Join(os.TempDir(), ns, ".thorcli")
-	cfg := config.ThorchainConfiguration{
+	cfg := config.ClientConfiguration{
 		ChainID:         "thorchain",
 		ChainHost:       "localhost",
 		SignerName:      "bob",
