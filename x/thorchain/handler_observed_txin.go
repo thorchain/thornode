@@ -112,7 +112,12 @@ func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, n
 	voter.Add(tx, signer)
 
 	ok := false
-	if voter.HasConensus(nas) && voter.Height == 0 {
+	// NOTE: We are checking here if the voter height is zero or the current
+	// height. We check zero because it means we have yet to process this
+	// observed tx. If we see the current blockheight, it prob means we've
+	// already processed this voter in the observed txout, but we haven't
+	// processed it for observed txin yet.
+	if voter.HasConensus(nas) && (voter.Height == 0 || voter.Height == ctx.BlockHeight()) {
 		ok = true
 		voter.Height = ctx.BlockHeight()
 	}
