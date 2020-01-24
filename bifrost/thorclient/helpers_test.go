@@ -16,10 +16,10 @@ import (
 	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
-func SetupStateChainForTest(c *C) (config.ThorchainConfiguration, cKeys.Info, func()) {
+func SetupStateChainForTest(c *C) (config.ClientConfiguration, cKeys.Info, func()) {
 	thorchain.SetupConfigForTest()
 	thorcliDir := SetupThorCliDirForTest()
-	cfg := config.ThorchainConfiguration{
+	cfg := config.ClientConfiguration{
 		ChainID:         "thorchain",
 		ChainHost:       "localhost",
 		SignerName:      "bob",

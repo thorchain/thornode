@@ -14,7 +14,7 @@ import (
 type BlockHeightSuite struct {
 	server  *httptest.Server
 	bridge  *ThorchainBridge
-	cfg     config.ThorchainConfiguration
+	cfg     config.ClientConfiguration
 	cleanup func()
 	fixture string
 }
