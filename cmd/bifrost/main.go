@@ -16,6 +16,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/observer"
+	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/signer"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/cmd"
@@ -74,13 +75,13 @@ func main() {
 		log.Fatal().Err(err).Msg("node account is not whitelisted, can't start")
 	}
 
-	// Address Manager
-	addrMgr, err := observer.NewAddressManager(cfg.Thorchain.ChainHost, m)
+	// PubKey Manager
+	pubkeyMgr, err := pubkeymanager.NewPubKeyManager(cfg.Thorchain.ChainHost, m)
 	if nil != err {
-		log.Fatal().Err(err).Msg("fail to create pool address manager")
+		log.Fatal().Err(err).Msg("fail to create pubkey manager")
 	}
-	if err := addrMgr.Start(); nil != err {
-		log.Fatal().Err(err).Msg("fail to start pool address manager")
+	if err := pubkeyMgr.Start(); nil != err {
+		log.Fatal().Err(err).Msg("fail to start pubkey manager")
 	}
 
 	// get thorchain key manager
@@ -96,7 +97,7 @@ func main() {
 	}
 
 	// start observer
-	obs, err := observer.NewObserver(cfg.Observer, thorchainBridge, addrMgr, bnb, m)
+	obs, err := observer.NewObserver(cfg.Observer, thorchainBridge, pubkeyMgr, bnb, m)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create observer")
 	}
@@ -105,7 +106,7 @@ func main() {
 	}
 
 	// start signer
-	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, cfg.TSS, bnb, m)
+	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, pubkeyMgr, cfg.TSS, bnb, m)
 	if nil != err {
 		log.Fatal().Err(err).Msg("fail to create instance of signer")
 	}

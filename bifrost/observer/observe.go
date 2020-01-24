@@ -16,6 +16,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/binance"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
@@ -31,11 +32,11 @@ type Observer struct {
 	m               *metrics.Metrics
 	wg              *sync.WaitGroup
 	errCounter      *prometheus.CounterVec
-	addrMgr         *AddressManager
+	pubkeyMgr       pubkeymanager.PubKeyValidator
 }
 
 // NewObserver create a new instance of Observer
-func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, addrMgr *AddressManager, bnb *binance.Binance, m *metrics.Metrics) (*Observer, error) {
+func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, pubkeyMgr pubkeymanager.PubKeyValidator, bnb *binance.Binance, m *metrics.Metrics) (*Observer, error) {
 	scanStorage, err := NewBinanceChanBlockScannerStorage(cfg.ObserverDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create scan storage")
@@ -62,7 +63,7 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 		}
 	}
 
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, bnb.IsTestNet, addrMgr, m)
+	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, bnb.IsTestNet, pubkeyMgr, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
@@ -76,7 +77,7 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 		storage:         scanStorage,
 		m:               m,
 		errCounter:      m.GetCounterVec(metrics.ObserverError),
-		addrMgr:         addrMgr,
+		pubkeyMgr:       pubkeyMgr,
 	}, nil
 }
 
@@ -246,7 +247,7 @@ func (o *Observer) Stop() error {
 
 	close(o.stopChan)
 	o.wg.Wait()
-	if err := o.addrMgr.Stop(); nil != err {
+	if err := o.pubkeyMgr.Stop(); nil != err {
 		o.logger.Error().Err(err).Msg("fail to stop pool address manager")
 	}
 	return o.m.Stop()
