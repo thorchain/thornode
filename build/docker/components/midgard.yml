@@ -3,6 +3,7 @@ version: '3'
 services:
 
   midgard:
+    container_name: midgard
     image: registry.gitlab.com/thorchain/midgard
     ports:
       - 8080:8080
@@ -17,6 +18,7 @@ services:
     command: "midgard -c /etc/midgard/config.json"
 
   pg:
+    container_name: timescale-db
     image: timescale/timescaledb:latest-pg11
     expose:
       - 5432

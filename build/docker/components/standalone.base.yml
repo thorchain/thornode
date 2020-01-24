@@ -2,6 +2,7 @@ version: '3'
 
 services:
   bifrost:
+    container_name: bifrost
     hostname: bifrost
     build:
       context: ../../..
@@ -26,6 +27,7 @@ services:
     command: ["bifrost", "-c", "/etc/bifrost/config.json", "-l", "$LOG_LEVEL"]
 
   thor-daemon:
+    container_name: thor-daemon
     hostname: thor-daemon
     build:
       context: ../../..
@@ -53,6 +55,7 @@ services:
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api:
+    container_name: thor-api
     hostname: thor-api
     build:
       context: ../../..
