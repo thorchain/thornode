@@ -159,15 +159,10 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
 	voter.Add(tx, signer)
 	ok := false
-	fmt.Printf("Voter Height: %d\n", voter.Height)
-	// NOTE: We are checking here if the voter height is zero or the current
-	// height. We check zero because it means we have yet to process this
-	// observed tx. If we see the current blockheight, it prob means we've
-	// already processed this voter in the observed txin, but we haven't
-	// processed it for observed txout yet.
-	if voter.HasConensus(nas) && (voter.Height == 0 || voter.Height == ctx.BlockHeight()) {
+	if voter.HasConensus(nas) && !voter.ProcessedOut {
 		ok = true
 		voter.Height = ctx.BlockHeight()
+		voter.ProcessedOut = true
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
 	// Check to see if we have enough identical observations to process the transaction
