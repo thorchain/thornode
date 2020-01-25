@@ -250,6 +250,12 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 			}
 			for _, keygen := range keygens.Keygens {
 				s.logger.Info().Msgf("Received a keygen of %+v from the Thorchain", keygens)
+
+				// Add pubkeys to pubkey manager for monitoring...
+				for _, pk := range keygen {
+					s.pubkeyMgr.AddPubKey(pk, false)
+				}
+
 				pubKey, err := s.tssKeygen.GenerateNewKey(keygen)
 				if err != nil {
 					s.errCounter.WithLabelValues("fail_to_keygen_pubkey", "").Inc()
