@@ -111,10 +111,6 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 			ctx.Logger().Info("Outbound observation preflight requirements not yet met...")
 			continue
 		}
-		// Apply Gas fees
-		if err := AddGasFees(ctx, h.keeper, tx); nil != err {
-			return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error()).Result()
-		}
 
 		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
 		m, err := processOneTxIn(ctx, h.keeper, txOut, msg.Signer)
@@ -123,6 +119,13 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 				"error", err,
 				"tx", tx.Tx.String())
 			continue
+		}
+		// when thorchain fail to parse the out going tx memo, likely it is an unauthorised tx
+		// in that case, thorchain doesn't subtract the fund from relevant vault, thus when the node/yggdrasil leave, they will either return those asset
+		// or they will be slashed for that amount, also if the tx memo is unknown , thorchain also doesn't subsidise gas
+		// Apply Gas fees
+		if err := AddGasFees(ctx, h.keeper, tx); nil != err {
+			return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error()).Result()
 		}
 
 		// If sending from one of our vaults, decrement coins

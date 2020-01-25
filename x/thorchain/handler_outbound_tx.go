@@ -88,7 +88,6 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 	// not empty
 	if !txOut.IsEmpty() {
 		for i, tx := range txOut.TxArray {
-
 			// withdraw , refund etc, one inbound tx might result two outbound txes, THORNode have to correlate outbound tx back to the
 			// inbound, and also txitem , thus THORNode could record both outbound tx hash correctly
 			// given every tx item will only have one coin in it , THORNode could use that to identify which txit
@@ -97,6 +96,8 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 				msg.Tx.Tx.Coins.Contains(tx.Coin) {
 				txOut.TxArray[i].OutHash = msg.Tx.Tx.ID
 			}
+
+			// TODO make sure the coins get send out is not more than the one specified in the txout item
 		}
 		if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
 			ctx.Logger().Error("fail to save tx out", "error", err)
