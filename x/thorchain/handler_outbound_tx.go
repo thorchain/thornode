@@ -1,10 +1,13 @@
 package thorchain
 
 import (
+	"fmt"
+
 	"github.com/blang/semver"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -98,8 +101,14 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 			}
 
 			c := msg.Tx.Tx.Coins.GetCoin(tx.Coin.Asset)
+			// fees might be taken from the txout , thus usually the amount send out from pool should a little bit less
 			if c.Amount.GT(tx.Coin.Amount) {
+				slashAmt := common.SafeSub(c.Amount, tx.Coin.Amount)
 				// slash the difference from the node account's bond
+				if err := h.slashNodeAccount(ctx, msg, tx.Coin.Asset, slashAmt); nil != err {
+					ctx.Logger().Error("fail to slash account for sending extra fund", "error", err)
+					return sdk.ErrInternal("fail to slash account").Result()
+				}
 			}
 		}
 		if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
@@ -113,4 +122,38 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
 	}
+}
+
+func (h OutboundTxHandler) slashNodeAccount(ctx sdk.Context, msg MsgOutboundTx, asset common.Asset, slashAmount sdk.Uint) error {
+	if slashAmount.IsZero() {
+		return nil
+	}
+	thorAddr, err := msg.Tx.ObservedPubKey.GetThorAddress()
+	if nil != err {
+		return fmt.Errorf("fail to get thoraddress from pubkey(%s) %w", msg.Tx.ObservedPubKey, err)
+	}
+	nodeAccount, err := h.keeper.GetNodeAccount(ctx, thorAddr)
+	if nil != err {
+		return fmt.Errorf("fail to get node account with pubkey(%s), %w", msg.Tx.ObservedPubKey, err)
+	}
+
+	if asset.IsRune() {
+		// if the diff asset is RUNE , just took 1.5 * diff from their bond
+		slashAmount = slashAmount.MulUint64(3).QuoUint64(2)
+		nodeAccount.Bond = common.SafeSub(nodeAccount.Bond, slashAmount)
+		return h.keeper.SetNodeAccount(ctx, nodeAccount)
+	}
+	pool, err := h.keeper.GetPool(ctx, asset)
+	if nil != err {
+		return fmt.Errorf("fail to get %s pool : %w", asset, err)
+	}
+	runeValue := pool.AssetValueInRune(slashAmount).MulUint64(3).QuoUint64(2)
+	pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, slashAmount)
+	pool.BalanceRune = pool.BalanceRune.Add(runeValue)
+	nodeAccount.Bond = common.SafeSub(nodeAccount.Bond, runeValue)
+	if err := h.keeper.SetPool(ctx, pool); nil != err {
+		return fmt.Errorf("fail to save %s pool: %w", asset, err)
+	}
+
+	return h.keeper.SetNodeAccount(ctx, nodeAccount)
 }
