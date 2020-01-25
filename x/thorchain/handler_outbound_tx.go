@@ -97,7 +97,10 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 				txOut.TxArray[i].OutHash = msg.Tx.Tx.ID
 			}
 
-			// TODO make sure the coins get send out is not more than the one specified in the txout item
+			c := msg.Tx.Tx.Coins.GetCoin(tx.Coin.Asset)
+			if c.Amount.GT(tx.Coin.Amount) {
+				// slash the difference from the node account's bond
+			}
 		}
 		if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
 			ctx.Logger().Error("fail to save tx out", "error", err)
