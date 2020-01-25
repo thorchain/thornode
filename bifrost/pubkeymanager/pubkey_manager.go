@@ -113,10 +113,12 @@ func (pkm *PubKeyManager) AddPubKey(pk common.PubKey, signer bool) {
 	defer pkm.rwMutex.Unlock()
 
 	if pkm.HasPubKey(pk) {
-		// pubkey already exists, update the signer...
-		for i, pubkey := range pkm.pubkeys {
-			if pk.Equals(pubkey.PubKey) {
-				pkm.pubkeys[i].Signer = signer
+		// pubkey already exists, update the signer... but only if signer is true
+		if signer {
+			for i, pubkey := range pkm.pubkeys {
+				if pk.Equals(pubkey.PubKey) {
+					pkm.pubkeys[i].Signer = signer
+				}
 			}
 		}
 	} else {
