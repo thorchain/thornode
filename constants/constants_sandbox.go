@@ -15,6 +15,6 @@ func init() {
 		StrictBondStakeRatio: false,
 	}
 	stringOverrides = map[ConstantName]string{
-		DefaultPoolStatus: "Enable",
+		DefaultPoolStatus: "Enabled",
 	}
 }
