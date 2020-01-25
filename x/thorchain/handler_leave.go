@@ -69,6 +69,7 @@ func (h LeaveHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ 
 		Codespace: DefaultCodespace,
 	}
 }
+
 func (h LeaveHandler) handle(ctx sdk.Context, msg MsgLeave, version semver.Version) sdk.Error {
 	nodeAcc, err := h.keeper.GetNodeAccountByBondAddress(ctx, msg.Tx.FromAddress)
 	if nil != err {
@@ -84,36 +85,46 @@ func (h LeaveHandler) handle(ctx sdk.Context, msg MsgLeave, version semver.Versi
 			nodeAcc.LeaveHeight = ctx.BlockHeight()
 		}
 	} else {
-		// given the node is not active, they should not have Yggdrasil pool either
-		// but let's check it anyway just in case
-		vault, err := h.keeper.GetVault(ctx, nodeAcc.PubKeySet.Secp256k1)
+		txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
 		if nil != err {
-			return sdk.ErrInternal(fmt.Errorf("fail to get vault pool: %w", err).Error())
-		}
-		if vault.IsYggdrasil() {
-			if !vault.HasFunds() {
-				txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
-				if nil != err {
-					ctx.Logger().Error("fail to get txout store", "error", err)
-					return errBadVersion
-				}
-				// node is not active , they are free to leave , refund them
-				if err := refundBond(ctx, msg.Tx, nodeAcc, h.keeper, txOutStore); err != nil {
-					return sdk.ErrInternal(fmt.Errorf("fail to refund bond: %w", err).Error())
-				}
-
-			}
-
-			if err := h.validatorManager.RequestYggReturn(ctx, version, nodeAcc); nil != err {
-				return sdk.ErrInternal(fmt.Errorf("fail to request yggdrasil return fund: %w", err).Error())
-			}
+			ctx.Logger().Error("fail to get txout store", "error", err)
+			return errBadVersion
 		}
 
+		// NOTE: there is an edge case, where the first node doesn't have a
+		// vault (it was destroyed when we successfully migrated funds from
+		// their address to a new TSS vault
+		if !h.keeper.VaultExists(ctx, nodeAcc.PubKeySet.Secp256k1) {
+			if err := refundBond(ctx, msg.Tx, nodeAcc, h.keeper, txOutStore); err != nil {
+				return sdk.ErrInternal(fmt.Errorf("fail to refund bond: %w", err).Error())
+			}
+		} else {
+			// given the node is not active, they should not have Yggdrasil pool either
+			// but let's check it anyway just in case
+			vault, err := h.keeper.GetVault(ctx, nodeAcc.PubKeySet.Secp256k1)
+			if nil != err {
+				return sdk.ErrInternal(fmt.Errorf("fail to get vault pool: %w", err).Error())
+			}
+			if vault.IsYggdrasil() {
+				if !vault.HasFunds() {
+					// node is not active , they are free to leave , refund them
+					if err := refundBond(ctx, msg.Tx, nodeAcc, h.keeper, txOutStore); err != nil {
+						return sdk.ErrInternal(fmt.Errorf("fail to refund bond: %w", err).Error())
+					}
+				} else {
+					if err := h.validatorManager.RequestYggReturn(ctx, version, nodeAcc); nil != err {
+						return sdk.ErrInternal(fmt.Errorf("fail to request yggdrasil return fund: %w", err).Error())
+					}
+				}
+			}
+		}
 	}
+
 	nodeAcc.RequestedToLeave = true
 	if err := h.keeper.SetNodeAccount(ctx, nodeAcc); nil != err {
 		return sdk.ErrInternal(fmt.Errorf("fail to save node account to key value store: %w", err).Error())
 	}
+
 	ctx.EventManager().EmitEvent(
 		sdk.NewEvent("validator_request_leave",
 			sdk.NewAttribute("signer bnb address", msg.Tx.FromAddress.String()),
