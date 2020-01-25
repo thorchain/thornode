@@ -365,6 +365,19 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 			if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
 				txInItem.ObservedPoolAddress = cpi.PubKey.String()
 				txs = append(txs, txInItem)
+			} else {
+				// Apparently we don't recognize where we are sending funds to.
+				// Lets check if we should because its an internal transaction
+				// moving funds between vaults (for example). If it is, lets
+				// manually trigger an update of pubkeys, then check again...
+				switch strings.ToLower(txInItem.Memo) {
+				case "migrate", "yggdrasil-", "yggdrasil+":
+					b.pubkeyMgr.FetchPubKeys()
+					if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
+						txInItem.ObservedPoolAddress = cpi.PubKey.String()
+						txs = append(txs, txInItem)
+					}
+				}
 			}
 
 		default:

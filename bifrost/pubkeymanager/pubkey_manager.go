@@ -22,6 +22,7 @@ import (
 
 type PubKeyValidator interface {
 	IsValidPoolAddress(addr string, chain common.Chain) (bool, common.ChainPoolInfo)
+	FetchPubKeys()
 	HasPubKey(pk common.PubKey) bool
 	AddPubKey(pk common.PubKey, _ bool)
 	RemovePubKey(pk common.PubKey)
@@ -143,6 +144,16 @@ func (pkm *PubKeyManager) RemovePubKey(pk common.PubKey) {
 	}
 }
 
+func (pkm *PubKeyManager) FetchPubKeys() {
+	pubkeys, err := pkm.getPubkeys()
+	if nil != err {
+		pkm.logger.Error().Err(err).Msg("fail to get pubkeys from thorchain")
+	}
+	for _, pk := range pubkeys {
+		pkm.AddPubKey(pk, false)
+	}
+}
+
 func (pkm *PubKeyManager) updatePubKeys() {
 	pkm.logger.Info().Msg("start to update pub keys")
 	defer pkm.logger.Info().Msg("stop to update pub keys")
@@ -151,13 +162,7 @@ func (pkm *PubKeyManager) updatePubKeys() {
 		case <-pkm.stopChan:
 			return
 		case <-time.After(time.Minute):
-			pubkeys, err := pkm.getPubkeys()
-			if nil != err {
-				pkm.logger.Error().Err(err).Msg("fail to get pubkeys from thorchain")
-			}
-			for _, pk := range pubkeys {
-				pkm.AddPubKey(pk, false)
-			}
+			pkm.FetchPubKeys()
 		}
 	}
 }
