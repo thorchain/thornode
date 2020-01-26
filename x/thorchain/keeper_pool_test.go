@@ -13,6 +13,8 @@ var _ = Suite(&KeeperPoolSuite{})
 func (s *KeeperPoolSuite) TestPool(c *C) {
 	ctx, k := setupKeeperForTest(c)
 
+	c.Check(k.SetPool(ctx, Pool{}), NotNil) // empty asset should error
+
 	pool := NewPool()
 	pool.Asset = common.BNBAsset
 
