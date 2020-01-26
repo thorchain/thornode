@@ -92,6 +92,11 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 	if !txOut.IsEmpty() {
 		processedCoins := common.Coins{}
 		for i, tx := range txOut.TxArray {
+
+			c := msg.Tx.Tx.Coins.GetCoin(tx.Coin.Asset)
+			if c.IsEmpty() {
+				continue
+			}
 			// withdraw , refund etc, one inbound tx might result two outbound txes, THORNode have to correlate outbound tx back to the
 			// inbound, and also txitem , thus THORNode could record both outbound tx hash correctly
 			// given every tx item will only have one coin in it , THORNode could use that to identify which txit
@@ -101,7 +106,6 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 				txOut.TxArray[i].OutHash = msg.Tx.Tx.ID
 			}
 
-			c := msg.Tx.Tx.Coins.GetCoin(tx.Coin.Asset)
 			// fees might be taken from the txout , thus usually the amount send out from pool should a little bit less
 			if c.Amount.GT(tx.Coin.Amount) {
 				slashAmt := common.SafeSub(c.Amount, tx.Coin.Amount)
