@@ -78,6 +78,7 @@ func (s YggdrasilSuite) TestFund(c *C) {
 	na1.Bond = sdk.NewUint(1000000 * common.One)
 	c.Assert(k.SetNodeAccount(ctx, na1), IsNil)
 	bnbPool := NewPool()
+	bnbPool.Asset = common.BNBAsset
 	bnbPool.BalanceAsset = sdk.NewUint(100000 * common.One)
 	bnbPool.BalanceRune = sdk.NewUint(100000 * common.One)
 	c.Assert(k.SetPool(ctx, bnbPool), IsNil)

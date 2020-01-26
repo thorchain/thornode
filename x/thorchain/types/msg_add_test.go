@@ -13,6 +13,7 @@ var _ = Suite(&MsgAddSuite{})
 func (mas *MsgAddSuite) SetUpSuite(c *C) {
 	SetupConfigForTest()
 }
+
 func (mas *MsgAddSuite) TestMsgAdd(c *C) {
 	tx := GetRandomTx()
 	addr := GetRandomBech32Addr()
