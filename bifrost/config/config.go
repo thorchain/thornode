@@ -12,12 +12,16 @@ import (
 )
 
 type Configuration struct {
-	Observer  ObserverConfiguration  `json:"observer" mapstructure:"observer"`
-	Signer    SignerConfiguration    `json:"signer" mapstructure:"signer"`
-	Thorchain ThorchainConfiguration `json:"thorchain" mapstructure:"thorchain"`
-	Metric    MetricConfiguration    `json:"metric" mapstructure:"metric"`
-	Binance   BinanceConfiguration   `json:"binance" mapstructure:"binance"`
-	TSS       TSSConfiguration       `json:"tss" mapstructure:"tss"`
+	Observer  ObserverConfiguration   `json:"observer" mapstructure:"observer"`
+	Signer    SignerConfiguration     `json:"signer" mapstructure:"signer"`
+	Thorchain ClientConfiguration     `json:"thorchain" mapstructure:"thorchain"`
+	Metric    MetricConfiguration     `json:"metric" mapstructure:"metric"`
+	Binance   BinanceConfiguration    `json:"binance" mapstructure:"binance"`
+	Chains    []ChainConfigurations   `json:"chains" mapstructure:"chains"`
+	TxScanner TxScannerConfigurations `json:"tx_scanner" mapstructure:"tx_scanner"`
+	TxSigner  TxSignerConfigurations  `json:"tx_signer" mapstructure:"tx_signer"`
+	TSS       TSSConfiguration        `json:"tss" mapstructure:"tss"`
+	BackOff   BackOff                 `json:"back_off" mapstructure:"back_off"`
 }
 
 // ObserverConfiguration values
@@ -34,6 +38,41 @@ type SignerConfiguration struct {
 	RetryInterval time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
 }
 
+// TxSignerConfigurations configuration
+type TxSignerConfigurations struct {
+	SignerDbPath  string `json:"signer_db_path" mapstructure:"signer_db_path"`
+	BlockChains   []ChainConfigurations
+	BlockScanner  BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
+	RetryInterval time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
+}
+
+// TxScannerConfigurations configuration
+type TxScannerConfigurations struct {
+	BlockChains []ChainConfigurations
+}
+
+// BackOff configuration
+type BackOff struct {
+	InitialInterval     time.Duration `json:"initial_interval" mapstructure:"initial_interval"`
+	RandomizationFactor float64       `json:"randomization_factor" mapstructure:"randomization_factor"`
+	Multiplier          float64       `json:"multiplier" mapstructure:"multiplier"`
+	MaxInterval         time.Duration `json:"max_interval" mapstructure:"max_interval"`
+	MaxElapsedTime      time.Duration `json:"max_elapsed_time" mapstructure:"max_elapsed_time"`
+}
+
+// ChainConfigurations configuration
+type ChainConfigurations struct {
+	Name         string `json:"name" mapstructure:"name"`
+	Enabled      bool   `json:"enabled" mapstructure:"enabled"`
+	ChainHost    string `json:"chain_host" mapstructure:"chain_host"`
+	ChainNetwork string `json:"chain_network" mapstructure:"chain_network"`
+	UserName     string `json:"username" mapstructure:"username"`
+	Password     string `json:"password" mapstructure:"password"`
+	HTTPostMode  bool   `json:"http_post_mode" mapstructure:"http_post_mode"` // Bitcoin core only supports HTTP POST mode
+	DisableTLS   bool   `json:"disable_tls" mapstructure:"disable_tls"`       // Bitcoin core does not provide TLS by default
+	BackOff      BackOff
+}
+
 // BinanceConfiguration all the configurations for binance client
 type BinanceConfiguration struct {
 	RPCHost string `json:"rpc_host" mapstructure:"rpc_host"`
@@ -44,6 +83,7 @@ type TSSConfiguration struct {
 	Scheme string `json:"scheme" mapstructure:"scheme"`
 	Host   string `json:"host" mapstructure:"host"`
 	Port   int    `json:"port" mapstructure:"port"`
+	NodeId string `json:"node_id" mapstructure:"node_id"`
 }
 
 // BlockScannerConfiguration settings for BlockScanner
@@ -61,13 +101,14 @@ type BlockScannerConfiguration struct {
 	ChainID                    string        `json:"chain_id" mapstructure:"chain_id"`
 }
 
-// ThorchainConfiguration
-type ThorchainConfiguration struct {
+// ClientConfiguration
+type ClientConfiguration struct {
 	ChainID         string `json:"chain_id" mapstructure:"chain_id" `
 	ChainHost       string `json:"chain_host" mapstructure:"chain_host"`
 	ChainHomeFolder string `json:"chain_home_folder" mapstructure:"chain_home_folder"`
 	SignerName      string `json:"signer_name" mapstructure:"signer_name"`
 	SignerPasswd    string `json:"signer_passwd" mapstructure:"signer_passwd"`
+	BackOff         BackOff
 }
 
 type MetricConfiguration struct {
@@ -77,8 +118,7 @@ type MetricConfiguration struct {
 	WriteTimeout time.Duration `json:"write_timeout" mapstructure:"write_timeout"`
 }
 
-// LoadConfig
-func LoadConfig(file string) (*Configuration, error) {
+func LoadBiFrostConfig(file string) (*Configuration, error) {
 	applyDefaultConfig()
 	var cfg Configuration
 	viper.AddConfigPath(".")
@@ -92,6 +132,14 @@ func LoadConfig(file string) (*Configuration, error) {
 	if err := viper.Unmarshal(&cfg); nil != err {
 		return nil, errors.Wrap(err, "fail to unmarshal")
 	}
+
+	// set global backoff settings to all chains config.
+	for _, chain := range cfg.Chains {
+		chain.BackOff = cfg.BackOff
+		cfg.TxScanner.BlockChains = append(cfg.TxScanner.BlockChains, chain)
+		cfg.TxSigner.BlockChains = append(cfg.TxSigner.BlockChains, chain)
+	}
+
 	return &cfg, nil
 }
 
@@ -101,6 +149,11 @@ func applyDefaultConfig() {
 	viper.SetDefault("metric.write_timeout", "30s")
 	viper.SetDefault("thorchain.chain_id", "thorchain")
 	viper.SetDefault("thorchain.chain_host", "localhost:1317")
+	viper.SetDefault("back_off.initial_interval", 500*time.Millisecond)
+	viper.SetDefault("back_off.randomization_factor", 0.5)
+	viper.SetDefault("back_off.multiplier", 1.5)
+	viper.SetDefault("back_off.max_interval", 3*time.Minute)
+	viper.SetDefault("back_off.max_elapsed_time", 168*time.Hour) // 7 days. Due to node sync time's being so random
 	applyDefaultObserverConfig()
 	applyDefaultSignerConfig()
 }

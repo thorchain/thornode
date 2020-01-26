@@ -24,6 +24,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
@@ -38,12 +39,12 @@ type BinanceBlockScanner struct {
 	commonBlockScanner *blockscanner.CommonBlockScanner
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
-	addrVal            AddressValidator
+	pubkeyMgr          pubkeymanager.PubKeyValidator
 	rpcHost            string
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
-func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, addrVal AddressValidator, m *metrics.Metrics) (*BinanceBlockScanner, error) {
+func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, pkmgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) (*BinanceBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
@@ -56,8 +57,8 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 	if nil == scanStorage {
 		return nil, errors.New("scanStorage is nil")
 	}
-	if addrVal == nil {
-		return nil, errors.New("pool address validator is nil")
+	if pkmgr == nil {
+		return nil, errors.New("pubkey validator is nil")
 	}
 	if nil == m {
 		return nil, errors.New("metrics is nil")
@@ -73,7 +74,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 	}
 	return &BinanceBlockScanner{
 		cfg:                cfg,
-		addrVal:            addrVal,
+		pubkeyMgr:          pkmgr,
 		logger:             log.Logger.With().Str("module", "blockscanner").Logger(),
 		wg:                 &sync.WaitGroup{},
 		stopChan:           make(chan struct{}),
@@ -209,12 +210,6 @@ func (b BinanceBlockScanner) MatchedAddress(txInItem stypes.TxInItem) bool {
 	// sending the staked assets to the user
 	if ok := b.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
 		b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
-
-		// **IMPORTANT** If this fails, THORNode won't monitor the address and could lose funds!
-		// var pk common.PubKey
-		// chainNetwork := common.GetCurrentChainNetwork()
-		// pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
-		// b.addrVal.AddPubKey(pk)
 		return true
 	}
 
@@ -222,12 +217,6 @@ func (b BinanceBlockScanner) MatchedAddress(txInItem stypes.TxInItem) bool {
 	// the bond back to the user
 	if ok := b.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
 		b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
-
-		// **IMPORTANT** If this fails, THORNode may slash a yggdrasil pool inappropriately
-		// var pk common.PubKey
-		// chainNetwork := common.GetCurrentChainNetwork()
-		// pk, _ = common.NewPubKeyFromBech32(txInItem.To, txInItem.Coins[0].Asset.Chain.AddressPrefix(chainNetwork))
-		// b.addrVal.RemovePubKey(pk)
 		return true
 	}
 
@@ -264,7 +253,7 @@ func (b *BinanceBlockScanner) isDeregisterYggdrasil(addr, memo string) bool {
 
 // Check if THORNode have an outbound yggdrasil transaction
 func (b *BinanceBlockScanner) isYggdrasil(addr string) bool {
-	ok, _ := b.addrVal.IsValidPoolAddress(addr, common.BNBChain)
+	ok, _ := b.pubkeyMgr.IsValidPoolAddress(addr, common.BNBChain)
 	return ok
 }
 
@@ -273,7 +262,7 @@ func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) bool {
 }
 
 func (b *BinanceBlockScanner) isAddrWithMemo(addr, memo, targetMemo string) bool {
-	match, _ := b.addrVal.IsValidPoolAddress(addr, common.BNBChain)
+	match, _ := b.pubkeyMgr.IsValidPoolAddress(addr, common.BNBChain)
 	if !match {
 		return false
 	}
@@ -368,14 +357,27 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 			// a inbound and outbound txn, if we both apply.
 
 			// check if the from address is a valid pool
-			if ok, cpi := b.addrVal.IsValidPoolAddress(txInItem.Sender, common.BNBChain); ok {
+			if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, common.BNBChain); ok {
 				txInItem.ObservedPoolAddress = cpi.PubKey.String()
 				txs = append(txs, txInItem)
 			}
 			// check if the to address is a valid pool address
-			if ok, cpi := b.addrVal.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
+			if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
 				txInItem.ObservedPoolAddress = cpi.PubKey.String()
 				txs = append(txs, txInItem)
+			} else {
+				// Apparently we don't recognize where we are sending funds to.
+				// Lets check if we should because its an internal transaction
+				// moving funds between vaults (for example). If it is, lets
+				// manually trigger an update of pubkeys, then check again...
+				switch strings.ToLower(txInItem.Memo) {
+				case "migrate", "yggdrasil-", "yggdrasil+":
+					b.pubkeyMgr.FetchPubKeys()
+					if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
+						txInItem.ObservedPoolAddress = cpi.PubKey.String()
+						txs = append(txs, txInItem)
+					}
+				}
 			}
 
 		default:
