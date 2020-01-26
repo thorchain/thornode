@@ -358,6 +358,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 		if err != nil {
 			return err
 		}
+		pool.Asset = gas.Asset
 		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
 		if err := keeper.SetPool(ctx, pool); err != nil {
 			return err

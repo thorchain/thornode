@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -54,6 +55,10 @@ func (k KVStore) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
 func (k KVStore) SetPool(ctx sdk.Context, pool Pool) error {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixPool, pool.Asset.String())
+
+	if pool.Asset.IsEmpty() {
+		return errors.New("Cannot save a pool with an empty asset")
+	}
 
 	prePool, err := k.GetPool(ctx, pool.Asset)
 	if err != nil {
