@@ -1,15 +1,15 @@
 package thorchain
 
 import (
-	"errors"
+	"encoding/json"
 
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/constants"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type HandlerOutboundTxSuite struct{}
@@ -53,234 +53,234 @@ func (s *HandlerOutboundTxSuite) TestValidate(c *C) {
 	}, 12, GetRandomPubKey())
 
 	msgOutboundTx := NewMsgOutboundTx(tx, tx.Tx.ID, keeper.activeNodeAccount.NodeAddress)
-	err = handler.validate(ctx, msgOutboundTx, ver)
-	c.Assert(err, IsNil)
+	sErr := handler.validate(ctx, msgOutboundTx, ver)
+	c.Assert(sErr, IsNil)
 
 	// invalid version
-	err = handler.validate(ctx, msgOutboundTx, semver.Version{})
-	c.Assert(err, Equals, errInvalidVersion)
+	sErr = handler.validate(ctx, msgOutboundTx, semver.Version{})
+	c.Assert(sErr, Equals, errBadVersion)
 
 	// invalid msg
 	msgOutboundTx = MsgOutboundTx{}
-	err = handler.validate(ctx, msgOutboundTx, ver)
-	c.Assert(err, NotNil)
+	sErr = handler.validate(ctx, msgOutboundTx, ver)
+	c.Assert(sErr, NotNil)
 
 	// not signed observer
 	msgOutboundTx = NewMsgOutboundTx(tx, tx.Tx.ID, GetRandomBech32Addr())
-	err = handler.validate(ctx, msgOutboundTx, ver)
-	c.Assert(err, Equals, notAuthorized)
+	sErr = handler.validate(ctx, msgOutboundTx, ver)
+	c.Assert(sErr.Code(), Equals, sdk.CodeUnauthorized)
 }
 
-type TestOutboundTxHandleKeeper struct {
-	KVStoreDummy
-	asgardVault       Vault
-	activeNodeAccount NodeAccount
-	voter             ObservedTxVoter
-	event             Event
-	pool              Pool
-	txOut             TxOut
-	height            int64
-	observing         []sdk.AccAddress
-	chains            common.Chains
+type outboundTxHandlerTestHelper struct {
+	ctx           sdk.Context
+	pool          Pool
+	version       semver.Version
+	keeper        outboundTxHandlerKeeperHelper
+	asgardVault   Vault
+	yggVault      Vault
+	constAccessor constants.ConstantValues
+	nodeAccount   NodeAccount
+	inboundTx     ObservedTx
+	toi           *TxOutItem
+	event         Event
 }
 
-func (k *TestOutboundTxHandleKeeper) GetChains(_ sdk.Context) (common.Chains, error) {
-	return k.chains, nil
+type outboundTxHandlerKeeperHelper struct {
+	Keeper
+	observeTxVoterErrHash common.TxID
+	failGetPendingEvent   common.TxID
 }
 
-func (k *TestOutboundTxHandleKeeper) SetChains(_ sdk.Context, chains common.Chains) {
-	k.chains = chains
-}
-
-func (k *TestOutboundTxHandleKeeper) SetLastChainHeight(_ sdk.Context, _ common.Chain, height int64) error {
-	k.height = height
-	return nil
-}
-
-func (k *TestOutboundTxHandleKeeper) VaultExists(_ sdk.Context, _ common.PubKey) bool {
-	return !k.asgardVault.IsEmpty()
-}
-
-func (k *TestOutboundTxHandleKeeper) GetVault(_ sdk.Context, _ common.PubKey) (Vault, error) {
-	return k.asgardVault, nil
-}
-
-func (k *TestOutboundTxHandleKeeper) SetVault(_ sdk.Context, vault Vault) error {
-	k.asgardVault = vault
-	return nil
-}
-
-func (k *TestOutboundTxHandleKeeper) GetObservedTxVoter(_ sdk.Context, _ common.TxID) (ObservedTxVoter, error) {
-	return k.voter, nil
-}
-
-func (k *TestOutboundTxHandleKeeper) SetObservedTxVoter(_ sdk.Context, voter ObservedTxVoter) {
-	k.voter = voter
-}
-
-func (k *TestOutboundTxHandleKeeper) GetPendingEventID(_ sdk.Context, _ common.TxID) ([]int64, error) {
-	return []int64{k.event.ID}, nil
-}
-
-func (k *TestOutboundTxHandleKeeper) GetEvent(_ sdk.Context, eventID int64) (Event, error) {
-	if eventID == k.event.ID {
-		return k.event, nil
+func newOutboundTxHandlerKeeperHelper(keeper Keeper) outboundTxHandlerKeeperHelper {
+	return outboundTxHandlerKeeperHelper{
+		Keeper:                keeper,
+		observeTxVoterErrHash: GetRandomTxHash(),
+		failGetPendingEvent:   GetRandomTxHash(),
 	}
-	return Event{}, kaboom
 }
 
-func (k *TestOutboundTxHandleKeeper) UpsertEvent(_ sdk.Context, event Event) error {
-	k.event = event
-	return nil
-}
-
-// IsActiveObserver see whether it is an active observer
-func (k *TestOutboundTxHandleKeeper) IsActiveObserver(_ sdk.Context, addr sdk.AccAddress) bool {
-	return k.activeNodeAccount.NodeAddress.Equals(addr)
-}
-
-func (k *TestOutboundTxHandleKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
-	return NodeAccounts{k.activeNodeAccount}, nil
-}
-
-func (k *TestOutboundTxHandleKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
-	if k.activeNodeAccount.NodeAddress.Equals(addr) {
-		return k.activeNodeAccount, nil
+func (k outboundTxHandlerKeeperHelper) GetObservedTxVoter(ctx sdk.Context, hash common.TxID) (ObservedTxVoter, error) {
+	if hash.Equals(k.observeTxVoterErrHash) {
+		return ObservedTxVoter{}, kaboom
 	}
-	return NodeAccount{}, errors.New("not exist")
+	return k.Keeper.GetObservedTxVoter(ctx, hash)
 }
-
-func (k *TestOutboundTxHandleKeeper) GetVaultData(_ sdk.Context) (VaultData, error) {
-	return NewVaultData(), nil
-}
-
-func (k *TestOutboundTxHandleKeeper) SetVaultData(_ sdk.Context, _ VaultData) error {
-	return nil
-}
-
-func (k *TestOutboundTxHandleKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
-	return k.pool, nil
-}
-
-func (k *TestOutboundTxHandleKeeper) SetPool(_ sdk.Context, pool Pool) error {
-	k.pool = pool
-	return nil
-}
-
-func (k *TestOutboundTxHandleKeeper) GetTxOut(_ sdk.Context, _ int64) (*TxOut, error) {
-	return &k.txOut, nil
-}
-
-func (k *TestOutboundTxHandleKeeper) SetTxOut(_ sdk.Context, _ *TxOut) error {
-	return nil
-}
-
-func (k *TestOutboundTxHandleKeeper) AddIncompleteEvents(_ sdk.Context, evt Event) error {
-	return nil
-}
-
-func (k *TestOutboundTxHandleKeeper) AddObservingAddresses(_ sdk.Context, addrs []sdk.AccAddress) error {
-	k.observing = addrs
-	return nil
-}
-
-func (s *HandlerOutboundTxSuite) TestHandle(c *C) {
-	ctx, _ := setupKeeperForTest(c)
-
-	keeper := &TestOutboundTxHandleKeeper{
-		activeNodeAccount: GetRandomNodeAccount(NodeActive),
-		asgardVault:       GetRandomVault(),
+func (k outboundTxHandlerKeeperHelper) GetPendingEventID(ctx sdk.Context, hash common.TxID) ([]int64, error) {
+	if hash.Equals(k.failGetPendingEvent) {
+		return nil, kaboom
 	}
+	return k.Keeper.GetPendingEventID(ctx, hash)
+}
 
-	ver := semver.MustParse("0.1.0")
-
+// newOutboundTxHandlerTestHelper setup all the basic condition to test OutboundTxHandler
+func newOutboundTxHandlerTestHelper(c *C) outboundTxHandlerTestHelper {
+	ctx, k := setupKeeperForTest(c)
+	ctx = ctx.WithBlockHeight(1023)
 	pool := NewPool()
 	pool.Asset = common.BNBAsset
 	pool.BalanceAsset = sdk.NewUint(100 * common.One)
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
-	c.Assert(keeper.SetPool(ctx, pool), IsNil)
 
-	constAccessor := constants.GetConstantValues(ver)
-	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
-
-	handler := NewOutboundTxHandler(keeper)
-
-	addr, err := keeper.asgardVault.PubKey.GetAddress(common.BNBChain)
+	version := semver.MustParse("0.1.0")
+	asgardVault := GetRandomVault()
+	addr, err := asgardVault.PubKey.GetAddress(common.BNBChain)
+	yggVault := GetRandomVault()
 	c.Assert(err, IsNil)
 
 	tx := NewObservedTx(common.Tx{
 		ID:          GetRandomTxHash(),
 		Chain:       common.BNBChain,
 		Coins:       common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(1*common.One))},
-		Memo:        "",
+		Memo:        "swap:RUNE-A1F",
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
 		Gas:         common.BNBGasFeeSingleton,
 	}, 12, GetRandomPubKey())
 
 	voter := NewObservedTxVoter(tx.Tx.ID, make(ObservedTxs, 0))
+	keeper := newOutboundTxHandlerKeeperHelper(k)
+	voter.Height = ctx.BlockHeight()
 	keeper.SetObservedTxVoter(ctx, voter)
+	nodeAccount := GetRandomNodeAccount(NodeActive)
+	nodeAccount.Bond = sdk.NewUint(100 * common.One)
+	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
+	c.Assert(keeper.SetPool(ctx, pool), IsNil)
 
-	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, keeper.asgardVault.PubKey)
-	ygg.Coins = common.Coins{
-		common.NewCoin(common.BNBAsset, sdk.NewUint(500*common.One)),
-		common.NewCoin(common.BTCAsset, sdk.NewUint(400*common.One)),
+	txOutStorage := NewTxOutStorageV1(keeper)
+	constAccessor := constants.GetConstantValues(version)
+	txOutStorage.NewBlock(ctx.BlockHeight(), constAccessor)
+	toi := &TxOutItem{
+		Chain:       common.BNBChain,
+		ToAddress:   tx.Tx.FromAddress,
+		VaultPubKey: yggVault.PubKey,
+		Coin:        common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One)),
+		Memo:        NewOutboundMemo(tx.Tx.ID).String(),
+		InHash:      tx.Tx.ID,
 	}
-	c.Assert(keeper.SetVault(ctx, ygg), IsNil)
+	result, err := txOutStorage.TryAddTxOutItem(ctx, toi)
+	txOutStorage.CommitBlock(ctx)
 
-	tx.ObservedPubKey = keeper.asgardVault.PubKey
-	tx.Tx.FromAddress = addr
-	tx.Tx.Coins = common.Coins{
-		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
-		common.NewCoin(common.BTCAsset, sdk.NewUint(200*common.One)),
-	}
-	tx.Tx.ID = GetRandomTxHash()
-	msgOutboundTxNormal := NewMsgOutboundTx(tx, tx.Tx.ID, keeper.activeNodeAccount.NodeAddress)
-	result3 := handler.handle(ctx, msgOutboundTxNormal, ver)
-	c.Assert(result3.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result3))
-	ygg, err = keeper.GetVault(ctx, keeper.asgardVault.PubKey)
+	swapEvent := NewEventSwap(common.BNBAsset, sdk.NewUint(common.One), sdk.NewUint(common.One), sdk.NewUint(common.One))
+	buf, err := json.Marshal(swapEvent)
 	c.Assert(err, IsNil)
-	// outbound handler doesn't substract fund anymore , it all moved to observe tx now
-	// also we don't take gas from outbound handler either
-	c.Check(ygg.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(500*common.One)), Equals, true) // 300 - Gas
-	c.Check(ygg.GetCoin(common.BTCAsset).Amount.Equal(sdk.NewUint(400*common.One)), Equals, true)
+	e := NewEvent(swapEvent.Type(), ctx.BlockHeight(), tx.Tx, buf, EventPending)
+	c.Assert(keeper.UpsertEvent(ctx, e), IsNil)
+	c.Assert(err, IsNil)
+	c.Assert(result, Equals, true)
+	return outboundTxHandlerTestHelper{
+		ctx:           ctx,
+		pool:          pool,
+		version:       version,
+		keeper:        keeper,
+		asgardVault:   asgardVault,
+		yggVault:      yggVault,
+		nodeAccount:   nodeAccount,
+		inboundTx:     tx,
+		toi:           toi,
+		constAccessor: constAccessor,
+	}
+}
 
-	versionedTxOutStoreDummy.txoutStore.NewBlock(2, constAccessor)
-	inTxID := GetRandomTxHash()
+func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
+	helper := newOutboundTxHandlerTestHelper(c)
+	handler := NewOutboundTxHandler(helper.keeper)
 
-	txIn := types.NewObservedTx(
-		common.Tx{
-			ID:          inTxID,
-			Chain:       common.BNBChain,
-			Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
-			Memo:        "swap:BNB",
-			FromAddress: GetRandomBNBAddress(),
-			ToAddress:   addr,
-			Gas:         common.BNBGasFeeSingleton,
-		},
-		1024,
-		keeper.asgardVault.PubKey,
-	)
+	// invalid message should return an error
+	noopMsg := NewMsgNoOp(helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, noopMsg, helper.version, helper.constAccessor).Code, Equals, CodeInvalidMessage)
 
-	observedTxInHandler := NewObservedTxInHandler(keeper, versionedTxOutStoreDummy, validatorMgr, versionedVaultMgrDummy)
-	msgObservedTxIn := NewMsgObservedTxIn(ObservedTxs{txIn}, keeper.activeNodeAccount.NodeAddress)
-	result := observedTxInHandler.Run(ctx, msgObservedTxIn, ver, constAccessor)
-	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
-
-	tx = NewObservedTx(common.Tx{
+	fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+	tx := NewObservedTx(common.Tx{
 		ID:          GetRandomTxHash(),
 		Chain:       common.BNBChain,
 		Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
-		Memo:        "swap:BNB",
-		FromAddress: GetRandomBNBAddress(),
-		ToAddress:   GetRandomBNBAddress(),
+		Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
+		FromAddress: fromAddr,
+		ToAddress:   helper.inboundTx.Tx.FromAddress,
 		Gas:         common.BNBGasFeeSingleton,
-	}, 12, GetRandomPubKey())
+	}, helper.ctx.BlockHeight(), GetRandomPubKey())
 
-	outMsg := NewMsgOutboundTx(tx, inTxID, keeper.activeNodeAccount.NodeAddress)
-	ctx = ctx.WithBlockHeight(2)
-	result4 := handler.handle(ctx, outMsg, ver)
-	c.Assert(result4.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result4))
+	// if the version is lower than expected, it should return an error
+	outMsg := NewMsgOutboundTx(tx, tx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.0.1"), helper.constAccessor).Code, Equals, CodeBadVersion)
+
+	// create a outbound tx with invalid observer account
+	outMsg = NewMsgOutboundTx(tx, tx.Tx.ID, GetRandomNodeAccount(NodeActive).NodeAddress)
+	// if the version is higher than expected, it should run as normal, because it should maintain backward compatibility
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.2.0"), helper.constAccessor).Code, Equals, sdk.CodeUnauthorized)
+
+	// fail to get observed TxVoter should result in an error
+	outMsg = NewMsgOutboundTx(tx, helper.keeper.observeTxVoterErrHash, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeInternal)
+
+	// fail to complete events should result in an error
+	outMsg = NewMsgOutboundTx(tx, helper.keeper.failGetPendingEvent, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeInternal)
+
+	// valid outbound message, no event, no txout
+	outMsg = NewMsgOutboundTx(tx, tx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
+
+	// valid outbound message, with event, with txout
+	outMsg = NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
+	// event should set to complete
+	ev, err := helper.keeper.GetEvent(helper.ctx, 1)
+	c.Assert(err, IsNil)
+	c.Assert(ev.Status, Equals, EventSuccess)
+	// txout should had been complete
+
+	txOut, err := helper.keeper.GetTxOut(helper.ctx, helper.ctx.BlockHeight())
+	c.Assert(err, IsNil)
+	c.Assert(txOut.TxArray[0].OutHash.IsEmpty(), Equals, false)
+}
+
+func (s *HandlerOutboundTxSuite) TestOuboundTxHandlerSendExtraFundShouldBeSlashed(c *C) {
+	helper := newOutboundTxHandlerTestHelper(c)
+	handler := NewOutboundTxHandler(helper.keeper)
+	fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+	tx := NewObservedTx(common.Tx{
+		ID:    GetRandomTxHash(),
+		Chain: common.BNBChain,
+		Coins: common.Coins{
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(2*common.One)),
+		},
+		Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
+		FromAddress: fromAddr,
+		ToAddress:   helper.inboundTx.Tx.FromAddress,
+		Gas:         common.BNBGasFeeSingleton,
+	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
+	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
+	// valid outbound message, with event, with txout
+	outMsg := NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
+	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
+	c.Assert(na.Bond.Equal(expectedBond), Equals, true)
+}
+
+func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldBeSlashed(c *C) {
+	helper := newOutboundTxHandlerTestHelper(c)
+	handler := NewOutboundTxHandler(helper.keeper)
+	fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+	tx := NewObservedTx(common.Tx{
+		ID:    GetRandomTxHash(),
+		Chain: common.BNBChain,
+		Coins: common.Coins{
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(1*common.One)),
+		},
+		Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
+		FromAddress: fromAddr,
+		ToAddress:   helper.inboundTx.Tx.FromAddress,
+		Gas:         common.BNBGasFeeSingleton,
+	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
+	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
+	// slash one BNB
+	outMsg := NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
+	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
+	c.Assert(na.Bond.Equal(expectedBond), Equals, true)
 }

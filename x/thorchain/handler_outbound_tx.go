@@ -27,20 +27,20 @@ func (h OutboundTxHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Versio
 		return errInvalidMessage.Result()
 	}
 	if err := h.validate(ctx, msg, version); err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
+		return err.Result()
 	}
 	return h.handle(ctx, msg, version)
 }
 
-func (h OutboundTxHandler) validate(ctx sdk.Context, msg MsgOutboundTx, version semver.Version) error {
+func (h OutboundTxHandler) validate(ctx sdk.Context, msg MsgOutboundTx, version semver.Version) sdk.Error {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
 	}
 	ctx.Logger().Error(errInvalidVersion.Error())
-	return errInvalidVersion
+	return errBadVersion
 }
 
-func (h OutboundTxHandler) validateV1(ctx sdk.Context, msg MsgOutboundTx) error {
+func (h OutboundTxHandler) validateV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Error {
 	if err := msg.ValidateBasic(); nil != err {
 		ctx.Logger().Error(err.Error())
 		return err
@@ -48,7 +48,7 @@ func (h OutboundTxHandler) validateV1(ctx sdk.Context, msg MsgOutboundTx) error 
 
 	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
 		ctx.Logger().Error(notAuthorized.Error())
-		return notAuthorized
+		return sdk.ErrUnauthorized("Not Authorized")
 	}
 	return nil
 }
@@ -90,6 +90,7 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 	// Save TxOut back with the TxID only when the TxOut on the block height is
 	// not empty
 	if !txOut.IsEmpty() {
+		processedCoins := common.Coins{}
 		for i, tx := range txOut.TxArray {
 			// withdraw , refund etc, one inbound tx might result two outbound txes, THORNode have to correlate outbound tx back to the
 			// inbound, and also txitem , thus THORNode could record both outbound tx hash correctly
@@ -110,6 +111,17 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 					return sdk.ErrInternal("fail to slash account").Result()
 				}
 			}
+			processedCoins = append(processedCoins, c)
+		}
+
+		for _, c := range msg.Tx.Tx.Coins {
+			if processedCoins.Contains(c) {
+				continue
+			}
+			if err := h.slashNodeAccount(ctx, msg, c.Asset, c.Amount); nil != err {
+				ctx.Logger().Error("fail to slash account for sending out extra fund", "error", err)
+				return sdk.ErrInternal("fail to slash account").Result()
+			}
 		}
 		if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
 			ctx.Logger().Error("fail to save tx out", "error", err)
@@ -124,6 +136,10 @@ func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Resu
 	}
 }
 
+// slashNodeAccount thorchain keep monitoring the outbound tx from asgard pool and yggdrasil pool, usually the txout is triggered by thorchain itself by
+// adding an item into the txout array, refer to TxOutItem for the detail, the TxOutItem contains a specific coin and amount.
+// if somehow thorchain discover signer send out fund more than the amount specified in TxOutItem, it will slash the node account who does that
+// by taking 1.5 * extra fund from node account's bond and subsidise the pool that actually lost it.
 func (h OutboundTxHandler) slashNodeAccount(ctx sdk.Context, msg MsgOutboundTx, asset common.Asset, slashAmount sdk.Uint) error {
 	if slashAmount.IsZero() {
 		return nil
@@ -146,6 +162,10 @@ func (h OutboundTxHandler) slashNodeAccount(ctx sdk.Context, msg MsgOutboundTx, 
 	pool, err := h.keeper.GetPool(ctx, asset)
 	if nil != err {
 		return fmt.Errorf("fail to get %s pool : %w", asset, err)
+	}
+	// thorchain doesn't even have a pool for the asset, or the pool had been suspended, then who cares
+	if pool.Empty() || pool.Status == PoolSuspended {
+		return nil
 	}
 	runeValue := pool.AssetValueInRune(slashAmount).MulUint64(3).QuoUint64(2)
 	pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, slashAmount)
