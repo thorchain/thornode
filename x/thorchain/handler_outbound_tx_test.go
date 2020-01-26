@@ -75,7 +75,7 @@ type outboundTxHandlerTestHelper struct {
 	ctx           sdk.Context
 	pool          Pool
 	version       semver.Version
-	keeper        outboundTxHandlerKeeperHelper
+	keeper        *outboundTxHandlerKeeperHelper
 	asgardVault   Vault
 	yggVault      Vault
 	constAccessor constants.ConstantValues
@@ -89,27 +89,63 @@ type outboundTxHandlerKeeperHelper struct {
 	Keeper
 	observeTxVoterErrHash common.TxID
 	failGetPendingEvent   common.TxID
+	errGetTxOut           bool
+	errGetNodeAccount     bool
+	errGetPool            bool
+	errSetPool            bool
+	errSetNodeAccount     bool
 }
 
-func newOutboundTxHandlerKeeperHelper(keeper Keeper) outboundTxHandlerKeeperHelper {
-	return outboundTxHandlerKeeperHelper{
+func newOutboundTxHandlerKeeperHelper(keeper Keeper) *outboundTxHandlerKeeperHelper {
+	return &outboundTxHandlerKeeperHelper{
 		Keeper:                keeper,
 		observeTxVoterErrHash: GetRandomTxHash(),
 		failGetPendingEvent:   GetRandomTxHash(),
 	}
 }
 
-func (k outboundTxHandlerKeeperHelper) GetObservedTxVoter(ctx sdk.Context, hash common.TxID) (ObservedTxVoter, error) {
+func (k *outboundTxHandlerKeeperHelper) GetObservedTxVoter(ctx sdk.Context, hash common.TxID) (ObservedTxVoter, error) {
 	if hash.Equals(k.observeTxVoterErrHash) {
 		return ObservedTxVoter{}, kaboom
 	}
 	return k.Keeper.GetObservedTxVoter(ctx, hash)
 }
-func (k outboundTxHandlerKeeperHelper) GetPendingEventID(ctx sdk.Context, hash common.TxID) ([]int64, error) {
+func (k *outboundTxHandlerKeeperHelper) GetPendingEventID(ctx sdk.Context, hash common.TxID) ([]int64, error) {
 	if hash.Equals(k.failGetPendingEvent) {
 		return nil, kaboom
 	}
 	return k.Keeper.GetPendingEventID(ctx, hash)
+}
+func (k *outboundTxHandlerKeeperHelper) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
+	if k.errGetTxOut {
+		return nil, kaboom
+	}
+	return k.Keeper.GetTxOut(ctx, height)
+}
+func (k *outboundTxHandlerKeeperHelper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+	if k.errGetNodeAccount {
+		return NodeAccount{}, kaboom
+	}
+	return k.Keeper.GetNodeAccount(ctx, addr)
+}
+func (k *outboundTxHandlerKeeperHelper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
+	if k.errGetPool {
+		return NewPool(), kaboom
+	}
+	return k.Keeper.GetPool(ctx, asset)
+}
+func (k *outboundTxHandlerKeeperHelper) SetPool(ctx sdk.Context, pool Pool) error {
+	if k.errSetPool {
+		return kaboom
+	}
+	return k.Keeper.SetPool(ctx, pool)
+}
+
+func (k *outboundTxHandlerKeeperHelper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
+	if k.errSetNodeAccount {
+		return kaboom
+	}
+	return k.Keeper.SetNodeAccount(ctx, na)
 }
 
 // newOutboundTxHandlerTestHelper setup all the basic condition to test OutboundTxHandler
@@ -144,6 +180,9 @@ func newOutboundTxHandlerTestHelper(c *C) outboundTxHandlerTestHelper {
 	nodeAccount := GetRandomNodeAccount(NodeActive)
 	nodeAccount.Bond = sdk.NewUint(100 * common.One)
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
+	nodeAccount1 := GetRandomNodeAccount(NodeActive)
+	nodeAccount1.Bond = sdk.NewUint(100 * common.One)
+
 	c.Assert(keeper.SetPool(ctx, pool), IsNil)
 
 	txOutStorage := NewTxOutStorageV1(keeper)
@@ -192,9 +231,12 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 	fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
 	tx := NewObservedTx(common.Tx{
-		ID:          GetRandomTxHash(),
-		Chain:       common.BNBChain,
-		Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
+		ID:    GetRandomTxHash(),
+		Chain: common.BNBChain,
+		Coins: common.Coins{
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(2*common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(common.One)),
+		},
 		Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
@@ -218,12 +260,60 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 	outMsg = NewMsgOutboundTx(tx, helper.keeper.failGetPendingEvent, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeInternal)
 
+	// fail to get txout should result in an error
+	helper.keeper.errGetTxOut = true
+	outMsg = NewMsgOutboundTx(tx, tx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeUnknownRequest)
+	helper.keeper.errGetTxOut = false
+
+	// fail to get node account should result in an error
+	helper.keeper.errGetNodeAccount = true
+	outMsg = NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeInternal)
+	helper.keeper.errGetNodeAccount = false
+
+	// fail to get pool should result in an error
+	helper.keeper.errGetPool = true
+	outMsg = NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeInternal)
+	helper.keeper.errGetPool = false
+
+	// fail to set pool should result in an error
+	helper.keeper.errSetPool = true
+	outMsg = NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeInternal)
+	helper.keeper.errSetPool = false
+
+	// fail to set node account should result in an error
+	helper.keeper.errSetNodeAccount = true
+	outMsg = NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeInternal)
+	helper.keeper.errSetNodeAccount = false
+
 	// valid outbound message, no event, no txout
 	outMsg = NewMsgOutboundTx(tx, tx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
 
+}
+func (s *HandlerOutboundTxSuite) TestOutboundTxNormalCase(c *C) {
+	helper := newOutboundTxHandlerTestHelper(c)
+	handler := NewOutboundTxHandler(helper.keeper)
+
+	fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+	tx := NewObservedTx(common.Tx{
+		ID:    GetRandomTxHash(),
+		Chain: common.BNBChain,
+		Coins: common.Coins{
+			common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One)),
+		},
+		Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
+		FromAddress: fromAddr,
+		ToAddress:   helper.inboundTx.Tx.FromAddress,
+		Gas:         common.BNBGasFeeSingleton,
+	}, helper.ctx.BlockHeight(), GetRandomPubKey())
 	// valid outbound message, with event, with txout
-	outMsg = NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
+	outMsg := NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
 	// event should set to complete
 	ev, err := helper.keeper.GetEvent(helper.ctx, 1)
@@ -235,7 +325,6 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(txOut.TxArray[0].OutHash.IsEmpty(), Equals, false)
 }
-
 func (s *HandlerOutboundTxSuite) TestOuboundTxHandlerSendExtraFundShouldBeSlashed(c *C) {
 	helper := newOutboundTxHandlerTestHelper(c)
 	handler := NewOutboundTxHandler(helper.keeper)
