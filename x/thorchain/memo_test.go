@@ -81,6 +81,9 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txYggdrasilReturn), Equals, true)
 
+	_, err = ParseMemo("migrate")
+	c.Assert(err, IsNil)
+
 	// unhappy paths
 	_, err = ParseMemo("")
 	c.Assert(err, NotNil)
@@ -104,8 +107,8 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("nextpool:whatever")
 	c.Assert(err, NotNil)
-
 }
+
 func (s *MemoSuite) TestParse(c *C) {
 	// happy paths
 	memo, err := ParseMemo("CREATE:RUNE-1BA")

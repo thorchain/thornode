@@ -112,9 +112,10 @@ func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, n
 	voter.Add(tx, signer)
 
 	ok := false
-	if voter.HasConensus(nas) && voter.Height == 0 {
+	if voter.HasConensus(nas) && !voter.ProcessedIn {
 		ok = true
 		voter.Height = ctx.BlockHeight()
+		voter.ProcessedIn = true
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
 

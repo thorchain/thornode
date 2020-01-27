@@ -70,6 +70,7 @@ func (toi TxOutItem) String() string {
 	sb.WriteString("To Address:" + toi.ToAddress.String())
 	sb.WriteString("Asset:" + toi.Coin.Asset.String())
 	sb.WriteString("Amount:" + toi.Coin.Amount.String())
+	sb.WriteString("Memo:" + toi.Memo)
 	return sb.String()
 }
 

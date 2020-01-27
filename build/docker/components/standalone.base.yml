@@ -50,6 +50,7 @@ services:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
+      - ${HOME}/.thornode/standalone/.bond:/root/.bond
       - ${HOME}/.thornode/tss/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
