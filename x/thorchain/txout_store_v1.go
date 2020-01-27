@@ -139,7 +139,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	nodes, err := tos.keeper.TotalActiveNodeAccount(ctx)
 	minumNodesForBFT := tos.constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
 	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
-	if int64(nodes) >= minumNodesForBFT && err == nil {
+	if int64(nodes) >= minumNodesForBFT && err == nil && toi.Memo != "yggdrasil-" && toi.Memo != "yggdrasil+" && toi.Memo != "migrate" {
 		var runeFee sdk.Uint
 		if toi.Coin.Asset.IsRune() {
 			if toi.Coin.Amount.LTE(sdk.NewUint(uint64(transactionFee))) {
@@ -178,10 +178,10 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			}
 		}
 	}
+
 	// When we request Yggdrasil pool to return the fund, the coin field is actually empty
 	// Signer when it sees an tx out item with memo "yggdrasil-" it will query the account on relevant chain
 	// and coin field will be filled there, thus we have to let this one go
-
 	if toi.Coin.IsEmpty() && toi.Memo != "yggdrasil-" {
 		ctx.Logger().Info("tx out item has zero coin", toi.String())
 		return false, nil

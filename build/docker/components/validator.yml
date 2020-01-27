@@ -57,6 +57,7 @@ services:
       - ${HOME}/.thornode/validator/.thord:/root/.thord
       - ${HOME}/.thornode/validator/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/validator/.tss:/root/.tss
+      - ${HOME}/.thornode/validator/.bond:/root/.bond
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api:
@@ -94,9 +95,9 @@ services:
       SEED: ${PEER}
       SEEDP2PPORT: 5040
       SEEDINFOPORT: 6040
-      TSSPORT: :4040
+      TSSPORT: ":4040"
       P2PPORT: 5040
-      INFOPORT: :6040
+      INFOPORT: ":6040"
       PRIVKEY: /root/.tss/private.key
     expose:
       - "5040"

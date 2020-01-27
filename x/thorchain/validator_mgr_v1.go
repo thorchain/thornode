@@ -428,6 +428,9 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 	}
 	// nth * 10 == the amount of the bond we want to send
 	for _, na := range active {
+		if !vm.k.VaultExists(ctx, na.PubKeySet.Secp256k1) {
+			continue
+		}
 		ygg, err := vm.k.GetVault(ctx, na.PubKeySet.Secp256k1)
 		if err != nil {
 			return err
@@ -533,6 +536,9 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 }
 
 func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) error {
+	if !vm.k.VaultExists(ctx, node.PubKeySet.Secp256k1) {
+		return nil
+	}
 	ygg, err := vm.k.GetVault(ctx, node.PubKeySet.Secp256k1)
 	if nil != err {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
@@ -774,6 +780,11 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
+		if na.RequestedToLeave {
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
+		}
+
+		// Check if they've requested to leave
 		if na.RequestedToLeave {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}

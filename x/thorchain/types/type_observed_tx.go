@@ -108,11 +108,13 @@ func (tx *ObservedTx) IsDone(numOuts int) bool {
 }
 
 type ObservedTxVoter struct {
-	TxID    common.TxID `json:"tx_id"`
-	Height  int64       `json:"height"`
-	Txs     ObservedTxs `json:"in_tx"`   // copies of tx in by various observers.
-	Actions []TxOutItem `json:"actions"` // outbound txs set to be sent
-	OutTxs  common.Txs  `json:"out_txs"` // observed outbound transactions
+	TxID         common.TxID `json:"tx_id"`
+	Height       int64       `json:"height"`
+	ProcessedIn  bool        `json:"processed_in"`  // used to track if has been processed txin
+	ProcessedOut bool        `json:"processed_out"` // used to track if has been processed txout
+	Txs          ObservedTxs `json:"in_tx"`         // copies of tx in by various observers.
+	Actions      []TxOutItem `json:"actions"`       // outbound txs set to be sent
+	OutTxs       common.Txs  `json:"out_txs"`       // observed outbound transactions
 }
 
 type ObservedTxVoters []ObservedTxVoter

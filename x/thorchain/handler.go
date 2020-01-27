@@ -166,6 +166,8 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 	case ReserveMemo:
 		res := NewReserveContributor(tx.Tx.FromAddress, tx.Tx.Coins[0].Amount)
 		newMsg = NewMsgReserveContributor(res, signer)
+	case MigrateMemo:
+		newMsg = NewMsgNoOp(signer)
 	default:
 		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid memo")
 	}

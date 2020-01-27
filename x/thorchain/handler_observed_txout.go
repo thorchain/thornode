@@ -159,9 +159,10 @@ func (h ObservedTxOutHandler) outboundFailure(ctx sdk.Context, tx ObservedTx, ac
 func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
 	voter.Add(tx, signer)
 	ok := false
-	if voter.HasConensus(nas) && voter.Height == 0 {
+	if voter.HasConensus(nas) && !voter.ProcessedOut {
 		ok = true
 		voter.Height = ctx.BlockHeight()
+		voter.ProcessedOut = true
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
 	// Check to see if we have enough identical observations to process the transaction
@@ -202,17 +203,15 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		}
 
 		// If sending from one of our vaults, decrement coins
-		if h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
-			vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
-			if nil != err {
-				ctx.Logger().Error("fail to get vault", "error", err)
-				return sdk.ErrInternal("fail to get vault").Result()
-			}
-			vault.SubFunds(tx.Tx.Coins)
-			if err := h.keeper.SetVault(ctx, vault); nil != err {
-				ctx.Logger().Error("fail to save vault", "error", err)
-				return sdk.ErrInternal("fail to save vault").Result()
-			}
+		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
+		if nil != err {
+			ctx.Logger().Error("fail to get vault", "error", err)
+			return sdk.ErrInternal("fail to get vault").Result()
+		}
+		vault.SubFunds(tx.Tx.Coins)
+		if err := h.keeper.SetVault(ctx, vault); nil != err {
+			ctx.Logger().Error("fail to save vault", "error", err)
+			return sdk.ErrInternal("fail to save vault").Result()
 		}
 		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
 
