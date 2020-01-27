@@ -158,9 +158,18 @@ func (h OutboundTxHandler) slashNodeAccount(ctx sdk.Context, msg MsgOutboundTx, 
 	}
 
 	if asset.IsRune() {
+		amountToReserve := slashAmount.QuoUint64(2)
 		// if the diff asset is RUNE , just took 1.5 * diff from their bond
 		slashAmount = slashAmount.MulUint64(3).QuoUint64(2)
 		nodeAccount.Bond = common.SafeSub(nodeAccount.Bond, slashAmount)
+		vaultData, err := h.keeper.GetVaultData(ctx)
+		if nil != err {
+			return fmt.Errorf("fail to get vault data: %w", err)
+		}
+		vaultData.TotalReserve = vaultData.TotalReserve.Add(amountToReserve)
+		if err := h.keeper.SetVaultData(ctx, vaultData); nil != err {
+			return fmt.Errorf("fail to save vault data: %w", err)
+		}
 		return h.keeper.SetNodeAccount(ctx, nodeAccount)
 	}
 	pool, err := h.keeper.GetPool(ctx, asset)

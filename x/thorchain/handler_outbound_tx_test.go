@@ -94,6 +94,8 @@ type outboundTxHandlerKeeperHelper struct {
 	errGetPool            bool
 	errSetPool            bool
 	errSetNodeAccount     bool
+	errGetVaultData       bool
+	errSetVaultData       bool
 }
 
 func newOutboundTxHandlerKeeperHelper(keeper Keeper) *outboundTxHandlerKeeperHelper {
@@ -146,6 +148,18 @@ func (k *outboundTxHandlerKeeperHelper) SetNodeAccount(ctx sdk.Context, na NodeA
 		return kaboom
 	}
 	return k.Keeper.SetNodeAccount(ctx, na)
+}
+func (k *outboundTxHandlerKeeperHelper) GetVaultData(ctx sdk.Context) (VaultData, error) {
+	if k.errGetVaultData {
+		return VaultData{}, kaboom
+	}
+	return k.Keeper.GetVaultData(ctx)
+}
+func (k *outboundTxHandlerKeeperHelper) SetVaultData(ctx sdk.Context, data VaultData) error {
+	if k.errSetVaultData {
+		return kaboom
+	}
+	return k.Keeper.SetVaultData(ctx, data)
 }
 
 // newOutboundTxHandlerTestHelper setup all the basic condition to test OutboundTxHandler
@@ -290,6 +304,18 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeInternal)
 	helper.keeper.errSetNodeAccount = false
 
+	// fail to get vault data should result in an error
+	helper.keeper.errGetVaultData = true
+	outMsg = NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeInternal)
+	helper.keeper.errGetVaultData = false
+
+	// fail to set vault data should result in an error
+	helper.keeper.errSetVaultData = true
+	outMsg = NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
+	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeInternal)
+	helper.keeper.errSetVaultData = false
+
 	// valid outbound message, no event, no txout
 	outMsg = NewMsgOutboundTx(tx, tx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
@@ -342,11 +368,17 @@ func (s *HandlerOutboundTxSuite) TestOuboundTxHandlerSendExtraFundShouldBeSlashe
 		Gas:         common.BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
 	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
+	vaultData, err := helper.keeper.GetVaultData(helper.ctx)
+	c.Assert(err, IsNil)
+	expectedVaultTotalReserve := vaultData.TotalReserve.Add(sdk.NewUint(common.One).QuoUint64(2))
 	// valid outbound message, with event, with txout
 	outMsg := NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
 	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
 	c.Assert(na.Bond.Equal(expectedBond), Equals, true)
+	vaultData, err = helper.keeper.GetVaultData(helper.ctx)
+	c.Assert(err, IsNil)
+	c.Assert(vaultData.TotalReserve.Equal(expectedVaultTotalReserve), Equals, true)
 }
 
 func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldBeSlashed(c *C) {
