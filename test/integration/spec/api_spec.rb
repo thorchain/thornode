@@ -208,7 +208,16 @@ describe "API Tests" do
           for idx in 0 ...arr['tx_array'].size
             # THORNode have found the block height of our last swap
             newTxId = txid()
-            tx = makeTx(memo: arr['tx_array'][idx]['memo'], hash:newTxId, sender:TRUST_BNB_ADDRESS, outbound:true)
+            coins = [{
+                'asset': {
+                    'chain': arr['tx_array'][idx]['coin']['asset']['chain'],
+                    'symbol': arr['tx_array'][idx]['coin']['asset']['symbol'],
+                    'ticker': arr['tx_array'][idx]['coin']['asset']['ticker'],
+                 },
+                 'amount': arr['tx_array'][idx]['coin']['amount'],
+                }]
+            toAddr = arr['tx_array'][idx]['to']
+            tx = makeTx(memo: arr['tx_array'][idx]['memo'], hash:newTxId,coins:coins , sender:toAddr, outbound:true)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
           end

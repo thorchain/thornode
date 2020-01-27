@@ -235,6 +235,7 @@ func isSignedByActiveObserver(ctx sdk.Context, keeper Keeper, signers []sdk.AccA
 		return false
 	}
 	for _, signer := range signers {
+
 		if !keeper.IsActiveObserver(ctx, signer) {
 			return false
 		}
