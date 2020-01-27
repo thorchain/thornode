@@ -110,8 +110,8 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 	c.Check(tx.Tx.Memo, Equals, "hello")
 	tx = voter.GetTx(trusts4)
 	c.Check(tx.Empty(), Equals, true)
-	c.Check(voter.HasConensus(trusts3), Equals, true)
-	c.Check(voter.HasConensus(trusts4), Equals, false)
+	c.Check(voter.HasConsensus(trusts3), Equals, true)
+	c.Check(voter.HasConsensus(trusts4), Equals, false)
 	c.Check(voter.Key().Equals(txID), Equals, true)
 	c.Check(voter.String() == txID.String(), Equals, true)
 

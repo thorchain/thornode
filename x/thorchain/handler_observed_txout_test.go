@@ -64,23 +64,6 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 type TestObservedTxOutFailureKeeper struct {
 	KVStoreDummy
 }
-
-func (s *HandlerObservedTxOutSuite) TestFailure(c *C) {
-	ctx, _ := setupKeeperForTest(c)
-	w := getHandlerTestWrapper(c, 1, true, false)
-
-	keeper := &TestObservedTxOutFailureKeeper{}
-	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy)
-	tx := NewObservedTx(GetRandomTx(), 12, GetRandomPubKey())
-	nas := NodeAccounts{GetRandomNodeAccount(NodeActive)}
-
-	err := handler.outboundFailure(ctx, tx, nas)
-	c.Assert(err, IsNil)
-}
-
 type TestObservedTxOutHandleKeeper struct {
 	KVStoreDummy
 	nas        NodeAccounts

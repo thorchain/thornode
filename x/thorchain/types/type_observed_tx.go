@@ -1,6 +1,8 @@
 package types
 
 import (
+	"strings"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 
@@ -144,20 +146,44 @@ func (tx ObservedTxVoter) Key() common.TxID {
 	return tx.TxID
 }
 
+// String implement fmt.Stringer
 func (tx ObservedTxVoter) String() string {
 	return tx.TxID.String()
 }
 
-func (tx *ObservedTxVoter) AddOutTx(in common.Tx) {
+// matchActionItem is to check the given outboundTx again the list of actions , return true of the outboundTx matched any of the actions
+func (tx ObservedTxVoter) matchActionItem(outboundTx common.Tx) bool {
+	for _, toi := range tx.Actions {
+		// note: Coins.Contains will match amount as well
+		if strings.EqualFold(toi.Memo, outboundTx.Memo) &&
+			toi.ToAddress.Equals(outboundTx.ToAddress) &&
+			toi.Chain.Equals(outboundTx.Chain) &&
+			outboundTx.Coins.Contains(toi.Coin) {
+			return true
+		}
+	}
+	return false
+}
+
+// AddOutTx trying to add the outbound tx into OutTxs ,
+// return value false indicate the given outbound tx doesn't match any of the actions items , node account should be slashed for a malicious tx
+// true indicated the outbound tx matched an action item , and it has been added into internal OutTxs
+func (tx *ObservedTxVoter) AddOutTx(in common.Tx) bool {
+	if !tx.matchActionItem(in) {
+		// no action item match the outbound tx
+		return false
+	}
+
 	for _, t := range tx.OutTxs {
 		if in.ID.Equals(t.ID) {
-			return
+			return true
 		}
 	}
 	tx.OutTxs = append(tx.OutTxs, in)
 	for i := range tx.Txs {
 		tx.Txs[i].SetDone(in.ID, len(tx.Actions))
 	}
+	return true
 }
 
 func (tx *ObservedTxVoter) IsDone() bool {
@@ -185,7 +211,7 @@ func (tx *ObservedTxVoter) Add(observedTx ObservedTx, signer sdk.AccAddress) {
 	tx.Txs = append(tx.Txs, observedTx)
 }
 
-func (tx ObservedTxVoter) HasConensus(nodeAccounts NodeAccounts) bool {
+func (tx ObservedTxVoter) HasConsensus(nodeAccounts NodeAccounts) bool {
 	for _, txIn := range tx.Txs {
 		var count int
 		for _, signer := range txIn.Signers {
