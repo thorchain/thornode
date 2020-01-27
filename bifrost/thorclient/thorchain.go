@@ -25,6 +25,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	btypes "gitlab.com/thorchain/thornode/bifrost/types"
 )
 
 // Endpoint urls
@@ -196,6 +197,10 @@ func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, inputPks comm
 	)
 
 	return &stdTx, nil
+}
+
+func (b *ThorchainBridge) GetVaults() (btypes.Vaults, error) {
+	return btypes.Vaults{}, nil
 }
 
 // GetObservationsStdTx get observations tx from txIns
