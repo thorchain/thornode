@@ -119,7 +119,7 @@ func (b *BinanceBlockScanner) getTxSearchUrl(block int64, currentPage, numberPer
 
 func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUrl string) error {
 	strBlock := strconv.FormatInt(block, 10)
-	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); nil != err {
+	if err := b.db.SetBlockScannerStatus(block, blockscanner.Processing); nil != err {
 		b.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
 		return errors.Wrapf(err, "fail to set block scan status for block %d", block)
 	}
@@ -187,7 +187,7 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 			}
 			b.logger.Debug().Int64("block", block).Msg("processing block")
 			if err := b.searchTxInABlockFromServer(block, b.getTxSearchUrl(block, 1, 100)); nil != err {
-				if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); nil != errStatus {
+				if errStatus := b.db.SetBlockScannerStatus(block, blockscanner.Failed); nil != errStatus {
 					b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
 					b.logger.Error().Err(err).Int64("height", block).Msg("fail to set block to fail status")
 				}

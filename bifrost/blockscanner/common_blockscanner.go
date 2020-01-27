@@ -17,10 +17,22 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	btypes "gitlab.com/thorchain/thornode/bifrost/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 )
+
+// RPCBlock struct to hold blocks
+type RPCBlock struct {
+	Jsonrpc string `json:"jsonrpc"`
+	ID      string `json:"id"`
+	Result  struct {
+		Block struct {
+			Header struct {
+				Height string `json:"height"`
+			} `json:"header"`
+		} `json:"block"`
+	} `json:"result"`
+}
 
 // CommonBlockScanner is used to discover block height
 // since both binance and thorchain use cosmos, so this part logic should be the same
@@ -48,7 +60,7 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
 
-	// check that we can parse our host url
+	// check that THORNode can parse our host url
 	_, err := url.Parse(rpcHost)
 	if err != nil {
 		return nil, err
@@ -78,7 +90,7 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 }
 
 // GetHttpClient return the http client used internal to ourside world
-// right now we need to use this for test
+// right now THORNode need to use this for test
 func (b *CommonBlockScanner) GetHttpClient() *http.Client {
 	return b.httpClient
 }
@@ -96,7 +108,7 @@ func (b *CommonBlockScanner) Start() {
 	go b.retryFailedBlocks()
 }
 
-// retryFailedBlocks , if somehow we failed to process a block , it will be retried
+// retryFailedBlocks , if somehow THORNode failed to process a block , it will be retried
 func (b *CommonBlockScanner) retryFailedBlocks() {
 	b.logger.Debug().Msg("start to retry failed blocks")
 	defer b.logger.Debug().Msg("stop retry failed blocks")
@@ -112,7 +124,7 @@ func (b *CommonBlockScanner) retryFailedBlocks() {
 	}
 }
 func (b *CommonBlockScanner) retryBlocks(failedonly bool) {
-	// start up to grab those blocks that we didn't finished
+	// start up to grab those blocks that THORNode didn't finished
 	blocks, err := b.scannerStorage.GetBlocksForRetry(failedonly)
 	if nil != err {
 		b.errorCounter.WithLabelValues("fail_get_blocks_for_retry", "").Inc()
@@ -137,12 +149,12 @@ func (b *CommonBlockScanner) scanBlocks() {
 	currentPos, err := b.scannerStorage.GetScanPos()
 	if nil != err {
 		b.errorCounter.WithLabelValues("fail_get_scan_pos", "").Inc()
-		b.logger.Error().Err(err).Msgf("fail to get current block scan pos, %s will start from %d", b.cfg.ChainID, b.previousBlock)
+		b.logger.Error().Err(err).Msgf("fail to get current block scan pos,THORNode will start from %d", b.previousBlock)
 	} else {
 		b.previousBlock = currentPos
 	}
 	b.metrics.GetCounter(metrics.CurrentPosition).Add(float64(currentPos))
-	// start up to grab those blocks that we didn't finished
+	// start up to grab those blocks that THORNode didn't finished
 	b.retryBlocks(false)
 	for {
 		select {
@@ -154,7 +166,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 				b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
 				b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 			}
-			b.logger.Debug().Int64("current block height", currentBlock).Int64("block height", b.previousBlock).Msgf("Chain %s get block height", b.cfg.ChainID)
+			b.logger.Debug().Int64("current block height", currentBlock).Int64("THORNode are at", b.previousBlock).Msg("get block height")
 			if b.previousBlock >= currentBlock {
 				// back off
 				time.Sleep(b.cfg.BlockHeightDiscoverBackoff)
@@ -165,7 +177,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 				for idx := b.previousBlock; idx < currentBlock; idx++ {
 					b.previousBlock++
 					b.metrics.GetCounter(metrics.TotalBlockScanned).Inc()
-					if err := b.scannerStorage.SetBlockScanStatus(b.previousBlock, NotStarted); err != nil {
+					if err := b.scannerStorage.SetBlockScannerStatus(b.previousBlock, NotStarted); err != nil {
 						b.logger.Error().Err(err).Msg("fail to set block status")
 						b.errorCounter.WithLabelValues("fail_set_block_status", strconv.FormatInt(b.previousBlock, 10)).Inc()
 						return
@@ -242,7 +254,7 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 }
 
 func (b *CommonBlockScanner) getBlockUrl() string {
-	// ignore err because we already checked we can parse the rpcHost at NewCommonBlockScanner
+	// ignore err because THORNode already checked THORNode can parse the rpcHost at NewCommonBlockScanner
 	u, _ := url.Parse(b.rpcHost)
 	u.Path = "block"
 	return u.String()
@@ -263,7 +275,7 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {
 		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
 		return 0, errors.Wrap(err, "fail to get blocks")
 	}
-	var tx btypes.RPCBlock
+	var tx RPCBlock
 	if err := json.Unmarshal(buf, &tx); nil != err {
 		b.errorCounter.WithLabelValues("fail_unmarshal_block", requestUrl).Inc()
 		return 0, errors.Wrap(err, "fail to unmarshal body to RPCBlock")

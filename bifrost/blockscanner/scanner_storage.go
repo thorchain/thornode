@@ -9,7 +9,7 @@ type ScannerStorage interface {
 	GetScanPos() (int64, error)
 	SetScanPos(block int64) error
 
-	SetBlockScanStatus(block int64, status BlockScanStatus) error
+	SetBlockScannerStatus(block int64, status BlockScannerStatus) error
 	RemoveBlockStatus(block int64) error
 
 	GetBlocksForRetry(failedOnly bool) ([]int64, error)

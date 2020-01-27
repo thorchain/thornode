@@ -21,8 +21,8 @@ const (
 
 // BlockStatusItem indicate the status of a block
 type BlockStatusItem struct {
-	Height int64           `json:"height"`
-	Status BlockScanStatus `json:"status"`
+	Height int64              `json:"height"`
+	Status BlockScannerStatus `json:"status"`
 }
 
 // NewLevelDBScannerStorage create a new instance of LevelDBScannerStorage
@@ -46,7 +46,7 @@ func (ldbss *LevelDBScannerStorage) SetScanPos(block int64) error {
 	n := binary.PutVarint(buf, block)
 	return ldbss.db.Put([]byte(ScanPosKey), buf[:n], nil)
 }
-func (ldbss *LevelDBScannerStorage) SetBlockScanStatus(block int64, status BlockScanStatus) error {
+func (ldbss *LevelDBScannerStorage) SetBlockScannerStatus(block int64, status BlockScannerStatus) error {
 	blockStatusItem := BlockStatusItem{
 		Height: block,
 		Status: status,

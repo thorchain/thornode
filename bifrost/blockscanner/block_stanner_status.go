@@ -1,10 +1,10 @@
 package blockscanner
 
-// BlockScanStatus
-type BlockScanStatus byte
+// BlockScannerStatus
+type BlockScannerStatus byte
 
 const (
-	Processing BlockScanStatus = iota
+	Processing BlockScannerStatus = iota
 	Failed
 	Finished
 	NotStarted

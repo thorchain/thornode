@@ -128,7 +128,7 @@ func (b *ThorchainBlockScan) processBlocks(idx int) {
 			}
 			b.logger.Debug().Int64("block", block).Msg("processing block")
 			if err := b.processTxOutBlock(block); nil != err {
-				if errStatus := b.scannerStorage.SetBlockScanStatus(block, blockscanner.Failed); nil != errStatus {
+				if errStatus := b.scannerStorage.SetBlockScannerStatus(block, blockscanner.Failed); nil != errStatus {
 					b.errCounter.WithLabelValues("fail_set_block_Status", strconv.FormatInt(block, 10))
 					b.logger.Error().Err(err).Int64("height", block).Msg("fail to set block to fail status")
 				}
