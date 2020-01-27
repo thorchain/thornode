@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -13,11 +11,15 @@ import (
 // usually this type or tx is because Thorchain fail to process the tx, which result in a refund, signer honour the tx and refund customer accordingly
 type RefundHandler struct {
 	keeper Keeper
+	ch     CommonOutboundTxHandler
 }
 
 // NewRefundHandler create a new refund handler
 func NewRefundHandler(keeper Keeper) RefundHandler {
-	return RefundHandler{keeper: keeper}
+	return RefundHandler{
+		keeper: keeper,
+		ch:     NewCommonOutboundTxHander(keeper),
+	}
 }
 func (h RefundHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgRefundTx)
@@ -31,15 +33,7 @@ func (h RefundHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, c
 		return err.Result()
 	}
 
-	if err := h.handle(ctx, msg, version); nil != err {
-		ctx.Logger().Error("fail to process msg refund", "error", err)
-		return err.Result()
-	}
-
-	return sdk.Result{
-		Code:      sdk.CodeOK,
-		Codespace: DefaultCodespace,
-	}
+	return h.handle(ctx, msg, version)
 }
 
 func (h RefundHandler) validate(ctx sdk.Context, msg MsgRefundTx, version semver.Version, constAccessor constants.ConstantValues) sdk.Error {
@@ -54,55 +48,12 @@ func (h RefundHandler) validateV1(ctx sdk.Context, version semver.Version, msg M
 		return err
 	}
 
-	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
+	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
 		return sdk.ErrUnauthorized("msg is not signed by an active node account")
 	}
 	return nil
 }
 
-func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.Version) sdk.Error {
-	voter, err := h.keeper.GetObservedTxVoter(ctx, msg.InTxID)
-	if err != nil {
-		ctx.Logger().Error(err.Error())
-		return sdk.ErrInternal("fail to get observed tx voter")
-	}
-	voter.AddOutTx(msg.Tx.Tx)
-	h.keeper.SetObservedTxVoter(ctx, voter)
-
-	// complete events
-	if voter.IsDone() {
-		err := completeEvents(ctx, h.keeper, msg.InTxID, voter.OutTxs, EventRefund)
-		if err != nil {
-			return sdk.ErrInternal(fmt.Errorf("fail to set event to refund: %w", err).Error())
-		}
-	}
-
-	// update txOut record with our TxID that sent funds out of the pool
-	txOut, err := h.keeper.GetTxOut(ctx, voter.Height)
-	if err != nil {
-		return sdk.ErrUnknownRequest(fmt.Errorf("unable to get txout record: %w", err).Error())
-	}
-
-	// Save TxOut back with the TxID only when the TxOut on the block height is
-	// not empty
-	if !txOut.IsEmpty() {
-		for i, tx := range txOut.TxArray {
-
-			// withdraw , refund etc, one inbound tx might result two outbound txes, THORNode have to correlate outbound tx back to the
-			// inbound, and also txitem , thus THORNode could record both outbound tx hash correctly
-			// given every tx item will only have one coin in it , given that , THORNode could use that to identify which txit
-			if tx.InHash.Equals(msg.InTxID) &&
-				tx.OutHash.IsEmpty() &&
-				msg.Tx.Tx.Coins.Contains(tx.Coin) {
-				txOut.TxArray[i].OutHash = msg.Tx.Tx.ID
-			}
-		}
-		if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
-			ctx.Logger().Error("fail to save tx out", "error", err)
-			return sdk.ErrInternal(fmt.Errorf("fail to save tx out: %w", err).Error())
-		}
-	}
-	h.keeper.SetLastSignedHeight(ctx, voter.Height)
-
-	return nil
+func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.Version) sdk.Result {
+	return h.ch.handle(ctx, msg.Tx, msg.InTxID, EventRefund)
 }

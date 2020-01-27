@@ -379,7 +379,6 @@ services:
       CHAIN_RPC: 172.32.10.25:26657
       TSS_HOST: 172.32.10.5
       TSS_PORT: 4043
-    depends_on:
     entrypoint:
       /docker/scripts/bifrost.sh
     depends_on:
