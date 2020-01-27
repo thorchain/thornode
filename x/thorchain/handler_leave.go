@@ -6,6 +6,7 @@ import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -69,6 +70,7 @@ func (h LeaveHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ 
 		Codespace: DefaultCodespace,
 	}
 }
+
 func (h LeaveHandler) handle(ctx sdk.Context, msg MsgLeave, version semver.Version) sdk.Error {
 	nodeAcc, err := h.keeper.GetNodeAccountByBondAddress(ctx, msg.Tx.FromAddress)
 	if nil != err {
@@ -78,6 +80,11 @@ func (h LeaveHandler) handle(ctx sdk.Context, msg MsgLeave, version semver.Versi
 		return sdk.ErrUnknownRequest("node account doesn't exist")
 	}
 	// THORNode add the node to leave queue
+
+	coin := msg.Tx.Coins.GetCoin(common.RuneAsset())
+	if !coin.IsEmpty() {
+		nodeAcc.Bond = nodeAcc.Bond.Add(coin.Amount)
+	}
 
 	if nodeAcc.Status == NodeActive {
 		if nodeAcc.LeaveHeight == 0 {

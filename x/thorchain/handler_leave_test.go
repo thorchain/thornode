@@ -24,16 +24,14 @@ func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 	ygg := NewVault(w.ctx.BlockHeight(), ActiveVault, YggdrasilVault, acc2.PubKeySet.Secp256k1)
 	c.Assert(w.keeper.SetVault(w.ctx, ygg), IsNil)
 	txID := GetRandomTxHash()
-	senderBNB := GetRandomBNBAddress()
 	tx := common.NewTx(
 		txID,
-		senderBNB,
+		acc2.BondAddress,
 		GetRandomBNBAddress(),
-		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		common.Coins{common.NewCoin(common.RuneAsset(), sdk.OneUint())},
 		common.BNBGasFeeSingleton,
-		"",
+		"LEAVE",
 	)
-	tx.FromAddress = acc2.BondAddress
 	msgLeave := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
@@ -44,27 +42,30 @@ func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 }
 
 func (HandlerLeaveSuite) TestLeaveHandler_ActiveNodeLeave(c *C) {
+	var err error
 	w := getHandlerTestWrapper(c, 1, true, false)
 	leaveHandler := NewLeaveHandler(w.keeper, w.validatorMgr, w.versionedTxOutStore)
 	acc2 := GetRandomNodeAccount(NodeActive)
 	acc2.Bond = sdk.NewUint(100 * common.One)
 	c.Assert(w.keeper.SetNodeAccount(w.ctx, acc2), IsNil)
 	txID := GetRandomTxHash()
-	senderBNB := GetRandomBNBAddress()
 	tx := common.NewTx(
 		txID,
-		senderBNB,
+		acc2.BondAddress,
 		GetRandomBNBAddress(),
-		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		common.Coins{common.NewCoin(common.RuneAsset(), sdk.OneUint())},
 		common.BNBGasFeeSingleton,
 		"",
 	)
-	tx.FromAddress = acc2.BondAddress
 	msgLeave := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	result := leaveHandler.Run(w.ctx, msgLeave, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
+
+	acc2, err = w.keeper.GetNodeAccountByBondAddress(w.ctx, acc2.BondAddress)
+	c.Assert(err, IsNil)
+	c.Check(acc2.Bond.Equal(sdk.NewUint(10000000001)), Equals, true, Commentf("Bond:%d\n", acc2.Bond.Uint64()))
 }
 
 func (HandlerLeaveSuite) TestLeaveValidation(c *C) {
