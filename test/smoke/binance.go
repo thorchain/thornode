@@ -19,7 +19,7 @@ import (
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
 	"github.com/pkg/errors"
-	btypes "gitlab.com/thorchain/thornode/bifrost/binance/types"
+	btypes "gitlab.com/thorchain/thornode/bifrost/chainclients/binance/types"
 )
 
 type Binance struct {

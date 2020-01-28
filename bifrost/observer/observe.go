@@ -13,7 +13,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 
-	"gitlab.com/thorchain/thornode/bifrost/binance"
+	"gitlab.com/thorchain/thornode/bifrost/chainclients/binance"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
@@ -25,8 +25,8 @@ import (
 type Observer struct {
 	cfg             config.ObserverConfiguration
 	logger          zerolog.Logger
-	blockScanner    *BinanceBlockScanner
-	storage         TxInStorage
+	blockScanner    *binance.BinanceBlockScanner
+	storage         binance.TxInStorage
 	stopChan        chan struct{}
 	thorchainBridge *thorclient.ThorchainBridge
 	m               *metrics.Metrics
@@ -37,7 +37,7 @@ type Observer struct {
 
 // NewObserver create a new instance of Observer
 func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, pubkeyMgr pubkeymanager.PubKeyValidator, bnb *binance.Binance, m *metrics.Metrics) (*Observer, error) {
-	scanStorage, err := NewBinanceChanBlockScannerStorage(cfg.ObserverDbPath)
+	scanStorage, err := binance.NewBinanceChanBlockScannerStorage(cfg.ObserverDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create scan storage")
 	}
@@ -63,7 +63,7 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 		}
 	}
 
-	blockScanner, err := NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, bnb.IsTestNet, pubkeyMgr, m)
+	blockScanner, err := binance.NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, bnb.IsTestNet, pubkeyMgr, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
