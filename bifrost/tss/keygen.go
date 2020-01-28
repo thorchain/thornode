@@ -40,10 +40,10 @@ func NewTssKeyGen(keyGenCfg config.TSSConfiguration, keys *thorclient.Keys) (*Ke
 	}, nil
 }
 
-func (kg *KeyGen) GenerateNewKey(pKeys common.PubKeys) (common.PubKeySet, error) {
+func (kg *KeyGen) GenerateNewKey(pKeys common.PubKeys) (common.PubKeySet, common.Blame, error) {
 	// No need to do key gen
 	if len(pKeys) == 0 {
-		return common.EmptyPubKeySet, nil
+		return common.EmptyPubKeySet, common.EmptyBlame, nil
 	}
 	var keys []string
 	for _, item := range pKeys {
@@ -54,38 +54,37 @@ func (kg *KeyGen) GenerateNewKey(pKeys common.PubKeys) (common.PubKeySet, error)
 	}
 	buf, err := json.Marshal(keyGenReq)
 	if nil != err {
-		return common.EmptyPubKeySet, fmt.Errorf("fail to marshal key gen request to json,err:%w", err)
+		return common.EmptyPubKeySet, common.EmptyBlame, fmt.Errorf("fail to marshal key gen request to json,err:%w", err)
 	}
 	tssUrl := kg.getTSSLocalUrl()
 	kg.logger.Debug().Str("url", tssUrl).Msg("sending request to tss key gen")
 	resp, err := kg.client.Post(tssUrl, "application/json", bytes.NewBuffer(buf))
 	if nil != err {
-		return common.EmptyPubKeySet, fmt.Errorf("fail to send key gen request,err:%w", err)
+		return common.EmptyPubKeySet, common.EmptyBlame, fmt.Errorf("fail to send key gen request,err:%w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); nil != err {
 			kg.logger.Error().Err(err).Msg("fail to close response body")
 		}
 	}()
-	if resp.StatusCode != http.StatusOK {
-		return common.EmptyPubKeySet, fmt.Errorf("status code from tss keygen (%d)", resp.StatusCode)
-	}
+
 	bodyBuf, err := ioutil.ReadAll(resp.Body)
 	if nil != err {
-		return common.EmptyPubKeySet, fmt.Errorf("fail to read response body,err:%w", err)
+		return common.EmptyPubKeySet, common.EmptyBlame, fmt.Errorf("fail to read response body,err:%w", err)
 	}
 	var dat KeyGenResp
 	err = json.Unmarshal(bodyBuf, &dat)
 	if err != nil {
-		return common.EmptyPubKeySet, fmt.Errorf("fail to unmarshal tss keygen response,err:%w", err)
+		return common.EmptyPubKeySet, common.EmptyBlame, fmt.Errorf("fail to unmarshal tss keygen response,err:%w", err)
 	}
+
 	cpk, err := common.NewPubKey(dat.PubKey)
 	if nil != err {
-		return common.EmptyPubKeySet, fmt.Errorf("fail to create common.PubKey,%w", err)
+		return common.EmptyPubKeySet, dat.Blame, fmt.Errorf("fail to create common.PubKey,%w", err)
 	}
 
 	// TODO later on THORNode need to have both secp256k1 key and ed25519
-	return common.NewPubKeySet(cpk, cpk), nil
+	return common.NewPubKeySet(cpk, cpk), dat.Blame, nil
 }
 
 func (kg *KeyGen) getTSSLocalUrl() string {
