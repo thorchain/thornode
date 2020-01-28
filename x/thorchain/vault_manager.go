@@ -130,12 +130,14 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 				// signer, to successfully send these funds while respecting
 				// gas requirements (so it'll actually send slightly less)
 				amt := coin.Amount
-				if nth <= 5 { // migrate partial funds 5 times
-					// migrating 20% of our funds. This will make this 20%
-					// unavailable to the system for the time it takes the txs
-					// to complete. For BNB, its instant, but for Bitcoin it
-					// can be 10 minutes.
-					amt = amt.QuoUint64(4)
+				if nth < 5 { // migrate partial funds 4 times
+					// each round of migration, we are increasing the amount 20%.
+					// Round 1 = 20%
+					// Round 2 = 40%
+					// Round 3 = 60%
+					// Round 4 = 80%
+					// Round 5 = 100%
+					amt = amt.MulUint64(uint64(nth)).QuoUint64(5)
 				}
 
 				toi := &TxOutItem{
