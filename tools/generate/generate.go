@@ -38,4 +38,10 @@ func main() {
 	conv, _ := bech32.ConvertBits(keyBytes, 8, 5, true)
 	pubKey, _ := bech32.Encode("bnbp", conv)
 	fmt.Printf("export %v_PUBKEY=%v\n", *addrType, pubKey)
+
+	mnem, err := keyManager.ExportAsMnemonic()
+	if err != nil {
+		log.Fatalf("%+v", err)
+	}
+	fmt.Printf("export %v_MNEMONIC=%v\n", *addrType, mnem)
 }
