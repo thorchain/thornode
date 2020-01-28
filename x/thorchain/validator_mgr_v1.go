@@ -116,7 +116,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 
 	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
 	nodesAfterChange := len(activeNodes) + len(newNodes) - len(removedNodes)
-	if (len(activeNodes) >= int(minimumNodesForBFT) && nodesAfterChange < int(minimumNodesForBFT)) || ctx.BlockHeight() >= 300 {
+	if len(activeNodes) >= int(minimumNodesForBFT) && nodesAfterChange < int(minimumNodesForBFT) {
 		// THORNode don't have enough validators for BFT
 		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
 			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
