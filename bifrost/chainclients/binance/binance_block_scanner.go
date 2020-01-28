@@ -1,4 +1,4 @@
-package observer
+package binance
 
 import (
 	"encoding/base64"
@@ -20,7 +20,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 
-	btypes "gitlab.com/thorchain/thornode/bifrost/binance/types"
+	btypes "gitlab.com/thorchain/thornode/bifrost/chainclients/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"

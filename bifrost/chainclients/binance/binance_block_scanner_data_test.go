@@ -1,4 +1,4 @@
-package observer
+package binance
 
 // https://testnet-dex.binance.org/api/v1/tx/A8FCD14430FDA557C5744ECC18AA9C9704B739E31FA6FA8328FDD8206F2F47EF?format=json
 const binanceTxNewOrder = `
