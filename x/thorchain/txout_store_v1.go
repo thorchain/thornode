@@ -121,7 +121,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			ctx.Logger().Error("fail to get active vaults", "error", err)
 		}
 
-		vault := active.SelectByMinCoin(toi.Coin.Asset)
+		vault := active.SelectByMaxCoin(toi.Coin.Asset)
 		if vault.IsEmpty() {
 			return false, fmt.Errorf("empty vault, cannot send out fund: %w", err)
 		}
