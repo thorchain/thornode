@@ -72,6 +72,10 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
+	if !msg.Blame.IsEmpty() {
+		ctx.Logger().Error(msg.Blame.String())
+	}
+
 	voter, err := h.keeper.GetTssVoter(ctx, msg.ID)
 	if err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
