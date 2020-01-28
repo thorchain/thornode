@@ -17,7 +17,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	btypes "gitlab.com/thorchain/thornode/bifrost/binance/types"
+	btypes "gitlab.com/thorchain/thornode/bifrost/chainclients/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 )

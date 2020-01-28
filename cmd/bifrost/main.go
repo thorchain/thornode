@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 	flag "github.com/spf13/pflag"
 
-	"gitlab.com/thorchain/thornode/bifrost/binance"
+	"gitlab.com/thorchain/thornode/bifrost/chainclients/binance"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/observer"

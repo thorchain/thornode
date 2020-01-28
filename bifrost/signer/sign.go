@@ -14,7 +14,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/thornode/bifrost/binance"
+	"gitlab.com/thorchain/thornode/bifrost/chainclients/binance"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"

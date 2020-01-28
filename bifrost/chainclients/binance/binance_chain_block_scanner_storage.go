@@ -1,4 +1,4 @@
-package observer
+package binance
 
 import (
 	"encoding/json"

@@ -1,4 +1,4 @@
-package blockclients
+package chainclients
 
 import (
 	"errors"
@@ -7,9 +7,9 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 )
 
-// LoadChains returns block chain clients from chain configurations
-func LoadChains(cfgChains []config.ChainConfigurations) []BlockChainClient {
-	var chains []BlockChainClient
+// LoadChains returns chain clients from chain configurations
+func LoadChains(cfgChains []config.ChainConfigurations) []ChainClient {
+	var chains []ChainClient
 
 	for _, chain := range cfgChains {
 		if !chain.Enabled {
@@ -18,17 +18,17 @@ func LoadChains(cfgChains []config.ChainConfigurations) []BlockChainClient {
 
 		switch strings.ToLower(chain.Name) {
 		case "bnb":
-			bnb, err := loadBnbClient(chain)
+			bnb, err := loadBNBClient(chain)
 			if err == nil {
 				chains = append(chains, bnb)
 			}
 		case "eth":
-			eth, err := loadEthClient(chain)
+			eth, err := loadETHClient(chain)
 			if err == nil {
 				chains = append(chains, eth)
 			}
 		case "btc":
-			btc, err := loadBtcClient(chain)
+			btc, err := loadBTCClient(chain)
 			if err == nil {
 				chains = append(chains, btc)
 			}
@@ -38,14 +38,14 @@ func LoadChains(cfgChains []config.ChainConfigurations) []BlockChainClient {
 	return chains
 }
 
-func loadBtcClient(cfg config.ChainConfigurations) (BlockChainClient, error) {
+func loadBTCClient(cfg config.ChainConfigurations) (ChainClient, error) {
 	return nil, errors.New("not implemented")
 }
 
-func loadBnbClient(cfg config.ChainConfigurations) (BlockChainClient, error) {
+func loadBNBClient(cfg config.ChainConfigurations) (ChainClient, error) {
 	return nil, errors.New("not implemented")
 }
 
-func loadEthClient(cfg config.ChainConfigurations) (BlockChainClient, error) {
+func loadETHClient(cfg config.ChainConfigurations) (ChainClient, error) {
 	return nil, errors.New("not implemented")
 }
