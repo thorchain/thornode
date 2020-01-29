@@ -75,11 +75,12 @@ verify_the_stack () {
     fi
     docker-machine ssh ${DOCKER_SERVER} sudo docker ps -a
     echo "allow a few mins for docker services to come up"
-    sleep 120
+    sleep 70
     echo "performing healthchecks"
-    HEALTHCHECK_URL="http://localhost:8080/v1/thorchain/pool_addresses"
-    HEALTHCHECK=$(docker-machine ssh ${DOCKER_SERVER} curl -s -o /dev/null -w "%{http_code}" ${HEALTHCHECK_URL})
-    if  [ "$HEALTHCHECK" == 200 ]; then
+    IP=$(docker-machine ip ${DOCKER_SERVER})
+    HEALTHCHECK_URL="http://${IP}:8080/v1/thorchain/pool_addresses"
+    HEALTHCHECK_CMD=$(curl -s -o /dev/null -w "%{http_code}" ${HEALTHCHECK_URL})
+    if  [ "${HEALTHCHECK_CMD}" == 200 ]; then
 	    echo "HEALTHCHECK PASSED"
     else
 	    echo "HEALTHCHECK FAILED"
