@@ -45,3 +45,4 @@ func main() {
 	}
 	fmt.Printf("export %v_MNEMONIC=%v\n", *addrType, mnem)
 }
+
