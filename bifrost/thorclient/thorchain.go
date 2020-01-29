@@ -168,11 +168,11 @@ func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, e
 		return 0, 0, errors.Wrap(err, "failed to get auth accounts")
 	}
 
-	var rep types.AccountResp
-	if err := json.Unmarshal(body, &rep); nil != err {
+	var resp types.AccountResp
+	if err := json.Unmarshal(body, &resp); nil != err {
 		return 0, 0, errors.Wrap(err, "failed to unmarshal account resp")
 	}
-	acc := rep.Result.Value
+	acc := resp.Result.Value
 
 	accNum, err := strconv.ParseUint(acc.AccountNumber, 10, 64)
 	if err != nil {
