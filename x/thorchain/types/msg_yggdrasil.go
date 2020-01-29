@@ -43,7 +43,7 @@ func (msg MsgYggdrasil) ValidateBasic() sdk.Error {
 	}
 	for _, coin := range msg.Coins {
 		if err := coin.IsValid(); err != nil {
-			return sdk.ErrUnknownRequest(err.Error())
+			return sdk.ErrInvalidCoins(err.Error())
 		}
 	}
 	return nil

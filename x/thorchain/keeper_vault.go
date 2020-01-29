@@ -158,7 +158,7 @@ func (k KVStore) GetAsgardVaultsByStatus(ctx sdk.Context, status VaultStatus) (V
 func (k KVStore) DeleteVault(ctx sdk.Context, pubkey common.PubKey) error {
 	vault, err := k.GetVault(ctx, pubkey)
 	if err != nil {
-		if !errors.Is(err, ErrVaultNotFound) {
+		if errors.Is(err, ErrVaultNotFound) {
 			return nil
 		}
 		return err
@@ -185,5 +185,9 @@ func (k KVStore) DeleteVault(ctx sdk.Context, pubkey common.PubKey) error {
 			store.Delete([]byte(key))
 		}
 	}
+	// delete the actual vault
+	key := k.GetKey(ctx, prefixVaultPool, vault.PubKey.String())
+	store := ctx.KVStore(k.storeKey)
+	store.Delete([]byte(key))
 	return nil
 }
