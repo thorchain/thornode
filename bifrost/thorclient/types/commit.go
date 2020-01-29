@@ -1,23 +1,19 @@
 package types
 
-type BadCommit struct {
-	Height string `json:"height"`
-	TxHash string `json:"txhash"`
-	Code   int    `json:"code"`
-	Log    struct {
-		CodeSpace string `json:"codespace"`
-		Code      int    `json:"code"`
-		Message   string `json:"message"`
-	} `json:"raw_log"`
-}
+import "gitlab.com/thorchain/thornode/common"
 
-type log struct {
-	Success bool   `json:"success"`
-	Log     string `json:"log"`
+type BadCommit struct {
+	Height string      `json:"height"`
+	TxHash common.TxID `json:"txhash"`
+	Code   int         `json:"code"`
+	Log    string      `json:"raw_log"`
 }
 
 type Commit struct {
-	Height string `json:"height"`
-	TxHash string `json:"txhash"`
-	Logs   []log  `json:"logs"`
+	Height string      `json:"height"`
+	TxHash common.TxID `json:"txhash"`
+	Logs   []struct {
+		Success bool   `json:"success"`
+		Log     string `json:"log"`
+	} `json:"logs"`
 }

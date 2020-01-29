@@ -49,7 +49,7 @@ func (s *BroadcastSuite) TearDownSuite(c *C) {
 }
 
 func (s *BroadcastSuite) TestBroadcast(c *C) {
-	s.fixture = "../../test/fixtures/endpoints/txs/template.json"
+	s.fixture = "../../test/fixtures/endpoints/txs/success.json"
 	stdTx := authtypes.StdTx{}
 	mode := types.TxSync
 	txID, err := s.bridge.Broadcast(stdTx, mode)
@@ -57,7 +57,20 @@ func (s *BroadcastSuite) TestBroadcast(c *C) {
 	c.Check(
 		txID.String(),
 		Equals,
-		"E43FA2330C4317ECC084B0C6044DFE75AAE1FAB8F84A66107809E9739D02F80D",
+		"D97E8A81417E293F5B28DDB53A4AD87B434CA30F51D683DA758ECC2168A7A005",
+	)
+	c.Check(s.bridge.accountNumber, Equals, uint64(3))
+	c.Check(s.bridge.seqNumber, Equals, uint64(6))
+
+	s.fixture = "../../test/fixtures/endpoints/txs/bad_seq_num.json"
+	stdTx = authtypes.StdTx{}
+	mode = types.TxSync
+	txID, err = s.bridge.Broadcast(stdTx, mode)
+	c.Assert(err, NotNil)
+	c.Check(
+		txID.String(),
+		Equals,
+		"6A9AA734374D567D1FFA794134A66D3BF614C4EE5DDF334F21A52A47C188A6A2",
 	)
 	c.Check(s.bridge.accountNumber, Equals, uint64(3))
 	c.Check(s.bridge.seqNumber, Equals, uint64(6))
