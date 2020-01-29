@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -x
-
 USER=$(hostname)
 DISK_SIZE=100
 cd ../../
@@ -89,9 +87,10 @@ verify_the_stack () {
     echo "allow a few mins for docker services to come up"
     sleep 120
     echo "performing healthchecks"
-    HEALTHCHECK_URL="http://localhost:8080/v1/thorchain/pool_addresses"
-    HEALTHCHECK=$(docker-machine ssh ${DOCKER_SERVER} curl -s -o /dev/null -w "%{http_code}" ${HEALTHCHECK_URL})
-    if  [ "$HEALTHCHECK" == 200 ]; then
+    IP=$(docker-machine ip ${DOCKER_SERVER})
+    HEALTHCHECK_URL="http://${IP}:8080/v1/thorchain/pool_addresses"
+    HEALTHCHECK_CMD=$(curl -s -o /dev/null -w "%{http_code}" ${HEALTHCHECK_URL})
+    if  [ "${HEALTHCHECK_CMD}" == 200 ]; then
 	    echo "HEALTHCHECK PASSED"
     else
 	    echo "HEALTHCHECK FAILED"
@@ -107,10 +106,10 @@ if [ -z "${THORNODE_ENV}" ]; then
     exit 1
 fi
 
-DOCKER_SERVER="${USER}-${THORNODE_ENV}$1"
+export DOCKER_SERVER="${USER}-${THORNODE_ENV}$1"
 if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANCE_TYPE}" ]; then
     cleanup ${DOCKER_SERVER} 20
-	echo "creating server node on AWS"
+	echo "creating server on AWS"
 	docker-machine create --driver amazonec2 \
         --amazonec2-vpc-id=${AWS_VPC_ID} \
         --amazonec2-region ${AWS_REGION} \
