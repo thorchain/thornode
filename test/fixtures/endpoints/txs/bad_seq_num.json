@@ -1,0 +1,6 @@
+{
+	"height": "0",
+	"txhash": "6A9AA734374D567D1FFA794134A66D3BF614C4EE5DDF334F21A52A47C188A6A2",
+	"code": 4,
+	"raw_log": "{\"codespace\":\"sdk\",\"code\":4,\"message\":\"signature verification failed; verify correct account sequence and chain-id\"}"
+}
