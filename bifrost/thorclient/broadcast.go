@@ -93,7 +93,7 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 	// Sample 2: { "height": "0", "txhash": "6A9AA734374D567D1FFA794134A66D3BF614C4EE5DDF334F21A52A47C188A6A2", "code": 4, "raw_log": "{\"codespace\":\"sdk\",\"code\":4,\"message\":\"signature verification failed; verify correct account sequence and chain-id\"}" }
 	var commit types.Commit
 	err = json.Unmarshal(body, &commit)
-	if err != nil {
+	if err != nil || len(commit.Logs) == 0 {
 		b.errCounter.WithLabelValues("fail_unmarshal_commit", "").Inc()
 		b.logger.Error().Err(err).Msg("fail unmarshal commit")
 
@@ -106,9 +106,9 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 
 		// check for any failure logs
 		if badCommit.Code > 0 {
-			err := errors.New(badCommit.Log.Message)
+			err := errors.New(badCommit.Log)
 			b.logger.Error().Err(err).Msg("fail to broadcast")
-			return noTxID, errors.Wrap(err, "fail to broadcast")
+			return badCommit.TxHash, errors.Wrap(err, "fail to broadcast")
 		}
 	}
 
@@ -126,5 +126,5 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 	// increment seqNum
 	atomic.AddUint64(&b.seqNumber, 1)
 
-	return common.NewTxID(commit.TxHash)
+	return commit.TxHash, nil
 }
