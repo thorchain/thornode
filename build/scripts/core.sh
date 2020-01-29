@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # adds an account node into the genesis file
 add_node_account () {
     NODE_ADDRESS=$1
