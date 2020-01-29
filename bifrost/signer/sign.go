@@ -256,7 +256,12 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 					s.pubkeyMgr.AddPubKey(pk, false)
 				}
 
-				pubKey, err := s.tssKeygen.GenerateNewKey(keygen)
+				pubKey, blame, err := s.tssKeygen.GenerateNewKey(keygen)
+				if !blame.IsEmpty() {
+					err := fmt.Errorf("Reason: %s. Nodes %+v", blame.FailReason, blame.BlameNodes)
+					s.logger.Error().Err(err).Msg("Blame")
+				}
+
 				if err != nil {
 					s.errCounter.WithLabelValues("fail_to_keygen_pubkey", "").Inc()
 					s.logger.Error().Err(err).Msg("fail to generate new pubkey")
@@ -269,7 +274,7 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 
 				s.pubkeyMgr.AddPubKey(pubKey.Secp256k1, true)
 
-				if err := s.sendKeygenToThorchain(keygens.Height, pubKey.Secp256k1, keygen); err != nil {
+				if err := s.sendKeygenToThorchain(keygens.Height, pubKey.Secp256k1, blame, keygen); err != nil {
 					s.errCounter.WithLabelValues("fail_to_broadcast_keygen", "").Inc()
 					s.logger.Error().Err(err).Msg("fail to broadcast keygen")
 				}
@@ -279,8 +284,8 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 	}
 }
 
-func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, input common.PubKeys) error {
-	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, input)
+func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame common.Blame, input common.PubKeys) error {
+	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, blame, input)
 	strHeight := strconv.FormatInt(height, 10)
 	if nil != err {
 		s.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()
