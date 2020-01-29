@@ -166,7 +166,7 @@ func (vs Vaults) SelectByMaxCoin(asset common.Asset) (vault Vault) {
 	}
 
 	for _, v := range vs {
-		if v.GetCoin(asset).Amount.GT(vault.GetCoin(asset).Amount) {
+		if vault.IsEmpty() || v.GetCoin(asset).Amount.GT(vault.GetCoin(asset).Amount) {
 			vault = v
 		}
 	}
