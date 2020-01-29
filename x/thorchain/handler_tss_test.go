@@ -36,7 +36,7 @@ func (s *HandlerTssSuite) TestValidate(c *C) {
 	pks := common.PubKeys{
 		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
 	}
-	msg := NewMsgTssPool(pks, pk, keeper.na.NodeAddress)
+	msg := NewMsgTssPool(pks, pk, common.EmptyBlame, keeper.na.NodeAddress)
 	err := handler.validate(ctx, msg, ver)
 	c.Assert(err, IsNil)
 
@@ -46,7 +46,7 @@ func (s *HandlerTssSuite) TestValidate(c *C) {
 
 	// inactive node account
 	keeper.na = GetRandomNodeAccount(NodeStandby)
-	msg = NewMsgTssPool(pks, pk, keeper.na.NodeAddress)
+	msg = NewMsgTssPool(pks, pk, common.EmptyBlame, keeper.na.NodeAddress)
 	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
 
@@ -97,7 +97,7 @@ func (s *HandlerTssSuite) TestHandle(c *C) {
 	pks := common.PubKeys{
 		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
 	}
-	msg := NewMsgTssPool(pks, pk, keeper.active[0].NodeAddress)
+	msg := NewMsgTssPool(pks, pk, common.EmptyBlame, keeper.active[0].NodeAddress)
 	result := handler.handle(ctx, msg, ver)
 	c.Assert(result.IsOK(), Equals, true)
 	c.Check(keeper.tss.Signers, HasLen, 1)
