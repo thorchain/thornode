@@ -1,6 +1,7 @@
 package types
 
 import (
+	"fmt"
 	"sort"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -172,4 +173,18 @@ func (vs Vaults) SelectByMaxCoin(asset common.Asset) (vault Vault) {
 	}
 
 	return
+}
+
+// HasAddress will go through the vaults to determinate whether any of the vault match the given address on the given chain
+func (vs Vaults) HasAddress(chain common.Chain, address common.Address) (bool, error) {
+	for _, item := range vs {
+		addr, err := item.PubKey.GetAddress(chain)
+		if nil != err {
+			return false, fmt.Errorf("fail to get address from (%s) for chain(%s)", item.PubKey, chain)
+		}
+		if addr.Equals(address) {
+			return true, nil
+		}
+	}
+	return false, nil
 }
