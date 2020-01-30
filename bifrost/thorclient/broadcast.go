@@ -42,9 +42,10 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 		if seqNum > b.seqNumber {
 			b.seqNumber = seqNum
 		}
+		fmt.Printf("SeqNum: %d %d\n", b.seqNumber, seqNum)
 	}
 
-	b.logger.Info().Uint64("account_number", b.accountNumber).Uint64("sequence_number", b.accountNumber).Msg("account info")
+	b.logger.Info().Uint64("account_number", b.accountNumber).Uint64("sequence_number", b.seqNumber).Msg("account info")
 	stdMsg := authtypes.StdSignMsg{
 		ChainID:       b.cfg.ChainID,
 		AccountNumber: b.accountNumber,
@@ -53,6 +54,7 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 		Msgs:          stdTx.GetMsgs(),
 		Memo:          stdTx.GetMemo(),
 	}
+	fmt.Printf("StdMsg: %+v\n", stdMsg)
 	sig, err := authtypes.MakeSignature(b.keys.GetKeybase(), b.cfg.SignerName, b.cfg.SignerPasswd, stdMsg)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_sign", "").Inc()
