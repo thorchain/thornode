@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -85,7 +87,9 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 	voter.Sign(msg.Signer)
 	h.keeper.SetTssVoter(ctx, voter)
 
+	fmt.Printf("Voter: %+v\n", voter)
 	if voter.HasConensus(active) && voter.BlockHeight == 0 {
+		fmt.Println("Adding new vault...")
 		voter.BlockHeight = ctx.BlockHeight()
 		h.keeper.SetTssVoter(ctx, voter)
 

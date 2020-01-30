@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -46,6 +48,7 @@ func (tss *TssVoter) HasConensus(nas NodeAccounts) bool {
 			count += 1
 		}
 	}
+	fmt.Printf("Majority: %d/%d\n", count, len(nas))
 	if HasMajority(count, len(nas)) {
 		return true
 	}

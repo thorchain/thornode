@@ -173,6 +173,7 @@ func (vm *VaultMgr) TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error {
 }
 
 func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {
+	fmt.Printf("Rotating vault...")
 	active, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
 	if err != nil {
 		return err
