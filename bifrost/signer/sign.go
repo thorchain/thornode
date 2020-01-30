@@ -14,7 +14,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/thornode/bifrost/chainclients/binance"
+	"gitlab.com/thorchain/thornode/bifrost/chainclients"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
@@ -26,14 +26,7 @@ import (
 	ttypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
-// Binance interface
-type Binance interface {
-	GetAccount(addr stypes.AccAddress) (stypes.BaseAccount, error)
-	GetAddress(poolPubKey common.PubKey) string
-	SignAndBroadcastToBinanceChain(tai types.TxOutItem, height int64) error
-}
-
-// Signer will pull the tx out from thorchain and then forward it to binance chain
+// Signer will pull the tx out from thorchain and then forward it to chain
 type Signer struct {
 	logger                zerolog.Logger
 	cfg                   config.SignerConfiguration
@@ -41,7 +34,7 @@ type Signer struct {
 	thorchainBridge       *thorclient.ThorchainBridge
 	stopChan              chan struct{}
 	thorchainBlockScanner *ThorchainBlockScan
-	Binance               Binance
+	Chain                 chainclients.ChainClient
 	storage               *ThorchainBlockScannerStorage
 	m                     *metrics.Metrics
 	errCounter            *prometheus.CounterVec
@@ -51,7 +44,7 @@ type Signer struct {
 }
 
 // NewSigner create a new instance of signer
-func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, pubkeyMgr pubkeymanager.PubKeyValidator, tssCfg config.TSSConfiguration, bnb *binance.Binance, m *metrics.Metrics) (*Signer, error) {
+func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, pubkeyMgr pubkeymanager.PubKeyValidator, tssCfg config.TSSConfiguration, chain chainclients.ChainClient, m *metrics.Metrics) (*Signer, error) {
 	thorchainScanStorage, err := NewThorchainBlockScannerStorage(cfg.SignerDbPath)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
@@ -91,7 +84,7 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 		wg:                    &sync.WaitGroup{},
 		stopChan:              make(chan struct{}),
 		thorchainBlockScanner: thorchainBlockScanner,
-		Binance:               bnb,
+		Chain:                 chain,
 		m:                     m,
 		storage:               thorchainScanStorage,
 		errCounter:            m.GetCounterVec(metrics.SignerError),
@@ -147,13 +140,13 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 		default:
 			if !item.Chain.Equals(common.BNBChain) {
 				s.logger.Debug().Str("chain", item.Chain.String()).
-					Msg("not binance chain , THORNode don't sign it")
+					Msg("not chain , THORNode don't sign it")
 				continue
 			}
 
-			if err := s.signTxOutAndSendToBinanceChain(item); nil != err {
-				s.errCounter.WithLabelValues("fail_sign_send_to_binance", strconv.FormatInt(item.Height, 10)).Inc()
-				s.logger.Error().Err(err).Str("height", strconv.FormatInt(item.Height, 10)).Msg("fail to sign and send it to binance chain")
+			if err := s.signTxOutAndSendToChain(item); nil != err {
+				s.errCounter.WithLabelValues("fail_sign_send_to_chain", strconv.FormatInt(item.Height, 10)).Inc()
+				s.logger.Error().Err(err).Str("height", strconv.FormatInt(item.Height, 10)).Msg("fail to sign and send it to chain")
 				continue
 			}
 			if err := s.storage.RemoveTxOut(item); err != nil {
@@ -217,9 +210,9 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 				return
 			}
 
-			if err := s.signTxOutAndSendToBinanceChain(txOut); nil != err {
-				s.errCounter.WithLabelValues("fail_sign_send_to_binance", strHeight).Inc()
-				s.logger.Error().Err(err).Msg("fail to send txout to binance chain, will retry later")
+			if err := s.signTxOutAndSendToChain(txOut); nil != err {
+				s.errCounter.WithLabelValues("fail_sign_send_to_chain", strHeight).Inc()
+				s.logger.Error().Err(err).Msg("fail to send txout to chain, will retry later")
 				if err := s.storage.SetTxOutStatus(txOut, Failed); nil != err {
 					s.errCounter.WithLabelValues("fail_update_txout_local", strHeight).Inc()
 					s.logger.Error().Err(err).Msg("fail to update txout local storage")
@@ -300,8 +293,8 @@ func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame
 	return nil
 }
 
-// signAndSendToBinanceChainWithRetry retry a few times before THORNode move on to he next block
-func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
+// signAndSendToChainWithRetry retry a few times before THORNode move on to he next block
+func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 	// most case , there should be only one item in txOut.TxArray, but sometimes there might be more than one
 	height := txOut.Height
 	for _, item := range txOut.TxArray {
@@ -316,7 +309,7 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 
 		if !s.shouldSign(item) {
 			s.logger.Info().
-				Str("signer_address", s.Binance.GetAddress(item.VaultPubKey)).
+				Str("signer_address", s.Chain.GetAddress(item.VaultPubKey)).
 				Msg("different pool address, ignore")
 			continue
 		}
@@ -336,9 +329,9 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 			}
 		}
 
-		err = s.signAndSendToBinanceChain(out, height)
+		err = s.signAndSendToChain(out, height)
 		if nil != err {
-			return fmt.Errorf("fail to broadcast tx to binance chain: %w", err)
+			return fmt.Errorf("fail to broadcast tx to chain: %w", err)
 		}
 		if err := s.storage.SetTxOutItem(item, height); nil != err {
 			return fmt.Errorf("fail to mark it off from local db: %w", err)
@@ -349,15 +342,15 @@ func (s *Signer) signTxOutAndSendToBinanceChain(txOut types.TxOut) error {
 }
 
 func (s *Signer) handleYggReturn(out types.TxOutItem) (types.TxOutItem, error) {
-	addr, err := stypes.AccAddressFromHex(s.Binance.GetAddress(out.VaultPubKey))
+	addr, err := stypes.AccAddressFromHex(s.Chain.GetAddress(out.VaultPubKey))
 	if err != nil {
 		s.logger.Error().Err(err).Msg("failed to convert to AccAddress")
 		return out, err
 	}
 
-	acct, err := s.Binance.GetAccount(addr)
+	acct, err := s.Chain.GetAccount(addr)
 	if err != nil {
-		s.logger.Error().Err(err).Msg("failed to get binance account info")
+		s.logger.Error().Err(err).Msg("failed to get chain account info")
 		return out, err
 	}
 	out.Coins = make(common.Coins, 0)
@@ -378,23 +371,23 @@ func (s *Signer) handleYggReturn(out types.TxOutItem) (types.TxOutItem, error) {
 	return out, nil
 }
 
-func (s *Signer) signAndSendToBinanceChain(tai types.TxOutItem, height int64) error {
+func (s *Signer) signAndSendToChain(tai types.TxOutItem, height int64) error {
 	start := time.Now()
 	defer func() {
-		s.m.GetHistograms(metrics.SignAndBroadcastToBinanceDuration).Observe(time.Since(start).Seconds())
+		s.m.GetHistograms(metrics.SignAndBroadcastToChainDuration(s.Chain.GetChain())).Observe(time.Since(start).Seconds())
 	}()
 	if !tai.OutHash.IsEmpty() {
 		s.logger.Info().Str("OutHash", tai.OutHash.String()).Msg("tx had been sent out before")
 		return nil
 	}
-	if err := s.Binance.SignAndBroadcastToBinanceChain(tai, height); nil != err {
-		s.logger.Error().Err(err).Msg("fail to broadcast a tx to binance chain")
+	if err := s.Chain.SignAndBroadcastToChain(tai, height); nil != err {
+		s.logger.Error().Err(err).Msg("fail to broadcast a tx to chain")
 		return err
 	}
 
 	s.logger.Debug().
-		Msg("signed and send to binance chain successfully")
-	s.m.GetCounter(metrics.TxToBinanceSignedBroadcast).Inc()
+		Msg("signed and send to chain successfully")
+	s.m.GetCounter(metrics.TxToChainSignedBroadcast(s.Chain.GetChain())).Inc()
 
 	return nil
 }

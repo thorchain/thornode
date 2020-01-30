@@ -17,26 +17,46 @@ type SignSuite struct{}
 
 var _ = Suite(&SignSuite{})
 
-type TestBinance struct {
+type MockChainClient struct {
 	baseAccount types.BaseAccount
+}	
+
+func (b *MockChainClient) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error) {
+	return nil, nil, nil
 }
 
-func (b *TestBinance) GetAddress(poolPubKey common.PubKey) string {
-	return "0dd3d0a4a6eacc98cc4894791702e46c270bde76"
+func (b *MockChainClient) GetHeight() (int64, error) {
+	return 0, nil
 }
-func (b *TestBinance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
-	return b.baseAccount, nil
+
+func (b *MockChainClient) CheckIsTestNet() (string, bool) {
+	return "", true
 }
-func (b *TestBinance) GetPubKey() crypto.PubKey {
+
+func (b *MockChainClient) GetChain() string {
+	return "bnb"
+}
+
+func (b *MockChainClient) BroadcastTx(tx []byte) error {
 	return nil
 }
-func (b *TestBinance) SignAndBroadcastToBinanceChain(tai stypes.TxOutItem, height int64) error {
+
+func (b *MockChainClient) GetAddress(poolPubKey common.PubKey) string {
+	return "0dd3d0a4a6eacc98cc4894791702e46c270bde76"
+}
+func (b *MockChainClient) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
+	return b.baseAccount, nil
+}
+func (b *MockChainClient) GetPubKey() crypto.PubKey {
+	return nil
+}
+func (b *MockChainClient) SignAndBroadcastToChain(tai stypes.TxOutItem, height int64) error {
 	return nil
 }
 
 func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 	sign := &Signer{
-		Binance: &TestBinance{
+		Chain: &MockChainClient{
 			baseAccount: types.BaseAccount{
 				Coins: types.Coins{
 					types.Coin{Denom: "BNB", Amount: 1000000},
@@ -56,7 +76,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 
 func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 	sign := &Signer{
-		Binance: &TestBinance{
+		Chain: &MockChainClient{
 			baseAccount: types.BaseAccount{
 				Coins: types.Coins{
 					types.Coin{Denom: "BNB", Amount: 1000000},
@@ -77,7 +97,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 
 func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {
 	sign := &Signer{
-		Binance: &TestBinance{
+		Chain: &MockChainClient{
 			baseAccount: types.BaseAccount{
 				Coins: types.Coins{
 					types.Coin{Denom: "BNB", Amount: 10000},

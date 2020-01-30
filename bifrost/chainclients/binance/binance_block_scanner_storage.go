@@ -14,12 +14,12 @@ import (
 
 const DefaultObserverLevelDBFolder = `observer_data`
 
-type BinanceChanBlockScannerStorage struct {
+type BinanceBlockScannerStorage struct {
 	*blockscanner.LevelDBScannerStorage
 	db *leveldb.DB
 }
 
-func NewBinanceChanBlockScannerStorage(levelDbFolder string) (*BinanceChanBlockScannerStorage, error) {
+func NewBinanceBlockScannerStorage(levelDbFolder string) (*BinanceBlockScannerStorage, error) {
 	if len(levelDbFolder) == 0 {
 		levelDbFolder = DefaultObserverLevelDBFolder
 	}
@@ -31,23 +31,10 @@ func NewBinanceChanBlockScannerStorage(levelDbFolder string) (*BinanceChanBlockS
 	if nil != err {
 		return nil, errors.New("fail to create leven db")
 	}
-	return &BinanceChanBlockScannerStorage{
+	return &BinanceBlockScannerStorage{
 		LevelDBScannerStorage: levelDbStorage,
 		db:                    db,
 	}, nil
-}
-
-// TxInStorage define method used by observer
-type TxInStorage interface {
-	SetTxInStatus(types.TxIn, types.TxInStatus) error
-	RemoveTxIn(types.TxIn) error
-	GetTxInForRetry(failedOnly bool) ([]types.TxIn, error)
-}
-
-// TxInStatusItem represent the TxIn item status
-type TxInStatusItem struct {
-	TxIn   types.TxIn       `json:"tx_in"`
-	Status types.TxInStatus `json:"status"`
 }
 
 func getTxInStatusKey(blockHeight string) string {
@@ -55,8 +42,8 @@ func getTxInStatusKey(blockHeight string) string {
 }
 
 // SetTxInStatus set the given txin to a status , in the data store
-func (ldbss *BinanceChanBlockScannerStorage) SetTxInStatus(txIn types.TxIn, status types.TxInStatus) error {
-	txStatusItem := TxInStatusItem{
+func (ldbss *BinanceBlockScannerStorage) SetTxInStatus(txIn types.TxIn, status types.TxInStatus) error {
+	txStatusItem := types.TxInStatusItem{
 		TxIn:   txIn,
 		Status: status,
 	}
@@ -71,13 +58,13 @@ func (ldbss *BinanceChanBlockScannerStorage) SetTxInStatus(txIn types.TxIn, stat
 }
 
 // RemoveTxIn remove the given txin from the store
-func (ldbss *BinanceChanBlockScannerStorage) RemoveTxIn(txin types.TxIn) error {
+func (ldbss *BinanceBlockScannerStorage) RemoveTxIn(txin types.TxIn) error {
 	return ldbss.db.Delete([]byte(getTxInStatusKey(txin.BlockHeight)), nil)
 
 }
 
 // GetTxInForRetry retrieve all txin that had been failed before to retry
-func (ldbss *BinanceChanBlockScannerStorage) GetTxInForRetry(failedOnly bool) ([]types.TxIn, error) {
+func (ldbss *BinanceBlockScannerStorage) GetTxInForRetry(failedOnly bool) ([]types.TxIn, error) {
 	iterator := ldbss.db.NewIterator(util.BytesPrefix([]byte("txin-process-status-")), nil)
 	defer iterator.Release()
 	var results []types.TxIn
@@ -86,7 +73,7 @@ func (ldbss *BinanceChanBlockScannerStorage) GetTxInForRetry(failedOnly bool) ([
 		if len(buf) == 0 {
 			continue
 		}
-		var txInStatusItem TxInStatusItem
+		var txInStatusItem types.TxInStatusItem
 		if err := json.Unmarshal(buf, &txInStatusItem); nil != err {
 			return nil, errors.Wrap(err, "fail to unmarshal to txin status item")
 		}
@@ -102,6 +89,6 @@ func (ldbss *BinanceChanBlockScannerStorage) GetTxInForRetry(failedOnly bool) ([
 }
 
 // Close underlying db
-func (ldbss *BinanceChanBlockScannerStorage) Close() error {
+func (ldbss *BinanceBlockScannerStorage) Close() error {
 	return ldbss.db.Close()
 }
