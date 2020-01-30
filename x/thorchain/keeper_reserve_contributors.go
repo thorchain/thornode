@@ -39,6 +39,9 @@ func (k KVStore) GetReservesContributors(ctx sdk.Context) (ReserveContributors, 
 func (k KVStore) SetReserveContributors(ctx sdk.Context, contributors ReserveContributors) error {
 	key := k.GetKey(ctx, prefixReserves, "")
 	store := ctx.KVStore(k.storeKey)
+	if contributors == nil {
+		contributors = make(ReserveContributors, 0)
+	}
 	buf, err := k.cdc.MarshalBinaryBare(contributors)
 	if nil != err {
 		return dbError(ctx, "fail to marshal reserve contributors to binary", err)
