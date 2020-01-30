@@ -116,6 +116,7 @@ type MetricConfiguration struct {
 	ListenPort   int           `json:"listen_port" mapstructure:"listen_port"`
 	ReadTimeout  time.Duration `json:"read_timeout" mapstructure:"read_timeout"`
 	WriteTimeout time.Duration `json:"write_timeout" mapstructure:"write_timeout"`
+	Chains       []string      `json:"chains" mapstructure:"chains"`
 }
 
 func LoadBiFrostConfig(file string) (*Configuration, error) {
@@ -147,6 +148,7 @@ func applyDefaultConfig() {
 	viper.SetDefault("metric.listen_port", "9000")
 	viper.SetDefault("metric.read_timeout", "30s")
 	viper.SetDefault("metric.write_timeout", "30s")
+	viper.SetDefault("metric.chains", []string{"bnb"})
 	viper.SetDefault("thorchain.chain_id", "thorchain")
 	viper.SetDefault("thorchain.chain_host", "localhost:1317")
 	viper.SetDefault("back_off.initial_interval", 500*time.Millisecond)

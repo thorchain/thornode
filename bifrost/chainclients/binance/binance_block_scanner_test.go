@@ -29,6 +29,8 @@ type BlockScannerTestSuite struct{}
 
 var _ = Suite(&BlockScannerTestSuite{})
 
+var m *metrics.Metrics
+
 func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 	return config.BlockScannerConfiguration{
 		RPCHost:                    rpcHost,
@@ -60,15 +62,8 @@ func getStdTx(f, t string, coins []types.Coin, memo string) (tx.StdTx, error) {
 
 func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	c.Skip("skip")
-	m, err := metrics.NewMetrics(config.MetricConfiguration{
-		Enabled:      false,
-		ListenPort:   9000,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-	})
 	pv := &MockPoolAddressValidator{}
 	c.Assert(m, NotNil)
-	c.Assert(err, IsNil)
 	bs, err := NewBinanceBlockScanner(getConfigForTest(""), blockscanner.NewMockScannerStorage(), true, pv, m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
@@ -227,14 +222,7 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 	})
 	server := httptest.NewTLSServer(h)
 	defer server.Close()
-	m, err := metrics.NewMetrics(config.MetricConfiguration{
-		Enabled:      false,
-		ListenPort:   9000,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-	})
 	c.Assert(m, NotNil)
-	c.Assert(err, IsNil)
 	pv := &MockPoolAddressValidator{}
 	bs, err := NewBinanceBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), true, pv, m)
 	c.Assert(err, IsNil)
@@ -267,14 +255,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 		err := json.Unmarshal([]byte(input), &query)
 		c.Check(err, IsNil)
 		c.Check(query.Result.Txs, NotNil)
-		m, err := metrics.NewMetrics(config.MetricConfiguration{
-			Enabled:      false,
-			ListenPort:   9000,
-			ReadTimeout:  time.Second,
-			WriteTimeout: time.Second,
-		})
 		c.Assert(m, NotNil)
-		c.Assert(err, IsNil)
 		pv := NewMockPoolAddressValidator()
 		bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, pv, m)
 		c.Assert(err, IsNil)
@@ -321,13 +302,6 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 
 func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 	c.Skip("skip")
-	m, err := metrics.NewMetrics(config.MetricConfiguration{
-		Enabled:      false,
-		ListenPort:   9000,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-	})
-	c.Assert(err, IsNil)
 	poolAddrValidator := NewMockPoolAddressValidator()
 	bs, err := NewBinanceBlockScanner(
 		getConfigForTest("127.0.0.1"),
@@ -397,4 +371,14 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 	c.Assert(items, HasLen, 1)
 	item = items[0]
 	c.Check(item.Memo, Equals, "yggdrasil-")
+}
+
+func init() {
+	m, _ = metrics.NewMetrics(config.MetricConfiguration{
+		Enabled:      false,
+		ListenPort:   8080,
+		ReadTimeout:  time.Second,
+		WriteTimeout: time.Second,
+		Chains:       []string{"bnb"},
+	})
 }
