@@ -5,6 +5,7 @@ services:
   midgard:
     container_name: midgard
     image: registry.gitlab.com/thorchain/midgard
+    restart: unless-stopped
     ports:
       - 8080:8080
     environment:
@@ -19,6 +20,7 @@ services:
 
   pg:
     container_name: timescale-db
+    restart: unless-stopped
     image: timescale/timescaledb:latest-pg11
     expose:
       - 5432
