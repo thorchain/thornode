@@ -24,16 +24,8 @@ const (
 	TotalRetryBlocks        MetricName = `total_retry_blocks`
 	CommonBlockScannerError MetricName = `block_scanner_error`
 
-	BinanceBlockScanError MetricName = `biance_block_scan_error`
-	BlockWithoutTx        MetricName = `block_no_tx`
-	BlockWithTxIn         MetricName = `block_tx_in`
-	BlockNoTxIn           MetricName = `block_no_tx_in`
-
 	ThorchainBlockScannerError MetricName = `thorchain_block_scan_error`
-	BlockNoTxOut               MetricName = `block_no_txout`
-
-	BlockDiscoveryDuration MetricName = `block_discovery_duration`
-	SearchTxDuration       MetricName = `search_tx_duration`
+	BlockDiscoveryDuration     MetricName = `block_discovery_duration`
 
 	ThorchainClientError    MetricName = `thorchain_client_error`
 	TxToThorchain           MetricName = `tx_to_thorchain`
@@ -43,9 +35,6 @@ const (
 
 	ObserverError                     MetricName = `observer_error`
 	SignerError                       MetricName = `signer_error`
-	TxToBinanceSigned                 MetricName = `tx_to_binance_signed`
-	TxToBinanceSignedBroadcast        MetricName = `tx_to_binance_broadcast`
-	SignAndBroadcastToBinanceDuration MetricName = `sign_and_broadcast_to_binance_duration`
 
 	PubKeyManagerError MetricName = `pubkey_manager_error`
 )
@@ -78,30 +67,6 @@ var (
 			Name:      "total_retry_blocks",
 			Help:      "total blocks retried ",
 		}),
-		BlockWithoutTx: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "block_scanner",
-			Subsystem: "binance_block_scanner",
-			Name:      "block_without_tx",
-			Help:      "block that has no tx in it",
-		}),
-		BlockWithTxIn: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "block_scanner",
-			Subsystem: "binance_block_scanner",
-			Name:      "block_with_tx_in",
-			Help:      "block that has tx we need to process",
-		}),
-		BlockNoTxIn: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "block_scanner",
-			Subsystem: "binance_block_scanner",
-			Name:      "block_no_tx_in",
-			Help:      "block that has tx , but not to our pool address",
-		}),
-		BlockNoTxOut: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "block_scanner",
-			Subsystem: "thorchain_block_scanner",
-			Name:      "block_no_tx_out",
-			Help:      "block doesn't have any tx out",
-		}),
 		TxToThorchain: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: "observer",
 			Subsystem: "thorchain_client",
@@ -114,18 +79,6 @@ var (
 			Name:      "tx_to_thorchain_signed",
 			Help:      "number of tx observer signed successfully",
 		}),
-		TxToBinanceSigned: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "signer",
-			Subsystem: "binance",
-			Name:      "tx_to_binance_signed",
-			Help:      "number of tx signer signed successfully",
-		}),
-		TxToBinanceSignedBroadcast: prometheus.NewCounter(prometheus.CounterOpts{
-			Namespace: "signer",
-			Subsystem: "binance",
-			Name:      "tx_to_binance_broadcast",
-			Help:      "number of tx observer broadcast to binance successfully",
-		}),
 	}
 	counterVecs = map[MetricName]*prometheus.CounterVec{
 		CommonBlockScannerError: prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -133,14 +86,6 @@ var (
 			Subsystem: "common_block_scanner",
 			Name:      "errors",
 			Help:      "errors in common block scanner",
-		}, []string{
-			"error_name", "additional",
-		}),
-		BinanceBlockScanError: prometheus.NewCounterVec(prometheus.CounterOpts{
-			Namespace: "block_scanner",
-			Subsystem: "binance_block_scanner",
-			Name:      "errors",
-			Help:      "errors in binance block scanner",
 		}, []string{
 			"error_name", "additional",
 		}),
@@ -196,18 +141,6 @@ var (
 			Name:      "block_discovery",
 			Help:      "how long it takes to discovery a block height",
 		}),
-		SearchTxDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
-			Namespace: "block_scanner",
-			Subsystem: "binance_block_scanner",
-			Name:      "search_tx_duration",
-			Help:      "how long it takes to search tx in a block",
-		}),
-		SignAndBroadcastToBinanceDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
-			Namespace: "signer",
-			Subsystem: "binance",
-			Name:      "sign_and_broadcast_to_binance",
-			Help:      "how long it takes to sign and broadcast to binance",
-		}),
 		SignToThorchainDuration: prometheus.NewHistogram(prometheus.HistogramOpts{
 			Namespace: "observer",
 			Subsystem: "thorchain",
@@ -225,6 +158,20 @@ var (
 
 // NewMetrics create a new instance of Metrics
 func NewMetrics(cfg config.MetricConfiguration) (*Metrics, error) {
+	// Add chain metrics
+	for _, chain := range cfg.Chains {
+		AddChainMetrics(chain, counters, counterVecs, histograms)
+	}
+	// Register metrics
+	for _, item := range counterVecs {
+		prometheus.MustRegister(item)
+	}
+	for _, item := range counters {
+		prometheus.MustRegister(item)
+	}
+	for _, item := range histograms {
+		prometheus.MustRegister(item)
+	}
 	// create a new mux server
 	server := http.NewServeMux()
 	// register a new handler for the /metrics endpoint
@@ -287,17 +234,4 @@ func (m *Metrics) Stop() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 	return m.s.Shutdown(ctx)
-}
-
-func init() {
-	for _, item := range counterVecs {
-		prometheus.MustRegister(item)
-	}
-	for _, item := range counters {
-		prometheus.MustRegister(item)
-	}
-	for _, item := range histograms {
-		prometheus.MustRegister(item)
-	}
-
 }

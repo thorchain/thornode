@@ -16,6 +16,8 @@ import (
 	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
+var m *metrics.Metrics
+
 func SetupStateChainForTest(c *C) (config.ClientConfiguration, cKeys.Info, func()) {
 	thorchain.SetupConfigForTest()
 	thorcliDir := SetupThorCliDirForTest()
@@ -46,13 +48,17 @@ func SetupThorCliDirForTest() string {
 }
 
 func GetMetricForTest(c *C) *metrics.Metrics {
-	m, err := metrics.NewMetrics(config.MetricConfiguration{
-		Enabled:      false,
-		ListenPort:   9000,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-	})
-	c.Assert(m, NotNil)
-	c.Assert(err, IsNil)
+	if m == nil {
+		var err error
+		m, err = metrics.NewMetrics(config.MetricConfiguration{
+			Enabled:      false,
+			ListenPort:   9000,
+			ReadTimeout:  time.Second,
+			WriteTimeout: time.Second,
+			Chains:       []string{"bnb"},
+		})
+		c.Assert(m, NotNil)
+		c.Assert(err, IsNil)
+	}
 	return m
 }

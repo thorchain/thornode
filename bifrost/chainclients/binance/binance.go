@@ -101,7 +101,12 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.BinanceConfiguration, keyS
 
 // IsTestNet determinate whether we are running on test net by checking the status
 func (b *Binance) CheckIsTestNet() (string, bool) {
-	u, err := url.Parse(b.RPCHost)
+	// Cached data after first call
+	if b.IsTestNet {
+		return b.chainID, true
+	}
+
+ 	u, err := url.Parse(b.RPCHost)
 	if err != nil {
 		log.Fatal().Msgf("Unable to parse rpc host: %s\n", b.RPCHost)
 	}
@@ -141,6 +146,10 @@ func (b *Binance) CheckIsTestNet() (string, bool) {
 
 	isTestNet := status.Result.NodeInfo.Network == "Binance-Chain-Nile"
 	return status.Result.NodeInfo.Network, isTestNet
+}
+
+func (b *Binance) GetChain() string {
+	return "bnb"
 }
 
 func (b *Binance) GetHeight() (int64, error) {
@@ -235,7 +244,7 @@ func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
 }
 
 // SignTx sign the the given TxArrayItem
-func (b *Binance) signTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error) {
+func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error) {
 	b.signLock.Lock()
 	defer b.signLock.Unlock()
 	var payload []msg.Transfer
@@ -406,7 +415,7 @@ func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 }
 
 // broadcastTx is to broadcast the tx to binance chain
-func (b *Binance) broadcastTx(hexTx []byte) error {
+func (b *Binance) BroadcastTx(hexTx []byte) error {
 	u, err := url.Parse(b.RPCHost)
 	if err != nil {
 		log.Error().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
@@ -437,8 +446,8 @@ func (b *Binance) broadcastTx(hexTx []byte) error {
 	return nil
 }
 
-func (b *Binance) SignAndBroadcastToBinanceChain(tai stypes.TxOutItem, height int64) error {
-	hexTx, _, err := b.signTx(tai, height)
+func (b *Binance) SignAndBroadcastToChain(tai stypes.TxOutItem, height int64) error {
+	hexTx, _, err := b.SignTx(tai, height)
 	if err != nil {
 		return fmt.Errorf("fail to sign txout:%w", err)
 	}
@@ -446,7 +455,7 @@ func (b *Binance) SignAndBroadcastToBinanceChain(tai stypes.TxOutItem, height in
 		b.logger.Info().Msg("nothing need to be send")
 		return nil
 	}
-	if err := b.broadcastTx(hexTx); nil != err {
+	if err := b.BroadcastTx(hexTx); nil != err {
 		return fmt.Errorf("fail to broadcast to binance chain: %w", err)
 	}
 	atomic.AddInt64(&b.seqNumber, 1)

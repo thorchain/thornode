@@ -2,6 +2,7 @@ package observer
 
 import (
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,7 +14,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 
-	"gitlab.com/thorchain/thornode/bifrost/chainclients/binance"
+	"gitlab.com/thorchain/thornode/bifrost/chainclients"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
@@ -25,8 +26,8 @@ import (
 type Observer struct {
 	cfg             config.ObserverConfiguration
 	logger          zerolog.Logger
-	blockScanner    *binance.BinanceBlockScanner
-	storage         binance.TxInStorage
+	blockScanner    chainclients.BlockScanner
+	storage         chainclients.BlockScannerStorage
 	stopChan        chan struct{}
 	thorchainBridge *thorclient.ThorchainBridge
 	m               *metrics.Metrics
@@ -35,9 +36,9 @@ type Observer struct {
 	pubkeyMgr       pubkeymanager.PubKeyValidator
 }
 
-// NewObserver create a new instance of Observer
-func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, pubkeyMgr pubkeymanager.PubKeyValidator, bnb *binance.Binance, m *metrics.Metrics) (*Observer, error) {
-	scanStorage, err := binance.NewBinanceChanBlockScannerStorage(cfg.ObserverDbPath)
+// NewObserver create a new instance of Observer for chain
+func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, pubkeyMgr pubkeymanager.PubKeyValidator, chain chainclients.ChainClient, m *metrics.Metrics) (*Observer, error) {
+	scanStorage, err := chainclients.NewBlockScannerStorage(cfg.ObserverDbPath, chain.GetChain())
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create scan storage")
 	}
@@ -45,7 +46,7 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 	logger := log.Logger.With().Str("module", "observer").Logger()
 
 	if !cfg.BlockScanner.EnforceBlockHeight {
-		startBlockHeight, err := thorchainBridge.GetLastObservedInHeight(common.BNBChain)
+		startBlockHeight, err := thorchainBridge.GetLastObservedInHeight(common.Chain(strings.ToUpper(chain.GetChain())))
 		if nil != err {
 			return nil, errors.Wrap(err, "fail to get start block height from thorchain")
 		}
@@ -54,7 +55,7 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 			cfg.BlockScanner.StartBlockHeight = startBlockHeight
 			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by thorchain")
 		} else {
-			cfg.BlockScanner.StartBlockHeight, err = bnb.GetHeight()
+			cfg.BlockScanner.StartBlockHeight, err = chain.GetHeight()
 			if err != nil {
 				return nil, errors.Wrap(err, "fail to get binance height")
 			}
@@ -63,7 +64,8 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 		}
 	}
 
-	blockScanner, err := binance.NewBinanceBlockScanner(cfg.BlockScanner, scanStorage, bnb.IsTestNet, pubkeyMgr, m)
+	_, isTestNet := chain.CheckIsTestNet()
+	blockScanner, err := chainclients.NewBlockScanner(cfg.BlockScanner, scanStorage, chain.GetChain(), isTestNet, pubkeyMgr, m)
 	if nil != err {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}
@@ -132,6 +134,7 @@ func (o *Observer) retryTxProcessor() {
 		}
 	}
 }
+
 func (o *Observer) txinsProcessor(ch <-chan types.TxIn, idx int) {
 	o.logger.Info().Int("idx", idx).Msg("start to process tx in")
 	defer o.logger.Info().Int("idx", idx).Msg("stop to process tx in")
