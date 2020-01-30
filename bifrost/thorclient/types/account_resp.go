@@ -1,11 +1,12 @@
 package types
 
-import (
-	"encoding/json"
-)
-
 /// AccountResp the response from thorclient
 type AccountResp struct {
-	Height string          `json:"height"`
-	Result json.RawMessage `json:"result"`
+	Height string `json:"height"`
+	Result struct {
+		Value struct {
+			AccountNumber string `json:"account_number"`
+			Sequence      string `json:"sequence"`
+		} `json:"value"`
+	} `json:"result"`
 }
