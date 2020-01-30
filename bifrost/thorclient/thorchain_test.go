@@ -192,7 +192,7 @@ func (s *ThorchainSuite) TestGetAccountNumberAndSequenceNumber_Fail_AccNumberStr
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/accnumber_string.json"
 	accNumber, sequence, err := s.bridge.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
-	c.Assert(true, Equals, strings.HasPrefix(err.Error(), "failed to unmarshal base account"))
+	c.Assert(true, Equals, strings.HasPrefix(err.Error(), "failed to parse account number"))
 	c.Assert(accNumber, Equals, uint64(0))
 	c.Assert(sequence, Equals, uint64(0))
 }
@@ -202,7 +202,7 @@ func (s *ThorchainSuite) TestGetAccountNumberAndSequenceNumber_Fail_SequenceStri
 	s.authAccountFixture = "../../test/fixtures/endpoints/auth/accounts/seqnumber_string.json"
 	accNumber, sequence, err := s.bridge.getAccountNumberAndSequenceNumber()
 	c.Assert(err, NotNil)
-	c.Assert(true, Equals, strings.HasPrefix(err.Error(), "failed to unmarshal base account"))
+	c.Assert(true, Equals, strings.HasPrefix(err.Error(), "failed to parse sequence number"))
 	c.Assert(accNumber, Equals, uint64(0))
 	c.Assert(sequence, Equals, uint64(0))
 }
