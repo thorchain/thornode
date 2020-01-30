@@ -185,6 +185,8 @@ func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, e
 		return 0, 0, errors.Wrap(err, fmt.Sprintf("failed to parse sequence number (%s)", acc.Sequence))
 	}
 
+	fmt.Printf("Account  Number: %s %d\n", acc.AccountNumber, accNum)
+	fmt.Printf("Sequence Number: %s %d\n", acc.Sequence, seq)
 	return accNum, seq, nil
 }
 
