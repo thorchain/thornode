@@ -167,16 +167,24 @@ func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, e
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "failed to get auth accounts")
 	}
-	var accountResp types.AccountResp
-	if err := json.Unmarshal(body, &accountResp); nil != err {
+
+	var resp types.AccountResp
+	if err := json.Unmarshal(body, &resp); nil != err {
 		return 0, 0, errors.Wrap(err, "failed to unmarshal account resp")
 	}
-	var baseAccount authtypes.BaseAccount
-	err = authtypes.ModuleCdc.UnmarshalJSON(accountResp.Result, &baseAccount)
+	acc := resp.Result.Value
+
+	accNum, err := strconv.ParseUint(acc.AccountNumber, 10, 64)
 	if err != nil {
-		return 0, 0, errors.Wrap(err, "failed to unmarshal base account")
+		return 0, 0, errors.Wrap(err, fmt.Sprintf("failed to parse account number (%s)", acc.AccountNumber))
 	}
-	return baseAccount.AccountNumber, baseAccount.Sequence, nil
+
+	seq, err := strconv.ParseUint(acc.Sequence, 10, 64)
+	if err != nil {
+		return 0, 0, errors.Wrap(err, fmt.Sprintf("failed to parse sequence number (%s)", acc.Sequence))
+	}
+
+	return accNum, seq, nil
 }
 
 // GetKeygenStdTx get keygen tx from params
