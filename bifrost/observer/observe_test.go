@@ -8,5 +8,5 @@ type ObserverSuite struct{}
 
 var _ = Suite(&ObserverSuite{})
 
-func (s *ObserverSuite) TestBinanceHeight(c *C) {
+func (s *ObserverSuite) TestChainHeight(c *C) {
 }

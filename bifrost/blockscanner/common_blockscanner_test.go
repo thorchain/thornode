@@ -19,19 +19,26 @@ type CommonBlockScannerTestSuite struct{}
 
 var _ = Suite(&CommonBlockScannerTestSuite{})
 
-func (CommonBlockScannerTestSuite) TestNewCommonBlockScanner(c *C) {
-	mss := NewMockScannerStorage()
-	m, err := metrics.NewMetrics(config.MetricConfiguration{
+var m *metrics.Metrics
+
+func (CommonBlockScannerTestSuite) SetUpSuite(c *C) {
+	var err error
+	m, err = metrics.NewMetrics(config.MetricConfiguration{
 		Enabled:      false,
 		ListenPort:   8080,
 		ReadTimeout:  time.Second,
 		WriteTimeout: time.Second,
+		Chains:       []string{"bnb"},
 	})
-	c.Check(m, NotNil)
-	c.Check(err, IsNil)
+	c.Assert(m, NotNil)
+	c.Assert(err, IsNil)
+}
+
+func (CommonBlockScannerTestSuite) TestNewCommonBlockScanner(c *C) {
+	mss := NewMockScannerStorage()
 	cbs, err := NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "",
-	}, mss, m)
+	}, mss, nil)
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
@@ -63,14 +70,6 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 	mss := NewMockScannerStorage()
 	s := httptest.NewTLSServer(h)
 	defer s.Close()
-	m, err := metrics.NewMetrics(config.MetricConfiguration{
-		Enabled:      false,
-		ListenPort:   8080,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-	})
-	c.Check(m, NotNil)
-	c.Check(err, IsNil)
 	cbs, err := NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost:                    s.URL,
 		StartBlockHeight:           0,
@@ -104,5 +103,4 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 	err = cbs.Stop()
 	c.Check(err, IsNil)
 	c.Check(counter, Equals, 11)
-
 }
