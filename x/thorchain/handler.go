@@ -59,7 +59,6 @@ func NewHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validato
 	handlerMap := getHandlerMapping(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
-		ctx.Logger().Info("handler request", "Msg:", msg)
 		version := keeper.GetLowestActiveVersion(ctx)
 		constantValues := constants.GetConstantValues(version)
 		if nil == constantValues {

@@ -86,7 +86,6 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 	if err != nil {
 		return noTxID, errors.Wrap(err, "fail to post tx to thorchain")
 	}
-	fmt.Printf("Thorchain response body: %s\n", string(body))
 
 	// NOTE: we can actually see two different json responses for the same end.
 	// This complicates things pretty well.
