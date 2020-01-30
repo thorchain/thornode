@@ -88,7 +88,7 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 	h.keeper.SetTssVoter(ctx, voter)
 
 	fmt.Printf("Voter: %+v\n", voter)
-	if voter.HasConensus(active) && voter.BlockHeight == 0 {
+	if voter.HasConensus(active) && voter.BlockHeight < msg.BlockHeight {
 		fmt.Println("Adding new vault...")
 		voter.BlockHeight = ctx.BlockHeight()
 		h.keeper.SetTssVoter(ctx, voter)

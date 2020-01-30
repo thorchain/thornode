@@ -11,14 +11,15 @@ import (
 
 // MsgTssPool defines a MsgTssPool message
 type MsgTssPool struct {
-	ID         string         `json:"id"`
-	PoolPubKey common.PubKey  `json:"pool_pub_key"`
-	PubKeys    common.PubKeys `json:"pubkeys"`
-	Signer     sdk.AccAddress `json:"signer"`
+	ID          string         `json:"id"`
+	PoolPubKey  common.PubKey  `json:"pool_pub_key"`
+	PubKeys     common.PubKeys `json:"pubkeys"`
+	BlockHeight int64          `json:"block_height"`
+	Signer      sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgTssPool is a constructor function for MsgTssPool
-func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, signer sdk.AccAddress) MsgTssPool {
+func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, height int64, signer sdk.AccAddress) MsgTssPool {
 
 	// ensure input pubkeys list is deterministically sorted
 	sort.Slice(pks, func(i, j int) bool {
@@ -33,10 +34,11 @@ func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, signer sdk.AccAddre
 	id := fmt.Sprintf("%X", sha256.Sum256(buf))
 
 	return MsgTssPool{
-		ID:         id,
-		PubKeys:    pks,
-		PoolPubKey: poolpk,
-		Signer:     signer,
+		ID:          id,
+		PubKeys:     pks,
+		PoolPubKey:  poolpk,
+		BlockHeight: height,
+		Signer:      signer,
 	}
 }
 
@@ -56,6 +58,9 @@ func (msg MsgTssPool) ValidateBasic() sdk.Error {
 	}
 	if len(msg.PubKeys) < 2 {
 		return sdk.ErrUnknownRequest("Must have at least 2 pub keys")
+	}
+	if msg.BlockHeight == 0 {
+		return sdk.ErrUnknownRequest("Block height must be non-zero")
 	}
 	for _, pk := range msg.PubKeys {
 		if pk.IsEmpty() {

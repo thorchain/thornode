@@ -277,7 +277,7 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 }
 
 func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame common.Blame, input common.PubKeys) error {
-	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, input)
+	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, input, height)
 	strHeight := strconv.FormatInt(height, 10)
 	if nil != err {
 		s.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()
