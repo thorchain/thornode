@@ -14,12 +14,11 @@ type MsgTssPool struct {
 	ID         string         `json:"id"`
 	PoolPubKey common.PubKey  `json:"pool_pub_key"`
 	PubKeys    common.PubKeys `json:"pubkeys"`
-	Blame      common.Blame   `json:"blame"`
 	Signer     sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgTssPool is a constructor function for MsgTssPool
-func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, blame common.Blame, signer sdk.AccAddress) MsgTssPool {
+func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, signer sdk.AccAddress) MsgTssPool {
 
 	// ensure input pubkeys list is deterministically sorted
 	sort.Slice(pks, func(i, j int) bool {
@@ -37,7 +36,6 @@ func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, blame common.Blame,
 		ID:         id,
 		PubKeys:    pks,
 		PoolPubKey: poolpk,
-		Blame:      blame,
 		Signer:     signer,
 	}
 }

@@ -15,7 +15,6 @@ import (
 type newTssPool struct {
 	BaseReq      rest.BaseReq   `json:"base_req"`
 	InputPubKeys common.PubKeys `json:"input_pubkeys"`
-	Blame        common.Blame   `json:"blame"`
 	PoolPubKey   common.PubKey  `json:"pool_pub_key"`
 }
 
@@ -41,7 +40,7 @@ func newTssPoolHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			return
 		}
 
-		msg := types.NewMsgTssPool(req.InputPubKeys, req.PoolPubKey, req.Blame, addr)
+		msg := types.NewMsgTssPool(req.InputPubKeys, req.PoolPubKey, addr)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
