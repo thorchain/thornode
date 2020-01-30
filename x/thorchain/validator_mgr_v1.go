@@ -355,6 +355,10 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		ctx.Logger().Error("can't get reserve contributors", "error", err)
 		return err
 	}
+	if len(contribs) == 0 {
+		return nil
+	}
+
 	vaultData, err := vm.k.GetVaultData(ctx)
 	if nil != err {
 		ctx.Logger().Error("can't get vault data", "error", err)
