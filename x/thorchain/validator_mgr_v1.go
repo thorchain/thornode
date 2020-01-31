@@ -455,10 +455,6 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			nth = 10
 		}
 		amt := na.Bond.MulUint64(uint64(nth)).QuoUint64(10)
-		na.Bond = common.SafeSub(na.Bond, amt)
-		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-			return err
-		}
 
 		// refund bond
 		txOutItem := &TxOutItem{
@@ -470,6 +466,12 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 		fmt.Printf("Refund bond: %s %s\n", na.BondAddress, txOutItem.Coin.String())
 		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
 		if nil != err {
+			fmt.Printf("Failed to send bond: %s\n", err)
+			return err
+		}
+
+		na.Bond = common.SafeSub(na.Bond, amt)
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 			return err
 		}
 
