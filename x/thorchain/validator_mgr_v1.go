@@ -451,6 +451,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 		if nth > 10 { // cap at 10
 			nth = 10
 		}
+		fmt.Printf("NA Bond: %s %d\n", na.BondAddress, na.Bond.Uint64())
 		amt := na.Bond.MulUint64(uint64(nth)).QuoUint64(10)
 		na.Bond = common.SafeSub(na.Bond, amt)
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
