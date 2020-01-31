@@ -95,6 +95,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 	for _, vault := range retiring {
 		if !vault.HasFunds() {
 			// no more funds to move, delete the vault
+			fmt.Println("Vault IS DELETED")
 			if err := vm.k.DeleteVault(ctx, vault.PubKey); err != nil {
 				return err
 			}

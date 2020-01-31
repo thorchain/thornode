@@ -221,6 +221,7 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 	}
 	// delete the ygg vault, there is nothing left in the ygg vault
 	if !ygg.HasFunds() {
+		fmt.Println("Vault is deleted.")
 		return keeper.DeleteVault(ctx, ygg.PubKey)
 	}
 	return nil
