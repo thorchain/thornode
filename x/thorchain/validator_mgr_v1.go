@@ -309,10 +309,12 @@ func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, activeNodes NodeAccou
 // ragnarokProtocolStage1 - request all yggdrasil pool to return the fund
 // when THORNode observe the node return fund successfully, the node's bound will be refund.
 func (vm *validatorMgrV1) ragnarokProtocolStage1(ctx sdk.Context, activeNodes NodeAccounts) error {
+	fmt.Println("Ragnarok Stage 1")
 	return vm.recallYggFunds(ctx, activeNodes)
 }
 
 func (vm *validatorMgrV1) ragnarokProtocolStage2(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
+	fmt.Println("Ragnarok Stage 2")
 	// Ragnarok Protocol
 	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
 	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
@@ -338,6 +340,7 @@ func (vm *validatorMgrV1) ragnarokProtocolStage2(ctx sdk.Context, nth int64, con
 }
 
 func (vm *validatorMgrV1) ragnarokBondReward(ctx sdk.Context) error {
+	fmt.Println("Ragnarok Release Bond Reward")
 	active, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to get all active node account: %w", err)
@@ -421,6 +424,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 }
 
 func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
+	fmt.Println("Refund bond reward...")
 	active, err := vm.k.ListActiveNodeAccounts(ctx)
 	if nil != err {
 		ctx.Logger().Error("can't get active nodes", "error", err)
@@ -460,6 +464,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
+		fmt.Printf("Refund bond: %s %s\n", na.BondAddress, txOutItem.Coin.String())
 		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
 		if nil != err {
 			return err
