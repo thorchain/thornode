@@ -425,9 +425,9 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 
 func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 	fmt.Println("Refund bond reward...")
-	active, err := vm.k.ListActiveNodeAccounts(ctx)
+	nas, err := vm.k.ListNodeAccounts(ctx)
 	if nil != err {
-		ctx.Logger().Error("can't get active nodes", "error", err)
+		ctx.Logger().Error("can't get nodes", "error", err)
 		return err
 	}
 	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
@@ -436,25 +436,24 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 		return err
 	}
 	// nth * 10 == the amount of the bond we want to send
-	for _, na := range active {
+	for _, na := range nas {
+		fmt.Printf("NA Bond: %s %d\n", na.BondAddress, na.Bond.Uint64())
 		if na.Bond.IsZero() {
 			continue
 		}
-		if !vm.k.VaultExists(ctx, na.PubKeySet.Secp256k1) {
-			continue
-		}
-		ygg, err := vm.k.GetVault(ctx, na.PubKeySet.Secp256k1)
-		if err != nil {
-			return err
-		}
-		if ygg.HasFunds() {
-			ctx.Logger().Info(fmt.Sprintf("skip bond refund due to remaining funds: %s", na.NodeAddress))
-			continue
+		if vm.k.VaultExists(ctx, na.PubKeySet.Secp256k1) {
+			ygg, err := vm.k.GetVault(ctx, na.PubKeySet.Secp256k1)
+			if err != nil {
+				return err
+			}
+			if ygg.HasFunds() {
+				ctx.Logger().Info(fmt.Sprintf("skip bond refund due to remaining funds: %s", na.NodeAddress))
+				continue
+			}
 		}
 		if nth > 10 { // cap at 10
 			nth = 10
 		}
-		fmt.Printf("NA Bond: %s %d\n", na.BondAddress, na.Bond.Uint64())
 		amt := na.Bond.MulUint64(uint64(nth)).QuoUint64(10)
 		na.Bond = common.SafeSub(na.Bond, amt)
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
