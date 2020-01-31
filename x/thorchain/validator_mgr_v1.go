@@ -110,6 +110,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	}
 
 	// no change
+	fmt.Printf("Add: %d. Remove: %d\n", len(newNodes), len(removedNodes))
 	if len(newNodes) == 0 && len(removedNodes) == 0 {
 		return nil
 	}

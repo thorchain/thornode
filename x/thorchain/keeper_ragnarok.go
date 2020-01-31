@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -37,5 +39,6 @@ func (k KVStore) GetRagnarokBlockHeight(ctx sdk.Context) (int64, error) {
 func (k KVStore) SetRagnarokBlockHeight(ctx sdk.Context, height int64) {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixRagnarok, "")
+	fmt.Printf("Set Ragnarok: %d\n", height)
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(height))
 }
