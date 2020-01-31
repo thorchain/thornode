@@ -99,6 +99,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 
 		// move partial funds every 30 minutes
 		if (ctx.BlockHeight()-vault.StatusSince)%migrateInterval == 0 {
+			fmt.Printf("Migrating funds... %d\n", ctx.BlockHeight())
 			for _, coin := range vault.Coins {
 
 				// determine which active asgard vault is the best to send
@@ -149,6 +150,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					},
 					Memo: "migrate",
 				}
+				fmt.Printf("Migrate Coins: %s %s\n", toi.ToAddress, toi.Coin)
 				_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 				if nil != err {
 					return err

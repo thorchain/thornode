@@ -437,6 +437,9 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 	}
 	// nth * 10 == the amount of the bond we want to send
 	for _, na := range active {
+		if na.Bond.IsZero() {
+			continue
+		}
 		if !vm.k.VaultExists(ctx, na.PubKeySet.Secp256k1) {
 			continue
 		}
