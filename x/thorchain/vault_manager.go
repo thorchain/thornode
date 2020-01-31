@@ -94,11 +94,6 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 	}
 	for _, vault := range retiring {
 		if !vault.HasFunds() {
-			// no more funds to move, delete the vault
-			//fmt.Println("Vault IS DELETED")
-			//if err := vm.k.DeleteVault(ctx, vault.PubKey); err != nil {
-			//return err
-			//}
 			continue
 		}
 
@@ -131,6 +126,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 				// signer, to successfully send these funds while respecting
 				// gas requirements (so it'll actually send slightly less)
 				amt := coin.Amount
+				fmt.Printf("Coin Count: %s %d\n", coin.Asset.String(), amt.Uint64())
 				if nth < 5 { // migrate partial funds 4 times
 					// each round of migration, we are increasing the amount 20%.
 					// Round 1 = 20%
@@ -140,6 +136,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					// Round 5 = 100%
 					amt = amt.MulUint64(uint64(nth)).QuoUint64(5)
 				}
+				fmt.Printf("Coin Nth: %d %d\n", nth, amt.Uint64())
 
 				toi := &TxOutItem{
 					Chain:       coin.Asset.Chain,
