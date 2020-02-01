@@ -1,6 +1,6 @@
 #!/bin/sh
-# ./mock-leave.bash <mock binance IP address> <BNB Address>
-# ./mock-leave.bash 127.0.0.1 bnbXYXYX
+# ./mock-reserve.bash <mock binance IP address> <BNB Address>
+# ./mock-reserve.bash 127.0.0.1 bnbXYXYX
 
 set -ex
 
@@ -22,5 +22,5 @@ curl -vvv -s -X POST -d "{
   \"coins\":[
       {\"denom\": \"RUNE-A1F\", \"amount\": 100000000000000}
   ],
-  \"memo\": \"LEAVE\"
+  \"memo\": \"RESERVE\"
 }" $1:26660/broadcast/easy
