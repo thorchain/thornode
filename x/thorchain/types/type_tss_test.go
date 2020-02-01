@@ -30,9 +30,9 @@ func (s *TypeTssSuite) TestVoter(c *C) {
 	tss.Sign(addr) // ensure signing twice doesn't duplicate
 	c.Check(tss.Signers, HasLen, 1)
 
-	c.Check(tss.HasConensus(nil), Equals, false)
+	c.Check(tss.HasConsensus(nil), Equals, false)
 	nas := NodeAccounts{
 		NodeAccount{NodeAddress: addr, Status: Active},
 	}
-	c.Check(tss.HasConensus(nas), Equals, true)
+	c.Check(tss.HasConsensus(nas), Equals, true)
 }
