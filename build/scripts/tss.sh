@@ -12,8 +12,8 @@ if [ ! -z ${SEED+x} ]; then
         sleep 1
     done
 
-    cat $PRIVKEY | /go/bin/tss -home ~/.tss -loglevel debug -info-port $INFOPORT -tss-port $TSSPORT -p2p-port $P2PPORT -peer /ip4/$SEED/tcp/$SEEDP2PPORT/ipfs/$(curl http://$SEED:$SEEDINFOPORT/p2pid)
+    cat $PRIVKEY | /go/bin/tss -home ~/.tss -loglevel debug -info-port $INFOPORT -tss-port $TSSPORT -p2p-port $P2PPORT -peer /ip4/$SEED/tcp/$SEEDP2PPORT/ipfs/$(curl http://$SEED:$SEEDINFOPORT/p2pid) -synctimeout 10s
 
 else
-    cat $PRIVKEY | /go/bin/tss -home ~/.tss -loglevel debug -info-port $INFOPORT -tss-port $TSSPORT -p2p-port $P2PPORT
+    cat $PRIVKEY | /go/bin/tss -home ~/.tss -loglevel debug -info-port $INFOPORT -tss-port $TSSPORT -p2p-port $P2PPORT -synctimeout 10s
 fi

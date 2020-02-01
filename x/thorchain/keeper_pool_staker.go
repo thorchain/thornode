@@ -25,7 +25,7 @@ func (k KVStore) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker,
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixPoolStaker, asset.String())
 	if !store.Has([]byte(key)) {
-		ctx.Logger().Info("NotExist", "poolstakerkey", key)
+		ctx.Logger().Debug("NotExist", "poolstakerkey", key)
 		return NewPoolStaker(asset, sdk.ZeroUint()), nil
 	}
 	var ps PoolStaker
@@ -41,7 +41,7 @@ func (k KVStore) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker,
 func (k KVStore) SetPoolStaker(ctx sdk.Context, ps PoolStaker) {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixPoolStaker, ps.Asset.String())
-	ctx.Logger().Info(fmt.Sprintf("key:%s ,pool staker:%s", key, ps))
+	ctx.Logger().Debug(fmt.Sprintf("key:%s ,pool staker:%s", key, ps))
 	result := k.cdc.MustMarshalBinaryBare(ps)
 	store.Set([]byte(key), result)
 }
