@@ -77,9 +77,6 @@ func (kg *KeyGen) GenerateNewKey(pKeys common.PubKeys) (common.PubKeySet, common
 	if err != nil {
 		return common.EmptyPubKeySet, common.EmptyBlame, fmt.Errorf("fail to unmarshal tss keygen response,err:%w", err)
 	}
-	if len(dat.Blame.BlameNodes) == 0 {
-		dat.Blame.BlameNodes = nil
-	}
 
 	cpk, err := common.NewPubKey(dat.PubKey)
 	if err != nil {
