@@ -164,6 +164,10 @@ func (k KVStore) DeleteVault(ctx sdk.Context, pubkey common.PubKey) error {
 		return err
 	}
 
+	if vault.HasFunds() {
+		return errors.New("unable to delete vault: it still contains funds")
+	}
+
 	if vault.IsAsgard() {
 		pks, err := k.getAsgardIndex(ctx)
 		if err != nil {
