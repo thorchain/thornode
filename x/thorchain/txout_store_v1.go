@@ -50,6 +50,10 @@ func (tos *TxOutStorageV1) GetOutboundItems() []*TxOutItem {
 	return tos.blockOut.TxArray
 }
 
+func (tos *TxOutStorageV1) ClearOutboundItems() {
+	tos.blockOut.TxArray = nil
+}
+
 // TryAddTxOutItem add an outbound tx to block
 // return bool indicate whether the transaction had been added successful or not
 // return error indicate error
