@@ -15,6 +15,7 @@ type TxOutStore interface {
 	NewBlock(height int64, constAccessor constants.ConstantValues)
 	CommitBlock(ctx sdk.Context)
 	GetBlockOut() *TxOut
+	ClearOutboundItems()
 	GetOutboundItems() []*TxOutItem
 	TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error)
 }
