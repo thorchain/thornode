@@ -487,6 +487,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
+		fmt.Printf("Pre  OutboundItems: (%d) %+v\n", len(txOutStore.GetOutboundItems()), txOutStore.GetOutboundItems())
 		ok, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
 		if err != nil {
 			return err
@@ -494,6 +495,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 		if !ok {
 			continue
 		}
+		fmt.Printf("Post OutboundItems: (%d) %+v\n", len(txOutStore.GetOutboundItems()), txOutStore.GetOutboundItems())
 
 		na.Bond = common.SafeSub(na.Bond, amt)
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
