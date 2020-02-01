@@ -11,7 +11,10 @@ if [ $1 == "ci" ]; then
     export CI="true"
     export AWS_REGION=$AWS_CI_REGION
     export USER=$CI_JOB_ID
+elif [ $1 == "churn" ]; then
+    export CHURN="true"
 fi
+
 
 ###########
 # CLEANUP #
@@ -60,7 +63,16 @@ start_the_stack () {
         export TAG=${THORNODE_ENV}
     fi
     eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
-    make run-${THORNODE_ENV}-genesis-ci
+    if [ ! -z "${CHURN}" ]; then
+        PEER=$(docker-machine ip $USER-$THORNODE_ENV)
+        export PEER && make run-${THORNODE_ENV}-validator
+        sleep 60
+        export FAUCET_PASSWORD=$FAUCET_PASSWORD && . ./../../scripts/make-testnet-bond.sh
+    elif [ ! -z "${CI}" ]; then
+        make reset-${THORNODE_ENV}-genesis-ci
+    else
+        make run-${THORNODE_ENV}-standalone
+    fi
     sleep 60
 }
 
@@ -95,8 +107,8 @@ if [ -z "${THORNODE_ENV}" ]; then
     exit 1
 fi
 
+DOCKER_SERVER="${USER}-${THORNODE_ENV}$1"
 if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANCE_TYPE}" ]; then
-    DOCKER_SERVER="${USER}-aws-${THORNODE_ENV}"
     cleanup ${DOCKER_SERVER} 20
 	echo "creating server node on AWS"
 	docker-machine create --driver amazonec2 \
@@ -104,7 +116,6 @@ if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANC
         --amazonec2-region ${AWS_REGION} \
         --amazonec2-instance-type ${AWS_INSTANCE_TYPE} \
         --amazonec2-root-size ${DISK_SIZE} \
-        --amazonec2-security-group ${SECURITY_GROUP} \
         ${DOCKER_SERVER}
     if [ $? != 0 ]; then
         echo "server could not be created"
@@ -122,4 +133,3 @@ else
 	echo "you have not provided all the required environment variables"
 	exit 1
 fi
-
