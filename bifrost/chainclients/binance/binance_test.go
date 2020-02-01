@@ -76,9 +76,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		Host:   "localhost",
 		Port:   5555,
 	}
-	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
-		RPCHost: "",
-	}, tssCfg)
+	b, err := NewBinance(s.thorKeys, "", tssCfg)
 	c.Assert(b, IsNil)
 	c.Assert(err, NotNil)
 
@@ -90,9 +88,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		}
 	}))
 
-	b2, err2 := NewBinance(s.thorKeys, config.BinanceConfiguration{
-		RPCHost: server.URL,
-	}, tssCfg)
+	b2, err2 := NewBinance(s.thorKeys, server.URL, tssCfg)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 }
@@ -124,9 +120,7 @@ func (s *BinancechainSuite) TestGetHeight(c *C) {
 		Host:   "localhost",
 		Port:   5555,
 	}
-	b, err := NewBinance(s.thorKeys, config.BinanceConfiguration{
-		RPCHost: server.URL,
-	}, tssCfg)
+	b, err := NewBinance(s.thorKeys, server.URL, tssCfg)
 	c.Assert(err, IsNil)
 
 	height, err := b.GetHeight()
@@ -157,9 +151,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		Host:   "localhost",
 		Port:   5555,
 	}
-	b2, err2 := NewBinance(s.thorKeys, config.BinanceConfiguration{
-		RPCHost: server.URL,
-	}, tssCfg)
+	b2, err2 := NewBinance(s.thorKeys, server.URL, tssCfg)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 	pk, err := common.NewPubKeyFromCrypto(b2.localKeyManager.GetPrivKey().PubKey())

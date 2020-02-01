@@ -16,10 +16,7 @@ type Configuration struct {
 	Signer    SignerConfiguration     `json:"signer" mapstructure:"signer"`
 	Thorchain ClientConfiguration     `json:"thorchain" mapstructure:"thorchain"`
 	Metric    MetricConfiguration     `json:"metric" mapstructure:"metric"`
-	Binance   BinanceConfiguration    `json:"binance" mapstructure:"binance"`
 	Chains    []ChainConfigurations   `json:"chains" mapstructure:"chains"`
-	TxScanner TxScannerConfigurations `json:"tx_scanner" mapstructure:"tx_scanner"`
-	TxSigner  TxSignerConfigurations  `json:"tx_signer" mapstructure:"tx_signer"`
 	TSS       TSSConfiguration        `json:"tss" mapstructure:"tss"`
 	BackOff   BackOff                 `json:"back_off" mapstructure:"back_off"`
 }
@@ -36,19 +33,6 @@ type SignerConfiguration struct {
 	SignerDbPath  string                    `json:"signer_db_path" mapstructure:"signer_db_path"`
 	BlockScanner  BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
 	RetryInterval time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
-}
-
-// TxSignerConfigurations configuration
-type TxSignerConfigurations struct {
-	SignerDbPath  string `json:"signer_db_path" mapstructure:"signer_db_path"`
-	BlockChains   []ChainConfigurations
-	BlockScanner  BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
-	RetryInterval time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
-}
-
-// TxScannerConfigurations configuration
-type TxScannerConfigurations struct {
-	BlockChains []ChainConfigurations
 }
 
 // BackOff configuration
@@ -68,14 +52,10 @@ type ChainConfigurations struct {
 	ChainNetwork string `json:"chain_network" mapstructure:"chain_network"`
 	UserName     string `json:"username" mapstructure:"username"`
 	Password     string `json:"password" mapstructure:"password"`
+	RPCHost      string `jsonn:"rpc_host" mapstructure:"rpc_host"`
 	HTTPostMode  bool   `json:"http_post_mode" mapstructure:"http_post_mode"` // Bitcoin core only supports HTTP POST mode
 	DisableTLS   bool   `json:"disable_tls" mapstructure:"disable_tls"`       // Bitcoin core does not provide TLS by default
 	BackOff      BackOff
-}
-
-// BinanceConfiguration all the configurations for binance client
-type BinanceConfiguration struct {
-	RPCHost string `json:"rpc_host" mapstructure:"rpc_host"`
 }
 
 // TSSConfiguration
@@ -134,11 +114,9 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 		return nil, errors.Wrap(err, "fail to unmarshal")
 	}
 
-	// set global backoff settings to all chains config.
-	for _, chain := range cfg.Chains {
-		chain.BackOff = cfg.BackOff
-		cfg.TxScanner.BlockChains = append(cfg.TxScanner.BlockChains, chain)
-		cfg.TxSigner.BlockChains = append(cfg.TxSigner.BlockChains, chain)
+	// Set global backoff settings to all chains config. Maybe is pointless and inefficient as we have it in global config
+	for i, _ := range cfg.Chains {
+		cfg.Chains[i].BackOff = cfg.BackOff
 	}
 
 	return &cfg, nil
