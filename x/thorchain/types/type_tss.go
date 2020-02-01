@@ -39,7 +39,7 @@ func (tss *TssVoter) Sign(signer sdk.AccAddress) {
 }
 
 // Determine if this tss pool has enough signers
-func (tss *TssVoter) HasConensus(nas NodeAccounts) bool {
+func (tss *TssVoter) HasConsensus(nas NodeAccounts) bool {
 	var count int
 	for _, signer := range tss.Signers {
 		if nas.IsNodeKeys(signer) {

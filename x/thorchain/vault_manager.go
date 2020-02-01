@@ -162,14 +162,25 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 	return nil
 }
 
+// TriggerKeygen generate a record to instruct signer kick off keygen process
 func (vm *VaultMgr) TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error {
-	keygen := make(common.PubKeys, len(nas))
+	var members common.PubKeys
 	for i := range nas {
-		keygen[i] = nas[i].PubKeySet.Secp256k1
+		members = append(members, nas[i].PubKeySet.Secp256k1)
 	}
-	keygens := NewKeygens(ctx.BlockHeight())
-	keygens.Keygens = []common.PubKeys{keygen}
-	return vm.k.SetKeygens(ctx, keygens)
+	keygen, err := NewKeygen(ctx.BlockHeight(), members, AsgardKeygen)
+	if nil != err {
+		return fmt.Errorf("fail to create a new keygen: %w", err)
+	}
+	keygenBlock, err := vm.k.GetKeygenBlock(ctx, ctx.BlockHeight())
+	if nil != err {
+		return fmt.Errorf("fail to get keygen block from data store: %w", err)
+	}
+
+	if !keygenBlock.Contains(keygen) {
+		keygenBlock.Keygens = append(keygenBlock.Keygens, keygen)
+	}
+	return vm.k.SetKeygenBlock(ctx, keygenBlock)
 }
 
 func (vm *VaultMgr) RotateVault(ctx sdk.Context, vault Vault) error {

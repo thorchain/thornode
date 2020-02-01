@@ -6,28 +6,31 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-type KeeperKeygensSuite struct{}
+type KeeperKeygenSuite struct{}
 
-var _ = Suite(&KeeperKeygensSuite{})
+var _ = Suite(&KeeperKeygenSuite{})
 
-func (s *KeeperKeygensSuite) TestKeeperKeygens(c *C) {
+func (s *KeeperKeygenSuite) TestKeeperKeygen(c *C) {
 	var err error
 	ctx, k := setupKeeperForTest(c)
 
-	keygens := NewKeygens(1)
-	keygen := common.PubKeys{GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey()}
-	keygens.Keygens = append(keygens.Keygens, keygen)
-	c.Assert(k.SetKeygens(ctx, keygens), IsNil)
-
-	keygens, err = k.GetKeygens(ctx, 1)
+	keygenBlock := NewKeygenBlock(1)
+	keygenMembers := common.PubKeys{GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey()}
+	keygen, err := NewKeygen(ctx.BlockHeight(), keygenMembers, AsgardKeygen)
 	c.Assert(err, IsNil)
-	c.Assert(keygens, NotNil)
-	c.Assert(keygens.Height, Equals, int64(1))
+	c.Assert(keygen.IsEmpty(), Equals, false)
+	keygenBlock.Keygens = append(keygenBlock.Keygens, keygen)
+	c.Assert(k.SetKeygenBlock(ctx, keygenBlock), IsNil)
 
-	keygens, err = k.GetKeygens(ctx, 100)
+	keygenBlock, err = k.GetKeygenBlock(ctx, 1)
 	c.Assert(err, IsNil)
-	c.Assert(keygens, NotNil)
+	c.Assert(keygenBlock, NotNil)
+	c.Assert(keygenBlock.Height, Equals, int64(1))
 
-	iter := k.GetKeygensIterator(ctx)
+	keygenBlock, err = k.GetKeygenBlock(ctx, 100)
+	c.Assert(err, IsNil)
+	c.Assert(keygenBlock, NotNil)
+
+	iter := k.GetKeygenBlockIterator(ctx)
 	defer iter.Close()
 }

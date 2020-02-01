@@ -48,9 +48,9 @@ func (s *KeygenSuite) TestGetKeygen(c *C) {
 	pk := types.GetRandomPubKey()
 	expectedKey, err := common.NewPubKey("thorpub1addwnpepq2kdyjkm6y9aa3kxl8wfaverka6pvkek2ygrmhx6sj3ec6h0fegwsgeslue")
 	c.Assert(err, IsNil)
-	keygens, err := s.bridge.GetKeygens(1718, pk.String())
+	keygenBlock, err := s.bridge.GetKeygenBlock(1718, pk.String())
 	c.Assert(err, IsNil)
-	c.Assert(keygens, NotNil)
-	c.Assert(keygens.Height, Equals, int64(1718))
-	c.Assert(keygens.Keygens[0][0], Equals, expectedKey)
+	c.Assert(keygenBlock, NotNil)
+	c.Assert(keygenBlock.Height, Equals, int64(1718))
+	c.Assert(keygenBlock.Keygens[0].Members[0], Equals, expectedKey)
 }
