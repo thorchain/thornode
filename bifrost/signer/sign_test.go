@@ -44,12 +44,15 @@ func (b *MockChainClient) BroadcastTx(tx []byte) error {
 func (b *MockChainClient) GetAddress(poolPubKey common.PubKey) string {
 	return "0dd3d0a4a6eacc98cc4894791702e46c270bde76"
 }
+
 func (b *MockChainClient) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 	return b.baseAccount, nil
 }
+
 func (b *MockChainClient) GetPubKey() crypto.PubKey {
 	return nil
 }
+
 func (b *MockChainClient) SignAndBroadcastToChain(tai stypes.TxOutItem, height int64) error {
 	return nil
 }
