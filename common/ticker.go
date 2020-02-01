@@ -13,8 +13,10 @@ const (
 	RuneB1ATicker = Ticker("RUNE-B1A")
 )
 
-type Ticker string
-type Tickers []Ticker
+type (
+	Ticker  string
+	Tickers []Ticker
+)
 
 func NewTicker(ticker string) (Ticker, error) {
 	noTicker := Ticker("")

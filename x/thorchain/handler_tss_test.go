@@ -39,29 +39,34 @@ func (k *tssKeeperHelper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubK
 	}
 	return k.Keeper.GetNodeAccountByPubKey(ctx, pk)
 }
+
 func (k *tssKeeperHelper) SetVault(ctx sdk.Context, vault Vault) error {
 	if k.errFailSaveVault {
 		return kaboom
 	}
 	return k.Keeper.SetVault(ctx, vault)
 }
+
 func (k *tssKeeperHelper) GetTssVoter(ctx sdk.Context, id string) (TssVoter, error) {
 	if k.errGetTssVoter {
 		return TssVoter{}, kaboom
 	}
 	return k.Keeper.GetTssVoter(ctx, id)
 }
+
 func (k *tssKeeperHelper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	if k.errListActiveAccounts {
 		return NodeAccounts{}, kaboom
 	}
 	return k.Keeper.ListActiveNodeAccounts(ctx)
 }
+
 func newTssKeeperHelper(keeper Keeper) *tssKeeperHelper {
 	return &tssKeeperHelper{
 		Keeper: keeper,
 	}
 }
+
 func newTssHandlerTestHelper(c *C) tssHandlerTestHelper {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1023)

@@ -33,5 +33,4 @@ func (PoolStakerSuite) TestPoolStaker(c *C) {
 	bnb1 := GetRandomBNBAddress()
 	stakerUnit1 := poolStaker.GetStakerUnit(bnb1)
 	c.Check(stakerUnit1.Units.IsZero(), Equals, true)
-
 }

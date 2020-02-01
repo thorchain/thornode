@@ -86,6 +86,7 @@ func (msg MsgTssPool) ValidateBasic() sdk.Error {
 	}
 	return nil
 }
+
 func (msg MsgTssPool) IsSuccess() bool {
 	return msg.Blame.IsEmpty()
 }

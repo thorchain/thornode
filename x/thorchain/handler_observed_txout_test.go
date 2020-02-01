@@ -64,6 +64,7 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 type TestObservedTxOutFailureKeeper struct {
 	KVStoreDummy
 }
+
 type TestObservedTxOutHandleKeeper struct {
 	KVStoreDummy
 	nas        NodeAccounts
@@ -169,6 +170,7 @@ func (k *TestObservedTxOutHandleKeeper) GetLastEventID(_ sdk.Context) (int64, er
 func (k *TestObservedTxOutHandleKeeper) GetIncompleteEvents(_ sdk.Context) (Events, error) {
 	return nil, nil
 }
+
 func (k *TestObservedTxOutHandleKeeper) SetPool(ctx sdk.Context, pool Pool) error {
 	k.pool = pool
 	return nil

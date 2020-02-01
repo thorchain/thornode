@@ -28,12 +28,14 @@ func (k yggdrasilTestKeeper) GetAsgardVaultsByStatus(ctx sdk.Context, vs VaultSt
 	}
 	return k.Keeper.GetAsgardVaultsByStatus(ctx, vs)
 }
+
 func (k yggdrasilTestKeeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
 	if k.errGetNodeAccount.Equals(addr) {
 		return NodeAccount{}, kaboom
 	}
 	return k.Keeper.GetNodeAccount(ctx, addr)
 }
+
 func (k yggdrasilTestKeeper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
 	if k.errGetPool {
 		return Pool{}, kaboom
@@ -66,6 +68,7 @@ func newYggdrasilTestKeeper(keeper Keeper) *yggdrasilTestKeeper {
 		Keeper: keeper,
 	}
 }
+
 func newYggdrasilHandlerTestHelper(c *C) yggdrasilHandlerTestHelper {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1023)

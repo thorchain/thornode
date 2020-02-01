@@ -34,5 +34,4 @@ func (MsgSetNodeKeysSuite) TestMsgSetNodeKeys(c *C) {
 
 	emptyPubKeySet := NewMsgSetNodeKeys(common.PubKeySet{}, consensPubKey, acc1)
 	c.Assert(emptyPubKeySet.ValidateBasic(), NotNil)
-
 }

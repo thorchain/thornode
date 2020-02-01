@@ -55,7 +55,6 @@ func (h ReserveContributorHandler) ValidateV1(ctx sdk.Context, msg MsgReserveCon
 	}
 
 	return nil
-
 }
 
 func (h ReserveContributorHandler) Handle(ctx sdk.Context, msg MsgReserveContributor, version semver.Version) error {

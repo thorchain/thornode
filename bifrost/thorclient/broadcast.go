@@ -19,7 +19,7 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 	b.broadcastLock.Lock()
 	defer b.broadcastLock.Unlock()
 
-	var noTxID = common.TxID("")
+	noTxID := common.TxID("")
 	if !mode.IsValid() {
 		return noTxID, errors.New(fmt.Sprintf("transaction Mode (%s) is invalid", mode))
 	}

@@ -33,7 +33,7 @@ func (s *HandlerSuite) SetUpSuite(*C) {
 // nolint: deadcode unused
 // create a codec used only for testing
 func makeTestCodec() *codec.Codec {
-	var cdc = codec.New()
+	cdc := codec.New()
 	bank.RegisterCodec(cdc)
 	auth.RegisterCodec(cdc)
 	RegisterCodec(cdc)
@@ -269,7 +269,6 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
 	c.Assert(pool.BalanceRune.Uint64(), Equals, uint64(0))
 	c.Assert(pool.BalanceAsset.Uint64(), Equals, uint64(0))
-
 }
 
 func (HandlerSuite) TestRefund(c *C) {

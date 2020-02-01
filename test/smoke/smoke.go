@@ -290,7 +290,6 @@ func (s *Smoke) WaitBlocks(count int) {
 
 // Run : Where there's smoke, there's fire!
 func (s *Smoke) Run() bool {
-
 	// Check that THORNode are starting with a blank set of thorchain data
 	pools := s.Thorchain.GetPools()
 	if len(pools) > 0 {

@@ -30,4 +30,3 @@ type TxInStatusItem struct {
 	TxIn   TxIn       `json:"tx_in"`
 	Status TxInStatus `json:"status"`
 }
-

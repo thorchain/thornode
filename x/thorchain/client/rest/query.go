@@ -35,6 +35,5 @@ func getHandlerWrapper(q query.Query, storeName string, cliCtx context.CLIContex
 		}
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(res)
-
 	}
 }

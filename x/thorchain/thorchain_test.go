@@ -377,7 +377,6 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 
 		versionedTxOutStoreDummy.txoutStore.ClearOutboundItems() // clear out txs
 	}
-
 }
 
 // calculate the expected coin amount taken from a original amount at nth round

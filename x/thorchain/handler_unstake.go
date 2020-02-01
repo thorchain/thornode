@@ -24,6 +24,7 @@ func NewUnstakeHandler(keeper Keeper, txOutStore VersionedTxOutStore) UnstakeHan
 		txOutStore: txOutStore,
 	}
 }
+
 func (h UnstakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgSetUnStake)
 	if !ok {

@@ -32,7 +32,6 @@ func (k *TestRefundBondKeeper) GetVault(_ sdk.Context, pk common.PubKey) (Vault,
 
 func (k *TestRefundBondKeeper) GetPool(_ sdk.Context, asset common.Asset) (Pool, error) {
 	if k.pool.Asset.Equals(asset) {
-
 		return k.pool, nil
 	}
 	return NewPool(), kaboom
@@ -42,9 +41,11 @@ func (k *TestRefundBondKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) err
 	k.na = na
 	return nil
 }
+
 func (k *TestRefundBondKeeper) UpsertEvent(_ sdk.Context, e Event) error {
 	return nil
 }
+
 func (k *TestRefundBondKeeper) SetPool(_ sdk.Context, p Pool) error {
 	if k.pool.Asset.Equals(p.Asset) {
 		k.pool = p
@@ -52,6 +53,7 @@ func (k *TestRefundBondKeeper) SetPool(_ sdk.Context, p Pool) error {
 	}
 	return kaboom
 }
+
 func (k *TestRefundBondKeeper) DeleteVault(_ sdk.Context, key common.PubKey) error {
 	if k.ygg.PubKey.Equals(key) {
 		k.ygg = NewVault(1, InactiveVault, AsgardVault, GetRandomPubKey())
@@ -144,8 +146,8 @@ func (s *HelperSuite) TestSubsidizePoolWithSlashBond(c *C) {
 	poolBTC, err = k.GetPool(ctx, common.BTCAsset)
 	c.Assert(err, IsNil)
 	c.Assert(poolBTC.BalanceRune.Equal(runeBTC), Equals, true)
-
 }
+
 func (s *HelperSuite) TestRefundBondError(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	// active node should not refund bond
@@ -191,6 +193,7 @@ func (s *HelperSuite) TestRefundBondError(c *C) {
 	_, err := keeper1.GetVault(ctx, pk)
 	c.Assert(err, NotNil)
 }
+
 func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	na := GetRandomNodeAccount(NodeActive)
@@ -229,7 +232,6 @@ func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 	c.Assert(p.BalanceRune.Equal(expectedPoolRune), Equals, true, Commentf("expect %s however we got %s", expectedPoolRune, p.BalanceRune))
 	expectedPoolBNB := sdk.NewUint(167 * common.One).Sub(sdk.NewUint(27 * common.One))
 	c.Assert(p.BalanceAsset.Equal(expectedPoolBNB), Equals, true, Commentf("expected BNB in pool %s , however we got %s", expectedPoolBNB, p.BalanceAsset))
-
 }
 
 func (s *HelperSuite) TestEnableNextPool(c *C) {
@@ -268,7 +270,7 @@ func (s *HelperSuite) TestEnableNextPool(c *C) {
 	pool.BalanceAsset = sdk.NewUint(0 * common.One)
 	c.Assert(k.SetPool(ctx, pool), IsNil)
 
-	//usdAsset
+	// usdAsset
 	usdAsset, err := common.NewAsset("BNB.TUSDB")
 	c.Assert(err, IsNil)
 	pool = NewPool()

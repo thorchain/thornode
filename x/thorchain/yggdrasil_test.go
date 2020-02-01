@@ -85,5 +85,4 @@ func (s YggdrasilSuite) TestFund(c *C) {
 	err1 := Fund(ctx, k, txOutStore, constAccessor)
 	c.Assert(err1, IsNil)
 	c.Assert(txOutStore.GetOutboundItems(), HasLen, 2)
-
 }

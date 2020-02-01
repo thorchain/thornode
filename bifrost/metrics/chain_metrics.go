@@ -91,7 +91,7 @@ func AddChainMetrics(chain string, counters map[MetricName]prometheus.Counter, c
 		"error_name", "additional",
 	})
 
-	histograms[SearchTxDuration(chain)]	= prometheus.NewHistogram(prometheus.HistogramOpts{
+	histograms[SearchTxDuration(chain)] = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: "block_scanner",
 		Subsystem: chain + "_block_scanner",
 		Name:      chain + "_search_tx_duration",

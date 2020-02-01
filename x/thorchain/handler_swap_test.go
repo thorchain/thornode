@@ -68,7 +68,6 @@ func (s *HandlerSwapSuite) TestValidate(c *C) {
 	msg = NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.ZeroUint(), GetRandomBech32Addr())
 	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
-
 }
 
 type TestSwapHandleKeeper struct {
@@ -108,10 +107,12 @@ func (k *TestSwapHandleKeeper) GetNodeAccount(_ sdk.Context, addr sdk.AccAddress
 func (k *TestSwapHandleKeeper) AddToLiquidityFees(_ sdk.Context, _ common.Asset, _ sdk.Uint) error {
 	return nil
 }
+
 func (k *TestSwapHandleKeeper) UpsertEvent(ctx sdk.Context, event Event) error {
 	k.event = append(k.event, event)
 	return nil
 }
+
 func (k *TestSwapHandleKeeper) clearEvent() {
 	k.event = nil
 }

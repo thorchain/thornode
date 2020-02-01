@@ -8,8 +8,10 @@ import (
 
 type Gas Coins
 
-var bnbSingleTxFee = sdk.NewUint(37500)
-var bnbMultiTxFee = sdk.NewUint(30000)
+var (
+	bnbSingleTxFee = sdk.NewUint(37500)
+	bnbMultiTxFee  = sdk.NewUint(30000)
+)
 
 // Gas Fees
 var BNBGasFeeSingleton = Gas{

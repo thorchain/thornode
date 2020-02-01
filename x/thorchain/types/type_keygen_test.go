@@ -55,6 +55,7 @@ func (s *KeygenSuite) TestGetKeygenID(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(txID3.Equals(txID), Equals, true)
 }
+
 func (s *KeygenSuite) TestNewKeygenBlock(c *C) {
 	kb := NewKeygenBlock(1)
 	c.Assert(kb.IsEmpty(), Equals, false)

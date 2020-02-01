@@ -42,6 +42,7 @@ func (*KeyGenTestSuite) setupKeysForTest(c *C) string {
 	kb.CloseDB()
 	return thorcliDir
 }
+
 func (kts *KeyGenTestSuite) TestNewTssKenGen(c *C) {
 	folder := kts.setupKeysForTest(c)
 	defer func() {
