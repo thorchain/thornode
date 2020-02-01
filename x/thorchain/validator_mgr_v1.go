@@ -378,6 +378,9 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		ctx.Logger().Error("can't get reserve contributors", "error", err)
 		return err
 	}
+	if len(contribs) == 0 {
+		return nil
+	}
 	vaultData, err := vm.k.GetVaultData(ctx)
 	if err != nil {
 		ctx.Logger().Error("can't get vault data", "error", err)
@@ -439,9 +442,9 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 }
 
 func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
-	active, err := vm.k.ListActiveNodeAccounts(ctx)
-	if err != nil {
-		ctx.Logger().Error("can't get active nodes", "error", err)
+	nas, err := vm.k.ListNodeAccounts(ctx)
+	if nil != err {
+		ctx.Logger().Error("can't get nodes", "error", err)
 		return err
 	}
 	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
@@ -450,26 +453,25 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 		return err
 	}
 	// nth * 10 == the amount of the bond we want to send
-	for _, na := range active {
-		if !vm.k.VaultExists(ctx, na.PubKeySet.Secp256k1) {
+	for _, na := range nas {
+		if na.Bond.IsZero() {
 			continue
 		}
-		ygg, err := vm.k.GetVault(ctx, na.PubKeySet.Secp256k1)
-		if err != nil {
-			return err
+		if vm.k.VaultExists(ctx, na.PubKeySet.Secp256k1) {
+			ygg, err := vm.k.GetVault(ctx, na.PubKeySet.Secp256k1)
+			if err != nil {
+				return err
+			}
+			if ygg.HasFunds() {
+				ctx.Logger().Info(fmt.Sprintf("skip bond refund due to remaining funds: %s", na.NodeAddress))
+				continue
+			}
 		}
-		if ygg.HasFunds() {
-			ctx.Logger().Info(fmt.Sprintf("skip bond refund due to remaining funds: %s", na.NodeAddress))
-			continue
-		}
+
 		if nth > 10 { // cap at 10
 			nth = 10
 		}
 		amt := na.Bond.MulUint64(uint64(nth)).QuoUint64(10)
-		na.Bond = common.SafeSub(na.Bond, amt)
-		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
-			return err
-		}
 
 		// refund bond
 		txOutItem := &TxOutItem{
@@ -478,11 +480,18 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
-		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
-		if err != nil {
+		ok, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		if nil != err {
 			return err
 		}
+		if !ok {
+			continue
+		}
 
+		na.Bond = common.SafeSub(na.Bond, amt)
+		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
+			return err
+		}
 	}
 
 	return nil
