@@ -21,6 +21,7 @@ const (
 	ValidatorRotateNumAfterFull
 	DesireValidatorSet
 	RotatePerBlockHeight
+	RotateRetryBlocks
 	ValidatorsChangeWindow
 	LeaveProcessPerBlockHeight
 	BadValidatorRate
@@ -49,6 +50,7 @@ var nameToString = map[ConstantName]string{
 	ValidatorRotateNumAfterFull:     "ValidatorRotateNumAfterFull",
 	DesireValidatorSet:              "DesireValidatorSet",
 	RotatePerBlockHeight:            "RotatePerBlockHeight",
+	RotateRetryBlocks:               "RotateRetryBlocks",
 	ValidatorsChangeWindow:          "ValidatorsChangeWindow",
 	LeaveProcessPerBlockHeight:      "LeaveProcessPerBlockHeight",
 	BadValidatorRate:                "BadValidatorRate",
