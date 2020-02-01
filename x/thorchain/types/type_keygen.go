@@ -83,7 +83,7 @@ func (kt KeygenType) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON convert string form back to PoolStatus
 func (kt *KeygenType) UnmarshalJSON(b []byte) error {
 	var s string
-	if err := json.Unmarshal(b, &s); nil != err {
+	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
 	*kt = GetKeygenTypeFromString(s)
@@ -104,7 +104,7 @@ func NewKeygen(height int64, members common.PubKeys, keygenType KeygenType) (Key
 		return members[i].String() < members[j].String()
 	})
 	id, err := getKeygenID(height, members, keygenType)
-	if nil != err {
+	if err != nil {
 		return Keygen{}, fmt.Errorf("fail to create new keygen: %w", err)
 	}
 	return Keygen{
@@ -124,7 +124,7 @@ func getKeygenID(height int64, members common.PubKeys, keygenType KeygenType) (c
 	}
 	h := sha256.New()
 	_, err := h.Write([]byte(sb.String()))
-	if nil != err {
+	if err != nil {
 		return "", fmt.Errorf("fail to write to hash: %w", err)
 	}
 

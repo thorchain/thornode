@@ -128,7 +128,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		ctx.Logger().Error("Fail to begin block on validator", "error", err)
 	}
 	txStore, err := am.txOutStore.GetTxOutStore(am.keeper, version)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return
 	}
@@ -146,7 +146,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		return nil
 	}
 	txStore, err := am.txOutStore.GetTxOutStore(am.keeper, version)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return nil
 	}
@@ -173,11 +173,11 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	}
 
 	// update vault data to account for block rewards and reward units
-	if err := am.keeper.UpdateVaultData(ctx, constantValues); nil != err {
+	if err := am.keeper.UpdateVaultData(ctx, constantValues); err != nil {
 		ctx.Logger().Error("fail to save vault", "error", err)
 	}
 	vaultMgr, err := am.versionedVaultManager.GetVaultManager(ctx, am.keeper, version)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get a valid vault manager", "error", err)
 		return nil
 	}

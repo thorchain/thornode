@@ -33,11 +33,11 @@ func NewKeys(chainHomeFolder, signerName, password string) (*Keys, error) {
 		return nil, fmt.Errorf("password is empty")
 	}
 	kb, err := getKeybase(chainHomeFolder)
-	if nil != err {
+	if err != nil {
 		return nil, fmt.Errorf("fail to get keybase,err:%w", err)
 	}
 	signerInfo, err := kb.Get(signerName)
-	if nil != err {
+	if err != nil {
 		return nil, fmt.Errorf("fail to get signer info,err:%w", err)
 	}
 	return &Keys{
@@ -54,7 +54,7 @@ func getKeybase(thorchainHome string) (ckeys.Keybase, error) {
 	cliDir := thorchainHome
 	if len(thorchainHome) == 0 {
 		usr, err := user.Current()
-		if nil != err {
+		if err != nil {
 			return nil, fmt.Errorf("fail to get current user,err:%w", err)
 		}
 		cliDir = filepath.Join(usr.HomeDir, thorchainCliFolderName)

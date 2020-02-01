@@ -36,7 +36,7 @@ func newValidatorMgrV1(k Keeper, versionedTxOutStore VersionedTxOutStore, versio
 func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	height := ctx.BlockHeight()
 	if height == genesisBlockHeight {
-		if err := vm.setupValidatorNodes(ctx, height, constAccessor); nil != err {
+		if err := vm.setupValidatorNodes(ctx, height, constAccessor); err != nil {
 			ctx.Logger().Error("fail to setup validator nodes", "error", err)
 		}
 	}
@@ -45,7 +45,7 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 		return nil
 	}
 	vaultMgr, err := vm.versionedVaultManager.GetVaultManager(ctx, vm.k, vm.version)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get a valid vault: %w", err)
 	}
 	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
@@ -104,7 +104,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	}
 
 	newNodes, removedNodes, err := vm.getChangedNodes(ctx, activeNodes)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get node changes", "error", err)
 		return nil
 	}
@@ -136,7 +136,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 			ctx.Logger().Error("fail to save node account", "error", err)
 		}
 		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
-		if nil != err {
+		if err != nil {
 			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey, "error", err)
 			continue
 		}
@@ -162,11 +162,11 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 			ctx.Logger().Error("fail to save node account", "error", err)
 		}
 
-		if err := vm.payNodeAccountBondAward(ctx, na); nil != err {
+		if err := vm.payNodeAccountBondAward(ctx, na); err != nil {
 			ctx.Logger().Error("fail to pay node account bond award", "error", err)
 		}
 		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
-		if nil != err {
+		if err != nil {
 			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey, "error", err)
 			continue
 		}
@@ -238,7 +238,7 @@ func (vm *validatorMgrV1) payNodeAccountBondAward(ctx sdk.Context, na NodeAccoun
 	// The node account seems to have become a non active node account.
 	// Therefore, lets give them their bond rewards.
 	vault, err := vm.k.GetVaultData(ctx)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get vault: %w", err)
 	}
 
@@ -263,7 +263,7 @@ func (vm *validatorMgrV1) payNodeAccountBondAward(ctx sdk.Context, na NodeAccoun
 		sdk.NewUint(uint64(totalActiveBlocks)),
 	)
 
-	if err := vm.k.SetVaultData(ctx, vault); nil != err {
+	if err := vm.k.SetVaultData(ctx, vault); err != nil {
 		return fmt.Errorf("fail to save vault data: %w", err)
 	}
 	na.ActiveBlockHeight = 0
@@ -283,7 +283,7 @@ func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, activeNodes NodeAccou
 	if ragnarokHeight == 0 {
 		ragnarokHeight = ctx.BlockHeight()
 		vm.k.SetRagnarokBlockHeight(ctx, ragnarokHeight)
-		if err := vm.ragnarokProtocolStage1(ctx, activeNodes); nil != err {
+		if err := vm.ragnarokProtocolStage1(ctx, activeNodes); err != nil {
 			return fmt.Errorf("fail to execute ragnarok protocol step 1: %w", err)
 		}
 		if err := vm.ragnarokBondReward(ctx); err != nil {
@@ -351,17 +351,17 @@ func (vm *validatorMgrV1) ragnarokBondReward(ctx sdk.Context) error {
 
 func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 	contribs, err := vm.k.GetReservesContributors(ctx)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("can't get reserve contributors", "error", err)
 		return err
 	}
 	vaultData, err := vm.k.GetVaultData(ctx)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("can't get vault data", "error", err)
 		return err
 	}
 	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
 	}
@@ -399,7 +399,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
 		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
-		if nil != err {
+		if err != nil {
 			return fmt.Errorf("fail to add outbound transaction")
 		}
 	}
@@ -417,12 +417,12 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 
 func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 	active, err := vm.k.ListActiveNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("can't get active nodes", "error", err)
 		return err
 	}
 	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
 	}
@@ -456,7 +456,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
 		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
-		if nil != err {
+		if err != nil {
 			return err
 		}
 
@@ -467,7 +467,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 
 func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("can't get active nodes", "error", err)
 		return err
 	}
@@ -498,7 +498,7 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 
 	for _, pool := range pools {
 		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
-		if nil != err {
+		if err != nil {
 			ctx.Logger().Error("fail to get pool staker", "error", err)
 			return err
 		}
@@ -540,7 +540,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 		return nil
 	}
 	ygg, err := vm.k.GetVault(ctx, node.PubKeySet.Secp256k1)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get yggdrasil: %w", err)
 	}
 	if ygg.IsAsgard() {
@@ -565,7 +565,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 		return fmt.Errorf("unable to determine asgard vault")
 	}
 	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
 		return err
 	}
@@ -586,7 +586,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 			// yggdrasil- will not set coin field here, when signer see a TxOutItem that has memo "yggdrasil-" it will query the chain
 			// and find out all the remaining assets , and fill in the field
 			_, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
-			if nil != err {
+			if err != nil {
 				return err
 			}
 		}
@@ -598,7 +598,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 func (vm *validatorMgrV1) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts) error {
 	// request every node to return fund
 	for _, na := range activeNodes {
-		if err := vm.RequestYggReturn(ctx, na); nil != err {
+		if err := vm.RequestYggReturn(ctx, na); err != nil {
 			return fmt.Errorf("fail to request yggdrasil fund back: %w", err)
 		}
 	}
@@ -618,7 +618,7 @@ func (vm *validatorMgrV1) setupValidatorNodes(ctx sdk.Context, height int64, con
 	activeCandidateNodes := NodeAccounts{}
 	for ; iter.Valid(); iter.Next() {
 		var na NodeAccount
-		if err := vm.k.Cdc().UnmarshalBinaryBare(iter.Value(), &na); nil != err {
+		if err := vm.k.Cdc().UnmarshalBinaryBare(iter.Value(), &na); err != nil {
 			return fmt.Errorf("fail to unmarshal node account, %w", err)
 		}
 		// when THORNode first start , THORNode only care about these two status
@@ -645,7 +645,7 @@ func (vm *validatorMgrV1) setupValidatorNodes(ctx sdk.Context, height int64, con
 		} else {
 			item.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
-		if err := vm.k.SetNodeAccount(ctx, item); nil != err {
+		if err := vm.k.SetNodeAccount(ctx, item); err != nil {
 			return fmt.Errorf("fail to save node account: %w", err)
 		}
 	}

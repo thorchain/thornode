@@ -44,7 +44,7 @@ func (h NoOpHandler) Validate(ctx sdk.Context, msg MsgNoOp, version semver.Versi
 }
 
 func (h NoOpHandler) ValidateV1(ctx sdk.Context, msg MsgNoOp) error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error(err.Error())
 		return err
 	}

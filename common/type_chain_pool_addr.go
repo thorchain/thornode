@@ -21,7 +21,7 @@ func NewChainPoolInfo(chain Chain, pubKey PubKey) (ChainPoolInfo, error) {
 		return EmptyChainPoolInfo, fmt.Errorf("pubkey is empty")
 	}
 	addr, err := pubKey.GetAddress(chain)
-	if nil != err {
+	if err != nil {
 		return EmptyChainPoolInfo, fmt.Errorf("fail to get address for chain %s,%w", chain, err)
 	}
 	return ChainPoolInfo{

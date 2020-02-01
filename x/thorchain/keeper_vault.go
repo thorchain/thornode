@@ -31,7 +31,7 @@ func (k KVStore) SetVault(ctx sdk.Context, vault Vault) error {
 	key := k.GetKey(ctx, prefixVaultPool, vault.PubKey.String())
 	store := ctx.KVStore(k.storeKey)
 	buf, err := k.cdc.MarshalBinaryBare(vault)
-	if nil != err {
+	if err != nil {
 		return dbError(ctx, "fail to marshal vault to binary", err)
 	}
 	if vault.IsAsgard() {
@@ -63,7 +63,7 @@ func (k KVStore) GetVault(ctx sdk.Context, pk common.PubKey) (Vault, error) {
 		return vault, fmt.Errorf("vault with pubkey(%s) doesn't exist: %w", pk, ErrVaultNotFound)
 	}
 	buf := store.Get([]byte(key))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &vault); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &vault); err != nil {
 		return vault, dbError(ctx, "fail to unmarshal vault", err)
 	}
 	if vault.PubKey.IsEmpty() {
@@ -78,7 +78,7 @@ func (k KVStore) HasValidVaultPools(ctx sdk.Context) (bool, error) {
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var vault Vault
-		if err := k.cdc.UnmarshalBinaryBare(iterator.Value(), &vault); nil != err {
+		if err := k.cdc.UnmarshalBinaryBare(iterator.Value(), &vault); err != nil {
 			return false, dbError(ctx, "fail to unmarshal vault", err)
 		}
 		if vault.HasFunds() {
@@ -96,7 +96,7 @@ func (k KVStore) getAsgardIndex(ctx sdk.Context) (common.PubKeys, error) {
 	}
 	buf := store.Get([]byte(key))
 	var pks common.PubKeys
-	if err := k.cdc.UnmarshalBinaryBare(buf, &pks); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &pks); err != nil {
 		return nil, dbError(ctx, "fail to unmarshal asgard index", err)
 	}
 	return pks, nil

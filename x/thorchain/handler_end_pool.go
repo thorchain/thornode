@@ -42,7 +42,7 @@ func (h EndPoolHandler) validate(ctx sdk.Context, msg MsgEndPool, version semver
 }
 
 func (h EndPoolHandler) validateV1(ctx sdk.Context, msg MsgEndPool) error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error(err.Error())
 		return err
 	}
@@ -66,7 +66,7 @@ func (h EndPoolHandler) handle(ctx sdk.Context, msg MsgEndPool, version semver.V
 
 func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get pool staker", "error", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}

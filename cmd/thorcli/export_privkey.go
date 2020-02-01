@@ -33,7 +33,7 @@ func runExportPrivateKey(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	priKey, err := kb.ExportPrivateKeyObject(args[0], decryptPassword)
-	if nil != err {
+	if err != nil {
 		return err
 	}
 	pk, ok := priKey.(secp256k1.PrivKeySecp256k1)

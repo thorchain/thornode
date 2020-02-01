@@ -15,7 +15,7 @@ type KeeperReserveContributors interface {
 // AddFeeToReserve add fee to reserve
 func (k KVStore) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error {
 	vault, err := k.GetVaultData(ctx)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get vault: %w", err)
 	}
 	vault.TotalReserve = vault.TotalReserve.Add(fee)
@@ -28,7 +28,7 @@ func (k KVStore) GetReservesContributors(ctx sdk.Context) (ReserveContributors, 
 	store := ctx.KVStore(k.storeKey)
 	if store.Has([]byte(key)) {
 		buf := store.Get([]byte(key))
-		if err := k.cdc.UnmarshalBinaryBare(buf, &contributors); nil != err {
+		if err := k.cdc.UnmarshalBinaryBare(buf, &contributors); err != nil {
 			return nil, dbError(ctx, "fail to unmarshal reserve contributors", err)
 		}
 	}
@@ -39,7 +39,7 @@ func (k KVStore) SetReserveContributors(ctx sdk.Context, contributors ReserveCon
 	key := k.GetKey(ctx, prefixReserves, "")
 	store := ctx.KVStore(k.storeKey)
 	buf, err := k.cdc.MarshalBinaryBare(contributors)
-	if nil != err {
+	if err != nil {
 		return dbError(ctx, "fail to marshal reserve contributors to binary", err)
 	}
 	store.Set([]byte(key), buf)

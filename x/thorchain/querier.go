@@ -78,7 +78,7 @@ func getURLFromData(data []byte) (*url.URL, error) {
 	}
 	u := &url.URL{}
 	err := u.UnmarshalBinary(data)
-	if nil != err {
+	if err != nil {
 		return nil, fmt.Errorf("fail to unmarshal url.URL: %w", err)
 	}
 	return u, nil
@@ -92,7 +92,7 @@ func queryVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), vaults)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal pubkeys response to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal response to json")
 	}
@@ -130,7 +130,7 @@ func queryVaultsAddresses(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal pubkeys response to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal response to json")
 	}
@@ -148,7 +148,7 @@ func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var vault Vault
-		if err := keeper.Cdc().UnmarshalBinaryBare(iter.Value(), &vault); nil != err {
+		if err := keeper.Cdc().UnmarshalBinaryBare(iter.Value(), &vault); err != nil {
 			ctx.Logger().Error("fail to unmarshal yggdrasil", "error", err)
 			return nil, sdk.ErrInternal("fail to unmarshal yggdrasil")
 		}
@@ -161,7 +161,7 @@ func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 		}
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal pubkeys response to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal response to json")
 	}
@@ -170,12 +170,12 @@ func queryVaultsPubkeys(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 
 func queryVaultData(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	data, err := keeper.GetVaultData(ctx)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get vault", "error", err)
 		return nil, sdk.ErrInternal("fail to get vault")
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), data)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal vault data to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal response to json")
 	}
@@ -189,7 +189,7 @@ func queryChains(ctx sdk.Context, req abci.RequestQuery, keeper Keeper) ([]byte,
 		return nil, sdk.ErrInternal("fail to get chains")
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), chains)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal current chains to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal chains to json")
 	}
@@ -246,7 +246,7 @@ func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, k
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), resp)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal current pool address to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal current pool address to json")
 	}
@@ -257,16 +257,16 @@ func queryPoolAddresses(ctx sdk.Context, path []string, req abci.RequestQuery, k
 func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	nodeAddress := path[0]
 	addr, err := sdk.AccAddressFromBech32(nodeAddress)
-	if nil != err {
+	if err != nil {
 		return nil, sdk.ErrUnknownRequest("invalid account address")
 	}
 
 	nodeAcc, err := keeper.GetNodeAccount(ctx, addr)
-	if nil != err {
+	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAcc)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal node account to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal node account to json")
 	}
@@ -275,11 +275,11 @@ func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 }
 func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	nodeAccounts, err := keeper.ListNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAccounts)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal observers to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal observers to json")
 	}
@@ -290,7 +290,7 @@ func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, ke
 // queryObservers will only return all the active accounts
 func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	activeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node account iterator")
 	}
 	var result []string
@@ -298,7 +298,7 @@ func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 		result = append(result, item.NodeAddress.String())
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), result)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal observers to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal observers to json")
 	}
@@ -309,16 +309,16 @@ func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 func queryObserver(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	observerAddr := path[0]
 	addr, err := sdk.AccAddressFromBech32(observerAddr)
-	if nil != err {
+	if err != nil {
 		return nil, sdk.ErrUnknownRequest("invalid account address")
 	}
 
 	nodeAcc, err := keeper.GetNodeAccount(ctx, addr)
-	if nil != err {
+	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node account")
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), nodeAcc)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal node account to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal node account to json")
 	}
@@ -329,17 +329,17 @@ func queryObserver(ctx sdk.Context, path []string, req abci.RequestQuery, keeper
 // queryPoolStakers
 func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	asset, err := common.NewAsset(path[0])
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get parse asset", "error", err)
 		return nil, sdk.ErrInternal("fail to parse asset")
 	}
 	ps, err := keeper.GetPoolStaker(ctx, asset)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get pool staker", "error", err)
 		return nil, sdk.ErrInternal("fail to get pool staker")
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ps)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal pool staker to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal pool staker to json")
 	}
@@ -349,18 +349,18 @@ func queryPoolStakers(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 // queryStakerPool
 func queryStakerPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	addr, err := common.NewAddress(path[0])
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to parse bnb address", "error", err)
 		return nil, sdk.ErrInternal("fail to parse bnb address")
 	}
 
 	ps, err := keeper.GetStakerPool(ctx, addr)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get staker pool", "error", err)
 		return nil, sdk.ErrInternal("fail to get staker pool")
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), ps)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal staker pool to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal staker pool to json")
 	}
@@ -387,7 +387,7 @@ func queryPool(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	}
 
 	addr, err := vault.PubKey.GetAddress(asset.Chain)
-	if nil != err {
+	if err != nil {
 		return nil, sdk.ErrInternal("fail to get chain pool address")
 	}
 
@@ -456,11 +456,11 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 	}
 
 	nodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node accounts")
 	}
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), voter.GetTx(nodeAccounts))
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal tx hash to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")
 	}
@@ -470,7 +470,7 @@ func queryTxIn(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Kee
 func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var err error
 	height, err := strconv.ParseInt(path[0], 0, 64)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to parse block height", "error", err)
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
@@ -480,14 +480,14 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 	}
 
 	keygenBlock, err := keeper.GetKeygenBlock(ctx, height)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get keygen block", "error", err)
 		return nil, sdk.ErrInternal("fail to get keygen block")
 	}
 
 	if len(path) > 1 {
 		pk, err := common.NewPubKey(path[1])
-		if nil != err {
+		if err != nil {
 			ctx.Logger().Error("fail to parse pubkey", "error", err)
 			return nil, sdk.ErrInternal("fail to parse pubkey")
 		}
@@ -502,7 +502,7 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), keygenBlock)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal keygen block to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal keygen block to json")
 	}
@@ -512,7 +512,7 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	var err error
 	height, err := strconv.ParseInt(path[0], 0, 64)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to parse block height", "error", err)
 		return nil, sdk.ErrInternal("fail to parse block height")
 	}
@@ -524,13 +524,13 @@ func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	pk := common.EmptyPubKey
 	if len(path) > 1 {
 		pk, err = common.NewPubKey(path[1])
-		if nil != err {
+		if err != nil {
 			ctx.Logger().Error("fail to parse pubkey", "error", err)
 			return nil, sdk.ErrInternal("fail to parse pubkey")
 		}
 	}
 	txs, err := keeper.GetTxOut(ctx, height)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get tx out array from key value store", "error", err)
 		return nil, sdk.ErrInternal("fail to get tx out array from key value store")
 	}
@@ -567,7 +567,7 @@ func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), QueryResTxOut{
 		Chains: out,
 	})
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal tx hash to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal tx hash to json")
 	}
@@ -617,7 +617,7 @@ func queryEventsByTxHash(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), events)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal events to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal events to json")
 	}
@@ -632,7 +632,7 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 		return nil, sdk.ErrInternal("fail to discover id number")
 	}
 	u, err := getURLFromData(req.Data)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error(err.Error())
 	}
 	es := getEventStatusFromQuery(u)
@@ -658,7 +658,7 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	}
 
 	res, err := codec.MarshalJSONIndent(keeper.Cdc(), events)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal events to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal events to json")
 	}
@@ -693,7 +693,7 @@ func queryHeights(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 		LastSignedHeight: signed,
 		Statechain:       ctx.BlockHeight(),
 	})
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal events to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal events to json")
 	}

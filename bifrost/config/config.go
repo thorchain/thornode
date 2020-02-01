@@ -12,13 +12,13 @@ import (
 )
 
 type Configuration struct {
-	Observer  ObserverConfiguration   `json:"observer" mapstructure:"observer"`
-	Signer    SignerConfiguration     `json:"signer" mapstructure:"signer"`
-	Thorchain ClientConfiguration     `json:"thorchain" mapstructure:"thorchain"`
-	Metric    MetricConfiguration     `json:"metric" mapstructure:"metric"`
-	Chains    []ChainConfigurations   `json:"chains" mapstructure:"chains"`
-	TSS       TSSConfiguration        `json:"tss" mapstructure:"tss"`
-	BackOff   BackOff                 `json:"back_off" mapstructure:"back_off"`
+	Observer  ObserverConfiguration `json:"observer" mapstructure:"observer"`
+	Signer    SignerConfiguration   `json:"signer" mapstructure:"signer"`
+	Thorchain ClientConfiguration   `json:"thorchain" mapstructure:"thorchain"`
+	Metric    MetricConfiguration   `json:"metric" mapstructure:"metric"`
+	Chains    []ChainConfigurations `json:"chains" mapstructure:"chains"`
+	TSS       TSSConfiguration      `json:"tss" mapstructure:"tss"`
+	BackOff   BackOff               `json:"back_off" mapstructure:"back_off"`
 }
 
 // ObserverConfiguration values
@@ -105,12 +105,12 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 	viper.AddConfigPath(".")
 	viper.AddConfigPath(filepath.Dir(file))
 	viper.SetConfigName(strings.TrimRight(path.Base(file), ".json"))
-	if err := viper.ReadInConfig(); nil != err {
+	if err := viper.ReadInConfig(); err != nil {
 		return nil, errors.Wrap(err, "fail to read from config file")
 	}
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
-	if err := viper.Unmarshal(&cfg); nil != err {
+	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, errors.Wrap(err, "fail to unmarshal")
 	}
 

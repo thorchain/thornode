@@ -36,7 +36,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 			}
 
 			success, err := store.TryAddTxOutItem(ctx, toi)
-			if nil != err {
+			if err != nil {
 				return fmt.Errorf("fail to prepare outbund tx: %w", err)
 			}
 			if success {
@@ -117,7 +117,7 @@ func subsidizePoolWithSlashBond(ctx sdk.Context, keeper Keeper, ygg Vault, yggTo
 		pool.BalanceRune = pool.BalanceRune.Add(f.subsidiseRune)
 		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, f.stolenAsset)
 
-		if err := keeper.SetPool(ctx, pool); nil != err {
+		if err := keeper.SetPool(ctx, pool); err != nil {
 			return fmt.Errorf("fail to save pool: %w", err)
 		}
 	}
@@ -157,7 +157,7 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 
 	// Calculate total value (in rune) the Yggdrasil pool has
 	yggRune, err := getTotalYggValueInRune(ctx, keeper, ygg)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get total ygg value in RUNE: %w", err)
 	}
 
@@ -190,16 +190,16 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 			Coin:        common.NewCoin(common.RuneAsset(), nodeAcc.Bond),
 		}
 		_, err = txOut.TryAddTxOutItem(ctx, txOutItem)
-		if nil != err {
+		if err != nil {
 			return fmt.Errorf("fail to add outbound tx: %w", err)
 		}
 		bondEvent := NewEventBond(nodeAcc.Bond, BondReturned)
 		buf, err := json.Marshal(bondEvent)
-		if nil != err {
+		if err != nil {
 			return fmt.Errorf("fail to marshal bond event: %w", err)
 		}
 		e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending)
-		if err := keeper.UpsertEvent(ctx, e); nil != err {
+		if err := keeper.UpsertEvent(ctx, e); err != nil {
 			return fmt.Errorf("fail to save bond return event: %w", err)
 		}
 	} else {
@@ -211,11 +211,11 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 	nodeAcc.Bond = sdk.ZeroUint()
 	// disable the node account
 	nodeAcc.UpdateStatus(NodeDisabled, ctx.BlockHeight())
-	if err := keeper.SetNodeAccount(ctx, nodeAcc); nil != err {
+	if err := keeper.SetNodeAccount(ctx, nodeAcc); err != nil {
 		ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", nodeAcc), "error", err)
 		return err
 	}
-	if err := subsidizePoolWithSlashBond(ctx, keeper, ygg, yggRune, slashRune); nil != err {
+	if err := subsidizePoolWithSlashBond(ctx, keeper, ygg, yggRune, slashRune); err != nil {
 		ctx.Logger().Error("fail to subsidize pool with slashed bond", "error", err)
 		return err
 	}
@@ -267,7 +267,7 @@ func isSignedByActiveNodeAccounts(ctx sdk.Context, keeper Keeper, signers []sdk.
 
 func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common.Txs, eventStatus EventStatus) error {
 	event, err := keeper.GetEvent(ctx, eventID)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get event: %w", err)
 	}
 	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
@@ -286,7 +286,7 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs, eventStatus EventStatus) error {
 	ctx.Logger().Info(fmt.Sprintf("txid(%s)", txID))
 	eventIDs, err := keeper.GetPendingEventID(ctx, txID)
-	if nil != err {
+	if err != nil {
 		if err == ErrEventNotFound {
 			ctx.Logger().Error(fmt.Sprintf("could not find the event(%s)", txID))
 			return nil
@@ -294,7 +294,7 @@ func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common
 		return fmt.Errorf("fail to get pending event id: %w", err)
 	}
 	for _, item := range eventIDs {
-		if err := updateEventStatus(ctx, keeper, item, txs, eventStatus); nil != err {
+		if err := updateEventStatus(ctx, keeper, item, txs, eventStatus); err != nil {
 			return fmt.Errorf("fail to set event(%d) to %s: %w", item, eventStatus, err)
 		}
 	}
@@ -344,7 +344,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 	}
 
 	vault, err := keeper.GetVaultData(ctx)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get vault: %w", err)
 	}
 	vault.Gas = vault.Gas.Add(tx.Tx.Gas)
@@ -385,7 +385,7 @@ func getErrMessageFromABCILog(content string) (string, error) {
 		Code      sdk.CodeType      `json:"code"`
 		Message   string            `json:"message"`
 	}
-	if err := json.Unmarshal([]byte(content), &humanReadableError); nil != err {
+	if err := json.Unmarshal([]byte(content), &humanReadableError); err != nil {
 		return "", err
 	}
 	return humanReadableError.Message, nil

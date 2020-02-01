@@ -23,7 +23,7 @@ func getHandlerWrapper(q query.Query, storeName string, cliCtx context.CLIContex
 	return func(w http.ResponseWriter, r *http.Request) {
 		param := mux.Vars(r)[restURLParam]
 		text, err := r.URL.MarshalBinary()
-		if nil != err {
+		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 			return
 		}

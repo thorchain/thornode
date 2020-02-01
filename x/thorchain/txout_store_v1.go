@@ -37,7 +37,7 @@ func (tos *TxOutStorageV1) CommitBlock(ctx sdk.Context) {
 	}
 
 	// write the tos to keeper
-	if err := tos.keeper.SetTxOut(ctx, tos.blockOut); nil != err {
+	if err := tos.keeper.SetTxOut(ctx, tos.blockOut); err != nil {
 		ctx.Logger().Error("fail to save tx out", "error", err)
 	}
 }
@@ -95,7 +95,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 
 			// collect yggdrasil pools
 			yggs, err := tos.collectYggdrasilPools(ctx, tx, toi.Chain.GetGasAsset())
-			if nil != err {
+			if err != nil {
 				return false, fmt.Errorf("fail to collect yggdrasil pool: %w", err)
 			}
 
@@ -148,7 +148,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 				runeFee = sdk.NewUint(uint64(transactionFee)) // Fee is the prescribed fee
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
-			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); nil != err {
+			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); err != nil {
 				// Add to reserve
 				ctx.Logger().Error("fail to add fee to reserve", "error", err)
 			}
@@ -173,7 +173,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			if err := tos.keeper.SetPool(ctx, pool); err != nil {        // Set Pool
 				return false, fmt.Errorf("fail to save pool: %w", err)
 			}
-			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); nil != err {
+			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); err != nil {
 				return false, fmt.Errorf("fail to add fee to reserve: %w", err)
 			}
 		}
@@ -208,7 +208,7 @@ func (tos *TxOutStorageV1) collectYggdrasilPools(ctx sdk.Context, tx ObservedTx,
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var vault Vault
-		if err := tos.keeper.Cdc().UnmarshalBinaryBare(iterator.Value(), &vault); nil != err {
+		if err := tos.keeper.Cdc().UnmarshalBinaryBare(iterator.Value(), &vault); err != nil {
 			return nil, fmt.Errorf("fail to unmarshal vault: %w", err)
 		}
 		if !vault.IsYggdrasil() {

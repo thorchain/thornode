@@ -33,7 +33,7 @@ func NewLevelDBScannerStorage(db *leveldb.DB) (*LevelDBScannerStorage, error) {
 // GetScanPos get current Scan Pos
 func (ldbss *LevelDBScannerStorage) GetScanPos() (int64, error) {
 	buf, err := ldbss.db.Get([]byte(ScanPosKey), nil)
-	if nil != err {
+	if err != nil {
 		return 0, err
 	}
 	pos, _ := binary.Varint(buf)
@@ -52,10 +52,10 @@ func (ldbss *LevelDBScannerStorage) SetBlockScanStatus(block int64, status Block
 		Status: status,
 	}
 	buf, err := json.Marshal(blockStatusItem)
-	if nil != err {
+	if err != nil {
 		return errors.Wrap(err, "fail to marshal BlockStatusItem to json")
 	}
-	if err := ldbss.db.Put([]byte(getBlockStatusKey(block)), buf, nil); nil != err {
+	if err := ldbss.db.Put([]byte(getBlockStatusKey(block)), buf, nil); err != nil {
 		return errors.Wrap(err, "fail to set block scan status")
 	}
 	return nil
@@ -72,7 +72,7 @@ func (ldbss *LevelDBScannerStorage) GetBlocksForRetry(failedOnly bool) ([]int64,
 			continue
 		}
 		var blockStatusItem BlockStatusItem
-		if err := json.Unmarshal(buf, &blockStatusItem); nil != err {
+		if err := json.Unmarshal(buf, &blockStatusItem); err != nil {
 			return nil, errors.Wrap(err, "fail to unmarshal to block status item")
 		}
 		if !failedOnly {

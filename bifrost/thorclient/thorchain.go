@@ -72,7 +72,7 @@ func NewThorchainBridge(cfg config.ClientConfiguration, m *metrics.Metrics) (*Th
 		return nil, errors.New("signer password is empty")
 	}
 	k, err := NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
-	if nil != err {
+	if err != nil {
 		return nil, fmt.Errorf("fail to get keybase,err:%w", err)
 	}
 
@@ -111,7 +111,7 @@ func (b *ThorchainBridge) get(path string) ([]byte, error) {
 		return nil, errors.Wrap(err, "failed to GET from thorchain")
 	}
 	defer func() {
-		if err := resp.Body.Close(); nil != err {
+		if err := resp.Body.Close(); err != nil {
 			b.logger.Error().Err(err).Msg("failed to close response body")
 		}
 	}()
@@ -134,7 +134,7 @@ func (b *ThorchainBridge) post(path string, bodyType string, body interface{}) (
 		return nil, errors.Wrap(err, "failed to POST to thorchain")
 	}
 	defer func() {
-		if err := resp.Body.Close(); nil != err {
+		if err := resp.Body.Close(); err != nil {
 			b.logger.Error().Err(err).Msg("failed to close response body")
 		}
 	}()
@@ -169,7 +169,7 @@ func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, e
 	}
 
 	var resp types.AccountResp
-	if err := json.Unmarshal(body, &resp); nil != err {
+	if err := json.Unmarshal(body, &resp); err != nil {
 		return 0, 0, errors.Wrap(err, "failed to unmarshal account resp")
 	}
 	acc := resp.Result.Value

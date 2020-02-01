@@ -29,7 +29,7 @@ func (h StakeHandler) validate(ctx sdk.Context, msg MsgSetStakeData, version sem
 }
 
 func (h StakeHandler) validateV1(ctx sdk.Context, msg MsgSetStakeData, constAccessor constants.ConstantValues) sdk.Error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error(err.ABCILog())
 		return sdk.NewError(DefaultCodespace, CodeStakeFailValidation, err.Error())
 	}
@@ -40,7 +40,7 @@ func (h StakeHandler) validateV1(ctx sdk.Context, msg MsgSetStakeData, constAcce
 	ensureStakeLargerThanBond := constAccessor.GetBoolValue(constants.StrictBondStakeRatio)
 	// the following  only applicable for chaosnet
 	totalStakeRUNE, err := h.getTotalStakeRUNE(ctx)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get total staked RUNE", err)
 		return sdk.ErrInternal("fail to get total staked RUNE")
 	}
@@ -58,7 +58,7 @@ func (h StakeHandler) validateV1(ctx sdk.Context, msg MsgSetStakeData, constAcce
 		return nil
 	}
 	totalBondRune, err := h.getTotalBond(ctx)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get total bond RUNE", err)
 		return sdk.ErrInternal("fail to get total bond RUNE")
 	}
@@ -79,12 +79,12 @@ func (h StakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, co
 	ctx.Logger().Info("received stake request",
 		"asset", msg.Asset.String(),
 		"tx", msg.Tx)
-	if err := h.validate(ctx, msg, version, constAccessor); nil != err {
+	if err := h.validate(ctx, msg, version, constAccessor); err != nil {
 		ctx.Logger().Error("msg stake fail validation", "error", err)
 		return err.Result()
 	}
 
-	if err := h.handle(ctx, msg, version, constAccessor); nil != err {
+	if err := h.handle(ctx, msg, version, constAccessor); err != nil {
 		ctx.Logger().Error("fail to process msg stake", "error", err)
 		return err.Result()
 	}
@@ -108,7 +108,7 @@ func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semve
 			return sdk.ErrInternal(fmt.Errorf("fail to save pool to key value store: %w", err).Error())
 		}
 	}
-	if err := pool.EnsureValidPoolStatus(msg); nil != err {
+	if err := pool.EnsureValidPoolStatus(msg); err != nil {
 		ctx.Logger().Error("fail to check pool status", "error", err)
 		return sdk.NewError(DefaultCodespace, CodeInvalidPoolStatus, err.Error())
 	}
@@ -127,7 +127,7 @@ func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semve
 		return sdk.ErrUnknownRequest(fmt.Errorf("fail to process stake request: %w", err).Error())
 	}
 
-	if err := processStakeEvent(ctx, h.keeper, msg, stakeUnits, EventSuccess); nil != err {
+	if err := processStakeEvent(ctx, h.keeper, msg, stakeUnits, EventSuccess); err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to save stake event: %w", err).Error())
 	}
 
@@ -164,7 +164,7 @@ func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stak
 // getTotalBond
 func (h StakeHandler) getTotalBond(ctx sdk.Context) (sdk.Uint, error) {
 	nodeAccounts, err := h.keeper.ListNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		return sdk.ZeroUint(), err
 	}
 	total := sdk.ZeroUint()
@@ -180,7 +180,7 @@ func (h StakeHandler) getTotalBond(ctx sdk.Context) (sdk.Uint, error) {
 // getTotalStakeRUNE we have in all pools
 func (h StakeHandler) getTotalStakeRUNE(ctx sdk.Context) (sdk.Uint, error) {
 	pools, err := h.keeper.GetPools(ctx)
-	if nil != err {
+	if err != nil {
 		return sdk.ZeroUint(), fmt.Errorf("fail to get pools from data store: %w", err)
 	}
 	total := sdk.ZeroUint()

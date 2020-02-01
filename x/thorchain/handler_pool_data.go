@@ -44,7 +44,7 @@ func (h PoolDataHandler) Validate(ctx sdk.Context, msg MsgSetPoolData, version s
 }
 
 func (h PoolDataHandler) ValidateV1(ctx sdk.Context, msg MsgSetPoolData) error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error(err.Error())
 		return err
 	}

@@ -316,7 +316,7 @@ func ParseMemo(memo string) (Memo, error) {
 		slip := sdk.ZeroUint()
 		if len(parts) > 3 && len(parts[3]) > 0 {
 			amount, err := sdk.ParseUint(parts[3])
-			if nil != err {
+			if err != nil {
 				return noMemo, fmt.Errorf("swap price limit:%s is invalid", parts[3])
 			}
 
@@ -346,7 +346,7 @@ func ParseMemo(memo string) (Memo, error) {
 			return noMemo, fmt.Errorf("not enough parameters")
 		}
 		addr, err := sdk.AccAddressFromBech32(parts[1])
-		if nil != err {
+		if err != nil {
 			return noMemo, errors.Wrapf(err, "%s is an invalid thorchain address", parts[1])
 		}
 		return BondMemo{
