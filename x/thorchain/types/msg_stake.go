@@ -53,7 +53,6 @@ func (msg MsgSetStakeData) ValidateBasic() sdk.Error {
 		if msg.AssetAddress.IsEmpty() {
 			return sdk.ErrUnknownRequest("asset address cannot be empty")
 		}
-
 	}
 	return nil
 }

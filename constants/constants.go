@@ -10,9 +10,11 @@ import (
 	"github.com/blang/semver"
 )
 
-var int64Overrides = map[ConstantName]int64{}
-var boolOverrides = map[ConstantName]bool{}
-var stringOverrides = map[ConstantName]string{}
+var (
+	int64Overrides  = map[ConstantName]int64{}
+	boolOverrides   = map[ConstantName]bool{}
+	stringOverrides = map[ConstantName]string{}
+)
 
 // The version of this software
 var SWVersion, _ = semver.Make("0.1.0")
@@ -55,7 +57,6 @@ func NewConstantValue010() *ConstantValue010 {
 			DefaultPoolStatus: "Bootstrap",
 		},
 	}
-
 }
 
 // GetInt64Value get value in int64 type, if it doesn't exist then it will return the default value of int64, which is 0

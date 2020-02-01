@@ -41,6 +41,7 @@ func (ah AddHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ c
 		Codespace: DefaultCodespace,
 	}
 }
+
 func (ah AddHandler) validate(ctx sdk.Context, msg MsgAdd, version semver.Version) sdk.Error {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return ah.validateV1(ctx, msg)

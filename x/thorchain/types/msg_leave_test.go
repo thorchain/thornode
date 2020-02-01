@@ -13,6 +13,7 @@ var _ = Suite(&MsgLeaveSuite{})
 func (*MsgLeaveSuite) SetupSuite(c *C) {
 	SetupConfigForTest()
 }
+
 func (MsgLeaveSuite) TestMsgLeave(c *C) {
 	nodeAddr := GetRandomBech32Addr()
 	txId := GetRandomTxHash()

@@ -105,6 +105,7 @@ func (s *ThorchainBlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([]typ
 func (s *ThorchainBlockScannerStorage) SetTxOutItem(tai types.TxArrayItem, height int64) error {
 	return s.db.Put([]byte(tai.GetKey(height)), []byte{1}, nil)
 }
+
 func (s *ThorchainBlockScannerStorage) HasTxOutItem(tai types.TxArrayItem, height int64) (bool, error) {
 	return s.db.Has([]byte(tai.GetKey(height)), nil)
 }

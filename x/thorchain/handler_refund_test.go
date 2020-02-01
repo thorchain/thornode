@@ -56,30 +56,35 @@ func (k *refundTxHandlerKeeperTestHelper) GetObservedTxVoter(ctx sdk.Context, ha
 	}
 	return k.Keeper.GetObservedTxVoter(ctx, hash)
 }
+
 func (k *refundTxHandlerKeeperTestHelper) GetPendingEventID(ctx sdk.Context, hash common.TxID) ([]int64, error) {
 	if k.failGetPendingEvent {
 		return nil, kaboom
 	}
 	return k.Keeper.GetPendingEventID(ctx, hash)
 }
+
 func (k *refundTxHandlerKeeperTestHelper) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
 	if k.errGetTxOut {
 		return nil, kaboom
 	}
 	return k.Keeper.GetTxOut(ctx, height)
 }
+
 func (k *refundTxHandlerKeeperTestHelper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
 	if k.errGetNodeAccount {
 		return NodeAccount{}, kaboom
 	}
 	return k.Keeper.GetNodeAccount(ctx, addr)
 }
+
 func (k *refundTxHandlerKeeperTestHelper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
 	if k.errGetPool {
 		return NewPool(), kaboom
 	}
 	return k.Keeper.GetPool(ctx, asset)
 }
+
 func (k *refundTxHandlerKeeperTestHelper) SetPool(ctx sdk.Context, pool Pool) error {
 	if k.errSetPool {
 		return kaboom
@@ -93,12 +98,14 @@ func (k *refundTxHandlerKeeperTestHelper) SetNodeAccount(ctx sdk.Context, na Nod
 	}
 	return k.Keeper.SetNodeAccount(ctx, na)
 }
+
 func (k *refundTxHandlerKeeperTestHelper) GetVaultData(ctx sdk.Context) (VaultData, error) {
 	if k.errGetVaultData {
 		return VaultData{}, kaboom
 	}
 	return k.Keeper.GetVaultData(ctx)
 }
+
 func (k *refundTxHandlerKeeperTestHelper) SetVaultData(ctx sdk.Context, data VaultData) error {
 	if k.errSetVaultData {
 		return kaboom

@@ -111,6 +111,7 @@ func (b *CommonBlockScanner) retryFailedBlocks() {
 		}
 	}
 }
+
 func (b *CommonBlockScanner) retryBlocks(failedonly bool) {
 	// start up to grab those blocks that we didn't finished
 	blocks, err := b.scannerStorage.GetBlocksForRetry(failedonly)

@@ -55,11 +55,9 @@ func (h PoolDataHandler) ValidateV1(ctx sdk.Context, msg MsgSetPoolData) error {
 	}
 
 	return nil
-
 }
 
 func (h PoolDataHandler) Handle(ctx sdk.Context, msg MsgSetPoolData, version semver.Version) error {
-
 	ctx.Logger().Info("handleMsgSetPoolData request", "Asset:", msg.Asset.String())
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.HandleV1(ctx, msg)

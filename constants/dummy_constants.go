@@ -14,6 +14,7 @@ func NewDummyConstants(int64Values map[ConstantName]int64, boolValues map[Consta
 		stringValues: stringValues,
 	}
 }
+
 func (dc *DummyConstants) GetInt64Value(name ConstantName) int64 {
 	v, ok := dc.int64values[name]
 	if !ok {
@@ -37,6 +38,7 @@ func (dc *DummyConstants) GetStringValue(name ConstantName) string {
 	}
 	return v
 }
+
 func (dc *DummyConstants) String() string {
 	return ""
 }

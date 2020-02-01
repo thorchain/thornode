@@ -221,7 +221,6 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 	}
 	// delete the ygg vault, there is nothing left in the ygg vault
 	return keeper.DeleteVault(ctx, ygg.PubKey)
-
 }
 
 // Checks if the observed vault pubkey is a valid asgard or ygg vault
@@ -235,7 +234,6 @@ func isSignedByActiveObserver(ctx sdk.Context, keeper Keeper, signers []sdk.AccA
 		return false
 	}
 	for _, signer := range signers {
-
 		if !keeper.IsActiveObserver(ctx, signer) {
 			return false
 		}
@@ -379,6 +377,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 
 	return nil
 }
+
 func getErrMessageFromABCILog(content string) (string, error) {
 	var humanReadableError struct {
 		Codespace sdk.CodespaceType `json:"codespace"`

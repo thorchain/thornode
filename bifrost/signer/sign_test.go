@@ -19,7 +19,7 @@ var _ = Suite(&SignSuite{})
 
 type MockChainClient struct {
 	baseAccount types.BaseAccount
-}	
+}
 
 func (b *MockChainClient) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error) {
 	return nil, nil, nil

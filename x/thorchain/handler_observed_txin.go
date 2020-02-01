@@ -95,7 +95,6 @@ func (h ObservedTxInHandler) signedByNewObserver(ctx sdk.Context, addr sdk.AccAd
 		return true, nil
 	}
 	return false, fmt.Errorf("fail to save node account(%s): %w", addr, err)
-
 }
 
 func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) sdk.Result {

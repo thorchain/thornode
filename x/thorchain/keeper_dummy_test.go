@@ -25,6 +25,7 @@ func (k KVStoreDummy) CoinKeeper() bank.Keeper { return bank.BaseKeeper{} }
 func (k KVStoreDummy) Logger(ctx sdk.Context) log.Logger {
 	return ctx.Logger().With("module", fmt.Sprintf("x/%s", ModuleName))
 }
+
 func (k KVStoreDummy) GetKey(_ sdk.Context, prefix dbPrefix, key string) string {
 	return fmt.Sprintf("%s/1/%s", prefix, key)
 }
@@ -32,12 +33,15 @@ func (k KVStoreDummy) SetLastSignedHeight(_ sdk.Context, _ int64) { return }
 func (k KVStoreDummy) GetLastSignedHeight(_ sdk.Context) (int64, error) {
 	return 0, kaboom
 }
+
 func (k KVStoreDummy) SetLastChainHeight(_ sdk.Context, _ common.Chain, _ int64) error {
 	return kaboom
 }
+
 func (k KVStoreDummy) GetLastChainHeight(_ sdk.Context, _ common.Chain) (int64, error) {
 	return 0, kaboom
 }
+
 func (k KVStoreDummy) GetRagnarokBlockHeight(_ sdk.Context) (int64, error) {
 	return 0, kaboom
 }
@@ -46,6 +50,7 @@ func (k KVStoreDummy) RagnarokInProgress(_ sdk.Context) bool         { return fa
 func (k KVStoreDummy) GetPoolBalances(_ sdk.Context, _, _ common.Asset) (sdk.Uint, sdk.Uint) {
 	return sdk.ZeroUint(), sdk.ZeroUint()
 }
+
 func (k KVStoreDummy) GetPoolIterator(_ sdk.Context) sdk.Iterator {
 	return nil
 }
@@ -78,6 +83,7 @@ func (k KVStoreDummy) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) { re
 func (k KVStoreDummy) ListNodeAccountsByStatus(_ sdk.Context, _ NodeStatus) (NodeAccounts, error) {
 	return nil, kaboom
 }
+
 func (k KVStoreDummy) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
 	return nil, kaboom
 }
@@ -86,9 +92,11 @@ func (k KVStoreDummy) GetMinJoinVersion(_ sdk.Context) semver.Version      { ret
 func (k KVStoreDummy) GetNodeAccount(_ sdk.Context, _ sdk.AccAddress) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
+
 func (k KVStoreDummy) GetNodeAccountByPubKey(_ sdk.Context, _ common.PubKey) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
+
 func (k KVStoreDummy) GetNodeAccountByBondAddress(_ sdk.Context, _ common.Address) (NodeAccount, error) {
 	return NodeAccount{}, kaboom
 }
@@ -127,9 +135,11 @@ func (k KVStoreDummy) GetTxOutIterator(_ sdk.Context) sdk.Iterator       { retur
 func (k KVStoreDummy) AddToLiquidityFees(_ sdk.Context, _ common.Asset, _ sdk.Uint) error {
 	return kaboom
 }
+
 func (k KVStoreDummy) GetTotalLiquidityFees(_ sdk.Context, _ uint64) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
+
 func (k KVStoreDummy) GetPoolLiquidityFees(_ sdk.Context, _ uint64, _ common.Asset) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
@@ -140,6 +150,7 @@ func (k KVStoreDummy) UpsertEvent(_ sdk.Context, _ Event) error       { return k
 func (k KVStoreDummy) GetPendingEventID(_ sdk.Context, _ common.TxID) ([]int64, error) {
 	return nil, kaboom
 }
+
 func (k KVStoreDummy) GetEventsIDByTxHash(ctx sdk.Context, txID common.TxID) ([]int64, error) {
 	return nil, kaboom
 }
@@ -166,6 +177,7 @@ func (k KVStoreDummy) DeleteVault(_ sdk.Context, _ common.PubKey) error { return
 func (k KVStoreDummy) GetReservesContributors(_ sdk.Context) (ReserveContributors, error) {
 	return nil, kaboom
 }
+
 func (k KVStoreDummy) SetReserveContributors(_ sdk.Context, _ ReserveContributors) error {
 	return kaboom
 }

@@ -55,5 +55,4 @@ func (mpa *MockPoolAddressValidator) IsValidPoolAddress(addr string, chain commo
 		return matchNext, cpi
 	}
 	return false, common.EmptyChainPoolInfo
-
 }

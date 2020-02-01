@@ -60,7 +60,6 @@ func (ldbss *BinanceBlockScannerStorage) SetTxInStatus(txIn types.TxIn, status t
 // RemoveTxIn remove the given txin from the store
 func (ldbss *BinanceBlockScannerStorage) RemoveTxIn(txin types.TxIn) error {
 	return ldbss.db.Delete([]byte(getTxInStatusKey(txin.BlockHeight)), nil)
-
 }
 
 // GetTxInForRetry retrieve all txin that had been failed before to retry

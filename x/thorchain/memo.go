@@ -12,8 +12,10 @@ import (
 
 // TXTYPE:STATE1:STATE2:STATE3:FINALMEMO
 
-type TxType uint8
-type adminType uint8
+type (
+	TxType    uint8
+	adminType uint8
+)
 
 const (
 	txUnknown TxType = iota
@@ -337,7 +339,6 @@ func ParseMemo(memo string) (Memo, error) {
 	case txRefund:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("not enough parameters")
-
 		}
 		txID, err := common.NewTxID(parts[1])
 		return NewRefundMemo(txID), err

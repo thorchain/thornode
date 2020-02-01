@@ -48,11 +48,13 @@ const (
 	CodeEmptyChain            sdk.CodeType = 138
 )
 
-var notAuthorized = fmt.Errorf("not authorized")
-var errInvalidVersion = fmt.Errorf("bad version")
-var errBadVersion = sdk.NewError(DefaultCodespace, CodeBadVersion, errInvalidVersion.Error())
-var errInvalidMessage = sdk.NewError(DefaultCodespace, CodeInvalidMessage, "invalid message")
-var errConstNotAvailable = sdk.NewError(DefaultCodespace, CodeConstantsNotAvailable, "constant values not available")
+var (
+	notAuthorized        = fmt.Errorf("not authorized")
+	errInvalidVersion    = fmt.Errorf("bad version")
+	errBadVersion        = sdk.NewError(DefaultCodespace, CodeBadVersion, errInvalidVersion.Error())
+	errInvalidMessage    = sdk.NewError(DefaultCodespace, CodeInvalidMessage, "invalid message")
+	errConstNotAvailable = sdk.NewError(DefaultCodespace, CodeConstantsNotAvailable, "constant values not available")
+)
 
 // NewHandler returns a handler for "thorchain" type messages.
 func NewHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, versionedVaultManager VersionedVaultManager) sdk.Handler {

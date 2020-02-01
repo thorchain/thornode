@@ -34,7 +34,6 @@ type KeySign struct {
 
 // NewKeySign create a new instance of KeySign
 func NewKeySign(cfg config.TSSConfiguration) (*KeySign, error) {
-
 	if len(cfg.Host) == 0 {
 		return nil, errors.New("TSS host is empty")
 	}
@@ -74,6 +73,7 @@ func (s *KeySign) ExportAsPrivateKey() (string, error) {
 func (s *KeySign) ExportAsKeyStore(password string) (*keys.EncryptedKeyJSON, error) {
 	return nil, nil
 }
+
 func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string) (sig tx.StdSignature, err error) {
 	var stdSignature tx.StdSignature
 	pk, err := sdk.GetAccPubKeyBech32(poolPubKey)
@@ -97,6 +97,7 @@ func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string) (sig tx.St
 		Signature:     signPack,
 	}, nil
 }
+
 func (s *KeySign) Sign(msg tx.StdSignMsg) ([]byte, error) {
 	return nil, nil
 }
@@ -132,6 +133,7 @@ func (s *KeySign) remoteSign(msg []byte, poolPubKey string) ([]byte, error) {
 
 	return data, nil
 }
+
 func getSignature(r, s string) ([]byte, error) {
 	rBytes, err := base64.StdEncoding.DecodeString(r)
 	if err != nil {
@@ -216,5 +218,4 @@ func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string) (string, string, 
 		return "", "", errors.Wrap(err, "fail to unmarshal tss response body")
 	}
 	return keySignResp.R, keySignResp.S, nil
-
 }

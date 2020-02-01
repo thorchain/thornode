@@ -27,9 +27,11 @@ type MockStackKeeper struct {
 func (m *MockStackKeeper) PoolExist(_ sdk.Context, asset common.Asset) bool {
 	return m.currentPool.Asset.Equals(asset)
 }
+
 func (m *MockStackKeeper) GetPools(_ sdk.Context) (Pools, error) {
 	return Pools{m.currentPool}, nil
 }
+
 func (m *MockStackKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	if m.failGetPool {
 		return Pool{}, errors.New("fail to get pool")
@@ -41,6 +43,7 @@ func (m *MockStackKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	m.currentPool = pool
 	return nil
 }
+
 func (m *MockStackKeeper) ListNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
 	return NodeAccounts{m.activeNodeAccount}, nil
 }
@@ -181,6 +184,7 @@ func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 	result = stakeHandler.Run(ctx, msgSetStake, semver.Version{}, constAccessor)
 	c.Assert(result.Code, Equals, CodeBadVersion)
 }
+
 func (HandlerStakeSuite) TestStakeHandlerValidation(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)
@@ -244,6 +248,7 @@ func (HandlerStakeSuite) TestStakeHandlerValidation(c *C) {
 		c.Assert(result.Code, Equals, item.expectedResult, Commentf(item.name))
 	}
 }
+
 func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)

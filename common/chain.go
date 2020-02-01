@@ -28,7 +28,6 @@ type Chains []Chain
 
 // NewChain create a new Chain and default the siging_algo to Secp256k1
 func NewChain(chain string) (Chain, error) {
-
 	if len(chain) < 3 {
 		return EmptyChain, fmt.Errorf("chain error: not enough characters")
 	}

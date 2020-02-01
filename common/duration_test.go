@@ -20,8 +20,8 @@ func (DurationTestSuit) TestDuration(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(result, NotNil)
 	c.Assert(string(result), Equals, `"1s"`)
-
 }
+
 func (DurationTestSuit) TestUnmarshal(c *C) {
 	inputs := []struct {
 		duration       string

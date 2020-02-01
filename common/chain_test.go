@@ -37,5 +37,4 @@ func (s ChainSuite) TestChain(c *C) {
 
 	c.Assert(BNBChain.AddressPrefix(TestNet), Equals, btypes.TestNetwork.Bech32Prefixes())
 	c.Assert(BNBChain.AddressPrefix(MainNet), Equals, btypes.ProdNetwork.Bech32Prefixes())
-
 }
