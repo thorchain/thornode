@@ -1,5 +1,4 @@
 #!/bin/sh
-set -ex
 
 source $(dirname "$0")/core.sh
 
@@ -41,16 +40,16 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
         # set node keys
         echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --node tcp://$PEER:26657 --from $SIGNER_NAME --yes
     elif [[ "$NET" == "testnet" ]]; then
-        # create a binance wallet and bond/register
-        echo "I am in ${NET} environment"
+        # create a binance wallet
         gen_bnb_address
         ADDRESS=$(cat ~/.bond/address.txt)
 
-        # wait for bond transaction and for node account to be created
+        # wait for bond transaction and for node account to be registered
         BOND_FILE=/tmp/bonded
         while [ ! -f $BOND_KEY ]; do
             sleep 10
         done
+        # set node keys
         echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --node tcp://$PEER:26657 --from $SIGNER_NAME --yes
 
     else

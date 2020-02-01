@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 
-set -ex
-
 echo "about to start making testnet bond"
 
 INPUT=input.txt
-export BOND_WALLET=bond-wallet
+export BOND_WALLET=${THORNODE_ENV}-bond-wallet
 NODE_ACCOUNT=$(docker exec -it thor-daemon thorcli keys show thorchain -a | sed -e 's/[^A-Za-z0-9._-]//g')
 BOND_MEMO=BOND:$NODE_ACCOUNT
 FAUCET_WALLET=faucet
@@ -25,7 +23,12 @@ BOND_ADDRESS=$(tbnbcli keys list --output json | jq '.[] | select(.name | contai
 if [ -z "${BOND_ADDRESS}" ]; then
     echo "no need to delete wallet"
 else
-    echo $BOND_WALLET_PASSWORD| tbnbcli keys delete bond-wallet 2>/dev/null
+    if [ ! -z "${BOND_WALLET_PASSWORD}" ]; then
+        echo $BOND_WALLET_PASSWORD| tbnbcli keys delete bond-wallet 2>/dev/null
+    else
+        echo "please export your BOND_WALLET_PASSWORD"
+        exit 1
+    fi
 fi
 
 cat <<EOF > input.txt
@@ -42,7 +45,9 @@ done < $INPUT
 
 BOND_ADDRESS=$(tbnbcli keys list --output json | jq '.[] | select(.name | contains(env.BOND_WALLET))'.address | sed -e 's/"//g')
 
-# fund bond wallet
+##############################
+# fund bond wallet from faucet
+##############################
 if [ ! -z "${FAUCET_PASSWORD}" ]; then
     echo $FAUCET_PASSWORD | tbnbcli token multi-send \
                                 --from $FAUCET_WALLET \
@@ -55,20 +60,22 @@ else
     exit 1
 fi
 
-# make bond
+######################
+# make bond to Asgard
+#####################
 IP=$(docker-machine ip $DOCKER_SERVER)
 ASGARD=$(curl -s http://${PEER}:1317/thorchain/pool_addresses | jq '.current[]'.address | sed -e 's/"//g')
 
-echo $PASSWORD | tbnbcli send \
-                    --from $BOND_WALLET \
-                    --to $ASGARD \
-                    --amount "$BOND_AMOUNT" \
-                    --chain-id=$CHAIN_ID \
-                    --node=$TENDERMINT_NODE \
-                    --memo $BOND_MEMO \
-                    --json \
+echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
+                                --from $BOND_WALLET \
+                                --to $ASGARD \
+                                --amount "$BOND_AMOUNT" \
+                                --chain-id=$CHAIN_ID \
+                                --node=$TENDERMINT_NODE \
+                                --memo $BOND_MEMO \
+                                --json \
 
-echo "just finished making testnet bond"
+echo "just finished making bond"
 
 eval $(docker-machine env -u)
 docker-machine ssh ${DOCKER_SERVER} touch /tmp/bonded
@@ -78,12 +85,6 @@ docker-machine ssh ${DOCKER_SERVER} touch /tmp/bonded
 #############
 rm -f $INPUT
 
-# delete bond-wallet
-echo $PASSWORD | tbnbcli keys delete $BOND_WALLET
-
-
-
-
-
-
+# delete local bond-wallet
+echo ${BOND_WALLET_PASSWORD} | tbnbcli keys delete $BOND_WALLET
 
