@@ -53,7 +53,7 @@ func main() {
 
 	// load configuration file
 	cfg, err := config.LoadBiFrostConfig(*cfgFile)
-	if nil != err {
+	if err != nil {
 		log.Fatal().Err(err).Msg("fail to load config ")
 	}
 
@@ -62,7 +62,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create metric instance")
 	}
-	if err := m.Start(); nil != err {
+	if err := m.Start(); err != nil {
 		log.Fatal().Err(err).Msg("fail to start metric collector")
 	}
 
@@ -71,16 +71,16 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create new thorchain bridge")
 	}
-	if err := thorchainBridge.EnsureNodeWhitelistedWithTimeout(); nil != err {
+	if err := thorchainBridge.EnsureNodeWhitelistedWithTimeout(); err != nil {
 		log.Fatal().Err(err).Msg("node account is not whitelisted, can't start")
 	}
 
 	// PubKey Manager
 	pubkeyMgr, err := pubkeymanager.NewPubKeyManager(cfg.Thorchain.ChainHost, m)
-	if nil != err {
+	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create pubkey manager")
 	}
-	if err := pubkeyMgr.Start(); nil != err {
+	if err := pubkeyMgr.Start(); err != nil {
 		log.Fatal().Err(err).Msg("fail to start pubkey manager")
 	}
 
@@ -90,27 +90,32 @@ func main() {
 		log.Fatal().Err(err).Msg("fail to load keys")
 	}
 
+	if len(cfg.Chains) == 0 {
+		log.Fatal().Err(err).Msg("missing chains")
+		return
+	}
 	// create binance client
-	bnb, err := binance.NewBinance(thorKeys, cfg.Binance, cfg.TSS)
+	bnb, err := binance.NewBinance(thorKeys, cfg.Chains[0].RPCHost, cfg.TSS)
+	log.Info().Msgf("RPCHost binance %s", cfg.Chains[0].RPCHost)
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create binance client")
 	}
 
 	// start observer
 	obs, err := observer.NewObserver(cfg.Observer, thorchainBridge, pubkeyMgr, bnb, m)
-	if nil != err {
+	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create observer")
 	}
-	if err := obs.Start(); nil != err {
+	if err := obs.Start(); err != nil {
 		log.Fatal().Err(err).Msg("fail to start observer")
 	}
 
 	// start signer
 	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, pubkeyMgr, cfg.TSS, bnb, m)
-	if nil != err {
+	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create instance of signer")
 	}
-	if err := sign.Start(); nil != err {
+	if err := sign.Start(); err != nil {
 		log.Fatal().Err(err).Msg("fail to start signer")
 	}
 
@@ -121,12 +126,12 @@ func main() {
 	log.Info().Msg("stop signal received")
 
 	// stop observer
-	if err := obs.Stop(); nil != err {
+	if err := obs.Stop(); err != nil {
 		log.Fatal().Err(err).Msg("fail to stop observer")
 	}
 
 	// stop signer
-	if err := sign.Stop(); nil != err {
+	if err := sign.Stop(); err != nil {
 		log.Fatal().Err(err).Msg("fail to stop signer")
 	}
 }

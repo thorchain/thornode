@@ -33,7 +33,6 @@ import (
 // Binance is a structure to sign and broadcast tx to binance chain used by signer mostly
 type Binance struct {
 	logger             zerolog.Logger
-	cfg                config.BinanceConfiguration
 	RPCHost            string
 	chainID            string
 	IsTestNet          bool
@@ -47,8 +46,9 @@ type Binance struct {
 }
 
 // NewBinance create new instance of binance client
-func NewBinance(thorKeys *thorclient.Keys, cfg config.BinanceConfiguration, keySignCfg config.TSSConfiguration) (*Binance, error) {
-	if len(cfg.RPCHost) == 0 {
+func NewBinance(thorKeys *thorclient.Keys, rpcHost string, keySignCfg config.TSSConfiguration) (*Binance, error) {
+	log.Info().Msgf("RPCHost binance %s", rpcHost)
+	if len(rpcHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
 	tssKm, err := tss.NewKeySign(keySignCfg)
@@ -72,14 +72,12 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.BinanceConfiguration, keyS
 		pubkey:  pk,
 	}
 
-	rpcHost := cfg.RPCHost
 	if !strings.HasPrefix(rpcHost, "http") {
 		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
 
 	bnb := &Binance{
 		logger:          log.With().Str("module", "binance").Logger(),
-		cfg:             cfg,
 		RPCHost:         rpcHost,
 		client:          &http.Client{},
 		signLock:        &sync.Mutex{},

@@ -31,9 +31,11 @@ echo "{
     \"metric\": {
         \"enabled\": true
     },
-    \"binance\": {
+    \"chains\": [
+      {
         \"rpc_host\": \"$BINANCE_HOST\"
-    },
+      }
+    ],
     \"tss\": {
         \"scheme\": \"$TSS_SCHEME\",
         \"host\": \"$TSS_HOST\",
