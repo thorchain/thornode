@@ -36,6 +36,7 @@ const (
 
 	BondPaid     = types.BondPaid
 	BondReturned = types.BondReturned
+	AsgardKeygen = types.AsgardKeygen
 )
 
 var (
@@ -53,7 +54,8 @@ var (
 	NewMsgSetStakeData             = types.NewMsgSetStakeData
 	NewMsgSetUnStake               = types.NewMsgSetUnStake
 	NewMsgSwap                     = types.NewMsgSwap
-	NewKeygens                     = types.NewKeygens
+	NewKeygen                      = types.NewKeygen
+	NewKeygenBlock                 = types.NewKeygenBlock
 	NewMsgSetNodeKeys              = types.NewMsgSetNodeKeys
 	NewTxOut                       = types.NewTxOut
 	NewEvent                       = types.NewEvent
@@ -136,7 +138,8 @@ type (
 	TssVoter                    = types.TssVoter
 	TxOutItem                   = types.TxOutItem
 	TxOut                       = types.TxOut
-	Keygens                     = types.Keygens
+	Keygen                      = types.Keygen
+	KeygenBlock                 = types.KeygenBlock
 	StakerPoolItem              = types.StakerPoolItem
 	StakeTxDetail               = types.StakeTxDetail
 	Event                       = types.Event

@@ -68,7 +68,7 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 		pubkeyMgr.AddPubKey(item, true)
 	}
 	if na.PubKeySet.Secp256k1.IsEmpty() {
-		return nil, fmt.Errorf("Unable to find pubkey for this node account.Exiting...")
+		return nil, fmt.Errorf("unable to find pubkey for this node account. Exiting...")
 	}
 	pubkeyMgr.AddPubKey(na.PubKeySet.Secp256k1, true)
 
@@ -110,7 +110,7 @@ func (s *Signer) Start() error {
 	go s.retryFailedTxOutProcessor()
 
 	s.wg.Add(1)
-	go s.processKeygen(s.thorchainBlockScanner.GetKeygenMessages(), 1)
+	go s.processKeygen(s.thorchainBlockScanner.GetKeygenMessages())
 
 	return s.thorchainBlockScanner.Start()
 }
@@ -229,45 +229,41 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 	}
 }
 
-func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
-	s.logger.Info().Int("idx", idx).Msg("start to process keygen")
-	defer s.logger.Info().Int("idx", idx).Msg("stop to process keygen")
+func (s *Signer) processKeygen(ch <-chan ttypes.KeygenBlock) {
+	s.logger.Info().Msg("start to process keygen")
+	defer s.logger.Info().Msg("stop to process keygen")
 	defer s.wg.Done()
 	for {
 		select {
 		case <-s.stopChan:
 			return
-		case keygens, more := <-ch:
+		case keygenBlock, more := <-ch:
 			if !more {
 				return
 			}
-			for _, keygen := range keygens.Keygens {
-				s.logger.Info().Msgf("Received a keygen of %+v from the Thorchain", keygens)
-
+			s.logger.Info().Msgf("Received a keygen block %+v from the Thorchain", keygenBlock)
+			for _, keygenReq := range keygenBlock.Keygens {
 				// Add pubkeys to pubkey manager for monitoring...
-				for _, pk := range keygen {
+				// each member might become a yggdrasil pool
+				for _, pk := range keygenReq.Members {
 					s.pubkeyMgr.AddPubKey(pk, false)
 				}
 
-				pubKey, blame, err := s.tssKeygen.GenerateNewKey(keygen)
+				pubKey, blame, err := s.tssKeygen.GenerateNewKey(keygenReq.Members)
 				if !blame.IsEmpty() {
-					err := fmt.Errorf("Reason: %s. Nodes %+v", blame.FailReason, blame.BlameNodes)
+					err := fmt.Errorf("reason: %s, nodes %+v", blame.FailReason, blame.BlameNodes)
 					s.logger.Error().Err(err).Msg("Blame")
 				}
 
 				if err != nil {
 					s.errCounter.WithLabelValues("fail_to_keygen_pubkey", "").Inc()
 					s.logger.Error().Err(err).Msg("fail to generate new pubkey")
-					continue
+				}
+				if !pubKey.Secp256k1.IsEmpty() {
+					s.pubkeyMgr.AddPubKey(pubKey.Secp256k1, true)
 				}
 
-				if pubKey.IsEmpty() {
-					continue
-				}
-
-				s.pubkeyMgr.AddPubKey(pubKey.Secp256k1, true)
-
-				if err := s.sendKeygenToThorchain(keygens.Height, pubKey.Secp256k1, blame, keygen); err != nil {
+				if err := s.sendKeygenToThorchain(keygenBlock.Height, pubKey.Secp256k1, blame, keygenReq.Members, keygenReq.Type); err != nil {
 					s.errCounter.WithLabelValues("fail_to_broadcast_keygen", "").Inc()
 					s.logger.Error().Err(err).Msg("fail to broadcast keygen")
 				}
@@ -277,8 +273,8 @@ func (s *Signer) processKeygen(ch <-chan types.Keygens, idx int) {
 	}
 }
 
-func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame common.Blame, input common.PubKeys) error {
-	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, blame, input)
+func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame common.Blame, input common.PubKeys, keygenType ttypes.KeygenType) error {
+	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, blame, input, keygenType, height)
 	strHeight := strconv.FormatInt(height, 10)
 	if nil != err {
 		s.errCounter.WithLabelValues("fail_to_sign", strHeight).Inc()

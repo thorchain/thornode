@@ -4,23 +4,21 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/pkg/errors"
-	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
-// GetKeygens retrieves keygens from this block height from thorchain
-func (b *ThorchainBridge) GetKeygens(blockHeight int64, pk string) (*types.Keygens, error) {
+// GetKeygen retrieves keygen request for the given block height from thorchain
+func (b *ThorchainBridge) GetKeygenBlock(blockHeight int64, pk string) (*types.KeygenBlock, error) {
 	url := fmt.Sprintf("%s/%d/%s", KeygenEndpoint, blockHeight, pk)
 	body, err := b.get(url)
-
 	if err != nil {
-		b.errCounter.WithLabelValues("fail_get_keygens", strconv.FormatInt(blockHeight, 10)).Inc()
-		return &types.Keygens{}, errors.Wrap(err, "failed to get keygens from a block height")
+		b.errCounter.WithLabelValues("fail_get_keygen", strconv.FormatInt(blockHeight, 10)).Inc()
+		return nil, fmt.Errorf("failed to get keygen for a block height: %w", err)
 	}
-	var keygens types.Keygens
-	if err := b.cdc.UnmarshalJSON(body, &keygens); err != nil {
-		b.errCounter.WithLabelValues("fail_unmarshal_keygens", strconv.FormatInt(blockHeight, 10)).Inc()
-		return &types.Keygens{}, errors.Wrap(err, "failed to unmarshal Keygens")
+	var keygen types.KeygenBlock
+	if err := b.cdc.UnmarshalJSON(body, &keygen); err != nil {
+		b.errCounter.WithLabelValues("fail_unmarshal_keygen", strconv.FormatInt(blockHeight, 10)).Inc()
+		return nil, fmt.Errorf("failed to unmarshal Keygen: %w", err)
 	}
-	return &keygens, nil
+	return &keygen, nil
 }

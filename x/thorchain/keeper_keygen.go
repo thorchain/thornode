@@ -7,37 +7,40 @@ import (
 )
 
 type KeeperKeygen interface {
-	SetKeygens(ctx sdk.Context, blockOut Keygens) error
-	GetKeygensIterator(ctx sdk.Context) sdk.Iterator
-	GetKeygens(ctx sdk.Context, height int64) (Keygens, error)
+	SetKeygenBlock(ctx sdk.Context, keygenBlock KeygenBlock) error
+	GetKeygenBlockIterator(ctx sdk.Context) sdk.Iterator
+	GetKeygenBlock(ctx sdk.Context, height int64) (KeygenBlock, error)
 }
 
-func (k KVStore) SetKeygens(ctx sdk.Context, keygens Keygens) error {
+// SetKeygenBlock save the KeygenBlock to kv store
+func (k KVStore) SetKeygenBlock(ctx sdk.Context, keygen KeygenBlock) error {
 	store := ctx.KVStore(k.storeKey)
-	key := k.GetKey(ctx, prefixKeygen, strconv.FormatInt(keygens.Height, 10))
-	buf, err := k.cdc.MarshalBinaryBare(keygens)
+	key := k.GetKey(ctx, prefixKeygen, strconv.FormatInt(keygen.Height, 10))
+	buf, err := k.cdc.MarshalBinaryBare(keygen)
 	if nil != err {
-		return dbError(ctx, "fail to marshal keygens", err)
+		return dbError(ctx, "fail to marshal keygen block", err)
 	}
 	store.Set([]byte(key), buf)
 	return nil
 }
 
-func (k KVStore) GetKeygensIterator(ctx sdk.Context) sdk.Iterator {
+// GetKeygenBlockIterator return an iterator
+func (k KVStore) GetKeygenBlockIterator(ctx sdk.Context) sdk.Iterator {
 	store := ctx.KVStore(k.storeKey)
 	return sdk.KVStorePrefixIterator(store, []byte(prefixKeygen))
 }
 
-func (k KVStore) GetKeygens(ctx sdk.Context, height int64) (Keygens, error) {
+// GetKeygenBlock from a given height
+func (k KVStore) GetKeygenBlock(ctx sdk.Context, height int64) (KeygenBlock, error) {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixKeygen, strconv.FormatInt(height, 10))
 	if !store.Has([]byte(key)) {
-		return NewKeygens(height), nil
+		return NewKeygenBlock(height), nil
 	}
 	buf := store.Get([]byte(key))
-	var keygens Keygens
-	if err := k.cdc.UnmarshalBinaryBare(buf, &keygens); nil != err {
-		return Keygens{}, dbError(ctx, "fail to unmarshal keygens", err)
+	var keygenBlock KeygenBlock
+	if err := k.cdc.UnmarshalBinaryBare(buf, &keygenBlock); nil != err {
+		return KeygenBlock{}, dbError(ctx, "fail to unmarshal keygen block", err)
 	}
-	return keygens, nil
+	return keygenBlock, nil
 }

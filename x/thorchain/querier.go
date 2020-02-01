@@ -479,10 +479,10 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 		return nil, sdk.ErrInternal("block height not available yet")
 	}
 
-	keygens, err := keeper.GetKeygens(ctx, height)
+	keygenBlock, err := keeper.GetKeygenBlock(ctx, height)
 	if nil != err {
-		ctx.Logger().Error("fail to get keygens", "error", err)
-		return nil, sdk.ErrInternal("fail to get keygens")
+		ctx.Logger().Error("fail to get keygen block", "error", err)
+		return nil, sdk.ErrInternal("fail to get keygen block")
 	}
 
 	if len(path) > 1 {
@@ -491,22 +491,20 @@ func queryKeygen(ctx sdk.Context, path []string, req abci.RequestQuery, keeper K
 			ctx.Logger().Error("fail to parse pubkey", "error", err)
 			return nil, sdk.ErrInternal("fail to parse pubkey")
 		}
-
-		newKeygens := Keygens{
-			Height: keygens.Height,
-		}
-		for _, k := range keygens.Keygens {
-			if k.Contains(pk) {
-				newKeygens.Keygens = append(newKeygens.Keygens, k)
+		// only return those keygen contains the request pub key
+		newKeygenBlock := NewKeygenBlock(keygenBlock.Height)
+		for _, keygen := range keygenBlock.Keygens {
+			if keygen.Members.Contains(pk) {
+				newKeygenBlock.Keygens = append(newKeygenBlock.Keygens, keygen)
 			}
 		}
-		keygens = newKeygens
+		keygenBlock = newKeygenBlock
 	}
 
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), keygens)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), keygenBlock)
 	if nil != err {
-		ctx.Logger().Error("fail to marshal keygens to json", "error", err)
-		return nil, sdk.ErrInternal("fail to marshal keygens to json")
+		ctx.Logger().Error("fail to marshal keygen block to json", "error", err)
+		return nil, sdk.ErrInternal("fail to marshal keygen block to json")
 	}
 	return res, nil
 }

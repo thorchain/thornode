@@ -12,6 +12,7 @@ type TssHandler struct {
 	versionedVaultManager VersionedVaultManager
 }
 
+// NewTssHandler create a new handler to process MsgTssPool
 func NewTssHandler(keeper Keeper, versionedVaultManager VersionedVaultManager) TssHandler {
 	return TssHandler{
 		keeper:                keeper,
@@ -19,36 +20,33 @@ func NewTssHandler(keeper Keeper, versionedVaultManager VersionedVaultManager) T
 	}
 }
 
-func (h TssHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, _ constants.ConstantValues) sdk.Result {
+func (h TssHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgTssPool)
 	if !ok {
 		return errInvalidMessage.Result()
 	}
 	err := h.validate(ctx, msg, version)
 	if err != nil {
-		return sdk.ErrInternal(err.Error()).Result()
+		ctx.Logger().Error("msg_tss_pool failed validation", "error", err)
+		return err.Result()
 	}
 	return h.handle(ctx, msg, version)
 }
 
-func (h TssHandler) validate(ctx sdk.Context, msg MsgTssPool, version semver.Version) error {
+func (h TssHandler) validate(ctx sdk.Context, msg MsgTssPool, version semver.Version) sdk.Error {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.validateV1(ctx, msg)
-	} else {
-		ctx.Logger().Error(errInvalidVersion.Error())
-		return errInvalidVersion
 	}
+	return errBadVersion
 }
 
-func (h TssHandler) validateV1(ctx sdk.Context, msg MsgTssPool) error {
+func (h TssHandler) validateV1(ctx sdk.Context, msg MsgTssPool) sdk.Error {
 	if err := msg.ValidateBasic(); nil != err {
-		ctx.Logger().Error(err.Error())
 		return err
 	}
 
 	if !isSignedByActiveNodeAccounts(ctx, h.keeper, msg.GetSigners()) {
-		ctx.Logger().Error(notAuthorized.Error())
-		return notAuthorized
+		return sdk.ErrUnauthorized("not authorized")
 	}
 
 	return nil
@@ -58,10 +56,9 @@ func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Versi
 	ctx.Logger().Info("handleMsgTssPool request", "ID:", msg.ID)
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, msg, version)
-	} else {
-		ctx.Logger().Error(errInvalidVersion.Error())
-		return errBadVersion.Result()
 	}
+	return errBadVersion.Result()
+
 }
 
 // Handle a message to observe inbound tx
@@ -88,23 +85,56 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 
 	voter.Sign(msg.Signer)
 	h.keeper.SetTssVoter(ctx, voter)
+	// doesn't have consensus yet
+	if !voter.HasConsensus(active) {
+		ctx.Logger().Info("not having consensus yet, return")
+		return sdk.Result{
+			Code:      sdk.CodeOK,
+			Codespace: DefaultCodespace,
+		}
+	}
 
-	if voter.HasConensus(active) && voter.BlockHeight == 0 {
+	if voter.BlockHeight == 0 {
 		voter.BlockHeight = ctx.BlockHeight()
 		h.keeper.SetTssVoter(ctx, voter)
+		if msg.IsSuccess() {
+			vaultType := YggdrasilVault
+			if msg.KeygenType == AsgardKeygen {
+				vaultType = AsgardVault
+			}
+			vault := NewVault(ctx.BlockHeight(), ActiveVault, vaultType, voter.PoolPubKey)
+			vault.Membership = voter.PubKeys
+			if err := h.keeper.SetVault(ctx, vault); nil != err {
+				ctx.Logger().Error("fail to save vault", "error", err)
+				return sdk.ErrInternal("fail to save vault").Result()
+			}
+			vaultMgr, err := h.versionedVaultManager.GetVaultManager(ctx, h.keeper, version)
+			if nil != err {
+				ctx.Logger().Error("fail to get a valid vault manager", "error", err)
+				return sdk.ErrInternal(err.Error()).Result()
+			}
+			if err := vaultMgr.RotateVault(ctx, vault); err != nil {
+				return sdk.ErrInternal(err.Error()).Result()
+			}
+		} else {
+			constAccessor := constants.GetConstantValues(version)
+			slashPoints := constAccessor.GetInt64Value(constants.FailKeygenSlashPoints)
+			// fail to generate a new tss key let's slash the node account
+			for _, nodePubKey := range msg.Blame.BlameNodes {
+				na, err := h.keeper.GetNodeAccountByPubKey(ctx, nodePubKey)
+				if nil != err {
+					ctx.Logger().Error("fail to get node from it's pub key", "error", err, "pub key", nodePubKey.String())
+					return sdk.ErrInternal("fail to get node account").Result()
+				}
+				// 720 blocks per hour
+				na.SlashPoints += slashPoints
+				if err := h.keeper.SetNodeAccount(ctx, na); nil != err {
+					ctx.Logger().Error("fail to save node account", "error", err)
+					return sdk.ErrInternal("fail to save node account").Result()
+				}
+			}
 
-		vault := NewVault(ctx.BlockHeight(), ActiveVault, AsgardVault, voter.PoolPubKey)
-		vault.Membership = voter.PubKeys
-
-		vaultMgr, err := h.versionedVaultManager.GetVaultManager(ctx, h.keeper, version)
-		if nil != err {
-			ctx.Logger().Error("fail to get a valid vault manager", "error", err)
-			return sdk.ErrInternal(err.Error()).Result()
 		}
-		if err := vaultMgr.RotateVault(ctx, vault); err != nil {
-			return sdk.ErrInternal(err.Error()).Result()
-		}
-
 	}
 
 	return sdk.Result{
