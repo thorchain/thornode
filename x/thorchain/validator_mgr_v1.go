@@ -133,12 +133,14 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	}
 
 	// no change
+	fmt.Printf("Add: %d Remove %d\n", len(newNodes), len(removedNodes))
 	if len(newNodes) == 0 && len(removedNodes) == 0 {
 		return nil
 	}
 
 	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
 	nodesAfterChange := len(activeNodes) + len(newNodes) - len(removedNodes)
+	fmt.Printf("%d >= %d && %d < %d", len(activeNodes), minimumNodesForBFT, nodesAfterChange, minimumNodesForBFT)
 	if len(activeNodes) >= int(minimumNodesForBFT) && nodesAfterChange < int(minimumNodesForBFT) {
 		// THORNode don't have enough validators for BFT
 		fmt.Println("Starting Ragnarok....")
