@@ -292,7 +292,8 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 	// most case , there should be only one item in txOut.TxArray, but sometimes there might be more than one
 	height := txOut.Height
 	for _, item := range txOut.TxArray {
-		processed, err := s.storage.HasTxOutItem(item, height)
+		key := item.GetKey(height)
+		processed, err := s.storage.HasTxOutItem(key)
 		if err != nil {
 			return fmt.Errorf("fail to check against local level db: %w", err)
 		}
@@ -305,11 +306,17 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 			s.logger.Info().
 				Str("signer_address", s.Chain.GetAddress(item.VaultPubKey)).
 				Msg("different pool address, ignore")
+			if err := s.storage.ClearTxOutItem(key); err != nil {
+				return fmt.Errorf("fail to mark it off from local db: %w", err)
+			}
 			continue
 		}
 
 		if len(item.ToAddress) == 0 {
 			s.logger.Info().Msg("To address is empty, THORNode don't know where to send the fund , ignore")
+			if err := s.storage.ClearTxOutItem(key); err != nil {
+				return fmt.Errorf("fail to mark it off from local db: %w", err)
+			}
 			continue
 		}
 
@@ -319,15 +326,24 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 		if strings.EqualFold(out.Memo, thorchain.YggdrasilReturnMemo{}.GetType().String()) && item.Coin.IsEmpty() {
 			out, err = s.handleYggReturn(out)
 			if err != nil {
+				s.logger.Error().Err(err).Msg("failed to handle yggdrasil return")
+				if err := s.storage.ClearTxOutItem(key); err != nil {
+					return fmt.Errorf("fail to mark it off from local db: %w", err)
+				}
 				continue
 			}
 		}
 
 		err = s.signAndSendToChain(out, height)
 		if err != nil {
+			// since we failed the txn, we'll clear the local db of this record
+			// for retry later
+			if err := s.storage.ClearTxOutItem(key); err != nil {
+				return fmt.Errorf("fail to mark it off from local db: %w", err)
+			}
 			return fmt.Errorf("fail to broadcast tx to chain: %w", err)
 		}
-		if err := s.storage.SetTxOutItem(item, height); err != nil {
+		if err := s.storage.SuccessTxOutItem(key); err != nil {
 			return fmt.Errorf("fail to mark it off from local db: %w", err)
 		}
 	}

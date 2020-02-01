@@ -52,5 +52,5 @@ type ChainsTxOut struct {
 
 // GetKey will return a key we can used it to save the infor to level db
 func (tai TxArrayItem) GetKey(height int64) string {
-	return fmt.Sprintf("%d-%s-%s-%s-%s", height, tai.VaultPubKey, tai.Memo, tai.Coin, tai.ToAddress)
+	return fmt.Sprintf("%d-%s-%s-%s-%s-%s", height, tai.InHash, tai.VaultPubKey, tai.Memo, tai.Coin, tai.ToAddress)
 }
