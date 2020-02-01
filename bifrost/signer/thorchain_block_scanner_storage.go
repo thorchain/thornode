@@ -3,6 +3,7 @@ package signer
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
@@ -16,7 +17,8 @@ const DefaultSignerLevelDBFolder = `signer_data`
 
 type ThorchainBlockScannerStorage struct {
 	*blockscanner.LevelDBScannerStorage
-	db *leveldb.DB
+	mutex *sync.RWMutex
+	db    *leveldb.DB
 }
 
 // NewThorchainBlockScannerStorage create a new instance of ThorchainBlockScannerStorage
@@ -30,10 +32,11 @@ func NewThorchainBlockScannerStorage(levelDbFolder string) (*ThorchainBlockScann
 	}
 	levelDbStorage, err := blockscanner.NewLevelDBScannerStorage(db)
 	if err != nil {
-		return nil, errors.New("fail to create leven db")
+		return nil, errors.New("fail to create level db")
 	}
 	return &ThorchainBlockScannerStorage{
 		LevelDBScannerStorage: levelDbStorage,
+		mutex:                 &sync.RWMutex{},
 		db:                    db,
 	}, nil
 }
@@ -102,12 +105,30 @@ func (s *ThorchainBlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([]typ
 	return results, nil
 }
 
-func (s *ThorchainBlockScannerStorage) SetTxOutItem(tai types.TxArrayItem, height int64) error {
-	return s.db.Put([]byte(tai.GetKey(height)), []byte{1}, nil)
+func (s *ThorchainBlockScannerStorage) SuccessTxOutItem(key string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.db.Put([]byte(key), []byte{0}, nil)
 }
 
-func (s *ThorchainBlockScannerStorage) HasTxOutItem(tai types.TxArrayItem, height int64) (bool, error) {
-	return s.db.Has([]byte(tai.GetKey(height)), nil)
+func (s *ThorchainBlockScannerStorage) ClearTxOutItem(key string) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	return s.db.Delete([]byte(key), nil)
+}
+
+func (s *ThorchainBlockScannerStorage) HasTxOutItem(key string) (bool, error) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+	ok, err := s.db.Has([]byte(key), nil)
+	if err != nil {
+		return false, err
+	}
+	if ok {
+		return true, nil
+	}
+	// mark as pending (2)
+	return false, s.db.Put([]byte(key), []byte{2}, nil)
 }
 
 // Close underlying db
