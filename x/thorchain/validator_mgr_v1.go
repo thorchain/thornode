@@ -464,10 +464,14 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
 		fmt.Printf("Refund bond: %s %s\n", na.BondAddress, txOutItem.Coin.String())
-		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		ok, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
+		fmt.Printf("Refund Attempt: %+v\n", ok)
 		if nil != err {
 			fmt.Printf("Failed to send bond: %s\n", err)
 			return err
+		}
+		if !ok {
+			continue
 		}
 
 		na.Bond = common.SafeSub(na.Bond, amt)
