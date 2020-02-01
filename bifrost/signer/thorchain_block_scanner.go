@@ -1,6 +1,7 @@
 package signer
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
@@ -17,6 +18,7 @@ import (
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type ThorchainBlockScan struct {
@@ -24,7 +26,7 @@ type ThorchainBlockScan struct {
 	wg                 *sync.WaitGroup
 	stopChan           chan struct{}
 	txOutChan          chan types.TxOut
-	keygensChan        chan types.Keygens
+	keygenChan         chan stypes.KeygenBlock
 	cfg                config.BlockScannerConfiguration
 	scannerStorage     blockscanner.ScannerStorage
 	commonBlockScanner *blockscanner.CommonBlockScanner
@@ -52,7 +54,7 @@ func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blo
 		wg:                 &sync.WaitGroup{},
 		stopChan:           make(chan struct{}),
 		txOutChan:          make(chan types.TxOut),
-		keygensChan:        make(chan types.Keygens),
+		keygenChan:         make(chan stypes.KeygenBlock),
 		cfg:                cfg,
 		scannerStorage:     scanStorage,
 		commonBlockScanner: commonBlockScanner,
@@ -68,8 +70,8 @@ func (b *ThorchainBlockScan) GetTxOutMessages() <-chan types.TxOut {
 	return b.txOutChan
 }
 
-func (b *ThorchainBlockScan) GetKeygenMessages() <-chan types.Keygens {
-	return b.keygensChan
+func (b *ThorchainBlockScan) GetKeygenMessages() <-chan stypes.KeygenBlock {
+	return b.keygenChan
 }
 
 // Start to scan blocks
@@ -82,11 +84,11 @@ func (b *ThorchainBlockScan) Start() error {
 
 func (b *ThorchainBlockScan) processKeygenBlock(blockHeight int64) error {
 	for _, pk := range b.pubkeyMgr.GetSignPubKeys() {
-		keygens, err := b.thorchain.GetKeygens(blockHeight, pk.String())
+		keygen, err := b.thorchain.GetKeygenBlock(blockHeight, pk.String())
 		if err != nil {
-			return errors.Wrap(err, "fail to get keygens from block scanner")
+			return fmt.Errorf("fail to get keygen from thorchain: %w", err)
 		}
-		b.keygensChan <- *keygens
+		b.keygenChan <- *keygen
 	}
 	return nil
 }

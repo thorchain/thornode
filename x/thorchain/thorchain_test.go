@@ -131,21 +131,23 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	c.Assert(validatorMgr.BeginBlock(ctx, consts), IsNil)
 
 	// check we've created a keygen, with the correct members
-	keygens, err := keeper.GetKeygens(ctx, ctx.BlockHeight())
+	keygenBlock, err := keeper.GetKeygenBlock(ctx, ctx.BlockHeight())
 	c.Assert(err, IsNil)
-	c.Assert(keygens.Keygens, HasLen, 1)
+	c.Assert(keygenBlock.IsEmpty(), Equals, false)
 	expected := append(vault.Membership[1:], na.PubKeySet.Secp256k1)
+	c.Assert(keygenBlock.Keygens, HasLen, 1)
+	keygen := keygenBlock.Keygens[0]
 	// sort our slices so they are in the same order
 	sort.Slice(expected, func(i, j int) bool { return expected[i].String() < expected[j].String() })
-	sort.Slice(keygens.Keygens[0], func(i, j int) bool { return keygens.Keygens[0][i].String() < keygens.Keygens[0][j].String() })
-	c.Assert(expected, HasLen, len(keygens.Keygens[0]))
+	sort.Slice(keygen.Members, func(i, j int) bool { return keygen.Members[i].String() < keygen.Members[j].String() })
+	c.Assert(expected, HasLen, len(keygen.Members))
 	for i := range expected {
-		c.Assert(expected[i].Equals(keygens.Keygens[0][i]), Equals, true, Commentf("%d: %s <==> %s", i, expected[i], keygens.Keygens[0][i]))
+		c.Assert(expected[i].Equals(keygen.Members[i]), Equals, true, Commentf("%d: %s <==> %s", i, expected[i], keygen.Members[i]))
 	}
 
 	// generate a tss keygen handler event
 	newVaultPk := GetRandomPubKey()
-	msg := NewMsgTssPool(keygens.Keygens[0], newVaultPk, common.EmptyBlame, addresses[0])
+	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), common.EmptyBlame, addresses[0])
 	tssHandler := NewTssHandler(keeper, versionedVaultMgr)
 
 	voter := NewTssVoter(msg.ID, msg.PubKeys, msg.PoolPubKey)

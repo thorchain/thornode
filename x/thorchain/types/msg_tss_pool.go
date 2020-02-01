@@ -2,10 +2,13 @@ package types
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"sort"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -13,33 +16,40 @@ import (
 type MsgTssPool struct {
 	ID         string         `json:"id"`
 	PoolPubKey common.PubKey  `json:"pool_pub_key"`
+	KeygenType KeygenType     `json:"keygen_type"`
 	PubKeys    common.PubKeys `json:"pubkeys"`
+	Height     int64          `json:"height"`
 	Blame      common.Blame   `json:"blame"`
 	Signer     sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgTssPool is a constructor function for MsgTssPool
-func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, blame common.Blame, signer sdk.AccAddress) MsgTssPool {
-
-	// ensure input pubkeys list is deterministically sorted
-	sort.Slice(pks, func(i, j int) bool {
-		return pks[i].String() < pks[j].String()
-	})
-
-	// get the checksum of our input pubkeys, as our identifier
-	var buf []byte
-	for _, pk := range pks {
-		buf = append(buf, []byte(pk)...)
-	}
-	id := fmt.Sprintf("%X", sha256.Sum256(buf))
-
+func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, KeygenType KeygenType, height int64, blame common.Blame, signer sdk.AccAddress) MsgTssPool {
 	return MsgTssPool{
-		ID:         id,
+		ID:         getTssID(pks, poolpk, height),
 		PubKeys:    pks,
 		PoolPubKey: poolpk,
+		Height:     height,
+		KeygenType: KeygenType,
 		Blame:      blame,
 		Signer:     signer,
 	}
+}
+
+// getTssID
+func getTssID(members common.PubKeys, poolPk common.PubKey, height int64) string {
+	// ensure input pubkeys list is deterministically sorted
+	sort.SliceStable(members, func(i, j int) bool {
+		return members[i].String() < members[j].String()
+	})
+	sb := strings.Builder{}
+	for _, item := range members {
+		sb.WriteString(item.String())
+	}
+	sb.WriteString(poolPk.String())
+	sb.WriteString(fmt.Sprintf("%d", height))
+	hash := sha256.New()
+	return hex.EncodeToString(hash.Sum([]byte(sb.String())))
 }
 
 // Route should return the cmname of the module
@@ -64,14 +74,20 @@ func (msg MsgTssPool) ValidateBasic() sdk.Error {
 			return sdk.ErrUnknownRequest("Pubkey cannot be empty")
 		}
 	}
-	if msg.PoolPubKey.IsEmpty() {
-		return sdk.ErrUnknownRequest("Pool pubkey cannot be empty")
+	// PoolPubKey can't be empty only when keygen success
+	if msg.IsSuccess() {
+		if msg.PoolPubKey.IsEmpty() {
+			return sdk.ErrUnknownRequest("Pool pubkey cannot be empty")
+		}
 	}
 	// ensure pool pubkey is a valid bech32 pubkey
 	if _, err := common.NewPubKey(msg.PoolPubKey.String()); err != nil {
 		return sdk.ErrUnknownRequest(err.Error())
 	}
 	return nil
+}
+func (msg MsgTssPool) IsSuccess() bool {
+	return msg.Blame.IsEmpty()
 }
 
 // GetSignBytes encodes the message for signing

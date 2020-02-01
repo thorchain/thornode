@@ -188,13 +188,12 @@ func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, e
 }
 
 // GetKeygenStdTx get keygen tx from params
-func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, blame common.Blame, inputPks common.PubKeys) (*authtypes.StdTx, error) {
+func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, blame common.Blame, inputPks common.PubKeys, keygenType stypes.KeygenType, height int64) (*authtypes.StdTx, error) {
 	start := time.Now()
 	defer func() {
 		b.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
 	}()
-
-	msg := stypes.NewMsgTssPool(inputPks, poolPubKey, blame, b.keys.GetSignerInfo().GetAddress())
+	msg := stypes.NewMsgTssPool(inputPks, poolPubKey, keygenType, height, blame, b.keys.GetSignerInfo().GetAddress())
 
 	stdTx := authtypes.NewStdTx(
 		[]sdk.Msg{msg},

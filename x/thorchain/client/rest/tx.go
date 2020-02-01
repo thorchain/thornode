@@ -13,10 +13,12 @@ import (
 )
 
 type newTssPool struct {
-	BaseReq      rest.BaseReq   `json:"base_req"`
-	InputPubKeys common.PubKeys `json:"input_pubkeys"`
-	Blame        common.Blame   `json:"blame"`
-	PoolPubKey   common.PubKey  `json:"pool_pub_key"`
+	BaseReq      rest.BaseReq     `json:"base_req"`
+	InputPubKeys common.PubKeys   `json:"input_pubkeys"`
+	KeygenType   types.KeygenType `json:"keygen_type"`
+	Height       int64            `json:"height"`
+	Blame        common.Blame     `json:"blame"`
+	PoolPubKey   common.PubKey    `json:"pool_pub_key"`
 }
 
 func newTssPoolHandler(cliCtx context.CLIContext) http.HandlerFunc {
@@ -40,8 +42,7 @@ func newTssPoolHandler(cliCtx context.CLIContext) http.HandlerFunc {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 			return
 		}
-
-		msg := types.NewMsgTssPool(req.InputPubKeys, req.PoolPubKey, req.Blame, addr)
+		msg := types.NewMsgTssPool(req.InputPubKeys, req.PoolPubKey, req.KeygenType, req.Height, req.Blame, addr)
 		err = msg.ValidateBasic()
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
