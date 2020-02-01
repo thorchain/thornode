@@ -141,6 +141,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	nodesAfterChange := len(activeNodes) + len(newNodes) - len(removedNodes)
 	if len(activeNodes) >= int(minimumNodesForBFT) && nodesAfterChange < int(minimumNodesForBFT) {
 		// THORNode don't have enough validators for BFT
+		fmt.Println("Starting Ragnarok....")
 		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
 			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
 		}
@@ -335,6 +336,7 @@ func (vm *validatorMgrV1) ragnarokProtocolStage1(ctx sdk.Context, activeNodes No
 }
 
 func (vm *validatorMgrV1) ragnarokProtocolStage2(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
+	fmt.Println("Ragnarok Stage 2")
 	// Ragnarok Protocol
 	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
 	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
@@ -624,8 +626,9 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 				VaultPubKey: ygg.PubKey,
 				Memo:        "yggdrasil-",
 			}
-			// yggdrasil- will not set coin field here, when signer see a TxOutItem that has memo "yggdrasil-" it will query the chain
-			// and find out all the remaining assets , and fill in the field
+			// yggdrasil- will not set coin field here, when signer see a
+			// TxOutItem that has memo "yggdrasil-" it will query the chain and
+			// find out all the remaining assets , and fill in the field
 			_, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
 			if err != nil {
 				return err
