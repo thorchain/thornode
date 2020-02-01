@@ -189,9 +189,6 @@ func (s *HelperSuite) TestRefundBondError(c *C) {
 	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), IsNil)
 	// make sure no tx has been generated for refund
 	c.Assert(txOut.GetOutboundItems(), HasLen, 0)
-	// make sure vault had been removed
-	_, err := keeper1.GetVault(ctx, pk)
-	c.Assert(err, NotNil)
 }
 
 func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
