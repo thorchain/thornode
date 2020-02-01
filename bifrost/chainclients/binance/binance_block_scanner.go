@@ -20,8 +20,8 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 
-	btypes "gitlab.com/thorchain/thornode/bifrost/chainclients/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
+	btypes "gitlab.com/thorchain/thornode/bifrost/chainclients/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
@@ -64,7 +64,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 		return nil, errors.New("metrics is nil")
 	}
 	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
-	if nil != err {
+	if err != nil {
 		return nil, errors.Wrap(err, "fail to create common block scanner")
 	}
 	if isTestNet {
@@ -119,18 +119,18 @@ func (b *BinanceBlockScanner) getTxSearchUrl(block int64, currentPage, numberPer
 
 func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUrl string) error {
 	strBlock := strconv.FormatInt(block, 10)
-	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); nil != err {
+	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
 		b.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
 		return errors.Wrapf(err, "fail to set block scan status for block %d", block)
 	}
 	b.logger.Debug().Str("url", txSearchUrl).Int64("height", block).Msg("start search txs in block")
 	buf, err := b.commonBlockScanner.GetFromHttpWithRetry(txSearchUrl)
-	if nil != err {
+	if err != nil {
 		b.errCounter.WithLabelValues("fail_tx_search", strBlock).Inc()
 		return errors.Wrap(err, "fail to send tx search request")
 	}
 	var query btypes.RPCTxSearch
-	if err := json.Unmarshal(buf, &query); nil != err {
+	if err := json.Unmarshal(buf, &query); err != nil {
 		b.errCounter.WithLabelValues("fail_unmarshal_tx_search", strBlock).Inc()
 		return errors.Wrap(err, "fail to unmarshal RPCTxSearch")
 	}
@@ -146,7 +146,7 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 	var txIn stypes.TxIn
 	for _, txn := range query.Result.Txs {
 		txItemIns, err := b.fromTxToTxIn(txn.Hash, txn.Height, txn.Tx) // b.getOneTxFromServer(txn.Hash, b.getSingleTxUrl(txn.Hash))
-		if nil != err {
+		if err != nil {
 			b.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
 			b.logger.Error().Err(err).Str("hash", txn.Hash).Msg("fail to get one tx from server")
 			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
@@ -186,8 +186,8 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 				return
 			}
 			b.logger.Debug().Int64("block", block).Msg("processing block")
-			if err := b.searchTxInABlockFromServer(block, b.getTxSearchUrl(block, 1, 100)); nil != err {
-				if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); nil != errStatus {
+			if err := b.searchTxInABlockFromServer(block, b.getTxSearchUrl(block, 1, 100)); err != nil {
+				if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
 					b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
 					b.logger.Error().Err(err).Int64("height", block).Msg("fail to set block to fail status")
 				}
@@ -197,7 +197,7 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 				continue
 			}
 			// set a block as success
-			if err := b.db.RemoveBlockStatus(block); nil != err {
+			if err := b.db.RemoveBlockStatus(block); err != nil {
 				b.errCounter.WithLabelValues("fail_remove_block_status", "").Inc()
 				b.logger.Error().Err(err).Int64("block", block).Msg("fail to remove block status from data store, thus block will be re processed")
 			}
@@ -289,7 +289,7 @@ func (b *BinanceBlockScanner) getCoinsForTxIn(outputs []bmsg.Output) (common.Coi
 	for _, output := range outputs {
 		for _, c := range output.Coins {
 			asset, err := common.NewAsset(fmt.Sprintf("BNB.%s", c.Denom))
-			if nil != err {
+			if err != nil {
 				b.errCounter.WithLabelValues("fail_create_ticker", c.Denom).Inc()
 				return nil, errors.Wrapf(err, "fail to create asset, %s is not valid", c.Denom)
 			}
@@ -305,12 +305,12 @@ func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) ([]st
 		return nil, errors.New("tx is empty")
 	}
 	buf, err := base64.StdEncoding.DecodeString(encodedTx)
-	if nil != err {
+	if err != nil {
 		b.errCounter.WithLabelValues("fail_decode_tx", hash).Inc()
 		return nil, errors.Wrap(err, "fail to decode tx")
 	}
 	var t tx.StdTx
-	if err := tx.Cdc.UnmarshalBinaryLengthPrefixed(buf, &t); nil != err {
+	if err := tx.Cdc.UnmarshalBinaryLengthPrefixed(buf, &t); err != nil {
 		b.errCounter.WithLabelValues("fail_unmarshal_tx", hash).Inc()
 		return nil, errors.Wrap(err, "fail to unmarshal tx.StdTx")
 	}
@@ -339,7 +339,7 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 			txInItem.Sender = sender.Address.String()
 			txInItem.To = receiver.Address.String()
 			txInItem.Coins, err = b.getCoinsForTxIn(sendMsg.Outputs)
-			if nil != err {
+			if err != nil {
 				return nil, errors.Wrap(err, "fail to convert coins")
 			}
 
@@ -401,7 +401,7 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 func (b *BinanceBlockScanner) Stop() error {
 	b.logger.Debug().Msg("receive stop request")
 	defer b.logger.Debug().Msg("block scanner stopped")
-	if err := b.commonBlockScanner.Stop(); nil != err {
+	if err := b.commonBlockScanner.Stop(); err != nil {
 		b.logger.Error().Err(err).Msg("fail to stop common block scanner")
 	}
 	close(b.stopChan)

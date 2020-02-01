@@ -46,7 +46,7 @@ func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blo
 		return nil, errors.New("metric is nil")
 	}
 	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
-	if nil != err {
+	if err != nil {
 		return nil, errors.Wrap(err, "fail to create txOut block scanner")
 	}
 	return &ThorchainBlockScan{
@@ -130,8 +130,8 @@ func (b *ThorchainBlockScan) processBlocks(idx int) {
 				return
 			}
 			b.logger.Debug().Int64("block", block).Msg("processing block")
-			if err := b.processTxOutBlock(block); nil != err {
-				if errStatus := b.scannerStorage.SetBlockScanStatus(block, blockscanner.Failed); nil != errStatus {
+			if err := b.processTxOutBlock(block); err != nil {
+				if errStatus := b.scannerStorage.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
 					b.errCounter.WithLabelValues("fail_set_block_Status", strconv.FormatInt(block, 10))
 					b.logger.Error().Err(err).Int64("height", block).Msg("fail to set block to fail status")
 				}
@@ -142,7 +142,7 @@ func (b *ThorchainBlockScan) processBlocks(idx int) {
 			}
 
 			// set a block as success
-			if err := b.scannerStorage.RemoveBlockStatus(block); nil != err {
+			if err := b.scannerStorage.RemoveBlockStatus(block); err != nil {
 				b.errCounter.WithLabelValues("fail_remove_block_Status", strconv.FormatInt(block, 10))
 				b.logger.Error().Err(err).Int64("block", block).Msg("fail to remove block status from data store, thus block will be re processed")
 			}
@@ -151,7 +151,7 @@ func (b *ThorchainBlockScan) processBlocks(idx int) {
 			// success. This is because we don't care if keygen is successful
 			// or not.
 			b.logger.Debug().Int64("block", block).Msg("processing keygen block")
-			if err := b.processKeygenBlock(block); nil != err {
+			if err := b.processKeygenBlock(block); err != nil {
 				b.errCounter.WithLabelValues("fail_process_keygen", strconv.FormatInt(block, 10))
 				b.logger.Error().Err(err).Int64("height", block).Msg("fail to process keygen")
 			}

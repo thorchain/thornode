@@ -29,7 +29,7 @@ func (h BondHandler) validate(ctx sdk.Context, msg MsgBond, version semver.Versi
 }
 
 func (h BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg MsgBond, constAccessor constants.ConstantValues) sdk.Error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		return err
 	}
 
@@ -40,7 +40,7 @@ func (h BondHandler) validateV1(ctx sdk.Context, version semver.Version, msg Msg
 	minValidatorBond := sdk.NewUint(uint64(minimumBond))
 
 	nodeAccount, err := h.keeper.GetNodeAccount(ctx, msg.NodeAddress)
-	if nil != err {
+	if err != nil {
 		return sdk.ErrInternal(fmt.Sprintf("fail to get node account(%s): %s", msg.NodeAddress, err))
 	}
 
@@ -62,24 +62,24 @@ func (h BondHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, con
 		"node address", msg.NodeAddress,
 		"request hash", msg.TxIn.ID,
 		"bond", msg.Bond)
-	if err := h.validate(ctx, msg, version, constAccessor); nil != err {
+	if err := h.validate(ctx, msg, version, constAccessor); err != nil {
 		ctx.Logger().Error("msg bond fail validation", "error", err)
 		return err.Result()
 	}
 
-	if err := h.handle(ctx, msg, version, constAccessor); nil != err {
+	if err := h.handle(ctx, msg, version, constAccessor); err != nil {
 		ctx.Logger().Error("fail to process msg bond", "error", err)
 		return err.Result()
 	}
 	bondEvent := NewEventBond(msg.Bond, BondPaid)
 	buf, err := json.Marshal(bondEvent)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to marshal bond event", "error", err)
 		return sdk.ErrInternal("fail to marshal bond event").Result()
 	}
 
 	e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), msg.TxIn, buf, EventSuccess)
-	if err := h.keeper.UpsertEvent(ctx, e); nil != err {
+	if err := h.keeper.UpsertEvent(ctx, e); err != nil {
 		ctx.Logger().Error("fail to save bond event", "error", err)
 		return sdk.ErrInternal("fail to save bond event").Result()
 	}
@@ -97,7 +97,7 @@ func (h BondHandler) handle(ctx sdk.Context, msg MsgBond, version semver.Version
 	}
 
 	nodeAccount, err := h.keeper.GetNodeAccount(ctx, msg.NodeAddress)
-	if nil != err {
+	if err != nil {
 		return sdk.ErrInternal(fmt.Sprintf("fail to get node account(%s): %s", msg.NodeAddress, err))
 	}
 
@@ -112,7 +112,7 @@ func (h BondHandler) handle(ctx sdk.Context, msg MsgBond, version semver.Version
 
 	nodeAccount.Bond = nodeAccount.Bond.Add(msg.Bond)
 
-	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
+	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to save node account(%s): %w", nodeAccount, err).Error())
 	}
 	return h.mintGasAsset(ctx, msg, constAccessor)
@@ -126,11 +126,11 @@ func (h BondHandler) mintGasAsset(ctx sdk.Context, msg MsgBond, constAccessor co
 	}
 	// mint some gas asset
 	err = h.keeper.Supply().MintCoins(ctx, ModuleName, coinsToMint)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to mint gas assets", "error", err)
 		return sdk.ErrInternal(fmt.Errorf("fail to mint gas assets: %w", err).Error())
 	}
-	if err := h.keeper.Supply().SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); nil != err {
+	if err := h.keeper.Supply().SendCoinsFromModuleToAccount(ctx, ModuleName, msg.NodeAddress, coinsToMint); err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to send newly minted gas asset to node address(%s): %w", msg.NodeAddress, err).Error())
 	}
 	return nil

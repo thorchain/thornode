@@ -100,7 +100,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		if nodeAccount.Status == NodeActive {
 			// Only Active node will become validator
 			pk, err := sdk.GetConsPubKeyBech32(nodeAccount.ValidatorConsPubKey)
-			if nil != err {
+			if err != nil {
 				ctx.Logger().Error("fail to parse consensus public key", "key", nodeAccount.ValidatorConsPubKey, "error", err)
 				panic(err)
 			}
@@ -110,7 +110,7 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 			})
 		}
 
-		if err := keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
+		if err := keeper.SetNodeAccount(ctx, nodeAccount); err != nil {
 			// we should panic
 			panic(err)
 		}
@@ -131,14 +131,14 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	}
 
 	for _, out := range data.TxOuts {
-		if err := keeper.SetTxOut(ctx, &out); nil != err {
+		if err := keeper.SetTxOut(ctx, &out); err != nil {
 			ctx.Logger().Error("fail to save tx out during genesis", "error", err)
 			panic(err)
 		}
 	}
 
 	for _, e := range data.Events {
-		if err := keeper.UpsertEvent(ctx, e); nil != err {
+		if err := keeper.UpsertEvent(ctx, e); err != nil {
 			panic(err)
 		}
 	}

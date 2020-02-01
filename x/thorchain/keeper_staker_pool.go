@@ -28,7 +28,7 @@ func (k KVStore) GetStakerPool(ctx sdk.Context, stakerID common.Address) (Staker
 	}
 	var ps StakerPool
 	buf := store.Get([]byte(key))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &ps); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &ps); err != nil {
 		ctx.Logger().Error("fail to unmarshal stakerpool", "error", err)
 		return StakerPool{}, errors.Wrap(err, "fail to unmarshal stakerpool")
 	}

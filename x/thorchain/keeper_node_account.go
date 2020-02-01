@@ -39,7 +39,7 @@ func (k KVStore) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	defer naIterator.Close()
 	for ; naIterator.Valid(); naIterator.Next() {
 		var na NodeAccount
-		if err := k.cdc.UnmarshalBinaryBare(naIterator.Value(), &na); nil != err {
+		if err := k.cdc.UnmarshalBinaryBare(naIterator.Value(), &na); err != nil {
 			return nodeAccounts, dbError(ctx, "Unmarshal: node account", err)
 		}
 		nodeAccounts = append(nodeAccounts, na)
@@ -52,7 +52,7 @@ func (k KVStore) ListNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 func (k KVStore) ListNodeAccountsByStatus(ctx sdk.Context, status NodeStatus) (NodeAccounts, error) {
 	nodeAccounts := make(NodeAccounts, 0)
 	allNodeAccounts, err := k.ListNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		return nodeAccounts, err
 	}
 	for _, item := range allNodeAccounts {
@@ -153,7 +153,7 @@ func (k KVStore) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccou
 
 	payload := store.Get([]byte(key))
 	var na NodeAccount
-	if err := k.cdc.UnmarshalBinaryBare(payload, &na); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(payload, &na); err != nil {
 		return na, dbError(ctx, "Unmarshal: node account", err)
 	}
 	return na, nil
@@ -173,7 +173,7 @@ func (k KVStore) GetNodeAccountByBondAddress(ctx sdk.Context, addr common.Addres
 	ctx.Logger().Debug("GetNodeAccountByBondAddress", "signer bnb address", addr.String())
 	var na NodeAccount
 	nodeAccounts, err := k.ListNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		return na, err
 	}
 	for _, item := range nodeAccounts {
@@ -219,7 +219,7 @@ func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, p
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var na NodeAccount
-		if err := k.cdc.UnmarshalBinaryBare(iter.Value(), &na); nil != err {
+		if err := k.cdc.UnmarshalBinaryBare(iter.Value(), &na); err != nil {
 			return dbError(ctx, "Unmarshal: node account", err)
 		}
 		if strings.EqualFold("", consensusPubKey) {

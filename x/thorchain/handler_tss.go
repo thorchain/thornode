@@ -41,7 +41,7 @@ func (h TssHandler) validate(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 }
 
 func (h TssHandler) validateV1(ctx sdk.Context, msg MsgTssPool) sdk.Error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		return err
 	}
 
@@ -64,7 +64,7 @@ func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Versi
 // Handle a message to observe inbound tx
 func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Version) sdk.Result {
 	active, err := h.keeper.ListActiveNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		err = wrapError(ctx, err, "fail to get list of active node accounts")
 		return sdk.ErrInternal(err.Error()).Result()
 	}
@@ -104,12 +104,12 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 			}
 			vault := NewVault(ctx.BlockHeight(), ActiveVault, vaultType, voter.PoolPubKey)
 			vault.Membership = voter.PubKeys
-			if err := h.keeper.SetVault(ctx, vault); nil != err {
+			if err := h.keeper.SetVault(ctx, vault); err != nil {
 				ctx.Logger().Error("fail to save vault", "error", err)
 				return sdk.ErrInternal("fail to save vault").Result()
 			}
 			vaultMgr, err := h.versionedVaultManager.GetVaultManager(ctx, h.keeper, version)
-			if nil != err {
+			if err != nil {
 				ctx.Logger().Error("fail to get a valid vault manager", "error", err)
 				return sdk.ErrInternal(err.Error()).Result()
 			}
@@ -122,13 +122,13 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 			// fail to generate a new tss key let's slash the node account
 			for _, nodePubKey := range msg.Blame.BlameNodes {
 				na, err := h.keeper.GetNodeAccountByPubKey(ctx, nodePubKey)
-				if nil != err {
+				if err != nil {
 					ctx.Logger().Error("fail to get node from it's pub key", "error", err, "pub key", nodePubKey.String())
 					return sdk.ErrInternal("fail to get node account").Result()
 				}
 				// 720 blocks per hour
 				na.SlashPoints += slashPoints
-				if err := h.keeper.SetNodeAccount(ctx, na); nil != err {
+				if err := h.keeper.SetNodeAccount(ctx, na); err != nil {
 					ctx.Logger().Error("fail to save node account", "error", err)
 					return sdk.ErrInternal("fail to save node account").Result()
 				}

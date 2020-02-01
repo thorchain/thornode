@@ -66,7 +66,7 @@ func (k KVStore) SetPool(ctx sdk.Context, pool Pool) error {
 	}
 
 	if prePool.Status != pool.Status {
-		if err := eventPoolStatusWrapper(ctx, k, pool); nil != err {
+		if err := eventPoolStatusWrapper(ctx, k, pool); err != nil {
 			return err
 		}
 	}

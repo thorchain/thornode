@@ -30,7 +30,7 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 		// the outbound tx doesn't match against any of the action items
 		// slash the node account for every coin they send out using this memo
 		for _, c := range tx.Tx.Coins {
-			if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); nil != err {
+			if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
 				ctx.Logger().Error("fail to slash account for sending extra fund", "error", err)
 				return sdk.ErrInternal("fail to slash account").Result()
 			}
@@ -84,12 +84,12 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 			if processedCoins.Contains(c) {
 				continue
 			}
-			if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); nil != err {
+			if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
 				ctx.Logger().Error("fail to slash account for sending out extra fund", "error", err)
 				return sdk.ErrInternal("fail to slash account").Result()
 			}
 		}
-		if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
+		if err := h.keeper.SetTxOut(ctx, txOut); err != nil {
 			ctx.Logger().Error("fail to save tx out", "error", err)
 			return sdk.ErrInternal("fail to save tx out").Result()
 		}

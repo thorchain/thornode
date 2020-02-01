@@ -52,7 +52,7 @@ func (es EventStatus) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON deserialize from json
 func (es *EventStatus) UnmarshalJSON(b []byte) error {
 	var s string
-	if err := json.Unmarshal(b, &s); nil != err {
+	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
 	*es = GetEventStatus(s)

@@ -59,7 +59,7 @@ func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.Constan
 		if !found {
 			lackOfObservationPenalty := constAccessor.GetInt64Value(constants.LackOfObservationPenalty)
 			na.SlashPoints += lackOfObservationPenalty
-			if err := s.keeper.SetNodeAccount(ctx, na); nil != err {
+			if err := s.keeper.SetNodeAccount(ctx, na); err != nil {
 				ctx.Logger().Error(fmt.Sprintf("fail to save node account(%s)", na), "error", err)
 				return err
 			}
@@ -98,7 +98,7 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 						continue
 					}
 					na.SlashPoints += signingTransPeriod * 2
-					if err := s.keeper.SetNodeAccount(ctx, na); nil != err {
+					if err := s.keeper.SetNodeAccount(ctx, na); err != nil {
 						ctx.Logger().Error("fail to save node account", "error", err)
 					}
 
@@ -137,7 +137,7 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 				}
 			}
 
-			if err := s.keeper.SetTxOut(ctx, txs); nil != err {
+			if err := s.keeper.SetTxOut(ctx, txs); err != nil {
 				ctx.Logger().Error("fail to save tx out", "error", err)
 				return err
 			}
@@ -155,11 +155,11 @@ func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubK
 		return nil
 	}
 	thorAddr, err := observedPubKey.GetThorAddress()
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get thoraddress from pubkey(%s) %w", observedPubKey, err)
 	}
 	nodeAccount, err := keeper.GetNodeAccount(ctx, thorAddr)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get node account with pubkey(%s), %w", observedPubKey, err)
 	}
 
@@ -170,17 +170,17 @@ func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubK
 		slashAmount = slashAmount.MulUint64(3).QuoUint64(2)
 		nodeAccount.Bond = common.SafeSub(nodeAccount.Bond, slashAmount)
 		vaultData, err := keeper.GetVaultData(ctx)
-		if nil != err {
+		if err != nil {
 			return fmt.Errorf("fail to get vault data: %w", err)
 		}
 		vaultData.TotalReserve = vaultData.TotalReserve.Add(amountToReserve)
-		if err := keeper.SetVaultData(ctx, vaultData); nil != err {
+		if err := keeper.SetVaultData(ctx, vaultData); err != nil {
 			return fmt.Errorf("fail to save vault data: %w", err)
 		}
 		return keeper.SetNodeAccount(ctx, nodeAccount)
 	}
 	pool, err := keeper.GetPool(ctx, asset)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get %s pool : %w", asset, err)
 	}
 	// thorchain doesn't even have a pool for the asset, or the pool had been suspended, then who cares
@@ -191,7 +191,7 @@ func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubK
 	pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, slashAmount)
 	pool.BalanceRune = pool.BalanceRune.Add(runeValue)
 	nodeAccount.Bond = common.SafeSub(nodeAccount.Bond, runeValue)
-	if err := keeper.SetPool(ctx, pool); nil != err {
+	if err := keeper.SetPool(ctx, pool); err != nil {
 		return fmt.Errorf("fail to save %s pool: %w", asset, err)
 	}
 

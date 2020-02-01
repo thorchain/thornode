@@ -29,7 +29,7 @@ func (k KVStore) GetLastSignedHeight(ctx sdk.Context) (int64, error) {
 		return 0, nil
 	}
 	buf := store.Get([]byte(key))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &height); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &height); err != nil {
 		return 0, dbError(ctx, "Unmarshal: last heights", err)
 	}
 	return height, nil
@@ -58,7 +58,7 @@ func (k KVStore) GetLastChainHeight(ctx sdk.Context, chain common.Chain) (int64,
 		return 0, nil
 	}
 	buf := store.Get([]byte(key))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &height); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &height); err != nil {
 		return height, dbError(ctx, "Unmarshal: last heights", err)
 	}
 	return height, nil

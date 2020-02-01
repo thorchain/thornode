@@ -53,23 +53,23 @@ func (kg *KeyGen) GenerateNewKey(pKeys common.PubKeys) (common.PubKeySet, common
 		Keys: keys,
 	}
 	buf, err := json.Marshal(keyGenReq)
-	if nil != err {
+	if err != nil {
 		return common.EmptyPubKeySet, common.EmptyBlame, fmt.Errorf("fail to marshal key gen request to json,err:%w", err)
 	}
 	tssUrl := kg.getTSSLocalUrl()
 	kg.logger.Debug().Str("url", tssUrl).Msg("sending request to tss key gen")
 	resp, err := kg.client.Post(tssUrl, "application/json", bytes.NewBuffer(buf))
-	if nil != err {
+	if err != nil {
 		return common.EmptyPubKeySet, common.EmptyBlame, fmt.Errorf("fail to send key gen request,err:%w", err)
 	}
 	defer func() {
-		if err := resp.Body.Close(); nil != err {
+		if err := resp.Body.Close(); err != nil {
 			kg.logger.Error().Err(err).Msg("fail to close response body")
 		}
 	}()
 
 	bodyBuf, err := ioutil.ReadAll(resp.Body)
-	if nil != err {
+	if err != nil {
 		return common.EmptyPubKeySet, common.EmptyBlame, fmt.Errorf("fail to read response body,err:%w", err)
 	}
 	var dat KeyGenResp
@@ -79,7 +79,7 @@ func (kg *KeyGen) GenerateNewKey(pKeys common.PubKeys) (common.PubKeySet, common
 	}
 
 	cpk, err := common.NewPubKey(dat.PubKey)
-	if nil != err {
+	if err != nil {
 		return common.EmptyPubKeySet, dat.Blame, fmt.Errorf("fail to create common.PubKey,%w", err)
 	}
 

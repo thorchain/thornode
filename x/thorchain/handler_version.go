@@ -53,7 +53,7 @@ func (h VersionHandler) validate(ctx sdk.Context, msg MsgSetVersion, version sem
 }
 
 func (h VersionHandler) validateV1(ctx sdk.Context, msg MsgSetVersion) sdk.Error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		return err
 	}
 
@@ -92,7 +92,7 @@ func (h VersionHandler) handleV1(ctx sdk.Context, msg MsgSetVersion) sdk.Error {
 		nodeAccount.Version = msg.Version
 	}
 
-	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
+	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); err != nil {
 		ctx.Logger().Error("fail to save node account", "error", err)
 		return sdk.ErrInternal("fail to save node account")
 	}

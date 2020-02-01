@@ -50,7 +50,7 @@ func (k KVStore) getLiquidityFees(ctx sdk.Context, key string) (sdk.Uint, error)
 	buf := store.Get([]byte(key))
 	var liquidityFees sdk.Uint
 
-	if err := k.cdc.UnmarshalBinaryBare(buf, &liquidityFees); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &liquidityFees); err != nil {
 		return sdk.ZeroUint(), dbError(ctx, "Unmarshal: liquidity fees", err)
 	}
 	return liquidityFees, nil

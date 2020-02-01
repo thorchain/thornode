@@ -33,7 +33,7 @@ func SetupStateChainForTest(c *C) (config.ClientConfiguration, cKeys.Info, func(
 	info, _, err := kb.CreateMnemonic(cfg.SignerName, cKeys.English, cfg.SignerPasswd, cKeys.Secp256k1)
 	c.Assert(err, IsNil)
 	return cfg, info, func() {
-		if err := os.RemoveAll(thorcliDir); nil != err {
+		if err := os.RemoveAll(thorcliDir); err != nil {
 			c.Error(err)
 		}
 	}

@@ -46,7 +46,7 @@ func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string,
 	}
 
 	var balConfig types.BalancesConfigs
-	if err := json.Unmarshal(balRaw, &balConfig); nil != err {
+	if err := json.Unmarshal(balRaw, &balConfig); err != nil {
 		log.Fatal(err)
 	}
 
@@ -56,7 +56,7 @@ func NewSmoke(apiAddr, faucetKey string, vaultKey, env string, bal, txns string,
 	}
 
 	var txnConfig []types.TransactionConfig
-	if err := json.Unmarshal(txnRaw, &txnConfig); nil != err {
+	if err := json.Unmarshal(txnRaw, &txnConfig); err != nil {
 		log.Fatal(err)
 	}
 

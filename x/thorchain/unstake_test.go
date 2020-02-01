@@ -137,7 +137,7 @@ func (s UnstakeSuite) TestCalculateUnsake(c *C) {
 func (s UnstakeSuite) TestValidateUnstake(c *C) {
 	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
 	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
-	if nil != err {
+	if err != nil {
 		c.Error("fail to create new BNB Address")
 	}
 	inputs := []struct {
@@ -242,7 +242,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 	ps := MockPoolStorage{}
 	accountAddr := GetRandomNodeAccount(NodeWhiteListed).NodeAddress
 	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
-	if nil != err {
+	if err != nil {
 		c.Error("fail to create new BNB Address")
 	}
 	testCases := []struct {
@@ -428,7 +428,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 
 func getInMemoryPoolStorageForUnstake(c *C) Keeper {
 	runeAddress, err := common.NewAddress("bnb1g0xakzh03tpa54khxyvheeu92hwzypkdce77rm")
-	if nil != err {
+	if err != nil {
 		c.Error("fail to create new BNB Address")
 	}
 
