@@ -47,9 +47,11 @@ lint-pre:
 	@go mod verify
 
 lint: lint-pre
+	@./scripts/gofumpt.sh
 	@golangci-lint run
 
 lint-verbose: lint-pre
+	@./scripts/gofumpt.sh
 	@golangci-lint run -v
 
 build:
