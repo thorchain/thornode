@@ -57,7 +57,7 @@ func (h UnstakeHandler) validate(ctx sdk.Context, msg MsgSetUnStake, version sem
 }
 
 func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error("unstake msg fail validation", "error", err.ABCILog())
 		return sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
 	}
@@ -77,7 +77,7 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 		return sdk.ErrInternal(errMsg)
 	}
 
-	if err := pool.EnsureValidPoolStatus(msg); nil != err {
+	if err := pool.EnsureValidPoolStatus(msg); err != nil {
 		ctx.Logger().Error("fail to check pool status", "error", err)
 		return sdk.NewError(DefaultCodespace, CodeInvalidPoolStatus, err.Error())
 	}
@@ -87,14 +87,14 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 
 func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semver.Version) ([]byte, sdk.Error) {
 	poolStaker, err := h.keeper.GetPoolStaker(ctx, msg.Asset)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get pool staker", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailGetPoolStaker, "fail to get pool staker")
 	}
 	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 
 	runeAmt, assetAmount, units, err := unstake(ctx, h.keeper, msg)
-	if nil != err {
+	if err != nil {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to process UnStake request: %w", err).Error())
 	}
 	res, err := h.keeper.Cdc().MarshalBinaryLengthPrefixed(struct {
@@ -104,7 +104,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		Rune:  runeAmt,
 		Asset: assetAmount,
 	})
-	if nil != err {
+	if err != nil {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to marshal result to json: %w", err).Error())
 	}
 
@@ -128,12 +128,12 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		EventPending,
 	)
 
-	if err := h.keeper.UpsertEvent(ctx, evt); nil != err {
+	if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
 		ctx.Logger().Error("fail to save event", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to save event")
 	}
 	txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return nil, errBadVersion
 	}

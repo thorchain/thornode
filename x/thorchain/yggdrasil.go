@@ -43,14 +43,14 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	// get a list of coin/amounts this yggdrasil pool should have, ideally.
 	// TODO: We are assuming here that the pub key is Secp256K1
 	ygg, err := keeper.GetVault(ctx, na.PubKeySet.Secp256k1)
-	if nil != err {
+	if err != nil {
 		if !errors.Is(err, ErrVaultNotFound) {
 			return fmt.Errorf("fail to get yggdrasil: %w", err)
 		}
 		ygg = NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1)
 		ygg.Membership = append(ygg.Membership, na.PubKeySet.Secp256k1)
 
-		if err := keeper.SetVault(ctx, ygg); nil != err {
+		if err := keeper.SetVault(ctx, ygg); err != nil {
 			return fmt.Errorf("fail to create yggdrasil pool: %w", err)
 		}
 	}
@@ -105,7 +105,7 @@ func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, yg
 			Coin:      coin,
 		}
 		_, err = txOutStore.TryAddTxOutItem(ctx, toi)
-		if nil != err {
+		if err != nil {
 			return err
 		}
 	}

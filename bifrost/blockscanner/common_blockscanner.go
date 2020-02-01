@@ -114,7 +114,7 @@ func (b *CommonBlockScanner) retryFailedBlocks() {
 func (b *CommonBlockScanner) retryBlocks(failedonly bool) {
 	// start up to grab those blocks that we didn't finished
 	blocks, err := b.scannerStorage.GetBlocksForRetry(failedonly)
-	if nil != err {
+	if err != nil {
 		b.errorCounter.WithLabelValues("fail_get_blocks_for_retry", "").Inc()
 		b.logger.Error().Err(err).Msg("fail to get blocks for retry")
 	}
@@ -135,7 +135,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 	defer b.logger.Debug().Msg("stop scan blocks")
 	defer b.wg.Done()
 	currentPos, err := b.scannerStorage.GetScanPos()
-	if nil != err {
+	if err != nil {
 		b.errorCounter.WithLabelValues("fail_get_scan_pos", "").Inc()
 		b.logger.Error().Err(err).Msgf("fail to get current block scan pos, %s will start from %d", b.cfg.ChainID, b.previousBlock)
 	} else {
@@ -150,7 +150,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 			return
 		default:
 			currentBlock, err := b.getRPCBlock(b.getBlockUrl())
-			if nil != err {
+			if err != nil {
 				b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
 				b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 			}
@@ -176,7 +176,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 					case b.scanChan <- b.previousBlock:
 					}
 					b.metrics.GetCounter(metrics.CurrentPosition).Inc()
-					if err := b.scannerStorage.SetScanPos(b.previousBlock); nil != err {
+					if err := b.scannerStorage.SetScanPos(b.previousBlock); err != nil {
 						b.errorCounter.WithLabelValues("fail_save_block_pos", strconv.FormatInt(b.previousBlock, 10)).Inc()
 						b.logger.Error().Err(err).Msg("fail to save block scan pos")
 						// alert!!
@@ -219,17 +219,17 @@ func (b *CommonBlockScanner) GetFromHttpWithRetry(url string) ([]byte, error) {
 func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 	b.logger.Debug().Str("url", url).Msg("http")
 	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if nil != err {
+	if err != nil {
 		b.errorCounter.WithLabelValues("fail_create_http_request", url).Inc()
 		return nil, errors.Wrap(err, "fail to create http request")
 	}
 	resp, err := b.httpClient.Do(req)
-	if nil != err {
+	if err != nil {
 		b.errorCounter.WithLabelValues("fail_send_http_request", url).Inc()
 		return nil, errors.Wrapf(err, "fail to get from %s ", url)
 	}
 	defer func() {
-		if err := resp.Body.Close(); nil != err {
+		if err := resp.Body.Close(); err != nil {
 			b.logger.Error().Err(err).Msg("fail to close http response body.")
 		}
 	}()
@@ -251,7 +251,7 @@ func (b *CommonBlockScanner) getBlockUrl() string {
 func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {
 	start := time.Now()
 	defer func() {
-		if err := recover(); nil != err {
+		if err := recover(); err != nil {
 			b.logger.Error().Msgf("fail to get RPCBlock:%s", err)
 		}
 		duration := time.Since(start)
@@ -259,19 +259,19 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {
 	}()
 	b.logger.Debug().Str("request_url", requestUrl).Msg("get_block")
 	buf, err := b.GetFromHttpWithRetry(requestUrl)
-	if nil != err {
+	if err != nil {
 		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
 		return 0, errors.Wrap(err, "fail to get blocks")
 	}
 	var tx btypes.RPCBlock
-	if err := json.Unmarshal(buf, &tx); nil != err {
+	if err := json.Unmarshal(buf, &tx); err != nil {
 		b.errorCounter.WithLabelValues("fail_unmarshal_block", requestUrl).Inc()
 		return 0, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
 	}
 	block := tx.Result.Block.Header.Height
 
 	parsedBlock, err := strconv.ParseInt(block, 10, 64)
-	if nil != err {
+	if err != nil {
 		b.errorCounter.WithLabelValues("fail_parse_block_height", block).Inc()
 		return 0, errors.Wrap(err, "fail to convert block height to int")
 	}

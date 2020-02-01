@@ -88,7 +88,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 		return nil
 	}
 	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return errBadVersion
 	}
@@ -152,7 +152,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					Memo: "migrate",
 				}
 				_, err = txOutStore.TryAddTxOutItem(ctx, toi)
-				if nil != err {
+				if err != nil {
 					return err
 				}
 			}
@@ -169,11 +169,11 @@ func (vm *VaultMgr) TriggerKeygen(ctx sdk.Context, nas NodeAccounts) error {
 		members = append(members, nas[i].PubKeySet.Secp256k1)
 	}
 	keygen, err := NewKeygen(ctx.BlockHeight(), members, AsgardKeygen)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to create a new keygen: %w", err)
 	}
 	keygenBlock, err := vm.k.GetKeygenBlock(ctx, ctx.BlockHeight())
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get keygen block from data store: %w", err)
 	}
 

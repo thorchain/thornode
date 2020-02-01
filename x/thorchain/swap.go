@@ -53,12 +53,12 @@ func swap(ctx sdk.Context,
 	transactionFee sdk.Uint) (sdk.Uint, []EventSwap, sdk.Error) {
 	var swapEvents []EventSwap
 
-	if err := validateMessage(tx, target, destination); nil != err {
+	if err := validateMessage(tx, target, destination); err != nil {
 		return sdk.ZeroUint(), nil, sdk.NewError(DefaultCodespace, CodeValidationError, err.Error())
 	}
 	source := tx.Coins[0].Asset
 
-	if err := validatePools(ctx, keeper, source, target); nil != err {
+	if err := validatePools(ctx, keeper, source, target); err != nil {
 		return sdk.ZeroUint(), nil, err
 	}
 	var swapEvt EventSwap

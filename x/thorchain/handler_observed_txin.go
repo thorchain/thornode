@@ -53,7 +53,7 @@ func (h ObservedTxInHandler) validate(ctx sdk.Context, msg MsgObservedTxIn, vers
 }
 
 func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (bool, error) {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error(err.Error())
 		return false, err
 	}
@@ -62,7 +62,7 @@ func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (b
 		signers := msg.GetSigners()
 		for _, signer := range signers {
 			newSigner, err := h.signedByNewObserver(ctx, signer)
-			if nil != err {
+			if err != nil {
 				ctx.Logger().Error("fail to determinate whether the tx is signed by a new observer", "error", err)
 				return false, notAuthorized
 			}
@@ -83,7 +83,7 @@ func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (b
 // by doing that, it also need to return a success code, otherwise the change will not be saved to key value store.
 func (h ObservedTxInHandler) signedByNewObserver(ctx sdk.Context, addr sdk.AccAddress) (bool, error) {
 	nodeAcct, err := h.keeper.GetNodeAccount(ctx, addr)
-	if nil != err {
+	if err != nil {
 		return false, fmt.Errorf("fail to get node account(%s): %w", addr.String(), err)
 	}
 	if nodeAcct.Status != NodeStandby {
@@ -126,12 +126,12 @@ func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, n
 // Handle a message to observe inbound tx
 func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, msg MsgObservedTxIn) sdk.Result {
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		err = wrapError(ctx, err, "fail to get list of active node accounts")
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 	txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return errBadVersion.Result()
 	}
@@ -158,12 +158,12 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 
 		txIn := voter.GetTx(activeNodeAccounts)
 		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
-		if nil != err {
+		if err != nil {
 			ctx.Logger().Error("fail to get vault", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 		vault.AddFunds(tx.Tx.Coins)
-		if err := h.keeper.SetVault(ctx, vault); nil != err {
+		if err := h.keeper.SetVault(ctx, vault); err != nil {
 			ctx.Logger().Error("fail to save vault", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
@@ -179,7 +179,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		}
 		// chain is empty
 		if tx.Tx.Chain.IsEmpty() {
-			if err := refundTx(ctx, tx, txOutStore, h.keeper, CodeEmptyChain, "chain is empty"); nil != err {
+			if err := refundTx(ctx, tx, txOutStore, h.keeper, CodeEmptyChain, "chain is empty"); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 			continue
@@ -204,7 +204,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 				"vault", tx.ObservedPubKey)
 			continue
 		}
-		if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, tx.BlockHeight); nil != err {
+		if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, tx.BlockHeight); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 
@@ -225,7 +225,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		result := handler(ctx, m)
 		if !result.IsOK() {
 			refundMsg, err := getErrMessageFromABCILog(result.Log)
-			if nil != err {
+			if err != nil {
 				ctx.Logger().Error(err.Error())
 			}
 			if err := refundTx(ctx, tx, txOutStore, h.keeper, result.Code, refundMsg); err != nil {

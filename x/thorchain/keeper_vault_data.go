@@ -28,7 +28,7 @@ func (k KVStore) GetVaultData(ctx sdk.Context) (VaultData, error) {
 		return data, nil
 	}
 	buf := store.Get([]byte(key))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &data); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &data); err != nil {
 		return data, dbError(ctx, "fail to unmarshal vault data", err)
 	}
 
@@ -40,7 +40,7 @@ func (k KVStore) SetVaultData(ctx sdk.Context, data VaultData) error {
 	key := k.GetKey(ctx, prefixVaultData, "")
 	store := ctx.KVStore(k.storeKey)
 	buf, err := k.cdc.MarshalBinaryBare(data)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to marshal vault data: %w", err)
 	}
 	store.Set([]byte(key), buf)
@@ -55,7 +55,7 @@ func (k KVStore) getEnabledPoolsAndTotalStakedRune(ctx sdk.Context) (Pools, sdk.
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		var pool Pool
-		if err := k.Cdc().UnmarshalBinaryBare(iterator.Value(), &pool); nil != err {
+		if err := k.Cdc().UnmarshalBinaryBare(iterator.Value(), &pool); err != nil {
 			return nil, sdk.ZeroUint(), fmt.Errorf("fail to unmarhsl pool: %w", err)
 		}
 		if pool.IsEnabled() && !pool.BalanceRune.IsZero() {
@@ -81,7 +81,7 @@ func (k KVStore) getTotalActiveBond(ctx sdk.Context) (sdk.Uint, error) {
 // UpdateVaultData Update the vault data to reflect changing in this block
 func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	vault, err := k.GetVaultData(ctx)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get existing vault data: %w", err)
 	}
 	// when total reserve is zero , can't pay reward
@@ -90,7 +90,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	}
 	currentHeight := uint64(ctx.BlockHeight())
 	pools, totalStaked, err := k.getEnabledPoolsAndTotalStakedRune(ctx)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get enabled pools and total staked rune: %w", err)
 	}
 
@@ -108,7 +108,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 
 	// Then get fees and rewards
 	totalLiquidityFees, err := k.GetTotalLiquidityFees(ctx, currentHeight)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get total liquidity fee: %w", err)
 	}
 	var totalFees sdk.Uint
@@ -124,7 +124,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	// block). This should be OK as the asset amount in the pool has already
 	// been deducted so the balances are correct. Just operating at a deficit.
 	totalBonded, err := k.getTotalActiveBond(ctx)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get total active bond: %w", err)
 	}
 	emissionCurve := constAccessor.GetInt64Value(constants.EmissionCurve)
@@ -192,7 +192,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 
 		for _, pool := range pools {
 			poolFees, err := k.GetPoolLiquidityFees(ctx, currentHeight, pool.Asset)
-			if nil != err {
+			if err != nil {
 				return fmt.Errorf("fail to get liquidity fees for pool(%s): %w", pool.Asset, err)
 			}
 			if !pool.BalanceRune.IsZero() || !poolFees.IsZero() { // Safety checks
@@ -224,12 +224,12 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		evtBytes,
 		EventSuccess,
 	)
-	if err := k.UpsertEvent(ctx, evt); nil != err {
+	if err := k.UpsertEvent(ctx, evt); err != nil {
 		return fmt.Errorf("fail to save event: %w", err)
 	}
 
 	i, err := getTotalActiveNodeWithBond(ctx, k)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to get total active node account: %w", err)
 	}
 	vault.TotalBondUnits = vault.TotalBondUnits.Add(sdk.NewUint(uint64(i))) // Add 1 unit for each active Node

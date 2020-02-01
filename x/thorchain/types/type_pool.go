@@ -56,7 +56,7 @@ func (ps PoolStatus) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON convert string form back to PoolStatus
 func (ps *PoolStatus) UnmarshalJSON(b []byte) error {
 	var s string
-	if err := json.Unmarshal(b, &s); nil != err {
+	if err := json.Unmarshal(b, &s); err != nil {
 		return err
 	}
 	*ps = GetPoolStatus(s)

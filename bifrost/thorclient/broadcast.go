@@ -35,7 +35,7 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 	if blockHeight > b.blockHeight {
 		var seqNum uint64
 		b.accountNumber, seqNum, err = b.getAccountNumberAndSequenceNumber()
-		if nil != err {
+		if err != nil {
 			return noTxID, errors.Wrap(err, "fail to get account number and sequence number from thorchain ")
 		}
 		b.blockHeight = blockHeight
@@ -75,7 +75,7 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 	setTx.Tx.Signatures = signed.Signatures
 	setTx.Tx.Memo = signed.Memo
 	result, err := b.cdc.MarshalJSON(setTx)
-	if nil != err {
+	if err != nil {
 		b.errCounter.WithLabelValues("fail_marshal_settx", "").Inc()
 		return noTxID, errors.Wrap(err, "fail to marshal settx to json")
 	}

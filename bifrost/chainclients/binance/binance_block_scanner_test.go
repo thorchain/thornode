@@ -16,8 +16,8 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 
-	btypes "gitlab.com/thorchain/thornode/bifrost/chainclients/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
+	btypes "gitlab.com/thorchain/thornode/bifrost/chainclients/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
@@ -149,7 +149,7 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 		c.Logf("================>:%s", r.RequestURI)
 		switch r.RequestURI {
 		case "/block": // trying to get block
-			if _, err := w.Write([]byte(blockResult)); nil != err {
+			if _, err := w.Write([]byte(blockResult)); err != nil {
 				c.Error(err)
 			}
 		case "/tx_search?page=1&per_page=100&prove=true&query=%22tx.height%3D1%22": // block 1
@@ -160,7 +160,7 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
     "txs": [],
     "total_count": "0"
   }
-}`)); nil != err {
+}`)); err != nil {
 				c.Error(err)
 			}
 		case "/tx_search?page=1&per_page=100&prove=true&query=%22tx.height%3D2%22": // block 1
@@ -198,11 +198,11 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
     ],
     "total_count": "1"
   }
-}`)); nil != err {
+}`)); err != nil {
 				c.Error(err)
 			}
 		case "/api/v1/tx/40C23998DCAF0003D6C4EF04161EAB1BE09DBA83323E9E4FF38AFDF5A1883BAE?format=json": // return a tx
-			if _, err := w.Write([]byte(normalApiTx)); nil != err {
+			if _, err := w.Write([]byte(normalApiTx)); err != nil {
 				c.Error(err)
 			}
 		default:
@@ -214,7 +214,7 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
     "txs": [],
     "total_count": "0"
   }
-}`)); nil != err {
+}`)); err != nil {
 					c.Error(err)
 				}
 			}

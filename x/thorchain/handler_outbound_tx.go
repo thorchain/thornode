@@ -40,7 +40,7 @@ func (h OutboundTxHandler) validate(ctx sdk.Context, msg MsgOutboundTx, version 
 }
 
 func (h OutboundTxHandler) validateV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error(err.Error())
 		return err
 	}

@@ -44,7 +44,7 @@ func (h SwapHandler) validate(ctx sdk.Context, msg MsgSwap, version semver.Versi
 }
 
 func (h SwapHandler) validateV1(ctx sdk.Context, msg MsgSwap) error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error(err.Error())
 		return err
 	}
@@ -72,7 +72,7 @@ func (h SwapHandler) addSwapEvent(ctx sdk.Context, swapEvt EventSwap, tx common.
 		return err
 	}
 	evt := NewEvent(swapEvt.Type(), ctx.BlockHeight(), tx, swapBytes, status)
-	if err := h.keeper.UpsertEvent(ctx, evt); nil != err {
+	if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
 		return err
 	}
 	return nil
@@ -105,12 +105,12 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 			Asset: amount,
 		})
 
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to encode result to json", "error", err)
 		return sdk.ErrInternal("fail to encode result to json").Result()
 	}
 	txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return errBadVersion.Result()
 	}

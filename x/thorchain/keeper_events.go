@@ -29,7 +29,7 @@ func (k KVStore) GetEvent(ctx sdk.Context, eventID int64) (Event, error) {
 	store := ctx.KVStore(k.storeKey)
 	buf := store.Get([]byte(key))
 	var e Event
-	if err := k.Cdc().UnmarshalBinaryBare(buf, &e); nil != err {
+	if err := k.Cdc().UnmarshalBinaryBare(buf, &e); err != nil {
 		return Event{}, fmt.Errorf("fail to unmarshal event: %w", err)
 	}
 	return e, nil
@@ -39,7 +39,7 @@ func (k KVStore) GetEvent(ctx sdk.Context, eventID int64) (Event, error) {
 func (k KVStore) UpsertEvent(ctx sdk.Context, event Event) error {
 	if event.ID == 0 {
 		nextEventID, err := k.getNextEventID(ctx)
-		if nil != err {
+		if err != nil {
 			return fmt.Errorf("fail to get next event id: %w", err)
 		}
 		event.ID = nextEventID
@@ -52,7 +52,7 @@ func (k KVStore) UpsertEvent(ctx sdk.Context, event Event) error {
 	key := k.GetKey(ctx, prefixEvents, strconv.FormatInt(event.ID, 10))
 	store := ctx.KVStore(k.storeKey)
 	buf, err := k.cdc.MarshalBinaryBare(&event)
-	if nil != err {
+	if err != nil {
 		return fmt.Errorf("fail to marshal event: %w", err)
 	}
 	store.Set([]byte(key), buf)
@@ -99,7 +99,7 @@ func (k KVStore) GetPendingEventID(ctx sdk.Context, txID common.TxID) ([]int64, 
 	}
 	buf := store.Get([]byte(key))
 	var eventIDs []int64
-	if err := k.Cdc().UnmarshalBinaryBare(buf, &eventIDs); nil != err {
+	if err := k.Cdc().UnmarshalBinaryBare(buf, &eventIDs); err != nil {
 		return nil, fmt.Errorf("fail to unmarshal event id: %w", err)
 	}
 	return eventIDs, nil
@@ -115,7 +115,7 @@ func (k KVStore) GetEventsIterator(ctx sdk.Context) sdk.Iterator {
 func (k KVStore) getNextEventID(ctx sdk.Context) (int64, error) {
 	var currentEventID, nextEventID int64
 	currentEventID, err := k.GetCurrentEventID(ctx)
-	if nil != err {
+	if err != nil {
 		return currentEventID, err
 	}
 	nextEventID = currentEventID + 1
@@ -159,11 +159,11 @@ func (k KVStore) GetAllPendingEvents(ctx sdk.Context) (Events, error) {
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var eventID int64
-		if err := k.Cdc().UnmarshalBinaryBare(iter.Value(), &eventID); nil != err {
+		if err := k.Cdc().UnmarshalBinaryBare(iter.Value(), &eventID); err != nil {
 			return nil, fmt.Errorf("fail to unmarshal event id: %w", err)
 		}
 		event, err := k.GetEvent(ctx, eventID)
-		if nil != err {
+		if err != nil {
 			return nil, fmt.Errorf("fail to get event: %w", err)
 		}
 		events = append(events, event)
@@ -180,7 +180,7 @@ func (k KVStore) GetEventsIDByTxHash(ctx sdk.Context, txID common.TxID) ([]int64
 	}
 	buf := store.Get([]byte(key))
 	var eventIDs []int64
-	if err := k.Cdc().UnmarshalBinaryBare(buf, &eventIDs); nil != err {
+	if err := k.Cdc().UnmarshalBinaryBare(buf, &eventIDs); err != nil {
 		return nil, fmt.Errorf("fail to unmarshal event id: %w", err)
 	}
 	return eventIDs, nil
@@ -193,7 +193,7 @@ func (k KVStore) upsertEventTxHash(ctx sdk.Context, event Event) error {
 	var err error
 	if store.Has([]byte(key)) {
 		eventIDs, err = k.GetEventsIDByTxHash(ctx, event.InTx.ID)
-		if nil != err {
+		if err != nil {
 			return fmt.Errorf("fail to get events id by tx hash id: %w", err)
 		}
 	}

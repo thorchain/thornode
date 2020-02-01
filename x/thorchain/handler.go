@@ -112,24 +112,24 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 	switch m := memo.(type) {
 	case CreateMemo:
 		newMsg, err = getMsgSetPoolDataFromMemo(ctx, keeper, m, signer)
-		if nil != err {
+		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid create memo: %s", err.Error())
 		}
 
 	case StakeMemo:
 		newMsg, err = getMsgStakeFromMemo(ctx, m, tx, signer)
-		if nil != err {
+		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid stake memo:%s", err.Error())
 		}
 
 	case WithdrawMemo:
 		newMsg, err = getMsgUnstakeFromMemo(m, tx, signer)
-		if nil != err {
+		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid withdraw memo:%s", err.Error())
 		}
 	case SwapMemo:
 		newMsg, err = getMsgSwapFromMemo(m, tx, signer)
-		if nil != err {
+		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid swap memo:%s", err.Error())
 		}
 	case AddMemo:
@@ -144,17 +144,17 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		}
 	case RefundMemo:
 		newMsg, err = getMsgRefundFromMemo(m, tx, signer)
-		if nil != err {
+		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid refund memo:%s", err.Error())
 		}
 	case OutboundMemo:
 		newMsg, err = getMsgOutboundFromMemo(m, tx, signer)
-		if nil != err {
+		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid outbound memo:%s", err.Error())
 		}
 	case BondMemo:
 		newMsg, err = getMsgBondFromMemo(m, tx, signer)
-		if nil != err {
+		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid bond memo:%s", err.Error())
 		}
 	case LeaveMemo:
@@ -172,7 +172,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid memo")
 	}
 
-	if err := newMsg.ValidateBasic(); nil != err {
+	if err := newMsg.ValidateBasic(); err != nil {
 		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid message:%s", err.Error())
 	}
 	return newMsg, nil

@@ -53,7 +53,7 @@ func GetCmdGetConstans(queryRoute string, cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			ver, err := semver.Parse(args[0])
-			if nil != err {
+			if err != nil {
 				return err
 			}
 			constAccessor := constants.GetConstantValues(ver)
@@ -94,7 +94,7 @@ func GetCmdPool(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.Pool
-			if err := cdc.UnmarshalJSON(res, &out); nil != err {
+			if err := cdc.UnmarshalJSON(res, &out); err != nil {
 				return fmt.Errorf("fail to unmarshal pool: %w", err)
 			}
 			return cliCtx.PrintOutput(out)
@@ -119,7 +119,7 @@ func GetCmdStakerPool(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.StakerPool
-			if err := cdc.UnmarshalJSON(res, &out); nil != err {
+			if err := cdc.UnmarshalJSON(res, &out); err != nil {
 				return fmt.Errorf("fail to unmarshal staker pool: %w", err)
 			}
 			return cliCtx.PrintOutput(out)
@@ -141,7 +141,7 @@ func GetCmdPoolStaker(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.PoolStaker
-			if err := cdc.UnmarshalJSON(res, &out); nil != err {
+			if err := cdc.UnmarshalJSON(res, &out); err != nil {
 				return fmt.Errorf("fail to unmarshal pool staker: %w", err)
 			}
 			return cliCtx.PrintOutput(out)
@@ -164,7 +164,7 @@ func GetCmdPools(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.QueryResPools
-			if err := cdc.UnmarshalJSON(res, &out); nil != err {
+			if err := cdc.UnmarshalJSON(res, &out); err != nil {
 				return fmt.Errorf("fail to unmarhal pools: %w", err)
 			}
 			return cliCtx.PrintOutput(out)
@@ -187,7 +187,7 @@ func GetCmdPoolIndex(queryRoute string, cdc *codec.Codec) *cobra.Command {
 			}
 
 			var out types.PoolIndex
-			if err := cdc.UnmarshalJSON(res, &out); nil != err {
+			if err := cdc.UnmarshalJSON(res, &out); err != nil {
 				return fmt.Errorf("fail to unmarshal pool index: %w", err)
 			}
 			cmd.Println(out)

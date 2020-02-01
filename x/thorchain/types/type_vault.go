@@ -179,7 +179,7 @@ func (vs Vaults) SelectByMaxCoin(asset common.Asset) (vault Vault) {
 func (vs Vaults) HasAddress(chain common.Chain, address common.Address) (bool, error) {
 	for _, item := range vs {
 		addr, err := item.PubKey.GetAddress(chain)
-		if nil != err {
+		if err != nil {
 			return false, fmt.Errorf("fail to get address from (%s) for chain(%s)", item.PubKey, chain)
 		}
 		if addr.Equals(address) {
