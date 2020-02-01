@@ -295,7 +295,8 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 		key := item.GetKey(height)
 		processed, err := s.storage.HasTxOutItem(key)
 		if err != nil {
-			return fmt.Errorf("fail to check against local level db: %w", err)
+			s.logger.Error().Err(err).Msg("fail to check against local level db")
+			continue
 		}
 		if processed {
 			s.logger.Debug().Msgf("%+v processed already", item)
@@ -307,7 +308,7 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 				Str("signer_address", s.Chain.GetAddress(item.VaultPubKey)).
 				Msg("different pool address, ignore")
 			if err := s.storage.ClearTxOutItem(key); err != nil {
-				return fmt.Errorf("fail to mark it off from local db: %w", err)
+				s.logger.Error().Err(err).Msg("fail to mark it off from local db")
 			}
 			continue
 		}
@@ -315,7 +316,7 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 		if len(item.ToAddress) == 0 {
 			s.logger.Info().Msg("To address is empty, THORNode don't know where to send the fund , ignore")
 			if err := s.storage.ClearTxOutItem(key); err != nil {
-				return fmt.Errorf("fail to mark it off from local db: %w", err)
+				s.logger.Error().Err(err).Msg("fail to mark it off from local db")
 			}
 			continue
 		}
@@ -328,7 +329,7 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 			if err != nil {
 				s.logger.Error().Err(err).Msg("failed to handle yggdrasil return")
 				if err := s.storage.ClearTxOutItem(key); err != nil {
-					return fmt.Errorf("fail to mark it off from local db: %w", err)
+					s.logger.Error().Err(err).Msg("fail to mark it off from local db")
 				}
 				continue
 			}
@@ -339,12 +340,14 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 			// since we failed the txn, we'll clear the local db of this record
 			// for retry later
 			if err := s.storage.ClearTxOutItem(key); err != nil {
-				return fmt.Errorf("fail to mark it off from local db: %w", err)
+				s.logger.Error().Err(err).Msg("fail to mark it off from local db")
 			}
-			return fmt.Errorf("fail to broadcast tx to chain: %w", err)
+			s.logger.Error().Err(err).Msg("fail to broadcast tx to chain")
+			continue
 		}
 		if err := s.storage.SuccessTxOutItem(key); err != nil {
-			return fmt.Errorf("fail to mark it off from local db: %w", err)
+			s.logger.Error().Err(err).Msg("fail to mark it off from local db")
+			continue
 		}
 	}
 
