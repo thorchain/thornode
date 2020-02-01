@@ -75,7 +75,7 @@ func (s Thorchain) PoolAddress() (ctypes.AccAddress, error) {
 		return nil, errors.Wrap(err, "Failed reading body")
 	}
 
-	if err := json.Unmarshal(data, &addrs); nil != err {
+	if err := json.Unmarshal(data, &addrs); err != nil {
 		return nil, errors.Wrap(err, "Failed to unmarshal pool addresses")
 	}
 
@@ -110,7 +110,7 @@ func (s Thorchain) GetPools() types.ThorchainPools {
 		log.Fatalf("Failed reading body: %v\n", err)
 	}
 
-	if err := json.Unmarshal(data, &pools); nil != err {
+	if err := json.Unmarshal(data, &pools); err != nil {
 		log.Fatalf("Failed to unmarshal pools: %s", err)
 	}
 
@@ -134,7 +134,7 @@ func (s Thorchain) GetHeight() int {
 		log.Fatalf("Failed reading body: %v\n", err)
 	}
 
-	if err := json.Unmarshal(data, &block); nil != err {
+	if err := json.Unmarshal(data, &block); err != nil {
 		log.Fatalf("Failed to unmarshal pools: %s", err)
 	}
 

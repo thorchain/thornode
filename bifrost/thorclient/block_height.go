@@ -47,7 +47,7 @@ func (b *ThorchainBridge) getLastBlock(chain common.Chain) (types.QueryResHeight
 		return types.QueryResHeights{}, errors.Wrap(err, "failed to get lastblock")
 	}
 	var lastBlock types.QueryResHeights
-	if err := b.cdc.UnmarshalJSON(buf, &lastBlock); nil != err {
+	if err := b.cdc.UnmarshalJSON(buf, &lastBlock); err != nil {
 		b.errCounter.WithLabelValues("fail_unmarshal_lastblock", "").Inc()
 		return types.QueryResHeights{}, errors.Wrap(err, "failed to unmarshal last block")
 	}

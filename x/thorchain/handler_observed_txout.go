@@ -46,7 +46,7 @@ func (h ObservedTxOutHandler) validate(ctx sdk.Context, msg MsgObservedTxOut, ve
 }
 
 func (h ObservedTxOutHandler) validateV1(ctx sdk.Context, msg MsgObservedTxOut) error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error(err.Error())
 		return err
 	}
@@ -86,7 +86,7 @@ func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, 
 // Handle a message to observe inbound tx
 func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sdk.Result {
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		err = wrapError(ctx, err, "fail to get list of active node accounts")
 		return sdk.ErrInternal(err.Error()).Result()
 	}
@@ -115,7 +115,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 
 		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
 		m, err := processOneTxIn(ctx, h.keeper, txOut, msg.Signer)
-		if nil != err || tx.Tx.Chain.IsEmpty() {
+		if err != nil || tx.Tx.Chain.IsEmpty() {
 			ctx.Logger().Error("fail to process txOut",
 				"error", err,
 				"tx", tx.Tx.String())
@@ -125,18 +125,18 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		// in that case, thorchain doesn't subtract the fund from relevant vault, thus when the node/yggdrasil leave, they will either return those asset
 		// or they will be slashed for that amount, also if the tx memo is unknown , thorchain also doesn't subsidise gas
 		// Apply Gas fees
-		if err := AddGasFees(ctx, h.keeper, tx); nil != err {
+		if err := AddGasFees(ctx, h.keeper, tx); err != nil {
 			return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error()).Result()
 		}
 
 		// If sending from one of our vaults, decrement coins
 		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
-		if nil != err {
+		if err != nil {
 			ctx.Logger().Error("fail to get vault", "error", err)
 			return sdk.ErrInternal("fail to get vault").Result()
 		}
 		vault.SubFunds(tx.Tx.Coins)
-		if err := h.keeper.SetVault(ctx, vault); nil != err {
+		if err := h.keeper.SetVault(ctx, vault); err != nil {
 			ctx.Logger().Error("fail to save vault", "error", err)
 			return sdk.ErrInternal("fail to save vault").Result()
 		}

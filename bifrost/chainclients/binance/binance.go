@@ -52,7 +52,7 @@ func NewBinance(thorKeys *thorclient.Keys, rpcHost string, keySignCfg config.TSS
 		return nil, errors.New("rpc host is empty")
 	}
 	tssKm, err := tss.NewKeySign(keySignCfg)
-	if nil != err {
+	if err != nil {
 		return nil, errors.Wrap(err, "fail to create tss signer")
 	}
 
@@ -104,7 +104,7 @@ func (b *Binance) CheckIsTestNet() (string, bool) {
 		return b.chainID, true
 	}
 
- 	u, err := url.Parse(b.RPCHost)
+	u, err := url.Parse(b.RPCHost)
 	if err != nil {
 		log.Fatal().Msgf("Unable to parse rpc host: %s\n", b.RPCHost)
 	}
@@ -117,7 +117,7 @@ func (b *Binance) CheckIsTestNet() (string, bool) {
 	}
 
 	defer func() {
-		if err := resp.Body.Close(); nil != err {
+		if err := resp.Body.Close(); err != nil {
 			log.Error().Err(err).Msg("fail to close resp body")
 		}
 	}()
@@ -138,7 +138,7 @@ func (b *Binance) CheckIsTestNet() (string, bool) {
 	}
 
 	var status Status
-	if err := json.Unmarshal(data, &status); nil != err {
+	if err := json.Unmarshal(data, &status); err != nil {
 		log.Fatal().Err(err).Msg("fail to unmarshal body")
 	}
 
@@ -162,7 +162,7 @@ func (b *Binance) GetHeight() (int64, error) {
 	}
 
 	defer func() {
-		if err := resp.Body.Close(); nil != err {
+		if err := resp.Body.Close(); err != nil {
 			log.Error().Err(err).Msg("fail to close resp body")
 		}
 	}()
@@ -183,7 +183,7 @@ func (b *Binance) GetHeight() (int64, error) {
 	}
 
 	var abci ABCIinfo
-	if err := json.Unmarshal(data, &abci); nil != err {
+	if err := json.Unmarshal(data, &abci); err != nil {
 		return 0, errors.Wrap(err, "failed to unmarshal")
 	}
 
@@ -220,7 +220,7 @@ func (b *Binance) createMsg(from types.AccAddress, fromCoins types.Coins, transf
 
 func (b *Binance) parseTx(fromAddr string, transfers []msg.Transfer) msg.SendMsg {
 	addr, err := types.AccAddressFromBech32(fromAddr)
-	if nil != err {
+	if err != nil {
 		b.logger.Error().Str("address", fromAddr).Err(err).Msg("fail to parse address")
 	}
 	fromCoins := types.Coins{}
@@ -234,7 +234,7 @@ func (b *Binance) parseTx(fromAddr string, transfers []msg.Transfer) msg.SendMsg
 // GetAddress return current signer address, it will be bech32 encoded address
 func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
 	addr, err := poolPubKey.GetAddress(common.BNBChain)
-	if nil != err {
+	if err != nil {
 		b.logger.Error().Err(err).Str("pool_pub_key", poolPubKey.String()).Msg("fail to get pool address")
 		return ""
 	}
@@ -248,7 +248,7 @@ func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string
 	var payload []msg.Transfer
 
 	toAddr, err := types.AccAddressFromBech32(tai.ToAddress.String())
-	if nil != err {
+	if err != nil {
 		return nil, nil, errors.Wrapf(err, "fail to parse account address(%s)", tai.ToAddress.String())
 	}
 
@@ -271,7 +271,7 @@ func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string
 	}
 	fromAddr := b.GetAddress(tai.VaultPubKey)
 	sendMsg := b.parseTx(fromAddr, payload)
-	if err := sendMsg.ValidateBasic(); nil != err {
+	if err := sendMsg.ValidateBasic(); err != nil {
 		return nil, nil, errors.Wrap(err, "invalid send msg")
 	}
 
@@ -308,7 +308,7 @@ func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string
 		"sync": "true",
 	}
 	rawBz, err := b.signWithRetry(signMsg, fromAddr, tai.VaultPubKey)
-	if nil != err {
+	if err != nil {
 		return nil, nil, errors.Wrap(err, "fail to sign message")
 	}
 
@@ -345,7 +345,7 @@ func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string, poolPubKey c
 		}
 
 		acc, err := b.GetAccount(address)
-		if nil != err {
+		if err != nil {
 			b.logger.Error().Err(err).Msg("fail to get account info from binance chain")
 			continue
 		}
@@ -372,7 +372,7 @@ func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 		return types.BaseAccount{}, err
 	}
 	defer func() {
-		if err := resp.Body.Close(); nil != err {
+		if err := resp.Body.Close(); err != nil {
 			b.logger.Error().Err(err).Msg("fail to close response body")
 		}
 	}()
@@ -428,13 +428,13 @@ func (b *Binance) BroadcastTx(hexTx []byte) error {
 		return errors.Wrap(err, "fail to broadcast tx to ")
 	}
 	defer func() {
-		if err := resp.Body.Close(); nil != err {
+		if err := resp.Body.Close(); err != nil {
 			log.Error().Err(err).Msg("we fail to close response body")
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
 		result, err := ioutil.ReadAll(resp.Body)
-		if nil != err {
+		if err != nil {
 			return fmt.Errorf("fail to read response body: %w", err)
 		}
 		log.Info().Msg(string(result))
@@ -453,7 +453,7 @@ func (b *Binance) SignAndBroadcastToChain(tai stypes.TxOutItem, height int64) er
 		b.logger.Info().Msg("nothing need to be send")
 		return nil
 	}
-	if err := b.BroadcastTx(hexTx); nil != err {
+	if err := b.BroadcastTx(hexTx); err != nil {
 		return fmt.Errorf("fail to broadcast to binance chain: %w", err)
 	}
 	atomic.AddInt64(&b.seqNumber, 1)

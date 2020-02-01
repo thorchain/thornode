@@ -67,11 +67,11 @@ func GetCmdSetNodeKeys(cdc *codec.Codec) *cobra.Command {
 			txBldr = txBldr.WithGas(400000) // set gas
 
 			secp256k1Key, err := common.NewPubKey(args[0])
-			if nil != err {
+			if err != nil {
 				return fmt.Errorf("fail to parse secp256k1 pub key ,err:%w", err)
 			}
 			ed25519Key, err := common.NewPubKey(args[1])
-			if nil != err {
+			if err != nil {
 				return fmt.Errorf("fail to parse ed25519 pub key ,err:%w", err)
 			}
 			pk := common.NewPubKeySet(secp256k1Key, ed25519Key)
@@ -105,15 +105,15 @@ func GetCmdEndPool(cdc *codec.Codec) *cobra.Command {
 			txBldr = txBldr.WithGas(400000) // set gas
 
 			asset, err := common.NewAsset(args[0])
-			if nil != err {
+			if err != nil {
 				return errors.Wrap(err, "invalid asset")
 			}
 			requester, err := common.NewAddress(args[1])
-			if nil != err {
+			if err != nil {
 				return errors.Wrap(err, "invalid requster bnb address")
 			}
 			txID, err := common.NewTxID(args[2])
-			if nil != err {
+			if err != nil {
 				return errors.Wrap(err, "invalid tx hash")
 			}
 

@@ -62,7 +62,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 		c.Logf("================>:%s", r.RequestURI)
 		switch r.RequestURI {
 		case "/block": // trying to get block
-			if _, err := w.Write([]byte(blockResult)); nil != err {
+			if _, err := w.Write([]byte(blockResult)); err != nil {
 				c.Error(err)
 			}
 		}

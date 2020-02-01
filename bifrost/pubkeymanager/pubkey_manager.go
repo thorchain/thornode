@@ -146,7 +146,7 @@ func (pkm *PubKeyManager) RemovePubKey(pk common.PubKey) {
 
 func (pkm *PubKeyManager) FetchPubKeys() {
 	pubkeys, err := pkm.getPubkeys()
-	if nil != err {
+	if err != nil {
 		pkm.logger.Error().Err(err).Msg("fail to get pubkeys from thorchain")
 	}
 	for _, pk := range pubkeys {
@@ -200,11 +200,11 @@ func (pkm *PubKeyManager) getPubkeys() (common.PubKeys, error) {
 		Path:   "/thorchain/vaults/pubkeys",
 	}
 	resp, err := retryablehttp.Get(uri.String())
-	if nil != err {
+	if err != nil {
 		return nil, errors.Wrap(err, "fail to get pubkeys from thorchain")
 	}
 	defer func() {
-		if err := resp.Body.Close(); nil != err {
+		if err := resp.Body.Close(); err != nil {
 			pkm.logger.Error().Err(err).Msg("fail to close response body")
 		}
 	}()
@@ -217,10 +217,10 @@ func (pkm *PubKeyManager) getPubkeys() (common.PubKeys, error) {
 		Yggdrasil common.PubKeys `json:"yggdrasil"`
 	}
 	buf, err := ioutil.ReadAll(resp.Body)
-	if nil != err {
+	if err != nil {
 		return nil, errors.Wrap(err, "fail to read response body")
 	}
-	if err := pkm.cdc.UnmarshalJSON(buf, &pubs); nil != err {
+	if err := pkm.cdc.UnmarshalJSON(buf, &pubs); err != nil {
 		pkm.errCounter.WithLabelValues("fail_unmarshal_pubkeys", "").Inc()
 		return nil, errors.Wrap(err, "fail to unmarshal pubkeys")
 	}

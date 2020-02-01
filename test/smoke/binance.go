@@ -62,13 +62,13 @@ func (b Binance) GetBlockHeight() (int64, error) {
 	}
 
 	var tx btypes.RPCBlock
-	if err := json.Unmarshal(body, &tx); nil != err {
+	if err := json.Unmarshal(body, &tx); err != nil {
 		return 0, errors.Wrap(err, "fail to unmarshal body")
 	}
 	block := tx.Result.Block.Header.Height
 
 	parsedBlock, err := strconv.ParseInt(block, 10, 64)
-	if nil != err {
+	if err != nil {
 		return 0, errors.Wrap(err, "fail to convert block height to int")
 	}
 	return parsedBlock, nil
@@ -193,7 +193,7 @@ func (b Binance) SignTx(key keys.KeyManager, sendMsg msg.SendMsg, memo string) (
 		"sync": "true",
 	}
 	rawBz, err := key.Sign(signMsg)
-	if nil != err {
+	if err != nil {
 		return nil, nil, errors.Wrap(err, "fail to sign message")
 	}
 

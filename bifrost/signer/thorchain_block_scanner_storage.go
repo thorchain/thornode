@@ -25,11 +25,11 @@ func NewThorchainBlockScannerStorage(levelDbFolder string) (*ThorchainBlockScann
 		levelDbFolder = DefaultSignerLevelDBFolder
 	}
 	db, err := leveldb.OpenFile(levelDbFolder, nil)
-	if nil != err {
+	if err != nil {
 		return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
 	}
 	levelDbStorage, err := blockscanner.NewLevelDBScannerStorage(db)
-	if nil != err {
+	if err != nil {
 		return nil, errors.New("fail to create leven db")
 	}
 	return &ThorchainBlockScannerStorage{
@@ -62,10 +62,10 @@ func (s *ThorchainBlockScannerStorage) SetTxOutStatus(txOut types.TxOut, status 
 		Status: status,
 	}
 	buf, err := json.Marshal(txOutLocalItem)
-	if nil != err {
+	if err != nil {
 		return errors.Wrap(err, "fail to marshal TxOutLocalItem to json")
 	}
-	if err := s.db.Put([]byte(s.getTxOutKey(txOut.Height)), buf, nil); nil != err {
+	if err := s.db.Put([]byte(s.getTxOutKey(txOut.Height)), buf, nil); err != nil {
 		return errors.Wrap(err, "fail to set txout local item status")
 	}
 	return nil
@@ -88,7 +88,7 @@ func (s *ThorchainBlockScannerStorage) GetTxOutsForRetry(failedOnly bool) ([]typ
 			continue
 		}
 		var txOutLocalItem TxOutLocalItem
-		if err := json.Unmarshal(buf, &txOutLocalItem); nil != err {
+		if err := json.Unmarshal(buf, &txOutLocalItem); err != nil {
 			return nil, errors.Wrap(err, "fail to unmarshal to txout item")
 		}
 		if !failedOnly {

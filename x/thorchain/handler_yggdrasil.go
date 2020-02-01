@@ -53,7 +53,7 @@ func (h YggdrasilHandler) validate(ctx sdk.Context, msg MsgYggdrasil, version se
 }
 
 func (h YggdrasilHandler) validateV1(ctx sdk.Context, msg MsgYggdrasil) sdk.Error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error(err.Error())
 		return err
 	}
@@ -76,7 +76,7 @@ func (h YggdrasilHandler) handle(ctx sdk.Context, msg MsgYggdrasil, version semv
 
 func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, version semver.Version) sdk.Result {
 	vault, err := h.keeper.GetVault(ctx, msg.PubKey)
-	if nil != err && !stdErrors.Is(err, ErrVaultNotFound) {
+	if err != nil && !stdErrors.Is(err, ErrVaultNotFound) {
 		ctx.Logger().Error("fail to get yggdrasil", "error", err)
 		return sdk.ErrInternal(err.Error()).Result()
 	}
@@ -120,12 +120,12 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 	// observe an outbound tx from yggdrasil vault
 	if vault.Type == YggdrasilVault {
 		asgardVaults, err := h.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
-		if nil != err {
+		if err != nil {
 			ctx.Logger().Error("unable to get asgard vaults", "error", err)
 			return sdk.ErrInternal("unable to get asgard vaults").Result()
 		}
 		isAsgardReceipient, err := asgardVaults.HasAddress(msg.Tx.Chain, msg.Tx.ToAddress)
-		if nil != err {
+		if err != nil {
 			ctx.Logger().Error(fmt.Sprintf("unable to determinate whether %s is an Asgard vault", msg.Tx.ToAddress), "error", err)
 			return sdk.ErrInternal("unable to check recipient against active Asgards").Result()
 		}
@@ -133,7 +133,7 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 		if !isAsgardReceipient {
 			// not sending to asgard , slash the node account
 			for _, c := range msg.Tx.Coins {
-				if err := slashNodeAccount(ctx, h.keeper, msg.PubKey, c.Asset, c.Amount); nil != err {
+				if err := slashNodeAccount(ctx, h.keeper, msg.PubKey, c.Asset, c.Amount); err != nil {
 					ctx.Logger().Error("fail to slash account for sending fund to a none asgard vault using yggdrasil-", "error", err)
 					return sdk.ErrInternal("fail to slash account").Result()
 				}
@@ -153,7 +153,7 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 			}
 		}
 		txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
-		if nil != err {
+		if err != nil {
 			ctx.Logger().Error("fail to get txout store", "error", err)
 			return errBadVersion.Result()
 		}

@@ -46,7 +46,7 @@ func (mss *MockScannerStorage) SetBlockScanStatus(block int64, status BlockScanS
 		Status: status,
 	}
 	buf, err := json.Marshal(blockStatusItem)
-	if nil != err {
+	if err != nil {
 		return errors.Wrap(err, "fail to marshal BlockStatusItem to json")
 	}
 	mss.l.Lock()

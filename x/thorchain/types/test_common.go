@@ -56,7 +56,7 @@ func GetRandomBech32Addr() sdk.AccAddress {
 func GetRandomBech32ConsensusPubKey() string {
 	_, pubKey, _ := atypes.KeyTestPubAddr()
 	result, err := sdk.Bech32ifyConsPub(pubKey)
-	if nil != err {
+	if err != nil {
 		panic(err)
 	}
 	return result

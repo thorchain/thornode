@@ -33,8 +33,8 @@ const (
 	SignToThorchainDuration MetricName = `sign_to_thorchain_duration`
 	SendToThorchainDuration MetricName = `send_to_thorchain_duration`
 
-	ObserverError                     MetricName = `observer_error`
-	SignerError                       MetricName = `signer_error`
+	ObserverError MetricName = `observer_error`
+	SignerError   MetricName = `signer_error`
 
 	PubKeyManagerError MetricName = `pubkey_manager_error`
 )
@@ -222,7 +222,7 @@ func (m *Metrics) Start() error {
 	m.wg.Add(1)
 	go func() {
 		m.logger.Info().Int("port", m.cfg.ListenPort).Msg("start metric server")
-		if err := m.s.ListenAndServe(); nil != err {
+		if err := m.s.ListenAndServe(); err != nil {
 			m.logger.Error().Err(err).Msg("fail to stop metric server")
 		}
 	}()

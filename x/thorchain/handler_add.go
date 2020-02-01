@@ -49,7 +49,7 @@ func (ah AddHandler) validate(ctx sdk.Context, msg MsgAdd, version semver.Versio
 }
 
 func (ah AddHandler) validateV1(ctx sdk.Context, msg MsgAdd) sdk.Error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		return err
 	}
 	if !isSignedByActiveObserver(ctx, ah.keeper, msg.GetSigners()) {
@@ -93,7 +93,7 @@ func (ah AddHandler) handle(ctx sdk.Context, msg MsgAdd) sdk.Error {
 		stakeBytes,
 		EventSuccess,
 	)
-	if err := ah.keeper.UpsertEvent(ctx, evt); nil != err {
+	if err := ah.keeper.UpsertEvent(ctx, evt); err != nil {
 		return sdk.ErrInternal(fmt.Errorf("fail to save event: %w", err).Error())
 	}
 	return nil

@@ -61,7 +61,7 @@ func (s *BinancechainSuite) SetUpSuite(c *C) {
 func (s *BinancechainSuite) TearDownSuite(c *C) {
 	c.Assert(os.Unsetenv("NET"), IsNil)
 
-	if err := os.RemoveAll(s.thordir); nil != err {
+	if err := os.RemoveAll(s.thordir); err != nil {
 		c.Error(err)
 	}
 }
@@ -132,11 +132,11 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
 		if strings.HasPrefix(req.RequestURI, "/abci_query?") {
-			if _, err := rw.Write([]byte(accountInfo)); nil != err {
+			if _, err := rw.Write([]byte(accountInfo)); err != nil {
 				c.Error(err)
 			}
 		} else if strings.HasPrefix(req.RequestURI, "/status") {
-			if _, err := rw.Write([]byte(status)); nil != err {
+			if _, err := rw.Write([]byte(status)); err != nil {
 				c.Error(err)
 			}
 		} else if req.RequestURI == "/abci_info" {

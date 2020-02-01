@@ -17,7 +17,7 @@ func (k KVStore) SetKeygenBlock(ctx sdk.Context, keygen KeygenBlock) error {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixKeygen, strconv.FormatInt(keygen.Height, 10))
 	buf, err := k.cdc.MarshalBinaryBare(keygen)
-	if nil != err {
+	if err != nil {
 		return dbError(ctx, "fail to marshal keygen block", err)
 	}
 	store.Set([]byte(key), buf)
@@ -39,7 +39,7 @@ func (k KVStore) GetKeygenBlock(ctx sdk.Context, height int64) (KeygenBlock, err
 	}
 	buf := store.Get([]byte(key))
 	var keygenBlock KeygenBlock
-	if err := k.cdc.UnmarshalBinaryBare(buf, &keygenBlock); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &keygenBlock); err != nil {
 		return KeygenBlock{}, dbError(ctx, "fail to unmarshal keygen block", err)
 	}
 	return keygenBlock, nil

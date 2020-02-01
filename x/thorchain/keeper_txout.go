@@ -17,7 +17,7 @@ func (k KVStore) SetTxOut(ctx sdk.Context, blockOut *TxOut) error {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixTxOut, strconv.FormatInt(blockOut.Height, 10))
 	buf, err := k.cdc.MarshalBinaryBare(blockOut)
-	if nil != err {
+	if err != nil {
 		return dbError(ctx, "fail to marshal tx out to binary", err)
 	}
 	store.Set([]byte(key), buf)
@@ -39,7 +39,7 @@ func (k KVStore) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
 	}
 	buf := store.Get([]byte(key))
 	var txOut TxOut
-	if err := k.cdc.UnmarshalBinaryBare(buf, &txOut); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &txOut); err != nil {
 		return nil, dbError(ctx, "fail to unmarshal tx out", err)
 	}
 	return &txOut, nil

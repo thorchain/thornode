@@ -40,7 +40,7 @@ func (h SetNodeKeysHandler) validate(ctx sdk.Context, msg MsgSetNodeKeys, versio
 }
 
 func (h SetNodeKeysHandler) validateV1(ctx sdk.Context, msg MsgSetNodeKeys) error {
-	if err := msg.ValidateBasic(); nil != err {
+	if err := msg.ValidateBasic(); err != nil {
 		ctx.Logger().Error(err.Error())
 		return err
 	}
@@ -84,7 +84,7 @@ func (h SetNodeKeysHandler) handleV1(ctx sdk.Context, msg MsgSetNodeKeys, versio
 		ctx.Logger().Error(fmt.Sprintf("node %s is disabled, so it can't update itself", nodeAccount.NodeAddress))
 		return sdk.ErrUnknownRequest("node is disabled can't update").Result()
 	}
-	if err := h.keeper.EnsureNodeKeysUnique(ctx, msg.ValidatorConsPubKey, msg.PubKeySetSet); nil != err {
+	if err := h.keeper.EnsureNodeKeysUnique(ctx, msg.ValidatorConsPubKey, msg.PubKeySetSet); err != nil {
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
@@ -92,7 +92,7 @@ func (h SetNodeKeysHandler) handleV1(ctx sdk.Context, msg MsgSetNodeKeys, versio
 	nodeAccount.UpdateStatus(NodeStandby, ctx.BlockHeight())
 	nodeAccount.PubKeySet = msg.PubKeySetSet
 	nodeAccount.ValidatorConsPubKey = msg.ValidatorConsPubKey
-	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); nil != err {
+	if err := h.keeper.SetNodeAccount(ctx, nodeAccount); err != nil {
 		ctx.Logger().Error(fmt.Sprintf("fail to save node account: %s", nodeAccount), "error", err)
 		return sdk.ErrInternal("fail to save node account").Result()
 	}

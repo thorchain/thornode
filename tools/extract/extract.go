@@ -30,7 +30,7 @@ func main() {
 		log.Panic(err)
 	}
 
-	if _, err := sdk.NewDexClient(*apiAddr, n, keyManager); nil != err {
+	if _, err := sdk.NewDexClient(*apiAddr, n, keyManager); err != nil {
 		log.Panic(err)
 	}
 

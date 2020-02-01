@@ -24,11 +24,11 @@ func NewBinanceBlockScannerStorage(levelDbFolder string) (*BinanceBlockScannerSt
 		levelDbFolder = DefaultObserverLevelDBFolder
 	}
 	db, err := leveldb.OpenFile(levelDbFolder, nil)
-	if nil != err {
+	if err != nil {
 		return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
 	}
 	levelDbStorage, err := blockscanner.NewLevelDBScannerStorage(db)
-	if nil != err {
+	if err != nil {
 		return nil, errors.New("fail to create leven db")
 	}
 	return &BinanceBlockScannerStorage{
@@ -48,10 +48,10 @@ func (ldbss *BinanceBlockScannerStorage) SetTxInStatus(txIn types.TxIn, status t
 		Status: status,
 	}
 	buf, err := json.Marshal(txStatusItem)
-	if nil != err {
+	if err != nil {
 		return errors.Wrap(err, "fail to marshal TxInStatusItem to json")
 	}
-	if err := ldbss.db.Put([]byte(getTxInStatusKey(txIn.BlockHeight)), buf, nil); nil != err {
+	if err := ldbss.db.Put([]byte(getTxInStatusKey(txIn.BlockHeight)), buf, nil); err != nil {
 		return errors.Wrap(err, "fail to set tx in status")
 	}
 	return nil
@@ -74,7 +74,7 @@ func (ldbss *BinanceBlockScannerStorage) GetTxInForRetry(failedOnly bool) ([]typ
 			continue
 		}
 		var txInStatusItem types.TxInStatusItem
-		if err := json.Unmarshal(buf, &txInStatusItem); nil != err {
+		if err := json.Unmarshal(buf, &txInStatusItem); err != nil {
 			return nil, errors.Wrap(err, "fail to unmarshal to txin status item")
 		}
 		if !failedOnly {

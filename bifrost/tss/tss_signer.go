@@ -77,7 +77,7 @@ func (s *KeySign) ExportAsKeyStore(password string) (*keys.EncryptedKeyJSON, err
 func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string) (sig tx.StdSignature, err error) {
 	var stdSignature tx.StdSignature
 	pk, err := sdk.GetAccPubKeyBech32(poolPubKey)
-	if nil != err {
+	if err != nil {
 		return stdSignature, fmt.Errorf("fail to get pub key: %w", err)
 	}
 	signPack, err := s.remoteSign(msg.Bytes(), poolPubKey)
@@ -120,13 +120,13 @@ func (s *KeySign) remoteSign(msg []byte, poolPubKey string) ([]byte, error) {
 	}
 	encodedMsg := base64.StdEncoding.EncodeToString(msg)
 	rResult, sResult, err := s.toLocalTSSSigner(poolPubKey, encodedMsg)
-	if nil != err {
+	if err != nil {
 		return nil, errors.Wrap(err, "fail to tss sign")
 	}
 
 	s.logger.Debug().Str("R", rResult).Str("S", sResult).Msg("tss result")
 	data, err := getSignature(rResult, sResult)
-	if nil != err {
+	if err != nil {
 		return nil, errors.Wrap(err, "fail to decode tss signature")
 	}
 
@@ -134,11 +134,11 @@ func (s *KeySign) remoteSign(msg []byte, poolPubKey string) ([]byte, error) {
 }
 func getSignature(r, s string) ([]byte, error) {
 	rBytes, err := base64.StdEncoding.DecodeString(r)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 	sBytes, err := base64.StdEncoding.DecodeString(s)
-	if nil != err {
+	if err != nil {
 		return nil, err
 	}
 
@@ -182,7 +182,7 @@ func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string) (string, string, 
 		Message:    sendmsg,
 	}
 	buf, err := json.Marshal(tssMsg)
-	if nil != err {
+	if err != nil {
 		return "", "", errors.Wrap(err, "fail to create tss request msg")
 	}
 	s.logger.Debug().Str("payload", string(buf)).Msg("msg to tss Local node")
@@ -192,7 +192,7 @@ func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string) (string, string, 
 		return "", "", errors.Wrapf(err, "fail to send request to local TSS node,url: %s", localTssURL)
 	}
 	defer func() {
-		if err := resp.Body.Close(); nil != err {
+		if err := resp.Body.Close(); err != nil {
 			s.logger.Error().Err(err).Msg("fail to close response body")
 		}
 	}()
@@ -212,7 +212,7 @@ func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string) (string, string, 
 		Status int    `json:"status"`
 	}{}
 
-	if err := json.Unmarshal(respBody, &keySignResp); nil != err {
+	if err := json.Unmarshal(respBody, &keySignResp); err != nil {
 		return "", "", errors.Wrap(err, "fail to unmarshal tss response body")
 	}
 	return keySignResp.R, keySignResp.S, nil

@@ -30,7 +30,7 @@ func (k KVStore) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker,
 	}
 	var ps PoolStaker
 	buf := store.Get([]byte(key))
-	if err := k.cdc.UnmarshalBinaryBare(buf, &ps); nil != err {
+	if err := k.cdc.UnmarshalBinaryBare(buf, &ps); err != nil {
 		ctx.Logger().Error("fail to unmarshal poolstaker", "error", err)
 		return PoolStaker{}, err
 	}

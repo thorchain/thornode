@@ -38,7 +38,7 @@ func NewPubKey(key string) (PubKey, error) {
 		return EmptyPubKey, nil
 	}
 	_, err := sdk.GetAccPubKeyBech32(key)
-	if nil != err {
+	if err != nil {
 		return EmptyPubKey, fmt.Errorf("%s is not bech32 encoded pub key,err : %w", key, err)
 	}
 	return PubKey(key), nil
@@ -47,7 +47,7 @@ func NewPubKey(key string) (PubKey, error) {
 // NewPubKeyFromCrypto
 func NewPubKeyFromCrypto(pk crypto.PubKey) (PubKey, error) {
 	s, err := sdk.Bech32ifyAccPub(pk)
-	if nil != err {
+	if err != nil {
 		return EmptyPubKey, fmt.Errorf("fail to create PubKey from crypto.PubKey,err:%w", err)
 	}
 	return PubKey(s), nil
@@ -77,21 +77,21 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 	switch chain {
 	case BNBChain:
 		pk, err := sdk.GetAccPubKeyBech32(string(pubKey))
-		if nil != err {
+		if err != nil {
 			return NoAddress, err
 		}
 		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk.Address().Bytes())
-		if nil != err {
+		if err != nil {
 			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
 		}
 		return NewAddress(str)
 	case THORChain:
 		pk, err := sdk.GetAccPubKeyBech32(string(pubKey))
-		if nil != err {
+		if err != nil {
 			return NoAddress, err
 		}
 		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk.Address().Bytes())
-		if nil != err {
+		if err != nil {
 			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
 		}
 		return NewAddress(str)
@@ -122,20 +122,20 @@ func (pubKey *PubKey) UnmarshalJSON(data []byte) error {
 	}
 	if strings.HasPrefix(s, "bnbp") {
 		buf, err := sdk.GetFromBech32(s, "bnbp")
-		if nil != err {
+		if err != nil {
 			return fmt.Errorf("fail to get from bech32 ,err:%w", err)
 		}
 		pk, err := cryptoAmino.PubKeyFromBytes(buf)
-		if nil != err {
+		if err != nil {
 			return fmt.Errorf("fail to create pub key from bytes,err:%w", err)
 		}
 		s, err = sdk.Bech32ifyAccPub(pk)
-		if nil != err {
+		if err != nil {
 			return fmt.Errorf("fail to bech32 acc pub:%w", err)
 		}
 	}
 	pk, err := NewPubKey(s)
-	if nil != err {
+	if err != nil {
 		return err
 	}
 	*pubKey = pk
