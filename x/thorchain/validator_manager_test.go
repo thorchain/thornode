@@ -78,6 +78,7 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 		constants.OldValidatorRate:              256,
 		constants.MinimumNodesForBFT:            4,
 		constants.RotatePerBlockHeight:          256,
+		constants.RotateRetryBlocks:             720,
 	}, map[constants.ConstantName]bool{
 		constants.StrictBondStakeRatio: false,
 	}, map[constants.ConstantName]string{})

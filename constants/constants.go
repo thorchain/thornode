@@ -40,6 +40,7 @@ func NewConstantValue010() *ConstantValue010 {
 			DesireValidatorSet:              33,                  // desire validator set
 			FundMigrationInterval:           360,                 // number of blocks THORNode will attempt to move funds from a retiring vault to an active one
 			RotatePerBlockHeight:            51840,               // How many blocks THORNode try to rotate validators
+			RotateRetryBlocks:               720,                 // How many blocks until we retry a churn (only if we haven't had a successful churn in RotatePerBlockHeight blocks
 			BadValidatorRate:                51840,               // rate to mark a validator to be rotated out for bad behavior
 			OldValidatorRate:                51840,               // rate to mark a validator to be rotated out for age
 			LackOfObservationPenalty:        2,                   // add two slash point for each block where a node does not observe
