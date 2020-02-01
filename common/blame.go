@@ -5,10 +5,7 @@ import (
 	"strings"
 )
 
-var EmptyBlame = Blame{
-	FailReason: "",
-	BlameNodes: make(PubKeys, 0),
-}
+var EmptyBlame = Blame{}
 
 type Blame struct {
 	FailReason string  `json:"fail_reason"`
@@ -22,6 +19,6 @@ func (b Blame) IsEmpty() bool {
 func (b Blame) String() string {
 	sb := strings.Builder{}
 	sb.WriteString("reason:" + b.FailReason + "\n")
-	sb.WriteString("nodes:" + fmt.Sprintf("%+v", b.BlameNodes) + "\n")
+	sb.WriteString(fmt.Sprintf("nodes:%+v\n", b.BlameNodes))
 	return sb.String()
 }
