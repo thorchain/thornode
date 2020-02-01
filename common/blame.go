@@ -5,7 +5,10 @@ import (
 	"strings"
 )
 
-var EmptyBlame = Blame{}
+var EmptyBlame = Blame{
+	FailReason: "",
+	BlameNodes: make(PubKeys, 0),
+}
 
 type Blame struct {
 	FailReason string  `json:"fail_reason"`
