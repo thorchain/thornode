@@ -19,13 +19,12 @@ func (vts *ValidatorMgrV1TestSuite) SetUpSuite(c *C) {
 func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1)
+	var err error
 	ver := semver.MustParse("0.1.0")
-	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(k, ver)
-	c.Assert(err, IsNil)
+	txOutStore := NewTxOutStoreDummy()
 
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(txOutStore)
+	vMgr := newValidatorMgrV1(k, txOutStore, versionedVaultMgrDummy)
 	c.Assert(vMgr, NotNil)
 	constAccessor := constants.GetConstantValues(ver)
 	err = vMgr.setupValidatorNodes(ctx, 0, constAccessor)

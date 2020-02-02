@@ -155,7 +155,7 @@ func (s *HelperSuite) TestRefundBondError(c *C) {
 	na := GetRandomNodeAccount(NodeActive)
 	na.PubKeySet.Secp256k1 = pk
 	na.Bond = sdk.NewUint(100 * common.One)
-	txOut := NewTxStoreDummy()
+	txOut := NewTxOutStoreDummy()
 	tx := GetRandomTx()
 	keeper1 := &TestRefundBondKeeper{}
 	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), IsNil)
@@ -195,7 +195,7 @@ func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	na := GetRandomNodeAccount(NodeActive)
 	na.Bond = sdk.NewUint(12098 * common.One)
-	txOut := NewTxStoreDummy()
+	txOut := NewTxOutStoreDummy()
 	pk := GetRandomPubKey()
 	na.PubKeySet.Secp256k1 = pk
 	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)

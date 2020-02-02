@@ -6,6 +6,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type TxOutStoreSuite struct{}
@@ -78,9 +79,9 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		InHash:    inTxID,
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(20*common.One)),
 	}
-	version := semver.MustParse("0.1.0")
-	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, version)
-	c.Assert(err, IsNil)
+	txOutStore := NewTxOutStorageV1(w.keeper)
+	constantValues := constants.GetConstantValues(semver.MustParse("0.1.0"))
+	txOutStore.NewBlock(w.ctx.BlockHeight(), constantValues)
 	txOutStore.TryAddTxOutItem(w.ctx, item)
 	msgs := txOutStore.GetOutboundItems()
 	c.Assert(msgs, HasLen, 1)
@@ -127,9 +128,7 @@ func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 		InHash:    inTxID,
 		Coin:      common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One)),
 	}
-	version := semver.MustParse("0.1.0")
-	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, version)
-	c.Assert(err, IsNil)
+	txOutStore := NewTxOutStoreDummy()
 	success, err := txOutStore.TryAddTxOutItem(w.ctx, item)
 	c.Assert(success, Equals, true)
 	c.Assert(err, IsNil)

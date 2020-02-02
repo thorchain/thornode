@@ -60,7 +60,7 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 		nas:   nas,
 		addrs: []sdk.AccAddress{nas[0].NodeAddress},
 	}
-	txOutStore := NewTxStoreDummy()
+	txOutStore := NewTxOutStoreDummy()
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 
@@ -126,7 +126,7 @@ func (k *TestSlashingLackKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) e
 func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(201) // set blockheight
-	txOutStore := NewTxStoreDummy()
+	txOutStore := NewTxOutStoreDummy()
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 	na := GetRandomNodeAccount(NodeActive)

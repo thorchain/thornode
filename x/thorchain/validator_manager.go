@@ -19,30 +19,35 @@ type VersionedValidatorManager interface {
 	BeginBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error
 	EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) []abci.ValidatorUpdate
 	RequestYggReturn(ctx sdk.Context, version semver.Version, node NodeAccount) error
+	SetTxOutStore(_ TxOutStore)
 }
 
 // VersionedValidatorMgr
 type VersionedValidatorMgr struct {
 	keeper                Keeper
 	v1ValidatorMgr        *validatorMgrV1
-	versionedTxOutStore   VersionedTxOutStore
+	txOutStore            TxOutStore
 	versionedVaultManager VersionedVaultManager
 }
 
 // NewVersionedValidatorMgr create a new versioned validator mgr , which require to pass in a version
-func NewVersionedValidatorMgr(k Keeper, versionedTxOutStore VersionedTxOutStore, versionedVaultManager VersionedVaultManager) *VersionedValidatorMgr {
+func NewVersionedValidatorMgr(k Keeper, txOutStore TxOutStore, versionedVaultManager VersionedVaultManager) *VersionedValidatorMgr {
 	return &VersionedValidatorMgr{
 		keeper:                k,
-		versionedTxOutStore:   versionedTxOutStore,
+		txOutStore:            txOutStore,
 		versionedVaultManager: versionedVaultManager,
 	}
+}
+
+func (vm *VersionedValidatorMgr) SetTxOutStore(txOutStore TxOutStore) {
+	vm.txOutStore = txOutStore
 }
 
 // BeginBlock start to process a new block
 func (vm *VersionedValidatorMgr) BeginBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) error {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		if vm.v1ValidatorMgr == nil {
-			vm.v1ValidatorMgr = newValidatorMgrV1(vm.keeper, vm.versionedTxOutStore, vm.versionedVaultManager)
+			vm.v1ValidatorMgr = newValidatorMgrV1(vm.keeper, vm.txOutStore, vm.versionedVaultManager)
 		}
 		return vm.v1ValidatorMgr.BeginBlock(ctx, constAccessor)
 	}
@@ -53,7 +58,7 @@ func (vm *VersionedValidatorMgr) BeginBlock(ctx sdk.Context, version semver.Vers
 func (vm *VersionedValidatorMgr) EndBlock(ctx sdk.Context, version semver.Version, constAccessor constants.ConstantValues) []abci.ValidatorUpdate {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		if vm.v1ValidatorMgr == nil {
-			vm.v1ValidatorMgr = newValidatorMgrV1(vm.keeper, vm.versionedTxOutStore, vm.versionedVaultManager)
+			vm.v1ValidatorMgr = newValidatorMgrV1(vm.keeper, vm.txOutStore, vm.versionedVaultManager)
 		}
 		return vm.v1ValidatorMgr.EndBlock(ctx, constAccessor)
 	}
@@ -65,7 +70,7 @@ func (vm *VersionedValidatorMgr) EndBlock(ctx sdk.Context, version semver.Versio
 func (vm *VersionedValidatorMgr) RequestYggReturn(ctx sdk.Context, version semver.Version, node NodeAccount) error {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		if vm.v1ValidatorMgr == nil {
-			vm.v1ValidatorMgr = newValidatorMgrV1(vm.keeper, vm.versionedTxOutStore, vm.versionedVaultManager)
+			vm.v1ValidatorMgr = newValidatorMgrV1(vm.keeper, vm.txOutStore, vm.versionedVaultManager)
 		}
 		return vm.v1ValidatorMgr.RequestYggReturn(ctx, node)
 	}

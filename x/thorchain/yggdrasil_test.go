@@ -69,7 +69,7 @@ func (s YggdrasilSuite) TestFund(c *C) {
 		na.Bond = sdk.NewUint(common.One * 1000000)
 		c.Assert(k.SetNodeAccount(ctx, na), IsNil)
 	}
-	txOutStore := NewTxStoreDummy()
+	txOutStore := NewTxOutStoreDummy()
 	constAccessor := constants.GetConstantValues(semver.MustParse("0.1.0"))
 	txOutStore.NewBlock(ctx.BlockHeight(), constAccessor)
 	err := Fund(ctx, k, txOutStore, constAccessor)

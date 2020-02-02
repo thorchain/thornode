@@ -11,15 +11,15 @@ import (
 
 type ObservedTxOutHandler struct {
 	keeper                Keeper
-	versionedTxOutStore   VersionedTxOutStore
+	txOutStore            TxOutStore
 	validatorMgr          VersionedValidatorManager
 	versionedVaultManager VersionedVaultManager
 }
 
-func NewObservedTxOutHandler(keeper Keeper, txOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, versionedVaultManager VersionedVaultManager) ObservedTxOutHandler {
+func NewObservedTxOutHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager, versionedVaultManager VersionedVaultManager) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
 		keeper:                keeper,
-		versionedTxOutStore:   txOutStore,
+		txOutStore:            txOutStore,
 		validatorMgr:          validatorMgr,
 		versionedVaultManager: versionedVaultManager,
 	}
@@ -90,7 +90,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager)
+	handler := NewHandler(h.keeper, h.txOutStore, h.validatorMgr, h.versionedVaultManager)
 
 	for _, tx := range msg.Txs {
 

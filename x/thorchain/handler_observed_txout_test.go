@@ -32,8 +32,8 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 		isActive: true,
 	}
 
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
-	handler := NewObservedTxOutHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.txOutStore)
+	handler := NewObservedTxOutHandler(keeper, w.txOutStore, w.validatorMgr, versionedVaultMgrDummy)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -190,7 +190,7 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	// txs[0].Tx.FromAddress, err = currentPool.GetAddress()
 	c.Assert(err, IsNil)
 
-	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+	txOutStore := NewTxOutStoreDummy()
 
 	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
 	ygg.Coins = common.Coins{
@@ -208,10 +208,9 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 		yggExists: true,
 		ygg:       ygg,
 	}
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
 	keeper.txOutStore = txOutStore
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(txOutStore)
+	handler := NewObservedTxOutHandler(keeper, txOutStore, w.validatorMgr, versionedVaultMgrDummy)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)

@@ -10,14 +10,14 @@ import (
 )
 
 type EndPoolHandler struct {
-	keeper              Keeper
-	versionedTxOutStore VersionedTxOutStore
+	keeper     Keeper
+	txOutStore TxOutStore
 }
 
-func NewEndPoolHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore) EndPoolHandler {
+func NewEndPoolHandler(keeper Keeper, txOutStore TxOutStore) EndPoolHandler {
 	return EndPoolHandler{
-		keeper:              keeper,
-		versionedTxOutStore: versionedTxOutStore,
+		keeper:     keeper,
+		txOutStore: txOutStore,
 	}
 }
 
@@ -80,7 +80,7 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver
 			msg.Asset,
 			msg.Signer,
 		)
-		unstakeHandler := NewUnstakeHandler(h.keeper, h.versionedTxOutStore)
+		unstakeHandler := NewUnstakeHandler(h.keeper, h.txOutStore)
 		result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 		if !result.IsOK() {
 			ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)

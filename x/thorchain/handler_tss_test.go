@@ -78,8 +78,8 @@ func newTssHandlerTestHelper(c *C) tssHandlerTestHelper {
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
 
 	constAccessor := constants.GetConstantValues(version)
-	versionedTxOutStore := NewVersionedTxOutStore()
-	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
+	txOutStore := NewTxOutStoreDummy()
+	vaultMgr := NewVersionedVaultMgr(txOutStore)
 	var members common.PubKeys
 	for i := 0; i < 8; i++ {
 		na := GetRandomNodeAccount(NodeStandby)

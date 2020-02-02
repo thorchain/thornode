@@ -9,15 +9,17 @@ import (
 
 // VersionedVaultMgrDummy used for test purpose
 type VersionedVaultMgrDummy struct {
-	versionedTxOutStore VersionedTxOutStore
+	versionedTxOutStore TxOutStore
 	vaultMgrDummy       *VaultMgrDummy
 }
 
-func NewVersionedVaultMgrDummy(versionedTxOutStore VersionedTxOutStore) *VersionedVaultMgrDummy {
+func NewVersionedVaultMgrDummy(versionedTxOutStore TxOutStore) *VersionedVaultMgrDummy {
 	return &VersionedVaultMgrDummy{
 		versionedTxOutStore: versionedTxOutStore,
 	}
 }
+
+func (v *VersionedVaultMgrDummy) SetTxOutStore(_ TxOutStore) {}
 
 func (v *VersionedVaultMgrDummy) GetVaultManager(ctx sdk.Context, keeper Keeper, version semver.Version) (VaultManager, error) {
 	if nil == v.vaultMgrDummy {

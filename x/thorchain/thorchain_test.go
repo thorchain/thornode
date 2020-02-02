@@ -94,13 +94,11 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	ver := semver.MustParse("0.1.0")
 	consts := constants.GetConstantValues(ver)
 
-	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStoreDummy)
+	txOutStore := NewTxOutStoreDummy()
+	versionedVaultMgr := NewVersionedVaultMgr(txOutStore)
 	vaultMgr, err := versionedVaultMgr.GetVaultManager(ctx, keeper, ver)
 	c.Assert(err, IsNil)
-	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgr)
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
-	c.Assert(err, IsNil)
+	validatorMgr := newValidatorMgrV1(keeper, txOutStore, versionedVaultMgr)
 
 	// create starting point, vault and four node active node accounts
 	vault := GetRandomVault()
@@ -211,11 +209,9 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	ver := semver.MustParse("0.1.0")
 	consts := constants.GetConstantValues(ver)
 
-	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
-	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
-	c.Assert(err, IsNil)
+	txOutStore := NewTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(txOutStore)
+	validatorMgr := newValidatorMgrV1(keeper, txOutStore, versionedVaultMgrDummy)
 
 	// create active asgard vault
 	asgard := GetRandomVault()
@@ -336,7 +332,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 		ygg.SubFunds(ygg.Coins)
 		c.Assert(keeper.SetVault(ctx, ygg), IsNil)
 	}
-	versionedTxOutStoreDummy.txoutStore.ClearOutboundItems() // clear out txs
+	txOutStore.ClearOutboundItems() // clear out txs
 
 	// run stage 2 of ragnarok protocol, nth = 1
 	ragnarokHeight, err := keeper.GetRagnarokBlockHeight(ctx)
@@ -345,12 +341,12 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	for i := 1; i <= 10; i++ { // simulate each round of ragnarok (max of ten)
 		ctx = ctx.WithBlockHeight(ragnarokHeight + (int64(i) * migrateInterval))
 		c.Assert(validatorMgr.processRagnarok(ctx, active, consts), IsNil)
-		items := versionedTxOutStoreDummy.txoutStore.GetOutboundItems()
+		items := txOutStore.GetOutboundItems()
 		c.Assert(items, HasLen, 15, Commentf("%d", len(items)))
 
 		// validate bonders have correct coin amounts being sent to them on each round of ragnarok
 		for _, bonder := range bonders {
-			items := versionedTxOutStoreDummy.txoutStore.GetOutboundItemByToAddress(bonder.BondAddress)
+			items := txOutStore.GetOutboundItemByToAddress(bonder.BondAddress)
 			c.Assert(items, HasLen, 1)
 			outCoin := common.NewCoin(common.RuneAsset(), calcExpectedValue(bonder.Bond, i))
 			c.Assert(items[0].Coin.Equals(outCoin), Equals, true, Commentf("expect:%s, however:%s", outCoin.String(), items[0].Coin.String()))
@@ -358,7 +354,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 
 		// validate stakers get their returns
 		for j, staker := range stakers {
-			items := versionedTxOutStoreDummy.txoutStore.GetOutboundItemByToAddress(staker)
+			items := txOutStore.GetOutboundItemByToAddress(staker)
 			// TODO: check item amounts
 			if j == len(stakers)-1 {
 				c.Assert(items, HasLen, 2, Commentf("%d", len(items)))
@@ -369,13 +365,13 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 
 		// validate reserve contributors get their returns
 		for _, res := range reserves {
-			items := versionedTxOutStoreDummy.txoutStore.GetOutboundItemByToAddress(res.Address)
+			items := txOutStore.GetOutboundItemByToAddress(res.Address)
 			c.Assert(items, HasLen, 1)
 			outCoin := common.NewCoin(common.RuneAsset(), calcExpectedValue(res.Amount, i))
 			c.Assert(items[0].Coin.Equals(outCoin), Equals, true, Commentf("expect:%s, however:%s", outCoin, items[0].Coin))
 		}
 
-		versionedTxOutStoreDummy.txoutStore.ClearOutboundItems() // clear out txs
+		txOutStore.ClearOutboundItems() // clear out txs
 	}
 }
 
@@ -397,9 +393,9 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 	ver := semver.MustParse("0.1.0")
 	consts := constants.GetConstantValues(ver)
 
-	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := newValidatorMgrV1(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	txOutStore := NewTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(txOutStore)
+	validatorMgr := newValidatorMgrV1(keeper, txOutStore, versionedVaultMgrDummy)
 
 	// create active asgard vault
 	asgard := GetRandomVault()
@@ -500,6 +496,6 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
 	ctx = ctx.WithBlockHeight(currentHeight + migrateInterval)
 	c.Assert(validatorMgr.BeginBlock(ctx, consts), IsNil)
-	versionedTxOutStoreDummy.txoutStore.ClearOutboundItems()
+	txOutStore.ClearOutboundItems()
 	c.Assert(validatorMgr.EndBlock(ctx, consts), IsNil)
 }

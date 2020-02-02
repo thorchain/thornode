@@ -74,23 +74,18 @@ type AppModule struct {
 	keeper                Keeper
 	coinKeeper            bank.Keeper
 	supplyKeeper          supply.Keeper
-	txOutStore            VersionedTxOutStore
+	txOutStore            TxOutStore
 	validatorMgr          VersionedValidatorManager
 	versionedVaultManager VersionedVaultManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
-	versionedTxOutStore := NewVersionedTxOutStore()
-	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
 	return AppModule{
-		AppModuleBasic:        AppModuleBasic{},
-		keeper:                k,
-		coinKeeper:            bankKeeper,
-		supplyKeeper:          supplyKeeper,
-		txOutStore:            versionedTxOutStore,
-		validatorMgr:          NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr),
-		versionedVaultManager: versionedVaultMgr,
+		AppModuleBasic: AppModuleBasic{},
+		keeper:         k,
+		coinKeeper:     bankKeeper,
+		supplyKeeper:   supplyKeeper,
 	}
 }
 
@@ -118,6 +113,7 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
+	var err error
 
 	version := am.keeper.GetLowestActiveVersion(ctx)
 	constantValues := constants.GetConstantValues(version)
@@ -125,19 +121,26 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
 		return
 	}
-	if err := am.validatorMgr.BeginBlock(ctx, version, constantValues); err != nil {
-		ctx.Logger().Error("Fail to begin block on validator", "error", err)
-	}
-	txStore, err := am.txOutStore.GetTxOutStore(am.keeper, version)
+
+	// get a tx out store based on the current version
+	am.txOutStore, err = GetTxOutStore(am.keeper, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return
 	}
-	txStore.NewBlock(req.Header.Height, constantValues)
+	am.validatorMgr.SetTxOutStore(am.txOutStore)          // update the tx out store in validator mgr
+	am.versionedVaultManager.SetTxOutStore(am.txOutStore) // update the tx out store in vault mgr
+
+	if err := am.validatorMgr.BeginBlock(ctx, version, constantValues); err != nil {
+		ctx.Logger().Error("Fail to begin block on validator", "error", err)
+	}
+
+	am.txOutStore.NewBlock(req.Header.Height, constantValues)
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	ctx.Logger().Debug("End Block", "height", req.Height)
+	var err error
 
 	version := am.keeper.GetLowestActiveVersion(ctx)
 	constantValues := constants.GetConstantValues(version)
@@ -145,12 +148,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
 		return nil
 	}
-	txStore, err := am.txOutStore.GetTxOutStore(am.keeper, version)
-	if err != nil {
-		ctx.Logger().Error("fail to get tx out store", "error", err)
-		return nil
-	}
-	slasher := NewSlasher(am.keeper, txStore)
+	slasher := NewSlasher(am.keeper, am.txOutStore)
 	// slash node accounts for not observing any accepted inbound tx
 	if err := slasher.LackObserving(ctx, constantValues); err != nil {
 		ctx.Logger().Error("Unable to slash for lack of observing:", "error", err)
@@ -167,7 +165,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	}
 
 	// Fill up Yggdrasil vaults
-	err = Fund(ctx, am.keeper, txStore, constantValues)
+	err = Fund(ctx, am.keeper, am.txOutStore, constantValues)
 	if err != nil {
 		ctx.Logger().Error("Unable to fund Yggdrasil", "error", err)
 	}
@@ -186,7 +184,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to end block for vault manager", "error", err)
 	}
 
-	txStore.CommitBlock(ctx)
+	am.txOutStore.CommitBlock(ctx)
 	return am.validatorMgr.EndBlock(ctx, version, constantValues)
 }
 

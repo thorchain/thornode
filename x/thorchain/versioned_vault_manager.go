@@ -10,6 +10,7 @@ import (
 // VersionedVaultManager
 type VersionedVaultManager interface {
 	GetVaultManager(ctx sdk.Context, keeper Keeper, version semver.Version) (VaultManager, error)
+	SetTxOutStore(_ TxOutStore)
 }
 
 // VaultManager interface define the contract of Vault Manager
@@ -21,22 +22,26 @@ type VaultManager interface {
 
 // VersionedVaultMgr is an implementation of versioned Vault Manager
 type VersionedVaultMgr struct {
-	vaultMgrV1          *VaultMgr
-	versionedTxOutStore VersionedTxOutStore
+	vaultMgrV1 *VaultMgr
+	txOutStore TxOutStore
 }
 
 // NewVersionedVaultMgr create a new instance of VersionedVaultMgr
-func NewVersionedVaultMgr(versionedTxOutStore VersionedTxOutStore) *VersionedVaultMgr {
+func NewVersionedVaultMgr(txOutStore TxOutStore) *VersionedVaultMgr {
 	return &VersionedVaultMgr{
-		versionedTxOutStore: versionedTxOutStore,
+		txOutStore: txOutStore,
 	}
+}
+
+func (v *VersionedVaultMgr) SetTxOutStore(txOutStore TxOutStore) {
+	v.txOutStore = txOutStore
 }
 
 // GetVaultManager retrieve a VaultManager that is compatible with the given version
 func (v *VersionedVaultMgr) GetVaultManager(ctx sdk.Context, keeper Keeper, version semver.Version) (VaultManager, error) {
 	if version.GTE(semver.MustParse("0.1.0")) {
 		if v.vaultMgrV1 == nil {
-			v.vaultMgrV1 = NewVaultMgr(keeper, v.versionedTxOutStore)
+			v.vaultMgrV1 = NewVaultMgr(keeper, v.txOutStore)
 		}
 		return v.vaultMgrV1, nil
 	}

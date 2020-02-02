@@ -14,11 +14,11 @@ import (
 // UnstakeHandler
 type UnstakeHandler struct {
 	keeper     Keeper
-	txOutStore VersionedTxOutStore
+	txOutStore TxOutStore
 }
 
 // NewUnstakeHandler create a new instance of UnstakeHandler to process unstake request
-func NewUnstakeHandler(keeper Keeper, txOutStore VersionedTxOutStore) UnstakeHandler {
+func NewUnstakeHandler(keeper Keeper, txOutStore TxOutStore) UnstakeHandler {
 	return UnstakeHandler{
 		keeper:     keeper,
 		txOutStore: txOutStore,
@@ -133,18 +133,13 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		ctx.Logger().Error("fail to save event", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to save event")
 	}
-	txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
-	if err != nil {
-		ctx.Logger().Error("fail to get txout store", "error", err)
-		return nil, errBadVersion
-	}
 	toi := &TxOutItem{
 		Chain:     common.BNBChain,
 		InHash:    msg.Tx.ID,
 		ToAddress: stakerUnit.RuneAddress,
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
 	}
-	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+	_, err = h.txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
@@ -157,7 +152,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		ToAddress: stakerUnit.AssetAddress,
 		Coin:      common.NewCoin(msg.Asset, assetAmount),
 	}
-	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+	_, err = h.txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")

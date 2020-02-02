@@ -93,7 +93,7 @@ type handlerTestWrapper struct {
 	ctx                  sdk.Context
 	keeper               Keeper
 	validatorMgr         VersionedValidatorManager
-	versionedTxOutStore  VersionedTxOutStore
+	txOutStore           TxOutStore
 	activeNodeAccount    NodeAccount
 	notActiveNodeAccount NodeAccount
 }
@@ -116,20 +116,18 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 	}
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
-	versionedTxOutStore := NewVersionedTxOutStore()
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
-	txOutStore, err := versionedTxOutStore.GetTxOutStore(k, ver)
-	c.Assert(err, IsNil)
+	txOutStore := NewTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(txOutStore)
 
 	txOutStore.NewBlock(height, constAccessor)
-	validatorMgr := NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgrDummy)
+	validatorMgr := NewVersionedValidatorMgr(k, txOutStore, versionedVaultMgrDummy)
 	c.Assert(validatorMgr.BeginBlock(ctx, ver, constAccessor), IsNil)
 
 	return handlerTestWrapper{
 		ctx:                  ctx,
 		keeper:               k,
 		validatorMgr:         validatorMgr,
-		versionedTxOutStore:  versionedTxOutStore,
+		txOutStore:           txOutStore,
 		activeNodeAccount:    acc1,
 		notActiveNodeAccount: GetRandomNodeAccount(NodeDisabled),
 	}
@@ -180,8 +178,9 @@ func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
 		w.activeNodeAccount.NodeAddress,
 	)
 
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
-	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
+	txOutStore := NewTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(txOutStore)
+	handler := NewHandler(w.keeper, txOutStore, w.validatorMgr, versionedVaultMgrDummy)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -227,8 +226,8 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 		w.activeNodeAccount.NodeAddress,
 	)
 
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
-	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.txOutStore)
+	handler := NewHandler(w.keeper, w.txOutStore, w.validatorMgr, versionedVaultMgrDummy)
 	result := handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -256,9 +255,7 @@ func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
 	)
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
-	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
-	c.Assert(err, IsNil)
-	txOutStore.NewBlock(2, constAccessor)
+	w.txOutStore.NewBlock(2, constAccessor)
 	result = handler(w.ctx, msg)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
 
@@ -296,9 +293,7 @@ func (HandlerSuite) TestRefund(c *C) {
 		1024,
 		GetRandomPubKey(),
 	)
-	ver := semver.MustParse("0.1.0")
-	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
-	c.Assert(err, IsNil)
+	txOutStore := NewTxOutStoreDummy()
 	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
 	c.Assert(txOutStore.GetOutboundItems(), HasLen, 1)
 
@@ -312,6 +307,7 @@ func (HandlerSuite) TestRefund(c *C) {
 	c.Assert(refundTx(w.ctx, txin, txOutStore, w.keeper, sdk.CodeInternal, "refund"), IsNil)
 	c.Assert(txOutStore.GetOutboundItems(), HasLen, 1)
 
+	var err error
 	pool, err = w.keeper.GetPool(w.ctx, lokiAsset)
 	c.Assert(err, IsNil)
 	// pool should be zero since we drop coins we don't recognize on the floor

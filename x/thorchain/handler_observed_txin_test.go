@@ -47,8 +47,8 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 		standbyAccount: standbyAccount,
 	}
 
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
-	handler := NewObservedTxInHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.txOutStore)
+	handler := NewObservedTxInHandler(keeper, w.txOutStore, w.validatorMgr, versionedVaultMgrDummy)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -113,7 +113,7 @@ func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 			BalanceAsset: sdk.NewUint(300),
 		},
 	}
-	txOutStore := NewTxStoreDummy()
+	txOutStore := NewTxOutStoreDummy()
 
 	tx := NewObservedTx(GetRandomTx(), 12, GetRandomPubKey())
 	err := refundTx(ctx, tx, txOutStore, keeper, CodeInvalidMemo, "Invalid memo")
@@ -221,11 +221,9 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 		},
 		yggExists: true,
 	}
-	versionedTxOutStore := NewVersionedTxOutStoreDummy()
-	txOutStore, err := versionedTxOutStore.GetTxOutStore(keeper, ver)
-	c.Assert(err, IsNil)
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
-	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
+	txOutStore := NewTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(txOutStore)
+	handler := NewObservedTxInHandler(keeper, txOutStore, w.validatorMgr, versionedVaultMgrDummy)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)

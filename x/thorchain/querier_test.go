@@ -39,9 +39,9 @@ func (s *QuerierSuite) TestQueryKeysign(c *C) {
 		txOut: txOut,
 	}
 
-	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	txOutStore := NewTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(txOutStore)
+	validatorMgr := NewVersionedValidatorMgr(keeper, txOutStore, versionedVaultMgrDummy)
 
 	querier := NewQuerier(keeper, validatorMgr)
 

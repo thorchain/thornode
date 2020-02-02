@@ -59,7 +59,7 @@ type yggdrasilHandlerTestHelper struct {
 	yggVault      Vault
 	constAccessor constants.ConstantValues
 	nodeAccount   NodeAccount
-	txOutStore    VersionedTxOutStore
+	txOutStore    TxOutStore
 	validatorMgr  VersionedValidatorManager
 }
 
@@ -90,9 +90,9 @@ func newYggdrasilHandlerTestHelper(c *C) yggdrasilHandlerTestHelper {
 
 	constAccessor := constants.GetConstantValues(version)
 
-	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	validatorMgr := NewVersionedValidatorMgr(keeper, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	txOutStore := NewTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(txOutStore)
+	validatorMgr := NewVersionedValidatorMgr(keeper, txOutStore, versionedVaultMgrDummy)
 	c.Assert(validatorMgr.BeginBlock(ctx, version, constAccessor), IsNil)
 	asgardVault := GetRandomVault()
 	asgardVault.Type = AsgardVault
@@ -110,7 +110,7 @@ func newYggdrasilHandlerTestHelper(c *C) yggdrasilHandlerTestHelper {
 		keeper:        keeper,
 		nodeAccount:   nodeAccount,
 		constAccessor: constAccessor,
-		txOutStore:    versionedTxOutStoreDummy,
+		txOutStore:    txOutStore,
 		validatorMgr:  validatorMgr,
 		asgardVault:   asgardVault,
 		yggVault:      yggdrasilVault,
@@ -373,9 +373,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
 			},
 			validator: func(helper yggdrasilHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
-				store, err := helper.txOutStore.GetTxOutStore(helper.keeper, helper.version)
-				c.Assert(err, IsNil)
-				c.Assert(store.GetOutboundItems(), HasLen, 1)
+				c.Assert(helper.txOutStore.GetOutboundItems(), HasLen, 1)
 				yggMsg := msg.(MsgYggdrasil)
 				yggVault, err := helper.keeper.GetVault(helper.ctx, yggMsg.PubKey)
 				c.Assert(err, NotNil)

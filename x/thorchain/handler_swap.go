@@ -12,14 +12,14 @@ import (
 )
 
 type SwapHandler struct {
-	keeper              Keeper
-	versionedTxOutStore VersionedTxOutStore
+	keeper     Keeper
+	txOutStore TxOutStore
 }
 
-func NewSwapHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore) SwapHandler {
+func NewSwapHandler(keeper Keeper, txOutStore TxOutStore) SwapHandler {
 	return SwapHandler{
-		keeper:              keeper,
-		versionedTxOutStore: versionedTxOutStore,
+		keeper:     keeper,
+		txOutStore: txOutStore,
 	}
 }
 
@@ -109,18 +109,13 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 		ctx.Logger().Error("fail to encode result to json", "error", err)
 		return sdk.ErrInternal("fail to encode result to json").Result()
 	}
-	txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
-	if err != nil {
-		ctx.Logger().Error("fail to get txout store", "error", err)
-		return errBadVersion.Result()
-	}
 	toi := &TxOutItem{
 		Chain:     msg.TargetAsset.Chain,
 		InHash:    msg.Tx.ID,
 		ToAddress: msg.Destination,
 		Coin:      common.NewCoin(msg.TargetAsset, amount),
 	}
-	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+	_, err = h.txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to add outbound tx", "error", err)
 		return sdk.ErrInternal(fmt.Errorf("fail to add outbound tx: %w", err).Error()).Result()

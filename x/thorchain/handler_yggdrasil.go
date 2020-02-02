@@ -19,12 +19,12 @@ import (
 // 2. inbound tx to asgard vault
 type YggdrasilHandler struct {
 	keeper       Keeper
-	txOutStore   VersionedTxOutStore
+	txOutStore   TxOutStore
 	validatorMgr VersionedValidatorManager
 }
 
 // NewYggdrasilHandler create a new Yggdrasil handler
-func NewYggdrasilHandler(keeper Keeper, txOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager) YggdrasilHandler {
+func NewYggdrasilHandler(keeper Keeper, txOutStore TxOutStore, validatorMgr VersionedValidatorManager) YggdrasilHandler {
 	return YggdrasilHandler{
 		keeper:       keeper,
 		txOutStore:   txOutStore,
@@ -152,12 +152,7 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 				Codespace: DefaultCodespace,
 			}
 		}
-		txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
-		if err != nil {
-			ctx.Logger().Error("fail to get txout store", "error", err)
-			return errBadVersion.Result()
-		}
-		if err := refundBond(ctx, msg.Tx, na, h.keeper, txOutStore); err != nil {
+		if err := refundBond(ctx, msg.Tx, na, h.keeper, h.txOutStore); err != nil {
 			ctx.Logger().Error("fail to refund bond", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}

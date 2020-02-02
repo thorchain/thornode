@@ -19,15 +19,15 @@ const (
 
 // VaultMgr is going to manage the vaults
 type VaultMgr struct {
-	k                   Keeper
-	versionedTxOutStore VersionedTxOutStore
+	k          Keeper
+	txOutStore TxOutStore
 }
 
 // NewVaultMgr create a new vault manager
-func NewVaultMgr(k Keeper, versionedTxOutStore VersionedTxOutStore) *VaultMgr {
+func NewVaultMgr(k Keeper, txOutStore TxOutStore) *VaultMgr {
 	return &VaultMgr{
-		k:                   k,
-		versionedTxOutStore: versionedTxOutStore,
+		k:          k,
+		txOutStore: txOutStore,
 	}
 }
 
@@ -87,11 +87,6 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 	if len(active) == 0 {
 		return nil
 	}
-	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, version)
-	if err != nil {
-		ctx.Logger().Error("fail to get txout store", "error", err)
-		return errBadVersion
-	}
 	for _, vault := range retiring {
 		if !vault.HasFunds() {
 			continue
@@ -147,7 +142,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					},
 					Memo: "migrate",
 				}
-				_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+				_, err = vm.txOutStore.TryAddTxOutItem(ctx, toi)
 				if err != nil {
 					return err
 				}
