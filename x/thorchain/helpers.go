@@ -220,7 +220,10 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 		return err
 	}
 	// delete the ygg vault, there is nothing left in the ygg vault
-	return keeper.DeleteVault(ctx, ygg.PubKey)
+	if !ygg.HasFunds() {
+		return keeper.DeleteVault(ctx, ygg.PubKey)
+	}
+	return nil
 }
 
 // Checks if the observed vault pubkey is a valid asgard or ygg vault

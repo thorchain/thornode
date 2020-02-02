@@ -9,7 +9,7 @@ var EmptyBlame = Blame{}
 
 type Blame struct {
 	FailReason string  `json:"fail_reason"`
-	BlameNodes PubKeys `json:"blame_peers"`
+	BlameNodes PubKeys `json:"blame_peers,omitempty"`
 }
 
 func (b Blame) IsEmpty() bool {
