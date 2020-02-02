@@ -84,5 +84,7 @@ func (s YggdrasilSuite) TestFund(c *C) {
 	c.Assert(k.SetPool(ctx, bnbPool), IsNil)
 	err1 := Fund(ctx, k, txOutStore, constAccessor)
 	c.Assert(err1, IsNil)
-	c.Assert(txOutStore.GetOutboundItems(), HasLen, 2)
+	items, err := txOutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 2)
 }

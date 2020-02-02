@@ -185,7 +185,8 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 
 	c.Check(keeper.na.SlashPoints, Equals, int64(200), Commentf("%+v\n", na))
 
-	outItems := txOutStore.GetOutboundItems()
+	outItems, err := txOutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
 	c.Assert(outItems, HasLen, 1)
 	c.Assert(outItems[0].VaultPubKey.Equals(keeper.vaults[0].PubKey), Equals, true)
 	c.Assert(keeper.voter.Actions, HasLen, 0) // ensure we've removed our previous txn

@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"fmt"
+	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -11,48 +12,36 @@ import (
 
 // TxOutStorageV1 is going to manage all the outgoing tx
 type TxOutStorageV1 struct {
-	blockOut      *TxOut
+	height        int64
 	keeper        Keeper
 	constAccessor constants.ConstantValues
+	rwMutex       *sync.Mutex // ensures we don't append to txout store at the same time and drop txout itmes
 }
 
 // NewTxOutStorage will create a new instance of TxOutStore.
 func NewTxOutStorageV1(keeper Keeper) *TxOutStorageV1 {
 	return &TxOutStorageV1{
-		keeper: keeper,
+		keeper:  keeper,
+		rwMutex: &sync.Mutex{},
 	}
 }
 
 // NewBlock create a new block
 func (tos *TxOutStorageV1) NewBlock(height int64, constAccessor constants.ConstantValues) {
 	tos.constAccessor = constAccessor
-	tos.blockOut = NewTxOut(height)
+	tos.height = height
 }
 
-// CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
-func (tos *TxOutStorageV1) CommitBlock(ctx sdk.Context) {
-	// if THORNode don't have anything in the array, THORNode don't need to save
-	if len(tos.blockOut.TxArray) == 0 {
-		return
-	}
-
-	// write the tos to keeper
-	if err := tos.keeper.SetTxOut(ctx, tos.blockOut); err != nil {
-		ctx.Logger().Error("fail to save tx out", "error", err)
-	}
+func (tos *TxOutStorageV1) GetBlockOut(ctx sdk.Context) (*TxOut, error) {
+	return tos.keeper.GetTxOut(ctx, tos.height)
 }
 
-func (tos *TxOutStorageV1) GetBlockOut() *TxOut {
-	return tos.blockOut
+func (tos *TxOutStorageV1) GetOutboundItems(ctx sdk.Context) ([]*TxOutItem, error) {
+	block, err := tos.keeper.GetTxOut(ctx, tos.height)
+	return block.TxArray, err
 }
 
-func (tos *TxOutStorageV1) GetOutboundItems() []*TxOutItem {
-	return tos.blockOut.TxArray
-}
-
-func (tos *TxOutStorageV1) ClearOutboundItems() {
-	tos.blockOut.TxArray = nil
-}
+func (tos *TxOutStorageV1) ClearOutboundItems(_ sdk.Context) {} // do nothing
 
 // TryAddTxOutItem add an outbound tx to block
 // return bool indicate whether the transaction had been added successful or not
@@ -66,7 +55,9 @@ func (tos *TxOutStorageV1) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (boo
 		return false, nil
 	}
 	// add tx to block out
-	tos.addToBlockOut(toi)
+	if err := tos.addToBlockOut(ctx, toi); err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
@@ -201,8 +192,10 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	return true, nil
 }
 
-func (tos *TxOutStorageV1) addToBlockOut(toi *TxOutItem) {
-	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
+func (tos *TxOutStorageV1) addToBlockOut(ctx sdk.Context, toi *TxOutItem) error {
+	tos.rwMutex.Lock()
+	defer tos.rwMutex.Unlock()
+	return tos.keeper.AppendTxOut(ctx, tos.height, toi)
 }
 
 func (tos *TxOutStorageV1) collectYggdrasilPools(ctx sdk.Context, tx ObservedTx, gasAsset common.Asset) (Vaults, error) {
@@ -235,11 +228,17 @@ func (tos *TxOutStorageV1) collectYggdrasilPools(ctx sdk.Context, tx ObservedTx,
 			continue
 		}
 
+		block, err := tos.GetBlockOut(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("fail to get block:%w", err)
+		}
+
 		// comments for future reference, this part of logic confuse me quite a few times
 		// This method read the vault from key value store, and trying to find out all the ygg candidate that can be used to send out fund
 		// given the fact, there might have multiple TxOutItem get created with in one block, and the fund has not been deducted from vault and save back to key values store,
 		// thus every previously processed TxOut need to be deducted from the ygg vault to make sure THORNode has a correct view of the ygg funds
-		for _, tx := range tos.blockOut.TxArray {
+
+		for _, tx := range block.TxArray {
 			if !tx.VaultPubKey.Equals(vault.PubKey) {
 				continue
 			}
