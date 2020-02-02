@@ -41,19 +41,16 @@ func (tos *TxOutStoreDummy) NewBlock(height int64, constAccessor constants.Const
 	tos.blockOut = NewTxOut(height)
 }
 
-// CommitBlock THORNode write the block into key value store , thus THORNode could send to signer later.
-func (tos *TxOutStoreDummy) CommitBlock(ctx sdk.Context) {}
-
-func (tos *TxOutStoreDummy) GetBlockOut() *TxOut {
-	return tos.blockOut
+func (tos *TxOutStoreDummy) GetBlockOut(_ sdk.Context) (*TxOut, error) {
+	return tos.blockOut, nil
 }
 
-func (tos *TxOutStoreDummy) ClearOutboundItems() {
+func (tos *TxOutStoreDummy) ClearOutboundItems(ctx sdk.Context) {
 	tos.blockOut = NewTxOut(tos.blockOut.Height)
 }
 
-func (tos *TxOutStoreDummy) GetOutboundItems() []*TxOutItem {
-	return tos.blockOut.TxArray
+func (tos *TxOutStoreDummy) GetOutboundItems(ctx sdk.Context) ([]*TxOutItem, error) {
+	return tos.blockOut.TxArray, nil
 }
 
 func (tos *TxOutStoreDummy) GetOutboundItemByToAddress(to common.Address) []TxOutItem {
@@ -68,10 +65,10 @@ func (tos *TxOutStoreDummy) GetOutboundItemByToAddress(to common.Address) []TxOu
 
 // AddTxOutItem add an item to internal structure
 func (tos *TxOutStoreDummy) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error) {
-	tos.addToBlockOut(toi)
+	tos.addToBlockOut(ctx, toi)
 	return true, nil
 }
 
-func (tos *TxOutStoreDummy) addToBlockOut(toi *TxOutItem) {
+func (tos *TxOutStoreDummy) addToBlockOut(_ sdk.Context, toi *TxOutItem) {
 	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 }

@@ -186,7 +186,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to end block for vault manager", "error", err)
 	}
 
-	txStore.CommitBlock(ctx)
 	return am.validatorMgr.EndBlock(ctx, version, constantValues)
 }
 

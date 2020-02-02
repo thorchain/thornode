@@ -216,7 +216,8 @@ func newOutboundTxHandlerTestHelper(c *C) outboundTxHandlerTestHelper {
 		InHash:      tx.Tx.ID,
 	}
 	result, err := txOutStorage.TryAddTxOutItem(ctx, toi)
-	txOutStorage.CommitBlock(ctx)
+	c.Assert(err, IsNil)
+	c.Check(result, Equals, true)
 
 	swapEvent := NewEventSwap(common.BNBAsset, sdk.NewUint(common.One), sdk.NewUint(common.One), sdk.NewUint(common.One))
 	buf, err := json.Marshal(swapEvent)
