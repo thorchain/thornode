@@ -346,13 +346,14 @@ func (vm *validatorMgrV1) ragnarokProtocolStage2(ctx sdk.Context, nth int64, con
 		return err
 	}
 
-	// refund stakers
-	if err := vm.ragnarokPools(ctx, nth, constAccessor); err != nil {
+	// refund reserve contributors
+	if err := vm.ragnarokReserve(ctx, nth); err != nil {
 		return err
 	}
 
-	// refund reserve contributors
-	if err := vm.ragnarokReserve(ctx, nth); err != nil {
+	// refund stakers. This is last to ensure there is likely gas for the
+	// returning bond and reserve
+	if err := vm.ragnarokPools(ctx, nth, constAccessor); err != nil {
 		return err
 	}
 
