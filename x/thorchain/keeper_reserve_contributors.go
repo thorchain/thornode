@@ -26,18 +26,24 @@ func (k KVStore) GetReservesContributors(ctx sdk.Context) (ReserveContributors, 
 	contributors := make(ReserveContributors, 0)
 	key := k.GetKey(ctx, prefixReserves, "")
 	store := ctx.KVStore(k.storeKey)
-	if store.Has([]byte(key)) {
-		buf := store.Get([]byte(key))
-		if err := k.cdc.UnmarshalBinaryBare(buf, &contributors); err != nil {
-			return nil, dbError(ctx, "fail to unmarshal reserve contributors", err)
-		}
+	if !store.Has([]byte(key)) {
+		return make(ReserveContributors, 0), nil
 	}
+	buf := store.Get([]byte(key))
+	if err := k.cdc.UnmarshalBinaryBare(buf, &contributors); nil != err {
+		return nil, dbError(ctx, "fail to unmarshal reserve contributors", err)
+	}
+
 	return contributors, nil
 }
 
 func (k KVStore) SetReserveContributors(ctx sdk.Context, contributors ReserveContributors) error {
 	key := k.GetKey(ctx, prefixReserves, "")
 	store := ctx.KVStore(k.storeKey)
+	if contributors == nil {
+		contributors = make(ReserveContributors, 0)
+	}
+
 	buf, err := k.cdc.MarshalBinaryBare(contributors)
 	if err != nil {
 		return dbError(ctx, "fail to marshal reserve contributors to binary", err)
