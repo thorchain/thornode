@@ -145,7 +145,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 						Asset:  coin.Asset,
 						Amount: amt,
 					},
-					Memo: "migrate",
+					Memo: NewMigrateMemo(ctx.BlockHeight()).String(),
 				}
 				_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 				if err != nil {

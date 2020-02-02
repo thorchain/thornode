@@ -69,6 +69,7 @@ var (
 	NewEventBond                   = types.NewEventBond
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
+	NewMsgMigrate                  = types.NewMsgMigrate
 	NewPoolStaker                  = types.NewPoolStaker
 	NewStakerPool                  = types.NewStakerPool
 	NewMsgEndPool                  = types.NewMsgEndPool
@@ -106,6 +107,7 @@ type (
 	MsgSetPoolData              = types.MsgSetPoolData
 	MsgSetStakeData             = types.MsgSetStakeData
 	MsgOutboundTx               = types.MsgOutboundTx
+	MsgMigrate                  = types.MsgMigrate
 	MsgRefundTx                 = types.MsgRefundTx
 	MsgSwap                     = types.MsgSwap
 	MsgSetVersion               = types.MsgSetVersion

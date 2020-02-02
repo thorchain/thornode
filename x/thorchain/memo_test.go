@@ -80,8 +80,11 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	memo, err = ParseMemo("yggdrasil-")
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txYggdrasilReturn), Equals, true)
+	memo, err = ParseMemo("migrate:100")
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txMigrate), Equals, true)
 
-	_, err = ParseMemo("migrate")
+	_, err = ParseMemo("migrate:100")
 	c.Assert(err, IsNil)
 
 	// unhappy paths
@@ -107,6 +110,9 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("nextpool:whatever")
 	c.Assert(err, NotNil)
+	_, err = ParseMemo("migrate")
+	c.Assert(err, NotNil)
+
 }
 
 func (s *MemoSuite) TestParse(c *C) {
@@ -175,6 +181,10 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txGas), Equals, true)
 
+	memo, err = ParseMemo("migrate:100")
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txMigrate), Equals, true)
+
 	// unhappy paths
 	_, err = ParseMemo("")
 	c.Assert(err, NotNil)
@@ -195,5 +205,7 @@ func (s *MemoSuite) TestParse(c *C) {
 	_, err = ParseMemo("admin:key:val") // not enough arguments
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("admin:bogus:key:value") // bogus admin command type
+	c.Assert(err, NotNil)
+	_, err = ParseMemo("migrate:abc")
 	c.Assert(err, NotNil)
 }
