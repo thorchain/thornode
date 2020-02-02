@@ -386,6 +386,11 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		ctx.Logger().Error("can't get vault data", "error", err)
 		return err
 	}
+
+	if vaultData.TotalReserve.IsZero() {
+		return nil
+	}
+
 	txOutStore, err := vm.versionedTxOutStore.GetTxOutStore(vm.k, vm.version)
 	if err != nil {
 		ctx.Logger().Error("can't get tx out store", "error", err)
@@ -405,6 +410,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 
 	// nth * 10 == the amount of the bond we want to send
 	for i, contrib := range contribs {
+
 		share := common.GetShare(
 			contrib.Amount,
 			totalReserve,
