@@ -51,7 +51,7 @@ var (
 
 // MakeCodec generates the necessary codecs for Amino
 func MakeCodec() *codec.Codec {
-	var cdc = codec.New()
+	cdc := codec.New()
 	ModuleBasics.RegisterCodec(cdc)
 	sdk.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)
@@ -77,7 +77,6 @@ type thorChainApp struct {
 
 // NewThorchainApp is a constructor function for thorChainApp
 func NewThorchainApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.BaseApp)) *thorChainApp {
-
 	// First define the top level codec that will be shared by the different modules
 	cdc := MakeCodec()
 
@@ -87,7 +86,7 @@ func NewThorchainApp(logger log.Logger, db dbm.DB, baseAppOptions ...func(*bam.B
 	tkeys := sdk.NewTransientStoreKeys(staking.TStoreKey, params.TStoreKey)
 
 	// Here you initialize your application with the store keys it requires
-	var app = &thorChainApp{
+	app := &thorChainApp{
 		BaseApp: bApp,
 		cdc:     cdc,
 
@@ -202,9 +201,11 @@ func (app *thorChainApp) InitChainer(ctx sdk.Context, req abci.RequestInitChain)
 func (app *thorChainApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 	return app.mm.BeginBlock(ctx, req)
 }
+
 func (app *thorChainApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
 }
+
 func (app *thorChainApp) LoadHeight(height int64) error {
 	return app.LoadVersion(height, app.keys[bam.MainStoreKey])
 }
@@ -223,7 +224,6 @@ func (app *thorChainApp) ModuleAccountAddrs() map[string]bool {
 
 func (app *thorChainApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhiteList []string,
 ) (appState json.RawMessage, validators []tmtypes.GenesisValidator, err error) {
-
 	// as if they could withdraw from the start of the next block
 	ctx := app.NewContext(true, abci.Header{Height: app.LastBlockHeight()})
 
@@ -233,6 +233,6 @@ func (app *thorChainApp) ExportAppStateAndValidators(forZeroHeight bool, jailWhi
 		return nil, nil, err
 	}
 
-	//validators = staking.WriteValidators(ctx, app.stakingKeeper)
+	// validators = staking.WriteValidators(ctx, app.stakingKeeper)
 	return appState, validators, nil
 }

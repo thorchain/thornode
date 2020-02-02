@@ -115,7 +115,7 @@ func (s *ThorchainSuite) TestSign(c *C) {
 }
 
 func (ThorchainSuite) TestNewThorchainBridge(c *C) {
-	var testFunc = func(cfg config.ClientConfiguration, errChecker Checker, sbChecker Checker) {
+	testFunc := func(cfg config.ClientConfiguration, errChecker Checker, sbChecker Checker) {
 		sb, err := NewThorchainBridge(cfg, m)
 		c.Assert(err, errChecker)
 		c.Assert(sb, sbChecker)

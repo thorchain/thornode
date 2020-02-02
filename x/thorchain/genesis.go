@@ -146,7 +146,6 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	keeper.SetCurrentEventID(ctx, data.CurrentEventID)
 
 	return validators
-
 }
 
 // ExportGenesis export the data in Genesis

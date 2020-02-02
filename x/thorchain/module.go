@@ -107,6 +107,7 @@ func (am AppModule) Route() string {
 func (am AppModule) NewHandler() sdk.Handler {
 	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager)
 }
+
 func (am AppModule) QuerierRoute() string {
 	return ModuleName
 }
@@ -133,7 +134,6 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		return
 	}
 	txStore.NewBlock(req.Header.Height, constantValues)
-
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
@@ -188,7 +188,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 
 	txStore.CommitBlock(ctx)
 	return am.validatorMgr.EndBlock(ctx, version, constantValues)
-
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {

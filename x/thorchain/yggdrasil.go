@@ -11,7 +11,6 @@ import (
 )
 
 func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor constants.ConstantValues) error {
-
 	// find total bonded
 	totalBond := sdk.ZeroUint()
 	nodeAccs, err := keeper.ListActiveNodeAccounts(ctx)

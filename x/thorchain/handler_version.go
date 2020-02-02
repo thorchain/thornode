@@ -68,7 +68,6 @@ func (h VersionHandler) validateV1(ctx sdk.Context, msg MsgSetVersion) sdk.Error
 	}
 
 	return nil
-
 }
 
 func (h VersionHandler) handle(ctx sdk.Context, msg MsgSetVersion, version semver.Version) sdk.Error {

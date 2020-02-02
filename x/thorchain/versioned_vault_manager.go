@@ -41,5 +41,4 @@ func (v *VersionedVaultMgr) GetVaultManager(ctx sdk.Context, keeper Keeper, vers
 		return v.vaultMgrV1, nil
 	}
 	return nil, errInvalidVersion
-
 }

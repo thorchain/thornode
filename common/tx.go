@@ -8,8 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-type TxID string
-type TxIDs []TxID
+type (
+	TxID  string
+	TxIDs []TxID
+)
 
 var BlankTxID = TxID("0000000000000000000000000000000000000000000000000000000000000000")
 
@@ -88,6 +90,7 @@ func NewTx(txID TxID, from Address, to Address, coins Coins, gas Gas, memo strin
 		Memo:        memo,
 	}
 }
+
 func (tx Tx) String() string {
 	return fmt.Sprintf("%s: %s ==> %s (Memo: %s) %s", tx.ID, tx.FromAddress, tx.ToAddress, tx.Memo, tx.Coins)
 }

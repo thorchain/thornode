@@ -225,7 +225,6 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 				s.logger.Error().Err(err).Msg("fail to remove txout from local store")
 			}
 		}
-
 	}
 }
 
@@ -269,7 +268,6 @@ func (s *Signer) processKeygen(ch <-chan ttypes.KeygenBlock) {
 				}
 			}
 		}
-
 	}
 }
 

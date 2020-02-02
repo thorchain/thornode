@@ -43,5 +43,4 @@ func (MsgEndPoolTestSuite) TestMsgEndPool(c *C) {
 	tx.FromAddress = ""
 	errEndPool3 := NewMsgEndPool(common.BNBAsset, tx, addr)
 	c.Assert(errEndPool3.ValidateBasic(), NotNil)
-
 }

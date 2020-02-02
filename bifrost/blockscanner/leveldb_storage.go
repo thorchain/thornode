@@ -46,6 +46,7 @@ func (ldbss *LevelDBScannerStorage) SetScanPos(block int64) error {
 	n := binary.PutVarint(buf, block)
 	return ldbss.db.Put([]byte(ScanPosKey), buf[:n], nil)
 }
+
 func (ldbss *LevelDBScannerStorage) SetBlockScanStatus(block int64, status BlockScanStatus) error {
 	blockStatusItem := BlockStatusItem{
 		Height: block,
@@ -89,6 +90,7 @@ func (ldbss *LevelDBScannerStorage) GetBlocksForRetry(failedOnly bool) ([]int64,
 func getBlockStatusKey(block int64) string {
 	return fmt.Sprintf("block-process-status-%d", block)
 }
+
 func (ldbss *LevelDBScannerStorage) RemoveBlockStatus(block int64) error {
 	return ldbss.db.Delete([]byte(getBlockStatusKey(block)), nil)
 }

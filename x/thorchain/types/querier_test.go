@@ -15,5 +15,4 @@ func (QueryResPoolsSuite) TestQueryResPools(c *C) {
 	var qrp QueryResPools
 	qrp = append(qrp, p)
 	c.Check(qrp.String(), Equals, "BNB.BNB")
-
 }

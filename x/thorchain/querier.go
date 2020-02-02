@@ -273,6 +273,7 @@ func queryNodeAccount(ctx sdk.Context, path []string, req abci.RequestQuery, kee
 
 	return res, nil
 }
+
 func queryNodeAccounts(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
 	nodeAccounts, err := keeper.ListNodeAccounts(ctx)
 	if err != nil {
@@ -625,7 +626,6 @@ func queryEventsByTxHash(ctx sdk.Context, path []string, req abci.RequestQuery, 
 }
 
 func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
-
 	id, err := strconv.ParseInt(path[0], 10, 64)
 	if err != nil {
 		ctx.Logger().Error("fail to discover id number", "error", err)

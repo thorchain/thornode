@@ -25,7 +25,6 @@ func validatePools(ctx sdk.Context, keeper Keeper, assets ...common.Asset) sdk.E
 				return sdk.NewError(DefaultCodespace, CodeInvalidPoolStatus, "pool %s is in %s status, can't swap", asset.String(), pool.Status)
 			}
 		}
-
 	}
 	return nil
 }
@@ -122,7 +121,6 @@ func swapOne(ctx sdk.Context,
 	destination common.Address,
 	tradeTarget sdk.Uint,
 	transactionFee sdk.Uint) (amt sdk.Uint, poolResult Pool, swapEvt EventSwap, err sdk.Error) {
-
 	source := tx.Coins[0].Asset
 	amount := tx.Coins[0].Amount
 	swapEvt = NewEventSwap(
@@ -231,7 +229,6 @@ func calcLiquidityFee(X, x, Y sdk.Uint) sdk.Uint {
 
 // calcTradeSlip - calculate the trade slip, expressed in basis points (10000)
 func calcTradeSlip(Xi, xi sdk.Uint) sdk.Uint {
-
 	// Cast to DECs
 	xD := sdk.NewDec(int64(xi.Uint64()))
 	XD := sdk.NewDec(int64(Xi.Uint64()))

@@ -30,7 +30,6 @@ type Binance struct {
 
 // NewBinance : new instnance of Binance.
 func NewBinance(host string, debug bool) Binance {
-
 	if !strings.HasPrefix(host, "http") {
 		host = fmt.Sprintf("http://%s", host)
 	}
@@ -205,7 +204,6 @@ func (b Binance) SignTx(key keys.KeyManager, sendMsg msg.SendMsg, memo string) (
 }
 
 func (b *Binance) BroadcastTx(hexTx []byte, param map[string]string) error {
-
 	u, err := url.Parse(b.host)
 	if err != nil {
 		log.Fatal(err)

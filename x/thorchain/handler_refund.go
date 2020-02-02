@@ -21,6 +21,7 @@ func NewRefundHandler(keeper Keeper) RefundHandler {
 		ch:     NewCommonOutboundTxHander(keeper),
 	}
 }
+
 func (h RefundHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	msg, ok := m.(MsgRefundTx)
 	if !ok {
