@@ -186,10 +186,12 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	vaultMgr.EndBlock(ctx, ver, consts) // should attempt to send 20% of the coin values
 	vault, err = keeper.GetVault(ctx, vault1.PubKey)
 	c.Assert(err, IsNil)
-	c.Assert(txOutStore.GetOutboundItems(), HasLen, 2, Commentf("%d", len(txOutStore.GetOutboundItems())))
-	item := txOutStore.GetOutboundItems()[0]
+	items, err := txOutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 2)
+	item := items[0]
 	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(2000000000), Commentf("%d", item.Coin.Amount.Uint64()))
-	item = txOutStore.GetOutboundItems()[1]
+	item = items[1]
 	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(1580000000), Commentf("%d", item.Coin.Amount.Uint64()))
 	// check we empty the rest at the last migration event
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
@@ -197,10 +199,12 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	vaultMgr.EndBlock(ctx, ver, consts) // should attempt to send 100% of the coin values
 	vault, err = keeper.GetVault(ctx, vault.PubKey)
 	c.Assert(err, IsNil)
-	c.Assert(txOutStore.GetOutboundItems(), HasLen, 4, Commentf("%d", len(txOutStore.GetOutboundItems())))
-	item = txOutStore.GetOutboundItems()[2]
+	items, err = txOutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 4, Commentf("%d", len(items)))
+	item = items[2]
 	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(10000000000), Commentf("%d", item.Coin.Amount.Uint64()))
-	item = txOutStore.GetOutboundItems()[3]
+	item = items[3]
 	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(7900000000), Commentf("%d", item.Coin.Amount.Uint64()))
 }
 
@@ -324,7 +328,13 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 		c.Assert(err, IsNil)
 		bonders[idx].Bond = na.Bond
 	}
-	c.Assert(txOutStore.GetOutboundItems(), HasLen, bonderCount)
+	// make sure we have enough yggdrasil returns
+	items, err := txOutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, bonderCount)
+	for _, item := range items {
+		c.Assert(item.Memo, Equals, "yggdrasil-")
+	}
 
 	// we'll assume the signer does it's job and sends the yggdrasil funds back
 	// to asgard, and do it ourselves here manually
@@ -336,7 +346,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 		ygg.SubFunds(ygg.Coins)
 		c.Assert(keeper.SetVault(ctx, ygg), IsNil)
 	}
-	versionedTxOutStoreDummy.txoutStore.ClearOutboundItems() // clear out txs
+	versionedTxOutStoreDummy.txoutStore.ClearOutboundItems(ctx) // clear out txs
 
 	// run stage 2 of ragnarok protocol, nth = 1
 	ragnarokHeight, err := keeper.GetRagnarokBlockHeight(ctx)
@@ -345,7 +355,8 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	for i := 1; i <= 10; i++ { // simulate each round of ragnarok (max of ten)
 		ctx = ctx.WithBlockHeight(ragnarokHeight + (int64(i) * migrateInterval))
 		c.Assert(validatorMgr.processRagnarok(ctx, active, consts), IsNil)
-		items := versionedTxOutStoreDummy.txoutStore.GetOutboundItems()
+		items, err := versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
+		c.Assert(err, IsNil)
 		c.Assert(items, HasLen, 15, Commentf("%d", len(items)))
 
 		// validate bonders have correct coin amounts being sent to them on each round of ragnarok
@@ -375,7 +386,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 			c.Assert(items[0].Coin.Equals(outCoin), Equals, true, Commentf("expect:%s, however:%s", outCoin, items[0].Coin))
 		}
 
-		versionedTxOutStoreDummy.txoutStore.ClearOutboundItems() // clear out txs
+		versionedTxOutStoreDummy.txoutStore.ClearOutboundItems(ctx) // clear out txs
 	}
 }
 
@@ -500,6 +511,6 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
 	ctx = ctx.WithBlockHeight(currentHeight + migrateInterval)
 	c.Assert(validatorMgr.BeginBlock(ctx, consts), IsNil)
-	versionedTxOutStoreDummy.txoutStore.ClearOutboundItems()
+	versionedTxOutStoreDummy.txoutStore.ClearOutboundItems(ctx)
 	c.Assert(validatorMgr.EndBlock(ctx, consts), IsNil)
 }

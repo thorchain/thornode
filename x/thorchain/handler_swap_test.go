@@ -198,12 +198,16 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txIn, observerAddr)
 	c.Assert(err, IsNil)
 	keeper.clearEvent()
-	c.Check(versionedTxOutStoreDummy.txoutStore.GetOutboundItems(), HasLen, 0)
+	items, err := versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 0)
 	res2 := handler.handle(ctx, msgSwapFromTxIn.(MsgSwap), ver, constAccessor)
 	c.Assert(res2.IsOK(), Equals, true)
 	c.Assert(res2.Code, Equals, sdk.CodeOK)
 	c.Assert(keeper.event, NotNil)
-	c.Check(versionedTxOutStoreDummy.txoutStore.GetOutboundItems(), HasLen, 1)
+	items, err = versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 1)
 }
 
 func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
@@ -251,13 +255,19 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 	msgSwapFromTxIn, err := getMsgSwapFromMemo(m.(SwapMemo), txIn, observerAddr)
 	c.Assert(err, IsNil)
 
-	c.Check(versionedTxOutStoreDummy.txoutStore.GetOutboundItems(), HasLen, 0)
+	items, err := versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 0)
+
 	res := handler.handle(ctx, msgSwapFromTxIn.(MsgSwap), ver, constAccessor)
 	c.Assert(res.IsOK(), Equals, true)
 	c.Assert(res.Code, Equals, sdk.CodeOK)
 	c.Assert(keeper.event, NotNil)
 	c.Assert(len(keeper.event), Equals, 2)
-	c.Check(versionedTxOutStoreDummy.txoutStore.GetOutboundItems(), HasLen, 1)
+
+	items, err = versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 1)
 	keeper.clearEvent()
 	// double swap , RUNE not enough to pay for transaction fee
 
@@ -275,10 +285,13 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 	)
 	msgSwapFromTxIn1, err := getMsgSwapFromMemo(m1.(SwapMemo), txIn1, observerAddr)
 	c.Assert(err, IsNil)
-	versionedTxOutStoreDummy.txoutStore.ClearOutboundItems()
+	versionedTxOutStoreDummy.txoutStore.ClearOutboundItems(ctx)
 	res1 := handler.handle(ctx, msgSwapFromTxIn1.(MsgSwap), ver, constAccessor)
 	c.Assert(res1.IsOK(), Equals, false)
 	c.Assert(res1.Code, Equals, CodeSwapFailNotEnoughFee)
 	c.Assert(keeper.event, IsNil)
-	c.Check(versionedTxOutStoreDummy.txoutStore.GetOutboundItems(), HasLen, 0)
+
+	items, err = versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 0)
 }

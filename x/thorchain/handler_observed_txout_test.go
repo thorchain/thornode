@@ -146,8 +146,8 @@ func (k *TestObservedTxOutHandleKeeper) AddIncompleteEvents(_ sdk.Context, evt E
 	return nil
 }
 
-func (k *TestObservedTxOutHandleKeeper) GetTxOut(_ sdk.Context, _ int64) (*TxOut, error) {
-	return k.txOutStore.GetBlockOut(), nil
+func (k *TestObservedTxOutHandleKeeper) GetTxOut(ctx sdk.Context, _ int64) (*TxOut, error) {
+	return k.txOutStore.GetBlockOut(ctx)
 }
 
 func (k *TestObservedTxOutHandleKeeper) FindPubKeyOfAddress(_ sdk.Context, _ common.Address, _ common.Chain) (common.PubKey, error) {
@@ -217,7 +217,9 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
 	result := handler.handle(ctx, msg, ver)
 	c.Assert(result.IsOK(), Equals, true)
-	c.Check(txOutStore.GetOutboundItems(), HasLen, 0)
+	items, err := txOutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(items, HasLen, 0)
 	c.Check(keeper.observing, HasLen, 1)
 	// make sure the coin has been substract from the vault
 	c.Check(ygg.Coins.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(19999962499)), Equals, true)
