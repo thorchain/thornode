@@ -86,7 +86,7 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 
 	// calculate if we need to retry a churn because we are overdue for a
 	// successful one
-	retryChurn := (ctx.BlockHeight()-lastHeight+rotatePerBlockHeight)%rotateRetryBlocks == 0
+	retryChurn := ctx.BlockHeight()-lastHeight > rotatePerBlockHeight && (ctx.BlockHeight()-lastHeight+rotatePerBlockHeight)%rotateRetryBlocks == 0
 
 	if ctx.BlockHeight()%rotatePerBlockHeight == 0 || retryChurn {
 		if retryChurn {
