@@ -131,6 +131,7 @@ type TestObservedTxInHandleKeeper struct {
 	pool      Pool
 	observing []sdk.AccAddress
 	vault     Vault
+	txOut     *TxOut
 }
 
 func (k *TestObservedTxInHandleKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
@@ -193,6 +194,29 @@ func (k *TestObservedTxInHandleKeeper) SetVault(_ sdk.Context, vault Vault) erro
 	}
 	return kaboom
 }
+func (k *TestObservedTxInHandleKeeper) GetLowestActiveVersion(_ sdk.Context) semver.Version {
+	return semver.MustParse("0.1.0")
+}
+func (k *TestObservedTxInHandleKeeper) IsActiveObserver(_ sdk.Context, addr sdk.AccAddress) bool {
+	if addr.Equals(k.nas[0].NodeAddress) {
+		return true
+	}
+	return false
+}
+
+func (k *TestObservedTxInHandleKeeper) GetTxOut(ctx sdk.Context, blockHeight int64) (*TxOut, error) {
+	if nil != k.txOut && k.txOut.Height == blockHeight {
+		return k.txOut, nil
+	}
+	return nil, kaboom
+}
+func (k *TestObservedTxInHandleKeeper) SetTxOut(ctx sdk.Context, blockOut *TxOut) error {
+	if k.txOut.Height == blockOut.Height {
+		k.txOut = blockOut
+		return nil
+	}
+	return kaboom
+}
 
 func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	var err error
@@ -210,6 +234,7 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 
 	vault := GetRandomVault()
 	vault.PubKey = obTx.ObservedPubKey
+
 	keeper := &TestObservedTxInHandleKeeper{
 		nas:   NodeAccounts{GetRandomNodeAccount(NodeActive)},
 		voter: NewObservedTxVoter(tx.ID, make(ObservedTxs, 0)),
@@ -238,4 +263,62 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	c.Check(keeper.chains[0].Equals(common.BNBChain), Equals, true)
 	bnbCoin := keeper.vault.Coins.GetCoin(common.BNBAsset)
 	c.Assert(bnbCoin.Amount.Equal(sdk.OneUint()), Equals, true)
+}
+
+// Test migrate memo
+func (s *HandlerObservedTxInSuite) TestMigrateMemo(c *C) {
+	var err error
+	ctx, _ := setupKeeperForTest(c)
+	w := getHandlerTestWrapper(c, 1, true, false)
+	ver := semver.MustParse("0.1.0")
+
+	vault := GetRandomVault()
+	addr, err := vault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+	newVault := GetRandomVault()
+	txout := NewTxOut(12)
+	newVaultAddr, err := newVault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+
+	txout.TxArray = append(txout.TxArray, &TxOutItem{
+		Chain:       common.BNBChain,
+		InHash:      common.BlankTxID,
+		ToAddress:   newVaultAddr,
+		VaultPubKey: vault.PubKey,
+		Coin:        common.NewCoin(common.BNBAsset, sdk.NewUint(1024)),
+		Memo:        NewMigrateMemo(1).String(),
+	})
+	tx := NewObservedTx(common.Tx{
+		ID:    GetRandomTxHash(),
+		Chain: common.BNBChain,
+		Coins: common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(1024))},
+		Memo:        NewMigrateMemo(12).String(),
+		FromAddress: addr,
+		ToAddress:   newVaultAddr,
+		Gas:         common.BNBGasFeeSingleton,
+	}, 13, vault.PubKey)
+
+	txs := ObservedTxs{tx}
+	keeper := &TestObservedTxInHandleKeeper{
+		nas:   NodeAccounts{GetRandomNodeAccount(NodeActive)},
+		voter: NewObservedTxVoter(tx.Tx.ID, make(ObservedTxs, 0)),
+		vault: vault,
+		pool: Pool{
+			Asset:        common.BNBAsset,
+			BalanceRune:  sdk.NewUint(200),
+			BalanceAsset: sdk.NewUint(300),
+		},
+		yggExists: true,
+		txOut:     txout,
+	}
+	versionedTxOutStore := NewVersionedTxOutStoreDummy()
+	c.Assert(err, IsNil)
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
+	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
+
+	c.Assert(err, IsNil)
+	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
+	result := handler.handle(ctx, msg, ver)
+	c.Assert(result.IsOK(), Equals, true)
 }
