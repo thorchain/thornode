@@ -91,7 +91,7 @@ smoke-standalone:
 
 smoke-genesis:
 	make -C build/docker reset-mocknet-genesis
-	bsinner -a localhost:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e local -x -g
+	bsinner -a localhost:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e mocknet -x -g
 
 export:
 	thord export

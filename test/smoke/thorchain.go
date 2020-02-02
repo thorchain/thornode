@@ -21,6 +21,7 @@ import (
 var endpoints = map[string]string{
 	"ci":         "docker:1317",
 	"local":      "localhost:1317",
+	"mocknet":    "67.205.166.241:1317",
 	"staging":    "testnet-chain.bepswap.io",
 	"develop":    "testnet-chain.bepswap.net",
 	"production": "testnet-chain.bepswap.com",
@@ -144,7 +145,7 @@ func (s Thorchain) GetHeight() int {
 
 func (s Thorchain) getUrl(p string) string {
 	scheme := "https"
-	if s.Env == "local" || s.Env == "ci" {
+	if s.Env == "local" || s.Env == "ci" || s.Env == "mocknet" {
 		scheme = "http"
 	}
 	u := url.URL{
