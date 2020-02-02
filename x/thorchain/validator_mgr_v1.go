@@ -691,35 +691,44 @@ func (vm *validatorMgrV1) setupValidatorNodes(ctx sdk.Context, height int64, con
 	return nil
 }
 
-// Iterate over active node accounts, finding the one with the most slash points
-func (vm *validatorMgrV1) findBadActor(ctx sdk.Context) (NodeAccount, error) {
-	na := NodeAccount{}
+// Iterate over active node accounts, finding bad actors with high slashpoints
+func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
+	badActors := NodeAccounts{}
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		return na, err
 	}
 
+	type badTracker struct {
+		Score       int // their badness score, derived from slash points and age
+		Age         int
+		NodeAccount NodeAccount
+	}
+	var tracker []badTracker
+	var totalScore int
+
 	// Find bad actor relative to slashpoints / age.
-	// NOTE: avoiding the usage of float64, we use an alt method...
-	na.SlashPoints = 1
-	na.StatusSince = 9223372036854775807 // highest int64 value
-	for _, n := range nas {
-		if n.SlashPoints == 0 {
+	for _, na := range nas {
+		if na.SlashPoints == 0 {
 			continue
 		}
 
-		naVal := n.StatusSince / na.SlashPoints
-		nVal := n.StatusSince / n.SlashPoints
-		if nVal > (naVal) {
-			na = n
-		} else if nVal == naVal {
-			if n.SlashPoints > na.SlashPoints {
-				na = n
-			}
-		}
+		// purposely avoiding use float64 as they are non-deterministic
+		score := na.StatusSince / na.SlashPoints
+		totalScore += score
+
+		tracker = append(tracker, badTracker{
+			Score:       score,
+			Age:         na.StatusSince,
+			NodeAccount: na,
+		})
 	}
 
-	return na, nil
+	avgScore := totalScore / len(nas)
+	// the red line is the line where anybody above it is considered to be a bad actor
+	redline := avgScore * 3
+
+	return badActors, nil
 }
 
 // Iterate over active node accounts, finding the one that has been active longest
