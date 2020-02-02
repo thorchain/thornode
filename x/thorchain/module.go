@@ -128,6 +128,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return
 	}
+	fmt.Printf("TxOutStore: %+v\n", am.txOutStore)
 	am.validatorMgr.SetTxOutStore(am.txOutStore)          // update the tx out store in validator mgr
 	am.versionedVaultManager.SetTxOutStore(am.txOutStore) // update the tx out store in vault mgr
 
