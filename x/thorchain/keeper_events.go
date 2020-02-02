@@ -140,7 +140,6 @@ func (k KVStore) GetCurrentEventID(ctx sdk.Context) (int64, error) {
 		currentEventID = 1
 	}
 	return currentEventID, nil
-
 }
 
 // SetCurrentEventID set the current event id in kv store

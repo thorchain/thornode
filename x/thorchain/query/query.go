@@ -22,7 +22,6 @@ func (q Query) Endpoint(args ...string) string {
 	}
 
 	return fmt.Sprintf(q.EndpointTemplate, in...)
-
 }
 
 // Path return the path

@@ -32,6 +32,7 @@ func (mss *MockScannerStorage) GetScanPos() (int64, error) {
 	pos, _ := binary.Varint(buf)
 	return pos, nil
 }
+
 func (mss *MockScannerStorage) SetScanPos(block int64) error {
 	mss.l.Lock()
 	defer mss.l.Unlock()
@@ -40,6 +41,7 @@ func (mss *MockScannerStorage) SetScanPos(block int64) error {
 	mss.store[ScanPosKey] = buf[:n]
 	return nil
 }
+
 func (mss *MockScannerStorage) SetBlockScanStatus(block int64, status BlockScanStatus) error {
 	blockStatusItem := BlockStatusItem{
 		Height: block,
@@ -54,15 +56,18 @@ func (mss *MockScannerStorage) SetBlockScanStatus(block int64, status BlockScanS
 	mss.store[getBlockStatusKey(block)] = buf
 	return nil
 }
+
 func (mss *MockScannerStorage) RemoveBlockStatus(block int64) error {
 	mss.l.Lock()
 	defer mss.l.Unlock()
 	delete(mss.store, getBlockStatusKey(block))
 	return nil
 }
+
 func (mss *MockScannerStorage) GetBlocksForRetry(failedOnly bool) ([]int64, error) {
 	return nil, nil
 }
+
 func (mss *MockScannerStorage) Close() error {
 	return nil
 }

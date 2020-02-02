@@ -47,6 +47,7 @@ func (mfp *MockUnstakeKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, erro
 	}
 	return mfp.currentPool, nil
 }
+
 func (mfp *MockUnstakeKeeper) SetPool(_ sdk.Context, pool Pool) error {
 	mfp.currentPool = pool
 	return nil
@@ -63,9 +64,11 @@ func (mfp *MockUnstakeKeeper) GetPoolStaker(_ sdk.Context, _ common.Asset) (Pool
 	}
 	return mfp.poolStaker, nil
 }
+
 func (mfp *MockUnstakeKeeper) GetStakerPool(_ sdk.Context, _ common.Address) (StakerPool, error) {
 	return mfp.stakerPool, nil
 }
+
 func (mfp *MockUnstakeKeeper) SetStakerPool(_ sdk.Context, sp StakerPool) {
 	mfp.stakerPool = sp
 }

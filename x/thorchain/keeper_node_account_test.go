@@ -55,7 +55,6 @@ func (s *KeeperNodeAccountSuite) TestNodeAccount(c *C) {
 }
 
 func (s *KeeperNodeAccountSuite) TestGetMinJoinVersion(c *C) {
-
 	type nodeInfo struct {
 		status  NodeStatus
 		version semver.Version
@@ -150,5 +149,4 @@ func (s *KeeperNodeAccountSuite) TestGetMinJoinVersion(c *C) {
 		}
 		c.Check(k.GetMinJoinVersion(ctx).Equals(item.expectedVersion), Equals, true, Commentf("%+v", k.GetMinJoinVersion(ctx)))
 	}
-
 }

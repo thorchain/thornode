@@ -18,6 +18,7 @@ type TxOutStore interface {
 	GetOutboundItems() []*TxOutItem
 	TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error)
 }
+
 type VersionedTxOutStorage struct {
 	txOutStorage *TxOutStorageV1
 }

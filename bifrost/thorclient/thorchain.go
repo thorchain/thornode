@@ -96,7 +96,7 @@ func NewThorchainBridge(cfg config.ClientConfiguration, m *metrics.Metrics) (*Th
 
 // MakeCodec creates codec
 func MakeCodec() *codec.Codec {
-	var cdc = codec.New()
+	cdc := codec.New()
 	sdk.RegisterCodec(cdc)
 	stypes.RegisterCodec(cdc)
 	codec.RegisterCrypto(cdc)

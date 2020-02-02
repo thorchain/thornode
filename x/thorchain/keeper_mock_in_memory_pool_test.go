@@ -65,10 +65,12 @@ func (p *MockInMemoryPoolStorage) GetStakerPool(ctx sdk.Context, stakerID common
 	}
 	return NewStakerPool(stakerID), nil
 }
+
 func (p *MockInMemoryPoolStorage) SetStakerPool(ctx sdk.Context, sp StakerPool) {
 	key := p.GetKey(ctx, prefixStakerPool, sp.RuneAddress.String())
 	p.store[key] = sp
 }
+
 func (p *MockInMemoryPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.Asset) (PoolStaker, error) {
 	if notExistPoolStakerAsset.Equals(asset) {
 		return NewPoolStaker(asset, sdk.ZeroUint()), errors.New("simulate error for test")
@@ -79,6 +81,7 @@ func (p *MockInMemoryPoolStorage) GetPoolStaker(ctx sdk.Context, asset common.As
 	}
 	return NewPoolStaker(asset, sdk.ZeroUint()), nil
 }
+
 func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, ps PoolStaker) {
 	key := p.GetKey(ctx, prefixPoolStaker, ps.Asset.String())
 	p.store[key] = ps

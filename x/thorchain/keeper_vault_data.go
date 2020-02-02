@@ -178,7 +178,6 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 				rewardAmts = append(rewardAmts, amt)
 				evtPools = append(evtPools, PoolAmt{Asset: pool.Asset, Amount: int64(amt.Uint64())})
 			}
-
 		} else {
 			// Pool Rewards are based on Depth Share
 			rewardAmts = calcPoolRewards(totalPoolRewards, totalStaked, pools)

@@ -22,6 +22,7 @@ func exportPrivateKeyForTSS() *cobra.Command {
 	}
 	return cmd
 }
+
 func runExportPrivateKey(cmd *cobra.Command, args []string) error {
 	kb, err := keys.NewKeyBaseFromHomeFlag()
 	if err != nil {

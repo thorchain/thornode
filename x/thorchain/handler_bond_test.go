@@ -79,8 +79,8 @@ func (HandlerBondSuite) TestBondHandler_Run(c *C) {
 	result = handler.Run(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeInternal)
 }
-func (HandlerBondSuite) TestBondHandlerFailValidation(c *C) {
 
+func (HandlerBondSuite) TestBondHandlerFailValidation(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)
 	c.Assert(k.SetNodeAccount(ctx, activeNodeAccount), IsNil)

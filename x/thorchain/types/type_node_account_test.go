@@ -94,8 +94,8 @@ func (NodeAccountSuite) TestNodeAccountsSortWithSlash(c *C) {
 	for idx, a := range accounts {
 		c.Assert(a.SlashPoints, Equals, int64(99-idx))
 	}
-
 }
+
 func (NodeAccountSuite) TestNodeAccountsSort(c *C) {
 	var accounts NodeAccounts
 	for {
@@ -159,7 +159,6 @@ func (NodeAccountSuite) TestTryAddSignerPubKey(c *C) {
 
 	na.TryRemoveSignerPubKey(pk)
 	c.Assert(na.SignerMembership, HasLen, 0)
-
 }
 
 func (s *NodeAccountSuite) TestCalcNodeRewards(c *C) {

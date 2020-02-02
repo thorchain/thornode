@@ -175,7 +175,6 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 				sdk.NewAttribute("pubkey", vault.PubKey.String()),
 				sdk.NewAttribute("coins", msg.Coins.String()),
 				sdk.NewAttribute("tx", msg.Tx.ID.String())))
-
 	}
 	return sdk.Result{
 		Code:      sdk.CodeOK,

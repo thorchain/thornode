@@ -5,14 +5,14 @@ import (
 	"strings"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
-	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/chainclients/binance"
+	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 )
 
 var (
-	NotSupported = errors.New("not supported")
+	NotSupported   = errors.New("not supported")
 	NotImplemented = errors.New("not implemented")
 )
 

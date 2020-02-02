@@ -89,7 +89,6 @@ func (v Vault) HasFunds() bool {
 		if coin.Amount.GT(sdk.ZeroUint()) {
 			return true
 		}
-
 	}
 	return false
 }

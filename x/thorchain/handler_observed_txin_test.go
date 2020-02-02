@@ -22,6 +22,7 @@ func (k *TestObservedTxInValidateKeeper) GetNodeAccount(_ sdk.Context, addr sdk.
 	}
 	return NodeAccount{}, kaboom
 }
+
 func (k *TestObservedTxInValidateKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) error {
 	if na.NodeAddress.Equals(k.standbyAccount.NodeAddress) {
 		k.standbyAccount = na
@@ -95,6 +96,7 @@ type TestObservedTxInFailureKeeper struct {
 func (k *TestObservedTxInFailureKeeper) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
 	return k.pool, nil
 }
+
 func (k *TestObservedTxInFailureKeeper) UpsertEvent(_ sdk.Context, evt Event) error {
 	k.evt = evt
 	return nil
@@ -102,7 +104,7 @@ func (k *TestObservedTxInFailureKeeper) UpsertEvent(_ sdk.Context, evt Event) er
 
 func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	ctx, _ := setupKeeperForTest(c)
-	//w := getHandlerTestWrapper(c, 1, true, false)
+	// w := getHandlerTestWrapper(c, 1, true, false)
 
 	keeper := &TestObservedTxInFailureKeeper{
 		pool: Pool{
@@ -117,7 +119,6 @@ func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	err := refundTx(ctx, tx, txOutStore, keeper, CodeInvalidMemo, "Invalid memo")
 	c.Assert(err, IsNil)
 	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
-
 }
 
 type TestObservedTxInHandleKeeper struct {
@@ -173,15 +174,18 @@ func (k *TestObservedTxInHandleKeeper) AddObservingAddresses(_ sdk.Context, addr
 	k.observing = addrs
 	return nil
 }
+
 func (k *TestObservedTxInHandleKeeper) UpsertEvent(_ sdk.Context, _ Event) error {
 	return nil
 }
+
 func (k *TestObservedTxInHandleKeeper) GetVault(_ sdk.Context, key common.PubKey) (Vault, error) {
 	if k.vault.PubKey.Equals(key) {
 		return k.vault, nil
 	}
 	return GetRandomVault(), kaboom
 }
+
 func (k *TestObservedTxInHandleKeeper) SetVault(_ sdk.Context, vault Vault) error {
 	if k.vault.PubKey.Equals(vault.PubKey) {
 		k.vault = vault
@@ -189,6 +193,7 @@ func (k *TestObservedTxInHandleKeeper) SetVault(_ sdk.Context, vault Vault) erro
 	}
 	return kaboom
 }
+
 func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)

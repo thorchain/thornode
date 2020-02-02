@@ -49,7 +49,6 @@ func (PoolTestSuite) TestPool(c *C) {
 
 	p.Status = Suspended
 	c.Check(p.EnsureValidPoolStatus(msgNoop), NotNil)
-
 }
 
 func (PoolTestSuite) TestPoolStatus(c *C) {

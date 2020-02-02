@@ -9,8 +9,10 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-type status string
-type ObservedTxIndex common.TxIDs
+type (
+	status          string
+	ObservedTxIndex common.TxIDs
+)
 
 const (
 	Incomplete status = "incomplete"

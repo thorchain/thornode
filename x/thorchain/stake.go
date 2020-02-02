@@ -148,7 +148,6 @@ func stake(ctx sdk.Context, keeper Keeper,
 // calculatePoolUnits calculate the pool units and staker units
 // returns newPoolUnit,stakerUnit, error
 func calculatePoolUnits(oldPoolUnits, poolRune, poolAsset, stakeRune, stakeAsset sdk.Uint) (sdk.Uint, sdk.Uint, error) {
-
 	if stakeRune.Add(poolRune).IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), errors.New("total RUNE in the pool is zero")
 	}

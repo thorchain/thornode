@@ -56,5 +56,4 @@ func (s *PubKeyTestSuite) TestPubKeySet(c *C) {
 		Ed25519: pk,
 	}
 	c.Check(pks.Contains(pk), Equals, true)
-
 }
