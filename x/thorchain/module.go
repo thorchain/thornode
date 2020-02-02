@@ -81,11 +81,16 @@ type AppModule struct {
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
+	txOutStore := NewTxOutStorageV1(k) // start with v1, this is just a placeholder...
+	versionedVaultManager := NewVersionedVaultMgr(txOutStore)
 	return AppModule{
-		AppModuleBasic: AppModuleBasic{},
-		keeper:         k,
-		coinKeeper:     bankKeeper,
-		supplyKeeper:   supplyKeeper,
+		AppModuleBasic:        AppModuleBasic{},
+		keeper:                k,
+		coinKeeper:            bankKeeper,
+		txOutStore:            txOutStore,
+		versionedVaultManager: versionedVaultManager,
+		validatorMgr:          NewVersionedValidatorMgr(k, txOutStore, versionedVaultManager),
+		supplyKeeper:          supplyKeeper,
 	}
 }
 

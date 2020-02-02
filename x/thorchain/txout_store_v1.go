@@ -19,7 +19,8 @@ type TxOutStorageV1 struct {
 // NewTxOutStorage will create a new instance of TxOutStore.
 func NewTxOutStorageV1(keeper Keeper) *TxOutStorageV1 {
 	return &TxOutStorageV1{
-		keeper: keeper,
+		keeper:   keeper,
+		blockOut: NewTxOut(0),
 	}
 }
 
