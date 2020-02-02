@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -114,6 +115,7 @@ type Memo interface {
 	GetValue() string
 	GetTxID() common.TxID
 	GetNodeAddress() sdk.AccAddress
+	GetBlockHeight() int64
 }
 
 type MemoBase struct {
@@ -191,6 +193,13 @@ type ReserveMemo struct {
 
 type MigrateMemo struct {
 	MemoBase
+	BlockHeight int64
+}
+
+func NewMigrateMemo(blockHeight int64) MigrateMemo {
+	return MigrateMemo{
+		BlockHeight: blockHeight,
+	}
 }
 
 func NewOutboundMemo(txID common.TxID) OutboundMemo {
@@ -221,8 +230,7 @@ func ParseMemo(memo string) (Memo, error) {
 	// list of memo types that do not contain an asset in their memo
 	noAssetMemos := []TxType{
 		txGas, txOutbound, txBond, txLeave, txRefund,
-		txYggdrasilFund, txYggdrasilReturn, txReserve,
-		txMigrate,
+		txYggdrasilFund, txYggdrasilReturn, txReserve, txMigrate,
 	}
 	hasAsset := true
 	for _, memoType := range noAssetMemos {
@@ -367,8 +375,16 @@ func ParseMemo(memo string) (Memo, error) {
 			MemoBase: MemoBase{TxType: txYggdrasilReturn},
 		}, nil
 	case txMigrate:
+		if len(parts) < 2 {
+			return noMemo, errors.New("not enough parameters")
+		}
+		blockHeight, err := strconv.ParseInt(parts[1], 10, 64)
+		if nil != err {
+			return noMemo, fmt.Errorf("fail to convert (%s) to a valid block height: %w", parts[1], err)
+		}
 		return MigrateMemo{
-			MemoBase: MemoBase{TxType: txMigrate},
+			MemoBase:    MemoBase{TxType: txMigrate},
+			BlockHeight: blockHeight,
 		}, nil
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())
@@ -387,6 +403,7 @@ func (m MemoBase) GetKey() string                 { return "" }
 func (m MemoBase) GetValue() string               { return "" }
 func (m MemoBase) GetTxID() common.TxID           { return "" }
 func (m MemoBase) GetNodeAddress() sdk.AccAddress { return sdk.AccAddress{} }
+func (m MemoBase) GetBlockHeight() int64          { return 0 }
 
 // Transaction Specific Functions
 func (m WithdrawMemo) GetAmount() string           { return m.Amount }
@@ -407,4 +424,10 @@ func (m RefundMemo) GetTxID() common.TxID { return m.TxID }
 // String implement fmt.Stringer
 func (m RefundMemo) String() string {
 	return fmt.Sprintf("REFUND:%s", m.TxID.String())
+}
+func (m MigrateMemo) String() string {
+	return fmt.Sprintf("MIGRATE:%d", m.BlockHeight)
+}
+func (m MigrateMemo) GetBlockHeight() int64 {
+	return m.BlockHeight
 }
