@@ -20,7 +20,7 @@ curl -vvv -s -X POST -d "{
   \"from\": \"$2\",
   \"to\": \"$POOL_ADDRESS\",
   \"coins\":[
-      {\"denom\": \"RUNE-A1F\", \"amount\": 100000000000000}
+      {\"denom\": \"RUNE-A1F\", \"amount\": 550000000000000}
   ],
   \"memo\": \"RESERVE\"
 }" $1:26660/broadcast/easy
