@@ -5,14 +5,9 @@ DISK_SIZE=100
 cd ../../
 LOCAL_VOLUME=$(pwd)
 
-if [ $1 == "ci" ]; then
-    export CI="true"
-    export AWS_REGION=$AWS_CI_REGION
-    export USER=$CI_JOB_ID
-elif [ $1 == "churn" ]; then
+if [ $1 == "churn" ]; then
     export CHURN="true"
 fi
-
 
 ###########
 # CLEANUP #
