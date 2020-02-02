@@ -375,7 +375,10 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 			validator: func(helper yggdrasilHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
 				store, err := helper.txOutStore.GetTxOutStore(helper.keeper, helper.version)
 				c.Assert(err, IsNil)
-				c.Assert(store.GetOutboundItems(), HasLen, 1)
+
+				items, err := store.GetOutboundItems(helper.ctx)
+				c.Assert(err, IsNil)
+				c.Assert(items, HasLen, 1)
 				yggMsg := msg.(MsgYggdrasil)
 				yggVault, err := helper.keeper.GetVault(helper.ctx, yggMsg.PubKey)
 				c.Assert(err, NotNil)

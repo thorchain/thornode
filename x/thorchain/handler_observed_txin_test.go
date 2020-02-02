@@ -118,7 +118,9 @@ func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	tx := NewObservedTx(GetRandomTx(), 12, GetRandomPubKey())
 	err := refundTx(ctx, tx, txOutStore, keeper, CodeInvalidMemo, "Invalid memo")
 	c.Assert(err, IsNil)
-	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
+	items, err := txOutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Check(items, HasLen, 1)
 }
 
 type TestObservedTxInHandleKeeper struct {
@@ -256,7 +258,9 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
 	result := handler.handle(ctx, msg, ver)
 	c.Assert(result.IsOK(), Equals, true)
-	c.Check(txOutStore.GetOutboundItems(), HasLen, 1)
+	items, err := txOutStore.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Check(items, HasLen, 1)
 	c.Check(keeper.observing, HasLen, 1)
 	c.Check(keeper.height, Equals, int64(12))
 	c.Check(keeper.chains, HasLen, 1)

@@ -13,10 +13,9 @@ type VersionedTxOutStore interface {
 
 type TxOutStore interface {
 	NewBlock(height int64, constAccessor constants.ConstantValues)
-	CommitBlock(ctx sdk.Context)
-	GetBlockOut() *TxOut
-	ClearOutboundItems()
-	GetOutboundItems() []*TxOutItem
+	GetBlockOut(ctx sdk.Context) (*TxOut, error)
+	ClearOutboundItems(ctx sdk.Context)
+	GetOutboundItems(ctx sdk.Context) ([]*TxOutItem, error)
 	TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error)
 }
 

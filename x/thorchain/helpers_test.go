@@ -188,7 +188,9 @@ func (s *HelperSuite) TestRefundBondError(c *C) {
 	}
 	c.Assert(refundBond(ctx, tx, na, keeper1, txOut), IsNil)
 	// make sure no tx has been generated for refund
-	c.Assert(txOut.GetOutboundItems(), HasLen, 0)
+	items, err := txOut.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Check(items, HasLen, 0)
 }
 
 func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
@@ -220,8 +222,10 @@ func (s *HelperSuite) TestRefundBondHappyPath(c *C) {
 	err = refundBond(ctx, tx, na, keeper, txOut)
 	slashAmt := yggAssetInRune.MulUint64(3).QuoUint64(2)
 	c.Assert(err, IsNil)
-	c.Assert(txOut.GetOutboundItems(), HasLen, 1)
-	outCoin := txOut.GetOutboundItems()[0].Coin
+	items, err := txOut.GetOutboundItems(ctx)
+	c.Assert(err, IsNil)
+	c.Check(items, HasLen, 1)
+	outCoin := items[0].Coin
 	c.Check(outCoin.Amount.Equal(sdk.NewUint(40981137725)), Equals, true)
 	p, err := keeper.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
