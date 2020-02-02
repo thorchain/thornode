@@ -118,7 +118,6 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
-	var err error
 
 	version := am.keeper.GetLowestActiveVersion(ctx)
 	constantValues := constants.GetConstantValues(version)
@@ -128,19 +127,19 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	}
 
 	// get a tx out store based on the current version
-	am.txOutStore, err = GetTxOutStore(am.keeper, version)
+	txOutStore, err := GetTxOutStore(am.keeper, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return
 	}
+	txOutStore.NewBlock(req.Header.Height, constantValues)
+	am.txOutStore = txOutStore
 	am.versionedVaultManager = NewVersionedVaultMgr(am.txOutStore)
 	am.validatorMgr = NewVersionedValidatorMgr(am.keeper, am.txOutStore, am.versionedVaultManager)
 
 	if err := am.validatorMgr.BeginBlock(ctx, version, constantValues); err != nil {
 		ctx.Logger().Error("Fail to begin block on validator", "error", err)
 	}
-
-	am.txOutStore.NewBlock(req.Header.Height, constantValues)
 }
 
 func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
