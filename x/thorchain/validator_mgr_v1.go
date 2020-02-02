@@ -67,10 +67,33 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 		}
 	}
 
+	// calculate last churn block height
+	vaults, err := vm.k.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		return err
+	}
+	var lastHeight int64 // the last block height we had a successful churn
+	for _, vault := range vaults {
+		if vault.BlockHeight > lastHeight {
+			lastHeight = vault.BlockHeight
+		}
+	}
+
+	// get constants
 	desireValidatorSet := constAccessor.GetInt64Value(constants.DesireValidatorSet)
 	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
-	if ctx.BlockHeight()%rotatePerBlockHeight == 0 {
-		ctx.Logger().Info("Checking for node account rotation...")
+	rotateRetryBlocks := constAccessor.GetInt64Value(constants.RotateRetryBlocks)
+
+	// calculate if we need to retry a churn because we are overdue for a
+	// successful one
+	retryChurn := ctx.BlockHeight()-lastHeight > rotatePerBlockHeight && (ctx.BlockHeight()-lastHeight+rotatePerBlockHeight)%rotateRetryBlocks == 0
+
+	if ctx.BlockHeight()%rotatePerBlockHeight == 0 || retryChurn {
+		if retryChurn {
+			ctx.Logger().Info("Checking for node account rotation... (retry)")
+		} else {
+			ctx.Logger().Info("Checking for node account rotation...")
+		}
 		next, ok, err := vm.nextVaultNodeAccounts(ctx, int(desireValidatorSet), constAccessor)
 		if err != nil {
 			return err
