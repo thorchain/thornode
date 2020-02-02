@@ -96,6 +96,7 @@ func getHandlerMapping(keeper Keeper, versionedTxOutStore VersionedTxOutStore, v
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
 	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
+	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper)
 	return m
 }
 
@@ -154,6 +155,11 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid outbound memo:%s", err.Error())
 		}
+	case MigrateMemo:
+		newMsg, err = getMsgMigrateFromMemo(m, tx, signer)
+		if nil != err {
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid migrate memo: %s", err.Error())
+		}
 	case BondMemo:
 		newMsg, err = getMsgBondFromMemo(m, tx, signer)
 		if err != nil {
@@ -168,8 +174,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 	case ReserveMemo:
 		res := NewReserveContributor(tx.Tx.FromAddress, tx.Tx.Coins[0].Amount)
 		newMsg = NewMsgReserveContributor(res, signer)
-	case MigrateMemo:
-		newMsg = NewMsgNoOp(signer)
+
 	default:
 		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid memo")
 	}
@@ -313,6 +318,10 @@ func getMsgOutboundFromMemo(memo OutboundMemo, tx ObservedTx, signer sdk.AccAddr
 		memo.GetTxID(),
 		signer,
 	), nil
+}
+
+func getMsgMigrateFromMemo(memo MigrateMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
+	return NewMsgMigrate(tx, memo.GetBlockHeight(), signer), nil
 }
 
 func getMsgBondFromMemo(memo BondMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
