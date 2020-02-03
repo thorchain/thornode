@@ -190,3 +190,12 @@ func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error   { return 
 func (k KVStoreDummy) UpdateVaultData(_ sdk.Context, _ constants.ConstantValues) error {
 	return kaboom
 }
+func (k KVStoreDummy) SetTssKeysignFailVoter(_ sdk.Context, tss TssKeysignFailVoter) {
+
+}
+func (k KVStoreDummy) GetTssKeysignFailVoterIterator(_ sdk.Context) sdk.Iterator {
+	return nil
+}
+func (k KVStoreDummy) GetTssKeysignFailVoter(_ sdk.Context, _ string) (TssKeysignFailVoter, error) {
+	return TssKeysignFailVoter{}, kaboom
+}

@@ -35,6 +35,7 @@ type Keeper interface {
 	KeeperReserveContributors
 	KeeperVaultData
 	KeeperTss
+	KeeperTssKeysignFail
 	KeeperKeygen
 	KeeperRagnarok
 }

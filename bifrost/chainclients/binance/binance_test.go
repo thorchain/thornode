@@ -30,6 +30,7 @@ func TestPackage(t *testing.T) { TestingT(t) }
 type BinancechainSuite struct {
 	thordir  string
 	thorKeys *thorclient.Keys
+	bridge   *thorclient.ThorchainBridge
 }
 
 var _ = Suite(&BinancechainSuite{})
@@ -56,6 +57,8 @@ func (s *BinancechainSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	s.thorKeys, err = thorclient.NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
 	c.Assert(err, IsNil)
+	s.bridge, err = thorclient.NewThorchainBridge(cfg, m)
+	c.Assert(err, IsNil)
 }
 
 func (s *BinancechainSuite) TearDownSuite(c *C) {
@@ -76,7 +79,8 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		Host:   "localhost",
 		Port:   5555,
 	}
-	b, err := NewBinance(s.thorKeys, "", tssCfg)
+
+	b, err := NewBinance(s.thorKeys, "", tssCfg, s.bridge)
 	c.Assert(b, IsNil)
 	c.Assert(err, NotNil)
 
@@ -88,7 +92,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		}
 	}))
 
-	b2, err2 := NewBinance(s.thorKeys, server.URL, tssCfg)
+	b2, err2 := NewBinance(s.thorKeys, server.URL, tssCfg, s.bridge)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 }
@@ -120,7 +124,7 @@ func (s *BinancechainSuite) TestGetHeight(c *C) {
 		Host:   "localhost",
 		Port:   5555,
 	}
-	b, err := NewBinance(s.thorKeys, server.URL, tssCfg)
+	b, err := NewBinance(s.thorKeys, server.URL, tssCfg, s.bridge)
 	c.Assert(err, IsNil)
 
 	height, err := b.GetHeight()
@@ -145,12 +149,13 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		} else {
 		}
 	}))
+
 	tssCfg := config.TSSConfiguration{
 		Scheme: "http",
 		Host:   "localhost",
 		Port:   5555,
 	}
-	b2, err2 := NewBinance(s.thorKeys, server.URL, tssCfg)
+	b2, err2 := NewBinance(s.thorKeys, server.URL, tssCfg, s.bridge)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 	pk, err := common.NewPubKeyFromCrypto(b2.localKeyManager.GetPrivKey().PubKey())
