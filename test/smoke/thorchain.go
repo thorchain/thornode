@@ -149,7 +149,7 @@ func (s Thorchain) getUrl(p string) string {
 	}
 	endpoint := os.Getenv("ENDPOINT")
 	if endpoint == "" {
-		endpoint := endpoints[s.Env]
+		endpoint = endpoints[s.Env]
 	}
 	u := url.URL{
 		Scheme: scheme,
