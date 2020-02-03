@@ -133,17 +133,14 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	}
 
 	// no change
-	fmt.Printf("Add: %d Remove %d\n", len(newNodes), len(removedNodes))
 	if len(newNodes) == 0 && len(removedNodes) == 0 {
 		return nil
 	}
 
 	minimumNodesForBFT := constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
 	nodesAfterChange := len(activeNodes) + len(newNodes) - len(removedNodes)
-	fmt.Printf("%d >= %d && %d < %d", len(activeNodes), minimumNodesForBFT, nodesAfterChange, minimumNodesForBFT)
 	if len(activeNodes) >= int(minimumNodesForBFT) && nodesAfterChange < int(minimumNodesForBFT) {
 		// THORNode don't have enough validators for BFT
-		fmt.Println("Starting Ragnarok....")
 		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
 			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
 		}
@@ -338,7 +335,6 @@ func (vm *validatorMgrV1) ragnarokProtocolStage1(ctx sdk.Context, activeNodes No
 }
 
 func (vm *validatorMgrV1) ragnarokProtocolStage2(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
-	fmt.Println("Ragnarok Stage 2")
 	// Ragnarok Protocol
 	// If THORNode can no longer be BFT, do a graceful shutdown of the entire network.
 	// 1) THORNode will request all yggdrasil pool to return fund , if THORNode don't have yggdrasil pool THORNode will go to step 3 directly
