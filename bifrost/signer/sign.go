@@ -302,6 +302,7 @@ func (s *Signer) signAndBroadcast(txOut types.TxOut) error {
 	height := txOut.Height
 	for _, item := range txOut.TxArray {
 		key := item.GetKey(height)
+		s.logger.Info().Msgf("signTxOutAndSendToChain: %s", key)
 		processed, err := s.storage.HasTxOutItem(key)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("fail to check against local level db")

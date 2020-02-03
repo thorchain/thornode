@@ -10,7 +10,6 @@ type TxOutItem struct {
 	Chain       common.Chain   `json:"chain"`
 	ToAddress   common.Address `json:"to"`
 	VaultPubKey common.PubKey  `json:"vault_pubkey"`
-	SeqNo       uint64         `json:"seq_no"`
 	Coins       common.Coins   `json:"coins"`
 	Memo        string         `json:"memo"`
 	InHash      common.TxID    `json:"in_hash"`
