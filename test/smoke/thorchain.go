@@ -21,7 +21,6 @@ import (
 var endpoints = map[string]string{
 	"ci":         "docker:1317",
 	"local":      "localhost:1317",
-	"mocknet":    "67.205.166.241:1317",
 	"staging":    "testnet-chain.bepswap.io",
 	"develop":    "testnet-chain.bepswap.net",
 	"production": "testnet-chain.bepswap.com",
@@ -148,9 +147,13 @@ func (s Thorchain) getUrl(p string) string {
 	if s.Env == "local" || s.Env == "ci" || s.Env == "mocknet" {
 		scheme = "http"
 	}
+	endpoint := os.Getenv("ENDPOINT")
+	if endpoint == "" {
+		endpoint := endpoints[s.Env]
+	}
 	u := url.URL{
 		Scheme: scheme,
-		Host:   endpoints[s.Env],
+		Host:   endpoint,
 		Path:   path.Join("thorchain", p),
 	}
 	return u.String()
