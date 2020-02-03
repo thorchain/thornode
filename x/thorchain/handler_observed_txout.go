@@ -135,6 +135,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 			return sdk.ErrInternal("fail to get vault").Result()
 		}
 		vault.SubFunds(tx.Tx.Coins)
+		fmt.Printf("Sub Funds: %s\n", tx.Tx.Coins)
 		if err := h.keeper.SetVault(ctx, vault); err != nil {
 			ctx.Logger().Error("fail to save vault", "error", err)
 			return sdk.ErrInternal("fail to save vault").Result()

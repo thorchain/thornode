@@ -460,6 +460,7 @@ func (b *Binance) BroadcastTx(hexTx []byte) error {
 		log.Error().Err(err).Msg("we fail to close response body")
 		return errors.New("fail to close response body")
 	}
+	b.logger.Info().Msgf("Sent to binance chain (%d): %+v\n", height, tai)
 	atomic.AddInt64(&b.seqNumber, 1)
 	return nil
 }

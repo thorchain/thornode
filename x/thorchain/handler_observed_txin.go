@@ -162,6 +162,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 		vault.AddFunds(tx.Tx.Coins)
+		fmt.Printf("Add Funds: %s\n", tx.Tx.Coins)
 		if err := h.keeper.SetVault(ctx, vault); err != nil {
 			ctx.Logger().Error("fail to save vault", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
