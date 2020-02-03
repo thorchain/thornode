@@ -95,7 +95,7 @@ func main() {
 		return
 	}
 	// create binance client
-	bnb, err := binance.NewBinance(thorKeys, cfg.Chains[0].RPCHost, cfg.TSS)
+	bnb, err := binance.NewBinance(thorKeys, cfg.Chains[0].RPCHost, cfg.TSS, thorchainBridge)
 	log.Info().Msgf("RPCHost binance %s", cfg.Chains[0].RPCHost)
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create binance client")

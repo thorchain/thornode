@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -19,7 +20,6 @@ import (
 	ttypes "github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
-	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
@@ -43,29 +43,32 @@ type Binance struct {
 	signLock           *sync.Mutex
 	tssKeyManager      keys.KeyManager
 	localKeyManager    *keyManager
+	thorchainBridge    *thorclient.ThorchainBridge
 }
 
 // NewBinance create new instance of binance client
-func NewBinance(thorKeys *thorclient.Keys, rpcHost string, keySignCfg config.TSSConfiguration) (*Binance, error) {
+func NewBinance(thorKeys *thorclient.Keys, rpcHost string, keySignCfg config.TSSConfiguration, thorchainBridge *thorclient.ThorchainBridge) (*Binance, error) {
 	log.Info().Msgf("RPCHost binance %s", rpcHost)
 	if len(rpcHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
 	tssKm, err := tss.NewKeySign(keySignCfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to create tss signer")
+		return nil, fmt.Errorf("fail to create tss signer: %w", err)
 	}
 
 	priv, err := thorKeys.GetPrivateKey()
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to get private key")
+		return nil, fmt.Errorf("fail to get private key: %w", err)
 	}
 
 	pk, err := common.NewPubKeyFromCrypto(priv.PubKey())
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to get pub key")
+		return nil, fmt.Errorf("fail to get pub key: %w", err)
 	}
-
+	if thorchainBridge == nil {
+		return nil, errors.New("thorchain bridge is nil")
+	}
 	localKm := &keyManager{
 		privKey: priv,
 		addr:    ctypes.AccAddress(priv.PubKey().Address()),
@@ -83,6 +86,7 @@ func NewBinance(thorKeys *thorclient.Keys, rpcHost string, keySignCfg config.TSS
 		signLock:        &sync.Mutex{},
 		tssKeyManager:   tssKm,
 		localKeyManager: localKm,
+		thorchainBridge: thorchainBridge,
 	}
 
 	chainID, isTestNet := bnb.CheckIsTestNet()
@@ -153,7 +157,7 @@ func (b *Binance) GetChain() string {
 func (b *Binance) GetHeight() (int64, error) {
 	u, err := url.Parse(b.RPCHost)
 	if err != nil {
-		return 0, errors.Wrap(err, "Unable to parse dex host")
+		return 0, fmt.Errorf("unable to parse dex host: %w", err)
 	}
 	u.Path = "abci_info"
 	resp, err := b.client.Get(u.String())
@@ -169,7 +173,7 @@ func (b *Binance) GetHeight() (int64, error) {
 
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return 0, errors.Wrap(err, "fail to read resp body")
+		return 0, fmt.Errorf("fail to read resp body: %w", err)
 	}
 
 	type ABCIinfo struct {
@@ -184,7 +188,7 @@ func (b *Binance) GetHeight() (int64, error) {
 
 	var abci ABCIinfo
 	if err := json.Unmarshal(data, &abci); err != nil {
-		return 0, errors.Wrap(err, "failed to unmarshal")
+		return 0, fmt.Errorf("failed to unmarshal: %w", err)
 	}
 
 	return strconv.ParseInt(abci.Result.Response.BlockHeight, 10, 64)
@@ -249,7 +253,7 @@ func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string
 
 	toAddr, err := types.AccAddressFromBech32(tai.ToAddress.String())
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "fail to parse account address(%s)", tai.ToAddress.String())
+		return nil, nil, fmt.Errorf("fail to parse account address(%s) :%w", tai.ToAddress.String(), err)
 	}
 
 	var coins types.Coins
@@ -272,7 +276,7 @@ func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string
 	fromAddr := b.GetAddress(tai.VaultPubKey)
 	sendMsg := b.parseTx(fromAddr, payload)
 	if err := sendMsg.ValidateBasic(); err != nil {
-		return nil, nil, errors.Wrap(err, "invalid send msg")
+		return nil, nil, fmt.Errorf("invalid send msg: %w", err)
 	}
 
 	address, err := types.AccAddressFromBech32(fromAddr)
@@ -288,7 +292,7 @@ func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string
 	if currentHeight > b.currentBlockHeight {
 		acc, err := b.GetAccount(address)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "fail to get account info")
+			return nil, nil, fmt.Errorf("fail to get account info: %w", err)
 		}
 		atomic.StoreInt64(&b.currentBlockHeight, currentHeight)
 		atomic.StoreInt64(&b.accountNumber, acc.AccountNumber)
@@ -307,12 +311,13 @@ func (b *Binance) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string
 	param := map[string]string{
 		"sync": "true",
 	}
-	rawBz, err := b.signWithRetry(signMsg, fromAddr, tai.VaultPubKey)
+	rawBz, err := b.signWithRetry(signMsg, fromAddr, tai.VaultPubKey, height, tai.Memo, tai.Coins)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "fail to sign message")
+		return nil, nil, fmt.Errorf("fail to sign message: %w", err)
 	}
 
 	if len(rawBz) == 0 {
+		// this could happen, if the local party trying to sign a message , however the TSS keysign process didn't chose the local party to sign the message
 		return nil, nil, nil
 	}
 
@@ -329,11 +334,27 @@ func (b *Binance) sign(signMsg tx.StdSignMsg, poolPubKey common.PubKey) ([]byte,
 }
 
 // signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
-func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string, poolPubKey common.PubKey) ([]byte, error) {
+func (b *Binance) signWithRetry(signMsg tx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins) ([]byte, error) {
 	for {
 		rawBytes, err := b.sign(signMsg, poolPubKey)
-		if nil == err {
+		if nil == err && rawBytes != nil {
 			return rawBytes, nil
+		}
+		var keysignError tss.KeysignError
+		if errors.As(err, &keysignError) {
+			if len(keysignError.Blame.BlameNodes) == 0 {
+				// TSS doesn't know which node to blame
+				continue
+			}
+
+			// key sign error forward the keysign blame to thorchain
+			txID, err := b.thorchainBridge.PostKeysignFailure(keysignError.Blame, height, memo, coins)
+			if err != nil {
+				b.logger.Error().Err(err).Msg("fail to post keysign failure to thorchain")
+			} else {
+				b.logger.Info().Str("tx_id", txID.String()).Msgf("post keysign failure to thorchain")
+			}
+			continue
 		}
 		b.logger.Error().Err(err).Msgf("fail to sign msg with memo: %s", signMsg.Memo)
 		// should THORNode give up? let's check the seq no on binance chain
@@ -425,7 +446,7 @@ func (b *Binance) BroadcastTx(hexTx []byte) error {
 	u.RawQuery = values.Encode()
 	resp, err := http.Post(u.String(), "", nil)
 	if err != nil {
-		return errors.Wrap(err, "fail to broadcast tx to ")
+		return fmt.Errorf("fail to broadcast tx to binance chain: %w", err)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {

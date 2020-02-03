@@ -7,13 +7,13 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	"github.com/tendermint/tendermint/crypto/secp256k1"
-	"gitlab.com/thorchain/thornode/common"
-
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
 	"github.com/binance-chain/go-sdk/types/tx"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/secp256k1"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type keyManager struct {

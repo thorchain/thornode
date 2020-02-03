@@ -46,6 +46,7 @@ var (
 	NewTssVoter                    = types.NewTssVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
 	NewMsgTssPool                  = types.NewMsgTssPool
+	NewMsgTssKeysignFail           = types.NewMsgTssKeysignFail
 	NewMsgObservedTxIn             = types.NewMsgObservedTxIn
 	NewMsgObservedTxOut            = types.NewMsgObservedTxOut
 	NewMsgNoOp                     = types.NewMsgNoOp
@@ -119,6 +120,7 @@ type (
 	MsgObservedTxIn             = types.MsgObservedTxIn
 	MsgObservedTxOut            = types.MsgObservedTxOut
 	MsgTssPool                  = types.MsgTssPool
+	MsgTssKeysignFail           = types.MsgTssKeysignFail
 	QueryResPools               = types.QueryResPools
 	QueryResHeights             = types.QueryResHeights
 	QueryResTxOut               = types.QueryResTxOut
@@ -138,6 +140,7 @@ type (
 	ObservedTxVoters            = types.ObservedTxVoters
 	ObservedTxIndex             = types.ObservedTxIndex
 	TssVoter                    = types.TssVoter
+	TssKeysignFailVoter         = types.TssKeysignFailVoter
 	TxOutItem                   = types.TxOutItem
 	TxOut                       = types.TxOut
 	Keygen                      = types.Keygen

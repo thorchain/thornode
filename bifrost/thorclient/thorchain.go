@@ -187,6 +187,22 @@ func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, e
 	return accNum, seq, nil
 }
 
+// PostKeysignFailure generate and  post a keysign fail tx to thorchan
+func (b *ThorchainBridge) PostKeysignFailure(blame common.Blame, height int64, memo string, coins common.Coins) (common.TxID, error) {
+	start := time.Now()
+	defer func() {
+		b.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
+	}()
+	msg := stypes.NewMsgTssKeysignFail(height, blame, memo, coins, b.keys.GetSignerInfo().GetAddress())
+	stdTx := authtypes.NewStdTx(
+		[]sdk.Msg{msg},
+		authtypes.NewStdFee(100000000, nil), // fee
+		nil,                                 // signatures
+		"",                                  // memo
+	)
+	return b.Broadcast(stdTx, types.TxSync)
+}
+
 // GetKeygenStdTx get keygen tx from params
 func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, blame common.Blame, inputPks common.PubKeys, keygenType stypes.KeygenType, height int64) (*authtypes.StdTx, error) {
 	start := time.Now()
