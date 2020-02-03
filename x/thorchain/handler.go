@@ -96,6 +96,7 @@ func getHandlerMapping(keeper Keeper, versionedTxOutStore VersionedTxOutStore, v
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore)
 	m[MsgSetStakeData{}.Type()] = NewStakeHandler(keeper)
 	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
+	m[MsgTssKeysignFail{}.Type()] = NewTssKeysignFailHandler(keeper)
 	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper)
 	return m
 }

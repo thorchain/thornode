@@ -3,7 +3,7 @@ package types
 import (
 	. "gopkg.in/check.v1"
 
-	common "gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type MsgTssPoolSuite struct{}
