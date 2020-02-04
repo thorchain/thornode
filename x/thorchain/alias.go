@@ -16,6 +16,8 @@ const (
 	EventPending     = types.Pending
 	EventFail        = types.Failed
 	EventRefund      = types.Refund
+	YggdrasilReturn  = types.YggdrasilReturn
+	YggdrasilFund    = types.YggdrasilFund
 
 	// Admin config keys
 	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
@@ -68,6 +70,7 @@ var (
 	NewEventUnstake                = types.NewEventUnstake
 	NewEventRefund                 = types.NewEventRefund
 	NewEventBond                   = types.NewEventBond
+	NewEventYggdrasil              = types.NewEventYggdrasil
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewMsgMigrate                  = types.NewMsgMigrate

@@ -30,6 +30,7 @@ const (
 	RewardEventType      = `rewards`
 	RefundEventType      = `refund`
 	BondEventType        = `bond`
+	YggdrasilEventType   = `yggdrasil`
 )
 
 // NewEvent create a new  event
@@ -251,4 +252,32 @@ func NewEventBond(amount sdk.Uint, bondType BondType) EventBond {
 		Amount:   amount,
 		BondType: bondType,
 	}
+}
+
+type YggdrasilFundEventType string
+
+const (
+	YggdrasilFund   YggdrasilFundEventType = `fund`
+	YggdrasilReturn YggdrasilFundEventType = `return`
+)
+
+// EventYggdrasil
+type EventYggdrasil struct {
+	PubKey                 common.PubKey          `json:"pub_key"`
+	Coins                  common.Coins           `json:"coins"`
+	YggdrasilFundEventType YggdrasilFundEventType `json:"yggdrasil_event_type"`
+}
+
+// NewEventYggdrasil create a new instance of yggdrasil event
+func NewEventYggdrasil(pubKey common.PubKey, coins common.Coins, eventType YggdrasilFundEventType) EventYggdrasil {
+	return EventYggdrasil{
+		PubKey:                 pubKey,
+		Coins:                  coins,
+		YggdrasilFundEventType: eventType,
+	}
+}
+
+// Type event type
+func (e EventYggdrasil) Type() string {
+	return YggdrasilEventType
 }

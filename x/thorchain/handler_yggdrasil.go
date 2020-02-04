@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"encoding/json"
 	stdErrors "errors"
 	"fmt"
 
@@ -105,6 +106,17 @@ func (h YggdrasilHandler) handleYggdrasilFund(ctx sdk.Context, msg MsgYggdrasil,
 				sdk.NewAttribute("pubkey", vault.PubKey.String()),
 				sdk.NewAttribute("coins", msg.Coins.String()),
 				sdk.NewAttribute("tx", msg.Tx.ID.String())))
+		yggFundEvent := NewEventYggdrasil(msg.PubKey, msg.Coins, YggdrasilFund)
+		yggBuf, err := json.Marshal(yggFundEvent)
+		if err != nil {
+			ctx.Logger().Error("fail to marshal yggdrasil fund event", "error", err)
+			return sdk.ErrInternal("fail to marshal yggdrasil fund event to json").Result()
+		}
+		e := NewEvent(yggFundEvent.Type(), ctx.BlockHeight(), msg.Tx, yggBuf, EventSuccess)
+		if err := h.keeper.UpsertEvent(ctx, e); err != nil {
+			ctx.Logger().Error("fail to save events", "error", err)
+			return sdk.ErrInternal("fail to save events").Result()
+		}
 	}
 	// Yggdrasil usually comes from Asgard , Asgard --> Yggdrasil
 	// It will be an outbound tx from Asgard pool , and it will be an Inbound tx form Yggdrasil pool
@@ -169,6 +181,17 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 
 	// when vault.Type is asgard, that means this tx is observed on an asgard pool and it is an inbound tx
 	if vault.Type == AsgardVault {
+		yggFundEvent := NewEventYggdrasil(msg.PubKey, msg.Coins, YggdrasilReturn)
+		yggBuf, err := json.Marshal(yggFundEvent)
+		if err != nil {
+			ctx.Logger().Error("fail to marshal yggdrasil fund event", "error", err)
+			return sdk.ErrInternal("fail to marshal yggdrasil fund event to json").Result()
+		}
+		e := NewEvent(yggFundEvent.Type(), ctx.BlockHeight(), msg.Tx, yggBuf, EventSuccess)
+		if err := h.keeper.UpsertEvent(ctx, e); err != nil {
+			ctx.Logger().Error("fail to save events", "error", err)
+			return sdk.ErrInternal("fail to save events").Result()
+		}
 		// Yggdrasil return fund back to Asgard
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent("yggdrasil_return",
