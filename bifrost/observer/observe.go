@@ -2,7 +2,6 @@ package observer
 
 import (
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 
@@ -38,7 +37,7 @@ type Observer struct {
 
 // NewObserver create a new instance of Observer for chain
 func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, pubkeyMgr pubkeymanager.PubKeyValidator, chain chainclients.ChainClient, m *metrics.Metrics) (*Observer, error) {
-	scanStorage, err := chainclients.NewBlockScannerStorage(cfg.ObserverDbPath, chain.GetChain())
+	scanStorage, err := chainclients.NewBlockScannerStorage(cfg.ObserverDbPath, chain)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create scan storage")
 	}
@@ -46,7 +45,7 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 	logger := log.Logger.With().Str("module", "observer").Logger()
 
 	if !cfg.BlockScanner.EnforceBlockHeight {
-		startBlockHeight, err := thorchainBridge.GetLastObservedInHeight(common.Chain(strings.ToUpper(chain.GetChain())))
+		startBlockHeight, err := thorchainBridge.GetLastObservedInHeight(chain.GetChain())
 		if err != nil {
 			return nil, errors.Wrap(err, "fail to get start block height from thorchain")
 		}
@@ -65,7 +64,7 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 	}
 
 	_, isTestNet := chain.CheckIsTestNet()
-	blockScanner, err := chainclients.NewBlockScanner(cfg.BlockScanner, scanStorage, chain.GetChain(), isTestNet, pubkeyMgr, m)
+	blockScanner, err := chainclients.NewBlockScanner(cfg.BlockScanner, scanStorage, chain, isTestNet, pubkeyMgr, m)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create block scanner")
 	}

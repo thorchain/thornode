@@ -2,44 +2,46 @@ package chainclients
 
 import (
 	"errors"
-	"strings"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/chainclients/binance"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 var (
-	NotSupported   = errors.New("not supported")
+	NotFound       = errors.New("not found")
 	NotImplemented = errors.New("not implemented")
+	NotSupported   = errors.New("not supported")
 )
 
 // LoadChains returns chain clients from chain configurations
-func LoadChains(cfgChains []config.ChainConfigurations) []ChainClient {
-	var chains []ChainClient
+func LoadChains(thorKeys *thorclient.Keys, cfg []config.ChainConfigurations, tss config.TSSConfiguration, thorchainBridge *thorclient.ThorchainBridge) map[common.Chain]ChainClient {
+	chains := make(map[common.Chain]ChainClient, 0)
 
-	for _, chain := range cfgChains {
+	for _, chain := range cfg {
 		if !chain.Enabled {
 			continue
 		}
 
-		switch strings.ToLower(chain.Name) {
-		case "bnb":
-			bnb, err := loadBNBClient(chain)
+		switch chain.Name {
+		case "BNB":
+			bnb, err := loadBNBClient(thorKeys, chain, tss, thorchainBridge)
 			if err == nil {
-				chains = append(chains, bnb)
+				chains[common.BNBChain] = bnb
 			}
-		case "eth":
-			eth, err := loadETHClient(chain)
+		case "ETH":
+			eth, err := loadETHClient(thorKeys, chain, tss)
 			if err == nil {
-				chains = append(chains, eth)
+				chains[common.ETHChain] = eth
 			}
-		case "btc":
-			btc, err := loadBTCClient(chain)
+		case "BTC":
+			btc, err := loadBTCClient(thorKeys, chain, tss)
 			if err == nil {
-				chains = append(chains, btc)
+				chains[common.BTCChain] = btc
 			}
 		}
 	}
@@ -47,32 +49,32 @@ func LoadChains(cfgChains []config.ChainConfigurations) []ChainClient {
 	return chains
 }
 
-func NewBlockScannerStorage(observerDbPath, chain string) (BlockScannerStorage, error) {
-	switch chain {
-	case "bnb":
+func NewBlockScannerStorage(observerDbPath string, chain ChainClient) (BlockScannerStorage, error) {
+	switch chain.GetChain() {
+	case common.BNBChain:
 		return binance.NewBinanceBlockScannerStorage(observerDbPath)
 	default:
 		return nil, NotSupported
 	}
 }
 
-func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chain string, isTestNet bool, pkmgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) (BlockScanner, error) {
-	switch chain {
-	case "bnb":
+func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, chain ChainClient, isTestNet bool, pkmgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) (BlockScanner, error) {
+	switch chain.GetChain() {
+	case common.BNBChain:
 		return binance.NewBinanceBlockScanner(cfg, scanStorage, isTestNet, pkmgr, m)
 	default:
 		return nil, NotSupported
 	}
 }
 
-func loadBTCClient(cfg config.ChainConfigurations) (ChainClient, error) {
+func loadBTCClient(thorKeys *thorclient.Keys, chain config.ChainConfigurations, tss config.TSSConfiguration) (ChainClient, error) {
 	return nil, NotImplemented
 }
 
-func loadBNBClient(cfg config.ChainConfigurations) (ChainClient, error) {
-	return nil, NotImplemented
+func loadBNBClient(thorKeys *thorclient.Keys, chain config.ChainConfigurations, tss config.TSSConfiguration, thorchainBridge *thorclient.ThorchainBridge) (ChainClient, error) {
+	return binance.NewBinance(thorKeys, chain.RPCHost, tss, thorchainBridge)
 }
 
-func loadETHClient(cfg config.ChainConfigurations) (ChainClient, error) {
+func loadETHClient(thorKeys *thorclient.Keys, chain config.ChainConfigurations, tss config.TSSConfiguration) (ChainClient, error) {
 	return nil, NotImplemented
 }
