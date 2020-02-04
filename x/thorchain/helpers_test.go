@@ -312,6 +312,7 @@ func newAddGasFeesKeeperHelper(keeper Keeper) *addGasFeesKeeperHelper {
 		Keeper: keeper,
 	}
 }
+
 func (h *addGasFeesKeeperHelper) GetVaultData(ctx sdk.Context) (VaultData, error) {
 	if h.errGetVaultData {
 		return VaultData{}, kaboom
@@ -325,18 +326,21 @@ func (h *addGasFeesKeeperHelper) SetVaultData(ctx sdk.Context, data VaultData) e
 	}
 	return h.Keeper.SetVaultData(ctx, data)
 }
+
 func (h *addGasFeesKeeperHelper) SetPool(ctx sdk.Context, pool Pool) error {
 	if h.errSetPool {
 		return kaboom
 	}
 	return h.Keeper.SetPool(ctx, pool)
 }
+
 func (h *addGasFeesKeeperHelper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
 	if h.errGetPool {
 		return Pool{}, kaboom
 	}
 	return h.Keeper.GetPool(ctx, asset)
 }
+
 func (h *addGasFeesKeeperHelper) UpsertEvent(ctx sdk.Context, event Event) error {
 	if h.errSetEvent {
 		return kaboom
