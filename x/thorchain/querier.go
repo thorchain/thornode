@@ -73,7 +73,7 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 }
 
 func getURLFromData(data []byte) (*url.URL, error) {
-	if nil == data {
+	if data == nil {
 		return nil, errors.New("empty data")
 	}
 	u := &url.URL{}
@@ -577,7 +577,7 @@ func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 
 func getEventStatusFromQuery(u *url.URL) EventStatuses {
 	var result EventStatuses
-	if nil == u {
+	if u == nil {
 		return result
 	}
 	values, ok := u.Query()["include"]

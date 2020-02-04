@@ -207,7 +207,7 @@ func (k *TestObservedTxInHandleKeeper) IsActiveObserver(_ sdk.Context, addr sdk.
 }
 
 func (k *TestObservedTxInHandleKeeper) GetTxOut(ctx sdk.Context, blockHeight int64) (*TxOut, error) {
-	if nil != k.txOut && k.txOut.Height == blockHeight {
+	if k.txOut != nil && k.txOut.Height == blockHeight {
 		return k.txOut, nil
 	}
 	return nil, kaboom

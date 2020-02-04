@@ -63,7 +63,7 @@ func NewHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validato
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
 		constantValues := constants.GetConstantValues(version)
-		if nil == constantValues {
+		if constantValues == nil {
 			return errConstNotAvailable.Result()
 		}
 		h, ok := handlerMap[msg.Type()]
@@ -158,7 +158,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		}
 	case MigrateMemo:
 		newMsg, err = getMsgMigrateFromMemo(m, tx, signer)
-		if nil != err {
+		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid migrate memo: %s", err.Error())
 		}
 	case BondMemo:

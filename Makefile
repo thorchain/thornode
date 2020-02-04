@@ -43,7 +43,7 @@ test-watch: clear
 
 lint-pre:
 	@test -z $(gofumpt -l .) # checks code is in proper format
-	@test -z $(grep -R "nil != err") # checks code is in proper format
+	@test -z $(grep -R "if nil") # checks code is in proper format
 	@go mod verify
 
 lint: lint-pre

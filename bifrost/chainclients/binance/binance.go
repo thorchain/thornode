@@ -336,7 +336,7 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey) ([]byte
 func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins) ([]byte, error) {
 	for {
 		rawBytes, err := b.sign(signMsg, poolPubKey)
-		if nil == err && rawBytes != nil {
+		if err == nil && rawBytes != nil {
 			return rawBytes, nil
 		}
 		var keysignError tss.KeysignError

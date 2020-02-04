@@ -91,7 +91,7 @@ func (h ObservedTxInHandler) signedByNewObserver(ctx sdk.Context, addr sdk.AccAd
 	}
 	nodeAcct.ObserverActive = true
 	err = h.keeper.SetNodeAccount(ctx, nodeAcct)
-	if nil == err {
+	if err == nil {
 		return true, nil
 	}
 	return false, fmt.Errorf("fail to save node account(%s): %w", addr, err)
@@ -186,7 +186,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 
 		// construct msg from memo
 		m, txErr := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
-		if nil != txErr {
+		if txErr != nil {
 			ctx.Logger().Error("fail to process inbound tx", "error", txErr.Error(), "tx hash", tx.Tx.ID.String())
 			if newErr := refundTx(ctx, tx, txOutStore, h.keeper, txErr.Code(), fmt.Sprint(txErr.Data())); nil != newErr {
 				return sdk.ErrInternal(newErr.Error()).Result()

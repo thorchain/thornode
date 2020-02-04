@@ -379,7 +379,7 @@ func ParseMemo(memo string) (Memo, error) {
 			return noMemo, errors.New("not enough parameters")
 		}
 		blockHeight, err := strconv.ParseInt(parts[1], 10, 64)
-		if nil != err {
+		if err != nil {
 			return noMemo, fmt.Errorf("fail to convert (%s) to a valid block height: %w", parts[1], err)
 		}
 		return MigrateMemo{
