@@ -113,7 +113,7 @@ func (h HandlerTssKeysignFailSuite) TestTssKeysignFailHandler(c *C) {
 		{
 			name: "invalid message should return an error",
 			messageCreator: func(helper tssKeysignFailHandlerTestHelper) sdk.Msg {
-				return NewMsgNoOp(helper.nodeAccount.NodeAddress)
+				return NewMsgNoOp(GetRandomObservedTx(), helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssKeysignFailHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
 				return handler.Run(helper.ctx, msg, helper.version, helper.constAccessor)
