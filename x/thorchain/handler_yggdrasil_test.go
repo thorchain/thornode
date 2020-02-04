@@ -6,6 +6,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 
 	. "gopkg.in/check.v1"
 )
@@ -225,6 +226,14 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
 			},
 			expectedResult: sdk.CodeOK,
+			validator: func(helper yggdrasilHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
+				eventID, err := helper.keeper.GetCurrentEventID(helper.ctx)
+				c.Assert(err, IsNil)
+				c.Assert(eventID == 2, Equals, true)
+				event, err := helper.keeper.GetEvent(helper.ctx, 1)
+				c.Assert(err, IsNil)
+				c.Assert(event.Type, Equals, types.YggdrasilEventType)
+			},
 		},
 		{
 			name: "yggdrasil return fund to asgard but to address is not asgard should be slashed",
@@ -343,14 +352,23 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
 			},
 			expectedResult: sdk.CodeOK,
+			validator: func(helper yggdrasilHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
+				// check event had been emitted
+				eventID, err := helper.keeper.GetCurrentEventID(helper.ctx)
+				c.Assert(err, IsNil)
+				c.Assert(eventID == 2, Equals, true)
+				event, err := helper.keeper.GetEvent(helper.ctx, 1)
+				c.Assert(err, IsNil)
+				c.Assert(event.Type, Equals, types.YggdrasilEventType)
+			},
 		},
 		{
 			name: "yggdrasil return fund and node account is not active should refund bond",
 			messageCreator: func(helper yggdrasilHandlerTestHelper) sdk.Msg {
 				na := GetRandomNodeAccount(NodeStandby)
-				helper.keeper.SetNodeAccount(helper.ctx, na)
+				_ = helper.keeper.SetNodeAccount(helper.ctx, na)
 				vault := NewVault(10, ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1)
-				helper.keeper.SetVault(helper.ctx, vault)
+				_ = helper.keeper.SetVault(helper.ctx, vault)
 				fromAddr, _ := vault.PubKey.GetAddress(common.BNBChain)
 				coins := common.Coins{
 					common.NewCoin(common.BNBAsset, sdk.NewUint(common.One)),
@@ -386,6 +404,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 				na, err := helper.keeper.GetNodeAccountByPubKey(helper.ctx, yggMsg.PubKey)
 				c.Assert(err, IsNil)
 				c.Assert(na.Status.String(), Equals, NodeDisabled.String())
+
 			},
 			expectedResult: sdk.CodeOK,
 		},
