@@ -699,12 +699,16 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 		return badActors, err
 	}
 
+	if len(nas) == 0 {
+		return nil, nil
+	}
+
 	type badTracker struct {
-		Score       int64 // their badness score, derived from slash points and age
+		Score       sdk.Dec // their badness score, derived from slash points and age
 		NodeAccount NodeAccount
 	}
 	var tracker []badTracker
-	var totalScore int64
+	totalScore := sdk.ZeroDec()
 
 	// Find bad actor relative to slashpoints / age.
 	for _, na := range nas {
@@ -712,9 +716,9 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 			continue
 		}
 
-		// purposely avoiding use float64 as they are non-deterministic
-		score := na.StatusSince / na.SlashPoints
-		totalScore += score
+		score := sdk.NewDecWithPrec(na.StatusSince, 5).Quo(sdk.NewDecWithPrec(na.SlashPoints, 5))
+		fmt.Printf("Score: %d\n", score)
+		totalScore = totalScore.Add(score)
 
 		tracker = append(tracker, badTracker{
 			Score:       score,
@@ -723,15 +727,21 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 	}
 
 	sort.Slice(tracker[:], func(i, j int) bool {
-		return tracker[i].Score > tracker[j].Score
+		return tracker[i].Score.GT(tracker[j].Score)
 	})
 
-	avgScore := totalScore / int64(len(nas))
-	// the red line is the line where anybody above it is considered to be a bad actor
-	redline := avgScore * 3
+	avgScore := totalScore.QuoInt64(int64(len(nas)))
+	// the red line is the line where anybody above it is considered to be a
+	// bad actor. Off with their heads!
+	redline := avgScore.MulInt64(3)
+	fmt.Printf("TotalScore: %d\n", totalScore)
+	fmt.Printf("Len: %d\n", len(nas))
+	fmt.Printf("AvgScore: %d\n", avgScore)
+	fmt.Printf("RedLine: %d\n", redline)
 
 	for _, track := range tracker {
-		if redline >= track.Score {
+		fmt.Printf("Score2: %d\n", track.Score.Uint64())
+		if redline.LTE(track.Score) {
 			badActors = append(badActors, track.NodeAccount)
 		}
 	}

@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
@@ -14,6 +16,43 @@ var _ = Suite(&ValidatorMgrV1TestSuite{})
 
 func (vts *ValidatorMgrV1TestSuite) SetUpSuite(c *C) {
 	SetupConfigForTest()
+}
+
+func (vts *ValidatorMgrV1TestSuite) TestBadActors(c *C) {
+	ctx, k := setupKeeperForTest(c)
+
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
+	c.Assert(vMgr, NotNil)
+
+	// no bad actors with active node accounts
+	nas, err := vMgr.findBadActors(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(nas, HasLen, 0)
+
+	activeNode := GetRandomNodeAccount(NodeActive)
+	activeNode.SlashPoints = 0
+	c.Assert(k.SetNodeAccount(ctx, activeNode), IsNil)
+
+	// no bad actors with active node accounts with no slash points
+	nas, err = vMgr.findBadActors(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(nas, HasLen, 0)
+	fmt.Println("FOOOOOOOOO")
+
+	activeNode = GetRandomNodeAccount(NodeActive)
+	activeNode.SlashPoints = 25
+	c.Assert(k.SetNodeAccount(ctx, activeNode), IsNil)
+	activeNode = GetRandomNodeAccount(NodeActive)
+	activeNode.SlashPoints = 50
+	c.Assert(k.SetNodeAccount(ctx, activeNode), IsNil)
+
+	// finds the worse actor
+	nas, err = vMgr.findBadActors(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(nas, HasLen, 1)
+	c.Check(nas[0].NodeAddress.Equals(activeNode.NodeAddress), Equals, true)
 }
 
 func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {
