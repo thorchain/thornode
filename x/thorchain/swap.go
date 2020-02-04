@@ -123,12 +123,7 @@ func swapOne(ctx sdk.Context,
 	transactionFee sdk.Uint) (amt sdk.Uint, poolResult Pool, swapEvt EventSwap, err sdk.Error) {
 	source := tx.Coins[0].Asset
 	amount := tx.Coins[0].Amount
-	swapEvt = NewEventSwap(
-		source,
-		tradeTarget,
-		sdk.ZeroUint(),
-		sdk.ZeroUint(),
-	)
+
 	ctx.Logger().Info(fmt.Sprintf("%s Swapping %s(%s) -> %s to %s", tx.FromAddress, source, tx.Coins[0].Amount, target, destination))
 
 	var X, x, Y, liquidityFee, emitAssets sdk.Uint
@@ -143,6 +138,13 @@ func swapOne(ctx sdk.Context,
 			return sdk.ZeroUint(), Pool{}, swapEvt, sdk.NewError(DefaultCodespace, CodeSwapFailNotEnoughFee, "output RUNE (%s) is not enough to pay transaction fee", amount)
 		}
 	}
+
+	swapEvt = NewEventSwap(
+		asset,
+		tradeTarget,
+		sdk.ZeroUint(),
+		sdk.ZeroUint(),
+	)
 
 	// Check if pool exists
 	if !keeper.PoolExist(ctx, asset) {
