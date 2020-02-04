@@ -20,6 +20,7 @@ func (vts *ValidatorMgrV1TestSuite) SetUpSuite(c *C) {
 
 func (vts *ValidatorMgrV1TestSuite) TestBadActors(c *C) {
 	ctx, k := setupKeeperForTest(c)
+	ctx = ctx.WithBlockHeight(102)
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
@@ -52,7 +53,21 @@ func (vts *ValidatorMgrV1TestSuite) TestBadActors(c *C) {
 	nas, err = vMgr.findBadActors(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(nas, HasLen, 1)
-	c.Check(nas[0].NodeAddress.Equals(activeNode.NodeAddress), Equals, true)
+	c.Check(nas[0].NodeAddress.Equals(activeNode.NodeAddress), Equals, true, Commentf("%+v\n", nas[0].SlashPoints))
+
+	// create really bad actors (crossing the redline)
+	bad1 := GetRandomNodeAccount(NodeActive)
+	bad1.SlashPoints = 1000
+	c.Assert(k.SetNodeAccount(ctx, bad1), IsNil)
+	bad2 := GetRandomNodeAccount(NodeActive)
+	bad2.SlashPoints = 10000
+	c.Assert(k.SetNodeAccount(ctx, bad2), IsNil)
+
+	nas, err = vMgr.findBadActors(ctx)
+	c.Assert(err, IsNil)
+	c.Assert(nas, HasLen, 2, Commentf("%d", len(nas)))
+	c.Check(nas[0].NodeAddress.Equals(bad2.NodeAddress), Equals, true, Commentf("%+v\n", nas[0].SlashPoints))
+	c.Check(nas[1].NodeAddress.Equals(bad1.NodeAddress), Equals, true, Commentf("%+v\n", nas[1].SlashPoints))
 }
 
 func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {

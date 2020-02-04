@@ -691,7 +691,7 @@ func (vm *validatorMgrV1) setupValidatorNodes(ctx sdk.Context, height int64, con
 	return nil
 }
 
-// Iterate over active node accounts, finding bad actors with high slashpoints
+// Iterate over active node accounts, finding bad actors with high slash points
 func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 	badActors := NodeAccounts{}
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
@@ -703,21 +703,25 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 		return nil, nil
 	}
 
+	// NOTE: Our score gives a numerical representation of the behavior our a
+	// node account. The lower the score, the better behavior (similar to
+	// golf). The score is determined by relative to how many slash points they
+	// have over how long they have been an active node account.
 	type badTracker struct {
-		Score       sdk.Dec // their badness score, derived from slash points and age
+		Score       sdk.Dec
 		NodeAccount NodeAccount
 	}
 	var tracker []badTracker
 	totalScore := sdk.ZeroDec()
 
-	// Find bad actor relative to slashpoints / age.
+	// Find bad actor relative to age / slashpoints
 	for _, na := range nas {
 		if na.SlashPoints == 0 {
 			continue
 		}
 
-		score := sdk.NewDecWithPrec(na.StatusSince, 5).Quo(sdk.NewDecWithPrec(na.SlashPoints, 5))
-		fmt.Printf("Score: %d\n", score)
+		age := sdk.NewDecWithPrec(ctx.BlockHeight()-na.StatusSince, 5)
+		score := age.Quo(sdk.NewDecWithPrec(na.SlashPoints, 5))
 		totalScore = totalScore.Add(score)
 
 		tracker = append(tracker, badTracker{
@@ -726,28 +730,35 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 		})
 	}
 
+	if len(tracker) == 0 {
+		// no offenders, exit nicely
+		return nil, nil
+	}
+
 	sort.Slice(tracker[:], func(i, j int) bool {
-		return tracker[i].Score.GT(tracker[j].Score)
+		return tracker[i].Score.LT(tracker[j].Score)
 	})
 
 	avgScore := totalScore.QuoInt64(int64(len(nas)))
-	// the red line is the line where anybody above it is considered to be a
-	// bad actor. Off with their heads!
-	redline := avgScore.MulInt64(3)
-	fmt.Printf("TotalScore: %d\n", totalScore)
-	fmt.Printf("Len: %d\n", len(nas))
-	fmt.Printf("AvgScore: %d\n", avgScore)
-	fmt.Printf("RedLine: %d\n", redline)
 
+	// NOTE: our redline is a hard line in the sand to determine if a node
+	// account is sufficiently bad that it should just be removed now. This
+	// ensures that if we have multiple "really bad" node accounts, they all
+	// can get removed in the same churn. It is important to note we shouldn't
+	// be able to churn out more than 1/3rd of our node accounts in a single
+	// churn, as that could threaten the security of the funds. This logic to
+	// protect against this is not inside this function.
+	redline := avgScore.QuoInt64(3)
+
+	// find any node accounts that have crossed the redline
 	for _, track := range tracker {
-		fmt.Printf("Score2: %d\n", track.Score.Uint64())
-		if redline.LTE(track.Score) {
+		if redline.GTE(track.Score) {
 			badActors = append(badActors, track.NodeAccount)
 		}
 	}
 
 	// if no one crossed the redline, lets just grab the worse offender
-	if len(badActors) == 0 && len(tracker) > 0 {
+	if len(badActors) == 0 {
 		badActors = NodeAccounts{tracker[0].NodeAccount}
 	}
 
