@@ -7,6 +7,7 @@ import (
 	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/tendermint/tendermint/crypto"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/bifrost/chainclients"
 	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
 )
@@ -21,20 +22,24 @@ type MockChainClient struct {
 	baseAccount types.BaseAccount
 }
 
-func (b *MockChainClient) SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error) {
-	return nil, nil, nil
+func (b *MockChainClient) SignTx(tai stypes.TxOutItem, height int64) ([]byte, error) {
+	return nil, nil
 }
 
 func (b *MockChainClient) GetHeight() (int64, error) {
 	return 0, nil
 }
 
+func (b *MockChainClient) GetGasFee(count uint64) common.Gas {
+	return common.GetBNBGasFee(count)
+}
+
 func (b *MockChainClient) CheckIsTestNet() (string, bool) {
 	return "", true
 }
 
-func (b *MockChainClient) GetChain() string {
-	return "bnb"
+func (b *MockChainClient) GetChain() common.Chain {
+	return common.BNBChain
 }
 
 func (b *MockChainClient) BroadcastTx(tx []byte) error {
@@ -53,21 +58,19 @@ func (b *MockChainClient) GetPubKey() crypto.PubKey {
 	return nil
 }
 
-func (b *MockChainClient) SignAndBroadcastToChain(tai stypes.TxOutItem, height int64) error {
-	return nil
-}
-
 func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 	sign := &Signer{
-		Chain: &MockChainClient{
-			baseAccount: types.BaseAccount{
-				Coins: types.Coins{
-					types.Coin{Denom: "BNB", Amount: 1000000},
+		chains: map[common.Chain]chainclients.ChainClient{
+			common.BNBChain: &MockChainClient{
+				baseAccount: types.BaseAccount{
+					Coins: types.Coins{
+						types.Coin{Denom: "BNB", Amount: 1000000},
+					},
 				},
 			},
 		},
 	}
-	input := `{ "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
@@ -79,16 +82,18 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 
 func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 	sign := &Signer{
-		Chain: &MockChainClient{
-			baseAccount: types.BaseAccount{
-				Coins: types.Coins{
-					types.Coin{Denom: "BNB", Amount: 1000000},
-					types.Coin{Denom: "RUNE", Amount: 1000000},
+		chains: map[common.Chain]chainclients.ChainClient{
+			common.BNBChain: &MockChainClient{
+				baseAccount: types.BaseAccount{
+					Coins: types.Coins{
+						types.Coin{Denom: "BNB", Amount: 1000000},
+						types.Coin{Denom: "RUNE", Amount: 1000000},
+					},
 				},
 			},
 		},
 	}
-	input := `{ "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
@@ -100,15 +105,17 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 
 func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {
 	sign := &Signer{
-		Chain: &MockChainClient{
-			baseAccount: types.BaseAccount{
-				Coins: types.Coins{
-					types.Coin{Denom: "BNB", Amount: 10000},
+		chains: map[common.Chain]chainclients.ChainClient{
+			common.BNBChain: &MockChainClient{
+				baseAccount: types.BaseAccount{
+					Coins: types.Coins{
+						types.Coin{Denom: "BNB", Amount: 10000},
+					},
 				},
 			},
 		},
 	}
-	input := `{ "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)

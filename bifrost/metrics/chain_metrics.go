@@ -4,16 +4,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-func SignAndBroadcastToChainDuration(chain string) MetricName {
-	return MetricName("sign_and_broadcast_to_" + chain + "_duration")
+func SignAndBroadcastDuration(chain string) MetricName {
+	return MetricName(chain + "_sign_and_broadcast_duration")
 }
 
-func TxToChainSigned(chain string) MetricName {
-	return MetricName("tx_to_" + chain + "_signed")
+func TxSigned(chain string) MetricName {
+	return MetricName(chain + "_tx_signed")
 }
 
-func TxToChainSignedBroadcast(chain string) MetricName {
-	return MetricName("tx_to_" + chain + "_broadcast")
+func TxSignedBroadcast(chain string) MetricName {
+	return MetricName(chain + "_tx_signed_broadcast")
 }
 
 func BlockScanError(chain string) MetricName {
@@ -69,16 +69,16 @@ func AddChainMetrics(chain string, counters map[MetricName]prometheus.Counter, c
 		Name:      chain + "_block_no_tx_out",
 		Help:      "block doesn't have any tx out",
 	})
-	counters[TxToChainSignedBroadcast(chain)] = prometheus.NewCounter(prometheus.CounterOpts{
+	counters[TxSignedBroadcast(chain)] = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "signer",
 		Subsystem: chain,
-		Name:      "tx_to_" + chain + "_broadcast",
+		Name:      chain + "_tx_signed_broadcast",
 		Help:      "number of tx observer broadcast to " + chain + " successfully",
 	})
-	counters[TxToChainSigned(chain)] = prometheus.NewCounter(prometheus.CounterOpts{
+	counters[TxSigned(chain)] = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "signer",
-		Subsystem: "chain",
-		Name:      "tx_to_" + chain + "_signed",
+		Subsystem: chain,
+		Name:      chain + "_tx_signed",
 		Help:      "number of tx signer signed successfully",
 	})
 
@@ -97,10 +97,10 @@ func AddChainMetrics(chain string, counters map[MetricName]prometheus.Counter, c
 		Name:      chain + "_search_tx_duration",
 		Help:      "how long it takes to search tx in a block in " + chain,
 	})
-	histograms[SignAndBroadcastToChainDuration(chain)] = prometheus.NewHistogram(prometheus.HistogramOpts{
+	histograms[SignAndBroadcastDuration(chain)] = prometheus.NewHistogram(prometheus.HistogramOpts{
 		Namespace: "signer",
 		Subsystem: chain,
-		Name:      "sign_and_broadcast_to_" + chain,
+		Name:      chain + "_sign_and_broadcast_duration",
 		Help:      "how long it takes to sign and broadcast to " + chain,
 	})
 }
