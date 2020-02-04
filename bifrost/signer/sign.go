@@ -365,6 +365,7 @@ func (s *Signer) signAndBroadcast(txOut types.TxOut) error {
 			continue
 		}
 
+		s.logger.Info().Msgf("Broadcast to binance chain (%d): %+v\n", height, string(signedTx))
 		err = chain.BroadcastTx(signedTx)
 		if err != nil {
 			// since we failed the txn, we'll clear the local db of this record
