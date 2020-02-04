@@ -135,7 +135,6 @@ func (s *KeySign) remoteSign(msg []byte, poolPubKey string) ([]byte, error) {
 	if len(rResult) == 0 && len(sResult) == 0 {
 		// this means the node tried to do keygen , however this node has not been chosen to take part in the keysign committee
 		return nil, nil
-
 	}
 	s.logger.Debug().Str("R", rResult).Str("S", sResult).Msg("tss result")
 	data, err := getSignature(rResult, sResult)

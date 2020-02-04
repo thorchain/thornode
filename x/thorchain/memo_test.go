@@ -112,7 +112,6 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("migrate")
 	c.Assert(err, NotNil)
-
 }
 
 func (s *MemoSuite) TestParse(c *C) {

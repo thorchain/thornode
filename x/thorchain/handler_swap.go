@@ -104,7 +104,6 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 		}{
 			Asset: amount,
 		})
-
 	if err != nil {
 		ctx.Logger().Error("fail to encode result to json", "error", err)
 		return sdk.ErrInternal("fail to encode result to json").Result()

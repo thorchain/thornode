@@ -42,8 +42,7 @@ test-watch: clear
 	@gow -c test -tags testnet -mod=readonly ./...
 
 lint-pre:
-	@test -z $(gofumpt -l .) # checks code is in proper format
-	@test -z $(grep -R "if nil") # checks code is in proper format
+	@test -z "$(shell gofumpt -l .)"
 	@go mod verify
 
 lint: lint-pre

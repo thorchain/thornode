@@ -58,7 +58,6 @@ func (h TssKeysignFailHandler) handle(ctx sdk.Context, msg MsgTssKeysignFail, ve
 		return h.handleV1(ctx, msg, version)
 	}
 	return errBadVersion.Result()
-
 }
 
 // Handle a message to observe inbound tx
