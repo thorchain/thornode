@@ -1,9 +1,13 @@
 package thorchain
 
 import (
+	"encoding/json"
+	"fmt"
+
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -64,5 +68,15 @@ func (h NoOpHandler) Handle(ctx sdk.Context, msg MsgNoOp, version semver.Version
 // Handle doesn't do anything, its a no op
 func (h NoOpHandler) HandleV1(ctx sdk.Context, msg MsgNoOp) error {
 	ctx.Logger().Info("receive no op msg")
-	return nil
+	gasCoin := common.Gas{}
+	for _, c := range msg.ObservedTx.Tx.Coins {
+		gasCoin = append(gasCoin, c)
+	}
+	gasEvent := NewEventGas(gasCoin, GasTopup)
+	gasBuf, err := json.Marshal(gasEvent)
+	if err != nil {
+		return fmt.Errorf("fail to marshal gas event to json: %w", err)
+	}
+	event := NewEvent(gasEvent.Type(), ctx.BlockHeight(), msg.ObservedTx.Tx, gasBuf, EventSuccess)
+	return h.keeper.UpsertEvent(ctx, event)
 }

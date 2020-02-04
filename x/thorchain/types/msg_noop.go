@@ -6,13 +6,15 @@ import (
 
 // MsgNoOp defines a no op message
 type MsgNoOp struct {
-	Signer sdk.AccAddress `json:"signer"`
+	ObservedTx ObservedTx     `json:"observed_tx"`
+	Signer     sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgNoOp is a constructor function for MsgNoOp
-func NewMsgNoOp(signer sdk.AccAddress) MsgNoOp {
+func NewMsgNoOp(ObservedTx ObservedTx, signer sdk.AccAddress) MsgNoOp {
 	return MsgNoOp{
-		Signer: signer,
+		ObservedTx: ObservedTx,
+		Signer:     signer,
 	}
 }
 
@@ -24,6 +26,9 @@ func (msg MsgNoOp) Type() string { return "set_noop" }
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgNoOp) ValidateBasic() sdk.Error {
+	if err := msg.ObservedTx.Valid(); err != nil {
+		return sdk.ErrInvalidCoins(err.Error())
+	}
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}

@@ -111,7 +111,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 		{
 			name: "invalid message should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
-				return NewMsgNoOp(helper.nodeAccount.NodeAddress)
+				return NewMsgNoOp(GetRandomObservedTx(), helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				return handler.Run(helper.ctx, msg, helper.version, helper.constAccessor)

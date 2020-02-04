@@ -30,6 +30,7 @@ const (
 	RewardEventType      = `rewards`
 	RefundEventType      = `refund`
 	BondEventType        = `bond`
+	GasEventType         = `gas`
 )
 
 // NewEvent create a new  event
@@ -251,4 +252,29 @@ func NewEventBond(amount sdk.Uint, bondType BondType) EventBond {
 		Amount:   amount,
 		BondType: bondType,
 	}
+}
+
+type GasType string
+
+const (
+	GasSpend GasType = `gas_spend`
+	GasTopup GasType = `gas_topup`
+)
+
+type EventGas struct {
+	Gas     common.Gas `json:"gas"`
+	GasType GasType    `json:"gas_type"`
+}
+
+// NewEventGas create a new EventGas instance
+func NewEventGas(gas common.Gas, gasType GasType) EventGas {
+	return EventGas{
+		Gas:     gas,
+		GasType: gasType,
+	}
+}
+
+// Type return event type
+func (e EventGas) Type() string {
+	return GasEventType
 }

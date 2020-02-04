@@ -37,6 +37,8 @@ const (
 	BondPaid     = types.BondPaid
 	BondReturned = types.BondReturned
 	AsgardKeygen = types.AsgardKeygen
+	GasSpend     = types.GasSpend
+	GasTopup     = types.GasTopup
 )
 
 var (
@@ -68,6 +70,7 @@ var (
 	NewEventUnstake                = types.NewEventUnstake
 	NewEventRefund                 = types.NewEventRefund
 	NewEventBond                   = types.NewEventBond
+	NewEventGas                    = types.NewEventGas
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewMsgMigrate                  = types.NewMsgMigrate
