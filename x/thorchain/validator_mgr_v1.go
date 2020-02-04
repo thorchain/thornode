@@ -696,16 +696,15 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 	badActors := NodeAccounts{}
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
-		return na, err
+		return badActors, err
 	}
 
 	type badTracker struct {
-		Score       int // their badness score, derived from slash points and age
-		Age         int
+		Score       int64 // their badness score, derived from slash points and age
 		NodeAccount NodeAccount
 	}
 	var tracker []badTracker
-	var totalScore int
+	var totalScore int64
 
 	// Find bad actor relative to slashpoints / age.
 	for _, na := range nas {
@@ -719,14 +718,28 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 
 		tracker = append(tracker, badTracker{
 			Score:       score,
-			Age:         na.StatusSince,
 			NodeAccount: na,
 		})
 	}
 
-	avgScore := totalScore / len(nas)
+	sort.Slice(tracker[:], func(i, j int) bool {
+		return tracker[i].Score > tracker[j].Score
+	})
+
+	avgScore := totalScore / int64(len(nas))
 	// the red line is the line where anybody above it is considered to be a bad actor
 	redline := avgScore * 3
+
+	for _, track := range tracker {
+		if redline >= track.Score {
+			badActors = append(badActors, track.NodeAccount)
+		}
+	}
+
+	// if no one crossed the redline, lets just grab the worse offender
+	if len(badActors) == 0 && len(tracker) > 0 {
+		badActors = NodeAccounts{tracker[0].NodeAccount}
+	}
 
 	return badActors, nil
 }
@@ -778,12 +791,14 @@ func (vm *validatorMgrV1) markOldActor(ctx sdk.Context, rate int64) error {
 // Mark a bad actor to be churned out
 func (vm *validatorMgrV1) markBadActor(ctx sdk.Context, rate int64) error {
 	if ctx.BlockHeight()%rate == 0 {
-		na, err := vm.findBadActor(ctx)
+		nas, err := vm.findBadActors(ctx)
 		if err != nil {
 			return err
 		}
-		if err := vm.markActor(ctx, na); err != nil {
-			return err
+		for _, na := range nas {
+			if err := vm.markActor(ctx, na); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
