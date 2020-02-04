@@ -368,17 +368,22 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 	}
 
 	if keeper.VaultExists(ctx, tx.ObservedPubKey) {
-		ygg, err := keeper.GetVault(ctx, tx.ObservedPubKey)
+		vault, err := keeper.GetVault(ctx, tx.ObservedPubKey)
 		if err != nil {
 			return err
 		}
 
-		ygg.SubFunds(tx.Tx.Gas.ToCoins())
+		vault.SubFunds(tx.Tx.Gas.ToCoins())
 
-		return keeper.SetVault(ctx, ygg)
+		return keeper.SetVault(ctx, vault)
 	}
-
-	return nil
+	eventGas := NewEventGas(tx.Tx.Gas, GasSpend)
+	gasBuf, err := json.Marshal(eventGas)
+	if err != nil {
+		return fmt.Errorf("fail to marshal gas event to buf: %w", err)
+	}
+	event := NewEvent(eventGas.Type(), ctx.BlockHeight(), tx.Tx, gasBuf, EventSuccess)
+	return keeper.UpsertEvent(ctx, event)
 }
 
 func getErrMessageFromABCILog(content string) (string, error) {

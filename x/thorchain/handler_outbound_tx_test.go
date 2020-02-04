@@ -250,7 +250,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 		{
 			name: "invalid message should return an error",
 			messageCreator: func(helper outboundTxHandlerTestHelper, tx ObservedTx) sdk.Msg {
-				return NewMsgNoOp(helper.nodeAccount.NodeAddress)
+				return NewMsgNoOp(GetRandomObservedTx(), helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler OutboundTxHandler, helper outboundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
 				return handler.Run(helper.ctx, msg, helper.version, helper.constAccessor)

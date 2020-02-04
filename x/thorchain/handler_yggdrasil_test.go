@@ -128,7 +128,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 		{
 			name: "invalid message should return error",
 			messageCreator: func(helper yggdrasilHandlerTestHelper) sdk.Msg {
-				return NewMsgNoOp(helper.nodeAccount.NodeAddress)
+				return NewMsgNoOp(GetRandomObservedTx(), helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler YggdrasilHandler, msg sdk.Msg, helper yggdrasilHandlerTestHelper) sdk.Result {
 				return handler.Run(helper.ctx, msg, helper.version, helper.constAccessor)

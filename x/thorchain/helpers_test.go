@@ -5,6 +5,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type HelperSuite struct{}
@@ -295,4 +296,211 @@ func (s *HelperSuite) TestEnableNextPool(c *C) {
 	pool, err = k.GetPool(ctx, xmrAsset)
 	c.Assert(pool.Empty(), Equals, false)
 	c.Check(pool.Status, Equals, PoolBootstrap)
+}
+
+type addGasFeesKeeperHelper struct {
+	Keeper
+	errGetVaultData bool
+	errSetVaultData bool
+	errGetPool      bool
+	errSetPool      bool
+	errSetEvent     bool
+}
+
+func newAddGasFeesKeeperHelper(keeper Keeper) *addGasFeesKeeperHelper {
+	return &addGasFeesKeeperHelper{
+		Keeper: keeper,
+	}
+}
+func (h *addGasFeesKeeperHelper) GetVaultData(ctx sdk.Context) (VaultData, error) {
+	if h.errGetVaultData {
+		return VaultData{}, kaboom
+	}
+	return h.Keeper.GetVaultData(ctx)
+}
+
+func (h *addGasFeesKeeperHelper) SetVaultData(ctx sdk.Context, data VaultData) error {
+	if h.errSetVaultData {
+		return kaboom
+	}
+	return h.Keeper.SetVaultData(ctx, data)
+}
+func (h *addGasFeesKeeperHelper) SetPool(ctx sdk.Context, pool Pool) error {
+	if h.errSetPool {
+		return kaboom
+	}
+	return h.Keeper.SetPool(ctx, pool)
+}
+func (h *addGasFeesKeeperHelper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
+	if h.errGetPool {
+		return Pool{}, kaboom
+	}
+	return h.Keeper.GetPool(ctx, asset)
+}
+func (h *addGasFeesKeeperHelper) UpsertEvent(ctx sdk.Context, event Event) error {
+	if h.errSetEvent {
+		return kaboom
+	}
+	return h.Keeper.UpsertEvent(ctx, event)
+}
+
+type addGasFeeTestHelper struct {
+	ctx sdk.Context
+	k   *addGasFeesKeeperHelper
+	na  NodeAccount
+}
+
+func newAddGasFeeTestHelper(c *C) addGasFeeTestHelper {
+	ctx, k := setupKeeperForTest(c)
+	keeper := newAddGasFeesKeeperHelper(k)
+	pool := NewPool()
+	pool.Asset = common.BNBAsset
+	pool.BalanceAsset = sdk.NewUint(100 * common.One)
+	pool.BalanceRune = sdk.NewUint(100 * common.One)
+	pool.Status = PoolEnabled
+	c.Assert(k.SetPool(ctx, pool), IsNil)
+
+	na := GetRandomNodeAccount(NodeActive)
+	c.Assert(k.SetNodeAccount(ctx, na), IsNil)
+	yggVault := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1)
+	c.Assert(k.SetVault(ctx, yggVault), IsNil)
+	return addGasFeeTestHelper{
+		ctx: ctx,
+		k:   keeper,
+		na:  na,
+	}
+}
+
+func (s *HelperSuite) TestAddGasFees(c *C) {
+	testCases := []struct {
+		name        string
+		txCreator   func(helper addGasFeeTestHelper) ObservedTx
+		runner      func(helper addGasFeeTestHelper, tx ObservedTx) error
+		expectError bool
+		validator   func(helper addGasFeeTestHelper, c *C)
+	}{
+		{
+			name: "empty Gas should just return nil",
+			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
+				return GetRandomObservedTx()
+			},
+
+			expectError: false,
+		},
+		{
+			name: "fail to get vault data should return an error",
+			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
+				return GetRandomObservedTx()
+			},
+			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
+				helper.k.errGetVaultData = true
+				return AddGasFees(helper.ctx, helper.k, tx)
+			},
+			expectError: true,
+		},
+		{
+			name: "fail to set vault data should return an error",
+			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
+				return GetRandomObservedTx()
+			},
+			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
+				helper.k.errSetVaultData = true
+				return AddGasFees(helper.ctx, helper.k, tx)
+			},
+			expectError: true,
+		},
+		{
+			name: "fail to get pool should return an error",
+			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
+				return GetRandomObservedTx()
+			},
+			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
+				helper.k.errGetPool = true
+				return AddGasFees(helper.ctx, helper.k, tx)
+			},
+			expectError: true,
+		},
+		{
+			name: "fail to set pool should return an error",
+			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
+				return GetRandomObservedTx()
+			},
+			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
+				helper.k.errSetPool = true
+				return AddGasFees(helper.ctx, helper.k, tx)
+			},
+			expectError: true,
+		},
+		{
+			name: "fail to set event should return an error",
+			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
+				return GetRandomObservedTx()
+			},
+			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
+				helper.k.errSetEvent = true
+				return AddGasFees(helper.ctx, helper.k, tx)
+			},
+			expectError: true,
+		},
+		{
+			name: "normal BNB gas",
+			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
+				tx := ObservedTx{
+					Tx: common.Tx{
+						ID:          GetRandomTxHash(),
+						Chain:       common.BNBChain,
+						FromAddress: GetRandomBNBAddress(),
+						ToAddress:   GetRandomBNBAddress(),
+						Coins: common.Coins{
+							common.NewCoin(common.BNBAsset, sdk.NewUint(5*common.One)),
+							common.NewCoin(common.RuneAsset(), sdk.NewUint(8*common.One)),
+						},
+						Gas: common.Gas{
+							common.NewCoin(common.BNBAsset, common.BNBGasFeeSingleton[0].Amount),
+						},
+						Memo: "",
+					},
+					Status:         types.Done,
+					OutHashes:      nil,
+					BlockHeight:    helper.ctx.BlockHeight(),
+					Signers:        []sdk.AccAddress{helper.na.NodeAddress},
+					ObservedPubKey: helper.na.PubKeySet.Secp256k1,
+				}
+				return tx
+			},
+			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
+				return AddGasFees(helper.ctx, helper.k, tx)
+			},
+			expectError: false,
+			validator: func(helper addGasFeeTestHelper, c *C) {
+				bnbPool, err := helper.k.GetPool(helper.ctx, common.BNBAsset)
+				c.Assert(err, IsNil)
+				expectedBNB := sdk.NewUint(100 * common.One).Sub(common.BNBGasFeeSingleton[0].Amount)
+				c.Assert(bnbPool.BalanceAsset.Equal(expectedBNB), Equals, true)
+			},
+		},
+	}
+	for _, tc := range testCases {
+		helper := newAddGasFeeTestHelper(c)
+		tx := tc.txCreator(helper)
+		var err error
+		if tc.runner == nil {
+			err = AddGasFees(helper.ctx, helper.k, tx)
+		} else {
+			err = tc.runner(helper, tx)
+		}
+
+		if err != nil && !tc.expectError {
+			c.Errorf("test case: %s,didn't expect error however it got : %s", tc.name, err)
+			c.FailNow()
+		}
+		if err == nil && tc.expectError {
+			c.Errorf("test case: %s, expect error however it didn't", tc.name)
+			c.FailNow()
+		}
+		if !tc.expectError && tc.validator != nil {
+			tc.validator(helper, c)
+			continue
+		}
+	}
 }

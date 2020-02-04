@@ -192,7 +192,7 @@ func getMsgNoOpFromMemo(tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
 			return nil, errors.New("Only accepts BNB coins")
 		}
 	}
-	return NewMsgNoOp(signer), nil
+	return NewMsgNoOp(tx, signer), nil
 }
 
 func getMsgSwapFromMemo(memo SwapMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
