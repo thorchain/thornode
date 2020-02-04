@@ -34,7 +34,7 @@ type Signer struct {
 	thorchainBridge       *thorclient.ThorchainBridge
 	stopChan              chan struct{}
 	thorchainBlockScanner *ThorchainBlockScan
-	Chain                 chainclients.ChainClient
+	chains                map[common.Chain]chainclients.ChainClient
 	storage               *ThorchainBlockScannerStorage
 	m                     *metrics.Metrics
 	errCounter            *prometheus.CounterVec
@@ -44,7 +44,7 @@ type Signer struct {
 }
 
 // NewSigner create a new instance of signer
-func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, pubkeyMgr pubkeymanager.PubKeyValidator, tssCfg config.TSSConfiguration, chain chainclients.ChainClient, m *metrics.Metrics) (*Signer, error) {
+func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, pubkeyMgr pubkeymanager.PubKeyValidator, tssCfg config.TSSConfiguration, chains map[common.Chain]chainclients.ChainClient, m *metrics.Metrics) (*Signer, error) {
 	thorchainScanStorage, err := NewThorchainBlockScannerStorage(cfg.SignerDbPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
@@ -78,26 +78,35 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 		return nil, errors.Wrap(err, "fail to create thorchain block scan")
 	}
 
-	signer := &Signer{
+	kg, err := tss.NewTssKeyGen(tssCfg, thorKeys)
+	if nil != err {
+		return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
+	}
+
+	return &Signer{
 		logger:                log.With().Str("module", "signer").Logger(),
 		cfg:                   cfg,
 		wg:                    &sync.WaitGroup{},
 		stopChan:              make(chan struct{}),
 		thorchainBlockScanner: thorchainBlockScanner,
-		Chain:                 chain,
+		chains:                chains,
 		m:                     m,
 		storage:               thorchainScanStorage,
 		errCounter:            m.GetCounterVec(metrics.SignerError),
 		pubkeyMgr:             pubkeyMgr,
 		thorchainBridge:       thorchainBridge,
-	}
+		tssKeygen:             kg,
 
-	kg, err := tss.NewTssKeyGen(tssCfg, thorKeys)
-	if err != nil {
-		return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
+	}, nil
+}
+
+func (s *Signer) getChain(chainName common.Chain) (chainclients.ChainClient, error) {
+	chain := s.chains[chainName]
+	if chain == nil {
+		s.logger.Debug().Str("chain", chainName.String()).Msg("is not supported yet")
+		return nil, chainclients.NotSupported
 	}
-	signer.tssKeygen = kg
-	return signer, nil
+	return chain, nil
 }
 
 func (s *Signer) Start() error {
@@ -138,15 +147,15 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 		case <-s.stopChan:
 			return nil
 		default:
-			if !item.Chain.Equals(common.BNBChain) {
-				s.logger.Debug().Str("chain", item.Chain.String()).
-					Msg("not chain , THORNode don't sign it")
+			_, err := s.getChain(item.Chain)
+			if err != nil {
+				s.logger.Error().Err(err).Msgf("not supported %s", item.Chain.String())
 				continue
 			}
 
-			if err := s.signTxOutAndSendToChain(item); err != nil {
-				s.errCounter.WithLabelValues("fail_sign_send_to_chain", strconv.FormatInt(item.Height, 10)).Inc()
-				s.logger.Error().Err(err).Str("height", strconv.FormatInt(item.Height, 10)).Msg("fail to sign and send it to chain")
+			if err := s.signAndBroadcast(item); err != nil {
+				s.errCounter.WithLabelValues("fail_sign_and_broadcast", strconv.FormatInt(item.Height, 10)).Inc()
+				s.logger.Error().Err(err).Str("height", strconv.FormatInt(item.Height, 10)).Msg("fail to sign and broadcast")
 				continue
 			}
 			if err := s.storage.RemoveTxOut(item); err != nil {
@@ -159,8 +168,8 @@ func (s *Signer) retryTxOut(txOuts []types.TxOut) error {
 	return nil
 }
 
-func (s *Signer) shouldSign(tai types.TxArrayItem) bool {
-	return s.pubkeyMgr.HasPubKey(tai.VaultPubKey)
+func (s *Signer) shouldSign(tx types.TxArrayItem) bool {
+	return s.pubkeyMgr.HasPubKey(tx.VaultPubKey)
 }
 
 func (s *Signer) retryFailedTxOutProcessor() {
@@ -198,10 +207,11 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 		case <-s.stopChan:
 			return
 		case txOut, more := <-ch:
-			strHeight := strconv.FormatInt(txOut.Height, 10)
 			if !more {
 				return
 			}
+
+			strHeight := strconv.FormatInt(txOut.Height, 10)
 			s.logger.Info().Msgf("Received a TxOut Array of %v from the Thorchain", txOut)
 			if err := s.storage.SetTxOutStatus(txOut, Processing); err != nil {
 				s.errCounter.WithLabelValues("fail_update_txout_local", strHeight).Inc()
@@ -210,9 +220,9 @@ func (s *Signer) processTxnOut(ch <-chan types.TxOut, idx int) {
 				return
 			}
 
-			if err := s.signTxOutAndSendToChain(txOut); err != nil {
-				s.errCounter.WithLabelValues("fail_sign_send_to_chain", strHeight).Inc()
-				s.logger.Error().Err(err).Msg("fail to send txout to chain, will retry later")
+			if err := s.signAndBroadcast(txOut); err != nil {
+				s.errCounter.WithLabelValues("fail_sign_and_broadcast", strHeight).Inc()
+				s.logger.Error().Err(err).Msg("fail to sign txout and broadcast, will retry later")
 				if err := s.storage.SetTxOutStatus(txOut, Failed); err != nil {
 					s.errCounter.WithLabelValues("fail_update_txout_local", strHeight).Inc()
 					s.logger.Error().Err(err).Msg("fail to update txout local storage")
@@ -287,8 +297,8 @@ func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame
 	return nil
 }
 
-// signAndSendToChainWithRetry retry a few times before THORNode move on to he next block
-func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
+// signAndBroadcast retry a few times before THORNode move on to he next block
+func (s *Signer) signAndBroadcast(txOut types.TxOut) error {
 	// most case , there should be only one item in txOut.TxArray, but sometimes there might be more than one
 	height := txOut.Height
 	for _, item := range txOut.TxArray {
@@ -303,10 +313,14 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 			continue
 		}
 
+		chain, err := s.getChain(item.Chain)
+		if err != nil {
+			s.logger.Error().Err(err).Msgf("not supported %s", item.Chain.String())
+			continue
+		}
+
 		if !s.shouldSign(item) {
-			s.logger.Info().
-				Str("signer_address", s.Chain.GetAddress(item.VaultPubKey)).
-				Msg("different pool address, ignore")
+			s.logger.Info().Str("signer_address", chain.GetAddress(item.VaultPubKey)).Msg("different pool address, ignore")
 			if err := s.storage.ClearTxOutItem(key); err != nil {
 				s.logger.Error().Err(err).Msg("fail to mark it off from local db")
 			}
@@ -323,9 +337,9 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 
 		// Check if we're sending all funds back (memo "yggdrasil-")
 		// In this scenario, we should chose the coins to send ourselves
-		out := item.TxOutItem()
-		if strings.EqualFold(out.Memo, thorchain.YggdrasilReturnMemo{}.GetType().String()) && item.Coin.IsEmpty() {
-			out, err = s.handleYggReturn(out)
+		tx := item.TxOutItem()
+		if strings.EqualFold(tx.Memo, thorchain.YggdrasilReturnMemo{}.GetType().String()) && item.Coin.IsEmpty() {
+			tx, err = s.handleYggReturn(tx)
 			if err != nil {
 				s.logger.Error().Err(err).Msg("failed to handle yggdrasil return")
 				if err := s.storage.ClearTxOutItem(key); err != nil {
@@ -335,7 +349,23 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 			}
 		}
 
-		err = s.signAndSendToChain(out, height)
+		start := time.Now()
+		defer func() {
+			s.m.GetHistograms(metrics.SignAndBroadcastDuration(chain.GetChain().String())).Observe(time.Since(start).Seconds())
+		}()
+
+		if !tx.OutHash.IsEmpty() {
+			s.logger.Info().Str("OutHash", tx.OutHash.String()).Msg("tx had been sent out before")
+			return nil
+		}
+
+		signedTx, err := chain.SignTx(tx, height)
+		if err != nil {
+			s.logger.Error().Err(err).Msg("fail to sign tx")
+			continue
+		}
+
+		err = chain.BroadcastTx(signedTx)
 		if err != nil {
 			// since we failed the txn, we'll clear the local db of this record
 			// for retry later
@@ -354,55 +384,39 @@ func (s *Signer) signTxOutAndSendToChain(txOut types.TxOut) error {
 	return nil
 }
 
-func (s *Signer) handleYggReturn(out types.TxOutItem) (types.TxOutItem, error) {
-	addr, err := stypes.AccAddressFromHex(s.Chain.GetAddress(out.VaultPubKey))
+func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
+	chain, err := s.getChain(tx.Chain)
+	if err != nil {
+		s.logger.Error().Err(err).Msgf("not supported %s", tx.Chain.String())
+		return tx, err
+	}
+	addr, err := stypes.AccAddressFromHex(chain.GetAddress(tx.VaultPubKey))
 	if err != nil {
 		s.logger.Error().Err(err).Msg("failed to convert to AccAddress")
-		return out, err
+		return tx, err
 	}
 
-	acct, err := s.Chain.GetAccount(addr)
+	acct, err := chain.GetAccount(addr)
 	if err != nil {
 		s.logger.Error().Err(err).Msg("failed to get chain account info")
-		return out, err
+		return tx, err
 	}
-	out.Coins = make(common.Coins, 0)
-	gas := common.GetBNBGasFee(uint64(len(acct.Coins)))
+	tx.Coins = make(common.Coins, 0)
+	gas := chain.GetGasFee(uint64(len(acct.Coins)))
 	for _, coin := range acct.Coins {
 		asset, err := common.NewAsset(coin.Denom)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("failed to parse asset")
-			return out, err
+			return tx, err
 		}
 		amount := sdk.NewUint(uint64(coin.Amount))
-		if asset.IsBNB() {
+		if asset.Chain == tx.Chain {
 			amount = common.SafeSub(amount, gas[0].Amount)
 		}
-		out.Coins = append(out.Coins, common.NewCoin(asset, amount))
+		tx.Coins = append(tx.Coins, common.NewCoin(asset, amount))
 	}
 
-	return out, nil
-}
-
-func (s *Signer) signAndSendToChain(tai types.TxOutItem, height int64) error {
-	start := time.Now()
-	defer func() {
-		s.m.GetHistograms(metrics.SignAndBroadcastToChainDuration(s.Chain.GetChain())).Observe(time.Since(start).Seconds())
-	}()
-	if !tai.OutHash.IsEmpty() {
-		s.logger.Info().Str("OutHash", tai.OutHash.String()).Msg("tx had been sent out before")
-		return nil
-	}
-	if err := s.Chain.SignAndBroadcastToChain(tai, height); err != nil {
-		s.logger.Error().Err(err).Msg("fail to broadcast a tx to chain")
-		return err
-	}
-
-	s.logger.Debug().
-		Msg("signed and send to chain successfully")
-	s.m.GetCounter(metrics.TxToChainSignedBroadcast(s.Chain.GetChain())).Inc()
-
-	return nil
+	return tx, nil
 }
 
 // Stop the signer process
