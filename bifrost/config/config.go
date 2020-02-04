@@ -115,8 +115,9 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 	}
 
 	// Set global backoff settings to all chains config. Maybe is pointless and inefficient as we have it in global config
-	for i, _ := range cfg.Chains {
+	for i, chain := range cfg.Chains {
 		cfg.Chains[i].BackOff = cfg.BackOff
+		cfg.Metric.Chains = append(cfg.Metric.Chains, chain.Name)
 	}
 
 	return &cfg, nil

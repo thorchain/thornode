@@ -16,15 +16,15 @@ import (
 // GetHeight    get chain height
 // GetAddress   gets address for public key pool in chain
 // GetAccount   gets account from thorclient in cain
-// SignAndBroadcastToChain signes and broadcasts to chain, returns error on failure
+// GetGasFee    calculates gas fee based on number of simple transfer sents
 
 type ChainClient interface {
-	SignTx(tai stypes.TxOutItem, height int64) ([]byte, map[string]string, error)
+	SignTx(tx stypes.TxOutItem, height int64) ([]byte, error)
+	BroadcastTx(tx []byte) error
 	CheckIsTestNet() (string, bool)
 	GetHeight() (int64, error)
 	GetAddress(poolPubKey common.PubKey) string
 	GetAccount(addr types.AccAddress) (types.BaseAccount, error)
-	GetChain() string
-	BroadcastTx([]byte) error
-	SignAndBroadcastToChain(tai stypes.TxOutItem, height int64) error
+	GetChain() common.Chain
+	GetGasFee(count uint64) common.Gas
 }

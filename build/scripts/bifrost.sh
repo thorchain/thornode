@@ -33,6 +33,8 @@ echo "{
     },
     \"chains\": [
       {
+        \"name\": \"BNB\",
+        \"enabled\": true,
         \"rpc_host\": \"$BINANCE_HOST\"
       }
     ],

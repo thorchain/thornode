@@ -81,7 +81,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 		txInChan:           make(chan stypes.TxIn),
 		db:                 scanStorage,
 		commonBlockScanner: commonBlockScanner,
-		errCounter:         m.GetCounterVec(metrics.BlockScanError("bnb")),
+		errCounter:         m.GetCounterVec(metrics.BlockScanError("BNB")),
 		rpcHost:            rpcHost,
 	}, nil
 }
@@ -137,7 +137,7 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 
 	b.logger.Debug().Int64("block", block).Int("txs", len(query.Result.Txs)).Str("total", query.Result.TotalCount).Msg("txs")
 	if len(query.Result.Txs) == 0 {
-		b.m.GetCounter(metrics.BlockWithoutTx("bnb")).Inc()
+		b.m.GetCounter(metrics.BlockWithoutTx("BNB")).Inc()
 		b.logger.Debug().Int64("block", block).Msg("there are no txs in this block")
 		return nil
 	}
@@ -155,12 +155,12 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 		}
 		if len(txItemIns) > 0 {
 			txIn.TxArray = append(txIn.TxArray, txItemIns...)
-			b.m.GetCounter(metrics.BlockWithTxIn("bnb")).Inc()
+			b.m.GetCounter(metrics.BlockWithTxIn("BNB")).Inc()
 			b.logger.Info().Str("hash", txn.Hash).Msg("THORNode got one tx")
 		}
 	}
 	if len(txIn.TxArray) == 0 {
-		b.m.GetCounter(metrics.BlockNoTxIn("bnb")).Inc()
+		b.m.GetCounter(metrics.BlockNoTxIn("BNB")).Inc()
 		b.logger.Debug().Int64("block", block).Msg("no tx need to be processed in this block")
 		return nil
 	}
