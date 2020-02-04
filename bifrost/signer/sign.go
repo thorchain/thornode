@@ -79,7 +79,7 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 	}
 
 	kg, err := tss.NewTssKeyGen(tssCfg, thorKeys)
-	if nil != err {
+	if err != nil {
 		return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
 	}
 
@@ -96,7 +96,6 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 		pubkeyMgr:             pubkeyMgr,
 		thorchainBridge:       thorchainBridge,
 		tssKeygen:             kg,
-
 	}, nil
 }
 

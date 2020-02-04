@@ -450,7 +450,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 
 func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 	nas, err := vm.k.ListNodeAccounts(ctx)
-	if nil != err {
+	if err != nil {
 		ctx.Logger().Error("can't get nodes", "error", err)
 		return err
 	}
@@ -488,7 +488,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
 		}
 		ok, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
-		if nil != err {
+		if err != nil {
 			return err
 		}
 		if !ok {

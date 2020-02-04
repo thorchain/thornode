@@ -54,13 +54,13 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
 
-	if nil == scanStorage {
+	if scanStorage == nil {
 		return nil, errors.New("scanStorage is nil")
 	}
 	if pkmgr == nil {
 		return nil, errors.New("pubkey validator is nil")
 	}
-	if nil == m {
+	if m == nil {
 		return nil, errors.New("metrics is nil")
 	}
 	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)

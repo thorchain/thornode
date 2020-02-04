@@ -20,7 +20,7 @@ func NewVersionedVaultMgrDummy(versionedTxOutStore VersionedTxOutStore) *Version
 }
 
 func (v *VersionedVaultMgrDummy) GetVaultManager(ctx sdk.Context, keeper Keeper, version semver.Version) (VaultManager, error) {
-	if nil == v.vaultMgrDummy {
+	if v.vaultMgrDummy == nil {
 		v.vaultMgrDummy = NewVaultMgrDummy()
 	}
 	return v.vaultMgrDummy, nil

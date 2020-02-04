@@ -281,7 +281,7 @@ func (b *ThorchainBridge) EnsureNodeWhitelistedWithTimeout() error {
 			return errors.New("Observer is not whitelisted yet")
 		default:
 			err := b.EnsureNodeWhitelisted()
-			if nil == err {
+			if err == nil {
 				// node had been whitelisted
 				return nil
 			}

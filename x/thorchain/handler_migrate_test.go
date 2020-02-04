@@ -76,7 +76,7 @@ type TestMigrateKeeperHappyPath struct {
 }
 
 func (k *TestMigrateKeeperHappyPath) GetTxOut(ctx sdk.Context, blockHeight int64) (*TxOut, error) {
-	if nil != k.txout && k.txout.Height == blockHeight {
+	if k.txout != nil && k.txout.Height == blockHeight {
 		return k.txout, nil
 	}
 	return nil, kaboom

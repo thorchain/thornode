@@ -121,7 +121,7 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 	version := am.keeper.GetLowestActiveVersion(ctx)
 	constantValues := constants.GetConstantValues(version)
-	if nil == constantValues {
+	if constantValues == nil {
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
 		return
 	}
@@ -141,7 +141,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 
 	version := am.keeper.GetLowestActiveVersion(ctx)
 	constantValues := constants.GetConstantValues(version)
-	if nil == constantValues {
+	if constantValues == nil {
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
 		return nil
 	}

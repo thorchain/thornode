@@ -39,10 +39,10 @@ type ThorchainBlockScan struct {
 
 // NewThorchainBlockScan create a new instance of thorchain block scanner
 func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, thorchain *thorclient.ThorchainBridge, m *metrics.Metrics, pubkeyMgr pubkeymanager.PubKeyValidator) (*ThorchainBlockScan, error) {
-	if nil == scanStorage {
+	if scanStorage == nil {
 		return nil, errors.New("scanStorage is nil")
 	}
-	if nil == m {
+	if m == nil {
 		return nil, errors.New("metric is nil")
 	}
 	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
