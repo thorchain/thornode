@@ -22,6 +22,7 @@ bin/
 thord
 *.exe
 
+cover.txt
 .testCoverage.txt
 c.out
 *.leveldb/

@@ -27,10 +27,10 @@ go.sum: go.mod
 	go mod verify
 
 test-coverage:
-	@go test -v -coverprofile .testCoverage.txt ./...
+	@go test -v -tags testnet -coverprofile cover.txt ./...
 
 coverage-report: test-coverage
-	@tool cover -html=.testCoverage.txt
+	@go tool cover -html=cover.txt
 
 clear:
 	clear
