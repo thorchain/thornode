@@ -739,7 +739,7 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 		return nil, nil
 	}
 
-	sort.Slice(tracker[:], func(i, j int) bool {
+	sort.SliceStable(tracker, func(i, j int) bool {
 		return tracker[i].Score.LT(tracker[j].Score)
 	})
 
