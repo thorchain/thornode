@@ -266,7 +266,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 			c.Logf("hash:%s", item.Hash)
 			c.Check(txInItem, txInItemCheck)
 			c.Check(err, errCheck)
-			if nil != txInItem {
+			if txInItem != nil {
 				return txInItem
 			}
 		}

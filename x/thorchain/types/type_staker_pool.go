@@ -113,7 +113,7 @@ func (sp StakerPool) Valid() error {
 func (sp StakerPool) String() string {
 	sb := strings.Builder{}
 	sb.WriteString(fmt.Sprintln("staker-id: " + sp.RuneAddress))
-	if nil != sp.PoolUnits {
+	if sp.PoolUnits != nil {
 		for _, item := range sp.PoolUnits {
 			sb.WriteString(fmt.Sprintf("pool-id: %s, staker unitsL %s", item.Units.String(), item.Units.String()))
 		}

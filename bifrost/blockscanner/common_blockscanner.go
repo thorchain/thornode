@@ -54,10 +54,10 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 		return nil, err
 	}
 
-	if nil == scannerStorage {
+	if scannerStorage == nil {
 		return nil, errors.New("scannerStorage is nil")
 	}
-	if nil == m {
+	if m == nil {
 		return nil, errors.New("metrics instance is nil")
 	}
 	return &CommonBlockScanner{
@@ -195,7 +195,7 @@ func (b *CommonBlockScanner) GetFromHttpWithRetry(url string) ([]byte, error) {
 	retry := 1
 	for {
 		res, err := b.getFromHttp(url)
-		if nil == err {
+		if err == nil {
 			return res, nil
 		}
 		b.logger.Error().Err(err).Msgf("fail to get from %s try %d", url, retry)

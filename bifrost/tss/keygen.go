@@ -27,7 +27,7 @@ type KeyGen struct {
 
 // NewTssKeyGen create a new instance of TssKeyGen which will look after TSS key stuff
 func NewTssKeyGen(keyGenCfg config.TSSConfiguration, keys *thorclient.Keys) (*KeyGen, error) {
-	if nil == keys {
+	if keys == nil {
 		return nil, fmt.Errorf("keys is nil")
 	}
 	return &KeyGen{
