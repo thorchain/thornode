@@ -721,6 +721,10 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 		}
 
 		age := sdk.NewDecWithPrec(ctx.BlockHeight()-na.StatusSince, 5)
+		if age.LT(sdk.NewDecWithPrec(720, 5)) {
+			// this node account is too new (1 hour) to be considered for removal
+			continue
+		}
 		score := age.Quo(sdk.NewDecWithPrec(na.SlashPoints, 5))
 		totalScore = totalScore.Add(score)
 

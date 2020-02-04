@@ -1,8 +1,6 @@
 package thorchain
 
 import (
-	"fmt"
-
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
@@ -20,7 +18,7 @@ func (vts *ValidatorMgrV1TestSuite) SetUpSuite(c *C) {
 
 func (vts *ValidatorMgrV1TestSuite) TestBadActors(c *C) {
 	ctx, k := setupKeeperForTest(c)
-	ctx = ctx.WithBlockHeight(102)
+	ctx = ctx.WithBlockHeight(1000)
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
@@ -40,7 +38,6 @@ func (vts *ValidatorMgrV1TestSuite) TestBadActors(c *C) {
 	nas, err = vMgr.findBadActors(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(nas, HasLen, 0)
-	fmt.Println("FOOOOOOOOO")
 
 	activeNode = GetRandomNodeAccount(NodeActive)
 	activeNode.SlashPoints = 25
