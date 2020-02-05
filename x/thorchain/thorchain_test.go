@@ -301,8 +301,8 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 		asgard.AddFunds(common.Coins{
 			common.NewCoin(common.RuneAsset(), res.Amount),
 		})
-		msg := NewMsgReserveContributor(res, bonders[0].NodeAddress)
-		c.Assert(resHandler.Handle(ctx, msg, ver), IsNil)
+		msg := NewMsgReserveContributor(GetRandomTx(), res, bonders[0].NodeAddress)
+		c.Assert(resHandler.Handle(ctx, msg, ver).Code, Equals, sdk.CodeOK)
 	}
 	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
 
@@ -495,8 +495,8 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 		asgard.AddFunds(common.Coins{
 			common.NewCoin(common.RuneAsset(), res.Amount),
 		})
-		msg := NewMsgReserveContributor(res, bonders[0].NodeAddress)
-		c.Assert(resHandler.Handle(ctx, msg, ver), IsNil)
+		msg := NewMsgReserveContributor(GetRandomTx(), res, bonders[0].NodeAddress)
+		c.Assert(resHandler.Handle(ctx, msg, ver).Code, Equals, sdk.CodeOK)
 	}
 	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
 	asgard.Membership = asgard.Membership[:len(asgard.Membership)-1]

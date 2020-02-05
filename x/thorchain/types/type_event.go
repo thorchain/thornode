@@ -31,6 +31,7 @@ const (
 	RefundEventType      = `refund`
 	BondEventType        = `bond`
 	GasEventType         = `gas`
+	ReserveEventType     = `reserve`
 )
 
 // NewEvent create a new  event
@@ -277,4 +278,20 @@ func NewEventGas(gas common.Gas, gasType GasType) EventGas {
 // Type return event type
 func (e EventGas) Type() string {
 	return GasEventType
+}
+
+// EventReserve Reserve event type
+type EventReserve struct {
+	ReserveContributor ReserveContributor `json:"reserve_contributor"`
+}
+
+// NewEventReserve create a new instance of EventReserve
+func NewEventReserve(contributor ReserveContributor) EventReserve {
+	return EventReserve{
+		ReserveContributor: contributor,
+	}
+}
+
+func (e EventReserve) Type() string {
+	return ReserveEventType
 }

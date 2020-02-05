@@ -71,6 +71,7 @@ var (
 	NewEventRefund                 = types.NewEventRefund
 	NewEventBond                   = types.NewEventBond
 	NewEventGas                    = types.NewEventGas
+	NewEventReserve                = types.NewEventReserve
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
 	NewMsgMigrate                  = types.NewMsgMigrate

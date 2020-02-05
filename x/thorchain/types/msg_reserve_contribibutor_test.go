@@ -16,7 +16,7 @@ func (s *MsgReserveContributorSuite) TestMsgReserveContributor(c *C) {
 	res := NewReserveContributor(addr, amt)
 	signer := GetRandomBech32Addr()
 
-	msg := NewMsgReserveContributor(res, signer)
+	msg := NewMsgReserveContributor(GetRandomTx(), res, signer)
 	c.Check(msg.Contributor.IsEmpty(), Equals, false)
 	c.Check(msg.Signer.Equals(signer), Equals, true)
 }
