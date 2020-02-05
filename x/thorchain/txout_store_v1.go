@@ -134,7 +134,8 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	nodes, err := tos.keeper.TotalActiveNodeAccount(ctx)
 	minumNodesForBFT := tos.constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
 	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
-	if int64(nodes) >= minumNodesForBFT && err == nil && toi.Memo != "yggdrasil-" && toi.Memo != "yggdrasil+" && toi.Memo != "migrate" {
+	memo, _ := ParseMemo(toi.Memo) // ignore err
+	if int64(nodes) >= minumNodesForBFT && err == nil && !memo.IsType(txYggdrasilFund) && !memo.IsType(txYggdrasilReturn) && !memo.IsType(txMigrate) {
 		var runeFee sdk.Uint
 		if toi.Coin.Asset.IsRune() {
 			if toi.Coin.Amount.LTE(sdk.NewUint(uint64(transactionFee))) {
