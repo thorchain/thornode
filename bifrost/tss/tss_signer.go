@@ -92,6 +92,7 @@ func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string) (sig tx.St
 		s.logger.Info().Msg("we can successfully verify the bytes")
 	} else {
 		s.logger.Error().Msg("Oops! we cannot verify the bytes")
+		return stdSignature, fmt.Errorf("Oops! we cannot verify the bytes")
 	}
 
 	return tx.StdSignature{
