@@ -344,7 +344,7 @@ func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey 
 	if errors.As(err, &keysignError) {
 		if len(keysignError.Blame.BlameNodes) == 0 {
 			// TSS doesn't know which node to blame
-			return nil, nil
+			return nil, fmt.Errorf("no nodes blamed")
 		}
 
 		// key sign error forward the keysign blame to thorchain
