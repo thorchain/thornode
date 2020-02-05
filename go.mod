@@ -27,7 +27,7 @@ require (
 	github.com/tendermint/tm-db v0.2.0
 	github.com/zondax/ledger-go v0.11.0 // indirect
 	golang.org/x/sys v0.0.0-20191128015809-6d18c012aee9 // indirect
-	golang.org/x/tools v0.0.0-20200131211209-ecb101ed6550 // indirect
+	golang.org/x/tools v0.0.0-20200204230316-67a4523381ef // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 	mvdan.cc/gofumpt v0.0.0-20200129124340-2a103673760e // indirect
 )

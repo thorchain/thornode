@@ -2,17 +2,21 @@ package types
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // MsgReserveContributor defines a MsgReserveContributor message
 type MsgReserveContributor struct {
+	Tx          common.Tx          `json:"tx"`
 	Contributor ReserveContributor `json:"contributor"`
 	Signer      sdk.AccAddress     `json:"signer"`
 }
 
 // NewMsgReserveContributor is a constructor function for MsgReserveContributor
-func NewMsgReserveContributor(contrib ReserveContributor, signer sdk.AccAddress) MsgReserveContributor {
+func NewMsgReserveContributor(tx common.Tx, contrib ReserveContributor, signer sdk.AccAddress) MsgReserveContributor {
 	return MsgReserveContributor{
+		Tx:          tx,
 		Contributor: contrib,
 		Signer:      signer,
 	}
@@ -24,6 +28,9 @@ func (msg MsgReserveContributor) Type() string { return "set_reserve_contributor
 
 // ValidateBasic runs stateless checks on the message
 func (msg MsgReserveContributor) ValidateBasic() sdk.Error {
+	if err := msg.Tx.IsValid(); err != nil {
+		return sdk.ErrUnknownRequest(err.Error())
+	}
 	if msg.Signer.Empty() {
 		return sdk.ErrInvalidAddress(msg.Signer.String())
 	}

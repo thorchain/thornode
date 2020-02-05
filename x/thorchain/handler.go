@@ -174,7 +174,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		newMsg = NewMsgYggdrasil(tx.Tx, tx.ObservedPubKey, false, tx.Tx.Coins, signer)
 	case ReserveMemo:
 		res := NewReserveContributor(tx.Tx.FromAddress, tx.Tx.Coins[0].Amount)
-		newMsg = NewMsgReserveContributor(res, signer)
+		newMsg = NewMsgReserveContributor(tx.Tx, res, signer)
 
 	default:
 		return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid memo")
