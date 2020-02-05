@@ -691,35 +691,82 @@ func (vm *validatorMgrV1) setupValidatorNodes(ctx sdk.Context, height int64, con
 	return nil
 }
 
-// Iterate over active node accounts, finding the one with the most slash points
-func (vm *validatorMgrV1) findBadActor(ctx sdk.Context) (NodeAccount, error) {
-	na := NodeAccount{}
+// Iterate over active node accounts, finding bad actors with high slash points
+func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
+	badActors := NodeAccounts{}
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
-		return na, err
+		return badActors, err
 	}
 
-	// Find bad actor relative to slashpoints / age.
-	// NOTE: avoiding the usage of float64, we use an alt method...
-	na.SlashPoints = 1
-	na.StatusSince = 9223372036854775807 // highest int64 value
-	for _, n := range nas {
-		if n.SlashPoints == 0 {
+	if len(nas) == 0 {
+		return nil, nil
+	}
+
+	// NOTE: Our score gives a numerical representation of the behavior our a
+	// node account. The lower the score, the worse behavior. The score is
+	// determined by relative to how many slash points they have over how long
+	// they have been an active node account.
+	type badTracker struct {
+		Score       sdk.Dec
+		NodeAccount NodeAccount
+	}
+	var tracker []badTracker
+	totalScore := sdk.ZeroDec()
+
+	// Find bad actor relative to age / slashpoints
+	for _, na := range nas {
+		if na.SlashPoints == 0 {
 			continue
 		}
 
-		naVal := n.StatusSince / na.SlashPoints
-		nVal := n.StatusSince / n.SlashPoints
-		if nVal > (naVal) {
-			na = n
-		} else if nVal == naVal {
-			if n.SlashPoints > na.SlashPoints {
-				na = n
-			}
+		age := sdk.NewDecWithPrec(ctx.BlockHeight()-na.StatusSince, 5)
+		if age.LT(sdk.NewDecWithPrec(720, 5)) {
+			// this node account is too new (1 hour) to be considered for removal
+			continue
+		}
+		score := age.Quo(sdk.NewDecWithPrec(na.SlashPoints, 5))
+		totalScore = totalScore.Add(score)
+
+		tracker = append(tracker, badTracker{
+			Score:       score,
+			NodeAccount: na,
+		})
+	}
+
+	if len(tracker) == 0 {
+		// no offenders, exit nicely
+		return nil, nil
+	}
+
+	sort.SliceStable(tracker, func(i, j int) bool {
+		return tracker[i].Score.LT(tracker[j].Score)
+	})
+
+	avgScore := totalScore.QuoInt64(int64(len(nas)))
+
+	// NOTE: our redline is a hard line in the sand to determine if a node
+	// account is sufficiently bad that it should just be removed now. This
+	// ensures that if we have multiple "really bad" node accounts, they all
+	// can get removed in the same churn. It is important to note we shouldn't
+	// be able to churn out more than 1/3rd of our node accounts in a single
+	// churn, as that could threaten the security of the funds. This logic to
+	// protect against this is not inside this function.
+	redline := avgScore.QuoInt64(3)
+
+	// find any node accounts that have crossed the redline
+	for _, track := range tracker {
+		if redline.GTE(track.Score) {
+			badActors = append(badActors, track.NodeAccount)
 		}
 	}
 
-	return na, nil
+	// if no one crossed the redline, lets just grab the worse offender
+	if len(badActors) == 0 {
+		badActors = NodeAccounts{tracker[0].NodeAccount}
+	}
+
+	return badActors, nil
 }
 
 // Iterate over active node accounts, finding the one that has been active longest
@@ -769,12 +816,14 @@ func (vm *validatorMgrV1) markOldActor(ctx sdk.Context, rate int64) error {
 // Mark a bad actor to be churned out
 func (vm *validatorMgrV1) markBadActor(ctx sdk.Context, rate int64) error {
 	if ctx.BlockHeight()%rate == 0 {
-		na, err := vm.findBadActor(ctx)
+		nas, err := vm.findBadActors(ctx)
 		if err != nil {
 			return err
 		}
-		if err := vm.markActor(ctx, na); err != nil {
-			return err
+		for _, na := range nas {
+			if err := vm.markActor(ctx, na); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
