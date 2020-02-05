@@ -333,51 +333,31 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey) ([]byte
 	return k.SignWithPool(signMsg, poolPubKey)
 }
 
-// signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
+// signWithRetry is design to sign a given message until it success or the same
+// message had been send out by other signer
 func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins) ([]byte, error) {
-	for i := 1; i <= 5; i++ {
-		fmt.Printf("Retry: %d\n", i)
-		rawBytes, err := b.sign(signMsg, poolPubKey)
-		if err == nil && rawBytes != nil {
-			return rawBytes, nil
-		}
-		var keysignError tss.KeysignError
-		if errors.As(err, &keysignError) {
-			if len(keysignError.Blame.BlameNodes) == 0 {
-				// TSS doesn't know which node to blame
-				continue
-			}
-
-			// key sign error forward the keysign blame to thorchain
-			txID, err := b.thorchainBridge.PostKeysignFailure(keysignError.Blame, height, memo, coins)
-			if err != nil {
-				b.logger.Error().Err(err).Msg("fail to post keysign failure to thorchain")
-			} else {
-				b.logger.Info().Str("tx_id", txID.String()).Msgf("post keysign failure to thorchain")
-			}
-			continue
-		}
-		b.logger.Error().Err(err).Msgf("fail to sign msg with memo: %s", signMsg.Memo)
-		// should THORNode give up? let's check the seq no on binance chain
-		// keep in mind, when THORNode don't run our own binance full node, THORNode might get rate limited by binance
-		address, err := types.AccAddressFromBech32(from)
-		if err != nil {
-			b.logger.Error().Err(err).Msgf("fail to get parse address: %s", from)
-			return nil, err
-		}
-
-		acc, err := b.GetAccount(address)
-		if err != nil {
-			b.logger.Error().Err(err).Msg("fail to get account info from binance chain")
-			continue
-		}
-		if acc.Sequence > signMsg.Sequence {
-			b.logger.Debug().Msgf("msg with memo: %s , seqNo: %d had been processed", signMsg.Memo, signMsg.Sequence)
+	rawBytes, err := b.sign(signMsg, poolPubKey)
+	if err == nil && rawBytes != nil {
+		return rawBytes, nil
+	}
+	var keysignError tss.KeysignError
+	if errors.As(err, &keysignError) {
+		if len(keysignError.Blame.BlameNodes) == 0 {
+			// TSS doesn't know which node to blame
 			return nil, nil
 		}
-	}
 
-	return nil, fmt.Errorf("sign failure (reached max retries)")
+		// key sign error forward the keysign blame to thorchain
+		txID, err := b.thorchainBridge.PostKeysignFailure(keysignError.Blame, height, memo, coins)
+		if err != nil {
+			b.logger.Error().Err(err).Msg("fail to post keysign failure to thorchain")
+		} else {
+			b.logger.Info().Str("tx_id", txID.String()).Msgf("post keysign failure to thorchain")
+		}
+		return nil, err
+	}
+	b.logger.Error().Err(err).Msgf("fail to sign msg with memo: %s", signMsg.Memo)
+	return nil, err
 }
 
 func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
