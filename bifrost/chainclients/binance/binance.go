@@ -375,6 +375,7 @@ func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey 
 			return nil, nil
 		}
 	}
+
 	return nil, fmt.Errorf("sign failure (reached max retries)")
 }
 
