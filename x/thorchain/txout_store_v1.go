@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -134,7 +135,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	nodes, err := tos.keeper.TotalActiveNodeAccount(ctx)
 	minumNodesForBFT := tos.constAccessor.GetInt64Value(constants.MinimumNodesForBFT)
 	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
-	if int64(nodes) >= minumNodesForBFT && err == nil && toi.Memo != "yggdrasil-" && toi.Memo != "yggdrasil+" && toi.Memo != "migrate" {
+	if int64(nodes) >= minumNodesForBFT && err == nil && !strings.EqualFold(toi.Memo, "yggdrasil-") && !strings.EqualFold(toi.Memo, "yggdrasil+") && !strings.EqualFold(toi.Memo, "migrate") {
 		var runeFee sdk.Uint
 		if toi.Coin.Asset.IsRune() {
 			if toi.Coin.Amount.LTE(sdk.NewUint(uint64(transactionFee))) {
