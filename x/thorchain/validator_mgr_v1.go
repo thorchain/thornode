@@ -704,9 +704,9 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 	}
 
 	// NOTE: Our score gives a numerical representation of the behavior our a
-	// node account. The lower the score, the better behavior (similar to
-	// golf). The score is determined by relative to how many slash points they
-	// have over how long they have been an active node account.
+	// node account. The lower the score, the worse behavior. The score is
+	// determined by relative to how many slash points they have over how long
+	// they have been an active node account.
 	type badTracker struct {
 		Score       sdk.Dec
 		NodeAccount NodeAccount
