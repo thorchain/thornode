@@ -81,6 +81,7 @@ func (k *TestMigrateKeeperHappyPath) GetTxOut(ctx sdk.Context, blockHeight int64
 	}
 	return nil, kaboom
 }
+
 func (k *TestMigrateKeeperHappyPath) SetTxOut(ctx sdk.Context, blockOut *TxOut) error {
 	if k.txout.Height == blockOut.Height {
 		k.txout = blockOut
@@ -88,6 +89,7 @@ func (k *TestMigrateKeeperHappyPath) SetTxOut(ctx sdk.Context, blockOut *TxOut) 
 	}
 	return kaboom
 }
+
 func (HandlerMigrateSuite) TestMigrateHappyPath(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	retireVault := GetRandomVault()
@@ -117,7 +119,8 @@ func (HandlerMigrateSuite) TestMigrateHappyPath(c *C) {
 		ID:    GetRandomTxHash(),
 		Chain: common.BNBChain,
 		Coins: common.Coins{
-			common.NewCoin(common.BNBAsset, sdk.NewUint(1024))},
+			common.NewCoin(common.BNBAsset, sdk.NewUint(1024)),
+		},
 		Memo:        NewMigrateMemo(1).String(),
 		FromAddress: addr,
 		ToAddress:   newVaultAddr,

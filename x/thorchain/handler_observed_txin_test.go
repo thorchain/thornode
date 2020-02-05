@@ -196,9 +196,11 @@ func (k *TestObservedTxInHandleKeeper) SetVault(_ sdk.Context, vault Vault) erro
 	}
 	return kaboom
 }
+
 func (k *TestObservedTxInHandleKeeper) GetLowestActiveVersion(_ sdk.Context) semver.Version {
 	return semver.MustParse("0.1.0")
 }
+
 func (k *TestObservedTxInHandleKeeper) IsActiveObserver(_ sdk.Context, addr sdk.AccAddress) bool {
 	if addr.Equals(k.nas[0].NodeAddress) {
 		return true
@@ -212,6 +214,7 @@ func (k *TestObservedTxInHandleKeeper) GetTxOut(ctx sdk.Context, blockHeight int
 	}
 	return nil, kaboom
 }
+
 func (k *TestObservedTxInHandleKeeper) SetTxOut(ctx sdk.Context, blockOut *TxOut) error {
 	if k.txOut.Height == blockOut.Height {
 		k.txOut = blockOut
@@ -296,7 +299,8 @@ func (s *HandlerObservedTxInSuite) TestMigrateMemo(c *C) {
 		ID:    GetRandomTxHash(),
 		Chain: common.BNBChain,
 		Coins: common.Coins{
-			common.NewCoin(common.BNBAsset, sdk.NewUint(1024))},
+			common.NewCoin(common.BNBAsset, sdk.NewUint(1024)),
+		},
 		Memo:        NewMigrateMemo(12).String(),
 		FromAddress: addr,
 		ToAddress:   newVaultAddr,

@@ -61,7 +61,6 @@ func (h MigrateHandler) handle(ctx sdk.Context, msg MsgMigrate, version semver.V
 }
 
 func (h MigrateHandler) handleV1(ctx sdk.Context, msg MsgMigrate) sdk.Result {
-
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := h.keeper.GetTxOut(ctx, msg.BlockHeight)
 	if err != nil {

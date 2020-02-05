@@ -12,7 +12,6 @@ type TypeTssKeysignFailTestSuite struct{}
 var _ = Suite(&TypeTssKeysignFailTestSuite{})
 
 func (s *TypeTssKeysignFailTestSuite) TestVoter(c *C) {
-
 	pks := common.PubKeys{
 		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
 	}

@@ -425,9 +425,11 @@ func (m RefundMemo) GetTxID() common.TxID { return m.TxID }
 func (m RefundMemo) String() string {
 	return fmt.Sprintf("REFUND:%s", m.TxID.String())
 }
+
 func (m MigrateMemo) String() string {
 	return fmt.Sprintf("MIGRATE:%d", m.BlockHeight)
 }
+
 func (m MigrateMemo) GetBlockHeight() int64 {
 	return m.BlockHeight
 }
