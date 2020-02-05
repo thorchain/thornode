@@ -5,7 +5,7 @@ package constants
 
 func init() {
 	int64Overrides = map[ConstantName]int64{
-		DesireValidatorSet:   5,
+		DesireValidatorSet:   6,
 		RotatePerBlockHeight: 17280,
 		BadValidatorRate:     17280,
 		OldValidatorRate:     17280,
