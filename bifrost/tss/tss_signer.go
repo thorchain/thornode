@@ -32,6 +32,13 @@ type KeySign struct {
 	client *http.Client
 }
 
+type KeySignResult struct {
+	R      string       `json:"r"`
+	S      string       `json:"s"`
+	Status int          `json:"status"`
+	Blame  common.Blame `json:"blame"`
+}
+
 // NewKeySign create a new instance of KeySign
 func NewKeySign(cfg config.TSSConfiguration) (*KeySign, error) {
 	if len(cfg.Host) == 0 {
@@ -74,25 +81,25 @@ func (s *KeySign) ExportAsKeyStore(password string) (*keys.EncryptedKeyJSON, err
 	return nil, nil
 }
 
-func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string) (sig tx.StdSignature, err error) {
+func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string) (sig tx.StdSignature, blame common.Blame, err error) {
 	var stdSignature tx.StdSignature
 	pk, err := sdk.GetAccPubKeyBech32(poolPubKey)
 	if err != nil {
-		return stdSignature, fmt.Errorf("fail to get pub key: %w", err)
+		return stdSignature, blame, fmt.Errorf("fail to get pub key: %w", err)
 	}
-	signPack, err := s.remoteSign(msg.Bytes(), poolPubKey)
+	signPack, blame, err := s.remoteSign(msg.Bytes(), poolPubKey)
 	if err != nil {
-		return stdSignature, fmt.Errorf("fail to TSS sign: %w", err)
+		return stdSignature, blame, fmt.Errorf("fail to TSS sign: %w", err)
 	}
 
 	if signPack == nil {
-		return stdSignature, nil
+		return stdSignature, blame, nil
 	}
 	if pk.VerifyBytes(msg.Bytes(), signPack) {
 		s.logger.Info().Msg("we can successfully verify the bytes")
 	} else {
 		s.logger.Error().Msg("Oops! we cannot verify the bytes")
-		return stdSignature, fmt.Errorf("Oops! we cannot verify the bytes")
+		return stdSignature, blame, fmt.Errorf("Oops! we cannot verify the bytes")
 	}
 
 	return tx.StdSignature{
@@ -100,51 +107,51 @@ func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string) (sig tx.St
 		Sequence:      msg.Sequence,
 		PubKey:        pk,
 		Signature:     signPack,
-	}, nil
+	}, blame, nil
 }
 
 func (s *KeySign) Sign(msg tx.StdSignMsg) ([]byte, error) {
 	return nil, nil
 }
 
-func (s *KeySign) SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey) ([]byte, error) {
-	sig, err := s.makeSignature(msg, poolPubKey.String())
+func (s *KeySign) SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey) ([]byte, common.Blame, error) {
+	sig, blame, err := s.makeSignature(msg, poolPubKey.String())
 	if err != nil {
-		return nil, err
+		return nil, blame, err
 	}
 	if len(sig.Signature) == 0 {
-		return nil, errors.New("fail to make signature")
+		return nil, blame, errors.New("fail to make signature")
 	}
 	newTx := tx.NewStdTx(msg.Msgs, []tx.StdSignature{sig}, msg.Memo, msg.Source, msg.Data)
 	bz, err := tx.Cdc.MarshalBinaryLengthPrefixed(&newTx)
 	if err != nil {
-		return nil, err
+		return nil, blame, err
 	}
-	return bz, nil
+	return bz, blame, nil
 }
 
-func (s *KeySign) remoteSign(msg []byte, poolPubKey string) ([]byte, error) {
+func (s *KeySign) remoteSign(msg []byte, poolPubKey string) ([]byte, common.Blame, error) {
 	if len(msg) == 0 {
-		return nil, nil
+		return nil, common.EmptyBlame, nil
 	}
 	encodedMsg := base64.StdEncoding.EncodeToString(msg)
-	rResult, sResult, err := s.toLocalTSSSigner(poolPubKey, encodedMsg)
+	result, err := s.toLocalTSSSigner(poolPubKey, encodedMsg)
 	if err != nil {
-		return nil, fmt.Errorf("fail to tss sign: %w", err)
+		return nil, result.Blame, fmt.Errorf("fail to tss sign: %w", err)
 	}
 
-	if len(rResult) == 0 && len(sResult) == 0 {
+	if (len(result.R) == 0 && len(result.S) == 0) || result.Status == 0 {
 		// this means the node tried to do keygen , however this node has not
 		// been chosen to take part in the keysign committee
-		return nil, nil
+		return nil, result.Blame, nil
 	}
-	s.logger.Debug().Str("R", rResult).Str("S", sResult).Msg("tss result")
-	data, err := getSignature(rResult, sResult)
+	s.logger.Debug().Str("R", result.R).Str("S", result.S).Msg("tss result")
+	data, err := getSignature(result.R, result.S)
 	if err != nil {
-		return nil, fmt.Errorf("fail to decode tss signature: %w", err)
+		return nil, result.Blame, fmt.Errorf("fail to decode tss signature: %w", err)
 	}
 
-	return data, nil
+	return data, result.Blame, nil
 }
 
 func getSignature(r, s string) ([]byte, error) {
@@ -188,7 +195,8 @@ func (s *KeySign) getTSSLocalUrl() string {
 }
 
 // toLocalTSSSigner will send the request to local signer
-func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string) (string, string, error) {
+func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string) (KeySignResult, error) {
+	var keySignResult KeySignResult
 	tssMsg := struct {
 		PoolPubKey string `json:"pool_pub_key"`
 		Message    string `json:"message"`
@@ -198,13 +206,13 @@ func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string) (string, string, 
 	}
 	buf, err := json.Marshal(tssMsg)
 	if err != nil {
-		return "", "", errors.Wrap(err, "fail to create tss request msg")
+		return keySignResult, errors.Wrap(err, "fail to create tss request msg")
 	}
 	s.logger.Debug().Str("payload", string(buf)).Msg("msg to tss Local node")
 	localTssURL := s.getTSSLocalUrl()
 	resp, err := s.client.Post(localTssURL, "application/json", bytes.NewBuffer(buf))
 	if err != nil {
-		return "", "", errors.Wrapf(err, "fail to send request to local TSS node,url: %s", localTssURL)
+		return keySignResult, errors.Wrapf(err, "fail to send request to local TSS node,url: %s", localTssURL)
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -212,37 +220,18 @@ func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string) (string, string, 
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("response status: %s from tss sign ", resp.Status)
+		return keySignResult, fmt.Errorf("response status: %s from tss sign ", resp.Status)
 	}
 
 	// Read Response Body
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", "", errors.Wrap(err, "fail to read response body")
+		return keySignResult, errors.Wrap(err, "fail to read response body")
 	}
 
-	keySignResp := struct {
-		R      string       `json:"r"`
-		S      string       `json:"s"`
-		Status int          `json:"status"`
-		Blame  common.Blame `json:"blame"`
-	}{}
-
-	if err := json.Unmarshal(respBody, &keySignResp); err != nil {
-		return "", "", errors.Wrap(err, "fail to unmarshal tss response body")
+	if err := json.Unmarshal(respBody, &keySignResult); err != nil {
+		return keySignResult, errors.Wrap(err, "fail to unmarshal tss response body")
 	}
 
-	// 0 NA, usually means this node isn't a member of this signing round
-	if keySignResp.Status == 0 {
-		return "", "", nil
-	}
-
-	// 1 means success,2 means fail , 0 means NA
-	if keySignResp.Status == 1 && keySignResp.Blame.IsEmpty() {
-		return keySignResp.R, keySignResp.S, nil
-	}
-
-	// Blame need to be passed back to thorchain , so as thorchain can use the
-	// information to slash relevant node account
-	return "", "", NewKeysignError(keySignResp.Blame)
+	return keySignResult, nil
 }

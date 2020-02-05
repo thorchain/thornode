@@ -317,7 +317,9 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	}
 
 	if len(rawBz) == 0 {
-		// this could happen, if the local party trying to sign a message , however the TSS keysign process didn't chose the local party to sign the message
+		// this could happen, if the local party trying to sign a message ,
+		// however the TSS keysign process didn't chose the local party to sign
+		// the message
 		return nil, nil
 	}
 
@@ -325,9 +327,10 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	return hexTx, nil
 }
 
-func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey) ([]byte, error) {
+func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey) ([]byte, common.Blame, error) {
 	if b.localKeyManager.Pubkey().Equals(poolPubKey) {
-		return b.localKeyManager.Sign(signMsg)
+		sig, err := b.localKeyManager.Sign(signMsg)
+		return sig, common.EmptyBlame, err
 	}
 	k := b.tssKeyManager.(tss.ThorchainKeyManager)
 	return k.SignWithPool(signMsg, poolPubKey)
@@ -336,19 +339,13 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey) ([]byte
 // signWithRetry is design to sign a given message until it success or the same
 // message had been send out by other signer
 func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins) ([]byte, error) {
-	rawBytes, err := b.sign(signMsg, poolPubKey)
+	rawBytes, blame, err := b.sign(signMsg, poolPubKey)
 	if err == nil && rawBytes != nil {
 		return rawBytes, nil
 	}
-	var keysignError tss.KeysignError
-	if errors.As(err, &keysignError) {
-		if len(keysignError.Blame.BlameNodes) == 0 {
-			// TSS doesn't know which node to blame
-			return nil, fmt.Errorf("no nodes blamed")
-		}
-
+	if !blame.IsEmpty() {
 		// key sign error forward the keysign blame to thorchain
-		txID, err := b.thorchainBridge.PostKeysignFailure(keysignError.Blame, height, memo, coins)
+		txID, err := b.thorchainBridge.PostKeysignFailure(blame, height, memo, coins)
 		if err != nil {
 			b.logger.Error().Err(err).Msg("fail to post keysign failure to thorchain")
 		} else {

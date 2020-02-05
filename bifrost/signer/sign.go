@@ -364,6 +364,11 @@ func (s *Signer) signAndBroadcast(txOut types.TxOut) error {
 			s.logger.Error().Err(err).Msg("fail to sign tx")
 			continue
 		}
+		if len(signedTx) == 0 {
+			// no signature, prob not chosen to be apart of the signing party
+			s.logger.Info().Msg("No signature returned. May not be apart of this signing party.")
+			continue
+		}
 
 		s.logger.Info().Msgf("Broadcast to binance chain (%d): %+v\n", height, string(signedTx))
 		err = chain.BroadcastTx(signedTx)
