@@ -133,7 +133,8 @@ func (s *KeySign) remoteSign(msg []byte, poolPubKey string) ([]byte, error) {
 	}
 
 	if len(rResult) == 0 && len(sResult) == 0 {
-		// this means the node tried to do keygen , however this node has not been chosen to take part in the keysign committee
+		// this means the node tried to do keygen , however this node has not
+		// been chosen to take part in the keysign committee
 		return nil, nil
 	}
 	s.logger.Debug().Str("R", rResult).Str("S", sResult).Msg("tss result")
@@ -229,15 +230,18 @@ func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string) (string, string, 
 	if err := json.Unmarshal(respBody, &keySignResp); err != nil {
 		return "", "", errors.Wrap(err, "fail to unmarshal tss response body")
 	}
+
+	// 0 NA, usually means this node isn't a member of this signing round
+	if keySignResp.Status == 0 {
+		return "", "", nil
+	}
+
 	// 1 means success,2 means fail , 0 means NA
 	if keySignResp.Status == 1 && keySignResp.Blame.IsEmpty() {
 		return keySignResp.R, keySignResp.S, nil
 	}
 
-	if keySignResp.Blame.IsEmpty() {
-		return "", "", nil
-	}
-
-	// Blame need to be passed back to thorchain , so as thorchain can use the information to slash relevant node account
+	// Blame need to be passed back to thorchain , so as thorchain can use the
+	// information to slash relevant node account
 	return "", "", NewKeysignError(keySignResp.Blame)
 }

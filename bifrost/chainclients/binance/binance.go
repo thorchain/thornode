@@ -335,7 +335,7 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey) ([]byte
 
 // signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
 func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins) ([]byte, error) {
-	for {
+	for i := 1; i <= 5; i++ {
 		rawBytes, err := b.sign(signMsg, poolPubKey)
 		if err == nil && rawBytes != nil {
 			return rawBytes, nil
@@ -375,6 +375,7 @@ func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey 
 			return nil, nil
 		}
 	}
+	return nil, fmt.Errorf("sign failure (reached max retries)")
 }
 
 func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
