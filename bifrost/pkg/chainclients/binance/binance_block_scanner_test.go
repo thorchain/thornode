@@ -17,9 +17,9 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
-	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
@@ -379,6 +379,6 @@ func init() {
 		ListenPort:   8080,
 		ReadTimeout:  time.Second,
 		WriteTimeout: time.Second,
-		Chains:       []string{"bnb"},
+		Chains:       common.Chains{common.BNBChain},
 	})
 }

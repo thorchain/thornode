@@ -9,6 +9,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type Configuration struct {
@@ -46,14 +48,14 @@ type BackOff struct {
 
 // ChainConfiguration configuration
 type ChainConfiguration struct {
-	Name         string `json:"name" mapstructure:"name"`
-	ChainHost    string `json:"chain_host" mapstructure:"chain_host"`
-	ChainNetwork string `json:"chain_network" mapstructure:"chain_network"`
-	UserName     string `json:"username" mapstructure:"username"`
-	Password     string `json:"password" mapstructure:"password"`
-	RPCHost      string `jsonn:"rpc_host" mapstructure:"rpc_host"`
-	HTTPostMode  bool   `json:"http_post_mode" mapstructure:"http_post_mode"` // Bitcoin core only supports HTTP POST mode
-	DisableTLS   bool   `json:"disable_tls" mapstructure:"disable_tls"`       // Bitcoin core does not provide TLS by default
+	Name         common.Chain `json:"name" mapstructure:"name"`
+	ChainHost    string       `json:"chain_host" mapstructure:"chain_host"`
+	ChainNetwork string       `json:"chain_network" mapstructure:"chain_network"`
+	UserName     string       `json:"username" mapstructure:"username"`
+	Password     string       `json:"password" mapstructure:"password"`
+	RPCHost      string       `jsonn:"rpc_host" mapstructure:"rpc_host"`
+	HTTPostMode  bool         `json:"http_post_mode" mapstructure:"http_post_mode"` // Bitcoin core only supports HTTP POST mode
+	DisableTLS   bool         `json:"disable_tls" mapstructure:"disable_tls"`       // Bitcoin core does not provide TLS by default
 	BackOff      BackOff
 }
 
@@ -91,11 +93,11 @@ type ClientConfiguration struct {
 }
 
 type MetricsConfiguration struct {
-	Enabled      bool          `json:"enabled" mapstructure:"enabled"`
-	ListenPort   int           `json:"listen_port" mapstructure:"listen_port"`
-	ReadTimeout  time.Duration `json:"read_timeout" mapstructure:"read_timeout"`
-	WriteTimeout time.Duration `json:"write_timeout" mapstructure:"write_timeout"`
-	Chains       []string      `json:"chains" mapstructure:"chains"`
+	Enabled      bool           `json:"enabled" mapstructure:"enabled"`
+	ListenPort   int            `json:"listen_port" mapstructure:"listen_port"`
+	ReadTimeout  time.Duration  `json:"read_timeout" mapstructure:"read_timeout"`
+	WriteTimeout time.Duration  `json:"write_timeout" mapstructure:"write_timeout"`
+	Chains       []common.Chain `json:"chains" mapstructure:"chains"`
 }
 
 func LoadBiFrostConfig(file string) (*Configuration, error) {

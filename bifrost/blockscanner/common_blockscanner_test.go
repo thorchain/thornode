@@ -29,7 +29,7 @@ func (CommonBlockScannerTestSuite) SetUpSuite(c *C) {
 		ListenPort:   8080,
 		ReadTimeout:  time.Second,
 		WriteTimeout: time.Second,
-		Chains:       []string{common.BNBChain.String()},
+		Chains:       common.Chains{common.BNBChain},
 	})
 	c.Assert(m, NotNil)
 	c.Assert(err, IsNil)

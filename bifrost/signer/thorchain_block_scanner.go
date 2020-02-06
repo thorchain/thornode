@@ -3,7 +3,6 @@ package signer
 import (
 	"fmt"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/cosmos/cosmos-sdk/codec"
@@ -107,7 +106,7 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 			b.logger.Debug().Str("chain", c.String()).Msg("chain")
 			if len(out.TxArray) == 0 {
 				b.logger.Debug().Int64("block", blockHeight).Msg("nothing to process")
-				b.m.GetCounter(metrics.BlockNoTxOut(strings.ToLower(c.String()))).Inc()
+				b.m.GetCounter(metrics.BlockNoTxOut(c)).Inc()
 				return nil
 			}
 			b.txOutChan <- out
