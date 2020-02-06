@@ -32,7 +32,7 @@ func (m *MockCheckTransactionChain) ValidateMetadata(_ interface{}) bool {
 }
 
 func (s *SignSuite) TestCheckTxn(c *C) {
-	storage, err := NewSignerStore("")
+	storage, err := NewSignerStore("", "")
 	c.Assert(err, IsNil)
 
 	mockChain := &MockCheckTransactionChain{
