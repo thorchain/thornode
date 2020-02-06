@@ -145,10 +145,10 @@ func (s *Signer) signTransactions() {
 		for _, item := range items {
 			if err := s.signAndBroadcast(item); err != nil {
 				s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
-			} else {
-				// We have a successful broadcast! Remove the item from our store
-				s.storage.Remove(item)
+				continue
 			}
+			// We have a successful broadcast! Remove the item from our store
+			s.storage.Remove(item)
 		}
 	}
 }

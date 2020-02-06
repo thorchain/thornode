@@ -85,8 +85,8 @@ func (s *SignerStore) Batch(items []TxOutStoreItem) error {
 	return s.db.Write(batch, nil)
 }
 
-func (s *SignerStore) Get(key string) (item TxOutStoreItem, ok bool, err error) {
-	ok, err = s.db.Has([]byte(key), nil)
+func (s *SignerStore) Get(key string) (item TxOutStoreItem, err error) {
+	ok, err := s.db.Has([]byte(key), nil)
 	if !ok || err != nil {
 		return
 	}
@@ -120,12 +120,13 @@ func (s *SignerStore) List() ([]TxOutStoreItem, error) {
 		if err := json.Unmarshal(buf, &item); err != nil {
 			return nil, errors.Wrap(err, "fail to unmarshal to txout store item")
 		}
+		results = append(results, item)
 	}
-	// Ensure that we sort our list by block height first (lowest to highest),
-	// then by key alphabetically.This makes best efforts to ensure that each
-	// node is iterating through their list of items as closely as possible
-	sort.SliceStable(results, func(i, j int) bool { return results[i].Height < results[j].Height })
-	sort.SliceStable(results, func(i, j int) bool { return results[i].Key() < results[j].Key() })
+
+	// Ensure that we sort our list by block height (lowest to highest). This
+	// makes best efforts to ensure that each node is iterating through their
+	// list of items as closely as possible
+	sort.SliceStable(results[:], func(i, j int) bool { return results[i].Height < results[j].Height })
 	return results, nil
 }
 
