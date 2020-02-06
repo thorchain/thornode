@@ -14,9 +14,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
@@ -136,15 +136,14 @@ func (s *Signer) signTransactions() {
 
 	for {
 		sleep()
+		items := s.storage.List()
 
-		for _, item := range s.storage.List() {
+		for _, item := range items {
 			if err := s.signAndBroadcast(item); err != nil {
 				s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
-				continue
-			}
-			// We have a successful broadcast! Remove the item from our store
-			if err := s.storage.Remove(item); err != nil {
-				s.logger.Error().Err(err).Msg("fail to remove tx out store item")
+			} else {
+				// We have a successful broadcast! Remove the item from our store
+				s.storage.Remove(item)
 			}
 		}
 	}
