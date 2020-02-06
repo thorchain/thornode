@@ -23,6 +23,15 @@ const (
 	txOutPrefix                = "txout-v1-"
 )
 
+type TxStatus int
+
+const (
+	TxUnknown TxStatus = iota
+	TxAvailable
+	TxUnavailable
+	TxSpent
+)
+
 type TxOutStoreItem struct {
 	TxOutItem types.TxOutItem
 	Status    TxStatus
