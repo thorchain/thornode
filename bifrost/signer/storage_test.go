@@ -14,7 +14,7 @@ var _ = Suite(&StorageSuite{})
 
 func (s *StorageSuite) TestStorage(c *C) {
 	dir := os.TempDir()
-	defer os.RemoveAll(dir)
+	defer os.Remove(dir)
 
 	store, err := NewSignerStore(dir)
 	c.Assert(err, IsNil)

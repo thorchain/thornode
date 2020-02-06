@@ -16,8 +16,8 @@ import (
 )
 
 const (
-	DefaultSignerLevelDBFolder = `signer_data`
-	txOutPrefix                = "txout-"
+	DefaultSignerLevelDBFolder = "signer_data"
+	txOutPrefix                = "txout-v1-"
 )
 
 type TxOutStoreItem struct {
