@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/storage"
 	"github.com/syndtr/goleveldb/leveldb/util"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
@@ -36,20 +37,45 @@ func NewTxOutStoreItem(height int64, item types.TxOutItem) TxOutStoreItem {
 	}
 }
 
+func (s *TxOutStoreItem) Key() string {
+	buf, _ := json.Marshal(s)
+	sha256Bytes := sha256.Sum256(buf)
+	return fmt.Sprintf("%s%s", txOutPrefix, hex.EncodeToString(sha256Bytes[:]))
+}
+
+type SignerStorage interface {
+	Set(item TxOutStoreItem) error
+	Batch(items []TxOutStoreItem) error
+	Get(key string) (TxOutStoreItem, error)
+	Has(key string) bool
+	Remove(item TxOutStoreItem) error
+	List() []TxOutStoreItem
+	Close() error
+}
+
 type SignerStore struct {
 	*blockscanner.LevelDBScannerStorage
 	logger zerolog.Logger
 	db     *leveldb.DB
 }
 
-// NewSignerStore create a new instance of SignerStore
+// NewSignerStore create a new instance of SignerStore. If no folder is given,
+// an in memory implementation is used.
 func NewSignerStore(levelDbFolder string) (*SignerStore, error) {
+	var db *leveldb.DB
+	var err error
 	if len(levelDbFolder) == 0 {
-		levelDbFolder = DefaultSignerLevelDBFolder
-	}
-	db, err := leveldb.OpenFile(levelDbFolder, nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
+		// no directory given, use in memory store
+		storage := storage.NewMemStorage()
+		db, err = leveldb.Open(storage, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "fail to in memory open level db")
+		}
+	} else {
+		db, err = leveldb.OpenFile(levelDbFolder, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
+		}
 	}
 	levelDbStorage, err := blockscanner.NewLevelDBScannerStorage(db)
 	if err != nil {
@@ -60,12 +86,6 @@ func NewSignerStore(levelDbFolder string) (*SignerStore, error) {
 		logger:                log.With().Str("module", "signer-storage").Logger(),
 		db:                    db,
 	}, nil
-}
-
-func (s *TxOutStoreItem) Key() string {
-	buf, _ := json.Marshal(s)
-	sha256Bytes := sha256.Sum256(buf)
-	return fmt.Sprintf("%s%s", txOutPrefix, hex.EncodeToString(sha256Bytes[:]))
 }
 
 func (s *SignerStore) Set(item TxOutStoreItem) error {

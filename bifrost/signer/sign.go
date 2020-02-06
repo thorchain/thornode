@@ -35,7 +35,7 @@ type Signer struct {
 	stopChan              chan struct{}
 	thorchainBlockScanner *ThorchainBlockScan
 	chains                map[common.Chain]chainclients.ChainClient
-	storage               *SignerStore
+	storage               SignerStorage
 	m                     *metrics.Metrics
 	errCounter            *prometheus.CounterVec
 	tssKeygen             *tss.KeyGen

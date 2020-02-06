@@ -1,9 +1,6 @@
 package signer
 
 import (
-	"fmt"
-	"os"
-
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
@@ -14,10 +11,7 @@ type StorageSuite struct{}
 var _ = Suite(&StorageSuite{})
 
 func (s *StorageSuite) TestStorage(c *C) {
-	dir := fmt.Sprintf("%ssigner_data", os.TempDir())
-	defer os.RemoveAll(dir)
-
-	store, err := NewSignerStore(dir)
+	store, err := NewSignerStore("")
 	c.Assert(err, IsNil)
 
 	item := NewTxOutStoreItem(12, types.TxOutItem{Memo: "foo"})
