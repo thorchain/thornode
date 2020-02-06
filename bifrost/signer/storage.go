@@ -15,8 +15,10 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
-const DefaultSignerLevelDBFolder = `signer_data`
-const txOutPrefix = "txout-"
+const (
+	DefaultSignerLevelDBFolder = `signer_data`
+	txOutPrefix                = "txout-"
+)
 
 type TxOutStoreItem struct {
 	TxOutItem types.TxOutItem
