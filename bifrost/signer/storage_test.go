@@ -14,11 +14,6 @@ func (s *StorageSuite) TestStorage(c *C) {
 	store, err := NewSignerStore("")
 	c.Assert(err, IsNil)
 
-	// clean out any items that may already exist
-	for _, item := range store.List() {
-		c.Assert(store.Remove(item), IsNil)
-	}
-
 	item := NewTxOutStoreItem(12, types.TxOutItem{Memo: "foo"})
 
 	c.Assert(store.Set(item), IsNil)
