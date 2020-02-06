@@ -1,4 +1,4 @@
-package signer
+package common
 
 import (
 	. "gopkg.in/check.v1"
@@ -12,10 +12,10 @@ func (s *EncryptionSuite) TestEncryption(c *C) {
 	body := []byte("hello world!")
 	passphrase := "my super secret password!"
 
-	encryp, err := encrypt(body, passphrase)
+	encryp, err := Encrypt(body, passphrase)
 	c.Assert(err, IsNil)
 
-	decryp, err := decrypt(encryp, passphrase)
+	decryp, err := Decrypt(encryp, passphrase)
 	c.Assert(err, IsNil)
 
 	c.Check(body, DeepEquals, decryp)

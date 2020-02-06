@@ -16,6 +16,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 const (
@@ -113,7 +114,7 @@ func (s *SignerStore) Set(item TxOutStoreItem) error {
 		return err
 	}
 	if len(s.passphrase) > 0 {
-		buf, err = encrypt(buf, s.passphrase)
+		buf, err = common.Encrypt(buf, s.passphrase)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("fail to encrypt txout item")
 			return err
@@ -136,7 +137,7 @@ func (s *SignerStore) Batch(items []TxOutStoreItem) error {
 			return err
 		}
 		if len(s.passphrase) > 0 {
-			buf, err = encrypt(buf, s.passphrase)
+			buf, err = common.Encrypt(buf, s.passphrase)
 			if err != nil {
 				s.logger.Error().Err(err).Msg("fail to encrypt txout item")
 				return err
@@ -154,7 +155,7 @@ func (s *SignerStore) Get(key string) (item TxOutStoreItem, err error) {
 	}
 	buf, err := s.db.Get([]byte(key), nil)
 	if len(s.passphrase) > 0 {
-		buf, err = decrypt(buf, s.passphrase)
+		buf, err = common.Decrypt(buf, s.passphrase)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("fail to decrypt txout item")
 			return item, err
@@ -190,7 +191,7 @@ func (s *SignerStore) List() []TxOutStoreItem {
 		}
 
 		if len(s.passphrase) > 0 {
-			buf, err = decrypt(buf, s.passphrase)
+			buf, err = common.Decrypt(buf, s.passphrase)
 			if err != nil {
 				s.logger.Error().Err(err).Msg("fail to decrypt txout item")
 				continue

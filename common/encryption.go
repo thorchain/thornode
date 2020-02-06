@@ -1,4 +1,4 @@
-package signer
+package common
 
 import (
 	"crypto/aes"
@@ -15,7 +15,7 @@ func createHash(key string) (string, error) {
 	return hex.EncodeToString(hasher.Sum(nil)), err
 }
 
-func encrypt(data []byte, passphrase string) ([]byte, error) {
+func Encrypt(data []byte, passphrase string) ([]byte, error) {
 	hash, err := createHash(passphrase)
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func encrypt(data []byte, passphrase string) ([]byte, error) {
 	return ciphertext, nil
 }
 
-func decrypt(data []byte, passphrase string) ([]byte, error) {
+func Decrypt(data []byte, passphrase string) ([]byte, error) {
 	hash, err := createHash(passphrase)
 	if err != nil {
 		return nil, err
