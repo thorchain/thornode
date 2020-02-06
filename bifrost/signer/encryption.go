@@ -9,32 +9,45 @@ import (
 	"io"
 )
 
-func createHash(key string) string {
+func createHash(key string) (string, error) {
 	hasher := md5.New()
-	hasher.Write([]byte(key))
-	return hex.EncodeToString(hasher.Sum(nil))
+	_, err := hasher.Write([]byte(key))
+	return hex.EncodeToString(hasher.Sum(nil)), err
 }
 
 func encrypt(data []byte, passphrase string) ([]byte, error) {
-	block, _ := aes.NewCipher([]byte(createHash(passphrase)))
+	hash, err := createHash(passphrase)
+	if err != nil {
+		return nil, err
+	}
+
+	block, _ := aes.NewCipher([]byte(hash))
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, err
 	}
+
 	nonce := make([]byte, gcm.NonceSize())
 	if _, err = io.ReadFull(rand.Reader, nonce); err != nil {
 		return nil, err
 	}
+
 	ciphertext := gcm.Seal(nonce, nonce, data, nil)
 	return ciphertext, nil
 }
 
 func decrypt(data []byte, passphrase string) ([]byte, error) {
-	key := []byte(createHash(passphrase))
+	hash, err := createHash(passphrase)
+	if err != nil {
+		return nil, err
+	}
+
+	key := []byte(hash)
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
+
 	gcm, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, err
