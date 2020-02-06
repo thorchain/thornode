@@ -50,7 +50,7 @@ func SetupThorCliDirForTest() string {
 func GetMetricForTest(c *C) *metrics.Metrics {
 	if m == nil {
 		var err error
-		m, err = metrics.NewMetrics(config.MetricConfiguration{
+		m, err = metrics.NewMetrics(config.MetricsConfiguration{
 			Enabled:      false,
 			ListenPort:   9000,
 			ReadTimeout:  time.Second,

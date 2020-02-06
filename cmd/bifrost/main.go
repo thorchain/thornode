@@ -12,7 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 	flag "github.com/spf13/pflag"
 
-	"gitlab.com/thorchain/thornode/bifrost/chainclients"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/observer"
@@ -59,7 +59,7 @@ func main() {
 	}
 
 	// metrics
-	m, err := metrics.NewMetrics(cfg.Metric)
+	m, err := metrics.NewMetrics(cfg.Metrics)
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create metric instance")
 	}
@@ -97,15 +97,12 @@ func main() {
 	}
 
 	chains := chainclients.LoadChains(thorKeys, cfg.Chains, cfg.TSS, thorchainBridge)
-
 	// start observer
 	obs, err := observer.NewObserver(cfg.Observer, thorchainBridge, pubkeyMgr, chains[common.BNBChain], m)
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create observer")
 	}
-	if err := obs.Start(); err != nil {
-		log.Fatal().Err(err).Msg("fail to start observer")
-	}
+	obs.Start();
 
 	// start signer
 	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, pubkeyMgr, cfg.TSS, chains, m)

@@ -6,8 +6,11 @@ import (
 
 	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/tendermint/tendermint/crypto"
-	"gitlab.com/thorchain/thornode/bifrost/chainclients"
+	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
 )
@@ -56,6 +59,32 @@ func (b *MockChainClient) GetAccount(addr types.AccAddress) (types.BaseAccount, 
 
 func (b *MockChainClient) GetPubKey() crypto.PubKey {
 	return nil
+}	
+
+func (b *MockChainClient) Start() {}
+
+func (b *MockChainClient) Stop() error {
+	return nil
+}
+
+func (b *MockChainClient) GetMessages() <-chan stypes.TxIn {
+	return nil
+}
+
+func (b *MockChainClient) GetTxInForRetry(failedOnly bool) ([]stypes.TxIn, error) {
+	return nil, nil
+}
+
+func (b *MockChainClient) SetTxInStatus(txIn stypes.TxIn, status stypes.TxInStatus) error {
+	return nil
+}
+
+func (b *MockChainClient) RemoveTxIn(txin stypes.TxIn) error {
+	return nil
+}
+
+func (b *MockChainClient) InitBlockScanner(observerDbPath string, cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+	return nil
 }
 
 func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
@@ -64,7 +93,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 			common.BNBChain: &MockChainClient{
 				baseAccount: types.BaseAccount{
 					Coins: types.Coins{
-						types.Coin{Denom: "BNB", Amount: 1000000},
+						types.Coin{Denom: common.BNBChain.String(), Amount: 1000000},
 					},
 				},
 			},
@@ -86,7 +115,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 			common.BNBChain: &MockChainClient{
 				baseAccount: types.BaseAccount{
 					Coins: types.Coins{
-						types.Coin{Denom: "BNB", Amount: 1000000},
+						types.Coin{Denom: common.BNBChain.String(), Amount: 1000000},
 						types.Coin{Denom: "RUNE", Amount: 1000000},
 					},
 				},
@@ -109,7 +138,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {
 			common.BNBChain: &MockChainClient{
 				baseAccount: types.BaseAccount{
 					Coins: types.Coins{
-						types.Coin{Denom: "BNB", Amount: 10000},
+						types.Coin{Denom: common.BNBChain.String(), Amount: 10000},
 					},
 				},
 			},

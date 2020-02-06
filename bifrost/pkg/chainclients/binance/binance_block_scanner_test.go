@@ -17,7 +17,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
-	btypes "gitlab.com/thorchain/thornode/bifrost/chainclients/binance/types"
+	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
@@ -374,7 +374,7 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 }
 
 func init() {
-	m, _ = metrics.NewMetrics(config.MetricConfiguration{
+	m, _ = metrics.NewMetrics(config.MetricsConfiguration{
 		Enabled:      false,
 		ListenPort:   8080,
 		ReadTimeout:  time.Second,

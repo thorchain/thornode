@@ -20,14 +20,17 @@ import (
 	ttypes "github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	btx "github.com/binance-chain/go-sdk/types/tx"
+	pkerrors "github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
+	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 )
 
 // Binance is a structure to sign and broadcast tx to binance chain used by signer mostly
@@ -44,6 +47,8 @@ type Binance struct {
 	tssKeyManager      keys.KeyManager
 	localKeyManager    *keyManager
 	thorchainBridge    *thorclient.ThorchainBridge
+	storage            *BinanceBlockScannerStorage
+	blockScanner       *BinanceBlockScanner
 }
 
 // NewBinance create new instance of binance client
@@ -98,6 +103,43 @@ func NewBinance(thorKeys *thorclient.Keys, rpcHost string, keySignCfg config.TSS
 	bnb.IsTestNet = isTestNet
 	bnb.chainID = chainID
 	return bnb, nil
+}
+
+func (b *Binance) InitBlockScanner(observerDbPath string, cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+	var err error
+	b.storage, err = NewBinanceBlockScannerStorage(observerDbPath)
+	if err != nil {
+		return pkerrors.Wrap(err, "fail to create scan storage")
+	}
+	b.blockScanner, err = NewBinanceBlockScanner(cfg, b.storage, b.IsTestNet, pubkeyMgr, m)
+	if err != nil {
+		return pkerrors.Wrap(err, "fail to create scan storage")
+	}
+	return nil
+}
+
+func (b *Binance) Start() {
+	b.blockScanner.Start()
+}
+
+func (b *Binance) Stop() error {
+	return b.blockScanner.Stop()
+}
+
+func (b *Binance) GetMessages() <-chan stypes.TxIn {
+	return b.blockScanner.GetMessages()
+}
+
+func (b *Binance) SetTxInStatus(txIn stypes.TxIn, status stypes.TxInStatus) error {
+	return b.storage.SetTxInStatus(txIn, status)
+}
+
+func (b *Binance) RemoveTxIn(txIn stypes.TxIn) error {
+	return b.storage.RemoveTxIn(txIn)
+}
+
+func (b *Binance) GetTxInForRetry(failedOnly bool) ([]stypes.TxIn, error) {
+	return b.storage.GetTxInForRetry(failedOnly)
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status

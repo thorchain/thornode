@@ -15,8 +15,8 @@ type Configuration struct {
 	Observer  ObserverConfiguration `json:"observer" mapstructure:"observer"`
 	Signer    SignerConfiguration   `json:"signer" mapstructure:"signer"`
 	Thorchain ClientConfiguration   `json:"thorchain" mapstructure:"thorchain"`
-	Metric    MetricConfiguration   `json:"metric" mapstructure:"metric"`
-	Chains    []ChainConfigurations `json:"chains" mapstructure:"chains"`
+	Metrics   MetricsConfiguration  `json:"metrics" mapstructure:"metrics"`
+	Chains    []ChainConfiguration  `json:"chains" mapstructure:"chains"`
 	TSS       TSSConfiguration      `json:"tss" mapstructure:"tss"`
 	BackOff   BackOff               `json:"back_off" mapstructure:"back_off"`
 }
@@ -44,10 +44,9 @@ type BackOff struct {
 	MaxElapsedTime      time.Duration `json:"max_elapsed_time" mapstructure:"max_elapsed_time"`
 }
 
-// ChainConfigurations configuration
-type ChainConfigurations struct {
+// ChainConfiguration configuration
+type ChainConfiguration struct {
 	Name         string `json:"name" mapstructure:"name"`
-	Enabled      bool   `json:"enabled" mapstructure:"enabled"`
 	ChainHost    string `json:"chain_host" mapstructure:"chain_host"`
 	ChainNetwork string `json:"chain_network" mapstructure:"chain_network"`
 	UserName     string `json:"username" mapstructure:"username"`
@@ -91,7 +90,7 @@ type ClientConfiguration struct {
 	BackOff         BackOff
 }
 
-type MetricConfiguration struct {
+type MetricsConfiguration struct {
 	Enabled      bool          `json:"enabled" mapstructure:"enabled"`
 	ListenPort   int           `json:"listen_port" mapstructure:"listen_port"`
 	ReadTimeout  time.Duration `json:"read_timeout" mapstructure:"read_timeout"`
@@ -117,17 +116,17 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 	// Set global backoff settings to all chains config. Maybe is pointless and inefficient as we have it in global config
 	for i, chain := range cfg.Chains {
 		cfg.Chains[i].BackOff = cfg.BackOff
-		cfg.Metric.Chains = append(cfg.Metric.Chains, chain.Name)
+		cfg.Metrics.Chains = append(cfg.Metrics.Chains, chain.Name)
 	}
 
 	return &cfg, nil
 }
 
 func applyDefaultConfig() {
-	viper.SetDefault("metric.listen_port", "9000")
-	viper.SetDefault("metric.read_timeout", "30s")
-	viper.SetDefault("metric.write_timeout", "30s")
-	viper.SetDefault("metric.chains", []string{"bnb"})
+	viper.SetDefault("metrics.listen_port", "9000")
+	viper.SetDefault("metrics.read_timeout", "30s")
+	viper.SetDefault("metrics.write_timeout", "30s")
+	viper.SetDefault("metrics.chains", []string{"BNB"})
 	viper.SetDefault("thorchain.chain_id", "thorchain")
 	viper.SetDefault("thorchain.chain_host", "localhost:1317")
 	viper.SetDefault("back_off.initial_interval", 500*time.Millisecond)

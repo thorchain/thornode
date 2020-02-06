@@ -11,6 +11,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 func Test(t *testing.T) { TestingT(t) }
@@ -23,12 +24,12 @@ var m *metrics.Metrics
 
 func (CommonBlockScannerTestSuite) SetUpSuite(c *C) {
 	var err error
-	m, err = metrics.NewMetrics(config.MetricConfiguration{
+	m, err = metrics.NewMetrics(config.MetricsConfiguration{
 		Enabled:      false,
 		ListenPort:   8080,
 		ReadTimeout:  time.Second,
 		WriteTimeout: time.Second,
-		Chains:       []string{"bnb"},
+		Chains:       []string{common.BNBChain.String()},
 	})
 	c.Assert(m, NotNil)
 	c.Assert(err, IsNil)
@@ -80,6 +81,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 		MaxHttpRequestRetry:        3,
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
+		ChainID:                    common.BNBChain.String(),
 	}, mss, m)
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)

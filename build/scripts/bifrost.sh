@@ -28,13 +28,12 @@ echo "{
         \"signer_name\": \"$SIGNER_NAME\",
         \"signer_passwd\": \"$SIGNER_PASSWD\"
     },
-    \"metric\": {
+    \"metrics\": {
         \"enabled\": true
     },
     \"chains\": [
       {
         \"name\": \"BNB\",
-        \"enabled\": true,
         \"rpc_host\": \"$BINANCE_HOST\"
       }
     ],
@@ -50,7 +49,8 @@ echo "{
         \"enforce_block_height\": false,
         \"block_scan_processors\": 1,
         \"block_height_discover_back_off\": \"1s\",
-        \"block_retry_interval\": \"10s\"
+        \"block_retry_interval\": \"10s\",
+        \"chain_id\": \"BNB\"
       }
   },
   \"signer\": {

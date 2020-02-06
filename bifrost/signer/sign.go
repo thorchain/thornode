@@ -14,7 +14,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/thornode/bifrost/chainclients"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
@@ -103,7 +103,7 @@ func (s *Signer) getChain(chainName common.Chain) (chainclients.ChainClient, err
 	chain := s.chains[chainName]
 	if chain == nil {
 		s.logger.Debug().Str("chain", chainName.String()).Msg("is not supported yet")
-		return nil, chainclients.NotSupported
+		return nil, errors.New("Not supported")
 	}
 	return chain, nil
 }
