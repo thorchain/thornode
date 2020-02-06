@@ -94,7 +94,7 @@ func (s *SignerStore) Get(key string) (item TxOutStoreItem, err error) {
 	}
 	buf, err := s.db.Get([]byte(key), nil)
 	if err := json.Unmarshal(buf, &item); err != nil {
-		err = errors.Wrap(err, "fail to unmarshal to txout store item")
+		return item, errors.Wrap(err, "fail to unmarshal to txout store item")
 	}
 	return
 }

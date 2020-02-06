@@ -148,7 +148,9 @@ func (s *Signer) signTransactions() {
 				continue
 			}
 			// We have a successful broadcast! Remove the item from our store
-			s.storage.Remove(item)
+			if err := s.storage.Remove(item); err != nil {
+				s.logger.Error().Err(err).Msg("fail to remove tx out store item")
+			}
 		}
 	}
 }
