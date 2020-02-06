@@ -1,6 +1,7 @@
 package signer
 
 import (
+	"fmt"
 	"os"
 
 	. "gopkg.in/check.v1"
@@ -18,11 +19,6 @@ func (s *StorageSuite) TestStorage(c *C) {
 
 	store, err := NewSignerStore(dir)
 	c.Assert(err, IsNil)
-
-	// clean out any items that may already exist
-	for _, item := range store.List() {
-		c.Assert(store.Remove(item), IsNil)
-	}
 
 	item := NewTxOutStoreItem(12, types.TxOutItem{Memo: "foo"})
 
