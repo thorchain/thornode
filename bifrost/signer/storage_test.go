@@ -50,3 +50,16 @@ func (s *StorageSuite) TestStorage(c *C) {
 
 	c.Check(store.Close(), IsNil)
 }
+
+func (s *StorageSuite) TestKey(c *C) {
+	item1 := NewTxOutStoreItem(12, types.TxOutItem{Memo: "foo"})
+	item2 := NewTxOutStoreItem(12, types.TxOutItem{Memo: "foo"})
+	item3 := NewTxOutStoreItem(1222, types.TxOutItem{Memo: "foo"})
+	item4 := NewTxOutStoreItem(12, types.TxOutItem{Memo: "bar"})
+	c.Check(item1.Key(), Equals, item2.Key())
+	c.Check(item1.Key(), Not(Equals), item3.Key())
+	c.Check(item1.Key(), Not(Equals), item4.Key())
+
+	item1.Status = TxSpent
+	c.Check(item1.Key(), Equals, item2.Key())
+}
