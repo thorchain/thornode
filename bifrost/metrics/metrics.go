@@ -42,7 +42,7 @@ const (
 // Metrics used to provide promethus metrics
 type Metrics struct {
 	logger zerolog.Logger
-	cfg    config.MetricConfiguration
+	cfg    config.MetricsConfiguration
 	s      *http.Server
 	wg     *sync.WaitGroup
 }
@@ -157,7 +157,7 @@ var (
 )
 
 // NewMetrics create a new instance of Metrics
-func NewMetrics(cfg config.MetricConfiguration) (*Metrics, error) {
+func NewMetrics(cfg config.MetricsConfiguration) (*Metrics, error) {
 	// Add chain metrics
 	for _, chain := range cfg.Chains {
 		AddChainMetrics(chain, counters, counterVecs, histograms)

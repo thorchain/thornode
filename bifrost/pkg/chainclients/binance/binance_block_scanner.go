@@ -21,7 +21,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
-	btypes "gitlab.com/thorchain/thornode/bifrost/chainclients/binance/types"
+	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"

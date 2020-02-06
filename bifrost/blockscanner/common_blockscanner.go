@@ -17,9 +17,10 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	btypes "gitlab.com/thorchain/thornode/bifrost/chainclients/binance/types"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // CommonBlockScanner is used to discover block height
@@ -249,6 +250,25 @@ func (b *CommonBlockScanner) getBlockUrl() string {
 	return u.String()
 }
 
+func (b *CommonBlockScanner) unmarshalAndGetBlockHeight(buf []byte) (string, error) {
+	switch common.Chain(b.cfg.ChainID) {
+	case common.BNBChain:
+		var block btypes.RPCBlock
+		err := json.Unmarshal(buf, &block)
+		if err != nil {
+			return "", errors.Wrap(err, "fail to unmarshal body to RPCBlock")
+		}
+		return block.Result.Block.Header.Height, nil
+	default:
+		var block btypes.RPCBlock
+		err := json.Unmarshal(buf, &block)
+		if err != nil {
+			return "", errors.Wrap(err, "fail to unmarshal body to RPCBlock")
+		}
+		return block.Result.Block.Header.Height, nil
+	}
+}
+
 func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {
 	start := time.Now()
 	defer func() {
@@ -264,12 +284,11 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, error) {
 		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
 		return 0, errors.Wrap(err, "fail to get blocks")
 	}
-	var tx btypes.RPCBlock
-	if err := json.Unmarshal(buf, &tx); err != nil {
+	block, err := b.unmarshalAndGetBlockHeight(buf)
+	if err != nil {
 		b.errorCounter.WithLabelValues("fail_unmarshal_block", requestUrl).Inc()
-		return 0, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
+		return 0, err
 	}
-	block := tx.Result.Block.Header.Height
 
 	parsedBlock, err := strconv.ParseInt(block, 10, 64)
 	if err != nil {

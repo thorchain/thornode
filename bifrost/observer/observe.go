@@ -13,7 +13,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 
-	"gitlab.com/thorchain/thornode/bifrost/chainclients"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
@@ -25,8 +25,7 @@ import (
 type Observer struct {
 	cfg             config.ObserverConfiguration
 	logger          zerolog.Logger
-	blockScanner    chainclients.BlockScanner
-	storage         chainclients.BlockScannerStorage
+	chain           chainclients.ChainClient
 	stopChan        chan struct{}
 	thorchainBridge *thorclient.ThorchainBridge
 	m               *metrics.Metrics
@@ -37,11 +36,6 @@ type Observer struct {
 
 // NewObserver create a new instance of Observer for chain
 func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, pubkeyMgr pubkeymanager.PubKeyValidator, chain chainclients.ChainClient, m *metrics.Metrics) (*Observer, error) {
-	scanStorage, err := chainclients.NewBlockScannerStorage(cfg.ObserverDbPath, chain)
-	if err != nil {
-		return nil, errors.Wrap(err, "fail to create scan storage")
-	}
-
 	logger := log.Logger.With().Str("module", "observer").Logger()
 
 	if !cfg.BlockScanner.EnforceBlockHeight {
@@ -63,37 +57,34 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 		}
 	}
 
-	_, isTestNet := chain.CheckIsTestNet()
-	blockScanner, err := chainclients.NewBlockScanner(cfg.BlockScanner, scanStorage, chain, isTestNet, pubkeyMgr, m)
+	err := chain.InitBlockScanner(cfg.ObserverDbPath, cfg.BlockScanner, pubkeyMgr, m)
 	if err != nil {
-		return nil, errors.Wrap(err, "fail to create block scanner")
+		return nil, err
 	}
 	return &Observer{
 		cfg:             cfg,
 		logger:          logger,
-		blockScanner:    blockScanner,
+		chain:           chain,
 		wg:              &sync.WaitGroup{},
 		stopChan:        make(chan struct{}),
 		thorchainBridge: thorchainBridge,
-		storage:         scanStorage,
 		m:               m,
 		errCounter:      m.GetCounterVec(metrics.ObserverError),
 		pubkeyMgr:       pubkeyMgr,
 	}, nil
 }
 
-func (o *Observer) Start() error {
+func (o *Observer) Start() {
 	o.wg.Add(1)
-	go o.txinsProcessor(o.blockScanner.GetMessages(), 1)
+	go o.txinsProcessor(o.chain.GetMessages(), 1)
 	o.retryAllTx()
 	o.wg.Add(1)
 	go o.retryTxProcessor()
-	o.blockScanner.Start()
-	return nil
+	o.chain.Start()
 }
 
 func (o *Observer) retryAllTx() {
-	txIns, err := o.storage.GetTxInForRetry(false)
+	txIns, err := o.chain.GetTxInForRetry(false)
 	if err != nil {
 		o.logger.Error().Err(err).Msg("fail to get txin for retry")
 		o.errCounter.WithLabelValues("fail_get_txin_for_retry", "").Inc()
@@ -116,7 +107,7 @@ func (o *Observer) retryTxProcessor() {
 		case <-o.stopChan:
 			return
 		case <-t.C:
-			txIns, err := o.storage.GetTxInForRetry(true)
+			txIns, err := o.chain.GetTxInForRetry(true)
 			if err != nil {
 				o.errCounter.WithLabelValues("fail_to_get_txin_for_retry", "").Inc()
 				o.logger.Error().Err(err).Msg("fail to get txin for retry")
@@ -157,7 +148,7 @@ func (o *Observer) txinsProcessor(ch <-chan types.TxIn, idx int) {
 }
 
 func (o *Observer) processOneTxIn(txIn types.TxIn) {
-	if err := o.storage.SetTxInStatus(txIn, types.Processing); err != nil {
+	if err := o.chain.SetTxInStatus(txIn, types.Processing); err != nil {
 		o.errCounter.WithLabelValues("fail_save_txin_local", txIn.BlockHeight).Inc()
 		o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
 		return
@@ -165,12 +156,12 @@ func (o *Observer) processOneTxIn(txIn types.TxIn) {
 	if err := o.signAndSendToThorchain(txIn); err != nil {
 		o.logger.Error().Err(err).Msg("fail to send to thorchain")
 		o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
-		if err := o.storage.SetTxInStatus(txIn, types.Failed); err != nil {
+		if err := o.chain.SetTxInStatus(txIn, types.Failed); err != nil {
 			o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
 			return
 		}
 	}
-	if err := o.storage.RemoveTxIn(txIn); err != nil {
+	if err := o.chain.RemoveTxIn(txIn); err != nil {
 		o.errCounter.WithLabelValues("fail_remove_from_local_store", txIn.BlockHeight).Inc()
 		o.logger.Error().Err(err).Msg("fail to remove txin from local store")
 		return
@@ -243,8 +234,8 @@ func (o *Observer) Stop() error {
 	o.logger.Debug().Msg("request to stop observer")
 	defer o.logger.Debug().Msg("observer stopped")
 
-	if err := o.blockScanner.Stop(); err != nil {
-		o.logger.Error().Err(err).Msg("fail to close block scanner")
+	if err := o.chain.Stop(); err != nil {
+		o.logger.Error().Err(err).Msg("fail to close chain block scanner")
 	}
 
 	close(o.stopChan)
