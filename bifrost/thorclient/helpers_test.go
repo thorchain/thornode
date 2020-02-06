@@ -13,6 +13,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 )
 
@@ -55,7 +56,7 @@ func GetMetricForTest(c *C) *metrics.Metrics {
 			ListenPort:   9000,
 			ReadTimeout:  time.Second,
 			WriteTimeout: time.Second,
-			Chains:       []string{"bnb"},
+			Chains:       common.Chains{common.BNBChain},
 		})
 		c.Assert(m, NotNil)
 		c.Assert(err, IsNil)

@@ -14,9 +14,9 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
@@ -266,7 +266,7 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 
 	start := time.Now()
 	defer func() {
-		s.m.GetHistograms(metrics.SignAndBroadcastDuration(chain.GetChain().String())).Observe(time.Since(start).Seconds())
+		s.m.GetHistograms(metrics.SignAndBroadcastDuration(chain.GetChain())).Observe(time.Since(start).Seconds())
 	}()
 
 	if !tx.OutHash.IsEmpty() {
