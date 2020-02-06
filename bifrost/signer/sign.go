@@ -136,13 +136,8 @@ func (s *Signer) signTransactions() {
 
 	for {
 		sleep()
-		items, err := s.storage.List()
-		if err != nil {
-			s.logger.Error().Err(err).Msg("fail to list tx out store items")
-			continue
-		}
 
-		for _, item := range items {
+		for _, item := range s.storage.List() {
 			if err := s.signAndBroadcast(item); err != nil {
 				s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
 				continue

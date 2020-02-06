@@ -1,6 +1,7 @@
 package signer
 
 import (
+	"fmt"
 	"os"
 
 	. "gopkg.in/check.v1"
@@ -16,6 +17,7 @@ func (s *StorageSuite) TestStorage(c *C) {
 	dir := os.TempDir()
 	defer os.Remove(dir)
 
+	fmt.Printf("TempDir: %s\n", dir)
 	store, err := NewSignerStore(dir)
 	c.Assert(err, IsNil)
 
@@ -28,8 +30,7 @@ func (s *StorageSuite) TestStorage(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(getItem.TxOutItem.Memo, Equals, item.TxOutItem.Memo)
 
-	items, err := store.List()
-	c.Assert(err, IsNil)
+	items := store.List()
 	c.Assert(items, HasLen, 1, Commentf("%d", len(items)))
 
 	c.Assert(store.Remove(item), IsNil)
@@ -44,8 +45,7 @@ func (s *StorageSuite) TestStorage(c *C) {
 
 	c.Assert(store.Batch(items), IsNil)
 
-	items, err = store.List()
-	c.Assert(err, IsNil)
+	items = store.List()
 	c.Assert(items, HasLen, 4)
 	c.Check(items[0].TxOutItem.Memo, Equals, "boo")
 	c.Check(items[1].TxOutItem.Memo, Equals, "foo")
