@@ -165,13 +165,17 @@ func (s *Signer) signTransactions() {
 
 	for {
 		sleep()
-		items := s.storage.List()
 
-		for _, item := range items {
+		for _, item := range s.storage.List() {
+			if item.Status == TxSpent { // don't rebroadcast spent transactions
+				continue
+			}
+
 			if err := s.signAndBroadcast(item); err != nil {
 				s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
 				continue
 			}
+
 			// We have a successful broadcast! Remove the item from our store
 			item.Status = TxSpent
 			if err := s.storage.Set(item); err != nil {

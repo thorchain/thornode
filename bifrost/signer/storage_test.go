@@ -35,11 +35,14 @@ func (s *StorageSuite) TestStorage(c *C) {
 	c.Assert(store.Remove(item), IsNil)
 	c.Check(store.Has(item.Key()), Equals, false)
 
+	spent := NewTxOutStoreItem(10, types.TxOutItem{Memo: "spent"})
+	spent.Status = TxSpent
 	items = []TxOutStoreItem{
 		NewTxOutStoreItem(12, types.TxOutItem{Memo: "foo"}),
 		NewTxOutStoreItem(12, types.TxOutItem{Memo: "bar"}),
 		NewTxOutStoreItem(13, types.TxOutItem{Memo: "baz"}),
 		NewTxOutStoreItem(10, types.TxOutItem{Memo: "boo"}),
+		spent,
 	}
 
 	c.Assert(store.Batch(items), IsNil)

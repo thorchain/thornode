@@ -133,6 +133,12 @@ func (s *SignerStore) List() []TxOutStoreItem {
 			s.logger.Error().Err(err).Msg("fail to unmarshal to txout store item")
 			continue
 		}
+
+		// ignore already spent items
+		if item.Status == TxSpent {
+			continue
+		}
+
 		results = append(results, item)
 	}
 
