@@ -108,6 +108,35 @@ func (s *Signer) getChain(chainName common.Chain) (chainclients.ChainClient, err
 	return chain, nil
 }
 
+func (s *Signer) CheckTransaction(key string, chainName common.Chain, metadata interface{}) (TxStatus, error) {
+	chain, err := s.getChain(chainName)
+	if err != nil {
+		return TxUnknown, err
+	}
+
+	// if we don't have the transaction yet, say its unavailable
+	if !s.storage.Has(key) {
+		return TxUnavailable, nil
+	}
+
+	tx, err := s.storage.Get(key)
+	if err != nil {
+		return TxUnknown, err
+	}
+
+	// if the tx isn't available, return immediately
+	if tx.Status != TxAvailable {
+		return tx.Status, nil
+	}
+
+	// validate metadata
+	if !chain.ValidateMetadata(metadata) {
+		return TxUnavailable, nil
+	}
+
+	return TxAvailable, nil
+}
+
 func (s *Signer) Start() error {
 	s.wg.Add(1)
 	go s.processTxnOut(s.thorchainBlockScanner.GetTxOutMessages(), 1)
@@ -141,9 +170,12 @@ func (s *Signer) signTransactions() {
 		for _, item := range items {
 			if err := s.signAndBroadcast(item); err != nil {
 				s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
-			} else {
-				// We have a successful broadcast! Remove the item from our store
-				s.storage.Remove(item)
+				continue
+			}
+			// We have a successful broadcast! Remove the item from our store
+			item.Status = TxSpent
+			if err := s.storage.Set(item); err != nil {
+				s.logger.Error().Err(err).Msg("fail to update tx out store item")
 			}
 		}
 	}

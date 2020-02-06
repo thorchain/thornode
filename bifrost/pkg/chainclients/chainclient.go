@@ -5,9 +5,9 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
-	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 )
 
 // ChainClient is the interface that wraps basic chain client methods
@@ -20,6 +20,7 @@ import (
 // GetAddress   gets address for public key pool in chain
 // GetAccount   gets account from thorclient in cain
 // GetGasFee    calculates gas fee based on number of simple transfer sents
+// ValidateMetadata  checks if given metadata is correct or not
 // Start
 // Stop
 // InitBlockScanner
@@ -39,6 +40,7 @@ type ChainClient interface {
 	GetAccount(addr types.AccAddress) (types.BaseAccount, error)
 	GetChain() common.Chain
 	GetGasFee(count uint64) common.Gas
+	ValidateMetadata(_ interface{}) bool
 	Start()
 	Stop() error
 	InitBlockScanner(observerDbPath string, cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error

@@ -24,6 +24,7 @@ const (
 
 type TxOutStoreItem struct {
 	TxOutItem types.TxOutItem
+	Status    TxStatus
 	Height    int64
 }
 
@@ -31,6 +32,7 @@ func NewTxOutStoreItem(height int64, item types.TxOutItem) TxOutStoreItem {
 	return TxOutStoreItem{
 		TxOutItem: item,
 		Height:    height,
+		Status:    TxAvailable,
 	}
 }
 

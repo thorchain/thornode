@@ -45,6 +45,10 @@ func (b *MockChainClient) GetChain() common.Chain {
 	return common.BNBChain
 }
 
+func (b *MockChainClient) ValidateMetadata(inter interface{}) bool {
+	return true
+}
+
 func (b *MockChainClient) BroadcastTx(tx []byte) error {
 	return nil
 }
