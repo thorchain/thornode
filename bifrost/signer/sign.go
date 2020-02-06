@@ -165,6 +165,7 @@ func (s *Signer) signTransactions() {
 
 	for {
 		sleep()
+		items := s.storage.List()
 
 		for _, item := range s.storage.List() {
 			if item.Status == TxSpent { // don't rebroadcast spent transactions
