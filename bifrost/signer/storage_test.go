@@ -1,6 +1,7 @@
 package signer
 
 import (
+	"fmt"
 	"os"
 
 	. "gopkg.in/check.v1"
@@ -13,16 +14,11 @@ type StorageSuite struct{}
 var _ = Suite(&StorageSuite{})
 
 func (s *StorageSuite) TestStorage(c *C) {
-	dir := os.TempDir()
-	defer os.Remove(dir)
+	dir := fmt.Sprintf("%ssigner_data", os.TempDir())
+	defer os.RemoveAll(dir)
 
 	store, err := NewSignerStore(dir)
 	c.Assert(err, IsNil)
-
-	// clean out any items that may already exist
-	for _, item := range store.List() {
-		c.Assert(store.Remove(item), IsNil)
-	}
 
 	item := NewTxOutStoreItem(12, types.TxOutItem{Memo: "foo"})
 
