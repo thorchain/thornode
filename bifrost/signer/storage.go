@@ -16,30 +16,7 @@ import (
 )
 
 const DefaultSignerLevelDBFolder = `signer_data`
-
-type TxOutStorage struct {
-	*blockscanner.LevelDBScannerStorage
-	db *leveldb.DB
-}
-
-// NewTxOutStorage create a new instance of TxOutStorage
-func NewTxOutStorage(levelDbFolder string) (*TxOutStorage, error) {
-	if len(levelDbFolder) == 0 {
-		levelDbFolder = DefaultSignerLevelDBFolder
-	}
-	db, err := leveldb.OpenFile(levelDbFolder, nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
-	}
-	levelDbStorage, err := blockscanner.NewLevelDBScannerStorage(db)
-	if err != nil {
-		return nil, errors.New("fail to create level db")
-	}
-	return &TxOutStorage{
-		LevelDBScannerStorage: levelDbStorage,
-		db:                    db,
-	}, nil
-}
+const txOutPrefix = "txout-"
 
 type TxOutStoreItem struct {
 	TxOutItem types.TxOutItem
@@ -53,13 +30,37 @@ func NewTxOutStoreItem(height int64, item types.TxOutItem) TxOutStoreItem {
 	}
 }
 
+type SignerStore struct {
+	*blockscanner.LevelDBScannerStorage
+	db *leveldb.DB
+}
+
+// NewSignerStore create a new instance of SignerStore
+func NewSignerStore(levelDbFolder string) (*SignerStore, error) {
+	if len(levelDbFolder) == 0 {
+		levelDbFolder = DefaultSignerLevelDBFolder
+	}
+	db, err := leveldb.OpenFile(levelDbFolder, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
+	}
+	levelDbStorage, err := blockscanner.NewLevelDBScannerStorage(db)
+	if err != nil {
+		return nil, errors.New("fail to create level db")
+	}
+	return &SignerStore{
+		LevelDBScannerStorage: levelDbStorage,
+		db:                    db,
+	}, nil
+}
+
 func (s *TxOutStoreItem) Key() string {
 	buf, _ := json.Marshal(s)
 	sha256Bytes := sha256.Sum256(buf)
-	return fmt.Sprintf("txoutitem-%s", hex.EncodeToString(sha256Bytes[:]))
+	return fmt.Sprintf("%s%s", txOutPrefix, hex.EncodeToString(sha256Bytes[:]))
 }
 
-func (s *TxOutStorage) Set(item TxOutStoreItem) error {
+func (s *SignerStore) Set(item TxOutStoreItem) error {
 	key := item.Key()
 	buf, err := json.Marshal(item)
 	if err != nil {
@@ -71,7 +72,7 @@ func (s *TxOutStorage) Set(item TxOutStoreItem) error {
 	return nil
 }
 
-func (s *TxOutStorage) Batch(items []TxOutStoreItem) error {
+func (s *SignerStore) Batch(items []TxOutStoreItem) error {
 	batch := new(leveldb.Batch)
 	for _, item := range items {
 		key := item.Key()
@@ -84,7 +85,7 @@ func (s *TxOutStorage) Batch(items []TxOutStoreItem) error {
 	return s.db.Write(batch, nil)
 }
 
-func (s *TxOutStorage) Get(key string) (item TxOutStoreItem, ok bool, err error) {
+func (s *SignerStore) Get(key string) (item TxOutStoreItem, ok bool, err error) {
 	ok, err = s.db.Has([]byte(key), nil)
 	if !ok || err != nil {
 		return
@@ -96,18 +97,18 @@ func (s *TxOutStorage) Get(key string) (item TxOutStoreItem, ok bool, err error)
 	return
 }
 
-func (s *TxOutStorage) Has(key string) (ok bool) {
+func (s *SignerStore) Has(key string) (ok bool) {
 	ok, _ = s.db.Has([]byte(key), nil)
 	return
 }
 
-func (s *TxOutStorage) Remove(item TxOutStoreItem) error {
+func (s *SignerStore) Remove(item TxOutStoreItem) error {
 	return s.db.Delete([]byte(item.Key()), nil)
 }
 
 // GetTxOutsForRetry send back tx out to retry depending on arg failed only
-func (s *TxOutStorage) List() ([]TxOutStoreItem, error) {
-	iterator := s.db.NewIterator(util.BytesPrefix([]byte("txoutitem-")), nil)
+func (s *SignerStore) List() ([]TxOutStoreItem, error) {
+	iterator := s.db.NewIterator(util.BytesPrefix([]byte(txOutPrefix)), nil)
 	defer iterator.Release()
 	var results []TxOutStoreItem
 	for iterator.Next() {
@@ -120,14 +121,15 @@ func (s *TxOutStorage) List() ([]TxOutStoreItem, error) {
 			return nil, errors.Wrap(err, "fail to unmarshal to txout store item")
 		}
 	}
-	// sort by height first
+	// Ensure that we sort our list by block height first (lowest to highest),
+	// then by key alphabetically.This makes best efforts to ensure that each
+	// node is iterating through their list of items as closely as possible
 	sort.SliceStable(results, func(i, j int) bool { return results[i].Height < results[j].Height })
-	// sort by key second
 	sort.SliceStable(results, func(i, j int) bool { return results[i].Key() < results[j].Key() })
 	return results, nil
 }
 
 // Close underlying db
-func (s *TxOutStorage) Close() error {
+func (s *SignerStore) Close() error {
 	return s.db.Close()
 }

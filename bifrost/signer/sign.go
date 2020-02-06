@@ -35,7 +35,7 @@ type Signer struct {
 	stopChan              chan struct{}
 	thorchainBlockScanner *ThorchainBlockScan
 	chains                map[common.Chain]chainclients.ChainClient
-	storage               *TxOutStorage
+	storage               *SignerStore
 	m                     *metrics.Metrics
 	errCounter            *prometheus.CounterVec
 	tssKeygen             *tss.KeyGen
@@ -45,7 +45,7 @@ type Signer struct {
 
 // NewSigner create a new instance of signer
 func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, pubkeyMgr pubkeymanager.PubKeyValidator, tssCfg config.TSSConfiguration, chains map[common.Chain]chainclients.ChainClient, m *metrics.Metrics) (*Signer, error) {
-	storage, err := NewTxOutStorage(cfg.SignerDbPath)
+	storage, err := NewSignerStore(cfg.SignerDbPath)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
 	}
