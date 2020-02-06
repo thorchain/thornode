@@ -94,6 +94,15 @@ func (cs1 Coins) Equals(cs2 Coins) bool {
 	return true
 }
 
+func (cs Coins) IsEmpty() bool {
+	for _, coin := range cs {
+		if !coin.IsEmpty() {
+			return false
+		}
+	}
+	return true
+}
+
 func (cs Coins) String() string {
 	coins := make([]string, len(cs))
 	for i, c := range cs {
