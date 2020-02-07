@@ -99,17 +99,17 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 	}, nil
 }
 
-func (s *Signer) getChain(chainName common.Chain) (chainclients.ChainClient, error) {
-	chain, ok := s.chains[chainName]
+func (s *Signer) getChain(chainID common.Chain) (chainclients.ChainClient, error) {
+	chain, ok := s.chains[chainID]
 	if !ok {
-		s.logger.Debug().Str("chain", chainName.String()).Msg("is not supported yet")
+		s.logger.Debug().Str("chain", chainID.String()).Msg("is not supported yet")
 		return nil, errors.New("Not supported")
 	}
 	return chain, nil
 }
 
-func (s *Signer) CheckTransaction(key string, chainName common.Chain, metadata interface{}) (TxStatus, error) {
-	chain, err := s.getChain(chainName)
+func (s *Signer) CheckTransaction(key string, chainID common.Chain, metadata interface{}) (TxStatus, error) {
+	chain, err := s.getChain(chainID)
 	if err != nil {
 		return TxUnknown, err
 	}
