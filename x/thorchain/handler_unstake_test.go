@@ -114,7 +114,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	// let's just unstake
 	unstakeHandler := NewUnstakeHandler(k, NewVersionedTxOutStoreDummy())
 
-	msgUnstake := NewMsgSetUnStake(GetRandomTx(), runeAddr, sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
+	msgUnstake := NewMsgSetUnStake(GetRandomTx(), runeAddr, sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
 	result := unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 
@@ -132,22 +132,22 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_Validation(c *C) {
 	}{
 		{
 			name:           "not signed by active observer should fail",
-			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
+			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
 			expectedResult: sdk.CodeUnauthorized,
 		},
 		{
 			name:           "empty signer should fail",
-			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, sdk.AccAddress{}),
+			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, sdk.AccAddress{}),
 			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
 			name:           "empty asset should fail",
-			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.Asset{}, GetRandomNodeAccount(NodeActive).NodeAddress),
+			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.Asset{}, GetRandomNodeAccount(NodeActive).NodeAddress),
 			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
 			name:           "empty RUNE address should fail",
-			msg:            NewMsgSetUnStake(GetRandomTx(), common.NoAddress, sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
+			msg:            NewMsgSetUnStake(GetRandomTx(), common.NoAddress, sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
 			expectedResult: CodeUnstakeFailValidation,
 		},
 		{
@@ -157,7 +157,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_Validation(c *C) {
 		},
 		{
 			name:           "withdraw basis point is larger than 10000 should fail",
-			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints+100)), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
+			msg:            NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxUnstakeBasisPoints+100)), common.BNBAsset, GetRandomNodeAccount(NodeActive).NodeAddress),
 			expectedResult: CodeUnstakeFailValidation,
 		},
 	}
@@ -223,7 +223,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 	for _, tc := range testCases {
 		ctx, _ := setupKeeperForTest(c)
 		unstakeHandler := NewUnstakeHandler(tc.k, NewVersionedTxOutStoreDummy())
-		msgUnstake := NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxWithdrawBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
+		msgUnstake := NewMsgSetUnStake(GetRandomTx(), GetRandomBNBAddress(), sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
 		c.Assert(unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor).Code, Equals, tc.expectedResult, Commentf(tc.name))
 	}
 }

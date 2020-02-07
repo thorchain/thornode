@@ -43,7 +43,7 @@ const (
 	CodePoolStakerNotExist    sdk.CodeType = 133
 	CodeStakerPoolNotExist    sdk.CodeType = 134
 	CodeNoStakeUnitLeft       sdk.CodeType = 135
-	CodeWithdrawWithin24Hours sdk.CodeType = 136
+	CodeUnstakeWithin24Hours  sdk.CodeType = 136
 	CodeUnstakeFail           sdk.CodeType = 137
 	CodeEmptyChain            sdk.CodeType = 138
 )
@@ -213,7 +213,7 @@ func getMsgSwapFromMemo(memo SwapMemo, tx ObservedTx, signer sdk.AccAddress) (sd
 }
 
 func getMsgUnstakeFromMemo(memo UnstakeMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
-	withdrawAmount := sdk.NewUint(MaxWithdrawBasisPoints)
+	withdrawAmount := sdk.NewUint(MaxUnstakeBasisPoints)
 	if len(memo.GetAmount()) > 0 {
 		withdrawAmount = sdk.NewUintFromString(memo.GetAmount())
 	}

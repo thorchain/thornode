@@ -6,26 +6,26 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
-// MaxWithdrawBasisPoints
-const MaxWithdrawBasisPoints = 10_000
+// MaxUnstakeBasisPoints
+const MaxUnstakeBasisPoints = 10_000
 
 // MsgSetUnStake is used to withdraw
 type MsgSetUnStake struct {
-	Tx                  common.Tx      `json:"tx"`
-	RuneAddress         common.Address `json:"rune_address"`          // it should be the rune address
-	WithdrawBasisPoints sdk.Uint       `json:"withdraw_basis_points"` // withdraw basis points
-	Asset               common.Asset   `json:"asset"`                 // asset asset asset
-	Signer              sdk.AccAddress `json:"signer"`
+	Tx                 common.Tx      `json:"tx"`
+	RuneAddress        common.Address `json:"rune_address"`          // it should be the rune address
+	UnstakeBasisPoints sdk.Uint       `json:"withdraw_basis_points"` // withdraw basis points
+	Asset              common.Asset   `json:"asset"`                 // asset asset asset
+	Signer             sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgSetUnStake is a constructor function for MsgSetPoolData
 func NewMsgSetUnStake(tx common.Tx, runeAddress common.Address, withdrawBasisPoints sdk.Uint, asset common.Asset, signer sdk.AccAddress) MsgSetUnStake {
 	return MsgSetUnStake{
-		Tx:                  tx,
-		RuneAddress:         runeAddress,
-		WithdrawBasisPoints: withdrawBasisPoints,
-		Asset:               asset,
-		Signer:              signer,
+		Tx:                 tx,
+		RuneAddress:        runeAddress,
+		UnstakeBasisPoints: withdrawBasisPoints,
+		Asset:              asset,
+		Signer:             signer,
 	}
 }
 
@@ -52,11 +52,11 @@ func (msg MsgSetUnStake) ValidateBasic() sdk.Error {
 	if !msg.RuneAddress.IsChain(common.BNBChain) {
 		return sdk.ErrUnknownRequest("Address must be a BNB address")
 	}
-	if msg.WithdrawBasisPoints.IsZero() {
-		return sdk.ErrUnknownRequest("WithdrawBasicPoints can't be zero")
+	if msg.UnstakeBasisPoints.IsZero() {
+		return sdk.ErrUnknownRequest("UnstakeBasicPoints can't be zero")
 	}
-	if msg.WithdrawBasisPoints.GT(sdk.ZeroUint()) && msg.WithdrawBasisPoints.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
-		return sdk.ErrUnknownRequest("WithdrawBasisPoints is larger than maximum withdraw basis points")
+	if msg.UnstakeBasisPoints.GT(sdk.ZeroUint()) && msg.UnstakeBasisPoints.GT(sdk.NewUint(MaxUnstakeBasisPoints)) {
+		return sdk.ErrUnknownRequest("UnstakeBasisPoints is larger than maximum withdraw basis points")
 	}
 	return nil
 }

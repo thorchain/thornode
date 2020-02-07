@@ -290,7 +290,7 @@ func ParseMemo(memo string) (Memo, error) {
 			if err != nil {
 				return noMemo, err
 			}
-			if !wa.GT(sdk.ZeroUint()) || wa.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
+			if !wa.GT(sdk.ZeroUint()) || wa.GT(sdk.NewUint(MaxUnstakeBasisPoints)) {
 				return noMemo, fmt.Errorf("withdraw amount :%s is invalid", withdrawAmount)
 			}
 		}

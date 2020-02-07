@@ -523,9 +523,9 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 	// send them, its only a very small portion that is not refunded.
 	var basisPoints int64
 	if nth > 10 {
-		basisPoints = MaxWithdrawBasisPoints
+		basisPoints = MaxUnstakeBasisPoints
 	} else {
-		basisPoints = nth * (MaxWithdrawBasisPoints / 10)
+		basisPoints = nth * (MaxUnstakeBasisPoints / 10)
 	}
 
 	// go through all the pooles
