@@ -94,6 +94,19 @@ func (vm *validatorMgrV1) BeginBlock(ctx sdk.Context, constAccessor constants.Co
 		} else {
 			ctx.Logger().Info("Checking for node account rotation...")
 		}
+
+		// don't churn if we have retiring asgard vaults that still have funds
+		retiringVaults, err := vm.k.GetAsgardVaultsByStatus(ctx, RetiringVault)
+		if err != nil {
+			return err
+		}
+		for _, vault := range retiringVaults {
+			if vault.HasFunds() {
+				ctx.Logger().Info("Skipping rotation due to retiring vaults still have funds.")
+				return nil
+			}
+		}
+
 		next, ok, err := vm.nextVaultNodeAccounts(ctx, int(desireValidatorSet), constAccessor)
 		if err != nil {
 			return err
