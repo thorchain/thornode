@@ -67,11 +67,11 @@ describe "API Tests" do
 
     it "should be able to stake" do
 
-      tx = makeTx(memo: "stake:BNB.TCAN-014", coins: coins, sender: sender)
+      tx = makeTx(memo: "stake:TCAN-014", coins: coins, sender: sender)
       resp = processTx(tx)
       expect(resp.code).to eq("200"), resp.body.inspect
 
-      resp = get("/pool/BNB.TCAN-014/stakers")
+      resp = get("/pool/TCAN-014/stakers")
       expect(resp.code).to eq("200"), resp.body.inspect
       expect(resp.body['stakers'].length).to eq(1), resp.body['stakers'].inspect
       expect(resp.body['stakers'][0]['units']).to eq("1342175000"), resp.body['stakers'][0].inspect
@@ -167,12 +167,13 @@ describe "API Tests" do
           for idx in 0 ...arr['tx_array'].size
             # THORNode have found the block height of our last swap
             newTxId = txid()
+            coin = arr['tx_array'][idx]['coin']
             coins = [{
-              'asset': "#{arr['tx_array'][idx]['coin']['asset']['chain']}.#{arr['tx_array'][idx]['coin']['asset']['symbol']}",
-               'amount': arr['tx_array'][idx]['coin']['amount'],
-                }]
+              'asset': coin['asset'],
+              'amount': coin['amount'],
+            }]
             toAddr = arr['tx_array'][idx]['to']
-            tx = makeTx(memo: arr['tx_array'][idx]['memo'], hash:newTxId,coins:coins , sender:toAddr, outbound:true)
+            tx = makeTx(memo: arr['tx_array'][idx]['memo'], hash:newTxId, coins:coins , sender:toAddr, outbound:true)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
           end
