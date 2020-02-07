@@ -51,6 +51,11 @@ type Binance struct {
 	blockScanner       *BinanceBlockScanner
 }
 
+type BinanceMetadata struct {
+	AccountNumber int64
+	SeqNumber     int64
+}
+
 // NewBinance create new instance of binance client
 func NewBinance(thorKeys *thorclient.Keys, rpcHost string, keySignCfg config.TSSConfiguration, thorchainBridge *thorclient.ThorchainBridge) (*Binance, error) {
 	if len(rpcHost) == 0 {
@@ -288,6 +293,11 @@ func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
 
 func (b *Binance) GetGasFee(count uint64) common.Gas {
 	return common.GetBNBGasFee(count)
+}
+
+func (b *Binance) ValidateMetadata(inter interface{}) bool {
+	meta := inter.(BinanceMetadata)
+	return meta.AccountNumber == b.accountNumber && meta.SeqNumber == b.seqNumber
 }
 
 // SignTx sign the the given TxArrayItem

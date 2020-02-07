@@ -9,8 +9,9 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
-	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
+	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	ttypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
 )
@@ -20,6 +21,57 @@ func TestPackage(t *testing.T) { TestingT(t) }
 type SignSuite struct{}
 
 var _ = Suite(&SignSuite{})
+
+type MockCheckTransactionChain struct {
+	chainclients.DummyChain
+	validateMetaData bool
+}
+
+func (m *MockCheckTransactionChain) ValidateMetadata(_ interface{}) bool {
+	return m.validateMetaData
+}
+
+func (s *SignSuite) TestCheckTxn(c *C) {
+	storage, err := NewSignerStore("")
+	c.Assert(err, IsNil)
+
+	mockChain := &MockCheckTransactionChain{
+		validateMetaData: true,
+	}
+	chain, err := common.NewChain("mock")
+	c.Assert(err, IsNil)
+
+	chains := make(map[common.Chain]chainclients.ChainClient)
+	chains[chain] = mockChain
+
+	signer := &Signer{
+		chains:  chains,
+		storage: storage,
+	}
+
+	status, err := signer.CheckTransaction("", "bad chain", nil)
+	c.Assert(err, NotNil)
+	c.Check(status, Equals, TxUnknown)
+
+	status, err = signer.CheckTransaction("", chain, nil)
+	c.Assert(err, IsNil)
+	c.Check(status, Equals, TxUnavailable)
+
+	tx := NewTxOutStoreItem(12, ttypes.TxOutItem{Memo: "foo"})
+	c.Assert(storage.Set(tx), IsNil)
+
+	status, err = signer.CheckTransaction(tx.Key(), chain, nil)
+	c.Assert(err, IsNil)
+	c.Check(status, Equals, TxAvailable)
+
+	spent := NewTxOutStoreItem(100, ttypes.TxOutItem{Memo: "spent"})
+	spent.Status = TxSpent
+	c.Assert(storage.Set(spent), IsNil)
+
+	status, err = signer.CheckTransaction(spent.Key(), chain, nil)
+	c.Assert(err, IsNil)
+	c.Check(status, Equals, TxSpent)
+}
 
 type MockChainClient struct {
 	baseAccount types.BaseAccount
@@ -45,6 +97,10 @@ func (b *MockChainClient) GetChain() common.Chain {
 	return common.BNBChain
 }
 
+func (b *MockChainClient) ValidateMetadata(inter interface{}) bool {
+	return true
+}
+
 func (b *MockChainClient) BroadcastTx(tx []byte) error {
 	return nil
 }
@@ -59,7 +115,7 @@ func (b *MockChainClient) GetAccount(addr types.AccAddress) (types.BaseAccount, 
 
 func (b *MockChainClient) GetPubKey() crypto.PubKey {
 	return nil
-}	
+}
 
 func (b *MockChainClient) Start() {}
 
