@@ -152,49 +152,7 @@ func (HandlerSuite) TestIsSignedByActiveNodeAccounts(c *C) {
 	c.Check(isSignedByActiveNodeAccounts(ctx, k, []sdk.AccAddress{nodeAccount1.NodeAddress}), Equals, false)
 }
 
-func (HandlerSuite) TestHandleTxInCreateMemo(c *C) {
-	w := getHandlerTestWrapper(c, 1, true, false)
-	vault := GetRandomVault()
-	w.keeper.SetVault(w.ctx, vault)
-	addr, err := vault.PubKey.GetAddress(common.BNBChain)
-	c.Assert(err, IsNil)
-
-	txIn := types.NewObservedTx(
-		common.Tx{
-			ID:          GetRandomTxHash(),
-			Chain:       common.BNBChain,
-			Coins:       common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One))},
-			Memo:        "create:BNB",
-			FromAddress: GetRandomBNBAddress(),
-			ToAddress:   addr,
-			Gas:         common.BNBGasFeeSingleton,
-		},
-		1024,
-		vault.PubKey,
-	)
-
-	msg := types.NewMsgObservedTxIn(
-		ObservedTxs{
-			txIn,
-		},
-		w.activeNodeAccount.NodeAddress,
-	)
-
-	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
-	handler := NewHandler(w.keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
-	result := handler(w.ctx, msg)
-	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s\n", result.Log))
-
-	pool, err := w.keeper.GetPool(w.ctx, common.BNBAsset)
-	c.Assert(err, IsNil)
-	c.Assert(pool.Empty(), Equals, false)
-	c.Assert(pool.Status, Equals, PoolEnabled)
-	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
-	c.Assert(pool.BalanceRune.Uint64(), Equals, uint64(0))
-	c.Assert(pool.BalanceAsset.Uint64(), Equals, uint64(0))
-}
-
-func (HandlerSuite) TestHandleTxInWithdrawMemo(c *C) {
+func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
 	vault := GetRandomVault()
 	w.keeper.SetVault(w.ctx, vault)
