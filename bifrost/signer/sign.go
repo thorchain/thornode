@@ -35,7 +35,7 @@ type Signer struct {
 	stopChan              chan struct{}
 	thorchainBlockScanner *ThorchainBlockScan
 	chains                map[common.Chain]chainclients.ChainClient
-	storage               *SignerStore
+	storage               SignerStorage
 	m                     *metrics.Metrics
 	errCounter            *prometheus.CounterVec
 	tssKeygen             *tss.KeyGen
@@ -99,13 +99,42 @@ func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.Thorc
 	}, nil
 }
 
-func (s *Signer) getChain(chainName common.Chain) (chainclients.ChainClient, error) {
-	chain, ok := s.chains[chainName]
+func (s *Signer) getChain(chainID common.Chain) (chainclients.ChainClient, error) {
+	chain, ok := s.chains[chainID]
 	if !ok {
-		s.logger.Debug().Str("chain", chainName.String()).Msg("is not supported yet")
+		s.logger.Debug().Str("chain", chainID.String()).Msg("is not supported yet")
 		return nil, errors.New("Not supported")
 	}
 	return chain, nil
+}
+
+func (s *Signer) CheckTransaction(key string, chainID common.Chain, metadata interface{}) (TxStatus, error) {
+	chain, err := s.getChain(chainID)
+	if err != nil {
+		return TxUnknown, err
+	}
+
+	// if we don't have the transaction yet, say its unavailable
+	if !s.storage.Has(key) {
+		return TxUnavailable, nil
+	}
+
+	tx, err := s.storage.Get(key)
+	if err != nil {
+		return TxUnknown, err
+	}
+
+	// if the tx isn't available, return immediately
+	if tx.Status != TxAvailable {
+		return tx.Status, nil
+	}
+
+	// validate metadata
+	if !chain.ValidateMetadata(metadata) {
+		return TxUnavailable, nil
+	}
+
+	return TxAvailable, nil
 }
 
 func (s *Signer) Start() error {
@@ -138,13 +167,19 @@ func (s *Signer) signTransactions() {
 		sleep()
 
 		for _, item := range s.storage.List() {
+			if item.Status == TxSpent { // don't rebroadcast spent transactions
+				continue
+			}
+
 			if err := s.signAndBroadcast(item); err != nil {
 				s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
 				continue
 			}
+
 			// We have a successful broadcast! Remove the item from our store
-			if err := s.storage.Remove(item); err != nil {
-				s.logger.Error().Err(err).Msg("fail to remove tx out store item")
+			item.Status = TxSpent
+			if err := s.storage.Set(item); err != nil {
+				s.logger.Error().Err(err).Msg("fail to update tx out store item")
 			}
 		}
 	}
