@@ -106,6 +106,7 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 		startBlockHeight += 256
 		c.Assert(k.DeleteVault(ctx, vault.PubKey), IsNil)
 	}
+
 	// trigger ragnarok
 	ctx = ctx.WithBlockHeight(startBlockHeight)
 	c.Assert(vMgr.BeginBlock(ctx, constAccessor), IsNil)
@@ -119,5 +120,5 @@ func (vts *ValidatorManagerTestSuite) TestRagnarokForChaosnet(c *C) {
 	c.Assert(updates, IsNil)
 	ragnarokHeight, err := k.GetRagnarokBlockHeight(ctx)
 	c.Assert(err, IsNil)
-	c.Assert(ragnarokHeight == startBlockHeight, Equals, true)
+	c.Assert(ragnarokHeight == startBlockHeight, Equals, true, Commentf("%d == %d", ragnarokHeight, startBlockHeight))
 }
