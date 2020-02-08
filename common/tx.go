@@ -64,7 +64,7 @@ func GetRagnarokTx(chain Chain) Tx {
 		ToAddress:   RagnarokAddr,
 		Coins: Coins{
 			// used for ragnarok, so doesn't really matter
-			NewCoin(RuneAsset(), sdk.OneUint()),
+			NewCoin(BNBAsset, sdk.OneUint()),
 		},
 		Gas: Gas{
 			// used for ragnarok, so doesn't really matter
