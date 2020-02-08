@@ -54,6 +54,22 @@ func (h SetNodeKeysHandler) validateV1(ctx sdk.Context, msg MsgSetNodeKeys) erro
 		ctx.Logger().Error("unauthorized account", "address", msg.Signer.String())
 		return notAuthorized
 	}
+
+	// You should not able to update node address when the node is in active mode
+	// for example if they update observer address
+	if nodeAccount.Status == NodeActive {
+		ctx.Logger().Error(fmt.Sprintf("node %s is active, so it can't update itself", nodeAccount.NodeAddress))
+		return fmt.Errorf("node is active can't update")
+	}
+	if nodeAccount.Status == NodeDisabled {
+		err := fmt.Errorf("node %s is disabled, so it can't update itself", nodeAccount.NodeAddress)
+		ctx.Logger().Error(err.Error())
+		return err
+	}
+	if err := h.keeper.EnsureNodeKeysUnique(ctx, msg.ValidatorConsPubKey, msg.PubKeySetSet); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -73,19 +89,6 @@ func (h SetNodeKeysHandler) handleV1(ctx sdk.Context, msg MsgSetNodeKeys, versio
 	if err != nil {
 		ctx.Logger().Error("fail to get node account", "error", err, "address", msg.Signer.String())
 		return sdk.ErrUnauthorized(fmt.Sprintf("%s is not authorized", msg.Signer)).Result()
-	}
-	// You should not able to update node address when the node is in active mode
-	// for example if they update observer address
-	if nodeAccount.Status == NodeActive {
-		ctx.Logger().Error(fmt.Sprintf("node %s is active, so it can't update itself", nodeAccount.NodeAddress))
-		return sdk.ErrUnknownRequest("node is active can't update").Result()
-	}
-	if nodeAccount.Status == NodeDisabled {
-		ctx.Logger().Error(fmt.Sprintf("node %s is disabled, so it can't update itself", nodeAccount.NodeAddress))
-		return sdk.ErrUnknownRequest("node is disabled can't update").Result()
-	}
-	if err := h.keeper.EnsureNodeKeysUnique(ctx, msg.ValidatorConsPubKey, msg.PubKeySetSet); err != nil {
-		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
 	// Here make sure THORNode don't change the node account's bond

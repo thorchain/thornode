@@ -37,7 +37,7 @@ func (h StakeHandler) validateV1(ctx sdk.Context, msg MsgSetStakeData, constAcce
 		return sdk.ErrUnauthorized("msg is not signed by an active node account")
 	}
 
-	ensureStakeLargerThanBond := constAccessor.GetBoolValue(constants.StrictBondStakeRatio)
+	ensureStakeNoLargerThanBond := constAccessor.GetBoolValue(constants.StrictBondStakeRatio)
 	// the following  only applicable for chaosnet
 	totalStakeRUNE, err := h.getTotalStakeRUNE(ctx)
 	if err != nil {
@@ -54,7 +54,7 @@ func (h StakeHandler) validateV1(ctx sdk.Context, msg MsgSetStakeData, constAcce
 		}
 	}
 
-	if !ensureStakeLargerThanBond {
+	if !ensureStakeNoLargerThanBond {
 		return nil
 	}
 	totalBondRune, err := h.getTotalBond(ctx)
@@ -185,6 +185,10 @@ func (h StakeHandler) getTotalStakeRUNE(ctx sdk.Context) (sdk.Uint, error) {
 	}
 	total := sdk.ZeroUint()
 	for _, p := range pools {
+		// ignore suspended pools
+		if p.Status == PoolSuspended {
+			continue
+		}
 		total = total.Add(p.BalanceRune)
 	}
 	return total, nil
