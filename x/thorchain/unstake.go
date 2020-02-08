@@ -19,9 +19,9 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 	if msg.Asset.IsEmpty() {
 		return errors.New("empty asset")
 	}
-	withdrawBasisPoints := msg.WithdrawBasisPoints
-	if withdrawBasisPoints.GT(sdk.ZeroUint()) && withdrawBasisPoints.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
-		return fmt.Errorf("withdraw basis points %s is invalid", msg.WithdrawBasisPoints)
+	withdrawBasisPoints := msg.UnstakeBasisPoints
+	if withdrawBasisPoints.GT(sdk.ZeroUint()) && withdrawBasisPoints.GT(sdk.NewUint(MaxUnstakeBasisPoints)) {
+		return fmt.Errorf("withdraw basis points %s is invalid", msg.UnstakeBasisPoints)
 	}
 	if !keeper.PoolExist(ctx, msg.Asset) {
 		// pool doesn't exist
@@ -69,13 +69,13 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	if !msg.Asset.Chain.Equals(common.BNBChain) {
 		height := ctx.BlockHeight()
 		if height < (stakerUnit.Height + 17280) {
-			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeWithdrawWithin24Hours, "you cannot unstake for 24 hours after staking for this blockchain")
+			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeWithin24Hours, "you cannot unstake for 24 hours after staking for this blockchain")
 		}
 	}
 
 	ctx.Logger().Info("pool before unstake", "pool unit", poolUnits, "balance RUNE", poolRune, "balance asset", poolAsset)
 	ctx.Logger().Info("staker before withdraw", "staker unit", fStakerUnit)
-	withdrawRune, withDrawAsset, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolAsset, fStakerUnit, msg.WithdrawBasisPoints)
+	withdrawRune, withDrawAsset, unitAfter, err := calculateUnstake(poolUnits, poolRune, poolAsset, fStakerUnit, msg.UnstakeBasisPoints)
 	if err != nil {
 		ctx.Logger().Error("fail to unstake", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFail, err.Error())
@@ -135,7 +135,7 @@ func calculateUnstake(poolUnits, poolRune, poolAsset, stakerUnits, withdrawBasis
 	if stakerUnits.IsZero() {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), errors.New("staker unit can't be zero")
 	}
-	if withdrawBasisPoints.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
+	if withdrawBasisPoints.GT(sdk.NewUint(MaxUnstakeBasisPoints)) {
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), fmt.Errorf("withdraw basis point %s is not valid", withdrawBasisPoints.String())
 	}
 

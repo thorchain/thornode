@@ -30,7 +30,7 @@ func (h UnstakeHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version, 
 	if !ok {
 		return errInvalidMessage.Result()
 	}
-	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.RuneAddress, msg.WithdrawBasisPoints))
+	ctx.Logger().Info(fmt.Sprintf("receive MsgSetUnstake from : %s(%s) unstake (%s)", msg, msg.RuneAddress, msg.UnstakeBasisPoints))
 
 	if err := h.validate(ctx, msg, version); err != nil {
 		ctx.Logger().Error("msg ack failed validation", "error", err)
@@ -67,7 +67,7 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 			"request tx hash", msg.Tx.ID,
 			"rune address", msg.RuneAddress,
 			"asset", msg.Asset,
-			"withdraw basis points", msg.WithdrawBasisPoints)
+			"withdraw basis points", msg.UnstakeBasisPoints)
 		return sdk.ErrUnauthorized("not authorized")
 	}
 
@@ -112,7 +112,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 	unstakeEvt := NewEventUnstake(
 		msg.Asset,
 		units,
-		int64(msg.WithdrawBasisPoints.Uint64()),
+		int64(msg.UnstakeBasisPoints.Uint64()),
 		sdk.ZeroDec(), // TODO: What is Asymmetry, how to calculate it?
 	)
 	unstakeBytes, err := json.Marshal(unstakeEvt)

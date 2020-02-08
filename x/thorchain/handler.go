@@ -43,7 +43,7 @@ const (
 	CodePoolStakerNotExist    sdk.CodeType = 133
 	CodeStakerPoolNotExist    sdk.CodeType = 134
 	CodeNoStakeUnitLeft       sdk.CodeType = 135
-	CodeWithdrawWithin24Hours sdk.CodeType = 136
+	CodeUnstakeWithin24Hours  sdk.CodeType = 136
 	CodeUnstakeFail           sdk.CodeType = 137
 	CodeEmptyChain            sdk.CodeType = 138
 )
@@ -126,7 +126,7 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid stake memo:%s", err.Error())
 		}
 
-	case WithdrawMemo:
+	case UnstakeMemo:
 		newMsg, err = getMsgUnstakeFromMemo(m, tx, signer)
 		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid withdraw memo:%s", err.Error())
@@ -212,8 +212,8 @@ func getMsgSwapFromMemo(memo SwapMemo, tx ObservedTx, signer sdk.AccAddress) (sd
 	return NewMsgSwap(tx.Tx, memo.GetAsset(), memo.Destination, memo.SlipLimit, signer), nil
 }
 
-func getMsgUnstakeFromMemo(memo WithdrawMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
-	withdrawAmount := sdk.NewUint(MaxWithdrawBasisPoints)
+func getMsgUnstakeFromMemo(memo UnstakeMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
+	withdrawAmount := sdk.NewUint(MaxUnstakeBasisPoints)
 	if len(memo.GetAmount()) > 0 {
 		withdrawAmount = sdk.NewUintFromString(memo.GetAmount())
 	}

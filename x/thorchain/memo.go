@@ -20,9 +20,8 @@ type (
 
 const (
 	txUnknown TxType = iota
-	txCreate
 	txStake
-	txWithdraw
+	txUnstake
 	txSwap
 	txOutbound
 	txAdd
@@ -37,15 +36,13 @@ const (
 )
 
 var stringToTxTypeMap = map[string]TxType{
-	"create":     txCreate,
-	"c":          txCreate,
-	"#":          txCreate,
 	"stake":      txStake,
 	"st":         txStake,
 	"+":          txStake,
-	"withdraw":   txWithdraw,
-	"wd":         txWithdraw,
-	"-":          txWithdraw,
+	"withdraw":   txUnstake,
+	"unstake":    txUnstake,
+	"wd":         txUnstake,
+	"-":          txUnstake,
 	"swap":       txSwap,
 	"s":          txSwap,
 	"=":          txSwap,
@@ -66,9 +63,8 @@ var stringToTxTypeMap = map[string]TxType{
 }
 
 var txToStringMap = map[TxType]string{
-	txCreate:          "create",
 	txStake:           "stake",
-	txWithdraw:        "withdraw",
+	txUnstake:         "unstake",
 	txSwap:            "swap",
 	txOutbound:        "outbound",
 	txRefund:          "refund",
@@ -142,7 +138,7 @@ type StakeMemo struct {
 	Address     common.Address
 }
 
-type WithdrawMemo struct {
+type UnstakeMemo struct {
 	MemoBase
 	Amount string
 }
@@ -252,11 +248,6 @@ func ParseMemo(memo string) (Memo, error) {
 	}
 
 	switch tx {
-	case txCreate:
-		return CreateMemo{
-			MemoBase: MemoBase{TxType: txCreate, Asset: asset},
-		}, nil
-
 	case txGas:
 		return GasMemo{
 			MemoBase: MemoBase{TxType: txGas},
@@ -288,7 +279,7 @@ func ParseMemo(memo string) (Memo, error) {
 			Address:  addr,
 		}, nil
 
-	case txWithdraw:
+	case txUnstake:
 		if len(parts) < 2 {
 			return noMemo, fmt.Errorf("invalid unstake memo")
 		}
@@ -299,12 +290,12 @@ func ParseMemo(memo string) (Memo, error) {
 			if err != nil {
 				return noMemo, err
 			}
-			if !wa.GT(sdk.ZeroUint()) || wa.GT(sdk.NewUint(MaxWithdrawBasisPoints)) {
+			if !wa.GT(sdk.ZeroUint()) || wa.GT(sdk.NewUint(MaxUnstakeBasisPoints)) {
 				return noMemo, fmt.Errorf("withdraw amount :%s is invalid", withdrawAmount)
 			}
 		}
-		return WithdrawMemo{
-			MemoBase: MemoBase{TxType: txWithdraw, Asset: asset},
+		return UnstakeMemo{
+			MemoBase: MemoBase{TxType: txUnstake, Asset: asset},
 			Amount:   withdrawAmount,
 		}, err
 
@@ -406,7 +397,7 @@ func (m MemoBase) GetNodeAddress() sdk.AccAddress { return sdk.AccAddress{} }
 func (m MemoBase) GetBlockHeight() int64          { return 0 }
 
 // Transaction Specific Functions
-func (m WithdrawMemo) GetAmount() string           { return m.Amount }
+func (m UnstakeMemo) GetAmount() string            { return m.Amount }
 func (m SwapMemo) GetDestination() common.Address  { return m.Destination }
 func (m SwapMemo) GetSlipLimit() sdk.Uint          { return m.SlipLimit }
 func (m AdminMemo) GetKey() string                 { return m.Key }

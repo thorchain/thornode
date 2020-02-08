@@ -37,49 +37,9 @@ describe "API Tests" do
       expect(resp.body).to eq([]), "Are you working from a clean blockchain? Did you wait until 1 block was create? \n(#{resp.code}: #{resp.body})"
     end
 
-    it "create a pool for bnb" do
-      tx = makeTx(memo: "create:BNB")
-      resp = processTx([tx])
-      expect(resp.code).to eq("200"), resp.body.inspect
+  end
 
-      resp = get("/pools")
-      expect(resp.body.length).to eq(1), resp.body.inspect
-    end
-
-    it "create a pool for TCAN-014" do
-      tx = makeTx(memo: "create:TCAN-014")
-      resp = processTx([tx])
-      expect(resp.code).to eq("200"), resp.body.inspect
-
-      resp = get("/pools")
-      expect(resp.body.length).to eq(2), resp.body.inspect
-    end
-
-    it "pool should be enabled" do
-      resp = get("/pool/TCAN-014")
-      expect(resp.code).to eq("200")
-      expect(resp.body['status']).to eq("Enabled"), resp.body.inspect
-
-      resp = get("/pool/BNB.BNB")
-      expect(resp.code).to eq("200")
-      expect(resp.body['status']).to eq("Enabled"), resp.body.inspect
-    end
-
-    it "should not create a duplicate pool" do
-      tx = makeTx(memo: "create:TCAN-014")
-      resp = processTx(tx)
-      expect(resp.code).to eq("200")
-
-      resp = get("/pools")
-      # should have one pool added via genesis
-      expect(resp.body.length).to eq(2), resp.body.inspect
-    end
-
-    it "should show up in listing of pools" do
-      resp = get("/pools")
-      expect(resp.body[1]['asset']['symbol']).to eq("TCAN-014"), resp.body.inspect
-    end
-
+  context "Add gas" do
     it "adds gas" do
       coins = [
         {'asset': {'chain': 'BNB', 'symbol': 'BNB', 'ticker': 'BNB'}, "amount": "20000000"},
@@ -118,8 +78,8 @@ describe "API Tests" do
     end
 
     it "check for stake event" do
-      resp = get("/events/3")
-      expect(resp.body[0]['id']).to eq("3"), resp.body[0].inspect
+      resp = get("/events/2")
+      expect(resp.body[0]['id']).to eq("2"), resp.body[0].inspect
       expect(resp.body[0]['type']).to eq("stake"), resp.body[0].inspect
     end
 
@@ -134,9 +94,9 @@ describe "API Tests" do
     end
 
     it "check for unstake event trigger pool event" do # check unstaking last staker creates pool event
-      resp = get("/events/4")
+      resp = get("/events/3")
       expect(resp.body.count).to eq(1), resp.body.inspect
-      expect(resp.body[0]['id']).to eq("4"), resp.body[0].inspect
+      expect(resp.body[0]['id']).to eq("3"), resp.body[0].inspect
       expect(resp.body[0]['type']).to eq("pool"), resp.body[0].inspect
       expect(resp.body[0]['event']['status']).to eq("Bootstrap"), resp.body[0].inspect
     end
@@ -236,7 +196,7 @@ describe "API Tests" do
     end
 
     it "check events are completed" do
-      resp = get("/events/7")
+      resp = get("/events/6")
       expect(resp.body.count).to eq(1), resp.body.inspect
       expect(resp.body[0]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[0].inspect
       expect(resp.body[0]['type']).to eq("swap"), resp.body[0].inspect

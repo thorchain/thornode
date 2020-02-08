@@ -18,7 +18,7 @@ const (
 	EventRefund      = types.Refund
 
 	// Admin config keys
-	MaxWithdrawBasisPoints = types.MaxWithdrawBasisPoints
+	MaxUnstakeBasisPoints = types.MaxUnstakeBasisPoints
 
 	// Vaults
 	AsgardVault    = types.AsgardVault

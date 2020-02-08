@@ -44,7 +44,7 @@ The THORChain facilitates the following transactions, which are made on external
 - **RESERVE**: Anyone can add assets to the Protocol Reserve, which pays out to Nodes and Stakers. 220,447,472 Rune will be funded in this way. 
 
 ### Continuous Liquidity Pools
-The Staking, Withdrawing and Swapping logic is based on the `CLP` Continuous Liquidity Pool algorithm. 
+The Staking, Unstaking and Swapping logic is based on the `CLP` Continuous Liquidity Pool algorithm. 
 
 **Swaps**
 The algorithm for processing assets swaps is given by:
