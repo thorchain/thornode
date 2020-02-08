@@ -82,7 +82,7 @@ gen_bnb_address () {
         BINANCE_PRIVATE_KEY=$(cat /tmp/bnb | grep MASTER_KEY= | awk -F= '{print $NF}')
         echo $BINANCE_PRIVATE_KEY > /root/.bond/private_key.txt
         PUBKEY=$(cat /tmp/bnb | grep MASTER_PUBKEY= | awk -F= '{print $NF}')
-        echo $PUBKEY > ~/root/.bond/pubkey.txt
+        echo $PUBKEY > /root/.bond/pubkey.txt
         MNEMONIC=$(cat /tmp/bnb | grep MASTER_MNEMONIC= | awk -F= '{print $NF}')
         echo $MNEMONIC > /root/.bond/mnemonic.txt
     fi

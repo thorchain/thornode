@@ -87,10 +87,10 @@ smoke-test:thornode:
     - ./scripts/docker_logs.sh
 
 deploy:
-  stage: deploy
+  #stage: deploy
   image: docker:stable
   only:
-    - master
+    - daily-automated-churning
   services:
     - docker:dind
   variables:

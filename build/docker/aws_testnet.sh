@@ -88,6 +88,7 @@ start_the_stack () {
 # CHURN
 ##################
 churn () {
+    echo "starting churning"
     export FAUCET_PASSWORD=$FAUCET_PASSWORD && . ./../../scripts/make-testnet-bond.sh
     #################################################################
     # wait for bond transaction and for node account to be registered
@@ -95,9 +96,12 @@ churn () {
     eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
     PUB_KEY=$(docker exec thor-daemon thorcli keys show thorchain --pubkey)
     VALIDATOR=$(docker exec thor-daemon thord tendermint show-validator)
-    docker exec thor-daemon ash -c \
-        "echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $PUB_KEY $PUB_KEY $VALIDATOR \
-        --node tcp://$PEER:26657 --from $SIGNER_NAME --yes"
+    if [ ! -z "${CI}" ]; then
+        export SIGNER_PASSWD=${CI_SIGNER_PASSWD}
+    fi
+    echo "setting node keys"
+    sleep 60 # wait for thorchain to register the new node account
+    docker exec thor-daemon ash -c "echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $PUB_KEY $PUB_KEY $VALIDATOR --node tcp://$PEER:26657 --from $SIGNER_NAME --yes"
 }
 
 #####################

@@ -43,15 +43,6 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
         # create a binance wallet
         gen_bnb_address
         ADDRESS=$(cat ~/.bond/address.txt)
-
-        # wait for bond transaction and for node account to be registered
-        BOND_FILE=/tmp/bonded
-        while [ ! -f $BOND_KEY ]; do
-            sleep 10
-        done
-        # set node keys
-        echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $(thorcli keys show thorchain --pubkey) $(thorcli keys show thorchain --pubkey) $(thord tendermint show-validator) --node tcp://$PEER:26657 --from $SIGNER_NAME --yes
-
     else
         echo "YOUR NODE ADDRESS: $NODE_ADDRESS . Send your bond with this as your address."
     fi
