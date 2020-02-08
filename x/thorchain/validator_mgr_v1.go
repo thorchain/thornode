@@ -854,7 +854,9 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 	}
 	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
 	if artificialRagnarokBlockHeight > 0 && ctx.BlockHeight() >= artificialRagnarokBlockHeight {
-		// ArtificialRagnarokBlockHeight should only have a positive value on chaosnet , we could even remove this after chaosnet
+		// ArtificialRagnarokBlockHeight should only have a positive value on
+		// chaosnet , we could even remove this after chaosnet
+
 		// mark every node to standby, thus no node will be rotated in.
 		for _, na := range append(standby, ready...) {
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
@@ -929,14 +931,15 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 		return active[i].LeaveHeight > active[j].LeaveHeight
 	})
 
-	// remove a node node account, if one is marked to leave
-	if len(active) > 0 && (active[0].LeaveHeight > 0 || active[0].RequestedToLeave) {
+	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
+	toRemove := findCounToRemove(ctx.BlockHeight(), artificialRagnarokBlockHeight, active)
+	if toRemove > 0 {
 		rotation = true
-		active = active[1:]
+		active = active[toRemove:]
 	}
 
 	// add ready nodes to become active
-	limit := 2 // Max limit of ready nodes to add. TODO: this should be a constant
+	limit := toRemove + 1 // Max limit of ready nodes to churn in
 	for i := 1; i < targetCount-len(active); i++ {
 		if len(ready) >= i {
 			rotation = true
@@ -948,4 +951,52 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 	}
 
 	return active, rotation, nil
+}
+
+// findCounToRemove - find the number of node accounts to remove
+func findCounToRemove(blockHeight, artificalRagnarok int64, active NodeAccounts) (toRemove int) {
+	// count number of node accounts that are a candidate to leaving
+	var candidateCount int
+	for _, na := range active {
+		if na.LeaveHeight > 0 {
+			candidateCount += 1
+			continue
+		}
+		break
+	}
+
+	maxRemove := findMaxAbleToLeave(len(active))
+	if len(active) > 0 {
+		if maxRemove == 0 {
+			// we can't remove any mathematically, but we always leave room for node
+			// accounts requesting to leave
+			if active[0].RequestedToLeave || (artificalRagnarok > 0 && blockHeight >= artificalRagnarok) {
+				toRemove = 1
+			}
+		} else {
+			if candidateCount > maxRemove {
+				toRemove = maxRemove
+			} else {
+				toRemove = candidateCount
+			}
+		}
+	}
+	return
+}
+
+// findMaxAbleToLeave - given number of current active node account, figure out
+// the max number of individuals we can allow to leave in a single churn event
+func findMaxAbleToLeave(count int) int {
+	majority := (count * 2 / 3) + 1 // add an extra 1 to "round up" for security
+	max := count - majority
+
+	// we don't want to loose BFT by accident (only when someone leaves)
+	if count-max < 4 {
+		max = count - 4
+		if max < 0 {
+			max = 0
+		}
+	}
+
+	return max
 }

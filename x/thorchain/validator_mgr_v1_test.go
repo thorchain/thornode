@@ -107,3 +107,64 @@ func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(items, HasLen, 1, Commentf("Len %d", items))
 }
+
+func (vtx *ValidatorMgrV1TestSuite) TestFindCounToRemove(c *C) {
+	// remove one
+	c.Check(findCounToRemove(0, 0, NodeAccounts{
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{},
+		NodeAccount{},
+		NodeAccount{},
+		NodeAccount{},
+	}), Equals, 1)
+
+	// don't remove one
+	c.Check(findCounToRemove(0, 0, NodeAccounts{
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{},
+		NodeAccount{},
+	}), Equals, 0)
+
+	// remove one because of request to leave
+	c.Check(findCounToRemove(0, 0, NodeAccounts{
+		NodeAccount{LeaveHeight: 12, RequestedToLeave: true},
+		NodeAccount{},
+		NodeAccount{},
+		NodeAccount{},
+	}), Equals, 1)
+
+	// don't remove more than 1/3rd of node accounts
+	c.Check(findCounToRemove(0, 0, NodeAccounts{
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+		NodeAccount{LeaveHeight: 12},
+	}), Equals, 3)
+}
+
+func (vts *ValidatorMgrV1TestSuite) TestFindMaxAbleToLeave(c *C) {
+	c.Check(findMaxAbleToLeave(-1), Equals, 0)
+	c.Check(findMaxAbleToLeave(0), Equals, 0)
+	c.Check(findMaxAbleToLeave(1), Equals, 0)
+	c.Check(findMaxAbleToLeave(2), Equals, 0)
+	c.Check(findMaxAbleToLeave(3), Equals, 0)
+	c.Check(findMaxAbleToLeave(4), Equals, 0)
+
+	c.Check(findMaxAbleToLeave(5), Equals, 1)
+	c.Check(findMaxAbleToLeave(6), Equals, 1)
+	c.Check(findMaxAbleToLeave(7), Equals, 2)
+	c.Check(findMaxAbleToLeave(8), Equals, 2)
+	c.Check(findMaxAbleToLeave(9), Equals, 2)
+	c.Check(findMaxAbleToLeave(10), Equals, 3)
+	c.Check(findMaxAbleToLeave(11), Equals, 3)
+	c.Check(findMaxAbleToLeave(12), Equals, 3)
+}
