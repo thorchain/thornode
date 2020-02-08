@@ -30,4 +30,7 @@ reset-testnet-genesis-churn: stop clean run-testnet-genesis-churn
 run-testnet-validator:
 	TAG=${TAG} NET=testnet docker-compose -p thornode -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/validator.yml -f ${path}../components/validator.${uname_S}.yml up --force-recreate --remove-orphans -d
 
+run-testnet-validator-ci:
+	TAG=${TAG} NET=testnet docker-compose -p thornode -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.ci.yml -f ${path}../components/validator.yml -f ${path}../components/validator.Darwin.yml up --force-recreate --remove-orphans -d
+
 reset-testnet-validator: stop clean run-testnet-validator
