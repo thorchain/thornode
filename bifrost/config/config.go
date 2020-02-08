@@ -48,7 +48,7 @@ type BackOff struct {
 
 // ChainConfiguration configuration
 type ChainConfiguration struct {
-	Name         common.Chain `json:"name" mapstructure:"name"`
+	ChainID      common.Chain `json:"chain_id" mapstructure:"chain_id"`
 	ChainHost    string       `json:"chain_host" mapstructure:"chain_host"`
 	ChainNetwork string       `json:"chain_network" mapstructure:"chain_network"`
 	UserName     string       `json:"username" mapstructure:"username"`
@@ -79,16 +79,16 @@ type BlockScannerConfiguration struct {
 	BlockHeightDiscoverBackoff time.Duration `json:"block_height_discover_back_off" mapstructure:"block_height_discover_back_off"`
 	BlockRetryInterval         time.Duration `json:"block_retry_interval" mapstructure:"block_retry_interval"`
 	EnforceBlockHeight         bool          `json:"enforce_block_height" mapstructure:"enforce_block_height"`
-	ChainID                    string        `json:"chain_id" mapstructure:"chain_id"`
+	ChainID                    common.Chain  `json:"chain_id" mapstructure:"chain_id"`
 }
 
 // ClientConfiguration
 type ClientConfiguration struct {
-	ChainID         string `json:"chain_id" mapstructure:"chain_id" `
-	ChainHost       string `json:"chain_host" mapstructure:"chain_host"`
-	ChainHomeFolder string `json:"chain_home_folder" mapstructure:"chain_home_folder"`
-	SignerName      string `json:"signer_name" mapstructure:"signer_name"`
-	SignerPasswd    string `json:"signer_passwd" mapstructure:"signer_passwd"`
+	ChainID         common.Chain `json:"chain_id" mapstructure:"chain_id" `
+	ChainHost       string       `json:"chain_host" mapstructure:"chain_host"`
+	ChainHomeFolder string       `json:"chain_home_folder" mapstructure:"chain_home_folder"`
+	SignerName      string       `json:"signer_name" mapstructure:"signer_name"`
+	SignerPasswd    string
 	BackOff         BackOff
 }
 
@@ -115,10 +115,15 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 		return nil, errors.Wrap(err, "fail to unmarshal")
 	}
 
-	// Set global backoff settings to all chains config. Maybe is pointless and inefficient as we have it in global config
+	if err := cfg.Observer.BlockScanner.ChainID.Validate(); err != nil {
+		return nil, err
+	}
+
 	for i, chain := range cfg.Chains {
+		if err := chain.ChainID.Validate(); err != nil {
+			return nil, err
+		}
 		cfg.Chains[i].BackOff = cfg.BackOff
-		cfg.Metrics.Chains = append(cfg.Metrics.Chains, chain.Name)
 	}
 
 	return &cfg, nil
@@ -128,7 +133,7 @@ func applyDefaultConfig() {
 	viper.SetDefault("metrics.listen_port", "9000")
 	viper.SetDefault("metrics.read_timeout", "30s")
 	viper.SetDefault("metrics.write_timeout", "30s")
-	viper.SetDefault("metrics.chains", []string{"BNB"})
+	viper.SetDefault("metrics.chains", common.Chains{common.BNBChain}	)
 	viper.SetDefault("thorchain.chain_id", "thorchain")
 	viper.SetDefault("thorchain.chain_host", "localhost:1317")
 	viper.SetDefault("back_off.initial_interval", 500*time.Millisecond)
@@ -155,8 +160,8 @@ func applyDefaultObserverConfig() {
 	viper.SetDefault("observer.observer_db_path", "observer_data")
 	viper.SetDefault("observer.retry_interval", "2s")
 	applyBlockScannerDefault("observer")
-	viper.SetDefault("observer.block_scanner.chain_id", "BNB")
-}
+	viper.SetDefault("observer.block_scanner.chain_id", common.BNBChain)
+}	
 
 func applyDefaultSignerConfig() {
 	viper.SetDefault("signer.signer_db_path", "signer_db")

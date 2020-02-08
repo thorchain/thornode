@@ -25,15 +25,14 @@ echo "{
     \"thorchain\": {
         \"chain_id\": \"$CHAIN_ID\",
         \"chain_host\": \"$CHAIN_API\",
-        \"signer_name\": \"$SIGNER_NAME\",
-        \"signer_passwd\": \"$SIGNER_PASSWD\"
+        \"signer_name\": \"$SIGNER_NAME\"
     },
     \"metrics\": {
         \"enabled\": true
     },
     \"chains\": [
       {
-        \"name\": \"BNB\",
+        \"chain_id\": \"BNB\",
         \"rpc_host\": \"$BINANCE_HOST\"
       }
     ],
@@ -67,4 +66,5 @@ echo "{
   }
 }" > /etc/bifrost/config.json
 
+export SIGNER_PASSWD
 exec "$@"

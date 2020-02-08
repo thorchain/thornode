@@ -81,7 +81,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 		MaxHttpRequestRetry:        3,
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
-		ChainID:                    common.BNBChain.String(),
+		ChainID:                    common.BNBChain,
 	}, mss, m)
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)

@@ -251,7 +251,7 @@ func (b *CommonBlockScanner) getBlockUrl() string {
 }
 
 func (b *CommonBlockScanner) unmarshalAndGetBlockHeight(buf []byte) (string, error) {
-	switch common.Chain(b.cfg.ChainID) {
+	switch b.cfg.ChainID {
 	case common.BNBChain:
 		var block btypes.RPCBlock
 		err := json.Unmarshal(buf, &block)
