@@ -38,7 +38,7 @@ func (s *SignSuite) TestCheckTxn(c *C) {
 	mockChain := &MockCheckTransactionChain{
 		validateMetaData: true,
 	}
-	chain, err := common.NewChain("mock")
+	chain, err := common.NewChain("MOCK")
 	c.Assert(err, IsNil)
 
 	chains := make(map[common.Chain]chainclients.ChainClient)

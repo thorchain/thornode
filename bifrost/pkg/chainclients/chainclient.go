@@ -14,7 +14,7 @@ import (
 //
 // SignTx       signs transactions
 // BroadcastTx  broadcast transactions on the chain associated with the client
-// GetChain     get chain name
+// GetChain     get chain id
 // SignTx       sign transaction
 // GetHeight    get chain height
 // GetAddress   gets address for public key pool in chain

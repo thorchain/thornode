@@ -47,7 +47,7 @@ func (b *ThorchainBridge) Broadcast(stdTx authtypes.StdTx, mode types.TxMode) (c
 
 	b.logger.Info().Uint64("account_number", b.accountNumber).Uint64("sequence_number", b.seqNumber).Msg("account info")
 	stdMsg := authtypes.StdSignMsg{
-		ChainID:       b.cfg.ChainID,
+		ChainID:       string(b.cfg.ChainID),
 		AccountNumber: b.accountNumber,
 		Sequence:      b.seqNumber,
 		Fee:           stdTx.Fee,

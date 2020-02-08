@@ -30,7 +30,7 @@ var (
 )
 
 const (
-	serverIdentity = "bifrost"
+	serverIdentity      = "bifrost"
 )
 
 func printVersion() {
@@ -57,7 +57,8 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to load config ")
 	}
-
+ 	cfg.Thorchain.SignerPasswd = os.Getenv("SIGNER_PASSWD")
+ 
 	// metrics
 	m, err := metrics.NewMetrics(cfg.Metrics)
 	if err != nil {
@@ -97,6 +98,7 @@ func main() {
 	}
 
 	chains := chainclients.LoadChains(thorKeys, cfg.Chains, cfg.TSS, thorchainBridge)
+
 	// start observer
 	obs, err := observer.NewObserver(cfg.Observer, thorchainBridge, pubkeyMgr, chains[common.BNBChain], m)
 	if err != nil {
