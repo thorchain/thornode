@@ -45,7 +45,7 @@ type Signer struct {
 
 // NewSigner create a new instance of signer
 func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, pubkeyMgr pubkeymanager.PubKeyValidator, tssCfg config.TSSConfiguration, chains map[common.Chain]chainclients.ChainClient, m *metrics.Metrics) (*Signer, error) {
-	storage, err := NewSignerStore(cfg.SignerDbPath)
+	storage, err := NewSignerStore(cfg.SignerDbPath, thorchainBridge.GetConfig().SignerPasswd)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
 	}
@@ -165,7 +165,6 @@ func (s *Signer) signTransactions() {
 
 	for {
 		sleep()
-
 		for _, item := range s.storage.List() {
 			if item.Status == TxSpent { // don't rebroadcast spent transactions
 				continue

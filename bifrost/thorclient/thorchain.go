@@ -187,6 +187,10 @@ func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, e
 	return accNum, seq, nil
 }
 
+func (b *ThorchainBridge) GetConfig() config.ClientConfiguration {
+	return b.cfg
+}
+
 // PostKeysignFailure generate and  post a keysign fail tx to thorchan
 func (b *ThorchainBridge) PostKeysignFailure(blame common.Blame, height int64, memo string, coins common.Coins) (common.TxID, error) {
 	start := time.Now()
