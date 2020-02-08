@@ -25,4 +25,11 @@ func (s *MsgObservedTxInSuite) TestMsgObservedTxIn(c *C) {
 	c.Assert(m1.ValidateBasic(), NotNil)
 	m2 := NewMsgObservedTxIn(ObservedTxs{tx}, sdk.AccAddress{})
 	c.Assert(m2.ValidateBasic(), NotNil)
+
+	// will not accept observations with pre-determined signers. This is
+	// important to ensure an observer can fake signers from other node accounts
+	// *IMPORTANT* DON'T REMOVE THIS CHECK
+	tx.Signers = append(tx.Signers, GetRandomBech32Addr())
+	m3 := NewMsgObservedTxIn(ObservedTxs{tx}, acc)
+	c.Assert(m3.ValidateBasic(), NotNil)
 }
