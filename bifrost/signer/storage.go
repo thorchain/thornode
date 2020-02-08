@@ -16,6 +16,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 const (
@@ -70,13 +71,14 @@ type SignerStorage interface {
 
 type SignerStore struct {
 	*blockscanner.LevelDBScannerStorage
-	logger zerolog.Logger
-	db     *leveldb.DB
+	logger     zerolog.Logger
+	db         *leveldb.DB
+	passphrase string
 }
 
 // NewSignerStore create a new instance of SignerStore. If no folder is given,
 // an in memory implementation is used.
-func NewSignerStore(levelDbFolder string) (*SignerStore, error) {
+func NewSignerStore(levelDbFolder, passphrase string) (*SignerStore, error) {
 	var db *leveldb.DB
 	var err error
 	if len(levelDbFolder) == 0 {
@@ -100,6 +102,7 @@ func NewSignerStore(levelDbFolder string) (*SignerStore, error) {
 		LevelDBScannerStorage: levelDbStorage,
 		logger:                log.With().Str("module", "signer-storage").Logger(),
 		db:                    db,
+		passphrase:            passphrase,
 	}, nil
 }
 
@@ -109,6 +112,13 @@ func (s *SignerStore) Set(item TxOutStoreItem) error {
 	if err != nil {
 		s.logger.Error().Err(err).Msg("fail to marshal to txout store item")
 		return err
+	}
+	if len(s.passphrase) > 0 {
+		buf, err = common.Encrypt(buf, s.passphrase)
+		if err != nil {
+			s.logger.Error().Err(err).Msg("fail to encrypt txout item")
+			return err
+		}
 	}
 	if err := s.db.Put([]byte(key), buf, nil); err != nil {
 		s.logger.Error().Err(err).Msg("fail to set txout item")
@@ -126,6 +136,13 @@ func (s *SignerStore) Batch(items []TxOutStoreItem) error {
 			s.logger.Error().Err(err).Msg("fail to marshal to txout store item")
 			return err
 		}
+		if len(s.passphrase) > 0 {
+			buf, err = common.Encrypt(buf, s.passphrase)
+			if err != nil {
+				s.logger.Error().Err(err).Msg("fail to encrypt txout item")
+				return err
+			}
+		}
 		batch.Put([]byte(key), buf)
 	}
 	return s.db.Write(batch, nil)
@@ -137,10 +154,18 @@ func (s *SignerStore) Get(key string) (item TxOutStoreItem, err error) {
 		return
 	}
 	buf, err := s.db.Get([]byte(key), nil)
+	if len(s.passphrase) > 0 {
+		buf, err = common.Decrypt(buf, s.passphrase)
+		if err != nil {
+			s.logger.Error().Err(err).Msg("fail to decrypt txout item")
+			return item, err
+		}
+	}
 	if err := json.Unmarshal(buf, &item); err != nil {
 		s.logger.Error().Err(err).Msg("fail to unmarshal to txout store item")
 		return item, err
 	}
+
 	return
 }
 
@@ -159,10 +184,20 @@ func (s *SignerStore) List() []TxOutStoreItem {
 	defer iterator.Release()
 	var results []TxOutStoreItem
 	for iterator.Next() {
+		var err error
 		buf := iterator.Value()
 		if len(buf) == 0 {
 			continue
 		}
+
+		if len(s.passphrase) > 0 {
+			buf, err = common.Decrypt(buf, s.passphrase)
+			if err != nil {
+				s.logger.Error().Err(err).Msg("fail to decrypt txout item")
+				continue
+			}
+		}
+
 		var item TxOutStoreItem
 		if err := json.Unmarshal(buf, &item); err != nil {
 			s.logger.Error().Err(err).Msg("fail to unmarshal to txout store item")

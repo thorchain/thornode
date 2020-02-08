@@ -11,7 +11,7 @@ type StorageSuite struct{}
 var _ = Suite(&StorageSuite{})
 
 func (s *StorageSuite) TestStorage(c *C) {
-	store, err := NewSignerStore("")
+	store, err := NewSignerStore("", "my secret passphrase")
 	c.Assert(err, IsNil)
 
 	item := NewTxOutStoreItem(12, types.TxOutItem{Memo: "foo"})
