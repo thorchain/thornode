@@ -6,7 +6,7 @@ import (
 
 const (
 	DefaultCodespace sdk.CodespaceType = ModuleName
-	MajorityFactor   int64             = 3
+	MajorityFactor   uint64            = 3
 )
 
 func HasMajority(signers, total int) bool {
@@ -16,15 +16,14 @@ func HasMajority(signers, total int) bool {
 	if signers <= 0 {
 		return false // edge case
 	}
+	mU := sdk.NewUint(MajorityFactor)
+
 	// 10*4 / (6.67*2) <= 3
 	// 4*4 / (3*2) <= 3
 	// 3*4 / (2*2) <= 3
 	// Is able to determine "majority" without needing floats or DECs
 	tU := sdk.NewUint(uint64(total))
 	sU := sdk.NewUint(uint64(signers))
-	two := sdk.NewUint(2)
-	four := sdk.NewUint(4)
-	factor := (tU.Mul(four)).Quo(sU.Mul(two))
-	mU := sdk.NewUint(uint64(MajorityFactor))
+	factor := tU.MulUint64(2).Quo(sU)
 	return mU.GTE(factor)
 }
