@@ -107,7 +107,7 @@ func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, versio
 	}
 }
 
-func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
+func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer ObservedSigner) (ObservedTxVoter, bool) {
 	voter.Add(tx, signer)
 
 	ok := false
@@ -149,7 +149,11 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 
-		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
+		if len(tx.Signers) == 0 {
+			return sdk.ErrInternal("no signers present").Result()
+		}
+
+		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, tx.Signers[0])
 		if !ok {
 			ctx.Logger().Info("Inbound observation preflight requirements not yet met...")
 			continue
@@ -217,7 +221,11 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 
 		// add addresses to observing addresses. This is used to detect
 		// active/inactive observing node accounts
-		if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
+		accAddresses := make([]sdk.AccAddress, len(txIn.Signers))
+		for i := range txIn.Signers {
+			accAddresses[i] = txIn.Signers[i].Address
+		}
+		if err := h.keeper.AddObservingAddresses(ctx, accAddresses); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 

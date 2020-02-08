@@ -2,6 +2,7 @@
 package types
 
 import (
+	ckeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
 	"github.com/tendermint/tendermint/crypto"
@@ -90,6 +91,13 @@ func GetRandomPubKey() common.PubKey {
 	bech32PubKey, _ := sdk.Bech32ifyAccPub(pubKey)
 	pk, _ := common.NewPubKey(bech32PubKey)
 	return pk
+}
+
+func GetRandomPrivKey() crypto.PrivKey {
+	keys := ckeys.NewInMemory()
+	keys.CreateMnemonic("user", ckeys.English, "password", ckeys.Secp256k1)
+	priv, _ := keys.ExportPrivateKeyObject("user", "password")
+	return priv
 }
 
 // SetupConfigForTest used for test purpose

@@ -464,10 +464,12 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 						},
 						Memo: "",
 					},
-					Status:         types.Done,
-					OutHashes:      nil,
-					BlockHeight:    helper.ctx.BlockHeight(),
-					Signers:        []sdk.AccAddress{helper.na.NodeAddress},
+					Status:      types.Done,
+					OutHashes:   nil,
+					BlockHeight: helper.ctx.BlockHeight(),
+					Signers: []ObservedSigner{
+						ObservedSigner{Address: helper.na.NodeAddress},
+					},
 					ObservedPubKey: helper.na.PubKeySet.Secp256k1,
 				}
 				return tx

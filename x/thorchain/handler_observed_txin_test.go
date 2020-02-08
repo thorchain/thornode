@@ -6,6 +6,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 type HandlerObservedTxInSuite struct{}
@@ -52,11 +53,24 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
-	pk := GetRandomPubKey()
-	txs := ObservedTxs{NewObservedTx(GetRandomTx(), 12, pk)}
-	txs[0].Tx.ToAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
+
+	priv := types.GetRandomPrivKey()
+	pubkey, err := common.NewPubKeyFromCrypto(priv.PubKey())
 	c.Assert(err, IsNil)
-	msg := NewMsgObservedTxIn(txs, GetRandomBech32Addr())
+	accAddress, err := pubkey.GetThorAddress()
+	c.Assert(err, IsNil)
+
+	obTx := NewObservedTx(GetRandomTx(), 12, pubkey)
+	obTx.Tx.ToAddress, err = pubkey.GetAddress(obTx.Tx.Coins[0].Asset.Chain)
+	c.Assert(err, IsNil)
+	sig, err := obTx.Tx.Sign(priv)
+	c.Assert(err, IsNil)
+	obTx.Signers = []ObservedSigner{
+		NewObservedSigner(accAddress, pubkey, sig),
+	}
+
+	txs := ObservedTxs{obTx}
+	msg := NewMsgObservedTxIn(txs, accAddress)
 	isNewSigner, err := handler.validate(ctx, msg, ver)
 	c.Assert(err, IsNil)
 	c.Assert(isNewSigner, Equals, false)
@@ -68,7 +82,7 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 
 	// inactive node account
 	keeper.isActive = false
-	msg = NewMsgObservedTxIn(txs, GetRandomBech32Addr())
+	msg = NewMsgObservedTxIn(txs, accAddress)
 	isNewSigner, err = handler.validate(ctx, msg, ver)
 	c.Assert(err, Equals, notAuthorized)
 	c.Assert(isNewSigner, Equals, false)
@@ -232,16 +246,32 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 
 	tx := GetRandomTx()
 	tx.Memo = "SWAP:BTC.BTC"
-	obTx := NewObservedTx(tx, 12, GetRandomPubKey())
+
+	priv := types.GetRandomPrivKey()
+	pubkey, err := common.NewPubKeyFromCrypto(priv.PubKey())
+	c.Assert(err, IsNil)
+	accAddress, err := pubkey.GetThorAddress()
+	c.Assert(err, IsNil)
+
+	obTx := NewObservedTx(tx, 12, pubkey)
+	obTx.Tx.ToAddress, err = GetRandomPubKey().GetAddress(obTx.Tx.Coins[0].Asset.Chain)
+	c.Assert(err, IsNil)
+	sig, err := obTx.Tx.Sign(priv)
+	c.Assert(err, IsNil)
+	obTx.Signers = []ObservedSigner{
+		NewObservedSigner(accAddress, pubkey, sig),
+	}
+	c.Assert(obTx.Verify(obTx.Signers[0]), Equals, true)
+
 	txs := ObservedTxs{obTx}
-	pk := GetRandomPubKey()
-	txs[0].Tx.ToAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
 
 	vault := GetRandomVault()
 	vault.PubKey = obTx.ObservedPubKey
 
+	na := GetRandomNodeAccount(NodeActive)
+	na.NodeAddress = accAddress
 	keeper := &TestObservedTxInHandleKeeper{
-		nas:   NodeAccounts{GetRandomNodeAccount(NodeActive)},
+		nas:   NodeAccounts{na},
 		voter: NewObservedTxVoter(tx.ID, make(ObservedTxs, 0)),
 		vault: vault,
 		pool: Pool{
@@ -263,7 +293,7 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	c.Assert(result.IsOK(), Equals, true)
 	items, err := txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
-	c.Check(items, HasLen, 1)
+	c.Assert(items, HasLen, 1)
 	c.Check(keeper.observing, HasLen, 1)
 	c.Check(keeper.height, Equals, int64(12))
 	c.Check(keeper.chains, HasLen, 1)
@@ -306,6 +336,17 @@ func (s *HandlerObservedTxInSuite) TestMigrateMemo(c *C) {
 		ToAddress:   newVaultAddr,
 		Gas:         common.BNBGasFeeSingleton,
 	}, 13, vault.PubKey)
+
+	priv := types.GetRandomPrivKey()
+	pubkey, err := common.NewPubKeyFromCrypto(priv.PubKey())
+	c.Assert(err, IsNil)
+	accAddress, err := pubkey.GetThorAddress()
+	c.Assert(err, IsNil)
+	sig, err := tx.Tx.Sign(priv)
+	c.Assert(err, IsNil)
+	tx.Signers = []ObservedSigner{
+		NewObservedSigner(accAddress, pubkey, sig),
+	}
 
 	txs := ObservedTxs{tx}
 	keeper := &TestObservedTxInHandleKeeper{

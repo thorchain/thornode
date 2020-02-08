@@ -44,6 +44,7 @@ const (
 var (
 	NewPool                        = types.NewPool
 	NewVaultData                   = types.NewVaultData
+	NewObservedSigner              = types.NewObservedSigner
 	NewObservedTx                  = types.NewObservedTx
 	NewTssVoter                    = types.NewTssVoter
 	NewObservedTxVoter             = types.NewObservedTxVoter
@@ -143,6 +144,7 @@ type (
 	ObservedTxVoter             = types.ObservedTxVoter
 	ObservedTxVoters            = types.ObservedTxVoters
 	ObservedTxIndex             = types.ObservedTxIndex
+	ObservedSigner              = types.ObservedSigner
 	TssVoter                    = types.TssVoter
 	TssKeysignFailVoter         = types.TssKeysignFailVoter
 	TxOutItem                   = types.TxOutItem

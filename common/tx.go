@@ -1,11 +1,13 @@
 package common
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/tendermint/tendermint/crypto"
 )
 
 type (
@@ -93,6 +95,30 @@ func NewTx(txID TxID, from Address, to Address, coins Coins, gas Gas, memo strin
 
 func (tx Tx) String() string {
 	return fmt.Sprintf("%s: %s ==> %s (Memo: %s) %s", tx.ID, tx.FromAddress, tx.ToAddress, tx.Memo, tx.Coins)
+}
+
+func (tx Tx) Bytes() ([]byte, error) {
+	buf, err := json.Marshal(tx)
+	if err != nil {
+		return nil, err
+	}
+	return sdk.SortJSON(buf)
+}
+
+func (tx Tx) Sign(priv crypto.PrivKey) ([]byte, error) {
+	buf, err := tx.Bytes()
+	if err != nil {
+		return buf, err
+	}
+	return priv.Sign(buf)
+}
+
+func (tx Tx) Verify(pk crypto.PubKey, sig []byte) (bool, error) {
+	buf, err := tx.Bytes()
+	if err != nil {
+		return false, err
+	}
+	return pk.VerifyBytes(buf, sig), nil
 }
 
 func (tx Tx) IsEmpty() bool {

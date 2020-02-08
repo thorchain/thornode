@@ -1,6 +1,7 @@
 package common
 
 import (
+	ckeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 )
@@ -43,4 +44,25 @@ func (s TxSuite) TestTx(c *C) {
 	c.Assert(tx.Coins, HasLen, 1)
 	c.Check(tx.Coins[0].Equals(NewCoin(BNBAsset, sdk.NewUint(5*One))), Equals, true)
 	c.Check(tx.Memo, Equals, "hello memo")
+
+	// Test that we can sign/verify a tx
+	keys := ckeys.NewInMemory()
+	keys.CreateMnemonic("user", ckeys.English, "password", ckeys.Secp256k1)
+	priv, err := keys.ExportPrivateKeyObject("user", "password")
+	c.Assert(err, IsNil)
+	sig, err := tx.Sign(priv)
+	c.Assert(err, IsNil)
+	c.Check(sig, HasLen, 64, Commentf("%d", len(sig)))
+	ok, err := tx.Verify(priv.PubKey(), sig)
+	c.Assert(err, IsNil)
+	c.Check(ok, Equals, true)
+
+	// verify that a bad signature does fail
+	keys2 := ckeys.NewInMemory()
+	keys2.CreateMnemonic("user2", ckeys.English, "password", ckeys.Secp256k1)
+	priv2, err := keys2.ExportPrivateKeyObject("user2", "password")
+	c.Assert(err, IsNil)
+	ok, err = tx.Verify(priv2.PubKey(), sig)
+	c.Assert(err, IsNil)
+	c.Check(ok, Equals, false)
 }

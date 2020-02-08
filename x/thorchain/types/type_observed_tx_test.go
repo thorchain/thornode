@@ -39,22 +39,55 @@ func (s TypeObservedTxSuite) TestVoter(c *C) {
 	obTx1 := NewObservedTx(tx1, 0, observePoolAddr)
 	obTx2 := NewObservedTx(tx2, 0, observePoolAddr)
 
-	voter.Add(obTx1, acc1)
+	priv := GetRandomPrivKey()
+	pubkey, err := common.NewPubKeyFromCrypto(priv.PubKey())
+	c.Assert(err, IsNil)
+	sig, err := obTx1.Tx.Sign(priv)
+	c.Assert(err, IsNil)
+	signer1 := ObservedSigner{
+		Address:   acc1,
+		PubKey:    pubkey,
+		Signature: sig,
+	}
+
+	priv2 := GetRandomPrivKey()
+	pubkey2, err := common.NewPubKeyFromCrypto(priv2.PubKey())
+	c.Assert(err, IsNil)
+	sig, err = obTx1.Tx.Sign(priv)
+	c.Assert(err, IsNil)
+	signer2 := ObservedSigner{
+		Address:   acc2,
+		PubKey:    pubkey2,
+		Signature: sig,
+	}
+
+	priv3 := GetRandomPrivKey()
+	pubkey3, err := common.NewPubKeyFromCrypto(priv3.PubKey())
+	c.Assert(err, IsNil)
+	sig, err = obTx2.Tx.Sign(priv)
+	c.Assert(err, IsNil)
+	signer3 := ObservedSigner{
+		Address:   acc3,
+		PubKey:    pubkey3,
+		Signature: sig,
+	}
+
+	voter.Add(obTx1, signer1)
 	c.Assert(voter.Txs, HasLen, 1)
 
-	voter.Add(obTx1, acc1) // check THORNode don't duplicate the same signer
+	voter.Add(obTx1, signer1) // check THORNode don't duplicate the same signer
 	c.Assert(voter.Txs, HasLen, 1)
 	c.Assert(voter.Txs[0].Signers, HasLen, 1)
 
-	voter.Add(obTx1, acc2) // append a signature
+	voter.Add(obTx1, signer2) // append a signature
 	c.Assert(voter.Txs, HasLen, 1)
 	c.Assert(voter.Txs[0].Signers, HasLen, 2)
 
-	voter.Add(obTx2, acc1) // same validator seeing a different version of tx
+	voter.Add(obTx2, signer1) // same validator seeing a different version of tx
 	c.Assert(voter.Txs, HasLen, 1)
 	c.Assert(voter.Txs[0].Signers, HasLen, 2)
 
-	voter.Add(obTx2, acc3) // second version
+	voter.Add(obTx2, signer3) // second version
 	c.Assert(voter.Txs, HasLen, 2)
 	c.Assert(voter.Txs[0].Signers, HasLen, 2)
 	c.Assert(voter.Txs[1].Signers, HasLen, 1)

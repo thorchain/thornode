@@ -70,6 +70,10 @@ func (pubKey PubKey) String() string {
 	return string(pubKey)
 }
 
+func (pubKey PubKey) CryptoPubKey() (crypto.PubKey, error) {
+	return sdk.GetAccPubKeyBech32(pubKey.String())
+}
+
 // GetAddress will return an address for the given chain
 func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 	if pubKey.IsEmpty() {

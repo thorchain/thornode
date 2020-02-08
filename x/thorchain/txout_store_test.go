@@ -66,7 +66,11 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	inTxID := GetRandomTxHash()
 	voter := NewObservedTxVoter(inTxID, ObservedTxs{
 		ObservedTx{
-			Signers: []sdk.AccAddress{w.activeNodeAccount.NodeAddress, acc1.NodeAddress, acc2.NodeAddress},
+			Signers: []ObservedSigner{
+				ObservedSigner{Address: w.activeNodeAccount.NodeAddress},
+				ObservedSigner{Address: acc1.NodeAddress},
+				ObservedSigner{Address: acc2.NodeAddress},
+			},
 		},
 	})
 	w.keeper.SetObservedTxVoter(w.ctx, voter)

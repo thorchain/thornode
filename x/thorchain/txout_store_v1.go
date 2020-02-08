@@ -225,7 +225,7 @@ func (tos *TxOutStorageV1) collectYggdrasilPools(ctx sdk.Context, tx ObservedTx,
 		}
 
 		// if the ygg pool didn't observe the TxIn, and didn't sign the TxIn, THORNode is not going to choose them to send out fund , because they might offline
-		if !tx.HasSigned(addr) {
+		if !tx.AddressHasSigned(addr) {
 			continue
 		}
 

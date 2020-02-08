@@ -69,7 +69,7 @@ func (h ObservedTxOutHandler) handle(ctx sdk.Context, msg MsgObservedTxOut, vers
 	}
 }
 
-func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer sdk.AccAddress) (ObservedTxVoter, bool) {
+func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, nas NodeAccounts, tx ObservedTx, signer ObservedSigner) (ObservedTxVoter, bool) {
 	voter.Add(tx, signer)
 	ok := false
 	if voter.HasConsensus(nas) && !voter.ProcessedOut {
@@ -105,8 +105,12 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 
+		if len(tx.Signers) == 0 {
+			return sdk.ErrInternal("no signers present").Result()
+		}
+
 		// check whether the tx has consensus
-		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
+		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, tx.Signers[0])
 		if !ok {
 			ctx.Logger().Info("Outbound observation preflight requirements not yet met...")
 			continue
@@ -142,7 +146,11 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 
 		// add addresses to observing addresses. This is used to detect
 		// active/inactive observing node accounts
-		if err := h.keeper.AddObservingAddresses(ctx, txOut.Signers); err != nil {
+		accAddresses := make([]sdk.AccAddress, len(txOut.Signers))
+		for i := range txOut.Signers {
+			accAddresses[i] = txOut.Signers[i].Address
+		}
+		if err := h.keeper.AddObservingAddresses(ctx, accAddresses); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 

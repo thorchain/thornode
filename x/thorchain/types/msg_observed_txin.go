@@ -43,8 +43,14 @@ func (msg MsgObservedTxIn) ValidateBasic() sdk.Error {
 		if !tx.Tx.ToAddress.Equals(obAddr) {
 			return sdk.ErrUnknownRequest("Request is not an inbound observed transaction")
 		}
-		if len(tx.Signers) > 0 {
-			return sdk.ErrUnknownRequest("signers must be empty")
+		if len(tx.Signers) != 1 {
+			return sdk.ErrUnknownRequest("signers must be exactly one")
+		}
+		if !msg.Signer.Equals(tx.Signers[0].Address) {
+			return sdk.ErrUnknownRequest("observed signers must match transaction signer")
+		}
+		if !tx.Verify(tx.Signers[0]) {
+			return sdk.ErrUnknownRequest("signature is invalid")
 		}
 	}
 
