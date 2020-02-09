@@ -10,3 +10,4 @@ services:
 
   pg:
     network_mode: "host"
+    command: postgres -c 'max_connections=250' -c 'listen_addresses=localhost'
