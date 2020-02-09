@@ -46,4 +46,10 @@ func (s *KeeperEventsSuite) TestEvents(c *C) {
 	e, err := k.GetEvent(ctx, 1)
 	c.Assert(err, IsNil)
 	c.Assert(e.Empty(), Equals, false)
+
+	// add another event, and make sure both exists
+	c.Assert(k.UpsertEvent(ctx, evt), IsNil)
+	e, err = k.GetEvent(ctx, 2)
+	c.Assert(err, IsNil)
+	c.Assert(e.Empty(), Equals, false)
 }
