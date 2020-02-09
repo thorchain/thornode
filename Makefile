@@ -1,7 +1,11 @@
 include Makefile.cicd
-.PHONY: test tools export
+.PHONY: test tools export healthcheck
 
 GOBIN?=${GOPATH}/bin
+
+# variables default for healthcheck against full stack in docker
+CHAIN_API?=localhost:1317
+MIDGARD_API?=localhost:8080
 
 all: lint install
 
@@ -92,6 +96,9 @@ smoke-standalone:
 smoke-genesis:
 	make -C build/docker reset-mocknet-genesis
 	bsinner -a localhost:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e local -x -g
+
+healthcheck:
+	@CHAIN_API=${CHAIN_API} MIDGARD_API=${MIDGARD_API} go test -tags healthcheck ./tools/healthcheck/...
 
 export:
 	thord export

@@ -6,3 +6,8 @@ services:
     environment:
       CHAIN_API: localhost:1317
       CHAIN_RPC: localhost:26657
+      PG_HOST: localhost
+
+  pg:
+    network_mode: "host"
+    command: postgres -c 'max_connections=250' -c 'listen_addresses=localhost'
