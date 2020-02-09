@@ -163,6 +163,10 @@ func (k *TestObservedTxOutHandleKeeper) AddObservingAddresses(_ sdk.Context, add
 	return nil
 }
 
+func (k *TestObservedTxOutHandleKeeper) UpsertEvent(ctx sdk.Context, event Event) error {
+	return nil
+}
+
 func (k *TestObservedTxOutHandleKeeper) GetLastEventID(_ sdk.Context) (int64, error) {
 	return 0, nil
 }
@@ -187,7 +191,6 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	obTx := NewObservedTx(tx, 12, GetRandomPubKey())
 	txs := ObservedTxs{obTx}
 	pk := GetRandomPubKey()
-	// txs[0].Tx.FromAddress, err = currentPool.GetAddress()
 	c.Assert(err, IsNil)
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()

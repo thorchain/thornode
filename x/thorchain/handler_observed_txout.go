@@ -120,10 +120,12 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 				"tx", tx.Tx.String())
 			continue
 		}
-		// when thorchain fail to parse the out going tx memo, likely it is an unauthorised tx
-		// in that case, thorchain doesn't subtract the fund from relevant vault, thus when the node/yggdrasil leave, they will either return those asset
-		// or they will be slashed for that amount, also if the tx memo is unknown , thorchain also doesn't subsidise gas
-		// Apply Gas fees
+		// when thorchain fail to parse the out going tx memo, likely it is an
+		// unauthorised tx in that case, thorchain doesn't subtract the fund
+		// from relevant vault, thus when the node/yggdrasil leave, they will
+		// either return those asset or they will be slashed for that amount,
+		// also if the tx memo is unknown , thorchain also doesn't subsidise
+		// gas Apply Gas fees
 		if err := AddGasFees(ctx, h.keeper, tx); err != nil {
 			return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error()).Result()
 		}
