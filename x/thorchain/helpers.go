@@ -344,12 +344,12 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 		return nil
 	}
 
-	vault, err := keeper.GetVaultData(ctx)
+	vaultData, err := keeper.GetVaultData(ctx)
 	if err != nil {
-		return fmt.Errorf("fail to get vault: %w", err)
+		return fmt.Errorf("fail to get vaultData: %w", err)
 	}
-	vault.Gas = vault.Gas.Add(tx.Tx.Gas)
-	if err := keeper.SetVaultData(ctx, vault); err != nil {
+	vaultData.Gas = vaultData.Gas.Add(tx.Tx.Gas)
+	if err := keeper.SetVaultData(ctx, vaultData); err != nil {
 		return err
 	}
 
@@ -375,7 +375,9 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 
 		vault.SubFunds(tx.Tx.Gas.ToCoins())
 
-		return keeper.SetVault(ctx, vault)
+		if err := keeper.SetVault(ctx, vault); err != nil {
+			return err
+		}
 	}
 	eventGas := NewEventGas(tx.Tx.Gas, GasSpend)
 	gasBuf, err := json.Marshal(eventGas)
