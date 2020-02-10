@@ -43,7 +43,7 @@ type ChainClient interface {
 	ValidateMetadata(_ interface{}) bool
 	Start()
 	Stop() error
-	InitBlockScanner(observerDbPath string, cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error
+	InitBlockScanner(cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error
 	GetMessages() <-chan stypes.TxIn
 	GetTxInForRetry(failedOnly bool) ([]stypes.TxIn, error)
 	SetTxInStatus(txIn stypes.TxIn, status stypes.TxInStatus) error

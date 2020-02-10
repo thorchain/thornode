@@ -110,15 +110,15 @@ func NewBinance(thorKeys *thorclient.Keys, rpcHost string, keySignCfg config.TSS
 	return bnb, nil
 }
 
-func (b *Binance) InitBlockScanner(observerDbPath string, cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+func (b *Binance) InitBlockScanner(cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
 	var err error
-	b.storage, err = NewBinanceBlockScannerStorage(observerDbPath)
+	b.storage, err = NewBinanceBlockScannerStorage(cfg.DBPath)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create scan storage")
 	}
 	b.blockScanner, err = NewBinanceBlockScanner(cfg, b.storage, b.IsTestNet, pubkeyMgr, m)
 	if err != nil {
-		return pkerrors.Wrap(err, "fail to create scan storage")
+		return pkerrors.Wrap(err, "fail to create block scanner")
 	}
 	return nil
 }

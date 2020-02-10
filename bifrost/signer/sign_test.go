@@ -139,7 +139,7 @@ func (b *MockChainClient) RemoveTxIn(txin stypes.TxIn) error {
 	return nil
 }
 
-func (b *MockChainClient) InitBlockScanner(observerDbPath string, cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+func (b *MockChainClient) InitBlockScanner(cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
 	return nil
 }
 

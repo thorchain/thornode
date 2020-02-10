@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -25,9 +26,8 @@ type Configuration struct {
 
 // ObserverConfiguration values
 type ObserverConfiguration struct {
-	ObserverDbPath string                    `json:"observer_db_path" mapstructure:"observer_db_path"`
-	BlockScanner   BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
-	RetryInterval  time.Duration             `json:"retry_interval" mapstructure:"retry_interval"`
+	RetryInterval time.Duration               `json:"retry_interval" mapstructure:"retry_interval"`
+	BlockScanners []BlockScannerConfiguration `json:"block_scanners" mapstructure:"block_scanners"`
 }
 
 // SignerConfiguration all the configures need by signer
@@ -70,7 +70,7 @@ type TSSConfiguration struct {
 // BlockScannerConfiguration settings for BlockScanner
 type BlockScannerConfiguration struct {
 	RPCHost                    string        `json:"rpc_host" mapstructure:"rpc_host"`
-	StartBlockHeight           int64         `json:"-"`
+	StartBlockHeight           int64         `json:"start_block_height" mapstructure:"start_block_height"`
 	BlockScanProcessors        int           `json:"block_scan_processors" mapstructure:"block_scan_processors"`
 	HttpRequestTimeout         time.Duration `json:"http_request_timeout" mapstructure:"http_request_timeout"`
 	HttpRequestReadTimeout     time.Duration `json:"http_request_read_timeout" mapstructure:"http_request_read_timeout"`
@@ -79,6 +79,7 @@ type BlockScannerConfiguration struct {
 	BlockHeightDiscoverBackoff time.Duration `json:"block_height_discover_back_off" mapstructure:"block_height_discover_back_off"`
 	BlockRetryInterval         time.Duration `json:"block_retry_interval" mapstructure:"block_retry_interval"`
 	EnforceBlockHeight         bool          `json:"enforce_block_height" mapstructure:"enforce_block_height"`
+	DBPath                     string        `json:"db_path" mapstructure:"db_path"`
 	ChainID                    common.Chain  `json:"chain_id" mapstructure:"chain_id"`
 }
 
@@ -114,14 +115,28 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, errors.Wrap(err, "fail to unmarshal")
 	}
-
-	if err := cfg.Observer.BlockScanner.ChainID.Validate(); err != nil {
-		return nil, err
+	for _, blockScanner := range cfg.Observer.BlockScanners {
+		if err := blockScanner.ChainID.Validate(); err != nil {
+			return nil, err
+		}
 	}
+
+	if len(cfg.Observer.BlockScanners) != len(cfg.Chains) {
+		return nil, errors.New("lengths for chain block scanners and chains are not equal")
+	}
+	sort.Slice(cfg.Observer.BlockScanners, func(i, j int) bool {
+		return cfg.Observer.BlockScanners[i].ChainID < cfg.Observer.BlockScanners[j].ChainID 
+	})
+	sort.Slice(cfg.Chains, func(i, j int) bool {
+		return cfg.Chains[i].ChainID < cfg.Chains[j].ChainID 
+	})
 
 	for i, chain := range cfg.Chains {
 		if err := chain.ChainID.Validate(); err != nil {
 			return nil, err
+		}
+		if chain.ChainID != cfg.Observer.BlockScanners[i].ChainID {
+			return nil, errors.New("corresponding chain ids are not equal")
 		}
 		cfg.Chains[i].BackOff = cfg.BackOff
 	}
@@ -133,7 +148,7 @@ func applyDefaultConfig() {
 	viper.SetDefault("metrics.listen_port", "9000")
 	viper.SetDefault("metrics.read_timeout", "30s")
 	viper.SetDefault("metrics.write_timeout", "30s")
-	viper.SetDefault("metrics.chains", common.Chains{common.BNBChain}	)
+	viper.SetDefault("metrics.chains", common.Chains{common.BNBChain})
 	viper.SetDefault("thorchain.chain_id", "thorchain")
 	viper.SetDefault("thorchain.chain_host", "localhost:1317")
 	viper.SetDefault("back_off.initial_interval", 500*time.Millisecond)
@@ -141,7 +156,7 @@ func applyDefaultConfig() {
 	viper.SetDefault("back_off.multiplier", 1.5)
 	viper.SetDefault("back_off.max_interval", 3*time.Minute)
 	viper.SetDefault("back_off.max_elapsed_time", 168*time.Hour) // 7 days. Due to node sync time's being so random
-	applyDefaultObserverConfig()
+	viper.SetDefault("observer.retry_interval", "2s")
 	applyDefaultSignerConfig()
 }
 
@@ -155,13 +170,6 @@ func applyBlockScannerDefault(path string) {
 	viper.SetDefault(fmt.Sprintf("%s.block_scanner.block_height_discover_back_off", path), "1s")
 	viper.SetDefault(fmt.Sprintf("%s.block_scanner.block_retry_interval", path), "1s")
 }
-
-func applyDefaultObserverConfig() {
-	viper.SetDefault("observer.observer_db_path", "observer_data")
-	viper.SetDefault("observer.retry_interval", "2s")
-	applyBlockScannerDefault("observer")
-	viper.SetDefault("observer.block_scanner.chain_id", common.BNBChain)
-}	
 
 func applyDefaultSignerConfig() {
 	viper.SetDefault("signer.signer_db_path", "signer_db")

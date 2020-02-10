@@ -20,7 +20,6 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/signer"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/cmd"
-	"gitlab.com/thorchain/thornode/common"
 )
 
 // THORNode define version / revision here , so THORNode could inject the version from CI pipeline if THORNode want to
@@ -64,7 +63,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create metric instance")
 	}
-	if err := m.Start(); err != nil {
+	if err :=	 m.Start(); err != nil {
 		log.Fatal().Err(err).Msg("fail to start metric collector")
 	}
 
@@ -100,7 +99,7 @@ func main() {
 	chains := chainclients.LoadChains(thorKeys, cfg.Chains, cfg.TSS, thorchainBridge)
 
 	// start observer
-	obs, err := observer.NewObserver(cfg.Observer, thorchainBridge, pubkeyMgr, chains[common.BNBChain], m)
+	obs, err := observer.NewObserver(cfg.Observer, thorchainBridge, pubkeyMgr, chains, m)
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create observer")
 	}
