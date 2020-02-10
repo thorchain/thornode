@@ -203,11 +203,6 @@ func getMsgSwapFromMemo(memo SwapMemo, tx ObservedTx, signer sdk.AccAddress) (sd
 		memo.Destination = tx.Tx.FromAddress
 	}
 
-	coin := tx.Tx.Coins[0]
-	if memo.Asset.Equals(coin.Asset) {
-		return nil, errors.Errorf("swap from %s to %s is noop, refund", memo.Asset.String(), coin.Asset.String())
-	}
-
 	// Looks like at the moment THORNode can only process ont ty
 	return NewMsgSwap(tx.Tx, memo.GetAsset(), memo.Destination, memo.SlipLimit, signer), nil
 }
