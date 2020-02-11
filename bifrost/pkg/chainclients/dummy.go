@@ -32,7 +32,7 @@ func (DummyChain) GetGasFee(count uint64) common.Gas   { return nil }
 func (DummyChain) ValidateMetadata(_ interface{}) bool { return false }
 func (DummyChain) Start()                              {}
 func (DummyChain) Stop() error                         { return kaboom }
-func (DummyChain) InitBlockScanner(_ string, _ config.BlockScannerConfiguration, _ pubkeymanager.PubKeyValidator, _ *metrics.Metrics) error {
+func (DummyChain) InitBlockScanner(_ config.BlockScannerConfiguration, _ pubkeymanager.PubKeyValidator, _ *metrics.Metrics) error {
 	return kaboom
 }
 func (DummyChain) GetMessages() <-chan stypes.TxIn                                { return nil }

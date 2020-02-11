@@ -25,46 +25,51 @@ import (
 type Observer struct {
 	cfg             config.ObserverConfiguration
 	logger          zerolog.Logger
-	chain           chainclients.ChainClient
+	chains          map[common.Chain]chainclients.ChainClient
 	stopChan        chan struct{}
 	thorchainBridge *thorclient.ThorchainBridge
 	m               *metrics.Metrics
 	wg              *sync.WaitGroup
 	errCounter      *prometheus.CounterVec
 	pubkeyMgr       pubkeymanager.PubKeyValidator
+	txQueue         chan types.TxIn
 }
 
 // NewObserver create a new instance of Observer for chain
-func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, pubkeyMgr pubkeymanager.PubKeyValidator, chain chainclients.ChainClient, m *metrics.Metrics) (*Observer, error) {
+func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, pubkeyMgr pubkeymanager.PubKeyValidator, chains map[common.Chain]chainclients.ChainClient, m *metrics.Metrics) (*Observer, error) {
 	logger := log.Logger.With().Str("module", "observer").Logger()
 
-	if !cfg.BlockScanner.EnforceBlockHeight {
-		startBlockHeight, err := thorchainBridge.GetLastObservedInHeight(chain.GetChain())
-		if err != nil {
-			return nil, errors.Wrap(err, "fail to get start block height from thorchain")
-		}
-
-		if startBlockHeight > 0 {
-			cfg.BlockScanner.StartBlockHeight = startBlockHeight
-			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("resume from last block height known by thorchain")
-		} else {
-			cfg.BlockScanner.StartBlockHeight, err = chain.GetHeight()
+	idx := 0
+	for _, chain := range chains {
+		if !cfg.BlockScanners[idx].EnforceBlockHeight {
+			startBlockHeight, err := thorchainBridge.GetLastObservedInHeight(chain.GetChain())
 			if err != nil {
-				return nil, errors.Wrap(err, "fail to get binance height")
+				return nil, errors.Wrap(err, "fail to get start block height from thorchain")
 			}
 
-			logger.Info().Int64("height", cfg.BlockScanner.StartBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
+			if startBlockHeight > 0 {
+				cfg.BlockScanners[idx].StartBlockHeight = startBlockHeight
+				logger.Info().Int64("height", cfg.BlockScanners[idx].StartBlockHeight).Msg("resume from last block height known by thorchain")
+			} else {
+				cfg.BlockScanners[idx].StartBlockHeight, err = chain.GetHeight()
+				if err != nil {
+					return nil, errors.Wrap(err, "fail to get binance height")
+				}
+
+				logger.Info().Int64("height", cfg.BlockScanners[idx].StartBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
+			}
 		}
+		err := chain.InitBlockScanner(cfg.BlockScanners[idx], pubkeyMgr, m)
+		if err != nil {
+			return nil, err
+		}
+		idx++
 	}
 
-	err := chain.InitBlockScanner(cfg.ObserverDbPath, cfg.BlockScanner, pubkeyMgr, m)
-	if err != nil {
-		return nil, err
-	}
 	return &Observer{
 		cfg:             cfg,
 		logger:          logger,
-		chain:           chain,
+		chains:          chains,
 		wg:              &sync.WaitGroup{},
 		stopChan:        make(chan struct{}),
 		thorchainBridge: thorchainBridge,
@@ -74,28 +79,56 @@ func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.T
 	}, nil
 }
 
-func (o *Observer) Start() {
-	o.wg.Add(1)
-	go o.txinsProcessor(o.chain.GetMessages(), 1)
-	o.retryAllTx()
-	o.wg.Add(1)
-	go o.retryTxProcessor()
-	o.chain.Start()
+func (o *Observer) getChain(chainID common.Chain) (chainclients.ChainClient, error) {
+	chain, ok := o.chains[chainID]
+	if !ok {
+		o.logger.Debug().Str("chain", chainID.String()).Msg("is not supported yet")
+		return nil, errors.New("Not supported")
+	}
+	return chain, nil
 }
 
-func (o *Observer) retryAllTx() {
-	txIns, err := o.chain.GetTxInForRetry(false)
+func (o *Observer) Start() {
+	for _, chain := range o.chains {
+		o.startChain(chain)
+	}
+	o.wg.Add(1)
+	go o.processTxIns()
+}
+
+func (o *Observer) startChain(chain chainclients.ChainClient) {
+	o.wg.Add(1)
+	go o.txinsProcessor(chain.GetMessages(), 1)
+	o.retryAllTx(chain)
+	o.wg.Add(1)
+	go o.retryTxProcessor(chain)
+	chain.Start()
+}
+
+func (o *Observer) processTxIns() {
+	for {
+		select {
+		case <-o.stopChan:
+			return
+		case txIn := <-o.txQueue:
+			o.processOneTxIn(txIn)
+		}
+	}
+}
+
+func (o *Observer) retryAllTx(chain chainclients.ChainClient) {
+	txIns, err := chain.GetTxInForRetry(false)
 	if err != nil {
 		o.logger.Error().Err(err).Msg("fail to get txin for retry")
 		o.errCounter.WithLabelValues("fail_get_txin_for_retry", "").Inc()
 		return
 	}
 	for _, item := range txIns {
-		o.processOneTxIn(item)
+		o.txQueue <- item
 	}
 }
 
-func (o *Observer) retryTxProcessor() {
+func (o *Observer) retryTxProcessor(chain chainclients.ChainClient) {
 	o.logger.Info().Msg("start retry process")
 	defer o.logger.Info().Msg("stop retry process")
 	defer o.wg.Done()
@@ -107,7 +140,7 @@ func (o *Observer) retryTxProcessor() {
 		case <-o.stopChan:
 			return
 		case <-t.C:
-			txIns, err := o.chain.GetTxInForRetry(true)
+			txIns, err := chain.GetTxInForRetry(true)
 			if err != nil {
 				o.errCounter.WithLabelValues("fail_to_get_txin_for_retry", "").Inc()
 				o.logger.Error().Err(err).Msg("fail to get txin for retry")
@@ -118,7 +151,7 @@ func (o *Observer) retryTxProcessor() {
 				case <-o.stopChan:
 					return
 				default:
-					o.processOneTxIn(item)
+					o.txQueue <- item
 				}
 			}
 		}
@@ -148,7 +181,8 @@ func (o *Observer) txinsProcessor(ch <-chan types.TxIn, idx int) {
 }
 
 func (o *Observer) processOneTxIn(txIn types.TxIn) {
-	if err := o.chain.SetTxInStatus(txIn, types.Processing); err != nil {
+	chain, _ := o.getChain(txIn.Chain)
+	if err := chain.SetTxInStatus(txIn, types.Processing); err != nil {
 		o.errCounter.WithLabelValues("fail_save_txin_local", txIn.BlockHeight).Inc()
 		o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
 		return
@@ -156,12 +190,12 @@ func (o *Observer) processOneTxIn(txIn types.TxIn) {
 	if err := o.signAndSendToThorchain(txIn); err != nil {
 		o.logger.Error().Err(err).Msg("fail to send to thorchain")
 		o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
-		if err := o.chain.SetTxInStatus(txIn, types.Failed); err != nil {
+		if err := chain.SetTxInStatus(txIn, types.Failed); err != nil {
 			o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
 			return
 		}
 	}
-	if err := o.chain.RemoveTxIn(txIn); err != nil {
+	if err := chain.RemoveTxIn(txIn); err != nil {
 		o.errCounter.WithLabelValues("fail_remove_from_local_store", txIn.BlockHeight).Inc()
 		o.logger.Error().Err(err).Msg("fail to remove txin from local store")
 		return
@@ -220,8 +254,9 @@ func (o *Observer) getThorchainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error
 			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolAddress).Inc()
 			return nil, errors.Wrapf(err, "fail to parse observed pool address: %s", item.ObservedPoolAddress)
 		}
+		chain, _ := o.getChain(txIn.Chain)
 		txs[i] = stypes.NewObservedTx(
-			common.NewTx(txID, sender, to, item.Coins, common.GetBNBGasFee(uint64(len(item.Coins))), item.Memo),
+			common.NewTx(txID, sender, to, item.Coins, chain.GetGasFee(uint64(len(item.Coins))), item.Memo),
 			h,
 			observedPoolPubKey,
 		)
@@ -234,8 +269,10 @@ func (o *Observer) Stop() error {
 	o.logger.Debug().Msg("request to stop observer")
 	defer o.logger.Debug().Msg("observer stopped")
 
-	if err := o.chain.Stop(); err != nil {
-		o.logger.Error().Err(err).Msg("fail to close chain block scanner")
+	for _, chain := range o.chains {
+		if err := chain.Stop(); err != nil {
+			o.logger.Error().Err(err).Msgf("fail to close %s block scanner", chain.GetChain().String())
+		}
 	}
 
 	close(o.stopChan)

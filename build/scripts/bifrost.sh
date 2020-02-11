@@ -41,18 +41,25 @@ echo "{
         \"host\": \"$TSS_HOST\",
         \"port\": $TSS_PORT
     },
-  \"observer\": {
-      \"observer_db_path\": \"$OBSERVER_PATH\",
-      \"block_scanner\": {
-        \"rpc_host\": \"$BINANCE_HOST\",
-        \"enforce_block_height\": false,
-        \"block_scan_processors\": 1,
-        \"block_height_discover_back_off\": \"1s\",
-        \"block_retry_interval\": \"10s\",
-        \"chain_id\": \"BNB\"
-      }
-  },
-  \"signer\": {
+    \"observer\": {
+      \"block_scanners\": [
+        {
+          \"rpc_host\": \"$BINANCE_HOST\",
+          \"enforce_block_height\": false,
+          \"block_scan_processors\": 1,
+          \"block_height_discover_back_off\": \"1s\",
+          \"block_retry_interval\": \"10s\",
+          \"chain_id\": \"BNB\",
+          \"http_request_timeout\": \"30s\",
+          \"http_request_read_timeout\": \"30s\",
+          \"http_request_write_timeout\": \"30s\",
+          \"max_http_request_retry\": 10,
+          \"start_block_height\": 0,
+          \"db_path\": \"$OBSERVER_PATH\"
+        }
+      ]
+    },
+    \"signer\": {
       \"signer_db_path\": \"$SIGNER_PATH\",
       \"block_scanner\": {
         \"rpc_host\": \"$CHAIN_RPC\",
@@ -63,7 +70,7 @@ echo "{
         \"block_retry_interval\": \"10s\",
         \"scheme\": \"http\"
       }
-  }
+    }
 }" > /etc/bifrost/config.json
 
 export SIGNER_PASSWD
