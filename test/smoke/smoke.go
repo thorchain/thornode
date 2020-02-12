@@ -238,8 +238,8 @@ func (s *Smoke) GetCurrentBalances() types.BalancesConfig {
 	for _, pool := range pools {
 		balances := make(map[string]int64, 0)
 		balances["RUNE-A1F"] = pool.BalanceRune
-		balances[pool.Asset.Symbol] = pool.BalanceAsset
-		switch pool.Asset.Symbol {
+		balances[pool.Asset.Symbol.String()] = pool.BalanceAsset
+		switch pool.Asset.Symbol.String() {
 		case "BNB":
 			bal.PoolBNB = balances
 		case "LOK-3C0":

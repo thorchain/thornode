@@ -1,6 +1,7 @@
 package common
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -70,6 +71,20 @@ func (a Asset) IsRune() bool {
 
 func (a Asset) IsBNB() bool {
 	return a.Equals(BNBAsset)
+}
+
+func (a Asset) MarshalJSON() ([]byte, error) {
+	return json.Marshal(a.String())
+}
+
+func (a *Asset) UnmarshalJSON(data []byte) error {
+	var err error
+	var assetStr string
+	if err := json.Unmarshal(data, &assetStr); err != nil {
+		return err
+	}
+	*a, err = NewAsset(assetStr)
+	return err
 }
 
 func RuneAsset() Asset {
