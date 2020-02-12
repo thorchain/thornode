@@ -57,19 +57,11 @@ def makeTx(memo:'', hash:nil, sender:nil, coins:nil, outbound:false)
   hash ||= txid()
   sender ||= bnbAddress
   gas ||= [{
-    'asset': {
-      'chain': 'BNB',
-      'symbol': 'BNB',
-      'ticker': 'BNB',
-    },
+    'asset': 'BNB.BNB',
     'amount': '13750',
   }]
   coins ||= [{
-    'asset': {
-      'chain': 'BNB',
-      'symbol': 'RUNE-B1A',
-      'ticker': 'RUNE',
-    },
+    'asset': 'BNB.RUNE-B1A',
     'amount': '1',
   }]
   from = sender
@@ -100,19 +92,11 @@ def makeOutboundTx(memo:'', hash:nil, to:nil, coins:nil)
   hash ||= txid()
   sender ||= bnbAddress
   gas ||= [{
-    'asset': {
-      'chain': 'BNB',
-      'symbol': 'BNB',
-      'ticker': 'BNB',
-    },
+    'asset': 'BNB.BNB',
     'amount': '13750',
   }]
   coins ||= [{
-    'asset': {
-      'chain': 'BNB',
-      'symbol': 'RUNE-B1A',
-      'ticker': 'RUNE',
-    },
+    'asset': 'BNB.RUNE-B1A',
     'amount': '1',
   }]
   return {

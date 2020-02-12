@@ -42,7 +42,7 @@ describe "API Tests" do
   context "Add gas" do
     it "adds gas" do
       coins = [
-        {'asset': {'chain': 'BNB', 'symbol': 'BNB', 'ticker': 'BNB'}, "amount": "20000000"},
+        {'asset': 'BNB.BNB', "amount": "20000000"},
       ]
       tx = makeTx(memo: "GAS", coins: coins)
       resp = processTx(tx)
@@ -61,8 +61,8 @@ describe "API Tests" do
   context "Stake/Unstake" do
 
     coins = [
-      {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "2349500000"},
-      {'asset': {'chain': 'BNB', 'symbol': 'TCAN-014', 'ticker': 'TCAN'}, "amount": "334850000"},
+      {'asset': 'BNB.RUNE-B1A', "amount": "2349500000"},
+      {'asset': 'BNB.TCAN-014', "amount": "334850000"},
     ]
 
     it "should be able to stake" do
@@ -107,8 +107,8 @@ describe "API Tests" do
     txid = txid() # outside it state so its value is available in multiple "it" statements
     it "swap" do
       coins = [
-        {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "2349500000"},
-        {'asset': {'chain': 'BNB', 'symbol': 'BOLT-014', 'ticker': 'BOLT'}, "amount": "334850000"},
+        {'asset': 'BNB.RUNE-B1A', "amount": "2349500000"},
+        {'asset': 'BNB.BOLT-014', "amount": "334850000"},
       ]
       # stake some coins first
       tx = makeTx(memo: "stake:BNB.BOLT-014", coins: coins, sender: sender)
@@ -121,7 +121,7 @@ describe "API Tests" do
 
       # make a swap
       coins = [
-        {'asset': {'chain': 'BNB', 'symbol': 'BOLT-014', 'ticker': 'BOLT'}, "amount": "20000000"},
+        {'asset': 'BNB.BOLT-014', "amount": "20000000"},
       ]
       tx = makeTx(
         memo: "swap:RUNE-B1A:bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq:124958592",
@@ -167,16 +167,13 @@ describe "API Tests" do
           for idx in 0 ...arr['tx_array'].size
             # THORNode have found the block height of our last swap
             newTxId = txid()
+            coin = arr['tx_array'][idx]['coin']
             coins = [{
-                'asset': {
-                    'chain': arr['tx_array'][idx]['coin']['asset']['chain'],
-                    'symbol': arr['tx_array'][idx]['coin']['asset']['symbol'],
-                    'ticker': arr['tx_array'][idx]['coin']['asset']['ticker'],
-                 },
-                 'amount': arr['tx_array'][idx]['coin']['amount'],
-                }]
+              'asset': coin['asset'],
+              'amount': coin['amount'],
+            }]
             toAddr = arr['tx_array'][idx]['to']
-            tx = makeTx(memo: arr['tx_array'][idx]['memo'], hash:newTxId,coins:coins , sender:toAddr, outbound:true)
+            tx = makeTx(memo: arr['tx_array'][idx]['memo'], hash:newTxId, coins:coins , sender:toAddr, outbound:true)
             resp = processTx(tx)
             expect(resp.code).to eq("200"), resp.body.inspect
           end
@@ -198,7 +195,7 @@ describe "API Tests" do
     it "check events are completed" do
       resp = get("/events/6")
       expect(resp.body.count).to eq(1), resp.body.inspect
-      expect(resp.body[0]['event']['pool']['symbol']).to eq("BOLT-014"), resp.body[0].inspect
+      expect(resp.body[0]['event']['pool']).to eq("BNB.BOLT-014"), resp.body[0].inspect
       expect(resp.body[0]['type']).to eq("swap"), resp.body[0].inspect
       expect(resp.body[0]['in_tx']['id']).to eq(txid), resp.body[0].inspect
       expect(resp.body[0]['out_txs'][0]['id'].length).to eq(64), resp.body[0].inspect
@@ -206,8 +203,8 @@ describe "API Tests" do
 
     it "add assets to a pool" do
       coins = [
-        {'asset': {'chain': 'BNB', 'symbol': 'RUNE-B1A', 'ticker': 'RUNE'}, "amount": "20000000"},
-        {'asset': {'chain': 'BNB', 'symbol': 'BOLT-014', 'ticker': 'BOLT'}, "amount": "20000000"},
+        {'asset': 'BNB.RUNE-B1A', "amount": "20000000"},
+        {'asset': 'BNB.BOLT-014', "amount": "20000000"},
       ]
       tx = makeTx(memo: "add:BOLT-014", coins: coins, sender: sender)
       resp = processTx(tx)

@@ -9,11 +9,7 @@
                     "chain": "BNB",
                     "coin": {
                         "amount": "10000000000",
-                        "asset": {
-                            "chain": "BNB",
-                            "symbol": "BNB",
-                            "ticker": "BNB"
-                        }
+                        "asset": "BNB.BNB"
                     },
                     "in_hash": "ENULZOBGZHEKFOIBYRLLBELKFZVGXOBLTRQGTOWNDHMPZQMBLGJETOXJLHPVQIKY",
                     "memo": "",
