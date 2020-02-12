@@ -38,7 +38,7 @@ integration:test:
   stage: test
   variables:
     NET: "testnet"
-    TAGS: "testnet"
+    TAG: "testnet"
   script:
     - make -C ./test/integration install setup run wait-for-blockchain test-internal
 
@@ -69,7 +69,6 @@ smoke-test:thornode:
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
-    TAG: "testnet"
   artifacts:
     when: on_failure
     name: "$CI_JOB_NAME-$CI_COMMIT_REF_NAME"

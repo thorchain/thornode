@@ -1,6 +1,6 @@
 // +build chaosnet
 
-// For internal testing and sandboxing
+// For internal testing and mockneting
 package constants
 
 func init() {

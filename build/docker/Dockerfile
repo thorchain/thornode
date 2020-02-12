@@ -12,7 +12,7 @@ ENV GOPATH=/go
 ENV CGO_ENABLED=0
 ENV GOOS=linux
 
-ARG TAGS=mainnet
+ARG TAG=mainnet
 
 # install keygenClient
 RUN git clone https://gitlab.com/thorchain/tss/tss-tools.git /tmp/tss-tools
@@ -27,10 +27,10 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/generate ./tools/generate
-RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/thord ./cmd/thord
-RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
-RUN go build -a -tags $TAGS -installsuffix cgo -o $GOBIN/bifrost ./cmd/bifrost
+RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/generate ./tools/generate
+RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/thord ./cmd/thord
+RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/thorcli ./cmd/thorcli
+RUN go build -a -tags $TAG -installsuffix cgo -o $GOBIN/bifrost ./cmd/bifrost
 
 #
 # Main
