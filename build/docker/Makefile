@@ -1,10 +1,10 @@
 include mocknet/Makefile testnet/Makefile
 .PHONY: build
 
-TAGS ?= sandbox
+TAG ?= mocknet
 
 build:
-	docker build -t registry.gitlab.com/thorchain/thornode:${TAGS} --build-arg TAGS=${TAGS} -f Dockerfile ../..
+	docker build -t registry.gitlab.com/thorchain/thornode:${TAG} --build-arg TAG=${TAG} -f Dockerfile ../..
 
 clean:
 	@rm -rf /tmp/genesis

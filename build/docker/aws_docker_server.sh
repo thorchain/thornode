@@ -55,7 +55,7 @@ start_the_stack () {
     export NET=${THORNODE_ENV}
 
     if [ "$THORNODE_ENV" = "mocknet" ]; then
-        export TAG=sandbox
+        export TAG=mocknet
     else
         export TAG=${THORNODE_ENV}
     fi

@@ -8,7 +8,7 @@ services:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
       args:
-        TAGS: ${TAG:-mainnet}
+        TAG: ${TAG:-mainnet}
     image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
     restart: unless-stopped
     environment:
@@ -35,7 +35,7 @@ services:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
       args:
-        TAGS: ${TAG:-mainnet}
+        TAG: ${TAG:-mainnet}
     image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
     restart: unless-stopped
     environment:
@@ -67,7 +67,7 @@ services:
       context: ../../..
       dockerfile: ./build/docker/Dockerfile
       args:
-        TAGS: ${TAG:-mainnet}
+        TAG: ${TAG:-mainnet}
     image: registry.gitlab.com/thorchain/thornode:${TAG:-latest}
     restart: unless-stopped
     environment:

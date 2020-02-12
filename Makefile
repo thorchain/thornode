@@ -10,15 +10,15 @@ MIDGARD_API?=localhost:8080
 all: lint install
 
 install: go.sum
-	go install -tags "${TAGS}" ./cmd/thorcli
-	go install -tags "${TAGS}" ./cmd/thord
+	go install -tags "${TAG}" ./cmd/thorcli
+	go install -tags "${TAG}" ./cmd/thord
 	go install ./cmd/bifrost
 
 install-testnet:
-	TAGS=testnet make install
+	TAG=testnet make install
 
-install-sandbox:
-	TAGS=sandbox make install
+install-mocknet:
+	TAG=mocknet make install
 
 tools:
 	go install ./tools/bsinner
@@ -56,7 +56,7 @@ lint-verbose: lint-pre
 	@golangci-lint run -v
 
 build:
-	@go build -tags "${TAGS}" ./...
+	@go build -tags "${TAG}" ./...
 
 start-daemon:
 	thord start --log_level "main:info,state:debug,*:error"
@@ -98,7 +98,7 @@ smoke-genesis:
 	bsinner -a localhost:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e local -x -g
 
 healthcheck:
-	@CHAIN_API=${CHAIN_API} MIDGARD_API=${MIDGARD_API} go test -tags healthcheck ./tools/healthcheck/...
+	@CHAIN_API=${CHAIN_API} MIDGARD_API=${MIDGARD_API} go test -tags healthcheck ./tools/healthcheck/... -count=1
 
 export:
 	thord export

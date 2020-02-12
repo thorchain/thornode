@@ -1,6 +1,6 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 path := $(dir $(mkfile_path))
-TAG ?= sandbox
+TAG ?= mocknet
 
 ifeq ($(OS),Windows_NT)
     uname_S := Windows
