@@ -38,7 +38,7 @@ integration:test:
   stage: test
   variables:
     NET: "testnet"
-    TAGS: "testnet"
+    TAG: "testnet"
   script:
     - make -C ./test/integration install setup run wait-for-blockchain test-internal
 
