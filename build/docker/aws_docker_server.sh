@@ -53,12 +53,7 @@ start_the_stack () {
     PROVISIONING_TIME=$1
     sleep ${PROVISIONING_TIME}
     export NET=${THORNODE_ENV}
-
-    if [ "$THORNODE_ENV" = "mocknet" ]; then
-        export TAG=mocknet
-    else
-        export TAG=${THORNODE_ENV}
-    fi
+    export TAG=${THORNODE_ENV}
     eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
     make run-${THORNODE_ENV}-genesis-ci
     sleep 60
@@ -123,4 +118,3 @@ else
 	echo "you have not provided all the required environment variables"
 	exit 1
 fi
-
