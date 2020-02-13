@@ -79,6 +79,7 @@ smoke-test:thornode:
     - apk add --no-cache --virtual .build-deps g++ python3-dev libffi-dev openssl-dev
     - apk add python3 py-pip make git jq curl
     - git clone --single-branch -b $CI_COMMIT_BRANCH https://gitlab.com/thorchain/heimdall.git || git clone --single-branch -b master https://gitlab.com/thorchain/heimdall.git
+    - pip3 install docker-compose
     - pip3 install -r ./heimdall/requirements.txt
     - make -C build/docker reset-mocknet-standalone
   except:
