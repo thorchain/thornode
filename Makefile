@@ -21,7 +21,6 @@ install-mocknet:
 	TAG=mocknet make install
 
 tools:
-	go install ./tools/bsinner
 	go install ./tools/generate
 	go install ./tools/extract
 	go install ./tools/sweep
@@ -72,7 +71,7 @@ reset: clean install
 
 clean:
 	rm -rf ~/.thor*
-	rm -f ${GOBIN}/{bsinner,generate,sweep,thorcli,thord,bifrost}
+	rm -f ${GOBIN}/{generate,sweep,thorcli,thord,bifrost}
 
 .envrc: install
 	@generate -t MASTER > .envrc
@@ -89,14 +88,6 @@ smoke-test: tools install
 
 smoke-local: smoke-standalone
 
-smoke-standalone:
-	make -C build/docker reset-mocknet-standalone
-	bsinner -a localhost:26660 -b ./test/smoke/scenarios/standalone/balances.json -t ./test/smoke/scenarios/standalone/transactions.json -e local -x -g
-
-smoke-genesis:
-	make -C build/docker reset-mocknet-genesis
-	bsinner -a localhost:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e local -x -g
-
 healthcheck:
 	@CHAIN_API=${CHAIN_API} MIDGARD_API=${MIDGARD_API} go test -tags healthcheck ./tools/healthcheck/... -count=1
 
@@ -105,6 +96,7 @@ export:
 
 pull:
 	docker pull registry.gitlab.com/thorchain/thornode
+	docker pull registry.gitlab.com/thorchain/thornode:mocknet
 	docker pull registry.gitlab.com/thorchain/tss/go-tss
 	docker pull registry.gitlab.com/thorchain/midgard
 	docker pull registry.gitlab.com/thorchain/bepswap/bepswap-react-app

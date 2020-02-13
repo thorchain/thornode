@@ -43,38 +43,6 @@ aws-ci-login:
 logger:
 	mkdir -p ./log
 
-# Step 1
-docker-aws-build: logger
-	./scripts/build.sh ${REGISTRY_ID}.${REPOSITORY}/${ECR_STATECHAIN}:latest | tee ./log/state-chain-build.log
-
-# Step 2
-docker-aws-tag: docker-aws-build
-	docker tag ${REGISTRY_ID}.${REPOSITORY}/${ECR_STATECHAIN}:latest ${REGISTRY_ID}.${REPOSITORY}/${ECR_STATECHAIN}:${STATE_CHAIN_IMAGE_HASH}
-
-# Step 3
-docker-aws-push: docker-aws-tag
-	docker push ${REGISTRY_ID}.${REPOSITORY}/${ECR_STATECHAIN}:${STATE_CHAIN_IMAGE_HASH}
-	docker push ${REGISTRY_ID}.${REPOSITORY}/${ECR_STATECHAIN}:latest
-
-# Step 4
-aws-ecs-deploy: config docker-aws-push
-	aws ecs update-service --force-new-deployment --cluster ${ECS_CLUSTER} --service ${ECR_STATECHAIN}
-
-# Step 5
-seed: tools
-	@bsinner -f ${FAUCET_KEY} -k ${BINANCE_PRIVATE_KEY} -e ${ENV} -c seed/seed.json -d true
-
-# -------------------------------- Smoke Test ---------------------------- #
-smoke-ci-genesis:
-	make -C build/docker run-mocknet-genesis
-	bsinner -a docker:26660 -b ./test/smoke/scenarios/genesis/balances.json -t ./test/smoke/scenarios/genesis/transactions.json -e ci -x
-
-smoke-ci-standalone:
-	make -C build/docker run-mocknet-standalone
-	bsinner -a docker:26660 -b ./test/smoke/scenarios/standalone/balances.json -t ./test/smoke/scenarios/standalone/transactions.json -e ci -x
-# ------------------------------------------------------------------------ #
-
-
 # ------------------------------- GitLab ------------------------------- #
 
 docker-gitlab-login:
