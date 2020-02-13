@@ -86,7 +86,7 @@ smoke-test:thornode:
   environment:
     name: integration
   script:
-    - python3 smoke.py --binance http://docker:26660 --thorchain http://docker:1317
+    - python3 ./heimdall/smoke.py --binance http://docker:26660 --thorchain http://docker:1317
   after_script:
     - ./scripts/docker_logs.sh
 
