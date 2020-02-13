@@ -6,7 +6,7 @@ ifeq (${NOCACHE}, TRUE)
 CACHE=--no-cache
 endif
 
-.PHONY: config smoke-test seed
+.PHONY: config smoke-test
 config:
 	@echo ENV: ${ENV}
 	@echo NET: ${NET}

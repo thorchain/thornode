@@ -15,7 +15,6 @@ stages:
   - smoke-test
   - push
   - deploy
-  - seed
 
 unit_tests:
   stage: test
