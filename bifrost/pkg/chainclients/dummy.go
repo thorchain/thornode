@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	"github.com/binance-chain/go-sdk/common/types"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -23,8 +22,8 @@ func (DummyChain) BroadcastTx(tx []byte) error                { return kaboom }
 func (DummyChain) CheckIsTestNet() (string, bool)             { return "", false }
 func (DummyChain) GetHeight() (int64, error)                  { return 0, kaboom }
 func (DummyChain) GetAddress(poolPubKey common.PubKey) string { return "" }
-func (DummyChain) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
-	return types.BaseAccount{}, kaboom
+func (DummyChain) GetAccount(addr string) (common.Account, error) {
+	return common.Account{}, kaboom
 }
 func (DummyChain) GetChain() common.Chain              { return "" }
 func (DummyChain) GetGasFee(count uint64) common.Gas   { return nil }
