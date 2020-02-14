@@ -3,9 +3,8 @@ package chainclients
 import (
 	"errors"
 
-	"github.com/binance-chain/go-sdk/common/types"
-	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"github.com/binance-chain/go-sdk/common/types"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -30,12 +29,5 @@ func (DummyChain) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 func (DummyChain) GetChain() common.Chain              { return "" }
 func (DummyChain) GetGasFee(count uint64) common.Gas   { return nil }
 func (DummyChain) ValidateMetadata(_ interface{}) bool { return false }
-func (DummyChain) Start()                              {}
+func (DummyChain) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error { return nil }
 func (DummyChain) Stop() error                         { return kaboom }
-func (DummyChain) InitBlockScanner(_ config.BlockScannerConfiguration, _ pubkeymanager.PubKeyValidator, _ *metrics.Metrics) error {
-	return kaboom
-}
-func (DummyChain) GetMessages() <-chan stypes.TxIn                                { return nil }
-func (DummyChain) GetTxInForRetry(failedOnly bool) ([]stypes.TxIn, error)         { return nil, kaboom }
-func (DummyChain) SetTxInStatus(txIn stypes.TxIn, status stypes.TxInStatus) error { return kaboom }
-func (DummyChain) RemoveTxIn(txin stypes.TxIn) error                              { return kaboom }

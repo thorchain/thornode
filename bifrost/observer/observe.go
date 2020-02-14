@@ -3,79 +3,47 @@ package observer
 import (
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/prometheus/client_golang/prometheus"
 
-	"gitlab.com/thorchain/thornode/common"
-	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
-
-	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
-	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
+	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // Observer observer service
 type Observer struct {
-	cfg             config.ObserverConfiguration
 	logger          zerolog.Logger
 	chains          map[common.Chain]chainclients.ChainClient
 	stopChan        chan struct{}
-	thorchainBridge *thorclient.ThorchainBridge
-	m               *metrics.Metrics
 	wg              *sync.WaitGroup
-	errCounter      *prometheus.CounterVec
 	pubkeyMgr       pubkeymanager.PubKeyValidator
-	txQueue         chan types.TxIn
+	globalTxsQueue  chan types.TxIn
+	m               *metrics.Metrics
+	errCounter      *prometheus.CounterVec
+	thorchainBridge *thorclient.ThorchainBridge
 }
 
 // NewObserver create a new instance of Observer for chain
-func NewObserver(cfg config.ObserverConfiguration, thorchainBridge *thorclient.ThorchainBridge, pubkeyMgr pubkeymanager.PubKeyValidator, chains map[common.Chain]chainclients.ChainClient, m *metrics.Metrics) (*Observer, error) {
+func NewObserver(pubkeyMgr pubkeymanager.PubKeyValidator, chains map[common.Chain]chainclients.ChainClient, thorchainBridge *thorclient.ThorchainBridge, m *metrics.Metrics) (*Observer, error) {
 	logger := log.Logger.With().Str("module", "observer").Logger()
-
-	idx := 0
-	for _, chain := range chains {
-		if !cfg.BlockScanners[idx].EnforceBlockHeight {
-			startBlockHeight, err := thorchainBridge.GetLastObservedInHeight(chain.GetChain())
-			if err != nil {
-				return nil, errors.Wrap(err, "fail to get start block height from thorchain")
-			}
-
-			if startBlockHeight > 0 {
-				cfg.BlockScanners[idx].StartBlockHeight = startBlockHeight
-				logger.Info().Int64("height", cfg.BlockScanners[idx].StartBlockHeight).Msg("resume from last block height known by thorchain")
-			} else {
-				cfg.BlockScanners[idx].StartBlockHeight, err = chain.GetHeight()
-				if err != nil {
-					return nil, errors.Wrap(err, "fail to get binance height")
-				}
-
-				logger.Info().Int64("height", cfg.BlockScanners[idx].StartBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
-			}
-		}
-		err := chain.InitBlockScanner(cfg.BlockScanners[idx], pubkeyMgr, m)
-		if err != nil {
-			return nil, err
-		}
-		idx++
-	}
-
 	return &Observer{
-		cfg:             cfg,
 		logger:          logger,
 		chains:          chains,
 		wg:              &sync.WaitGroup{},
 		stopChan:        make(chan struct{}),
-		thorchainBridge: thorchainBridge,
 		m:               m,
-		errCounter:      m.GetCounterVec(metrics.ObserverError),
 		pubkeyMgr:       pubkeyMgr,
+		globalTxsQueue:  make(chan types.TxIn),
+		errCounter:      m.GetCounterVec(metrics.ObserverError),
+		thorchainBridge: thorchainBridge,
 	}, nil
 }
 
@@ -90,19 +58,13 @@ func (o *Observer) getChain(chainID common.Chain) (chainclients.ChainClient, err
 
 func (o *Observer) Start() {
 	for _, chain := range o.chains {
-		o.startChain(chain)
+		err := chain.Start(o.globalTxsQueue, o.pubkeyMgr, o.m)
+		if err != nil {
+			o.logger.Error().Err(err).Str("chain", chain.GetChain().String()).Msg("fail to start")
+		}
 	}
 	o.wg.Add(1)
 	go o.processTxIns()
-}
-
-func (o *Observer) startChain(chain chainclients.ChainClient) {
-	o.wg.Add(1)
-	go o.txinsProcessor(chain.GetMessages(), 1)
-	o.retryAllTx(chain)
-	o.wg.Add(1)
-	go o.retryTxProcessor(chain)
-	chain.Start()
 }
 
 func (o *Observer) processTxIns() {
@@ -110,95 +72,12 @@ func (o *Observer) processTxIns() {
 		select {
 		case <-o.stopChan:
 			return
-		case txIn := <-o.txQueue:
-			o.processOneTxIn(txIn)
-		}
-	}
-}
-
-func (o *Observer) retryAllTx(chain chainclients.ChainClient) {
-	txIns, err := chain.GetTxInForRetry(false)
-	if err != nil {
-		o.logger.Error().Err(err).Msg("fail to get txin for retry")
-		o.errCounter.WithLabelValues("fail_get_txin_for_retry", "").Inc()
-		return
-	}
-	for _, item := range txIns {
-		o.txQueue <- item
-	}
-}
-
-func (o *Observer) retryTxProcessor(chain chainclients.ChainClient) {
-	o.logger.Info().Msg("start retry process")
-	defer o.logger.Info().Msg("stop retry process")
-	defer o.wg.Done()
-	// retry all
-	t := time.NewTicker(o.cfg.RetryInterval)
-	defer t.Stop()
-	for {
-		select {
-		case <-o.stopChan:
-			return
-		case <-t.C:
-			txIns, err := chain.GetTxInForRetry(true)
-			if err != nil {
-				o.errCounter.WithLabelValues("fail_to_get_txin_for_retry", "").Inc()
-				o.logger.Error().Err(err).Msg("fail to get txin for retry")
-				continue
-			}
-			for _, item := range txIns {
-				select {
-				case <-o.stopChan:
-					return
-				default:
-					o.txQueue <- item
-				}
+		case txIn := <-o.globalTxsQueue:
+			if err := o.signAndSendToThorchain(txIn); err != nil {
+				o.logger.Error().Err(err).Msg("fail to send to thorchain")
+				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
 			}
 		}
-	}
-}
-
-func (o *Observer) txinsProcessor(ch <-chan types.TxIn, idx int) {
-	o.logger.Info().Int("idx", idx).Msg("start to process tx in")
-	defer o.logger.Info().Int("idx", idx).Msg("stop to process tx in")
-	defer o.wg.Done()
-	for {
-		select {
-		case <-o.stopChan:
-			return
-		case txIn, more := <-ch:
-			if !more {
-				// channel closed
-				return
-			}
-			if len(txIn.TxArray) == 0 {
-				o.logger.Debug().Msg("nothing need to forward to thorchain")
-				continue
-			}
-			o.processOneTxIn(txIn)
-		}
-	}
-}
-
-func (o *Observer) processOneTxIn(txIn types.TxIn) {
-	chain, _ := o.getChain(txIn.Chain)
-	if err := chain.SetTxInStatus(txIn, types.Processing); err != nil {
-		o.errCounter.WithLabelValues("fail_save_txin_local", txIn.BlockHeight).Inc()
-		o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
-		return
-	}
-	if err := o.signAndSendToThorchain(txIn); err != nil {
-		o.logger.Error().Err(err).Msg("fail to send to thorchain")
-		o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
-		if err := chain.SetTxInStatus(txIn, types.Failed); err != nil {
-			o.logger.Error().Err(err).Msg("fail to save TxIn to local store")
-			return
-		}
-	}
-	if err := chain.RemoveTxIn(txIn); err != nil {
-		o.errCounter.WithLabelValues("fail_remove_from_local_store", txIn.BlockHeight).Inc()
-		o.logger.Error().Err(err).Msg("fail to remove txin from local store")
-		return
 	}
 }
 

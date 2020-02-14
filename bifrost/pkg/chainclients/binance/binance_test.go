@@ -18,6 +18,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -31,12 +32,32 @@ type BinancechainSuite struct {
 	thordir  string
 	thorKeys *thorclient.Keys
 	bridge   *thorclient.ThorchainBridge
+	m        *metrics.Metrics
 }
 
 var _ = Suite(&BinancechainSuite{})
 
+var m *metrics.Metrics
+
+func GetMetricForTest(c *C) *metrics.Metrics {
+	if m == nil {
+		var err error
+		m, err = metrics.NewMetrics(config.MetricsConfiguration{
+			Enabled:      false,
+			ListenPort:   9000,
+			ReadTimeout:  time.Second,
+			WriteTimeout: time.Second,
+			Chains:       common.Chains{common.BNBChain},
+		})
+		c.Assert(m, NotNil)
+		c.Assert(err, IsNil)
+	}
+	return m
+}
+
 func (s *BinancechainSuite) SetUpSuite(c *C) {
-	var err error
+	s.m = GetMetricForTest(c)
+	c.Assert(s.m, NotNil)
 	ns := strconv.Itoa(time.Now().Nanosecond())
 	types2.SetupConfigForTest()
 	ctypes.Network = ctypes.TestNetwork
@@ -57,7 +78,7 @@ func (s *BinancechainSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	s.thorKeys, err = thorclient.NewKeys(cfg.ChainHomeFolder, cfg.SignerName, cfg.SignerPasswd)
 	c.Assert(err, IsNil)
-	s.bridge, err = thorclient.NewThorchainBridge(cfg, m)
+	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
 	c.Assert(err, IsNil)
 }
 
@@ -80,7 +101,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		Port:   5555,
 	}
 
-	b, err := NewBinance(s.thorKeys, "", tssCfg, s.bridge)
+	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{}, tssCfg, s.bridge)
 	c.Assert(b, IsNil)
 	c.Assert(err, NotNil)
 
@@ -92,7 +113,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		}
 	}))
 
-	b2, err2 := NewBinance(s.thorKeys, server.URL, tssCfg, s.bridge)
+	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, tssCfg, s.bridge)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 }
@@ -124,7 +145,7 @@ func (s *BinancechainSuite) TestGetHeight(c *C) {
 		Host:   "localhost",
 		Port:   5555,
 	}
-	b, err := NewBinance(s.thorKeys, server.URL, tssCfg, s.bridge)
+	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, tssCfg, s.bridge)
 	c.Assert(err, IsNil)
 
 	height, err := b.GetHeight()
@@ -155,7 +176,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		Host:   "localhost",
 		Port:   5555,
 	}
-	b2, err2 := NewBinance(s.thorKeys, server.URL, tssCfg, s.bridge)
+	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, tssCfg, s.bridge)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 	pk, err := common.NewPubKeyFromCrypto(b2.localKeyManager.GetPrivKey().PubKey())

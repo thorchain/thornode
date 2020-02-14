@@ -25,11 +25,16 @@ import (
 
 func Test(t *testing.T) { TestingT(t) }
 
-type BlockScannerTestSuite struct{}
+type BlockScannerTestSuite struct{
+	m *metrics.Metrics
+}
 
 var _ = Suite(&BlockScannerTestSuite{})
 
-var m *metrics.Metrics
+func (s *BlockScannerTestSuite) SetUpSuite(c *C) {
+	s.m = GetMetricForTest(c)
+	c.Assert(s.m, NotNil)
+}
 
 func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 	return config.BlockScannerConfiguration{
@@ -56,27 +61,26 @@ func getStdTx(f, t string, coins []types.Coin, memo string) (tx.StdTx, error) {
 		return tx.StdTx{}, err
 	}
 	transfers := []msg.Transfer{{to, coins}}
-	m := msg.CreateSendMsg(from, coins, transfers)
-	return tx.NewStdTx([]msg.Msg{m}, nil, memo, 0, nil), nil
+	ms := msg.CreateSendMsg(from, coins, transfers)
+	return tx.NewStdTx([]msg.Msg{ms}, nil, memo, 0, nil), nil
 }
 
 func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	c.Skip("skip")
 	pv := &MockPoolAddressValidator{}
-	c.Assert(m, NotNil)
-	bs, err := NewBinanceBlockScanner(getConfigForTest(""), blockscanner.NewMockScannerStorage(), true, pv, m)
+	bs, err := NewBinanceBlockScanner(getConfigForTest(""), 0, blockscanner.NewMockScannerStorage(), true, pv, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, nil, m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, nil, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), nil, true, pv, m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, nil, true, pv, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, nil, m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, nil, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, pv, m)
+	bs, err = NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, pv, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 }
@@ -222,9 +226,8 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 	})
 	server := httptest.NewTLSServer(h)
 	defer server.Close()
-	c.Assert(m, NotNil)
 	pv := &MockPoolAddressValidator{}
-	bs, err := NewBinanceBlockScanner(getConfigForTest(server.URL), blockscanner.NewMockScannerStorage(), true, pv, m)
+	bs, err := NewBinanceBlockScanner(getConfigForTest(server.URL), 0, blockscanner.NewMockScannerStorage(), true, pv, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 	trSkipVerify := &http.Transport{
@@ -235,13 +238,7 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 		},
 	}
 	bs.commonBlockScanner.GetHttpClient().Transport = trSkipVerify
-	bs.Start()
-	// read all the messages
-	go func() {
-		for item := range bs.GetMessages() {
-			c.Logf("got message on block height:%s", item.BlockHeight)
-		}
-	}()
+	bs.Start(make(chan stypes.TxIn))
 	// stop
 	time.Sleep(time.Second * 5)
 	err = bs.Stop()
@@ -255,9 +252,8 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 		err := json.Unmarshal([]byte(input), &query)
 		c.Check(err, IsNil)
 		c.Check(query.Result.Txs, NotNil)
-		c.Assert(m, NotNil)
 		pv := NewMockPoolAddressValidator()
-		bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), blockscanner.NewMockScannerStorage(), true, pv, m)
+		bs, err := NewBinanceBlockScanner(getConfigForTest("127.0.0.1"), 0, blockscanner.NewMockScannerStorage(), true, pv, s.m)
 		c.Assert(err, IsNil)
 		c.Assert(bs, NotNil)
 		c.Log(input)
@@ -305,10 +301,11 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 	poolAddrValidator := NewMockPoolAddressValidator()
 	bs, err := NewBinanceBlockScanner(
 		getConfigForTest("127.0.0.1"),
+		0,
 		blockscanner.NewMockScannerStorage(),
 		true,
 		poolAddrValidator,
-		m,
+		s.m,
 	)
 	c.Assert(err, IsNil)
 
@@ -371,14 +368,4 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 	c.Assert(items, HasLen, 1)
 	item = items[0]
 	c.Check(item.Memo, Equals, "yggdrasil-")
-}
-
-func init() {
-	m, _ = metrics.NewMetrics(config.MetricsConfiguration{
-		Enabled:      false,
-		ListenPort:   8080,
-		ReadTimeout:  time.Second,
-		WriteTimeout: time.Second,
-		Chains:       common.Chains{common.BNBChain},
-	})
 }
