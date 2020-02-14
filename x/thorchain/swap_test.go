@@ -33,6 +33,7 @@ func (s SwapSuite) TestSwap(c *C) {
 		returnAmount  sdk.Uint
 		tradeTarget   sdk.Uint
 		expectedErr   sdk.Error
+		events        []Event
 	}{
 		{
 			name:          "empty-source",
@@ -135,6 +136,9 @@ func (s SwapSuite) TestSwap(c *C) {
 			returnAmount:  sdk.NewUint(2222222222),
 			tradeTarget:   sdk.ZeroUint(),
 			expectedErr:   nil,
+			events: []Event{
+				Event{ID: 0, Height: 0, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don't know", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(5000000000))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
+			},
 		},
 		{
 			name:          "swap-over-trade-sliplimit",
@@ -159,6 +163,9 @@ func (s SwapSuite) TestSwap(c *C) {
 			returnAmount:  sdk.NewUint(685871056),
 			tradeTarget:   sdk.ZeroUint(),
 			expectedErr:   nil,
+			events: []Event{
+				Event{ID: 0, Height: 0, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(800000000))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
+			},
 		},
 		{
 			name:          "swap",
@@ -171,6 +178,9 @@ func (s SwapSuite) TestSwap(c *C) {
 			returnAmount:  sdk.NewUint(453514739),
 			tradeTarget:   sdk.NewUint(453514738),
 			expectedErr:   nil,
+			events: []Event{
+				Event{ID: 0, Height: 0, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(500000000))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
+			},
 		},
 		{
 			name:          "double-swap",
@@ -183,8 +193,13 @@ func (s SwapSuite) TestSwap(c *C) {
 			returnAmount:  sdk.NewUint(415017809),
 			tradeTarget:   sdk.NewUint(415017809),
 			expectedErr:   nil,
+			events: []Event{
+				Event{ID: 0, Height: 0, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.BTCAsset, sdk.NewUint(5*common.One))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
+				Event{ID: 0, Height: 0, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(453514739))}, Gas: nil}},
+			},
 		},
 	}
+
 	for _, item := range inputs {
 		c.Logf("test name:%s", item.name)
 		tx := common.NewTx(
@@ -198,10 +213,17 @@ func (s SwapSuite) TestSwap(c *C) {
 			"",
 		)
 		tx.Chain = common.BNBChain
-		amount, swapEvents, err := swap(ctx, poolStorage, tx, item.target, item.destination, item.tradeTarget, sdk.NewUint(1000_000))
+		amount, evts, err := swap(ctx, poolStorage, tx, item.target, item.destination, item.tradeTarget, sdk.NewUint(1000_000))
 		if item.expectedErr == nil {
 			c.Assert(err, IsNil)
-			c.Assert(len(swapEvents) > 0, Equals, true)
+			c.Assert(evts, HasLen, len(item.events))
+			for i := range evts {
+				c.Assert(item.events[i].ID, Equals, evts[i].ID)
+				c.Assert(item.events[i].Height, Equals, evts[i].Height)
+				c.Assert(item.events[i].Type, Equals, evts[i].Type)
+				c.Assert(item.events[i].InTx.Equals(evts[i].InTx), Equals, true, Commentf("%+v\n%+v", item.events[i].InTx, evts[i].InTx))
+				// TODO: test for price target, trade slip, and liquidity fee
+			}
 		} else {
 			c.Assert(err, NotNil, Commentf("Expected: %s, got nil", item.expectedErr.Error()))
 			c.Assert(err.Error(), Equals, item.expectedErr.Error())

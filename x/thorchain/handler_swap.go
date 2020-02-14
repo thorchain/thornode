@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -66,21 +65,9 @@ func (h SwapHandler) handle(ctx sdk.Context, msg MsgSwap, version semver.Version
 	}
 }
 
-func (h SwapHandler) addSwapEvent(ctx sdk.Context, swapEvt EventSwap, tx common.Tx, status EventStatus) error {
-	swapBytes, err := json.Marshal(swapEvt)
-	if err != nil {
-		return err
-	}
-	evt := NewEvent(swapEvt.Type(), ctx.BlockHeight(), tx, swapBytes, status)
-	if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Version, constAccessor constants.ConstantValues) sdk.Result {
 	transactionFee := constAccessor.GetInt64Value(constants.TransactionFee)
-	amount, swapEvents, swapErr := swap(
+	amount, events, swapErr := swap(
 		ctx,
 		h.keeper,
 		msg.Tx,
@@ -92,9 +79,9 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 		ctx.Logger().Error("fail to process swap message", "error", swapErr)
 		return swapErr.Result()
 	}
-	for _, item := range swapEvents {
-		if eventErr := h.addSwapEvent(ctx, item, msg.Tx, EventPending); eventErr != nil {
-			return sdk.ErrInternal(eventErr.Error()).Result()
+	for _, evt := range events {
+		if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
+			return sdk.ErrInternal(err.Error()).Result()
 		}
 	}
 
