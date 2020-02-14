@@ -211,7 +211,7 @@ func newOutboundTxHandlerTestHelper(c *C) outboundTxHandlerTestHelper {
 		Chain:       common.BNBChain,
 		ToAddress:   tx.Tx.FromAddress,
 		VaultPubKey: yggVault.PubKey,
-		Coin:        common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One)),
+		Coin:        common.NewCoin(common.RuneAsset(), sdk.NewUint(2*common.One)),
 		Memo:        NewOutboundMemo(tx.Tx.ID).String(),
 		InHash:      tx.Tx.ID,
 	}

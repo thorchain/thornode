@@ -131,7 +131,7 @@ func newRefundTxHandlerTestHelper(c *C) refundTxHandlerTestHelper {
 	tx := NewObservedTx(common.Tx{
 		ID:          GetRandomTxHash(),
 		Chain:       common.BNBChain,
-		Coins:       common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(1*common.One))},
+		Coins:       common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(2*common.One))},
 		Memo:        "swap:RUNE-A1F",
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
@@ -157,7 +157,7 @@ func newRefundTxHandlerTestHelper(c *C) refundTxHandlerTestHelper {
 		Chain:       common.BNBChain,
 		ToAddress:   tx.Tx.FromAddress,
 		VaultPubKey: yggVault.PubKey,
-		Coin:        common.NewCoin(common.RuneAsset(), sdk.NewUint(common.One)),
+		Coin:        common.NewCoin(common.RuneAsset(), sdk.NewUint(2*common.One)),
 		Memo:        NewRefundMemo(tx.Tx.ID).String(),
 		InHash:      tx.Tx.ID,
 	}
@@ -433,19 +433,19 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldBeSla
 		Chain: common.BNBChain,
 		Coins: common.Coins{
 			common.NewCoin(common.RuneAsset(), sdk.NewUint(1*common.One)),
-			common.NewCoin(common.BNBAsset, sdk.NewUint(1*common.One)),
+			common.NewCoin(common.BNBAsset, sdk.NewUint(common.One)),
 		},
 		Memo:        NewRefundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
 		Gas:         common.BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
-	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
+	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(1 * common.One).MulUint64(3).QuoUint64(2))
 	// slash one BNB
 	outMsg := NewMsgRefundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
 	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
-	c.Assert(na.Bond.Equal(expectedBond), Equals, true)
+	c.Assert(na.Bond.Equal(expectedBond), Equals, true, Commentf("Bond: %d != %d", na.Bond.Uint64(), expectedBond.Uint64()))
 }
 
 func (s *HandlerRefundSuite) TestOutboundTxHandlerInvalidObservedTxVoterShouldSlash(c *C) {
@@ -481,7 +481,7 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerInvalidObservedTxVoterShouldSl
 	outMsg := NewMsgRefundTx(tx, tx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
 	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
-	c.Assert(na.Bond.Equal(expectedBond), Equals, true)
+	c.Assert(na.Bond.Equal(expectedBond), Equals, true, Commentf("Bond: %d != %d", na.Bond.Uint64(), expectedBond.Uint64()))
 
 	vaultData, err = helper.keeper.GetVaultData(helper.ctx)
 	c.Assert(err, IsNil)
