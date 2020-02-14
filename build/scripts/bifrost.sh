@@ -33,17 +33,8 @@ echo "{
     \"chains\": [
       {
         \"chain_id\": \"BNB\",
-        \"rpc_host\": \"$BINANCE_HOST\"
-      }
-    ],
-    \"tss\": {
-        \"scheme\": \"$TSS_SCHEME\",
-        \"host\": \"$TSS_HOST\",
-        \"port\": $TSS_PORT
-    },
-    \"observer\": {
-      \"block_scanners\": [
-        {
+        \"rpc_host\": \"$BINANCE_HOST\",
+        \"block_scanner\": {
           \"rpc_host\": \"$BINANCE_HOST\",
           \"enforce_block_height\": false,
           \"block_scan_processors\": 1,
@@ -57,7 +48,12 @@ echo "{
           \"start_block_height\": 0,
           \"db_path\": \"$OBSERVER_PATH\"
         }
-      ]
+      }
+    ],
+    \"tss\": {
+        \"scheme\": \"$TSS_SCHEME\",
+        \"host\": \"$TSS_HOST\",
+        \"port\": $TSS_PORT
     },
     \"signer\": {
       \"signer_db_path\": \"$SIGNER_PATH\",

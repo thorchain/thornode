@@ -6,9 +6,9 @@ import (
 
 	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/tendermint/tendermint/crypto"
-	"gitlab.com/thorchain/thornode/bifrost/config"
-	"gitlab.com/thorchain/thornode/bifrost/metrics"
+
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	ttypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
@@ -117,29 +117,11 @@ func (b *MockChainClient) GetPubKey() crypto.PubKey {
 	return nil
 }
 
-func (b *MockChainClient) Start() {}
+func (b *MockChainClient) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+	return nil
+}
 
 func (b *MockChainClient) Stop() error {
-	return nil
-}
-
-func (b *MockChainClient) GetMessages() <-chan stypes.TxIn {
-	return nil
-}
-
-func (b *MockChainClient) GetTxInForRetry(failedOnly bool) ([]stypes.TxIn, error) {
-	return nil, nil
-}
-
-func (b *MockChainClient) SetTxInStatus(txIn stypes.TxIn, status stypes.TxInStatus) error {
-	return nil
-}
-
-func (b *MockChainClient) RemoveTxIn(txin stypes.TxIn) error {
-	return nil
-}
-
-func (b *MockChainClient) InitBlockScanner(cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
 	return nil
 }
 

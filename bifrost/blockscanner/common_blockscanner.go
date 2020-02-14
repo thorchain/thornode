@@ -40,7 +40,7 @@ type CommonBlockScanner struct {
 }
 
 // NewCommonBlockScanner create a new instance of CommonBlockScanner
-func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage ScannerStorage, m *metrics.Metrics) (*CommonBlockScanner, error) {
+func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics) (*CommonBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("host is empty")
 	}
@@ -73,7 +73,7 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage 
 		},
 		scannerStorage: scannerStorage,
 		metrics:        m,
-		previousBlock:  cfg.StartBlockHeight,
+		previousBlock:  startBlockHeight,
 		errorCounter:   m.GetCounterVec(metrics.CommonBlockScannerError),
 	}, nil
 }

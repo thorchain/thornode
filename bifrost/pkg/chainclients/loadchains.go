@@ -14,7 +14,7 @@ func LoadChains(thorKeys *thorclient.Keys, cfg []config.ChainConfiguration, tss 
 	for _, chain := range cfg {	
 		switch chain.ChainID {
 		case common.BNBChain:
-			bnb, err := binance.NewBinance(thorKeys, chain.RPCHost, tss, thorchainBridge)
+			bnb, err := binance.NewBinance(thorKeys, chain, tss, thorchainBridge)
 			if err == nil {
 				chains[common.BNBChain] = bnb
 			}

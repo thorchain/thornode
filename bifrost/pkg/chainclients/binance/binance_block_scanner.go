@@ -34,17 +34,17 @@ type BinanceBlockScanner struct {
 	logger             zerolog.Logger
 	wg                 *sync.WaitGroup
 	stopChan           chan struct{}
-	txInChan           chan stypes.TxIn
 	db                 blockscanner.ScannerStorage
 	commonBlockScanner *blockscanner.CommonBlockScanner
 	m                  *metrics.Metrics
 	errCounter         *prometheus.CounterVec
 	pubkeyMgr          pubkeymanager.PubKeyValidator
+	globalTxsQueue     chan stypes.TxIn
 	rpcHost            string
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
-func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, pkmgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) (*BinanceBlockScanner, error) {
+func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scanStorage blockscanner.ScannerStorage, isTestNet bool, pkmgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) (*BinanceBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
@@ -63,7 +63,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 	if m == nil {
 		return nil, errors.New("metrics is nil")
 	}
-	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, scanStorage, m)
+	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, startBlockHeight, scanStorage, m)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create common block scanner")
 	}
@@ -78,21 +78,16 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, scanStorage bl
 		logger:             log.Logger.With().Str("module", "blockscanner").Logger(),
 		wg:                 &sync.WaitGroup{},
 		stopChan:           make(chan struct{}),
-		txInChan:           make(chan stypes.TxIn),
 		db:                 scanStorage,
 		commonBlockScanner: commonBlockScanner,
-		errCounter:         m.GetCounterVec(metrics.BlockScanError("BNB")),
+		errCounter:         m.GetCounterVec(metrics.BlockScanError(common.BNBChain)),
 		rpcHost:            rpcHost,
 	}, nil
 }
 
-// GetMessages return the channel
-func (b *BinanceBlockScanner) GetMessages() <-chan stypes.TxIn {
-	return b.txInChan
-}
-
 // Start block scanner
-func (b *BinanceBlockScanner) Start() {
+func (b *BinanceBlockScanner) Start(globalTxsQueue chan stypes.TxIn) {
+	b.globalTxsQueue = globalTxsQueue
 	for idx := 1; idx <= b.cfg.BlockScanProcessors; idx++ {
 		b.wg.Add(1)
 		go b.searchTxInABlock(idx)
@@ -168,7 +163,7 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 	txIn.BlockHeight = strconv.FormatInt(block, 10)
 	txIn.Count = strconv.Itoa(len(txIn.TxArray))
 	txIn.Chain = common.BNBChain
-	b.txInChan <- txIn
+	b.globalTxsQueue <- txIn
 	return nil
 }
 

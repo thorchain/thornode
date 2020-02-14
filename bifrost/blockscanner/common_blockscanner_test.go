@@ -39,17 +39,17 @@ func (CommonBlockScannerTestSuite) TestNewCommonBlockScanner(c *C) {
 	mss := NewMockScannerStorage()
 	cbs, err := NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "",
-	}, mss, nil)
+	}, 0, mss, nil)
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "localhost",
-	}, mss, nil)
+	}, 0, mss, nil)
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "localhost",
-	}, mss, m)
+	}, 0, mss, m)
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 }
@@ -82,7 +82,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, mss, m)
+	}, 0, mss, m)
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	trSkipVerify := &http.Transport{

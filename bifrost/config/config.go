@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -15,19 +14,12 @@ import (
 )
 
 type Configuration struct {
-	Observer  ObserverConfiguration `json:"observer" mapstructure:"observer"`
 	Signer    SignerConfiguration   `json:"signer" mapstructure:"signer"`
 	Thorchain ClientConfiguration   `json:"thorchain" mapstructure:"thorchain"`
 	Metrics   MetricsConfiguration  `json:"metrics" mapstructure:"metrics"`
 	Chains    []ChainConfiguration  `json:"chains" mapstructure:"chains"`
 	TSS       TSSConfiguration      `json:"tss" mapstructure:"tss"`
 	BackOff   BackOff               `json:"back_off" mapstructure:"back_off"`
-}
-
-// ObserverConfiguration values
-type ObserverConfiguration struct {
-	RetryInterval time.Duration               `json:"retry_interval" mapstructure:"retry_interval"`
-	BlockScanners []BlockScannerConfiguration `json:"block_scanners" mapstructure:"block_scanners"`
 }
 
 // SignerConfiguration all the configures need by signer
@@ -48,14 +40,15 @@ type BackOff struct {
 
 // ChainConfiguration configuration
 type ChainConfiguration struct {
-	ChainID      common.Chain `json:"chain_id" mapstructure:"chain_id"`
-	ChainHost    string       `json:"chain_host" mapstructure:"chain_host"`
-	ChainNetwork string       `json:"chain_network" mapstructure:"chain_network"`
-	UserName     string       `json:"username" mapstructure:"username"`
-	Password     string       `json:"password" mapstructure:"password"`
-	RPCHost      string       `jsonn:"rpc_host" mapstructure:"rpc_host"`
-	HTTPostMode  bool         `json:"http_post_mode" mapstructure:"http_post_mode"` // Bitcoin core only supports HTTP POST mode
-	DisableTLS   bool         `json:"disable_tls" mapstructure:"disable_tls"`       // Bitcoin core does not provide TLS by default
+	ChainID      common.Chain              `json:"chain_id" mapstructure:"chain_id"`
+	ChainHost    string                    `json:"chain_host" mapstructure:"chain_host"`
+	ChainNetwork string                    `json:"chain_network" mapstructure:"chain_network"`
+	UserName     string                    `json:"username" mapstructure:"username"`
+	Password     string                    `json:"password" mapstructure:"password"`
+	RPCHost      string                    `jsonn:"rpc_host" mapstructure:"rpc_host"`
+	HTTPostMode  bool                      `json:"http_post_mode" mapstructure:"http_post_mode"` // Bitcoin core only supports HTTP POST mode
+	DisableTLS   bool                      `json:"disable_tls" mapstructure:"disable_tls"`       // Bitcoin core does not provide TLS by default
+	BlockScanner BlockScannerConfiguration `json:"block_scanner" mapstructure:"block_scanner"`
 	BackOff      BackOff
 }
 
@@ -115,28 +108,13 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, errors.Wrap(err, "fail to unmarshal")
 	}
-	for _, blockScanner := range cfg.Observer.BlockScanners {
-		if err := blockScanner.ChainID.Validate(); err != nil {
-			return nil, err
-		}
-	}
-
-	if len(cfg.Observer.BlockScanners) != len(cfg.Chains) {
-		return nil, errors.New("lengths for chain block scanners and chains are not equal")
-	}
-	sort.Slice(cfg.Observer.BlockScanners, func(i, j int) bool {
-		return cfg.Observer.BlockScanners[i].ChainID < cfg.Observer.BlockScanners[j].ChainID 
-	})
-	sort.Slice(cfg.Chains, func(i, j int) bool {
-		return cfg.Chains[i].ChainID < cfg.Chains[j].ChainID 
-	})
 
 	for i, chain := range cfg.Chains {
 		if err := chain.ChainID.Validate(); err != nil {
 			return nil, err
 		}
-		if chain.ChainID != cfg.Observer.BlockScanners[i].ChainID {
-			return nil, errors.New("corresponding chain ids are not equal")
+		if err := chain.BlockScanner.ChainID.Validate(); err != nil {
+			return nil, err
 		}
 		cfg.Chains[i].BackOff = cfg.BackOff
 	}
@@ -156,7 +134,6 @@ func applyDefaultConfig() {
 	viper.SetDefault("back_off.multiplier", 1.5)
 	viper.SetDefault("back_off.max_interval", 3*time.Minute)
 	viper.SetDefault("back_off.max_elapsed_time", 168*time.Hour) // 7 days. Due to node sync time's being so random
-	viper.SetDefault("observer.retry_interval", "2s")
 	applyDefaultSignerConfig()
 }
 

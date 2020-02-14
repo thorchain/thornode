@@ -37,8 +37,9 @@ import (
 type Binance struct {
 	logger             zerolog.Logger
 	RPCHost            string
+	cfg                config.ChainConfiguration
 	chainID            string
-	IsTestNet          bool
+	isTestNet          bool
 	client             *http.Client
 	accountNumber      int64
 	seqNumber          int64
@@ -57,10 +58,12 @@ type BinanceMetadata struct {
 }
 
 // NewBinance create new instance of binance client
-func NewBinance(thorKeys *thorclient.Keys, rpcHost string, keySignCfg config.TSSConfiguration, thorchainBridge *thorclient.ThorchainBridge) (*Binance, error) {
-	if len(rpcHost) == 0 {
+func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, keySignCfg config.TSSConfiguration, thorchainBridge *thorclient.ThorchainBridge) (*Binance, error) {
+	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
+	rpcHost := cfg.RPCHost
+
 	tssKm, err := tss.NewKeySign(keySignCfg)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create tss signer: %w", err)
@@ -88,70 +91,68 @@ func NewBinance(thorKeys *thorclient.Keys, rpcHost string, keySignCfg config.TSS
 		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
 
-	bnb := &Binance{
+	return &Binance{
 		logger:          log.With().Str("module", "binance").Logger(),
 		RPCHost:         rpcHost,
+		cfg:             cfg,
 		client:          &http.Client{},
 		signLock:        &sync.Mutex{},
 		tssKeyManager:   tssKm,
 		localKeyManager: localKm,
 		thorchainBridge: thorchainBridge,
-	}
-
-	chainID, isTestNet := bnb.CheckIsTestNet()
-	if isTestNet {
-		types.Network = types.TestNetwork
-	} else {
-		types.Network = types.ProdNetwork
-	}
-
-	bnb.IsTestNet = isTestNet
-	bnb.chainID = chainID
-	return bnb, nil
+	}, nil
 }
 
-func (b *Binance) InitBlockScanner(cfg config.BlockScannerConfiguration, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+func (b *Binance) initBlockScanner(pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+	b.checkIsTestNet()
+
 	var err error
-	b.storage, err = NewBinanceBlockScannerStorage(cfg.DBPath)
+	b.storage, err = NewBinanceBlockScannerStorage(b.cfg.BlockScanner.DBPath)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create scan storage")
 	}
-	b.blockScanner, err = NewBinanceBlockScanner(cfg, b.storage, b.IsTestNet, pubkeyMgr, m)
+	startBlockHeight := int64(0)
+	if !b.cfg.BlockScanner.EnforceBlockHeight {
+		startBlockHeight, err = b.thorchainBridge.GetLastObservedInHeight(common.BNBChain)
+		if err != nil {
+			return pkerrors.Wrap(err, "fail to get start block height from thorchain")
+		}
+		if startBlockHeight == 0 {
+			startBlockHeight, err = b.GetHeight()
+			if err != nil {
+				return pkerrors.Wrap(err, "fail to get binance height")
+			}
+			b.logger.Info().Int64("height", startBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
+		}
+	} else {
+		startBlockHeight = b.cfg.BlockScanner.StartBlockHeight
+	}
+	b.blockScanner, err = NewBinanceBlockScanner(b.cfg.BlockScanner, startBlockHeight, b.storage, b.isTestNet, pubkeyMgr, m)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create block scanner")
 	}
 	return nil
 }
 
-func (b *Binance) Start() {
-	b.blockScanner.Start()
+func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+	err := b.initBlockScanner(pubkeyMgr, m)
+	if err != nil {
+		b.logger.Error().Err(err).Msg("fail to init block scanner")
+		return err
+	}
+	b.blockScanner.Start(globalTxsQueue)
+	return nil
 }
 
 func (b *Binance) Stop() error {
 	return b.blockScanner.Stop()
 }
 
-func (b *Binance) GetMessages() <-chan stypes.TxIn {
-	return b.blockScanner.GetMessages()
-}
-
-func (b *Binance) SetTxInStatus(txIn stypes.TxIn, status stypes.TxInStatus) error {
-	return b.storage.SetTxInStatus(txIn, status)
-}
-
-func (b *Binance) RemoveTxIn(txIn stypes.TxIn) error {
-	return b.storage.RemoveTxIn(txIn)
-}
-
-func (b *Binance) GetTxInForRetry(failedOnly bool) ([]stypes.TxIn, error) {
-	return b.storage.GetTxInForRetry(failedOnly)
-}
-
 // IsTestNet determinate whether we are running on test net by checking the status
-func (b *Binance) CheckIsTestNet() (string, bool) {
+func (b *Binance) checkIsTestNet() {
 	// Cached data after first call
-	if b.IsTestNet {
-		return b.chainID, true
+	if b.isTestNet {
+		return
 	}
 
 	u, err := url.Parse(b.RPCHost)
@@ -192,8 +193,14 @@ func (b *Binance) CheckIsTestNet() (string, bool) {
 		log.Fatal().Err(err).Msg("fail to unmarshal body")
 	}
 
-	isTestNet := status.Result.NodeInfo.Network == "Binance-Chain-Nile"
-	return status.Result.NodeInfo.Network, isTestNet
+	b.chainID = status.Result.NodeInfo.Network
+	b.isTestNet = b.chainID == "Binance-Chain-Nile"
+
+	if b.isTestNet {
+		types.Network = types.TestNetwork
+	} else {
+		types.Network = types.ProdNetwork
+	}
 }
 
 func (b *Binance) GetChain() common.Chain {

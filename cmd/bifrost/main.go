@@ -99,7 +99,7 @@ func main() {
 	chains := chainclients.LoadChains(thorKeys, cfg.Chains, cfg.TSS, thorchainBridge)
 
 	// start observer
-	obs, err := observer.NewObserver(cfg.Observer, thorchainBridge, pubkeyMgr, chains, m)
+	obs, err := observer.NewObserver(pubkeyMgr, chains, thorchainBridge, m)
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create observer")
 	}
