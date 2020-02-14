@@ -15,7 +15,6 @@ stages:
   - smoke-test
   - push
   - deploy
-  - seed
 
 unit_tests:
   stage: test
@@ -63,7 +62,7 @@ build-thornode:
 
 smoke-test:thornode:
   stage: smoke-test
-  image: cbarraford/docker-golang
+  image: docker:stable
   services:
     - docker:dind
   variables:
@@ -75,13 +74,19 @@ smoke-test:thornode:
     paths:
       - ./logs/
   before_script:
-    - export GOBIN=$GOPATH/bin
+    - apk update
+    - apk add --no-cache --virtual .build-deps g++ python3-dev libffi-dev openssl-dev
+    - apk add python3 py-pip make git jq curl
+    - git clone --single-branch -b $CI_COMMIT_BRANCH https://gitlab.com/thorchain/heimdall.git || git clone --single-branch -b master https://gitlab.com/thorchain/heimdall.git
+    - pip3 install docker-compose
+    - pip3 install -r ./heimdall/requirements.txt
+    - make -C build/docker reset-mocknet-standalone
   except:
     - schedules
   environment:
     name: integration
   script:
-    - make tools smoke-ci-standalone
+    - python3 ./heimdall/smoke.py --binance http://docker:26660 --thorchain http://docker:1317
   after_script:
     - ./scripts/docker_logs.sh
 
