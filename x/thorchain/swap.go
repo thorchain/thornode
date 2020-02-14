@@ -79,6 +79,11 @@ func swap(ctx sdk.Context,
 		pools = append(pools, sourcePool)
 		tx.Coins = common.Coins{common.NewCoin(common.RuneAsset(), amt)}
 		tx.Gas = nil
+
+		// pre-populate the out transaction
+		swapEvt.Status = EventSuccess
+		swapEvt.OutTxs = common.Txs{common.NewTx(common.BlankTxID, tx.FromAddress, tx.ToAddress, tx.Coins, tx.Gas, tx.Memo)}
+
 		swapEvents = append(swapEvents, swapEvt)
 	}
 

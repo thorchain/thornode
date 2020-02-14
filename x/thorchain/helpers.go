@@ -271,6 +271,12 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 	if err != nil {
 		return fmt.Errorf("fail to get event: %w", err)
 	}
+
+	// if the event is already successful, don't append more transactions
+	if event.Status == EventSuccess {
+		return nil
+	}
+
 	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
 	event.OutTxs = append(event.OutTxs, txs...)
 	if eventStatus == EventRefund {
