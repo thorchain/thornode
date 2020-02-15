@@ -72,7 +72,8 @@ func swap(ctx sdk.Context,
 		var swapErr sdk.Error
 		var swapEvt Event
 		var amt sdk.Uint
-		amt, sourcePool, swapEvt, swapErr = swapOne(ctx, keeper, tx, sourcePool, common.RuneAsset(), destination, tradeTarget, transactionFee)
+		// Here we use a tradeTarget of 0 because the target is for the next swap asset in a double swap
+		amt, sourcePool, swapEvt, swapErr = swapOne(ctx, keeper, tx, sourcePool, common.RuneAsset(), destination, sdk.ZeroUint(), transactionFee)
 		if swapErr != nil {
 			return sdk.ZeroUint(), swapEvents, swapErr
 		}
