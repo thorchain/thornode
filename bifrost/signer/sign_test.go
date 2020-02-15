@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/tendermint/tendermint/crypto"
 
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
@@ -74,7 +73,7 @@ func (s *SignSuite) TestCheckTxn(c *C) {
 }
 
 type MockChainClient struct {
-	baseAccount types.BaseAccount
+	account common.Account
 }
 
 func (b *MockChainClient) SignTx(tai stypes.TxOutItem, height int64) ([]byte, error) {
@@ -109,8 +108,8 @@ func (b *MockChainClient) GetAddress(poolPubKey common.PubKey) string {
 	return "0dd3d0a4a6eacc98cc4894791702e46c270bde76"
 }
 
-func (b *MockChainClient) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
-	return b.baseAccount, nil
+func (b *MockChainClient) GetAccount(addr string) (common.Account, error) {
+	return b.account, nil
 }
 
 func (b *MockChainClient) GetPubKey() crypto.PubKey {
@@ -129,9 +128,9 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 	sign := &Signer{
 		chains: map[common.Chain]chainclients.ChainClient{
 			common.BNBChain: &MockChainClient{
-				baseAccount: types.BaseAccount{
-					Coins: types.Coins{
-						types.Coin{Denom: common.BNBChain.String(), Amount: 1000000},
+				account: common.Account{
+					Coins: common.AccountCoins{
+						common.AccountCoin{Denom: common.BNBChain.String(), Amount: 1000000},
 					},
 				},
 			},
@@ -151,10 +150,10 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 	sign := &Signer{
 		chains: map[common.Chain]chainclients.ChainClient{
 			common.BNBChain: &MockChainClient{
-				baseAccount: types.BaseAccount{
-					Coins: types.Coins{
-						types.Coin{Denom: common.BNBChain.String(), Amount: 1000000},
-						types.Coin{Denom: "RUNE", Amount: 1000000},
+				account: common.Account{
+					Coins: common.AccountCoins{
+						common.AccountCoin{Denom: common.BNBChain.String(), Amount: 1000000},
+						common.AccountCoin{Denom: "RUNE", Amount: 1000000},
 					},
 				},
 			},
@@ -174,9 +173,9 @@ func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {
 	sign := &Signer{
 		chains: map[common.Chain]chainclients.ChainClient{
 			common.BNBChain: &MockChainClient{
-				baseAccount: types.BaseAccount{
-					Coins: types.Coins{
-						types.Coin{Denom: common.BNBChain.String(), Amount: 10000},
+				account: common.Account{
+					Coins: common.AccountCoins{
+						common.AccountCoin{Denom: common.BNBChain.String(), Amount: 0},
 					},
 				},
 			},

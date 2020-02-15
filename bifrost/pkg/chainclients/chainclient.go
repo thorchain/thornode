@@ -1,8 +1,6 @@
 package chainclients
 
 import (
-	"github.com/binance-chain/go-sdk/common/types"
-
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
@@ -28,7 +26,7 @@ type ChainClient interface {
 	BroadcastTx(tx []byte) error
 	GetHeight() (int64, error)
 	GetAddress(poolPubKey common.PubKey) string
-	GetAccount(addr types.AccAddress) (types.BaseAccount, error)
+	GetAccount(addr string) (common.Account, error)
 	GetChain() common.Chain
 	GetGasFee(count uint64) common.Gas
 	ValidateMetadata(_ interface{}) bool

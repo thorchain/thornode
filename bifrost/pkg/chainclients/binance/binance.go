@@ -341,18 +341,13 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		return nil, fmt.Errorf("invalid send msg: %w", err)
 	}
 
-	address, err := types.AccAddressFromBech32(fromAddr)
-	if err != nil {
-		b.logger.Error().Err(err).Msgf("fail to get parse address: %s", fromAddr)
-		return nil, err
-	}
 	currentHeight, err := b.GetHeight()
 	if err != nil {
 		b.logger.Error().Err(err).Msg("fail to get current binance block height")
 		return nil, err
 	}
 	if currentHeight > b.currentBlockHeight {
-		acc, err := b.GetAccount(address)
+		acc, err := b.GetAccount(fromAddr)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get account info: %w", err)
 		}
@@ -417,13 +412,8 @@ func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey 
 		b.logger.Error().Err(err).Msgf("fail to sign msg with memo: %s", signMsg.Memo)
 		// should THORNode give up? let's check the seq no on binance chain
 		// keep in mind, when THORNode don't run our own binance full node, THORNode might get rate limited by binance
-		address, err := types.AccAddressFromBech32(from)
-		if err != nil {
-			b.logger.Error().Err(err).Msgf("fail to get parse address: %s", from)
-			return nil, err
-		}
 
-		acc, err := b.GetAccount(address)
+		acc, err := b.GetAccount(from)
 		if err != nil {
 			b.logger.Error().Err(err).Msg("fail to get account info from binance chain")
 			continue
@@ -435,20 +425,25 @@ func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey 
 	}
 }
 
-func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
+func (b *Binance) GetAccount(addr string) (common.Account, error) {
+	address, err := types.AccAddressFromBech32(addr)
+	if err != nil {
+		b.logger.Error().Err(err).Msgf("fail to get parse address: %s", addr)
+		return common.Account{}, err
+	}
 	u, err := url.Parse(b.RPCHost)
 	if err != nil {
 		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
-		return types.BaseAccount{}, err
+		return common.Account{}, err
 	}
 	u.Path = "/abci_query"
 	v := u.Query()
-	v.Set("path", fmt.Sprintf("\"/account/%s\"", addr.String()))
+	v.Set("path", fmt.Sprintf("\"/account/%s\"", address.String()))
 	u.RawQuery = v.Encode()
 
 	resp, err := http.Get(u.String())
 	if err != nil {
-		return types.BaseAccount{}, err
+		return common.Account{}, err
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -471,24 +466,27 @@ func (b *Binance) GetAccount(addr types.AccAddress) (types.BaseAccount, error) {
 	var result queryResult
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return types.BaseAccount{}, err
+		return common.Account{}, err
 	}
 
 	err = json.Unmarshal(body, &result)
 	if err != nil {
-		return types.BaseAccount{}, err
+		return common.Account{}, err
 	}
 
 	data, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
 	if err != nil {
-		return types.BaseAccount{}, err
+		return common.Account{}, err
 	}
 
 	cdc := ttypes.NewCodec()
 	var acc types.AppAccount
 	err = cdc.UnmarshalBinaryBare(data, &acc)
-
-	return acc.BaseAccount, err
+	if err != nil {
+		return common.Account{}, err
+	}
+	account := common.NewAccount(acc.BaseAccount.Sequence, acc.BaseAccount.AccountNumber, common.GetCoins(acc.BaseAccount.Coins))
+	return account, nil
 }
 
 // broadcastTx is to broadcast the tx to binance chain

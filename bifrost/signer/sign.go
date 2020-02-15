@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	stypes "github.com/binance-chain/go-sdk/common/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -329,13 +328,8 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 		s.logger.Error().Err(err).Msgf("not supported %s", tx.Chain.String())
 		return tx, err
 	}
-	addr, err := stypes.AccAddressFromHex(chain.GetAddress(tx.VaultPubKey))
-	if err != nil {
-		s.logger.Error().Err(err).Msg("failed to convert to AccAddress")
-		return tx, err
-	}
 
-	acct, err := chain.GetAccount(addr)
+	acct, err := chain.GetAccount(chain.GetAddress(tx.VaultPubKey))
 	if err != nil {
 		s.logger.Error().Err(err).Msg("failed to get chain account info")
 		return tx, err
@@ -348,7 +342,7 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 			s.logger.Error().Err(err).Msg("failed to parse asset")
 			return tx, err
 		}
-		amount := sdk.NewUint(uint64(coin.Amount))
+		amount := sdk.NewUint(coin.Amount)
 		if asset.Chain == tx.Chain {
 			amount = common.SafeSub(amount, gas[0].Amount)
 		}
