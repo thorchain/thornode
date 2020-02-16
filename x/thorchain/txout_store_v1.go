@@ -142,12 +142,10 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 				runeFee = sdk.NewUint(uint64(transactionFee)) // Fee is the prescribed fee
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
-			/* Uncomment me. Temporally disabling adding rune fee to reserve to help test heimdall math
 			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); err != nil {
 				// Add to reserve
 				ctx.Logger().Error("fail to add fee to reserve", "error", err)
 			}
-			*/
 		} else {
 			pool, err := tos.keeper.GetPool(ctx, toi.Coin.Asset) // Get pool
 			if err != nil {
@@ -169,11 +167,9 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			if err := tos.keeper.SetPool(ctx, pool); err != nil {        // Set Pool
 				return false, fmt.Errorf("fail to save pool: %w", err)
 			}
-			/* Uncomment me. Temporally disabling adding rune fee to reserve to help test heimdall math
 			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); err != nil {
 				return false, fmt.Errorf("fail to add fee to reserve: %w", err)
 			}
-			*/
 		}
 	}
 
