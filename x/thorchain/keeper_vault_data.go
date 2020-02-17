@@ -101,20 +101,21 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 
 	// First subsidise the gas that was consumed from reserves, any
 	// reserves we take, minus from the gas we owe.
-	vault.TotalReserve, vault.Gas, err = subtractGas(ctx, k, vault.TotalReserve, vault.Gas)
+	vault.TotalReserve, vault.Gas, err = subtractGas(ctx, k, vault.TotalReserve, vault.Gas, true)
 	if err != nil {
 		return fmt.Errorf("fail to subtract gas from reserve: %w", err)
 	}
 
-	// Then get fees and rewards
+	// get total liquidity fees
 	totalLiquidityFees, err := k.GetTotalLiquidityFees(ctx, currentHeight)
+	fmt.Printf("Total Liquidity Fees: %d\n", totalLiquidityFees.Uint64())
 	if err != nil {
 		return fmt.Errorf("fail to get total liquidity fee: %w", err)
 	}
 	var totalFees sdk.Uint
 
-	// If we have any remaining gas to pay, take from total liquidity fees
-	totalFees, vault.Gas, err = subtractGas(ctx, k, totalLiquidityFees, vault.Gas)
+	// get total Fees (which is total liquidity fees, minus any gas we have left to pay)
+	totalFees, vault.Gas, err = subtractGas(ctx, k, totalLiquidityFees, vault.Gas, false)
 	if err != nil {
 		return fmt.Errorf("fail to subtract gas from liquidity fees: %w", err)
 	}
@@ -129,22 +130,24 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	}
 	emissionCurve := constAccessor.GetInt64Value(constants.EmissionCurve)
 	blocksOerYear := constAccessor.GetInt64Value(constants.BlocksPerYear)
+	fmt.Printf("Total Staked: %d, TotalBonded: %d, TotalReserve: %d, Total Fees: %d\n", totalStaked.Uint64(), totalBonded.Uint64(), vault.TotalReserve.Uint64(), totalFees.Uint64())
 	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, vault.TotalReserve, totalFees, emissionCurve, blocksOerYear)
+	fmt.Printf("Bond Rewards: %d, Total Pool Rewards: %d, Staker Deficit: %d\n", bondReward.Uint64(), totalPoolRewards.Uint64(), stakerDeficit.Uint64())
+
+	// if we don't have enough reserve to pay out various rewards, save the
+	// vault changes and return
+	if vault.TotalReserve.LT(totalPoolRewards.Add(bondReward)) {
+		return k.SetVaultData(ctx, vault)
+	}
 
 	// Move Rune from the Reserve to the Bond and Pool Rewards
-	if vault.TotalReserve.LT(totalPoolRewards) {
-		vault.TotalReserve = sdk.ZeroUint()
-	} else {
-		vault.TotalReserve = common.SafeSub(
-			common.SafeSub(vault.TotalReserve, bondReward),
-			totalPoolRewards) // Subtract Bond and Pool rewards
-	}
+	vault.TotalReserve = common.SafeSub(vault.TotalReserve, bondReward.Add(totalPoolRewards))
 	vault.BondRewardRune = vault.BondRewardRune.Add(bondReward) // Add here for individual Node collection later
 
 	var evtPools []PoolAmt
 
 	if !totalPoolRewards.IsZero() { // If Pool Rewards to hand out
-		// First subsidise the gas that was consumed
+		// First subsidise the gas that was consumed (if any remain)
 		for _, coin := range vault.Gas {
 			if coin.Amount.IsZero() {
 				continue
@@ -194,11 +197,14 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 			if err != nil {
 				return fmt.Errorf("fail to get liquidity fees for pool(%s): %w", pool.Asset, err)
 			}
-			if !pool.BalanceRune.IsZero() || !poolFees.IsZero() { // Safety checks
+			fmt.Printf("%s BalanceRune: %d, PoolFees: %d\n", pool.Asset.String(), pool.BalanceRune.Uint64(), poolFees.Uint64())
+			if pool.BalanceRune.IsZero() || poolFees.IsZero() { // Safety checks
 				continue
 			}
 			poolDeficit := calcPoolDeficit(stakerDeficit, totalLiquidityFees, poolFees)
+			fmt.Printf("Pool Deficit: %d\n", poolDeficit.Uint64())
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, poolDeficit)
+			vault.BondRewardRune = vault.BondRewardRune.Add(poolDeficit)
 			if err := k.SetPool(ctx, pool); err != nil {
 				err = errors.Wrap(err, "fail to set pool")
 				ctx.Logger().Error(err.Error())
@@ -251,7 +257,7 @@ func getTotalActiveNodeWithBond(ctx sdk.Context, k Keeper) (int64, error) {
 }
 
 // remove gas
-func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (sdk.Uint, common.Gas, error) {
+func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas, addToPool bool) (sdk.Uint, common.Gas, error) {
 	for i, coin := range gas {
 		// if the coin is zero amount, don't need to do anything
 		if coin.Amount.IsZero() {
@@ -261,9 +267,19 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (
 		if err != nil {
 			return sdk.ZeroUint(), nil, fmt.Errorf("fail to get pool(%s): %w", coin.Asset, err)
 		}
+
 		runeGas := pool.AssetValueInRune(coin.Amount)
-		gas[i].Amount = common.SafeSub(gas[i].Amount, coin.Amount)
+		if runeGas.GT(val) {
+			runeGas = val
+		}
+		gas[i].Amount = common.SafeSub(gas[i].Amount, pool.RuneValueInAsset(runeGas))
 		val = common.SafeSub(val, runeGas)
+		if addToPool {
+			pool.BalanceRune = pool.BalanceRune.Add(runeGas)
+			if err := keeper.SetPool(ctx, pool); err != nil {
+				return sdk.ZeroUint(), nil, fmt.Errorf("fail to set pool(%s): %w", coin.Asset, err)
+			}
+		}
 
 	}
 	return val, gas, nil
@@ -272,6 +288,7 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (
 // Pays out Rewards
 func payPoolRewards(ctx sdk.Context, k Keeper, poolRewards []sdk.Uint, pools Pools) error {
 	for i, reward := range poolRewards {
+		fmt.Printf("Pay Pool Rewards: %s %d\n", pools[i].Asset.String(), reward.Uint64())
 		pools[i].BalanceRune = pools[i].BalanceRune.Add(reward)
 		if err := k.SetPool(ctx, pools[i]); err != nil {
 			err = errors.Wrap(err, "fail to set pool")

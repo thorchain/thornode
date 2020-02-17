@@ -200,10 +200,6 @@ func swapOne(ctx sdk.Context,
 	}
 	swapEvt.LiquidityFee = liquidityFee
 	swapEvt.TradeSlip = tradeSlip
-	errLiquidityFee := keeper.AddToLiquidityFees(ctx, pool.Asset, liquidityFee)
-	if errLiquidityFee != nil {
-		return sdk.ZeroUint(), pool, evt, sdk.ErrInternal(fmt.Errorf("fail to add liquidity: %w", swapErr).Error())
-	}
 
 	// do THORNode have enough balance to swap?
 	if emitAssets.GT(Y) {

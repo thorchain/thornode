@@ -1,6 +1,8 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -33,6 +35,7 @@ func calcBlockRewards(totalStaked, totalBonded, totalReserve, totalLiquidityFees
 	systemIncome := blockReward.Add(totalLiquidityFees)                 // Get total system income for block
 	stakerSplit := getPoolShare(totalStaked, totalBonded, systemIncome) // Get staker share
 	bonderSplit := common.SafeSub(systemIncome, stakerSplit)            // Remainder to Bonders
+	fmt.Printf(">>>>>>>>>>>> System Income: %d, Total Liquidity Fees: %d, Bond Split: %d, Staker Split: %d\n", systemIncome.Uint64(), totalLiquidityFees.Uint64(), bonderSplit.Uint64(), stakerSplit.Uint64())
 
 	stakerDeficit := sdk.ZeroUint()
 	poolReward := sdk.ZeroUint()

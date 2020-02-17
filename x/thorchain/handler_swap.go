@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -81,6 +82,14 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 	}
 	for _, evt := range events {
 		if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+
+		var swap EventSwap
+		if err := json.Unmarshal(evt.Event, &swap); err != nil {
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+		if err := h.keeper.AddToLiquidityFees(ctx, swap.Pool, swap.LiquidityFee); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 	}

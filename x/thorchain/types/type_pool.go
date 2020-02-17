@@ -148,12 +148,7 @@ func (ps Pool) AssetValueInRune(amt sdk.Uint) sdk.Uint {
 	if ps.BalanceRune.IsZero() || ps.BalanceAsset.IsZero() {
 		return sdk.ZeroUint()
 	}
-	rD := sdk.NewDec(int64(ps.BalanceRune.Uint64()))
-	aD := sdk.NewDec(int64(ps.BalanceAsset.Uint64()))
-	amtD := sdk.NewDec(int64(amt.Uint64()))
-	// priceInRune = (Rune/Asset)*amt
-	priceD := rD.Quo(aD).Mul(amtD)
-	return sdk.NewUint(uint64((priceD).RoundInt64()))
+	return common.GetShare(ps.BalanceRune, ps.BalanceAsset, amt)
 }
 
 // convert a specific amount of rune amt into its asset value
@@ -161,10 +156,5 @@ func (ps Pool) RuneValueInAsset(amt sdk.Uint) sdk.Uint {
 	if ps.BalanceRune.IsZero() || ps.BalanceAsset.IsZero() {
 		return sdk.ZeroUint()
 	}
-	rD := sdk.NewDec(int64(ps.BalanceRune.Uint64()))
-	aD := sdk.NewDec(int64(ps.BalanceAsset.Uint64()))
-	amtD := sdk.NewDec(int64(amt.Uint64()))
-	// priceInAsset = (Asset/Rune)*amt
-	priceD := aD.Quo(rD).Mul(amtD)
-	return sdk.NewUint(uint64((priceD).RoundInt64()))
+	return common.GetShare(ps.BalanceAsset, ps.BalanceRune, amt)
 }
