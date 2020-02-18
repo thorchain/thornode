@@ -23,7 +23,7 @@ type KeeperEvents interface {
 
 var ErrEventNotFound = errors.New("event not found")
 
-// GetEventByID will retrieve event with the given id from data store
+// GetEvent will retrieve event with the given id from data store
 func (k KVStore) GetEvent(ctx sdk.Context, eventID int64) (Event, error) {
 	key := k.GetKey(ctx, prefixEvents, strconv.FormatInt(eventID, 10))
 	store := ctx.KVStore(k.storeKey)
@@ -35,8 +35,11 @@ func (k KVStore) GetEvent(ctx sdk.Context, eventID int64) (Event, error) {
 	return e, nil
 }
 
-// AddEvent add one event to data store
+// UpsertEvent add one event to data store
 func (k KVStore) UpsertEvent(ctx sdk.Context, event Event) error {
+	if event.InTx.ID.IsEmpty() {
+		return fmt.Errorf("cant save event with empty TxIn ID")
+	}
 	if event.ID == 0 {
 		nextEventID, err := k.getNextEventID(ctx)
 		if err != nil {

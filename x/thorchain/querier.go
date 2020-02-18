@@ -575,6 +575,22 @@ func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 	return res, nil
 }
 
+func isIncludeAllEvents(u *url.URL) bool {
+	if u == nil {
+		return false
+	}
+	values, ok := u.Query()["include"]
+	if !ok {
+		return false
+	}
+	for _, value := range values {
+		if value == "all" {
+			return true
+		}
+	}
+	return false
+}
+
 func getEventStatusFromQuery(u *url.URL) EventStatuses {
 	var result EventStatuses
 	if u == nil {
@@ -635,12 +651,16 @@ func queryCompleteEvents(ctx sdk.Context, path []string, req abci.RequestQuery, 
 	if err != nil {
 		ctx.Logger().Error(err.Error())
 	}
+	all := isIncludeAllEvents(u)
 	es := getEventStatusFromQuery(u)
 	limit := int64(100) // limit the number of events, aka pagination
 	events := make(Events, 0)
 	for i := id; i <= id+limit; i++ {
 		event, _ := keeper.GetEvent(ctx, i)
-
+		if all {
+			events = append(events, event)
+			continue
+		}
 		if event.Empty() {
 			break
 		}

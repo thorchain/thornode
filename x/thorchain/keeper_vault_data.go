@@ -219,7 +219,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	evt := NewEvent(
 		rewardEvt.Type(),
 		ctx.BlockHeight(),
-		common.Tx{},
+		common.Tx{ID: common.BlankTxID},
 		evtBytes,
 		EventSuccess,
 	)
