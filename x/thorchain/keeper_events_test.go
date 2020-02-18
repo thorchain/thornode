@@ -52,4 +52,12 @@ func (s *KeeperEventsSuite) TestEvents(c *C) {
 	e, err = k.GetEvent(ctx, 2)
 	c.Assert(err, IsNil)
 	c.Assert(e.Empty(), Equals, false)
+
+	// check txIn ID cant be empty
+	evt.InTx.ID = ""
+	c.Assert(k.UpsertEvent(ctx, evt), NotNil)
+	e, err = k.GetEvent(ctx, 3)
+	c.Assert(err, IsNil)
+	c.Assert(e.Empty(), Equals, true)
+
 }
