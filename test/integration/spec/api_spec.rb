@@ -149,7 +149,7 @@ describe "API Tests" do
       resp = get("/pool/BNB.BOLT-014")
       expect(resp.code).to eq("200")
       expect(resp.body['balance_rune']).to eq("2117077851"), resp.body.inspect
-      expect(resp.body['balance_asset']).to eq("370801602"), resp.body.inspect
+      expect(resp.body['balance_asset']).to eq("370855302"), resp.body.inspect
     end
 
     it "Send outbound tx and mark tx'es as complete" do
