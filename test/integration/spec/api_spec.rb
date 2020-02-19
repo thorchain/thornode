@@ -148,7 +148,7 @@ describe "API Tests" do
       # pool balance should not change (other than the transaction fees)
       resp = get("/pool/BNB.BOLT-014")
       expect(resp.code).to eq("200")
-      expect(resp.body['balance_rune']).to eq("2217077851"), resp.body.inspect
+      expect(resp.body['balance_rune']).to eq("2117077851"), resp.body.inspect
       expect(resp.body['balance_asset']).to eq("370801602"), resp.body.inspect
     end
 
