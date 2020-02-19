@@ -212,8 +212,8 @@ describe "API Tests" do
 
       resp = get("/pool/BOLT-014")
       expect(resp.code).to eq("200")
-      expect(resp.body['balance_rune']).to eq("2144541407"), resp.body.inspect
-      expect(resp.body['balance_asset']).to eq("390801602"), resp.body.inspect
+      expect(resp.body['balance_rune']).to eq("2137077851"), resp.body.inspect
+      expect(resp.body['balance_asset']).to eq("390855302"), resp.body.inspect
     end
 
   end
