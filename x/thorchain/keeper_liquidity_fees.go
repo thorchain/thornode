@@ -19,7 +19,6 @@ type KeeperLiquidityFees interface {
 func (k KVStore) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fee sdk.Uint) error {
 	store := ctx.KVStore(k.storeKey)
 	currentHeight := uint64(ctx.BlockHeight())
-	fmt.Printf("Add To Liquidity: %d %s %d\n", currentHeight, asset.String(), fee.Uint64())
 
 	totalFees, err := k.GetTotalLiquidityFees(ctx, currentHeight)
 	if err != nil {
@@ -44,7 +43,6 @@ func (k KVStore) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fee sdk
 }
 
 func (k KVStore) getLiquidityFees(ctx sdk.Context, key string) (sdk.Uint, error) {
-	fmt.Printf("Get Liquidity: %s\n", key)
 	store := ctx.KVStore(k.storeKey)
 	if !store.Has([]byte(key)) {
 		return sdk.ZeroUint(), nil
