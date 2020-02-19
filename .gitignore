@@ -23,6 +23,7 @@ thord
 *.exe
 
 cover.txt
+coverage.txt
 .testCoverage.txt
 c.out
 *.leveldb/
