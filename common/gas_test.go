@@ -29,6 +29,14 @@ func (s *GasSuite) TestMultiGasCalc(c *C) {
 	)
 }
 
+func (s *GasSuite) TestIsEmpty(c *C) {
+	gas1 := Gas{
+		{Asset: BNBAsset, Amount: sdk.NewUint(11 * One)},
+	}
+	c.Check(gas1.IsEmpty(), Equals, false)
+	c.Check(Gas{}.IsEmpty(), Equals, true)
+}
+
 func (s *GasSuite) TestCombineGas(c *C) {
 	gas1 := Gas{
 		{Asset: BNBAsset, Amount: sdk.NewUint(11 * One)},
