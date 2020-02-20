@@ -101,7 +101,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 
 	// First subsidise the gas that was consumed from reserves, any
 	// reserves we take, minus from the gas we owe.
-	vault.TotalReserve, vault.Gas, err = subtractGas(ctx, k, vault.TotalReserve, vault.Gas, true)
+	vault.TotalReserve, vault.Gas, err = subtractGas(ctx, k, vault.TotalReserve, vault.Gas)
 	if err != nil {
 		return fmt.Errorf("fail to subtract gas from reserve: %w", err)
 	}
@@ -119,7 +119,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 
 	// get total Fees (which is total liquidity fees, minus any gas we have left to pay)
 	var totalFees sdk.Uint
-	totalFees, vault.Gas, err = subtractGas(ctx, k, totalLiquidityFees, vault.Gas, false)
+	totalFees, vault.Gas, err = subtractGas(ctx, k, totalLiquidityFees, vault.Gas)
 	if err != nil {
 		return fmt.Errorf("fail to subtract gas from liquidity fees: %w", err)
 	}
@@ -257,7 +257,7 @@ func getTotalActiveNodeWithBond(ctx sdk.Context, k Keeper) (int64, error) {
 }
 
 // remove gas
-func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas, addToPool bool) (sdk.Uint, common.Gas, error) {
+func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (sdk.Uint, common.Gas, error) {
 	for i, coin := range gas {
 		// if the coin is zero amount, don't need to do anything
 		if coin.Amount.IsZero() {
@@ -274,13 +274,10 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas, a
 		}
 		gas[i].Amount = common.SafeSub(gas[i].Amount, pool.RuneValueInAsset(runeGas))
 		val = common.SafeSub(val, runeGas)
-		if addToPool {
-			pool.BalanceRune = pool.BalanceRune.Add(runeGas)
-			if err := keeper.SetPool(ctx, pool); err != nil {
-				return sdk.ZeroUint(), nil, fmt.Errorf("fail to set pool(%s): %w", coin.Asset, err)
-			}
+		pool.BalanceRune = pool.BalanceRune.Add(runeGas)
+		if err := keeper.SetPool(ctx, pool); err != nil {
+			return sdk.ZeroUint(), nil, fmt.Errorf("fail to set pool(%s): %w", coin.Asset, err)
 		}
-
 	}
 	return val, gas, nil
 }
