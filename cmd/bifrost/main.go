@@ -103,7 +103,9 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create observer")
 	}
-	obs.Start()
+	if err = obs.Start(); err != nil {
+		log.Fatal().Err(err).Msg("fail to start observer")
+	}
 
 	// start signer
 	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, pubkeyMgr, cfg.TSS, chains, m)
