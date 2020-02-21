@@ -133,7 +133,7 @@ describe "API Tests" do
 
       resp = get("/pool/BOLT-014")
       expect(resp.code).to eq("200")
-      expect(resp.body['balance_rune']).to eq("2224541407"), resp.body.inspect
+      expect(resp.body['balance_rune']).to eq("2217077851"), resp.body.inspect
       expect(resp.body['balance_asset']).to eq("354850000"), resp.body.inspect
 
       # another swap ,it should fail due to price protection
@@ -148,8 +148,8 @@ describe "API Tests" do
       # pool balance should not change (other than the transaction fees)
       resp = get("/pool/BNB.BOLT-014")
       expect(resp.code).to eq("200")
-      expect(resp.body['balance_rune']).to eq("2124541407"), resp.body.inspect
-      expect(resp.body['balance_asset']).to eq("370801602"), resp.body.inspect
+      expect(resp.body['balance_rune']).to eq("2117077851"), resp.body.inspect
+      expect(resp.body['balance_asset']).to eq("370855302"), resp.body.inspect
     end
 
     it "Send outbound tx and mark tx'es as complete" do
@@ -194,7 +194,7 @@ describe "API Tests" do
 
     it "check events are completed" do
       resp = get("/events/6")
-      expect(resp.body.count).to eq(1), resp.body.inspect
+      expect(resp.body.count).to eq(2), resp.body.inspect
       expect(resp.body[0]['event']['pool']).to eq("BNB.BOLT-014"), resp.body[0].inspect
       expect(resp.body[0]['type']).to eq("swap"), resp.body[0].inspect
       expect(resp.body[0]['in_tx']['id']).to eq(txid), resp.body[0].inspect
@@ -212,8 +212,8 @@ describe "API Tests" do
 
       resp = get("/pool/BOLT-014")
       expect(resp.code).to eq("200")
-      expect(resp.body['balance_rune']).to eq("2144541407"), resp.body.inspect
-      expect(resp.body['balance_asset']).to eq("390801602"), resp.body.inspect
+      expect(resp.body['balance_rune']).to eq("2137077851"), resp.body.inspect
+      expect(resp.body['balance_asset']).to eq("390855302"), resp.body.inspect
     end
 
   end

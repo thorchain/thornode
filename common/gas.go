@@ -49,6 +49,15 @@ func (g Gas) IsValid() error {
 	return nil
 }
 
+func (g Gas) IsEmpty() bool {
+	for _, coin := range g {
+		if !coin.IsEmpty() {
+			return false
+		}
+	}
+	return true
+}
+
 // This function combines two gas objects into one, adding amounts where needed
 // or appending new coins.
 func (g Gas) Add(g2 Gas) Gas {
