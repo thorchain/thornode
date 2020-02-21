@@ -37,7 +37,7 @@ reset-testnet-validator: stop clean run-testnet-validator
 
 run-testnet-binance:
 	@mkdir -p ${HOME}/.binance && chown 1000:1000 ${HOME}/.binance
-	docker-compose -p thornode -f ${path}../components/binance-testnet.yml -f ${path}../components/binance-testnet.${uname_S}.yml up --force-recreate --remove-orphans -d
+	docker-compose -p thornode -f ${path}../components/binance-testnet.yml up --force-recreate --remove-orphans -d
 
 clean-testnet-binance:
 	@rm -rf ${HOME}/.binance
