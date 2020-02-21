@@ -2,7 +2,6 @@ package observer
 
 import (
 	"strconv"
-	"sync"
 
 	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
@@ -23,7 +22,6 @@ type Observer struct {
 	logger          zerolog.Logger
 	chains          map[common.Chain]chainclients.ChainClient
 	stopChan        chan struct{}
-	wg              *sync.WaitGroup
 	pubkeyMgr       pubkeymanager.PubKeyValidator
 	globalTxsQueue  chan types.TxIn
 	m               *metrics.Metrics
@@ -37,7 +35,6 @@ func NewObserver(pubkeyMgr pubkeymanager.PubKeyValidator, chains map[common.Chai
 	return &Observer{
 		logger:          logger,
 		chains:          chains,
-		wg:              &sync.WaitGroup{},
 		stopChan:        make(chan struct{}),
 		m:               m,
 		pubkeyMgr:       pubkeyMgr,
@@ -56,15 +53,16 @@ func (o *Observer) getChain(chainID common.Chain) (chainclients.ChainClient, err
 	return chain, nil
 }
 
-func (o *Observer) Start() {
+func (o *Observer) Start() error {
 	for _, chain := range o.chains {
 		err := chain.Start(o.globalTxsQueue, o.pubkeyMgr, o.m)
 		if err != nil {
 			o.logger.Error().Err(err).Str("chain", chain.GetChain().String()).Msg("fail to start")
+			return err
 		}
 	}
-	o.wg.Add(1)
 	go o.processTxIns()
+	return nil
 }
 
 func (o *Observer) processTxIns() {
@@ -104,6 +102,7 @@ func (o *Observer) signAndSendToThorchain(txIn types.TxIn) error {
 // maybe in later THORNode can just refactor this to use the type in thorchain
 func (o *Observer) getThorchainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error) {
 	txs := make(stypes.ObservedTxs, len(txIn.TxArray))
+	o.logger.Debug().Msgf("len %d", len(txIn.TxArray))
 	for i, item := range txIn.TxArray {
 		o.logger.Debug().Str("tx-hash", item.Tx).Msg("txInItem")
 		txID, err := common.NewTxID(item.Tx)
@@ -128,7 +127,11 @@ func (o *Observer) getThorchainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error
 			o.errCounter.WithLabelValues("fail to parse block height", txIn.BlockHeight).Inc()
 			return nil, errors.Wrapf(err, "fail to parse block height")
 		}
+		o.logger.Debug().Msgf("pool address %s", item.ObservedPoolAddress)
 		observedPoolPubKey, err := common.NewPubKey(item.ObservedPoolAddress)
+		o.logger.Debug().Msgf("poool address %s", observedPoolPubKey.String())
+		bnbAddr, _ := observedPoolPubKey.GetAddress(common.BNBChain)
+		o.logger.Debug().Msgf("bnb address %s", bnbAddr)
 		if err != nil {
 			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolAddress).Inc()
 			return nil, errors.Wrapf(err, "fail to parse observed pool address: %s", item.ObservedPoolAddress)
@@ -151,11 +154,11 @@ func (o *Observer) Stop() error {
 	for _, chain := range o.chains {
 		if err := chain.Stop(); err != nil {
 			o.logger.Error().Err(err).Msgf("fail to close %s block scanner", chain.GetChain().String())
+			return err
 		}
 	}
 
-	close(o.stopChan)
-	o.wg.Wait()
+	close(o.stopChan)	
 	if err := o.pubkeyMgr.Stop(); err != nil {
 		o.logger.Error().Err(err).Msg("fail to stop pool address manager")
 	}

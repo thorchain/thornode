@@ -6,13 +6,14 @@ import (
 
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 var (
 	previous = "tbnb1hzwfk6t3sqjfuzlr0ur9lj920gs37gg92gtay9"
 	current  = "tbnb1yycn4mh6ffwpjf584t8lpp7c27ghu03gpvqkfj"
 	next     = "tbnb1hzwfk6t3sqjfuzlr0ur9lj920gs37gg92gtay9"
+	top      = "tbnb186nvjtqk4kkea3f8a30xh4vqtkrlu2rm9xgly3"
+	validpb  = "thorpub1addwnpepqfgfxharps79pqv8fv9ndqh90smw8c3slrtrssn58ryc5g3p9sx856x07yn"
 )
 
 type MockPoolAddressValidator struct {
@@ -24,7 +25,8 @@ func NewMockPoolAddressValidator() *MockPoolAddressValidator {
 
 func matchTestAddress(addr, testAddr string, chain common.Chain) (bool, common.ChainPoolInfo) {
 	if strings.EqualFold(testAddr, addr) {
-		cpi, err := common.NewChainPoolInfo(chain, types.GetRandomPubKey())
+		pubKey, _ := common.NewPubKey(validpb)
+		cpi, err := common.NewChainPoolInfo(chain, pubKey)
 		cpi.PoolAddress = common.Address(testAddr)
 		fmt.Println(err)
 		return true, cpi
@@ -53,6 +55,10 @@ func (mpa *MockPoolAddressValidator) IsValidPoolAddress(addr string, chain commo
 	matchNext, cpi := matchTestAddress(addr, next, chain)
 	if matchNext {
 		return matchNext, cpi
+	}
+	matchTop, cpi := matchTestAddress(addr, top, chain)
+	if matchTop {
+		return matchTop, cpi
 	}
 	return false, common.EmptyChainPoolInfo
 }
