@@ -81,7 +81,6 @@ func (s *HandlerSetNodeKeysSuite) TestValidate(c *C) {
 	msg = MsgSetNodeKeys{}
 	err = handler.validate(ctx, msg, ver)
 	c.Assert(err, NotNil)
-
 }
 
 type TestSetNodeKeysHandleKeeper struct {

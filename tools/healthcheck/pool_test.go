@@ -90,7 +90,6 @@ func get(url string) ([]byte, error) {
 		return nil, errors.Wrap(err, "Failed to read response body")
 	}
 	return buf, nil
-
 }
 
 func getThorchainPools(baseURL string) (types.Pools, error) {
@@ -119,7 +118,6 @@ func getMidgardPool(baseURL string, poolName string) (MidgardPool, error) {
 		return pool, errors.Wrap(err, "Failed to unmarshal midgard pool")
 	}
 	return pool, nil
-
 }
 
 func (s *HealthCheckSuite) TestPoolBalanceAsset(c *C) {

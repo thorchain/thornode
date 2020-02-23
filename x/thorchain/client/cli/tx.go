@@ -64,7 +64,7 @@ func GetCmdSetNodeKeys(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			txBldr = txBldr.WithGas(400000) // set gas
+			txBldr = txBldr.WithGas(600000) // set gas
 
 			secp256k1Key, err := common.NewPubKey(args[0])
 			if err != nil {
@@ -102,7 +102,7 @@ func GetCmdEndPool(cdc *codec.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			txBldr := auth.NewTxBuilderFromCLI().WithTxEncoder(utils.GetTxEncoder(cdc))
-			txBldr = txBldr.WithGas(400000) // set gas
+			txBldr = txBldr.WithGas(600000) // set gas
 
 			asset, err := common.NewAsset(args[0])
 			if err != nil {

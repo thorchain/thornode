@@ -59,5 +59,4 @@ func (s *KeeperEventsSuite) TestEvents(c *C) {
 	e, err = k.GetEvent(ctx, 3)
 	c.Assert(err, IsNil)
 	c.Assert(e.Empty(), Equals, true)
-
 }

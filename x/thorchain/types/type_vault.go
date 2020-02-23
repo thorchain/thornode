@@ -10,6 +10,7 @@ import (
 	"gitlab.com/thorchain/thornode/common"
 )
 
+// VaultType there are two different types of Vault in thorchain
 type VaultType string
 
 const (
@@ -21,12 +22,15 @@ const (
 type VaultStatus string
 
 const (
-	ActiveVault   VaultStatus = "active"
+	// ActiveVault means the vault is currently actively in use
+	ActiveVault VaultStatus = "active"
+	// RetiringVault means the vault is in the process of retiring
 	RetiringVault VaultStatus = "retiring"
+	// InactiveVault means the vault is not active anymore
 	InactiveVault VaultStatus = "inactive"
 )
 
-// Vault
+// Vault usually represent the pool we are using
 type Vault struct {
 	BlockHeight int64          `json:"block_height"`
 	PubKey      common.PubKey  `json:"pub_key"`
@@ -39,6 +43,7 @@ type Vault struct {
 
 type Vaults []Vault
 
+// NewVault create a new instance of vault
 func NewVault(height int64, status VaultStatus, vtype VaultType, pk common.PubKey) Vault {
 	return Vault{
 		BlockHeight: height,
@@ -50,26 +55,32 @@ func NewVault(height int64, status VaultStatus, vtype VaultType, pk common.PubKe
 	}
 }
 
+// IsType determine whether the vault is given type
 func (v Vault) IsType(vtype VaultType) bool {
 	return v.Type == vtype
 }
 
+// IsAsgard check whether the vault is Asgard vault, it returns true when it is an asgard vault
 func (v Vault) IsAsgard() bool {
 	return v.IsType(AsgardVault)
 }
 
+// IsYggdrasil return true when the vault is YggdrasilVault
 func (v Vault) IsYggdrasil() bool {
 	return v.IsType(YggdrasilVault)
 }
 
+// IsEmpty returns true when the vault pubkey is empty
 func (v Vault) IsEmpty() bool {
 	return v.PubKey.IsEmpty()
 }
 
+// Contains check whether the given pubkey is party of the originally node who create this vault
 func (v Vault) Contains(pubkey common.PubKey) bool {
 	return v.Membership.Contains(pubkey)
 }
 
+// UpdateStatus set the vault to given status
 func (v *Vault) UpdateStatus(s VaultStatus, height int64) {
 	v.Status = s
 	v.StatusSince = height
@@ -93,11 +104,12 @@ func (v Vault) HasFunds() bool {
 	return false
 }
 
-// Check if this vault has a particular asset
+// HasAsset Check if this vault has a particular asset
 func (v Vault) HasAsset(asset common.Asset) bool {
 	return !v.GetCoin(asset).Amount.IsZero()
 }
 
+// GetCoin return coin type of given asset
 func (v Vault) GetCoin(asset common.Asset) common.Coin {
 	for _, coin := range v.Coins {
 		if coin.Asset.Equals(asset) {
@@ -107,6 +119,24 @@ func (v Vault) GetCoin(asset common.Asset) common.Coin {
 	return common.NewCoin(asset, sdk.ZeroUint())
 }
 
+// GetMembers return members who's address exist in the given list
+func (v Vault) GetMembers(activeObservers []sdk.AccAddress) (common.PubKeys, error) {
+	signers := common.PubKeys{}
+	for _, k := range v.Membership {
+		addr, err := k.GetThorAddress()
+		if err != nil {
+			return common.PubKeys{}, fmt.Errorf("fail to get thor address: %w", err)
+		}
+		for _, item := range activeObservers {
+			if item.Equals(addr) {
+				signers = append(signers, k)
+			}
+		}
+	}
+	return signers, nil
+}
+
+// AddFunds add given coins into vault
 func (v *Vault) AddFunds(coins common.Coins) {
 	for _, coin := range coins {
 		if v.HasAsset(coin.Asset) {
@@ -121,6 +151,7 @@ func (v *Vault) AddFunds(coins common.Coins) {
 	}
 }
 
+// SubFunds subtract given coins from vault
 func (v *Vault) SubFunds(coins common.Coins) {
 	for _, coin := range coins {
 		for i, ycoin := range v.Coins {
@@ -135,9 +166,10 @@ func (v *Vault) SubFunds(coins common.Coins) {
 	}
 }
 
+// SortBy order coins by the given asset
 func (vs Vaults) SortBy(sortBy common.Asset) Vaults {
 	// use the vault pool with the highest quantity of our coin
-	sort.Slice(vs[:], func(i, j int) bool {
+	sort.SliceStable(vs[:], func(i, j int) bool {
 		return vs[i].GetCoin(sortBy).Amount.GT(
 			vs[j].GetCoin(sortBy).Amount,
 		)
@@ -146,6 +178,7 @@ func (vs Vaults) SortBy(sortBy common.Asset) Vaults {
 	return vs
 }
 
+// SelectByMinCoin return the vault that has least of given asset
 func (vs Vaults) SelectByMinCoin(asset common.Asset) (vault Vault) {
 	if len(vs) == 0 {
 		return Vault{}
@@ -160,6 +193,7 @@ func (vs Vaults) SelectByMinCoin(asset common.Asset) (vault Vault) {
 	return
 }
 
+// SelectByMaxCoin return the vault that has most of given asset
 func (vs Vaults) SelectByMaxCoin(asset common.Asset) (vault Vault) {
 	if len(vs) == 0 {
 		return Vault{}

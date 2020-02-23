@@ -34,9 +34,7 @@ func newTssPoolHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		if !baseReq.ValidateBasic(w) {
 			return
 		}
-
-		baseReq.Gas = "400000" // i think we can delete this "auto" gas should work
-
+		baseReq.Gas = "auto"
 		addr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
@@ -71,9 +69,7 @@ func postTxsHandler(cliCtx context.CLIContext) http.HandlerFunc {
 		if !baseReq.ValidateBasic(w) {
 			return
 		}
-
-		baseReq.Gas = "400000" // i think we can delete this "auto" gas should work
-
+		baseReq.Gas = "auto"
 		addr, err := sdk.AccAddressFromBech32(req.BaseReq.From)
 		if err != nil {
 			rest.WriteErrorResponse(w, http.StatusBadRequest, err.Error())

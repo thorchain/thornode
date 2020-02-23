@@ -29,7 +29,7 @@ var (
 )
 
 const (
-	serverIdentity      = "bifrost"
+	serverIdentity = "bifrost"
 )
 
 func printVersion() {
@@ -56,14 +56,14 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to load config ")
 	}
- 	cfg.Thorchain.SignerPasswd = os.Getenv("SIGNER_PASSWD")
- 
+	cfg.Thorchain.SignerPasswd = os.Getenv("SIGNER_PASSWD")
+
 	// metrics
 	m, err := metrics.NewMetrics(cfg.Metrics)
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create metric instance")
 	}
-	if err :=	 m.Start(); err != nil {
+	if err := m.Start(); err != nil {
 		log.Fatal().Err(err).Msg("fail to start metric collector")
 	}
 

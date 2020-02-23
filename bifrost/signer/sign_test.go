@@ -6,8 +6,8 @@ import (
 
 	"github.com/tendermint/tendermint/crypto"
 
-	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	ttypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"

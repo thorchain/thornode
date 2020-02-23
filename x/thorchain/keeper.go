@@ -81,7 +81,7 @@ func dbError(ctx sdk.Context, wrapper string, err error) error {
 	return err
 }
 
-// Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
+// KVStore Keeper maintains the link to data storage and exposes getter/setter methods for the various parts of the state machine
 type KVStore struct {
 	coinKeeper   bank.Keeper
 	supplyKeeper supply.Keeper

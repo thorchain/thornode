@@ -87,7 +87,6 @@ func (h UnstakeHandler) validateV1(ctx sdk.Context, msg MsgSetUnStake) sdk.Error
 }
 
 func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semver.Version) ([]byte, sdk.Error) {
-
 	// Get rune (if any) and donate it to the reserve
 	coin := msg.Tx.Coins.GetCoin(common.RuneAsset())
 	if !coin.IsEmpty() {

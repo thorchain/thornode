@@ -175,6 +175,7 @@ func (k KVStoreDummy) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vau
 	return nil, kaboom
 }
 func (k KVStoreDummy) DeleteVault(_ sdk.Context, _ common.PubKey) error { return kaboom }
+
 func (k KVStoreDummy) GetReservesContributors(_ sdk.Context) (ReserveContributors, error) {
 	return nil, kaboom
 }
