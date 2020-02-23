@@ -43,7 +43,10 @@ type Signer struct {
 }
 
 // NewSigner create a new instance of signer
-func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge, thorKeys *thorclient.Keys, pubkeyMgr pubkeymanager.PubKeyValidator, tssCfg config.TSSConfiguration, chains map[common.Chain]chainclients.ChainClient, m *metrics.Metrics) (*Signer, error) {
+func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge,
+	thorKeys *thorclient.Keys, pubkeyMgr pubkeymanager.PubKeyValidator,
+	tssCfg config.TSSConfiguration,
+	chains map[common.Chain]chainclients.ChainClient, m *metrics.Metrics) (*Signer, error) {
 	storage, err := NewSignerStore(cfg.SignerDbPath, thorchainBridge.GetConfig().SignerPasswd)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
@@ -306,8 +309,12 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 		s.logger.Info().Str("OutHash", tx.OutHash.String()).Msg("tx had been sent out before")
 		return nil // return nil and discard item
 	}
-
-	signedTx, err := chain.SignTx(tx, height)
+	pubKeys, err := s.thorchainBridge.GetKeysignParty(tx.VaultPubKey)
+	if err != nil {
+		s.logger.Error().Err(err).Msg("fail to get key")
+		return fmt.Errorf("fail to get keysign party from thorchain:%w", err)
+	}
+	signedTx, err := chain.SignTx(tx, height, pubKeys)
 	if err != nil {
 		s.logger.Error().Err(err).Msg("fail to sign tx")
 		return err

@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 

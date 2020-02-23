@@ -10,5 +10,5 @@ import (
 // ThorchainKeyManager it is a composite of binance chain keymanager
 type ThorchainKeyManager interface {
 	keys.KeyManager
-	SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey) ([]byte, error)
+	SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey, signerPubKeys common.PubKeys) ([]byte, error)
 }

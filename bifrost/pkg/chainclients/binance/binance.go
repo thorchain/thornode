@@ -308,7 +308,7 @@ func (b *Binance) ValidateMetadata(inter interface{}) bool {
 }
 
 // SignTx sign the the given TxArrayItem
-func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
+func (b *Binance) SignTx(tx stypes.TxOutItem, height int64, keys common.PubKeys) ([]byte, error) {
 	b.signLock.Lock()
 	defer b.signLock.Unlock()
 	var payload []msg.Transfer
@@ -364,7 +364,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		Sequence:      b.seqNumber,
 		AccountNumber: b.accountNumber,
 	}
-	rawBz, err := b.signWithRetry(signMsg, fromAddr, tx.VaultPubKey, height, tx.Memo, tx.Coins)
+	rawBz, err := b.signWithRetry(signMsg, fromAddr, tx.VaultPubKey, height, tx.Memo, tx.Coins, keys)
 	if err != nil {
 		return nil, fmt.Errorf("fail to sign message: %w", err)
 	}
@@ -378,18 +378,18 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	return hexTx, nil
 }
 
-func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey) ([]byte, error) {
+func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey, signerPubKeys common.PubKeys) ([]byte, error) {
 	if b.localKeyManager.Pubkey().Equals(poolPubKey) {
 		return b.localKeyManager.Sign(signMsg)
 	}
 	k := b.tssKeyManager.(tss.ThorchainKeyManager)
-	return k.SignWithPool(signMsg, poolPubKey)
+	return k.SignWithPool(signMsg, poolPubKey, signerPubKeys)
 }
 
 // signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
-func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins) ([]byte, error) {
+func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins, keys common.PubKeys) ([]byte, error) {
 	for {
-		rawBytes, err := b.sign(signMsg, poolPubKey)
+		rawBytes, err := b.sign(signMsg, poolPubKey, keys)
 		if err == nil && rawBytes != nil {
 			return rawBytes, nil
 		}

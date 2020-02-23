@@ -1,6 +1,6 @@
 package observer
 
-import (	
+import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -14,17 +14,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
-	"github.com/cosmos/cosmos-sdk/client/keys"
 	txType "github.com/binance-chain/go-sdk/types/tx"
+	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
+	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance"
-	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -33,7 +33,7 @@ import (
 
 func TestPackage(t *testing.T) { TestingT(t) }
 
-type ObserverSuite struct{
+type ObserverSuite struct {
 	m        *metrics.Metrics
 	thordir  string
 	thorKeys *thorclient.Keys
@@ -76,7 +76,7 @@ func (s *ObserverSuite) NewMockBinanceInstance(c *C, jsonData string) {
 		} else if req.RequestURI == "/block" {
 			_, err := rw.Write([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "block": { "header": { "height": "1" } } } }`))
 			c.Assert(err, IsNil)
-		} else if strings.HasPrefix(req.RequestURI, "/tx_search")  {
+		} else if strings.HasPrefix(req.RequestURI, "/tx_search") {
 			_, err := rw.Write([]byte(jsonData))
 			c.Assert(err, IsNil)
 		} else {
@@ -87,19 +87,19 @@ func (s *ObserverSuite) NewMockBinanceInstance(c *C, jsonData string) {
 	blockRetryInterval, _ := time.ParseDuration("10s")
 	httpRequestTimeout, _ := time.ParseDuration("30s")
 	s.b, err = binance.NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL, BlockScanner: config.BlockScannerConfiguration{
-		RPCHost: server.URL, 
-        BlockScanProcessors: 1,
-        BlockHeightDiscoverBackoff: blockHeightDiscoverBackoff,
-        BlockRetryInterval: blockRetryInterval,
-        ChainID: common.BNBChain,
-        HttpRequestTimeout: httpRequestTimeout,
-        HttpRequestReadTimeout: httpRequestTimeout,
-        HttpRequestWriteTimeout: httpRequestTimeout,
-        MaxHttpRequestRetry: 10,
-        StartBlockHeight: 0,
-        EnforceBlockHeight: true,
-        DBPath: "/var/data/bifrost/observer",
-    }}, s.tssCfg, s.bridge)
+		RPCHost:                    server.URL,
+		BlockScanProcessors:        1,
+		BlockHeightDiscoverBackoff: blockHeightDiscoverBackoff,
+		BlockRetryInterval:         blockRetryInterval,
+		ChainID:                    common.BNBChain,
+		HttpRequestTimeout:         httpRequestTimeout,
+		HttpRequestReadTimeout:     httpRequestTimeout,
+		HttpRequestWriteTimeout:    httpRequestTimeout,
+		MaxHttpRequestRetry:        10,
+		StartBlockHeight:           0,
+		EnforceBlockHeight:         true,
+		DBPath:                     filepath.Join(os.TempDir(), "/var/data/bifrost/observer"),
+	}}, s.tssCfg, s.bridge)
 	c.Assert(s.b, NotNil)
 	c.Assert(err, IsNil)
 }
@@ -146,7 +146,7 @@ func (s *ObserverSuite) SetUpSuite(c *C) {
 	splitted := strings.SplitAfter(server.URL, ":")
 	cfg := config.ClientConfiguration{
 		ChainID:         "thorchain",
-		ChainHost:       "localhost:" + splitted[len(splitted) - 1],
+		ChainHost:       "localhost:" + splitted[len(splitted)-1],
 		SignerName:      "bob",
 		SignerPasswd:    "password",
 		ChainHomeFolder: s.thordir,
@@ -179,7 +179,7 @@ func (s *ObserverSuite) SetUpSuite(c *C) {
 
 	s.NewMockBinanceInstance(c, "")
 
-	r, err := s.b.SignTx(out, 1440)
+	r, err := s.b.SignTx(out, 1440, common.PubKeys{})
 	c.Assert(err, IsNil)
 	c.Assert(r, NotNil)
 	buf, err := hex.DecodeString(string(r))
@@ -204,8 +204,8 @@ func (s *ObserverSuite) TearDownSuite(c *C) {
 	if err := os.RemoveAll("observer/observer_data"); err != nil {
 		c.Error(err)
 	}
-
-	if err := os.RemoveAll("/var/data/bifrost/observer"); err != nil {
+	tempPath := filepath.Join(os.TempDir(), "/var/data/bifrost/observer")
+	if err := os.RemoveAll(tempPath); err != nil {
 		c.Error(err)
 	}
 

@@ -29,14 +29,15 @@ import (
 
 // Endpoint urls
 const (
-	AuthAccountEndpoint  = "/auth/accounts"
-	BroadcastTxsEndpoint = "/txs"
-	KeygenEndpoint       = "/thorchain/keygen"
-	KeysignEndpoint      = "/thorchain/keysign"
-	LastBlockEndpoint    = "/thorchain/lastblock"
-	NodeAccountEndpoint  = "/thorchain/nodeaccount"
-	ValidatorsEndpoint   = "/thorchain/validators"
-	VaultsEndpoint       = "/thorchain/vaults/pubkeys"
+	AuthAccountEndpoint      = "/auth/accounts"
+	BroadcastTxsEndpoint     = "/txs"
+	KeygenEndpoint           = "/thorchain/keygen"
+	KeysignEndpoint          = "/thorchain/keysign"
+	LastBlockEndpoint        = "/thorchain/lastblock"
+	NodeAccountEndpoint      = "/thorchain/nodeaccount"
+	ValidatorsEndpoint       = "/thorchain/validators"
+	VaultsEndpoint           = "/thorchain/vaults/pubkeys"
+	SignerMembershipEndpoint = "/thorchain/vaults/%s/signers"
 )
 
 // ThorchainBridge will be used to send tx to thorchain
@@ -309,4 +310,18 @@ func (b *ThorchainBridge) EnsureNodeWhitelisted() error {
 		return errors.Errorf("node account status %s , will not be able to forward transaction to thorchain", na.Status)
 	}
 	return nil
+}
+
+// GetKeysignParty call into thorchain to get the node accounts that should be join together to sign the message
+func (b *ThorchainBridge) GetKeysignParty(vaultPubKey common.PubKey) (common.PubKeys, error) {
+	p := fmt.Sprintf(SignerMembershipEndpoint, vaultPubKey.String())
+	result, err := b.get(p)
+	if err != nil {
+		return common.PubKeys{}, fmt.Errorf("fail to get key sign party from thorchain: %w", err)
+	}
+	var keys common.PubKeys
+	if err := b.cdc.UnmarshalJSON(result, &keys); err != nil {
+		return common.PubKeys{}, fmt.Errorf("fail to unmarshal result to pubkeys:%w", err)
+	}
+	return keys, nil
 }

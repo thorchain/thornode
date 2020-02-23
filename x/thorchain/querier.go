@@ -744,10 +744,13 @@ func queryTSSSigners(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		ctx.Logger().Error("fail to get vault", "error", err)
 		return nil, sdk.ErrInternal("fail to get vault")
 	}
-	signers, err := vault.GetMembers(accountAddrs)
-	if err != nil {
-		ctx.Logger().Error("fail to get signers", "error", err)
-		return nil, sdk.ErrInternal("fail to get signers")
+	signers := vault.Membership
+	if len(accountAddrs) > 0 {
+		signers, err = vault.GetMembers(accountAddrs)
+		if err != nil {
+			ctx.Logger().Error("fail to get signers", "error", err)
+			return nil, sdk.ErrInternal("fail to get signers")
+		}
 	}
 	// TODO Here it use ctx.BlockHeight as the seed, probably worth to consider use other more deterministic seed
 	// if there are 9 nodes in total , it need 6 nodes to sign a message
