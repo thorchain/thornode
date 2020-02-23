@@ -17,8 +17,8 @@ func (s *KeeperNodeAccountSuite) TestNodeAccount(c *C) {
 
 	na1 := GetRandomNodeAccount(NodeActive)
 	na2 := GetRandomNodeAccount(NodeStandby)
-	k.SetNodeAccount(ctx, na1)
-	k.SetNodeAccount(ctx, na2)
+	c.Assert(k.SetNodeAccount(ctx, na1), IsNil)
+	c.Assert(k.SetNodeAccount(ctx, na2), IsNil)
 	c.Check(na1.ActiveBlockHeight, Equals, int64(10))
 	c.Check(na1.SlashPoints, Equals, int64(0))
 	c.Check(na2.ActiveBlockHeight, Equals, int64(0))
@@ -52,6 +52,11 @@ func (s *KeeperNodeAccountSuite) TestNodeAccount(c *C) {
 	c.Assert(err, NotNil)
 	err = k.EnsureNodeKeysUnique(ctx, valCon, pubkeys)
 	c.Assert(err, IsNil)
+	addr := GetRandomBech32Addr()
+	na, err = k.GetNodeAccount(ctx, addr)
+	c.Assert(err, IsNil)
+	c.Assert(na.Status, Equals, NodeUnknown)
+	c.Assert(na.ValidatorConsPubKey, Equals, "")
 }
 
 func (s *KeeperNodeAccountSuite) TestGetMinJoinVersion(c *C) {

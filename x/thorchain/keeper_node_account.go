@@ -214,6 +214,8 @@ func (k KVStore) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 	return nil
 }
 
+// EnsureNodeKeysUnique check the given consensus pubkey and pubkey set against all the the node account
+// return an error when it is overlap with any existing account
 func (k KVStore) EnsureNodeKeysUnique(ctx sdk.Context, consensusPubKey string, pubKeys common.PubKeySet) error {
 	iter := k.GetNodeAccountIterator(ctx)
 	defer iter.Close()

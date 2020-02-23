@@ -158,7 +158,7 @@ func (o *Observer) Stop() error {
 		}
 	}
 
-	close(o.stopChan)	
+	close(o.stopChan)
 	if err := o.pubkeyMgr.Stop(); err != nil {
 		o.logger.Error().Err(err).Msg("fail to stop pool address manager")
 	}

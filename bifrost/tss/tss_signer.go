@@ -74,13 +74,13 @@ func (s *KeySign) ExportAsKeyStore(password string) (*keys.EncryptedKeyJSON, err
 	return nil, nil
 }
 
-func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string) (sig tx.StdSignature, err error) {
+func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string, signerPubKeys common.PubKeys) (sig tx.StdSignature, err error) {
 	var stdSignature tx.StdSignature
 	pk, err := sdk.GetAccPubKeyBech32(poolPubKey)
 	if err != nil {
 		return stdSignature, fmt.Errorf("fail to get pub key: %w", err)
 	}
-	signPack, err := s.remoteSign(msg.Bytes(), poolPubKey)
+	signPack, err := s.remoteSign(msg.Bytes(), poolPubKey, signerPubKeys)
 	if err != nil {
 		return stdSignature, fmt.Errorf("fail to TSS sign: %w", err)
 	}
@@ -106,8 +106,8 @@ func (s *KeySign) Sign(msg tx.StdSignMsg) ([]byte, error) {
 	return nil, nil
 }
 
-func (s *KeySign) SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey) ([]byte, error) {
-	sig, err := s.makeSignature(msg, poolPubKey.String())
+func (s *KeySign) SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey, signerPubKeys common.PubKeys) ([]byte, error) {
+	sig, err := s.makeSignature(msg, poolPubKey.String(), signerPubKeys)
 	if err != nil {
 		return nil, err
 	}
@@ -122,12 +122,12 @@ func (s *KeySign) SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey) ([]b
 	return bz, nil
 }
 
-func (s *KeySign) remoteSign(msg []byte, poolPubKey string) ([]byte, error) {
+func (s *KeySign) remoteSign(msg []byte, poolPubKey string, signerPubKeys common.PubKeys) ([]byte, error) {
 	if len(msg) == 0 {
 		return nil, nil
 	}
 	encodedMsg := base64.StdEncoding.EncodeToString(msg)
-	rResult, sResult, err := s.toLocalTSSSigner(poolPubKey, encodedMsg)
+	rResult, sResult, err := s.toLocalTSSSigner(poolPubKey, encodedMsg, signerPubKeys)
 	if err != nil {
 		return nil, fmt.Errorf("fail to tss sign: %w", err)
 	}
@@ -186,13 +186,17 @@ func (s *KeySign) getTSSLocalUrl() string {
 }
 
 // toLocalTSSSigner will send the request to local signer
-func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string) (string, string, error) {
+func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string, signerPubKeys common.PubKeys) (string, string, error) {
 	tssMsg := struct {
-		PoolPubKey string `json:"pool_pub_key"`
-		Message    string `json:"message"`
+		PoolPubKey    string   `json:"pool_pub_key"`
+		Message       string   `json:"message"`
+		SignerPubKeys []string `json:"signer_pub_keys"`
 	}{
 		PoolPubKey: poolPubKey,
 		Message:    sendmsg,
+	}
+	for _, k := range signerPubKeys {
+		tssMsg.SignerPubKeys = append(tssMsg.SignerPubKeys, k.String())
 	}
 	buf, err := json.Marshal(tssMsg)
 	if err != nil {
