@@ -12,7 +12,6 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"gitlab.com/thorchain/thornode/common"
-
 	q "gitlab.com/thorchain/thornode/x/thorchain/query"
 )
 
@@ -64,6 +63,8 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryVaultsPubkeys(ctx, keeper)
 		case q.QueryVaultAddresses.Key:
 			return queryVaultsAddresses(ctx, keeper)
+		case q.QueryTSSSigners.Key:
+			return queryTSSSigners(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown thorchain query endpoint: %s", path[0]),
@@ -717,5 +718,52 @@ func queryHeights(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 		ctx.Logger().Error("fail to marshal events to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal events to json")
 	}
+	return res, nil
+}
+
+// queryTSSSigner
+func queryTSSSigners(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	vaultPubKey := path[0]
+	if len(vaultPubKey) == 0 {
+		ctx.Logger().Error("empty vault pub key")
+		return nil, sdk.ErrUnknownRequest("empty pool pub key")
+	}
+	pk, err := common.NewPubKey(vaultPubKey)
+	if err != nil {
+		ctx.Logger().Error("fail to parse pool pub key", "error", err)
+		return nil, sdk.ErrUnknownRequest("invalid pool pub key")
+	}
+
+	accountAddrs, err := keeper.GetObservingAddresses(ctx)
+	if err != nil {
+		ctx.Logger().Error("fail to get observing addresses", "error", err)
+		return nil, sdk.ErrInternal("fail to get observing addresses")
+	}
+	vault, err := keeper.GetVault(ctx, pk)
+	if err != nil {
+		ctx.Logger().Error("fail to get vault", "error", err)
+		return nil, sdk.ErrInternal("fail to get vault")
+	}
+	signers, err := vault.GetMembers(accountAddrs)
+	if err != nil {
+		ctx.Logger().Error("fail to get signers", "error", err)
+		return nil, sdk.ErrInternal("fail to get signers")
+	}
+	// TODO Here it use ctx.BlockHeight as the seed, probably worth to consider use other more deterministic seed
+	// if there are 9 nodes in total , it need 6 nodes to sign a message
+	// 3 signer send request to thorchain at block height 100
+	// another 3 signer send request to thorchain at block height 101
+	// in this case we get into trouble ,they get different results, key sign is going to fail
+	signerParty, err := ChooseSignerParty(signers, ctx.BlockHeight(), len(vault.Membership))
+	if err != nil {
+		ctx.Logger().Error("fail to choose signer party members", "error", err)
+		return nil, sdk.ErrInternal("fail to choose signer party members")
+	}
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), signerParty)
+	if err != nil {
+		ctx.Logger().Error("fail to marshal to json", "error", err)
+		return nil, sdk.ErrInternal("fail to marshal to json")
+	}
+
 	return res, nil
 }

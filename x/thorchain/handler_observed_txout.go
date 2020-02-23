@@ -78,11 +78,12 @@ func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, 
 		voter.ProcessedOut = true
 	}
 	h.keeper.SetObservedTxVoter(ctx, voter)
+
 	// Check to see if we have enough identical observations to process the transaction
 	return voter, ok
 }
 
-// Handle a message to observe inbound tx
+// Handle a message to observe outbound tx
 func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sdk.Result {
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if err != nil {

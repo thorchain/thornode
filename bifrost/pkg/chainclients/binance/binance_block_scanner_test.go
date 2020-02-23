@@ -25,7 +25,7 @@ import (
 
 func Test(t *testing.T) { TestingT(t) }
 
-type BlockScannerTestSuite struct{
+type BlockScannerTestSuite struct {
 	m *metrics.Metrics
 }
 

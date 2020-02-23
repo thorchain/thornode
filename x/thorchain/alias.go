@@ -79,6 +79,7 @@ var (
 	NewStakerPool                  = types.NewStakerPool
 	NewMsgEndPool                  = types.NewMsgEndPool
 	HasMajority                    = types.HasMajority
+	ChooseSignerParty              = types.ChooseSignerParty
 	ModuleCdc                      = types.ModuleCdc
 	RegisterCodec                  = types.RegisterCodec
 	NewNodeAccount                 = types.NewNodeAccount

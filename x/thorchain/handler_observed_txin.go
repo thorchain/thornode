@@ -9,6 +9,7 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
+// ObservedTxInHandler to handle MsgObservedTxIn
 type ObservedTxInHandler struct {
 	keeper                Keeper
 	versionedTxOutStore   VersionedTxOutStore
@@ -16,6 +17,7 @@ type ObservedTxInHandler struct {
 	versionedVaultManager VersionedVaultManager
 }
 
+// NewObservedTxInHandler create a new instance of ObservedTxInHandler
 func NewObservedTxInHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, versionedVaultManager VersionedVaultManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
 		keeper:                keeper,

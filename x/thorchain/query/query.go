@@ -59,6 +59,7 @@ var (
 	QueryVaultsAsgard       = Query{Key: "vaultsasgard", EndpointTemplate: "/%s/vaults/asgard"}
 	QueryVaultPubkeys       = Query{Key: "vaultpubkeys", EndpointTemplate: "/%s/vaults/pubkeys"}
 	QueryVaultAddresses     = Query{Key: "vaultaddresses", EndpointTemplate: "/%s/vaults/addresses"}
+	QueryTSSSigners         = Query{Key: "tsssigner", EndpointTemplate: "/%s/vaults/{%s}/signers"}
 )
 
 // Queries all queries
@@ -89,4 +90,5 @@ var Queries = []Query{
 	QueryVaultPubkeys,
 	QueryKeygensPubkey,
 	QueryVaultAddresses,
+	QueryTSSSigners,
 }

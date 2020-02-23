@@ -9,16 +9,19 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
+// SlashingModule define the methods used to slash node accounts
 type SlashingModule interface {
 	LackObserving(_ sdk.Context) error
 	LackSigning(_ sdk.Context) error
 }
 
+// Slasher implements SlashingModule interface provide the necessary functionality to slash node accounts
 type Slasher struct {
 	keeper     Keeper
 	txOutStore TxOutStore
 }
 
+// NewSlasher create a new instance of Slasher
 func NewSlasher(keeper Keeper, txOutStore TxOutStore) Slasher {
 	return Slasher{
 		keeper:     keeper,
@@ -26,7 +29,7 @@ func NewSlasher(keeper Keeper, txOutStore TxOutStore) Slasher {
 	}
 }
 
-// Slash node accounts that didn't observe a single inbound txn
+// LackObserving Slash node accounts that didn't observe a single inbound txn
 func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	accs, err := s.keeper.GetObservingAddresses(ctx)
 	if err != nil {
@@ -66,12 +69,10 @@ func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.Constan
 		}
 	}
 
-	// clear our list of observing addresses
-	s.keeper.ClearObservingAddresses(ctx)
-
 	return nil
 }
 
+// LackSigning slash account that fail to sign tx
 func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	pendingEvents, err := s.keeper.GetAllPendingEvents(ctx)
 	if err != nil {

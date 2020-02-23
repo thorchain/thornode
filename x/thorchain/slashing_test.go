@@ -72,6 +72,8 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 	c.Assert(keeper.nas[0].SlashPoints, Equals, int64(0))
 	c.Assert(keeper.nas[1].SlashPoints, Equals, lackOfObservationPenalty)
 
+	// manually clear the observing address, as clear observing address had been moved to moduleManager begin block
+	keeper.ClearObservingAddresses(ctx)
 	// since THORNode have cleared all node addresses in slashForObservingAddresses,
 	// running it a second time should result in slashing nobody.
 	err = slasher.LackObserving(ctx, constAccessor)

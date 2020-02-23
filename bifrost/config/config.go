@@ -14,12 +14,12 @@ import (
 )
 
 type Configuration struct {
-	Signer    SignerConfiguration   `json:"signer" mapstructure:"signer"`
-	Thorchain ClientConfiguration   `json:"thorchain" mapstructure:"thorchain"`
-	Metrics   MetricsConfiguration  `json:"metrics" mapstructure:"metrics"`
-	Chains    []ChainConfiguration  `json:"chains" mapstructure:"chains"`
-	TSS       TSSConfiguration      `json:"tss" mapstructure:"tss"`
-	BackOff   BackOff               `json:"back_off" mapstructure:"back_off"`
+	Signer    SignerConfiguration  `json:"signer" mapstructure:"signer"`
+	Thorchain ClientConfiguration  `json:"thorchain" mapstructure:"thorchain"`
+	Metrics   MetricsConfiguration `json:"metrics" mapstructure:"metrics"`
+	Chains    []ChainConfiguration `json:"chains" mapstructure:"chains"`
+	TSS       TSSConfiguration     `json:"tss" mapstructure:"tss"`
+	BackOff   BackOff              `json:"back_off" mapstructure:"back_off"`
 }
 
 // SignerConfiguration all the configures need by signer
