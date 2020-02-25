@@ -43,10 +43,13 @@ type Signer struct {
 }
 
 // NewSigner create a new instance of signer
-func NewSigner(cfg config.SignerConfiguration, thorchainBridge *thorclient.ThorchainBridge,
-	thorKeys *thorclient.Keys, pubkeyMgr pubkeymanager.PubKeyValidator,
+func NewSigner(cfg config.SignerConfiguration,
+	thorchainBridge *thorclient.ThorchainBridge,
+	thorKeys *thorclient.Keys,
+	pubkeyMgr pubkeymanager.PubKeyValidator,
 	tssCfg config.TSSConfiguration,
-	chains map[common.Chain]chainclients.ChainClient, m *metrics.Metrics) (*Signer, error) {
+	chains map[common.Chain]chainclients.ChainClient,
+	m *metrics.Metrics) (*Signer, error) {
 	storage, err := NewSignerStore(cfg.SignerDbPath, thorchainBridge.GetConfig().SignerPasswd)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create thorchain scan storage")
@@ -162,12 +165,22 @@ func (s *Signer) signTransactions() {
 	s.logger.Info().Msg("start to sign transactions")
 	defer s.logger.Info().Msg("stop to sign transactions")
 	defer s.wg.Done()
-
-	sleep := func() { time.Sleep(1 * time.Second) }
-
 	for {
-		sleep()
-		for _, item := range s.storage.List() {
+		select {
+		case <-s.stopChan:
+			return
+		case <-time.After(time.Second):
+			s.processTransactions()
+		}
+	}
+}
+
+func (s *Signer) processTransactions() {
+	for _, item := range s.storage.List() {
+		select {
+		case <-s.stopChan:
+			return
+		default:
 			if item.Status == TxSpent { // don't rebroadcast spent transactions
 				continue
 			}
