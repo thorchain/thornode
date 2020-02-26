@@ -739,6 +739,22 @@ func queryTSSSigners(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		ctx.Logger().Error("fail to get observing addresses", "error", err)
 		return nil, sdk.ErrInternal("fail to get observing addresses")
 	}
+
+	// if don't have any active observers, pick from our active node accounts
+	if len(accountAddrs) == 0 {
+		nodeAccounts, err := keeper.ListActiveNodeAccounts(ctx)
+		if err != nil {
+			ctx.Logger().Error("fail to get active node accounts", "error", err)
+			return nil, sdk.ErrInternal("fail to get active node accounts")
+		}
+
+		accountAddrs = make([]sdk.AccAddress, len(nodeAccounts))
+		for i, na := range nodeAccounts {
+			accountAddrs[i] = na.NodeAddress
+		}
+
+	}
+
 	vault, err := keeper.GetVault(ctx, pk)
 	if err != nil {
 		ctx.Logger().Error("fail to get vault", "error", err)
