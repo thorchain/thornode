@@ -120,6 +120,15 @@ func GetCmdEndPool(cdc *codec.Codec) *cobra.Command {
 			tx := common.Tx{
 				ID:          txID,
 				FromAddress: requester,
+				ToAddress:   requester,
+				Chain:       asset.Chain,
+				Coins: common.Coins{
+					common.Coin{
+						Asset:  asset,
+						Amount: sdk.NewUint(1),
+					},
+				},
+				Gas: common.BNBGasFeeSingleton,
 			}
 
 			msg := types.NewMsgEndPool(asset, tx, cliCtx.GetFromAddress())
