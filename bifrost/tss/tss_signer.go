@@ -198,6 +198,7 @@ func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string, signerPubKeys com
 	for _, k := range signerPubKeys {
 		tssMsg.SignerPubKeys = append(tssMsg.SignerPubKeys, k.String())
 	}
+	fmt.Printf("TSS Msg: %+v\n", tssMsg)
 	buf, err := json.Marshal(tssMsg)
 	if err != nil {
 		return "", "", errors.Wrap(err, "fail to create tss request msg")
