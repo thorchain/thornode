@@ -73,6 +73,7 @@ func (h EndPoolHandler) handleV1(ctx sdk.Context, msg MsgEndPool, version semver
 
 	// everyone withdraw
 	for _, item := range poolStaker.Stakers {
+		msg.Tx.FromAddress = item.AssetAddress
 		unstakeMsg := NewMsgSetUnStake(
 			msg.Tx,
 			item.RuneAddress,
