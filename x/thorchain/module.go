@@ -173,6 +173,21 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("Unable to fund Yggdrasil", "error", err)
 	}
 
+	// fail stale pending events
+	signingTransPeriod := constantValues.GetInt64Value(constants.SigningTransactionPeriod)
+	pendingEvents, err := am.keeper.GetAllPendingEvents(ctx)
+	if err != nil {
+		ctx.Logger().Error("Unable to get all pending events", "error", err)
+	}
+	for _, evt := range pendingEvents {
+		if evt.Height+(2*signingTransPeriod) < ctx.BlockHeight() {
+			evt.Status = EventFail
+			if err := am.keeper.UpsertEvent(ctx, evt); err != nil {
+				ctx.Logger().Error("Unable to update pending event", "error", err)
+			}
+		}
+	}
+
 	// update vault data to account for block rewards and reward units
 	if err := am.keeper.UpdateVaultData(ctx, constantValues); err != nil {
 		ctx.Logger().Error("fail to save vault", "error", err)
