@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	maddr "github.com/multiformats/go-multiaddr"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 
@@ -54,10 +55,15 @@ type ChainConfiguration struct {
 
 // TSSConfiguration
 type TSSConfiguration struct {
-	Scheme string `json:"scheme" mapstructure:"scheme"`
-	Host   string `json:"host" mapstructure:"host"`
-	Port   int    `json:"port" mapstructure:"port"`
-	NodeId string `json:"node_id" mapstructure:"node_id"`
+	Scheme         string   `json:"scheme" mapstructure:"scheme"`   // TODO remove
+	Host           string   `json:"host" mapstructure:"host"`       // TODO remove
+	Port           int      `json:"port" mapstructure:"port"`       // TODO remove
+	NodeId         string   `json:"node_id" mapstructure:"node_id"` // TODO remove
+	BootstrapPeers []string `json:"bootstrap_peers" mapstructure:"bootstrap_peers"`
+	Rendezvous     string   `json:"rendezvous" mapstructure:"rendezvous"`
+	P2PPort        int      `json:"p2p_port" mapstructure:"p2p_port"`
+	InfoAddress    string   `json:"info_address" mapstructure:"info_address"` // TODO remove
+	TSSAddress     string   `json:"tss_address" mapstructure:"tss_address"`   // TODO remove
 }
 
 // BlockScannerConfiguration settings for BlockScanner
@@ -94,6 +100,7 @@ type MetricsConfiguration struct {
 	Chains       []common.Chain `json:"chains" mapstructure:"chains"`
 }
 
+// LoadBiFrostConfig read the bifrost configuration from the given file
 func LoadBiFrostConfig(file string) (*Configuration, error) {
 	applyDefaultConfig()
 	var cfg Configuration
@@ -120,6 +127,19 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 	}
 
 	return &cfg, nil
+}
+
+// GetBootstrapPeers return the internal bootstrap peers in a slice of maddr.Multiaddr
+func (c TSSConfiguration) GetBootstrapPeers() ([]maddr.Multiaddr, error) {
+	addrs := make([]maddr.Multiaddr, 0, len(c.BootstrapPeers))
+	for _, item := range c.BootstrapPeers {
+		addr, err := maddr.NewMultiaddr(item)
+		if err != nil {
+			return nil, fmt.Errorf("fail to parse multi addr(%s): %w", item, err)
+		}
+		addrs = append(addrs, addr)
+	}
+	return addrs, nil
 }
 
 func applyDefaultConfig() {
