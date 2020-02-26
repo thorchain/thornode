@@ -17,6 +17,7 @@ services:
       CHAIN_RPC: thor-daemon:26657
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
       TSS_HOST: tss
+      PEER: ${PEER}
     entrypoint:
       /docker/scripts/bifrost.sh
     volumes:

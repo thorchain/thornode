@@ -16,6 +16,7 @@ services:
       BINANCE_HOST: ${BINANCE_HOST:-http://172.32.90.1:26660}
       TSS_HOST: 172.32.10.6
       TSS_PORT: 4044
+      PEER: ${PEER}
     entrypoint:
       /docker/scripts/bifrost.sh
     depends_on:

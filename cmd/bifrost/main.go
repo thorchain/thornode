@@ -1,22 +1,33 @@
 package main
 
 import (
+	"bytes"
+	"context"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	btsskeygen "github.com/binance-chain/tss-lib/ecdsa/keygen"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	golog "github.com/ipfs/go-log"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	flag "github.com/spf13/pflag"
+	"gitlab.com/thorchain/tss/go-tss/common"
+	"gitlab.com/thorchain/tss/go-tss/tss"
 
+	app "gitlab.com/thorchain/thornode"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/observer"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
-	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
+	"gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/signer"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/cmd"
@@ -41,6 +52,7 @@ func main() {
 	logLevel := flag.StringP("log-level", "l", "info", "Log Level")
 	pretty := flag.BoolP("pretty-log", "p", false, "Enables unstructured prettified logging. This is useful for local debugging")
 	cfgFile := flag.StringP("cfg", "c", "config", "configuration file with extension")
+	tssPreParam := flag.StringP("preparm", "t", "", "pre-generated PreParam file used for tss")
 	flag.Parse()
 
 	if *showVersion {
@@ -115,7 +127,38 @@ func main() {
 	if err := sign.Start(); err != nil {
 		log.Fatal().Err(err).Msg("fail to start signer")
 	}
+	priKey, err := thorKeys.GetPrivateKey()
+	if err != nil {
+		log.Fatal().Err(err).Msg("fail to get private key")
+	}
 
+	bootstrapPeers, err := cfg.TSS.GetBootstrapPeers()
+	if err != nil {
+		log.Fatal().Err(err).Msg("fail to get bootstrap peers")
+	}
+
+	tssIns, err := tss.NewTss(bootstrapPeers,
+		cfg.TSS.P2PPort,
+		priKey,
+		cfg.TSS.Rendezvous,
+		app.DefaultCLIHome,
+		common.TssConfig{
+			KeyGenTimeout:   30 * time.Second,
+			KeySignTimeout:  30 * time.Second,
+			PreParamTimeout: 5 * time.Minute,
+		}, getLocalPreParam(*tssPreParam))
+	if err != nil {
+		log.Fatal().Err(err).Msg("fail to create tss instance")
+	}
+	tssIns.ConfigureHttpServers(cfg.TSS.TSSAddress, cfg.TSS.InfoAddress)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go func() {
+		defer log.Info().Msg("tss instance exit")
+		if err := tssIns.Start(ctx); err != nil {
+			log.Err(err).Msg("fail to start tss instance")
+		}
+	}()
 	// wait....
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
@@ -131,6 +174,7 @@ func main() {
 	if err := sign.Stop(); err != nil {
 		log.Fatal().Err(err).Msg("fail to stop signer")
 	}
+	cancel()
 }
 
 func initPrefix() {
@@ -150,4 +194,46 @@ func initLog(level string, pretty bool) {
 	}
 	zerolog.SetGlobalLevel(l)
 	log.Logger = log.Output(out).With().Str("service", serverIdentity).Logger()
+
+	logLevel := golog.LevelInfo
+	switch l {
+	case zerolog.DebugLevel:
+		logLevel = golog.LevelDebug
+	case zerolog.InfoLevel:
+		logLevel = golog.LevelInfo
+	case zerolog.ErrorLevel:
+		logLevel = golog.LevelError
+	case zerolog.FatalLevel:
+		logLevel = golog.LevelFatal
+	case zerolog.PanicLevel:
+		logLevel = golog.LevelPanic
+	}
+	golog.SetAllLoggers(logLevel)
+	if err := golog.SetLogLevel("tss-lib", level); err != nil {
+		log.Fatal().Err(err).Msg("fail to set tss-lib loglevel")
+	}
+}
+
+func getLocalPreParam(file string) *btsskeygen.LocalPreParams {
+	if len(file) == 0 {
+		return nil
+	}
+	buf, err := ioutil.ReadFile(file)
+	if err != nil {
+		log.Fatal().Msgf("fail to read file:%s", file)
+		return nil
+	}
+	buf = bytes.Trim(buf, "\n")
+	log.Info().Msg(string(buf))
+	result, err := hex.DecodeString(string(buf))
+	if err != nil {
+		log.Fatal().Msg("fail to hex decode the file content")
+		return nil
+	}
+	var preParam btsskeygen.LocalPreParams
+	if err := json.Unmarshal(result, &preParam); err != nil {
+		log.Fatal().Msg("fail to unmarshal file content to LocalPreParams")
+		return nil
+	}
+	return &preParam
 }

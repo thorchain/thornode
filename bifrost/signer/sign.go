@@ -381,5 +381,8 @@ func (s *Signer) Stop() error {
 	if err := s.m.Stop(); err != nil {
 		s.logger.Error().Err(err).Msg("fail to stop metric server")
 	}
+	if err := s.thorchainBlockScanner.Stop(); err != nil {
+		s.logger.Error().Err(err).Msg("stop thorchain block scanner")
+	}
 	return s.storage.Close()
 }
