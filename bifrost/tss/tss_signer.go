@@ -115,6 +115,7 @@ func (s *KeySign) SignWithPool(msg tx.StdSignMsg, poolPubKey common.PubKey, sign
 		return nil, errors.New("fail to make signature")
 	}
 	newTx := tx.NewStdTx(msg.Msgs, []tx.StdSignature{sig}, msg.Memo, msg.Source, msg.Data)
+	fmt.Printf(">>>> StdSignMsg: %+v\n", newTx)
 	bz, err := tx.Cdc.MarshalBinaryLengthPrefixed(&newTx)
 	if err != nil {
 		return nil, err
