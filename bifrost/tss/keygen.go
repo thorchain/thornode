@@ -72,6 +72,7 @@ func (kg *KeyGen) GenerateNewKey(pKeys common.PubKeys) (common.PubKeySet, common
 	if err != nil {
 		return common.EmptyPubKeySet, common.EmptyBlame, fmt.Errorf("fail to read response body,err:%w", err)
 	}
+	fmt.Printf(">>>>>>>>>>KeyGenResp: %s", string(bodyBuf))
 	var dat KeyGenResp
 	err = json.Unmarshal(bodyBuf, &dat)
 	if err != nil {
