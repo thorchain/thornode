@@ -254,6 +254,7 @@ func (s *Signer) processKeygen(ch <-chan ttypes.KeygenBlock) {
 					s.errCounter.WithLabelValues("fail_to_keygen_pubkey", "").Inc()
 					s.logger.Error().Err(err).Msg("fail to generate new pubkey")
 				}
+				fmt.Printf("----------KeyGenResp: %+v\n", pubKey)
 				if !pubKey.Secp256k1.IsEmpty() {
 					s.pubkeyMgr.AddPubKey(pubKey.Secp256k1, true)
 				}
