@@ -364,6 +364,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64, keys common.PubKeys)
 		Sequence:      b.seqNumber,
 		AccountNumber: b.accountNumber,
 	}
+	fmt.Printf(">>>>- StdSignMsg: %+v\n", signMsg)
 	rawBz, err := b.signWithRetry(signMsg, fromAddr, tx.VaultPubKey, height, tx.Memo, tx.Coins, keys)
 	if err != nil {
 		return nil, fmt.Errorf("fail to sign message: %w", err)
