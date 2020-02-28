@@ -23,7 +23,6 @@ services:
       /docker/scripts/bifrost.sh
     depends_on:
       - thor-api
-      - tss
     volumes:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
@@ -49,15 +48,12 @@ services:
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.2:4040
       TSSKEYGENLIST: 172.32.10.2:6040,172.32.10.3:6041,172.32.10.4:6042,172.32.10.5:6043
-      TSSPRIVKEY: /root/.tss/private.key
     ports:
       - "26657:26657"
       - "26656:26656"
     expose:
       - "26656"
       - "26657"
-    depends_on:
-      - tss
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
@@ -66,7 +62,6 @@ services:
       - ${HOME}/.thornode/genesis_1/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_1/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_1/.bond:/root/.bond
-      - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
@@ -102,32 +97,6 @@ services:
       localnet:
         ipv4_address: 172.32.40.32
 
-  tss:
-    container_name: tss
-    hostname: tss
-    image: registry.gitlab.com/thorchain/tss/go-tss
-    restart: unless-stopped
-    environment:
-      NET: ${NET}
-      TSSPORT: :4040
-      P2PPORT: 5040
-      INFOPORT: :6040
-      PRIVKEY: /root/.tss/private.key
-    expose:
-      - "5040"
-      - "6040"
-    ports:
-      - "5040:5040"
-      - "6040:6040"
-    entrypoint:
-      /docker/scripts/tss.sh
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_1/.tss:/root/.tss
-    networks:
-      localnet:
-        ipv4_address: 172.32.10.2
-
   bifrost2:
     container_name: bifrost2
     hostname: bifrost2
@@ -149,7 +118,6 @@ services:
       /docker/scripts/bifrost.sh
     depends_on:
       - thor-api2
-      - tss2
     volumes:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
@@ -175,9 +143,6 @@ services:
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.3:4041
       TSSKEYGENLIST: 172.32.10.2:6040,172.32.10.3:6041,172.32.10.4:6042,172.32.10.5:6043
-      TSSPRIVKEY: /root/.tss/private.key
-    depends_on:
-      - tss2
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
@@ -186,7 +151,6 @@ services:
       - ${HOME}/.thornode/genesis_2/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_2/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_2/.bond:/root/.bond
-      - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
@@ -218,35 +182,6 @@ services:
       localnet:
         ipv4_address: 172.32.40.33
 
-  tss2:
-    container_name: tss2
-    hostname: tss2
-    image: registry.gitlab.com/thorchain/tss/go-tss
-    restart: unless-stopped
-    environment:
-      NET: ${NET}
-      SEED: 172.32.10.2
-      SEEDP2PPORT: 5040
-      SEEDINFOPORT: 6040
-      TSSPORT: :4041
-      P2PPORT: 5041
-      INFOPORT: :6041
-      PRIVKEY: /root/.tss/private.key
-    expose:
-      - "5041"
-      - "6041"
-    ports:
-      - "5041:5041"
-      - "6041:6041"
-    entrypoint:
-      /docker/scripts/tss.sh
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_2/.tss:/root/.tss
-    networks:
-      localnet:
-        ipv4_address: 172.32.10.3
-
   bifrost3:
     container_name: bifrost3
     hostname: bifrost3
@@ -268,7 +203,6 @@ services:
       /docker/scripts/bifrost.sh
     depends_on:
       - thor-api3
-      - tss3
     volumes:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
@@ -294,9 +228,6 @@ services:
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.4:4042
       TSSKEYGENLIST: 172.32.10.2:6040,172.32.10.3:6041,172.32.10.4:6042,172.32.10.5:6043
-      TSSPRIVKEY: /root/.tss/private.key
-    depends_on:
-      - tss3
     entrypoint:
       /docker/scripts/genesis.sh
     volumes:
@@ -305,7 +236,6 @@ services:
       - ${HOME}/.thornode/genesis_3/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_3/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_3/.bond:/root/.bond
-      - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
@@ -337,35 +267,6 @@ services:
       localnet:
         ipv4_address: 172.32.40.34
 
-  tss3:
-    container_name: tss3
-    hostname: tss3
-    image: registry.gitlab.com/thorchain/tss/go-tss
-    restart: unless-stopped
-    environment:
-      NET: ${NET}
-      SEED: 172.32.10.2
-      SEEDP2PPORT: 5040
-      SEEDINFOPORT: 6040
-      TSSPORT: :4042
-      P2PPORT: 5042
-      INFOPORT: :6042
-      PRIVKEY: /root/.tss/private.key
-    expose:
-      - "5042"
-      - "6042"
-    ports:
-      - "5042:5042"
-      - "6042:6042"
-    entrypoint:
-      /docker/scripts/tss.sh
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_3/.tss:/root/.tss
-    networks:
-      localnet:
-        ipv4_address: 172.32.10.4
-
   bifrost4:
     container_name: bifrost4
     hostname: bifrost4
@@ -387,7 +288,6 @@ services:
       /docker/scripts/bifrost.sh
     depends_on:
       - thor-api4
-      - tss4
     volumes:
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
@@ -413,18 +313,14 @@ services:
       SEED: thor-daemon
       TSSKEYGEN: 172.32.10.5:4043
       TSSKEYGENLIST: 172.32.10.2:6040,172.32.10.3:6041,172.32.10.4:6042,172.32.10.5:6043
-      TSSPRIVKEY: /root/.tss/private.key
     entrypoint:
       /docker/scripts/genesis.sh
-    depends_on:
-      - tss4
     volumes:
       - /tmp/genesis:/tmp/shared
       - "../../scripts:/docker/scripts"
       - ${HOME}/.thornode/genesis_4/.thord:/root/.thord
       - ${HOME}/.thornode/genesis_4/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/genesis_4/.bond:/root/.bond
-      - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
     networks:
       localnet:
@@ -455,35 +351,6 @@ services:
     networks:
       localnet:
         ipv4_address: 172.32.40.35
-
-  tss4:
-    container_name: tss4
-    hostname: tss4
-    image: registry.gitlab.com/thorchain/tss/go-tss
-    restart: unless-stopped
-    environment:
-      NET: ${NET}
-      SEED: 172.32.10.2
-      SEEDP2PPORT: 5040
-      SEEDINFOPORT: 6040
-      TSSPORT: :4043
-      P2PPORT: 5043
-      INFOPORT: :6043
-      PRIVKEY: /root/.tss/private.key
-    expose:
-      - "5043"
-      - "6043"
-    ports:
-      - "5043:5043"
-      - "6043:6043"
-    entrypoint:
-      /docker/scripts/tss.sh
-    volumes:
-      - "../../scripts:/docker/scripts"
-      - ${HOME}/.thornode/genesis_4/.tss:/root/.tss
-    networks:
-      localnet:
-        ipv4_address: 172.32.10.5
 
 networks:
   localnet:
