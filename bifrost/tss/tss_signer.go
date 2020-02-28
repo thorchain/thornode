@@ -80,6 +80,7 @@ func (s *KeySign) makeSignature(msg tx.StdSignMsg, poolPubKey string, signerPubK
 	if err != nil {
 		return stdSignature, fmt.Errorf("fail to get pub key: %w", err)
 	}
+	fmt.Printf("Remote Sign: %+v\n", msg)
 	signPack, err := s.remoteSign(msg.Bytes(), poolPubKey, signerPubKeys)
 	if err != nil {
 		return stdSignature, fmt.Errorf("fail to TSS sign: %w", err)
