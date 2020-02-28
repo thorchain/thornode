@@ -14,11 +14,6 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
 
     thorcli keys show $SIGNER_NAME || echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME 2>&1
 
-    # write private key to tss volume
-    if [ ! -z ${TSSPRIVKEY+x} ]; then
-        echo $SIGNER_PASSWD | thorcli keys tss $SIGNER_NAME 2> $TSSPRIVKEY
-    fi
-
     NODE_ADDRESS=$(thorcli keys show $SIGNER_NAME -a)
     init_chain $NODE_ADDRESS
 

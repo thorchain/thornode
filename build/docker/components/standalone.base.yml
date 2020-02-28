@@ -16,7 +16,6 @@ services:
       CHAIN_API: thor-api:1317
       CHAIN_RPC: thor-daemon:26657
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
-      TSS_HOST: tss
       PEER: ${PEER}
     entrypoint:
       /docker/scripts/bifrost.sh
@@ -40,7 +39,6 @@ services:
       NODES: 1
       SEED: thor-daemon
       NET: ${NET}
-      TSSPRIVKEY: /root/.tss/private.key
     ports:
       - "26657:26657"
       - "26656:26656"
@@ -52,7 +50,6 @@ services:
       - ${HOME}/.thornode/standalone/.thord:/root/.thord
       - ${HOME}/.thornode/standalone/.thorcli:/root/.thorcli
       - ${HOME}/.thornode/standalone/.bond:/root/.bond
-      - ${HOME}/.thornode/tss/.tss:/root/.tss
     command: ["thord", "start", "--log_level", "main:info,state:debug,*:error", "--rpc.laddr", "tcp://0.0.0.0:26657"]
 
   thor-api:
