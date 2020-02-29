@@ -98,6 +98,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 		}
 
 		// move partial funds every 30 minutes
+		fmt.Printf("Migrated Funds check: (%d - %d) %% %d\n", ctx.BlockHeight(), vault.StatusSince, migrateInterval)
 		if (ctx.BlockHeight()-vault.StatusSince)%migrateInterval == 0 {
 			for _, coin := range vault.Coins {
 
