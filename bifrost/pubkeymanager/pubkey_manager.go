@@ -25,16 +25,19 @@ type PubKeyValidator interface {
 	FetchPubKeys()
 	HasPubKey(pk common.PubKey) bool
 	AddPubKey(pk common.PubKey, _ bool)
+	AddNodePubKey(pk common.PubKey)
 	RemovePubKey(pk common.PubKey)
 	GetSignPubKeys() common.PubKeys
+	GetNodePubKey() common.PubKey
 	GetPubKeys() common.PubKeys
 	Start() error
 	Stop() error
 }
 
 type PK struct {
-	PubKey common.PubKey
-	Signer bool
+	PubKey      common.PubKey
+	Signer      bool
+	NodeAccount bool
 }
 
 // PubKeyManager it manages a list of pubkeys
@@ -100,6 +103,15 @@ func (pkm *PubKeyManager) GetSignPubKeys() common.PubKeys {
 	return pubkeys
 }
 
+func (pkm *PubKeyManager) GetNodePubKey() common.PubKey {
+	for _, pk := range pkm.pubkeys {
+		if pk.NodeAccount {
+			return pk.PubKey
+		}
+	}
+	return common.EmptyPubKey
+}
+
 func (pkm *PubKeyManager) HasPubKey(pk common.PubKey) bool {
 	for _, pubkey := range pkm.pubkeys {
 		if pk.Equals(pubkey.PubKey) {
@@ -125,8 +137,30 @@ func (pkm *PubKeyManager) AddPubKey(pk common.PubKey, signer bool) {
 	} else {
 		// pubkey doesn't exist yet, append it...
 		pkm.pubkeys = append(pkm.pubkeys, PK{
-			PubKey: pk,
-			Signer: signer,
+			PubKey:      pk,
+			Signer:      signer,
+			NodeAccount: false,
+		})
+	}
+}
+
+func (pkm *PubKeyManager) AddNodePubKey(pk common.PubKey) {
+	pkm.rwMutex.Lock()
+	defer pkm.rwMutex.Unlock()
+
+	for i, pubkey := range pkm.pubkeys {
+		if pubkey.PubKey.Equals(pk) {
+			pkm.pubkeys[i].Signer = true
+			pkm.pubkeys[i].NodeAccount = true
+			return
+		}
+	}
+
+	if !pkm.HasPubKey(pk) {
+		pkm.pubkeys = append(pkm.pubkeys, PK{
+			PubKey:      pk,
+			Signer:      true,
+			NodeAccount: true,
 		})
 	}
 }

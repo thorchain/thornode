@@ -42,7 +42,7 @@ func (b *ThorchainBridge) getLastBlock(chain common.Chain) (types.QueryResHeight
 	if chain.String() != "" {
 		url = fmt.Sprintf("%s/%s", url, chain.String())
 	}
-	buf, err := b.get(url)
+	buf, _, err := b.get(url)
 	if err != nil {
 		return types.QueryResHeights{}, errors.Wrap(err, "failed to get lastblock")
 	}

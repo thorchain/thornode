@@ -10,7 +10,7 @@ import (
 // GetNodeAccount retrieves node account for this address from thorchain
 func (b *ThorchainBridge) GetNodeAccount(thorAddr string) (*types.NodeAccount, error) {
 	url := fmt.Sprintf("%s/%s", NodeAccountEndpoint, thorAddr)
-	body, err := b.get(url)
+	body, _, err := b.get(url)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_get_node_account", thorAddr).Inc()
 		return &types.NodeAccount{}, errors.Wrap(err, "failed to get node account")
