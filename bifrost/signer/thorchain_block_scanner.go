@@ -82,13 +82,19 @@ func (b *ThorchainBlockScan) Start() error {
 }
 
 func (b *ThorchainBlockScan) processKeygenBlock(blockHeight int64) error {
-	for _, pk := range b.pubkeyMgr.GetSignPubKeys() {
-		keygen, err := b.thorchain.GetKeygenBlock(blockHeight, pk.String())
-		if err != nil {
-			return fmt.Errorf("fail to get keygen from thorchain: %w", err)
-		}
-		b.keygenChan <- *keygen
+	pk := b.pubkeyMgr.GetNodePubKey()
+	keygen, err := b.thorchain.GetKeygenBlock(blockHeight, pk.String())
+	if err != nil {
+		return fmt.Errorf("fail to get keygen from thorchain: %w", err)
 	}
+
+	// custom error (to be dropped and not logged) because the block is
+	// available yet
+	if keygen == nil {
+		return errors.New("")
+	}
+
+	b.keygenChan <- *keygen
 	return nil
 }
 
@@ -100,6 +106,12 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 		tx, err := b.thorchain.GetKeysign(blockHeight, pk.String())
 		if err != nil {
 			return errors.Wrap(err, "fail to get keysign from block scanner")
+		}
+
+		// custom error (to be dropped and not logged) because the block is
+		// available yet
+		if tx == nil {
+			return errors.New("")
 		}
 
 		for c, out := range tx.Chains {
@@ -133,6 +145,10 @@ func (b *ThorchainBlockScan) processBlocks(idx int) {
 				if errStatus := b.scannerStorage.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
 					b.errCounter.WithLabelValues("fail_set_block_Status", strconv.FormatInt(block, 10))
 					b.logger.Error().Err(err).Int64("height", block).Msg("fail to set block to fail status")
+				}
+				// the error is blank, which means its an error we skip logging
+				if err.Error() == "" {
+					continue
 				}
 				b.errCounter.WithLabelValues("fail_search_tx", strconv.FormatInt(block, 10))
 				b.logger.Error().Err(err).Int64("height", block).Msg("fail to search tx in block")

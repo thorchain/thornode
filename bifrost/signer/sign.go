@@ -75,7 +75,7 @@ func NewSigner(cfg config.SignerConfiguration,
 	if na.PubKeySet.Secp256k1.IsEmpty() {
 		return nil, fmt.Errorf("unable to find pubkey for this node account. Exiting...")
 	}
-	pubkeyMgr.AddPubKey(na.PubKeySet.Secp256k1, true)
+	pubkeyMgr.AddNodePubKey(na.PubKeySet.Secp256k1)
 
 	// Create pubkey manager and add our private key (Yggdrasil pubkey)
 	thorchainBlockScanner, err := NewThorchainBlockScan(cfg.BlockScanner, storage, thorchainBridge, m, pubkeyMgr)

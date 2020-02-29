@@ -87,7 +87,8 @@ func httpTestHandler(c *C, rw http.ResponseWriter, fixture string) {
 }
 
 func (s *ThorchainSuite) TestGet(c *C) {
-	buf, err := s.bridge.get("")
+	buf, status, err := s.bridge.get("")
+	c.Check(status, Equals, http.StatusOK)
 	c.Assert(err, IsNil)
 	c.Assert(buf, NotNil)
 }

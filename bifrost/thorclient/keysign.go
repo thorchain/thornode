@@ -3,6 +3,7 @@ package thorclient
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/pkg/errors"
@@ -13,9 +14,12 @@ import (
 // GetKeysign retrieves txout from this block height from thorchain
 func (b *ThorchainBridge) GetKeysign(blockHeight int64, pk string) (*types.ChainsTxOut, error) {
 	url := fmt.Sprintf("%s/%d/%s", KeysignEndpoint, blockHeight, pk)
-	body, err := b.get(url)
+	body, status, err := b.get(url)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_get_tx_out", strconv.FormatInt(blockHeight, 10)).Inc()
+		if status == http.StatusNotFound {
+			return nil, nil
+		}
 		return &types.ChainsTxOut{}, errors.Wrap(err, "failed to get tx from a block height")
 	}
 	var txOut types.ChainsTxOut

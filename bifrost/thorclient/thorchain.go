@@ -105,11 +105,11 @@ func MakeCodec() *codec.Codec {
 }
 
 // get handle all the low level http GET calls using retryablehttp.ThorchainBridge
-func (b *ThorchainBridge) get(path string) ([]byte, error) {
+func (b *ThorchainBridge) get(path string) ([]byte, int, error) {
 	resp, err := b.httpClient.Get(b.getThorChainURL(path))
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_get_from_thorchain", "").Inc()
-		return nil, errors.Wrap(err, "failed to GET from thorchain")
+		return nil, http.StatusNotFound, errors.Wrap(err, "failed to GET from thorchain")
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -117,14 +117,14 @@ func (b *ThorchainBridge) get(path string) ([]byte, error) {
 		}
 	}()
 	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("Status code: " + strconv.Itoa(resp.StatusCode) + " returned")
+		return nil, resp.StatusCode, errors.New("Status code: " + strconv.Itoa(resp.StatusCode) + " returned")
 	}
 	buf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_read_thorchain_resp", "").Inc()
-		return nil, errors.Wrap(err, "failed to read response body")
+		return nil, resp.StatusCode, errors.Wrap(err, "failed to read response body")
 	}
-	return buf, nil
+	return buf, resp.StatusCode, nil
 }
 
 // post handle all the low level http POST calls using retryablehttp.ThorchainBridge
@@ -164,7 +164,7 @@ func (b *ThorchainBridge) getThorChainURL(path string) string {
 func (b *ThorchainBridge) getAccountNumberAndSequenceNumber() (uint64, uint64, error) {
 	url := fmt.Sprintf("%s/%s", AuthAccountEndpoint, b.keys.GetSignerInfo().GetAddress())
 
-	body, err := b.get(url)
+	body, _, err := b.get(url)
 	if err != nil {
 		return 0, 0, errors.Wrap(err, "failed to get auth accounts")
 	}
@@ -315,7 +315,7 @@ func (b *ThorchainBridge) EnsureNodeWhitelisted() error {
 // GetKeysignParty call into thorchain to get the node accounts that should be join together to sign the message
 func (b *ThorchainBridge) GetKeysignParty(vaultPubKey common.PubKey) (common.PubKeys, error) {
 	p := fmt.Sprintf(SignerMembershipEndpoint, vaultPubKey.String())
-	result, err := b.get(p)
+	result, _, err := b.get(p)
 	if err != nil {
 		return common.PubKeys{}, fmt.Errorf("fail to get key sign party from thorchain: %w", err)
 	}

@@ -19,6 +19,7 @@ func (s *PubKeyMgrSuite) TestPubkeyMgr(c *C) {
 	pk1 := types.GetRandomPubKey()
 	pk2 := types.GetRandomPubKey()
 	pk3 := types.GetRandomPubKey()
+	pk4 := types.GetRandomPubKey()
 
 	pubkeyMgr, err := NewPubKeyManager("localhost:1317", nil)
 	c.Assert(err, IsNil)
@@ -51,6 +52,8 @@ func (s *PubKeyMgrSuite) TestPubkeyMgr(c *C) {
 
 	addr, err = pk3.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
+	pubkeyMgr.AddNodePubKey(pk4)
+	c.Check(pubkeyMgr.GetNodePubKey().String(), Equals, pk4.String())
 	ok, _ = pubkeyMgr.IsValidPoolAddress(addr.String(), common.BNBChain)
 	c.Assert(ok, Equals, false)
 }
