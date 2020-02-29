@@ -98,8 +98,9 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 		}
 
 		// move partial funds every 30 minutes
-		fmt.Printf("Migrated Funds check: (%d - %d) %% %d\n", ctx.BlockHeight(), vault.StatusSince, migrateInterval)
+		fmt.Printf("Migrated Funds check: (%d - %d) %% %d == %d\n", ctx.BlockHeight(), vault.StatusSince, migrateInterval, (ctx.BlockHeight()-vault.StatusSince)%migrateInterval)
 		if (ctx.BlockHeight()-vault.StatusSince)%migrateInterval == 0 {
+			fmt.Printf("Migrating...\n")
 			for _, coin := range vault.Coins {
 
 				// determine which active asgard vault is the best to send
