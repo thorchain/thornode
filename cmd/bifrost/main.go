@@ -119,24 +119,15 @@ func main() {
 		log.Fatal().Err(err).Msg("fail to start observer")
 	}
 
-	// start signer
-	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, pubkeyMgr, cfg.TSS, chains, m)
-	if err != nil {
-		log.Fatal().Err(err).Msg("fail to create instance of signer")
-	}
-	if err := sign.Start(); err != nil {
-		log.Fatal().Err(err).Msg("fail to start signer")
-	}
+	// setup TSS signing
 	priKey, err := thorKeys.GetPrivateKey()
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to get private key")
 	}
-
 	bootstrapPeers, err := cfg.TSS.GetBootstrapPeers()
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to get bootstrap peers")
 	}
-
 	tssIns, err := tss.NewTss(bootstrapPeers,
 		cfg.TSS.P2PPort,
 		priKey,
@@ -159,6 +150,16 @@ func main() {
 			log.Err(err).Msg("fail to start tss instance")
 		}
 	}()
+
+	// start signer
+	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, pubkeyMgr, tssIns, cfg.TSS, chains, m)
+	if err != nil {
+		log.Fatal().Err(err).Msg("fail to create instance of signer")
+	}
+	if err := sign.Start(); err != nil {
+		log.Fatal().Err(err).Msg("fail to start signer")
+	}
+
 	// wait....
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)

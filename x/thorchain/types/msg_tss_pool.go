@@ -8,23 +8,24 @@ import (
 	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 
 	"gitlab.com/thorchain/thornode/common"
 )
 
 // MsgTssPool defines a MsgTssPool message
 type MsgTssPool struct {
-	ID         string         `json:"id"`
-	PoolPubKey common.PubKey  `json:"pool_pub_key"`
-	KeygenType KeygenType     `json:"keygen_type"`
-	PubKeys    common.PubKeys `json:"pubkeys"`
-	Height     int64          `json:"height"`
-	Blame      common.Blame   `json:"blame"`
-	Signer     sdk.AccAddress `json:"signer"`
+	ID         string          `json:"id"`
+	PoolPubKey common.PubKey   `json:"pool_pub_key"`
+	KeygenType KeygenType      `json:"keygen_type"`
+	PubKeys    common.PubKeys  `json:"pubkeys"`
+	Height     int64           `json:"height"`
+	Blame      tssCommon.Blame `json:"blame"`
+	Signer     sdk.AccAddress  `json:"signer"`
 }
 
 // NewMsgTssPool is a constructor function for MsgTssPool
-func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, KeygenType KeygenType, height int64, blame common.Blame, signer sdk.AccAddress) MsgTssPool {
+func NewMsgTssPool(pks common.PubKeys, poolpk common.PubKey, KeygenType KeygenType, height int64, blame tssCommon.Blame, signer sdk.AccAddress) MsgTssPool {
 	return MsgTssPool{
 		ID:         getTssID(pks, poolpk, height),
 		PubKeys:    pks,

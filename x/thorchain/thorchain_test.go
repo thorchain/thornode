@@ -10,6 +10,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -147,7 +148,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 
 	// generate a tss keygen handler event
 	newVaultPk := GetRandomPubKey()
-	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), common.EmptyBlame, addresses[0])
+	msg := NewMsgTssPool(keygen.Members, newVaultPk, AsgardKeygen, ctx.BlockHeight(), tssCommon.NoBlame, addresses[0])
 	tssHandler := NewTssHandler(keeper, versionedVaultMgr)
 
 	voter := NewTssVoter(msg.ID, msg.PubKeys, msg.PoolPubKey)
