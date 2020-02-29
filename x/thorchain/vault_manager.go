@@ -103,6 +103,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 			fmt.Printf("Migrating...\n")
 			fmt.Printf("Vault: %+v\n", vault)
 			for _, coin := range vault.Coins {
+				fmt.Printf("Migrating coin: %s\n", coin.Asset.String())
 
 				// determine which active asgard vault is the best to send
 				// these coins to. We target the vault with the least amount of
@@ -119,11 +120,13 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 				// get address of asgard pubkey
 				addr, err := pk.GetAddress(coin.Asset.Chain)
 				if err != nil {
+					fmt.Printf("Error1: %s\n", err)
 					return err
 				}
 
 				// figure the nth time, we've sent migration txs from this vault
 				nth := (ctx.BlockHeight()-vault.StatusSince)/migrateInterval + 1
+				fmt.Printf("Nth: %d\n", nth)
 
 				// Default amount set to total remaining amount. Relies on the
 				// signer, to successfully send these funds while respecting
@@ -138,6 +141,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					// Round 5 = 100%
 					amt = amt.MulUint64(uint64(nth)).QuoUint64(5)
 				}
+				fmt.Printf("Migrate amt: %d\n", amt.Uint64())
 
 				toi := &TxOutItem{
 					Chain:       coin.Asset.Chain,
@@ -152,6 +156,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 				}
 				_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 				if err != nil {
+					fmt.Printf("Error2: %s\n", err)
 					return err
 				}
 			}
