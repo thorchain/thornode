@@ -504,6 +504,13 @@ func (b *Binance) BroadcastTx(hexTx []byte) error {
 	if err != nil {
 		return fmt.Errorf("fail to broadcast tx to binance chain: %w", err)
 	}
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			b.logger.Error().Err(err).Msg("failed to close response body")
+		}
+	}()
+
 	if resp.StatusCode != http.StatusOK {
 		result, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -511,11 +518,6 @@ func (b *Binance) BroadcastTx(hexTx []byte) error {
 		}
 		log.Info().Msg(string(result))
 		return fmt.Errorf("fail to broadcast tx to binance:(%s)", b.RPCHost)
-	}
-	err = resp.Body.Close()
-	if err != nil {
-		log.Error().Err(err).Msg("we fail to close response body")
-		return errors.New("fail to close response body")
 	}
 	atomic.AddInt64(&b.seqNumber, 1)
 	return nil
