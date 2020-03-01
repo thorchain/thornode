@@ -279,14 +279,7 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 
 	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
 	event.OutTxs = append(event.OutTxs, txs...)
-	if eventStatus == EventRefund {
-		// if the inbound tx has more than one coin in it, when thorchain refund it , there will have outbound tx per coin
-		if len(event.InTx.Coins) == len(event.OutTxs) {
-			event.Status = eventStatus
-		}
-	} else {
-		event.Status = eventStatus
-	}
+	event.Status = eventStatus
 	return keeper.UpsertEvent(ctx, event)
 }
 
