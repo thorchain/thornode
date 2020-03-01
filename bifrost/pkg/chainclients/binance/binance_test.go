@@ -145,6 +145,7 @@ func (s *BinancechainSuite) TestGetHeight(c *C) {
 		Host:   "localhost",
 		Port:   5555,
 	}
+
 	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, tssCfg, s.bridge)
 	c.Assert(err, IsNil)
 
@@ -167,6 +168,13 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		} else if req.RequestURI == "/abci_info" {
 			_, err := rw.Write([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "response": { "data": "BNBChain", "last_block_height": "123456789", "last_block_app_hash": "pwx4TJjXu3yaF6dNfLQ9F4nwAhjIqmzE8fNa+RXwAzQ=" } } }`))
 			c.Assert(err, IsNil)
+		} else if strings.HasSuffix(req.RequestURI, "/signers") {
+			_, err := rw.Write([]byte(`[
+  "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck",
+  "thorpub1addwnpepq2flfr96skc5lkwdv0n5xjsnhmuju20x3zndgu42zd8dtkrud9m2v0zl2qu",
+  "thorpub1addwnpepqwhnus6xs4208d4ynm05lv493amz3fexfjfx4vptntedd7k0ajlcup0pzgk"
+]`))
+			c.Assert(err, IsNil)
 		} else {
 		}
 	}))
@@ -176,7 +184,18 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		Host:   "localhost",
 		Port:   5555,
 	}
-	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, tssCfg, s.bridge)
+
+	b, err := thorclient.NewThorchainBridge(config.ClientConfiguration{
+		ChainID:         "thorchain",
+		ChainHost:       server.Listener.Addr().String(),
+		SignerName:      "bob",
+		SignerPasswd:    "password",
+		ChainHomeFolder: s.thordir,
+	}, s.m)
+	c.Assert(err, IsNil)
+	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{
+		RPCHost: server.URL,
+	}, tssCfg, b)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 	pk, err := common.NewPubKeyFromCrypto(b2.localKeyManager.GetPrivKey().PubKey())
@@ -184,7 +203,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	txOut := getTxOutFromJsonInput(`{ "height": "1718", "hash": "", "tx_array": [ { "vault_pubkey":"thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy","seq_no":"0","to": "tbnb1hzwfk6t3sqjfuzlr0ur9lj920gs37gg92gtay9", "coin":  { "asset": "BNB", "amount": "194765912" }  } ]}`, c)
 	txOut.TxArray[0].VaultPubKey = pk
 	out := txOut.TxArray[0].TxOutItem()
-	r, err := b2.SignTx(out, 1440, common.PubKeys{})
+	r, err := b2.SignTx(out, 1440)
 	c.Assert(err, IsNil)
 	c.Assert(r, NotNil)
 

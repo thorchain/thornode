@@ -308,7 +308,7 @@ func (b *Binance) ValidateMetadata(inter interface{}) bool {
 }
 
 // SignTx sign the the given TxArrayItem
-func (b *Binance) SignTx(tx stypes.TxOutItem, height int64, keys common.PubKeys) ([]byte, error) {
+func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	b.signLock.Lock()
 	defer b.signLock.Unlock()
 	var payload []msg.Transfer
@@ -364,7 +364,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64, keys common.PubKeys)
 		Sequence:      b.seqNumber,
 		AccountNumber: b.accountNumber,
 	}
-	rawBz, err := b.signWithRetry(signMsg, fromAddr, tx.VaultPubKey, height, tx.Memo, tx.Coins, keys)
+	rawBz, err := b.signWithRetry(signMsg, fromAddr, tx.VaultPubKey, height, tx.Memo, tx.Coins)
 	if err != nil {
 		return nil, fmt.Errorf("fail to sign message: %w", err)
 	}
@@ -387,9 +387,14 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey, signerP
 }
 
 // signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
-func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins, keys common.PubKeys) ([]byte, error) {
+func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins) ([]byte, error) {
 	for {
-		rawBytes, err := b.sign(signMsg, poolPubKey, keys)
+		keySignParty, err := b.thorchainBridge.GetKeysignParty(poolPubKey)
+		if err != nil {
+			b.logger.Error().Err(err).Msg("fail to get keysign party")
+			continue
+		}
+		rawBytes, err := b.sign(signMsg, poolPubKey, keySignParty)
 		if err == nil && rawBytes != nil {
 			return rawBytes, nil
 		}

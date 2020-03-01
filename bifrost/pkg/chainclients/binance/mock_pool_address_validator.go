@@ -40,7 +40,7 @@ func (mpa *MockPoolAddressValidator) GetSignPubKeys() common.PubKeys     { retur
 func (mpa *MockPoolAddressValidator) GetNodePubKey() common.PubKey       { return common.EmptyPubKey }
 func (mpa *MockPoolAddressValidator) HasPubKey(pk common.PubKey) bool    { return false }
 func (mpa *MockPoolAddressValidator) AddPubKey(pk common.PubKey, _ bool) {}
-func (mpa *MockPoolAddressValidator) AddNodePubKey(pk common.PubKey) {}
+func (mpa *MockPoolAddressValidator) AddNodePubKey(pk common.PubKey)     {}
 func (mpa *MockPoolAddressValidator) RemovePubKey(pk common.PubKey)      {}
 func (mpa *MockPoolAddressValidator) Start() error                       { return errors.New("Kaboom!") }
 func (mpa *MockPoolAddressValidator) Stop() error                        { return errors.New("Kaboom!") }
