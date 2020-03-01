@@ -15,7 +15,9 @@ TSS_PORT="${TSS_PORT:=4040}"
 
 $(dirname "$0")/wait-for-thorchain-api.sh $CHAIN_API
 
-if [ -z ${PEER+x} ]; then
+echo "PEER: $PEER"
+if [ ! -z "$PEER" ]; then
+    echo "got here"
     PEER="/ip4/$PEER/tcp/5040/ipfs/$(curl http://$PEER:6040/p2pid)"
 fi
 
