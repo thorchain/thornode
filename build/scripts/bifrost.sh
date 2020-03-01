@@ -12,9 +12,12 @@ START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
 TSS_SCHEME="${TSS_SCHEME:=http}"
 TSS_HOST="${TSS_HOST:=127.0.0.1}"
 TSS_PORT="${TSS_PORT:=4040}"
-PEER=${PEER}
 
 $(dirname "$0")/wait-for-thorchain-api.sh $CHAIN_API
+
+if [ ! -z ${PEER+x} ]; then
+    PEER="/ip4/$PEER/tcp/5040/ipfs/$(curl http://$PEER:6040/p2pid)"
+fi
 
 OBSERVER_PATH=$DB_PATH/bifrost/observer/
 SIGNER_PATH=$DB_PATH/bifrost/signer/
@@ -56,7 +59,7 @@ echo "{
         \"host\": \"$TSS_HOST\",
         \"port\": $TSS_PORT,
         \"bootstrap_peers\": [
-          $PEER
+          \"$PEER\"
         ],
         \"rendezvous\": \"asgard\",
         \"p2p_port\": 5040,

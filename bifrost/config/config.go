@@ -131,13 +131,15 @@ func LoadBiFrostConfig(file string) (*Configuration, error) {
 
 // GetBootstrapPeers return the internal bootstrap peers in a slice of maddr.Multiaddr
 func (c TSSConfiguration) GetBootstrapPeers() ([]maddr.Multiaddr, error) {
-	addrs := make([]maddr.Multiaddr, 0, len(c.BootstrapPeers))
+	var addrs []maddr.Multiaddr
 	for _, item := range c.BootstrapPeers {
-		addr, err := maddr.NewMultiaddr(item)
-		if err != nil {
-			return nil, fmt.Errorf("fail to parse multi addr(%s): %w", item, err)
+		if len(item) > 0 {
+			addr, err := maddr.NewMultiaddr(item)
+			if err != nil {
+				return nil, fmt.Errorf("fail to parse multi addr(%s): %w", item, err)
+			}
+			addrs = append(addrs, addr)
 		}
-		addrs = append(addrs, addr)
 	}
 	return addrs, nil
 }
