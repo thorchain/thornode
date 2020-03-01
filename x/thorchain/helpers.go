@@ -48,7 +48,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 	if len(refundCoins) > 0 {
 		// create a new TX based on the coins thorchain refund , some of the coins thorchain doesn't refund
 		// coin thorchain doesn't have pool with , likely airdrop
-		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, refundCoins, tx.Tx.Gas, tx.Tx.Memo)
+		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, tx.Tx.Coins, tx.Tx.Gas, tx.Tx.Memo)
 		// save refund event
 		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), newTx, buf, EventPending)
 		if err := keeper.UpsertEvent(ctx, event); err != nil {
@@ -280,8 +280,13 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
 	event.OutTxs = append(event.OutTxs, txs...)
 	if eventStatus == EventRefund {
-		// if the inbound tx has more than one coin in it, when thorchain refund it , there will have outbound tx per coin
-		if len(event.InTx.Coins) == len(event.OutTxs) {
+		// we need to check we refunded all the coins that need to be refunded from in tx
+		// before updating status to complete, we use the count of voter actions to check
+		voter, err := keeper.GetObservedTxVoter(ctx, event.InTx.ID)
+		if err != nil {
+			return fmt.Errorf("fail to get observed tx voter: %w", err)
+		}
+		if len(voter.Actions) == len(event.OutTxs) {
 			event.Status = eventStatus
 		}
 	} else {
