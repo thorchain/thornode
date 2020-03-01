@@ -15,7 +15,7 @@ var kaboom = errors.New("Kaboom!!!")
 
 type DummyChain struct{}
 
-func (DummyChain) SignTx(tx stypes.TxOutItem, height int64, keys common.PubKeys) ([]byte, error) {
+func (DummyChain) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	return nil, kaboom
 }
 func (DummyChain) BroadcastTx(tx []byte) error                { return kaboom }
