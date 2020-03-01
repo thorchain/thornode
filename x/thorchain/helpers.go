@@ -279,7 +279,19 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 
 	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
 	event.OutTxs = append(event.OutTxs, txs...)
-	event.Status = eventStatus
+	if eventStatus == EventRefund {
+		// we need to check we refunded all the coins that need to be refunded from in tx
+		// before updating status to complete, we use the count of voter actions to check
+		voter, err := keeper.GetObservedTxVoter(ctx, event.InTx.ID)
+		if err != nil {
+			return fmt.Errorf("fail to get observed tx voter: %w", err)
+		}
+		if len(voter.Actions) == len(event.OutTxs) {
+			event.Status = eventStatus
+		}
+	} else {
+		event.Status = eventStatus
+	}
 	return keeper.UpsertEvent(ctx, event)
 }
 
