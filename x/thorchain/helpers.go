@@ -46,8 +46,11 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		// Zombie coins are just dropped.
 	}
 	if len(refundCoins) > 0 {
+		// create a new TX based on the coins thorchain refund , some of the coins thorchain doesn't refund
+		// coin thorchain doesn't have pool with , likely airdrop
+		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, tx.Tx.Coins, tx.Tx.Gas, tx.Tx.Memo)
 		// save refund event
-		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), tx.Tx, buf, EventPending)
+		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), newTx, buf, EventPending)
 		if err := keeper.UpsertEvent(ctx, event); err != nil {
 			return fmt.Errorf("fail to save refund event: %w", err)
 		}
