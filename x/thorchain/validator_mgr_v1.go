@@ -915,10 +915,7 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 		return nil, false, err
 	}
 
-	// sort by bond size
-	sort.SliceStable(ready, func(i, j int) bool {
-		return ready[i].Bond.GT(ready[j].Bond)
-	})
+	ready = sortNodeAccountsByProbabilisticBond(ctx, ready)
 
 	active, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
