@@ -13,12 +13,14 @@ require (
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/didip/tollbooth v4.0.2+incompatible
 	github.com/go-kit/kit v0.10.0 // indirect
+	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/gorilla/mux v1.7.4
 	github.com/hashicorp/go-retryablehttp v0.6.4
 	github.com/ipfs/go-datastore v0.4.4 // indirect
 	github.com/ipfs/go-log v1.0.2
 	github.com/libp2p/go-libp2p-kad-dht v0.5.0 // indirect
-	github.com/multiformats/go-multiaddr v0.2.0
+	github.com/libp2p/go-mplex v0.1.1 // indirect
+	github.com/multiformats/go-multiaddr v0.2.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1
@@ -39,10 +41,12 @@ require (
 	github.com/tendermint/tendermint v0.32.9
 	github.com/tendermint/tm-db v0.2.0
 	github.com/zondax/ledger-go v0.11.0 // indirect
-	gitlab.com/thorchain/tss/go-tss v0.0.0-20200224230523-6a0cde51cba6
+	gitlab.com/thorchain/tss/go-tss v0.0.0-20200301042350-2ae7774f6cc4
 	go.uber.org/multierr v1.5.0 // indirect
-	golang.org/x/tools v0.0.0-20200225022059-a0ec867d517c // indirect
-	google.golang.org/genproto v0.0.0-20200224152610-e50cd9704f63 // indirect
+	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
+	golang.org/x/sys v0.0.0-20200301153931-2f85c7ec1e52 // indirect
+	golang.org/x/tools v0.0.0-20200228224639-71482053b885 // indirect
+	google.golang.org/genproto v0.0.0-20200228133532-8c2c7df3a383 // indirect
 	google.golang.org/grpc v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 	gopkg.in/ini.v1 v1.52.0 // indirect
