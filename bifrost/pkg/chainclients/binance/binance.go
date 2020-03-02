@@ -404,6 +404,7 @@ func (b *Binance) signWithRetry(inHash common.TxID, signMsg btx.StdSignMsg, from
 		}
 
 		// if our event is already completed, don't bother trying to sign again
+		// TODO: this may be too slow of a mechanism for chains with longer block times
 		if evt.Status != tttypes.Pending {
 			b.logger.Debug().Msgf("Message already signed or failed. Skipping...")
 			return nil, nil
