@@ -336,9 +336,13 @@ func (b *ThorchainBridge) GetEvent(txID common.TxID) (ttypes.Event, error) {
 	if err != nil {
 		return ttypes.Event{}, fmt.Errorf("fail to get event: %w", err)
 	}
-	var evt ttypes.Event
+	var evt []ttypes.Event
+	fmt.Printf("Event Body: %s\n", string(result))
 	if err := b.cdc.UnmarshalJSON(result, &evt); err != nil {
 		return ttypes.Event{}, fmt.Errorf("fail to unmarshal result to event:%w", err)
 	}
-	return evt, nil
+	if len(evt) == 0 {
+		return ttypes.Event{}, fmt.Errorf("no events for hash id:%s", txID.String())
+	}
+	return evt[0], nil
 }
