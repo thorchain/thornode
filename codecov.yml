@@ -2,6 +2,7 @@ codecov:
   require_ci_to_pass: yes
 
 coverage:
+  range: 0..100
   status:
     project: off
     patch: off
