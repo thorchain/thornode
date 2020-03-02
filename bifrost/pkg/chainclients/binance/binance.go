@@ -32,6 +32,7 @@ import (
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
+	tttypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // Binance is a structure to sign and broadcast tx to binance chain used by signer mostly
@@ -365,7 +366,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		Sequence:      b.seqNumber,
 		AccountNumber: b.accountNumber,
 	}
-	rawBz, err := b.signWithRetry(signMsg, fromAddr, tx.VaultPubKey, height, tx.Memo, tx.Coins)
+	rawBz, err := b.signWithRetry(tx.InHash, signMsg, fromAddr, tx.VaultPubKey, height, tx.Memo, tx.Coins)
 	if err != nil {
 		return nil, fmt.Errorf("fail to sign message: %w", err)
 	}
@@ -388,13 +389,26 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey, signerP
 }
 
 // signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
-func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins) ([]byte, error) {
+func (b *Binance) signWithRetry(inHash common.TxID, signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, memo string, coins common.Coins) ([]byte, error) {
 	for {
 		keySignParty, err := b.thorchainBridge.GetKeysignParty(poolPubKey)
 		if err != nil {
 			b.logger.Error().Err(err).Msg("fail to get keysign party")
 			continue
 		}
+
+		evt, err := b.thorchainBridge.GetEvent(inHash)
+		if err != nil {
+			b.logger.Error().Err(err).Msg("fail to get event")
+			continue
+		}
+
+		// if our event is already completed, don't bother trying to sign again
+		if evt.Status == tttypes.Success {
+			b.logger.Debug().Msgf("Message already signed. Skipping...")
+			return nil, nil
+		}
+
 		rawBytes, err := b.sign(signMsg, poolPubKey, keySignParty)
 		if err == nil && rawBytes != nil {
 			return rawBytes, nil

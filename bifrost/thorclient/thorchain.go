@@ -26,6 +26,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	ttypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // Endpoint urls
@@ -39,6 +40,7 @@ const (
 	ValidatorsEndpoint       = "/thorchain/validators"
 	VaultsEndpoint           = "/thorchain/vaults/pubkeys"
 	SignerMembershipEndpoint = "/thorchain/vaults/%s/signers"
+	EventTxViaID             = "/thorchain/events/tx/%s"
 )
 
 // ThorchainBridge will be used to send tx to thorchain
@@ -325,4 +327,18 @@ func (b *ThorchainBridge) GetKeysignParty(vaultPubKey common.PubKey) (common.Pub
 		return common.PubKeys{}, fmt.Errorf("fail to unmarshal result to pubkeys:%w", err)
 	}
 	return keys, nil
+}
+
+// GetEvnet call into thorchain to get the event for a given tx hash
+func (b *ThorchainBridge) GetEvent(txID common.TxID) (ttypes.Event, error) {
+	p := fmt.Sprintf(EventTxViaID, txID.String())
+	result, _, err := b.get(p)
+	if err != nil {
+		return ttypes.Event{}, fmt.Errorf("fail to get event: %w", err)
+	}
+	var evt ttypes.Event
+	if err := b.cdc.UnmarshalJSON(result, &evt); err != nil {
+		return ttypes.Event{}, fmt.Errorf("fail to unmarshal result to event:%w", err)
+	}
+	return evt, nil
 }
