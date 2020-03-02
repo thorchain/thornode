@@ -101,7 +101,6 @@ func (tos *TxOutStorageV1) CalcTxOutFee(ctx sdk.Context, toi ...*TxOutItem) (com
 			if assetFee.GT(sdk.ZeroUint()) {
 				fee.Coins = append(fee.Coins, common.NewCoin(to.Coin.Asset, assetFee))
 			}
-			fee.Coins = append(fee.Coins, common.NewCoin(to.Coin.Asset, assetFee))
 			fee.PoolDeduct = fee.PoolDeduct.Add(reservedRune)
 		}
 	}
