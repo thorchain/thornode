@@ -1,15 +1,9 @@
 package tss
 
 import (
-	"bytes"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math/big"
-	"net/http"
-	"net/url"
-	"time"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
@@ -21,32 +15,22 @@ import (
 	"github.com/tendermint/btcd/btcec"
 	"github.com/tendermint/tendermint/crypto"
 
-	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/tss/go-tss/keysign"
+	tss "gitlab.com/thorchain/tss/go-tss/tss"
 )
 
 // KeySign is a proxy between signer and TSS
 type KeySign struct {
-	cfg    config.TSSConfiguration
 	logger zerolog.Logger
-	client *http.Client
+	server *tss.TssServer
 }
 
 // NewKeySign create a new instance of KeySign
-func NewKeySign(cfg config.TSSConfiguration) (*KeySign, error) {
-	if len(cfg.Host) == 0 {
-		return nil, errors.New("TSS host is empty")
-	}
-	if cfg.Port == 0 {
-		return nil, errors.New("TSS port not specified")
-	}
-
+func NewKeySign(server *tss.TssServer) (*KeySign, error) {
 	return &KeySign{
-		cfg:    cfg,
+		server: server,
 		logger: log.With().Str("module", "tss_signer").Logger(),
-		client: &http.Client{
-			Timeout: time.Second * 30,
-		},
 	}, nil
 }
 
@@ -176,63 +160,22 @@ func getSignature(r, s string) ([]byte, error) {
 	return sigBytes, nil
 }
 
-func (s *KeySign) getTSSLocalUrl() string {
-	u := url.URL{
-		Scheme: s.cfg.Scheme,
-		Host:   fmt.Sprintf("%s:%d", s.cfg.Host, s.cfg.Port),
-		Path:   "keysign",
-	}
-	return u.String()
-}
-
 // toLocalTSSSigner will send the request to local signer
 func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string, signerPubKeys common.PubKeys) (string, string, error) {
-	tssMsg := struct {
-		PoolPubKey    string   `json:"pool_pub_key"`
-		Message       string   `json:"message"`
-		SignerPubKeys []string `json:"signer_pub_keys"`
-	}{
+	tssMsg := keysign.Request{
 		PoolPubKey: poolPubKey,
 		Message:    sendmsg,
 	}
 	for _, k := range signerPubKeys {
 		tssMsg.SignerPubKeys = append(tssMsg.SignerPubKeys, k.String())
 	}
-	buf, err := json.Marshal(tssMsg)
+	s.logger.Debug().Str("payload", fmt.Sprintf("PoolPubKey: %s, Message: %s, Signers: %+v", tssMsg.PoolPubKey, tssMsg.Message, tssMsg.SignerPubKeys)).Msg("msg to tss Local node")
+
+	keySignResp, err := s.server.KeySign(tssMsg)
 	if err != nil {
-		return "", "", errors.Wrap(err, "fail to create tss request msg")
-	}
-	s.logger.Debug().Str("payload", string(buf)).Msg("msg to tss Local node")
-	localTssURL := s.getTSSLocalUrl()
-	resp, err := s.client.Post(localTssURL, "application/json", bytes.NewBuffer(buf))
-	if err != nil {
-		return "", "", errors.Wrapf(err, "fail to send request to local TSS node,url: %s", localTssURL)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			s.logger.Error().Err(err).Msg("fail to close response body")
-		}
-	}()
-	if resp.StatusCode != http.StatusOK {
-		return "", "", fmt.Errorf("response status: %s from tss sign ", resp.Status)
+		return "", "", errors.Wrapf(err, "fail to send request to local TSS node")
 	}
 
-	// Read Response Body
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", "", errors.Wrap(err, "fail to read response body")
-	}
-
-	keySignResp := struct {
-		R      string       `json:"r"`
-		S      string       `json:"s"`
-		Status int          `json:"status"`
-		Blame  common.Blame `json:"blame"`
-	}{}
-
-	if err := json.Unmarshal(respBody, &keySignResp); err != nil {
-		return "", "", errors.Wrap(err, "fail to unmarshal tss response body")
-	}
 	// 1 means success,2 means fail , 0 means NA
 	if keySignResp.Status == 1 && keySignResp.Blame.IsEmpty() {
 		return keySignResp.R, keySignResp.S, nil

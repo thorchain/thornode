@@ -194,7 +194,7 @@ func (b *ThorchainBridge) GetConfig() config.ClientConfiguration {
 }
 
 // PostKeysignFailure generate and  post a keysign fail tx to thorchan
-func (b *ThorchainBridge) PostKeysignFailure(blame common.Blame, height int64, memo string, coins common.Coins) (common.TxID, error) {
+func (b *ThorchainBridge) PostKeysignFailure(blame tssCommon.Blame, height int64, memo string, coins common.Coins) (common.TxID, error) {
 	start := time.Now()
 	defer func() {
 		b.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())
