@@ -1011,6 +1011,8 @@ func sortNodeAccountsByProbabilisticBond(ctx sdk.Context, nas NodeAccounts) (res
 	for _, x := range ctx.TxBytes() {
 		seed += int64(x)
 	}
+	source := rand.NewSource(seed)
+	rnd := rand.New(source)
 
 	// sort by node address
 	sort.SliceStable(nas, func(i, j int) bool {
@@ -1029,8 +1031,6 @@ func sortNodeAccountsByProbabilisticBond(ctx sdk.Context, nas NodeAccounts) (res
 			totalBond = totalBond.Add(na.Bond)
 		}
 
-		source := rand.NewSource(seed)
-		rnd := rand.New(source)
 		// get our randomly chosen number within our total bond
 		idx := rnd.Uint64() % totalBond.Uint64()
 
