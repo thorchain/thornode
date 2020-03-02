@@ -3,16 +3,16 @@ package tss
 import (
 	"fmt"
 
-	"gitlab.com/thorchain/thornode/common"
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 )
 
 // KeysignError is a custom error create to include which party to blame
 type KeysignError struct {
-	Blame common.Blame
+	Blame tssCommon.Blame
 }
 
 // NewKeysignError create a new instance of KeysignError
-func NewKeysignError(blame common.Blame) KeysignError {
+func NewKeysignError(blame tssCommon.Blame) KeysignError {
 	return KeysignError{
 		Blame: blame,
 	}

@@ -103,22 +103,6 @@ func main() {
 		log.Fatal().Err(err).Msg("fail to load keys")
 	}
 
-	if len(cfg.Chains) == 0 {
-		log.Fatal().Err(err).Msg("missing chains")
-		return
-	}
-
-	chains := chainclients.LoadChains(thorKeys, cfg.Chains, cfg.TSS, thorchainBridge)
-
-	// start observer
-	obs, err := observer.NewObserver(pubkeyMgr, chains, thorchainBridge, m)
-	if err != nil {
-		log.Fatal().Err(err).Msg("fail to create observer")
-	}
-	if err = obs.Start(); err != nil {
-		log.Fatal().Err(err).Msg("fail to start observer")
-	}
-
 	// setup TSS signing
 	priKey, err := thorKeys.GetPrivateKey()
 	if err != nil {
@@ -150,6 +134,22 @@ func main() {
 			log.Err(err).Msg("fail to start tss instance")
 		}
 	}()
+
+	if len(cfg.Chains) == 0 {
+		log.Fatal().Err(err).Msg("missing chains")
+		return
+	}
+
+	chains := chainclients.LoadChains(thorKeys, cfg.Chains, tssIns, thorchainBridge)
+
+	// start observer
+	obs, err := observer.NewObserver(pubkeyMgr, chains, thorchainBridge, m)
+	if err != nil {
+		log.Fatal().Err(err).Msg("fail to create observer")
+	}
+	if err = obs.Start(); err != nil {
+		log.Fatal().Err(err).Msg("fail to start observer")
+	}
 
 	// start signer
 	sign, err := signer.NewSigner(cfg.Signer, thorchainBridge, thorKeys, pubkeyMgr, tssIns, cfg.TSS, chains, m)

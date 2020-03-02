@@ -10,20 +10,21 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 )
 
 // MsgTssKeysignFail means TSS keysign failed
 type MsgTssKeysignFail struct {
-	ID     string         `json:"id"`
-	Height int64          `json:"height"`
-	Blame  common.Blame   `json:"blame"`
-	Memo   string         `json:"memo"`
-	Coins  common.Coins   `json:"coins"`
-	Signer sdk.AccAddress `json:"signer"`
+	ID     string          `json:"id"`
+	Height int64           `json:"height"`
+	Blame  tssCommon.Blame `json:"blame"`
+	Memo   string          `json:"memo"`
+	Coins  common.Coins    `json:"coins"`
+	Signer sdk.AccAddress  `json:"signer"`
 }
 
 // NewMsgTssKeysignFail create a new instance of MsgTssKeysignFail message
-func NewMsgTssKeysignFail(height int64, blame common.Blame, memo string, coins common.Coins, signer sdk.AccAddress) MsgTssKeysignFail {
+func NewMsgTssKeysignFail(height int64, blame tssCommon.Blame, memo string, coins common.Coins, signer sdk.AccAddress) MsgTssKeysignFail {
 	return MsgTssKeysignFail{
 		ID:     getMsgTssKeysignFailID(blame.BlameNodes, height, memo, coins),
 		Height: height,
@@ -37,14 +38,14 @@ func NewMsgTssKeysignFail(height int64, blame common.Blame, memo string, coins c
 // getTssKeysignFailID this method will use all the members that caused the tss keysign failure , as well as
 // the block height of the txout item to generate a hash, given that , if the same party keep failing the same
 // txout item , then we will only slash it once.
-func getMsgTssKeysignFailID(members common.PubKeys, height int64, memo string, coins common.Coins) string {
+func getMsgTssKeysignFailID(members []string, height int64, memo string, coins common.Coins) string {
 	// ensure input pubkeys list is deterministically sorted
 	sort.SliceStable(members, func(i, j int) bool {
-		return members[i].String() < members[j].String()
+		return members[i] < members[j]
 	})
 	sb := strings.Builder{}
 	for _, item := range members {
-		sb.WriteString(item.String())
+		sb.WriteString(item)
 	}
 	sb.WriteString(fmt.Sprintf("%d", height))
 	sb.WriteString(memo)

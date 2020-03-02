@@ -95,13 +95,7 @@ const binanceNodeInfo = `{"node_info":{"protocol_version":{"p2p":7,"block":10,"a
 var status = fmt.Sprintf(`{ "jsonrpc": "2.0", "id": "", "result": %s}`, binanceNodeInfo)
 
 func (s *BinancechainSuite) TestNewBinance(c *C) {
-	tssCfg := config.TSSConfiguration{
-		Scheme: "http",
-		Host:   "localhost",
-		Port:   5555,
-	}
-
-	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{}, tssCfg, s.bridge)
+	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{}, nil, s.bridge)
 	c.Assert(b, IsNil)
 	c.Assert(err, NotNil)
 
@@ -113,7 +107,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		}
 	}))
 
-	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, tssCfg, s.bridge)
+	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, nil, s.bridge)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 }
@@ -140,13 +134,7 @@ func (s *BinancechainSuite) TestGetHeight(c *C) {
 		}
 	}))
 
-	tssCfg := config.TSSConfiguration{
-		Scheme: "http",
-		Host:   "localhost",
-		Port:   5555,
-	}
-
-	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, tssCfg, s.bridge)
+	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, nil, s.bridge)
 	c.Assert(err, IsNil)
 
 	height, err := b.GetHeight()
@@ -179,12 +167,6 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		}
 	}))
 
-	tssCfg := config.TSSConfiguration{
-		Scheme: "http",
-		Host:   "localhost",
-		Port:   5555,
-	}
-
 	b, err := thorclient.NewThorchainBridge(config.ClientConfiguration{
 		ChainID:         "thorchain",
 		ChainHost:       server.Listener.Addr().String(),
@@ -195,7 +177,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	c.Assert(err, IsNil)
 	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{
 		RPCHost: server.URL,
-	}, tssCfg, b)
+	}, nil, b)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 	pk, err := common.NewPubKeyFromCrypto(b2.localKeyManager.GetPrivKey().PubKey())

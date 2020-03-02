@@ -4,6 +4,7 @@ import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
@@ -95,7 +96,12 @@ func (h TssKeysignFailHandler) handleV1(ctx sdk.Context, msg MsgTssKeysignFail, 
 		constAccessor := constants.GetConstantValues(version)
 		slashPoints := constAccessor.GetInt64Value(constants.FailKeygenSlashPoints)
 		// fail to generate a new tss key let's slash the node account
-		for _, nodePubKey := range msg.Blame.BlameNodes {
+		for _, pubkeyStr := range msg.Blame.BlameNodes {
+			nodePubKey, err := common.NewPubKey(pubkeyStr)
+			if err != nil {
+				ctx.Logger().Error("fail to parse pubkey")
+				return sdk.ErrInternal("fail to parse pubkey").Result()
+			}
 			na, err := h.keeper.GetNodeAccountByPubKey(ctx, nodePubKey)
 			if err != nil {
 				ctx.Logger().Error("fail to get node from it's pub key", "error", err, "pub key", nodePubKey.String())

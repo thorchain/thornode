@@ -5,6 +5,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 )
 
 type TypeTssKeysignFailTestSuite struct{}
@@ -12,10 +13,10 @@ type TypeTssKeysignFailTestSuite struct{}
 var _ = Suite(&TypeTssKeysignFailTestSuite{})
 
 func (s *TypeTssKeysignFailTestSuite) TestVoter(c *C) {
-	pks := common.PubKeys{
-		GetRandomPubKey(), GetRandomPubKey(), GetRandomPubKey(),
+	pks := []string{
+		GetRandomPubKey().String(), GetRandomPubKey().String(), GetRandomPubKey().String(),
 	}
-	b := common.Blame{BlameNodes: pks, FailReason: "fail to keysign"}
+	b := tssCommon.Blame{BlameNodes: pks, FailReason: "fail to keysign"}
 	m := NewMsgTssKeysignFail(1, b, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, GetRandomBech32Addr())
 	tss := NewTssKeysignFailVoter(m.ID, 1)
 	c.Check(tss.Empty(), Equals, false)

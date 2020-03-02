@@ -99,7 +99,7 @@ func (s *ObserverSuite) NewMockBinanceInstance(c *C, jsonData string) {
 		StartBlockHeight:           0,
 		EnforceBlockHeight:         true,
 		DBPath:                     filepath.Join(os.TempDir(), "/var/data/bifrost/observer"),
-	}}, s.tssCfg, s.bridge)
+	}}, nil, s.bridge)
 	c.Assert(s.b, NotNil)
 	c.Assert(err, IsNil)
 }

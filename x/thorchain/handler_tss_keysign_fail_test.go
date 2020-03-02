@@ -7,6 +7,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 )
 
 type HandlerTssKeysignFailSuite struct{}
@@ -21,7 +22,7 @@ type tssKeysignFailHandlerTestHelper struct {
 	nodeAccount   NodeAccount
 	vaultManager  VersionedVaultManager
 	members       common.PubKeys
-	blame         common.Blame
+	blame         tssCommon.Blame
 }
 
 type tssKeysignFailKeeperHelper struct {
@@ -78,13 +79,13 @@ func newTssKeysignFailHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
 	constAccessor := constants.GetConstantValues(version)
 	versionedTxOutStore := NewVersionedTxOutStore()
 	vaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
-	var members common.PubKeys
+	var members []string
 	for i := 0; i < 8; i++ {
 		na := GetRandomNodeAccount(NodeStandby)
-		members = append(members, na.PubKeySet.Secp256k1)
+		members = append(members, na.PubKeySet.Secp256k1.String())
 		_ = keeper.SetNodeAccount(ctx, na)
 	}
-	blame := common.Blame{
+	blame := tssCommon.Blame{
 		FailReason: "whatever",
 		BlameNodes: members,
 	}
@@ -97,7 +98,6 @@ func newTssKeysignFailHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
 		constAccessor: constAccessor,
 		nodeAccount:   nodeAccount,
 		vaultManager:  vaultMgr,
-		members:       members,
 		blame:         blame,
 	}
 }
@@ -165,9 +165,9 @@ func (h HandlerTssKeysignFailSuite) TestTssKeysignFailHandler(c *C) {
 		{
 			name: "empty member pubkeys should return an error",
 			messageCreator: func(helper tssKeysignFailHandlerTestHelper) sdk.Msg {
-				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), common.Blame{
+				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), tssCommon.Blame{
 					FailReason: "",
-					BlameNodes: common.PubKeys{},
+					BlameNodes: []string{},
 				}, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssKeysignFailHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
