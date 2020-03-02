@@ -331,13 +331,15 @@ func (b *ThorchainBridge) GetKeysignParty(vaultPubKey common.PubKey) (common.Pub
 
 // GetEvnet call into thorchain to get the event for a given tx hash
 func (b *ThorchainBridge) GetEvent(txID common.TxID) (ttypes.Event, error) {
+	if txID == common.BlankTxID {
+		return ttypes.Event{Status: ttypes.Pending}, nil
+	}
 	p := fmt.Sprintf(EventTxViaID, txID.String())
 	result, _, err := b.get(p)
 	if err != nil {
 		return ttypes.Event{}, fmt.Errorf("fail to get event: %w", err)
 	}
 	var evt []ttypes.Event
-	fmt.Printf("Event Body: %s\n", string(result))
 	if err := b.cdc.UnmarshalJSON(result, &evt); err != nil {
 		return ttypes.Event{}, fmt.Errorf("fail to unmarshal result to event:%w", err)
 	}
