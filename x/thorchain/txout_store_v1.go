@@ -102,7 +102,7 @@ func (tos *TxOutStorageV1) CalcTxOutFee(ctx sdk.Context, toi ...*TxOutItem) (com
 				fee.Coins = append(fee.Coins, common.NewCoin(to.Coin.Asset, assetFee))
 			}
 			fee.Coins = append(fee.Coins, common.NewCoin(to.Coin.Asset, assetFee))
-			fee.PoolDeduct.Add(reservedRune)
+			fee.PoolDeduct = fee.PoolDeduct.Add(reservedRune)
 		}
 	}
 	return fee, nil
@@ -189,7 +189,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 				// Add to reserve
 				ctx.Logger().Error("fail to add fee to reserve", "error", err)
 			}
-		} else if !toi.Coin.Asset.IsRune() {
+		} else {
 			pool, err := tos.keeper.GetPool(ctx, toi.Coin.Asset) // Get pool
 			if err != nil {
 				// the error is already logged within kvstore
