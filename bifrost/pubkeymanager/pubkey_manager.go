@@ -258,7 +258,6 @@ func (pkm *PubKeyManager) getPubkeys() (common.PubKeys, error) {
 		pkm.errCounter.WithLabelValues("fail_unmarshal_pubkeys", "").Inc()
 		return nil, errors.Wrap(err, "fail to unmarshal pubkeys")
 	}
-
 	pubkeys := append(pubs.Asgard, pubs.Yggdrasil...)
 	return pubkeys, nil
 }
