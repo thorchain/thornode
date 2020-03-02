@@ -1,6 +1,8 @@
 package pubkeymanager
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	. "gopkg.in/check.v1"
@@ -56,4 +58,25 @@ func (s *PubKeyMgrSuite) TestPubkeyMgr(c *C) {
 	c.Check(pubkeyMgr.GetNodePubKey().String(), Equals, pk4.String())
 	ok, _ = pubkeyMgr.IsValidPoolAddress(addr.String(), common.BNBChain)
 	c.Assert(ok, Equals, false)
+}
+
+func (s *PubKeyMgrSuite) TestFetchKeys(c *C) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c.Logf("================>:%s", r.RequestURI)
+		switch r.RequestURI {
+		case "/thorchain/vaults/pubkeys":
+			if _, err := w.Write([]byte(`{"asgard": [], "yggdrasil": []}`)); err != nil {
+				c.Error(err)
+			}
+		}
+	}))
+	pubkeyMgr, err := NewPubKeyManager(server.URL[7:], nil)
+	c.Assert(err, IsNil)
+	err = pubkeyMgr.Start()
+	c.Assert(err, IsNil)
+	pubkeyMgr.FetchPubKeys()
+	pubKeys := pubkeyMgr.GetPubKeys()
+	c.Check(len(pubKeys), Equals, 0)
+	err = pubkeyMgr.Stop()
+	c.Assert(err, IsNil)
 }
