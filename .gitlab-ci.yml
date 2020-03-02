@@ -62,7 +62,7 @@ build-thornode:
 
 smoke-test:thornode:
   stage: smoke-test
-  image: docker:stable
+  image: docker/compose:alpine-1.25.4
   services:
     - docker:dind
   variables:
@@ -75,24 +75,23 @@ smoke-test:thornode:
       - ./logs/
   before_script:
     - apk update
-    - apk add --no-cache --virtual .build-deps g++ python3-dev libffi-dev openssl-dev
-    - apk add python3 py-pip make git jq curl
+    - apk add make git
     - git clone --single-branch -b $CI_COMMIT_BRANCH https://gitlab.com/thorchain/heimdall.git || git clone --single-branch -b master https://gitlab.com/thorchain/heimdall.git
-    - pip3 install docker-compose
-    - pip3 install -r ./heimdall/requirements.txt
     - make -C build/docker reset-mocknet-standalone
   except:
     - schedules
   environment:
     name: integration
   script:
-    - python3 ./heimdall/smoke.py --binance http://docker:26660 --thorchain http://docker:1317
+    - cd ./heimdall
+    - make build
+    - make smoke
   after_script:
     - ./scripts/docker_logs.sh
 
 deploy:
   #stage: deploy
-  image: docker:stable
+  image: docker/compose:alpine-1.25.4
   only:
     - daily-automated-churning
   services:
@@ -101,8 +100,8 @@ deploy:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
   before_script:
-    - apk add python git py-pip make bash curl python-dev libffi-dev openssl-dev gcc libc-dev jq
-    - pip install awscli docker-compose
+    - apk add python git py-pip make bash curl python-dev
+    - pip install awscli
     - make aws-ci-login
   script:
     - cd $CI_PROJECT_DIR/build/docker
