@@ -42,6 +42,7 @@ func NewEvent(typ string, ht int64, inTx common.Tx, evt json.RawMessage, status 
 		InTx:   inTx,
 		Event:  evt,
 		Status: status,
+		Fee:    common.Fee{PoolDeduct: sdk.ZeroUint()},
 	}
 }
 

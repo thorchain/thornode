@@ -61,8 +61,8 @@ func (tos *TxOutStorageV1) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (boo
 	return true, nil
 }
 
-// CalcTxOutFee will caclulate the amount of fee that has been subtracted from
-// transaction's assets and amount of rune transfered from the pool to reserved
+// CalcTxOutFee will calculate the amount of fee that has been subtracted from
+// transactions assets and amount of rune transferred from the pool to reserved
 func (tos *TxOutStorageV1) CalcTxOutFee(ctx sdk.Context, toi ...*TxOutItem) (common.Fee, error) {
 	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
 
@@ -195,8 +195,10 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 				// the error is already logged within kvstore
 				return false, fmt.Errorf("fail to get pool: %w", err)
 			}
-			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, fee.Coins[0].Amount)
-			pool.BalanceAsset = pool.BalanceAsset.Add(fee.Coins[0].Amount)      // Add Asset fee to Pool
+			if len(fee.Coins) > 0 {
+				toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, fee.Coins[0].Amount)
+				pool.BalanceAsset = pool.BalanceAsset.Add(fee.Coins[0].Amount) // Add Asset fee to Pool
+			}
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, fee.PoolDeduct) // Deduct Rune from Pool
 			if err := tos.keeper.SetPool(ctx, pool); err != nil {               // Set Pool
 				return false, fmt.Errorf("fail to save pool: %w", err)

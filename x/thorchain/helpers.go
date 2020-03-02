@@ -19,6 +19,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		return fmt.Errorf("fail to marshal refund event: %w", err)
 	}
 	var refundCoins common.Coins
+	var refundToi []*TxOutItem
 	for _, coin := range tx.Tx.Coins {
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
@@ -41,6 +42,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 			}
 			if success {
 				refundCoins = append(refundCoins, coin)
+				refundToi = append(refundToi, toi)
 			}
 		}
 		// Zombie coins are just dropped.
@@ -51,6 +53,11 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, tx.Tx.Coins, tx.Tx.Gas, tx.Tx.Memo)
 		// save refund event
 		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), newTx, buf, EventPending)
+		event.Fee, err = store.CalcTxOutFee(ctx, refundToi...)
+		if err != nil {
+			ctx.Logger().Error("CalcTxOutFee", "error", err)
+			return fmt.Errorf("fail to calculate fee")
+		}
 		if err := keeper.UpsertEvent(ctx, event); err != nil {
 			return fmt.Errorf("fail to save refund event: %w", err)
 		}
@@ -199,6 +206,11 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 			return fmt.Errorf("fail to marshal bond event: %w", err)
 		}
 		e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending)
+		e.Fee, err = txOut.CalcTxOutFee(ctx, txOutItem)
+		if err != nil {
+			ctx.Logger().Error("CalcTxOutFee", "error", err)
+			return fmt.Errorf("fail to calculate fee")
+		}
 		if err := keeper.UpsertEvent(ctx, e); err != nil {
 			return fmt.Errorf("fail to save bond return event: %w", err)
 		}
