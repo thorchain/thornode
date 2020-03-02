@@ -72,3 +72,6 @@ func (tos *TxOutStoreDummy) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 func (tos *TxOutStoreDummy) addToBlockOut(_ sdk.Context, toi *TxOutItem) {
 	tos.blockOut.TxArray = append(tos.blockOut.TxArray, toi)
 }
+func (tos *TxOutStoreDummy) CalcTxOutFee(_ sdk.Context, toi ...*TxOutItem) (common.Fee, error) {
+	return common.Fee{PoolDeduct: sdk.ZeroUint()}, nil
+}

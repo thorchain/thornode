@@ -80,7 +80,25 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 		ctx.Logger().Error("fail to process swap message", "error", swapErr)
 		return swapErr.Result()
 	}
+	txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
+	if err != nil {
+		ctx.Logger().Error("fail to get txout store", "error", err)
+		return errBadVersion.Result()
+	}
+	toi := &TxOutItem{
+		Chain:     msg.TargetAsset.Chain,
+		InHash:    msg.Tx.ID,
+		ToAddress: msg.Destination,
+		Coin:      common.NewCoin(msg.TargetAsset, amount),
+	}
 	for _, evt := range events {
+		if len(evt.OutTxs) == 0 {
+			evt.Fee, err = txOutStore.CalcTxOutFee(ctx, toi)
+			if err != nil {
+				ctx.Logger().Error("CalcTxOutFee", "error", err)
+				return errBadVersion.Result()
+			}
+		}
 		if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
@@ -104,17 +122,7 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 		ctx.Logger().Error("fail to encode result to json", "error", err)
 		return sdk.ErrInternal("fail to encode result to json").Result()
 	}
-	txOutStore, err := h.versionedTxOutStore.GetTxOutStore(h.keeper, version)
-	if err != nil {
-		ctx.Logger().Error("fail to get txout store", "error", err)
-		return errBadVersion.Result()
-	}
-	toi := &TxOutItem{
-		Chain:     msg.TargetAsset.Chain,
-		InHash:    msg.Tx.ID,
-		ToAddress: msg.Destination,
-		Coin:      common.NewCoin(msg.TargetAsset, amount),
-	}
+
 	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
 		ctx.Logger().Error("fail to add outbound tx", "error", err)

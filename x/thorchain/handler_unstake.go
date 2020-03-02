@@ -128,7 +128,6 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 	if err != nil {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to marshal event: %w", err).Error())
 	}
-
 	// unstake event is pending , once signer send the fund to customer successfully, then this should be marked as success
 	evt := NewEvent(
 		unstakeEvt.Type(),
@@ -138,35 +137,42 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		EventPending,
 	)
 
-	if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
-		ctx.Logger().Error("fail to save event", "error", err)
-		return nil, sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to save event")
+	toi1 := &TxOutItem{
+		Chain:     common.BNBChain,
+		InHash:    msg.Tx.ID,
+		ToAddress: stakerUnit.RuneAddress,
+		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
+	}
+	toi2 := &TxOutItem{
+		Chain:     msg.Asset.Chain,
+		InHash:    msg.Tx.ID,
+		ToAddress: stakerUnit.AssetAddress,
+		Coin:      common.NewCoin(msg.Asset, assetAmount),
 	}
 	txOutStore, err := h.txOutStore.GetTxOutStore(h.keeper, version)
 	if err != nil {
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return nil, errBadVersion
 	}
-	toi := &TxOutItem{
-		Chain:     common.BNBChain,
-		InHash:    msg.Tx.ID,
-		ToAddress: stakerUnit.RuneAddress,
-		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
+
+	evt.Fee, err = txOutStore.CalcTxOutFee(ctx, toi1, toi2)
+	if err != nil {
+		ctx.Logger().Error("CalcTxOutFee", "error", err)
+		return nil, sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to calculate fee")
 	}
-	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+
+	if err := h.keeper.UpsertEvent(ctx, evt); err != nil {
+		ctx.Logger().Error("fail to save event", "error", err)
+		return nil, sdk.NewError(DefaultCodespace, CodeFailSaveEvent, "fail to save event")
+	}
+
+	_, err = txOutStore.TryAddTxOutItem(ctx, toi1)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
 
 	}
-
-	toi = &TxOutItem{
-		Chain:     msg.Asset.Chain,
-		InHash:    msg.Tx.ID,
-		ToAddress: stakerUnit.AssetAddress,
-		Coin:      common.NewCoin(msg.Asset, assetAmount),
-	}
-	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+	_, err = txOutStore.TryAddTxOutItem(ctx, toi2)
 	if err != nil {
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")

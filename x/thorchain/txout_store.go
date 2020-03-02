@@ -3,6 +3,7 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/common"
 
 	"gitlab.com/thorchain/thornode/constants"
 )
@@ -17,6 +18,7 @@ type TxOutStore interface {
 	ClearOutboundItems(ctx sdk.Context)
 	GetOutboundItems(ctx sdk.Context) ([]*TxOutItem, error)
 	TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (bool, error)
+	CalcTxOutFee(ctx sdk.Context, toi ...*TxOutItem) (common.Fee, error)
 }
 
 type VersionedTxOutStorage struct {

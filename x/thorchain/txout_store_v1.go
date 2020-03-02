@@ -61,6 +61,53 @@ func (tos *TxOutStorageV1) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (boo
 	return true, nil
 }
 
+// CalcTxOutFee will caclulate the amount of fee that has been subtracted from
+// transaction's assets and amount of rune transfered from the pool to reserved
+func (tos *TxOutStorageV1) CalcTxOutFee(ctx sdk.Context, toi ...*TxOutItem) (common.Fee, error) {
+	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
+
+	// Deduct TransactionFee from TOI and add to PoolDeduct
+	fee := common.Fee{
+		Coins:      common.Coins{},
+		PoolDeduct: sdk.ZeroUint()}
+
+	for _, to := range toi {
+		var runeFee sdk.Uint
+		var reservedRune sdk.Uint
+		memo, _ := ParseMemo(to.Memo) // ignore err
+		if memo.IsType(txYggdrasilFund) || memo.IsType(txYggdrasilReturn) || memo.IsType(txMigrate) {
+			continue
+		}
+		if to.Coin.Asset.IsRune() {
+			if to.Coin.Amount.LTE(sdk.NewUint(uint64(transactionFee))) {
+				runeFee = to.Coin.Amount // Fee is the full amount
+			} else {
+				runeFee = sdk.NewUint(uint64(transactionFee)) // Fee is the prescribed fee
+			}
+			fee.Coins = append(fee.Coins, common.NewCoin(to.Coin.Asset, runeFee))
+		} else {
+			pool, err := tos.keeper.GetPool(ctx, to.Coin.Asset) // Get pool
+			if err != nil {
+				// the error is already logged within kvstore
+				return common.Fee{}, fmt.Errorf("fail to get pool: %w", err)
+			}
+			assetFee := pool.RuneValueInAsset(sdk.NewUint(uint64(transactionFee))) // Get fee in Asset value
+			if to.Coin.Amount.LTE(assetFee) {
+				assetFee = to.Coin.Amount // Fee is the full amount
+				reservedRune = pool.AssetValueInRune(assetFee)
+			} else {
+				reservedRune = sdk.NewUint(uint64(transactionFee))
+			}
+			if assetFee.GT(sdk.ZeroUint()) {
+				fee.Coins = append(fee.Coins, common.NewCoin(to.Coin.Asset, assetFee))
+			}
+			fee.Coins = append(fee.Coins, common.NewCoin(to.Coin.Asset, assetFee))
+			fee.PoolDeduct.Add(reservedRune)
+		}
+	}
+	return fee, nil
+}
+
 // PrepareTxOutItem will do some data validation which include the following
 // 1. Make sure it has a legitimate memo
 // 2. choose an appropriate pool,Yggdrasil or Asgard
@@ -129,50 +176,36 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
 		return false, nil
 	}
-
-	// Deduct TransactionFee from TOI and add to Reserve
-	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
-	memo, _ := ParseMemo(toi.Memo) // ignore err
+	memo, _ := ParseMemo(toi.Memo)
 	if err == nil && !memo.IsType(txYggdrasilFund) && !memo.IsType(txYggdrasilReturn) && !memo.IsType(txMigrate) {
-		var runeFee sdk.Uint
+		fee, err := tos.CalcTxOutFee(ctx, toi)
+		if err != nil {
+			ctx.Logger().Info("CalcTxOutFee failed ", toi.String())
+			return false, err
+		}
 		if toi.Coin.Asset.IsRune() {
-			if toi.Coin.Amount.LTE(sdk.NewUint(uint64(transactionFee))) {
-				runeFee = toi.Coin.Amount // Fee is the full amount
-			} else {
-				runeFee = sdk.NewUint(uint64(transactionFee)) // Fee is the prescribed fee
-			}
-			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
-			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); err != nil {
+			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, fee.Coins[0].Amount)
+			if err := tos.keeper.AddFeeToReserve(ctx, toi.Coin.Amount); err != nil {
 				// Add to reserve
 				ctx.Logger().Error("fail to add fee to reserve", "error", err)
 			}
-		} else {
+		} else if !toi.Coin.Asset.IsRune() {
 			pool, err := tos.keeper.GetPool(ctx, toi.Coin.Asset) // Get pool
 			if err != nil {
 				// the error is already logged within kvstore
 				return false, fmt.Errorf("fail to get pool: %w", err)
 			}
-
-			assetFee := pool.RuneValueInAsset(sdk.NewUint(uint64(transactionFee))) // Get fee in Asset value
-			if toi.Coin.Amount.LTE(assetFee) {
-				assetFee = toi.Coin.Amount // Fee is the full amount
-				runeFee = pool.AssetValueInRune(assetFee)
-			} else {
-				runeFee = sdk.NewUint(uint64(transactionFee))
-			}
-
-			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)  // Deduct Asset fee
-			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool
-			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
-			if err := tos.keeper.SetPool(ctx, pool); err != nil {        // Set Pool
+			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, fee.Coins[0].Amount)
+			pool.BalanceAsset = pool.BalanceAsset.Add(fee.Coins[0].Amount)      // Add Asset fee to Pool
+			pool.BalanceRune = common.SafeSub(pool.BalanceRune, fee.PoolDeduct) // Deduct Rune from Pool
+			if err := tos.keeper.SetPool(ctx, pool); err != nil {               // Set Pool
 				return false, fmt.Errorf("fail to save pool: %w", err)
 			}
-			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); err != nil {
+			if err := tos.keeper.AddFeeToReserve(ctx, fee.PoolDeduct); err != nil {
 				return false, fmt.Errorf("fail to add fee to reserve: %w", err)
 			}
 		}
 	}
-
 	// When we request Yggdrasil pool to return the fund, the coin field is actually empty
 	// Signer when it sees an tx out item with memo "yggdrasil-" it will query the account on relevant chain
 	// and coin field will be filled there, thus we have to let this one go
