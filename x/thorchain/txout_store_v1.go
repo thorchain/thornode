@@ -61,8 +61,8 @@ func (tos *TxOutStorageV1) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (boo
 	return true, nil
 }
 
-// CalcTxOutFee will caclulate the amount of fee that has been subtracted from
-// transaction's assets and amount of rune transfered from the pool to reserved
+// CalcTxOutFee will calculate the amount of fee that has been subtracted from
+// transactions assets and amount of rune transferred from the pool to reserved
 func (tos *TxOutStorageV1) CalcTxOutFee(ctx sdk.Context, toi ...*TxOutItem) (common.Fee, error) {
 	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
 
