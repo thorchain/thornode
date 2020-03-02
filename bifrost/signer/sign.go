@@ -12,6 +12,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
@@ -47,6 +49,7 @@ func NewSigner(cfg config.SignerConfiguration,
 	thorchainBridge *thorclient.ThorchainBridge,
 	thorKeys *thorclient.Keys,
 	pubkeyMgr pubkeymanager.PubKeyValidator,
+	tssServer *tssp.TssServer,
 	tssCfg config.TSSConfiguration,
 	chains map[common.Chain]chainclients.ChainClient,
 	m *metrics.Metrics) (*Signer, error) {
@@ -83,7 +86,7 @@ func NewSigner(cfg config.SignerConfiguration,
 		return nil, errors.Wrap(err, "fail to create thorchain block scan")
 	}
 
-	kg, err := tss.NewTssKeyGen(tssCfg, thorKeys)
+	kg, err := tss.NewTssKeyGen(thorKeys, tssServer)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create Tss Key gen,err:%w", err)
 	}
@@ -267,7 +270,7 @@ func (s *Signer) processKeygen(ch <-chan ttypes.KeygenBlock) {
 	}
 }
 
-func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame common.Blame, input common.PubKeys, keygenType ttypes.KeygenType) error {
+func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame tssCommon.Blame, input common.PubKeys, keygenType ttypes.KeygenType) error {
 	stdTx, err := s.thorchainBridge.GetKeygenStdTx(poolPk, blame, input, keygenType, height)
 	strHeight := strconv.FormatInt(height, 10)
 	if err != nil {

@@ -18,6 +18,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 
 	"gitlab.com/thorchain/thornode/common"
 	stypes "gitlab.com/thorchain/thornode/x/thorchain/types"
@@ -209,7 +210,7 @@ func (b *ThorchainBridge) PostKeysignFailure(blame common.Blame, height int64, m
 }
 
 // GetKeygenStdTx get keygen tx from params
-func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, blame common.Blame, inputPks common.PubKeys, keygenType stypes.KeygenType, height int64) (*authtypes.StdTx, error) {
+func (b *ThorchainBridge) GetKeygenStdTx(poolPubKey common.PubKey, blame tssCommon.Blame, inputPks common.PubKeys, keygenType stypes.KeygenType, height int64) (*authtypes.StdTx, error) {
 	start := time.Now()
 	defer func() {
 		b.m.GetHistograms(metrics.SignToThorchainDuration).Observe(time.Since(start).Seconds())

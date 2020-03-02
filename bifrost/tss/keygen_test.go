@@ -11,7 +11,6 @@ import (
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	. "gopkg.in/check.v1"
 
-	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 )
@@ -50,15 +49,10 @@ func (kts *KeyGenTestSuite) TestNewTssKenGen(c *C) {
 		c.Assert(err, IsNil)
 	}()
 
-	keyGenCfg := config.TSSConfiguration{
-		Scheme: "http",
-		Host:   "localhost",
-		Port:   0,
-	}
 	k, err := thorclient.NewKeys(folder, signerNameForTest, signerPasswordForTest)
 	c.Assert(err, IsNil)
 	c.Assert(k, NotNil)
-	kg, err := NewTssKeyGen(keyGenCfg, k)
+	kg, err := NewTssKeyGen(k, nil)
 	c.Assert(err, IsNil)
 	c.Assert(kg, NotNil)
 }
