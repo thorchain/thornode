@@ -324,7 +324,7 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 		}
 	}
 	if fee.PoolDeduct.GT(sdk.ZeroUint()) {
-		fee.PoolDeduct = fee.PoolDeduct.Add(fee.PoolDeduct)
+		event.Fee.PoolDeduct = event.Fee.PoolDeduct.Add(fee.PoolDeduct)
 	}
 	return keeper.UpsertEvent(ctx, event)
 }
