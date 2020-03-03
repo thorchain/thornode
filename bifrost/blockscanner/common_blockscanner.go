@@ -285,7 +285,7 @@ func (b *CommonBlockScanner) unmarshalAndGetInfo(buf []byte) (string, string, er
 	}
 }
 
-func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, int64, error) {
+func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (parsedBlock int64, parsedNumTxs int64, err error) {
 	start := time.Now()
 	defer func() {
 		if err := recover(); err != nil {
@@ -295,23 +295,31 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, int64, error
 		b.metrics.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
 	b.logger.Debug().Str("request_url", requestUrl).Msg("get_block")
-	buf, err := b.GetFromHttpWithRetry(requestUrl)
-	if err != nil {
-		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
-		return 0, 0, errors.Wrap(err, "fail to get blocks")
+	fmt.Printf(">>>>>> Request URL: %s\n", requestUrl)
+	var buf []byte
+	for {
+		buf, err = b.getFromHttp(requestUrl)
+		if err != nil {
+			b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
+			b.logger.Error().Err(err).Msg("fail to get block")
+			time.Sleep(1 * time.Second)
+			continue
+		}
+		break
 	}
+
 	block, numTxs, err := b.unmarshalAndGetInfo(buf)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_unmarshal_block", requestUrl).Inc()
 		return 0, 0, err
 	}
 
-	parsedBlock, err := strconv.ParseInt(block, 10, 64)
+	parsedBlock, err = strconv.ParseInt(block, 10, 64)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_parse_block_height", block).Inc()
 		return 0, 0, errors.Wrap(err, "fail to convert block height to int")
 	}
-	parsedNumTxs, err := strconv.ParseInt(numTxs, 10, 64)
+	parsedNumTxs, err = strconv.ParseInt(numTxs, 10, 64)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_parse_block_height", block).Inc()
 		return 0, 0, errors.Wrap(err, "fail to convert block height to int")
