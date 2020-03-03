@@ -314,7 +314,7 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 		return fmt.Errorf("fail to get event: %w", err)
 	}
 
-	ctx.Logger().Info(fmt.Sprintf("Update fee for event %s,eventID (%d) , fee:%s", eventID, eventID, fee))
+	ctx.Logger().Info(fmt.Sprintf("Update fee for event %s,eventID (%d)", eventID, eventID))
 	if event.Fee == nil {
 		event.Fee = new(common.Fee)
 	}
