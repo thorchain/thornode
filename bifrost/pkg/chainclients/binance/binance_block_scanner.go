@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/binance-chain/go-sdk/common/types"
 	bmsg "github.com/binance-chain/go-sdk/types/msg"
@@ -118,16 +119,24 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 		b.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
 		return errors.Wrapf(err, "fail to set block scan status for block %d", block)
 	}
-	b.logger.Debug().Str("url", txSearchUrl).Int64("height", block).Msg("start search txs in block")
-	buf, err := b.commonBlockScanner.GetFromHttpWithRetry(txSearchUrl)
-	if err != nil {
-		b.errCounter.WithLabelValues("fail_tx_search", strBlock).Inc()
-		return errors.Wrap(err, "fail to send tx search request")
-	}
 	var query btypes.RPCTxSearch
-	if err := json.Unmarshal(buf, &query); err != nil {
-		b.errCounter.WithLabelValues("fail_unmarshal_tx_search", strBlock).Inc()
-		return errors.Wrap(err, "fail to unmarshal RPCTxSearch")
+	var count int
+	for len(query.Result.Txs) == 0 {
+		b.logger.Debug().Str("url", txSearchUrl).Int64("height", block).Msg("start search txs in block")
+		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(txSearchUrl)
+		if err != nil {
+			b.errCounter.WithLabelValues("fail_tx_search", strBlock).Inc()
+			return errors.Wrap(err, "fail to send tx search request")
+		}
+		if err := json.Unmarshal(buf, &query); err != nil {
+			b.errCounter.WithLabelValues("fail_unmarshal_tx_search", strBlock).Inc()
+			return errors.Wrap(err, "fail to unmarshal RPCTxSearch")
+		}
+		count += 1
+		if count > 2 {
+			break
+		}
+		time.Sleep(300 * time.Millisecond)
 	}
 
 	b.logger.Debug().Int64("block", block).Int("txs", len(query.Result.Txs)).Str("total", query.Result.TotalCount).Msg("txs")
