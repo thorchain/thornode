@@ -21,7 +21,7 @@ const (
 
 // BlockStatusItem indicate the status of a block
 type BlockStatusItem struct {
-	Height int64           `json:"height"`
+	Block  Block           `json:"block"`
 	Status BlockScanStatus `json:"status"`
 }
 
@@ -47,26 +47,26 @@ func (ldbss *LevelDBScannerStorage) SetScanPos(block int64) error {
 	return ldbss.db.Put([]byte(ScanPosKey), buf[:n], nil)
 }
 
-func (ldbss *LevelDBScannerStorage) SetBlockScanStatus(block int64, status BlockScanStatus) error {
+func (ldbss *LevelDBScannerStorage) SetBlockScanStatus(block Block, status BlockScanStatus) error {
 	blockStatusItem := BlockStatusItem{
-		Height: block,
+		Block:  block,
 		Status: status,
 	}
 	buf, err := json.Marshal(blockStatusItem)
 	if err != nil {
 		return errors.Wrap(err, "fail to marshal BlockStatusItem to json")
 	}
-	if err := ldbss.db.Put([]byte(getBlockStatusKey(block)), buf, nil); err != nil {
+	if err := ldbss.db.Put([]byte(getBlockStatusKey(block.Height)), buf, nil); err != nil {
 		return errors.Wrap(err, "fail to set block scan status")
 	}
 	return nil
 }
 
 // GetFailedBlocksForRetry
-func (ldbss *LevelDBScannerStorage) GetBlocksForRetry(failedOnly bool) ([]int64, error) {
+func (ldbss *LevelDBScannerStorage) GetBlocksForRetry(failedOnly bool) ([]Block, error) {
 	iterator := ldbss.db.NewIterator(util.BytesPrefix([]byte("block-process-status-")), nil)
 	defer iterator.Release()
-	var results []int64
+	var results []Block
 	for iterator.Next() {
 		buf := iterator.Value()
 		if len(buf) == 0 {
@@ -77,11 +77,11 @@ func (ldbss *LevelDBScannerStorage) GetBlocksForRetry(failedOnly bool) ([]int64,
 			return nil, errors.Wrap(err, "fail to unmarshal to block status item")
 		}
 		if !failedOnly {
-			results = append(results, blockStatusItem.Height)
+			results = append(results, blockStatusItem.Block)
 			continue
 		}
 		if blockStatusItem.Status == Failed {
-			results = append(results, blockStatusItem.Height)
+			results = append(results, blockStatusItem.Block)
 		}
 	}
 	return results, nil

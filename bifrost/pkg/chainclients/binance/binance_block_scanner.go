@@ -2,9 +2,7 @@ package binance
 
 import (
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"net/url"
 	"strconv"
 	"strings"
 	"sync"
@@ -23,7 +21,6 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
@@ -95,51 +92,23 @@ func (b *BinanceBlockScanner) Start(globalTxsQueue chan stypes.TxIn) {
 	b.commonBlockScanner.Start()
 }
 
-// need to process multiple pages
-func (b *BinanceBlockScanner) getTxSearchUrl(block int64, currentPage, numberPerPage int64) string {
-	u, err := url.Parse(b.rpcHost)
-	if err != nil {
-		log.Fatal().Msgf("Error parsing rpc (%s): %s", b.rpcHost, err)
-	}
-	u.Path = "tx_search"
-
-	q := u.Query()
-	q.Set("query", fmt.Sprintf("\"tx.height=%d\"", block))
-	q.Set("prove", "true")
-	q.Set("page", strconv.FormatInt(currentPage, 10))
-	q.Set("per_page", strconv.FormatInt(numberPerPage, 10))
-	u.RawQuery = q.Encode()
-	return u.String()
-}
-
-func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUrl string) error {
-	strBlock := strconv.FormatInt(block, 10)
+func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
+	strBlock := strconv.FormatInt(block.Height, 10)
 	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
 		b.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
 		return errors.Wrapf(err, "fail to set block scan status for block %d", block)
 	}
-	b.logger.Debug().Str("url", txSearchUrl).Int64("height", block).Msg("start search txs in block")
-	buf, err := b.commonBlockScanner.GetFromHttpWithRetry(txSearchUrl)
-	if err != nil {
-		b.errCounter.WithLabelValues("fail_tx_search", strBlock).Inc()
-		return errors.Wrap(err, "fail to send tx search request")
-	}
-	var query btypes.RPCTxSearch
-	if err := json.Unmarshal(buf, &query); err != nil {
-		b.errCounter.WithLabelValues("fail_unmarshal_tx_search", strBlock).Inc()
-		return errors.Wrap(err, "fail to unmarshal RPCTxSearch")
-	}
 
-	b.logger.Debug().Int64("block", block).Int("txs", len(query.Result.Txs)).Str("total", query.Result.TotalCount).Msg("txs")
-	if len(query.Result.Txs) == 0 {
+	b.logger.Debug().Int64("block", block.Height).Int("txs", len(block.Txs)).Msg("txs")
+	if len(block.Txs) == 0 {
 		b.m.GetCounter(metrics.BlockWithoutTx("BNB")).Inc()
-		b.logger.Debug().Int64("block", block).Msg("there are no txs in this block")
+		b.logger.Debug().Int64("block", block.Height).Msg("there are no txs in this block")
 		return nil
 	}
 
 	// TODO implement pagination appropriately
 	var txIn stypes.TxIn
-	for _, txn := range query.Result.Txs {
+	for _, txn := range block.Txs {
 		txItemIns, err := b.fromTxToTxIn(txn.Hash, txn.Height, txn.Tx) // b.getOneTxFromServer(txn.Hash, b.getSingleTxUrl(txn.Hash))
 		if err != nil {
 			b.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
@@ -181,20 +150,20 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 				return
 			}
 			b.logger.Debug().Int64("block", block).Msg("processing block")
-			if err := b.searchTxInABlockFromServer(block, b.getTxSearchUrl(block, 1, 100)); err != nil {
+			if err := b.processBlock(block); err != nil {
 				if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
 					b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
-					b.logger.Error().Err(err).Int64("height", block).Msg("fail to set block to fail status")
+					b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
 				}
 				b.errCounter.WithLabelValues("fail_search_block", "").Inc()
-				b.logger.Error().Err(err).Int64("height", block).Msg("fail to search tx in block")
+				b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
 				// THORNode will have a retry go routine to check it.
 				continue
 			}
 			// set a block as success
-			if err := b.db.RemoveBlockStatus(block); err != nil {
+			if err := b.db.RemoveBlockStatus(block.Height); err != nil {
 				b.errCounter.WithLabelValues("fail_remove_block_status", "").Inc()
-				b.logger.Error().Err(err).Int64("block", block).Msg("fail to remove block status from data store, thus block will be re processed")
+				b.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
 			}
 		}
 	}
