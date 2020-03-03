@@ -41,9 +41,9 @@ type CommonBlockScanner struct {
 
 type ErrorBlock struct {
 	Error struct {
-		code    int64  `json:code"`
-		message string `json:message"`
-		data    string `json:"data"`
+		Code    int64  `json:"code"`
+		Message string `json:"message"`
+		Data    string `json:"data"`
 	} `json:"error"`
 }
 
@@ -253,7 +253,7 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 		return buf, nil
 	}
 
-	return buf, fmt.Errorf("%s (%d): %s", errorBlock.Error.message, errorBlock.Error.code, errorBlock.Error.data)
+	return buf, fmt.Errorf("%s (%d): %s", errorBlock.Error.Message, errorBlock.Error.Code, errorBlock.Error.Data)
 }
 
 func (b *CommonBlockScanner) getBlockUrl(height int64) string {
