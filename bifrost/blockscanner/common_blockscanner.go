@@ -240,9 +240,9 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 	// test if our response body is an error block json format
 	errorBlock := struct {
 		Error struct {
-			Code    uint64 `json:code"`
-			Message string `json:message"`
-			Data    string `json:"data"`
+			code    uint64 `json:code"`
+			message string `json:message"`
+			data    string `json:"data"`
 		} `json:"error"`
 	}{}
 
@@ -252,7 +252,7 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 		return buf, nil
 	}
 
-	return buf, fmt.Errorf("%s (%d): %s", errorBlock.Error.Message, errorBlock.Error.Code, errorBlock.Error.Data)
+	return buf, fmt.Errorf("%s (%d): %s", errorBlock.Error.message, errorBlock.Error.code, errorBlock.Error.data)
 }
 
 func (b *CommonBlockScanner) getBlockUrl(height int64) string {
