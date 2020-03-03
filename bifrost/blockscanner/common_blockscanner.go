@@ -39,6 +39,14 @@ type CommonBlockScanner struct {
 	errorCounter   *prometheus.CounterVec
 }
 
+type ErrorBlock struct {
+	Error struct {
+		code    int64  `json:code"`
+		message string `json:message"`
+		data    string `json:"data"`
+	} `json:"error"`
+}
+
 // NewCommonBlockScanner create a new instance of CommonBlockScanner
 func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics) (*CommonBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
@@ -238,14 +246,7 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 	}
 
 	// test if our response body is an error block json format
-	errorBlock := struct {
-		Error struct {
-			code    uint64 `json:code"`
-			message string `json:message"`
-			data    string `json:"data"`
-		} `json:"error"`
-	}{}
-
+	var errorBlock ErrorBlock
 	err = json.Unmarshal(buf, &errorBlock)
 	if err != nil {
 		// we didn't get an error block from cosmos
