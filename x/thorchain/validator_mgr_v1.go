@@ -3,6 +3,7 @@ package thorchain
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"sort"
 
 	"github.com/blang/semver"
@@ -913,10 +914,8 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 	if err != nil {
 		return nil, false, err
 	}
-	// sort by bond size
-	sort.SliceStable(ready, func(i, j int) bool {
-		return ready[i].Bond.GT(ready[j].Bond)
-	})
+
+	ready = sortNodeAccountsByProbabilisticBond(ctx, ready)
 
 	active, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
@@ -999,4 +998,56 @@ func findMaxAbleToLeave(count int) int {
 	}
 
 	return max
+}
+
+// sortNodeAccountsByProbabilisticBond - this takes a list of node accounts and
+// sorts them in a deterministic random order with relationship to the bond
+// amounts.
+func sortNodeAccountsByProbabilisticBond(ctx sdk.Context, nas NodeAccounts) (result NodeAccounts) {
+	// get seed random number from ctx.TxBytes()
+	// we use TxBytes because its not a number that someone can reasonably
+	// be predicted for a future block
+	var seed int64
+	for _, x := range ctx.TxBytes() {
+		seed += int64(x)
+	}
+	source := rand.NewSource(seed)
+	rnd := rand.New(source)
+
+	// sort by node address
+	sort.SliceStable(nas, func(i, j int) bool {
+		return nas[i].NodeAddress.String() > nas[j].NodeAddress.String()
+	})
+
+	// we sort our list of nodes with a relationship to the amount of
+	// bond they have bonded. Higher bond should give them a higher chance of
+	// be selected.
+	for len(nas) > 0 {
+		nextReadyList := make(NodeAccounts, 0) // store our list of non-selected node accounts
+
+		// sum bond of nodes
+		totalBond := sdk.ZeroUint()
+		for _, na := range nas {
+			totalBond = totalBond.Add(na.Bond)
+		}
+
+		// get our randomly chosen number within our total bond
+		idx := rnd.Uint64() % totalBond.Uint64()
+
+		var count uint64
+		for _, na := range nas {
+			// if our idx falls inside the bond of this node, they are the next
+			// chosen node accounts.
+			if (count+na.Bond.Uint64()) >= idx && count < idx {
+				result = append(result, na)
+			} else {
+				nextReadyList = append(nextReadyList, na)
+			}
+			count += na.Bond.Uint64()
+		}
+
+		nas = nextReadyList
+	}
+
+	return
 }

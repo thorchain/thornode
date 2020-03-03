@@ -168,3 +168,33 @@ func (vts *ValidatorMgrV1TestSuite) TestFindMaxAbleToLeave(c *C) {
 	c.Check(findMaxAbleToLeave(11), Equals, 3)
 	c.Check(findMaxAbleToLeave(12), Equals, 3)
 }
+
+func (vts *ValidatorMgrV1TestSuite) TestSortNodeAccountsByProbabilisticBond(c *C) {
+	ctx, _ := setupKeeperForTest(c)
+	ctx = ctx.WithTxBytes([]byte("hello world"))
+
+	readyNodes := NodeAccounts{
+		NodeAccount{Bond: sdk.NewUint(100)},
+		NodeAccount{Bond: sdk.NewUint(200)},
+		NodeAccount{Bond: sdk.NewUint(300)},
+		NodeAccount{Bond: sdk.NewUint(400)},
+		NodeAccount{Bond: sdk.NewUint(500)},
+	}
+
+	sorted := sortNodeAccountsByProbabilisticBond(ctx, readyNodes)
+	c.Assert(sorted, HasLen, len(readyNodes))
+	c.Check(sorted[0].Bond.Equal(sdk.NewUint(400)), Equals, true, Commentf("%d", sorted[0].Bond.Uint64()))
+	c.Check(sorted[1].Bond.Equal(sdk.NewUint(100)), Equals, true, Commentf("%d", sorted[1].Bond.Uint64()))
+	c.Check(sorted[2].Bond.Equal(sdk.NewUint(500)), Equals, true)
+	c.Check(sorted[3].Bond.Equal(sdk.NewUint(300)), Equals, true, Commentf("%d", sorted[3].Bond.Uint64()))
+	c.Check(sorted[4].Bond.Equal(sdk.NewUint(200)), Equals, true)
+
+	ctx = ctx.WithTxBytes([]byte("hello world and some more"))
+	sorted = sortNodeAccountsByProbabilisticBond(ctx, readyNodes)
+	c.Assert(sorted, HasLen, len(readyNodes))
+	c.Check(sorted[0].Bond.Equal(sdk.NewUint(400)), Equals, true, Commentf("%d", sorted[0].Bond.Uint64()))
+	c.Check(sorted[1].Bond.Equal(sdk.NewUint(500)), Equals, true, Commentf("%d", sorted[1].Bond.Uint64()))
+	c.Check(sorted[2].Bond.Equal(sdk.NewUint(300)), Equals, true)
+	c.Check(sorted[3].Bond.Equal(sdk.NewUint(200)), Equals, true)
+	c.Check(sorted[4].Bond.Equal(sdk.NewUint(100)), Equals, true)
+}
