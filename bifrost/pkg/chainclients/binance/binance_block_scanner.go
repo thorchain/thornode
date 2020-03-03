@@ -121,8 +121,8 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 	}
 	var query btypes.RPCTxSearch
 	var count int
-	for len(query.Result.Txs) == 0 {
-		b.logger.Debug().Str("url", txSearchUrl).Int64("height", block).Msg("start search txs in block")
+	b.logger.Debug().Str("url", txSearchUrl).Int64("height", block).Msg("start search txs in block")
+	for len(query.Result.Txs) == 0 || count <= 2 {
 		buf, err := b.commonBlockScanner.GetFromHttpWithRetry(txSearchUrl)
 		if err != nil {
 			b.errCounter.WithLabelValues("fail_tx_search", strBlock).Inc()
@@ -133,9 +133,6 @@ func (b *BinanceBlockScanner) searchTxInABlockFromServer(block int64, txSearchUr
 			return errors.Wrap(err, "fail to unmarshal RPCTxSearch")
 		}
 		count += 1
-		if count > 2 {
-			break
-		}
 		time.Sleep(300 * time.Millisecond)
 	}
 
