@@ -138,6 +138,9 @@ func (s *ObserverSuite) SetUpSuite(c *C) {
 		} else if strings.HasPrefix(req.RequestURI, "/thorchain/vaults/pubkeys") {
 			_, err := rw.Write([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "asgard": ["thorpub1addwnpepq2jgpsw2lalzuk7sgtmyakj7l6890f5cfpwjyfp8k4y4t7cw2vk8vcglsjy"], "yggdrasil": ["thorpub1addwnpepqdqvd4r84lq9m54m5kk9sf4k6kdgavvch723pcgadulxd6ey9u70kgjgrwl"] } }`))
 			c.Assert(err, IsNil)
+		} else if strings.HasPrefix(req.RequestURI, "/thorchain/keysign") {
+			_, err := rw.Write([]byte(`{"chains":{}}`))
+			c.Assert(err, IsNil)
 		} else if strings.HasSuffix(req.RequestURI, "/signers") {
 			_, err := rw.Write([]byte(`[
   "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck",

@@ -156,6 +156,9 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		} else if req.RequestURI == "/abci_info" {
 			_, err := rw.Write([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "response": { "data": "BNBChain", "last_block_height": "123456789", "last_block_app_hash": "pwx4TJjXu3yaF6dNfLQ9F4nwAhjIqmzE8fNa+RXwAzQ=" } } }`))
 			c.Assert(err, IsNil)
+		} else if strings.HasPrefix(req.RequestURI, "/thorchain/keysign") {
+			_, err := rw.Write([]byte(`{"chains":{}}`))
+			c.Assert(err, IsNil)
 		} else if strings.HasSuffix(req.RequestURI, "/signers") {
 			_, err := rw.Write([]byte(`[
   "thorpub1addwnpepqflvfv08t6qt95lmttd6wpf3ss8wx63e9vf6fvyuj2yy6nnyna5763e2kck",
