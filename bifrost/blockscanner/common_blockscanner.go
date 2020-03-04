@@ -170,7 +170,11 @@ func (b *CommonBlockScanner) scanBlocks() {
 				b.errorCounter.WithLabelValues("fail_set_block_status", strconv.FormatInt(b.previousBlock, 10)).Inc()
 				return
 			}
-			b.scanChan <- block
+			select {
+			case <-b.stopChan:
+				return
+			case b.scanChan <- block:
+			}
 			b.metrics.GetCounter(metrics.CurrentPosition).Inc()
 			if err := b.scannerStorage.SetScanPos(b.previousBlock); err != nil {
 				b.errorCounter.WithLabelValues("fail_save_block_pos", strconv.FormatInt(b.previousBlock, 10)).Inc()

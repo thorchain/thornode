@@ -80,6 +80,8 @@ func (s *ObserverSuite) NewMockBinanceInstance(c *C, jsonData string) {
 			_, err := rw.Write([]byte(jsonData))
 			c.Assert(err, IsNil)
 		} else {
+			// err := fmt.Errorf("unsupported path: %s", req.RequestURI)
+			// c.Assert(err, IsNil)
 		}
 	}))
 
