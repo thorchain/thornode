@@ -134,7 +134,9 @@ func (b *Binance) initScanBlockHeight() (err error) {
 		if b.currentBlockHeight == 0 {
 			b.currentBlockHeight, err = b.GetHeight()
 			if err != nil {
-				return errors.Wrap(err, "fail to get binance height")
+				b.currentBlockHeight = 1
+				b.logger.Info().Int64("height", b.currentBlockHeight).Msg("Current block height is indeterminate and binance didnt replied, starting from 1.")
+				return nil
 			}
 			b.logger.Info().Int64("height", b.currentBlockHeight).Msg("Current block height is indeterminate; using current height from Binance.")
 		}
