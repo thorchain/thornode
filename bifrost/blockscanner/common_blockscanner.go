@@ -158,8 +158,13 @@ func (b *CommonBlockScanner) scanBlocks() {
 		default:
 			currentBlock, rawTxs, err := b.getRPCBlock(b.getBlockUrl(b.previousBlock + 1))
 			if err != nil {
-				b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
-				b.logger.Error().Err(err).Msg("fail to get RPCBlock")
+				// don't log an error if its because the block doesn't exist yet
+				if !strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") {
+
+					b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
+					b.logger.Error().Err(err).Msg("fail to get RPCBlock")
+				}
+				continue
 			}
 			block := Block{Height: currentBlock, Txs: rawTxs}
 			b.logger.Debug().Int64("current block height", currentBlock).Int64("block height", b.previousBlock).Msgf("Chain %s get block height", b.cfg.ChainID)
@@ -303,16 +308,11 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, []string, er
 	}()
 	b.logger.Debug().Str("request_url", requestUrl).Msg("get_block")
 
-	var buf []byte
-	var count int
-	for len(buf) == 0 && count > 2 {
-		var err error
-		buf, err = b.getFromHttp(requestUrl)
-		if err != nil {
-			b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
-			time.Sleep(300 * time.Millisecond)
-		}
-		count += 1
+	buf, err := b.getFromHttp(requestUrl)
+	if err != nil {
+		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
+		time.Sleep(300 * time.Millisecond)
+		return 0, nil, err
 	}
 
 	block, rawTxns, err := b.unmarshalAndGetBlockHeight(buf)
