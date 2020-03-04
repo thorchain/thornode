@@ -1,6 +1,7 @@
 package binance
 
 import (
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"strconv"
@@ -96,7 +97,7 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 	strBlock := strconv.FormatInt(block.Height, 10)
 	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
 		b.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
-		return errors.Wrapf(err, "fail to set block scan status for block %d", block)
+		return errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
 	}
 
 	b.logger.Debug().Int64("block", block.Height).Int("txs", len(block.Txs)).Msg("txs")
@@ -109,10 +110,11 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 	// TODO implement pagination appropriately
 	var txIn stypes.TxIn
 	for _, txn := range block.Txs {
-		txItemIns, err := b.fromTxToTxIn(txn.Hash, txn.Height, txn.Tx) // b.getOneTxFromServer(txn.Hash, b.getSingleTxUrl(txn.Hash))
+		hash := fmt.Sprintf("%X", sha256.Sum256([]byte(txn)))
+		txItemIns, err := b.fromTxToTxIn(hash, txn)
 		if err != nil {
 			b.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
-			b.logger.Error().Err(err).Str("hash", txn.Hash).Msg("fail to get one tx from server")
+			b.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")
 			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
 			// if THORNode bail here, then THORNode should retry later
 			return errors.Wrap(err, "fail to get one tx from server")
@@ -120,16 +122,16 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 		if len(txItemIns) > 0 {
 			txIn.TxArray = append(txIn.TxArray, txItemIns...)
 			b.m.GetCounter(metrics.BlockWithTxIn("BNB")).Inc()
-			b.logger.Info().Str("hash", txn.Hash).Msg("THORNode got one tx")
+			b.logger.Info().Str("hash", hash).Msg("THORNode got one tx")
 		}
 	}
 	if len(txIn.TxArray) == 0 {
 		b.m.GetCounter(metrics.BlockNoTxIn("BNB")).Inc()
-		b.logger.Debug().Int64("block", block).Msg("no tx need to be processed in this block")
+		b.logger.Debug().Int64("block", block.Height).Msg("no tx need to be processed in this block")
 		return nil
 	}
 
-	txIn.BlockHeight = strconv.FormatInt(block, 10)
+	txIn.BlockHeight = strconv.FormatInt(block.Height, 10)
 	txIn.Count = strconv.Itoa(len(txIn.TxArray))
 	txIn.Chain = common.BNBChain
 	b.globalTxsQueue <- txIn
@@ -149,7 +151,7 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 			if !more {
 				return
 			}
-			b.logger.Debug().Int64("block", block).Msg("processing block")
+			b.logger.Debug().Int64("block", block.Height).Msg("processing block")
 			if err := b.processBlock(block); err != nil {
 				if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
 					b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
@@ -264,7 +266,7 @@ func (b *BinanceBlockScanner) getCoinsForTxIn(outputs []bmsg.Output) (common.Coi
 	return cc, nil
 }
 
-func (b *BinanceBlockScanner) fromTxToTxIn(hash, height, encodedTx string) ([]stypes.TxInItem, error) {
+func (b *BinanceBlockScanner) fromTxToTxIn(hash, encodedTx string) ([]stypes.TxInItem, error) {
 	if len(encodedTx) == 0 {
 		return nil, errors.New("tx is empty")
 	}

@@ -140,35 +140,35 @@ func (b *ThorchainBlockScan) processBlocks(idx int) {
 			if !more {
 				return
 			}
-			b.logger.Debug().Int64("block", block).Msg("processing block")
-			if err := b.processTxOutBlock(block); err != nil {
+			b.logger.Debug().Int64("block", block.Height).Msg("processing block")
+			if err := b.processTxOutBlock(block.Height); err != nil {
 				if errStatus := b.scannerStorage.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
-					b.errCounter.WithLabelValues("fail_set_block_Status", strconv.FormatInt(block, 10))
-					b.logger.Error().Err(err).Int64("height", block).Msg("fail to set block to fail status")
+					b.errCounter.WithLabelValues("fail_set_block_Status", strconv.FormatInt(block.Height, 10))
+					b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
 				}
 				// the error is blank, which means its an error we skip logging
 				if err.Error() == "" {
 					continue
 				}
-				b.errCounter.WithLabelValues("fail_search_tx", strconv.FormatInt(block, 10))
-				b.logger.Error().Err(err).Int64("height", block).Msg("fail to search tx in block")
+				b.errCounter.WithLabelValues("fail_search_tx", strconv.FormatInt(block.Height, 10))
+				b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
 				// THORNode will have a retry go routine to check it.
 				continue
 			}
 
 			// set a block as success
-			if err := b.scannerStorage.RemoveBlockStatus(block); err != nil {
-				b.errCounter.WithLabelValues("fail_remove_block_Status", strconv.FormatInt(block, 10))
-				b.logger.Error().Err(err).Int64("block", block).Msg("fail to remove block status from data store, thus block will be re processed")
+			if err := b.scannerStorage.RemoveBlockStatus(block.Height); err != nil {
+				b.errCounter.WithLabelValues("fail_remove_block_Status", strconv.FormatInt(block.Height, 10))
+				b.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
 			}
 
 			// Intentionally not covering this before the block is marked as
 			// success. This is because we don't care if keygen is successful
 			// or not.
-			b.logger.Debug().Int64("block", block).Msg("processing keygen block")
-			if err := b.processKeygenBlock(block); err != nil {
-				b.errCounter.WithLabelValues("fail_process_keygen", strconv.FormatInt(block, 10))
-				b.logger.Error().Err(err).Int64("height", block).Msg("fail to process keygen")
+			b.logger.Debug().Int64("block", block.Height).Msg("processing keygen block")
+			if err := b.processKeygenBlock(block.Height); err != nil {
+				b.errCounter.WithLabelValues("fail_process_keygen", strconv.FormatInt(block.Height, 10))
+				b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to process keygen")
 			}
 		}
 	}
