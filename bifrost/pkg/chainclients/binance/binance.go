@@ -165,7 +165,7 @@ func (b *Binance) scanBlocks(globalTxsQueue chan stypes.TxIn) {
 		case <-b.stopChan:
 			return
 		default:
-			block, err := b.GetBlock(b.currentBlockHeight)
+			block, err := b.GetBlock(&b.currentBlockHeight)
 			if err != nil || block.Block == nil {
 				b.logger.Debug().Int64("block height", b.currentBlockHeight).Msg("backing off before getting next block")
 				time.Sleep(b.cfg.BlockScanner.BlockHeightDiscoverBackoff)
@@ -185,7 +185,7 @@ func (b *Binance) processBlock(block *ctypes.ResultBlock) (txIn stypes.TxIn) {
 			b.logger.Err(err).Msg("UnmarshalBinaryLengthPrefixed")
 		}
 
-		hash := string(tx.Hash())
+		hash := fmt.Sprintf("%X", tx.Hash())
 		txItems, err := b.processStdTx(hash, t)
 		if err != nil {
 			b.logger.Err(err).Msg("failed to processStdTx")
@@ -380,8 +380,8 @@ func (b *Binance) getCoinsForTxIn(outputs []bmsg.Output) (common.Coins, error) {
 }
 
 // GetBlock gets the block for a height
-func (b *Binance) GetBlock(blockHeight int64) (*ctypes.ResultBlock, error) {
-	return b.client.Block(&blockHeight)
+func (b *Binance) GetBlock(blockHeight *int64) (*ctypes.ResultBlock, error) {
+	return b.client.Block(blockHeight)
 }
 
 // Stop stops scanning incoming block on binance chain
@@ -400,7 +400,7 @@ func (b *Binance) GetChain() common.Chain {
 
 // GetHeight return current block height in binance chain
 func (b *Binance) GetHeight() (int64, error) {
-	block, err := b.client.Block(nil)
+	block, err := b.GetBlock(nil)
 	if err != nil {
 		return 0, errors.Wrap(err, "unable to retrieve block from binance")
 	}

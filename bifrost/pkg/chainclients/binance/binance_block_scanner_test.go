@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/binance-chain/go-sdk/common/types"
@@ -22,8 +21,6 @@ import (
 	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
-
-func Test(t *testing.T) { TestingT(t) }
 
 type BlockScannerTestSuite struct {
 	m *metrics.Metrics
