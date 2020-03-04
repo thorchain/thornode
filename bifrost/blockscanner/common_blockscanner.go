@@ -244,19 +244,23 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 	// test if our response body is an error block json format
 	errorBlock := struct {
 		Error struct {
-			Code    uint64 `json:"code"`
+			Code    int64  `json:"code"`
 			Message string `json:"message"`
 			Data    string `json:"data"`
 		} `json:"error"`
 	}{}
 
-	err = json.Unmarshal(buf, &errorBlock)
-	if err != nil {
-		// we didn't get an error block from cosmos
-		return buf, nil
+	_ = json.Unmarshal(buf, &errorBlock) // ignore error
+	if errorBlock.Error.Code != 0 {
+		return nil, fmt.Errorf(
+			"%s (%d): %s",
+			errorBlock.Error.Message,
+			errorBlock.Error.Code,
+			errorBlock.Error.Data,
+		)
 	}
 
-	return buf, fmt.Errorf("%s (%d): %s", errorBlock.Error.Message, errorBlock.Error.Code, errorBlock.Error.Data)
+	return buf, nil
 }
 
 func (b *CommonBlockScanner) getBlockUrl(height int64) string {
@@ -298,11 +302,19 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, []string, er
 		b.metrics.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
 	b.logger.Debug().Str("request_url", requestUrl).Msg("get_block")
-	buf, err := b.GetFromHttpWithRetry(requestUrl)
-	if err != nil {
-		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
-		return 0, nil, errors.Wrap(err, "fail to get blocks")
+
+	var buf []byte
+	var count int
+	for len(buf) == 0 && count > 2 {
+		var err error
+		buf, err = b.getFromHttp(requestUrl)
+		if err != nil {
+			b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
+			time.Sleep(300 * time.Millisecond)
+		}
+		count += 1
 	}
+
 	block, rawTxns, err := b.unmarshalAndGetBlockHeight(buf)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_unmarshal_block", requestUrl).Inc()
