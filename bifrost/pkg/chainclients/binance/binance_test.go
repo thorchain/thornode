@@ -167,8 +167,6 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 ]`))
 			c.Assert(err, IsNil)
 		} else {
-			// err := fmt.Errorf("unsupported path: %s", req.RequestURI)
-			// c.Assert(err, IsNil)
 		}
 	}))
 

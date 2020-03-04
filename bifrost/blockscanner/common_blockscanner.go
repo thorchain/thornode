@@ -278,7 +278,7 @@ func (b *CommonBlockScanner) getBlockUrl(height int64) string {
 	return u.String()
 }
 
-func (b *CommonBlockScanner) unmarshalAndGetBlockHeight(buf []byte) (string, []string, error) {
+func (b *CommonBlockScanner) unmarshalAndGetBlockInfo(buf []byte) (string, []string, error) {
 	switch b.cfg.ChainID {
 	case common.BNBChain:
 		var block btypes.RPCBlock
@@ -315,7 +315,7 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, []string, er
 		return 0, nil, err
 	}
 
-	block, rawTxns, err := b.unmarshalAndGetBlockHeight(buf)
+	block, rawTxns, err := b.unmarshalAndGetBlockInfo(buf)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_unmarshal_block", requestUrl).Inc()
 		return 0, nil, err
