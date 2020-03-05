@@ -304,7 +304,6 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 		}
 		return fmt.Errorf("fail to get event id: %w", err)
 	}
-	//Todo: Check if we could have multiple txs
 	if len(eventIDs) > 1 {
 		return fmt.Errorf("more than events found")
 	}
