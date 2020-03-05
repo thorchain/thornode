@@ -769,6 +769,8 @@ github.com/zondax/ledger-go v0.11.0 h1:EEqUh6eaZucWAaGo87G7sJiqRNJpzBZr+I9PpGgjj
 github.com/zondax/ledger-go v0.11.0/go.mod h1:NI6JDs8VWwgh+9Bf1vPZMm9Xufp2Q7Iwm2IzxJWzmus=
 gitlab.com/thorchain/tss/go-tss v0.0.0-20200305000006-03df275cc299 h1:577aJyQfpDsBxnkcDQBtukEO0GPH0FDCnYfKTtGIP54=
 gitlab.com/thorchain/tss/go-tss v0.0.0-20200305000006-03df275cc299/go.mod h1:VRLGWB+svZYuP/ZBArAER7y4SDiGfJ+4w9T3p2ULdTI=
+gitlab.com/thorchain/tss/go-tss v0.0.0-20200305030838-37b99a717bda h1:qSaKbjDxOUFVOkgkqj/etj+QMQzaI6cuGOTaEbpPTYE=
+gitlab.com/thorchain/tss/go-tss v0.0.0-20200305030838-37b99a717bda/go.mod h1:VRLGWB+svZYuP/ZBArAER7y4SDiGfJ+4w9T3p2ULdTI=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.3 h1:MUGmc65QhB3pIlaQ5bB4LwqSj6GIonVJXpZiaKNyaKk=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=

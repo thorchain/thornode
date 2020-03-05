@@ -82,6 +82,10 @@ extract: tools
 healthcheck:
 	@CHAIN_API=${CHAIN_API} MIDGARD_API=${MIDGARD_API} go test -tags healthcheck ./tools/healthcheck/... -count=1
 
+# updates our tss dependency
+tss:
+	go get gitlab.com/thorchain/tss/go-tss
+
 export:
 	thord export
 
