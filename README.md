@@ -1,5 +1,7 @@
 [![pipeline status](https://gitlab.com/thorchain/thornode/badges/master/pipeline.svg)](https://gitlab.com/thorchain/thornode/commits/master)
 [![Build Status](https://gitlab.com/thorchain/thornode/badges/master/build.svg)](https://gitlab.com/thorchain/thornode/commits/master)
+[![Coverage Report](//gitlab.com/thorchain/thornode/badges/master/coverage.svg)](//gitlab.com/thorchain/thornode/commits/master)
+[![Go Report Card](https://goreportcard.com/badge/gitlab.com/thorchain/thornode)](https://goreportcard.com/report/gitlab.com/thorchain/thornode)
 
 # THORChain
 ======================================
