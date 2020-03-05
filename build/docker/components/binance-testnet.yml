@@ -9,7 +9,7 @@ services:
       - 26656:26656
       - 26657:26657
     volumes:
-      - ${HOME}/.binance:/opt/bnbchaind
+      - ${HOME}/.bnbchaind:/opt/bnbchaind
     environment:
       BNET: "testnet"
     security_opt:
@@ -33,12 +33,12 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ${HOME}/.binance:/opt/bnbchaind
+      - ${HOME}/.bnbcli:/opt/bnbcli
     environment:
       BNET: "testnet"
       SIGNER: "bnb"
       PASS: "binancebnb"
-    entrypoint: ["bash", "-c", "source setup.sh && su bnbchaind -c 'tbnbcli --home $$BNCHOME keys show $$SIGNER || echo $$PASS | tbnbcli --home $$BNCHOME keys add $$SIGNER 2>&1 && tbnbcli api-server --home $$BNCHOME --chain-id Binance-Chain-Nile --laddr tcp://0.0.0.0:8080 --node tcp://binance-testnet:26657 --trust-node'"]
+    entrypoint: ["bash", "-c", "source setup.sh && su bnbchaind -c 'tbnbcli --home /opt/bnbcli keys show $$SIGNER || echo $$PASS | tbnbcli --home /opt/bnbcli keys add $$SIGNER 2>&1 && tbnbcli api-server --home /opt/bnbcli --chain-id Binance-Chain-Nile --laddr tcp://0.0.0.0:8080 --node tcp://binance-testnet:26657 --trust-node'"]
     security_opt:
       - no-new-privileges
     ulimits:

@@ -36,10 +36,12 @@ run-testnet-validator-ci:
 reset-testnet-validator: stop clean run-testnet-validator
 
 run-testnet-binance:
-	@mkdir -p ${HOME}/.binance && chown 1000:1000 ${HOME}/.binance
+	@mkdir -p ${HOME}/.bnbchaind && chown 1000:1000 ${HOME}/.bnbchaind
+	@mkdir -p ${HOME}/.bnbcli && chown 1000:1000 ${HOME}/.bnbcli
 	docker-compose -p thornode -f ${path}../components/binance-testnet.yml up --force-recreate --remove-orphans -d
 
 clean-testnet-binance:
-	@rm -rf ${HOME}/.binance
+	@rm -rf ${HOME}/.bnbchaind
+	@rm -rf ${HOME}/.bnbcli
 
 reset-testnet-binance: stop clean-testnet-binance run-testnet-binance
