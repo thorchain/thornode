@@ -4,4 +4,4 @@ services:
   bifrost:
     environment:
       BINANCE_HOST: http://binance:26660
-    command: ["bifrost", "-c", "/etc/bifrost/config.json", "-l", "info","-t","/etc/bifrost/preparam.data"]
+    command: ["bifrost", "-c", "/etc/bifrost/config.json", "-l", "debug","-t","/etc/bifrost/preparam.data"]
