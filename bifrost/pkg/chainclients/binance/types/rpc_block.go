@@ -8,6 +8,9 @@ type RPCBlock struct {
 			Header struct {
 				Height string `json:"height"`
 			} `json:"header"`
+			Data struct {
+				Txs []string `json:"txs"`
+			} `json:"data"`
 		} `json:"block"`
 	} `json:"result"`
 }

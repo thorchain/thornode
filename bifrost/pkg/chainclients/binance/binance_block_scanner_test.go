@@ -258,7 +258,7 @@ func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 		c.Assert(bs, NotNil)
 		c.Log(input)
 		for _, item := range query.Result.Txs {
-			txInItem, err := bs.fromTxToTxIn(item.Hash, item.Height, item.Tx)
+			txInItem, err := bs.fromTxToTxIn(item.Hash, item.Tx)
 			c.Logf("hash:%s", item.Hash)
 			c.Check(txInItem, txInItemCheck)
 			c.Check(err, errCheck)
