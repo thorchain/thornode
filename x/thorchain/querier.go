@@ -734,11 +734,17 @@ func queryTSSSigners(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		return nil, sdk.ErrUnknownRequest("invalid pool pub key")
 	}
 
+	// seed is the current block height, rounded down to the nearest 100th
+	// This helps keep the selected nodes to be the same across blocks, but
+	// also change immediately if we have a change in which nodes are active
+	seed := ctx.BlockHeight() / 100 * 100
+
 	accountAddrs, err := keeper.GetObservingAddresses(ctx)
 	if err != nil {
 		ctx.Logger().Error("fail to get observing addresses", "error", err)
 		return nil, sdk.ErrInternal("fail to get observing addresses")
 	}
+
 	vault, err := keeper.GetVault(ctx, pk)
 	if err != nil {
 		ctx.Logger().Error("fail to get vault", "error", err)
@@ -752,12 +758,11 @@ func queryTSSSigners(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 			return nil, sdk.ErrInternal("fail to get signers")
 		}
 	}
-	// TODO Here it use ctx.BlockHeight as the seed, probably worth to consider use other more deterministic seed
 	// if there are 9 nodes in total , it need 6 nodes to sign a message
 	// 3 signer send request to thorchain at block height 100
 	// another 3 signer send request to thorchain at block height 101
 	// in this case we get into trouble ,they get different results, key sign is going to fail
-	signerParty, err := ChooseSignerParty(signers, ctx.BlockHeight(), len(vault.Membership))
+	signerParty, err := ChooseSignerParty(signers, seed, len(vault.Membership))
 	if err != nil {
 		ctx.Logger().Error("fail to choose signer party members", "error", err)
 		return nil, sdk.ErrInternal("fail to choose signer party members")
