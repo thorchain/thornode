@@ -245,6 +245,15 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 	c.Assert(err, IsNil)
 }
 
+func (s *BlockScannerTestSuite) TestGetTxHash(c *C) {
+	encodedTx := "3QHwYl3uClYqLIf6CicKFF/Vq4zfYja39WQljA8VT5XTNz/9Eg8KB0ZUTS01ODUQgMivoCUSJwoU30sdez2XhJ9HwZpma+fcj7qVL+cSDwoHRlRNLTU4NRCAyK+gJRJwCibrWumHIQOEaqS0YC4VfGWO/iNeyWZWQDA5+nwTpwl3aWAczWwpKRJAgMb102No1QWvq/kr2fXY5cz2bU5NPGrvtkr9sFqwbysdSuywWNU8i/NyxA0b63/OuuucSTMj380yk+2dvWmUyBiGoSsgDBoNU1RBS0U6RlRNLTU4NQ=="
+	expectedTxHash := "0AA0A88421B7B7F2B12679DD0DB6A9FC226D998769910133D1F3A0815CFCEC91"
+	binanceBlockScanner := BinanceBlockScanner{}
+	obtainedTxHash, err := binanceBlockScanner.getTxHash(encodedTx)
+	c.Assert(err, IsNil)
+	c.Assert(obtainedTxHash, Equals, expectedTxHash)
+}
+
 func (s *BlockScannerTestSuite) TestFromTxToTxIn(c *C) {
 	c.Skip("skip")
 	testFunc := func(input string, txInItemCheck, errCheck Checker) []stypes.TxInItem {

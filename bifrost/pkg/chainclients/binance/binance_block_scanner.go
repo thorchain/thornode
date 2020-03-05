@@ -93,6 +93,18 @@ func (b *BinanceBlockScanner) Start(globalTxsQueue chan stypes.TxIn) {
 	b.commonBlockScanner.Start()
 }
 
+// getTxHash return hex formatted value of tx hash
+// raw tx base 64 encoded -> base64 decode -> sha256sum = tx hash
+func (b *BinanceBlockScanner) getTxHash(encodedTx string) (string, error) {
+	// first we base64 deocde the tx
+	decodedTx, err := base64.StdEncoding.DecodeString(encodedTx)
+	if err != nil {
+		b.errCounter.WithLabelValues("fail_decode_tx", encodedTx).Inc()
+		return "", errors.Wrap(err, "fail to decode tx")
+	}
+	return fmt.Sprintf("%X", sha256.Sum256(decodedTx)), nil
+}
+
 func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 	strBlock := strconv.FormatInt(block.Height, 10)
 	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
@@ -110,7 +122,13 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 	// TODO implement pagination appropriately
 	var txIn stypes.TxIn
 	for _, txn := range block.Txs {
-		hash := fmt.Sprintf("%X", sha256.Sum256([]byte(txn)))
+		hash, err := b.getTxHash(txn)
+		if err != nil {
+			b.errCounter.WithLabelValues("fail_get_tx_hash", strBlock).Inc()
+			b.logger.Error().Err(err).Str("tx", txn).Msg("fail to get tx hash from raw data")
+			return errors.Wrap(err, "fail to get tx hash from tx raw data")
+		}
+
 		txItemIns, err := b.fromTxToTxIn(hash, txn)
 		if err != nil {
 			b.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
