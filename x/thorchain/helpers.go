@@ -314,9 +314,10 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 		return fmt.Errorf("fail to get event: %w", err)
 	}
 
-	ctx.Logger().Info(fmt.Sprintf("Update fee for event %s,eventID (%d)", eventID, eventID))
+	ctx.Logger().Info(fmt.Sprintf("Update fee for event %d, fee:%s", eventID, fee))
 	if event.Fee == nil {
 		event.Fee = new(common.Fee)
+		event.Fee.PoolDeduct = sdk.ZeroUint()
 	}
 	if !fee.Coins.IsEmpty() {
 		for _, coin := range fee.Coins {
