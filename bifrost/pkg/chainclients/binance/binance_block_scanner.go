@@ -96,7 +96,6 @@ func (b *BinanceBlockScanner) Start(globalTxsQueue chan stypes.TxIn) {
 // getTxHash return hex formatted value of tx hash
 // raw tx base 64 encoded -> base64 decode -> sha256sum = tx hash
 func (b *BinanceBlockScanner) getTxHash(encodedTx string) (string, error) {
-	// first we base64 deocde the tx
 	decodedTx, err := base64.StdEncoding.DecodeString(encodedTx)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_decode_tx", encodedTx).Inc()
