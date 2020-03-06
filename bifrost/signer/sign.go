@@ -331,6 +331,11 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 		return err
 	}
 
+	// looks like the transaction is already signed
+	if len(signedTx) == 0 {
+		return nil
+	}
+
 	err = chain.BroadcastTx(signedTx)
 	if err != nil {
 		s.logger.Error().Err(err).Msg("fail to broadcast tx to chain")

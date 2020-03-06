@@ -371,7 +371,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	}
 
 	if len(rawBz) == 0 {
-		// this could happen, if the local party trying to sign a message , however the TSS keysign process didn't chose the local party to sign the message
+		// the transaction was already signed
 		return nil, nil
 	}
 
@@ -410,7 +410,7 @@ func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey 
 				item := tx.TxOutItem()
 				if txOutItem.Equals(item) && !tx.OutHash.IsEmpty() {
 					// already been signed, we can skip it
-					b.logger.Info().Str("tx_id", tx.InHash.String()).Msgf("already signed. skippping...")
+					b.logger.Info().Str("tx_id", tx.OutHash.String()).Msgf("already signed. skippping...")
 					return nil, nil
 				}
 			}
