@@ -184,7 +184,7 @@ func (s *Signer) processTransactions() {
 	wg := &sync.WaitGroup{}
 	wg.Add(len(ordered))
 	for _, items := range s.storage.OrderedLists() {
-		go func() {
+		go func(items []TxOutStoreItem) {
 			defer wg.Done()
 			for _, item := range items {
 				select {
@@ -208,7 +208,7 @@ func (s *Signer) processTransactions() {
 					}
 				}
 			}
-		}()
+		}(items)
 	}
 }
 
