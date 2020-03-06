@@ -42,8 +42,7 @@ type Binance struct {
 	chainID            string
 	isTestNet          bool
 	client             *http.Client
-	accountNumber      int64
-	seqNumber          int64
+	accts              map[common.PubKey]BinanceMetadata
 	currentBlockHeight int64
 	signLock           *sync.Mutex
 	tssKeyManager      keys.KeyManager
@@ -96,6 +95,7 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 		logger:          log.With().Str("module", "binance").Logger(),
 		RPCHost:         rpcHost,
 		cfg:             cfg,
+		accts:           make(map[common.PubKey]BinanceMetadata, 0),
 		client:          &http.Client{},
 		signLock:        &sync.Mutex{},
 		tssKeyManager:   tssKm,
@@ -147,6 +147,13 @@ func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager
 
 func (b *Binance) Stop() error {
 	return b.blockScanner.Stop()
+}
+
+func (b *Binance) getMeta(pk common.PubKey) BinanceMetadata {
+	if val, ok := b.accts[pk]; ok {
+		return val
+	}
+	return BinanceMetadata{}
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status
@@ -305,7 +312,12 @@ func (b *Binance) GetGasFee(count uint64) common.Gas {
 
 func (b *Binance) ValidateMetadata(inter interface{}) bool {
 	meta := inter.(BinanceMetadata)
-	return meta.AccountNumber == b.accountNumber && meta.SeqNumber == b.seqNumber
+	for _, acct := range b.accts {
+		if acct.AccountNumber == meta.AccountNumber {
+			return acct.SeqNumber == meta.SeqNumber
+		}
+	}
+	return false
 }
 
 // SignTx sign the the given TxArrayItem
@@ -353,17 +365,20 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 			return nil, fmt.Errorf("fail to get account info: %w", err)
 		}
 		atomic.StoreInt64(&b.currentBlockHeight, currentHeight)
-		atomic.StoreInt64(&b.accountNumber, acc.AccountNumber)
-		atomic.StoreInt64(&b.seqNumber, acc.Sequence)
+		b.accts[tx.VaultPubKey] = BinanceMetadata{
+			AccountNumber: acc.AccountNumber,
+			SeqNumber:     acc.Sequence,
+		}
 	}
-	b.logger.Info().Int64("account_number", b.accountNumber).Int64("sequence_number", b.seqNumber).Msg("account info")
+	meta := b.getMeta(tx.VaultPubKey)
+	b.logger.Info().Int64("account_number", meta.AccountNumber).Int64("sequence_number", meta.SeqNumber).Msg("account info")
 	signMsg := btx.StdSignMsg{
 		ChainID:       b.chainID,
 		Memo:          tx.Memo,
 		Msgs:          []msg.Msg{sendMsg},
 		Source:        btx.Source,
-		Sequence:      b.seqNumber,
-		AccountNumber: b.accountNumber,
+		Sequence:      meta.SeqNumber,
+		AccountNumber: meta.AccountNumber,
 	}
 	rawBz, err := b.signWithRetry(signMsg, fromAddr, tx.VaultPubKey, height, tx)
 	if err != nil {
@@ -374,6 +389,10 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		// this could happen, if the local party trying to sign a message , however the TSS keysign process didn't chose the local party to sign the message
 		return nil, nil
 	}
+
+	// increment sequence number
+	meta.SeqNumber += 1
+	b.accts[tx.VaultPubKey] = meta
 
 	hexTx := []byte(hex.EncodeToString(rawBz))
 	return hexTx, nil
@@ -544,6 +563,5 @@ func (b *Binance) BroadcastTx(hexTx []byte) error {
 		log.Error().Err(err).Msg("we fail to close response body")
 		return errors.New("fail to close response body")
 	}
-	atomic.AddInt64(&b.seqNumber, 1)
 	return nil
 }
