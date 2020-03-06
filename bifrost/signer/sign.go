@@ -168,15 +168,13 @@ func (s *Signer) signTransactions() {
 	s.logger.Info().Msg("start to sign transactions")
 	defer s.logger.Info().Msg("stop to sign transactions")
 	defer s.wg.Done()
-	mutex := sync.Mutex{}
 	for {
 		select {
 		case <-s.stopChan:
 			return
-		case <-time.After(time.Second):
-			mutex.Lock()
-			defer mutex.Unlock()
+		default:
 			s.processTransactions()
+			time.Sleep(1 * time.Second)
 		}
 	}
 }
@@ -191,6 +189,7 @@ func (s *Signer) processTransactions() {
 				continue
 			}
 
+			s.logger.Info().Msgf("Signing transaction (Height: %d | Status: %d): %+v", item.Height, item.Status, item.TxOutItem)
 			if err := s.signAndBroadcast(item); err != nil {
 				s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
 				continue
