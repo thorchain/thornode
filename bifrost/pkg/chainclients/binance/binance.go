@@ -42,7 +42,7 @@ type Binance struct {
 	chainID            string
 	isTestNet          bool
 	client             *http.Client
-	accts              map[common.PubKey]BinanceMetadata
+	accts              *BinanceMetaDataStore
 	currentBlockHeight int64
 	signLock           *sync.Mutex
 	tssKeyManager      keys.KeyManager
@@ -50,11 +50,6 @@ type Binance struct {
 	thorchainBridge    *thorclient.ThorchainBridge
 	storage            *BinanceBlockScannerStorage
 	blockScanner       *BinanceBlockScanner
-}
-
-type BinanceMetadata struct {
-	AccountNumber int64
-	SeqNumber     int64
 }
 
 // NewBinance create new instance of binance client
@@ -95,7 +90,7 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 		logger:          log.With().Str("module", "binance").Logger(),
 		RPCHost:         rpcHost,
 		cfg:             cfg,
-		accts:           make(map[common.PubKey]BinanceMetadata, 0),
+		accts:           NewBinanceMetaDataStore(),
 		client:          &http.Client{},
 		signLock:        &sync.Mutex{},
 		tssKeyManager:   tssKm,
@@ -147,13 +142,6 @@ func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager
 
 func (b *Binance) Stop() error {
 	return b.blockScanner.Stop()
-}
-
-func (b *Binance) getMeta(pk common.PubKey) BinanceMetadata {
-	if val, ok := b.accts[pk]; ok {
-		return val
-	}
-	return BinanceMetadata{}
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status
@@ -312,12 +300,8 @@ func (b *Binance) GetGasFee(count uint64) common.Gas {
 
 func (b *Binance) ValidateMetadata(inter interface{}) bool {
 	meta := inter.(BinanceMetadata)
-	for _, acct := range b.accts {
-		if acct.AccountNumber == meta.AccountNumber {
-			return acct.SeqNumber == meta.SeqNumber
-		}
-	}
-	return false
+	acct := b.accts.GetByAccount(meta.AccountNumber)
+	return acct.AccountNumber == meta.AccountNumber && acct.SeqNumber == meta.SeqNumber
 }
 
 // SignTx sign the the given TxArrayItem
@@ -365,12 +349,12 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 			return nil, fmt.Errorf("fail to get account info: %w", err)
 		}
 		atomic.StoreInt64(&b.currentBlockHeight, currentHeight)
-		b.accts[tx.VaultPubKey] = BinanceMetadata{
+		b.accts.Set(tx.VaultPubKey, BinanceMetadata{
 			AccountNumber: acc.AccountNumber,
 			SeqNumber:     acc.Sequence,
-		}
+		})
 	}
-	meta := b.getMeta(tx.VaultPubKey)
+	meta := b.accts.Get(tx.VaultPubKey)
 	b.logger.Info().Int64("account_number", meta.AccountNumber).Int64("sequence_number", meta.SeqNumber).Msg("account info")
 	signMsg := btx.StdSignMsg{
 		ChainID:       b.chainID,
@@ -391,8 +375,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	}
 
 	// increment sequence number
-	meta.SeqNumber += 1
-	b.accts[tx.VaultPubKey] = meta
+	b.accts.SeqInc(tx.VaultPubKey)
 
 	hexTx := []byte(hex.EncodeToString(rawBz))
 	return hexTx, nil
