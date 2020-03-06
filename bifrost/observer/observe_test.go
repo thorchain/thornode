@@ -39,7 +39,6 @@ type ObserverSuite struct {
 	thorKeys *thorclient.Keys
 	bridge   *thorclient.ThorchainBridge
 	b        *binance.Binance
-	tssCfg   config.TSSConfiguration
 }
 
 var _ = Suite(&ObserverSuite{})
@@ -173,12 +172,6 @@ func (s *ObserverSuite) SetUpSuite(c *C) {
 	c.Assert(s.bridge, NotNil)
 	c.Assert(err, IsNil)
 
-	s.tssCfg = config.TSSConfiguration{
-		Scheme: "http",
-		Host:   "localhost",
-		Port:   5555,
-	}
-
 	priv, err := s.thorKeys.GetPrivateKey()
 	c.Assert(err, IsNil)
 	pk, err := common.NewPubKeyFromCrypto(priv.PubKey())
@@ -219,7 +212,7 @@ func (s *ObserverSuite) TearDownSuite(c *C) {
 		c.Error(err)
 	}
 
-	if err := os.RemoveAll("sobserver/var"); err != nil {
+	if err := os.RemoveAll("observer/var"); err != nil {
 		c.Error(err)
 	}
 }
