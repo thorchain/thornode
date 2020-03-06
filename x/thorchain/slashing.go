@@ -83,7 +83,7 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 	for _, evt := range pendingEvents {
 		// NOTE: not checking the event type because all non-swap/unstake/etc
 		// are completed immediately.
-		if (ctx.BlockHeight()-evt.Height)%signingTransPeriod == 0 {
+		if ctx.BlockHeight() == evt.Height+signingTransPeriod {
 			txs, err := s.keeper.GetTxOut(ctx, evt.Height)
 			if err != nil {
 				ctx.Logger().Error("Unable to get tx out list", "error", err)
