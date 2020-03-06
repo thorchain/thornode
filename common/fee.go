@@ -14,10 +14,3 @@ func NewFee(coins Coins, poolDeduct sdk.Uint) Fee {
 		PoolDeduct: poolDeduct,
 	}
 }
-
-// EmptyFee return a empty instance of Fee
-func EmptyFee() Fee {
-	return Fee{
-		PoolDeduct: sdk.ZeroUint(),
-	}
-}

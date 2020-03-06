@@ -305,7 +305,7 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 		return fmt.Errorf("fail to get event id: %w", err)
 	}
 	if len(eventIDs) > 1 {
-		return fmt.Errorf("more than events found")
+		return errors.New("more than events found")
 	}
 	eventID := eventIDs[0]
 	event, err := keeper.GetEvent(ctx, eventID)
@@ -314,10 +314,6 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 	}
 
 	ctx.Logger().Info(fmt.Sprintf("Update fee for event %d, fee:%s", eventID, fee))
-	if event.Fee == nil {
-		fee := common.EmptyFee()
-		event.Fee = &fee
-	}
 	event.Fee.Coins = append(event.Fee.Coins, fee.Coins...)
 	event.Fee.PoolDeduct = event.Fee.PoolDeduct.Add(fee.PoolDeduct)
 	return keeper.UpsertEvent(ctx, event)
