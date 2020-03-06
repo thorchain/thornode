@@ -99,6 +99,10 @@ func (k *TestSlashingLackKeeper) SetObservedTxVoter(_ sdk.Context, voter Observe
 	k.voter = voter
 }
 
+func (k *TestSlashingLackKeeper) GetVault(_ sdk.Context, pk common.PubKey) (Vault, error) {
+	return k.vaults[0], nil
+}
+
 func (k *TestSlashingLackKeeper) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultStatus) (Vaults, error) {
 	return k.vaults, nil
 }
@@ -170,17 +174,19 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	txOut := NewTxOut(evt.Height)
 	txOut.TxArray = append(txOut.TxArray, txOutItem)
 
+	ygg := GetRandomVault()
+	ygg.Type = YggdrasilVault
 	keeper := &TestSlashingLackKeeper{
 		txOut:  txOut,
 		evts:   Events{evt},
 		na:     na,
-		vaults: Vaults{GetRandomVault()},
+		vaults: Vaults{ygg},
 		voter: ObservedTxVoter{
 			Actions: []TxOutItem{*txOutItem},
 		},
 	}
 	signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
-	ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod + 5)
+	ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod)
 
 	slasher := NewSlasher(keeper, txOutStore)
 	c.Assert(slasher.LackSigning(ctx, constAccessor), IsNil)
@@ -191,5 +197,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(outItems, HasLen, 1)
 	c.Assert(outItems[0].VaultPubKey.Equals(keeper.vaults[0].PubKey), Equals, true)
-	c.Assert(keeper.voter.Actions, HasLen, 0) // ensure we've removed our previous txn
+	c.Assert(keeper.voter.Actions, HasLen, 1)
+	// ensure we've updated our action item
+	c.Assert(keeper.voter.Actions[0].VaultPubKey.Equals(outItems[0].VaultPubKey), Equals, true)
 }
