@@ -734,10 +734,10 @@ func queryTSSSigners(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		return nil, sdk.ErrUnknownRequest("invalid pool pub key")
 	}
 
-	// seed is the current block height, rounded down to the nearest 100th
+	// seed is the current block height, rounded down to the nearest 10th
 	// This helps keep the selected nodes to be the same across blocks, but
 	// also change immediately if we have a change in which nodes are active
-	seed := ctx.BlockHeight() / 100
+	seed := ctx.BlockHeight() / 10
 
 	accountAddrs, err := keeper.GetObservingAddresses(ctx)
 	if err != nil {
