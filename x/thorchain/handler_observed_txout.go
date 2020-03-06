@@ -109,7 +109,11 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		// check whether the tx has consensus
 		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
 		if !ok {
-			ctx.Logger().Info("Outbound observation preflight requirements not yet met...")
+			if voter.Height > 0 {
+				ctx.Logger().Info("Outbound observation already processed.")
+			} else {
+				ctx.Logger().Info("Outbound observation preflight requirements not yet met...")
+			}
 			continue
 		}
 
