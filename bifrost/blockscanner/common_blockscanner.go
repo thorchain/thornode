@@ -220,7 +220,6 @@ func (b *CommonBlockScanner) GetFromHttpWithRetry(url string) ([]byte, error) {
 }
 
 func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
-	b.logger.Debug().Str("url", url).Msg("http")
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_create_http_request", url).Inc()
@@ -306,7 +305,6 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, []string, er
 		duration := time.Since(start)
 		b.metrics.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
-	b.logger.Debug().Str("request_url", requestUrl).Msg("get_block")
 
 	buf, err := b.getFromHttp(requestUrl)
 	if err != nil {
