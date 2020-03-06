@@ -295,7 +295,7 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 	return keeper.UpsertEvent(ctx, event)
 }
 func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common.Fee) error {
-	ctx.Logger().Info(fmt.Sprintf("txid(%s)", txID))
+	ctx.Logger().Info("update event fee txid(%s)", txID.String())
 	eventIDs, err := keeper.GetEventsIDByTxHash(ctx, txID)
 	if err != nil {
 		if err == ErrEventNotFound {
@@ -315,17 +315,11 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 
 	ctx.Logger().Info(fmt.Sprintf("Update fee for event %d, fee:%s", eventID, fee))
 	if event.Fee == nil {
-		event.Fee = new(common.Fee)
-		event.Fee.PoolDeduct = sdk.ZeroUint()
+		fee := common.EmptyFee()
+		event.Fee = &fee
 	}
-	if !fee.Coins.IsEmpty() {
-		for _, coin := range fee.Coins {
-			event.Fee.Coins = append(event.Fee.Coins, coin)
-		}
-	}
-	if fee.PoolDeduct.GT(sdk.ZeroUint()) {
-		event.Fee.PoolDeduct = event.Fee.PoolDeduct.Add(fee.PoolDeduct)
-	}
+	event.Fee.Coins = append(event.Fee.Coins, fee.Coins...)
+	event.Fee.PoolDeduct = event.Fee.PoolDeduct.Add(fee.PoolDeduct)
 	return keeper.UpsertEvent(ctx, event)
 }
 func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs, eventStatus EventStatus) error {
