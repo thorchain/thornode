@@ -168,11 +168,14 @@ func (s *Signer) signTransactions() {
 	s.logger.Info().Msg("start to sign transactions")
 	defer s.logger.Info().Msg("stop to sign transactions")
 	defer s.wg.Done()
+	mutex := sync.Mutex{}
 	for {
 		select {
 		case <-s.stopChan:
 			return
 		case <-time.After(time.Second):
+			mutex.Lock()
+			defer mutex.Unlock()
 			s.processTransactions()
 		}
 	}
