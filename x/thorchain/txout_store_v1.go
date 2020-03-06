@@ -176,7 +176,13 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)  // Deduct Asset fee
 			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
-			fee := common.NewFee(common.Coins{common.NewCoin(toi.Coin.Asset, assetFee)}, runeFee)
+			var poolDeduct sdk.Uint
+			if runeFee.GT(pool.BalanceRune) {
+				poolDeduct = sdk.ZeroUint()
+			} else {
+				poolDeduct = runeFee
+			}
+			fee := common.NewFee(common.Coins{common.NewCoin(toi.Coin.Asset, assetFee)}, poolDeduct)
 			err = updateEventFee(ctx, tos.keeper, toi.InHash, fee)
 			if err != nil {
 				ctx.Logger().Error("Failed to update event fee", "error", err)
