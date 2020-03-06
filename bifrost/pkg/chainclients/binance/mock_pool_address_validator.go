@@ -36,7 +36,10 @@ func matchTestAddress(addr, testAddr string, chain common.Chain) (bool, common.C
 
 func (mpa *MockPoolAddressValidator) FetchPubKeys()                      {}
 func (mpa *MockPoolAddressValidator) GetPubKeys() common.PubKeys         { return nil }
-func (mpa *MockPoolAddressValidator) GetSignPubKeys() common.PubKeys     { return nil }
+func (mpa *MockPoolAddressValidator) GetSignPubKeys() common.PubKeys     {
+	pubKey, _ := common.NewPubKey(validpb)
+	return common.PubKeys{pubKey}
+}
 func (mpa *MockPoolAddressValidator) GetNodePubKey() common.PubKey       { return common.EmptyPubKey }
 func (mpa *MockPoolAddressValidator) HasPubKey(pk common.PubKey) bool    { return false }
 func (mpa *MockPoolAddressValidator) AddPubKey(pk common.PubKey, _ bool) {}
