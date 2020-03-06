@@ -61,6 +61,12 @@ func (tos *TxOutStorageV1) TryAddTxOutItem(ctx sdk.Context, toi *TxOutItem) (boo
 	return true, nil
 }
 
+// UnSafeAddTxOutItem - blindly adds a tx out, skipping vault selection, transaction
+// fee deduction, etc
+func (tos *TxOutStorageV1) UnSafeAddTxOutItem(ctx sdk.Context, toi *TxOutItem) error {
+	return tos.addToBlockOut(ctx, toi)
+}
+
 // PrepareTxOutItem will do some data validation which include the following
 // 1. Make sure it has a legitimate memo
 // 2. choose an appropriate pool,Yggdrasil or Asgard
