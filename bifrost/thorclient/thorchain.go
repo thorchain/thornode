@@ -78,11 +78,8 @@ func NewThorchainBridge(cfg config.ClientConfiguration, m *metrics.Metrics) (*Th
 		return nil, fmt.Errorf("fail to get keybase,err:%w", err)
 	}
 
-	// create retryablehttp client using our own logger format with a sublogger
-	sublogger := logger.With().Str("component", "retryable_http_client").Logger()
-	httpClientLogger := common.NewRetryableHTTPLogger(sublogger)
 	httpClient := retryablehttp.NewClient()
-	httpClient.Logger = httpClientLogger
+	httpClient.Logger = nil
 
 	return &ThorchainBridge{
 		logger:        logger,
