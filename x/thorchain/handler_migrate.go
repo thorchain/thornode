@@ -73,19 +73,24 @@ func (h MigrateHandler) handleV1(ctx sdk.Context, msg MsgMigrate) sdk.Result {
 			Codespace: DefaultCodespace,
 		}
 	}
+
 	hasChanged := false
 	for i, tx := range txOut.TxArray {
 		// migrate is the memo used by thorchain to identify fund migration between asgard vault.
 		// it use migrate:{block height} to mark a tx out caused by vault rotation
 		// this type of tx out is special , because it doesn't have relevant tx in to trigger it, it is trigger by thorchain itself.
+		fromAddress, _ := tx.VaultPubKey.GetAddress(tx.Chain)
 		if tx.InHash.Equals(common.BlankTxID) &&
 			tx.OutHash.IsEmpty() &&
 			msg.Tx.Tx.Coins.Contains(tx.Coin) &&
-			tx.VaultPubKey.Equals(msg.Tx.ObservedPubKey) {
+			tx.ToAddress.Equals(msg.Tx.Tx.ToAddress) &&
+			fromAddress.Equals(msg.Tx.Tx.FromAddress) {
 			txOut.TxArray[i].OutHash = msg.Tx.Tx.ID
 			hasChanged = true
+			break
 		}
 	}
+
 	if !hasChanged {
 		return sdk.Result{
 			Code:      sdk.CodeOK,
