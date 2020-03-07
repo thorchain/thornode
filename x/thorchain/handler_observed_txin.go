@@ -142,8 +142,8 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 
 		// check we are sending to a valid vault
 		if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
-			ctx.Logger().Info("Observed Pubkey", tx.ObservedPubKey)
-			return sdk.ErrInternal("Observed Tx Pubkey is not associated with a valid vault").Result()
+			ctx.Logger().Info("Not valid Observed Pubkey", tx.ObservedPubKey)
+			continue
 		}
 
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
@@ -162,6 +162,14 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		if err != nil {
 			ctx.Logger().Error("fail to get vault", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
+		}
+		if !vault.IsAsgard() {
+			ctx.Logger().Error("Vault is not an Asgard vault, transaction ignored.")
+			continue
+		}
+		if vault.Status == InactiveVault {
+			ctx.Logger().Error("Vault is inactive, transaction ignored.")
+			continue
 		}
 		vault.AddFunds(tx.Tx.Coins)
 		if err := h.keeper.SetVault(ctx, vault); err != nil {
