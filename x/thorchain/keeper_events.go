@@ -40,6 +40,9 @@ func (k KVStore) UpsertEvent(ctx sdk.Context, event Event) error {
 	if event.InTx.ID.IsEmpty() {
 		return fmt.Errorf("cant save event with empty TxIn ID")
 	}
+	if event.Height == 0 {
+		return fmt.Errorf("cant save event with height equal to zero")
+	}
 	if event.ID == 0 {
 		nextEventID, err := k.getNextEventID(ctx)
 		if err != nil {
@@ -160,15 +163,19 @@ func (k KVStore) GetAllPendingEvents(ctx sdk.Context) (Events, error) {
 	iter := sdk.KVStorePrefixIterator(store, []byte(key))
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
-		var eventID int64
-		if err := k.Cdc().UnmarshalBinaryBare(iter.Value(), &eventID); err != nil {
+		var eventIDs []int64
+		fmt.Printf("Pending Event ID: %s\n", string(iter.Value()))
+		if err := k.Cdc().UnmarshalBinaryBare(iter.Value(), &eventIDs); err != nil {
 			return nil, fmt.Errorf("fail to unmarshal event id: %w", err)
 		}
-		event, err := k.GetEvent(ctx, eventID)
-		if err != nil {
-			return nil, fmt.Errorf("fail to get event: %w", err)
+		for _, eventID := range eventIDs {
+			evt, err := k.GetEvent(ctx, eventID)
+			if err != nil {
+				return nil, fmt.Errorf("fail to get event: %w", err)
+
+			}
+			events = append(events, evt)
 		}
-		events = append(events, event)
 	}
 	return events, nil
 }

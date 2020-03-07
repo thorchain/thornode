@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
@@ -111,7 +112,7 @@ func (e EventStake) Type() string {
 type EventUnstake struct {
 	Pool        common.Asset `json:"pool"`
 	StakeUnits  sdk.Uint     `json:"stake_units"`
-	BasisPoints int64        `json:"basis_points"` // 1 ==> 10,0000
+	BasisPoints string       `json:"basis_points"` // 1 ==> 10,0000
 	Asymmetry   sdk.Dec      `json:"asymmetry"`    // -1.0 <==> 1.0
 }
 
@@ -120,7 +121,7 @@ func NewEventUnstake(pool common.Asset, su sdk.Uint, basisPts int64, asym sdk.De
 	return EventUnstake{
 		Pool:        pool,
 		StakeUnits:  su,
-		BasisPoints: basisPts,
+		BasisPoints: strconv.FormatInt(basisPts, 10),
 		Asymmetry:   asym,
 	}
 }

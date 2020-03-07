@@ -67,6 +67,7 @@ func setupKeeperForTest(c *C) (sdk.Context, Keeper) {
 	c.Assert(err, IsNil)
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "thorchain"}, false, log.NewNopLogger())
+	ctx = ctx.WithBlockHeight(18)
 	cdc := makeTestCodec()
 
 	pk := params.NewKeeper(cdc, keyParams, tkeyParams, params.DefaultCodespace)
