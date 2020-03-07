@@ -212,10 +212,11 @@ func (s *SignerStore) List() []TxOutStoreItem {
 		results = append(results, item)
 	}
 
-	// Ensure that we sort our list by block height (lowest to highest). This
-	// makes best efforts to ensure that each node is iterating through their
-	// list of items as closely as possible
-	sort.SliceStable(results[:], func(i, j int) bool { return results[i].Height < results[j].Height })
+	// Ensure that we sort our list by block height (lowest to highest), then
+	// by Hash. This makes best efforts to ensure that each node is iterating
+	// through their list of items as closely as possible
+	sort.SliceStable(results, func(i, j int) bool { return results[i].TxOutItem.Hash() < results[j].TxOutItem.Hash() })
+	sort.SliceStable(results, func(i, j int) bool { return results[i].Height < results[j].Height })
 	return results
 }
 

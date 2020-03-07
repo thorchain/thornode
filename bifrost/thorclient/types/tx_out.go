@@ -1,6 +1,7 @@
 package types
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strings"
 
@@ -16,6 +17,11 @@ type TxOutItem struct {
 	Memo        string         `json:"memo"`
 	InHash      common.TxID    `json:"in_hash"`
 	OutHash     common.TxID    `json:"out_hash"`
+}
+
+func (tx TxOutItem) Hash() string {
+	str := fmt.Sprintf("%s|%s|%s|%s|%s|%s", tx.Chain, tx.ToAddress, tx.VaultPubKey, tx.Coins, tx.Memo, tx.InHash)
+	return fmt.Sprintf("%X", sha256.Sum256([]byte(str)))
 }
 
 func (tx1 TxOutItem) Equals(tx2 TxOutItem) bool {
