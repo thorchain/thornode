@@ -563,7 +563,7 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 			}
 
 			unstakeMsg := NewMsgSetUnStake(
-				common.GetRagnarokTx(pool.Asset.Chain),
+				common.GetRagnarokTx(pool.Asset.Chain, item.RuneAddress, item.RuneAddress),
 				item.RuneAddress,
 				sdk.NewUint(uint64(basisPoints)),
 				pool.Asset,

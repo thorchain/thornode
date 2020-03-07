@@ -56,12 +56,12 @@ type Tx struct {
 
 type Txs []Tx
 
-func GetRagnarokTx(chain Chain) Tx {
+func GetRagnarokTx(chain Chain, fromAddr, toAddr Address) Tx {
 	return Tx{
 		Chain:       chain,
 		ID:          BlankTxID,
-		FromAddress: RagnarokAddr,
-		ToAddress:   RagnarokAddr,
+		FromAddress: fromAddr,
+		ToAddress:   toAddr,
 		Coins: Coins{
 			// used for ragnarok, so doesn't really matter
 			NewCoin(BNBAsset, sdk.OneUint()),
