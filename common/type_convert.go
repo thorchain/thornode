@@ -33,6 +33,7 @@ func GetShare(part sdk.Uint, total sdk.Uint, allocation sdk.Uint) sdk.Uint {
 	}
 	// A / (Total / part) == A * (part/Total) but safer when part < Totals
 	result := aD.Quo(tD.Quo(pD))
+	fmt.Printf("Get Share: %d / %d / %d == %d", aD.Uint64(), tD.Uint64(), pD.Uint64(), result.Uint64())
 	return sdk.NewUintFromBigInt(result.RoundInt().BigInt())
 }
 
