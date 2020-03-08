@@ -94,6 +94,10 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 	}
 	for _, vault := range retiring {
 		if !vault.HasFunds() {
+			vault.Status = InactiveVault
+			if err := vm.k.SetVault(ctx, vault); err != nil {
+				ctx.Logger().Error("fail to set vault to inactive", "error", err)
+			}
 			continue
 		}
 

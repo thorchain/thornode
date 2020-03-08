@@ -97,8 +97,8 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 
 		// check we are sending from a valid vault
 		if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
-			ctx.Logger().Info("Observed Pubkey", tx.ObservedPubKey)
-			return sdk.ErrInternal("Observed Tx Pubkey is not associated with a valid vault").Result()
+			ctx.Logger().Info("Not valid Observed Pubkey", tx.ObservedPubKey)
+			continue
 		}
 
 		voter, err := h.keeper.GetObservedTxVoter(ctx, tx.Tx.ID)
