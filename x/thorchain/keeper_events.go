@@ -164,7 +164,6 @@ func (k KVStore) GetAllPendingEvents(ctx sdk.Context) (Events, error) {
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var eventIDs []int64
-		fmt.Printf("Pending Event ID: %s\n", string(iter.Value()))
 		if err := k.Cdc().UnmarshalBinaryBare(iter.Value(), &eventIDs); err != nil {
 			return nil, fmt.Errorf("fail to unmarshal event id: %w", err)
 		}
