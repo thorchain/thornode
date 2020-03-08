@@ -147,11 +147,18 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return nil, errBadVersion
 	}
+
+	memo := ""
+	if msg.Tx.ID.Equals(common.BlankTxID) {
+		// tx id is blank, must be triggered by the ragnarok protocol
+		memo = NewRagnarokMemo(ctx.BlockHeight()).String()
+	}
 	toi := &TxOutItem{
 		Chain:     common.BNBChain,
 		InHash:    msg.Tx.ID,
 		ToAddress: stakerUnit.RuneAddress,
 		Coin:      common.NewCoin(common.RuneAsset(), runeAmt),
+		Memo:      memo,
 	}
 	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {

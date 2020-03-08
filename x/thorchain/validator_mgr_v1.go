@@ -388,6 +388,8 @@ func (vm *validatorMgrV1) ragnarokBondReward(ctx sdk.Context) error {
 }
 
 func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
+	fmt.Printf("-----------Ragnarok Reserve (%d)...\n", nth)
+	defer fmt.Println("-----------Ragnarok Reserve done.")
 	contribs, err := vm.k.GetReservesContributors(ctx)
 	if err != nil {
 		ctx.Logger().Error("can't get reserve contributors", "error", err)
@@ -403,6 +405,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 	}
 
 	if vaultData.TotalReserve.IsZero() {
+		fmt.Println(">>>>>>> reserve total is zero")
 		return nil
 	}
 
@@ -425,7 +428,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 
 	// nth * 10 == the amount of the bond we want to send
 	for i, contrib := range contribs {
-
+		fmt.Printf("Refunding contrib: %s\n", contrib.Address.String())
 		share := common.GetShare(
 			contrib.Amount,
 			totalReserve,
@@ -435,6 +438,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 			nth = 10
 		}
 		amt := share.MulUint64(uint64(nth)).QuoUint64(10)
+		fmt.Printf("Amt: %d * %d / 10 = %d\n", share.Uint64(), nth, amt.Uint64())
 		vaultData.TotalReserve = common.SafeSub(vaultData.TotalReserve, amt)
 		contribs[i].Amount = common.SafeSub(contrib.Amount, amt)
 
@@ -444,7 +448,9 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 			ToAddress: contrib.Address,
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
+			Memo:      NewRagnarokMemo(ctx.BlockHeight()).String(),
 		}
+		fmt.Printf("Reserve Return: %+v\n", txOutItem)
 		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
 		if err != nil {
 			return fmt.Errorf("fail to add outbound transaction")
@@ -463,6 +469,8 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 }
 
 func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
+	fmt.Printf("Ragnarok Bond (%d)...\n", nth)
+	defer fmt.Println("Ragnarok Bond done.")
 	nas, err := vm.k.ListNodeAccounts(ctx)
 	if err != nil {
 		ctx.Logger().Error("can't get nodes", "error", err)
@@ -475,6 +483,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 	}
 	// nth * 10 == the amount of the bond we want to send
 	for _, na := range nas {
+		fmt.Printf("Na: %s: %d\n", na.NodeAddress, na.Bond.Uint64())
 		if na.Bond.IsZero() {
 			continue
 		}
@@ -493,6 +502,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			nth = 10
 		}
 		amt := na.Bond.MulUint64(uint64(nth)).QuoUint64(10)
+		fmt.Printf("Amt: %d * %d / 10 = %d\n", na.Bond.Uint64(), nth, amt.Uint64())
 
 		// refund bond
 		txOutItem := &TxOutItem{
@@ -500,6 +510,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			ToAddress: na.BondAddress,
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
+			Memo:      NewRagnarokMemo(ctx.BlockHeight()).String(),
 		}
 		ok, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
 		if err != nil {
@@ -508,6 +519,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 		if !ok {
 			continue
 		}
+		fmt.Printf("Reserve Return: %+v\n", txOutItem)
 
 		na.Bond = common.SafeSub(na.Bond, amt)
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
@@ -519,6 +531,8 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 }
 
 func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
+	fmt.Printf("Ragnarok Pools (%d)...\n", nth)
+	defer fmt.Println("Ragnarok Pools done.")
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		ctx.Logger().Error("can't get active nodes", "error", err)
