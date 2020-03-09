@@ -425,6 +425,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 
 	// nth * 10 == the amount of the bond we want to send
 	for i, contrib := range contribs {
+		fmt.Printf("Refunding contrib: %s (%d)\n", contrib.Address.String(), contrib.Amount.Uint64())
 		share := common.GetShare(
 			contrib.Amount,
 			totalReserve,
@@ -436,6 +437,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 		amt := share.MulUint64(uint64(nth)).QuoUint64(10)
 		vaultData.TotalReserve = common.SafeSub(vaultData.TotalReserve, amt)
 		contribs[i].Amount = common.SafeSub(contrib.Amount, amt)
+		fmt.Printf("New Contrib amt: %d\n", contribs[i].Amount.Uint64())
 
 		// refund contribution
 		txOutItem := &TxOutItem{
