@@ -147,12 +147,17 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 		ctx.Logger().Info("node still active , cannot refund bond", "node address", nodeAcc.NodeAddress, "node pub key", nodeAcc.PubKeySet.Secp256k1)
 		return nil
 	}
-	ygg, err := keeper.GetVault(ctx, nodeAcc.PubKeySet.Secp256k1)
-	if err != nil {
-		return err
-	}
-	if !ygg.IsYggdrasil() {
-		return errors.New("this is not a Yggdrasil vault")
+
+	ygg := Vault{}
+	if keeper.VaultExists(ctx, nodeAcc.PubKeySet.Secp256k1) {
+		var err error
+		ygg, err = keeper.GetVault(ctx, nodeAcc.PubKeySet.Secp256k1)
+		if err != nil {
+			return err
+		}
+		if !ygg.IsYggdrasil() {
+			return errors.New("this is not a Yggdrasil vault")
+		}
 	}
 
 	// Calculate total value (in rune) the Yggdrasil pool has

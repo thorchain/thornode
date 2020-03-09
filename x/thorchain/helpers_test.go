@@ -24,6 +24,10 @@ func (k *TestRefundBondKeeper) GetAsgardVaultsByStatus(_ sdk.Context, _ VaultSta
 	return k.vaults, nil
 }
 
+func (k *TestRefundBondKeeper) VaultExists(_ sdk.Context, pk common.PubKey) bool {
+	return true
+}
+
 func (k *TestRefundBondKeeper) GetVault(_ sdk.Context, pk common.PubKey) (Vault, error) {
 	if k.ygg.PubKey.Equals(pk) {
 		return k.ygg, nil
