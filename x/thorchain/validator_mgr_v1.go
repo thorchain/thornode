@@ -520,8 +520,6 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 }
 
 func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
-	fmt.Printf(">>>>>>>> Ragnarok Pools: Nth: %d\n", nth)
-	defer fmt.Printf(">>>>>>> Done.\n")
 	nas, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		ctx.Logger().Error("can't get active nodes", "error", err)
@@ -544,7 +542,6 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 	} else {
 		basisPoints = nth * (MaxUnstakeBasisPoints / 10)
 	}
-	fmt.Printf("Basis Points: %d\n", basisPoints)
 
 	// go through all the pools
 	pools, err := vm.k.GetPools(ctx)
@@ -563,7 +560,6 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 	}
 
 	for _, pool := range pools {
-		fmt.Printf("Ragnarok Pool: %s\n", pool.Asset.String())
 		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
 		if err != nil {
 			ctx.Logger().Error("fail to get pool staker", "error", err)
@@ -572,7 +568,6 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 
 		// everyone withdraw
 		for _, item := range poolStaker.Stakers {
-			fmt.Printf("Staker: %s (%d)\n", item.RuneAddress, item.Units.Uint64())
 			if item.Units.IsZero() {
 				continue
 			}
@@ -584,7 +579,6 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 				pool.Asset,
 				na.NodeAddress,
 			)
-			fmt.Printf("Unstake: %+v\n", unstakeMsg)
 
 			version := vm.k.GetLowestActiveVersion(ctx)
 			unstakeHandler := NewUnstakeHandler(vm.k, vm.versionedTxOutStore)
