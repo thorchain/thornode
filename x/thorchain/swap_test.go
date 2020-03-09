@@ -137,7 +137,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			tradeTarget:   sdk.ZeroUint(),
 			expectedErr:   nil,
 			events: []Event{
-				Event{ID: 0, Height: 0, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don't know", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(5000000000))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
+				Event{ID: 0, Height: 18, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don't know", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(5000000000))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
 			},
 		},
 		{
@@ -164,7 +164,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			tradeTarget:   sdk.ZeroUint(),
 			expectedErr:   nil,
 			events: []Event{
-				Event{ID: 0, Height: 0, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(800000000))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
+				Event{ID: 0, Height: 18, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(800000000))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
 			},
 		},
 		{
@@ -179,7 +179,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			tradeTarget:   sdk.NewUint(453514738),
 			expectedErr:   nil,
 			events: []Event{
-				Event{ID: 0, Height: 0, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(500000000))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
+				Event{ID: 0, Height: 18, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(500000000))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
 			},
 		},
 		{
@@ -194,8 +194,8 @@ func (s SwapSuite) TestSwap(c *C) {
 			tradeTarget:   sdk.NewUint(415017809),
 			expectedErr:   nil,
 			events: []Event{
-				Event{ID: 0, Height: 0, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.BTCAsset, sdk.NewUint(5*common.One))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
-				Event{ID: 0, Height: 0, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(453514739))}, Gas: nil}},
+				Event{ID: 0, Height: 18, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.BTCAsset, sdk.NewUint(5*common.One))}, Gas: common.Gas{common.NewCoin(common.BNBAsset, sdk.NewUint(37500))}}},
+				Event{ID: 0, Height: 18, Type: "swap", InTx: common.Tx{ID: "hash", Chain: "BNB", FromAddress: "tester", ToAddress: "don'tknow", Coins: common.Coins{common.NewCoin(common.RuneAsset(), sdk.NewUint(453514739))}, Gas: nil}},
 			},
 		},
 	}
