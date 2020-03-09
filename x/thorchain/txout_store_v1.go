@@ -148,10 +148,16 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 				runeFee = sdk.NewUint(uint64(transactionFee)) // Fee is the prescribed fee
 			}
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, runeFee)
+			fee := common.NewFee(common.Coins{common.NewCoin(toi.Coin.Asset, runeFee)}, sdk.ZeroUint())
+			err := updateEventFee(ctx, tos.keeper, toi.InHash, fee)
+			if err != nil {
+				ctx.Logger().Error("Failed to update event fee", "error", err)
+			}
 			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); err != nil {
 				// Add to reserve
 				ctx.Logger().Error("fail to add fee to reserve", "error", err)
 			}
+
 		} else {
 			pool, err := tos.keeper.GetPool(ctx, toi.Coin.Asset) // Get pool
 			if err != nil {
@@ -170,7 +176,18 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 			toi.Coin.Amount = common.SafeSub(toi.Coin.Amount, assetFee)  // Deduct Asset fee
 			pool.BalanceAsset = pool.BalanceAsset.Add(assetFee)          // Add Asset fee to Pool
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, runeFee) // Deduct Rune from Pool
-			if err := tos.keeper.SetPool(ctx, pool); err != nil {        // Set Pool
+			var poolDeduct sdk.Uint
+			if runeFee.GT(pool.BalanceRune) {
+				poolDeduct = sdk.ZeroUint()
+			} else {
+				poolDeduct = runeFee
+			}
+			fee := common.NewFee(common.Coins{common.NewCoin(toi.Coin.Asset, assetFee)}, poolDeduct)
+			err = updateEventFee(ctx, tos.keeper, toi.InHash, fee)
+			if err != nil {
+				ctx.Logger().Error("Failed to update event fee", "error", err)
+			}
+			if err := tos.keeper.SetPool(ctx, pool); err != nil { // Set Pool
 				return false, fmt.Errorf("fail to save pool: %w", err)
 			}
 			if err := tos.keeper.AddFeeToReserve(ctx, runeFee); err != nil {

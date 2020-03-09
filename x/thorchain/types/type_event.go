@@ -15,7 +15,7 @@ type Event struct {
 	Type   string          `json:"type"`
 	InTx   common.Tx       `json:"in_tx"`
 	OutTxs common.Txs      `json:"out_txs"`
-	Gas    common.Coins    `json:"gas"`
+	Fee    common.Fee      `json:"fee"`
 	Event  json.RawMessage `json:"event"`
 	Status EventStatus     `json:"status"`
 }
@@ -42,6 +42,10 @@ func NewEvent(typ string, ht int64, inTx common.Tx, evt json.RawMessage, status 
 		InTx:   inTx,
 		Event:  evt,
 		Status: status,
+		Fee: common.Fee{
+			Coins:      common.Coins{},
+			PoolDeduct: sdk.ZeroUint(),
+		},
 	}
 }
 
