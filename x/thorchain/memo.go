@@ -33,6 +33,7 @@ const (
 	txReserve
 	txRefund
 	txMigrate
+	txRagnarok
 )
 
 var stringToTxTypeMap = map[string]TxType{
@@ -60,6 +61,7 @@ var stringToTxTypeMap = map[string]TxType{
 	"reserve":    txReserve,
 	"refund":     txRefund,
 	"migrate":    txMigrate,
+	"ragnarok":   txRagnarok,
 }
 
 var txToStringMap = map[TxType]string{
@@ -76,6 +78,7 @@ var txToStringMap = map[TxType]string{
 	txYggdrasilReturn: "yggdrasil-",
 	txReserve:         "reserve",
 	txMigrate:         "migrate",
+	txRagnarok:        "ragnarok",
 }
 
 // converts a string into a txType
@@ -192,6 +195,17 @@ type MigrateMemo struct {
 	BlockHeight int64
 }
 
+type RagnarokMemo struct {
+	MemoBase
+	BlockHeight int64
+}
+
+func NewRagnarokMemo(blockHeight int64) RagnarokMemo {
+	return RagnarokMemo{
+		BlockHeight: blockHeight,
+	}
+}
+
 func NewMigrateMemo(blockHeight int64) MigrateMemo {
 	return MigrateMemo{
 		BlockHeight: blockHeight,
@@ -226,7 +240,8 @@ func ParseMemo(memo string) (Memo, error) {
 	// list of memo types that do not contain an asset in their memo
 	noAssetMemos := []TxType{
 		txGas, txOutbound, txBond, txLeave, txRefund,
-		txYggdrasilFund, txYggdrasilReturn, txReserve, txMigrate,
+		txYggdrasilFund, txYggdrasilReturn, txReserve,
+		txMigrate, txRagnarok,
 	}
 	hasAsset := true
 	for _, memoType := range noAssetMemos {
@@ -377,6 +392,18 @@ func ParseMemo(memo string) (Memo, error) {
 			MemoBase:    MemoBase{TxType: txMigrate},
 			BlockHeight: blockHeight,
 		}, nil
+	case txRagnarok:
+		if len(parts) < 2 {
+			return noMemo, errors.New("not enough parameters")
+		}
+		blockHeight, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil {
+			return noMemo, fmt.Errorf("fail to convert (%s) to a valid block height: %w", parts[1], err)
+		}
+		return RagnarokMemo{
+			MemoBase:    MemoBase{TxType: txRagnarok},
+			BlockHeight: blockHeight,
+		}, nil
 	default:
 		return noMemo, fmt.Errorf("TxType not supported: %s", tx.String())
 	}
@@ -422,5 +449,13 @@ func (m MigrateMemo) String() string {
 }
 
 func (m MigrateMemo) GetBlockHeight() int64 {
+	return m.BlockHeight
+}
+
+func (m RagnarokMemo) String() string {
+	return fmt.Sprintf("RAGNAROK:%d", m.BlockHeight)
+}
+
+func (m RagnarokMemo) GetBlockHeight() int64 {
 	return m.BlockHeight
 }

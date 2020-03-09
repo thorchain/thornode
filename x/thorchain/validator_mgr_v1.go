@@ -425,7 +425,6 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 
 	// nth * 10 == the amount of the bond we want to send
 	for i, contrib := range contribs {
-
 		share := common.GetShare(
 			contrib.Amount,
 			totalReserve,
@@ -444,6 +443,7 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 			ToAddress: contrib.Address,
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
+			Memo:      NewRagnarokMemo(ctx.BlockHeight()).String(),
 		}
 		_, err = txOutStore.TryAddTxOutItem(ctx, txOutItem)
 		if err != nil {
@@ -500,6 +500,7 @@ func (vm *validatorMgrV1) ragnarokBond(ctx sdk.Context, nth int64) error {
 			ToAddress: na.BondAddress,
 			InHash:    common.BlankTxID,
 			Coin:      common.NewCoin(common.RuneAsset(), amt),
+			Memo:      NewRagnarokMemo(ctx.BlockHeight()).String(),
 		}
 		ok, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
 		if err != nil {

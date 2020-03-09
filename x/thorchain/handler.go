@@ -98,6 +98,7 @@ func getHandlerMapping(keeper Keeper, versionedTxOutStore VersionedTxOutStore, v
 	m[MsgRefundTx{}.Type()] = NewRefundHandler(keeper)
 	m[MsgTssKeysignFail{}.Type()] = NewTssKeysignFailHandler(keeper)
 	m[MsgMigrate{}.Type()] = NewMigrateHandler(keeper)
+	m[MsgRagnarok{}.Type()] = NewRagnarokHandler(keeper)
 	return m
 }
 
@@ -165,6 +166,11 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 		newMsg, err = getMsgBondFromMemo(m, tx, signer)
 		if err != nil {
 			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid bond memo:%s", err.Error())
+		}
+	case RagnarokMemo:
+		newMsg, err = getMsgRagnarokFromMemo(m, tx, signer)
+		if err != nil {
+			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid ragnarok memo: %s", err.Error())
 		}
 	case LeaveMemo:
 		newMsg = NewMsgLeave(tx.Tx, signer)
@@ -323,6 +329,10 @@ func getMsgOutboundFromMemo(memo OutboundMemo, tx ObservedTx, signer sdk.AccAddr
 
 func getMsgMigrateFromMemo(memo MigrateMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
 	return NewMsgMigrate(tx, memo.GetBlockHeight(), signer), nil
+}
+
+func getMsgRagnarokFromMemo(memo RagnarokMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
+	return NewMsgRagnarok(tx, memo.GetBlockHeight(), signer), nil
 }
 
 func getMsgBondFromMemo(memo BondMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {

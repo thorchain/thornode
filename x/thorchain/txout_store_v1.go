@@ -139,7 +139,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	// Deduct TransactionFee from TOI and add to Reserve
 	transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
 	memo, _ := ParseMemo(toi.Memo) // ignore err
-	if err == nil && !memo.IsType(txYggdrasilFund) && !memo.IsType(txYggdrasilReturn) && !memo.IsType(txMigrate) {
+	if err == nil && !memo.IsType(txYggdrasilFund) && !memo.IsType(txYggdrasilReturn) && !memo.IsType(txMigrate) && !memo.IsType(txRagnarok) {
 		var runeFee sdk.Uint
 		if toi.Coin.Asset.IsRune() {
 			if toi.Coin.Amount.LTE(sdk.NewUint(uint64(transactionFee))) {
