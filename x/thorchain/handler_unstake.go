@@ -172,6 +172,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		InHash:    msg.Tx.ID,
 		ToAddress: stakerUnit.AssetAddress,
 		Coin:      common.NewCoin(msg.Asset, assetAmount),
+		Memo:      memo,
 	}
 	_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 	if err != nil {
