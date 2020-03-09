@@ -543,11 +543,20 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		basisPoints = nth * (MaxUnstakeBasisPoints / 10)
 	}
 
-	// go through all the pooles
+	// go through all the pools
 	pools, err := vm.k.GetPools(ctx)
 	if err != nil {
 		ctx.Logger().Error("can't get pools", "error", err)
 		return err
+	}
+
+	// set all pools to bootstrap mode
+	for _, pool := range pools {
+		pool.Status = PoolBootstrap
+		if err := vm.k.SetPool(ctx, pool); err != nil {
+			ctx.Logger().Error(err.Error())
+			return err
+		}
 	}
 
 	for _, pool := range pools {
@@ -578,11 +587,6 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
 				return fmt.Errorf("fail to unstake address: %s", result.Log)
 			}
-		}
-		pool.Status = PoolBootstrap
-		if err := vm.k.SetPool(ctx, pool); err != nil {
-			ctx.Logger().Error(err.Error())
-			return err
 		}
 	}
 
