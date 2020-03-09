@@ -166,6 +166,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
 
 	}
+	fmt.Printf("---- TxOutItem: %+v\n", toi)
 
 	toi = &TxOutItem{
 		Chain:     msg.Asset.Chain,
@@ -179,6 +180,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 		ctx.Logger().Error("fail to prepare outbound tx", "error", err)
 		return nil, sdk.NewError(DefaultCodespace, CodeFailAddOutboundTx, "fail to prepare outbound tx")
 	}
+	fmt.Printf("---- TxOutItem: %+v\n", toi)
 
 	return res, nil
 }
