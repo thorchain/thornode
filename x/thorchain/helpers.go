@@ -18,7 +18,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 	if err != nil {
 		return fmt.Errorf("fail to marshal refund event: %w", err)
 	}
-	var tois []TxOutItem
+	var refundCoins common.Coins
 	for _, coin := range tx.Tx.Coins {
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
@@ -26,7 +26,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		}
 
 		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
-			toi := TxOutItem{
+			toi := &TxOutItem{
 				Chain:       tx.Tx.Chain,
 				InHash:      tx.Tx.ID,
 				ToAddress:   tx.Tx.FromAddress,
@@ -34,22 +34,18 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 				Coin:        coin,
 				Memo:        NewRefundMemo(tx.Tx.ID).String(),
 			}
-			tois = append(tois, toi)
+
+			success, err := store.TryAddTxOutItem(ctx, toi)
+			if err != nil {
+				return fmt.Errorf("fail to prepare outbund tx: %w", err)
+			}
+			if success {
+				refundCoins = append(refundCoins, coin)
+			}
 		}
 		// Zombie coins are just dropped.
 	}
-	for _, toi := range tois {
-		_, err := store.TryAddTxOutItem(ctx, &toi)
-		if err != nil {
-			/*event.Status = EventFail
-			err := keeper.UpsertEvent(ctx, event)
-			if err != nil {
-				return fmt.Errorf("fail to update refund event: %w", err)
-			}*/
-			return fmt.Errorf("fail to prepare outbund tx: %w", err)
-		}
-	}
-	if len(tois) > 0 {
+	if len(refundCoins) > 0 {
 		// create a new TX based on the coins thorchain refund , some of the coins thorchain doesn't refund
 		// coin thorchain doesn't have pool with , likely airdrop
 		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, tx.Tx.Coins, tx.Tx.Gas, tx.Tx.Memo)
