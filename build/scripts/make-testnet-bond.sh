@@ -19,9 +19,11 @@ export BOND_WALLET=bond-wallet
 # restore faucet wallet only on CI
 ####################################
 if [ ! -z "${CI}" ]; then
-wget https://media.githubusercontent.com/media/binance-chain/node-binary/master/cli/testnet/0.6.2/linux/tbnbcli
+TBNBCLI_VERSION=0.6.2
+wget https://media.githubusercontent.com/media/binance-chain/node-binary/master/cli/testnet/${TBNBCLI_VERSION}/linux/tbnbcli
 chmod +x tbnbcli
 mv tbnbcli /usr/local/bin/.
+export PATH=$PATH:/usr/local/bin
 
 cat <<EOF > ${FAUCET_FILE}
 ${FAUCET_PASSWORD}
@@ -68,17 +70,12 @@ BOND_ADDRESS=$(tbnbcli keys list --output json | jq '.[] | select(.name | contai
 ##############################
 # fund bond wallet from faucet
 ##############################
-if [ ! -z "${FAUCET_PASSWORD}" ]; then
-    echo $FAUCET_PASSWORD | tbnbcli token multi-send \
-                                --from $FAUCET_WALLET \
-                                --chain-id=$CHAIN_ID \
-                                --node=$TENDERMINT_NODE \
-                                --memo=$FUND_MEMO \
-                                --transfers "[{\"to\":\"$BOND_ADDRESS\",\"amount\":\"$BOND_AMOUNT\"}, {\"to\":\"$BOND_ADDRESS\",\"amount\":\"$GAS_FEE:BNB\"}]" --json
-else
-    echo "please export your FAUCET_PASSWORD"
-    exit 1
-fi
+echo $FAUCET_PASSWORD | tbnbcli token multi-send \
+                            --from $FAUCET_WALLET \
+                            --chain-id=$CHAIN_ID \
+                            --node=$TENDERMINT_NODE \
+                            --memo=$FUND_MEMO \
+                            --transfers "[{\"to\":\"$BOND_ADDRESS\",\"amount\":\"$BOND_AMOUNT\"}, {\"to\":\"$BOND_ADDRESS\",\"amount\":\"$GAS_FEE:BNB\"}]" --json
 
 ######################
 # make bond to Asgard

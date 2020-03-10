@@ -89,6 +89,7 @@ smoke-test:thornode:
     - make smoke
   after_script:
     - ./scripts/docker_logs.sh
+    - bash <(curl -s https://codecov.io/bash) -t $CODECOV_TOKEN
 
 deploy:
   #stage: deploy
@@ -106,4 +107,6 @@ deploy:
     - make aws-ci-login
   script:
     - cd $CI_PROJECT_DIR/build/docker
-    - bash aws_testnet.sh ci
+    - export SIGNER_PASSWD=$CI_SIGNER_PASSWD && bash aws_testnet.sh ci
+
+

@@ -73,7 +73,7 @@ start_the_stack () {
     export NET=${THORNODE_ENV}
     export TAG=${THORNODE_ENV}
     eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
-    PEER=$(curl -s http://thorchain.net.s3-website-us-east-1.amazonaws.com/net/)
+    PEER=$(curl -s ${WEBSITE} |tail -n 1 |jq '.'ip | sed -e 's/"//g' -e "s/null//g")
     if [ ! -z "${CI}" ]; then
         export PEER=$PEER && make run-${THORNODE_ENV}-validator-ci
     elif [ ! -z "${NON_CI}" ]; then
@@ -89,18 +89,23 @@ start_the_stack () {
 ##################
 churn () {
     echo "starting churning"
-    export FAUCET_PASSWORD=$FAUCET_PASSWORD && . ./../../scripts/make-testnet-bond.sh
+    if [ ! -z "${CI}" ]; then
+        export SIGNER_PASSWD=${CI_SIGNER_PASSWD}
+    fi
+    export FAUCET_PASSWORD=$FAUCET_PASSWORD && \
+    export BOND_WALLET_PASSWORD=$BOND_WALLET_PASSWORD  && \
+    export SIGNER_PASSWD=$SIGNER_PASSWD && \
+    export SIGNER_NAME=thorchain  && \
+    . ./../../scripts/make-testnet-bond.sh
     #################################################################
     # wait for bond transaction and for node account to be registered
     #################################################################
     eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
-    PUB_KEY=$(docker exec thor-daemon thorcli keys show thorchain --pubkey)
+    export PUB_KEY=$(docker exec thor-daemon thorcli keys show thorchain --pubkey)
     VALIDATOR=$(docker exec thor-daemon thord tendermint show-validator)
-    if [ ! -z "${CI}" ]; then
-        export SIGNER_PASSWD=${CI_SIGNER_PASSWD}
-    fi
     echo "setting node keys"
-    sleep 60 # wait for thorchain to register the new node account
+    sleep 120 # wait for thorchain to register the new node account
+    echo "wait for thorchain to register the new node account"
     docker exec thor-daemon ash -c "echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $PUB_KEY $PUB_KEY $VALIDATOR --node tcp://$PEER:26657 --from $SIGNER_NAME --yes"
 }
 
@@ -122,27 +127,32 @@ verify_the_stack () {
 	    exit 1
     fi
     if [ ! -z "${CHURN}" ]; then
-        echo "starting churning"
         churn
-    else
-        update_ip
     fi
+    update_ip
 }
 
 ################################
 # Register IP on S3 Web Endpoint
 ################################
 update_ip() {
-    echo $IP > /tmp/ip_address
-    sed -e 's/"//g' -e "s/null//g" /tmp/ip_address > /tmp/${S3_FILE}
-    aws s3 cp /tmp/${S3_FILE} s3://${BUCKET_NAME}/net/
+
+DATE=$(date +%F)
+aws s3 cp s3://www.${BUCKET_NAME}/${S3_FILE} /tmp/${S3_FILE}
+cat <<EOF >> /tmp/${S3_FILE}
+{"ip": "${IP}", "date": "${DATE}", "PUB_KEY": "${PUB_KEY}"}
+EOF
+aws s3 cp /tmp/${S3_FILE} s3://www.${BUCKET_NAME}/
+rm -rf /tmp/${S3_FILE}
+
 }
 
 #########
 # START #
 #########
 THORNODE_ENV=testnet
-BUCKET_NAME="thorchain.net"
+BUCKET_NAME="thorchain.info"
+WEBSITE="www.${BUCKET_NAME}"
 S3_FILE="${THORNODE_ENV}.json"
 USER=computer
 DISK_SIZE=100
@@ -161,7 +171,6 @@ fi
 
 export DOCKER_SERVER="${USER}-${THORNODE_ENV}$1"
 if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANCE_TYPE}" ]; then
-    cleanup ${DOCKER_SERVER} 20
     create_server
     start_the_stack 60
     verify_the_stack
