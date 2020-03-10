@@ -559,7 +559,8 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		}
 	}
 
-	for _, pool := range pools {
+	for i := len(pools) - 1; i >= 0; i-- { // iterate backwards
+		pool := pools[i]
 		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
 		if err != nil {
 			ctx.Logger().Error("fail to get pool staker", "error", err)
@@ -567,7 +568,8 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		}
 
 		// everyone withdraw
-		for _, item := range poolStaker.Stakers {
+		for i := len(poolStaker.Stakers) - 1; i >= 0; i-- { // iterate backwards
+			item := poolStaker.Stakers[i]
 			if item.Units.IsZero() {
 				continue
 			}
