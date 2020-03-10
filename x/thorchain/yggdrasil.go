@@ -56,6 +56,10 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	if !ygg.IsYggdrasil() {
 		return fmt.Errorf("this is not a Yggdrasil vault")
 	}
+	if ygg.PendingTxCount > 0 {
+		return fmt.Errorf("cannot send more yggdrasil funds while transactions are pending")
+	}
+
 	targetCoins, err := calcTargetYggCoins(pools, na.Bond, totalBond)
 	if err != nil {
 		return err
@@ -82,7 +86,15 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	}
 
 	if len(sendCoins) > 0 {
-		return sendCoinsToYggdrasil(ctx, keeper, sendCoins, ygg, txOutStore)
+		count, err := sendCoinsToYggdrasil(ctx, keeper, sendCoins, ygg, txOutStore)
+		if err != nil {
+			return err
+		}
+
+		ygg.PendingTxCount += count
+		if err := keeper.SetVault(ctx, ygg); err != nil {
+			return fmt.Errorf("fail to create yggdrasil pool: %w", err)
+		}
 	}
 
 	return nil
@@ -90,11 +102,12 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 
 // sendCoinsToYggdrasil - adds outbound txs to send the given coins to a
 // yggdrasil pool
-func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Vault, txOutStore TxOutStore) error {
+func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Vault, txOutStore TxOutStore) (int64, error) {
+	var count int64
 	for _, coin := range coins {
 		to, err := ygg.PubKey.GetAddress(coin.Asset.Chain)
 		if err != nil {
-			return err
+			return 0, err
 		}
 
 		toi := &TxOutItem{
@@ -105,11 +118,12 @@ func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, yg
 		}
 		_, err = txOutStore.TryAddTxOutItem(ctx, toi)
 		if err != nil {
-			return err
+			return 0, err
 		}
+		count += 1
 	}
 
-	return nil
+	return count, nil
 }
 
 // calcTargetYggCoins - calculate the amount of coins of each pool a yggdrasil

@@ -211,6 +211,19 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	}
 	voter.Actions = append(voter.Actions, *toi)
 	tos.keeper.SetObservedTxVoter(ctx, voter)
+
+	// increment number of pending txs
+	vault, err := tos.keeper.GetVault(ctx, toi.VaultPubKey)
+	if err != nil {
+		return false, fmt.Errorf("fail to get observed tx voter: %w", err)
+	}
+	if vault.IsAsgard() {
+		vault.PendingTxCount += 1
+		if err := tos.keeper.SetVault(ctx, vault); err != nil {
+			return false, fmt.Errorf("fail to save vault: %w", err)
+		}
+	}
+
 	return true, nil
 }
 

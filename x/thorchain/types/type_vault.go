@@ -32,13 +32,16 @@ const (
 
 // Vault usually represent the pool we are using
 type Vault struct {
-	BlockHeight int64          `json:"block_height"`
-	PubKey      common.PubKey  `json:"pub_key"`
-	Coins       common.Coins   `json:"coins"`
-	Type        VaultType      `json:"type"`
-	Status      VaultStatus    `json:"status"`
-	StatusSince int64          `json:"status_since"`
-	Membership  common.PubKeys `json:"membership"`
+	BlockHeight     int64          `json:"block_height"`
+	PubKey          common.PubKey  `json:"pub_key"`
+	Coins           common.Coins   `json:"coins"`
+	Type            VaultType      `json:"type"`
+	Status          VaultStatus    `json:"status"`
+	StatusSince     int64          `json:"status_since"`
+	Membership      common.PubKeys `json:"membership"`
+	InboundTxCount  int64          `json:"inbound_tx_count"`
+	OutboundTxCount int64          `json:"outbound_tx_count"`
+	PendingTxCount  int64          `json:"pending_tx_count"`
 }
 
 type Vaults []Vault
