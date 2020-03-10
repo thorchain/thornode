@@ -1036,6 +1036,10 @@ func sortNodeAccountsByProbabilisticBond(ctx sdk.Context, nas NodeAccounts) (res
 			totalBond = totalBond.Add(na.Bond)
 		}
 
+		if totalBond.IsZero() {
+			return nas
+		}
+
 		// get our randomly chosen number within our total bond
 		idx := rnd.Uint64() % totalBond.Uint64()
 
