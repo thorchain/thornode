@@ -3,6 +3,7 @@ package thorchain
 import (
 	"encoding/json"
 	"fmt"
+	"gitlab.com/thorchain/thornode/constants"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
@@ -19,6 +20,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		return fmt.Errorf("fail to marshal refund event: %w", err)
 	}
 	var refundCoins common.Coins
+	var tois []TxOutItem
 	for _, coin := range tx.Tx.Coins {
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
@@ -41,6 +43,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 			}
 			if success {
 				refundCoins = append(refundCoins, coin)
+				tois = append(tois, *toi)
 			}
 		}
 		// Zombie coins are just dropped.
@@ -51,6 +54,21 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, tx.Tx.Coins, tx.Tx.Gas, tx.Tx.Memo)
 		// save refund event
 		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), newTx, buf, EventPending)
+		var tos TxOutStorageV1
+		for _, outTx := range tois {
+			for _, intTx := range tx.Tx.Coins {
+				if outTx.Coin.Asset.Equals(intTx.Asset) {
+					if outTx.Coin.Asset.IsRune() {
+						event.Fee.Coins = append(event.Fee.Coins, common.NewCoin(outTx.Coin.Asset, intTx.Amount.Sub(outTx.Coin.Amount)))
+					} else {
+						event.Fee.Coins = append(event.Fee.Coins, common.NewCoin(outTx.Coin.Asset, intTx.Amount.Sub(outTx.Coin.Amount)))
+
+						transactionFee := tos.constAccessor.GetInt64Value(constants.TransactionFee)
+						event.Fee.PoolDeduct = sdk.NewUint(uint64(transactionFee))
+					}
+				}
+			}
+		}
 		if err := keeper.UpsertEvent(ctx, event); err != nil {
 			return fmt.Errorf("fail to save refund event: %w", err)
 		}
