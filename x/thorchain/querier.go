@@ -751,12 +751,22 @@ func queryTSSSigners(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		return nil, sdk.ErrInternal("fail to get vault")
 	}
 	signers := vault.Membership
-	if len(accountAddrs) > 0 {
+	threshold, err := GetThreshold(len(vault.Membership))
+	if err != nil {
+		ctx.Logger().Error("fail to get threshold", "error", err)
+		return nil, sdk.ErrInternal("fail to get threshold")
+	}
+	totalObservingAccounts := len(accountAddrs)
+	if totalObservingAccounts > 0 && totalObservingAccounts >= threshold {
 		signers, err = vault.GetMembers(accountAddrs)
 		if err != nil {
 			ctx.Logger().Error("fail to get signers", "error", err)
 			return nil, sdk.ErrInternal("fail to get signers")
 		}
+	}
+	// if we don't have enough signer
+	if len(signers) < threshold {
+		signers = vault.Membership
 	}
 	// if there are 9 nodes in total , it need 6 nodes to sign a message
 	// 3 signer send request to thorchain at block height 100
