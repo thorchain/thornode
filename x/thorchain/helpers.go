@@ -38,6 +38,17 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		}
 		// Zombie coins are just dropped.
 	}
+	for _, toi := range tois {
+		_, err := store.TryAddTxOutItem(ctx, &toi)
+		if err != nil {
+			/*event.Status = EventFail
+			err := keeper.UpsertEvent(ctx, event)
+			if err != nil {
+				return fmt.Errorf("fail to update refund event: %w", err)
+			}*/
+			return fmt.Errorf("fail to prepare outbund tx: %w", err)
+		}
+	}
 	if len(tois) > 0 {
 		// create a new TX based on the coins thorchain refund , some of the coins thorchain doesn't refund
 		// coin thorchain doesn't have pool with , likely airdrop
@@ -47,18 +58,6 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		if err := keeper.UpsertEvent(ctx, event); err != nil {
 			return fmt.Errorf("fail to save refund event: %w", err)
 		}
-
-		/*for _, toi := range tois {
-			_, err := store.TryAddTxOutItem(ctx, &toi)
-			if err != nil {
-				event.Status = EventFail
-				err := keeper.UpsertEvent(ctx, event)
-				if err != nil {
-					return fmt.Errorf("fail to update refund event: %w", err)
-				}
-				return fmt.Errorf("fail to prepare outbund tx: %w", err)
-			}
-		}*/
 		return nil
 	}
 	// event thorchain didn't actually refund anything , still create an event thus front-end ui can keep track of what happened
