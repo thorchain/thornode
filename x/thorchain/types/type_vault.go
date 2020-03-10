@@ -139,15 +139,18 @@ func (v Vault) GetMembers(activeObservers []sdk.AccAddress) (common.PubKeys, err
 // AddFunds add given coins into vault
 func (v *Vault) AddFunds(coins common.Coins) {
 	for _, coin := range coins {
-		if v.HasAsset(coin.Asset) {
-			for i, ycoin := range v.Coins {
-				if coin.Asset.Equals(ycoin.Asset) {
-					v.Coins[i].Amount = ycoin.Amount.Add(coin.Amount)
-				}
+		found := false
+		for i, ycoin := range v.Coins {
+			if coin.Asset.Equals(ycoin.Asset) {
+				v.Coins[i].Amount = ycoin.Amount.Add(coin.Amount)
+				found = true
+				break
 			}
-		} else {
-			v.Coins = append(v.Coins, coin)
 		}
+		if found {
+			continue
+		}
+		v.Coins = append(v.Coins, coin)
 	}
 }
 
