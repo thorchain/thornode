@@ -5,7 +5,7 @@ go 1.13
 require (
 	github.com/binance-chain/go-sdk v1.2.2
 	github.com/binance-chain/ledger-cosmos-go v0.9.9 // indirect
-	github.com/binance-chain/tss-lib v1.1.1
+	github.com/binance-chain/tss-lib v1.3.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcutil v1.0.1
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -40,7 +40,7 @@ require (
 	github.com/tendermint/tendermint v0.32.9
 	github.com/tendermint/tm-db v0.2.0
 	github.com/zondax/ledger-go v0.11.0 // indirect
-	gitlab.com/thorchain/tss/go-tss v0.0.0-20200307032949-28f30f80dd99
+	gitlab.com/thorchain/tss/go-tss v0.0.0-20200308082656-27debac35a59
 	go.uber.org/multierr v1.5.0 // indirect
 	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect

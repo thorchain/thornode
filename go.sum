@@ -16,6 +16,7 @@ github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/
 github.com/Workiva/go-datastructures v1.0.50/go.mod h1:Z+F2Rca0qCsVYDS8z7bAGm8f3UkzuWYS/oBZz5a7VVA=
 github.com/aead/siphash v1.0.1/go.mod h1:Nywa3cDsYNNK3gaciGTWPwHt0wlpNV15vwmswBAUSII=
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=
+github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412/go.mod h1:WPjqKcmVOxf0XSf3YxCJs6N6AOSrOx3obionmG7T0y0=
 github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
@@ -46,8 +47,8 @@ github.com/binance-chain/go-sdk v1.2.2/go.mod h1:M41XCy5ZnKuJwYpUdoz22b4ltULq8aX
 github.com/binance-chain/ledger-cosmos-go v0.9.9-binance.1/go.mod h1:FI6WAujuiBpoSavYreux2zTKyrUkngXDlRJczxsDK5M=
 github.com/binance-chain/ledger-cosmos-go v0.9.9 h1:ZfkgW0jsTRrGJgFoXqwaVIPNEPSO+usOkp8VN2RPEqA=
 github.com/binance-chain/ledger-cosmos-go v0.9.9/go.mod h1:FI6WAujuiBpoSavYreux2zTKyrUkngXDlRJczxsDK5M=
-github.com/binance-chain/tss-lib v1.1.1 h1:WWVVb7GlWuOy2usumPDWuzR0pTPl+t+faGEjk910o1A=
-github.com/binance-chain/tss-lib v1.1.1/go.mod h1:5mmPQOOkBIjHxyGVesSUB2AemcZj5YkMJ+HPZY4Jd38=
+github.com/binance-chain/tss-lib v1.3.0 h1:I3UfAkzC/TP4CqsnCX+MpzHxZavTC6t5r6n49P8pI38=
+github.com/binance-chain/tss-lib v1.3.0/go.mod h1:y85qADlz1+q+Eo01GupDnNt68XJDmb6I/jEwAolIHtQ=
 github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
 github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
 github.com/btcsuite/btcd v0.0.0-20190115013929-ed77733ec07d/go.mod h1:d3C0AkH6BRcvO8T0UEPu53cnw4IbV63x1bEjildYhO0=
@@ -112,6 +113,7 @@ github.com/davecgh/go-spew v0.0.0-20171005155431-ecdeabc65495/go.mod h1:J7Y8YcW2
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/decred/dcrd/dcrec/edwards/v2 v2.0.0/go.mod h1:d0H8xGMWbiIQP7gN3v2rByWUcuZPm9YsgmnfoxgbINc=
 github.com/dgraph-io/badger v1.5.5-0.20190226225317-8115aed38f8f/go.mod h1:VZxzAIRPHRVNRKRo6AXrX9BJegn6il06VMTZVJYCIjQ=
 github.com/dgraph-io/badger v1.6.0-rc1/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
 github.com/dgraph-io/badger v1.6.0/go.mod h1:zwt7syl517jmP8s94KqSxTlM6IMsdhYy6psNgSztDR4=
@@ -767,12 +769,8 @@ github.com/zondax/hid v0.9.0/go.mod h1:l5wttcP0jwtdLjqjMMWFVEE7d1zO0jvSPA9OPZxWp
 github.com/zondax/ledger-go v0.9.0/go.mod h1:b2vIcu3u9gJoIx4kTWuXOgzGV7FPWeUktqRqVf6feG0=
 github.com/zondax/ledger-go v0.11.0 h1:EEqUh6eaZucWAaGo87G7sJiqRNJpzBZr+I9PpGgjjPg=
 github.com/zondax/ledger-go v0.11.0/go.mod h1:NI6JDs8VWwgh+9Bf1vPZMm9Xufp2Q7Iwm2IzxJWzmus=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200305000006-03df275cc299 h1:577aJyQfpDsBxnkcDQBtukEO0GPH0FDCnYfKTtGIP54=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200305000006-03df275cc299/go.mod h1:VRLGWB+svZYuP/ZBArAER7y4SDiGfJ+4w9T3p2ULdTI=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200305030838-37b99a717bda h1:qSaKbjDxOUFVOkgkqj/etj+QMQzaI6cuGOTaEbpPTYE=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200305030838-37b99a717bda/go.mod h1:VRLGWB+svZYuP/ZBArAER7y4SDiGfJ+4w9T3p2ULdTI=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200307032949-28f30f80dd99 h1:T0DbeBOz0r99U2M8SHt2R9KG3X9sEM6gX6zxYkllpE8=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200307032949-28f30f80dd99/go.mod h1:VRLGWB+svZYuP/ZBArAER7y4SDiGfJ+4w9T3p2ULdTI=
+gitlab.com/thorchain/tss/go-tss v0.0.0-20200308082656-27debac35a59 h1:AE/qkDXCnD2EO25aWntgM6o/2o9mEjM6gswapb/gDGs=
+gitlab.com/thorchain/tss/go-tss v0.0.0-20200308082656-27debac35a59/go.mod h1:ezIsYgnT42fXgani/rJvF7yNSbI1yr6RsZD06aC6yJg=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.3 h1:MUGmc65QhB3pIlaQ5bB4LwqSj6GIonVJXpZiaKNyaKk=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
