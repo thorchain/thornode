@@ -26,7 +26,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		}
 
 		if coin.Asset.IsRune() || !pool.BalanceRune.IsZero() {
-			toi := &TxOutItem{
+			toi := TxOutItem{
 				Chain:       tx.Tx.Chain,
 				InHash:      tx.Tx.ID,
 				ToAddress:   tx.Tx.FromAddress,
@@ -34,7 +34,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 				Coin:        coin,
 				Memo:        NewRefundMemo(tx.Tx.ID).String(),
 			}
-			tois = append(tois, *toi)
+			tois = append(tois, toi)
 		}
 		// Zombie coins are just dropped.
 	}
@@ -53,7 +53,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 			if err != nil {
 				event.Status = EventFail
 				err := keeper.UpsertEvent(ctx, event)
-				if err!=nil{
+				if err != nil {
 					return fmt.Errorf("fail to update refund event: %w", err)
 				}
 				return fmt.Errorf("fail to prepare outbund tx: %w", err)
