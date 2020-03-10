@@ -80,6 +80,7 @@ var (
 	NewMsgEndPool                  = types.NewMsgEndPool
 	HasMajority                    = types.HasMajority
 	ChooseSignerParty              = types.ChooseSignerParty
+	GetThreshold                   = types.GetThreshold
 	ModuleCdc                      = types.ModuleCdc
 	RegisterCodec                  = types.RegisterCodec
 	NewNodeAccount                 = types.NewNodeAccount
