@@ -47,8 +47,7 @@ github.com/binance-chain/go-sdk v1.2.2/go.mod h1:M41XCy5ZnKuJwYpUdoz22b4ltULq8aX
 github.com/binance-chain/ledger-cosmos-go v0.9.9-binance.1/go.mod h1:FI6WAujuiBpoSavYreux2zTKyrUkngXDlRJczxsDK5M=
 github.com/binance-chain/ledger-cosmos-go v0.9.9 h1:ZfkgW0jsTRrGJgFoXqwaVIPNEPSO+usOkp8VN2RPEqA=
 github.com/binance-chain/ledger-cosmos-go v0.9.9/go.mod h1:FI6WAujuiBpoSavYreux2zTKyrUkngXDlRJczxsDK5M=
-github.com/binance-chain/tss-lib v1.1.1 h1:WWVVb7GlWuOy2usumPDWuzR0pTPl+t+faGEjk910o1A=
-github.com/binance-chain/tss-lib v1.1.1/go.mod h1:5mmPQOOkBIjHxyGVesSUB2AemcZj5YkMJ+HPZY4Jd38=
+github.com/binance-chain/tss-lib v1.3.0 h1:I3UfAkzC/TP4CqsnCX+MpzHxZavTC6t5r6n49P8pI38=
 github.com/binance-chain/tss-lib v1.3.0/go.mod h1:y85qADlz1+q+Eo01GupDnNt68XJDmb6I/jEwAolIHtQ=
 github.com/blang/semver v3.5.1+incompatible h1:cQNTCjp13qL8KC3Nbxr/y2Bqb63oX6wdnnjpJbkM4JQ=
 github.com/blang/semver v3.5.1+incompatible/go.mod h1:kRBLl5iJ+tD4TcOOxsy/0fnwebNt5EWlYSAyrTnjyyk=
@@ -770,12 +769,6 @@ github.com/zondax/hid v0.9.0/go.mod h1:l5wttcP0jwtdLjqjMMWFVEE7d1zO0jvSPA9OPZxWp
 github.com/zondax/ledger-go v0.9.0/go.mod h1:b2vIcu3u9gJoIx4kTWuXOgzGV7FPWeUktqRqVf6feG0=
 github.com/zondax/ledger-go v0.11.0 h1:EEqUh6eaZucWAaGo87G7sJiqRNJpzBZr+I9PpGgjjPg=
 github.com/zondax/ledger-go v0.11.0/go.mod h1:NI6JDs8VWwgh+9Bf1vPZMm9Xufp2Q7Iwm2IzxJWzmus=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200305000006-03df275cc299 h1:577aJyQfpDsBxnkcDQBtukEO0GPH0FDCnYfKTtGIP54=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200305000006-03df275cc299/go.mod h1:VRLGWB+svZYuP/ZBArAER7y4SDiGfJ+4w9T3p2ULdTI=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200305030838-37b99a717bda h1:qSaKbjDxOUFVOkgkqj/etj+QMQzaI6cuGOTaEbpPTYE=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200305030838-37b99a717bda/go.mod h1:VRLGWB+svZYuP/ZBArAER7y4SDiGfJ+4w9T3p2ULdTI=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200307032949-28f30f80dd99 h1:T0DbeBOz0r99U2M8SHt2R9KG3X9sEM6gX6zxYkllpE8=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200307032949-28f30f80dd99/go.mod h1:VRLGWB+svZYuP/ZBArAER7y4SDiGfJ+4w9T3p2ULdTI=
 gitlab.com/thorchain/tss/go-tss v0.0.0-20200308082656-27debac35a59 h1:AE/qkDXCnD2EO25aWntgM6o/2o9mEjM6gswapb/gDGs=
 gitlab.com/thorchain/tss/go-tss v0.0.0-20200308082656-27debac35a59/go.mod h1:ezIsYgnT42fXgani/rJvF7yNSbI1yr6RsZD06aC6yJg=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
