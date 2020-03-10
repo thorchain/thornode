@@ -48,7 +48,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 			return fmt.Errorf("fail to save refund event: %w", err)
 		}
 
-		for _, toi := range tois {
+		/*for _, toi := range tois {
 			_, err := store.TryAddTxOutItem(ctx, &toi)
 			if err != nil {
 				event.Status = EventFail
@@ -58,7 +58,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 				}
 				return fmt.Errorf("fail to prepare outbund tx: %w", err)
 			}
-		}
+		}*/
 		return nil
 	}
 	// event thorchain didn't actually refund anything , still create an event thus front-end ui can keep track of what happened
