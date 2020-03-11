@@ -299,6 +299,7 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 	}
 	return keeper.UpsertEvent(ctx, event)
 }
+
 func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common.Fee) error {
 	ctx.Logger().Info("update event fee txid(%s)", txID.String())
 	eventIDs, err := keeper.GetEventsIDByTxHash(ctx, txID)
@@ -323,6 +324,7 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 	event.Fee.PoolDeduct = event.Fee.PoolDeduct.Add(fee.PoolDeduct)
 	return keeper.UpsertEvent(ctx, event)
 }
+
 func completeEvents(ctx sdk.Context, keeper Keeper, txID common.TxID, txs common.Txs, eventStatus EventStatus) error {
 	ctx.Logger().Info(fmt.Sprintf("txid(%s)", txID))
 	eventIDs, err := keeper.GetPendingEventID(ctx, txID)
