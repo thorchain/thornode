@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/x/thorchain/types"
 
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -89,9 +90,29 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 				return sdk.ErrInternal("fail to slash account").Result()
 			}
 		}
-		if err := h.keeper.SetTxOut(ctx, txOut); err != nil {
-			ctx.Logger().Error("fail to save tx out", "error", err)
-			return sdk.ErrInternal("fail to save tx out").Result()
+		eventIds, err := h.keeper.GetEventsIDByTxHash(ctx, inTxID)
+		if err != nil {
+			ctx.Logger().Error("fail to get events", "error", err)
+			return sdk.ErrInternal("fail to get events").Result()
+		}
+
+		ignore := false
+		for _, eventId := range eventIds {
+			event, err := h.keeper.GetEvent(ctx, eventId)
+			if err != nil {
+				ctx.Logger().Error("fail to get event", "error", err)
+				return sdk.ErrInternal("fail to get event").Result()
+			}
+			if event.Type == types.RefundEventType || event.Type == types.BondEventType {
+				ignore = true
+			}
+		}
+
+		if !ignore {
+			if err := h.keeper.SetTxOut(ctx, txOut); err != nil {
+				ctx.Logger().Error("fail to save tx out", "error", err)
+				return sdk.ErrInternal("fail to save tx out").Result()
+			}
 		}
 	}
 	h.keeper.SetLastSignedHeight(ctx, voter.Height)
