@@ -108,7 +108,7 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 			}
 		}
 
-		if !ignore {
+		if false && !ignore {
 			if err := h.keeper.SetTxOut(ctx, txOut); err != nil {
 				ctx.Logger().Error("fail to save tx out", "error", err)
 				return sdk.ErrInternal("fail to save tx out").Result()
