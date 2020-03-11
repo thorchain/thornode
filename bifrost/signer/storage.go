@@ -66,6 +66,7 @@ type SignerStorage interface {
 	Has(key string) bool
 	Remove(item TxOutStoreItem) error
 	List() []TxOutStoreItem
+	OrderedLists() map[string][]TxOutStoreItem
 	Close() error
 }
 
@@ -218,6 +219,19 @@ func (s *SignerStore) List() []TxOutStoreItem {
 	sort.SliceStable(results, func(i, j int) bool { return results[i].TxOutItem.Hash() < results[j].TxOutItem.Hash() })
 	sort.SliceStable(results, func(i, j int) bool { return results[i].Height < results[j].Height })
 	return results
+}
+
+// OrderedLists
+func (s *SignerStore) OrderedLists() map[string][]TxOutStoreItem {
+	lists := make(map[string][]TxOutStoreItem, 0)
+	for _, item := range s.List() {
+		key := fmt.Sprintf("%s-%s", item.TxOutItem.Chain.String(), item.TxOutItem.VaultPubKey.String())
+		if _, ok := lists[key]; !ok {
+			lists[key] = make([]TxOutStoreItem, 0)
+		}
+		lists[key] = append(lists[key], item)
+	}
+	return lists
 }
 
 // Close underlying db

@@ -180,27 +180,35 @@ func (s *Signer) signTransactions() {
 }
 
 func (s *Signer) processTransactions() {
-	for _, item := range s.storage.List() {
-		select {
-		case <-s.stopChan:
-			return
-		default:
-			if item.Status == TxSpent { // don't rebroadcast spent transactions
-				continue
-			}
+	ordered := s.storage.OrderedLists()
+	wg := &sync.WaitGroup{}
+	wg.Add(len(ordered))
+	for _, items := range s.storage.OrderedLists() {
+		go func(items []TxOutStoreItem) {
+			defer wg.Done()
+			for _, item := range items {
+				select {
+				case <-s.stopChan:
+					return
+				default:
+					if item.Status == TxSpent { // don't rebroadcast spent transactions
+						continue
+					}
 
-			s.logger.Info().Msgf("Signing transaction (Height: %d | Status: %d): %+v", item.Height, item.Status, item.TxOutItem)
-			if err := s.signAndBroadcast(item); err != nil {
-				s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
-				continue
-			}
+					s.logger.Info().Msgf("Signing transaction (Height: %d | Status: %d): %+v", item.Height, item.Status, item.TxOutItem)
+					if err := s.signAndBroadcast(item); err != nil {
+						s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
+						continue
+					}
 
-			// We have a successful broadcast! Remove the item from our store
-			item.Status = TxSpent
-			if err := s.storage.Set(item); err != nil {
-				s.logger.Error().Err(err).Msg("fail to update tx out store item")
+					// We have a successful broadcast! Remove the item from our store
+					item.Status = TxSpent
+					if err := s.storage.Set(item); err != nil {
+						s.logger.Error().Err(err).Msg("fail to update tx out store item")
+					}
+				}
 			}
-		}
+		}(items)
 	}
 }
 
