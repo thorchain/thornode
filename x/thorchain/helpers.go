@@ -50,7 +50,10 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 			_, err := store.TryAddTxOutItem(ctx, &toi)
 			if err != nil {
 				event.Status = EventFail
-				keeper.UpsertEvent(ctx, event)
+				err1 := keeper.UpsertEvent(ctx, event)
+				if err1 != nil {
+					return fmt.Errorf("fail to save event: %w", err1)
+				}
 				return fmt.Errorf("fail to prepare outbund tx: %w", err)
 			}
 		}
