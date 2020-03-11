@@ -19,7 +19,15 @@ func (k KVStore) AppendTxOut(ctx sdk.Context, height int64, item *TxOutItem) err
 	if err != nil {
 		return err
 	}
-	block.TxArray = append(block.TxArray, item)
+	ignore := false
+	for _, tx := range block.TxArray {
+		if tx.Equals(*item) {
+			ignore = true
+		}
+	}
+	if !ignore {
+		block.TxArray = append(block.TxArray, item)
+	}
 	return k.SetTxOut(ctx, block)
 }
 

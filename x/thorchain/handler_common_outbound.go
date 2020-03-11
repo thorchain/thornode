@@ -3,7 +3,6 @@ package thorchain
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
 
 // CommonOutboundTxHandler is the place where those common logic can be shared between multiple different kind of outbound tx handler
@@ -89,34 +88,10 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 				return sdk.ErrInternal("fail to slash account").Result()
 			}
 		}
-		ignore := false
-		eventIDs, err := h.keeper.GetEventsIDByTxHash(ctx, tx.Tx.ID)
-		if err == nil && eventIDs != nil && len(eventIDs) > 0 {
-			for _, eventId := range eventIDs {
-				event, err := h.keeper.GetEvent(ctx, eventId)
-				if err == nil {
-					if event.Type == types.RefundEventType || event.Type == types.BondEventType {
-						ignore = true
-					}
-				}
-			}
-		}
-		eventIDs, err = h.keeper.GetEventsIDByTxHash(ctx, inTxID)
-		if err == nil && eventIDs != nil && len(eventIDs) > 0 {
-			for _, eventId := range eventIDs {
-				event, err := h.keeper.GetEvent(ctx, eventId)
-				if err == nil {
-					if event.Type == types.RefundEventType || event.Type == types.BondEventType {
-						ignore = true
-					}
-				}
-			}
-		}
-		if !ignore {
-			if err := h.keeper.SetTxOut(ctx, txOut); err != nil {
-				ctx.Logger().Error("fail to save tx out", "error", err)
-				return sdk.ErrInternal("fail to save tx out").Result()
-			}
+
+		if err := h.keeper.SetTxOut(ctx, txOut); err != nil {
+			ctx.Logger().Error("fail to save tx out", "error", err)
+			return sdk.ErrInternal("fail to save tx out").Result()
 		}
 	}
 	h.keeper.SetLastSignedHeight(ctx, voter.Height)
