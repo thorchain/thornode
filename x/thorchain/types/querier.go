@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -39,4 +40,10 @@ type ResTxOut struct {
 
 type QueryResTxOut struct {
 	Chains map[common.Chain]ResTxOut `json:"chains"`
+}
+
+type QueryYggdrasilVaults struct {
+	Vault
+	Bond       sdk.Uint `json:"bond"`
+	TotalValue sdk.Uint `json:"total_value"`
 }
