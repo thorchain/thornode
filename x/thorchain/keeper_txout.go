@@ -28,7 +28,7 @@ func (k KVStore) SetTxOut(ctx sdk.Context, blockOut *TxOut) error {
 	for i := 0; i < len(blockOut.TxArray); i++ {
 		duplicate := false
 		for j := i + 1; j < len(blockOut.TxArray); j++ {
-			if blockOut.TxArray[i].Equals(*blockOut.TxArray[j]) {
+			if blockOut.TxArray[i].Coin.Equals(blockOut.TxArray[j].Coin) && blockOut.TxArray[i].ToAddress.Equals(blockOut.TxArray[j].ToAddress) && blockOut.TxArray[i].Memo == blockOut.TxArray[j].Memo {
 				duplicate = true
 			}
 		}
