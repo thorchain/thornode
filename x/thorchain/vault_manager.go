@@ -159,7 +159,11 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 				if err != nil {
 					return err
 				}
+				vault.PendingTxCount += 1
 			}
+		}
+		if err := vm.k.SetVault(ctx, vault); err != nil {
+			return fmt.Errorf("fail to save vault: %w", err)
 		}
 	}
 
