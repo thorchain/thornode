@@ -56,8 +56,25 @@ func (h RefundHandler) validateV1(ctx sdk.Context, version semver.Version, msg M
 }
 
 func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.Version) sdk.Result {
-	inTxID:=msg.InTxID
-	tx:=msg.Tx
+	inTxID := msg.InTxID
+	tx := msg.Tx
+	evetIDs, err := h.keeper.GetEventsIDByTxHash(ctx, msg.Tx.Tx.ID)
+	if err != nil {
+		ctx.Logger().Error(err.Error())
+		return sdk.ErrInternal("fail to get observed tx voter").Result()
+	}
+	if len(evetIDs) > 0 {
+		event, err := h.keeper.GetEvent(ctx, evetIDs[0])
+		if err != nil {
+			ctx.Logger().Error(err.Error())
+			return sdk.ErrInternal("fail to get observed tx voter").Result()
+		}
+		if len(event.OutTxs) == 0 {
+			return h.ch.handle(ctx, msg.Tx, msg.InTxID, EventRefund)
+		}
+	} else {
+		return h.ch.handle(ctx, msg.Tx, msg.InTxID, EventRefund)
+	}
 	voter, err := h.keeper.GetObservedTxVoter(ctx, inTxID)
 	if err != nil {
 		ctx.Logger().Error(err.Error())
@@ -80,7 +97,6 @@ func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.V
 			Codespace: DefaultCodespace,
 		}
 	}
-
 
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := h.keeper.GetTxOut(ctx, voter.Height)
