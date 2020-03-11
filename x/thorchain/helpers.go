@@ -288,7 +288,18 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 	}
 
 	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
-	event.OutTxs = append(event.OutTxs, txs...)
+	outTxs := append(event.OutTxs, txs...)
+	for i := 0; i < len(outTxs); i++ {
+		duplicate := false
+		for j := i + 1; j < len(outTxs); j++ {
+			if outTxs[i].Equals(outTxs[j]) {
+				duplicate = true
+			}
+		}
+		if !duplicate {
+			event.OutTxs = append(event.OutTxs, outTxs[i])
+		}
+	}
 	if eventStatus == EventRefund {
 		// we need to check we refunded all the coins that need to be refunded from in tx
 		// before updating status to complete, we use the count of voter actions to check
