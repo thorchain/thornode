@@ -60,8 +60,7 @@ func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.V
 	tx := msg.Tx
 	evetIDs, err := h.keeper.GetEventsIDByTxHash(ctx, msg.Tx.Tx.ID)
 	if err != nil {
-		ctx.Logger().Error(err.Error())
-		return sdk.ErrInternal("fail to get observed tx voter").Result()
+		return h.ch.handle(ctx, msg.Tx, msg.InTxID, EventRefund)
 	}
 	if len(evetIDs) > 0 {
 		event, err := h.keeper.GetEvent(ctx, evetIDs[0])
