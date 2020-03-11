@@ -69,7 +69,7 @@ func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.V
 			ctx.Logger().Error(err.Error())
 			return sdk.ErrInternal("fail to get observed tx voter").Result()
 		}
-		if len(event.OutTxs) == 0 {
+		if len(event.OutTxs) == 0 || len(event.Fee.Coins)==0 {
 			return h.ch.handle(ctx, msg.Tx, msg.InTxID, EventRefund)
 		}
 	} else {
