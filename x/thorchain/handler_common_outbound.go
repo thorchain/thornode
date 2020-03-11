@@ -2,8 +2,6 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/x/thorchain/types"
-
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -90,43 +88,6 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 				return sdk.ErrInternal("fail to slash account").Result()
 			}
 		}
-		/*eventIds, err := h.keeper.GetEventsIDByTxHash(ctx, inTxID)
-		if err != nil {
-			ctx.Logger().Error("fail to get events", "error", err)
-			return sdk.ErrInternal("fail to get events").Result()
-		}*/
-
-		var outArray []*TxOutItem
-		for i := 0; i < len(txOut.TxArray); i++ {
-			eventIds, err := h.keeper.GetEventsIDByTxHash(ctx, txOut.TxArray[i].InHash)
-			if err != nil {
-				ctx.Logger().Error("fail to get events", "error", err)
-				return sdk.ErrInternal("fail to get events").Result()
-			}
-			if len(eventIds) > 0 {
-				event, err := h.keeper.GetEvent(ctx, eventIds[0])
-				if err != nil {
-					ctx.Logger().Error("fail to get event", "error", err)
-					return sdk.ErrInternal("fail to get event").Result()
-				}
-				if event.Type != types.RefundEventType && event.Type != types.BondEventType {
-					outArray = append(outArray, txOut.TxArray[i])
-				}
-			}
-		}
-		txOut.TxArray = outArray
-		/*txOut.TxArray = outArray
-		for _, eventId := range eventIds {
-			event, err := h.keeper.GetEvent(ctx, eventId)
-			if err != nil {
-				ctx.Logger().Error("fail to get event", "error", err)
-				return sdk.ErrInternal("fail to get event").Result()
-			}
-			if event.Type == types.RefundEventType || event.Type == types.BondEventType {
-				ignore = true
-			}
-		}*/
-
 		if err := h.keeper.SetTxOut(ctx, txOut); err != nil {
 			ctx.Logger().Error("fail to save tx out", "error", err)
 			return sdk.ErrInternal("fail to save tx out").Result()
@@ -139,3 +100,4 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 		Codespace: DefaultCodespace,
 	}
 }
+
