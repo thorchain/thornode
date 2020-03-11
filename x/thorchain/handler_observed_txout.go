@@ -143,7 +143,8 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		}
 		vault.SubFunds(tx.Tx.Coins)
 		vault.OutboundTxCount += 1
-		if vault.IsAsgard() {
+		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
+		if vault.IsAsgard() && memo.IsType(txMigrate) {
 			vault.PendingTxCount -= 1
 			if vault.PendingTxCount < 0 {
 				vault.PendingTxCount = 0

@@ -177,7 +177,8 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		}
 		vault.AddFunds(tx.Tx.Coins)
 		vault.InboundTxCount += 1
-		if vault.IsYggdrasil() {
+		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
+		if vault.IsYggdrasil() && memo.IsType(txYggdrasilFund) {
 			vault.PendingTxCount -= 1
 			if vault.PendingTxCount < 0 {
 				vault.PendingTxCount = 0
