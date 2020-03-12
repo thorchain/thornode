@@ -124,6 +124,7 @@ func queryYggdrasilVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 			ctx.Logger().Error("fail to get vault", "error", err)
 			continue
 		}
+		fmt.Printf(">>>> Vault: %+v\n", vault)
 		if vault.IsYggdrasil() && vault.HasFunds() {
 			vaults = append(vaults, vault)
 		}

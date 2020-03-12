@@ -101,13 +101,14 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 			continue
 		}
 
-		if vault.PendingTxCount > 0 {
-			ctx.Logger().Info("Skipping the migration of funds while transactions are still pending")
-			continue
-		}
-
 		// move partial funds every 30 minutes
 		if (ctx.BlockHeight()-vault.StatusSince)%migrateInterval == 0 {
+
+			if vault.PendingTxCount > 0 {
+				ctx.Logger().Info("Skipping the migration of funds while transactions are still pending")
+				continue
+			}
+
 			for _, coin := range vault.Coins {
 
 				// determine which active asgard vault is the best to send
