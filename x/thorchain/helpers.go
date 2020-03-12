@@ -202,6 +202,15 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 			return fmt.Errorf("unable to determine asgard vault to send funds")
 		}
 
+		bondEvent := NewEventBond(nodeAcc.Bond, BondReturned)
+		buf, err := json.Marshal(bondEvent)
+		if err != nil {
+			return fmt.Errorf("fail to marshal bond event: %w", err)
+		}
+		e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending)
+		if err := keeper.UpsertEvent(ctx, e); err != nil {
+			return fmt.Errorf("fail to save bond return event: %w", err)
+		}
 		// refund bond
 		txOutItem := &TxOutItem{
 			Chain:       common.BNBChain,
@@ -213,16 +222,6 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 		_, err = txOut.TryAddTxOutItem(ctx, txOutItem)
 		if err != nil {
 			return fmt.Errorf("fail to add outbound tx: %w", err)
-		}
-		bondEvent := NewEventBond(nodeAcc.Bond, BondReturned)
-		buf, err := json.Marshal(bondEvent)
-		if err != nil {
-			return fmt.Errorf("fail to marshal bond event: %w", err)
-		}
-		e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending)
-		e.Fee = getFee(tx.Coins, common.Coins{txOutItem.Coin})
-		if err := keeper.UpsertEvent(ctx, e); err != nil {
-			return fmt.Errorf("fail to save bond return event: %w", err)
 		}
 	} else {
 		// if it get into here that means the node account doesn't have any bond left after slash.
