@@ -180,17 +180,11 @@ func (s *Signer) signTransactions() {
 }
 
 func (s *Signer) processTransactions() {
-	fmt.Println("---- Process Transactions")
-	defer fmt.Println("---- Done.")
 	wg := &sync.WaitGroup{}
 	for key, items := range s.storage.OrderedLists() {
-		fmt.Printf(">>>> Ordered List: %s (%d)\n", key, len(items))
 		wg.Add(1)
 		go func(items []TxOutStoreItem) {
 			defer wg.Done()
-			for i, item := range items {
-				fmt.Printf("Item (%d): %s\n", i, item.TxOutItem.Memo)
-			}
 			for i, item := range items {
 				select {
 				case <-s.stopChan:

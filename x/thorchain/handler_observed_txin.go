@@ -172,13 +172,11 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		vault.AddFunds(tx.Tx.Coins)
 		vault.InboundTxCount += 1
 		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
-		fmt.Printf("<<<< FOO: %s %s %v %v\n", memo.String(), memo.GetType(), memo.IsType(txYggdrasilFund), vault.IsYggdrasil())
 		if vault.IsYggdrasil() && memo.IsType(txYggdrasilFund) {
 			vault.PendingTxCount -= 1
 			if vault.PendingTxCount < 0 {
 				vault.PendingTxCount = 0
 			}
-			fmt.Printf("<<<<< Minus Ygg Pending: %s (%d)", vault.PubKey, vault.PendingTxCount)
 		}
 		if err := h.keeper.SetVault(ctx, vault); err != nil {
 			ctx.Logger().Error("fail to save vault", "error", err)
