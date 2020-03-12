@@ -167,14 +167,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			ctx.Logger().Error("fail to get vault", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
-		if !vault.IsAsgard() {
-			ctx.Logger().Error("Vault is not an Asgard vault, transaction ignored.")
-			continue
-		}
-		if vault.Status == InactiveVault {
-			ctx.Logger().Error("Vault is inactive, transaction ignored.")
-			continue
-		}
+
 		vault.AddFunds(tx.Tx.Coins)
 		vault.InboundTxCount += 1
 		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
@@ -188,6 +181,16 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			ctx.Logger().Error("fail to save vault", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
+
+		if !vault.IsAsgard() {
+			ctx.Logger().Error("Vault is not an Asgard vault, transaction ignored.")
+			continue
+		}
+		if vault.Status == InactiveVault {
+			ctx.Logger().Error("Vault is inactive, transaction ignored.")
+			continue
+		}
+
 		// tx is not observed at current vault - refund
 		// yggdrasil pool is ok
 		if ok := isCurrentVaultPubKey(ctx, h.keeper, tx); !ok {
