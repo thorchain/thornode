@@ -8,21 +8,23 @@ import (
 
 // MsgYggdrasil defines a MsgYggdrasil message
 type MsgYggdrasil struct {
-	Tx       common.Tx      `json:"tx"`
-	PubKey   common.PubKey  `json:"pub_key"`
-	AddFunds bool           `json:"add_funds"`
-	Coins    common.Coins   `json:"coins"`
-	Signer   sdk.AccAddress `json:"signer"`
+	Tx          common.Tx      `json:"tx"`
+	PubKey      common.PubKey  `json:"pub_key"`
+	AddFunds    bool           `json:"add_funds"`
+	Coins       common.Coins   `json:"coins"`
+	BlockHeight int64          `json:"block_height"`
+	Signer      sdk.AccAddress `json:"signer"`
 }
 
 // NewMsgYggdrasil is a constructor function for MsgYggdrasil
-func NewMsgYggdrasil(tx common.Tx, pk common.PubKey, addFunds bool, coins common.Coins, signer sdk.AccAddress) MsgYggdrasil {
+func NewMsgYggdrasil(tx common.Tx, pk common.PubKey, blockHeight int64, addFunds bool, coins common.Coins, signer sdk.AccAddress) MsgYggdrasil {
 	return MsgYggdrasil{
-		Tx:       tx,
-		PubKey:   pk,
-		AddFunds: addFunds,
-		Coins:    coins,
-		Signer:   signer,
+		Tx:          tx,
+		PubKey:      pk,
+		AddFunds:    addFunds,
+		Coins:       coins,
+		BlockHeight: blockHeight,
+		Signer:      signer,
 	}
 }
 
@@ -37,6 +39,9 @@ func (msg MsgYggdrasil) ValidateBasic() sdk.Error {
 	}
 	if msg.PubKey.IsEmpty() {
 		return sdk.ErrUnknownRequest("pubkey cannot be empty")
+	}
+	if msg.BlockHeight <= 0 {
+		return sdk.ErrUnknownRequest("invalid block height")
 	}
 	if msg.Tx.IsEmpty() {
 		return sdk.ErrUnknownRequest("request tx cannot be empty")

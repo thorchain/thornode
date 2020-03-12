@@ -336,7 +336,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(items, HasLen, bonderCount)
 	for _, item := range items {
-		c.Assert(item.Memo, Equals, "yggdrasil-")
+		c.Assert(item.Memo, Equals, NewYggdrasilReturn(ctx.BlockHeight()).String())
 	}
 
 	// we'll assume the signer does it's job and sends the yggdrasil funds back
