@@ -39,7 +39,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 				return fmt.Errorf("fail to prepare outbund tx: %w", err)
 			}
 			if success {
-				refundCoins = append(refundCoins, coin)
+				refundCoins = append(refundCoins, toi.Coin)
 			}
 		}
 		// Zombie coins are just dropped.
