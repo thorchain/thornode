@@ -210,6 +210,7 @@ func (s *Signer) processTransactions() {
 			}
 		}(items)
 	}
+	wg.Wait()
 }
 
 // processTxnOut processes inbound TxOuts and save them to storage
