@@ -7,7 +7,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
-	"gitlab.com/thorchain/thornode/constants"
 )
 
 func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, refundCode sdk.CodeType, refundReason string) error {
@@ -51,7 +50,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, tx.Tx.Coins, tx.Tx.Gas, tx.Tx.Memo)
 		// save refund event
 		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), newTx, buf, EventPending)
-		event.Fee = getFee(ctx, tx.Tx.Coins, refundCoins)
+		event.Fee = getFee(tx.Tx.Coins, refundCoins)
 		if err := keeper.UpsertEvent(ctx, event); err != nil {
 			return fmt.Errorf("fail to save refund event: %w", err)
 		}
@@ -66,7 +65,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 
 	return nil
 }
-func getFee(ctx sdk.Context, input, output common.Coins) common.Fee {
+func getFee(input, output common.Coins) common.Fee {
 	var fee common.Fee
 	assetTxCount := 0
 	for _, out := range output {
@@ -79,8 +78,7 @@ func getFee(ctx sdk.Context, input, output common.Coins) common.Fee {
 			}
 		}
 	}
-	var tos TxOutStorageV1
-	fee.PoolDeduct = sdk.NewUint(uint64(tos.constAccessor.GetInt64Value(constants.TransactionFee)) * uint64(assetTxCount))
+	fee.PoolDeduct = sdk.NewUint( 1e+8 * uint64(assetTxCount))
 	return fee
 }
 
