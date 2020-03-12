@@ -1,8 +1,9 @@
 package thorchain
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"strconv"
+
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type KeeperTxOut interface {
@@ -24,19 +25,6 @@ func (k KVStore) AppendTxOut(ctx sdk.Context, height int64, item *TxOutItem) err
 
 // SetTxOut - write the given txout information to key values tore
 func (k KVStore) SetTxOut(ctx sdk.Context, blockOut *TxOut) error {
-	var txOut []*TxOutItem
-	for i := 0; i < len(blockOut.TxArray); i++ {
-		duplicate := false
-		for j := i + 1; j < len(blockOut.TxArray); j++ {
-			if blockOut.TxArray[i].Coin.Equals(blockOut.TxArray[j].Coin) && blockOut.TxArray[i].ToAddress.Equals(blockOut.TxArray[j].ToAddress) && blockOut.TxArray[i].Memo == blockOut.TxArray[j].Memo {
-				duplicate = true
-			}
-		}
-		if !duplicate {
-			txOut = append(txOut, blockOut.TxArray[i])
-		}
-	}
-	blockOut.TxArray = txOut
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixTxOut, strconv.FormatInt(blockOut.Height, 10))
 	buf, err := k.cdc.MarshalBinaryBare(blockOut)
