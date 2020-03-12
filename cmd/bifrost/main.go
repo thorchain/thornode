@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -125,16 +124,20 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("fail to create tss instance")
 	}
-	tssIns.ConfigureHttpServers(cfg.TSS.TSSAddress, cfg.TSS.InfoAddress)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+
 	go func() {
 		defer log.Info().Msg("tss instance exit")
-		if err := tssIns.Start(ctx); err != nil {
+		if err := tssIns.Start(); err != nil {
 			log.Err(err).Msg("fail to start tss instance")
 		}
 	}()
-
+	healthServer := NewHealthServer(cfg.TSS.InfoAddress, tssIns)
+	go func() {
+		defer log.Info().Msg("health server exit")
+		if err := healthServer.Start(); err != nil {
+			log.Error().Err(err).Msg("fail to start health server")
+		}
+	}()
 	if len(cfg.Chains) == 0 {
 		log.Fatal().Err(err).Msg("missing chains")
 		return
@@ -175,7 +178,12 @@ func main() {
 	if err := sign.Stop(); err != nil {
 		log.Fatal().Err(err).Msg("fail to stop signer")
 	}
-	cancel()
+
+	// stop go tss
+	tssIns.Stop()
+	if err := healthServer.Stop(); err != nil {
+		log.Fatal().Err(err).Msg("fail to stop health server")
+	}
 }
 
 func initPrefix() {

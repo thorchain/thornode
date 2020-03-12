@@ -171,7 +171,6 @@ func (k KVStore) GetAllPendingEvents(ctx sdk.Context) (Events, error) {
 			evt, err := k.GetEvent(ctx, eventID)
 			if err != nil {
 				return nil, fmt.Errorf("fail to get event: %w", err)
-
 			}
 			events = append(events, evt)
 		}
