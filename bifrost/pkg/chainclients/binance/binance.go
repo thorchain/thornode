@@ -359,7 +359,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		Sequence:      meta.SeqNumber,
 		AccountNumber: meta.AccountNumber,
 	}
-	rawBz, err := b.signWithRetry(signMsg, fromAddr, tx.VaultPubKey, height, tx)
+	rawBz, err := b.signMsg(signMsg, fromAddr, tx.VaultPubKey, height, tx)
 	if err != nil {
 		return nil, fmt.Errorf("fail to sign message: %w", err)
 	}
@@ -384,34 +384,13 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey, signerP
 	return k.SignWithPool(signMsg, poolPubKey, signerPubKeys)
 }
 
-// signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
-func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, txOutItem stypes.TxOutItem) ([]byte, error) {
+// signMsg is design to sign a given message until it success or the same message had been send out by other signer
+func (b *Binance) signMsg(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, txOutItem stypes.TxOutItem) ([]byte, error) {
 	keySignParty, err := b.thorchainBridge.GetKeysignParty(poolPubKey)
 	if err != nil {
 		b.logger.Error().Err(err).Msg("fail to get keysign party")
 		return nil, err
 	}
-
-	// We get the keysign object from thorchain again to ensure it hasn't
-	// been signed already, and we can skip. This helps us not get stuck on
-	// a task that we'll never sign, because 2/3rds already has and will
-	// never be available to sign again.
-	txOut, err := b.thorchainBridge.GetKeysign(height, poolPubKey.String())
-	if err != nil {
-		b.logger.Error().Err(err).Msg("fail to get keysign items")
-		return nil, err
-	}
-	for _, out := range txOut.Chains {
-		for _, tx := range out.TxArray {
-			item := tx.TxOutItem()
-			if txOutItem.Equals(item) && !tx.OutHash.IsEmpty() {
-				// already been signed, we can skip it
-				b.logger.Info().Str("tx_id", tx.OutHash.String()).Msgf("already signed. skipping...")
-				return nil, nil
-			}
-		}
-	}
-
 	rawBytes, err := b.sign(signMsg, poolPubKey, keySignParty)
 	if err == nil && rawBytes != nil {
 		return rawBytes, nil
