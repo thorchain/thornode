@@ -3,9 +3,11 @@ package thorchain
 import (
 	"encoding/json"
 	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, refundCode sdk.CodeType, refundReason string) error {
@@ -16,7 +18,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 	if err != nil {
 		return fmt.Errorf("fail to marshal refund event: %w", err)
 	}
-	var tois []TxOutItem
+	var refundCoins common.Coins
 	for _, coin := range tx.Tx.Coins {
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
@@ -32,30 +34,26 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 				Coin:        coin,
 				Memo:        NewRefundMemo(tx.Tx.ID).String(),
 			}
-			tois = append(tois, *toi)
+
+			success, err := store.TryAddTxOutItem(ctx, toi)
+			if err != nil {
+				return fmt.Errorf("fail to prepare outbund tx: %w", err)
+			}
+			if success {
+				refundCoins = append(refundCoins, coin)
+			}
 		}
 		// Zombie coins are just dropped.
 	}
-	if len(tois) > 0 {
+	if len(refundCoins) > 0 {
 		// create a new TX based on the coins thorchain refund , some of the coins thorchain doesn't refund
 		// coin thorchain doesn't have pool with , likely airdrop
 		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, tx.Tx.Coins, tx.Tx.Gas, tx.Tx.Memo)
 		// save refund event
 		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), newTx, buf, EventPending)
+		event.Fee = getFee(ctx, tx.Tx.Coins, refundCoins)
 		if err := keeper.UpsertEvent(ctx, event); err != nil {
 			return fmt.Errorf("fail to save refund event: %w", err)
-		}
-
-		for _, toi := range tois {
-			_, err := store.TryAddTxOutItem(ctx, &toi)
-			if err != nil {
-				event.Status = EventFail
-				err1 := keeper.UpsertEvent(ctx, event)
-				if err1 != nil {
-					return fmt.Errorf("fail to save event: %w", err1)
-				}
-				return fmt.Errorf("fail to prepare outbund tx: %w", err)
-			}
 		}
 		return nil
 	}
@@ -67,6 +65,23 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 	}
 
 	return nil
+}
+func getFee(ctx sdk.Context, input, output common.Coins) common.Fee {
+	var fee common.Fee
+	assetTxCount := 0
+	for _, out := range output {
+		if !out.Asset.IsRune() {
+			assetTxCount++
+		}
+		for _, in := range input {
+			if out.Asset.Equals(in.Asset) {
+				fee.Coins = append(fee.Coins, common.NewCoin(in.Asset, in.Amount.Sub(out.Amount)))
+			}
+		}
+	}
+	var tos TxOutStorageV1
+	fee.PoolDeduct = sdk.NewUint(uint64(tos.constAccessor.GetInt64Value(constants.TransactionFee)) * uint64(assetTxCount))
+	return fee
 }
 
 func subsidizePoolWithSlashBond(ctx sdk.Context, keeper Keeper, ygg Vault, yggTotalStolen, slashRuneAmt sdk.Uint) error {

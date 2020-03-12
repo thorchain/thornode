@@ -14,3 +14,13 @@ func NewFee(coins Coins, poolDeduct sdk.Uint) Fee {
 		PoolDeduct: poolDeduct,
 	}
 }
+
+// Asset retun asset name of fee coins
+func (fee *Fee) Asset() Asset {
+	for _, coin := range fee.Coins {
+		if !coin.Asset.IsRune() {
+			return coin.Asset
+		}
+	}
+	return Asset{}
+}
