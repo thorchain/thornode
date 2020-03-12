@@ -197,9 +197,11 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	// check we empty the rest at the last migration event
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
 	ctx = ctx.WithBlockHeight(vault.StatusSince + (migrateInterval * 7))
-	vaultMgr.EndBlock(ctx, ver, consts) // should attempt to send 100% of the coin values
 	vault, err = keeper.GetVault(ctx, vault.PubKey)
 	c.Assert(err, IsNil)
+	vault.PendingTxCount = 0 // reset pending tx count
+	c.Assert(keeper.SetVault(ctx, vault), IsNil)
+	vaultMgr.EndBlock(ctx, ver, consts) // should attempt to send 100% of the coin values
 	items, err = txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(items, HasLen, 4, Commentf("%d", len(items)))

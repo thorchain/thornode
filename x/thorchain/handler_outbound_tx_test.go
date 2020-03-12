@@ -95,6 +95,7 @@ type outboundTxHandlerKeeperHelper struct {
 	errSetNodeAccount     bool
 	errGetVaultData       bool
 	errSetVaultData       bool
+	vault                 Vault
 }
 
 func newOutboundTxHandlerKeeperHelper(keeper Keeper) *outboundTxHandlerKeeperHelper {
@@ -151,6 +152,15 @@ func (k *outboundTxHandlerKeeperHelper) SetNodeAccount(ctx sdk.Context, na NodeA
 		return kaboom
 	}
 	return k.Keeper.SetNodeAccount(ctx, na)
+}
+
+func (k *outboundTxHandlerKeeperHelper) GetVault(ctx sdk.Context, _ common.PubKey) (Vault, error) {
+	return k.vault, nil
+}
+
+func (k *outboundTxHandlerKeeperHelper) SetVault(ctx sdk.Context, v Vault) error {
+	k.vault = v
+	return nil
 }
 
 func (k *outboundTxHandlerKeeperHelper) GetVaultData(ctx sdk.Context) (VaultData, error) {

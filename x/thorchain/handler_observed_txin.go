@@ -176,6 +176,14 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			continue
 		}
 		vault.AddFunds(tx.Tx.Coins)
+		vault.InboundTxCount += 1
+		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
+		if vault.IsYggdrasil() && memo.IsType(txYggdrasilFund) {
+			vault.PendingTxCount -= 1
+			if vault.PendingTxCount < 0 {
+				vault.PendingTxCount = 0
+			}
+		}
 		if err := h.keeper.SetVault(ctx, vault); err != nil {
 			ctx.Logger().Error("fail to save vault", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()

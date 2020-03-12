@@ -240,6 +240,9 @@ func (HandlerSuite) TestRefund(c *C) {
 	}
 	c.Assert(w.keeper.SetPool(w.ctx, pool), IsNil)
 
+	vault := GetRandomVault()
+	c.Assert(w.keeper.SetVault(w.ctx, vault), IsNil)
+
 	txin := NewObservedTx(
 		common.Tx{
 			ID:    GetRandomTxHash(),
@@ -253,7 +256,7 @@ func (HandlerSuite) TestRefund(c *C) {
 			Gas:         common.BNBGasFeeSingleton,
 		},
 		1024,
-		GetRandomPubKey(),
+		vault.PubKey,
 	)
 	ver := semver.MustParse("0.1.0")
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
