@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 
 	"github.com/binance-chain/go-sdk/common/types"
@@ -44,7 +43,6 @@ type Binance struct {
 	client             *http.Client
 	accts              *BinanceMetaDataStore
 	currentBlockHeight int64
-	signLock           *sync.Mutex
 	tssKeyManager      keys.KeyManager
 	localKeyManager    *keyManager
 	thorchainBridge    *thorclient.ThorchainBridge
@@ -92,7 +90,6 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 		cfg:             cfg,
 		accts:           NewBinanceMetaDataStore(),
 		client:          &http.Client{},
-		signLock:        &sync.Mutex{},
 		tssKeyManager:   tssKm,
 		localKeyManager: localKm,
 		thorchainBridge: thorchainBridge,
@@ -306,8 +303,6 @@ func (b *Binance) ValidateMetadata(inter interface{}) bool {
 
 // SignTx sign the the given TxArrayItem
 func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
-	b.signLock.Lock()
-	defer b.signLock.Unlock()
 	var payload []msg.Transfer
 
 	toAddr, err := types.AccAddressFromBech32(tx.ToAddress.String())
