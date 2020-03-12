@@ -284,7 +284,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 			},
 		},
 	}
-	input := `{ "chain": "BNB", "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "yggdrasil-:30", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
@@ -307,7 +307,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 			},
 		},
 	}
-	input := `{ "chain": "BNB", "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "yggdrasil-:30", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
@@ -329,7 +329,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {
 			},
 		},
 	}
-	input := `{ "chain": "BNB", "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "yggdrasil-:30", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)

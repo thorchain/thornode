@@ -69,10 +69,10 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txGas), Equals, true)
 
-	memo, err = ParseMemo("yggdrasil+")
+	memo, err = ParseMemo("yggdrasil+:30")
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txYggdrasilFund), Equals, true)
-	memo, err = ParseMemo("yggdrasil-")
+	memo, err = ParseMemo("yggdrasil-:30")
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txYggdrasilReturn), Equals, true)
 	memo, err = ParseMemo("migrate:100")

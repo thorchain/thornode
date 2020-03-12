@@ -112,7 +112,8 @@ func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, yg
 		toi := &TxOutItem{
 			Chain:     coin.Asset.Chain,
 			ToAddress: to,
-			Memo:      "yggdrasil+",
+			InHash:    common.BlankTxID,
+			Memo:      NewYggdrasilFund(ctx.BlockHeight()).String(),
 			Coin:      coin,
 		}
 		_, err = txOutStore.TryAddTxOutItem(ctx, toi)
