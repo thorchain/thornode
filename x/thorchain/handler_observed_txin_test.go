@@ -6,6 +6,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type HandlerObservedTxInSuite struct{}
@@ -116,7 +117,9 @@ func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	txOutStore := NewTxStoreDummy()
 
 	tx := NewObservedTx(GetRandomTx(), 12, GetRandomPubKey())
-	err := refundTx(ctx, tx, txOutStore, keeper, CodeInvalidMemo, "Invalid memo")
+	ver := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(ver)
+	err := refundTx(ctx, tx, txOutStore, keeper, constAccessor, CodeInvalidMemo, "Invalid memo")
 	c.Assert(err, IsNil)
 	items, err := txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
