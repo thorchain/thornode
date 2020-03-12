@@ -181,7 +181,7 @@ func (s *Signer) signTransactions() {
 
 func (s *Signer) processTransactions() {
 	wg := &sync.WaitGroup{}
-	for key, items := range s.storage.OrderedLists() {
+	for _, items := range s.storage.OrderedLists() {
 		wg.Add(1)
 		go func(items []TxOutStoreItem) {
 			defer wg.Done()
