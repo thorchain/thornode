@@ -2,6 +2,7 @@ package thorchain
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
+
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -88,7 +89,6 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 				return sdk.ErrInternal("fail to slash account").Result()
 			}
 		}
-
 		if err := h.keeper.SetTxOut(ctx, txOut); err != nil {
 			ctx.Logger().Error("fail to save tx out", "error", err)
 			return sdk.ErrInternal("fail to save tx out").Result()
