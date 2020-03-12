@@ -54,10 +54,10 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 		}
 	}
 	if !ygg.IsYggdrasil() {
-		return fmt.Errorf("this is not a Yggdrasil vault")
+		return nil
 	}
 	if ygg.PendingTxCount > 0 {
-		return fmt.Errorf("cannot send more yggdrasil funds while transactions are pending")
+		return fmt.Errorf("cannot send more yggdrasil funds while transactions are pending (%s: %d)", ygg.PubKey, ygg.PendingTxCount)
 	}
 
 	targetCoins, err := calcTargetYggCoins(pools, na.Bond, totalBond)

@@ -180,15 +180,18 @@ func (s *Signer) signTransactions() {
 }
 
 func (s *Signer) processTransactions() {
-	ordered := s.storage.OrderedLists()
+	fmt.Println("---- Process Transactions")
+	defer fmt.Println("---- Done.")
 	wg := &sync.WaitGroup{}
-	wg.Add(len(ordered))
 	for key, items := range s.storage.OrderedLists() {
-		fmt.Printf(">>>>>>>>>>>>>>>>>>>>>Ordered List: %s %d\n", key, len(items))
+		fmt.Printf(">>>> Ordered List: %s (%d)\n", key, len(items))
+		wg.Add(1)
 		go func(items []TxOutStoreItem) {
 			defer wg.Done()
 			for i, item := range items {
-				s.logger.Info().Msgf("Signing transaction (Id: %d | Height: %d | Status: %d): %+v", i, item.Height, item.Status, item.TxOutItem)
+				fmt.Printf("Item (%d): %s\n", i, item.TxOutItem.Memo)
+			}
+			for i, item := range items {
 				select {
 				case <-s.stopChan:
 					return
@@ -197,9 +200,10 @@ func (s *Signer) processTransactions() {
 						continue
 					}
 
+					s.logger.Info().Msgf("Signing transaction (Num: %d | Height: %d | Status: %d): %+v", i, item.Height, item.Status, item.TxOutItem)
 					if err := s.signAndBroadcast(item); err != nil {
 						s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
-						continue
+						return
 					}
 
 					// We have a successful broadcast! Remove the item from our store
