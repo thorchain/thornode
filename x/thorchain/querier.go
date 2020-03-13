@@ -138,6 +138,7 @@ func queryYggdrasilVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 		for _, na := range active {
 			if na.PubKeySet.Secp256k1.Equals(vault.PubKey) {
 				bond = na.Bond
+				break
 			}
 		}
 
