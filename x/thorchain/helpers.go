@@ -449,7 +449,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 			return err
 		}
 	}
-	eventGas := NewEventGas(tx.Tx.Gas, GasSpend)
+	eventGas := NewEventGas(tx.Tx.Gas, GasSpend, nil)
 	gasBuf, err := json.Marshal(eventGas)
 	if err != nil {
 		return fmt.Errorf("fail to marshal gas event to buf: %w", err)
