@@ -32,13 +32,16 @@ const (
 
 // Vault usually represent the pool we are using
 type Vault struct {
-	BlockHeight int64          `json:"block_height"`
-	PubKey      common.PubKey  `json:"pub_key"`
-	Coins       common.Coins   `json:"coins"`
-	Type        VaultType      `json:"type"`
-	Status      VaultStatus    `json:"status"`
-	StatusSince int64          `json:"status_since"`
-	Membership  common.PubKeys `json:"membership"`
+	BlockHeight     int64          `json:"block_height"`
+	PubKey          common.PubKey  `json:"pub_key"`
+	Coins           common.Coins   `json:"coins"`
+	Type            VaultType      `json:"type"`
+	Status          VaultStatus    `json:"status"`
+	StatusSince     int64          `json:"status_since"`
+	Membership      common.PubKeys `json:"membership"`
+	InboundTxCount  int64          `json:"inbound_tx_count"`
+	OutboundTxCount int64          `json:"outbound_tx_count"`
+	PendingTxCount  int64          `json:"pending_tx_count"`
 }
 
 type Vaults []Vault
@@ -139,15 +142,18 @@ func (v Vault) GetMembers(activeObservers []sdk.AccAddress) (common.PubKeys, err
 // AddFunds add given coins into vault
 func (v *Vault) AddFunds(coins common.Coins) {
 	for _, coin := range coins {
-		if v.HasAsset(coin.Asset) {
-			for i, ycoin := range v.Coins {
-				if coin.Asset.Equals(ycoin.Asset) {
-					v.Coins[i].Amount = ycoin.Amount.Add(coin.Amount)
-				}
+		found := false
+		for i, ycoin := range v.Coins {
+			if coin.Asset.Equals(ycoin.Asset) {
+				v.Coins[i].Amount = ycoin.Amount.Add(coin.Amount)
+				found = true
+				break
 			}
-		} else {
-			v.Coins = append(v.Coins, coin)
 		}
+		if found {
+			continue
+		}
+		v.Coins = append(v.Coins, coin)
 	}
 }
 

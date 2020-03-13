@@ -180,28 +180,38 @@ func (s *Signer) signTransactions() {
 }
 
 func (s *Signer) processTransactions() {
-	for _, item := range s.storage.List() {
-		select {
-		case <-s.stopChan:
-			return
-		default:
-			if item.Status == TxSpent { // don't rebroadcast spent transactions
-				continue
-			}
+	ordered := s.storage.OrderedLists()
+	wg := &sync.WaitGroup{}
+	wg.Add(len(ordered))
+	for key, items := range s.storage.OrderedLists() {
+		fmt.Printf(">>>>>>>>>>>>>>>>>>>>>Ordered List: %s %d\n", key, len(items))
+		go func(items []TxOutStoreItem) {
+			defer wg.Done()
+			for i, item := range items {
+				s.logger.Info().Msgf("Signing transaction (Id: %d | Height: %d | Status: %d): %+v", i, item.Height, item.Status, item.TxOutItem)
+				select {
+				case <-s.stopChan:
+					return
+				default:
+					if item.Status == TxSpent { // don't rebroadcast spent transactions
+						continue
+					}
 
-			s.logger.Info().Msgf("Signing transaction (Height: %d | Status: %d): %+v", item.Height, item.Status, item.TxOutItem)
-			if err := s.signAndBroadcast(item); err != nil {
-				s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
-				continue
-			}
+					if err := s.signAndBroadcast(item); err != nil {
+						s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
+						continue
+					}
 
-			// We have a successful broadcast! Remove the item from our store
-			item.Status = TxSpent
-			if err := s.storage.Set(item); err != nil {
-				s.logger.Error().Err(err).Msg("fail to update tx out store item")
+					// We have a successful broadcast! Remove the item from our store
+					item.Status = TxSpent
+					if err := s.storage.Set(item); err != nil {
+						s.logger.Error().Err(err).Msg("fail to update tx out store item")
+					}
+				}
 			}
-		}
+		}(items)
 	}
+	wg.Wait()
 }
 
 // processTxnOut processes inbound TxOuts and save them to storage
@@ -310,7 +320,7 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 
 	// Check if we're sending all funds back (memo "yggdrasil-")
 	// In this scenario, we should chose the coins to send ourselves
-	if strings.EqualFold(tx.Memo, thorchain.YggdrasilReturnMemo{}.GetType().String()) && tx.Coins.IsEmpty() {
+	if strings.HasPrefix(tx.Memo, thorchain.YggdrasilReturnMemo{}.GetType().String()) && tx.Coins.IsEmpty() {
 		tx, err = s.handleYggReturn(tx)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("failed to handle yggdrasil return")

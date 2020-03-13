@@ -8,15 +8,15 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 	"time"
-	"sync"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
-	"github.com/tendermint/tendermint/crypto"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/rs/zerolog/log"
+	"github.com/tendermint/tendermint/crypto"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
@@ -26,9 +26,9 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	ttypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
+	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
 )
 
@@ -52,7 +52,7 @@ func GetMetricForTest(c *C) *metrics.Metrics {
 	return m
 }
 
-type SignSuite struct{
+type SignSuite struct {
 	thordir  string
 	thorKeys *thorclient.Keys
 	bridge   *thorclient.ThorchainBridge
@@ -284,7 +284,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeSingleton(c *C) {
 			},
 		},
 	}
-	input := `{ "chain": "BNB", "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "yggdrasil-:30", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
@@ -307,7 +307,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_FeeMulti(c *C) {
 			},
 		},
 	}
-	input := `{ "chain": "BNB", "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "yggdrasil-:30", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
@@ -329,7 +329,7 @@ func (s *SignSuite) TestHandleYggReturn_Success_NotEnough(c *C) {
 			},
 		},
 	}
-	input := `{ "chain": "BNB", "memo": "yggdrasil-", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
+	input := `{ "chain": "BNB", "memo": "yggdrasil-:30", "to": "tbnb1yxfyeda8pnlxlmx0z3cwx74w9xevspwdpzdxpj", "coins": [] }`
 	var item stypes.TxOutItem
 	err := json.Unmarshal([]byte(input), &item)
 	c.Check(err, IsNil)
@@ -343,13 +343,13 @@ func (s *SignSuite) TestProcess(c *C) {
 	cfg := config.SignerConfiguration{
 		SignerDbPath: filepath.Join(os.TempDir(), "/var/data/bifrost/signer"),
 		BlockScanner: config.BlockScannerConfiguration{
-			RPCHost: "127.0.0.1:" + s.rpcHost,
-			ChainID: "ThorChain",
-			StartBlockHeight: 1,
-			EnforceBlockHeight: true,
-			BlockScanProcessors: 1,
+			RPCHost:                    "127.0.0.1:" + s.rpcHost,
+			ChainID:                    "ThorChain",
+			StartBlockHeight:           1,
+			EnforceBlockHeight:         true,
+			BlockScanProcessors:        1,
 			BlockHeightDiscoverBackoff: time.Second,
-			BlockRetryInterval: 10 * time.Second,
+			BlockRetryInterval:         10 * time.Second,
 		},
 		RetryInterval: 2 * time.Second,
 	}

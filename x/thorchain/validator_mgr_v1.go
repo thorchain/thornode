@@ -559,7 +559,8 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		}
 	}
 
-	for _, pool := range pools {
+	for i := len(pools) - 1; i >= 0; i-- { // iterate backwards
+		pool := pools[i]
 		poolStaker, err := vm.k.GetPoolStaker(ctx, pool.Asset)
 		if err != nil {
 			ctx.Logger().Error("fail to get pool staker", "error", err)
@@ -567,7 +568,8 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 		}
 
 		// everyone withdraw
-		for _, item := range poolStaker.Stakers {
+		for i := len(poolStaker.Stakers) - 1; i >= 0; i-- { // iterate backwards
+			item := poolStaker.Stakers[i]
 			if item.Units.IsZero() {
 				continue
 			}
@@ -639,7 +641,7 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 				ToAddress:   toAddr,
 				InHash:      common.BlankTxID,
 				VaultPubKey: ygg.PubKey,
-				Memo:        "yggdrasil-",
+				Memo:        NewYggdrasilReturn(ctx.BlockHeight()).String(),
 			}
 			// yggdrasil- will not set coin field here, when signer see a TxOutItem that has memo "yggdrasil-" it will query the chain
 			// and find out all the remaining assets , and fill in the field
@@ -1034,6 +1036,10 @@ func sortNodeAccountsByProbabilisticBond(ctx sdk.Context, nas NodeAccounts) (res
 		totalBond := sdk.ZeroUint()
 		for _, na := range nas {
 			totalBond = totalBond.Add(na.Bond)
+		}
+
+		if totalBond.IsZero() {
+			return nas
 		}
 
 		// get our randomly chosen number within our total bond

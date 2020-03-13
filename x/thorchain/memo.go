@@ -180,10 +180,12 @@ type LeaveMemo struct {
 
 type YggdrasilFundMemo struct {
 	MemoBase
+	BlockHeight int64
 }
 
 type YggdrasilReturnMemo struct {
 	MemoBase
+	BlockHeight int64
 }
 
 type ReserveMemo struct {
@@ -208,6 +210,18 @@ func NewRagnarokMemo(blockHeight int64) RagnarokMemo {
 
 func NewMigrateMemo(blockHeight int64) MigrateMemo {
 	return MigrateMemo{
+		BlockHeight: blockHeight,
+	}
+}
+
+func NewYggdrasilFund(blockHeight int64) YggdrasilFundMemo {
+	return YggdrasilFundMemo{
+		BlockHeight: blockHeight,
+	}
+}
+
+func NewYggdrasilReturn(blockHeight int64) YggdrasilReturnMemo {
+	return YggdrasilReturnMemo{
 		BlockHeight: blockHeight,
 	}
 }
@@ -369,16 +383,32 @@ func ParseMemo(memo string) (Memo, error) {
 			NodeAddress: addr,
 		}, nil
 	case txYggdrasilFund:
+		if len(parts) < 2 {
+			return noMemo, errors.New("not enough parameters")
+		}
+		blockHeight, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil {
+			return noMemo, fmt.Errorf("fail to convert (%s) to a valid block height: %w", parts[1], err)
+		}
 		return YggdrasilFundMemo{
-			MemoBase: MemoBase{TxType: txYggdrasilFund},
+			MemoBase:    MemoBase{TxType: txYggdrasilFund},
+			BlockHeight: blockHeight,
 		}, nil
 	case txYggdrasilReturn:
+		if len(parts) < 2 {
+			return noMemo, errors.New("not enough parameters")
+		}
+		blockHeight, err := strconv.ParseInt(parts[1], 10, 64)
+		if err != nil {
+			return noMemo, fmt.Errorf("fail to convert (%s) to a valid block height: %w", parts[1], err)
+		}
 		return YggdrasilReturnMemo{
-			MemoBase: MemoBase{TxType: txYggdrasilReturn},
+			MemoBase:    MemoBase{TxType: txYggdrasilReturn},
+			BlockHeight: blockHeight,
 		}, nil
 	case txReserve:
 		return ReserveMemo{
-			MemoBase: MemoBase{TxType: txYggdrasilReturn},
+			MemoBase: MemoBase{TxType: txReserve},
 		}, nil
 	case txMigrate:
 		if len(parts) < 2 {
@@ -442,6 +472,22 @@ func (m RefundMemo) GetTxID() common.TxID { return m.TxID }
 // String implement fmt.Stringer
 func (m RefundMemo) String() string {
 	return fmt.Sprintf("REFUND:%s", m.TxID.String())
+}
+
+func (m YggdrasilFundMemo) String() string {
+	return fmt.Sprintf("YGGDRASIL+:%d", m.BlockHeight)
+}
+
+func (m YggdrasilFundMemo) GetBlockHeight() int64 {
+	return m.BlockHeight
+}
+
+func (m YggdrasilReturnMemo) String() string {
+	return fmt.Sprintf("YGGDRASIL-:%d", m.BlockHeight)
+}
+
+func (m YggdrasilReturnMemo) GetBlockHeight() int64 {
+	return m.BlockHeight
 }
 
 func (m MigrateMemo) String() string {

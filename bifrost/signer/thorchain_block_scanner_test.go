@@ -3,12 +3,12 @@ package signer
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
-	"os"
 
 	. "gopkg.in/check.v1"
 
@@ -26,7 +26,7 @@ import (
 
 func Test(t *testing.T) { TestingT(t) }
 
-type ThorchainBlockScanSuite struct{
+type ThorchainBlockScanSuite struct {
 	thordir  string
 	thorKeys *thorclient.Keys
 	bridge   *thorclient.ThorchainBridge
@@ -158,13 +158,13 @@ func (s *ThorchainBlockScanSuite) TearDownSuite(c *C) {
 
 func (s *ThorchainBlockScanSuite) TestProcess(c *C) {
 	cfg := config.BlockScannerConfiguration{
-		RPCHost: "127.0.0.1:" + s.rpcHost,
-		ChainID: "ThorChain",
-		StartBlockHeight: 1,
-		EnforceBlockHeight: true,
-		BlockScanProcessors: 1,
+		RPCHost:                    "127.0.0.1:" + s.rpcHost,
+		ChainID:                    "ThorChain",
+		StartBlockHeight:           1,
+		EnforceBlockHeight:         true,
+		BlockScanProcessors:        1,
 		BlockHeightDiscoverBackoff: time.Second,
-		BlockRetryInterval: 10 * time.Second,
+		BlockRetryInterval:         10 * time.Second,
 	}
 	blockScan, err := NewThorchainBlockScan(cfg, s.storage, s.bridge, s.m, binance.NewMockPoolAddressValidator())
 	c.Assert(blockScan, NotNil)

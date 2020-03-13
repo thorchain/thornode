@@ -175,9 +175,9 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 	case LeaveMemo:
 		newMsg = NewMsgLeave(tx.Tx, signer)
 	case YggdrasilFundMemo:
-		newMsg = NewMsgYggdrasil(tx.Tx, tx.ObservedPubKey, true, tx.Tx.Coins, signer)
+		newMsg = NewMsgYggdrasil(tx.Tx, tx.ObservedPubKey, m.GetBlockHeight(), true, tx.Tx.Coins, signer)
 	case YggdrasilReturnMemo:
-		newMsg = NewMsgYggdrasil(tx.Tx, tx.ObservedPubKey, false, tx.Tx.Coins, signer)
+		newMsg = NewMsgYggdrasil(tx.Tx, tx.ObservedPubKey, m.GetBlockHeight(), false, tx.Tx.Coins, signer)
 	case ReserveMemo:
 		res := NewReserveContributor(tx.Tx.FromAddress, tx.Tx.Coins[0].Amount)
 		newMsg = NewMsgReserveContributor(tx.Tx, res, signer)

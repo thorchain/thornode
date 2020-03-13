@@ -130,6 +130,11 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 		toi.VaultPubKey = vault.PubKey
 	}
 
+	// Ensure the InHash is set
+	if toi.InHash == "" {
+		toi.InHash = common.BlankTxID
+	}
+
 	// Ensure THORNode are not sending from and to the same address
 	fromAddr, err := toi.VaultPubKey.GetAddress(toi.Chain)
 	if err != nil || fromAddr.IsEmpty() || toi.ToAddress.Equals(fromAddr) {
@@ -199,7 +204,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	// When we request Yggdrasil pool to return the fund, the coin field is actually empty
 	// Signer when it sees an tx out item with memo "yggdrasil-" it will query the account on relevant chain
 	// and coin field will be filled there, thus we have to let this one go
-	if toi.Coin.IsEmpty() && toi.Memo != "yggdrasil-" {
+	if toi.Coin.IsEmpty() && !memo.IsType(txYggdrasilReturn) {
 		ctx.Logger().Info("tx out item has zero coin", toi.String())
 		return false, nil
 	}
@@ -211,6 +216,7 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 	}
 	voter.Actions = append(voter.Actions, *toi)
 	tos.keeper.SetObservedTxVoter(ctx, voter)
+
 	return true, nil
 }
 

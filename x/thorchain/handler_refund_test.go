@@ -41,6 +41,7 @@ type refundTxHandlerKeeperTestHelper struct {
 	errSetNodeAccount     bool
 	errGetVaultData       bool
 	errSetVaultData       bool
+	vault                 Vault
 }
 
 func newRefundTxHandlerKeeperTestHelper(keeper Keeper) *refundTxHandlerKeeperTestHelper {
@@ -97,6 +98,15 @@ func (k *refundTxHandlerKeeperTestHelper) SetNodeAccount(ctx sdk.Context, na Nod
 		return kaboom
 	}
 	return k.Keeper.SetNodeAccount(ctx, na)
+}
+
+func (k *refundTxHandlerKeeperTestHelper) GetVault(ctx sdk.Context, _ common.PubKey) (Vault, error) {
+	return k.vault, nil
+}
+
+func (k *refundTxHandlerKeeperTestHelper) SetVault(ctx sdk.Context, v Vault) error {
+	k.vault = v
+	return nil
 }
 
 func (k *refundTxHandlerKeeperTestHelper) GetVaultData(ctx sdk.Context) (VaultData, error) {

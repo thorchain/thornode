@@ -56,6 +56,10 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	if !ygg.IsYggdrasil() {
 		return fmt.Errorf("this is not a Yggdrasil vault")
 	}
+	if ygg.PendingTxCount > 0 {
+		return fmt.Errorf("cannot send more yggdrasil funds while transactions are pending")
+	}
+
 	targetCoins, err := calcTargetYggCoins(pools, na.Bond, totalBond)
 	if err != nil {
 		return err
@@ -82,7 +86,15 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	}
 
 	if len(sendCoins) > 0 {
-		return sendCoinsToYggdrasil(ctx, keeper, sendCoins, ygg, txOutStore)
+		err := sendCoinsToYggdrasil(ctx, keeper, sendCoins, ygg, txOutStore)
+		if err != nil {
+			return err
+		}
+
+		ygg.PendingTxCount += int64(len(sendCoins))
+		if err := keeper.SetVault(ctx, ygg); err != nil {
+			return fmt.Errorf("fail to create yggdrasil pool: %w", err)
+		}
 	}
 
 	return nil
@@ -100,7 +112,8 @@ func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, yg
 		toi := &TxOutItem{
 			Chain:     coin.Asset.Chain,
 			ToAddress: to,
-			Memo:      "yggdrasil+",
+			InHash:    common.BlankTxID,
+			Memo:      NewYggdrasilFund(ctx.BlockHeight()).String(),
 			Coin:      coin,
 		}
 		_, err = txOutStore.TryAddTxOutItem(ctx, toi)

@@ -197,9 +197,11 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	// check we empty the rest at the last migration event
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
 	ctx = ctx.WithBlockHeight(vault.StatusSince + (migrateInterval * 7))
-	vaultMgr.EndBlock(ctx, ver, consts) // should attempt to send 100% of the coin values
 	vault, err = keeper.GetVault(ctx, vault.PubKey)
 	c.Assert(err, IsNil)
+	vault.PendingTxCount = 0 // reset pending tx count
+	c.Assert(keeper.SetVault(ctx, vault), IsNil)
+	vaultMgr.EndBlock(ctx, ver, consts) // should attempt to send 100% of the coin values
 	items, err = txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(items, HasLen, 4, Commentf("%d", len(items)))
@@ -334,7 +336,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(items, HasLen, bonderCount)
 	for _, item := range items {
-		c.Assert(item.Memo, Equals, "yggdrasil-")
+		c.Assert(item.Memo, Equals, NewYggdrasilReturn(ctx.BlockHeight()).String())
 	}
 
 	// we'll assume the signer does it's job and sends the yggdrasil funds back

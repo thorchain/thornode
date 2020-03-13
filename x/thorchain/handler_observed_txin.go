@@ -168,6 +168,21 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			ctx.Logger().Error("fail to get vault", "error", err)
 			return sdk.ErrInternal(err.Error()).Result()
 		}
+
+		vault.AddFunds(tx.Tx.Coins)
+		vault.InboundTxCount += 1
+		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
+		if vault.IsYggdrasil() && memo.IsType(txYggdrasilFund) {
+			vault.PendingTxCount -= 1
+			if vault.PendingTxCount < 0 {
+				vault.PendingTxCount = 0
+			}
+		}
+		if err := h.keeper.SetVault(ctx, vault); err != nil {
+			ctx.Logger().Error("fail to save vault", "error", err)
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+
 		if !vault.IsAsgard() {
 			ctx.Logger().Error("Vault is not an Asgard vault, transaction ignored.")
 			continue
@@ -176,11 +191,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			ctx.Logger().Error("Vault is inactive, transaction ignored.")
 			continue
 		}
-		vault.AddFunds(tx.Tx.Coins)
-		if err := h.keeper.SetVault(ctx, vault); err != nil {
-			ctx.Logger().Error("fail to save vault", "error", err)
-			return sdk.ErrInternal(err.Error()).Result()
-		}
+
 		// tx is not observed at current vault - refund
 		// yggdrasil pool is ok
 		if ok := isCurrentVaultPubKey(ctx, h.keeper, tx); !ok {
