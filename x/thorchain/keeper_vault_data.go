@@ -279,8 +279,8 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (
 			return sdk.ZeroUint(), nil, fmt.Errorf("fail to set pool(%s): %w", coin.Asset, err)
 		}
 
-		gas := common.Gas{common.Coin{Asset: common.RuneAsset(), Amount: runeGas}}
-		eventGas := NewEventGas(gas, GasSpend)
+		gasForEvent := common.Gas{common.Coin{Asset: common.RuneAsset(), Amount: runeGas}}
+		eventGas := NewEventGas(gasForEvent, GasSpend)
 		gasBuf, err := json.Marshal(eventGas)
 		if err != nil {
 			return sdk.ZeroUint(), nil, fmt.Errorf("fail to marshal gas event to buf: %w", err)
