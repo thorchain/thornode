@@ -39,6 +39,7 @@ const (
 	AsgardKeygen = types.AsgardKeygen
 	GasSpend     = types.GasSpend
 	GasTopup     = types.GasTopup
+	GasReimburse = types.GasReimburse
 )
 
 var (

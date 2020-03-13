@@ -72,7 +72,7 @@ func (h NoOpHandler) HandleV1(ctx sdk.Context, msg MsgNoOp) error {
 	for _, c := range msg.ObservedTx.Tx.Coins {
 		gasCoin = append(gasCoin, c)
 	}
-	gasEvent := NewEventGas(gasCoin, GasTopup)
+	gasEvent := NewEventGas(gasCoin, GasTopup, nil)
 	gasBuf, err := json.Marshal(gasEvent)
 	if err != nil {
 		return fmt.Errorf("fail to marshal gas event to json: %w", err)
