@@ -394,7 +394,6 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 		return err
 	}
 
-	var runeGas common.Gas
 	// Subtract gas from pools (will be reimbursed later with rune at the end
 	// of the block)
 	for _, gas := range tx.Tx.Gas {
@@ -404,7 +403,6 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 		}
 		pool.Asset = gas.Asset
 		pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, gas.Amount)
-		runeGas = append(runeGas, common.Coin{common.RuneAsset(), pool.AssetValueInRune(gas.Amount)})
 		if err := keeper.SetPool(ctx, pool); err != nil {
 			return err
 		}
@@ -422,8 +420,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 			return err
 		}
 	}
-	totalGas := append(tx.Tx.Gas, runeGas...)
-	eventGas := NewEventGas(totalGas, GasSpend)
+	eventGas := NewEventGas(tx.Tx.Gas, GasSpend)
 	gasBuf, err := json.Marshal(eventGas)
 	if err != nil {
 		return fmt.Errorf("fail to marshal gas event to buf: %w", err)
