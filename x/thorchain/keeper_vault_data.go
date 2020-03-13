@@ -284,19 +284,21 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (
 		eventGas.ReimburseTo = append(eventGas.ReimburseTo, coin.Asset)
 	}
 
-	gasBuf, err := json.Marshal(eventGas)
-	if err != nil {
-		return sdk.ZeroUint(), nil, fmt.Errorf("fail to marshal gas event to buf: %w", err)
-	}
-	event := NewEvent(
-		eventGas.Type(),
-		ctx.BlockHeight(),
-		common.Tx{ID: common.BlankTxID},
-		gasBuf,
-		EventSuccess)
-	err = keeper.UpsertEvent(ctx, event)
-	if err != nil {
-		return sdk.ZeroUint(), nil, fmt.Errorf("fail to save gas event: %w", err)
+	if !eventGas.Gas.IsEmpty() {
+		gasBuf, err := json.Marshal(eventGas)
+		if err != nil {
+			return sdk.ZeroUint(), nil, fmt.Errorf("fail to marshal gas event to buf: %w", err)
+		}
+		event := NewEvent(
+			eventGas.Type(),
+			ctx.BlockHeight(),
+			common.Tx{ID: common.BlankTxID},
+			gasBuf,
+			EventSuccess)
+		err = keeper.UpsertEvent(ctx, event)
+		if err != nil {
+			return sdk.ZeroUint(), nil, fmt.Errorf("fail to save gas event: %w", err)
+		}
 	}
 	return val, gas, nil
 }
