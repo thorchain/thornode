@@ -6,11 +6,11 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
-
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
-func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, refundCode sdk.CodeType, refundReason string) error {
+func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, constAccessor constants.ConstantValues, refundCode sdk.CodeType, refundReason string) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	eventRefund := NewEventRefund(refundCode, refundReason)
@@ -40,7 +40,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 				return fmt.Errorf("fail to prepare outbund tx: %w", err)
 			}
 			if success {
-				refundCoins = append(refundCoins, coin)
+				refundCoins = append(refundCoins, toi.Coin)
 			}
 		}
 		// Zombie coins are just dropped.
@@ -51,6 +51,8 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 		newTx := common.NewTx(tx.Tx.ID, tx.Tx.FromAddress, tx.Tx.ToAddress, tx.Tx.Coins, tx.Tx.Gas, tx.Tx.Memo)
 		// save refund event
 		event := NewEvent(eventRefund.Type(), ctx.BlockHeight(), newTx, buf, EventPending)
+		transactionFee := constAccessor.GetInt64Value(constants.TransactionFee)
+		event.Fee = getFee(tx.Tx.Coins, refundCoins, transactionFee)
 		if err := keeper.UpsertEvent(ctx, event); err != nil {
 			return fmt.Errorf("fail to save refund event: %w", err)
 		}
@@ -64,6 +66,22 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, r
 	}
 
 	return nil
+}
+func getFee(input, output common.Coins, transactionFee int64) common.Fee {
+	var fee common.Fee
+	assetTxCount := 0
+	for _, out := range output {
+		if !out.Asset.IsRune() {
+			assetTxCount++
+		}
+		for _, in := range input {
+			if out.Asset.Equals(in.Asset) {
+				fee.Coins = append(fee.Coins, common.NewCoin(in.Asset, in.Amount.Sub(out.Amount)))
+			}
+		}
+	}
+	fee.PoolDeduct = sdk.NewUint(uint64(transactionFee) * uint64(assetTxCount))
+	return fee
 }
 
 func subsidizePoolWithSlashBond(ctx sdk.Context, keeper Keeper, ygg Vault, yggTotalStolen, slashRuneAmt sdk.Uint) error {
@@ -186,6 +204,15 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 			return fmt.Errorf("unable to determine asgard vault to send funds")
 		}
 
+		bondEvent := NewEventBond(nodeAcc.Bond, BondReturned)
+		buf, err := json.Marshal(bondEvent)
+		if err != nil {
+			return fmt.Errorf("fail to marshal bond event: %w", err)
+		}
+		e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending)
+		if err := keeper.UpsertEvent(ctx, e); err != nil {
+			return fmt.Errorf("fail to save bond return event: %w", err)
+		}
 		// refund bond
 		txOutItem := &TxOutItem{
 			Chain:       common.BNBChain,
@@ -197,15 +224,6 @@ func refundBond(ctx sdk.Context, tx common.Tx, nodeAcc NodeAccount, keeper Keepe
 		_, err = txOut.TryAddTxOutItem(ctx, txOutItem)
 		if err != nil {
 			return fmt.Errorf("fail to add outbound tx: %w", err)
-		}
-		bondEvent := NewEventBond(nodeAcc.Bond, BondReturned)
-		buf, err := json.Marshal(bondEvent)
-		if err != nil {
-			return fmt.Errorf("fail to marshal bond event: %w", err)
-		}
-		e := NewEvent(bondEvent.Type(), ctx.BlockHeight(), tx, buf, EventPending)
-		if err := keeper.UpsertEvent(ctx, e); err != nil {
-			return fmt.Errorf("fail to save bond return event: %w", err)
 		}
 	} else {
 		// if it get into here that means the node account doesn't have any bond left after slash.
@@ -283,7 +301,18 @@ func updateEventStatus(ctx sdk.Context, keeper Keeper, eventID int64, txs common
 	}
 
 	ctx.Logger().Info(fmt.Sprintf("set event to %s,eventID (%d) , txs:%s", eventStatus, eventID, txs))
-	event.OutTxs = append(event.OutTxs, txs...)
+	outTxs := append(event.OutTxs, txs...)
+	for i := 0; i < len(outTxs); i++ {
+		duplicate := false
+		for j := i + 1; j < len(outTxs); j++ {
+			if outTxs[i].Equals(outTxs[j]) {
+				duplicate = true
+			}
+		}
+		if !duplicate {
+			event.OutTxs = append(event.OutTxs, outTxs[i])
+		}
+	}
 	if eventStatus == EventRefund {
 		// we need to check we refunded all the coins that need to be refunded from in tx
 		// before updating status to complete, we use the count of voter actions to check

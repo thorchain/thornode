@@ -126,6 +126,7 @@ func (h ObservedTxInHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, n
 
 // Handle a message to observe inbound tx
 func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, msg MsgObservedTxIn) sdk.Result {
+	constAccessor := constants.GetConstantValues(version)
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		err = wrapError(ctx, err, "fail to get list of active node accounts")
@@ -196,14 +197,14 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		if ok := isCurrentVaultPubKey(ctx, h.keeper, tx); !ok {
 			reason := fmt.Sprintf("vault %s is not current vault", tx.ObservedPubKey)
 			ctx.Logger().Info("refund reason", reason)
-			if err := refundTx(ctx, tx, txOutStore, h.keeper, CodeInvalidVault, reason); err != nil {
+			if err := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, CodeInvalidVault, reason); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 			continue
 		}
 		// chain is empty
 		if tx.Tx.Chain.IsEmpty() {
-			if err := refundTx(ctx, tx, txOutStore, h.keeper, CodeEmptyChain, "chain is empty"); err != nil {
+			if err := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, CodeEmptyChain, "chain is empty"); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 			continue
@@ -213,7 +214,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		m, txErr := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
 		if txErr != nil {
 			ctx.Logger().Error("fail to process inbound tx", "error", txErr.Error(), "tx hash", tx.Tx.ID.String())
-			if newErr := refundTx(ctx, tx, txOutStore, h.keeper, txErr.Code(), fmt.Sprint(txErr.Data())); nil != newErr {
+			if newErr := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, txErr.Code(), fmt.Sprint(txErr.Data())); nil != newErr {
 				return sdk.ErrInternal(newErr.Error()).Result()
 			}
 			continue
@@ -252,7 +253,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			if err != nil {
 				ctx.Logger().Error(err.Error())
 			}
-			if err := refundTx(ctx, tx, txOutStore, h.keeper, result.Code, refundMsg); err != nil {
+			if err := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, result.Code, refundMsg); err != nil {
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 		}
