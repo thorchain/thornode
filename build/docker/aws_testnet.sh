@@ -1,9 +1,33 @@
 #!/bin/sh
 
+export USER=$(hostname -s)
+export DOCKER_SERVER="${USER}-${THORNODE_ENV}-${THORNODE_SERVICE}"
+export SEED_ENDPOINT=seed.thorchain.info
+export BUCKET_NAME=thorchain.info
+export SEED_BUCKET="seed.${BUCKET_NAME}"
+export S3_FILE="${THORNODE_ENV}.json"
+export DATE=$(date +%F)
+export BOOTSTRAP="/opt/${THORNODE_ENV}/${THORNODE_SERVICE}-bootstrap"
+export FAUCET_FILE=/tmp/faucet.txt
+export BOND_FILE=/tmp/bond.txt
+export BOND_WALLET=bond-wallet
+export FAUCET_WALLET=faucet
+export SSH_PUB_KEY=gitlab-ci.pub
+export SSH_PRIV_KEY=gitlab-ci
+export FUND_MEMO="fund-bond-wallet"
+export TENDERMINT_NODE="testnet-binance.thorchain.info:26657"
+#export TENDERMINT_NODE="data-seed-pre-2-s1.binance.org:80"
+export CHAIN_ID=Binance-Chain-Nile
+export SIGNER_NAME=thorchain
+export BOND_AMOUNT=100000000:RUNE-A1F
+export GAS_FEE=37500
+
 cleanup () {
     echo "performing cleanup"
     if [ ! -z "${CI}" ]; then
         echo "no need to unset docker variables"
+        export AWS_REGION=${AWS_CI_REGION}
+        export USER=$CI_JOB_ID
     else
         eval $(docker-machine env -u)
     fi
@@ -33,8 +57,7 @@ fi
 ####################
 create_server() {
     cleanup ${DOCKER_SERVER} 20
-    cd ../../
-    LOCAL_VOLUME=$(pwd)
+    DISK_SIZE=100
     if [ ! -z "${CI}" ]; then
         aws s3 cp s3://${BUCKET_NAME}/$SSH_PUB_KEY /tmp/.
         aws s3 cp s3://${BUCKET_NAME}/$SSH_PRIV_KEY /tmp/.
@@ -46,6 +69,9 @@ create_server() {
             --amazonec2-instance-type ${AWS_INSTANCE_TYPE} \
             --amazonec2-root-size ${DISK_SIZE} \
             --amazonec2-ssh-keypath /tmp/$SSH_PRIV_KEY \
+            --amazonec2-userdata ./${THORNODE_ENV}/ec2-userdata.sh \
+            --amazonec2-tags Environment,${THORNODE_ENV} \
+            --amazonec2-iam-instance-profile ${THORNODE_ENV}-secrets \
             ${DOCKER_SERVER}
     else
         docker-machine create --driver amazonec2 \
@@ -53,126 +79,177 @@ create_server() {
             --amazonec2-region ${AWS_REGION} \
             --amazonec2-instance-type ${AWS_INSTANCE_TYPE} \
             --amazonec2-root-size ${DISK_SIZE} \
+            --amazonec2-userdata ./${THORNODE_ENV}/ec2-userdata.sh \
+            --amazonec2-tags Environment,${THORNODE_ENV} \
+            --amazonec2-iam-instance-profile ${THORNODE_ENV}-secrets \
             ${DOCKER_SERVER}
     fi
     if [ $? != 0 ]; then
         echo "server could not be created"
         exit 1
     fi
-    echo "mounting volumes"
-    docker-machine ssh ${DOCKER_SERVER} sudo mkdir -p ${LOCAL_VOLUME}
-    docker-machine ssh ${DOCKER_SERVER} sudo chmod 777 -R ${LOCAL_VOLUME}
-    docker-machine scp -r ${LOCAL_VOLUME}/. ${DOCKER_SERVER}:${LOCAL_VOLUME}
 }
 
 start_the_stack () {
-    cd build/docker/${THORNODE_ENV}
     echo "waiting for server to be ready"
-    PROVISIONING_TIME=$1
-    sleep ${PROVISIONING_TIME}
-    export NET=${THORNODE_ENV}
-    export TAG=${THORNODE_ENV}
+    sleep 30
     eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
-    PEER=$(curl -s http://thorchain.net.s3-website-us-east-1.amazonaws.com/net/)
-    if [ ! -z "${CI}" ]; then
-        export PEER=$PEER && make run-${THORNODE_ENV}-validator-ci
-    elif [ ! -z "${NON_CI}" ]; then
-        export PEER=$PEER && make run-${THORNODE_ENV}-validator
-    else
-        make run-${THORNODE_ENV}-standalone
-    fi
-    sleep 60
+    docker-machine ssh ${DOCKER_SERVER} sudo bash $BOOTSTRAP
 }
 
-##################
-# CHURN
-##################
-churn () {
-    echo "starting churning"
-    export FAUCET_PASSWORD=$FAUCET_PASSWORD && . ./../../scripts/make-testnet-bond.sh
-    #################################################################
-    # wait for bond transaction and for node account to be registered
-    #################################################################
-    eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
-    PUB_KEY=$(docker exec thor-daemon thorcli keys show thorchain --pubkey)
-    VALIDATOR=$(docker exec thor-daemon thord tendermint show-validator)
-    if [ ! -z "${CI}" ]; then
-        export SIGNER_PASSWD=${CI_SIGNER_PASSWD}
-    fi
-    echo "setting node keys"
-    sleep 60 # wait for thorchain to register the new node account
-    docker exec thor-daemon ash -c "echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $PUB_KEY $PUB_KEY $VALIDATOR --node tcp://$PEER:26657 --from $SIGNER_NAME --yes"
+update_ip() {
+IP=$(docker-machine ip ${DOCKER_SERVER})
+if [ "${THORNODE_SERVICE}" == churn ]; then
+aws s3 cp s3://${SEED_BUCKET}/${S3_FILE} /tmp/${S3_FILE}
+fi
+
+cat <<EOF >> /tmp/${S3_FILE}
+{"ip": "${IP}", "date": "${DATE}", "PUB_KEY": "${PUB_KEY}"}
+EOF
+
+aws s3 cp /tmp/${S3_FILE} s3://${SEED_BUCKET}/
+rm -rf /tmp/${S3_FILE}
 }
 
-#####################
-# VERIFY THE STACK  #
-#####################
-verify_the_stack () {
-    echo "allow a few mins for docker services to come up"
+verify_stack () {
+    if [ "${THORNODE_SERVICE}" != binance ]; then
+        export PUB_KEY=$(docker exec thor-daemon thorcli keys show thorchain --pubkey)
+        export VALIDATOR=$(docker exec thor-daemon thord tendermint show-validator)
+    fi
+    echo "allow sufficient time for stack to be up"
     sleep 60
-    docker ps -a
     echo "performing healthchecks"
     export IP=$(docker-machine ip ${DOCKER_SERVER})
-    HEALTHCHECK_URL="http://${IP}:8080/v1/thorchain/pool_addresses"
-    HEALTHCHECK_CMD=$(curl -s -o /dev/null -w "%{http_code}" ${HEALTHCHECK_URL})
-    if  [ "${HEALTHCHECK_CMD}" == 200 ]; then
-	    echo "HEALTHCHECK PASSED"
+    if [ "${THORNODE_SERVICE}" == binance ]; then
+        HEALTHCHECK_CMD=$(nc -z $IP 8080)
+        if  [ $? == 0 ]; then
+	        echo "HEALTHCHECK PASSED"
+	    else
+	        echo "HEALTHCHECK FAILED"
+	        exit 1
+        fi
     else
-	    echo "HEALTHCHECK FAILED"
-	    exit 1
-    fi
-    if [ ! -z "${CHURN}" ]; then
-        echo "starting churning"
-        churn
-    else
-        update_ip
+        HEALTHCHECK_URL="http://${IP}:8080/v1/thorchain/pool_addresses"
+        HEALTHCHECK_CMD=$(curl -s -o /dev/null -w "%{http_code}" ${HEALTHCHECK_URL})
+        if  [ "${HEALTHCHECK_CMD}" == 200 ]; then
+	        echo "HEALTHCHECK PASSED"
+	        if [ "${THORNODE_SERVICE}" == standalone ]; then
+	            update_ip
+	        fi
+        else
+	        echo "HEALTHCHECK FAILED"
+	        exit 1
+        fi
     fi
 }
 
-################################
-# Register IP on S3 Web Endpoint
-################################
-update_ip() {
-    echo $IP > /tmp/ip_address
-    sed -e 's/"//g' -e "s/null//g" /tmp/ip_address > /tmp/${S3_FILE}
-    aws s3 cp /tmp/${S3_FILE} s3://${BUCKET_NAME}/net/
-}
+churn () {
+echo "churning"
 
-#########
-# START #
-#########
-THORNODE_ENV=testnet
-BUCKET_NAME="thorchain.net"
-S3_FILE="${THORNODE_ENV}.json"
-USER=computer
-DISK_SIZE=100
-SSH_PUB_KEY=gitlab-ci.pub
-SSH_PRIV_KEY=gitlab-ci
+eval $(docker-machine env ${DOCKER_SERVER} --shell bash)
 
-if [ $1 == "ci" ]; then
-    export CI="true"
-    export AWS_REGION=$AWS_CI_REGION
-    export USER=$CI_JOB_ID
-    export CHURN="true"
-elif [ $1 == "churn" ]; then
-    export CHURN="true"
-    export NON_CI="true"
-fi
+cat <<EOD > ${FAUCET_FILE}
+${FAUCET_PASSWORD}
+${FAUCET_PASSWORD}
+${FAUCET_MNEMONIC}
+EOD
 
-export DOCKER_SERVER="${USER}-${THORNODE_ENV}$1"
-if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANCE_TYPE}" ]; then
-    cleanup ${DOCKER_SERVER} 20
-    create_server
-    start_the_stack 60
-    verify_the_stack
+echo "restore faucet wallet"
+while read -r password password_confirmation mnemonic
+do
+        tbnbcli keys add $FAUCET_WALLET --recover 2>/dev/null
+done < $FAUCET_FILE
+
+echo "restore bond wallet locally"
+MNEMONIC=$(docker exec thor-daemon cat /root/.bond/mnemonic.txt)
+
+# first delete the wallet if it does exist
+echo $BOND_WALLET_PASSWORD| tbnbcli keys delete bond-wallet 2>/dev/null
+
+cat <<EOF > $BOND_FILE
+${BOND_WALLET_PASSWORD}
+${BOND_WALLET_PASSWORD}
+${MNEMONIC}
+EOF
+
+sudo chown root $BOND_FILE && sudo chmod 400 $BOND_FILE
+
+while read -r password password_confirmation mnemonic
+do
+        tbnbcli keys add $BOND_WALLET --recover 2>/dev/null
+done < $BOND_FILE
+export BOND_ADDRESS=$(tbnbcli keys list --output json | jq '.[] | select(.name | contains(env.BOND_WALLET))'.address | sed -e 's/"//g')
+
+sleep 15
+echo "fund bond wallet from faucet"
+if [ ! -z "${FAUCET_PASSWORD}" ]; then
+    echo $FAUCET_PASSWORD | tbnbcli token multi-send \
+                                --from $FAUCET_WALLET \
+                                --chain-id=$CHAIN_ID \
+                                --node=$TENDERMINT_NODE \
+                                --memo=$FUND_MEMO \
+                                --transfers "[{\"to\":\"$BOND_ADDRESS\",\"amount\":\"$BOND_AMOUNT\"}, {\"to\":\"$BOND_ADDRESS\",\"amount\":\"$GAS_FEE:BNB\"}]" --json
 else
-	echo "you have not provided all the required environment variables"
-	exit 1
+    echo "please supply your FAUCET_PASSWORD"
+    exit 1
 fi
+
+sleep 15
+echo "make bond to Asgard"
+PEER=$(curl -s http://${SEED_ENDPOINT}/${THORNODE_ENV}.json -L |tail -n 1 |jq '.'ip | sed -e 's/"//g' -e "s/null//g")
+NODE_ACCOUNT=$(docker exec thor-daemon thorcli keys show thorchain -a)
+BOND_MEMO=BOND:$NODE_ACCOUNT
+ASGARD=$(curl -s http://${PEER}:1317/thorchain/pool_addresses | jq '.current[]'.address | sed -e 's/"//g')
+echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
+                                --from $BOND_WALLET \
+                                --to $ASGARD \
+                                --amount "$BOND_AMOUNT" \
+                                --chain-id=$CHAIN_ID \
+                                --node=$TENDERMINT_NODE \
+                                --memo $BOND_MEMO \
+                                --json \
+
+echo "just finished making bond"
 
 if [ ! -z "${CI}" ]; then
+    export SIGNER_PASSWD=${CI_SIGNER_PASSWD}
+fi
+
+echo "setting node keys"
+sleep 60 # wait for thorchain to register the new node account
+docker exec thor-daemon ash -c "echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $PUB_KEY $PUB_KEY $VALIDATOR --node tcp://$PEER:26657 --from $SIGNER_NAME --yes"
+
+echo "update IP"
+update_ip
+
+##############################################################
+# clean recovered wallets and disconnect from docker socket ##
+##############################################################
+echo "clean recovered wallets and disconnect from docker socket"
+if [ ! -z "${CI}" ]; then
     echo "no need to unset docker variables"
-    rm -rf /tmp/gitlab-ci*
 else
     eval $(docker-machine env -u)
+fi
+rm -f $FAUCET_FILE
+
+# delete local bond-wallet
+echo ${BOND_WALLET_PASSWORD} | tbnbcli keys delete $BOND_WALLET
+
+# delete local faucet-wallet
+if [ ! -z "${CI}" ]; then
+    echo ${FAUCET_PASSWORD} | tbnbcli keys delete $FAUCET_WALLET
+fi
+}
+
+if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANCE_TYPE}" ] && [ ! -z "${THORNODE_ENV}" ] && [ ! -z "${THORNODE_SERVICE}" ]; then
+    create_server
+    start_the_stack
+    verify_stack
+    if [ "${THORNODE_SERVICE}" == churn ]; then
+        churn
+    fi
+else
+    echo "you have not provided all the required environment variables"
+	exit 1
 fi
