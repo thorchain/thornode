@@ -8,6 +8,7 @@ services:
       CHAIN_RPC: localhost:26657
       BINANCE_HOST: ${BINANCE_HOST:-http://localhost:26660}
       TSS_HOST: localhost
+      SIGNER_PASSWD: ${SIGNER_PASSWD}
   thor-daemon:
     network_mode: "host"
   thor-api:
