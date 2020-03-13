@@ -279,16 +279,18 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (
 			return sdk.ZeroUint(), nil, fmt.Errorf("fail to set pool(%s): %w", coin.Asset, err)
 		}
 
-		gasForEvent := common.Gas{common.Coin{Asset: common.BNBAsset, Amount: sdk.NewUint(0)}, common.Coin{Asset: common.RuneAsset(), Amount: runeGas}}
-		eventGas := NewEventGas(gasForEvent, GasSpend)
-		gasBuf, err := json.Marshal(eventGas)
-		if err != nil {
-			return sdk.ZeroUint(), nil, fmt.Errorf("fail to marshal gas event to buf: %w", err)
-		}
-		event := NewEvent(eventGas.Type(), ctx.BlockHeight(), common.Tx{}, gasBuf, EventSuccess)
-		err = keeper.UpsertEvent(ctx, event)
-		if err != nil {
-			return sdk.ZeroUint(), nil, fmt.Errorf("fail to save gas event: %w", err)
+		if coin.Asset.IsBNB() {
+			gasForEvent := common.Gas{common.Coin{Asset: common.RuneAsset(), Amount: runeGas}}
+			eventGas := NewEventGas(gasForEvent, GasSpend)
+			gasBuf, err := json.Marshal(eventGas)
+			if err != nil {
+				return sdk.ZeroUint(), nil, fmt.Errorf("fail to marshal gas event to buf: %w", err)
+			}
+			event := NewEvent(eventGas.Type(), ctx.BlockHeight(), common.Tx{}, gasBuf, EventSuccess)
+			err = keeper.UpsertEvent(ctx, event)
+			if err != nil {
+				return sdk.ZeroUint(), nil, fmt.Errorf("fail to save gas event: %w", err)
+			}
 		}
 	}
 	return val, gas, nil
