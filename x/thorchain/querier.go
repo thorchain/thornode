@@ -58,7 +58,9 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 		case q.QueryVaultData.Key:
 			return queryVaultData(ctx, keeper)
 		case q.QueryVaultsAsgard.Key:
-			return queryVaults(ctx, keeper)
+			return queryAsgardVaults(ctx, keeper)
+		case q.QueryVaultsYggdrasil.Key:
+			return queryYggdrasilVaults(ctx, keeper)
 		case q.QueryVaultPubkeys.Key:
 			return queryVaultsPubkeys(ctx, keeper)
 		case q.QueryVaultAddresses.Key:
@@ -85,16 +87,83 @@ func getURLFromData(data []byte) (*url.URL, error) {
 	return u, nil
 }
 
-func queryVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
+func queryAsgardVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 	vaults, err := keeper.GetAsgardVaults(ctx)
 	if err != nil {
-		ctx.Logger().Error("fail to get active asgards", "error", err)
-		return nil, sdk.ErrInternal("fail to get active asgards")
+		ctx.Logger().Error("fail to get asgard vaults", "error", err)
+		return nil, sdk.ErrInternal("fail to get asgard vaults")
 	}
 
-	res, err := codec.MarshalJSONIndent(keeper.Cdc(), vaults)
+	var vaultsWithFunds Vaults
+	for _, vault := range vaults {
+		if vault.IsAsgard() && (vault.HasFunds() || vault.Status == ActiveVault) {
+			vaultsWithFunds = append(vaultsWithFunds, vault)
+		}
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), vaultsWithFunds)
 	if err != nil {
-		ctx.Logger().Error("fail to marshal pubkeys response to json", "error", err)
+		ctx.Logger().Error("fail to marshal vaults response to json", "error", err)
+		return nil, sdk.ErrInternal("fail to marshal response to json")
+	}
+
+	return res, nil
+}
+
+func queryYggdrasilVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
+	active, err := keeper.ListActiveNodeAccounts(ctx)
+	if err != nil {
+		ctx.Logger().Error("fail to get active node accounts", "error", err)
+		return nil, sdk.ErrInternal("fail to get node accounts")
+	}
+
+	var vaults Vaults
+	for _, na := range active {
+		vault, err := keeper.GetVault(ctx, na.PubKeySet.Secp256k1)
+		if err != nil {
+			ctx.Logger().Error("fail to get vault", "error", err)
+			continue
+		}
+		if vault.IsYggdrasil() && vault.HasFunds() {
+			vaults = append(vaults, vault)
+		}
+	}
+
+	respVaults := make([]QueryYggdrasilVaults, len(vaults))
+	for i, vault := range vaults {
+		bond := sdk.ZeroUint()
+		totalValue := sdk.ZeroUint()
+
+		// find the bond of this node account
+		for _, na := range active {
+			if na.PubKeySet.Secp256k1.Equals(vault.PubKey) {
+				bond = na.Bond
+				break
+			}
+		}
+
+		// calculate the total value of this yggdrasil vault
+		for _, coin := range vault.Coins {
+			if coin.Asset.IsRune() {
+				totalValue = totalValue.Add(coin.Amount)
+			} else {
+				pool, err := keeper.GetPool(ctx, coin.Asset)
+				if err != nil {
+					ctx.Logger().Error("fail to get pool", "error", err)
+					continue
+				}
+				totalValue = totalValue.Add(pool.AssetValueInRune(coin.Amount))
+			}
+		}
+
+		respVaults[i] = QueryYggdrasilVaults{
+			vault, bond, totalValue,
+		}
+	}
+
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), respVaults)
+	if err != nil {
+		ctx.Logger().Error("fail to marshal vaults response to json", "error", err)
 		return nil, sdk.ErrInternal("fail to marshal response to json")
 	}
 

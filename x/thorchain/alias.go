@@ -132,6 +132,7 @@ type (
 	QueryResPools               = types.QueryResPools
 	QueryResHeights             = types.QueryResHeights
 	QueryResTxOut               = types.QueryResTxOut
+	QueryYggdrasilVaults        = types.QueryYggdrasilVaults
 	ResTxOut                    = types.ResTxOut
 	NodeKeys                    = types.NodeKeys
 	NodesKeys                   = types.NodesKeys

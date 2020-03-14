@@ -57,6 +57,7 @@ var (
 	QueryPoolAddresses      = Query{Key: "pooladdresses", EndpointTemplate: "/%s/pool_addresses"}
 	QueryVaultData          = Query{Key: "vaultdata", EndpointTemplate: "/%s/vault"}
 	QueryVaultsAsgard       = Query{Key: "vaultsasgard", EndpointTemplate: "/%s/vaults/asgard"}
+	QueryVaultsYggdrasil    = Query{Key: "vaultsyggdrasil", EndpointTemplate: "/%s/vaults/yggdrasil"}
 	QueryVaultPubkeys       = Query{Key: "vaultpubkeys", EndpointTemplate: "/%s/vaults/pubkeys"}
 	QueryVaultAddresses     = Query{Key: "vaultaddresses", EndpointTemplate: "/%s/vaults/addresses"}
 	QueryTSSSigners         = Query{Key: "tsssigner", EndpointTemplate: "/%s/vaults/{%s}/signers"}
@@ -87,6 +88,7 @@ var Queries = []Query{
 	QueryPoolAddresses,
 	QueryVaultData,
 	QueryVaultsAsgard,
+	QueryVaultsYggdrasil,
 	QueryVaultPubkeys,
 	QueryKeygensPubkey,
 	QueryVaultAddresses,
