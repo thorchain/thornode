@@ -770,8 +770,6 @@ github.com/zondax/hid v0.9.0/go.mod h1:l5wttcP0jwtdLjqjMMWFVEE7d1zO0jvSPA9OPZxWp
 github.com/zondax/ledger-go v0.9.0/go.mod h1:b2vIcu3u9gJoIx4kTWuXOgzGV7FPWeUktqRqVf6feG0=
 github.com/zondax/ledger-go v0.11.0 h1:EEqUh6eaZucWAaGo87G7sJiqRNJpzBZr+I9PpGgjjPg=
 github.com/zondax/ledger-go v0.11.0/go.mod h1:NI6JDs8VWwgh+9Bf1vPZMm9Xufp2Q7Iwm2IzxJWzmus=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200311063750-ecbf4b87e492 h1:fEpRLHPsS/yyplhSMQsN1NNRQ949izo8dJxDAN4D2IY=
-gitlab.com/thorchain/tss/go-tss v0.0.0-20200311063750-ecbf4b87e492/go.mod h1:ezIsYgnT42fXgani/rJvF7yNSbI1yr6RsZD06aC6yJg=
 gitlab.com/thorchain/tss/go-tss v0.0.0-20200312094649-aef9dc0dbd42 h1:Lhocay+Q3xKM27xg6wDpjgPAkC6pRNXx13VfwGTRUXo=
 gitlab.com/thorchain/tss/go-tss v0.0.0-20200312094649-aef9dc0dbd42/go.mod h1:ezIsYgnT42fXgani/rJvF7yNSbI1yr6RsZD06aC6yJg=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
