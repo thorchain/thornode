@@ -942,8 +942,12 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 		return active[i].LeaveHeight > active[j].LeaveHeight
 	})
 
+	fmt.Printf(">>>>>>>> Ready  Len: %d\n", len(ready))
+	fmt.Printf(">>>>>>>> Active Len: %d\n", len(active))
+
 	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
 	toRemove := findCounToRemove(ctx.BlockHeight(), artificialRagnarokBlockHeight, active)
+	fmt.Printf(">>>>>>>> To Remove: %d\n", toRemove)
 	if toRemove > 0 {
 		rotation = true
 		active = active[toRemove:]
@@ -951,16 +955,19 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 
 	// add ready nodes to become active
 	limit := toRemove + 1 // Max limit of ready nodes to churn in
-	for i := 1; targetCount >= len(active); i++ {
+	for i := 0; targetCount >= len(active); i++ {
 		if len(ready) >= i {
 			rotation = true
+			fmt.Println(">>>>>>>> Adding Ready")
 			active = append(active, ready[i-1])
 		}
 		if i == limit { // limit adding ready accounts
+			fmt.Println(">>>>>>>> Hit next limit")
 			break
 		}
 	}
 
+	fmt.Printf(">>>>>>>> Post Active Len: %d\n", len(active))
 	return active, rotation, nil
 }
 
