@@ -959,7 +959,7 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 		if len(ready) >= i {
 			rotation = true
 			fmt.Println(">>>>>>>> Adding Ready")
-			active = append(active, ready[i-1])
+			active = append(active, ready[i])
 		}
 		if i == limit { // limit adding ready accounts
 			fmt.Println(">>>>>>>> Hit next limit")
