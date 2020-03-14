@@ -180,15 +180,12 @@ func (s *Signer) signTransactions() {
 }
 
 func (s *Signer) processTransactions() {
-	ordered := s.storage.OrderedLists()
 	wg := &sync.WaitGroup{}
-	wg.Add(len(ordered))
-	for key, items := range s.storage.OrderedLists() {
-		fmt.Printf(">>>>>>>>>>>>>>>>>>>>>Ordered List: %s %d\n", key, len(items))
+	for _, items := range s.storage.OrderedLists() {
+		wg.Add(1)
 		go func(items []TxOutStoreItem) {
 			defer wg.Done()
 			for i, item := range items {
-				s.logger.Info().Msgf("Signing transaction (Id: %d | Height: %d | Status: %d): %+v", i, item.Height, item.Status, item.TxOutItem)
 				select {
 				case <-s.stopChan:
 					return
@@ -197,9 +194,34 @@ func (s *Signer) processTransactions() {
 						continue
 					}
 
+					// We get the keysign object from thorchain again to ensure it hasn't
+					// been signed already, and we can skip. This helps us not get stuck on
+					// a task that we'll never sign, because 2/3rds already has and will
+					// never be available to sign again.
+					txOut, err := s.thorchainBridge.GetKeysign(item.Height, item.TxOutItem.VaultPubKey.String())
+					if err != nil {
+						s.logger.Error().Err(err).Msg("fail to get keysign items")
+						return
+					}
+					for _, out := range txOut.Chains {
+						for _, tx := range out.TxArray {
+							txOutItem := tx.TxOutItem()
+							if txOutItem.Equals(txOutItem) && !tx.OutHash.IsEmpty() {
+								// already been signed, we can skip it
+								s.logger.Info().Str("tx_id", tx.OutHash.String()).Msgf("already signed. skipping...")
+								item.Status = TxSpent
+								if err := s.storage.Set(item); err != nil {
+									s.logger.Error().Err(err).Msg("fail to update tx out store item")
+								}
+								continue
+							}
+						}
+					}
+
+					s.logger.Info().Msgf("Signing transaction (Num: %d | Height: %d | Status: %d): %+v", i, item.Height, item.Status, item.TxOutItem)
 					if err := s.signAndBroadcast(item); err != nil {
 						s.logger.Error().Err(err).Msg("fail to sign and broadcast tx out store item")
-						continue
+						return
 					}
 
 					// We have a successful broadcast! Remove the item from our store

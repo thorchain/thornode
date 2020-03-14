@@ -359,7 +359,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		Sequence:      meta.SeqNumber,
 		AccountNumber: meta.AccountNumber,
 	}
-	rawBz, err := b.signWithRetry(signMsg, fromAddr, tx.VaultPubKey, height, tx)
+	rawBz, err := b.signMsg(signMsg, fromAddr, tx.VaultPubKey, height, tx)
 	if err != nil {
 		return nil, fmt.Errorf("fail to sign message: %w", err)
 	}
@@ -384,69 +384,38 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey, signerP
 	return k.SignWithPool(signMsg, poolPubKey, signerPubKeys)
 }
 
-// signWithRetry is design to sign a given message until it success or the same message had been send out by other signer
-func (b *Binance) signWithRetry(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, txOutItem stypes.TxOutItem) ([]byte, error) {
-	for {
-		keySignParty, err := b.thorchainBridge.GetKeysignParty(poolPubKey)
+// signMsg is design to sign a given message until it success or the same message had been send out by other signer
+func (b *Binance) signMsg(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, txOutItem stypes.TxOutItem) ([]byte, error) {
+	keySignParty, err := b.thorchainBridge.GetKeysignParty(poolPubKey)
+	if err != nil {
+		b.logger.Error().Err(err).Msg("fail to get keysign party")
+		return nil, err
+	}
+	rawBytes, err := b.sign(signMsg, poolPubKey, keySignParty)
+	if err == nil && rawBytes != nil {
+		return rawBytes, nil
+	}
+	var keysignError tss.KeysignError
+	if errors.As(err, &keysignError) {
+		if len(keysignError.Blame.BlameNodes) == 0 {
+			// TSS doesn't know which node to blame
+			return nil, err
+		}
+
+		// key sign error forward the keysign blame to thorchain
+		txID, err := b.thorchainBridge.PostKeysignFailure(keysignError.Blame, height, txOutItem.Memo, txOutItem.Coins)
 		if err != nil {
-			b.logger.Error().Err(err).Msg("fail to get keysign party")
-			continue
-		}
-
-		// We get the keysign object from thorchain again to ensure it hasn't
-		// been signed already, and we can skip. This helps us not get stuck on
-		// a task that we'll never sign, because 2/3rds already has and will
-		// never be available to sign again.
-		txOut, err := b.thorchainBridge.GetKeysign(height, poolPubKey.String())
-		if err != nil {
-			b.logger.Error().Err(err).Msg("fail to get keysign items")
-			continue
-		}
-		for _, out := range txOut.Chains {
-			for _, tx := range out.TxArray {
-				item := tx.TxOutItem()
-				if txOutItem.Equals(item) && !tx.OutHash.IsEmpty() {
-					// already been signed, we can skip it
-					b.logger.Info().Str("tx_id", tx.OutHash.String()).Msgf("already signed. skipping...")
-					return nil, nil
-				}
-			}
-		}
-
-		rawBytes, err := b.sign(signMsg, poolPubKey, keySignParty)
-		if err == nil && rawBytes != nil {
-			return rawBytes, nil
-		}
-		var keysignError tss.KeysignError
-		if errors.As(err, &keysignError) {
-			if len(keysignError.Blame.BlameNodes) == 0 {
-				// TSS doesn't know which node to blame
-				continue
-			}
-
-			// key sign error forward the keysign blame to thorchain
-			txID, err := b.thorchainBridge.PostKeysignFailure(keysignError.Blame, height, txOutItem.Memo, txOutItem.Coins)
-			if err != nil {
-				b.logger.Error().Err(err).Msg("fail to post keysign failure to thorchain")
-			} else {
-				b.logger.Info().Str("tx_id", txID.String()).Msgf("post keysign failure to thorchain")
-			}
-			continue
-		}
-		b.logger.Error().Err(err).Msgf("fail to sign msg with memo: %s", signMsg.Memo)
-		// should THORNode give up? let's check the seq no on binance chain
-		// keep in mind, when THORNode don't run our own binance full node, THORNode might get rate limited by binance
-
-		acc, err := b.GetAccount(from)
-		if err != nil {
-			b.logger.Error().Err(err).Msg("fail to get account info from binance chain")
-			continue
-		}
-		if acc.Sequence > signMsg.Sequence {
-			b.logger.Debug().Msgf("msg with memo: %s , seqNo: %d had been processed", signMsg.Memo, signMsg.Sequence)
-			return nil, nil
+			b.logger.Error().Err(err).Msg("fail to post keysign failure to thorchain")
+			return nil, err
+		} else {
+			b.logger.Info().Str("tx_id", txID.String()).Msgf("post keysign failure to thorchain")
+			return nil, fmt.Errorf("sent keysign failure to thorchain")
 		}
 	}
+	b.logger.Error().Err(err).Msgf("fail to sign msg with memo: %s", signMsg.Memo)
+	// should THORNode give up? let's check the seq no on binance chain
+	// keep in mind, when THORNode don't run our own binance full node, THORNode might get rate limited by binance
+	return nil, err
 }
 
 func (b *Binance) GetAccount(addr string) (common.Account, error) {
