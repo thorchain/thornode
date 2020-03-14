@@ -948,10 +948,10 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 
 	// add ready nodes to become active
 	limit := toRemove + 1 // Max limit of ready nodes to churn in
-	for i := 1; targetCount >= len(active); i++ {
+	for i := 0; targetCount >= len(active); i++ {
 		if len(ready) >= i {
 			rotation = true
-			active = append(active, ready[i-1])
+			active = append(active, ready[i])
 		}
 		if i == limit { // limit adding ready accounts
 			break
