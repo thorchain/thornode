@@ -171,6 +171,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 		na.UpdateStatus(NodeActive, height)
 		na.LeaveHeight = 0
 		na.RequestedToLeave = false
+		na.SlashPoints = 0
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 			ctx.Logger().Error("fail to save node account", "error", err)
 		}
