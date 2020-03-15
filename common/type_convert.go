@@ -42,17 +42,3 @@ func SafeSub(input1, input2 sdk.Uint) sdk.Uint {
 	}
 	return input1.Sub(input2)
 }
-
-// UintToUint64
-func UintToUint64(input sdk.Uint) uint64 {
-	return input.Uint64()
-}
-
-//
-func IntToInt64(input sdk.Int) int64 {
-	return input.Int64()
-}
-
-func IntToUint64(input sdk.Int) uint64 {
-	return uint64(input.Int64())
-}

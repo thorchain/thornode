@@ -430,8 +430,8 @@ func (vm *validatorMgrV1) ragnarokReserve(ctx sdk.Context, nth int64) error {
 	for i, contrib := range contribs {
 		share := common.GetShare(
 			contrib.Amount,
-			totalReserve,
 			totalContributions,
+			totalReserve,
 		)
 		if nth > 10 { // cap at 10
 			nth = 10
