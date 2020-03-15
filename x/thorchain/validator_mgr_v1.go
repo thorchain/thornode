@@ -813,9 +813,9 @@ func (vm *validatorMgrV1) findOldActor(ctx sdk.Context) (NodeAccount, error) {
 }
 
 // Mark an old to be churned out
-func (vm *validatorMgrV1) markActor(ctx sdk.Context, na NodeAccount) error {
+func (vm *validatorMgrV1) markActor(ctx sdk.Context, na NodeAccount, reason string) error {
 	if !na.IsEmpty() && na.LeaveHeight == 0 {
-		ctx.Logger().Info(fmt.Sprintf("Marked Validator to be churned out %s", na.NodeAddress))
+		ctx.Logger().Info(fmt.Sprintf("Marked Validator to be churned out %s: %s", na.NodeAddress, reason))
 		na.LeaveHeight = ctx.BlockHeight()
 		return vm.k.SetNodeAccount(ctx, na)
 	}
@@ -829,7 +829,7 @@ func (vm *validatorMgrV1) markOldActor(ctx sdk.Context, rate int64) error {
 		if err != nil {
 			return err
 		}
-		if err := vm.markActor(ctx, na); err != nil {
+		if err := vm.markActor(ctx, na, "for age"); err != nil {
 			return err
 		}
 	}
@@ -844,7 +844,7 @@ func (vm *validatorMgrV1) markBadActor(ctx sdk.Context, rate int64) error {
 			return err
 		}
 		for _, na := range nas {
-			if err := vm.markActor(ctx, na); err != nil {
+			if err := vm.markActor(ctx, na, "for bad behavior"); err != nil {
 				return err
 			}
 		}
