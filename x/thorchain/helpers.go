@@ -67,6 +67,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, c
 
 	return nil
 }
+
 func getFee(input, output common.Coins, transactionFee int64) common.Fee {
 	var fee common.Fee
 	assetTxCount := 0
