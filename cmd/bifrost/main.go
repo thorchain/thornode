@@ -118,7 +118,7 @@ func main() {
 		app.DefaultCLIHome,
 		common.TssConfig{
 			KeyGenTimeout:   30 * time.Second,
-			KeySignTimeout:  30 * time.Second,
+			KeySignTimeout:  10 * time.Second,
 			PreParamTimeout: 5 * time.Minute,
 		}, getLocalPreParam(*tssPreParam))
 	if err != nil {
