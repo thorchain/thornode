@@ -100,7 +100,7 @@ func (v Vault) IsValid() error {
 // HasFunds check whether the vault pool has fund
 func (v Vault) HasFunds() bool {
 	for _, coin := range v.Coins {
-		if coin.Amount.GT(sdk.ZeroUint()) {
+		if !coin.Amount.IsZero() {
 			return true
 		}
 	}

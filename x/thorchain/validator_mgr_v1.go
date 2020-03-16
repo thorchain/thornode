@@ -644,12 +644,12 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 				ToAddress:   toAddr,
 				InHash:      common.BlankTxID,
 				VaultPubKey: ygg.PubKey,
+				Coin:        common.NewCoin(common.RuneAsset(), sdk.ZeroUint()),
 				Memo:        NewYggdrasilReturn(ctx.BlockHeight()).String(),
 			}
 			// yggdrasil- will not set coin field here, when signer see a TxOutItem that has memo "yggdrasil-" it will query the chain
 			// and find out all the remaining assets , and fill in the field
-			_, err := txOutStore.TryAddTxOutItem(ctx, txOutItem)
-			if err != nil {
+			if err := txOutStore.UnSafeAddTxOutItem(ctx, txOutItem); err != nil {
 				return err
 			}
 		}

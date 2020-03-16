@@ -620,9 +620,6 @@ func queryKeysign(ctx sdk.Context, path []string, req abci.RequestQuery, keeper 
 
 	out := make(map[common.Chain]ResTxOut, 0)
 	for _, item := range txs.TxArray {
-		if item.Coin.IsEmpty() {
-			continue
-		}
 		res, ok := out[item.Chain]
 		if !ok {
 			res = ResTxOut{

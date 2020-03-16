@@ -318,7 +318,7 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 
 	// Check if we're sending all funds back (memo "yggdrasil-")
 	// In this scenario, we should chose the coins to send ourselves
-	if strings.HasPrefix(tx.Memo, thorchain.YggdrasilReturnMemo{}.GetType().String()) && tx.Coins.IsEmpty() {
+	if strings.HasPrefix(strings.ToLower(tx.Memo), thorchain.YggdrasilReturnMemo{}.GetType().String()) && tx.Coins.IsEmpty() {
 		tx, err = s.handleYggReturn(tx)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("failed to handle yggdrasil return")
@@ -395,7 +395,7 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 			return tx, err
 		}
 		amount := sdk.NewUint(coin.Amount)
-		if asset.Chain == tx.Chain {
+		if asset.Equals(gas[0].Asset) {
 			amount = common.SafeSub(amount, gas[0].Amount)
 		}
 		tx.Coins = append(tx.Coins, common.NewCoin(asset, amount))
