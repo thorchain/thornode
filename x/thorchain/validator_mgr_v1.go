@@ -205,6 +205,12 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 		if err := vm.payNodeAccountBondAward(ctx, na); err != nil {
 			ctx.Logger().Error("fail to pay node account bond award", "error", err)
 		}
+
+		// return yggdrasil funds
+		if err := vm.RequestYggReturn(ctx, na); err != nil {
+			ctx.Logger().Error("fail to request yggdrasil funds return", "error", err)
+		}
+
 		pk, err := sdk.GetConsPubKeyBech32(na.ValidatorConsPubKey)
 		if err != nil {
 			ctx.Logger().Error("fail to parse consensus public key", "key", na.ValidatorConsPubKey, "error", err)
