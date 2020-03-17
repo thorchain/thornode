@@ -340,10 +340,7 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 		}
 		return fmt.Errorf("fail to get event id: %w", err)
 	}
-	if len(eventIDs) > 1 {
-		return errors.New("more than events found")
-	}
-	eventID := eventIDs[0]
+	eventID := eventIDs[len(eventIDs)-1]
 	event, err := keeper.GetEvent(ctx, eventID)
 	if err != nil {
 		return fmt.Errorf("fail to get event: %w", err)
