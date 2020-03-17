@@ -356,20 +356,18 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 		}
 	}
 
-	keySignParty := make(common.PubKeys, 0)
-	if signers, ok := s.signers[tx.VaultPubKey]; ok && len(signers) > 0 {
-		keySignParty = signers
-	} else {
-		keySignParty, err = s.thorchainBridge.GetKeysignParty(tx.VaultPubKey)
+	// update signers list if needed
+	if signers, ok := s.signers[tx.VaultPubKey]; !ok || len(signers) == 0 {
+		s.signers[tx.VaultPubKey], err = s.thorchainBridge.GetKeysignParty(tx.VaultPubKey)
 		if err != nil {
 			s.logger.Error().Err(err).Msg("fail to get keysign party")
 			return err
 		}
 	}
 
-	signedTx, err := chain.SignTx(tx, height, keySignParty)
+	signedTx, err := chain.SignTx(tx, height, s.signers[tx.VaultPubKey])
 	if err != nil {
-		s.signers[tx.VaultPubKey] = nil // clear signer party
+		s.signers[tx.VaultPubKey] = nil // clear signer party so we get a new list next time
 		s.logger.Error().Err(err).Msg("fail to sign tx")
 		return err
 	}
