@@ -78,6 +78,8 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
+	// when PoolPubKey is empty , which means TssVoter with id(msg.ID) doesn't exist before, this is the first time to create it
+	// set the PoolPubKey to the one in msg, there is no reason voter.PubKeys have anything in it either, thus override it with msg.PubKeys as well
 	if voter.PoolPubKey.IsEmpty() {
 		voter.PoolPubKey = msg.PoolPubKey
 		voter.PubKeys = msg.PubKeys
