@@ -160,8 +160,8 @@ func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins
 		assetAmt := common.GetShare(targetRune, totalRune, pool.BalanceAsset)
 		if !assetAmt.IsZero() {
 			// add rune amt (not asset since the two are considered to be equal)
+			// in a single pool X, the value of 1% asset X in RUNE ,equals the 1% RUNE in the same pool
 			counter = counter.Add(runeAmt)
-
 			coin := common.NewCoin(pool.Asset, assetAmt)
 			coins = append(coins, coin)
 		}

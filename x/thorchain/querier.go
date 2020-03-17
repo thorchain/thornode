@@ -364,7 +364,7 @@ func queryObservers(ctx sdk.Context, path []string, req abci.RequestQuery, keepe
 	if err != nil {
 		return nil, sdk.ErrInternal("fail to get node account iterator")
 	}
-	var result []string
+	result := make([]string, 0, len(activeAccounts))
 	for _, item := range activeAccounts {
 		result = append(result, item.NodeAddress.String())
 	}
