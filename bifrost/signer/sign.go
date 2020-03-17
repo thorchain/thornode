@@ -367,7 +367,7 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 
 	signedTx, err := chain.SignTx(tx, height, s.signers[tx.VaultPubKey])
 	if err != nil {
-		s.signers[tx.VaultPubKey] = nil // clear signer party so we get a new list next time
+		delete(s.signers, tx.VaultPubKey) // clear signer party so we get a new list next time
 		s.logger.Error().Err(err).Msg("fail to sign tx")
 		return err
 	}
