@@ -81,6 +81,7 @@ func getFee(input, output common.Coins, transactionFee int64) common.Fee {
 		for _, out := range output {
 			if out.Asset.Equals(in.Asset) {
 				outCoin = out
+				break
 			}
 		}
 		if outCoin.IsEmpty() {
