@@ -105,6 +105,7 @@ func NewSigner(cfg config.SignerConfiguration,
 		pubkeyMgr:             pubkeyMgr,
 		thorchainBridge:       thorchainBridge,
 		tssKeygen:             kg,
+		signers:               make(map[common.PubKey]common.PubKeys, 0),
 	}, nil
 }
 
