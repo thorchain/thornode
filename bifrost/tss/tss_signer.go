@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"math/big"
+	"time"
 
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/keys"
@@ -171,16 +172,30 @@ func (s *KeySign) toLocalTSSSigner(poolPubKey, sendmsg string, signerPubKeys com
 	}
 	s.logger.Debug().Str("payload", fmt.Sprintf("PoolPubKey: %s, Message: %s, Signers: %+v", tssMsg.PoolPubKey, tssMsg.Message, tssMsg.SignerPubKeys)).Msg("msg to tss Local node")
 
-	keySignResp, err := s.server.KeySign(tssMsg)
-	if err != nil {
-		return "", "", errors.Wrapf(err, "fail to send request to local TSS node")
+	tssChan := make(chan keysign.Request, 1)
+
+	go func() {
+		tssChan <- tssMsg
+	}()
+
+	select {
+	case tssMsg := <-tssChan:
+		keySignResp, err := s.server.KeySign(tssMsg)
+
+		// 1 means success,2 means fail , 0 means NA
+		if keySignResp.Status == 1 && keySignResp.Blame.IsEmpty() {
+			return keySignResp.R, keySignResp.S, nil
+		}
+
+		// Blame need to be passed back to thorchain , so as thorchain can use the information to slash relevant node account
+		return "", "", NewKeysignError(keySignResp.Blame)
+
+		if err != nil {
+			return "", "", errors.Wrapf(err, "fail to send request to local TSS node")
+		}
+	case <-time.After(12 * time.Second):
+		return "", "", fmt.Errorf("TSS keysign timeout")
 	}
 
-	// 1 means success,2 means fail , 0 means NA
-	if keySignResp.Status == 1 && keySignResp.Blame.IsEmpty() {
-		return keySignResp.R, keySignResp.S, nil
-	}
-
-	// Blame need to be passed back to thorchain , so as thorchain can use the information to slash relevant node account
-	return "", "", NewKeysignError(keySignResp.Blame)
+	return "", "", fmt.Errorf("dev error")
 }
