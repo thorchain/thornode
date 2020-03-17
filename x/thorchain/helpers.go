@@ -349,6 +349,9 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 		}
 		return fmt.Errorf("fail to get event id: %w", err)
 	}
+	if len(eventIDs) == 0 {
+		return errors.New("no event found")
+	}
 	//There are two events for double swap with the same the same txID. Only the second one has fee
 	eventID := eventIDs[len(eventIDs)-1]
 	event, err := keeper.GetEvent(ctx, eventID)
