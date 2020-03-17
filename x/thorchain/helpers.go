@@ -75,10 +75,18 @@ func getFee(input, output common.Coins, transactionFee int64) common.Fee {
 		if !out.Asset.IsRune() {
 			assetTxCount++
 		}
-		for _, in := range input {
+	}
+	for _, in := range input {
+		outCoin := common.NoCoin
+		for _, out := range output {
 			if out.Asset.Equals(in.Asset) {
-				fee.Coins = append(fee.Coins, common.NewCoin(in.Asset, in.Amount.Sub(out.Amount)))
+				outCoin = out
 			}
+		}
+		if outCoin.IsEmpty() {
+			fee.Coins = append(fee.Coins, common.NewCoin(in.Asset, in.Amount))
+		} else {
+			fee.Coins = append(fee.Coins, common.NewCoin(in.Asset, in.Amount.Sub(outCoin.Amount)))
 		}
 	}
 	fee.PoolDeduct = sdk.NewUint(uint64(transactionFee) * uint64(assetTxCount))
