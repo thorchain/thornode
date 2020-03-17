@@ -76,6 +76,7 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeigh
 		httpClient: &http.Client{
 			Timeout: cfg.HttpRequestTimeout,
 		},
+		rpcClient:      client,
 		scannerStorage: scannerStorage,
 		metrics:        m,
 		previousBlock:  startBlockHeight,
@@ -156,7 +157,7 @@ func (b *CommonBlockScanner) scanBlocks() {
 		case <-b.stopChan:
 			return
 		default:
-			currentBlock, rawTxs, err := b.getRPCBlock(b.getBlockUrl(b.previousBlock + 1))
+			currentBlock, rawTxs, err := b.getRPCBlock(b.previousBlock + 1)
 			if err != nil {
 				// don't log an error if its because the block doesn't exist yet
 				if !strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") {
@@ -191,39 +192,14 @@ func (b *CommonBlockScanner) scanBlocks() {
 	}
 }
 
-func (b *CommonBlockScanner) GetFromHttpWithRetry(url string) ([]byte, error) {
-	backoffCtrl := backoff.NewExponentialBackOff()
-
-	retry := 1
-	for {
-		res, err := b.getFromHttp(url)
-		if err == nil {
-			return res, nil
-		}
-		b.logger.Error().Err(err).Msgf("fail to get from %s try %d", url, retry)
-		retry++
-		backOffDuration := backoffCtrl.NextBackOff()
-		if backOffDuration == backoff.Stop {
-			return nil, errors.Wrapf(err, "fail to get from %s after maximum retry", url)
-		}
-		if retry >= b.cfg.MaxHttpRequestRetry {
-			return nil, errors.Errorf("fail to get from %s after maximum retry(%d)", url, b.cfg.MaxHttpRequestRetry)
-		}
-		t := time.NewTicker(backOffDuration)
-		select {
-		case <-b.stopChan:
-			return nil, err
-		case <-t.C:
-			t.Stop()
-		}
-	}
-}
-
-func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+func (b *CommonBlockScanner) getFromHttp(url, body string) ([]byte, error) {
+	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(body))
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_create_http_request", url).Inc()
 		return nil, errors.Wrap(err, "fail to create http request")
+	}
+	if len(body) > 0 {
+		req.Header.Add("Content-Type", "application/json")
 	}
 	resp, err := b.httpClient.Do(req)
 	if err != nil {
@@ -267,14 +243,18 @@ func (b *CommonBlockScanner) getFromHttp(url string) ([]byte, error) {
 	return buf, nil
 }
 
-func (b *CommonBlockScanner) getBlockUrl(height int64) string {
-	// ignore err because we already checked we can parse the rpcHost at NewCommonBlockScanner
-	u, _ := url.Parse(b.rpcHost)
-	u.Path = "block"
-	if height > 0 {
-		u.RawQuery = fmt.Sprintf("height=%d", height)
+func (b *CommonBlockScanner) getBlockRequest(height int64) (string, string) {
+	switch b.cfg.ChainID {
+	case common.ETHChain:
+		b.rpcHost, `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x` + fmt.Sprintf("%x", height) + `", true],"id":1}`
+	default:
+		u, _ := url.Parse(b.rpcHost)
+		u.Path = "block"
+		if height > 0 {
+			u.RawQuery = fmt.Sprintf("height=%d", height)
+		}
+		return u.String(), ""
 	}
-	return u.String()
 }
 
 func (b *CommonBlockScanner) unmarshalAndGetBlockInfo(buf []byte) (string, []string, error) {
@@ -286,6 +266,21 @@ func (b *CommonBlockScanner) unmarshalAndGetBlockInfo(buf []byte) (string, []str
 			return "", nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
 		}
 		return block.Result.Block.Header.Height, block.Result.Block.Data.Txs, nil
+	case common.ETHChain:
+		var block etypes.RPCBlock
+		err := json.Unmarshal(buf, &block)
+		if err != nil {
+			return "", nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
+		}
+		txs := make([]string, 0)
+		for _, tx := range block.Transactions() {
+			bytes, err := tx.MarshalJSON()
+			if err != nil {
+				return "", nil, errors.Wrap(err, "fail to unmarshal tx from block")
+			}
+			txs = append(txs, string(bytes))
+		}
+		return block.Number().String(), txs, nil
 	default:
 		var block btypes.RPCBlock
 		err := json.Unmarshal(buf, &block)
@@ -296,7 +291,7 @@ func (b *CommonBlockScanner) unmarshalAndGetBlockInfo(buf []byte) (string, []str
 	}
 }
 
-func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, []string, error) {
+func (b *CommonBlockScanner) getRPCBlock(height int64) (int64, []string, error) {
 	start := time.Now()
 	defer func() {
 		if err := recover(); err != nil {
@@ -305,8 +300,8 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, []string, er
 		duration := time.Since(start)
 		b.metrics.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
-
-	buf, err := b.getFromHttp(requestUrl)
+	url, body := b.getBlockRequest(height)
+	buf, err := b.getFromHttp(url, body)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
 		time.Sleep(300 * time.Millisecond)

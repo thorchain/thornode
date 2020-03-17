@@ -19,6 +19,11 @@ func LoadChains(thorKeys *thorclient.Keys, cfg []config.ChainConfiguration, serv
 			if err == nil {
 				chains[common.BNBChain] = bnb
 			}
+		case common.ETHChain:
+			eth, err := ethereum.NewEthereum(thorKeys, chain, server, thorchainBridge)
+			if err == nil {
+				chains[common.ETHChain] = eth
+			}
 		default:
 			continue
 		}
