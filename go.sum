@@ -778,6 +778,8 @@ gitlab.com/thorchain/tss/go-tss v0.0.0-20200316093239-b0385637f72c h1:QvRZsLrTKO
 gitlab.com/thorchain/tss/go-tss v0.0.0-20200316093239-b0385637f72c/go.mod h1:ezIsYgnT42fXgani/rJvF7yNSbI1yr6RsZD06aC6yJg=
 gitlab.com/thorchain/tss/go-tss v0.0.0-20200316161733-ad85caf88a27 h1:wAMyFkRRRWY27l+Ye0roCrT62YEWK9x4KI0kDGhHovY=
 gitlab.com/thorchain/tss/go-tss v0.0.0-20200316161733-ad85caf88a27/go.mod h1:ezIsYgnT42fXgani/rJvF7yNSbI1yr6RsZD06aC6yJg=
+gitlab.com/thorchain/tss/go-tss v0.0.0-20200316234205-49f4de291102 h1:wkT6nYFfsj8wounTynkjkKWvz/3dFJMS69haVzyjqyg=
+gitlab.com/thorchain/tss/go-tss v0.0.0-20200316234205-49f4de291102/go.mod h1:ezIsYgnT42fXgani/rJvF7yNSbI1yr6RsZD06aC6yJg=
 go.etcd.io/bbolt v1.3.2/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/bbolt v1.3.3 h1:MUGmc65QhB3pIlaQ5bB4LwqSj6GIonVJXpZiaKNyaKk=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
