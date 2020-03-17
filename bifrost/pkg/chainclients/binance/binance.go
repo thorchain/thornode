@@ -302,7 +302,7 @@ func (b *Binance) ValidateMetadata(inter interface{}) bool {
 }
 
 // SignTx sign the the given TxArrayItem
-func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
+func (b *Binance) SignTx(tx stypes.TxOutItem, height int64, keySignParty common.PubKeys) ([]byte, error) {
 	var payload []msg.Transfer
 
 	toAddr, err := types.AccAddressFromBech32(tx.ToAddress.String())
@@ -359,7 +359,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		Sequence:      meta.SeqNumber,
 		AccountNumber: meta.AccountNumber,
 	}
-	rawBz, err := b.signMsg(signMsg, fromAddr, tx.VaultPubKey, height, tx)
+	rawBz, err := b.signMsg(signMsg, fromAddr, tx.VaultPubKey, height, tx, keySignParty)
 	if err != nil {
 		return nil, fmt.Errorf("fail to sign message: %w", err)
 	}
@@ -385,12 +385,7 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey, signerP
 }
 
 // signMsg is design to sign a given message until it success or the same message had been send out by other signer
-func (b *Binance) signMsg(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, txOutItem stypes.TxOutItem) ([]byte, error) {
-	keySignParty, err := b.thorchainBridge.GetKeysignParty(poolPubKey)
-	if err != nil {
-		b.logger.Error().Err(err).Msg("fail to get keysign party")
-		return nil, err
-	}
+func (b *Binance) signMsg(signMsg btx.StdSignMsg, from string, poolPubKey common.PubKey, height int64, txOutItem stypes.TxOutItem, keySignParty common.PubKeys) ([]byte, error) {
 	rawBytes, err := b.sign(signMsg, poolPubKey, keySignParty)
 	if err == nil && rawBytes != nil {
 		return rawBytes, nil

@@ -42,6 +42,7 @@ type Signer struct {
 	tssKeygen             *tss.KeyGen
 	thorKeys              *thorclient.Keys
 	pubkeyMgr             pubkeymanager.PubKeyValidator
+	signers               map[common.PubKey]common.PubKeys
 }
 
 // NewSigner create a new instance of signer
@@ -355,8 +356,20 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 		}
 	}
 
-	signedTx, err := chain.SignTx(tx, height)
+	keySignParty := make(common.PubKeys, 0)
+	if signers, ok := s.signers[tx.VaultPubKey]; ok && len(signers) > 0 {
+		keySignParty = signers
+	} else {
+		keySignParty, err = s.thorchainBridge.GetKeysignParty(tx.VaultPubKey)
+		if err != nil {
+			s.logger.Error().Err(err).Msg("fail to get keysign party")
+			return err
+		}
+	}
+
+	signedTx, err := chain.SignTx(tx, height, keySignParty)
 	if err != nil {
+		s.signers[tx.VaultPubKey] = nil // clear signer party
 		s.logger.Error().Err(err).Msg("fail to sign tx")
 		return err
 	}

@@ -182,7 +182,7 @@ func (s *ObserverSuite) SetUpSuite(c *C) {
 
 	s.NewMockBinanceInstance(c, "")
 
-	r, err := s.b.SignTx(out, 1440)
+	r, err := s.b.SignTx(out, 1440, nil)
 	c.Assert(err, IsNil)
 	c.Assert(r, NotNil)
 	buf, err := hex.DecodeString(string(r))
