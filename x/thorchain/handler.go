@@ -227,6 +227,8 @@ func getMsgUnstakeFromMemo(memo UnstakeMemo, tx ObservedTx, signer sdk.AccAddres
 }
 
 func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer sdk.AccAddress) (sdk.Msg, error) {
+	// when staker stake to a pool ,usually it will be two coins, RUNE and the asset of the pool.
+	// if it is multi-chain , like NOT Binance chain , it is using two asymmetric staking
 	if len(tx.Tx.Coins) > 2 {
 		return nil, errors.New("not expecting more than two coins in a stake")
 	}
@@ -236,9 +238,12 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer 
 	if asset.IsEmpty() {
 		return nil, errors.New("Unable to determine the intended pool for this stake")
 	}
+	// There is no dedicate pool for RUNE ,because every pool will have RUNE , that's by design
 	if asset.IsRune() {
 		return nil, errors.New("invalid pool asset")
 	}
+	// Extract the Rune amount and the asset amount from the transaction. At least one of them must be
+	// nonzero. If we saw two types of coins, one of them must be the asset coin.
 	for _, coin := range tx.Tx.Coins {
 		ctx.Logger().Info("coin", "asset", coin.Asset.String(), "amount", coin.Amount.String())
 		if coin.Asset.IsRune() {
@@ -255,11 +260,15 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer 
 
 	// when THORNode receive two coins, but THORNode didn't find the coin specify by asset, then user might send in the wrong coin
 	if assetAmount.IsZero() && len(tx.Tx.Coins) == 2 {
-		return nil, errors.Errorf("did not find %s ", asset)
+		return nil, fmt.Errorf("did not find %s ", asset)
 	}
 
 	runeAddr := tx.Tx.FromAddress
 	assetAddr := memo.GetDestination()
+	// this is to cover multi-chain scenario, for example BTC , staker who would like to stake in BTC pool,  will have to complete
+	// the stake operation by sending in two asymmetric stake tx, one tx on BTC chain with memo stake:BTC:<RUNE address> ,
+	// and another one on Binance chain with stake:BTC , with only RUNE as the coin
+	// Thorchain will use the <RUNE address> to match these two together , and consider it as one stake.
 	if !runeAddr.IsChain(common.BNBChain) {
 		runeAddr = memo.GetDestination()
 		assetAddr = tx.Tx.FromAddress
