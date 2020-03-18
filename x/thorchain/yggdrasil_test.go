@@ -104,6 +104,14 @@ func (s YggdrasilSuite) TestCalcTargetAmounts3(c *C) {
 
 func (s YggdrasilSuite) TestFund(c *C) {
 	ctx, k := setupKeeperForTest(c)
+
+	vault := GetRandomVault()
+	vault.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(10000*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(10000*common.One)),
+	}
+	k.SetVault(ctx, vault)
+
 	// setup 6 active nodes
 	for i := 0; i < 6; i++ {
 		na := GetRandomNodeAccount(NodeActive)
