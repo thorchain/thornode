@@ -21,6 +21,17 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 		return nil
 	}
 
+	// Check we're not migrating funds
+	retiring, err := keeper.GetAsgardVaultsByStatus(ctx, RetiringVault)
+	if err != nil {
+		ctx.Logger().Error("fail to get retiring vaults", "error", err)
+		return err
+	}
+	if len(retiring) > 0 {
+		// skip yggdrasil funding while a migration is in progress
+		return nil
+	}
+
 	// find total bonded
 	totalBond := sdk.ZeroUint()
 	nodeAccs, err := keeper.ListActiveNodeAccounts(ctx)
@@ -70,7 +81,27 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 		return fmt.Errorf("cannot send more yggdrasil funds while transactions are pending (%s: %d)", ygg.PubKey, ygg.PendingTxCount)
 	}
 
-	targetCoins, err := calcTargetYggCoins(pools, na.Bond, totalBond)
+	// calculate the total value of funds of this yggdrasil vault
+	totalValue := sdk.ZeroUint()
+	for _, coin := range ygg.Coins {
+		if coin.Asset.IsRune() {
+			totalValue = totalValue.Add(coin.Amount)
+			continue
+		}
+		for _, pool := range pools {
+			if pool.Asset.Equals(coin.Asset) {
+				totalValue = totalValue.Add(pool.AssetValueInRune(coin.Amount))
+			}
+		}
+	}
+
+	// if the ygg total value is more than 25% bond, funds are low enough yet
+	// to top up
+	if totalValue.MulUint64(4).GTE(na.Bond) {
+		return nil
+	}
+
+	targetCoins, err := calcTargetYggCoins(pools, ygg, na.Bond, totalBond)
 	if err != nil {
 		return err
 	}
@@ -96,12 +127,12 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	}
 
 	if len(sendCoins) > 0 {
-		err := sendCoinsToYggdrasil(ctx, keeper, sendCoins, ygg, txOutStore)
+		count, err := sendCoinsToYggdrasil(ctx, keeper, sendCoins, ygg, txOutStore)
 		if err != nil {
 			return err
 		}
 
-		ygg.PendingTxCount += int64(len(sendCoins))
+		ygg.PendingTxCount += int64(count)
 		if err := keeper.SetVault(ctx, ygg); err != nil {
 			return fmt.Errorf("fail to create yggdrasil pool: %w", err)
 		}
@@ -112,33 +143,52 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 
 // sendCoinsToYggdrasil - adds outbound txs to send the given coins to a
 // yggdrasil pool
-func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Vault, txOutStore TxOutStore) error {
+func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, ygg Vault, txOutStore TxOutStore) (int, error) {
+	var count int
+
+	active, err := keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
+	if err != nil {
+		return count, err
+	}
+
 	for _, coin := range coins {
+
+		// select active vault to send funds from
+		vault := active.SelectByMaxCoin(coin.Asset)
+		if vault.IsEmpty() {
+			continue
+		}
+		if coin.Amount.GT(vault.GetCoin(coin.Asset).Amount) {
+			// not enough funds
+			continue
+		}
+
 		to, err := ygg.PubKey.GetAddress(coin.Asset.Chain)
 		if err != nil {
-			return err
+			continue
 		}
 
 		toi := &TxOutItem{
-			Chain:     coin.Asset.Chain,
-			ToAddress: to,
-			InHash:    common.BlankTxID,
-			Memo:      NewYggdrasilFund(ctx.BlockHeight()).String(),
-			Coin:      coin,
+			Chain:       coin.Asset.Chain,
+			ToAddress:   to,
+			InHash:      common.BlankTxID,
+			Memo:        NewYggdrasilFund(ctx.BlockHeight()).String(),
+			Coin:        coin,
+			VaultPubKey: vault.PubKey,
 		}
-		_, err = txOutStore.TryAddTxOutItem(ctx, toi)
-		if err != nil {
-			return err
+		if err := txOutStore.UnSafeAddTxOutItem(ctx, toi); err != nil {
+			return count, err
 		}
+		count += 1
 	}
 
-	return nil
+	return count, nil
 }
 
 // calcTargetYggCoins - calculate the amount of coins of each pool a yggdrasil
 // pool should have, relative to how much they have bonded (which should be
 // target == bond / 2).
-func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins, error) {
+func calcTargetYggCoins(pools []Pool, ygg Vault, yggBond, totalBond sdk.Uint) (common.Coins, error) {
 	runeCoin := common.NewCoin(common.RuneAsset(), sdk.ZeroUint())
 	var coins common.Coins
 
@@ -168,23 +218,26 @@ func calcTargetYggCoins(pools []Pool, yggBond, totalBond sdk.Uint) (common.Coins
 		runeAmt := common.GetShare(targetRune, totalRune, pool.BalanceRune)
 		runeCoin.Amount = runeCoin.Amount.Add(runeAmt)
 		assetAmt := common.GetShare(targetRune, totalRune, pool.BalanceAsset)
-		if !assetAmt.IsZero() {
-			// add rune amt (not asset since the two are considered to be equal)
-			// in a single pool X, the value of 1% asset X in RUNE ,equals the 1% RUNE in the same pool
+		// add rune amt (not asset since the two are considered to be equal)
+		// in a single pool X, the value of 1% asset X in RUNE ,equals the 1% RUNE in the same pool
+		yggCoin := ygg.GetCoin(pool.Asset)
+		coin := common.NewCoin(pool.Asset, common.SafeSub(assetAmt, yggCoin.Amount))
+		if !coin.IsEmpty() {
 			counter = counter.Add(runeAmt)
-			coin := common.NewCoin(pool.Asset, assetAmt)
 			coins = append(coins, coin)
 		}
 	}
 
-	if !runeCoin.Amount.IsZero() {
+	yggRune := ygg.GetCoin(common.RuneAsset())
+	runeCoin.Amount = common.SafeSub(runeCoin.Amount, yggRune.Amount)
+	if !runeCoin.IsEmpty() {
 		counter = counter.Add(runeCoin.Amount)
 		coins = append(coins, runeCoin)
 	}
 
 	// ensure THORNode don't send too much value in coins to the ygg pool
 	if counter.GT(yggBond.QuoUint64(2)) {
-		return nil, errors.New("exceeded safe amounts of assets for given Yggdrasil pool")
+		return nil, fmt.Errorf("exceeded safe amounts of assets for given Yggdrasil pool (%d/%d)", counter.Uint64(), yggBond.QuoUint64(2).Uint64())
 	}
 
 	return coins, nil
