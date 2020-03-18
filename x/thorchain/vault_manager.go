@@ -146,6 +146,15 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					amt = amt.MulUint64(uint64(nth)).QuoUint64(5)
 				}
 
+				// TODO: make this not chain specific
+				// minus gas costs for our transactions
+				if coin.Asset.IsBNB() {
+					amt = common.SafeSub(
+						amt,
+						common.BNBGasFeeSingleton[0].Amount.MulUint64(uint64(len(vault.Coins))),
+					)
+				}
+
 				toi := &TxOutItem{
 					Chain:       coin.Asset.Chain,
 					InHash:      common.BlankTxID,
