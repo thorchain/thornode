@@ -71,8 +71,7 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 			// inbound, and also txitem , thus THORNode could record both outbound tx hash correctly
 			// given every tx item will only have one coin in it , THORNode could use that to identify which txit
 			if txOutItem.InHash.Equals(inTxID) &&
-				txOutItem.OutHash.IsEmpty() &&
-				tx.Tx.Coins.Contains(txOutItem.Coin) {
+				txOutItem.OutHash.IsEmpty() {
 				txOut.TxArray[i].OutHash = tx.Tx.ID
 			}
 			processedCoins = append(processedCoins, txOutItem.Coin)
