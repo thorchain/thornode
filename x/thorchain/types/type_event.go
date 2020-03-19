@@ -32,6 +32,7 @@ const (
 	BondEventType        = `bond`
 	GasEventType         = `gas`
 	ReserveEventType     = `reserve`
+	SlashNodeEventType   = `slash`
 )
 
 // NewEvent create a new  event
@@ -301,4 +302,22 @@ func NewEventReserve(contributor ReserveContributor) EventReserve {
 
 func (e EventReserve) Type() string {
 	return ReserveEventType
+}
+
+// EventSlash represent a change in pool balance which caused by slash a node account
+type EventSlash struct {
+	Pool        common.Asset `json:"pool"`
+	SlashAmount []PoolAmt    `json:"slash_amount"`
+}
+
+func NewEventSlash(pool common.Asset, slashAmount []PoolAmt) EventSlash {
+	return EventSlash{
+		Pool:        pool,
+		SlashAmount: slashAmount,
+	}
+}
+
+// Type return slash event type
+func (e EventSlash) Type() string {
+	return SlashNodeEventType
 }

@@ -1,8 +1,8 @@
 package thorchain
 
 import (
+	"encoding/json"
 	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -199,6 +199,32 @@ func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubK
 	nodeAccount.Bond = common.SafeSub(nodeAccount.Bond, runeValue)
 	if err := keeper.SetPool(ctx, pool); err != nil {
 		return fmt.Errorf("fail to save %s pool: %w", asset, err)
+	}
+
+	poolSlashAmt := []PoolAmt{
+		{
+			Asset:  pool.Asset,
+			Amount: 0 - int64(slashAmount.Uint64()),
+		},
+		{
+			Asset:  common.RuneAsset(),
+			Amount: int64(runeValue.Uint64()),
+		},
+	}
+	eventSlash := NewEventSlash(pool.Asset, poolSlashAmt)
+	slashBuf, err := json.Marshal(eventSlash)
+	if err != nil {
+		return fmt.Errorf("fail to marshal slash event to buf: %w", err)
+	}
+	event := NewEvent(
+		eventSlash.Type(),
+		ctx.BlockHeight(),
+		common.Tx{ID: common.BlankTxID},
+		slashBuf,
+		EventSuccess,
+	)
+	if err := keeper.UpsertEvent(ctx, event); err != nil {
+		return fmt.Errorf("fail to save event: %w", err)
 	}
 
 	return keeper.SetNodeAccount(ctx, nodeAccount)
