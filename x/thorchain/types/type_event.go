@@ -32,7 +32,7 @@ const (
 	BondEventType        = `bond`
 	GasEventType         = `gas`
 	ReserveEventType     = `reserve`
-	SlashNodeEventType   = `slash`
+	SlashEventType       = `slash`
 )
 
 // NewEvent create a new  event
@@ -319,5 +319,5 @@ func NewEventSlash(pool common.Asset, slashAmount []PoolAmt) EventSlash {
 
 // Type return slash event type
 func (e EventSlash) Type() string {
-	return SlashNodeEventType
+	return SlashEventType
 }
