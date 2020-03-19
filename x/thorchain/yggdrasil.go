@@ -165,6 +165,7 @@ func sendCoinsToYggdrasil(ctx sdk.Context, keeper Keeper, coins common.Coins, yg
 
 		to, err := ygg.PubKey.GetAddress(coin.Asset.Chain)
 		if err != nil {
+			ctx.Logger().Error("fail to get address for pubkey", "pubkey", ygg.PubKey, "chain", coin.Asset.Chain, "error", err)
 			continue
 		}
 
