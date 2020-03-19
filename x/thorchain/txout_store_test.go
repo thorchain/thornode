@@ -30,8 +30,8 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
 	vault := GetRandomVault()
 	vault.Coins = common.Coins{
-		common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
-		common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(10000*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(10000*common.One)),
 	}
 	w.keeper.SetVault(w.ctx, vault)
 
