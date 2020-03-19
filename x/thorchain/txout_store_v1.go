@@ -100,18 +100,13 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 				return false, fmt.Errorf("fail to collect yggdrasil pool: %w", err)
 			}
 
-			yggs = yggs.SortBy(toi.Coin.Asset)
-
-			// if none of our Yggdrasil pools have enough funds to fulfil
-			// the order, fallback to our Asguard pool
-			if len(yggs) > 0 {
-				if toi.Coin.Amount.LT(yggs[0].GetCoin(toi.Coin.Asset).Amount) {
-					toi.VaultPubKey = yggs[0].PubKey
-				}
+			vault := yggs.SelectByMaxCoin(toi.Coin.Asset)
+			// if none of the ygg vaults have enough funds, don't select one
+			// and we'll select an asgard vault a few lines down
+			if toi.Coin.Amount.LT(vault.GetCoin(toi.Coin.Asset).Amount) {
+				toi.VaultPubKey = vault.PubKey
 			}
-
 		}
-
 	}
 
 	// Apparently we couldn't find a yggdrasil vault to send from, so use asgard
@@ -125,6 +120,12 @@ func (tos *TxOutStorageV1) prepareTxOutItem(ctx sdk.Context, toi *TxOutItem) (bo
 		vault := active.SelectByMaxCoin(toi.Coin.Asset)
 		if vault.IsEmpty() {
 			return false, fmt.Errorf("empty vault, cannot send out fund: %w", err)
+		}
+
+		// check that this vault has enough funds to satisfy the request
+		if toi.Coin.Amount.GT(vault.GetCoin(toi.Coin.Asset).Amount) {
+			// not enough funds
+			return false, fmt.Errorf("Vault %s, does not have enough funds. Has %s, but requires %s", vault.PubKey, vault.GetCoin(toi.Coin.Asset), toi.Coin)
 		}
 
 		toi.VaultPubKey = vault.PubKey
