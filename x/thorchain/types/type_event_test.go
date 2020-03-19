@@ -132,3 +132,17 @@ func (s EventSuite) TestEvent(c *C) {
 
 	c.Check(Event{}.Empty(), Equals, true)
 }
+
+func (s EventSuite) TestSlash(c *C) {
+	evt := NewEventSlash(common.BNBAsset, []PoolAmt{
+		{common.BNBAsset, -20},
+		{common.RuneAsset(), 30},
+	})
+	c.Check(evt.Type(), Equals, "slash")
+	c.Check(evt.Pool, Equals, common.BNBAsset)
+	c.Assert(evt.SlashAmount, HasLen, 2)
+	c.Check(evt.SlashAmount[0].Asset, Equals, common.BNBAsset)
+	c.Check(evt.SlashAmount[0].Amount, Equals, int64(-20))
+	c.Check(evt.SlashAmount[1].Asset, Equals, common.RuneAsset())
+	c.Check(evt.SlashAmount[1].Amount, Equals, int64(30))
+}
