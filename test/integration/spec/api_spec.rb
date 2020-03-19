@@ -193,7 +193,7 @@ describe "API Tests" do
     end
 
     it "check events are completed" do
-      resp = get("/events/6")
+      resp = get("/events/7")
       expect(resp.body.count).to eq(2), resp.body.inspect
       expect(resp.body[0]['event']['pool']).to eq("BNB.BOLT-014"), resp.body[0].inspect
       expect(resp.body[0]['type']).to eq("swap"), resp.body[0].inspect

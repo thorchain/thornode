@@ -29,6 +29,10 @@ func (s TxOutStoreSuite) TestAddGasFees(c *C) {
 func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
 	vault := GetRandomVault()
+	vault.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
+	}
 	w.keeper.SetVault(w.ctx, vault)
 
 	acc1 := GetRandomNodeAccount(NodeActive)
@@ -111,8 +115,8 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(1000*common.One)),
 	}
 	success, err = txOutStore.TryAddTxOutItem(w.ctx, item)
-	c.Assert(success, Equals, true)
 	c.Assert(err, IsNil)
+	c.Assert(success, Equals, true)
 	msgs, err = txOutStore.GetOutboundItems(w.ctx)
 	c.Assert(err, IsNil)
 	c.Assert(msgs, HasLen, 3)
@@ -121,7 +125,11 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 
 func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, true)
-	w.keeper.SetVault(w.ctx, GetRandomVault())
+	vault := GetRandomVault()
+	vault.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(100*common.One)),
+	}
+	w.keeper.SetVault(w.ctx, vault)
 
 	inTxID := GetRandomTxHash()
 	item := &TxOutItem{
@@ -134,8 +142,8 @@ func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, version)
 	c.Assert(err, IsNil)
 	success, err := txOutStore.TryAddTxOutItem(w.ctx, item)
-	c.Assert(success, Equals, true)
 	c.Assert(err, IsNil)
+	c.Assert(success, Equals, true)
 	msgs, err := txOutStore.GetOutboundItems(w.ctx)
 	c.Assert(err, IsNil)
 	c.Assert(msgs, HasLen, 1)

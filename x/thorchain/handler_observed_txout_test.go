@@ -225,5 +225,5 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	c.Assert(items, HasLen, 0)
 	c.Check(keeper.observing, HasLen, 1)
 	// make sure the coin has been substract from the vault
-	c.Check(ygg.Coins.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(19999962499)), Equals, true)
+	c.Check(ygg.Coins.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(19999962499)), Equals, true, Commentf("%d", ygg.Coins.GetCoin(common.BNBAsset).Amount.Uint64()))
 }

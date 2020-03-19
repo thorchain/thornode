@@ -155,8 +155,17 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	nodesAfterChange := len(activeNodes) + len(newNodes) - len(removedNodes)
 	if len(activeNodes) >= int(minimumNodesForBFT) && nodesAfterChange < int(minimumNodesForBFT) {
 		// THORNode don't have enough validators for BFT
-		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
-			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
+
+		// Check we're not migrating funds
+		retiring, err := vm.k.GetAsgardVaultsByStatus(ctx, RetiringVault)
+		if err != nil {
+			ctx.Logger().Error("fail to get retiring vaults", "error", err)
+		}
+
+		if len(retiring) == 0 { // wait until all funds are migrated before starting ragnarok
+			if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
+				ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
+			}
 		}
 		// by return
 		return nil
@@ -596,7 +605,6 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
 				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
-				return fmt.Errorf("fail to unstake address: %s", result.Log)
 			}
 		}
 	}

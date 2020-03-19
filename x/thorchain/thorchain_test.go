@@ -193,7 +193,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	item := items[0]
 	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(2000000000), Commentf("%d", item.Coin.Amount.Uint64()))
 	item = items[1]
-	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(1580000000), Commentf("%d", item.Coin.Amount.Uint64()))
+	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(1579925000), Commentf("%d", item.Coin.Amount.Uint64()))
 	// check we empty the rest at the last migration event
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
 	ctx = ctx.WithBlockHeight(vault.StatusSince + (migrateInterval * 7))
@@ -208,7 +208,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	item = items[2]
 	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(10000000000), Commentf("%d", item.Coin.Amount.Uint64()))
 	item = items[3]
-	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(7900000000), Commentf("%d", item.Coin.Amount.Uint64()))
+	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(7899925000), Commentf("%d", item.Coin.Amount.Uint64()))
 }
 
 func (s *ThorchainSuite) TestRagnarok(c *C) {
