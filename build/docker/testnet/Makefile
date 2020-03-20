@@ -45,3 +45,6 @@ clean-testnet-binance:
 	@rm -rf ${HOME}/.bnbcli
 
 reset-testnet-binance: stop clean-testnet-binance run-testnet-binance
+
+refund-testnet:
+	TAG=${TAG} NET=testnet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/standalone.${uname_S}.yml exec thor-api /docker/scripts/refund.sh localhost:1317
