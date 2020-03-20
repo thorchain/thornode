@@ -43,7 +43,8 @@ type QueryResTxOut struct {
 }
 
 type QueryYggdrasilVaults struct {
-	Vault
-	Bond       sdk.Uint `json:"bond"`
-	TotalValue sdk.Uint `json:"total_value"`
+	Vault      Vault      `json:"vault"`
+	Status     NodeStatus `json:"status"`
+	Bond       sdk.Uint   `json:"bond"`
+	TotalValue sdk.Uint   `json:"total_value"`
 }
