@@ -136,11 +136,6 @@ func (h StakeHandler) handle(ctx sdk.Context, msg MsgSetStakeData, version semve
 
 func processStakeEvent(ctx sdk.Context, keeper Keeper, msg MsgSetStakeData, stakeUnits sdk.Uint, eventStatus EventStatus) error {
 	var stakeEvt EventStake
-	if eventStatus == EventFail {
-		// do not log event if the stake failed
-		return nil
-	}
-
 	stakeEvt = NewEventStake(
 		msg.Asset,
 		stakeUnits,

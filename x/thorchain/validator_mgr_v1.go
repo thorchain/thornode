@@ -749,7 +749,7 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 		Score       sdk.Dec
 		NodeAccount NodeAccount
 	}
-	var tracker []badTracker
+	tracker := make([]badTracker, 0, len(nas))
 	totalScore := sdk.ZeroDec()
 
 	// Find bad actor relative to age / slashpoints
