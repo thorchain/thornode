@@ -913,6 +913,12 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
+		// ensure we have enough rune
+		minBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+		if na.Bond.LT(sdk.NewUint(uint64(minBond))) {
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
+		}
+
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 			return err
 		}
