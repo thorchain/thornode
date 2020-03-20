@@ -72,7 +72,7 @@ func GetEventStatus(es string) EventStatus {
 
 // GetEventStatuses convert a list of status in string type to EventStatus
 func GetEventStatuses(es []string) EventStatuses {
-	var result EventStatuses
+	result := make(EventStatuses, 0, len(es))
 	for _, item := range es {
 		if len(item) == 0 {
 			continue

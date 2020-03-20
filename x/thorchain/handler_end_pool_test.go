@@ -142,6 +142,7 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)
+	activeNodeAccount.Bond = sdk.NewUint(common.One * 100)
 	bnbAddr := GetRandomBNBAddress()
 	keeper := &TestEndPoolHandleKeeper{
 		activeNodeAccount: activeNodeAccount,
@@ -198,7 +199,8 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	c.Assert(p.Empty(), Equals, false)
 	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
 	c.Assert(p.BalanceAsset.Uint64(), Equals, msgSetStake.AssetAmount.Uint64())
-	c.Assert(p.Status, Equals, PoolEnabled)
+	defaultPoolStatus := constAccessor.GetStringValue(constants.DefaultPoolStatus)
+	c.Assert(p.Status, Equals, GetPoolStatus(defaultPoolStatus))
 	txOutStore.NewBlock(1, constAccessor)
 
 	// EndPool again
