@@ -167,12 +167,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		}
 	}
 
-	// Fill up Yggdrasil vaults
-	err = Fund(ctx, am.keeper, txStore, constantValues)
-	if err != nil {
-		ctx.Logger().Error("Unable to fund Yggdrasil", "error", err)
-	}
-
 	// fail stale pending events
 	signingTransPeriod := constantValues.GetInt64Value(constants.SigningTransactionPeriod)
 	pendingEvents, err := am.keeper.GetAllPendingEvents(ctx)
@@ -202,7 +196,16 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to end block for vault manager", "error", err)
 	}
 
-	return am.validatorMgr.EndBlock(ctx, version, constantValues)
+	validators := am.validatorMgr.EndBlock(ctx, version, constantValues)
+
+	// Fill up Yggdrasil vaults
+	// We do this AFTER validatorMgr.EndBlock, because we don't want to send
+	// funds to a yggdrasil vault that is being churned out this block.
+	if err := Fund(ctx, am.keeper, txStore, constantValues); err != nil {
+		ctx.Logger().Error("unable to fund yggdrasil", "error", err)
+	}
+
+	return validators
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {
