@@ -12,11 +12,7 @@ import (
 
 func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor constants.ConstantValues) error {
 	// Check if we have triggered the ragnarok protocol
-	ragnarokHeight, err := keeper.GetRagnarokBlockHeight(ctx)
-	if err != nil {
-		return fmt.Errorf("fail to get ragnarok height: %w", err)
-	}
-	if ragnarokHeight > 0 {
+	if keeper.RagnarokInProgress(ctx) {
 		return nil
 	}
 

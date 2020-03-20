@@ -925,6 +925,11 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int, constAccessor constants.ConstantValues) (NodeAccounts, bool, error) {
 	rotation := false // track if are making any changes to the current active node accounts
 
+	// don't churn if the ragnarok protocol has been initiated
+	if vm.k.RagnarokInProgress(ctx) {
+		return nil, false, nil
+	}
+
 	// update list of ready actors
 	if err := vm.markReadyActors(ctx, constAccessor); err != nil {
 		return nil, false, err
