@@ -111,18 +111,14 @@ func queryAsgardVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 }
 
 func queryYggdrasilVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
-	active, err := keeper.ListActiveNodeAccounts(ctx)
-	if err != nil {
-		ctx.Logger().Error("fail to get active node accounts", "error", err)
-		return nil, sdk.ErrInternal("fail to get node accounts")
-	}
-
-	var vaults Vaults
-	for _, na := range active {
-		vault, err := keeper.GetVault(ctx, na.PubKeySet.Secp256k1)
-		if err != nil {
-			ctx.Logger().Error("fail to get vault", "error", err)
-			continue
+	vaults := make(Vaults, 0)
+	iter := keeper.GetVaultIterator(ctx)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		var vault Vault
+		if err := keeper.Cdc().UnmarshalBinaryBare(iter.Value(), &vault); err != nil {
+			ctx.Logger().Error("fail to unmarshal yggdrasil", "error", err)
+			return nil, sdk.ErrInternal("fail to unmarshal yggdrasil")
 		}
 		if vault.IsYggdrasil() && vault.HasFunds() {
 			vaults = append(vaults, vault)
@@ -131,15 +127,13 @@ func queryYggdrasilVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 
 	respVaults := make([]QueryYggdrasilVaults, len(vaults))
 	for i, vault := range vaults {
-		bond := sdk.ZeroUint()
 		totalValue := sdk.ZeroUint()
 
 		// find the bond of this node account
-		for _, na := range active {
-			if na.PubKeySet.Secp256k1.Equals(vault.PubKey) {
-				bond = na.Bond
-				break
-			}
+		na, err := keeper.GetNodeAccountByPubKey(ctx, vault.PubKey)
+		if err != nil {
+			ctx.Logger().Error("fail to get node account by pubkey", "error", err)
+			continue
 		}
 
 		// calculate the total value of this yggdrasil vault
@@ -157,7 +151,7 @@ func queryYggdrasilVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 		}
 
 		respVaults[i] = QueryYggdrasilVaults{
-			vault, bond, totalValue,
+			vault, na.Status, na.Bond, totalValue,
 		}
 	}
 
