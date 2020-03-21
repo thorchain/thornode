@@ -11,7 +11,7 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-// UnstakeHandler
+// UnstakeHandler to process unstake requests
 type UnstakeHandler struct {
 	keeper     Keeper
 	txOutStore VersionedTxOutStore
@@ -103,7 +103,7 @@ func (h UnstakeHandler) handle(ctx sdk.Context, msg MsgSetUnStake, version semve
 	}
 	stakerUnit := poolStaker.GetStakerUnit(msg.RuneAddress)
 
-	runeAmt, assetAmount, units, err := unstake(ctx, h.keeper, msg)
+	runeAmt, assetAmount, units, err := unstake(ctx, version, h.keeper, msg)
 	if err != nil {
 		return nil, sdk.ErrInternal(fmt.Errorf("fail to process UnStake request: %w", err).Error())
 	}
