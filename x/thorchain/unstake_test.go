@@ -1,6 +1,7 @@
 package thorchain
 
 import (
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
@@ -412,7 +413,8 @@ func (UnstakeSuite) TestUnstake(c *C) {
 	for _, tc := range testCases {
 		ctx, _ := setupKeeperForTest(c)
 		c.Logf("name:%s", tc.name)
-		r, asset, _, err := unstake(ctx, tc.ps, tc.msg)
+		version := semver.MustParse("0.1.0")
+		r, asset, _, err := unstake(ctx, version, tc.ps, tc.msg)
 		if tc.expectedError != nil {
 			c.Assert(err, NotNil)
 			c.Check(err.Error(), Equals, tc.expectedError.Error())

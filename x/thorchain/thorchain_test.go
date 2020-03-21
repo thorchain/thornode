@@ -50,9 +50,10 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(staker2.PoolUnits, HasLen, 1)
 
+	version := semver.MustParse("0.1.0")
 	// unstake for user1
 	msg := NewMsgSetUnStake(GetRandomTx(), user1, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
-	_, _, _, err = unstake(ctx, keeper, msg)
+	_, _, _, err = unstake(ctx, version, keeper, msg)
 	c.Assert(err, IsNil)
 	staker1, err = keeper.GetStakerPool(ctx, user1)
 	c.Assert(err, IsNil)
@@ -60,7 +61,7 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 
 	// unstake for user2
 	msg = NewMsgSetUnStake(GetRandomTx(), user2, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
-	_, _, _, err = unstake(ctx, keeper, msg)
+	_, _, _, err = unstake(ctx, version, keeper, msg)
 	c.Assert(err, IsNil)
 	staker2, err = keeper.GetStakerPool(ctx, user2)
 	c.Assert(err, IsNil)

@@ -36,6 +36,7 @@ const (
 	StrictBondStakeRatio
 	DefaultPoolStatus
 	FailKeygenSlashPoints
+	StakeLockUpBlocks
 )
 
 var nameToString = map[ConstantName]string{
@@ -65,6 +66,7 @@ var nameToString = map[ConstantName]string{
 	StrictBondStakeRatio:            "StrictBondStakeRatio",
 	DefaultPoolStatus:               "DefaultPoolStatus",
 	FailKeygenSlashPoints:           "FailKeygenSlashPoints",
+	StakeLockUpBlocks:               "StakeLockUpBlocks",
 }
 
 // String implement fmt.stringer

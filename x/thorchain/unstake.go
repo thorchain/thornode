@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
@@ -20,7 +22,7 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 		return errors.New("empty asset")
 	}
 	withdrawBasisPoints := msg.UnstakeBasisPoints
-	if withdrawBasisPoints.GT(sdk.ZeroUint()) && withdrawBasisPoints.GT(sdk.NewUint(MaxUnstakeBasisPoints)) {
+	if !withdrawBasisPoints.GTE(sdk.ZeroUint()) || withdrawBasisPoints.GT(sdk.NewUint(MaxUnstakeBasisPoints)) {
 		return fmt.Errorf("withdraw basis points %s is invalid", msg.UnstakeBasisPoints)
 	}
 	if !keeper.PoolExist(ctx, msg.Asset) {
@@ -31,7 +33,7 @@ func validateUnstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) error {
 }
 
 // unstake withdraw all the asset
-func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.Uint, sdk.Uint, sdk.Error) {
+func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.Uint, sdk.Uint, sdk.Error) {
 	if err := validateUnstake(ctx, keeper, msg); err != nil {
 		ctx.Logger().Error("msg unstake fail validation", "error", err)
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFailValidation, err.Error())
@@ -68,7 +70,8 @@ func unstake(ctx sdk.Context, keeper Keeper, msg MsgSetUnStake) (sdk.Uint, sdk.U
 	// https://gitlab.com/thorchain/thornode/issues/166
 	if !msg.Asset.Chain.Equals(common.BNBChain) {
 		height := ctx.BlockHeight()
-		if height < (stakerUnit.Height + 17280) {
+		cv := constants.GetConstantValues(version)
+		if height < (stakerUnit.Height + cv.GetInt64Value(constants.StakeLockUpBlocks)) {
 			return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeWithin24Hours, "you cannot unstake for 24 hours after staking for this blockchain")
 		}
 	}

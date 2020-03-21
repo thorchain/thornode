@@ -8,7 +8,7 @@ import (
 
 // Calculate pool rewards
 func calcPoolRewards(totalPoolRewards, totalStakedRune sdk.Uint, pools []Pool) []sdk.Uint {
-	var amts []sdk.Uint
+	amts := make([]sdk.Uint, 0, len(pools))
 	for _, pool := range pools {
 		amt := common.GetShare(pool.BalanceRune, totalStakedRune, totalPoolRewards)
 		amts = append(amts, amt)
@@ -22,12 +22,12 @@ func calcPoolDeficit(stakerDeficit, totalFees sdk.Uint, poolFees sdk.Uint) sdk.U
 }
 
 // Calculate the block rewards that bonders and stakers should receive
-func calcBlockRewards(totalStaked, totalBonded, totalReserve, totalLiquidityFees sdk.Uint, emissionCurve, blocksOerYear int64) (sdk.Uint, sdk.Uint, sdk.Uint) {
+func calcBlockRewards(totalStaked, totalBonded, totalReserve, totalLiquidityFees sdk.Uint, emissionCurve, blocksPerYear int64) (sdk.Uint, sdk.Uint, sdk.Uint) {
 	// Block Rewards will take the latest reserve, divide it by the emission
 	// curve factor, then divide by blocks per year
 	trD := sdk.NewDec(int64(totalReserve.Uint64()))
 	ecD := sdk.NewDec(emissionCurve)
-	bpyD := sdk.NewDec(blocksOerYear)
+	bpyD := sdk.NewDec(blocksPerYear)
 	blockRewardD := trD.Quo(ecD).Quo(bpyD)
 	blockReward := sdk.NewUint(uint64((blockRewardD).RoundInt64()))
 
