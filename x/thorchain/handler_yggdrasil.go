@@ -93,9 +93,13 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, version se
 		fromAddress, _ := tx.VaultPubKey.GetAddress(tx.Chain)
 		if tx.InHash.Equals(common.BlankTxID) &&
 			tx.OutHash.IsEmpty() &&
-			msg.Tx.Coins.Contains(tx.Coin) &&
 			tx.ToAddress.Equals(msg.Tx.ToAddress) &&
 			fromAddress.Equals(msg.Tx.FromAddress) {
+
+			// only need to check the coin if yggdrasil+
+			if msg.AddFunds && !msg.Tx.Coins.Contains(tx.Coin) {
+				continue
+			}
 			txOut.TxArray[i].OutHash = msg.Tx.ID
 			if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
 				ctx.Logger().Error("fail to save tx out", "error", err)
