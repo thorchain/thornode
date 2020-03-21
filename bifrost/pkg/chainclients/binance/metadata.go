@@ -9,6 +9,7 @@ import (
 type BinanceMetadata struct {
 	AccountNumber int64
 	SeqNumber     int64
+	BlockHeight   int64
 }
 
 type BinanceMetaDataStore struct {
@@ -49,11 +50,12 @@ func (b *BinanceMetaDataStore) Set(pk common.PubKey, meta BinanceMetadata) {
 	b.accts[pk] = meta
 }
 
-func (b *BinanceMetaDataStore) SeqInc(pk common.PubKey) {
+func (b *BinanceMetaDataStore) SeqInc(pk common.PubKey, blockHeight int64) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if meta, ok := b.accts[pk]; ok {
 		meta.SeqNumber += 1
+		meta.BlockHeight = blockHeight
 		b.accts[pk] = meta
 	}
 }

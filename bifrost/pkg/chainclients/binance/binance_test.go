@@ -122,6 +122,24 @@ const accountInfo string = `{
   }
 }`
 
+const broadcastSuccess string = `{
+	"height": "0",
+	"txhash": "D97E8A81417E293F5B28DDB53A4AD87B434CA30F51D683DA758ECC2168A7A005",
+	"raw_log": "[{\"msg_index\":0,\"success\":true,\"log\":\"\",\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"set_observed_txout\"}]}]}]",
+	"logs": [{
+		"msg_index": 0,
+		"success": true,
+		"log": "",
+		"events": [{
+			"type": "message",
+			"attributes": [{
+				"key": "action",
+				"value": "set_observed_txout"
+			}]
+		}]
+	}]
+}`
+
 func (s *BinancechainSuite) TestGetHeight(c *C) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
@@ -147,6 +165,10 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 		c.Logf("requestUri:%s", req.RequestURI)
 		if strings.HasPrefix(req.RequestURI, "/abci_query?") {
 			if _, err := rw.Write([]byte(accountInfo)); err != nil {
+				c.Error(err)
+			}
+		} else if strings.HasPrefix(req.RequestURI, "/broadcast_tx_commit") {
+			if _, err := rw.Write([]byte(broadcastSuccess)); err != nil {
 				c.Error(err)
 			}
 		} else if strings.HasPrefix(req.RequestURI, "/status") {
