@@ -75,7 +75,6 @@ func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (b
 		if newSigner {
 			return true, nil
 		}
-		ctx.Logger().Error(notAuthorized.Error())
 		return false, notAuthorized
 	}
 
