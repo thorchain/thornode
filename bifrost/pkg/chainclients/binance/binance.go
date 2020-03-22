@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync/atomic"
 
 	"github.com/binance-chain/go-sdk/common/types"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
@@ -35,19 +34,18 @@ import (
 
 // Binance is a structure to sign and broadcast tx to binance chain used by signer mostly
 type Binance struct {
-	logger             zerolog.Logger
-	RPCHost            string
-	cfg                config.ChainConfiguration
-	chainID            string
-	isTestNet          bool
-	client             *http.Client
-	accts              *BinanceMetaDataStore
-	currentBlockHeight int64
-	tssKeyManager      keys.KeyManager
-	localKeyManager    *keyManager
-	thorchainBridge    *thorclient.ThorchainBridge
-	storage            *BinanceBlockScannerStorage
-	blockScanner       *BinanceBlockScanner
+	logger          zerolog.Logger
+	RPCHost         string
+	cfg             config.ChainConfiguration
+	chainID         string
+	isTestNet       bool
+	client          *http.Client
+	accts           *BinanceMetaDataStore
+	tssKeyManager   keys.KeyManager
+	localKeyManager *keyManager
+	thorchainBridge *thorclient.ThorchainBridge
+	storage         *BinanceBlockScannerStorage
+	blockScanner    *BinanceBlockScanner
 }
 
 // NewBinance create new instance of binance client
@@ -338,18 +336,19 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		b.logger.Error().Err(err).Msg("fail to get current binance block height")
 		return nil, err
 	}
-	if currentHeight > b.currentBlockHeight {
+	meta := b.accts.Get(tx.VaultPubKey)
+	if currentHeight > meta.BlockHeight {
 		acc, err := b.GetAccount(fromAddr)
 		if err != nil {
 			return nil, fmt.Errorf("fail to get account info: %w", err)
 		}
-		atomic.StoreInt64(&b.currentBlockHeight, currentHeight)
-		b.accts.Set(tx.VaultPubKey, BinanceMetadata{
+		meta = BinanceMetadata{
 			AccountNumber: acc.AccountNumber,
 			SeqNumber:     acc.Sequence,
-		})
+			BlockHeight:   currentHeight,
+		}
+		b.accts.Set(tx.VaultPubKey, meta)
 	}
-	meta := b.accts.Get(tx.VaultPubKey)
 	b.logger.Info().Int64("account_number", meta.AccountNumber).Int64("sequence_number", meta.SeqNumber).Msg("account info")
 	signMsg := btx.StdSignMsg{
 		ChainID:       b.chainID,
@@ -370,7 +369,7 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	}
 
 	// increment sequence number
-	b.accts.SeqInc(tx.VaultPubKey)
+	b.accts.SeqInc(tx.VaultPubKey, currentHeight)
 
 	hexTx := []byte(hex.EncodeToString(rawBz))
 	return hexTx, nil
@@ -497,18 +496,43 @@ func (b *Binance) BroadcastTx(hexTx []byte) error {
 	if err != nil {
 		return fmt.Errorf("fail to broadcast tx to binance chain: %w", err)
 	}
-	if resp.StatusCode != http.StatusOK {
-		result, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return fmt.Errorf("fail to read response body: %w", err)
-		}
-		log.Info().Msg(string(result))
-		return fmt.Errorf("fail to broadcast tx to binance:(%s)", b.RPCHost)
-	}
-	err = resp.Body.Close()
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Error().Err(err).Msg("we fail to close response body")
-		return errors.New("fail to close response body")
+		return fmt.Errorf("fail to read response body: %w", err)
 	}
+
+	// NOTE: we can actually see two different json responses for the same end.
+	// This complicates things pretty well.
+	// Sample 1: { "height": "0", "txhash": "D97E8A81417E293F5B28DDB53A4AD87B434CA30F51D683DA758ECC2168A7A005", "raw_log": "[{\"msg_index\":0,\"success\":true,\"log\":\"\",\"events\":[{\"type\":\"message\",\"attributes\":[{\"key\":\"action\",\"value\":\"set_observed_txout\"}]}]}]", "logs": [ { "msg_index": 0, "success": true, "log": "", "events": [ { "type": "message", "attributes": [ { "key": "action", "value": "set_observed_txout" } ] } ] } ] }
+	// Sample 2: { "height": "0", "txhash": "6A9AA734374D567D1FFA794134A66D3BF614C4EE5DDF334F21A52A47C188A6A2", "code": 4, "raw_log": "{\"codespace\":\"sdk\",\"code\":4,\"message\":\"signature verification failed; verify correct account sequence and chain-id\"}" }
+	var commit stypes.Commit
+	err = json.Unmarshal(body, &commit)
+	if err != nil || len(commit.Logs) == 0 {
+		b.logger.Error().Err(err).Msg("fail unmarshal commit")
+
+		var badCommit stypes.BadCommit // since commit doesn't work, lets try bad commit
+		err = json.Unmarshal(body, &badCommit)
+		if err != nil {
+			b.logger.Error().Err(err).Msg("fail unmarshal bad commit")
+			return fmt.Errorf("fail to unmarshal bad commit: %w", err)
+		}
+
+		// check for any failure logs
+		if badCommit.Code > 0 {
+			err := errors.New(badCommit.Log)
+			b.logger.Error().Err(err).Msg("fail to broadcast")
+			return fmt.Errorf("fail to broadcast: %w", err)
+		}
+	}
+
+	for _, log := range commit.Logs {
+		if !log.Success {
+			err := errors.New(log.Log)
+			b.logger.Error().Err(err).Msg("fail to broadcast")
+			return fmt.Errorf("fail to broadcast: %w", err)
+		}
+	}
+
 	return nil
 }

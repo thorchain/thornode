@@ -15,7 +15,7 @@ func (s *MetadataSuite) TestMetaData(c *C) {
 
 	pk := types.GetRandomPubKey()
 
-	store.Set(pk, BinanceMetadata{1, 2})
+	store.Set(pk, BinanceMetadata{1, 2, 3})
 
 	meta := store.Get(types.GetRandomPubKey())
 	c.Check(meta.AccountNumber, Equals, int64(0))
@@ -33,8 +33,9 @@ func (s *MetadataSuite) TestMetaData(c *C) {
 	c.Check(meta.AccountNumber, Equals, int64(0))
 	c.Check(meta.SeqNumber, Equals, int64(0))
 
-	store.SeqInc(pk)
+	store.SeqInc(pk, 12)
 	meta = store.Get(pk)
 	c.Check(meta.AccountNumber, Equals, int64(1))
 	c.Check(meta.SeqNumber, Equals, int64(3))
+	c.Check(meta.BlockHeight, Equals, int64(12))
 }
