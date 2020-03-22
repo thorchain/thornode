@@ -325,7 +325,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	c.Assert(err, IsNil)
 	// this should trigger stage 1 of the ragnarok protocol. We should see a tx
 	// out per node account
-	c.Assert(validatorMgr.processRagnarok(ctx, active, consts), IsNil)
+	c.Assert(validatorMgr.processRagnarok(ctx, consts), IsNil)
 	// after ragnarok get trigged , we pay bond reward immediately
 	for idx, bonder := range bonders {
 		na, err := keeper.GetNodeAccount(ctx, bonder.NodeAddress)
@@ -358,7 +358,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
 	for i := 1; i <= 10; i++ { // simulate each round of ragnarok (max of ten)
 		ctx = ctx.WithBlockHeight(ragnarokHeight + (int64(i) * migrateInterval))
-		c.Assert(validatorMgr.processRagnarok(ctx, active, consts), IsNil)
+		c.Assert(validatorMgr.processRagnarok(ctx, consts), IsNil)
 		items, err := versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
 		c.Assert(err, IsNil)
 		c.Assert(items, HasLen, 15, Commentf("%d", len(items)))

@@ -17,7 +17,7 @@ type KeeperObserver interface {
 func (k KVStore) SetActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixActiveObserver, addr.String())
-	ctx.Logger().Info("set_active_observer", "key", key)
+	ctx.Logger().Debug("set_active_observer", "key", key)
 	store.Set([]byte(key), addr.Bytes())
 }
 
@@ -32,7 +32,7 @@ func (k KVStore) RemoveActiveObserver(ctx sdk.Context, addr sdk.AccAddress) {
 func (k KVStore) IsActiveObserver(ctx sdk.Context, addr sdk.AccAddress) bool {
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixActiveObserver, addr.String())
-	ctx.Logger().Info("is_active_observer", "key", key)
+	ctx.Logger().Debug("is_active_observer", "key", key)
 	return store.Has([]byte(key))
 }
 

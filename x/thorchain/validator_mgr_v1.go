@@ -134,7 +134,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	// when ragnarok is in progress, just process ragnarok
 	if vm.k.RagnarokInProgress(ctx) {
 		// process ragnarok
-		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
+		if err := vm.processRagnarok(ctx, constAccessor); err != nil {
 			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
 		}
 		return nil
@@ -163,7 +163,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 		}
 
 		if len(retiring) == 0 { // wait until all funds are migrated before starting ragnarok
-			if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
+			if err := vm.processRagnarok(ctx, constAccessor); err != nil {
 				ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
 			}
 		}
@@ -326,7 +326,7 @@ func (vm *validatorMgrV1) payNodeAccountBondAward(ctx sdk.Context, na NodeAccoun
 }
 
 // determines when/if to run each part of the ragnarok process
-func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, activeNodes NodeAccounts, constAccessor constants.ConstantValues) error {
+func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	// execute Ragnarok protocol, no going back
 	// THORNode have to request the fund back now, because once it get to the rotate block height ,
 	// THORNode won't have validators anymore
@@ -338,7 +338,7 @@ func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, activeNodes NodeAccou
 	if ragnarokHeight == 0 {
 		ragnarokHeight = ctx.BlockHeight()
 		vm.k.SetRagnarokBlockHeight(ctx, ragnarokHeight)
-		if err := vm.ragnarokProtocolStage1(ctx, activeNodes); err != nil {
+		if err := vm.ragnarokProtocolStage1(ctx); err != nil {
 			return fmt.Errorf("fail to execute ragnarok protocol step 1: %w", err)
 		}
 		if err := vm.ragnarokBondReward(ctx); err != nil {
@@ -362,8 +362,8 @@ func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, activeNodes NodeAccou
 
 // ragnarokProtocolStage1 - request all yggdrasil pool to return the fund
 // when THORNode observe the node return fund successfully, the node's bound will be refund.
-func (vm *validatorMgrV1) ragnarokProtocolStage1(ctx sdk.Context, activeNodes NodeAccounts) error {
-	return vm.recallYggFunds(ctx, activeNodes)
+func (vm *validatorMgrV1) ragnarokProtocolStage1(ctx sdk.Context) error {
+	return vm.recallYggFunds(ctx)
 }
 
 func (vm *validatorMgrV1) ragnarokProtocolStage2(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
@@ -672,9 +672,14 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 	return nil
 }
 
-func (vm *validatorMgrV1) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts) error {
+func (vm *validatorMgrV1) recallYggFunds(ctx sdk.Context) error {
+	nodes, err := vm.k.ListNodeAccounts(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to list all node accounts: %w", err)
+	}
+
 	// request every node to return fund
-	for _, na := range activeNodes {
+	for _, na := range nodes {
 		if err := vm.RequestYggReturn(ctx, na); err != nil {
 			return fmt.Errorf("fail to request yggdrasil fund back: %w", err)
 		}
