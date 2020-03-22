@@ -118,16 +118,19 @@ func NewNodeAccount(nodeAddress sdk.AccAddress, status NodeStatus, nodePubKeySet
 
 // IsEmpty decide whether NodeAccount is empty
 func (n NodeAccount) IsEmpty() bool {
-	return n.NodeAddress.Empty()
+	return n.NodeAddress.Empty() || n.Status == Unknown
 }
 
 // IsValid check whether NodeAccount has all necessary values
 func (n NodeAccount) IsValid() error {
 	if n.NodeAddress.Empty() {
-		return errors.New("node bep address is empty")
+		return errors.New("node thor address is empty")
 	}
 	if n.BondAddress.IsEmpty() {
 		return errors.New("bond address is empty")
+	}
+	if n.Status == Unknown {
+		return errors.New("node status cannot be unknown")
 	}
 
 	return nil
