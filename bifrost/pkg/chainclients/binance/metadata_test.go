@@ -33,9 +33,8 @@ func (s *MetadataSuite) TestMetaData(c *C) {
 	c.Check(meta.AccountNumber, Equals, int64(0))
 	c.Check(meta.SeqNumber, Equals, int64(0))
 
-	store.SeqInc(pk, 12)
+	store.SeqInc(pk)
 	meta = store.Get(pk)
 	c.Check(meta.AccountNumber, Equals, int64(1))
 	c.Check(meta.SeqNumber, Equals, int64(3))
-	c.Check(meta.BlockHeight, Equals, int64(12))
 }

@@ -366,7 +366,7 @@ func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 		return nil
 	}
 
-	if err := chain.BroadcastTx(signedTx); err != nil {
+	if err := chain.BroadcastTx(tx, signedTx); err != nil {
 		s.logger.Error().Err(err).Msg("fail to broadcast tx to chain")
 		return err
 	}

@@ -368,9 +368,6 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 		return nil, nil
 	}
 
-	// increment sequence number
-	b.accts.SeqInc(tx.VaultPubKey, currentHeight)
-
 	hexTx := []byte(hex.EncodeToString(rawBz))
 	return hexTx, nil
 }
@@ -482,7 +479,7 @@ func (b *Binance) GetAccount(addr string) (common.Account, error) {
 }
 
 // broadcastTx is to broadcast the tx to binance chain
-func (b *Binance) BroadcastTx(hexTx []byte) error {
+func (b *Binance) BroadcastTx(tx stypes.TxOutItem, hexTx []byte) error {
 	u, err := url.Parse(b.RPCHost)
 	if err != nil {
 		log.Error().Msgf("Error parsing rpc (%s): %s", b.RPCHost, err)
@@ -533,6 +530,9 @@ func (b *Binance) BroadcastTx(hexTx []byte) error {
 			return fmt.Errorf("fail to broadcast: %w", err)
 		}
 	}
+
+	// increment sequence number
+	b.accts.SeqInc(tx.VaultPubKey)
 
 	return nil
 }
