@@ -166,13 +166,15 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					},
 					Memo: NewMigrateMemo(ctx.BlockHeight()).String(),
 				}
-				_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+				ok, err := txOutStore.TryAddTxOutItem(ctx, toi)
 				if err != nil {
 					return err
 				}
-				vault.PendingTxCount += 1
-				if err := vm.k.SetVault(ctx, vault); err != nil {
-					return fmt.Errorf("fail to save vault: %w", err)
+				if ok {
+					vault.PendingTxCount += 1
+					if err := vm.k.SetVault(ctx, vault); err != nil {
+						return fmt.Errorf("fail to save vault: %w", err)
+					}
 				}
 			}
 		}
