@@ -71,7 +71,7 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	pool, err = keeper.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	c.Check(pool.BalanceRune.IsZero(), Equals, true)
-	c.Check(pool.BalanceAsset.IsZero(), Equals, true)
+	c.Check(pool.BalanceAsset.Uint64(), Equals, uint64(75000)) // leave a little behind for gas
 	c.Check(pool.PoolUnits.IsZero(), Equals, true)
 
 	// stake for user1, again
@@ -87,7 +87,7 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	pool, err = keeper.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	c.Check(pool.BalanceRune.Equal(sdk.NewUint(200*common.One)), Equals, true)
-	c.Check(pool.BalanceAsset.Equal(sdk.NewUint(200*common.One)), Equals, true)
+	c.Check(pool.BalanceAsset.Equal(sdk.NewUint(20000075000)), Equals, true, Commentf("%d", pool.BalanceAsset.Uint64()))
 	c.Check(pool.PoolUnits.IsZero(), Equals, false)
 }
 

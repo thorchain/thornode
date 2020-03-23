@@ -227,7 +227,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 	c.Assert(pool.Status, Equals, PoolBootstrap)
 	c.Assert(pool.PoolUnits.Uint64(), Equals, uint64(0))
 	c.Assert(pool.BalanceRune.Uint64(), Equals, uint64(0))
-	c.Assert(pool.BalanceAsset.Uint64(), Equals, uint64(0))
+	c.Assert(pool.BalanceAsset.Uint64(), Equals, uint64(75000)) // leave a little behind for gas
 }
 
 func (HandlerSuite) TestRefund(c *C) {

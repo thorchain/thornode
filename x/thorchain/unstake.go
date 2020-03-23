@@ -84,6 +84,18 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 		return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFail, err.Error())
 	}
 
+	// If the pool is empty, and there is a gas asset, subtract required gas
+	if common.SafeSub(poolUnits, fStakerUnit).Add(unitAfter).IsZero() {
+		// TODO: make this not chain specific
+		// minus gas costs for our transactions
+		if pool.Asset.IsBNB() {
+			withDrawAsset = common.SafeSub(
+				withDrawAsset,
+				common.BNBGasFeeSingleton[0].Amount.MulUint64(uint64(2)),
+			)
+		}
+	}
+
 	withdrawRune = withdrawRune.Add(stakerUnit.PendingRune) // extract pending rune
 	stakerUnit.PendingRune = sdk.ZeroUint()                 // reset pending to zero
 
