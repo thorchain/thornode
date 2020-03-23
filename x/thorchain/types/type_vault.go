@@ -107,8 +107,8 @@ func (v Vault) HasFunds() bool {
 	return false
 }
 
-// CoinCoint - counts the number of coins this vault has
-func (v Vault) CoinCount() (count int) {
+// CoinLength - counts the number of coins this vault has
+func (v Vault) CoinLength() (count int) {
 	for _, coin := range v.Coins {
 		if !coin.Amount.IsZero() {
 			count += 1
