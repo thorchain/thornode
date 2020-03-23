@@ -151,7 +151,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 				if coin.Asset.IsBNB() {
 					amt = common.SafeSub(
 						amt,
-						common.BNBGasFeeSingleton[0].Amount.MulUint64(uint64(len(vault.Coins))),
+						common.BNBGasFeeSingleton[0].Amount.MulUint64(uint64(vault.CoinCount())),
 					)
 				}
 
