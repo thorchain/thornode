@@ -107,6 +107,16 @@ func (v Vault) HasFunds() bool {
 	return false
 }
 
+// CoinLength - counts the number of coins this vault has
+func (v Vault) CoinLength() (count int) {
+	for _, coin := range v.Coins {
+		if !coin.Amount.IsZero() {
+			count += 1
+		}
+	}
+	return
+}
+
 // HasAsset Check if this vault has a particular asset
 func (v Vault) HasAsset(asset common.Asset) bool {
 	return !v.GetCoin(asset).Amount.IsZero()
