@@ -50,12 +50,11 @@ func (b *BinanceMetaDataStore) Set(pk common.PubKey, meta BinanceMetadata) {
 	b.accts[pk] = meta
 }
 
-func (b *BinanceMetaDataStore) SeqInc(pk common.PubKey, blockHeight int64) {
+func (b *BinanceMetaDataStore) SeqInc(pk common.PubKey) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	if meta, ok := b.accts[pk]; ok {
 		meta.SeqNumber += 1
-		meta.BlockHeight = blockHeight
 		b.accts[pk] = meta
 	}
 }

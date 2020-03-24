@@ -214,7 +214,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	c.Assert(err, IsNil)
 	c.Assert(r, NotNil)
 
-	err = b2.BroadcastTx(r)
+	err = b2.BroadcastTx(out, r)
 	c.Assert(err, IsNil)
 }
 

@@ -248,7 +248,7 @@ func (b *MockChainClient) ValidateMetadata(inter interface{}) bool {
 	return true
 }
 
-func (b *MockChainClient) BroadcastTx(tx []byte) error {
+func (b *MockChainClient) BroadcastTx(_ stypes.TxOutItem, tx []byte) error {
 	return nil
 }
 
