@@ -141,6 +141,9 @@ func (k *TestEndPoolHandleKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context,
 func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 
+	asset, err := common.NewAsset("BNB.LOK-3C0")
+	c.Assert(err, IsNil)
+
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)
 	activeNodeAccount.Bond = sdk.NewUint(common.One * 100)
 	bnbAddr := GetRandomBNBAddress()
@@ -149,13 +152,13 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 		currentPool: Pool{
 			BalanceRune:  sdk.ZeroUint(),
 			BalanceAsset: sdk.ZeroUint(),
-			Asset:        common.BNBAsset,
+			Asset:        asset,
 			PoolUnits:    sdk.ZeroUint(),
 			PoolAddress:  "",
 			Status:       PoolEnabled,
 		},
 		poolStaker: PoolStaker{
-			Asset:      common.BNBAsset,
+			Asset:      asset,
 			TotalUnits: sdk.ZeroUint(),
 			Stakers:    nil,
 		},
@@ -176,13 +179,13 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 		stakeTxHash,
 		bnbAddr,
 		GetRandomBNBAddress(),
-		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
+		common.Coins{common.NewCoin(asset, sdk.OneUint())},
 		common.BNBGasFeeSingleton,
 		"",
 	)
 	msgSetStake := NewMsgSetStakeData(
 		tx,
-		common.BNBAsset,
+		asset,
 		sdk.NewUint(100*common.One),
 		sdk.NewUint(100*common.One),
 		bnbAddr,
@@ -194,7 +197,7 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	stakeResult := stakeHandler.Run(ctx, msgSetStake, ver, constAccessor)
 	c.Assert(stakeResult.Code, Equals, sdk.CodeOK)
 
-	p, err := keeper.GetPool(ctx, common.BNBAsset)
+	p, err := keeper.GetPool(ctx, asset)
 	c.Assert(err, IsNil)
 	c.Assert(p.Empty(), Equals, false)
 	c.Assert(p.BalanceRune.Uint64(), Equals, msgSetStake.RuneAmount.Uint64())
@@ -204,10 +207,10 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 	txOutStore.NewBlock(1, constAccessor)
 
 	// EndPool again
-	msgEndPool1 := NewMsgEndPool(common.BNBAsset, tx, activeNodeAccount.NodeAddress)
+	msgEndPool1 := NewMsgEndPool(asset, tx, activeNodeAccount.NodeAddress)
 	result1 := handler.handle(ctx, msgEndPool1, ver, constAccessor)
 	c.Assert(result1.Code, Equals, sdk.CodeOK, Commentf("%+v\n", result1))
-	p1, err := keeper.GetPool(ctx, common.BNBAsset)
+	p1, err := keeper.GetPool(ctx, asset)
 	c.Assert(err, IsNil)
 	c.Check(p1.Status, Equals, PoolBootstrap)
 	c.Check(p1.BalanceAsset.Uint64(), Equals, uint64(0))

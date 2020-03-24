@@ -392,7 +392,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 			},
 			ps:            getInMemoryPoolStorageForUnstake(c),
 			runeAmount:    sdk.NewUint(100 * common.One),
-			assetAmount:   sdk.NewUint(100 * common.One),
+			assetAmount:   sdk.NewUint(100 * common.One).Sub(sdk.NewUint(75000)),
 			expectedError: nil,
 		},
 		{
