@@ -105,13 +105,12 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 		}
 		tx, err := b.thorchain.GetKeysign(blockHeight, pk.String())
 		if err != nil {
+			if err.Error() == "not found" {
+				// custom error (to be dropped and not logged) because the block is
+				// available yet
+				return errors.New("")
+			}
 			return errors.Wrap(err, "fail to get keysign from block scanner")
-		}
-
-		// custom error (to be dropped and not logged) because the block is
-		// available yet
-		if tx == nil {
-			return errors.New("")
 		}
 
 		for c, out := range tx.Chains {
