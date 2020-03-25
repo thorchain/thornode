@@ -12,6 +12,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 	q "gitlab.com/thorchain/thornode/x/thorchain/query"
 )
 
@@ -67,6 +68,8 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryVaultsAddresses(ctx, keeper)
 		case q.QueryTSSSigners.Key:
 			return queryTSSSigners(ctx, path[1:], req, keeper)
+		case q.QueryConstantValues.Key:
+			return queryConstantValues(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown thorchain query endpoint: %s", path[0]),
@@ -843,5 +846,16 @@ func queryTSSSigners(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		return nil, sdk.ErrInternal("fail to marshal to json")
 	}
 
+	return res, nil
+}
+
+func queryConstantValues(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	ver := keeper.GetLowestActiveVersion(ctx)
+	constAccessor := constants.GetConstantValues(ver)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), constAccessor)
+	if err != nil {
+		ctx.Logger().Error("fail to marshal constant values to json", "error", err)
+		return nil, sdk.ErrInternal("fail to marshal constant values to json")
+	}
 	return res, nil
 }

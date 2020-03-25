@@ -33,8 +33,6 @@ func (q Query) Path(args ...string) string {
 
 // query endpoints supported by the thorchain Querier
 var (
-	QueryAdminConfigBnb     = Query{Key: "adminconfig", EndpointTemplate: "/%s/admin/{%s}/{%s}"}
-	QueryAdminConfig        = Query{Key: "adminconfigbnb", EndpointTemplate: "/%s/admin/{%s}"}
 	QueryChains             = Query{Key: "chains", EndpointTemplate: "/%s/chains"}
 	QueryPool               = Query{Key: "pool", EndpointTemplate: "/%s/pool/{%s}"}
 	QueryPools              = Query{Key: "pools", EndpointTemplate: "/%s/pools"}
@@ -61,12 +59,11 @@ var (
 	QueryVaultPubkeys       = Query{Key: "vaultpubkeys", EndpointTemplate: "/%s/vaults/pubkeys"}
 	QueryVaultAddresses     = Query{Key: "vaultaddresses", EndpointTemplate: "/%s/vaults/addresses"}
 	QueryTSSSigners         = Query{Key: "tsssigner", EndpointTemplate: "/%s/vaults/{%s}/signers"}
+	QueryConstantValues     = Query{Key: "constants", EndpointTemplate: "/%s/constants"}
 )
 
 // Queries all queries
 var Queries = []Query{
-	QueryAdminConfig,
-	QueryAdminConfigBnb,
 	QueryPool,
 	QueryPools,
 	QueryChains,
@@ -93,4 +90,5 @@ var Queries = []Query{
 	QueryKeygensPubkey,
 	QueryVaultAddresses,
 	QueryTSSSigners,
+	QueryConstantValues,
 }
