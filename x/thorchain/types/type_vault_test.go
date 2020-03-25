@@ -1,10 +1,12 @@
 package types
 
 import (
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type VaultSuite struct{}
@@ -68,4 +70,24 @@ func (s *VaultSuite) TestGetTssSigners(c *C) {
 	c.Assert(keys, HasLen, 2)
 	c.Assert(keys[0].Equals(nodeAccounts[0].PubKeySet.Secp256k1), Equals, true)
 	c.Assert(keys[1].Equals(nodeAccounts[1].PubKeySet.Secp256k1), Equals, true)
+}
+
+func (s *VaultSuite) TestPendingTxBlockHeights(c *C) {
+	vault := NewVault(12, ActiveVault, AsgardVault, GetRandomPubKey())
+
+	version := semver.MustParse("0.1.0")
+	constAccessor := constants.GetConstantValues(version)
+	vault.AppendPendingTxBlockHeights(1, constAccessor)
+	c.Assert(vault.LenPendingTxBlockHeights(2, constAccessor), Equals, 1)
+	c.Assert(vault.LenPendingTxBlockHeights(102, constAccessor), Equals, 0)
+	for i := 0; i < 100; i++ {
+		vault.AppendPendingTxBlockHeights(int64(i), constAccessor)
+	}
+	c.Assert(vault.LenPendingTxBlockHeights(100, constAccessor), Equals, 101)
+	vault.AppendPendingTxBlockHeights(1000, constAccessor)
+	c.Assert(vault.LenPendingTxBlockHeights(1001, constAccessor), Equals, 1)
+	vault.RemovePendingTxBlockHeights(1000)
+	c.Assert(vault.LenPendingTxBlockHeights(1002, constAccessor), Equals, 0)
+	vault.RemovePendingTxBlockHeights(1001)
+	c.Assert(vault.LenPendingTxBlockHeights(1002, constAccessor), Equals, 0)
 }

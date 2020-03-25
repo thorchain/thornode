@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,11 +19,12 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
-	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
+	"gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 	ttypes "gitlab.com/thorchain/thornode/x/thorchain/types"
 )
@@ -300,6 +302,17 @@ func (s *Signer) sendKeygenToThorchain(height int64, poolPk common.PubKey, blame
 func (s *Signer) signAndBroadcast(item TxOutStoreItem) error {
 	height := item.Height
 	tx := item.TxOutItem
+	blockHeight, err := s.thorchainBridge.GetBlockHeight()
+	if err != nil {
+		s.logger.Error().Err(err).Msgf("fail to get block height")
+		return err
+	}
+	// TODO hardcode it as 0.1.0 for now, will need to get it appropriately later
+	cv := constants.GetConstantValues(semver.MustParse("0.1.0"))
+	if blockHeight-height > cv.GetInt64Value(constants.SigningTransactionPeriod) {
+		s.logger.Error().Msgf("tx was created at block height(%d), now it is (%d), it is older than (%d) blocks , skip it ", height, blockHeight, cv.GetInt64Value(constants.SigningTransactionPeriod))
+		return nil
+	}
 	chain, err := s.getChain(tx.Chain)
 	if err != nil {
 		s.logger.Error().Err(err).Msgf("not supported %s", tx.Chain.String())
