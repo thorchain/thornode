@@ -1,8 +1,6 @@
 version: '3'
 
 services:
-  binance:
-    network_mode: "host"
   bifrost:
     network_mode: "host"
     environment:

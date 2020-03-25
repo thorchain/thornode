@@ -1,6 +1,5 @@
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 path := $(dir $(mkfile_path))
-TAG ?= mocknet
 
 ifeq ($(OS),Windows_NT)
     uname_S := Windows
@@ -9,27 +8,27 @@ else
 endif
 
 run-mocknet-standalone:
-	TAG=${TAG} NET=mocknet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/standalone.yml -f ${path}../components/standalone.${uname_S}.yml up --force-recreate --remove-orphans -d
+	TAG=mocknet NET=mocknet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/standalone.yml -f ${path}../components/standalone.${uname_S}.yml up --force-recreate --remove-orphans -d
 
 reset-mocknet-standalone: stop clean run-mocknet-standalone
 
 run-mocknet-genesis:
-	TAG=${TAG} NET=mocknet docker-compose -p thornode -f ${path}../components/genesis.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/genesis.yml up --force-recreate --remove-orphans -d
+	TAG=mocknet NET=mocknet docker-compose -p thornode -f ${path}../components/genesis.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/genesis.yml up --force-recreate --remove-orphans -d
 
 run-mocknet-genesis-logs:
-	TAG=${TAG} NET=mocknet docker-compose -p thornode -f ${path}../components/genesis.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/genesis.yml logs -f
+	TAG=mocknet NET=mocknet docker-compose -p thornode -f ${path}../components/genesis.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/genesis.yml logs -f
 
 reset-mocknet-genesis: stop clean run-mocknet-genesis
 
 run-mocknet-genesis-churn:
-	TAG=${TAG} NET=mocknet docker-compose -p thornode -f ${path}../components/genesis.base.yml -f ${path}../components/fifthnode.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/genesis.yml -f ${path}../mocknet/churn.yml up --force-recreate --remove-orphans -d
+	TAG=mocknet NET=mocknet docker-compose -p thornode -f ${path}../components/genesis.base.yml -f ${path}../components/fifthnode.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/genesis.yml -f ${path}../mocknet/churn.yml up --force-recreate --remove-orphans -d
 
 run-mocknet-genesis-churn-logs:
-	TAG=${TAG} NET=mocknet docker-compose -p thornode -f ${path}../components/genesis.base.yml -f ${path}../components/fifthnode.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/genesis.yml -f ${path}../mocknet/churn.yml logs -f
+	TAG=mocknet NET=mocknet docker-compose -p thornode -f ${path}../components/genesis.base.yml -f ${path}../components/fifthnode.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/mock-binance.yml -f ${path}../mocknet/genesis.yml -f ${path}../mocknet/churn.yml logs -f
 
 reset-mocknet-genesis-churn: stop clean run-mocknet-genesis-churn
 
 run-mocknet-validator:
-	TAG=${TAG} NET=mocknet docker-compose -p thornode -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/validator.yml -f ${path}../components/validator.${uname_S}.yml up --force-recreate --remove-orphans -d
+	TAG=mocknet NET=mocknet docker-compose -p thornode -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/validator.yml -f ${path}../components/validator.${uname_S}.yml up --force-recreate --remove-orphans -d
 
 reset-mocknet-validator: stop clean run-mocknet-validator
