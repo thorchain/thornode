@@ -7,8 +7,8 @@ CHAIN_SCHEME="${CHAIN_SCHEME:=http}"
 CHAIN_API="${CHAIN_API:=localhost:1317}"
 CHAIN_RPC="${CHAIN_RPC:=localhost:26657}"
 
-BINANCE_DEX="${BINANCE_HOST:=testnet-dex.binance.org}"
-BINANCE_SCHEME="${BINANCE_SCHEME:=https}"
+BINANCE_API="${BINANCE_API:=testnet-dex.binance.org}"
+BINANCE_API_SCHEME="${BINANCE_API_SCHEME:=https}"
 ISTESTNET="${ISTESTNET:=true}"
 
 PG_HOST="${PG_HOST:=localhost}"
@@ -28,6 +28,7 @@ echo "{
     \"host\": \"$CHAIN_API\",
     \"rpc_host\": \"$CHAIN_RPC\",
     \"enable_scan\": true,
+    \"no_events_backoff\": \"5s\",
     \"scan_start_pos\": 1,
     \"proxied_whitelisted_endpoints\": [
       \"pool_addresses\"
@@ -43,8 +44,8 @@ echo "{
     \"migrationsDir\": \"./db/migrations/\"
   },
   \"binance\": {
-    \"scheme\": \"$BINANCE_SCHEME\",
-    \"dex_host\": \"$BINANCE_DEX\",
+    \"scheme\": \"$BINANCE_API_SCHEME\",
+    \"dex_host\": \"$BINANCE_API\",
     \"is_testnet\": $ISTESTNET
   }
 }" > /etc/midgard/config.json
