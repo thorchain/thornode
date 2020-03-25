@@ -29,11 +29,12 @@ func (k yggdrasilTestKeeper) GetAsgardVaultsByStatus(ctx sdk.Context, vs VaultSt
 	return k.Keeper.GetAsgardVaultsByStatus(ctx, vs)
 }
 
-func (k yggdrasilTestKeeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+func (k yggdrasilTestKeeper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
+	addr, _ := pk.GetThorAddress()
 	if k.errGetNodeAccount.Equals(addr) {
 		return NodeAccount{}, kaboom
 	}
-	return k.Keeper.GetNodeAccount(ctx, addr)
+	return k.Keeper.GetNodeAccountByPubKey(ctx, pk)
 }
 
 func (k yggdrasilTestKeeper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {

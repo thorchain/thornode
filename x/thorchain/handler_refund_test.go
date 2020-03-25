@@ -72,11 +72,11 @@ func (k *refundTxHandlerKeeperTestHelper) GetTxOut(ctx sdk.Context, height int64
 	return k.Keeper.GetTxOut(ctx, height)
 }
 
-func (k *refundTxHandlerKeeperTestHelper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+func (k *refundTxHandlerKeeperTestHelper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
 	if k.errGetNodeAccount {
 		return NodeAccount{}, kaboom
 	}
-	return k.Keeper.GetNodeAccount(ctx, addr)
+	return k.Keeper.GetNodeAccountByPubKey(ctx, pk)
 }
 
 func (k *refundTxHandlerKeeperTestHelper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {

@@ -117,6 +117,30 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 			continue
 		}
 
+		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
+		if err != nil {
+			ctx.Logger().Error("fail to get vault", "error", err)
+			continue
+		}
+
+		// Check if memo is valid, if it isn't and its funds moving from a
+		// yggdrasil vault, slash the node
+		_, err = ParseMemo(tx.Tx.Memo)
+		if err != nil && vault.IsYggdrasil() {
+			// a yggdrasil vault has apparently stolen funds, slash them
+			for _, c := range append(tx.Tx.Coins, tx.Tx.Gas.ToCoins()...) {
+				if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
+					ctx.Logger().Error("fail to slash account for sending extra fund", "error", err)
+				}
+			}
+			vault.SubFunds(tx.Tx.Coins)
+			vault.SubFunds(tx.Tx.Gas.ToCoins())
+			if err := h.keeper.SetVault(ctx, vault); err != nil {
+				ctx.Logger().Error("fail to save vault", "error", err)
+			}
+			continue
+		}
+
 		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
 		m, err := processOneTxIn(ctx, h.keeper, txOut, msg.Signer)
 		if err != nil || tx.Tx.Chain.IsEmpty() {
@@ -125,22 +149,13 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 				"tx", tx.Tx.String())
 			continue
 		}
-		// when thorchain fail to parse the out going tx memo, likely it is an
-		// unauthorised tx in that case, thorchain doesn't subtract the fund
-		// from relevant vault, thus when the node/yggdrasil leave, they will
-		// either return those asset or they will be slashed for that amount,
-		// also if the tx memo is unknown , thorchain also doesn't subsidise
-		// gas Apply Gas fees
+
+		// Apply Gas fees
 		if err := AddGasFees(ctx, h.keeper, tx); err != nil {
 			return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error()).Result()
 		}
 
 		// If sending from one of our vaults, decrement coins
-		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
-		if err != nil {
-			ctx.Logger().Error("fail to get vault", "error", err)
-			return sdk.ErrInternal("fail to get vault").Result()
-		}
 		vault.SubFunds(tx.Tx.Coins)
 		vault.OutboundTxCount += 1
 		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err

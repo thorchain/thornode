@@ -506,7 +506,7 @@ func (b *Binance) BroadcastTx(tx stypes.TxOutItem, hexTx []byte) error {
 	var commit stypes.Commit
 	err = json.Unmarshal(body, &commit)
 	if err != nil || len(commit.Logs) == 0 {
-		b.logger.Error().Err(err).Msg("fail unmarshal commit")
+		b.logger.Error().Err(err).Msgf("fail unmarshal commit: %s", string(body))
 
 		var badCommit stypes.BadCommit // since commit doesn't work, lets try bad commit
 		err = json.Unmarshal(body, &badCommit)

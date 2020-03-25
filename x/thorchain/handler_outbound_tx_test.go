@@ -126,11 +126,11 @@ func (k *outboundTxHandlerKeeperHelper) GetTxOut(ctx sdk.Context, height int64) 
 	return k.Keeper.GetTxOut(ctx, height)
 }
 
-func (k *outboundTxHandlerKeeperHelper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+func (k *outboundTxHandlerKeeperHelper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
 	if k.errGetNodeAccount {
 		return NodeAccount{}, kaboom
 	}
-	return k.Keeper.GetNodeAccount(ctx, addr)
+	return k.Keeper.GetNodeAccountByPubKey(ctx, pk)
 }
 
 func (k *outboundTxHandlerKeeperHelper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {

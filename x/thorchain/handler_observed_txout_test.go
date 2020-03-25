@@ -227,3 +227,56 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	// make sure the coin has been subtract from the vault
 	c.Check(ygg.Coins.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(19999962499)), Equals, true, Commentf("%d", ygg.Coins.GetCoin(common.BNBAsset).Amount.Uint64()))
 }
+
+func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
+	var err error
+	ctx, _ := setupKeeperForTest(c)
+	w := getHandlerTestWrapper(c, 1, true, false)
+
+	ver := semver.MustParse("0.1.0")
+	tx := GetRandomTx()
+	tx.Memo = "I AM A THIEF!" // bad memo
+	obTx := NewObservedTx(tx, 12, GetRandomPubKey())
+	obTx.Tx.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(300*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(100*common.One)),
+	}
+	txs := ObservedTxs{obTx}
+	pk := GetRandomPubKey()
+	c.Assert(err, IsNil)
+
+	na := GetRandomNodeAccount(NodeActive)
+	na.Bond = sdk.NewUint(1000000 * common.One)
+	na.PubKeySet.Secp256k1 = pk
+
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(500*common.One)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
+	}
+	keeper := &TestObservedTxOutHandleKeeper{
+		nas:   NodeAccounts{na},
+		voter: NewObservedTxVoter(tx.ID, make(ObservedTxs, 0)),
+		pool: Pool{
+			Asset:        common.BNBAsset,
+			BalanceRune:  sdk.NewUint(200 * common.One),
+			BalanceAsset: sdk.NewUint(300 * common.One),
+		},
+		yggExists: true,
+		ygg:       ygg,
+	}
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
+	keeper.txOutStore = txOutStore
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy)
+
+	c.Assert(err, IsNil)
+	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
+	result := handler.handle(ctx, msg, ver)
+	c.Assert(result.IsOK(), Equals, true)
+	// make sure the coin has been subtract from the vault
+	c.Check(ygg.Coins.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(9999962500)), Equals, true, Commentf("%d", ygg.Coins.GetCoin(common.BNBAsset).Amount.Uint64()))
+	c.Assert(keeper.na.Bond.LT(sdk.NewUint(1000000*common.One)), Equals, true, Commentf("%d", keeper.na.Bond.Uint64()))
+}
