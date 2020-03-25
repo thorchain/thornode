@@ -117,28 +117,29 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 			continue
 		}
 
-		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
-		if err != nil {
-			ctx.Logger().Error("fail to get vault", "error", err)
-			continue
-		}
-
-		// Check if memo is valid, if it isn't and its funds moving from a
-		// yggdrasil vault, slash the node
+		// if memo isn't valid and its funds moving from a yggdrasil vault,
+		// slash the node
 		_, err = ParseMemo(tx.Tx.Memo)
-		if err != nil && vault.IsYggdrasil() {
-			// a yggdrasil vault has apparently stolen funds, slash them
-			for _, c := range append(tx.Tx.Coins, tx.Tx.Gas.ToCoins()...) {
-				if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
-					ctx.Logger().Error("fail to slash account for sending extra fund", "error", err)
+		if err != nil {
+			vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
+			if err != nil {
+				ctx.Logger().Error("fail to get vault", "error", err)
+				continue
+			}
+			if vault.IsYggdrasil() {
+				// a yggdrasil vault has apparently stolen funds, slash them
+				for _, c := range append(tx.Tx.Coins, tx.Tx.Gas.ToCoins()...) {
+					if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
+						ctx.Logger().Error("fail to slash account for sending extra fund", "error", err)
+					}
 				}
+				vault.SubFunds(tx.Tx.Coins)
+				vault.SubFunds(tx.Tx.Gas.ToCoins())
+				if err := h.keeper.SetVault(ctx, vault); err != nil {
+					ctx.Logger().Error("fail to save vault", "error", err)
+				}
+				continue
 			}
-			vault.SubFunds(tx.Tx.Coins)
-			vault.SubFunds(tx.Tx.Gas.ToCoins())
-			if err := h.keeper.SetVault(ctx, vault); err != nil {
-				ctx.Logger().Error("fail to save vault", "error", err)
-			}
-			continue
 		}
 
 		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
@@ -156,6 +157,11 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		}
 
 		// If sending from one of our vaults, decrement coins
+		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
+		if err != nil {
+			ctx.Logger().Error("fail to get vault", "error", err)
+			continue
+		}
 		vault.SubFunds(tx.Tx.Coins)
 		vault.OutboundTxCount += 1
 		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
