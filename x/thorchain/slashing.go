@@ -161,11 +161,7 @@ func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubK
 	if slashAmount.IsZero() {
 		return nil
 	}
-	thorAddr, err := observedPubKey.GetThorAddress()
-	if err != nil {
-		return fmt.Errorf("fail to get thoraddress from pubkey(%s) %w", observedPubKey, err)
-	}
-	nodeAccount, err := keeper.GetNodeAccount(ctx, thorAddr)
+	nodeAccount, err := keeper.GetNodeAccountByPubKey(ctx, observedPubKey)
 	if err != nil {
 		return fmt.Errorf("fail to get node account with pubkey(%s), %w", observedPubKey, err)
 	}

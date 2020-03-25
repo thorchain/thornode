@@ -187,6 +187,8 @@ func (s *MemoSuite) TestParse(c *C) {
 	c.Assert(err, IsNil)
 	_, err = ParseMemo("withdraw:bnb:twenty-two") // bad amount
 	c.Assert(err, NotNil)
+	_, err = ParseMemo("swap:bnb:STAKER-1:5.6") // bad destination
+	c.Assert(err, NotNil)
 	_, err = ParseMemo("swap:bnb:bad_DES:5.6") // bad destination
 	c.Assert(err, NotNil)
 	_, err = ParseMemo("swap:bnb:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:five") // bad slip limit

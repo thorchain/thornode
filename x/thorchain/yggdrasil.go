@@ -58,6 +58,12 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	// With 100 Ygg pools, THORNode should check each pool every 8.33 minutes.
 	na := nodeAccs[ctx.BlockHeight()%int64(len(nodeAccs))]
 
+	// check that we have enough bond
+	minBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+	if na.Bond.LT(sdk.NewUint(uint64(minBond))) {
+		return nil
+	}
+
 	// figure out if THORNode need to send them assets.
 	// get a list of coin/amounts this yggdrasil pool should have, ideally.
 	// TODO: We are assuming here that the pub key is Secp256K1
