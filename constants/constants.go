@@ -130,6 +130,7 @@ func (cv ConstantValue010) MarshalJSON() ([]byte, error) {
 	}
 	result.Int64Values = make(map[string]int64)
 	result.BoolValues = make(map[string]bool)
+	result.StringValues = make(map[string]string)
 	for k, v := range cv.int64values {
 		result.Int64Values[k.String()] = v
 	}
