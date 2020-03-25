@@ -8,9 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -200,7 +201,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	ctx = ctx.WithBlockHeight(vault.StatusSince + (migrateInterval * 7))
 	vault, err = keeper.GetVault(ctx, vault.PubKey)
 	c.Assert(err, IsNil)
-	vault.PendingTxCount = 0 // reset pending tx count
+	vault.PendingTxBlockHeights = nil
 	c.Assert(keeper.SetVault(ctx, vault), IsNil)
 	vaultMgr.EndBlock(ctx, ver, consts) // should attempt to send 100% of the coin values
 	items, err = txOutStore.GetOutboundItems(ctx)
@@ -310,9 +311,9 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	}
 	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
 
-	//////////////////////////////////////////////////////////
-	//////////////// Start Ragnarok Protocol /////////////////
-	//////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////
+	// ////////////// Start Ragnarok Protocol /////////////////
+	// ////////////////////////////////////////////////////////
 	vd := VaultData{
 		BondRewardRune: sdk.NewUint(1000_000 * common.One),
 		TotalBondUnits: sdk.NewUint(3 * 1014), // block height * node count

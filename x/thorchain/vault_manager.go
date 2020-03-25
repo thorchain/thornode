@@ -103,8 +103,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 
 		// move partial funds every 30 minutes
 		if (ctx.BlockHeight()-vault.StatusSince)%migrateInterval == 0 {
-
-			if vault.PendingTxCount > 0 {
+			if vault.LenPendingTxBlockHeights(ctx.BlockHeight(), constAccessor) > 0 {
 				ctx.Logger().Info("Skipping the migration of funds while transactions are still pending")
 				continue
 			}
@@ -171,7 +170,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					return err
 				}
 				if ok {
-					vault.PendingTxCount += 1
+					vault.AppendPendingTxBlockHeights(ctx.BlockHeight(), constAccessor)
 					if err := vm.k.SetVault(ctx, vault); err != nil {
 						return fmt.Errorf("fail to save vault: %w", err)
 					}

@@ -10,6 +10,7 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
+// Fund is a method to fund yggdrasil pool
 func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor constants.ConstantValues) error {
 	// Check if we have triggered the ragnarok protocol
 	ragnarokHeight, err := keeper.GetRagnarokBlockHeight(ctx)
@@ -76,8 +77,9 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 	if !ygg.IsYggdrasil() {
 		return nil
 	}
-	if ygg.PendingTxCount > 0 {
-		return fmt.Errorf("cannot send more yggdrasil funds while transactions are pending (%s: %d)", ygg.PubKey, ygg.PendingTxCount)
+	pendingTxCount := ygg.LenPendingTxBlockHeights(ctx.BlockHeight(), constAccessor)
+	if pendingTxCount > 0 {
+		return fmt.Errorf("cannot send more yggdrasil funds while transactions are pending (%s: %d)", ygg.PubKey, pendingTxCount)
 	}
 
 	// calculate the total value of funds of this yggdrasil vault
@@ -130,8 +132,9 @@ func Fund(ctx sdk.Context, keeper Keeper, txOutStore TxOutStore, constAccessor c
 		if err != nil {
 			return err
 		}
-
-		ygg.PendingTxCount += int64(count)
+		for i := 0; i < count; i++ {
+			ygg.AppendPendingTxBlockHeights(ctx.BlockHeight(), constAccessor)
+		}
 		if err := keeper.SetVault(ctx, ygg); err != nil {
 			return fmt.Errorf("fail to create yggdrasil pool: %w", err)
 		}

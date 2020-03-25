@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 // VaultType there are two different types of Vault in thorchain
@@ -32,16 +33,16 @@ const (
 
 // Vault usually represent the pool we are using
 type Vault struct {
-	BlockHeight     int64          `json:"block_height"`
-	PubKey          common.PubKey  `json:"pub_key"`
-	Coins           common.Coins   `json:"coins"`
-	Type            VaultType      `json:"type"`
-	Status          VaultStatus    `json:"status"`
-	StatusSince     int64          `json:"status_since"`
-	Membership      common.PubKeys `json:"membership"`
-	InboundTxCount  int64          `json:"inbound_tx_count"`
-	OutboundTxCount int64          `json:"outbound_tx_count"`
-	PendingTxCount  int64          `json:"pending_tx_count"`
+	BlockHeight           int64          `json:"block_height"`
+	PubKey                common.PubKey  `json:"pub_key"`
+	Coins                 common.Coins   `json:"coins"`
+	Type                  VaultType      `json:"type"`
+	Status                VaultStatus    `json:"status"`
+	StatusSince           int64          `json:"status_since"`
+	Membership            common.PubKeys `json:"membership"`
+	InboundTxCount        int64          `json:"inbound_tx_count"`
+	OutboundTxCount       int64          `json:"outbound_tx_count"`
+	PendingTxBlockHeights []int64        `json:"-"`
 }
 
 type Vaults []Vault
@@ -180,6 +181,45 @@ func (v *Vault) SubFunds(coins common.Coins) {
 			}
 		}
 	}
+}
+
+// AppendPendingTxBlockHeights will add current block height into the list , also remove the block height that is too old
+func (v *Vault) AppendPendingTxBlockHeights(blockHeight int64, constAccessor constants.ConstantValues) {
+	heights := []int64{
+		blockHeight,
+	}
+	for _, item := range v.PendingTxBlockHeights {
+		if (blockHeight - item) <= constAccessor.GetInt64Value(constants.SigningTransactionPeriod) {
+			heights = append(heights, item)
+		}
+	}
+	v.PendingTxBlockHeights = heights
+}
+
+// RemovePendingTxBlockHeights remove the given block height from internal pending tx block height
+func (v *Vault) RemovePendingTxBlockHeights(blockHeight int64) {
+	idxToRemove := -1
+	for idx, item := range v.PendingTxBlockHeights {
+		if item == blockHeight {
+			idxToRemove = idx
+			break
+		}
+	}
+	if idxToRemove != -1 {
+		v.PendingTxBlockHeights = append(v.PendingTxBlockHeights[:idxToRemove], v.PendingTxBlockHeights[idxToRemove+1:]...)
+	}
+}
+
+// LenPendingTxBlockHeights count how many outstanding block heights in the vault
+// if the a block height is older than SigningTransactionPeriod , it will ignore
+func (v *Vault) LenPendingTxBlockHeights(currentBlockHeight int64, constAccessor constants.ConstantValues) int {
+	total := 0
+	for _, item := range v.PendingTxBlockHeights {
+		if (currentBlockHeight - item) <= constAccessor.GetInt64Value(constants.SigningTransactionPeriod) {
+			total++
+		}
+	}
+	return total
 }
 
 // SortBy order coins by the given asset
