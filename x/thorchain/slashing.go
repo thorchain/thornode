@@ -153,10 +153,13 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 	return nil
 }
 
-// slashNodeAccount thorchain keep monitoring the outbound tx from asgard pool and yggdrasil pool, usually the txout is triggered by thorchain itself by
-// adding an item into the txout array, refer to TxOutItem for the detail, the TxOutItem contains a specific coin and amount.
-// if somehow thorchain discover signer send out fund more than the amount specified in TxOutItem, it will slash the node account who does that
-// by taking 1.5 * extra fund from node account's bond and subsidise the pool that actually lost it.
+// slashNodeAccount thorchain keep monitoring the outbound tx from asgard pool
+// and yggdrasil pool, usually the txout is triggered by thorchain itself by
+// adding an item into the txout array, refer to TxOutItem for the detail, the
+// TxOutItem contains a specific coin and amount.  if somehow thorchain
+// discover signer send out fund more than the amount specified in TxOutItem,
+// it will slash the node account who does that by taking 1.5 * extra fund from
+// node account's bond and subsidise the pool that actually lost it.
 func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubKey, asset common.Asset, slashAmount sdk.Uint) error {
 	if slashAmount.IsZero() {
 		return nil
@@ -166,8 +169,14 @@ func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubK
 		return fmt.Errorf("fail to get node account with pubkey(%s), %w", observedPubKey, err)
 	}
 
+	if nodeAccount.Status == NodeUnknown {
+		return nil
+	}
+
 	if asset.IsRune() {
-		// If rune, we take 1.5x the amount, and take it from their bond. We put 1/3rd of it into the reserve, and 2/3rds into the pools (but keeping the rune pool balances unchanged)
+		// If rune, we take 1.5x the amount, and take it from their bond. We
+		// put 1/3rd of it into the reserve, and 2/3rds into the pools (but
+		// keeping the rune pool balances unchanged)
 		amountToReserve := slashAmount.QuoUint64(2)
 		// if the diff asset is RUNE , just took 1.5 * diff from their bond
 		slashAmount = slashAmount.MulUint64(3).QuoUint64(2)
@@ -186,7 +195,8 @@ func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubK
 	if err != nil {
 		return fmt.Errorf("fail to get %s pool : %w", asset, err)
 	}
-	// thorchain doesn't even have a pool for the asset, or the pool had been suspended, then who cares
+	// thorchain doesn't even have a pool for the asset, or the pool had been
+	// suspended, then who cares
 	if pool.Empty() || pool.Status == PoolSuspended {
 		return nil
 	}

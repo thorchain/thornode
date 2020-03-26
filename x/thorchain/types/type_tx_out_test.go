@@ -16,7 +16,7 @@ func (TxOutTestSuite) TestTxOut(c *C) {
 	toAddr := GetRandomBNBAddress()
 	txOut := NewTxOut(1)
 	c.Assert(txOut, NotNil)
-	c.Assert(txOut.TxArray, IsNil)
+	c.Assert(txOut.TxArray, HasLen, 0)
 	c.Assert(txOut.IsEmpty(), Equals, true)
 	c.Assert(txOut.Valid(), IsNil)
 	txOutItem := &TxOutItem{
