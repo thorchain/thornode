@@ -221,7 +221,7 @@ func (tx ObservedTxVoter) HasConsensus(nodeAccounts NodeAccounts) bool {
 				count += 1
 			}
 		}
-		if HasMajority(count, len(nodeAccounts)) {
+		if HasSuperMajority(count, len(nodeAccounts)) {
 			return true
 		}
 	}
@@ -237,7 +237,7 @@ func (tx ObservedTxVoter) GetTx(nodeAccounts NodeAccounts) ObservedTx {
 				count += 1
 			}
 		}
-		if HasMajority(count, len(nodeAccounts)) {
+		if HasSuperMajority(count, len(nodeAccounts)) {
 			return txIn
 		}
 	}
