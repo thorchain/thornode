@@ -43,15 +43,15 @@ func (k KVStore) GetTxOutIterator(ctx sdk.Context) sdk.Iterator {
 
 // GetTxOut - write the given txout information to key values tore
 func (k KVStore) GetTxOut(ctx sdk.Context, height int64) (*TxOut, error) {
+	txOut := NewTxOut(height)
 	store := ctx.KVStore(k.storeKey)
 	key := k.GetKey(ctx, prefixTxOut, strconv.FormatInt(height, 10))
 	if !store.Has([]byte(key)) {
-		return NewTxOut(height), nil
+		return txOut, nil
 	}
 	buf := store.Get([]byte(key))
-	var txOut TxOut
-	if err := k.cdc.UnmarshalBinaryBare(buf, &txOut); err != nil {
-		return nil, dbError(ctx, "fail to unmarshal tx out", err)
+	if err := k.cdc.UnmarshalBinaryBare(buf, txOut); err != nil {
+		return txOut, dbError(ctx, "fail to unmarshal tx out", err)
 	}
-	return &txOut, nil
+	return txOut, nil
 }

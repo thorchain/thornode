@@ -17,39 +17,27 @@ func NewCommonOutboundTxHander(k Keeper) CommonOutboundTxHandler {
 	return CommonOutboundTxHandler{keeper: k}
 }
 
+func (h CommonOutboundTxHandler) slash(ctx sdk.Context, tx ObservedTx) error {
+	var returnErr error
+	for _, c := range tx.Tx.Coins {
+		if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
+			ctx.Logger().Error("fail to slash account", "error", err)
+			returnErr = err
+		}
+	}
+	return returnErr
+}
+
 func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID common.TxID, status EventStatus) sdk.Result {
 	voter, err := h.keeper.GetObservedTxVoter(ctx, inTxID)
 	if err != nil {
-		ctx.Logger().Error(err.Error())
+		ctx.Logger().Error("fail to get observed tx voter", "error", err)
 		return sdk.ErrInternal("fail to get observed tx voter").Result()
 	}
 
-	if voter.IsDone() || !voter.AddOutTx(tx.Tx) {
-		// voter.IsDone will cover the scenario that more tx out than the actions
-		// this will also cover the scenario that the hash in `outbound:xxxx` doesn't match any of the ObservedTxVoter as well
-		// the outbound tx doesn't match against any of the action items
-		// slash the node account for every coin they send out using this memo
-		for _, c := range tx.Tx.Coins {
-			if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
-				ctx.Logger().Error("fail to slash account for sending extra fund", "error", err)
-				return sdk.ErrInternal("fail to slash account").Result()
-			}
-		}
-
-		return sdk.Result{
-			Code:      sdk.CodeOK,
-			Codespace: DefaultCodespace,
-		}
-	}
-	h.keeper.SetObservedTxVoter(ctx, voter)
-
-	// complete events
-	if voter.IsDone() {
-		err := completeEvents(ctx, h.keeper, inTxID, voter.OutTxs, status)
-		if err != nil {
-			ctx.Logger().Error("unable to complete events", "error", err)
-			return sdk.ErrInternal(err.Error()).Result()
-		}
+	if voter.Height > 0 {
+		voter.AddOutTx(tx.Tx)
+		h.keeper.SetObservedTxVoter(ctx, voter)
 	}
 
 	// update txOut record with our TxID that sent funds out of the pool
@@ -61,42 +49,50 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 
 	// Save TxOut back with the TxID only when the TxOut on the block height is
 	// not empty
-	if !txOut.IsEmpty() {
-		processedCoins := common.Coins{}
-		for i, txOutItem := range txOut.TxArray {
-			if !tx.Tx.Coins.Contains(txOutItem.Coin) {
-				continue
+	shouldSlash := true
+	for i, txOutItem := range txOut.TxArray {
+		// withdraw , refund etc, one inbound tx might result two outbound
+		// txes, THORNode have to correlate outbound tx back to the
+		// inbound, and also txitem , thus THORNode could record both
+		// outbound tx hash correctly given every tx item will only have
+		// one coin in it , THORNode could use that to identify which tx it
+		// is
+		if txOutItem.InHash.Equals(inTxID) &&
+			txOutItem.OutHash.IsEmpty() &&
+			tx.Tx.Coins.Equals(common.Coins{txOutItem.Coin}) &&
+			tx.Tx.ToAddress.Equals(txOutItem.ToAddress) &&
+			tx.ObservedPubKey.Equals(txOutItem.VaultPubKey) {
+
+			txOut.TxArray[i].OutHash = tx.Tx.ID
+			shouldSlash = false
+
+			if err := h.keeper.SetTxOut(ctx, txOut); err != nil {
+				ctx.Logger().Error("fail to save tx out", "error", err)
 			}
-			// withdraw , refund etc, one inbound tx might result two outbound txes, THORNode have to correlate outbound tx back to the
-			// inbound, and also txitem , thus THORNode could record both outbound tx hash correctly
-			// given every tx item will only have one coin in it , THORNode could use that to identify which txit
-			if txOutItem.InHash.Equals(inTxID) &&
-				txOutItem.OutHash.IsEmpty() {
-				txOut.TxArray[i].OutHash = tx.Tx.ID
-			}
-			processedCoins = append(processedCoins, txOutItem.Coin)
-		}
-		// the following logic will handle the scenario that pool send out coins that not specific in the original tx out item
-		// for example, the txout item says , send 1 RUNE to customer, however , it send 1 RUNE and 1 BNB as a result
-		// in that case, thorchain will slash the node account for 1.5 BNB in RUNE value
-		for _, c := range tx.Tx.Coins {
-			if processedCoins.Contains(c) {
-				continue
-			}
-			if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
-				ctx.Logger().Error("fail to slash account for sending out extra fund", "error", err)
-				return sdk.ErrInternal("fail to slash account").Result()
-			}
-		}
-		if err := h.keeper.SetTxOut(ctx, txOut); err != nil {
-			ctx.Logger().Error("fail to save tx out", "error", err)
-			return sdk.ErrInternal("fail to save tx out").Result()
+			break
 		}
 	}
+
+	if shouldSlash {
+		if err := h.slash(ctx, tx); err != nil {
+			return sdk.ErrInternal("fail to slash account").Result()
+		}
+	}
+
 	h.keeper.SetLastSignedHeight(ctx, voter.Height)
+
+	// complete events
+	if voter.IsDone() {
+		err := completeEvents(ctx, h.keeper, inTxID, voter.OutTxs, status)
+		if err != nil {
+			ctx.Logger().Error("unable to complete events", "error", err)
+			return sdk.ErrInternal(err.Error()).Result()
+		}
+	}
 
 	return sdk.Result{
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
 	}
+
 }
