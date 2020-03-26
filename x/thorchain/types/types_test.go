@@ -15,21 +15,30 @@ type TypesSuite struct{}
 
 var _ = Suite(&TypesSuite{})
 
-func (s TypesSuite) TestHasMajority(c *C) {
+func (s TypesSuite) TestHasSuperMajority(c *C) {
 	// happy path
-	c.Check(HasMajority(3, 4), Equals, true)
-	c.Check(HasMajority(2, 3), Equals, true)
-	c.Check(HasMajority(4, 4), Equals, true)
-	c.Check(HasMajority(1, 1), Equals, true)
-	c.Check(HasMajority(67, 100), Equals, true)
+	c.Check(HasSuperMajority(3, 4), Equals, true)
+	c.Check(HasSuperMajority(2, 3), Equals, true)
+	c.Check(HasSuperMajority(4, 4), Equals, true)
+	c.Check(HasSuperMajority(1, 1), Equals, true)
+	c.Check(HasSuperMajority(67, 100), Equals, true)
 
 	// unhappy path
-	c.Check(HasMajority(2, 4), Equals, false)
-	c.Check(HasMajority(9, 4), Equals, false)
-	c.Check(HasMajority(-9, 4), Equals, false)
-	c.Check(HasMajority(9, -4), Equals, false)
-	c.Check(HasMajority(0, 0), Equals, false)
-	c.Check(HasMajority(3, 0), Equals, false)
+	c.Check(HasSuperMajority(2, 4), Equals, false)
+	c.Check(HasSuperMajority(9, 4), Equals, false)
+	c.Check(HasSuperMajority(-9, 4), Equals, false)
+	c.Check(HasSuperMajority(9, -4), Equals, false)
+	c.Check(HasSuperMajority(0, 0), Equals, false)
+	c.Check(HasSuperMajority(3, 0), Equals, false)
+}
+
+func (TypesSuite) TestHasMajority(c *C) {
+	c.Check(HasMajority(3, 4), Equals, true)
+	c.Check(HasMajority(2, 3), Equals, true)
+	c.Check(HasMajority(1, 2), Equals, true)
+	c.Check(HasMajority(1, 3), Equals, false)
+	c.Check(HasMajority(2, 4), Equals, true)
+	c.Check(HasMajority(100000, 3000000), Equals, false)
 }
 
 func (TypesSuite) TestGetThreshold(c *C) {

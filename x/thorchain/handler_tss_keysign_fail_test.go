@@ -5,9 +5,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 )
 
 type HandlerTssKeysignFailSuite struct{}
@@ -228,6 +229,44 @@ func (h HandlerTssKeysignFailSuite) TestTssKeysignFailHandler(c *C) {
 				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
+		},
+		{
+			name: "without majority it should not take any actions",
+			messageCreator: func(helper tssKeysignFailHandlerTestHelper) sdk.Msg {
+				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), helper.blame, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, helper.nodeAccount.NodeAddress)
+			},
+			runner: func(handler TssKeysignFailHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
+				for i := 0; i < 3; i++ {
+					na := GetRandomNodeAccount(NodeActive)
+					if err := helper.keeper.SetNodeAccount(helper.ctx, na); err != nil {
+						return sdk.ErrInternal("fail to set node account").Result()
+					}
+				}
+				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+			},
+			expectedResult: sdk.CodeOK,
+		},
+		{
+			name: "with majority it should take actions",
+			messageCreator: func(helper tssKeysignFailHandlerTestHelper) sdk.Msg {
+				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), helper.blame, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, helper.nodeAccount.NodeAddress)
+			},
+			runner: func(handler TssKeysignFailHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
+				var na NodeAccount
+				for i := 0; i < 3; i++ {
+					na = GetRandomNodeAccount(NodeActive)
+					if err := helper.keeper.SetNodeAccount(helper.ctx, na); err != nil {
+						return sdk.ErrInternal("fail to set node account").Result()
+					}
+				}
+				result := handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				if result.Code != sdk.CodeOK {
+					return result
+				}
+				msg = NewMsgTssKeysignFail(helper.ctx.BlockHeight(), helper.blame, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, na.NodeAddress)
+				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+			},
+			expectedResult: sdk.CodeOK,
 		},
 	}
 	for _, tc := range testCases {

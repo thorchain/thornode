@@ -108,7 +108,7 @@ func (k KVStore) GetMinJoinVersion(ctx sdk.Context) semver.Version {
 
 	for _, info := range vCount {
 		// skip those version that doesn't have majority
-		if !HasMajority(info.count, totalCount) {
+		if !HasSuperMajority(info.count, totalCount) {
 			continue
 		}
 		if info.version.GT(version) {
