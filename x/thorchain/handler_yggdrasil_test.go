@@ -251,11 +251,10 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 			},
 			expectedResult: sdk.CodeOK,
 			validator: func(helper yggdrasilHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
-				beforeBond := helper.nodeAccount.Bond
-				slashAmount := sdk.NewUint(common.One).MulUint64(3)
+				expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(603787879))
 				na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
 				c.Assert(err, IsNil)
-				c.Assert(na.Bond.Equal(common.SafeSub(beforeBond, slashAmount)), Equals, true)
+				c.Assert(na.Bond.Equal(expectedBond), Equals, true, Commentf("%d/%d", na.Bond.Uint64(), expectedBond.Uint64()))
 			},
 		},
 		{
