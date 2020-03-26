@@ -37,11 +37,23 @@ func (k yggdrasilTestKeeper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.P
 	return k.Keeper.GetNodeAccountByPubKey(ctx, pk)
 }
 
+func (k *yggdrasilTestKeeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
+	return k.Keeper.SetNodeAccount(ctx, na)
+}
+
 func (k yggdrasilTestKeeper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
 	if k.errGetPool {
 		return Pool{}, kaboom
 	}
 	return k.Keeper.GetPool(ctx, asset)
+}
+
+func (k *yggdrasilTestKeeper) SetPool(ctx sdk.Context, p Pool) error {
+	return k.Keeper.SetPool(ctx, p)
+}
+
+func (k *yggdrasilTestKeeper) UpsertEvent(ctx sdk.Context, evt Event) error {
+	return k.Keeper.UpsertEvent(ctx, evt)
 }
 
 func (k yggdrasilTestKeeper) GetVault(ctx sdk.Context, pk common.PubKey) (Vault, error) {
