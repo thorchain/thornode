@@ -39,6 +39,9 @@ func UpdateBNBGasFee(gas Gas) {
 		return
 	}
 	bnbSingleTxFee = gasCoin.Amount
+	BNBGasFeeSingleton = Gas{
+		{Asset: BNBAsset, Amount: bnbSingleTxFee},
+	}
 }
 
 func GetBNBGasFee(count uint64) Gas {
