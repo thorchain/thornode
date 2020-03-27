@@ -57,7 +57,6 @@ func (s *GasSuite) TestCombineGas(c *C) {
 func (s *GasSuite) TestUpdateBNBGasFee(c *C) {
 	noGas := Gas{}
 	single := BNBGasFeeSingleton
-	//multiple := BNBGasFeeMulti
 	UpdateBNBGasFee(noGas, 1)
 	// nothing change
 	c.Assert(BNBGasFeeSingleton.Equals(single), Equals, true)
