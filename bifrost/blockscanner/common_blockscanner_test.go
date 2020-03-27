@@ -104,7 +104,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 		}
 	}()
 	cbs.Start()
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 1)
 	err = cbs.Stop()
 	c.Check(err, IsNil)
 	// c.Check(counter, Equals, 11)
