@@ -272,9 +272,12 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
+	gas := common.BNBGasFeeSingleton
 	result := handler.handle(ctx, msg, ver)
 	c.Assert(result.IsOK(), Equals, true)
 	c.Assert(common.BNBGasFeeSingleton.Equals(tx.Gas), Equals, true)
+	// revert the gas change , otherwise it messed up the other tests
+	common.UpdateBNBGasFee(gas)
 }
 
 func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
