@@ -14,7 +14,9 @@ type Coin struct {
 	Amount sdk.Uint `json:"amount"`
 }
 
-var NoCoin = Coin{}
+var NoCoin = Coin{
+	Amount: sdk.ZeroUint(),
+}
 
 type Coins []Coin
 
