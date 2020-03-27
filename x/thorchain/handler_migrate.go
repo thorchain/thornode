@@ -60,6 +60,17 @@ func (h MigrateHandler) handle(ctx sdk.Context, msg MsgMigrate, version semver.V
 	return errBadVersion.Result()
 }
 
+func (h MigrateHandler) slash(ctx sdk.Context, tx ObservedTx) error {
+	var returnErr error
+	for _, c := range tx.Tx.Coins {
+		if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
+			ctx.Logger().Error("fail to slash account", "error", err)
+			returnErr = err
+		}
+	}
+	return returnErr
+}
+
 func (h MigrateHandler) handleV1(ctx sdk.Context, msg MsgMigrate) sdk.Result {
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := h.keeper.GetTxOut(ctx, msg.BlockHeight)
@@ -67,14 +78,8 @@ func (h MigrateHandler) handleV1(ctx sdk.Context, msg MsgMigrate) sdk.Result {
 		ctx.Logger().Error("unable to get txOut record", "error", err)
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
-	if txOut.IsEmpty() {
-		return sdk.Result{
-			Code:      sdk.CodeOK,
-			Codespace: DefaultCodespace,
-		}
-	}
 
-	hasChanged := false
+	shouldSlash := true
 	for i, tx := range txOut.TxArray {
 		// migrate is the memo used by thorchain to identify fund migration between asgard vault.
 		// it use migrate:{block height} to mark a tx out caused by vault rotation
@@ -85,22 +90,25 @@ func (h MigrateHandler) handleV1(ctx sdk.Context, msg MsgMigrate) sdk.Result {
 			msg.Tx.Tx.Coins.Contains(tx.Coin) &&
 			tx.ToAddress.Equals(msg.Tx.Tx.ToAddress) &&
 			fromAddress.Equals(msg.Tx.Tx.FromAddress) {
+
 			txOut.TxArray[i].OutHash = msg.Tx.Tx.ID
-			hasChanged = true
+			shouldSlash = false
+
+			if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
+				ctx.Logger().Error("fail to save tx out", "error", err)
+				return sdk.ErrInternal("fail to save tx out").Result()
+			}
+
 			break
 		}
 	}
 
-	if !hasChanged {
-		return sdk.Result{
-			Code:      sdk.CodeOK,
-			Codespace: DefaultCodespace,
+	if shouldSlash {
+		if err := h.slash(ctx, msg.Tx); err != nil {
+			return sdk.ErrInternal("fail to slash account").Result()
 		}
 	}
-	if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
-		ctx.Logger().Error("fail to save tx out", "error", err)
-		return sdk.ErrInternal("fail to save tx out").Result()
-	}
+
 	h.keeper.SetLastSignedHeight(ctx, msg.BlockHeight)
 
 	return sdk.Result{

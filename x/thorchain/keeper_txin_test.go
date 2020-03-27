@@ -21,4 +21,10 @@ func (s *KeeperTxInSuite) TestTxInVoter(c *C) {
 	voter, err := k.GetObservedTxVoter(ctx, voter.TxID)
 	c.Assert(err, IsNil)
 	c.Check(voter.TxID.Equals(tx.ID), Equals, true)
+
+	// ensure that if the voter doesn't exist, we DON'T error
+	tx = GetRandomTx()
+	voter, err = k.GetObservedTxVoter(ctx, tx.ID)
+	c.Assert(err, IsNil)
+	c.Check(voter.TxID.Equals(tx.ID), Equals, true)
 }

@@ -152,11 +152,13 @@ func newRefundTxHandlerTestHelper(c *C) refundTxHandlerTestHelper {
 	keeper := newRefundTxHandlerKeeperTestHelper(k)
 	voter.Height = ctx.BlockHeight()
 	keeper.SetObservedTxVoter(ctx, voter)
+
 	nodeAccount := GetRandomNodeAccount(NodeActive)
+	nodeAccount.NodeAddress, err = yggVault.PubKey.GetThorAddress()
+	c.Assert(err, IsNil)
 	nodeAccount.Bond = sdk.NewUint(100 * common.One)
+	nodeAccount.PubKeySet = common.NewPubKeySet(yggVault.PubKey, yggVault.PubKey)
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
-	nodeAccount1 := GetRandomNodeAccount(NodeActive)
-	nodeAccount1.Bond = sdk.NewUint(100 * common.One)
 
 	c.Assert(keeper.SetPool(ctx, pool), IsNil)
 
@@ -354,7 +356,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 	for _, tc := range testCases {
 		helper := newRefundTxHandlerTestHelper(c)
 		handler := NewRefundHandler(helper.keeper)
-		fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
+		fromAddr, err := helper.yggVault.PubKey.GetAddress(common.BNBChain)
 		c.Assert(err, IsNil)
 		tx := NewObservedTx(common.Tx{
 			ID:    GetRandomTxHash(),
@@ -366,7 +368,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			FromAddress: fromAddr,
 			ToAddress:   helper.inboundTx.Tx.FromAddress,
 			Gas:         common.BNBGasFeeSingleton,
-		}, helper.ctx.BlockHeight(), GetRandomPubKey())
+		}, helper.ctx.BlockHeight(), helper.yggVault.PubKey)
 		msg := tc.messageCreator(helper, tx)
 		c.Assert(tc.runner(handler, helper, msg).Code, Equals, tc.expectedResult, Commentf("name:%s", tc.name))
 	}
@@ -376,7 +378,7 @@ func (s *HandlerRefundSuite) TestRefundTxNormalCase(c *C) {
 	helper := newRefundTxHandlerTestHelper(c)
 	handler := NewRefundHandler(helper.keeper)
 
-	fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
+	fromAddr, err := helper.yggVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
 	tx := NewObservedTx(common.Tx{
 		ID:    GetRandomTxHash(),
@@ -388,7 +390,7 @@ func (s *HandlerRefundSuite) TestRefundTxNormalCase(c *C) {
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
 		Gas:         common.BNBGasFeeSingleton,
-	}, helper.ctx.BlockHeight(), GetRandomPubKey())
+	}, helper.ctx.BlockHeight(), helper.yggVault.PubKey)
 	// valid outbound message, with event, with txout
 	outMsg := NewMsgRefundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
@@ -450,8 +452,8 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldBeSla
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
 		Gas:         common.BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
-	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(1 * common.One).MulUint64(3).QuoUint64(2))
-	// slash one BNB
+	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(2 * common.One).MulUint64(3).QuoUint64(2))
+	// slash one BNB and one rune
 	outMsg := NewMsgRefundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
 	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)

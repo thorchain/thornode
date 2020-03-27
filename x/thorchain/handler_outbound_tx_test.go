@@ -206,11 +206,13 @@ func newOutboundTxHandlerTestHelper(c *C) outboundTxHandlerTestHelper {
 	keeper := newOutboundTxHandlerKeeperHelper(k)
 	voter.Height = ctx.BlockHeight()
 	keeper.SetObservedTxVoter(ctx, voter)
+
 	nodeAccount := GetRandomNodeAccount(NodeActive)
+	nodeAccount.NodeAddress, err = yggVault.PubKey.GetThorAddress()
+	c.Assert(err, IsNil)
 	nodeAccount.Bond = sdk.NewUint(100 * common.One)
+	nodeAccount.PubKeySet = common.NewPubKeySet(yggVault.PubKey, yggVault.PubKey)
 	c.Assert(keeper.SetNodeAccount(ctx, nodeAccount), IsNil)
-	nodeAccount1 := GetRandomNodeAccount(NodeActive)
-	nodeAccount1.Bond = sdk.NewUint(100 * common.One)
 
 	c.Assert(keeper.SetPool(ctx, pool), IsNil)
 
@@ -408,7 +410,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 	for _, tc := range testCases {
 		helper := newOutboundTxHandlerTestHelper(c)
 		handler := NewOutboundTxHandler(helper.keeper)
-		fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
+		fromAddr, err := helper.yggVault.PubKey.GetAddress(common.BNBChain)
 		c.Assert(err, IsNil)
 		tx := NewObservedTx(common.Tx{
 			ID:    GetRandomTxHash(),
@@ -420,7 +422,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 			FromAddress: fromAddr,
 			ToAddress:   helper.inboundTx.Tx.FromAddress,
 			Gas:         common.BNBGasFeeSingleton,
-		}, helper.ctx.BlockHeight(), GetRandomPubKey())
+		}, helper.ctx.BlockHeight(), helper.yggVault.PubKey)
 		msg := tc.messageCreator(helper, tx)
 		c.Assert(tc.runner(handler, helper, msg).Code, Equals, tc.expectedResult, Commentf("name:%s", tc.name))
 	}
@@ -430,7 +432,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxNormalCase(c *C) {
 	helper := newOutboundTxHandlerTestHelper(c)
 	handler := NewOutboundTxHandler(helper.keeper)
 
-	fromAddr, err := helper.asgardVault.PubKey.GetAddress(common.BNBChain)
+	fromAddr, err := helper.yggVault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
 	tx := NewObservedTx(common.Tx{
 		ID:    GetRandomTxHash(),
@@ -442,7 +444,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxNormalCase(c *C) {
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
 		Gas:         common.BNBGasFeeSingleton,
-	}, helper.ctx.BlockHeight(), GetRandomPubKey())
+	}, helper.ctx.BlockHeight(), helper.yggVault.PubKey)
 	// valid outbound message, with event, with txout
 	outMsg := NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
@@ -504,12 +506,12 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldB
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
 		Gas:         common.BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
-	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))
-	// slash one BNB
+	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(2 * common.One).MulUint64(3).QuoUint64(2))
+	// slash one BNB, and one rune
 	outMsg := NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
 	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
 	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
-	c.Assert(na.Bond.Equal(expectedBond), Equals, true)
+	c.Assert(na.Bond.Equal(expectedBond), Equals, true, Commentf("%d/%d", na.Bond.Uint64(), expectedBond.Uint64()))
 }
 
 func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerInvalidObservedTxVoterShouldSlash(c *C) {
