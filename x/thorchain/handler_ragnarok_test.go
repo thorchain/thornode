@@ -73,6 +73,7 @@ type TestRagnarokKeeperHappyPath struct {
 	newVault          Vault
 	retireVault       Vault
 	txout             *TxOut
+	pool              Pool
 }
 
 func (k *TestRagnarokKeeperHappyPath) GetTxOut(ctx sdk.Context, blockHeight int64) (*TxOut, error) {
@@ -88,6 +89,28 @@ func (k *TestRagnarokKeeperHappyPath) SetTxOut(ctx sdk.Context, blockOut *TxOut)
 		return nil
 	}
 	return kaboom
+}
+
+func (k *TestRagnarokKeeperHappyPath) GetNodeAccountByPubKey(_ sdk.Context, _ common.PubKey) (NodeAccount, error) {
+	return k.activeNodeAccount, nil
+}
+
+func (k *TestRagnarokKeeperHappyPath) SetNodeAccount(_ sdk.Context, na NodeAccount) error {
+	k.activeNodeAccount = na
+	return nil
+}
+
+func (k *TestRagnarokKeeperHappyPath) GetPool(_ sdk.Context, _ common.Asset) (Pool, error) {
+	return k.pool, nil
+}
+
+func (k *TestRagnarokKeeperHappyPath) SetPool(_ sdk.Context, p Pool) error {
+	k.pool = p
+	return nil
+}
+
+func (k *TestRagnarokKeeperHappyPath) UpsertEvent(_ sdk.Context, _ Event) error {
+	return nil
 }
 
 func (HandlerRagnarokSuite) TestRagnarokHappyPath(c *C) {
@@ -131,4 +154,47 @@ func (HandlerRagnarokSuite) TestRagnarokHappyPath(c *C) {
 	result := handler.handleV1(ctx, msgRagnarok)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 	c.Assert(keeper.txout.TxArray[0].OutHash.Equals(tx.Tx.ID), Equals, true)
+}
+
+func (HandlerRagnarokSuite) TestSlash(c *C) {
+	ctx, _ := setupKeeperForTest(c)
+	retireVault := GetRandomVault()
+
+	newVault := GetRandomVault()
+	txout := NewTxOut(1)
+	newVaultAddr, err := newVault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+
+	pool := NewPool()
+	pool.Asset = common.BNBAsset
+	pool.BalanceAsset = sdk.NewUint(100 * common.One)
+	pool.BalanceRune = sdk.NewUint(100 * common.One)
+	na := GetRandomNodeAccount(NodeActive)
+	na.Bond = sdk.NewUint(100 * common.One)
+	keeper := &TestRagnarokKeeperHappyPath{
+		activeNodeAccount: na,
+		newVault:          newVault,
+		retireVault:       retireVault,
+		txout:             txout,
+		pool:              pool,
+	}
+	addr, err := keeper.retireVault.PubKey.GetAddress(common.BNBChain)
+	c.Assert(err, IsNil)
+	handler := NewRagnarokHandler(keeper)
+	tx := NewObservedTx(common.Tx{
+		ID:    GetRandomTxHash(),
+		Chain: common.BNBChain,
+		Coins: common.Coins{
+			common.NewCoin(common.BNBAsset, sdk.NewUint(1024)),
+		},
+		Memo:        NewRagnarokMemo(1).String(),
+		FromAddress: addr,
+		ToAddress:   newVaultAddr,
+		Gas:         common.BNBGasFeeSingleton,
+	}, 1, retireVault.PubKey)
+
+	msgRagnarok := NewMsgRagnarok(tx, 1, keeper.activeNodeAccount.NodeAddress)
+	result := handler.handleV1(ctx, msgRagnarok)
+	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s", result.Log))
+	c.Assert(keeper.activeNodeAccount.Bond.Equal(sdk.NewUint(9999998464)), Equals, true, Commentf("%d", keeper.activeNodeAccount.Bond.Uint64()))
 }
