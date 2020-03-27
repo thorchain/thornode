@@ -305,7 +305,6 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, []string, er
 		duration := time.Since(start)
 		b.metrics.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
-
 	buf, err := b.getFromHttp(requestUrl)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
