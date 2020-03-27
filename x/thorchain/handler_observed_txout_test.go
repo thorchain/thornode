@@ -277,7 +277,7 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 	c.Assert(result.IsOK(), Equals, true)
 	c.Assert(common.BNBGasFeeSingleton.Equals(tx.Gas), Equals, true)
 	// revert the gas change , otherwise it messed up the other tests
-	common.UpdateBNBGasFee(gas)
+	common.UpdateBNBGasFee(gas, 1)
 }
 
 func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
