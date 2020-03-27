@@ -281,7 +281,6 @@ func (b *CommonBlockScanner) unmarshalAndGetBlockInfo(buf []byte) (string, []str
 	switch b.cfg.ChainID {
 	case common.BNBChain:
 		var block btypes.RPCBlock
-		b.logger.Info().Msgf("content:%s", string(buf))
 		err := json.Unmarshal(buf, &block)
 		if err != nil {
 			return "", nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
