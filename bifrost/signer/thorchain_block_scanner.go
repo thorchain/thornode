@@ -105,7 +105,7 @@ func (b *ThorchainBlockScan) processTxOutBlock(blockHeight int64) error {
 		}
 		tx, err := b.thorchain.GetKeysign(blockHeight, pk.String())
 		if err != nil {
-			if err.Error() == "not found" {
+			if errors.Is(err, thorclient.ErrNotFound) {
 				// custom error (to be dropped and not logged) because the block is
 				// available yet
 				return errors.New("")
