@@ -399,7 +399,6 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 		s.logger.Error().Err(err).Msg("failed to get chain account info")
 		return tx, err
 	}
-	fmt.Printf("<<<<< Binance Account: %+v\n", acct)
 	tx.Coins = make(common.Coins, 0)
 	gas := chain.GetGasFee(uint64(len(acct.Coins)))
 	for _, coin := range acct.Coins {
@@ -415,7 +414,6 @@ func (s *Signer) handleYggReturn(tx types.TxOutItem) (types.TxOutItem, error) {
 		tx.Coins = append(tx.Coins, common.NewCoin(asset, amount))
 	}
 
-	fmt.Printf("<<<<< Ygg Return Coins: %+v\n", tx.Coins)
 	return tx, nil
 }
 
