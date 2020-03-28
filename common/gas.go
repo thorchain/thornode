@@ -22,6 +22,39 @@ var BNBGasFeeMulti = Gas{
 	{Asset: BNBAsset, Amount: bnbMultiTxFee},
 }
 
+// UpdateBNBGasFee
+func UpdateBNBGasFee(gas Gas, numberCoins int) {
+	if gas.IsEmpty() {
+		return
+	}
+	if err := gas.IsValid(); err != nil {
+		return
+	}
+	gasCoin := gas.ToCoins().GetCoin(BNBAsset)
+	if gasCoin.Equals(NoCoin) {
+		return
+	}
+
+	if numberCoins == 1 {
+		if gasCoin.Amount.Equal(bnbSingleTxFee) {
+			return
+		}
+		bnbSingleTxFee = gasCoin.Amount
+		BNBGasFeeSingleton = Gas{
+			{Asset: BNBAsset, Amount: bnbSingleTxFee},
+		}
+		return
+	}
+	multiGas := gasCoin.Amount.QuoUint64(uint64(numberCoins))
+	if multiGas.Equal(bnbMultiTxFee) {
+		return
+	}
+	bnbMultiTxFee = multiGas
+	BNBGasFeeMulti = Gas{
+		{Asset: BNBAsset, Amount: multiGas},
+	}
+}
+
 func GetBNBGasFee(count uint64) Gas {
 	if count == 0 {
 		return nil

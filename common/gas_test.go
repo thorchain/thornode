@@ -53,3 +53,38 @@ func (s *GasSuite) TestCombineGas(c *C) {
 	c.Check(gas[1].Asset.Equals(BTCAsset), Equals, true)
 	c.Check(gas[1].Amount.Equal(sdk.NewUint(20*One)), Equals, true)
 }
+
+func (s *GasSuite) TestUpdateBNBGasFee(c *C) {
+	noGas := Gas{}
+	single := BNBGasFeeSingleton
+	multiple := GetBNBGasFeeMulti(2)
+
+	UpdateBNBGasFee(noGas, 1)
+	// nothing change
+	c.Assert(BNBGasFeeSingleton.Equals(single), Equals, true)
+	// invalid gas
+	UpdateBNBGasFee(Gas{
+		{Asset: EmptyAsset, Amount: sdk.ZeroUint()},
+	}, 1)
+	c.Assert(BNBGasFeeSingleton.Equals(single), Equals, true)
+
+	UpdateBNBGasFee(Gas{
+		{Asset: BTCAsset, Amount: sdk.NewUint(1000)},
+	}, 1)
+	c.Assert(BNBGasFeeSingleton.Equals(single), Equals, true)
+	newGas := Gas{
+		{
+			Asset: BNBAsset, Amount: sdk.NewUint(1000),
+		},
+	}
+	UpdateBNBGasFee(newGas, 1)
+	c.Assert(BNBGasFeeSingleton.Equals(newGas), Equals, true)
+	UpdateBNBGasFee(single, 1)
+	UpdateBNBGasFee(newGas, 2)
+	c.Assert(BNBGasFeeMulti.Equals(Gas{
+		{
+			Asset: BNBAsset, Amount: sdk.NewUint(500),
+		},
+	}), Equals, true)
+	UpdateBNBGasFee(multiple, 2)
+}

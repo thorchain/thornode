@@ -228,6 +228,58 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	c.Check(ygg.Coins.GetCoin(common.BNBAsset).Amount.Equal(sdk.NewUint(19999962499)), Equals, true, Commentf("%d", ygg.Coins.GetCoin(common.BNBAsset).Amount.Uint64()))
 }
 
+func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
+	var err error
+	ctx, _ := setupKeeperForTest(c)
+	w := getHandlerTestWrapper(c, 1, true, false)
+
+	ver := semver.MustParse("0.1.0")
+	tx := GetRandomTx()
+	tx.Gas = common.Gas{
+		{
+			Asset:  common.BNBAsset,
+			Amount: sdk.NewUint(475000),
+		},
+	}
+	tx.Memo = fmt.Sprintf("OUTBOUND:%s", tx.ID)
+	obTx := NewObservedTx(tx, 12, GetRandomPubKey())
+	txs := ObservedTxs{obTx}
+	pk := GetRandomPubKey()
+	c.Assert(err, IsNil)
+
+	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
+
+	ygg := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pk)
+	ygg.Coins = common.Coins{
+		common.NewCoin(common.RuneAsset(), sdk.NewUint(500)),
+		common.NewCoin(common.BNBAsset, sdk.NewUint(200*common.One)),
+	}
+	keeper := &TestObservedTxOutHandleKeeper{
+		nas:   NodeAccounts{GetRandomNodeAccount(NodeActive)},
+		voter: NewObservedTxVoter(tx.ID, make(ObservedTxs, 0)),
+		pool: Pool{
+			Asset:        common.BNBAsset,
+			BalanceRune:  sdk.NewUint(200),
+			BalanceAsset: sdk.NewUint(300),
+		},
+		yggExists: true,
+		ygg:       ygg,
+	}
+	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
+	keeper.txOutStore = txOutStore
+	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
+	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy)
+
+	c.Assert(err, IsNil)
+	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
+	gas := common.BNBGasFeeSingleton
+	result := handler.handle(ctx, msg, ver)
+	c.Assert(result.IsOK(), Equals, true)
+	c.Assert(common.BNBGasFeeSingleton.Equals(tx.Gas), Equals, true)
+	// revert the gas change , otherwise it messed up the other tests
+	common.UpdateBNBGasFee(gas, 1)
+}
+
 func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)
