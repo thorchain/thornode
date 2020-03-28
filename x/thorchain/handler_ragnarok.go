@@ -1,8 +1,9 @@
 package thorchain
 
 import (
-	"github.com/blang/semver"
+	"fmt"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -27,7 +28,7 @@ func (h RagnarokHandler) Run(ctx sdk.Context, m sdk.Msg, version semver.Version,
 	if err := h.validate(ctx, msg, version); err != nil {
 		return sdk.ErrInternal(err.Error()).Result()
 	}
-	return h.handle(ctx, msg, version)
+	return h.handle(ctx, version, msg)
 }
 
 func (h RagnarokHandler) validate(ctx sdk.Context, msg MsgRagnarok, version semver.Version) error {
@@ -51,19 +52,23 @@ func (h RagnarokHandler) validateV1(ctx sdk.Context, msg MsgRagnarok) error {
 	return nil
 }
 
-func (h RagnarokHandler) handle(ctx sdk.Context, msg MsgRagnarok, version semver.Version) sdk.Result {
+func (h RagnarokHandler) handle(ctx sdk.Context, version semver.Version, msg MsgRagnarok) sdk.Result {
 	ctx.Logger().Info("receive MsgRagnarok", "request tx hash", msg.Tx.Tx.ID)
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg)
+		return h.handleV1(ctx, version, msg)
 	}
 	ctx.Logger().Error(errInvalidVersion.Error())
 	return errBadVersion.Result()
 }
 
-func (h RagnarokHandler) slash(ctx sdk.Context, tx ObservedTx) error {
+func (h RagnarokHandler) slash(ctx sdk.Context, version semver.Version, tx ObservedTx) error {
 	var returnErr error
+	slasher, err := NewSlasher(h.keeper, version)
+	if err != nil {
+		return fmt.Errorf("fail to create slasher: %w", err)
+	}
 	for _, c := range tx.Tx.Coins {
-		if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
+		if err := slasher.SlashNodeAccount(ctx, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
 			ctx.Logger().Error("fail to slash account", "error", err)
 			returnErr = err
 		}
@@ -71,7 +76,7 @@ func (h RagnarokHandler) slash(ctx sdk.Context, tx ObservedTx) error {
 	return returnErr
 }
 
-func (h RagnarokHandler) handleV1(ctx sdk.Context, msg MsgRagnarok) sdk.Result {
+func (h RagnarokHandler) handleV1(ctx sdk.Context, version semver.Version, msg MsgRagnarok) sdk.Result {
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := h.keeper.GetTxOut(ctx, msg.BlockHeight)
 	if err != nil {
@@ -105,7 +110,7 @@ func (h RagnarokHandler) handleV1(ctx sdk.Context, msg MsgRagnarok) sdk.Result {
 	}
 
 	if shouldSlash {
-		if err := h.slash(ctx, msg.Tx); err != nil {
+		if err := h.slash(ctx, version, msg.Tx); err != nil {
 			return sdk.ErrInternal("fail to slash account").Result()
 		}
 	}

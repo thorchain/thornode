@@ -60,11 +60,11 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 		nas:   nas,
 		addrs: []sdk.AccAddress{nas[0].NodeAddress},
 	}
-	txOutStore := NewTxStoreDummy()
 	ver := semver.MustParse("0.1.0")
 	constAccessor := constants.GetConstantValues(ver)
 
-	slasher := NewSlasher(keeper, txOutStore)
+	slasher, err := NewSlasher(keeper, ver)
+	c.Assert(err, IsNil)
 	// should slash na2 only
 	lackOfObservationPenalty := constAccessor.GetInt64Value(constants.LackOfObservationPenalty)
 	err = slasher.LackObserving(ctx, constAccessor)
@@ -187,9 +187,10 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	}
 	signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
 	ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod)
-
-	slasher := NewSlasher(keeper, txOutStore)
-	c.Assert(slasher.LackSigning(ctx, constAccessor), IsNil)
+	version := semver.MustParse("0.1.0")
+	slasher, err := NewSlasher(keeper, version)
+	c.Assert(err, IsNil)
+	c.Assert(slasher.LackSigning(ctx, constAccessor, txOutStore), IsNil)
 
 	c.Check(keeper.na.SlashPoints, Equals, int64(200), Commentf("%+v\n", na))
 

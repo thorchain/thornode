@@ -151,7 +151,7 @@ func (HandlerMigrateSuite) TestMigrateHappyPath(c *C) {
 	}, 1, retireVault.PubKey)
 
 	msgMigrate := NewMsgMigrate(tx, 1, keeper.activeNodeAccount.NodeAddress)
-	result := handler.handleV1(ctx, msgMigrate)
+	result := handler.handleV1(ctx, semver.MustParse("0.1.0"), msgMigrate)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 	c.Assert(keeper.txout.TxArray[0].OutHash.Equals(tx.Tx.ID), Equals, true)
 }
@@ -194,7 +194,7 @@ func (HandlerMigrateSuite) TestSlash(c *C) {
 	}, 1, retireVault.PubKey)
 
 	msgMigrate := NewMsgMigrate(tx, 1, keeper.activeNodeAccount.NodeAddress)
-	result := handler.handleV1(ctx, msgMigrate)
+	result := handler.handleV1(ctx, semver.MustParse("0.1.0"), msgMigrate)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s", result.Log))
 	c.Assert(keeper.activeNodeAccount.Bond.Equal(sdk.NewUint(9999998464)), Equals, true, Commentf("%d", keeper.activeNodeAccount.Bond.Uint64()))
 }

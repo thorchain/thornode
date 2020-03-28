@@ -62,7 +62,7 @@ func (h ObservedTxOutHandler) validateV1(ctx sdk.Context, msg MsgObservedTxOut) 
 func (h ObservedTxOutHandler) handle(ctx sdk.Context, msg MsgObservedTxOut, version semver.Version) sdk.Result {
 	ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", msg.Txs[0].String())
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg)
+		return h.handleV1(ctx, version, msg)
 	} else {
 		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion.Result()
@@ -84,7 +84,7 @@ func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, 
 }
 
 // Handle a message to observe outbound tx
-func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sdk.Result {
+func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, msg MsgObservedTxOut) sdk.Result {
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		err = wrapError(ctx, err, "fail to get list of active node accounts")
@@ -127,9 +127,14 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 				continue
 			}
 			if vault.IsYggdrasil() {
+				slash, err := NewSlasher(h.keeper, version)
+				if err != nil {
+					ctx.Logger().Error("fail to create slasher:%w", err)
+					continue
+				}
 				// a yggdrasil vault has apparently stolen funds, slash them
 				for _, c := range append(tx.Tx.Coins, tx.Tx.Gas.ToCoins()...) {
-					if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
+					if err := slash.SlashNodeAccount(ctx, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
 						ctx.Logger().Error("fail to slash account for sending extra fund", "error", err)
 					}
 				}

@@ -151,12 +151,16 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return nil
 	}
-	slasher := NewSlasher(am.keeper, txStore)
+	slasher, err := NewSlasher(am.keeper, version)
+	if err != nil {
+		ctx.Logger().Error("fail to create slasher", "error", err)
+		return nil
+	}
 	// slash node accounts for not observing any accepted inbound tx
 	if err := slasher.LackObserving(ctx, constantValues); err != nil {
 		ctx.Logger().Error("Unable to slash for lack of observing:", "error", err)
 	}
-	if err := slasher.LackSigning(ctx, constantValues); err != nil {
+	if err := slasher.LackSigning(ctx, constantValues, txStore); err != nil {
 		ctx.Logger().Error("Unable to slash for lack of signing:", "error", err)
 	}
 	newPoolCycle := constantValues.GetInt64Value(constants.NewPoolCycle)
