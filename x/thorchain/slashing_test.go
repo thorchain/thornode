@@ -142,6 +142,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
+		sdk.NewUint(5),
 	)
 
 	swapBytes, _ := json.Marshal(swapEvt)
