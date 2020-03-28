@@ -72,19 +72,21 @@ func (evts Events) PopByInHash(txID common.TxID) (found Events, events Events) {
 
 // EventSwap event for swap action
 type EventSwap struct {
-	Pool         common.Asset `json:"pool"`
-	PriceTarget  sdk.Uint     `json:"price_target"`
-	TradeSlip    sdk.Uint     `json:"trade_slip"`
-	LiquidityFee sdk.Uint     `json:"liquidity_fee"`
+	Pool               common.Asset `json:"pool"`
+	PriceTarget        sdk.Uint     `json:"price_target"`
+	TradeSlip          sdk.Uint     `json:"trade_slip"`
+	LiquidityFee       sdk.Uint     `json:"liquidity_fee"`
+	LiquidityFeeInRune sdk.Uint     `json:"liquidity_fee_in_rune"`
 }
 
 // NewEventSwap create a new swap event
-func NewEventSwap(pool common.Asset, priceTarget, fee, tradeSlip sdk.Uint) EventSwap {
+func NewEventSwap(pool common.Asset, priceTarget, fee, tradeSlip, liquidityFeeInRune sdk.Uint) EventSwap {
 	return EventSwap{
-		Pool:         pool,
-		PriceTarget:  priceTarget,
-		TradeSlip:    tradeSlip,
-		LiquidityFee: fee,
+		Pool:               pool,
+		PriceTarget:        priceTarget,
+		TradeSlip:          tradeSlip,
+		LiquidityFee:       fee,
+		LiquidityFeeInRune: liquidityFeeInRune,
 	}
 }
 

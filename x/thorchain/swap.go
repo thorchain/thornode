@@ -155,6 +155,7 @@ func swapOne(ctx sdk.Context,
 		tradeTarget,
 		sdk.ZeroUint(),
 		sdk.ZeroUint(),
+		sdk.ZeroUint(),
 	)
 
 	// Check if pool exists
@@ -194,11 +195,14 @@ func swapOne(ctx sdk.Context,
 	liquidityFee = calcLiquidityFee(X, x, Y)
 	tradeSlip = calcTradeSlip(X, x)
 	emitAssets = calcAssetEmission(X, x, Y)
+	swapEvt.LiquidityFee = liquidityFee
 
 	if source.IsRune() {
-		liquidityFee = pool.AssetValueInRune(liquidityFee)
+		swapEvt.LiquidityFeeInRune = pool.AssetValueInRune(liquidityFee)
+	} else {
+		// because the output asset is RUNE , so liqualidtyFee is already in RUNE
+		swapEvt.LiquidityFeeInRune = liquidityFee
 	}
-	swapEvt.LiquidityFee = liquidityFee
 	swapEvt.TradeSlip = tradeSlip
 
 	// do THORNode have enough balance to swap?
