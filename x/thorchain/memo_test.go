@@ -27,17 +27,20 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(memo.GetAsset().String(), Equals, "BNB.RUNE-1BA")
 	c.Check(memo.IsType(txAdd), Equals, true, Commentf("MEMO: %+v", memo))
+	c.Check(memo.IsInbound(), Equals, true)
 
 	memo, err = ParseMemo("+:RUNE-1BA")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetAsset().String(), Equals, "BNB.RUNE-1BA")
 	c.Check(memo.IsType(txStake), Equals, true, Commentf("MEMO: %+v", memo))
+	c.Check(memo.IsInbound(), Equals, true)
 
 	memo, err = ParseMemo("-:RUNE-1BA:25")
 	c.Assert(err, IsNil)
 	c.Check(memo.GetAsset().String(), Equals, "BNB.RUNE-1BA")
 	c.Check(memo.IsType(txUnstake), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetAmount(), Equals, "25")
+	c.Check(memo.IsInbound(), Equals, true)
 
 	memo, err = ParseMemo("=:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:870000000")
 	c.Assert(err, IsNil)
@@ -46,6 +49,7 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Log(memo.GetSlipLimit().Uint64())
 	c.Check(memo.GetSlipLimit().Equal(sdk.NewUint(870000000)), Equals, true)
+	c.Check(memo.IsInbound(), Equals, true)
 
 	memo, err = ParseMemo("=:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Assert(err, IsNil)
@@ -53,6 +57,7 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Check(memo.IsType(txSwap), Equals, true, Commentf("MEMO: %+v", memo))
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit().Uint64(), Equals, uint64(0))
+	c.Check(memo.IsInbound(), Equals, true)
 
 	memo, err = ParseMemo("=:RUNE-1BA:bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6:")
 	c.Assert(err, IsNil)
@@ -61,6 +66,16 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	c.Check(memo.GetDestination().String(), Equals, "bnb1lejrrtta9cgr49fuh7ktu3sddhe0ff7wenlpn6")
 	c.Check(memo.GetSlipLimit().Equal(sdk.ZeroUint()), Equals, true)
 
+	memo, err = ParseMemo("OUTBOUND:MUKVQILIHIAUSEOVAXBFEZAJKYHFJYHRUUYGQJZGFYBYVXCXYNEMUOAIQKFQLLCX")
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txOutbound), Equals, true, Commentf("%s", memo.GetType()))
+	c.Check(memo.IsOutbound(), Equals, true)
+
+	memo, err = ParseMemo("REFUND:MUKVQILIHIAUSEOVAXBFEZAJKYHFJYHRUUYGQJZGFYBYVXCXYNEMUOAIQKFQLLCX")
+	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txRefund), Equals, true)
+	c.Check(memo.IsOutbound(), Equals, true)
+
 	memo, err = ParseMemo("leave:whatever")
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txLeave), Equals, true)
@@ -68,19 +83,25 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	memo, err = ParseMemo("gas")
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txGas), Equals, true)
+	c.Check(memo.IsInbound(), Equals, true)
 
 	memo, err = ParseMemo("yggdrasil+:30")
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txYggdrasilFund), Equals, true)
+	c.Check(memo.IsInternal(), Equals, true)
 	memo, err = ParseMemo("yggdrasil-:30")
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txYggdrasilReturn), Equals, true)
+	c.Check(memo.IsInternal(), Equals, true)
 	memo, err = ParseMemo("migrate:100")
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txMigrate), Equals, true)
+	c.Check(memo.IsInternal(), Equals, true)
 
-	_, err = ParseMemo("migrate:100")
+	memo, err = ParseMemo("ragnarok:100")
 	c.Assert(err, IsNil)
+	c.Check(memo.IsType(txRagnarok), Equals, true)
+	c.Check(memo.IsInternal(), Equals, true)
 
 	// unhappy paths
 	_, err = ParseMemo("")

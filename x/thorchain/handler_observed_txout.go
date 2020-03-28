@@ -117,10 +117,10 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 			continue
 		}
 
-		// if memo isn't valid and its funds moving from a yggdrasil vault,
-		// slash the node
-		_, err = ParseMemo(tx.Tx.Memo)
-		if err != nil {
+		// if memo isn't valid or its an inbound memo, and its funds moving
+		// from a yggdrasil vault, slash the node
+		memo, _ := ParseMemo(tx.Tx.Memo)
+		if memo.IsEmpty() || memo.IsInbound() {
 			vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
 			if err != nil {
 				ctx.Logger().Error("fail to get vault", "error", err)
@@ -139,7 +139,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 					}
 				}
 				vault.SubFunds(tx.Tx.Coins)
-				vault.SubFunds(tx.Tx.Gas.ToCoins())
+				vault.SubFunds(tx.Tx.Gas.ToCoins()) // we don't subsidize the gas when it's theft
 				if err := h.keeper.SetVault(ctx, vault); err != nil {
 					ctx.Logger().Error("fail to save vault", "error", err)
 				}
@@ -169,7 +169,6 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		}
 		vault.SubFunds(tx.Tx.Coins)
 		vault.OutboundTxCount += 1
-		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
 		if vault.IsAsgard() && memo.IsType(txMigrate) {
 			// only remove the block height that had been specified in the memo
 			vault.RemovePendingTxBlockHeights(memo.GetBlockHeight())
