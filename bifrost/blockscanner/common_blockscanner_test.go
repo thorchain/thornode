@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -64,8 +65,8 @@ const (
 func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c.Logf("================>:%s", r.RequestURI)
-		switch r.RequestURI {
-		case "/block": // trying to get block
+		switch {
+		case strings.HasPrefix(r.RequestURI, "/block"): // trying to get block
 			if _, err := w.Write([]byte(blockResult)); err != nil {
 				c.Error(err)
 			}
@@ -104,7 +105,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 		}
 	}()
 	cbs.Start()
-	time.Sleep(time.Second * 10)
+	time.Sleep(time.Second * 1)
 	err = cbs.Stop()
 	c.Check(err, IsNil)
 	// c.Check(counter, Equals, 11)
@@ -113,8 +114,8 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 func (CommonBlockScannerTestSuite) TestBadBlock(c *C) {
 	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		c.Logf("================>:%s", r.RequestURI)
-		switch r.RequestURI {
-		case "/block": // trying to get block
+		switch {
+		case strings.HasPrefix(r.RequestURI, "/block"): // trying to get block
 			if _, err := w.Write([]byte(blockBadResult)); err != nil {
 				c.Error(err)
 			}
