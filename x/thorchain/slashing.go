@@ -4,30 +4,28 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-// SlashingModule define the methods used to slash node accounts
-type SlashingModule interface {
-	LackObserving(_ sdk.Context) error
-	LackSigning(_ sdk.Context) error
-}
-
 // Slasher implements SlashingModule interface provide the necessary functionality to slash node accounts
 type Slasher struct {
-	keeper     Keeper
-	txOutStore TxOutStore
+	keeper  Keeper
+	version semver.Version
 }
 
 // NewSlasher create a new instance of Slasher
-func NewSlasher(keeper Keeper, txOutStore TxOutStore) Slasher {
-	return Slasher{
-		keeper:     keeper,
-		txOutStore: txOutStore,
+func NewSlasher(keeper Keeper, version semver.Version) (*Slasher, error) {
+	if version.GTE(semver.MustParse("0.1.0")) {
+		return &Slasher{
+			keeper:  keeper,
+			version: version,
+		}, nil
 	}
+	return nil, errBadVersion
 }
 
 // LackObserving Slash node accounts that didn't observe a single inbound txn
@@ -74,7 +72,7 @@ func (s *Slasher) LackObserving(ctx sdk.Context, constAccessor constants.Constan
 }
 
 // LackSigning slash account that fail to sign tx
-func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantValues) error {
+func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantValues, txOutStore TxOutStore) error {
 	pendingEvents, err := s.keeper.GetAllPendingEvents(ctx)
 	if err != nil {
 		ctx.Logger().Error("Unable to get all pending events", "error", err)
@@ -137,7 +135,7 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 
 					// Save the tx to as a new tx, select Asgard to send it this time.
 					tx.VaultPubKey = vault.PubKey
-					err = s.txOutStore.UnSafeAddTxOutItem(ctx, tx)
+					err = txOutStore.UnSafeAddTxOutItem(ctx, tx)
 					if err != nil {
 						return fmt.Errorf("fail to add outbound tx: %w", err)
 					}
@@ -160,11 +158,11 @@ func (s *Slasher) LackSigning(ctx sdk.Context, constAccessor constants.ConstantV
 // discover signer send out fund more than the amount specified in TxOutItem,
 // it will slash the node account who does that by taking 1.5 * extra fund from
 // node account's bond and subsidise the pool that actually lost it.
-func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubKey, asset common.Asset, slashAmount sdk.Uint) error {
+func (s *Slasher) SlashNodeAccount(ctx sdk.Context, observedPubKey common.PubKey, asset common.Asset, slashAmount sdk.Uint) error {
 	if slashAmount.IsZero() {
 		return nil
 	}
-	nodeAccount, err := keeper.GetNodeAccountByPubKey(ctx, observedPubKey)
+	nodeAccount, err := s.keeper.GetNodeAccountByPubKey(ctx, observedPubKey)
 	if err != nil {
 		return fmt.Errorf("fail to get node account with pubkey(%s), %w", observedPubKey, err)
 	}
@@ -181,17 +179,17 @@ func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubK
 		// if the diff asset is RUNE , just took 1.5 * diff from their bond
 		slashAmount = slashAmount.MulUint64(3).QuoUint64(2)
 		nodeAccount.Bond = common.SafeSub(nodeAccount.Bond, slashAmount)
-		vaultData, err := keeper.GetVaultData(ctx)
+		vaultData, err := s.keeper.GetVaultData(ctx)
 		if err != nil {
 			return fmt.Errorf("fail to get vault data: %w", err)
 		}
 		vaultData.TotalReserve = vaultData.TotalReserve.Add(amountToReserve)
-		if err := keeper.SetVaultData(ctx, vaultData); err != nil {
+		if err := s.keeper.SetVaultData(ctx, vaultData); err != nil {
 			return fmt.Errorf("fail to save vault data: %w", err)
 		}
-		return keeper.SetNodeAccount(ctx, nodeAccount)
+		return s.keeper.SetNodeAccount(ctx, nodeAccount)
 	}
-	pool, err := keeper.GetPool(ctx, asset)
+	pool, err := s.keeper.GetPool(ctx, asset)
 	if err != nil {
 		return fmt.Errorf("fail to get %s pool : %w", asset, err)
 	}
@@ -204,7 +202,7 @@ func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubK
 	pool.BalanceAsset = common.SafeSub(pool.BalanceAsset, slashAmount)
 	pool.BalanceRune = pool.BalanceRune.Add(runeValue)
 	nodeAccount.Bond = common.SafeSub(nodeAccount.Bond, runeValue)
-	if err := keeper.SetPool(ctx, pool); err != nil {
+	if err := s.keeper.SetPool(ctx, pool); err != nil {
 		return fmt.Errorf("fail to save %s pool: %w", asset, err)
 	}
 
@@ -230,9 +228,9 @@ func slashNodeAccount(ctx sdk.Context, keeper Keeper, observedPubKey common.PubK
 		slashBuf,
 		EventSuccess,
 	)
-	if err := keeper.UpsertEvent(ctx, event); err != nil {
+	if err := s.keeper.UpsertEvent(ctx, event); err != nil {
 		return fmt.Errorf("fail to save event: %w", err)
 	}
 
-	return keeper.SetNodeAccount(ctx, nodeAccount)
+	return s.keeper.SetNodeAccount(ctx, nodeAccount)
 }

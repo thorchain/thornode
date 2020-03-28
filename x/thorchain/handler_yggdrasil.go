@@ -75,10 +75,14 @@ func (h YggdrasilHandler) handle(ctx sdk.Context, msg MsgYggdrasil, version semv
 	}
 }
 
-func (h YggdrasilHandler) slash(ctx sdk.Context, pk common.PubKey, coins common.Coins) error {
+func (h YggdrasilHandler) slash(ctx sdk.Context, version semver.Version, pk common.PubKey, coins common.Coins) error {
 	var returnErr error
+	slasher, err := NewSlasher(h.keeper, version)
+	if err != nil {
+		return fmt.Errorf("fail to create new slasher,error:%w", err)
+	}
 	for _, c := range coins {
-		if err := slashNodeAccount(ctx, h.keeper, pk, c.Asset, c.Amount); err != nil {
+		if err := slasher.SlashNodeAccount(ctx, pk, c.Asset, c.Amount); err != nil {
 			ctx.Logger().Error("fail to slash account", "error", err)
 			returnErr = err
 		}
@@ -125,7 +129,7 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, version se
 	}
 
 	if shouldSlash {
-		if err := h.slash(ctx, msg.PubKey, msg.Tx.Coins); err != nil {
+		if err := h.slash(ctx, version, msg.PubKey, msg.Tx.Coins); err != nil {
 			return sdk.ErrInternal("fail to slash account").Result()
 		}
 	}
@@ -189,11 +193,9 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 
 		if !isAsgardReceipient {
 			// not sending to asgard , slash the node account
-			for _, c := range msg.Tx.Coins {
-				if err := slashNodeAccount(ctx, h.keeper, msg.PubKey, c.Asset, c.Amount); err != nil {
-					ctx.Logger().Error("fail to slash account for sending fund to a none asgard vault using yggdrasil-", "error", err)
-					return sdk.ErrInternal("fail to slash account").Result()
-				}
+			if err := h.slash(ctx, version, msg.PubKey, msg.Tx.Coins); err != nil {
+				ctx.Logger().Error("fail to slash account for sending fund to a none asgard vault using yggdrasil-", "error", err)
+				return sdk.ErrInternal("fail to slash account").Result()
 			}
 		}
 

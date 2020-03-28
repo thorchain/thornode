@@ -8,7 +8,6 @@ require (
 	github.com/binance-chain/tss-lib v1.3.0
 	github.com/blang/semver v3.5.1+incompatible
 	github.com/btcsuite/btcutil v1.0.1
-	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/cosmos-sdk v0.37.7
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/didip/tollbooth v4.0.2+incompatible
