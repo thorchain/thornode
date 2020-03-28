@@ -216,16 +216,12 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			}
 			continue
 		}
-		switch m.(type) {
-		case MsgRefundTx, MsgOutboundTx:
-			// these two are thorchain's outbound message, no one should send tx to vault with these two memo
-			ctx.Logger().Info("refund and outbound memo should not be used for inbound tx",
-				"memo", tx.Tx.Memo,
-				"coin", tx.Tx.Coins,
-				"from", tx.Tx.FromAddress,
-				"vault", tx.ObservedPubKey)
+
+		if memo.IsOutbound() {
+			// no one should send an outbound tx to vault
 			continue
 		}
+
 		if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, tx.BlockHeight); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
