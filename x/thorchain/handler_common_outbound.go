@@ -96,5 +96,4 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 		Code:      sdk.CodeOK,
 		Codespace: DefaultCodespace,
 	}
-
 }
