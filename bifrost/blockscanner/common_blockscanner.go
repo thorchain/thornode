@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cenkalti/backoff"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -187,34 +186,6 @@ func (b *CommonBlockScanner) scanBlocks() {
 				// alert!!
 				return
 			}
-		}
-	}
-}
-
-func (b *CommonBlockScanner) GetFromHttpWithRetry(url string) ([]byte, error) {
-	backoffCtrl := backoff.NewExponentialBackOff()
-
-	retry := 1
-	for {
-		res, err := b.getFromHttp(url)
-		if err == nil {
-			return res, nil
-		}
-		b.logger.Error().Err(err).Msgf("fail to get from %s try %d", url, retry)
-		retry++
-		backOffDuration := backoffCtrl.NextBackOff()
-		if backOffDuration == backoff.Stop {
-			return nil, errors.Wrapf(err, "fail to get from %s after maximum retry", url)
-		}
-		if retry >= b.cfg.MaxHttpRequestRetry {
-			return nil, errors.Errorf("fail to get from %s after maximum retry(%d)", url, b.cfg.MaxHttpRequestRetry)
-		}
-		t := time.NewTicker(backOffDuration)
-		select {
-		case <-b.stopChan:
-			return nil, err
-		case <-t.C:
-			t.Stop()
 		}
 	}
 }

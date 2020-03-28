@@ -18,7 +18,7 @@ type RefundHandler struct {
 func NewRefundHandler(keeper Keeper) RefundHandler {
 	return RefundHandler{
 		keeper: keeper,
-		ch:     NewCommonOutboundTxHander(keeper),
+		ch:     NewCommonOutboundTxHandler(keeper),
 	}
 }
 
@@ -56,5 +56,5 @@ func (h RefundHandler) validateV1(ctx sdk.Context, version semver.Version, msg M
 }
 
 func (h RefundHandler) handle(ctx sdk.Context, msg MsgRefundTx, version semver.Version) sdk.Result {
-	return h.ch.handle(ctx, msg.Tx, msg.InTxID, EventRefund)
+	return h.ch.handle(ctx, version, msg.Tx, msg.InTxID, EventRefund)
 }

@@ -1,6 +1,9 @@
 package thorchain
 
 import (
+	"fmt"
+
+	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
@@ -12,15 +15,19 @@ type CommonOutboundTxHandler struct {
 	keeper Keeper
 }
 
-// NewCommonOutboundTxHander create a new instance of the CommonOutboundTxHandler
-func NewCommonOutboundTxHander(k Keeper) CommonOutboundTxHandler {
+// NewCommonOutboundTxHandler create a new instance of the CommonOutboundTxHandler
+func NewCommonOutboundTxHandler(k Keeper) CommonOutboundTxHandler {
 	return CommonOutboundTxHandler{keeper: k}
 }
 
-func (h CommonOutboundTxHandler) slash(ctx sdk.Context, tx ObservedTx) error {
+func (h CommonOutboundTxHandler) slash(ctx sdk.Context, version semver.Version, tx ObservedTx) error {
 	var returnErr error
+	slasher, err := NewSlasher(h.keeper, version)
+	if err != nil {
+		return fmt.Errorf("fail to create new slasher,error:%w", err)
+	}
 	for _, c := range tx.Tx.Coins {
-		if err := slashNodeAccount(ctx, h.keeper, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
+		if err := slasher.SlashNodeAccount(ctx, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
 			ctx.Logger().Error("fail to slash account", "error", err)
 			returnErr = err
 		}
@@ -28,7 +35,7 @@ func (h CommonOutboundTxHandler) slash(ctx sdk.Context, tx ObservedTx) error {
 	return returnErr
 }
 
-func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID common.TxID, status EventStatus) sdk.Result {
+func (h CommonOutboundTxHandler) handle(ctx sdk.Context, version semver.Version, tx ObservedTx, inTxID common.TxID, status EventStatus) sdk.Result {
 	voter, err := h.keeper.GetObservedTxVoter(ctx, inTxID)
 	if err != nil {
 		ctx.Logger().Error("fail to get observed tx voter", "error", err)
@@ -76,7 +83,7 @@ func (h CommonOutboundTxHandler) handle(ctx sdk.Context, tx ObservedTx, inTxID c
 	}
 
 	if shouldSlash {
-		if err := h.slash(ctx, tx); err != nil {
+		if err := h.slash(ctx, version, tx); err != nil {
 			return sdk.ErrInternal("fail to slash account").Result()
 		}
 	}
