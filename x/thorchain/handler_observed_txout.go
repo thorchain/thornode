@@ -60,7 +60,6 @@ func (h ObservedTxOutHandler) validateV1(ctx sdk.Context, msg MsgObservedTxOut) 
 }
 
 func (h ObservedTxOutHandler) handle(ctx sdk.Context, msg MsgObservedTxOut, version semver.Version) sdk.Result {
-	ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", msg.Txs[0].String())
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, version, msg)
 	} else {
@@ -109,13 +108,9 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		// check whether the tx has consensus
 		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
 		if !ok {
-			if voter.Height > 0 {
-				ctx.Logger().Info("Outbound observation already processed.")
-			} else {
-				ctx.Logger().Info("Outbound observation preflight requirements not yet met...")
-			}
 			continue
 		}
+		ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", msg.Txs[0].String())
 
 		// if memo isn't valid or its an inbound memo, and its funds moving
 		// from a yggdrasil vault, slash the node
