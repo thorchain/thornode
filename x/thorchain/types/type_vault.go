@@ -42,7 +42,7 @@ type Vault struct {
 	Membership            common.PubKeys `json:"membership"`
 	InboundTxCount        int64          `json:"inbound_tx_count"`
 	OutboundTxCount       int64          `json:"outbound_tx_count"`
-	PendingTxBlockHeights []int64        `json:"-"`
+	PendingTxBlockHeights []int64        `json:"pending_tx_heights"`
 }
 
 type Vaults []Vault
