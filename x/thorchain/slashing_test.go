@@ -199,6 +199,7 @@ func (k *TestSlashingLackKeeper) SetNodeAccount(_ sdk.Context, na NodeAccount) e
 	k.na = na
 	return nil
 }
+
 func (s *SlashingSuite) TestNodeSignSlashErrors(c *C) {
 	testCases := []struct {
 		name        string
@@ -324,8 +325,8 @@ func (s *SlashingSuite) TestNodeSignSlashErrors(c *C) {
 			c.Assert(slasher.LackSigning(ctx, constAccessor, txOutStore), IsNil)
 		}
 	}
-
 }
+
 func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(201) // set blockheight
