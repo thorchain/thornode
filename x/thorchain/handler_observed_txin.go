@@ -100,7 +100,6 @@ func (h ObservedTxInHandler) signedByNewObserver(ctx sdk.Context, addr sdk.AccAd
 }
 
 func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) sdk.Result {
-	ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", msg.Txs[0].String())
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, version, msg)
 	} else {
@@ -154,13 +153,9 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 
 		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
 		if !ok {
-			if voter.Height > 0 {
-				ctx.Logger().Info("Inbound observation already processed.")
-			} else {
-				ctx.Logger().Info("Inbound observation preflight requirements not yet met...")
-			}
 			continue
 		}
+		ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", msg.Txs[0].String())
 
 		txIn := voter.GetTx(activeNodeAccounts)
 		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
