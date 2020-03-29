@@ -12,14 +12,6 @@ ENV GOPATH=/go
 ENV CGO_ENABLED=0
 ENV GOOS=linux
 
-
-# install keygenClient
-RUN git clone https://gitlab.com/thorchain/tss/tss-tools.git /tmp/tss-tools
-WORKDIR /tmp/tss-tools/cmd/keygenclient
-RUN go mod verify
-RUN go mod download
-RUN go build -a -installsuffix cgo -o $GOBIN/keygenclient .
-
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
@@ -45,7 +37,6 @@ COPY --from=build /go/bin/generate /usr/bin/
 COPY --from=build /go/bin/thord /usr/bin/
 COPY --from=build /go/bin/thorcli /usr/bin/
 COPY --from=build /go/bin/bifrost /usr/bin/
-COPY --from=build /go/bin/keygenclient /usr/bin/
 
 # Add users.
 RUN adduser -Ds /bin/sh www-data -G www-data
