@@ -35,22 +35,6 @@ while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODE
     sleep 1
 done
 
-if [ ! -z ${TSSKEYGEN+x} ]; then
-    export IFS=","
-    for addr in $TSSKEYGENLIST; do
-        # wait for TSS keysign agent to become available
-        $(dirname "$0")/wait-for-tss-keygen.sh $addr
-    done
-
-    KEYCLIENT="/usr/bin/keygenclient -url http://$TSSKEYGEN/keygen"
-    for f in /tmp/shared/node_*.json; do
-        KEYCLIENT="$KEYCLIENT --pubkey $(cat $f | awk '{print $3}')"
-    done
-    sh -c "$KEYCLIENT > /tmp/keygenclient.output"
-
-    VAULT_PUBKEY=$(cat /tmp/keygenclient.output | tail -1 | jq -r .pub_key)
-fi
-
 if [ "$SEED" = "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
         # get a list of addresses (thor bech32)
