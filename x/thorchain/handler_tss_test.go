@@ -279,7 +279,38 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			expectedResult: sdk.CodeOK,
 		},
 		{
-			name: "fail to keygen should be slashed",
+			name: "fail to keygen retry should be slashed",
+			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
+				sort.SliceStable(helper.members, func(i, j int) bool {
+					return helper.members[i].String() < helper.members[j].String()
+				})
+				thorAddr, _ := helper.members[3].GetThorAddress()
+				na, _ := helper.keeper.GetNodeAccount(helper.ctx, thorAddr)
+				na.UpdateStatus(NodeActive, helper.ctx.BlockHeight())
+				_ = helper.keeper.SetNodeAccount(helper.ctx, na)
+				b := tssCommon.Blame{
+					FailReason: "who knows",
+					BlameNodes: []string{
+						helper.members[3].String(),
+					},
+				}
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+			},
+			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
+				ctx := helper.ctx.WithBlockHeight(60000)
+				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+			},
+			validator: func(helper tssHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
+				// make sure node get slashed
+				pubKey := helper.members[3]
+				na, err := helper.keeper.GetNodeAccountByPubKey(helper.ctx, pubKey)
+				c.Assert(err, IsNil)
+				c.Assert(na.SlashPoints > 0, Equals, true)
+			},
+			expectedResult: sdk.CodeOK,
+		},
+		{
+			name: "fail to keygen retry and none active account should be slashed with bond",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
 				sort.SliceStable(helper.members, func(i, j int) bool {
 					return helper.members[i].String() < helper.members[j].String()
@@ -293,14 +324,47 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				ctx := helper.ctx.WithBlockHeight(60000)
+				vd := VaultData{
+					BondRewardRune: sdk.NewUint(5000 * common.One),
+					TotalBondUnits: sdk.NewUint(10000),
+				}
+				_ = helper.keeper.SetVaultData(helper.ctx, vd)
+				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
 			},
 			validator: func(helper tssHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
 				// make sure node get slashed
 				pubKey := helper.members[3]
 				na, err := helper.keeper.GetNodeAccountByPubKey(helper.ctx, pubKey)
 				c.Assert(err, IsNil)
-				c.Assert(na.SlashPoints > 0, Equals, true)
+				c.Assert(na.Bond.Equal(sdk.ZeroUint()), Equals, true)
+			},
+			expectedResult: sdk.CodeOK,
+		},
+		{
+			name: "fail to keygen first time should not be slashed",
+			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
+				sort.SliceStable(helper.members, func(i, j int) bool {
+					return helper.members[i].String() < helper.members[j].String()
+				})
+				b := tssCommon.Blame{
+					FailReason: "who knows",
+					BlameNodes: []string{
+						helper.members[3].String(),
+					},
+				}
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+			},
+			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
+				ctx := helper.ctx.WithBlockHeight(53000)
+				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+			},
+			validator: func(helper tssHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
+				// make sure node get slashed
+				pubKey := helper.members[3]
+				na, err := helper.keeper.GetNodeAccountByPubKey(helper.ctx, pubKey)
+				c.Assert(err, IsNil)
+				c.Assert(na.SlashPoints == 0, Equals, true)
 			},
 			expectedResult: sdk.CodeOK,
 		},
@@ -317,12 +381,14 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				helper.keeper.errFailGetNodeAccount = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				ctx := helper.ctx.WithBlockHeight(60000)
+				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
 	}
 	for _, tc := range testCases {
+		c.Log(tc.name)
 		helper := newTssHandlerTestHelper(c)
 		handler := NewTssHandler(helper.keeper, helper.vaultManager)
 		msg := tc.messageCreator(helper)
