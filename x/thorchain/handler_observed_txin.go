@@ -156,8 +156,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			if voter.Height > 0 {
 				// we've already process the transaction, but we should still
 				// update the observing addresses
-				txIn := voter.GetTx(activeNodeAccounts)
-				if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
+				if err := h.keeper.AddObservingAddresses(ctx, msg.GetSigners()); err != nil {
 					ctx.Logger().Error("fail to add observing address", "error", err)
 				}
 			}
