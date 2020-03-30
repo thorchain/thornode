@@ -22,6 +22,7 @@ func (s *KeeperEventsSuite) TestEvents(c *C) {
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
+		sdk.NewUint(5),
 	)
 	swapBytes, _ := json.Marshal(swap)
 	evt := NewEvent(
