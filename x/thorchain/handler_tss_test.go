@@ -32,6 +32,7 @@ type tssKeeperHelper struct {
 	errGetTssVoter        bool
 	errFailSaveVault      bool
 	errFailGetNodeAccount bool
+	errFailGetAsgardVault bool
 }
 
 func (k *tssKeeperHelper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
@@ -60,6 +61,12 @@ func (k *tssKeeperHelper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts,
 		return NodeAccounts{}, kaboom
 	}
 	return k.Keeper.ListActiveNodeAccounts(ctx)
+}
+func (k *tssKeeperHelper) GetAsgardVaultsByStatus(ctx sdk.Context, state VaultStatus) (Vaults, error) {
+	if k.errFailGetAsgardVault {
+		return Vaults{}, kaboom
+	}
+	return k.Keeper.GetAsgardVaultsByStatus(ctx, state)
 }
 
 func newTssKeeperHelper(keeper Keeper) *tssKeeperHelper {
@@ -308,6 +315,27 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				c.Assert(na.SlashPoints > 0, Equals, true)
 			},
 			expectedResult: sdk.CodeOK,
+		},
+		{
+			name: "fail to keygen retry and fail to get asgard vaults should return error",
+			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
+				sort.SliceStable(helper.members, func(i, j int) bool {
+					return helper.members[i].String() < helper.members[j].String()
+				})
+				b := tssCommon.Blame{
+					FailReason: "who knows",
+					BlameNodes: []string{
+						helper.members[3].String(),
+					},
+				}
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+			},
+			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
+				ctx := helper.ctx.WithBlockHeight(60000)
+				helper.keeper.errFailGetAsgardVault = true
+				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+			},
+			expectedResult: sdk.CodeInternal,
 		},
 		{
 			name: "fail to keygen retry and none active account should be slashed with bond",
