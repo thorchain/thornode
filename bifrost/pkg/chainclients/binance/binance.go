@@ -57,7 +57,7 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 	}
 	rpcHost := cfg.RPCHost
 
-	tssKm, err := tss.NewKeySign(server)
+	tssKm, err := NewKeySign(server)
 	if err != nil {
 		return nil, fmt.Errorf("fail to create tss signer: %w", err)
 	}
@@ -380,7 +380,7 @@ func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey, signerP
 	if b.localKeyManager.Pubkey().Equals(poolPubKey) {
 		return b.localKeyManager.Sign(signMsg)
 	}
-	k := b.tssKeyManager.(tss.ThorchainKeyManager)
+	k := b.tssKeyManager.(ThorchainKeyManager)
 	return k.SignWithPool(signMsg, poolPubKey, signerPubKeys)
 }
 
@@ -395,7 +395,7 @@ func (b *Binance) signMsg(signMsg btx.StdSignMsg, from string, poolPubKey common
 	if err == nil && rawBytes != nil {
 		return rawBytes, nil
 	}
-	var keysignError tss.KeysignError
+	var keysignError KeysignError
 	if errors.As(err, &keysignError) {
 		if len(keysignError.Blame.BlameNodes) == 0 {
 			// TSS doesn't know which node to blame
