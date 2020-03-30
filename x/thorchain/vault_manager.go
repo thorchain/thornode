@@ -103,8 +103,7 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 
 		// move partial funds every 30 minutes
 		if (ctx.BlockHeight()-vault.StatusSince)%migrateInterval == 0 {
-
-			if vault.PendingTxCount > 0 {
+			if vault.LenPendingTxBlockHeights(ctx.BlockHeight(), constAccessor) > 0 {
 				ctx.Logger().Info("Skipping the migration of funds while transactions are still pending")
 				continue
 			}
@@ -146,6 +145,15 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					amt = amt.MulUint64(uint64(nth)).QuoUint64(5)
 				}
 
+				// TODO: make this not chain specific
+				// minus gas costs for our transactions
+				if coin.Asset.IsBNB() {
+					amt = common.SafeSub(
+						amt,
+						common.BNBGasFeeSingleton[0].Amount.MulUint64(uint64(vault.CoinLength())),
+					)
+				}
+
 				toi := &TxOutItem{
 					Chain:       coin.Asset.Chain,
 					InHash:      common.BlankTxID,
@@ -157,15 +165,17 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 					},
 					Memo: NewMigrateMemo(ctx.BlockHeight()).String(),
 				}
-				_, err = txOutStore.TryAddTxOutItem(ctx, toi)
+				ok, err := txOutStore.TryAddTxOutItem(ctx, toi)
 				if err != nil {
 					return err
 				}
-				vault.PendingTxCount += 1
+				if ok {
+					vault.AppendPendingTxBlockHeights(ctx.BlockHeight(), constAccessor)
+					if err := vm.k.SetVault(ctx, vault); err != nil {
+						return fmt.Errorf("fail to save vault: %w", err)
+					}
+				}
 			}
-		}
-		if err := vm.k.SetVault(ctx, vault); err != nil {
-			return fmt.Errorf("fail to save vault: %w", err)
 		}
 	}
 

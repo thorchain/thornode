@@ -1,4 +1,4 @@
-// constants package contains all the constants used by thorchain
+// Package constants  contains all the constants used by thorchain
 // by default all the settings in this is for mainnet
 package constants
 
@@ -50,6 +50,7 @@ func NewConstantValue010() *ConstantValue010 {
 			MinimumBondInRune:               100_000_000_000_000, // 1 million rune
 			WhiteListGasAsset:               1000,                // thor coins we will be given to the validator
 			FailKeygenSlashPoints:           720,                 // slash for 720 blocks , which equals 1 hour
+			StakeLockUpBlocks:               17280,               // the number of blocks staker can unstake after their stake
 		},
 		boolValues: map[ConstantName]bool{
 			StrictBondStakeRatio: true,
@@ -129,6 +130,7 @@ func (cv ConstantValue010) MarshalJSON() ([]byte, error) {
 	}
 	result.Int64Values = make(map[string]int64)
 	result.BoolValues = make(map[string]bool)
+	result.StringValues = make(map[string]string)
 	for k, v := range cv.int64values {
 		result.Int64Values[k.String()] = v
 	}

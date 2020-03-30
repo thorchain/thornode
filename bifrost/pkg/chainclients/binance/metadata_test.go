@@ -15,7 +15,7 @@ func (s *MetadataSuite) TestMetaData(c *C) {
 
 	pk := types.GetRandomPubKey()
 
-	store.Set(pk, BinanceMetadata{1, 2})
+	store.Set(pk, BinanceMetadata{1, 2, 3})
 
 	meta := store.Get(types.GetRandomPubKey())
 	c.Check(meta.AccountNumber, Equals, int64(0))

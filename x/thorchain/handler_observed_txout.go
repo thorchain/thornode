@@ -60,9 +60,8 @@ func (h ObservedTxOutHandler) validateV1(ctx sdk.Context, msg MsgObservedTxOut) 
 }
 
 func (h ObservedTxOutHandler) handle(ctx sdk.Context, msg MsgObservedTxOut, version semver.Version) sdk.Result {
-	ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", msg.Txs[0].String())
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg)
+		return h.handleV1(ctx, version, msg)
 	} else {
 		ctx.Logger().Error(errInvalidVersion.Error())
 		return errBadVersion.Result()
@@ -84,7 +83,7 @@ func (h ObservedTxOutHandler) preflight(ctx sdk.Context, voter ObservedTxVoter, 
 }
 
 // Handle a message to observe outbound tx
-func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sdk.Result {
+func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, msg MsgObservedTxOut) sdk.Result {
 	activeNodeAccounts, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if err != nil {
 		err = wrapError(ctx, err, "fail to get list of active node accounts")
@@ -110,11 +109,45 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
 		if !ok {
 			if voter.Height > 0 {
-				ctx.Logger().Info("Outbound observation already processed.")
-			} else {
-				ctx.Logger().Info("Outbound observation preflight requirements not yet met...")
+				// we've already process the transaction, but we should still
+				// update the observing addresses
+				txIn := voter.GetTx(activeNodeAccounts)
+				if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
+					ctx.Logger().Error("fail to add observing address", "error", err)
+				}
 			}
 			continue
+		}
+		ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", msg.Txs[0].String())
+
+		// if memo isn't valid or its an inbound memo, and its funds moving
+		// from a yggdrasil vault, slash the node
+		memo, _ := ParseMemo(tx.Tx.Memo)
+		if memo.IsEmpty() || memo.IsInbound() {
+			vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
+			if err != nil {
+				ctx.Logger().Error("fail to get vault", "error", err)
+				continue
+			}
+			if vault.IsYggdrasil() {
+				slash, err := NewSlasher(h.keeper, version)
+				if err != nil {
+					ctx.Logger().Error("fail to create slasher:%w", err)
+					continue
+				}
+				// a yggdrasil vault has apparently stolen funds, slash them
+				for _, c := range append(tx.Tx.Coins, tx.Tx.Gas.ToCoins()...) {
+					if err := slash.SlashNodeAccount(ctx, tx.ObservedPubKey, c.Asset, c.Amount); err != nil {
+						ctx.Logger().Error("fail to slash account for sending extra fund", "error", err)
+					}
+				}
+				vault.SubFunds(tx.Tx.Coins)
+				vault.SubFunds(tx.Tx.Gas.ToCoins()) // we don't subsidize the gas when it's theft
+				if err := h.keeper.SetVault(ctx, vault); err != nil {
+					ctx.Logger().Error("fail to save vault", "error", err)
+				}
+				continue
+			}
 		}
 
 		txOut := voter.GetTx(activeNodeAccounts) // get consensus tx, in case our for loop is incorrect
@@ -125,12 +158,8 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 				"tx", tx.Tx.String())
 			continue
 		}
-		// when thorchain fail to parse the out going tx memo, likely it is an
-		// unauthorised tx in that case, thorchain doesn't subtract the fund
-		// from relevant vault, thus when the node/yggdrasil leave, they will
-		// either return those asset or they will be slashed for that amount,
-		// also if the tx memo is unknown , thorchain also doesn't subsidise
-		// gas Apply Gas fees
+
+		// Apply Gas fees
 		if err := AddGasFees(ctx, h.keeper, tx); err != nil {
 			return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error()).Result()
 		}
@@ -139,16 +168,13 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, msg MsgObservedTxOut) sd
 		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
 		if err != nil {
 			ctx.Logger().Error("fail to get vault", "error", err)
-			return sdk.ErrInternal("fail to get vault").Result()
+			continue
 		}
 		vault.SubFunds(tx.Tx.Coins)
 		vault.OutboundTxCount += 1
-		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
 		if vault.IsAsgard() && memo.IsType(txMigrate) {
-			vault.PendingTxCount -= 1
-			if vault.PendingTxCount < 0 {
-				vault.PendingTxCount = 0
-			}
+			// only remove the block height that had been specified in the memo
+			vault.RemovePendingTxBlockHeights(memo.GetBlockHeight())
 		}
 		if err := h.keeper.SetVault(ctx, vault); err != nil {
 			ctx.Logger().Error("fail to save vault", "error", err)

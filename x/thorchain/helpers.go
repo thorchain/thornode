@@ -6,6 +6,7 @@ import (
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
 )
@@ -75,10 +76,19 @@ func getFee(input, output common.Coins, transactionFee int64) common.Fee {
 		if !out.Asset.IsRune() {
 			assetTxCount++
 		}
-		for _, in := range input {
+	}
+	for _, in := range input {
+		outCoin := common.NoCoin
+		for _, out := range output {
 			if out.Asset.Equals(in.Asset) {
-				fee.Coins = append(fee.Coins, common.NewCoin(in.Asset, in.Amount.Sub(out.Amount)))
+				outCoin = out
+				break
 			}
+		}
+		if outCoin.IsEmpty() {
+			fee.Coins = append(fee.Coins, common.NewCoin(in.Asset, in.Amount))
+		} else {
+			fee.Coins = append(fee.Coins, common.NewCoin(in.Asset, in.Amount.Sub(outCoin.Amount)))
 		}
 	}
 	fee.PoolDeduct = sdk.NewUint(uint64(transactionFee) * uint64(assetTxCount))
@@ -340,10 +350,11 @@ func updateEventFee(ctx sdk.Context, keeper Keeper, txID common.TxID, fee common
 		}
 		return fmt.Errorf("fail to get event id: %w", err)
 	}
-	if len(eventIDs) > 1 {
-		return errors.New("more than events found")
+	if len(eventIDs) == 0 {
+		return errors.New("no event found")
 	}
-	eventID := eventIDs[0]
+	// There are two events for double swap with the same the same txID. Only the second one has fee
+	eventID := eventIDs[len(eventIDs)-1]
 	event, err := keeper.GetEvent(ctx, eventID)
 	if err != nil {
 		return fmt.Errorf("fail to get event: %w", err)
@@ -414,7 +425,8 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 	if len(tx.Tx.Gas) == 0 {
 		return nil
 	}
-
+	numberOfCoins := len(tx.Tx.Coins)
+	common.UpdateBNBGasFee(tx.Tx.Gas, numberOfCoins)
 	vaultData, err := keeper.GetVaultData(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to get vaultData: %w", err)

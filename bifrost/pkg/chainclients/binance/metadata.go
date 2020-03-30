@@ -9,6 +9,7 @@ import (
 type BinanceMetadata struct {
 	AccountNumber int64
 	SeqNumber     int64
+	BlockHeight   int64
 }
 
 type BinanceMetaDataStore struct {

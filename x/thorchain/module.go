@@ -151,12 +151,16 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to get tx out store", "error", err)
 		return nil
 	}
-	slasher := NewSlasher(am.keeper, txStore)
+	slasher, err := NewSlasher(am.keeper, version)
+	if err != nil {
+		ctx.Logger().Error("fail to create slasher", "error", err)
+		return nil
+	}
 	// slash node accounts for not observing any accepted inbound tx
 	if err := slasher.LackObserving(ctx, constantValues); err != nil {
 		ctx.Logger().Error("Unable to slash for lack of observing:", "error", err)
 	}
-	if err := slasher.LackSigning(ctx, constantValues); err != nil {
+	if err := slasher.LackSigning(ctx, constantValues, txStore); err != nil {
 		ctx.Logger().Error("Unable to slash for lack of signing:", "error", err)
 	}
 	newPoolCycle := constantValues.GetInt64Value(constants.NewPoolCycle)
@@ -165,12 +169,6 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		if err := enableNextPool(ctx, am.keeper); err != nil {
 			ctx.Logger().Error("Unable to enable a pool", "error", err)
 		}
-	}
-
-	// Fill up Yggdrasil vaults
-	err = Fund(ctx, am.keeper, txStore, constantValues)
-	if err != nil {
-		ctx.Logger().Error("Unable to fund Yggdrasil", "error", err)
 	}
 
 	// fail stale pending events
@@ -202,7 +200,16 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 		ctx.Logger().Error("fail to end block for vault manager", "error", err)
 	}
 
-	return am.validatorMgr.EndBlock(ctx, version, constantValues)
+	validators := am.validatorMgr.EndBlock(ctx, version, constantValues)
+
+	// Fill up Yggdrasil vaults
+	// We do this AFTER validatorMgr.EndBlock, because we don't want to send
+	// funds to a yggdrasil vault that is being churned out this block.
+	if err := Fund(ctx, am.keeper, txStore, constantValues); err != nil {
+		ctx.Logger().Error("unable to fund yggdrasil", "error", err)
+	}
+
+	return validators
 }
 
 func (am AppModule) InitGenesis(ctx sdk.Context, data json.RawMessage) []abci.ValidatorUpdate {

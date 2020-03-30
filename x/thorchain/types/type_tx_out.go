@@ -83,7 +83,8 @@ type TxOut struct {
 // NewTxOut create a new item ot TxOut
 func NewTxOut(height int64) *TxOut {
 	return &TxOut{
-		Height: height,
+		Height:  height,
+		TxArray: make([]*TxOutItem, 0),
 	}
 }
 

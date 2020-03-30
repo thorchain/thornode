@@ -8,9 +8,10 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
+	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
+
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
-	tssCommon "gitlab.com/thorchain/tss/go-tss/common"
 )
 
 func TestPackage(t *testing.T) { TestingT(t) }
@@ -50,9 +51,10 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(staker2.PoolUnits, HasLen, 1)
 
+	version := semver.MustParse("0.1.0")
 	// unstake for user1
 	msg := NewMsgSetUnStake(GetRandomTx(), user1, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
-	_, _, _, err = unstake(ctx, keeper, msg)
+	_, _, _, err = unstake(ctx, version, keeper, msg)
 	c.Assert(err, IsNil)
 	staker1, err = keeper.GetStakerPool(ctx, user1)
 	c.Assert(err, IsNil)
@@ -60,7 +62,7 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 
 	// unstake for user2
 	msg = NewMsgSetUnStake(GetRandomTx(), user2, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
-	_, _, _, err = unstake(ctx, keeper, msg)
+	_, _, _, err = unstake(ctx, version, keeper, msg)
 	c.Assert(err, IsNil)
 	staker2, err = keeper.GetStakerPool(ctx, user2)
 	c.Assert(err, IsNil)
@@ -70,7 +72,7 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	pool, err = keeper.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	c.Check(pool.BalanceRune.IsZero(), Equals, true)
-	c.Check(pool.BalanceAsset.IsZero(), Equals, true)
+	c.Check(pool.BalanceAsset.Uint64(), Equals, uint64(75000)) // leave a little behind for gas
 	c.Check(pool.PoolUnits.IsZero(), Equals, true)
 
 	// stake for user1, again
@@ -86,7 +88,7 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	pool, err = keeper.GetPool(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	c.Check(pool.BalanceRune.Equal(sdk.NewUint(200*common.One)), Equals, true)
-	c.Check(pool.BalanceAsset.Equal(sdk.NewUint(200*common.One)), Equals, true)
+	c.Check(pool.BalanceAsset.Equal(sdk.NewUint(20000075000)), Equals, true, Commentf("%d", pool.BalanceAsset.Uint64()))
 	c.Check(pool.PoolUnits.IsZero(), Equals, false)
 }
 
@@ -193,13 +195,13 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	item := items[0]
 	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(2000000000), Commentf("%d", item.Coin.Amount.Uint64()))
 	item = items[1]
-	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(1580000000), Commentf("%d", item.Coin.Amount.Uint64()))
+	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(1579925000), Commentf("%d", item.Coin.Amount.Uint64()))
 	// check we empty the rest at the last migration event
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
 	ctx = ctx.WithBlockHeight(vault.StatusSince + (migrateInterval * 7))
 	vault, err = keeper.GetVault(ctx, vault.PubKey)
 	c.Assert(err, IsNil)
-	vault.PendingTxCount = 0 // reset pending tx count
+	vault.PendingTxBlockHeights = nil
 	c.Assert(keeper.SetVault(ctx, vault), IsNil)
 	vaultMgr.EndBlock(ctx, ver, consts) // should attempt to send 100% of the coin values
 	items, err = txOutStore.GetOutboundItems(ctx)
@@ -208,7 +210,7 @@ func (s *ThorchainSuite) TestChurn(c *C) {
 	item = items[2]
 	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(10000000000), Commentf("%d", item.Coin.Amount.Uint64()))
 	item = items[3]
-	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(7900000000), Commentf("%d", item.Coin.Amount.Uint64()))
+	c.Check(item.Coin.Amount.Uint64(), Equals, uint64(7899925000), Commentf("%d", item.Coin.Amount.Uint64()))
 }
 
 func (s *ThorchainSuite) TestRagnarok(c *C) {
@@ -309,9 +311,9 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	}
 	c.Assert(keeper.SetVault(ctx, asgard), IsNil)
 
-	//////////////////////////////////////////////////////////
-	//////////////// Start Ragnarok Protocol /////////////////
-	//////////////////////////////////////////////////////////
+	// ////////////////////////////////////////////////////////
+	// ////////////// Start Ragnarok Protocol /////////////////
+	// ////////////////////////////////////////////////////////
 	vd := VaultData{
 		BondRewardRune: sdk.NewUint(1000_000 * common.One),
 		TotalBondUnits: sdk.NewUint(3 * 1014), // block height * node count
@@ -324,7 +326,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	c.Assert(err, IsNil)
 	// this should trigger stage 1 of the ragnarok protocol. We should see a tx
 	// out per node account
-	c.Assert(validatorMgr.processRagnarok(ctx, active, consts), IsNil)
+	c.Assert(validatorMgr.processRagnarok(ctx, consts), IsNil)
 	// after ragnarok get trigged , we pay bond reward immediately
 	for idx, bonder := range bonders {
 		na, err := keeper.GetNodeAccount(ctx, bonder.NodeAddress)
@@ -357,7 +359,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	migrateInterval := consts.GetInt64Value(constants.FundMigrationInterval)
 	for i := 1; i <= 10; i++ { // simulate each round of ragnarok (max of ten)
 		ctx = ctx.WithBlockHeight(ragnarokHeight + (int64(i) * migrateInterval))
-		c.Assert(validatorMgr.processRagnarok(ctx, active, consts), IsNil)
+		c.Assert(validatorMgr.processRagnarok(ctx, consts), IsNil)
 		items, err := versionedTxOutStoreDummy.txoutStore.GetOutboundItems(ctx)
 		c.Assert(err, IsNil)
 		c.Assert(items, HasLen, 15, Commentf("%d", len(items)))

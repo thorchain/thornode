@@ -20,6 +20,7 @@ func (s *KeeperVaultSuite) TestVault(c *C) {
 	c.Assert(k.VaultExists(ctx, pubKey), Equals, true)
 	pubKey1 := GetRandomPubKey()
 	yggdrasil1 := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, pubKey1)
+	yggdrasil1.PendingTxBlockHeights = []int64{35}
 	yggdrasil1.Coins = common.Coins{
 		common.NewCoin(common.BNBAsset, types.NewUint(100)),
 	}
@@ -27,6 +28,8 @@ func (s *KeeperVaultSuite) TestVault(c *C) {
 	ygg, err := k.GetVault(ctx, pubKey1)
 	c.Assert(err, IsNil)
 	c.Assert(ygg.IsEmpty(), Equals, false)
+	c.Assert(ygg.PendingTxBlockHeights, HasLen, 1)
+	c.Assert(ygg.PendingTxBlockHeights[0], Equals, int64(35))
 	hasYgg, err := k.HasValidVaultPools(ctx)
 	c.Assert(err, IsNil)
 	c.Assert(hasYgg, Equals, true)

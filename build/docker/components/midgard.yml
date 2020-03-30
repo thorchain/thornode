@@ -12,6 +12,8 @@ services:
       CHAIN_API: thor-api:1317
       CHAIN_RPC: thor-daemon:26657
       PG_HOST: pg
+      BINANCE_API: ${BINANCE_API}
+      BINANCE_API_SCHEME: ${BINANCE_API_SCHEME}
     entrypoint:
       /docker/scripts/midgard.sh
     volumes:

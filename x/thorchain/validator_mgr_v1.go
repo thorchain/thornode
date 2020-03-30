@@ -3,7 +3,6 @@ package thorchain
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"sort"
 
 	"github.com/blang/semver"
@@ -134,7 +133,7 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	// when ragnarok is in progress, just process ragnarok
 	if vm.k.RagnarokInProgress(ctx) {
 		// process ragnarok
-		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
+		if err := vm.processRagnarok(ctx, constAccessor); err != nil {
 			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
 		}
 		return nil
@@ -155,8 +154,17 @@ func (vm *validatorMgrV1) EndBlock(ctx sdk.Context, constAccessor constants.Cons
 	nodesAfterChange := len(activeNodes) + len(newNodes) - len(removedNodes)
 	if len(activeNodes) >= int(minimumNodesForBFT) && nodesAfterChange < int(minimumNodesForBFT) {
 		// THORNode don't have enough validators for BFT
-		if err := vm.processRagnarok(ctx, activeNodes, constAccessor); err != nil {
-			ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
+
+		// Check we're not migrating funds
+		retiring, err := vm.k.GetAsgardVaultsByStatus(ctx, RetiringVault)
+		if err != nil {
+			ctx.Logger().Error("fail to get retiring vaults", "error", err)
+		}
+
+		if len(retiring) == 0 { // wait until all funds are migrated before starting ragnarok
+			if err := vm.processRagnarok(ctx, constAccessor); err != nil {
+				ctx.Logger().Error("fail to process ragnarok protocol", "error", err)
+			}
 		}
 		// by return
 		return nil
@@ -317,7 +325,7 @@ func (vm *validatorMgrV1) payNodeAccountBondAward(ctx sdk.Context, na NodeAccoun
 }
 
 // determines when/if to run each part of the ragnarok process
-func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, activeNodes NodeAccounts, constAccessor constants.ConstantValues) error {
+func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, constAccessor constants.ConstantValues) error {
 	// execute Ragnarok protocol, no going back
 	// THORNode have to request the fund back now, because once it get to the rotate block height ,
 	// THORNode won't have validators anymore
@@ -329,7 +337,7 @@ func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, activeNodes NodeAccou
 	if ragnarokHeight == 0 {
 		ragnarokHeight = ctx.BlockHeight()
 		vm.k.SetRagnarokBlockHeight(ctx, ragnarokHeight)
-		if err := vm.ragnarokProtocolStage1(ctx, activeNodes); err != nil {
+		if err := vm.ragnarokProtocolStage1(ctx); err != nil {
 			return fmt.Errorf("fail to execute ragnarok protocol step 1: %w", err)
 		}
 		if err := vm.ragnarokBondReward(ctx); err != nil {
@@ -353,8 +361,8 @@ func (vm *validatorMgrV1) processRagnarok(ctx sdk.Context, activeNodes NodeAccou
 
 // ragnarokProtocolStage1 - request all yggdrasil pool to return the fund
 // when THORNode observe the node return fund successfully, the node's bound will be refund.
-func (vm *validatorMgrV1) ragnarokProtocolStage1(ctx sdk.Context, activeNodes NodeAccounts) error {
-	return vm.recallYggFunds(ctx, activeNodes)
+func (vm *validatorMgrV1) ragnarokProtocolStage1(ctx sdk.Context) error {
+	return vm.recallYggFunds(ctx)
 }
 
 func (vm *validatorMgrV1) ragnarokProtocolStage2(ctx sdk.Context, nth int64, constAccessor constants.ConstantValues) error {
@@ -596,7 +604,6 @@ func (vm *validatorMgrV1) ragnarokPools(ctx sdk.Context, nth int64, constAccesso
 			result := unstakeHandler.Run(ctx, unstakeMsg, version, constAccessor)
 			if !result.IsOK() {
 				ctx.Logger().Error("fail to unstake", "staker", item.RuneAddress, "error", result.Log)
-				return fmt.Errorf("fail to unstake address: %s", result.Log)
 			}
 		}
 	}
@@ -664,9 +671,14 @@ func (vm *validatorMgrV1) RequestYggReturn(ctx sdk.Context, node NodeAccount) er
 	return nil
 }
 
-func (vm *validatorMgrV1) recallYggFunds(ctx sdk.Context, activeNodes NodeAccounts) error {
+func (vm *validatorMgrV1) recallYggFunds(ctx sdk.Context) error {
+	nodes, err := vm.k.ListNodeAccounts(ctx)
+	if err != nil {
+		return fmt.Errorf("fail to list all node accounts: %w", err)
+	}
+
 	// request every node to return fund
-	for _, na := range activeNodes {
+	for _, na := range nodes {
 		if err := vm.RequestYggReturn(ctx, na); err != nil {
 			return fmt.Errorf("fail to request yggdrasil fund back: %w", err)
 		}
@@ -741,7 +753,7 @@ func (vm *validatorMgrV1) findBadActors(ctx sdk.Context) (NodeAccounts, error) {
 		Score       sdk.Dec
 		NodeAccount NodeAccount
 	}
-	var tracker []badTracker
+	tracker := make([]badTracker, 0, len(nas))
 	totalScore := sdk.ZeroDec()
 
 	// Find bad actor relative to age / slashpoints
@@ -905,6 +917,12 @@ func (vm *validatorMgrV1) markReadyActors(ctx sdk.Context, constAccessor constan
 			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
 		}
 
+		// ensure we have enough rune
+		minBond := constAccessor.GetInt64Value(constants.MinimumBondInRune)
+		if na.Bond.LT(sdk.NewUint(uint64(minBond))) {
+			na.UpdateStatus(NodeStandby, ctx.BlockHeight())
+		}
+
 		if err := vm.k.SetNodeAccount(ctx, na); err != nil {
 			return err
 		}
@@ -927,7 +945,10 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 		return nil, false, err
 	}
 
-	ready = sortNodeAccountsByProbabilisticBond(ctx, ready)
+	// sort by bond size
+	sort.SliceStable(ready, func(i, j int) bool {
+		return ready[i].Bond.GT(ready[j].Bond)
+	})
 
 	active, err := vm.k.ListActiveNodeAccounts(ctx)
 	if err != nil {
@@ -1010,60 +1031,4 @@ func findMaxAbleToLeave(count int) int {
 	}
 
 	return max
-}
-
-// sortNodeAccountsByProbabilisticBond - this takes a list of node accounts and
-// sorts them in a deterministic random order with relationship to the bond
-// amounts.
-func sortNodeAccountsByProbabilisticBond(ctx sdk.Context, nas NodeAccounts) (result NodeAccounts) {
-	// get seed random number from ctx.TxBytes()
-	// we use TxBytes because its not a number that someone can reasonably
-	// be predicted for a future block
-	var seed int64
-	for _, x := range ctx.TxBytes() {
-		seed += int64(x)
-	}
-	source := rand.NewSource(seed)
-	rnd := rand.New(source)
-
-	// sort by node address
-	sort.SliceStable(nas, func(i, j int) bool {
-		return nas[i].NodeAddress.String() > nas[j].NodeAddress.String()
-	})
-
-	// we sort our list of nodes with a relationship to the amount of
-	// bond they have bonded. Higher bond should give them a higher chance of
-	// be selected.
-	for len(nas) > 0 {
-		nextReadyList := make(NodeAccounts, 0) // store our list of non-selected node accounts
-
-		// sum bond of nodes
-		totalBond := sdk.ZeroUint()
-		for _, na := range nas {
-			totalBond = totalBond.Add(na.Bond)
-		}
-
-		if totalBond.IsZero() {
-			return nas
-		}
-
-		// get our randomly chosen number within our total bond
-		idx := rnd.Uint64() % totalBond.Uint64()
-
-		var count uint64
-		for _, na := range nas {
-			// if our idx falls inside the bond of this node, they are the next
-			// chosen node accounts.
-			if (count+na.Bond.Uint64()) >= idx && count < idx {
-				result = append(result, na)
-			} else {
-				nextReadyList = append(nextReadyList, na)
-			}
-			count += na.Bond.Uint64()
-		}
-
-		nas = nextReadyList
-	}
-
-	return
 }

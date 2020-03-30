@@ -62,19 +62,19 @@ func (h ObservedTxInHandler) validateV1(ctx sdk.Context, msg MsgObservedTxIn) (b
 
 	if !isSignedByActiveObserver(ctx, h.keeper, msg.GetSigners()) {
 		signers := msg.GetSigners()
+		newSigner := false
+		var err error
 		for _, signer := range signers {
-			newSigner, err := h.signedByNewObserver(ctx, signer)
+			newSigner, err = h.signedByNewObserver(ctx, signer)
 			if err != nil {
 				ctx.Logger().Error("fail to determinate whether the tx is signed by a new observer", "error", err)
 				return false, notAuthorized
 			}
-
-			// if this tx is signed by a new observer , we have to return a success code
-			if newSigner {
-				return true, nil
-			}
 		}
-		ctx.Logger().Error(notAuthorized.Error())
+		// if this tx is signed by a new observer , we have to return a success code
+		if newSigner {
+			return true, nil
+		}
 		return false, notAuthorized
 	}
 
@@ -100,7 +100,6 @@ func (h ObservedTxInHandler) signedByNewObserver(ctx sdk.Context, addr sdk.AccAd
 }
 
 func (h ObservedTxInHandler) handle(ctx sdk.Context, msg MsgObservedTxIn, version semver.Version) sdk.Result {
-	ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", msg.Txs[0].String())
 	if version.GTE(semver.MustParse("0.1.0")) {
 		return h.handleV1(ctx, version, msg)
 	} else {
@@ -155,12 +154,16 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
 		if !ok {
 			if voter.Height > 0 {
-				ctx.Logger().Info("Inbound observation already processed.")
-			} else {
-				ctx.Logger().Info("Inbound observation preflight requirements not yet met...")
+				// we've already process the transaction, but we should still
+				// update the observing addresses
+				txIn := voter.GetTx(activeNodeAccounts)
+				if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
+					ctx.Logger().Error("fail to add observing address", "error", err)
+				}
 			}
 			continue
 		}
+		ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", msg.Txs[0].String())
 
 		txIn := voter.GetTx(activeNodeAccounts)
 		vault, err := h.keeper.GetVault(ctx, tx.ObservedPubKey)
@@ -173,10 +176,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		vault.InboundTxCount += 1
 		memo, _ := ParseMemo(tx.Tx.Memo) // ignore err
 		if vault.IsYggdrasil() && memo.IsType(txYggdrasilFund) {
-			vault.PendingTxCount -= 1
-			if vault.PendingTxCount < 0 {
-				vault.PendingTxCount = 0
-			}
+			vault.RemovePendingTxBlockHeights(memo.GetBlockHeight())
 		}
 		if err := h.keeper.SetVault(ctx, vault); err != nil {
 			ctx.Logger().Error("fail to save vault", "error", err)
@@ -219,16 +219,12 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			}
 			continue
 		}
-		switch m.(type) {
-		case MsgRefundTx, MsgOutboundTx:
-			// these two are thorchain's outbound message, no one should send tx to vault with these two memo
-			ctx.Logger().Info("refund and outbound memo should not be used for inbound tx",
-				"memo", tx.Tx.Memo,
-				"coin", tx.Tx.Coins,
-				"from", tx.Tx.FromAddress,
-				"vault", tx.ObservedPubKey)
+
+		if memo.IsOutbound() {
+			// no one should send an outbound tx to vault
 			continue
 		}
+
 		if err := h.keeper.SetLastChainHeight(ctx, tx.Tx.Chain, tx.BlockHeight); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}

@@ -16,7 +16,7 @@ type OutboundTxHandler struct {
 func NewOutboundTxHandler(keeper Keeper) OutboundTxHandler {
 	return OutboundTxHandler{
 		keeper: keeper,
-		ch:     NewCommonOutboundTxHander(keeper),
+		ch:     NewCommonOutboundTxHandler(keeper),
 	}
 }
 
@@ -55,12 +55,12 @@ func (h OutboundTxHandler) validateV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Er
 func (h OutboundTxHandler) handle(ctx sdk.Context, msg MsgOutboundTx, version semver.Version) sdk.Result {
 	ctx.Logger().Info("receive MsgOutboundTx", "request outbound tx hash", msg.Tx.Tx.ID)
 	if version.GTE(semver.MustParse("0.1.0")) {
-		return h.handleV1(ctx, msg)
+		return h.handleV1(ctx, version, msg)
 	}
 	ctx.Logger().Error(errInvalidVersion.Error())
 	return errBadVersion.Result()
 }
 
-func (h OutboundTxHandler) handleV1(ctx sdk.Context, msg MsgOutboundTx) sdk.Result {
-	return h.ch.handle(ctx, msg.Tx, msg.InTxID, EventSuccess)
+func (h OutboundTxHandler) handleV1(ctx sdk.Context, version semver.Version, msg MsgOutboundTx) sdk.Result {
+	return h.ch.handle(ctx, version, msg.Tx, msg.InTxID, EventSuccess)
 }

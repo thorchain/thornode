@@ -75,6 +75,21 @@ func (h YggdrasilHandler) handle(ctx sdk.Context, msg MsgYggdrasil, version semv
 	}
 }
 
+func (h YggdrasilHandler) slash(ctx sdk.Context, version semver.Version, pk common.PubKey, coins common.Coins) error {
+	var returnErr error
+	slasher, err := NewSlasher(h.keeper, version)
+	if err != nil {
+		return fmt.Errorf("fail to create new slasher,error:%w", err)
+	}
+	for _, c := range coins {
+		if err := slasher.SlashNodeAccount(ctx, pk, c.Asset, c.Amount); err != nil {
+			ctx.Logger().Error("fail to slash account", "error", err)
+			returnErr = err
+		}
+	}
+	return returnErr
+}
+
 func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, version semver.Version) sdk.Result {
 	// update txOut record with our TxID that sent funds out of the pool
 	txOut, err := h.keeper.GetTxOut(ctx, msg.BlockHeight)
@@ -83,6 +98,7 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, version se
 		return sdk.ErrUnknownRequest(err.Error()).Result()
 	}
 
+	shouldSlash := true
 	for i, tx := range txOut.TxArray {
 		// yggdrasil is the memo used by thorchain to identify fund migration
 		// to a yggdrasil vault.
@@ -93,15 +109,28 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, version se
 		fromAddress, _ := tx.VaultPubKey.GetAddress(tx.Chain)
 		if tx.InHash.Equals(common.BlankTxID) &&
 			tx.OutHash.IsEmpty() &&
-			msg.Tx.Coins.Contains(tx.Coin) &&
 			tx.ToAddress.Equals(msg.Tx.ToAddress) &&
 			fromAddress.Equals(msg.Tx.FromAddress) {
+
+			// only need to check the coin if yggdrasil+
+			if msg.AddFunds && !msg.Tx.Coins.Contains(tx.Coin) {
+				continue
+			}
+
 			txOut.TxArray[i].OutHash = msg.Tx.ID
+			shouldSlash = false
+
 			if err := h.keeper.SetTxOut(ctx, txOut); nil != err {
 				ctx.Logger().Error("fail to save tx out", "error", err)
 			}
-			h.keeper.SetLastSignedHeight(ctx, msg.BlockHeight)
+
 			break
+		}
+	}
+
+	if shouldSlash {
+		if err := h.slash(ctx, version, msg.PubKey, msg.Tx.Coins); err != nil {
+			return sdk.ErrInternal("fail to slash account").Result()
 		}
 	}
 
@@ -114,6 +143,8 @@ func (h YggdrasilHandler) handleV1(ctx sdk.Context, msg MsgYggdrasil, version se
 		vault.Status = ActiveVault
 		vault.Type = YggdrasilVault
 	}
+
+	h.keeper.SetLastSignedHeight(ctx, msg.BlockHeight)
 
 	if msg.AddFunds {
 		return h.handleYggdrasilFund(ctx, msg, vault)
@@ -162,11 +193,9 @@ func (h YggdrasilHandler) handleYggdrasilReturn(ctx sdk.Context, msg MsgYggdrasi
 
 		if !isAsgardReceipient {
 			// not sending to asgard , slash the node account
-			for _, c := range msg.Tx.Coins {
-				if err := slashNodeAccount(ctx, h.keeper, msg.PubKey, c.Asset, c.Amount); err != nil {
-					ctx.Logger().Error("fail to slash account for sending fund to a none asgard vault using yggdrasil-", "error", err)
-					return sdk.ErrInternal("fail to slash account").Result()
-				}
+			if err := h.slash(ctx, version, msg.PubKey, msg.Tx.Coins); err != nil {
+				ctx.Logger().Error("fail to slash account for sending fund to a none asgard vault using yggdrasil-", "error", err)
+				return sdk.ErrInternal("fail to slash account").Result()
 			}
 		}
 

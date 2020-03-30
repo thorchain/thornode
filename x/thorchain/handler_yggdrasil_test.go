@@ -29,11 +29,16 @@ func (k yggdrasilTestKeeper) GetAsgardVaultsByStatus(ctx sdk.Context, vs VaultSt
 	return k.Keeper.GetAsgardVaultsByStatus(ctx, vs)
 }
 
-func (k yggdrasilTestKeeper) GetNodeAccount(ctx sdk.Context, addr sdk.AccAddress) (NodeAccount, error) {
+func (k yggdrasilTestKeeper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
+	addr, _ := pk.GetThorAddress()
 	if k.errGetNodeAccount.Equals(addr) {
 		return NodeAccount{}, kaboom
 	}
-	return k.Keeper.GetNodeAccount(ctx, addr)
+	return k.Keeper.GetNodeAccountByPubKey(ctx, pk)
+}
+
+func (k *yggdrasilTestKeeper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
+	return k.Keeper.SetNodeAccount(ctx, na)
 }
 
 func (k yggdrasilTestKeeper) GetPool(ctx sdk.Context, asset common.Asset) (Pool, error) {
@@ -41,6 +46,14 @@ func (k yggdrasilTestKeeper) GetPool(ctx sdk.Context, asset common.Asset) (Pool,
 		return Pool{}, kaboom
 	}
 	return k.Keeper.GetPool(ctx, asset)
+}
+
+func (k *yggdrasilTestKeeper) SetPool(ctx sdk.Context, p Pool) error {
+	return k.Keeper.SetPool(ctx, p)
+}
+
+func (k *yggdrasilTestKeeper) UpsertEvent(ctx sdk.Context, evt Event) error {
+	return k.Keeper.UpsertEvent(ctx, evt)
 }
 
 func (k yggdrasilTestKeeper) GetVault(ctx sdk.Context, pk common.PubKey) (Vault, error) {
@@ -250,11 +263,10 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 			},
 			expectedResult: sdk.CodeOK,
 			validator: func(helper yggdrasilHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
-				beforeBond := helper.nodeAccount.Bond
-				slashAmount := sdk.NewUint(common.One).MulUint64(3)
+				expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(603787879))
 				na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
 				c.Assert(err, IsNil)
-				c.Assert(na.Bond.Equal(common.SafeSub(beforeBond, slashAmount)), Equals, true)
+				c.Assert(na.Bond.Equal(expectedBond), Equals, true, Commentf("%d/%d", na.Bond.Uint64(), expectedBond.Uint64()))
 			},
 		},
 		{

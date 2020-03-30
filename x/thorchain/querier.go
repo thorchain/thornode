@@ -12,6 +12,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 	q "gitlab.com/thorchain/thornode/x/thorchain/query"
 )
 
@@ -67,6 +68,8 @@ func NewQuerier(keeper Keeper, validatorMgr VersionedValidatorManager) sdk.Queri
 			return queryVaultsAddresses(ctx, keeper)
 		case q.QueryTSSSigners.Key:
 			return queryTSSSigners(ctx, path[1:], req, keeper)
+		case q.QueryConstantValues.Key:
+			return queryConstantValues(ctx, path[1:], req, keeper)
 		default:
 			return nil, sdk.ErrUnknownRequest(
 				fmt.Sprintf("unknown thorchain query endpoint: %s", path[0]),
@@ -111,18 +114,14 @@ func queryAsgardVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 }
 
 func queryYggdrasilVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
-	active, err := keeper.ListActiveNodeAccounts(ctx)
-	if err != nil {
-		ctx.Logger().Error("fail to get active node accounts", "error", err)
-		return nil, sdk.ErrInternal("fail to get node accounts")
-	}
-
-	var vaults Vaults
-	for _, na := range active {
-		vault, err := keeper.GetVault(ctx, na.PubKeySet.Secp256k1)
-		if err != nil {
-			ctx.Logger().Error("fail to get vault", "error", err)
-			continue
+	vaults := make(Vaults, 0)
+	iter := keeper.GetVaultIterator(ctx)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		var vault Vault
+		if err := keeper.Cdc().UnmarshalBinaryBare(iter.Value(), &vault); err != nil {
+			ctx.Logger().Error("fail to unmarshal yggdrasil", "error", err)
+			return nil, sdk.ErrInternal("fail to unmarshal yggdrasil")
 		}
 		if vault.IsYggdrasil() && vault.HasFunds() {
 			vaults = append(vaults, vault)
@@ -131,15 +130,13 @@ func queryYggdrasilVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 
 	respVaults := make([]QueryYggdrasilVaults, len(vaults))
 	for i, vault := range vaults {
-		bond := sdk.ZeroUint()
 		totalValue := sdk.ZeroUint()
 
 		// find the bond of this node account
-		for _, na := range active {
-			if na.PubKeySet.Secp256k1.Equals(vault.PubKey) {
-				bond = na.Bond
-				break
-			}
+		na, err := keeper.GetNodeAccountByPubKey(ctx, vault.PubKey)
+		if err != nil {
+			ctx.Logger().Error("fail to get node account by pubkey", "error", err)
+			continue
 		}
 
 		// calculate the total value of this yggdrasil vault
@@ -157,7 +154,7 @@ func queryYggdrasilVaults(ctx sdk.Context, keeper Keeper) ([]byte, sdk.Error) {
 		}
 
 		respVaults[i] = QueryYggdrasilVaults{
-			vault, bond, totalValue,
+			vault, na.Status, na.Bond, totalValue,
 		}
 	}
 
@@ -800,10 +797,10 @@ func queryTSSSigners(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		return nil, sdk.ErrUnknownRequest("invalid pool pub key")
 	}
 
-	// seed is the current block height, rounded down to the nearest 10th
+	// seed is the current block height, rounded down to the nearest 100th
 	// This helps keep the selected nodes to be the same across blocks, but
 	// also change immediately if we have a change in which nodes are active
-	seed := ctx.BlockHeight() / 10
+	seed := ctx.BlockHeight() / 100
 
 	accountAddrs, err := keeper.GetObservingAddresses(ctx)
 	if err != nil {
@@ -849,5 +846,16 @@ func queryTSSSigners(ctx sdk.Context, path []string, req abci.RequestQuery, keep
 		return nil, sdk.ErrInternal("fail to marshal to json")
 	}
 
+	return res, nil
+}
+
+func queryConstantValues(ctx sdk.Context, path []string, req abci.RequestQuery, keeper Keeper) ([]byte, sdk.Error) {
+	ver := keeper.GetLowestActiveVersion(ctx)
+	constAccessor := constants.GetConstantValues(ver)
+	res, err := codec.MarshalJSONIndent(keeper.Cdc(), constAccessor)
+	if err != nil {
+		ctx.Logger().Error("fail to marshal constant values to json", "error", err)
+		return nil, sdk.ErrInternal("fail to marshal constant values to json")
+	}
 	return res, nil
 }

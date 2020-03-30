@@ -72,6 +72,7 @@ var (
 	NewEventRefund                 = types.NewEventRefund
 	NewEventBond                   = types.NewEventBond
 	NewEventGas                    = types.NewEventGas
+	NewEventSlash                  = types.NewEventSlash
 	NewEventReserve                = types.NewEventReserve
 	NewMsgRefundTx                 = types.NewMsgRefundTx
 	NewMsgOutboundTx               = types.NewMsgOutboundTx
@@ -80,7 +81,7 @@ var (
 	NewPoolStaker                  = types.NewPoolStaker
 	NewStakerPool                  = types.NewStakerPool
 	NewMsgEndPool                  = types.NewMsgEndPool
-	HasMajority                    = types.HasMajority
+	HasSuperMajority               = types.HasSuperMajority
 	ChooseSignerParty              = types.ChooseSignerParty
 	GetThreshold                   = types.GetThreshold
 	ModuleCdc                      = types.ModuleCdc
