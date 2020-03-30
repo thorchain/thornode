@@ -108,6 +108,14 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		// check whether the tx has consensus
 		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
 		if !ok {
+			if voter.Height > 0 {
+				// we've already process the transaction, but we should still
+				// update the observing addresses
+				txIn := voter.GetTx(activeNodeAccounts)
+				if err := h.keeper.AddObservingAddresses(ctx, txIn.Signers); err != nil {
+					ctx.Logger().Error("fail to add observing address", "error", err)
+				}
+			}
 			continue
 		}
 		ctx.Logger().Info("handleMsgObservedTxOut request", "Tx:", msg.Txs[0].String())
