@@ -964,7 +964,7 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 	})
 
 	artificialRagnarokBlockHeight := constAccessor.GetInt64Value(constants.ArtificialRagnarokBlockHeight)
-	toRemove := findCounToRemove(ctx.BlockHeight(), artificialRagnarokBlockHeight, active)
+	toRemove := findCountToRemove(ctx.BlockHeight(), artificialRagnarokBlockHeight, active)
 	if toRemove > 0 {
 		rotation = true
 		active = active[toRemove:]
@@ -985,8 +985,8 @@ func (vm *validatorMgrV1) nextVaultNodeAccounts(ctx sdk.Context, targetCount int
 	return active, rotation, nil
 }
 
-// findCounToRemove - find the number of node accounts to remove
-func findCounToRemove(blockHeight, artificalRagnarok int64, active NodeAccounts) (toRemove int) {
+// findCountToRemove - find the number of node accounts to remove
+func findCountToRemove(blockHeight, artificalRagnarok int64, active NodeAccounts) (toRemove int) {
 	// count number of node accounts that are a candidate to leaving
 	var candidateCount int
 	for _, na := range active {
