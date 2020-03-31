@@ -270,6 +270,7 @@ func (s *SlashingSuite) TestNodeSignSlashErrors(c *C) {
 			sdk.NewUint(5),
 			sdk.NewUint(5),
 			sdk.NewUint(5),
+			sdk.NewUint(5),
 		)
 
 		swapBytes, _ := json.Marshal(swapEvt)
