@@ -270,6 +270,7 @@ func (s *SlashingSuite) TestNodeSignSlashErrors(c *C) {
 			sdk.NewUint(5),
 			sdk.NewUint(5),
 			sdk.NewUint(5),
+			sdk.NewUint(5),
 		)
 
 		swapBytes, _ := json.Marshal(swapEvt)
@@ -337,6 +338,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 
 	swapEvt := NewEventSwap(
 		common.BNBAsset,
+		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),

@@ -153,6 +153,13 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 
 		voter, ok := h.preflight(ctx, voter, activeNodeAccounts, tx, msg.Signer)
 		if !ok {
+			if voter.Height == ctx.BlockHeight() {
+				// we've already process the transaction, but we should still
+				// update the observing addresses
+				if err := h.keeper.AddObservingAddresses(ctx, msg.GetSigners()); err != nil {
+					ctx.Logger().Error("fail to add observing address", "error", err)
+				}
+			}
 			continue
 		}
 		ctx.Logger().Info("handleMsgObservedTxIn request", "Tx:", msg.Txs[0].String())

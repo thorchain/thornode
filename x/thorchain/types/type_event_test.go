@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"gitlab.com/thorchain/thornode/common"
 	. "gopkg.in/check.v1"
+
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type EventSuite struct{}
@@ -18,6 +19,7 @@ func (s EventSuite) TestSwapEvent(c *C) {
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
+		sdk.ZeroUint(),
 	)
 	c.Check(evt.Type(), Equals, "swap")
 }
@@ -76,6 +78,7 @@ func (s EventSuite) TestEvent(c *C) {
 		sdk.NewUint(5),
 		sdk.NewUint(5),
 		sdk.NewUint(5),
+		sdk.ZeroUint(),
 	)
 
 	swapBytes, _ := json.Marshal(swap)

@@ -89,7 +89,8 @@ func (h SwapHandler) handleV1(ctx sdk.Context, msg MsgSwap, version semver.Versi
 		if err := json.Unmarshal(evt.Event, &swap); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
-		if err := h.keeper.AddToLiquidityFees(ctx, swap.Pool, swap.LiquidityFee); err != nil {
+
+		if err := h.keeper.AddToLiquidityFees(ctx, swap.Pool, swap.LiquidityFeeInRune); err != nil {
 			return sdk.ErrInternal(err.Error()).Result()
 		}
 	}
