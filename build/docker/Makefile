@@ -33,3 +33,14 @@ run-validator:
 	docker-compose -f validator.yml --project-name validator up --force-recreate -d
 
 reset-validator: clean-validator run-validator
+
+run-mainnet-binance:
+	@mkdir -p ${HOME}/.bnbchaind && chown 1000:1000 ${HOME}/.bnbchaind
+	@mkdir -p ${HOME}/.bnbcli && chown 1000:1000 ${HOME}/.bnbcli
+	docker-compose -p thornode -f ${path}../components/binance-mainnet.yml up --force-recreate --remove-orphans -d
+
+clean-mainnet-binance:
+	@rm -rf ${HOME}/.bnbchaind
+	@rm -rf ${HOME}/.bnbcli
+
+reset-mainnet-binance: stop clean-mainnet-binance run-mainnet-binance
