@@ -48,12 +48,24 @@ logger:
 docker-gitlab-login:
 	docker login -u ${CI_REGISTRY_USER} -p ${CI_REGISTRY_PASSWORD} ${CI_REGISTRY}
 
-docker-gitlab-push:
+docker-gitlab-build-mocknet:
+	docker build -t registry.gitlab.com/thorchain/thornode:mocknet -f build/docker/Dockerfile --build-arg TAG=mocknet .
+
+docker-gitlab-build-testnet:
+	docker build -t registry.gitlab.com/thorchain/thornode:testnet -f build/docker/Dockerfile --build-arg TAG=testnet .
+
+docker-gitlab-build-mainnet:
+	docker build -t registry.gitlab.com/thorchain/thornode:mainnet -t registry.gitlab.com/thorchain/thornode:$$(git rev-parse --short HEAD) -t registry.gitlab.com/thorchain/thornode:latest -f build/docker/Dockerfile --build-arg TAG=mainnet .
+
+docker-gitlab-build: docker-gitlab-build-mocknet docker-gitlab-build-testnet docker-gitlab-build-mainnet
+
+docker-gitlab-push-mocknet:
 	docker push registry.gitlab.com/thorchain/thornode:mocknet
+
+docker-gitlab-push-tesnet:
 	docker push registry.gitlab.com/thorchain/thornode:testnet
+
+docker-gitlab-push-mainnet:
 	docker push registry.gitlab.com/thorchain/thornode:mainnet
 
-docker-gitlab-build:
-	docker build -t registry.gitlab.com/thorchain/thornode:mocknet -f build/docker/Dockerfile --build-arg TAG=mocknet .
-	docker build -t registry.gitlab.com/thorchain/thornode:testnet -f build/docker/Dockerfile --build-arg TAG=testnet .
-	docker build -t registry.gitlab.com/thorchain/thornode:mainnet -t registry.gitlab.com/thorchain/thornode:$$(git rev-parse --short HEAD) -t registry.gitlab.com/thorchain/thornode:latest -f build/docker/Dockerfile --build-arg TAG=mainnet .
+docker-gitlab-push: docker-gitlab-push-mocknet docker-gitlab-push-testnet docker-gitlab-push-mainnet
