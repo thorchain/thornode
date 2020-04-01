@@ -119,7 +119,7 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 				return sdk.ErrInternal(err.Error()).Result()
 			}
 		} else {
-			// if a node fail to join the keygen, thus hold off the
+			// if a node fail to join the keygen, thus hold off the network from churning then it will be slashed accordingly
 			constAccessor := constants.GetConstantValues(version)
 			slashPoints := constAccessor.GetInt64Value(constants.FailKeygenSlashPoints)
 			reserveVault, err := h.keeper.GetVaultData(ctx)
@@ -129,7 +129,6 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 			}
 
 			slashBond := reserveVault.CalcNodeRewards(sdk.NewUint(uint64(slashPoints)))
-			// fail to generate a new tss key let's slash the node account
 			for _, pubkeyStr := range msg.Blame.BlameNodes {
 				nodePubKey, err := common.NewPubKey(pubkeyStr)
 				if err != nil {
