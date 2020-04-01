@@ -370,7 +370,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				ctx := helper.ctx.WithBlockHeight(60000)
 				helper.keeper.errFailGetVaultData = true
-				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(ctx, msg, semver.MustParse("0.2.0"), helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -395,7 +395,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 					TotalBondUnits: sdk.NewUint(10000),
 				}
 				_ = helper.keeper.SetVaultData(helper.ctx, vd)
-				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(ctx, msg, semver.MustParse("0.2.0"), helper.constAccessor)
 			},
 			validator: func(helper tssHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
 				// make sure node get slashed
@@ -428,7 +428,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				}
 				_ = helper.keeper.SetVaultData(helper.ctx, vd)
 				helper.keeper.errFailSetVaultData = true
-				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(ctx, msg, semver.MustParse("0.2.0"), helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
