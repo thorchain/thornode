@@ -79,13 +79,6 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	isNewSigner, err = handler.validate(ctx, msg, ver)
 	c.Assert(err, NotNil)
 	c.Assert(isNewSigner, Equals, false)
-
-	// test it is signed by a new observer
-	msg = NewMsgObservedTxIn(txs, standbyAccount.NodeAddress)
-	isNewSigner, err = handler.validate(ctx, msg, ver)
-	c.Assert(err, IsNil)
-	c.Assert(isNewSigner, Equals, true)
-	c.Assert(keeper.standbyAccount.ObserverActive, Equals, true)
 }
 
 type TestObservedTxInFailureKeeper struct {
