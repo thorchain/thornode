@@ -64,16 +64,11 @@ func swap(ctx sdk.Context,
 	pools := make([]Pool, 0)
 	isDoubleSwap := !source.IsRune() && !target.IsRune()
 	if isDoubleSwap {
-		var err error
-		sourcePool, err := keeper.GetPool(ctx, source)
-		if err != nil {
-			return sdk.ZeroUint(), swapEvents, sdk.ErrInternal(fmt.Errorf("fail to get %s pool : %w", source, err).Error())
-		}
 		var swapErr sdk.Error
 		var swapEvt Event
 		var amt sdk.Uint
 		// Here we use a tradeTarget of 0 because the target is for the next swap asset in a double swap
-		amt, sourcePool, swapEvt, swapErr = swapOne(ctx, keeper, tx, sourcePool, common.RuneAsset(), destination, sdk.ZeroUint(), transactionFee)
+		amt, sourcePool, swapEvt, swapErr := swapOne(ctx, keeper, tx, common.RuneAsset(), destination, sdk.ZeroUint(), transactionFee)
 		if swapErr != nil {
 			return sdk.ZeroUint(), swapEvents, swapErr
 		}
@@ -88,16 +83,7 @@ func swap(ctx sdk.Context,
 		swapEvents = append(swapEvents, swapEvt)
 	}
 
-	// Set asset to our non-rune asset asset
-	asset := source
-	if source.IsRune() {
-		asset = target
-	}
-	pool, err := keeper.GetPool(ctx, asset)
-	if err != nil {
-		return sdk.ZeroUint(), swapEvents, sdk.NewError(DefaultCodespace, CodeInvalidPoolStatus, err.Error())
-	}
-	assetAmount, pool, swapEvt, swapErr := swapOne(ctx, keeper, tx, pool, target, destination, tradeTarget, transactionFee)
+	assetAmount, pool, swapEvt, swapErr := swapOne(ctx, keeper, tx, target, destination, tradeTarget, transactionFee)
 	if swapErr != nil {
 		return sdk.ZeroUint(), swapEvents, swapErr
 	}
@@ -127,7 +113,7 @@ func swap(ctx sdk.Context,
 }
 
 func swapOne(ctx sdk.Context,
-	keeper Keeper, tx common.Tx, pool Pool,
+	keeper Keeper, tx common.Tx,
 	target common.Asset,
 	destination common.Address,
 	tradeTarget sdk.Uint,
