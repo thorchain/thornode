@@ -206,7 +206,7 @@ func swapOne(ctx sdk.Context,
 	swapEvt.TradeSlip = tradeSlip
 
 	// do THORNode have enough balance to swap?
-	if emitAssets.GT(Y) {
+	if emitAssets.GTE(Y) {
 		return sdk.ZeroUint(), pool, evt, sdk.NewError(DefaultCodespace, CodeSwapFailNotEnoughBalance, "asset(%s) balance is %d, can't do swap", asset, Y)
 	}
 
