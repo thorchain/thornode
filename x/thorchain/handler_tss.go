@@ -61,26 +61,6 @@ func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Versi
 	return errBadVersion.Result()
 }
 
-func (h TssHandler) isFirstFailure(ctx sdk.Context, constAccessor constants.ConstantValues) (bool, error) {
-	vaults, err := h.keeper.GetAsgardVaultsByStatus(ctx, ActiveVault)
-	if err != nil {
-		return false, err
-	}
-	var lastHeight int64 // the last block height we had a successful churn
-	for _, vault := range vaults {
-		if vault.BlockHeight > lastHeight {
-			lastHeight = vault.BlockHeight
-		}
-	}
-	rotatePerBlockHeight := constAccessor.GetInt64Value(constants.RotatePerBlockHeight)
-	rotateRetryBlocks := constAccessor.GetInt64Value(constants.RotateRetryBlocks)
-	blockDiff := ctx.BlockHeight() - lastHeight
-	if blockDiff > (rotatePerBlockHeight + rotateRetryBlocks) {
-		return false, nil
-	}
-	return true, nil
-}
-
 // Handle a message to observe inbound tx
 func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Version) sdk.Result {
 	active, err := h.keeper.ListActiveNodeAccounts(ctx)
@@ -141,18 +121,6 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 		} else {
 			// if a node fail to join the keygen, thus hold off the
 			constAccessor := constants.GetConstantValues(version)
-			isFirst, err := h.isFirstFailure(ctx, constAccessor)
-			if err != nil {
-				ctx.Logger().Error("fail to determinate whether it is first TSS keygen failure", "error", err)
-				return sdk.ErrInternal("fail to determinate whether it is the first TSS keygen failure").Result()
-			}
-			if isFirst {
-				// it is the first keygen failure , let's forgive all the signers
-				return sdk.Result{
-					Code:      sdk.CodeOK,
-					Codespace: DefaultCodespace,
-				}
-			}
 			slashPoints := constAccessor.GetInt64Value(constants.FailKeygenSlashPoints)
 			reserveVault, err := h.keeper.GetVaultData(ctx)
 			if err != nil {
@@ -178,8 +146,15 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 					// 720 blocks per hour
 					na.SlashPoints += slashPoints
 				} else {
-					// we need to take it from node account's bond
+					// take out bond from the node account and add it to vault bond reward RUNE
+					// thus good behaviour node will get reward
 					na.Bond = common.SafeSub(na.Bond, slashBond)
+					reserveVault.BondRewardRune = reserveVault.BondRewardRune.Add(slashBond)
+					if err := h.keeper.SetVaultData(ctx, reserveVault); err != nil {
+						ctx.Logger().Error("fail to set vault data", "error", err)
+						return sdk.ErrInternal("fail to save vault data").Result()
+					}
+
 				}
 				if err := h.keeper.SetNodeAccount(ctx, na); err != nil {
 					ctx.Logger().Error("fail to save node account", "error", err)

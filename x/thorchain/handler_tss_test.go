@@ -32,7 +32,9 @@ type tssKeeperHelper struct {
 	errGetTssVoter        bool
 	errFailSaveVault      bool
 	errFailGetNodeAccount bool
-	errFailGetAsgardVault bool
+	errFailGetVaultData   bool
+	errFailSetVaultData   bool
+	errFailSetNodeAccount bool
 }
 
 func (k *tssKeeperHelper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
@@ -62,11 +64,24 @@ func (k *tssKeeperHelper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts,
 	}
 	return k.Keeper.ListActiveNodeAccounts(ctx)
 }
-func (k *tssKeeperHelper) GetAsgardVaultsByStatus(ctx sdk.Context, state VaultStatus) (Vaults, error) {
-	if k.errFailGetAsgardVault {
-		return Vaults{}, kaboom
+
+func (k *tssKeeperHelper) GetVaultData(ctx sdk.Context) (VaultData, error) {
+	if k.errFailGetVaultData {
+		return VaultData{}, kaboom
 	}
-	return k.Keeper.GetAsgardVaultsByStatus(ctx, state)
+	return k.Keeper.GetVaultData(ctx)
+}
+func (k *tssKeeperHelper) SetVaultData(ctx sdk.Context, data VaultData) error {
+	if k.errFailSetVaultData {
+		return kaboom
+	}
+	return k.Keeper.SetVaultData(ctx, data)
+}
+func (k *tssKeeperHelper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
+	if k.errFailSetNodeAccount {
+		return kaboom
+	}
+	return k.Keeper.SetNodeAccount(ctx, na)
 }
 
 func newTssKeeperHelper(keeper Keeper) *tssKeeperHelper {
@@ -286,6 +301,26 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			expectedResult: sdk.CodeOK,
 		},
 		{
+			name: "fail to keygen with invalid blame node account address should return an error",
+			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
+				sort.SliceStable(helper.members, func(i, j int) bool {
+					return helper.members[i].String() < helper.members[j].String()
+				})
+				b := tssCommon.Blame{
+					FailReason: "who knows",
+					BlameNodes: []string{
+						"whatever",
+					},
+				}
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+			},
+			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
+				ctx := helper.ctx.WithBlockHeight(60000)
+				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+			},
+			expectedResult: sdk.CodeInternal,
+		},
+		{
 			name: "fail to keygen retry should be slashed",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
 				sort.SliceStable(helper.members, func(i, j int) bool {
@@ -317,7 +352,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			expectedResult: sdk.CodeOK,
 		},
 		{
-			name: "fail to keygen retry and fail to get asgard vaults should return error",
+			name: "fail to keygen but can't get vault data should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
 				sort.SliceStable(helper.members, func(i, j int) bool {
 					return helper.members[i].String() < helper.members[j].String()
@@ -332,7 +367,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				ctx := helper.ctx.WithBlockHeight(60000)
-				helper.keeper.errFailGetAsgardVault = true
+				helper.keeper.errFailGetVaultData = true
 				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
@@ -370,7 +405,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			expectedResult: sdk.CodeOK,
 		},
 		{
-			name: "fail to keygen first time should not be slashed",
+			name: "fail to keygen and none active account, fail to set vault data should return an error",
 			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
 				sort.SliceStable(helper.members, func(i, j int) bool {
 					return helper.members[i].String() < helper.members[j].String()
@@ -384,17 +419,16 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				ctx := helper.ctx.WithBlockHeight(53000)
+				ctx := helper.ctx.WithBlockHeight(60000)
+				vd := VaultData{
+					BondRewardRune: sdk.NewUint(5000 * common.One),
+					TotalBondUnits: sdk.NewUint(10000),
+				}
+				_ = helper.keeper.SetVaultData(helper.ctx, vd)
+				helper.keeper.errFailSetVaultData = true
 				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
 			},
-			validator: func(helper tssHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
-				// make sure node get slashed
-				pubKey := helper.members[3]
-				na, err := helper.keeper.GetNodeAccountByPubKey(helper.ctx, pubKey)
-				c.Assert(err, IsNil)
-				c.Assert(na.SlashPoints == 0, Equals, true)
-			},
-			expectedResult: sdk.CodeOK,
+			expectedResult: sdk.CodeInternal,
 		},
 		{
 			name: "fail to keygen and fail to get node account should return an error",
@@ -409,6 +443,24 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				helper.keeper.errFailGetNodeAccount = true
+				ctx := helper.ctx.WithBlockHeight(60000)
+				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+			},
+			expectedResult: sdk.CodeInternal,
+		},
+		{
+			name: "fail to keygen and fail to set node account should return an error",
+			messageCreator: func(helper tssHandlerTestHelper) sdk.Msg {
+				b := tssCommon.Blame{
+					FailReason: "who knows",
+					BlameNodes: []string{
+						helper.members[3].String(),
+					},
+				}
+				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), b, helper.nodeAccount.NodeAddress)
+			},
+			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
+				helper.keeper.errFailSetNodeAccount = true
 				ctx := helper.ctx.WithBlockHeight(60000)
 				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
 			},
