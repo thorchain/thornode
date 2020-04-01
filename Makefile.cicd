@@ -55,11 +55,9 @@ docker-gitlab-build-nightly:
 	docker build -t registry.gitlab.com/thorchain/thornode:mocknet -f build/docker/Dockerfile --build-arg TAG=mocknet .
 
 docker-gitlab-push:
-	docker push registry.gitlab.com/thorchain/thornode:latest
 	docker push registry.gitlab.com/thorchain/thornode:testnet
-	docker push registry.gitlab.com/thorchain/thornode:mainnet
+	docker push registry.gitlab.com/thorchain/thornode:latest
 
 docker-gitlab-build:
-	make install
 	docker build -t registry.gitlab.com/thorchain/thornode:testnet -f build/docker/Dockerfile --build-arg TAG=testnet .
-	docker build -t registry.gitlab.com/thorchain/thornode:mainnet -t registry.gitlab.com/thorchain/thornode:$$(git rev-parse --short HEAD) -t registry.gitlab.com/thorchain/thornode:$$(thorcli query thorchain version | awk '{ print $$NF}' | xargs) -t registry.gitlab.com/thorchain/thornode:latest -f build/docker/Dockerfile --build-arg TAG=mainnet .
+	docker build -t registry.gitlab.com/thorchain/thornode:mainnet -t registry.gitlab.com/thorchain/thornode:$$(git rev-parse --short HEAD) -t registry.gitlab.com/thorchain/thornode:latest -f build/docker/Dockerfile --build-arg TAG=mainnet .
