@@ -11,14 +11,14 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
-type HandlerTssKeysignFailSuite struct{}
+type HandlerTssKeysignSuite struct{}
 
-var _ = Suite(&HandlerTssKeysignFailSuite{})
+var _ = Suite(&HandlerTssKeysignSuite{})
 
 type tssKeysignFailHandlerTestHelper struct {
 	ctx           sdk.Context
 	version       semver.Version
-	keeper        *tssKeysignFailKeeperHelper
+	keeper        *tssKeysignKeeperHelper
 	constAccessor constants.ConstantValues
 	nodeAccount   NodeAccount
 	vaultManager  VersionedVaultManager
@@ -26,7 +26,7 @@ type tssKeysignFailHandlerTestHelper struct {
 	blame         tssCommon.Blame
 }
 
-type tssKeysignFailKeeperHelper struct {
+type tssKeysignKeeperHelper struct {
 	Keeper
 	errListActiveAccounts           bool
 	errGetTssVoter                  bool
@@ -34,41 +34,41 @@ type tssKeysignFailKeeperHelper struct {
 	errFailSetNodeAccount           bool
 }
 
-func newTssKeysignFailKeeperHelper(keeper Keeper) *tssKeysignFailKeeperHelper {
-	return &tssKeysignFailKeeperHelper{
+func newTssKeysignFailKeeperHelper(keeper Keeper) *tssKeysignKeeperHelper {
+	return &tssKeysignKeeperHelper{
 		Keeper: keeper,
 	}
 }
 
-func (k *tssKeysignFailKeeperHelper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
+func (k *tssKeysignKeeperHelper) GetNodeAccountByPubKey(ctx sdk.Context, pk common.PubKey) (NodeAccount, error) {
 	if k.errFailToGetNodeAccountByPubKey {
 		return NodeAccount{}, kaboom
 	}
 	return k.Keeper.GetNodeAccountByPubKey(ctx, pk)
 }
 
-func (k *tssKeysignFailKeeperHelper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
+func (k *tssKeysignKeeperHelper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 	if k.errFailSetNodeAccount {
 		return kaboom
 	}
 	return k.Keeper.SetNodeAccount(ctx, na)
 }
 
-func (k *tssKeysignFailKeeperHelper) GetTssKeysignFailVoter(ctx sdk.Context, id string) (TssKeysignFailVoter, error) {
+func (k *tssKeysignKeeperHelper) GetTssKeysignFailVoter(ctx sdk.Context, id string) (TssKeysignFailVoter, error) {
 	if k.errGetTssVoter {
 		return TssKeysignFailVoter{}, kaboom
 	}
 	return k.Keeper.GetTssKeysignFailVoter(ctx, id)
 }
 
-func (k *tssKeysignFailKeeperHelper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
+func (k *tssKeysignKeeperHelper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAccounts, error) {
 	if k.errListActiveAccounts {
 		return NodeAccounts{}, kaboom
 	}
 	return k.Keeper.ListActiveNodeAccounts(ctx)
 }
 
-func newTssKeysignFailHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
+func newTssKeysignHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1023)
 	version := semver.MustParse("0.1.0")
@@ -103,7 +103,7 @@ func newTssKeysignFailHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
 	}
 }
 
-func (h HandlerTssKeysignFailSuite) TestTssKeysignFailHandler(c *C) {
+func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 	testCases := []struct {
 		name           string
 		messageCreator func(helper tssKeysignFailHandlerTestHelper) sdk.Msg
@@ -270,8 +270,8 @@ func (h HandlerTssKeysignFailSuite) TestTssKeysignFailHandler(c *C) {
 		},
 	}
 	for _, tc := range testCases {
-		helper := newTssKeysignFailHandlerTestHelper(c)
-		handler := NewTssKeysignFailHandler(helper.keeper)
+		helper := newTssKeysignHandlerTestHelper(c)
+		handler := NewTssKeysignHandler(helper.keeper)
 		msg := tc.messageCreator(helper)
 		result := tc.runner(handler, msg, helper)
 		c.Assert(result.Code, Equals, tc.expectedResult, Commentf("name:%s", tc.name))
