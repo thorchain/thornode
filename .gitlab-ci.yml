@@ -61,6 +61,25 @@ build-thornode:
     - make docker-gitlab-build
     - make docker-gitlab-push
 
+# Build docker image, nightly
+build-thornode-nightly:
+  stage: build
+  image: docker:stable
+  only:
+    - master
+  services:
+    - docker:dind
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+  before_script:
+    - apk update
+    - apk add python py-pip make git jq curl
+    - make docker-gitlab-login
+  script:
+    - make docker-gitlab-build-nightly
+    - make docker-gitlab-push-nightly
+
 smoke-test:thornode:
   stage: smoke-test
   image: docker/compose:alpine-1.25.4
