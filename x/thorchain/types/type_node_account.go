@@ -95,8 +95,6 @@ type NodeAccount struct {
 	// start from which block height this node account is in current status
 	// StatusSince field is important , it has been used to sort node account , used for validator rotation
 	StatusSince      int64          `json:"status_since"`
-	ObserverActive   bool           `json:"observer_active"`
-	SignerActive     bool           `json:"signer_active"`
 	SignerMembership common.PubKeys `json:"signer_membership"`
 	RequestedToLeave bool           `json:"requested_to_leave"`
 	LeaveHeight      int64          `json:"leave_height"`
