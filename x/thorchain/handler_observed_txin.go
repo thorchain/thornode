@@ -139,13 +139,6 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager)
 
 	for _, tx := range msg.Txs {
-		// chain is empty
-		if tx.Tx.Chain.IsEmpty() {
-			if err := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, CodeEmptyChain, "chain is empty"); err != nil {
-				ctx.Logger().Error("fail to refund tx", "error", err)
-			}
-			continue
-		}
 
 		// check we are sending to a valid vault
 		if !h.keeper.VaultExists(ctx, tx.ObservedPubKey) {
@@ -204,11 +197,18 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 			reason := fmt.Sprintf("vault %s is not current vault", tx.ObservedPubKey)
 			ctx.Logger().Info("refund reason", reason)
 			if err := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, CodeInvalidVault, reason); err != nil {
-				return sdk.ErrInternal(err.Error()).Result()
+				ctx.Logger().Error("fail to refund tx", "error", err)
 			}
 			continue
 		}
 
+		// chain is empty
+		if tx.Tx.Chain.IsEmpty() {
+			if err := refundTx(ctx, tx, txOutStore, h.keeper, constAccessor, CodeEmptyChain, "chain is empty"); err != nil {
+				ctx.Logger().Error("fail to refund tx", "error", err)
+			}
+			continue
+		}
 		// construct msg from memo
 		m, txErr := processOneTxIn(ctx, h.keeper, txIn, msg.Signer)
 		if txErr != nil {
