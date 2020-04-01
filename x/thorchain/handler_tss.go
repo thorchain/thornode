@@ -148,7 +148,7 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 					// take out bond from the node account and add it to vault bond reward RUNE
 					// thus good behaviour node will get reward
 					na.Bond = common.SafeSub(na.Bond, slashBond)
-					reserveVault.BondRewardRune = reserveVault.BondRewardRune.Add(slashBond)
+					reserveVault.TotalReserve = reserveVault.TotalReserve.Add(slashBond)
 					if err := h.keeper.SetVaultData(ctx, reserveVault); err != nil {
 						ctx.Logger().Error("fail to set vault data", "error", err)
 						return sdk.ErrInternal("fail to save vault data").Result()
