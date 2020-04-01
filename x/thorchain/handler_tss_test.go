@@ -71,12 +71,14 @@ func (k *tssKeeperHelper) GetVaultData(ctx sdk.Context) (VaultData, error) {
 	}
 	return k.Keeper.GetVaultData(ctx)
 }
+
 func (k *tssKeeperHelper) SetVaultData(ctx sdk.Context, data VaultData) error {
 	if k.errFailSetVaultData {
 		return kaboom
 	}
 	return k.Keeper.SetVaultData(ctx, data)
 }
+
 func (k *tssKeeperHelper) SetNodeAccount(ctx sdk.Context, na NodeAccount) error {
 	if k.errFailSetNodeAccount {
 		return kaboom

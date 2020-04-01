@@ -17,7 +17,7 @@ var (
 )
 
 // The version of this software
-var SWVersion, _ = semver.Make("0.1.0")
+var SWVersion, _ = semver.Make("0.2.0")
 
 // ConstantValue010 implement ConstantValues interface for version 0.1.0
 type ConstantValue010 struct {
