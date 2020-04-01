@@ -47,7 +47,7 @@ build-thornode:
   stage: build
   image: docker:stable
   only:
-    - master
+    - build
   services:
     - docker:dind
   variables:
