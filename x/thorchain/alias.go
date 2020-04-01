@@ -54,7 +54,6 @@ var (
 	NewMsgObservedTxOut            = types.NewMsgObservedTxOut
 	NewMsgNoOp                     = types.NewMsgNoOp
 	NewMsgAdd                      = types.NewMsgAdd
-	NewMsgSetPoolData              = types.NewMsgSetPoolData
 	NewMsgSetStakeData             = types.NewMsgSetStakeData
 	NewMsgSetUnStake               = types.NewMsgSetUnStake
 	NewMsgSwap                     = types.NewMsgSwap
@@ -114,7 +113,6 @@ type (
 	MsgNoOp                     = types.MsgNoOp
 	MsgAdd                      = types.MsgAdd
 	MsgSetUnStake               = types.MsgSetUnStake
-	MsgSetPoolData              = types.MsgSetPoolData
 	MsgSetStakeData             = types.MsgSetStakeData
 	MsgOutboundTx               = types.MsgOutboundTx
 	MsgMigrate                  = types.MsgMigrate

@@ -86,7 +86,6 @@ func getHandlerMapping(keeper Keeper, versionedTxOutStore VersionedTxOutStore, v
 	m[MsgSetNodeKeys{}.Type()] = NewSetNodeKeysHandler(keeper)
 	m[MsgSwap{}.Type()] = NewSwapHandler(keeper, versionedTxOutStore)
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
-	m[MsgSetPoolData{}.Type()] = NewPoolDataHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)
 	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager)
@@ -115,12 +114,6 @@ func processOneTxIn(ctx sdk.Context, keeper Keeper, tx ObservedTx, signer sdk.Ac
 	var newMsg sdk.Msg
 	// interpret the memo and initialize a corresponding msg event
 	switch m := memo.(type) {
-	case CreateMemo:
-		newMsg, err = getMsgSetPoolDataFromMemo(ctx, keeper, m, signer)
-		if err != nil {
-			return nil, sdk.NewError(DefaultCodespace, CodeInvalidMemo, "invalid create memo: %s", err.Error())
-		}
-
 	case StakeMemo:
 		newMsg, err = getMsgStakeFromMemo(ctx, m, tx, signer)
 		if err != nil {
@@ -286,17 +279,6 @@ func getMsgStakeFromMemo(ctx sdk.Context, memo StakeMemo, tx ObservedTx, signer 
 		assetAmount,
 		runeAddr,
 		assetAddr,
-		signer,
-	), nil
-}
-
-func getMsgSetPoolDataFromMemo(ctx sdk.Context, keeper Keeper, memo CreateMemo, signer sdk.AccAddress) (sdk.Msg, error) {
-	if keeper.PoolExist(ctx, memo.GetAsset()) {
-		return nil, errors.New("pool already exists")
-	}
-	return NewMsgSetPoolData(
-		memo.GetAsset(),
-		PoolEnabled, // new pools start in a Bootstrap state
 		signer,
 	), nil
 }
