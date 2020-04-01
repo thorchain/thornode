@@ -15,7 +15,7 @@ if [ ! -f ~/.thord/config/genesis.json ]; then
     thorcli keys show $SIGNER_NAME || echo $SIGNER_PASSWD | thorcli --trace keys add $SIGNER_NAME 2>&1
 
     NODE_ADDRESS=$(thorcli keys show $SIGNER_NAME -a)
-    init_chain $NODE_ADDRESS
+    init_chain $NODE_ADDRESS $NODE_ADDRESS
 
     fetch_genesis $PEER
 

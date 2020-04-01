@@ -43,7 +43,8 @@ add_vault () {
 init_chain () {
     export IFS=","
 
-    thord init local --chain-id thorchain
+    thord init $1 --chain-id thorchain
+    shift
     thorcli keys list
 
     for user in $@; do # iterate over our list of comma separated users "alice,jack"
