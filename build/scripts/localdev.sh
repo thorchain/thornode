@@ -21,7 +21,7 @@ VALIDATOR="$(thord tendermint show-validator)"
 NODE_ADDRESS="$(thorcli keys show thorchain -a)"
 NODE_PUB_KEY="$(thorcli keys show thorchain -p)"
 
-init_chain $NODE_ADDRESS
+init_chain $NODE_ADDRESS $NODE_ADDRESS
 
 VERSION="$(thorcli query thorchain version | jq -r .version)"
 

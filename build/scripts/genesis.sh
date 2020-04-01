@@ -42,7 +42,7 @@ if [ "$SEED" = "$(hostname)" ]; then
         for f in /tmp/shared/node_*.json; do
             ADDRS="$ADDRS,$(cat $f | awk '{print $1}')"
         done
-        init_chain $(echo "$ADDRS" | sed -e 's/^,*//')
+        init_chain $NODE_ADDRESS $(echo "$ADDRS" | sed -e 's/^,*//')
 
         if [ ! -z ${VAULT_PUBKEY+x} ]; then
             PUBKEYS=""
@@ -75,7 +75,7 @@ if [ "$SEED" != "$(hostname)" ]; then
     if [ ! -f ~/.thord/config/genesis.json ]; then
         echo "I AM NOT THE SEED"
         
-        init_chain $NODE_ADDRESS
+        init_chain $NODE_ADDRESS $NODE_ADDRESS
         fetch_genesis $SEED
         NODE_ID=$(fetch_node_id $SEED)
         echo "NODE ID: $NODE_ID"
