@@ -116,7 +116,7 @@ check_for_slots() {
     standy=$(curl -s $PEER:1317/thorchain/nodeaccounts | jq -r '.[] | select(.status | inside("standby ready")) | select(.bond | contains("100000000")) | .status')
     if [[ $(echo $standby | wc -l) -ge 0 ]]; then
         echo "A node is already waiting to be churned in.... exiting"
-        exit 1
+        exit 0
     fi
 }
 
