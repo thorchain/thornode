@@ -2,11 +2,11 @@ image: golang:1.13
 
 cache:
   paths:
-    - /tmp/cache
+    - .cache
 
 before_script:
-  - mkdir -p /tmp/cache
-  - export GOPATH="/tmp/cache"
+  - mkdir -p .cache
+  - export GOPATH="$CI_PROJECT_DIR/.cache"
 
 stages:
   - test
