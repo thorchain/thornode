@@ -9,9 +9,6 @@ CHAIN_RPC="${CHAIN_RPC:=127.0.0.1:26657}"
 SIGNER_NAME="${SIGNER_NAME:=thorchain}"
 SIGNER_PASSWD="${SIGNER_PASSWD:=password}"
 START_BLOCK_HEIGHT="${START_BLOCK_HEIGHT:=1}"
-TSS_SCHEME="${TSS_SCHEME:=http}"
-TSS_HOST="${TSS_HOST:=127.0.0.1}"
-TSS_PORT="${TSS_PORT:=4040}"
 
 $(dirname "$0")/wait-for-thorchain-api.sh $CHAIN_API
 
@@ -55,16 +52,12 @@ echo "{
       }
     ],
     \"tss\": {
-        \"scheme\": \"$TSS_SCHEME\",
-        \"host\": \"$TSS_HOST\",
-        \"port\": $TSS_PORT,
         \"bootstrap_peers\": [
           \"$PEER\"
         ],
         \"rendezvous\": \"asgard\",
         \"p2p_port\": 5040,
         \"info_address\": \":6040\",
-        \"tss_address\": \":4040\"
     },
     \"signer\": {
       \"signer_db_path\": \"$SIGNER_PATH\",

@@ -55,15 +55,10 @@ type ChainConfiguration struct {
 
 // TSSConfiguration
 type TSSConfiguration struct {
-	Scheme         string   `json:"scheme" mapstructure:"scheme"`   // TODO remove
-	Host           string   `json:"host" mapstructure:"host"`       // TODO remove
-	Port           int      `json:"port" mapstructure:"port"`       // TODO remove
-	NodeId         string   `json:"node_id" mapstructure:"node_id"` // TODO remove
 	BootstrapPeers []string `json:"bootstrap_peers" mapstructure:"bootstrap_peers"`
 	Rendezvous     string   `json:"rendezvous" mapstructure:"rendezvous"`
 	P2PPort        int      `json:"p2p_port" mapstructure:"p2p_port"`
-	InfoAddress    string   `json:"info_address" mapstructure:"info_address"` // TODO remove
-	TSSAddress     string   `json:"tss_address" mapstructure:"tss_address"`   // TODO remove
+	InfoAddress    string   `json:"info_address" mapstructure:"info_address"`
 }
 
 // BlockScannerConfiguration settings for BlockScanner
