@@ -11,12 +11,13 @@ import (
 	"gitlab.com/thorchain/thornode/constants"
 )
 
+
+
 func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, constAccessor constants.ConstantValues, refundCode sdk.CodeType, refundReason string) error {
 	// If THORNode recognize one of the coins, and therefore able to refund
 	// withholding fees, refund all coins.
 	eventRefund := NewEventRefund(refundCode, refundReason)
 	buf, err := json.Marshal(eventRefund)
-	err = nil
 	if err != nil {
 		return fmt.Errorf("fail to marshal refund event: %w", err)
 	}
