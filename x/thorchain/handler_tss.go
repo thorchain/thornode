@@ -61,7 +61,7 @@ func (h TssHandler) handle(ctx sdk.Context, msg MsgTssPool, version semver.Versi
 	return errBadVersion.Result()
 }
 
-// Handle a message to observe inbound tx (v0.2.0)
+// Handle a message to observe inbound tx (v0.1.0)
 func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Version) sdk.Result {
 	active, err := h.keeper.ListActiveNodeAccounts(ctx)
 	if err != nil {
