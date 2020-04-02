@@ -136,11 +136,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	blocksOerYear := constAccessor.GetInt64Value(constants.BlocksPerYear)
 	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, vault.TotalReserve, totalFees, emissionCurve, blocksOerYear)
 
-	// if we don't have enough reserve to pay out various rewards, save the
-	// vault changes and return
-	if vault.TotalReserve.LT(totalPoolRewards.Add(bondReward)) {
-		return k.SetVaultData(ctx, vault)
-	}
+	// given bondReward and toolPoolRewards are both calculated base on vault.TotalReserve, thus it should always have enough to pay the bond reward
 
 	// Move Rune from the Reserve to the Bond and Pool Rewards
 	vault.TotalReserve = common.SafeSub(vault.TotalReserve, bondReward.Add(totalPoolRewards))
