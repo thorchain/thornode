@@ -111,6 +111,15 @@ aws s3 cp /tmp/${S3_FILE} s3://${SEED_BUCKET}/
 rm -rf /tmp/${S3_FILE}
 }
 
+# checks if there is are any standby/ready nodes, exits if there are
+check_for_slots() {
+    standy=$(curl -s $PEER:1317/thorchain/nodeaccounts | jq -r '.[] | select(.status | inside("standby ready")) | select(.bond | contains("100000000")) | .status')
+    if [[ $(echo $standby | wc -l) -ge 0 ]]; then
+        echo "A node is already waiting to be churned in.... exiting"
+        exit 1
+    fi
+}
+
 verify_stack () {
     if [ "${THORNODE_SERVICE}" != binance ]; then
         export PUB_KEY=$(docker exec thor-daemon thorcli keys show thorchain --pubkey)
@@ -250,6 +259,7 @@ final_cleanup () {
 # START #
 #########
 if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANCE_TYPE}" ] && [ ! -z "${THORNODE_ENV}" ] && [ ! -z "${THORNODE_SERVICE}" ]; then
+    check_for_slots
     create_server
     start_the_stack
     verify_stack
