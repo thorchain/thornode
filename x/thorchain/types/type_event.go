@@ -265,23 +265,23 @@ func NewEventBond(amount sdk.Uint, bondType BondType) EventBond {
 type GasType string
 
 const (
-	GasSpend     GasType = `gas_spend`
-	GasTopup     GasType = `gas_topup`
-	GasReimburse GasType = `gas_reimburse`
+	GasTypeSpend     GasType = `gas_spend`
+	GasTypeTopup     GasType = `gas_topup`
+	GasTypeReimburse GasType = `gas_reimburse`
 )
 
 type EventGas struct {
-	Gas         common.Gas     `json:"gas"`
-	GasType     GasType        `json:"gas_type"`
-	ReimburseTo []common.Asset `json:"reimburse_to"` // Determine which pool we are reimbursing to
+	GasSpend     common.Gas `json:"gas_spend"`
+	GasTopUp     common.Gas `json:"gas_top_up"`
+	GasReimburse common.Gas `json:"gas_reimburse"`
 }
 
 // NewEventGas create a new EventGas instance
-func NewEventGas(gas common.Gas, gasType GasType, reimburseTo []common.Asset) EventGas {
+func NewEventGas(gasSpend, gasTopup, gasReimburse common.Gas) EventGas {
 	return EventGas{
-		Gas:         gas,
-		GasType:     gasType,
-		ReimburseTo: reimburseTo,
+		GasSpend:     gasSpend,
+		GasTopUp:     gasTopup,
+		GasReimburse: gasReimburse,
 	}
 }
 

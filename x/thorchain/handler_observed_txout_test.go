@@ -179,6 +179,12 @@ func (k *TestObservedTxOutHandleKeeper) SetPool(ctx sdk.Context, pool Pool) erro
 	k.pool = pool
 	return nil
 }
+func (k *TestObservedTxOutHandleKeeper) SaveBlockGas(ctx sdk.Context, blockGas BlockGas) error {
+	return nil
+}
+func (k *TestObservedTxOutHandleKeeper) GetBlockGas(ctx sdk.Context) (BlockGas, error) {
+	return NewBlockGas(ctx.BlockHeight()), nil
+}
 
 func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	var err error

@@ -14,9 +14,7 @@ var _ = Suite(&TxOutStoreSuite{})
 
 func (s TxOutStoreSuite) TestAddGasFees(c *C) {
 	ctx, k := setupKeeperForTest(c)
-
 	tx := GetRandomObservedTx()
-
 	err := AddGasFees(ctx, k, tx)
 	c.Assert(err, IsNil)
 	vault, err := k.GetVaultData(ctx)

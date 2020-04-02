@@ -16,3 +16,19 @@ func NewBlockGas(height int64) BlockGas {
 		Height: height,
 	}
 }
+
+func (b *BlockGas) IsEmpty() bool {
+	return b.Height == 0
+}
+
+// AddGas to the block gas structure so
+func (b *BlockGas) AddGas(gas common.Gas, ty GasType) {
+	switch ty {
+	case GasTypeTopup:
+		b.GasTopup = b.GasTopup.Add(gas)
+	case GasTypeReimburse:
+		b.GasReimburse = b.GasReimburse.Add(gas)
+	case GasTypeSpend:
+		b.GasSpend = b.GasSpend.Add(gas)
+	}
+}

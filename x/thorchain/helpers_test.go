@@ -440,17 +440,6 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 			expectError: true,
 		},
 		{
-			name: "fail to set event should return an error",
-			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
-				return GetRandomObservedTx()
-			},
-			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
-				helper.k.errSetEvent = true
-				return AddGasFees(helper.ctx, helper.k, tx)
-			},
-			expectError: true,
-		},
-		{
 			name: "normal BNB gas",
 			txCreator: func(helper addGasFeeTestHelper) ObservedTx {
 				tx := ObservedTx{

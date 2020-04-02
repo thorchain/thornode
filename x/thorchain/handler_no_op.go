@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/blang/semver"
@@ -72,11 +71,10 @@ func (h NoOpHandler) HandleV1(ctx sdk.Context, msg MsgNoOp) error {
 	for _, c := range msg.ObservedTx.Tx.Coins {
 		gasCoin = append(gasCoin, c)
 	}
-	gasEvent := NewEventGas(gasCoin, GasTopup, nil)
-	gasBuf, err := json.Marshal(gasEvent)
+	blockGas, err := h.keeper.GetBlockGas(ctx)
 	if err != nil {
-		return fmt.Errorf("fail to marshal gas event to json: %w", err)
+		return fmt.Errorf("fail to get block gas: %w", err)
 	}
-	event := NewEvent(gasEvent.Type(), ctx.BlockHeight(), msg.ObservedTx.Tx, gasBuf, EventSuccess)
-	return h.keeper.UpsertEvent(ctx, event)
+	blockGas.AddGas(gasCoin, GasTypeTopup)
+	return h.keeper.SaveBlockGas(ctx, blockGas)
 }

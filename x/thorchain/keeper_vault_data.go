@@ -256,14 +256,15 @@ func getTotalActiveNodeWithBond(ctx sdk.Context, k Keeper) (int64, error) {
 	return total, nil
 }
 
-// remove gas
+// substractGas is actually subsidise pool with RUNE for the gas they spend
 func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (sdk.Uint, common.Gas, error) {
-	eventGas := NewEventGas(common.Gas{}, GasReimburse, []common.Asset{})
+	thorGas := common.Gas{}
 	for i, coin := range gas {
 		// if the coin is zero amount, don't need to do anything
 		if coin.Amount.IsZero() {
 			continue
 		}
+
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
 			return sdk.ZeroUint(), nil, fmt.Errorf("fail to get pool(%s): %w", coin.Asset, err)
@@ -279,25 +280,17 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (
 		if err := keeper.SetPool(ctx, pool); err != nil {
 			return sdk.ZeroUint(), nil, fmt.Errorf("fail to set pool(%s): %w", coin.Asset, err)
 		}
-
-		eventGas.Gas = append(eventGas.Gas, common.Coin{Asset: common.RuneAsset(), Amount: runeGas})
-		eventGas.ReimburseTo = append(eventGas.ReimburseTo, coin.Asset)
+		thorGas = append(thorGas, common.Coin{Asset: common.RuneAsset(), Amount: runeGas})
 	}
 
-	if !eventGas.Gas.IsEmpty() {
-		gasBuf, err := json.Marshal(eventGas)
+	if !thorGas.IsEmpty() {
+		blockGas, err := keeper.GetBlockGas(ctx)
 		if err != nil {
-			return sdk.ZeroUint(), nil, fmt.Errorf("fail to marshal gas event to buf: %w", err)
+			return sdk.ZeroUint(), nil, fmt.Errorf("fail to get block gas: %w", err)
 		}
-		event := NewEvent(
-			eventGas.Type(),
-			ctx.BlockHeight(),
-			common.Tx{ID: common.BlankTxID},
-			gasBuf,
-			EventSuccess)
-		err = keeper.UpsertEvent(ctx, event)
-		if err != nil {
-			return sdk.ZeroUint(), nil, fmt.Errorf("fail to save gas event: %w", err)
+		blockGas.AddGas(thorGas, GasTypeReimburse)
+		if err := keeper.SaveBlockGas(ctx, blockGas); err != nil {
+			return sdk.ZeroUint(), nil, fmt.Errorf("fail to save block gas: %w", err)
 		}
 	}
 	return val, gas, nil

@@ -462,13 +462,12 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 			return err
 		}
 	}
-	eventGas := NewEventGas(tx.Tx.Gas, GasSpend, nil)
-	gasBuf, err := json.Marshal(eventGas)
+	blockGas, err := keeper.GetBlockGas(ctx)
 	if err != nil {
-		return fmt.Errorf("fail to marshal gas event to buf: %w", err)
+		return err
 	}
-	event := NewEvent(eventGas.Type(), ctx.BlockHeight(), tx.Tx, gasBuf, EventSuccess)
-	return keeper.UpsertEvent(ctx, event)
+	blockGas.AddGas(tx.Tx.Gas, GasTypeSpend)
+	return keeper.SaveBlockGas(ctx, blockGas)
 }
 
 func getErrMessageFromABCILog(content string) (string, error) {
