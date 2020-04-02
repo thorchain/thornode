@@ -17,8 +17,9 @@ func NewBlockGas(height int64) BlockGas {
 	}
 }
 
+// IsEmpty check whether the block gas is empty
 func (b *BlockGas) IsEmpty() bool {
-	return b.Height == 0
+	return b.GasReimburse.IsEmpty() && b.GasSpend.IsEmpty() && b.GasTopup.IsEmpty()
 }
 
 // AddGas to the block gas structure so

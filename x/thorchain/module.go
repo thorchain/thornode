@@ -208,7 +208,9 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if err := Fund(ctx, am.keeper, txStore, constantValues); err != nil {
 		ctx.Logger().Error("unable to fund yggdrasil", "error", err)
 	}
-
+	if err := EmitGasEvents(ctx, am.keeper); err != nil {
+		ctx.Logger().Error("fail to emit gas event", "error", err)
+	}
 	return validators
 }
 
