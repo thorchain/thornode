@@ -430,7 +430,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				helper.keeper.errFailSetVaultData = true
 				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
 			},
-			expectedResult: sdk.CodeInternal,
+			expectedResult: sdk.CodeOK,
 		},
 		{
 			name: "fail to keygen and fail to get node account should return an error",

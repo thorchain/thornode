@@ -151,7 +151,6 @@ func (h TssHandler) handleV1(ctx sdk.Context, msg MsgTssPool, version semver.Ver
 					reserveVault.TotalReserve = reserveVault.TotalReserve.Add(slashBond)
 					if err := h.keeper.SetVaultData(ctx, reserveVault); err != nil {
 						ctx.Logger().Error("fail to set vault data", "error", err)
-						return sdk.ErrInternal("fail to save vault data").Result()
 					}
 
 				}
