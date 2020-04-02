@@ -17,9 +17,12 @@ apt-get install -y \
     ca-certificates \
     curl \
     gnupg2 \
+    cron \
     software-properties-common \
     unzip \
     python3-pip
+
+systemctl enable cron # enable cron
 
 echo "install aws cli"
 export LC_ALL=C
