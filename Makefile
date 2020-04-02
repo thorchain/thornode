@@ -44,8 +44,8 @@ test-watch: clear
 	@gow -c test -tags testnet -mod=readonly ./...
 
 lint-pre:
-	@gofumpt -l cmd x bifrost common constants tools
-	@test -z "$(shell gofumpt -l cmd x bifrost common constants tools)"
+	@gofumpt -l cmd x bifrost common constants tools # for display
+	@test -z "$(shell gofumpt -l cmd x bifrost common constants tools)" # cause error
 	@go mod verify
 
 lint: lint-pre
