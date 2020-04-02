@@ -44,6 +44,7 @@ test-watch: clear
 	@gow -c test -tags testnet -mod=readonly ./...
 
 lint-pre:
+	@gofumpt -l cmd x bifrost common constants tools
 	@test -z "$(shell gofumpt -l cmd x bifrost common constants tools)"
 	@go mod verify
 
