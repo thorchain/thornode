@@ -9,7 +9,7 @@ endif
 
 
 run-testnet-standalone:
-	TAG=testnet NET=testnet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/standalone.${uname_S}.yml up --force-recreate --remove-orphans -d
+	TAG=${TAG} NET=testnet docker-compose -p thornode -f ${path}../components/standalone.base.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/standalone.${uname_S}.yml up --force-recreate --remove-orphans -d
 
 reset-testnet-standalone: stop clean run-testnet-standalone
 
@@ -27,7 +27,7 @@ run-testnet-genesis-churn:
 reset-testnet-genesis-churn: stop clean run-testnet-genesis-churn
 
 run-testnet-validator:
-	TAG=testnet NET=testnet docker-compose -p thornode -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/validator.yml -f ${path}../components/validator.${uname_S}.yml up --force-recreate --remove-orphans -d
+	TAG=${TAG} NET=testnet docker-compose -p thornode -f ${path}../components/midgard.yml -f ${path}../components/midgard.${uname_S}.yml -f ${path}../components/validator.yml -f ${path}../components/validator.${uname_S}.yml up --force-recreate --remove-orphans -d
 
 run-testnet-validator-ci:
 	TAG=testnet NET=testnet docker-compose -p thornode -f ${path}../components/frontend.yml -f ${path}../components/midgard.yml -f ${path}../components/midgard.ci.yml -f ${path}../components/validator.yml -f ${path}../components/validator.Darwin.yml up --force-recreate --remove-orphans -d

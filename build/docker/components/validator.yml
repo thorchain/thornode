@@ -17,6 +17,7 @@ services:
       CHAIN_RPC: thor-daemon:26657
       BINANCE_HOST: ${BINANCE_HOST:-https://data-seed-pre-0-s3.binance.org}
       PEER: ${PEER}
+      SIGNER_PASSWD: ${SIGNER_PASSWD}
     entrypoint:
       /docker/scripts/bifrost.sh
     depends_on:
@@ -40,6 +41,7 @@ services:
     environment:
       NET: ${NET}
       PEER: ${PEER}
+      SIGNER_PASSWD: ${SIGNER_PASSWD}
     ports:
       - "26657:26657"
       - "26656:26656"
