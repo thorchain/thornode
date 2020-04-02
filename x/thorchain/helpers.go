@@ -16,6 +16,7 @@ func refundTx(ctx sdk.Context, tx ObservedTx, store TxOutStore, keeper Keeper, c
 	// withholding fees, refund all coins.
 	eventRefund := NewEventRefund(refundCode, refundReason)
 	buf, err := json.Marshal(eventRefund)
+	err = nil
 	if err != nil {
 		return fmt.Errorf("fail to marshal refund event: %w", err)
 	}
