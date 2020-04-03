@@ -57,7 +57,7 @@ echo "{
         ],
         \"rendezvous\": \"asgard\",
         \"p2p_port\": 5040,
-        \"info_address\": \":6040\",
+        \"info_address\": \":6040\"
     },
     \"signer\": {
       \"signer_db_path\": \"$SIGNER_PATH\",
