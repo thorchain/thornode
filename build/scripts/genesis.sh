@@ -27,9 +27,6 @@ fi
 # write node account data to json file in shared directory
 echo "$NODE_ADDRESS $VALIDATOR $NODE_PUB_KEY $VERSION $ADDRESS" > /tmp/shared/node_$NODE_ADDRESS.json
 
-# enable pools by default
-echo "DefaultPoolStatus Enabled $NODE_ADDRESS" > /tmp/shared/config_pool_status.json
-
 # wait until THORNode have the correct number of nodes in our directory before continuing
 while [ "$(ls -1 /tmp/shared/node_*.json | wc -l | tr -d '[:space:]')" != "$NODES" ]; do
     sleep 1
@@ -61,9 +58,8 @@ if [ "$SEED" = "$(hostname)" ]; then
             fi
         done
 
-        for f in /tmp/shared/config_*.json; do
-          add_admin_config $(cat $f | awk '{print $1}') $(cat $f | awk '{print $2}') $(cat $f | awk '{print $3}')
-        done
+        # add gases
+        add_gas_config "BNB.BNB" 37500 30000
 
         cat ~/.thord/config/genesis.json
         thord validate-genesis
