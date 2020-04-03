@@ -39,17 +39,6 @@ describe "API Tests" do
 
   end
 
-  context "Add gas" do
-    it "adds gas" do
-      coins = [
-        {'asset': 'BNB.BNB', "amount": "20000000"},
-      ]
-      tx = makeTx(memo: "GAS", coins: coins)
-      resp = processTx(tx)
-      expect(resp.code).to eq("200"), resp.body.inspect
-    end
-  end
-
   context "Show supporting chains" do
     it "should have BNB in the list of support chains" do
       resp = get("/chains")
