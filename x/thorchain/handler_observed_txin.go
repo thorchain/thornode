@@ -15,15 +15,21 @@ type ObservedTxInHandler struct {
 	versionedTxOutStore   VersionedTxOutStore
 	validatorMgr          VersionedValidatorManager
 	versionedVaultManager VersionedVaultManager
+	gasManager            GasManager
 }
 
 // NewObservedTxInHandler create a new instance of ObservedTxInHandler
-func NewObservedTxInHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, versionedVaultManager VersionedVaultManager) ObservedTxInHandler {
+func NewObservedTxInHandler(keeper Keeper,
+	versionedTxOutStore VersionedTxOutStore,
+	validatorMgr VersionedValidatorManager,
+	versionedVaultManager VersionedVaultManager,
+	gasManager GasManager) ObservedTxInHandler {
 	return ObservedTxInHandler{
 		keeper:                keeper,
 		versionedTxOutStore:   versionedTxOutStore,
 		validatorMgr:          validatorMgr,
 		versionedVaultManager: versionedVaultManager,
+		gasManager:            gasManager,
 	}
 }
 
@@ -105,7 +111,7 @@ func (h ObservedTxInHandler) handleV1(ctx sdk.Context, version semver.Version, m
 		ctx.Logger().Error("fail to get txout store", "error", err)
 		return errBadVersion.Result()
 	}
-	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager)
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.gasManager)
 
 	for _, tx := range msg.Txs {
 

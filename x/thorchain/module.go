@@ -77,12 +77,14 @@ type AppModule struct {
 	txOutStore            VersionedTxOutStore
 	validatorMgr          VersionedValidatorManager
 	versionedVaultManager VersionedVaultManager
+	gasManager            GasManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
 	versionedTxOutStore := NewVersionedTxOutStore()
 	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
+
 	return AppModule{
 		AppModuleBasic:        AppModuleBasic{},
 		keeper:                k,
@@ -91,6 +93,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		txOutStore:            versionedTxOutStore,
 		validatorMgr:          NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr),
 		versionedVaultManager: versionedVaultMgr,
+		gasManager:            NewGasManagerImp(),
 	}
 }
 
@@ -105,7 +108,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager)
+	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager, am.gasManager)
 }
 
 func (am AppModule) QuerierRoute() string {
@@ -118,7 +121,7 @@ func (am AppModule) NewQuerierHandler() sdk.Querier {
 
 func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 	ctx.Logger().Debug("Begin Block", "height", req.Header.Height)
-
+	am.gasManager.BeginBlock()
 	am.keeper.ClearObservingAddresses(ctx)
 	version := am.keeper.GetLowestActiveVersion(ctx)
 	constantValues := constants.GetConstantValues(version)
@@ -187,7 +190,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	}
 
 	// update vault data to account for block rewards and reward units
-	if err := am.keeper.UpdateVaultData(ctx, constantValues); err != nil {
+	if err := am.keeper.UpdateVaultData(ctx, constantValues, am.gasManager); err != nil {
 		ctx.Logger().Error("fail to save vault", "error", err)
 	}
 	vaultMgr, err := am.versionedVaultManager.GetVaultManager(ctx, am.keeper, version)
@@ -208,9 +211,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if err := Fund(ctx, am.keeper, txStore, constantValues); err != nil {
 		ctx.Logger().Error("unable to fund yggdrasil", "error", err)
 	}
-	if err := EmitGasEvents(ctx, am.keeper); err != nil {
-		ctx.Logger().Error("fail to emit gas event", "error", err)
-	}
+	am.gasManager.EndBlock(ctx, am.keeper)
 	return validators
 }
 

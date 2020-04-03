@@ -353,9 +353,10 @@ func (h *addGasFeesKeeperHelper) UpsertEvent(ctx sdk.Context, event Event) error
 }
 
 type addGasFeeTestHelper struct {
-	ctx sdk.Context
-	k   *addGasFeesKeeperHelper
-	na  NodeAccount
+	ctx        sdk.Context
+	k          *addGasFeesKeeperHelper
+	na         NodeAccount
+	gasManager GasManager
 }
 
 func newAddGasFeeTestHelper(c *C) addGasFeeTestHelper {
@@ -373,9 +374,10 @@ func newAddGasFeeTestHelper(c *C) addGasFeeTestHelper {
 	yggVault := NewVault(ctx.BlockHeight(), ActiveVault, YggdrasilVault, na.PubKeySet.Secp256k1)
 	c.Assert(k.SetVault(ctx, yggVault), IsNil)
 	return addGasFeeTestHelper{
-		ctx: ctx,
-		k:   keeper,
-		na:  na,
+		ctx:        ctx,
+		k:          keeper,
+		na:         na,
+		gasManager: NewDummyGasManager(),
 	}
 }
 
@@ -402,7 +404,7 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 			},
 			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
 				helper.k.errGetVaultData = true
-				return AddGasFees(helper.ctx, helper.k, tx)
+				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
 			},
 			expectError: true,
 		},
@@ -413,7 +415,7 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 			},
 			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
 				helper.k.errSetVaultData = true
-				return AddGasFees(helper.ctx, helper.k, tx)
+				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
 			},
 			expectError: true,
 		},
@@ -424,7 +426,7 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 			},
 			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
 				helper.k.errGetPool = true
-				return AddGasFees(helper.ctx, helper.k, tx)
+				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
 			},
 			expectError: true,
 		},
@@ -435,7 +437,7 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 			},
 			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
 				helper.k.errSetPool = true
-				return AddGasFees(helper.ctx, helper.k, tx)
+				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
 			},
 			expectError: true,
 		},
@@ -466,7 +468,7 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 				return tx
 			},
 			runner: func(helper addGasFeeTestHelper, tx ObservedTx) error {
-				return AddGasFees(helper.ctx, helper.k, tx)
+				return AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
 			},
 			expectError: false,
 			validator: func(helper addGasFeeTestHelper, c *C) {
@@ -482,7 +484,7 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 		tx := tc.txCreator(helper)
 		var err error
 		if tc.runner == nil {
-			err = AddGasFees(helper.ctx, helper.k, tx)
+			err = AddGasFees(helper.ctx, helper.k, tx, helper.gasManager)
 		} else {
 			err = tc.runner(helper, tx)
 		}

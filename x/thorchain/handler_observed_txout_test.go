@@ -33,7 +33,8 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 	}
 
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
-	handler := NewObservedTxOutHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
+	gasManager := NewDummyGasManager()
+	handler := NewObservedTxOutHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, gasManager)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -180,14 +181,6 @@ func (k *TestObservedTxOutHandleKeeper) SetPool(ctx sdk.Context, pool Pool) erro
 	return nil
 }
 
-func (k *TestObservedTxOutHandleKeeper) SaveBlockGas(ctx sdk.Context, blockGas BlockGas) error {
-	return nil
-}
-
-func (k *TestObservedTxOutHandleKeeper) GetBlockGas(ctx sdk.Context) (BlockGas, error) {
-	return NewBlockGas(ctx.BlockHeight()), nil
-}
-
 func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)
@@ -222,7 +215,8 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
 	keeper.txOutStore = txOutStore
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy)
+	gasManager := NewDummyGasManager()
+	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, gasManager)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
@@ -276,7 +270,8 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
 	keeper.txOutStore = txOutStore
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy)
+	gasManager := NewDummyGasManager()
+	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, gasManager)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
@@ -330,7 +325,8 @@ func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
 	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(keeper, ver)
 	keeper.txOutStore = txOutStore
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
-	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy)
+	gasManager := NewDummyGasManager()
+	handler := NewObservedTxOutHandler(keeper, versionedTxOutStoreDummy, w.validatorMgr, versionedVaultMgrDummy, gasManager)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)

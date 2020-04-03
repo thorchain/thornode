@@ -34,12 +34,9 @@ const (
 	NodeStandby     = types.Standby
 	NodeUnknown     = types.Unknown
 
-	BondPaid         = types.BondPaid
-	BondReturned     = types.BondReturned
-	AsgardKeygen     = types.AsgardKeygen
-	GasTypeSpend     = types.GasTypeSpend
-	GasTypeTopup     = types.GasTypeTopup
-	GasTypeReimburse = types.GasTypeReimburse
+	BondPaid     = types.BondPaid
+	BondReturned = types.BondReturned
+	AsgardKeygen = types.AsgardKeygen
 )
 
 var (
@@ -106,7 +103,6 @@ var (
 	GetRandomPubKeySet             = types.GetRandomPubKeySet
 	SetupConfigForTest             = types.SetupConfigForTest
 	GetEventStatuses               = types.GetEventStatuses
-	NewBlockGas                    = types.NewBlockGas
 )
 
 type (
@@ -175,5 +171,6 @@ type (
 	VaultData                   = types.VaultData
 	VaultStatus                 = types.VaultStatus
 	EventStatuses               = types.EventStatuses
-	BlockGas                    = types.BlockGas
+	GasPool                     = types.GasPool
+	EventGas                    = types.EventGas
 )

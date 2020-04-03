@@ -38,7 +38,6 @@ type Keeper interface {
 	KeeperTssKeysignFail
 	KeeperKeygen
 	KeeperRagnarok
-	KeeperBlockGas
 }
 
 // NOTE: Always end a dbPrefix with a slash ("/"). This is to ensure that there

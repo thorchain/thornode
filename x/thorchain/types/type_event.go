@@ -264,29 +264,45 @@ func NewEventBond(amount sdk.Uint, bondType BondType) EventBond {
 
 type GasType string
 
-const (
-	GasTypeSpend     GasType = `gas_spend`
-	GasTypeTopup     GasType = `gas_topup`
-	GasTypeReimburse GasType = `gas_reimburse`
-)
+type GasPool struct {
+	Asset    common.Asset `json:"asset"`
+	AssetAmt sdk.Uint     `json:"asset_amt"`
+	RuneAmt  sdk.Uint     `json:"rune_amt"`
+}
 
 type EventGas struct {
-	GasSpend     common.Gas `json:"gas_spend"`
-	GasTopUp     common.Gas `json:"gas_top_up"`
-	GasReimburse common.Gas `json:"gas_reimburse"`
+	Pools []GasPool `json:"pools"`
 }
 
 // NewEventGas create a new EventGas instance
-func NewEventGas(gasSpend, gasTopup, gasReimburse common.Gas) EventGas {
-	return EventGas{
-		GasSpend:     gasSpend,
-		GasTopUp:     gasTopup,
-		GasReimburse: gasReimburse,
+func NewEventGas() *EventGas {
+	return &EventGas{
+		Pools: []GasPool{},
 	}
 }
 
+// UpsertGasPool does what the name says, if the gasPool exist, then it combine , otherwise add it to the list
+func (e *EventGas) UpsertGasPool(pool GasPool) {
+	var pools []GasPool
+	found := false
+	for _, p := range e.Pools {
+		if p.Asset == pool.Asset {
+			p.RuneAmt = p.RuneAmt.Add(pool.RuneAmt)
+			p.AssetAmt = p.AssetAmt.Add(pool.AssetAmt)
+			pools = append(pools, p)
+			found = true
+			continue
+		}
+		pools = append(pools, p)
+	}
+	if !found {
+		pools = append(pools, pool)
+	}
+	e.Pools = pools
+}
+
 // Type return event type
-func (e EventGas) Type() string {
+func (e *EventGas) Type() string {
 	return GasEventType
 }
 

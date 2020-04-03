@@ -14,14 +14,20 @@ type ObservedTxOutHandler struct {
 	versionedTxOutStore   VersionedTxOutStore
 	validatorMgr          VersionedValidatorManager
 	versionedVaultManager VersionedVaultManager
+	gasManager            GasManager
 }
 
-func NewObservedTxOutHandler(keeper Keeper, txOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, versionedVaultManager VersionedVaultManager) ObservedTxOutHandler {
+func NewObservedTxOutHandler(keeper Keeper,
+	txOutStore VersionedTxOutStore,
+	validatorMgr VersionedValidatorManager,
+	versionedVaultManager VersionedVaultManager,
+	gasManager GasManager) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
 		keeper:                keeper,
 		versionedTxOutStore:   txOutStore,
 		validatorMgr:          validatorMgr,
 		versionedVaultManager: versionedVaultManager,
+		gasManager:            gasManager,
 	}
 }
 
@@ -90,7 +96,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager)
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.gasManager)
 
 	for _, tx := range msg.Txs {
 
@@ -159,7 +165,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		}
 
 		// Apply Gas fees
-		if err := AddGasFees(ctx, h.keeper, tx); err != nil {
+		if err := AddGasFees(ctx, h.keeper, tx, h.gasManager); err != nil {
 			return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error()).Result()
 		}
 

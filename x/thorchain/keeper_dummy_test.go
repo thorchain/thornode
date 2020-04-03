@@ -188,7 +188,7 @@ func (k KVStoreDummy) HasValidVaultPools(_ sdk.Context) (bool, error)  { return 
 func (k KVStoreDummy) AddFeeToReserve(_ sdk.Context, _ sdk.Uint) error { return kaboom }
 func (k KVStoreDummy) GetVaultData(_ sdk.Context) (VaultData, error)   { return VaultData{}, kaboom }
 func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error   { return kaboom }
-func (k KVStoreDummy) UpdateVaultData(_ sdk.Context, _ constants.ConstantValues) error {
+func (k KVStoreDummy) UpdateVaultData(_ sdk.Context, _ constants.ConstantValues, gasManager GasManager) error {
 	return kaboom
 }
 
@@ -201,15 +201,4 @@ func (k KVStoreDummy) GetTssKeysignFailVoterIterator(_ sdk.Context) sdk.Iterator
 
 func (k KVStoreDummy) GetTssKeysignFailVoter(_ sdk.Context, _ string) (TssKeysignFailVoter, error) {
 	return TssKeysignFailVoter{}, kaboom
-}
-
-func (k KVStoreDummy) SaveBlockGas(ctx sdk.Context, blockGas BlockGas) error {
-	return kaboom
-}
-
-func (k KVStoreDummy) GetBlockGas(ctx sdk.Context) (BlockGas, error) {
-	return BlockGas{}, kaboom
-}
-
-func (k KVStoreDummy) RemoveBlockGas(ctx sdk.Context) {
 }

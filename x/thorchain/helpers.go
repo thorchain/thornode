@@ -421,7 +421,7 @@ func wrapError(ctx sdk.Context, err error, wrap string) error {
 	return err
 }
 
-func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
+func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx, gasManager GasManager) error {
 	if len(tx.Tx.Gas) == 0 {
 		return nil
 	}
@@ -431,6 +431,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 	if err != nil {
 		return fmt.Errorf("fail to get vaultData: %w", err)
 	}
+	gasManager.AddGasAsset(tx.Tx.Gas)
 	vaultData.Gas = vaultData.Gas.Add(tx.Tx.Gas)
 	if err := keeper.SetVaultData(ctx, vaultData); err != nil {
 		return err
@@ -462,12 +463,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 			return err
 		}
 	}
-	blockGas, err := keeper.GetBlockGas(ctx)
-	if err != nil {
-		return err
-	}
-	blockGas.AddGas(tx.Tx.Gas, GasTypeSpend)
-	return keeper.SaveBlockGas(ctx, blockGas)
+	return nil
 }
 
 func getErrMessageFromABCILog(content string) (string, error) {
