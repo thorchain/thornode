@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -x
+
 export USER=$(hostname -s)
 export DOCKER_SERVER="${USER}-${THORNODE_ENV}-${THORNODE_SERVICE}"
 export SEED_ENDPOINT=https://${THORNODE_ENV}-seed.thorchain.info
@@ -145,52 +147,11 @@ verify_stack () {
 	        if [ "${THORNODE_SERVICE}" == standalone ]; then
 	            update_ip
 	        fi
-            setup_self_destruct
         else
 	        echo "HEALTHCHECK FAILED"
 	        exit 1
         fi
     fi
-}
-
-setup_self_destruct () {
-echo "Setting up self destruct...."
-# create a script used to self destruct
-mkdir -p /usr/local/scripts
-chmod -R 777 /usr/local/scripts
-cat <<EOF > /usr/local/scripts/self-destruct
-#!/bin/sh
-
-echo "Checking to see if its time to self destruct..."
-
-node_status=$(curl -s localhost:1317/thorchain/nodeaccount/${NODE_ACCOUNT} | jq -r '.status')
-bond=$(curl -s localhost:1317/thorchain/nodeaccount/${NODE_ACCOUNT} | jq -r '.bond')
-
-if [ "$node_status" = "active" ]; then
-    echo "node is still active... exiting"
-    exit 0
-fi
-
-if [[ $bond -eq 100000000 ]]; then
-    echo "node is hasn't been churned in yet... exiting"
-    exit 0
-fi
-
-ASGARD=$(curl -s http://${PEER}:1317/thorchain/pool_addresses | jq -r '.current[0].address')
-echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
-                                --from ${BOND_WALLET} \
-                                --to $ASGARD \
-                                --amount "1:BNB" \
-                                --chain-id=${CHAIN_ID} \
-                                --node=${TENDERMINT_NODE} \
-                                --memo "LEAVE" \
-                                --json
-
-
-# we have been churned out, we should shutdown
-echo "node has been churned out, ready to be shutdown"
-shutdown -h now
-EOF
 }
 
 churn () {
