@@ -289,9 +289,7 @@ func (e *EventGas) UpsertGasPool(pool GasPool) {
 		if p.Asset == pool.Asset {
 			p.RuneAmt = p.RuneAmt.Add(pool.RuneAmt)
 			p.AssetAmt = p.AssetAmt.Add(pool.AssetAmt)
-			pools = append(pools, p)
 			found = true
-			continue
 		}
 		pools = append(pools, p)
 	}
