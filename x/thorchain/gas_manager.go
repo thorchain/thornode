@@ -55,6 +55,9 @@ func (gm *GasManagerImp) AddRune(asset common.Asset, amt sdk.Uint) {
 
 // EndBlock emit the events
 func (gm *GasManagerImp) EndBlock(ctx sdk.Context, keeper Keeper) {
+	if len(gm.gasEvent.Pools) == 0 {
+		return
+	}
 	buf, err := json.Marshal(gm.gasEvent)
 	if err != nil {
 		ctx.Logger().Error("fail to marshal gas event", "error", err)

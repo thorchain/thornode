@@ -73,7 +73,6 @@ const (
 	prefixTss                dbPrefix = "tss/"
 	prefixKeygen             dbPrefix = "keygen/"
 	prefixRagnarok           dbPrefix = "ragnarok/"
-	prefixBlockGas           dbPrefix = "block_gas/"
 )
 
 func dbError(ctx sdk.Context, wrapper string, err error) error {
