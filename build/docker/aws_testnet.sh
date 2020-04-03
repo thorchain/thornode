@@ -156,7 +156,9 @@ verify_stack () {
 setup_self_destruct () {
 echo "Setting up self destruct...."
 # create a script used to self destruct
-cat <<EOF > /opt/self-destruct
+mkdir -p /usr/local/scripts
+chmod -R 777 /usr/local/scripts
+cat <<EOF > /usr/local/scripts/self-destruct
 #!/bin/sh
 
 echo "Checking to see if its time to self destruct..."
@@ -189,8 +191,6 @@ echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
 echo "node has been churned out, ready to be shutdown"
 shutdown -h now
 EOF
-chmod 777 /opt/self-destruct
-ls /opt
 }
 
 churn () {

@@ -46,7 +46,7 @@ mkdir -p /opt/${THORNODE_ENV}
 chmod -R 777 /opt/${THORNODE_ENV}
 
 # setup crontab
-echo "0 * * * * root /bin/bash /opt/self-destruct" >> /etc/cron.d/self-destruct
+echo "0 * * * * root /bin/bash /usr/local/scripts/self-destruct" >> /etc/cron.d/self-destruct
 
 cat <<EOF > /opt/${THORNODE_ENV}/binance-bootstrap
 #!/bin/sh
