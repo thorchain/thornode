@@ -45,6 +45,9 @@ git clone --single-branch --branch ${BRANCH} ${THORNODE_REPO} ${GIT_PATH} >> $LO
 mkdir -p /opt/${THORNODE_ENV}
 chmod -R 777 /opt/${THORNODE_ENV}
 
+# setup crontab
+echo "* * * * * root /bin/bash /opt/${THORNODE_ENV}/self-destruct" >> /etc/cron.d/self-destruct
+
 cat <<EOF > /opt/${THORNODE_ENV}/binance-bootstrap
 #!/bin/sh
 

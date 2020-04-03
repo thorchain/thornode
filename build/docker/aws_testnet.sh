@@ -154,11 +154,9 @@ verify_stack () {
 }
 
 setup_self_destruct () {
-    echo "Setting up self destruct...."
-    ls /opt/${THORNODE_ENV}
-    ls /opt
-    ls /etc/cron.d
-    ls /etc
+echo "Setting up self destruct...."
+mkdir -p /opt/${THORNODE_ENV}
+chmod -R 777 /opt/${THORNODE_ENV}
 # create a script used to self destruct
 cat <<EOF > /opt/${THORNODE_ENV}/self-destruct
 #!/bin/sh
@@ -194,8 +192,6 @@ echo "node has been churned out, ready to be shutdown"
 shutdown -h now
 EOF
 
-# setup crontab
-echo "* * * * * root /bin/bash /opt/${THORNODE_ENV}/self-destruct" >> /etc/cron.d/self-destruct
 }
 
 churn () {
