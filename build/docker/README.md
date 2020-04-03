@@ -96,7 +96,7 @@ If you already have your AWS VPC, public subnet and routes setup you can just ru
 export THORNODE_ENV=testnet
 export AWS_VPC_ID=vpc***
 export AWS_REGION=us-east-1
-export AWS_INSTANCE_TYPE=c5.2xlarge
+export AWS_INSTANCE_TYPE=c5.xlarge
 bash aws_docker_server.sh
 ```
  

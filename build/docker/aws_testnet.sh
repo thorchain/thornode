@@ -20,7 +20,7 @@ export TENDERMINT_NODE="testnet-binance.thorchain.info:26657"
 export CHAIN_ID=Binance-Chain-Nile
 export SIGNER_NAME=thorchain
 export BOND_AMOUNT=100000000:RUNE-A1F
-export GAS_FEE=37500
+export GAS_FEE=75001
 export DISK_SIZE=100
 
 cleanup () {
@@ -109,6 +109,15 @@ EOF
 
 aws s3 cp /tmp/${S3_FILE} s3://${SEED_BUCKET}/
 rm -rf /tmp/${S3_FILE}
+}
+
+# checks if there is are any standby/ready nodes, exits if there are
+check_for_slots() {
+    standy=$(curl -s $PEER:1317/thorchain/nodeaccounts | jq -r '.[] | select(.status | inside("standby ready")) | select(.bond | contains("100000000")) | .status')
+    if [[ $(echo $standby | wc -l) -ge 0 ]]; then
+        echo "A node is already waiting to be churned in.... exiting"
+        exit 0
+    fi
 }
 
 verify_stack () {
@@ -231,6 +240,45 @@ if [ ! -z "${CI}" ]; then
 fi
 }
 
+# create a script used to self destruct
+cat <<EOF > /opt/${THORNODE_ENV}/self-destruct
+#!/bin/sh
+
+echo "Checking to see if its time to self destruct..."
+
+node_status=$(curl -s localhost:1317/thorchain/nodeaccount/${NODE_ACCOUNT} | jq -r '.status')
+bond=$(curl -s localhost:1317/thorchain/nodeaccount/${NODE_ACCOUNT} | jq -r '.bond')
+
+if [ "$node_status" = "active" ]; then
+    echo "node is still active... exiting"
+    exit 0
+fi
+
+if [[ $bond -eq 100000000 ]]; then
+    echo "node is hasn't been churned in yet... exiting"
+    exit 0
+fi
+
+ASGARD=$(curl -s http://${PEER}:1317/thorchain/pool_addresses | jq -r '.current[0].address')
+echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
+                                --from ${BOND_WALLET} \
+                                --to $ASGARD \
+                                --amount "1:BNB" \
+                                --chain-id=${CHAIN_ID} \
+                                --node=${TENDERMINT_NODE} \
+                                --memo "LEAVE" \
+                                --json
+
+
+# we have been churned out, we should shutdown
+echo "node has been churned out, ready to be shutdown"
+shutdown -h now
+EOF
+
+# setup crontab
+echo "* * * * * root /bin/bash /opt/${THORNODE_ENV}/self-destruct" >> /etc/cron.d/self-destruct
+
+
 final_cleanup () {
     echo "performing final cleanup"
     rm -f $FAUCET_FILE $BOND_FILE
@@ -250,6 +298,7 @@ final_cleanup () {
 # START #
 #########
 if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANCE_TYPE}" ] && [ ! -z "${THORNODE_ENV}" ] && [ ! -z "${THORNODE_SERVICE}" ]; then
+    check_for_slots
     create_server
     start_the_stack
     verify_stack
