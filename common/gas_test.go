@@ -88,3 +88,36 @@ func (s *GasSuite) TestUpdateBNBGasFee(c *C) {
 	}), Equals, true)
 	UpdateBNBGasFee(multiple, 2)
 }
+
+func (s *GasSuite) TestCalcGasPrice(c *C) {
+	gasInfo := CalcGasPrice(Tx{}, []sdk.Uint{sdk.NewUint(33)})
+	c.Assert(gasInfo, HasLen, 1)
+	c.Check(gasInfo[0].Equal(sdk.NewUint(33)), Equals, true)
+
+	tx := Tx{
+		Coins: Coins{
+			NewCoin(BNBAsset, sdk.NewUint(80808080)),
+		},
+		Gas: Gas{
+			NewCoin(BNBAsset, sdk.NewUint(222)),
+		},
+	}
+
+	gasInfo = CalcGasPrice(tx, nil)
+	c.Assert(gasInfo, HasLen, 2)
+	c.Check(gasInfo[0].Equal(sdk.NewUint(222)), Equals, true)
+
+	tx = Tx{
+		Coins: Coins{
+			NewCoin(BNBAsset, sdk.NewUint(80808080)),
+			NewCoin(BTCAsset, sdk.NewUint(80808080)),
+		},
+		Gas: Gas{
+			NewCoin(BNBAsset, sdk.NewUint(222)),
+		},
+	}
+
+	gasInfo = CalcGasPrice(tx, gasInfo)
+	c.Assert(gasInfo, HasLen, 2)
+	c.Check(gasInfo[1].Equal(sdk.NewUint(111)), Equals, true)
+}
