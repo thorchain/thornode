@@ -110,7 +110,7 @@ func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {
 
 func (vtx *ValidatorMgrV1TestSuite) TestFindCounToRemove(c *C) {
 	// remove one
-	c.Check(findCounToRemove(0, 0, NodeAccounts{
+	c.Check(findCountToRemove(0, 0, NodeAccounts{
 		NodeAccount{LeaveHeight: 12},
 		NodeAccount{},
 		NodeAccount{},
@@ -119,7 +119,7 @@ func (vtx *ValidatorMgrV1TestSuite) TestFindCounToRemove(c *C) {
 	}), Equals, 1)
 
 	// don't remove one
-	c.Check(findCounToRemove(0, 0, NodeAccounts{
+	c.Check(findCountToRemove(0, 0, NodeAccounts{
 		NodeAccount{LeaveHeight: 12},
 		NodeAccount{LeaveHeight: 12},
 		NodeAccount{},
@@ -127,7 +127,7 @@ func (vtx *ValidatorMgrV1TestSuite) TestFindCounToRemove(c *C) {
 	}), Equals, 0)
 
 	// remove one because of request to leave
-	c.Check(findCounToRemove(0, 0, NodeAccounts{
+	c.Check(findCountToRemove(0, 0, NodeAccounts{
 		NodeAccount{LeaveHeight: 12, RequestedToLeave: true},
 		NodeAccount{},
 		NodeAccount{},
@@ -135,7 +135,7 @@ func (vtx *ValidatorMgrV1TestSuite) TestFindCounToRemove(c *C) {
 	}), Equals, 1)
 
 	// don't remove more than 1/3rd of node accounts
-	c.Check(findCounToRemove(0, 0, NodeAccounts{
+	c.Check(findCountToRemove(0, 0, NodeAccounts{
 		NodeAccount{LeaveHeight: 12},
 		NodeAccount{LeaveHeight: 12},
 		NodeAccount{LeaveHeight: 12},
