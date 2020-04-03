@@ -104,16 +104,16 @@ cat <<EOF > /opt/${THORNODE_ENV}/self-destruct
 
 echo "Checking to see if its time to self destruct..."
 
-NODE_ACCOUNT=$(docker exec thor-daemon thorcli keys show thorchain -a)
-node_status=$(curl -s localhost:1317/thorchain/nodeaccount/$NODE_ACCOUNT | jq -r '.status')
-bond=$(curl -s localhost:1317/thorchain/nodeaccount/$NODE_ACCOUNT | jq -r '.bond')
+NODE_ACCOUNT=\$(docker exec thor-daemon thorcli keys show thorchain -a)
+node_status=\$(curl -s localhost:1317/thorchain/nodeaccount/\$NODE_ACCOUNT | jq -r '.status')
+bond=\$(curl -s localhost:1317/thorchain/nodeaccount/\$NODE_ACCOUNT | jq -r '.bond')
 
-if [ "$node_status" = "active" ]; then
+if [ "\$node_status" = "active" ]; then
     echo "node is still active... exiting"
     exit 0
 fi
 
-if [[ $bond -eq 100000000 ]]; then
+if [[ \$bond -eq 100000000 ]]; then
     echo "node is hasn't been churned in yet... exiting"
     exit 0
 fi
