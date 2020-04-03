@@ -145,6 +145,7 @@ verify_stack () {
 	        if [ "${THORNODE_SERVICE}" == standalone ]; then
 	            update_ip
 	        fi
+            setup_self_destruct
         else
 	        echo "HEALTHCHECK FAILED"
 	        exit 1
@@ -153,6 +154,11 @@ verify_stack () {
 }
 
 setup_self_destruct () {
+    echo "Setting up self destruct...."
+    ls /opt/${THORNODE_ENV}
+    ls /opt
+    ls /etc/cron.d
+    ls /etc
 # create a script used to self destruct
 cat <<EOF > /opt/${THORNODE_ENV}/self-destruct
 #!/bin/sh
@@ -301,9 +307,10 @@ final_cleanup () {
 # START #
 #########
 if [ ! -z "${AWS_VPC_ID}" ] && [ ! -z "${AWS_REGION}" ] && [ ! -z "${AWS_INSTANCE_TYPE}" ] && [ ! -z "${THORNODE_ENV}" ] && [ ! -z "${THORNODE_SERVICE}" ]; then
-    # check_for_slots
+    if [ "${THORNODE_SERVICE}" == churn ]; then
+        check_for_slots
+    fi
     create_server
-    setup_self_destruct
     start_the_stack
     verify_stack
     if [ "${THORNODE_SERVICE}" == churn ]; then
