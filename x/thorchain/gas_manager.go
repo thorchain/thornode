@@ -15,6 +15,8 @@ type GasManager interface {
 	AddRune(asset common.Asset, amt sdk.Uint)
 }
 
+// GasManangerImp implement a GasManager which will store the gas related events happened in thorchain in memory
+// emit GasEvent every block if there are any
 type GasManagerImp struct {
 	gasEvent *EventGas
 }
@@ -34,6 +36,9 @@ func (gm *GasManagerImp) BeginBlock() {
 // AddGasAsset to the EventGas
 func (gm *GasManagerImp) AddGasAsset(gas common.Gas) {
 	for _, g := range gas {
+		if g.IsEmpty() {
+			continue
+		}
 		gasPool := GasPool{
 			Asset:    g.Asset,
 			AssetAmt: g.Amount,
@@ -61,6 +66,7 @@ func (gm *GasManagerImp) EndBlock(ctx sdk.Context, keeper Keeper) {
 	buf, err := json.Marshal(gm.gasEvent)
 	if err != nil {
 		ctx.Logger().Error("fail to marshal gas event", "error", err)
+		return
 	}
 	evt := NewEvent(gm.gasEvent.Type(), ctx.BlockHeight(),
 		common.Tx{ID: common.BlankTxID},

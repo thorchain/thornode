@@ -270,6 +270,7 @@ type GasPool struct {
 	RuneAmt  sdk.Uint     `json:"rune_amt"`
 }
 
+// EventGas represent the events happened in thorchain related to Gas
 type EventGas struct {
 	Pools []GasPool `json:"pools"`
 }
@@ -281,22 +282,17 @@ func NewEventGas() *EventGas {
 	}
 }
 
-// UpsertGasPool does what the name says, if the gasPool exist, then it combine , otherwise add it to the list
+// UpsertGasPool update the Pools hold by EventGas instance
+// if the gasPool exist, then it combine , otherwise add it to the list
 func (e *EventGas) UpsertGasPool(pool GasPool) {
-	var pools []GasPool
-	found := false
-	for _, p := range e.Pools {
+	for i, p := range e.Pools {
 		if p.Asset == pool.Asset {
-			p.RuneAmt = p.RuneAmt.Add(pool.RuneAmt)
-			p.AssetAmt = p.AssetAmt.Add(pool.AssetAmt)
-			found = true
+			e.Pools[i].RuneAmt = p.RuneAmt.Add(pool.RuneAmt)
+			e.Pools[i].AssetAmt = p.AssetAmt.Add(pool.AssetAmt)
+			return
 		}
-		pools = append(pools, p)
 	}
-	if !found {
-		pools = append(pools, pool)
-	}
-	e.Pools = pools
+	e.Pools = append(e.Pools, pool)
 }
 
 // Type return event type
