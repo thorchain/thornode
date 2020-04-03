@@ -88,7 +88,7 @@ type ConstantValues interface {
 
 // GetConstantValues will return an  implementation of ConstantValues which provide ways to get constant values
 func GetConstantValues(ver semver.Version) ConstantValues {
-	if ver.GTE(SWVersion) {
+	if ver.GTE(semver.MustParse("0.1.0")) {
 		return NewConstantValue010()
 	}
 	return nil
