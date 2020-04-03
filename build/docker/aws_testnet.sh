@@ -155,10 +155,8 @@ verify_stack () {
 
 setup_self_destruct () {
 echo "Setting up self destruct...."
-mkdir -p /opt/${THORNODE_ENV}
-chmod -R 777 /opt/${THORNODE_ENV}
 # create a script used to self destruct
-cat <<EOF > /opt/${THORNODE_ENV}/self-destruct
+cat <<EOF > /opt/self-destruct
 #!/bin/sh
 
 echo "Checking to see if its time to self destruct..."
@@ -191,7 +189,8 @@ echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
 echo "node has been churned out, ready to be shutdown"
 shutdown -h now
 EOF
-
+chmod 777 /opt/self-destruct
+ls /opt
 }
 
 churn () {
