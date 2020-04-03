@@ -28,15 +28,25 @@ describe "API Tests" do
     end
   end
 
-
   context "Create a pool" do
-
     it "should show up in listing of pools" do
       resp = get("/pools")
       # Previously THORNode add BNB pool in genesis , but now THORNode removed it
       expect(resp.body).to eq([]), "Are you working from a clean blockchain? Did you wait until 1 block was create? \n(#{resp.code}: #{resp.body})"
     end
 
+  end
+
+  context "stake some BNB" do
+    it "stake BNB" do
+      coins = [
+        {'asset': 'BNB.BNB', "amount": "20000000"},
+        {'asset': 'BNB.RUNE-B1A', "amount": "200000000"},
+      ]
+      tx = makeTx(memo: "stake:BNB", coins: coins)
+      resp = processTx(tx)
+      expect(resp.code).to eq("200"), resp.body.inspect
+    end
   end
 
   context "Show supporting chains" do
