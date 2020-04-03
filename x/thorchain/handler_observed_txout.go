@@ -14,20 +14,20 @@ type ObservedTxOutHandler struct {
 	versionedTxOutStore   VersionedTxOutStore
 	validatorMgr          VersionedValidatorManager
 	versionedVaultManager VersionedVaultManager
-	gasManager            GasManager
+	versionedGasMgr       VersionedGasManager
 }
 
 func NewObservedTxOutHandler(keeper Keeper,
 	txOutStore VersionedTxOutStore,
 	validatorMgr VersionedValidatorManager,
 	versionedVaultManager VersionedVaultManager,
-	gasManager GasManager) ObservedTxOutHandler {
+	versionedGasMgr VersionedGasManager) ObservedTxOutHandler {
 	return ObservedTxOutHandler{
 		keeper:                keeper,
 		versionedTxOutStore:   txOutStore,
 		validatorMgr:          validatorMgr,
 		versionedVaultManager: versionedVaultManager,
-		gasManager:            gasManager,
+		versionedGasMgr:       versionedGasMgr,
 	}
 }
 
@@ -96,7 +96,7 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 		return sdk.ErrInternal(err.Error()).Result()
 	}
 
-	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.gasManager)
+	handler := NewHandler(h.keeper, h.versionedTxOutStore, h.validatorMgr, h.versionedVaultManager, h.versionedGasMgr)
 
 	for _, tx := range msg.Txs {
 
@@ -163,9 +163,13 @@ func (h ObservedTxOutHandler) handleV1(ctx sdk.Context, version semver.Version, 
 				"tx", tx.Tx.String())
 			continue
 		}
-
+		gasMgr, err := h.versionedGasMgr.GetGasManager(ctx, version)
+		if err != nil {
+			ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))
+			return sdk.ErrInternal("fail to get gas manager").Result()
+		}
 		// Apply Gas fees
-		if err := AddGasFees(ctx, h.keeper, tx, h.gasManager); err != nil {
+		if err := AddGasFees(ctx, h.keeper, tx, gasMgr); err != nil {
 			return sdk.ErrInternal(fmt.Errorf("fail to add gas fee: %w", err).Error()).Result()
 		}
 

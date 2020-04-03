@@ -17,24 +17,24 @@ type GasManager interface {
 
 // GasManangerImp implement a GasManager which will store the gas related events happened in thorchain in memory
 // emit GasEvent every block if there are any
-type GasManagerImp struct {
+type GasMgr struct {
 	gasEvent *EventGas
 }
 
-// NewGasManagerImp create a new instance of GasManager
-func NewGasManagerImp() *GasManagerImp {
-	return &GasManagerImp{
+// NewGasMgr create a new instance of GasManager
+func NewGasMgr() *GasMgr {
+	return &GasMgr{
 		gasEvent: NewEventGas(),
 	}
 }
 
 // BeginBlock when a new block created , update the internal EventGas to new one
-func (gm *GasManagerImp) BeginBlock() {
+func (gm *GasMgr) BeginBlock() {
 	gm.gasEvent = NewEventGas()
 }
 
 // AddGasAsset to the EventGas
-func (gm *GasManagerImp) AddGasAsset(gas common.Gas) {
+func (gm *GasMgr) AddGasAsset(gas common.Gas) {
 	for _, g := range gas {
 		if g.IsEmpty() {
 			continue
@@ -49,7 +49,7 @@ func (gm *GasManagerImp) AddGasAsset(gas common.Gas) {
 }
 
 //  AddRune to the gas event
-func (gm *GasManagerImp) AddRune(asset common.Asset, amt sdk.Uint) {
+func (gm *GasMgr) AddRune(asset common.Asset, amt sdk.Uint) {
 	gasPool := GasPool{
 		Asset:    asset,
 		AssetAmt: sdk.ZeroUint(),
@@ -59,7 +59,7 @@ func (gm *GasManagerImp) AddRune(asset common.Asset, amt sdk.Uint) {
 }
 
 // EndBlock emit the events
-func (gm *GasManagerImp) EndBlock(ctx sdk.Context, keeper Keeper) {
+func (gm *GasMgr) EndBlock(ctx sdk.Context, keeper Keeper) {
 	if len(gm.gasEvent.Pools) == 0 {
 		return
 	}

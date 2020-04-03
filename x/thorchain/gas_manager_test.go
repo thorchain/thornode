@@ -13,7 +13,7 @@ var _ = Suite(&GasManagerTestSuite{})
 
 func (GasManagerTestSuite) TestGasManager(c *C) {
 	ctx, k := setupKeeperForTest(c)
-	gasMgr := NewGasManagerImp()
+	gasMgr := NewGasMgr()
 	gasEvent := gasMgr.gasEvent
 	c.Assert(gasMgr, NotNil)
 	gasMgr.BeginBlock()

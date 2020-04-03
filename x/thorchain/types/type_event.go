@@ -282,8 +282,8 @@ func NewEventGas() *EventGas {
 	}
 }
 
-// UpsertGasPool update the Pools hold by EventGas instance
-// if the gasPool exist, then it combine , otherwise add it to the list
+// UpsertGasPool update the Gas Pools hold by EventGas instance
+// if the given gasPool already exist, then it merge the gasPool with internal one , otherwise add it to the list
 func (e *EventGas) UpsertGasPool(pool GasPool) {
 	for i, p := range e.Pools {
 		if p.Asset == pool.Asset {

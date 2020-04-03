@@ -204,5 +204,4 @@ func (s EventSuite) TestEventGas(c *C) {
 	c.Assert(eg.Pools[1].Asset, Equals, common.BTCAsset)
 	c.Assert(eg.Pools[1].AssetAmt.Equal(sdk.NewUint(1024)), Equals, true)
 	c.Assert(eg.Pools[1].RuneAmt.Equal(sdk.NewUint(3333)), Equals, true)
-
 }
