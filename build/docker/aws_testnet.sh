@@ -65,7 +65,7 @@ create_server() {
 	    echo "creating server node on AWS"
         echo "Hostname"
         hostname
-        hostname $(hostname)-$(date +%s)
+        hostnamectl set-hostname $(hostname)-$(date +%s)
         hostname
 	    docker-machine create --driver amazonec2 \
             --amazonec2-vpc-id=${AWS_VPC_ID} \
