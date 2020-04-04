@@ -97,20 +97,6 @@ start_the_stack () {
     docker-machine ssh ${DOCKER_SERVER} sudo bash $BOOTSTRAP
 }
 
-update_ip() {
-IP=$(docker-machine ip ${DOCKER_SERVER})
-
-echo "updating IP on https://${THORNODE_ENV}-seed.thorchain.info/bonded_nodes.json"
-aws s3 cp s3://${SEED_BUCKET}/${S3_FILE} /tmp/${S3_FILE} > /dev/null
-
-cat <<EOF >> /tmp/${S3_FILE}
-{"ip": "${IP}", "date": "${DATE}", "PUB_KEY": "${PUB_KEY}"}
-EOF
-
-aws s3 cp /tmp/${S3_FILE} s3://${SEED_BUCKET}/
-rm -rf /tmp/${S3_FILE}
-}
-
 # checks if there is are any standby/ready nodes, exits if there are
 check_for_slots() {
     standy=$(curl -s $PEER:1317/thorchain/nodeaccounts | jq -r '.[] | select(.status | inside("standby ready")) | select(.bond | contains("100000000")) | .status')
@@ -142,9 +128,6 @@ verify_stack () {
         HEALTHCHECK_CMD=$(curl -s -o /dev/null -w "%{http_code}" ${HEALTHCHECK_URL})
         if  [ "${HEALTHCHECK_CMD}" == 200 ]; then
 	        echo "HEALTHCHECK PASSED"
-	        if [ "${THORNODE_SERVICE}" == standalone ]; then
-	            update_ip
-	        fi
         else
 	        echo "HEALTHCHECK FAILED"
 	        exit 1
@@ -228,8 +211,6 @@ echo "setting node keys"
 sleep 120 # wait for thorchain to register the new node account
 export SIGNER_PASSWD=$(aws secretsmanager get-secret-value --secret-id ${THORNODE_ENV}-signer-passwd --region $AWS_REGION  | jq -r .SecretString | awk -F'[:]' '{print $2}' | sed -e 's/}//' | sed -e 's/"//g')
 docker exec thor-daemon ash -c "echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $PUB_KEY $PUB_KEY $VALIDATOR --node tcp://$PEER:26657 --from $SIGNER_NAME --yes"
-
-update_ip
 
 # delete local bond-wallet
 echo ${BOND_WALLET_PASSWORD} | tbnbcli keys delete $BOND_WALLET
