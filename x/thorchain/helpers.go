@@ -431,7 +431,7 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx) error {
 		gasAsset := tx.Tx.Coins[0].Asset.Chain.GetGasAsset()
 		gasInfo, err := keeper.GetGas(ctx, gasAsset)
 		if err == nil {
-			gasInfo = common.CalcGasPrice(tx.Tx, gasInfo)
+			gasInfo = common.UpdateGasPrice(tx.Tx, gasAsset, gasInfo)
 			keeper.SetGas(ctx, gasAsset, gasInfo)
 		}
 	}
