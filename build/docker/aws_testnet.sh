@@ -73,6 +73,7 @@ create_server() {
             --amazonec2-userdata ./${THORNODE_ENV}/ec2-userdata.sh \
             --amazonec2-tags Environment,${THORNODE_ENV} \
             --amazonec2-iam-instance-profile ${THORNODE_ENV}-secrets \
+            ${MACHINE_NAME}
             ${DOCKER_SERVER}
     else
         docker-machine create --driver amazonec2 \
