@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -x
-
 export THORNODE_REPO="https://gitlab.com/thorchain/thornode.git"
 export BRANCH=bifrost-daily-churning
 export GIT_PATH=/opt/thornode
@@ -15,6 +13,7 @@ apt-get update -y
 apt-get install -y \
     build-essential \
     jq \
+    make \
     apt-transport-https \
     ca-certificates \
     curl \
