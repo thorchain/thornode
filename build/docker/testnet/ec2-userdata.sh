@@ -83,7 +83,7 @@ start_stack () {
     export TAG=${THORNODE_ENV} && \
     export SIGNER_PASSWD=${THORNODE_PASSWD} && \
     export BINANCE_HOST="http://testnet-binance.thorchain.info:26657" && \
-    export PEER=$(curl -s ${SEED_ENDPOINT}/bonded_nodes.json |tail -n 1 |jq '.'ip | sed -e 's/"//g' -e "s/null//g") && \
+    export PEER=$(curl -sL testnet-seed.thorchain.info/node_ip_list.json | jq -r .[] | shuf -n 1) && \
     make run-${THORNODE_ENV}-validator >> $LOGFILE
 }
 

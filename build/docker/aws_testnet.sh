@@ -192,7 +192,7 @@ fi
 
 sleep 15
 echo "make bond to Asgard"
-export PEER=$(curl -s ${SEED_ENDPOINT}/$S3_FILE |tail -n 1 |jq '.'ip | sed -e 's/"//g' -e "s/null//g")
+export PEER=$(curl -sL testnet-seed.thorchain.info/node_ip_list.json | jq -r .[] | shuf -n 1)
 NODE_ACCOUNT=$(docker exec thor-daemon thorcli keys show thorchain -a)
 BOND_MEMO=BOND:$NODE_ACCOUNT
 ASGARD=$(curl -s http://${PEER}:1317/thorchain/pool_addresses | jq '.current[]'.address | sed -e 's/"//g')
