@@ -11,16 +11,16 @@ import (
 
 // GenesisState strcture that used to store the data THORNode put in genesis
 type GenesisState struct {
-	Pools            []Pool                      `json:"pools"`
-	PoolStakers      []PoolStaker                `json:"pool_stakers"`
-	StakerPools      []StakerPool                `json:"staker_pools"`
-	ObservedTxVoters ObservedTxVoters            `json:"observed_tx_voters"`
-	TxOuts           []TxOut                     `json:"txouts"`
-	NodeAccounts     NodeAccounts                `json:"node_accounts"`
-	CurrentEventID   int64                       `json:"current_event_id"`
-	Events           Events                      `json:"events"`
-	Vaults           Vaults                      `json:"vaults"`
-	Gas              map[common.Asset][]sdk.Uint `json:"gas"`
+	Pools            []Pool                `json:"pools"`
+	PoolStakers      []PoolStaker          `json:"pool_stakers"`
+	StakerPools      []StakerPool          `json:"staker_pools"`
+	ObservedTxVoters ObservedTxVoters      `json:"observed_tx_voters"`
+	TxOuts           []TxOut               `json:"txouts"`
+	NodeAccounts     NodeAccounts          `json:"node_accounts"`
+	CurrentEventID   int64                 `json:"current_event_id"`
+	Events           Events                `json:"events"`
+	Vaults           Vaults                `json:"vaults"`
+	Gas              map[string][]sdk.Uint `json:"gas"`
 }
 
 // NewGenesisState create a new instance of GenesisState
@@ -90,7 +90,7 @@ func DefaultGenesisState() GenesisState {
 		Events:           make(Events, 0),
 		Vaults:           make(Vaults, 0),
 		ObservedTxVoters: make(ObservedTxVoters, 0),
-		Gas:              make(map[common.Asset][]sdk.Uint, 0),
+		Gas:              make(map[string][]sdk.Uint, 0),
 	}
 }
 
@@ -155,7 +155,11 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 	}
 
 	for k, v := range data.Gas {
-		keeper.SetGas(ctx, k, v)
+		asset, err := common.NewAsset(k)
+		if err != nil {
+			panic(err)
+		}
+		keeper.SetGas(ctx, asset, v)
 	}
 
 	keeper.SetCurrentEventID(ctx, data.CurrentEventID)
@@ -226,16 +230,13 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		events = append(events, e)
 	}
 
-	gas := make(map[common.Asset][]sdk.Uint, 0)
+	gas := make(map[string][]sdk.Uint, 0)
 	iterator = k.GetGasIterator(ctx)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
-		asset, err := common.NewAsset(string(iterator.Key()))
-		if err == nil {
-			var g []sdk.Uint
-			k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &g)
-			gas[asset] = g
-		}
+		var g []sdk.Uint
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &g)
+		gas[string(iterator.Key())] = g
 	}
 
 	return GenesisState{
