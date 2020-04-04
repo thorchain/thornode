@@ -63,10 +63,7 @@ create_server() {
         aws s3 cp s3://${BUCKET_NAME}/$SSH_PRIV_KEY /tmp/.
         chmod 0600 /tmp/$SSH_PRIV_KEY
 	    echo "creating server node on AWS"
-        echo "Hostname"
-        hostname
-        hostnamectl set-hostname $(hostname)-$(date +%s)
-        hostname
+        export MACHINE_NAME="$(hostname)-$(date +%s)"
 	    docker-machine create --driver amazonec2 \
             --amazonec2-vpc-id=${AWS_VPC_ID} \
             --amazonec2-region ${AWS_REGION} \
