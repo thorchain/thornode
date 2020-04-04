@@ -90,7 +90,29 @@ func (s *GasSuite) TestUpdateBNBGasFee(c *C) {
 }
 
 func (s *GasSuite) TestCalcGasPrice(c *C) {
-	gasInfo := CalcGasPrice(Tx{}, []sdk.Uint{sdk.NewUint(33)})
+	gasInfo := []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)}
+	tx := Tx{
+		Coins: Coins{
+			NewCoin(BNBAsset, sdk.NewUint(80808080)),
+		},
+	}
+
+	gas := CalcGasPrice(tx, BNBAsset, gasInfo)
+	c.Check(gas.Equals(Gas{NewCoin(BNBAsset, sdk.NewUint(37500))}), Equals, true)
+
+	tx = Tx{
+		Coins: Coins{
+			NewCoin(BNBAsset, sdk.NewUint(80808080)),
+			NewCoin(BNBAsset, sdk.NewUint(80808080)),
+		},
+	}
+
+	gas = CalcGasPrice(tx, BNBAsset, gasInfo)
+	c.Check(gas.Equals(Gas{NewCoin(BNBAsset, sdk.NewUint(60000))}), Equals, true)
+}
+
+func (s *GasSuite) TestUpdateGasPrice(c *C) {
+	gasInfo := UpdateGasPrice(Tx{}, BNBAsset, []sdk.Uint{sdk.NewUint(33)})
 	c.Assert(gasInfo, HasLen, 1)
 	c.Check(gasInfo[0].Equal(sdk.NewUint(33)), Equals, true)
 
@@ -103,7 +125,7 @@ func (s *GasSuite) TestCalcGasPrice(c *C) {
 		},
 	}
 
-	gasInfo = CalcGasPrice(tx, nil)
+	gasInfo = UpdateGasPrice(tx, BNBAsset, nil)
 	c.Assert(gasInfo, HasLen, 2)
 	c.Check(gasInfo[0].Equal(sdk.NewUint(222)), Equals, true)
 
@@ -117,7 +139,7 @@ func (s *GasSuite) TestCalcGasPrice(c *C) {
 		},
 	}
 
-	gasInfo = CalcGasPrice(tx, gasInfo)
+	gasInfo = UpdateGasPrice(tx, BNBAsset, gasInfo)
 	c.Assert(gasInfo, HasLen, 2)
 	c.Check(gasInfo[1].Equal(sdk.NewUint(111)), Equals, true)
 }
