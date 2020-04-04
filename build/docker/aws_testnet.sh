@@ -59,13 +59,17 @@ fi
 create_server() {
     cleanup ${DOCKER_SERVER} 20
     if [ ! -z "${CI}" ]; then
+        aws s3 cp s3://${BUCKET_NAME}/$SSH_PUB_KEY /tmp/.
+        aws s3 cp s3://${BUCKET_NAME}/$SSH_PRIV_KEY /tmp/.
+        chmod 0600 /tmp/$SSH_PRIV_KEY
 	    echo "creating server node on AWS"
 	    docker-machine create --driver amazonec2 \
             --amazonec2-vpc-id=${AWS_VPC_ID} \
             --amazonec2-region ${AWS_REGION} \
             --amazonec2-instance-type ${AWS_INSTANCE_TYPE} \
             --amazonec2-root-size ${DISK_SIZE} \
-            --amazonec2-keypair-name ${THORNODE_ENV} \
+            --amazonec2-ssh-keypath /tmp/$SSH_PRIV_KEY \
+            --amazonec2-keypair-name ${THORNODE_ENV}-keypair-$(date +%s) \
             --amazonec2-userdata ./${THORNODE_ENV}/ec2-userdata.sh \
             --amazonec2-tags Environment,${THORNODE_ENV} \
             --amazonec2-iam-instance-profile ${THORNODE_ENV}-secrets \
