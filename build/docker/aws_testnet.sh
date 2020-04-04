@@ -100,7 +100,7 @@ start_the_stack () {
 # checks if there is are any standby/ready nodes, exits if there are
 check_for_slots() {
     standy=$(curl -s $PEER:1317/thorchain/nodeaccounts | jq -r '.[] | select(.status | inside("standby ready")) | select(.bond | contains("100000000")) | .status')
-    if [[ $(echo $standby | wc -l) -ge 0 ]]; then
+    if [[ $(echo $standby | sed '/^$/d' | wc -l) -gt 0 ]]; then
         echo "A node is already waiting to be churned in.... exiting"
         exit 0
     fi
