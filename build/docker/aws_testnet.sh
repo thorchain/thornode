@@ -65,7 +65,7 @@ create_server() {
             --amazonec2-region ${AWS_REGION} \
             --amazonec2-instance-type ${AWS_INSTANCE_TYPE} \
             --amazonec2-root-size ${DISK_SIZE} \
-            --amazonec2-keypair-name ${THORNODE_ENV}
+            --amazonec2-keypair-name ${THORNODE_ENV} \
             --amazonec2-userdata ./${THORNODE_ENV}/ec2-userdata.sh \
             --amazonec2-tags Environment,${THORNODE_ENV} \
             --amazonec2-iam-instance-profile ${THORNODE_ENV}-secrets \
