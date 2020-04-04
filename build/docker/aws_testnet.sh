@@ -64,6 +64,7 @@ create_server() {
         chmod 0600 /tmp/$SSH_PRIV_KEY
 	    echo "creating server node on AWS"
         export MACHINE_NAME="$(hostname)-$(date +%s)"
+        echo $MACHINE_NAME
 	    docker-machine create --driver amazonec2 \
             --amazonec2-vpc-id=${AWS_VPC_ID} \
             --amazonec2-region ${AWS_REGION} \
@@ -74,7 +75,6 @@ create_server() {
             --amazonec2-tags Environment,${THORNODE_ENV} \
             --amazonec2-iam-instance-profile ${THORNODE_ENV}-secrets \
             ${MACHINE_NAME}
-            ${DOCKER_SERVER}
     else
         docker-machine create --driver amazonec2 \
             --amazonec2-vpc-id=${AWS_VPC_ID} \
