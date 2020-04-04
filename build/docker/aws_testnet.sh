@@ -1,7 +1,7 @@
 #!/bin/sh
 
 export USER=$(hostname -s)
-export DOCKER_SERVER="${USER}-${THORNODE_ENV}-${THORNODE_SERVICE}"
+export DOCKER_SERVER="${USER}-${THORNODE_ENV}-${THORNODE_SERVICE}-$(date +%s)"
 export SEED_ENDPOINT=https://${THORNODE_ENV}-seed.thorchain.info
 export BUCKET_NAME=thorchain.info
 export SEED_BUCKET="${THORNODE_ENV}-seed.${BUCKET_NAME}"
@@ -63,8 +63,6 @@ create_server() {
         aws s3 cp s3://${BUCKET_NAME}/$SSH_PRIV_KEY /tmp/.
         chmod 0600 /tmp/$SSH_PRIV_KEY
 	    echo "creating server node on AWS"
-        export MACHINE_NAME="$(hostname)-${THORNODE_SERVICE}-$(date +%s)"
-        echo ${DOCKER_SERVER}
 	    docker-machine create --driver amazonec2 \
             --amazonec2-vpc-id=${AWS_VPC_ID} \
             --amazonec2-region ${AWS_REGION} \
@@ -74,7 +72,7 @@ create_server() {
             --amazonec2-userdata ./${THORNODE_ENV}/ec2-userdata.sh \
             --amazonec2-tags Environment,${THORNODE_ENV} \
             --amazonec2-iam-instance-profile ${THORNODE_ENV}-secrets \
-            ${MACHINE_NAME}
+            ${DOCKER_SERVER}
     else
         docker-machine create --driver amazonec2 \
             --amazonec2-vpc-id=${AWS_VPC_ID} \
