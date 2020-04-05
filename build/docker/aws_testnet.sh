@@ -221,8 +221,6 @@ if [ ! -z "${CI}" ]; then
 fi
 }
 
-
-
 final_cleanup () {
     echo "performing final cleanup"
     rm -f $FAUCET_FILE $BOND_FILE
