@@ -25,7 +25,6 @@ const (
 	txSwap
 	txOutbound
 	txAdd
-	txGas
 	txBond
 	txLeave
 	txYggdrasilFund
@@ -51,9 +50,6 @@ var stringToTxTypeMap = map[string]TxType{
 	"add":        txAdd,
 	"a":          txAdd,
 	"%":          txAdd,
-	"gas":        txGas,
-	"g":          txGas,
-	"$":          txGas,
 	"bond":       txBond,
 	"leave":      txLeave,
 	"yggdrasil+": txYggdrasilFund,
@@ -71,7 +67,6 @@ var txToStringMap = map[TxType]string{
 	txOutbound:        "outbound",
 	txRefund:          "refund",
 	txAdd:             "add",
-	txGas:             "gas",
 	txBond:            "bond",
 	txLeave:           "leave",
 	txYggdrasilFund:   "yggdrasil+",
@@ -93,7 +88,7 @@ func stringToTxType(s string) (TxType, error) {
 
 func (tx TxType) IsInbound() bool {
 	switch tx {
-	case txStake, txUnstake, txSwap, txAdd, txGas, txBond, txLeave:
+	case txStake, txUnstake, txSwap, txAdd, txBond, txLeave:
 		return true
 	default:
 		return false
@@ -237,12 +232,6 @@ type RagnarokMemo struct {
 	BlockHeight int64
 }
 
-func NewGasMemo() GasMemo {
-	return GasMemo{
-		MemoBase: MemoBase{TxType: txGas},
-	}
-}
-
 func NewLeaveMemo() LeaveMemo {
 	return LeaveMemo{
 		MemoBase: MemoBase{TxType: txLeave},
@@ -347,7 +336,7 @@ func ParseMemo(memo string) (Memo, error) {
 
 	// list of memo types that do not contain an asset in their memo
 	noAssetMemos := []TxType{
-		txGas, txOutbound, txBond, txLeave, txRefund,
+		txOutbound, txBond, txLeave, txRefund,
 		txYggdrasilFund, txYggdrasilReturn, txReserve,
 		txMigrate, txRagnarok,
 	}
@@ -371,8 +360,6 @@ func ParseMemo(memo string) (Memo, error) {
 	}
 
 	switch tx {
-	case txGas:
-		return NewGasMemo(), nil
 	case txLeave:
 		return NewLeaveMemo(), nil
 	case txAdd:

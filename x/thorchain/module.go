@@ -77,12 +77,14 @@ type AppModule struct {
 	txOutStore            VersionedTxOutStore
 	validatorMgr          VersionedValidatorManager
 	versionedVaultManager VersionedVaultManager
+	versionedGasManager   VersionedGasManager
 }
 
 // NewAppModule creates a new AppModule Object
 func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) AppModule {
 	versionedTxOutStore := NewVersionedTxOutStore()
 	versionedVaultMgr := NewVersionedVaultMgr(versionedTxOutStore)
+
 	return AppModule{
 		AppModuleBasic:        AppModuleBasic{},
 		keeper:                k,
@@ -91,6 +93,7 @@ func NewAppModule(k Keeper, bankKeeper bank.Keeper, supplyKeeper supply.Keeper) 
 		txOutStore:            versionedTxOutStore,
 		validatorMgr:          NewVersionedValidatorMgr(k, versionedTxOutStore, versionedVaultMgr),
 		versionedVaultManager: versionedVaultMgr,
+		versionedGasManager:   NewVersionedGasMgr(),
 	}
 }
 
@@ -105,7 +108,7 @@ func (am AppModule) Route() string {
 }
 
 func (am AppModule) NewHandler() sdk.Handler {
-	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager)
+	return NewHandler(am.keeper, am.txOutStore, am.validatorMgr, am.versionedVaultManager, am.versionedGasManager)
 }
 
 func (am AppModule) QuerierRoute() string {
@@ -121,6 +124,12 @@ func (am AppModule) BeginBlock(ctx sdk.Context, req abci.RequestBeginBlock) {
 
 	am.keeper.ClearObservingAddresses(ctx)
 	version := am.keeper.GetLowestActiveVersion(ctx)
+	gasMgr, err := am.versionedGasManager.GetGasManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))
+		return
+	}
+	gasMgr.BeginBlock()
 	constantValues := constants.GetConstantValues(version)
 	if constantValues == nil {
 		ctx.Logger().Error(fmt.Sprintf("constants for version(%s) is not available", version))
@@ -185,9 +194,13 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 			}
 		}
 	}
-
+	gasMgr, err := am.versionedGasManager.GetGasManager(ctx, version)
+	if err != nil {
+		ctx.Logger().Error(fmt.Sprintf("gas manager that compatible with version :%s is not available", version))
+		return nil
+	}
 	// update vault data to account for block rewards and reward units
-	if err := am.keeper.UpdateVaultData(ctx, constantValues); err != nil {
+	if err := am.keeper.UpdateVaultData(ctx, constantValues, gasMgr); err != nil {
 		ctx.Logger().Error("fail to save vault", "error", err)
 	}
 	vaultMgr, err := am.versionedVaultManager.GetVaultManager(ctx, am.keeper, version)
@@ -208,7 +221,7 @@ func (am AppModule) EndBlock(ctx sdk.Context, req abci.RequestEndBlock) []abci.V
 	if err := Fund(ctx, am.keeper, txStore, constantValues); err != nil {
 		ctx.Logger().Error("unable to fund yggdrasil", "error", err)
 	}
-
+	gasMgr.EndBlock(ctx, am.keeper)
 	return validators
 }
 

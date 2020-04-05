@@ -57,8 +57,12 @@ var (
 )
 
 // NewHandler returns a handler for "thorchain" type messages.
-func NewHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, versionedVaultManager VersionedVaultManager) sdk.Handler {
-	handlerMap := getHandlerMapping(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager)
+func NewHandler(keeper Keeper,
+	versionedTxOutStore VersionedTxOutStore,
+	validatorMgr VersionedValidatorManager,
+	versionedVaultManager VersionedVaultManager,
+	versionedGasMgr VersionedGasManager) sdk.Handler {
+	handlerMap := getHandlerMapping(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
 
 	return func(ctx sdk.Context, msg sdk.Msg) sdk.Result {
 		version := keeper.GetLowestActiveVersion(ctx)
@@ -75,12 +79,15 @@ func NewHandler(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validato
 	}
 }
 
-func getHandlerMapping(keeper Keeper, versionedTxOutStore VersionedTxOutStore, validatorMgr VersionedValidatorManager, versionedVaultManager VersionedVaultManager) map[string]MsgHandler {
+func getHandlerMapping(keeper Keeper,
+	versionedTxOutStore VersionedTxOutStore,
+	validatorMgr VersionedValidatorManager,
+	versionedVaultManager VersionedVaultManager,
+	versionedGasMgr VersionedGasManager) map[string]MsgHandler {
 	// New arch handlers
 	m := make(map[string]MsgHandler)
 	m[MsgOutboundTx{}.Type()] = NewOutboundTxHandler(keeper)
 	m[MsgTssPool{}.Type()] = NewTssHandler(keeper, versionedVaultManager)
-	m[MsgNoOp{}.Type()] = NewNoOpHandler(keeper)
 	m[MsgYggdrasil{}.Type()] = NewYggdrasilHandler(keeper, versionedTxOutStore, validatorMgr)
 	m[MsgEndPool{}.Type()] = NewEndPoolHandler(keeper, versionedTxOutStore)
 	m[MsgSetNodeKeys{}.Type()] = NewSetNodeKeysHandler(keeper)
@@ -88,8 +95,8 @@ func getHandlerMapping(keeper Keeper, versionedTxOutStore VersionedTxOutStore, v
 	m[MsgReserveContributor{}.Type()] = NewReserveContributorHandler(keeper)
 	m[MsgSetVersion{}.Type()] = NewVersionHandler(keeper)
 	m[MsgBond{}.Type()] = NewBondHandler(keeper)
-	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager)
-	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager)
+	m[MsgObservedTxIn{}.Type()] = NewObservedTxInHandler(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
+	m[MsgObservedTxOut{}.Type()] = NewObservedTxOutHandler(keeper, versionedTxOutStore, validatorMgr, versionedVaultManager, versionedGasMgr)
 	m[MsgLeave{}.Type()] = NewLeaveHandler(keeper, validatorMgr, versionedTxOutStore)
 	m[MsgAdd{}.Type()] = NewAddHandler(keeper)
 	m[MsgSetUnStake{}.Type()] = NewUnstakeHandler(keeper, versionedTxOutStore)

@@ -49,7 +49,8 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	}
 
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(w.versionedTxOutStore)
-	handler := NewObservedTxInHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
+	versionedGasMgr := NewDummyVersionedGasMgr()
+	handler := NewObservedTxInHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	// happy path
 	ver := semver.MustParse("0.1.0")
@@ -251,7 +252,8 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	txOutStore, err := versionedTxOutStore.GetTxOutStore(keeper, ver)
 	c.Assert(err, IsNil)
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
-	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
+	versionedGasMgr := NewVersionedGasMgr()
+	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
@@ -319,7 +321,8 @@ func (s *HandlerObservedTxInSuite) TestMigrateMemo(c *C) {
 	versionedTxOutStore := NewVersionedTxOutStoreDummy()
 	c.Assert(err, IsNil)
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
-	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy)
+	versionedGasMgr := NewVersionedGasMgr()
+	handler := NewObservedTxInHandler(keeper, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
