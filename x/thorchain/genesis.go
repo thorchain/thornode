@@ -1,22 +1,26 @@
 package thorchain
 
 import (
+	"fmt"
+
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 // GenesisState strcture that used to store the data THORNode put in genesis
 type GenesisState struct {
-	Pools            []Pool           `json:"pools"`
-	PoolStakers      []PoolStaker     `json:"pool_stakers"`
-	StakerPools      []StakerPool     `json:"staker_pools"`
-	ObservedTxVoters ObservedTxVoters `json:"observed_tx_voters"`
-	TxOuts           []TxOut          `json:"txouts"`
-	NodeAccounts     NodeAccounts     `json:"node_accounts"`
-	CurrentEventID   int64            `json:"current_event_id"`
-	Events           Events           `json:"events"`
-	Vaults           Vaults           `json:"vaults"`
+	Pools            []Pool                `json:"pools"`
+	PoolStakers      []PoolStaker          `json:"pool_stakers"`
+	StakerPools      []StakerPool          `json:"staker_pools"`
+	ObservedTxVoters ObservedTxVoters      `json:"observed_tx_voters"`
+	TxOuts           []TxOut               `json:"txouts"`
+	NodeAccounts     NodeAccounts          `json:"node_accounts"`
+	CurrentEventID   int64                 `json:"current_event_id"`
+	Events           Events                `json:"events"`
+	Vaults           Vaults                `json:"vaults"`
+	Gas              map[string][]sdk.Uint `json:"gas"`
 }
 
 // NewGenesisState create a new instance of GenesisState
@@ -65,6 +69,12 @@ func ValidateGenesis(data GenesisState) error {
 		}
 	}
 
+	for k, v := range data.Gas {
+		if len(v) == 0 {
+			return fmt.Errorf("Gas %s cannot have empty units", k)
+		}
+	}
+
 	return nil
 }
 
@@ -80,6 +90,7 @@ func DefaultGenesisState() GenesisState {
 		Events:           make(Events, 0),
 		Vaults:           make(Vaults, 0),
 		ObservedTxVoters: make(ObservedTxVoters, 0),
+		Gas:              make(map[string][]sdk.Uint, 0),
 	}
 }
 
@@ -141,6 +152,14 @@ func InitGenesis(ctx sdk.Context, keeper Keeper, data GenesisState) []abci.Valid
 		if err := keeper.UpsertEvent(ctx, e); err != nil {
 			panic(err)
 		}
+	}
+
+	for k, v := range data.Gas {
+		asset, err := common.NewAsset(k)
+		if err != nil {
+			panic(err)
+		}
+		keeper.SetGas(ctx, asset, v)
 	}
 
 	keeper.SetCurrentEventID(ctx, data.CurrentEventID)
@@ -211,6 +230,15 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		events = append(events, e)
 	}
 
+	gas := make(map[string][]sdk.Uint, 0)
+	iterator = k.GetGasIterator(ctx)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		var g []sdk.Uint
+		k.Cdc().MustUnmarshalBinaryBare(iterator.Value(), &g)
+		gas[string(iterator.Key())] = g
+	}
+
 	return GenesisState{
 		Pools:            pools,
 		NodeAccounts:     nodeAccounts,
@@ -220,5 +248,6 @@ func ExportGenesis(ctx sdk.Context, k Keeper) GenesisState {
 		TxOuts:           outs,
 		CurrentEventID:   currentEventID,
 		Events:           events,
+		Gas:              gas,
 	}
 }

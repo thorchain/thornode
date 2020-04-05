@@ -207,7 +207,6 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 		1024,
 		vault.PubKey,
 	)
-
 	msg = types.NewMsgObservedTxIn(
 		ObservedTxs{
 			txStake,

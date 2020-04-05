@@ -90,7 +90,7 @@ do
 done
 
 
-export AWS_INSTANCE_TYPE=c5.2xlarge
+export AWS_INSTANCE_TYPE=c5.xlarge
 export AWS_VPC_ID=${VPC_ID}
 export AWS_REGION=${REGION}
 export AWS_PROFILE=${AWS_PROFILE} && bash -x ./aws_docker_server.sh

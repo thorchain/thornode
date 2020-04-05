@@ -7,7 +7,6 @@ cache:
 before_script:
   - mkdir -p .cache
   - export GOPATH="$CI_PROJECT_DIR/.cache"
-  - go get mvdan.cc/gofumpt
 
 stages:
   - test
@@ -30,17 +29,10 @@ unit_tests:
 lint_code:
   image: golangci/golangci-lint
   stage: test
+  before_script:
+    - go get mvdan.cc/gofumpt
   script:
     - make lint-verbose
-
-integration:test:
-  image: cbarraford/golang-ruby
-  stage: test
-  variables:
-    NET: "testnet"
-    TAG: "testnet"
-  script:
-    - make -C ./test/integration install setup run wait-for-blockchain test-internal
 
 # Build docker image
 build-thornode:
@@ -113,16 +105,18 @@ deploy:
   #stage: deploy
   image: docker/compose:alpine-1.25.4
   only:
-    - daily-automated-churning
+    - schedules
   services:
     - docker:dind
   variables:
     DOCKER_HOST: tcp://docker:2375
     DOCKER_DRIVER: overlay2
   before_script:
-    - apk add python git py-pip make bash curl python-dev
-    - pip install awscli
+    - apk add sudo jq python git py-pip make bash curl python-dev
+    - pip install --upgrade pip && pip install awscli requests
     - make aws-ci-login
+    - wget https://media.githubusercontent.com/media/binance-chain/node-binary/master/cli/testnet/0.6.2/linux/tbnbcli
+    - chmod +x tbnbcli && mv tbnbcli /usr/local/bin/. && tbnbcli version
   script:
     - cd $CI_PROJECT_DIR/build/docker
     - bash aws_testnet.sh ci
