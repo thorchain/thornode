@@ -208,12 +208,12 @@ echo ${BOND_WALLET_PASSWORD} | tbnbcli send \
 echo "just finished making bond"
 
 echo "setting node keys"
-sleep 120 # wait for thorchain to register the new node account
+sleep 30 # wait for thorchain to register the new node account
 export SIGNER_PASSWD=$(aws secretsmanager get-secret-value --secret-id ${THORNODE_ENV}-signer-passwd --region $AWS_REGION  | jq -r .SecretString | awk -F'[:]' '{print $2}' | sed -e 's/}//' | sed -e 's/"//g')
 docker exec thor-daemon ash -c "echo $SIGNER_PASSWD | thorcli tx thorchain set-node-keys $PUB_KEY $PUB_KEY $VALIDATOR --node tcp://$PEER:26657 --from $SIGNER_NAME --yes"
 
 # delete local bond-wallet
-echo ${BOND_WALLET_PASSWORD} | tbnbcli keys delete $BOND_WALLET
+# echo ${BOND_WALLET_PASSWORD} | tbnbcli keys delete $BOND_WALLET
 
 # delete local faucet-wallet
 if [ ! -z "${CI}" ]; then
