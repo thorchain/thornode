@@ -264,29 +264,39 @@ func NewEventBond(amount sdk.Uint, bondType BondType) EventBond {
 
 type GasType string
 
-const (
-	GasSpend     GasType = `gas_spend`
-	GasTopup     GasType = `gas_topup`
-	GasReimburse GasType = `gas_reimburse`
-)
+type GasPool struct {
+	Asset    common.Asset `json:"asset"`
+	AssetAmt sdk.Uint     `json:"asset_amt"`
+	RuneAmt  sdk.Uint     `json:"rune_amt"`
+}
 
+// EventGas represent the events happened in thorchain related to Gas
 type EventGas struct {
-	Gas         common.Gas     `json:"gas"`
-	GasType     GasType        `json:"gas_type"`
-	ReimburseTo []common.Asset `json:"reimburse_to"` // Determine which pool we are reimbursing to
+	Pools []GasPool `json:"pools"`
 }
 
 // NewEventGas create a new EventGas instance
-func NewEventGas(gas common.Gas, gasType GasType, reimburseTo []common.Asset) EventGas {
-	return EventGas{
-		Gas:         gas,
-		GasType:     gasType,
-		ReimburseTo: reimburseTo,
+func NewEventGas() *EventGas {
+	return &EventGas{
+		Pools: []GasPool{},
 	}
 }
 
+// UpsertGasPool update the Gas Pools hold by EventGas instance
+// if the given gasPool already exist, then it merge the gasPool with internal one , otherwise add it to the list
+func (e *EventGas) UpsertGasPool(pool GasPool) {
+	for i, p := range e.Pools {
+		if p.Asset == pool.Asset {
+			e.Pools[i].RuneAmt = p.RuneAmt.Add(pool.RuneAmt)
+			e.Pools[i].AssetAmt = p.AssetAmt.Add(pool.AssetAmt)
+			return
+		}
+	}
+	e.Pools = append(e.Pools, pool)
+}
+
 // Type return event type
-func (e EventGas) Type() string {
+func (e *EventGas) Type() string {
 	return GasEventType
 }
 

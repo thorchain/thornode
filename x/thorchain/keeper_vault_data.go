@@ -16,7 +16,7 @@ import (
 type KeeperVaultData interface {
 	GetVaultData(ctx sdk.Context) (VaultData, error)
 	SetVaultData(ctx sdk.Context, data VaultData) error
-	UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues) error
+	UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager) error
 }
 
 // GetVaultData retrieve vault data from key value store
@@ -79,7 +79,7 @@ func (k KVStore) getTotalActiveBond(ctx sdk.Context) (sdk.Uint, error) {
 }
 
 // UpdateVaultData Update the vault data to reflect changing in this block
-func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues) error {
+func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.ConstantValues, gasManager GasManager) error {
 	vault, err := k.GetVaultData(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to get existing vault data: %w", err)
@@ -101,7 +101,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 
 	// First subsidise the gas that was consumed from reserves, any
 	// reserves we take, minus from the gas we owe.
-	vault.TotalReserve, vault.Gas, err = subtractGas(ctx, k, vault.TotalReserve, vault.Gas)
+	vault.TotalReserve, vault.Gas, err = subtractGas(ctx, k, vault.TotalReserve, vault.Gas, gasManager)
 	if err != nil {
 		return fmt.Errorf("fail to subtract gas from reserve: %w", err)
 	}
@@ -119,7 +119,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 
 	// get total Fees (which is total liquidity fees, minus any gas we have left to pay)
 	var totalFees sdk.Uint
-	totalFees, vault.Gas, err = subtractGas(ctx, k, totalLiquidityFees, vault.Gas)
+	totalFees, vault.Gas, err = subtractGas(ctx, k, totalLiquidityFees, vault.Gas, gasManager)
 	if err != nil {
 		return fmt.Errorf("fail to subtract gas from liquidity fees: %w", err)
 	}
@@ -252,14 +252,14 @@ func getTotalActiveNodeWithBond(ctx sdk.Context, k Keeper) (int64, error) {
 	return total, nil
 }
 
-// remove gas
-func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (sdk.Uint, common.Gas, error) {
-	eventGas := NewEventGas(common.Gas{}, GasReimburse, []common.Asset{})
+// substractGas is actually subsidise pool with RUNE for the gas they spend
+func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas, gasManager GasManager) (sdk.Uint, common.Gas, error) {
 	for i, coin := range gas {
 		// if the coin is zero amount, don't need to do anything
 		if coin.Amount.IsZero() {
 			continue
 		}
+
 		pool, err := keeper.GetPool(ctx, coin.Asset)
 		if err != nil {
 			return sdk.ZeroUint(), nil, fmt.Errorf("fail to get pool(%s): %w", coin.Asset, err)
@@ -275,27 +275,9 @@ func subtractGas(ctx sdk.Context, keeper Keeper, val sdk.Uint, gas common.Gas) (
 		if err := keeper.SetPool(ctx, pool); err != nil {
 			return sdk.ZeroUint(), nil, fmt.Errorf("fail to set pool(%s): %w", coin.Asset, err)
 		}
-
-		eventGas.Gas = append(eventGas.Gas, common.Coin{Asset: common.RuneAsset(), Amount: runeGas})
-		eventGas.ReimburseTo = append(eventGas.ReimburseTo, coin.Asset)
+		gasManager.AddRune(coin.Asset, runeGas)
 	}
 
-	if !eventGas.Gas.IsEmpty() {
-		gasBuf, err := json.Marshal(eventGas)
-		if err != nil {
-			return sdk.ZeroUint(), nil, fmt.Errorf("fail to marshal gas event to buf: %w", err)
-		}
-		event := NewEvent(
-			eventGas.Type(),
-			ctx.BlockHeight(),
-			common.Tx{ID: common.BlankTxID},
-			gasBuf,
-			EventSuccess)
-		err = keeper.UpsertEvent(ctx, event)
-		if err != nil {
-			return sdk.ZeroUint(), nil, fmt.Errorf("fail to save gas event: %w", err)
-		}
-	}
 	return val, gas, nil
 }
 

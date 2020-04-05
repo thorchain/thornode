@@ -149,3 +149,59 @@ func (s EventSuite) TestSlash(c *C) {
 	c.Check(evt.SlashAmount[1].Asset, Equals, common.RuneAsset())
 	c.Check(evt.SlashAmount[1].Amount, Equals, int64(30))
 }
+
+func (s EventSuite) TestEventGas(c *C) {
+	eg := NewEventGas()
+	c.Assert(eg, NotNil)
+	eg.UpsertGasPool(GasPool{
+		Asset:    common.BNBAsset,
+		AssetAmt: sdk.NewUint(1000),
+		RuneAmt:  sdk.ZeroUint(),
+	})
+	c.Assert(eg.Pools, HasLen, 1)
+	c.Assert(eg.Pools[0].Asset, Equals, common.BNBAsset)
+	c.Assert(eg.Pools[0].RuneAmt.Equal(sdk.ZeroUint()), Equals, true)
+	c.Assert(eg.Pools[0].AssetAmt.Equal(sdk.NewUint(1000)), Equals, true)
+
+	eg.UpsertGasPool(GasPool{
+		Asset:    common.BNBAsset,
+		AssetAmt: sdk.NewUint(1234),
+		RuneAmt:  sdk.NewUint(1024),
+	})
+	c.Assert(eg.Pools, HasLen, 1)
+	c.Assert(eg.Pools[0].Asset, Equals, common.BNBAsset)
+	c.Assert(eg.Pools[0].RuneAmt.Equal(sdk.NewUint(1024)), Equals, true)
+	c.Assert(eg.Pools[0].AssetAmt.Equal(sdk.NewUint(2234)), Equals, true)
+
+	eg.UpsertGasPool(GasPool{
+		Asset:    common.BTCAsset,
+		AssetAmt: sdk.NewUint(1024),
+		RuneAmt:  sdk.ZeroUint(),
+	})
+	c.Assert(eg.Pools, HasLen, 2)
+	c.Assert(eg.Pools[1].Asset, Equals, common.BTCAsset)
+	c.Assert(eg.Pools[1].AssetAmt.Equal(sdk.NewUint(1024)), Equals, true)
+	c.Assert(eg.Pools[1].RuneAmt.Equal(sdk.ZeroUint()), Equals, true)
+
+	eg.UpsertGasPool(GasPool{
+		Asset:    common.BTCAsset,
+		AssetAmt: sdk.ZeroUint(),
+		RuneAmt:  sdk.ZeroUint(),
+	})
+
+	c.Assert(eg.Pools, HasLen, 2)
+	c.Assert(eg.Pools[1].Asset, Equals, common.BTCAsset)
+	c.Assert(eg.Pools[1].AssetAmt.Equal(sdk.NewUint(1024)), Equals, true)
+	c.Assert(eg.Pools[1].RuneAmt.Equal(sdk.ZeroUint()), Equals, true)
+
+	eg.UpsertGasPool(GasPool{
+		Asset:    common.BTCAsset,
+		AssetAmt: sdk.ZeroUint(),
+		RuneAmt:  sdk.NewUint(3333),
+	})
+
+	c.Assert(eg.Pools, HasLen, 2)
+	c.Assert(eg.Pools[1].Asset, Equals, common.BTCAsset)
+	c.Assert(eg.Pools[1].AssetAmt.Equal(sdk.NewUint(1024)), Equals, true)
+	c.Assert(eg.Pools[1].RuneAmt.Equal(sdk.NewUint(3333)), Equals, true)
+}

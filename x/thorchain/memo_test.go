@@ -14,7 +14,7 @@ func (s *MemoSuite) SetUpSuite(c *C) {
 }
 
 func (s *MemoSuite) TestTxType(c *C) {
-	for _, trans := range []TxType{txStake, txUnstake, txSwap, txOutbound, txAdd, txGas, txBond, txLeave} {
+	for _, trans := range []TxType{txStake, txUnstake, txSwap, txOutbound, txAdd, txBond, txLeave} {
 		tx, err := stringToTxType(trans.String())
 		c.Assert(err, IsNil)
 		c.Check(tx, Equals, trans)
@@ -79,11 +79,6 @@ func (s *MemoSuite) TestParseWithAbbreviated(c *C) {
 	memo, err = ParseMemo("leave:whatever")
 	c.Assert(err, IsNil)
 	c.Check(memo.IsType(txLeave), Equals, true)
-
-	memo, err = ParseMemo("gas")
-	c.Assert(err, IsNil)
-	c.Check(memo.IsType(txGas), Equals, true)
-	c.Check(memo.IsInbound(), Equals, true)
 
 	memo, err = ParseMemo("yggdrasil+:30")
 	c.Assert(err, IsNil)
@@ -186,10 +181,6 @@ func (s *MemoSuite) TestParse(c *C) {
 	memo, err = ParseMemo("leave")
 	c.Assert(err, IsNil)
 	c.Assert(memo.IsType(txLeave), Equals, true)
-
-	memo, err = ParseMemo("gas")
-	c.Assert(err, IsNil)
-	c.Check(memo.IsType(txGas), Equals, true)
 
 	memo, err = ParseMemo("migrate:100")
 	c.Assert(err, IsNil)

@@ -188,7 +188,7 @@ func (k KVStoreDummy) HasValidVaultPools(_ sdk.Context) (bool, error)  { return 
 func (k KVStoreDummy) AddFeeToReserve(_ sdk.Context, _ sdk.Uint) error { return kaboom }
 func (k KVStoreDummy) GetVaultData(_ sdk.Context) (VaultData, error)   { return VaultData{}, kaboom }
 func (k KVStoreDummy) SetVaultData(_ sdk.Context, _ VaultData) error   { return kaboom }
-func (k KVStoreDummy) UpdateVaultData(_ sdk.Context, _ constants.ConstantValues) error {
+func (k KVStoreDummy) UpdateVaultData(_ sdk.Context, _ constants.ConstantValues, gasManager GasManager) error {
 	return kaboom
 }
 

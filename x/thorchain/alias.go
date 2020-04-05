@@ -37,9 +37,6 @@ const (
 	BondPaid     = types.BondPaid
 	BondReturned = types.BondReturned
 	AsgardKeygen = types.AsgardKeygen
-	GasSpend     = types.GasSpend
-	GasTopup     = types.GasTopup
-	GasReimburse = types.GasReimburse
 )
 
 var (
@@ -174,4 +171,6 @@ type (
 	VaultData                   = types.VaultData
 	VaultStatus                 = types.VaultStatus
 	EventStatuses               = types.EventStatuses
+	GasPool                     = types.GasPool
+	EventGas                    = types.EventGas
 )
