@@ -34,15 +34,6 @@ lint_code:
   script:
     - make lint-verbose
 
-integration:test:
-  image: cbarraford/golang-ruby
-  stage: test
-  variables:
-    NET: "testnet"
-    TAG: "testnet"
-  script:
-    - make -C ./test/integration install setup run wait-for-blockchain test-internal
-
 # Build docker image
 build-thornode:
   stage: build
