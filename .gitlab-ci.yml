@@ -99,6 +99,8 @@ smoke-test:thornode:
     - cd ./heimdall
     - make build
     - make smoke
+  after_script:
+    - ./scripts/docker_logs.sh
 
 deploy:
   #stage: deploy
