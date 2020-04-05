@@ -202,3 +202,9 @@ func (k KVStoreDummy) GetTssKeysignFailVoterIterator(_ sdk.Context) sdk.Iterator
 func (k KVStoreDummy) GetTssKeysignFailVoter(_ sdk.Context, _ string) (TssKeysignFailVoter, error) {
 	return TssKeysignFailVoter{}, kaboom
 }
+
+func (k KVStoreDummy) GetGas(_ sdk.Context, _ common.Asset) ([]sdk.Uint, error) {
+	return nil, kaboom
+}
+func (k KVStoreDummy) SetGas(_ sdk.Context, _ common.Asset, _ []sdk.Uint) {}
+func (k KVStoreDummy) GetGasIterator(ctx sdk.Context) sdk.Iterator        { return nil }

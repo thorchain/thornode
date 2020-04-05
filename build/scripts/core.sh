@@ -21,9 +21,19 @@ add_last_event_id () {
     mv /tmp/genesis.json ~/.thord/config/genesis.json
 }
 
-add_admin_config () {
-    jq --arg NODE_ADDRESS "$3" --arg KEY "$1" --arg VALUE "$2" '.app_state.thorchain.admin_configs += [{"address": $NODE_ADDRESS ,"key":$KEY, "value":$VALUE}]' ~/.thord/config/genesis.json > /tmp/genesis.json
+add_gas_config () {
+    asset=$1
+    shift
+
+    # add asset to gas
+    echo "[\"app_state\", \"thorchain\", \"gas\", \"$asset\"]"
+    jq --argjson path "[\"app_state\", \"thorchain\", \"gas\", \"$asset\"]" 'getpath($path) = []' ~/.thord/config/genesis.json > /tmp/genesis.json
     mv /tmp/genesis.json ~/.thord/config/genesis.json
+
+    for unit in $@; do
+        jq --argjson path "[\"app_state\", \"thorchain\", \"gas\", \"$asset\"]" --arg unit "$unit" 'getpath($path) += [$unit]' ~/.thord/config/genesis.json > /tmp/genesis.json
+        mv /tmp/genesis.json ~/.thord/config/genesis.json
+    done
 }
 
 add_vault () {

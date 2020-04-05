@@ -22,6 +22,45 @@ var BNBGasFeeMulti = Gas{
 	{Asset: BNBAsset, Amount: bnbMultiTxFee},
 }
 
+func CalcGasPrice(tx Tx, asset Asset, units []sdk.Uint) Gas {
+	lenCoins := uint64(len(tx.Coins))
+
+	switch asset {
+	case BNBAsset:
+		if lenCoins == 0 {
+			return nil
+		} else if lenCoins == 1 {
+			return Gas{NewCoin(BNBAsset, units[0])}
+		} else if lenCoins > 1 {
+			return Gas{NewCoin(BNBAsset, units[1].MulUint64(lenCoins))}
+		}
+	}
+	return nil
+}
+
+func UpdateGasPrice(tx Tx, asset Asset, units []sdk.Uint) []sdk.Uint {
+	if tx.Gas.IsEmpty() {
+		// no change
+		return units
+	}
+
+	switch asset {
+	case BNBAsset:
+		// first unit is single txn, second unit is multiple transactions
+		if len(units) != 2 {
+			units = make([]sdk.Uint, 2)
+		}
+		gasCoin := tx.Gas.ToCoins().GetCoin(BNBAsset)
+		lenCoins := uint64(len(tx.Coins))
+		if lenCoins == 1 {
+			units[0] = gasCoin.Amount
+		} else if lenCoins > 1 {
+			units[1] = gasCoin.Amount.QuoUint64(lenCoins)
+		}
+	}
+	return units
+}
+
 // UpdateBNBGasFee
 func UpdateBNBGasFee(gas Gas, numberCoins int) {
 	if gas.IsEmpty() {
