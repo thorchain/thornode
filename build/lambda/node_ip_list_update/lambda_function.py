@@ -32,11 +32,11 @@ def lambda_handler(event, context):
           
 
           updated_ip_list = list(set(updated_ip_list)) # avoid duplicates
-          new_body = json.dumps(updated_ip_list)
-          obj.put(Body=new_body)
 
-          if len(updated_ip_list) == 0:
-            return {'message': 'no IP addresses found!'}
+
+          if len(updated_ip_list) != 0:
+            new_body = json.dumps(updated_ip_list)
+            obj.put(Body=new_body)
 
 
     return {
