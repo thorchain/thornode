@@ -253,7 +253,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 					FromAddress: fromAddr,
 					ToAddress:   GetRandomBNBAddress(),
 					Coins:       coins,
-					Gas:         common.BNBGasFeeSingleton,
+					Gas:         BNBGasFeeSingleton,
 					Memo:        "yggdrasil-:30",
 				}
 				return NewMsgYggdrasil(tx, helper.yggVault.PubKey, 12, false, coins, helper.nodeAccount.NodeAddress)
@@ -294,7 +294,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 					FromAddress: fromAddr,
 					ToAddress:   GetRandomBNBAddress(),
 					Coins:       coins,
-					Gas:         common.BNBGasFeeSingleton,
+					Gas:         BNBGasFeeSingleton,
 					Memo:        "yggdrasil-:30",
 				}
 				return NewMsgYggdrasil(tx, GetRandomPubKey(), 12, false, coins, helper.nodeAccount.NodeAddress)
@@ -321,7 +321,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 					FromAddress: fromAddr,
 					ToAddress:   GetRandomBNBAddress(),
 					Coins:       coins,
-					Gas:         common.BNBGasFeeSingleton,
+					Gas:         BNBGasFeeSingleton,
 					Memo:        "yggdrasil-:30",
 				}
 				return NewMsgYggdrasil(tx, helper.yggVault.PubKey, 12, false, coins, helper.nodeAccount.NodeAddress)
@@ -346,7 +346,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 					FromAddress: fromAddr,
 					ToAddress:   GetRandomBNBAddress(),
 					Coins:       coins,
-					Gas:         common.BNBGasFeeSingleton,
+					Gas:         BNBGasFeeSingleton,
 					Memo:        "yggdrasil-:30",
 				}
 				return NewMsgYggdrasil(tx, helper.asgardVault.PubKey, 12, false, coins, helper.nodeAccount.NodeAddress)
@@ -376,7 +376,7 @@ func (s *HandlerYggdrasilSuite) TestYggdrasilHandler(c *C) {
 					FromAddress: fromAddr,
 					ToAddress:   toAddr,
 					Coins:       coins,
-					Gas:         common.BNBGasFeeSingleton,
+					Gas:         BNBGasFeeSingleton,
 					Memo:        "yggdrasil-:30",
 				}
 				return NewMsgYggdrasil(tx, vault.PubKey, 12, false, coins, helper.nodeAccount.NodeAddress)

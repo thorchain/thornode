@@ -82,6 +82,10 @@ func (mfp *MockUnstakeKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ s
 }
 func (mfp *MockUnstakeKeeper) UpsertEvent(ctx sdk.Context, event Event) error { return nil }
 
+func (mfp *MockUnstakeKeeper) GetGas(ctx sdk.Context, asset common.Asset) ([]sdk.Uint, error) {
+	return []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(3000)}, nil
+}
+
 func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 	// w := getHandlerTestWrapper(c, 1, true, true)
 	ctx, _ := setupKeeperForTest(c)
@@ -116,7 +120,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 
 	msgUnstake := NewMsgSetUnStake(GetRandomTx(), runeAddr, sdk.NewUint(uint64(MaxUnstakeBasisPoints)), common.BNBAsset, activeNodeAccount.NodeAddress)
 	result := unstakeHandler.Run(ctx, msgUnstake, ver, constAccessor)
-	c.Assert(result.Code, Equals, sdk.CodeOK)
+	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("+v", result))
 
 	// Bad version should fail
 	result = unstakeHandler.Run(ctx, msgUnstake, semver.Version{}, constAccessor)

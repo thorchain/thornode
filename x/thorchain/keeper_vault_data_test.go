@@ -24,7 +24,7 @@ func (KeeperVaultDataSuite) TestVaultData(c *C) {
 
 	// add something in vault
 	vd.TotalReserve = sdk.NewUint(common.One * 100)
-	vd.Gas = common.BNBGasFeeMulti
+	vd.Gas = BNBGasFeeMulti
 	err = k.SetVaultData(ctx, vd)
 	c.Assert(err, IsNil)
 	c.Assert(k.UpdateVaultData(ctx, constAccessor, gasManager), IsNil)

@@ -72,3 +72,7 @@ func (mps MockPoolStorage) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error 
 func (mps MockPoolStorage) UpsertEvent(ctx sdk.Context, event Event) error {
 	return nil
 }
+
+func (mps MockPoolStorage) GetGas(ctx sdk.Context, _ common.Asset) ([]sdk.Uint, error) {
+	return []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(3000)}, nil
+}

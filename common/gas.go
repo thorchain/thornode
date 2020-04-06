@@ -6,20 +6,6 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var (
-	bnbSingleTxFee = sdk.NewUint(37500)
-	bnbMultiTxFee  = sdk.NewUint(30000)
-)
-
-// Gas Fees
-var BNBGasFeeSingleton = Gas{
-	{Asset: BNBAsset, Amount: bnbSingleTxFee},
-}
-
-var BNBGasFeeMulti = Gas{
-	{Asset: BNBAsset, Amount: bnbMultiTxFee},
-}
-
 type Gas Coins
 
 func CalcGasPrice(tx Tx, asset Asset, units []sdk.Uint) Gas {

@@ -46,7 +46,7 @@ func (HandlerRagnarokSuite) TestRagnarok(c *C) {
 		Memo:        "",
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 12, GetRandomPubKey())
 
 	msgRagnarok := NewMsgRagnarok(tx, 1, keeper.activeNodeAccount.NodeAddress)
@@ -148,7 +148,7 @@ func (HandlerRagnarokSuite) TestRagnarokHappyPath(c *C) {
 		Memo:        NewRagnarokMemo(1).String(),
 		FromAddress: addr,
 		ToAddress:   newVaultAddr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 1, retireVault.PubKey)
 
 	msgRagnarok := NewMsgRagnarok(tx, 1, keeper.activeNodeAccount.NodeAddress)
@@ -192,7 +192,7 @@ func (HandlerRagnarokSuite) TestSlash(c *C) {
 		Memo:        NewRagnarokMemo(1).String(),
 		FromAddress: addr,
 		ToAddress:   newVaultAddr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 1, retireVault.PubKey)
 
 	msgRagnarok := NewMsgRagnarok(tx, 1, keeper.activeNodeAccount.NodeAddress)

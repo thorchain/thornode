@@ -455,7 +455,7 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 							common.NewCoin(common.RuneAsset(), sdk.NewUint(8*common.One)),
 						},
 						Gas: common.Gas{
-							common.NewCoin(common.BNBAsset, common.BNBGasFeeSingleton[0].Amount),
+							common.NewCoin(common.BNBAsset, BNBGasFeeSingleton[0].Amount),
 						},
 						Memo: "",
 					},
@@ -474,7 +474,7 @@ func (s *HelperSuite) TestAddGasFees(c *C) {
 			validator: func(helper addGasFeeTestHelper, c *C) {
 				bnbPool, err := helper.k.GetPool(helper.ctx, common.BNBAsset)
 				c.Assert(err, IsNil)
-				expectedBNB := sdk.NewUint(100 * common.One).Sub(common.BNBGasFeeSingleton[0].Amount)
+				expectedBNB := sdk.NewUint(100 * common.One).Sub(BNBGasFeeSingleton[0].Amount)
 				c.Assert(bnbPool.BalanceAsset.Equal(expectedBNB), Equals, true)
 			},
 		},

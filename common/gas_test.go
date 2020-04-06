@@ -5,6 +5,20 @@ import (
 	. "gopkg.in/check.v1"
 )
 
+var (
+	bnbSingleTxFee = sdk.NewUint(37500)
+	bnbMultiTxFee  = sdk.NewUint(30000)
+)
+
+// Gas Fees
+var BNBGasFeeSingleton = Gas{
+	{Asset: BNBAsset, Amount: bnbSingleTxFee},
+}
+
+var BNBGasFeeMulti = Gas{
+	{Asset: BNBAsset, Amount: bnbMultiTxFee},
+}
+
 type GasSuite struct{}
 
 var _ = Suite(&GasSuite{})

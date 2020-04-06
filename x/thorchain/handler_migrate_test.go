@@ -46,7 +46,7 @@ func (HandlerMigrateSuite) TestMigrate(c *C) {
 		Memo:        "",
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 12, GetRandomPubKey())
 
 	msgMigrate := NewMsgMigrate(tx, 1, keeper.activeNodeAccount.NodeAddress)
@@ -148,7 +148,7 @@ func (HandlerMigrateSuite) TestMigrateHappyPath(c *C) {
 		Memo:        NewMigrateMemo(1).String(),
 		FromAddress: addr,
 		ToAddress:   newVaultAddr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 1, retireVault.PubKey)
 
 	msgMigrate := NewMsgMigrate(tx, 1, keeper.activeNodeAccount.NodeAddress)
@@ -191,7 +191,7 @@ func (HandlerMigrateSuite) TestSlash(c *C) {
 		Memo:        NewMigrateMemo(1).String(),
 		FromAddress: addr,
 		ToAddress:   newVaultAddr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 1, retireVault.PubKey)
 
 	msgMigrate := NewMsgMigrate(tx, 1, keeper.activeNodeAccount.NodeAddress)

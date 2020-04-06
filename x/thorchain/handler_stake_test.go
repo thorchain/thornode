@@ -108,7 +108,7 @@ func (HandlerStakeSuite) TestStakeHandler(c *C) {
 		bnbAddr,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(common.One*5))},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"stake:BNB",
 	)
 	ver := constants.SWVersion
@@ -154,7 +154,7 @@ func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 		bnbAddr,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(common.One*5))},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"stake:BNB",
 	)
 	ver := constants.SWVersion
@@ -307,7 +307,7 @@ func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 			bnbAddr,
 			GetRandomBNBAddress(),
 			common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(common.One*5))},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"stake:BNB",
 		)
 		ver := constants.SWVersion

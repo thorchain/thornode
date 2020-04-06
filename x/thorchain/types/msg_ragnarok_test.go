@@ -20,7 +20,7 @@ func (MsgRagnarokSuite) TestMsgRagnarokSuite(c *C) {
 		bnb,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"ragnarok:10",
 	), 12, GetRandomPubKey())
 	m := NewMsgRagnarok(tx, 10, acc1)
@@ -65,7 +65,7 @@ func (MsgRagnarokSuite) TestMsgRagnarokSuite(c *C) {
 			item.sender,
 			GetRandomBNBAddress(),
 			common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		), 12, GetRandomPubKey())
 		m := NewMsgRagnarok(tx, item.blockHeight, item.signer)

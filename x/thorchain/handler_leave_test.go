@@ -29,7 +29,7 @@ func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 		acc2.BondAddress,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.RuneAsset(), sdk.OneUint())},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"LEAVE",
 	)
 	msgLeave := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
@@ -54,7 +54,7 @@ func (HandlerLeaveSuite) TestLeaveHandler_ActiveNodeLeave(c *C) {
 		acc2.BondAddress,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.RuneAsset(), sdk.OneUint())},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"",
 	)
 	msgLeave := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)

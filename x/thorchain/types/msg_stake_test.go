@@ -24,7 +24,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 		common.Coins{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(100000000)),
 		},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"",
 	)
 	m := NewMsgSetStakeData(tx, common.BNBAsset, sdk.NewUint(100000000), sdk.NewUint(100000000), bnbAddress, assetAddress, addr)
@@ -85,7 +85,7 @@ func (MsgStakeSuite) TestMsgStake(c *C) {
 			common.Coins{
 				common.NewCoin(item.asset, item.r),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		)
 		m := NewMsgSetStakeData(tx, item.asset, item.r, item.amt, item.runeAddr, item.assetAddr, item.signer)

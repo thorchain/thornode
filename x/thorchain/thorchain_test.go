@@ -15,6 +15,20 @@ import (
 
 func TestPackage(t *testing.T) { TestingT(t) }
 
+var (
+	bnbSingleTxFee = sdk.NewUint(37500)
+	bnbMultiTxFee  = sdk.NewUint(30000)
+)
+
+// Gas Fees
+var BNBGasFeeSingleton = common.Gas{
+	{Asset: common.BNBAsset, Amount: bnbSingleTxFee},
+}
+
+var BNBGasFeeMulti = common.Gas{
+	{Asset: common.BNBAsset, Amount: bnbMultiTxFee},
+}
+
 type ThorchainSuite struct{}
 
 var _ = Suite(&ThorchainSuite{})
