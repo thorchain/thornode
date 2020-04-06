@@ -34,7 +34,8 @@ func UpdateGasPrice(tx Tx, asset Asset, units []sdk.Uint) []sdk.Uint {
 	case BNBAsset:
 		// first unit is single txn, second unit is multiple transactions
 		if len(units) != 2 {
-			units = make([]sdk.Uint, 2)
+			// defaults
+			units = []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)}
 		}
 		gasCoin := tx.Gas.ToCoins().GetCoin(BNBAsset)
 		lenCoins := uint64(len(tx.Coins))
