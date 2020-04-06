@@ -14,7 +14,7 @@ stages:
   - smoke-test
   - push
   - deploy
-  - deploy-lambda
+  - lambda
 
 unit_tests:
   stage: test
@@ -125,6 +125,7 @@ deploy:
 
 deploy-lambda:
   image: python:3.7
+  stage: lambda
   # only:
   #   - master
 
