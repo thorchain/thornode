@@ -79,6 +79,7 @@ type TestObservedTxOutHandleKeeper struct {
 	pool       Pool
 	txOutStore TxOutStore
 	observing  []sdk.AccAddress
+	gas        []sdk.Uint
 }
 
 func (k *TestObservedTxOutHandleKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
@@ -182,6 +183,14 @@ func (k *TestObservedTxOutHandleKeeper) SetPool(ctx sdk.Context, pool Pool) erro
 	return nil
 }
 
+func (k *TestObservedTxOutHandleKeeper) GetGas(ctx sdk.Context, asset common.Asset) ([]sdk.Uint, error) {
+	return k.gas, nil
+}
+
+func (k *TestObservedTxOutHandleKeeper) SetGas(ctx sdk.Context, asset common.Asset, units []sdk.Uint) {
+	k.gas = units
+}
+
 func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)
@@ -276,12 +285,13 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
-	gas := common.BNBGasFeeSingleton
 	result := handler.handle(ctx, msg, ver)
 	c.Assert(result.IsOK(), Equals, true)
-	c.Assert(common.BNBGasFeeSingleton.Equals(tx.Gas), Equals, true)
+	gas := keeper.gas[0]
+	c.Assert(gas.Equal(sdk.NewUint(475000)), Equals, true, Commentf("%+v", gas))
 	// revert the gas change , otherwise it messed up the other tests
-	common.UpdateBNBGasFee(gas, 1)
+	gasInfo := common.UpdateGasPrice(common.Tx{}, common.BNBAsset, []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)})
+	keeper.SetGas(ctx, common.BNBAsset, gasInfo)
 }
 
 func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
