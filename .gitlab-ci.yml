@@ -9,12 +9,12 @@ before_script:
   - export GOPATH="$CI_PROJECT_DIR/.cache"
 
 stages:
-  # - test
-  # - build
-  # - smoke-test
-  # - push
-  # - deploy
   - lambda
+  - test
+  - build
+  - smoke-test
+  - push
+  - deploy
 
 unit_tests:
   stage: test
