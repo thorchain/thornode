@@ -18,6 +18,7 @@ import (
 	ttypes "github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	btx "github.com/binance-chain/go-sdk/types/tx"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	pkerrors "github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -290,7 +291,9 @@ func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
 }
 
 func (b *Binance) GetGasFee(count uint64) common.Gas {
-	return common.GetBNBGasFee(count)
+	// TODO: remove GetGasFee entirely
+	coins := make(common.Coins, count)
+	return common.CalcGasPrice(common.Tx{Coins: coins}, common.BNBAsset, []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)})
 }
 
 func (b *Binance) ValidateMetadata(inter interface{}) bool {
