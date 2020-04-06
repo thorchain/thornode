@@ -27,6 +27,14 @@ func (s *AddressSuite) TestAddress(c *C) {
 	c.Check(err, NotNil)
 	c.Check(Address("").IsEmpty(), Equals, true)
 
+	// eth tests
+	addr, err = NewAddress("0x90f2b1ae50e6018230e90a33f98c7844a0ab635a")
+	c.Check(addr.IsChain(ETHChain), Equals, true)
+	c.Check(addr.IsChain(BNBChain), Equals, false)
+	c.Check(err, IsNil)
+	_, err = NewAddress("0x90f2b1ae50e6018230e90a33f98c7844a0ab635aaaaaaaaa")
+	c.Check(err, NotNil)
+
 	c.Check(NoAddress.Equals(Address("")), Equals, true)
 	_, err = NewAddress("")
 	c.Assert(err, IsNil)

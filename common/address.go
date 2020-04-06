@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/btcsuite/btcutil/bech32"
@@ -20,6 +21,14 @@ func NewAddress(address string) (Address, error) {
 		return NoAddress, nil
 	}
 
+	// Check is eth address
+	if strings.HasPrefix(address, "0x") {
+		if len(address) != 42 {
+			return NoAddress, fmt.Errorf("0x address must be 42 characters (%d/42)", len(address))
+		}
+		return Address(address), nil
+	}
+
 	_, _, err := bech32.Decode(address)
 	if err != nil {
 		return NoAddress, err
@@ -30,6 +39,8 @@ func NewAddress(address string) (Address, error) {
 
 func (addr Address) IsChain(chain Chain) bool {
 	switch chain {
+	case ETHChain:
+		return strings.HasPrefix(addr.String(), "0x")
 	case BNBChain:
 		prefix, _, _ := bech32.Decode(addr.String())
 		return prefix == "bnb" || prefix == "tbnb"
