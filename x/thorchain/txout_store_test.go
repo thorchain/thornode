@@ -1,11 +1,11 @@
 package thorchain
 
 import (
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type TxOutStoreSuite struct{}
@@ -81,7 +81,7 @@ func (s TxOutStoreSuite) TestAddOutTxItem(c *C) {
 		InHash:    inTxID,
 		Coin:      common.NewCoin(common.BNBAsset, sdk.NewUint(20*common.One)),
 	}
-	version := semver.MustParse("0.1.0")
+	version := constants.SWVersion
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, version)
 	c.Assert(err, IsNil)
 	txOutStore.TryAddTxOutItem(w.ctx, item)
@@ -137,7 +137,7 @@ func (s TxOutStoreSuite) TestAddOutTxItemWithoutBFT(c *C) {
 		InHash:    inTxID,
 		Coin:      common.NewCoin(common.RuneAsset(), sdk.NewUint(20*common.One)),
 	}
-	version := semver.MustParse("0.1.0")
+	version := constants.SWVersion
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, version)
 	c.Assert(err, IsNil)
 	success, err := txOutStore.TryAddTxOutItem(w.ctx, item)

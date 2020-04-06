@@ -4,7 +4,6 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -26,7 +25,7 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	user1 := GetRandomBNBAddress()
 	user2 := GetRandomBNBAddress()
 	txID := GetRandomTxHash()
-	constAccessor := constants.GetConstantValues(semver.MustParse("0.1.0"))
+	constAccessor := constants.GetConstantValues(constants.SWVersion)
 
 	// create bnb pool
 	pool := NewPool()
@@ -51,7 +50,7 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 	c.Assert(err, IsNil)
 	c.Check(staker2.PoolUnits, HasLen, 1)
 
-	version := semver.MustParse("0.1.0")
+	version := constants.SWVersion
 	// unstake for user1
 	msg := NewMsgSetUnStake(GetRandomTx(), user1, sdk.NewUint(10000), common.BNBAsset, GetRandomBech32Addr())
 	_, _, _, err = unstake(ctx, version, keeper, msg)
@@ -94,7 +93,7 @@ func (s *ThorchainSuite) TestStaking(c *C) {
 
 func (s *ThorchainSuite) TestChurn(c *C) {
 	ctx, keeper := setupKeeperForTest(c)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	consts := constants.GetConstantValues(ver)
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
@@ -217,7 +216,7 @@ func (s *ThorchainSuite) TestRagnarok(c *C) {
 	var err error
 	ctx, keeper := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(10)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	consts := constants.GetConstantValues(ver)
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
@@ -410,7 +409,7 @@ func (s *ThorchainSuite) TestRagnarokNoOneLeave(c *C) {
 	var err error
 	ctx, keeper := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(10)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	consts := constants.GetConstantValues(ver)
 
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()

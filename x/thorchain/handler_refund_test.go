@@ -132,7 +132,7 @@ func newRefundTxHandlerTestHelper(c *C) refundTxHandlerTestHelper {
 	pool.BalanceAsset = sdk.NewUint(100 * common.One)
 	pool.BalanceRune = sdk.NewUint(100 * common.One)
 
-	version := semver.MustParse("0.1.0")
+	version := constants.SWVersion
 	asgardVault := GetRandomVault()
 	addr, err := asgardVault.PubKey.GetAddress(common.BNBChain)
 	yggVault := GetRandomVault()
@@ -241,7 +241,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 				return NewMsgRefundTx(tx, helper.keeper.observeTxVoterErrHash, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler RefundHandler, helper refundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -252,7 +252,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			},
 			runner: func(handler RefundHandler, helper refundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.failGetPendingEvent = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -263,7 +263,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			},
 			runner: func(handler RefundHandler, helper refundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errGetTxOut = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -275,7 +275,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			},
 			runner: func(handler RefundHandler, helper refundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errGetNodeAccount = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -287,7 +287,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			},
 			runner: func(handler RefundHandler, helper refundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errGetPool = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -299,7 +299,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			},
 			runner: func(handler RefundHandler, helper refundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errSetPool = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -311,7 +311,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			},
 			runner: func(handler RefundHandler, helper refundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errSetNodeAccount = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -324,7 +324,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			},
 			runner: func(handler RefundHandler, helper refundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errGetVaultData = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -337,7 +337,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			},
 			runner: func(handler RefundHandler, helper refundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errSetVaultData = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -347,7 +347,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 				return NewMsgRefundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler RefundHandler, helper refundTxHandlerTestHelper, msg sdk.Msg) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeOK,
 		},
@@ -393,7 +393,7 @@ func (s *HandlerRefundSuite) TestRefundTxNormalCase(c *C) {
 	}, helper.ctx.BlockHeight(), helper.yggVault.PubKey)
 	// valid outbound message, with event, with txout
 	outMsg := NewMsgRefundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
-	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
+	c.Assert(handler.Run(helper.ctx, outMsg, constants.SWVersion, helper.constAccessor).Code, Equals, sdk.CodeOK)
 	// event should set to complete
 	ev, err := helper.keeper.GetEvent(helper.ctx, 1)
 	c.Assert(err, IsNil)
@@ -427,7 +427,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerSendExtraFundShouldBeSlashed(c *
 	expectedVaultTotalReserve := vaultData.TotalReserve.Add(sdk.NewUint(common.One * 2).QuoUint64(2))
 	// valid outbound message, with event, with txout
 	outMsg := NewMsgRefundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
-	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
+	c.Assert(handler.Run(helper.ctx, outMsg, constants.SWVersion, helper.constAccessor).Code, Equals, sdk.CodeOK)
 	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
 	c.Assert(na.Bond.Equal(expectedBond), Equals, true)
 	vaultData, err = helper.keeper.GetVaultData(helper.ctx)
@@ -455,7 +455,7 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldBeSla
 	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(2 * common.One).MulUint64(3).QuoUint64(2))
 	// slash one BNB and one rune
 	outMsg := NewMsgRefundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
-	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
+	c.Assert(handler.Run(helper.ctx, outMsg, constants.SWVersion, helper.constAccessor).Code, Equals, sdk.CodeOK)
 	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
 	c.Assert(na.Bond.Equal(expectedBond), Equals, true, Commentf("Bond: %d != %d", na.Bond.Uint64(), expectedBond.Uint64()))
 }
@@ -491,7 +491,7 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerInvalidObservedTxVoterShouldSl
 
 	// given the outbound tx doesn't have relevant OservedTxVoter in system , thus it should be slashed with 1.5 * the full amount of assets
 	outMsg := NewMsgRefundTx(tx, tx.Tx.ID, helper.nodeAccount.NodeAddress)
-	c.Assert(handler.Run(helper.ctx, outMsg, semver.MustParse("0.1.0"), helper.constAccessor).Code, Equals, sdk.CodeOK)
+	c.Assert(handler.Run(helper.ctx, outMsg, constants.SWVersion, helper.constAccessor).Code, Equals, sdk.CodeOK)
 	na, err := helper.keeper.GetNodeAccount(helper.ctx, helper.nodeAccount.NodeAddress)
 	c.Assert(na.Bond.Equal(expectedBond), Equals, true, Commentf("Bond: %d != %d", na.Bond.Uint64(), expectedBond.Uint64()))
 

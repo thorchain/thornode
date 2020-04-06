@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -15,7 +14,7 @@ var _ = Suite(&KeeperVaultDataSuite{})
 
 func (KeeperVaultDataSuite) TestVaultData(c *C) {
 	ctx, k := setupKeeperForTest(c)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	vd := NewVaultData()
 	err := k.SetVaultData(ctx, vd)

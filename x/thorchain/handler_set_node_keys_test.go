@@ -39,7 +39,7 @@ func (s *HandlerSetNodeKeysSuite) TestValidate(c *C) {
 	handler := NewSetNodeKeysHandler(keeper)
 
 	// happy path
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	signer := GetRandomBech32Addr()
 	c.Assert(signer.Empty(), Equals, false)
 	consensPubKey := GetRandomBech32ConsensusPubKey()
@@ -110,7 +110,7 @@ func (s *HandlerSetNodeKeysSuite) TestHandle(c *C) {
 
 	handler := NewSetNodeKeysHandler(keeper)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 
 	constAccessor := constants.GetConstantValues(ver)
 	ctx = ctx.WithBlockHeight(1)

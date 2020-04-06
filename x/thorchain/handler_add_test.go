@@ -20,7 +20,7 @@ func (HandlerAddSuite) TestAdd(c *C) {
 	c.Assert(err, IsNil)
 	addHandler := NewAddHandler(w.keeper)
 	msg := NewMsgAdd(GetRandomTx(), common.BNBAsset, sdk.NewUint(common.One*5), sdk.NewUint(common.One*5), w.activeNodeAccount.NodeAddress)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	result := addHandler.Run(w.ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
@@ -60,7 +60,7 @@ func (HandlerAddSuite) TestHandleMsgAddValidation(c *C) {
 	}
 
 	addHandler := NewAddHandler(w.keeper)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	cosntAccessor := constants.GetConstantValues(ver)
 	for _, item := range testCases {
 		c.Assert(addHandler.Run(w.ctx, item.msg, ver, cosntAccessor).Code, Equals, item.expectedCode)

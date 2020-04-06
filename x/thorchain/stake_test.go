@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
@@ -123,7 +122,7 @@ func (StakeSuite) TestStake(c *C) {
 	assetAddress := GetRandomBNBAddress()
 	btcAddress, err := common.NewAddress("bc1qwqdg6squsna38e46795at95yu9atm8azzmyvckulcc7kytlcckxswvvzej")
 	c.Assert(err, IsNil)
-	constAccessor := constants.GetConstantValues(semver.MustParse("0.1.0"))
+	constAccessor := constants.GetConstantValues(constants.SWVersion)
 	_, err = stake(ctx, ps, common.Asset{}, sdk.NewUint(100*common.One), sdk.NewUint(100*common.One), bnbAddress, assetAddress, txID, constAccessor)
 	c.Assert(err, NotNil)
 	c.Assert(ps.SetPool(ctx, Pool{

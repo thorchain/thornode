@@ -111,7 +111,7 @@ func (HandlerStakeSuite) TestStakeHandler(c *C) {
 		common.BNBGasFeeSingleton,
 		"stake:BNB",
 	)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	msgSetStake := NewMsgSetStakeData(
 		tx,
@@ -157,7 +157,7 @@ func (HandlerStakeSuite) TestStakeHandler_NoPool_ShouldCreateNewPool(c *C) {
 		common.BNBGasFeeSingleton,
 		"stake:BNB",
 	)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.NewDummyConstants(map[constants.ConstantName]int64{
 		constants.MaximumStakeRune: 600_000_00000000,
 	}, map[constants.ConstantName]bool{
@@ -235,7 +235,7 @@ func (HandlerStakeSuite) TestStakeHandlerValidation(c *C) {
 			expectedResult: CodeStakeRUNEMoreThanBond,
 		},
 	}
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.NewDummyConstants(map[constants.ConstantName]int64{
 		constants.MaximumStakeRune: 600_000_00000000,
 	}, map[constants.ConstantName]bool{
@@ -310,7 +310,7 @@ func (HandlerStakeSuite) TestHandlerStakeFailScenario(c *C) {
 			common.BNBGasFeeSingleton,
 			"stake:BNB",
 		)
-		ver := semver.MustParse("0.1.0")
+		ver := constants.SWVersion
 		constAccessor := constants.GetConstantValues(ver)
 		msgSetStake := NewMsgSetStakeData(
 			tx,

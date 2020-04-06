@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/thornode/constants"
@@ -14,7 +13,7 @@ type VaultSuite struct{}
 var _ = Suite(&VaultSuite{})
 
 func (s VaultSuite) TestCalcBlockRewards(c *C) {
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	emissionCurve := constAccessor.GetInt64Value(constants.EmissionCurve)
 	blocksPerYear := constAccessor.GetInt64Value(constants.BlocksPerYear)

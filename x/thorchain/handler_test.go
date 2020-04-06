@@ -3,7 +3,6 @@ package thorchain
 import (
 	"fmt"
 
-	"github.com/blang/semver"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -115,7 +114,7 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		p.BalanceAsset = sdk.NewUint(100 * common.One)
 		c.Assert(k.SetPool(ctx, p), IsNil)
 	}
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	versionedTxOutStore := NewVersionedTxOutStore()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
@@ -213,7 +212,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 		},
 		w.activeNodeAccount.NodeAddress,
 	)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
 	c.Assert(err, IsNil)
@@ -258,7 +257,7 @@ func (HandlerSuite) TestRefund(c *C) {
 		1024,
 		vault.PubKey,
 	)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
 	c.Assert(err, IsNil)

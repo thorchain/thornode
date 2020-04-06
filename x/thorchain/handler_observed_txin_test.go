@@ -53,7 +53,7 @@ func (s *HandlerObservedTxInSuite) TestValidate(c *C) {
 	handler := NewObservedTxInHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	// happy path
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	pk := GetRandomPubKey()
 	txs := ObservedTxs{NewObservedTx(GetRandomTx(), 12, pk)}
 	txs[0].Tx.ToAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
@@ -111,7 +111,7 @@ func (s *HandlerObservedTxInSuite) TestFailure(c *C) {
 	txOutStore := NewTxStoreDummy()
 
 	tx := NewObservedTx(GetRandomTx(), 12, GetRandomPubKey())
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	err := refundTx(ctx, tx, txOutStore, keeper, constAccessor, CodeInvalidMemo, "Invalid memo")
 	c.Assert(err, IsNil)
@@ -195,7 +195,7 @@ func (k *TestObservedTxInHandleKeeper) SetVault(_ sdk.Context, vault Vault) erro
 }
 
 func (k *TestObservedTxInHandleKeeper) GetLowestActiveVersion(_ sdk.Context) semver.Version {
-	return semver.MustParse("0.1.0")
+	return constants.SWVersion
 }
 
 func (k *TestObservedTxInHandleKeeper) IsActiveObserver(_ sdk.Context, addr sdk.AccAddress) bool {
@@ -225,7 +225,7 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 
 	tx := GetRandomTx()
 	tx.Memo = "SWAP:BTC.BTC"
@@ -275,7 +275,7 @@ func (s *HandlerObservedTxInSuite) TestMigrateMemo(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 
 	vault := GetRandomVault()
 	addr, err := vault.PubKey.GetAddress(common.BNBChain)

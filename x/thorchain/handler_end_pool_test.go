@@ -36,7 +36,7 @@ func (s *HandlerEndPoolSuite) TestValidate(c *C) {
 	handler := NewEndPoolHandler(keeper, versionedTxOutStoreDummy)
 
 	// happy path
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	bnbAddr := GetRandomBNBAddress()
 	txHash := GetRandomTxHash()
 	tx := common.NewTx(
@@ -171,7 +171,7 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 
 	versionedTxOutStore := NewVersionedTxOutStoreDummy()
 	handler := NewEndPoolHandler(keeper, versionedTxOutStore)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	txOutStore, err := versionedTxOutStore.GetTxOutStore(keeper, ver)
 	c.Assert(err, IsNil)
 	stakeTxHash := GetRandomTxHash()
