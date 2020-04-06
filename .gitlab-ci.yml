@@ -135,6 +135,7 @@ deploy-lambda:
     - pip install awscli --upgrade --user
     - export PATH=~/.local/bin:$PATH
     - aws --version
+    - make aws-ci-login
     # lambda function directory
     - cd ./build/lambda
 
