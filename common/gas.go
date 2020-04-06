@@ -11,6 +11,7 @@ type Gas Coins
 var (
 	bnbSingleTxFee = sdk.NewUint(37500)
 	bnbMultiTxFee  = sdk.NewUint(30000)
+	ethTransferFee = sdk.NewUint(21000)
 )
 
 // Gas Fees
@@ -20,6 +21,10 @@ var BNBGasFeeSingleton = Gas{
 
 var BNBGasFeeMulti = Gas{
 	{Asset: BNBAsset, Amount: bnbMultiTxFee},
+}
+
+var ETHGasFeeTransfer = Gas{
+	{Asset: ETHAsset, Amount: ethTransferFee},
 }
 
 func CalcGasPrice(tx Tx, asset Asset, units []sdk.Uint) Gas {
@@ -109,6 +114,10 @@ func GetBNBGasFeeMulti(count uint64) Gas {
 	return Gas{
 		{Asset: BNBAsset, Amount: bnbMultiTxFee.MulUint64(count)},
 	}
+}
+
+func GetETHGasFee() Gas {
+	return ETHGasFeeTransfer
 }
 
 func (g Gas) IsValid() error {

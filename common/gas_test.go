@@ -29,6 +29,17 @@ func (s *GasSuite) TestMultiGasCalc(c *C) {
 	)
 }
 
+func (s *GasSuite) TestETHGasFee(c *C) {
+	gas := GetETHGasFee()
+	amt := gas[0].Amount
+	c.Check(
+		amt.Equal(sdk.NewUint(21000)),
+		Equals,
+		true,
+		Commentf("%d", amt.Uint64()),
+	)
+}
+
 func (s *GasSuite) TestIsEmpty(c *C) {
 	gas1 := Gas{
 		{Asset: BNBAsset, Amount: sdk.NewUint(11 * One)},
