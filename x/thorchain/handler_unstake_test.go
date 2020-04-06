@@ -83,7 +83,7 @@ func (mfp *MockUnstakeKeeper) GetAdminConfigDefaultPoolStatus(_ sdk.Context, _ s
 func (mfp *MockUnstakeKeeper) UpsertEvent(ctx sdk.Context, event Event) error { return nil }
 
 func (mfp *MockUnstakeKeeper) GetGas(ctx sdk.Context, asset common.Asset) ([]sdk.Uint, error) {
-	return []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(3000)}, nil
+	return []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)}, nil
 }
 
 func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
