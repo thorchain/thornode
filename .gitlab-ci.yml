@@ -136,21 +136,21 @@ deploy-lambda:
     - pip install awscli --upgrade --user
     - export PATH=~/.local/bin:$PATH
     - aws --version
-# setup aws credentials
+    # setup aws credentials
     - mkdir ~/.aws
     - touch ~/.aws/config
     - chmod 600 ~/.aws/config
     - echo "aws_access_key_id=$AWS_ACCESS_KEY_ID" >> ~/.aws/config
     - echo "aws_secret_access_key=$AWS_SECRET_ACCESS_KEY" >> ~/.aws/config
-# lambda function directory
+    # lambda function directory
     - cd ./build/lambda
-  
+
   variables:
-    LAMBDA_NAME: 'node-ip-list-update'
-    S3_BUCKET: 'testnet-seed.thorchain.info'   # s3 bucket to store zip file.
-    LAMBDA_RUNTIME: 'python3.7'
-    LAMBDA_ARN: 'arn:aws:lambda:us-east-2:526267067157:function:node-ip-list-update'
-    LAMBDA_HANDLER: 'lambda_function.lambda_handler'
+    LAMBDA_NAME: "node-ip-list-update"
+    S3_BUCKET: "testnet-seed.thorchain.info" # s3 bucket to store zip file.
+    LAMBDA_RUNTIME: "python3.7"
+    LAMBDA_ARN: "arn:aws:lambda:us-east-2:526267067157:function:node-ip-list-update"
+    LAMBDA_HANDLER: "lambda_function.lambda_handler"
 
   script:
     - pip install -r requirements.txt -t .
@@ -158,7 +158,3 @@ deploy-lambda:
     - aws s3 cp code.zip s3://$S3_BUCKET/code.zip
     - aws lambda list-functions --max-items 10
     - aws lambda update-function-code --function-name $LAMBDA_NAME \ --zip-file fileb://code.zip || aws lambda create-function --function-name $LAMBDA_NAME --runtime $LAMBDA_RUNTIME --role $LAMBDA_ARN --handler $LAMBDA_HANDLER --code S3Bucket=$S3_BUCKET,S3Key=code.zip --memory-size 1024
-
-
-
-
