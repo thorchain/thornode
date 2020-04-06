@@ -15,6 +15,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	etypes "github.com/ethereum/go-ethereum/core/types"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
@@ -75,7 +76,6 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeigh
 		httpClient: &http.Client{
 			Timeout: cfg.HttpRequestTimeout,
 		},
-		rpcClient:      client,
 		scannerStorage: scannerStorage,
 		metrics:        m,
 		previousBlock:  startBlockHeight,
@@ -160,7 +160,6 @@ func (b *CommonBlockScanner) scanBlocks() {
 			if err != nil {
 				// don't log an error if its because the block doesn't exist yet
 				if !strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") {
-
 					b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
 					b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 				}
@@ -245,7 +244,7 @@ func (b *CommonBlockScanner) getFromHttp(url, body string) ([]byte, error) {
 func (b *CommonBlockScanner) getBlockRequest(height int64) (string, string) {
 	switch b.cfg.ChainID {
 	case common.ETHChain:
-		b.rpcHost, `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x` + fmt.Sprintf("%x", height) + `", true],"id":1}`
+		return b.rpcHost, `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x` + fmt.Sprintf("%x", height) + `", true],"id":1}`
 	default:
 		u, _ := url.Parse(b.rpcHost)
 		u.Path = "block"
@@ -266,7 +265,7 @@ func (b *CommonBlockScanner) unmarshalAndGetBlockInfo(buf []byte) (string, []str
 		}
 		return block.Result.Block.Header.Height, block.Result.Block.Data.Txs, nil
 	case common.ETHChain:
-		var block etypes.RPCBlock
+		var block etypes.Block
 		err := json.Unmarshal(buf, &block)
 		if err != nil {
 			return "", nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
@@ -302,14 +301,14 @@ func (b *CommonBlockScanner) getRPCBlock(height int64) (int64, []string, error) 
 	url, body := b.getBlockRequest(height)
 	buf, err := b.getFromHttp(url, body)
 	if err != nil {
-		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
+		b.errorCounter.WithLabelValues("fail_get_block", url).Inc()
 		time.Sleep(300 * time.Millisecond)
 		return 0, nil, err
 	}
 
 	block, rawTxns, err := b.unmarshalAndGetBlockInfo(buf)
 	if err != nil {
-		b.errorCounter.WithLabelValues("fail_unmarshal_block", requestUrl).Inc()
+		b.errorCounter.WithLabelValues("fail_unmarshal_block", url).Inc()
 		return 0, nil, err
 	}
 

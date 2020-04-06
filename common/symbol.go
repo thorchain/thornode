@@ -8,6 +8,7 @@ import (
 
 const (
 	BNBSymbol     = Symbol("BNB")
+	ETHSymbol     = Symbol("ETH")
 	RuneA1FSymbol = Symbol("RUNE-A1F")
 	RuneB1ASymbol = Symbol("RUNE-B1A")
 )

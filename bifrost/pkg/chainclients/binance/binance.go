@@ -14,7 +14,6 @@ import (
 
 	"github.com/binance-chain/go-sdk/common/types"
 	ctypes "github.com/binance-chain/go-sdk/common/types"
-	"github.com/binance-chain/go-sdk/keys"
 	ttypes "github.com/binance-chain/go-sdk/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	btx "github.com/binance-chain/go-sdk/types/tx"
@@ -41,8 +40,7 @@ type Binance struct {
 	isTestNet       bool
 	client          *http.Client
 	accts           *BinanceMetaDataStore
-	tssKeyManager   keys.KeyManager
-	localKeyManager *keyManager
+	keyManager      *KeyManager
 	thorchainBridge *thorclient.ThorchainBridge
 	storage         *BinanceBlockScannerStorage
 	blockScanner    *BinanceBlockScanner
@@ -54,11 +52,6 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 		return nil, errors.New("rpc host is empty")
 	}
 	rpcHost := cfg.RPCHost
-
-	tssKm, err := NewKeySign(server)
-	if err != nil {
-		return nil, fmt.Errorf("fail to create tss signer: %w", err)
-	}
 
 	priv, err := thorKeys.GetPrivateKey()
 	if err != nil {
@@ -72,10 +65,12 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 	if thorchainBridge == nil {
 		return nil, errors.New("thorchain bridge is nil")
 	}
-	localKm := &keyManager{
+	localKm := &KeyManager{
 		privKey: priv,
 		addr:    ctypes.AccAddress(priv.PubKey().Address()),
 		pubkey:  pk,
+		server:  server,
+		logger:  log.With().Str("module", "tss_signer").Logger(),
 	}
 
 	if !strings.HasPrefix(rpcHost, "http") {
@@ -88,8 +83,7 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 		cfg:             cfg,
 		accts:           NewBinanceMetaDataStore(),
 		client:          &http.Client{},
-		tssKeyManager:   tssKm,
-		localKeyManager: localKm,
+		keyManager:      localKm,
 		thorchainBridge: thorchainBridge,
 	}, nil
 }
@@ -373,11 +367,10 @@ func (b *Binance) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 }
 
 func (b *Binance) sign(signMsg btx.StdSignMsg, poolPubKey common.PubKey, signerPubKeys common.PubKeys) ([]byte, error) {
-	if b.localKeyManager.Pubkey().Equals(poolPubKey) {
-		return b.localKeyManager.Sign(signMsg)
+	if b.keyManager.Pubkey().Equals(poolPubKey) {
+		return b.keyManager.Sign(signMsg)
 	}
-	k := b.tssKeyManager.(ThorchainKeyManager)
-	return k.SignWithPool(signMsg, poolPubKey, signerPubKeys)
+	return b.keyManager.SignWithPool(signMsg, poolPubKey, signerPubKeys)
 }
 
 // signMsg is design to sign a given message until it success or the same message had been send out by other signer
@@ -391,7 +384,7 @@ func (b *Binance) signMsg(signMsg btx.StdSignMsg, from string, poolPubKey common
 	if err == nil && rawBytes != nil {
 		return rawBytes, nil
 	}
-	var keysignError KeysignError
+	var keysignError tss.KeysignError
 	if errors.As(err, &keysignError) {
 		if len(keysignError.Blame.BlameNodes) == 0 {
 			// TSS doesn't know which node to blame

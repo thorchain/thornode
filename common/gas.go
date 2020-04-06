@@ -9,7 +9,7 @@ import (
 type Gas Coins
 
 var (
-	ethTransferFee = sdk.NewUinT(21000)
+	ethTransferFee = sdk.NewUint(21000)
 	bnbSingleTxFee = sdk.NewUint(37500)
 	bnbMultiTxFee  = sdk.NewUint(30000)
 )
@@ -68,16 +68,6 @@ func UpdateBNBGasFee(gas Gas, numberCoins int) {
 	BNBGasFeeMulti = Gas{
 		{Asset: BNBAsset, Amount: multiGas},
 	}
-}
-
-func GetBNBGasFee(count uint64) Gas {
-	if count == 0 {
-		return nil
-	}
-	if count == 1 {
-		return BNBGasFeeSingleton
-	}
-	return GetBNBGasFeeMulti(count)
 }
 
 // Calculates the amount of gas for x number of coins in a single tx.

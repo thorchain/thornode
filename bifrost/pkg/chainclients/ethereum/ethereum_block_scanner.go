@@ -1,19 +1,17 @@
 package ethereum
 
 import (
-	"crypto/sha256"
-	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/crypto"
 	etypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/ethereum/go-ethereum/types/tx"
+	"github.com/ethereum/go-ethereum/crypto"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -28,6 +26,8 @@ import (
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
+const DefaultObserverLevelDBFolder = `observer_data`
+
 // EthereumBlockScanner is to scan the blocks
 type EthereumBlockScanner struct {
 	cfg                config.BlockScannerConfiguration
@@ -41,12 +41,11 @@ type EthereumBlockScanner struct {
 	pubkeyMgr          pubkeymanager.PubKeyValidator
 	globalTxsQueue     chan stypes.TxIn
 	client             *ethclient.Client
-	signer             etypes.EIP155Signer
 	rpcHost            string
 }
 
 // NewEthereumBlockScanner create a new instance of BlockScan
-func NewEthereumBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, signer etypes.EIP155Signer, isTestNet bool, client *ethclient.Client, pkmgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) (*EthereumBlockScanner, error) {
+func NewEthereumBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, isTestNet bool, client *ethclient.Client, pkmgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) (*EthereumBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
@@ -59,7 +58,7 @@ func NewEthereumBlockScanner(cfg config.BlockScannerConfiguration, startBlockHei
 	if err != nil {
 		return nil, err
 	}
-	if level {
+	if scanStorage == nil {
 		return nil, errors.New("scanStorage is nil")
 	}
 	if pkmgr == nil {
@@ -71,11 +70,6 @@ func NewEthereumBlockScanner(cfg config.BlockScannerConfiguration, startBlockHei
 	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, startBlockHeight, scanStorage, m)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create common block scanner")
-	}
-	if isTestNet {
-		types.Network = types.TestNetwork
-	} else {
-		types.Network = types.ProdNetwork
 	}
 
 	return &EthereumBlockScanner{
@@ -89,7 +83,6 @@ func NewEthereumBlockScanner(cfg config.BlockScannerConfiguration, startBlockHei
 		errCounter:         m.GetCounterVec(metrics.BlockScanError(common.ETHChain)),
 		rpcHost:            rpcHost,
 		client:             client,
-		signer:             signer,
 	}, nil
 }
 
@@ -137,7 +130,6 @@ func (e *EthereumBlockScanner) processBlock(block blockscanner.Block) error {
 		return nil
 	}
 
-	// TODO implement pagination appropriately
 	var txIn stypes.TxIn
 	for _, txn := range block.Txs {
 		hash, err := e.getTxHash(txn)
@@ -147,7 +139,7 @@ func (e *EthereumBlockScanner) processBlock(block blockscanner.Block) error {
 			return errors.Wrap(err, "fail to get tx hash from tx raw data")
 		}
 
-		txItemIns, err := e.fromTxToTxIn(hash, txn)
+		txItemIns, err := e.fromTxToTxIn(txn)
 		if err != nil {
 			e.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
 			e.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")
@@ -167,6 +159,7 @@ func (e *EthereumBlockScanner) processBlock(block blockscanner.Block) error {
 		return nil
 	}
 
+	// TODO implement postponing for transactions if total transfer values per block for address to secure against attacks
 	txIn.BlockHeight = strconv.FormatInt(block.Height, 10)
 	txIn.Count = strconv.Itoa(len(txIn.TxArray))
 	txIn.Chain = common.ETHChain
@@ -286,13 +279,13 @@ func (e *EthereumBlockScanner) isAddrWithMemo(addr, memo, targetMemo string) boo
 	return false
 }
 
-func (e *EthereumBlockScanner) getCoinsForTxIn(tx etypes.Transaction) (common.Coins, error) {
+func (e *EthereumBlockScanner) getCoinsForTxIn(tx *etypes.Transaction) (common.Coins, error) {
 	asset, err := common.NewAsset("ETH.ETH")
 	if err != nil {
 		e.errCounter.WithLabelValues("fail_create_ticker", "ETH").Inc()
 		return nil, errors.Wrap(err, "fail to create asset, ETH is not valid")
 	}
-	amt := sdk.NewUint(c.Value().NumberU64())
+	amt := sdk.NewUint(tx.Value().Uint64())
 	return common.Coins{common.NewCoin(asset, amt)}, nil
 }
 
@@ -300,15 +293,15 @@ func (e *EthereumBlockScanner) fromTxToTxIn(encodedTx string) ([]stypes.TxInItem
 	if len(encodedTx) == 0 {
 		return nil, errors.New("tx is empty")
 	}
-	var tx etypes.Transaction
-	if err := json.Unmarshal([]byte(encodedTx), &tx); err != nil {
-		return err
+	var tx *etypes.Transaction = &etypes.Transaction{}
+	if err := json.Unmarshal([]byte(encodedTx), tx); err != nil {
+		return nil, err
 	}
 	return e.fromStdTx(tx)
 }
 
 // fromStdTx - process a stdTx
-func (e *EthereumBlockScanner) fromStdTx(tx etypes.Transaction) ([]stypes.TxInItem, error) {
+func (e *EthereumBlockScanner) fromStdTx(tx *etypes.Transaction) ([]stypes.TxInItem, error) {
 	var err error
 	var txs []stypes.TxInItem
 
@@ -316,9 +309,8 @@ func (e *EthereumBlockScanner) fromStdTx(tx etypes.Transaction) ([]stypes.TxInIt
 		Tx: tx.Hash().String(),
 	}
 	txInItem.Memo = string(tx.Data())
-	// THORNode take the first Input as sender, first Output as receiver
-	// so if THORNode send to multiple different receiver within one tx, this won't be able to process it.
-	sender, err := e.signer.Sender(tx)
+
+	sender, err := eipSigner.Sender(tx)
 	if err != nil {	
 		return make([]stypes.TxInItem, 0), nil
 	}
@@ -342,7 +334,7 @@ func (e *EthereumBlockScanner) fromStdTx(tx etypes.Transaction) ([]stypes.TxInIt
 	txInItem.Gas = common.GetETHGasFee()
 
 	if ok := e.MatchedAddress(txInItem); !ok {
-		continue
+		return nil, errors.New("address is not matched")
 	}
 
 	// NOTE: the following could result in the same tx being added

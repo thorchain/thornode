@@ -36,6 +36,9 @@ func (addr Address) IsChain(chain Chain) bool {
 	case THORChain:
 		prefix, _, _ := bech32.Decode(addr.String())
 		return prefix == "thor" || prefix == "tthor"
+	case ETHChain:
+		prefix, _, _ := bech32.Decode(addr.String())
+		return prefix == "eth" || prefix == "teth"
 	default:
 		return true // if THORNode don't specifically check a chain yet, assume its ok.
 	}

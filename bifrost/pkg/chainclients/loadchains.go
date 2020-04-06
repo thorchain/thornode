@@ -3,6 +3,7 @@ package chainclients
 import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/common"
 	"gitlab.com/thorchain/tss/go-tss/tss"

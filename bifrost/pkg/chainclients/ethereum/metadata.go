@@ -1,14 +1,15 @@
-package Ethereum
+package ethereum
 
 import (
 	"sync"
 
-	"gitlae.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/common"
 )
 
 type EthereumMetadata struct {
-	Address string
-	Nonce   uint64
+	Address     string
+	Nonce       uint64
+	BlockHeight int64
 }
 
 type EthereumMetaDataStore struct {
@@ -23,7 +24,7 @@ func NewEthereumMetaDataStore() *EthereumMetaDataStore {
 	}
 }
 
-func (b *EthereumMetaDataStore) Get(pk common.PubKey) EthereumMetadata {
+func (e *EthereumMetaDataStore) Get(pk common.PubKey) EthereumMetadata {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	if val, ok := e.accts[pk]; ok {
@@ -32,7 +33,7 @@ func (b *EthereumMetaDataStore) Get(pk common.PubKey) EthereumMetadata {
 	return EthereumMetadata{}
 }
 
-func (b *EthereumMetaDataStore) GetByAccount(addr string) EthereumMetadata {
+func (e *EthereumMetaDataStore) GetByAccount(addr string) EthereumMetadata {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	for _, meta := range e.accts {
@@ -43,13 +44,13 @@ func (b *EthereumMetaDataStore) GetByAccount(addr string) EthereumMetadata {
 	return EthereumMetadata{}
 }
 
-func (b *EthereumMetaDataStore) Set(pk common.PubKey, meta EthereumMetadata) {
+func (e *EthereumMetaDataStore) Set(pk common.PubKey, meta EthereumMetadata) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	e.accts[pk] = meta
 }
 
-func (b *EthereumMetaDataStore) NonceInc(pk common.PubKey) {
+func (e *EthereumMetaDataStore) NonceInc(pk common.PubKey) {
 	e.lock.Lock()
 	defer e.lock.Unlock()
 	if meta, ok := e.accts[pk]; ok {

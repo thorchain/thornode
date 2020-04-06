@@ -97,8 +97,17 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
 		}
 		return NewAddress(str)
+	case ETHChain:
+		pk, err := sdk.GetAccPubKeyBech32(string(pubKey))
+		if err != nil {
+			return NoAddress, err
+		}
+		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk.Address().Bytes())
+		if err != nil {
+			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
+		}
+		return NewAddress(str)
 	}
-
 	return NoAddress, nil
 }
 

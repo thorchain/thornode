@@ -227,9 +227,9 @@ func (CommonBlockScannerTestSuite) TestGetHttp(c *C) {
 	}
 	cbs.GetHttpClient().Transport = trSkipVerify
 
-	_, err = cbs.getFromHttp(fmt.Sprintf("%s/block?height=1", s.URL))
+	_, err = cbs.getFromHttp(fmt.Sprintf("%s/block?height=1", s.URL), "")
 	c.Assert(err, IsNil)
 
-	_, err = cbs.getFromHttp(fmt.Sprintf("%s/block?height=2", s.URL))
+	_, err = cbs.getFromHttp(fmt.Sprintf("%s/block?height=2", s.URL), "")
 	c.Assert(err, NotNil)
 }
