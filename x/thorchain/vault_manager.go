@@ -148,9 +148,14 @@ func (vm *VaultMgr) EndBlock(ctx sdk.Context, version semver.Version, constAcces
 				// TODO: make this not chain specific
 				// minus gas costs for our transactions
 				if coin.Asset.IsBNB() {
+					gasInfo, err := vm.k.GetGas(ctx, coin.Asset)
+					if err != nil {
+						ctx.Logger().Error("fail to get gas for asset", "asset", coin.Asset, "error", err)
+						return err
+					}
 					amt = common.SafeSub(
 						amt,
-						common.BNBGasFeeSingleton[0].Amount.MulUint64(uint64(vault.CoinLength())),
+						gasInfo[0].MulUint64(uint64(vault.CoinLength())),
 					)
 				}
 

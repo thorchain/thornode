@@ -86,6 +86,12 @@ func setupKeeperForTest(c *C) (sdk.Context, Keeper) {
 	totalSupply := sdk.NewCoins(sdk.NewCoin("bep", sdk.NewInt(1000*common.One)))
 	supplyKeeper.SetSupply(ctx, supply.NewSupply(totalSupply))
 	k := NewKVStore(bk, supplyKeeper, keyThorchain, cdc)
+
+	// set bnb gas
+	k.SetGas(ctx, common.BNBAsset, []sdk.Uint{
+		sdk.NewUint(37500),
+		sdk.NewUint(30000),
+	})
 	return ctx, k
 }
 
@@ -172,7 +178,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 			Memo:        "stake:BNB",
 			FromAddress: staker,
 			ToAddress:   addr,
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		},
 		1024,
 		vault.PubKey,
@@ -201,7 +207,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 			Memo:        "withdraw:BNB",
 			FromAddress: staker,
 			ToAddress:   addr,
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		},
 		1024,
 		vault.PubKey,
@@ -252,7 +258,7 @@ func (HandlerSuite) TestRefund(c *C) {
 			Memo:        "withdraw:BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		},
 		1024,
 		vault.PubKey,
@@ -316,7 +322,7 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 			Memo:        "withdraw:BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		},
 		1024,
 		common.EmptyPubKey,
@@ -365,7 +371,7 @@ func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 			Memo:        "withdraw:BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		},
 		1024,
 		common.EmptyPubKey,

@@ -48,7 +48,7 @@ func (s *HandlerOutboundTxSuite) TestValidate(c *C) {
 		Memo:        "",
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 12, GetRandomPubKey())
 
 	msgOutboundTx := NewMsgOutboundTx(tx, tx.Tx.ID, keeper.activeNodeAccount.NodeAddress)
@@ -199,7 +199,7 @@ func newOutboundTxHandlerTestHelper(c *C) outboundTxHandlerTestHelper {
 		Memo:        "swap:RUNE-A1F",
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 12, GetRandomPubKey())
 
 	voter := NewObservedTxVoter(tx.Tx.ID, make(ObservedTxs, 0))
@@ -421,7 +421,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerShouldUpdateTxOut(c *C) {
 			Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
 			FromAddress: fromAddr,
 			ToAddress:   helper.inboundTx.Tx.FromAddress,
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		}, helper.ctx.BlockHeight(), helper.yggVault.PubKey)
 		msg := tc.messageCreator(helper, tx)
 		c.Assert(tc.runner(handler, helper, msg).Code, Equals, tc.expectedResult, Commentf("name:%s", tc.name))
@@ -443,7 +443,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxNormalCase(c *C) {
 		Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.yggVault.PubKey)
 	// valid outbound message, with event, with txout
 	outMsg := NewMsgOutboundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
@@ -473,7 +473,7 @@ func (s *HandlerOutboundTxSuite) TestOuboundTxHandlerSendExtraFundShouldBeSlashe
 		Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
 	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(2 * common.One).MulUint64(3).QuoUint64(2))
 	vaultData, err := helper.keeper.GetVaultData(helper.ctx)
@@ -504,7 +504,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldB
 		Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
 	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(2 * common.One).MulUint64(3).QuoUint64(2))
 	// slash one BNB, and one rune
@@ -529,7 +529,7 @@ func (s *HandlerOutboundTxSuite) TestOutboundTxHandlerInvalidObservedTxVoterShou
 		Memo:        NewOutboundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
 
 	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))

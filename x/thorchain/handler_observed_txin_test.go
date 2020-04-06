@@ -302,7 +302,7 @@ func (s *HandlerObservedTxInSuite) TestMigrateMemo(c *C) {
 		Memo:        NewMigrateMemo(12).String(),
 		FromAddress: addr,
 		ToAddress:   newVaultAddr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 13, vault.PubKey)
 
 	txs := ObservedTxs{tx}

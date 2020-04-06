@@ -136,9 +136,8 @@ func (o *Observer) getThorchainTxIns(txIn types.TxIn) (stypes.ObservedTxs, error
 			o.errCounter.WithLabelValues("fail to parse observed pool address", item.ObservedPoolAddress).Inc()
 			return nil, errors.Wrapf(err, "fail to parse observed pool address: %s", item.ObservedPoolAddress)
 		}
-		chain, _ := o.getChain(txIn.Chain)
 		txs[i] = stypes.NewObservedTx(
-			common.NewTx(txID, sender, to, item.Coins, chain.GetGasFee(uint64(len(item.Coins))), item.Memo),
+			common.NewTx(txID, sender, to, item.Coins, item.Gas, item.Memo),
 			h,
 			observedPoolPubKey,
 		)

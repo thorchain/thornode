@@ -44,7 +44,7 @@ func (s *HandlerEndPoolSuite) TestValidate(c *C) {
 		bnbAddr,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"",
 	)
 	signer := GetRandomBech32Addr()
@@ -180,7 +180,7 @@ func (s *HandlerEndPoolSuite) TestHandle(c *C) {
 		bnbAddr,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(asset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"",
 	)
 	msgSetStake := NewMsgSetStakeData(

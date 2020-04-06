@@ -20,7 +20,7 @@ func (MsgUnstakeSuite) TestMsgUnstake(c *C) {
 		common.Coins{
 			common.NewCoin(common.BTCAsset, sdk.NewUint(100000000)),
 		},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"",
 	)
 	bnb := GetRandomBNBAddress()

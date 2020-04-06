@@ -8,20 +8,6 @@ import (
 
 type Gas Coins
 
-var (
-	bnbSingleTxFee = sdk.NewUint(37500)
-	bnbMultiTxFee  = sdk.NewUint(30000)
-)
-
-// Gas Fees
-var BNBGasFeeSingleton = Gas{
-	{Asset: BNBAsset, Amount: bnbSingleTxFee},
-}
-
-var BNBGasFeeMulti = Gas{
-	{Asset: BNBAsset, Amount: bnbMultiTxFee},
-}
-
 func CalcGasPrice(tx Tx, asset Asset, units []sdk.Uint) Gas {
 	lenCoins := uint64(len(tx.Coins))
 
@@ -48,7 +34,8 @@ func UpdateGasPrice(tx Tx, asset Asset, units []sdk.Uint) []sdk.Uint {
 	case BNBAsset:
 		// first unit is single txn, second unit is multiple transactions
 		if len(units) != 2 {
-			units = make([]sdk.Uint, 2)
+			// defaults
+			units = []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)}
 		}
 		gasCoin := tx.Gas.ToCoins().GetCoin(BNBAsset)
 		lenCoins := uint64(len(tx.Coins))
@@ -59,56 +46,6 @@ func UpdateGasPrice(tx Tx, asset Asset, units []sdk.Uint) []sdk.Uint {
 		}
 	}
 	return units
-}
-
-// UpdateBNBGasFee
-func UpdateBNBGasFee(gas Gas, numberCoins int) {
-	if gas.IsEmpty() {
-		return
-	}
-	if err := gas.IsValid(); err != nil {
-		return
-	}
-	gasCoin := gas.ToCoins().GetCoin(BNBAsset)
-	if gasCoin.Equals(NoCoin) {
-		return
-	}
-
-	if numberCoins == 1 {
-		if gasCoin.Amount.Equal(bnbSingleTxFee) {
-			return
-		}
-		bnbSingleTxFee = gasCoin.Amount
-		BNBGasFeeSingleton = Gas{
-			{Asset: BNBAsset, Amount: bnbSingleTxFee},
-		}
-		return
-	}
-	multiGas := gasCoin.Amount.QuoUint64(uint64(numberCoins))
-	if multiGas.Equal(bnbMultiTxFee) {
-		return
-	}
-	bnbMultiTxFee = multiGas
-	BNBGasFeeMulti = Gas{
-		{Asset: BNBAsset, Amount: multiGas},
-	}
-}
-
-func GetBNBGasFee(count uint64) Gas {
-	if count == 0 {
-		return nil
-	}
-	if count == 1 {
-		return BNBGasFeeSingleton
-	}
-	return GetBNBGasFeeMulti(count)
-}
-
-// Calculates the amount of gas for x number of coins in a single tx.
-func GetBNBGasFeeMulti(count uint64) Gas {
-	return Gas{
-		{Asset: BNBAsset, Amount: bnbMultiTxFee.MulUint64(count)},
-	}
 }
 
 func (g Gas) IsValid() error {

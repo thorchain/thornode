@@ -209,7 +209,7 @@ func (s SwapSuite) TestSwap(c *C) {
 			common.Coins{
 				common.NewCoin(item.source, item.amount),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		)
 		tx.Chain = common.BNBChain
@@ -251,7 +251,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3429850000)),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -265,7 +265,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3429850000)),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -279,7 +279,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.Asset{}, sdk.NewUint(3429850000)),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -293,7 +293,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3429850000)),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		),
 		common.Asset{},
@@ -307,7 +307,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.ZeroUint()),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -321,7 +321,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3429850000)),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,
@@ -335,7 +335,7 @@ func (s SwapSuite) TestValidateMessage(c *C) {
 			common.Coins{
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(3429850000)),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		),
 		common.BNBAsset,

@@ -21,7 +21,7 @@ func (MsgEndPoolTestSuite) TestMsgEndPool(c *C) {
 		bnb,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"",
 	)
 	msgEndPool := NewMsgEndPool(asset, tx, addr)

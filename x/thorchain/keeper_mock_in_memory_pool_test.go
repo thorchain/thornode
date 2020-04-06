@@ -96,3 +96,7 @@ func (p *MockInMemoryPoolStorage) AddIncompleteEvents(ctx sdk.Context, event Eve
 func (p *MockInMemoryPoolStorage) SetCompletedEvent(ctx sdk.Context, event Event)         {}
 
 func (p *MockInMemoryPoolStorage) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error { return nil }
+
+func (p *MockInMemoryPoolStorage) GetGas(ctx sdk.Context, asset common.Asset) ([]sdk.Uint, error) {
+	return []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)}, nil
+}

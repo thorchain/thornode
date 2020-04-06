@@ -21,7 +21,7 @@ func (MsgRefundTxSuite) TestMsgRefundTx(c *C) {
 		bnb,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"",
 	), 12, GetRandomPubKey())
 	m := NewMsgRefundTx(tx, inTxID, acc1)
@@ -66,7 +66,7 @@ func (MsgRefundTxSuite) TestMsgRefundTx(c *C) {
 			item.sender,
 			GetRandomBNBAddress(),
 			common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		), 12, GetRandomPubKey())
 		m := NewMsgRefundTx(tx, item.inTxID, item.signer)

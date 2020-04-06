@@ -145,7 +145,7 @@ func newRefundTxHandlerTestHelper(c *C) refundTxHandlerTestHelper {
 		Memo:        "swap:RUNE-A1F",
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 12, GetRandomPubKey())
 
 	voter := NewObservedTxVoter(tx.Tx.ID, make(ObservedTxs, 0))
@@ -367,7 +367,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerShouldUpdateTxOut(c *C) {
 			Memo:        NewRefundMemo(helper.inboundTx.Tx.ID).String(),
 			FromAddress: fromAddr,
 			ToAddress:   helper.inboundTx.Tx.FromAddress,
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		}, helper.ctx.BlockHeight(), helper.yggVault.PubKey)
 		msg := tc.messageCreator(helper, tx)
 		c.Assert(tc.runner(handler, helper, msg).Code, Equals, tc.expectedResult, Commentf("name:%s", tc.name))
@@ -389,7 +389,7 @@ func (s *HandlerRefundSuite) TestRefundTxNormalCase(c *C) {
 		Memo:        NewRefundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.yggVault.PubKey)
 	// valid outbound message, with event, with txout
 	outMsg := NewMsgRefundTx(tx, helper.inboundTx.Tx.ID, helper.nodeAccount.NodeAddress)
@@ -419,7 +419,7 @@ func (s *HandlerRefundSuite) TestRefundTxHandlerSendExtraFundShouldBeSlashed(c *
 		Memo:        NewRefundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
 	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(common.One * 2).MulUint64(3).QuoUint64(2))
 	vaultData, err := helper.keeper.GetVaultData(helper.ctx)
@@ -450,7 +450,7 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerSendAdditionalCoinsShouldBeSla
 		Memo:        NewRefundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
 	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(2 * common.One).MulUint64(3).QuoUint64(2))
 	// slash one BNB and one rune
@@ -475,7 +475,7 @@ func (s *HandlerRefundSuite) TestOutboundTxHandlerInvalidObservedTxVoterShouldSl
 		Memo:        NewRefundMemo(helper.inboundTx.Tx.ID).String(),
 		FromAddress: fromAddr,
 		ToAddress:   helper.inboundTx.Tx.FromAddress,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, helper.ctx.BlockHeight(), helper.nodeAccount.PubKeySet.Secp256k1)
 
 	expectedBond := helper.nodeAccount.Bond.Sub(sdk.NewUint(common.One).MulUint64(3).QuoUint64(2))

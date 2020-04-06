@@ -89,9 +89,14 @@ func unstake(ctx sdk.Context, version semver.Version, keeper Keeper, msg MsgSetU
 		// TODO: make this not chain specific
 		// minus gas costs for our transactions
 		if pool.Asset.IsBNB() {
+			gasInfo, err := keeper.GetGas(ctx, pool.Asset)
+			if err != nil {
+				ctx.Logger().Error("fail to get gas for asset", "asset", pool.Asset, "error", err)
+				return sdk.ZeroUint(), sdk.ZeroUint(), sdk.ZeroUint(), sdk.NewError(DefaultCodespace, CodeUnstakeFail, err.Error())
+			}
 			withDrawAsset = common.SafeSub(
 				withDrawAsset,
-				common.BNBGasFeeSingleton[0].Amount.MulUint64(uint64(2)),
+				gasInfo[0].MulUint64(uint64(2)),
 			)
 		}
 	}
