@@ -125,8 +125,8 @@ deploy:
 deploy-lambda:
   image: python:3.7
   stage: deploy
-  # only:
-  #   - master
+  only:
+    - master
 
   before_script:
     - python -V
