@@ -14,6 +14,7 @@ stages:
   - smoke-test
   - push
   - deploy
+  - deploy-lambda
 
 unit_tests:
   stage: test
