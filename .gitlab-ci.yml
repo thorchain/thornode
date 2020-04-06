@@ -147,7 +147,7 @@ deploy-lambda:
   variables:
     LAMBDA_NAME: "node-ip-list-update"
     S3_BUCKET: "testnet-seed.thorchain.info" # s3 bucket to store zip file.
-    LAMBDA_RUNTIME: "python3.7"
+    LAMBDA_RUNTIME: "python3.8"
     LAMBDA_ARN: "arn:aws:lambda:us-east-2:526267067157:function:node-ip-list-update"
     LAMBDA_HANDLER: "lambda_function.lambda_handler"
 
@@ -156,4 +156,4 @@ deploy-lambda:
     - zip -r code.zip . -x \*.pyc *.git*
     - aws s3 cp code.zip s3://$S3_BUCKET/code.zip
     - aws lambda list-functions --max-items 10
-    - aws lambda update-function-code --function-name $LAMBDA_NAME \ --zip-file fileb://code.zip || aws lambda create-function --function-name $LAMBDA_NAME --runtime $LAMBDA_RUNTIME --role $LAMBDA_ARN --handler $LAMBDA_HANDLER --code S3Bucket=$S3_BUCKET,S3Key=code.zip --memory-size 1024
+    - aws lambda update-function-code --function-name $LAMBDA_NAME --zip-file fileb://code.zip || aws lambda create-function --function-name $LAMBDA_NAME --runtime $LAMBDA_RUNTIME --role $LAMBDA_ARN --handler $LAMBDA_HANDLER --code S3Bucket=$S3_BUCKET,S3Key=code.zip --memory-size 1024
