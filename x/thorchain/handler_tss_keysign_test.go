@@ -71,7 +71,7 @@ func (k *tssKeysignKeeperHelper) ListActiveNodeAccounts(ctx sdk.Context) (NodeAc
 func newTssKeysignHandlerTestHelper(c *C) tssKeysignFailHandlerTestHelper {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1023)
-	version := semver.MustParse("0.1.0")
+	version := constants.SWVersion
 	keeper := newTssKeysignFailKeeperHelper(k)
 	// active account
 	nodeAccount := GetRandomNodeAccount(NodeActive)
@@ -137,7 +137,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), helper.blame, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, GetRandomBech32Addr())
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnauthorized,
 		},
@@ -147,7 +147,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), helper.blame, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, sdk.AccAddress{})
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInvalidAddress,
 		},
@@ -159,7 +159,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 				return tssMsg
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -172,7 +172,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 				}, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -182,7 +182,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 				return NewMsgTssKeysignFail(helper.ctx.BlockHeight(), helper.blame, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeOK,
 		},
@@ -193,7 +193,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
 				helper.keeper.errListActiveAccounts = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -204,7 +204,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
 				helper.keeper.errGetTssVoter = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -215,7 +215,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
 				helper.keeper.errFailToGetNodeAccountByPubKey = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -226,7 +226,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 			},
 			runner: func(handler TssKeysignHandler, msg sdk.Msg, helper tssKeysignFailHandlerTestHelper) sdk.Result {
 				helper.keeper.errFailSetNodeAccount = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -242,7 +242,7 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 						return sdk.ErrInternal("fail to set node account").Result()
 					}
 				}
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeOK,
 		},
@@ -259,12 +259,12 @@ func (h HandlerTssKeysignSuite) TestTssKeysignFailHandler(c *C) {
 						return sdk.ErrInternal("fail to set node account").Result()
 					}
 				}
-				result := handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				result := handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 				if result.Code != sdk.CodeOK {
 					return result
 				}
 				msg = NewMsgTssKeysignFail(helper.ctx.BlockHeight(), helper.blame, "hello", common.Coins{common.NewCoin(common.BNBAsset, sdk.NewUint(100))}, na.NodeAddress)
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeOK,
 		},

@@ -1,7 +1,6 @@
 package types
 
 import (
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -75,7 +74,7 @@ func (s *VaultSuite) TestGetTssSigners(c *C) {
 func (s *VaultSuite) TestPendingTxBlockHeights(c *C) {
 	vault := NewVault(12, ActiveVault, AsgardVault, GetRandomPubKey())
 
-	version := semver.MustParse("0.1.0")
+	version := constants.SWVersion
 	constAccessor := constants.GetConstantValues(version)
 	vault.AppendPendingTxBlockHeights(1, constAccessor)
 	c.Assert(vault.LenPendingTxBlockHeights(2, constAccessor), Equals, 1)

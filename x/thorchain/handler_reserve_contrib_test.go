@@ -76,7 +76,7 @@ func newReserveContributorHandlerHelper(c *C) reserveContributorHandlerHelper {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1023)
 
-	version := semver.MustParse("0.1.0")
+	version := constants.SWVersion
 	keeper := newReserveContributorKeeper(k)
 
 	// active account
@@ -133,7 +133,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 				return NewMsgReserveContributor(GetRandomTx(), helper.reserveContributor, GetRandomBech32Addr())
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnauthorized,
 		},
@@ -143,7 +143,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 				return NewMsgReserveContributor(GetRandomTx(), helper.reserveContributor, sdk.AccAddress{})
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInvalidAddress,
 		},
@@ -156,7 +156,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 				}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -169,7 +169,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 				}, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -181,7 +181,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 				return NewMsgReserveContributor(tx, helper.reserveContributor, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -192,7 +192,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errGetReserveContributors = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -203,7 +203,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errSetReserveContributors = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -214,7 +214,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errGetVaultData = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -225,7 +225,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errSetVaultData = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -236,7 +236,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
 				helper.keeper.errSetEvents = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -246,7 +246,7 @@ func (h HandlerReserveContributorSuite) TestReserveContributorHandler(c *C) {
 				return NewMsgReserveContributor(GetRandomTx(), helper.reserveContributor, helper.nodeAccount.NodeAddress)
 			},
 			runner: func(handler ReserveContributorHandler, helper reserveContributorHandlerHelper, msg sdk.Msg) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			validator: func(helper reserveContributorHandlerHelper, msg sdk.Msg, result sdk.Result, c *C) {
 				eventID, err := helper.keeper.GetCurrentEventID(helper.ctx)

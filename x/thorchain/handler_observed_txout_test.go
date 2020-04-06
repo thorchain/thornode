@@ -8,6 +8,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type HandlerObservedTxOutSuite struct{}
@@ -37,7 +38,7 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 	handler := NewObservedTxOutHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	// happy path
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	pk := GetRandomPubKey()
 	txs := ObservedTxs{NewObservedTx(GetRandomTx(), 12, pk)}
 	txs[0].Tx.FromAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
@@ -186,7 +187,7 @@ func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	tx := GetRandomTx()
 	tx.Memo = fmt.Sprintf("OUTBOUND:%s", tx.ID)
 	obTx := NewObservedTx(tx, 12, GetRandomPubKey())
@@ -235,7 +236,7 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	tx := GetRandomTx()
 	tx.Gas = common.Gas{
 		{
@@ -288,7 +289,7 @@ func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	tx := GetRandomTx()
 	tx.Memo = "I AM A THIEF!" // bad memo
 	obTx := NewObservedTx(tx, 12, GetRandomPubKey())

@@ -1,12 +1,12 @@
 package thorchain
 
 import (
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type UnstakeSuite struct{}
@@ -413,7 +413,7 @@ func (UnstakeSuite) TestUnstake(c *C) {
 	for _, tc := range testCases {
 		ctx, _ := setupKeeperForTest(c)
 		c.Logf("name:%s", tc.name)
-		version := semver.MustParse("0.1.0")
+		version := constants.SWVersion
 		r, asset, _, err := unstake(ctx, version, tc.ps, tc.msg)
 		if tc.expectedError != nil {
 			c.Assert(err, NotNil)

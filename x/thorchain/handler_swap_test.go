@@ -37,7 +37,7 @@ func (s *HandlerSwapSuite) TestValidate(c *C) {
 
 	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	txID := GetRandomTxHash()
 	signerBNBAddr := GetRandomBNBAddress()
 	observerAddr := keeper.activeNodeAccount.NodeAddress
@@ -128,7 +128,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 
 	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	txID := GetRandomTxHash()
 	signerBNBAddr := GetRandomBNBAddress()
@@ -218,7 +218,7 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 	}
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 
 	pool := NewPool()

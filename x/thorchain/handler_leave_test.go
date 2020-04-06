@@ -33,7 +33,7 @@ func (HandlerLeaveSuite) TestLeaveHandler_NotActiveNodeLeave(c *C) {
 		"LEAVE",
 	)
 	msgLeave := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	result := leaveHandler.Run(w.ctx, msgLeave, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%+v", result))
@@ -58,7 +58,7 @@ func (HandlerLeaveSuite) TestLeaveHandler_ActiveNodeLeave(c *C) {
 		"",
 	)
 	msgLeave := NewMsgLeave(tx, w.activeNodeAccount.NodeAddress)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	result := leaveHandler.Run(w.ctx, msgLeave, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
@@ -70,7 +70,7 @@ func (HandlerLeaveSuite) TestLeaveHandler_ActiveNodeLeave(c *C) {
 
 func (HandlerLeaveSuite) TestLeaveValidation(c *C) {
 	w := getHandlerTestWrapper(c, 1, true, false)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	testCases := []struct {
 		name         string

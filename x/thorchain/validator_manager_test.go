@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"github.com/blang/semver"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/constants"
@@ -22,7 +21,7 @@ func (vts *ValidatorManagerTestSuite) TestSetupValidatorNodes(c *C) {
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStoreDummy)
 	vMgr := newValidatorMgrV1(k, versionedTxOutStoreDummy, versionedVaultMgrDummy)
 	c.Assert(vMgr, NotNil)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	err := vMgr.setupValidatorNodes(ctx, 0, constAccessor)
 	c.Assert(err, IsNil)

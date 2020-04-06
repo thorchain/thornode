@@ -8,6 +8,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
@@ -64,7 +65,7 @@ func (mps MockPoolStorage) AddToLiquidityFees(ctx sdk.Context, asset common.Asse
 }
 
 func (mps MockPoolStorage) GetLowestActiveVersion(ctx sdk.Context) semver.Version {
-	return semver.MustParse("0.1.0")
+	return constants.SWVersion
 }
 
 func (mps MockPoolStorage) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error { return nil }

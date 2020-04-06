@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -70,7 +69,7 @@ func (vts *ValidatorMgrV1TestSuite) TestBadActors(c *C) {
 func (vts *ValidatorMgrV1TestSuite) TestRagnarokBond(c *C) {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	txOutStore, err := versionedTxOutStoreDummy.GetTxOutStore(k, ver)
 	c.Assert(err, IsNil)

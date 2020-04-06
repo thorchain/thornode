@@ -3,7 +3,6 @@
 package thorchain
 
 import (
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -37,7 +36,7 @@ func (HandlerStakeSuite) TestStakeRUNEOverLimit(c *C) {
 		common.BNBGasFeeSingleton,
 		"stake:BNB",
 	)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	msgSetStake := NewMsgSetStakeData(
 		tx,
 		common.BNBAsset,

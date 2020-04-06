@@ -1,7 +1,6 @@
 package thorchain
 
 import (
-	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
@@ -119,7 +118,7 @@ func (s YggdrasilSuite) TestFund(c *C) {
 		c.Assert(k.SetNodeAccount(ctx, na), IsNil)
 	}
 	txOutStore := NewTxStoreDummy()
-	constAccessor := constants.GetConstantValues(semver.MustParse("0.1.0"))
+	constAccessor := constants.GetConstantValues(constants.SWVersion)
 	txOutStore.NewBlock(ctx.BlockHeight(), constAccessor)
 	err := Fund(ctx, k, txOutStore, constAccessor)
 	c.Assert(err, IsNil)

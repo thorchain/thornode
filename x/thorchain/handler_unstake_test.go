@@ -96,7 +96,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler(c *C) {
 			Status:       PoolEnabled,
 		},
 	}
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	// Happy path , this is a round trip , first we stake, then we unstake
 	runeAddr := GetRandomBNBAddress()
@@ -161,7 +161,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_Validation(c *C) {
 			expectedResult: CodeUnstakeFailValidation,
 		},
 	}
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	for _, tc := range testCases {
 		unstakeHandler := NewUnstakeHandler(k, NewVersionedTxOutStoreDummy())
@@ -217,7 +217,7 @@ func (HandlerUnstakeSuite) TestUnstakeHandler_mockFailScenarios(c *C) {
 			expectedResult: sdk.CodeInternal,
 		},
 	}
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 
 	for _, tc := range testCases {
