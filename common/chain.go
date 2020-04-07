@@ -99,6 +99,8 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 		switch c {
 		case BNBChain:
 			return btypes.TestNetwork.Bech32Prefixes()
+		case ETHChain:
+			return "0x"
 		case THORChain:
 			// TODO update this to use testnet address prefix
 			return types.GetConfig().GetBech32AccountAddrPrefix()
@@ -107,6 +109,8 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 		switch c {
 		case BNBChain:
 			return btypes.ProdNetwork.Bech32Prefixes()
+		case ETHChain:
+			return "0x"
 		case THORChain:
 			return types.GetConfig().GetBech32AccountAddrPrefix()
 		}

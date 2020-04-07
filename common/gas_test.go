@@ -5,23 +5,20 @@ import (
 	. "gopkg.in/check.v1"
 )
 
-var (
-	bnbSingleTxFee = sdk.NewUint(37500)
-	bnbMultiTxFee  = sdk.NewUint(30000)
-)
-
-// Gas Fees
-var BNBGasFeeSingleton = Gas{
-	{Asset: BNBAsset, Amount: bnbSingleTxFee},
-}
-
-var BNBGasFeeMulti = Gas{
-	{Asset: BNBAsset, Amount: bnbMultiTxFee},
-}
-
 type GasSuite struct{}
 
 var _ = Suite(&GasSuite{})
+
+func (s *GasSuite) TestETHGasFee(c *C) {
+	gas := GetETHGasFee()
+	amt := gas[0].Amount
+	c.Check(
+		amt.Equal(sdk.NewUint(21000)),
+		Equals,
+		true,
+		Commentf("%d", amt.Uint64()),
+	)
+}
 
 func (s *GasSuite) TestIsEmpty(c *C) {
 	gas1 := Gas{

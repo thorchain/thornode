@@ -11,6 +11,7 @@ require (
 	github.com/cosmos/cosmos-sdk v0.37.7
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/didip/tollbooth v4.0.2+incompatible
+	github.com/ethereum/go-ethereum v1.9.12
 	github.com/go-kit/kit v0.10.0 // indirect
 	github.com/golang/protobuf v1.3.4 // indirect
 	github.com/gorilla/mux v1.7.4
@@ -41,16 +42,13 @@ require (
 	github.com/zondax/ledger-go v0.11.0 // indirect
 	gitlab.com/thorchain/tss/go-tss v0.0.0-20200320003459-54d30a7e8a20
 	go.uber.org/multierr v1.5.0 // indirect
-	golang.org/x/crypto v0.0.0-20200302210943-78000ba7a073 // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
-	golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 // indirect
-	golang.org/x/tools v0.0.0-20200304193943-95d2e580d8eb // indirect
 	google.golang.org/genproto v0.0.0-20200304201815-d429ff31ee6c // indirect
 	google.golang.org/grpc v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 	gopkg.in/ini.v1 v1.52.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
+	mvdan.cc/gofumpt v0.0.0-20200324091932-79fd7e92aeae // indirect
 
 )
 
