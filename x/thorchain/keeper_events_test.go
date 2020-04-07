@@ -36,7 +36,7 @@ func (s *KeeperEventsSuite) TestEvents(c *C) {
 				common.NewCoin(common.BNBAsset, sdk.NewUint(320000000)),
 				common.NewCoin(common.RuneAsset(), sdk.NewUint(420000000)),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"SWAP:BNB.BNB",
 		),
 		swapBytes,

@@ -15,6 +15,7 @@ import (
 	ctypes "github.com/binance-chain/go-sdk/common/types"
 	"github.com/cosmos/cosmos-sdk/client/keys"
 	cKeys "github.com/cosmos/cosmos-sdk/crypto/keys"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
@@ -216,6 +217,35 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 
 	err = b2.BroadcastTx(out, r)
 	c.Assert(err, IsNil)
+}
+
+func (s *BinancechainSuite) TestGetGasFee(c *C) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		c.Logf("requestUri:%s", req.RequestURI)
+	}))
+
+	b, err := thorclient.NewThorchainBridge(config.ClientConfiguration{
+		ChainID:         "thorchain",
+		ChainHost:       server.Listener.Addr().String(),
+		SignerName:      "bob",
+		SignerPasswd:    "password",
+		ChainHomeFolder: s.thordir,
+	}, s.m)
+	c.Assert(err, IsNil)
+	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{
+		RPCHost: server.URL,
+	}, nil, b)
+	c.Assert(err2, IsNil)
+	c.Assert(b2, NotNil)
+
+	gas := b2.GetGasFee(0)
+	c.Check(gas, HasLen, 0)
+
+	gas = b2.GetGasFee(1)
+	c.Check(gas[0].Amount.Equal(sdk.NewUint(37500)), Equals, true)
+
+	gas = b2.GetGasFee(2)
+	c.Check(gas[0].Amount.Equal(sdk.NewUint(60000)), Equals, true)
 }
 
 func getTxOutFromJsonInput(input string, c *C) types.TxOut {

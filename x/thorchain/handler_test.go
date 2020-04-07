@@ -3,7 +3,6 @@ package thorchain
 import (
 	"fmt"
 
-	"github.com/blang/semver"
 	"github.com/cosmos/cosmos-sdk/codec"
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -87,6 +86,12 @@ func setupKeeperForTest(c *C) (sdk.Context, Keeper) {
 	totalSupply := sdk.NewCoins(sdk.NewCoin("bep", sdk.NewInt(1000*common.One)))
 	supplyKeeper.SetSupply(ctx, supply.NewSupply(totalSupply))
 	k := NewKVStore(bk, supplyKeeper, keyThorchain, cdc)
+
+	// set bnb gas
+	k.SetGas(ctx, common.BNBAsset, []sdk.Uint{
+		sdk.NewUint(37500),
+		sdk.NewUint(30000),
+	})
 	return ctx, k
 }
 
@@ -115,7 +120,7 @@ func getHandlerTestWrapper(c *C, height int64, withActiveNode, withActieBNBPool 
 		p.BalanceAsset = sdk.NewUint(100 * common.One)
 		c.Assert(k.SetPool(ctx, p), IsNil)
 	}
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	versionedTxOutStore := NewVersionedTxOutStore()
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
@@ -173,7 +178,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 			Memo:        "stake:BNB",
 			FromAddress: staker,
 			ToAddress:   addr,
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		},
 		1024,
 		vault.PubKey,
@@ -202,7 +207,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 			Memo:        "withdraw:BNB",
 			FromAddress: staker,
 			ToAddress:   addr,
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		},
 		1024,
 		vault.PubKey,
@@ -213,7 +218,7 @@ func (HandlerSuite) TestHandleTxInUnstakeMemo(c *C) {
 		},
 		w.activeNodeAccount.NodeAddress,
 	)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
 	c.Assert(err, IsNil)
@@ -253,12 +258,12 @@ func (HandlerSuite) TestRefund(c *C) {
 			Memo:        "withdraw:BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		},
 		1024,
 		vault.PubKey,
 	)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	txOutStore, err := w.versionedTxOutStore.GetTxOutStore(w.keeper, ver)
 	c.Assert(err, IsNil)
@@ -317,7 +322,7 @@ func (HandlerSuite) TestGetMsgSwapFromMemo(c *C) {
 			Memo:        "withdraw:BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		},
 		1024,
 		common.EmptyPubKey,
@@ -366,7 +371,7 @@ func (HandlerSuite) TestGetMsgStakeFromMemo(c *C) {
 			Memo:        "withdraw:BNB",
 			FromAddress: GetRandomBNBAddress(),
 			ToAddress:   GetRandomBNBAddress(),
-			Gas:         common.BNBGasFeeSingleton,
+			Gas:         BNBGasFeeSingleton,
 		},
 		1024,
 		common.EmptyPubKey,

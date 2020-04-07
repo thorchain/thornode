@@ -6,6 +6,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type HandlerRagnarokSuite struct{}
@@ -36,7 +37,7 @@ func (HandlerRagnarokSuite) TestRagnarok(c *C) {
 	addr, err := keeper.vault.PubKey.GetAddress(common.BNBChain)
 	c.Assert(err, IsNil)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 
 	tx := NewObservedTx(common.Tx{
 		ID:          GetRandomTxHash(),
@@ -45,7 +46,7 @@ func (HandlerRagnarokSuite) TestRagnarok(c *C) {
 		Memo:        "",
 		FromAddress: GetRandomBNBAddress(),
 		ToAddress:   addr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 12, GetRandomPubKey())
 
 	msgRagnarok := NewMsgRagnarok(tx, 1, keeper.activeNodeAccount.NodeAddress)
@@ -147,11 +148,11 @@ func (HandlerRagnarokSuite) TestRagnarokHappyPath(c *C) {
 		Memo:        NewRagnarokMemo(1).String(),
 		FromAddress: addr,
 		ToAddress:   newVaultAddr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 1, retireVault.PubKey)
 
 	msgRagnarok := NewMsgRagnarok(tx, 1, keeper.activeNodeAccount.NodeAddress)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	result := handler.handleV1(ctx, ver, msgRagnarok)
 	c.Assert(result.Code, Equals, sdk.CodeOK)
 	c.Assert(keeper.txout.TxArray[0].OutHash.Equals(tx.Tx.ID), Equals, true)
@@ -191,11 +192,11 @@ func (HandlerRagnarokSuite) TestSlash(c *C) {
 		Memo:        NewRagnarokMemo(1).String(),
 		FromAddress: addr,
 		ToAddress:   newVaultAddr,
-		Gas:         common.BNBGasFeeSingleton,
+		Gas:         BNBGasFeeSingleton,
 	}, 1, retireVault.PubKey)
 
 	msgRagnarok := NewMsgRagnarok(tx, 1, keeper.activeNodeAccount.NodeAddress)
-	result := handler.handleV1(ctx, semver.MustParse("0.1.0"), msgRagnarok)
+	result := handler.handleV1(ctx, constants.SWVersion, msgRagnarok)
 	c.Assert(result.Code, Equals, sdk.CodeOK, Commentf("%s", result.Log))
 	c.Assert(keeper.activeNodeAccount.Bond.Equal(sdk.NewUint(9999998464)), Equals, true, Commentf("%d", keeper.activeNodeAccount.Bond.Uint64()))
 }

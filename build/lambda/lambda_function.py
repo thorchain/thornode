@@ -21,7 +21,7 @@ def lambda_handler(event, context):
 
       for obj in thorchain_bucket.objects.all():
         key = obj.key
-        if key.startsWith(prefix):
+        if key.startswith(prefix):
           print('key: ' + key)
           body = obj.get()['Body'].read()
           ip_list = json.loads(body)

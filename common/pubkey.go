@@ -8,9 +8,8 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/tendermint/tendermint/crypto"
-	ecrypto "github.com/ethereum/go-ethereum/crypto"
 	ecommon "github.com/ethereum/go-ethereum/common"
+	"github.com/tendermint/tendermint/crypto"
 	cryptoAmino "github.com/tendermint/tendermint/crypto/encoding/amino"
 )
 
@@ -84,7 +83,7 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 		if err != nil {
 			return NoAddress, err
 		}
-		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk.Address().Bytes(), chain)
+		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk.Address().Bytes())
 		if err != nil {
 			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
 		}
@@ -94,17 +93,17 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 		if err != nil {
 			return NoAddress, err
 		}
-		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk.Address().Bytes(), chain)
+		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk.Address().Bytes())
 		if err != nil {
 			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
 		}
 		return NewAddress(str)
 	case ETHChain:
-		pk, err := sdk.GetAccPubKeyBech32(string(pubKey))
+		pk, err := sdk.GetPubKeyFromBech32(sdk.Bech32PubKeyTypeAccPub, string(pubKey))
 		if err != nil {
 			return NoAddress, err
 		}
-		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk.Address().Bytes(), chain)
+		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk.Bytes())
 		if err != nil {
 			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
 		}
@@ -184,9 +183,9 @@ func (pks PubKeys) String() string {
 }
 
 // ConvertAndEncode converts from a base64 encoded byte string to hex or base32 encoded byte string and then to bech32
-func ConvertAndEncode(hrp string, data []byte, chain Chain) (string, error) {
-	if chain == ETHChain {
-		return ecommon.BytesToAddress(ecrypto.Keccak256(data)).String(), nil
+func ConvertAndEncode(hrp string, data []byte) (string, error) {
+	if hrp == "0x" {
+		return ecommon.BytesToAddress(data).String(), nil
 	}
 	converted, err := bech32.ConvertBits(data, 8, 5, true)
 	if err != nil {

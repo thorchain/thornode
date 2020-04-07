@@ -128,7 +128,6 @@ func GetCmdEndPool(cdc *codec.Codec) *cobra.Command {
 						Amount: sdk.NewUint(1),
 					},
 				},
-				Gas: common.BNBGasFeeSingleton,
 			}
 
 			msg := types.NewMsgEndPool(asset, tx, cliCtx.GetFromAddress())

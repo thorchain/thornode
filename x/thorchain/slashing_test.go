@@ -72,7 +72,7 @@ func (s *SlashingSuite) TestObservingSlashing(c *C) {
 		nas:   nas,
 		addrs: []sdk.AccAddress{nas[0].NodeAddress},
 	}
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 
 	slasher, err := NewSlasher(keeper, ver)
@@ -106,7 +106,7 @@ func (s *SlashingSuite) TestLackObservingErrors(c *C) {
 		nas:   nas,
 		addrs: []sdk.AccAddress{nas[0].NodeAddress},
 	}
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	slasher, err := NewSlasher(keeper, ver)
 	c.Assert(err, IsNil)
@@ -261,7 +261,7 @@ func (s *SlashingSuite) TestNodeSignSlashErrors(c *C) {
 		ctx, _ := setupKeeperForTest(c)
 		ctx = ctx.WithBlockHeight(201) // set blockheight
 		txOutStore := NewTxStoreDummy()
-		ver := semver.MustParse("0.1.0")
+		ver := constants.SWVersion
 		constAccessor := constants.GetConstantValues(ver)
 		na := GetRandomNodeAccount(NodeActive)
 
@@ -316,7 +316,7 @@ func (s *SlashingSuite) TestNodeSignSlashErrors(c *C) {
 		}
 		signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
 		ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod)
-		version := semver.MustParse("0.1.0")
+		version := constants.SWVersion
 		slasher, err := NewSlasher(keeper, version)
 		c.Assert(err, IsNil)
 		item.condition(keeper)
@@ -332,7 +332,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(201) // set blockheight
 	txOutStore := NewTxStoreDummy()
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	na := GetRandomNodeAccount(NodeActive)
 
@@ -387,7 +387,7 @@ func (s *SlashingSuite) TestNotSigningSlash(c *C) {
 	}
 	signingTransactionPeriod := constAccessor.GetInt64Value(constants.SigningTransactionPeriod)
 	ctx = ctx.WithBlockHeight(evt.Height + signingTransactionPeriod)
-	version := semver.MustParse("0.1.0")
+	version := constants.SWVersion
 	slasher, err := NewSlasher(keeper, version)
 	c.Assert(err, IsNil)
 	c.Assert(slasher.LackSigning(ctx, constAccessor, txOutStore), IsNil)

@@ -7,6 +7,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 
 	"gitlab.com/thorchain/thornode/x/thorchain/types"
 )
@@ -88,10 +89,14 @@ func (p *MockInMemoryPoolStorage) SetPoolStaker(ctx sdk.Context, ps PoolStaker) 
 }
 
 func (p *MockInMemoryPoolStorage) GetLowestActiveVersion(ctx sdk.Context) semver.Version {
-	return semver.MustParse("0.1.0")
+	return constants.SWVersion
 }
 
 func (p *MockInMemoryPoolStorage) AddIncompleteEvents(ctx sdk.Context, event Event) error { return nil }
 func (p *MockInMemoryPoolStorage) SetCompletedEvent(ctx sdk.Context, event Event)         {}
 
 func (p *MockInMemoryPoolStorage) AddFeeToReserve(ctx sdk.Context, fee sdk.Uint) error { return nil }
+
+func (p *MockInMemoryPoolStorage) GetGas(ctx sdk.Context, asset common.Asset) ([]sdk.Uint, error) {
+	return []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)}, nil
+}

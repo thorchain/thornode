@@ -3,6 +3,7 @@ package thorchain
 import (
 	"github.com/blang/semver"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"gitlab.com/thorchain/thornode/constants"
 	. "gopkg.in/check.v1"
 )
 
@@ -33,7 +34,7 @@ func (s *HandlerVersionSuite) TestValidate(c *C) {
 
 	handler := NewVersionHandler(keeper)
 	// happy path
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	msg := NewMsgSetVersion(ver, keeper.na.NodeAddress)
 	err := handler.validate(ctx, msg, ver)
 	c.Assert(err, IsNil)
@@ -50,7 +51,7 @@ func (s *HandlerVersionSuite) TestValidate(c *C) {
 
 func (s *HandlerVersionSuite) TestHandle(c *C) {
 	ctx, _ := setupKeeperForTest(c)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 
 	keeper := &TestVersionlKeeper{
 		na: GetRandomNodeAccount(NodeActive),

@@ -105,7 +105,6 @@ func (s *ThorchainSuite) TestSign(c *C) {
 			Memo:        "This is my memo!",
 			FromAddress: vaultAddr,
 			ToAddress:   common.Address("bnb1ntqj0v0sv62ut0ehxt7jqh7lenfrd3hmfws0aq"),
-			Gas:         common.BNBGasFeeSingleton,
 		},
 		1,
 		pk,

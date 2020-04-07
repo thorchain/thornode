@@ -46,7 +46,7 @@ func (HandlerBondSuite) TestBondHandler_Run(c *C) {
 	// happy path
 	c.Assert(k1.SetNodeAccount(ctx, activeNodeAccount), IsNil)
 	handler := NewBondHandler(k1)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	minimumBondInRune := constAccessor.GetInt64Value(constants.MinimumBondInRune)
 	txIn := common.NewTx(
@@ -70,7 +70,7 @@ func (HandlerBondSuite) TestBondHandler_Run(c *C) {
 	c.Assert(result.Code, Equals, CodeBadVersion)
 
 	// simulate fail to get node account
-	ver = semver.MustParse("0.1.0")
+	ver = constants.SWVersion
 	msg = NewMsgBond(txIn, k.failGetNodeAccount.NodeAddress, sdk.NewUint(uint64(minimumBondInRune)), GetRandomBNBAddress(), activeNodeAccount.NodeAddress)
 	result = handler.Run(ctx, msg, ver, constAccessor)
 	c.Assert(result.Code, Equals, sdk.CodeInternal)
@@ -85,7 +85,7 @@ func (HandlerBondSuite) TestBondHandlerFailValidation(c *C) {
 	activeNodeAccount := GetRandomNodeAccount(NodeActive)
 	c.Assert(k.SetNodeAccount(ctx, activeNodeAccount), IsNil)
 	handler := NewBondHandler(k)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	minimumBondInRune := constAccessor.GetInt64Value(constants.MinimumBondInRune)
 	txIn := common.NewTx(

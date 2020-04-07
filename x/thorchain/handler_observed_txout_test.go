@@ -8,6 +8,7 @@ import (
 	. "gopkg.in/check.v1"
 
 	"gitlab.com/thorchain/thornode/common"
+	"gitlab.com/thorchain/thornode/constants"
 )
 
 type HandlerObservedTxOutSuite struct{}
@@ -37,7 +38,7 @@ func (s *HandlerObservedTxOutSuite) TestValidate(c *C) {
 	handler := NewObservedTxOutHandler(keeper, w.versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	// happy path
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	pk := GetRandomPubKey()
 	txs := ObservedTxs{NewObservedTx(GetRandomTx(), 12, pk)}
 	txs[0].Tx.FromAddress, err = pk.GetAddress(txs[0].Tx.Coins[0].Asset.Chain)
@@ -78,6 +79,7 @@ type TestObservedTxOutHandleKeeper struct {
 	pool       Pool
 	txOutStore TxOutStore
 	observing  []sdk.AccAddress
+	gas        []sdk.Uint
 }
 
 func (k *TestObservedTxOutHandleKeeper) ListActiveNodeAccounts(_ sdk.Context) (NodeAccounts, error) {
@@ -181,12 +183,20 @@ func (k *TestObservedTxOutHandleKeeper) SetPool(ctx sdk.Context, pool Pool) erro
 	return nil
 }
 
+func (k *TestObservedTxOutHandleKeeper) GetGas(ctx sdk.Context, asset common.Asset) ([]sdk.Uint, error) {
+	return k.gas, nil
+}
+
+func (k *TestObservedTxOutHandleKeeper) SetGas(ctx sdk.Context, asset common.Asset, units []sdk.Uint) {
+	k.gas = units
+}
+
 func (s *HandlerObservedTxOutSuite) TestHandle(c *C) {
 	var err error
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	tx := GetRandomTx()
 	tx.Memo = fmt.Sprintf("OUTBOUND:%s", tx.ID)
 	obTx := NewObservedTx(tx, 12, GetRandomPubKey())
@@ -235,7 +245,7 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	tx := GetRandomTx()
 	tx.Gas = common.Gas{
 		{
@@ -275,12 +285,13 @@ func (s *HandlerObservedTxOutSuite) TestGasUpdate(c *C) {
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxOut(txs, keeper.nas[0].NodeAddress)
-	gas := common.BNBGasFeeSingleton
 	result := handler.handle(ctx, msg, ver)
 	c.Assert(result.IsOK(), Equals, true)
-	c.Assert(common.BNBGasFeeSingleton.Equals(tx.Gas), Equals, true)
+	gas := keeper.gas[0]
+	c.Assert(gas.Equal(sdk.NewUint(475000)), Equals, true, Commentf("%+v", gas))
 	// revert the gas change , otherwise it messed up the other tests
-	common.UpdateBNBGasFee(gas, 1)
+	gasInfo := common.UpdateGasPrice(common.Tx{}, common.BNBAsset, []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)})
+	keeper.SetGas(ctx, common.BNBAsset, gasInfo)
 }
 
 func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
@@ -288,7 +299,7 @@ func (s *HandlerObservedTxOutSuite) TestHandleStolenFunds(c *C) {
 	ctx, _ := setupKeeperForTest(c)
 	w := getHandlerTestWrapper(c, 1, true, false)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	tx := GetRandomTx()
 	tx.Memo = "I AM A THIEF!" // bad memo
 	obTx := NewObservedTx(tx, 12, GetRandomPubKey())

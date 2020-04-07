@@ -95,7 +95,7 @@ func newTssKeeperHelper(keeper Keeper) *tssKeeperHelper {
 func newTssHandlerTestHelper(c *C) tssHandlerTestHelper {
 	ctx, k := setupKeeperForTest(c)
 	ctx = ctx.WithBlockHeight(1023)
-	version := semver.MustParse("0.1.0")
+	version := constants.SWVersion
 	keeper := newTssKeeperHelper(k)
 	// active account
 	nodeAccount := GetRandomNodeAccount(NodeActive)
@@ -159,7 +159,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, GetRandomNodeAccount(NodeActive).NodeAddress)
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnauthorized,
 		},
@@ -169,7 +169,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return NewMsgTssPool(helper.members, GetRandomPubKey(), AsgardKeygen, helper.ctx.BlockHeight(), tssCommon.NoBlame, sdk.AccAddress{})
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInvalidAddress,
 		},
@@ -181,7 +181,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -192,7 +192,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -203,7 +203,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -214,7 +214,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -225,7 +225,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -236,7 +236,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeUnknownRequest,
 		},
@@ -248,7 +248,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				helper.keeper.errListActiveAccounts = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -260,7 +260,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				helper.keeper.errGetTssVoter = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -272,7 +272,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				helper.keeper.errFailSaveVault = true
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -287,7 +287,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 					na := GetRandomNodeAccount(NodeActive)
 					_ = helper.keeper.SetNodeAccount(helper.ctx, na)
 				}
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeOK,
 		},
@@ -298,7 +298,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				return tssMsg
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
-				return handler.Run(helper.ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(helper.ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeOK,
 		},
@@ -318,7 +318,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				ctx := helper.ctx.WithBlockHeight(60000)
-				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -342,7 +342,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			},
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				ctx := helper.ctx.WithBlockHeight(60000)
-				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			validator: func(helper tssHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
 				// make sure node get slashed
@@ -370,7 +370,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				ctx := helper.ctx.WithBlockHeight(60000)
 				helper.keeper.errFailGetVaultData = true
-				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -395,7 +395,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 					TotalBondUnits: sdk.NewUint(10000),
 				}
 				_ = helper.keeper.SetVaultData(helper.ctx, vd)
-				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			validator: func(helper tssHandlerTestHelper, msg sdk.Msg, result sdk.Result, c *C) {
 				// make sure node get slashed
@@ -428,7 +428,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 				}
 				_ = helper.keeper.SetVaultData(helper.ctx, vd)
 				helper.keeper.errFailSetVaultData = true
-				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeOK,
 		},
@@ -446,7 +446,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				helper.keeper.errFailGetNodeAccount = true
 				ctx := helper.ctx.WithBlockHeight(60000)
-				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},
@@ -464,7 +464,7 @@ func (s *HandlerTssSuite) TestTssHandler(c *C) {
 			runner: func(handler TssHandler, msg sdk.Msg, helper tssHandlerTestHelper) sdk.Result {
 				helper.keeper.errFailSetNodeAccount = true
 				ctx := helper.ctx.WithBlockHeight(60000)
-				return handler.Run(ctx, msg, semver.MustParse("0.1.0"), helper.constAccessor)
+				return handler.Run(ctx, msg, constants.SWVersion, helper.constAccessor)
 			},
 			expectedResult: sdk.CodeInternal,
 		},

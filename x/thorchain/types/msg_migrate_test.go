@@ -20,7 +20,7 @@ func (MsgMigrateSuite) TestMsgMigrateSuite(c *C) {
 		bnb,
 		GetRandomBNBAddress(),
 		common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"migrate:10",
 	), 12, GetRandomPubKey())
 	m := NewMsgMigrate(tx, 10, acc1)
@@ -65,7 +65,7 @@ func (MsgMigrateSuite) TestMsgMigrateSuite(c *C) {
 			item.sender,
 			GetRandomBNBAddress(),
 			common.Coins{common.NewCoin(common.BNBAsset, sdk.OneUint())},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"",
 		), 12, GetRandomPubKey())
 		m := NewMsgMigrate(tx, item.blockHeight, item.signer)

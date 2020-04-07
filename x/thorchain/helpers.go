@@ -436,8 +436,6 @@ func AddGasFees(ctx sdk.Context, keeper Keeper, tx ObservedTx, gasManager GasMan
 		}
 	}
 
-	numberOfCoins := len(tx.Tx.Coins)
-	common.UpdateBNBGasFee(tx.Tx.Gas, numberOfCoins)
 	vaultData, err := keeper.GetVaultData(ctx)
 	if err != nil {
 		return fmt.Errorf("fail to get vaultData: %w", err)

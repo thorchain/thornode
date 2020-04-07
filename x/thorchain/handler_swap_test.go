@@ -37,7 +37,7 @@ func (s *HandlerSwapSuite) TestValidate(c *C) {
 
 	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	txID := GetRandomTxHash()
 	signerBNBAddr := GetRandomBNBAddress()
 	observerAddr := keeper.activeNodeAccount.NodeAddress
@@ -48,7 +48,7 @@ func (s *HandlerSwapSuite) TestValidate(c *C) {
 		common.Coins{
 			common.NewCoin(common.RuneAsset(), sdk.OneUint()),
 		},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"",
 	)
 	msg := NewMsgSwap(tx, common.BNBAsset, signerBNBAddr, sdk.ZeroUint(), observerAddr)
@@ -128,7 +128,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 
 	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
 
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 	txID := GetRandomTxHash()
 	signerBNBAddr := GetRandomBNBAddress()
@@ -142,7 +142,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 		common.Coins{
 			common.NewCoin(common.RuneAsset(), sdk.OneUint()),
 		},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"",
 	)
 	keeper.clearEvent()
@@ -165,7 +165,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 		common.Coins{
 			common.NewCoin(common.RuneAsset(), sdk.NewUint(2*common.One)),
 		},
-		common.BNBGasFeeSingleton,
+		BNBGasFeeSingleton,
 		"",
 	)
 	keeper.clearEvent()
@@ -189,7 +189,7 @@ func (s *HandlerSwapSuite) TestHandle(c *C) {
 			common.Coins{
 				common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"swap:RUNE-B1A:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u:124958592",
 		),
 		1,
@@ -218,7 +218,7 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 	}
 	versionedTxOutStoreDummy := NewVersionedTxOutStoreDummy()
 	handler := NewSwapHandler(keeper, versionedTxOutStoreDummy)
-	ver := semver.MustParse("0.1.0")
+	ver := constants.SWVersion
 	constAccessor := constants.GetConstantValues(ver)
 
 	pool := NewPool()
@@ -246,7 +246,7 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 			common.Coins{
 				common.NewCoin(tCanAsset, sdk.NewUint(20000000)),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"swap:BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u",
 		),
 		1,
@@ -277,7 +277,7 @@ func (s *HandlerSwapSuite) TestDoubleSwap(c *C) {
 			common.Coins{
 				common.NewCoin(tCanAsset, sdk.NewUint(10000000)),
 			},
-			common.BNBGasFeeSingleton,
+			BNBGasFeeSingleton,
 			"swap:BNB:bnb18jtza8j86hfyuj2f90zec0g5gvjh823e5psn2u",
 		),
 		1,
