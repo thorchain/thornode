@@ -16,6 +16,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
@@ -27,7 +28,7 @@ type Client struct {
 	logger             zerolog.Logger
 	RPCHost            string
 	cfg                config.ChainConfiguration
-	chainID            int64
+	chainID            types.ChainID
 	isTestNet          bool
 	pk                 common.PubKey
 	client             *ethclient.Client
@@ -96,7 +97,7 @@ func (c *Client) CheckIsTestNet() bool {
 		return false
 	}
 
-	c.chainID = chainID.Int64()
+	c.chainID = types.ChainID(chainID.Int64())
 	c.isTestNet = c.chainID > 1
 	return c.isTestNet
 }

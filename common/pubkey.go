@@ -11,6 +11,8 @@ import (
 	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/crypto"
 	cryptoAmino "github.com/tendermint/tendermint/crypto/encoding/amino"
+
+	"gitlab.com/thorchain/thornode/cmd"
 )
 
 // PubKey used in statechain, it should be bech32 encoded string
@@ -99,7 +101,7 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 		}
 		return NewAddress(str)
 	case ETHChain:
-		pk, err := sdk.GetFromBech32(string(pubKey), "thorpub1")
+		pk, err := sdk.GetFromBech32(string(pubKey), cmd.Bech32PrefixAccPub)
 		if err != nil {
 			return NoAddress, err
 		}

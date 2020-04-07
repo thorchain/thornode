@@ -57,3 +57,10 @@ func (s *PubKeyTestSuite) TestPubKeySet(c *C) {
 	}
 	c.Check(pks.Contains(pk), Equals, true)
 }
+
+func (s *PubKeyTestSuite) TestETHPubKey(c *C) {
+	pubKey := PubKey("thorpub1addwnpepqt7qug8vk9r3saw8n4r803ydj2g3dqwx0mvq5akhnze86fc536xcy2cr8a2")
+	addr, err := pubKey.GetAddress(ETHChain)
+	c.Assert(err, IsNil)
+	c.Check(len(addr), Equals, 42)
+}
