@@ -293,10 +293,11 @@ func (b *Binance) GetAddress(poolPubKey common.PubKey) string {
 func (b *Binance) GetGasFee(count uint64) common.Gas {
 	// TODO: remove GetGasFee entirely
 	coins := make(common.Coins, count)
-	return common.CalcGasPrice(common.Tx{Coins: coins}, common.BNBAsset, []sdk.Uint{
-		sdk.NewUint(b.blockScanner.singleFee), sdk.NewUint(b.blockScanner.multiFee),
-	},
-	)
+	gasInfo := []sdk.Uint{
+		sdk.NewUint(b.blockScanner.singleFee),
+		sdk.NewUint(b.blockScanner.multiFee),
+	}
+	return common.CalcGasPrice(common.Tx{Coins: coins}, common.BNBAsset, gasInfo)
 }
 
 func (b *Binance) ValidateMetadata(inter interface{}) bool {
