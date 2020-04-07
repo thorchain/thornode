@@ -86,8 +86,6 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 		errCounter:         m.GetCounterVec(metrics.BlockScanError(common.BNBChain)),
 		rpcHost:            rpcHost,
 		binanceHTTP:        rpc.NewRPCClient(rpcHost, types.Network),
-		// singleFee:          37500,
-		// multiFee:           30000,
 	}, nil
 }
 
