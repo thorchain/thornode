@@ -3,7 +3,6 @@ package binance
 import (
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -379,13 +378,11 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 }
 
 func (s *BlockScannerTestSuite) TestUpdateGasFees(c *C) {
-	c.Skip("skip this test for now")
-	client := rpc.NewRPCClient("http://dataseed1.binance.org", types.ProdNetwork)
+	// unable to get unit test to pass. I think its some kind of race condition with go-sdk
+	c.Skip("Unable to get this test to pass. RPC client fails")
 	b := BinanceBlockScanner{
-		binanceHTTP: client,
+		binanceHTTP: rpc.NewRPCClient("http://dataseed1.binance.org", types.ProdNetwork),
 	}
-	fmt.Printf("Running: %+v\n", b.binanceHTTP.IsRunning())
-	// fmt.Printf("Dialing: %+v\n", b.binanceHTTP.WSClient.IsDialing())
 	c.Assert(b.updateFees(), IsNil)
 	c.Check(b.singleFee, Equals, uint64(37500))
 	c.Check(b.multiFee, Equals, uint64(30000))
