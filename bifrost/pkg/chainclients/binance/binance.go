@@ -294,7 +294,8 @@ func (b *Binance) GetGasFee(count uint64) common.Gas {
 	// TODO: remove GetGasFee entirely
 	coins := make(common.Coins, count)
 	return common.CalcGasPrice(common.Tx{Coins: coins}, common.BNBAsset, []sdk.Uint{
-		sdk.NewUint(b.blockScanner.singleFee), sdk.NewUint(b.blockScanner.multiFee)},
+		sdk.NewUint(b.blockScanner.singleFee), sdk.NewUint(b.blockScanner.multiFee),
+	},
 	)
 }
 
