@@ -3,12 +3,15 @@ package binance
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
-	"github.com/binance-chain/go-sdk/client/rpc"
 	"github.com/binance-chain/go-sdk/common/types"
 	bmsg "github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
@@ -17,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/tendermint/go-amino"
 
 	"gitlab.com/thorchain/thornode/common"
 
@@ -39,10 +43,18 @@ type BinanceBlockScanner struct {
 	errCounter         *prometheus.CounterVec
 	pubkeyMgr          pubkeymanager.PubKeyValidator
 	globalTxsQueue     chan stypes.TxIn
-	binanceHTTP        *rpc.HTTP
+	http               *http.Client
 	singleFee          uint64
 	multiFee           uint64
 	rpcHost            string
+}
+
+type QueryResult struct {
+	Result struct {
+		Response struct {
+			Value string `json:"value"`
+		} `json:"response"`
+	} `json:"result"`
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
@@ -55,7 +67,6 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 	if !strings.HasPrefix(rpcHost, "http") {
 		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
-	fmt.Printf("<<<<<<<<<<<<<<<<<<<<< Binance Block Scanner RPC Host: %s\n", rpcHost)
 
 	if scanStorage == nil {
 		return nil, errors.New("scanStorage is nil")
@@ -76,6 +87,10 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 		types.Network = types.ProdNetwork
 	}
 
+	var netClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
+
 	return &BinanceBlockScanner{
 		cfg:                cfg,
 		pubkeyMgr:          pkmgr,
@@ -85,8 +100,8 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 		db:                 scanStorage,
 		commonBlockScanner: commonBlockScanner,
 		errCounter:         m.GetCounterVec(metrics.BlockScanError(common.BNBChain)),
+		http:               netClient,
 		rpcHost:            rpcHost,
-		binanceHTTP:        rpc.NewRPCClient(rpcHost, types.Network),
 	}, nil
 }
 
@@ -112,10 +127,37 @@ func (b *BinanceBlockScanner) getTxHash(encodedTx string) (string, error) {
 }
 
 func (b *BinanceBlockScanner) updateFees() error {
-	fees, err := b.binanceHTTP.GetFee()
+	url := fmt.Sprintf("%s/abci_query?path=\"/param/fees\"", b.rpcHost)
+	resp, err := b.http.Get(url)
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("failed to get current gas fees: non 200 error (%d)", resp.StatusCode)
+	}
+
+	bz, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	var result QueryResult
+	err = json.Unmarshal(bz, &result)
+
+	val, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
+	if err != nil {
+		return err
+	}
+
+	var fees []types.FeeParam
+	cdc := amino.NewCodec()
+	types.RegisterWire(cdc)
+	err = cdc.UnmarshalBinaryLengthPrefixed(val, &fees)
+	if err != nil {
+		return err
+	}
+
 	for _, fee := range fees {
 		if fee.GetParamType() == types.TransferFeeType {
 			if err := fee.Check(); err != nil {
@@ -123,8 +165,12 @@ func (b *BinanceBlockScanner) updateFees() error {
 			}
 
 			transferFee := fee.(*types.TransferFeeParam)
-			b.singleFee = uint64(transferFee.FixedFeeParams.Fee)
-			b.multiFee = uint64(transferFee.MultiTransferFee)
+			if transferFee.FixedFeeParams.Fee > 0 {
+				b.singleFee = uint64(transferFee.FixedFeeParams.Fee)
+			}
+			if transferFee.MultiTransferFee > 0 {
+				b.multiFee = uint64(transferFee.MultiTransferFee)
+			}
 		}
 	}
 
