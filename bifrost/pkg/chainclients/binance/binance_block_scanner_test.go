@@ -378,10 +378,8 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 }
 
 func (s *BlockScannerTestSuite) TestUpdateGasFees(c *C) {
-	// unable to get unit test to pass. I think its some kind of race condition with go-sdk
-	c.Skip("Unable to get this test to pass. RPC client fails")
 	b := BinanceBlockScanner{
-		binanceHTTP: rpc.NewRPCClient("http://dataseed1.binance.org", types.ProdNetwork),
+		binanceHTTP: rpc.NewRPCClient("testnet-binance.thorchain.info:26657", types.ProdNetwork),
 	}
 	c.Assert(b.updateFees(), IsNil)
 	c.Check(b.singleFee, Equals, uint64(37500))
