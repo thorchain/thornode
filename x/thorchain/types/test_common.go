@@ -65,7 +65,7 @@ func GetRandomBech32ConsensusPubKey() string {
 // GetRandomBNBAddress will just create a random bnb address used for test purpose
 func GetRandomBNBAddress() common.Address {
 	name := common.RandStringBytesMask(10)
-	str, _ := common.ConvertAndEncode("tbnb", crypto.AddressHash([]byte(name)), common.BNBChain)
+	str, _ := common.ConvertAndEncode("tbnb", crypto.AddressHash([]byte(name)))
 	bnb, _ := common.NewAddress(str)
 	return bnb
 }
