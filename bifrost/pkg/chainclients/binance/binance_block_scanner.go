@@ -143,7 +143,9 @@ func (b *BinanceBlockScanner) updateFees() error {
 		return err
 	}
 	var result QueryResult
-	err = json.Unmarshal(bz, &result)
+	if err := json.Unmarshal(bz, &result); err != nil {
+		return err
+	}
 
 	val, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
 	if err != nil {
