@@ -115,7 +115,6 @@ func (s *EthereumSuite) TestNewClient(c *C) {
 			c.Assert(err, IsNil)
 		}
 		if rpcRequest.Method == "eth_chainId" {
-			c.Log("YES")
 			_, err := rw.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":"0x2"}`))
 			c.Assert(err, IsNil)
 		}
@@ -148,7 +147,6 @@ func (s *EthereumSuite) TestNewClient(c *C) {
 			c.Assert(err, IsNil)
 		}
 	}))
-	c.Log("OK")
 	splitted := strings.SplitAfter(server.URL, ":")
 	e2, err2 := NewClient(s.thorKeys, config.ChainConfiguration{RPCHost: "localhost:" + splitted[len(splitted)-1]}, nil, s.bridge)
 	c.Assert(err2, IsNil)

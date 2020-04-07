@@ -7,8 +7,8 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/ethclient"
 	ecommon "github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -150,7 +150,7 @@ func (c *Client) GetAccount(addr string) (common.Account, error) {
 		return common.Account{}, fmt.Errorf("fail to get account nonce: %w", err)
 	}
 	balance, err := c.client.BalanceAt(ctx, ecommon.HexToAddress(addr), nil)
-	if err != nil {	
+	if err != nil {
 		return common.Account{}, fmt.Errorf("fail to get account nonce: %w", err)
 	}
 	account := common.NewAccount(int64(nonce), 0, common.AccountCoins{common.AccountCoin{Amount: balance.Uint64(), Denom: "ETH.ETH"}})

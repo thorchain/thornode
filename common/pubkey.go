@@ -99,13 +99,13 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 		}
 		return NewAddress(str)
 	case ETHChain:
-		pk, err := sdk.GetPubKeyFromBech32(sdk.Bech32PubKeyTypeAccPub, string(pubKey))
+		pk, err := sdk.GetFromBech32(string(pubKey), "thorpub1")
 		if err != nil {
 			return NoAddress, err
 		}
-		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk.Bytes())
+		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk)
 		if err != nil {
-			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
+			return NoAddress, fmt.Errorf("fail to hex encode the address, err:%w", err)
 		}
 		return NewAddress(str)
 	}
