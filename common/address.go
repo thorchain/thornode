@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/bech32"
 )
 
@@ -29,12 +31,25 @@ func NewAddress(address string) (Address, error) {
 		return Address(address), nil
 	}
 
+	// Check bech32 addresses, would succeed any string bech32 encoded
 	_, _, err := bech32.Decode(address)
-	if err != nil {
-		return NoAddress, err
+	if err == nil {
+		return Address(address), nil
 	}
 
-	return Address(address), nil
+	// Check other BTC address formats with mainnet
+	_, err = btcutil.DecodeAddress(address, &chaincfg.MainNetParams)
+	if err == nil {
+		return Address(address), nil
+	}
+
+	// Check BTC address formats with testnet
+	_, err = btcutil.DecodeAddress(address, &chaincfg.TestNet3Params)
+	if err == nil {
+		return Address(address), nil
+	}
+
+	return NoAddress, fmt.Errorf("No address format compatible was found for %s", address)
 }
 
 func (addr Address) IsChain(chain Chain) bool {
@@ -47,6 +62,24 @@ func (addr Address) IsChain(chain Chain) bool {
 	case THORChain:
 		prefix, _, _ := bech32.Decode(addr.String())
 		return prefix == "thor" || prefix == "tthor"
+	case BTCChain:
+		prefix, _, err := bech32.Decode(addr.String())
+		fmt.Print(prefix)
+
+		if err == nil && (prefix == "bc" || prefix == "tb") {
+			return true
+		}
+		// Check mainnet other formats
+		_, err = btcutil.DecodeAddress(addr.String(), &chaincfg.MainNetParams)
+		if err == nil {
+			return true
+		}
+		// Check testnet other formats
+		_, err = btcutil.DecodeAddress(addr.String(), &chaincfg.TestNet3Params)
+		if err == nil {
+			return true
+		}
+		return false
 	default:
 		return true // if THORNode don't specifically check a chain yet, assume its ok.
 	}
