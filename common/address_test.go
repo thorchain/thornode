@@ -218,5 +218,4 @@ func (s *AddressSuite) TestAddress(c *C) {
 	c.Check(addr.IsChain(ETHChain), Equals, false)
 	c.Check(addr.IsChain(BNBChain), Equals, false)
 	c.Check(addr.IsChain(THORChain), Equals, false)
-
 }
