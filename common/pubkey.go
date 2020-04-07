@@ -8,8 +8,11 @@ import (
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/tendermint/tendermint/crypto"
 	cryptoAmino "github.com/tendermint/tendermint/crypto/encoding/amino"
+
+	"gitlab.com/thorchain/thornode/cmd"
 )
 
 // PubKey used in statechain, it should be bech32 encoded string
@@ -97,6 +100,16 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
 		}
 		return NewAddress(str)
+	case ETHChain:
+		pk, err := sdk.GetFromBech32(string(pubKey), cmd.Bech32PrefixAccPub)
+		if err != nil {
+			return NoAddress, err
+		}
+		str, err := ConvertAndEncode(chain.AddressPrefix(chainNetwork), pk)
+		if err != nil {
+			return NoAddress, fmt.Errorf("fail to hex encode the address, err:%w", err)
+		}
+		return NewAddress(str)
 	}
 
 	return NoAddress, nil
@@ -171,8 +184,11 @@ func (pks PubKeys) String() string {
 	return strings.Join(strs, ", ")
 }
 
-// ConvertAndEncode converts from a base64 encoded byte string to base32 encoded byte string and then to bech32
+// ConvertAndEncode converts from a base64 encoded byte string to hex or base32 encoded byte string and then to bech32
 func ConvertAndEncode(hrp string, data []byte) (string, error) {
+	if hrp == "0x" {
+		return ecommon.BytesToAddress(data).String(), nil
+	}
 	converted, err := bech32.ConvertBits(data, 8, 5, true)
 	if err != nil {
 		return "", fmt.Errorf("encoding bech32 failed,%w", err)
