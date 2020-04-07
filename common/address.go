@@ -64,8 +64,6 @@ func (addr Address) IsChain(chain Chain) bool {
 		return prefix == "thor" || prefix == "tthor"
 	case BTCChain:
 		prefix, _, err := bech32.Decode(addr.String())
-		fmt.Print(prefix)
-
 		if err == nil && (prefix == "bc" || prefix == "tb") {
 			return true
 		}
