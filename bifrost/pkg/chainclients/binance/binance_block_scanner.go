@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/binance-chain/go-sdk/client/rpc"
 	"github.com/binance-chain/go-sdk/common/types"
 	bmsg "github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
@@ -38,6 +39,9 @@ type BinanceBlockScanner struct {
 	errCounter         *prometheus.CounterVec
 	pubkeyMgr          pubkeymanager.PubKeyValidator
 	globalTxsQueue     chan stypes.TxIn
+	binanceHTTP        *rpc.HTTP
+	singleFee          uint64
+	multiFee           uint64
 	rpcHost            string
 }
 
@@ -70,6 +74,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 	} else {
 		types.Network = types.ProdNetwork
 	}
+
 	return &BinanceBlockScanner{
 		cfg:                cfg,
 		pubkeyMgr:          pkmgr,
@@ -80,6 +85,9 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 		commonBlockScanner: commonBlockScanner,
 		errCounter:         m.GetCounterVec(metrics.BlockScanError(common.BNBChain)),
 		rpcHost:            rpcHost,
+		binanceHTTP:        rpc.NewRPCClient(rpcHost, types.Network),
+		singleFee:          37500,
+		multiFee:           30000,
 	}, nil
 }
 
@@ -104,6 +112,26 @@ func (b *BinanceBlockScanner) getTxHash(encodedTx string) (string, error) {
 	return fmt.Sprintf("%X", sha256.Sum256(decodedTx)), nil
 }
 
+func (b *BinanceBlockScanner) updateFees() error {
+	fees, err := b.binanceHTTP.GetFee()
+	if err != nil {
+		return err
+	}
+	for _, fee := range fees {
+		if fee.GetParamType() == types.TransferFeeType {
+			if err := fee.Check(); err != nil {
+				return err
+			}
+
+			transferFee := fee.(*types.TransferFeeParam)
+			b.singleFee = uint64(transferFee.FixedFeeParams.Fee)
+			b.multiFee = uint64(transferFee.MultiTransferFee)
+		}
+	}
+
+	return nil
+}
+
 func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 	strBlock := strconv.FormatInt(block.Height, 10)
 	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
@@ -116,6 +144,11 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 		b.m.GetCounter(metrics.BlockWithoutTx("BNB")).Inc()
 		b.logger.Debug().Int64("block", block.Height).Msg("there are no txs in this block")
 		return nil
+	}
+
+	// update our gas fees from binance RPC node
+	if err := b.updateFees(); err != nil {
+		b.logger.Error().Err(err).Msg("fail to update Binance gas fees")
 	}
 
 	// TODO implement pagination appropriately
@@ -334,7 +367,7 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 			// their price fees at the same time.
 
 			// Calculate gas for this tx
-			txInItem.Gas = common.CalcGasPrice(common.Tx{Coins: txInItem.Coins}, common.BNBAsset, []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)})
+			txInItem.Gas = common.CalcGasPrice(common.Tx{Coins: txInItem.Coins}, common.BNBAsset, []sdk.Uint{sdk.NewUint(b.singleFee), sdk.NewUint(b.multiFee)})
 
 			if ok := b.MatchedAddress(txInItem); !ok {
 				continue
