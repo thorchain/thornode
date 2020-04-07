@@ -2,13 +2,10 @@ package common
 
 import (
 	"encoding/json"
-	"testing"
 	"time"
 
 	. "gopkg.in/check.v1"
 )
-
-func Test(t *testing.T) { TestingT(t) }
 
 type DurationTestSuit struct{}
 
