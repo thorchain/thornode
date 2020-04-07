@@ -126,8 +126,8 @@ func (b *BinanceBlockScanner) getTxHash(encodedTx string) (string, error) {
 	return fmt.Sprintf("%X", sha256.Sum256(decodedTx)), nil
 }
 
-func (b *BinanceBlockScanner) updateFees() error {
-	url := fmt.Sprintf("%s/abci_query?path=\"/param/fees\"", b.rpcHost)
+func (b *BinanceBlockScanner) updateFees(height int64) error {
+	url := fmt.Sprintf("%s/abci_query?path=\"/param/fees\"&height=%d", b.rpcHost, height)
 	resp, err := b.http.Get(url)
 	if err != nil {
 		return err
@@ -194,7 +194,7 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 	}
 
 	// update our gas fees from binance RPC node
-	if err := b.updateFees(); err != nil {
+	if err := b.updateFees(block.Height); err != nil {
 		b.logger.Error().Err(err).Msg("fail to update Binance gas fees")
 	}
 

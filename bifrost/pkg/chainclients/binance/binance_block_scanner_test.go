@@ -397,7 +397,7 @@ func (s *BlockScannerTestSuite) TestUpdateGasFees(c *C) {
 		rpcHost: "http://" + server.Listener.Addr().String(),
 		http:    &http.Client{},
 	}
-	c.Assert(b.updateFees(), IsNil)
+	c.Assert(b.updateFees(10), IsNil)
 	c.Check(b.singleFee, Equals, uint64(37500))
 	c.Check(b.multiFee, Equals, uint64(30000))
 }
