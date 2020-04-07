@@ -3,12 +3,13 @@ package binance
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"testing"
 	"time"
 
+	"github.com/binance-chain/go-sdk/client/rpc"
 	"github.com/binance-chain/go-sdk/common/types"
 	"github.com/binance-chain/go-sdk/types/msg"
 	"github.com/binance-chain/go-sdk/types/tx"
@@ -22,8 +23,6 @@ import (
 	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
-
-func Test(t *testing.T) { TestingT(t) }
 
 type BlockScannerTestSuite struct {
 	m *metrics.Metrics
@@ -377,4 +376,17 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 	c.Assert(items, HasLen, 1)
 	item = items[0]
 	c.Check(item.Memo, Equals, "yggdrasil-")
+}
+
+func (s *BlockScannerTestSuite) TestUpdateGasFees(c *C) {
+	c.Skip("skip this test for now")
+	client := rpc.NewRPCClient("http://dataseed1.binance.org", types.ProdNetwork)
+	b := BinanceBlockScanner{
+		binanceHTTP: client,
+	}
+	fmt.Printf("Running: %+v\n", b.binanceHTTP.IsRunning())
+	// fmt.Printf("Dialing: %+v\n", b.binanceHTTP.WSClient.IsDialing())
+	c.Assert(b.updateFees(), IsNil)
+	c.Check(b.singleFee, Equals, uint64(37500))
+	c.Check(b.multiFee, Equals, uint64(30000))
 }
