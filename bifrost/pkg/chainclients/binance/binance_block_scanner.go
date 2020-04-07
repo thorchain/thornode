@@ -87,7 +87,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 		types.Network = types.ProdNetwork
 	}
 
-	var netClient = &http.Client{
+	netClient := &http.Client{
 		Timeout: time.Second * 10,
 	}
 
