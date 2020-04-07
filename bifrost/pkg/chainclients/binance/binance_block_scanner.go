@@ -55,6 +55,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 	if !strings.HasPrefix(rpcHost, "http") {
 		rpcHost = fmt.Sprintf("http://%s", rpcHost)
 	}
+	fmt.Printf("<<<<<<<<<<<<<<<<<<<<< Binance Block Scanner RPC Host: %s\n", rpcHost)
 
 	if scanStorage == nil {
 		return nil, errors.New("scanStorage is nil")
