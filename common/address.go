@@ -7,6 +7,7 @@ import (
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/bech32"
+	eth "github.com/ethereum/go-ethereum/common"
 )
 
 type Address string
@@ -24,10 +25,7 @@ func NewAddress(address string) (Address, error) {
 	}
 
 	// Check is eth address
-	if strings.HasPrefix(address, "0x") {
-		if len(address) != 42 {
-			return NoAddress, fmt.Errorf("0x address must be 42 characters (%d/42)", len(address))
-		}
+	if eth.IsHexAddress(address) {
 		return Address(address), nil
 	}
 

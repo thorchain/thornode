@@ -60,7 +60,12 @@ func (s *AddressSuite) TestAddress(c *C) {
 	c.Check(addr.IsChain(BNBChain), Equals, false)
 	c.Check(addr.IsChain(BTCChain), Equals, false)
 	c.Check(addr.IsChain(THORChain), Equals, false)
+	// wrong length
 	_, err = NewAddress("0x90f2b1ae50e6018230e90a33f98c7844a0ab635aaaaaaaaa")
+	c.Check(err, NotNil)
+
+	// good length but not valid hex string
+	_, err = NewAddress("0x90f2b1ae50e6018230e90a33f98c7844a0ab63zz")
 	c.Check(err, NotNil)
 
 	// btc tests
