@@ -1,6 +1,7 @@
 package blockscanner
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -155,7 +156,8 @@ func (b *CommonBlockScanner) scanBlocks() {
 		case <-b.stopChan:
 			return
 		default:
-			currentBlock, rawTxs, err := b.getRPCBlock(b.getBlockUrl(b.previousBlock + 1))
+			currentBlock := b.previousBlock + 1
+			rawTxs, err := b.getRPCBlock(b.getBlockUrl(currentBlock))
 			if err != nil {
 				// don't log an error if its because the block doesn't exist yet
 				if !strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") {
@@ -248,26 +250,34 @@ func (b *CommonBlockScanner) getBlockUrl(height int64) string {
 	return u.String()
 }
 
-func (b *CommonBlockScanner) unmarshalAndGetBlockInfo(buf []byte) (string, []string, error) {
+func (b *CommonBlockScanner) unmarshalAndGetBlockInfo(buf []byte) ([]string, error) {
+	// check if the block is null. This can happen when binance gets the block,
+	// but not the data within it. In which case, we'll never have the data and
+	// we should just move onto the next block.
+	// { "jsonrpc": "2.0", "id": "", "result": { "block_meta": null, "block": null } }
+	if bytes.Contains(buf, []byte(`"block": null`)) {
+		return nil, nil
+	}
+
 	switch b.cfg.ChainID {
 	case common.BNBChain:
 		var block btypes.RPCBlock
 		err := json.Unmarshal(buf, &block)
 		if err != nil {
-			return "", nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
+			return nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
 		}
-		return block.Result.Block.Header.Height, block.Result.Block.Data.Txs, nil
+		return block.Result.Block.Data.Txs, nil
 	default:
 		var block btypes.RPCBlock
 		err := json.Unmarshal(buf, &block)
 		if err != nil {
-			return "", nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
+			return nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
 		}
-		return block.Result.Block.Header.Height, block.Result.Block.Data.Txs, nil
+		return block.Result.Block.Data.Txs, nil
 	}
 }
 
-func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, []string, error) {
+func (b *CommonBlockScanner) getRPCBlock(requestUrl string) ([]string, error) {
 	start := time.Now()
 	defer func() {
 		if err := recover(); err != nil {
@@ -280,21 +290,16 @@ func (b *CommonBlockScanner) getRPCBlock(requestUrl string) (int64, []string, er
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_get_block", requestUrl).Inc()
 		time.Sleep(300 * time.Millisecond)
-		return 0, nil, err
+		return nil, err
 	}
 
-	block, rawTxns, err := b.unmarshalAndGetBlockInfo(buf)
+	rawTxns, err := b.unmarshalAndGetBlockInfo(buf)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_unmarshal_block", requestUrl).Inc()
-		return 0, nil, err
+		return nil, err
 	}
 
-	parsedBlock, err := strconv.ParseInt(block, 10, 64)
-	if err != nil {
-		b.errorCounter.WithLabelValues("fail_parse_block_height", block).Inc()
-		return 0, nil, errors.Wrap(err, "fail to convert block height to int")
-	}
-	return parsedBlock, rawTxns, nil
+	return rawTxns, nil
 }
 
 func (b *CommonBlockScanner) Stop() error {
