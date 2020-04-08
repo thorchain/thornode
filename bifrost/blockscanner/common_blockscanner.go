@@ -36,6 +36,8 @@ type CommonBlockScanner struct {
 	stopChan       chan struct{}
 	httpClient     *http.Client
 	scannerStorage ScannerStorage
+	blockRequest   func(rpcHost string, height int64) (string, string)
+	unmarshalBlock func(buf []byte) (string, []string, error)
 	metrics        *metrics.Metrics
 	previousBlock  int64
 	errorCounter   *prometheus.CounterVec

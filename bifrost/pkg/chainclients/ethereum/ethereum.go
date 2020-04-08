@@ -9,7 +9,7 @@ import (
 
 	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
-
+	pkerrors "github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
@@ -34,6 +34,7 @@ type Client struct {
 	client             *ethclient.Client
 	currentBlockHeight int64
 	thorchainBridge    *thorclient.ThorchainBridge
+	blockScanner       *BlockScanner
 }
 
 // NewClient create new instance of Ethereum client
@@ -76,12 +77,45 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	}, nil
 }
 
+func (c *Client) initBlockScanner(pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+	c.CheckIsTestNet()
+
+	var err error
+	startBlockHeight := int64(0)
+	if !c.cfg.BlockScanner.EnforceBlockHeight {
+		startBlockHeight, err = c.thorchainBridge.GetLastObservedInHeight(common.ETHChain)
+		if err != nil {
+			return pkerrors.Wrap(err, "fail to get start block height from thorchain")
+		}
+		if startBlockHeight == 0 {
+			startBlockHeight, err = c.GetHeight()
+			if err != nil {
+				return pkerrors.Wrap(err, "fail to get Ethereum height")
+			}
+			c.logger.Info().Int64("height", startBlockHeight).Msg("Current block height is indeterminate; using current height from Ethereum.")
+		}
+	} else {
+		startBlockHeight = c.cfg.BlockScanner.StartBlockHeight
+	}
+	c.blockScanner, err = NewBlockScanner(c.cfg.BlockScanner, startBlockHeight, c.isTestNet, c.client, pubkeyMgr, m)
+	if err != nil {
+		return pkerrors.Wrap(err, "fail to create block scanner")
+	}
+	return nil
+}
+
 func (c *Client) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+	err := c.initBlockScanner(pubkeyMgr, m)
+	if err != nil {
+		c.logger.Error().Err(err).Msg("fail to init block scanner")
+		return err
+	}
+	c.blockScanner.Start(globalTxsQueue)
 	return nil
 }
 
 func (c *Client) Stop() error {
-	return nil
+	return c.blockScanner.Stop()
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status

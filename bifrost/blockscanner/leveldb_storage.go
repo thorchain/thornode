@@ -94,3 +94,7 @@ func getBlockStatusKey(block int64) string {
 func (ldbss *LevelDBScannerStorage) RemoveBlockStatus(block int64) error {
 	return ldbss.db.Delete([]byte(getBlockStatusKey(block)), nil)
 }
+
+func (ldbss *LevelDBScannerStorage) Close() error {
+	return ldbss.db.Close()
+}
