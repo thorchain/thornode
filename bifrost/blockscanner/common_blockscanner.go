@@ -1,9 +1,7 @@
 package blockscanner
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -18,11 +16,11 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
 type CommonBlockScannerSupplemental interface {
-	BlockRequest(rpcHost string, height int64) (string, string)
-	UnmarshalBlock(buf []byte) (int64, []string, error)
+	GetTxs(height int64) (stypes.TxIn, bool, error)
 }
 
 // CommonBlockScanner is used to discover block height
@@ -34,6 +32,7 @@ type CommonBlockScanner struct {
 	wg             *sync.WaitGroup
 	scanChan       chan Block
 	stopChan       chan struct{}
+	globalTxsQueue chan stypes.TxIn
 	httpClient     *http.Client
 	scannerStorage ScannerStorage
 	metrics        *metrics.Metrics
@@ -44,7 +43,7 @@ type CommonBlockScanner struct {
 
 type Block struct {
 	Height int64
-	Txs    []string
+	Txs    stypes.TxIn
 }
 
 // NewCommonBlockScanner create a new instance of CommonBlockScanner
@@ -160,17 +159,17 @@ func (b *CommonBlockScanner) scanBlocks() {
 		case <-b.stopChan:
 			return
 		default:
-			currentBlock, rawTxs, err := b.getRPCBlock(b.previousBlock + 1)
+			currentBlock := b.previousBlock + 1
+			txIn, ok, err := b.supplemental.GetTxs(currentBlock)
 			if err != nil {
-				// don't log an error if its because the block doesn't exist yet
-				if !strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") {
-
+				// don't log an error if we didn't get the block ok
+				if !ok {
 					b.errorCounter.WithLabelValues("fail_get_block", "").Inc()
 					b.logger.Error().Err(err).Msg("fail to get RPCBlock")
 				}
 				continue
 			}
-			block := Block{Height: currentBlock, Txs: rawTxs}
+			block := Block{Height: currentBlock, Txs: txIn}
 			b.logger.Debug().Int64("current block height", currentBlock).Int64("block height", b.previousBlock).Msgf("Chain %s get block height", b.cfg.ChainID)
 			b.previousBlock++
 			b.metrics.GetCounter(metrics.TotalBlockScanned).Inc()
@@ -193,81 +192,6 @@ func (b *CommonBlockScanner) scanBlocks() {
 			}
 		}
 	}
-}
-
-func (b *CommonBlockScanner) getFromHttp(url, body string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, url, strings.NewReader(body))
-	if err != nil {
-		b.errorCounter.WithLabelValues("fail_create_http_request", url).Inc()
-		return nil, errors.Wrap(err, "fail to create http request")
-	}
-	if len(body) > 0 {
-		req.Header.Add("Content-Type", "application/json")
-	}
-	resp, err := b.httpClient.Do(req)
-	if err != nil {
-		b.errorCounter.WithLabelValues("fail_send_http_request", url).Inc()
-		return nil, errors.Wrapf(err, "fail to get from %s ", url)
-	}
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			b.logger.Error().Err(err).Msg("fail to close http response body.")
-		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		b.errorCounter.WithLabelValues("unexpected_status_code", resp.Status).Inc()
-		return nil, errors.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
-	}
-	buf, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	// test if our response body is an error block json format
-	errorBlock := struct {
-		Error struct {
-			Code    int64  `json:"code"`
-			Message string `json:"message"`
-			Data    string `json:"data"`
-		} `json:"error"`
-	}{}
-
-	_ = json.Unmarshal(buf, &errorBlock) // ignore error
-	if errorBlock.Error.Code != 0 {
-		return nil, fmt.Errorf(
-			"%s (%d): %s",
-			errorBlock.Error.Message,
-			errorBlock.Error.Code,
-			errorBlock.Error.Data,
-		)
-	}
-
-	return buf, nil
-}
-
-func (b *CommonBlockScanner) getRPCBlock(height int64) (int64, []string, error) {
-	start := time.Now()
-	defer func() {
-		if err := recover(); err != nil {
-			b.logger.Error().Msgf("fail to get RPCBlock:%s", err)
-		}
-		duration := time.Since(start)
-		b.metrics.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
-	}()
-	url, body := b.supplemental.BlockRequest(b.rpcHost, height)
-	buf, err := b.getFromHttp(url, body)
-	if err != nil {
-		b.errorCounter.WithLabelValues("fail_get_block", url).Inc()
-		time.Sleep(300 * time.Millisecond)
-		return 0, nil, err
-	}
-
-	block, rawTxns, err := b.supplemental.UnmarshalBlock(buf)
-	if err != nil {
-		b.errorCounter.WithLabelValues("fail_unmarshal_block", url).Inc()
-	}
-	return block, rawTxns, err
 }
 
 func (b *CommonBlockScanner) Stop() error {

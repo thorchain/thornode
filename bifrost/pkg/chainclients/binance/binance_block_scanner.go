@@ -1,26 +1,17 @@
 package binance
 
 import (
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/binance-chain/go-sdk/common/types"
-	bmsg "github.com/binance-chain/go-sdk/types/msg"
-	"github.com/binance-chain/go-sdk/types/tx"
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/tendermint/go-amino"
 
 	"gitlab.com/thorchain/thornode/common"
 
@@ -47,14 +38,6 @@ type BinanceBlockScanner struct {
 	singleFee          uint64
 	multiFee           uint64
 	rpcHost            string
-}
-
-type QueryResult struct {
-	Result struct {
-		Response struct {
-			Value string `json:"value"`
-		} `json:"response"`
-	} `json:"result"`
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
@@ -115,126 +98,6 @@ func (b *BinanceBlockScanner) Start(globalTxsQueue chan stypes.TxIn) {
 	b.commonBlockScanner.Start()
 }
 
-// getTxHash return hex formatted value of tx hash
-// raw tx base 64 encoded -> base64 decode -> sha256sum = tx hash
-func (b *BinanceBlockScanner) getTxHash(encodedTx string) (string, error) {
-	decodedTx, err := base64.StdEncoding.DecodeString(encodedTx)
-	if err != nil {
-		b.errCounter.WithLabelValues("fail_decode_tx", encodedTx).Inc()
-		return "", errors.Wrap(err, "fail to decode tx")
-	}
-	return fmt.Sprintf("%X", sha256.Sum256(decodedTx)), nil
-}
-
-func (b *BinanceBlockScanner) updateFees(height int64) error {
-	url := fmt.Sprintf("%s/abci_query?path=\"/param/fees\"&height=%d", b.rpcHost, height)
-	resp, err := b.http.Get(url)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("failed to get current gas fees: non 200 error (%d)", resp.StatusCode)
-	}
-
-	bz, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return err
-	}
-	var result QueryResult
-	if err := json.Unmarshal(bz, &result); err != nil {
-		return err
-	}
-
-	val, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
-	if err != nil {
-		return err
-	}
-
-	var fees []types.FeeParam
-	cdc := amino.NewCodec()
-	types.RegisterWire(cdc)
-	err = cdc.UnmarshalBinaryLengthPrefixed(val, &fees)
-	if err != nil {
-		return err
-	}
-
-	for _, fee := range fees {
-		if fee.GetParamType() == types.TransferFeeType {
-			if err := fee.Check(); err != nil {
-				return err
-			}
-
-			transferFee := fee.(*types.TransferFeeParam)
-			if transferFee.FixedFeeParams.Fee > 0 {
-				b.singleFee = uint64(transferFee.FixedFeeParams.Fee)
-			}
-			if transferFee.MultiTransferFee > 0 {
-				b.multiFee = uint64(transferFee.MultiTransferFee)
-			}
-		}
-	}
-
-	return nil
-}
-
-func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
-	strBlock := strconv.FormatInt(block.Height, 10)
-	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
-		b.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
-		return errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
-	}
-
-	b.logger.Debug().Int64("block", block.Height).Int("txs", len(block.Txs)).Msg("txs")
-	if len(block.Txs) == 0 {
-		b.m.GetCounter(metrics.BlockWithoutTx("BNB")).Inc()
-		b.logger.Debug().Int64("block", block.Height).Msg("there are no txs in this block")
-		return nil
-	}
-
-	// update our gas fees from binance RPC node
-	if err := b.updateFees(block.Height); err != nil {
-		b.logger.Error().Err(err).Msg("fail to update Binance gas fees")
-	}
-
-	// TODO implement pagination appropriately
-	var txIn stypes.TxIn
-	for _, txn := range block.Txs {
-		hash, err := b.getTxHash(txn)
-		if err != nil {
-			b.errCounter.WithLabelValues("fail_get_tx_hash", strBlock).Inc()
-			b.logger.Error().Err(err).Str("tx", txn).Msg("fail to get tx hash from raw data")
-			return errors.Wrap(err, "fail to get tx hash from tx raw data")
-		}
-
-		txItemIns, err := b.fromTxToTxIn(hash, txn)
-		if err != nil {
-			b.errCounter.WithLabelValues("fail_get_tx", strBlock).Inc()
-			b.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")
-			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
-			// if THORNode bail here, then THORNode should retry later
-			return errors.Wrap(err, "fail to get one tx from server")
-		}
-		if len(txItemIns) > 0 {
-			txIn.TxArray = append(txIn.TxArray, txItemIns...)
-			b.m.GetCounter(metrics.BlockWithTxIn("BNB")).Inc()
-			b.logger.Info().Str("hash", hash).Msg("THORNode got one tx")
-		}
-	}
-	if len(txIn.TxArray) == 0 {
-		b.m.GetCounter(metrics.BlockNoTxIn("BNB")).Inc()
-		b.logger.Debug().Int64("block", block.Height).Msg("no tx need to be processed in this block")
-		return nil
-	}
-
-	txIn.BlockHeight = strconv.FormatInt(block.Height, 10)
-	txIn.Count = strconv.Itoa(len(txIn.TxArray))
-	txIn.Chain = common.BNBChain
-	b.globalTxsQueue <- txIn
-	return nil
-}
-
 func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 	b.logger.Debug().Int("idx", idx).Msg("start searching tx in a block")
 	defer b.logger.Debug().Int("idx", idx).Msg("stop searching tx in a block")
@@ -266,186 +129,6 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 			}
 		}
 	}
-}
-
-func (b BinanceBlockScanner) MatchedAddress(txInItem stypes.TxInItem) bool {
-	// Check if we are migrating our funds...
-	if ok := b.isMigration(txInItem.Sender, txInItem.Memo); ok {
-		b.logger.Debug().Str("memo", txInItem.Memo).Msg("migrate")
-		return true
-	}
-
-	// Check if our pool is registering a new yggdrasil pool. Ie
-	// sending the staked assets to the user
-	if ok := b.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
-		b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
-		return true
-	}
-
-	// Check if out pool is de registering a yggdrasil pool. Ie sending
-	// the bond back to the user
-	if ok := b.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
-		b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
-		return true
-	}
-
-	// Check if THORNode are sending from a yggdrasil address
-	if ok := b.isYggdrasil(txInItem.Sender); ok {
-		b.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
-		return true
-	}
-
-	// Check if THORNode are sending to a yggdrasil address
-	if ok := b.isYggdrasil(txInItem.To); ok {
-		b.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
-		return true
-	}
-
-	// outbound message from pool, when it is outbound, it does not matter how much coins THORNode send to customer for now
-	if ok := b.isOutboundMsg(txInItem.Sender, txInItem.Memo); ok {
-		b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
-		return true
-	}
-
-	return false
-}
-
-// Check if memo is for registering an Asgard vault
-func (b *BinanceBlockScanner) isMigration(addr, memo string) bool {
-	return b.isAddrWithMemo(addr, memo, "migrate")
-}
-
-// Check if memo is for registering a Yggdrasil vault
-func (b *BinanceBlockScanner) isRegisterYggdrasil(addr, memo string) bool {
-	return b.isAddrWithMemo(addr, memo, "yggdrasil+")
-}
-
-// Check if memo is for de registering a Yggdrasil vault
-func (b *BinanceBlockScanner) isDeregisterYggdrasil(addr, memo string) bool {
-	return b.isAddrWithMemo(addr, memo, "yggdrasil-")
-}
-
-// Check if THORNode have an outbound yggdrasil transaction
-func (b *BinanceBlockScanner) isYggdrasil(addr string) bool {
-	ok, _ := b.pubkeyMgr.IsValidPoolAddress(addr, common.BNBChain)
-	return ok
-}
-
-func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) bool {
-	return b.isAddrWithMemo(addr, memo, "outbound")
-}
-
-func (b *BinanceBlockScanner) isAddrWithMemo(addr, memo, targetMemo string) bool {
-	match, _ := b.pubkeyMgr.IsValidPoolAddress(addr, common.BNBChain)
-	if !match {
-		return false
-	}
-	lowerMemo := strings.ToLower(memo)
-	if strings.HasPrefix(lowerMemo, targetMemo) {
-		return true
-	}
-	return false
-}
-
-func (b *BinanceBlockScanner) getCoinsForTxIn(outputs []bmsg.Output) (common.Coins, error) {
-	cc := common.Coins{}
-	for _, output := range outputs {
-		for _, c := range output.Coins {
-			asset, err := common.NewAsset(fmt.Sprintf("BNB.%s", c.Denom))
-			if err != nil {
-				b.errCounter.WithLabelValues("fail_create_ticker", c.Denom).Inc()
-				return nil, errors.Wrapf(err, "fail to create asset, %s is not valid", c.Denom)
-			}
-			amt := sdk.NewUint(uint64(c.Amount))
-			cc = append(cc, common.NewCoin(asset, amt))
-		}
-	}
-	return cc, nil
-}
-
-func (b *BinanceBlockScanner) fromTxToTxIn(hash, encodedTx string) ([]stypes.TxInItem, error) {
-	if len(encodedTx) == 0 {
-		return nil, errors.New("tx is empty")
-	}
-	buf, err := base64.StdEncoding.DecodeString(encodedTx)
-	if err != nil {
-		b.errCounter.WithLabelValues("fail_decode_tx", hash).Inc()
-		return nil, errors.Wrap(err, "fail to decode tx")
-	}
-	var t tx.StdTx
-	if err := tx.Cdc.UnmarshalBinaryLengthPrefixed(buf, &t); err != nil {
-		b.errCounter.WithLabelValues("fail_unmarshal_tx", hash).Inc()
-		return nil, errors.Wrap(err, "fail to unmarshal tx.StdTx")
-	}
-
-	return b.fromStdTx(hash, t)
-}
-
-// fromStdTx - process a stdTx
-func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.TxInItem, error) {
-	var err error
-	var txs []stypes.TxInItem
-
-	// TODO: It is also possible to have multiple inputs/outputs within a
-	// single stdTx, which THORNode are not yet accounting for.
-	for _, msg := range stdTx.Msgs {
-		switch sendMsg := msg.(type) {
-		case bmsg.SendMsg:
-			txInItem := stypes.TxInItem{
-				Tx: hash,
-			}
-			txInItem.Memo = stdTx.Memo
-			// THORNode take the first Input as sender, first Output as receiver
-			// so if THORNode send to multiple different receiver within one tx, this won't be able to process it.
-			sender := sendMsg.Inputs[0]
-			receiver := sendMsg.Outputs[0]
-			txInItem.Sender = sender.Address.String()
-			txInItem.To = receiver.Address.String()
-			txInItem.Coins, err = b.getCoinsForTxIn(sendMsg.Outputs)
-			if err != nil {
-				return nil, errors.Wrap(err, "fail to convert coins")
-			}
-
-			// Calculate gas for this tx
-			txInItem.Gas = common.CalcGasPrice(common.Tx{Coins: txInItem.Coins}, common.BNBAsset, []sdk.Uint{sdk.NewUint(b.singleFee), sdk.NewUint(b.multiFee)})
-
-			if ok := b.MatchedAddress(txInItem); !ok {
-				continue
-			}
-
-			// NOTE: the following could result in the same tx being added
-			// twice, which is expected. We want to make sure we generate both
-			// a inbound and outbound txn, if we both apply.
-
-			// check if the from address is a valid pool
-			if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, common.BNBChain); ok {
-				txInItem.ObservedPoolAddress = cpi.PubKey.String()
-				txs = append(txs, txInItem)
-			}
-			// check if the to address is a valid pool address
-			if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
-				txInItem.ObservedPoolAddress = cpi.PubKey.String()
-				txs = append(txs, txInItem)
-			} else {
-				// Apparently we don't recognize where we are sending funds to.
-				// Lets check if we should because its an internal transaction
-				// moving funds between vaults (for example). If it is, lets
-				// manually trigger an update of pubkeys, then check again...
-				switch strings.ToLower(txInItem.Memo) {
-				case "migrate", "yggdrasil-", "yggdrasil+":
-					b.pubkeyMgr.FetchPubKeys()
-					if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
-						txInItem.ObservedPoolAddress = cpi.PubKey.String()
-						txs = append(txs, txInItem)
-					}
-				}
-			}
-
-		default:
-			continue
-		}
-	}
-	return txs, nil
 }
 
 func (b *BinanceBlockScanner) Stop() error {

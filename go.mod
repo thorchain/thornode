@@ -20,7 +20,6 @@ require (
 	github.com/ipfs/go-log v1.0.2
 	github.com/libp2p/go-libp2p-kad-dht v0.5.0 // indirect
 	github.com/multiformats/go-multiaddr v0.2.1
-	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.5.0
@@ -40,6 +39,7 @@ require (
 	github.com/tendermint/tendermint v0.32.9
 	github.com/tendermint/tm-db v0.2.0
 	github.com/zondax/ledger-go v0.11.0 // indirect
+	gitlab.com/thorchain/bepswap/thornode v0.0.0-20191121232047-8acb6f8cb031
 	gitlab.com/thorchain/tss/go-tss v0.0.0-20200320003459-54d30a7e8a20
 	go.uber.org/multierr v1.5.0 // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
