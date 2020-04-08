@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strconv"
 
 	"github.com/pkg/errors"
 )
@@ -44,11 +45,16 @@ func (cosmos CosmosSupplemental) BlockRequest(rpcHost string, height int64) (str
 	return u.String(), ""
 }
 
-func (cosmos CosmosSupplemental) UnmarshalBlock(buf []byte) (string, []string, error) {
+func (cosmos CosmosSupplemental) UnmarshalBlock(buf []byte) (int64, []string, error) {
 	var block item
 	err := json.Unmarshal(buf, &block)
 	if err != nil {
-		return "", nil, errors.Wrap(err, "fail to unmarshal body to rpcBlock")
+		return 0, nil, errors.Wrap(err, "fail to unmarshal body to rpcBlock")
 	}
-	return block.Result.Block.Header.Height, block.Result.Block.Data.Txs, nil
+
+	height, err := strconv.ParseInt(block.Result.Block.Header.Height, 10, 64)
+	if err != nil {
+		return 0, nil, errors.Wrap(err, "fail to convert block height to int")
+	}
+	return height, block.Result.Block.Data.Txs, nil
 }

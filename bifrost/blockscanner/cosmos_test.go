@@ -37,6 +37,6 @@ func (s *CosmosSupplementalSuite) TestUnmarshalBlock(c *C) {
 	supp := CosmosSupplemental{}
 	height, txns, err := supp.UnmarshalBlock(bz)
 	c.Assert(err, IsNil)
-	c.Check(height, Equals, "400")
+	c.Check(height, Equals, int64(400))
 	c.Check(txns, DeepEquals, []string{"a", "b", "c"})
 }

@@ -22,7 +22,7 @@ import (
 
 type CommonBlockScannerSupplemental interface {
 	BlockRequest(rpcHost string, height int64) (string, string)
-	UnmarshalBlock(buf []byte) (string, []string, error)
+	UnmarshalBlock(buf []byte) (int64, []string, error)
 }
 
 // CommonBlockScanner is used to discover block height
@@ -266,15 +266,8 @@ func (b *CommonBlockScanner) getRPCBlock(height int64) (int64, []string, error) 
 	block, rawTxns, err := b.supplemental.UnmarshalBlock(buf)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_unmarshal_block", url).Inc()
-		return 0, nil, err
 	}
-
-	parsedBlock, err := strconv.ParseInt(block, 10, 64)
-	if err != nil {
-		b.errorCounter.WithLabelValues("fail_parse_block_height", block).Inc()
-		return 0, nil, errors.Wrap(err, "fail to convert block height to int")
-	}
-	return parsedBlock, rawTxns, nil
+	return block, rawTxns, err
 }
 
 func (b *CommonBlockScanner) Stop() error {
