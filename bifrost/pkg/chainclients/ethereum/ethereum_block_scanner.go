@@ -18,6 +18,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
@@ -63,7 +64,7 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int6
 	if m == nil {
 		return nil, errors.New("metrics is nil")
 	}
-	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, startBlockHeight, scanStorage, m)
+	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, startBlockHeight, scanStorage, m, types.BlockRequest, types.UnmarshalBlock)
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create common block scanner")
 	}
@@ -71,7 +72,7 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int6
 	return &BlockScanner{
 		cfg:                cfg,
 		pubkeyMgr:          pkmgr,
-		logger:             log.Logger.With().Str("module", "blockscanner").Logger(),
+		logger:             log.Logger.With().Str("module", "blockscanner").Str("chain", "ethereum").Logger(),
 		wg:                 &sync.WaitGroup{},
 		stopChan:           make(chan struct{}),
 		db:                 scanStorage,
@@ -170,6 +171,5 @@ func (e *BlockScanner) Stop() error {
 	}
 	close(e.stopChan)
 	e.wg.Wait()
-
 	return nil
 }

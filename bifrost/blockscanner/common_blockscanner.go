@@ -11,7 +11,6 @@ import (
 	"sync"
 	"time"
 
-	etypes "github.com/ethereum/go-ethereum/core/types"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
@@ -19,8 +18,6 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
-	"gitlab.com/thorchain/thornode/common"
 )
 
 // CommonBlockScanner is used to discover block height
@@ -34,6 +31,8 @@ type CommonBlockScanner struct {
 	stopChan       chan struct{}
 	httpClient     *http.Client
 	scannerStorage ScannerStorage
+	blockRequest   func(rpcHost string, height int64) (string, string)
+	unmarshalBlock func(buf []byte) (string, []string, error)
 	metrics        *metrics.Metrics
 	previousBlock  int64
 	errorCounter   *prometheus.CounterVec
@@ -45,7 +44,8 @@ type Block struct {
 }
 
 // NewCommonBlockScanner create a new instance of CommonBlockScanner
-func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics) (*CommonBlockScanner, error) {
+func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics,
+							blockRequest func(rpcHost string, height int64) (string, string), unmarshalBlock func(buf []byte) (string, []string, error)) (*CommonBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("host is empty")
 	}
@@ -66,6 +66,12 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeigh
 	if m == nil {
 		return nil, errors.New("metrics instance is nil")
 	}
+	if blockRequest == nil {
+		return nil, errors.New("chain block request method is nil")
+	}
+	if unmarshalBlock == nil {
+		return nil, errors.New("chain unmarshal block method is nil")
+	}
 	return &CommonBlockScanner{
 		cfg:      cfg,
 		logger:   log.Logger.With().Str("module", "commonblockscanner").Logger(),
@@ -77,6 +83,8 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeigh
 			Timeout: cfg.HttpRequestTimeout,
 		},
 		scannerStorage: scannerStorage,
+		blockRequest:   blockRequest,
+		unmarshalBlock: unmarshalBlock,
 		metrics:        m,
 		previousBlock:  startBlockHeight,
 		errorCounter:   m.GetCounterVec(metrics.CommonBlockScannerError),
@@ -242,47 +250,6 @@ func (b *CommonBlockScanner) getFromHttp(url, body string) ([]byte, error) {
 	return buf, nil
 }
 
-func (b *CommonBlockScanner) getBlockRequest(height int64) (string, string) {
-	switch b.cfg.ChainID {
-	case common.ETHChain:
-		return b.rpcHost, `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x` + fmt.Sprintf("%x", height) + `", true],"id":1}`
-	default:
-		u, _ := url.Parse(b.rpcHost)
-		u.Path = "block"
-		if height > 0 {
-			u.RawQuery = fmt.Sprintf("height=%d", height)
-		}
-		return u.String(), ""
-	}
-}
-
-func (b *CommonBlockScanner) unmarshalAndGetBlockInfo(buf []byte) (string, []string, error) {
-	switch b.cfg.ChainID {
-	case common.ETHChain:
-		var block etypes.Block
-		err := json.Unmarshal(buf, &block)
-		if err != nil {
-			return "", nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
-		}
-		txs := make([]string, 0)
-		for _, tx := range block.Transactions() {
-			bytes, err := tx.MarshalJSON()
-			if err != nil {
-				return "", nil, errors.Wrap(err, "fail to unmarshal tx from block")
-			}
-			txs = append(txs, string(bytes))
-		}
-		return block.Number().String(), txs, nil
-	default:
-		var block btypes.RPCBlock
-		err := json.Unmarshal(buf, &block)
-		if err != nil {
-			return "", nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
-		}
-		return block.Result.Block.Header.Height, block.Result.Block.Data.Txs, nil
-	}
-}
-
 func (b *CommonBlockScanner) getRPCBlock(height int64) (int64, []string, error) {
 	start := time.Now()
 	defer func() {
@@ -292,7 +259,7 @@ func (b *CommonBlockScanner) getRPCBlock(height int64) (int64, []string, error) 
 		duration := time.Since(start)
 		b.metrics.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
-	url, body := b.getBlockRequest(height)
+	url, body := b.blockRequest(b.rpcHost, height)
 	buf, err := b.getFromHttp(url, body)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_get_block", url).Inc()
@@ -300,7 +267,7 @@ func (b *CommonBlockScanner) getRPCBlock(height int64) (int64, []string, error) 
 		return 0, nil, err
 	}
 
-	block, rawTxns, err := b.unmarshalAndGetBlockInfo(buf)
+	block, rawTxns, err := b.unmarshalBlock(buf)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_unmarshal_block", url).Inc()
 		return 0, nil, err

@@ -44,7 +44,7 @@ func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	c.Skip("skip")
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {}))
-	pv := &MockPoolAddressValidator{}
+	pv := NewMockPoolAddressValidator()
 	ctx := context.Background()
 	ethClient, err := ethclient.DialContext(ctx, server.URL)
 	c.Assert(err, IsNil)
