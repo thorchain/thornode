@@ -27,7 +27,6 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
@@ -78,7 +77,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 	if m == nil {
 		return nil, errors.New("metrics is nil")
 	}
-	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, startBlockHeight, scanStorage, m, btypes.BlockRequest, btypes.UnmarshalBlock)
+	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, startBlockHeight, scanStorage, m, blockscanner.CosmosSupplemental{})
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create common block scanner")
 	}

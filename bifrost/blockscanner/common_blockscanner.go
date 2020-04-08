@@ -20,6 +20,11 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 )
 
+type CommonBlockScannerSupplemental interface {
+	BlockRequest(rpcHost string, height int64) (string, string)
+	UnmarshalBlock(buf []byte) (int64, []string, error)
+}
+
 // CommonBlockScanner is used to discover block height
 // since both binance and thorchain use cosmos, so this part logic should be the same
 type CommonBlockScanner struct {
@@ -36,6 +41,7 @@ type CommonBlockScanner struct {
 	metrics        *metrics.Metrics
 	previousBlock  int64
 	errorCounter   *prometheus.CounterVec
+	supplemental   CommonBlockScannerSupplemental
 }
 
 type Block struct {
@@ -44,8 +50,7 @@ type Block struct {
 }
 
 // NewCommonBlockScanner create a new instance of CommonBlockScanner
-func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics,
-	blockRequest func(rpcHost string, height int64) (string, string), unmarshalBlock func(buf []byte) (string, []string, error)) (*CommonBlockScanner, error) {
+func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics, supplemental CommonBlockScannerSupplemental) (*CommonBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("host is empty")
 	}
@@ -66,12 +71,6 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeigh
 	if m == nil {
 		return nil, errors.New("metrics instance is nil")
 	}
-	if blockRequest == nil {
-		return nil, errors.New("chain block request method is nil")
-	}
-	if unmarshalBlock == nil {
-		return nil, errors.New("chain unmarshal block method is nil")
-	}
 	return &CommonBlockScanner{
 		cfg:      cfg,
 		logger:   log.Logger.With().Str("module", "commonblockscanner").Logger(),
@@ -83,11 +82,10 @@ func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeigh
 			Timeout: cfg.HttpRequestTimeout,
 		},
 		scannerStorage: scannerStorage,
-		blockRequest:   blockRequest,
-		unmarshalBlock: unmarshalBlock,
 		metrics:        m,
 		previousBlock:  startBlockHeight,
 		errorCounter:   m.GetCounterVec(metrics.CommonBlockScannerError),
+		supplemental:   supplemental,
 	}, nil
 }
 
@@ -259,7 +257,7 @@ func (b *CommonBlockScanner) getRPCBlock(height int64) (int64, []string, error) 
 		duration := time.Since(start)
 		b.metrics.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
-	url, body := b.blockRequest(b.rpcHost, height)
+	url, body := b.supplemental.BlockRequest(b.rpcHost, height)
 	buf, err := b.getFromHttp(url, body)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_get_block", url).Inc()
@@ -267,18 +265,11 @@ func (b *CommonBlockScanner) getRPCBlock(height int64) (int64, []string, error) 
 		return 0, nil, err
 	}
 
-	block, rawTxns, err := b.unmarshalBlock(buf)
+	block, rawTxns, err := b.supplemental.UnmarshalBlock(buf)
 	if err != nil {
 		b.errorCounter.WithLabelValues("fail_unmarshal_block", url).Inc()
-		return 0, nil, err
 	}
-
-	parsedBlock, err := strconv.ParseInt(block, 10, 64)
-	if err != nil {
-		b.errorCounter.WithLabelValues("fail_parse_block_height", block).Inc()
-		return 0, nil, errors.Wrap(err, "fail to convert block height to int")
-	}
-	return parsedBlock, rawTxns, nil
+	return block, rawTxns, err
 }
 
 func (b *CommonBlockScanner) Stop() error {

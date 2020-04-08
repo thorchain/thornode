@@ -2,29 +2,30 @@ package types
 
 import (
 	"encoding/json"
-	"fmt"
 
-	etypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/pkg/errors"
+	"github.com/ethereum/go-ethereum/core/types"
 )
 
-func BlockRequest(rpcHost string, height int64) (string, string) {
-	return rpcHost, `{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["0x` + fmt.Sprintf("%x", height) + `", true],"id":1}`
+type txExtraInfo struct {
+	BlockNumber string `json:"blockNumber,omitempty"`
+	BlockHash   string `json:"blockHash,omitempty"`
+	From        string `json:"from,omitempty"`
 }
 
-func UnmarshalBlock(buf []byte) (string, []string, error) {
-	var block etypes.Block
-	err := json.Unmarshal(buf, &block)
-	if err != nil {
-		return "", nil, errors.Wrap(err, "fail to unmarshal body to RPCBlock")
+type RPCTransaction struct {
+	Transaction *types.Transaction
+	txExtraInfo
+}
+
+func (tx *RPCTransaction) UnmarshalJSON(msg []byte) error {
+	if err := json.Unmarshal(msg, &tx.Transaction); err != nil {
+		return err
 	}
-	txs := make([]string, 0)
-	for _, tx := range block.Transactions() {
-		bytes, err := tx.MarshalJSON()
-		if err != nil {
-			return "", nil, errors.Wrap(err, "fail to unmarshal tx from block")
-		}
-		txs = append(txs, string(bytes))
-	}
-	return block.Number().String(), txs, nil
+	return json.Unmarshal(msg, &tx.txExtraInfo)
+}
+
+type RPCBlock struct {
+	Hash         string           `json:"hash"`
+	Transactions []RPCTransaction `json:"transactions"`
+	UncleHashes  []string         `json:"uncles"`
 }

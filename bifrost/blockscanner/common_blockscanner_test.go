@@ -15,8 +15,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
-	etypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
+	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -45,27 +44,17 @@ func (CommonBlockScannerTestSuite) TestNewCommonBlockScanner(c *C) {
 	mss := NewMockScannerStorage()
 	cbs, err := NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "",
-	}, 0, mss, m, btypes.BlockRequest, btypes.UnmarshalBlock)
+	}, 0, mss, nil, CosmosSupplemental{})
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "localhost",
-	}, 0, mss, m, btypes.BlockRequest, nil)
+	}, 0, mss, nil, CosmosSupplemental{})
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "localhost",
-	}, 0, mss, m, nil, btypes.UnmarshalBlock)
-	c.Check(cbs, IsNil)
-	c.Check(err, NotNil)
-	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
-		RPCHost: "localhost",
-	}, 0, mss, nil, btypes.BlockRequest, btypes.UnmarshalBlock)
-	c.Check(cbs, IsNil)
-	c.Check(err, NotNil)
-	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
-		RPCHost: "localhost",
-	}, 0, mss, m, btypes.BlockRequest, btypes.UnmarshalBlock)
+	}, 0, mss, m, CosmosSupplemental{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 }
@@ -100,7 +89,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m, btypes.BlockRequest, btypes.UnmarshalBlock)
+	}, 0, mss, m, CosmosSupplemental{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	trSkipVerify := &http.Transport{
@@ -149,7 +138,7 @@ func (CommonBlockScannerTestSuite) TestBadBlock(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m, btypes.BlockRequest, btypes.UnmarshalBlock)
+	}, 0, mss, m, CosmosSupplemental{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	trSkipVerify := &http.Transport{
@@ -182,7 +171,7 @@ func (CommonBlockScannerTestSuite) TestBadConnection(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m, btypes.BlockRequest, btypes.UnmarshalBlock)
+	}, 0, mss, m, CosmosSupplemental{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	trSkipVerify := &http.Transport{
@@ -230,7 +219,7 @@ func (CommonBlockScannerTestSuite) TestGetHttp(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m, btypes.BlockRequest, btypes.UnmarshalBlock)
+	}, 0, mss, m, CosmosSupplemental{})
 	c.Assert(err, IsNil)
 	trSkipVerify := &http.Transport{
 		MaxIdleConnsPerHost: 10,
@@ -289,6 +278,7 @@ func (CommonBlockScannerTestSuite) TestGetETHBlocks(c *C) {
 	mss := NewMockScannerStorage()
 	s := httptest.NewTLSServer(h)
 	defer s.Close()
+	supp := types.EthereumSupplemental{}
 	cbs, err := NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost:                    s.URL,
 		StartBlockHeight:           0,
@@ -300,7 +290,7 @@ func (CommonBlockScannerTestSuite) TestGetETHBlocks(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.ETHChain,
-	}, 0, mss, m, etypes.BlockRequest, etypes.UnmarshalBlock)
+	}, 0, mss, m, supp)
 	c.Assert(err, IsNil)
 	trSkipVerify := &http.Transport{
 		MaxIdleConnsPerHost: 10,
@@ -310,7 +300,7 @@ func (CommonBlockScannerTestSuite) TestGetETHBlocks(c *C) {
 		},
 	}
 	cbs.GetHttpClient().Transport = trSkipVerify
-	_, request := etypes.BlockRequest(s.URL, 1)
+	_, request := supp.BlockRequest(s.URL, 1)
 	_, err = cbs.getFromHttp(s.URL, request)
 	c.Assert(err, IsNil)
 }

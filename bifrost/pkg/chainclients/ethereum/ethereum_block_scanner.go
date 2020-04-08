@@ -64,7 +64,7 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int6
 	if m == nil {
 		return nil, errors.New("metrics is nil")
 	}
-	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, startBlockHeight, scanStorage, m, types.BlockRequest, types.UnmarshalBlock)
+	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, startBlockHeight, scanStorage, m, types.EthereumSupplemental{})
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create common block scanner")
 	}
