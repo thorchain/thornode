@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -29,6 +30,12 @@ func (PubKeyTestSuite) TestPubKey(c *C) {
 	addr, err := pk.GetAddress(BNBChain)
 	c.Assert(err, IsNil)
 	c.Assert(addr.Equals(NoAddress), Equals, false)
+
+	addr, err = pk.GetAddress(BTCChain)
+	c.Assert(err, IsNil)
+	c.Assert(addr.Equals(NoAddress), Equals, false)
+	c.Assert(strings.HasPrefix(addr.String(), "bc1"), Equals, true)
+	c.Assert(addr.IsChain(BTCChain), Equals, true)
 
 	result, err := json.Marshal(pk)
 	c.Assert(err, IsNil)

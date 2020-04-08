@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/bech32"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	sdk "github.com/cosmos/cosmos-sdk/types"
@@ -110,6 +112,23 @@ func (pubKey PubKey) GetAddress(chain Chain) (Address, error) {
 			return NoAddress, fmt.Errorf("fail to hex encode the address, err:%w", err)
 		}
 		return NewAddress(str)
+	case BTCChain:
+		pk, err := sdk.GetAccPubKeyBech32(string(pubKey))
+		if err != nil {
+			return NoAddress, err
+		}
+		var net *chaincfg.Params
+		switch chainNetwork {
+		case MainNet:
+			net = &chaincfg.MainNetParams
+		case TestNet:
+			net = &chaincfg.TestNet3Params
+		}
+		addr, err := btcutil.NewAddressWitnessPubKeyHash(pk.Address().Bytes(), net)
+		if err != nil {
+			return NoAddress, fmt.Errorf("fail to bech32 encode the address, err:%w", err)
+		}
+		return NewAddress(addr.String())
 	}
 
 	return NoAddress, nil
