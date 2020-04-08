@@ -45,7 +45,7 @@ type Block struct {
 
 // NewCommonBlockScanner create a new instance of CommonBlockScanner
 func NewCommonBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics,
-							blockRequest func(rpcHost string, height int64) (string, string), unmarshalBlock func(buf []byte) (string, []string, error)) (*CommonBlockScanner, error) {
+	blockRequest func(rpcHost string, height int64) (string, string), unmarshalBlock func(buf []byte) (string, []string, error)) (*CommonBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("host is empty")
 	}
