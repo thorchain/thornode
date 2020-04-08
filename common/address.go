@@ -49,7 +49,7 @@ func NewAddress(address string) (Address, error) {
 		return Address(address), nil
 	}
 
-	return NoAddress, fmt.Errorf("address format no supported: %s", address)
+	return NoAddress, fmt.Errorf("address format not supported: %s", address)
 }
 
 func (addr Address) IsChain(chain Chain) bool {
