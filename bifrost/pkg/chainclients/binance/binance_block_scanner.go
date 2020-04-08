@@ -94,7 +94,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 	return &BinanceBlockScanner{
 		cfg:                cfg,
 		pubkeyMgr:          pkmgr,
-		logger:             log.Logger.With().Str("module", "blockscanner").Logger(),
+		logger:             log.Logger.With().Str("module", "blockscanner").Str("chain", "binance").Logger(),
 		wg:                 &sync.WaitGroup{},
 		stopChan:           make(chan struct{}),
 		db:                 scanStorage,
