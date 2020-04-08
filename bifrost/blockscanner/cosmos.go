@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"strconv"
 
 	"github.com/pkg/errors"
 )
@@ -46,24 +45,20 @@ func (cosmos CosmosSupplemental) BlockRequest(rpcHost string, height int64) (str
 	return u.String(), ""
 }
 
-func (cosmos CosmosSupplemental) UnmarshalBlock(buf []byte) (int64, []string, error) {
+func (cosmos CosmosSupplemental) UnmarshalBlock(buf []byte) ([]string, error) {
 	// check if the block is null. This can happen when binance gets the block,
 	// but not the data within it. In which case, we'll never have the data and
 	// we should just move onto the next block.
 	// { "jsonrpc": "2.0", "id": "", "result": { "block_meta": null, "block": null } }
 	if bytes.Contains(buf, []byte(`"block": null`)) {
-		return 0, nil, nil
+		return nil, nil
 	}
 
 	var block item
 	err := json.Unmarshal(buf, &block)
 	if err != nil {
-		return 0, nil, errors.Wrap(err, "fail to unmarshal body to rpcBlock")
+		return nil, errors.Wrap(err, "fail to unmarshal body to rpcBlock")
 	}
 
-	height, err := strconv.ParseInt(block.Result.Block.Header.Height, 10, 64)
-	if err != nil {
-		return 0, nil, errors.Wrap(err, "fail to convert block height to int")
-	}
-	return height, block.Result.Block.Data.Txs, nil
+	return block.Result.Block.Data.Txs, nil
 }

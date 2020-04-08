@@ -35,13 +35,11 @@ func (s *CosmosSupplementalSuite) TestUnmarshalBlock(c *C) {
 	c.Assert(err, IsNil)
 
 	supp := CosmosSupplemental{}
-	height, txns, err := supp.UnmarshalBlock(bz)
+	txns, err := supp.UnmarshalBlock(bz)
 	c.Assert(err, IsNil)
-	c.Check(height, Equals, int64(400))
 	c.Check(txns, DeepEquals, []string{"a", "b", "c"})
 
-	height, txns, err = supp.UnmarshalBlock([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "block_meta": null, "block": null } }`))
+	txns, err = supp.UnmarshalBlock([]byte(`{ "jsonrpc": "2.0", "id": "", "result": { "block_meta": null, "block": null } }`))
 	c.Assert(err, IsNil)
-	c.Check(height, Equals, int64(0))
 	c.Check(txns, HasLen, 0)
 }

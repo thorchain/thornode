@@ -58,8 +58,7 @@ func (s *EthereumSupplementalSuite) TestUnmarshalBlock(c *C) {
 	}`
 
 	supp := EthereumSupplemental{}
-	height, txns, err := supp.UnmarshalBlock([]byte(blockJson))
+	txns, err := supp.UnmarshalBlock([]byte(blockJson))
 	c.Assert(err, IsNil)
-	c.Check(height, Equals, int64(23))
 	c.Check(txns, DeepEquals, []string{`{"nonce":"0x15","gasPrice":"0x4a817c800","gas":"0xc350","to":"0xf02c1c8e6114b1dbe8937a39260b5b0a374432bb","value":"0xf3dbb76162000","input":"0x68656c6c6f21","v":"0x25","r":"0x1b5e176d927f8e9ab405058b2d2457392da3e20f328b16ddabcebc33eaac5fea","s":"0x4ba69724e8f69de52f0125ad8b3c5c2cef33019bac3249e2c0a2192766d1721c","hash":"0x88df016429689c079f3b2f6ad39fa052532c56795b733da78a91ebe6a713944b"}`})
 }
