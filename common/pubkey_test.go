@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -59,8 +60,14 @@ func (s *PubKeyTestSuite) TestPubKeySet(c *C) {
 }
 
 func (s *PubKeyTestSuite) TestETHPubKey(c *C) {
-	pubKey := PubKey("thorpub1addwnpepqt7qug8vk9r3saw8n4r803ydj2g3dqwx0mvq5akhnze86fc536xcy2cr8a2")
-	addr, err := pubKey.GetAddress(ETHChain)
+	_, pubKey, _ := atypes.KeyTestPubAddr()
+	spk, err := sdk.Bech32ifyAccPub(pubKey)
+	c.Assert(err, IsNil)
+	pk, err := NewPubKey(spk)
+	c.Assert(err, IsNil)
+
+	addr, err := pk.GetAddress(ETHChain)
 	c.Assert(err, IsNil)
 	c.Check(len(addr), Equals, 42)
+	c.Check(strings.HasPrefix(addr.String(), "0x"), Equals, true)
 }
