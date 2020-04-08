@@ -44,7 +44,7 @@ func NewThorchainBlockScan(cfg config.BlockScannerConfiguration, scanStorage blo
 	if m == nil {
 		return nil, errors.New("metric is nil")
 	}
-	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, 0, scanStorage, m)
+	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, 0, scanStorage, m, blockscanner.CosmosSupplemental{})
 	if err != nil {
 		return nil, errors.Wrap(err, "fail to create txOut block scanner")
 	}

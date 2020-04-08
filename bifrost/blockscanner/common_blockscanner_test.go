@@ -41,17 +41,17 @@ func (CommonBlockScannerTestSuite) TestNewCommonBlockScanner(c *C) {
 	mss := NewMockScannerStorage()
 	cbs, err := NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "",
-	}, 0, mss, nil)
+	}, 0, mss, nil, CosmosSupplemental{})
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "localhost",
-	}, 0, mss, nil)
+	}, 0, mss, nil, CosmosSupplemental{})
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewCommonBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "localhost",
-	}, 0, mss, m)
+	}, 0, mss, m, CosmosSupplemental{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 }
@@ -86,7 +86,7 @@ func (CommonBlockScannerTestSuite) TestBlockScanner(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m)
+	}, 0, mss, m, CosmosSupplemental{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	trSkipVerify := &http.Transport{
@@ -135,7 +135,7 @@ func (CommonBlockScannerTestSuite) TestBadBlock(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m)
+	}, 0, mss, m, CosmosSupplemental{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	trSkipVerify := &http.Transport{
@@ -168,7 +168,7 @@ func (CommonBlockScannerTestSuite) TestBadConnection(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m)
+	}, 0, mss, m, CosmosSupplemental{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	trSkipVerify := &http.Transport{
@@ -216,7 +216,7 @@ func (CommonBlockScannerTestSuite) TestGetHttp(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m)
+	}, 0, mss, m, CosmosSupplemental{})
 	c.Assert(err, IsNil)
 	trSkipVerify := &http.Transport{
 		MaxIdleConnsPerHost: 10,
@@ -227,9 +227,9 @@ func (CommonBlockScannerTestSuite) TestGetHttp(c *C) {
 	}
 	cbs.GetHttpClient().Transport = trSkipVerify
 
-	_, err = cbs.getFromHttp(fmt.Sprintf("%s/block?height=1", s.URL))
+	_, err = cbs.getFromHttp(fmt.Sprintf("%s/block?height=1", s.URL), "")
 	c.Assert(err, IsNil)
 
-	_, err = cbs.getFromHttp(fmt.Sprintf("%s/block?height=2", s.URL))
+	_, err = cbs.getFromHttp(fmt.Sprintf("%s/block?height=2", s.URL), "")
 	c.Assert(err, NotNil)
 }
