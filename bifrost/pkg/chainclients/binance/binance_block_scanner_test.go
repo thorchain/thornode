@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
-	"testing"
 	"time"
 
 	"github.com/binance-chain/go-sdk/common/types"
@@ -22,8 +21,6 @@ import (
 	btypes "gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance/types"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
-
-func Test(t *testing.T) { TestingT(t) }
 
 type BlockScannerTestSuite struct {
 	m *metrics.Metrics
@@ -377,4 +374,30 @@ func (s *BlockScannerTestSuite) TestFromStdTx(c *C) {
 	c.Assert(items, HasLen, 1)
 	item = items[0]
 	c.Check(item.Memo, Equals, "yggdrasil-")
+}
+
+func (s *BlockScannerTestSuite) TestUpdateGasFees(c *C) {
+	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		// Send response to be tested
+		rw.Write([]byte(`{
+  "jsonrpc": "2.0",
+  "id": "",
+  "result": {
+    "response": {
+      "value": "ngUKHcKpb6MKD3N1Ym1pdF9wcm9wb3NhbBCAyrXuARgBChPCqW+jCgdkZXBvc2l0EKToAxgBCgzCqW+jCgR2b3RlGAMKHsKpb6MKEGNyZWF0ZV92YWxpZGF0b3IQgJTr3AMYAQodwqlvowoQcmVtb3ZlX3ZhbGlkYXRvchCAwtcvGAEKFsKpb6MKB2RleExpc3QQgNDbw/QCGAIKEMKpb6MKCG9yZGVyTmV3GAMKE8Kpb6MKC29yZGVyQ2FuY2VsGAMKF8Kpb6MKCGlzc3VlTXNnEIDo7aG6ARgCChXCqW+jCgdtaW50TXNnEIDKte4BGAIKF8Kpb6MKCnRva2Vuc0J1cm4QgOHrFxgBChjCqW+jCgx0b2tlbnNGcmVlemUQoMIeGAEKGJo9J2kKDAoEc2VuZBD8pAIYARCw6gEYAgqgAUlaUEQKDwoJRXhwaXJlRmVlEKjDAQoUCg9FeHBpcmVGZWVOYXRpdmUQiCcKDwoJQ2FuY2VsRmVlEKjDAQoUCg9DYW5jZWxGZWVOYXRpdmUQiCcKDAoHRmVlUmF0ZRDoBwoSCg1GZWVSYXRlTmF0aXZlEJADChEKDElPQ0V4cGlyZUZlZRCQTgoXChJJT0NFeHBpcmVGZWVOYXRpdmUQxBMKFMKpb6MKCHRpbWVMb2NrEMCEPRgBChbCqW+jCgp0aW1lVW5sb2NrEMCEPRgBChbCqW+jCgp0aW1lUmVsb2NrEMCEPRgBChzCqW+jCg9zZXRBY2NvdW50RmxhZ3MQgMLXLxgBChDCqW+jCgRIVExUEPykAhgBChfCqW+jCgtkZXBvc2l0SFRMVBD8pAIYAQoVwqlvowoJY2xhaW1IVExUEPykAhgBChbCqW+jCgpyZWZ1bmRIVExUEPykAhgB"
+    }
+  }
+}`))
+	}))
+	// Close the server when test finishes
+	defer server.Close()
+
+	// test against mock server
+	b := BinanceBlockScanner{
+		rpcHost: "http://" + server.Listener.Addr().String(),
+		http:    &http.Client{},
+	}
+	c.Assert(b.updateFees(10), IsNil)
+	c.Check(b.singleFee, Equals, uint64(37500))
+	c.Check(b.multiFee, Equals, uint64(30000))
 }

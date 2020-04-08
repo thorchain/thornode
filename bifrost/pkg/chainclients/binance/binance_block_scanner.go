@@ -3,10 +3,14 @@ package binance
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/binance-chain/go-sdk/common/types"
 	bmsg "github.com/binance-chain/go-sdk/types/msg"
@@ -16,6 +20,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/tendermint/go-amino"
 
 	"gitlab.com/thorchain/thornode/common"
 
@@ -38,7 +43,18 @@ type BinanceBlockScanner struct {
 	errCounter         *prometheus.CounterVec
 	pubkeyMgr          pubkeymanager.PubKeyValidator
 	globalTxsQueue     chan stypes.TxIn
+	http               *http.Client
+	singleFee          uint64
+	multiFee           uint64
 	rpcHost            string
+}
+
+type QueryResult struct {
+	Result struct {
+		Response struct {
+			Value string `json:"value"`
+		} `json:"response"`
+	} `json:"result"`
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
@@ -70,6 +86,11 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 	} else {
 		types.Network = types.ProdNetwork
 	}
+
+	netClient := &http.Client{
+		Timeout: time.Second * 10,
+	}
+
 	return &BinanceBlockScanner{
 		cfg:                cfg,
 		pubkeyMgr:          pkmgr,
@@ -79,6 +100,7 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 		db:                 scanStorage,
 		commonBlockScanner: commonBlockScanner,
 		errCounter:         m.GetCounterVec(metrics.BlockScanError(common.BNBChain)),
+		http:               netClient,
 		rpcHost:            rpcHost,
 	}, nil
 }
@@ -104,6 +126,59 @@ func (b *BinanceBlockScanner) getTxHash(encodedTx string) (string, error) {
 	return fmt.Sprintf("%X", sha256.Sum256(decodedTx)), nil
 }
 
+func (b *BinanceBlockScanner) updateFees(height int64) error {
+	url := fmt.Sprintf("%s/abci_query?path=\"/param/fees\"&height=%d", b.rpcHost, height)
+	resp, err := b.http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("failed to get current gas fees: non 200 error (%d)", resp.StatusCode)
+	}
+
+	bz, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	var result QueryResult
+	if err := json.Unmarshal(bz, &result); err != nil {
+		return err
+	}
+
+	val, err := base64.StdEncoding.DecodeString(result.Result.Response.Value)
+	if err != nil {
+		return err
+	}
+
+	var fees []types.FeeParam
+	cdc := amino.NewCodec()
+	types.RegisterWire(cdc)
+	err = cdc.UnmarshalBinaryLengthPrefixed(val, &fees)
+	if err != nil {
+		return err
+	}
+
+	for _, fee := range fees {
+		if fee.GetParamType() == types.TransferFeeType {
+			if err := fee.Check(); err != nil {
+				return err
+			}
+
+			transferFee := fee.(*types.TransferFeeParam)
+			if transferFee.FixedFeeParams.Fee > 0 {
+				b.singleFee = uint64(transferFee.FixedFeeParams.Fee)
+			}
+			if transferFee.MultiTransferFee > 0 {
+				b.multiFee = uint64(transferFee.MultiTransferFee)
+			}
+		}
+	}
+
+	return nil
+}
+
 func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 	strBlock := strconv.FormatInt(block.Height, 10)
 	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
@@ -116,6 +191,11 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 		b.m.GetCounter(metrics.BlockWithoutTx("BNB")).Inc()
 		b.logger.Debug().Int64("block", block.Height).Msg("there are no txs in this block")
 		return nil
+	}
+
+	// update our gas fees from binance RPC node
+	if err := b.updateFees(block.Height); err != nil {
+		b.logger.Error().Err(err).Msg("fail to update Binance gas fees")
 	}
 
 	// TODO implement pagination appropriately
@@ -326,15 +406,8 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 				return nil, errors.Wrap(err, "fail to convert coins")
 			}
 
-			// TODO: We should not assume what the gas fees are going to be in
-			// the future (although they are largely static for binance). We
-			// should modulus the binance block height and get the latest fee
-			// prices every 1,000 or so blocks. This would ensure that all
-			// observers will always report the same gas prices as they update
-			// their price fees at the same time.
-
 			// Calculate gas for this tx
-			txInItem.Gas = common.CalcGasPrice(common.Tx{Coins: txInItem.Coins}, common.BNBAsset, []sdk.Uint{sdk.NewUint(37500), sdk.NewUint(30000)})
+			txInItem.Gas = common.CalcGasPrice(common.Tx{Coins: txInItem.Coins}, common.BNBAsset, []sdk.Uint{sdk.NewUint(b.singleFee), sdk.NewUint(b.multiFee)})
 
 			if ok := b.MatchedAddress(txInItem); !ok {
 				continue
