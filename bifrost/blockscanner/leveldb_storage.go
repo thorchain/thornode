@@ -15,12 +15,6 @@ const (
 	ScanPosKey = "blockscanpos"
 )
 
-// BlockStatusItem indicate the status of a block
-type BlockStatusItem struct {
-	Block  Block           `json:"block"`
-	Status BlockScanStatus `json:"status"`
-}
-
 // NewLevelDBScannerStorage create a new instance of LevelDBScannerStorage
 func NewLevelDBScannerStorage(db *leveldb.DB) (*LevelDBScannerStorage, error) {
 	return &LevelDBScannerStorage{db: db}, nil
