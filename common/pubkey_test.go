@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	atypes "github.com/cosmos/cosmos-sdk/x/auth/types"
@@ -101,6 +102,7 @@ func (s *PubKeyTestSuite) TestPubKeySet(c *C) {
 }
 
 func (s *PubKeyTestSuite) TestPubKeyGetAddress(c *C) {
+	os.Setenv("NET", "mainnet")
 	for _, d := range s.keyData {
 		privB, _ := hex.DecodeString(d.priv)
 		pubB, _ := hex.DecodeString(d.pub)
