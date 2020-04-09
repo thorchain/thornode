@@ -104,42 +104,6 @@ func (b *CommonBlockScanner) GetMessages() <-chan Block {
 func (b *CommonBlockScanner) Start() {
 	b.wg.Add(1)
 	go b.scanBlocks()
-	b.wg.Add(1)
-	go b.retryFailedBlocks()
-}
-
-// retryFailedBlocks , if somehow we failed to process a block , it will be retried
-func (b *CommonBlockScanner) retryFailedBlocks() {
-	b.logger.Debug().Msg("start to retry failed blocks")
-	defer b.logger.Debug().Msg("stop retry failed blocks")
-	defer b.wg.Done()
-	t := time.NewTicker(b.cfg.BlockRetryInterval)
-	for {
-		select {
-		case <-b.stopChan:
-			return // bail
-		case <-t.C:
-			b.retryBlocks(true)
-		}
-	}
-}
-
-func (b *CommonBlockScanner) retryBlocks(failedonly bool) {
-	// start up to grab those blocks that we didn't finished
-	blocks, err := b.scannerStorage.GetBlocksForRetry(failedonly)
-	if err != nil {
-		b.errorCounter.WithLabelValues("fail_get_blocks_for_retry", "").Inc()
-		b.logger.Error().Err(err).Msg("fail to get blocks for retry")
-	}
-	b.logger.Debug().Msgf("find %v blocks need to retry", blocks)
-	for _, item := range blocks {
-		select {
-		case <-b.stopChan:
-			return // need to bail
-		case b.scanChan <- item:
-			b.metrics.GetCounter(metrics.TotalRetryBlocks).Inc()
-		}
-	}
 }
 
 // scanBlocks
@@ -156,7 +120,6 @@ func (b *CommonBlockScanner) scanBlocks() {
 	}
 	b.metrics.GetCounter(metrics.CurrentPosition).Add(float64(currentPos))
 	// start up to grab those blocks that we didn't finished
-	b.retryBlocks(false)
 	for {
 		select {
 		case <-b.stopChan:
@@ -176,11 +139,6 @@ func (b *CommonBlockScanner) scanBlocks() {
 			b.logger.Debug().Int64("current block height", currentBlock).Int64("block height", b.previousBlock).Msgf("Chain %s get block height", b.cfg.ChainID)
 			b.previousBlock++
 			b.metrics.GetCounter(metrics.TotalBlockScanned).Inc()
-			if err := b.scannerStorage.SetBlockScanStatus(block, NotStarted); err != nil {
-				b.logger.Error().Err(err).Msg("fail to set block status")
-				b.errorCounter.WithLabelValues("fail_set_block_status", strconv.FormatInt(b.previousBlock, 10)).Inc()
-				return
-			}
 			select {
 			case <-b.stopChan:
 				return

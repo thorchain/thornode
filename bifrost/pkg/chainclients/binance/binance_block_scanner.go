@@ -181,11 +181,6 @@ func (b *BinanceBlockScanner) updateFees(height int64) error {
 
 func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 	strBlock := strconv.FormatInt(block.Height, 10)
-	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
-		b.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
-		return errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
-	}
-
 	b.logger.Debug().Int64("block", block.Height).Int("txs", len(block.Txs)).Msg("txs")
 	if len(block.Txs) == 0 {
 		b.m.GetCounter(metrics.BlockWithoutTx("BNB")).Inc()
@@ -250,19 +245,10 @@ func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
 			}
 			b.logger.Debug().Int64("block", block.Height).Msg("processing block")
 			if err := b.processBlock(block); err != nil {
-				if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
-					b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
-					b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
-				}
 				b.errCounter.WithLabelValues("fail_search_block", "").Inc()
 				b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
 				// THORNode will have a retry go routine to check it.
 				continue
-			}
-			// set a block as success
-			if err := b.db.RemoveBlockStatus(block.Height); err != nil {
-				b.errCounter.WithLabelValues("fail_remove_block_status", "").Inc()
-				b.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
 			}
 		}
 	}

@@ -2,7 +2,6 @@ package ethereum
 
 import (
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -110,12 +109,6 @@ func (e *BlockScanner) Start(globalTxsQueue chan stypes.TxIn) {
 
 // processBlock extracts transactions from block
 func (e *BlockScanner) processBlock(block blockscanner.Block) error {
-	strBlock := strconv.FormatInt(block.Height, 10)
-	if err := e.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
-		e.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
-		return errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
-	}
-
 	e.logger.Debug().Int64("block", block.Height).Int("txs", len(block.Txs)).Msg("txs")
 	if len(block.Txs) == 0 {
 		e.m.GetCounter(metrics.BlockWithoutTx("ETH")).Inc()
@@ -144,19 +137,10 @@ func (e *BlockScanner) processBlocks(idx int) {
 			}
 			e.logger.Debug().Int64("block", block.Height).Msg("processing block")
 			if err := e.processBlock(block); err != nil {
-				if errStatus := e.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
-					e.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
-					e.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
-				}
 				e.errCounter.WithLabelValues("fail_search_block", "").Inc()
 				e.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
 				// THORNode will have a retry go routine to check it.
 				continue
-			}
-			// set a block as success
-			if err := e.db.RemoveBlockStatus(block.Height); err != nil {
-				e.errCounter.WithLabelValues("fail_remove_block_status", "").Inc()
-				e.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
 			}
 		}
 	}
