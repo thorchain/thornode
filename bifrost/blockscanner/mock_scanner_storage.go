@@ -7,8 +7,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const MockErrorBlockHeight = 1024
-
 // MockScannerStorage is to mock scanner storage interface
 type MockScannerStorage struct {
 	l     *sync.Mutex
