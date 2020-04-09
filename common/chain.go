@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	btypes "github.com/binance-chain/go-sdk/common/types"
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/cosmos/cosmos-sdk/crypto/keys"
 	"github.com/cosmos/cosmos-sdk/types"
 )
@@ -104,6 +105,8 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 		case THORChain:
 			// TODO update this to use testnet address prefix
 			return types.GetConfig().GetBech32AccountAddrPrefix()
+		case BTCChain:
+			return chaincfg.MainNetParams.Bech32HRPSegwit
 		}
 	case MainNet:
 		switch c {
@@ -113,6 +116,8 @@ func (c Chain) AddressPrefix(cn ChainNetwork) string {
 			return "0x"
 		case THORChain:
 			return types.GetConfig().GetBech32AccountAddrPrefix()
+		case BTCChain:
+			return chaincfg.TestNet3Params.Bech32HRPSegwit
 		}
 	}
 	return ""
