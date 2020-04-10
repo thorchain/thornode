@@ -1,6 +1,7 @@
 package observer
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -72,7 +73,13 @@ func (o *Observer) processTxIns() {
 		case <-o.stopChan:
 			return
 		case txIn := <-o.globalTxsQueue:
+<<<<<<< HEAD
 			txIn.TxArray = o.filterObservations(txIn.Chain, txIn.TxArray)
+=======
+			fmt.Printf("<<<< PRE  Filter: %d\n", len(txIn.TxArray))
+			txIn.TxArray = o.filterObservations(txIn.Chain, txIn.TxArray)
+			fmt.Printf("<<<< POST Filter: %d\n", len(txIn.TxArray))
+>>>>>>> make it chain flexible
 			if err := o.signAndSendToThorchain(txIn); err != nil {
 				o.logger.Error().Err(err).Msg("fail to send to thorchain")
 				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
@@ -93,12 +100,20 @@ func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem
 
 		// check if the from address is a valid pool
 		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, chain); ok {
+<<<<<<< HEAD
 			txInItem.ObservedPoolPubKey = cpi.PubKey
+=======
+			txInItem.ObservedPoolAddress = cpi.PubKey.String()
+>>>>>>> make it chain flexible
 			txs = append(txs, txInItem)
 		}
 		// check if the to address is a valid pool address
 		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
+<<<<<<< HEAD
 			txInItem.ObservedPoolPubKey = cpi.PubKey
+=======
+			txInItem.ObservedPoolAddress = cpi.PubKey.String()
+>>>>>>> make it chain flexible
 			txs = append(txs, txInItem)
 		} else {
 			// Apparently we don't recognize where we are sending funds to.
@@ -109,7 +124,11 @@ func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem
 			case "migrate", "yggdrasil-", "yggdrasil+":
 				o.pubkeyMgr.FetchPubKeys()
 				if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
+<<<<<<< HEAD
 					txInItem.ObservedPoolPubKey = cpi.PubKey
+=======
+					txInItem.ObservedPoolAddress = cpi.PubKey.String()
+>>>>>>> make it chain flexible
 					txs = append(txs, txInItem)
 				}
 			}
