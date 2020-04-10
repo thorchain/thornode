@@ -291,7 +291,7 @@ func (b *BinanceBlockScanner) getFromHttp(url string) ([]byte, error) {
 	return buf, nil
 }
 
-func (b *BinanceBlockScanner) getRPCBlock(height int64) (int64, []string, error) {
+func (b *BinanceBlockScanner) getRPCBlock(height int64) ([]string, error) {
 	start := time.Now()
 	defer func() {
 		if err := recover(); err != nil {
@@ -305,14 +305,14 @@ func (b *BinanceBlockScanner) getRPCBlock(height int64) (int64, []string, error)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_get_block", url).Inc()
 		time.Sleep(300 * time.Millisecond)
-		return 0, nil, err
+		return nil, err
 	}
 
 	rawTxns, err := b.UnmarshalBlock(buf)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_unmarshal_block", url).Inc()
 	}
-	return height, rawTxns, err
+	return rawTxns, err
 }
 
 func (b *BinanceBlockScanner) BlockRequest(rpcHost string, height int64) string {
@@ -343,43 +343,31 @@ func (b *BinanceBlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
 }
 
 func (b *BinanceBlockScanner) FetchTxs(height int64) (stypes.TxIn, error) {
-	return stypes.TxIn{}, nil
-}
-
-/*
-func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
-	b.logger.Debug().Int("idx", idx).Msg("start searching tx in a block")
-	defer b.logger.Debug().Int("idx", idx).Msg("stop searching tx in a block")
-	defer b.wg.Done()
-
-	for {
-		select {
-		case <-b.stopChan: // time to get out
-			return
-		case block, more := <-b.commonBlockScanner.GetMessages():
-			if !more {
-				return
-			}
-			b.logger.Debug().Int64("block", block.Height).Msg("processing block")
-			if err := b.processBlock(block); err != nil {
-				if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
-					b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
-					b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
-				}
-				b.errCounter.WithLabelValues("fail_search_block", "").Inc()
-				b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
-				// THORNode will have a retry go routine to check it.
-				continue
-			}
-			// set a block as success
-			if err := b.db.RemoveBlockStatus(block.Height); err != nil {
-				b.errCounter.WithLabelValues("fail_remove_block_status", "").Inc()
-				b.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
-			}
-		}
+	rawTxs, err := b.getRPCBlock(height)
+	if err != nil {
+		return stypes.TxIn{}, err
 	}
+
+	block := blockscanner.Block{Height: height, Txs: rawTxs}
+	b.logger.Debug().Int64("block", block.Height).Msg("processing block")
+	txIn, err := b.processBlock(block)
+	if err != nil {
+		if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
+			b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
+			b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
+		}
+		b.errCounter.WithLabelValues("fail_search_block", "").Inc()
+		b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
+		// THORNode will have a retry go routine to check it.
+		return txIn, err
+	}
+	// set a block as success
+	if err := b.db.RemoveBlockStatus(block.Height); err != nil {
+		b.errCounter.WithLabelValues("fail_remove_block_status", "").Inc()
+		b.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
+	}
+	return txIn, nil
 }
-*/
 
 func (b BinanceBlockScanner) MatchedAddress(txInItem stypes.TxInItem) bool {
 	// Check if we are migrating our funds...
