@@ -1,7 +1,6 @@
 package observer
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -73,9 +72,7 @@ func (o *Observer) processTxIns() {
 		case <-o.stopChan:
 			return
 		case txIn := <-o.globalTxsQueue:
-			fmt.Printf("<<<< PRE  Filter: %d\n", len(txIn.TxArray))
 			txIn.TxArray = o.filterObservations(txIn.Chain, txIn.TxArray)
-			fmt.Printf("<<<< POST Filter: %d\n", len(txIn.TxArray))
 			if err := o.signAndSendToThorchain(txIn); err != nil {
 				o.logger.Error().Err(err).Msg("fail to send to thorchain")
 				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
