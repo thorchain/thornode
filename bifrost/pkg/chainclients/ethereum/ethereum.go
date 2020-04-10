@@ -85,12 +85,12 @@ func (c *Client) initBlockScanner(m *metrics.Metrics) error {
 		return pkerrors.Wrap(err, "fail to create blockscanner storage")
 	}
 
-	ethScanner, err := NewBlockScanner(c.cfg.BlockScanner, storage, c.isTestNet, c.client, m)
+	ethScanner, err := NewBlockScanner(c.cfg.BlockScanner, startBlockHeight, storage, c.isTestNet, c.client, m)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create eth block scanner")
 	}
 
-	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, storage, m, c.thorchainBridge, ethScanner)
+	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, startBlockHeight, storage, m, ethScanner)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create block scanner")
 	}

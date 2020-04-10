@@ -39,7 +39,7 @@ type BlockScanner struct {
 }
 
 // NewBlockScanner create a new instance of BlockScan
-func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, client *ethclient.Client, m *metrics.Metrics) (*BlockScanner, error) {
+func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scanStorage blockscanner.ScannerStorage, isTestNet bool, client *ethclient.Client, m *metrics.Metrics) (*BlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
@@ -164,6 +164,7 @@ func (e *BlockScanner) getRPCBlock(height int64) ([]string, error) {
 		e.errCounter.WithLabelValues("fail_unmarshal_block", e.cfg.RPCHost).Inc()
 	}
 	return rawTxns, err
+
 }
 
 func (e *BlockScanner) BlockRequest(height int64) string {
