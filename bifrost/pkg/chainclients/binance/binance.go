@@ -141,7 +141,6 @@ func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager
 		b.logger.Error().Err(err).Msg("fail to init block scanner")
 		return err
 	}
-	b.blockScanner.Start(globalTxsQueue)
 	return nil
 }
 
