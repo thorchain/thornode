@@ -2,7 +2,6 @@ package chainclients
 
 import (
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 )
@@ -30,6 +29,6 @@ type ChainClient interface {
 	GetChain() common.Chain
 	GetGasFee(count uint64) common.Gas
 	ValidateMetadata(_ interface{}) bool
-	Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error
+	Start(globalTxsQueue chan stypes.TxIn, m *metrics.Metrics) error
 	Stop() error
 }

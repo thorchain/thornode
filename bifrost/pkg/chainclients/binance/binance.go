@@ -27,7 +27,6 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
@@ -136,7 +135,7 @@ func (b *Binance) initBlockScanner(m *metrics.Metrics) error {
 	return nil
 }
 
-func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, m *metrics.Metrics) error {
 	err := b.initBlockScanner(m)
 	if err != nil {
 		b.logger.Error().Err(err).Msg("fail to init block scanner")

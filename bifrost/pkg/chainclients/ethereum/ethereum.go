@@ -18,7 +18,6 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
-	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -75,7 +74,7 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	}, nil
 }
 
-func (c *Client) initBlockScanner(pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+func (c *Client) initBlockScanner(m *metrics.Metrics) error {
 	c.CheckIsTestNet()
 
 	var err error
@@ -114,8 +113,8 @@ func (c *Client) initBlockScanner(pubkeyMgr pubkeymanager.PubKeyValidator, m *me
 	return nil
 }
 
-func (c *Client) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
-	err := c.initBlockScanner(pubkeyMgr, m)
+func (c *Client) Start(globalTxsQueue chan stypes.TxIn, m *metrics.Metrics) error {
+	err := c.initBlockScanner(m)
 	if err != nil {
 		c.logger.Error().Err(err).Msg("fail to init block scanner")
 		return err

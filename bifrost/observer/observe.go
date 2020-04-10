@@ -56,7 +56,7 @@ func (o *Observer) getChain(chainID common.Chain) (chainclients.ChainClient, err
 
 func (o *Observer) Start() error {
 	for _, chain := range o.chains {
-		err := chain.Start(o.globalTxsQueue, o.pubkeyMgr, o.m)
+		err := chain.Start(o.globalTxsQueue, o.m)
 		if err != nil {
 			o.logger.Error().Err(err).Str("chain", chain.GetChain().String()).Msg("fail to start")
 			return err
