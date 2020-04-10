@@ -17,9 +17,11 @@ func LoadChains(thorKeys *thorclient.Keys, cfg []config.ChainConfiguration, serv
 		switch chain.ChainID {
 		case common.BNBChain:
 			bnb, err := binance.NewBinance(thorKeys, chain, server, thorchainBridge)
-			if err == nil {
-				chains[common.BNBChain] = bnb
+			if err != nil {
+				continue
 			}
+
+			chains[common.BNBChain] = bnb
 		case common.ETHChain:
 			eth, err := ethereum.NewClient(thorKeys, chain, server, thorchainBridge)
 			if err == nil {
