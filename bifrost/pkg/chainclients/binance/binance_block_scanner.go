@@ -1,15 +1,16 @@
 package binance
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/binance-chain/go-sdk/common/types"
@@ -33,20 +34,15 @@ import (
 
 // BinanceBlockScanner is to scan the blocks
 type BinanceBlockScanner struct {
-	cfg                config.BlockScannerConfiguration
-	logger             zerolog.Logger
-	wg                 *sync.WaitGroup
-	stopChan           chan struct{}
-	db                 blockscanner.ScannerStorage
-	commonBlockScanner *blockscanner.CommonBlockScanner
-	m                  *metrics.Metrics
-	errCounter         *prometheus.CounterVec
-	pubkeyMgr          pubkeymanager.PubKeyValidator
-	globalTxsQueue     chan stypes.TxIn
-	http               *http.Client
-	singleFee          uint64
-	multiFee           uint64
-	rpcHost            string
+	cfg        config.BlockScannerConfiguration
+	logger     zerolog.Logger
+	db         blockscanner.ScannerStorage
+	m          *metrics.Metrics
+	errCounter *prometheus.CounterVec
+	pubkeyMgr  pubkeymanager.PubKeyValidator
+	http       *http.Client
+	singleFee  uint64
+	multiFee   uint64
 }
 
 type QueryResult struct {
@@ -57,15 +53,37 @@ type QueryResult struct {
 	} `json:"result"`
 }
 
+type itemData struct {
+	Txs []string `json:"txs"`
+}
+
+type itemHeader struct {
+	Height string `json:"height"`
+}
+
+type itemBlock struct {
+	Header itemHeader `json:"header"`
+	Data   itemData   `json:"data"`
+}
+
+type itemResult struct {
+	Block itemBlock `json:"block"`
+}
+
+type item struct {
+	Jsonrpc string     `json:"jsonrpc"`
+	ID      string     `json:"id"`
+	Result  itemResult `json:"result"`
+}
+
 // NewBinanceBlockScanner create a new instance of BlockScan
 func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scanStorage blockscanner.ScannerStorage, isTestNet bool, pkmgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) (*BinanceBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
 
-	rpcHost := cfg.RPCHost
-	if !strings.HasPrefix(rpcHost, "http") {
-		rpcHost = fmt.Sprintf("http://%s", rpcHost)
+	if !strings.HasPrefix(cfg.RPCHost, "http") {
+		cfg.RPCHost = fmt.Sprintf("http://%s", cfg.RPCHost)
 	}
 
 	if scanStorage == nil {
@@ -77,10 +95,6 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 	if m == nil {
 		return nil, errors.New("metrics is nil")
 	}
-	commonBlockScanner, err := blockscanner.NewCommonBlockScanner(cfg, startBlockHeight, scanStorage, m, blockscanner.CosmosSupplemental{})
-	if err != nil {
-		return nil, errors.Wrap(err, "fail to create common block scanner")
-	}
 	if isTestNet {
 		types.Network = types.TestNetwork
 	} else {
@@ -88,31 +102,17 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 	}
 
 	netClient := &http.Client{
-		Timeout: time.Second * 10,
+		Timeout: cfg.HttpRequestTimeout,
 	}
 
 	return &BinanceBlockScanner{
-		cfg:                cfg,
-		pubkeyMgr:          pkmgr,
-		logger:             log.Logger.With().Str("module", "blockscanner").Str("chain", "binance").Logger(),
-		wg:                 &sync.WaitGroup{},
-		stopChan:           make(chan struct{}),
-		db:                 scanStorage,
-		commonBlockScanner: commonBlockScanner,
-		errCounter:         m.GetCounterVec(metrics.BlockScanError(common.BNBChain)),
-		http:               netClient,
-		rpcHost:            rpcHost,
+		cfg:        cfg,
+		pubkeyMgr:  pkmgr,
+		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", "binance").Logger(),
+		db:         scanStorage,
+		errCounter: m.GetCounterVec(metrics.BlockScanError(common.BNBChain)),
+		http:       netClient,
 	}, nil
-}
-
-// Start block scanner
-func (b *BinanceBlockScanner) Start(globalTxsQueue chan stypes.TxIn) {
-	b.globalTxsQueue = globalTxsQueue
-	for idx := 1; idx <= b.cfg.BlockScanProcessors; idx++ {
-		b.wg.Add(1)
-		go b.searchTxInABlock(idx)
-	}
-	b.commonBlockScanner.Start()
 }
 
 // getTxHash return hex formatted value of tx hash
@@ -127,7 +127,7 @@ func (b *BinanceBlockScanner) getTxHash(encodedTx string) (string, error) {
 }
 
 func (b *BinanceBlockScanner) updateFees(height int64) error {
-	url := fmt.Sprintf("%s/abci_query?path=\"/param/fees\"&height=%d", b.rpcHost, height)
+	url := fmt.Sprintf("%s/abci_query?path=\"/param/fees\"&height=%d", b.cfg.RPCHost, height)
 	resp, err := b.http.Get(url)
 	if err != nil {
 		return err
@@ -179,18 +179,19 @@ func (b *BinanceBlockScanner) updateFees(height int64) error {
 	return nil
 }
 
-func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
+func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) (stypes.TxIn, error) {
+	var txIn stypes.TxIn
 	strBlock := strconv.FormatInt(block.Height, 10)
 	if err := b.db.SetBlockScanStatus(block, blockscanner.Processing); err != nil {
 		b.errCounter.WithLabelValues("fail_set_block_status", strBlock).Inc()
-		return errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
+		return txIn, errors.Wrapf(err, "fail to set block scan status for block %d", block.Height)
 	}
 
 	b.logger.Debug().Int64("block", block.Height).Int("txs", len(block.Txs)).Msg("txs")
 	if len(block.Txs) == 0 {
 		b.m.GetCounter(metrics.BlockWithoutTx("BNB")).Inc()
 		b.logger.Debug().Int64("block", block.Height).Msg("there are no txs in this block")
-		return nil
+		return txIn, nil
 	}
 
 	// update our gas fees from binance RPC node
@@ -199,13 +200,12 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 	}
 
 	// TODO implement pagination appropriately
-	var txIn stypes.TxIn
 	for _, txn := range block.Txs {
 		hash, err := b.getTxHash(txn)
 		if err != nil {
 			b.errCounter.WithLabelValues("fail_get_tx_hash", strBlock).Inc()
 			b.logger.Error().Err(err).Str("tx", txn).Msg("fail to get tx hash from raw data")
-			return errors.Wrap(err, "fail to get tx hash from tx raw data")
+			return txIn, errors.Wrap(err, "fail to get tx hash from tx raw data")
 		}
 
 		txItemIns, err := b.fromTxToTxIn(hash, txn)
@@ -214,7 +214,7 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 			b.logger.Error().Err(err).Str("hash", hash).Msg("fail to get one tx from server")
 			// if THORNode fail to get one tx hash from server, then THORNode should bail, because THORNode might miss tx
 			// if THORNode bail here, then THORNode should retry later
-			return errors.Wrap(err, "fail to get one tx from server")
+			return txIn, errors.Wrap(err, "fail to get one tx from server")
 		}
 		if len(txItemIns) > 0 {
 			txIn.TxArray = append(txIn.TxArray, txItemIns...)
@@ -225,47 +225,139 @@ func (b *BinanceBlockScanner) processBlock(block blockscanner.Block) error {
 	if len(txIn.TxArray) == 0 {
 		b.m.GetCounter(metrics.BlockNoTxIn("BNB")).Inc()
 		b.logger.Debug().Int64("block", block.Height).Msg("no tx need to be processed in this block")
-		return nil
+		return txIn, nil
 	}
 
 	txIn.BlockHeight = strconv.FormatInt(block.Height, 10)
 	txIn.Count = strconv.Itoa(len(txIn.TxArray))
 	txIn.Chain = common.BNBChain
-	b.globalTxsQueue <- txIn
-	return nil
+	return txIn, nil
 }
 
-func (b *BinanceBlockScanner) searchTxInABlock(idx int) {
-	b.logger.Debug().Int("idx", idx).Msg("start searching tx in a block")
-	defer b.logger.Debug().Int("idx", idx).Msg("stop searching tx in a block")
-	defer b.wg.Done()
-
-	for {
-		select {
-		case <-b.stopChan: // time to get out
-			return
-		case block, more := <-b.commonBlockScanner.GetMessages():
-			if !more {
-				return
-			}
-			b.logger.Debug().Int64("block", block.Height).Msg("processing block")
-			if err := b.processBlock(block); err != nil {
-				if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
-					b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
-					b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
-				}
-				b.errCounter.WithLabelValues("fail_search_block", "").Inc()
-				b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
-				// THORNode will have a retry go routine to check it.
-				continue
-			}
-			// set a block as success
-			if err := b.db.RemoveBlockStatus(block.Height); err != nil {
-				b.errCounter.WithLabelValues("fail_remove_block_status", "").Inc()
-				b.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
-			}
-		}
+func (b *BinanceBlockScanner) getFromHttp(url string) ([]byte, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		b.errCounter.WithLabelValues("fail_create_http_request", url).Inc()
+		return nil, errors.Wrap(err, "fail to create http request")
 	}
+	resp, err := b.http.Do(req)
+	if err != nil {
+		b.errCounter.WithLabelValues("fail_send_http_request", url).Inc()
+		return nil, errors.Wrapf(err, "fail to get from %s ", url)
+	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			b.logger.Error().Err(err).Msg("fail to close http response body.")
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		b.errCounter.WithLabelValues("unexpected_status_code", resp.Status).Inc()
+		return nil, errors.Errorf("unexpected status code:%d from %s", resp.StatusCode, url)
+	}
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// test if our response body is an error block json format
+	errorBlock := struct {
+		Error struct {
+			Code    int64  `json:"code"`
+			Message string `json:"message"`
+			Data    string `json:"data"`
+		} `json:"error"`
+	}{}
+
+	_ = json.Unmarshal(buf, &errorBlock) // ignore error
+	if errorBlock.Error.Code != 0 {
+		return nil, fmt.Errorf(
+			"%s (%d): %s",
+			errorBlock.Error.Message,
+			errorBlock.Error.Code,
+			errorBlock.Error.Data,
+		)
+	}
+
+	return buf, nil
+}
+
+func (b *BinanceBlockScanner) getRPCBlock(height int64) ([]string, error) {
+	start := time.Now()
+	defer func() {
+		if err := recover(); err != nil {
+			b.logger.Error().Msgf("fail to get RPCBlock:%s", err)
+		}
+		duration := time.Since(start)
+		b.m.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
+	}()
+	url := b.BlockRequest(height)
+	buf, err := b.getFromHttp(url)
+	if err != nil {
+		b.errCounter.WithLabelValues("fail_get_block", url).Inc()
+		time.Sleep(300 * time.Millisecond)
+		return nil, err
+	}
+
+	rawTxns, err := b.UnmarshalBlock(buf)
+	if err != nil {
+		b.errCounter.WithLabelValues("fail_unmarshal_block", url).Inc()
+	}
+	return rawTxns, err
+}
+
+func (b *BinanceBlockScanner) BlockRequest(height int64) string {
+	u, _ := url.Parse(b.cfg.RPCHost)
+	u.Path = "block"
+	if height > 0 {
+		u.RawQuery = fmt.Sprintf("height=%d", height)
+	}
+	return u.String()
+}
+
+func (b *BinanceBlockScanner) UnmarshalBlock(buf []byte) ([]string, error) {
+	// check if the block is null. This can happen when binance gets the block,
+	// but not the data within it. In which case, we'll never have the data and
+	// we should just move onto the next block.
+	// { "jsonrpc": "2.0", "id": "", "result": { "block_meta": null, "block": null } }
+	if bytes.Contains(buf, []byte(`"block": null`)) {
+		return nil, nil
+	}
+
+	var block item
+	err := json.Unmarshal(buf, &block)
+	if err != nil {
+		return nil, errors.Wrap(err, "fail to unmarshal body to rpcBlock")
+	}
+
+	return block.Result.Block.Data.Txs, nil
+}
+
+func (b *BinanceBlockScanner) FetchTxs(height int64) (stypes.TxIn, error) {
+	rawTxs, err := b.getRPCBlock(height)
+	if err != nil {
+		return stypes.TxIn{}, err
+	}
+
+	block := blockscanner.Block{Height: height, Txs: rawTxs}
+	b.logger.Debug().Int64("block", block.Height).Msg("processing block")
+	txIn, err := b.processBlock(block)
+	if err != nil {
+		if errStatus := b.db.SetBlockScanStatus(block, blockscanner.Failed); errStatus != nil {
+			b.errCounter.WithLabelValues("fail_set_block_status", "").Inc()
+			b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to set block to fail status")
+		}
+		b.errCounter.WithLabelValues("fail_search_block", "").Inc()
+		b.logger.Error().Err(err).Int64("height", block.Height).Msg("fail to search tx in block")
+		// THORNode will have a retry go routine to check it.
+		return txIn, err
+	}
+	// set a block as success
+	if err := b.db.RemoveBlockStatus(block.Height); err != nil {
+		b.errCounter.WithLabelValues("fail_remove_block_status", "").Inc()
+		b.logger.Error().Err(err).Int64("block", block.Height).Msg("fail to remove block status from data store, thus block will be re processed")
+	}
+	return txIn, nil
 }
 
 func (b BinanceBlockScanner) MatchedAddress(txInItem stypes.TxInItem) bool {
@@ -446,16 +538,4 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 		}
 	}
 	return txs, nil
-}
-
-func (b *BinanceBlockScanner) Stop() error {
-	b.logger.Debug().Msg("receive stop request")
-	defer b.logger.Debug().Msg("block scanner stopped")
-	if err := b.commonBlockScanner.Stop(); err != nil {
-		b.logger.Error().Err(err).Msg("fail to stop common block scanner")
-	}
-	close(b.stopChan)
-	b.wg.Wait()
-
-	return nil
 }
