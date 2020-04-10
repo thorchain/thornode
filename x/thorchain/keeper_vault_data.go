@@ -112,11 +112,6 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		return fmt.Errorf("fail to get total liquidity fee: %w", err)
 	}
 
-	// if we have no swaps, no block rewards for this block
-	if totalLiquidityFeesInBlock.IsZero() {
-		return k.SetVaultData(ctx, vault)
-	}
-
 	// NOTE: if we continue to have remaining gas to pay off (which is
 	// extremely unlikely), ignore it for now (attempt to recover in the next
 	// block). This should be OK as the asset amount in the pool has already
