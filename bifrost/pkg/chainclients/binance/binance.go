@@ -132,12 +132,11 @@ func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager
 		b.logger.Error().Err(err).Msg("fail to init block scanner")
 		return err
 	}
-	b.blockScanner.Start(globalTxsQueue)
 	return nil
 }
 
 func (b *Binance) Stop() error {
-	return b.blockScanner.Stop()
+	return nil
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status
