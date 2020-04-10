@@ -19,7 +19,6 @@ import (
 // ValidateMetadata  checks if given metadata is correct or not
 // Start
 // Stop
-
 type ChainClient interface {
 	SignTx(tx stypes.TxOutItem, height int64) ([]byte, error)
 	BroadcastTx(_ stypes.TxOutItem, _ []byte) error
