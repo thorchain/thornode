@@ -11,8 +11,10 @@ import (
 
 type KeeperLiquidityFees interface {
 	AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fee sdk.Uint) error
-	GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint, error)
-	GetPoolLiquidityFees(ctx sdk.Context, height uint64, asset common.Asset) (sdk.Uint, error)
+	GetTotalLiquidityFeesInBlock(ctx sdk.Context, height uint64) (sdk.Uint, error)
+	GetPoolLiquidityFeesInBlock(ctx sdk.Context, height uint64, asset common.Asset) (sdk.Uint, error)
+	GetTotalLiquidityFees(ctx sdk.Context) (sdk.Uint, error)
+	GetPoolLiquidityFees(ctx sdk.Context, asset common.Asset) (sdk.Uint, error)
 }
 
 // AddToLiquidityFees - measure of fees collected in each block
@@ -20,25 +22,44 @@ func (k KVStore) AddToLiquidityFees(ctx sdk.Context, asset common.Asset, fee sdk
 	store := ctx.KVStore(k.storeKey)
 	currentHeight := uint64(ctx.BlockHeight())
 
-	totalFees, err := k.GetTotalLiquidityFees(ctx, currentHeight)
+	totalFeesInBlock, err := k.GetTotalLiquidityFeesInBlock(ctx, currentHeight)
 	if err != nil {
 		return err
 	}
-	poolFees, err := k.GetPoolLiquidityFees(ctx, currentHeight, asset)
+	poolFeesInBlock, err := k.GetPoolLiquidityFeesInBlock(ctx, currentHeight, asset)
+	if err != nil {
+		return err
+	}
+	totalFees, err := k.GetTotalLiquidityFees(ctx)
+	if err != nil {
+		return err
+	}
+	poolFees, err := k.GetPoolLiquidityFees(ctx, asset)
 	if err != nil {
 		return err
 	}
 
+	totalFeesInBlock = totalFeesInBlock.Add(fee)
+	poolFeesInBlock = poolFeesInBlock.Add(fee)
 	totalFees = totalFees.Add(fee)
 	poolFees = poolFees.Add(fee)
 
-	// update total liquidity
-	key := k.GetKey(ctx, prefixTotalLiquidityFee, strconv.FormatUint(currentHeight, 10))
+	// update total liquidity fee in block
+	key := k.GetKey(ctx, prefixTotalLiquidityFeeInBlock, strconv.FormatUint(currentHeight, 10))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(totalFeesInBlock))
+
+	// update pool liquidity fee in block
+	key = k.GetKey(ctx, prefixPoolLiquidityFeeInBlock, fmt.Sprintf("%d-%s", currentHeight, asset.String()))
+	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(poolFeesInBlock))
+
+	// update total liquidity fee
+	key = k.GetKey(ctx, prefixTotalLiquidityFee, "")
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(totalFees))
 
-	// update pool liquidity
-	key = k.GetKey(ctx, prefixPoolLiquidityFee, fmt.Sprintf("%d-%s", currentHeight, asset.String()))
+	// update pool liquidity fee
+	key = k.GetKey(ctx, prefixPoolLiquidityFee, fmt.Sprintf("%s", asset.String()))
 	store.Set([]byte(key), k.cdc.MustMarshalBinaryBare(poolFees))
+
 	return nil
 }
 
@@ -56,14 +77,26 @@ func (k KVStore) getLiquidityFees(ctx sdk.Context, key string) (sdk.Uint, error)
 	return liquidityFees, nil
 }
 
-// GetTotalLiquidityFees - total of all fees collected in each block
-func (k KVStore) GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint, error) {
-	key := k.GetKey(ctx, prefixTotalLiquidityFee, strconv.FormatUint(height, 10))
+// GetTotalLiquidityFeesInBlock - total of all fees collected in each block
+func (k KVStore) GetTotalLiquidityFeesInBlock(ctx sdk.Context, height uint64) (sdk.Uint, error) {
+	key := k.GetKey(ctx, prefixTotalLiquidityFeeInBlock, strconv.FormatUint(height, 10))
 	return k.getLiquidityFees(ctx, key)
 }
 
 // GetPoolLiquidityFees - total of fees collected in each block per pool
-func (k KVStore) GetPoolLiquidityFees(ctx sdk.Context, height uint64, asset common.Asset) (sdk.Uint, error) {
-	key := k.GetKey(ctx, prefixPoolLiquidityFee, fmt.Sprintf("%d-%s", height, asset.String()))
+func (k KVStore) GetPoolLiquidityFeesInBlock(ctx sdk.Context, height uint64, asset common.Asset) (sdk.Uint, error) {
+	key := k.GetKey(ctx, prefixPoolLiquidityFeeInBlock, fmt.Sprintf("%d-%s", height, asset.String()))
+	return k.getLiquidityFees(ctx, key)
+}
+
+// GetTotalLiquidityFees - total of all fees collected ever
+func (k KVStore) GetTotalLiquidityFees(ctx sdk.Context) (sdk.Uint, error) {
+	key := k.GetKey(ctx, prefixTotalLiquidityFee, "")
+	return k.getLiquidityFees(ctx, key)
+}
+
+// GetPoolLiquidityFees - total of fees collected in each per pool ever
+func (k KVStore) GetPoolLiquidityFees(ctx sdk.Context, asset common.Asset) (sdk.Uint, error) {
+	key := k.GetKey(ctx, prefixPoolLiquidityFee, fmt.Sprintf("%s", asset.String()))
 	return k.getLiquidityFees(ctx, key)
 }

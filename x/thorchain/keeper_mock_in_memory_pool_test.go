@@ -48,11 +48,19 @@ func (p *MockInMemoryPoolStorage) AddToLiquidityFees(ctx sdk.Context, asset comm
 	return nil
 }
 
-func (p *MockInMemoryPoolStorage) GetTotalLiquidityFees(ctx sdk.Context, height uint64) (sdk.Uint, error) {
+func (p *MockInMemoryPoolStorage) GetTotalLiquidityFeesInBlock(ctx sdk.Context, height uint64) (sdk.Uint, error) {
 	return sdk.ZeroUint(), nil
 }
 
-func (p *MockInMemoryPoolStorage) GetPoolLiquidityFees(ctx sdk.Context, height uint64, asset common.Asset) (sdk.Uint, error) {
+func (p *MockInMemoryPoolStorage) GetPoolLiquidityFeesInBlock(ctx sdk.Context, height uint64, asset common.Asset) (sdk.Uint, error) {
+	return sdk.ZeroUint(), nil
+}
+
+func (p *MockInMemoryPoolStorage) GetTotalLiquidityFees(ctx sdk.Context) (sdk.Uint, error) {
+	return sdk.ZeroUint(), nil
+}
+
+func (p *MockInMemoryPoolStorage) GetPoolLiquidityFees(ctx sdk.Context, asset common.Asset) (sdk.Uint, error) {
 	return sdk.ZeroUint(), nil
 }
 

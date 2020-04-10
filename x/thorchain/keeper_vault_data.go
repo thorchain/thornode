@@ -106,14 +106,14 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 		return fmt.Errorf("fail to subtract gas from reserve: %w", err)
 	}
 
-	// get total liquidity fees
-	totalLiquidityFees, err := k.GetTotalLiquidityFees(ctx, currentHeight)
+	// get total liquidity fees in block
+	totalLiquidityFeesInBlock, err := k.GetTotalLiquidityFeesInBlock(ctx, currentHeight)
 	if err != nil {
 		return fmt.Errorf("fail to get total liquidity fee: %w", err)
 	}
 
 	// if we have no swaps, no block rewards for this block
-	if totalLiquidityFees.IsZero() {
+	if totalLiquidityFeesInBlock.IsZero() {
 		return k.SetVaultData(ctx, vault)
 	}
 
@@ -127,7 +127,7 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	}
 	emissionCurve := constAccessor.GetInt64Value(constants.EmissionCurve)
 	blocksOerYear := constAccessor.GetInt64Value(constants.BlocksPerYear)
-	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, vault.TotalReserve, totalLiquidityFees, emissionCurve, blocksOerYear)
+	bondReward, totalPoolRewards, stakerDeficit := calcBlockRewards(totalStaked, totalBonded, vault.TotalReserve, totalLiquidityFeesInBlock, emissionCurve, blocksOerYear)
 
 	// given bondReward and toolPoolRewards are both calculated base on vault.TotalReserve, thus it should always have enough to pay the bond reward
 
@@ -141,10 +141,28 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 
 		var rewardAmts []sdk.Uint
 
-		if !totalLiquidityFees.IsZero() {
-			// Pool Rewards are based on Fee Share
+		if !totalLiquidityFeesInBlock.IsZero() {
+			// Pool Rewards are based on Fee Share In Block
 			for _, pool := range pools {
-				fees, err := k.GetPoolLiquidityFees(ctx, currentHeight, pool.Asset)
+				fees, err := k.GetPoolLiquidityFeesInBlock(ctx, currentHeight, pool.Asset)
+				if err != nil {
+					err = errors.Wrap(err, "fail to get fees")
+					ctx.Logger().Error(err.Error())
+					return err
+				}
+				amt := common.GetShare(fees, totalLiquidityFeesInBlock, totalPoolRewards)
+				rewardAmts = append(rewardAmts, amt)
+				evtPools = append(evtPools, PoolAmt{Asset: pool.Asset, Amount: int64(amt.Uint64())})
+			}
+		} else {
+			// Pool Rewards are based on Total Fee Share
+			totalLiquidityFees, err := k.GetTotalLiquidityFees(ctx)
+			if err != nil {
+				return fmt.Errorf("fail to get total liquidity fee: %w", err)
+			}
+
+			for _, pool := range pools {
+				fees, err := k.GetPoolLiquidityFees(ctx, pool.Asset)
 				if err != nil {
 					err = errors.Wrap(err, "fail to get fees")
 					ctx.Logger().Error(err.Error())
@@ -154,9 +172,6 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 				rewardAmts = append(rewardAmts, amt)
 				evtPools = append(evtPools, PoolAmt{Asset: pool.Asset, Amount: int64(amt.Uint64())})
 			}
-		} else {
-			// Pool Rewards are based on Depth Share
-			rewardAmts = calcPoolRewards(totalPoolRewards, totalStaked, pools)
 		}
 		// Pay out
 		if err := payPoolRewards(ctx, k, rewardAmts, pools); err != nil {
@@ -166,14 +181,14 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	} else { // Else deduct pool deficit
 
 		for _, pool := range pools {
-			poolFees, err := k.GetPoolLiquidityFees(ctx, currentHeight, pool.Asset)
+			poolFees, err := k.GetPoolLiquidityFeesInBlock(ctx, currentHeight, pool.Asset)
 			if err != nil {
 				return fmt.Errorf("fail to get liquidity fees for pool(%s): %w", pool.Asset, err)
 			}
 			if pool.BalanceRune.IsZero() || poolFees.IsZero() { // Safety checks
 				continue
 			}
-			poolDeficit := calcPoolDeficit(stakerDeficit, totalLiquidityFees, poolFees)
+			poolDeficit := calcPoolDeficit(stakerDeficit, totalLiquidityFeesInBlock, poolFees)
 			pool.BalanceRune = common.SafeSub(pool.BalanceRune, poolDeficit)
 			vault.BondRewardRune = vault.BondRewardRune.Add(poolDeficit)
 			if err := k.SetPool(ctx, pool); err != nil {

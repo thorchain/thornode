@@ -137,11 +137,19 @@ func (k KVStoreDummy) AddToLiquidityFees(_ sdk.Context, _ common.Asset, _ sdk.Ui
 	return kaboom
 }
 
-func (k KVStoreDummy) GetTotalLiquidityFees(_ sdk.Context, _ uint64) (sdk.Uint, error) {
+func (k KVStoreDummy) GetTotalLiquidityFeesInBlock(_ sdk.Context, _ uint64) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
 
-func (k KVStoreDummy) GetPoolLiquidityFees(_ sdk.Context, _ uint64, _ common.Asset) (sdk.Uint, error) {
+func (k KVStoreDummy) GetPoolLiquidityFeesInBlock(_ sdk.Context, _ uint64, _ common.Asset) (sdk.Uint, error) {
+	return sdk.ZeroUint(), kaboom
+}
+
+func (k KVStoreDummy) GetTotalLiquidityFees(_ sdk.Context) (sdk.Uint, error) {
+	return sdk.ZeroUint(), kaboom
+}
+
+func (k KVStoreDummy) GetPoolLiquidityFees(_ sdk.Context, _ common.Asset) (sdk.Uint, error) {
 	return sdk.ZeroUint(), kaboom
 }
 
