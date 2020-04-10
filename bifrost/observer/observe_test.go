@@ -25,6 +25,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance"
+	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
@@ -218,7 +219,7 @@ func (s *ObserverSuite) TearDownSuite(c *C) {
 }
 
 func (s *ObserverSuite) TestProcess(c *C) {
-	obs, err := NewObserver(binance.NewMockPoolAddressValidator(), map[common.Chain]chainclients.ChainClient{common.BNBChain: s.b}, s.bridge, s.m)
+	obs, err := NewObserver(pubkeymanager.NewMockPoolAddressValidator(), map[common.Chain]chainclients.ChainClient{common.BNBChain: s.b}, s.bridge, s.m)
 	c.Assert(obs, NotNil)
 	c.Assert(err, IsNil)
 	err = obs.Start()

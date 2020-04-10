@@ -27,7 +27,7 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
+	"gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/bifrost/tss"
@@ -97,7 +97,7 @@ func NewBinance(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server
 	}, nil
 }
 
-func (b *Binance) initBlockScanner(pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+func (b *Binance) initBlockScanner(m *metrics.Metrics) error {
 	b.checkIsTestNet()
 
 	var err error
@@ -122,7 +122,7 @@ func (b *Binance) initBlockScanner(pubkeyMgr pubkeymanager.PubKeyValidator, m *m
 		startBlockHeight = b.cfg.BlockScanner.StartBlockHeight
 	}
 
-	b.bnbScanner, err = NewBinanceBlockScanner(b.cfg.BlockScanner, startBlockHeight, b.storage, b.isTestNet, pubkeyMgr, m)
+	b.bnbScanner, err = NewBinanceBlockScanner(b.cfg.BlockScanner, startBlockHeight, b.storage, b.isTestNet, m)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create block scanner")
 	}
@@ -136,7 +136,7 @@ func (b *Binance) initBlockScanner(pubkeyMgr pubkeymanager.PubKeyValidator, m *m
 }
 
 func (b *Binance) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
-	err := b.initBlockScanner(pubkeyMgr, m)
+	err := b.initBlockScanner(m)
 	if err != nil {
 		b.logger.Error().Err(err).Msg("fail to init block scanner")
 		return err

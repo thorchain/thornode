@@ -18,7 +18,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/binance"
+	"gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/x/thorchain"
 	types2 "gitlab.com/thorchain/thornode/x/thorchain/types"
@@ -166,7 +166,7 @@ func (s *ThorchainBlockScanSuite) TestProcess(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         10 * time.Second,
 	}
-	blockScan, err := NewThorchainBlockScan(cfg, s.storage, s.bridge, s.m, binance.NewMockPoolAddressValidator())
+	blockScan, err := NewThorchainBlockScan(cfg, s.storage, s.bridge, s.m, pubkeymanager.NewMockPoolAddressValidator())
 	c.Assert(blockScan, NotNil)
 	c.Assert(err, IsNil)
 	err = blockScan.Start()

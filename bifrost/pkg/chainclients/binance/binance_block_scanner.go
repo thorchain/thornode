@@ -28,7 +28,6 @@ import (
 	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
-	pubkeymanager "gitlab.com/thorchain/thornode/bifrost/pubkeymanager"
 	stypes "gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
@@ -76,7 +75,7 @@ type item struct {
 }
 
 // NewBinanceBlockScanner create a new instance of BlockScan
-func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scanStorage blockscanner.ScannerStorage, isTestNet bool, pkmgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) (*BinanceBlockScanner, error) {
+func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scanStorage blockscanner.ScannerStorage, isTestNet bool, m *metrics.Metrics) (*BinanceBlockScanner, error) {
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
@@ -87,9 +86,6 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 
 	if scanStorage == nil {
 		return nil, errors.New("scanStorage is nil")
-	}
-	if pkmgr == nil {
-		return nil, errors.New("pubkey validator is nil")
 	}
 	if m == nil {
 		return nil, errors.New("metrics is nil")
