@@ -380,8 +380,10 @@ func (s *BlockScannerTestSuite) TestUpdateGasFees(c *C) {
 
 	// test against mock server
 	b := BinanceBlockScanner{
-		rpcHost: "http://" + server.Listener.Addr().String(),
-		http:    &http.Client{},
+		cfg: config.BlockScannerConfiguration{
+			RPCHost: "http://" + server.Listener.Addr().String(),
+		},
+		http: &http.Client{},
 	}
 	c.Assert(b.updateFees(10), IsNil)
 	c.Check(b.singleFee, Equals, uint64(37500))

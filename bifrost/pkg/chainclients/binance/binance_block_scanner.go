@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/binance-chain/go-sdk/common/types"
@@ -35,19 +34,15 @@ import (
 
 // BinanceBlockScanner is to scan the blocks
 type BinanceBlockScanner struct {
-	cfg            config.BlockScannerConfiguration
-	logger         zerolog.Logger
-	wg             *sync.WaitGroup
-	stopChan       chan struct{}
-	db             blockscanner.ScannerStorage
-	m              *metrics.Metrics
-	errCounter     *prometheus.CounterVec
-	pubkeyMgr      pubkeymanager.PubKeyValidator
-	globalTxsQueue chan stypes.TxIn
-	http           *http.Client
-	singleFee      uint64
-	multiFee       uint64
-	rpcHost        string
+	cfg        config.BlockScannerConfiguration
+	logger     zerolog.Logger
+	db         blockscanner.ScannerStorage
+	m          *metrics.Metrics
+	errCounter *prometheus.CounterVec
+	pubkeyMgr  pubkeymanager.PubKeyValidator
+	http       *http.Client
+	singleFee  uint64
+	multiFee   uint64
 }
 
 type QueryResult struct {
@@ -87,9 +82,8 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 		return nil, errors.New("rpc host is empty")
 	}
 
-	rpcHost := cfg.RPCHost
-	if !strings.HasPrefix(rpcHost, "http") {
-		rpcHost = fmt.Sprintf("http://%s", rpcHost)
+	if !strings.HasPrefix(cfg.RPCHost, "http") {
+		cfg.RPCHost = fmt.Sprintf("http://%s", cfg.RPCHost)
 	}
 
 	if scanStorage == nil {
@@ -108,19 +102,16 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 	}
 
 	netClient := &http.Client{
-		Timeout: time.Second * 10,
+		Timeout: cfg.HttpRequestTimeout,
 	}
 
 	return &BinanceBlockScanner{
 		cfg:        cfg,
 		pubkeyMgr:  pkmgr,
 		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", "binance").Logger(),
-		wg:         &sync.WaitGroup{},
-		stopChan:   make(chan struct{}),
 		db:         scanStorage,
 		errCounter: m.GetCounterVec(metrics.BlockScanError(common.BNBChain)),
 		http:       netClient,
-		rpcHost:    rpcHost,
 	}, nil
 }
 
@@ -136,7 +127,7 @@ func (b *BinanceBlockScanner) getTxHash(encodedTx string) (string, error) {
 }
 
 func (b *BinanceBlockScanner) updateFees(height int64) error {
-	url := fmt.Sprintf("%s/abci_query?path=\"/param/fees\"&height=%d", b.rpcHost, height)
+	url := fmt.Sprintf("%s/abci_query?path=\"/param/fees\"&height=%d", b.cfg.RPCHost, height)
 	resp, err := b.http.Get(url)
 	if err != nil {
 		return err
@@ -300,7 +291,7 @@ func (b *BinanceBlockScanner) getRPCBlock(height int64) ([]string, error) {
 		duration := time.Since(start)
 		b.m.GetHistograms(metrics.BlockDiscoveryDuration).Observe(duration.Seconds())
 	}()
-	url := b.BlockRequest(b.rpcHost, height)
+	url := b.BlockRequest(height)
 	buf, err := b.getFromHttp(url)
 	if err != nil {
 		b.errCounter.WithLabelValues("fail_get_block", url).Inc()
@@ -315,8 +306,8 @@ func (b *BinanceBlockScanner) getRPCBlock(height int64) ([]string, error) {
 	return rawTxns, err
 }
 
-func (b *BinanceBlockScanner) BlockRequest(rpcHost string, height int64) string {
-	u, _ := url.Parse(rpcHost)
+func (b *BinanceBlockScanner) BlockRequest(height int64) string {
+	u, _ := url.Parse(b.cfg.RPCHost)
 	u.Path = "block"
 	if height > 0 {
 		u.RawQuery = fmt.Sprintf("height=%d", height)
