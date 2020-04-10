@@ -1,6 +1,7 @@
 package observer
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -72,7 +73,9 @@ func (o *Observer) processTxIns() {
 		case <-o.stopChan:
 			return
 		case txIn := <-o.globalTxsQueue:
-			txIn.TxArray = o.filterObservations(txIn.TxArray)
+			fmt.Printf("<<<< PRE  Filter: %d\n", len(txIn.TxArray))
+			txIn.TxArray = o.filterObservations(txIn.Chain, txIn.TxArray)
+			fmt.Printf("<<<< POST Filter: %d\n", len(txIn.TxArray))
 			if err := o.signAndSendToThorchain(txIn); err != nil {
 				o.logger.Error().Err(err).Msg("fail to send to thorchain")
 				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
@@ -81,9 +84,9 @@ func (o *Observer) processTxIns() {
 	}
 }
 
-func (o *Observer) filterObservations(items []types.TxInItem) (txs []types.TxInItem) {
+func (o *Observer) filterObservations(chain common.Chain, items []types.TxInItem) (txs []types.TxInItem) {
 	for _, txInItem := range items {
-		if ok := o.MatchedAddress(txInItem); !ok {
+		if ok := o.MatchedAddress(chain, txInItem); !ok {
 			continue
 		}
 
@@ -92,12 +95,12 @@ func (o *Observer) filterObservations(items []types.TxInItem) (txs []types.TxInI
 		// a inbound and outbound txn, if we both apply.
 
 		// check if the from address is a valid pool
-		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, common.BNBChain); ok {
+		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, chain); ok {
 			txInItem.ObservedPoolAddress = cpi.PubKey.String()
 			txs = append(txs, txInItem)
 		}
 		// check if the to address is a valid pool address
-		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
+		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
 			txInItem.ObservedPoolAddress = cpi.PubKey.String()
 			txs = append(txs, txInItem)
 		} else {
@@ -108,7 +111,7 @@ func (o *Observer) filterObservations(items []types.TxInItem) (txs []types.TxInI
 			switch strings.ToLower(txInItem.Memo) {
 			case "migrate", "yggdrasil-", "yggdrasil+":
 				o.pubkeyMgr.FetchPubKeys()
-				if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
+				if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, chain); ok {
 					txInItem.ObservedPoolAddress = cpi.PubKey.String()
 					txs = append(txs, txInItem)
 				}
@@ -118,41 +121,41 @@ func (o *Observer) filterObservations(items []types.TxInItem) (txs []types.TxInI
 	return
 }
 
-func (o *Observer) MatchedAddress(txInItem types.TxInItem) bool {
+func (o *Observer) MatchedAddress(chain common.Chain, txInItem types.TxInItem) bool {
 	// Check if we are migrating our funds...
-	if ok := o.isMigration(txInItem.Sender, txInItem.Memo); ok {
+	if ok := o.isMigration(chain, txInItem.Sender, txInItem.Memo); ok {
 		o.logger.Debug().Str("memo", txInItem.Memo).Msg("migrate")
 		return true
 	}
 
 	// Check if our pool is registering a new yggdrasil pool. Ie
 	// sending the staked assets to the user
-	if ok := o.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
+	if ok := o.isRegisterYggdrasil(chain, txInItem.Sender, txInItem.Memo); ok {
 		o.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
 		return true
 	}
 
 	// Check if out pool is de registering a yggdrasil pool. Ie sending
 	// the bond back to the user
-	if ok := o.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
+	if ok := o.isDeregisterYggdrasil(chain, txInItem.Sender, txInItem.Memo); ok {
 		o.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
 		return true
 	}
 
 	// Check if THORNode are sending from a yggdrasil address
-	if ok := o.isYggdrasil(txInItem.Sender); ok {
+	if ok := o.isYggdrasil(chain, txInItem.Sender); ok {
 		o.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
 		return true
 	}
 
 	// Check if THORNode are sending to a yggdrasil address
-	if ok := o.isYggdrasil(txInItem.To); ok {
+	if ok := o.isYggdrasil(chain, txInItem.To); ok {
 		o.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
 		return true
 	}
 
 	// outbound message from pool, when it is outbound, it does not matter how much coins THORNode send to customer for now
-	if ok := o.isOutboundMsg(txInItem.Sender, txInItem.Memo); ok {
+	if ok := o.isOutboundMsg(chain, txInItem.Sender, txInItem.Memo); ok {
 		o.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
 		return true
 	}
@@ -161,32 +164,32 @@ func (o *Observer) MatchedAddress(txInItem types.TxInItem) bool {
 }
 
 // Check if memo is for registering an Asgard vault
-func (o *Observer) isMigration(addr, memo string) bool {
-	return o.isAddrWithMemo(addr, memo, "migrate")
+func (o *Observer) isMigration(chain common.Chain, addr, memo string) bool {
+	return o.isAddrWithMemo(chain, addr, memo, "migrate")
 }
 
 // Check if memo is for registering a Yggdrasil vault
-func (o *Observer) isRegisterYggdrasil(addr, memo string) bool {
-	return o.isAddrWithMemo(addr, memo, "yggdrasil+")
+func (o *Observer) isRegisterYggdrasil(chain common.Chain, addr, memo string) bool {
+	return o.isAddrWithMemo(chain, addr, memo, "yggdrasil+")
 }
 
 // Check if memo is for de registering a Yggdrasil vault
-func (o *Observer) isDeregisterYggdrasil(addr, memo string) bool {
-	return o.isAddrWithMemo(addr, memo, "yggdrasil-")
+func (o *Observer) isDeregisterYggdrasil(chain common.Chain, addr, memo string) bool {
+	return o.isAddrWithMemo(chain, addr, memo, "yggdrasil-")
 }
 
 // Check if THORNode have an outbound yggdrasil transaction
-func (o *Observer) isYggdrasil(addr string) bool {
-	ok, _ := o.pubkeyMgr.IsValidPoolAddress(addr, common.BNBChain)
+func (o *Observer) isYggdrasil(chain common.Chain, addr string) bool {
+	ok, _ := o.pubkeyMgr.IsValidPoolAddress(addr, chain)
 	return ok
 }
 
-func (o *Observer) isOutboundMsg(addr, memo string) bool {
-	return o.isAddrWithMemo(addr, memo, "outbound")
+func (o *Observer) isOutboundMsg(chain common.Chain, addr, memo string) bool {
+	return o.isAddrWithMemo(chain, addr, memo, "outbound")
 }
 
-func (o *Observer) isAddrWithMemo(addr, memo, targetMemo string) bool {
-	match, _ := o.pubkeyMgr.IsValidPoolAddress(addr, common.BNBChain)
+func (o *Observer) isAddrWithMemo(chain common.Chain, addr, memo, targetMemo string) bool {
+	match, _ := o.pubkeyMgr.IsValidPoolAddress(addr, chain)
 	if !match {
 		return false
 	}
