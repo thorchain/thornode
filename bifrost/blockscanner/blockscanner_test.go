@@ -10,6 +10,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 	"gitlab.com/thorchain/thornode/common"
 )
 
@@ -93,7 +94,8 @@ func (s *BlockScannerTestSuite) TestBlockScanner(c *C) {
 			counter++
 		}
 	}()
-	cbs.Start()
+	globalChan := make(chan types.TxIn)
+	cbs.Start(globalChan)
 	time.Sleep(time.Second * 1)
 	err = cbs.Stop()
 	c.Check(err, IsNil)
@@ -127,7 +129,7 @@ func (s *BlockScannerTestSuite) TestBadBlock(c *C) {
 	}, 0, mss, m, DummyFetcher{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
-	cbs.Start()
+	cbs.Start(make(chan types.TxIn))
 	time.Sleep(time.Second * 1)
 	err = cbs.Stop()
 	c.Check(err, IsNil)
@@ -152,7 +154,7 @@ func (s *BlockScannerTestSuite) TestBadConnection(c *C) {
 	}, 0, mss, m, DummyFetcher{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
-	cbs.Start()
+	cbs.Start(make(chan types.TxIn))
 	time.Sleep(time.Second * 1)
 	err = cbs.Stop()
 	c.Check(err, IsNil)

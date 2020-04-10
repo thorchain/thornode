@@ -63,7 +63,8 @@ func (b *BlockScanner) GetMessages() <-chan int64 {
 }
 
 // Start block scanner
-func (b *BlockScanner) Start() {
+func (b *BlockScanner) Start(globalTxsQueue chan types.TxIn) {
+	b.globalTxsQueue = globalTxsQueue
 	b.wg.Add(1)
 	go b.scanBlocks()
 }
@@ -99,9 +100,12 @@ func (b *BlockScanner) scanBlocks() {
 				}
 				continue
 			}
-			b.logger.Debug().Int64("current block height", currentBlock).Int64("block height", b.previousBlock).Msgf("Chain %s get block height", b.cfg.ChainID)
+			b.logger.Debug().Int64("block height", currentBlock).Int("txs", len(txIn.TxArray))
 			b.previousBlock++
 			b.metrics.GetCounter(metrics.TotalBlockScanned).Inc()
+			if len(txIn.TxArray) == 0 {
+				continue
+			}
 			select {
 			case <-b.stopChan:
 				return
