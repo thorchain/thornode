@@ -1,7 +1,6 @@
 package binance
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -227,19 +226,6 @@ func (s *BlockScannerTestSuite) TestSearchTxInABlockFromServer(c *C) {
 	bs, err := NewBinanceBlockScanner(getConfigForTest(server.URL), 0, blockscanner.NewMockScannerStorage(), true, pv, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
-	trSkipVerify := &http.Transport{
-		MaxIdleConnsPerHost: 10,
-		TLSClientConfig: &tls.Config{
-			MaxVersion:         tls.VersionTLS11,
-			InsecureSkipVerify: true,
-		},
-	}
-	bs.commonBlockScanner.GetHttpClient().Transport = trSkipVerify
-	bs.Start(make(chan stypes.TxIn))
-	// stop
-	time.Sleep(time.Second * 5)
-	err = bs.Stop()
-	c.Assert(err, IsNil)
 }
 
 func (s *BlockScannerTestSuite) TestGetTxHash(c *C) {
@@ -394,8 +380,10 @@ func (s *BlockScannerTestSuite) TestUpdateGasFees(c *C) {
 
 	// test against mock server
 	b := BinanceBlockScanner{
-		rpcHost: "http://" + server.Listener.Addr().String(),
-		http:    &http.Client{},
+		cfg: config.BlockScannerConfiguration{
+			RPCHost: "http://" + server.Listener.Addr().String(),
+		},
+		http: &http.Client{},
 	}
 	c.Assert(b.updateFees(10), IsNil)
 	c.Check(b.singleFee, Equals, uint64(37500))
