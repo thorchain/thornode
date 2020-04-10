@@ -14,6 +14,7 @@ import (
 	"github.com/rs/zerolog/log"
 	tssp "gitlab.com/thorchain/tss/go-tss/tss"
 
+	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 	"gitlab.com/thorchain/thornode/bifrost/pkg/chainclients/ethereum/types"
@@ -26,7 +27,6 @@ import (
 // Client is a structure to sign and broadcast tx to Ethereum chain used by signer mostly
 type Client struct {
 	logger             zerolog.Logger
-	RPCHost            string
 	cfg                config.ChainConfiguration
 	chainID            types.ChainID
 	isTestNet          bool
@@ -34,7 +34,7 @@ type Client struct {
 	client             *ethclient.Client
 	currentBlockHeight int64
 	thorchainBridge    *thorclient.ThorchainBridge
-	blockScanner       *BlockScanner
+	blockScanner       *blockscanner.BlockScanner
 }
 
 // NewClient create new instance of Ethereum client
@@ -42,7 +42,6 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 	if len(cfg.RPCHost) == 0 {
 		return nil, errors.New("rpc host is empty")
 	}
-	rpcHost := cfg.RPCHost
 
 	priv, err := thorKeys.GetPrivateKey()
 	if err != nil {
@@ -57,19 +56,18 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return nil, errors.New("thorchain bridge is nil")
 	}
 
-	if !strings.HasPrefix(rpcHost, "http") {
-		rpcHost = fmt.Sprintf("http://%s", rpcHost)
+	if !strings.HasPrefix(cfg.RPCHost, "http") {
+		cfg.RPCHost = fmt.Sprintf("http://%s", cfg.RPCHost)
 	}
 
 	ctx := context.Background()
-	ethClient, err := ethclient.DialContext(ctx, rpcHost)
+	ethClient, err := ethclient.DialContext(ctx, cfg.RPCHost)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Client{
 		logger:          log.With().Str("module", "ethereum").Logger(),
-		RPCHost:         rpcHost,
 		cfg:             cfg,
 		client:          ethClient,
 		pk:              pk,
@@ -97,7 +95,19 @@ func (c *Client) initBlockScanner(pubkeyMgr pubkeymanager.PubKeyValidator, m *me
 	} else {
 		startBlockHeight = c.cfg.BlockScanner.StartBlockHeight
 	}
-	c.blockScanner, err = NewBlockScanner(c.cfg.BlockScanner, startBlockHeight, c.isTestNet, c.client, pubkeyMgr, m)
+
+	path := fmt.Sprintf("%s/%s", c.cfg.BlockScanner.DBPath, c.cfg.BlockScanner.ChainID)
+	storage, err := blockscanner.NewBlockScannerStorage(path)
+	if err != nil {
+		return pkerrors.Wrap(err, "fail to create blockscanner storage")
+	}
+
+	ethScanner, err := NewBlockScanner(c.cfg.BlockScanner, startBlockHeight, storage, c.isTestNet, c.client, m)
+	if err != nil {
+		return pkerrors.Wrap(err, "fail to create eth block scanner")
+	}
+
+	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, startBlockHeight, storage, m, ethScanner)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create block scanner")
 	}
