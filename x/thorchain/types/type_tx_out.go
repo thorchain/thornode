@@ -15,6 +15,7 @@ type TxOutItem struct {
 	VaultPubKey common.PubKey  `json:"vault_pubkey"`
 	Coin        common.Coin    `json:"coin"`
 	Memo        string         `json:"memo"`
+	MaxGas      common.Gas     `json:"max_gas"`
 	InHash      common.TxID    `json:"in_hash"`
 	OutHash     common.TxID    `json:"out_hash"`
 }
@@ -36,6 +37,9 @@ func (toi TxOutItem) Valid() error {
 		return errors.New("invalid base asset")
 	}
 	if err := toi.Coin.IsValid(); err != nil {
+		return err
+	}
+	if err := toi.MaxGas.IsValid(); err != nil {
 		return err
 	}
 	return nil
