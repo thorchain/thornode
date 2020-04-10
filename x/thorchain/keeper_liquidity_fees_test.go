@@ -62,5 +62,4 @@ func (s *KeeperLiquidityFeesSuite) TestLiquidityFees(c *C) {
 	i, err = k.GetPoolLiquidityFees(ctx, common.BNBAsset)
 	c.Assert(err, IsNil)
 	c.Check(i.Uint64(), Equals, uint64(600), Commentf("%d", i.Uint64()))
-
 }
