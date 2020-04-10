@@ -75,6 +75,8 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 }
 
 func (c *Client) initBlockScanner(m *metrics.Metrics) error {
+	c.CheckIsTestNet()
+
 	var err error
 
 	c.CheckIsTestNet()
