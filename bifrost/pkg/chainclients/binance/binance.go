@@ -46,7 +46,7 @@ type Binance struct {
 	tssKeyManager   keys.KeyManager
 	localKeyManager *keyManager
 	thorchainBridge *thorclient.ThorchainBridge
-	storage         *BinanceBlockScannerStorage
+	storage         *blockscanner.BlockScannerStorage
 	blockScanner    *blockscanner.BlockScanner
 	bnbScanner      *BinanceBlockScanner
 }
@@ -101,7 +101,8 @@ func (b *Binance) initBlockScanner(m *metrics.Metrics) error {
 	b.checkIsTestNet()
 
 	var err error
-	b.storage, err = NewBinanceBlockScannerStorage(b.cfg.BlockScanner.DBPath)
+	path := fmt.Sprintf("%s/%s", b.cfg.BlockScanner.DBPath, b.cfg.BlockScanner.ChainID)
+	b.storage, err = blockscanner.NewBlockScannerStorage(path)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create scan storage")
 	}
