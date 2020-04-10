@@ -44,12 +44,13 @@ require (
 	gitlab.com/thorchain/tss/go-tss v0.0.0-20200320003459-54d30a7e8a20
 	go.uber.org/multierr v1.5.0 // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
+	golang.org/x/tools v0.0.0-20200409210453-700752c24408 // indirect
 	google.golang.org/genproto v0.0.0-20200304201815-d429ff31ee6c // indirect
 	google.golang.org/grpc v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
 	gopkg.in/ini.v1 v1.52.0 // indirect
 	gopkg.in/yaml.v2 v2.2.8 // indirect
-	mvdan.cc/gofumpt v0.0.0-20200324091932-79fd7e92aeae // indirect
+	mvdan.cc/gofumpt v0.0.0-20200407124128-2096975b8dcb // indirect
 
 )
 
