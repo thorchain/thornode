@@ -7,7 +7,10 @@ require (
 	github.com/binance-chain/ledger-cosmos-go v0.9.9 // indirect
 	github.com/binance-chain/tss-lib v1.3.0
 	github.com/blang/semver v3.5.1+incompatible
+	github.com/btcsuite/btcd v0.20.1-beta
 	github.com/btcsuite/btcutil v1.0.1
+	github.com/btcsuite/goleveldb v1.0.0 // indirect
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cosmos/cosmos-sdk v0.37.7
 	github.com/cosmos/ledger-cosmos-go v0.11.1 // indirect
 	github.com/didip/tollbooth v4.0.2+incompatible
@@ -18,6 +21,7 @@ require (
 	github.com/hashicorp/go-retryablehttp v0.6.4
 	github.com/ipfs/go-datastore v0.4.4 // indirect
 	github.com/ipfs/go-log v1.0.2
+	github.com/kkdai/bstream v1.0.0 // indirect
 	github.com/libp2p/go-libp2p-kad-dht v0.5.0 // indirect
 	github.com/multiformats/go-multiaddr v0.2.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
@@ -42,6 +46,7 @@ require (
 	github.com/zondax/ledger-go v0.11.0 // indirect
 	gitlab.com/thorchain/tss/go-tss v0.0.0-20200320003459-54d30a7e8a20
 	go.uber.org/multierr v1.5.0 // indirect
+	golang.org/x/crypto v0.0.0-20200406173513-056763e48d71 // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	google.golang.org/genproto v0.0.0-20200304201815-d429ff31ee6c // indirect
 	google.golang.org/grpc v1.27.1 // indirect
