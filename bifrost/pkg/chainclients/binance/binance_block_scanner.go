@@ -39,7 +39,6 @@ type BinanceBlockScanner struct {
 	db         blockscanner.ScannerStorage
 	m          *metrics.Metrics
 	errCounter *prometheus.CounterVec
-	pubkeyMgr  pubkeymanager.PubKeyValidator
 	http       *http.Client
 	singleFee  uint64
 	multiFee   uint64
@@ -107,7 +106,6 @@ func NewBinanceBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeig
 
 	return &BinanceBlockScanner{
 		cfg:        cfg,
-		pubkeyMgr:  pkmgr,
 		logger:     log.Logger.With().Str("module", "blockscanner").Str("chain", "binance").Logger(),
 		db:         scanStorage,
 		errCounter: m.GetCounterVec(metrics.BlockScanError(common.BNBChain)),
@@ -360,85 +358,6 @@ func (b *BinanceBlockScanner) FetchTxs(height int64) (stypes.TxIn, error) {
 	return txIn, nil
 }
 
-func (b BinanceBlockScanner) MatchedAddress(txInItem stypes.TxInItem) bool {
-	// Check if we are migrating our funds...
-	if ok := b.isMigration(txInItem.Sender, txInItem.Memo); ok {
-		b.logger.Debug().Str("memo", txInItem.Memo).Msg("migrate")
-		return true
-	}
-
-	// Check if our pool is registering a new yggdrasil pool. Ie
-	// sending the staked assets to the user
-	if ok := b.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
-		b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
-		return true
-	}
-
-	// Check if out pool is de registering a yggdrasil pool. Ie sending
-	// the bond back to the user
-	if ok := b.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
-		b.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
-		return true
-	}
-
-	// Check if THORNode are sending from a yggdrasil address
-	if ok := b.isYggdrasil(txInItem.Sender); ok {
-		b.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
-		return true
-	}
-
-	// Check if THORNode are sending to a yggdrasil address
-	if ok := b.isYggdrasil(txInItem.To); ok {
-		b.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
-		return true
-	}
-
-	// outbound message from pool, when it is outbound, it does not matter how much coins THORNode send to customer for now
-	if ok := b.isOutboundMsg(txInItem.Sender, txInItem.Memo); ok {
-		b.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
-		return true
-	}
-
-	return false
-}
-
-// Check if memo is for registering an Asgard vault
-func (b *BinanceBlockScanner) isMigration(addr, memo string) bool {
-	return b.isAddrWithMemo(addr, memo, "migrate")
-}
-
-// Check if memo is for registering a Yggdrasil vault
-func (b *BinanceBlockScanner) isRegisterYggdrasil(addr, memo string) bool {
-	return b.isAddrWithMemo(addr, memo, "yggdrasil+")
-}
-
-// Check if memo is for de registering a Yggdrasil vault
-func (b *BinanceBlockScanner) isDeregisterYggdrasil(addr, memo string) bool {
-	return b.isAddrWithMemo(addr, memo, "yggdrasil-")
-}
-
-// Check if THORNode have an outbound yggdrasil transaction
-func (b *BinanceBlockScanner) isYggdrasil(addr string) bool {
-	ok, _ := b.pubkeyMgr.IsValidPoolAddress(addr, common.BNBChain)
-	return ok
-}
-
-func (b *BinanceBlockScanner) isOutboundMsg(addr, memo string) bool {
-	return b.isAddrWithMemo(addr, memo, "outbound")
-}
-
-func (b *BinanceBlockScanner) isAddrWithMemo(addr, memo, targetMemo string) bool {
-	match, _ := b.pubkeyMgr.IsValidPoolAddress(addr, common.BNBChain)
-	if !match {
-		return false
-	}
-	lowerMemo := strings.ToLower(memo)
-	if strings.HasPrefix(lowerMemo, targetMemo) {
-		return true
-	}
-	return false
-}
-
 func (b *BinanceBlockScanner) getCoinsForTxIn(outputs []bmsg.Output) (common.Coins, error) {
 	cc := common.Coins{}
 	for _, output := range outputs {
@@ -500,38 +419,6 @@ func (b *BinanceBlockScanner) fromStdTx(hash string, stdTx tx.StdTx) ([]stypes.T
 
 			// Calculate gas for this tx
 			txInItem.Gas = common.CalcGasPrice(common.Tx{Coins: txInItem.Coins}, common.BNBAsset, []sdk.Uint{sdk.NewUint(b.singleFee), sdk.NewUint(b.multiFee)})
-
-			if ok := b.MatchedAddress(txInItem); !ok {
-				continue
-			}
-
-			// NOTE: the following could result in the same tx being added
-			// twice, which is expected. We want to make sure we generate both
-			// a inbound and outbound txn, if we both apply.
-
-			// check if the from address is a valid pool
-			if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, common.BNBChain); ok {
-				txInItem.ObservedPoolAddress = cpi.PubKey.String()
-				txs = append(txs, txInItem)
-			}
-			// check if the to address is a valid pool address
-			if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
-				txInItem.ObservedPoolAddress = cpi.PubKey.String()
-				txs = append(txs, txInItem)
-			} else {
-				// Apparently we don't recognize where we are sending funds to.
-				// Lets check if we should because its an internal transaction
-				// moving funds between vaults (for example). If it is, lets
-				// manually trigger an update of pubkeys, then check again...
-				switch strings.ToLower(txInItem.Memo) {
-				case "migrate", "yggdrasil-", "yggdrasil+":
-					b.pubkeyMgr.FetchPubKeys()
-					if ok, cpi := b.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
-						txInItem.ObservedPoolAddress = cpi.PubKey.String()
-						txs = append(txs, txInItem)
-					}
-				}
-			}
 
 		default:
 			continue

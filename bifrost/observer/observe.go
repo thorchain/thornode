@@ -2,6 +2,7 @@ package observer
 
 import (
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -71,12 +72,129 @@ func (o *Observer) processTxIns() {
 		case <-o.stopChan:
 			return
 		case txIn := <-o.globalTxsQueue:
+			txIn.TxArray = o.filterObservations(txIn.TxArray)
 			if err := o.signAndSendToThorchain(txIn); err != nil {
 				o.logger.Error().Err(err).Msg("fail to send to thorchain")
 				o.errCounter.WithLabelValues("fail_send_to_thorchain", txIn.BlockHeight).Inc()
 			}
 		}
 	}
+}
+
+func (o *Observer) filterObservations(items []types.TxInItem) (txs []types.TxInItem) {
+	for _, txInItem := range items {
+		if ok := o.MatchedAddress(txInItem); !ok {
+			continue
+		}
+
+		// NOTE: the following could result in the same tx being added
+		// twice, which is expected. We want to make sure we generate both
+		// a inbound and outbound txn, if we both apply.
+
+		// check if the from address is a valid pool
+		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.Sender, common.BNBChain); ok {
+			txInItem.ObservedPoolAddress = cpi.PubKey.String()
+			txs = append(txs, txInItem)
+		}
+		// check if the to address is a valid pool address
+		if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
+			txInItem.ObservedPoolAddress = cpi.PubKey.String()
+			txs = append(txs, txInItem)
+		} else {
+			// Apparently we don't recognize where we are sending funds to.
+			// Lets check if we should because its an internal transaction
+			// moving funds between vaults (for example). If it is, lets
+			// manually trigger an update of pubkeys, then check again...
+			switch strings.ToLower(txInItem.Memo) {
+			case "migrate", "yggdrasil-", "yggdrasil+":
+				o.pubkeyMgr.FetchPubKeys()
+				if ok, cpi := o.pubkeyMgr.IsValidPoolAddress(txInItem.To, common.BNBChain); ok {
+					txInItem.ObservedPoolAddress = cpi.PubKey.String()
+					txs = append(txs, txInItem)
+				}
+			}
+		}
+	}
+	return
+}
+
+func (o *Observer) MatchedAddress(txInItem types.TxInItem) bool {
+	// Check if we are migrating our funds...
+	if ok := o.isMigration(txInItem.Sender, txInItem.Memo); ok {
+		o.logger.Debug().Str("memo", txInItem.Memo).Msg("migrate")
+		return true
+	}
+
+	// Check if our pool is registering a new yggdrasil pool. Ie
+	// sending the staked assets to the user
+	if ok := o.isRegisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
+		o.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil+")
+		return true
+	}
+
+	// Check if out pool is de registering a yggdrasil pool. Ie sending
+	// the bond back to the user
+	if ok := o.isDeregisterYggdrasil(txInItem.Sender, txInItem.Memo); ok {
+		o.logger.Debug().Str("memo", txInItem.Memo).Msg("yggdrasil-")
+		return true
+	}
+
+	// Check if THORNode are sending from a yggdrasil address
+	if ok := o.isYggdrasil(txInItem.Sender); ok {
+		o.logger.Debug().Str("assets sent from yggdrasil pool", txInItem.Memo).Msg("fill order")
+		return true
+	}
+
+	// Check if THORNode are sending to a yggdrasil address
+	if ok := o.isYggdrasil(txInItem.To); ok {
+		o.logger.Debug().Str("assets to yggdrasil pool", txInItem.Memo).Msg("refill")
+		return true
+	}
+
+	// outbound message from pool, when it is outbound, it does not matter how much coins THORNode send to customer for now
+	if ok := o.isOutboundMsg(txInItem.Sender, txInItem.Memo); ok {
+		o.logger.Debug().Str("memo", txInItem.Memo).Msg("outbound")
+		return true
+	}
+
+	return false
+}
+
+// Check if memo is for registering an Asgard vault
+func (o *Observer) isMigration(addr, memo string) bool {
+	return o.isAddrWithMemo(addr, memo, "migrate")
+}
+
+// Check if memo is for registering a Yggdrasil vault
+func (o *Observer) isRegisterYggdrasil(addr, memo string) bool {
+	return o.isAddrWithMemo(addr, memo, "yggdrasil+")
+}
+
+// Check if memo is for de registering a Yggdrasil vault
+func (o *Observer) isDeregisterYggdrasil(addr, memo string) bool {
+	return o.isAddrWithMemo(addr, memo, "yggdrasil-")
+}
+
+// Check if THORNode have an outbound yggdrasil transaction
+func (o *Observer) isYggdrasil(addr string) bool {
+	ok, _ := o.pubkeyMgr.IsValidPoolAddress(addr, common.BNBChain)
+	return ok
+}
+
+func (o *Observer) isOutboundMsg(addr, memo string) bool {
+	return o.isAddrWithMemo(addr, memo, "outbound")
+}
+
+func (o *Observer) isAddrWithMemo(addr, memo, targetMemo string) bool {
+	match, _ := o.pubkeyMgr.IsValidPoolAddress(addr, common.BNBChain)
+	if !match {
+		return false
+	}
+	lowerMemo := strings.ToLower(memo)
+	if strings.HasPrefix(lowerMemo, targetMemo) {
+		return true
+	}
+	return false
 }
 
 func (o *Observer) signAndSendToThorchain(txIn types.TxIn) error {
