@@ -31,11 +31,11 @@ type BlockScanner struct {
 	previousBlock  int64
 	globalTxsQueue chan types.TxIn
 	errorCounter   *prometheus.CounterVec
-	chainInterface BlockScannerFetcher
+	chainScanner   BlockScannerFetcher
 }
 
 // NewBlockScanner create a new instance of BlockScanner
-func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics, chainInterface BlockScannerFetcher) (*BlockScanner, error) {
+func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics, chainScanner BlockScannerFetcher) (*BlockScanner, error) {
 	if scannerStorage == nil {
 		return nil, errors.New("scannerStorage is nil")
 	}
@@ -53,7 +53,7 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int6
 		metrics:        m,
 		previousBlock:  startBlockHeight,
 		errorCounter:   m.GetCounterVec(metrics.CommonBlockScannerError),
-		chainInterface: chainInterface,
+		chainScanner:   chainScanner,
 	}, nil
 }
 
@@ -89,7 +89,7 @@ func (b *BlockScanner) scanBlocks() {
 			return
 		default:
 			currentBlock := b.previousBlock + 1
-			txIn, err := b.chainInterface.FetchTxs(currentBlock)
+			txIn, err := b.chainScanner.FetchTxs(currentBlock)
 			if err != nil {
 				// don't log an error if its because the block doesn't exist yet
 				if !strings.Contains(err.Error(), "Height must be less than or equal to the current blockchain height") {
