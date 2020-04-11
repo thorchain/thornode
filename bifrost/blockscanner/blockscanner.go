@@ -38,6 +38,7 @@ type BlockScanner struct {
 
 // NewBlockScanner create a new instance of BlockScanner
 func NewBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage ScannerStorage, m *metrics.Metrics, thorchainBridge *thorclient.ThorchainBridge, chainScanner BlockScannerFetcher) (*BlockScanner, error) {
+	var err error
 	if scannerStorage == nil {
 		return nil, errors.New("scannerStorage is nil")
 	}
@@ -47,8 +48,9 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage Scanne
 	if thorchainBridge == nil {
 		return nil, errors.New("thorchain bridge is nil")
 	}
+
 	logger := log.Logger.With().Str("module", "blockscanner").Str("chain", cfg.ChainID.String()).Logger()
-	return &BlockScanner{
+	scanner := &BlockScanner{
 		cfg:             cfg,
 		logger:          logger,
 		wg:              &sync.WaitGroup{},
@@ -59,7 +61,10 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage Scanne
 		errorCounter:    m.GetCounterVec(metrics.CommonBlockScannerError),
 		thorchainBridge: thorchainBridge,
 		chainScanner:    chainScanner,
-	}, nil
+	}
+
+	scanner.previousBlock, err = scanner.FetchLastHeight()
+	return scanner, err
 }
 
 // GetMessages return the channel
