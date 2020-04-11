@@ -254,12 +254,16 @@ func (s *HandlerObservedTxInSuite) TestHandle(c *C) {
 	c.Assert(err, IsNil)
 	versionedVaultMgrDummy := NewVersionedVaultMgrDummy(versionedTxOutStore)
 	versionedGasMgr := NewVersionedGasMgr()
-	versionedObMgr := NewDummyVersionedObserverMgr()
+	versionedObMgr := NewVersionedObserverMgr()
 	handler := NewObservedTxInHandler(keeper, versionedObMgr, versionedTxOutStore, w.validatorMgr, versionedVaultMgrDummy, versionedGasMgr)
 
 	c.Assert(err, IsNil)
 	msg := NewMsgObservedTxIn(txs, keeper.nas[0].NodeAddress)
 	result := handler.handle(ctx, msg, ver)
+	obMgr, err := versionedObMgr.GetObserverManager(ctx, ver)
+	c.Assert(err, IsNil)
+	obMgr.EndBlock(ctx, keeper)
+
 	c.Assert(result.IsOK(), Equals, true)
 	items, err := txOutStore.GetOutboundItems(ctx)
 	c.Assert(err, IsNil)
