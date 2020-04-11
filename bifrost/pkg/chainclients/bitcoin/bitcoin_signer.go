@@ -61,6 +61,9 @@ func (c *Client) getLastOutput(inputTxId, sourceAddr string) (btcjson.Vout, erro
 	}
 	return btcjson.Vout{}, errors.New("not found")
 }
+func getGasCoin(tx stypes.TxOutItem) common.Coin {
+	return tx.MaxGas.ToCoins().GetCoin(common.BTCAsset)
+}
 
 // SignTx is going to generate the outbound transaction, and also sign it
 func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
@@ -121,15 +124,24 @@ func (c *Client) SignTx(tx stypes.TxOutItem, height int64) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("fail to parse total amount(%f),err: %w", totalAmt, err)
 	}
+	gasCoin := getGasCoin(tx)
+	coinToCustomer := tx.Coins.GetCoin(common.BTCAsset)
 
-	redeemTxOut := wire.NewTxOut(int64(total)-1501, buf)
+	// pay to customer
+	redeemTxOut := wire.NewTxOut(int64(coinToCustomer.Amount.Uint64()), buf)
 	redeemTx.AddTxOut(redeemTxOut)
 
+	// memo
 	nullDataScript, err := txscript.NullDataScript([]byte(tx.Memo))
 	if err != nil {
 		return nil, fmt.Errorf("fail to generate null data script: %w", err)
 	}
 	redeemTx.AddTxOut(wire.NewTxOut(0, nullDataScript))
+
+	// balance to ourselves
+	// add output to pay the balance back ourselves
+	balance := int64(total) - redeemTxOut.Value - int64(gasCoin.Amount.Uint64())
+	redeemTx.AddTxOut(wire.NewTxOut(balance, sourceScript))
 
 	for idx := range redeemTx.TxIn {
 		sigHashes := txscript.NewTxSigHashes(redeemTx)

@@ -15,6 +15,7 @@ type TxOutItem struct {
 	SeqNo       uint64         `json:"seq_no"`
 	Coins       common.Coins   `json:"coins"`
 	Memo        string         `json:"memo"`
+	MaxGas      common.Gas     `json:"max_gas"`
 	InHash      common.TxID    `json:"in_hash"`
 	OutHash     common.TxID    `json:"out_hash"`
 }
