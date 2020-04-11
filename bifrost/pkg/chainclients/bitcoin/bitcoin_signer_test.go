@@ -68,11 +68,16 @@ func (s *BitcoinSignerSuite) SetUpSuite(c *C) {
 			Method string `json:"method"`
 		}{}
 		json.NewDecoder(req.Body).Decode(&r)
+		defer func() {
+			c.Assert(req.Body.Close(), IsNil)
+		}()
 		switch r.Method {
 		case "getrawtransaction":
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/tx.json")
 		case "getinfo":
 			httpTestHandler(c, rw, "../../../../test/fixtures/btc/getinfo.json")
+		case "sendrawtransaction":
+			httpTestHandler(c, rw, "../../../../test/fixtures/btc/sendrawtransaction.json")
 		}
 	}))
 
