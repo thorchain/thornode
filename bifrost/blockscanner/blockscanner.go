@@ -12,6 +12,7 @@ import (
 
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
+	"gitlab.com/thorchain/thornode/bifrost/thorclient"
 	"gitlab.com/thorchain/thornode/bifrost/thorclient/types"
 )
 
@@ -21,39 +22,44 @@ type BlockScannerFetcher interface {
 
 // BlockScanner is used to discover block height
 type BlockScanner struct {
-	cfg            config.BlockScannerConfiguration
-	logger         zerolog.Logger
-	wg             *sync.WaitGroup
-	scanChan       chan int64
-	stopChan       chan struct{}
-	scannerStorage ScannerStorage
-	metrics        *metrics.Metrics
-	previousBlock  int64
-	globalTxsQueue chan types.TxIn
-	errorCounter   *prometheus.CounterVec
-	chainScanner   BlockScannerFetcher
+	cfg             config.BlockScannerConfiguration
+	logger          zerolog.Logger
+	wg              *sync.WaitGroup
+	scanChan        chan int64
+	stopChan        chan struct{}
+	scannerStorage  ScannerStorage
+	metrics         *metrics.Metrics
+	previousBlock   int64
+	globalTxsQueue  chan types.TxIn
+	errorCounter    *prometheus.CounterVec
+	thorchainBridge *thorclient.ThorchainBridge
+	chainScanner    BlockScannerFetcher
 }
 
 // NewBlockScanner create a new instance of BlockScanner
-func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics, chainScanner BlockScannerFetcher) (*BlockScanner, error) {
+func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics, thorchainBridge *thorclient.ThorchainBridge, chainScanner BlockScannerFetcher) (*BlockScanner, error) {
 	if scannerStorage == nil {
 		return nil, errors.New("scannerStorage is nil")
 	}
 	if m == nil {
 		return nil, errors.New("metrics instance is nil")
 	}
+	if thorchainBridge == nil {
+		return nil, errors.New("thorchain bridge is nil")
+	}
 	logger := log.Logger.With().Str("module", "blockscanner").Str("chain", cfg.ChainID.String()).Logger()
 	return &BlockScanner{
-		cfg:            cfg,
-		logger:         logger,
-		wg:             &sync.WaitGroup{},
-		stopChan:       make(chan struct{}),
-		scanChan:       make(chan int64),
-		scannerStorage: scannerStorage,
-		metrics:        m,
-		previousBlock:  startBlockHeight,
-		errorCounter:   m.GetCounterVec(metrics.CommonBlockScannerError),
-		chainScanner:   chainScanner,
+		cfg:             cfg,
+		logger:          logger,
+		wg:              &sync.WaitGroup{},
+		stopChan:        make(chan struct{}),
+		scanChan:        make(chan int64),
+		scannerStorage:  scannerStorage,
+		metrics:         m,
+		previousBlock:   startBlockHeight,
+		errorCounter:    m.GetCounterVec(metrics.CommonBlockScannerError),
+		thorchainBridge: thorchainBridge,
+		chainScanner:    chainScanner,
 	}, nil
 }
 
@@ -120,6 +126,18 @@ func (b *BlockScanner) scanBlocks() {
 			}
 		}
 	}
+}
+
+func (b *BlockScanner) FetchLastHeight() (startBlockHeight int64, err error) {
+	startBlockHeight = b.cfg.StartBlockHeight
+	if startBlockHeight == 0 {
+		startBlockHeight, err = b.thorchainBridge.GetLastObservedInHeight(b.cfg.ChainID)
+		if err != nil {
+			return 0, errors.Wrap(err, "fail to get start block height from thorchain")
+		}
+		b.logger.Info().Int64("height", startBlockHeight).Msgf("Current block height is indeterminate; using current height from %s.", b.cfg.ChainID)
+	}
+	return
 }
 
 func (b *BlockScanner) Stop() error {

@@ -127,7 +127,7 @@ func (b *Binance) initBlockScanner(m *metrics.Metrics) error {
 		return pkerrors.Wrap(err, "fail to create block scanner")
 	}
 
-	b.blockScanner, err = blockscanner.NewBlockScanner(b.cfg.BlockScanner, startBlockHeight, b.storage, m, b.bnbScanner)
+	b.blockScanner, err = blockscanner.NewBlockScanner(b.cfg.BlockScanner, startBlockHeight, b.storage, m, b.thorchainBridge, b.bnbScanner)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create block scanner")
 	}
