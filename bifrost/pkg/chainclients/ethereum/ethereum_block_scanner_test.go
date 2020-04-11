@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 	. "gopkg.in/check.v1"
 
+	"gitlab.com/thorchain/thornode/bifrost/blockscanner"
 	"gitlab.com/thorchain/thornode/bifrost/config"
 	"gitlab.com/thorchain/thornode/bifrost/metrics"
 )
@@ -43,24 +44,25 @@ func getConfigForTest(rpcHost string) config.BlockScannerConfiguration {
 
 func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	c.Skip("skip")
+	storage, err := blockscanner.NewBlockScannerStorage("eth/path")
+	c.Assert(err, IsNil)
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {}))
-	pv := NewMockPoolAddressValidator()
 	ctx := context.Background()
 	ethClient, err := ethclient.DialContext(ctx, server.URL)
 	c.Assert(err, IsNil)
-	bs, err := NewBlockScanner(getConfigForTest(""), 0, true, ethClient, pv, s.m)
+	bs, err := NewBlockScanner(getConfigForTest(""), 0, storage, true, ethClient, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), 0, true, ethClient, nil, s.m)
+	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), 0, storage, true, ethClient, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), 0, true, nil, pv, s.m)
+	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), 0, storage, true, nil, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), 0, true, ethClient, nil, s.m)
+	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), 0, storage, true, ethClient, s.m)
 	c.Assert(err, NotNil)
 	c.Assert(bs, IsNil)
-	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), 0, true, ethClient, pv, s.m)
+	bs, err = NewBlockScanner(getConfigForTest("127.0.0.1"), 0, storage, true, ethClient, s.m)
 	c.Assert(err, IsNil)
 	c.Assert(bs, NotNil)
 }

@@ -154,7 +154,7 @@ func (s *SignSuite) SetUpSuite(c *C) {
 	c.Assert(err, IsNil)
 	s.bridge, err = thorclient.NewThorchainBridge(cfg, s.m)
 	c.Assert(err, IsNil)
-	s.storage, err = NewSignerStore("signer_data", "")
+	s.storage, err = NewSignerStore("/tmp/signer_data", "")
 	c.Assert(err, IsNil)
 }
 
@@ -265,7 +265,7 @@ func (b *MockChainClient) GetPubKey() crypto.PubKey {
 	return nil
 }
 
-func (b *MockChainClient) Start(globalTxsQueue chan stypes.TxIn, pubkeyMgr pubkeymanager.PubKeyValidator, m *metrics.Metrics) error {
+func (b *MockChainClient) Start(globalTxsQueue chan stypes.TxIn, m *metrics.Metrics) error {
 	return nil
 }
 
