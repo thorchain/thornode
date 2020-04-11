@@ -39,14 +39,7 @@ type BlockScanner struct {
 }
 
 // NewBlockScanner create a new instance of BlockScan
-func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scanStorage blockscanner.ScannerStorage, isTestNet bool, client *ethclient.Client, m *metrics.Metrics) (*BlockScanner, error) {
-	if len(cfg.RPCHost) == 0 {
-		return nil, errors.New("rpc host is empty")
-	}
-
-	if !strings.HasPrefix(cfg.RPCHost, "http") {
-		cfg.RPCHost = fmt.Sprintf("http://%s", cfg.RPCHost)
-	}
+func NewBlockScanner(cfg config.BlockScannerConfiguration, scanStorage blockscanner.ScannerStorage, isTestNet bool, client *ethclient.Client, m *metrics.Metrics) (*BlockScanner, error) {
 	if scanStorage == nil {
 		return nil, errors.New("scanStorage is nil")
 	}

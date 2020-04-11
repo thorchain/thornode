@@ -96,10 +96,6 @@ const binanceNodeInfo = `{"node_info":{"protocol_version":{"p2p":7,"block":10,"a
 var status = fmt.Sprintf(`{ "jsonrpc": "2.0", "id": "", "result": %s}`, binanceNodeInfo)
 
 func (s *BinancechainSuite) TestNewBinance(c *C) {
-	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{}, nil, s.bridge)
-	c.Assert(b, IsNil)
-	c.Assert(err, NotNil)
-
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
 		if req.RequestURI == "/status" {
@@ -108,7 +104,7 @@ func (s *BinancechainSuite) TestNewBinance(c *C) {
 		}
 	}))
 
-	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, nil, s.bridge)
+	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, nil, s.bridge, s.m)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 }
@@ -153,7 +149,7 @@ func (s *BinancechainSuite) TestGetHeight(c *C) {
 		}
 	}))
 
-	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, nil, s.bridge)
+	b, err := NewBinance(s.thorKeys, config.ChainConfiguration{RPCHost: server.URL}, nil, s.bridge, s.m)
 	c.Assert(err, IsNil)
 
 	height, err := b.GetHeight()
@@ -203,7 +199,7 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 	c.Assert(err, IsNil)
 	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{
 		RPCHost: server.URL,
-	}, nil, b)
+	}, nil, b, s.m)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 	pk, err := common.NewPubKeyFromCrypto(b2.localKeyManager.GetPrivKey().PubKey())
@@ -222,6 +218,10 @@ func (s *BinancechainSuite) TestSignTx(c *C) {
 func (s *BinancechainSuite) TestGetGasFee(c *C) {
 	server := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		c.Logf("requestUri:%s", req.RequestURI)
+		if req.RequestURI == "/status" {
+			_, err := rw.Write([]byte(status))
+			c.Assert(err, IsNil)
+		}
 	}))
 
 	b, err := thorclient.NewThorchainBridge(config.ClientConfiguration{
@@ -234,7 +234,7 @@ func (s *BinancechainSuite) TestGetGasFee(c *C) {
 	c.Assert(err, IsNil)
 	b2, err2 := NewBinance(s.thorKeys, config.ChainConfiguration{
 		RPCHost: server.URL,
-	}, nil, b)
+	}, nil, b, s.m)
 	c.Assert(err2, IsNil)
 	c.Assert(b2, NotNil)
 	b2.bnbScanner = &BinanceBlockScanner{

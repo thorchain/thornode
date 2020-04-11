@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -143,7 +144,26 @@ func main() {
 		return
 	}
 
-	chains := chainclients.LoadChains(thorKeys, cfg.Chains, tssIns, thorchainBridge)
+	// ensure we have a protocol for chain RPC Hosts
+	for _, chainCfg := range cfg.Chains {
+		if len(chainCfg.RPCHost) == 0 {
+			log.Fatal().Err(err).Msg("missing chain RPC host")
+			return
+		}
+		if !strings.HasPrefix(chainCfg.RPCHost, "http") {
+			chainCfg.RPCHost = fmt.Sprintf("http://%s", chainCfg.RPCHost)
+		}
+
+		if len(chainCfg.BlockScanner.RPCHost) == 0 {
+			log.Fatal().Err(err).Msg("missing chain RPC host")
+			return
+		}
+		if !strings.HasPrefix(chainCfg.BlockScanner.RPCHost, "http") {
+			chainCfg.BlockScanner.RPCHost = fmt.Sprintf("http://%s", chainCfg.BlockScanner.RPCHost)
+		}
+	}
+
+	chains := chainclients.LoadChains(thorKeys, cfg.Chains, tssIns, thorchainBridge, m)
 
 	// start observer
 	obs, err := observer.NewObserver(pubkeyMgr, chains, thorchainBridge, m)

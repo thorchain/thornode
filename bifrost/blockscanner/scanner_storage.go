@@ -1,11 +1,11 @@
 package blockscanner
 
 import (
-	"fmt"
 	"io"
 
 	"github.com/pkg/errors"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/storage"
 )
 
 // ScannerStorage define the method need to be used by scanner
@@ -26,16 +26,24 @@ type BlockScannerStorage struct {
 }
 
 func NewBlockScannerStorage(levelDbFolder string) (*BlockScannerStorage, error) {
+	var err error
+	var db *leveldb.DB
 	if len(levelDbFolder) == 0 {
-		return nil, fmt.Errorf("must pass valid directory path to scanner storage")
-	}
-	db, err := leveldb.OpenFile(levelDbFolder, nil)
-	if err != nil {
-		return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
+		// no directory given, use in memory store
+		storage := storage.NewMemStorage()
+		db, err = leveldb.Open(storage, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "fail to in memory open level db")
+		}
+	} else {
+		db, err = leveldb.OpenFile(levelDbFolder, nil)
+		if err != nil {
+			return nil, errors.Wrapf(err, "fail to open level db %s", levelDbFolder)
+		}
 	}
 	levelDbStorage, err := NewLevelDBScannerStorage(db)
 	if err != nil {
-		return nil, errors.New("fail to create leven db")
+		return nil, errors.New("fail to create level db")
 	}
 	return &BlockScannerStorage{
 		LevelDBScannerStorage: levelDbStorage,

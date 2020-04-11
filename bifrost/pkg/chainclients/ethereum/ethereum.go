@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"strings"
 
 	ecommon "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -37,11 +36,7 @@ type Client struct {
 }
 
 // NewClient create new instance of Ethereum client
-func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, thorchainBridge *thorclient.ThorchainBridge) (*Client, error) {
-	if len(cfg.RPCHost) == 0 {
-		return nil, errors.New("rpc host is empty")
-	}
-
+func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server *tssp.TssServer, thorchainBridge *thorclient.ThorchainBridge, m *metrics.Metrics) (*Client, error) {
 	priv, err := thorKeys.GetPrivateKey()
 	if err != nil {
 		return nil, fmt.Errorf("fail to get private key: %w", err)
@@ -55,62 +50,50 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 		return nil, errors.New("thorchain bridge is nil")
 	}
 
-	if !strings.HasPrefix(cfg.RPCHost, "http") {
-		cfg.RPCHost = fmt.Sprintf("http://%s", cfg.RPCHost)
-	}
-
 	ctx := context.Background()
 	ethClient, err := ethclient.DialContext(ctx, cfg.RPCHost)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Client{
+	c := &Client{
 		logger:          log.With().Str("module", "ethereum").Logger(),
 		cfg:             cfg,
 		client:          ethClient,
 		pk:              pk,
 		thorchainBridge: thorchainBridge,
-	}, nil
-}
-
-func (c *Client) initBlockScanner(m *metrics.Metrics) error {
-	c.CheckIsTestNet()
-
-	var err error
+	}
 
 	c.CheckIsTestNet()
 
-	path := fmt.Sprintf("%s/%s", c.cfg.BlockScanner.DBPath, c.cfg.BlockScanner.ChainID)
+	var path string // if not set later, will in memory storage
+	if len(c.cfg.BlockScanner.DBPath) > 0 {
+		path = fmt.Sprintf("%s/%s", c.cfg.BlockScanner.DBPath, c.cfg.BlockScanner.ChainID)
+	}
 	storage, err := blockscanner.NewBlockScannerStorage(path)
 	if err != nil {
-		return pkerrors.Wrap(err, "fail to create blockscanner storage")
+		return c, pkerrors.Wrap(err, "fail to create blockscanner storage")
 	}
 
 	ethScanner, err := NewBlockScanner(c.cfg.BlockScanner, startBlockHeight, storage, c.isTestNet, c.client, m)
 	if err != nil {
-		return pkerrors.Wrap(err, "fail to create eth block scanner")
+		return c, pkerrors.Wrap(err, "fail to create eth block scanner")
 	}
 
 	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, startBlockHeight, storage, m, ethScanner)
 	if err != nil {
-		return pkerrors.Wrap(err, "fail to create block scanner")
+		return c, pkerrors.Wrap(err, "fail to create block scanner")
 	}
-	return nil
+
+	return c, nil
 }
 
-func (c *Client) Start(globalTxsQueue chan stypes.TxIn, m *metrics.Metrics) error {
-	err := c.initBlockScanner(m)
-	if err != nil {
-		c.logger.Error().Err(err).Msg("fail to init block scanner")
-		return err
-	}
+func (c *Client) Start(globalTxsQueue chan stypes.TxIn) {
 	c.blockScanner.Start(globalTxsQueue)
-	return nil
 }
 
-func (c *Client) Stop() error {
-	return c.blockScanner.Stop()
+func (c *Client) Stop() {
+	c.blockScanner.Stop()
 }
 
 // IsTestNet determinate whether we are running on test net by checking the status
