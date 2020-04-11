@@ -37,7 +37,8 @@ type BlockScanner struct {
 }
 
 // NewBlockScanner create a new instance of BlockScanner
-func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int64, scannerStorage ScannerStorage, m *metrics.Metrics, thorchainBridge *thorclient.ThorchainBridge, chainScanner BlockScannerFetcher) (*BlockScanner, error) {
+func NewBlockScanner(cfg config.BlockScannerConfiguration, scannerStorage ScannerStorage, m *metrics.Metrics, thorchainBridge *thorclient.ThorchainBridge, chainScanner BlockScannerFetcher) (*BlockScanner, error) {
+	var err error
 	if scannerStorage == nil {
 		return nil, errors.New("scannerStorage is nil")
 	}
@@ -47,8 +48,9 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int6
 	if thorchainBridge == nil {
 		return nil, errors.New("thorchain bridge is nil")
 	}
+
 	logger := log.Logger.With().Str("module", "blockscanner").Str("chain", cfg.ChainID.String()).Logger()
-	return &BlockScanner{
+	scanner := &BlockScanner{
 		cfg:             cfg,
 		logger:          logger,
 		wg:              &sync.WaitGroup{},
@@ -56,11 +58,13 @@ func NewBlockScanner(cfg config.BlockScannerConfiguration, startBlockHeight int6
 		scanChan:        make(chan int64),
 		scannerStorage:  scannerStorage,
 		metrics:         m,
-		previousBlock:   startBlockHeight,
 		errorCounter:    m.GetCounterVec(metrics.CommonBlockScannerError),
 		thorchainBridge: thorchainBridge,
 		chainScanner:    chainScanner,
-	}, nil
+	}
+
+	scanner.previousBlock, err = scanner.FetchLastHeight()
+	return scanner, err
 }
 
 // GetMessages return the channel
@@ -128,16 +132,29 @@ func (b *BlockScanner) scanBlocks() {
 	}
 }
 
-func (b *BlockScanner) FetchLastHeight() (startBlockHeight int64, err error) {
-	startBlockHeight = b.cfg.StartBlockHeight
-	if startBlockHeight == 0 {
-		startBlockHeight, err = b.thorchainBridge.GetLastObservedInHeight(b.cfg.ChainID)
-		if err != nil {
-			return 0, errors.Wrap(err, "fail to get start block height from thorchain")
-		}
-		b.logger.Info().Int64("height", startBlockHeight).Msgf("Current block height is indeterminate; using current height from %s.", b.cfg.ChainID)
+func (b *BlockScanner) FetchLastHeight() (int64, error) {
+	// If we've already started scanning, begin where we left off
+	currentPos, _ := b.scannerStorage.GetScanPos() // ignore error
+	if currentPos > 0 {
+		return currentPos, nil
 	}
-	return
+
+	// if we've configured a starting height, use that
+	if b.cfg.StartBlockHeight > 0 {
+		return b.cfg.StartBlockHeight, nil
+	}
+
+	// attempt to find the height from thorchain
+	if b.thorchainBridge != nil {
+		height, _ := b.thorchainBridge.GetLastObservedInHeight(b.cfg.ChainID)
+		if height > 0 {
+			return height, nil
+		}
+	}
+
+	// TODO: get current block height from RPC chain node
+
+	return 0, nil
 }
 
 func (b *BlockScanner) Stop() error {

@@ -86,17 +86,17 @@ func (s *BlockScannerTestSuite) TestNewBlockScanner(c *C) {
 	mss := NewMockScannerStorage()
 	cbs, err := NewBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "",
-	}, 0, mss, nil, nil, DummyFetcher{})
+	}, mss, nil, nil, DummyFetcher{})
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "localhost",
-	}, 0, mss, nil, nil, DummyFetcher{})
+	}, mss, nil, nil, DummyFetcher{})
 	c.Check(cbs, IsNil)
 	c.Check(err, NotNil)
 	cbs, err = NewBlockScanner(config.BlockScannerConfiguration{
 		RPCHost: "localhost",
-	}, 0, mss, m, s.bridge, DummyFetcher{})
+	}, mss, m, s.bridge, DummyFetcher{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 }
@@ -131,7 +131,7 @@ func (s *BlockScannerTestSuite) TestBlockScanner(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m, s.bridge, DummyFetcher{})
+	}, mss, m, s.bridge, DummyFetcher{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	var counter int
@@ -173,7 +173,7 @@ func (s *BlockScannerTestSuite) TestBadBlock(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m, s.bridge, DummyFetcher{})
+	}, mss, m, s.bridge, DummyFetcher{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	cbs.Start(make(chan types.TxIn))
@@ -198,7 +198,7 @@ func (s *BlockScannerTestSuite) TestBadConnection(c *C) {
 		BlockHeightDiscoverBackoff: time.Second,
 		BlockRetryInterval:         time.Second,
 		ChainID:                    common.BNBChain,
-	}, 0, mss, m, s.bridge, DummyFetcher{})
+	}, mss, m, s.bridge, DummyFetcher{})
 	c.Check(cbs, NotNil)
 	c.Check(err, IsNil)
 	cbs.Start(make(chan types.TxIn))
