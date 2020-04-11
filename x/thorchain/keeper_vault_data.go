@@ -140,23 +140,17 @@ func (k KVStore) UpdateVaultData(ctx sdk.Context, constAccessor constants.Consta
 	if !totalPoolRewards.IsZero() { // If Pool Rewards to hand out
 
 		var rewardAmts []sdk.Uint
-
-		if !totalLiquidityFees.IsZero() {
-			// Pool Rewards are based on Fee Share
-			for _, pool := range pools {
-				fees, err := k.GetPoolLiquidityFees(ctx, currentHeight, pool.Asset)
-				if err != nil {
-					err = errors.Wrap(err, "fail to get fees")
-					ctx.Logger().Error(err.Error())
-					return err
-				}
-				amt := common.GetShare(fees, totalLiquidityFees, totalPoolRewards)
-				rewardAmts = append(rewardAmts, amt)
-				evtPools = append(evtPools, PoolAmt{Asset: pool.Asset, Amount: int64(amt.Uint64())})
+		// Pool Rewards are based on Fee Share
+		for _, pool := range pools {
+			fees, err := k.GetPoolLiquidityFees(ctx, currentHeight, pool.Asset)
+			if err != nil {
+				err = errors.Wrap(err, "fail to get fees")
+				ctx.Logger().Error(err.Error())
+				return err
 			}
-		} else {
-			// Pool Rewards are based on Depth Share
-			rewardAmts = calcPoolRewards(totalPoolRewards, totalStaked, pools)
+			amt := common.GetShare(fees, totalLiquidityFees, totalPoolRewards)
+			rewardAmts = append(rewardAmts, amt)
+			evtPools = append(evtPools, PoolAmt{Asset: pool.Asset, Amount: int64(amt.Uint64())})
 		}
 		// Pay out
 		if err := payPoolRewards(ctx, k, rewardAmts, pools); err != nil {
