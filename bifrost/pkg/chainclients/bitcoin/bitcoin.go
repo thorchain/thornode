@@ -91,6 +91,10 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseResult) (*types.TxIn, 
 		if err != nil {
 			return &types.TxIn{}, errors.Wrap(err, "fail to get memo from tx")
 		}
+		gas, err := c.getGas(&tx)
+		if err != nil {
+			return &types.TxIn{}, errors.Wrap(err, "fail to get gas from tx")
+		}
 		amount := uint64(tx.Vout[0].Value * common.One)
 		txItems = append(txItems, types.TxInItem{
 			Tx:     fmt.Sprintf("%s:0", tx.Txid),
@@ -100,6 +104,7 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseResult) (*types.TxIn, 
 				common.NewCoin(common.BTCAsset, sdk.NewUint(amount)),
 			},
 			Memo: memo,
+			Gas:  gas,
 		})
 	}
 	txIn.TxArray = txItems
@@ -182,4 +187,28 @@ func (c *Client) getMemo(tx *btcjson.TxRawResult) (string, error) {
 		return "", fmt.Errorf("fail to decode OP_RETURN string")
 	}
 	return string(decoded), nil
+}
+
+// getGas returns gas for a btc tx (sum vin - sum vout)
+func (c *Client) getGas(tx *btcjson.TxRawResult) (common.Gas, error) {
+	var sumVin float64 = 0
+	for _, vin := range tx.Vin {
+		txHash, err := chainhash.NewHashFromStr(tx.Vin[0].Txid)
+		if err != nil {
+			return common.Gas{}, fmt.Errorf("fail to get tx hash from tx id string")
+		}
+		vinTx, err := c.client.GetRawTransactionVerbose(txHash)
+		if err != nil {
+			return common.Gas{}, fmt.Errorf("fail to query raw tx from btcd")
+		}
+		sumVin += vinTx.Vout[vin.Vout].Value
+	}
+	var sumVout float64 = 0
+	for _, vout := range tx.Vout {
+		sumVout += vout.Value
+	}
+	totalGas := uint64((sumVin - sumVout) * common.One)
+	return common.Gas{
+		common.NewCoin(common.BTCAsset, sdk.NewUint(totalGas)),
+	}, nil
 }
