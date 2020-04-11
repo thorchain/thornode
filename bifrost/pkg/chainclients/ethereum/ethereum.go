@@ -75,25 +75,9 @@ func NewClient(thorKeys *thorclient.Keys, cfg config.ChainConfiguration, server 
 }
 
 func (c *Client) initBlockScanner(m *metrics.Metrics) error {
-	c.CheckIsTestNet()
-
 	var err error
-	startBlockHeight := int64(0)
-	if !c.cfg.BlockScanner.EnforceBlockHeight {
-		startBlockHeight, err = c.thorchainBridge.GetLastObservedInHeight(common.ETHChain)
-		if err != nil {
-			return pkerrors.Wrap(err, "fail to get start block height from thorchain")
-		}
-		if startBlockHeight == 0 {
-			startBlockHeight, err = c.GetHeight()
-			if err != nil {
-				return pkerrors.Wrap(err, "fail to get Ethereum height")
-			}
-			c.logger.Info().Int64("height", startBlockHeight).Msg("Current block height is indeterminate; using current height from Ethereum.")
-		}
-	} else {
-		startBlockHeight = c.cfg.BlockScanner.StartBlockHeight
-	}
+
+	c.CheckIsTestNet()
 
 	path := fmt.Sprintf("%s/%s", c.cfg.BlockScanner.DBPath, c.cfg.BlockScanner.ChainID)
 	storage, err := blockscanner.NewBlockScannerStorage(path)
@@ -101,12 +85,12 @@ func (c *Client) initBlockScanner(m *metrics.Metrics) error {
 		return pkerrors.Wrap(err, "fail to create blockscanner storage")
 	}
 
-	ethScanner, err := NewBlockScanner(c.cfg.BlockScanner, startBlockHeight, storage, c.isTestNet, c.client, m)
+	ethScanner, err := NewBlockScanner(c.cfg.BlockScanner, storage, c.isTestNet, c.client, m)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create eth block scanner")
 	}
 
-	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, startBlockHeight, storage, m, ethScanner)
+	c.blockScanner, err = blockscanner.NewBlockScanner(c.cfg.BlockScanner, storage, m, c.thorchainBridge, ethScanner)
 	if err != nil {
 		return pkerrors.Wrap(err, "fail to create block scanner")
 	}
