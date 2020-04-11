@@ -76,7 +76,6 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseResult) (*types.TxIn, 
 	txIn := &types.TxIn{
 		BlockHeight: strconv.FormatInt(block.Height, 10),
 		Chain:       c.chain,
-		Count:       strconv.Itoa(len(block.RawTx)),
 	}
 	var txItems []types.TxInItem
 	for _, tx := range block.RawTx {
@@ -108,6 +107,7 @@ func (c *Client) extractTxs(block *btcjson.GetBlockVerboseResult) (*types.TxIn, 
 		})
 	}
 	txIn.TxArray = txItems
+	txIn.Count = strconv.Itoa(len(txItems))
 	return txIn, nil
 }
 
